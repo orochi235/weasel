@@ -45,4 +45,30 @@ describe('<ControlPanel> keeping its own auto set', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reset all' }));
     expect([pinned('A'), pinned('B')]).toEqual([false, false]);
   });
+
+  it('starts a schema of other leaves from its own start-auto set', () => {
+    const first = f.schema({ a: f.number(1).range(0, 9).initial(AUTO).label('A') });
+    const second = f.schema({
+      a: f.number(1).range(0, 9).auto().label('A'),
+      b: f.number(2).range(0, 9).initial(AUTO).label('B'),
+    });
+    const draw = (schema: ReturnType<typeof f.schema>) => (
+      <ControlPanel schema={resolveConfigSchema(schema, [])} config={{}} setConfig={() => {}} />
+    );
+    const { rerender } = render(draw(first));
+    expect(pinned('A')).toBe(false);
+    rerender(draw(second));
+    expect([pinned('A'), pinned('B')]).toEqual([true, false]);
+  });
+
+  it('keeps its pins across a render that resolves the same schema afresh', () => {
+    const schema = f.schema({ a: f.number(1).range(0, 9).initial(AUTO).label('A') });
+    const draw = () => (
+      <ControlPanel schema={resolveConfigSchema(schema, [])} config={{}} setConfig={() => {}} />
+    );
+    const { rerender } = render(draw());
+    fireEvent.click(screen.getByRole('button', { name: 'Pin A' }));
+    rerender(draw());
+    expect(pinned('A')).toBe(true);
+  });
 });

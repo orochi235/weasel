@@ -1144,6 +1144,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Diagram, audio, and labkit
 
+- 2026-11-20 (audit round 50, labkit.controls): a `ControlPanel` keeping its own auto set starts it afresh from
+  the schema's `.initial(AUTO)` leaves when the schema's leaf paths or start-auto paths change, and keeps it across
+  a schema resolved anew with the same ones. Two trials of one instrument in one mounted panel therefore share pins;
+  a lab that wants each to open fresh keys the panel by trial. Why: `resolveConfigSchema` returns a new object each
+  call, so keying on identity would drop every pin on a panel whose schema is resolved in render.
 - Open (2026-11-11, audit round 15, leftovers lane): how close together two edits must be to undo as one step,
   and who sets it. labkit merges a trial's config writes to one path within a hardcoded 500 ms (`GESTURE_MS`,
   `packages/labkit/src/trial/useTrialWrites.ts`); ui exposes the same idea as the kit setting `history.coalesceMs`,

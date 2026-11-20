@@ -17,6 +17,7 @@ import { type ReactNode, useMemo, useState } from 'react';
 import { AUTO, isAuto } from '../config/auto';
 import { applyConfigWrite, resolveAutoConfig, startAutoPathsOf } from '../config/autoConfig';
 import { type AutoReports, withAutoReports } from '../config/autoReports';
+import { configLeaves } from '../config/leaves';
 import { configValueAt } from '../config/path';
 import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { type ControlPack, gridOf } from './controlPack';
@@ -130,6 +131,15 @@ export interface ControlPanelProps<TC extends Record<string, unknown>>
 
 type Write = (path: string, value: unknown) => void;
 
+const startSet = (resolved: ResolvedConfig): ReadonlySet<string> =>
+  new Set(startAutoPathsOf(resolved));
+
+/** What a panel's own auto set is kept for: the schema's leaf paths, and which of them start auto. */
+const schemaShape = (resolved: ResolvedConfig): string =>
+  `${Array.from(configLeaves(resolved.group))
+    .map(([path]) => path)
+    .join('\n')}\n*${startAutoPathsOf(resolved).join('\n')}`;
+
 /**
  * Which rows are unpinned, and what hands one to its resolver or takes it
  * back. An owner that tracks the set decides what a dot means; one that does
@@ -142,10 +152,18 @@ function usePanelAuto(
   config: Record<string, unknown>,
   writes: { setConfig: Write; draftConfig?: Write },
 ) {
-  // A panel keeping its own set opens with the leaves its schema starts auto, as a trial does.
-  const [ownAuto, setOwnAuto] = useState<ReadonlySet<string>>(
-    () => new Set(startAutoPathsOf(resolved)),
-  );
+  // A panel keeping its own set opens with the leaves its schema starts auto, as a trial does, and opens
+  // afresh on a schema of other leaves. A schema resolved anew each render keeps its pins: the set is keyed
+  // by what the schema holds, not by the object.
+  const shape = useMemo(() => schemaShape(resolved), [resolved]);
+  const [own, setOwn] = useState(() => ({ shape, paths: startSet(resolved) }));
+  if (own.shape !== shape) setOwn({ shape, paths: startSet(resolved) });
+  const ownAuto = own.paths;
+  const setOwnAuto = (fn: (prev: ReadonlySet<string>) => ReadonlySet<string>): void =>
+    setOwn((prev) => {
+      const paths = fn(prev.paths);
+      return paths === prev.paths ? prev : { shape: prev.shape, paths };
+    });
   const mark = (path: string, next: boolean): void =>
     setOwnAuto((prev) => {
       if (prev.has(path) === next) return prev;
