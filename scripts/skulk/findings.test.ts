@@ -50,9 +50,20 @@ describe('validPairs', () => {
 });
 
 describe('fixTallyOf', () => {
-  it('reads the fixer\'s closing tally line, and nothing from a report with no verdicts', () => {
-    expect(fixTallyOf('fixed 1a2b3c4d | a thing (A)\nChecks: pass\ntally: 3 of 4 fixed, 1 extra fixed\n')).toEqual({ fixed: 3, of: 4, extra: 1 });
+  it('counts its verdicts over the fixer\'s own tally line, which it reads only when no verdict parses', () => {
+    expect(fixTallyOf('fixed 1a2b3c4d | a thing (A)\nChecks: pass\ntally: 3 of 4 fixed, 1 extra fixed\n')).toEqual({ fixed: 1, of: 1, extra: 0 });
+    expect(fixTallyOf('Checks: pass\n\ntally: 3 of 4 fixed, 1 extra fixed\n')).toEqual({ fixed: 3, of: 4, extra: 1 });
     expect(fixTallyOf('A note about a watcher; nothing was lost.')).toBeNull();
+  });
+
+  it('counts a finding the fixer answers twice once', () => {
+    const report = [
+      'pathCrossings missed a cubic crossing itself (A): fixed 56f1699ac2',
+      'pathCrossings never tested a segment against itself (B): duplicate of A\'s pathCrossings finding, fixed 56f1699ac2',
+      'lengthTable gave 0 on overflow (A): fixed e1d05887c0',
+      '', 'Extra:', 'lengths disagreed in the last bit: fixed a769170623', '', 'tally: 3 of 4 fixed, 0 extra fixed',
+    ].join('\n');
+    expect(fixTallyOf(report)).toEqual({ fixed: 2, of: 2, extra: 1 });
   });
 
   it('counts a report with no tally from its verdict lines, extras apart and checks left out', () => {
