@@ -123,6 +123,7 @@ describe('PROPERTIES is the parser\'s one pathway', () => {
     'font-weight': text('600', 'lighter'),
     'font-style': text('italic', 'oblique'),
     'text-anchor': text('middle', 'left'),
+    'dominant-baseline': text('hanging', 'top'),
     'letter-spacing': text('2px', '0.1vw'),
     'text-decoration': text('underline', 'underline wavy'),
     'direction': text('rtl', 'sideways'),

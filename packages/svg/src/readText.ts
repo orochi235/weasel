@@ -112,7 +112,7 @@ export function parseTextElement(
   const textPaint = readTextPaint(el, leafStyle, gradients, onWarn, isNonScalingStroke(el));
   const fontSize = resolveScreenLength(textStyle.fontSize ?? 16, 1);
 
-  const dominantBaseline = el.getAttribute('dominant-baseline');
+  const dominantBaseline = styleValue(leafStyle, 'dominant-baseline', onWarn);
   // Laid-out lines sit on their own baselines, and `y` stays the box top.
   const laid = el.hasAttribute(LAID_ATTR);
   const explicitTopAnchor = laid || dominantBaseline === 'text-before-edge'

@@ -278,6 +278,10 @@ export const PROPERTIES = {
   'font-weight': inherited(readFontWeight),
   'font-style': inherited(readFontStyle),
   'text-anchor': inherited(keyword('start', 'middle', 'end'), 'unread'),
+  'dominant-baseline': inherited(keyword(
+    'auto', 'alphabetic', 'ideographic', 'middle', 'central', 'mathematical', 'hanging', 'text-top', 'text-bottom',
+    'use-script', 'no-change', 'reset-size', 'text-before-edge', 'text-after-edge',
+  ), 'unread'),
   'letter-spacing': inherited(readLetterSpacing),
   'text-decoration': inherited(readDecoration),
   'direction': inherited(keyword('ltr', 'rtl'), 'unread'),
