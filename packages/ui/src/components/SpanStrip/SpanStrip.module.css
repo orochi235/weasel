@@ -1,0 +1,83 @@
+/* `--spans` (the grid's columns) and `--at` (the playhead, 0 to 1) are set on the strip from its ref; each segment's
+   `--span-color` from its own. */
+.strip {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--spans, 1fr);
+  height: 22px;
+  min-width: 0;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface-sunken);
+  user-select: none;
+}
+
+.strip[data-seekable] {
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.strip:focus-visible {
+  outline: 2px solid var(--wzl-accent);
+  outline-offset: 1px;
+}
+
+.segment {
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 var(--wzl-space-3);
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-2xs);
+  line-height: 20px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.segment[data-state='active'] { font-weight: var(--wzl-font-weight-bold); }
+
+.played {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: var(--spans, 1fr);
+  border-radius: inherit;
+  clip-path: inset(0 calc((1 - var(--at, 0)) * 100%) 0 0);
+  pointer-events: none;
+}
+
+.played > .segment {
+  background: var(--span-color, var(--wzl-accent));
+  color: color-mix(in oklab, var(--span-color, var(--wzl-accent)) 22%, black);
+}
+
+.played > .segment[data-state='failed'] {
+  background-image: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in oklab, black 22%, transparent) 4px 6px);
+}
+
+.seams {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: var(--spans, 1fr);
+  pointer-events: none;
+}
+
+.seam:not(:last-child) {
+  border-inline-end: 2px dotted white;
+  mix-blend-mode: difference;
+  opacity: 0.6;
+}
+
+.playhead {
+  position: absolute;
+  inset-block: -3px;
+  left: calc(var(--at, 0) * 100%);
+  width: 2px;
+  margin-inline-start: -1px;
+  border-radius: 1px;
+  background: var(--wzl-accent);
+  box-shadow: 0 0 6px var(--wzl-accent);
+  pointer-events: none;
+}
