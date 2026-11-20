@@ -109,11 +109,6 @@ export function createDeleteOp<TNode extends { id: string }>(args: DeleteArgs<TN
     label,
     apply(adapter) {
       const a = adapter as DeleteAdapter<TNode>;
-      const observed = captureSlot(a, parentOf(node), node.id);
-      if (observed) {
-        slot = observed;
-        argsForSerial.slot = observed;
-      }
       captured = captureCascade(a, node.id);
       argsForSerial.cascaded = captured;
       // Undo puts back what was removed, not the copy the op was built from.
@@ -121,6 +116,13 @@ export function createDeleteOp<TNode extends { id: string }>(args: DeleteArgs<TN
       if (live) {
         node = live;
         argsForSerial.node = live;
+      }
+      // The slot is read under the live node's parent, which is where the
+      // inverse insert puts it back.
+      const observed = captureSlot(a, parentOf(node), node.id);
+      if (observed) {
+        slot = observed;
+        argsForSerial.slot = observed;
       }
       a.removeNode(node.id);
     },

@@ -1,4 +1,5 @@
 import type { Op } from './types';
+import { alreadyHolds } from './alreadyHolds';
 import { registerKitOpFactory } from './registry';
 
 interface SetTextAdapter {
@@ -17,7 +18,9 @@ export interface SetTextArgs {
 /** Op: set a text node's text content, inverting back to `from`. `coalesceKey`
  *  defaults to `setText:${id}` so successive edits to the same node (typing)
  *  merge into one undo entry within the history's coalesce window. Pass an
- *  explicit key to opt out. */
+ *  explicit key to opt out. Reports a no-op when the node's `text`, read
+ *  through the adapter's `getNode`, is already `to`; `from` stands in only
+ *  where there is no `getNode`. */
 export function createSetTextOp(args: SetTextArgs): Op {
   const { id, from, to, label, coalesceKey = `setText:${id}` } = args;
   return {
@@ -26,7 +29,9 @@ export function createSetTextOp(args: SetTextArgs): Op {
     label,
     coalesceKey,
     apply(adapter) {
+      const held = alreadyHolds(adapter, id, (node) => node.text === to) ?? from === to;
       (adapter as SetTextAdapter).setText(id, to);
+      return held ? false : undefined;
     },
     invert() {
       return createSetTextOp({ id, from: to, to: from, label, coalesceKey });

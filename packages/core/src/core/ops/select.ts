@@ -4,6 +4,7 @@ import { sameList } from '@weasel-js/registry';
 
 interface SelectionAdapter {
   setSelection(ids: string[]): void;
+  getSelection?(): readonly string[];
 }
 
 /** Arguments to {@link createSetSelectionOp}: replace the selection `from` → `to`. */
@@ -13,7 +14,9 @@ export interface SetSelectionArgs {
   label?: string;
 }
 
-/** Op: replace the current selection with `to`; inverts back to `from`. */
+/** Op: replace the current selection with `to`; inverts back to `from`.
+ *  Reports a no-op when the selection is already `to`, read through the
+ *  adapter's `getSelection` where it has one and from `from` otherwise. */
 export function createSetSelectionOp(args: SetSelectionArgs): Op {
   const { from, to, label } = args;
   return {
@@ -22,13 +25,14 @@ export function createSetSelectionOp(args: SetSelectionArgs): Op {
     label,
     apply(adapter) {
       // Always call setSelection so consumers that inspect op behavior
-      // (tests, overlays) see a consistent "this op writes `to`" signal.
-      // When from and to are sequence-equal, additionally report a no-op
-      // to history so the entry can be skipped from the undo stack.
-      // setSelection with the same value is idempotent.
-      (adapter as SelectionAdapter).setSelection([...to]);
-      if (sameList(from, to)) return false;
-      return undefined;
+      // (tests, overlays) see a consistent "this op writes `to`" signal, and
+      // report a no-op to history when the selection is already `to`. The
+      // live selection is the answer where it can be read: a stated `from`
+      // can be stale.
+      const a = adapter as SelectionAdapter;
+      const held = typeof a.getSelection === 'function' ? sameList(a.getSelection(), to) : sameList(from, to);
+      a.setSelection([...to]);
+      return held ? false : undefined;
     },
     invert() {
       return createSetSelectionOp({ from: to, to: from, label });
