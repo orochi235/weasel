@@ -22,7 +22,7 @@ const without = (local: LocalArgs, keys: string[]): LocalArgs =>
 /**
  * Storybook's `useArgs`, writing through the trial's config. Stands in for `storybook/preview-api`.
  * A value a MessagePort would not deliver intact, such as a function, a React element or a class
- * instance, stays in the frame.
+ * instance, stays in the frame, as does an `undefined`, which clears the arg.
  */
 export function useArgs(): [
   Record<string, unknown>,
@@ -36,7 +36,8 @@ export function useArgs(): [
     const sent: [string, unknown][] = [];
     const kept: LocalArgs = {};
     for (const [key, value] of Object.entries(patch)) {
-      if (sendable(value)) sent.push([key, value]);
+      // A config `undefined` means the story's own arg, so a cleared arg stays in the frame, as Storybook drops it.
+      if (value !== undefined && sendable(value)) sent.push([key, value]);
       else setOwn(kept, key, { value, over: coverOf(getOwn(config, key)) });
     }
     setLocal((prev) => ({ ...without(prev, Object.keys(patch)), ...kept }));

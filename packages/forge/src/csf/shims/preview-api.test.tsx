@@ -96,6 +96,24 @@ describe('useArgs with values that cannot cross the port', () => {
     expect(screen.getByText('number:8')).toBeInTheDocument();
   });
 
+  it('clears an arg updated to undefined, rather than putting the story’s own back', () => {
+    let captured: ReturnType<typeof useArgs> | undefined;
+    const { sent } = mount(
+      load({
+        render: function Read() {
+          captured = useArgs();
+          return <p>label:{String(captured[0].label)}</p>;
+        },
+      }),
+    );
+    act(() => captured?.[1]({ label: undefined }));
+    expect(sent).toEqual([]);
+    expect(screen.getByText('label:undefined')).toBeInTheDocument();
+    expect(captured && Object.hasOwn(captured[0], 'label')).toBe(false);
+    act(() => captured?.[2](['label']));
+    expect(screen.getByText('label:x')).toBeInTheDocument();
+  });
+
   it('resets frame-local values back to the original args', () => {
     let captured: ReturnType<typeof useArgs> | undefined;
     const { sent } = mount(
