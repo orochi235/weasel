@@ -94,6 +94,19 @@ describe('clipToAncestors', () => {
     expect(clipToAncestors(tile, box)).toEqual({ left: 100, top: 120, width: 200, height: 40 });
   });
 
+  it('cuts both axes to an ancestor containing its paint', () => {
+    for (const rule of [
+      'contain: paint',
+      'contain: content',
+      'contain: strict',
+      'content-visibility: auto',
+    ]) {
+      const { outer, tile } = nest(rule, '');
+      stubBox(outer, 150, 120, 100, 40);
+      expect(clipToAncestors(tile, box)).toEqual({ left: 150, top: 120, width: 100, height: 40 });
+    }
+  });
+
   it('skips an ancestor whose overflow applies to no box', () => {
     for (const display of ['contents', 'inline']) {
       const { inner, tile } = nest('', `display: ${display}; ${BOTH}`);

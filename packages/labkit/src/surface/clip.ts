@@ -9,6 +9,13 @@ interface Edges {
 
 const clips = (overflow: string): boolean => overflow !== '' && overflow !== 'visible';
 
+/** Whether `style` turns on paint containment, which clips both axes to the padding box as `overflow: clip` does. */
+function containsPaint(style: CSSStyleDeclaration): boolean {
+  const contain = style.contain.split(/\s+/);
+  if (contain.some((v) => v === 'paint' || v === 'content' || v === 'strict')) return true;
+  return style.contentVisibility === 'auto' || style.contentVisibility === 'hidden';
+}
+
 /** Whether an element displayed as `display` has a box its `overflow` applies to: `contents` has none, and a
  *  non-replaced inline one is never a scroll container. */
 const hasClipBox = (display: string): boolean => display !== 'contents' && display !== 'inline';
@@ -44,6 +51,10 @@ function clipsViewport(a: Element): boolean {
   return !clips(root.overflowX) && !clips(root.overflowY);
 }
 
+/** The edges `a`'s `overflow` cuts to. */
+const clipEdges = (a: Element): Edges =>
+  clipsViewport(a) ? viewportEdges(a.ownerDocument) : paddingEdges(a);
+
 /** Whether `el` is drawn in the top layer, where no ancestor's overflow reaches. */
 function inTopLayer(el: Element): boolean {
   try {
@@ -65,7 +76,7 @@ function boxParent(el: Element): Element | null {
 
 /**
  * The part of `box` — `el`'s own, in viewport px — that every ancestor
- * clipping its overflow leaves showing. Each axis is cut only by the ancestors
+ * clipping its overflow, or containing its paint, leaves showing. Each axis is cut only by the ancestors
  * that clip that axis. Where nothing is left the box comes back with a zero
  * width or height.
  *
@@ -83,9 +94,10 @@ export function clipToAncestors(el: Element, box: Box): Box {
   for (let a = inTopLayer(el) ? null : boxParent(el); a; a = boxParent(a)) {
     const style = getComputedStyle(a);
     const boxed = hasClipBox(style.display);
-    const x = boxed && clips(style.overflowX);
-    const y = boxed && clips(style.overflowY);
-    const edges = !(x || y) ? null : clipsViewport(a) ? viewportEdges(a.ownerDocument) : paddingEdges(a);
+    const contained = boxed && containsPaint(style);
+    const x = contained || (boxed && clips(style.overflowX));
+    const y = contained || (boxed && clips(style.overflowY));
+    const edges = x || y ? clipEdges(a) : null;
     if (edges && x) {
       out.left = Math.max(out.left, edges.left);
       out.right = Math.min(out.right, edges.right);
