@@ -35,9 +35,9 @@ function resize(enabled: boolean, mixed: string[] = []): Action {
   };
 }
 
-function resolve(action: Action, trigger = vi.fn(() => true)): MenuEntry[] {
+function resolve(action: Action, trigger = vi.fn(() => true), at?: { x: number; y: number }): MenuEntry[] {
   const src: MenuSources = { actions: () => [action], depsFor: () => ({}), trigger };
-  return resolveSchemaMenu({ name: '', children: { resize: pref.action('resize') } }, src);
+  return resolveSchemaMenu({ name: '', children: { resize: pref.action('resize') } }, src, at);
 }
 
 const rows = (e: MenuEntry | undefined) => (e as MenuSubmenuEntry).entries.filter((r) => r.kind !== 'separator');
@@ -57,6 +57,13 @@ describe('resolveSchemaMenu: an action carrying settings', () => {
     const [entry] = resolve(resize(true), trigger);
     (rows(entry)[0] as MenuNumberEntry).set(9);
     expect(trigger).toHaveBeenCalledWith('resize', { field: 'box.width', value: 9 });
+  });
+
+  it('triggers the action at the point the menu opened at, as a plain row does', () => {
+    const trigger = vi.fn(() => true);
+    const [entry] = resolve(resize(true), trigger, { x: 3, y: 4 });
+    (rows(entry)[0] as MenuNumberEntry).set(9);
+    expect(trigger).toHaveBeenCalledWith('resize', { world: { x: 3, y: 4 }, field: 'box.width', value: 9 });
   });
 
   it('shows a mixed field as holding nothing', () => {
