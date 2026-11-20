@@ -190,6 +190,18 @@ describe('repairPrefValue', () => {
       expect(repairPrefValue(box, stored)).toBe(stored);
     });
 
+    it('reads a dotted field where it is stored nested', () => {
+      const stroke = {
+        kind: 'object', name: 'Stroke', description: '', default: {},
+        children: {
+          nib: { kind: 'boolean', name: 'Nib', description: '', default: false, encoding: { read: (v: unknown) => v !== undefined, write: () => ({}) } },
+          'nib.angle': num(),
+        },
+      } as unknown as PrefLeaf;
+      expect(repairPrefValue(stroke, { nib: { angle: 'garbage' } })).toEqual({ nib: { angle: 10 } });
+      expect(repairPrefValue(stroke, { nib: { angle: 500, keep: 1 } })).toEqual({ nib: { angle: 100, keep: 1 } });
+    });
+
     it('checks each entry of a list of objects', () => {
       const boxes = { kind: 'list', name: 'Boxes', description: '', default: [], item: box } as PrefLeaf;
       expect(repairPrefValue(boxes, [{ w: -5 }, 7])).toEqual([{ w: 0 }, { w: 1 }]);

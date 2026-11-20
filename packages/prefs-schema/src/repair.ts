@@ -3,6 +3,7 @@ import { endlessAllows } from '@weasel-js/quantity';
 import { codePointFloor, getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 import { prefClampNumber } from './bounds';
 import { prefSectionLeaves } from './helpers';
+import { prefObjectField, prefObjectWithField } from './object';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import { prefVariantOf, type PrefUnion } from './union';
@@ -77,13 +78,14 @@ type Validators = Readonly<Record<string, PrefValidator>> | undefined;
  * the field at its default. Fields no leaf describes pass through.
  */
 function repairFields(leaf: PrefObject, stored: Record<string, unknown>, validators: Validators): unknown {
-  let out: Record<string, unknown> | undefined;
+  let out = stored;
   for (const [key, field] of prefSectionLeaves(leaf.children)) {
-    if (!Object.hasOwn(stored, key) || stored[key] === undefined) continue;
-    const read = repairPrefValue(field, stored[key], validators);
-    if (read !== stored[key]) setOwn((out ??= { ...stored }), key, read);
+    const held = prefObjectField(stored, key);
+    if (held === undefined) continue;
+    const read = repairPrefValue(field, held, validators);
+    if (read !== held) out = prefObjectWithField(leaf, out, key, read);
   }
-  return out ?? stored;
+  return out;
 }
 
 /** Each value reads as `item` would on its own, under the key it was stored at. */
