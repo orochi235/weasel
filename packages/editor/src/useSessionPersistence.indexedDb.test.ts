@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { createScene, decodeSnapshot, isSerializedScene, type SavedScene } from '@weasel-js/core';
 import { createIndexedDbAdapter, openRecords } from '@weasel-js/storage';
 import { readStored } from './sessionStore';
@@ -39,8 +39,8 @@ describe('useSessionPersistence over IndexedDB', () => {
     act(() => { scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { photo, coords: new Float32Array([1, 2]) } }); });
     session.rerender();
     inLocalStorage.rerender();
-    await vi.waitFor(() => expect(onSaved).toHaveBeenLastCalledWith(true));
-    await vi.waitFor(() => expect(local).toHaveBeenLastCalledWith(false));
+    await waitFor(() => expect(onSaved).toHaveBeenLastCalledWith(true));
+    await waitFor(() => expect(local).toHaveBeenLastCalledWith(false));
     session.unmount();
     inLocalStorage.unmount();
     expect(await records.close()).toBe(true);

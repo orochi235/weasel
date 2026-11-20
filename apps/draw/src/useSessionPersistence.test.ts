@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { asNodeId, createScene, encodeSceneDocument, type AddNodeSpec } from '@weasel-js/core';
 import { readStored } from '@weasel-js/editor';
 import { DOC_KEY, loadDoc } from './docPersistence';
@@ -45,7 +45,7 @@ async function saveWith(node: AddNodeSpec<WeaselDrawData, WeaselDrawLayer, Wease
   act(() => { scene.add(node); });
   rerender();
   unmount();
-  await vi.waitFor(() => expect(landed()).toBe(true), { timeout: 10_000 });
+  await waitFor(() => expect(landed()).toBe(true), { timeout: 10_000 });
 }
 
 const landedIn = (keys: readonly string[]) => () => {
@@ -135,7 +135,7 @@ describe("draw's session in IndexedDB", () => {
     expect(pictureOf('m')).toBe('data:image/png;base64,iVBORw0KGgo=');
     expect(savedStack()).not.toBeNull();
     expect(loadDoc().filename).toBe('moved.svg');
-    await vi.waitFor(() => expect(landedIn([LS_KEY, SCENE_HISTORY_KEY, DOC_KEY])()).toBe(true));
+    await waitFor(() => expect(landedIn([LS_KEY, SCENE_HISTORY_KEY, DOC_KEY])()).toBe(true));
     await closeSession();
 
     localStorage.setItem(DOC_KEY, JSON.stringify({ filename: 'stale.svg' }));

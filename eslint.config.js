@@ -388,6 +388,16 @@ export default [
     },
   },
   {
+    files: ['**/*.{test,spec}.{ts,tsx}'],
+    ignores: ['**/*.browser.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': ['error', ...RESTRICTED_EVERYWHERE, {
+        selector: "Program:has(ImportDeclaration[source.value='@testing-library/react']) CallExpression[callee.object.name='vi'][callee.property.name='waitFor']",
+        message: "Wait with testing-library's waitFor: vi.waitFor polls outside act(), so every React update it waits through warns.",
+      }],
+    },
+  },
+  {
     /**
      * A context keeps the attributes of whoever opens it first, and the renderer refuses one without a
      * stencil buffer, so a pixel read that comes before the app's first paint breaks the canvas for good.

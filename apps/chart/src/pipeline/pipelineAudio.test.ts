@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { createAudioEngine } from '@weasel-js/audio';
 import { pickFile } from '@weasel-js/editor';
@@ -82,7 +82,7 @@ describe('usePipelineAudio', () => {
     vi.mocked(pickFile).mockResolvedValue(new File([new Uint8Array(4)], 'a.wav'));
     const { result, unmount } = renderHook(() => usePipelineAudio({ stages: [], wires: [] }, 'off'));
     const picking = result.current.chooseSource();
-    await vi.waitFor(() => expect(fail).toBeDefined(), { timeout: 10_000 });
+    await waitFor(() => expect(fail).toBeDefined(), { timeout: 10_000 });
     unmount();
     fail(new Error('the context was closed'));
     await expect(picking).resolves.toBeUndefined();
@@ -110,9 +110,9 @@ describe('usePipelineAudio', () => {
     vi.mocked(pickFile).mockResolvedValue(new File([new Uint8Array(4)], 'a.wav'));
     const { result } = renderHook(() => usePipelineAudio({ stages: [], wires: [] }, 'off'));
     const slow = result.current.chooseSource();
-    await vi.waitFor(() => expect(decodes).toHaveLength(1), { timeout: 10_000 });
+    await waitFor(() => expect(decodes).toHaveLength(1), { timeout: 10_000 });
     const fast = result.current.chooseSource();
-    await vi.waitFor(() => expect(decodes).toHaveLength(2), { timeout: 10_000 });
+    await waitFor(() => expect(decodes).toHaveLength(2), { timeout: 10_000 });
     const late = { duration: 60 } as AudioBuffer;
     const next = { duration: 1 } as AudioBuffer;
     await act(async () => {

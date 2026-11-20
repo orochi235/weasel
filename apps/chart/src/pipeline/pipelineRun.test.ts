@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { pickFile } from '@weasel-js/editor';
 import { createLatest } from '@weasel-js/registry';
 import { chooseImage, useSourceImage } from './pipelineRun';
@@ -19,7 +19,7 @@ describe('chooseImage', () => {
     const picks = createLatest();
     const slow = chooseImage(picks);
     const fast = chooseImage(picks);
-    await vi.waitFor(() => expect(decodes).toHaveLength(2), { timeout: 10_000 });
+    await waitFor(() => expect(decodes).toHaveLength(2), { timeout: 10_000 });
     const late = { close: vi.fn() } as unknown as ImageBitmap;
     const next = { close: vi.fn() } as unknown as ImageBitmap;
     decodes[1]?.resolve(next);
@@ -37,7 +37,7 @@ describe('chooseImage', () => {
     const first = chooseImage(picks);
     expect(await chooseImage(picks)).toBeNull();
     const image = { close: vi.fn() } as unknown as ImageBitmap;
-    await vi.waitFor(() => expect(decoded).toBeDefined(), { timeout: 10_000 });
+    await waitFor(() => expect(decoded).toBeDefined(), { timeout: 10_000 });
     decoded(image);
     expect(await first).toBe(image);
   });
@@ -61,9 +61,9 @@ describe('useSourceImage', () => {
     expect(result.current.sources).toEqual({ image: photo });
     expect(card.close).not.toHaveBeenCalled();
     idle();
-    await vi.waitFor(() => expect(card.close).toHaveBeenCalled());
+    await waitFor(() => expect(card.close).toHaveBeenCalled());
     unmount();
     idle();
-    await vi.waitFor(() => expect(photo.close).toHaveBeenCalled());
+    await waitFor(() => expect(photo.close).toHaveBeenCalled());
   });
 });

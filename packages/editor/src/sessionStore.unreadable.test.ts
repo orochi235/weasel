@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { createRecordCache, type SyncStorageAdapter } from '@weasel-js/storage';
 import { readStored, writeSession } from './sessionStore';
 import { useAutosave } from './useAutosave';
@@ -96,7 +96,7 @@ describe('an unreadable document', () => {
     readStored('doc', read, () => 0, records);
     const onSaved = vi.fn();
     const { unmount } = renderHook(() => useAutosave(() => ({ primary: ['doc', 1] }), { records, onSaved, debounceMs: 0 }));
-    await vi.waitFor(() => expect(onSaved).toHaveBeenCalledWith(false));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(false));
     unmount();
     expect(data.get('doc')).toBe('seven');
     await records.close();

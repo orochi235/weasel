@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, beforeAll, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { prefLeaves, VERSION_RECORD } from '@weasel-js/prefs';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import {
@@ -217,7 +217,7 @@ describe('importLegacyPrefs', () => {
     const store = openDrawPrefs(createMemoryAdapter(backing));
     importLegacyPrefs(store, window.localStorage);
     expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).not.toBeNull();
-    await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
+    await waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
     expect(backing.get(`${PREFS_PREFIX}view.grid.spacing`)).toEqual({ $at: 9, value: 40 });
   });
 
@@ -252,7 +252,7 @@ describe('importLegacyPrefs', () => {
     expect(store.isSet('view.grid.spacing')).toBe(false);
     away = false;
     await store.read();
-    await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
+    await waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
     expect(backing.get(`${PREFS_PREFIX}view.grid.spacing`)).toEqual({ $at: 9, value: 40 });
     await store.close();
     warn.mockRestore();
@@ -293,7 +293,7 @@ describe('importLegacyPrefs', () => {
     const store = openDrawPrefs(createMemoryAdapter());
     importLegacyPrefs(store, window.localStorage);
     expect(store.unset().size).toBe(prefLeaves(PREFS).size);
-    await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
+    await waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
   });
 });
 

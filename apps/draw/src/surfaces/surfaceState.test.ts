@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeAll, beforeEach, vi } from 'vitest';
 import { createMemoryAdapter } from '@weasel-js/storage';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { drawPrefs, openDrawPrefs } from '../prefs';
 import { SURFACE_ASSETS } from './assets';
 import { migrateLegacyPanelFlags, surfaceOf, useSetSurface, useSurfaces } from './surfaceState';
@@ -126,7 +126,7 @@ describe('migrateLegacyPanelFlags', () => {
       layers: { collapsed: true },
       history: { collapsed: false },
     });
-    await vi.waitFor(() => expect(window.localStorage.getItem('wd:panel:layers:collapsed')).toBeNull());
+    await waitFor(() => expect(window.localStorage.getItem('wd:panel:layers:collapsed')).toBeNull());
     expect(window.localStorage.getItem('wd:panel:history:collapsed')).toBeNull();
   });
 
