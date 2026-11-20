@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "A from-center polygon or star drawn by a level (or plumb) drag previews a full shape and commits nothing",
+  "The insert's container is decided at the raw press point for snap scope and copies, but the dep parents the node at `ends.start`, which can be a different point",
+  "A behavior-shaped start is not the point the line's Shift constraint turns about, and Space-reposition throws the behavior's shaping away",
+  "Click-to-place leaves the selection cleared, and its snap session open, when the dep's commit throws",
+  "The polygon/star param defaults are written out twice instead of read from `SHAPE_DEFAULTS`"
+ ],
+ "b": [
+  "A click ignores snap keys that were rebound: if a tuning or `opts.roles` moves `snap.suspend` or `snap.constrain` off Ctrl or Shift, a click doesn't follow",
+  "A click builds a built-in kind's extras differently from a drag, which contradicts its own doc comment",
+  "A click loses the cleared selection when the `insert` dep's commit throws, but a drag puts it back",
+  "The preview's `lands` box is wrong inside a rotated or scaled parent"
+ ]
+}

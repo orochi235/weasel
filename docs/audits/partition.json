@@ -2187,6 +2187,7 @@
   "id": "devtools.page",
   "files": [
    "packages/devtools/src/page/attach.ts",
+   "packages/devtools/src/page/followRing.ts",
    "packages/devtools/src/page/handlers.ts",
    "packages/devtools/src/page/history.ts",
    "packages/devtools/src/page/hook.ts",
@@ -2273,6 +2274,7 @@
    "packages/diagram-formats/src/lineError.ts",
    "packages/diagram-formats/src/pageKinds.ts",
    "packages/diagram-formats/src/pageLayout.ts",
+   "packages/diagram-formats/src/pageRoots.ts",
    "packages/diagram-formats/src/pageSvg.ts",
    "packages/diagram-formats/src/pbt.fixture.ts",
    "packages/diagram-formats/src/plotPages.ts",
@@ -2528,6 +2530,7 @@
    "packages/diagram/src/layered/across.ts",
    "packages/diagram/src/layered/bands.ts",
    "packages/diagram/src/layered/cloudFixture.ts",
+   "packages/diagram/src/layered/clusterSpans.ts",
    "packages/diagram/src/layered/cycles.ts",
    "packages/diagram/src/layered/expand.ts",
    "packages/diagram/src/layered/fixtures.ts",
@@ -2619,6 +2622,7 @@
   "id": "diagram.part2",
   "files": [
    "packages/diagram/src/faceCapCenter.ts",
+   "packages/diagram/src/faceMeasure.ts",
    "packages/diagram/src/faceRemeasure.ts",
    "packages/diagram/src/firstSight.ts",
    "packages/diagram/src/footprint.ts",
@@ -2666,13 +2670,13 @@
    "packages/diagram/src/offPage/pagedFixture.ts",
    "packages/diagram/src/offPage/split.ts",
    "packages/diagram/src/offPage/tag.ts",
-   "packages/diagram/src/offPage/trait.ts",
-   "packages/diagram/src/offPage/useOffPageMarkers.ts"
+   "packages/diagram/src/offPage/trait.ts"
   ]
  },
  {
   "id": "diagram.part3",
   "files": [
+   "packages/diagram/src/offPage/useOffPageMarkers.ts",
    "packages/diagram/src/onOutline.ts",
    "packages/diagram/src/outline.ts",
    "packages/diagram/src/overlays.tsx",

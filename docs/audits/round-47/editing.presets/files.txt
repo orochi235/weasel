@@ -1,0 +1,12 @@
+packages/editing/src/presets/arrange.ts
+packages/editing/src/presets/booleans.ts
+packages/editing/src/presets/composites.ts
+packages/editing/src/presets/edit.ts
+packages/editing/src/presets/ingest.ts
+packages/editing/src/presets/insert.ts
+packages/editing/src/presets/pathfinder.ts
+packages/editing/src/presets/select.ts
+packages/editing/src/presets/selection.ts
+packages/editing/src/presets/selectionChrome.ts
+packages/editing/src/presets/tools.ts
+packages/editing/src/presets/transform.ts

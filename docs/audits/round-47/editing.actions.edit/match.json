@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   4,
+   2
+  ]
+ ],
+ "a": [
+  "Paint actions spread an `'inherit'` fill or stroke as an object, writing character-indexed garbage",
+  "`setFillOpacity` / `setStrokeOpacity` write a NaN opacity for a non-finite `alpha01`",
+  "`setStrokeWidth` writes a non-finite or negative width unchecked",
+  "`setVertexColor` splices an `rgba` of the wrong length, shifting every later anchor's color",
+  "Paint actions stay enabled when the run would change nothing, against the 2026-11-10 ruling"
+ ],
+ "b": [
+  "Paint actions and nudge act on page structure that group, ungroup and duplicate filter out",
+  "Group places the container from a parent-local pose read as a world pose when the members have no drawn bounds",
+  "setVertexColor stays enabled where it can change nothing"
+ ]
+}

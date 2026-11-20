@@ -1,0 +1,54 @@
+{
+ "id": "dither",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/dither/src/diffuse.ts",
+  "packages/dither/src/ditherPixels.ts",
+  "packages/dither/src/gpu/createProtectTexture.ts",
+  "packages/dither/src/gpu/deviceGrid.ts",
+  "packages/dither/src/gpu/dither.ts",
+  "packages/dither/src/gpu/frag.ts",
+  "packages/dither/src/gray.ts",
+  "packages/dither/src/index.ts",
+  "packages/dither/src/maskToRgba.ts",
+  "packages/dither/src/pbt.fixture.ts",
+  "packages/dither/src/protectMask.ts",
+  "packages/dither/src/protectRects.ts",
+  "packages/dither/src/shared.ts",
+  "packages/dither/src/testing/grayImage.ts",
+  "packages/dither/src/types.ts"
+ ],
+ "a": 1,
+ "b": 2,
+ "m": 1,
+ "distinct": 2,
+ "chapman": 2,
+ "unfound": 0,
+ "read": {
+  "A": 15,
+  "B": 15
+ },
+ "patches": 2,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.2,
+   "B": 7.3,
+   "match": 0.3,
+   "fix": 8.5
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "tokens": 3468077,
+  "costUsd": 2.97
+ },
+ "fixCommits": [
+  "e1d23269e246cc3772215ffac70d743316a4fee1",
+  "0a17b1d7dc6407cece0915dfc014e01f313c81cb"
+ ]
+}

@@ -1,0 +1,82 @@
+{
+ "id": "editing.actions.move",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/editing/src/actions/move/action.ts",
+  "packages/editing/src/actions/move/behaviors/clampMove.ts",
+  "packages/editing/src/actions/move/behaviors/index.ts",
+  "packages/editing/src/actions/move/behaviors/layoutDrop.ts",
+  "packages/editing/src/actions/move/behaviors/pageDrop.ts",
+  "packages/editing/src/actions/move/behaviors/reparentOnDrop.ts",
+  "packages/editing/src/actions/move/behaviors/snapBackOrDelete.ts",
+  "packages/editing/src/actions/move/behaviors/snapToContainer.ts",
+  "packages/editing/src/actions/move/behaviors/swapOnDrop.ts",
+  "packages/editing/src/actions/move/capture.ts",
+  "packages/editing/src/actions/move/commit/index.ts",
+  "packages/editing/src/actions/move/commit/layoutDrop.ts",
+  "packages/editing/src/actions/move/commit/layoutRelease.ts",
+  "packages/editing/src/actions/move/commit/pageDrop.ts",
+  "packages/editing/src/actions/move/commit/rebase.ts",
+  "packages/editing/src/actions/move/commit/reparent.ts",
+  "packages/editing/src/actions/move/delta.ts",
+  "packages/editing/src/actions/move/dragSnap.ts",
+  "packages/editing/src/actions/move/frame.ts",
+  "packages/editing/src/actions/move/gestureAdapter.ts",
+  "packages/editing/src/actions/move/index.ts",
+  "packages/editing/src/actions/move/landedDescendants.ts",
+  "packages/editing/src/actions/move/layout/container.ts",
+  "packages/editing/src/actions/move/layout/dragged.ts",
+  "packages/editing/src/actions/move/layout/dropPass.ts",
+  "packages/editing/src/actions/move/layout/exits.ts",
+  "packages/editing/src/actions/move/layout/glide.ts",
+  "packages/editing/src/actions/move/layout/types.ts",
+  "packages/editing/src/actions/move/layout/view.ts",
+  "packages/editing/src/actions/move/refusal.ts",
+  "packages/editing/src/actions/move/session.ts",
+  "packages/editing/src/actions/move/sessionOf.ts",
+  "packages/editing/src/actions/move/translate.ts"
+ ],
+ "a": 6,
+ "b": 7,
+ "m": 4,
+ "distinct": 9,
+ "chapman": 10.2,
+ "unfound": 1.2,
+ "read": {
+  "A": 33,
+  "B": 33
+ },
+ "patches": 12,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9.9,
+   "B": 5,
+   "match": 0.2,
+   "fix": 33.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "tokens": 24912322,
+  "costUsd": 11.09
+ },
+ "fixCommits": [
+  "c6b831ff11c1bf2a1bcc80aa7973a7bc9ddd2467",
+  "1526249de6cf74b446f48c6eb606492f2420a5af",
+  "3e89500e3d01d1825549ce78aea0490d29ae9bfb",
+  "5b0df8a081080f324ccbdc910e74dbb36a4f14b6",
+  "36b25c8503b050c6d7ad4f9418516f47c62a5786",
+  "921e20eb0cf91dc4671fbea5853149bfada14bd6",
+  "87f3d389e526695dde3fbacced069ee2b9e367ef",
+  "d7a156b7455f5263ac481b823c5733b227437c59",
+  "2202a324cb175a33680805609bc705ca143d74dd",
+  "6b09492bd38259f96a3f203067d5b56b47f2bf80",
+  "a424dac1453af6544320a331d83b1bc6c4618021",
+  "87955c1f43cffbfd424d8a0d0818f4913c9aa0cd"
+ ]
+}

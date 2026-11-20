@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A deferred click collapses the selection on release even though extend-clicks are locked",
+  "Alt-drag cloning ignores `move.dragThresholdPx` and the move run's lifecycle options",
+  "`pickTolerance` is documented as silhouette-only, but the default picker's derived-route hit depends on it under `'aabb'` too",
+  "`useImageTool` accepts `share` and silently drops it"
+ ],
+ "b": [
+  "The deferred collapse applies the click with the release's modifiers and skips the extend-click lock",
+  "The Alt-drag clone bindings ignore `move.dragThresholdPx`"
+ ]
+}

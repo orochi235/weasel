@@ -1,0 +1,61 @@
+{
+ "id": "editing.actions.insert",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/editing/src/actions/insert/action.ts",
+  "packages/editing/src/actions/insert/commit.ts",
+  "packages/editing/src/actions/insert/extras.ts",
+  "packages/editing/src/actions/insert/frame.ts",
+  "packages/editing/src/actions/insert/geometry.ts",
+  "packages/editing/src/actions/insert/lands.ts",
+  "packages/editing/src/actions/insert/live.ts",
+  "packages/editing/src/actions/insert/params.ts",
+  "packages/editing/src/actions/insert/placeAction.ts",
+  "packages/editing/src/actions/insert/repositionAction.ts",
+  "packages/editing/src/actions/insert/rotateAction.ts",
+  "packages/editing/src/actions/insert/session.ts",
+  "packages/editing/src/actions/insert/shape.ts",
+  "packages/editing/src/actions/insert/style.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 1,
+ "distinct": 8,
+ "chapman": 14,
+ "unfound": 6,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.4,
+   "B": 6,
+   "match": 0.2,
+   "fix": 22.2
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "tokens": 20636278,
+  "costUsd": 9.09
+ },
+ "fixCommits": [
+  "74261dff44a31042721211f1f038fca585d97b9f",
+  "9aa80365fdd77f9bf3b014fe9b912e49958e5a75",
+  "76c5562e53f569694f4e44f8e9b8c08942c9654c",
+  "9a0027c08213959e00a12a67ba561ee0f6b7ca58",
+  "1fbfa96f3499edecc207b2c3723ab75625fae5db",
+  "60b38f51c7ea5572c6c35069ac66da351311a485",
+  "a86bd3471d4445720d7c62c3b01afd1ace93289e",
+  "7cace1d6f7ebaf1c8473309015cee197c2e7ef08",
+  "d059b75ef94ef292b4eec2e87e959930d10b3212",
+  "c5a36f971482f1cc3a96edc2ee48e48138d94a76"
+ ]
+}

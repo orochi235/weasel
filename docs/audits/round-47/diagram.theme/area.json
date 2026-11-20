@@ -1,0 +1,57 @@
+{
+ "id": "diagram.theme",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/diagram/src/theme/applyTheme.ts",
+  "packages/diagram/src/theme/fromTokens.ts",
+  "packages/diagram/src/theme/resolve.ts",
+  "packages/diagram/src/theme/styleField.ts",
+  "packages/diagram/src/theme/themeEdit.ts",
+  "packages/diagram/src/theme/themeFile.ts",
+  "packages/diagram/src/theme/themeFixture.ts",
+  "packages/diagram/src/theme/themeWrites.ts",
+  "packages/diagram/src/theme/themes.ts",
+  "packages/diagram/src/theme/types.ts"
+ ],
+ "a": 7,
+ "b": 4,
+ "m": 1,
+ "distinct": 10,
+ "chapman": 19,
+ "unfound": 9,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 10,
+ "questions": 2,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.2,
+   "B": 3.3,
+   "match": 0.2,
+   "fix": 20.4
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "tokens": 13877233,
+  "costUsd": 6.99
+ },
+ "fixCommits": [
+  "c39e272012d302b1207fe078e43a24bb82d2118f",
+  "9b59a034b9c89acfe632eb285d5846d7a3c76d0f",
+  "e4e3b6ae90655f9b7d5096e6fa823f426e12bb65",
+  "34e26b902e5963b7a843ec5e562b1ed1a1e3458d",
+  "c95ff395c1d08753d433fadf8b991d5046a422fb",
+  "119b6c54ed9ac205bd223899d124f02989f64c1f",
+  "963678e82a75b8a14d1eee9a2fc9a98856ae487d",
+  "eaa8ff5a10c9c6054b686f25b5d2d67c1a33e313",
+  "493f964b4dde7fef3b2a824b5d4d4228749621b0",
+  "aabd7a6bd3670035e82df4f10728abdbc8c75a6e"
+ ]
+}

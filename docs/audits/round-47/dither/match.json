@@ -1,0 +1,15 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "GPU dither places dots in float32 from an absolute grid origin, so dot edges jitter once the grid origin is ~2^24 device px off screen"
+ ],
+ "b": [
+  "The live dither loses its dot grid far from the grid origin: `u_gridOrigin` reaches the shader as an unreduced float32",
+  "`ditherPixels` returns `undefined` for a method it doesn't know, while `dither` throws for the same input, with a message that calls it error diffusion"
+ ]
+}

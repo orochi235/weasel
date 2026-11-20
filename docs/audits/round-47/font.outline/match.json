@@ -1,0 +1,31 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   3
+  ],
+  [
+   4,
+   5
+  ]
+ ],
+ "a": [
+  "checkCff never reads the FDArray's Font DICTs, so a CID-keyed CFF with a damaged FD `Private` reaches opentype.js unchecked",
+  "The CFF and cmap checks are skipped for WOFF input, and the CFF check runs only for an `OTTO` signature",
+  "A WOFF face loses every kerning pair behind a GPOS Extension lookup, while the same font as TTF/OTF keeps them",
+  "gposPairKerning's memo grows with no bound",
+  "loadFontOutlines / fontEmbedding report the status of a registration that was replaced while it loaded"
+ ],
+ "b": [
+  "cffCheck never checks the FDArray font DICTs' Private DICTs, which opentype.js follows the same way",
+  "A local variable font registers its default instance's outlines under every named instance's weight",
+  "A thunk or Blob source is read twice when DOM text asks for the face before the canvas does",
+  "gposPairKerning's pair memo has no bound",
+  "Kerning adds up every `kern` lookup across all scripts, so a pair kerned in two scripts' lookups is applied twice",
+  "fontEmbedding answers null when the face is re-registered while it loads"
+ ]
+}

@@ -1,0 +1,14 @@
+packages/editing/src/actions/resize/action.ts
+packages/editing/src/actions/resize/aspect.ts
+packages/editing/src/actions/resize/behaviors/clampMinSize.ts
+packages/editing/src/actions/resize/behaviors/index.ts
+packages/editing/src/actions/resize/boxFrame.ts
+packages/editing/src/actions/resize/capture.ts
+packages/editing/src/actions/resize/commit.ts
+packages/editing/src/actions/resize/frame.ts
+packages/editing/src/actions/resize/held.ts
+packages/editing/src/actions/resize/index.ts
+packages/editing/src/actions/resize/minimum.ts
+packages/editing/src/actions/resize/replay.ts
+packages/editing/src/actions/resize/ruleBounds.ts
+packages/editing/src/actions/resize/session.ts

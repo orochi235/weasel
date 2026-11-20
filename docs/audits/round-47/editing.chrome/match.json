@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "The overlay paints the rotate badge on a node that cannot rotate, where no grab region exists",
+  "The selection outline drops `dashOffset`, `miterLimit`, `trim` and markers from the consumer's stroke",
+  "The shape-outline cache keeps an open path's ink band after its inherited stroke style changes"
+ ],
+ "b": [
+  "The overlay paints a rotate badge on a selection the rotate affordance refuses, so the badge cannot be grabbed",
+  "Selection boxes measured through `boxReader` ignore the scene's own node painters (`scene.shapes` dropped)"
+ ]
+}

@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "A Storybook number control with only `min` (or only `max`) loses its bound, though labkit can hold one",
+  "A `select`/`radio` control whose `options` are not all strings disappears, and with no control type it becomes a free field",
+  "A URL param for an object or union knob is accepted with any fields and any tag",
+  "`weaselforge build --out` overrides a config's own `build.emptyOutDir: true`"
+ ],
+ "b": [
+  "`updateArgs({ key: undefined })` puts the story's own arg back instead of clearing it",
+  "`describeSchema` copies function-valued annotations into the `ready` message, which a port cannot clone",
+  "A `select` or `radio` control whose options are not all strings draws no control at all",
+  "A CSF story's `globals` are read for the viewport only; the story renders under the toolbar's globals regardless",
+  "The schema description drops `enableIf`, `auto`, `resettable`, `motif` and `dialog`, so the workshop panel ignores them",
+  "A cleared clearable number writes no URL param, so the link reopens it at its default",
+  "An argType `if` on an arg that has no control reads it as undefined, so the conditioned control hides for good",
+  "An arg holding a Proxy gets a control, and its default then fails the `ready` post",
+  "`runStory`'s doc says it renders with no globals, but it takes and applies `globals`"
+ ]
+}

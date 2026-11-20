@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "Unmounting the newest tools publisher withdraws every publisher's tools from the shortcut sheet",
+  "A throwing `onSaved` drops the save queued behind it and leaves its slots cache unclosed",
+  "`usePageFit`'s refit changes identity when `padding` changes, against its doc",
+  "`'single'` paging ignores a pointer already held when it turns on"
+ ],
+ "b": [
+  "Unmounting any tool publisher clears the shortcut sheet's tools, even while a newer publisher is still mounted",
+  "useAutosave drops a failed write's error and, without `onSaved`, logs nothing",
+  "usePageSettle misses a pointer already held when single paging turns on"
+ ]
+}

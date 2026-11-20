@@ -1,0 +1,51 @@
+{
+ "id": "editing.chrome",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/editing/src/chrome/affordances/cornerResize.ts",
+  "packages/editing/src/chrome/affordances/rotateCursor.ts",
+  "packages/editing/src/chrome/affordances/rotationHandle.ts",
+  "packages/editing/src/chrome/handleCommands.ts",
+  "packages/editing/src/chrome/overlay.ts",
+  "packages/editing/src/chrome/rotationBadge.ts",
+  "packages/editing/src/chrome/rotationHandleGeometry.ts",
+  "packages/editing/src/chrome/selectionChrome.ts",
+  "packages/editing/src/chrome/selectionPose.ts",
+  "packages/editing/src/chrome/shapeOutline.ts"
+ ],
+ "a": 3,
+ "b": 2,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 5,
+ "unfound": 1,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 4,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.8,
+   "B": 4,
+   "match": 0.1,
+   "fix": 9.7
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "tokens": 8325228,
+  "costUsd": 4.84
+ },
+ "fixCommits": [
+  "b0bc4cda821100094ab022c5be72331854c72ea7",
+  "deda51055f34af4a050f910953d81b4887f87acc",
+  "091bd67e13b248596b9950725bcb20daf08d8ca0",
+  "9217b8a39626402531f9e6a7ce1eac79069dcbf8"
+ ]
+}

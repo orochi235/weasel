@@ -1,0 +1,58 @@
+{
+ "id": "editing.actions.resize",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/editing/src/actions/resize/action.ts",
+  "packages/editing/src/actions/resize/aspect.ts",
+  "packages/editing/src/actions/resize/behaviors/clampMinSize.ts",
+  "packages/editing/src/actions/resize/behaviors/index.ts",
+  "packages/editing/src/actions/resize/boxFrame.ts",
+  "packages/editing/src/actions/resize/capture.ts",
+  "packages/editing/src/actions/resize/commit.ts",
+  "packages/editing/src/actions/resize/frame.ts",
+  "packages/editing/src/actions/resize/held.ts",
+  "packages/editing/src/actions/resize/index.ts",
+  "packages/editing/src/actions/resize/minimum.ts",
+  "packages/editing/src/actions/resize/replay.ts",
+  "packages/editing/src/actions/resize/ruleBounds.ts",
+  "packages/editing/src/actions/resize/session.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.4,
+   "B": 6.9,
+   "match": 0.2,
+   "fix": 17.9
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "tokens": 9094580,
+  "costUsd": 5.48
+ },
+ "fixCommits": [
+  "261488b396020f7352baa3d685227f5741783fa9",
+  "7e1ab6c6ef3c164c18dabf8f277d720c620ca6eb",
+  "55ab2c67094de92c66252457c3d7eb30356aeb44",
+  "f57aa8993822d692e7b9a154832eea6f82a09406",
+  "a453821edd96ed2e38df12943660815d9d3a0b8b",
+  "32356fff83e470106a84d9d24f6b96633fb074b5",
+  "df73bc8ace998214e31f63b9e74fe754a5c8e001"
+ ]
+}

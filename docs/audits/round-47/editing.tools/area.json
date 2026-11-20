@@ -1,0 +1,76 @@
+{
+ "id": "editing.tools",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/editing/src/tools/ellipse/index.ts",
+  "packages/editing/src/tools/ellipse/useEllipseTool.tsx",
+  "packages/editing/src/tools/eyedropper/index.ts",
+  "packages/editing/src/tools/eyedropper/useEyedropperTool.ts",
+  "packages/editing/src/tools/image/index.ts",
+  "packages/editing/src/tools/image/useImageTool.tsx",
+  "packages/editing/src/tools/lasso/index.ts",
+  "packages/editing/src/tools/lasso/useLassoTool.ts",
+  "packages/editing/src/tools/line/index.ts",
+  "packages/editing/src/tools/line/useLineTool.tsx",
+  "packages/editing/src/tools/polygon/index.ts",
+  "packages/editing/src/tools/polygon/usePolygonTool.tsx",
+  "packages/editing/src/tools/rect/index.ts",
+  "packages/editing/src/tools/rect/useRectTool.ts",
+  "packages/editing/src/tools/select/adapterPointQuery.ts",
+  "packages/editing/src/tools/select/collapseDeferred.ts",
+  "packages/editing/src/tools/select/extendPressLocked.ts",
+  "packages/editing/src/tools/select/groupEntry.ts",
+  "packages/editing/src/tools/select/index.ts",
+  "packages/editing/src/tools/select/pressDecision.ts",
+  "packages/editing/src/tools/select/selectDeep.ts",
+  "packages/editing/src/tools/select/selectPick.ts",
+  "packages/editing/src/tools/select/selectionContributions.ts",
+  "packages/editing/src/tools/select/testing/rectListAdapter.ts",
+  "packages/editing/src/tools/select/usePickerSelectTool.ts",
+  "packages/editing/src/tools/select/useSelectTool.ts",
+  "packages/editing/src/tools/shared/countOption.ts",
+  "packages/editing/src/tools/shared/insertToolOptions.ts",
+  "packages/editing/src/tools/shared/pointerFollower.ts",
+  "packages/editing/src/tools/shared/styleOptions.ts",
+  "packages/editing/src/tools/star/index.ts",
+  "packages/editing/src/tools/star/useStarTool.tsx",
+  "packages/editing/src/tools/toolOptions.ts",
+  "packages/editing/src/tools/toolSets.ts"
+ ],
+ "a": 4,
+ "b": 2,
+ "m": 2,
+ "distinct": 4,
+ "chapman": 4,
+ "unfound": 0,
+ "read": {
+  "A": 34,
+  "B": 34
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.2,
+   "B": 5.1,
+   "match": 0.6,
+   "fix": 10.6
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "tokens": 9153731,
+  "costUsd": 5.24
+ },
+ "fixCommits": [
+  "cf2a57b4b0cf221705aeb8ea6d75fff3935e656c",
+  "597f68dca640f35e94f682e5ac01259cbc839eba",
+  "929a2d22e84fb39d7860ab08859e4454718ccf6b",
+  "3d5d715568c727d905ef54761e4bb06fa2318b8b",
+  "0618a25c0633972b172cf65606c1374da0985dda"
+ ]
+}

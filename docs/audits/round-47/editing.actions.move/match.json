@@ -1,0 +1,37 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   4
+  ],
+  [
+   3,
+   5
+  ]
+ ],
+ "a": [
+  "A layout exit translates an envelope root's descendants by the drag in the old frame, after the root has left that frame",
+  "Every snapToContainer instance shares one scratch slot, so two on one binding cancel each other's dwell",
+  "A scrolled source container is handed two different bounds: unscrolled while previewing, scrolled on release",
+  "swapOnDrop picks the swapped node from the selection, not from what the drag moves",
+  "Descendant carry measures each landed root with the scene's projection instead of the node's own descriptor",
+  "A layer whose plane is singular throws at press"
+ ],
+ "b": [
+  "Every `snapToContainer` instance shares one scratch slot, so two in one binding cancel each other's dwell",
+  "A layout drop pulls a selected child out of its selected parent; reparent-on-drop keeps it in",
+  "A root leaving its layout container takes its envelope descendants with an old-frame translate",
+  "A swap armed over a layout sibling previews the layout insertion, then release commits the swap",
+  "The source container's reflow is laid out against different bounds in the preview and in the release",
+  "Swap acts on the selected id, not the node the drag actually moves",
+  "The move lead is cached by delta alone, so a landing that changes at the same delta is ignored"
+ ]
+}

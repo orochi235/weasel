@@ -1,0 +1,34 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   7,
+   3
+  ]
+ ],
+ "a": [
+  "The within-family chain misses a family that has faces, unless one is a 400 or in the request's weight bucket",
+  "An outline-only default family is never substituted, and the warning says it is \"not registered\"",
+  "`cssFontFamily` returns an unquoted family name, which a name like `Font 3D` makes invalid CSS",
+  "With no canvas available, `resolveFontVariant` throws for a canvas font, but the per-code-point escalation catches the same error",
+  "Under `'none'`, a family explicitly registered with `registerCanvasFont` gets no per-code-point escalation, and the warning tells the user to call `registerCanvasFont`",
+  "A request whose family has landed faces is laid out in a stand-in while the variant the chain would pick is still fetching",
+  "`warmFonts` with a family name resolves successfully when that family's loads have already failed",
+  "`warmFonts` with a `FontRequest` doesn't load the substitute when the family is registered but its chain finds no face",
+  "The font picker lists a lazily declared variant immediately but an eagerly registered one only once it lands",
+  "A replaced or superseded atlas `ImageBitmap` is never closed"
+ ],
+ "b": [
+  "Resolving a landed face wakes every other lazily declared variant of its family",
+  "A multi-page BmFont atlas draws its page-1+ glyphs from page 0's image",
+  "The within-family chain serves nothing for a family whose only faces are italic, or only in the other weight bucket",
+  "warmFonts does not warm the substitute a registered family falls back to",
+  "A canvas glyph that found no room right after an emptying stays invisible until some new glyph is asked for",
+  "The dynamic tier keeps one face per distinct (family, weight, style) forever",
+  "A family name with an apostrophe is written raw into the canvas `font` and DOM `font-family`",
+  "The dynamic tier's test resets leave timers and per-cache upload state that act on the next test's atlas"
+ ]
+}

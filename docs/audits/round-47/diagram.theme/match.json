@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   5,
+   1
+  ]
+ ],
+ "a": [
+  "Applying a theme recolors only, so a scene switched into a theme keeps the old theme's stroke widths, dashes and edge widths, unlike one built in it",
+  "setDiagramStyle / setDiagramColor on a sequence part write a trait the sequence never reads, so the role does not show and a hand color is lost at the next redraw",
+  "The explicit style edits write locked nodes with a bare `scene.update`, so one locked id throws the whole edit, while `writeAll` in the same file skips locked nodes",
+  "setDiagramColor('fill') paints a header row's text with the fill even when the theme names `headerText`, and the next theme apply paints it back",
+  "diagramThemeFrom accepts any object with a `roles` key as a whole theme, and a malformed one crashes the first style lookup",
+  "A theme file passes the check with bad values in the optional fields the engine writes into the scene",
+  "setThemeValue on a role, lane body or series index the theme lacks makes a partial style or a sparse array"
+ ],
+ "b": [
+  "diagramThemeFromTokens copies `--wzl-fg-muted` verbatim, and the shipped token is relative color syntax no weasel parser reads",
+  "A theme file passes the check with values the scene writers then paint or size with",
+  "A text row sized near the floor loses its size across a theme round trip",
+  "DiagramTheme.defaultRole's doc says a connector naming no role, or a role the theme lacks, is drawn in the default role; connectors take `theme.edge` instead"
+ ]
+}

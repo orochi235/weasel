@@ -1,0 +1,10 @@
+packages/editing/src/chrome/affordances/cornerResize.ts
+packages/editing/src/chrome/affordances/rotateCursor.ts
+packages/editing/src/chrome/affordances/rotationHandle.ts
+packages/editing/src/chrome/handleCommands.ts
+packages/editing/src/chrome/overlay.ts
+packages/editing/src/chrome/rotationBadge.ts
+packages/editing/src/chrome/rotationHandleGeometry.ts
+packages/editing/src/chrome/selectionChrome.ts
+packages/editing/src/chrome/selectionPose.ts
+packages/editing/src/chrome/shapeOutline.ts

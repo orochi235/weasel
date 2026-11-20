@@ -1,0 +1,32 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "A dropped weasel payload lands at the paste cascade offset, not where it was dropped (and not where its ghost was drawn)",
+  "The kit `booleansAdapter` dep never supplies `getStrokeFrame`, so a counted stroke on a skewed or non-uniformly transformed leaf is outlined in world, not as drawn",
+  "The kit binding sweep no longer reaches any editing preset: their ambient contributions, tools and chrome bindings fell out of the binding-id and collision tests",
+  "Repeated Cmd+V stacks every paste exactly on the first: the OS-clipboard paste path never steps the cascade",
+  "A drop of SVG and raster files together stacks the first of each kind on one spot: each kit handler restarts the cascade at 0",
+  "A copied node whose data contains the text `</metadata>` cannot be pasted back from the SVG flavor"
+ ],
+ "b": [
+  "The kit's booleansAdapter never supplies getStrokeFrame, so a counted stroke on a stretched or skewed node is outlined at uniform world width",
+  "kitSweep no longer reaches any feature preset, so the binding-id and collision tests skip every preset's ambient, contributions and tools",
+  "kit:svg inserts an SVG string flavor beside the SVG file it came with, making two nodes where the ghost showed one",
+  "kit:weasel-json ignores a drop's point and lands dropped nodes at the paste offset",
+  "writeOsClipboard leaves a rejecting promised flavor unhandled when there is no clipboard API",
+  "useSelection seeds `initial` only into the first `scene` store it is given"
+ ]
+}

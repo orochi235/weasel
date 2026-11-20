@@ -1,0 +1,64 @@
+{
+ "id": "editor",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/editor/src/EditorShell.tsx",
+  "packages/editor/src/TextEditDepPublisher.tsx",
+  "packages/editor/src/contextMenus.ts",
+  "packages/editor/src/editorCommands.ts",
+  "packages/editor/src/editorPrefs.tsx",
+  "packages/editor/src/fileCommands.ts",
+  "packages/editor/src/fileWarnings.ts",
+  "packages/editor/src/index.ts",
+  "packages/editor/src/menuBar.ts",
+  "packages/editor/src/paperLayer.ts",
+  "packages/editor/src/pbt.fixture.ts",
+  "packages/editor/src/sessionSaveNotice.ts",
+  "packages/editor/src/sessionStore.ts",
+  "packages/editor/src/shortcutSheet.tsx",
+  "packages/editor/src/snapshot.ts",
+  "packages/editor/src/useAutosave.ts",
+  "packages/editor/src/useDocClipboard.ts",
+  "packages/editor/src/usePageFit.ts",
+  "packages/editor/src/usePageGrid.ts",
+  "packages/editor/src/usePageSettle.ts",
+  "packages/editor/src/usePages.ts",
+  "packages/editor/src/useSessionPersistence.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 2,
+ "distinct": 5,
+ "chapman": 5.7,
+ "unfound": 0.7,
+ "read": {
+  "A": 22,
+  "B": 22
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6,
+   "B": 3.4,
+   "match": 0.1,
+   "fix": 15.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "tokens": 8022954,
+  "costUsd": 5.21
+ },
+ "fixCommits": [
+  "1f7db87fef3b5deb5b151a24d95d5cfe3e9c3e7f",
+  "25da931db884fb43b3baa1053c8d9fc14002484c",
+  "06704aecbf40b9a67a6e04627954c8c73a2b857b",
+  "d14878ac021fcefa7490f5a7e9819b1cdfb93844",
+  "7575dd0c40cbb485a95c1b2f38e5a86c598bc831"
+ ]
+}

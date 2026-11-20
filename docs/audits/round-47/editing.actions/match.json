@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   3,
+   0
+  ]
+ ],
+ "a": [
+  "Flip reads every node through the unspecialized pose descriptor, ignoring `forNode`",
+  "flip's `enabled` throws when the dispatcher has operands but no scene",
+  "Make Boolean Group does not strip page structure from the operands it groups",
+  "The lasso's default commit and `selectFromLasso` answer a degenerate lasso differently",
+  "Clone's preview hands a singular-frame copy's `null` pose to the quantize rule, where rotate skips it"
+ ],
+ "b": [
+  "A zero-area lasso selects through the default commit but acts as a click through `selectFromLasso`",
+  "Swap is enabled over an envelope holding a locked member, and its commit writes that member's pose",
+  "Flip, Align, Distribute and Rotate write the locked member of a selected envelope and are not disabled for it",
+  "Make Boolean Group is enabled for a selection spanning layers, then does nothing",
+  "`transformSelection`'s doc tells callers to require `selection`, but it reads `operands`",
+  "A clone dropped into another container stores an envelope's children in the source's frame, not the new parent's",
+  "A lone path-effect node with one source rotates about the source's center while the gesture orbits the effect's box"
+ ]
+}

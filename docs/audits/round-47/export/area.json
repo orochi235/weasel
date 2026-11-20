@@ -1,0 +1,55 @@
+{
+ "id": "export",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/export/src/captureExport.ts",
+  "packages/export/src/exportDiagnostics.ts",
+  "packages/export/src/exportFormats.ts",
+  "packages/export/src/exportPages.ts",
+  "packages/export/src/exportTypes.ts",
+  "packages/export/src/index.ts",
+  "packages/export/src/placedRects.fixture.ts",
+  "packages/export/src/regionPng.ts",
+  "packages/export/src/regionRenderArgs.ts",
+  "packages/export/src/selectionRegion.ts",
+  "packages/export/src/testing/parallaxScene.ts",
+  "packages/export/src/testing/plainScene.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 3,
+ "distinct": 6,
+ "chapman": 6.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.3,
+   "B": 6.8,
+   "match": 7.1,
+   "fix": 12.3
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "tokens": 7618786,
+  "costUsd": 4.31
+ },
+ "fixCommits": [
+  "fbb5fcda0e031d3964727e9341640b0809e6c37b",
+  "4ae3b06fcad38e2f98ef714a4607e370c67723db",
+  "24ac2654228c92e1532de6f236b5d7ac4742ea24",
+  "f7d0cda6197a87634e68204102e4e1b5a24230e0",
+  "6ee98b4549a17fa8b31659cf2e561a0e0df42cea",
+  "75634a66f31381119d6e876e5d91364d0c18f3cb"
+ ]
+}

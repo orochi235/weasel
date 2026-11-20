@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "Shift on an edge handle shrinks the free axis past `data.minSize`, and a clamp then breaks the aspect",
+  "Resizing by command (Transform Again) does not hold a frame's children in place, which the drag does",
+  "A flipped lone node with a minimum unflips and jumps on the first move",
+  "Transform Again records the dragged box even when a constraint's `onEnd` committed something else",
+  "A projected frame's normalized pose leaves its held children posed for the flipped one"
+ ],
+ "b": [
+  "A minimum set on one axis only stops every flip on the other axis, collapsing it to zero",
+  "Transform Again (resizeSelectionOps) does not hold a frame's contents in place, so the drag and the replay disagree about them",
+  "Transform Again of a resize skips the output-grid quantization the drag applies",
+  "The recorded repeatable resize is the pre-quantization box, and is still recorded when a constraint's onEnd replaced the commit"
+ ]
+}

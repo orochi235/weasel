@@ -1,0 +1,83 @@
+{
+ "id": "editing.actions",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/editing/src/actions/align/action.tsx",
+  "packages/editing/src/actions/align/align.ts",
+  "packages/editing/src/actions/align/index.ts",
+  "packages/editing/src/actions/clipboard/action.ts",
+  "packages/editing/src/actions/clone/action.ts",
+  "packages/editing/src/actions/clone/behaviors.ts",
+  "packages/editing/src/actions/delete/delete.ts",
+  "packages/editing/src/actions/derivedBox.ts",
+  "packages/editing/src/actions/distribute/action.tsx",
+  "packages/editing/src/actions/distribute/distribute.ts",
+  "packages/editing/src/actions/distribute/index.ts",
+  "packages/editing/src/actions/distribute/plan.ts",
+  "packages/editing/src/actions/flip/action.ts",
+  "packages/editing/src/actions/flip/helpers.ts",
+  "packages/editing/src/actions/group/enterGroup.ts",
+  "packages/editing/src/actions/lassoSelect/action.ts",
+  "packages/editing/src/actions/lassoSelect/behaviors/selectFromLasso.ts",
+  "packages/editing/src/actions/lassoSelect/index.ts",
+  "packages/editing/src/actions/lassoSelect/options.ts",
+  "packages/editing/src/actions/pathfinder/action.tsx",
+  "packages/editing/src/actions/pathfinder/booleanGroupAction.ts",
+  "packages/editing/src/actions/pathfinder/keymap.ts",
+  "packages/editing/src/actions/reorder/reorder.ts",
+  "packages/editing/src/actions/rotate/action.ts",
+  "packages/editing/src/actions/rotate/commit.ts",
+  "packages/editing/src/actions/rotate/frame.ts",
+  "packages/editing/src/actions/rotate/replay.ts",
+  "packages/editing/src/actions/rotate/session.ts",
+  "packages/editing/src/actions/select/areaSelect.ts",
+  "packages/editing/src/actions/select/clearSelection.ts",
+  "packages/editing/src/actions/swap/action.ts",
+  "packages/editing/src/actions/swap/swapOps.ts",
+  "packages/editing/src/actions/transformAgain/action.ts",
+  "packages/editing/src/actions/transformAgain/transformSelection.ts"
+ ],
+ "a": 5,
+ "b": 7,
+ "m": 1,
+ "distinct": 11,
+ "chapman": 23,
+ "unfound": 12,
+ "read": {
+  "A": 34,
+  "B": 34
+ },
+ "patches": 12,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.3,
+   "B": 6.1,
+   "match": 0.2,
+   "fix": 29.2
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "tokens": 9876805,
+  "costUsd": 11.45
+ },
+ "fixCommits": [
+  "8c17e91708351c3a4f70bf19fd067e664a13ce4f",
+  "9606e24f358efe5b3958ab4c5cc2d66199f7d4d0",
+  "814994ab7932a2b767bb2ff682ed336e7ff7c28a",
+  "e468edc02bb666ccad615e2f5a858a338c8dae94",
+  "37daa58924cf499566beef85415db0601543cbd1",
+  "bb5880a8dfadb2f3dc4c71f574d6dd21304383ce",
+  "7f35ade9b500e70eaa4f94d9cb5b4a3042acedae",
+  "c23c975405c876e0cd9f08282e6120a4c074098e",
+  "7a5e0723035882b8a8459e23fb1a4cf6acbd558f",
+  "c9c57a9eb9a03f4b2f87aa985c5a439fe0dc40f5",
+  "ac55283bb30f130aeef71b3be265462a99767e99",
+  "7c1053e72b276ac44f6d6c77d82c1a8457e79de0"
+ ]
+}

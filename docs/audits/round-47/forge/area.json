@@ -1,0 +1,73 @@
+{
+ "id": "forge",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/forge/src/actionParamSchema.ts",
+  "packages/forge/src/cli/cli.ts",
+  "packages/forge/src/cli/parse.ts",
+  "packages/forge/src/cli/policy.ts",
+  "packages/forge/src/config.ts",
+  "packages/forge/src/csf/argsContext.ts",
+  "packages/forge/src/csf/argsToSchema.ts",
+  "packages/forge/src/csf/loadCsfModule.tsx",
+  "packages/forge/src/csf/portSafe.ts",
+  "packages/forge/src/csf/propArgTypes.ts",
+  "packages/forge/src/csf/shims/preview-api.ts",
+  "packages/forge/src/csf/types.ts",
+  "packages/forge/src/icons.gen.ts",
+  "packages/forge/src/index.ts",
+  "packages/forge/src/kitIcons.tsx",
+  "packages/forge/src/pbt.fixture.ts",
+  "packages/forge/src/play.ts",
+  "packages/forge/src/protocol/channel.ts",
+  "packages/forge/src/protocol/messages.ts",
+  "packages/forge/src/protocol/schema.ts",
+  "packages/forge/src/route/url.ts",
+  "packages/forge/src/test/index.ts",
+  "packages/forge/src/test/play.ts",
+  "packages/forge/src/test/runStory.tsx",
+  "packages/forge/src/testing/frame.ts",
+  "packages/forge/src/testing/loupe.ts",
+  "packages/forge/src/testing/shell.ts",
+  "packages/forge/src/title.ts"
+ ],
+ "a": 4,
+ "b": 9,
+ "m": 1,
+ "distinct": 12,
+ "chapman": 24,
+ "unfound": 12,
+ "read": {
+  "A": 28,
+  "B": 28
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.4,
+   "B": 8.4,
+   "match": 0.2,
+   "fix": 12.8
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "tokens": 8484218,
+  "costUsd": 4.77
+ },
+ "fixCommits": [
+  "e34095241b1c9e5d25c79ea0c00dadac8b2e4bc3",
+  "51febda3298f94b6c4886eede9b856f9cbd6f088",
+  "fa24c15a900de082e6930fb18e3bd231bf57c66c",
+  "45def2143bd0b8ac2bb3734f742a9ebff636fcef",
+  "d11c794efcfae13236c2f0145473b9d9281fd201",
+  "334843a9d63c594e3f56b1235d95e61980560910",
+  "6c28d1e3b7f1a7ed5b53e6296eb71233829a34d8",
+  "89d2361a90bd96e0d14b5621fbbe32e33d64f065"
+ ]
+}

@@ -1,0 +1,59 @@
+{
+ "id": "font.outline",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/font/src/outline/OutlineFace.ts",
+  "packages/font/src/outline/cffCheck.ts",
+  "packages/font/src/outline/cmapCheck.ts",
+  "packages/font/src/outline/dataFork.ts",
+  "packages/font/src/outline/fontEmbedding.ts",
+  "packages/font/src/outline/fontFiles.fixture.ts",
+  "packages/font/src/outline/gposKerning.ts",
+  "packages/font/src/outline/localFonts.ts",
+  "packages/font/src/outline/opentypeParser.ts",
+  "packages/font/src/outline/outlineRegistry.ts",
+  "packages/font/src/outline/sfnt.ts",
+  "packages/font/src/outline/tag.ts",
+  "packages/font/src/outline/writtenFont.fixture.ts"
+ ],
+ "a": 5,
+ "b": 6,
+ "m": 3,
+ "distinct": 8,
+ "chapman": 9.5,
+ "unfound": 1.5,
+ "read": {
+  "A": 13,
+  "B": 13
+ },
+ "patches": 9,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.5,
+   "B": 5.9,
+   "match": 0.2,
+   "fix": 31.7
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "tokens": 16214769,
+  "costUsd": 8.28
+ },
+ "fixCommits": [
+  "95a1a63eb0a5bb613f232a837637ab0150f4cd50",
+  "1810479b22d6b8e3d9d76869456dbef8048a7786",
+  "89f4197f455a2f6d624fd8a5f590b8d62b29596f",
+  "662f94f2109433eb82e95cdcfec847247b121671",
+  "39422f9fe77bbc9e4532de3d330fc24e67025639",
+  "57df97b27209b723a448e4ac344180b1f978a7e7",
+  "8e5f1cf2b8e16e41a98776bb80d49a35bc0d2f96",
+  "7dbeddbf8c9ed9e72a5a489d40eeb31a04f1903f",
+  "21889cf5f0db42f34b503554fd58a6c61d4f0723"
+ ]
+}

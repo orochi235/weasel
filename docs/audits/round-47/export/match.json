@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   4,
+   3
+  ]
+ ],
+ "a": [
+  "selectionRegion boxes hidden nodes and annotation-layer nodes, which no export draws",
+  "selectionRegion measures `{ px }` strokes at scale 1, so an export at scale < 1 crops them",
+  "No selection region source: the README's selection export reads its bounds outside the revision it draws",
+  "The registry's `background` is typed `string | null`, so exportRegions/exportPages cannot take the revision-read function every format accepts",
+  "exportRegions throws synchronously when a format's `export` throws, though every other failure rejects"
+ ],
+ "b": [
+  "selectionRegion frames hidden nodes, nodes on hidden layers and annotation-layer nodes that no export draws",
+  "The registry path's `background` cannot be the revision-read function the region exports take",
+  "regionRenderArgs draws the document but reads the background function from the shown scene",
+  "exportRegions throws synchronously when a registered format's export does"
+ ]
+}

@@ -1,0 +1,48 @@
+{
+ "id": "editing.presets",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/editing/src/presets/arrange.ts",
+  "packages/editing/src/presets/booleans.ts",
+  "packages/editing/src/presets/composites.ts",
+  "packages/editing/src/presets/edit.ts",
+  "packages/editing/src/presets/ingest.ts",
+  "packages/editing/src/presets/insert.ts",
+  "packages/editing/src/presets/pathfinder.ts",
+  "packages/editing/src/presets/select.ts",
+  "packages/editing/src/presets/selection.ts",
+  "packages/editing/src/presets/selectionChrome.ts",
+  "packages/editing/src/presets/tools.ts",
+  "packages/editing/src/presets/transform.ts"
+ ],
+ "a": 1,
+ "b": 0,
+ "m": 0,
+ "distinct": 1,
+ "chapman": 1,
+ "unfound": 0,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 0,
+ "questions": 1,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3,
+   "B": 5.3,
+   "match": 0,
+   "fix": 2.6
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "tokens": 6534542,
+  "costUsd": 3.67
+ },
+ "fixCommits": []
+}

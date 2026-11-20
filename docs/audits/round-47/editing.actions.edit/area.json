@@ -1,0 +1,50 @@
+{
+ "id": "editing.actions.edit",
+ "commit": "44e73a944bea29d4d56fc7883fa302daec48ecf1",
+ "date": "2026-11-20",
+ "files": [
+  "packages/editing/src/actions/edit/createPaintAction.ts",
+  "packages/editing/src/actions/edit/deselect.ts",
+  "packages/editing/src/actions/edit/duplicate.ts",
+  "packages/editing/src/actions/edit/group.ts",
+  "packages/editing/src/actions/edit/ingest.ts",
+  "packages/editing/src/actions/edit/nudge.ts",
+  "packages/editing/src/actions/edit/paintActionTestUtils.ts",
+  "packages/editing/src/actions/edit/selectAll.ts",
+  "packages/editing/src/actions/edit/setFill.ts",
+  "packages/editing/src/actions/edit/setFillOpacity.ts",
+  "packages/editing/src/actions/edit/setStroke.ts",
+  "packages/editing/src/actions/edit/setStrokeOpacity.ts",
+  "packages/editing/src/actions/edit/setStrokeWidth.ts",
+  "packages/editing/src/actions/edit/setVertexColor.ts"
+ ],
+ "a": 5,
+ "b": 3,
+ "m": 1,
+ "distinct": 7,
+ "chapman": 11,
+ "unfound": 4,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.4,
+   "B": 4.6,
+   "match": 0.2,
+   "fix": 19.9
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "tokens": 11608747,
+  "costUsd": 6.23
+ },
+ "fixCommits": []
+}

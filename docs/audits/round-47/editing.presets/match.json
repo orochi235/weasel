@@ -1,0 +1,7 @@
+{
+ "pairs": [],
+ "a": [
+  "A double-click can enter a different group than the one the press selected, because `selectPreset`'s group entry ignores `selectTool.pickBest`"
+ ],
+ "b": []
+}
