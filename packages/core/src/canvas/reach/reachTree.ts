@@ -214,10 +214,7 @@ export function createReachTree(source: ReachSource, wideAt = WIDE_AT): ReachTre
       // A record queued at its old depth would drain out of order.
       if (rec.queued) rec.queued = false;
     }
-    for (const rec of live) {
-      enqueue(rec);
-      if (rec.parent!.wide !== null && !rec.parent!.childrenStale) rec.parent!.wide.ranksStale = true;
-    }
+    for (const rec of live) enqueue(rec);
   }
 
   function ensure(): void {
