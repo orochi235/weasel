@@ -6,6 +6,7 @@
 import { NODE_FN_FIELDS } from './nodeFnFields';
 import { SnapshotShapeError } from './snapshotShapeError';
 import { isPlainObject } from '@weasel-js/registry';
+import { pageLayoutFault } from '../pages/pages';
 
 export { SnapshotShapeError };
 
@@ -67,6 +68,8 @@ export function nodeShapeFault(n: unknown, kinds: readonly string[] | null = NOD
   for (const flag of ['pickable', 'hidden', 'locked', 'consumesChildren'] as const) {
     if (n[flag] !== undefined && typeof n[flag] !== 'boolean') return `has a \`${flag}\` that is not a boolean`;
   }
+  const runFault = n.pageRun === undefined ? null : pageLayoutFault(n.pageRun);
+  if (runFault !== null) return `has a \`pageRun\` that ${runFault}`;
   for (const { jsonKey } of NODE_FN_FIELDS) {
     if (n[jsonKey] !== undefined && typeof n[jsonKey] !== 'string') return `has a \`${jsonKey}\` that is not a string`;
   }

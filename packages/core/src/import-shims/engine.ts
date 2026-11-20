@@ -44,7 +44,7 @@ export type { CreatePageRunOptions, PageInfo, PageRunInfo, PageTreeReader, Pages
 export { followerHome, groupingSite, isFollower, keepOnPage, pasteboardOn, placedPage, rehomedFollowers } from '../core/pages/pagePlacement';
 export type { GroupingSite } from '../core/pages/pagePlacement';
 export { PAGE_RUN, pageRunLayout } from '../core/pages/pageRunLayout';
-export { adjacentPage, layoutPages, pageAt, pageHolding, pageName, pageOfBounds, pagesBounds } from '../core/pages/pages';
+export { adjacentPage, layoutPages, pageAt, pageHolding, pageLayoutFault, pageName, pageOfBounds, pagesBounds } from '../core/pages/pages';
 export type { Page, PageLayoutOptions, PlacedPage } from '../core/pages/pages';
 export { addOnPages, placeOnPages } from '../core/pages/placeOnPages';
 export type { PlaceOnPagesOptions } from '../core/pages/placeOnPages';

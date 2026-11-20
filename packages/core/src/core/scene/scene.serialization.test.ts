@@ -201,6 +201,18 @@ describe('loadScene', () => {
     expect(() => loadScene(json as never, {})).toThrow(SnapshotShapeError);
   });
 
+  it('refuses a saved page run whose layout layoutPages cannot read', () => {
+    const run = (pageRun: unknown) => ({
+      version: 3, systemLayers: [{ id: 'structures' }],
+      nodes: [{ id: 'r', kind: 'group', layer: 'structures', pose: POSE, pageRun }],
+    });
+    expect(() => loadScene(run({ align: 'middle' }) as never, {})).toThrow(/node "r" has a `pageRun` that has an `align`/);
+    expect(() => loadScene(run({ align: 'toString' }) as never, {})).toThrow(SnapshotShapeError);
+    expect(() => loadScene(run({ gap: '40' }) as never, {})).toThrow(/`gap` that is not a finite number/);
+    expect(() => loadScene(run('row') as never, {})).toThrow(/`pageRun` that is not an object/);
+    expect(() => loadScene(run({ direction: 'column', gap: 10, align: 'end', pasteboard: true }) as never, {})).not.toThrow();
+  });
+
   it('refuses a later version for its version, before reading kinds it may name differently', () => {
     const json = { version: 4, systemLayers: [{ id: 'structures' }], nodes: [{ id: 'a', kind: 'leaf', layer: 'structures', pose: POSE }] };
     expect(() => loadScene(json as never, {})).toThrow(/unsupported version 4/);

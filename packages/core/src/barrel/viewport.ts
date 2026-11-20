@@ -52,7 +52,7 @@ export * from '../core/viewport/fitSize';
 export { fitViewToBounds, hasExtent } from '../core/viewport/fitViewToBounds';
 export { HOME_VIEW, resetView } from '../core/viewport/homeView';
 export type { Bounds, ViewportDims, FitViewToBoundsOptions } from '../core/viewport/fitViewToBounds';
-export { adjacentPage, layoutPages, pageAt, pageHolding, pageName, pageOfBounds, pagesBounds } from '../core/pages/pages';
+export { adjacentPage, layoutPages, pageAt, pageHolding, pageLayoutFault, pageName, pageOfBounds, pagesBounds } from '../core/pages/pages';
 export type { Page, PageLayoutOptions, PlacedPage } from '../core/pages/pages';
 export { createPagesLayer, type PagesLayerOptions } from '../core/pages/pagesLayer';
 export { fitViewToPage, pageInView } from '../core/pages/fitViewToPage';

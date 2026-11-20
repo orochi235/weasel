@@ -1,4 +1,5 @@
 import { unionRects, maxOf, wrapPositive } from '@weasel-js/geom';
+import { isFiniteNumber, isPlainObject } from '@weasel-js/registry';
 import type { Bounds } from '@weasel-js/routing';
 
 /** One page of a document: a sheet of a fixed size, in world units. */
@@ -33,14 +34,33 @@ export interface PageLayoutOptions {
 }
 
 const ALIGN = { start: 0, center: 0.5, end: 1 } as const;
+const DIRECTIONS: readonly unknown[] = ['row', 'column'];
+
+/** What is wrong with `value` as {@link PageLayoutOptions}, as a phrase after its name ("has a `gap` that is not
+ *  a finite number"), or `null` when `layoutPages` can read it. Keys it does not know are left alone. */
+export function pageLayoutFault(value: unknown): string | null {
+  if (!isPlainObject(value)) return 'is not an object';
+  const { direction, gap, align, origin } = value;
+  if (direction !== undefined && !DIRECTIONS.includes(direction)) return "has a `direction` that is neither 'row' nor 'column'";
+  if (gap !== undefined && !isFiniteNumber(gap)) return 'has a `gap` that is not a finite number';
+  if (align !== undefined && !(typeof align === 'string' && Object.hasOwn(ALIGN, align))) {
+    return "has an `align` that is not 'start', 'center' or 'end'";
+  }
+  if (origin !== undefined && !(isPlainObject(origin) && isFiniteNumber(origin.x) && isFiniteNumber(origin.y))) {
+    return 'has an `origin` that is not a finite point';
+  }
+  return null;
+}
 
 /**
  * Place a document's pages in one world space, in order, so a single scene,
  * view, and history serve all of them. With the defaults the first page's
  * top-left corner is the world origin, where a one-page document's page is.
- * Throws on two pages with one id.
+ * Throws on two pages with one id, and on options it cannot read ({@link pageLayoutFault}).
  */
 export function layoutPages(pages: readonly Page[], options: PageLayoutOptions = {}): PlacedPage[] {
+  const fault = pageLayoutFault(options);
+  if (fault !== null) throw new Error(`layoutPages: the layout ${fault}`);
   const { direction = 'row', gap = 40, align = 'start', origin = { x: 0, y: 0 } } = options;
   const row = direction === 'row';
   const across = Math.max(0, maxOf(pages, (p) => (row ? p.height : p.width)));

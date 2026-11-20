@@ -35,6 +35,14 @@ describe('layoutPages', () => {
     expect(layoutPages([])).toEqual([]);
   });
 
+  it('refuses options it cannot read', () => {
+    expect(() => layoutPages([A], { align: 'middle' as never })).toThrow(/`align`/);
+    expect(() => layoutPages([A], { align: 'toString' as never })).toThrow(/`align`/);
+    expect(() => layoutPages([A], { gap: '40' as never })).toThrow(/`gap` that is not a finite number/);
+    expect(() => layoutPages([A], { direction: 'diagonal' as never })).toThrow(/`direction`/);
+    expect(() => layoutPages([A], { origin: { x: Number.NaN, y: 0 } })).toThrow(/`origin`/);
+  });
+
   it('refuses two pages with one id', () => {
     expect(() => layoutPages([A, { ...B, id: 'a' }])).toThrow(/"a"/);
   });
