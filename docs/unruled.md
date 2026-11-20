@@ -2812,3 +2812,10 @@ Calls the lanes made without a ruling:
   and the end only where none does, so `present.go` reaches every page by its id and old callers keep working.
   Keeping the ends ahead of the ids, so such a page was unreachable by id, was the alternative; so was dropping
   `to: 'first' | 'last'` outright.
+
+## Audit round forty-six (2026-11-20): effect pipelines
+
+- 2026-11-20 (the fixer's call): `runPipeline` and the effect runner hand a `many` input to its evaluator as an
+  array of every reached wire's value, in the pipeline's wire order, and a bypassed stage passes the first of them
+  on. Before, the evaluator got the first wire's value alone. Summing like the audio runner was the alternative; the
+  image runner can't know how a value type combines, so the evaluator does.

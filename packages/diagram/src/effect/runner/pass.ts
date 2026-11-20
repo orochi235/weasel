@@ -1,6 +1,6 @@
 import { getOwn, setOwn } from '@weasel-js/registry';
 import { PREVIEW_SIZE, shownPorts, uniqueStages } from '../draw';
-import type { EffectPipeline, EffectRun, EffectStage, EffectStageRun } from '../types';
+import type { EffectPipeline, EffectPort, EffectRun, EffectStage, EffectStageRun } from '../types';
 import { runOrder } from './order';
 import { paramValues } from './params';
 import { closeBitmaps } from './previews';
@@ -52,12 +52,15 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
   const kindOf = (type: string) => (opts.kinds ? getOwn(opts.kinds, type) : undefined);
 
   const inputsOf = (stage: EffectStage): Record<string, unknown> => {
+    const many = new Set((stage.inputs ?? []).filter((i) => i.many === true).map((i) => i.id));
     const inputs = new Map<string, unknown>();
     for (const w of pipeline.wires) {
-      if (w.to.stage !== stage.id || inputs.has(w.to.port)) continue;
+      if (w.to.stage !== stage.id || (inputs.has(w.to.port) && !many.has(w.to.port))) continue;
       const from = made.get(w.from.stage);
       const value = from && getOwn(from, w.from.port);
-      if (value !== undefined) inputs.set(w.to.port, value);
+      if (value === undefined) continue;
+      if (many.has(w.to.port)) inputs.set(w.to.port, [...(inputs.get(w.to.port) as unknown[] | undefined ?? []), value]);
+      else inputs.set(w.to.port, value);
     }
     return Object.fromEntries(inputs);
   };
@@ -144,11 +147,16 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
   };
 }
 
-/** Each output's value for a bypassed stage: its first input of the same type that has one. */
+/** Each output's value for a bypassed stage: its first input of the same type
+ *  that has one, and of a `many` input, the first wire's value. */
 function passThrough(stage: EffectStage, inputs: Readonly<Record<string, unknown>>): Record<string, unknown> {
   const out = new Map<string, unknown>();
+  const valueOf = (input: EffectPort): unknown => {
+    const value = getOwn(inputs, input.id);
+    return input.many === true ? (value as readonly unknown[] | undefined)?.[0] : value;
+  };
   for (const port of stage.outputs ?? []) {
-    const value = (stage.inputs ?? []).filter((i) => i.type === port.type).map((i) => getOwn(inputs, i.id)).find((v) => v !== undefined);
+    const value = (stage.inputs ?? []).filter((i) => i.type === port.type).map(valueOf).find((v) => v !== undefined);
     if (value !== undefined) out.set(port.id, value);
   }
   return Object.fromEntries(out);

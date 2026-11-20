@@ -178,4 +178,19 @@ describe('runPipeline', () => {
     expect(run.stages.skip).toMatchObject({ error: 'no text' });
   });
 
+  it('hands a many input every reached wire\'s value, in wire order', async () => {
+    const sum = { id: 'sum', title: 'sum', type: 'sum', inputs: [{ id: 'in', type: 'number', many: true }], outputs: [num('out')] };
+    const p: EffectPipeline = {
+      stages: [stage('a', 'two'), stage('b', 'given'), stage('c', 'fail'), sum, { ...sum, id: 'skip', bypassed: true }],
+      wires: [wire('a', 'sum'), wire('c', 'sum'), wire('b', 'sum'), wire('b', 'skip'), wire('a', 'skip')],
+    };
+    const seen: unknown[] = [];
+    const run = await runPipeline(p, {
+      evaluators: { ...EVAL, sum: ({ inputs }) => { seen.push(inputs.in); return { outputs: { out: (inputs.in as number[]).reduce((x, y) => x + y, 0) } }; } },
+      sources: { n: 5 },
+    });
+    expect(seen).toEqual([[2, 5]]);
+    expect(run.stages.sum!.values).toEqual({ out: '7' });
+    expect(run.stages.skip!.values).toEqual({ out: '5' });
+  });
 });

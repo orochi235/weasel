@@ -46,7 +46,8 @@ export interface EffectPort {
   label?: string;
   type: string;
   /** An input that takes any number of wires, which a runner combines: the
-   *  audio runner sums them, as Web Audio does. Default one wire. */
+   *  audio runner sums them, as Web Audio does, and `runPipeline` hands the
+   *  evaluator every reached wire's value as an array. Default one wire. */
   many?: boolean;
 }
 
