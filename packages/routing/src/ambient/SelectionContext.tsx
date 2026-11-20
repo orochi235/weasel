@@ -18,6 +18,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useLatest } from '@weasel-js/react';
+import { createPart } from '@weasel-js/registry';
 import type { NodeId } from '../vocabulary';
 
 /** The ambient selection store a canvas publishes into and non-canvas UI reads. */
@@ -35,6 +36,9 @@ export interface SelectionContextValue {
 }
 
 const SelectionContext = createContext<SelectionContextValue | null>(null);
+
+/** What each live publisher into a slot last published, keyed by the slot's `publishSelection`. */
+const heldOf = createPart((_publish: SelectionContextValue['publishSelection']) => new Map<object, string>());
 
 /**
  * Wrap the part of the React tree that should share a selection context.
@@ -94,7 +98,7 @@ export function SelectionContextProviderIfRoot({
 /**
  * Publishes `ids` into the surrounding `<SelectionContextProvider>` whenever
  * their content changes, and clears the slot on unmount unless another
- * publisher has written it since. No-op when there's no provider in scope.
+ * publisher has written it since or still holds the same selection. No-op when there's no provider in scope.
  */
 export function usePublishSelection(
   ids: readonly NodeId[],
@@ -110,18 +114,24 @@ export function usePublishSelection(
   // context value on every publish, so keying on `ctx` refires this effect for
   // every publisher whenever any one of them publishes.
   const publish = ctx?.publishSelection;
+  const [token] = useState(() => ({}));
   useEffect(() => {
     if (!publish) return;
+    heldOf(publish).set(token, serialized);
     publish(idsRef.current, kindsRef.current);
-  }, [publish, serialized, idsRef, kindsRef]);
+  }, [publish, serialized, idsRef, kindsRef, token]);
   // A publisher that goes away takes its selection with it, unless another
-  // has written the slot since.
+  // has written the slot since or another live publisher holds the same.
   const ctxRef = useLatest(ctx);
   const serializedRef = useLatest(serialized);
   useEffect(() => () => {
     const slot = ctxRef.current;
-    if (slot && JSON.stringify([slot.selection, slot.kinds]) === serializedRef.current) {
-      slot.publishSelection([]);
-    }
-  }, [ctxRef, serializedRef]);
+    if (!slot) return;
+    const held = heldOf(slot.publishSelection);
+    held.delete(token);
+    const mine = serializedRef.current;
+    if (JSON.stringify([slot.selection, slot.kinds]) !== mine) return;
+    if ([...held.values()].includes(mine)) return;
+    slot.publishSelection([]);
+  }, [ctxRef, serializedRef, token]);
 }
