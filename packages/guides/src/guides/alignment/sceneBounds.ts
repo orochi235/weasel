@@ -3,7 +3,9 @@ import {
   type Bounds,
   type NodeId,
   nodeGates,
+  type PlaneMap,
   type PoseDescriptor,
+  rectFromPlane,
   scenePoseFrame,
   unionAabb,
   visualBoundsViaDescriptor,
@@ -16,6 +18,11 @@ export interface SceneBoundsOptions {
   /** How to read a pose's box. Pass the canvas's, so these agree with what it
    *  draws. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<unknown>;
+  /** The parallax plane a node's pose is stored in, for a node on a
+   *  `parallax` layer (`view.planeOf(layer)`). Its box is carried out to the
+   *  camera's world, where `deriveAlignmentGuides` puts its lines. Omit it, or
+   *  answer null, for a node already there. */
+  planeOf?: (id: NodeId) => PlaneMap | null | undefined;
 }
 
 /** The world box each id is drawn in, rotation included, skipping ids the
@@ -30,7 +37,9 @@ export function worldBoundsOf(
   const out: Bounds[] = [];
   for (const id of ids) {
     if (scene.get(id) === undefined) continue;
-    out.push(visualBoundsViaDescriptor(frame.world(id), d));
+    const box = visualBoundsViaDescriptor(frame.world(id), d);
+    const plane = opts.planeOf?.(id);
+    out.push(plane ? rectFromPlane(plane, box) : box);
   }
   return out;
 }
