@@ -5,12 +5,15 @@
  * author put it, so two ends can still finish side by side. Leaving by the
  * faces toward the next and last rank, such an edge would loop out and back
  * round; it runs straight across between their facing sides instead, or,
- * when a node sits between them, out past both on the side toward the next
- * rank and back.
+ * when a node or a cluster neither is in sits between them, out past both on
+ * the side toward the next rank and back.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import type { Graph } from '../graph';
+import type { Graph, GraphCluster } from '../graph';
 import type { Bounds } from '../outline';
+import { unionRects } from '@weasel-js/geom';
+import { boxAround } from '../cluster';
+import { grownBy } from '../footprint';
 import { center, extent, type LayoutAxes, type LayoutDirection, type LayoutPorts } from '../layout';
 import { FACES, hasCompassPort, type Compass } from '../route';
 
@@ -51,6 +54,7 @@ export function levelRoutes(input: LevelInput): LevelRoutes {
   const { graph, boxes, axes } = input;
   const out: LevelRoutes = { ports: new Map(), waypoints: new Map() };
   const seen = new Set<string>();
+  const clusters = clusterBoxes(graph, boxes);
   for (const e of graph.edges) {
     const id = e.origin?.id ?? e.id;
     if (seen.has(id)) continue;
@@ -62,6 +66,7 @@ export function levelRoutes(input: LevelInput): LevelRoutes {
     if (from === to || a === undefined || b === undefined) continue;
     if (!overlaps(spanOf(a, axes.rank), spanOf(b, axes.rank)) || overlaps(spanOf(a, axes.cross), spanOf(b, axes.cross))) continue;
     const others = [...boxes].filter(([n]) => n !== from && n !== to).map(([, box]) => box);
+    for (const { cluster, box } of clusters) if (!cluster.members.includes(from) && !cluster.members.includes(to)) others.push(box);
     if (between(a, b, others, axes)) {
       const face = FACES[input.direction ?? 'down'].out;
       out.ports.set(id, named(graph, [from, face], [to, face]));
@@ -73,6 +78,25 @@ export function levelRoutes(input: LevelInput): LevelRoutes {
     }
   }
   return out;
+}
+
+/** Each cluster's box around where its members finish, nested boxes
+ *  included, as `clusterDerivePose` draws it. */
+function clusterBoxes(graph: Graph, boxes: ReadonlyMap<string, Bounds>): { cluster: GraphCluster; box: Bounds }[] {
+  const clusters = graph.clusters ?? [];
+  const byId = new Map(clusters.map((g) => [g.id, g]));
+  const depth = (g: GraphCluster): number => (g.parent === undefined || !byId.has(g.parent) ? 0 : 1 + depth(byId.get(g.parent)!));
+  const built = new Map<string, Bounds>();
+  // Innermost first, so a parent's box takes in its children's.
+  for (const g of [...clusters].sort((p, q) => depth(q) - depth(p))) {
+    const nodes = g.members.flatMap((id) => {
+      const box = boxes.get(id);
+      return box === undefined ? [] : [grownBy(box, graph.node(id)?.margin)];
+    });
+    const union = unionRects([...nodes, ...clusters.filter((c) => c.parent === g.id).flatMap((c) => built.get(c.id) ?? [])]);
+    if (union !== null) built.set(g.id, boxAround(union, g));
+  }
+  return clusters.filter((g) => built.has(g.id)).map((g) => ({ cluster: g, box: built.get(g.id)! }));
 }
 
 /** The ports each end has by the name given. */
@@ -99,21 +123,31 @@ function between(a: Bounds, b: Bounds, others: readonly Bounds[], axes: LayoutAx
 }
 
 /**
- * Two waypoints past whichever of `a` and `b` reaches further toward the next
- * rank, one beyond each one's middle: half `rankGap` out, or half way to the
- * nearest box beyond in the way of the run between them.
+ * Two waypoints past whichever of `a`, `b` and the boxes the run between them
+ * would cross reaches furthest toward the next rank, one beyond each end's
+ * middle: half `rankGap` out, or half way to the nearest box beyond in the way
+ * of the run.
  */
 function around(a: Bounds, b: Bounds, others: readonly Bounds[], axes: LayoutAxes, rankGap: number): Vec2[] {
   const ahead = (box: Bounds) => (axes.sign === 1 ? spanOf(box, axes.rank).hi : -spanOf(box, axes.rank).lo);
   const behind = (box: Bounds) => (axes.sign === 1 ? spanOf(box, axes.rank).lo : -spanOf(box, axes.rank).hi);
-  const edge = Math.max(ahead(a), ahead(b));
   const [ma, mb] = [center(a, axes.cross), center(b, axes.cross)];
   const run = { lo: Math.min(ma, mb), hi: Math.max(ma, mb) };
-  let standoff = rankGap / 2;
-  for (const o of others) {
-    const room = behind(o) - edge;
+  const inRun = others.filter((o) => {
     const c = spanOf(o, axes.cross);
-    if (room > 0 && c.lo <= run.hi && c.hi >= run.lo) standoff = Math.min(standoff, room / 2);
+    return c.lo <= run.hi && c.hi >= run.lo;
+  });
+  let edge = Math.max(ahead(a), ahead(b));
+  for (let moved = true; moved; ) {
+    moved = false;
+    for (const o of inRun) {
+      if (behind(o) <= edge && ahead(o) > edge) [edge, moved] = [ahead(o), true];
+    }
+  }
+  let standoff = rankGap / 2;
+  for (const o of inRun) {
+    const room = behind(o) - edge;
+    if (room > 0) standoff = Math.min(standoff, room / 2);
   }
   const rank = axes.sign * (edge + standoff);
   const point = (cross: number): Vec2 => (axes.cross === 'x' ? { x: cross, y: rank } : { x: rank, y: cross });

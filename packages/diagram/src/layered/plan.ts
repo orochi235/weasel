@@ -73,21 +73,34 @@ export function layeredPlan(graph: Graph, opts: LayoutOptions = {}): LayeredPlan
   if (opts.order === 'barycenter' || ((graph.clusters?.length ?? 0) === 0 && pinnedSet(graph, opts).size < 2)) return planOnce(graph, opts);
   // Each pass starts its placeholders on the routes the pass before laid out,
   // and the routes kept are the last pass's.
-  let last: LayeredPlan | undefined;
+  let last: Pass | undefined;
   const moves = untilSettled((g, o) => {
-    last = planOnce(last === undefined ? g : { ...g, edges: g.edges.map((e) => routed(e, last!)) }, o);
-    return last.moves;
+    last = planPass(last === undefined ? g : { ...g, edges: g.edges.map((e) => routed(e, last!)) }, o);
+    return last.plan.moves;
   }, graph, opts);
-  return { ...last!, moves };
+  return { ...last!.plan, moves };
 }
 
-function routed(edge: GraphEdge, plan: LayeredPlan): GraphEdge {
+/** A plan, and which of its edges run between two level nodes: their
+ *  waypoints go around, and say nothing of where they cross a rank. */
+export interface Pass {
+  plan: LayeredPlan;
+  level: ReadonlySet<string>;
+}
+
+/** `edge` carrying the last pass's route as its placeholders' seed. */
+export function routed(edge: GraphEdge, { plan, level }: Pass): GraphEdge {
   const { waypoints: _, ...rest } = edge;
-  const route = plan.waypoints.get(edge.origin?.id ?? edge.id);
+  const id = edge.origin?.id ?? edge.id;
+  const route = level.has(id) ? undefined : plan.waypoints.get(id);
   return route === undefined ? rest : { ...rest, waypoints: route };
 }
 
 function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
+  return planPass(graph, opts).plan;
+}
+
+export function planPass(graph: Graph, opts: LayoutOptions = {}): Pass {
   const axes = axesFor(opts.direction);
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;
@@ -191,5 +204,5 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
     labels.delete(edge);
   }
   for (const [edge, points] of level.waypoints) waypoints.set(edge, points);
-  return { moves, ranks, back, waypoints, labels, ports, unheld };
+  return { plan: { moves, ranks, back, waypoints, labels, ports, unheld }, level: new Set(level.ports.keys()) };
 }

@@ -11,12 +11,13 @@
  */
 import type { DerivedDep } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { insetOf, type ClusterInset } from './cluster';
+import { boxAround, type ClusterInset } from './cluster';
+
+export { boxAround };
 import { grownBy } from './footprint';
 import { frameFor, type FrameOptions } from './layoutFrame';
 import { DIAGRAM_TRAIT_KEY } from './trait';
 import type { DiagramCluster, PortAnchor } from './types';
-import type { Rect } from '@weasel-js/geom';
 
 /** Where an anchored node sits on its dependency. */
 export interface DiagramAnchor {
@@ -82,23 +83,6 @@ export function clusterDerivePose<TPose>(opts: ClusterPoseOptions<TPose> = {}): 
     }
     if (!Number.isFinite(x0)) return null;
     return frame.fromBox(boxAround({ x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, cluster), node.pose);
-  };
-}
-
-/** A cluster's box around the union of its members: grown by its inset, and
- *  widened evenly to its `minWidth`. */
-export function boxAround(
-  union: Rect,
-  cluster: DiagramCluster,
-): Rect {
-  const inset = insetOf(cluster.inset);
-  const width = union.width + inset.left + inset.right;
-  const grow = Math.max(0, (cluster.minWidth ?? 0) - width);
-  return {
-    x: union.x - inset.left - grow / 2,
-    y: union.y - inset.top,
-    width: width + grow,
-    height: union.height + inset.top + inset.bottom,
   };
 }
 

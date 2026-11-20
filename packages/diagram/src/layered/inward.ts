@@ -9,9 +9,9 @@
  * at least. Swapping the two can, since the node then holds the drawing's edge
  * beyond the run.
  */
-import { crossInset } from '../cluster';
 import type { Graph, GraphNode } from '../graph';
 import { extent, type LayoutAxes } from '../layout';
+import { clusterSpans, type Span } from './clusterSpans';
 import { sidesOf } from './places';
 import { isPlaceholder, type Hop, type Rows } from './types';
 
@@ -26,8 +26,6 @@ export interface OutwardInput {
   pinned: ReadonlySet<string>;
   hops: readonly Hop[];
 }
-
-type Span = readonly [lo: number, hi: number];
 
 /** How far past the drawing a placeholder may sit before its rank is reordered. */
 const SLACK = 1;
@@ -94,34 +92,9 @@ function drawingSpan(input: OutwardInput, size: (n: GraphNode) => number): Span 
   return lo <= hi ? [lo, hi] : undefined;
 }
 
-/** Each cluster's box across the rank: its members', nested boxes included,
- *  widened by its inset. */
+/** Each cluster's box across the rank around its real nodes. */
 function clusterBoxes(input: OutwardInput, size: (n: GraphNode) => number): Map<string, Span> {
-  const clusters = input.graph.clusters ?? [];
-  const byId = new Map(clusters.map((g) => [g.id, g]));
-  const inner = new Map<string, [number, number]>();
-  const widen = (id: string, [a, b]: Span) => {
-    const s = inner.get(id);
-    inner.set(id, s === undefined ? [a, b] : [Math.min(s[0], a), Math.max(s[1], b)]);
-  };
-  for (const n of input.rows.flat()) {
-    if (n.cluster === undefined || isPlaceholder(n.id)) continue;
-    const at = input.crossAt.get(n.id)!;
-    for (let g = byId.get(n.cluster); g !== undefined; g = g.parent === undefined ? undefined : byId.get(g.parent)) widen(g.id, [at, at + size(n)]);
-  }
-  const depth = (id: string): number => {
-    const p = byId.get(id)?.parent;
-    return p === undefined ? 0 : 1 + depth(p);
-  };
-  const boxes = new Map<string, Span>();
-  // Innermost first, so a parent's box takes its children's insets.
-  for (const id of [...inner.keys()].sort((a, b) => depth(b) - depth(a))) {
-    const g = byId.get(id)!;
-    const [a, b] = inner.get(id)!;
-    const inset = crossInset(g.inset, input.axes);
-    const box: Span = [a - inset.lo, b + inset.hi];
-    boxes.set(id, box);
-    if (g.parent !== undefined) widen(g.parent, box);
-  }
-  return boxes;
+  const nodes = input.rows.flat().filter((n) => !isPlaceholder(n.id));
+  const at = (n: GraphNode) => input.crossAt.get(n.id)!;
+  return clusterSpans(input.graph.clusters ?? [], nodes.map((n) => ({ cluster: n.cluster, span: [at(n), at(n) + size(n)] })), input.axes);
 }

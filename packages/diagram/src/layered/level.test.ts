@@ -5,8 +5,8 @@ import { layeredPlan } from '../layered';
 import type { LayoutDirection } from '../layout';
 
 /** Every node pinned where it is given, and an edge for each pair. */
-function pinnedGraph(at: Record<string, { x: number; y: number }>, pairs: [string, string][]): Graph {
-  const nodes: GraphNode[] = Object.entries(at).map(([id, p]) => ({ id, bounds: { ...p, width: 80, height: 30 }, pinned: true }));
+function pinnedGraph(at: Record<string, { x: number; y: number; height?: number }>, pairs: [string, string][]): Graph {
+  const nodes: GraphNode[] = Object.entries(at).map(([id, p]) => ({ id, bounds: { width: 80, height: 30, ...p }, pinned: true }));
   const edges = pairs.map(([from, to]) => ({ id: `${from}${to}`, from, to }));
   const byId = new Map(nodes.map((n) => [n.id, n]));
   return {
@@ -49,6 +49,30 @@ describe('layered, an edge between two nodes level along the rank axis', () => {
     const graph = pinnedGraph({ a: { x: 0, y: 0 }, m: { x: 200, y: 0 }, b: { x: 400, y: 0 }, z: { x: 200, y: 50 } }, [['a', 'b']]);
     const plan = layeredPlan(graph, { rankGap: 96 });
     expect(plan.waypoints.get('ab')).toEqual([{ x: 40, y: 40 }, { x: 440, y: 40 }]);
+  });
+
+  it('goes around past a node between them that reaches further toward the next rank than either end', () => {
+    const graph = pinnedGraph({ a: { x: 0, y: 30, height: 40 }, c: { x: 200, y: 0, height: 140 }, b: { x: 400, y: 30, height: 40 } }, [['a', 'b']]);
+    const plan = layeredPlan(graph, { rankGap: 96 });
+    expect(plan.waypoints.get('ab')).toEqual([{ x: 40, y: 188 }, { x: 440, y: 188 }]);
+  });
+
+  it('goes around a cluster box between them that neither end is in', () => {
+    const graph = pinnedGraph({ a: { x: 0, y: 0 }, k1: { x: 200, y: -60 }, k2: { x: 200, y: 60 }, b: { x: 400, y: 0 } }, [['a', 'b']]);
+    graph.nodes.find((n) => n.id === 'k1')!.cluster = 'K';
+    graph.nodes.find((n) => n.id === 'k2')!.cluster = 'K';
+    const clustered: Graph = { ...graph, clusters: [{ id: 'K', members: ['k1', 'k2'], inset: { top: 12, right: 12, bottom: 12, left: 12 } }] };
+    const plan = layeredPlan(clustered, { rankGap: 96 });
+    expect(plan.ports.get('ab')).toEqual({ from: 's', to: 's' });
+    expect(plan.waypoints.get('ab')).toEqual([{ x: 40, y: 150 }, { x: 440, y: 150 }]);
+  });
+
+  it('runs straight across inside the cluster both ends are in', () => {
+    const graph = pinnedGraph({ a: { x: 0, y: 0 }, b: { x: 400, y: 0 } }, [['a', 'b']]);
+    for (const n of graph.nodes) n.cluster = 'K';
+    const clustered: Graph = { ...graph, clusters: [{ id: 'K', members: ['a', 'b'], inset: { top: 12, right: 12, bottom: 12, left: 12 } }] };
+    const plan = layeredPlan(clustered, { rankGap: 96 });
+    expect(plan.ports.get('ab')).toEqual({ from: 'e', to: 'w' });
   });
 
   it('keeps the rank faces for nodes that are not level', () => {

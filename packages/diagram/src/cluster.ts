@@ -11,7 +11,7 @@
  *
  * A cluster may be a member of another: its column then sits inside its parent's.
  */
-import { maxOf, minOf } from '@weasel-js/geom';
+import { maxOf, minOf, type Rect } from '@weasel-js/geom';
 import type { Graph, GraphEdge, GraphCluster, GraphNode } from './graph';
 import { extent, type LayoutAxes } from './layout';
 
@@ -31,6 +31,23 @@ export function insetOf(inset: number | Partial<ClusterInset> | undefined): Clus
     right: inset?.right ?? DEFAULT_CLUSTER_INSET,
     bottom: inset?.bottom ?? DEFAULT_CLUSTER_INSET,
     left: inset?.left ?? DEFAULT_CLUSTER_INSET,
+  };
+}
+
+/** A cluster's box around the union of its members: grown by its inset, and
+ *  widened evenly to its `minWidth`. */
+export function boxAround(
+  union: Rect,
+  cluster: { inset?: number | Partial<ClusterInset>; minWidth?: number },
+): Rect {
+  const inset = insetOf(cluster.inset);
+  const width = union.width + inset.left + inset.right;
+  const grow = Math.max(0, (cluster.minWidth ?? 0) - width);
+  return {
+    x: union.x - inset.left - grow / 2,
+    y: union.y - inset.top,
+    width: width + grow,
+    height: union.height + inset.top + inset.bottom,
   };
 }
 
