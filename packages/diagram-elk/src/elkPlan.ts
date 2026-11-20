@@ -86,9 +86,16 @@ function shortIds(options: Readonly<Record<string, string>>): Record<string, str
 
 let bundled: Promise<ElkRunner> | undefined;
 
-/** elkjs's bundled build, imported the first time a layout needs it. */
+/** elkjs's bundled build, imported the first time a layout needs it. A failed import is not kept, so the next layout
+ *  tries again: a chunk that failed to load while offline loads once the network is back. */
 function defaultElk(): Promise<ElkRunner> {
-  bundled ??= import('elkjs/lib/elk.bundled.js').then(({ default: ELKConstructor }) => new ELKConstructor());
+  bundled ??= import('elkjs/lib/elk.bundled.js').then(
+    ({ default: ELKConstructor }) => new ELKConstructor(),
+    (error: unknown) => {
+      bundled = undefined;
+      throw error;
+    },
+  );
   return bundled;
 }
 
