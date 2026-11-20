@@ -237,6 +237,24 @@ describe('createLiveAudioRunner', () => {
     expect(graph.applies.flat().filter((p) => p.kind === 'add' && p.id === 'gain')).toHaveLength(1);
   });
 
+  it('starts nothing when a pause or reset comes while play waits on the unlock', async () => {
+    const { runner, engine, graphs } = setup();
+    let unlocked = () => {};
+    vi.mocked(engine.unlock).mockImplementation(() => new Promise<void>((r) => { unlocked = r; }));
+    const played = runner.play();
+    runner.pause();
+    unlocked();
+    await played;
+    expect(graphs[0]!.calls).not.toContain('start');
+    expect(runner.state.playing).toBe(false);
+    const again = runner.play();
+    runner.reset();
+    unlocked();
+    await again;
+    expect(graphs[1]!.calls).not.toContain('start');
+    expect(runner.state.playing).toBe(false);
+  });
+
   it('resets onto a fresh graph holding the current plan, not playing', async () => {
     const { runner, graphs, engine } = setup();
     await runner.play();

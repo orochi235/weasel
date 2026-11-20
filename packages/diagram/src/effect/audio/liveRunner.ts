@@ -27,7 +27,7 @@ export interface LiveAudioRunner {
   setPipeline(pipeline: EffectPipeline): void;
   /** A new buffer replaces each file node. */
   setSources(sources: AudioSources): void;
-  /** Unlocks the engine, then starts the graph. */
+  /** Unlocks the engine, then starts the graph, unless a `pause`, `reset` or later `play` came first. */
   play(): Promise<void>;
   pause(): void;
   /** Which stages draw into their `out` preview: a scope, a spectrum, or none. Takes effect on the next `frame`. */
@@ -95,6 +95,8 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
   let errors: Readonly<Record<string, string>> = {};
   let state: LiveAudioRunnerState = { run: { stages: {} }, playing: false };
   let disposed = false;
+  /** Bumped by every play, pause and reset, so a play whose unlock a later one overtook starts nothing. */
+  let transport = 0;
   const listeners = createEmitter();
   const previews = createLivePreviews();
 
@@ -197,13 +199,15 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     },
     async play() {
       if (disposed) return;
+      const mine = ++transport;
       await engine.unlock();
-      if (disposed) return;
+      if (disposed || mine !== transport) return;
       graph.start();
       set({ playing: true });
     },
     pause() {
       if (disposed) return;
+      transport++;
       graph.stop();
       set({ playing: false });
     },
@@ -220,6 +224,7 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     drawn: previews.drawn,
     reset() {
       if (disposed) return;
+      transport++;
       graph.dispose();
       graph = engine.graph(bus);
       previews.restart();
