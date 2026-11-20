@@ -81,6 +81,34 @@ describe('EditorShell', () => {
     expect(within(sheet).getAllByRole('listitem').map((li) => li.textContent)).toContain('QQ');
   });
 
+  it('falls back to a publisher still mounted when another stops publishing', () => {
+    function Workspace({ label }: { label: string }) {
+      const [tools, setTools] = useState<ToolsApi | null>(null);
+      const [sets] = useState(() => [{ ...SHAPE_TOOLS, label }]);
+      usePublishEditorTools(tools, sets);
+      return <SceneCanvas features={[presets.draw]} scene={scene()} layers={{}} width={64} height={64} defaultTools={[SHAPE_TOOLS]} onToolsCreated={setTools} />;
+    }
+    const shown = () => {
+      key({ key: '?', code: 'Slash', shiftKey: true });
+      const sheet = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
+      const names = ['A', 'B', 'C'].filter((n) => within(sheet).queryByRole('region', { name: n }) !== null);
+      fireEvent.keyDown(sheet, { key: 'Escape' });
+      return names;
+    };
+    const shell = (...labels: string[]) => (
+      <EditorShell><Probe />{labels.map((l) => <Workspace key={l} label={l} />)}</EditorShell>
+    );
+    const { rerender } = render(shell('A', 'B'));
+    expect(shown()).toEqual(['B']);
+    // The newest leaving gives the sheet back to the one before it.
+    rerender(shell('A'));
+    expect(shown()).toEqual(['A']);
+    // An older one leaving takes nothing from the newest.
+    rerender(shell('A', 'C'));
+    rerender(shell('C'));
+    expect(shown()).toEqual(['C']);
+  });
+
   it('registers no shortcut sheet for `shortcuts={null}`', () => {
     render(<EditorShell shortcuts={null}><Probe /></EditorShell>);
     expect(registry?.list().some((a) => a.id === EDITOR_ACTIONS.shortcuts)).toBe(false);
