@@ -13,7 +13,7 @@ import type {
 } from '@weasel-js/paint';
 import { gradientForBounds, isGradientPaint, isTilePaint, tryParseColor, withGradientKind } from '@weasel-js/paint';
 import { createReflectable, type PushOptions, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
-import { getPaintDrawKind, registerPaintDrawKind, registerPaintDrawKindLoader } from '@weasel-js/renderer';
+import { isPaintKindKnown, registerPaintDrawKind, registerPaintDrawKindLoader, warmPaintKinds } from '@weasel-js/renderer';
 import type { PaintKind, PaintKindEntry, PaintKindFamily } from './paintKindEntry';
 import type { IconRef } from '@weasel-js/icons';
 import { icon } from './icons.gen';
@@ -173,6 +173,7 @@ export function registerPaintKindLoader(id: string, load: PaintKindLoader, optio
   return registerPaintDrawKindLoader(id, load, {
     fallback: options?.fallback,
     register: (entry: PaintKindEntry) => registerPaintKind(entry, options),
+    has: (kind) => KINDS.has(kind),
   });
 }
 
@@ -181,7 +182,7 @@ export function registerPaintKindLoader(id: string, load: PaintKindLoader, optio
 export function getPaintKind(kind: string | undefined): PaintKindEntry | undefined {
   const id = kind ?? 'solid';
   const entry = KINDS.get(id);
-  if (!entry) getPaintDrawKind(id);
+  if (!entry && isPaintKindKnown(id)) void warmPaintKinds([id]).catch(() => {});
   return entry;
 }
 
