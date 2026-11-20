@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import type { RefObject } from 'react';
 import { useActionsRegistry, useDepSource, useGestureDispatcher } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
@@ -39,10 +39,16 @@ export function useMinimapInput(opts: MinimapInputOptions): (cx: number, cy: num
   const fitViewRef = useLatest(opts.fitView);
   const sizeRef = useLatest(opts.size);
 
-  // The main canvas's camera, which is what the minimap's actions move.
+  // The main canvas's camera, which is what the minimap's actions move. Samples arriving before the host
+  // re-renders compound off the last view written; the next commit hands the camera back to the prop.
+  const written = useRef<View | null>(null);
+  useLayoutEffect(() => { written.current = null; });
   const rootView = useMemo<ViewApi>(() => ({
-    get: () => mainViewRef.current,
-    set: (v) => onMainViewChangeRef.current(v),
+    get: () => written.current ?? mainViewRef.current,
+    set: (v) => {
+      written.current = v;
+      onMainViewChangeRef.current(v);
+    },
     hostSize: () => mainViewDimsRef.current,
   }), [mainViewRef, onMainViewChangeRef, mainViewDimsRef]);
   useDepSource('rootView', () => rootView);

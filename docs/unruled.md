@@ -3016,3 +3016,11 @@ Calls the lanes made without a ruling:
   differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
   family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
   family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.
+
+## Audit round fifty-three (2026-11-20): minimap
+
+- 2026-11-20 (the fixer's call): `<MinimapCanvas>`'s `rootView` reads back the last view it wrote until the minimap
+  next commits, so zoom samples landing before the host re-renders compound rather than overwrite each other. A host
+  that drops a write without re-rendering has the next sample in the same frame start from the dropped view; the
+  minimap's next render hands the camera back to the `mainView` prop. Holding the write until the prop itself changes
+  was the alternative, which would keep a dropped write forever.

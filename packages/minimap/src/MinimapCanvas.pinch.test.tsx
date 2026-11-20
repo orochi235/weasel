@@ -73,10 +73,20 @@ function mount(zoom?: boolean | ZoomClampOptions, start: View = MAIN) {
       }));
     });
   };
+  /** Pointer events dispatched back to back, with no render between them. */
+  const burst = (events: readonly [type: string, pointerId: number, clientX: number][]): void => {
+    act(() => {
+      for (const [type, pointerId, clientX] of events) {
+        canvas.dispatchEvent(new PointerEvent(type, {
+          bubbles: true, cancelable: true, pointerId, pointerType: 'touch', clientX, clientY: Y, button: 0, buttons: 1,
+        }));
+      }
+    });
+  };
   const main = (): View => seen.at(-1) ?? start;
   /** World point under minimap x on the `Y` line. */
   const worldAt = (x: number) => viewScreenToWorld(fit, { x, y: Y });
-  return { touch, main, worldAt, fit };
+  return { touch, burst, main, worldAt, fit };
 }
 
 /** The main view's center, in world. */
@@ -107,6 +117,16 @@ describe('<MinimapCanvas> touch pinch', () => {
     touch('pointermove', 2, 60);
     const before = main();
     touch('pointermove', 2, 70);
+    expect(main().scale.x).toBeCloseTo(before.scale.x * 2);
+  });
+
+  it('compounds moves that land before the host re-renders', () => {
+    const { touch, burst, main } = mount();
+    touch('pointerdown', 1, 40);
+    touch('pointerdown', 2, 60);
+    const before = main();
+    // Spread 20 → 30 → 40, the two moves in one frame.
+    burst([['pointermove', 2, 70], ['pointermove', 2, 80]]);
     expect(main().scale.x).toBeCloseTo(before.scale.x * 2);
   });
 
