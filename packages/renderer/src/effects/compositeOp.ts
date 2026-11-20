@@ -40,9 +40,13 @@ const OPERATORS: Readonly<Record<CompositeOp, BlendFactors>> = {
   copy: { source: 'one', destination: 'zero' },
 };
 
-/** The factor pair `composite` stands for. */
+/** The factor pair `composite` stands for. Throws a `RangeError` naming a string that is no {@link CompositeOp}. */
 export function blendFactorsOf(composite: CompositeOp | BlendFactors): BlendFactors {
-  return typeof composite === 'string' ? OPERATORS[composite] : composite;
+  if (typeof composite !== 'string') return composite;
+  if (!Object.hasOwn(OPERATORS, composite)) {
+    throw new RangeError(`unknown composite operator '${composite}'; expected one of ${Object.keys(OPERATORS).join(', ')}`);
+  }
+  return OPERATORS[composite];
 }
 
 /** Whether `composite` is anything but the renderer's ordinary blend. */

@@ -3059,3 +3059,9 @@ Calls the lanes made without a ruling:
   `measureIds`, and so picking, editing, Delete and Clear all, reads only `ms.layer`. Either `measureIds` reads the
   whole scene, which puts a walk of every node on each pointer move's hit test (`measureEndSource.test.ts` holds
   that it must not), or the painter and the snap source take only `ms.layer`'s nodes and the rest go undrawn.
+
+## Audit round fifty-four (2026-11-20): the renderer, part one
+
+- 2026-11-20 (my call, audit round 54): a group or layer `composite` string that is no `CompositeOp` (`'multiply'`,
+  or an inherited name such as `'constructor'`) throws a `RangeError` naming it and listing the operators, rather
+  than being drawn as `source-over`. It still ends the frame, as the bare `TypeError` it replaces did.
