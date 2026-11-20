@@ -150,7 +150,8 @@ export function captureTurn(
     turn: {
       origins,
       pivot: { x: union.x + union.width / 2, y: union.y + union.height / 2 },
-      useUnionPivot: ids.length > 1 && pivot !== 'each',
+      // A derived node turns as one item about its own box, whatever its sources.
+      useUnionPivot: owner !== null || (ids.length > 1 && pivot !== 'each'),
       descriptorOf,
     },
     originPoses,
