@@ -35,7 +35,7 @@ class C4Writer {
   }
 
   element(n: DataNode, indent: string): void {
-    const { kind, name, technology, description } = elementParts(nodeLines(n, this.out.warnings, 'Mermaid'), n.outline, n.style);
+    const { kind, name, technology, description } = elementParts(nodeLines(n, this.out.warnings, 'Mermaid'), n.outline, n.style, (m) => this.out.warnings.add(m));
     if (technology !== undefined && !hasTechnology(kind)) this.out.warnings.add('Mermaid C4 people and systems have no technology; it was written into the description.');
     const tech = hasTechnology(kind) ? [technology] : [];
     const desc = !hasTechnology(kind) && technology !== undefined ? `[${technology}] ${description}`.trim() : description;
