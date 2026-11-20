@@ -252,4 +252,7 @@ describe('the conditions a node is shown and enabled by', () => {
   it('removes one that is emptied', () => {
     expect(normalizeAttr('showIf', undefined)).toBeUndefined();
   });
+  it("shows a group drawn as an unknown form with no extra attributes, though the form's name is an Object member", () => {
+    expect(Object.keys(attributeSchema({ name: 'G', as: 'toString', children: {} } as unknown as PrefGroup).shared)).toContain('as');
+  });
 });

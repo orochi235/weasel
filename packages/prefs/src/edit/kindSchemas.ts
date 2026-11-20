@@ -179,7 +179,7 @@ export function attributeSchema(
 ): AttributeSchema {
   if (!isPrefLeaf(node)) {
     const attrs = Object.entries(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS);
-    const shared = attrs.flatMap((attr): Array<[string, KindAttr]> => (attr[0] === 'as' ? [attr, ...(AS_ATTRS[node.as ?? ''] ?? [])] : [attr]));
+    const shared = attrs.flatMap((attr): Array<[string, KindAttr]> => (attr[0] === 'as' ? [attr, ...(getOwn(AS_ATTRS, node.as ?? '') ?? [])] : [attr]));
     return { shared: Object.fromEntries(shared), own: {}, auto: {}, entry: {}, readOnly: [] };
   }
   const typed = node.type !== undefined;
