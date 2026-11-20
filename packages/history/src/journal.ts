@@ -103,6 +103,26 @@ export interface Journal {
   isActive(): boolean;
 }
 
+/** The journals opened inside one: each leaves `RESUMERS` when it closes. */
+function createChildren() {
+  const children: Journal[] = [];
+  /** When each child last changed the adapter, counted in opens and edits. */
+  const lastEdit = new Map<Journal, number>();
+  let edits = 0;
+  const openChildren = (): Journal[] => children.filter((c) => RESUMERS.has(c));
+  return {
+    adopt(child: Journal): void {
+      children.push(child);
+      lastEdit.set(child, ++edits);
+      child.observe(() => lastEdit.set(child, ++edits));
+    },
+    openChildren,
+    /** The open ones, latest edit first. Edits interleaved between suspended siblings cannot be
+     *  unwound exactly in any order. */
+    latestFirst: (): Journal[] => openChildren().sort((x, y) => lastEdit.get(y)! - lastEdit.get(x)!),
+  };
+}
+
 /** Internal factory used by `createHistory`'s `beginJournal` method.
  *  Not exported via the package's `index.ts` — callers go through
  *  `history.beginJournal()`. */
@@ -133,12 +153,7 @@ export function createJournalInternal(
   type State = 'active' | 'suspended' | 'closed';
   let state: State = 'active';
   const targetId = opts.targetId;
-  /** Journals opened inside this one; each leaves `RESUMERS` when it closes. */
-  const children: Journal[] = [];
-  const openChildren = (): Journal[] => children.filter((c) => RESUMERS.has(c));
-  /** When each child last changed the adapter, counted in opens and edits. */
-  const lastEdit = new Map<Journal, number>();
-  let edits = 0;
+  const { adopt, openChildren, latestFirst } = createChildren();
 
   const journal: Journal = {
     targetId,
@@ -178,9 +193,7 @@ export function createJournalInternal(
       const child = inner.beginJournal(nested);
       ENCLOSING.set(child, journal);
       OWNER.set(child, inner);
-      children.push(child);
-      lastEdit.set(child, ++edits);
-      child.observe(() => lastEdit.set(child, ++edits));
+      adopt(child);
       return child;
     },
     getVersion: () => version,
@@ -201,8 +214,7 @@ export function createJournalInternal(
     },
     cancel(): void {
       if (state !== 'active') throw new Error('Journal is not active');
-      // Latest edit first. Edits interleaved between suspended siblings cannot be unwound exactly by any order.
-      for (const child of openChildren().sort((x, y) => lastEdit.get(y)! - lastEdit.get(x)!)) {
+      for (const child of latestFirst()) {
         if (!child.isActive()) RESUMERS.get(child)!();
         child.cancel();
       }

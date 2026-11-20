@@ -2,6 +2,6 @@
 '@weasel-js/history': patch
 ---
 
-`Journal.cancel()` unwinds the journals still open inside it in the order of their latest edits, newest first, rather than newest opened first.
+`Journal.cancel()` unwinds the journals open inside it latest edit first. It had gone by the order they were opened.
 
 <!-- entry: fix -->

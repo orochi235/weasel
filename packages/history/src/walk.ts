@@ -4,7 +4,8 @@
  */
 import type { Op } from './op';
 import type { Entry, HistoryLogger } from './serialized';
-import type { HistorySelection } from './historyTypes';
+import type { HistorySelection, HistoryStep } from './historyTypes';
+import { stepOf } from './entryOps';
 
 /** The entries a walk moved, in the order moved, and what it applied for each. */
 export interface Walked {
@@ -18,6 +19,8 @@ export interface WalkEnv {
   selection: HistorySelection | undefined;
   applyAllOrNothing(ops: Op[], settle?: () => Op[]): boolean;
   logger: HistoryLogger;
+  /** Tells the history's listeners of a step. */
+  report(step: HistoryStep): void;
 }
 
 export function createWalk(env: WalkEnv) {
@@ -94,5 +97,17 @@ export function createWalk(env: WalkEnv) {
     }
   }
 
-  return { walkTo, walkOrReturn, readSelection };
+  /** Run a walk and report what it applied whenever it leaves the stacks somewhere new, a throw
+   *  partway through included. */
+  function reported(kind: 'undo' | 'redo' | 'goto', walk: (into: Walked) => void): void {
+    const start = undoStack.length;
+    const into: Walked = { walked: [], applied: [] };
+    try {
+      walk(into);
+    } finally {
+      if (undoStack.length !== start) env.report(stepOf(kind, into.walked, into.applied));
+    }
+  }
+
+  return { walkTo, walkOrReturn, reported, readSelection };
 }

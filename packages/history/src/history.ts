@@ -1,7 +1,7 @@
 import type { Op } from './op';
 import { appliedHalves, createApplier, stepOf } from './entryOps';
 import { createStackView } from './stackView';
-import { createWalk, type Walked } from './walk';
+import { createWalk } from './walk';
 import { createVersionClock } from './versionClock';
 import { createForks } from './forks';
 import { createRecorder } from './recording';
@@ -70,26 +70,14 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
 
   const applyAllOrNothing = createApplier(adapter, logger);
 
-  const { walkTo, walkOrReturn, readSelection } = createWalk({
-    undoStack, redoStack, selection, applyAllOrNothing, logger,
+  const { walkTo, walkOrReturn, reported, readSelection } = createWalk({
+    undoStack, redoStack, selection, applyAllOrNothing, logger, report: clock.bump,
   });
 
   const recorder = createRecorder({
     undoStack, forks, clock, applyAllOrNothing, readSelection, now, coalesceWindowMs, historyLimit, logger,
   });
   const { pushOrCoalesce, record } = recorder;
-
-  /** Run a walk and report what it applied whenever it leaves the stacks somewhere new, a throw
-   *  partway through included. */
-  function reported(kind: 'undo' | 'redo' | 'goto', walk: (into: Walked) => void): void {
-    const start = undoStack.length;
-    const into: Walked = { walked: [], applied: [] };
-    try {
-      walk(into);
-    } finally {
-      if (undoStack.length !== start) clock.bump(stepOf(kind, into.walked, into.applied));
-    }
-  }
 
   const history: History = {
     ...createStackView(undoStack, redoStack),
