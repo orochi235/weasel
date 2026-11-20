@@ -16,6 +16,11 @@ export interface Inflated {
 
 const EPS = 1e-7;
 
+/** `obstacle`'s box grown by the clearance kept from it: `labelClearance`
+ *  for a label, `clearance` for anything else. */
+export const inflatedBox = (obstacle: AvoidObstacle, clearance: number, labelClearance = clearance): Box =>
+  growRect(obstacle.box, obstacle.kind === 'label' ? labelClearance : clearance);
+
 /** Every obstacle, inflated, filed in a spatial hash: a label by
  *  `labelClearance`, anything else by `clearance`. */
 export class ObstacleIndex {
@@ -27,7 +32,7 @@ export class ObstacleIndex {
   }
 
   private file(obstacle: AvoidObstacle): void {
-    const item = { obstacle, box: growRect(obstacle.box, obstacle.kind === 'label' ? this.labelClearance : this.clearance) };
+    const item = { obstacle, box: inflatedBox(obstacle, this.clearance, this.labelClearance) };
     this.byId.set(obstacle.id, item);
     this.hash.insert(item, item.box);
   }

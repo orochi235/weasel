@@ -10,7 +10,7 @@ import { DragIndex } from './dragIndex';
 import { labelObstacle, labelObstacles } from './labels';
 import { routeEdge, type EdgeRouteContext } from './edgeRoute';
 import { nudge, type NudgeRoute } from './nudge';
-import { ObstacleIndex } from './obstacles';
+import { inflatedBox, ObstacleIndex } from './obstacles';
 import { SegmentIndex } from './segments';
 import { AVOID_DEFAULTS, type AvoidEdge, type AvoidInput, type AvoidObstacle, type AvoidOptions, type Box } from './types';
 
@@ -180,9 +180,9 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
     update(input, updateOpts = {}) {
       if (updateOpts.preview === true) return preview(input, updateOpts.budgetMs ?? Infinity);
       const obstacles = [...input.obstacles, ...labelObstacles(input.edges, routeOf)];
-      const changed = changedObstacles(committed, obstacles);
+      const changed = changedObstacles(committed, obstacles, (o) => inflatedBox(o, opts.clearance, opts.labelClearance));
       // The route before nudging too, which a nudge spreads a clean connector from.
-      const dirty = dirtyEdges(input.edges, keys, changed, opts.clearance, (e) => [routeOf(e), rawOf(e)], pathless);
+      const dirty = dirtyEdges(input.edges, keys, changed, (e) => [routeOf(e), rawOf(e)], pathless);
       forget(input);
       return commit(input, dirty, obstacles);
     },
