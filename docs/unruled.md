@@ -2820,3 +2820,7 @@ Calls the lanes made without a ruling:
   takes `edgeDerivePath` for the host's own registered one, and development warns once per action id when
   `routers` or `frame` is set with neither `edgeDerivePath` nor `commit`. Throwing was the stricter alternative;
   building and registering a derive path per `routers` table inside the action was the other.
+- 2026-11-20 (the fixer's call): `DiagramView`'s connect previews with `'bezier'` when `portOptions.router` is unset,
+  the router `diagramScene` draws an edge naming none with, and reports no `router`; set, it previews with it and
+  `onConnect`'s edge names it. A host whose `diagramScene` call sets its own `router` sets `portOptions.router` to
+  match. Always reporting the preview's router was the alternative, which would pin `'straight'` on every new edge.

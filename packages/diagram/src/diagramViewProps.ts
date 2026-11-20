@@ -216,7 +216,9 @@ export interface DiagramViewProps {
    *  reports nothing. Default: everywhere. */
   canDropItem?: CanDropItem;
   /** How ports look and answer the pointer, and the router a connect's
-   *  preview draws with. */
+   *  preview draws with, which the edge `onConnect` reports names. Unset, the
+   *  preview draws `'bezier'`, the router an edge naming none is drawn with,
+   *  and the report names none. */
   portOptions?: Pick<
     DiagramContributionOptions<RectPose>,
     'fill' | 'stroke' | 'shape' | 'sizePx' | 'hitRadiusPx' | 'cursor' | 'shows' | 'showsPort' | 'snapRadius' | 'router'

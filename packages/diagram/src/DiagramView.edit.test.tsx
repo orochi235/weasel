@@ -90,6 +90,18 @@ describe('DiagramView editing', () => {
     expect(onConnect).toHaveBeenCalledWith({ from: 'a', fromPort: expect.any(String), to: 'c' });
   });
 
+  it('reports a connect with the router its preview drew with', () => {
+    const onConnect = vi.fn();
+    const { canvas } = mount({ onConnect, connectBodies: true, portOptions: { router: 'orthogonal' } });
+    act(() => {
+      pointer(canvas, 'pointerdown', 100, 20);
+      pointer(canvas, 'pointermove', 200, 120);
+      pointer(canvas, 'pointermove', 350, 220);
+      pointer(canvas, 'pointerup', 350, 220);
+    });
+    expect(onConnect).toHaveBeenCalledWith({ from: 'a', fromPort: expect.any(String), to: 'c', router: 'orthogonal' });
+  });
+
   it('reports a double-click on an edge for its label', () => {
     const onEditLabel = vi.fn();
     const { canvas } = mount({ onEditLabel });
