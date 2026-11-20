@@ -15,7 +15,7 @@ import { boundsOfPath } from '@weasel-js/geom';
 import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
 import type { ReactNode } from 'react';
 
-type Data = { skeleton?: Skeleton; skin?: Skin; label?: string };
+type Data = { skeleton?: Skeleton; skin?: Skin; joint?: string; label?: string };
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const MODS = { alt: false, ctrl: false, meta: false, shift: false };
@@ -140,6 +140,18 @@ describe('useBoneTool', () => {
     t.scene.undo();
     expect(t.joints()).toHaveLength(3);
     expect(t.scene.get(t.sleeve)!.data.skin).toEqual({ joint: [1, 0], joint2: [0, 1] });
+  });
+
+  it('unbinds a node riding a removed joint whole, so a bone drawn later under that name does not take it', () => {
+    const t = setup();
+    t.drag([120, 150], [200, 150]);
+    t.drag([0, 0], [260, 180]);
+    const cuff = t.scene.add({ kind: 'mark', layer: 'main', parent: t.rig, pose: { x: 0, y: 0, width: 5, height: 5 }, data: { joint: 'joint3', label: 'cuff' } });
+    t.state.setActive('joint2');
+    t.fire('bone.remove');
+    expect(t.scene.get(cuff)!.data).toEqual({ label: 'cuff' });
+    t.scene.undo();
+    expect(t.scene.get(cuff)!.data).toEqual({ joint: 'joint3', label: 'cuff' });
   });
 
   it('declines Delete and Escape with no joint active, and everything with no rig', () => {
