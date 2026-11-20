@@ -13,7 +13,7 @@ import type { Node, NodeId, Scene } from 'core/scene/types';
 import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
 import { withSceneShapes } from './sceneShapes';
 import { nodeShapesOf } from './nodeShapeRegistry';
-import { withDerivedPaths, sceneDerivedPathOf, sceneShownToPose } from './derivedPath';
+import { withDerivedPaths, withOverridePathBounds, sceneDerivedPathOf, sceneShownToPose } from './derivedPath';
 import { withPaintOverrides, type PaintOverrides } from './paintOverrides';
 import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
 import { withShownNode } from './shownNodes';
@@ -50,7 +50,10 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
     ...slot,
     ...(slot.toPose ? { toPose: sceneShownToPose(scene, slot.toPose) } : {}),
     ...(slot.paintBounds
-      ? { paintBounds: withShownNode(scene.overrides, withSceneShapes(scene, withInheritedPaintBounds(shown, slot.paintBounds))) }
+      ? {
+        paintBounds: withShownNode(scene.overrides, withSceneShapes(scene,
+          withOverridePathBounds(scene, withInheritedPaintBounds(shown, slot.paintBounds), slot.toPose))),
+      }
       : {}),
     drawOne: withShownNode(scene.overrides, painted),
     ...(drawnAt ? { drawnPose: (node: Node<TData, TLayer, TPose>, pose: TPose) => drawnAt(nodeAsShown(scene.overrides, node), pose) } : {}),
