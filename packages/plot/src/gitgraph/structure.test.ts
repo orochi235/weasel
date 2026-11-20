@@ -68,6 +68,19 @@ describe('gitgraph structure', () => {
     expect(() => setGitCommandField(d, 1, 'name', 'main')).toThrow(/already called "main"/);
   });
 
+  it('carries a commit\'s new id into the cherry-picks after it, refusing one another commit holds', () => {
+    const d: GitGraphData = { kind: 'gitgraph', commands: [
+      { kind: 'commit', id: 'root' }, { kind: 'branch', name: 'dev' }, { kind: 'commit', id: 'A' }, { kind: 'checkout', name: 'main' },
+      { kind: 'cherry-pick', id: 'A' },
+    ] };
+    const renamed = setGitCommandField(d, 2, 'id', 'B');
+    expect(renamed.commands[4]).toEqual({ kind: 'cherry-pick', id: 'B' });
+    expect(replayGitGraph(renamed).error).toBeUndefined();
+    const dropped = setGitCommandField(d, 2, 'id', undefined);
+    expect(replayGitGraph(dropped).error).toBeUndefined();
+    expect(() => setGitCommandField(d, 2, 'id', 'root')).toThrow(/already has id "root"/);
+  });
+
   it('fills a new merge or cherry-pick from the history before it', () => {
     const d: GitGraphData = { kind: 'gitgraph', commands: [
       { kind: 'commit', id: 'm1' }, { kind: 'branch', name: 'dev' }, { kind: 'commit', id: 'd1' }, { kind: 'commit' },
