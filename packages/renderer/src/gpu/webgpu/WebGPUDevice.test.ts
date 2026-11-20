@@ -130,3 +130,38 @@ describe('a WebGPU canvas with no area', () => {
     expect(made.map((t) => t.label).sort()).toEqual(['canvas color', 'canvas resolved', 'canvas stencil']);
   });
 });
+
+describe('a WebGPU canvas read back after a resize and before the next frame', () => {
+  function copies(fake: ReturnType<typeof fakeGpuDevice>) {
+    const calls: unknown[][] = [];
+    const make = fake.device.createCommandEncoder.bind(fake.device);
+    fake.device.createCommandEncoder = ((desc?: GPUCommandEncoderDescriptor) => {
+      const encoder = make(desc);
+      encoder.copyTextureToBuffer = (...args: unknown[]) => { calls.push(args); };
+      return encoder;
+    }) as GPUDevice['createCommandEncoder'];
+    return calls;
+  }
+
+  it('reads the bottom rows of what the last frame drew, counted from that frame\'s height', () => {
+    const fake = fakeGpuDevice(64, 64);
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    gpu.beginPass({ target: null, viewport: { x: 0, y: 0, width: 64, height: 64 } });
+    gpu.endPass();
+    const calls = copies(fake);
+    fake.canvas.height = 32;
+    void gpu.readCanvas({ x: 0, y: 0, width: 2, height: 2 });
+    expect((calls[0][0] as GPUTexelCopyTextureInfo).origin).toEqual([0, 62]);
+  });
+
+  it('copies only the part of the rect the smaller frame holds', () => {
+    const fake = fakeGpuDevice(64, 64);
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    gpu.beginPass({ target: null, viewport: { x: 0, y: 0, width: 64, height: 64 } });
+    gpu.endPass();
+    const calls = copies(fake);
+    fake.canvas.width = fake.canvas.height = 128;
+    void gpu.readCanvas({ x: 60, y: 60, width: 8, height: 8 });
+    expect(calls[0][2]).toEqual([4, 4]);
+  });
+});

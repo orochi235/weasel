@@ -199,17 +199,22 @@ export function encodeReadIds(
 }
 
 /** Encode reading `rect` of an RGBA8 `texture` `height` tall; the promise,
- *  once the encoder is submitted, holds its texels with rows bottom-up. */
+ *  once the encoder is submitted, holds its texels with rows bottom-up, and
+ *  zeros wherever the rect falls off the texture. */
 export function encodeReadTexture(
   device: GPUDevice, encoder: GPUCommandEncoder, texture: GPUTexture | null, height: number, rect: GpuRect,
 ): () => Promise<Uint8Array> {
   const { width, height: rows } = rect;
-  if (width === 0 || rows === 0 || !texture) return () => Promise.resolve(new Uint8Array(width * rows * 4));
-  const stride = Math.ceil((width * 4) / 256) * 256;
-  const buffer = device.createBuffer({ size: stride * rows, usage: BufferUsage.COPY_DST | BufferUsage.MAP_READ });
   const from = topDown(rect, height);
+  const x0 = Math.max(0, from.x);
+  const y0 = Math.max(0, from.y);
+  const copyWidth = texture ? Math.min(texture.width, from.x + width) - x0 : 0;
+  const copyRows = texture ? Math.min(texture.height, from.y + rows) - y0 : 0;
+  if (copyWidth <= 0 || copyRows <= 0 || !texture) return () => Promise.resolve(new Uint8Array(width * rows * 4));
+  const stride = Math.ceil((copyWidth * 4) / 256) * 256;
+  const buffer = device.createBuffer({ size: stride * copyRows, usage: BufferUsage.COPY_DST | BufferUsage.MAP_READ });
   encoder.copyTextureToBuffer(
-    { texture, origin: [from.x, from.y] }, { buffer, bytesPerRow: stride, rowsPerImage: rows }, [width, rows],
+    { texture, origin: [x0, y0] }, { buffer, bytesPerRow: stride, rowsPerImage: copyRows }, [copyWidth, copyRows],
   );
   return async () => {
     const out = new Uint8Array(width * rows * 4);
@@ -222,8 +227,10 @@ export function encodeReadTexture(
     }
     const mapped = new Uint8Array(buffer.getMappedRange());
     // Read top-down; the layer's rows run bottom-up.
-    for (let row = 0; row < rows; row++) {
-      out.set(mapped.subarray(row * stride, row * stride + width * 4), (rows - 1 - row) * width * 4);
+    const column = (x0 - from.x) * 4;
+    for (let row = 0; row < copyRows; row++) {
+      const into = rows - 1 - (y0 - from.y + row);
+      out.set(mapped.subarray(row * stride, row * stride + copyWidth * 4), into * width * 4 + column);
     }
     buffer.unmap();
     buffer.destroy();

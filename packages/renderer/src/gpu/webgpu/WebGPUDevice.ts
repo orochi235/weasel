@@ -251,7 +251,7 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
     let read: () => Promise<Uint8Array> = () => Promise.resolve(new Uint8Array(rect.width * rect.height * 4));
     const texture = this.canvas.frameTexture();
     this.frame.outsidePass((encoder) => {
-      read = encodeReadTexture(this.device, encoder, texture, this.surface.height, rect);
+      read = encodeReadTexture(this.device, encoder, texture, texture?.height ?? this.surface.height, rect);
     });
     this.frame.flush();
     return read();
