@@ -390,6 +390,13 @@ export const Basic = story({ render: () => null });
       expect(tags(native)).toEqual([['gallery']]);
     });
 
+    it('reads a meta’s negated tag as a removal, never as a tag', () => {
+      expect(tags(`export default { title: 'ui/Neg', tags: ['autodocs', '!test'] };\nexport const A = {};\nexport const B = { tags: ['test'] };\n`)).toEqual([
+        ['autodocs'],
+        ['autodocs', 'test'],
+      ]);
+    });
+
     it('adds a story’s own tags to the meta’s, and drops one a story negates, as Storybook does', () => {
       const code = `
 export default { title: 'ui/Route', tags: ['a', 'b'] };

@@ -1,3 +1,4 @@
+import { messageOf } from '../../messageOf';
 import { contrastRatio, luminanceContrast, relativeLuminance, tryParseColor, useLatest, wcagLevels } from '@weasel-js/core';
 import {
   type LensCapture,
@@ -15,7 +16,6 @@ import type { ForgeComparison } from './conditions';
 import { backgroundOf, colorAt, tokenChain } from './tokenChain';
 import { trialAt } from './trialAt';
 import { varRefs } from '../../frame/cssVarUse';
-import { messageOf } from '../../vite/capture/payload';
 
 export const NO_TEXT = 'No text under the aim';
 export const NO_BACKGROUND = 'No opaque background behind the text';

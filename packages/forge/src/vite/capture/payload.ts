@@ -32,7 +32,6 @@ export interface CapturePayload {
 }
 
 /** What a capture failure says: an error's message, or anything else as a string. */
-export const messageOf = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
 /** Where the endpoint answers, under the dev server's base. */
 export const CAPTURE_PATH = '__forge/capture';

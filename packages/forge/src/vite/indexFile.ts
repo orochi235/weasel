@@ -2,8 +2,10 @@ import type * as t from '@babel/types';
 import type { StoryViewport } from '../protocol/messages.ts';
 import { storyId, storyNameFromExport } from '../story/ids.ts';
 import type { IndexEntry } from '../story/types.ts';
+import { messageOf } from '../messageOf.ts';
 import {
   type Bindings,
+  bindingsOf,
   calleeOf,
   docOf,
   exportedName,
@@ -31,7 +33,7 @@ export function indexFile(
   try {
     return indexProgram(parseFile(code, file), file, autoTitle, wrappers, foreign);
   } catch (err) {
-    throw new Error(`${file}: ${err instanceof Error ? err.message : String(err)}`, { cause: err });
+    throw new Error(`${file}: ${messageOf(err)}`, { cause: err });
   }
 }
 
@@ -75,7 +77,6 @@ export function foreignCallees(code: string, file: string): ForeignCallee[] {
 
 /** The program's top-level bindings, and its locals that are forge's `meta` or `story`. */
 export function scan(program: t.Program, extra: ReadonlySet<string>): { bindings: Bindings; wrappers: Set<string> } {
-  const bindings: Bindings = new Map();
   const wrappers = new Set(extra);
   for (const stmt of program.body) {
     if (stmt.type === 'ImportDeclaration' && stmt.source.value === '@weasel-js/forge') {
@@ -85,14 +86,8 @@ export function scan(program: t.Program, extra: ReadonlySet<string>): { bindings
         }
       }
     }
-    const decl = stmt.type === 'ExportNamedDeclaration' ? stmt.declaration : stmt;
-    if (decl?.type === 'VariableDeclaration') {
-      for (const d of decl.declarations) if (d.id.type === 'Identifier' && d.init) bindings.set(d.id.name, d.init);
-    } else if (decl?.type === 'FunctionDeclaration' && decl.id) {
-      bindings.set(decl.id.name, decl);
-    }
   }
-  return { bindings, wrappers };
+  return { bindings: bindingsOf(program), wrappers };
 }
 
 export function indexProgram(program: t.Program, file: string, autoTitle: string, extra: ReadonlySet<string>, foreign?: Foreign): IndexEntry[] {
@@ -220,11 +215,11 @@ function tagsOf(obj: t.ObjectExpression | null): string[] | undefined {
   return value.elements.flatMap((e) => (e ? (stringLiteral(e) ?? []) : []));
 }
 
-/** A story's tags as Storybook combines them: the meta's, then its own, where `!tag` removes `tag`. */
+/** A story's tags as Storybook combines them: the meta's, then its own, where `!tag` at either level removes `tag`. */
 function combineTags(meta: string[] | undefined, own: string[] | undefined): string[] | undefined {
   if (meta === undefined && own === undefined) return undefined;
-  const out = new Set(meta);
-  for (const tag of own ?? []) {
+  const out = new Set<string>();
+  for (const tag of [...(meta ?? []), ...(own ?? [])]) {
     if (tag.startsWith('!')) out.delete(tag.slice(1));
     else out.add(tag);
   }

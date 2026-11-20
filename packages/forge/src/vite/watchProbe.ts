@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, watch as fsWatch, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Plugin, ViteDevServer } from 'vite';
+import { messageOf } from '../messageOf.ts';
 import { WATCH_RECOVERY } from './watchRecovery.ts';
 
 /** Starts a watch on a directory and returns what stops it. */
@@ -24,34 +25,54 @@ const watchDir: WatchDir = (dir, onEvent) => {
   return () => watcher.close();
 };
 
-/** Writes a file in a temp directory of its own and answers whether the OS reported the write within the wait. */
+/**
+ * Writes a file in a temp directory of its own and answers whether the OS reported the write within the wait. Rejects
+ * when it cannot write the file, which says nothing about the watcher.
+ */
 export function fileEventsArrive({ waitMs = WAIT_MS, watch = watchDir }: FileEventsOptions = {}): Promise<boolean> {
-  const dir = mkdtempSync(join(tmpdir(), 'forge-watch-'));
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    let dir: string;
+    try {
+      dir = mkdtempSync(join(tmpdir(), 'forge-watch-'));
+    } catch (err) {
+      reject(err);
+      return;
+    }
     let settled = false;
     let writes = 0;
     let stop: (() => void) | undefined;
     let rewrite: ReturnType<typeof setInterval> | undefined;
     let deadline: ReturnType<typeof setTimeout> | undefined;
-    const settle = (arrived: boolean) => {
+    const settle = (end: () => void) => {
       if (settled) return;
       settled = true;
       clearInterval(rewrite);
       clearTimeout(deadline);
       stop?.();
-      rmSync(dir, { recursive: true, force: true });
-      resolve(arrived);
+      try {
+        rmSync(dir, { recursive: true, force: true });
+      } catch {
+        // A temp directory left behind is the OS's to clear.
+      }
+      end();
     };
-    const write = () => writeFileSync(join(dir, 'probe'), String(writes++));
+    const write = () => {
+      try {
+        writeFileSync(join(dir, 'probe'), String(writes++));
+      } catch (err) {
+        settle(() => reject(err));
+      }
+    };
     try {
-      stop = watch(dir, () => settle(true));
-      write();
+      stop = watch(dir, () => settle(() => resolve(true)));
     } catch {
-      settle(false);
+      settle(() => resolve(false));
       return;
     }
+    write();
+    if (settled) return;
     rewrite = setInterval(write, REWRITE_MS);
-    deadline = setTimeout(() => settle(false), waitMs);
+    deadline = setTimeout(() => settle(() => resolve(false)), waitMs);
     rewrite.unref();
     deadline.unref();
   });
@@ -76,7 +97,14 @@ const RECOVERING =
 export async function warnWhenWatchIsSilent(server: ViteDevServer, probe: () => Promise<boolean> = fileEventsArrive): Promise<void> {
   const { watch } = server.config.server;
   if (watch === null || watch?.usePolling) return;
-  if (await probe()) return;
+  let arrived: boolean;
+  try {
+    arrived = await probe();
+  } catch (err) {
+    server.config.logger.warn(`[watch] could not check whether the OS file watcher reports changes: ${messageOf(err)}`);
+    return;
+  }
+  if (arrived) return;
   const recovering = server.config.plugins.some((p) => p.name === WATCH_RECOVERY);
   server.config.logger.warn(recovering ? RECOVERING : SILENT);
 }

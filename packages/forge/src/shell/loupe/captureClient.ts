@@ -1,6 +1,7 @@
+import { messageOf } from '../../messageOf';
 import type { LensSourceStatus } from '@weasel-js/labkit/loupe';
 import { createEmitter } from '@weasel-js/registry';
-import { CAPTURE_PATH, type CapturePayload, messageOf } from '../../vite/capture/payload';
+import { CAPTURE_PATH, type CapturePayload } from '../../vite/capture/payload';
 
 export const CHECKING = 'checking for a capture browser';
 const UNAVAILABLE = 'captures are unavailable';

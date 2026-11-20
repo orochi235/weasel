@@ -19,6 +19,7 @@ import { titleStandIn } from './componentOf.ts';
 import { warnWhenWatchIsSilent } from './watchProbe.ts';
 import { watchRecovery } from './watchRecovery.ts';
 import { settledWatch } from './watchSettle.ts';
+import { messageOf } from '../messageOf.ts';
 
 /** Options for the `forge` vite plugin. */
 export interface ForgeOptions {
@@ -121,7 +122,7 @@ export function forge(options: ForgeOptions): Plugin[] {
   let root = process.cwd();
   let base = '/';
   let logger: Logger | undefined;
-  const logError = (err: unknown) => logger?.error(`[forge] ${err instanceof Error ? err.message : String(err)}`);
+  const logError = (err: unknown) => logger?.error(`[forge] ${messageOf(err)}`);
   const stories = createStoryIndex({ stories: options.stories, root: () => root, logger: () => logger, logError });
   const { files, index } = stories;
   const deps = createDepsFeed({ root: () => root, index, logError });

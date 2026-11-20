@@ -1,7 +1,9 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  CAPTURE_CLOSED,
   type CaptureBrowser,
+  CONTEXT_CAP,
   captureAvailability,
   IDLE_CLOSE_MS,
   INSTALL_CHROMIUM,
@@ -70,7 +72,7 @@ async function decide(handler: (route: FakeRoute) => unknown, url: string): Prom
  *  the first `hang` renders never settle. */
 function fakePlaywright({ hold = false, hang = 0 } = {}) {
   let hangs = hang;
-  const launches: { closed: boolean }[] = [];
+  const launches: { closed: boolean; disconnect(): void; contextsClosed: number[] }[] = [];
   const pagesClosed: number[] = [];
   const contexts: number[] = [];
   const viewports: unknown[] = [];
@@ -113,13 +115,22 @@ function fakePlaywright({ hold = false, hang = 0 } = {}) {
   const playwright = {
     chromium: {
       launch: async () => {
-        const record = { closed: false };
+        const listeners: (() => void)[] = [];
+        const record = { closed: false, disconnect: () => listeners.forEach((l) => l()), contextsClosed: [] as number[] };
         launches.push(record);
         return {
+          on: (event: string, listener: () => void) => {
+            if (event === 'disconnected') listeners.push(listener);
+          },
           newContext: async (options: { deviceScaleFactor: number }) => {
             contexts.push(options.deviceScaleFactor);
             contextOptions.push(options);
-            return { newPage: async () => page };
+            return {
+              newPage: async () => page,
+              close: async () => {
+                record.contextsClosed.push(options.deviceScaleFactor);
+              },
+            };
           },
           close: async () => {
             record.closed = true;
@@ -193,6 +204,20 @@ describe('launchCaptureBrowser', () => {
     await browser.close();
   });
 
+  it('keeps at most CONTEXT_CAP contexts open, closing the least recently used', async () => {
+    const fake = fakePlaywright();
+    const browser = await launched(fake.load);
+    const dprs = [1, 1.25, 1.5, 1.75];
+    for (const dpr of dprs) await browser.capture('http://localhost:5173/x', { ...payload, dpr });
+    await browser.capture('http://localhost:5173/x', { ...payload, dpr: 1 });
+    await browser.capture('http://localhost:5173/x', { ...payload, dpr: 2 });
+    await vi.waitFor(() => expect(fake.launches[0]!.contextsClosed).toEqual([1.25]));
+    await browser.capture('http://localhost:5173/x', { ...payload, dpr: 1 });
+    expect(fake.contexts).toEqual([...dprs, 2]);
+    expect(CONTEXT_CAP).toBe(dprs.length);
+    await browser.close();
+  });
+
   it("emulates the payload's color scheme before the page loads", async () => {
     const fake = fakePlaywright();
     const browser = await launched(fake.load);
@@ -218,6 +243,17 @@ describe('launchCaptureBrowser', () => {
     expect(fake.launches[1]!.closed).toBe(false);
     await browser.close();
     expect(fake.launches[1]!.closed).toBe(true);
+  });
+
+  it('starts a new Chromium for the next capture once the one it had disconnects', async () => {
+    const fake = fakePlaywright();
+    const browser = await launched(fake.load);
+    await browser.capture('http://localhost:5173/x', payload);
+    fake.launches[0]!.disconnect();
+    await browser.capture('http://localhost:5173/x', payload);
+    expect(fake.launches).toHaveLength(2);
+    expect(fake.contexts).toEqual([2, 2]);
+    await browser.close();
   });
 
   it('fails a capture that has not finished in 20 s, closes its page, and takes the next', async () => {
@@ -368,5 +404,19 @@ describe('launchCaptureBrowser', () => {
     fake.pending[QUEUE_CAP]!();
     await expect(next).resolves.toEqual(expect.any(Buffer));
     await browser.close();
+  });
+
+  it('fails the captures still queued once closed, and every capture after, without starting Chromium again', async () => {
+    const fake = fakePlaywright({ hold: true });
+    const browser = await launched(fake.load);
+    const first = browser.capture('http://x/', payload);
+    const queued = browser.capture('http://x/', payload);
+    await vi.waitFor(() => expect(fake.pending).toHaveLength(1));
+    await browser.close();
+    fake.pending[0]!();
+    await first;
+    await expect(queued).rejects.toThrow(CAPTURE_CLOSED);
+    await expect(browser.capture('http://x/', payload)).rejects.toThrow(CAPTURE_CLOSED);
+    expect(fake.launches).toHaveLength(1);
   });
 });
