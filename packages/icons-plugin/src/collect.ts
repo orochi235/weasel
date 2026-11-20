@@ -2,7 +2,17 @@ import type { ParseResult } from 'oxc-parser';
 import { parseModule } from './parse.ts';
 import { walk } from './walk.ts';
 
-const ANNOTATED = /\/\*\s*@icon\s*\*\/\s*(['"])([^'"]+)\1/g;
+const ANNOTATED = /\/\*\s*@icon\s*\*\/\s*(['"`])((?:\\[^]|(?!\1)[^\\\n])*)\1/g;
+const ESCAPE = /\\(?:u\{([0-9a-fA-F]+)\}|u([0-9a-fA-F]{4})|x([0-9a-fA-F]{2})|(\r\n|[^]))/g;
+const SINGLE: Record<string, string> = { n: '\n', t: '\t', r: '\r', b: '\b', f: '\f', v: '\v', 0: '\0', '\n': '', '\r': '', '\r\n': '', '\u2028': '', '\u2029': '' };
+
+/** The string a literal's source text between its quotes spells. */
+const unescape = (raw: string) =>
+  raw.replace(ESCAPE, (all, cp?: string, u?: string, x?: string, c?: string) => {
+    if (c !== undefined) return Object.hasOwn(SINGLE, c) ? SINGLE[c]! : c;
+    const code = Number.parseInt((cp ?? u ?? x)!, 16);
+    return code <= 0x10ffff ? String.fromCodePoint(code) : all;
+  });
 const ANNOTATION = /^\s*@icon\s*$/;
 
 /** Every string literal in a parsed module, a template with no substitution included, by start offset. */
@@ -40,6 +50,8 @@ export function annotatedLiterals(parsed: ParseResult, code: string, literals = 
 export function collectIconRefs(code: string, id = 'module.js'): string[] {
   if (!code.includes('@icon')) return [];
   const parsed = parseModule(code, id);
-  if ('error' in parsed) return [...code.matchAll(ANNOTATED)].map((m) => m[2]!);
+  if ('error' in parsed) {
+    return [...code.matchAll(ANNOTATED)].filter((m) => m[1] !== '`' || !m[2]!.includes('${')).map((m) => unescape(m[2]!));
+  }
   return [...annotatedLiterals(parsed, code).values()];
 }
