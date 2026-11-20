@@ -4,7 +4,7 @@ import { createElement, type ReactNode } from 'react';
 import {
   editAnchorSetTracked, PathBuilder, pathInWorld, pathToAnchors, polygonFromPoints, setSubpathStart, type PolygonPath,
 } from '@weasel-js/geom';
-import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
+import { ActionDisabledReason, type ActionDeps, type ImmediateInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import type { Skin } from '@weasel-js/animator';
 import { anchorFieldsOf, createScene, defaultCommitAdapter } from '@weasel-js/core';
@@ -91,5 +91,19 @@ describe('setAnchorField', () => {
     expect(anchorFieldsOf(t.deps())).toMatchObject({ x: 100, y: 100, outX: 110, outY: 100, outAngle: 0, outLength: 10 });
     t.run({ field: 'outLength', to: 20 });
     expect(pathToAnchors(t.world()).anchors[0][0].outHandle!.x).toBeCloseTo(120, 4);
+  });
+
+  it('is disabled for an entry that would change nothing, as its run commits nothing', () => {
+    const t = setup();
+    t.select(1);
+    const enabled = (params?: Record<string, unknown>) => setAnchorFieldAction.enabled!(t.deps(), undefined, undefined, params as never);
+    expect(enabled({ field: 'x', to: 150 })).toBe(true);
+    expect(enabled({ field: 'x', to: 140 })).toBe(ActionDisabledReason.NotApplicable);
+    expect(enabled({ field: 'x', by: Number.NaN })).toBe(ActionDisabledReason.NotApplicable);
+    expect(enabled({ field: 'outLength', to: 20 })).toBe(ActionDisabledReason.NotApplicable);
+    expect(enabled({ field: 'nope', to: 1 })).toBe(ActionDisabledReason.NotApplicable);
+    expect(enabled()).toBe(true);
+    t.select(9);
+    expect(enabled({ field: 'x', to: 150 })).toBe(ActionDisabledReason.NotApplicable);
   });
 });

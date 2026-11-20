@@ -3016,3 +3016,9 @@ Calls the lanes made without a ruling:
   differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
   family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
   family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.
+
+## Audit round fifty-three (2026-11-20): path-tools.pathEdit
+
+- 2026-11-20 (the fixer's call): `setAnchorField` asked `enabled` with params answers as its `run` would, so an
+  entry that would change nothing is `NotApplicable`; asked with no params, as a listing asks, it answers for the
+  anchor selection alone, since what a field would write only arrives with the entry.
