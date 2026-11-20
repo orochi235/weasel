@@ -172,6 +172,24 @@ describe('attachHud', () => {
     expect(types).toEqual(['hovermove', 'dispose']);
   });
 
+  it('sends no hoverleave to a hovered widget taken off the HUD over a decoration twin, when the pointer next moves', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    const heard: string[] = [];
+    const box = { x: 0, y: 0, width: 80, height: 76 };
+    const ws = [hud.rect({ id: 'w0', ...box, fill: '#000', claims: ['wheel'] }), hud.rect({ id: 'w1', ...box, fill: '#000' })];
+    ws.forEach((w, i) => {
+      const real = w.onPointer.bind(w);
+      w.onPointer = (e) => { heard.push(`${e.type} ${i}`); real(e); };
+    });
+    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    api._layer!.onUncapturedMove!(0, 0, null as never, view, { width: 400, height: 300 });
+    hud.remove(ws[0]!);
+    api._layer!.onUncapturedMove!(0, 0, null as never, view, { width: 400, height: 300 });
+    expect(heard).toEqual(['hovermove 0']);
+  });
+
   it('detach sends hoverleave so a widget is not stranded hovered', () => {
     const hud = createHud();
     const api = makeApi();

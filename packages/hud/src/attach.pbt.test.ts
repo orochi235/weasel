@@ -156,7 +156,11 @@ describe('attachHud layer', () => {
           const i = s.i % ws.length;
           const w = ws[i]! as Widget & { setHidden(h: boolean): void };
           if (s.t === 'hide') { if (!w.disposed) { w.setHidden(s.hidden); live[i]!.hidden = s.hidden; } }
-          else { hud.remove(w); const k = order.indexOf(i); if (k >= 0) order.splice(k, 1); }
+          else {
+            hud.remove(w); const k = order.indexOf(i); if (k >= 0) order.splice(k, 1);
+            // A widget taken off the HUD while hovered is let go of with no hoverleave.
+            if (over === i) over = null;
+          }
         }
         expect(heard).toEqual(want);
       }
