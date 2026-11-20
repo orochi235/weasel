@@ -57,6 +57,16 @@ describe('usePenTool', () => {
       expect(pointsOf(p.scene.n1)).toEqual([[[0, 0], [100, 0], [100, 100]]]);
     });
 
+    it('drops a lone anchor clicked after closing, as a new path does', () => {
+      const p = setup({ autoCommitOnClose: false, paths: { n1: poly('M 0 0 L 100 0') } });
+      p.click(100, 0);
+      p.click(100, 100);
+      p.click(0, 1);
+      p.click(500, 500);
+      p.enter();
+      expect(pointsOf(p.scene.n1)).toEqual([[[0, 0], [100, 0], [100, 100]]]);
+    });
+
     it('leaves the node\'s other subpaths and fill rule alone', () => {
       const original = { ...poly('M 0 0 L 10 0 L 10 10 Z M 50 50 L 60 50'), fillRule: 'evenodd' as const };
       const p = setup({ paths: { n1: original } });
