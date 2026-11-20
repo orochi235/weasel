@@ -4,7 +4,7 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { SpanStrips, type SpanStripSpan, type SpanStripsRow } from '@weasel-js/ui/components/SpanStrip';
 import { clockRuler } from './clock';
-import { STEP_COLUMN_COUNT, inSharedSteps, laneStepsOf, laneViewOf, passDone, runClockOf, sharedSpansOf, type LaneView } from './phases';
+import { GATE_RUNS, STEP_COLUMN_COUNT, inSharedSteps, laneStepsOf, laneViewOf, passDone, runClockOf, sharedSpansOf, type LaneView } from './phases';
 import { NODE_SEP, headlineOf, lastLineOf, spendOf, startedText } from './runData';
 import { useViewerPref } from './viewerPref';
 import type { AuditLane, AuditRun } from './skulkMap.types';
@@ -110,7 +110,10 @@ function RunStrip({ run, now, mode, onMode, hideComplete, onHideComplete, on }: 
           {(inSharedSteps(run) || run.lanes.every(passDone)) && (
             <SpanStrips
               aria-label={`Round ${run.round}, every area`} window={SHARED_WINDOW}
-              rows={[{ id: 'all', spans: sharedSpansOf(run).map(withNode), 'aria-label': 'all areas', lead: <span className={s.nameCell}>all areas</span> }]}
+              rows={GATE_RUNS.map((g) => ({
+                id: g.id, spans: sharedSpansOf(run, g.id).map(withNode), 'aria-label': `all areas, ${g.label}`,
+                lead: <span className={s.nameCell}>{g.id === 'tests' ? 'all areas' : ''}</span>,
+              }))}
             />
           )}
         </div>

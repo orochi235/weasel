@@ -285,19 +285,24 @@ const SHARED_STEPS = [
 export const inSharedSteps = (run: AuditRun): boolean =>
   !run.running || SHARED_STEPS.some((s) => (s.steps as readonly string[]).includes(run.step));
 
-/** The run's lane for every area at once: its batch, fleet run and merge, a column each, the fleet run filled by the
- *  tests it has run. */
-export function sharedSpansOf(run: AuditRun): SpanStripSpan[] {
+/** The two fleet runs a batch's gate starts at once, a lane each. */
+export const GATE_RUNS = [{ id: 'tests', label: 'fleet tests' }, { id: 'build', label: 'postbuild' }] as const;
+export type GateRun = typeof GATE_RUNS[number]['id'];
+
+/** One of the run's lanes for every area at once: the batch, `gate`'s fleet run, and the merge, a column each, the
+ *  fleet run filled by how far it has got. */
+export function sharedSpansOf(run: AuditRun, gate: GateRun = 'tests'): SpanStripSpan[] {
   const at = run.running ? SHARED_STEPS.findIndex((s) => (s.steps as readonly string[]).includes(run.step)) : SHARED_STEPS.length;
   return SHARED_STEPS.map((s, i): SpanStripSpan => {
     const state = i < at ? 'done' : i === at ? 'active' : 'pending';
-    const fleet = s.id === 'fleet' && state === 'active' ? run.fleet ?? null : null;
-    const fill = state === 'done' ? 1 : fleet && fleet.total > 0 ? fleet.done / fleet.total : 0;
-    const label = fleet ? `${s.label} · ${Math.round(fill * 100)}%` : s.label;
+    const fleet = s.id === 'fleet' && state === 'active' ? run.fleet?.[gate] ?? null : null;
+    const fill = state === 'done' ? 1 : fleet && fleet.total > 0 ? Math.min(1, fleet.done / fleet.total) : 0;
+    const name = s.id === 'fleet' ? GATE_RUNS.find((g) => g.id === gate)!.label : s.label;
+    const label = fleet ? `${name} · ${Math.round(fill * 100)}%` : name;
     return {
       id: s.id, start: i, ms: 1, state, fill, label, color: phaseColor(s.id === 'merge' ? 'patch' : 'fix'),
       ...(s.id === 'merge' ? { ink: phaseInkOf('patch', fill) } : {}),
-      ...(fleet ? { title: `${fleet.done.toLocaleString()} of ${fleet.total.toLocaleString()} tests run` } : {}),
+      ...(fleet ? { title: `${fleet.done.toLocaleString()} of ${fleet.total.toLocaleString()} done` } : {}),
     };
   });
 }

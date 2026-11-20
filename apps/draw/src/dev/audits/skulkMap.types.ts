@@ -58,6 +58,12 @@ export interface AuditLane {
   readonly pass?: AuditPass;
 }
 
+/** How far one fleet run has got: `done` of `total`, in whatever unit it counts. */
+export interface FleetProgress {
+  readonly done: number;
+  readonly total: number;
+}
+
 export interface AuditRun {
   readonly running: boolean;
   readonly round: number;
@@ -74,8 +80,8 @@ export interface AuditRun {
   readonly sweepRunning: boolean;
   readonly lastLine: string | null;
   readonly lines: readonly string[];
-  /** How far the batch's fleet run has got, in tests, while one runs. */
-  readonly fleet?: { readonly done: number; readonly total: number } | null;
+  /** How far the batch's two fleet runs have got while they run: its tests, and its postbuild checks. */
+  readonly fleet?: { readonly tests: FleetProgress | null; readonly build: FleetProgress | null } | null;
 }
 
 export interface AuditRound {
