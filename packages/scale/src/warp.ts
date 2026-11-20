@@ -1,5 +1,6 @@
 import { formatNumber, proportion, stepTicks, tickCount, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
+import { tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
 import { lerp } from '@weasel-js/geom';
 
@@ -63,12 +64,11 @@ export function warpTicks(domain: readonly [number, number], to: (value: number)
   return out.sort((a, b) => (d0 <= d1 ? a - b : b - a));
 }
 
-/** The grid a round value sits on, so its label keeps the decimals it has: 0.5 for 2.5, 1 for 2. */
+/** The grid a round value sits on, so its label keeps the decimals it has: 0.1 for 2.5, 0.01 for 1.15, 100 for 200. */
 function gridOf(v: number): number {
   if (v === 0 || !Number.isFinite(v)) return 1;
   const p = 10 ** Math.floor(Math.log10(Math.abs(v)));
-  const m = Math.abs(v) / p;
-  return Math.abs(m - Math.round(m)) < 1e-9 ? p : p / 10;
+  return p / 10 ** tickDecimals([Math.abs(v) / p]);
 }
 
 /** A scale from `domain` onto `range`, linear in `to(value)` and inverted through `from`. Its ticks are spaced
@@ -81,8 +81,7 @@ export function warpScale(opts: WarpScaleOptions): WarpScale {
   const w1 = to(d1);
   const { along, unmap } = proportion(w0, w1);
   const map = (v: number) => (w1 === w0 ? (r0 + r1) / 2 : lerp(r0, r1, along(to(v))));
-  const step = (count = DEFAULT_TICKS) => tickStep(d0, d1, count);
-  const format = (v: number): string => formatNumber(v, step());
+  const format = (v: number): string => formatNumber(v, gridOf(v));
   return {
     kind: 'warp',
     domain: [d0, d1],
@@ -92,7 +91,7 @@ export function warpScale(opts: WarpScaleOptions): WarpScale {
     ticks: (count = DEFAULT_TICKS) => warpTicks([d0, d1], to, from, count),
     format,
     tickFormat() {
-      return replacedFormat(this, format) ?? ((v) => formatNumber(v, gridOf(v)));
+      return replacedFormat(this, format) ?? format;
     },
   };
 }

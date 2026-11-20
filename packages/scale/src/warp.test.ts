@@ -64,4 +64,13 @@ describe('powScale', () => {
   it('refuses an exponent of zero', () => {
     expect(() => powScale({ domain: [0, 1], range: [0, 1], exponent: 0 })).toThrow(/exponent/);
   });
+
+  it('formats a value as its own ticks label it', () => {
+    for (const domain of [[0, 4], [0, 1]] as const) {
+      const s = powScale({ domain, range: [0, 100], exponent: 0.5 });
+      expect(s.ticks().map(s.format)).toEqual(s.ticks().map(s.tickFormat()));
+      expect(new Set(s.ticks().map(s.format)).size).toBe(s.ticks().length);
+    }
+    expect(powScale({ domain: [0, 4], range: [0, 100], exponent: 0.5 }).format(0.15)).toBe('0.15');
+  });
 });
