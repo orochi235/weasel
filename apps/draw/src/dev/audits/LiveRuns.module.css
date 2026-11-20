@@ -122,10 +122,10 @@
   .lanes [data-state='active'] .node { animation: node-pulse 1.34s infinite; }
 }
 
-/* It holds at its lightest and only passes through its darkest: it leaves dark at speed, eases into light, rests
-   there, then accelerates back down. */
+/* It holds at its lightest and only passes through its darkest: it eases into light, rests there, then drops back
+   down and rounds the bottom without resting. */
 @keyframes node-pulse {
-  0%, 100% { color: color-mix(in srgb, #fff 20%, #000); animation-timing-function: cubic-bezier(0.1, 0.7, 0.3, 1); }
+  0%, 100% { color: color-mix(in srgb, #fff 20%, #000); animation-timing-function: cubic-bezier(0.35, 0.2, 0.3, 1); }
   30% { color: color-mix(in srgb, #fff 80%, #000); animation-timing-function: linear; }
-  75% { color: color-mix(in srgb, #fff 80%, #000); animation-timing-function: cubic-bezier(0.7, 0, 0.9, 0.3); }
+  75% { color: color-mix(in srgb, #fff 80%, #000); animation-timing-function: cubic-bezier(0.6, 0, 0.65, 0.8); }
 }
