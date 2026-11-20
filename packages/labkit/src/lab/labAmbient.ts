@@ -26,18 +26,21 @@ export function useLabAmbientHost(): {
   entriesById: ReadonlyMap<string, Contribution<never>>;
   host: LabAmbient;
 } {
-  const [installed, setInstalled] = useState<readonly (readonly Contribution<never>[])[]>([]);
+  const [installed, setInstalled] = useState<
+    readonly { entries: readonly Contribution<never>[] }[]
+  >([]);
   const host = useMemo<LabAmbient>(
     () => ({
       install: (entries) => {
-        setInstalled((prev) => [...prev, entries]);
-        return () => setInstalled((prev) => prev.filter((e) => e !== entries));
+        const own = { entries };
+        setInstalled((prev) => [...prev, own]);
+        return () => setInstalled((prev) => prev.filter((e) => e !== own));
       },
     }),
     [],
   );
   const entriesById = useMemo(
-    () => new Map(installed.flat().map((e) => [e.id, e] as const)),
+    () => new Map(installed.flatMap((i) => i.entries).map((e) => [e.id, e] as const)),
     [installed],
   );
   return { entriesById, host };

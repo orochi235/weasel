@@ -1,4 +1,11 @@
-import { type ColorList, colorAt, colorCount, resolveTheme, type Theme } from '@weasel-js/theme';
+import {
+  type ColorContext,
+  type ColorList,
+  colorAt,
+  colorCount,
+  resolveTheme,
+  type Theme,
+} from '@weasel-js/theme';
 import type { CSSProperties } from 'react';
 
 // Fixed spread of nebula blob positions / sizes / fall-off stops. Colors
@@ -19,7 +26,10 @@ export function buildNebula(
   mode: 'light' | 'dark',
   density: string,
 ): string {
-  const ctx = { theme, resolved: resolveTheme(theme, { mode, density }) };
+  return nebulaLayers(list, { theme, resolved: resolveTheme(theme, { mode, density }) });
+}
+
+function nebulaLayers(list: ColorList, ctx: ColorContext): string {
   const n = colorCount(list, ctx) ?? NEBULA_SLOTS.length;
   const colors = Array.from({ length: n }, (_, i) => colorAt(list, i, ctx));
   const blobs = colors.map((c, i) => {
@@ -39,8 +49,10 @@ export function nebulaStyle(
   mode: 'light' | 'dark',
   density: string,
 ): CSSProperties | undefined {
-  if (mode !== 'dark' || !nebula || colorCount(nebula) === 0) return undefined;
+  if (mode !== 'dark' || !nebula) return undefined;
+  const ctx = { theme, resolved: resolveTheme(theme, { mode, density }) };
+  if (colorCount(nebula, ctx) === 0) return undefined;
   return {
-    ['--wzl-backdrop' as string]: buildNebula(nebula, theme, mode, density),
+    ['--wzl-backdrop' as string]: nebulaLayers(nebula, ctx),
   } as CSSProperties;
 }

@@ -46,4 +46,13 @@ describe('<Lab nebula>', () => {
     };
     expect(backdrop(container)).toContain(`${colorAt({ ramp: 'swatch' }, 2, ctx)} 22%`);
   });
+
+  it('counts a ramp only the lab’s theme declares against that theme', async () => {
+    const theme = { ...interstellarTheme, ramps: { ...interstellarTheme.ramps, aurora: ['sky'] } };
+    const { container } = await renderSettled(
+      <Lab instruments={[bare]} theme={theme} mode="dark" nebula={{ ramp: 'aurora' }} />,
+      { wrapper: withIcons },
+    );
+    expect(backdrop(container).match(/radial-gradient/g)).toHaveLength(2);
+  });
 });
