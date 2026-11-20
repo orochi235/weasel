@@ -36,9 +36,10 @@ import {
   openSubpathAt,
   type AnchorSet, type Rect,
 } from '@weasel-js/geom';
-import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
+import { pathToAnchors, type PointOrigin, type PolygonPath } from '@weasel-js/geom';
 import { rectBetween } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from './editAnchors/editAnchors';
+import { finishPathEditFrame } from './editAnchors/preview';
 import { canDeleteSelectedMark, deleteSelectedMark, markUnder } from './pathEditMarks';
 import { editingLayer, inPlane, pathOperationTags } from '@weasel-js/core';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
@@ -59,21 +60,29 @@ function worldPathOf(dep: EditAnchorsDep): PolygonPath | null {
 }
 
 /**
- * Decode → mutate → encode → commit, in one history entry. Returns false
- * when the edit changed nothing, so callers can skip the commit rather
- * than push an empty undo step.
+ * Commit `next`, an edit of the path in edit mode, as one history entry.
+ * Returns false when it commits nothing: no edit, or one an extension
+ * cannot finish.
  */
+export function commitAnchorFrame(
+  dep: EditAnchorsDep,
+  label: string,
+  next: { path: PolygonPath; origins: readonly (PointOrigin | null)[] } | null,
+): boolean {
+  if (!next || !finishPathEditFrame(dep, dep.editingId, next.path, next.origins)) return false;
+  dep.applyEdit(dep.editingId, next.path, label, next.origins);
+  return true;
+}
+
+/** Decode → mutate → encode → commit, in one history entry
+ *  ({@link commitAnchorFrame}). Returns false when it commits nothing. */
 export function commitAnchorEdit(
   dep: EditAnchorsDep,
   label: string,
   edit: (set: AnchorSet) => boolean | void,
 ): boolean {
   const worldPath = worldPathOf(dep);
-  if (!worldPath) return false;
-  const next = editAnchorSetTracked(worldPath, edit);
-  if (!next) return false;
-  dep.applyEdit(dep.editingId, next.path, label, next.origins);
-  return true;
+  return worldPath !== null && commitAnchorFrame(dep, label, editAnchorSetTracked(worldPath, edit));
 }
 
 /** Whether `edit` would change the edited path, tried on a scratch decode. */
