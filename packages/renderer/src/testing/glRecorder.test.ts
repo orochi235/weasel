@@ -5,6 +5,8 @@
  * `enable(SCISSOR_TEST)` assertion compares 0 to 0, and `drawingBufferHeight`
  * arithmetic yields NaN. These pin the three the target-rect work depends on.
  */
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { createGLRecorder } from './glRecorder';
 import { WeaselRenderer } from '../WeaselRenderer';
@@ -87,5 +89,19 @@ describe('createGLRecorder', () => {
     expect(renderer.isContextLost()).toBe(true);
     expect(recorder.gl.drawingBufferColorSpace).toBe('srgb');
     expect(recorder.calls).toEqual([]);
+  });
+
+  it('knows every constant the renderer names', () => {
+    const { gl } = createGLRecorder();
+    const sources = readdirSync(join(__dirname, '..'), { recursive: true, encoding: 'utf8' })
+      .filter((file) => file.endsWith('.ts') && !file.includes('.test.'));
+    const named = new Set<string>();
+    for (const file of sources) {
+      const text = readFileSync(join(__dirname, '..', file), 'utf8');
+      for (const m of text.matchAll(/\bgl\.([A-Z][A-Z_0-9]+)\b/g)) named.add(m[1]);
+    }
+    expect(named.size).toBeGreaterThan(20);
+    const constants = gl as unknown as Record<string, number>;
+    expect([...named].filter((name) => constants[name] === 0 && name !== 'NO_ERROR' && name !== 'ZERO' && name !== 'NONE').sort()).toEqual([]);
   });
 });

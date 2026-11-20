@@ -47,9 +47,11 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   ARRAY_BUFFER: 0x8892,
   ELEMENT_ARRAY_BUFFER: 0x8893,
   STATIC_DRAW: 0x88E4,
+  DYNAMIC_DRAW: 0x88E8,
   // Types
   FLOAT: 0x1406,
   UNSIGNED_INT: 0x1405,
+  UNSIGNED_SHORT: 0x1403,
   // Primitives
   TRIANGLES: 0x0004,
   // Errors / state
@@ -61,6 +63,9 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   UNPACK_FLIP_Y_WEBGL: 0x9240,
   UNPACK_PREMULTIPLY_ALPHA_WEBGL: 0x9241,
   MAX_TEXTURE_SIZE: 0x0D33,
+  UNPACK_ALIGNMENT: 0x0CF5,
+  RENDERER: 0x1F01,
+  SAMPLES: 0x80A9,
   // Blend factors
   SRC_ALPHA: 0x0302,
   ONE_MINUS_SRC_ALPHA: 0x0303,
@@ -89,6 +94,8 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   TEXTURE_2D: 0x0DE1,
   TEXTURE0: 0x84C0,
   RGBA: 0x1908,
+  RED: 0x1903,
+  R8: 0x8229,
   UNSIGNED_BYTE: 0x1401,
   TEXTURE_MIN_FILTER: 0x2801,
   TEXTURE_MAG_FILTER: 0x2800,
@@ -107,6 +114,8 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   // reads as 0 through the proxy, so `expect(args[0]).toBe(gl.FRAMEBUFFER)`
   // would compare 0 against 0 and pass over a renderer that bound nothing.
   FRAMEBUFFER: 0x8D40,
+  READ_FRAMEBUFFER: 0x8CA8,
+  DRAW_FRAMEBUFFER: 0x8CA9,
   RENDERBUFFER: 0x8D41,
   FRAMEBUFFER_BINDING: 0x8CA6,
   RENDERBUFFER_BINDING: 0x8CA7,
