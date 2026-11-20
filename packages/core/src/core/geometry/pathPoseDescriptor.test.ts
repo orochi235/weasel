@@ -60,4 +60,26 @@ describe('pathPoseDescriptor polygon axes', () => {
     expect(axes.add!(pentagon, new Array(axes.count).fill(1))).toBe(pentagon);
   });
 
+  it('keeps the added pose\'s own commands and fields', () => {
+    const axes = pathPoseDescriptor.axes!(square)!;
+    const evenOdd = { ...square, fillRule: 'evenodd' as const };
+    const moved = axes.add!(evenOdd, new Array(axes.count).fill(1)) as PolygonPath;
+    expect(moved.fillRule).toBe('evenodd');
+    expect(Array.from(moved.coords)).toEqual([1, 1, 11, 1, 11, 11, 1, 11]);
+  });
+});
+
+describe('pathPoseDescriptor.lerp between polygons', () => {
+  const square = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }]);
+
+  it('refuses two polygons whose commands differ', () => {
+    const other = { ...square, commands: Uint8Array.from(square.commands, (c, i) => (i === 2 ? square.commands[0]! : c)) };
+    expect(() => pathPoseDescriptor.lerp!(square, other, 0.5)).toThrow(/incompatible/);
+  });
+
+  it('lands on the end polygon\'s fields at t = 1', () => {
+    const b = { ...square, fillRule: 'evenodd' as const };
+    expect((pathPoseDescriptor.lerp!(square, b, 1) as PolygonPath).fillRule).toBe('evenodd');
+    expect((pathPoseDescriptor.lerp!(square, b, 0) as PolygonPath).fillRule).toBe(square.fillRule);
+  });
 });
