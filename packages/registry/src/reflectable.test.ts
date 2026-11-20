@@ -347,6 +347,19 @@ describe('createReflectable holdPlace', () => {
   });
 });
 
+describe('createReflectable set and rank', () => {
+  it('keeps the replaced registrant\'s rank, so a later lower-rank push stays under it', () => {
+    const r = createReflectable<string>();
+    r.push('k', 'a', { rank: 5 });
+    r.push('k', 'b', { rank: 10 });
+    r.set('k', 'c');
+    expect(r.stack('k').at(-1)).toMatchObject({ value: 'c', rank: 10 });
+    r.push('k', 'd', { rank: 3 });
+    expect(r.get('k')).toBe('c');
+    expect(r.stack('k').map((s) => s.value)).toEqual(['d', 'a', 'c']);
+  });
+});
+
 describe('createReflectable clash warning', () => {
   afterEach(() => {
     vi.restoreAllMocks();

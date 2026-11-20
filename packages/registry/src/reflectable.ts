@@ -89,7 +89,7 @@ export interface Reflectable<V, K = string> extends Reflection<V, K> {
   push(key: K, value: V, options?: PushOptions): () => void;
   /** Replace `key`'s live registrant in place, the way `Map.set` does — for
    *  registries where a second registration means "newer version", not
-   *  "override". Records no conflict. Returns a release that removes this
+   *  "override". The replacement takes the rank of the one it replaces. Records no conflict. Returns a release that removes this
    *  registrant if it is still there, and does nothing once a later `set`
    *  replaced it. */
   set(key: K, value: V, options?: RegisterOptions): () => void;
@@ -245,8 +245,9 @@ export function createReflectable<V, K = string>(options?: ReflectableOptions): 
       };
     },
     set(key, value, options) {
-      const registrant = registrantOf(value, { source: options?.source });
       const stack = stacks.get(key) ?? NONE;
+      const rank = stack.at(-1)?.rank;
+      const registrant = registrantOf(value, { source: options?.source, ...(rank === undefined ? {} : { rank }) });
       stacks.set(key, Object.freeze([...stack.slice(0, -1), registrant]));
       changed();
       return () => {
