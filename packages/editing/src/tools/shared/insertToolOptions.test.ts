@@ -11,7 +11,7 @@ const tools: Array<[string, (o: InsertToolOptions) => unknown]> = [
   ['line', (o) => builtins.useLineTool(o)],
   ['polygon', (o) => builtins.usePolygonTool(o)],
   ['star', (o) => builtins.useStarTool(o)],
-  ['image', (o) => builtins.useImageTool({ src: 'a.png', ...o })],
+  ['image', ({ behaviors }) => builtins.useImageTool({ src: 'a.png', ...(behaviors ? { behaviors } : {}) })],
 ];
 
 describe('drag-to-insert tools carry their behaviors onto the insert binding', () => {

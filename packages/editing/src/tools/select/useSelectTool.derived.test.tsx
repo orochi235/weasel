@@ -85,6 +85,20 @@ describe('useSelectTool — a derived node through a bare adapter', () => {
     expect(beside.selection()).toEqual([]);
   });
 
+  it("picks a straight route, whose box has no area, within pickTolerance of it under 'aabb'", () => {
+    const flat = (options: UseSelectToolOptions<Pose>) => {
+      const h = harness(options);
+      h.items[1] = { id: 'b', pose: { x: 200, y: 0, width: 10, height: 10 } };
+      return h;
+    };
+    const near = flat({ pickTolerance: 2 });
+    near.press(100, 1);
+    expect(near.selection()).toEqual(['edge']);
+    const far = flat({ pickTolerance: 2 });
+    far.press(100, 3);
+    expect(far.selection()).toEqual([]);
+  });
+
   it('follows a dependency the adapter moved', () => {
     const h = harness();
     h.press(150, 50);

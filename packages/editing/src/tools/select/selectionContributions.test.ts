@@ -23,6 +23,13 @@ describe('selectionMoveBindings — binding opts', () => {
     for (const b of bindings) expect(b.opts?.dragThresholdPx).toBe(12);
   });
 
+  it('gives the Alt-drag clone bindings move.dragThresholdPx too: the threshold belongs to the press on the body', () => {
+    const bindings = selectionMoveBindings({ move: { dragThresholdPx: 12 } })
+      .filter((b) => b.actionId === 'clone');
+    expect(bindings.length).toBe(2);
+    for (const b of bindings) expect(b.opts?.dragThresholdPx).toBe(12);
+  });
+
   it('threads the move lifecycle options and expandIds into the move binding params', () => {
     const onRunStart = () => {};
     const onRunEnd = () => {};

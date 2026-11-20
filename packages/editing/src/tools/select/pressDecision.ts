@@ -26,6 +26,9 @@ export interface PressDecision {
  * set, or of the group. A group here is a container whose pose derives from
  * its children; one with its own pose is a place its members sit, and a press
  * picks the member out of it.
+ *
+ * A locked press neither applies nor defers: the release would otherwise
+ * make the change the lock holds back.
  */
 export function pressDecision(
   top: string,
@@ -36,7 +39,9 @@ export function pressDecision(
 ): PressDecision {
   const inMultiSelection = sel.includes(top) && sel.length > 1;
   const defer = !extend && (inMultiSelection || insideSelectedGroup(top, sel, tree));
-  return { applyNow: !defer && !locked, deferred: defer ? top : null };
+  // A locked press changes nothing on the press, and nothing on release either.
+  if (locked) return { applyNow: false, deferred: null };
+  return { applyNow: !defer, deferred: defer ? top : null };
 }
 
 function insideSelectedGroup(top: string, sel: readonly string[], tree: PressTree): boolean {

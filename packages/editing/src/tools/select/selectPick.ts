@@ -4,6 +4,7 @@ import type { NodeId } from '@weasel-js/core';
 import { extendPressLocked, extendsSelection } from './extendPressLocked';
 import { pressTarget, type PressTargetTree } from '@weasel-js/core/engine';
 import { pressDecision, type PressTree } from './pressDecision';
+import type { DeferredClick } from './collapseDeferred';
 import type {} from '@weasel-js/core';
 
 type Between = (from: NodeId, to: NodeId) => readonly NodeId[];
@@ -17,8 +18,8 @@ export interface SelectPickOptions {
   tree: () => PressTree & PressTargetTree;
   /** What a range covers for a press inside `level`, or undefined to walk the selection's order. */
   rangeIn: (level: string | null) => Between | undefined;
-  /** Told the id the press held its click back for, or null. */
-  pressed: (deferred: string | null) => void;
+  /** Told the click the press held back, with the modifiers it was classified with, or null. */
+  pressed: (deferred: DeferredClick | null) => void;
 }
 
 /**
@@ -57,7 +58,7 @@ export function createSelectPickAction(opts: SelectPickOptions): Action {
         const locked = extendPressLocked(intent, mods.shift === true, opts.extendLocked);
         const press = pressDecision(top, sel, extendsSelection(intent), locked, tree);
         if (press.applyNow) applyClickIn(selection, top as NodeId, mods, intent === 'range' ? opts.rangeIn(entered) : undefined);
-        opts.pressed(press.deferred);
+        opts.pressed(press.deferred === null ? null : { id: press.deferred, mods });
       },
     },
   });
