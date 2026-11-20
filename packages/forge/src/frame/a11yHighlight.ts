@@ -34,14 +34,41 @@ export function resolveTarget(doc: Document, target: readonly string[]): Element
   return found;
 }
 
+/** The frame elements between `el` and `doc`, innermost first: each one's document holds the next. */
+function framesBetween(doc: Document, el: Element): Element[] {
+  const frames: Element[] = [];
+  for (let at = el.ownerDocument; at !== doc; ) {
+    const frame = at.defaultView?.frameElement;
+    if (!frame) break;
+    frames.push(frame);
+    at = frame.ownerDocument;
+  }
+  return frames;
+}
+
+/** `el`'s rect in `doc`'s viewport: an element inside a frame is offset by each frame's content box. */
+function rectIn(doc: Document, el: Element): { left: number; top: number; width: number; height: number } {
+  const { left, top, width, height } = el.getBoundingClientRect();
+  let x = left;
+  let y = top;
+  for (const frame of framesBetween(doc, el)) {
+    const at = frame.getBoundingClientRect();
+    const style = frame.ownerDocument.defaultView?.getComputedStyle(frame);
+    x += at.left + frame.clientLeft + (parseFloat(style?.paddingLeft ?? '') || 0);
+    y += at.top + frame.clientTop + (parseFloat(style?.paddingTop ?? '') || 0);
+  }
+  return { left: x, top: y, width, height };
+}
+
 export function createA11yHighlighter(doc: Document): A11yHighlighter {
   let style: HTMLStyleElement | null = null;
   let boxes: { el: Element; box: HTMLElement }[] = [];
-  const view = doc.defaultView;
+  /** `doc`'s window and every frame's a box's element sits in: a scroll in any of them moves the element. */
+  let views: Window[] = [];
 
   const place = () => {
     for (const { el, box } of boxes) {
-      const rect = el.getBoundingClientRect();
+      const rect = rectIn(doc, el);
       box.style.left = `${rect.left}px`;
       box.style.top = `${rect.top}px`;
       box.style.width = `${rect.width}px`;
@@ -52,8 +79,11 @@ export function createA11yHighlighter(doc: Document): A11yHighlighter {
   const clear = () => {
     for (const { box } of boxes) box.remove();
     boxes = [];
-    view?.removeEventListener('scroll', place, true);
-    view?.removeEventListener('resize', place);
+    for (const view of views) {
+      view.removeEventListener('scroll', place, true);
+      view.removeEventListener('resize', place);
+    }
+    views = [];
   };
 
   return {
@@ -75,8 +105,16 @@ export function createA11yHighlighter(doc: Document): A11yHighlighter {
         return { el, box };
       });
       place();
-      view?.addEventListener('scroll', place, true);
-      view?.addEventListener('resize', place);
+      const docs = new Set<Document>([doc]);
+      for (const el of elements) {
+        docs.add(el.ownerDocument);
+        for (const frame of framesBetween(doc, el)) docs.add(frame.ownerDocument);
+      }
+      views = [...docs].map((d) => d.defaultView).filter((v) => v !== null);
+      for (const view of views) {
+        view.addEventListener('scroll', place, true);
+        view.addEventListener('resize', place);
+      }
     },
     dispose() {
       clear();
