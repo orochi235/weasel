@@ -55,6 +55,9 @@ export function inkOn(fill: string, palette: AuditPalette): string {
   return inverse > plain ? palette.inkInverse : palette.ink;
 }
 
+/** Room the pass dots take at a cell's top right, which its label stops short of. */
+const dotsRoom = (passes: number) => (passes > 0 ? Math.min(passes, 4) * 6 + 4 : 0);
+
 function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette): AuditCellData {
   const tone = toneOf(area);
   const fill = tone === 'settled' ? palette.settled : tone === 'unaudited' ? palette.uncharted : palette.depth[tone];
@@ -68,7 +71,7 @@ function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette): AuditC
     ...(tone === 'unaudited' ? { over: { kind: 'hatch', color: palette.hatch, size: 6, lineWidth: 1.6 } } : {}),
     edge: palette.panel,
     ink,
-    ...(labeled ? { label: clip(cellLabelOf(area.id), Math.floor((cell.width - 8) / 6.1)) } : {}),
+    ...(labeled ? { label: clip(cellLabelOf(area.id), Math.floor((cell.width - 8 - dotsRoom(area.passes.length)) / 6.1)) } : {}),
     ...(live ? { live: palette.live } : {}),
     ...(live && area.stage && labeled && cell.height > 38 ? { stage: STAGE_LABEL[area.stage] ?? area.stage } : {}),
     ...(showsQueue ? { queue: area.queue! } : {}),
