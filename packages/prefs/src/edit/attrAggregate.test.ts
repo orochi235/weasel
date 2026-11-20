@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { aggregateAttributes } from './attrAggregate';
+import { aggregateAttributes, setObjectField } from './attrAggregate';
+import { nodeAt } from './schemaEdit';
 import { attributeSchema } from './kindSchemas';
 
 const num = (over: Record<string, unknown> = {}): PrefLeaf =>
@@ -61,3 +62,14 @@ describe('aggregateAttributes', () => {
     expect(both.apart).toEqual(['frame']);
   });
 });
+
+describe('setObjectField', () => {
+  it('removes an object attribute once its last field is cleared, and builds nothing to clear a field never set', () => {
+    const root: PrefGroup = { name: 'R', children: { n: num() } };
+    const set = setObjectField(root, ['n'], 'frame.edge', 1);
+    expect(nodeAt(set, 'n')).toMatchObject({ frame: { edge: 1 } });
+    expect(nodeAt(setObjectField(set, ['n'], 'frame.edge', undefined), 'n')).not.toHaveProperty('frame');
+    expect(nodeAt(setObjectField(root, ['n'], 'frame.a.b', undefined), 'n')).not.toHaveProperty('frame');
+  });
+});
+
