@@ -11,7 +11,7 @@
  */
 
 import { OUTLINE_PRECISION, type FaceEmbedding, type OutlineFace, type OutlineParser } from './OutlineFace';
-import { sfntFromCollection, tableOf } from './sfnt';
+import { postScriptNameOf, sfntFromCollection, tableOf } from './sfnt';
 import { checkCff } from './cffCheck';
 import { checkCmap } from './cmapCheck';
 import { isWoff, sfntFromWoff } from './woff';
@@ -184,9 +184,10 @@ function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer, ascent
 /**
  * Parse font file bytes into a face. Accepts single fonts and collections
  * (`.ttc`, `.dfont`); `postScriptName` picks the member of a collection, and
- * is ignored for a single font. A collection with no member of that name
- * rejects: its first member is usually Regular, and bold text drawn from it
- * is lighter above the outline threshold than below it.
+ * is ignored for a single static font. A collection with no member of that
+ * name rejects: its first member is usually Regular, and bold text drawn from
+ * it is lighter above the outline threshold than below it. A variable font
+ * rejects a name other than its default instance's for the same reason.
  */
 export function createOpenTypeParser(postScriptName?: string): OutlineParser {
   return async (bytes: ArrayBuffer): Promise<OutlineFace> => {
@@ -201,6 +202,14 @@ export function createOpenTypeParser(postScriptName?: string): OutlineParser {
     if (!matched) {
       throw new Error(
         `no member of the font file is named "${postScriptName}" (it holds ${names.join(', ')})`);
+    }
+    // A variable font's nameID 6 names its default instance, the only one whose outlines opentype.js draws.
+    if (postScriptName !== undefined && tableOf(single, 'fvar')) {
+      const defaultName = postScriptNameOf(single);
+      if (defaultName !== postScriptName) {
+        throw new Error(`"${postScriptName}" is not the default instance of its variable font `
+          + `(${defaultName === null ? 'which names none' : `"${defaultName}"`}), and the outline parser draws only that one`);
+      }
     }
     // opentype.js reads `CFF ` whenever the font lacks a glyf and loca pair, whatever its signature says.
     const cff = tableOf(single, 'glyf') && tableOf(single, 'loca') ? null : tableOf(single, 'CFF ');
