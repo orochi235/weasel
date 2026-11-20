@@ -34,7 +34,49 @@ function kernExtension(extensionOffset: number, subtableOffset = 8): number[] {
   ];
 }
 
+/** A PairPos format 1 subtable kerning glyph 1 then `second` by `value`. */
+function pairPos(second: number, value: number): number[] {
+  return [
+    ...u16(1), ...u16(12), ...u16(4), ...u16(0), ...u16(1), ...u16(18), // format, coverage, XAdvance only, one PairSet
+    ...u16(1), ...u16(1), ...u16(1), // Coverage at 12: format 1, glyph 1
+    ...u16(1), ...u16(second), ...u16(value & 0xffff), // PairSet at 18
+  ];
+}
+
+/**
+ * A GPOS whose `DFLT` and `latn` scripts each name one `kern` feature with a lookup of its own, the first holding
+ * `dflt` and the second `latn`.
+ */
+function perScriptKern(dflt: number[], latn: number[]): number[] {
+  const langSys = (feature: number) => [...u16(4), ...u16(0), ...u16(0), ...u16(0xffff), ...u16(1), ...u16(feature)];
+  return [
+    ...u32(0x00010000), ...u16(10), ...u16(48), ...u16(74),
+    // ScriptList at 10: DFLT 14 on, latn 26 on.
+    ...u16(2), 0x44, 0x46, 0x4c, 0x54, ...u16(14), 0x6c, 0x61, 0x74, 0x6e, ...u16(26),
+    ...langSys(0), ...langSys(1),
+    // FeatureList at 48: two `kern` features, 14 and 20 on, naming lookups 0 and 1.
+    ...u16(2), 0x6b, 0x65, 0x72, 0x6e, ...u16(14), 0x6b, 0x65, 0x72, 0x6e, ...u16(20),
+    ...u16(0), ...u16(1), ...u16(0), ...u16(0), ...u16(1), ...u16(1),
+    // LookupList at 74: lookups 6 and 14 on, their subtables at 96 and 120.
+    ...u16(2), ...u16(6), ...u16(14),
+    ...u16(2), ...u16(0), ...u16(1), ...u16(16),
+    ...u16(2), ...u16(0), ...u16(1), ...u16(32),
+    ...dflt, ...latn,
+  ];
+}
+
 describe('gposPairKerning', () => {
+  it('kerns a pair two scripts\' lookups both cover by one script\'s value, not their sum', () => {
+    const kern = gposPairKerning(sfntWithGpos(perScriptKern(pairPos(2, -40), pairPos(2, -50))))!;
+    expect(kern(1, 2)).toBe(-50);
+  });
+
+  it('kerns a pair only another script\'s lookup covers', () => {
+    const kern = gposPairKerning(sfntWithGpos(perScriptKern(pairPos(3, -40), pairPos(2, -50))))!;
+    expect(kern(1, 2)).toBe(-50);
+    expect(kern(1, 3)).toBe(-40);
+  });
+
   it('kerns nothing, rather than throwing, through a subtable that runs past the end of the font', () => {
     const kern = gposPairKerning(sfntWithGpos(kernExtension(0x10000)));
     expect(() => kern?.(1, 2)).not.toThrow();
