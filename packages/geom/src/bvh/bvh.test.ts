@@ -341,4 +341,21 @@ describe('createBvh', () => {
   it('createBvh throws RangeError on a bad dim', () => {
     for (const dim of [0, -1, 1.5, NaN, Infinity]) expect(() => createBvh(dim)).toThrow(RangeError);
   });
+
+  it('bounds holds every item through inserts, updates and removes, and is false when empty', () => {
+    const t = createBvh<number>(2);
+    const out = new Float64Array(4);
+    expect(t.bounds(out)).toBe(false);
+    for (let i = 0; i < 40; i++) t.insert(i, [i, -i, i + 1, -i + 2]);
+    t.update(3, [100, 100, 101, 101]);
+    t.remove(0);
+    expect(t.bounds(out)).toBe(true);
+    for (let i = 1; i < 40; i++) {
+      const b = i === 3 ? [100, 100, 101, 101] : [i, -i, i + 1, -i + 2];
+      expect(out[0]).toBeLessThanOrEqual(b[0]!);
+      expect(out[1]).toBeLessThanOrEqual(b[1]!);
+      expect(out[2]).toBeGreaterThanOrEqual(b[2]!);
+      expect(out[3]).toBeGreaterThanOrEqual(b[3]!);
+    }
+  });
 });

@@ -23,6 +23,9 @@ export interface Bvh<K> {
   refit(): void;
   /** Rebuild the hierarchy top-down from the current boxes. */
   rebuild(): void;
+  /** Write a box holding every item into `out` from `at`, and answer true; false, writing
+   *  nothing, when the tree is empty. It can be looser than the items' union after updates. */
+  bounds(out: Float64Array, at?: number): boolean;
   /** visit returns false to stop. In every query, changing the tree from inside
    *  a visit (insert, update, remove, refit, rebuild) is undefined. */
   queryBox(box: BoxN, visit: (key: K) => boolean | void): void;
@@ -142,6 +145,14 @@ class BvhImpl<K> implements Bvh<K> {
     } finally {
       sc.release();
     }
+  }
+
+  bounds(out: Float64Array, at = 0): boolean {
+    const t = this.tree;
+    if (t.root === -1) return false;
+    const s = 2 * this.dim;
+    out.set(t.nodeBox.subarray(t.root * s, t.root * s + s), at);
+    return true;
   }
 
   rebuild(): void {

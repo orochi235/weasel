@@ -24,6 +24,7 @@ import { withPaintOverrides, type PaintOverrides } from './paintOverrides';
 import type { SceneViewDrawOne } from './NodeShape';
 import { paintedSceneLayers } from './sceneLayerPaint';
 import { cullDrawCommands } from '@weasel-js/renderer';
+import { sceneSubtreeCull } from './reach/sceneVisibility';
 import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { paintBoundsFor } from './defaultDrawOne';
 import { pixelScaleCtx } from './pixelScale';
@@ -193,6 +194,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
       : undefined,
     camera,
     nodeShapesOf(scene),
+    cullRect && cull?.paintBounds ? sceneSubtreeCull(scene, cull.paintBounds, cullRect) as Parameters<typeof buildSceneTree>[9] : undefined,
   );
   const children = cull && cullRect ? cullDrawCommands(tree, viewToMat3(view), cullRect, cull.dpr) : tree;
   if (extraCommands && extraCommands.length > 0) {
