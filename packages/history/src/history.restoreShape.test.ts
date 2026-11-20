@@ -12,4 +12,11 @@ describe('History.restore — a snapshot of the wrong shape', () => {
     expect(h.restore(bad, { recovery: 'best-effort' }).restored).toBe(false);
     expect(h.branches()).toEqual([]);
   });
+
+  it('refuses a snapshot in a version it does not read', () => {
+    const h = createHistory(undefined);
+    const later = snapshotOf({ version: 2 as 1 });
+    expect(() => h.restore(later)).toThrow(/version/);
+    expect(h.restore(later, { recovery: 'best-effort' }).restored).toBe(false);
+  });
 });
