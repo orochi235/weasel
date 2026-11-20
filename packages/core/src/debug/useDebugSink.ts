@@ -26,15 +26,29 @@ const OFF = { sink: null, overlay: null, frameStats: false };
  * reads `?debug=…` from the URL, `false` forces it off, and a config forces it
  * on. Keyed on the config's content, so one written inline keeps its sink, and
  * what the sink and the overlay have accumulated, from render to render.
+ * `highlight` is left out of the key: an inspector changes it on every hover,
+ * so it is written into the live config, and only the overlay is replaced.
  */
 export function useDebugSink(debug: DebugFlags | false | undefined): SurfaceDebug {
-  const key = debug === undefined ? undefined : JSON.stringify(debug);
-  const state = useMemo(() => {
+  const { highlight, ...rest }: DebugFlags = debug || {};
+  const key = debug === undefined ? undefined : debug === false ? 'false' : JSON.stringify(rest);
+  const highlightKey = JSON.stringify(highlight ?? null);
+  const base = useMemo(() => {
     const config = resolveDebugFlags(key === undefined ? undefined : JSON.parse(key) as DebugFlags | false);
-    if (!config) return OFF;
-    const sink = createDebugSink(config);
-    return { sink, overlay: createDebugOverlayLayer({ sink, config }), frameStats: config.fps === true };
+    if (!config) return null;
+    const live: DebugFlags = { ...config };
+    const setHighlight = (ids: readonly string[] | null): void => {
+      if (ids) live.highlight = ids;
+      else delete live.highlight;
+    };
+    const sink = createDebugSink(live);
+    return { setHighlight, sink, overlay: createDebugOverlayLayer({ sink, config: live }), frameStats: config.fps === true };
   }, [key]);
+  const state = useMemo(() => {
+    if (!base) return OFF;
+    base.setHighlight(JSON.parse(highlightKey) as string[] | null);
+    return { sink: base.sink, overlay: { ...base.overlay }, frameStats: base.frameStats };
+  }, [base, highlightKey]);
   const committed = useLatest(state.sink);
   const getDebug = useCallback(() => committed.current, [committed]);
   return { ...state, getDebug };
