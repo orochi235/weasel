@@ -24,6 +24,8 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   `summary` and roles `tab`, `option`, `radio`, `menuitemcheckbox` and `menuitemradio` now count as
   controls a host leaves a press to, and the last three also own Space and Enter. A dispatcher surface
   whose children carry those roles takes them with `controls: 'take'`, as the segment sweep does.
+- 2026-11-20: `routeToSpec` (and so `bindingSpec`) throws on `hover(*)` rather than reading it as
+  `hover(move)`: a `HoverSpec` moves or leaves, never both, so a binding for both is two routes.
 - 2026-10-20 (overnight pass): The pointer recognizer measures the double-click window and the
   multitouch tap's hold from a sample's `timeStamp` (the pointer channel passes `e.timeStamp`),
   falling back to handling time when the stamp is missing, 0, or later than the clock (jsdom stamps
