@@ -48,8 +48,8 @@ try {
   say(`${git('log', '-1', '--format=%h %s', commit)}${branch ? ` (${branch})` : ''}`);
   const base = git('merge-base', commit, 'origin/main');
   const commitEnv = armTree(tree, { commit, files: changedFiles(git('diff', '--raw', '--no-renames', '--no-abbrev', '-z', base, commit)) });
-  const jobs = MODES[mode](tree);
-  for (const job of jobs) {
+  const steps = MODES[mode](tree);
+  for (const job of steps) {
     const started = Date.now();
     const result = await ontoWhenFree(
       ['do', '--kind', job.kind, '--icon', job.icon, '--in', job.tree, '--ref', base, '--timeout', '90m',
