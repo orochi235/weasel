@@ -253,3 +253,19 @@ describe('d3Bind join — mappers', () => {
     expect(s.scene.current.get('b' as never)).toBeUndefined();
   });
 });
+
+describe('d3Bind transition — nothing to tween', () => {
+  it('lasts its duration, as a d3 transition does', async () => {
+    const s = setup();
+    act(() => void s.bind([{ id: 'a', x: 0 }]));
+    const sel = s.bind([{ id: 'a', x: 0 }]);
+    act(() => void sel.transition().end());
+    s.play(300);
+    let end!: Promise<void>;
+    act(() => { end = sel.transition().duration(200).end(); });
+    s.play(100);
+    expect(await settled(end)).toBe(false);
+    s.play(150);
+    expect(await settled(end)).toBe(true);
+  });
+});

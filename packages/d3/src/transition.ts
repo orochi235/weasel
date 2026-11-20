@@ -5,7 +5,7 @@ import { createTransitionHandle, type StageSettings } from './transitionHandle';
 import { createTransitionProgress } from './transitionProgress';
 import { createStageRemoval } from './transitionRemoval';
 import { createItemRuns } from './transitionRuns';
-import { customTweenJob, poseTweenJob, type TweenJob } from './transitionTweens';
+import { customTweenJob, holdJob, poseTweenJob, type TweenJob } from './transitionTweens';
 import type { D3Transition } from './types';
 
 interface TransitionCtx<TData, TPose> {
@@ -123,6 +123,8 @@ function itemJobs<TData, TPose>(
       (value) => { if (!lost()) ct.apply(d, id, value); },
     ));
   }
+  // With nothing to tween, the item still lasts its duration, as a d3 transition does.
+  if (jobs.length === 0) jobs.push(holdJob(animator, settings, transitionCancelKey(scene, name, id)));
   return jobs;
 }
 

@@ -75,3 +75,16 @@ export function customTweenJob<TData>(
     onCancel: canceled,
   });
 }
+
+/** The job that only lasts the transition's duration: for an item with nothing to tween. */
+export function holdJob(animator: Animator, timing: TweenTiming, cancelKey: string): TweenJob {
+  return (done, canceled) => animator.tween({
+    from: 0,
+    to: 1,
+    ms: timing.duration,
+    cancelKey,
+    onTick: () => {},
+    onDone: done,
+    onCancel: canceled,
+  });
+}
