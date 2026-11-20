@@ -1,5 +1,5 @@
 import type { Action, InvocationCtx } from '@weasel-js/routing';
-import { defineAction, resolveParams } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
 import type { Scene, NodeId, Op } from '@weasel-js/core';
 import { commitOps, inheritedPaintIn, paintInheritors } from '@weasel-js/core/engine';
 import { INHERIT } from '@weasel-js/paint';
@@ -36,6 +36,9 @@ export interface PaintActionSpec<TState, TValue, K extends string, P> {
    *  a node with `fill: null` paints no fill. Handing back `prev`, or a value
    *  equal to it, leaves the node out of the preview and the commit. */
   merge(prev: TValue | null | undefined, state: TState): TValue | null;
+  /** Whether some run could change a node holding `prev`. The action is
+   *  `NotApplicable` while no operand passes. Omitted, every node can change. */
+  writable?(prev: TValue | null | undefined): boolean;
 }
 
 /** `v` when it is a finite number, else `fallback`: how a paint action reads a numeric param. */
@@ -163,6 +166,12 @@ export function createPaintAction<TState, TValue, K extends string, P>(
         };
       },
     },
-    enabled: requiresContent(1),
+    enabled: (deps) => {
+      const given = requiresContent(1)(deps);
+      const scene = deps?.scene as Scene<Data, string, unknown> | undefined;
+      if (given !== true || !spec.writable || !scene) return given;
+      const ids = operandContent(deps);
+      return ids.some((id) => scene.get(id) && spec.writable!(baseOf(scene, id))) ? true : ActionDisabledReason.NotApplicable;
+    },
   });
 }

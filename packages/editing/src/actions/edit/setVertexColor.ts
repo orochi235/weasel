@@ -21,8 +21,9 @@ const rgbaOf = (v: unknown): Rgba | undefined =>
  * `params.index` names an anchor and `params.rgba` its new color (ignored
  * unless four finite numbers), written into each selected node's
  * `data.vertexColors` (one RGBA per anchor of its path), leaving the other
- * anchors alone. A node with no vertex colors, or fewer
- * anchors than `index` names, is left as it is.
+ * anchors alone. A node with no vertex colors, or fewer anchors than `index`
+ * names, is left as it is; the action is `NotApplicable` while no selected
+ * node has any.
  */
 export const setVertexColorAction: Action = createPaintAction<
   SetVertexColorState,
@@ -40,6 +41,7 @@ export const setVertexColorAction: Action = createPaintAction<
     if (rgba === undefined && index === undefined) return null;
     return { index: index ?? prev.index, rgba: rgba ?? prev.rgba };
   },
+  writable: (prev) => Array.isArray(prev) && prev.length >= 4,
   merge: (prev, { index, rgba }) => {
     if (!prev || !rgba || !Number.isInteger(index) || index < 0 || index * 4 + 4 > prev.length) return prev ?? null;
     const next = [...prev];
