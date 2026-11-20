@@ -134,14 +134,18 @@ export function linkFaces(xs: readonly number[], ys: readonly number[], origin: 
 
 /**
  * The arrangement of `lines`. Points closer than `eps` per axis are one
- * vertex; `eps` defaults to a billionth of the largest coordinate.
+ * vertex; `eps` defaults to a billionth of the lines' span, and no finer than
+ * a few ulps of their largest coordinate.
  */
 export function arrangeLines(lines: readonly LineSeg[], eps?: number): Arrangement {
-  let extent = 0;
+  let magnitude = 0;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   const segs: Seg[] = [];
   for (const l of lines) {
     if (l.ax === l.bx && l.ay === l.by) { segs.push({ ...l, minX: NaN, maxX: NaN, minY: NaN, maxY: NaN, cuts: [] }); continue; }
-    extent = Math.max(extent, Math.abs(l.ax), Math.abs(l.ay), Math.abs(l.bx), Math.abs(l.by));
+    magnitude = Math.max(magnitude, Math.abs(l.ax), Math.abs(l.ay), Math.abs(l.bx), Math.abs(l.by));
+    x0 = Math.min(x0, l.ax, l.bx); x1 = Math.max(x1, l.ax, l.bx);
+    y0 = Math.min(y0, l.ay, l.by); y1 = Math.max(y1, l.ay, l.by);
     segs.push({
       ax: l.ax, ay: l.ay, bx: l.bx, by: l.by,
       minX: Math.min(l.ax, l.bx), maxX: Math.max(l.ax, l.bx),
@@ -149,7 +153,7 @@ export function arrangeLines(lines: readonly LineSeg[], eps?: number): Arrangeme
       cuts: [],
     });
   }
-  const tol = eps ?? 1e-9 * Math.max(1, extent);
+  const tol = eps ?? (Math.max(1e-9 * Math.max(x1 - x0, y1 - y0), 16 * Number.EPSILON * magnitude) || 1e-9);
   const live = segs.filter((s) => !Number.isNaN(s.minX));
   cutAll(live, tol);
 

@@ -2935,3 +2935,7 @@ Calls the lanes made without a ruling:
   then `DFLT`'s, then the rest in ScriptList order, and taking the first whose lookups cover the pair. Layout knows
   no run's script, so picking one script for every pair was the alternative, and loses kerning other scripts' lookups
   alone carry.
+## Audit round forty-nine (2026-11-20): geom booleans
+
+- 2026-11-20 (the fixer's call): `pathFaceArrangement` throws a `RangeError` for a `flattenTolerance` that is not a
+  positive finite number. Clamping it to some floor, or reading it as the default, was the alternative.

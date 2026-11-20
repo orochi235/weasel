@@ -42,3 +42,10 @@ describe('snipPathsAtCrossings', () => {
     expect(snipPathsAtCrossings([loop, line(50, 0, 60, 0)])).toEqual([null, null]);
   });
 });
+
+describe('snipPathsAtCrossings at a closed cutter\'s first point', () => {
+  it('cuts a line crossing a rect at the corner its outline starts from', () => {
+    const [cutLine] = snipPathsAtCrossings([line(-1, -1, 1, 1), { kind: 'rect', x: 0, y: 0, width: 4, height: 4 }]);
+    expect(cutLine!.map(ends)).toEqual([[[-1, -1], [0, 0]], [[0, 0], [1, 1]]]);
+  });
+});
