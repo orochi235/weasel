@@ -29,12 +29,12 @@ function makeScene(): Scene<unknown, string, unknown> {
 }
 
 /** The top-left handle dragged from the container's corner to `to`. */
-function ctxAt(scene: Scene<unknown, string, unknown>, to: { x: number; y: number }): InvocationCtx {
+function ctxAt(scene: Scene<unknown, string, unknown>, to: { x: number; y: number }, deps: object = {}): InvocationCtx {
   return {
     world: to,
     screen: to,
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { operands: { get: () => [BOX] as NodeId[] }, scene },
+    deps: { operands: { get: () => [BOX] as NodeId[] }, scene, ...deps },
     drag: {
       start: { x: 100, y: 100 }, current: to, delta: { x: to.x - 100, y: to.y - 100 },
       affordance: { kind: 'handle:top-left', targetIds: [BOX as string], anchor: { x: 'max', y: 'max' } },
@@ -73,6 +73,22 @@ describe('resizing a frame', () => {
     const ops = resizeSelectionOps(scene, [BOX], { x: 'max', y: 'max' }, units, {}, 'Scale');
     scene.applyBatch(ops, 'Scale', defaultCommitAdapter(scene));
     expect(scene.get(BOX)!.pose).toMatchObject({ x: 40, y: 60, width: 260, height: 140 });
+    expect(worldAt(scene, KID)).toEqual({ x: 150, y: 150 });
+    expect(worldAt(scene, INNER)).toEqual({ x: 200, y: 120 });
+  });
+
+  it('leaves its contents where they drew when its data takes a drag past its far edge', () => {
+    const scene = makeScene();
+    // A projection that answers for the frame: its pose commits normalized, the mirror going to its data.
+    const geometryProjection = { transform: (node: { id?: string; data: unknown }) => (node.id === BOX ? { mirrored: true } : null) };
+    const deps = { geometryProjection };
+    const handle = resizeAction.invoker!.timing === 'ongoing'
+      ? resizeAction.invoker!.start(ctxAt(scene, { x: 100, y: 100 }, deps), undefined) as OngoingHandle
+      : null;
+    handle!.onMove!(ctxAt(scene, { x: 400, y: 60 }, deps));
+    expect(worldAt(scene, KID)).toEqual({ x: 150, y: 150 });
+    handle!.onEnd!(ctxAt(scene, { x: 400, y: 60 }, deps), 'commit');
+    expect(scene.get(BOX)!.pose).toMatchObject({ x: 300, y: 60, width: 100, height: 140 });
     expect(worldAt(scene, KID)).toEqual({ x: 150, y: 150 });
     expect(worldAt(scene, INNER)).toEqual({ x: 200, y: 120 });
   });

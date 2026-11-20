@@ -4,6 +4,7 @@ import { defaultCommitAdapter, type GeometryProjection } from '@weasel-js/core/e
 import { commitRunOps, reduceBehaviorEnd } from '@weasel-js/core';
 import type { PoseDescriptor } from '@weasel-js/core/engine';
 import type { ResizeFrame, ResizeSession } from './session';
+import { holdInPlace, type HeldNode } from './held';
 import * as coreOps from '@weasel-js/core/ops';
 
 /** The op mapping a leaf's data-held geometry by the box→box affine its pose
@@ -44,18 +45,16 @@ function projectedGeometry(
 
 /** One transform op per write id, `from` the pose stored at press and `to`
  *  its preview, each preceded by its data op when the geometry projection
- *  answers for the node. A node no longer in the scene is skipped, as the move's commit skips it. */
+ *  answers for the node. A node a written frame holds is posed against the
+ *  pose its frame commits, which the projection may have normalized. A node no
+ *  longer in the scene is skipped, as the move's commit skips it. */
 export function resizeOps(
-  leaves: Pick<ResizeSession, 'scene' | 'writeIds' | 'startPoses' | 'geometryOf' | 'geometryProjection'> & Partial<Pick<ResizeSession, 'held'>>,
+  leaves: Pick<ResizeSession, 'scene' | 'writeIds' | 'startPoses' | 'geometryOf' | 'geometryProjection'> & Partial<Pick<ResizeSession, 'held' | 'poseFrame'>>,
   previews: ReadonlyMap<NodeId, unknown>,
   label: string,
 ): Op[] {
-  const ops: Op[] = [];
-  for (const [id, h] of leaves.held ?? []) {
-    if (!leaves.scene.get(id)) continue;
-    const to = previews.get(id);
-    if (to !== undefined) ops.push(coreOps.setPose<unknown>({ id: id as string, from: h.from, to, label }));
-  }
+  const written: Op[] = [];
+  const renormalized = new Map<NodeId, unknown>();
   for (const id of leaves.writeIds) {
     const next = previews.get(id);
     if (next === undefined) continue;
@@ -68,13 +67,24 @@ export function resizeOps(
         leaves.geometryProjection, leaves.geometryOf(id), { id: id as string, data: node.data }, from, next, label,
       );
       if (projected) {
-        ops.push(projected.dataOp);
+        written.push(projected.dataOp);
         to = projected.pose;
+        if (to !== next) renormalized.set(id, to);
       }
     }
-    ops.push(coreOps.setPose<unknown>({ id: id as string, from, to, label }));
+    written.push(coreOps.setPose<unknown>({ id: id as string, from, to, label }));
   }
-  return ops;
+  const held = leaves.held ?? new Map<NodeId, HeldNode>();
+  const heldPoses = renormalized.size > 0 && leaves.poseFrame
+    ? holdInPlace(new Map([...previews, ...renormalized]), held, leaves.poseFrame)
+    : previews;
+  const ops: Op[] = [];
+  for (const [id, h] of held) {
+    if (!leaves.scene.get(id)) continue;
+    const to = heldPoses.get(id);
+    if (to !== undefined) ops.push(coreOps.setPose<unknown>({ id: id as string, from: h.from, to, label }));
+  }
+  return [...ops, ...written];
 }
 
 /** What {@link commitResize} put in the document: nothing, the resized box,
