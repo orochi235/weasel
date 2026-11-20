@@ -111,7 +111,7 @@ describe('scheduleGantt', () => {
     expect(excluded(at('2026-01-10'))).toBe(false);
     const none = () => false;
     expect(addGanttDuration(at('2026-01-05'), 1.5, 'h', none)).toBe(at('2026-01-05') + 5_400_000);
-    expect(addGanttDuration(at('2026-01-31'), 1, 'M', none)).toBe(at('2026-03-03'));
+    expect(addGanttDuration(at('2026-01-31'), 1, 'M', none)).toBe(at('2026-02-28'));
     expect(addGanttDuration(at('2026-01-05'), 1, 'y', none)).toBe(at('2027-01-05'));
     expect(addGanttDuration(at('2026-01-05'), 100, 'ms', none)).toBe(at('2026-01-05') + 100);
   });

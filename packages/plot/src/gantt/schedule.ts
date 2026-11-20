@@ -51,11 +51,16 @@ export function excludedDays(data: GanttData): (t: number) => boolean {
   return (t) => weekdays.has(new Date(t).getUTCDay()) || dates.has(dayOf(t));
 }
 
-/** `t` moved by `months` calendar months; past the instants a `Date` holds, by 30 days a month. */
+/** `t` moved by `months` calendar months, a day past the target month's last held to it, as Day.js adds months; past
+ *  the instants a `Date` holds, by 30 days a month. */
 function addMonths(t: number, months: number): number {
   const whole = Math.trunc(months);
   const d = new Date(t);
-  d.setUTCMonth(d.getUTCMonth() + whole);
+  const day = d.getUTCDate();
+  d.setUTCMonth(d.getUTCMonth() + whole, 1);
+  const last = new Date(d.getTime());
+  last.setUTCMonth(last.getUTCMonth() + 1, 0);
+  d.setUTCDate(Math.min(day, last.getUTCDate()));
   const at = d.getTime() + (months - whole) * 30 * DAY;
   return Number.isNaN(at) ? t + months * 30 * DAY : at;
 }
@@ -83,11 +88,21 @@ function endAfter(start: number, amount: number, unit: GanttUnit, excluded: (t: 
 export function ganttDurationBetween(start: number, end: number, unit: GanttUnit, excluded: (t: number) => boolean): number {
   const fixed = FIXED[unit];
   if (fixed !== undefined) return Math.round((end - start) / fixed);
-  if (unit === 'M' || unit === 'y') return Math.round((end - start) / ((unit === 'y' ? 365.25 : 30.44) * DAY));
+  if (unit === 'M' || unit === 'y') return monthsBetween(start, end, unit === 'y' ? 12 : 1);
   const steps = Math.min(WALK_LIMIT, Math.round((end - start) / DAY));
   let days = 0;
   for (let k = 0; k < steps; k++) if (!excluded(start + k * DAY)) days++;
   return unit === 'w' ? Math.round(days / 7) : days;
+}
+
+/** The whole number of `per`-month steps from `start` whose end by {@link addMonths} falls nearest `end`. */
+function monthsBetween(start: number, end: number, per: number): number {
+  const guess = Math.round((end - start) / (per * 30.44 * DAY));
+  let best = guess;
+  for (const n of [guess - 1, guess + 1]) {
+    if (Math.abs(addMonths(start, n * per) - end) < Math.abs(addMonths(start, best * per) - end)) best = n;
+  }
+  return best;
 }
 
 /** A day from `t`, or as far as the next double can be where a day is too fine to move it. */
