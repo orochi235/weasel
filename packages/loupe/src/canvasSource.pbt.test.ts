@@ -2,7 +2,7 @@
  * Stateful property test of a canvas source against a model of its readers and frames: readers retained and
  * released (twice, too), captures, canvas resizes to any size, zero included, and reads, on a canvas, a context that
  * keeps its buffer, and one that does not. After every step the frame a reader gets, the redraws asked for, the frame
- * subscribers told, and the one warning about a missing `capture()` are the model's.
+ * subscribers told, and the warnings about a missing `capture()` and a missing `retain()` are the model's.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
@@ -21,7 +21,7 @@ beforeEach(() => { vi.stubGlobal('OffscreenCanvas', FakeOffscreen); });
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 type Kind = 'canvas' | 'kept' | 'cleared';
-interface Model { captured: boolean; readers: number; current: boolean; snapshot: { width: number; height: number } | null; missed: number; warned: boolean; redraws: number; frames: number }
+interface Model { captured: boolean; readers: number; current: boolean; snapshot: { width: number; height: number } | null; missed: number; warned: boolean; unheld: boolean; redraws: number; frames: number }
 interface Real {
   source: CanvasSource; canvas: { width: number; height: number };
   releases: (() => void)[]; redraws: number; frames: number; warns: number;
@@ -31,7 +31,7 @@ const seen = tally();
 
 function check(m: Model, r: Real): void {
   expect(r.source.captured).toBe(m.captured);
-  expect([r.redraws, r.frames, r.warns]).toEqual([m.redraws, m.frames, m.warned ? 1 : 0]);
+  expect([r.redraws, r.frames, r.warns]).toEqual([m.redraws, m.frames, (m.warned ? 1 : 0) + (m.unheld ? 1 : 0)]);
 }
 
 /** What `frame()` answers, read as a reader would, the model stepping its missed count alongside. */
@@ -45,8 +45,14 @@ function read(m: Model, r: Real): void {
     seen.count('read a capture');
   } else {
     expect(got).toBeNull();
-    if (!m.warned && ++m.missed >= 120) { m.warned = true; seen.count('warned'); }
+    miss(m);
   }
+}
+
+/** A captured source read with no frame: one warning for reading it unheld, another for 120 held reads with no capture. */
+function miss(m: Model): void {
+  if (m.readers === 0) { if (!m.unheld) { m.unheld = true; seen.count('warned unheld'); } return; }
+  if (!m.warned && ++m.missed >= 120) { m.warned = true; seen.count('warned'); }
 }
 
 const cmd = (label: string, run: (m: Model, r: Real) => void, ...args: unknown[]): fc.Command<Model, Real> => ({
@@ -67,6 +73,7 @@ const commands = [
     release();
     if (twice) { release(); seen.count('released twice'); }
     m.readers--;
+    if (m.readers === 0) { m.current = false; m.snapshot = null; }
   }, n, twice)),
   fc.constant(cmd('capture', (m, r) => {
     r.source.capture();
@@ -84,7 +91,7 @@ const commands = [
   fc.record({ x: fc.oneof({ weight: 4, arbitrary: fc.integer({ min: -2, max: 20 }) }, fc.constantFrom(NaN, Infinity, -0.5, 63.999)), y: fc.integer({ min: -2, max: 12 }) }).map((p) => cmd('pixel', (m, r) => {
     const frameSize = !m.captured ? r.canvas : m.current ? m.snapshot : null;
     const got = r.source.pixel(p);
-    if (m.captured && !(m.current && m.snapshot) && !m.warned && ++m.missed >= 120) m.warned = true;
+    if (m.captured && !(m.current && m.snapshot)) miss(m);
     const on = frameSize !== null && frameSize.width > 0 && frameSize.height > 0
       && Math.floor(p.x) >= 0 && Math.floor(p.y) >= 0 && Math.floor(p.x) < frameSize.width && Math.floor(p.y) < frameSize.height;
     seen.count(on ? 'pixel on the frame' : 'pixel off it');
@@ -102,7 +109,7 @@ function setup(kind: Kind): () => { model: Model; real: Real } {
     vi.spyOn(console, 'warn').mockImplementation(() => { real.warns++; });
     real.source = createCanvasSource(target as never, { requestRedraw: () => { real.redraws++; } });
     real.source.subscribeFrame(() => { real.frames++; });
-    const model: Model = { captured: kind === 'cleared', readers: 0, current: false, snapshot: null, missed: 0, warned: false, redraws: 0, frames: 0 };
+    const model: Model = { captured: kind === 'cleared', readers: 0, current: false, snapshot: null, missed: 0, warned: false, unheld: false, redraws: 0, frames: 0 };
     return { model, real };
   };
 }
@@ -115,5 +122,6 @@ describe('createCanvasSource', () => {
     }), runs(RUNS));
     for (const what of ['read the canvas', 'read a capture', 'released twice', 'pixel on the frame', 'pixel off it', 'empty canvas']) seen.atLeast(what, RUNS / 10);
     seen.atLeast('warned', 3);
+    seen.atLeast('warned unheld', 3);
   }, timeoutFor(RUNS, 20));
 });

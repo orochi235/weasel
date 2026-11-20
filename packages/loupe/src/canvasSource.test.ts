@@ -68,6 +68,7 @@ describe('createCanvasSource', () => {
   });
 
   it('copies nothing while no reader holds it', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const s = createCanvasSource(gl(false));
     s.capture();
     expect(made).toHaveLength(0);
@@ -141,6 +142,28 @@ describe('createCanvasSource', () => {
     s.retain();
     for (let i = 0; i < 500; i++) s.frame();
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('answers no frame once its last reader lets go, and drops the copy', () => {
+    const s = createCanvasSource(gl(false));
+    const release = s.retain();
+    s.capture();
+    expect(s.frame()).toBe(made[0]);
+    release();
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect(s.frame()).toBeNull();
+    expect(s.pixel({ x: 1, y: 1 })).toBeNull();
+  });
+
+  it('warns that a captured source read with no reader holding it must be retained', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const s = createCanvasSource(gl(false));
+    s.capture();
+    expect(s.frame()).toBeNull();
+    s.frame();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toMatch(/retain\(\)/);
+    expect(String(warn.mock.calls[0][0])).not.toMatch(/nothing has called capture/);
   });
 
   it('reads a backing-store pixel, and nothing off the canvas', () => {

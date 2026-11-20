@@ -124,7 +124,8 @@ export function createSampler(sources: readonly PixelSource[] | (() => readonly 
  * A canvas source as one layer of a sampled picture: a surface point in CSS
  * px lands on the backing-store pixel of the canvas laid over `box`, scaled
  * per axis, so a canvas stretched unevenly is read correctly too. Nothing is
- * read while `box` answers `null`.
+ * read while `box` answers `null`. It does not hold `source`: a captured one
+ * answers only while something has it retained.
  */
 export function canvasPixelSource(source: CanvasSource, box: () => Rect | null): PixelSource {
   return {
