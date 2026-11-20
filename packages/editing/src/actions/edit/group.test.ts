@@ -367,3 +367,29 @@ describe('ungroupAction enabled', () => {
     expect(ungroupAction.enabled?.(stubDeps({ scene, operands: makeSelection([leaf, box]) }))).toBe(true);
   });
 });
+
+describe('groupAction — per-node descriptors', () => {
+  it("sizes the container to each member's own descriptor", () => {
+    type Box = { x: number; y: number; width: number; height: number };
+    const rect = {
+      getBounds: (p: Box) => p,
+      remapBounds: (p: Box) => p,
+      fromBounds: (b: Box) => ({ ...b }),
+    };
+    // A ball draws the circle its box circumscribes.
+    const ball = {
+      ...rect,
+      getBounds: (p: Box) => {
+        const r = Math.max(p.width, p.height) / 2;
+        return { x: p.x + p.width / 2 - r, y: p.y + p.height / 2 - r, width: 2 * r, height: 2 * r };
+      },
+    };
+    const poseDescriptor = { ...rect, forNode: (node: { kind: string }) => (node.kind === 'ball' ? ball : undefined) };
+    const scene = makeScene();
+    const a = scene.add({ kind: 'ball', layer: 'main', pose: { x: 0, y: 0, width: 40, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 50, y: 0, width: 10, height: 10 }, data: {} });
+    const selection = makeSelection([a, b]);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection, poseDescriptor } as never, undefined as never);
+    expect(scene.get(selection.get()[0]!)!.pose).toEqual({ x: 0, y: -15, width: 60, height: 40 });
+  });
+});
