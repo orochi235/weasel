@@ -7,7 +7,7 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 6px 18px;
+  gap: var(--wzl-space-3) 18px;
   padding: var(--wzl-space-3) var(--wzl-space-4);
   background: var(--audit-panel);
   border: 1px solid var(--audit-rule);
@@ -45,9 +45,8 @@
 }
 
 .spend {
-  font-family: var(--wzl-font-mono);
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   font-size: var(--wzl-font-size-sm);
-  font-variant-numeric: tabular-nums;
   text-align: end;
   white-space: nowrap;
 }
@@ -63,20 +62,20 @@
 .lanes {
   grid-column: 1 / -1;
   overflow-x: auto;
-  margin-top: 4px;
+  margin-top: var(--wzl-space-2);
 }
 
 .grid {
   display: grid;
   grid-template-columns: minmax(150px, max-content) repeat(5, minmax(96px, 1fr));
-  gap: 3px 4px;
+  gap: 3px var(--wzl-space-2);
   min-width: 640px;
 }
 
 .row { display: contents; }
 
 .head {
-  padding: 0 6px 2px;
+  padding: 0 var(--wzl-space-3) var(--wzl-space-1);
   font-size: var(--wzl-font-size-2xs);
   font-weight: var(--wzl-font-weight-bold);
   letter-spacing: 0.08em;
@@ -87,7 +86,7 @@
 .nameCell {
   font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-sm);
-  padding: 4px 6px 4px 0;
+  padding: var(--wzl-space-2) var(--wzl-space-3) var(--wzl-space-2) 0;
   white-space: nowrap;
 }
 
@@ -104,12 +103,11 @@
 .name:focus-visible { color: var(--audit-live); }
 
 .seg {
-  padding: 4px 7px;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  padding: var(--wzl-space-2) 7px;
   border: 1px dashed var(--audit-rule);
   border-radius: 3px;
-  font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-xs);
-  font-variant-numeric: tabular-nums;
   color: var(--audit-muted);
   white-space: nowrap;
   overflow: hidden;

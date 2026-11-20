@@ -2,7 +2,7 @@
 import { asNodeId, contrastRatio, createScene, nodeShapesOf, type NodeId, type RectPose, type Scene } from '@weasel-js/core';
 import { deepEqual } from '@weasel-js/registry';
 import { AUDIT_PAINTER, type AuditCellData, type AuditFrameData, type AuditNodeData } from './auditPainter';
-import { STAGE_LABEL, cellLabelOf, clip, toneOf } from './areaData';
+import { cellLabelOf, clip, stageLabelOf, toneOf } from './areaData';
 import type { MapCell, MapFrame } from './mapLayout';
 import type { AuditArea } from './skulkMap.types';
 
@@ -73,7 +73,7 @@ function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette): AuditC
     ink,
     ...(labeled ? { label: clip(cellLabelOf(area.id), Math.floor((cell.width - 8 - dotsRoom(area.passes.length)) / 6.1)) } : {}),
     ...(live ? { live: palette.live } : {}),
-    ...(live && area.stage && labeled && cell.height > 38 ? { stage: STAGE_LABEL[area.stage] ?? area.stage } : {}),
+    ...(live && area.stage && labeled && cell.height > 38 ? { stage: stageLabelOf(area.stage) } : {}),
     ...(showsQueue ? { queue: area.queue! } : {}),
     dots: area.passes.length,
     pulse: 1,

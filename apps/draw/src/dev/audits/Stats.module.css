@@ -11,10 +11,9 @@
 
 .value {
   display: block;
-  font-family: var(--wzl-font-display);
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   font-size: var(--wzl-font-size-xl);
   font-weight: var(--wzl-font-weight-bold);
-  font-variant-numeric: tabular-nums;
 }
 
 .label {

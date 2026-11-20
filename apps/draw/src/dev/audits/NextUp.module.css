@@ -1,11 +1,10 @@
 .list {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   display: grid;
-  gap: 2px;
+  gap: var(--wzl-space-1);
   margin: 0;
   padding-left: 28px;
-  font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-sm);
-  font-variant-numeric: tabular-nums;
 }
 
 .pick {
@@ -32,7 +31,7 @@
 .files {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--wzl-space-1);
   margin-inline-start: auto;
   white-space: nowrap;
   text-align: end;
