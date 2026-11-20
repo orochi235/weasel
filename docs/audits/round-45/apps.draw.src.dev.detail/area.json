@@ -1,0 +1,53 @@
+{
+ "id": "apps.draw.src.dev.detail",
+ "commit": "04c3a6536306f9e757e77a6ab15759ff43b02241",
+ "date": "2026-11-19",
+ "files": [
+  "apps/draw/src/dev/detail/BundleDetail.tsx",
+  "apps/draw/src/dev/detail/ExportsDetail.tsx",
+  "apps/draw/src/dev/detail/GestureDetail.tsx",
+  "apps/draw/src/dev/detail/IconDetail.tsx",
+  "apps/draw/src/dev/detail/KindDetail.tsx",
+  "apps/draw/src/dev/detail/MetaDetail.tsx",
+  "apps/draw/src/dev/detail/OpDetail.tsx",
+  "apps/draw/src/dev/detail/RouteBadge.tsx",
+  "apps/draw/src/dev/detail/SlotDetail.tsx",
+  "apps/draw/src/dev/detail/shared.tsx",
+  "apps/draw/src/dev/detail/sourceLinks.tsx"
+ ],
+ "a": 2,
+ "b": 5,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 8,
+ "unfound": 2,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "tokens": 7428286,
+  "costUsd": 4.36
+ },
+ "fixCommits": [
+  "fb246f8f9b7833367986651c2ba64348f48f4d6d",
+  "7fdb9abf0b8801450f4013df0600177a40357fdb",
+  "45e2bba8713e2491c07433e8df1093b1cd726e03",
+  "43b900beaa38069407b40012bab0c4cbd1cce191",
+  "d97e302d8d5391c7b80a431de54f4d3fb2159eff"
+ ]
+}

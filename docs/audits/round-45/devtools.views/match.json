@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   2,
+   3
+  ]
+ ],
+ "a": [
+  "The State tab's overlay switches drop later steps of an Alt-drag sweep, because each step is compared with the render the sweep began in",
+  "GestureRoute draws a key route's arg as one literal key, so a wildcard reads as the `*` key and optional modifiers in the arg disappear",
+  "Overlay flags changed by the app go stale in the State and Frame tabs, because no notice covers them"
+ ],
+ "b": [
+  "GestureRoute drops a hover route's `held` slot, so `hover +held` and `hover ?held` look the same as plain `hover`",
+  "A route the panel's grammar rejects throws during render and takes down the whole panel",
+  "A dep's \"Required by\" lists only actions, never the tools that declare the dep",
+  "The State tab's overlays and probes go stale: the query never re-runs when they change",
+  "CoordTable's padding collapses in HTML, so x and y don't line up across rows",
+  "CoordTable keys rows by their position in the window, so every row remounts once the window is full",
+  "ValueView gives two rows the same React key when an object has a real `…` key and was cut",
+  "RegistryBrowser's entry keys collide when a category id contains `/`"
+ ]
+}

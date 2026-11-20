@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "Gesture and phase-output details tell the reader about a phase grammar and `initial.overlay` that no longer exist",
+  "Action-binding rows on a gesture detail collide when two bindings differ only in fields the route text drops"
+ ],
+ "b": [
+  "A shape kind with no mounted tool shows another package's export as its source and doc",
+  "GestureDetail calls tool subscriptions \"legacy phase grammar\", which no longer exists",
+  "PhaseOutputDetail describes `initial.overlay` and `claimsAll`, which are both gone",
+  "OpKindDetail names an `ops.*` factory that doesn't exist for a consumer-registered op kind",
+  "RouteBadge drops a hover route's `held` requirement"
+ ]
+}

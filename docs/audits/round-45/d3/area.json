@@ -1,0 +1,68 @@
+{
+ "id": "d3",
+ "commit": "04c3a6536306f9e757e77a6ab15759ff43b02241",
+ "date": "2026-11-19",
+ "files": [
+  "packages/d3/src/bind.ts",
+  "packages/d3/src/cancelKey.ts",
+  "packages/d3/src/index.ts",
+  "packages/d3/src/liveTransitions.ts",
+  "packages/d3/src/pbt.fixture.ts",
+  "packages/d3/src/pendingRemovals.ts",
+  "packages/d3/src/selection.ts",
+  "packages/d3/src/transition.ts",
+  "packages/d3/src/transitionHandle.ts",
+  "packages/d3/src/transitionProgress.ts",
+  "packages/d3/src/transitionRemoval.ts",
+  "packages/d3/src/transitionRuns.ts",
+  "packages/d3/src/transitionTweens.ts",
+  "packages/d3/src/types.ts"
+ ],
+ "a": 6,
+ "b": 10,
+ "m": 5,
+ "distinct": 11,
+ "chapman": 11.8,
+ "unfound": 0.8,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "patches": 17,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "tokens": 3658343,
+  "costUsd": 7.58
+ },
+ "fixCommits": [
+  "00ef3bb32e7cd8b226439c923faab0058670af1d",
+  "2ba838db8c8febc89c8b28ad7be144eb2a869621",
+  "a63ab5388fd6a95dc5fd962438bcbdfcc50638be",
+  "406c2ba4b5ea068ee7ac147ef882e8185800934f",
+  "b64fc9f21914c4f72c48cdc613ee4048d3d83b89",
+  "2d5a5d6d72fe6020582cfce7d6f81fd35aab836d",
+  "649ac628271ca99d69f2aeaadcfe11922633f943",
+  "92860e6f7ce73460cd6eda502436ff7828ca799f",
+  "af47fa1a1a9d813c450569932e037350d6d09b8f",
+  "2e9e320dc2506168e877e1dc1d371105713b8227",
+  "fae9ac85d4fbc42d47949e69d7be29a271d6258b",
+  "9a9cec554a2649dbe8b20da45f7e3a7e75a9c3ca",
+  "74ff01d72737a9b9a3a7786e387ed9f465e94fba",
+  "0fad9d425cff38a8bef5998c888c3bad8cdb950b",
+  "0f074ae2bee01d9e4856a248a68177731a57866a",
+  "6515fe3d0cd2f31e9f3c0787f5493b6f42a1ea7d",
+  "e8ec3f7df6e2aa113cdf3b64de7f0695f7f23404"
+ ]
+}

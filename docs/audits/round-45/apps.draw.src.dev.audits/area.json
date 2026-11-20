@@ -1,0 +1,80 @@
+{
+ "id": "apps.draw.src.dev.audits",
+ "commit": "04c3a6536306f9e757e77a6ab15759ff43b02241",
+ "date": "2026-11-19",
+ "files": [
+  "apps/draw/src/dev/audits/AreaDetail.module.css",
+  "apps/draw/src/dev/audits/AreaDetail.tsx",
+  "apps/draw/src/dev/audits/AuditsPage.module.css",
+  "apps/draw/src/dev/audits/AuditsPage.tsx",
+  "apps/draw/src/dev/audits/HeatLegend.module.css",
+  "apps/draw/src/dev/audits/HeatLegend.tsx",
+  "apps/draw/src/dev/audits/JobsFeed.module.css",
+  "apps/draw/src/dev/audits/JobsFeed.tsx",
+  "apps/draw/src/dev/audits/LiveRuns.module.css",
+  "apps/draw/src/dev/audits/LiveRuns.tsx",
+  "apps/draw/src/dev/audits/NextUp.module.css",
+  "apps/draw/src/dev/audits/NextUp.tsx",
+  "apps/draw/src/dev/audits/RoundsChart.module.css",
+  "apps/draw/src/dev/audits/RoundsChart.tsx",
+  "apps/draw/src/dev/audits/Stats.module.css",
+  "apps/draw/src/dev/audits/Stats.tsx",
+  "apps/draw/src/dev/audits/Treemap.module.css",
+  "apps/draw/src/dev/audits/Treemap.tsx",
+  "apps/draw/src/dev/audits/areaData.ts",
+  "apps/draw/src/dev/audits/areaTree.ts",
+  "apps/draw/src/dev/audits/auditPainter.ts",
+  "apps/draw/src/dev/audits/auditScene.ts",
+  "apps/draw/src/dev/audits/clock.ts",
+  "apps/draw/src/dev/audits/heat.ts",
+  "apps/draw/src/dev/audits/mapLayout.ts",
+  "apps/draw/src/dev/audits/palette.module.css",
+  "apps/draw/src/dev/audits/phases.ts",
+  "apps/draw/src/dev/audits/runData.ts",
+  "apps/draw/src/dev/audits/skulkMap.types.ts",
+  "apps/draw/src/dev/audits/skulkMapRoute.ts",
+  "apps/draw/src/dev/audits/useAuditPalette.tsx",
+  "apps/draw/src/dev/audits/useSkulkMap.ts"
+ ],
+ "a": 7,
+ "b": 8,
+ "m": 3,
+ "distinct": 12,
+ "chapman": 17,
+ "unfound": 5,
+ "read": {
+  "A": 32,
+  "B": 32
+ },
+ "patches": 11,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "tokens": 8629242,
+  "costUsd": 5.22
+ },
+ "fixCommits": [
+  "0d518cb2981d72eb432ec3c4222d2b4fc3e9dae7",
+  "ac92c19abc4f4801bb50e05f531ca024f85564af",
+  "6447e8e44122ec6fad594976a27de0ae915b372b",
+  "35410043a921c329ca72ecee7d02691d79c6367e",
+  "3d303ca5830b9811420824778c7917902c368239",
+  "1f9f028e18ef0c2a08d70e4b4f4e5e4e9754007b",
+  "6d88ac40c3db7b96e4a9d0552573702ba0fc1f46",
+  "6f1b2d97d5ddb88ddc6b7765ae754eaa9afe874a",
+  "ffe2770ce93d69ade7f4a35d6f20bf0a37e6e578",
+  "6b873de84ca498a30e6910d13194983111637de1",
+  "edd7df15a15ec73b13fdf354b12c74b4a99a8d1e"
+ ]
+}

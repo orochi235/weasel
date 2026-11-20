@@ -1,0 +1,61 @@
+{
+ "id": "devtools",
+ "commit": "04c3a6536306f9e757e77a6ab15759ff43b02241",
+ "date": "2026-11-19",
+ "files": [
+  "packages/devtools/src/DevtoolsPanel.browser.module.css",
+  "packages/devtools/src/DevtoolsPanel.module.css",
+  "packages/devtools/src/DevtoolsPanel.stories.module.css",
+  "packages/devtools/src/DevtoolsPanel.stories.tsx",
+  "packages/devtools/src/DevtoolsPanel.tsx",
+  "packages/devtools/src/RootPicker.tsx",
+  "packages/devtools/src/client.ts",
+  "packages/devtools/src/history.ts",
+  "packages/devtools/src/hook.ts",
+  "packages/devtools/src/hooks.ts",
+  "packages/devtools/src/icons.gen.ts",
+  "packages/devtools/src/inPageTransport.ts",
+  "packages/devtools/src/index.ts",
+  "packages/devtools/src/mount.tsx",
+  "packages/devtools/src/protocol.ts",
+  "packages/devtools/src/tabs.ts",
+  "packages/devtools/src/testing/mountCanvas.tsx",
+  "packages/devtools/src/trace.ts"
+ ],
+ "a": 7,
+ "b": 4,
+ "m": 4,
+ "distinct": 7,
+ "chapman": 7,
+ "unfound": 0,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "tokens": 11077483,
+  "costUsd": 6.03
+ },
+ "fixCommits": [
+  "faa97fbb6030acc7a0e0e1c4a3cb27fdcc29d704",
+  "1bc90d8b1de423050a764a20433f740d54cd615c",
+  "fee4957c34ee139d4eed205434a0737655e214ef",
+  "1c5b8045559f5915fc7a1ab2cb3ebc2c3cf5703c",
+  "f59d25c9ef4f32da5f779523d0ab176dbb6088a9",
+  "1b0a5fcca39cea0b121988888a8c442b78a37a36"
+ ]
+}
