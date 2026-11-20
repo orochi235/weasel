@@ -171,7 +171,7 @@ export type {
   GraphSource,
 } from './graph';
 export {
-  EDIT_EDGE_LABEL_ACTION_ID, END_LABEL_PLACEMENT, dropEmptyEdgeLabel, edgeLabelIdOf, edgeLabelSpec, createEditEdgeLabelAction, editEdgeLabelBinding, endLabelIdOf, labelSize,
+  EDIT_EDGE_LABEL_ACTION_ID, END_LABEL_PLACEMENT, dropEmptyEdgeLabel, edgeLabelIdOf, edgeLabelSpec, createEditEdgeLabelAction, editEdgeLabelBinding, endLabelIdOf, labelEndOf, labelSize,
 } from './edgeLabel';
 export type { EdgeLabelOptions, EditEdgeLabelOptions } from './edgeLabel';
 export {

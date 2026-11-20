@@ -38,6 +38,10 @@ export const edgeLabelIdOf = (edgeId: string): string => `${edgeId}/label`;
 /** The id of the label at edge `edgeId`'s `from` or `to` end (`DataEdge.endLabels`). */
 export const endLabelIdOf = (edgeId: string, end: 'from' | 'to'): string => `${edgeId}/label:${end}`;
 
+/** Which end of `edgeId` the label `labelId` is the end label of, or `null` for any other label. */
+export const labelEndOf = (edgeId: string, labelId: string | undefined): 'from' | 'to' | null =>
+  labelId === endLabelIdOf(edgeId, 'from') ? 'from' : labelId === endLabelIdOf(edgeId, 'to') ? 'to' : null;
+
 /** Where an end label sits: just off the end, to the left of travel. `to`'s is at `'end'`. */
 export const END_LABEL_PLACEMENT: DiagramLabel = { at: 'start', offset: 4, inset: 4 };
 
@@ -96,8 +100,9 @@ export const EDIT_EDGE_LABEL_ACTION_ID = 'diagram.editEdgeLabel';
 
 /** Options for {@link createEditEdgeLabelAction}. */
 export interface EditEdgeLabelOptions {
-  /** Runs in place of the default add-then-edit. */
-  commit?: (edgeId: string, ctx: InvocationCtx) => void;
+  /** Runs in place of the default add-then-edit. `labelId` is the label the
+   *  double-click landed on, when it landed on one; see {@link labelEndOf}. */
+  commit?: (edgeId: string, ctx: InvocationCtx, labelId?: string) => void;
   /** The face a new label is set in. Default the diagram's, two sizes down. Ignored when `commit` is given. */
   style?: RowTextStyle;
   /** A new label's text color. Ignored when `commit` is given. */
@@ -148,10 +153,7 @@ function beginEditing(
  * built from the deps and the click point.
  */
 export function createEditEdgeLabelAction(opts: EditEdgeLabelOptions = {}): Action {
-  const given = opts.commit;
-  const commit = given !== undefined
-    ? (edgeId: string, ctx: InvocationCtx) => given(edgeId, ctx)
-    : (edgeId: string, ctx: InvocationCtx, labelId?: string) => beginEditing(edgeId, ctx, opts, labelId);
+  const commit = opts.commit ?? ((edgeId: string, ctx: InvocationCtx, labelId?: string) => beginEditing(edgeId, ctx, opts, labelId));
   return defineAction({
     id: EDIT_EDGE_LABEL_ACTION_ID,
     label: 'Edit edge label',
@@ -167,7 +169,8 @@ export function createEditEdgeLabelAction(opts: EditEdgeLabelOptions = {}): Acti
         const hit = pressed !== null ? { edgeId: pressed.edgeId, labelId: pressed.labelId } : edgeUnder(deps, world);
         if (hit === null) return;
         const ctx = { world, modifiers: { alt: false, shift: false, meta: false, ctrl: false }, deps } as InvocationCtx;
-        commit(hit.edgeId, ctx, hit.labelId);
+        if (hit.labelId === undefined) commit(hit.edgeId, ctx);
+        else commit(hit.edgeId, ctx, hit.labelId);
       },
     },
     enabled: (deps, at) => (edgeUnder(deps, at) !== null ? true : ActionDisabledReason.NotApplicable),

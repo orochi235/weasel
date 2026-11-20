@@ -150,8 +150,10 @@ export interface DiagramViewProps {
    *  dragged out of the container's box becomes a move, as `onMove` reports
    *  one, and lands wherever it is dropped. */
   onReorder?: (change: ReorderChange) => void;
-  /** Set to report a double-click on an edge, for its label to be edited. */
-  onEditLabel?: (edge: string) => void;
+  /** Set to report a double-click on an edge, for its label to be edited: its
+   *  `endLabels` entry at `end` when the double-click landed on an end label,
+   *  else its middle label. */
+  onEditLabel?: (edge: string, end?: 'from' | 'to') => void;
   /** Set to edit the sequences `sequenceSpecs` drew: drag a message, note, or fragment to another row, a head
    *  to another column, a message end to another lifeline, double-click text to edit it in place, click a part
    *  to select it, and press Delete to remove it. Reports each edit as the sequence's new data and draws

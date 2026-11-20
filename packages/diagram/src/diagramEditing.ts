@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 import { isBodyEnd } from './connectTargets';
 import { diagramContainerOf, titleIdOf } from './containers/trait';
 import { createDiagramLabelsContribution, createDiagramPortsContribution, createDiagramWaypointsContribution } from './contribution';
-import { createEditEdgeLabelAction, editEdgeLabelBinding } from './edgeLabel';
+import { createEditEdgeLabelAction, editEdgeLabelBinding, labelEndOf } from './edgeLabel';
 import { diagramEdgeOf } from './edgeTrait';
 import type { DiagramSpec } from './dataTypes';
 import type { ParticipantSource } from './portAffordance';
@@ -214,7 +214,13 @@ export function useDiagramEditing(
     ? {
         id: 'weasel-diagram-edge-label',
         eligibility: { always: true },
-        actions: [createEditEdgeLabelAction({ commit: (edgeId) => report.current.onEditLabel?.(edgeId) })],
+        actions: [createEditEdgeLabelAction({
+          commit: (edgeId, _ctx, labelId) => {
+            const end = labelEndOf(edgeId, labelId);
+            if (end === null) report.current.onEditLabel?.(edgeId);
+            else report.current.onEditLabel?.(edgeId, end);
+          },
+        })],
         bindings: [editEdgeLabelBinding()],
       }
     : null, [labels, report]);

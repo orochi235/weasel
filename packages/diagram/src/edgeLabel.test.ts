@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { AUTO_POSE_DESCRIPTOR, createScene, effectivePose, type ActionDeps, type Scene } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH } from './edge';
 import {
-  EDIT_EDGE_LABEL_ACTION_ID, END_LABEL_PLACEMENT, dropEmptyEdgeLabel, edgeLabelSpec, endLabelIdOf, createEditEdgeLabelAction, editEdgeLabelBinding, labelSize,
+  EDIT_EDGE_LABEL_ACTION_ID, END_LABEL_PLACEMENT, dropEmptyEdgeLabel, edgeLabelSpec, endLabelIdOf, labelEndOf, createEditEdgeLabelAction, editEdgeLabelBinding, labelSize,
 } from './edgeLabel';
 import { seqMeasure } from './sequence/metrics';
 import { LABEL_DERIVE_POSE } from './label';
@@ -138,7 +138,7 @@ describe('createEditEdgeLabelAction', () => {
     const commit = vi.fn();
     const action = createEditEdgeLabelAction({ commit });
     runOn(action, depsOf(scene, {}, 'e2'), at);
-    expect(commit).toHaveBeenCalledWith('e1', expect.anything());
+    expect(commit).toHaveBeenCalledWith('e1', expect.anything(), 'e1/label');
     expect(action.enabled?.(depsOf(scene, {}, 'e2'), at)).toBe(true);
   });
 
@@ -149,7 +149,7 @@ describe('createEditEdgeLabelAction', () => {
     if (action.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
     const payload = { targetId: 'e1/label', labelId: 'e1/label', edgeId: 'e1' };
     action.invoker.run(depsOf(scene, {}, null), { world: { x: -500, y: -500 }, affordance: { payload } });
-    expect(commit).toHaveBeenCalledWith('e1', expect.anything());
+    expect(commit).toHaveBeenCalledWith('e1', expect.anything(), 'e1/label');
   });
 
   it('declines a double-click that is not on an edge', () => {
@@ -198,5 +198,17 @@ describe('createEditEdgeLabelAction on an end label', () => {
     action.invoker.run(depsOf(scene, { textEdit: { startEdit } }), { world: { x: 380, y: 20 }, affordance: press });
     expect(startEdit).toHaveBeenCalledWith('e1/label:to');
     expect(scene.get('e1/label' as never)).toBeUndefined();
+  });
+
+  it('hands a custom commit the end label pressed, which labelEndOf reads as its end', () => {
+    const commit = vi.fn();
+    const action = createEditEdgeLabelAction({ commit });
+    if (action.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
+    action.invoker.run(depsOf(withEndLabel()), { world: { x: 380, y: 20 }, affordance: press });
+    expect(commit).toHaveBeenCalledWith('e1', expect.anything(), 'e1/label:to');
+    expect(labelEndOf('e1', 'e1/label:to')).toBe('to');
+    expect(labelEndOf('e1', 'e1/label:from')).toBe('from');
+    expect(labelEndOf('e1', 'e1/label')).toBeNull();
+    expect(labelEndOf('e1', undefined)).toBeNull();
   });
 });
