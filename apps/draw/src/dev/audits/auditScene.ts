@@ -108,7 +108,10 @@ function labelLines(area: AuditArea, cell: MapCell, font: string): string[] {
   return wrapAtDots(label, Math.floor((cell.width - 8 - dotsRoom(area.passes.length)) / perChar), Math.max(1, Math.floor(room / LINE)));
 }
 
-function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette, heat: HeatScale, phase: AuditPhase | undefined, lit: boolean, upcoming: number): AuditCellData {
+function cellData(
+  area: AuditArea, cell: MapCell, palette: AuditPalette, heat: HeatScale, phase: AuditPhase | undefined, lit: boolean, upcoming: number,
+  estimate: number | undefined,
+): AuditCellData {
   const tone = toneOf(area);
   const fill = tone === 'settled' ? palette.settled : tone === 'unaudited' ? palette.uncharted : rampAt(palette.depth, heat.at(tone.left));
   const ink = tone === 'unaudited' ? palette.ink : inkOn(fill, palette);
@@ -118,7 +121,9 @@ function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette, heat: H
   return {
     kind: 'audit-cell',
     fill: { color: fill },
-    ...(tone === 'unaudited' ? { over: { kind: 'hatch', color: palette.hatch, size: 6, lineWidth: 1.6 } } : {}),
+    ...(tone === 'unaudited' ? {
+      over: { kind: 'hatch', color: estimate === undefined ? palette.hatch : rampAt(palette.depth, heat.at(estimate)), size: 6, lineWidth: 1.6 },
+    } : {}),
     edge: palette.panel,
     ink,
     ...(labeled ? { label: labelLines(area, cell, palette.font.ui) } : {}),
@@ -144,6 +149,8 @@ export function auditNodeSpecs(
   lit: string | null = null,
   /** How many places of the queue to number, from its head. */
   upcoming = Infinity,
+  /** What a live run already estimates its areas hold: a never-audited one's hatching takes that heat. */
+  estimates: ReadonlyMap<string, number> = new Map(),
 ): AuditNodeSpec[] {
   const byId = new Map(areas.map((a) => [a.id, a]));
   const heat = heatScaleOf(areas);
@@ -165,7 +172,7 @@ export function auditNodeSpecs(
     const parent = c.parent === null ? undefined : frameBox.get(c.parent);
     out.push({
       id: asNodeId(c.id), parent: c.parent === null ? null : frameIdOf(c.parent), pickable: true,
-      pose: poseIn(c, parent), data: cellData(area, c, palette, heat, phases.get(area.id), area.id === lit, upcoming),
+      pose: poseIn(c, parent), data: cellData(area, c, palette, heat, phases.get(area.id), area.id === lit, upcoming, estimates.get(area.id)),
     });
   }
   return out;

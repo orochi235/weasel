@@ -30,6 +30,18 @@ describe('the audit scene', () => {
     expect(scene.history.canUndo()).toBe(false);
   });
 
+  it("hatches a never-audited area in the heat of what its live run already estimates it holds", () => {
+    const scene = createAuditScene();
+    const layout = layoutMap(map.areas, 900, 400);
+    syncAuditScene(scene, auditNodeSpecs(map.areas, layout, PALETTE));
+    expect(cellOf(scene, 'ui.menu').over).toMatchObject({ kind: 'hatch', color: PALETTE.hatch });
+    syncAuditScene(scene, auditNodeSpecs(map.areas, layout, PALETTE, new Map(), null, Infinity, new Map([['ui.menu', 0]])));
+    const hatch = cellOf(scene, 'ui.menu').over as { color: string };
+    expect(hatch.color).not.toBe(PALETTE.hatch);
+    expect(PALETTE.depth.map((c) => c.toLowerCase())).toContain(hatch.color.toLowerCase());
+    expect(cellOf(scene, 'ui.menu').fill).toEqual({ color: PALETTE.uncharted });
+  });
+
   it("outlines a live area's cell in its phase's color", () => {
     const scene = createAuditScene();
     syncAuditScene(scene, auditNodeSpecs(map.areas, layoutMap(map.areas, 900, 400), PALETTE, phasesOf(map.runs)));
