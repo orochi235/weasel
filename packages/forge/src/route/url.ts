@@ -159,7 +159,7 @@ const nestedHolds = (leaf: PrefLeaf, value: unknown): boolean =>
 function fieldsHold(children: KnobParts['children'], value: Record<string, unknown>, tag?: string): boolean {
   if (!children) return true;
   return prefSectionLeaves(children).every(
-    ([key, child]) => key === tag || getOwn(value, key) === undefined || nestedHolds(child, value[key]),
+    ([key, child]) => key === tag || getOwn(value, key) === undefined || nestedHolds(child, getOwn(value, key)),
   );
 }
 
