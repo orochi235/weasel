@@ -20,3 +20,20 @@ describe('stroke joins', () => {
     expect(await types([rect()])).toEqual(['rect']);
   });
 });
+
+describe('polylines', () => {
+  const line = (points: [number, number][], stroke: Record<string, unknown> = {}): DrawCommand => {
+    const b = new PathBuilder().moveTo(...points[0]!);
+    for (const p of points.slice(1)) b.lineTo(...p);
+    return { kind: 'path', path: b.build(), stroke: { paint: { color: '#000' }, width: 1, ...stroke } };
+  };
+  const corner: [number, number][] = [[0, 0], [30, 10], [60, 0]];
+
+  it('rasterizes a polyline whose corners are rounded, beveled, or past the miter limit', async () => {
+    expect(await types([line(corner)])).toEqual(['line']);
+    expect(await types([line(corner, { join: 'round' })])).toEqual([]);
+    expect(await types([line(corner, { join: 'bevel' })])).toEqual([]);
+    expect(await types([line([[0, 0], [5, 40], [10, 0]])])).toEqual([]);
+    expect(await types([line([[0, 0], [60, 0]], { join: 'round' })])).toEqual(['line']);
+  });
+});

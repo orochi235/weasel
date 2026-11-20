@@ -5,7 +5,7 @@
 import { mat3, PATH_CMD_LENGTHS, PATH_L, PATH_M, type PolygonPath, maxOf, minOf } from '@weasel-js/geom';
 import type { PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import type { ArrowStyle, HorizontalAlignment, LineObject, RectObject, TextObject, VerticalAlignment } from 'bil-lbx';
-import { axisMap, fillColor, mitersAt, plainStroke, uniformScale, type DrawState } from './style';
+import { axisMap, fillColor, mitersAt, plainStroke, uniformScale, type DrawState, type PlainStroke } from './style';
 
 const NO_PEN = { style: 'NULL' as const };
 const NO_BRUSH = { style: 'NULL' as const };
@@ -61,6 +61,20 @@ function polylinePoints(path: PolygonPath): { x: number; y: number }[] | undefin
 
 const ARROW_FOR_CAP: Record<'butt' | 'round' | 'square', ArrowStyle> = { butt: 'SQUARE', round: 'ROUND', square: 'SQUARE' };
 
+/** Whether every interior corner of `points` is drawn mitered, the join P-touch draws a polyline with. */
+function cornersMiter(points: readonly { x: number; y: number }[], stroke: PlainStroke): boolean {
+  for (let i = 1; i < points.length - 1; i++) {
+    const a = points[i - 1]!, b = points[i]!, c = points[i + 1]!;
+    const ux = a.x - b.x, uy = a.y - b.y, vx = c.x - b.x, vy = c.y - b.y;
+    const lengths = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+    if (!(lengths > 0)) return false;
+    // A miter is 1 / sin(θ / 2) stroke widths long at a corner of angle θ.
+    const sinHalf = Math.sqrt(Math.max(0, (1 - (ux * vx + uy * vy) / lengths) / 2));
+    if (!mitersAt(stroke, 1 / sinHalf)) return false;
+  }
+  return true;
+}
+
 /** An open polyline stroked in a solid color, unfilled, as a `draw:poly`. */
 export function lineObject(cmd: PathDrawCommand, state: DrawState): LineObject | undefined {
   if (cmd.path.kind !== 'polygon' || cmd.vertexColors || cmd.fill?.paint !== undefined) return undefined;
@@ -74,6 +88,7 @@ export function lineObject(cmd: PathDrawCommand, state: DrawState): LineObject |
     const [x, y] = mat3.transformPoint(state.transform, p.x, p.y);
     return { x, y };
   });
+  if (!cornersMiter(points, stroke)) return undefined;
   const xs = points.map((p) => p.x);
   const ys = points.map((p) => p.y);
   const x = minOf(xs);
