@@ -28,10 +28,10 @@ export const inWindow = (date, from, until) => {
 /** The nodes a job may be offered to at `date`, before onto's own quiet hours and availability. */
 export const nodesAt = (date) => (inWindow(date, LOCAL_FROM, LOCAL_UNTIL) ? [...NODES, LOCAL_NODE] : NODES);
 
-/** Model jobs run at once on one node, each in a tree of its own. */
+/** Model jobs run at once on one node, each in a tree of its own. Fixers wait on the model as reviewers do:
+ *  three on 2026-11-19 used under a core and about 1 GB each, so they get as many slots. */
 export const REVIEW_SLOTS_PER_NODE = 6;
-/** Fixers wait on the model most of the time: three on 2026-11-19 used under a core and about 1 GB each. */
-export const FIX_SLOTS_PER_NODE = 3;
+export const FIX_SLOTS_PER_NODE = 6;
 
 export const AREAS_PER_NIGHT = 8;
 export const MAX_AREA_FILES = 50;
