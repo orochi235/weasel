@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { SHARED_TOOL_OPTIONS, toolOptionParams, setToolOption, type ToolOptionsSpec } from './toolOptions';
+import { prefLeaves } from '@weasel-js/prefs-schema';
+import { defineTool } from './defineTool';
 import { prefsToolOptionValues, toolOptionsPrefs, type ToolOptionPrefsStore } from './toolOptionPrefs';
 
 /** A store over a flat map of paths, filling in the shared fill's default as a `PrefsStore` does. */
@@ -140,5 +142,55 @@ describe('tool ids and option keys named like Object.prototype members', () => {
   it('reads nothing for a tool named toString that the store holds no values for', () => {
     const values = prefsToolOptionValues(fakeStore(), 'tools');
     expect(values.get('toString')).toEqual({});
+  });
+});
+
+describe('tool options of a dotted tool id in a prefs store', () => {
+  const sized = (id: string, key = 'size', share?: Record<string, string>): { id: string; options: ToolOptionsSpec } => ({
+    id,
+    options: {
+      actionId: 'paint',
+      prefs: { name: 'Brush', children: { [key]: { kind: 'number', name: 'Size', description: '', default: 20 } } },
+      ...(share ? { share } : {}),
+    },
+  });
+
+  it('reads back what it wrote for a tool whose id has a dot', () => {
+    const store = fakeStore();
+    const values = prefsToolOptionValues(store, 'tools');
+    const brush = sized('path.brush');
+    setToolOption(brush.id, brush.options, values, 'size', 7);
+    expect(store.get('tools.path.brush.size')).toBe(7);
+    expect(toolOptionParams(brush.id, brush.options, values).size).toBe(7);
+  });
+
+  it('refuses an option key or a shared key with a dot, which the store would read as a group', () => {
+    expect(() => toolOptionsPrefs([sized('brush', 'tip.size')])).toThrow(/tip\.size/);
+    expect(() => toolOptionsPrefs([sized('brush', 'size', { size: 'style.size' })])).toThrow(/style\.size/);
+  });
+
+  it('refuses a tool whose options would sit inside another tool’s option', () => {
+    expect(() => toolOptionsPrefs([sized('path', 'brush'), sized('path.brush')])).toThrow(/inside an option/);
+    expect(() => toolOptionsPrefs([sized('path.brush'), sized('path', 'brush')])).toThrow(/share one place/);
+  });
+
+  it('nests a dotted id’s group where the store keeps it, beside the options of the tool it sits in', () => {
+    const schema = toolOptionsPrefs([sized('path.brush'), sized('path', 'pen')]);
+    expect([...prefLeaves(schema).keys()]).toEqual(['path.brush.size', 'path.pen']);
+  });
+});
+
+describe('a tool id that names the shared group', () => {
+  const own = (id: string) => ({
+    id,
+    options: { actionId: 'paint', prefs: { name: 'S', children: { fill: { kind: 'color', name: 'Fill', description: '', default: '#000' } } } } as ToolOptionsSpec,
+  });
+
+  it('is refused, alone or as a dotted id under it', () => {
+    expect(() => toolOptionsPrefs([own(SHARED_TOOL_OPTIONS), RECT])).toThrow(/shared/);
+    expect(() => toolOptionsPrefs([own(`${SHARED_TOOL_OPTIONS}.x`)])).toThrow(/shared/);
+    expect(() => defineTool({ id: SHARED_TOOL_OPTIONS, options: own('x').options })).toThrow(/shared/);
+    expect(() => defineTool({ id: SHARED_TOOL_OPTIONS })).not.toThrow();
+    expect(() => toolOptionsPrefs([own('sharedish')])).not.toThrow();
   });
 });

@@ -242,7 +242,9 @@ export function useTools<TOverlay = KernelOverlay>(
     [slotted],
   );
 
-  useModeDefaultTool(opts.modes, { active: contributions.focused, initial: initialActive, setActive, has });
+  // Only a registry tool can be made active; an ambient one is always on.
+  const activatable = useCallback((id: string): boolean => Object.hasOwn(slotted.registry, id), [slotted]);
+  useModeDefaultTool(opts.modes, { active: contributions.focused, initial: initialActive, setActive, has: activatable });
   const shortcuts = useToolShortcuts(useActionsRegistry(), slotted.registry);
 
   // Memoized: a consumer using `tools` as an effect dep loops infinitely on

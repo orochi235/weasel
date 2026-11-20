@@ -4,7 +4,7 @@
  */
 import type { PrefGroup, PrefLeaf, PrefNumber } from '@weasel-js/prefs-schema';
 import { deepEqual, getOwn, setOwn } from '@weasel-js/registry';
-import { SHARED_TOOL_OPTIONS, toolOptionSlot, type ToolOptionsSpec, type ToolOptionValues } from './toolOptions';
+import { checkToolOptionOwner, SHARED_TOOL_OPTIONS, toolOptionSlot, type ToolOptionsSpec, type ToolOptionValues } from './toolOptions';
 
 /** A tool as these read it: its id and its options. */
 export interface OptionedTool {
@@ -48,12 +48,37 @@ function widened(held: PrefLeaf | PrefGroup, next: PrefLeaf | PrefGroup): PrefLe
   } as PrefNumber;
 }
 
+const isGroup = (node: PrefLeaf | PrefGroup | undefined): node is PrefGroup => !!node && !('kind' in node);
+
+/** Lay `group` into `children` at `toolId`, a group per segment of a dotted id, as a prefs store nests the names it
+ *  keeps. Throws where one tool's option and another's group would sit in one place. */
+function placeToolGroup(children: Record<string, PrefLeaf | PrefGroup>, toolId: string, group: PrefGroup): void {
+  const parts = toolId.split('.');
+  let at = children;
+  for (const part of parts.slice(0, -1)) {
+    const node = getOwn(at, part);
+    if (node && !isGroup(node)) throw new Error(`toolOptionsPrefs: tool "${toolId}" would keep its options inside an option at "${part}"`);
+    const next = node ?? { name: '', children: {} };
+    if (!node) setOwn(at, part, next);
+    at = (next as PrefGroup).children as Record<string, PrefLeaf | PrefGroup>;
+  }
+  const last = parts.at(-1)!;
+  const held = getOwn(at, last);
+  if (held && !isGroup(held)) throw new Error(`toolOptionsPrefs: tool "${toolId}" would keep its options inside an option at "${last}"`);
+  const below = held ? held.children : {};
+  for (const key of Object.keys(group.children)) {
+    if (Object.hasOwn(below, key)) throw new Error(`toolOptionsPrefs: tool "${toolId}"'s option "${key}" and the tool "${toolId}.${key}" would share one place`);
+  }
+  setOwn(at, last, { ...group, children: { ...below, ...group.children } });
+}
+
 /**
  * The prefs group `tools`' options are kept in: a group per tool holding its
  * own options, and a {@link SHARED_TOOL_OPTIONS} group holding each shared
  * key once, as the first tool naming it declares it, with the default the host
  * gives it. A shared number takes the widest bounds of the tools naming it, and
- * each tool reads it held to its own. A tool with no options of its own has no group.
+ * each tool reads it held to its own. A tool with no options of its own has no group, and a dotted id's group
+ * sits a level down for each dot (`path.brush` in `path`), where the store keeps it.
  */
 export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOptionsPrefsSpec = {}): PrefGroup {
   const children: Record<string, PrefLeaf | PrefGroup> = {};
@@ -61,13 +86,17 @@ export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOption
   for (const tool of tools) {
     const options = tool.options;
     if (!options) continue;
+    checkToolOptionOwner(tool.id);
     const own: Record<string, PrefLeaf | PrefGroup> = {};
     for (const [key, leaf] of Object.entries(options.prefs.children)) {
       const slot = toolOptionSlot(tool.id, options, key);
+      if (slot.key.includes('.')) {
+        throw new Error(`toolOptionsPrefs: ${tool.id}'s option "${key}" is kept under "${slot.key}", and a prefs store reads a "." there as a group`);
+      }
       if (slot.owner === tool.id) setOwn(own, key, leaf);
       else setOwn(shared, slot.key, Object.hasOwn(shared, slot.key) ? widened(getOwn(shared, slot.key)!, leaf) : leaf);
     }
-    if (Object.keys(own).length > 0) setOwn(children, tool.id, { ...options.prefs, children: own });
+    if (Object.keys(own).length > 0) placeToolGroup(children, tool.id, { ...options.prefs, children: own });
   }
   for (const [key, value] of Object.entries(spec.shared ?? {})) {
     const leaf = getOwn(shared, key);
@@ -103,7 +132,8 @@ export function prefsToolOptionValues(store: ToolOptionPrefsStore, base: string)
       const hit = cache.get(owner);
       if (hit && hit.values === values) return hit.out;
       const tree = subtree(values, base);
-      const held = tree && getOwn(tree, owner);
+      // The store nests a dotted name, so a tool id `a.b` is kept at `a` → `b`.
+      const held = tree && subtree(tree, owner);
       let out = held && typeof held === 'object' ? (held as Readonly<Record<string, unknown>>) : NONE;
       // An unchanged answer keeps its identity, so a subscriber comparing it sees no change.
       if (hit && deepEqual(hit.out, out)) out = hit.out;

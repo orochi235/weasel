@@ -22,6 +22,10 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 - 2026-11-20: `captureGesture` settles on a click it holds back for a double click when a key other than
   Escape comes in the window, and leaves that key to the page; Escape still resolves `null`.
+- 2026-11-20: A tool with options may not be named `shared` or `shared.<anything>`: `defineTool` and
+  `toolOptionsPrefs` throw, since its options would land in the group every tool's shared options are kept in.
+  `toolOptionsPrefs` also throws for an option key or shared key with a dot, and for a tool whose options would sit
+  inside another tool's option (`path`'s option `brush` beside a tool `path.brush`), rather than escaping either.
 - 2026-11-20: `CONTROL_SELECTOR` names everything `focusedControlOwnsKey` leaves Space and Enter to:
   `summary` and roles `tab`, `option`, `radio`, `menuitemcheckbox` and `menuitemradio` now count as
   controls a host leaves a press to, and the last three also own Space and Enter. A dispatcher surface
