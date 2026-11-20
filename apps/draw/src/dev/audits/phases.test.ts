@@ -124,8 +124,8 @@ describe('runClockOf', () => {
 describe('laneStepsOf', () => {
   it('gives every step one equal column, filled by its state, a running one by its share of the typical time', () => {
     const spans = laneStepsOf(lane({ A: done({ findings: 5, minutes: 3 }), B: running(at(27.5)), match: W }), NOW);
-    expect(spans.map((s) => [s.id, s.ms, s.fill])).toEqual([['A', 1, 1], ['B', 1, 0.5], ['match', 1, 0], ['fix', 1, 0], ['patch', 0.6, 0]]);
-    expect(spans.map((s) => s.color)).toEqual(['review', 'reviewed', 'match', 'fix', 'patch'].map((p) => phaseColor(p as never)));
+    expect(spans.map((s) => [s.id, s.ms, s.fill])).toEqual([['A', 1, 1], ['B', 1, 0.5], ['match', 1, 0], ['fix', 1, 0], ['checks', 0.25, 0], ['patch', 0.6, 0]]);
+    expect(spans.filter((s) => s.id !== 'checks').map((s) => s.color)).toEqual(['review', 'reviewed', 'match', 'fix', 'patch'].map((p) => phaseColor(p as never)));
     expect(spans[1]!.label).toBe('studio · 2.5 min');
     expect(spans[2]!.label).toBe('');
   });
@@ -133,9 +133,9 @@ describe('laneStepsOf', () => {
   it('runs A and B in one column, A over B, and every later step a column after, across both', () => {
     const spans = laneStepsOf(lane({}), NOW);
     expect(spans.map((s) => [s.id, s.start, s.track ?? 0, s.trackSpan ?? 1])).toEqual([
-      ['A', 0, 0, 1], ['B', 0, 1, 1], ['match', 1, 0, 2], ['fix', 2, 0, 2], ['patch', 3, 0, 2],
+      ['A', 0, 0, 1], ['B', 0, 1, 1], ['match', 1, 0, 2], ['fix', 2, 0, 2], ['checks', 3, 0, 2], ['patch', 3.25, 0, 2],
     ]);
-    expect(STEP_COLUMN_COUNT).toBe(3.6);
+    expect(STEP_COLUMN_COUNT).toBe(3.85);
   });
 
   it('stops a running step short of full until it finishes', () => {
@@ -147,6 +147,11 @@ describe('laneStepsOf', () => {
     const fix = laneStepsOf(fixing, NOW).find((s) => s.id === 'fix')!;
     expect(fix.fill).toBe(3 / 8);
     expect(fix.label).toMatch(/^studio · 3\/8 · \d/);
-    expect(laneStepsOf(lane({ fix: { ...running(at(6)), done: 8, total: 8 } }), NOW).find((s) => s.id === 'fix')!.fill).toBe(0.9);
+    const checking = laneStepsOf(lane({ fix: { ...running(at(6)), done: 8, total: 8 } }), NOW);
+    expect(checking.find((s) => s.id === 'fix')!.fill).toBe(1);
+    expect(checking.find((s) => s.id === 'checks')).toMatchObject({ state: 'active', fill: 1, label: 'studio' });
+    expect(checking.find((s) => s.id === 'fix')).toMatchObject({ state: 'done' });
+    expect(checking.find((s) => s.id === 'fix')!.label).toMatch(/^8\/8 · /);
+    expect(laneStepsOf(fixing, NOW).find((s) => s.id === 'checks')!.state).toBe('pending');
   });
 });

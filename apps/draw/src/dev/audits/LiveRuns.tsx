@@ -18,11 +18,14 @@ export interface AreaHandlers {
   readonly onLight: (id: string | null) => void;
 }
 
-/** A running span with its node's name marked, so the name alone pulses. */
+/** A running span with its node's name marked, so the name alone pulses: the label up to its separator, or all of it
+ *  where it has none. */
 function withNode(span: SpanStripSpan): SpanStripSpan {
-  const at = span.state === 'active' ? span.label.indexOf(NODE_SEP) : -1;
-  if (at <= 0) return span;
-  return { ...span, content: <><span className={s.node}>{span.label.slice(0, at)}</span>{span.label.slice(at)}</> };
+  if (span.state !== 'active' || span.label === '') return span;
+  const at = span.label.indexOf(NODE_SEP);
+  if (at === 0) return span;
+  const end = at === -1 ? span.label.length : at;
+  return { ...span, content: <><span className={s.node}>{span.label.slice(0, end)}</span>{span.label.slice(end)}</> };
 }
 
 /** An area's lane as a stack row: its name, and `spans`, its steps in the view chosen. */

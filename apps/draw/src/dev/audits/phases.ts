@@ -1,7 +1,7 @@
 /** Where a run has an area: the phase it is in, the color that phase wears, and its lane as spans on the run's clock. */
 import { getOwn } from '@weasel-js/registry';
 import type { SpanState, SpanStripSpan } from '@weasel-js/ui/components/SpanStrip';
-import { minutesText, stepText } from './runData';
+import { NODE_SEP, minutesText, stepText } from './runData';
 import type { AuditArea, AuditLane, AuditRun, LaneStep, LaneStepName } from './skulkMap.types';
 import palette from './palette.module.css';
 
@@ -250,8 +250,28 @@ const STEP_COLUMNS: readonly { step: LaneStepName; part: Part; phase: AuditPhase
   { step: 'match', part: 'match', phase: 'match', start: 1, width: 1, trackSpan: 2 },
   { step: 'fix', part: 'fix', phase: 'fix', start: 2, width: 1, trackSpan: 2 },
   // Applying a patch takes no time to speak of; its column is wide enough for its tally.
-  { step: 'patch', part: 'patch', phase: 'patch', start: 3, width: 0.6, trackSpan: 2 },
+  { step: 'patch', part: 'patch', phase: 'patch', start: 3 + 0.25, width: 0.6, trackSpan: 2 },
 ];
+
+/** A narrow track after the fix's own, lit while its fixer runs its checks past its last commit. */
+const CHECKS_COLUMN = { start: 3, width: 0.25 } as const;
+
+/** Whether a fixer has made every commit it set out to and is still running: its checks. */
+const checkingOf = (fix: LaneStep): boolean => fix.state === 'running' && !!fix.total && (fix.done ?? 0) >= fix.total;
+
+/** The fixer's checks: lit while it runs them, carrying the node doing it, and filled once it ends. */
+function checksSpan(fix: LaneStep): SpanStripSpan {
+  const checking = checkingOf(fix);
+  const state = fix.state === 'done' ? 'done' : fix.state === 'failed' ? 'failed' : checking ? 'active' : 'pending';
+  return {
+    id: 'checks', start: CHECKS_COLUMN.start, ms: CHECKS_COLUMN.width, trackSpan: 2, title: 'the fixer\'s checks',
+    label: checking ? fix.node ?? '' : '', state, fill: state === 'pending' ? 0 : 1, color: 'var(--audit-checks)',
+  };
+}
+
+/** The fix span while its fixer runs its checks: no longer active, its node moved onto the checks track. */
+const fixWhileChecking = (span: SpanStripSpan, fix: LaneStep): SpanStripSpan =>
+  (checkingOf(fix) ? { ...span, state: 'done', label: span.label.slice(span.label.indexOf(NODE_SEP) + NODE_SEP.length) } : span);
 
 /** How wide the steps view's window is, in columns. */
 export const STEP_COLUMN_COUNT = Math.max(...STEP_COLUMNS.map((c) => c.start + c.width));
@@ -270,7 +290,8 @@ export function laneStepsOf(lane: AuditLane, now: number): SpanStripSpan[] {
     const since = s.state === 'running' ? ms(s.since) : null;
     const fill = s.state === 'done' || s.state === 'failed' ? 1
       : step === 'patch' ? patchFillOf(lane)
-      : s.state === 'running' && s.total ? Math.min(RUNNING_FILL_CAP, (s.done ?? 0) / s.total)
+      // Its count runs to full: the checks after its last commit light a track of their own.
+      : s.state === 'running' && s.total ? Math.min(1, (s.done ?? 0) / s.total)
       : since !== null ? Math.min(RUNNING_FILL_CAP, (now - since) / (TYPICAL_MINUTES[part] * MIN))
       : 0;
     return {
@@ -278,7 +299,7 @@ export function laneStepsOf(lane: AuditLane, now: number): SpanStripSpan[] {
       label: step === 'patch' && s.state !== 'failed' ? tallyOf(lane) : s.state === 'waiting' ? '' : stepText(step, s, now),
       color: phaseColor(s.state === 'failed' ? 'conflict' : phase),
     };
-  }).flatMap((span) => (span.id === 'patch' && span.state !== 'failed' ? withUnfixed(span, lane) : [span]))
+  }).flatMap((span) => (span.id === 'patch' && span.state !== 'failed' ? withUnfixed(span, lane) : span.id === 'fix' ? [fixWhileChecking(span, lane.steps.fix), checksSpan(lane.steps.fix)] : [span]))
     .map((span) => withInk(span));
 }
 

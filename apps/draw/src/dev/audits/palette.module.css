@@ -33,6 +33,8 @@
   /* Fixed and patched: black, inked and outlined white where it is drawn. */
   --audit-phase-patch: oklch(0.16 0 0);
   --audit-phase-patch-ink: #fff;
+  /* A fixer's checks, run after its last commit. */
+  --audit-checks: oklch(0.72 0.18 55);
   /* The share of a patch its fixer filed rather than fixed. */
   --audit-filed: oklch(0.38 0 0);
   --audit-phase-ramp: linear-gradient(to right, var(--audit-phase-review), var(--audit-phase-reviewed), var(--audit-phase-match),
