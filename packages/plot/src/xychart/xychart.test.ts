@@ -159,6 +159,19 @@ describe('xyScales', () => {
     }
   });
 
+  it('a drag holds a value inside a set value-axis end, and past a fitted one lets it grow', () => {
+    const { layout, get } = byKey(SALES);
+    const bar = get('bar:0:2')!;
+    const drag = xyEditor.drag(SALES, bar.data.plotMark, SIZE, PLOT_THEME, measure)!;
+    expect(drag({ x: 0, y: layout.value.position(130) }).series[0]!.values[2]).toBe(100);
+    expect(drag({ x: 0, y: layout.value.position(-30) }).series[0]!.values[2]).toBe(0);
+    const open: XyChartData = { ...SALES, y: { min: 0 } };
+    const fitted = byKey(open);
+    const grow = xyEditor.drag(open, fitted.get('bar:0:2')!.data.plotMark, SIZE, PLOT_THEME, measure)!;
+    expect(grow({ x: 0, y: fitted.layout.value.position(130) }).series[0]!.values[2]).toBe(130);
+    expect(grow({ x: 0, y: fitted.layout.value.position(-30) }).series[0]!.values[2]).toBe(0);
+  });
+
   it('the editor puts a handle on a bar\'s end and on each point, and a drag proposes the value under the pointer', () => {
     const { layout, get } = byKey(SALES);
     const bar = get('bar:0:1')!;

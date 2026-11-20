@@ -32,7 +32,8 @@ export const xyEditor: PlotEditor<XyChartData> = {
     if (which === null) return null;
     const { layout } = compileXyChart(data, size, theme, measure);
     const vertical = layout.orientation === 'vertical';
-    return (at) => setXyValue(data, which.series, which.index, xyValueAt(layout.value, vertical ? at.y : at.x));
+    // A set end holds the value, as the bar is cut there; past a fitted end the value grows and the axis refits.
+    return (at) => setXyValue(data, which.series, which.index, xyValueAt(layout.value, vertical ? at.y : at.x, data.y));
   },
   text: (data, datum, text) => (datum.edit === 'title' ? withTitle(data, text) : data),
 };
