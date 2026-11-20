@@ -85,6 +85,16 @@ describe('an unregistered name', () => {
     expect(warn).toHaveBeenCalledTimes(2);
   });
 
+  it('paints as whatever rect resolves to, a registered rect included', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const dispose = registerOutline('rect', { path: (b) => rectPath(b.x, b.y, 5, 5) });
+    try {
+      expect(outlinePath('test:shadowed-fallback', BOX)).toEqual(rectPath(10, 20, 5, 5));
+    } finally {
+      dispose();
+    }
+  });
+
   it('keeps a bounded memory of the names it warned about', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     outlinePath('test:forgotten', BOX);

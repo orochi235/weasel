@@ -44,12 +44,12 @@ export function registerOutline(name: string, def: OutlineDef): () => void {
 }
 
 /** The definition `name` resolves to. An unregistered name resolves to
- *  `rect`, with a development warning once per name. */
+ *  whatever `rect` does, a registration shadowing it included, with a development warning once per name. */
 export function resolveOutline(name: string): OutlineDef {
   const def = table.get(name);
   if (def) return def;
   if (isDev() && unwarned(name)) {
     console.warn(`@weasel-js/diagram: no outline named '${name}' is registered; painting it as 'rect'`);
   }
-  return FLOWCHART_OUTLINES.rect;
+  return table.get('rect') ?? FLOWCHART_OUTLINES.rect;
 }
