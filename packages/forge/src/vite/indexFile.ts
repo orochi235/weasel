@@ -215,11 +215,11 @@ function tagsOf(obj: t.ObjectExpression | null): string[] | undefined {
   return value.elements.flatMap((e) => (e ? (stringLiteral(e) ?? []) : []));
 }
 
-/** A story's tags as Storybook combines them: the meta's, then its own, where `!tag` removes `tag`. */
+/** A story's tags as Storybook combines them: the meta's, then its own, where `!tag` at either level removes `tag`. */
 function combineTags(meta: string[] | undefined, own: string[] | undefined): string[] | undefined {
   if (meta === undefined && own === undefined) return undefined;
-  const out = new Set(meta);
-  for (const tag of own ?? []) {
+  const out = new Set<string>();
+  for (const tag of [...(meta ?? []), ...(own ?? [])]) {
     if (tag.startsWith('!')) out.delete(tag.slice(1));
     else out.add(tag);
   }
