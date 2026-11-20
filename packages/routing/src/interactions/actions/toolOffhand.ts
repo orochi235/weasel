@@ -18,12 +18,13 @@ export interface ToolOffhandBindingSpec {
 }
 
 /** `KeyboardEvent.key` for a declared `Eligibility.offhand` trigger. The
- *  named keys become their DOM names; any other trigger already is one. */
+ *  named keys and the modifiers, in any case, become their DOM names; any
+ *  other trigger already is one. */
 export function offhandKeyFor(trigger: HotkeyTrigger): string {
-  switch (trigger) {
+  switch (trigger.toLowerCase()) {
     case 'space': return ' ';
     case 'alt': return 'Alt';
-    case 'ctrl': return 'Control';
+    case 'ctrl': case 'control': return 'Control';
     case 'meta': return 'Meta';
     case 'shift': return 'Shift';
     default: return trigger;
@@ -53,11 +54,11 @@ export function buildToolOffhandBindings(
  *  with Cmd or Ctrl, so a letter trigger leaves its browser chord alone.
  *  Every hold-a-key binding builds its spec here, so that rule has one home. */
 export function heldKeySpec(key: string | string[]): KeyHeldSpec {
-  const isModifier = [key].flat().some((k) => MODIFIER_KEYS.has(k));
+  const isModifier = [key].flat().some((k) => MODIFIER_KEYS.has(k.toLowerCase()));
   return { kind: 'keyHeld', key, mods: { ...(isModifier ? ANY_MODS : SHIFT_OR_ALT) } };
 }
 
-const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Alt', 'Control', 'Meta', 'Shift']);
+const MODIFIER_KEYS: ReadonlySet<string> = new Set(['alt', 'control', 'meta', 'shift']);
 
 // A modifier's own keydown reports its flag set, and which other modifiers are
 // already down when it lands is an accident of the order they were pressed in.

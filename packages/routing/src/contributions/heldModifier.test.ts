@@ -13,6 +13,12 @@ describe('heldModifierOf', () => {
     expect(heldModifierOf(undefined)).toBeNull();
     expect(heldModifierOf('constructor')).toBeNull();
   });
+
+  it('reads a modifier trigger in any case, as every key spec is matched', () => {
+    expect(heldModifierOf('control')).toBe('ctrl');
+    expect(heldModifierOf('SHIFT')).toBe('shift');
+    expect(heldModifierOf('CTRL')).toBe('ctrl');
+  });
 });
 
 describe('withHeldModifier', () => {

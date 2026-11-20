@@ -233,6 +233,47 @@ describe('route-conflict reporting sees binding overrides', () => {
   });
 });
 
+describe('route-conflict reporting checks again when what it compares changes', () => {
+  const keyed = (id: string, key: string): Contribution => ({
+    id, eligibility: { always: true }, bindings: [{ spec: { kind: 'key', key }, actionId: `${id}.run` }],
+  });
+  const conflicts = (warn: { mock: { calls: unknown[][] } }) =>
+    warn.mock.calls.map((args) => String(args[0])).filter((m) => m.includes('route conflict'));
+  const providers = ({ children }: { children: ReactNode }) => (
+    <ActionsProvider><ActiveToolContextProvider>{children}</ActiveToolContextProvider></ActionsProvider>
+  );
+
+  it('reports an entry whose bindings move onto a taken key under the same id', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { rerender } = renderHook(
+      ({ key }: { key: string }) => useContributions({ entries: [keyed('a', 'L'), keyed('b', key)], focused: null }),
+      { wrapper: providers, initialProps: { key: 'M' } },
+    );
+    expect(conflicts(warn)).toEqual([]);
+    rerender({ key: 'L' });
+    const said = conflicts(warn);
+    warn.mockRestore();
+    expect(said).toHaveLength(1);
+  });
+
+  it('reports an action registered after the first check whose binding collides', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const late = { id: 'late.action', kind: 'immediate', deps: [], defaultBinding: { kind: 'key', key: 'L' }, run: () => {} } as unknown as Action;
+    function Late(): null { useAction(late); return null; }
+    function Host({ mounted }: { mounted: boolean }): ReactNode {
+      useContributions({ entries: [keyed('a', 'L')], focused: null });
+      return mounted ? <Late /> : null;
+    }
+    const { rerender } = render(providers({ children: <Host mounted={false} /> }));
+    expect(conflicts(warn)).toEqual([]);
+    rerender(providers({ children: <Host mounted /> }));
+    const said = conflicts(warn);
+    warn.mockRestore();
+    expect(said).toHaveLength(1);
+    expect(said[0]).toContain('late.action');
+  });
+});
+
 // Every tool `defineTool` builds declares `focus: true`, and `useTools`'
 // `declareSlot(tool, 'always')` adds `always: true` on top of it. Bucketing on
 // "not focus-eligible" therefore put every ambient tool in the registry

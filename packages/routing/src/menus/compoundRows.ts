@@ -6,6 +6,7 @@ import {
 } from '@weasel-js/prefs-schema';
 import { getOwn, isPlainObject } from '@weasel-js/registry';
 import { sep } from './separators';
+import { pathSegment, pathSegments } from './paths';
 
 /** How values are read and written where a set of rows is drawn. */
 export interface MenuAccess {
@@ -25,24 +26,6 @@ export interface MenuDraw {
 }
 
 const noop = () => {};
-
-/** A map key as one segment of a dotted path: a `.` or `\` in it is escaped with a `\`. */
-export function pathSegment(key: string): string {
-  return key.replace(/[\\.]/g, '\\$&');
-}
-
-/** A dotted path's segments, each unescaped: the inverse of joining {@link pathSegment}s with `.`. */
-export function pathSegments(path: string): string[] {
-  const out: string[] = [];
-  let seg = '';
-  for (let i = 0; i < path.length; i++) {
-    const ch = path[i]!;
-    if (ch === '\\' && i + 1 < path.length) seg += path[++i];
-    else if (ch === '.') { out.push(seg); seg = ''; } else seg += ch;
-  }
-  out.push(seg);
-  return out;
-}
 
 /** `container` with the value at `segs` replaced, every container on the way copied. */
 function setIn(container: unknown, segs: readonly string[], value: unknown): unknown {

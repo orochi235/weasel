@@ -13,7 +13,7 @@ import { actionItems, type ActionItem } from '../interactions/actions/actionItem
 import { actionItemShortcuts, type ActionShortcut } from '../interactions/actions/actionShortcuts';
 import { checkActive, checkEnabled, type ActionEnabledResult } from '../interactions/actions/actionEnabled';
 import { actionSettingsParams, readActionSettings } from '../interactions/actions/actionSettings';
-import { isDev } from '@weasel-js/react';
+import { isDev } from '@weasel-js/registry';
 import { sep, tidy, withReason } from './separators';
 import { booleanRows, colorRows, enumRows, numberRows, stringRows } from './valueRows';
 import type { MenuDef } from './types';
@@ -74,7 +74,7 @@ function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boole
     ? { enabled: false }
     : checkEnabled(it.action, deps, ctx.at, params);
   const why = !off && reason !== undefined ? { disabledReason: reason } : {};
-  if (it.action.settings) return settingsOf(ctx, it, key, label, off || !enabled, why, access);
+  if (it.action.settings) return settingsOf(ctx, it, params, key, label, off || !enabled, why, access);
   return {
     kind: 'item',
     key,
@@ -103,7 +103,8 @@ const hintOf = ({ description, grade }: ActionItem): Pick<ActionItem, 'descripti
 /** An action carrying settings as a submenu of its form's rows, read when the
  *  menu resolves; each change triggers the action with the params it makes. */
 function settingsOf(
-  ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, why: { disabledReason?: string }, access?: string,
+  ctx: Ctx, it: ActionItem, base: Record<string, unknown>, key: string, label: string, off: boolean,
+  why: { disabledReason?: string }, access?: string,
 ): MenuEntry {
   const settings = it.action.settings!;
   const state = off ? null : readActionSettings(it.action, ctx.src.depsFor(it.action));
@@ -111,7 +112,7 @@ function settingsOf(
   const values = (path: string): unknown => (mixed.has(path) ? undefined : prefValueAt(state?.values, path));
   const onChange = (path: string, value: unknown): void => {
     const params = actionSettingsParams(settings, path, value);
-    if (params) ctx.src.trigger(it.action.id, { ...ctx.params, ...it.params, ...params });
+    if (params) ctx.src.trigger(it.action.id, { ...base, ...params });
   };
   const form: Ctx = {
     ...ctx,

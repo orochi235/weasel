@@ -42,7 +42,8 @@ function read(): Cached {
       const v = localStorage.getItem(k);
       if (v == null || v === '') continue;
       if (v === '1' || v === 'true' || v === '*') return { all: true, set: new Set() };
-      return { all: false, set: new Set(v.split(/[\s,]+/).filter(Boolean)) };
+      const set = new Set(v.split(/[\s,]+/).filter(Boolean));
+      return set.has('*') ? { all: true, set: new Set() } : { all: false, set };
     }
     return empty;
   } catch {

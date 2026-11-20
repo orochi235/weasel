@@ -192,4 +192,32 @@ describe('usePublishSelection — unmount', () => {
     rerender(tree(false));
     expect(seen).toEqual(['z']);
   });
+
+  it('keeps a selection another live canvas still holds when one holding the same goes away', () => {
+    let seen: readonly NodeId[] = [];
+    const tree = (second: boolean) => (
+      <SelectionContextProvider>
+        <Publisher ids={[asNodeId('n1')]} />
+        {second ? <Publisher ids={[asNodeId('n1')]} /> : null}
+        <Reader onRead={(ids) => { seen = ids; }} />
+      </SelectionContextProvider>
+    );
+    const { rerender } = render(tree(true));
+    rerender(tree(false));
+    expect(seen).toEqual(['n1']);
+  });
+
+  it('keeps it when the first of two canvases holding it goes away', () => {
+    let seen: readonly NodeId[] = [];
+    const tree = (first: boolean) => (
+      <SelectionContextProvider>
+        {first ? <Publisher ids={[asNodeId('n1')]} /> : null}
+        <Publisher ids={[asNodeId('n1')]} />
+        <Reader onRead={(ids) => { seen = ids; }} />
+      </SelectionContextProvider>
+    );
+    const { rerender } = render(tree(true));
+    rerender(tree(false));
+    expect(seen).toEqual(['n1']);
+  });
 });

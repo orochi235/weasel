@@ -16,10 +16,9 @@ import { assembleEntries } from './assemble';
 import { liveScope, type EligibilityState } from './eligibility';
 import { useInnermostKeymap } from '../keymaps/useInnermostKeymap';
 import type { Contribution, OverlayPosition } from './types';
-import { isDev } from '@weasel-js/react';
 import { sameList, useStableByContent } from '@weasel-js/react';
 import type { KernelOverlay } from '../index';
-import { compositeKey } from '@weasel-js/registry';
+import { compositeKey, identityKeyOf, isDev } from '@weasel-js/registry';
 
 const NO_SUBSCRIBE = (): (() => void) => () => {};
 
@@ -158,6 +157,8 @@ function routedTool(
   return entry && liveScope(entry.id, entry.eligibility ?? {}, state) === 'active' ? entry.id : null;
 }
 
+const dropFunctions = (_key: string, v: unknown): unknown => (typeof v === 'function' ? 'ƒ' : v);
+
 /**
  * Route-conflict check. Two entries declaring the same (phase, gesture, arg,
  * target, modifiers) tuple in one scope are resolved by declaration order and
@@ -166,18 +167,19 @@ function routedTool(
  */
 function useRouteConflictReport(entries: readonly Contribution<unknown>[], modesRegistry: ModeRegistry | undefined): void {
   const actionsRegistry = useActionsRegistry();
-  // Dev-only, and deduped on a signature of the entry set and the binding
-  // overrides: the check walks every binding of every entry, and consumers
-  // usually rebuild the entry list each render. Actions are read inside the
-  // effect, after the registrations that ran in child effects have landed, and
-  // the registry is watched so an override set later is checked too.
+  // Dev-only, and deduped on a signature of what it compares (each entry's
+  // eligibility and bindings, the registered actions, and the overrides), since
+  // consumers usually rebuild the entry list each render. Actions are read
+  // inside the effect, after child effects' registrations have landed, and the
+  // registry is watched so a later registration or override is checked too.
   const lastConflictSigRef = useRef<{ sig: string; modes: ModeRegistry | undefined } | null>(null);
-  const entrySig = compositeKey(entries.map((e) => e.id));
   useEffect(() => {
     if (!isDev()) return;
+    const entrySig = JSON.stringify(entries.map((e) => [e.id, e.eligibility, e.bindings]), dropFunctions);
     const check = (): void => {
       const overrides = actionsRegistry?.bindingOverrides() ?? NO_OVERRIDES;
-      const sig = `${entrySig}|${JSON.stringify([...overrides])}`;
+      const actions = actionsRegistry?.list() ?? [];
+      const sig = `${entrySig}|${compositeKey(actions.map(identityKeyOf))}|${JSON.stringify([...overrides])}`;
       const last = lastConflictSigRef.current;
       if (last?.sig === sig && last.modes === modesRegistry) return;
       lastConflictSigRef.current = { sig, modes: modesRegistry };
@@ -197,14 +199,14 @@ function useRouteConflictReport(entries: readonly Contribution<unknown>[], modes
       reportRouteConflicts({
         registry,
         ambient,
-        actions: actionsRegistry?.list() ?? [],
+        actions,
         overrides,
         ...(modesRegistry ? { modes: modesRegistry.list().map(activeModeOf) } : {}),
       });
     };
     check();
     return actionsRegistry?.subscribe(check);
-  }, [entrySig, entries, actionsRegistry, modesRegistry]);
+  }, [entries, actionsRegistry, modesRegistry]);
 }
 
 /**

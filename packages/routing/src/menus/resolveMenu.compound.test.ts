@@ -5,7 +5,7 @@ import {
   type PrefUnion,
 } from '@weasel-js/prefs-schema';
 import { resolveSchemaMenu, type MenuSources } from './resolveMenu';
-import { pathSegment, pathSegments } from './compoundRows';
+import { parentPath, pathSegment, pathSegments } from './paths';
 
 /** Values held whole at each top-level key, as a prefs store holds them, read at a dotted path. */
 function store(initial: Record<string, unknown>, extra: Partial<MenuSources> = {}) {
@@ -158,6 +158,27 @@ describe('resolveSchemaMenu: a map leaf', () => {
     const { src } = store({ sizes: { small: 8 } });
     const rows = rowsOf(only(resolveSchemaMenu(menu({ sizes: { ...sizes, readout: true } }), src)));
     expect(rows.map((r) => r.key)).toEqual(['sizes.small']);
+  });
+});
+
+describe('resolveSchemaMenu: a map of encoded booleans', () => {
+  it('hands an entry under a dotted key the map as its siblings', () => {
+    const read = vi.fn((stored: unknown) => stored === 'on');
+    const flags = leafOf<PrefMap>({
+      kind: 'map', name: 'Flags', default: {},
+      item: { ...pref.boolean('Flag', false), encoding: { read, write: (on: boolean) => (on ? 'on' : 'off') } } as PrefLeaf,
+    });
+    const { src } = store({ flags: { 'a.b': 'on' } });
+    resolveSchemaMenu(menu({ flags }), src);
+    expect(read).toHaveBeenCalledWith('on', { 'a.b': 'on' });
+  });
+});
+
+describe('parentPath', () => {
+  it('splits at the last unescaped dot', () => {
+    expect(parentPath('m.a\\.b')).toBe('m');
+    expect(parentPath('m.a\\\\.b')).toBe('m.a\\\\');
+    expect(parentPath('m')).toBeUndefined();
   });
 });
 

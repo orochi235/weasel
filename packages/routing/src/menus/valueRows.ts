@@ -5,6 +5,7 @@ import {
 } from '@weasel-js/prefs-schema';
 import { endlessAllows } from '@weasel-js/quantity';
 import { sep } from './separators';
+import { parentPath } from './paths';
 
 /** Where a value row reads and writes; a row is left out without what it needs. */
 export interface RowAccess {
@@ -16,8 +17,8 @@ const noop = () => {};
 const withAccess = (access?: string): { access?: string } => (access ? { access } : {});
 
 function siblingsOf(src: RowAccess, path: string): Record<string, unknown> | undefined {
-  const dot = path.lastIndexOf('.');
-  const parent = dot < 0 ? undefined : src.values!(path.slice(0, dot));
+  const at = parentPath(path);
+  const parent = at === undefined ? undefined : src.values!(at);
   return parent && typeof parent === 'object' ? parent as Record<string, unknown> : undefined;
 }
 
