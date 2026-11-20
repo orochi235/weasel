@@ -95,6 +95,21 @@ describe('useGestureDispatcher — drop preview', () => {
     expect(hide).toHaveBeenCalledTimes(3);
   });
 
+  it('keeps the preview up while the drag moves onto a child of the element', () => {
+    const { action, preview, hide } = previewing();
+    const { canvas } = mount(action);
+    const child = canvas.appendChild(document.createElement('span'));
+    drag(canvas, 'dragover');
+    drag(child, 'dragenter');
+    drag(canvas, 'dragleave', { relatedTarget: child });
+    expect(hide).not.toHaveBeenCalled();
+    expect(canvas.classList.contains('weasel-dropover')).toBe(true);
+    drag(child, 'dragover');
+    expect(preview).toHaveBeenCalledTimes(1);
+    drag(child, 'dragleave', { relatedTarget: null });
+    expect(hide).toHaveBeenCalledTimes(1);
+  });
+
   it('asks nothing of a drag no binding would take', () => {
     const { action, preview } = previewing(['text/csv']);
     const { canvas } = mount(action);
