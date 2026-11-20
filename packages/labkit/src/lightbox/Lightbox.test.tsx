@@ -92,10 +92,25 @@ describe('Lightbox', () => {
       </Lightbox>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Expand' }));
+    fireEvent.pointerDown(screen.getByTestId('out'));
     fireEvent.click(screen.getByTestId('out'));
     expect(expanded()).toBe(true);
+    fireEvent.pointerDown(root());
     fireEvent.click(root());
     expect(expanded()).toBe(false);
+  });
+
+  it('stays open after a drag that starts in the content and is released in the margin', () => {
+    renderWithIcons(
+      <Lightbox>
+        <div data-testid="out">output</div>
+      </Lightbox>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Expand' }));
+    fireEvent.pointerDown(screen.getByTestId('out'));
+    // The browser sends the click to the press and release targets' common ancestor: the root.
+    fireEvent.click(root());
+    expect(expanded()).toBe(true);
   });
 
   it('makes everything outside it inert while open, and only what it marked', () => {
