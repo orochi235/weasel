@@ -3040,3 +3040,9 @@ Calls the lanes made without a ruling:
   does nothing once another element holds the id; labkit's own tenants release through it. `registerTile(id, null)`
   still drops whatever holds the id, for a ref callback detaching. Making the null form refuse to drop a connected
   element was the alternative, but a ref callback whose id changed detaches an element still in the document.
+## Audit round fifty-one (2026-11-20): labkit's trials
+
+- 2026-11-20 (the fixer's call): an instrument declaring `dragDrop` without `canvas` throws, from `cameraOf`, as
+  `orbit` beside `canvas` does: only a canvas mounts the drop target and the drag overlay, so the palette showed and
+  nothing could be dropped. Mounting a drop target for `stage` and `orbit` cameras was the alternative; an `orbit`
+  one needs a world point from a ray, which `onDrop`'s `Point` has no form for.

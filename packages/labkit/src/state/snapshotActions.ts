@@ -2,7 +2,7 @@ import type { InstrumentList } from '../instrument/types';
 import { resetTrial as resetTrialOp } from '../trial/trialOps';
 import { loadedFrom, snapshotOf } from './snapshots';
 import { announceTrialRestart } from './trialRestarts';
-import type { InstrumentHooks, LabStoreState, SavedSnapshot, TrialRecord } from './types';
+import type { InstrumentHooks, LabStoreState, SavedSnapshot } from './types';
 
 /** The store's actions that save a trial, or put one back: to a snapshot, or to what it opened on. */
 export interface SnapshotActions {
@@ -63,22 +63,8 @@ export function snapshotActions(
     },
 
     resetTrial: (trialId, instruments) => {
-      const record = resetTrialOp(get().trials, trialId, instruments).find((w) => w.id === trialId);
-      if (!record) return;
-      set((s) => ({
-        trials: s.trials.map((w) => {
-          if (w.id !== trialId) return w;
-          const { auto: _pinnedNow, history: _history, undo: _undo, ...kept } = w;
-          const reset: TrialRecord = {
-            ...kept,
-            config: record.config,
-            state: record.state,
-            view: record.view,
-          };
-          if (record.auto) reset.auto = record.auto;
-          return reset;
-        }),
-      }));
+      if (!get().trials.some((w) => w.id === trialId)) return;
+      set((s) => ({ trials: resetTrialOp(s.trials, trialId, instruments) }));
       restarted(trialId);
     },
   };

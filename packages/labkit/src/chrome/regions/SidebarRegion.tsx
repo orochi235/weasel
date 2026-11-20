@@ -84,6 +84,19 @@ export function Section({
   );
 }
 
+/** The props a {@link Section} takes from a sidebar section, docked or torn out. */
+export function sectionProps(item: SidebarSection) {
+  return {
+    title: item.title,
+    stance: item.stance,
+    grade: item.grade,
+    emphasis: item.emphasis,
+    tint: item.tint,
+    actions: item.actions,
+    fill: item.fill,
+  };
+}
+
 /** A docked section's undock control, or nothing where the context offers no tear-out. */
 export function undockButton(ctx: SidebarSlotContext, id: string, item: SidebarSection): ReactNode {
   const { undockPanel } = ctx;
@@ -117,13 +130,7 @@ export function SidebarRegion<TCtx extends SidebarSlotContext = TrialChromeConte
         return (
           <Section
             key={c.id}
-            title={item.title}
-            stance={item.stance}
-            grade={item.grade}
-            emphasis={item.emphasis}
-            tint={item.tint}
-            actions={item.actions}
-            fill={item.fill}
+            {...sectionProps(item)}
             collapsed={getOwn(ctx.collapsedSections, c.id) ?? item.defaultCollapsed ?? false}
             onCollapsedChange={(next) => ctx.setSectionCollapsed(c.id, next)}
             trailing={undockButton(ctx, c.id, item)}
