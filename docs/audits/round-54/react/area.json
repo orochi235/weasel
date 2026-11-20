@@ -1,0 +1,76 @@
+{
+ "id": "react",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/react/src/adoptCss.ts",
+  "packages/react/src/assignRef.ts",
+  "packages/react/src/colorScheme.ts",
+  "packages/react/src/copyText.ts",
+  "packages/react/src/index.ts",
+  "packages/react/src/kitSettings.ts",
+  "packages/react/src/media.ts",
+  "packages/react/src/pageStorage.ts",
+  "packages/react/src/pbt.fixture.ts",
+  "packages/react/src/reducedMotion.ts",
+  "packages/react/src/scheduledFrame.ts",
+  "packages/react/src/test-seams.ts",
+  "packages/react/src/testing/abandonRender.tsx",
+  "packages/react/src/testing/baselineOf.ts",
+  "packages/react/src/testing/domResidue.ts",
+  "packages/react/src/testing/giveKeys.ts",
+  "packages/react/src/testing/leakProbe.ts",
+  "packages/react/src/testing/renderSettled.tsx",
+  "packages/react/src/testing/stubMatchMedia.ts",
+  "packages/react/src/useCanvasFocus.ts",
+  "packages/react/src/useElapsed.ts",
+  "packages/react/src/useKitSetting.ts",
+  "packages/react/src/useLatest.ts",
+  "packages/react/src/useLatestOnly.ts",
+  "packages/react/src/useNearViewport.ts",
+  "packages/react/src/useNotified.ts",
+  "packages/react/src/useStableByContent.ts",
+  "packages/react/src/useVisibleRaf.ts",
+  "packages/react/src/useWindowEvent.ts",
+  "packages/react/src/watchElementMove.ts",
+  "packages/react/src/watchResize.ts"
+ ],
+ "a": 6,
+ "b": 6,
+ "m": 3,
+ "distinct": 9,
+ "chapman": 11.3,
+ "unfound": 2.3,
+ "read": {
+  "A": 31,
+  "B": 31
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.8,
+   "B": 4,
+   "match": 2.2,
+   "fix": 23
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "weightedTokens": 1761223,
+  "costUsd": 5.32
+ },
+ "fixCommits": [
+  "2c0f2fe78e1362173aa08935cf84551cb163a100",
+  "5dd240d730a6eb673c0b29a743ed429a02ac2347",
+  "8b01b26439c3f241f91b69c7d006fbc9e641c34e",
+  "a4c6809052e25ecc10f50a4d1963e27a7c12bf5d",
+  "b2737bc58faf15558ecfefbcc1a83f54a357f52b",
+  "344f62d085e79f82ecb53210e103062a5dc85f70",
+  "85f85baf270412ee18abda5bc69901aea4dfaec0",
+  "b6863aa21eca29868f4354468148dbd3733d9ab5"
+ ]
+}

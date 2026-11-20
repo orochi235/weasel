@@ -1,0 +1,16 @@
+packages/rig/src/actionParamSchema.ts
+packages/rig/src/bone/boneActions.ts
+packages/rig/src/bone/boneOverlay.ts
+packages/rig/src/bone/placedRig.ts
+packages/rig/src/bone/rigEditState.ts
+packages/rig/src/bone/useBoneTool.ts
+packages/rig/src/icons.gen.ts
+packages/rig/src/icons.table.ts
+packages/rig/src/index.ts
+packages/rig/src/kitSettings.ts
+packages/rig/src/pbt.fixture.ts
+packages/rig/src/toolSets.ts
+packages/rig/src/useRigTools.ts
+packages/rig/src/weight/useWeightTool.ts
+packages/rig/src/weight/weightActions.ts
+packages/rig/src/weight/weightOverlay.ts

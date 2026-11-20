@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   3,
+   4
+  ],
+  [
+   5,
+   0
+  ]
+ ],
+ "a": [
+  "Moving a section between `object` leaves (or into/out of one) leaves every condition, alias and pair that read its leaves pointing at the old value paths",
+  "Converting a leaf that carries its own enum options to `enum` drops its default and keeps the blank's `'a'`, which is not one of the options kept",
+  "Two bundles of one package whose ids differ only in punctuation collapse into one group, the first silently lost",
+  "A draft whose schema holds a plain-data value with a `$from`, `$num`, `$stub`, `$type` or `$unset` key is misread on reopen",
+  "A dotted leaf key under a section root may name a path beneath another leaf's value",
+  "A bundle link moved from one bundle to another exports as `{ op: 'move', kind: 'bundle' }`, the same shape as a bundle moved between packages, and `touched` reads its bundle ids as package names",
+  "Reopening an asset-set draft that stands at the baseline throws away its redo steps; a lone schema's draft keeps them",
+  "`attributeSchema` looks a group's `as` up in a plain object, so an `as` naming an `Object.prototype` member throws"
+ ],
+ "b": [
+  "An included bundle moved between bundles exports as a bundle changing package, and the packages of the bundles it moved between are left out",
+  "`convertLeaf` drops `access` (and keeps `readout` and `auto`) by a different list than `sharedAttrs` offers",
+  "`conditionLeaves` and `conditionLeafOf` never resolve a test read from its group (`from: 'group'`)",
+  "Clearing a field of an object attribute leaves an empty object behind instead of removing the attribute",
+  "Draft packing does not escape its marker keys, so user data holding `$num`/`$stub`/`$from`/`$type` is misread on reload"
+ ]
+}

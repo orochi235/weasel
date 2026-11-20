@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "Emoji in text with a gradient or pattern fill ignore the fill's opacity",
+  "Without batchVariants, a run that collects two color matrices is drawn with the single-matrix program",
+  "Text decorations and outline-tier glyphs are built as float32 world coordinates with no mesh origin, so they shift away from their glyphs far from the origin"
+ ],
+ "b": [
+  "A group's color matrix never reaches a registered paint kind, on paths or on glyphs",
+  "A Float64Array value for an array uniform is rejected, though the uniform table says it reads as a Float32Array",
+  "A group with effects whose color matrix lowers alpha still claims picking ids at its unmapped alpha"
+ ]
+}

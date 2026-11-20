@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ]
+ ],
+ "a": [
+  "prefDisplayBounds decides a unit's direction from rounded display values, so a decreasing linear unit with `places` returns min > max",
+  "A union field described by one variant reads as UNSEEN when another variant reaches a list/map/paint/custom leaf at the same key, so its encoding is never applied",
+  "prefReader resolves a section-schema path by the first key that prefixes it, where prefLeavesHolding prefers an exact key, so a condition's default and its decoding leaf can come from two different leaves",
+  "prefObjectBase calls `fromScalar(undefined)` when nothing is held, so an edit of one field of an unset object starts from the lifted `undefined` rather than the leaf's default",
+  "assignPrefValueAt throws when a shorter path already holds a primitive"
+ ],
+ "b": [
+  "`repairPrefValue` never repairs an object leaf's dotted field (`'nib.angle'`)",
+  "`prefStatusAt` answers a dotted object field with the status of a sibling whose key is its prefix",
+  "`PrefValueOf` types a `clearable` number as `number`, though it reads `undefined` once cleared",
+  "`prefDisplayBounds` misses a decreasing unit when `places` rounds the unit step to zero"
+ ]
+}

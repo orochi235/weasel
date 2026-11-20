@@ -1,0 +1,61 @@
+{
+ "id": "renderer.shaders",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/renderer/src/shaders/CustomPrograms.ts",
+  "packages/renderer/src/shaders/ShaderProgram.ts",
+  "packages/renderer/src/shaders/batchFill.ts",
+  "packages/renderer/src/shaders/builtinPrograms.ts",
+  "packages/renderer/src/shaders/customPrelude.ts",
+  "packages/renderer/src/shaders/extractUniformNames.ts",
+  "packages/renderer/src/shaders/glslSource.ts",
+  "packages/renderer/src/shaders/glyphCell.ts",
+  "packages/renderer/src/shaders/glyphLayer.ts",
+  "packages/renderer/src/shaders/glyphPaint.ts",
+  "packages/renderer/src/shaders/gradFill.ts",
+  "packages/renderer/src/shaders/hullCoverage.ts",
+  "packages/renderer/src/shaders/idOutput.ts",
+  "packages/renderer/src/shaders/pathFill.ts",
+  "packages/renderer/src/shaders/patternFill.ts",
+  "packages/renderer/src/shaders/registerProgram.ts",
+  "packages/renderer/src/shaders/straightRgb.ts",
+  "packages/renderer/src/shaders/trimmedRibbon.ts"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 2,
+ "distinct": 6,
+ "chapman": 7.3,
+ "unfound": 1.3,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.8,
+   "B": 18.5,
+   "match": 0.2,
+   "fix": 14.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2173105,
+  "costUsd": 6.48
+ },
+ "fixCommits": [
+  "d58694b0a77489695d3ad052aa79facca98fd295",
+  "3cb3a673c8e267d9b30a04518bb3f6fc1fb63999",
+  "31cd706e22f8c16510cf8ec120259a8dba0a0d05",
+  "26b779a5b155c6ec25461316a1154b6c706a1e92",
+  "7d89cf68cc7496606b6c7d2b7fef66346832d82d",
+  "4f7976e3a9e08ddccfa714ba770af423d785dcdb"
+ ]
+}

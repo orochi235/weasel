@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   2,
+   2
+  ],
+  [
+   4,
+   3
+  ]
+ ],
+ "a": [
+  "A WGSL program the GPU refuses still draws until the refusal arrives, voiding the whole pass it is first drawn in",
+  "WGSL reflection depends on declaration order, so valid modules with forward references are refused",
+  "`readCanvas` on WebGPU flips the rect by the canvas's current height, not the height of the texture it reads",
+  "WebGL `beginFrame` forgets cached state but not the pixel-store and unpack-buffer state its uploads rely on",
+  "A zero-sized WebGPU canvas re-creates and retires all its buffers on every view lookup"
+ ],
+ "b": [
+  "WebGPU programs keep block members in one flat name table, so a group-1 struct member that shares a kit member's name takes the kit's writes",
+  "A throw inside a premultiplied WebGL image upload leaves UNPACK_PREMULTIPLY_ALPHA_WEBGL on, so every later upload is premultiplied",
+  "WebGPU `readCanvas` turns the rect over using the canvas's current height, not the height of the texture it reads",
+  "A zero-width or zero-height canvas makes `CanvasTarget` reallocate its color, resolve and stencil textures on every view call",
+  "WebGPU `writeBuffer` pads a write to 4 bytes with zeros, overwriting the bytes after it, and rejects offsets GL accepts",
+  "The doc says `GpuProgram.set`'s `offset`/`count` count elements of the array's type, but both backends read them as components",
+  "WebGPU targets report `samples` and `bytes` from the requested sample count, not the 1× or 4× actually allocated",
+  "A straight-alpha `ImageBitmap` uploaded with `premultiply: false` stays straight on WebGL but is premultiplied on WebGPU"
+ ]
+}

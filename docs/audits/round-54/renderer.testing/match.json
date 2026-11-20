@@ -1,0 +1,34 @@
+{
+ "pairs": [
+  [
+   1,
+   3
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   7,
+   5
+  ]
+ ],
+ "a": [
+  "createUploadTracker reads a tightly packed attribute as two floats per vertex whatever its size",
+  "fakeGpuDevice's getCurrentTexture keeps the first texture forever, so it ignores canvas resizes",
+  "glRecorder's handles and uniform locations repeat after reset(), so different objects look the same",
+  "Both recording Proxies answer `then`, so awaiting or resolving the stand-in hangs forever",
+  "glRecorder reports `gl.canvas` as a function, so a renderer over it never watches for context loss",
+  "fakeGpuDevice's popErrorScope resolves null on an empty stack, where a real device rejects",
+  "parityDevice keeps handing out a lost device and can request two devices at once",
+  "readGpu leaks its readback buffer when mapAsync rejects, and openBackends leaks the GL renderer when the WebGPU one throws"
+ ],
+ "b": [
+  "stagedVertices drops every run drawn with the several-matrices (or hull) batch variant",
+  "The GL recorder's proxy returns a function for `then`, so awaiting or resolving with `gl` hangs",
+  "The GL recorder is missing constants the WebGL device uses, so they read as 0 and collide",
+  "fakeGpuDevice's getCurrentTexture keeps the first texture forever, so it ignores canvas resizes",
+  "trimClip's vertex-color case uses colors sized for the 41-point zigzag but draws them only on the 3-anchor curve",
+  "openBackends leaks a WebGL context and renderer when building either renderer throws"
+ ]
+}

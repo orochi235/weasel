@@ -1,0 +1,30 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   4,
+   3
+  ]
+ ],
+ "a": [
+  "The settings submenu triggers the action without the point the menu was opened at",
+  "dlog: `*` inside a namespace list does not turn on every namespace",
+  "A publisher that unmounts clears the selection slot even when another live publisher holds the same selection",
+  "`siblingsOf` splits a map-key path at an escaped dot",
+  "A held trigger spelled in a different case is not treated as a modifier"
+ ],
+ "b": [
+  "Routing's \"no React\" main entry loads React through `isDev`",
+  "A menu's settings submenu triggers its action without the `world` point",
+  "The route-conflict check never re-runs for actions registered later, or for bindings that change under the same ids",
+  "A held modifier written in a case other than the two in the table loses its loosening",
+  "Map entries whose keys contain `.` read the wrong siblings for an encoded boolean or enum"
+ ]
+}

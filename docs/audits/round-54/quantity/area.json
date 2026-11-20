@@ -1,0 +1,73 @@
+{
+ "id": "quantity",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/quantity/src/catalog.ts",
+  "packages/quantity/src/composite.ts",
+  "packages/quantity/src/endless.ts",
+  "packages/quantity/src/fieldLocale.ts",
+  "packages/quantity/src/index.ts",
+  "packages/quantity/src/infinity.ts",
+  "packages/quantity/src/kind.ts",
+  "packages/quantity/src/kinds/measure.ts",
+  "packages/quantity/src/kinds/numeral.ts",
+  "packages/quantity/src/kinds/plain.ts",
+  "packages/quantity/src/kinds/proportion.ts",
+  "packages/quantity/src/kinds/scientific.ts",
+  "packages/quantity/src/localized.ts",
+  "packages/quantity/src/number.ts",
+  "packages/quantity/src/pbt.fixture.ts",
+  "packages/quantity/src/places.ts",
+  "packages/quantity/src/present.ts",
+  "packages/quantity/src/quantity.ts",
+  "packages/quantity/src/scaleBar.ts",
+  "packages/quantity/src/scope.ts",
+  "packages/quantity/src/spin.ts",
+  "packages/quantity/src/unitExpr.ts",
+  "packages/quantity/src/units.ts"
+ ],
+ "a": 6,
+ "b": 8,
+ "m": 2,
+ "distinct": 12,
+ "chapman": 20,
+ "unfound": 8,
+ "read": {
+  "A": 23,
+  "B": 23
+ },
+ "patches": 13,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.8,
+   "B": 10.8,
+   "match": 0.2,
+   "fix": 18.5
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2746274,
+  "costUsd": 8.3
+ },
+ "fixCommits": [
+  "d30164d8e0b12e35d622d4ce15c147c31643dde4",
+  "e59f1ae7d582231e9ffff3f6d178f3f0452fd6a8",
+  "4e68cf0032415e47202d2ec5d82ac65559703701",
+  "38095a2713297a35bdd10258f4da8ab1e380b70b",
+  "6cacf314e7d1cd7e219a5e2d04c3e23471b18579",
+  "300539174416d44d7d32989323342f2a4e140080",
+  "3311ddef2f1745ad31d17896780a2b0115170c20",
+  "ff5f0667b1df6b66706d6f77ce6e3164b0c2ab5e",
+  "b72cf4811cc7ef81bdd1ae0498d1c0070a8188af",
+  "f164d0e1c99f4030961fbeb05f34062251f0f90d",
+  "b73c8ef6184ca0787b021d5f463fb43ca237209d",
+  "126d17f1ed64fd5e6f6e87fe9cc83166d8b0943b",
+  "6274badbcc22991087996b3eafe11591e2223b93"
+ ]
+}

@@ -1,0 +1,11 @@
+packages/renderer/src/cache/GLImageCache.ts
+packages/renderer/src/cache/GLMeshCache.ts
+packages/renderer/src/cache/GLTextureCache.ts
+packages/renderer/src/cache/GradientRampAtlas.ts
+packages/renderer/src/cache/cache.ts
+packages/renderer/src/cache/markerCommandCache.ts
+packages/renderer/src/cache/outlineMeshCache.ts
+packages/renderer/src/cache/outlineStrokeMeshCache.ts
+packages/renderer/src/cache/strokeMeshCache.ts
+packages/renderer/src/cache/uploadPremultiplied.ts
+packages/renderer/src/cache/whiteTexture.ts

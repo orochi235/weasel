@@ -1,0 +1,30 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "A fraction counted in a constant reads a run of spaces in cubic time",
+  "A multiplier reads a long run of spaces in quadratic time",
+  "A sum or compound value with many terms overflows the stack when resolved",
+  "Reading compound unit text is quadratic in the number of terms",
+  "scaleBar labels a bar shorter than one of its smallest unit in the base unit, rounding it to 0",
+  "QuantityView.to keeps a display that names the old unit, so the converted value shows with the wrong unit"
+ ],
+ "b": [
+  "resolveUnitExpr overflows the stack on a long flat chain of terms; the depth guard only counts parentheses and signs",
+  "multiplier parse is quadratic in a run of spaces",
+  "a long digit run ending in junk before a unit parses in quadratic time",
+  "fraction and ratio read a division by zero as ±Infinity, where every other reader refuses a non-finite number",
+  "a range's separator is spaced for a negative end that shows as 0",
+  "a `fraction({ of: 'e' })` field strips the `e` out of exponent notation",
+  "ordinal speaks a negative with a bare minus sign",
+  "roman parse does not round, where integer and ordinal parse do"
+ ]
+}

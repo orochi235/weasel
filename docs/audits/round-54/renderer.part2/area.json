@@ -1,0 +1,82 @@
+{
+ "id": "renderer.part2",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/renderer/src/meshPaint/surface.ts",
+  "packages/renderer/src/paintKinds.ts",
+  "packages/renderer/src/paintResources.ts",
+  "packages/renderer/src/paintScratch.ts",
+  "packages/renderer/src/paintToLocalUnits.ts",
+  "packages/renderer/src/paintedBounds.ts",
+  "packages/renderer/src/patterns-builtin.ts",
+  "packages/renderer/src/patterns/commandPaint.ts",
+  "packages/renderer/src/patterns/imagePatternId.ts",
+  "packages/renderer/src/patterns/index.ts",
+  "packages/renderer/src/patterns/patterns-builtin.ts",
+  "packages/renderer/src/patterns/rasterizeTile.ts",
+  "packages/renderer/src/patterns/resolveImage.ts",
+  "packages/renderer/src/patterns/resolveSpec.ts",
+  "packages/renderer/src/patterns/test-utils/fakeOffscreenCanvas.ts",
+  "packages/renderer/src/patterns/tileGeometry.ts",
+  "packages/renderer/src/pbt.fixture.ts",
+  "packages/renderer/src/readPixels.ts",
+  "packages/renderer/src/rendererParts.ts",
+  "packages/renderer/src/rendererTypes.ts",
+  "packages/renderer/src/retain/RetainedSurfaces.ts",
+  "packages/renderer/src/retain/contentBounds.ts",
+  "packages/renderer/src/retain/movesWithView.ts",
+  "packages/renderer/src/retain/retainedKey.ts",
+  "packages/renderer/src/retain/tileCull.ts",
+  "packages/renderer/src/spriteSheet.ts",
+  "packages/renderer/src/state/GroupState.ts",
+  "packages/renderer/src/state/colorMatrix.ts",
+  "packages/renderer/src/strokeLengths.ts",
+  "packages/renderer/src/targetRect.ts",
+  "packages/renderer/src/test-seams.ts",
+  "packages/renderer/src/textBounds.ts",
+  "packages/renderer/src/textCommand.ts",
+  "packages/renderer/src/textLayout.ts",
+  "packages/renderer/src/textures/registerTexture.ts",
+  "packages/renderer/src/warnOnce.ts"
+ ],
+ "a": 8,
+ "b": 4,
+ "m": 3,
+ "distinct": 9,
+ "chapman": 10.3,
+ "unfound": 1.3,
+ "read": {
+  "A": 36,
+  "B": 36
+ },
+ "patches": 9,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 12,
+   "B": 7.9,
+   "match": 0.1,
+   "fix": 29
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "weightedTokens": 3805445,
+  "costUsd": 10.52
+ },
+ "fixCommits": [
+  "8fda190a04ba47eb5e766780cbd619d43e83c425",
+  "9eb084a9de55ad8582d381a53496d5be1b360698",
+  "5a94e2b7cf9f5288a67491b5c12c5e504bbc0881",
+  "f3130d56e6cf8f69eb6344c1eab567133d5a2e8e",
+  "d8dc6bf1e3c04a96c2a77ce878c1abe1f5118f5a",
+  "3b803d70f84fbe315c73354bfb4966d4d1380cf1",
+  "a97fe65d36bda30b9abef432e006feed23a1cf00",
+  "c60fc3d33848d2bbf1d040bcac387c6abafc6802",
+  "defc1cd1a9daa261d86790d88a42ecb875bf333f"
+ ]
+}

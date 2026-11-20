@@ -1,0 +1,32 @@
+{
+ "pairs": [
+  [
+   2,
+   1
+  ],
+  [
+   3,
+   5
+  ],
+  [
+   4,
+   4
+  ]
+ ],
+ "a": [
+  "A target that leaves the document suspends a running loop, and nothing resumes it until someone calls `request()`",
+  "watchElementMove frames an unclipped element against the implicit root, which inside an iframe is the top-level viewport",
+  "A loop given `requestFrame` without `cancelFrame` cancels the page's real animation frames by the injected clock's ids",
+  "leakProbe reports a timer cleared by the other kind's clear function as still live",
+  "leakProbe counts a listener added with an already-aborted signal as live forever",
+  "actSettled's release puts back the frame functions it saw on entry, undoing any stub installed inside it"
+ ],
+ "b": [
+  "A synchronous frame clock leaves the loop holding a dead handle, so it never runs again",
+  "Cancelling a frame from an injected `requestFrame` with no `cancelFrame` cancels an unrelated window frame",
+  "A loop suspended by an offscreen target stays frozen after the target is swapped for a visible element",
+  "useNearViewport never observes an element that mounts after the hook's effect, or one that replaces it",
+  "leakProbe misses a `once` listener's removal when the event's propagation is stopped, and records listeners an already-aborted signal never added",
+  "leakProbe keeps a timer live when it is cleared with the other clear function"
+ ]
+}

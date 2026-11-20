@@ -1,0 +1,78 @@
+{
+ "id": "prefs-editor.PrefSchemaEditor.part2",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/prefs-editor/src/PrefSchemaEditor/UnplacedTree.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/aliasChoices.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/assetEdits.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/attrRenderers.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/attributeForm.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/attributeKey.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/attributeRenderers.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/autoValueRenderer.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/defaults.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/editorActions.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/editorPrefs.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/heirAfter.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/iconPickerModel.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/nodeIcon.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/paneWidths.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/panelPaths.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/pointerDrag.fixture.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/previewDrop.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/rowSearch.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/structureRows.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/treeDropRules.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/treeRows.fixture.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useActionCatalog.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useAssetChanges.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useAssetView.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useBundleView.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/useDocument.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useEditorSelection.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useHeldPlace.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useNodeAdder.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/usePaletteDrop.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/usePreviewDrag.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/usePreviewDropZone.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useRowMarks.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/useSelectedNodes.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useTreeDragOut.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 2,
+ "distinct": 5,
+ "chapman": 5.7,
+ "unfound": 0.7,
+ "read": {
+  "A": 36,
+  "B": 36
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 10.2,
+   "B": 10.7,
+   "match": 0.1,
+   "fix": 9.1
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1840588,
+  "costUsd": 5.52
+ },
+ "fixCommits": [
+  "68991fa52a0f160594bd6fa04657270b1a2b5ccc",
+  "97078cc5094faa293ee0d1f99cf27db6def5d733",
+  "dff56aed6a968711f614b7d4783cd2fe0c21de13",
+  "2853f9c6b1d8a7626b82e31806f2e51c92357f52",
+  "af230d7d85aaa7ea9ca987f7c594f03a8c0f1327"
+ ]
+}

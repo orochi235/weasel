@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "identityKeyOf gives two distinct symbols with the same description one key",
+  "Reflectable.set drops the live registrant's rank, so a later push goes over a higher-ranked registrant"
+ ],
+ "b": [
+  "identityKeyOf gives two distinct symbols with the same description one key",
+  "ExtensionRegistry.subscribe's unsubscribe also removes the same listener's direct subscription to the parent",
+  "Reflectable.set drops the live registrant's rank, so a later lower-rank push goes live over a higher-rank one",
+  "The clash warning says the newer registrant is live when a higher-rank one sits above it",
+  "KeyedEmitter.clear during an emit still calls the cleared listeners",
+  "ExtensionRegistry.entries lists inherited ids before its own, not in first-registration order",
+  "hostile fixture's mutate throws when duplicating a field that holds undefined",
+  "prototypePolluted misses an overwritten Object.prototype member"
+ ]
+}

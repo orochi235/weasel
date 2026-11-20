@@ -1,0 +1,73 @@
+{
+ "id": "renderer.part1",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/renderer/src/DrawCommand.ts",
+  "packages/renderer/src/WeaselRenderer.ts",
+  "packages/renderer/src/batchBuffers.ts",
+  "packages/renderer/src/batchClip.ts",
+  "packages/renderer/src/batchHull.ts",
+  "packages/renderer/src/batchStage.ts",
+  "packages/renderer/src/contextLoss.ts",
+  "packages/renderer/src/contextResources.ts",
+  "packages/renderer/src/cullDrawCommands.ts",
+  "packages/renderer/src/cullTree.fixture.ts",
+  "packages/renderer/src/draw.ts",
+  "packages/renderer/src/drawBatch.ts",
+  "packages/renderer/src/drawStream.ts",
+  "packages/renderer/src/dropShadow.ts",
+  "packages/renderer/src/effects/EffectTargets.ts",
+  "packages/renderer/src/effects/builtins.ts",
+  "packages/renderer/src/effects/composite.ts",
+  "packages/renderer/src/effects/compositeOp.ts",
+  "packages/renderer/src/effects/effectPrelude.ts",
+  "packages/renderer/src/effects/types.ts",
+  "packages/renderer/src/glyphCorners.ts",
+  "packages/renderer/src/glyphOutlineMesh.ts",
+  "packages/renderer/src/images/bitmapHolds.ts",
+  "packages/renderer/src/images/bitmapNames.ts",
+  "packages/renderer/src/images/imageCache.ts",
+  "packages/renderer/src/images/imageLoader.ts",
+  "packages/renderer/src/images/imageReads.ts",
+  "packages/renderer/src/index.ts",
+  "packages/renderer/src/markerCommands.ts",
+  "packages/renderer/src/math/patternSpace.ts",
+  "packages/renderer/src/mesh.ts",
+  "packages/renderer/src/meshPaint/bake.ts",
+  "packages/renderer/src/meshPaint/bakeCache.ts",
+  "packages/renderer/src/meshPaint/handles.ts",
+  "packages/renderer/src/meshPaint/index.ts",
+  "packages/renderer/src/meshPaint/meshPaint.ts",
+  "packages/renderer/src/meshPaint/meshShader.ts"
+ ],
+ "a": 6,
+ "b": 8,
+ "m": 4,
+ "distinct": 10,
+ "chapman": 11.6,
+ "unfound": 1.6,
+ "read": {
+  "A": 37,
+  "B": 37
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.1,
+   "B": 22.6,
+   "match": 0.1,
+   "fix": 21.2
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 4021891,
+  "costUsd": 11.15
+ },
+ "fixCommits": []
+}

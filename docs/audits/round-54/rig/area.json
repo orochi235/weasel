@@ -1,0 +1,56 @@
+{
+ "id": "rig",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/rig/src/actionParamSchema.ts",
+  "packages/rig/src/bone/boneActions.ts",
+  "packages/rig/src/bone/boneOverlay.ts",
+  "packages/rig/src/bone/placedRig.ts",
+  "packages/rig/src/bone/rigEditState.ts",
+  "packages/rig/src/bone/useBoneTool.ts",
+  "packages/rig/src/icons.gen.ts",
+  "packages/rig/src/icons.table.ts",
+  "packages/rig/src/index.ts",
+  "packages/rig/src/kitSettings.ts",
+  "packages/rig/src/pbt.fixture.ts",
+  "packages/rig/src/toolSets.ts",
+  "packages/rig/src/useRigTools.ts",
+  "packages/rig/src/weight/useWeightTool.ts",
+  "packages/rig/src/weight/weightActions.ts",
+  "packages/rig/src/weight/weightOverlay.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 2,
+ "distinct": 3,
+ "chapman": 3,
+ "unfound": 0,
+ "read": {
+  "A": 16,
+  "B": 16
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 14.4,
+   "B": 11.9,
+   "match": 0.1,
+   "fix": 6.5
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1142990,
+  "costUsd": 3.54
+ },
+ "fixCommits": [
+  "74f7bf497770380feb4f712029d0f828b8e23132",
+  "1dd6f79104dd0786917988bdfb2a40a2a30049af",
+  "92cb90fe48ac8b9c80e78210d02e33a1b710e978"
+ ]
+}

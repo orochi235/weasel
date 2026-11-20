@@ -1,0 +1,32 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   7,
+   3
+  ]
+ ],
+ "a": [
+  "A fractional tile `size` rasterizes a truncated tile whose shapes were laid out for the unrounded size, so the GL pattern has seams and drifts from the SVG export",
+  "`patchBounds` samples an 8×8 grid, so it under-bounds a bowed patch edge and the mesh bake crops the bulge",
+  "`textCommand` / `textCommandFromRuns(Into)` pass a tile or image pattern through unresolved, so that text draws nothing, while `textCommandFromPose` resolves it",
+  "A text layer's cached box never sees a font land, so after a face registers or loads the layer is culled and bounded by its fallback-metric layout",
+  "`registerPaintDrawKind` that throws on a sourceless program leaves the programs registered before it in place, unreleasable, over whatever those ids held",
+  "A `'bounds'` linear gradient on a non-square box draws its color bands perpendicular in the node's frame, while the SVG export (and SVG import) means `objectBoundingBox`, where they lean with the box",
+  "`retainBudget`'s documented overshoot (36 MiB at 4x) leaves out the second, single-sampled scratch buffer `RetainedSurfaces` keeps beside the multisampled one",
+  "`keepKey` keeps a retained group's effect uniforms by reference, so an effect whose uniform array is rewritten in place keeps compositing stale pixels"
+ ],
+ "b": [
+  "A text layer's memoized box never sees a font arrive, so it bounds the layout from before the face loaded",
+  "`chunks` tile has no bound on its scatter count, so a small `chunkSize` or a large `density` hangs the resolve",
+  "A fractional tile `size` is rasterized on a truncated canvas but drawn for the fractional size, so the raster tile seams and drifts from the SVG one",
+  "`keepKey` copies the key's matrices against later in-place writes but keeps effect uniforms by reference, so an effect uniform updated in place matches the stale surface"
+ ]
+}

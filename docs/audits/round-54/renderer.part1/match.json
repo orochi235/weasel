@@ -1,0 +1,38 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   3
+  ],
+  [
+   3,
+   6
+  ],
+  [
+   4,
+   2
+  ]
+ ],
+ "a": [
+  "Outline-glyph meshes bake the text's position into float32 vertices with no `origin`, so outlined text far from the origin jitters",
+  "`meshGradientXml` joins corner colors with spaces, so a mesh with any functional-notation color does not survive an SVG round trip",
+  "The mesh bake hands straight-alpha texels to a texture the paint-kind contract says is premultiplied, so bilinear sampling darkens every mesh edge",
+  "`blendFactorsOf` looks a composite name up on a plain object, so an unknown name throws a bare TypeError and `'constructor'` resolves to a function",
+  "`meshFromStops` leaves the span before the first stop and after the last uncovered, so a gradient whose stops don't sit at 0 and 1 loses its ends on conversion",
+  "`renderIdsAsync` throws synchronously instead of rejecting when the id frame fails"
+ ],
+ "b": [
+  "meshGradientXml writes patch colors space-joined, so any CSS color containing a space does not round-trip",
+  "A mesh patch color that does not parse throws out of the render",
+  "meshFromStops drops the pad regions outside the first and last stop, and a single stop at offset 1 yields an empty mesh",
+  "Mesh bake is straight alpha but sampled bilinear, so every patch edge inside the bake box gets a dark fringe",
+  "A vector image's first raster is made at its declared size with no cap",
+  "A blurred drop shadow's interior is ~70% of its color where an unblurred one is 100%",
+  "Composite operator names are looked up on a plain object, so an unknown or inherited name throws or reads Object.prototype",
+  "imageStatus counts as an image read for a minted bitmap name but not for any other src"
+ ]
+}

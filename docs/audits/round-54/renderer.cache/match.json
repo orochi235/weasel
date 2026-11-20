@@ -1,0 +1,14 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "An aligned `{ px }` glyph-outline stroke drops its stroke metric, so its screen thickness varies by direction under any non-similarity map"
+ ],
+ "b": [
+  "An aligned (inside/outside) glyph outline stroke with a `{ px }` width ignores the screen metric, so it is not `px` wide in every direction under a stretched or sheared em-to-screen map"
+ ]
+}

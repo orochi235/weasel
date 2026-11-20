@@ -1,0 +1,76 @@
+{
+ "id": "prefs-editor.PrefSchemaEditor.part1",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/prefs-editor/src/PrefSchemaEditor/ActionList.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/AddNodeDialog.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/AssetEditor.demo.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/AssetEditor.fixture.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/AssetEditor.stories.module.css",
+  "packages/prefs-editor/src/PrefSchemaEditor/AssetEditor.stories.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/AssetEditor.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/AssetList.module.css",
+  "packages/prefs-editor/src/PrefSchemaEditor/AssetList.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/AttributesPane.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/BundlePreview.module.css",
+  "packages/prefs-editor/src/PrefSchemaEditor/BundlePreview.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/EditorBar.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/EditorNotice.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/ExportPanel.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/IconAttrField.module.css",
+  "packages/prefs-editor/src/PrefSchemaEditor/IconAttrField.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/IconPicker.module.css",
+  "packages/prefs-editor/src/PrefSchemaEditor/IconPicker.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/IdentityForm.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/NodeGhost.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/NumberText.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/Palette.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/PaneHeader.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/PartsList.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/PrefSchemaEditor.module.css",
+  "packages/prefs-editor/src/PrefSchemaEditor/PrefSchemaEditor.stories.module.css",
+  "packages/prefs-editor/src/PrefSchemaEditor/PrefSchemaEditor.stories.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/PrefSchemaEditor.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/PreviewPane.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/SettingsTree.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/Shelf.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/StoredArea.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/StructurePane.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/StructureTools.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/UnitAttr.tsx"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 1,
+ "distinct": 3,
+ "chapman": 3.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 36,
+  "B": 28
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.4,
+   "B": 3.4,
+   "match": 2.3,
+   "fix": 8.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1873705,
+  "costUsd": 5.65
+ },
+ "fixCommits": [
+  "fadfee9868339c775402dcfecd587d9441ef1f5f",
+  "bda158aafc5b7434659caa658cc10a157e601128",
+  "7a8d6892aa9128a436f2f1ea3a2f04496179f694"
+ ]
+}

@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "Removing a joint leaves `data.joint` bindings naming it, and the next bone drawn reuses the name and takes them over",
+  "The weight brush paints only where the pointer was sampled, so a fast drag leaves gaps"
+ ],
+ "b": [
+  "Removing a joint strips it from skins but leaves `data.joint` bindings naming it, and a later bone takes them over",
+  "A weight-brush drag paints only where pointer events land, so a fast stroke leaves gaps",
+  "The overlays don't repaint when a consumer-supplied `selection` or `rig` thunk changes"
+ ]
+}

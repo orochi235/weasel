@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "Enum options and pair editors draw a mixed value as empty, so one edit wipes every selected node's list",
+  "A tree drag moved from the preview onto the unplaced list leaves the preview's drop drawn and its rail timer running",
+  "`useAssetChanges` returns the host's `report` result from an effect, which React then calls as a cleanup",
+  "`heirAfter` gives no heir when a removed node sits inside a folded branch, so Delete clears the selection"
+ ],
+ "b": [
+  "\"Add pref\" with nothing selected puts the new leaf loose at a page-holding root, where every drop path refuses a loose node",
+  "A tree drag moved onto the Unplaced list never tells the preview it left, so the preview's drop stays drawn",
+  "useAssetChanges hands the host's `onChangedAssets` return value back to React as an effect cleanup"
+ ]
+}

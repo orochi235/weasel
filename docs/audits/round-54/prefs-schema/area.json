@@ -1,0 +1,76 @@
+{
+ "id": "prefs-schema",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/prefs-schema/src/action.ts",
+  "packages/prefs-schema/src/alias.ts",
+  "packages/prefs-schema/src/bounds.ts",
+  "packages/prefs-schema/src/build.ts",
+  "packages/prefs-schema/src/condition.ts",
+  "packages/prefs-schema/src/groupConditions.ts",
+  "packages/prefs-schema/src/groups.ts",
+  "packages/prefs-schema/src/helpers.ts",
+  "packages/prefs-schema/src/holding.ts",
+  "packages/prefs-schema/src/index.ts",
+  "packages/prefs-schema/src/internal.ts",
+  "packages/prefs-schema/src/judge.ts",
+  "packages/prefs-schema/src/label.ts",
+  "packages/prefs-schema/src/leafValue.ts",
+  "packages/prefs-schema/src/list.ts",
+  "packages/prefs-schema/src/map.ts",
+  "packages/prefs-schema/src/number.ts",
+  "packages/prefs-schema/src/object.ts",
+  "packages/prefs-schema/src/paths.ts",
+  "packages/prefs-schema/src/presets.ts",
+  "packages/prefs-schema/src/repair.ts",
+  "packages/prefs-schema/src/schema.ts",
+  "packages/prefs-schema/src/schemaIcon.typetest.ts",
+  "packages/prefs-schema/src/scope.ts",
+  "packages/prefs-schema/src/scopeSpec.ts",
+  "packages/prefs-schema/src/shown.ts",
+  "packages/prefs-schema/src/status.ts",
+  "packages/prefs-schema/src/statusAt.ts",
+  "packages/prefs-schema/src/testing/pbt.fixture.ts",
+  "packages/prefs-schema/src/union.ts",
+  "packages/prefs-schema/src/unit.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 1,
+ "distinct": 8,
+ "chapman": 14,
+ "unfound": 6,
+ "read": {
+  "A": 31,
+  "B": 31
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.8,
+   "B": 11.9,
+   "match": 0.2,
+   "fix": 13.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2456675,
+  "costUsd": 7.27
+ },
+ "fixCommits": [
+  "a3b1735421df7bbdd0f992c80d1be29a712d0c97",
+  "470d4be3683b0a29e8a10a422c58ef024c0e764b",
+  "2e7bd8044de42fd6566d3fd2e4bc5d5c83990026",
+  "7affd451588cf8285e71681a72a18043f663074f",
+  "e11a52ef0369da3bf6cae2ae820a277d3201449c",
+  "bcc5c05c161ec45075fbfc6652d9b2707314a7cc",
+  "6c3e486f68d229fad4576a0506bc01e81c5e36f9",
+  "2823dca9ba1ae148c9878bf4f499bdffc28d6e2f"
+ ]
+}

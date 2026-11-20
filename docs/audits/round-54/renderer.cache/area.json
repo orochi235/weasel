@@ -1,0 +1,49 @@
+{
+ "id": "renderer.cache",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/renderer/src/cache/GLImageCache.ts",
+  "packages/renderer/src/cache/GLMeshCache.ts",
+  "packages/renderer/src/cache/GLTextureCache.ts",
+  "packages/renderer/src/cache/GradientRampAtlas.ts",
+  "packages/renderer/src/cache/cache.ts",
+  "packages/renderer/src/cache/markerCommandCache.ts",
+  "packages/renderer/src/cache/outlineMeshCache.ts",
+  "packages/renderer/src/cache/outlineStrokeMeshCache.ts",
+  "packages/renderer/src/cache/strokeMeshCache.ts",
+  "packages/renderer/src/cache/uploadPremultiplied.ts",
+  "packages/renderer/src/cache/whiteTexture.ts"
+ ],
+ "a": 1,
+ "b": 1,
+ "m": 1,
+ "distinct": 1,
+ "chapman": 1,
+ "unfound": 0,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "patches": 1,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 10.1,
+   "B": 11.1,
+   "match": 0.1,
+   "fix": 3.6
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 1353106,
+  "costUsd": 4.06
+ },
+ "fixCommits": [
+  "9c4c2ffcd63f3b55c1db4d4ea9305281180d5821"
+ ]
+}

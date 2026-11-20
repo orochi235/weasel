@@ -1,0 +1,58 @@
+{
+ "id": "renderer.testing",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/renderer/src/testing/batch.ts",
+  "packages/renderer/src/testing/fakeGpuDevice.ts",
+  "packages/renderer/src/testing/glRecorder.ts",
+  "packages/renderer/src/testing/ownDrawPaint.ts",
+  "packages/renderer/src/testing/parityHarness.ts",
+  "packages/renderer/src/testing/recorderCtx.ts",
+  "packages/renderer/src/testing/stencilledEvenOdd.ts",
+  "packages/renderer/src/testing/trimClip.ts",
+  "packages/renderer/src/testing/vertexUploads.ts",
+  "packages/renderer/src/testing/wgsl.ts"
+ ],
+ "a": 8,
+ "b": 6,
+ "m": 3,
+ "distinct": 11,
+ "chapman": 14.8,
+ "unfound": 3.8,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 11,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9.7,
+   "B": 8.9,
+   "match": 0.1,
+   "fix": 15
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2238196,
+  "costUsd": 6.39
+ },
+ "fixCommits": [
+  "01d3e391c32e50eff01a29d466a680e24f1a8f88",
+  "972a96ccd9b37800c11ba4dfafe579e750728b4b",
+  "6aedb33259174133ef2bae034e6592d17268f3de",
+  "eeef48abbeb4e3cf9c486f2bf8a37ab94bc1ef33",
+  "736df4e8a021148647fa6bf8dbc8eab36ec293b0",
+  "8357dba3c6b5cb29eb769cd00d1d06c900fe1637",
+  "719c30970c59c9484f56d919dfefaf97ef386dda",
+  "96f1c68536864114f904b815bf7d121f5ed26056",
+  "08a4480a2eeb3f09eb3ff6d76f3a4c71e39b8c74",
+  "d12c760e5050c32c7c38d7edf066d7b9b289ed7a",
+  "43b831f36b96913e10d72396055a2ce365b71d3f"
+ ]
+}

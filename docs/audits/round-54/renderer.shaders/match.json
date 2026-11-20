@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "Re-registering a program that is already compiled from the same source recompiles it and makes every retained surface stale",
+  "A released program source keeps drawing: `refresh` skips it, while `restore` drops it",
+  "`const int A = 2, B = 3;` records neither constant, so arrays sized by either get no locations",
+  "Ramp lookups are off by up to half a texel: `t` is used as the texture coordinate with no texel-center remap"
+ ],
+ "b": [
+  "A released program registration keeps drawing on every renderer that compiled it, and its GPU program is never freed until dispose",
+  "After a context restore, a program whose re-registered source failed to compile stops drawing, though before the loss it kept drawing the previous one",
+  "A top-level `const int A = 2, B = 3;` records neither constant, so arrays sized by them are dropped from the uniform scan",
+  "The id-output rewrite counts `main` and outputs with regexes over the source with comments still in, so a comment mentioning them makes a custom shader unpickable"
+ ]
+}

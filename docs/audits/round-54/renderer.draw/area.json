@@ -1,0 +1,78 @@
+{
+ "id": "renderer.draw",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/renderer/src/draw/alignedRibbon.ts",
+  "packages/renderer/src/draw/batch.ts",
+  "packages/renderer/src/draw/batchMatrices.ts",
+  "packages/renderer/src/draw/batchRun.ts",
+  "packages/renderer/src/draw/clip.ts",
+  "packages/renderer/src/draw/clippedTrim.ts",
+  "packages/renderer/src/draw/colorGlyphs.ts",
+  "packages/renderer/src/draw/cornersResolved.ts",
+  "packages/renderer/src/draw/customShader.ts",
+  "packages/renderer/src/draw/drawContext.ts",
+  "packages/renderer/src/draw/drawTriangles.ts",
+  "packages/renderer/src/draw/effects.ts",
+  "packages/renderer/src/draw/flattenTolerance.ts",
+  "packages/renderer/src/draw/flushBatch.ts",
+  "packages/renderer/src/draw/foldColor.ts",
+  "packages/renderer/src/draw/gradient.ts",
+  "packages/renderer/src/draw/groupEffects.ts",
+  "packages/renderer/src/draw/idComposite.ts",
+  "packages/renderer/src/draw/idFrame.ts",
+  "packages/renderer/src/draw/idRender.ts",
+  "packages/renderer/src/draw/image.ts",
+  "packages/renderer/src/draw/mesh.ts",
+  "packages/renderer/src/draw/modelScale.ts",
+  "packages/renderer/src/draw/paintBind.ts",
+  "packages/renderer/src/draw/pathPaint.ts",
+  "packages/renderer/src/draw/patternBatch.ts",
+  "packages/renderer/src/draw/quad.ts",
+  "packages/renderer/src/draw/retained.ts",
+  "packages/renderer/src/draw/scratchPass.ts",
+  "packages/renderer/src/draw/stencil.ts",
+  "packages/renderer/src/draw/text.ts",
+  "packages/renderer/src/draw/textLayer.ts",
+  "packages/renderer/src/draw/triangleCut.ts",
+  "packages/renderer/src/draw/uniforms.ts",
+  "packages/renderer/src/draw/vertexColors.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 0,
+ "distinct": 6,
+ "chapman": 15,
+ "unfound": 9,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 12.4,
+   "B": 9.8,
+   "match": 0.1,
+   "fix": 21.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 3915234,
+  "costUsd": 11.05
+ },
+ "fixCommits": [
+  "b85869b9f77f14100213aa962cfe91da35b9ec65",
+  "6babdc5d374692d44fa32bbded5b149765c30ccb",
+  "3b37bd1df29c797d682ea65b74687402d2d42620",
+  "b1bbd3968399620f24cb76ecc109a24e87999be6",
+  "7dadcf244aef6074f209cc81730726b197a7d439",
+  "d22292c1c366e019d68fafd92d02ca71e62b46eb"
+ ]
+}

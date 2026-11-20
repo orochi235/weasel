@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "PrefSchemaEditor's Submit turns on for changes that only touch the action catalog, lists them, then submits an empty change list",
+  "IdentityForm places the node's glyph on the wrong side in right-to-left layouts"
+ ],
+ "b": [
+  "An accepted unit suffix can't be typed if any other row already holds one of its prefixes, or if any row holds its first letter",
+  "PrefSchemaEditor enables Submit and lists changes for a catalog-only edit, then submits an empty change list"
+ ]
+}

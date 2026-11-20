@@ -1,0 +1,78 @@
+{
+ "id": "routing",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/routing/src/ambient/PointerContext.tsx",
+  "packages/routing/src/ambient/SelectionContext.tsx",
+  "packages/routing/src/contributions/assemble.ts",
+  "packages/routing/src/contributions/eligibility.ts",
+  "packages/routing/src/contributions/heldModifier.ts",
+  "packages/routing/src/contributions/index.ts",
+  "packages/routing/src/contributions/merge.ts",
+  "packages/routing/src/contributions/modeShortcuts.ts",
+  "packages/routing/src/contributions/types.ts",
+  "packages/routing/src/contributions/useContributions.ts",
+  "packages/routing/src/dlog.ts",
+  "packages/routing/src/eligibility/deviceProfile.ts",
+  "packages/routing/src/eligibility/exclusive.ts",
+  "packages/routing/src/eligibility/index.ts",
+  "packages/routing/src/eligibility/rule.ts",
+  "packages/routing/src/eligibility/ruleCtx.ts",
+  "packages/routing/src/index.ts",
+  "packages/routing/src/ingestion/ingestItems.ts",
+  "packages/routing/src/internal.ts",
+  "packages/routing/src/kitSettings.ts",
+  "packages/routing/src/menus/MenuHostContext.tsx",
+  "packages/routing/src/menus/compoundRows.ts",
+  "packages/routing/src/menus/menuHost.ts",
+  "packages/routing/src/menus/pickMenu.ts",
+  "packages/routing/src/menus/resolveMenu.ts",
+  "packages/routing/src/menus/separators.ts",
+  "packages/routing/src/menus/types.ts",
+  "packages/routing/src/menus/valueRows.ts",
+  "packages/routing/src/pbt.fixture.ts",
+  "packages/routing/src/react.ts",
+  "packages/routing/src/testing/registerAction.tsx",
+  "packages/routing/src/viewport/clientToCanvas.ts",
+  "packages/routing/src/viewport/useElementSize.ts",
+  "packages/routing/src/vocabulary.ts"
+ ],
+ "a": 5,
+ "b": 5,
+ "m": 3,
+ "distinct": 7,
+ "chapman": 8,
+ "unfound": 1,
+ "read": {
+  "A": 34,
+  "B": 34
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 16.1,
+   "B": 6.3,
+   "match": 0.2,
+   "fix": 18.2
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 2205541,
+  "costUsd": 6.55
+ },
+ "fixCommits": [
+  "e0bea5ac602b0d8a11a266678981a50cc5d1fc89",
+  "410ba5ea4b2be0f612632f39bc0a1ad9fb56a2e1",
+  "82f3868d58e944ca01c3bc45b027f913d4e0ca55",
+  "6c1ea88a5b5a8d6dbc3d696679f73e47a80d65fb",
+  "16eca518d292f549c1ee64ef44877afc116caa1f",
+  "36a20d4c773be221d9a67dc193772052e40ca349",
+  "87a8b06eb2e50e1657bae6592c7655bd4d88d1d9"
+ ]
+}

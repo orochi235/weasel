@@ -1,0 +1,69 @@
+{
+ "id": "registry",
+ "commit": "608f35f5258a05f095a34c54f949616c26b75022",
+ "date": "2026-11-20",
+ "files": [
+  "packages/registry/src/after.ts",
+  "packages/registry/src/codePoint.ts",
+  "packages/registry/src/compositeKey.ts",
+  "packages/registry/src/deepEqual.ts",
+  "packages/registry/src/emitter.ts",
+  "packages/registry/src/extensionRegistry.ts",
+  "packages/registry/src/freshId.ts",
+  "packages/registry/src/getOwn.ts",
+  "packages/registry/src/grade.ts",
+  "packages/registry/src/index.ts",
+  "packages/registry/src/isDev.ts",
+  "packages/registry/src/isFiniteNumber.ts",
+  "packages/registry/src/isPlainObject.ts",
+  "packages/registry/src/latest.ts",
+  "packages/registry/src/match.ts",
+  "packages/registry/src/mixed.ts",
+  "packages/registry/src/part.ts",
+  "packages/registry/src/pbt.fixture.ts",
+  "packages/registry/src/reflectable.ts",
+  "packages/registry/src/sameList.ts",
+  "packages/registry/src/setOwn.ts",
+  "packages/registry/src/testing/hostile.fixture.ts",
+  "packages/registry/src/valueStore.ts",
+  "packages/registry/src/xmlEscape.ts"
+ ],
+ "a": 2,
+ "b": 8,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 8,
+ "unfound": 0,
+ "read": {
+  "A": 24,
+  "B": 24
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.5,
+   "B": 7.8,
+   "match": 0.3,
+   "fix": 15.8
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 526612,
+  "costUsd": 3.35
+ },
+ "fixCommits": [
+  "8882b53c330e13aa2241e01c3914c4dbccbd10c1",
+  "52ee4221049dac987b55e15bfa3459976f73c0a1",
+  "84028cbee30c43a2427fe7921dc371fa8073ecb8",
+  "e6871f10c1b9d8246826a886aef84067f71404ed",
+  "754e0c6442d8f0ce335d3df3360f3695f9f45478",
+  "27eb7f9f34064e1df0b8e615eb1511656b74adfe",
+  "fc270c60cd915624995a2e3d42ed45c3f9eed112",
+  "d51b5f892fc26f284abbaac39d8411a578128670"
+ ]
+}

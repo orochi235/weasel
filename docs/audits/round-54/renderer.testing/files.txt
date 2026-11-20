@@ -1,0 +1,10 @@
+packages/renderer/src/testing/batch.ts
+packages/renderer/src/testing/fakeGpuDevice.ts
+packages/renderer/src/testing/glRecorder.ts
+packages/renderer/src/testing/ownDrawPaint.ts
+packages/renderer/src/testing/parityHarness.ts
+packages/renderer/src/testing/recorderCtx.ts
+packages/renderer/src/testing/stencilledEvenOdd.ts
+packages/renderer/src/testing/trimClip.ts
+packages/renderer/src/testing/vertexUploads.ts
+packages/renderer/src/testing/wgsl.ts
