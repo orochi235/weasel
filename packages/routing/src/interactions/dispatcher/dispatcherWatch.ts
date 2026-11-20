@@ -16,8 +16,8 @@ export function dispatcherWatch(onChange: () => void): DispatcherWatch {
       for (const d of live) {
         if (!subscriptions.has(d)) subscriptions.set(d, d.subscribe(onChange));
       }
-      if (subscriptions.size === live.length) return;
       const keep = new Set(live);
+      if (subscriptions.size === keep.size) return;
       for (const [d, unsubscribe] of subscriptions) {
         if (keep.has(d)) continue;
         unsubscribe();
