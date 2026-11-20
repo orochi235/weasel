@@ -64,4 +64,22 @@ describe('powScale', () => {
   it('refuses an exponent of zero', () => {
     expect(() => powScale({ domain: [0, 1], range: [0, 1], exponent: 0 })).toThrow(/exponent/);
   });
+
+  it('formats a value as its own ticks label it', () => {
+    for (const domain of [[0, 4], [0, 1]] as const) {
+      const s = powScale({ domain, range: [0, 100], exponent: 0.5 });
+      expect(s.ticks().map(s.format)).toEqual(s.ticks().map(s.tickFormat()));
+      expect(new Set(s.ticks().map(s.format)).size).toBe(s.ticks().length);
+    }
+    expect(powScale({ domain: [0, 4], range: [0, 100], exponent: 0.5 }).format(0.15)).toBe('0.15');
+  });
+
+  it('ticks a domain narrower than its values\' decade on a finer one', () => {
+    expect(powScale({ domain: [101, 109], range: [0, 100], exponent: 2 }).ticks()).toEqual([101, 103, 104, 105, 106, 108]);
+    const near = powScale({ domain: [1.1, 1.3], range: [0, 100], exponent: 0.5 });
+    expect(near.ticks()).toEqual([1.1, 1.15, 1.2, 1.25, 1.3]);
+    expect(near.ticks().map(near.format)).toEqual(['1.1', '1.15', '1.2', '1.25', '1.3']);
+    expect(powScale({ domain: [100, 110], range: [0, 100], exponent: 2 }).ticks()).toEqual([100, 110]);
+    expect(powScale({ domain: [-109, -101], range: [0, 100], exponent: 2 }).ticks().length).toBeGreaterThan(3);
+  });
 });
