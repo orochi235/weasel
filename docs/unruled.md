@@ -2948,3 +2948,6 @@ Calls the lanes made without a ruling:
   editing's drag-out preview now runs the source's `depart`, as its commit does, rather than `childPoses`. A resize
   still reads each child's cell from its pose at the new pitch, so a child in a gap can change cell when the grid is
   resized.
+- 2026-11-20 (the fixer's call): `quadtree` rounds `maxDepth` down and holds it to 0–7, so a 128 × 128 grid at its
+  finest, the order of `snapPoint`'s 129 × 129 cap; `NaN` is the default 4. Past 31 the cell arithmetic overflowed and
+  its scan never ended, and at 8 a container of point-sized children took seconds per edit.

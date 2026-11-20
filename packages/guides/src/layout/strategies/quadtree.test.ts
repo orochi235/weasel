@@ -71,4 +71,20 @@ describe('quadtree', () => {
       { id: 'small', depth: 3, rect: { x: 0, y: 0, width: 20, height: 20 } },
     ]);
   });
+
+  it('quarters at most 7 times, however deep it is asked to go', () => {
+    const points = Array.from({ length: 100 }, (_, i) => rect(`p${i}`, (i * 37) % 160, (i * 61) % 160, 0));
+    for (const maxDepth of [8, 40, Infinity]) {
+      const deep = quadtree<P>({ maxDepth });
+      const start = performance.now();
+      const cells = deep.cells(container, points);
+      expect(performance.now() - start).toBeLessThan(2000);
+      expect(cells).toHaveLength(100);
+      expect(Math.max(...cells.map((c) => c.depth))).toBe(7);
+    }
+    expect(quadtree<P>({ maxDepth: 2.7 }).cells(container, [rect('p', 0, 0, 0)])[0]!.depth).toBe(2);
+    expect(quadtree<P>({ maxDepth: -3 }).cells(container, [rect('p', 0, 0, 0)])[0]!.depth).toBe(0);
+    expect(quadtree<P>({ maxDepth: NaN }).cells(container, [rect('p', 0, 0, 0)])[0]!.depth).toBe(4);
+  });
 });
+

@@ -13,7 +13,8 @@ import * as ops from '@weasel-js/core/ops';
 
 /** Options for `quadtree`. */
 export interface QuadtreeOptions<TPose> {
-  /** How many times the container may be quartered. Default 4, a 16 × 16 grid at its finest. */
+  /** How many times the container may be quartered, rounded down and held to 0–7 (a 128 × 128 grid at its
+   *  finest). Default 4, a 16 × 16 grid, which is also what `NaN` gives. */
   maxDepth?: number;
   /** Which free cell a drag means. Default `containedThenNearest()`. */
   snap?: LayoutSnap<TPose>;
@@ -48,11 +49,37 @@ interface Cell {
   row: number;
 }
 
-/** Whether one cell is the other, or holds it. */
-function overlaps(a: Cell, b: Cell): boolean {
-  const [outer, inner] = a.depth <= b.depth ? [a, b] : [b, a];
-  const shift = inner.depth - outer.depth;
-  return inner.col >> shift === outer.col && inner.row >> shift === outer.row;
+/** The deepest a quadtree quarters: past it a drag's free cells alone number in the tens of thousands. */
+const MAX_DEPTH = 7;
+
+const keyOf = (depth: number, col: number, row: number): number => (depth << 16) | (col << 8) | row;
+
+/** The cells given out, and every cell holding one of them, for telling a free cell in a few lookups. */
+interface Taken {
+  cells: Cell[];
+  held: Set<number>;
+  above: Set<number>;
+}
+
+function takenOf(cells: readonly Cell[]): Taken {
+  const taken: Taken = { cells: [], held: new Set(), above: new Set() };
+  for (const cell of cells) take(taken, cell);
+  return taken;
+}
+
+function take(taken: Taken, cell: Cell): void {
+  taken.cells.push(cell);
+  taken.held.add(keyOf(cell.depth, cell.col, cell.row));
+  for (let d = cell.depth - 1, shift = 1; d >= 0; d--, shift++) taken.above.add(keyOf(d, cell.col >> shift, cell.row >> shift));
+}
+
+/** Whether a cell is free: nobody holds it, a cell holding it, or a cell inside it. */
+function isFree(taken: Taken, cell: Cell): boolean {
+  if (taken.above.has(keyOf(cell.depth, cell.col, cell.row))) return false;
+  for (let d = cell.depth, shift = 0; d >= 0; d--, shift++) {
+    if (taken.held.has(keyOf(d, cell.col >> shift, cell.row >> shift))) return false;
+  }
+  return true;
 }
 
 function rectOf(bounds: ContainerBounds, cell: Cell): Rect {
@@ -62,7 +89,11 @@ function rectOf(bounds: ContainerBounds, cell: Cell): Rect {
 };
 
 /** The free cell at `depth` nearest `at`: the one holding it, if that is free. */
-function freeCell(bounds: ContainerBounds, taken: readonly Cell[], depth: number, at: { x: number; y: number }): Cell | null {
+function freeCell(bounds: ContainerBounds, taken: Taken, depth: number, at: { x: number; y: number }): Cell | null {
+  const n = 2 ** depth;
+  const col = Math.floor(((at.x - bounds.x) / bounds.width) * n);
+  const row = Math.floor(((at.y - bounds.y) / bounds.height) * n);
+  if (col >= 0 && col < n && row >= 0 && row < n && isFree(taken, { depth, col, row })) return { depth, col, row };
   let best: Cell | null = null;
   let bestD = Infinity;
   for (const cell of freeCells(taken, depth)) {
@@ -76,13 +107,13 @@ function freeCell(bounds: ContainerBounds, taken: readonly Cell[], depth: number
   return best;
 }
 
-function freeCells(taken: readonly Cell[], depth: number): Cell[] {
+function freeCells(taken: Taken, depth: number): Cell[] {
   const out: Cell[] = [];
   const n = 2 ** depth;
   for (let row = 0; row < n; row++) {
     for (let col = 0; col < n; col++) {
       const cell = { depth, col, row };
-      if (!taken.some((t) => overlaps(t, cell))) out.push(cell);
+      if (isFree(taken, cell)) out.push(cell);
     }
   }
   return out;
@@ -108,7 +139,8 @@ function defaultCellToPose<TPose>(cell: Rect, pose: TPose): TPose {
  * one, and an arrival with no free cell of its size is refused.
  */
 export function quadtree<TPose>(opts: QuadtreeOptions<TPose> = {}): QuadtreeStrategy<TPose> {
-  const maxDepth = opts.maxDepth ?? 4;
+  const asked = Math.floor(opts.maxDepth ?? 4);
+  const maxDepth = Number.isNaN(asked) ? 4 : Math.min(MAX_DEPTH, Math.max(0, asked));
   const snap = opts.snap ?? containedThenNearest<TPose>();
   const cellToPose = opts.cellToPose ?? defaultCellToPose;
   const centerOf = opts.centerOf ?? defaultCenterOf;
@@ -131,7 +163,7 @@ export function quadtree<TPose>(opts: QuadtreeOptions<TPose> = {}): QuadtreeStra
   /** A cell for every child that finds one, larger children first so a small
    *  one never takes the corner of a cell a large one needs whole. */
   function assign(bounds: ContainerBounds, children: ReadonlyArray<LayoutChild<TPose>>, held: readonly Cell[] = []) {
-    const taken = [...held];
+    const taken = takenOf(held);
     const cells = new Map<string, Cell>();
     const bySize = children
       .map((c) => ({ c, depth: depthOf(bounds, c.pose) }))
@@ -139,7 +171,7 @@ export function quadtree<TPose>(opts: QuadtreeOptions<TPose> = {}): QuadtreeStra
     for (const { c, depth } of bySize) {
       const cell = freeCell(bounds, taken, depth, centerOf(c.pose));
       if (!cell) continue;
-      taken.push(cell);
+      take(taken, cell);
       cells.set(c.id, cell);
     }
     return { cells, taken };
@@ -184,7 +216,7 @@ export function quadtree<TPose>(opts: QuadtreeOptions<TPose> = {}): QuadtreeStra
     arrive(container, children, arrivals) {
       const { taken } = assign(container.bounds, children.filter((c) => !arrivals.has(c.id)));
       const joining = children.filter((c) => arrivals.has(c.id));
-      const { cells } = assign(container.bounds, joining, taken);
+      const { cells } = assign(container.bounds, joining, taken.cells);
       if (cells.size < joining.length) return null;
       return {
         poses: new Map(joining.map((c) => [c.id, cellToPose(rectOf(container.bounds, cells.get(c.id)!), c.pose)])),
