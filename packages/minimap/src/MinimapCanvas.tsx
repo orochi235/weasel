@@ -56,7 +56,8 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> extends
    *  scoping-dim treatment shows up in the minimap too. */
   alphaFor?: (id: string) => number;
   /** Hide scene layers in the minimap, keyed `scene:<layerId>` as on
-   *  `<SceneCanvas>` — pass the main canvas's map so both show the same set. */
+   *  `<SceneCanvas>` — pass the main canvas's map so both show the same set.
+   *  The `"scene"` and `"live"` fits leave out what it hides. */
   layerVisibility?: SceneViewLayers['layerVisibility'];
   /** Paint order for the minimap, keyed as `layerVisibility`. */
   layerOrder?: SceneViewLayers['layerOrder'];
@@ -119,7 +120,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   const mainView = normalizeView(mainViewProp);
 
   const descriptor = (poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
-  const fitView = useFitView(scene, width, height, fit, descriptor);
+  const fitView = useFitView(scene, width, height, fit, descriptor, { layerVisibility, layerOrder });
 
   const [accent, setAccent] = useState(FALLBACK_ACCENT);
   useLayoutEffect(() => {

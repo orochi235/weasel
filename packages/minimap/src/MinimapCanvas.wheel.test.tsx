@@ -1,6 +1,7 @@
 /** Wheel and trackpad pinch over `<MinimapCanvas>` zoom the main view about the point under the cursor. */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
+import { useState } from 'react';
 import { createScene, RECT_POSE_DESCRIPTOR, wheelZoomFactor, DEFAULT_MAX_ZOOM } from '@weasel-js/core';
 import type { DrawCommand, PoseDescriptor, Scene, View, ZoomClampOptions } from '@weasel-js/core';
 import { MinimapCanvas } from './MinimapCanvas';
@@ -101,6 +102,28 @@ describe('<MinimapCanvas> wheel zoom', () => {
     const world = { x: fit.x + 30 / fit.scale.x, y: fit.y + 60 / fit.scale.y };
     expect(onMain(next, world).x).toBeCloseTo(onMain(MAIN, world).x);
     expect(onMain(next, world).y).toBeCloseTo(onMain(MAIN, world).y);
+  });
+
+  it('compounds two samples that land before the host re-renders', () => {
+    const scene = makeScene();
+    const seen: View[] = [];
+    function Host() {
+      const [main, setMain] = useState(MAIN);
+      return (
+        <MinimapCanvas
+          scene={scene} mainView={main} mainViewDims={MAIN_DIMS} onMainViewChange={(v) => { seen.push(v); setMain(v); }}
+          width={100} height={100} drawOne={drawOne} poseDescriptor={descriptor}
+        />
+      );
+    }
+    const { container } = render(<Host />);
+    const canvas = container.querySelector('canvas')!;
+    const wheel = () => new WheelEvent('wheel', { clientX: 50, clientY: 50, deltaY: -100, bubbles: true, cancelable: true });
+    act(() => {
+      canvas.dispatchEvent(wheel());
+      canvas.dispatchEvent(wheel());
+    });
+    expect(seen.at(-1)!.scale.x).toBeCloseTo(MAIN.scale.x * wheelZoomFactor(-100) ** 2);
   });
 
   it('clamps to the kit default limits', () => {
