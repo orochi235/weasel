@@ -120,6 +120,27 @@ describe('createPathLayer — getVertexColors', () => {
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
   });
+
+  it('forgets a warning once a draw no longer meets the mismatch, so it holds only what is drawn', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const path = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]);
+    let nodes = [{ id: 'wrong' }];
+    const layer = createPathLayer({
+      getNodes: () => nodes,
+      getPath: () => path,
+      getFill: () => ({ paint: { color: '#f00' } }),
+      getVertexColors: () => [1, 0, 0, 1],
+    });
+    const draw = () => layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100, dpr: 1 });
+    draw();
+    nodes = [];
+    draw();
+    nodes = [{ id: 'wrong' }];
+    draw();
+    draw();
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
 });
 
 describe('createPathLayer — getStrokeVertexColors', () => {
