@@ -113,4 +113,15 @@ describe('CustomPrograms re-registration', () => {
     expect(programs.ensure('fx')).toBeNull();
   });
 
+  it('keeps drawing the previous source across a context restore when the re-registered one fails', () => {
+    const { gpu, state } = countingDevice();
+    const programs = new CustomPrograms(gpu);
+    registerProgram('fx', { glsl: { frag: OTHER } });
+    expect(programs.ensure('fx')).not.toBeNull();
+    registerProgram('fx', { glsl: { frag: `${FRAG}// BROKEN\n` } }, { replace: true });
+    programs.refresh();
+    expect(programs.ensure('fx')).toBe(state.made[0]);
+    programs.restore();
+    expect(programs.ensure('fx')).toBe(state.made[1]);
+  });
 });
