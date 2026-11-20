@@ -337,4 +337,20 @@ describe('worldPickIndex', () => {
     world.bounds = (node) => boundsOfTestNode(node);
     expect(worldPickIndex(world)).not.toBe(index);
   });
+
+  it('holds an exact box only for the nodes still in the scene', () => {
+    const scene = randomScene(mulberry32(5), 10);
+    const vp = randomViewport(mulberry32(6));
+    const world: World3d<TestData, TestLayer> = { scene, viewport: () => vp, bounds: boundsOfTestNode };
+    const index = worldPickIndex(world);
+    const held = () => (index as unknown as { exact: Map<string, unknown> }).exact.size;
+    expect(held()).toBe(10);
+    for (let i = 0; i < 50; i++) {
+      const id = scene.add({ kind: 'mark', layer: 'solids', pose: pose3({ x: i, y: 0, z: 0 }), data: {} });
+      worldPickIndex(world);
+      scene.remove(id);
+      worldPickIndex(world);
+    }
+    expect(held()).toBe(10);
+  });
 });
