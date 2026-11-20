@@ -93,4 +93,21 @@ describe('pack as a scene layout', () => {
     scene.undo();
     expect(scene.get(b)!.pose).toEqual({ x: 0, y: 20, width: 60, height: 10 });
   });
+
+  it('keeps a growing container sized to its shelves when a child grows or the container narrows', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const G = scene.add({
+      kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 0 },
+      layout: pack<RectPose>({ overflow: 'grow' }),
+    });
+    const leaf = (pose: RectPose) => scene.add({ kind: 'mark', layer: 'main', data: {}, pose, parent: G as NodeId });
+    leaf({ x: 0, y: 0, width: 60, height: 50 });
+    const b = leaf({ x: 60, y: 0, width: 40, height: 50 });
+    expect(scene.get(G)!.pose.height).toBe(50);
+    scene.setPose(b, { ...scene.get(b)!.pose, height: 80 });
+    expect(scene.get(G)!.pose.height).toBe(80);
+    scene.setPose(G, { ...scene.get(G)!.pose, width: 70 });
+    expect(scene.get(G)!.pose.height).toBe(130);
+    expect(scene.get(b)!.pose).toMatchObject({ x: 0, y: 50 });
+  });
 });

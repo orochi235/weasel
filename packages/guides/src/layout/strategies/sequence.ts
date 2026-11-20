@@ -122,13 +122,22 @@ export function sequenceLayout<TPose>(seq: Sequencer<TPose>): LayoutStrategy<TPo
     return poses;
   };
 
+  const resting = (container: LayoutContainer, children: ReadonlyArray<LayoutChild<TPose>>) => {
+    const sequence = seq.order(container, children, children.length);
+    return { sequence, poses: seq.place(container, sequence) ?? new Map(children.map((c) => [c.id, c.pose])) };
+  };
+
   return {
     snap: seq.snap,
 
-    childPoses(container, children) {
-      const sequence = seq.order(container, children, children.length);
-      return seq.place(container, sequence) ?? new Map(children.map((c) => [c.id, c.pose]));
-    },
+    childPoses: (container, children) => resting(container, children).poses,
+
+    ...(seq.resize && {
+      fit(container: LayoutContainer, children: ReadonlyArray<LayoutChild<TPose>>) {
+        const { sequence, poses } = resting(container, children);
+        return arranged(container, sequence, poses);
+      },
+    }),
 
     getDropTargets(container, children, dragged) {
       const others = othersOf(seq, container, children, dragged);
