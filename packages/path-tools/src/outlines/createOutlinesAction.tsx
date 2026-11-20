@@ -1,8 +1,9 @@
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason, BETWEEN_GESTURES } from '@weasel-js/routing';
-import { warnOutlines, type NodeId, type NodeOutline, type NodeOutlineError, type NoticesDep, type OperandsDep } from '@weasel-js/core';
+import { warnOutlines, type NodeId, type NodeOutline, type NodeOutlineError, type NoticesDep } from '@weasel-js/core';
 import { applyCreateOutlines, type CreateOutlinesAdapter, type CreateOutlinesResult } from './createOutlines';
 import { icon } from '../icons.gen';
+import { handBackOperands } from '../shared/handBackOperands';
 
 /** What an outline conversion answers when an outline could not be built. */
 type OutlinesFailure = { kind: 'failed'; error: NodeOutlineError };
@@ -34,21 +35,6 @@ export async function withOutlines<R extends { kind: string } | OutlinesFailure>
   const error = failure(result);
   if (error) warnOutlines(notices, tag, error);
   return result;
-}
-
-/**
- * Hand what a conversion left back to `operands`, where they are not the
- * selection the conversion already updated: each converted id that is gone
- * gives way to the conversion's results.
- */
-export function handBackOperands(
-  operands: OperandsDep | undefined, adapter: CreateOutlinesAdapter, result: { kind: string; resultIds?: readonly string[] },
-): void {
-  if (!operands || result.kind !== 'applied' || !result.resultIds) return;
-  const now = operands.get();
-  const kept = now.filter((id) => adapter.getNode(id) != null);
-  if (kept.length === now.length) return;
-  operands.set([...kept, ...(result.resultIds as NodeId[]).filter((id) => !kept.includes(id))]);
 }
 
 /** {@link applyCreateOutlines} through {@link withOutlines}. */

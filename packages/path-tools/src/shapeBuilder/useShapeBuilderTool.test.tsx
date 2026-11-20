@@ -113,6 +113,13 @@ describe('useShapeBuilderTool', () => {
     expect(s.made()).toContainEqual(['union', 'a', 5, 5]);
   });
 
+  it('cuts the operands a host supplies, not the selection', () => {
+    const s = setup(['elsewhere'], {}, ['a', 'b']);
+    expect(s.enabled('shapeBuilder.takeFace')).toBe(true);
+    s.fire('shapeBuilder.takeFace', { press: { x: 7, y: 5 }, mods: noMods });
+    expect(s.made()).toContainEqual(['union', 'b', 5, 5]);
+  });
+
   it('commits nothing for a canceled drag', () => {
     const s = setup();
     s.drag([[13, 5], [2, 5]]).onEnd?.(handleEndCtx(), 'cancel');

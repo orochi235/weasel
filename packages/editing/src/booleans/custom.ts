@@ -36,9 +36,10 @@ export interface BooleanOperands {
 export function resolveBooleanOperands(
   adapter: BooleansAdapter,
   opts: BooleanOpOptions = {},
+  ids?: readonly NodeId[],
 ): BooleanOperands | Exclude<BooleanOpResult, { kind: 'applied' }> {
   const selection = [...adapter.getSelection()] as NodeId[];
-  const entries = resolveEntries(adapter, selection, 'divide', opts);
+  const entries = resolveEntries(adapter, ids ?? selection, 'divide', opts);
   if ('kind' in entries) return entries;
   return {
     selection,
