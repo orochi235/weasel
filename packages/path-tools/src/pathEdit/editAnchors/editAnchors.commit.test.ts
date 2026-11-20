@@ -39,4 +39,18 @@ describe('editAnchors commit', () => {
     d.end();
     expect(applied).toEqual([]);
   });
+
+  it('begins no snap session for a Shift-press that drags nothing', () => {
+    const path = triangle();
+    let begun = 0;
+    const snap = { begin: () => { begun++; return { at: (p: unknown) => ({ point: p }), end: () => {} }; } };
+    const dep = makeDep({
+      getStorageKind: () => 'pose', getNodeShape: () => null, getEditablePath: () => path, applyEdit: () => {},
+      selectedAnchors: new Set([0]),
+    });
+    const d = drag(dep, { snap }, true);
+    d.to(20, 20);
+    d.end();
+    expect(begun).toBe(0);
+  });
 });

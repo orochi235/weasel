@@ -194,7 +194,6 @@ function handlePressOf(
 /** Move the dragged anchors to follow `to`, and the anchors the extensions
  *  weight by their shares. A weighted drag moves no symmetric images. */
 function moveAnchors(scratch: EditAnchorsScratch, to: WorldPoint): void {
-  if (scratch.dragging.length === 0) return;
   const dx = to.x - scratch.anchorOrigin.x;
   const dy = to.y - scratch.anchorOrigin.y;
   const weights = dragWeights(scratch.drags, scratch.dragging);
@@ -349,7 +348,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
       const move = (moveCtx: InvocationCtx): void => {
         scratch.lastMove = moveCtx;
         if (scratch.part !== 'anchor') return moveHandle(scratch, moveCtx, paramsOf(opts));
-        moveAnchors(scratch, snapAnchor.at(moveCtx.world, snapMods(moveCtx)));
+        if (scratch.dragging.length > 0) moveAnchors(scratch, snapAnchor.at(moveCtx.world, snapMods(moveCtx)));
       };
 
       return {
