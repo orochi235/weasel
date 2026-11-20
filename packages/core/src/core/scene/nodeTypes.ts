@@ -17,8 +17,8 @@ export interface NodeBase<TData, TLayer extends string, TPose> {
   readonly pose: TPose;
   readonly data: TData;
   readonly parent: NodeId | null;
-  /** Nodes whose poses this node's geometry is computed from. Fixed at add
-   *  time. Absent or empty means the node's geometry is authored, which is the
+  /** Nodes whose poses this node's geometry is computed from. Set at add
+   *  time, and changed as an undoable edit by `scene.setDependsOn`. Absent or empty means the node's geometry is authored, which is the
    *  normal case.
    *
    *  `'children'` means "my own children, in child order" — a container that
