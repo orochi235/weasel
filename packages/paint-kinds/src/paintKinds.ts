@@ -57,6 +57,8 @@ const BUILTINS: readonly PaintKindEntry[] = [
   },
 ];
 
+const BUILTIN_ENTRIES: ReadonlySet<PaintKindEntry> = new Set(BUILTINS);
+
 function tileKind(id: TileKind, label: string): PaintKindEntry {
   return {
     id,
@@ -221,9 +223,10 @@ const gradientKinds = derivedList(
  * `paint` retargeted to gradient kind `kind`, or `undefined` when either side
  * is not a gradient kind.
  *
- * Between two of the stop gradients this is `withGradientKind`, which carries
- * the geometry. Any other pair goes through the stop list — `stopsOf` on the
- * way out, `fromStops` on the way in — keeping `interpolate` and `opacity`.
+ * Between two of the built-in stop gradients this is `withGradientKind`, which
+ * carries the geometry. Any other pair, an override of a built-in included,
+ * goes through the stop list — `stopsOf` on the way out, `fromStops` on the
+ * way in — keeping `interpolate` and `opacity`.
  * Lossy wherever the kinds hold different information.
  */
 export function withPaintKind(paint: Paint, kind: PaintKind): Paint | undefined {
@@ -231,7 +234,7 @@ export function withPaintKind(paint: Paint, kind: PaintKind): Paint | undefined 
   const to = getPaintKind(kind);
   if (!from?.stopsOf || !to?.fromStops) return undefined;
   if (from.id === to.id) return paint;
-  if (isGradientPaint(paint) && isGradientPaint({ kind } as Paint)) {
+  if (BUILTIN_ENTRIES.has(from) && BUILTIN_ENTRIES.has(to) && isGradientPaint(paint) && isGradientPaint({ kind } as Paint)) {
     return withGradientKind(paint, kind as GradientKind);
   }
   const { interpolate, opacity } = paint as { interpolate?: ColorSpace; opacity?: number };
