@@ -6,10 +6,19 @@ import type { ParallaxOptions } from 'core/viewport/parallax';
 import type { KitOpsEnv } from './kitOps';
 import type { LayerRecord, RegisteredOp, UserLayerRecord } from './types';
 import type { MutableLayerRecord } from './layerTypes';
+import { own } from './owned';
 
+/** Kept by reference, by the layer and the undo payload both, so owned as a pose is. */
 function setParallax(record: { parallax?: ParallaxOptions }, to: ParallaxOptions | undefined): void {
   if (to === undefined) delete record.parallax;
-  else record.parallax = to;
+  else record.parallax = own(to);
+}
+
+/** A copy of `record` for the stack, its parallax owned. */
+function stacked<R extends { parallax?: ParallaxOptions }>(record: R): R {
+  const copy = { ...record };
+  if (copy.parallax !== undefined) copy.parallax = own(copy.parallax);
+  return copy;
 }
 
 /** Register the layer op kinds against `env`'s layer stack. */
@@ -36,14 +45,22 @@ export function registerLayerOps<TData, TLayer extends string, TPose>(
     revert: (p) => { setParallax(state.layers[requireLayerIndex(p.layer)], p.from); },
   });
 
+  // Adding and removing find the layer to take out by id, as `placeLayer`
+  // does: a replay or a restored history onto a stack in another order then
+  // takes out the layer it names, or throws when the scene does not hold it.
   registerKitOp<{ record: UserLayerRecord<TLayer>; index: number }>('kit:addLayer', {
-    apply: (p) => { state.layers.splice(p.index, 0, { ...p.record }); rebuildLayerIndex(); },
-    revert: (p) => { state.layers.splice(p.index, 1); rebuildLayerIndex(); },
+    apply: (p) => {
+      // As `kit:add` refuses a node id it holds, so a diverged replay fails whole.
+      if (state.layers.some((l) => l.id === p.record.id)) throw new Error(`Scene: duplicate layer id "${p.record.id}"`);
+      state.layers.splice(p.index, 0, stacked(p.record));
+      rebuildLayerIndex();
+    },
+    revert: (p) => { state.layers.splice(requireLayerIndex(p.record.id), 1); rebuildLayerIndex(); },
   });
 
   registerKitOp<{ record: LayerRecord<TLayer>; index: number }>('kit:removeLayer', {
-    apply: (p) => { state.layers.splice(p.index, 1); rebuildLayerIndex(); },
-    revert: (p) => { state.layers.splice(p.index, 0, { ...p.record } as MutableLayerRecord<TLayer>); rebuildLayerIndex(); },
+    apply: (p) => { state.layers.splice(requireLayerIndex(p.record.id), 1); rebuildLayerIndex(); },
+    revert: (p) => { state.layers.splice(p.index, 0, stacked(p.record) as MutableLayerRecord<TLayer>); rebuildLayerIndex(); },
   });
 
   registerKitOp<{ layer: TLayer; from: string; to: string }>('kit:renameLayer', {

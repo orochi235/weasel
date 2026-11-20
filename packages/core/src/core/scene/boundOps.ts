@@ -5,7 +5,8 @@ import type { Op } from 'core/ops/types';
  *  site — the scene's engine was constructed without an adapter, so ops
  *  it stores and later replays must close over the right one. Forwards
  *  the apply return value (no-op detection) and preserves
- *  `coalesceKey`/`name`/`args`/`label` for coalescing and eviction. See
+ *  `coalesceKey`/`name`/`args`/`label` for coalescing and eviction, and
+ *  `caused`, each op it names bound the same way. See
  *  `bindOpToHistoryAdapter` for RESTORED entries (lazy accessor). */
 export function bindOpToAdapter(op: Op, adapter: unknown): Op {
   return {
@@ -16,6 +17,8 @@ export function bindOpToAdapter(op: Op, adapter: unknown): Op {
     get coalesceKey() { return op.coalesceKey; },
     elideNoop: op.elideNoop,
     apply: () => op.apply(adapter),
+    // What the op says it caused replays against the same adapter.
+    ...(op.caused && { caused: () => op.caused!().map((c) => bindOpToAdapter(c, adapter)) }),
     invert: () => bindOpToAdapter(op.invert(), adapter),
   };
 }
@@ -68,6 +71,7 @@ export function bindOpToHistoryAdapter(op: Op, accessor: () => (() => unknown) |
         throw new RestoredOpError(name, context?.entry, 'threw', { cause: err });
       }
     },
+    ...(op.caused && { caused: () => op.caused!().map((c) => bindOpToHistoryAdapter(c, accessor, context)) }),
     invert: () => bindOpToHistoryAdapter(op.invert(), accessor, context),
   };
 }

@@ -64,7 +64,8 @@ export interface EditPasses {
   note(kind: string, payload: unknown): void;
   /** Run every pass in order, each over the summary as it stands at its
    *  turn, applying its ops into that summary; then close it. Answers how
-   *  many ops applied. */
+   *  many ops applied and changed something: one reporting `false` or
+   *  `'noop'` is not counted. */
   run(): number;
   /** Close the summary with nothing run. */
   abandon(): void;
@@ -126,8 +127,9 @@ export function createEditPasses(env: EditPassEnv): EditPasses {
         if (ops === null) continue;
         const adapter = env.adapter();
         for (const op of ops) {
-          op.apply(adapter);
-          applied++;
+          // An op that reports it changed nothing leaves the edit-pass op elidable.
+          const result = op.apply(adapter);
+          if (result !== false && result !== 'noop') applied++;
         }
       }
     } finally {

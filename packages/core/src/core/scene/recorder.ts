@@ -102,6 +102,11 @@ function sealAll(env: RecorderEnv): void {
   env.journal()?.seal();
 }
 
+/** What an entry records for `op`: the ops it names as caused, as a push records them, else itself. */
+function asRecorded(op: Op): Op[] {
+  return op.caused?.() ?? [op];
+}
+
 export function createRecorder(env: RecorderEnv): Recorder {
   const { notifier, mode, engine, log, arrivals, passes } = env;
   /** The outermost open batch, while it is recording. */
@@ -198,7 +203,7 @@ export function createRecorder(env: RecorderEnv): Recorder {
             const result = op.apply(adapter);
             if (into.ops.length > before || result === false || result === 'noop') continue;
             outer.push(bindOpToAdapter(op, adapter));
-            into.ops.push(outer[outer.length - 1]);
+            into.ops.push(...asRecorded(outer[outer.length - 1]!));
           }
         }, () => false);
       } catch (err) {
