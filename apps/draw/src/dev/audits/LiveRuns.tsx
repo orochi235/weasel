@@ -4,8 +4,8 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { SpanStrips, type SpanStripSpan, type SpanStripsRow } from '@weasel-js/ui/components/SpanStrip';
 import { clockRuler } from './clock';
-import { STEP_COLUMN_COUNT, laneStepsOf, laneViewOf, passDone, runClockOf, type LaneView } from './phases';
-import { NODE_SEP, headlineOf, lastLineOf, sharedLaneOf, spendOf, startedText } from './runData';
+import { GATE_RUNS, STEP_COLUMN_COUNT, inSharedSteps, laneStepsOf, laneViewOf, passDone, runClockOf, sharedSpansOf, type LaneView } from './phases';
+import { NODE_SEP, headlineOf, lastLineOf, spendOf, startedText } from './runData';
 import { useViewerPref } from './viewerPref';
 import type { AuditLane, AuditRun } from './skulkMap.types';
 import s from './LiveRuns.module.css';
@@ -59,6 +59,7 @@ function useHideComplete(): [boolean, (hide: boolean) => void] {
 }
 
 const STEPS_WINDOW = { from: 0, to: STEP_COLUMN_COUNT };
+const SHARED_WINDOW = { from: 0, to: 3 };
 
 /** The run's areas, on the run's clock or as a grid of steps; a finished one stays, filled, until the run ends, unless
  *  the viewer hides those whose pass is done, as the map shows them. */
@@ -90,7 +91,6 @@ function RunStrip({ run, now, mode, onMode, hideComplete, onHideComplete, on }: 
   run: AuditRun; now: number; mode: LaneMode; onMode: (mode: LaneMode) => void;
   hideComplete: boolean; onHideComplete: (hide: boolean) => void; on: AreaHandlers;
 }) {
-  const shared = sharedLaneOf(run);
   return (
     <section className={s.run} aria-label={`Round ${run.round}`}>
       <div className={s.pulse} aria-hidden="true" />
@@ -107,10 +107,15 @@ function RunStrip({ run, now, mode, onMode, hideComplete, onHideComplete, on }: 
       {run.lanes.length > 0 && (
         <div className={s.lanes} data-mode={mode}>
           <Lanes run={run} now={now} mode={mode} hideComplete={hideComplete} on={on} />
-          <div className={s.sharedRow}>
-            <span className={s.nameCell}>all areas</span>
-            <span className={cx(s.shared, s[shared.state])}>{shared.text}</span>
-          </div>
+          {(inSharedSteps(run) || run.lanes.every(passDone)) && (
+            <SpanStrips
+              aria-label={`Round ${run.round}, every area`} window={SHARED_WINDOW}
+              rows={GATE_RUNS.map((g) => ({
+                id: g.id, spans: sharedSpansOf(run, g.id).map(withNode), 'aria-label': `all areas, ${g.label}`,
+                lead: <span className={s.nameCell}>{g.id === 'tests' ? 'all areas' : ''}</span>,
+              }))}
+            />
+          )}
         </div>
       )}
     </section>

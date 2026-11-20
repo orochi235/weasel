@@ -108,13 +108,13 @@ function labelLines(area: AuditArea, cell: MapCell, font: string): string[] {
   return wrapAtDots(label, Math.floor((cell.width - 8 - dotsRoom(area.passes.length)) / perChar), Math.max(1, Math.floor(room / LINE)));
 }
 
-function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette, heat: HeatScale, phase: AuditPhase | undefined, lit: boolean): AuditCellData {
+function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette, heat: HeatScale, phase: AuditPhase | undefined, lit: boolean, upcoming: number): AuditCellData {
   const tone = toneOf(area);
   const fill = tone === 'settled' ? palette.settled : tone === 'unaudited' ? palette.uncharted : rampAt(palette.depth, heat.at(tone.left));
   const ink = tone === 'unaudited' ? palette.ink : inkOn(fill, palette);
   const live = area.status === 'tonight';
   const labeled = cell.width > 52 && cell.height > 28;
-  const showsQueue = area.queue !== null && !live;
+  const showsQueue = area.queue !== null && area.queue <= upcoming && !live;
   return {
     kind: 'audit-cell',
     fill: { color: fill },
@@ -142,6 +142,8 @@ export function auditNodeSpecs(
   palette: AuditPalette,
   phases: ReadonlyMap<string, AuditPhase> = new Map(),
   lit: string | null = null,
+  /** How many places of the queue to number, from its head. */
+  upcoming = Infinity,
 ): AuditNodeSpec[] {
   const byId = new Map(areas.map((a) => [a.id, a]));
   const heat = heatScaleOf(areas);
@@ -163,7 +165,7 @@ export function auditNodeSpecs(
     const parent = c.parent === null ? undefined : frameBox.get(c.parent);
     out.push({
       id: asNodeId(c.id), parent: c.parent === null ? null : frameIdOf(c.parent), pickable: true,
-      pose: poseIn(c, parent), data: cellData(area, c, palette, heat, phases.get(area.id), area.id === lit),
+      pose: poseIn(c, parent), data: cellData(area, c, palette, heat, phases.get(area.id), area.id === lit, upcoming),
     });
   }
   return out;

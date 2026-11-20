@@ -273,3 +273,36 @@ export function laneStepsOf(lane: AuditLane, now: number): SpanStripSpan[] {
   }).flatMap((span) => (span.id === 'patch' && span.state !== 'failed' ? withUnfixed(span, lane) : [span]))
     .map((span) => withInk(span));
 }
+
+/** The steps every area shares once its own lane is done, in order. */
+const SHARED_STEPS = [
+  { id: 'batch', label: 'batch', steps: ['batch'] },
+  { id: 'fleet', label: 'fleet run', steps: ['fleet'] },
+  { id: 'merge', label: 'merge', steps: ['merge-wait', 'merge'] },
+] as const;
+
+/** Whether the run has reached the steps its areas share: the batch, the fleet run and the merge. */
+export const inSharedSteps = (run: AuditRun): boolean =>
+  !run.running || SHARED_STEPS.some((s) => (s.steps as readonly string[]).includes(run.step));
+
+/** The two fleet runs a batch's gate starts at once, a lane each. */
+export const GATE_RUNS = [{ id: 'tests', label: 'fleet tests' }, { id: 'build', label: 'postbuild' }] as const;
+export type GateRun = typeof GATE_RUNS[number]['id'];
+
+/** One of the run's lanes for every area at once: the batch, `gate`'s fleet run, and the merge, a column each, the
+ *  fleet run filled by how far it has got. */
+export function sharedSpansOf(run: AuditRun, gate: GateRun = 'tests'): SpanStripSpan[] {
+  const at = run.running ? SHARED_STEPS.findIndex((s) => (s.steps as readonly string[]).includes(run.step)) : SHARED_STEPS.length;
+  return SHARED_STEPS.map((s, i): SpanStripSpan => {
+    const state = i < at ? 'done' : i === at ? 'active' : 'pending';
+    const fleet = s.id === 'fleet' && state === 'active' ? run.fleet?.[gate] ?? null : null;
+    const fill = state === 'done' ? 1 : fleet && fleet.total > 0 ? Math.min(1, fleet.done / fleet.total) : 0;
+    const name = s.id === 'fleet' ? GATE_RUNS.find((g) => g.id === gate)!.label : s.label;
+    const label = fleet ? `${name} · ${Math.round(fill * 100)}%` : name;
+    return {
+      id: s.id, start: i, ms: 1, state, fill, label, color: phaseColor(s.id === 'merge' ? 'patch' : 'fix'),
+      ...(s.id === 'merge' ? { ink: phaseInkOf('patch', fill) } : {}),
+      ...(fleet ? { title: `${fleet.done.toLocaleString()} of ${fleet.total.toLocaleString()} done` } : {}),
+    };
+  });
+}
