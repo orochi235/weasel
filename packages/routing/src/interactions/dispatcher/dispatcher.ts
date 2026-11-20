@@ -32,7 +32,7 @@ import { endAllGestures, invokeAction, pumpGesture, type GestureRun } from './ge
 import { handOff } from './handOff';
 import { createInFlightGestures } from './inFlightGestures';
 import { createUiOngoing } from './uiOngoing';
-import { explain, resolveAll, resolveOnly } from './predict';
+import { bindsInKeymap, explain, resolveAll, resolveOnly } from './predict';
 import { rank, walk, type Attempt } from './walk';
 import { routeThroughKeymap } from './keymapRoute';
 import type { Ranking, Walked } from './ranking';
@@ -105,7 +105,7 @@ export function createDispatcher(opts?: {
 
     return routeThroughKeymap(event, ctx, {
       run: (pass, ev) => route(ev, { ...ctx, keymapPass: pass }),
-      binds: (ev) => rank(ev, { ...ctx, keymapPass: 'only' }, inFlight.engagedOwners(), false).ordered.length > 0,
+      binds: (ev) => bindsInKeymap(ev, ctx, inFlight.engagedOwners()),
       engaged: () => inFlight.handles.size > 0,
     }) ?? route(event, ctx);
   }
@@ -165,9 +165,11 @@ export function createDispatcher(opts?: {
 
   return {
     handleInput: handleInputWithNotify,
-    resolveOnly: (event, ctx) => resolveOnly(event, ctx, inFlight.engagedOwners()),
-    resolveAll: (event, ctx, resolveOpts) => resolveAll(event, ctx, inFlight.engagedOwners(), resolveOpts),
-    explain: (event, ctx, explainOpts) => explain(event, ctx, inFlight.engagedOwners(), explainOpts),
+    resolveOnly: (event, ctx) => resolveOnly(event, ctx, inFlight.engagedOwners(), inFlight.handles.size > 0),
+    resolveAll: (event, ctx, resolveOpts) =>
+      resolveAll(event, ctx, inFlight.engagedOwners(), inFlight.handles.size > 0, resolveOpts),
+    explain: (event, ctx, explainOpts) =>
+      explain(event, ctx, inFlight.engagedOwners(), inFlight.handles.size > 0, explainOpts),
     cancelAll: cancelAllWithNotify,
     inFlight: () => inFlight.handles,
     inFlightCursor: inFlight.cursor,
