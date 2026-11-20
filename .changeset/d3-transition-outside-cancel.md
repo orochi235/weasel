@@ -2,6 +2,6 @@
 '@weasel-js/d3': patch
 ---
 
-A transition whose tween is stopped from outside, by `animator.cancelKey`, `animator.cancelAll` or a tick that threw, ends as an interrupt instead of never ending.
+A transition whose tween is canceled from outside or throws on a tick ends as an interrupt instead of never ending.
 
 <!-- entry: fix -->
