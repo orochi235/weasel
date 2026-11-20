@@ -93,17 +93,20 @@ export function clipRibbon(
   const style: RibbonStyle = { ...ribbonStyle(stroke), meet: false };
   const si = Math.max(0, opts.startInset ?? 0);
   const ei = Math.max(0, opts.endInset ?? 0);
-  // Wider than any inset, so a window pushed past its subpath by one lands in the gap.
-  const gap = 1 + 2 * (si + ei);
+  const strokeIn = widthHasInk(style.width)
+    ? strokePolylines(path, stroke, style.width, opts.flattenTolerance, opts.metric) : null;
+  const polylines = !strokeIn ? [] : strokeIn.polylines
+    .map((pl) => (opts.metric && !strokeIn.rectInMetric ? into(pl, opts.metric) : pl));
+  // Wider than any inset, so a window pushed past its subpath by one lands in the gap, and many float32
+  // steps wide at the path's far end, where the lengths are read.
+  const gap = Math.max(1 + 2 * (si + ei), polylinesLength(polylines) * 2 ** -14);
   const ribbon: ClipRibbon = {
     mesh: ribbonMesh({ verts: [], idx: [], anchorA: [], anchorB: [], anchorT: [] }, path),
     trim: new Float32Array(0), subpaths: [], pieces: [], style, startInset: si, endInset: ei, margin: gap / 4,
     ...(opts.metric ? { metric: opts.metric } : {}),
   };
-  if (!widthHasInk(style.width)) return ribbon;
+  if (!strokeIn) return ribbon;
   const metric = opts.metric;
-  const strokeIn = strokePolylines(path, stroke, style.width, opts.flattenTolerance, metric);
-  const polylines = strokeIn.polylines.map((pl) => (metric && !strokeIn.rectInMetric ? into(pl, metric) : pl));
   const dashLength = stroke.dash === undefined ? undefined : untrimmedWorldLength(polylines, si, ei);
   const dash = (pls: MeasuredPolyline[]) => dashPolylines(pls, stroke.dash, undefined, dashLength, stroke.dashOffset);
   const out: RibbonOut = { verts: [], idx: [], anchorA: [], anchorB: [], anchorT: [], lengths: [] };

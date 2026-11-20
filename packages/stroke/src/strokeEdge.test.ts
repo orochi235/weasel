@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PathBuilder } from '@weasel-js/geom';
+import { PathBuilder, type Path } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
 import { nearestStrokeEdge } from './strokeEdge';
 
@@ -77,5 +77,19 @@ describe('nearestStrokeEdge', () => {
 
   it('answers null for a path with no segments', () => {
     expect(nearestStrokeEdge(new PathBuilder().moveTo(5, 5).build(), stroke, 5, 5)).toBeNull();
+  });
+});
+
+describe('nearestStrokeEdge on a path with cut corners', () => {
+  it('reads each anchor\'s width where the ribbon does, past a rounded corner', () => {
+    const square = {
+      ...new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close().build(),
+      corners: [null, { shape: 'round', radius: 20 }, null, null],
+    } as Path;
+    const widths: Stroke = { ...stroke, vertexWidths: [2, 2, 10, 10] };
+    // Halfway down the bottom edge, from anchor 2 to anchor 3: both 10 wide.
+    const hit = nearestStrokeEdge(square, widths, 50, 110)!;
+    expect(hit.y).toBeCloseTo(100, 6);
+    expect(hit.right + hit.left).toBeCloseTo(10, 5);
   });
 });

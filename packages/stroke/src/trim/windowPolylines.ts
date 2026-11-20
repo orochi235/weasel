@@ -31,12 +31,25 @@ export function windowPolylines(
   polylines: readonly Polyline[], span: CurveSpan, runs?: readonly LengthRun[],
 ): WindowedRun[] {
   const out: WindowedRun[] = [];
-  for (let r = Math.max(span.from.run, 0); r <= Math.min(span.to.run, polylines.length - 1); r++) {
+  const first = Math.max(span.from.run, 0), last = Math.min(span.to.run, polylines.length - 1);
+  const place = (r: number, at: CurvePosition) => polylineAtCurve(polylines[r], at.segment, at.t, runs?.[r]);
+  const isDot = (r: number) => r >= 0 && r < polylines.length && polylinesLength([polylines[r]]) <= EPS;
+  // A curve position never falls in a subpath of no length, so a dot the window reaches at its very
+  // start or end sits beside the first or last run, not in it; it is drawn whole, as untrimmed.
+  let r0 = first, r1 = last;
+  if (first <= last && place(first, span.from).length <= EPS) while (isDot(r0 - 1)) r0--;
+  if (first <= last && polylinesLength([polylines[last]]) - place(last, span.to).length <= EPS) {
+    while (isDot(r1 + 1)) r1++;
+  }
+  for (let r = r0; r <= r1; r++) {
     const pl = polylines[r];
-    const place = (at: CurvePosition) => polylineAtCurve(pl, at.segment, at.t, runs?.[r]);
-    const head = r === span.from.run ? place(span.from) : null;
-    const tail = r === span.to.run ? place(span.to) : null;
     const total = polylinesLength([pl]);
+    if (total <= EPS) {
+      out.push({ polyline: pl, fromClosed: pl.closed, dashPhase: 0 });
+      continue;
+    }
+    const head = r === span.from.run ? place(r, span.from) : null;
+    const tail = r === span.to.run ? place(r, span.to) : null;
     const lo = head?.length ?? 0;
     const hi = tail?.length ?? total;
     if (hi - lo <= EPS) continue;

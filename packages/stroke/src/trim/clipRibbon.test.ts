@@ -166,3 +166,13 @@ describe('a clipped ribbon draws what the trimmed one does', () => {
     expect(clipWindow(clipRibbon(ZIGZAG, BASE), ZIGZAG, { start: 0.6, end: 0.4 })).toBeNull();
   });
 });
+
+describe('clipRibbon on a long path', () => {
+  it('keeps its subpaths apart in the float32 lengths a window is read in', () => {
+    const ribbon = clipRibbon(pathFromD('M0 0 L40000000 0 M0 10 L10 10'), { paint: { kind: 'solid', color: '#000' }, width: 2 });
+    const [a, b] = ribbon.subpaths;
+    const f = Math.fround;
+    expect(f(a.offset + a.length + ribbon.margin / 2)).toBeLessThan(f(b.offset - ribbon.margin / 2));
+    expect(f(a.offset + a.length)).toBeLessThan(f(a.offset + a.length + ribbon.margin / 2));
+  });
+});

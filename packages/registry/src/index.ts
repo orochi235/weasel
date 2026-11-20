@@ -4,6 +4,7 @@ export type { ExtensionRegistry, ExtensionRegistryOptions, ExtensionRegisterOpti
 export { createEmitter, createKeyedEmitter, type Emitter, type KeyedEmitter } from './emitter';
 export { createValueStore, type ValueStore } from './valueStore';
 export { isDev } from './isDev';
+export { createWarnOnce } from './warnOnce';
 export { isPlainObject, isPlainPrototype } from './isPlainObject';
 export { isFiniteNumber } from './isFiniteNumber';
 export { deepEqual, type DeepEqualOptions } from './deepEqual';
