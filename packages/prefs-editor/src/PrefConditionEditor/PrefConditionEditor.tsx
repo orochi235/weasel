@@ -78,6 +78,9 @@ export function PrefConditionEditor({ value, onChange, schema, over, exclude = N
       };
     }), [leaves, exclude, entryOf, over]);
   const classes = [s.editor, className].filter(Boolean).join(' ');
+  // A page not served securely has no clipboard, and then neither button is drawn.
+  const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+  const tools = clipboard && <ConditionClipboard clipboard={clipboard} value={value} onPaste={onChange} />;
 
   if (value !== undefined && !isPrefCondition(value)) {
     return (
@@ -85,19 +88,18 @@ export function PrefConditionEditor({ value, onChange, schema, over, exclude = N
         <div className={s.row} data-invalid>
           <Code size="xs" emphasis="low" className={s.text}>{JSON.stringify(value) ?? String(value)}</Code>
           <Button size="sm" onClick={() => onChange(undefined)}>Remove</Button>
+          {tools}
           {checkPrefCondition(value, schema, site, over).map((p, i) => <p key={i} className={s.problem}>{p.problem}</p>)}
         </div>
       </div>
     );
   }
 
-  // A page not served securely has no clipboard, and then neither button is drawn.
-  const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
   const scope: ConditionScope = { schema, over, site, leaves, prefOptions };
   return (
     <div className={classes} role="group" aria-label={ariaLabel}>
       <ConditionGroupRows group={rootGroup(value)} scope={scope} onChange={(next) => onChange(rootCondition(next))}
-        tools={clipboard && <ConditionClipboard clipboard={clipboard} value={value} onPaste={onChange} />} />
+        tools={tools} />
     </div>
   );
 }

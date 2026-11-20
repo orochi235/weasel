@@ -431,6 +431,14 @@ describe('PrefConditionEditor copy and paste', () => {
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('The clipboard could not be read.'));
   });
 
+  it('pastes a condition over one that is no condition at all', async () => {
+    clipboard(JSON.stringify({ path: 'view.grid', is: true }));
+    const seen = open({ path: 1 } as unknown as PrefCondition);
+    fireEvent.click(screen.getByRole('button', { name: 'Paste condition' }));
+    await waitFor(() => expect(seen.value).toEqual({ path: 'view.grid', is: true }));
+    expect(row(1)).not.toHaveAttribute('data-invalid');
+  });
+
   it('writes nothing for a clipboard that holds no condition, and says so', async () => {
     for (const text of ['not json', '{"path":"view.grid","nope":1}', '42']) {
       clipboard(text);
