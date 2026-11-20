@@ -1,5 +1,5 @@
 import type { DragSample } from '@weasel-js/routing';
-import type { InsertPoint, InsertEnds, InsertExtras } from '@weasel-js/core/engine';
+import { insertPreviewExtent, type InsertPoint, type InsertEnds, type InsertExtras } from '@weasel-js/core/engine';
 import { applyUserRotation, buildExtras } from './extras';
 import { insertRectFor, effectiveOriginMode } from './geometry';
 import type { InsertFrame } from './session';
@@ -75,6 +75,8 @@ export function insertShape(
   userRotation: number,
   /** The snap's landing for an end at `p` (`SpanSnap.landingAt`). */
   landingAt?: (p: InsertPoint) => unknown,
+  /** The point that picked the container (`InsertEnds.site`). */
+  site?: InsertPoint,
 ): InsertShape {
   const mode = effectiveOriginMode(resolved?.['originMode'], frame.altHeld);
   const kind = insertKind(resolved);
@@ -93,12 +95,15 @@ export function insertShape(
   if (min) (extras as { minSize?: MinSize }).minSize = min;
   const style = insertStyleOf(resolved);
   if (style) (extras as { style?: InsertStyle }).style = style;
-  const landings = landingAt && endLandings(landingAt(start), landingAt(current));
+  // A from-center drag's start is its center, a line's too, not the end mirrored from the pointer.
+  const from = mode === 'center' ? frame.shaped.start : start;
+  const landings = landingAt && endLandings(landingAt(from), landingAt(current));
   const drag: InsertEnds = {
-    start: { x: start.x, y: start.y },
+    start: { x: from.x, y: from.y },
     end: { x: current.x, y: current.y },
     ...(mode === 'center' ? { fromCenter: true } : {}),
     ...(landings ? { landings } : {}),
+    ...(site ? { site: { x: site.x, y: site.y } } : {}),
   };
   return { bounds, extras, start, ends: drag };
 }
@@ -116,12 +121,13 @@ function endLandings(start: unknown, end: unknown): InsertEnds['landings'] | und
  *     zero-height (or zero-width) AABB and is perfectly valid — only
  *     a zero-LENGTH drag is degenerate. (Shift-constrain makes
  *     axis-aligned the common case, which is how this surfaced.)
- *   - everything else: a zero extent in either axis is degenerate. */
-export function isCommittableExtent(
-  bounds: { width: number; height: number },
-  kind: string,
-): boolean {
+ *   - everything else: a zero extent in either axis is degenerate, the
+ *     extent being the shape the preview draws and the dep mints
+ *     (`insertPreviewExtent`): a from-center polygon's is its radius, not the box. */
+export function isCommittableExtent(bounds: Rect, extras: InsertExtras): boolean {
+  const kind = extras.kind;
   if (kind === 'pencil') return true;
   if (kind === 'line') return bounds.width !== 0 || bounds.height !== 0;
-  return bounds.width !== 0 && bounds.height !== 0;
+  const { width, height } = insertPreviewExtent({ shape: kind, bounds, extras }).bounds;
+  return width !== 0 && height !== 0;
 }

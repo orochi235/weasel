@@ -171,7 +171,7 @@ export function useInsertDepSource(
       quiet = false,
     ): ({ parent: NodeId | null; layer: string; pose: unknown; data: unknown } & Hooks) | null => {
         const kind = extras.kind;
-        const { parent, layer, local } = site(ends?.start ?? { x: bounds.x, y: bounds.y });
+        const { parent, layer, local } = site(ends?.site ?? ends?.start ?? { x: bounds.x, y: bounds.y });
         const style = (extras as { style?: InsertStyle }).style;
         const painted = (as: string = kind) => paintOf(as, style, seq);
 

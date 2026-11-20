@@ -12,8 +12,8 @@ export interface SpanSnap {
   /** Snap the end. */
   end(p: Point, mods: SnapMods): SnapOutcome;
   /** Turn the end about `p`, a start placed by something other than this
-   *  snap. */
-  anchor(p: Point): void;
+   *  snap. Whether that moved the point the end turns about. */
+  anchor(p: Point): boolean;
   /** Whether a target holds the start. */
   startHeld(): boolean;
   /** The host's landing (`SnapOutcome.landing`) for an end at `p`: the start's
@@ -29,13 +29,14 @@ export interface SpanSnap {
  * as drawn. `constrain` is read whenever the end snaps, and a new value
  * reopens the end's session. With no `snap` dep, or one that runs no
  * sessions, only `constrain` applies. `common` goes into every session's
- * request.
+ * request; as a function, it is read each time a session opens.
  */
 export function createSpanSnap(
   dep: SnapDep | undefined,
   constrain: () => SnapConstrain | undefined = () => undefined,
-  common: Pick<SnapBegin, 'parent'> = {},
+  common: Pick<SnapBegin, 'parent'> | (() => Pick<SnapBegin, 'parent'>) = {},
 ): SpanSnap {
+  const shared = typeof common === 'function' ? common : () => common;
   const begin = (req: SnapBegin): SnapSession => dep?.begin(req) ?? createBareSnapSession(req);
   let raw: Point = { x: 0, y: 0 };
   let start: Point = raw;
@@ -57,7 +58,7 @@ export function createSpanSnap(
     const key = JSON.stringify(c ?? null);
     if (live?.key === key) return live.session;
     live?.session.end();
-    live = { session: begin({ ...common, gesture: 'point', press: start, origin: start, ...(c ? { constrain: c } : {}) }), key };
+    live = { session: begin({ ...shared(), gesture: 'point', press: start, origin: start, ...(c ? { constrain: c } : {}) }), key };
     return live.session;
   };
   const drop = (): void => {
@@ -68,7 +69,7 @@ export function createSpanSnap(
   const place = (p: Point, mods: SnapMods): SnapOutcome => {
     raw = p;
     drop();
-    placed = begin({ ...common, gesture: 'point', press: p });
+    placed = begin({ ...shared(), gesture: 'point', press: p });
     const landed = placed.at(p, mods);
     start = landed.point;
     held = landed.held;
@@ -86,10 +87,11 @@ export function createSpanSnap(
       return endOut;
     },
     anchor(p) {
-      if (p.x === start.x && p.y === start.y) return;
+      if (p.x === start.x && p.y === start.y) return false;
       start = p;
       startOut = null;
       drop();
+      return true;
     },
     startHeld: () => held,
     landingAt: (p) => at(startOut, p) ?? at(endOut, p),

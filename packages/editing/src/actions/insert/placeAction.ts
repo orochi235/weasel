@@ -1,25 +1,31 @@
-import { defineAction, type Action, type ModifierState } from '@weasel-js/routing';
+import { defineAction, type Action, type ImmediateParams, type ModifierState } from '@weasel-js/routing';
 import { SNAP_ROLES, snapMods } from '@weasel-js/core/engine';
 import { inPlane, insertLayer, insertParent, minSizeOf } from '@weasel-js/core';
 import { restoreSelection } from './commit';
-import { insertKind } from './shape';
+import { insertShape } from './shape';
 import { clearedSelection } from './session';
-import { insertStyleOf } from './style';
 import type {} from '@weasel-js/core';
 import { INSERT_GROUP } from '../../actionGroups';
 
 /** What the dispatcher lays under an immediate action's params for a click. */
-const CLICK_FIELDS = ['world', 'press', 'affordance', 'mods'] as const;
+const CLICK_FIELDS = ['world', 'press', 'affordance', 'mods', 'roles'] as const;
 
 const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: false };
+
+/** The keys a click held, and the roles the dispatcher resolved them to (`ImmediateParams`). */
+function clickRoles(params: Readonly<Record<string, unknown>> | undefined) {
+  const p = params as ImmediateParams | undefined;
+  return { modifiers: p?.mods ?? NO_KEYS, ...(p?.roles ? { roles: p.roles } : {}) };
+}
 
 /**
  * Click-to-insert: the companion to `insertAction` for a click, which draws
  * no box. It commits a node of `params.kind` at `params.size`, centered on the
  * click, snapped through a `point` session of the `snap` dep unless the
  * click held `snap.suspend` (Ctrl), and commits
- * through the same `insert` dep a drag commits through. The rest of the
- * binding's params are the insert's extras, as a drag's are.
+ * through the same `insert` dep a drag commits through. Its extras are the
+ * ones a drag out from the click's center to the size's corner makes
+ * (`insertShape`), built from the rest of the binding's params.
  *
  * A `minSize` in the params floors the size, and goes on to the node. Style
  * params (a shape tool's fill, stroke, …) reach the dep as `extras.style`.
@@ -50,24 +56,30 @@ export const placeAction: Action = inPlane(defineAction({
 
       const prior = deps.operands ? [...deps.operands.get()] : [];
       deps.operands?.set([]);
-      const parent = insertParent(deps.scene, deps.insertInto?.get(), deps.canDropInto, { x, y });
-      const snap = deps.snap?.begin({ gesture: 'point', press: { x, y }, ...(parent === null ? {} : { parent }) });
-      const mods = snapMods({ modifiers: params?.mods ?? NO_KEYS });
-      const out = snap?.at({ x, y }, mods);
-      const at = out ? out.point : { x, y };
-      snap?.end();
-      const extras: { kind: string; [extra: string]: unknown } = { ...params, kind: insertKind(params) };
-      for (const k of [...CLICK_FIELDS, 'size']) delete extras[k];
-      const style = insertStyleOf(params);
-      if (style) extras['style'] = style;
-      const bounds = { x: at.x - size.width / 2, y: at.y - size.height / 2, width: size.width, height: size.height };
-      const ends = {
-        start: at, end: { x: at.x + size.width / 2, y: at.y + size.height / 2 }, fromCenter: true,
-        ...(out?.landing !== undefined ? { landings: { start: out.landing } } : {}),
-      };
-      const id = dep.commit(bounds, extras, ends, clearedSelection(prior));
-      if (id === null) {
-        restoreSelection({ priorSelection: prior, selection: deps.operands });
+      let committed = false;
+      try {
+        const parent = insertParent(deps.scene, deps.insertInto?.get(), deps.canDropInto, { x, y });
+        const snap = deps.snap?.begin({ gesture: 'point', press: { x, y }, ...(parent === null ? {} : { parent }) });
+        let out;
+        try {
+          out = snap?.at({ x, y }, snapMods(clickRoles(params)));
+        } finally {
+          snap?.end();
+        }
+        const at = out ? out.point : { x, y };
+        const binding: Record<string, unknown> = { ...params, originMode: 'center' };
+        for (const k of [...CLICK_FIELDS, 'size']) delete binding[k];
+        const landing = out?.landing;
+        const { bounds, extras, ends } = insertShape(
+          binding,
+          { shaped: { start: at, current: { x: at.x + size.width / 2, y: at.y + size.height / 2 } }, altHeld: false },
+          null, 0,
+          (p) => (p === at ? landing : undefined),
+          { x, y },
+        );
+        committed = dep.commit(bounds, extras, ends, clearedSelection(prior)) !== null;
+      } finally {
+        if (!committed) restoreSelection({ priorSelection: prior, selection: deps.operands });
       }
     },
   },

@@ -2907,3 +2907,12 @@ Calls the lanes made without a ruling:
   color the theme lacks, past appending one color at the end of `series`; `addThemeRole` is how a role is made. It had
   made a role holding one field, or a sparse array, which painted `undefined` and failed `diagramThemeErrors`. Filling
   a missing role from the default role, as `addThemeRole` does, was the alternative.
+## Audit round forty-seven (2026-11-20): editing's insert actions
+
+- 2026-11-20 (the fixer's call): an insert's container is picked at one site, `InsertEnds.site`: the press, carried
+  with the shape when Space moves it mid-draw, and a click-place's raw click, not its snapped center. The snap's scope
+  and the preview's copies follow the same container. Picking it at the snapped start, as the dep did, was the
+  alternative.
+- 2026-11-20 (the fixer's call): a click-place builds its extras as a drag out from the click's center to the size's
+  corner does, so a polygon's first vertex points at that corner unless the binding names a `rotation`, and a custom
+  kind's extras carry `originMode: 'center'`. Inscribing a radial shape in the box unturned was the alternative.

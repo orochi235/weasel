@@ -4,7 +4,7 @@ import type { NodeId } from '@weasel-js/core';
 import type { InsertDep, InsertEnds } from '@weasel-js/core/engine';
 import { insertAction } from './action';
 
-function drag(from: { x: number; y: number }, to: { x: number; y: number }, alt = false): InsertEnds | undefined {
+function drag(from: { x: number; y: number }, to: { x: number; y: number }, alt = false, kind?: string): InsertEnds | undefined {
   let ends: InsertEnds | undefined;
   const dep: InsertDep = {
     commit(_bounds, _extras, e) {
@@ -17,7 +17,7 @@ function drag(from: { x: number; y: number }, to: { x: number; y: number }, alt 
   });
   const invoker = insertAction.invoker;
   if (invoker?.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
-  const handle = invoker.start(ctx(from), undefined);
+  const handle = invoker.start(ctx(from), kind ? { params: { kind } } : undefined);
   handle.onMove!(ctx(to));
   handle.onEnd!(ctx(to), 'commit');
   return ends;
@@ -25,11 +25,16 @@ function drag(from: { x: number; y: number }, to: { x: number; y: number }, alt 
 
 describe('insertAction hands the insert dep the drag ends', () => {
   it('from where the drag started to where it ended, whichever way it went', () => {
-    expect(drag({ x: 60, y: 70 }, { x: 10, y: 20 })).toEqual({ start: { x: 60, y: 70 }, end: { x: 10, y: 20 } });
+    expect(drag({ x: 60, y: 70 }, { x: 10, y: 20 })).toEqual({ start: { x: 60, y: 70 }, end: { x: 10, y: 20 }, site: { x: 60, y: 70 } });
   });
 
   it('saying so when the box grows from its center', () => {
     expect(drag({ x: 60, y: 70 }, { x: 10, y: 20 }, true))
-      .toEqual({ start: { x: 60, y: 70 }, end: { x: 10, y: 20 }, fromCenter: true });
+      .toEqual({ start: { x: 60, y: 70 }, end: { x: 10, y: 20 }, fromCenter: true, site: { x: 60, y: 70 } });
+  });
+
+  it('from the center a line grows out of, as a box\'s', () => {
+    expect(drag({ x: 60, y: 70 }, { x: 10, y: 20 }, true, 'line'))
+      .toEqual({ start: { x: 60, y: 70 }, end: { x: 10, y: 20 }, fromCenter: true, site: { x: 60, y: 70 } });
   });
 });

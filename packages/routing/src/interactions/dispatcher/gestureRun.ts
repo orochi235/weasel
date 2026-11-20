@@ -6,12 +6,13 @@ import type { Action } from '../actions/action';
 import type { ActionDeps, DragSample, InvocationCtx, OngoingHandle } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
 import { bindingOptionsOf } from '../actions/binding';
-import { platformRoleKeys, roleKeysOf } from '../actions/modifierRoles';
+import { platformRoleKeys, resolveRoles, roleKeysOf, type RoleKeys } from '../actions/modifierRoles';
 import type { DispatcherContext, KeyReach } from './dispatcherApi';
 import type { GestureFactsStore } from './gestureFacts';
 import { gestureIdFor, isMultiTouchGestureId } from './gestureIds';
 import { isEmptyOngoingHandle, type InFlightGestures } from './inFlightGestures';
 import { immediateParams } from './inputFacts';
+import type { ModifierState } from '../../vocabulary';
 import { deferredStart } from './deferredStart';
 import { buildInvocationCtx, uiInvocationCtx } from './invocationCtx';
 import type { InputEvent, MatchResult } from './matcher';
@@ -211,6 +212,14 @@ function withView<P extends object>(params: P | undefined, viewId: string | null
   return params && viewId !== undefined ? { ...params, viewId } : params;
 }
 
+/** `params` with the roles its `mods` hold, as an ongoing action's ctx carries them. */
+function withRoles<P extends { mods?: ModifierState }>(
+  params: P | undefined,
+  keys: Readonly<Record<string, RoleKeys>> | undefined,
+): P | undefined {
+  return params && keys && params.mods ? { ...params, roles: resolveRoles(keys, params.mods, false) } : params;
+}
+
 /** Run the candidate the walk chose. */
 export function invokeAction(
   run: GestureRun,
@@ -223,7 +232,11 @@ export function invokeAction(
 
   if (action.invoker?.timing === 'immediate') {
     try {
-      const params = withView(immediateParams(event, resolveParams(bindingOptionsOf(match.binding)?.params)), run.viewId());
+      const roleKeys = roleKeysOf(action.modifierRoles, match.binding.opts?.roles);
+      const params = withRoles(
+        withView(immediateParams(event, resolveParams(bindingOptionsOf(match.binding)?.params)), run.viewId()),
+        roleKeys && platformRoleKeys(roleKeys, run.apple()),
+      );
       if (action.invoker.run(deps, params) === 'pass') return 'empty-handle';
     } catch (err) {
       console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);

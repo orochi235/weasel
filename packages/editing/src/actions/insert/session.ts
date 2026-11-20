@@ -33,10 +33,23 @@ export interface InsertSession {
   readonly gestureCtx: GestureContext<unknown>;
   /** For committing a behavior's `Op[]`. */
   readonly scene: Scene<unknown, string, unknown> | undefined;
-  /** The container the node lands in; null for the top of the tree. */
-  readonly parent: NodeId | null;
+  /** How far the behaviors' `onStart` moved the start off where the snap put
+   *  it at press. A carry keeps it. */
+  readonly startShift: InsertPoint;
+  /** Where the node lands. The one part of the session a drag changes: moving
+   *  the shape mid-draw carries it. */
+  readonly place: InsertPlace;
   readonly applyOps: ((ops: Op[], label: string) => void) | undefined;
   readonly selection: OperandsDep | undefined;
+}
+
+/** The point that picks an insert's container (`InsertEnds.site`), and the
+ *  container it picks: null for the top of the tree. */
+export interface InsertPlace {
+  site: InsertPoint;
+  parent: NodeId | null;
+  /** The container for a site at `p`, as `insertParent` picks it. */
+  readonly parentAt: (p: InsertPoint) => NodeId | null;
 }
 
 /** The selection change an insert's commit carries: from what the press
@@ -82,9 +95,12 @@ export function beginInsert(
     selection.set([]);
   }
 
-  const parent = insertParent(ctx.deps.scene, ctx.deps.insertInto?.get(), ctx.deps.canDropInto, ctx.world);
+  const { insertInto, canDropInto } = ctx.deps;
+  const parentAt = (p: InsertPoint) => insertParent(scene, insertInto?.get(), canDropInto, p);
+  const site = { x: ctx.world.x, y: ctx.world.y };
+  const place: InsertPlace = { site, parent: parentAt(site), parentAt };
   const constrain = () => (insertKind(resolveParams(opts?.params)) === 'line' ? { step: SNAP_ANGLE_STEP } : undefined);
-  const snap = createSpanSnap(ctx.deps.snap, constrain, parent === null ? {} : { parent });
+  const snap = createSpanSnap(ctx.deps.snap, constrain, () => (place.parent === null ? {} : { parent: place.parent }));
   const behaviors = (opts?.behaviors ?? []) as InsertBehavior<unknown>[];
   const readers = gestureReaders(ctx.deps);
   const origin = snap.start({ x: ctx.world.x, y: ctx.world.y }, snapMods(ctx)).point;
@@ -109,6 +125,7 @@ export function beginInsert(
   if (snap.startHeld()) gestureCtx.origin.set(GESTURE_KEY, origin);
   const startPoint = gestureCtx.origin.get(GESTURE_KEY) as InsertPoint;
   snap.anchor(startPoint);
+  const startShift = { x: startPoint.x - origin.x, y: startPoint.y - origin.y };
 
   const session: InsertSession = {
     dep,
@@ -118,7 +135,8 @@ export function beginInsert(
     behaviors,
     gestureCtx,
     scene: ctx.deps.scene,
-    parent,
+    startShift,
+    place,
     applyOps: ctx.deps.applyOps,
     selection,
   };

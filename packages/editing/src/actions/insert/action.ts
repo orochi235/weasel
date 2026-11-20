@@ -10,7 +10,7 @@ import { insertParams } from './params';
 import { beginInsert } from './session';
 import { insertKind, insertShape } from './shape';
 import { insertLanding } from './lands';
-import type {} from '@weasel-js/core';
+import type { NodeId } from '@weasel-js/core';
 import { INSERT_GROUP } from '../../actionGroups';
 
 /** How far, in CSS pixels, a drag travels before it draws a shape: past the wobble of a click, so a
@@ -62,7 +62,13 @@ export const insertAction: Action = inPlane(defineAction({
       if (live) live.gesture = gesture;
       // Where the shape will land decides the copies it will be drawn in.
       const scene = ctx.deps.scene;
-      const copies = scene ? copiesWithin(scene, session.parent, scenePaintedPoseOf(scene)) : [];
+      let copiesOf: { parent: NodeId | null; copies: ReturnType<typeof copiesWithin> } | null = null;
+      const copiesNow = () => {
+        const { parent } = session.place;
+        if (!scene) return [];
+        if (copiesOf?.parent !== parent) copiesOf = { parent, copies: copiesWithin(scene, parent, scenePaintedPoseOf(scene)) };
+        return copiesOf.copies;
+      };
 
       return {
         kind: 'insert',
@@ -79,8 +85,11 @@ export const insertAction: Action = inPlane(defineAction({
           // sides ticking via ArrowUp mid-drag) reflect in the live preview.
           const resolved = resolveParams(session.opts?.params);
           if (shapeKindInfo(insertKind(resolved))?.insertPreview === false) return null;
-          const { bounds, extras, start, ends } = insertShape(resolved, frame, frame.points, gesture.userRotation, session.snap.landingAt);
-          const lands = scene && insertLanding(scene, session.dep, bounds, extras, ends);
+          const { bounds, extras, start, ends } = insertShape(
+            resolved, frame, frame.points, gesture.userRotation, session.snap.landingAt, session.place.site,
+          );
+          const copies = copiesNow();
+          const lands = scene && insertLanding(scene, session.dep, bounds, extras, ends, session.place.parent);
           return {
             kind: 'insertPreview',
             shape: extras.kind,

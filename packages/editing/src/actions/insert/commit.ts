@@ -51,9 +51,9 @@ export function commitInsert(
     }
   }
 
-  const { bounds, extras, ends } = insertShape(resolved, frame, points, userRotation, session.snap.landingAt);
+  const { bounds, extras, ends } = insertShape(resolved, frame, points, userRotation, session.snap.landingAt, session.place.site);
   // Sub-threshold drag — no insert.
-  if (!isCommittableExtent(bounds, extras.kind)) return false;
+  if (!isCommittableExtent(bounds, extras)) return false;
 
   const id = session.dep.commit(bounds, extras, ends, clearedSelection(session.priorSelection));
   return id !== null;

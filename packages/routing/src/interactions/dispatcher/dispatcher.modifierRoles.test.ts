@@ -121,4 +121,19 @@ describe('modifier roles', () => {
     expect(held({ modifiers: mods }, 'mirror.break')).toBe(true);
     expect(held({ modifiers: mods, roles: { 'mirror.break': false } }, 'mirror.break')).toBe(false);
   });
+
+  it("hands an immediate action its roles in params, with a binding's rebind and the platform's mod", () => {
+    const seen: unknown[] = [];
+    const action: Action = {
+      id: 'tap',
+      label: 'tap',
+      defaultBinding: [{ spec: { kind: 'click', mods: { alt: true, meta: true } }, opts: { roles: { 'handle.holdAngle': ['alt'] } } }],
+      modifierRoles: holdAction(() => ({})).modifierRoles,
+      invoker: { timing: 'immediate', run: (_deps, params) => { seen.push(params?.['roles']); } },
+    };
+    const ctx = makeCtx({ actions: makeRegistry([action]), apple: true });
+    const d = createDispatcher();
+    d.handleInput({ ...pointer('pointerdown'), kind: 'click', altKey: true, metaKey: true } as InputEvent, ctx);
+    expect(seen).toEqual([{ 'handle.holdAngle': true, 'handle.holdLength': true }]);
+  });
 });

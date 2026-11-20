@@ -8,6 +8,9 @@ import { sceneToAdapter, insertParent } from '@weasel-js/core';
 import { ON_PAGEForTests as ON_PAGE, PAGE_AForTests as PAGE_A, PAGE_BForTests as PAGE_B, pagedSceneForTests as pagedScene } from '@weasel-js/core/test-seams';
 import type { NodeId, RectPose } from '@weasel-js/core';
 import { insertAction } from './action';
+import { insertRepositionAction } from './repositionAction';
+import { sessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
+import type { InsertLive } from '@weasel-js/core/engine';
 
 const MODS = { alt: false, ctrl: false, meta: false, shift: false };
 
@@ -61,5 +64,56 @@ describe('insertParent in a paged scene', () => {
     expect(insertParent(scene as never, null, undefined, at)).toBe(PAGE_A);
     expect(insertParent(scene as never, null, (parent) => parent !== PAGE_A, at)).toBe(PAGE_B);
     expect(insertParent(scene as never, null, () => false, at)).toBeNull();
+  });
+});
+
+describe('insertAction carried across pages by Space', () => {
+  it('lands in the page it was carried onto, and snaps in that page\'s scope from then on', () => {
+    const { scene } = pagedScene({});
+    const adapter = sceneToAdapter(scene);
+    let reg!: DepRegistry;
+    function Wire() {
+      useInsertDepSource(scene as never, adapter as never);
+      reg = useDepRegistry();
+      return null;
+    }
+    render(<DepRegistryProvider><Wire /></DepRegistryProvider>);
+    const told: Array<string | undefined> = [];
+    const spy = { id: 'spy', roles: ['pointer'], *collect(q: { parent?: string }) { told.push(q.parent); } };
+    const snap = sessionDep(scene as never, [spy as never]);
+    const insertLive: InsertLive = { gesture: null };
+    const deps = { ...createActionDeps(insertAction, reg), scene, snap, insertLive };
+    const ctx = (world: { x: number; y: number }) => ({ world, screen: world, modifiers: MODS, deps }) as unknown as InvocationCtx;
+    const invoker = insertAction.invoker!;
+    if (invoker.timing !== 'ongoing' || insertRepositionAction.invoker?.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(ctx({ x: 20, y: 20 }), { params: { kind: 'rect' } } as BindingOptions);
+    handle.onMove!(ctx({ x: 40, y: 40 }));
+    const space = insertRepositionAction.invoker.start(ctx({ x: 0, y: 0 }), undefined);
+    handle.onMove!(ctx({ x: 170, y: 40 }));
+    space.onEnd!(ctx({ x: 170, y: 40 }), 'commit');
+    told.length = 0;
+    handle.onMove!(ctx({ x: 180, y: 50 }));
+    handle.onEnd!(ctx({ x: 180, y: 50 }), 'commit');
+    const made = [...scene.nodes.values()].find((n) => n.kind === 'mark' && n.id !== ON_PAGE)!;
+    expect(made.parent).toBe(PAGE_B);
+    expect(told.length).toBeGreaterThan(0);
+    expect(new Set(told)).toEqual(new Set([PAGE_B]));
+  });
+});
+
+describe('the insert dep in a paged scene', () => {
+  it('puts the node in the container under ends.site, wherever its start is', () => {
+    const { scene } = pagedScene({ pasteboard: true });
+    const adapter = sceneToAdapter(scene);
+    let reg!: DepRegistry;
+    function Wire() {
+      useInsertDepSource(scene as never, adapter as never);
+      reg = useDepRegistry();
+      return null;
+    }
+    render(<DepRegistryProvider><Wire /></DepRegistryProvider>);
+    const bounds = { x: 115, y: 10, width: 10, height: 10 };
+    const id = reg.get('insert')!.commit(bounds, { kind: 'rect' }, { start: { x: 115, y: 10 }, end: { x: 125, y: 20 }, site: { x: 95, y: 10 } });
+    expect(scene.get(id as NodeId)?.parent).toBe(PAGE_A);
   });
 });
