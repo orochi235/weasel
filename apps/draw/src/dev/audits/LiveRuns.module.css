@@ -115,14 +115,14 @@
 }
 
 /* Every lane label inks black, filled or not, so a running step's node name pulses the same way in each: between
-   black and 40% white while the job runs. */
+   black and 60% white while the job runs. */
 .lanes { --span-ink: #000; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .lanes [data-state='active'] .node { animation: node-pulse 1.07s ease-in-out infinite; }
+  .lanes [data-state='active'] .node { animation: node-pulse 1.34s ease-in-out infinite; }
 }
 
 @keyframes node-pulse {
   0%, 100% { color: #000; }
-  50% { color: color-mix(in srgb, #fff 40%, #000); }
+  50% { color: color-mix(in srgb, #fff 60%, #000); }
 }
