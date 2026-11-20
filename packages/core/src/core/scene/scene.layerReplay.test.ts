@@ -44,3 +44,22 @@ describe('layer ops replayed onto a drifted stack', () => {
     expect(ids(s)).toEqual(['main', 'y']);
   });
 });
+
+describe('layer parallax ownership', () => {
+  it('refuses a write into options handed to setLayerParallax', () => {
+    const s = make();
+    const opts = { pan: 0.5 };
+    s.setLayerParallax('main', opts);
+    expect(() => { opts.pan = 2; }).toThrow(TypeError);
+    expect(s.layers[0].parallax).toEqual({ pan: 0.5 });
+  });
+
+  it('refuses a write into options handed to addLayer or a system layer', () => {
+    const declared = { pan: 0.2 };
+    const s = createScene<unknown, L>({ systemLayers: [{ id: 'main', parallax: declared }] });
+    expect(() => { declared.pan = 2; }).toThrow(TypeError);
+    const added = { pan: 1.3 };
+    s.addLayer({ id: 'x', name: 'x', parallax: added });
+    expect(() => { added.pan = 2; }).toThrow(TypeError);
+  });
+});
