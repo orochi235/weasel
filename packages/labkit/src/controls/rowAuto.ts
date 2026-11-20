@@ -1,6 +1,8 @@
 import {
+  type PrefGroup,
   type PrefLeaf,
   type PrefNumber,
+  type PrefSection,
   prefAutoValue,
   prefCanAuto,
   prefValueOrDefault,
@@ -38,6 +40,8 @@ export interface RowAutoSource {
   setRowAuto: ((path: string, next: boolean, value: unknown) => void) | undefined;
   /** Writes one value, the `AUTO` sentinel included: what a reset goes through. */
   setConfig: (path: string, value: unknown) => void;
+  /** The schema the panel's aliases point into, where an alias row's leaf and its reset live. */
+  over?: PrefGroup | PrefSection;
 }
 
 /** What a row would read as auto, pinned or not; `cycles` where unpinning it would close a resolver cycle. */
@@ -113,7 +117,16 @@ function rowReset({
   auto,
   setRowAuto,
   setConfig,
+  over,
 }: RowAutoSource): (() => void) | undefined {
-  const source = createLabConfigSource({ resolved, config, shown, setConfig, auto, setRowAuto });
+  const source = createLabConfigSource({
+    resolved,
+    config,
+    shown,
+    setConfig,
+    auto,
+    setRowAuto,
+    over,
+  });
   return sourceLeafIsAtReset(source, path, leaf) ? undefined : () => source.reset([path]);
 }

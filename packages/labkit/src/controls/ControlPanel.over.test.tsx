@@ -94,3 +94,39 @@ describe("a condition of a <ControlPanel>'s own node that reads a pref of `over`
     expect(screen.queryByRole('checkbox', { name: 'Tight' })).toBeNull();
   });
 });
+
+describe("an alias row's reset into another schema", () => {
+  const target: PrefGroup = {
+    name: 'Dialog',
+    children: {
+      view: {
+        name: 'View',
+        children: {
+          spacing: {
+            kind: 'number',
+            name: 'Spacing',
+            description: '',
+            default: 8,
+            min: 0,
+            max: 40,
+          } as PrefLeaf,
+        },
+      },
+    },
+  };
+  const aliases = resolveConfigSchema(f.schema({ spacing: f.alias('view.spacing') }), [], target);
+
+  it("writes the leaf's default back at its path in that schema", () => {
+    const setConfig = vi.fn();
+    render(
+      <ControlPanel
+        schema={aliases}
+        over={target}
+        config={{ view: { spacing: 12 } }}
+        setConfig={setConfig}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Spacing' }));
+    expect(setConfig).toHaveBeenCalledWith('view.spacing', 8);
+  });
+});

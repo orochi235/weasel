@@ -54,7 +54,14 @@ export interface LabConfigInput {
  *  it is one undo step. */
 export function createLabConfigSource(input: LabConfigInput): PrefsSource {
   const { resolved, config, shown, setConfig, draftConfig, auto, setRowAuto, over } = input;
-  const leafOf = (path: string): PrefLeaf | undefined => prefLeafAt(resolved.group, path);
+  // A path the panel's own schema holds nothing at is an alias's target, which lives in `over`.
+  const rootOf = (path: string): PrefGroup | PrefSection =>
+    over !== undefined &&
+    prefNodeAt(resolved.group, path) === undefined &&
+    prefNodeAt(over, path) !== undefined
+      ? over
+      : resolved.group;
+  const leafOf = (path: string): PrefLeaf | undefined => prefLeafAt(rootOf(path), path);
   const autoAt = (path: string): boolean | undefined => {
     const leaf = leafOf(path);
     if (!leaf || setRowAuto === undefined || !prefCanAuto(leaf)) return undefined;
@@ -94,8 +101,9 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
       active: isRowActive(resolved, path, config, over),
     }),
     reset: (paths) => {
-      const plan = sourceResetPlan(source, paths);
       for (const path of paths) {
+        const root = rootOf(path);
+        const plan = sourceResetPlan({ ...source, schema: root }, [path]);
         if (path === '') {
           for (const w of plan) setConfig(w.path, w.value);
           continue;
@@ -103,7 +111,7 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
         const under = plan.filter((w) => w.path === path || w.path.startsWith(`${path}.`));
         if (under.length === 0) continue;
         const planned = new Set(under.map((w) => w.path));
-        const node = prefNodeAt(resolved.group, path);
+        const node = prefNodeAt(root, path);
         // A group's value is written whole, and the write pins every leaf in it holding no sentinel: one the reset
         // leaves unpinned keeps it.
         const kept = (node ? prefResets(node, path) : []).filter(
