@@ -33,6 +33,7 @@ class SequenceReader {
   readonly counts = { m: 0, n: 0, f: 0, b: 0 };
   autonumber: number | undefined;
   title: string | undefined;
+  accTitle: string | undefined;
 
   id(prefix: keyof SequenceReader['counts']): string {
     return `${prefix}${++this.counts[prefix]}`;
@@ -106,6 +107,7 @@ class SequenceReader {
         return;
       case 'autonumber': return this.numbering(s.args, s.line);
       case 'title': this.title = plainText(s.text); return;
+      case 'accTitle': this.accTitle = s.text; return;
       case 'dropped': this.warnings.add(s.what);
     }
   }
@@ -152,7 +154,8 @@ export function readMermaidSequence(text: string): ImportResult {
     participants: [...r.participants.values()], steps: r.root,
     ...(r.boxes.length > 0 ? { boxes: r.boxes } : {}), ...(r.autonumber !== undefined ? { autonumber: r.autonumber } : {}),
   };
-  const title = r.title ?? parsed.title;
+  const title = r.title ?? parsed.title ?? r.accTitle;
+  if (title !== r.accTitle && r.accTitle !== undefined) r.warnings.add('Mermaid accessible titles were dropped; the page is named by the title.');
   const size = sequenceLayout(data);
   const page: SequencePage = {
     kind: 'sequence', id: 'page-1', ...(title !== undefined ? { name: title } : {}),
