@@ -21,11 +21,11 @@ export interface PoseRotation {
  * Resolve a pose's rotation transform, or `null` when the pose carries no
  * effective rotation. Non-null requires a nonzero `rotation` **and** all four
  * AABB fields (`x`, `y`, `width`, `height`) — the pivot is the unrotated AABB
- * center.
+ * center. A `null` or `undefined` pose carries none.
  */
 export function poseRotationOf(pose: unknown): PoseRotation | null {
-  const p = pose as Partial<{ x: number; y: number; width: number; height: number; rotation: number }>;
-  if (p.rotation && p.x != null && p.y != null && p.width != null && p.height != null) {
+  const p = pose as Partial<{ x: number; y: number; width: number; height: number; rotation: number }> | null | undefined;
+  if (p?.rotation && p.x != null && p.y != null && p.width != null && p.height != null) {
     return { cx: p.x + p.width / 2, cy: p.y + p.height / 2, rotation: p.rotation };
   }
   return null;

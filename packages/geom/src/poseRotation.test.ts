@@ -50,3 +50,10 @@ describe('rotatePathAbout', () => {
     expect(out.coords[1]).toBeCloseTo(0);
   });
 });
+
+describe('poseRotationOf on no pose', () => {
+  it('answers null for null and undefined', () => {
+    expect(poseRotationOf(null)).toBeNull();
+    expect(poseRotationOf(undefined)).toBeNull();
+  });
+});
