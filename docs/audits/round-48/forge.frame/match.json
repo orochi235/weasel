@@ -1,0 +1,35 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   3,
+   3
+  ],
+  [
+   4,
+   5
+  ]
+ ],
+ "a": [
+  "A shadow-DOM node in an a11y finding can never be highlighted: its selector chain is joined into one descendant selector",
+  "An index page's frame ignores `a11y.highlight`, so the A11y panel can't outline anything on an index page",
+  "An index page's frame never reports or applies its document scroll, so loupe copies and captures of a scrolled index page show its top",
+  "Overriding a token reports a stale value for every token defined through it",
+  "On a frame with an iframe, a highlight box is placed in the wrong spot and doesn't follow the inner document's scroll"
+ ],
+ "b": [
+  "Shadow-DOM a11y findings can never be highlighted: `finding()` flattens the shadow path that `resolveTarget` needs split",
+  "An index page in a frame ignores `a11y.highlight`, `scroll` and `vars.set`, which a story frame handles",
+  "A throw from `applyGlobals` on an index page escapes the channel handler, and the trial never hears back",
+  "Overriding a CSS var leaves every var derived from it stale in the vars report",
+  "An index page's fault drops the stack that story faults carry",
+  "The a11y highlight box is misplaced for a target inside an iframe"
+ ]
+}

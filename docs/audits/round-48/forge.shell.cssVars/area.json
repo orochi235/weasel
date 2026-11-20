@@ -1,0 +1,59 @@
+{
+ "id": "forge.shell.cssVars",
+ "commit": "7c016ebfdf6a5facdd58c7d93e390fdfdd4ffe84",
+ "date": "2026-11-20",
+ "files": [
+  "packages/forge/src/shell/cssVars/CssVarsPanel.tsx",
+  "packages/forge/src/shell/cssVars/SectionJump.tsx",
+  "packages/forge/src/shell/cssVars/cssVars.css",
+  "packages/forge/src/shell/cssVars/cssVarsChrome.ts",
+  "packages/forge/src/shell/cssVars/overrides.ts",
+  "packages/forge/src/shell/cssVars/reveal.ts",
+  "packages/forge/src/shell/cssVars/saveScales.ts",
+  "packages/forge/src/shell/cssVars/saveTokens.ts",
+  "packages/forge/src/shell/cssVars/themeScales.ts",
+  "packages/forge/src/shell/cssVars/useStoryTokens.ts",
+  "packages/forge/src/shell/cssVars/useThemeSave.ts",
+  "packages/forge/src/shell/cssVars/useThemeTokens.ts",
+  "packages/forge/src/shell/cssVars/useTrialSelection.ts",
+  "packages/forge/src/shell/cssVars/useVarsEdits.ts",
+  "packages/forge/src/shell/cssVars/varsHistory.ts"
+ ],
+ "a": 5,
+ "b": 5,
+ "m": 3,
+ "distinct": 7,
+ "chapman": 8,
+ "unfound": 1,
+ "read": {
+  "A": 15,
+  "B": 15
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.8,
+   "B": 8.2,
+   "match": 0.1,
+   "fix": 12.6
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1732252,
+  "costUsd": 5.14
+ },
+ "fixCommits": [
+  "277cee36a2cead04fce41d80267f21612409fce0",
+  "e94408481ecfc41371522c711ef139d4cb9c3f9f",
+  "1c48db4a7fd447ce6d0f56ae163a0210fd790612",
+  "be8f1c22edda3a4d8a911d6df1f2d0b7cbcd1d2c",
+  "0bd6b7c923c2e4a170953b7599a9c66e58fe1a2b",
+  "9edaab9cc88bd5b0633545396eda2be0da099fad",
+  "11ab3ae3bc68e10c1ea68c66a9601d5ff64208b7"
+ ]
+}

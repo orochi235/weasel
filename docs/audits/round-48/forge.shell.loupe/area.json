@@ -1,0 +1,68 @@
+{
+ "id": "forge.shell.loupe",
+ "commit": "7c016ebfdf6a5facdd58c7d93e390fdfdd4ffe84",
+ "date": "2026-11-20",
+ "files": [
+  "packages/forge/src/shell/loupe/CaptureInputs.tsx",
+  "packages/forge/src/shell/loupe/CompareMenu.tsx",
+  "packages/forge/src/shell/loupe/ForgeLoupe.tsx",
+  "packages/forge/src/shell/loupe/LiveCopies.tsx",
+  "packages/forge/src/shell/loupe/captureClient.ts",
+  "packages/forge/src/shell/loupe/captureContext.ts",
+  "packages/forge/src/shell/loupe/capturePayload.ts",
+  "packages/forge/src/shell/loupe/conditions.ts",
+  "packages/forge/src/shell/loupe/frameScroll.ts",
+  "packages/forge/src/shell/loupe/liveLenses.ts",
+  "packages/forge/src/shell/loupe/liveSource.ts",
+  "packages/forge/src/shell/loupe/loupe.css",
+  "packages/forge/src/shell/loupe/pixels.fixture.ts",
+  "packages/forge/src/shell/loupe/pixelsLens.ts",
+  "packages/forge/src/shell/loupe/pixelsSource.ts",
+  "packages/forge/src/shell/loupe/readouts.tsx",
+  "packages/forge/src/shell/loupe/tokenChain.ts",
+  "packages/forge/src/shell/loupe/trialAt.ts",
+  "packages/forge/src/shell/loupe/usePixelsSource.ts"
+ ],
+ "a": 8,
+ "b": 8,
+ "m": 5,
+ "distinct": 11,
+ "chapman": 12.5,
+ "unfound": 1.5,
+ "read": {
+  "A": 19,
+  "B": 19
+ },
+ "patches": 12,
+ "questions": 1,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.6,
+   "B": 10.9,
+   "match": 0.1,
+   "fix": 18.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 3185318,
+  "costUsd": 8.88
+ },
+ "fixCommits": [
+  "2c9904019328830764e6c0305feb005b99a00b87",
+  "bd7dbed969e14ebdb9e4d1b1663a81e299bc3732",
+  "6037ef452e7697760e166c679703b49ebe49d538",
+  "808d9b494c8f0dc5a217e13e5d6fe7e093773903",
+  "2bef790ee62d388661893d1f5539d17bd486abab",
+  "fea67fb99a3d59aaa1288b194a1031ca0adb7232",
+  "482d2c53f67d28a76703b4c316e94f9f99e7efdd",
+  "d5dea5a80656641a78ca211068d013653fdf4ef7",
+  "8fdc8d7d6769ee816a0f9663a5aaa634500aabee",
+  "7b1e2cbaf229b8f87612e6fc6df1efbd3aaef00f",
+  "be8d0c734718b78a02a450f60fcf21e21727ce59",
+  "7747a9302f56e08ad343e4db635cec6684f78abf"
+ ]
+}

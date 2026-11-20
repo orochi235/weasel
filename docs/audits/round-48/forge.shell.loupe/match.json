@@ -1,0 +1,44 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   2
+  ],
+  [
+   4,
+   6
+  ],
+  [
+   5,
+   7
+  ],
+  [
+   6,
+   4
+  ]
+ ],
+ "a": [
+  "A Difference lens's captures stay in the shared shot map for the workshop's life after the lens closes",
+  "A replaced or cleared Pixels shot's ImageBitmap is never closed",
+  "The Contrast readout over Pixels posts a capture on every reticle move, bypassing the lens's rest delay",
+  "A Split lens's Live Token/Contrast readout finds nothing once the seam is dragged right of center",
+  "A Live copy keeps its host's old size when the host resizes without the reticle's local point moving",
+  "The Contrast readout's Pixels reading stays on the old DPR after the lens's DPR changes",
+  "The compare menu gives two options the same variant key when their values stringify alike",
+  "tokenChain drops declarations that follow a nested rule inside a style rule"
+ ],
+ "b": [
+  "A replaced or dropped Pixels shot's ImageBitmap is never closed",
+  "A 503 from the capture endpoint with a non-JSON body rejects `take` instead of answering null",
+  "The Pixels Contrast readout posts a capture on every reticle move, with no rest delay",
+  "Live and Pixels lenses never re-resolve when the OS color scheme flips",
+  "Compare-menu variant keys collide for arg options whose values stringify alike",
+  "Token chain cache ignores changes to the element's or ancestors' attributes and inline style",
+  "A Live copy keeps its host's old size after the host resizes under a still reticle",
+  "The Pixels Contrast reading is not retaken when the lens's size or DPRs change"
+ ]
+}

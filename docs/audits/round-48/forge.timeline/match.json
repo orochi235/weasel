@@ -1,0 +1,9 @@
+{
+ "pairs": [],
+ "a": [
+  "After a hashchange re-holds the playhead, the user's next seek (or play under a pending hold) never reaches the URL's `t`"
+ ],
+ "b": [
+  "A URL `t` change that matches the shown time, or drops `t`, leaves an earlier pending hold alive, which later moves the playhead to the stale time and writes it back"
+ ]
+}

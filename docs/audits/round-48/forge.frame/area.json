@@ -1,0 +1,79 @@
+{
+ "id": "forge.frame",
+ "commit": "7c016ebfdf6a5facdd58c7d93e390fdfdd4ffe84",
+ "date": "2026-11-20",
+ "files": [
+  "packages/forge/src/frame/FrameController.tsx",
+  "packages/forge/src/frame/StoryHost.tsx",
+  "packages/forge/src/frame/a11y.ts",
+  "packages/forge/src/frame/a11yContrast.ts",
+  "packages/forge/src/frame/a11yHighlight.ts",
+  "packages/forge/src/frame/capture/CaptureView.tsx",
+  "packages/forge/src/frame/capture/capture.css",
+  "packages/forge/src/frame/capture/mountCapture.tsx",
+  "packages/forge/src/frame/cssVarUse.ts",
+  "packages/forge/src/frame/cssVars.ts",
+  "packages/forge/src/frame/cssVarsWatch.ts",
+  "packages/forge/src/frame/documentScroll.ts",
+  "packages/forge/src/frame/fault.ts",
+  "packages/forge/src/frame/frame.css",
+  "packages/forge/src/frame/frameDecorators.tsx",
+  "packages/forge/src/frame/globalsTarget.ts",
+  "packages/forge/src/frame/index.ts",
+  "packages/forge/src/frame/index/Description.tsx",
+  "packages/forge/src/frame/index/IndexApi.tsx",
+  "packages/forge/src/frame/index/IndexPage.tsx",
+  "packages/forge/src/frame/index/LabBadge.tsx",
+  "packages/forge/src/frame/index/LibraryBadge.tsx",
+  "packages/forge/src/frame/index/TypeText.tsx",
+  "packages/forge/src/frame/index/api.css",
+  "packages/forge/src/frame/index/envContext.ts",
+  "packages/forge/src/frame/index/index.css",
+  "packages/forge/src/frame/index/indexEnv.ts",
+  "packages/forge/src/frame/index/startIndex.tsx",
+  "packages/forge/src/frame/index/useFullscreenFit.ts",
+  "packages/forge/src/frame/index/variants.ts",
+  "packages/forge/src/frame/mountFrame.tsx",
+  "packages/forge/src/frame/safeOverride.ts",
+  "packages/forge/src/frame/storySession.tsx"
+ ],
+ "a": 5,
+ "b": 6,
+ "m": 4,
+ "distinct": 7,
+ "chapman": 7.4,
+ "unfound": 0.4,
+ "read": {
+  "A": 33,
+  "B": 33
+ },
+ "patches": 9,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.9,
+   "B": 3.5,
+   "match": 0.2,
+   "fix": 9.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1613239,
+  "costUsd": 4.84
+ },
+ "fixCommits": [
+  "aeac75840d3b0fa8bcf434783ec83090b5f6e375",
+  "b5d8f01421ec518f4bd2b8a0570d544a881cfaad",
+  "753eae20b55e4aeb4c967a73eca80e351997a160",
+  "d61f2b4344f286a6b059a4672a9ff732b5da9a03",
+  "a9b4073ebb4b0e24dade7c0e73ae7ed157746a25",
+  "96af038213d4b781e6ca4166552e197ec42797d7",
+  "a2dd504b27bd7353ad788621301bd96cd54aa3b2",
+  "83dffe0d9a109c1cabd41e1a9ffb60fcb1d11649",
+  "a0b977c0301f1b51f43c39305d8cae55661d4cf8"
+ ]
+}

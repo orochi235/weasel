@@ -1,0 +1,30 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   4,
+   4
+  ]
+ ],
+ "a": [
+  "A theme save that resolves after the focused trial changes resets the new trial's overrides",
+  "An edit made while a save is in flight is dropped if it touches a token the save wrote",
+  "A scale edit outlives its steps' overrides and is later shown, and then saved, as if it were current",
+  "SectionJump finds the panel through two different lookups, and jumping fails where reading works",
+  "A picked section stays lit after scrolling with the scrollbar"
+ ],
+ "b": [
+  "A save that resolves after the focused trial changes resets the new trial's overrides and clears the old trial's history",
+  "Edits made while a save is in flight are thrown away when it resolves",
+  "The panel's history is opened once per trial, so another tab's edits are overwritten and reverted by undo",
+  "\"Commits in one tick are one step\" fails when `history.coalesceMs` is 0",
+  "The section jump stays lit on a picked section after the list is scrolled other than by wheel, touch or key"
+ ]
+}

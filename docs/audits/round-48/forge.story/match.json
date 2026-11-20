@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "A native story whose `name` is `''` is named `''` by the loader but by its export name in the index",
+  "`primaryFile` misses the component's own file when the title's last segment has a space or separator",
+  "The index page loads a sanitize-colliding title's stories under the other title"
+ ],
+ "b": [
+  "A story merged onto another title's index page renders with that title, not its own",
+  "primaryFile misses the file named for a title whose last segment has spaces or separators"
+ ]
+}

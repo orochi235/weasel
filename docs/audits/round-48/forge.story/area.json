@@ -1,0 +1,53 @@
+{
+ "id": "forge.story",
+ "commit": "7c016ebfdf6a5facdd58c7d93e390fdfdd4ffe84",
+ "date": "2026-11-20",
+ "files": [
+  "packages/forge/src/story/Counter.stories.tsx",
+  "packages/forge/src/story/api.ts",
+  "packages/forge/src/story/declarationEmit.fixture.ts",
+  "packages/forge/src/story/define.ts",
+  "packages/forge/src/story/ids.ts",
+  "packages/forge/src/story/indexBundle.ts",
+  "packages/forge/src/story/indexPages.ts",
+  "packages/forge/src/story/library.ts",
+  "packages/forge/src/story/load.ts",
+  "packages/forge/src/story/native.ts",
+  "packages/forge/src/story/tags.ts",
+  "packages/forge/src/story/types.ts"
+ ],
+ "a": 3,
+ "b": 2,
+ "m": 2,
+ "distinct": 3,
+ "chapman": 3,
+ "unfound": 0,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 4,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.7,
+   "B": 8.1,
+   "match": 0.1,
+   "fix": 2.7
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 876535,
+  "costUsd": 2.69
+ },
+ "fixCommits": [
+  "99341640d6d8fa3556939448abf3ffa3769f96dc",
+  "b174c9823b38ea302115f9c3337a099d6378c1aa",
+  "e9e5fafc4eb70489b3fc66aabb8bc4913f27c7c5",
+  "0c4dbcac3ed7d8dc3aab6f7bfca208489a50dc16"
+ ]
+}
