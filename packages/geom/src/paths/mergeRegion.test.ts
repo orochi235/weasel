@@ -120,3 +120,11 @@ describe('mergeRegion', () => {
     expect(edgesInsideFill(mergeRegion(offset, { tolerance: 0.0005 }), 1e-3)).toBe(0);
   });
 });
+
+describe('mergeRegion on open subpaths a fill does not close', () => {
+  it('winds them as it does when a fill closes them, since it closes every subpath', () => {
+    const open = pathFromD('M0 0 L0 10 L10 10 L10 0') as PolygonPath;
+    const closes = mergeRegion({ ...open, openFill: 'close' });
+    expect(pathToD(mergeRegion({ ...open, openFill: 'none' }))).toBe(pathToD(closes));
+  });
+});

@@ -7,7 +7,7 @@ import { cubicEvalAt } from '../curve';
 import type { Path, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
 import { lineSegment, pathToCubicContours, splitSegment, type CubicSegment } from './cubicContours';
-import { pathSignedArea } from './winding';
+import { closedSignedArea } from './winding';
 
 /** Options for {@link growRegion}. */
 export interface GrowRegionOptions {
@@ -46,7 +46,7 @@ const SAMPLES = [0.2, 0.35, 0.5, 0.65, 0.8];
 export function growRegion(path: Path, distance: number, opts: GrowRegionOptions = {}): PolygonPath {
   const b = new PathBuilder().autoOrigin();
   if (!(distance > 0)) return b.build();
-  const sigma = pathSignedArea(path) < 0 ? -1 : 1;
+  const sigma = closedSignedArea(path) < 0 ? -1 : 1;
   const ctx: Ctx = {
     d: distance,
     sigma,

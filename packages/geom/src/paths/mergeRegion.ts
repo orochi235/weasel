@@ -9,7 +9,7 @@ import type { Path, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
 import { lineSegment, pathToCubicContours, splitSegment, type CubicSegment } from './cubicContours';
 import { crossingsAmong } from './crossingsAmong';
-import { pathSignedArea } from './winding';
+import { closedSignedArea } from './winding';
 import { lerp } from '../scalar';
 
 /** Options for {@link mergeRegion}. */
@@ -46,7 +46,7 @@ export function mergeRegion(path: Path, opts: MergeRegionOptions = {}): PolygonP
   const snap = tol * 1e-3;
   const all = weld(contours.flatMap((c) => closeContour(c.segs, snap)), snap);
   // A positively wound region fills to the right of travel (`growRegion`).
-  const fillLeft = pathSignedArea(path) < 0;
+  const fillLeft = closedSignedArea(path) < 0;
   // A segment another contour already runs along carries no edge of its own; its twin decides that.
   const segs = distinct(all, snap);
   const cuts: Cut[][] = segs.map(() => []);
