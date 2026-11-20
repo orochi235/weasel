@@ -7,8 +7,9 @@ import { SHAPE_KINDS } from '@weasel-js/core/engine';
 import { INSERT_DRAG_MODS } from '../../actions/insert/action';
 import { INSERT_REPOSITION_BINDING } from '../../actions/insert/repositionAction';
 
-/** Options for `useImageTool`. */
-export interface UseImageToolOptions extends InsertToolOptions {
+/** Options for `useImageTool`. It takes an insert tool's `behaviors` but not
+ *  its `share`: the image tool has no options for a share to lay over. */
+export interface UseImageToolOptions extends Pick<InsertToolOptions, 'behaviors'> {
   /** Image source for inserted nodes — a URL, a `blob:` URL, or a
    *  `data:image/…;base64,…` URI. Stored verbatim on each new node's
    *  `data.image.src`. */

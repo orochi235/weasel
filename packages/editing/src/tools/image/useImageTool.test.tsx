@@ -22,6 +22,11 @@ describe('useImageTool', () => {
     expect(insertParams(result.current).preview).toBe('outline');
   });
 
+  it('takes no option share: the image tool has no options to share', () => {
+    // @ts-expect-error -- `share` is a shape tool's; the image tool would drop it unread.
+    renderHook(() => useImageTool({ src: 'photo.png', share: { fill: null } }));
+  });
+
   it('repositions the image mid-draw, as the shape tools do', () => {
     const { result } = renderHook(() => useImageTool({ src: 'photo.png' }));
     expect(result.current.bindings).toContain(INSERT_REPOSITION_BINDING);
