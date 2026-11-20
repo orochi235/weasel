@@ -226,3 +226,27 @@ describe('DragDrop integration', () => {
     expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
   });
 });
+
+describe('DragDrop across trials and buttons', () => {
+  it.each([
+    ['middle', 1, 4],
+    ['secondary', 2, 2],
+  ])('starts no drag on a %s-button press', async (_, button, buttons) => {
+    let latest: DropState = { items: [] };
+    await renderLab((s) => {
+      latest = s;
+    });
+    await act(async () => {
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'Item A' }), {
+        pointerId: 1,
+        button,
+        buttons,
+        clientX: 0,
+        clientY: 0,
+      });
+    });
+    expect(document.querySelector('.lk-drag-ghost')).toBeNull();
+    await pointerUp(250, 250);
+    expect(latest.items).toHaveLength(0);
+  });
+});

@@ -67,7 +67,7 @@ interface DropSink {
 
 /**
  * Run palette-to-canvas drags for a `DragDropCapability`. A palette item's
- * press starts a carry; releasing it over the canvas `target` is rendered in
+ * primary-button press starts a carry; releasing it over the canvas `target` is rendered in
  * emits `'canvas.itemAdded'` and then applies `onDrop`'s state, so an undo
  * snapshot taken on the event holds the state from before it, and releasing
  * anywhere else, or a canceled gesture, drops nothing. `onDragOver` is probed
@@ -133,7 +133,8 @@ export function useDragDrop<TS, TC>({
 
   const startDrag = useCallback(
     (item: PaletteItem, e: ReactPointerEvent) => {
-      if (carryRef.current) return;
+      // Only a primary-button press drags, as the dispatcher's own drags do.
+      if (carryRef.current || e.button !== 0) return;
       update({
         item,
         from: e.currentTarget,
