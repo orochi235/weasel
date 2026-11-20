@@ -2,6 +2,7 @@ import type { ColorSpace, Paint, PaintUnits, GradStop, TexturePaint } from '@wea
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import type { GradientUV } from '../drawBatch';
 import { PAINT_MODE_PLAIN, PAINT_MODE_RADIAL, PAINT_MODE_CONIC } from '../shaders/batchFill';
+import { RAMP_U_OFFSET, RAMP_U_SCALE } from '../cache/GradientRampAtlas';
 import type { DrawContext } from './drawContext';
 import { patternBatchPaint, type PatternBatchPaint } from './patternBatch';
 
@@ -89,11 +90,11 @@ function linearRampUV(
   const dy = fill.to.y - fill.from.y;
   const len = Math.hypot(dx, dy) || 1;
   // dir is (dx, dy)/len and the divisor is len, so the pair is 1/len².
-  const k = 1 / (len * len);
+  const k = RAMP_U_SCALE / (len * len);
   return {
     ux: (g[0] * dx + g[1] * dy) * k,
     uy: (g[3] * dx + g[4] * dy) * k,
-    u0: ((g[6] - fill.from.x) * dx + (g[7] - fill.from.y) * dy) * k,
+    u0: ((g[6] - fill.from.x) * dx + (g[7] - fill.from.y) * dy) * k + RAMP_U_OFFSET,
     vx: 0, vy: 0, v0: 0,
   };
 }

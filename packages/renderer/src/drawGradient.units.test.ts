@@ -8,6 +8,9 @@ import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from './drawBatch';
 import { paintModeOf } from './shaders/batchFill';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 import { glUniformLocation } from './gpu/webgl/GlProgram';
+import { rampPosition } from './testing/rampPosition';
+
+const near = (t: number) => expect.closeTo(t, 4);
 
 describe('gradient units — which space a gradient measures its geometry in', () => {
   let recorder: ReturnType<typeof createGLRecorder>;
@@ -81,14 +84,14 @@ describe('gradient units — which space a gradient measures its geometry in', (
       shifted(LINEAR);
       // Screen x 100..110 over a ramp spanning screen x 0..10, and no paint
       // mode of its own — the plain path already samples (position, row).
-      expect(stagedUV().uv.map(([u]) => u)).toEqual([10, 11, 11, 10]);
+      expect(stagedUV().uv.map(([u]) => rampPosition(u))).toEqual([10, 11, 11, 10].map(near));
       expect(stagedUV().mode).toBe(0);
       expect(stagedUV().post).toEqual([1, 1, 1, 1]);
     });
 
     it("units: 'local' measures the shape's own coordinates, so the ramp rides it", () => {
       shifted({ ...LINEAR, units: 'local' });
-      expect(stagedUV().uv.map(([u]) => u)).toEqual([0, 1, 1, 0]);
+      expect(stagedUV().uv.map(([u]) => rampPosition(u))).toEqual([0, 1, 1, 0].map(near));
     });
 
     // Scaled, because the fold composes two matrices and two translations
@@ -101,7 +104,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
       }] as DrawCommand[], mat3.translated(mat3.identity(), 25, 75));
       // World x 75..95: the shape's own 0..10 doubled and moved to 100..120,
       // less the view's 25.
-      expect(stagedUV().uv.map(([u]) => u)).toEqual([7.5, 9.5, 9.5, 7.5]);
+      expect(stagedUV().uv.map(([u]) => rampPosition(u))).toEqual([7.5, 9.5, 9.5, 7.5].map(near));
     });
 
     it('a radial gradient carries the point its own radius scales to 1', () => {

@@ -68,6 +68,7 @@ import { STRAIGHT_RGB_GLSL } from './straightRgb';
 import { HULL_COVERAGE_GLSL } from './hullCoverage';
 import { HULL_PLANES } from '../batchHull';
 import { GLYPH_CELL_VERT_GLSL } from './glyphCell';
+import { rampU } from '../cache/GradientRampAtlas';
 
 /**
  * Texture units the batch program samples, slot 0 being the white texel.
@@ -293,7 +294,7 @@ void main() {
     float t = v_paintMode > ${PAINT_MODE_CONIC - 0.5}
       ? fract(atan(v_uv.y, v_uv.x) * ${INV_TAU})
       : length(v_uv);
-    texel = texture(u_samplers[${RAMP_SLOT}], vec2(t, v_post));
+    texel = texture(u_samplers[${RAMP_SLOT}], vec2(${rampU('t')}, v_post));
   } else {
     texel = sampleSlot(v_texSlot, v_uv);
   }

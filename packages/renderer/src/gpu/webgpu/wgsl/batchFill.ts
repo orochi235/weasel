@@ -5,6 +5,7 @@ import {
 import { HULL_PLANES } from '../../../batchHull';
 import { STRAIGHT_RGB_WGSL, uniformsWgsl } from './common';
 import { GLYPH_CELL_WGSL } from './glyphCell';
+import { rampU } from '../../../cache/GradientRampAtlas';
 import { GLYPH_COVERAGE_WGSL, GLYPH_POINT_COVERAGE_WGSL } from '@weasel-js/font';
 import { HULL_COVERAGE_WGSL, HULL_MEMBERS } from './hullCoverage';
 import { ID_OUT_WGSL } from './idOut';
@@ -143,7 +144,7 @@ export function fragmentWgsl({ matrices, hulls, area }: BatchBuild): string {
   if (isGrad > 0.5) {
     let t = select(length(in.v_uv), fract(atan2(in.v_uv.y, in.v_uv.x) * ${INV_TAU}), in.v_paintMode > ${PAINT_MODE_CONIC - 0.5});
     // The ramp atlas has no mipmaps, so level 0 is what an implicit derivative picks.
-    texel = textureSampleLevel(u_samplers_${RAMP_SLOT}, ${samplerOf(RAMP_SLOT)}, vec2f(t, in.v_post), 0.0);
+    texel = textureSampleLevel(u_samplers_${RAMP_SLOT}, ${samplerOf(RAMP_SLOT)}, vec2f(${rampU('t')}, in.v_post), 0.0);
   } else {
     texel = sampleSlot(in.v_texSlot, in.v_uv, ddx, ddy);
   }

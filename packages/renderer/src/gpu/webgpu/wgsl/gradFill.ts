@@ -1,3 +1,4 @@
+import { rampU } from '../../../cache/GradientRampAtlas';
 import { COLOR_MATRIX_MEMBERS, SHADE_MAPPED_WGSL, textureWgsl, uniformsWgsl } from './common';
 import { PAINT_FILL_LOCATIONS, PAINT_VERTEX_MEMBERS, PAINT_VERTEX_WGSL, type WgslPaint } from './paintVertex';
 
@@ -22,7 +23,7 @@ fn shadePaint(world: vec2f) -> vec4f {
     t = fract(a / (2.0 * PI));
   }
   t = saturate(t);
-  let ramp = textureSample(u_ramp, u_ramp_sampler, vec2f(t, u.u_rampV));
+  let ramp = textureSample(u_ramp, u_ramp_sampler, vec2f(${rampU('t')}, u.u_rampV));
   return shadeMapped(vec4f(ramp.rgb, ramp.a * u.u_opacity));
 }
 `,
