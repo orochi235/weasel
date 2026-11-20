@@ -7,7 +7,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from
 import { join } from 'node:path';
 import { JOB_IN, JOB_OUT } from './config.mjs';
 import { citedPaths, firstJson, isFinished, matchPrompt, parseFilesRead, parseFindings, reviewText, validPairs } from './findings.mjs';
-import { PROGRESS_IN, PROGRESS_SOURCE, fixShell, jobDir, matchShell, reviewShell, runJob } from './jobs.mjs';
+import { PROGRESS_IN, fixShell, jobDir, matchShell, progressSource, reviewShell, runJob } from './jobs.mjs';
 import { chapman } from './rounds.mjs';
 import { parseEnvelope, totals } from './usage.mjs';
 
@@ -29,11 +29,32 @@ const cents = (n) => Number(n.toFixed(2));
 const REVIEW_EXPECT = '8m';
 
 /**
+ * A job's earlier result, when a resumed round finds one that came home whole: an exit code, a reply that is
+ * not an error (a usage-limit refusal is), and for a fixer its mbox. Answers undefined to run it again.
+ */
+export const cameHome = (spec, role) => {
+  const exit = readIf(join(spec.to, 'exit')).trim();
+  if (exit === '' || (role === 'fix' && !existsSync(join(spec.to, 'fix.mbox')))) return undefined;
+  const raw = readIf(join(spec.to, 'claude.json'));
+  if (!raw.trim() || /"is_error":\s*true/.test(raw)) return undefined;
+  if (role.startsWith('review') && !isFinished(reviewText(readIf(join(spec.to, 'findings.md')), parseEnvelope(raw).reply))) return undefined;
+  return { exit, raw };
+};
+
+/**
  * Runs one job on whichever slot frees first, moving to another node when one turns it away. Answers
  * where it ran, how long it took, the model's reply, and the job's usage record (also passed to
  * `ctx.usage`, which counts it against the night and logs it).
  */
+
 const dispatch = async (ctx, area, role, spec) => {
+  const earlier = cameHome(spec, role);
+  if (earlier) {
+    const { reply, record } = parseEnvelope(earlier.raw);
+    const usage = { area: area.id, role, node: 'earlier', ...record, exit: earlier.exit, reused: true };
+    ctx.usage(usage);
+    return { status: 0, launched: true, node: 'earlier', minutes: 0, reply, usage };
+  }
   for (let launches = 1; ; launches++) {
     const slot = await ctx.acquire(role === 'fix' ? 'fix' : 'review');
     const t0 = Date.now();
@@ -134,7 +155,7 @@ export const runArea = async (ctx, area, { previous, changedSince }) => {
   const vars = { round: ctx.round, area: area.id, commit: ctx.commit, out: `${JOB_OUT}/findings.md`, files: area.files.map((f) => `- ${f}`).join('\n') };
   writeFileSync(join(inDir, 'review.md'), fill(brief('reviewer.md'), vars));
   writeFileSync(join(inDir, 'files.txt'), `${area.files.join('\n')}\n`);
-  copyFileSync(PROGRESS_SOURCE, join(ctx.frozen, PROGRESS_IN));
+  copyFileSync(progressSource(), join(ctx.frozen, PROGRESS_IN));
   const [a, b] = await Promise.all([review(ctx, area, 'A'), review(ctx, area, 'B')]);
   const dir = join(ctx.nightDir, 'areas', area.id);
   mkdirSync(dir, { recursive: true });

@@ -28,10 +28,11 @@ const list = (v) => (Array.isArray(v) ? v.join(',') : String(v));
 
 /** `night.mjs`'s arguments for a `start` request's fields. Throws on a field it does not know. */
 export const startArgs = (req) => {
-  const known = new Set(['id', 'start', 'areas', 'only', 'nodes', 'capUsd', 'budget', 'merge', 'sweep']);
+  const known = new Set(['id', 'start', 'resume', 'areas', 'only', 'nodes', 'capUsd', 'budget', 'merge', 'sweep']);
   const unknown = Object.keys(req).filter((k) => !known.has(k));
   if (unknown.length > 0) throw new Error(`start does not take ${unknown.join(', ')}`);
   const args = [];
+  if (req.resume !== undefined) args.push('--resume', String(Number(req.resume)));
   if (req.areas !== undefined) args.push('--areas', String(req.areas));
   if (req.only !== undefined) args.push('--only', list(req.only));
   if (req.nodes !== undefined) args.push('--nodes', list(req.nodes));
@@ -62,7 +63,7 @@ export const handle = async (line, deps) => {
     if (req.ping) return reply({ pong: true, build: deps.build });
     if (req.status) return reply(deps.status());
     if (req.plan) return reply({ plan: await deps.plan() });
-    if (req.start) return reply({ started: true, args: deps.start(startArgs(req)) });
+    if (req.start || req.resume !== undefined) return reply({ started: true, args: deps.start(startArgs(req)) });
     if (req.stop) {
       const live = deps.live();
       const round = req.round === undefined ? undefined : Number(req.round);
@@ -72,7 +73,7 @@ export const handle = async (line, deps) => {
       deps.stop(rounds);
       return reply({ stopping: rounds, note: 'no new jobs start; running jobs finish, then each run records and batches what completed' });
     }
-    return reply({ error: 'unknown request; send ping, status, plan, start or stop' });
+    return reply({ error: 'unknown request; send ping, status, plan, start, resume or stop' });
   } catch (error) {
     return reply({ error: error.message });
   }

@@ -85,6 +85,7 @@ export const areasHeld = (state = STATE_DIR) => new Set(liveRuns(state).flatMap(
 const stopFile = (round, state) => join(runDir(round, state), 'stop');
 export const requestStop = (round, state = STATE_DIR) => writeFileSync(stopFile(round, state), new Date().toISOString());
 export const stopRequested = (round, state = STATE_DIR) => existsSync(stopFile(round, state));
+export const clearStop = (round, state = STATE_DIR) => rmSync(stopFile(round, state), { force: true });
 
 /** Deletes the oldest run directories past the newest `keep`, never a live one. */
 export const pruneRuns = (keep, state = STATE_DIR) => {

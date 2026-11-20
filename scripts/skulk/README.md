@@ -35,13 +35,13 @@ Flags:
 
 | Flag | Default | Does |
 |---|---|---|
-| `--areas K` | 8 | areas tonight |
+| `--areas K` | 16 | areas tonight |
 | `--only a,b` | | these areas, ignoring the pick order; refused if a live run holds one |
 | `--nodes a,b` | | only these nodes (onto's own quiet hours still apply) |
 | `--dry` | | print the plan (round, nodes, areas and their files, jobs) and stop |
 | `--no-merge` | | leave `main` alone even when the batch is green; the batch and branches are kept |
 | `--sweep` | | run the control sweep too; a night leaves it out unless asked (2026-11-19) |
-| `--cap-usd N` | 80 | list-price dollars the night may spend, summed from each job's cost |
+| `--cap-usd N` | 160 | list-price dollars the night may spend, summed from each job's cost |
 | `--budget-review USD`, `--budget-match USD`, `--budget-fix USD` | 8, 1, 15 | each job's `--max-budget-usd` |
 
 ## The control sweep
@@ -95,7 +95,7 @@ All are named constants in `config.mjs`.
 - **Nodes.** studio, teitou and msb-uai always; orochi (this Mac) too, but only from 00:00 to 09:00, since by
   day it is the machine being worked on. Fixers never run on orochi. A node onto reports as quiet or
   unavailable is skipped; a dispatch a node refuses moves to another node and keeps that one out for 30
-  minutes. Each node runs up to 6 reviewer or matcher jobs and 1 fixer at once, each in its own tree
+  minutes. Each node runs up to 6 reviewer or matcher jobs and 6 fixers at once, each in its own tree
   (`weasel-skulk-r<k>`, `weasel-skulk-f<k>`), counted across every run: a job leases its tree in `slots/`
   (below) first.
 - **Time.** Each job's model is stopped at 45 minutes, and onto's `--timeout` stops the job at 55, so what
@@ -122,7 +122,7 @@ branches and worktrees there. Once, sync the tree it runs in, then bring it up:
 After changing `service.mjs`, sync the tree again; onto restarts the service. A run always runs the main
 checkout's `night.mjs`.
 
-It starts a run by itself at 23:00 unless any run is live or one has started since 23:00 that day (a run started by hand after midnight does not count as that evening's). Requests, one JSON object a
+It starts a run by itself at 23:00 unless any run is live or one has started since 23:00 that day (a run started by hand after midnight does not count as that evening's). Starting or restarting the service, which every `onto sync` does, never starts a run. Requests, one JSON object a
 line, each echoing its `id`:
 
 | Request | Reply |

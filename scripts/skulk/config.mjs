@@ -28,11 +28,12 @@ export const inWindow = (date, from, until) => {
 /** The nodes a job may be offered to at `date`, before onto's own quiet hours and availability. */
 export const nodesAt = (date) => (inWindow(date, LOCAL_FROM, LOCAL_UNTIL) ? [...NODES, LOCAL_NODE] : NODES);
 
-/** Model jobs run at once on one node, each in a tree of its own. */
+/** Model jobs run at once on one node, each in a tree of its own. Fixers wait on the model as reviewers do:
+ *  three on 2026-11-19 used under a core and about 1 GB each, so they get as many slots. */
 export const REVIEW_SLOTS_PER_NODE = 6;
-export const FIX_SLOTS_PER_NODE = 1;
+export const FIX_SLOTS_PER_NODE = 6;
 
-export const AREAS_PER_NIGHT = 8;
+export const AREAS_PER_NIGHT = 16;
 export const MAX_AREA_FILES = 50;
 /** A subdirectory with fewer files than this is read with its parent's own files when the parent splits. */
 export const MIN_AREA_FILES = 10;
@@ -45,7 +46,7 @@ export const JOB_TIMEOUT_MIN = 45;
 /** A hard stop per `claude -p` job, in list-price dollars (`--max-budget-usd`). */
 export const JOB_BUDGET_USD = { review: 8, match: 1, fix: 15 };
 /** List-price dollars a night may spend in all, summed from each job's `costUsd`. */
-export const NIGHT_USD_CAP = 80;
+export const NIGHT_USD_CAP = 160;
 /** What an area is expected to cost, in list-price dollars, before any area of the night has finished. */
 export const AREA_USD_GUESS = 10;
 

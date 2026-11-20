@@ -87,7 +87,7 @@ const schedule = () => {
   });
 };
 
-autoStart();
+// No check at startup: a restart (every `onto sync`) never starts a night, only the 23:00 timer does.
 schedule();
 
 createInterface({ input: process.stdin }).on('line', async (line) => {
