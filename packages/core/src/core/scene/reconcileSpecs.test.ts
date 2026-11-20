@@ -118,4 +118,24 @@ describe('reconcileSpecs', () => {
     reconcileSpecs(scene, prev, [box('b', 0), box('a', 0)]);
     expect(ids(scene)).toEqual(['b', 'x', 'a']);
   });
+
+  it('leaves a node no spec names in its place when a named one moves past it', () => {
+    const prev = [box('a', 0), box('b', 0), box('c', 0)];
+    const scene = sceneOf(prev);
+    scene.add(box('x', 0));
+    scene.reorder(id('x'), 1);
+    reconcileSpecs(scene, prev, [box('b', 0), box('c', 0), box('a', 0)]);
+    expect(ids(scene)).toEqual(['b', 'x', 'c', 'a']);
+  });
+
+  it('leaves two unnamed nodes in place through a reversal', () => {
+    const prev = [box('a', 0), box('b', 0), box('c', 0)];
+    const scene = sceneOf(prev);
+    scene.add(box('x', 0));
+    scene.reorder(id('x'), 1);
+    scene.add(box('y', 0));
+    scene.reorder(id('y'), 3);
+    reconcileSpecs(scene, prev, [box('c', 0), box('b', 0), box('a', 0)]);
+    expect(ids(scene)).toEqual(['c', 'x', 'b', 'y', 'a']);
+  });
 });
