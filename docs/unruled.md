@@ -2812,3 +2812,12 @@ Calls the lanes made without a ruling:
   and the end only where none does, so `present.go` reaches every page by its id and old callers keep working.
   Keeping the ends ahead of the ids, so such a page was unreachable by id, was the alternative; so was dropping
   `to: 'first' | 'last'` outright.
+
+## Audit round forty-six (2026-11-20): the effect editor and live audio
+
+- 2026-11-20 (the fixer's call): a live audio wire into a port its node lacks is cut from the graph alone, with
+  `no input port "…"` on the stage it enters; the stage still plays from its other wires. Leaving the whole stage out,
+  as a stage whose node fails to build is, was the alternative.
+- 2026-11-20 (the fixer's call): an audio stage missing a discrete setting (`wave`, `color`, `type`, `seconds`) plays
+  with its stage type's default from `AUDIO_STAGE_TYPES`, where a noise stage without `color` used to fail. Failing the
+  stage with "no color" was the alternative.
