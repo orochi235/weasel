@@ -7,22 +7,15 @@
  * edge went. Everything else about it is a normal scene node — its own size,
  * data, styling, z-order and selection.
  */
-import {
-  AUTO_POSE_DESCRIPTOR,
-  translatePoseViaDescriptor,
-  type DerivedDep,
-  type PoseDescriptor,
-} from '@weasel-js/core';
+import type { DerivedDep } from '@weasel-js/core';
 import { diagramLabelOf } from './labelTrait';
+import { frameFor, type FrameOptions } from './layoutFrame';
 import { labelCenter } from './labels/station';
 
 export { labelCenter };
 
-/** Options for {@link labelDerivePose}. `poseDescriptor` defaults to the kit's
- *  `AUTO_POSE_DESCRIPTOR`. */
-export interface LabelPoseOptions<TPose> {
-  poseDescriptor?: PoseDescriptor<TPose>;
-}
+/** Options for {@link labelDerivePose}: the plane the label is stationed on. */
+export type LabelPoseOptions<TPose> = FrameOptions<TPose>;
 
 /**
  * A `derivePose` that stations a label along its dependency's path.
@@ -35,7 +28,7 @@ export interface LabelPoseOptions<TPose> {
 export function labelDerivePose<TPose>(
   opts: LabelPoseOptions<TPose> = {},
 ): (node: { pose: TPose; data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => TPose | null {
-  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const frame = frameFor(opts);
 
   return (node, deps) => {
     const label = diagramLabelOf(node);
@@ -43,15 +36,14 @@ export function labelDerivePose<TPose>(
     const path = deps[0]?.path ?? null;
     if (path === null) return null;
 
-    const bounds = poseDescriptor.getBounds(node.pose);
+    const bounds = frame.box(node.pose);
     const center = labelCenter(path, label, bounds);
     if (center === null) return null;
 
-    return translatePoseViaDescriptor(
+    return frame.translate(
       node.pose,
       center.x - (bounds.x + bounds.width / 2),
       center.y - (bounds.y + bounds.height / 2),
-      poseDescriptor,
     );
   };
 }

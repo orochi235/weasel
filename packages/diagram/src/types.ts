@@ -128,17 +128,18 @@ export interface DiagramCluster {
   reorder?: 'x' | 'y';
 }
 
-/** A port resolved against a node's current pose: where it is in world
- *  coordinates, and which way an edge leaves it. */
-export interface Port {
+/** A port resolved against a node's current pose: where it is on the
+ *  diagram's plane, and which way an edge leaves it. `P` is the point type,
+ *  a plane point unless a router is working in some other space. */
+export interface Port<P = Vec2> {
   id: string;
   /** The node this port belongs to. */
   nodeId: string;
-  /** World point an edge attaches to. */
-  point: Vec2;
+  /** The point an edge attaches to. */
+  point: P;
   /** Unit vector pointing away from the node, or `null` when the port
    *  declared no direction. Rotated with the node. */
-  normal: Vec2 | null;
+  normal: P | null;
   type?: string;
   label?: string;
 }

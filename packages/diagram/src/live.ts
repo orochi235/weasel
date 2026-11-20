@@ -19,7 +19,6 @@ import {
   useLatest,
   usePoseRun,
   type NodeId,
-  type PoseDescriptor,
   type PoseRunCtx,
   type PoseRunStep,
   type Scene,
@@ -32,6 +31,7 @@ import { chain } from './chain';
 import { grid } from './grid';
 import { layered } from './layered';
 import { layoutOf, layoutPoses } from './layoutAction';
+import { frameFor, type FrameOptions } from './layoutFrame';
 import { planOf, plannerPlan, type LayoutFn, type LayoutOptions, type LayoutPlan, type LayoutPlanner } from './layout';
 import { sameGraph, shapeOf, usePendingPlan } from './livePlan';
 import {
@@ -58,7 +58,7 @@ export {
 } from './liveProducers';
 
 /** Options for {@link useLiveLayout}. Only `scene` and `source` are required. */
-export interface UseLiveLayoutOptions<TPose> {
+export interface UseLiveLayoutOptions<TPose> extends FrameOptions<TPose> {
   scene: Scene<unknown, string, TPose>;
   /** Where the graph is read from. The same thunk the port affordance takes. */
   source: GraphSource<TPose>;
@@ -68,12 +68,11 @@ export interface UseLiveLayoutOptions<TPose> {
   algorithm?: string | LayoutFn | LayoutPlanner;
   layout?: LayoutOptions;
   /** The relaxation's forces, and when a live run of it counts as at rest. */
-  force?: Omit<ForceProducerOptions<TPose>, 'poseDescriptor'>;
+  force?: Omit<ForceProducerOptions<TPose>, 'poseDescriptor' | 'frame'>;
   /** Frames an eased layout takes to arrive. Default 24. */
   frames?: number;
   easing?: EasingFn;
   read?: DiagramNodeReader;
-  poseDescriptor?: PoseDescriptor<TPose>;
   /** The undo entry's name. Default `'Layout'`. */
   label?: string;
   /** Fires once the run has settled or been stopped and its poses are in the
@@ -110,10 +109,7 @@ export interface LiveLayout {
 
 /** The graph `o.source` describes now. */
 function graphOf<TPose>(o: UseLiveLayoutOptions<TPose>): Graph {
-  return buildGraph(o.source, {
-    ...(o.read ? { read: o.read } : {}),
-    ...(o.poseDescriptor ? { poseDescriptor: o.poseDescriptor } : {}),
-  });
+  return buildGraph(o.source, { ...(o.read ? { read: o.read } : {}), frame: frameFor(o) });
 }
 
 /** What `o.algorithm` plans for `graph`: `null` for a relaxation, which has
@@ -128,7 +124,7 @@ function planFor<TPose>(graph: Graph, o: UseLiveLayoutOptions<TPose>): LayoutPla
 /** The producer that eases from `graph` to `plan`, or relaxes `graph` when
  *  there is no plan. */
 function producerFor<TPose>(graph: Graph, plan: LayoutPlan | null, o: UseLiveLayoutOptions<TPose>): LiveLayoutProducer<TPose> {
-  if (plan === null) return forceProducer<TPose>(graph, { ...o.layout, ...o.force, ...(o.poseDescriptor ? { poseDescriptor: o.poseDescriptor } : {}) });
+  if (plan === null) return forceProducer<TPose>(graph, { ...o.layout, ...o.force, frame: frameFor(o) });
   return easedProducer<TPose>(graph, () => plan.moves, {
     ...(o.frames === undefined ? {} : { frames: o.frames }),
     ...(o.easing ? { easing: o.easing } : {}),
@@ -183,10 +179,10 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
       for (const id of ctx.pinned.keys()) held.delete(id as string);
       placed = held;
     }
-    const poses = layoutPoses(o.scene, placed, o.poseDescriptor);
+    const poses = layoutPoses(o.scene, placed, frameFor(o));
     // Routes ease only toward where they will be written, which a held run never writes.
     const { u } = progress(frame, o.frames ?? EASE_FRAMES, o.easing ?? easeInOutQuad);
-    eased.show(o.scene, held.current ? null : u, (id) => poses.get(id) ?? ctx.pinned.get(id as NodeId), o.poseDescriptor);
+    eased.show(o.scene, held.current ? null : u, (id) => poses.get(id) ?? ctx.pinned.get(id as NodeId), frameFor(o));
     return { poses: [...poses] as [NodeId, TPose][], done };
   }, [optsRef, eased]);
 

@@ -496,6 +496,49 @@ only story runner in the repo.
 
 ---
 
+## Scale
+
+Arcs toward scenes far larger than a screen, in the order each builds on the last (2026-11-19, from
+comparing pezlie's wall, which pans a 1.1M-cell corpus at 60 fps). Arc 1, render-time visibility, is in
+`docs/PERF.md`; these rest on it.
+
+- **(P3) [agent] Level of detail: a node's representation chosen by its size on screen.** Painters get
+  `pixelScale` (`packages/core/src/canvas/nodeShapeTypes.ts:23`) and nothing builds on it. A node declares
+  representations by on-screen size, and the engine picks one with hysteresis so a zoom parked on a boundary
+  does not flicker (pezlie's `wall/src/levels.ts:66` goes up at ×1.5 and down at ×0.67). Closes when a node
+  type ships with two or more representations switched by the engine, a test pins the hysteresis, and a demo
+  shows labels dropping out and groups drawing as boxes as it zooms out.
+- **(P3) [agent] A tile-pyramid layer.** `retain` (`packages/renderer/src/draw/retained.ts`) survives only
+  whole-device-pixel pans; any zoom redraws. A layer renders its content into `z/tx/ty` power-of-two tiles
+  under a per-frame budget, draws a coarser parent until a finer tile is ready, cross-fades between levels,
+  and keeps a bounded LRU with the coarsest level pinned (pezlie's `wall/src/tiles.ts`). Tiles bake through
+  `renderSceneToPixels`. Closes when a layer can be marked tiled, a zoom over a static backdrop draws from
+  tiles with no full redraw (measured), and the cache's bound is tested.
+- **(P3) [agent] A streaming scene source.** Nothing loads or drops nodes as the view moves; a consumer on
+  `onViewChange` pays a pick-index rebuild and an undo-history entry per change. A source answers the nodes
+  of a world rect, loads in priority order (on screen, the margin, where a fling will land), adds and drops
+  them through a mutation path outside history, and caps concurrent loads. Closes when a demo pans a scene
+  larger than memory would hold whole, undo history stays empty through the pan, and the visibility index
+  updates without a rebuild.
+- **(P3) [agent] kernel3d depth for a near/far ratio past 1e4.** `perspective`
+  (`packages/geom/src/3d/mat4.ts:139`) is the standard GL projection, so a planet-to-street ratio near 1e7
+  z-fights far away. Logarithmic depth in the shader (WebGL2) or reversed-Z with a float depth buffer.
+  Closes when two surfaces 1 m apart at 1e6 m from a camera with near 0.1 resolve in a browser test.
+- **(P3) [agent] kernel3d's line pass relative to the eye.** `packLines` writes absolute world points as
+  float32 (`packages/kernel3d/src/lines/pack.ts:114-124`) and the pass uploads a float32 view-projection
+  holding the camera's translation (`lines/pass.ts:104`), so lines near Earth-radius coordinates snap to
+  about half-metre steps and jitter as the camera moves. Subtract the eye in doubles before packing and
+  upload the projection without that translation, as the 2D batch does (`drawBatch.ts`). Closes when a
+  browser test draws a line at 6.4e6 m with the camera 10 m away and its pixels stay put under a 1 mm
+  camera move.
+- **(P3) [agent] A true 3D force layout.** A diagram reaches a 3D host only through a `LayoutFrame`, a plane
+  (2026-11-19), so `force` relaxes in two dimensions: `@weasel-js/simulation`'s `SimulationNode` is
+  `{x, y, vx, vy, fx, fy}` (`packages/simulation/src/types.ts:7`) and `packages/diagram/src/force.ts` writes
+  `Vec2` places. The integrator and its forces run over an axis list instead (position, velocity and pin as
+  number arrays), `LayoutAxes` (`packages/diagram/src/layout.ts:118`) names axes by index rather than
+  `'x' | 'y'`, and a frame can answer a box in three dimensions. Closes when `force` relaxes a graph of
+  solids in 3D under kernel3d, with a test that a run over nodes all on z = 0 returns the 2D run's places.
+
 ## Backends (WebGL future)
 
 - **(P3) [waiting] Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit

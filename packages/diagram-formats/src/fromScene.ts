@@ -34,7 +34,7 @@ interface PageBucket {
 /** One page around everything, for a scene with no page list. A connector is left out: it is stored as an empty box
  *  at the origin, and draws between what it joins. */
 function contentPage(scene: AnyScene): PlacedPage {
-  const boxes = scene.roots.map((id) => scene.get(id as never)!).filter((n) => kindOf(n) !== 'edge').map((n) => n.pose as RectPose);
+  const boxes = scene.roots.map((id) => scene.get(id as never)!).filter((n) => kindOf(n) !== 'edge').map((n) => n.pose);
   const x = boxes.length === 0 ? 0 : boxes.reduce((m, b) => Math.min(m, b.x), Infinity);
   const y = boxes.length === 0 ? 0 : boxes.reduce((m, b) => Math.min(m, b.y), Infinity);
   const width = boxes.length === 0 ? 0 : boxes.reduce((m, b) => Math.max(m, b.x + b.width), -Infinity) - x;
@@ -59,8 +59,8 @@ function contentPage(scene: AnyScene): PlacedPage {
  * A graph page takes the notation, layout, and direction its scene page keeps; with no notation there, the one the
  * scene's diagram type writes (`diagramNotationOf`).
  */
-export function documentFromScene<TData, TLayer extends string, TPose>(
-  scene: Scene<TData, TLayer, TPose>, opts: DocumentFromSceneOptions = {},
+export function documentFromScene<TData, TLayer extends string>(
+  scene: Scene<TData, TLayer, RectPose>, opts: DocumentFromSceneOptions = {},
 ): DiagramDocument {
   const s = inWorld(scene);
   const themeValue = s.doc.get(DIAGRAM_THEME_KEY) as DiagramDocument['theme'];
@@ -155,7 +155,7 @@ const isContainerOrPool = (node: ReadNode): boolean => {
 };
 
 /** `scene` read with every node at the pose it is drawn at in document space. */
-function inWorld<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>): AnyScene {
+function inWorld<TData, TLayer extends string>(scene: Scene<TData, TLayer, RectPose>): AnyScene {
   const raw = scene as unknown as AnyScene;
   const world = worldPoses(scene, 'document');
   const placed = (node: ReadNode): ReadNode => ({ ...node, pose: world(node.id as NodeId) });

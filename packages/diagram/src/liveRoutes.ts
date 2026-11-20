@@ -10,10 +10,8 @@
  */
 import { useEffect, useMemo, useRef } from 'react';
 import {
-  AUTO_POSE_DESCRIPTOR,
   derivedDepOf,
   type DerivedDep,
-  type PoseDescriptor,
   type NodeId,
   type Path,
   type PoseOverride,
@@ -23,6 +21,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { lerpPoint, maxOf, minOf } from '@weasel-js/geom';
 import { diagramEdgeOf, layoutWritesRoute, type DiagramEdge } from './edgeTrait';
 import type { Graph } from './graph';
+import { AUTO_LAYOUT_FRAME, boxCenter, type LayoutFrame } from './layoutFrame';
 import { routeWrites, type LayoutRoutes } from './routeWrites';
 
 /** One route on its way from where it ran to where layout puts it. */
@@ -126,13 +125,10 @@ export function easedPaths<TPose>(
   easings: readonly RouteEasing[],
   u: number,
   poseOf: (id: string) => TPose | undefined,
-  poseDescriptor: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
+  frame: LayoutFrame<TPose> = AUTO_LAYOUT_FRAME as LayoutFrame<TPose>,
 ): Map<string, Path> {
   const depOf = frameDeps(scene, poseOf);
-  const centerOf = (dep: DerivedDep<TPose>): Vec2 => {
-    const b = poseDescriptor.getBounds(dep.pose);
-    return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
-  };
+  const centerOf = (dep: DerivedDep<TPose>): Vec2 => boxCenter(frame, dep.pose);
   const out = new Map<string, Path>();
   for (const { id, from, to, ends } of easings) {
     const node = scene.get(id as NodeId);
@@ -230,12 +226,12 @@ export interface EasedRoutes<TPose> {
   /** The routes the run now eases; any shown before stop showing. */
   set(easings: readonly RouteEasing[]): void;
   /** Show each route `u` of the way there, its ends where `poseOf` puts
-   *  them; `null` shows none. `poseDescriptor` reads the poses' bounds. */
+   *  them; `null` shows none. `frame` reads the poses' boxes. */
   show(
     scene: Scene<unknown, string, TPose>,
     u: number | null,
     poseOf: (id: string) => TPose | undefined,
-    poseDescriptor?: PoseDescriptor<TPose>,
+    frame?: LayoutFrame<TPose>,
   ): void;
   /** Stop showing them. */
   drop(): void;
@@ -249,14 +245,14 @@ export function useEasedRoutes<TPose>(): EasedRoutes<TPose> {
       held.current?.hold.drop();
       easings.current = next;
     },
-    show(scene, u, poseOf, poseDescriptor) {
+    show(scene, u, poseOf, frame) {
       if (u === null) held.current?.hold.drop();
       if (u === null || easings.current.length === 0) return;
       if (held.current?.scene !== scene) {
         held.current?.hold.drop();
         held.current = { scene, hold: pathHold(scene) };
       }
-      held.current.hold.show(easedPaths(scene, easings.current, u, poseOf, poseDescriptor));
+      held.current.hold.show(easedPaths(scene, easings.current, u, poseOf, frame));
     },
     drop() {
       held.current?.hold.drop();

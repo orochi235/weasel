@@ -6,12 +6,13 @@
  * every add, delete, reparent, and `dependsOn` edit, and layout is not on the
  * hot path.
  */
-import { AUTO_POSE_DESCRIPTOR, type PoseDescriptor, type Vec2 } from '@weasel-js/core/math';
+import type { Vec2 } from '@weasel-js/core/math';
 import { expandClusterEdges, insetOf, type ClusterInset } from './cluster';
 import { diagramContainerOf } from './containers/trait';
 import { diagramEdgeOf, layoutOwnsRoute } from './edgeTrait';
 import { nestClusters } from './clusterTree';
 import { diagramLabelOf, type DiagramLabel } from './labelTrait';
+import { frameFor, type FrameOptions } from './layoutFrame';
 import type { Bounds, Outline } from './outline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
 import type { PortSpec } from './types';
@@ -122,11 +123,10 @@ export interface Graph {
   incoming(id: string): readonly GraphEdge[];
 }
 
-/** Options for {@link buildGraph}: how the trait is read, and how a pose
- *  yields bounds. Both default to the kit's own. */
-export interface BuildGraphOptions<TPose> {
+/** Options for {@link buildGraph}: how the trait is read, and the plane a
+ *  pose's box is read on. Both default to the kit's own. */
+export interface BuildGraphOptions<TPose> extends FrameOptions<TPose> {
   read?: DiagramNodeReader;
-  poseDescriptor?: PoseDescriptor<TPose>;
 }
 
 /**
@@ -143,7 +143,7 @@ export function buildGraph<TPose>(
   source: GraphSource<TPose>,
   opts: BuildGraphOptions<TPose> = {},
 ): Graph {
-  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const frame = frameFor(opts);
   const nodes: GraphNode[] = [];
   const byId = new Map<string, GraphNode>();
   const candidates: GraphEdge[] = [];
@@ -178,7 +178,7 @@ export function buildGraph<TPose>(
     if (label !== null) {
       const deps = node.dependsOn;
       if (Array.isArray(deps) && deps.length === 1 && labelFollowsLayout(label.at) && !rooms.has(deps[0]!)) {
-        const { width, height } = poseDescriptor.getBounds(pose);
+        const { width, height } = frame.box(pose);
         rooms.set(deps[0]!, { width, height, ...(label.offset ? { offset: label.offset } : {}) });
       }
       continue;
@@ -198,7 +198,7 @@ export function buildGraph<TPose>(
     }
     const entry: GraphNode = {
       id: node.id,
-      bounds: poseDescriptor.getBounds(pose),
+      bounds: frame.box(pose),
       pinned: trait.pinned === true,
       ...(trait.ports !== undefined ? { ports: trait.ports } : {}),
       ...(trait.outline !== undefined ? { outline: trait.outline } : {}),

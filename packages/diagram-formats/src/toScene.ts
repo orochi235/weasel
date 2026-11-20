@@ -1,7 +1,7 @@
 /** A {@link DiagramDocument} as scene specs and document values: what every import draws from. */
 import {
-  createPageRun, layoutPages, pageRunOf, pasteboardOn, placeOnPages, replaceDoc, type Page, type PlacedPage, type Scene,
-  type SerializedDoc,
+  createPageRun, layoutPages, pageRunOf, pasteboardOn, placeOnPages, replaceDoc, type Page, type PlacedPage, type RectPose,
+  type Scene, type SerializedDoc,
 } from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, DIAGRAM_TYPE_DOC_KEY, diagramScene, diagramThemeFrom, diagramTypeDocValue, diagramTypeOfNotation, themeDocValue,
@@ -145,8 +145,8 @@ function typeOfGraphs(pages: readonly DocumentPage[]): DiagramType | null {
  * pasteboard and layer, a page whose id a node holds getting a fresh node
  * id; and each root goes on its page (`placeOnPages`).
  */
-export function addDocumentScene<TData, TLayer extends string, TPose>(
-  scene: Scene<TData, TLayer, TPose>, drawn: DocumentScene<TLayer>, label = 'Open',
+export function addDocumentScene<TData, TLayer extends string>(
+  scene: Scene<TData, TLayer, RectPose>, drawn: DocumentScene<TLayer>, label = 'Open',
 ): void {
   scene.batch(label, () => {
     const pasteboard = pasteboardOn(scene);

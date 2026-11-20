@@ -801,7 +801,7 @@ Marks move with their node. `DiagramView` registers the painters for outlines
 and marks itself; a scene drawn on your own `SceneCanvas` calls
 `registerDiagramShape()` once for outlines and `registerMarkShape()` once for
 marks, each of which returns its disposer, or they do not paint. Calls with the
-same options share one painter. A painter with its own `poseDescriptor` or `read`
+same options share one painter. A painter with its own `poseDescriptor`, `frame` or `read`
 registered beside `DiagramView`'s takes an `id` of its own, since the registry
 holds one painter per id:
 
@@ -1571,6 +1571,13 @@ your groups.
 **Ports live on the bounds and are cast onto the outline when read.** The
 anchor stays normalized against the bounds because that is what survives a
 resize; `rayHit` moves it onto the shape. Don't store outline-relative anchors.
+
+**Diagram geometry is read through a `LayoutFrame`, never the pose descriptor
+directly.** A descriptor answers in whatever space its host draws in; kernel3d's
+answers a solid's screen box. The frame is the plane the diagram lives on, so a
+3D host passes one that projects onto it, and every layout place, port,
+waypoint and route is a coordinate on that plane. Reading `getBounds` in a new
+reader instead lays a 3D diagram out in screen pixels, and type-checks.
 
 **Connect declines in two different places on purpose.** Which presses start a
 connect is routing, and lives in the binding's `target`. Which ports a live
