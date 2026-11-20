@@ -28,6 +28,12 @@ describe('fitEulerSegment', () => {
 });
 
 describe('solveSpiro', () => {
+  it('lets a curve beside a point snapped onto its neighbor keep its own direction', () => {
+    const segs = solveSpiro(pts('smooth', [0, -20], [0, -10], [0, 0], [0, 0], [0, 10]), false);
+    expect(angleGap(eulerAngleAt(segs[1].spiral!, 1), Math.PI / 2)).toBeLessThan(1e-6);
+    expect(angleGap(eulerAngleAt(segs[3].spiral!, 0), Math.PI / 2)).toBeLessThan(1e-6);
+  });
+
   it('runs four smooth points of a square round a circle', () => {
     const segs = solveSpiro(pts('smooth', [100, 0], [0, 100], [-100, 0], [0, -100]), true);
     expect(segs).toHaveLength(4);

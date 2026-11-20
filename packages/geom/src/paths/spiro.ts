@@ -103,7 +103,11 @@ function sides(sys: System, closed: boolean, i: number): [Side, Side] {
   const count = sys.ends.length;
   const side = (seg: number): Side => {
     if (seg < 0 || seg >= count) return { kind: 'none' };
-    if (sys.straight[seg]) return { kind: 'line', angle: angleOf(sys.points[seg], sys.points[sys.ends[seg]]) };
+    if (sys.straight[seg]) {
+      const a = sys.points[seg], b = sys.points[sys.ends[seg]];
+      // A zero-length segment has no direction for its neighbors to follow.
+      return distance(a, b) < 1e-9 ? { kind: 'none' } : { kind: 'line', angle: angleOf(a, b) };
+    }
     return { kind: 'curve', seg };
   };
   const into = i > 0 ? i - 1 : closed ? n - 1 : -1;
