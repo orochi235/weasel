@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useScene, linear } from '@weasel-js/core';
+import { useScene, linear, RECT_POSE_DESCRIPTOR } from '@weasel-js/core';
+import type { PoseDescriptor } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Animator } from '@weasel-js/animator';
 import { d3Bind } from './bind';
@@ -267,5 +268,37 @@ describe('d3Bind transition — nothing to tween', () => {
     expect(await settled(end)).toBe(false);
     s.play(150);
     expect(await settled(end)).toBe(true);
+  });
+});
+
+describe('d3Bind transition — a pose descriptor without lerp', () => {
+  const noLerp = { ...RECT_POSE_DESCRIPTOR, lerp: undefined } as unknown as PoseDescriptor<Pose>;
+
+  it('refuses a transition that tweens a pose every time it is started, having started nothing', () => {
+    const s = setup();
+    const bind = (data: Datum[]) =>
+      d3Bind(s.scene.current, data, { key: (d) => d.id, animator: s.animator(), poseDescriptor: noLerp })
+        .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 })).join();
+    act(() => void bind([{ id: 'a', x: 0 }]));
+    const t = bind([{ id: 'a', x: 100 }]).transition().remove();
+    expect(() => t.end()).toThrow(/lerp/);
+    expect(() => t.end()).toThrow(/lerp/);
+    expect(s.x('a')).toBe(100);
+  });
+
+  it('runs one that tweens no pose', async () => {
+    const s = setup();
+    const opacity: number[] = [];
+    const bind = (data: Datum[]) =>
+      d3Bind(s.scene.current, data, { key: (d) => d.id, animator: s.animator(), poseDescriptor: noLerp })
+        .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
+        .exit((exit) => void exit.transition().duration(100)
+          .tween({ name: 'o', from: () => 1, to: () => 0, apply: (_d, _id, v) => opacity.push(v) })
+          .remove().end());
+    act(() => void bind([{ id: 'a', x: 0 }]).join());
+    act(() => void bind([]).join());
+    s.play(200);
+    expect(opacity.at(-1)).toBe(0);
+    expect(s.scene.current.get('a' as never)).toBeUndefined();
   });
 });

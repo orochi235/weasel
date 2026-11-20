@@ -75,10 +75,34 @@ function seedFromPoses<TPose>(
     const from = priorPoses.get(id);
     if (from === undefined || !present(i)) return;
     priorPoses.delete(id);
-    seeds.set(id, { from, joined: scene.get(id)!.pose });
+    // One already at its prior pose, as an exiting node is, has no move to make.
+    const joined = scene.get(id)!.pose;
+    if (from !== joined) seeds.set(id, { from, joined });
   });
   for (const [id, { from }] of seeds) scene.setPose(id, from);
   return seeds;
+}
+
+/** Whether the first transition on these nodes would tween one: some node waiting to be
+ *  seeded stands somewhere other than its prior pose. */
+function seedsAny<TPose>(
+  scene: Scene<unknown, string, TPose>,
+  ids: readonly NodeId[],
+  priorPoses: ReadonlyMap<NodeId, TPose>,
+  present: (i: number) => boolean,
+): boolean {
+  return ids.some((id, i) => {
+    const from = priorPoses.get(id);
+    return from !== undefined && present(i) && from !== scene.get(id)!.pose;
+  });
+}
+
+/** Throws where a transition would tween a pose with no `lerp` to tween it by. */
+function refuseWithoutLerp(geometry: PoseDescriptor<unknown>): void {
+  if (geometry.lerp) return;
+  throw new Error(
+    'd3Bind.transition: its pose descriptor has no `lerp` — pass `poseDescriptor` with one in D3BindOptions',
+  );
 }
 
 /**
@@ -191,13 +215,10 @@ function makeStage<TData, TPose>(
     root: undefined as unknown as Stage,
     schedule(deferReady = false) {
       if (scheduled || progress.canceled) return;
+      // Before anything changes, so a refused transition can be started again and refused again.
+      if (!parent && seedsAny(scene, ids, priorPoses, present)) refuseWithoutLerp(ctx.geometry as PoseDescriptor<unknown>);
       scheduled = true;
       if (settings.remove) armRemoval();
-      if (!ctx.geometry.lerp) {
-        throw new Error(
-          'd3Bind.transition: its pose descriptor has no `lerp` — pass `poseDescriptor` with one in D3BindOptions',
-        );
-      }
       ids.forEach((_, i) => runs.track(i));
       if (parent) {
         parent.schedule();
@@ -230,6 +251,7 @@ function makeStage<TData, TPose>(
 
   const handle = createTransitionHandle(settings, {
     on: progress.on,
+    pose: () => refuseWithoutLerp(ctx.geometry as PoseDescriptor<unknown>),
     chain() {
       const next = makeStage(ctx, stage, { duration: settings.duration, easing: settings.easing });
       children.push(next.stage);

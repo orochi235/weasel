@@ -17,6 +17,8 @@ export interface StageSettings<TData, TPose> {
 /** What a transition's handle does beyond recording settings. */
 export interface StageControls<TData, TPose> {
   on(event: 'start' | 'end' | 'interrupt', fn: () => void): void;
+  /** Called before `settings.pose` is set; throws where no pose can be tweened. */
+  pose(): void;
   /** Chain a transition after this one. */
   chain(): D3Transition<TData, TPose>;
   interrupt(): void;
@@ -45,6 +47,7 @@ export function createTransitionHandle<TData, TPose>(
       return t;
     },
     pose(fn) {
+      controls.pose();
       settings.pose = fn;
       return t;
     },
