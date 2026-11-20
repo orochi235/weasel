@@ -1,4 +1,5 @@
 import { parseArgs } from 'node:util';
+import { messageOf } from '../messageOf.ts';
 
 export type Cli =
   | { command: 'dev'; config: string }
@@ -28,7 +29,7 @@ export function parseCli(argv: string[]): Cli {
       },
     });
   } catch (err) {
-    return usage(err instanceof Error ? err.message : String(err));
+    return usage(messageOf(err));
   }
   const { values, positionals } = parsed;
   if (values.help) return { command: 'help' };

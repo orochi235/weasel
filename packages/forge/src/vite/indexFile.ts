@@ -2,6 +2,7 @@ import type * as t from '@babel/types';
 import type { StoryViewport } from '../protocol/messages.ts';
 import { storyId, storyNameFromExport } from '../story/ids.ts';
 import type { IndexEntry } from '../story/types.ts';
+import { messageOf } from '../messageOf.ts';
 import {
   type Bindings,
   bindingsOf,
@@ -32,7 +33,7 @@ export function indexFile(
   try {
     return indexProgram(parseFile(code, file), file, autoTitle, wrappers, foreign);
   } catch (err) {
-    throw new Error(`${file}: ${err instanceof Error ? err.message : String(err)}`, { cause: err });
+    throw new Error(`${file}: ${messageOf(err)}`, { cause: err });
   }
 }
 

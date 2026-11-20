@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import type { Browser, BrowserContext, Page, Route } from 'playwright';
-import { type CapturePayload, messageOf } from './payload.ts';
+import { messageOf } from '../../messageOf.ts';
+import type { CapturePayload } from './payload.ts';
 
 /** Headless Chromium, taking screenshots of capture pages one at a time. */
 export interface CaptureBrowser {

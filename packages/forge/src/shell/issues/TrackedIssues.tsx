@@ -6,6 +6,7 @@ import { effectiveGlobals, GLOBALS_KEY } from '../globals';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { IssuesPanel } from './IssuesPanel';
 import { fetchIssues, type IssueReport, newIssueUrl, reopenLink } from './tracker';
+import { messageOf } from '../../messageOf';
 
 /** What the panel shows of the dev server's answer: the issues, or a note in their place. */
 type Listing = { issues: readonly ForgeIssue[] } | { note: string };
@@ -35,7 +36,7 @@ export function TrackedIssues({ base, storyId, component }: { base: string; stor
         setListing(listingOf(next));
       },
       (err: unknown) => {
-        if (!abort.signal.aborted) setListing(couldNot(err instanceof Error ? err.message : String(err)));
+        if (!abort.signal.aborted) setListing(couldNot(messageOf(err)));
       },
     );
     return () => abort.abort();

@@ -1,7 +1,8 @@
+import { messageOf } from '../../messageOf';
 import { watchDevicePixelRatio } from '@weasel-js/core';
 import { LENS_REST_MS, type LensSourceHandle, type LensSourceRequest, unavailableText } from '@weasel-js/labkit/loupe';
 import { stableStringify } from '../../protocol/messages';
-import { type CapturePayload, messageOf } from '../../vite/capture/payload';
+import type { CapturePayload } from '../../vite/capture/payload';
 import type { ForgeComparison } from './conditions';
 import { NOTHING_UNDER } from './liveSource';
 import { type TrialHit, trialAt } from './trialAt';
