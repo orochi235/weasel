@@ -1822,9 +1822,10 @@ Calls the lanes made without a ruling:
   Import restore both, locking after the nodes are added (2026-11-12).
 - `nodeSpecsFromSnapshot`'s new `systemLayers` builds the specs into a scene of those layers to prove they load,
   so draw and chart build one scene more at boot (2026-11-12).
-- Open: Cmd+V pastes the OS clipboard's copy through the weasel-JSON handler at the adapter's fixed offset from the
-  copied nodes every time, while the Paste button steps on from its last paste or lands at the pointer. Both put
-  the same nodes in history, but a run of Cmd+V stacks every paste on one spot.
+- Cmd+V of a weasel copy steps on from that canvas's last paste of the same payload, as the Paste button does,
+  remembered per paste adapter (2026-11-20, audit round 47). Copying the same unchanged nodes again keeps stepping,
+  since the handler cannot see a copy made in another canvas. Open: Cmd+V still lands at the adapter's offset where
+  the Paste button lands at the pointer by default.
 
 ## Audit round eighteen (2026-11-12): a lab's trials
 
