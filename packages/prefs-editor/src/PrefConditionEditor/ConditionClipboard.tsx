@@ -5,6 +5,7 @@ import { Button } from '@weasel-js/ui';
 import s from './PrefConditionEditor.module.css';
 
 const NOTHING = 'The clipboard holds no condition.';
+const UNREAD = 'The clipboard could not be read.';
 
 /**
  * Copy and Paste for a whole condition, which crosses the system clipboard as the JSON a schema holds it in: one
@@ -18,14 +19,21 @@ export function ConditionClipboard({ clipboard, value, onPaste }: { clipboard: C
     void copyText(JSON.stringify(value, null, 2)).then((took) => say(took ? 'Copied.' : 'The clipboard took nothing.'));
   };
   const paste = async (): Promise<void> => {
+    let text: string;
     try {
-      const held: unknown = JSON.parse(await clipboard.readText());
-      if (!isPrefCondition(held)) return say(NOTHING);
-      setSaid(null);
-      onPaste(held);
+      text = await clipboard.readText();
     } catch {
-      say(NOTHING);
+      return say(UNREAD);
     }
+    let held: unknown;
+    try {
+      held = JSON.parse(text);
+    } catch {
+      return say(NOTHING);
+    }
+    if (!isPrefCondition(held)) return say(NOTHING);
+    setSaid(null);
+    onPaste(held);
   };
   return (
     <div className={s.clipboard}>

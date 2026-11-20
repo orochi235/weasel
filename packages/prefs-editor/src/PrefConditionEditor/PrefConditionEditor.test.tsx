@@ -424,6 +424,13 @@ describe('PrefConditionEditor copy and paste', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
+  it('says the clipboard could not be read where reading it is refused', async () => {
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText: async () => {}, readText: () => Promise.reject(new DOMException('denied', 'NotAllowedError')) } });
+    open({ path: 'view.grid' });
+    fireEvent.click(screen.getByRole('button', { name: 'Paste condition' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('The clipboard could not be read.'));
+  });
+
   it('writes nothing for a clipboard that holds no condition, and says so', async () => {
     for (const text of ['not json', '{"path":"view.grid","nope":1}', '42']) {
       clipboard(text);
