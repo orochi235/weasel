@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, expectTypeOf } from 'vitest';
 import { SHIPPED_TAGS, IMPLICIT_TAGS, isShippedTag } from './capabilities';
 
 describe('capabilities', () => {
@@ -23,5 +23,19 @@ describe('capabilities', () => {
   it('isShippedTag narrows correctly', () => {
     expect(isShippedTag('creates-selection')).toBe(true);
     expect(isShippedTag('not-a-tag')).toBe(false);
+  });
+
+  it('isShippedTag narrows to the shipped literals and leaves other strings as strings', () => {
+    const seen: number[] = [];
+    for (const tag of ['edits-text', 'app-tag'] as string[]) {
+      if (isShippedTag(tag)) {
+        expectTypeOf(tag).toEqualTypeOf<(typeof SHIPPED_TAGS)[number]>();
+        seen.push(SHIPPED_TAGS.indexOf(tag));
+      } else {
+        expectTypeOf(tag).toEqualTypeOf<string>();
+        seen.push(tag.length);
+      }
+    }
+    expect(seen).toEqual([SHIPPED_TAGS.indexOf('edits-text'), 'app-tag'.length]);
   });
 });

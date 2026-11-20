@@ -3028,3 +3028,10 @@ Calls the lanes made without a ruling:
   that drops a write without re-rendering has the next sample in the same frame start from the dropped view; the
   minimap's next render hands the camera back to the `mainView` prop. Holding the write until the prop itself changes
   was the alternative, which would keep a dropped write forever.
+## Audit round fifty-three (2026-11-20): modes
+
+- 2026-11-20 (the fixer's call): the shipped `ModeDefinition`s and `DEFAULT_MODES` are deeply frozen, so
+  `NORMAL.allows.push(…)` throws; an app copies a preset to change it. `createModeRegistry` still neither
+  copies nor freezes an app's own definitions, so mutating one after registering it leaves
+  `createActiveModeReader` serving the old tags until the next `setMode`. Copying them on registration was
+  the alternative, at the cost of `byId` no longer returning the object passed in.

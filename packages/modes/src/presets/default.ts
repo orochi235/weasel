@@ -1,8 +1,14 @@
 import type { ModeDefinition } from '../modeDefinition';
 
+/** Every registry on the page shares these objects, so one is changed by copying it, never in place. */
+function frozen<T extends object>(value: T): T {
+  for (const v of Object.values(value)) if (typeof v === 'object' && v !== null) frozen(v);
+  return Object.freeze(value);
+}
+
 /** The default mode: everything except anchor and text editing, no scoping,
  *  no workspace tint. */
-export const NORMAL: ModeDefinition = {
+export const NORMAL: ModeDefinition = frozen({
   id: 'normal',
   label: 'Normal',
   description: 'Select, draw and arrange anything on the page.',
@@ -18,7 +24,7 @@ export const NORMAL: ModeDefinition = {
     'edits-page',
   ],
   scoping: false,
-};
+});
 
 /** Discarding a soft mode: Cmd+Escape on a Mac, and no key elsewhere, where
  *  Ctrl+Escape opens the Windows Start menu and Meta is the Windows key. */
@@ -26,8 +32,8 @@ const DISCARD = { shortcut: { apple: 'Meta+Escape' } } as const;
 
 /** Editing the anchors of a path. Scoped to the target, entered by
  *  double-clicking a `path` or with Enter, left with Escape. It starts on
- *  core's `anchors` tool. */
-export const PATH_EDIT: ModeDefinition = {
+ *  `@weasel-js/path-tools`' `anchors` tool. */
+export const PATH_EDIT: ModeDefinition = frozen({
   id: 'path-edit',
   label: 'Path Edit',
   description: "Move a path's anchors and handles.",
@@ -39,13 +45,13 @@ export const PATH_EDIT: ModeDefinition = {
   exit: { shortcut: 'Escape' },
   discard: DISCARD,
   defaultTool: 'anchors',
-};
+});
 
 /** A transaction that transforms the selection: the whole session is one undo
  *  step, entered with Mod+Alt+T, committed with Enter or discarded with Escape.
  *  Not Cmd+T or Mod+Shift+T: a browser keeps those for a new tab and for
  *  reopening a closed one. */
-export const FREE_TRANSFORM: ModeDefinition = {
+export const FREE_TRANSFORM: ModeDefinition = frozen({
   id: 'free-transform',
   label: 'Free Transform',
   description: 'Move, scale and rotate the selection as one undoable step.',
@@ -56,11 +62,11 @@ export const FREE_TRANSFORM: ModeDefinition = {
   entry: { shortcut: 'Mod+Alt+T' },
   commit: { shortcut: 'Enter' },
   cancel: { shortcut: 'Escape' },
-};
+});
 
 /** Editing the text of one node. Entered by double-clicking it, left with
  *  Escape. It names no targets: the text edit opening is what enters it. */
-export const TEXT_EDIT: ModeDefinition = {
+export const TEXT_EDIT: ModeDefinition = frozen({
   id: 'text-edit',
   label: 'Text Edit',
   description: "Edit a text node's content.",
@@ -71,11 +77,11 @@ export const TEXT_EDIT: ModeDefinition = {
   entry: { trigger: 'double-click-target' },
   exit: { shortcut: 'Escape' },
   discard: DISCARD,
-};
+});
 
 /** A transaction that changes the page extents, committed with Enter or
  *  discarded with Escape. */
-export const CROP: ModeDefinition = {
+export const CROP: ModeDefinition = frozen({
   id: 'crop',
   label: 'Crop',
   description: 'Change the page extents as one undoable step.',
@@ -86,16 +92,16 @@ export const CROP: ModeDefinition = {
   entry: { shortcut: 'C' },
   commit: { shortcut: 'Enter' },
   cancel: { shortcut: 'Escape' },
-};
+});
 
 /** The modes this package ships, ready to hand to `createModeRegistry`. */
-export const DEFAULT_MODES: readonly ModeDefinition[] = [
+export const DEFAULT_MODES: readonly ModeDefinition[] = Object.freeze([
   NORMAL,
   PATH_EDIT,
   FREE_TRANSFORM,
   TEXT_EDIT,
   CROP,
-];
+]);
 
 /** Look up one of the `DEFAULT_MODES` by id. Throws on an unknown id. For an
  *  app's own mode set, use the registry's `byId` instead. */
