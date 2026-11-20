@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, type Bounds, type SnapSource, type AnyScene } from '@weasel-js/core';
+import { createScene, type Bounds, type SnapCollect, type SnapSource, type AnyScene } from '@weasel-js/core';
 import { alignmentSnapSource } from './alignment';
 import { gridSnapSource } from './grid';
 import { spacingSnapSource } from './spacing';
@@ -13,11 +13,19 @@ interface Tally { offered: Map<string, number>; measured: number }
 
 /** `source`, tallying what each frame offers each probe and each box it measures. */
 function counted(source: SnapSource, tally: Tally): SnapSource {
+  // One counting wrapper per session's drawnBox: sources cache their targets on its identity, so a wrapper made each
+  // frame would read as a new session every frame.
+  const wrappers = new WeakMap<NonNullable<SnapCollect['drawnBox']>, NonNullable<SnapCollect['drawnBox']>>();
+  const countingOf = (drawnBox: NonNullable<SnapCollect['drawnBox']>) => {
+    let wrapped = wrappers.get(drawnBox);
+    if (!wrapped) wrappers.set(drawnBox, wrapped = (id: string) => (tally.measured++, drawnBox(id)));
+    return wrapped;
+  };
   return {
     ...source,
     *collect(q) {
       const drawnBox = q.drawnBox;
-      const measuring = drawnBox ? { ...q, drawnBox: (id: string) => (tally.measured++, drawnBox(id)) } : q;
+      const measuring = drawnBox ? { ...q, drawnBox: countingOf(drawnBox) } : q;
       for (const c of source.collect(measuring)) {
         tally.offered.set(c.probe, (tally.offered.get(c.probe) ?? 0) + 1);
         yield c;
