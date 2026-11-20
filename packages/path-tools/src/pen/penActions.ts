@@ -89,7 +89,7 @@ function createPlaceAnchorAction(env: PenActionEnv): Action {
         const join = joinable(scratch, deps, hit);
         scratch.current ??= startSubpath(scratch);
         scratch.current.anchors.push({ x: wx, y: wy });
-        if (join) commitJoin(scratch, deps, hit, env.settings());
+        if (join) { commitJoin(scratch, deps, hit, env.settings()); scratch.justClosed = true; }
         trail.update(deps);
       },
     },

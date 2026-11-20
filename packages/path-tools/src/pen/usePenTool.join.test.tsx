@@ -84,6 +84,17 @@ describe('usePenTool', () => {
       expect(p.adapter.setSelection).toHaveBeenCalledWith(['a']);
     });
 
+    it('a double click on the other path\'s end joins and starts no new path', () => {
+      const p = setup({ paths: { b: poly('M 0 0 L 100 0 L 100 100') } });
+      p.click(0, 200);
+      p.click(0, 100);
+      p.doubleClick(1, 1);
+      expect(p.inserted).toHaveLength(1);
+      expect(pointsOf(p.inserted[0].pose.path)).toEqual([[[0, 200], [0, 100], [0, 0], [100, 0], [100, 100]]]);
+      expect(p.scratch.current).toBeNull();
+      expect(p.scratch.finishedSubpaths).toEqual([]);
+    });
+
     it('a path continued from its first anchor keeps its direction through the join', () => {
       const p = setup({ paths: { a: poly('M 0 0 L 100 0'), b: poly('M -300 0 L -200 0') } });
       p.click(0, 0);
