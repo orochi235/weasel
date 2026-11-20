@@ -56,3 +56,19 @@ describe('multiplier', () => {
     expect(parseAs('3X', multiplier())).toBe(3);
   });
 });
+
+describe('fraction counted in e', () => {
+  const ofE = fraction({ of: 'e' });
+
+  it('reads exponent notation as a number, not as a count of e', () => {
+    expect(parseAs('1e3', ofE)).toBe(1000);
+    expect(parseAs('2E-1', ofE)).toBeCloseTo(0.2);
+  });
+
+  it('still reads e as a factor', () => {
+    expect(parseAs('2e', ofE)).toBeCloseTo(2 * Math.E);
+    expect(parseAs('e/2', ofE)).toBeCloseTo(Math.E / 2);
+    expect(parseAs('3e/4', ofE)).toBeCloseTo((3 * Math.E) / 4);
+    expect(parseAs('-e', ofE)).toBeCloseTo(-Math.E);
+  });
+});

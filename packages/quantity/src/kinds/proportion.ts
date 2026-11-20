@@ -229,7 +229,9 @@ export const fractionKind: DisplayKind<FractionDisplay> = {
     const constant = constantOf(d);
     if (!constant) return parseFraction(text, ctx.locale);
     const spellings = [constant.symbol, ...(constant.names ?? [])].sort((a, b) => b.length - a.length);
-    const token = new RegExp(spellings.map(escape).join('|'), 'i');
+    // Not the `e` of an exponent, between a digit and a signed digit: `1e3` is 1000.
+    const any = spellings.map(escape).join('|');
+    const token = new RegExp(`(?<!\\d)(?:${any})|(?:${any})(?![-−+]?\\d)`, 'i');
     if (!token.test(text)) return parseFraction(text, ctx.locale);
     // With the constant taken out, a bare `/2` or nothing at all counts one of it.
     const rest = text.replace(token, '').trim();
