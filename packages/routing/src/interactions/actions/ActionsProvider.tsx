@@ -260,7 +260,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       };
     },
     paramsOf: <Id extends string>(id: Id, given?: Partial<ActionParamsOf<Id>>) =>
-      tunedParams(this.tuningsOf(id), given) as Partial<ActionParamsOf<Id>>,
+      tunedParams(this.start().tuningsOf(id), given) as Partial<ActionParamsOf<Id>>,
     overrideBindings: (overrides: BindingOverrides) => {
       const release = pushOwner(this.overrides, overrides);
       this.changed();
