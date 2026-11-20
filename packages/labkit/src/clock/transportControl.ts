@@ -33,13 +33,27 @@ export interface TransportControl {
   seek(ms: number): void;
 }
 
+/** The whole run in ms: `Infinity` for one that never ends. */
+const spanOf = (clock: TrialClock): number =>
+  clock.duration *
+  (clock.loop === true ? Number.POSITIVE_INFINITY : clock.loop === false ? 1 : clock.loop);
+
+/** Whether `clock` has played out in the direction it plays, so play starts it over: a forward run at its end, a
+ *  backward one at its start. */
+export function playedOut(clock: TrialClock, backward: boolean): boolean {
+  if (backward && clock.seekable) return clock.elapsed <= 0 && Number.isFinite(spanOf(clock));
+  return clock.ended;
+}
+
 /** The control over `clock`, given the speed and direction it last ran at
- *  and where to keep a change to either. */
+ *  and where to keep a change to either. `reset` returns a clock that is not seekable to its start, so a play
+ *  after its end starts it over. */
 export function transportControl(
   clock: TrialClock,
   held: { speed: number; backward: boolean; touched?: boolean },
   hold: (next: { speed: number; backward: boolean }) => void,
   touch: () => void = () => {},
+  reset?: () => void,
 ): TransportControl {
   const finite = Number.isFinite(clock.duration) && clock.duration > 0;
   const passStart = finite ? clock.pass * clock.duration : 0;
@@ -58,8 +72,12 @@ export function transportControl(
     scrubs,
     touch,
     play() {
-      // A run played to the end starts over, the way a player's play does.
-      if (clock.seekable && !held.backward && clock.ended) clock.seek(0);
+      // A run played out starts over, the way a player's play does.
+      if (playedOut(clock, held.backward)) {
+        if (!clock.seekable) reset?.();
+        else if (held.backward) clock.seek(spanOf(clock), 'end');
+        else clock.seek(0);
+      }
       clock.rate = signed(held.speed, held.backward);
     },
     pause() {

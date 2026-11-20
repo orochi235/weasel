@@ -57,7 +57,8 @@ const passAt = (run: Run): number =>
 const phaseAt = (run: Run): number =>
   placeOf(run.elapsed, run.duration, passesOf(run.loop), run.edge).phase;
 /** The speed a transport plays a paused clock at, when none is declared. */
-const restingSpeed = (rate: number): number => Math.abs(rate) || 1;
+/** The speed `spec` declares: its `speed`, else its `rate` unsigned, else 1. */
+export const declaredSpeed = (spec: ClockSpec): number => spec.speed ?? (Math.abs(spec.rate ?? 0) || 1);
 
 /** Which pass `elapsed` falls in and how far into it, in ms; a pass's end stands as its own. */
 function passOf(run: Run): { pass: number; into: number } {
@@ -126,7 +127,7 @@ function declaredOf(spec: ClockSpec): Declared {
     duration: spec.duration ?? Number.POSITIVE_INFINITY,
     origin: spec.origin ?? 0,
     loop: spec.loop ?? false,
-    speed: spec.speed ?? restingSpeed(spec.rate ?? 0),
+    speed: declaredSpeed(spec),
   };
 }
 
@@ -309,7 +310,7 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
     loop,
     span: duration * passesOf(loop),
     origin,
-    speed: spec.speed ?? restingSpeed(openRate),
+    speed: declaredSpeed(spec),
     rate: at ? at.rate : openRate,
     elapsed: 0,
     edge: at?.passEnd ?? false,

@@ -21,7 +21,7 @@ export function useTransportControl(trialId?: string | null): TransportControl |
   const hold = clock ? transportHoldOf(clock) : null;
   const held = useSyncExternalStore(hold?.subscribe ?? NO_SUBSCRIBE, () => hold?.get() ?? NO_HOLD);
   if (!clock || !hold) return null;
-  const control = transportControl(clock, held, hold.set, hold.touch);
+  const control = transportControl(clock, held, hold.set, hold.touch, handle?.reset);
   const touching =
     <A extends unknown[]>(fn: (...args: A) => void) =>
     (...args: A): void => {

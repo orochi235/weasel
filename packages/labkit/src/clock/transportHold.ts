@@ -19,7 +19,8 @@ export interface TransportHoldStore {
 }
 
 /** The hold every transport over `clock` shares, opened on the rate the clock
- *  runs at, or at its `speed` forward for one that is paused. */
+ *  runs at, or at its `speed` forward for one that is paused. Until a transport
+ *  sets a speed, it takes the clock's `speed` each time a declaration changes it. */
 export const transportHoldOf = createPart((clock: TrialClock): TransportHoldStore => {
   let hold: TransportHold = {
     speed: Math.abs(clock.rate) || clock.speed,
@@ -27,6 +28,13 @@ export const transportHoldOf = createPart((clock: TrialClock): TransportHoldStor
     touched: false,
   };
   const changed = createEmitter();
+  let chosen = false;
+  let declared = clock.speed;
+  clock.subscribe(() => {
+    if (Object.is(clock.speed, declared)) return;
+    declared = clock.speed;
+    if (!chosen && !Object.is(declared, hold.speed)) replace({ ...hold, speed: declared });
+  });
   const replace = (next: TransportHold): void => {
     hold = next;
     changed.emit();
@@ -34,6 +42,7 @@ export const transportHoldOf = createPart((clock: TrialClock): TransportHoldStor
   const store: TransportHoldStore = {
     get: () => hold,
     set: ({ speed, backward }) => {
+      if (!Object.is(speed, hold.speed)) chosen = true;
       if (!Object.is(speed, hold.speed) || backward !== hold.backward)
         replace({ ...hold, speed, backward });
     },

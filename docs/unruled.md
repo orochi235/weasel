@@ -3037,3 +3037,12 @@ Calls the lanes made without a ruling:
   arrival order and the first member's `end` was the alternative, and contradicted `ContributionBase.end`.
 - 2026-11-20 (the fixer's call): a toolbar or header group is announced by its `group` name (`history`, `view`), and
   an ungrouped contribution's bar group carries no name. A label of its own on a group is not offered.
+## Audit round fifty (2026-11-20): labkit's trial clock
+
+- 2026-11-20 (the fixer's call): a trial transport's Play, and `<TrialTransport replay>`, start a played-out run over
+  in the direction it plays: a run played backward to its start seeks to its end and plays backward, and an ended
+  clock that is not seekable is reset (`handle.reset()`) and played from its start. Limiting `replay` to seekable
+  clocks in its doc, and leaving Play inert there, was the alternative.
+- 2026-11-20 (the fixer's call): a clock's transport hold takes each speed a redeclaration gives the clock until a
+  transport sets a speed of its own; working the clock otherwise (a pause, a loop toggle, a seek) does not stop it
+  following. Following only while the hold is untouched was the alternative.
