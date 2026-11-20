@@ -926,7 +926,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 ## ui, prefs, and theme
 
 - Open (2026-11-18, accessibility sweep): theme tokens drawn as text miss WCAG's 4.5:1 on the surfaces they sit
-  on, measured by axe over every ui and labkit story in both modes (`apps/forge/a11y.browser.test.tsx`, which
+  on, measured by axe over every ui and labkit story in both modes (`apps/forge/a11y.suite.tsx`, which
   lists the stories in `a11y.known.ts`). The status bases as text on `gray-50`: danger `#d94a3f` 3.85:1, warning
   `#d99a3f` 2.22:1, success `#2ec27e` 2.11:1, info `#7ab8d4` 2.00:1; danger on `gray-800` 4.14:1. The muted grays
   on `gray-50` (`#828284` 3.52:1, `#9b9b9d` 2.54:1, `#89898b` 3.20:1), the accent `#6a62d4` 4.47:1 on `gray-50`,
