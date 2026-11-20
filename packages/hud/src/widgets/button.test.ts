@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { createButton } from './button';
+import { textWidth } from '../menu/textWidth';
 import { layoutRuns, resolveTextStyle, verticalAlignOffset } from '@weasel-js/text';
 import { registerDefaultFont, DEFAULT_FONT_FAMILY } from '../fonts/registerDefaultFont';
 import { resolveFontVariant } from '@weasel-js/font';
@@ -275,5 +276,15 @@ describe('button keyboard', () => {
     expect(b.onKey!(k('Delete'))).toBe(false);
     expect(b.onKey!(k('Enter', 'keyup'))).toBe(false);
     expect(press).not.toHaveBeenCalled();
+  });
+});
+
+describe('button label', () => {
+  it('ends a label wider than the button with an ellipsis, inside the button', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 60, height: 28, label: 'Export settings', fontSize: 13 });
+    const text = b.draw(ctx).find((c): c is TextDrawCommand => c.kind === 'text')!;
+    const label = text.runs.map((r) => r.text).join('');
+    expect(label).toMatch(/…$/);
+    expect(text.x + textWidth(label, 13, 'D')).toBeLessThanOrEqual(60);
   });
 });

@@ -8,6 +8,7 @@ import {
   envPx, exactly, measureButton, type ButtonFace, type ButtonLayout, type ButtonSize, type HeadlessComponent,
 } from '@weasel-js/ui-logic';
 import { hudMeasureEnv } from '../measureEnv';
+import { ellipsize } from '../menu/textWidth';
 import { textCommandFromRuns } from '@weasel-js/core';
 import { solidFill } from '@weasel-js/paint';
 
@@ -95,12 +96,15 @@ export const hudButton: HeadlessComponent<HudButtonState, ButtonLayout, HudButto
     const out: DrawCommand[] = [{
       kind: 'path', path: roundRectPath(b.x, b.y, b.width, b.height, radius), fill: solidFill(color),
     }];
+    const font = { fontFamily: target.fontFamily ?? ctx.defaultFont, fontSize: layout.metrics.font.size };
     for (const { part, rect } of layout.parts) {
       if (part !== 'label') continue;
+      // Held to the label part's width, which the measure trims to what the button leaves it.
+      const label = ellipsize(state.label ?? '', rect.width, font.fontSize, font.fontFamily);
       out.push(textCommandFromRuns(
         b.x + rect.x, b.y,
-        [{ text: state.label ?? '', fill: solidFill(target.textColor ?? t['--wzl-fg']) }],
-        { fontFamily: target.fontFamily ?? ctx.defaultFont, fontSize: layout.metrics.font.size },
+        [{ text: label, fill: solidFill(target.textColor ?? t['--wzl-fg']) }],
+        font,
         undefined, b.height, 'center',
       ));
     }
