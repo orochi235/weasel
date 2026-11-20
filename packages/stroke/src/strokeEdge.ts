@@ -8,7 +8,7 @@ import { extractPolylines } from '@weasel-js/geom/tessellate';
 import type { Stroke } from '@weasel-js/paint';
 import { strokeFlattening } from './tessellate/flattening';
 import { nibWidthScale } from './tessellate/nib';
-import { widthHasInk} from './tessellate/stroke';
+import { cornerResolved, widthHasInk } from './tessellate/stroke';
 import { populateWidths } from './tessellate/vertexWidths';
 
 /** One side of a stroke's ribbon, as `VertexWidth` names them. */
@@ -64,11 +64,11 @@ export function nearestStrokeEdge(
     const hit = nearestStrokeEdge(offsets, stroke, x - ox, y - oy, opts);
     return hit && { ...hit, x: hit.x + ox, y: hit.y + oy };
   }
-  const vw = stroke.vertexWidths && stroke.vertexWidths.length > 0 ? stroke.vertexWidths : null;
+  const { path: outline, vertexWidths: vw } = cornerResolved(path, stroke.vertexWidths);
   const nibScale = stroke.nib ? nibWidthScale(stroke.nib) : null;
   const align = stroke.align ?? 'center';
   let best: StrokeEdgeHit | null = null;
-  for (const pl of extractPolylines(path, strokeFlattening(opts.flattenTolerance, width, vw ?? undefined))) {
+  for (const pl of extractPolylines(outline, strokeFlattening(opts.flattenTolerance, width, vw ?? undefined))) {
     populateWidths(pl, vw, stroke.nib, width);
     const P = pl.points, W = pl.widths, O = pl.offsets;
     const n = P.length / 2;

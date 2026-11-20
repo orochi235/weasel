@@ -1,5 +1,5 @@
 import { remapPerAnchor, resolveCornersWithSources, type Path, type RectPath } from '@weasel-js/geom';
-import type { Stroke } from '@weasel-js/paint';
+import type { Stroke, VertexWidth } from '@weasel-js/paint';
 import { alignedStrokeRect, alignedStrokeRectHolds, DEFAULT_MITER_LIMIT, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { dashPolylines } from './dash';
@@ -130,16 +130,28 @@ export function strokePolylines(
   // interpolates them rather than re-reading an anchor's.
   // Expanded here rather than inside `extractPolylines`, so each width moves
   // to the anchors its corner's cut leaves.
-  const resolved = workingPath.kind === 'polygon' ? resolveCornersWithSources(workingPath) : null;
-  if (resolved) workingPath = resolved.path;
-  const given = stroke.vertexWidths && stroke.vertexWidths.length > 0 ? stroke.vertexWidths : null;
-  const vertexWidths = given && resolved?.anchorSources ? remapPerAnchor(given, resolved.anchorSources, 1) : given;
+  const outline = cornerResolved(workingPath, stroke.vertexWidths);
+  workingPath = outline.path;
+  const { vertexWidths } = outline;
   const polylines = extractPolylines(workingPath, strokeFlattening(flattenTolerance, width, vertexWidths ?? undefined));
   const scale: WidthScale | undefined = !metric ? undefined
     : rectInMetric ? (tx, ty) => worldWidthInMetric(metric, tx, ty)
       : (ux, uy) => worldWidthInMetricAlongWorld(metric, ux, uy);
   for (const pl of polylines) populateWidths(pl, vertexWidths, stroke.nib, width, scale);
   return { polylines, rectInMetric };
+}
+
+/** `path` with its corners cut, and `vertexWidths` (null when empty) moved to
+ *  the anchors the cuts leave: what a stroke's widths are read along. */
+export function cornerResolved(
+  path: Path, vertexWidths: readonly VertexWidth[] | undefined,
+): { path: Path; vertexWidths: readonly VertexWidth[] | null } {
+  const resolved = path.kind === 'polygon' ? resolveCornersWithSources(path) : null;
+  const given = vertexWidths && vertexWidths.length > 0 ? vertexWidths : null;
+  return {
+    path: resolved?.path ?? path,
+    vertexWidths: given && resolved?.anchorSources ? remapPerAnchor(given, resolved.anchorSources, 1) : given,
+  };
 }
 
 /**
