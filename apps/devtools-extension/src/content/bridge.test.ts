@@ -89,6 +89,17 @@ describe('the content-script bridge', () => {
     expect(background.received).toEqual([]);
   });
 
+  it('names the panel’s session in the bye it sends for it', async () => {
+    const background = bridge();
+    background.postMessage({ type: 'yo', protocol: 7, session: 's1' });
+    await drain();
+    const heard = new Promise<unknown>((resolve) => {
+      window.addEventListener('message', (e) => resolve(e.data), { once: true });
+    });
+    background.disconnect();
+    expect(await heard).toEqual({ source: ENVELOPE, side: 'panel', message: { type: 'bye', protocol: 7, session: 's1' } });
+  });
+
   it('does not repeat a bye the panel already sent', async () => {
     const background = bridge();
     background.postMessage({ type: 'yo', protocol: PROTOCOL });
