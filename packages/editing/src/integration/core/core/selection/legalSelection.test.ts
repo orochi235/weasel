@@ -51,6 +51,20 @@ describe('legalSelection', () => {
     expect(api.get()).toEqual(ids(['g']));
   });
 
+  it('reads a node the scene locks out of an api that keeps it', () => {
+    const { scene, api, view } = mount();
+    act(() => api.set(ids(['c', 'd'])));
+    const first = view.get();
+    expect(first).toEqual(ids(['c', 'd']));
+    expect(view.get()).toBe(first);
+    scene.setLocked(asNodeId('c'), true);
+    expect(api.get()).toEqual(ids(['c', 'd']));
+    expect(view.get()).toEqual(ids(['d']));
+    expect(view.get()).toBe(view.get());
+    expect(view.contains(asNodeId('c'))).toBe(false);
+    expect(view.adapterMethods.getSelection()).toEqual(ids(['d']));
+  });
+
   it('is one view per api and scene', () => {
     const { scene, api, view } = mount();
     expect(legalSelection(api, scene.selectable)).toBe(view);
