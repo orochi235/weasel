@@ -10,9 +10,9 @@ import { setStrokeWidthAction } from './setStrokeWidth';
 
 const CASES: [Action, Record<string, unknown>][] = [
   [setFillAction, { color: '#ff0000' }],
-  [setFillOpacityAction, { opacity: 0.5 }],
+  [setFillOpacityAction, { alpha01: 0.5 }],
   [setStrokeAction, { color: '#ff0000' }],
-  [setStrokeOpacityAction, { opacity: 0.5 }],
+  [setStrokeOpacityAction, { alpha01: 0.5 }],
   [setStrokeWidthAction, { width: 4 }],
 ];
 

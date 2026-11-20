@@ -9,6 +9,7 @@ import { IN_VIEW_MARGIN } from './inViewMargin';
 import { FRAME_HELLO } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
+import type { FrameActions } from './frameActions';
 import { useCssOverrides } from './cssVars/overrides';
 import { closeLink, type Fault, type Link, useFrameLink } from './frameLink';
 import { FramePoolContext, HELLO_TIMEOUT_MS, moveFrame } from './framePool';
@@ -39,6 +40,8 @@ export interface FrameViewProps {
   /** The workshop's frame setup. A copy's host takes its globals through it, so what it paints behind the copy's
    *  frame is in the copy's mode rather than the lab's. */
   setup?: FrameSetup;
+  /** Where the story's action buttons send a press; this view takes the ones its trial makes. */
+  actions?: FrameActions;
 }
 
 interface FrameMount {
@@ -172,6 +175,12 @@ export function FrameView(props: FrameViewProps) {
   }, [title]);
 
   useEffect(() => (copy ? undefined : answers.hold(ctx.config)), [answers, ctx.config, copy]);
+
+  const actions = props.actions;
+  useEffect(
+    () => (copy || !actions ? undefined : actions.attach(trialCtx.setConfig, (path) => link.current?.channel.send({ type: 'action', path }))),
+    [actions, copy, trialCtx.setConfig, link],
+  );
 
   const setup = props.setup;
   const copyId = copy?.id;

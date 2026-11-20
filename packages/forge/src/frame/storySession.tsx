@@ -1,7 +1,7 @@
 import { flushSync } from 'react-dom';
 import type { createKitRoot } from '../kitIcons';
 import { type FromFrame, type StoryGlobals, stableStringify, type ToFrame } from '../protocol/messages';
-import { answerSchema } from '../protocol/schema';
+import { answerSchema, schemaActionAt } from '../protocol/schema';
 import type { Decorator, LoadedStory, StoryContext } from '../story/types';
 import { fault } from './fault';
 import { StoryHost } from './StoryHost';
@@ -24,6 +24,8 @@ export interface StorySession {
   setConfig(config: unknown): void;
   setState(state: unknown): void;
   setGlobals(globals: StoryGlobals): void;
+  /** Runs the story's action leaf at `path` against the config the session holds. */
+  runAction(path: string): void;
 }
 
 /**
@@ -135,5 +137,17 @@ export function createStorySession({
         globals = { ...next, ...story.globals };
         applyGlobals(globals);
       }),
+    runAction: (path) => {
+      const run = schemaActionAt(story.config, path);
+      if (!run) return;
+      const at = seq;
+      try {
+        void Promise.resolve(run({ path, config: config as Record<string, unknown>, setConfig })).catch((error: unknown) =>
+          send(fault('render', error, at)),
+        );
+      } catch (error) {
+        send(fault('render', error, at));
+      }
+    },
   };
 }

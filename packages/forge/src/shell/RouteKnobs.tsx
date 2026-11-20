@@ -2,7 +2,7 @@ import { type InstrumentList, TrialIdContext, useLabContext, useTrialState } fro
 import { type ConfigSchema, configValueAt } from '@weasel-js/labkit/config';
 import { useWindowEvent } from '@weasel-js/react';
 import { useEffect, useRef, useState } from 'react';
-import { knobPaths, knobsToParams, paramsToKnobs, paramsToPins, reservedParams, sameKnob, withoutPins } from '../route/url';
+import { isClearedKnob, knobPaths, knobsToParams, paramsToKnobs, paramsToPins, reservedParams, sameKnob, withoutPins } from '../route/url';
 import { routedTrial } from './routedTrial';
 import { readRouteParams, replaceRouteParams, takeRouteFromTrial, useRoute } from './useRoute';
 
@@ -44,7 +44,8 @@ function KnobSync({ trialId, schema, config }: KnobSyncProps) {
       for (const { path, leaf } of knobPaths(schema)) {
         const target = Object.hasOwn(knobs, path) ? knobs[path] : leaf.default;
         const current = configValueAt(config, path);
-        if (sameKnob(current === undefined ? leaf.default : current, target)) continue;
+        const shown = current === undefined && !isClearedKnob(config, path, leaf) ? leaf.default : current;
+        if (sameKnob(shown, target)) continue;
         setConfig(path as never, target as never);
         wrote = true;
       }

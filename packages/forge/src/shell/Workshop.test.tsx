@@ -185,6 +185,19 @@ describe('Workshop', () => {
     for (const { frame } of frames) frame.close();
   });
 
+  it("sends a press of a frame story's action button to that trial's frame", async () => {
+    location.hash = '#/x--a';
+    const { container } = renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await frameSrc(container);
+    const { frame, received } = connectFrame(container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
+    frame.send({ type: 'ready', schema: describeSchema(f.schema({ go: f.action(() => {}).label('Go') })), layout: 'centered', viewport: null });
+    await flush();
+    fireEvent.click(await screen.findByRole('button', { name: 'Go' }));
+    await flush();
+    expect(received.at(-1)).toEqual({ type: 'action', path: 'go' });
+    frame.close();
+  });
+
   it('opens a component’s index page the hash names', async () => {
     location.hash = '#/x:index';
     const { container } = renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);

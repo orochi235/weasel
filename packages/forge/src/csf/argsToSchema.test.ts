@@ -30,6 +30,11 @@ describe('argsToSchema', () => {
       expect(Object.keys(schema.nodes)).toEqual(['n']);
     });
 
+    it('omits an arg holding a Proxy, whose default no port could post', () => {
+      const schema = argsToSchema({ store: new Proxy({ count: 1 }, {}), n: 1 }, {});
+      expect(Object.keys(schema.nodes)).toEqual(['n']);
+    });
+
     it('gives an object or array arg holding a function a json leaf of the part that crosses the port', () => {
       const schema = argsToSchema({ job: { done: 1, cancel: () => {} }, instruments: [{ id: 'a', defaults: () => ({}) }] }, {});
       expect(shape(schema.nodes.job as ConfigNode<unknown>)).toEqual({ kind: 'json', default: { done: 1 } });
