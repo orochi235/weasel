@@ -5,6 +5,8 @@ import { usePrefersReducedMotion, watchResize } from '@weasel-js/react';
 import * as presets from '@weasel-js/editing/presets';
 import { auditNodeSpecs, breathe, syncAuditScene, type AuditPalette, type AuditScene } from './auditScene';
 import { layoutMap } from './mapLayout';
+import { heatScaleOf } from './areaData';
+import { HeatLegend } from './HeatLegend';
 import { OFF_PIPELINE, PHASE_LABEL, PIPELINE, phaseClass, type AuditPhase } from './phases';
 import type { AuditArea } from './skulkMap.types';
 import s from './Treemap.module.css';
@@ -38,6 +40,7 @@ export function Treemap({ scene, selection, areas, palette, phases, onHover }: T
     return watchResize(host, measure);
   }, []);
 
+  const heat = useMemo(() => heatScaleOf(areas), [areas]);
   const layout = useMemo(() => layoutMap(areas, size.width, size.height), [areas, size]);
   useLayoutEffect(() => {
     syncAuditScene(scene, auditNodeSpecs(areas, layout, palette, phases));
@@ -84,10 +87,7 @@ export function Treemap({ scene, selection, areas, palette, phases, onHover }: T
         <span><i className={`${s.key} ${s.uncharted}`} />never audited</span>
         <span>
           audited, estimated defects left after the last pass:
-          <span className={s.ramp}>
-            <i className={s.depth0} /><i className={s.depth1} /><i className={s.depth2} /><i className={s.depth3} /><i className={s.depth4} />
-          </span>
-          0 → 6+
+          <HeatLegend heat={heat} />
         </span>
         <span><i className={`${s.key} ${s.settled}`} />settled</span>
         <span className={s.phases}>

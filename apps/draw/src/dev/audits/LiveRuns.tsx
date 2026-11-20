@@ -2,18 +2,17 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { SpanStrips, type SpanStripSpan, type SpanStripsRow } from '@weasel-js/ui/components/SpanStrip';
 import { clockRuler } from './clock';
-import { laneStepsOf, laneViewOf, phaseClass, runClockOf, type LaneView } from './phases';
+import { laneStepsOf, laneViewOf, runClockOf, type LaneView } from './phases';
 import { headlineOf, lastLineOf, sharedLaneOf, spendOf } from './runData';
 import type { AuditLane, AuditRun } from './skulkMap.types';
 import s from './LiveRuns.module.css';
 
 const cx = (...names: (string | false | undefined)[]) => names.filter(Boolean).join(' ');
 
-/** An area's lane as a stack row: its name in its phase's color, and `spans`, its steps in the view chosen. */
+/** An area's lane as a stack row: its name, and `spans`, its steps in the view chosen. */
 function laneRow(lane: AuditLane, view: LaneView, onPick: (id: string) => void, spans: SpanStripSpan[]): SpanStripsRow {
   return {
     id: lane.id,
-    className: phaseClass(view.phase),
     spans,
     'aria-label': lane.id,
     valueText: view.elapsed ? `${view.phase}, ${view.elapsed} in` : view.phase,

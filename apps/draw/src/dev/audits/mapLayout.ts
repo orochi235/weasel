@@ -1,4 +1,5 @@
-/** The audit map's layout: a squarified treemap of packages, each holding its areas, sized by source files. */
+/** The audit map's layout: a squarified treemap of the areas nested by their paths, sized by source files. */
+import { areaTree, type AreaTreeNode } from './areaTree';
 
 export interface Box {
   readonly x: number;
@@ -87,7 +88,12 @@ export function snapped(box: Box): Box {
 }
 
 export interface MapFrame extends Box {
+  /** Its path, the prefix its areas share: `core.domains`. */
   readonly name: string;
+  /** The frame holding it, or null at the top. */
+  readonly parent: string | null;
+  /** 0 for a top-level package, one more for each frame around it. */
+  readonly depth: number;
   readonly files: number;
   /** Whether it is big enough to carry its name above its areas. */
   readonly titled: boolean;
@@ -95,38 +101,44 @@ export interface MapFrame extends Box {
 
 export interface MapCell extends Box {
   readonly id: string;
+  /** The frame holding it, or null for an area at the top. */
+  readonly parent: string | null;
 }
 
-/** How a package frame is padded: outside, between its areas, and above them when it is titled. */
-export const MAP_PADDING = { outer: 2, inner: 1.5, title: 18 } as const;
+/** How a frame is padded: outside, between its children, and above them when it is titled, a top-level package more
+ *  than a frame inside one. */
+export const MAP_PADDING = { outer: 2, inner: 1.5, title: 18, nestedPad: 1.5, nestedTitle: 15 } as const;
 
-const titledAt = (b: Box) => b.width > 54 && b.height > 46;
+/** The title's height and the padding on a frame at `depth`. */
+export const framePadOf = (depth: number) => (depth === 0
+  ? { pad: MAP_PADDING.outer, title: MAP_PADDING.title }
+  : { pad: MAP_PADDING.nestedPad, title: MAP_PADDING.nestedTitle });
 
-/** Every package as a frame and every area as a cell, in a `width` × `height` box. */
+const titledAt = (b: Box, depth: number) => (depth === 0 ? b.width > 40 && b.height > 40 : b.width > 40 && b.height > 36);
+
+/** Every frame the areas' paths make and every area as one cell, nested, in a `width` × `height` box. */
 export function layoutMap(
-  areas: readonly { id: string; group: string; files: number }[],
+  areas: readonly { id: string; files: number }[],
   width: number,
   height: number,
 ): { frames: MapFrame[]; cells: MapCell[] } {
-  const groups = new Map<string, { id: string; files: number }[]>();
-  for (const a of areas) {
-    const list = groups.get(a.group) ?? [];
-    list.push(a);
-    groups.set(a.group, list);
-  }
-  const outer = inset({ x: 0, y: 0, width, height }, MAP_PADDING.outer);
-  const placed = squarify([...groups].map(([name, list]) => ({ item: { name, list }, value: list.reduce((n, a) => n + a.files, 0) })), outer);
   const frames: MapFrame[] = [];
   const cells: MapCell[] = [];
-  for (const g of placed) {
-    const box = snapped(inset(g, MAP_PADDING.inner / 2));
-    const titled = titledAt(box);
-    frames.push({ ...box, name: g.item.name, files: g.item.list.reduce((n, a) => n + a.files, 0), titled });
-    const top = titled ? MAP_PADDING.title : MAP_PADDING.outer;
-    const inner = { x: box.x + MAP_PADDING.outer, y: box.y + top, width: box.width - 2 * MAP_PADDING.outer, height: box.height - top - MAP_PADDING.outer };
-    for (const c of squarify(g.item.list.map((a) => ({ item: a.id, value: a.files })), inner)) {
-      cells.push({ id: c.item, ...snapped(inset(c, MAP_PADDING.inner / 2)) });
+  const place = (nodes: readonly AreaTreeNode[], box: Box, depth: number, parent: string | null) => {
+    for (const placed of squarify(nodes.map((n) => ({ item: n, value: n.files })), box)) {
+      const node = placed.item;
+      if (node.kind === 'area') {
+        cells.push({ id: node.id, parent, ...snapped(inset(placed, MAP_PADDING.inner / 2)) });
+        continue;
+      }
+      const frame = snapped(inset(placed, MAP_PADDING.inner / 2));
+      const titled = titledAt(frame, depth);
+      frames.push({ ...frame, name: node.name, parent, depth, files: node.files, titled });
+      const { pad, title } = framePadOf(depth);
+      const top = titled ? title : pad;
+      place(node.children, { x: frame.x + pad, y: frame.y + top, width: frame.width - 2 * pad, height: frame.height - top - pad }, depth + 1, node.name);
     }
-  }
+  };
+  place(areaTree(areas), inset({ x: 0, y: 0, width, height }, MAP_PADDING.outer), 0, null);
   return { frames, cells };
 }

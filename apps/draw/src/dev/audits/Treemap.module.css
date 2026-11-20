@@ -32,8 +32,7 @@
   color: var(--audit-muted);
 }
 
-.key,
-.ramp i {
+.key {
   display: inline-block;
   width: 14px;
   height: 14px;
@@ -78,14 +77,6 @@
   gap: var(--wzl-space-2) var(--wzl-space-4);
 }
 
-.ramp {
-  display: inline-flex;
-  margin: 0 5px;
-  vertical-align: -3px;
-}
-
-.ramp i { width: 12px; }
-
 /* The phases' sweep, one bar, each name under its own stop. */
 .phaseRamp {
   display: inline-grid;
@@ -111,8 +102,4 @@
 .phaseNames > :first-child { text-align: start; }
 .phaseNames > :not(:first-child, :last-child) { text-align: center; }
 .phaseNames > :last-child { text-align: end; }
-.depth0 { background: var(--audit-depth-0); }
-.depth1 { background: var(--audit-depth-1); }
-.depth2 { background: var(--audit-depth-2); }
-.depth3 { background: var(--audit-depth-3); }
-.depth4 { background: var(--audit-depth-4); }
+

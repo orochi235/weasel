@@ -2,6 +2,8 @@
    probes below. */
 .palette {
   --audit-panel: var(--wzl-surface);
+  /* A nested frame's title band: a shade off the panel, so it reads apart from the band of the frame around it. */
+  --audit-band: color-mix(in oklab, var(--wzl-fg) 7%, var(--wzl-surface));
   --audit-ink: var(--wzl-fg);
   --audit-ink-inverse: var(--wzl-fg-inverse);
   --audit-muted: var(--wzl-fg-muted);
@@ -15,6 +17,8 @@
   --audit-depth-2: oklch(0.59 0.21 25);
   --audit-depth-3: oklch(0.75 0.17 58);
   --audit-depth-4: oklch(0.92 0.11 98);
+  --audit-heat-ramp: linear-gradient(in oklch to right, var(--audit-depth-0), var(--audit-depth-1), var(--audit-depth-2),
+    var(--audit-depth-3), var(--audit-depth-4));
   /* Settled is no heat at all: a neutral fill, which the map marks with a check. */
   --audit-settled: color-mix(in oklab, var(--wzl-fg) 14%, var(--wzl-surface));
   --audit-live: var(--wzl-swatch-rose);
@@ -51,6 +55,7 @@
 }
 
 .panel { color: var(--audit-panel); }
+.band { color: var(--audit-band); }
 .ink { color: var(--audit-ink); }
 .inkInverse { color: var(--audit-ink-inverse); }
 .uncharted { color: var(--audit-uncharted); }

@@ -7,13 +7,13 @@ import s from './palette.module.css';
 
 /** Where the theme gives nothing the renderer can parse (jsdom resolves no `var()`), grays that still tell apart. */
 const FALLBACK: AuditPalette = {
-  panel: '#f6f6f6', ink: '#1a1a1a', inkInverse: '#ffffff', uncharted: '#d4d4d4', hatch: '#a8a8a8',
+  panel: '#f6f6f6', band: '#ebebeb', ink: '#1a1a1a', inkInverse: '#ffffff', uncharted: '#d4d4d4', hatch: '#a8a8a8',
   depth: ['#24124a', '#6b1a63', '#d23b3a', '#f08a2c', '#f4e7a1'], settled: '#dcdcdc', live: '#e0457b',
   font: { ui: 'Oswald', numeric: 'Oswald Tabular' },
   phase: { review: '#5a4fcf', reviewed: '#3d84d6', match: '#3fae6a', fix: '#e2b93b', patch: '#ef8a3a', conflict: '#d23b2a', done: '#777777' },
 };
 
-const KEYS = ['panel', 'ink', 'inkInverse', 'uncharted', 'hatch', 'depth0', 'depth1', 'depth2', 'depth3', 'depth4', 'settled', 'live'] as const;
+const KEYS = ['panel', 'band', 'ink', 'inkInverse', 'uncharted', 'hatch', 'depth0', 'depth1', 'depth2', 'depth3', 'depth4', 'settled', 'live'] as const;
 type Key = typeof KEYS[number];
 
 /** The first family a `font-family` list names, unquoted: the one face a canvas is given, which serves no list. */
@@ -31,6 +31,7 @@ function read(host: HTMLElement): AuditPalette {
   const phase = Object.fromEntries(AUDIT_PHASES.map((p) => [p, probe(`[data-phase="${p}"]`, FALLBACK.phase[p])])) as Record<AuditPhase, string>;
   return {
     panel: at('panel', FALLBACK.panel),
+    band: at('band', FALLBACK.band),
     ink: at('ink', FALLBACK.ink),
     inkInverse: at('inkInverse', FALLBACK.inkInverse),
     uncharted: at('uncharted', FALLBACK.uncharted),

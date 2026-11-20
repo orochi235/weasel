@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { depthFor, nextUpOf, runHolding, statsFor, toneOf, wrapAtDots } from './areaData';
+import { heatScaleOf, labelIn, nextUpOf, runHolding, statsFor, toneOf, wrapAtDots } from './areaData';
 import { headlineOf, parseJob, recentJobsOf, sharedLaneOf, spendOf, stepText } from './runData';
 import { ticksFor } from './RoundsChart';
-import { inset, layoutMap, squarify } from './mapLayout';
+import { layoutMap, squarify } from './mapLayout';
+import { areaTree, leavesOf, type AreaTreeNode } from './areaTree';
 import fixture from './fixture.map.json';
 import type { SkulkMap } from './skulkMap.types';
 
@@ -62,8 +63,18 @@ describe('jobs', () => {
 
 describe('areas', () => {
   it('shades by estimated defects left, settled and never-audited apart', () => {
-    expect([0, 0.74, 0.75, 1.99, 2, 3.5, 5.99, 6, 40].map(depthFor)).toEqual([0, 0, 1, 1, 2, 3, 3, 4, 4]);
-    expect(map.areas.map(toneOf)).toEqual([1, 'unaudited', 4, 'settled', 'unaudited', 1]);
+    expect(map.areas.map(toneOf)).toEqual([{ left: 1.7 }, 'unaudited', { left: 10 }, 'settled', 'unaudited', { left: 1 }]);
+  });
+
+  it('puts defects left on a heat scale whose top is the 98th percentile, at least 8', () => {
+    const heat = heatScaleOf(map.areas);
+    expect(heat.top).toBeCloseTo(9.668);
+    expect(heat.at(0)).toBe(0);
+    expect(heat.at(heat.top)).toBe(1);
+    expect(heat.at(40)).toBe(1);
+    expect(heat.at(1.7)).toBeCloseTo(Math.log1p(1.7) / Math.log1p(9.668));
+    expect(heat.ticks.map((t) => [t.label, t.value])).toEqual([['0', 0], ['median', 1.7], ['p90', expect.closeTo(8.34, 2)], ['top', expect.closeTo(9.668, 2)]]);
+    expect(heatScaleOf([]).top).toBe(8);
   });
 
   it('sums the headline stats', () => {
@@ -102,18 +113,64 @@ describe('treemap', () => {
     expect(squarify([{ item: 'a', value: 0 }], box)).toEqual([{ item: 'a', x: 0, y: 0, width: 0, height: 0 }]);
   });
 
-  it('frames each package and puts every area inside its frame', () => {
+  it('frames the areas that share a path and puts each one inside its frame', () => {
     const { frames, cells } = layoutMap(map.areas, 800, 400);
-    expect(frames.map((f) => [f.name, f.files])).toEqual([['core', 76], ['ui', 48], ['geom', 26]]);
-    for (const c of cells) {
-      const group = map.areas.find((a) => a.id === c.id)!.group;
-      const f = inset(frames.find((fr) => fr.name === group)!, 0);
+    expect(frames.map((f) => [f.name, f.files, f.parent])).toEqual([['core', 76, null], ['ui', 48, null]]);
+    expect(cells.find((c) => c.id === 'geom')?.parent).toBeNull();
+    for (const c of cells.filter((cell) => cell.parent !== null)) {
+      const f = frames.find((fr) => fr.name === c.parent)!;
       expect(c.x).toBeGreaterThanOrEqual(f.x);
       expect(c.y).toBeGreaterThanOrEqual(f.y);
       expect(c.x + c.width).toBeLessThanOrEqual(f.x + f.width);
       expect(c.y + c.height).toBeLessThanOrEqual(f.y + f.height);
     }
     expect(cells).toHaveLength(map.areas.length);
+  });
+
+  it('nests a frame inside its parent, a step deeper', () => {
+    const areas = ['core.domains', 'core.domains.paths', 'core.domains.snap', 'core.ops', 'geom'].map((id) => ({ id, files: 10 }));
+    const { frames, cells } = layoutMap(areas, 800, 400);
+    expect(frames.map((f) => [f.name, f.parent, f.depth])).toEqual([['core', null, 0], ['core.domains', 'core', 1]]);
+    expect(cells.map((c) => [c.id, c.parent]).sort()).toEqual([
+      ['core.domains', 'core.domains'], ['core.domains.paths', 'core.domains'], ['core.domains.snap', 'core.domains'], ['core.ops', 'core'], ['geom', null],
+    ]);
+  });
+});
+
+describe('areaTree', () => {
+  const tree = (ids: string[]) => areaTree(ids.map((id) => ({ id, files: 1 })));
+  const shape = (nodes: readonly AreaTreeNode[]): unknown[] =>
+    nodes.map((n) => (n.kind === 'area' ? n.id : { [n.name]: shape(n.children) }));
+
+  it('makes a frame of every shared prefix, an area that is also a prefix one cell beside its siblings', () => {
+    expect(shape(tree(['apps.site', 'apps.draw.src', 'apps.draw.src.dev', 'devtools', 'devtools.page', 'devtools.views']))).toEqual([
+      { apps: ['apps.site', { 'apps.draw.src': ['apps.draw.src', 'apps.draw.src.dev'] }] },
+      { devtools: ['devtools', 'devtools.page', 'devtools.views'] },
+    ]);
+  });
+
+  it('collapses a frame with one child into that child, ending at the area itself', () => {
+    expect(shape(tree(['apps.draw.src.dev.audits', 'core.interactions.actions.part1', 'core.interactions.actions.part2']))).toEqual([
+      'apps.draw.src.dev.audits',
+      { 'core.interactions.actions': ['core.interactions.actions.part1', 'core.interactions.actions.part2'] },
+    ]);
+  });
+
+  it('gives every area exactly one leaf, and no frame holds only one', () => {
+    const ids = [...map.areas.map((a) => a.id), 'core.domains', 'core.domains.paths', 'devtools', 'devtools.page', 'cursor'];
+    const nodes = tree(ids);
+    expect(leavesOf(nodes).sort()).toEqual([...ids].sort());
+    const frames = (ns: readonly AreaTreeNode[]): AreaTreeNode[] => ns.flatMap((n) => (n.kind === 'frame' ? [n, ...frames(n.children)] : []));
+    for (const f of frames(nodes)) expect(f.kind === 'frame' && f.children.length).toBeGreaterThan(1);
+  });
+});
+
+describe('labelIn', () => {
+  it("shows only what the frame's path does not", () => {
+    expect(labelIn('apps.draw.src.dev', 'apps.draw.src')).toBe('dev');
+    expect(labelIn('apps.draw.src', 'apps')).toBe('draw.src');
+    expect(labelIn('devtools', 'devtools')).toBe('devtools');
+    expect(labelIn('apps.draw.src.dev.audits', null)).toBe('apps.draw.src.dev.audits');
   });
 });
 

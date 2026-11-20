@@ -1,8 +1,9 @@
 /** What the audit page says about areas: their tone on the map, the headline stats, and the queue. */
+import { lerp } from '@weasel-js/geom';
 import type { AreaStatus, AuditArea, AuditPass, AuditRun } from './skulkMap.types';
 
 /** How an area is shaded: never read, settled, or by how many defects are estimated to be left in it. */
-export type AreaTone = 'unaudited' | 'settled' | 0 | 1 | 2 | 3 | 4;
+export type AreaTone = 'unaudited' | 'settled' | { readonly left: number };
 
 export const STATUS_LABEL: Readonly<Record<AreaStatus, string>> = {
   unaudited: 'never audited',
@@ -21,20 +22,47 @@ export const STAGE_LABEL: Readonly<Record<string, string>> = {
   conflict: 'conflict',
 };
 
-/** The ramp's upper bounds on estimated defects left: under 0.75 is the lightest step, 6 or more the darkest. */
-const DEPTH_STEPS = [0.75, 2, 3.5, 6] as const;
-
 export const lastPassOf = (area: AuditArea): AuditPass | null => area.passes.at(-1) ?? null;
-
-export function depthFor(left: number): 0 | 1 | 2 | 3 | 4 {
-  const i = DEPTH_STEPS.findIndex((bound) => left < bound);
-  return (i === -1 ? 4 : i) as 0 | 1 | 2 | 3 | 4;
-}
 
 export function toneOf(area: AuditArea): AreaTone {
   if (area.status === 'settled') return 'settled';
   const pass = lastPassOf(area);
-  return pass ? depthFor(pass.left) : 'unaudited';
+  return pass ? { left: pass.left } : 'unaudited';
+}
+
+/** The least the heat scale's top may be, so a quiet map does not paint its few defects hot. */
+const HEAT_FLOOR = 8;
+
+/** `sorted`'s value at fraction `p` of the way through it, read between neighbors. */
+function quantile(sorted: readonly number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  const at = p * (sorted.length - 1);
+  const lo = Math.floor(at);
+  return lerp(sorted[lo]!, sorted[Math.min(lo + 1, sorted.length - 1)]!, at - lo);
+}
+
+/** Where estimated defects left sit on the heat ramp, and the values the legend marks. */
+export interface HeatScale {
+  /** The value that reaches the hot end: the 98th percentile of the audited areas, at least `HEAT_FLOOR`. */
+  readonly top: number;
+  /** `left`'s place along the ramp, 0 to 1, through log1p so the middle has room and only outliers reach the top. */
+  readonly at: (left: number) => number;
+  /** 0, the median, the 90th percentile and the top. */
+  readonly ticks: readonly { readonly label: string; readonly value: number }[];
+}
+
+/** The heat scale for `areas`, set by what the areas still being audited have left. */
+export function heatScaleOf(areas: readonly AuditArea[]): HeatScale {
+  const left = areas.flatMap((a) => (a.status === 'settled' ? [] : [lastPassOf(a)?.left ?? NaN])).filter(Number.isFinite).sort((x, y) => x - y);
+  const top = Math.max(HEAT_FLOOR, quantile(left, 0.98));
+  const at = (v: number) => Math.min(1, Math.max(0, Math.log1p(Math.max(0, v)) / Math.log1p(top)));
+  const ticks = [
+    { label: '0', value: 0 },
+    { label: 'median', value: quantile(left, 0.5) },
+    { label: 'p90', value: quantile(left, 0.9) },
+    { label: 'top', value: top },
+  ];
+  return { top, at, ticks };
 }
 
 export const formatCount = (n: number): string => n.toLocaleString('en-US');
@@ -73,10 +101,12 @@ export function nextUpOf(areas: readonly AuditArea[], count = 8): AuditArea[] {
 export const runHolding = (runs: readonly AuditRun[], id: string): AuditRun | undefined =>
   runs.find((r) => r.running && r.areas.includes(id));
 
-/** The label inside an area's cell: its id without the package it sits in. */
-export function cellLabelOf(id: string): string {
-  const parts = id.split('.');
-  return parts.length > 1 ? parts.slice(1).join('.') : id;
+/** What a name shows inside the frame `parent`: the rest of it past the frame's path, or its last segment where it is
+ *  the frame's own name; all of it at the top. */
+export function labelIn(name: string, parent: string | null): string {
+  if (parent === null) return name;
+  if (name.startsWith(`${parent}.`)) return name.slice(parent.length + 1);
+  return name.split('.').at(-1) ?? name;
 }
 
 /** `text` cut to `max` characters, an ellipsis standing in for the rest. */

@@ -69,23 +69,20 @@
   margin-top: var(--wzl-space-2);
 }
 
-/* An area's name, worn as a chip in its phase's color, the height of its strip. */
+/* An area's name: a plain label, the strip beside it carrying the phase. */
 .name {
   display: block;
   width: 100%;
-  padding: 0 var(--wzl-space-3);
+  padding: 0;
   border: 0;
-  border-radius: var(--wzl-radius-sm);
-  background: var(--audit-phase, transparent);
-  min-width: calc(var(--audit-lead-ch, 0) * 1ch + 2 * var(--wzl-space-3));
+  background: none;
+  min-width: calc(var(--audit-lead-ch, 0) * 1ch);
   font: inherit;
   font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-md);
-  font-weight: var(--wzl-font-weight-bold);
   line-height: 24px;
   text-align: start;
-  /* Black or white, whichever reads on the phase: the ramp runs from near black to near white. */
-  color: oklch(from var(--audit-phase, var(--audit-panel)) clamp(0, (0.564 - l) * 1000, 1) 0 0);
+  color: var(--audit-ink);
   cursor: pointer;
 }
 
