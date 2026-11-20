@@ -54,7 +54,7 @@ export function startIndex(options: StartIndexOptions): () => void {
   container.append(wrapper);
   const root = createKitRoot(wrapper, setup.icons);
   const globalsTarget = createGlobalsTarget(document.documentElement, ':root');
-  const services = startFrameServices(document);
+  const services = startFrameServices(document, send);
   let globals: StoryGlobals | null = null;
   let announced = false;
 

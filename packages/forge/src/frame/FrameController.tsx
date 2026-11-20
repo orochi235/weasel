@@ -7,7 +7,6 @@ import type { Decorator, LoadedStory } from '../story/types';
 import { auditElement } from './a11y';
 import { createOverrides } from './cssVars';
 import { watchCssVars } from './cssVarsWatch';
-import { followDocumentScroll } from './documentScroll';
 import { fault } from './fault';
 import { createGlobalsTarget, type GlobalsTarget } from './globalsTarget';
 import { frameDecorators } from './frameDecorators';
@@ -63,7 +62,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
 
   const overrides = createOverrides(document, setup.cssVarsScope);
   const globalsTarget = createGlobalsTarget(document.documentElement, ':root');
-  const services = startFrameServices(document);
+  const services = startFrameServices(document, send);
   const vars = watchCssVars(document, overrides, (report) => send({ type: 'vars', vars: report }), {
     under: document.documentElement,
   });
@@ -75,8 +74,6 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     applyGlobals: (globals: StoryGlobals) => setup.applyGlobals?.(globals, globalsTarget),
     onCommit: () => vars.scan(),
   });
-
-  const scroll = followDocumentScroll(document, send);
 
   const audit = async (id: string) => send({ type: 'a11y', id, ...(await auditElement(wrapper)) });
 
@@ -103,15 +100,11 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
       case 'a11y.run':
         void audit(msg.id);
         break;
-      case 'scroll':
-        scroll.apply(msg);
-        break;
     }
   });
 
   return () => {
     off();
-    scroll.dispose();
     vars.dispose();
     overrides.dispose();
     globalsTarget.dispose();

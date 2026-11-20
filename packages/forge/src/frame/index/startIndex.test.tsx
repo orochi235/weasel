@@ -201,4 +201,14 @@ describe('startIndex', () => {
     await flush();
     expect(document.querySelectorAll('[data-fg-a11y-highlight]')).toHaveLength(0);
   });
+
+  it('reports where the document stands after ready, and scrolls it where the shell says', async () => {
+    const { shell, received } = start();
+    await flush();
+    expect(received.slice(0, 2).map((m) => m.type)).toEqual(['ready', 'scroll']);
+    shell.send({ type: 'scroll', left: 0, top: 40 });
+    await flush();
+    expect((document.scrollingElement ?? document.documentElement).scrollTop).toBe(40);
+    (document.scrollingElement ?? document.documentElement).scrollTop = 0;
+  });
 });
