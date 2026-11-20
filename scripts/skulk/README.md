@@ -131,6 +131,13 @@ line, each echoing its `id`:
 
     onto call skulk '{"id":1,"status":true}'
 
+## The audit chart
+
+`node scripts/skulk/map.mjs --out map.json` writes every area's passes, status (never audited, due, settled,
+in tonight's round), queue position and tonight's stage, read from the round records and the service's
+`current.json` / `last.json`. The page at https://claude.ai/artifact/CyXRYZbDw6b8Knm8zT7RQK draws it as a
+treemap; it reads a published `map.json` beside it, so keeping it current is republishing that file.
+
 ## Where things go
 
 | What | Where | Bound |
