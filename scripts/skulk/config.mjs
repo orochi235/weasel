@@ -39,9 +39,15 @@ export const MAX_AREA_FILES = 50;
 export const MIN_AREA_FILES = 10;
 
 /** Unset means the account's default model. */
-export const REVIEW_MODEL = undefined;
-export const FIX_MODEL = undefined;
+/**
+ * Jobs start without the user's settings (`--setting-sources project,local`), so the model and effort those settings
+ * gave them are named here: opus at medium, as the personal config's per-model setting had it (2026-11-20).
+ */
+export const REVIEW_MODEL = 'opus';
+export const FIX_MODEL = 'opus';
 export const MATCH_MODEL = 'haiku';
+export const REVIEW_EFFORT = 'medium';
+export const FIX_EFFORT = 'medium';
 export const JOB_TIMEOUT_MIN = 45;
 /** A hard stop per `claude -p` job, in list-price dollars (`--max-budget-usd`). */
 export const JOB_BUDGET_USD = { review: 8, match: 1, fix: 15 };

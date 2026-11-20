@@ -23,6 +23,8 @@ export interface TreemapProps {
   readonly palette: AuditPalette;
   /** Each area a live run holds, and its phase. */
   readonly phases: ReadonlyMap<string, AuditPhase>;
+  /** What a live run already estimates its areas hold. */
+  readonly estimates?: ReadonlyMap<string, number>;
   readonly onHover: (id: string | null) => void;
   /** The area to glow: one something else on the page names and is hovered. */
   readonly lit?: string | null;
@@ -40,7 +42,7 @@ const readHalves = (v: string): number | undefined => {
   return Number.isInteger(n) && n >= 0 && n <= MAX_HALVES ? n : undefined;
 };
 
-export function Treemap({ scene, selection, areas, palette, phases, onHover, lit = null, areasPerRound = 16 }: TreemapProps) {
+export function Treemap({ scene, selection, areas, palette, phases, estimates, onHover, lit = null, areasPerRound = 16 }: TreemapProps) {
   // How many half-rounds of the queue's head to number on the map, each in its area's corner.
   const [halves, setHalves, keepHalves] = useViewerPref('upcomingHalves', 6, readHalves);
   const places = halves * (areasPerRound / 2);
@@ -60,8 +62,8 @@ export function Treemap({ scene, selection, areas, palette, phases, onHover, lit
   const heat = useMemo(() => heatScaleOf(areas), [areas]);
   const layout = useMemo(() => layoutMap(areas, size.width, size.height), [areas, size]);
   useLayoutEffect(() => {
-    syncAuditScene(scene, auditNodeSpecs(areas, layout, palette, phases, lit, places));
-  }, [scene, areas, layout, palette, phases, lit, places]);
+    syncAuditScene(scene, auditNodeSpecs(areas, layout, palette, phases, lit, places, estimates));
+  }, [scene, areas, layout, palette, phases, lit, places, estimates]);
 
   // The map's text is set in the theme's faces, which the canvas draws from the document's fonts once each loads.
   useEffect(() => {

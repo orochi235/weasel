@@ -9,6 +9,18 @@
   past the current commit: your commits on top of it are what the controller takes back, as patches.
 - Read root `CLAUDE.md` first, and the `docs/traps/*.md` file its table names for what you touch.
 - Leave `.skulk/` alone and out of every commit.
+- Every call rereads everything before it, so read in few, targeted calls: the findings and the files they cite
+  together, a function rather than a whole file, and a check's verdict rather than its log (`… | tail -5`, or
+  `grep -E "Tests |×|error"`).
+
+## Writing
+
+What you write ships under the repo owner's name.
+
+- US English: color, behavior, gray, canceled; never -ise or -our. The Oxford comma in any list of three or more.
+- Comment sparingly: only what the code cannot say and a reader would be harmed not knowing, in one or two
+  lines. Never narrate what the code does.
+- A changeset or a message says what a consumer sees, plainly, with no session shorthand.
 
 ## For each distinct finding
 
