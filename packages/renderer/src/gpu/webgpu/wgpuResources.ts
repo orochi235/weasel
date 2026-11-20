@@ -98,8 +98,13 @@ export function resizeBuffer(host: ResourceHost, buffer: WgpuBuffer, init: numbe
 export function writeBuffer(
   host: ResourceHost, buffer: WgpuBuffer, dstByteOffset: number, data: ArrayBufferView, srcOffset?: number, length?: number,
 ): void {
+  const bytes = bytesOf(data, srcOffset, length);
+  const end = dstByteOffset + bytes.byteLength;
+  if (dstByteOffset % 4 !== 0 || (bytes.byteLength % 4 !== 0 && end < buffer.size)) {
+    throw new Error(`weasel: a WebGPU buffer write starts and ends on a multiple of 4 bytes, or at the buffer's end; this one covers ${dstByteOffset}–${end}`);
+  }
   host.beforeWrite(buffer);
-  writeBytes(host, buffer.gpu, dstByteOffset, bytesOf(data, srcOffset, length));
+  writeBytes(host, buffer.gpu, dstByteOffset, bytes);
 }
 
 const FORMATS: readonly GPUVertexFormat[] = ['float32', 'float32x2', 'float32x3', 'float32x4'];

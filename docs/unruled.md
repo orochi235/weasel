@@ -3059,3 +3059,9 @@ Calls the lanes made without a ruling:
   `measureIds`, and so picking, editing, Delete and Clear all, reads only `ms.layer`. Either `measureIds` reads the
   whole scene, which puts a walk of every node on each pointer move's hit test (`measureEndSource.test.ts` holds
   that it must not), or the painter and the snap source take only `ms.layer`'s nodes and the rest go undrawn.
+## Audit round fifty-four (2026-11-20): renderer.gpu
+
+- 2026-11-20 (the fixer's call): WebGPU's `writeBuffer` throws on a write that starts off a multiple of 4 bytes, or
+  ends off one before the buffer's end; a queue write takes only whole words, so it used to zero up to 3 bytes past
+  the write and dropped a write at an odd offset. WebGL still writes either. Keeping a CPU copy of every buffer, to
+  fill the padding from what it holds, was the alternative.

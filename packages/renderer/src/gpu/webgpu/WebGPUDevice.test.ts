@@ -104,6 +104,26 @@ describe('a WGSL program whose own struct shares a member name with the kit bloc
   });
 });
 
+describe('a WebGPU buffer written off a 4-byte boundary', () => {
+  function device() {
+    const fake = fakeGpuDevice();
+    return new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+  }
+
+  it('refuses a write that would zero the bytes after it, or that starts between words', () => {
+    const gpu = device();
+    const indices = gpu.createBuffer('index', new Uint16Array(8), 'dynamic');
+    expect(() => gpu.writeBuffer(indices, 0, new Uint16Array([1, 2, 3]))).toThrow(/multiple of 4/);
+    expect(() => gpu.writeBuffer(indices, 2, new Uint16Array([1, 2]))).toThrow(/multiple of 4/);
+  });
+
+  it('takes one ending on the buffer\'s end, whose padding falls past it', () => {
+    const gpu = device();
+    const indices = gpu.createBuffer('index', new Uint16Array(3), 'dynamic');
+    expect(() => gpu.writeBuffer(indices, 0, new Uint16Array([1, 2, 3]))).not.toThrow();
+  });
+});
+
 describe('WebGPU renderers built and freed on one shared device', () => {
   /** `fake`, with each reaction registered on its `device.lost` counted. A reaction on a promise that
    *  never settles holds what it closes over for as long as the device lives. */

@@ -250,7 +250,8 @@ export interface GpuDevice {
   /** Respecify the whole buffer: `init` bytes of nothing, or this data. */
   resizeBuffer(buffer: GpuBuffer, init: number | ArrayBufferView, usage: GpuBufferUsage): void;
   /** Write `length` elements of `data` from `srcOffset` (all of it by
-   *  default) at `dstByteOffset`. */
+   *  default) at `dstByteOffset`. WebGPU throws on a write that does not start
+   *  on a multiple of 4 bytes, or that ends off one before the buffer's end. */
   writeBuffer(buffer: GpuBuffer, dstByteOffset: number, data: ArrayBufferView, srcOffset?: number, length?: number): void;
   deleteBuffer(buffer: GpuBuffer): void;
   createGeometry(desc: GpuGeometryDesc): GpuGeometry;
