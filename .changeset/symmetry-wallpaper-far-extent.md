@@ -2,6 +2,6 @@
 '@weasel-js/symmetry': patch
 ---
 
-A wallpaper draws a copy at every lattice point of an extent that is long or far from its center, up to the copy cap, rather than only those within 512 steps of the center.
+A wallpaper draws its lattice over an extent that is long or far from its center. Every lattice point inside gets a copy, up to the copy cap.
 
 <!-- entry: fix visual -->

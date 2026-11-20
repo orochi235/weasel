@@ -2,6 +2,6 @@
 '@weasel-js/symmetry': patch
 ---
 
-A baked symmetry group keeps its own data, less its symmetry spec, and its stated fields, so a hidden or clipped group stays hidden or clipped.
+A baked symmetry group keeps its own data and stated fields. Only its symmetry spec is dropped, so a hidden or clipped group stays so.
 
 <!-- entry: fix -->
