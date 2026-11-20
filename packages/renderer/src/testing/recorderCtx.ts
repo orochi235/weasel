@@ -31,9 +31,15 @@ export function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeo
     gradFill: r._gradFill(),
     patternFill: r._patternFill(),
   };
-  rendererParts(r).batchVariants.get(true, false);
-  // The build a run holding small glyphs draws with, which takes the same vertices.
-  const areaBuild = glProgramHandle(rendererParts(r).batchVariants.get(false, false, true));
+  // Every build `flushBatch` picks among, each taking the same vertices.
+  const batchBuilds = new Set<unknown>([glProgramHandle(programs.batchFill)]);
+  for (const matrices of [false, true]) {
+    for (const hulls of [false, true]) {
+      for (const area of [false, true]) {
+        if (matrices || hulls || area) batchBuilds.add(glProgramHandle(programs.batchVariants.get(matrices, hulls, area)));
+      }
+    }
+  }
   recorder.reset();
   const gpu = webglDevice(recorder.gl);
   // A frame's start, as `render` begins one: what the device believes it holds.
@@ -56,17 +62,17 @@ export function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeo
     clipDepth: 0,
     clipStack: [],
   };
-  AREA_BUILDS.set(ctx, areaBuild);
+  BATCH_BUILDS.set(ctx, batchBuilds);
   return { ctx, calls: recorder.calls, gl: recorder.gl };
 }
 
-/** Each recorder context's batch build with the glyph taps. */
-const AREA_BUILDS = new WeakMap<DrawContext, unknown>();
+/** Each recorder context's batch builds. */
+const BATCH_BUILDS = new WeakMap<DrawContext, ReadonlySet<unknown>>();
 
-/** Whether `handle` is a batch build a plain run draws with: the default, or
- *  the one a run holding small glyphs takes. */
+/** Whether `handle` is a build a batch run draws with: the default, or the
+ *  variant a run with several matrices, hulls or small glyphs takes. */
 export function isBatchBuild(ctx: DrawContext, handle: unknown): boolean {
-  return handle === glProgramHandle(ctx.batchFill) || handle === AREA_BUILDS.get(ctx);
+  return BATCH_BUILDS.get(ctx)?.has(handle) === true;
 }
 
 /** The floats a batch upload sent: `bufferSubData` names a window into a
