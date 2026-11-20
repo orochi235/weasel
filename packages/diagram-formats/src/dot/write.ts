@@ -21,21 +21,33 @@ const attrList = (attrs: readonly (string | null)[]) => {
   const set = attrs.filter((a): a is string => a !== null);
   return set.length > 0 ? ` [${set.join(', ')}]` : '';
 };
+const penwidth = (width: number | undefined) => (width !== undefined && Number.isFinite(width) ? `penwidth=${dotNumber(width)}` : null);
+const dashedDefault = (dash: readonly number[] | undefined) => dash !== undefined && dash.length > 0;
+/** An edge's `style` where its dash is not the default's: its dash word, or `solid` under a dashed default. */
+function edgeDash(dash: readonly number[] | undefined, base: readonly number[] | undefined): string | null {
+  const dashed = dashedDefault(dash);
+  if (!dashed) return dashedDefault(base) ? 'style=solid' : null;
+  return dashedDefault(base) && dashStyle(dash!) === dashStyle(base!) ? null : `style=${dashStyle(dash!)}`;
+}
 const color = (key: string, value: string | undefined) => (value === undefined ? null : `${key}="${hexColor(value, 'hex')}"`);
 
 function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
   const { shape, rounded, missing, marked } = shapeOf(node.outline);
   if (missing) out.warnings.add('DOT has no shape for some outlines; they were written as boxes.');
   const own = changed(nodeStyleIn(out, node), nodeStyleIn(out));
-  const styles = [rounded ? 'rounded' : null, 'filled', own.dash !== undefined ? dashStyle(own.dash) : null].filter((s) => s !== null);
+  const dash = nodeStyleIn(out, node).dash;
+  const dashed = dash !== undefined && dash.length > 0;
+  const styles = [rounded ? 'rounded' : null, 'filled', dashed ? dashStyle(dash) : null].filter((s) => s !== null);
+  // Written when it says more than `filled`, or when the default it would otherwise take is dashed and this one is not.
+  const ownStyle = styles.length > 1 || (!dashed && dashedDefault(nodeStyleIn(out).dash));
   const page = out.page.height;
   return attrList([
     `label=${quoteLabel(nodeLines(node, out.warnings, 'DOT'))}`,
     shape !== 'box' ? `shape=${shape}` : null,
-    styles.length > 1 ? `style="${styles.join(',')}"` : null,
+    ownStyle ? `style="${styles.join(',')}"` : null,
     marked ? `${OUTLINE_ATTR}=${dotId(node.outline as string)}` : null,
     color('fillcolor', own.fill), color('color', own.stroke), color('fontcolor', own.text),
-    own.strokeWidth !== undefined && Number.isFinite(own.strokeWidth) ? `penwidth=${dotNumber(own.strokeWidth)}` : null,
+    penwidth(own.strokeWidth),
     placed ? `pos="${dotNumber(node.at!.x + node.width! / 2)},${dotNumber(page - node.at!.y - node.height! / 2)}"` : null,
     placed ? `width=${dotNumber(node.width! / POINTS_PER_INCH)}, height=${dotNumber(node.height! / POINTS_PER_INCH)}` : null,
   ]);
@@ -111,8 +123,8 @@ function edgeLine(out: GraphOut, edge: DataEdge): string | null {
     edge.endLabels?.from ? `taillabel=${quoteLabel([edge.endLabels.from])}` : null,
     edge.endLabels?.to ? `headlabel=${quoteLabel([edge.endLabels.to])}` : null,
     color('color', own.stroke), color('fontcolor', own.label),
-    own.width !== undefined && Number.isFinite(own.width) ? `penwidth=${dotNumber(own.width)}` : null,
-    own.dash !== undefined ? `style=${dashStyle(own.dash)}` : null,
+    penwidth(own.width),
+    edgeDash(edgeStyleIn(out, edge).dash, edgeStyleIn(out).dash),
     ...markerAttrs(out, edge),
   ])};`;
 }
@@ -131,8 +143,14 @@ export function writeDot(doc: DiagramDocument, opts?: WriteOptions): ExportResul
     `digraph ${page.name !== undefined ? dotId(page.name) : ''}${page.name !== undefined ? ' ' : ''}{`,
     ...(rankdir !== null ? [`  rankdir=${rankdir};`] : []),
     ...(placed ? [`  bb="0,0,${dotNumber(page.width)},${dotNumber(page.height)}";`] : []),
-    `  node${attrList(['shape=box', 'style=filled', color('fillcolor', node.fill), color('color', node.stroke), color('fontcolor', node.text)])};`,
-    `  edge${attrList([color('color', edge.stroke), color('fontcolor', edge.label)])};`,
+    `  node${attrList([
+      'shape=box', node.dash !== undefined && node.dash.length > 0 ? `style="filled,${dashStyle(node.dash)}"` : 'style=filled',
+      color('fillcolor', node.fill), color('color', node.stroke), color('fontcolor', node.text), penwidth(node.strokeWidth),
+    ])};`,
+    `  edge${attrList([
+      color('color', edge.stroke), color('fontcolor', edge.label), penwidth(edge.width),
+      edge.dash !== undefined && edge.dash.length > 0 ? `style=${dashStyle(edge.dash)}` : null,
+    ])};`,
   ];
   for (const n of out.nodes) lines.push(`  ${dotId(n.id)}${nodeAttrs(out, n, placed)};`);
   for (const c of out.clusters) writeCluster(out, c, placed, '  ', lines);

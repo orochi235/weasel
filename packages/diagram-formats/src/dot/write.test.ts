@@ -242,4 +242,14 @@ describe('writing DOT', () => {
     const read = asGraph(readDot('digraph { subgraph cluster_x { style=dashed; a } }').document.pages[0]!);
     expect(read.data.containers![0]!.colors?.dash).toEqual([6, 4]);
   });
+
+  it('writes the theme\'s stroke widths as the node and edge defaults, so Graphviz and the reader draw them', () => {
+    const doc: DiagramDocument = { ...pageOf({ nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b' }] }), theme: 'night' };
+    const { text } = writeDot(doc);
+    expect(text).toMatch(/node \[[^\]]*penwidth=1\.5/);
+    expect(text).toMatch(/edge \[[^\]]*penwidth=2/);
+    const page = asGraph(readDot(text).document.pages[0]!);
+    expect(page.data.nodes.map((n) => n.colors?.strokeWidth)).toEqual([1.5, 1.5]);
+    expect(page.data.edges[0]!.colors?.width).toBe(2);
+  });
 });
