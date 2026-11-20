@@ -75,7 +75,8 @@ export function withAnchorPoints(
 
 /**
  * For each anchor of `after`, the anchor of `before` it is: the one whose
- * point `origins` says it was copied from. An anchor the edit made has none.
+ * point `origins` says it was copied from. An anchor the edit made has none,
+ * even one that copies its only kept neighbor.
  * `origins` is what `editAnchorSetTracked` answered for the edit.
  */
 export function anchorsBefore(
@@ -87,7 +88,7 @@ export function anchorsBefore(
   anchorPointIndices(before).forEach((point, anchor) => anchorOfPoint.set(point, anchor));
   return anchorPointIndices(after).map((point) => {
     const o = origins[point];
-    if (!o || (o.t !== 0 && o.a !== o.b)) return undefined;
+    if (!o || o.made || (o.t !== 0 && o.a !== o.b)) return undefined;
     return anchorOfPoint.get(o.a);
   });
 }
@@ -119,14 +120,15 @@ export function remapConstraints(
 
 /**
  * The segment of `path` joining anchors `a` and `b`, as the pair in the order
- * the path runs it, or null when no segment joins them.
+ * the path runs it, or null when no segment joins them. Where two segments
+ * join them — a closed subpath of two anchors — the one from `a` to `b`.
  */
 export function segmentBetween(path: PolygonPath, a: number, b: number): AnchorPair | null {
   const { anchors, closed } = pathToAnchors(path);
   let base = 0;
   for (let s = 0; s < anchors.length; s++) {
     const n = anchors[s].length;
-    const next = (i: number) => (i + 1 < n ? i + 1 : closed[s] && n > 2 ? 0 : -1);
+    const next = (i: number) => (i + 1 < n ? i + 1 : closed[s] && n > 1 ? 0 : -1);
     for (const [p, q] of [[a, b], [b, a]] as const) {
       const i = p - base;
       if (i >= 0 && i < n && next(i) >= 0 && base + next(i) === q) return [p, q];
