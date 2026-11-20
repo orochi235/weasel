@@ -2776,3 +2776,9 @@ Calls the lanes made without a ruling:
 
 - 2026-11-19 (the fixer's call): `AUTO_POSE_DESCRIPTOR.lerp` throws for a Path pose and a rect pose, as
   `pathPoseDescriptor.lerp` already does for a rect Path and a polygon. Snapping to the nearer end was the alternative.
+
+## Audit round forty-one (2026-11-19): pages
+
+- 2026-11-19 (the fixer's call): `createPageRun` throws on a scene that already has a page run. A second run's pages
+  drew and clipped, but `pageRunOf` finds only the first, so every page reader and edit missed them. Handing the call
+  to `setPages` on the existing run was the alternative.

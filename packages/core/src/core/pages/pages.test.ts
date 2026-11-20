@@ -35,6 +35,14 @@ describe('layoutPages', () => {
     expect(layoutPages([])).toEqual([]);
   });
 
+  it('refuses options it cannot read', () => {
+    expect(() => layoutPages([A], { align: 'middle' as never })).toThrow(/`align`/);
+    expect(() => layoutPages([A], { align: 'toString' as never })).toThrow(/`align`/);
+    expect(() => layoutPages([A], { gap: '40' as never })).toThrow(/`gap` that is not a finite number/);
+    expect(() => layoutPages([A], { direction: 'diagonal' as never })).toThrow(/`direction`/);
+    expect(() => layoutPages([A], { origin: { x: Number.NaN, y: 0 } })).toThrow(/`origin`/);
+  });
+
   it('refuses two pages with one id', () => {
     expect(() => layoutPages([A, { ...B, id: 'a' }])).toThrow(/"a"/);
   });
@@ -55,6 +63,17 @@ describe('finding a page', () => {
     expect(pageOfBounds(placed, { x: 80, y: 0, width: 50, height: 50 })?.id).toBe('a');
     expect(pageOfBounds(placed, { x: 0, y: 300, width: 10, height: 10 })).toBeNull();
     expect(pageOfBounds(placed, { x: 50, y: 50, width: 0, height: 0 })?.id).toBe('a');
+  });
+
+  it('answers the page a zero-thickness box runs along most', () => {
+    const pair = layoutPages([{ id: 'a', width: 100, height: 50 }, { id: 'b', width: 100, height: 50 }], { gap: 10 });
+    expect(pageOfBounds(pair, { x: 90, y: 10, width: 110, height: 0 })?.id).toBe('b');
+    expect(pageOfBounds(pair, { x: 50, y: 10, width: 70, height: 0 })?.id).toBe('a');
+    const column = layoutPages([{ id: 'a', width: 50, height: 100 }, { id: 'b', width: 50, height: 100 }], {
+      direction: 'column', gap: 10,
+    });
+    expect(pageOfBounds(column, { x: 10, y: 90, width: 0, height: 110 })?.id).toBe('b');
+    expect(pageHolding(pair, { x: 90, y: 10, width: 110, height: 0 })?.id).toBe('b');
   });
 
   it('bounds every page, and nothing when there are none', () => {

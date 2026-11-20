@@ -1,4 +1,5 @@
 import { unionRects, maxOf, wrapPositive } from '@weasel-js/geom';
+import { isFiniteNumber, isPlainObject } from '@weasel-js/registry';
 import type { Bounds } from '@weasel-js/routing';
 
 /** One page of a document: a sheet of a fixed size, in world units. */
@@ -33,14 +34,33 @@ export interface PageLayoutOptions {
 }
 
 const ALIGN = { start: 0, center: 0.5, end: 1 } as const;
+const DIRECTIONS: readonly unknown[] = ['row', 'column'];
+
+/** What is wrong with `value` as {@link PageLayoutOptions}, as a phrase after its name ("has a `gap` that is not
+ *  a finite number"), or `null` when `layoutPages` can read it. Keys it does not know are left alone. */
+export function pageLayoutFault(value: unknown): string | null {
+  if (!isPlainObject(value)) return 'is not an object';
+  const { direction, gap, align, origin } = value;
+  if (direction !== undefined && !DIRECTIONS.includes(direction)) return "has a `direction` that is neither 'row' nor 'column'";
+  if (gap !== undefined && !isFiniteNumber(gap)) return 'has a `gap` that is not a finite number';
+  if (align !== undefined && !(typeof align === 'string' && Object.hasOwn(ALIGN, align))) {
+    return "has an `align` that is not 'start', 'center' or 'end'";
+  }
+  if (origin !== undefined && !(isPlainObject(origin) && isFiniteNumber(origin.x) && isFiniteNumber(origin.y))) {
+    return 'has an `origin` that is not a finite point';
+  }
+  return null;
+}
 
 /**
  * Place a document's pages in one world space, in order, so a single scene,
  * view, and history serve all of them. With the defaults the first page's
  * top-left corner is the world origin, where a one-page document's page is.
- * Throws on two pages with one id.
+ * Throws on two pages with one id, and on options it cannot read ({@link pageLayoutFault}).
  */
 export function layoutPages(pages: readonly Page[], options: PageLayoutOptions = {}): PlacedPage[] {
+  const fault = pageLayoutFault(options);
+  if (fault !== null) throw new Error(`layoutPages: the layout ${fault}`);
   const { direction = 'row', gap = 40, align = 'start', origin = { x: 0, y: 0 } } = options;
   const row = direction === 'row';
   const across = Math.max(0, maxOf(pages, (p) => (row ? p.height : p.width)));
@@ -74,25 +94,28 @@ export function pageAt(
   return pageOfBounds(pages, { x: point.x, y: point.y, width: 0, height: 0 });
 }
 
-function overlap(page: PlacedPage, b: Bounds): number | null {
+/** How much of `b` lies on `page`: the overlap's area, then its width plus height, which ranks a box of no
+ *  area (a straight line) by the length of it on the page. `null` when they do not touch. */
+function overlap(page: PlacedPage, b: Bounds): readonly [area: number, span: number] | null {
   const w = Math.min(page.x + page.width, b.x + b.width) - Math.max(page.x, b.x);
   const h = Math.min(page.y + page.height, b.y + b.height) - Math.max(page.y, b.y);
-  return w < 0 || h < 0 ? null : w * h;
+  return w < 0 || h < 0 ? null : [w * h, w + h];
 }
 
 /**
  * The page a world-space box belongs to: the one it overlaps most, the earlier
- * of two it overlaps equally, and `null` when it touches none. This is the
- * rule that says which page an object is on.
+ * of two it overlaps equally, and `null` when it touches none. A box of no
+ * area, such as a straight line's, overlaps most the page holding most of its
+ * length. This is the rule that says which page an object is on.
  */
 export function pageOfBounds(pages: readonly PlacedPage[], bounds: Bounds): PlacedPage | null {
   let best: PlacedPage | null = null;
-  let most = -1;
+  let most: readonly [number, number] = [-1, -1];
   for (const page of pages) {
-    const area = overlap(page, bounds);
-    if (area !== null && area > most) {
+    const o = overlap(page, bounds);
+    if (o !== null && (o[0] > most[0] || (o[0] === most[0] && o[1] > most[1]))) {
       best = page;
-      most = area;
+      most = o;
     }
   }
   return best;
