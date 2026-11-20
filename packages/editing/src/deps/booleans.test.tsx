@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { boundsOfPath, type Path } from '@weasel-js/geom';
+import { boundsOfPath, poseFrameOf, type Path } from '@weasel-js/geom';
 import { SceneCanvas, defineTool } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
@@ -93,5 +93,28 @@ describe('who publishes the booleansAdapter', () => {
   it('is booleansPreset: a canvas without it has no booleansAdapter', () => {
     expect(published([selectionPreset])).toBeUndefined();
     expect(published([selectionPreset, booleansPreset])).toBeDefined();
+  });
+});
+
+describe('the booleansPreset booleansAdapter stroke frame', () => {
+  function adapterOver(pose: P & { transform?: [number, number, number, number] }) {
+    const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }], initial: [{ ...box(0, 'red'), pose }] });
+    let registry: ReturnType<typeof useOptionalDepRegistry> = null;
+    function Probe() {
+      registry = useOptionalDepRegistry();
+      return null;
+    }
+    render(<SceneCanvas features={[selectionPreset, booleansPreset]} scene={scene} layers={{}} width={400} height={400}><Probe /></SceneCanvas>);
+    return { adapter: registry!.get('booleansAdapter')!, id: [...scene.renderOrder()][0] as NodeId };
+  }
+
+  it('answers a skewed leaf with the frame its stroke is drawn in', () => {
+    const { adapter, id } = adapterOver({ x: 0, y: 0, width: 100, height: 100, transform: [1, 0, 0.5, 1] });
+    expect(adapter.getStrokeFrame?.(id)).toEqual(poseFrameOf({ x: 0, y: 0, width: 100, height: 100, transform: [1, 0, 0.5, 1] }));
+  });
+
+  it('answers null for a leaf drawn straight', () => {
+    const { adapter, id } = adapterOver({ x: 0, y: 0, width: 100, height: 100 });
+    expect(adapter.getStrokeFrame?.(id)).toBeNull();
   });
 });

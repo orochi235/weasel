@@ -11,7 +11,7 @@ import { renderOrderCompare as compareZ, sceneInheritedPaintOf, storesEdits, pat
 import { useMemo } from 'react';
 import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
-import { pathInWorld } from '@weasel-js/geom';
+import { pathInWorld, poseFrameOf } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR, poseDescriptorForNode, type PoseDescriptor, sceneMutators, asNodeId, type Scene, withoutPageStructure, scenePoseFrame } from '@weasel-js/core/engine';
 import type { OperandsDep } from '@weasel-js/core/engine';
 import type { BooleansAdapter } from '../booleans/booleans';
@@ -62,6 +62,10 @@ export function useBooleansAdapterDepSource(
         return leaf
           ? pathPaintOf(leaf.node.data as Parameters<typeof pathPaintOf>[0], sceneInheritedPaintOf(sceneRef.current)(leaf.node))
           : undefined;
+      },
+      getStrokeFrame: (id) => {
+        const leaf = leafOf(id);
+        return leaf ? poseFrameOf(leaf.drawn.box) : undefined;
       },
       compareZ: (a, b) => compareZ(sceneRef.current)(a, b),
       createPathNode: (path, _op, sourceId, paint?: PathPaint) => {
