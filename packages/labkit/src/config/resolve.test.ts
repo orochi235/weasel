@@ -17,6 +17,11 @@ describe('titleCase', () => {
     expect(titleCase('useHDR')).toBe('Use hdr');
     expect(titleCase('seed')).toBe('Seed');
   });
+
+  it('ends an acronym before the capitalized word after it', () => {
+    expect(titleCase('maxURLLength')).toBe('Max url length');
+    expect(titleCase('useGPUCache')).toBe('Use gpu cache');
+  });
 });
 
 describe('resolveConfigSchema', () => {
