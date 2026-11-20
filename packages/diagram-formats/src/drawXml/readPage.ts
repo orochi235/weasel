@@ -28,7 +28,8 @@ function claim(ids: IdSpace, cellId: string, pageId: string): string {
   return id;
 }
 
-interface Reader { page: PageCells; idOf: ReadonlyMap<RawCell, string>; groups: ReadonlySet<RawCell>; warn: Warn }
+/** What a page's readers share. `idOf` names every vertex the page keeps; `claimId` names a kept connector. */
+interface Reader { page: PageCells; idOf: ReadonlyMap<RawCell, string>; groups: ReadonlySet<RawCell>; claimId: (cell: RawCell) => string; warn: Warn }
 
 /** A region, lane, or connector label: its value's lines, one per line. */
 const labelOf = (cell: RawCell): string | undefined => {
@@ -108,7 +109,7 @@ function readGroup({ page, idOf, groups }: Reader, cell: RawCell): DataCluster {
 
 const moved = (p: Vec2, by: Vec2): Vec2 => ({ x: p.x + by.x, y: p.y + by.y });
 
-function readEdge({ page, idOf, groups, warn }: Reader, cell: RawCell, byCellId: ReadonlyMap<string, RawCell>): DataEdge | null {
+function readEdge({ page, idOf, groups, claimId, warn }: Reader, cell: RawCell, byCellId: ReadonlyMap<string, RawCell>): DataEdge | null {
   const target = (id: string | null) => (id === null ? undefined : byCellId.get(id));
   const dropped = (c: RawCell | undefined) => c !== undefined && page.kindOf(c) === 'group' && !groups.has(c);
   const end = (c: RawCell | undefined) =>
@@ -138,7 +139,7 @@ function readEdge({ page, idOf, groups, warn }: Reader, cell: RawCell, byCellId:
     else warn('Connectors with more than one label at an end kept only the first.');
   }
   return {
-    id: idOf.get(cell)!, from, to, router: routerOf(cell.style),
+    id: claimId(cell), from, to, router: routerOf(cell.style),
     ...optional('fromPort', portAt(cell.style, 'exit')),
     ...optional('toPort', portAt(cell.style, 'entry')),
     ...(points.length > 0 ? { waypoints: points } : {}),
@@ -173,11 +174,15 @@ export function readPage(model: Element, src: PageSource, ids: IdSpace, warn: Wa
   const page = pageCells(model);
   const label = src.name !== undefined ? `"${src.name}"` : 'the page';
   if (page.layers > 1) warn(`The ${page.layers} layers on ${label} were merged into one.`);
+  const kept = keptGroups(page, warn);
+  // Only what the page keeps takes an id, so a dropped group or connector leaves its id to a later page.
   const idOf = new Map<RawCell, string>();
   for (const cell of page.cells) {
-    if (page.kindOf(cell) !== 'layer' && page.kindOf(cell) !== 'label') idOf.set(cell, claim(ids, cell.id, src.id));
+    const kind = page.kindOf(cell);
+    if (kind === 'layer' || kind === 'label' || kind === 'edge' || (kind === 'group' && !kept.has(cell))) continue;
+    idOf.set(cell, claim(ids, cell.id, src.id));
   }
-  const reader: Reader = { page, idOf, groups: keptGroups(page, warn), warn };
+  const reader: Reader = { page, idOf, groups: kept, claimId: (cell) => claim(ids, cell.id, src.id), warn };
   const byCellId = new Map(page.cells.map((c) => [c.id, c]));
   const of = (kind: string) => page.cells.filter((c) => page.kindOf(c) === kind);
   const groups = of('group').filter((c) => reader.groups.has(c)).map((c) => readGroup(reader, c));

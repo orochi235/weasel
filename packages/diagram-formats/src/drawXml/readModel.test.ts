@@ -65,3 +65,14 @@ describe('reading groups', () => {
     expect(warnings).not.toContain('Connectors with a loose end, or with an end on another connector, were left out.');
   });
 });
+
+describe('naming cells across pages', () => {
+  it('leaves the ids of cells a page dropped free for a later page', async () => {
+    const model = (cells: string) => `<diagram id="p%"><mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>${cells}</root></mxGraphModel></diagram>`;
+    const first = model(box('a', 0, 0) + `<mxCell id="g" style="group;" vertex="1" parent="1"><mxGeometry width="10" height="10" as="geometry"/></mxCell>`
+      + `<mxCell id="e" edge="1" parent="1" source="a"><mxGeometry relative="1" as="geometry"/></mxCell>`).replace('%', '1');
+    const second = model(box('g', 0, 0) + box('e', 100, 0)).replace('%', '2');
+    const { document } = await DIAGRAM_DRAW_XML.read!(`<mxfile>${first}${second}</mxfile>`);
+    expect(asGraph(document.pages[1]!).data.nodes.map((n) => n.id)).toEqual(['g', 'e']);
+  });
+});
