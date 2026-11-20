@@ -79,7 +79,7 @@ export const readRun = (run, running, jobs = []) => {
   const log = logPath && existsSync(logPath) ? readFileSync(logPath, 'utf8') : '';
   const lines = log.split('\n').filter(Boolean);
   const areaIds = run.areas?.map((a) => (typeof a === 'string' ? a : a.id)) ?? [];
-  const live = running ? jobs.filter((j) => (j.task ?? '').startsWith(`audit${run.round}-`)) : [];
+  const live = running ? jobs.filter((j) => new RegExp(`^(audit|skulk)${run.round}-`).test(j.task ?? '')) : [];
   return {
     running,
     round: run.round,
