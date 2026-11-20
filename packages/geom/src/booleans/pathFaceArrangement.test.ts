@@ -133,3 +133,12 @@ describe('pathFaceArrangement flattenTolerance', () => {
     }
   });
 });
+
+describe('pathFaceArrangement far from the origin', () => {
+  it('cuts small circles at x = 1e8 as it cuts them at the origin', () => {
+    const near = pathFaceArrangement([circle(0, 0, 1), circle(1.2, 0, 0.8)]).faces;
+    const far = pathFaceArrangement([circle(1e8, 0, 1), circle(1e8 + 1.2, 0, 0.8)]).faces;
+    expect(far.map((f) => f.sources)).toEqual(near.map((f) => f.sources));
+    far.forEach((f, i) => expect(area(f.path)).toBeCloseTo(area(near[i].path), 3));
+  });
+});
