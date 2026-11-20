@@ -22,6 +22,7 @@ export function PanelsAndRows() {
       </Cell>
       <Cell label="Sidebar, SidebarPanel">
         <div className="lk-specimen__box">
+          <div className="lk-specimen__box-main">content</div>
           <Sidebar side="right" aria-label="Specimen sidebar">
             <SidebarPanel
               title="Selection"

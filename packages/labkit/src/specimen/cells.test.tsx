@@ -1,6 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
+import { PanelsAndRows } from './PanelsAndRows';
 import { ShapePanelCell } from './ShapePanelCell';
 
 // Each cell shows its control in a small working state (`Specimen`'s doc): every control on it answers.
@@ -14,5 +15,11 @@ describe('specimen cells', () => {
     fireEvent.input(rings, { target: { value: '33' } });
     fireEvent.change(rings);
     expect(Number(rings.value)).toBe(33);
+  });
+
+  it('docks the right sidebar after a main area, on the box edge it names', () => {
+    renderWithIcons(<PanelsAndRows />);
+    const sidebar = screen.getByRole('complementary', { name: 'Specimen sidebar' });
+    expect(sidebar.previousElementSibling?.classList.contains('lk-specimen__box-main')).toBe(true);
   });
 });
