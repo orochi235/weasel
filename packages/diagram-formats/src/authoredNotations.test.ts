@@ -133,4 +133,14 @@ describe('a chart drawn from a notation type\'s stencils writes that notation, a
     expect(fields).toEqual([['int', 'id PK'], ['string', 'name'], ['int', 'owner_id FK']]);
   });
 
+  it('mind map', () => {
+    const { text, warnings, back } = drawn('mindMap', [
+      { stencil: 'central-topic', at: { x: 300, y: 300 } },
+      { stencil: 'main-topic', at: { x: 600, y: 300 } },
+      { stencil: 'subtopic', at: { x: 800, y: 300 } },
+    ], [[0, 1], [1, 2]]);
+    expect(text).toMatch(/^mindmap/m);
+    expect(warnings).toEqual([]);
+    expect(outlines(back)).toEqual(['ellipse', 'roundRect', 'rect']);
+  });
 });
