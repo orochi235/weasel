@@ -77,9 +77,12 @@ export function resizeOps(
   return ops;
 }
 
-/** Commit the drag as one batch, so one undo entry. Returns whether anything
- *  reached the document. */
-export function commitResize(session: ResizeSession, frame: ResizeFrame): boolean {
+/** What {@link commitResize} put in the document: nothing, the resized box,
+ *  or the ops a constraint's `onEnd` answered in its place. */
+export type ResizeCommit = 'none' | 'box' | 'constraint';
+
+/** Commit the drag as one batch, so one undo entry. */
+export function commitResize(session: ResizeSession, frame: ResizeFrame): ResizeCommit {
   const { lifecycle } = session;
   const target = {
     scene: session.scene,
@@ -88,11 +91,11 @@ export function commitResize(session: ResizeSession, frame: ResizeFrame): boolea
     adapter: defaultCommitAdapter(session.scene, session.selectionMethods),
   };
   const r = reduceBehaviorEnd(session.constraints, session.gestureCtx);
-  if (r === null) return false;
-  if (r !== undefined) return commitRunOps(target, lifecycle, r);
+  if (r === null) return 'none';
+  if (r !== undefined) return commitRunOps(target, lifecycle, r) ? 'constraint' : 'none';
 
-  if (frame.previews.size === 0) return false;
+  if (frame.previews.size === 0) return 'none';
   const ops = resizeOps(session, frame.previews, lifecycle.label);
-  if (ops.length === 0) return false;
-  return commitRunOps(target, lifecycle, ops);
+  if (ops.length === 0) return 'none';
+  return commitRunOps(target, lifecycle, ops) ? 'box' : 'none';
 }

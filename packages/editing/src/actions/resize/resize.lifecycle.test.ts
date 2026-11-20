@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { resizeAction } from './action';
 import { createScene } from '@weasel-js/core/engine';
+import { lastTransform, recordTransform } from '@weasel-js/core';
 import type { NodeId } from '@weasel-js/core';
 import type { ResizePolicy } from '@weasel-js/core/engine';
 import * as coreOps from '@weasel-js/core/ops';
@@ -104,6 +105,21 @@ describe('resizeAction — lifecycle via the resizePolicy dep', () => {
     const s = setup({ constraints: [{ onEnd }] as never });
     resize(s);
     expect(s.scene.get(s.a)!.pose).toEqual(marker);
+  });
+
+  it('records nothing for Transform Again when a behavior onEnd committed ops of its own', () => {
+    const marker: Pose = { x: 7, y: 7, width: 11, height: 11 };
+    const onEnd = () => [coreOps.setPose<Pose>({ id: s.a, from: s.scene.get(s.a)!.pose, to: marker, label: 'Marker' })];
+    const s = setup({ constraints: [{ onEnd }] as never });
+    recordTransform(s.scene, { kind: 'translate', dx: 5, dy: 0 }, [s.a]);
+    resize(s);
+    expect(lastTransform(s.scene)).toBeUndefined();
+  });
+
+  it('records the box it resized to for Transform Again', () => {
+    const s = setup({});
+    resize(s);
+    expect(lastTransform(s.scene)).toEqual({ kind: 'scale', to: { x: 0, y: 0, width: 1.5, height: 1.5 }, anchor: { x: 'min', y: 'min' } });
   });
 });
 
