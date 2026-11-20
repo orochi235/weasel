@@ -124,6 +124,7 @@ export function inDialog(body: LeafRenderer, opts: InDialogOptions = {}): LeafRe
           description={pref.description}
           summary={summary(value)}
           title={opts.title}
+          disabled={ctx.disabled}
           readout={auto ? 'auto' : undefined}
           value={value}
           setValue={ctx.setValue}

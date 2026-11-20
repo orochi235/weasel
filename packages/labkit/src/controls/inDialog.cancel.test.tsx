@@ -122,3 +122,20 @@ describe('a .dialog body writing through update and drafts', () => {
     expect(setConfig).not.toHaveBeenCalled();
   });
 });
+
+describe('a .dialog row whose enableIf is false', () => {
+  it('cannot be opened', () => {
+    const gated = resolveConfigSchema(
+      f.schema({
+        on: f.boolean(false).label('On'),
+        note: f
+          .string('hi')
+          .enableIf({ path: 'on' })
+          .dialog(({ value }) => <output>{String(value)}</output>),
+      }),
+    );
+    renderWithIcons(<ControlPanel schema={gated} config={{ on: false, note: 'hi' }} setConfig={vi.fn()} />);
+    open('Note');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});
