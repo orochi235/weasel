@@ -52,7 +52,7 @@ export interface LastOperationHost {
   /** The params a run of `id` handed `given` starts with: every tuning's, `given` laid over them. */
   paramsOf(id: string, given: Record<string, unknown> | undefined): Record<string, unknown>;
   /** Run the action live for `id` here with `params`, as `trigger` would, and say whether it ran: false when none
-   *  is registered or its `enabled` refuses. */
+   *  is registered, its `eligible` rule or `enabled` refuses, or it passes. */
   rerun(id: string, params: Record<string, unknown>): boolean;
   /** Hand `params`, which a panel change made `id`'s for the session, to each tuning of `id` that keeps them. */
   keep(id: string, params: Readonly<Record<string, unknown>>): void;

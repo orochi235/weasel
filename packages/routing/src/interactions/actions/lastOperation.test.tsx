@@ -8,6 +8,7 @@ import { DepRegistryProvider, useDepRegistry, type DepName, type DepRegistry } f
 import type { ActionsRegistry } from './registry';
 import { lastOperationOf } from './useLastOperation';
 import { dynamicActionId } from './actionIds';
+import { buildRuleCtx, type RuleCtx } from '../../eligibility';
 
 /** The document the test action edits: a width, the selection, and the selection each run started from. */
 interface Doc { width: number; selected: string[]; ranOn: string[][] }
@@ -30,10 +31,12 @@ function widen(doc: Doc, history: History): Action {
       run: (_deps, params) => {
         const by = typeof params?.by === 'number' ? params.by : 1;
         doc.ranOn.push(doc.selected);
-        if (by === 0) return;
+        if (by === 0) return undefined;
         if (by === 7) throw new Error('refused');
+        if (by === 9) return 'pass';
         history.applyOps([setWidth(doc, doc.width + by)], 'Widen');
         doc.selected = ['result'];
+        return undefined;
       },
     },
   };
@@ -142,6 +145,37 @@ describe('the last operation', () => {
     expect(store.get()).toBeNull();
     expect(registry.paramsOf('widen')).toEqual({ by: 3 });
     error.mockRestore();
+  });
+
+  it("leaves the operation as it was when its rerun passes", () => {
+    const { doc, history, registry, store } = setup();
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
+    act(() => { expect(store.adjust({ by: 9 })).toBe(false); });
+    expect(doc.width).toBe(13);
+    expect(history.undoDepth()).toBe(1);
+    expect(store.get()).toBeNull();
+  });
+
+  it("leaves the operation as it was when the action's eligible rule refuses the rerun", () => {
+    const { doc, history, registry, store } = setup();
+    let allowed = true;
+    const ctx = (): RuleCtx => buildRuleCtx({
+      focused: true, selection: [], multiActive: false,
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      action: { kind: null, id: null }, hover: null, mode: 'free-transform',
+      allowedCapabilities: new Set(allowed ? ['edits-page'] : []),
+    });
+    act(() => {
+      actionsNodeOf(registry)!.registry.register({ ...widen(doc, history), eligible: { capability: 'edits-page' } });
+    });
+    const deps = (actionsNodeOf(registry) as unknown as { deps(): DepRegistry }).deps();
+    act(() => { deps.register('ruleCtx', () => ctx); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
+    allowed = false;
+    act(() => { expect(store.adjust({ by: 5 })).toBe(false); });
+    expect(doc.width).toBe(13);
+    expect(history.undoDepth()).toBe(1);
+    expect(store.get()).toBeNull();
   });
 
   it('lets go of an adjustment that committed more than one entry, rather than stacking the next on it', () => {

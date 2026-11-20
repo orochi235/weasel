@@ -127,10 +127,11 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       rerun: (id, params) => {
         const a = this.resolve(id);
         if (a?.invoker?.timing !== 'immediate') return false;
-        const deps = depsFor(a, this.deps());
-        const ran = checkEnabled(a, deps, pointOf(params), params).enabled;
-        if (ran) a.invoker.run(deps, params);
-        return ran;
+        const r = this.deps();
+        if (!eligibleNow(a, r?.get('ruleCtx'))) return false;
+        const deps = depsFor(a, r);
+        if (!checkEnabled(a, deps, pointOf(params), params).enabled) return false;
+        return a.invoker.run(deps, params) !== 'pass';
       },
       keep: (id, params) => { for (const t of this.tuningsOf(id)) t.keep?.(params); },
     };
