@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fixedSeat, nearestPortalHost } from './fixedSeat';
 
-afterEach(() => { document.body.innerHTML = ''; });
+afterEach(() => { document.body.innerHTML = ''; vi.restoreAllMocks(); });
 
 function mount(html: string): HTMLElement {
   document.body.innerHTML = html;
@@ -60,4 +60,35 @@ describe('fixedSeat', () => {
       delete (document.body as Partial<HTMLElement>).getBoundingClientRect;
     }
   });
+
+  // jsdom's computed style drops these properties, so the style is stubbed for the one ancestor.
+  it.each([
+    ['scale', '1.5'], ['translate', '4px'], ['rotate', '10deg'],
+    ['willChange', 'opacity, transform'], ['willChange', 'filter'],
+    ['containerType', 'inline-size'], ['containerType', 'size'], ['contentVisibility', 'auto'],
+  ])("answers the corner of an ancestor whose %s is %s, which contains its fixed descendants", (prop, value) => {
+    const from = mount('<div id="a"><div data-wzl-theme="x" id="h"><i id="from"></i></div></div>');
+    const outer = document.getElementById('a')!;
+    outer.getBoundingClientRect = () => DOMRect.fromRect({ x: 12, y: 7 });
+    const real = window.getComputedStyle.bind(window);
+    vi.spyOn(window, 'getComputedStyle').mockImplementation((el) => {
+      const cs = real(el);
+      return el === outer ? ({ ...cs, transform: 'none', [prop]: value } as CSSStyleDeclaration) : cs;
+    });
+    expect(fixedSeat(from)).toMatchObject({ left: 12, top: 7 });
+  });
+
+  it.each([['willChange', 'opacity'], ['containerType', 'normal'], ['contentVisibility', 'visible']])(
+    'seats at the viewport origin past an ancestor whose %s is %s',
+    (prop, value) => {
+      const from = mount('<div id="a"><div data-wzl-theme="x" id="h"><i id="from"></i></div></div>');
+      const outer = document.getElementById('a')!;
+      const real = window.getComputedStyle.bind(window);
+      vi.spyOn(window, 'getComputedStyle').mockImplementation((el) => {
+        const cs = real(el);
+        return el === outer ? ({ ...cs, [prop]: value } as CSSStyleDeclaration) : cs;
+      });
+      expect(fixedSeat(from)).toMatchObject({ left: 0, top: 0 });
+    },
+  );
 });

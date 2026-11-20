@@ -17,16 +17,25 @@ export function nearestPortalHost(from: Element | null | undefined): HTMLElement
   return (from?.closest(HOST_SELECTOR) as HTMLElement | null) ?? null;
 }
 
+const set = (value: string | undefined) => value !== undefined && value !== '' && value !== 'none';
+const FIXED_CONTAINING_WILL_CHANGE = /\b(transform|translate|scale|rotate|perspective|filter|backdrop-filter|contain)\b/;
+
 /** Whether `el` is the containing block of its fixed-position descendants rather than the viewport. */
 function containsFixed(el: Element): boolean {
   const cs = getComputedStyle(el);
-  const set = (value: string | undefined) => value !== undefined && value !== '' && value !== 'none';
   return (
     set(cs.transform) ||
+    set(cs.translate) ||
+    set(cs.scale) ||
+    set(cs.rotate) ||
     set(cs.filter) ||
     set(cs.backdropFilter) ||
     set(cs.perspective) ||
-    /paint|layout|strict|content/.test(cs.contain ?? '')
+    /paint|layout|strict|content/.test(cs.contain ?? '') ||
+    // `container-type` other than `normal` and `content-visibility: auto` both apply layout containment.
+    (cs.containerType !== undefined && cs.containerType !== '' && cs.containerType !== 'normal') ||
+    cs.contentVisibility === 'auto' ||
+    FIXED_CONTAINING_WILL_CHANGE.test(cs.willChange ?? '')
   );
 }
 
