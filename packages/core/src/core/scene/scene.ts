@@ -113,6 +113,14 @@ function sceneTouchesOver(
   return { journal, touches };
 }
 
+/** Throws when a `loadState` would replace the state an open edit or journal works against. */
+function refuseLoadMidEdit(editOpen: boolean, journalOpen: boolean): void {
+  if (editOpen) throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
+  if (journalOpen) {
+    throw new Error('Scene: cannot loadState while a journal is open — commit or cancel it first; its entries edit the state this replaces');
+  }
+}
+
 type SceneConfig<TData, TLayer extends string, TPose> =
   Omit<SceneOptions<TData, TLayer, TPose>, 'systemLayers' | 'initial' | 'doc'>;
 
@@ -213,12 +221,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     loadState(json, opts) {
       // Validate + map up front: throws on a bad version or registry key before live state is touched.
       const specs = quantizedSpecs(foldable(specsFromSerialized(json, registry, { composition: scene.composition, ...opts }), options.composition), options.quantize, json.doc);
-      if (mode.open()) {
-        throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
-      }
-      if (recording.journalOpen()) {
-        throw new Error('Scene: cannot loadState while a journal is open — commit or cancel it first; its entries edit the state this replaces');
-      }
+      refuseLoadMidEdit(mode.open(), recording.journalOpen());
       buildScene(options, json.systemLayers.map(layerFromSerialized), () => specs, json.doc); // a dry run: a bad snapshot keeps the document
       // Session state, and every id is a new node after this.
       sessions.clearShown();
