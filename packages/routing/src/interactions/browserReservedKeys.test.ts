@@ -34,4 +34,10 @@ describe('browserReservedChord', () => {
     expect(browserReservedChord({ kind: 'key', key: 'Escape', mods: { meta: true } }, true)).toBeNull();
     expect(browserReservedChord({ kind: 'key', key: 'Escape' }, false)).toBeNull();
   });
+
+  it('reads a physical key code as the key it names, since either one fires the binding', () => {
+    expect(browserReservedChord({ kind: 'key', key: 'ρ', code: 'KeyR', mods: { mod: true } })?.key).toBe('r');
+    expect(browserReservedChord({ kind: 'key', key: 'x', code: ['Escape'], mods: { mod: true } }, false)?.key).toBe('escape');
+    expect(browserReservedChord({ kind: 'key', key: 'ρ', code: 'KeyG', mods: { mod: true } })).toBeNull();
+  });
 });

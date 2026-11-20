@@ -42,6 +42,12 @@ const lower = (k: string | readonly string[]): string[] => (typeof k === 'string
 const allows = (policy: boolean | 'optional' | undefined, held: boolean): boolean =>
   policy === 'optional' || (policy === true) === held;
 
+/** The keys a spec fires on: its `key`s, and each `code` as the US-layout key it names (`KeyR` is `r`). */
+const keysOf = (spec: KeySpec): string[] => [
+  ...lower(spec.key),
+  ...(spec.code === undefined ? [] : lower(spec.code).map((c) => c.replace(/^(key|digit)(?=.$)/, ''))),
+];
+
 type Policy = boolean | 'optional' | undefined;
 
 /** The stronger of two policies on one key, as `matchModifiers` folds `mod` into it. */
@@ -52,7 +58,7 @@ const stronger = (a: Policy, b: Policy): Policy =>
  *  `null` when none. `mod` and the key it stands for there (Meta on Apple, Ctrl elsewhere) are one
  *  key, and the other of Ctrl and Meta must be free to be released, as in `matchModifiers`. */
 export function browserReservedChord(spec: KeySpec, apple = isApplePlatform()): ReservedChord | null {
-  const keys = lower(spec.key);
+  const keys = keysOf(spec);
   const m = spec.mods ?? {};
   const mod = stronger(m.mod, apple ? m.meta : m.ctrl);
   const other = apple ? m.ctrl : m.meta;
