@@ -119,7 +119,7 @@
 .lanes { --span-ink: #000; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .lanes [data-state='active'] .node { animation: node-pulse 1.34s cubic-bezier(0.83, 0, 0.17, 1) infinite; }
+  .lanes [data-state='active'] .node { animation: node-pulse 2.68s cubic-bezier(0.83, 0, 0.17, 1) infinite; }
 }
 
 @keyframes node-pulse {
