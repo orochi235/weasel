@@ -46,3 +46,18 @@ describe('pathPoseDescriptor.remapBounds on a degenerate source axis', () => {
     expect(Array.from((out as { coords: Float32Array }).coords)).toEqual([100, 0, 105, 10]);
   });
 });
+
+describe('pathPoseDescriptor polygon axes', () => {
+  const square = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }]);
+  const pentagon = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 5, y: 15 }, { x: 0, y: 10 }]);
+
+  it('writes no more than its count for a polygon of another point count', () => {
+    const axes = pathPoseDescriptor.axes!(square)!;
+    const out = new Float64Array(axes.count * 2).fill(-1);
+    axes.write!(pentagon, out, 0);
+    expect(Array.from(out.subarray(axes.count))).toEqual(new Array(axes.count).fill(-1));
+    expect(axes.to(pentagon)).toEqual([]);
+    expect(axes.add!(pentagon, new Array(axes.count).fill(1))).toBe(pentagon);
+  });
+
+});
