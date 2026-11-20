@@ -2,7 +2,7 @@
  * A mode's `defaultTool` becomes active as the mode is entered, and the tool it
  * replaced comes back as the mode is left.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { createModeRegistry, NORMAL, type ModeDefinition } from '@weasel-js/modes';
@@ -15,13 +15,14 @@ const registry = { select: tool('select'), anchors: tool('anchors'), brush: tool
 
 const EDIT: ModeDefinition = { id: 'edit', kind: 'soft', allows: [], scoping: false, defaultTool: 'anchors' };
 const BARE: ModeDefinition = { id: 'bare', kind: 'soft', allows: [], scoping: false };
+const AMBIENT: ModeDefinition = { id: 'ambient', kind: 'soft', allows: [], scoping: false, defaultTool: 'laser' };
 const MISSING: ModeDefinition = { id: 'missing', kind: 'soft', allows: [], scoping: false, defaultTool: 'nope' };
 
 function setup(initial = 'normal') {
-  const modes = createModeRegistry({ modes: [NORMAL, EDIT, BARE, MISSING], initial });
+  const modes = createModeRegistry({ modes: [NORMAL, EDIT, BARE, AMBIENT, MISSING], initial });
   const wrapper = ({ children }: { children: ReactNode }) => <ActiveToolContextProvider>{children}</ActiveToolContextProvider>;
   // StrictMode runs every effect twice, as a re-run would; a StrictMode inside an arrow wrapper does not.
-  const { result, rerender } = renderHook(() => useTools({ active: 'select', registry, modes }), { wrapper, reactStrictMode: true });
+  const { result, rerender } = renderHook(() => useTools({ active: 'select', registry, ambient: [tool('laser')], modes }), { wrapper, reactStrictMode: true });
   const enter = (id: string) => act(() => modes.setMode(id));
   return { result, rerender, enter };
 }
@@ -63,5 +64,19 @@ describe('a mode with a default tool', () => {
     expect(result.current.active).toBe('select');
     enter('missing');
     expect(result.current.active).toBe('select');
+  });
+
+  it('leaves the tool alone in a mode whose default is an ambient tool, which cannot be made active', () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const { result, enter } = setup('ambient');
+      expect(result.current.active).toBe('select');
+      enter('normal');
+      enter('ambient');
+      expect(result.current.active).toBe('select');
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+    }
   });
 });
