@@ -77,6 +77,13 @@ describe('quantity shape', () => {
     expect(qty(tag(12, unit(), 'mm')).to('cm', METRIC_MM).text).toBe('1.2cm');
     expect(qty(25).to('cm', METRIC_MM).raw).toEqual({ value: 2.5, unit: 'cm' });
   });
+
+  it('converts a value shown in a named unit into the target unit', () => {
+    expect(qty(tag(12, unit('mm'), 'mm')).to('cm', METRIC_MM).text).toBe('1.2cm');
+    expect(qty(12, unit('mm')).to('cm', METRIC_MM).text).toBe('1.2cm');
+    expect(qty(tag(12, unit('mm', { places: 3 }), 'mm')).to('cm', METRIC_MM).raw)
+      .toEqual({ value: 1.2, unit: 'cm', display: unit('cm', { places: 3 }) });
+  });
 });
 
 /** [display, value, text, spoken] */

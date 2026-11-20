@@ -183,8 +183,12 @@ export class QuantityView<Q extends Quantity = Quantity> {
     const to = unitScale(system, target);
     const base = this.value * from.factor + from.offset;
     const value = (base - to.offset) / to.factor;
-    const raw = typeof this.raw === 'number' ? tag(value, undefined, target) : { ...(this.raw as Tagged), value, unit: target };
-    return new QuantityView(raw, this.fallback, this.options);
+    const shown = (d: Display | undefined) => (d?.kind === 'unit' && d['unit'] !== undefined ? { ...d, unit: target } : d);
+    const own = typeof this.raw === 'number' ? undefined : this.raw.display;
+    const raw = typeof this.raw === 'number'
+      ? tag(value, undefined, target)
+      : { ...(this.raw as Tagged), value, unit: target, ...(own === undefined ? {} : { display: shown(own) }) };
+    return new QuantityView(raw, shown(this.fallback), this.options);
   }
   toJSON(): Q {
     return this.raw;
