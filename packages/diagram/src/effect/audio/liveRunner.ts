@@ -147,7 +147,8 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
   };
 
   /** Brings the graph from `from` to the plan `pipeline` and `sources` now give. Structure goes first
-   *  in its own apply: a throw there changed nothing, while a throw from the sets means structure landed. */
+   *  in its own apply. A throw there changed nothing unless the nodes it adds are in the graph, as
+   *  when a source added while playing fails to start; a throw from the sets means structure landed. */
   const sync = (from: LivePlan) => {
     const merged: Record<string, string> = {};
     const { next, defs } = buildable(from, merged);
@@ -163,8 +164,11 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
       const id = failingStage(structural, message);
       if (id !== undefined) setOwn(merged, id, message);
       console.warn(`@weasel-js/diagram: audio graph edit failed: ${message}`);
-      adopted = from;
-      sets = [];
+      const added = structural.flatMap((p) => (p.kind === 'add' ? [p.id] : []));
+      if (added.length === 0 || !added.every((a) => graph.has(a))) {
+        adopted = from;
+        sets = [];
+      }
     }
     applySets(graph, sets, merged);
     plan = adopted;

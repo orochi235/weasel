@@ -225,6 +225,18 @@ describe('createLiveAudioRunner', () => {
     expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
   });
 
+  it('adopts the next plan when the structural apply throws after its nodes landed', () => {
+    const { runner, graph } = setup();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    graph.landOnFail = true;
+    graph.failWhen = (ps) => (ps.some((p) => p.kind === 'add') ? new Error('start failed') : undefined);
+    runner.setPipeline(withGain(440));
+    graph.failWhen = undefined;
+    runner.setPipeline(withGain(220));
+    expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
+    expect(graph.applies.flat().filter((p) => p.kind === 'add' && p.id === 'gain')).toHaveLength(1);
+  });
+
   it('resets onto a fresh graph holding the current plan, not playing', async () => {
     const { runner, graphs, engine } = setup();
     await runner.play();
