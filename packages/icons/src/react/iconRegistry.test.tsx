@@ -1,5 +1,6 @@
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { StrictMode, type ReactNode } from 'react';
+import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { IconTable } from '../index';
 import { IconRegistryProvider, useIconGlyph, useIconVariant } from '../react';
@@ -123,5 +124,16 @@ describe('icon registry provider', () => {
     await waitFor(() => expect(screen.getByText('loaded')).toBeTruthy());
     expect(fixed).toHaveBeenCalledTimes(1);
     error.mockRestore();
+  });
+
+  it('server-renders a glyph and a variant listing from the registry as it stands', () => {
+    function Probe() {
+      const { state, entries } = useIconVariant('all');
+      return <span>{`${useIconGlyph('core:undo')?.body ?? 'none'} ${state} ${entries.length}`}</span>;
+    }
+    const html = renderToString(
+      <IconRegistryProvider icons={core} variants={{ all: async () => ({ default: [more] }) }}><Probe /></IconRegistryProvider>,
+    );
+    expect(html).toContain('&lt;path d=&quot;u&quot;/&gt; idle 1');
   });
 });
