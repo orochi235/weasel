@@ -207,3 +207,31 @@ describe('a lens API built over a scene that already holds lenses', () => {
     expect(lensesOf(scene).map((l) => l.lensId)).toEqual([first, second]);
   });
 });
+
+describe('a lens API’s scene subscription', () => {
+  it('listens only while a lens is held', () => {
+    const scene = createLensScene<null>();
+    const unsubscribed = vi.fn();
+    const subscribe = scene.subscribe.bind(scene);
+    const spy = vi.spyOn(scene, 'subscribe').mockImplementation((fn) => {
+      const off = subscribe(fn);
+      return () => {
+        unsubscribed();
+        off();
+      };
+    });
+    const api = createLensApi(scene, {
+      body: { current: document.createElement('div') },
+      pointer: { current: null },
+      focus: { current: null },
+      sources: { current: {} },
+    });
+    expect(spy).not.toHaveBeenCalled();
+    const lensId = api.add()!;
+    act(() => api.apply(setAimOps(scene, lensId, 'follow')));
+    act(() => api.follow({ x: 40, y: 40 }));
+    expect(spy).toHaveBeenCalledTimes(1);
+    act(() => api.unfollow(lensId));
+    expect(unsubscribed).toHaveBeenCalledTimes(1);
+  });
+});
