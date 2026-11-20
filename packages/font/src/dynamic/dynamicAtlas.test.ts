@@ -349,6 +349,35 @@ describe('full pages', () => {
   });
 });
 
+describe('the test reset', () => {
+  it('cancels an emptying still waiting, and forgets what each texture cache was sent', async () => {
+    pageSizedGlyphs();
+    const big = getDynamicFace('Big', 400, 'normal');
+    for (let i = 0; i < 5; i++) big.requestGlyph(65 + i);
+    const patches: string[] = [];
+    const ids = new Set<string>();
+    const sink = {
+      has: (id: string) => ids.has(id),
+      upload: (id: string) => id,
+      uploadR8: (id: string) => { ids.add(id); },
+      subImageR8: (_id: string, x: number, y: number) => { patches.push(`${x},${y}`); },
+      uploadRGBA: () => {},
+      subImageRGBA: () => {},
+    };
+    syncDynamicPageTexture(sink, 0);
+
+    _resetDynamicFontsForTests();
+    __setGlyphRasterizerForTests(fakeRasterizer());
+    const face = getDynamicFace('Small', 400, 'normal');
+    const glyph = face.requestGlyph(65);
+    syncDynamicPageTexture(sink, 0);
+    expect(patches).toEqual(['0,0']);
+    await new Promise<void>((r) => { setTimeout(r, 0); });
+    expect(face.font.charMap.get(65)).toBe(glyph);
+    expect(glyph.page).toBe(0);
+  });
+});
+
 describe('unregisterCanvasFont', () => {
   it('drops the family faces and leaves their glyphs in the pages until those fill', () => {
     registerCanvasFont('Futura');

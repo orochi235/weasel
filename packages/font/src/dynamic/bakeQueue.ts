@@ -40,6 +40,16 @@ let colorRoom = newRoom();
 let sharpRoom = newRoom();
 let pending: PendingBake[] = [];
 let flushScheduled = false;
+/** Every timer this queue has set and not yet seen fire, so a reset can clear them. */
+const timers = new Set<ReturnType<typeof setTimeout>>();
+
+function later(run: () => void): void {
+  const id = setTimeout(() => {
+    timers.delete(id);
+    run();
+  }, 0);
+  timers.add(id);
+}
 let budget = DEFAULT_BAKE_BUDGET;
 /** Glyphs measured since the frame began. */
 let asked = 0;
@@ -153,7 +163,7 @@ function noRoom(room: Room, job: PendingBake, empty: () => void): void {
   } else if (!room.reclaimScheduled) {
     room.reclaimScheduled = true;
     if (job.retried) starvedRetry = 'emptying';
-    setTimeout(empty, 0);
+    later(empty);
   }
 }
 
@@ -193,7 +203,7 @@ function reclaimSharp(): void {
 function scheduleFlush(): void {
   if (flushScheduled) return;
   flushScheduled = true;
-  setTimeout(flushPending, 0);
+  later(flushPending);
 }
 
 function flushPending(): void {
@@ -225,6 +235,8 @@ export function resetBakeBudget(n: number = DEFAULT_BAKE_BUDGET): void {
 
 /** @internal test seam — forget every bake and all the room given out. */
 export function _resetBakeQueueForTests(): void {
+  for (const id of timers) clearTimeout(id);
+  timers.clear();
   fieldRoom = newRoom();
   colorRoom = newRoom();
   sharpRoom = newRoom();

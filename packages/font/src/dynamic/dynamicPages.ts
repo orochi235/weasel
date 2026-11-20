@@ -34,6 +34,12 @@ class PageSet {
   // WeakMap-keyed so disposed renderers don't pin anything.
   private uploaded = new WeakMap<GlyphTextureSink, Map<number, number>>();
 
+  /** Forget every page, and every cache's upload progress with them. */
+  reset(): void {
+    this.pages = [];
+    this.uploaded = new WeakMap();
+  }
+
   constructor(private readonly format: PageFormat) {}
 
   textureId(page: number): string {
@@ -199,7 +205,7 @@ export function _getSharpColorPagesForTests(): readonly DynamicPage[] {
 
 /** @internal test seam — forget every page. */
 export function _resetPagesForTests(): void {
-  fields.pages = [];
-  colors.pages = [];
-  sharpColors.pages = [];
+  fields.reset();
+  colors.reset();
+  sharpColors.reset();
 }
