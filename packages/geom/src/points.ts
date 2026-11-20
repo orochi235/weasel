@@ -1,7 +1,7 @@
 /**
- * Points and segments over plain number arrays, in any dimension: how far
- * apart two points are, the point part of the way between them, and the
- * nearest point of a segment.
+ * Points and segments over plain number arrays, in any dimension: a dot
+ * product, how far apart two points are, the point part of the way between
+ * them, and the nearest point of a segment.
  *
  * Published as is from `./nd`. The 2D barrel states the same rules over loose
  * scalars in `./points2` (they run per pointermove and per vertex, so they
@@ -10,6 +10,13 @@
  */
 
 import { lerp as lerpScalar } from './scalar';
+
+/** The dot product of two vectors of one dimension. */
+export function dot(a: readonly number[], b: readonly number[]): number {
+  let s = 0;
+  for (let i = 0; i < a.length; i++) s += a[i]! * b[i]!;
+  return s;
+}
 
 /** Squared distance between two points. Compare with this and skip the root. */
 export function distance2(a: readonly number[], b: readonly number[]): number {
