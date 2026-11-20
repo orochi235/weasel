@@ -382,3 +382,12 @@ describe('createSymmetry, under a scrolled container', () => {
     expect(reachFrom(scene as never, group, sym.read(group)!.center)).toBeCloseTo(10);
   });
 });
+
+describe('createSymmetry, a stored spec', () => {
+  it('keeps fields this version does not read through a write', () => {
+    const { scene, sym, group } = setup();
+    scene.update(group, { data: { symmetry: { ...(scene.get(group)!.data as { symmetry: object }).symmetry, future: 3 } } });
+    sym.preview(group, { spec: { angle: 1 } });
+    expect((scene.get(group)!.data as { symmetry: Record<string, unknown> }).symmetry).toMatchObject({ future: 3, angle: 1 });
+  });
+});

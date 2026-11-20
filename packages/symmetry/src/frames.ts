@@ -30,6 +30,20 @@ export function keepContentsPut(scene: AnyScene, id: NodeId, change: () => void)
   }
 }
 
+/** Put back exactly what `id` and everything held in its frame store now, data and poses, with no undo step. */
+export function restorer(scene: AnyScene, id: NodeId): () => void {
+  const node = scene.get(id);
+  if (!node) return () => {};
+  const { data, pose } = node;
+  const held = heldInFrame(scene, id).map((n) => ({ n, pose: scene.get(n)!.pose }));
+  return () => scene.untracked(() => {
+    if (!scene.get(id)) return;
+    if (scene.get(id)!.data !== data) scene.update(id, { data });
+    if (scene.get(id)!.pose !== pose) scene.setPose(id, pose);
+    for (const h of held) if (scene.get(h.n) && scene.get(h.n)!.pose !== h.pose) scene.setPose(h.n, h.pose);
+  });
+}
+
 /**
  * How far from `center`, a shown world point, anything inside `id` draws: the farthest corner of
  * any descendant's drawn box, rotation included. A symmetry's copies turn and

@@ -103,8 +103,10 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     let wrote = false;
     if (change.spec) {
       const now = symmetrySpecOf(node.data);
-      const spec = { ...now, ...change.spec };
-      if (!deepEqual(spec, now)) {
+      const stored: unknown = (node.data as { symmetry?: unknown } | null | undefined)?.symmetry;
+      // Fields this version does not read stay as the file had them.
+      const spec = { ...(typeof stored === 'object' && stored !== null ? stored : {}), ...change.spec };
+      if (!deepEqual(symmetrySpecOf({ symmetry: spec }), now)) {
         scene.update(id, { data: { ...(node.data as object), symmetry: spec } });
         wrote = true;
       }
