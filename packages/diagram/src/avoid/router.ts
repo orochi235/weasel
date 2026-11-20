@@ -41,13 +41,16 @@ export interface AvoidRouter {
 
 const now = (): number => globalThis.performance?.now() ?? Date.now();
 
-/** The box every search window may grow to: everything, with room around it. */
+/** The box every search window may grow to: everything, with room around it.
+ *  A coordinate that is not finite, a degenerate pose's, is left out, so the
+ *  limit stays one a window can reach. */
 function limitOf(input: AvoidInput, margin: number): Box {
   let x0 = Infinity;
   let y0 = Infinity;
   let x1 = -Infinity;
   let y1 = -Infinity;
   const take = (x: number, y: number) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     x0 = Math.min(x0, x);
     y0 = Math.min(y0, y);
     x1 = Math.max(x1, x);
