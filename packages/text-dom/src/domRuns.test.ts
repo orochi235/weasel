@@ -783,6 +783,18 @@ describe('domRuns — small caps', () => {
     expect(domToRuns(parent)).toEqual([{ text: 'AxbY', fontVariantCaps: 'small-caps' }]);
   });
 
+  it('keeps a <br> typed into a small-caps run through a re-split and a flatten', () => {
+    runsToDom([{ text: 'Ab', fontVariantCaps: 'small-caps' }], parent);
+    const span = parent.querySelector<HTMLElement>('span[data-run]')!;
+    span.insertBefore(document.createElement('br'), span.querySelector('[data-small-caps]'));
+    (span.firstChild as Text).data = 'Ax';
+    expect(normalizeSmallCaps(parent)).toBe(true);
+    expect(domToRuns(parent)).toEqual([{ text: 'Ax\nb', fontVariantCaps: 'small-caps' }]);
+    span.style.fontVariant = 'normal';
+    expect(normalizeSmallCaps(parent)).toBe(true);
+    expect(parent.textContent).toBe('Ax\nb');
+  });
+
   it('flattens the pieces of a run that is no longer small caps', () => {
     runsToDom([{ text: 'Ab', fontVariantCaps: 'small-caps' }], parent);
     const span = parent.querySelector<HTMLElement>('span[data-run]')!;
