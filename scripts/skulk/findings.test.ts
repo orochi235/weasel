@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { citedPaths, firstJson, fixTallyOf, isFinished, parseFilesRead, parseFindings, reviewText, validPairs } from './findings.mjs';
+import { citedPaths, firstJson, fixTallyOf, isFinished, reportItems, parseFilesRead, parseFindings, reviewText, validPairs } from './findings.mjs';
 import { appendRecordRow } from './record.mjs';
 import { mayStartArea, parseEnvelope } from './usage.mjs';
 
@@ -61,6 +61,24 @@ describe('fixTallyOf', () => {
       'Extra defects found while fixing:', 'fixed 9c0d1e2f | an extra (sweep)', 'Checks:', '- vitest: fixed 3 files, pass',
     ].join('\n');
     expect(fixTallyOf(report)).toEqual({ fixed: 2, of: 3, extra: 1 });
+  });
+});
+
+describe('reportItems', () => {
+  it('reads what was broken and what the fix changed from either way a fixer writes a line', () => {
+    const report = [
+      'Held routes go stale after undo (A+B): fixed b34f6924a4. The pass now drops them on every write.',
+      'fixed 1ed6ba02a9 | **A level drag commits nothing** (A). The commit check now tests the preview\'s extent.',
+      '- Make Boolean Group doesn\'t strip page structure (B): not a defect. `rootsAmong` already does.',
+      'Extra defects found while fixing:', '- `createSpecHops` made edges hop over hidden specs (sweep): fixed 8cd35da9bf',
+      'Checks:', '- vitest: pass',
+    ].join('\n');
+    expect(reportItems(report)).toEqual([
+      { claim: 'Held routes go stale after undo', from: 'A+B', verdict: 'fixed', note: 'The pass now drops them on every write.' },
+      { claim: 'A level drag commits nothing', from: 'A', verdict: 'fixed', note: 'The commit check now tests the preview\'s extent.' },
+      { claim: 'Make Boolean Group doesn\'t strip page structure', from: 'B', verdict: 'not a defect', note: '`rootsAmong` already does.' },
+      { claim: '`createSpecHops` made edges hop over hidden specs', from: 'extra', verdict: 'fixed', note: '' },
+    ]);
   });
 });
 

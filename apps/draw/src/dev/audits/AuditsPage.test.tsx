@@ -7,8 +7,13 @@ import fixture from './fixture.map.json';
 
 const URL = '/test/__skulk/map';
 
+const DEFECTS = [{ round: 41, recorded: true, fixed: true, items: [{ claim: 'A scene write is lost on undo', from: 'A', verdict: 'fixed', note: 'Undo now keeps it.' }] }];
+
+/** Answers the map's route with `body`, and an area's defects route with {@link DEFECTS}. */
 function serve(status: number, body: unknown) {
-  const fetch = vi.fn(async () => new Response(typeof body === 'string' ? body : JSON.stringify(body), { status }));
+  const fetch = vi.fn(async (url: string) => (String(url).includes('__skulk/area')
+    ? new Response(JSON.stringify(DEFECTS), { status: 200 })
+    : new Response(typeof body === 'string' ? body : JSON.stringify(body), { status })));
   vi.stubGlobal('fetch', fetch);
   return fetch;
 }
@@ -46,14 +51,16 @@ describe('AuditsPage', () => {
     expect(screen.getByText('1 finding, read 9 of 12 files')).toBeInTheDocument();
   });
 
-  it('opens an area picked from the queue, through the map selection', async () => {
+  it('opens an area picked from the queue, through the map selection, with its defects', async () => {
     serve(200, fixture);
     renderPage();
     expect(await screen.findByText('Hover or click an area for its passes.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /core\.scene/ }));
-    const detail = screen.getByText('core.scene', { selector: 'div' }).parentElement!;
+    const detail = screen.getAllByText('core.scene', { selector: 'div' })[0]!.parentElement!;
     expect(within(detail).getByText('due again')).toBeInTheDocument();
     expect(within(detail).getByRole('table')).toHaveTextContent('33');
+    expect(await screen.findByText('A scene write is lost on undo')).toBeInTheDocument();
+    expect(screen.getByText('Undo now keeps it.')).toBeInTheDocument();
 
     fireEvent.click(within(screen.getByRole('list', { name: 'Round 41 lanes' })).getByRole('button', { name: 'core.ops' }));
     expect(screen.getByText('in round 41')).toBeInTheDocument();

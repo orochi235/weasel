@@ -3,6 +3,7 @@ import { asNodeId } from '@weasel-js/core';
 import { useSelection } from '@weasel-js/editing';
 import { ResizeHandle } from '@weasel-js/ui/components/ResizeHandle';
 import { DevShell } from '../DevShell';
+import { AreaDefects } from './AreaDefects';
 import { AreaDetail } from './AreaDetail';
 import { JobsFeed } from './JobsFeed';
 import { LiveRuns } from './LiveRuns';
@@ -76,6 +77,7 @@ function Chart({ map }: { map: SkulkMap }) {
         <ResizeHandle value={asideWidth} min={ASIDE.min} max={ASIDE.max} invert onInput={setAsideWidth} onChange={keepAside} aria-label="Resize the side panel" />
         <aside className={s.aside} aria-label="Area, queue and rounds">
           <AreaDetail area={area} holder={area && runHolding(map.runs, area.id)} />
+          {picked && <AreaDefects id={picked} version={map.generated} />}
           <NextUp areas={next} onPick={pick} onLight={setLit} />
           <RoundsChart rounds={map.rounds} />
         </aside>

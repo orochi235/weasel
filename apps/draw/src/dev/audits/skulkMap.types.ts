@@ -94,3 +94,20 @@ export interface SkulkMap {
   readonly areas: readonly AuditArea[];
   readonly rounds: readonly AuditRound[];
 }
+
+/** One defect as a round tells it: what was broken, who listed it, what became of it, and what the fix changed. */
+export interface AuditDefect {
+  readonly claim: string;
+  /** `A`, `B`, `A+B`, `sweep`, or `extra` for one the fixer found itself. */
+  readonly from: string;
+  readonly verdict: 'fixed' | 'not a defect' | 'duplicate' | 'question' | 'not fixed' | 'open';
+  readonly note: string;
+}
+
+/** One round's defects in an area: from its record once landed, and from its fixer's report once it has one. */
+export interface AuditAreaRound {
+  readonly round: number;
+  readonly recorded: boolean;
+  readonly fixed: boolean;
+  readonly items: readonly AuditDefect[];
+}
