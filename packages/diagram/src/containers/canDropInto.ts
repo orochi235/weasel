@@ -1,7 +1,7 @@
 import { rectContainsPointHalfOpen, type Rect } from '@weasel-js/geom';
 import { diagramEdgeOf } from '../edgeTrait';
 import { diagramLabelOf } from '../labelTrait';
-import { dataKeyReader } from '../trait';
+import { DIAGRAM_TRAIT_KEY } from '../trait';
 import type { DropVerdict } from '@weasel-js/core';
 import { bodyBox, diagramContainerOf, type ContainerRole } from './trait';
 
@@ -13,8 +13,8 @@ export type CanReparent = (ids: readonly string[], container: string) => DropVer
  * shapes and other containers, a pool takes only lanes, and a lane goes
  * nowhere but a pool. A stencil body, an edge, or a label takes nothing, and
  * edges and labels are never dropped in: they stay where they are, drawn from
- * what they are attached to. Any other container — a plain group — takes
- * anything but a lane. `canReparent` is asked about a move the rules allow
+ * what they are attached to. A plain group — a group carrying no diagram
+ * trait — takes anything but a lane, and nothing else takes anything. `canReparent` is asked about a move the rules allow
  * into a container the nodes are not already in, and has the last word.
  */
 export function diagramCanDropInto(
@@ -37,13 +37,18 @@ export function diagramCanDropInto(
     if (role === 'pool') return ids.every((id) => roleOf(id) === 'lane');
     if (ids.some((id) => roleOf(id) === 'lane')) return false;
     if (role !== null) return ids.every((id) => roleOf(id) !== 'pool');
-    return !attached(parent) && dataKeyReader(node) === null;
+    return node.kind === 'group' && !hasDiagramTrait(node);
   };
   return (parent, ids) => {
     if (!allowed(parent, ids)) return false;
     if (canReparent === undefined || ids.every((id) => nodeOf(id)?.parent === parent)) return true;
     return canReparent(ids, parent);
   };
+}
+
+function hasDiagramTrait(node: { data: unknown }): boolean {
+  const data = node.data;
+  return data !== null && typeof data === 'object' && (data as Record<string, unknown>)[DIAGRAM_TRAIT_KEY] != null;
 }
 
 /** What {@link diagramDropParentAt} walks. */

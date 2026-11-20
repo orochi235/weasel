@@ -17,6 +17,9 @@ const NODES: Record<string, N> = {
   group: { id: 'group', kind: 'group', data: {} },
   shape: { id: 'shape', kind: 'mark', data: { diagram: { outline: 'rect' } } },
   edge: { id: 'edge', kind: 'mark', data: { diagram: { from: {}, to: {} } } },
+  text: { id: 'text', kind: 'mark', data: {} },
+  seq: { id: 'seq', kind: 'group', data: { diagram: { sequence: {} } } },
+  anchor: { id: 'anchor', kind: 'group', data: { diagram: { anchor: {} } } },
 };
 const can = diagramCanDropInto({ get: (id: never) => NODES[id as string] });
 
@@ -42,6 +45,12 @@ describe('diagramCanDropInto', () => {
     expect(can('body', ['shape'])).toBe(false);
     expect(can('box', ['edge'])).toBe(false);
     expect(can('group', ['shape'])).toBe(true);
+  });
+
+  it('takes nothing into a mark, or into a group carrying a diagram trait that is no region', () => {
+    expect(can('text', ['shape'])).toBe(false);
+    expect(can('seq', ['shape'])).toBe(false);
+    expect(can('anchor', ['shape'])).toBe(false);
   });
 
   it('asks the host about a structurally allowed reparent, and answers with its verdict', () => {
