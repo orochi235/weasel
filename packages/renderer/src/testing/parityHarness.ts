@@ -54,16 +54,29 @@ export interface Diff {
   readonly first: readonly string[];
 }
 
-let device: GPUDevice | null = null;
+let device: Promise<GPUDevice> | null = null;
 const errors: string[] = [];
 
-/** The shared device, every uncaptured error it raises collected for `takeErrors`. */
-export async function parityDevice(): Promise<GPUDevice> {
-  if (device) return device;
-  device = await requestRendererDevice();
-  if (!device) throw new Error('no WebGPU device: the browser project launches Chromium with --enable-unsafe-webgpu');
-  device.addEventListener('uncapturederror', (e) => errors.push(`uncaptured: ${(e as GPUUncapturedErrorEvent).error.message}`));
+/** The shared device, every uncaptured error it raises collected for `takeErrors`,
+ *  and requested again once it is lost. */
+export function parityDevice(): Promise<GPUDevice> {
+  device ??= openDevice().catch((err: unknown) => {
+    device = null;
+    throw err;
+  });
   return device;
+}
+
+async function openDevice(): Promise<GPUDevice> {
+  const gpu = await requestRendererDevice();
+  if (!gpu) throw new Error('no WebGPU device: the browser project launches Chromium with --enable-unsafe-webgpu');
+  const held = device;
+  gpu.addEventListener('uncapturederror', (e) => errors.push(`uncaptured: ${(e as GPUUncapturedErrorEvent).error.message}`));
+  void gpu.lost.then((info) => {
+    if (info.reason !== 'destroyed') errors.push(`device lost: ${info.message}`);
+    if (device === held) device = null;
+  });
+  return gpu;
 }
 
 /** The WebGPU errors raised since the last call. Not the browser's own
@@ -112,13 +125,20 @@ export async function openBackends({ width, height, dpr, antialias = false }: Pa
   glCanvas.height = Math.round(height * dpr);
   const glContext = glCanvas.getContext('webgl2', { stencil: true, antialias, preserveDrawingBuffer: true })!;
   const canvas = document.createElement('canvas');
-  const b = await scoped(gpuDevice, 'building the renderer', (): Backends => ({
-    gl: new WeaselRenderer({ gl: glContext, width, height, dpr }),
-    gpu: new WeaselRenderer({ gpu: { device: gpuDevice, canvas, antialias }, width, height, dpr }),
-    glContext, canvas, device: gpuDevice, width: glCanvas.width, height: glCanvas.height,
-  }));
-  opened.push(b);
-  return b;
+  const built: { gl?: WeaselRenderer } = {};
+  try {
+    const b = await scoped(gpuDevice, 'building the renderer', (): Backends => {
+      const gl = built.gl = new WeaselRenderer({ gl: glContext, width, height, dpr });
+      const gpu = new WeaselRenderer({ gpu: { device: gpuDevice, canvas, antialias }, width, height, dpr });
+      return { gl, gpu, glContext, canvas, device: gpuDevice, width: glCanvas.width, height: glCanvas.height };
+    });
+    opened.push(b);
+    return b;
+  } catch (err) {
+    built.gl?.dispose();
+    glContext.getExtension('WEBGL_lose_context')?.loseContext();
+    throw err;
+  }
 }
 
 /** Dispose every renderer `openBackends` built, and let go of both
@@ -134,8 +154,9 @@ export function closeBackends(): void {
 
 /** Destroy the shared device, once a file is done with it. */
 export function releaseDevice(): void {
-  device?.destroy();
+  const held = device;
   device = null;
+  void held?.then((gpu) => gpu.destroy(), () => {});
 }
 
 function readGl(b: Backends): Uint8Array {
@@ -164,9 +185,8 @@ function readGpu(b: Backends): Promise<Uint8Array> {
     const out = new Uint8Array(width * height * 4);
     for (let y = 0; y < height; y++) out.set(mapped.subarray(y * stride, y * stride + width * 4), y * width * 4);
     buffer.unmap();
-    buffer.destroy();
     return out;
-  });
+  }).finally(() => buffer.destroy());
 }
 
 /** Whether pixel `p` of `a` matches all eight of its neighbors: away from any edge. */

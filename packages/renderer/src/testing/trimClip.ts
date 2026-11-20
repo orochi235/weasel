@@ -8,7 +8,7 @@
  * differ too. Nothing else may.
  */
 import { afterEach, expect, it } from 'vitest';
-import { mat3, pathFromD, pointAlongPath, polylineFromPoints, type Affine, type Path } from '@weasel-js/geom';
+import { countPathAnchors, mat3, pathFromD, pointAlongPath, polylineFromPoints, type Affine, type Path } from '@weasel-js/geom';
 import { clipRibbon, clipWindow, strokeMetricOf, tessellateStroke, type StrokeMetric } from '@weasel-js/stroke';
 import { quantizeStrokeScale } from '../cache/strokeMeshCache';
 import { stencilledEvenOdd } from './stencilledEvenOdd';
@@ -173,24 +173,34 @@ const GRADIENT: CommandPaint = {
  * earlier segment paints the overlap, and the rebuilt one splits it at the
  * bisector, so each shows a different anchor's color there.
  */
-const PAINTS: [string, Pick<CommandStroke, 'paint' | 'vertexColors'>, CommandPaint, number, number][] = [
+/** A stroke's paint, with `anchorColors` asking for a ramp across the path's anchors. */
+type StrokePaint = Pick<CommandStroke, 'paint'> & { anchorColors?: true };
+
+/** Blue to red across `path`'s anchors, one RGBA per anchor as `vertexColors` takes them. */
+function anchorRamp(path: Path): number[] {
+  const n = countPathAnchors(path);
+  return Array.from({ length: n }, (_, k) => [k / (n - 1), 0.4, 1 - k / (n - 1), 1]).flat();
+}
+
+function strokeFields({ paint, anchorColors }: StrokePaint, path: Path): Pick<CommandStroke, 'paint' | 'vertexColors'> {
+  return anchorColors ? { paint, vertexColors: anchorRamp(path) } : { paint };
+}
+
+const PAINTS: [string, StrokePaint, CommandPaint, number, number][] = [
   ['translucent', { paint: { color: '#ffb000', opacity: 0.5 } }, { color: '#ffb000' }, 0.5, 1],
   ['a gradient', { paint: GRADIENT }, GRADIENT, 1, 3],
   ['a translucent gradient', { paint: { ...GRADIENT, opacity: 0.6 } as CommandPaint }, GRADIENT, 0.6, 3],
-  ['vertex colors', {
-    paint: { color: '#ffffff', opacity: 0.7 },
-    vertexColors: Array.from({ length: 41 }, (_, k) => [k / 40, 0.4, 1 - k / 40, 1]).flat(),
-  }, { color: '#ffffff' }, 0.7, 3],
+  ['vertex colors', { paint: { color: '#ffffff', opacity: 0.7 }, anchorColors: true }, { color: '#ffffff' }, 0.7, 3],
 ];
 
 /** One test per shape and paint, each against every trim. */
 export function paintCases(antialias: boolean): void {
   for (const [name, path, curved] of SHAPES) {
     for (const [painted, fields, opaquePaint, alpha, tolerance] of PAINTS) {
-      if (fields.vertexColors && !curved) continue;
+      if (fields.anchorColors && !curved) continue;
       it(`paints what the rebuilt one does: ${name}, ${painted}${antialias ? ', multisampled' : ''}`, () => {
         for (const trim of TRIMS) {
-          const stroke: CommandStroke = { width: 9, cap: 'round', join: 'round', ...fields, trim };
+          const stroke: CommandStroke = { width: 9, cap: 'round', join: 'round', ...strokeFields(fields, path), trim };
           const clipped = paint(frame(path, stroke), antialias, true);
           const once: DrawCommand[] = [{ kind: 'path', path, stroke: { ...stroke, paint: opaquePaint } }];
           const rebuilt = paint(alpha < 1 ? [{ kind: 'group', isolate: true, alpha, children: once }] : once, antialias, false);
@@ -245,9 +255,9 @@ export function metricCases(antialias: boolean): void {
 }
 
 /** Every paint a stroke takes, opaque or not, for comparing a stroke with itself. */
-const ALL_PAINTS: [string, Pick<CommandStroke, 'paint' | 'vertexColors'>][] = [
+const ALL_PAINTS: [string, StrokePaint][] = [
   ['opaque', { paint: { color: '#ffb000' } }],
-  ...PAINTS.map(([name, fields]): [string, Pick<CommandStroke, 'paint' | 'vertexColors'>] => [name, fields]),
+  ...PAINTS.map(([name, fields]): [string, StrokePaint] => [name, fields]),
 ];
 
 /**
@@ -261,7 +271,7 @@ export function wholeCases(antialias: boolean): void {
   for (const [name, path] of SHAPES) {
     for (const [painted, fields] of ALL_PAINTS) {
       it(`draws a whole trim as no trim: ${name}, ${painted}${antialias ? ', multisampled' : ''}`, () => {
-        const stroke: CommandStroke = { width: 9, cap: 'round', join: 'round', ...fields };
+        const stroke: CommandStroke = { width: 9, cap: 'round', join: 'round', ...strokeFields(fields, path) };
         for (const view of [undefined, STRETCH]) {
           const at = (s: CommandStroke): DrawCommand[] => (view
             ? [{ kind: 'group', transform: mat3.fromAffine(view), children: frame(path, { ...s, width: { px: 9 } }) }]

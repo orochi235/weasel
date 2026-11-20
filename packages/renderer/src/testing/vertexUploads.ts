@@ -60,9 +60,9 @@ export function createUploadTracker(recorder: GLRecorder): UploadTracker {
           continue;
         }
         if (call.name === 'vertexAttribPointer') {
-          // Byte stride; 0 means tightly packed, which for a_position is a vec2.
+          // A byte stride of 0 means tightly packed: one attribute's floats per vertex.
           const bytes = call.args[4] as number;
-          strides.set(bound, bytes === 0 ? 2 : bytes / 4);
+          strides.set(bound, bytes === 0 ? (call.args[1] as number) : bytes / 4);
           continue;
         }
         if (call.name !== 'bufferData' && call.name !== 'bufferSubData') continue;

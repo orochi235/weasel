@@ -11,6 +11,7 @@
 import { paintTextures } from '../draw/paintBind';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import type { PaintBindContext } from '../paintKinds';
+import { NOT_METHODS } from './standInKeys';
 
 /** One recorded call on the context: its name, its arguments, and what it returned. */
 export interface GLCall {
@@ -46,9 +47,11 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   ARRAY_BUFFER: 0x8892,
   ELEMENT_ARRAY_BUFFER: 0x8893,
   STATIC_DRAW: 0x88E4,
+  DYNAMIC_DRAW: 0x88E8,
   // Types
   FLOAT: 0x1406,
   UNSIGNED_INT: 0x1405,
+  UNSIGNED_SHORT: 0x1403,
   // Primitives
   TRIANGLES: 0x0004,
   // Errors / state
@@ -67,6 +70,9 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   UNPACK_SKIP_PIXELS: 0x0CF4,
   PIXEL_UNPACK_BUFFER: 0x88EC,
   MAX_TEXTURE_SIZE: 0x0D33,
+  UNPACK_ALIGNMENT: 0x0CF5,
+  RENDERER: 0x1F01,
+  SAMPLES: 0x80A9,
   // Blend factors
   SRC_ALPHA: 0x0302,
   ONE_MINUS_SRC_ALPHA: 0x0303,
@@ -95,6 +101,8 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   TEXTURE_2D: 0x0DE1,
   TEXTURE0: 0x84C0,
   RGBA: 0x1908,
+  RED: 0x1903,
+  R8: 0x8229,
   UNSIGNED_BYTE: 0x1401,
   TEXTURE_MIN_FILTER: 0x2801,
   TEXTURE_MAG_FILTER: 0x2800,
@@ -113,6 +121,8 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   // reads as 0 through the proxy, so `expect(args[0]).toBe(gl.FRAMEBUFFER)`
   // would compare 0 against 0 and pass over a renderer that bound nothing.
   FRAMEBUFFER: 0x8D40,
+  READ_FRAMEBUFFER: 0x8CA8,
+  DRAW_FRAMEBUFFER: 0x8CA9,
   RENDERBUFFER: 0x8D41,
   FRAMEBUFFER_BINDING: 0x8CA6,
   RENDERBUFFER_BINDING: 0x8CA7,
@@ -149,6 +159,8 @@ function snapshot(value: unknown): unknown {
 /** A WebGL2 stand-in that records every call and draws nothing. */
 export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
   const calls: GLCall[] = [];
+  // Not `calls.length`, which a reset rewinds: handles minted after it would equal earlier ones.
+  let minted = 0;
   const {
     drawingBufferWidth = 800,
     drawingBufferHeight = 600,
@@ -157,10 +169,16 @@ export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
 
   // Read as data, not called. The Proxy below hands back a recording function
   // for every lowercase property, so without this `drawingBufferHeight` is a
-  // function and every y-flip computed from it is NaN — silently.
+  // function and every y-flip computed from it is NaN — silently. Every data
+  // property a real context has belongs here.
   const DATA_PROPERTIES: Readonly<Record<string, unknown>> = {
     drawingBufferWidth,
     drawingBufferHeight,
+    drawingBufferColorSpace: 'srgb',
+    unpackColorSpace: 'srgb',
+    drawingBufferFormat: 0x8058,
+    // An event target, so a renderer watches it for context loss and a test can dispatch one.
+    canvas: Object.assign(new EventTarget(), { width: drawingBufferWidth, height: drawingBufferHeight }),
   };
 
   const handler = (name: string) => (...args: unknown[]) => {
@@ -173,11 +191,11 @@ export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
       case 'createTexture':
       case 'createFramebuffer':
       case 'createRenderbuffer':
-        result = syntheticHandle(name, calls.length);
+        result = syntheticHandle(name, minted++);
         break;
       case 'getUniformLocation':
       case 'getAttribLocation':
-        result = calls.length;
+        result = minted++;
         break;
       case 'getShaderParameter':
       case 'getProgramParameter':
@@ -204,9 +222,9 @@ export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
     {},
     {
       get(_, prop: string | symbol) {
-        if (typeof prop !== 'string') return undefined;
-        if (prop in DATA_PROPERTIES) return DATA_PROPERTIES[prop];
-        if (prop in GL_CONSTANTS) return GL_CONSTANTS[prop];
+        if (typeof prop !== 'string' || NOT_METHODS.has(prop)) return undefined;
+        if (Object.hasOwn(DATA_PROPERTIES, prop)) return DATA_PROPERTIES[prop];
+        if (Object.hasOwn(GL_CONSTANTS, prop)) return GL_CONSTANTS[prop];
         if (/^[A-Z_0-9]+$/.test(prop)) return 0; // unknown all-caps constant → 0
         return handler(prop);
       },

@@ -5,6 +5,8 @@
  * steer the promises a real device settles (`lose`, `failMaps`, `failPipelines`).
  */
 
+import { NOT_METHODS } from './standInKeys';
+
 export interface FakeGpuObject {
   readonly label: string;
   readonly desc: Record<string, unknown>;
@@ -35,6 +37,12 @@ export function fakeGpuDevice(width = 64, height = 64): FakeGpuDevice {
   const lost = new Promise<GPUDeviceLostInfo>((resolve) => { lose = resolve; });
   const scopes: (unknown | null)[] = [];
   const state = { failMaps: false, failPipelines: false };
+  const events = new EventTarget();
+  /** Into the innermost open scope, keeping its first error, or out as `uncapturederror` with none open. */
+  const raise = (error: { message: string }): void => {
+    if (scopes.length > 0) scopes[scopes.length - 1] ??= error;
+    else events.dispatchEvent(Object.assign(new Event('uncapturederror'), { error }));
+  };
 
   const buffer = (desc: GPUBufferDescriptor) => {
     const record: FakeGpuObject = { label: desc.label ?? 'buffer', desc: { ...desc }, destroyed: false };
@@ -61,13 +69,15 @@ export function fakeGpuDevice(width = 64, height = 64): FakeGpuDevice {
   };
 
   const renderPass = () => new Proxy({}, {
-    get: (_, method: string) => (...args: unknown[]) => { passCalls.push([method, ...args]); },
+    get: (_, method: string | symbol) => (typeof method !== 'string' || NOT_METHODS.has(method)
+      ? undefined
+      : (...args: unknown[]) => { passCalls.push([method, ...args]); }),
   }) as GPURenderPassEncoder;
 
   const device = {
     limits: { maxTextureDimension2D: 8192, minUniformBufferOffsetAlignment: 256 },
     lost,
-    queue: { writeBuffer() {}, writeTexture() {}, copyExternalImageToTexture() {}, submit() {} },
+    queue: { writeBuffer() {}, writeTexture() {}, copyExternalImageToTexture() {}, submit: () => { present(); } },
     createBuffer: buffer,
     createTexture: texture,
     createSampler: () => ({}),
@@ -76,11 +86,16 @@ export function fakeGpuDevice(width = 64, height = 64): FakeGpuDevice {
     createPipelineLayout: () => ({}),
     createShaderModule: () => ({ getCompilationInfo: () => Promise.resolve({ messages: [] }) }),
     createRenderPipeline: () => {
-      if (state.failPipelines && scopes.length > 0) scopes[scopes.length - 1] ??= { message: 'invalid pipeline' };
+      if (state.failPipelines) raise({ message: 'invalid pipeline' });
       return { getBindGroupLayout: () => ({}) };
     },
     pushErrorScope: () => { scopes.push(null); },
-    popErrorScope: () => Promise.resolve(scopes.pop() ?? null),
+    popErrorScope: () => (scopes.length === 0
+      ? Promise.reject(new DOMException('no error scope to pop', 'OperationError'))
+      : Promise.resolve(scopes.pop() ?? null)),
+    destroy: () => { lose({ reason: 'destroyed', message: 'destroyed' } as GPUDeviceLostInfo); },
+    addEventListener: events.addEventListener.bind(events),
+    removeEventListener: events.removeEventListener.bind(events),
     createCommandEncoder: () => ({
       beginRenderPass: renderPass,
       copyTextureToBuffer() {}, copyTextureToTexture() {},
@@ -88,13 +103,23 @@ export function fakeGpuDevice(width = 64, height = 64): FakeGpuDevice {
     }),
   } as unknown as GPUDevice;
 
-  let current: GPUTexture | null = null;
+  // A real context's texture lasts one frame, sized to the canvas when it was
+  // taken; a submit stands in for the frame's end.
+  let current: { texture: GPUTexture; record: FakeGpuObject } | null = null;
+  const present = (): void => {
+    if (current) current.record.destroyed = true;
+    current = null;
+  };
   const canvas = { width, height };
   const context = {
     configure() {},
     getCurrentTexture: () => {
-      current ??= texture({ label: 'context', size: [canvas.width, canvas.height], format: 'rgba8unorm', usage: 0 });
-      return current;
+      if (current && (current.texture.width !== canvas.width || current.texture.height !== canvas.height)) present();
+      if (!current) {
+        const tex = texture({ label: 'context', size: [canvas.width, canvas.height], format: 'rgba8unorm', usage: 0 });
+        current = { texture: tex, record: textures[textures.length - 1] };
+      }
+      return current.texture;
     },
   } as unknown as GPUCanvasContext;
 

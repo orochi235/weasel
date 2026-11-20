@@ -28,8 +28,8 @@ describe('u_windowOrigin', () => {
       fill: { paint: { color: '#ffffff' } },
     };
     renderer.render([{ kind: 'group', effects: [{ program, reach: 0 }], children: [square] }]);
-    const locations = new Set(rec.calls.flatMap((c, i) =>
-      c.name === 'getUniformLocation' && c.args[1] === 'u_windowOrigin' ? [i] : []));
+    const locations = new Set(rec.calls.flatMap((c) =>
+      c.name === 'getUniformLocation' && c.args[1] === 'u_windowOrigin' ? [c.result as number] : []));
     expect(locations.size).toBeGreaterThan(0);
     const uploads = rec.calls.filter((c) => c.name === 'uniform2f' && locations.has(c.args[0] as number));
     expect(uploads.map((c) => c.args.slice(1))).toEqual([[9, 19]]);
