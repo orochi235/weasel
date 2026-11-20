@@ -5,10 +5,11 @@
 import { describe, expect, it } from 'vitest';
 import { alignToGrid, snapToPitch, type OutputGrid } from '@weasel-js/geom';
 import type { InvocationCtx, ResizeAnchor } from '@weasel-js/routing';
-import { createScene, OUTPUT_GRID_KEY, quantizeSize } from '@weasel-js/core/engine';
+import { createScene, OUTPUT_GRID_KEY, quantizeSize, defaultCommitAdapter } from '@weasel-js/core/engine';
 import { asNodeId, type NodeId, type RectPose, type Scene } from '@weasel-js/core';
 import type { QuantizeRule } from '@weasel-js/core/engine';
 import { resizeAction } from './action';
+import { resizeSelectionOps } from './replay';
 
 type Data = { kind: 'box' };
 type S = Scene<Data, 'main', RectPose>;
@@ -71,5 +72,17 @@ describe('a resize under a quantize rule', () => {
       expect(anchor.y === 'max' ? end.y + end.height : end.y).toBeCloseTo(held.y, 9);
     });
   }
-});
 
+  it('replayed by command, holds the anchored side as the drag does', () => {
+    const scene = makeScene();
+    const start = scene.get(BOX)!.pose;
+    const anchor = { x: 'max', y: 'max' } as const;
+    const ops = resizeSelectionOps(scene as never, [BOX], anchor, { x: -0.11, y: -9.1, width: 1.11, height: 10.1 }, {}, 'Scale');
+    scene.applyBatch(ops, 'Scale', defaultCommitAdapter(scene));
+    const end = scene.get(BOX)!.pose;
+    expect(whole(dots(end.width))).toBe(true);
+    expect(whole(dots(end.height))).toBe(true);
+    expect(end.x + end.width).toBeCloseTo(start.x + start.width, 9);
+    expect(end.y + end.height).toBeCloseTo(start.y + start.height, 9);
+  });
+});
