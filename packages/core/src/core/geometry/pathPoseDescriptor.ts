@@ -8,8 +8,16 @@ import {
   transformPath,
   worldCoords,
   type Path,
+  type PolygonPath,
 } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
+
+/** Whether two polygons have one command stream, so their coordinates pair up point for point. */
+function samePolygonShape(a: PolygonPath, b: PolygonPath): boolean {
+  if (a.coords.length !== b.coords.length || a.commands.length !== b.commands.length) return false;
+  for (let i = 0; i < a.commands.length; i++) if (a.commands[i] !== b.commands[i]) return false;
+  return true;
+}
 
 /**
  * `PoseDescriptor` for `Path` poses — wires `useResize` to operate
@@ -39,18 +47,20 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
         height: lerp(a.height, b.height, t),
       };
     }
-    if (a.kind === 'polygon' && b.kind === 'polygon' && a.coords.length === b.coords.length) {
+    if (a.kind === 'polygon' && b.kind === 'polygon' && samePolygonShape(a, b)) {
       const aw = worldCoords(a), bw = worldCoords(b);
       const mid = new Float64Array(aw.length);
       for (let i = 0; i < aw.length; i++) mid[i] = lerp(aw[i], bw[i], t);
-      const next = coordsFrom(a.origin, mid);
-      const { corners: _a, ...bare } = a;
+      // What does not interpolate is the nearer end's, as `lerpCorners` takes a corner's shape.
+      const near = t < 0.5 ? a : b;
+      const next = coordsFrom(near.origin, mid);
+      const { corners: _a, ...bare } = near;
       const corners = lerpCorners(a.corners, b.corners, t);
       return corners ? { ...bare, coords: next, corners } : { ...bare, coords: next };
     }
     throw new Error('pathPoseDescriptor.lerp: incompatible path shapes');
   },
-  // A polygon's axes are its coordinates, so a move needs both ends to have as many points.
+  // A polygon's axes are its coordinates, so a move needs both ends to have one command stream.
   axes: (like) => {
     if (like.kind === 'rect') {
       return {
@@ -70,18 +80,21 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
         },
       };
     }
+    const count = like.coords.length;
+    // A pose of another shape has no axes here, as a polygon has none in the rect branch.
+    const fits = (p: Path): p is PolygonPath => p.kind === 'polygon' && samePolygonShape(p, like);
     return {
-      count: like.coords.length,
-      to: (p) => (p.kind === 'polygon' ? Array.from(worldCoords(p)) : []),
+      count,
+      to: (p) => (fits(p) ? Array.from(worldCoords(p)) : []),
       from: (a) => ({ ...like, coords: coordsFrom(like.origin, a as ArrayLike<number>) }),
       add: (p, d) => {
-        if (p.kind !== 'polygon') return p;
+        if (!fits(p)) return p;
         const moved = Float64Array.from(worldCoords(p));
         for (let i = 0; i < moved.length; i++) moved[i]! += d[i]!;
-        return { ...like, coords: coordsFrom(like.origin, moved) };
+        return { ...p, coords: coordsFrom(p.origin, moved) };
       },
       write: (p, out, at) => {
-        if (p.kind !== 'polygon') return;
+        if (!fits(p)) return;
         const world = worldCoords(p);
         for (let i = 0; i < world.length; i++) out[at + i] = world[i]!;
       },

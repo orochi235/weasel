@@ -6,6 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { isPathLike, AUTO_POSE_DESCRIPTOR } from './autoPoseDescriptor';
+import { polygonFromPoints } from '@weasel-js/geom';
 import { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 import {
   PATH_M,
@@ -109,6 +110,18 @@ describe('AUTO fromBounds / withRotation', () => {
       .toEqual({ x: 5, y: 10, width: 20, height: 10 });
     expect(lerp({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect', x: 10, y: 0, width: 10, height: 30 }, 0.5))
       .toEqual({ kind: 'rect', x: 5, y: 0, width: 10, height: 20 });
+  });
+
+  it('maps a rect Path through the Path axes, which carry no rotation', () => {
+    const axes = AUTO_POSE_DESCRIPTOR.axes!({ kind: 'rect', ...box })!;
+    expect(axes.count).toBe(4);
+    expect(axes.angles).toBeUndefined();
+  });
+
+  it('refuses to lerp a Path pose with a rect pose', () => {
+    const polygon = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 0, y: 10 }]);
+    expect(() => AUTO_POSE_DESCRIPTOR.lerp!(polygon, { ...box }, 0.5)).toThrow(/Path pose and a rect pose/);
+    expect(() => AUTO_POSE_DESCRIPTOR.lerp!({ ...box }, polygon, 0.5)).toThrow(/Path pose and a rect pose/);
   });
 
   it('pathPoseDescriptor.fromBounds returns a rect Path', () => {
