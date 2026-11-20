@@ -10,8 +10,8 @@ export type CanReparent = (ids: readonly string[], container: string) => DropVer
 
 /**
  * The `canDropInto` dep for a diagram scene. A container or a lane takes
- * shapes and other containers, a pool takes only lanes, and a lane goes
- * nowhere but a pool. A stencil body, an edge, or a label takes nothing, and
+ * shapes and other containers, a pool takes only lanes stacking along its
+ * axis, and a lane goes nowhere but a pool. A stencil body, an edge, or a label takes nothing, and
  * edges and labels are never dropped in: they stay where they are, drawn from
  * what they are attached to. A plain group — a group carrying no diagram
  * trait — takes anything but a lane, and nothing else takes anything. `canReparent` is asked about a move the rules allow
@@ -34,7 +34,11 @@ export function diagramCanDropInto(
     const node = nodeOf(parent);
     if (node === undefined || ids.some(attached)) return false;
     const role = roleOf(parent);
-    if (role === 'pool') return ids.every((id) => roleOf(id) === 'lane');
+    if (role === 'pool') {
+      // A lane is built for its pool's axis, header and layout both, so it moves only into a pool stacking the same way.
+      const side = diagramContainerOf(node)?.header?.side;
+      return ids.every((id) => roleOf(id) === 'lane' && diagramContainerOf(nodeOf(id)!)?.header?.side === side);
+    }
     if (ids.some((id) => roleOf(id) === 'lane')) return false;
     if (role !== null) return ids.every((id) => roleOf(id) !== 'pool');
     return node.kind === 'group' && !hasDiagramTrait(node);

@@ -6,13 +6,16 @@ import { diagramScene } from '../fromData';
 import { diagramCanDropInto, diagramDropParentAt } from './canDropInto';
 
 type N = { id: string; kind: 'mark' | 'group'; data: unknown };
-const region = (id: string, role: string): N =>
-  ({ id, kind: 'group', data: { diagram: { outline: 'rect', container: { role } } } });
+const region = (id: string, role: string, side?: 'top' | 'left'): N =>
+  ({ id, kind: 'group', data: { diagram: { outline: 'rect', container: { role, ...(side ? { header: { side, size: 32 } } : {}) } } } });
 const NODES: Record<string, N> = {
   box: region('box', 'container'),
   pool: region('pool', 'pool'),
   lane: region('lane', 'lane'),
   lane2: region('lane2', 'lane'),
+  rows: region('rows', 'pool', 'left'),
+  row: region('row', 'lane', 'left'),
+  column: region('column', 'lane', 'top'),
   body: { id: 'body', kind: 'group', data: { diagram: { outline: 'rect' } } },
   group: { id: 'group', kind: 'group', data: {} },
   shape: { id: 'shape', kind: 'mark', data: { diagram: { outline: 'rect' } } },
@@ -34,6 +37,11 @@ describe('diagramCanDropInto', () => {
     expect(can('pool', ['shape'])).toBe(false);
     expect(can('box', ['lane'])).toBe(false);
     expect(can('group', ['lane'])).toBe(false);
+  });
+
+  it('lets a lane move only into a pool stacking along its axis', () => {
+    expect(can('rows', ['row'])).toBe(true);
+    expect(can('rows', ['column'])).toBe(false);
   });
 
   it('keeps pools out of containers and lanes', () => {

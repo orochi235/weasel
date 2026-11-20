@@ -2812,3 +2812,9 @@ Calls the lanes made without a ruling:
   and the end only where none does, so `present.go` reaches every page by its id and old callers keep working.
   Keeping the ends ahead of the ids, so such a page was unreachable by id, was the alternative; so was dropping
   `to: 'first' | 'last'` outright.
+
+## Audit round forty-six (2026-11-20): diagram containers
+
+- 2026-11-20 (the fixer's call): `diagramCanDropInto` refuses a lane moving into a pool that stacks along the other
+  axis — a lane whose header side is not the pool's — so a lane dragged from a pool of columns into a pool of rows
+  stays where it was. Letting it in and rewriting its header and layout key for the new axis was the alternative.
