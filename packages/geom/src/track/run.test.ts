@@ -174,3 +174,16 @@ describe('trackRun in a right-to-left direction', () => {
     expect(trackRun(shape, 0.1, 0.9).toShape(0)).toBeCloseTo(0.9);
   });
 });
+
+describe('trackRun nearest off the run', () => {
+  test("finds the run's own nearest end, not the whole shape's clamped into it", () => {
+    // A quarter of a whole circle, 12 → 3 o'clock; a probe at 11 o'clock is nearest 12.
+    const run = trackRun(arcShape({ center: { x: 0, y: 0 }, radius: 100, start: 0, end: 0 }), 0, 0.25);
+    const p = { x: -50, y: -87 };
+    const n = run.nearest(p);
+    const q = run.at(n.f).point;
+    const atStart = run.shape.at(0).point;
+    expect(Math.hypot(q.x - atStart.x, q.y - atStart.y)).toBeLessThan(1e-6);
+    expect(n.distance).toBeCloseTo(Math.hypot(p.x - atStart.x, p.y - atStart.y), 6);
+  });
+});
