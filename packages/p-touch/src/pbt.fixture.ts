@@ -76,7 +76,7 @@ export const textBox: fc.Arbitrary<DrawCommand> = fc.record({
   align: fc.constantFrom('left', 'center', 'right', 'justify', 'start', 'end'),
 }).map((t) => ({
   kind: 'text',
-  x: t.x, y: t.y, width: t.width, height: t.height, ...(t.wrap ? { maxWidth: t.width } : {}),
+  x: t.x, y: t.y, width: t.width, height: t.height, maxWidth: t.wrap ? t.width : Infinity,
   style: {}, align: t.align as never, verticalAlign: 'top',
   runs: t.texts.map((text) => run(text, {
     fontFamily: t.family, fontSize: t.size, fontWeight: t.weight, fontStyle: t.italic ? 'italic' : 'normal', underline: t.underline,

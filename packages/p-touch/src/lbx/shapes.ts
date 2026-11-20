@@ -148,7 +148,7 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
     textStyle: { color, underline: first!.underline ? 1 : 0, strikeout: first!.strikethrough ? 1 : 0 },
     control: 'FIXEDFRAME',
     shrink: false,
-    autoLF: cmd.maxWidth !== undefined,
+    autoLF: Number.isFinite(cmd.maxWidth),
     horizontalAlignment: H_ALIGN[align] ?? 'LEFT',
     verticalAlignment: V_ALIGN[cmd.verticalAlign ?? 'top'] ?? 'TOP',
     data,
