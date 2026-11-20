@@ -11,6 +11,7 @@
 import { colorLiteralToHex, hexToColorLiteral, resolvePaletteColor, type ColorLiteral, type Palette } from './palette';
 import type { CommandFill, CommandStroke, SolidPaint } from './commandPaint';
 import type { Paint, Stroke } from './paint';
+import { rgbaToHex, tryParseColor } from './color';
 import { hexAlpha, toHex8 } from './hexAlpha';
 
 /** Default fill paint for shapes and the fill action — opaque white. */
@@ -53,20 +54,31 @@ export const GHOST_STROKE_COLOR: string = paletteColorAt(0);
  * shape a `Fill.paint` or a `Stroke.paint` may take.
  *
  * An alpha channel in `color` moves to `opacity`, because that is where every
- * paint kind carries its alpha; leaving it in the hex too would multiply the
- * two in the renderer.
+ * paint kind carries its alpha; leaving it in the color too would multiply the
+ * two in the renderer. A color the kit cannot read stays as written.
  */
 export function solid(color: string): SolidPaint {
-  if (!hasHexAlpha(color)) return { color };
-  const hex8 = toHex8(color);
-  const a = hexAlpha(hex8);
-  const rgb = hex8.slice(0, 7);
-  return a === 1 ? { color: rgb } : { color: rgb, opacity: a };
+  if (hasHexAlpha(color)) {
+    const hex8 = toHex8(color);
+    const a = hexAlpha(hex8);
+    const rgb = hex8.slice(0, 7);
+    return a === 1 ? { color: rgb } : { color: rgb, opacity: a };
+  }
+  const rgba = color.startsWith('#') ? null : tryParseColor(color);
+  if (rgba === null || rgba[3] >= 1) return { color };
+  return { color: rgbaToHex([rgba[0], rgba[1], rgba[2]]), opacity: rgba[3] };
 }
 
 /** Whether `color` is a hex color with an alpha channel: `#rgba` or `#rrggbbaa`. */
 function hasHexAlpha(color: string): boolean {
   return color.startsWith('#') && (color.length === 5 || color.length === 9) && toHex8(color).length === 9;
+}
+
+/** Whether `color` carries an alpha of its own: a hex alpha channel, or any other color below full opacity. */
+function hasOwnAlpha(color: string): boolean {
+  if (hasHexAlpha(color)) return true;
+  const rgba = color.startsWith('#') ? null : tryParseColor(color);
+  return rgba !== null && rgba[3] < 1;
 }
 
 /** A fill of `color`, tagged `kind: 'solid'`; an alpha channel moves to
@@ -107,12 +119,13 @@ export function paintWithAlpha(paint: Paint, alpha01: number): Paint {
  *
  * A solid paint takes the new color; a gradient or a pattern has no single
  * color to replace, so it is superseded by a solid one — picking a color off
- * a swatch means "paint this color". An alpha channel in `color` wins;
- * without one, the paint's existing opacity carries over.
+ * a swatch means "paint this color". An alpha channel in `color` wins, a hex
+ * one or the alpha of `rgba()`, `hsl(… / a)` and the like below 1; without
+ * one, the paint's existing opacity carries over.
  */
 export function paintWithColor(paint: Paint | undefined, color: string): Paint {
   const next = solid(color);
-  if (hasHexAlpha(color) || paint === undefined) return next;
+  if (paint === undefined || hasOwnAlpha(color)) return next;
   const alpha = paintAlpha(paint);
   return alpha === 1 ? next : { ...next, opacity: alpha };
 }
