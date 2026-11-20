@@ -25,7 +25,9 @@ export function createVelocityTracker(): VelocityTracker {
     getVelocity(now) {
       const s = now === undefined ? samples : samples.filter((p) => p.t >= now - 100);
       if (s.length < 2) return { vx: 0, vy: 0 };
-      const dt = s[s.length - 1].t - s[0].t;
+      // Up to `now`, not the last sample: a pointer at rest fires no moves, so its pause has no sample.
+      const end = Math.max(now ?? -Infinity, s[s.length - 1].t);
+      const dt = end - s[0].t;
       if (dt === 0) return { vx: 0, vy: 0 };
       const totalDx = s.slice(1).reduce((acc, p) => acc + p.dx, 0);
       const totalDy = s.slice(1).reduce((acc, p) => acc + p.dy, 0);
