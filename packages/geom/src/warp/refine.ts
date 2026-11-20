@@ -60,21 +60,24 @@ class Triangulation {
     return { t, c: x !== a && x !== b ? x : y !== a && y !== b ? y : z };
   }
 
-  /** Flip edge `a→b` of the triangle `(a, b, p)` while the triangle across it disagrees. */
-  legalize(a: number, b: number, p: number): void {
-    const stack: [number, number, number][] = [[a, b, p]];
+  /** Flip edge `a→b` of the triangle having it, and each edge a flip exposes, while the triangle across disagrees. */
+  legalize(a: number, b: number): void {
+    const stack: [number, number][] = [[a, b]];
     while (stack.length > 0) {
-      const [u, v, w] = stack.pop()!;
+      const [u, v] = stack.pop()!;
       const mine = this.owner.get(this.key(u, v));
+      if (mine === undefined) continue;
+      // An earlier flip may have given edge u→v to another triangle: test that one's corner.
+      const w = this.across(v, u)!.c;
       const other = this.across(u, v);
-      if (mine === undefined || !other || !inCircle(this.V, u, v, w, other.c)) continue;
+      if (!other || !inCircle(this.V, u, v, w, other.c)) continue;
       const q = other.c;
       if (orient(this.V, u, q, w) <= 0 || orient(this.V, q, v, w) <= 0) continue;
       this.remove(mine);
       this.remove(other.t);
       this.add(u, q, w);
       this.add(q, v, w);
-      stack.push([u, q, w], [q, v, w]);
+      stack.push([u, q], [q, v]);
     }
   }
 
@@ -118,7 +121,7 @@ class Triangulation {
     if (flat < 0) {
       this.remove(t);
       this.add(a, b, p); this.add(b, c, p); this.add(c, a, p);
-      this.legalize(a, b, p); this.legalize(b, c, p); this.legalize(c, a, p);
+      this.legalize(a, b); this.legalize(b, c); this.legalize(c, a);
       return true;
     }
     // On edge u→v of this triangle, opposite corner w.
@@ -132,21 +135,24 @@ class Triangulation {
       this.add(u, other.c, p); this.add(other.c, v, p);
       rim.push([u, other.c], [other.c, v]);
     }
-    for (const [x, y] of rim) this.legalize(x, y, p);
+    for (const [x, y] of rim) this.legalize(x, y);
     return true;
   }
 }
 
 /**
- * `triangles` over `coords`, with the points from vertex `firstInner` on
- * inserted inside it and every triangle flipped toward Delaunay. A point no
- * triangle holds is left out of the mesh. Returns the new triangles.
+ * `triangles` over `coords`, with every point they leave out inserted inside
+ * them (an outline point earcut dropped for lying on an edge included), and
+ * every triangle flipped toward Delaunay. A point no triangle holds is left
+ * out of the mesh. Returns the new triangles.
  */
-export function refineTriangulation(coords: number[], triangles: ArrayLike<number>, firstInner: number): number[] {
+export function refineTriangulation(coords: number[], triangles: ArrayLike<number>): number[] {
   const n = coords.length / 2;
   const mesh = new Triangulation(coords, n);
+  const used = new Uint8Array(n);
   for (let i = 0; i + 2 < triangles.length; i += 3) {
     const [a, b, c] = [triangles[i], triangles[i + 1], triangles[i + 2]];
+    used[a] = used[b] = used[c] = 1;
     const o = orient(coords, a, b, c);
     if (o > 0) mesh.add(a, b, c);
     else if (o < 0) mesh.add(a, c, b);
@@ -155,8 +161,8 @@ export function refineTriangulation(coords: number[], triangles: ArrayLike<numbe
   for (const t of live()) {
     if (mesh.tris[3 * t] < 0) continue;
     const [a, b, c] = mesh.corners(t);
-    mesh.legalize(a, b, c); mesh.legalize(b, c, a); mesh.legalize(c, a, b);
+    mesh.legalize(a, b); mesh.legalize(b, c); mesh.legalize(c, a);
   }
-  for (let p = firstInner; p < n; p++) mesh.insert(p);
+  for (let p = 0; p < n; p++) if (!used[p]) mesh.insert(p);
   return live().flatMap((t) => mesh.corners(t));
 }

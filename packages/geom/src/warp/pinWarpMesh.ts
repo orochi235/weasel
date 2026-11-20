@@ -219,8 +219,10 @@ export function pinWarpMesh(path: PolygonPath, pins: readonly Point[], opts: Pin
     const offset = vertices.length / 2;
     const coords = points.flatMap((p) => [p.x, p.y]);
     const outline = earcut(coords.slice(0, 2 * at), holes.length > 0 ? holes : undefined);
-    for (const t of refineTriangulation(coords, outline, at)) triangles.push(t + offset);
-    points.forEach((p, i) => { for (const k of p.pins) pinVertex[k] = offset + i; });
+    const held = new Uint8Array(points.length);
+    for (const t of refineTriangulation(coords, outline)) { held[t] = 1; triangles.push(t + offset); }
+    // A pin whose point no triangle holds is left unplaced, as one off every region is.
+    points.forEach((p, i) => { if (held[i]) for (const k of p.pins) pinVertex[k] = offset + i; });
     vertices.push(...coords);
   }
   return { vertices: Float64Array.from(vertices), triangles: Uint32Array.from(triangles), pinVertex };

@@ -148,6 +148,27 @@ describe('pinWarpMap', () => {
     close(pinWarpMap(square(), pins)({ x: 0, y: 50 }), { x: 0, y: 65 }, 3);
   });
 
+  it('meshes the whole fill, and puts every pin at its target', () => {
+    const pts = [[154, 100], [120, 114], [128, 187], [90, 130], [33, 149], [60, 100], [47, 62], [87, 60], [119, 42], [177, 44]];
+    const b = new PathBuilder();
+    pts.forEach(([x, y], i) => (i ? b.lineTo(x, y) : b.moveTo(x, y)));
+    const shape = b.close().build();
+    const froms = [{ x: 131, y: 110 }, { x: 100, y: 103 }, { x: 103, y: 73 }];
+    const mesh = pinWarpMesh(shape, froms);
+    const T = mesh.triangles, V = mesh.vertices;
+    let area = 0;
+    for (let t = 0; t < T.length; t += 3) {
+      const [a, b2, c] = [T[t], T[t + 1], T[t + 2]];
+      area += ((V[2 * b2] - V[2 * a]) * (V[2 * c + 1] - V[2 * a + 1]) - (V[2 * c] - V[2 * a]) * (V[2 * b2 + 1] - V[2 * a + 1])) / 2;
+    }
+    expect(Math.abs(area)).toBeCloseTo(9190, 6);
+    const held = new Set(mesh.triangles);
+    mesh.pinVertex.forEach((v) => { expect(v).toBeGreaterThanOrEqual(0); expect(held.has(v)).toBe(true); });
+    const pins = froms.map((p, k) => ({ from: p, to: { x: p.x + 4 * k, y: p.y - 3 * k } }));
+    const { vertices } = pinWarpSolve(shape, pins)!;
+    mesh.pinVertex.forEach((v, k) => close({ x: vertices[2 * v], y: vertices[2 * v + 1] }, { x: mesh.vertices[2 * v] + 4 * k, y: mesh.vertices[2 * v + 1] - 3 * k }));
+  });
+
   it('moves the whole shape with one pin, and leaves it be with none', () => {
     close(pinWarpMap(square(), [])({ x: 3, y: 4 }), { x: 3, y: 4 });
     close(pinWarpMap(square(), [{ from: { x: 50, y: 50 }, to: { x: 55, y: 57 } }])({ x: 10, y: 10 }), { x: 15, y: 17 });
