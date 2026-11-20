@@ -35,4 +35,33 @@ describe('pickFile', () => {
     expect(document.querySelector('input[type=file]')).toBeNull();
     vi.restoreAllMocks();
   });
+
+  it('resolves null and removes its input when the window regains focus with no file chosen and no cancel event', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {});
+    const picked = pickFile('.json');
+    window.dispatchEvent(new Event('focus'));
+    await vi.advanceTimersByTimeAsync(1000);
+    await expect(picked).resolves.toBeNull();
+    expect(document.querySelector('input[type=file]')).toBeNull();
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  it('still resolves the file when its change follows the window regaining focus', async () => {
+    vi.useFakeTimers();
+    const file = new File(['x'], 'a.json');
+    let input: HTMLInputElement | null = null;
+    vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(function (this: HTMLInputElement) {
+      input = this;
+    });
+    const picked = pickFile('.json');
+    window.dispatchEvent(new Event('focus'));
+    await vi.advanceTimersByTimeAsync(100);
+    Object.defineProperty(input!, 'files', { value: [file] });
+    input!.dispatchEvent(new Event('change'));
+    await expect(picked).resolves.toBe(file);
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
 });
