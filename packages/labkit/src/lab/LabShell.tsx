@@ -57,7 +57,7 @@ export function LabShell({
   }, [documentTitle]);
 
   return (
-    <LabRoot mode={mode} className="lk-shell">
+    <LabRoot mode={mode} className={bar ? 'lk-shell' : 'lk-shell lk-shell--bare'}>
       {bar && (
         <header className="lk-shell-header">
           {pages && pages.length > 0 ? (
