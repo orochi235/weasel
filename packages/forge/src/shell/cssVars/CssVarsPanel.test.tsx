@@ -86,6 +86,55 @@ function row(scope: ReturnType<typeof vars>, name: string) {
   return within(scope.getByRole('group', { name }));
 }
 
+/** As `stubStore`, with each PUT held until the returned `release` is called. */
+function stubHeldStore() {
+  const calls: { url: string; init?: RequestInit }[] = [];
+  const held: (() => void)[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, ...(init ? { init } : {}) });
+      if (init?.method === 'PUT') {
+        await new Promise<void>((resolve) => held.push(resolve));
+        const body = { status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] };
+        return new Response(JSON.stringify(body), { status: 200 });
+      }
+      const body = { name: 'weasel', hash: 'h1', emits: true, definition: THEME_SOURCES.weasel };
+      return new Response(JSON.stringify(body), { status: 200 });
+    }),
+  );
+  const release = async () => {
+    await waitFor(() => expect(held.length).toBeGreaterThan(0));
+    await act(async () => held.splice(0).forEach((resolve) => resolve()));
+    await flush();
+  };
+  return { calls, release };
+}
+
+/** Opens trials A and B side by side, B focused. */
+async function openBoth() {
+  const first = await openTrial('A');
+  // Shift-click in the tree is what opens a second trial; a hash goes into the focused one.
+  fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
+  const folder = screen.getByRole('treeitem', { name: /^X/ });
+  if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(within(folder).getByText('X'));
+  fireEvent.click(within(screen.getByRole('treeitem', { name: 'B' })).getByText('B'), { shiftKey: true });
+  const second = await openTrial('B');
+  await waitFor(() => expect(vars().getByText('X > B')).toBeInTheDocument());
+  return { first, second };
+}
+
+async function focusTrial(name: string) {
+  fireEvent.pointerDown(screen.getByRole('region', { name: `Trial X > ${name}` }));
+  await waitFor(() => expect(vars().getByText(`X > ${name}`)).toBeInTheDocument());
+}
+
+async function editToken(name: string, value: string) {
+  fireEvent.change(vars().getByLabelText('Filter'), { target: { value: name.replace('--wzl-', '') } });
+  fireEvent.change(row(vars(), name).getByRole('textbox'), { target: { value } });
+  await flush();
+}
+
 const setsOf = (received: { type: string }[]) => received.filter((m) => m.type === 'vars.set');
 type VarsSet = Extract<ToFrame, { type: 'vars.set' }>;
 
@@ -237,6 +286,27 @@ describe('CssVarsPanel', () => {
     await flush();
     expect(again.received.map((m) => m.type)).toEqual(['vars.set', 'init']);
     expect(again.received[0]).toEqual({ type: 'vars.set', name: '--wzl-gray-50', value: 'red' });
+  });
+
+  it('clears what a save wrote from the trial it was saved from, though another is focused when it lands', async () => {
+    location.hash = '#/x--a';
+    const { release } = stubHeldStore();
+    renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { first, second } = await openBoth();
+    await editToken('--wzl-gray-50', '#222222');
+    await focusTrial('A');
+    await editToken('--wzl-gray-50', '#111111');
+
+    fireEvent.click(vars().getByRole('button', { name: 'Save to theme' }));
+    await focusTrial('B');
+    expect(vars().getByRole('button', { name: 'Save to theme' })).toBeEnabled();
+    await release();
+
+    expect(row(vars(), '--wzl-gray-50').getByRole('textbox')).toHaveValue('#222222');
+    expect(setsOf(second.received).at(-1)).toEqual({ type: 'vars.set', name: '--wzl-gray-50', value: '#222222' });
+    expect(setsOf(first.received).at(-1)).toEqual({ type: 'vars.set', name: '--wzl-gray-50', value: null });
+    await focusTrial('A');
+    expect(vars().queryByRole('button', { name: 'Save to theme' })).toBeNull();
   });
 
   it('saves a font base edit into the current density’s seed, then drops the overrides the theme now carries', async () => {

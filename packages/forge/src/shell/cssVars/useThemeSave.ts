@@ -13,7 +13,7 @@ export const THEME_NAME = 'weasel';
 export const TOKEN_PREFIX = '--wzl-';
 const NO_AXES: AxisDefs = {};
 
-type Notice = { readonly trialId: string | null; readonly outcome: 'saved' | 'error'; readonly text: string };
+type Notice = { readonly outcome: 'saved' | 'error'; readonly text: string };
 
 /** An edited scale, and the steps of it that still hold what its edit generated. */
 export interface UnsavedScale {
@@ -27,7 +27,6 @@ export interface UnsavedScale {
 }
 
 export interface ThemeSaveOptions {
-  readonly trialId: string | null;
   /** The globals the trial renders under, which pick the axis values a save writes into. */
   readonly globals: StoryGlobals;
   /** Where a save goes. Defaults to the dev server's theme store. */
@@ -41,7 +40,7 @@ export interface ThemeSave {
   /** Whether any edit has a place in the definition to be saved to. */
   readonly pending: boolean;
   readonly saving: boolean;
-  readonly notice: Omit<Notice, 'trialId'> | null;
+  readonly notice: Notice | null;
   save(): Promise<void>;
 }
 
@@ -50,7 +49,7 @@ export interface ThemeSave {
  * the definition writes its value out or pinned over what it derives. An override the theme has no token for, or one
  * whose branch the trial's globals do not pick, stays the trial's own.
  */
-export function useThemeSave({ trialId, globals, themeApi, scales, overrides, history }: ThemeSaveOptions): ThemeSave {
+export function useThemeSave({ globals, themeApi, scales, overrides, history }: ThemeSaveOptions): ThemeSave {
   const definition = THEME_SOURCES[THEME_NAME];
   const selection = useTrialSelection(definition?.axes ?? NO_AXES, globals);
   const tokens = useMemo(() => {
@@ -66,8 +65,7 @@ export function useThemeSave({ trialId, globals, themeApi, scales, overrides, hi
   }, [definition, selection, scales, overrides]);
 
   const [saving, setSaving] = useState(false);
-  const [held, setHeld] = useState<Notice | null>(null);
-  const setNotice = (next: Omit<Notice, 'trialId'> | null) => setHeld(next && { ...next, trialId });
+  const [notice, setNotice] = useState<Notice | null>(null);
 
   const save = async () => {
     setSaving(true);
@@ -121,7 +119,7 @@ export function useThemeSave({ trialId, globals, themeApi, scales, overrides, hi
   return {
     pending: scales.length > 0 || Object.keys(tokens).length > 0,
     saving,
-    notice: held?.trialId === trialId ? held : null,
+    notice,
     save,
   };
 }
