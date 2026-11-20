@@ -3,13 +3,14 @@
  * the canvas with the devtools hook, installing the hook first. A canvas that
  * never takes it keeps no root, no history record and no coord trace.
  */
+import { DEBUG_FEATURES } from '@weasel-js/core';
 import type {
   CanvasExtensionApi, CanvasInspection, ContributionDepReader, CoordTraceEntry, DebugFlags, Scene, SurfaceContribution,
 } from '@weasel-js/core';
 import { createDispatchTrace, createTraceRing } from '@weasel-js/routing';
 import { installDevtoolsHook, type WeaselDevtoolsHook } from './hook';
 import { recordHistory } from './history';
-import type { DevtoolsHistoryRecord } from './protocol';
+import type { DevtoolsHistoryRecord, DevtoolsOverlays } from './protocol';
 import { describeRegistry } from './registry';
 import { createDevtoolsRoot, type DevtoolsRoot, type DevtoolsRootSource } from './root';
 
@@ -29,6 +30,14 @@ function dimensionOf(scene: Scene<unknown, string, unknown> | null): '2d' | '3d'
 /** What `get-registry` reports of the dep registry, as one comparable string; null for one that cannot list itself. */
 function depListingKey(deps: ReturnType<CanvasInspection['deps']>): string | null {
   return deps.list?.().map((d) => `${d.name}:${d.depth}:${d.stacked}`).join('\u0000') ?? null;
+}
+
+/** The debug flags a panel's override lays over the canvas: its feature flags, never another `DebugFlags` key. */
+function overrideFlags(o: { overlays: DevtoolsOverlays; highlight: readonly string[] }): DebugFlags {
+  const flags: DebugFlags = {};
+  for (const f of DEBUG_FEATURES) if (typeof o.overlays[f] === 'boolean') flags[f] = o.overlays[f];
+  if (o.highlight.length) flags.highlight = o.highlight;
+  return flags;
 }
 
 /** What a canvas reads before its dispatcher, or its inspection, has published its own. */
@@ -64,9 +73,7 @@ export function canvasRoot(api: CanvasExtensionApi, deps: ContributionDepReader)
     get coords() { return inspection()?.coords() ?? NO_COORDS; },
     frame: () => api.getDebug()?.snapshot().frame ?? null,
     overlays: () => inspection()?.debug() ?? null,
-    setOverride: (o) => inspection()?.setDebugOverride(o && ({
-      ...o.overlays, ...(o.highlight.length ? { highlight: o.highlight } : {}),
-    } as DebugFlags)),
+    setOverride: (o) => inspection()?.setDebugOverride(o && overrideFlags(o)),
     registry() {
       const i = inspection();
       if (!i) throw new Error('this canvas offers no inspection');

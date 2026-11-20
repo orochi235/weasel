@@ -2,6 +2,7 @@
  * Whether a value that crossed a `postMessage` or an extension port is a protocol message. Anything in the page,
  * or in another frame, can post one, so each side checks what it hears before reading a field.
  */
+import { DEBUG_FEATURES } from '@weasel-js/core';
 import { DEVTOOLS_PROTOCOL, type DevtoolsRootInfo, type PageMessage, type PanelMessage } from './protocol';
 
 type Fields = Record<string, unknown>;
@@ -11,6 +12,8 @@ const isStrings = (v: unknown): boolean => Array.isArray(v) && v.every((s) => ty
 const isRequestId = (v: unknown): v is number => Number.isSafeInteger(v);
 const optional = (v: unknown, is: (v: unknown) => boolean): boolean => v === undefined || is(v);
 const isNumber = (v: unknown): boolean => typeof v === 'number';
+const isOverlays = (v: unknown): boolean => isFields(v)
+  && Object.entries(v).every(([k, on]) => (DEBUG_FEATURES as readonly string[]).includes(k) && typeof on === 'boolean');
 
 function isRootInfo(v: unknown): v is DevtoolsRootInfo {
   return isFields(v) && typeof v.id === 'string' && typeof v.label === 'string' && (v.dimension === '2d' || v.dimension === '3d');
@@ -36,7 +39,7 @@ export function isPanelMessage(m: unknown): m is PanelMessage {
     case 'select':
     case 'highlight': return isStrings(m.ids);
     case 'set-tool': return m.toolId === null || typeof m.toolId === 'string';
-    case 'set-overlays': return isFields(m.overlays) && Object.values(m.overlays).every((v) => typeof v === 'boolean');
+    case 'set-overlays': return isOverlays(m.overlays);
     default: return false;
   }
 }
