@@ -8,7 +8,7 @@ import { shiftData } from '../shiftData';
 import { geometryOf, pointsOf, type RawCell } from './cells';
 import { pageCells, type PageCells } from './pageCells';
 import {
-  edgeColorsOf, labelPlacementOf, nodeColorsOf, outlineOf, portAt, routerOf, textOf, valueLines, verticalAlignOf, type Warn,
+  edgeColorsOf, labelPlacementOf, nodeColorsOf, outlineOf, regionColorsOf, portAt, routerOf, textOf, valueLines, verticalAlignOf, type Warn,
 } from './readStyle';
 import type { Rect } from '@weasel-js/geom';
 
@@ -62,7 +62,7 @@ function readRegion(r: Reader, cell: RawCell): DataContainer {
   const { page, idOf } = r;
   const id = idOf.get(cell)!;
   const box = page.boxOf(cell);
-  const common = { id, ...optional('label', labelOf(cell)), box, ...optional('colors', nodeColorsOf(cell.style, r.warn)) };
+  const common = { id, ...optional('label', labelOf(cell)), box, ...optional('colors', regionColorsOf(cell.style, r.warn)) };
   if (page.kindOf(cell) === 'container') {
     const members = membersOf(r, cell);
     return { ...common, role: 'container', ...(members.length > 0 ? { members } : {}) };
@@ -76,7 +76,7 @@ function readRegion(r: Reader, cell: RawCell): DataContainer {
       const members = membersOf(r, lane);
       return {
         id: idOf.get(lane)!, ...optional('label', labelOf(lane)), size: axis === 'y' ? b.height : b.width,
-        ...(members.length > 0 ? { members } : {}), ...optional('colors', nodeColorsOf(lane.style, r.warn)),
+        ...(members.length > 0 ? { members } : {}), ...optional('colors', regionColorsOf(lane.style, r.warn)),
       };
     });
   return { ...common, role: 'pool', axis, lanes };

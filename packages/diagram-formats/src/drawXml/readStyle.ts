@@ -57,6 +57,14 @@ export function nodeColorsOf(style: CellStyle, warn: Warn): Partial<NodeStyle> |
   });
 }
 
+/** A container's, pool's, or lane's colors: a swimlane's body is its `swimlaneFillColor`, where it names one, and else its
+ *  `fillColor`, which a draw app paints in the header. */
+export function regionColorsOf(style: CellStyle, warn: Warn): Partial<NodeStyle> | undefined {
+  const colors = nodeColorsOf(style, warn);
+  const body = colorOf(style, 'swimlaneFillColor', warn);
+  return body === undefined ? colors : { ...colors, fill: body };
+}
+
 /** A cell's value as text. */
 export const valueLines = (cell: RawCell): string[] => cellLines(cell.value, styleFlag(cell.style, 'html'));
 

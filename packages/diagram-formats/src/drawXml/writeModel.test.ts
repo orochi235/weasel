@@ -34,4 +34,22 @@ describe('writing regions', () => {
     expect([cells.has('a'), cells.has('ab')]).toEqual([true, true]);
     expect(warnings).toEqual([]);
   });
+
+  it('fills a container\'s and a pool\'s body, which a draw app fills from swimlaneFillColor, and reads the fill back', async () => {
+    const data: DiagramData = {
+      nodes: [], edges: [],
+      containers: [
+        { id: 'k', role: 'container', box: { x: 0, y: 0, width: 200, height: 100 }, colors: { fill: '#ffeeaa' } },
+        { id: 'p', role: 'pool', axis: 'y', box: { x: 0, y: 200, width: 400, height: 200 }, colors: { fill: '#aaeeff' }, lanes: [{ id: 'l' }] },
+      ],
+    };
+    const cells = cellsOf(written(data).text);
+    const style = (id: string) => parseStyle(cells.get(id)!.getAttribute('style'));
+    expect(style('k').values.get('swimlaneFillColor')).toBe('#ffeeaa');
+    expect(style('p').values.get('swimlaneFillColor')).toBe('#aaeeff');
+    expect(style('l').values.get('swimlaneFillColor')).toBe('none');
+    const regions = new Map((await back(data)).containers!.map((c) => [c.id, c]));
+    expect(regions.get('k')!.colors!.fill).toBe('#ffeeaa');
+    expect(regions.get('p')!.colors!.fill).toBe('#aaeeff');
+  });
 });

@@ -63,14 +63,17 @@ export function nodeStyle(node: DataNode, theme: DiagramTheme, warn: Warn): stri
   ]);
 }
 
-/** A container's, pool's, or lane's style: a swimlane whose header is on the side `header` says, `startSize` deep. */
+/** A container's, pool's, or lane's style: a swimlane whose header is on the side `header` says, `startSize` deep. A draw app
+ *  fills a swimlane's header from `fillColor` and its body from `swimlaneFillColor`; the diagram fills both, but a lane not at all. */
 export function regionStyle(region: DataContainer | (DataLane & { role: 'lane' }), header: ContainerHeader | undefined,
   theme: DiagramTheme, laneIndex = 0): string {
   const style = dataRegionStyle({ role: region.role, style: 'style' in region ? region.style : undefined, colors: region.colors }, theme, laneIndex);
+  const lane = region.role === 'lane';
   return writeStyle([
     'swimlane', ['horizontal', header?.side === 'left' ? 0 : 1], ['startSize', header?.size ?? 0],
     ['container', 1], ['collapsible', 0], ['whiteSpace', 'wrap'],
-    ...(region.role === 'lane' ? colorParts({ ...style, strokeWidth: LANE_STROKE_WIDTH }, false) : colorParts(style, true)),
+    ...(lane ? colorParts({ ...style, strokeWidth: LANE_STROKE_WIDTH }, false) : colorParts(style, true)),
+    ['swimlaneFillColor', lane ? 'none' : colorValue(style.fill)],
   ]);
 }
 
