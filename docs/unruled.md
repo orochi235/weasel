@@ -2935,3 +2935,9 @@ Calls the lanes made without a ruling:
   then `DFLT`'s, then the rest in ScriptList order, and taking the first whose lookups cover the pair. Layout knows
   no run's script, so picking one script for every pair was the alternative, and loses kerning other scripts' lookups
   alone carry.
+## Audit round fifty (2026-11-20): labkit's config
+
+- 2026-11-20 (the fixer's call): a field of `f.object`, the item of `f.list` or `f.map`, or a variant of `f.union`
+  that says `.showIf`/`.enableIf` as a function, `.render`, `.dialog`, `.auto`, `.initial(AUTO)`, `.quote`,
+  `.section`, or carries `f.custom`'s `validate` throws when the outer leaf is built, since none of those has a row
+  to act on there. Dropping them silently, as before, or warning and dropping was the alternative.
