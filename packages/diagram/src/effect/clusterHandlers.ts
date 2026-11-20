@@ -4,11 +4,9 @@ import type { NodeMove } from '../DiagramView';
 import type { ContainerEdit } from '../regionSync';
 import { moveStages } from './edit';
 import type { EditorScene } from './editorMapping';
-import { clusterContents, moveCluster, moveToCluster, setClusterBox } from './clusterEdit';
+import { clusterContents, clusterDepth, clusterParents, moveCluster, moveToCluster, setClusterBox } from './clusterEdit';
 import type { EffectDoc } from './types';
 import type { Rect } from '@weasel-js/geom';
-
-const parentCluster = (doc: EffectDoc, id: string) => doc.pipeline.clusters?.find((g) => g.members.includes(id))?.id;
 
 type BoxEdit = Extract<ContainerEdit, { kind: 'box' }>;
 
@@ -36,11 +34,8 @@ export function dragEdit(
     if (parent === undefined) return;
     if (parent === null || built.clusterOf(parent) !== undefined) next = moveToCluster(next, [id], parent);
   };
-  const depth = (id: string) => {
-    let n = 0;
-    for (let at = parentCluster(doc, id); at !== undefined; at = parentCluster(doc, at)) n++;
-    return n;
-  };
+  const parents = clusterParents(doc.pipeline.clusters ?? []);
+  const depth = (id: string) => clusterDepth(parents, id);
   for (const edit of [...reports.boxes].sort((a, b) => depth(a.id) - depth(b.id))) {
     const cluster = built.clusterOf(edit.id);
     const was = boxOf(edit.id);

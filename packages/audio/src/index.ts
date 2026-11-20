@@ -49,6 +49,7 @@ export type {
   NoiseColor, NoiseOptions, NoisePatch,
 } from './types';
 export { impulseResponse, type ImpulseResponseOptions } from './impulse';
+export { checkFilterType, checkNoiseColor, checkWave } from './patchCheck';
 export type { Timers } from './audioTime';
 export { createAudioGraph } from './graph/createAudioGraph';
 export {

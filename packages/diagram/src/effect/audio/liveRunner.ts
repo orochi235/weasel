@@ -1,10 +1,10 @@
-import type { AudioEngine, AudioGraph, GraphPatch } from '@weasel-js/audio';
-import { createEmitter, getOwn, setOwn } from '@weasel-js/registry';
+import type { AudioEngine, AudioGraph, GraphNodeDef, GraphPatch } from '@weasel-js/audio';
+import { createEmitter, createLatest, getOwn, setOwn } from '@weasel-js/registry';
 import type { EffectPipeline, EffectRun } from '../types';
 import { audioStageNodes, type AudioSources, type AudioStageNodes } from './nodes';
 import { createLivePreviews, errorsRun } from './livePreviews';
 import { diffPlans } from './patches';
-import { EMPTY_PLAN, livePlan, type LivePlan } from './plan';
+import { EMPTY_PLAN, edgeKey, livePlan, type LivePlan, type PlanEdge, type PlanNode } from './plan';
 import type { AudioPreview } from './scope';
 
 /** What a live runner last published: its run, and whether it plays. */
@@ -27,7 +27,7 @@ export interface LiveAudioRunner {
   setPipeline(pipeline: EffectPipeline): void;
   /** A new buffer replaces each file node. */
   setSources(sources: AudioSources): void;
-  /** Unlocks the engine, then starts the graph. */
+  /** Unlocks the engine, then starts the graph, unless a `pause`, `reset` or later `play` came first. */
   play(): Promise<void>;
   pause(): void;
   /** Which stages draw into their `out` preview: a scope, a spectrum, or none. Takes effect on the next `frame`. */
@@ -57,7 +57,7 @@ const sameErrors = (a: Readonly<Record<string, string>>, b: Readonly<Record<stri
   return keys.length === Object.keys(b).length && keys.every((k) => Object.hasOwn(b, k) && a[k] === b[k]);
 };
 
-/** Applies the param writes together; when that throws, one by one, to name the stage that failed. */
+/** Applies the param writes together; when that throws, one by one, so the rest land and each failing stage is named. */
 function applySets(graph: AudioGraph, sets: readonly GraphPatch[], failures: Record<string, string>): void {
   if (sets.length === 0) return;
   try {
@@ -69,9 +69,69 @@ function applySets(graph: AudioGraph, sets: readonly GraphPatch[], failures: Rec
         graph.apply([p]);
       } catch (one) {
         if (p.kind === 'set') setOwn(failures, p.id, messageOf(one));
-        break;
       }
     }
+  }
+}
+
+/** `plan` without the nodes in `drop`, the edges touching them, and the edges `cut` names by `edgeKey`. */
+function prune(plan: LivePlan, drop: ReadonlySet<string>, cut: ReadonlySet<string>): LivePlan {
+  const touches = (e: PlanEdge) => drop.has(e.from) || ('node' in e.to && drop.has(e.to.node));
+  return {
+    nodes: Object.fromEntries(Object.entries(plan.nodes).filter(([id]) => !drop.has(id))),
+    edges: plan.edges.filter((e) => !touches(e) && !cut.has(edgeKey(e))),
+    errors: plan.errors,
+  };
+}
+
+/**
+ * `planned` less what cannot go in the graph: a node whose `build` throws, and an edge into a port
+ * its node lacks, by the defs built here or, for a node kept, by `ports`. Each is put in `errors`
+ * under its stage, and the defs built are returned for the patches to use.
+ */
+function buildablePlan(
+  from: LivePlan, planned: LivePlan, build: (node: PlanNode) => GraphNodeDef,
+  ports: ReadonlyMap<string, ReadonlySet<string>>, errors: Record<string, string>,
+): { next: LivePlan; defs: Map<string, GraphNodeDef> } {
+  const defs = new Map<string, GraphNodeDef>();
+  const failed = new Set<string>();
+  diffPlans(from, planned, (id, n) => {
+    try {
+      defs.set(id, build(n));
+    } catch (err) {
+      failed.add(id);
+      setOwn(errors, id, messageOf(err));
+    }
+    return defs.get(id)!;
+  });
+  const cut = new Set<string>();
+  for (const e of planned.edges) {
+    if (!('node' in e.to) || failed.has(e.to.node) || failed.has(e.from)) continue;
+    const def = defs.get(e.to.node);
+    const has = def !== undefined ? Object.hasOwn(def.inputs, e.to.port) : ports.get(e.to.node)?.has(e.to.port);
+    if (has !== false) continue;
+    cut.add(edgeKey(e));
+    setOwn(errors, e.to.node, `no input port "${e.to.port}"`);
+  }
+  return { next: failed.size > 0 || cut.size > 0 ? prune(planned, failed, cut) : planned, defs };
+}
+
+/**
+ * Applies the structural patches, and whether they landed. A throw changed nothing unless the
+ * nodes it adds are in the graph, as when a source added while playing fails to start.
+ */
+function applyStructure(graph: AudioGraph, structural: readonly GraphPatch[], errors: Record<string, string>): boolean {
+  if (structural.length === 0) return true;
+  try {
+    graph.apply(structural);
+    return true;
+  } catch (err) {
+    const message = messageOf(err);
+    const id = failingStage(structural, message);
+    if (id !== undefined) setOwn(errors, id, message);
+    console.warn(`@weasel-js/diagram: audio graph edit failed: ${message}`);
+    const added = structural.flatMap((p) => (p.kind === 'add' ? [p.id] : []));
+    return added.length > 0 && added.every((a) => graph.has(a));
   }
 }
 
@@ -86,6 +146,8 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
   let errors: Readonly<Record<string, string>> = {};
   let state: LiveAudioRunnerState = { run: { stages: {} }, playing: false };
   let disposed = false;
+  /** Taken by every play and dropped by pause and reset, so a play whose unlock a later one overtook starts nothing. */
+  const transport = createLatest();
   const listeners = createEmitter();
   const previews = createLivePreviews();
 
@@ -102,31 +164,27 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     set({ run: errorsRun(next) });
   };
 
+  /** The input ports of each node in the graph, from the def it was built with. */
+  const ports = new Map<string, ReadonlySet<string>>();
+
   /** Brings the graph from `from` to the plan `pipeline` and `sources` now give. Structure goes first
-   *  in its own apply: a throw there changed nothing, while a throw from the sets means structure landed. */
+   *  in its own apply; a throw from the sets means structure landed. */
   const sync = (from: LivePlan) => {
-    const next = livePlan(pipeline, nodes, sources);
-    const merged: Record<string, string> = { ...next.errors };
-    let adopted = next;
-    let structural: GraphPatch[] = [];
-    let removed: string[] = [];
-    let sets: GraphPatch[] = [];
-    try {
-      const patches = diffPlans(from, next, (_id, n) => getOwn(nodes, n.type)!.build(engine.context, n.settings, n.levels));
-      structural = patches.filter((p) => p.kind !== 'set');
-      sets = patches.filter((p) => p.kind === 'set');
-      if (structural.length > 0) graph.apply(structural);
-      removed = structural.flatMap((p) => (p.kind === 'remove' ? [p.id] : []));
-    } catch (err) {
-      const message = messageOf(err);
-      const id = failingStage(structural, message);
-      if (id !== undefined) setOwn(merged, id, message);
-      console.warn(`@weasel-js/diagram: audio graph edit failed: ${message}`);
-      adopted = from;
-      sets = [];
-    }
+    const planned = livePlan(pipeline, nodes, sources);
+    const merged: Record<string, string> = { ...planned.errors };
+    const { next, defs } = buildablePlan(from, planned, (n) => getOwn(nodes, n.type)!.build(engine.context, n.settings, n.levels), ports, merged);
+    const patches = diffPlans(from, next, (id) => defs.get(id)!);
+    const structural = patches.filter((p) => p.kind !== 'set');
+    const landed = applyStructure(graph, structural, merged);
+    const adopted = landed ? next : from;
+    const sets = landed ? patches.filter((p) => p.kind === 'set') : [];
     applySets(graph, sets, merged);
     plan = adopted;
+    if (adopted === next) {
+      for (const id of ports.keys()) if (!Object.hasOwn(next.nodes, id)) ports.delete(id);
+      for (const [id, def] of defs) ports.set(id, new Set(Object.keys(def.inputs)));
+    }
+    const removed = adopted === next ? structural.flatMap((p) => (p.kind === 'remove' ? [p.id] : [])) : [];
     previews.follow(graph, removed, Object.keys(adopted.nodes));
     publishErrors(merged);
   };
@@ -147,13 +205,15 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     },
     async play() {
       if (disposed) return;
+      const newest = transport.take();
       await engine.unlock();
-      if (disposed) return;
+      if (disposed || !newest()) return;
       graph.start();
       set({ playing: true });
     },
     pause() {
       if (disposed) return;
+      transport.drop();
       graph.stop();
       set({ playing: false });
     },
@@ -170,6 +230,7 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     drawn: previews.drawn,
     reset() {
       if (disposed) return;
+      transport.drop();
       graph.dispose();
       graph = engine.graph(bus);
       previews.restart();

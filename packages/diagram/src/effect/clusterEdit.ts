@@ -34,6 +34,20 @@ export function pruneClusters(
 /** The cluster holding `id` directly, if any. */
 const parentOf = (clusters: readonly EffectCluster[], id: string) => clusters.find((g) => g.members.includes(id));
 
+/** Each cluster member's id, mapped to the first cluster that names it: the one it is drawn in. */
+export function clusterParents(clusters: readonly EffectCluster[]): Map<string, string> {
+  const parent = new Map<string, string>();
+  for (const g of clusters) for (const m of g.members) if (!parent.has(m)) parent.set(m, g.id);
+  return parent;
+}
+
+/** How many clusters hold `id`, directly or through others, each counted once so a loop of clusters ends. */
+export function clusterDepth(parents: ReadonlyMap<string, string>, id: string): number {
+  const seen = new Set<string>();
+  for (let at = parents.get(id); at !== undefined && !seen.has(at); at = parents.get(at)) seen.add(at);
+  return seen.size;
+}
+
 /** `ids` without repeats, and without any inside another of them, which carries it. */
 const outermost = (clusters: readonly EffectCluster[], ids: readonly string[]): string[] =>
   [...new Set(ids)].filter((id, _i, all) => !all.some((o) => o !== id && within(clusters, id, o)));

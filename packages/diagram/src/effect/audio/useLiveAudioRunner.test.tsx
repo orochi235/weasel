@@ -5,7 +5,8 @@ import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { EffectPipeline } from '../types';
 import type { AudioPreview } from './scope';
-import { audioStageNodes, type AudioStageNode } from './nodes';
+import type { LiveAudioRunner } from './liveRunner';
+import { audioStageNodes, type AudioSources, type AudioStageNode } from './nodes';
 import { AUDIO_STAGE_TYPES } from './stageTypes';
 import { useFollowAudioRunner } from './useFollowAudioRunner';
 import { useLiveAudioRunner } from './useLiveAudioRunner';
@@ -149,5 +150,20 @@ describe('useFollowAudioRunner', () => {
     };
     const { result } = renderHook(() => useFollowAudioRunner(null, { pipeline, previews: 'off' }));
     expect(result.current).toEqual({ run: { stages: { file: { error: 'no source audio' } } }, playing: false });
+  });
+
+  it('hands the runner no sources once they go back to undefined', () => {
+    const runner = {
+      state: { run: undefined, playing: false },
+      setPipeline: vi.fn(), setSources: vi.fn(), setPreviews: vi.fn(), frame: vi.fn(), drawn: vi.fn(),
+      subscribe: () => () => {},
+    } as never as LiveAudioRunner;
+    const audio = createFakeAudioContext().createBuffer(1, 8, 8000) as never as AudioBuffer;
+    const { rerender } = renderHook(
+      ({ sources }: { sources: AudioSources | undefined }) => useFollowAudioRunner(runner, { pipeline: PIPELINE, sources, previews: 'off' }),
+      { initialProps: { sources: { audio } as AudioSources | undefined } },
+    );
+    rerender({ sources: undefined });
+    expect(vi.mocked(runner.setSources).mock.calls.at(-1)).toEqual([{}]);
   });
 });

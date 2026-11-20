@@ -49,6 +49,17 @@ describe('settings', () => {
     expect(audioStageNodes['audio.oscillator']!.settings({ wave: 'square', frequency: 220 }, {})).toEqual({ wave: 'square' });
   });
 
+  it('gives a missing discrete setting its stage type\'s default', () => {
+    expect(audioStageNodes['audio.noise']!.settings({}, {})).toEqual({ color: 'white' });
+    expect(audioStageNodes['audio.oscillator']!.settings({}, {})).toEqual({ wave: 'sine' });
+  });
+
+  it('fails a stage in settings on a discrete setting its factory would refuse', () => {
+    expect(() => audioStageNodes['audio.noise']!.settings({ color: 'blue' }, {})).toThrow(/not a noise color/);
+    expect(() => audioStageNodes['audio.oscillator']!.settings({ wave: 'wobble' }, {})).toThrow(/not a wave/);
+    expect(() => audioStageNodes['audio.filter']!.settings({ type: 'sideways' }, {})).toThrow(/not a filter type/);
+  });
+
   it('fails a file stage that has no source audio', () => {
     expect(() => audioStageNodes['audio.file']!.settings({}, {})).toThrow(/no source audio/);
   });

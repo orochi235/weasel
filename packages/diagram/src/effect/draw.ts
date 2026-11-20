@@ -137,11 +137,16 @@ export interface DrawableWire {
 
 /** The wires a look can draw: each one whose two stages and two ports exist,
  *  in the pipeline's order. A wire `checkPipeline` reported and that still has
- *  both ends is kept, with `problem` set. */
+ *  both ends is kept, with `problem` set; one whose id an earlier wire has is
+ *  kept without it, since `diagramScene` throws on an edge id naming two edges. */
 export function drawableWires(pipeline: EffectPipeline): DrawableWire[] {
   const stages = new Map(uniqueStages(pipeline).map((s) => [s.id, s]));
   const flagged = new Set(checkPipeline(pipeline).flatMap((p) => (p.wire === undefined ? [] : [p.wire])));
-  return pipeline.wires.flatMap((wire, index) => {
+  const ids = new Set<string>();
+  return pipeline.wires.flatMap((given, index) => {
+    const repeat = given.id !== undefined && ids.has(given.id);
+    if (given.id !== undefined) ids.add(given.id);
+    const wire = repeat ? (({ id: _id, ...rest }) => rest)(given) : given;
     const fromStage = stages.get(wire.from.stage);
     const toStage = stages.get(wire.to.stage);
     const from = portOn(fromStage, wire.from.port);

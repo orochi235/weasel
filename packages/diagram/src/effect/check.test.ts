@@ -69,6 +69,19 @@ describe('checkPipeline', () => {
     expect(stage.map((x) => [x.kind, x.cluster])).toEqual([['duplicate-cluster', 'blur']]);
   });
 
+  it('names a cluster that holds what an earlier cluster already holds', () => {
+    const twice = checkPipeline({ ...OK, clusters: [{ id: 'g', members: ['blur'] }, { id: 'h', members: ['src', 'blur'] }] });
+    expect(twice.map((x) => [x.kind, x.cluster, x.stage])).toEqual([['duplicate-member', 'h', 'blur']]);
+    const nested = checkPipeline({ ...OK, clusters: [{ id: 'g', members: ['blur'] }, { id: 'h', members: ['g'] }, { id: 'k', members: ['g'] }] });
+    expect(nested.map((x) => [x.kind, x.cluster, x.stage])).toEqual([['duplicate-member', 'k', undefined]]);
+  });
+
+  it('names a wire whose id an earlier wire has', () => {
+    const w = { ...OK.wires[0]!, id: 'w1' };
+    expect(checkPipeline({ ...OK, wires: [w, { ...w }] }).map(({ message: _m, ...rest }) => rest))
+      .toEqual([{ kind: 'duplicate-wire', wire: 1 }]);
+  });
+
   it('names a cut that is not a finite number', () => {
     const gate = {
       id: 'gate', title: 'Gate', kind: 'decision',
@@ -107,7 +120,10 @@ describe('checkPipeline', () => {
     expect(two).toEqual([{ kind: 'cluster-loop', cluster: 'A', clusters: ['A', 'B'], message: 'Groups "A" and "B" hold each other in a loop.' }]);
     const three = [{ id: 'A', members: ['B'] }, { id: 'B', members: ['C'] }, { id: 'C', members: ['A'] }, { id: 'D', members: ['A'] }];
     expect(checkPipeline({ ...OK, clusters: three }).map((x) => [x.kind, x.clusters, x.message]))
-      .toEqual([['cluster-loop', ['A', 'B', 'C'], 'Groups "A", "B", and "C" hold each other in a loop.']]);
+      .toEqual([
+        ['duplicate-member', undefined, 'Group "D" names "A", which group "C" already holds.'],
+        ['cluster-loop', ['A', 'B', 'C'], 'Groups "A", "B", and "C" hold each other in a loop.'],
+      ]);
     expect(checkPipeline({ ...OK, clusters: [{ id: 'A', members: ['A'] }] }).map((x) => x.message)).toEqual(['Group "A" holds itself.']);
   });
 

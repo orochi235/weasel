@@ -30,6 +30,7 @@ export function checkFilterType(type: string): void {
 
 const NOISE_COLORS = new Set<string>(['white', 'pink', 'brown']);
 
+/** Throws on a noise color there is no buffer for. */
 export function checkNoiseColor(color: NoiseColor): void {
   if (!NOISE_COLORS.has(color)) fail(`"${color}" is not a noise color: one of white, pink, brown`);
 }

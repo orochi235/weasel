@@ -20,17 +20,28 @@ interface FakeGraph extends AudioGraph {
   applies: GraphPatch[][];
   calls: string[];
   failWhen: ((patches: readonly GraphPatch[]) => unknown) | undefined;
+  /** A failing apply still lands its patches first, as one whose source fails to start does. */
+  landOnFail: boolean;
 }
 const fakeGraph = (): FakeGraph => {
   const g = {
     applies: [] as GraphPatch[][],
     calls: [] as string[],
     failWhen: undefined as FakeGraph['failWhen'],
+    landOnFail: false,
+    live: new Set<string>(),
     apply(patches: readonly GraphPatch[]) {
       g.applies.push([...patches]);
       const err = g.failWhen?.(patches);
+      if (err === undefined || g.landOnFail) {
+        for (const p of patches) {
+          if (p.kind === 'add') g.live.add(p.id);
+          if (p.kind === 'remove') g.live.delete(p.id);
+        }
+      }
       if (err !== undefined) throw err;
     },
+    has: (id: string) => g.live.has(id),
     start: () => { g.calls.push('start'); },
     stop: () => { g.calls.push('stop'); },
     dispose: () => { g.calls.push('dispose'); },
@@ -170,6 +181,78 @@ describe('createLiveAudioRunner', () => {
     runner.setPipeline(withGain(330));
     expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 330 }]);
     expect(graph.applies.flat().filter((p) => p.kind === 'add' && p.id === 'gain')).toHaveLength(1);
+  });
+
+  it('applies the other stages\' writes when one stage\'s write fails, and blames only that stage', () => {
+    const { runner, graphs } = setup();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    runner.setPipeline(withGain(440));
+    const graph = graphs[0]!;
+    graph.failWhen = (ps) => (ps.some((p) => p.kind === 'set' && p.id === 'gain') ? new Error('@weasel-js/audio: node "gain" has no param "gain"') : undefined);
+    const base = withGain(220);
+    const next = { ...base, stages: base.stages.map((s) => (s.id === 'gain' ? stage('gain', 'audio.gain', { gain: 0.5 }) : s)) };
+    runner.setPipeline(next);
+    expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
+    expect(runner.state.run?.stages.gain?.error).toMatch(/no param/);
+    expect(runner.state.run?.stages.osc?.error).toBeUndefined();
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves out a node whose build throws, names its stage, and keeps following the rest', () => {
+    const { runner, graph } = setup();
+    const withReverb = (frequency: number): EffectPipeline => ({
+      stages: [stage('osc', 'audio.oscillator', { frequency }), stage('verb', 'audio.reverb', { seconds: 0 }), stage('out', 'audio.output')],
+      wires: [wire('osc', 'verb'), wire('verb', 'out')],
+    });
+    runner.setPipeline(withReverb(440));
+    expect(runner.state.run?.stages.verb?.error).toMatch(/impulse length 0/);
+    expect(graph.applies.flat().some((p) => 'id' in p && p.id === 'verb')).toBe(false);
+    expect(kinds(graph.applies[1]!)).toEqual(['disconnect osc']);
+    runner.setPipeline(withReverb(220));
+    expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
+  });
+
+  it('leaves out a wire into a port its node lacks, names the stage, and keeps following the rest', () => {
+    const { runner, graph } = setup();
+    const stale = (frequency: number): EffectPipeline => ({
+      ...withGain(frequency),
+      wires: [{ from: { stage: 'osc', port: 'out' }, to: { stage: 'gain', port: 'inn' } }, wire('gain', 'out')],
+    });
+    runner.setPipeline(stale(440));
+    expect(runner.state.run?.stages.gain?.error).toBe('no input port "inn"');
+    expect(graph.applies.flat().some((p) => p.kind === 'connect' && 'node' in p.to && p.to.port === 'inn')).toBe(false);
+    runner.setPipeline(stale(220));
+    expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
+  });
+
+  it('adopts the next plan when the structural apply throws after its nodes landed', () => {
+    const { runner, graph } = setup();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    graph.landOnFail = true;
+    graph.failWhen = (ps) => (ps.some((p) => p.kind === 'add') ? new Error('start failed') : undefined);
+    runner.setPipeline(withGain(440));
+    graph.failWhen = undefined;
+    runner.setPipeline(withGain(220));
+    expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
+    expect(graph.applies.flat().filter((p) => p.kind === 'add' && p.id === 'gain')).toHaveLength(1);
+  });
+
+  it('starts nothing when a pause or reset comes while play waits on the unlock', async () => {
+    const { runner, engine, graphs } = setup();
+    let unlocked = () => {};
+    vi.mocked(engine.unlock).mockImplementation(() => new Promise<void>((r) => { unlocked = r; }));
+    const played = runner.play();
+    runner.pause();
+    unlocked();
+    await played;
+    expect(graphs[0]!.calls).not.toContain('start');
+    expect(runner.state.playing).toBe(false);
+    const again = runner.play();
+    runner.reset();
+    unlocked();
+    await again;
+    expect(graphs[1]!.calls).not.toContain('start');
+    expect(runner.state.playing).toBe(false);
   });
 
   it('resets onto a fresh graph holding the current plan, not playing', async () => {

@@ -118,6 +118,12 @@ describe('clusterSlotsAt', () => {
     expect([...slots.items[1]!.carries!].sort()).toEqual(['a', 'b', 'c', 'g', 'h', clusterLabelIdOf('g'), clusterLabelIdOf('h')].sort());
   });
 
+  it('drags a member two clusters name among the members of the first, where it is drawn', () => {
+    const source = rackSource(docOf([{ id: 'P', label: 'P', members: ['g', 'd'] }, { id: 'Q', label: 'Q', members: ['g'] }, { id: 'g', label: 'G', members: ['b', 'c'] }]));
+    const slots = clusterSlotsAt(source, middle(source.boxOf(clusterLabelIdOf('g'))!))!;
+    expect(slots.items.map((i) => i.id)).toEqual(['g', 'd']);
+  });
+
   it('has no slots on a cluster with no stage on the line', () => {
     const source = rackSource(docOf([{ id: 's', label: 'Side', members: ['side'] }]));
     expect(source.boxOf(clusterLabelIdOf('s'))).toBeDefined();

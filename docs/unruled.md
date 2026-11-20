@@ -2833,3 +2833,11 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): `diagramCanDropInto` refuses a lane moving into a pool that stacks along the other
   axis — a lane whose header side is not the pool's — so a lane dragged from a pool of columns into a pool of rows
   stays where it was. Letting it in and rewriting its header and layout key for the new axis was the alternative.
+## Audit round forty-six (2026-11-20): the effect editor and live audio
+
+- 2026-11-20 (the fixer's call): a live audio wire into a port its node lacks is cut from the graph alone, with
+  `no input port "…"` on the stage it enters; the stage still plays from its other wires. Leaving the whole stage out,
+  as a stage whose node fails to build is, was the alternative.
+- 2026-11-20 (the fixer's call): an audio stage missing a discrete setting (`wave`, `color`, `type`, `seconds`) plays
+  with its stage type's default from `AUDIO_STAGE_TYPES`, where a noise stage without `color` used to fail. Failing the
+  stage with "no color" was the alternative.
