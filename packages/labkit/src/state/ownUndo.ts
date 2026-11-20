@@ -8,7 +8,7 @@ interface Held {
   sources: Map<string, TrialHistorySource>;
   /** What each trial's last unmounted history saved, until another mounts or the trial restarts
    *  its undo, with the stop of the restart listener that drops it. */
-  parked: Map<string, { data: unknown; off: () => void }>;
+  parked: Map<string, { data: unknown; from: TrialHistorySource; off: () => void }>;
   steps: Emitter<[trialId: string]>;
 }
 
@@ -38,16 +38,23 @@ function stepKey(source: TrialHistorySource): string {
  * Holds `source` as the history trial `trialId` of `store` saves for its
  * instrument, and tells `onOwnUndoStep`'s listeners each time it steps.
  * Returns the release, which keeps what it saved last for the next save while
- * the trial stays open.
+ * the trial stays open. A source held while another's saved form is kept takes
+ * that form through `adopt`, so a history mounted again carries on from the
+ * last rather than saving over it empty.
  */
 export function holdOwnUndo(
   store: LabStore,
   trialId: string,
   source: TrialHistorySource,
+  adopt?: (data: unknown) => void,
 ): () => void {
   const h = held(store);
+  const parked = h.parked.get(trialId);
   h.sources.set(trialId, source);
   unpark(h, trialId);
+  if (adopt && parked && parked.from !== source && parked.data !== undefined) {
+    restoringOwnUndo(() => adopt(parked.data));
+  }
   let key = stepKey(source);
   const off = source.subscribe(() => {
     const next = stepKey(source);
@@ -62,7 +69,7 @@ export function holdOwnUndo(
     h.sources.delete(trialId);
     if (!source.serialize || !store.getState().trials.some((t) => t.id === trialId)) return;
     const offRestart = onTrialRestart(store, trialId, () => unpark(h, trialId));
-    h.parked.set(trialId, { data: source.serialize(), off: offRestart });
+    h.parked.set(trialId, { data: source.serialize(), from: source, off: offRestart });
   };
 }
 

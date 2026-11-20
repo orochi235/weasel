@@ -54,7 +54,7 @@ export function useRestoredHistory(args: {
 /**
  * Holds `source`, the history trial `trialId`'s instrument mounted, as the one
  * its record saves, and restores into it what the record was read with, once
- * per read.
+ * per read, or what the history it replaces last saved.
  */
 export function useHeldOwnHistory(args: {
   store: LabStore;
@@ -65,8 +65,13 @@ export function useHeldOwnHistory(args: {
   const { store, trialId, source, rebuild } = args;
   const saved = useStore(store, (s) => s.trials.find((t) => t.id === trialId)?.undo?.own);
   useEffect(
-    () => (source ? holdOwnUndo(store, trialId, source) : undefined),
-    [store, trialId, source],
+    () =>
+      source
+        ? holdOwnUndo(store, trialId, source, (data) => {
+            if (typeof data === 'object' && data !== null) source.restore?.(data, rebuild);
+          })
+        : undefined,
+    [store, trialId, source, rebuild],
   );
   useEffect(() => {
     if (!source?.restore || typeof saved !== 'object' || saved === null) return;
