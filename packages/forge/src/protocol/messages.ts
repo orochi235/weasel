@@ -78,7 +78,9 @@ export type ToFrame =
   /** Outlines the elements each `A11yNode.target` reaches, in place of the last ones; an empty list clears. */
   | { type: 'a11y.highlight'; targets: readonly (readonly string[])[] }
   /** Scrolls the frame document to `left`, `top` in CSS px: a lens's copy following its trial's frame. */
-  | { type: 'scroll'; left: number; top: number };
+  | { type: 'scroll'; left: number; top: number }
+  /** Runs the story's action leaf at `path`, whose button was pressed in the workshop. */
+  | { type: 'action'; path: string };
 
 /** A message a story's frame sends the workshop. */
 export type FromFrame =

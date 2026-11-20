@@ -97,6 +97,27 @@ describe('startFrame', () => {
     expect(received[0]).toMatchObject({ type: 'ready', schema: describeSchema(counter.config) });
   });
 
+  it('opens a story whose schema holds an action, and runs it on an action message with its own config and writer', async () => {
+    const withAction = loadNativeModule(
+      {
+        default: meta({ title: 'Test/Action' }),
+        Action: story({
+          config: f.schema({ label: f.string('x'), go: f.action(({ path, config, setConfig }) => setConfig('label', `${path}:${String(config.label)}`)) }),
+          render: ({ config }) => <p data-testid="out">{config.label}</p>,
+        }),
+      },
+      'Test/Action',
+    )[0]!;
+    const { shell, of } = start(withAction);
+    await flush();
+    expect(of('ready')).toHaveLength(1);
+    shell.send({ type: 'init', config: { label: 'x' }, state: null, globals: {} });
+    await flush();
+    shell.send({ type: 'action', path: 'go' });
+    await flush();
+    expect(of('setConfig')).toEqual([{ type: 'setConfig', path: 'label', value: 'go:x' }]);
+  });
+
   it('says it has rendered once, after init commits its first render, and not before', async () => {
     const { shell, of, received } = start(counter);
     await flush();

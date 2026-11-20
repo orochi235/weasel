@@ -1,6 +1,6 @@
 import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
-import { describe, expect, it } from 'vitest';
-import { answerSchema, describeSchema, schemaFromDescription } from './schema';
+import { describe, expect, it, vi } from 'vitest';
+import { answerSchema, describeSchema, schemaActionAt, schemaFromDescription } from './schema';
 
 const original = f.schema({
   size: f.number(12).range(8, 48).step(1).slider().label('Size'),
@@ -65,6 +65,31 @@ describe('schema descriptions', () => {
     const d = describeSchema(f.schema({ size: f.number(1).render(() => null) }));
     expect(d.nodes.size).toMatchObject({ customControl: true });
     expect(structuredClone(d)).toEqual(d);
+  });
+
+  it('ships no function an annotation holds, and runs an action in the frame through the answers', () => {
+    const run = vi.fn();
+    const schema = f.schema({
+      go: f.action(run),
+      gain: f.number(1).scale({ to: Math.log, from: Math.exp }).unit({ suffix: 'dB', toDisplay: (v) => v, fromDisplay: (v) => v }),
+      pos: f.object({ x: f.number(0) }).summary((v) => String(v.x)),
+      list: f.list([{ x: 0 }], f.object({ x: f.number(0) }).summary((v) => String(v.x))),
+    });
+    const d = describeSchema(schema);
+    expect(() => structuredClone(d)).not.toThrow();
+    expect(d.nodes.go).toMatchObject({ kind: 'action', runsInFrame: true });
+    expect(d.nodes.gain).toMatchObject({ kind: 'number', annotations: {} });
+    expect(d.nodes.gain).not.toHaveProperty('annotations.scale');
+    expect(d.nodes.list).toMatchObject({ annotations: { item: { kind: 'object', children: { x: { kind: 'number' } } } } });
+
+    const asked = vi.fn();
+    const rebuilt = schemaFromDescription(structuredClone(d), { ...noAnswers, run: asked });
+    const go = rebuilt.nodes.go;
+    const ctx = { path: 'go', config: {}, setConfig: () => {} };
+    if (!('children' in go)) (go.annotations.run as (c: typeof ctx) => void)(ctx);
+    expect(asked).toHaveBeenCalledWith('go', ctx);
+    expect(schemaActionAt(schema, 'go')).toBe(run);
+    expect(schemaActionAt(schema, 'gain')).toBeUndefined();
   });
 
   it('answers validate in the frame and serves it to the rebuilt leaf', () => {

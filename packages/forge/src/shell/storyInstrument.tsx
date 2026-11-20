@@ -5,6 +5,7 @@ import type { FrameSetup } from '../frame/FrameController';
 import { schemaFromDescription } from '../protocol/schema';
 import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
+import { createFrameActions } from './frameActions';
 import { FrameView } from './FrameView';
 import { CaptureInputs } from './loupe/CaptureInputs';
 import { type GlobalDeclarations, withGlobals } from './globals';
@@ -27,8 +28,11 @@ export interface StoryInstrumentOptions {
 /** A story as a lab instrument. Its frame reads the lab's globals from the surrounding `StoryGlobalsContext`. */
 export function storyInstrument(options: StoryInstrumentOptions): Instrument<unknown, unknown> {
   const { entry, ready, answers, frameUrl, onReady, globals = {}, setup } = options;
+  const frames = createFrameActions();
   const config = withGlobals(
-    ready ? schemaFromDescription(ready.schema, answers) : (f.schema({}) as ConfigSchema<unknown>),
+    ready
+      ? schemaFromDescription(ready.schema, { hidden: answers.hidden, errors: answers.errors, run: frames.run })
+      : (f.schema({}) as ConfigSchema<unknown>),
     globals,
   );
   const descriptionKey = ready ? readyKey(ready) : null;
@@ -47,6 +51,7 @@ export function storyInstrument(options: StoryInstrumentOptions): Instrument<unk
           onReady={onReady}
           descriptionKey={descriptionKey}
           ctx={ctx}
+          actions={frames}
           {...(setup ? { setup } : {})}
         />
         <CaptureInputs entry={entry} layout={ready?.layout ?? DEFAULT_LAYOUT} config={ctx.config} state={ctx.state} />

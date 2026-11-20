@@ -6,6 +6,8 @@ import {
   schemaNodeAt,
   type Annotations,
   type BranchAnnotations,
+  type ConfigActionContext,
+  type ConfigActionRun,
   type ConfigBranch,
   type ConfigEntry,
   type ConfigNode,
@@ -13,6 +15,7 @@ import {
   type ConfigShape,
   type NodeOptions,
 } from '@weasel-js/labkit/config';
+import { isPlainObject } from '@weasel-js/core';
 import { setOwn } from '@weasel-js/registry';
 
 /** The section a described entry sits in, as structured-clone data. */
@@ -40,6 +43,8 @@ export type DescribedEntry =
       validated: boolean;
       /** The node draws its own row with `.render`, which stays in the frame. */
       customControl: boolean;
+      /** An action whose `run` stays in the frame: the rebuilt leaf's button asks the frame to run it. */
+      runsInFrame?: true;
     };
 
 /** A config shape as structured-clone data: each key's entry, described. */
@@ -54,17 +59,42 @@ export interface SchemaDescription {
 export interface SchemaAnswers {
   hidden(path: string, config: unknown): boolean;
   errors(path: string, config: unknown): string[];
+  /** Asks the frame of the panel that pressed it, which `ctx` names, to run its action at `path`. Without it, the
+   *  rebuilt action's button does nothing. */
+  run?(path: string, ctx: ConfigActionContext): void;
 }
 
 const joinPath = (at: string, key: string): string => (at === '' ? key : `${at}.${key}`);
+
+const DROPPED = Symbol('dropped');
+
+/**
+ * `value` as structured-clone data: a function is left out, and so is any other object holding one, which is code (a
+ * scale's pair, a function unit, a motif) rather than data. An object carrying a `kind` or `members` is a nested leaf
+ * or section, and like the bag at the top (`keepsKeys`) loses only its function-valued keys.
+ */
+function dataOf(value: unknown, keepsKeys = false): unknown {
+  if (typeof value === 'function' || typeof value === 'symbol') return DROPPED;
+  if (Array.isArray(value)) return value.map((member) => dataOf(member)).filter((member) => member !== DROPPED);
+  if (!isPlainObject(value)) return value;
+  const described = keepsKeys || typeof value.kind === 'string' || 'members' in value;
+  if (!described && Object.values(value).some((member) => typeof member === 'function')) return DROPPED;
+  const out: Record<string, unknown> = {};
+  for (const [key, member] of Object.entries(value)) {
+    const data = dataOf(member);
+    if (data !== DROPPED) setOwn(out, key, data);
+  }
+  return out;
+}
 
 function describeShape(shape: ConfigShape): DescribedShape {
   const out: DescribedShape = {};
   for (const [key, entry] of Object.entries(shape)) {
     const { section, showIf } = entry.options;
+    const sectionData = section === undefined ? undefined : dataOf(section, true);
     const common = {
-      annotations: { ...entry.annotations },
-      ...(section === undefined ? {} : { section: { ...section } }),
+      annotations: dataOf(entry.annotations, true) as Annotations,
+      ...(sectionData === undefined ? {} : { section: sectionData as SectionDescription }),
       conditional: showIf !== undefined,
     };
     const described: DescribedEntry = isConfigBranch(entry)
@@ -76,6 +106,7 @@ function describeShape(shape: ConfigShape): DescribedShape {
           ...common,
           validated: entry.options.validate !== undefined,
           customControl: entry.options.render !== undefined,
+          ...(typeof entry.annotations.run === 'function' ? { runsInFrame: true as const } : {}),
         };
     setOwn(out, key, described);
   }
@@ -105,7 +136,7 @@ function rebuildShape(shape: DescribedShape, at: string, answers: SchemaAnswers)
       const node: ConfigNode = {
         kind: entry.kind,
         default: entry.default,
-        annotations: entry.annotations,
+        annotations: entry.runsInFrame ? { ...entry.annotations, run: (ctx: ConfigActionContext) => answers.run?.(path, ctx) } : entry.annotations,
         options: entry.validated ? { ...options, validate: (_leaf, config) => answers.errors(path, config) } : options,
       };
       setOwn(out, key, node);
@@ -119,6 +150,19 @@ export function schemaFromDescription(
   answers: SchemaAnswers,
 ): ConfigSchema<unknown> {
   return f.schema(rebuildShape(description.nodes, '', answers)) as ConfigSchema<unknown>;
+}
+
+/** The `run` of the action leaf at `path` in `schema`, or undefined where none is. */
+export function schemaActionAt(schema: ConfigSchema<unknown>, path: string): ConfigActionRun | undefined {
+  let shape: ConfigShape = schema.nodes;
+  const segments = path.split('.');
+  for (const [i, segment] of segments.entries()) {
+    if (!Object.hasOwn(shape, segment)) return undefined;
+    const entry = shape[segment]!;
+    if (isConfigBranch(entry)) shape = entry.children;
+    else return i === segments.length - 1 && typeof entry.annotations.run === 'function' ? entry.annotations.run : undefined;
+  }
+  return undefined;
 }
 
 /** Evaluate a schema's own predicates for one config — the frame's half of `answers`. */
