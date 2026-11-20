@@ -18,7 +18,7 @@ import {
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { createClaimPressAction, claimPressBindings } from '../connect';
-import { addLane, canReleaseMembers, releaseMembers } from './containerStencils';
+import { addLane, canReleaseMembers, lanesOf, releaseMembers } from './containerStencils';
 import {
   addLaneLocked, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneLayer, laneResizeLocked, laneScratchOf, poolsOf, type LaneLayerOptions,
   type PoolLanes,
@@ -44,8 +44,9 @@ export interface LaneResize {
   size: number;
 }
 
-/** The default commit: the lane's and the pool's new size, as one history
- *  entry labeled "Resize lane". The pool's layout restacks the lanes after it. */
+/** The default commit: the lane's and the pool's new size, and the lanes after it moved along by the change, as
+ *  one history entry labeled "Resize lane". The pool's layout stacks lanes by where they sit, so the later ones are
+ *  written where they go rather than left for it to find. */
 export function commitLaneResizeToScene(resize: LaneResize, ctx: InvocationCtx): void {
   const scene = ctx.deps.scene as AnyScene | undefined;
   const pool = scene?.get(resize.poolId as NodeId);
@@ -55,8 +56,14 @@ export function commitLaneResizeToScene(resize: LaneResize, ctx: InvocationCtx):
   const l = lane.pose as RectPose;
   const p = pool.pose as RectPose;
   const d = resize.size - (axis === 'y' ? l.height : l.width);
+  const lanes = lanesOf(scene, pool.id);
+  const later = lanes.slice(lanes.indexOf(lane.id) + 1);
   scene.batch('Resize lane', () => {
     scene.setPose(lane.id, axis === 'y' ? { ...l, height: resize.size } : { ...l, width: resize.size });
+    for (const id of later) {
+      const at = scene.get(id)!.pose as RectPose;
+      scene.setPose(id, axis === 'y' ? { ...at, y: at.y + d } : { ...at, x: at.x + d });
+    }
     scene.setPose(pool.id, axis === 'y' ? { ...p, height: p.height + d } : { ...p, width: p.width + d });
   });
 }

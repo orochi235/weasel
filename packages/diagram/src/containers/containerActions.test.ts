@@ -78,6 +78,15 @@ describe('the lane resize action', () => {
     }
   });
 
+  it('keeps the lanes in order when one grows past the lanes after it', () => {
+    const h = pool();
+    resize(h, { x: 200, y: 370 });
+    expect(lanesOf(h.scene as never, h.poolId)).toEqual([h.first, h.second]);
+    expect(pose(h.scene, h.first)).toMatchObject({ y: 0, height: 370 });
+    expect(pose(h.scene, h.second)).toMatchObject({ y: 370, height: 120 });
+    expect(pose(h.scene, h.poolId)).toMatchObject({ height: 490 });
+  });
+
   it('stops a lane at its least size', () => {
     const h = pool();
     resize(h, { x: 200, y: -500 });
