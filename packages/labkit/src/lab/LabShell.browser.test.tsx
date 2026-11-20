@@ -43,12 +43,18 @@ test('the header is as tall in any face, with its actions shown or folded into t
 
 test("zeroes the body's margin under a shell with its bar, and leaves it under one without", () => {
   const margin = () => getComputedStyle(document.body).marginTop;
-  const { rerender } = renderWithIcons(<LabShell title="t">x</LabShell>);
+  const { rerender } = renderWithIcons(
+    <div className="lk-shell-margin-host">
+      <LabShell title="t">x</LabShell>
+    </div>,
+  );
   expect(margin()).toBe('0px');
   rerender(
-    <LabShell title="t" bar={false}>
-      x
-    </LabShell>,
+    <div className="lk-shell-margin-host">
+      <LabShell title="t" bar={false}>
+        x
+      </LabShell>
+    </div>,
   );
-  expect(margin()).not.toBe('0px');
+  expect(margin()).toBe('8px');
 });
