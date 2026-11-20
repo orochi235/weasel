@@ -64,7 +64,7 @@ export function createOuterOps(env: OuterOpsEnv): OuterOps {
   let activeJournal = env.getActiveJournal;
 
   function causing(op: Op, given: Op = op): Op {
-    if (op.caused) return op;
+    if (given.caused) return given;
     let caused: Op[] = [given];
     return {
       get name() { return op.name; },
