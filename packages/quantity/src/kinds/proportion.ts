@@ -323,7 +323,7 @@ export const multiplierKind: DisplayKind<MultiplierDisplay> = {
   parse: (text, d, ctx) => {
     const own = d.symbol !== undefined && text.trimEnd().endsWith(d.symbol)
       ? text.trimEnd().slice(0, -d.symbol.length)
-      : text.replace(/\s*[x×X]\s*$/, '');
+      : text.trimEnd().replace(/[x×X]$/, '');
     return parseNumberIn(own, undefined, ctx.locale);
   },
 };

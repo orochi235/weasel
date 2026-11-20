@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseAs } from '../present';
-import { fraction, ratio } from './proportion';
+import { fraction, multiplier, ratio } from './proportion';
 
 describe('fraction and ratio read typed text in the locale', () => {
   it("reads a fraction's decimal fallback with the locale's decimal mark and digits", () => {
@@ -42,5 +42,17 @@ describe('fraction counted in a constant', () => {
     expect(parseAs('π/2', fraction({ of: 'π' }))).toBeCloseTo(Math.PI / 2);
     expect(parseAs('-π/4', fraction({ of: 'π' }))).toBeCloseTo(-Math.PI / 4);
     expect(parseAs('3π/4', fraction({ of: 'π' }))).toBeCloseTo((3 * Math.PI) / 4);
+  });
+});
+
+describe('multiplier', () => {
+  it('reads a long run of spaces in bounded time', () => {
+    expect(timed(() => parseAs(`5${' '.repeat(60_000)}a`, multiplier()))).toBeNaN();
+  });
+
+  it('reads a typed times sign, spaced or not', () => {
+    expect(parseAs('2.5x', multiplier())).toBe(2.5);
+    expect(parseAs(' 2.5 × ', multiplier())).toBe(2.5);
+    expect(parseAs('3X', multiplier())).toBe(3);
   });
 });
