@@ -31,6 +31,11 @@ describe('conditional processing', () => {
     expect(kinds(out.nodes)).toEqual([['text']]);
   });
 
+  it('draws a <use> child of a <switch> rather than passing over it', () => {
+    const out = parse('<defs><rect id="r" width="1" height="1"/></defs><switch><use href="#r"/><text>fallback</text></switch>');
+    expect(kinds(out.nodes)).toEqual([['path']]);
+  });
+
   it('leaves out an element outside a <switch> whose conditions fail', () => {
     expect(parse('<rect systemLanguage="zz" width="1" height="1"/><rect width="1" height="1"/>').nodes).toHaveLength(1);
   });
