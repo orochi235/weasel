@@ -34,6 +34,7 @@ import { tuneAction, tunedParams, underFirst, type ActionTuning } from './tuning
 import { overrideActionBindings, resolveBindingOverrides, type BindingOverrides, type ResolvedBindingOverrides } from './bindingOverrides';
 import { LastOperationKeeper, type LastOperationHost } from './lastOperation';
 import { showPreview } from './showPreview';
+import { heldActionId, holdingLive } from './holdPreview';
 import { eligibleNow } from '../dispatcher/ranking';
 import type { History } from '@weasel-js/history';
 
@@ -94,9 +95,17 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     for (const n of this.chain()) {
       if (n.muted.has(id)) return undefined;
       const a = n.actions.get(id);
-      if (a) return this.tuned(a);
+      if (a) return this.live(a);
     }
     return undefined;
+  }
+
+  /** `a` as it runs from here: tuned, and a hold holding the action live here for its id, or none when that is gone. */
+  private live(a: Action): Action | undefined {
+    const target = heldActionId(a);
+    if (target === undefined) return this.tuned(a);
+    const held = this.resolve(target);
+    return held ? this.tuned(holdingLive(a, held)) : undefined;
   }
 
   /** Every tuning for `id` from the root down to here, root first. */
@@ -177,7 +186,8 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   ownActions(): readonly Action[] {
     const out: Action[] = [];
     for (const { key, value } of this.actions.entries()) {
-      if (!this.muted.has(key)) out.push(this.tuned(value));
+      const a = this.muted.has(key) ? undefined : this.live(value);
+      if (a) out.push(a);
     }
     return out;
   }
