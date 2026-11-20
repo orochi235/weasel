@@ -51,7 +51,7 @@ describe('placeAction', () => {
   it('hands the binding\'s params on as extras, and none of the click\'s', () => {
     const insert = makeInsertDep();
     click({ kind: 'sticky', size: { width: 40, height: 20 }, padding: 4 }, { insert });
-    expect(insert.calls[0].extras).toEqual({ kind: 'sticky', padding: 4 });
+    expect(insert.calls[0].extras).toEqual({ kind: 'sticky', originMode: 'center', padding: 4 });
   });
 
   it('hands the style its params carry on as extras.style, as a drag does', () => {
@@ -84,7 +84,7 @@ describe('placeAction', () => {
     const mods = { alt: false, ctrl: true, meta: false, shift: false };
     click({ kind: 'sticky', size: { width: 40, height: 20 }, mods }, { insert, snap }, { x: 103, y: 48 });
     expect(insert.calls[0].bounds).toEqual({ x: 83, y: 38, width: 40, height: 20 });
-    expect(insert.calls[0].extras).toEqual({ kind: 'sticky' });
+    expect(insert.calls[0].extras).toEqual({ kind: 'sticky', originMode: 'center' });
     expect(placeAction.modifierRoles).toHaveProperty(['snap.suspend']);
   });
 
@@ -134,6 +134,29 @@ describe('placeAction', () => {
     const roles = { 'snap.suspend': true, 'snap.constrain': false };
     click({ kind: 'sticky', size: { width: 40, height: 20 }, mods, roles }, { insert, snap }, { x: 103, y: 48 });
     expect(insert.calls[0].bounds).toEqual({ x: 83, y: 38, width: 40, height: 20 });
-    expect(insert.calls[0].extras).toEqual({ kind: 'sticky' });
+    expect(insert.calls[0].extras).toEqual({ kind: 'sticky', originMode: 'center' });
+  });
+});
+
+describe('placeAction — a built-in kind\'s extras, as a drag out from the click makes them', () => {
+  const size = { width: 40, height: 20 };
+
+  it('hands a rect only its kind and style, not its style params at the top level', () => {
+    const insert = makeInsertDep();
+    const fill = { kind: 'solid', color: '#123456' };
+    click({ kind: 'rect', size, fill }, { insert });
+    expect(insert.calls[0].extras).toEqual({ kind: 'rect', style: { fill } });
+  });
+
+  it('gives a line its two ends', () => {
+    const insert = makeInsertDep();
+    click({ kind: 'line', size }, { insert });
+    expect(insert.calls[0].extras).toEqual({ kind: 'line', a: { x: 80, y: 40 }, b: { x: 120, y: 60 } });
+  });
+
+  it('gives a polygon a numeric side count, a center and a rotation', () => {
+    const insert = makeInsertDep();
+    click({ kind: 'polygon', size, sides: '5' }, { insert });
+    expect(insert.calls[0].extras).toMatchObject({ kind: 'polygon', sides: 5, center: { x: 100, y: 50 }, rotation: Math.atan2(10, 20) });
   });
 });
