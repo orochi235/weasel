@@ -347,6 +347,19 @@ describe('createReflectable holdPlace', () => {
   });
 });
 
+describe('createReflectable set and rank', () => {
+  it('keeps the replaced registrant\'s rank, so a later lower-rank push stays under it', () => {
+    const r = createReflectable<string>();
+    r.push('k', 'a', { rank: 5 });
+    r.push('k', 'b', { rank: 10 });
+    r.set('k', 'c');
+    expect(r.stack('k').at(-1)).toMatchObject({ value: 'c', rank: 10 });
+    r.push('k', 'd', { rank: 3 });
+    expect(r.get('k')).toBe('c');
+    expect(r.stack('k').map((s) => s.value)).toEqual(['d', 'a', 'c']);
+  });
+});
+
 describe('createReflectable clash warning', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -362,6 +375,7 @@ describe('createReflectable clash warning', () => {
     r.push('k', 'c', { source: 'two' });
     expect(warn).toHaveBeenCalledTimes(2);
     expect(warn.mock.calls[0]![0]).toMatch(/"two" registered "k" over "one"/);
+    expect(warn.mock.calls[0]![0]).toMatch(/The newer one is live/);
     r.push('k', 'd', { source: 'two' });
     expect(warn).toHaveBeenCalledTimes(2);
   });
@@ -402,6 +416,9 @@ describe('createReflectable clash warning', () => {
     r.push('k', 'a');
     r.push('k', 'b');
     expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).not.toMatch(/newer one is live/);
+    expect(warn.mock.calls[0]![0]).toMatch(/under a higher-ranked registrant/);
+    expect(r.get('k')).toBe('override');
   });
 
   it('is silent outside development', () => {

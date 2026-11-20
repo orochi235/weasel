@@ -82,4 +82,27 @@ describe('createExtensionRegistry', () => {
     expect(() => r.register('x', { v: 1 })).not.toThrow();
     expect(() => r.register('x', { v: 2 })).toThrow(/thing "x"/);
   });
+
+  it('keeps a listener\'s own subscription to the parent when its subscription to a child ends', () => {
+    const parent = make();
+    const child = make(parent);
+    const onChange = vi.fn();
+    parent.subscribe(onChange);
+    child.own.subscribe(onChange);
+    child.subscribe(onChange)();
+    parent.register('a', 'one');
+    expect(onChange).toHaveBeenCalledTimes(1);
+    child.register('b', 'two');
+    expect(onChange).toHaveBeenCalledTimes(2);
+  });
+
+  it('lists its ids and its parent\'s in the order each was first registered', () => {
+    const parent = make();
+    const child = make(parent);
+    child.register('a', 'one');
+    parent.register('b', 'two');
+    parent.register('c', 'three');
+    child.register('c', 'mine', { replace: true });
+    expect(child.entries().map((e) => [e.key, e.value])).toEqual([['a', 'one'], ['b', 'two'], ['c', 'mine']]);
+  });
 });

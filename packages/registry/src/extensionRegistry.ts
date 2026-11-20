@@ -1,3 +1,4 @@
+import { createEmitter } from './emitter';
 import { createReflectable, type ReflectedEntry, type Reflection } from './reflectable';
 
 /** Options for {@link ExtensionRegistry.register}. */
@@ -55,6 +56,11 @@ export class ExtensionConflictError extends Error {
   }
 }
 
+/** Counts registrations across every registry, so a child can order its ids among its parent's. */
+let nextOrder = 0;
+/** When each registry made with {@link createExtensionRegistry} first held an id, here or in a parent. */
+const orderOfRegistry = new WeakMap<object, (id: string) => number | undefined>();
+
 interface Holding {
   /** Identifies the registration a release belongs to; a replacement makes a new one. */
   token: object;
@@ -69,7 +75,20 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
   const same = options.same ?? Object.is;
   const store = createReflectable<V>({ name: kind });
   const held = new Map<string, Holding>();
+  /** When this registry's store came to hold each id it holds. */
+  const since = new Map<string, number>();
+  const parentOrder = parent ? orderOfRegistry.get(parent) : undefined;
+  const orderOf = (id: string): number | undefined => {
+    const mine = since.get(id);
+    const theirs = parentOrder?.(id);
+    return mine === undefined ? theirs : theirs === undefined ? mine : Math.min(mine, theirs);
+  };
   let cached: { version: number; entries: readonly ReflectedEntry<V>[] } | null = null;
+  /** This registry's own listeners, so subscribing here never shares a subscription a listener holds on `own` or
+   *  the parent; it hears the store and the parent only while it has listeners. */
+  const changes = createEmitter();
+  const notify = (): void => { changes.emit(); };
+  let offUpstream: (() => void) | null = null;
 
   const get = (id: string): V | undefined => (store.has(id) ? store.get(id) : parent?.get(id));
   const getVersion = (): number => store.getVersion() + (parent?.getVersion() ?? 0);
@@ -82,11 +101,12 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
       if (held.get(id)?.token !== holding.token) return;
       if (--holding.count > 0) return;
       held.delete(id);
+      since.delete(id);
       store.delete(id);
     };
   }
 
-  return {
+  const registry: ExtensionRegistry<V> = {
     name: kind,
     parent,
     own: store.reflection,
@@ -97,13 +117,24 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
       if (cached?.version === version) return cached.entries;
       const mine = store.entries();
       const inherited = (parent?.entries() ?? []).filter((e) => !store.has(e.key));
-      cached = { version, entries: Object.freeze([...inherited, ...mine]) };
+      const all = [...inherited, ...mine];
+      if (parentOrder) all.sort((a, b) => (orderOf(a.key) ?? 0) - (orderOf(b.key) ?? 0));
+      cached = { version, entries: Object.freeze(all) };
       return cached.entries;
     },
     subscribe(listener) {
-      const off = store.subscribe(listener);
-      const offParent = parent?.subscribe(listener);
-      return () => { off(); offParent?.(); };
+      if (changes.size === 0) {
+        const offStore = store.subscribe(notify);
+        const offParent = parent?.subscribe(notify);
+        offUpstream = () => { offStore(); offParent?.(); };
+      }
+      const off = changes.subscribe(listener);
+      return () => {
+        off();
+        if (changes.size > 0 || !offUpstream) return;
+        offUpstream();
+        offUpstream = null;
+      };
     },
     getVersion,
     register(id, value, opts = {}) {
@@ -116,12 +147,16 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
       if (have !== undefined && !same(have, value) && !opts.replace) throw new ExtensionConflictError(kind, id);
       const next: Holding = { token: {}, count: 1 };
       held.set(id, next);
+      if (!since.has(id)) since.set(id, nextOrder++);
       store.set(id, value, opts.source !== undefined ? { source: opts.source } : undefined);
       return createRelease(id, next);
     },
     clear() {
       held.clear();
+      since.clear();
       store.clear();
     },
   };
+  orderOfRegistry.set(registry, orderOf);
+  return registry;
 }

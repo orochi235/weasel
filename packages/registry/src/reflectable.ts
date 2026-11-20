@@ -89,7 +89,7 @@ export interface Reflectable<V, K = string> extends Reflection<V, K> {
   push(key: K, value: V, options?: PushOptions): () => void;
   /** Replace `key`'s live registrant in place, the way `Map.set` does — for
    *  registries where a second registration means "newer version", not
-   *  "override". Records no conflict. Returns a release that removes this
+   *  "override". The replacement takes the rank of the one it replaces. Records no conflict. Returns a release that removes this
    *  registrant if it is still there, and does nothing once a later `set`
    *  replaced it. */
   set(key: K, value: V, options?: RegisterOptions): () => void;
@@ -131,14 +131,15 @@ function createClashWarnings<K, V>(name: string | undefined) {
   const warned = new Map<K, Set<string>>();
   const named = (r: Registrant<V>) => (r.source === undefined ? 'an unnamed registrant' : `"${r.source}"`);
   return {
-    warn(key: K, under: Registrant<V>, over: Registrant<V>): void {
+    warn(key: K, under: Registrant<V>, over: Registrant<V>, live: boolean): void {
       const pair = `${under.source ?? ''}\u0000${over.source ?? ''}`;
       const seen = warned.get(key) ?? new Set<string>();
       if (seen.has(pair)) return;
       warned.set(key, seen.add(pair));
       console.warn(
         `${prefix}: ${named(over)} registered "${String(key)}" over ${named(under)}, which is not an engine default. ` +
-        'The newer one is live; release one, or push the override at a higher rank.',
+        (live ? 'The newer one is live' : 'The newer one is under a higher-ranked registrant, and goes live over it once that one is released') +
+        '; release one, or push the override at a higher rank.',
       );
     },
     forget: (key: K) => { warned.delete(key); },
@@ -237,7 +238,7 @@ export function createReflectable<V, K = string>(options?: ReflectableOptions): 
       let at = stack.length;
       while (at > 0 && (stack[at - 1]!.rank ?? 0) > rank) at--;
       const under = stack[at - 1];
-      if (under && !layered && !under.fallback && under.value !== value && (under.rank ?? 0) === rank && isDev()) clashes.warn(key, under, registrant);
+      if (under && !layered && !under.fallback && under.value !== value && (under.rank ?? 0) === rank && isDev()) clashes.warn(key, under, registrant, at === stack.length);
       stacks.set(key, Object.freeze([...stack.slice(0, at), registrant, ...stack.slice(at)]));
       changed();
       return () => {
@@ -245,8 +246,9 @@ export function createReflectable<V, K = string>(options?: ReflectableOptions): 
       };
     },
     set(key, value, options) {
-      const registrant = registrantOf(value, { source: options?.source });
       const stack = stacks.get(key) ?? NONE;
+      const rank = stack.at(-1)?.rank;
+      const registrant = registrantOf(value, { source: options?.source, ...(rank === undefined ? {} : { rank }) });
       stacks.set(key, Object.freeze([...stack.slice(0, -1), registrant]));
       changed();
       return () => {

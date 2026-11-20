@@ -51,4 +51,13 @@ describe('identityKeyOf', () => {
     expect(identityKeyOf(1)).not.toBe(identityKeyOf('1'));
     expect(identityKeyOf(null)).not.toBe(identityKeyOf(undefined));
   });
+
+  it('names each symbol by identity, and a registered one by its registry key', () => {
+    const a = Symbol('x');
+    expect(identityKeyOf(a)).toBe(identityKeyOf(a));
+    expect(identityKeyOf(a)).not.toBe(identityKeyOf(Symbol('x')));
+    expect(identityKeyOf(Symbol())).not.toBe(identityKeyOf(Symbol()));
+    expect(identityKeyOf(Symbol.for('x'))).toBe(identityKeyOf(Symbol.for('x')));
+    expect(identityKeyOf(Symbol.for('x'))).not.toBe(identityKeyOf('x'));
+  });
 });

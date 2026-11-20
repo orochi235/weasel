@@ -104,6 +104,16 @@ describe('createKeyedEmitter', () => {
     expect(later).toHaveBeenCalledTimes(1);
   });
 
+  it('does not call a listener a clear during the pass removed before its turn', () => {
+    const e = createKeyedEmitter<string>();
+    const second = vi.fn();
+    e.subscribe('k', () => e.clear('k'));
+    e.subscribe('k', second);
+    e.emit('k');
+    expect(second).not.toHaveBeenCalled();
+    expect(e.size('k')).toBe(0);
+  });
+
   it('forgets a key on clear, and an unsubscribe from before it keeps a new subscriber', () => {
     const e = createKeyedEmitter<string>();
     const old = vi.fn();
