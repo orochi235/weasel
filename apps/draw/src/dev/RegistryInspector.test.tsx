@@ -57,6 +57,7 @@ describe('RegistryInspector', () => {
       ['Toolkit Builder', '#/dev/toolkits'],
       ['Bundle Inspector', '#/dev/registry'],
       ['Assets', '#/dev/assets'],
+      ['Audits', '#/dev/audits'],
     ]);
     expect(screen.getByRole('menuitem', { name: 'Bundle Inspector' }))
       .toHaveAttribute('aria-current', 'page');
