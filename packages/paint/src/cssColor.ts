@@ -1,7 +1,7 @@
 import { isNamedColor } from './color';
 import { parseHexBytes } from './hex';
 
-const COLOR_FUNCTION = /^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\([^{};]+\)$/i;
+const COLOR_FUNCTION = /^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\(/i;
 const KEYWORDS = new Set(['transparent', 'currentcolor']);
 
 const CSS_WIDE = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer']);
@@ -19,5 +19,17 @@ export function parsesAsColor(value: string, supports: ((value: string) => boole
   // `CSS.supports` accepts any `var()`, and any CSS-wide keyword, for any property.
   if (!v || v.includes('var(') || CSS_WIDE.has(v.toLowerCase())) return false;
   if (supports) return supports(v);
-  return parseHexBytes(v) !== null || COLOR_FUNCTION.test(v) || KEYWORDS.has(v.toLowerCase()) || isNamedColor(v);
+  return parseHexBytes(v) !== null || isColorFunction(v) || KEYWORDS.has(v.toLowerCase()) || isNamedColor(v);
+}
+
+/** A color function whose own parenthesis closes at the end of `v`, so nothing follows it. */
+function isColorFunction(v: string): boolean {
+  const open = COLOR_FUNCTION.exec(v);
+  if (!open || /[{};]/.test(v)) return false;
+  let depth = 0;
+  for (let i = open[0].length - 1; i < v.length; i++) {
+    if (v[i] === '(') depth++;
+    else if (v[i] === ')' && --depth === 0) return i === v.length - 1 && i > open[0].length;
+  }
+  return false;
 }
