@@ -14,8 +14,7 @@ import { clusterSpecs, resolveClusters, type ResolvedCluster } from './dataClust
 import { bodyLayoutOf } from './bodyRelayout';
 import { bodyTrait, measureBody, growToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { buildBody } from './buildBody';
-import { faceCapCenter } from './faceCapCenter';
-import { estimatedWidth } from './rowMeasure';
+import { measureInFace } from './faceMeasure';
 import { edgeIdOf } from './edgeId';
 import { warnUnknownRefs } from './unknownRefs';
 import { asideFillOf, headerFillOf, ownNodeStyle, rowTextColor, withColors } from './dataColors';
@@ -53,7 +52,6 @@ export const SLOT_FRAME = 'M0 0H1V1H0Z';
 /** What a cluster is drawn with when there is no theme and nothing says otherwise. */
 export const DEFAULT_CLUSTER_STYLE: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
 export { LABEL_PLACEMENT };
-const LINE = 1.4;
 const MIN_WIDTH = 64;
 
 export { edgeIdOf };
@@ -155,16 +153,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   const font = opts.font ?? (theme ? themeFont(theme) : DEFAULT_FONT);
   const labelFont = theme ? themeLabelFont(theme, font) : font;
   const styleOf = (s: RowTextStyle | undefined) => textFace(s, font);
-  const measure: MeasureRowText = opts.measure
-    ? (text, s) => opts.measure!(text, { ...s, fontFamily: s.fontFamily ?? font.fontFamily, fontSize: s.fontSize ?? font.fontSize })
-    : (text, s) => {
-        const face = { ...s, fontSize: s.fontSize ?? font.fontSize, fontFamily: s.fontFamily ?? font.fontFamily };
-        const capCenter = faceCapCenter(face);
-        return {
-          width: estimatedWidth(text, face), height: Math.ceil(LINE * face.fontSize),
-          ...(capCenter !== undefined ? { capCenter } : {}),
-        };
-      };
+  const measure = measureInFace(font, opts.measure);
 
   const ids = new Set<string>();
   for (const n of data.nodes) {
