@@ -1,0 +1,77 @@
+{
+  "generated": "2026-11-19T21:30:00.000Z",
+  "head": "6b331e4",
+  "runs": [
+    {
+      "running": true,
+      "round": 41,
+      "started": "2026-11-19T20:50:00.000Z",
+      "ended": null,
+      "step": "fix",
+      "costUsd": 12.5,
+      "capUsd": 80,
+      "report": null,
+      "areas": ["core.ops", "core.debug"],
+      "stages": { "core.ops": "matched", "core.debug": "reviewing" },
+      "lanes": [
+        {
+          "id": "core.ops",
+          "steps": {
+            "A": { "state": "done", "node": "studio", "findings": 5, "read": 24, "files": 24, "minutes": 2.8 },
+            "B": { "state": "done", "node": "teitou", "findings": 2, "read": 24, "files": 24, "minutes": 2.9 },
+            "match": { "state": "done", "shared": 2, "a": 5, "b": 2 },
+            "fix": { "state": "running", "node": "studio", "since": "2026-11-19T21:18:00.000Z" },
+            "patch": { "state": "waiting" }
+          }
+        },
+        {
+          "id": "core.debug",
+          "steps": {
+            "A": { "state": "done", "node": "teitou", "findings": 1, "read": 9, "files": 12, "minutes": 1.5 },
+            "B": { "state": "running", "node": "studio", "since": "2026-11-19T21:29:30.000Z" },
+            "match": { "state": "waiting" },
+            "fix": { "state": "waiting" },
+            "patch": { "state": "waiting" }
+          }
+        }
+      ],
+      "sweepRunning": false,
+      "lastLine": "match 1/2 core.ops: 2 shared of 5 + 2",
+      "lines": [
+        "night: round 41, 2 areas",
+        "review 1/4 core.ops A on studio: 5 findings, 24/24 files read, 2.8 min, 1.30M tokens",
+        "review 2/4 core.ops B on teitou: 2 findings, 24/24 files read, 2.9 min, 1.66M tokens",
+        "review 3/4 core.debug A on teitou: 1 findings, 9/12 files read, 1.5 min, 0.40M tokens",
+        "match 1/2 core.ops: 2 shared of 5 + 2"
+      ]
+    },
+    {
+      "running": false,
+      "round": 40,
+      "started": "2026-11-19T02:00:00.000Z",
+      "ended": "2026-11-19T04:10:00.000Z",
+      "step": "done",
+      "costUsd": 61.2,
+      "capUsd": 80,
+      "report": "8 areas merged; fleet green",
+      "areas": ["ui.badge"],
+      "stages": { "ui.badge": "patched" },
+      "lanes": [],
+      "sweepRunning": false,
+      "lastLine": "fix 1/1 ui.badge on studio: 3 commits, 8.0 min, 0.79M tokens",
+      "lines": ["fix 1/1 ui.badge on studio: 3 commits, 8.0 min, 0.79M tokens"]
+    }
+  ],
+  "areas": [
+    { "id": "core.ops", "group": "core", "files": 24, "status": "tonight", "queue": null, "passes": [{ "round": 30, "date": "2026-11-12", "a": 4, "b": 3, "shared": 2, "distinct": 5, "est": 6.7, "left": 1.7 }], "stage": "matched" },
+    { "id": "core.debug", "group": "core", "files": 12, "status": "tonight", "queue": null, "passes": [], "stage": "reviewing" },
+    { "id": "core.scene", "group": "core", "files": 40, "status": "due", "queue": 2, "passes": [{ "round": 33, "date": "2026-11-17", "a": 9, "b": 7, "shared": 3, "distinct": 13, "est": 23, "left": 10 }], "stage": null },
+    { "id": "ui.badge", "group": "ui", "files": 30, "status": "settled", "queue": null, "passes": [{ "round": 38, "date": "2026-11-18", "a": 1, "b": 0, "shared": 0, "distinct": 1, "est": 1, "left": 0 }, { "round": 40, "date": "2026-11-19", "a": 0, "b": 0, "shared": 0, "distinct": 0, "est": 0, "left": 0 }], "stage": null },
+    { "id": "ui.menu", "group": "ui", "files": 18, "status": "unaudited", "queue": 1, "passes": [], "stage": null },
+    { "id": "geom", "group": "geom", "files": 26, "status": "due", "queue": 3, "passes": [{ "round": 39, "date": "2026-11-19", "a": 3, "b": 2, "shared": 1, "distinct": 4, "est": 5, "left": 1 }], "stage": null }
+  ],
+  "rounds": [
+    { "round": 39, "date": "2026-11-19", "areas": 6, "files": 192, "distinct": 38, "est": 49 },
+    { "round": 40, "date": "2026-11-19", "areas": 8, "files": 291, "distinct": 51, "est": 74 }
+  ]
+}

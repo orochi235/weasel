@@ -1,0 +1,28 @@
+.chart {
+  display: block;
+  width: 100%;
+  height: 150px;
+}
+
+.grid { stroke: var(--audit-rule); }
+
+.axis {
+  font-family: var(--wzl-font-mono);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  fill: var(--audit-muted);
+}
+
+.est {
+  fill: none;
+  stroke: var(--audit-depth-3);
+  stroke-dasharray: 2 2;
+}
+
+.found { fill: var(--audit-depth-2); }
+
+.hint {
+  margin: var(--wzl-space-2) 0 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--audit-muted);
+}

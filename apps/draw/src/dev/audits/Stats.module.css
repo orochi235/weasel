@@ -1,0 +1,23 @@
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--wzl-space-3);
+}
+
+.stat {
+  padding-top: var(--wzl-space-3);
+  border-top: 2px solid var(--audit-ink);
+}
+
+.value {
+  display: block;
+  font-family: var(--wzl-font-display);
+  font-size: var(--wzl-font-size-xl);
+  font-weight: var(--wzl-font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--audit-muted);
+}

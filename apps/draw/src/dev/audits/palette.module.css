@@ -1,0 +1,40 @@
+/* The audit page's colors, from the theme's tokens: the DOM reads them as custom properties, the map through the
+   probes below. */
+.palette {
+  --audit-panel: var(--wzl-surface);
+  --audit-ink: var(--wzl-fg);
+  --audit-ink-inverse: var(--wzl-fg-inverse);
+  --audit-muted: var(--wzl-fg-muted);
+  --audit-rule: var(--wzl-border);
+  --audit-uncharted: var(--wzl-surface-sunken);
+  --audit-hatch: var(--wzl-border-strong);
+  --audit-depth-0: color-mix(in oklab, var(--wzl-info) 14%, var(--wzl-surface));
+  --audit-depth-1: color-mix(in oklab, var(--wzl-info) 34%, var(--wzl-surface));
+  --audit-depth-2: color-mix(in oklab, var(--wzl-info) 56%, var(--wzl-surface));
+  --audit-depth-3: color-mix(in oklab, var(--wzl-info) 72%, var(--wzl-fg));
+  --audit-depth-4: color-mix(in oklab, var(--wzl-info) 45%, var(--wzl-fg));
+  --audit-settled: var(--wzl-success);
+  --audit-live: var(--wzl-swatch-rose);
+  --audit-live-soft: color-mix(in oklab, var(--wzl-swatch-rose) 16%, transparent);
+}
+
+.probes {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.panel { color: var(--audit-panel); }
+.ink { color: var(--audit-ink); }
+.inkInverse { color: var(--audit-ink-inverse); }
+.uncharted { color: var(--audit-uncharted); }
+.hatch { color: var(--audit-hatch); }
+.depth0 { color: var(--audit-depth-0); }
+.depth1 { color: var(--audit-depth-1); }
+.depth2 { color: var(--audit-depth-2); }
+.depth3 { color: var(--audit-depth-3); }
+.depth4 { color: var(--audit-depth-4); }
+.settled { color: var(--audit-settled); }
+.live { color: var(--audit-live); }
