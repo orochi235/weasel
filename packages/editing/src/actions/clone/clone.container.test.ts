@@ -82,7 +82,7 @@ describe('cloneAction dropping an envelope into a container', () => {
     }) as unknown as InvocationCtx;
     const opts = { behaviors: [snapToContainer<RectPose>({
       dwellMs: 0, isInstant: () => true,
-      findTarget: (_id, wx, wy) => (wx >= BIN.x && wx <= BIN.x + BIN.width ? { parentId: bin, slotPose: SLOT } : null),
+      findTarget: (_id, wx) => (wx >= BIN.x && wx <= BIN.x + BIN.width ? { parentId: bin, slotPose: SLOT } : null),
     })].flatMap((x) => (x.clone ? [x.clone] : [])) } as BindingOptions;
     const handle = (cloneAction.invoker as OngoingInvoker).start(at(5, 5), opts) as OngoingHandle;
     handle.onMove!(at(125, 27));
