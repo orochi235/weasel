@@ -159,6 +159,24 @@ describe('gesture detail', () => {
     const { container } = renderWithIcons(<RegistryDetail entry={gesture} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(container.textContent).not.toMatch(/phase grammar/);
   });
+
+  it('gives each of an action\'s bindings its own row, even when their routes read the same', () => {
+    const zoom: ActionEntry = {
+      kind: 'action', id: 'zoomReset', label: 'Reset zoom',
+      defaultBinding: [
+        { kind: 'key', key: '0', mods: { mod: true } },
+        { kind: 'key', key: '0', code: 'Numpad0', mods: { mod: true } },
+      ],
+    } as unknown as ActionEntry;
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      renderWithIcons(<RegistryDetail entry={gesture} tools={[]} actions={[zoom]} onNavigate={() => {}} />);
+      expect(screen.getAllByText('Reset zoom')).toHaveLength(2);
+      expect(errors.mock.calls.flat().join(' ')).not.toMatch(/same key/);
+    } finally {
+      errors.mockRestore();
+    }
+  });
 });
 
 describe('phase output detail', () => {

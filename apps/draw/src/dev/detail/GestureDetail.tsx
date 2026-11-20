@@ -21,6 +21,10 @@ function describeGestureSpec(spec: { kind?: string } | undefined): string {
 }
 
 export interface ActionBindingRow {
+  /** Unique per binding: the action's id and the binding's place in its
+   *  `defaultBinding`. Two bindings can describe as the same route text
+   *  (they differ in `code`, `when` or `opts`), so the text can't key a row. */
+  id: string;
   actionId: string;
   specKind: string;
   bindingText: string;
@@ -33,16 +37,17 @@ export function flattenActionBindings(actions: readonly ActionEntry[]): ActionBi
     if (!raw) continue;
     // `defaultBinding` is `GestureSpec | BoundGesture | BoundGesture[]`.
     const entries: unknown[] = Array.isArray(raw) ? raw : [raw];
-    for (const entry of entries) {
+    entries.forEach((entry, index) => {
       const obj = entry as { spec?: { kind?: string }; kind?: string };
       const spec = (obj.spec ?? obj) as { kind?: string };
-      if (!spec || typeof spec.kind !== 'string') continue;
+      if (!spec || typeof spec.kind !== 'string') return;
       rows.push({
+        id: `${a.id}::${index}`,
         actionId: a.id,
         specKind: spec.kind,
         bindingText: describeGestureSpec(spec),
       });
-    }
+    });
   }
   return rows;
 }
@@ -79,8 +84,7 @@ export function GestureDetail({
   );
   const aliasSet = new Set([entry.id]);
   const actionRows = flattenActionBindings(actions)
-    .filter((r) => aliasSet.has(r.specKind))
-    .map((r) => ({ id: `${r.actionId}::${r.specKind}::${r.bindingText}`, ...r }));
+    .filter((r) => aliasSet.has(r.specKind));
   const actionEntriesById = new Map(actions.map((a) => [a.id, a] as const));
   return (
     <div>
