@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { nightStages } from './map.mjs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
+import { nightStages, readRuns } from './map.mjs';
+import { claimRound, writeStatus, writeSummary } from './runs.mjs';
+
+const dirs: string[] = [];
+afterEach(() => {
+  for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
+});
 
 describe('nightStages', () => {
   it('takes each area to the furthest step its log lines reach', () => {
@@ -21,5 +30,28 @@ describe('nightStages', () => {
       'core.core': 'reviewing',
       'core.canvas.part1': 'conflict',
     });
+  });
+});
+
+describe('readRuns', () => {
+  it('lists every live run with its own stages, then the last finished', () => {
+    const state = mkdtempSync(join(tmpdir(), 'skulk-map-'));
+    dirs.push(state);
+    const night = (round: number, lines: string[]) => {
+      const dir = join(state, 'nights', `r${round}`);
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, 'night.log'), `${lines.join('\n')}\n`);
+      return dir;
+    };
+    for (const round of [40, 41, 42]) claimRound(round, state);
+    writeSummary(40, { round: 40, started: 's', ended: 'e', areas: [{ id: 'old' }], nightDir: night(40, []) }, state);
+    writeStatus(41, { step: 'review', areas: ['a'], nightDir: night(41, ['review 1/2 a A on studio: 0 findings']) }, state);
+    writeStatus(42, { step: 'fleet', areas: ['b'], nightDir: night(42, ['patch b: 1 commits on audit42-b']) }, state);
+    const runs = readRuns(state);
+    expect(runs.map((r) => [r.round, r.running, r.step, r.areas, r.stages])).toEqual([
+      [41, true, 'review', ['a'], { a: 'reviewing' }],
+      [42, true, 'fleet', ['b'], { b: 'patched' }],
+      [40, false, 'done', ['old'], {}],
+    ]);
   });
 });
