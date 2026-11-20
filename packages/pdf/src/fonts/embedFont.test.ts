@@ -138,6 +138,18 @@ describe('DocumentFonts', () => {
     expect(s).toContain(`/W [${gid} [${w}]]`);
   });
 
+  it('answers null for a second reading of a glyph once the face has no spare code left', async () => {
+    registerInter('pdf-inter-spare');
+    const fonts = new DocumentFonts(new PdfObjects(), registryFontSource);
+    const font = (await fonts.face('pdf-inter-spare', 400, 'normal'))!;
+    const gid = font.use(0x41)!;
+    let code: number | null = gid;
+    for (let i = 0; code !== null && i <= 0x10000; i++) code = font.useGlyph(gid, `A${i}`);
+    expect(code).toBeNull();
+    expect(font.readsAs(gid)).toBe('A');
+    expect(font.useGlyph(gid, 'A')).toBe(gid);
+  });
+
   it('answers null for a glyph the face lacks and never records glyph 0', async () => {
     registerInter('pdf-inter-miss');
     const objects = new PdfObjects();

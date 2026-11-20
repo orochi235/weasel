@@ -27,6 +27,12 @@ async function render(commands: DrawCommand[]) {
 }
 
 describe('writeStroke', () => {
+  it('paints no stroke for a path with no commands', async () => {
+    const empty: Path = { kind: 'polygon', commands: new Uint8Array(0), coords: new Float32Array(0), fillRule: 'nonzero' };
+    const c = await content([{ kind: 'path', path: empty, stroke: { paint: { color: '#000' }, width: 1 } }]);
+    expect(c).not.toMatch(/(^|\n)S\n/);
+  });
+
   it('strokes a plain centered stroke natively', async () => {
     const c = await content([
       {

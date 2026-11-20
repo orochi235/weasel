@@ -3054,3 +3054,8 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): `setAnchorField` asked `enabled` with params answers as its `run` would, so an
   entry that would change nothing is `NotApplicable`; asked with no params, as a listing asks, it answers for the
   anchor selection alone, since what a field would write only arrives with the entry.
+## Audit round fifty-three (2026-11-20): pdf
+
+- 2026-11-20 (the fixer's call): once a PDF face has given out every two-byte code, a glyph's further reading (other
+  text, or another width) gets no code, so `writePdf` draws that glyph as an outline rather than as text. Reusing the
+  glyph's first code, as before, copied out the wrong text and moved the pen by the wrong width.

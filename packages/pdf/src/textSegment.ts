@@ -260,7 +260,7 @@ export async function writeSegment(
   const bold = syntheticBoldOffset(first.resolved);
   const fillColor = fill && isSolidPaint(fill) ? solidColor(fill, state) : undefined;
   // A text object paints a fill-and-stroke glyph twice, which only matches a grown outline when opaque.
-  const boldInText = bold && !stroke && solidFill && fillColor!.alpha >= 1;
+  const boldInText = bold && !stroke && solidFill && (!fillColor || fillColor.alpha >= 1);
   if ((stroke && !nativeStroke) || (bold && !boldInText)) return writeOutlinedInk(ctx, seg, cmd, dx, dy, state);
 
   const { out } = ctx;

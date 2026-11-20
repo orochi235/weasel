@@ -15,7 +15,8 @@ export interface EmbeddedFont {
    * The code that draws glyph `gid`, which a shaper chose, and reads back as `text`: `''` for a
    * glyph that stands for no text of its own. With `width`, in 1000/em, the code moves the pen
    * that far rather than the glyph's own advance. Each reading and width of a glyph takes a
-   * code of its own, mapped to it. Null for `.notdef`.
+   * code of its own, mapped to it. Null for `.notdef`, and for a further reading once every
+   * two-byte code is taken.
    */
   useGlyph(gid: number, text: string, width?: number): number | null;
   /** The text `/ToUnicode` reads code `code` back as: `''` for one that reads as nothing. */
@@ -87,8 +88,10 @@ class Face implements EmbeddedFont {
     const key = `${gid}|${width ?? ''}|${text}`;
     let code = this.codeOf.get(key);
     if (code === undefined) {
-      code = !this.codes.has(gid) ? gid : this.spare <= MAX_CODE ? this.spare++ : gid;
-      if (!this.codes.has(code)) this.codes.set(code, { gid, text, width });
+      if (!this.codes.has(gid)) code = gid;
+      else if (this.spare <= MAX_CODE) code = this.spare++;
+      else return null;
+      this.codes.set(code, { gid, text, width });
       this.codeOf.set(key, code);
     }
     this.used.add(gid);

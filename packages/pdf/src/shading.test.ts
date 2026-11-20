@@ -48,6 +48,14 @@ function meshVertex(s: string, data: Uint8Array, i: number): { x: number; y: num
 }
 
 describe('paintShading', () => {
+  it('drops and reports a gradient fill with a NaN opacity', async () => {
+    const { content, skipped } = await render([
+      filled({ kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: redBlue, units: 'local', opacity: NaN }),
+    ]);
+    expect(content).not.toContain(' sh');
+    expect(skipped.map((s) => s.detail)).toEqual(['path has a non-finite coordinate']);
+  });
+
   it('writes a linear gradient as an axial shading over its from/to', async () => {
     const { s, content, skipped } = await render([
       filled({ kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: redBlue, units: 'local' }),
