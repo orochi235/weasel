@@ -101,4 +101,25 @@ describe('diagramDropParentAt', () => {
     expect(scene.get('box' as NodeId)!.parent).toBe('env');
     expect(diagramDropParentAt(scene as never, { x: 400, y: 250 }, null)).toBe('box');
   });
+
+  it('passes over a locked or hidden container, and one canDropInto refuses, for the region around it', () => {
+    const specs = diagramScene({
+      nodes: [], edges: [],
+      containers: [
+        { id: 'outer', role: 'container', members: ['inner'], box: { x: 100, y: 100, width: 400, height: 300 }, pinned: true },
+        { id: 'inner', role: 'container', box: { x: 300, y: 200, width: 150, height: 150 }, pinned: true },
+      ],
+    }, { layout: 'none' });
+    const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+    for (const spec of specs) scene.add(spec as never);
+    const at = { x: 400, y: 300 };
+    scene.setLocked('inner' as NodeId, true);
+    expect(diagramDropParentAt(scene as never, at, null)).toBe('outer');
+    scene.setLocked('inner' as NodeId, false);
+    scene.setHidden('inner' as NodeId, true);
+    expect(diagramDropParentAt(scene as never, at, null)).toBe('outer');
+    scene.setHidden('inner' as NodeId, false);
+    expect(diagramDropParentAt(scene as never, at, null, (parent) => parent !== 'inner')).toBe('outer');
+    expect(diagramDropParentAt(scene as never, at, null)).toBe('inner');
+  });
 });
