@@ -75,7 +75,9 @@ export function createRulers(opts: RulersOptions): Rulers {
   const changed = createEmitter();
   // The canvas repaints on this one: only for the draft guide it draws, not every pointer move.
   const draftChanged = createEmitter();
-  let state: RulersState = { view: null, width: 0, height: 0, pointer: null, frame: documentRulerFrame(opts.root, opts.origin), draft: null };
+  const initial = (): RulersState =>
+    ({ view: null, width: 0, height: 0, pointer: null, frame: documentRulerFrame(opts.root, opts.origin), draft: null });
+  let state: RulersState = initial();
   const set = (patch: Partial<RulersState>): void => {
     if (Object.entries(patch).every(([k, v]) => state[k as keyof RulersState] === v)) return;
     const draftMoved = 'draft' in patch && patch.draft !== state.draft;
@@ -100,7 +102,7 @@ export function createRulers(opts: RulersOptions): Rulers {
   const onRuler = hitPredicate((hit) => (hit as { kind?: string } | null | undefined)?.kind === `layer:${hitLayerId}`);
   const bindings: GestureBinding[] = [
     { spec: { kind: 'hover', mods: ANY_MODS }, actionId: dynamicActionId(pointer.id), opts: { id: `${id}.hover`, params: { over: true } } },
-    { spec: { kind: 'hover', motion: 'leave' }, actionId: dynamicActionId(pointer.id), opts: { id: `${id}.leave`, params: { over: false } } },
+    { spec: { kind: 'hover', motion: 'leave', mods: ANY_MODS }, actionId: dynamicActionId(pointer.id), opts: { id: `${id}.leave`, params: { over: false } } },
     { spec: { kind: 'drag', target: { kindOf: onRuler }, mods: ANY_MODS }, actionId: guide.id, opts: { id: `${id}.drag` } },
   ];
   const draftLayer = createGuidesLayer({
@@ -122,6 +124,8 @@ export function createRulers(opts: RulersOptions): Rulers {
       canvas.requestRedraw();
       return () => {
         api = null;
+        // Nothing is left to describe: chrome reading the state stops drawing the canvas that went.
+        set(initial());
       };
     },
     beforePaint: ({ view }) => {

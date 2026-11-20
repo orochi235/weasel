@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  asNodeId, createScene,
+  ANY_MODS, asNodeId, createScene,
   type ActionDeps, type CanvasExtensionApi, type ContributionFrameCtx, type ImmediateInvoker, type InvocationCtx,
   type OngoingInvoker, type RectPose, type RenderLayer, type UnitScope, type View,
 } from '@weasel-js/core';
@@ -64,6 +64,28 @@ describe('createRulers', () => {
     expect(() => rulers.contribution.attach!(other, { get: () => undefined })).toThrow(/one canvas/);
     rulers.contribution.beforePaint!({ view: VIEW } as ContributionFrameCtx);
     expect(rulers.get().width).toBe(400);
+  });
+
+  it('forgets the canvas it was attached to when detached, and says so', () => {
+    const rulers = createRulers({ guides: store(), root: PT });
+    const api = { requestRedraw: () => {}, getSurfaceRect: () => ({ x: 0, y: 0, width: 400, height: 300 }) } as unknown as CanvasExtensionApi;
+    const detach = rulers.contribution.attach!(api, { get: () => undefined }) as () => void;
+    rulers.contribution.beforePaint!({ view: VIEW } as ContributionFrameCtx);
+    (rulers.contribution.actions!.find((a) => a.id === 'rulers.pointer')!.invoker as ImmediateInvoker)
+      .run({} as ActionDeps, { world: { x: 1, y: 1 }, over: true } as never);
+    const heard = vi.fn();
+    rulers.subscribe(heard);
+    detach();
+    expect(heard).toHaveBeenCalled();
+    expect(rulers.get()).toMatchObject({ view: null, width: 0, height: 0, pointer: null, draft: null });
+    expect(rulers.layout()).toBeNull();
+  });
+
+  it('hears the pointer leave the canvas with any keys held, as it hears it hover', () => {
+    const { rulers } = fixture();
+    const spec = (id: string) => rulers.contribution.bindings!.find((b) => b.opts?.id === id)!.spec;
+    expect(spec('rulers.leave')).toEqual({ kind: 'hover', motion: 'leave', mods: ANY_MODS });
+    expect(spec('rulers.hover')).toMatchObject({ mods: ANY_MODS });
   });
 
   it('claims presses on the strips along the top and left, and the corner', () => {
@@ -133,6 +155,20 @@ describe('createRulers', () => {
     // World y 100 is screen y 120.
     expect(at(200, 123)).toEqual({ part: 'guide', guide: { id: 'h', axis: 'y', offset: 100 } });
     expect(at(200, 130)).toBeNull();
+  });
+
+  it('claims a press near a spanned guide only along the stretch it is drawn over', () => {
+    const { guides, layers } = fixture();
+    guides.addGuide({ id: 'v', axis: 'x', offset: 100, span: { min: 0, max: 50 } });
+    const hit = layers.find((l) => l.id === 'rulers-hit')!;
+    const at = (x: number, y: number) => {
+      const w = screenToWorld(x, y);
+      return (hit.hitTest!(w.x, w.y, undefined, VIEW, { width: 400, height: 300 }) as { initialScratch?: { part: string } } | null)?.initialScratch?.part ?? null;
+    };
+    // World x 100 is screen x 120; the span runs down screen y 20..70.
+    expect(at(121, 40)).toBe('guide');
+    expect(at(121, 73)).toBe('guide');
+    expect(at(121, 200)).toBeNull();
   });
 
   it('moves a placed guide, and removes one dropped on a ruler, each one undo step', () => {

@@ -1,6 +1,5 @@
-import { defineAction, dynamicActionId, sceneMagnification, type Action, type GestureBinding, type ModSpec, type NodeId, type SnapMark, type SnapOutcomeStore, type SurfaceContribution } from '@weasel-js/core';
+import { ANY_MODS, defineAction, drawnBoxes, dynamicActionId, sceneMagnification, scenePoseFrame, unionAabb, type Action, type ActionDeps, type Bounds, type GestureBinding, type ModSpec, type NodeId, type SnapMark, type SnapOutcomeStore, type SurfaceContribution } from '@weasel-js/core';
 import { measureDistances, type DistanceReadout } from './distance';
-import { worldBoundsOf, worldUnionOf } from '../guides/alignment/sceneBounds';
 import type { ImmediateParams, AnyScene } from '@weasel-js/core';
 
 
@@ -60,13 +59,23 @@ function subtreeOf(scene: AnyScene, ids: readonly NodeId[]): Set<NodeId> {
   return out;
 }
 
+/** `ids`' world boxes as the canvas draws them, through its `drawnBoxes` dep
+ *  (stroke included unless `boundsIncludeStroke` is off), as its snap
+ *  sources measure them; ids the scene no longer holds are skipped. */
+function drawnBoundsOf(deps: ActionDeps, scene: AnyScene, ids: readonly NodeId[]): Bounds[] {
+  const frame = scenePoseFrame(scene);
+  const boxes = drawnBoxes({ ...deps, scene }, frame);
+  return ids.filter((id) => scene.get(id) !== undefined).map((id) => boxes.aabb(id, frame.world(id)));
+}
+
 /**
  * Distance readouts on hover: while `modifier` is held over a shape, the
  * distances from the selection's box to that shape's, on each axis where they
  * separate, measured by `measureDistances` and drawn as labeled gaps. Pass it
  * in `<SceneCanvas ambient>`. It runs on `hover` bindings, so it claims no
  * input, and it reads the canvas's `selection`, `scene`, `nodeAtPoint`,
- * `poseDescriptor`, and `snapReadout` deps. A press hides it.
+ * `poseDescriptor`, `drawnBoxes`, `boundsIncludeStroke`, `view` and
+ * `snapReadout` deps, so it measures the boxes its spacing snap does. A press hides it.
  */
 export function createDistanceReadoutContribution(opts: DistanceReadoutOptions = {}): DistanceReadoutContribution {
   const id = opts.id ?? 'distanceReadout';
@@ -82,11 +91,11 @@ export function createDistanceReadoutContribution(opts: DistanceReadoutOptions =
   const action: Action = defineAction<string, DistanceReadoutParams>({
     id: `${id}.measure`,
     label: 'Measure distance to the shape under the pointer',
-    requires: ['selection', 'scene', 'nodeAtPoint', 'poseDescriptor', 'snapReadout'],
+    requires: ['selection', 'scene', 'nodeAtPoint', 'poseDescriptor', 'drawnBoxes', 'boundsIncludeStroke', 'view', 'snapReadout'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const { selection, scene, nodeAtPoint, poseDescriptor, snapReadout } = deps;
+        const { selection, scene, nodeAtPoint, snapReadout } = deps;
         if (snapReadout !== undefined) store = snapReadout.store;
         const ids = selection?.get() ?? [];
         if (params?.show !== true || params.world === undefined
@@ -95,8 +104,9 @@ export function createDistanceReadoutContribution(opts: DistanceReadoutOptions =
           return;
         }
         const hit = nodeAtPoint(params.world, subtreeOf(scene, ids));
-        const from = worldUnionOf(scene, ids, { poseDescriptor });
-        const [to] = hit === null ? [] : worldBoundsOf(scene, [hit], { poseDescriptor });
+        const own = drawnBoundsOf(deps, scene, ids);
+        const from = own.length === 0 ? null : unionAabb(own);
+        const [to] = hit === null ? [] : drawnBoundsOf(deps, scene, [hit]);
         if (from === null || to === undefined) show(EMPTY);
         else show(measureDistances(from, to), sceneMagnification(scene, [...ids, hit!]));
       },
@@ -109,7 +119,8 @@ export function createDistanceReadoutContribution(opts: DistanceReadoutOptions =
   const bindings: GestureBinding[] = [
     { spec: { kind: 'hover', mods: mods(true) }, actionId: dynamicActionId(action.id), opts: { id: `${id}.show`, params: { show: true } } },
     { spec: { kind: 'hover', mods: mods(false) }, actionId: dynamicActionId(action.id), opts: { id: `${id}.hide`, params: { show: false } } },
-    { spec: { kind: 'hover', motion: 'leave' }, actionId: dynamicActionId(action.id), opts: { id: `${id}.leave`, params: { show: false } } },
+    // Any keys: leaving with the modifier still held is the usual way out, and must still hide it.
+    { spec: { kind: 'hover', motion: 'leave', mods: ANY_MODS }, actionId: dynamicActionId(action.id), opts: { id: `${id}.leave`, params: { show: false } } },
   ];
 
   return {
