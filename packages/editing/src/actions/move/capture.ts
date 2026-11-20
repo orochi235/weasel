@@ -94,12 +94,14 @@ export function capturePlaneRefs(
     const layer = node?.layer;
     if (node === undefined || layer === undefined || planeRefs.has(layer)) continue;
     const m = planeOf(view, layer);
-    if (m === null) continue;
+    // An identity map has no inverse to answer: its plane is the edited one, which needs no reference.
+    const back = invertPlane(m);
+    if (m === null || back === null) continue;
     const world = frames.get(id)?.world ?? startPoses.get(id);
     if (world === undefined) continue;
     const b = poseDescriptorForNode(projection, node).getBounds(world);
     const own = { x: b.x, y: b.y };
-    planeRefs.set(layer, { own, edited: toPlane(invertPlane(m)!, own) });
+    planeRefs.set(layer, { own, edited: toPlane(back, own) });
   }
   return planeRefs;
 }
