@@ -34,6 +34,17 @@ describe('LabShell', () => {
     expect(screen.getByText('body')).toBeInTheDocument();
   });
 
+  test("marks a shell without its bar as bare, which leaves the page's body margin alone", () => {
+    const { container, rerender } = render(<LabShell title="t">x</LabShell>);
+    expect(container.querySelector('.lk-shell')?.classList.contains('lk-shell--bare')).toBe(false);
+    rerender(
+      <LabShell title="t" bar={false}>
+        x
+      </LabShell>,
+    );
+    expect(container.querySelector('.lk-shell')?.classList.contains('lk-shell--bare')).toBe(true);
+  });
+
   test('stamps the requested mode under the interstellar theme', () => {
     const { container } = render(
       <LabShell title="t" mode="light">

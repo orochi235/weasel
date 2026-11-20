@@ -8,6 +8,7 @@ import type {
   SidebarSlotContext,
   TrialChromeContext,
 } from '../types';
+import { inLayoutOrder } from './groupsOf';
 import { Section, type SidebarRegionProps, undockButton } from './SidebarRegion';
 
 const STRATEGIES = { strip: stripStrategy as never };
@@ -162,7 +163,7 @@ export function SidebarPanes<TCtx extends SidebarSlotContext = TrialChromeContex
   // Measured as it changes: a density switch resizes the bars without rendering this.
   const [bar, barRef] = useBarHeight();
 
-  const shown = contributions.filter(
+  const shown = inLayoutOrder(contributions).filter(
     (c: RegionContribution<TCtx>) =>
       c.render || (c.region === region && c.item && !ctx.undockedPanels?.includes(c.id)),
   );

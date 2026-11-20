@@ -1,10 +1,10 @@
 import { asNodeId } from '@weasel-js/core';
-import { boundsOf, fracToWorld, roundFrac, worldToFrac } from './frac';
+import { boundsOf, fracToWorld, worldToFrac } from './frac';
 import { markDataFrom } from './markData';
 import { markIdOf } from './markId';
 import type { FoundMark } from './markReads';
 import type { MarkPose, MarkScene } from './markScenes';
-import { shapeFor } from './markShape';
+import { settledMarkData, shapeFor } from './markShape';
 import { seenValues } from './staleness';
 import type { AnnotationsApi, AnnotationTargetInfo } from './types';
 
@@ -13,6 +13,8 @@ export interface MarkWritesOptions {
   scenes: ReadonlyMap<string, MarkScene>;
   openScene: (target: string) => MarkScene;
   hold: (fn: () => void) => void;
+  /** Runs `fn`, whose changes on every target join the others made under `key` as one undo step. */
+  grouped: (key: string, fn: () => void) => void;
   nodeOf: (id: string) => FoundMark | undefined;
   targetOf: (id: string) => AnnotationTargetInfo | undefined;
   contentOf: (target: string) => { width: number; height: number };
@@ -28,11 +30,20 @@ export type MarkWrites = Pick<
 /** The store's mutations: each converts fractions to world units and lands as
  *  scene ops, so every one is undoable through the scene's own history. */
 export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
-  const { nodeOf, contentOf } = o;
+  const { nodeOf } = o;
+  /** A target's content box, to place a mark in. One with no area would put every mark at the origin. */
+  const contentOf = (target: string) => {
+    const content = o.contentOf(target);
+    if (content.width > 0 && content.height > 0) return content;
+    throw new Error(
+      `[labkit] cannot place a mark on '${target}': its content box is not known, or has no area`,
+    );
+  };
   return {
     add(init, config) {
       const target = o.targetOf(init.target);
-      const frac = roundFrac(init.frac);
+      // Unrounded: the scene holds world units, and 4dp of a long target's side is whole units. Reads round.
+      const frac = init.frac;
       const shape = shapeFor(init.kind, init.points, frac);
       const data = markDataFrom(init, shape, seenValues(config, target?.positionDependsOn ?? []));
       const node = o.openScene(init.target).add({
@@ -49,21 +60,28 @@ export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
       if (!found) return;
       const { frac: fracPatch, points, ...meaning } = patch;
       const nid = asNodeId(found.node.id);
-      const content = contentOf(found.target);
       const frac = fracPatch ?? (points ? boundsOf(points) : null);
-      const bounds = roundFrac(frac ?? worldToFrac(found.node.pose as MarkPose, content));
+      // Only a move needs the content box: a title or a color lands whatever the target's size.
+      const content = frac ? contentOf(found.target) : o.contentOf(found.target);
+      const bounds = frac ?? worldToFrac(found.node.pose as MarkPose, content);
       const shape = points ? shapeFor(found.node.data.kind, points, bounds) : undefined;
-      const data = { ...found.node.data, ...meaning, ...(shape ? { shape } : {}) };
-      const coalesce =
-        opts?.coalesceKey === undefined ? undefined : { coalesceKey: opts.coalesceKey };
-      found.scene.batch(
-        'update mark',
-        () => {
-          if (Object.keys(meaning).length > 0 || shape) found.scene.update(nid, { data });
-          if (frac) found.scene.setPose(nid, fracToWorld(bounds, content));
-        },
-        coalesce,
-      );
+      // A legacy mark is written back settled, so its vertices follow the bounds from here on.
+      const settled = settledMarkData(found.node.data, found.node.pose as MarkPose, content);
+      const data = { ...settled, ...meaning, ...(shape ? { shape } : {}) };
+      const key = opts?.coalesceKey;
+      const write = (): void =>
+        found.scene.batch(
+          'update mark',
+          () => {
+            if (Object.keys(meaning).length > 0 || shape || settled !== found.node.data)
+              found.scene.update(nid, { data });
+            if (frac) found.scene.setPose(nid, fracToWorld(bounds, content));
+          },
+          key === undefined ? undefined : { coalesceKey: key },
+        );
+      // The key folds updates within one target's scene; the group joins the targets' parts as one step.
+      if (key === undefined) write();
+      else o.grouped(key, write);
     },
 
     setMeta(id, meta) {

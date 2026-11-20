@@ -5,7 +5,7 @@ import type { ConfigRule, ConfigRuleContext, LeafPatch } from './types';
 export function titleCase(key: string): string {
   const words = key
     .replace(/[_-]+/g, ' ')
-    .split(/(?<=[a-z0-9])(?=[A-Z])/)
+    .split(/(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/)
     .join(' ')
     .trim()
     .toLowerCase();

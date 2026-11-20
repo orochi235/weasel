@@ -49,6 +49,18 @@ describe('a mark as vector', () => {
     expect(node.stroke?.dash).toEqual([6, 4]);
   });
 
+  it("writes a screen-sized stroke's dashes against the export's scale", () => {
+    // A stale point's ring and an untitled text box are `{ px }` strokes: their dashes are
+    // screen pixels, as on screen and in a raster export.
+    const scale = { x: 4, y: 4 };
+    const ring = markSvgNodes(mark('point'), { stale: true }, scale).find(
+      (n) => n.kind === 'path' && n.stroke?.dash,
+    );
+    expect(ring).toMatchObject({ stroke: { width: 0.5, dash: [1.5, 1] } });
+    const [box] = markSvgNodes(mark('text'), {}, scale);
+    expect(box).toMatchObject({ stroke: { width: 0.25, dash: [0.75, 0.75] } });
+  });
+
   it("keeps the arrow's marker, so the export draws its head", () => {
     const nodes = markSvgNodes(mark('arrow'));
     expect(nodes).toHaveLength(1);

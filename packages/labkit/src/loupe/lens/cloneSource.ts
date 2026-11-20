@@ -49,6 +49,20 @@ function copyCanvases(root: HTMLElement, copy: Element): void {
   });
 }
 
+/**
+ * Takes the live behavior out of a copy before it is connected: a named radio would join the trial's own radio group
+ * and uncheck its checked one, an iframe would load its page again, and autoplaying media would start a second time.
+ */
+function stillCopy(copy: Element): void {
+  for (const radio of copy.querySelectorAll<HTMLInputElement>('input[type="radio" i][name]'))
+    radio.removeAttribute('name');
+  for (const frame of copy.querySelectorAll('iframe')) {
+    frame.removeAttribute('src');
+    frame.removeAttribute('srcdoc');
+  }
+  for (const media of copy.querySelectorAll('[autoplay]')) media.removeAttribute('autoplay');
+}
+
 /** One lens cell's copy: which root it copies, the copy itself, and what keeps it current. */
 class CloneCell {
   readonly box = document.createElement('div');
@@ -121,6 +135,7 @@ class CloneCell {
     this.stale = false;
     const root = this.root;
     this.copy = root ? (root.cloneNode(true) as Element) : null;
+    if (this.copy) stillCopy(this.copy);
     this.box.replaceChildren(...(this.copy ? [this.copy] : []));
     if (root && this.copy) copyCanvases(root, this.copy);
     this.want();

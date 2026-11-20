@@ -46,6 +46,21 @@ beforeAll(() => {
 });
 
 describe('<ExportMenu>', () => {
+  it("gives each panel's radios names of its own, so two open panels keep their own choices", () => {
+    const { store } = spied();
+    renderWithIcons(
+      <AnnotationsContext.Provider value={store}>
+        <ExportMenu />
+        <ExportMenu />
+      </AnnotationsContext.Provider>,
+    );
+    for (const b of screen.getAllByRole('button', { name: /export/i })) fireEvent.click(b);
+    const svgs = screen.getAllByRole('radio', { name: 'SVG' }) as HTMLInputElement[];
+    expect(svgs).toHaveLength(2);
+    const [a, b] = svgs;
+    expect(a?.name).not.toBe(b?.name);
+  });
+
   it('renders nothing for a trial whose instrument declares no annotations', () => {
     const { container } = mount(null);
     expect(container).toBeEmptyDOMElement();

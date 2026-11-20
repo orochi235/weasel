@@ -299,6 +299,15 @@ Owner tags, after the priority (2026-10-26):
   the shared value lives, how undo records an edit to it, and which panel shows it (2026-11-16). Closes when two
   trials in one workspace can declare a shared param and an edit in either reaches both.
 
+- **(P2) [maintainer] labkit's `DragDropCapability.pickUp` is declared and never called.** Its doc promises
+  dragging an existing item back out of the canvas, but nothing in labkit reads it, and its `HitResult` argument
+  has no producer: a trial's canvas dispatcher (`CameraInput`) mounts no `affordanceAt` or `classifyTarget`, so
+  nothing hit-tests the instrument's items. Wiring it means passing a world point (or a real hit-test) instead,
+  claiming the press through an affordance so the pick-up outranks the trial's pan (registration order between
+  them is not stable), carrying the item with the palette's ghost and `onDragOver` feedback, and recording the
+  pick-up and its drop as one undo step; removing it is a breaking change (round 50 audit, 2026-11-20). Closes
+  when a declared `pickUp` starts a drag from the canvas, or the option and `HitResult` are gone.
+
 - **(P3) [maintainer] A labkit tile drag shows its node's UUID as the ghost.** `<Workspace reorderable>` mounts
   windease's `DragProvider` with its default overlay, which labels the chip with the node's `meta.title` and falls
   back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip

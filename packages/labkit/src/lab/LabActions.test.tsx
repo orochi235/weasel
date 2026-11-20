@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import {
   ActionsProvider,
   type ActionsRegistry,
@@ -184,6 +184,22 @@ describe('a lab’s actions registry', () => {
     });
     expect(set).toHaveBeenCalled();
     expect(current.scale.x).toBeGreaterThan(1);
+  });
+
+  it("names what a <LabZoom> with no lab's store or commands is missing", () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() => render(<LabZoom />, { wrapper: withIcons })).toThrow(
+      "<LabZoom> needs a lab's store and commands",
+    );
+    const store = createLabStore();
+    expect(() =>
+      render(
+        <LabStoreProvider store={store}>
+          <LabZoom />
+        </LabStoreProvider>,
+        { wrapper: withIcons },
+      ),
+    ).toThrow("<LabZoom> needs a lab's store and commands");
   });
 
   it('one zoom action, lab.zoom, lists in, out and actual size with their shortcuts', async () => {

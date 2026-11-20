@@ -80,6 +80,15 @@ describe('<Lab present>', () => {
     expect(await storage.list(labPrefix('lab'))).toEqual([]);
   });
 
+  it('claims the document root only inside a frame', async () => {
+    const inline = await mountLab({ present: true });
+    expect(root(inline.container).classList.contains('lk-lab--framed')).toBe(false);
+    inline.unmount();
+    vi.spyOn(window, 'self', 'get').mockReturnValue({} as Window & typeof globalThis);
+    const framed = await mountLab({ present: true });
+    expect(root(framed.container).classList.contains('lk-lab--framed')).toBe(true);
+  });
+
   it('does not leave on Escape, having nowhere to go back to', async () => {
     const { container } = await mountLab({ present: true });
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -144,6 +153,13 @@ describe('usePresentation', () => {
     await act(async () => fireEvent.keyDown(widget, { key: 'Escape' }));
     expect(presented(container)).toHaveLength(1);
     widget.remove();
+  });
+
+  it('does nothing in a lab with no trial to present', async () => {
+    const { container } = await mountLab({ instruments: [] });
+    await act(async () => presentation?.enter());
+    expect(presentation?.active).toBe(false);
+    expect(root(container).classList.contains('lk-lab--present')).toBe(false);
   });
 
   it('throws outside <Lab>', () => {

@@ -12,8 +12,6 @@ export interface LabChromeAll {
   /** Every contribution, the tools' palette items among them. */
   all: LabContribution[];
   hasFooter: boolean;
-  /** Whether anything goes in a sidebar or aside pane. */
-  hasPanes: boolean;
 }
 
 /**
@@ -35,7 +33,6 @@ export function useLabChromeAll(
       tools: allTools,
       all,
       hasFooter: all.some((c) => c.region === 'footer'),
-      hasPanes: all.some((c) => c.region === 'sidebar' || c.region === 'aside'),
     };
   }, [instruments, marks, tools, labChrome]);
 }

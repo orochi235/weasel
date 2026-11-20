@@ -23,7 +23,7 @@ beforeAll(() => {
 
 const OPEN: ViewTransform2D = { zoom: 1, pan: { x: 0, y: 0 } };
 
-function mountStage(gestures?: CameraGestures) {
+function mountStage(gestures?: CameraGestures, maxZoom?: number) {
   const seen: ViewTransform2D[] = [];
   function Host() {
     const [view, setView] = useState(OPEN);
@@ -36,6 +36,7 @@ function mountStage(gestures?: CameraGestures) {
           setView(v);
         }}
         {...(gestures ? { gestures } : {})}
+        {...(maxZoom !== undefined ? { maxZoom } : {})}
       >
         <div />
       </Stage>
@@ -129,6 +130,20 @@ describe('camera gestures', () => {
     const { host, seen } = mountStage({ drag: false });
     pinchOut(host);
     expect(seen.at(-1)?.zoom).toBeGreaterThan(1);
+  });
+
+  it('pans on a two-finger drag that spreads past the zoom bound', () => {
+    // Already at the most it zooms: the spread is held, the 50px the centroid travels is not.
+    const { host, seen } = mountStage({ drag: false }, 1);
+    act(() => {
+      pointer(host, 'pointerdown', 1, 100, 100);
+      pointer(host, 'pointerdown', 2, 200, 100);
+    });
+    act(() => pointer(host, 'pointermove', 2, 300, 100));
+    const last = seen.at(-1);
+    expect(last?.zoom).toBe(1);
+    expect(last?.pan.x).toBeCloseTo(50, 5);
+    expect(last?.pan.y).toBeCloseTo(0, 5);
   });
 
   it('leaves a pinch alone with `pinch: false`, trackpad or touch', () => {

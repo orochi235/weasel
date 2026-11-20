@@ -1,7 +1,9 @@
 import { after } from '@weasel-js/registry';
 import { Transport } from '@weasel-js/ui/components/Transport';
 import { useEffect, useRef } from 'react';
-import { useTrialClock } from './hooks';
+import { useTrialClock, useTrialClockHandle } from './hooks';
+import { playedOut, transportControl } from './transportControl';
+import { transportHoldOf } from './transportHold';
 import { useTransportControl } from './useTransportControl';
 import { useTransportKeys } from './useTransportKeys';
 
@@ -14,8 +16,8 @@ export interface TrialTransportProps {
    *  while focus is outside a field, a control and a canvas, which has keys
    *  of its own (the trial's, say). Default `false`. */
   keys?: boolean;
-  /** Play a run that has ended again from the start after this many ms, until
-   *  anyone works the clock from a transport. Omitted, an ended run stays ended. */
+  /** Play a run that has played out again after this many ms, as Play would, until anyone works the clock from a
+   *  transport. Omitted, a run that has played out stays where it stopped. */
   replay?: number;
   /** How a speed reads, shown and spoken. Default a multiplier, `0.5x`. */
   formatRate?: (rate: number) => string;
@@ -36,21 +38,21 @@ export function TrialTransport({
   className,
 }: TrialTransportProps) {
   const clock = useTrialClock(trialId);
+  const handle = useTrialClockHandle(trialId);
   const control = useTransportControl(trialId);
   const root = useRef<HTMLDivElement | null>(null);
   useTransportKeys(root, control, keys);
 
   const touched = control?.touched ?? false;
-  const speed = control?.speed;
-  const ended = clock?.ended ?? false;
+  const out = clock !== null && control !== null && playedOut(clock, control.backward);
   useEffect(() => {
-    if (replay === undefined || touched || !ended || !clock?.seekable || speed === undefined)
-      return;
+    if (replay === undefined || touched || !out || !clock) return;
+    // Played as the transport's Play would, without marking the clock as worked by hand.
     return after(replay, () => {
-      clock.seek(0);
-      clock.rate = speed;
+      const hold = transportHoldOf(clock);
+      transportControl(clock, hold.get(), hold.set, () => {}, handle?.reset).play();
     });
-  }, [replay, touched, ended, clock, speed]);
+  }, [replay, touched, out, clock, handle]);
 
   if (!clock || !control) return null;
   return (

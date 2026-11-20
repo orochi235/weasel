@@ -165,6 +165,34 @@ describe('useJob', () => {
     expect(seen.state.items).toEqual([0, 1]);
   });
 
+  it('hands `run` the state `begin` makes, not the one before it', async () => {
+    const seenByRun: State[] = [];
+    const cap: JobCapability<State, Config, number> = {
+      ...capability(),
+      run: ({ config, state, signal }) => {
+        seenByRun.push(state);
+        return counter(config.n, signal);
+      },
+      begin: () => ({ items: [] }),
+    };
+    const seen: { handle: JobHandle | null; state: State } = { handle: null, state: { items: [] } };
+    render(
+      <Harness
+        capability={cap}
+        config={{ n: 2 }}
+        onHandle={(h, s) => {
+          seen.handle = h;
+          seen.state = s;
+        }}
+      />,
+    );
+    act(() => seen.handle?.start());
+    await waitFor(() => expect(seen.handle?.status).toBe('done'));
+    act(() => seen.handle?.start());
+    await waitFor(() => expect(seen.handle?.status).toBe('done'));
+    expect(seenByRun[1]).toEqual({ items: [] });
+  });
+
   it('aborts on unmount', async () => {
     const aborted = vi.fn();
     const watching: JobCapability<State, Config, number> = {

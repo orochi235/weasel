@@ -1,7 +1,8 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { renderWithIcons, withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
+import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
 import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
@@ -114,5 +115,28 @@ describe('<Lab> chrome', () => {
     expect(body.closest('.lk-lab__aside')).not.toBeNull();
     expect(trial.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole('separator', { name: /Lab aside/ })).toBeInTheDocument();
+  });
+
+  it('keeps its trials mounted while a sidebar or aside pane comes and goes', async () => {
+    const sidebar = {
+      id: 'tree',
+      region: 'sidebar',
+      item: { title: 'Tree', body: <p>tree</p> },
+    } as const;
+    const aside = {
+      id: 'notes',
+      region: 'aside',
+      item: { title: 'Notes', body: <p>jot</p> },
+    } as const;
+    const lab = (labChrome: LabContribution[]) => (
+      <Lab title="T" instruments={[bare]} labChrome={labChrome} />
+    );
+    const { rerender } = await renderSettled(lab([]), { wrapper: withIcons });
+    const trial = screen.getByRole('region', { name: /trial/i });
+    for (const next of [[aside], [sidebar, aside], [sidebar], []]) {
+      await act(async () => rerender(lab(next)));
+      expect(screen.getByRole('region', { name: /trial/i })).toBe(trial);
+    }
+    expect(screen.queryByText('tree')).toBeNull();
   });
 });

@@ -1201,6 +1201,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Diagram, audio, and labkit
 
+- 2026-11-20 (audit round 50, labkit.controls): a `ControlPanel` keeping its own auto set starts it afresh from
+  the schema's `.initial(AUTO)` leaves when the schema's leaf paths or start-auto paths change, and keeps it across
+  a schema resolved anew with the same ones. Two trials of one instrument in one mounted panel therefore share pins;
+  a lab that wants each to open fresh keys the panel by trial. Why: `resolveConfigSchema` returns a new object each
+  call, so keying on identity would drop every pin on a panel whose schema is resolved in render.
 - Open (2026-11-11, audit round 15, leftovers lane): how close together two edits must be to undo as one step,
   and who sets it. labkit merges a trial's config writes to one path within a hardcoded 500 ms (`GESTURE_MS`,
   `packages/labkit/src/trial/useTrialWrites.ts`); ui exposes the same idea as the kit setting `history.coalesceMs`,
@@ -1497,6 +1502,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   namespace `a:b` with glyph `c` share the slot `a:b:c` under two owners. Whether such a table is refused.
 - Open (icons second property pass, 2026-11-11): in dev, icons-plugin's tables still follow the order modules were
   transformed in, so `virtual:weasel-icons/all` lists them in that order; the build path sorts by module id.
+- 2026-11-20 (my call, audit round 50): icons-plugin warns on an imported `icon` used other than as a direct call
+  (`list.map(icon)`, `const f = icon`, a tagged template) rather than failing the build; `icon!('x')` and `(icon)('x')`
+  are rewritten as calls. In dev, a regenerated table's new glyphs reload every loaded variant, and a glyph it drops
+  stays until a restart. `weaselIcons.vite()`, `.rollup()` and `.rolldown()` return two plugins, the second ordered
+  `post` to read modules another plugin compiles to JS.
 - 2026-10-19 (pass 7): The rule forbidding the `@weasel-js/ui` barrel covers site, theme-editor,
   and forge's and labkit's `src` as well as draw and chart. Files importing a name no subpath
   publishes are exempted by path in `eslint.config.js` rather than given new ui subpaths, whose
@@ -3177,3 +3187,34 @@ Calls the lanes made without a ruling:
   (`'sr‑Latn'`), naming the tag, before it reads its cache. HarfBuzz threw its own "Expected ASCII text" for one
   and leaked the copy. No BCP 47 tag holds such a character, so there is no override; shaping as though no language
   were given was the alternative, which draws the default forms with no sign the tag went unread.
+## Audit round fifty (2026-11-20): labkit annotations
+
+- 2026-11-20 (the fixer's call): a mark store reads a target's marks against the last content box with an area it
+  was given, so a target the instrument stops declaring, or whose element has not sized again, keeps reporting
+  where its marks are. `add`, and an `update` that moves a mark (`frac` or `points`), throw on a target whose content
+  box was never known or has no area; an `update` of meaning alone still lands. Skipping such writes silently, as
+  an unknown id is, was the alternative.
+## Audit round fifty (2026-11-20): labkit chrome
+
+- 2026-11-20 (the fixer's call): every labkit chrome region lays its contributions out by `groupsOf`: a group's
+  members together where the group first appears, a group `end` when any member sets `end`, and every `end` run
+  after the rest. In the viewport, sidebar, and palette, which draw no spacer, "the far end" means last. The built-in
+  FPS meter is ungrouped, so the scale bar it used to share `view` with stays at the status bar's near end. Keeping
+  arrival order and the first member's `end` was the alternative, and contradicted `ContributionBase.end`.
+- 2026-11-20 (the fixer's call): a toolbar or header group is announced by its `group` name (`history`, `view`), and
+  an ungrouped contribution's bar group carries no name. A label of its own on a group is not offered.
+## Audit round fifty (2026-11-20): labkit's trial clock
+
+- 2026-11-20 (the fixer's call): a trial transport's Play, and `<TrialTransport replay>`, start a played-out run over
+  in the direction it plays: a run played backward to its start seeks to its end and plays backward, and an ended
+  clock that is not seekable is reset (`handle.reset()`) and played from its start. Limiting `replay` to seekable
+  clocks in its doc, and leaving Play inert there, was the alternative.
+- 2026-11-20 (the fixer's call): a clock's transport hold takes each speed a redeclaration gives the clock until a
+  transport sets a speed of its own; working the clock otherwise (a pause, a loop toggle, a seek) does not stop it
+  following. Following only while the hold is untouched was the alternative.
+## Audit round fifty (2026-11-20): labkit's config
+
+- 2026-11-20 (the fixer's call): a field of `f.object`, the item of `f.list` or `f.map`, or a variant of `f.union`
+  that says `.showIf`/`.enableIf` as a function, `.render`, `.dialog`, `.auto`, `.initial(AUTO)`, `.quote`,
+  `.section`, or carries `f.custom`'s `validate` throws when the outer leaf is built, since none of those has a row
+  to act on there. Dropping them silently, as before, or warning and dropping was the alternative.

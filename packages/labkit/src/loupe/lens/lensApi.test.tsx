@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { LabContext, type LabContextValue } from '../../lab/LabContext';
 import { MAX_LENSES } from './lensActionDefs';
 import { createLensApi, lensClient, useLensFocus } from './lensApi';
-import { createLensScene, lensesOf, setAimOps } from './lensScene';
+import { createLensScene, keepHeldOps, lensesOf, setAimOps, setLensOps } from './lensScene';
 import { BODY_SIZE } from './lensTypes';
 import { type Remeasurable, useLensRemeasure } from './useLensRemeasure';
 
@@ -189,5 +189,113 @@ describe('a host’s re-measuring', () => {
     await act(async () => {});
     expect(remeasure.mock.calls.length).toBe(before + 1);
     body.remove();
+  });
+});
+
+describe('a lens API built over a scene that already holds lenses', () => {
+  it('mints ids past the lenses already there', () => {
+    const { scene, api } = setup();
+    const first = api.add();
+    const again = createLensApi(scene, {
+      body: { current: document.createElement('div') },
+      pointer: { current: null },
+      focus: { current: null },
+      sources: { current: {} },
+    });
+    const second = again.add();
+    expect(second).not.toBe(first);
+    expect(lensesOf(scene).map((l) => l.lensId)).toEqual([first, second]);
+  });
+});
+
+describe('a lens API’s scene subscription', () => {
+  it('listens only while a lens is held', () => {
+    const scene = createLensScene<null>();
+    const unsubscribed = vi.fn();
+    const subscribe = scene.subscribe.bind(scene);
+    const spy = vi.spyOn(scene, 'subscribe').mockImplementation((fn) => {
+      const off = subscribe(fn);
+      return () => {
+        unsubscribed();
+        off();
+      };
+    });
+    const api = createLensApi(scene, {
+      body: { current: document.createElement('div') },
+      pointer: { current: null },
+      focus: { current: null },
+      sources: { current: {} },
+    });
+    expect(spy).not.toHaveBeenCalled();
+    const lensId = api.add()!;
+    act(() => api.apply(setAimOps(scene, lensId, 'follow')));
+    act(() => api.follow({ x: 40, y: 40 }));
+    expect(spy).toHaveBeenCalledTimes(1);
+    act(() => api.unfollow(lensId));
+    expect(unsubscribed).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('a Follow reticle zoomed while its pointer rests', () => {
+  it('is held at the new patch, and pins there', () => {
+    const { scene, api } = setup();
+    const lensId = api.add()!;
+    act(() => api.apply(setAimOps(scene, lensId, 'follow')));
+    act(() => api.follow({ x: 40, y: 40 }));
+    const factor = 8;
+    act(() => api.apply(setLensOps(scene, lensId, { factor })));
+    const reticle = () => effectivePose(scene, scene.get(asNodeId(`${lensId}:reticle`))!);
+    const want = {
+      x: 40 - BODY_SIZE / factor / 2,
+      y: 40 - BODY_SIZE / factor / 2,
+      width: BODY_SIZE / factor,
+      height: BODY_SIZE / factor,
+    };
+    expect(reticle()).toEqual(want);
+    act(() =>
+      api.apply([
+        ...setAimOps(scene, lensId, 'pinned'),
+        ...keepHeldOps(scene, `${lensId}:reticle`, 'pin'),
+      ]),
+    );
+    expect(scene.get(asNodeId(`${lensId}:reticle`))?.pose).toEqual(want);
+  });
+});
+
+describe('a lens API whose scene is in a host container’s px', () => {
+  /** A 400×300 lab body sitting 200, 100 into a 1000×800 host container, both unscaled. */
+  function boxed(left: number, top: number, width: number, height: number) {
+    const el = document.createElement('div');
+    Object.defineProperty(el, 'offsetWidth', { value: width });
+    Object.defineProperty(el, 'offsetHeight', { value: height });
+    el.getBoundingClientRect = () => new DOMRect(left, top, width, height);
+    return el;
+  }
+
+  it('places and follows lenses in the container’s px, and keeps a new body inside the lab body', () => {
+    const scene = createLensScene<null>();
+    const body = boxed(210, 110, 400, 300);
+    const frame = boxed(10, 10, 1000, 800);
+    const api = createLensApi(scene, {
+      body: { current: body },
+      frame: { current: frame },
+      pointer: { current: null },
+      focus: { current: null },
+      sources: { current: {} },
+    });
+    const lensId = api.add({ x: 300, y: 250 })!;
+    const center = (id: string) => {
+      const n = scene.get(asNodeId(id))!;
+      const p = effectivePose(scene, n);
+      return { x: p.x + p.width / 2, y: p.y + p.height / 2 };
+    };
+    expect(center(`${lensId}:reticle`)).toEqual({ x: 290, y: 240 });
+    expect(lensClient(scene, lensId, frame)?.reticle).toEqual({ x: 300, y: 250 });
+    const b = center(`${lensId}:body`);
+    expect(b.x).toBeGreaterThanOrEqual(200 + BODY_SIZE / 2);
+    expect(b.x).toBeLessThanOrEqual(600 - BODY_SIZE / 2);
+    act(() => api.apply(setAimOps(scene, lensId, 'follow')));
+    act(() => api.follow({ x: 400, y: 300 }));
+    expect(center(`${lensId}:reticle`)).toEqual({ x: 390, y: 290 });
   });
 });

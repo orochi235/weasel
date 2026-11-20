@@ -3,7 +3,7 @@ import 'windease/styles.css';
 import '../styles.less';
 import './LabShell.browser.test.less';
 import { cleanup } from '@testing-library/react';
-import { Lab } from '@weasel-js/labkit';
+import { Lab, LabShell } from '@weasel-js/labkit';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
 import type { Instrument } from '../instrument/types';
@@ -39,4 +39,22 @@ test('the header is as tall in any face, with its actions shown or folded into t
     cleanup();
   }
   expect([...heights]).toHaveLength(1);
+});
+
+test("zeroes the body's margin under a shell with its bar, and leaves it under one without", () => {
+  const margin = () => getComputedStyle(document.body).marginTop;
+  const { rerender } = renderWithIcons(
+    <div className="lk-shell-margin-host">
+      <LabShell title="t">x</LabShell>
+    </div>,
+  );
+  expect(margin()).toBe('0px');
+  rerender(
+    <div className="lk-shell-margin-host">
+      <LabShell title="t" bar={false}>
+        x
+      </LabShell>
+    </div>,
+  );
+  expect(margin()).toBe('8px');
 });

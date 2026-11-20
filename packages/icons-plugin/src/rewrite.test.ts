@@ -76,6 +76,29 @@ describe('rewriteIconCalls on imports it cannot follow', () => {
     expect(warnings.join('\n')).toMatch(/w\.ts.*@app\/icons\.gen/);
   });
 
+  it('warns on icon used other than as a direct call', () => {
+    for (const use of [`['undo'].map(icon);`, `const f = icon;\nf('undo');`, 'icon`undo`;', `const o = { icon };`, `call(icon as never);`]) {
+      expect(warned(`import { icon } from './icons.gen';\n${use}\n`)).toMatch(/w\.ts.*used other than as a direct call/);
+    }
+  });
+
+  it('says nothing of icon as a property name, a label, a type or a shadowing local', () => {
+    const src = [
+      `import { icon } from './icons.gen';`,
+      `x.icon; ({ icon: 1 }); class K { icon = 1; icon2() {} }`,
+      `icon: for (;;) break icon;`,
+      `type T = typeof icon; let v: typeof icon;`,
+      `function f(icon) { return icon; }`,
+      `icon('x');`,
+    ].join('\n');
+    expect(warned(src)).toBe('');
+  });
+
+  it('rewrites a call through a non-null assertion or parentheses', () => {
+    const src = `import { icon } from './icons.gen';\nconst a = icon!('bang'), b = (icon)('paren');\n`;
+    expect(collectIconRefs(rewriteIconCalls(src, 'n.ts', ns)!.code, 'n.ts').sort()).toEqual(['core:bang', 'core:paren']);
+  });
+
   it('says nothing about a type-only re-export', () => {
     expect(warned(`export type { CoreIconName } from './icons.gen';\n`)).toBe('');
   });
@@ -195,6 +218,23 @@ describe('rewriteIconCalls on a local that shadows the import', () => {
   it('rewrites a default parameter, which the body cannot shadow', () => {
     const src = `${head}function f(a = icon('default')) { var icon; return a; }\n`;
     expect(refs(src)).toEqual(['core:default']);
+  });
+
+  it('leaves a call through a var in a class static block', () => {
+    const src = `${head}class K { static { var icon = String; K.v = icon('static'); } }\nicon('outside');\n`;
+    expect(refs(src)).toEqual(['core:outside']);
+  });
+
+  it('leaves a call through a declaration in a namespace body', () => {
+    const src = [
+      head,
+      `namespace A { const icon = (s: string) => s; export const x = icon('const'); }`,
+      `namespace B { export function icon(s: string) { return s; } icon('exported'); }`,
+      `namespace C { if (x) { var icon = id; } icon('var'); }`,
+      `namespace D.E { let icon = id; icon('dotted'); }`,
+      `icon('outside');`,
+    ].join('\n');
+    expect(refs(src)).toEqual(['core:outside']);
   });
 
   it('tracks an aliased import by its local name', () => {

@@ -16,32 +16,55 @@ import { addLensOps, aimAt, lensesOf, lensIdsOf, settingsOf } from './lensScene'
 import type { LensSources } from './lensSource';
 import { BODY_SIZE, type LensScene, type LensSourceKind, type LoupePoint } from './lensTypes';
 
+const samePose = (a: RectPose, b: RectPose): boolean =>
+  a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+
 /** Each new lens's body sits this far further along than the last, so lenses added in a row do not stack. */
 const STAGGER = 24;
 
-/** A new body beside its reticle, in lab-body px, flipped left where the right has no room. */
-function bodyBeside(reticle: LoupePoint, box: LayoutBox, n: number): LoupePoint {
+/** Where the lab body lies in the frame's px: the region a new lens is kept inside. */
+interface Region {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+function regionOf(body: HTMLElement, frame: HTMLElement): Region {
+  const box: LayoutBox = layoutBoxOf(body);
+  const [left, top] = clientToCanvas(frame, box.left, box.top);
+  const [right, bottom] = clientToCanvas(
+    frame,
+    box.left + box.width * box.scale.x,
+    box.top + box.height * box.scale.y,
+  );
+  return { left, top, right, bottom };
+}
+
+/** A new body beside its reticle, in the frame's px, flipped left where the right has no room. */
+function bodyBeside(reticle: LoupePoint, region: Region, n: number): LoupePoint {
   const half = BODY_SIZE / 2;
   const gap = BODY_SIZE * 0.75 + STAGGER * n;
-  const x = reticle.x + gap + half > box.width ? reticle.x - gap : reticle.x + gap;
+  const x = reticle.x + gap + half > region.right ? reticle.x - gap : reticle.x + gap;
   return {
-    x: clamp(x, half, box.width - half),
-    y: clamp(reticle.y + STAGGER * n, half, box.height - half),
+    x: clamp(x, region.left + half, region.right - half),
+    y: clamp(reticle.y + STAGGER * n, region.top + half, region.bottom - half),
   };
 }
 
-/** A lens's reticle and body centers in client px, from the scene's lab-body px, which an ancestor transform scales. */
+/** A lens's reticle and body centers in client px, from the scene's px in `frame` (see {@link LensApiRefs.frame}),
+ *  which an ancestor transform scales. */
 export function lensClient<C>(
   scene: LensScene<C>,
   lensId: string,
-  body: HTMLElement | null,
+  frame: HTMLElement | null,
 ): { reticle: LoupePoint; body: LoupePoint } | null {
   const ids = lensIdsOf(scene, `${lensId}:body`);
   const reticle = ids ? scene.get(ids.reticle) : undefined;
   const lens = ids ? scene.get(ids.body) : undefined;
-  if (!body || !reticle || !lens) return null;
+  if (!frame || !reticle || !lens) return null;
   const center = (p: RectPose) => {
-    const [x, y] = canvasToClient(body, p.x + p.width / 2, p.y + p.height / 2);
+    const [x, y] = canvasToClient(frame, p.x + p.width / 2, p.y + p.height / 2);
     return { x, y };
   };
   return {
@@ -65,6 +88,9 @@ export function useLensFocus() {
 /** What {@link createLensApi} reads as it acts: the lab body, the last pointer, the focused lens and the sources. */
 export interface LensApiRefs<C> {
   body: RefObject<HTMLElement | null>;
+  /** The element whose px the scene holds: the surface container the lens canvas covers, which is the lab body's
+   *  over layer under a lab's own surface and a host's container under an outer one. Default `body`. */
+  frame?: RefObject<HTMLElement | null>;
   pointer: RefObject<LoupePoint | null>;
   focus: RefObject<string | null>;
   sources: RefObject<LensSources<C>>;
@@ -72,26 +98,60 @@ export interface LensApiRefs<C> {
   compare?: RefObject<((lensId: string) => void) | null>;
 }
 
-/** The lens API the lens actions drive, in client px at its edges and lab-body px in the scene. */
+/** The lens API the lens actions drive, in client px at its edges and the frame's px in the scene. */
 export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): LensActionApi<C> {
   let next = 0;
   // Each held lens, and the aim it was held under: the hold is on the node that aim moves.
-  const holds = new Map<string, { hold: PoseHold<RectPose>; aim: string | undefined }>();
+  const holds = new Map<
+    string,
+    { hold: PoseHold<RectPose>; aim: string | undefined; at: LoupePoint }
+  >();
+  // Subscribed only while a lens is held, so an api a host drops leaves no listener on a scene that outlives it.
+  let unsubscribe: (() => void) | null = null;
   const release = (lensId: string) => {
     holds.get(lensId)?.hold.drop();
     holds.delete(lensId);
+    if (holds.size === 0) {
+      unsubscribe?.();
+      unsubscribe = null;
+    }
   };
-  // An undo, a redo or a write from outside the actions can also change a held lens's aim.
-  scene.subscribe(() => {
-    for (const [lensId, { aim }] of [...holds])
-      if (settingsOf(scene, lensId)?.aim !== aim) release(lensId);
-  });
-  const toBody = (client: LoupePoint, body: HTMLElement) => {
-    const [x, y] = clientToCanvas(body, client.x, client.y);
+  // An undo, a redo or a write from outside the actions can also change a held lens's aim, and a new factor the
+  // size of the patch a held reticle marks.
+  const watch = () => {
+    unsubscribe ??= scene.subscribe(() => {
+      for (const [lensId, { aim, at }] of [...holds]) {
+        if (settingsOf(scene, lensId)?.aim !== aim) release(lensId);
+        else hold(lensId, at);
+      }
+    });
+  };
+  const hold = (lensId: string, at: LoupePoint) => {
+    const held = holds.get(lensId);
+    const aimed = held && aimAt(scene, lensId, at);
+    if (!held || !aimed) return;
+    held.at = at;
+    const was = scene.overrides.read(aimed.id as never)?.pose;
+    if (was && samePose(was, aimed.pose)) return;
+    held.hold.set([[aimed.id as never, aimed.pose]]);
+  };
+  const frameOf = () => refs.frame?.current ?? refs.body.current;
+  const toFrame = (client: LoupePoint, frame: HTMLElement) => {
+    const [x, y] = clientToCanvas(frame, client.x, client.y);
     return { x, y };
   };
   const apply = (ops: readonly Op[]) => {
     if (ops.length > 0) sceneToAdapter(scene).applyOps([...ops], 'lens');
+  };
+  // A host's scene may outlive an api built over it, so an id is minted past the lenses it already holds.
+  const mint = () => {
+    let lensId: string;
+    do lensId = `lens-${next++}`;
+    while (
+      lensIdsOf(scene, `${lensId}:body`) !== null ||
+      lensIdsOf(scene, `${lensId}:reticle`) !== null
+    );
+    return lensId;
   };
   const current = () => {
     const focused = refs.focus.current;
@@ -104,28 +164,33 @@ export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): Len
     apply,
     add(at) {
       const body = refs.body.current;
+      const frame = frameOf();
       const count = lensesOf(scene).length;
-      if (!body || count >= MAX_LENSES) return null;
-      const box = layoutBoxOf(body);
+      if (!body || !frame || count >= MAX_LENSES) return null;
+      const region = regionOf(body, frame);
       const client = at ?? refs.pointer.current;
-      const reticle = client ? toBody(client, body) : { x: box.width / 2, y: box.height / 2 };
-      const lensId = `lens-${next++}`;
-      apply(addLensOps(scene, lensId, { body: bodyBeside(reticle, box, count), reticle }));
+      const reticle = client
+        ? toFrame(client, frame)
+        : { x: (region.left + region.right) / 2, y: (region.top + region.bottom) / 2 };
+      const lensId = mint();
+      apply(addLensOps(scene, lensId, { body: bodyBeside(reticle, region, count), reticle }));
       refs.focus.current = lensId;
       return lensId;
     },
     follow(client, named) {
       const lensId = named ?? current();
-      const body = refs.body.current;
-      if (lensId === null || !body) return;
-      const aimed = aimAt(scene, lensId, toBody(client, body));
-      if (aimed === null) return;
-      const held = holds.get(lensId) ?? {
-        hold: scene.overrides.hold(),
-        aim: settingsOf(scene, lensId)?.aim,
-      };
-      holds.set(lensId, held);
-      held.hold.set([[aimed.id as never, aimed.pose]]);
+      const frame = frameOf();
+      if (lensId === null || !frame) return;
+      const at = toFrame(client, frame);
+      if (aimAt(scene, lensId, at) === null) return;
+      if (!holds.has(lensId))
+        holds.set(lensId, {
+          hold: scene.overrides.hold(),
+          aim: settingsOf(scene, lensId)?.aim,
+          at,
+        });
+      watch();
+      hold(lensId, at);
     },
     unfollow: release,
     sourceAvailable: (kind: LensSourceKind) =>

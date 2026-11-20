@@ -1,5 +1,6 @@
 import { ToolRail, type ToolRailItem } from '@weasel-js/ui/components/ToolRail';
 import type { RailItem, RegionContribution, ToolSlotContext, TrialChromeContext } from '../types';
+import { inLayoutOrder } from './groupsOf';
 
 /** Props for `<PaletteRegion>`. */
 export interface PaletteRegionProps<TCtx extends ToolSlotContext = TrialChromeContext> {
@@ -19,7 +20,7 @@ export function PaletteRegion<TCtx extends ToolSlotContext = TrialChromeContext>
   region = 'palette',
 }: PaletteRegionProps<TCtx>) {
   if (contributions.length === 0) return null;
-  const items = contributions.flatMap((c): ToolRailItem[] => {
+  const items = inLayoutOrder(contributions).flatMap((c): ToolRailItem[] => {
     if (c.render) return [{ id: c.id, group: c.group, render: () => c.render?.(ctx) }];
     if (c.region !== region || !c.item) return [];
     const item = c.item as RailItem<TCtx>;

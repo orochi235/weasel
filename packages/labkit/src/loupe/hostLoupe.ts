@@ -20,16 +20,22 @@ export interface HostLoupeSurface {
   onPick: (hex: string) => void;
 }
 
-/** `@weasel-js/loupe`'s model over a host element. */
+/** `@weasel-js/loupe`'s model over a host element. `options` is read live: `mode` and `factor` open the
+ *  model, and the bounds clamp every later factor. */
 export function createHostLoupeModel(
-  options: Pick<ResolvedLoupe, 'mode' | 'factor' | 'minFactor' | 'maxFactor'>,
+  options: () => Pick<ResolvedLoupe, 'mode' | 'factor' | 'minFactor' | 'maxFactor'>,
   host: HostLoupeSurface,
 ): LoupeModel {
+  const opening = options();
   return createLoupeModel({
-    mode: options.mode,
-    factor: options.factor,
-    minFactor: options.minFactor,
-    maxFactor: options.maxFactor,
+    mode: opening.mode,
+    factor: opening.factor,
+    get minFactor() {
+      return options().minFactor;
+    },
+    get maxFactor() {
+      return options().maxFactor;
+    },
     onColorChange: host.onColorChange,
     onPick: host.onPick,
     surface: {

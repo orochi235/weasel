@@ -1,12 +1,12 @@
 import { setToolOption } from '@weasel-js/routing';
 import { useToolOptionParams } from '@weasel-js/routing/react';
 import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
-import { useDeferredValue, useRef } from 'react';
+import { useDeferredValue } from 'react';
 import { useLabChromeContext } from '../chrome/LabChrome';
 import { PersistedFloatingPanel } from '../primitives/PersistedFloatingPanel';
 import type { TrialTool } from '../tools/types';
-import { GESTURE_MS } from '../trial/writeGesture';
 import { useLabMarkStores } from './labMarkStores';
+import { useMarkGesture } from './markGesture';
 import { type MarkStyleField, markHasField, selectionStyle } from './selectionStyle';
 import type { Annotation, AnnotationsApi } from './types';
 import { useLabToolOptionValues } from './useLabToolOptions';
@@ -33,21 +33,6 @@ function selectedMarks(stores: readonly AnnotationsApi[]): Selected[] {
   return out;
 }
 
-/** One undo step per burst of edits to one field of one selection, as a trial's config writes are. */
-function useRestyleGesture(): (field: string, ids: string) => string {
-  const last = useRef<{ field: string; ids: string; at: number; n: number } | null>(null);
-  return (field, ids) => {
-    const now = Date.now();
-    const prev = last.current;
-    const gap = prev ? now - prev.at : Infinity;
-    const same =
-      prev !== null && prev.field === field && prev.ids === ids && gap >= 0 && gap < GESTURE_MS;
-    const n = same && prev ? prev.n : (prev?.n ?? 0) + 1;
-    last.current = { field, ids, at: now, n };
-    return `restyle:${n}`;
-  };
-}
-
 /**
  * The lab's floating options palette. With a tool that declares options, it draws them: the style the next mark is
  * drawn in. With Select and marks selected, in any trial, it draws their style and restyles them. Otherwise it is
@@ -60,7 +45,8 @@ export function AnnotationOptions({ tools }: AnnotationOptionsProps) {
   const tool = tools.find((t) => t.id === activeToolId);
   const options = tool?.options;
   const params = useToolOptionParams(options && tool, values);
-  const gesture = useRestyleGesture();
+  // One undo step per burst of edits to one field of one selection, as a trial's config writes are.
+  const gesture = useMarkGesture('restyle');
 
   const bar =
     tool && options && params

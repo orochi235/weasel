@@ -92,10 +92,25 @@ describe('Lightbox', () => {
       </Lightbox>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Expand' }));
+    fireEvent.pointerDown(screen.getByTestId('out'));
     fireEvent.click(screen.getByTestId('out'));
     expect(expanded()).toBe(true);
+    fireEvent.pointerDown(root());
     fireEvent.click(root());
     expect(expanded()).toBe(false);
+  });
+
+  it('stays open after a drag that starts in the content and is released in the margin', () => {
+    renderWithIcons(
+      <Lightbox>
+        <div data-testid="out">output</div>
+      </Lightbox>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Expand' }));
+    fireEvent.pointerDown(screen.getByTestId('out'));
+    // The browser sends the click to the press and release targets' common ancestor: the root.
+    fireEvent.click(root());
+    expect(expanded()).toBe(true);
   });
 
   it('makes everything outside it inert while open, and only what it marked', () => {
@@ -226,5 +241,56 @@ describe('Lightbox', () => {
       ),
     );
     expect(onExpandedChange).toHaveBeenCalledWith(false);
+  });
+
+  it('tells a controlled parent that mounts it disabled and open that it is closed, so enabling it opens nothing', () => {
+    const heard: boolean[] = [];
+    let enable = (): void => undefined;
+    function Parent() {
+      const [open, setOpen] = useState(true);
+      const [disabled, setDisabled] = useState(true);
+      enable = () => setDisabled(false);
+      return (
+        <Lightbox
+          expanded={open}
+          disabled={disabled}
+          onExpandedChange={(e) => {
+            heard.push(e);
+            setOpen(e);
+          }}
+        >
+          <div />
+        </Lightbox>
+      );
+    }
+    renderWithIcons(<Parent />);
+    expect(heard).toEqual([false]);
+    act(() => enable());
+    expect(expanded()).toBe(false);
+  });
+
+  it('closes the innermost of two open lightboxes on Escape, then the outer one', () => {
+    renderWithIcons(
+      <Lightbox label="outer">
+        <Lightbox label="inner">
+          <div />
+        </Lightbox>
+      </Lightbox>,
+    );
+    const [outer, inner] = [...document.querySelectorAll('.lk-lightbox')] as [
+      HTMLElement,
+      HTMLElement,
+    ];
+    const open = (el: HTMLElement): boolean => el.classList.contains('lk-lightbox--expanded');
+    const expandOf = (el: HTMLElement) =>
+      el.querySelector(':scope > .lk-lightbox__open') as HTMLElement;
+    fireEvent.click(expandOf(outer));
+    expect(open(outer)).toBe(true);
+    fireEvent.click(expandOf(inner));
+    expect(open(inner)).toBe(true);
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect([open(outer), open(inner)]).toEqual([true, false]);
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect([open(outer), open(inner)]).toEqual([false, false]);
   });
 });

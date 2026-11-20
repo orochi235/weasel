@@ -92,10 +92,6 @@
   flex: 1;
   min-height: 0;
   position: relative;
-
-  > .lk-workspace-host {
-    min-width: 0;
-  }
 }
 
 // A lab with no trials: its children, boxed as a bare shell's body boxes them.
@@ -135,11 +131,13 @@
   display: flex;
   min-width: 0;
   height: 100%;
+}
 
-  > .lk-workspace-host {
-    flex: 1;
-    min-width: 0;
-  }
+// An embed has no panes, so its workspace sits in the body itself.
+.lk-lab__main > .lk-workspace-host,
+.lk-lab__body > .lk-workspace-host {
+  flex: 1;
+  min-width: 0;
 }
 
 // The lab's two shared drawing buffers, stacked around the trials: marks that

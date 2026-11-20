@@ -54,8 +54,8 @@ export interface TileChromeSources {
   expandOnDoubleClick: boolean | ((id: string) => boolean);
 }
 
-/** How the grid draws each kind of tile: a panel as its frame, a trial inside its lightbox, and inside a drag
- *  context when tiles reorder. */
+/** How the grid draws each kind of tile: a panel as its frame, a trial inside its lightbox and a drag context
+ *  saying whether tiles reorder. */
 export function createTileChrome({
   nodeIds,
   items,
@@ -90,10 +90,12 @@ export function createTileChrome({
           {byId.get(node.id) ?? null}
         </Lightbox>
       );
-      if (!reorderable) return tile;
+      // Provided whether or not tiles reorder, so turning it on cannot remount
+      // the tile. No grip strip: the tile's own `<TileGrip>` is the drag surface.
       return (
-        // No grip strip: the tile's own `<TileGrip>` is the drag surface.
-        <TrialDragContext.Provider value={{ nodeId: node.id }}>{tile}</TrialDragContext.Provider>
+        <TrialDragContext.Provider value={{ nodeId: node.id, reorderable }}>
+          {tile}
+        </TrialDragContext.Provider>
       );
     },
   };

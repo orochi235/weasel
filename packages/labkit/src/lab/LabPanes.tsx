@@ -7,7 +7,8 @@ import { useSurfaceOptional } from '../surface/useSurfaceTile';
 
 /** The strip holding the sidebar beside the tool rail and workspace. Its own component
  *  because the width is a persisted value, and `LabRuntime` renders the
- *  persistence provider it reads from. */
+ *  persistence provider it reads from. Both panes' splits render whether or not anything
+ *  contributes to them, so a pane arriving or leaving keeps `children` mounted. */
 export function LabPanes({
   contributions,
   children,
@@ -26,27 +27,7 @@ export function LabPanes({
     undefined,
     { scope: 'lab' },
   );
-  const main = contributions.some((c) => c.region === 'aside') ? (
-    <Split
-      className="lk-lab__panes"
-      side="end"
-      sidebarClassName="lk-lab__aside"
-      contentClassName="lk-lab__main"
-      label="Lab aside"
-      defaultWidth={320}
-      width={asideWidth}
-      onWidthChange={(w) => {
-        setAsideWidth(w);
-        surface?.invalidateRects();
-      }}
-      sidebar={<LabAsideRegion contributions={contributions} />}
-    >
-      {children}
-    </Split>
-  ) : (
-    children
-  );
-  if (!contributions.some((c) => c.region === 'sidebar')) return main;
+  const has = (region: 'sidebar' | 'aside') => contributions.some((c) => c.region === region);
   return (
     <Split
       className="lk-lab__panes"
@@ -59,9 +40,24 @@ export function LabPanes({
         setSidebarWidth(w);
         surface?.invalidateRects();
       }}
-      sidebar={<LabSidebarRegion contributions={contributions} />}
+      sidebar={has('sidebar') ? <LabSidebarRegion contributions={contributions} /> : null}
     >
-      {main}
+      <Split
+        className="lk-lab__panes"
+        side="end"
+        sidebarClassName="lk-lab__aside"
+        contentClassName="lk-lab__main"
+        label="Lab aside"
+        defaultWidth={320}
+        width={asideWidth}
+        onWidthChange={(w) => {
+          setAsideWidth(w);
+          surface?.invalidateRects();
+        }}
+        sidebar={has('aside') ? <LabAsideRegion contributions={contributions} /> : null}
+      >
+        {children}
+      </Split>
     </Split>
   );
 }

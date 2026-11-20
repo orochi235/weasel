@@ -10,13 +10,25 @@ export type TileGripProps = HTMLAttributes<HTMLDivElement>;
 // form is a separate component rather than a conditional hook.
 function Draggable({
   nodeId,
+  reorderable,
   onPointerDown,
   onPointerMove,
   onPointerUp,
   onPointerCancel,
   ...rest
-}: TileGripProps & { nodeId: NodeId }) {
+}: TileGripProps & { nodeId: NodeId; reorderable: boolean }) {
   const handle = useDragHandle(nodeId);
+  // The same element either way, so turning reordering on cannot remount what the grip holds.
+  if (!reorderable)
+    return (
+      <div
+        {...rest}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+      />
+    );
   return (
     <div
       {...rest}
@@ -60,6 +72,6 @@ function Draggable({
  */
 export function TileGrip(props: TileGripProps) {
   const drag = useTrialDrag();
-  if (drag) return <Draggable nodeId={drag.nodeId} {...props} />;
+  if (drag) return <Draggable nodeId={drag.nodeId} reorderable={drag.reorderable} {...props} />;
   return <div {...props} />;
 }

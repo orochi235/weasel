@@ -248,3 +248,29 @@ describe('summarizeLeaf', () => {
     expect(summarizeLeaf(arcs, [{ sweep: Math.PI }])).toBe('{"sweep":"180°"}');
   });
 });
+
+describe('an auto .dialog row', () => {
+  const draw = (quote: boolean) => {
+    const leaf = f
+      .number(12)
+      .auto(() => 18)
+      .dialog(({ value }) => <output>{String(value)}</output>);
+    return renderWithIcons(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ gap: quote ? leaf.quote() : leaf }))}
+        config={{ gap: 12 }}
+        auto={new Set(['gap'])}
+        setConfig={() => {}}
+      />,
+    );
+  };
+
+  it('quotes the value in effect beside the word where its leaf says .quote(), as a compound row does', () => {
+    const quoted = draw(true);
+    expect(quoted.container.textContent).toContain('auto · 18');
+    quoted.unmount();
+    const plain = draw(false);
+    expect(plain.container.textContent).not.toContain('auto · ');
+    expect(screen.getByText('auto')).toBeInTheDocument();
+  });
+});

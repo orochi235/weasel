@@ -11,6 +11,7 @@ import {
   createViewportZoomAction,
   defineAction,
   InputScope,
+  type OngoingInvoker,
   PointerContextProvider,
   type PointerWorldPos,
   screenToWorld,
@@ -191,6 +192,22 @@ const DRAG_PAN = {
   defaultBinding: [{ spec: { kind: 'drag' }, opts: { id: `${viewportDragPanAction.id}.drag` } }],
 } as Action;
 
+/**
+ * Core's two-finger zoom, clamped to the camera's range as it stands when each
+ * pinch starts. The pinch clamps about where the fingers were and then pans,
+ * so a pinch at a bound still pans.
+ */
+const TOUCH_ZOOM: Action = {
+  ...createTouchZoomAction(),
+  invoker: {
+    timing: 'ongoing',
+    start: (ctx, opts) => {
+      const range = (ctx.deps.view as Partial<CameraView> | undefined)?.zoomRange?.();
+      return (createTouchZoomAction(range).invoker as OngoingInvoker).start(ctx, opts);
+    },
+  },
+};
+
 /** Props for `<CameraInput>`. */
 export interface CameraInputProps {
   hostRef: RefObject<HTMLElement | null>;
@@ -267,7 +284,9 @@ function CameraDispatch({
 
   const actions = useMemo<Action[]>(() => {
     // Unclamped here: `camera.set` clamps, to a range widened around the
-    // zooms it was placed at, and anchors the clamp where the wheel was.
+    // zooms it was placed at, and anchors the clamp where the wheel was. The
+    // pinch is the exception: each step zooms and pans at once, which `set`
+    // cannot tell apart, so it clamps to the camera's range itself.
     const unclamped = { min: 1e-9, max: Number.POSITIVE_INFINITY };
     const zoom = createViewportZoomAction({ wheel: wheel || 'plain', ...unclamped });
     // The wheel and the trackpad's two pinch forms (ctrl+wheel, WebKit's
@@ -302,7 +321,7 @@ function CameraDispatch({
       ...(zoomBindings.length > 0
         ? [{ ...zoom, defaultBinding: zoomBindings as Action['defaultBinding'] }]
         : []),
-      ...(touchPinch ? [createTouchZoomAction(unclamped)] : []),
+      ...(touchPinch ? [TOUCH_ZOOM] : []),
       ...(taps ? [tap] : []),
       ...(homes ? [goHome] : []),
     ];

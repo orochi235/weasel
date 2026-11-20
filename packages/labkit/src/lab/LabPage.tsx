@@ -137,7 +137,12 @@ export function LabPage({
         footer={labFooter(footer, chromeAll)}
         header={bar.header}
       >
-        <LabContent chromeAll={chromeAll} shortcuts={shortcuts} bodyRef={bodyRef}>
+        <LabContent
+          chromeAll={chromeAll}
+          shortcuts={shortcuts}
+          bodyRef={bodyRef}
+          panes={!presentation.embed}
+        >
           {children}
         </LabContent>
       </LabShell>
@@ -157,16 +162,20 @@ function labFooter(footer: ReactNode, chromeAll: LabChromeAll): ReactNode {
 }
 
 /** The lab's page body: its notices and shortcut sheet, then its surface, holding the options palette and the
- *  contributed palette beside `children`, in panes when anything contributes to one. */
+ *  contributed palette beside `children`, in the lab's sidebar and aside panes unless `panes` is false. */
 function LabContent({
   chromeAll,
   shortcuts,
   bodyRef,
+  panes,
   children,
 }: {
   chromeAll: LabChromeAll;
   shortcuts: boolean;
   bodyRef: (el: HTMLDivElement | null) => void;
+  /** False for an embed. A split mounts its content only once a ResizeObserver has measured it, so the trial of
+   *  a lab presenting from mount would arrive mid-delivery and take the boxes of the splits above it away. */
+  panes: boolean;
   children: ReactNode;
 }) {
   // One registry for the lab's lifetime: a panel host is a DOM node the workspace owns and the
@@ -179,7 +188,7 @@ function LabContent({
       <PanelHostContext.Provider value={panelHosts}>
         <LabSurface bodyRef={bodyRef} contributions={chromeAll.all}>
           <AnnotationOptions tools={chromeAll.tools} />
-          {chromeAll.hasPanes ? (
+          {panes ? (
             <LabPanes contributions={chromeAll.all}>
               <LabPalette contributions={chromeAll.all} />
               {children}

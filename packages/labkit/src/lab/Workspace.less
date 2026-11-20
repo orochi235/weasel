@@ -34,9 +34,15 @@
   height: 100%;
 }
 
+// Floating panels stack down the workspace's top-right corner, each in turn,
+// and shrink together once they run out of height.
 .lk-workspace__floating {
   position: absolute;
-  inset: 0;
+  inset: var(--wzl-space-md);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--wzl-space-sm);
   pointer-events: none;
 
   > * {
@@ -45,11 +51,10 @@
 }
 
 .lk-panel-tile--floating {
-  position: absolute;
-  top: var(--wzl-space-md);
-  right: var(--wzl-space-md);
+  flex: 0 1 auto;
   width: 260px;
   height: auto;
+  min-height: 0;
   max-height: 60%;
   box-shadow: 0 2px 8px var(--wzl-shadow);
 }

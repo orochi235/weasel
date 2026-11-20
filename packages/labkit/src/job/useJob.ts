@@ -125,10 +125,12 @@ export function useJob<TS, TC, TItem>({
     const begin = capRef.current.begin;
     const startConfig = configRef.current;
     if (begin) setStateRef.current((prev) => begin(prev, startConfig));
+    // `run` sees the state its items fold into: what `begin` makes of it.
+    const startState = begin ? begin(stateRef.current, startConfig) : stateRef.current;
 
     void drive(
       () => capRef.current,
-      { config: configRef.current, state: stateRef.current, signal: controller.signal },
+      { config: startConfig, state: startState, signal: controller.signal },
       () => token.current === mine,
       (fold) => setStateRef.current(fold),
       setProgress,

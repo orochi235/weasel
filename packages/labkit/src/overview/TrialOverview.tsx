@@ -35,6 +35,7 @@ import {
   type CSSProperties,
   type ReactNode,
   type RefObject,
+  useCallback,
   useContext,
   useEffect,
   useLayoutEffect,
@@ -223,13 +224,15 @@ function contentVars(fit: View, content: OverviewBounds): CSSProperties {
   } as CSSProperties;
 }
 
-/** A canvas instrument's layers, redrawn through the fit camera. */
+/** A canvas instrument's layers, redrawn through the fit camera, and again on each of the stack's ticks while
+ *  one of them is `timed`. */
 function LayersCanvas({ fit, size, frame }: { fit: View; size: ViewportSize; frame: WorldFrame }) {
   const stack = useContext(CanvasStackContext);
   const ref = useRef<HTMLCanvasElement | null>(null);
   const layers = stack?.surface?.layers;
+  const ticks = stack?.surface?.ticks;
   const { dpr } = useDeviceProfile();
-  useLayoutEffect(() => {
+  const draw = useCallback(() => {
     const ctx = prepare(ref.current, size, dpr);
     if (!ctx || !layers) return;
     const local: WorldFrame = { originPx: { x: 0, y: 0 }, yDir: frame.yDir };
@@ -241,6 +244,9 @@ function LayersCanvas({ fit, size, frame }: { fit: View; size: ViewportSize; fra
       ctx.restore();
     }
   }, [layers, fit, size, frame.yDir, dpr]);
+  useLayoutEffect(draw, [draw]);
+  const timed = layers?.some((l) => l.visible && l.timed) ?? false;
+  useEffect(() => (ticks && timed ? ticks(draw) : undefined), [ticks, timed, draw]);
   return <canvas ref={ref} className="lk-overview__canvas" />;
 }
 
@@ -285,10 +291,10 @@ function ChromeCanvas({
       );
       ctx.setLineDash([]);
     }
-    const world = pointerElsewhere(pointer, OVERVIEW_VIEW_ID, camera.frame);
-    if (world) {
-      // Back to frame-local: the map is its own inverse.
-      const at = px(world.x, world.y * camera.frame.yDir);
+    // Frame-local already, the space `fit` works in.
+    const local = pointerElsewhere(pointer, OVERVIEW_VIEW_ID, camera.frame);
+    if (local) {
+      const at = px(local.x, local.y);
       const { halo, bars } = crosshairRects(at.x, at.y, { x: 1, y: 1 });
       ctx.fillStyle = 'rgb(0 0 0 / 60%)';
       for (const r of halo) ctx.fillRect(r.x, r.y, r.width, r.height);

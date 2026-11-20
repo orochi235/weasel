@@ -170,9 +170,14 @@ export function LabSurface({ bodyRef, children, contributions }: LabSurfaceProps
   return (
     <SurfaceContext.Provider value={surface}>
       <SurfaceCanvasContext.Provider value={canvases}>
-        <LightboxLayers below={below} above={above}>
-          {body}
-        </LightboxLayers>
+        {/* Under a host's surface the trials paint into the host's buffers, which the host declares. */}
+        {outerSurface ? (
+          body
+        ) : (
+          <LightboxLayers below={below} above={above}>
+            {body}
+          </LightboxLayers>
+        )}
       </SurfaceCanvasContext.Provider>
     </SurfaceContext.Provider>
   );

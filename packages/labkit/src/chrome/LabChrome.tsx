@@ -92,26 +92,32 @@ export function LabHeaderRegion({ contributions }: LabRegionProps) {
 const NO_ACTIONS: readonly Action[] = [];
 const noSubscribe = () => () => {};
 
-/** `header` with each item that binds `keys` showing the key its command answers to now, so a rebind reaches it. */
+/** `header` with each item that binds `keys` showing the key its command answers to now, so a rebind reaches it.
+ *  An item whose command is not registered, outside an `<ActionsProvider>` or before it mounts, keeps the
+ *  `shortcut` it declares. */
+export function withBoundShortcuts(
+  header: readonly LabContribution[],
+  actions: readonly Action[],
+): LabContribution[] {
+  return header.map((c) => {
+    if (!c.item || (c.item as { kind?: string }).kind === 'menu') return c;
+    const item = c.item as LabHeaderItem;
+    if (item.keys === undefined) return c;
+    const action = actions.find((a) => a.id === labItemCommandId(c.id));
+    if (!action) return c;
+    const { shortcut: _declared, ...rest } = item;
+    const bound = actionShortcuts(action)[0];
+    return { ...c, item: bound ? { ...rest, shortcut: bound } : rest } as LabContribution;
+  });
+}
+
 function useBoundShortcuts(header: LabContribution[]): LabContribution[] {
   const registry = useActionsRegistry();
   const actions = useSyncExternalStore(
     registry ? registry.subscribe : noSubscribe,
     () => registry?.list() ?? NO_ACTIONS,
   );
-  return useMemo(
-    () =>
-      header.map((c) => {
-        if (!c.item || (c.item as { kind?: string }).kind === 'menu') return c;
-        const item = c.item as LabHeaderItem;
-        if (item.keys === undefined) return c;
-        const action = actions.find((a) => a.id === labItemCommandId(c.id));
-        const { shortcut: _declared, ...rest } = item;
-        const bound = action ? actionShortcuts(action)[0] : undefined;
-        return { ...c, item: bound ? { ...rest, shortcut: bound } : rest } as LabContribution;
-      }),
-    [header, actions],
-  );
+  return useMemo(() => withBoundShortcuts(header, actions), [header, actions]);
 }
 
 function LabSections({ contributions, region }: LabRegionProps & { region: 'sidebar' | 'aside' }) {

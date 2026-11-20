@@ -65,6 +65,51 @@ describe('undo across targets', () => {
     expect(s.canRedo()).toBe(false);
   });
 
+  it("drops another target's scene redo when a change lands, so its pane cannot redo it", () => {
+    const s = store();
+    s.add({ ...MARK, target: 'left' });
+    s.add({ ...MARK, target: 'right' });
+    s.undo();
+    s.add({ ...MARK, target: 'left' });
+
+    expect(s.canRedo()).toBe(false);
+    expect(s.openScene('right').canRedo()).toBe(false);
+    expect(s.openScene('right').redo()).toBe(false);
+    expect(s.query({ target: 'right' })).toHaveLength(0);
+  });
+
+  it('undoes and redoes updates sharing a coalesce key across targets as one step', () => {
+    const s = store();
+    const left = s.add({ ...MARK, target: 'left' });
+    const right = s.add({ ...MARK, target: 'right' });
+    for (const width of [2, 3, 4]) {
+      s.update(left, { width }, { coalesceKey: 'restyle:width' });
+      s.update(right, { width }, { coalesceKey: 'restyle:width' });
+    }
+    s.update(left, { title: 'later' });
+
+    s.undo();
+    expect(s.get(left)?.title).toBeUndefined();
+    s.undo();
+    expect(s.get(left)?.width).toBeUndefined();
+    expect(s.get(right)?.width).toBeUndefined();
+    expect(s.query()).toHaveLength(2);
+
+    s.redo();
+    expect(s.get(left)?.width).toBe(4);
+    expect(s.get(right)?.width).toBe(4);
+  });
+
+  it('keeps a change made after a keyed burst out of its step', () => {
+    const s = store();
+    const left = s.add({ ...MARK, target: 'left' });
+    s.update(left, { width: 3 }, { coalesceKey: 'k' });
+    s.add({ ...MARK, target: 'right' });
+    s.undo();
+    expect(s.query({ target: 'right' })).toHaveLength(0);
+    expect(s.get(left)?.width).toBe(3);
+  });
+
   it('follows an undo driven from inside a pane, not just its own', () => {
     // A pane's own Cmd+Z calls scene.undo() directly. Tracking the ordering
     // off the subscribe callback alone would read that as one more change and

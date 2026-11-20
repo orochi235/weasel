@@ -50,12 +50,14 @@ export function MatrixEditor({
   const { path, leaf } = open;
   const choices = useFieldChoices();
   const disabled = !isRowEnabled(schema, path, config, over);
-  const field = isBuiltinPref(leaf)
+  // The field is the leaf the cell draws, at its path: an alias's target, where the cell is an alias.
+  const { leaf: shown, at } = open.cell;
+  const field = isBuiltinPref(shown)
     ? prefFieldProps(
-        leaf,
+        shown,
         {
-          value: prefValueOrDefault(leaf, configValueAt(config, path)),
-          setValue: (next) => setConfig(path, next),
+          value: prefValueOrDefault(shown, configValueAt(config, at)),
+          setValue: (next) => setConfig(at, next),
           fields: choices,
           disabled,
         },
@@ -66,7 +68,7 @@ export function MatrixEditor({
     return (
       <PropertyField
         {...field}
-        label={leaf.name}
+        label={shown.name}
         control={enumControlAt(field.control, 'popover')}
         onChange={(next: Parameters<typeof field.onChange>[0]) => {
           field.onChange(next);

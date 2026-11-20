@@ -77,9 +77,9 @@ function Pair({ args }: { args: Story['args'] }) {
 
 /**
  * Both states of every row kind, side by side. What to look at: an auto row
- * shows no control at all — only its label and the word `auto` — and still
- * takes exactly the room it took while pinned, so nothing below it moves on
- * the toggle. `Width` and `Seed` never said `.auto()`, and do not toggle.
+ * keeps its control live and ghosted, drawing the value in effect, with the
+ * word `auto` beside it, and an edit to it pins the row. It takes exactly the
+ * room it took while pinned, so nothing below it moves on the toggle. `Width` and `Seed` never said `.auto()`, and do not toggle.
  */
 export const BothStates: Story = {
   render: (args) => <Pair args={args} />,

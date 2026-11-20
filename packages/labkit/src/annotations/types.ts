@@ -298,8 +298,8 @@ export interface AnnotationsApi {
   capture(target: string, opts?: CaptureOptions): Promise<CaptureResult>;
 
   add(init: AnnotationInit, config?: unknown): string;
-  /** Patch a mark. Updates carrying the same `coalesceKey`, one after another on a target, are one undo step: a
-   *  slider dragged across a mark's width. */
+  /** Patch a mark. Updates carrying the same `coalesceKey`, one after another, are one undo step, across every
+   *  target they land on: a slider dragged across the width of a selection spanning two panes. */
   update(id: string, patch: AnnotationPatch, opts?: { coalesceKey?: string }): void;
   setMeta(id: string, meta: unknown): void;
   remove(id: string): void;

@@ -36,17 +36,26 @@ function LabFallback({
   mode,
   density,
   theme = interstellarTheme,
+  nebula,
+  header = true,
   pages,
   path,
   documentTitle,
 }: Pick<
   LabBaseProps,
-  'title' | 'documentTitle' | 'mode' | 'density' | 'theme' | 'pages' | 'path'
+  'title' | 'documentTitle' | 'mode' | 'density' | 'theme' | 'nebula' | 'header' | 'pages' | 'path'
 >) {
   return (
-    <LabTheme theme={theme} mode={mode ?? 'auto'} density={density} className="lk-lab">
+    <LabTheme
+      theme={theme}
+      mode={mode ?? 'auto'}
+      density={density}
+      {...(nebula ? { nebula } : {})}
+      className="lk-lab"
+    >
       <LabShell
         title={title ?? 'Labkit'}
+        bar={header}
         mode={mode}
         {...(documentTitle !== undefined ? { documentTitle } : {})}
         {...(pages ? { pages } : {})}
@@ -87,6 +96,8 @@ export function Lab(given: LabProps) {
         mode={props.mode}
         density={props.density}
         {...(props.theme ? { theme: props.theme } : {})}
+        {...(props.nebula ? { nebula: props.nebula } : {})}
+        {...(props.header !== undefined ? { header: props.header } : {})}
         pages={props.pages}
         path={props.path}
       />

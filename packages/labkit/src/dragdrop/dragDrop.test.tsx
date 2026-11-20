@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { useStore } from 'zustand/react';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
+import { LabContext, type LabContextValue } from '../lab/LabContext';
 import { LabStoreContext } from '../state/context';
 
 interface DropState {
@@ -224,5 +225,101 @@ describe('DragDrop integration', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(latest.items).toHaveLength(0);
     expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  });
+});
+
+describe('DragDrop across trials and buttons', () => {
+  /** Two trials side by side: the first trial's canvas at x 100–500, the second's at 600–1000. */
+  function sideBySide() {
+    HTMLElement.prototype.getBoundingClientRect = function () {
+      const host = this.closest('.lk-trial__canvas-host');
+      if (host && (this === host || this.classList.contains('lk-canvas-stack'))) {
+        const i = [...document.querySelectorAll('.lk-trial__canvas-host')].indexOf(host);
+        const left = 100 + i * 500;
+        return {
+          x: left,
+          y: 100,
+          left,
+          top: 100,
+          right: left + 400,
+          bottom: 500,
+          width: 400,
+          height: 400,
+          toJSON: () => ({}),
+        } as DOMRect;
+      }
+      return originalGetBoundingClientRect.call(this);
+    };
+  }
+
+  it("refuses an item dragged from one trial's palette onto another trial's canvas", async () => {
+    sideBySide();
+    let lab: LabContextValue | null = null;
+    await renderSettled(
+      <Lab instruments={[testInstrument]}>
+        <LabContext.Consumer>
+          {(value) => {
+            lab = value;
+            return null;
+          }}
+        </LabContext.Consumer>
+      </Lab>,
+      { wrapper: withIcons },
+    );
+    await act(async () => (lab as LabContextValue | null)?.addTrial('TestDrop'));
+    const trials = () => (lab as LabContextValue | null)?.trials ?? [];
+    expect(trials()).toHaveLength(2);
+    const palettes = screen.getAllByRole('button', { name: 'Item A' });
+    await act(async () => {
+      pointerDown(palettes[0] as Element, 0, 0);
+    });
+    // Over the other trial's canvas, then released there.
+    await pointerMove(800, 300);
+    await pointerUp(800, 300);
+    const states = trials().map((t) => (t.state as DropState).items.length);
+    expect(states).toEqual([0, 0]);
+  });
+
+  it('drops nothing where onDragOver refuses the drop', async () => {
+    let latest: DropState = { items: [] };
+    const refusing = defineInstrument<DropState, Record<string, never>>({
+      ...testInstrument,
+      name: 'Refusing',
+      dragDrop: {
+        ...(testInstrument.dragDrop as NonNullable<typeof testInstrument.dragDrop>),
+        onDragOver: () => ({ ok: false, reason: 'full' }),
+      },
+    });
+    await renderLab((s) => {
+      latest = s;
+    }, refusing);
+    await act(async () => {
+      pointerDown(screen.getByRole('button', { name: 'Item A' }), 0, 0);
+    });
+    await pointerUp(250, 250);
+    expect(latest.items).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  });
+
+  it.each([
+    ['middle', 1, 4],
+    ['secondary', 2, 2],
+  ])('starts no drag on a %s-button press', async (_, button, buttons) => {
+    let latest: DropState = { items: [] };
+    await renderLab((s) => {
+      latest = s;
+    });
+    await act(async () => {
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'Item A' }), {
+        pointerId: 1,
+        button,
+        buttons,
+        clientX: 0,
+        clientY: 0,
+      });
+    });
+    expect(document.querySelector('.lk-drag-ghost')).toBeNull();
+    await pointerUp(250, 250);
+    expect(latest.items).toHaveLength(0);
   });
 });

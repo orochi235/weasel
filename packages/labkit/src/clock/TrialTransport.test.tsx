@@ -63,7 +63,9 @@ describe('<TrialTransport>', () => {
 
   it('plays at the chosen speed and pauses', async ({ mount }) => {
     await mount({ duration: 3_600_000 });
-    fireEvent.keyDown(screen.getByRole('slider', { name: /rate/i }), { key: 'ArrowRight' });
+    fireEvent.keyDown(screen.getByRole('slider', { name: /rate/i }), {
+      key: 'ArrowRight',
+    });
     expect(c().rate).toBe(0);
     press('Play');
     expect(c().rate).toBe(2);
@@ -109,7 +111,9 @@ describe('<TrialTransport>', () => {
     });
     expect(c().rate).toBe(-1);
     act(() => {
-      fireEvent.keyDown(screen.getByRole('slider', { name: 'Position' }), { key: 'End' });
+      fireEvent.keyDown(screen.getByRole('slider', { name: 'Position' }), {
+        key: 'End',
+      });
     });
     expect(c().elapsed).toBe(3_600_000);
   });
@@ -128,7 +132,9 @@ describe('<TrialTransport>', () => {
       '300',
     );
     act(() => {
-      fireEvent.keyDown(screen.getByRole('slider', { name: 'Position' }), { key: 'Home' });
+      fireEvent.keyDown(screen.getByRole('slider', { name: 'Position' }), {
+        key: 'Home',
+      });
     });
     expect(c().elapsed).toBe(2000);
   });
@@ -157,6 +163,40 @@ describe('<TrialTransport>', () => {
     await mount({ duration: 1000 });
     act(() => c().seek(1000));
     press('Play');
+    expect(c().elapsed).toBe(0);
+    expect(c().rate).toBe(1);
+  });
+
+  it('plays a run played backward to its start again from its end', async ({ mount }) => {
+    await mount({ duration: 1000, loop: 2 });
+    act(() => {
+      fireEvent.click(screen.getByRole('switch', { name: 'Reverse' }));
+    });
+    expect(c().elapsed).toBe(0);
+    press('Play');
+    expect(c().elapsed).toBe(2000);
+    expect(c().rate).toBe(-1);
+  });
+
+  it('replays a run played backward to its start, backward', async ({ mount }) => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    await mount({ duration: 1000, rate: -1, start: 'end' }, { replay: 3000 });
+    act(() => c().seek(0));
+    act(() => vi.advanceTimersByTime(3000));
+    expect(c().elapsed).toBe(1000);
+    expect(c().rate).toBe(-1);
+  });
+
+  it('replays a finished run that is not seekable from its start', async ({ mount }) => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    await mount({ duration: 1000, seekable: false, rate: 1 }, { replay: 3000 });
+    act(() => {
+      const now = performance.now();
+      c().sync(now);
+      c().sync(now + 5000);
+    });
+    expect(c().ended).toBe(true);
+    act(() => vi.advanceTimersByTime(3000));
     expect(c().elapsed).toBe(0);
     expect(c().rate).toBe(1);
   });

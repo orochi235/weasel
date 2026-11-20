@@ -25,6 +25,26 @@ describe('HeldClock', () => {
     expect(screen.getByLabelText('elapsed')).toHaveTextContent('300');
   });
 
+  it('keeps the speed a declared `rate` gives, and takes a new one', () => {
+    let speed = 0;
+    function Speed() {
+      speed = useTrialClock()?.speed ?? 0;
+      return null;
+    }
+    const { rerender } = render(
+      <HeldClock spec={{ duration: 1000, rate: 2 }} at={300}>
+        <Speed />
+      </HeldClock>,
+    );
+    expect(speed).toBe(2);
+    rerender(
+      <HeldClock spec={{ duration: 1000, rate: 4 }} at={300}>
+        <Speed />
+      </HeldClock>,
+    );
+    expect(speed).toBe(4);
+  });
+
   it('syncs once, so a frame listener draws the held moment with no frame loop', () => {
     render(
       <HeldClock spec={{ duration: 1000 }} at={250}>

@@ -1,3 +1,4 @@
+import { declaredSpeed } from '@weasel-js/clock';
 import { isDev } from '@weasel-js/react';
 import {
   type FrameOptions,
@@ -20,7 +21,11 @@ export interface HeldClockProps {
 }
 
 function holdAt(spec: ClockCapability, at: number): TrialClockHandle {
-  const handle = createTrialClock({ ...spec, rate: 0 });
+  const handle = createTrialClock({
+    ...spec,
+    rate: 0,
+    speed: declaredSpeed(spec),
+  });
   if (handle.clock.seekable) handle.clock.seek(at);
   else if (runs(handle)) runTo(handle.clock, at, handle.step);
   else if (isDev())
@@ -30,14 +35,15 @@ function holdAt(spec: ClockCapability, at: number): TrialClockHandle {
   return handle;
 }
 
-/** Whether two declarations open the same clock; `mix` aside, which is made anew with each. */
+/** Whether two declarations open the same held clock; `mix` aside, which is made anew with each. A held clock is
+ *  paused, so `rate` counts only through the speed it declares. */
 function sameDeclaration(a: ClockCapability, b: ClockCapability): boolean {
   return (
     a.duration === b.duration &&
     a.loop === b.loop &&
     a.origin === b.origin &&
     a.start === b.start &&
-    a.speed === b.speed &&
+    declaredSpeed(a) === declaredSpeed(b) &&
     a.seekable === b.seekable &&
     a.step === b.step &&
     String(a.speeds) === String(b.speeds)

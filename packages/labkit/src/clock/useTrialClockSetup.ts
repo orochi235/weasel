@@ -1,4 +1,4 @@
-import { holdPosition } from '@weasel-js/clock';
+import { declaredSpeed, holdPosition } from '@weasel-js/clock';
 import { useLatest } from '@weasel-js/core';
 import { createEmitter } from '@weasel-js/registry';
 import {
@@ -30,11 +30,14 @@ interface Held {
 }
 
 const shape = (s: ClockCapability): string =>
-  `${s.duration}|${s.origin ?? 0}|${s.loop ?? false}|${s.speed}`;
+  `${s.duration}|${s.origin ?? 0}|${s.loop ?? false}|${declaredSpeed(s)}`;
 
 function open(spec: ClockCapability, at: ClockPosition | undefined): Held {
   const handle = createTrialClock(spec, at);
-  return { handle, reopenAt: at && handle.clock.elapsed !== at.elapsed ? at : null };
+  return {
+    handle,
+    reopenAt: at && handle.clock.elapsed !== at.elapsed ? at : null,
+  };
 }
 
 /** Where {@link useSeededClock} keeps its clock, outside React state. Shaped
@@ -122,7 +125,10 @@ export function useTrialClockSetup({ instrument, config, record, store, target }
   const handle = onLab ? (clocks?.shared ?? null) : (held?.handle ?? null);
 
   const declaredShape = spec ? shape(spec) : null;
-  const lastDeclared = useRef<{ handle: TrialClockHandle; shape: string } | null>(null);
+  const lastDeclared = useRef<{
+    handle: TrialClockHandle;
+    shape: string;
+  } | null>(null);
   useLayoutEffect(() => {
     if (!held || !spec || declaredShape === null) return;
     const last = lastDeclared.current;
