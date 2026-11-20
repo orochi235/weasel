@@ -6,8 +6,8 @@ import { createDistanceReadoutContribution, type DistanceReadoutOptions } from '
 
 /** Options for `createSpacingHintsPreset`. */
 export interface SpacingHintsOptions {
-  /** Preset id. Default `'spacingHints'`. Given, its snap sources are `<id>.spacing` and `<id>.alignment`, so two
-   *  presets can share a canvas; otherwise they keep the sources' own ids. */
+  /** Preset id. Default `'spacingHints'`. Given, its snap sources are `<id>.spacing` and `<id>.alignment` and its
+   *  readout `<id>.readout`, so two presets can share a canvas; otherwise they keep their own ids. */
   id?: string;
   /** Snap a move so its gap to a neighbor equals one already between its
    *  siblings, and mark the equal gaps. Default true. */
@@ -20,7 +20,8 @@ export interface SpacingHintsOptions {
   /** Which nodes the snap sources take as siblings to line up or space against. */
   filter?: TargetFilter;
   /** The Alt-hover distance readout, configured, or `false` for none. Default
-   *  on, with the preset's `color`. */
+   *  on, with the preset's `color`; given an `id`, the preset names it
+   *  `<id>.readout` unless this names it. */
   readout?: false | Omit<DistanceReadoutOptions, 'color'>;
   /** The color of the marks and the readout. */
   color?: string;
@@ -48,6 +49,8 @@ export function createSpacingHintsPreset(opts: SpacingHintsOptions = {}): Featur
     ...((opts.align ?? false) ? [alignmentSnapSource({ ...own, ...sourceId(opts.id, 'alignment') })] : []),
   ];
   const contributions: SurfaceContribution[] = [];
-  if (opts.readout !== false) contributions.push(createDistanceReadoutContribution({ ...opts.readout, ...color }));
+  if (opts.readout !== false) {
+    contributions.push(createDistanceReadoutContribution({ ...sourceId(opts.id, 'readout'), ...opts.readout, ...color }));
+  }
   return { id, snapSources, contributions };
 }

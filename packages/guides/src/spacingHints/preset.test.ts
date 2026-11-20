@@ -44,6 +44,12 @@ describe('createSpacingHintsPreset', () => {
     expect(fixture({ id: 'hints', align: true }).preset.snapSources!.map((s) => s.id)).toEqual(['hints.spacing', 'hints.alignment']);
   });
 
+  it('names its readout after its own id when given one, so two presets share a canvas without colliding', () => {
+    const ids = (opts: SpacingHintsOptions) => fixture(opts).contributions.flatMap((c) => [c.id, ...(c.actions ?? []).map((a) => a.id)]);
+    expect(ids({ id: 'a' })).toEqual(['a.readout', 'a.readout.measure']);
+    expect(ids({ id: 'a', readout: { id: 'mine' } })).toEqual(['mine', 'mine.measure']);
+  });
+
   it('gives its sources its reachPx', () => {
     expect(fixture({ align: true, reachPx: 12 }).preset.snapSources!.map((s) => s.reachPx)).toEqual([12, 12]);
     expect(fixture().preset.snapSources![0].reachPx).toBeUndefined();
