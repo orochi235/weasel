@@ -9,7 +9,7 @@ export interface ItemRuns {
   wait(i: number, ms: number, fn: () => void): void;
   /**
    * After `delayMs`, unless `canceled()` by then, interrupt other chains on item `i`'s node and
-   * start its `jobs`, calling `onDone` once every one has finished. A job stopped short of its
+   * start its `jobs`, calling `onDone` once every one has finished, or at once with none. A job stopped short of its
    * end from outside (`animator.cancelKey`, `cancelAll`, a tick that threw) stops the item
    * through `stops[i]`, as an interrupt, since that job will never finish.
    */
@@ -72,6 +72,7 @@ export function createItemRuns(
             break;
           }
         }
+        if (jobs.length === 0) onDone();
       };
       if (delayMs > 0) runs.wait(i, delayMs, spawn);
       else spawn();

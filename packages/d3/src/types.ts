@@ -52,8 +52,8 @@ export interface D3Binding<TData, TPose, TPayload = Record<string, unknown>> {
 }
 
 /**
- * The bound, post-join set of leaves. Carries per-node prior poses (used by
- * `.transition()` to compute the tween `from`) and a stable id-per-datum mapping.
+ * The bound, post-join set of leaves. Carries per-node prior poses, which the first
+ * `.transition()` to start on a node tweens it from, and a stable id-per-datum mapping.
  */
 export interface D3Selection<TData, TPose> {
   /** Node ids in the same order as the bound data. */
@@ -61,8 +61,8 @@ export interface D3Selection<TData, TPose> {
   /** Bound data, in registration order. */
   readonly data: readonly TData[];
 
-  /** Filter to a subset by predicate. The returned selection retains the prior
-   *  poses for transition purposes. */
+  /** Filter to a subset by predicate. The returned selection shares the prior
+   *  poses: a transition on either that starts on a node first tweens it from there. */
   filter(pred: (d: TData, i: number) => boolean): D3Selection<TData, TPose>;
 
   /** Iterate. Returns this for chaining. */
@@ -88,10 +88,9 @@ export interface D3Transition<TData, TPose = unknown> {
   /** Per-item delay, in ms. On a chained transition it counts from the moment that
    *  item's previous transition ended. An infinite delay never starts the item. */
   delay(ms: number | ((d: TData, i: number) => number)): this;
-  /** Per-item target pose. Defaults to the pose the node holds when this
-   *  transition starts — for the first transition, the pose `.join()` set, so
-   *  it animates prior → joined; a chained transition without `.pose()` leaves
-   *  the pose where the previous one put it. */
+  /** Per-item target pose. The first transition to start on a node after its join
+   *  tweens it from its prior pose, by default to the pose `.join()` set; any other
+   *  tweens from where the node stands, and without `.pose()` leaves the pose alone. */
   pose(fn: (d: TData, i: number) => TPose): this;
   /** A custom tween, applied each frame by `apply`. A transition runs one tween per `name`:
    *  another of the same name replaces it, as in d3. */

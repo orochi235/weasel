@@ -142,3 +142,36 @@ describe('d3Bind transition — an item interrupted on its node', () => {
     expect(s.x('a')).toBeCloseTo(500, 6);
   });
 });
+
+describe('d3Bind transition — a second transition on one selection', () => {
+  it('tweens from where the node stands, not from its pose before the join', () => {
+    const s = setup();
+    act(() => void s.bind([{ id: 'a', x: 0 }]));
+    const sel = s.bind([{ id: 'a', x: 100 }]);
+    act(() => void sel.transition().duration(100).ease(linear).end());
+    s.play(200);
+    expect(s.x('a')).toBeCloseTo(100, 6);
+    act(() => void sel.transition().duration(100).ease(linear).pose(() => ({ x: 200, y: 0, width: 10, height: 10 })).end());
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(50));
+    expect(s.x('a')).toBeCloseTo(150, 6);
+  });
+
+  it('of another name and with no .pose() leaves the pose to the first', () => {
+    const s = setup();
+    act(() => void s.bind([{ id: 'a', x: 0 }]));
+    const opacity: number[] = [];
+    act(() => {
+      const sel = s.bind([{ id: 'a', x: 100 }]);
+      void sel.transition().duration(100).ease(linear).end();
+      void sel.transition('fade').duration(100)
+        .tween({ name: 'opacity', from: () => 0, to: () => 1, apply: (_d, _id, v) => opacity.push(v) }).end();
+    });
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(50));
+    expect(s.x('a')).toBeCloseTo(50, 6);
+    s.play(200);
+    expect(s.x('a')).toBeCloseTo(100, 6);
+    expect(opacity.at(-1)).toBe(1);
+  });
+});
