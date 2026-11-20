@@ -80,7 +80,7 @@
   left: calc(var(--at, 0) * 100%);
   width: 2px;
   margin-inline-start: -1px;
-  border-radius: 1px;
+  border-radius: var(--wzl-radius-sm);
   background: var(--wzl-accent);
   box-shadow: 0 0 6px var(--wzl-accent);
   pointer-events: none;
@@ -130,7 +130,7 @@
   left: calc(var(--at, 0) * 100%);
   width: 2px;
   margin-inline-start: -1px;
-  border-radius: 1px;
+  border-radius: var(--wzl-radius-sm);
   background: var(--wzl-accent);
   box-shadow: 0 0 6px var(--wzl-accent);
 }
