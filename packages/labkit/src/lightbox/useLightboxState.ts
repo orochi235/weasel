@@ -2,14 +2,15 @@ import { useLatest } from '@weasel-js/core';
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import type { LightboxContextValue } from './LightboxContext';
 
-/** Disabling closes an open lightbox for good: its owner hears it, and enabling it again does not reopen it. */
+/** Disabling closes an open lightbox for good: its owner hears it, and enabling it again does not reopen it.
+ *  Mounting one disabled and open counts as disabling it. */
 function useDisablingCloses(
   disabled: boolean,
   open: boolean,
   setOwn: (open: boolean) => void,
   onChangeRef: { readonly current: ((expanded: boolean) => void) | undefined },
 ): void {
-  const [wasDisabled, setWasDisabled] = useState(disabled);
+  const [wasDisabled, setWasDisabled] = useState(false);
   const [closings, setClosings] = useState(0);
   if (disabled !== wasDisabled) {
     setWasDisabled(disabled);

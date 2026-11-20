@@ -227,4 +227,30 @@ describe('Lightbox', () => {
     );
     expect(onExpandedChange).toHaveBeenCalledWith(false);
   });
+
+  it('tells a controlled parent that mounts it disabled and open that it is closed, so enabling it opens nothing', () => {
+    const heard: boolean[] = [];
+    let enable = (): void => undefined;
+    function Parent() {
+      const [open, setOpen] = useState(true);
+      const [disabled, setDisabled] = useState(true);
+      enable = () => setDisabled(false);
+      return (
+        <Lightbox
+          expanded={open}
+          disabled={disabled}
+          onExpandedChange={(e) => {
+            heard.push(e);
+            setOpen(e);
+          }}
+        >
+          <div />
+        </Lightbox>
+      );
+    }
+    renderWithIcons(<Parent />);
+    expect(heard).toEqual([false]);
+    act(() => enable());
+    expect(expanded()).toBe(false);
+  });
 });
