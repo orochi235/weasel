@@ -520,17 +520,6 @@ comparing pezlie's wall, which pans a 1.1M-cell corpus at 60 fps). Arc 1, render
   them through a mutation path outside history, and caps concurrent loads. Closes when a demo pans a scene
   larger than memory would hold whole, undo history stays empty through the pan, and the visibility index
   updates without a rebuild.
-- **(P3) [agent] kernel3d depth for a near/far ratio past 1e4.** `perspective`
-  (`packages/geom/src/3d/mat4.ts:139`) is the standard GL projection, so a planet-to-street ratio near 1e7
-  z-fights far away. Logarithmic depth in the shader (WebGL2) or reversed-Z with a float depth buffer.
-  Closes when two surfaces 1 m apart at 1e6 m from a camera with near 0.1 resolve in a browser test.
-- **(P3) [agent] kernel3d's line pass relative to the eye.** `packLines` writes absolute world points as
-  float32 (`packages/kernel3d/src/lines/pack.ts:114-124`) and the pass uploads a float32 view-projection
-  holding the camera's translation (`lines/pass.ts:104`), so lines near Earth-radius coordinates snap to
-  about half-metre steps and jitter as the camera moves. Subtract the eye in doubles before packing and
-  upload the projection without that translation, as the 2D batch does (`drawBatch.ts`). Closes when a
-  browser test draws a line at 6.4e6 m with the camera 10 m away and its pixels stay put under a 1 mm
-  camera move.
 - **(P3) [agent] A true 3D force layout.** A diagram reaches a 3D host only through a `LayoutFrame`, a plane
   (2026-11-19), so `force` relaxes in two dimensions: `@weasel-js/simulation`'s `SimulationNode` is
   `{x, y, vx, vy, fx, fy}` (`packages/simulation/src/types.ts:7`) and `packages/diagram/src/force.ts` writes

@@ -63,14 +63,17 @@ describe('withOutsideReads', () => {
 });
 
 describe('outsideGeneration', () => {
-  it('moves when any registered source moves, and stops counting a removed one', () => {
+  it('moves when any registered source moves, stops counting a removed one, and never falls back', () => {
     let mine = 0;
     const remove = addOutsideSource(() => mine);
     const before = outsideGeneration();
     mine = 5;
     expect(outsideGeneration()).toBe(before + 5);
     remove();
-    expect(outsideGeneration()).toBe(before);
+    const removed = outsideGeneration();
+    expect(removed).toBeGreaterThan(before + 5);
+    mine = 9;
+    expect(outsideGeneration()).toBe(removed);
   });
 
   it('counts the face generation once fontReads is loaded', async () => {

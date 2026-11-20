@@ -149,8 +149,10 @@ describe('NodeShapeEntry.geometryGeneration', () => {
     gem.recut();
     expect(outsideGeneration()).toBe(before + 1);
     release();
+    const released = outsideGeneration();
+    expect(released).toBeGreaterThan(before + 1);
     gem.recut();
-    expect(outsideGeneration()).toBe(before);
+    expect(outsideGeneration()).toBe(released);
   });
 });
 
