@@ -10,6 +10,8 @@ import type { Scene } from '../../core/scene/types';
 import { SurfaceCanvas } from '../SurfaceCanvas';
 import { useFrameLoop } from '../useFrameLoop';
 import { useRedrawOnDensityChange } from '../useCanvasRenderer';
+import { useRedrawOn } from '../useRedrawOn';
+import type { RedrawSource } from '../../core/layers/redrawSource';
 import { useSurfaceSize, type SurfaceSizeProps } from '../useSurfaceSize';
 import type { SceneViewLayers } from '../sceneViewRender';
 import type { FollowedClock, SceneRenderInputs } from './startSceneRenderWorker';
@@ -41,6 +43,8 @@ export interface WorkerSceneViewProps<TData, TLayer extends string, TPose> exten
   worker: () => Worker;
   extraCommands?: ReadonlyArray<DrawCommand>;
   alphaFor?: (id: string) => number;
+  /** See `<SceneViewCanvas redrawOn>`: a notification sends the worker the alphas that changed. */
+  redrawOn?: readonly RedrawSource[];
   clock?: FollowedClock;
   cull?: boolean;
   className?: string;
@@ -108,6 +112,7 @@ function WorkerSceneSurface(props: WorkerSceneViewProps<unknown, string, unknown
   useSceneRenderWorker(localRef, { worker: props.worker, timeout: props.workerTimeout }, inputs, loop.requestRedraw, held);
   // The frame writer reads the ambient ratio, but only on a frame something else asked for.
   useRedrawOnDensityChange(loop.requestRedraw, dpr);
+  useRedrawOn(props.redrawOn, loop.requestRedraw);
 
   // No dependency array: every commit hands the worker what the render read.
   useLayoutEffect(() => {
