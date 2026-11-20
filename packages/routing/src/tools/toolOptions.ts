@@ -96,6 +96,16 @@ export function toolOptionActionIds(options: ToolOptionsSpec): readonly string[]
   return typeof options.actionId === 'string' ? [options.actionId] : options.actionId;
 }
 
+/** The tool whose options are live: the newest held on its key (of those `among` names, when given), else the
+ *  active one. Routing walks held tools the same way. */
+export function liveTool(
+  slot: { active: string | null; hotkeyStack?: readonly string[] } | undefined, among?: ReadonlySet<string>,
+): string | null {
+  const stack = slot?.hotkeyStack ?? [];
+  for (let i = stack.length - 1; i >= 0; i--) if (!among || among.has(stack[i]!)) return stack[i]!;
+  return slot?.active ?? null;
+}
+
 /** Where `toolId`'s option `option` is kept: under the tool, or under its shared key. */
 export function toolOptionSlot(toolId: string, options: ToolOptionsSpec, option: string): { owner: string; key: string } {
   const shared = options.share && Object.hasOwn(options.share, option) ? options.share[option] : null;

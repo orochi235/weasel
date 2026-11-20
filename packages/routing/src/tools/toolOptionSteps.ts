@@ -1,6 +1,6 @@
 /**
  * The step actions of a tool's size and strength options: `[` `]` move the
- * size and `Shift+[` `Shift+]` the strength while the tool is active, and a
+ * size and `Shift+[` `Shift+]` the strength while the tool is live (held on its key, or active), and a
  * Shift+wheel moves the size.
  */
 import type { PrefNumber } from '@weasel-js/prefs-schema';
@@ -10,7 +10,7 @@ import { ActionDisabledReason, type Action } from '../interactions/actions/actio
 import type { ActionDeps, ImmediateInvoker } from '../interactions/actions/invoker';
 import type { GestureBinding } from '../interactions/actions/binding';
 import {
-  setToolOption, steppedOption, toolOptionNumberLeaf, toolOptionParams,
+  liveTool, setToolOption, steppedOption, toolOptionNumberLeaf, toolOptionParams,
   type ToolOptionsSpec, type ToolOptionStep, type ToolOptionValues,
 } from './toolOptions';
 
@@ -47,7 +47,7 @@ function stepOption(
 }
 
 const enabledFor = (toolId: string) => (deps?: ActionDeps) =>
-  deps?.activeTool?.active === toolId && deps.toolOptionValues ? true : ActionDisabledReason.NotApplicable;
+  liveTool(deps?.activeTool) === toolId && deps?.toolOptionValues ? true : ActionDisabledReason.NotApplicable;
 
 function stepAction(toolId: string, toolLabel: string, options: ToolOptionsSpec, spec: StepSpec): Action | null {
   const step = options[spec.which];
