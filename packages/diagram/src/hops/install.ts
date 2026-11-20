@@ -10,7 +10,7 @@ import { DIAGRAM_PASS_ORDER } from '../passOrder';
 import { samePoints } from '../edgeTrait';
 import { edgeHops } from './crossings';
 import { hopFollower } from './follower';
-import { edgePolylines, hopDataOps, inOrUnder, sceneEdges, type AnyScene, type SceneEdge } from './sceneEdges';
+import { edgePolylines, hopDataOps, reroutedBy, sceneEdges, type AnyScene, type SceneEdge } from './sceneEdges';
 import { HOPS_DOC_KEY, type EdgeHop, type HopsDocValue } from './types';
 
 /** Options for {@link installHops} and `useHops`: how a connector routes, as
@@ -67,14 +67,11 @@ function allPolylines(edges: readonly SceneEdge[], polylineOf: (e: SceneEdge) =>
   return out;
 }
 
-/** The connectors an edit may have rerouted: changed themselves, new, or
- *  attached to a changed node or one inside it, or to a node whose pose
- *  derives from others. */
+/** The connectors an edit may have rerouted: new, or rerouted by what it
+ *  changed (`reroutedBy`). */
 function candidates(sc: AnyScene, edges: readonly SceneEdge[], held: Held, s: SceneEditSummary): SceneEdge[] {
   const changed = new Set<string>([...s.added, ...s.removed, ...s.posed, ...s.reparented, ...s.dataChanged]);
-  const derived = (id: string) => sc.get(id as never)?.derivePose !== undefined;
-  return edges.filter((e) => changed.has(e.node.id) || !held.polylines.has(e.node.id)
-    || e.ends.some((end) => inOrUnder(sc, end, changed) || derived(end)));
+  return edges.filter((e) => !held.polylines.has(e.node.id) || reroutedBy(sc, e, changed));
 }
 
 /**

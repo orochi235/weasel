@@ -1,6 +1,6 @@
 import type { Scene, TransformFollower, TransformPreviewNode } from '@weasel-js/core';
 import { diagramEdgeOf } from '../edgeTrait';
-import { inOrUnder, sceneEdges, withHopsData, type AnyScene } from './sceneEdges';
+import { reroutedBy, sceneEdges, withHopsData, type AnyScene } from './sceneEdges';
 
 /**
  * The transform follower that hides hops while a drag is in progress: each
@@ -18,7 +18,7 @@ export function hopFollower<TPose>(scene: Scene<unknown, string, TPose>): Transf
       const edges = sceneEdges(sc);
       const moved = new Set<string>();
       for (const e of edges) {
-        if (data.has(e.node.id) || frame.has(e.node.id) || e.ends.some((end) => inOrUnder(sc, end, frame))) moved.add(e.node.id);
+        if (data.has(e.node.id) || reroutedBy(sc, e, frame)) moved.add(e.node.id);
       }
       const out: TransformPreviewNode[] = [];
       for (const e of edges) {

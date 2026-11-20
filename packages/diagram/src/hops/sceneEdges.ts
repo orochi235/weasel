@@ -49,12 +49,23 @@ export function edgePolylines<TPose>(scene: AnyScene, opts: EdgeRouteOptions<TPo
   };
 }
 
-/** Whether `id`, or a node it sits in, is in `ids`. */
-export function inOrUnder(scene: AnyScene, id: string, ids: { has(id: string): boolean }): boolean {
+/** Whether `id` moves when `ids` do: it, or a node it sits in, is in `ids`, or
+ *  derives its pose from a node that moves with them. */
+export function movesWith(scene: AnyScene, id: string, ids: { has(id: string): boolean }, seen = new Set<string>()): boolean {
   for (let at: string | null | undefined = id; at != null; at = scene.get(at as never)?.parent) {
     if (ids.has(at)) return true;
+    if (seen.has(at)) return false;
+    seen.add(at);
+    const node = scene.get(at as never);
+    if (node?.derivePose !== undefined && (node.dependsOn ?? []).some((dep) => movesWith(scene, dep, ids, seen))) return true;
   }
   return false;
+}
+
+/** Whether `edge` may be rerouted when `ids` change or move: it is among
+ *  them, or either end moves with them. */
+export function reroutedBy(scene: AnyScene, edge: SceneEdge, ids: { has(id: string): boolean }): boolean {
+  return ids.has(edge.node.id) || edge.ends.some((end) => movesWith(scene, end, ids));
 }
 
 /** `data` with its edge trait holding `hops`, or none when the list is empty. */

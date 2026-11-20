@@ -209,7 +209,6 @@ describe('line jumps in a scene', () => {
     expect(preview.find((p) => p.id === 'cd')!.pose).toBe(dragged);
   });
 
-
   it('counts a connector an earlier follower rerouted as moved, so the connectors hopping over it hide their hops', () => {
     const { scene, hops } = load(false);
     scene.doc.set(HOPS_DOC_KEY, { size: 5 });
@@ -219,4 +218,24 @@ describe('line jumps in a scene', () => {
     expect(preview.map((p) => p.id)).toEqual(['cd']);
   });
 
+  it('counts a connector whose end derives its pose from a dragged node as moved in a drag, as the commit does', () => {
+    const scene: HopScene = createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      registry: withDiagramRegistry(),
+      initial: [
+        box('a', 0, 0), box('b', 400, 0), box('c', 200, -200), box('d', 200, 200),
+        {
+          ...box('e', 0, 0),
+          dependsOn: ['c' as never],
+          derivePose: (_n: unknown, deps: readonly ({ pose: RectPose } | undefined)[]) => deps[0]?.pose ?? null,
+        },
+        connector('ab', 'a', 'b'), connector('ed', 'e', 'd'),
+      ] as never,
+    });
+    const hops = installHops(scene);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    expect(hopsOf(scene, 'ed')).toEqual([{ at: { x: 250, y: 30 }, over: ['ab'], r: 5 }]);
+    const preview = hops.follower.preview(new Map([['c', { x: 210, y: -200, width: 100, height: 60 }]]), new Map());
+    expect(preview.map((p) => p.id)).toEqual(['ed']);
+  });
 });
