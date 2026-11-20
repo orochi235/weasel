@@ -3,7 +3,7 @@
  * pools, lanes, groups, edges, and edge labels — with their boxes on the page.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { cellsOf, geometryOf, type RawCell } from './cells';
+import { cellsOf, geometryOf, offsetOf, type RawCell } from './cells';
 import { hasStyleName, styleFlag, styleNumber } from './style';
 import type { Rect } from '@weasel-js/geom';
 
@@ -98,7 +98,13 @@ export function pageCells(model: Element): PageCells {
     if (origin === undefined) {
       const up = originOf(cell.parent);
       const g = geometryOf(cell);
-      origin = { x: up.x + g.x, y: up.y + g.y };
+      const parent = cell.parent === null ? undefined : byId.get(cell.parent);
+      if (g.relative && parent?.vertex === true) {
+        // As a draw app places a relative vertex, a boundary event or a port on a shape: fractions of its parent's box.
+        const of = geometryOf(parent);
+        const off = offsetOf(cell);
+        origin = { x: up.x + g.x * of.width + off.x, y: up.y + g.y * of.height + off.y };
+      } else origin = { x: up.x + g.x, y: up.y + g.y };
       origins.set(cell.id, origin);
     }
     return origin;

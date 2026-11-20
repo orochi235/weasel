@@ -122,3 +122,13 @@ describe('reading outlines', () => {
     expect(outline('shape=document;direction=east;').warnings).toEqual([]);
   });
 });
+
+describe('placing cells', () => {
+  it('places a vertex with relative geometry under another at a fraction of its parent, plus its offset', async () => {
+    const { data } = await page(`<mxCell id="t" value="task" vertex="1" parent="1"><mxGeometry x="100" y="50" width="200" height="100" as="geometry"/></mxCell>`
+      + `<mxCell id="b" value="boundary" vertex="1" parent="t"><mxGeometry x="1" y="0.5" width="20" height="20" relative="1" as="geometry">`
+      + `<mxPoint x="-10" y="-10" as="offset"/></mxGeometry></mxCell>`);
+    const at = new Map(data.nodes.map((n) => [n.id, n.at]));
+    expect(at.get('b')).toEqual({ x: at.get('t')!.x + 190, y: at.get('t')!.y + 40 });
+  });
+});

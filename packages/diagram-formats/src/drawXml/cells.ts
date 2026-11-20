@@ -79,7 +79,7 @@ export function cellsOf(model: Element): RawCell[] {
 
 /** A cell's geometry. A missing one is an empty box at the origin. A negative width or height
  *  reaches back from `x` or `y`, as a draw app renders it, so it reads as that box; a relative
- *  geometry's `x` and `y` place it along an edge, and stay as written. */
+ *  geometry's `x` and `y` are fractions, along an edge or of a parent vertex's box, and stay as written. */
 export function geometryOf(cell: RawCell): CellGeometry {
   const g = cell.geometry;
   const width = numberAttr(g, 'width');
@@ -91,6 +91,13 @@ export function geometryOf(cell: RawCell): CellGeometry {
     width: Math.abs(width), height: Math.abs(height),
     relative,
   };
+}
+
+/** A geometry's `offset` point: how far a relative cell sits from where its fractions put it, or a label from its anchor. */
+export function offsetOf(cell: RawCell): Vec2 {
+  const p = cell.geometry === null ? undefined
+    : childElements(cell.geometry).find((c) => c.tagName === 'mxPoint' && c.getAttribute('as') === 'offset');
+  return { x: numberAttr(p ?? null, 'x'), y: numberAttr(p ?? null, 'y') };
 }
 
 /** An edge geometry's bend points, relative to its parent's origin. */
