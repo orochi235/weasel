@@ -34,6 +34,7 @@ describe('nextRound', () => {
     expect(nextRound({ roundDirs: ['round-12', 'partition.json'] })).toBe(13);
     expect(nextRound({ hardening: '| rounds 28–30; method below |\n| (audit round 15) |' })).toBe(31);
     expect(nextRound({ branches: ['main', 'audit30-ui', 'batch/2026-11-17-audit33', 'skulk'] })).toBe(34);
+    expect(nextRound({ roundDirs: ['round-12'], claimed: ['14', '13'] })).toBe(15);
     expect(nextRound({})).toBe(1);
   });
 });
