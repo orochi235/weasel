@@ -100,6 +100,16 @@ describe('<MinimapCanvas> touch pinch', () => {
     expect(held.y).toBeCloseTo(anchor.y);
   });
 
+  it('zooms from the first spread past zero when both fingers land on one point', () => {
+    const { touch, main } = mount();
+    touch('pointerdown', 1, 50);
+    touch('pointerdown', 2, 50);
+    touch('pointermove', 2, 60);
+    const before = main();
+    touch('pointermove', 2, 70);
+    expect(main().scale.x).toBeCloseTo(before.scale.x * 2);
+  });
+
   it('pans with one finger, centering the main view on the point under it', () => {
     const { touch, main, worldAt } = mount();
     touch('pointerdown', 1, 30);
