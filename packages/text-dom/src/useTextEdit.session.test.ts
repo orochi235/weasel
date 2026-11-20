@@ -106,3 +106,9 @@ it('writes nothing for an edit another startEdit closes, when onEnd moves focus'
   act(() => result.current.startEdit('b'));
   expect(h.commits).toEqual([]);
 });
+
+it('the test harness knows no node named for an Object.prototype key', () => {
+  const { opts } = makeHarness({ a: 'hi' });
+  expect(opts.getScreenPose('constructor')).toBeNull();
+  expect(opts.getText('constructor')).toBe('');
+});
