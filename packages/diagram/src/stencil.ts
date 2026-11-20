@@ -5,13 +5,13 @@
 import { RIGID_POSE_COMPOSITION, localizeWorldPoses, type Op, type PoseComposition, type RectPose } from '@weasel-js/core';
 import type { BodySpec, MeasureRowText, Row } from './body';
 import { buildBody } from './buildBody';
+import { filledMeasure } from './rowMeasure';
 import { bodyLayoutOf } from './bodyRelayout';
 import { asideFillOf, headerFillOf, rowTextColor } from './dataColors';
 import { DEFAULT_FONT } from './edgeLabel';
 import { DEFAULT_NODE_STYLE, type DiagramSceneData, type NodeStyle } from './dataTypes';
 import { NODE_STROKE_WIDTH } from './dataTypes';
 import { asideFace, rowTextStyle } from './rowStyle';
-import { measureInFace } from './faceMeasure';
 import type { IconSpec } from '@weasel-js/icons';
 import type { Outline } from './outline';
 import type { Rect } from '@weasel-js/geom';
@@ -78,9 +78,6 @@ export function stencilInsertOps<TLayer extends string>(
   },
 ): { id: string; ops: Op[] } {
   const id = opts.newId();
-  const font = opts.font ?? DEFAULT_FONT;
-  // Measured in the face each row is drawn in, which `font` fills in.
-  const measure = measureInFace(font, opts.measure);
   const style = { ...(opts.style ?? DEFAULT_NODE_STYLE), ...stencil.style };
   const at = placedBounds(stencil, bounds);
   const spec: BodySpec = {
@@ -89,6 +86,9 @@ export function stencilInsertOps<TLayer extends string>(
     ...(stencil.gap !== undefined ? { gap: stencil.gap } : {}),
     ...(stencil.verticalAlign !== undefined ? { verticalAlign: stencil.verticalAlign } : {}),
   };
+  const font = opts.font ?? DEFAULT_FONT;
+  // Measured in the face each row is stored in, as a relayout of the body measures it.
+  const measure = filledMeasure(font, opts.measure);
   const built = buildBody<DiagramSceneData, TLayer, RectPose>(
     spec,
     at,

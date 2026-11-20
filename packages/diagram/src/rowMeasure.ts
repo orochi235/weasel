@@ -59,3 +59,15 @@ export function canvasMeasure(
     return { ...out, capCenter: capCenterFrom({ ascent: em(h.fontBoundingBoxAscent), descent: em(h.fontBoundingBoxDescent), capHeight: em(h.actualBoundingBoxAscent) }, size) };
   };
 }
+
+/** `measure` handed each row's face with `font` filling the family and size it leaves unset: the face the row's
+ *  text node is stored in, so a relayout of its body measures what the build did. Without `measure`, the
+ *  estimate a relayout makes from that face. */
+export function filledMeasure(font: { fontFamily: string; fontSize: number }, measure?: MeasureRowText): MeasureRowText {
+  return (text, s) => {
+    const face = { ...s, fontFamily: s.fontFamily ?? font.fontFamily, fontSize: s.fontSize ?? font.fontSize };
+    return measure !== undefined
+      ? measure(text, face)
+      : { width: estimatedWidth(text, face), height: Math.ceil(face.fontSize * TEXT_LINE_HEIGHT) };
+  };
+}

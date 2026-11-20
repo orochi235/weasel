@@ -2868,3 +2868,18 @@ Calls the lanes made without a ruling:
   look's lane nodes, the rack look's skip and tap ports). `checkPipeline` reports one as `reserved-id`, and `rack` and
   `lanes` throw naming it; before, lanes threw from `diagramScene` on a shared id and rack misread such a port. Giving the
   looks' ids a prefix no pipeline uses, found per pipeline, was the alternative; `laneTypeOf` reads a lane id on its own.
+## Audit round forty-six (2026-11-20): diagrams, part one
+
+- 2026-11-20 (the fixer's call): the connect action's default commit cannot draw with custom `routers` or a
+  `frame`, since `EDGE_DERIVE_PATH` is the one registered function and a fresh one would not survive `toJSON`. It
+  takes `edgeDerivePath` for the host's own registered one, and development warns once per action id when
+  `routers` or `frame` is set with neither `edgeDerivePath` nor `commit`. Throwing was the stricter alternative;
+  building and registering a derive path per `routers` table inside the action was the other.
+- 2026-11-20 (the fixer's call): `DiagramView`'s connect previews with `'bezier'` when `portOptions.router` is unset,
+  the router `diagramScene` draws an edge naming none with, and reports no `router`; set, it previews with it and
+  `onConnect`'s edge names it. A host whose `diagramScene` call sets its own `router` sets `portOptions.router` to
+  match. Always reporting the preview's router was the alternative, which would pin `'straight'` on every new edge.
+- 2026-11-20 (the fixer's call): `useDiagramTools` keeps a tool for every shipped stencil, containers included, and
+  `useStencilInsert` warns once per id in development when an insert names a `stencil:` kind it was not handed,
+  then hands it to the insert dep it displaced as before. Dropping the container tools from the default list, or
+  having `useStencilInsert` fall back to every shipped stencil, were the alternatives.

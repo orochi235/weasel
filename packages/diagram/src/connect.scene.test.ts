@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createScene, pageRunOf, type InvocationCtx, type Scene } from '@weasel-js/core';
 import { commitEdgeToScene, DEFAULT_EDGE_STROKE } from './connect';
 import { createConnectorTool } from './connectorTool';
-import { DIAGRAM_EDGE, EDGE_DERIVE_PATH, withDiagramRegistry } from './edge';
+import { DIAGRAM_EDGE, EDGE_DERIVE_PATH, ROUTERS, edgeDerivePath, withDiagramRegistry, type Router } from './edge';
 import { diagramEdgeOf } from './edgeTrait';
 import { pagedScene } from './offPage/pagedFixture';
 import type { Port } from './types';
@@ -153,5 +153,42 @@ describe('the connect action\'s edgeStroke option', () => {
     handle.onEnd!(ctx(350), 'commit');
     const edge = scene.renderOrderNodes().find((n) => n.dependsOn !== undefined)!;
     expect((edge.data as { stroke?: unknown }).stroke).toEqual(stroke);
+  });
+});
+
+describe('the connect action\'s routers', () => {
+  const wavy: Router = (req) => [req.from.point, { x: (req.from.point.x + req.to.point.x) / 2, y: 99 }, req.to.point];
+  const routers = { ...ROUTERS, wavy };
+
+  function connect(opts: Partial<Parameters<typeof createConnectorTool<Rect>>[0]>) {
+    const scene = sceneWithTwo();
+    const participants = () => (['a', 'b'] as const).map((id) => ({ node: scene.get(id as never)!, pose: scene.get(id as never)!.pose }));
+    const invoker = createConnectorTool<Rect>({ participants, routers, router: 'wavy', ...opts }).actions![0]!.invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+    const ctx = (x: number) => ({
+      world: { x, y: 20 }, screen: { x, y: 20 }, modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      deps: { scene }, drag: { start: { x: 50, y: 20 }, current: { x, y: 20 }, delta: { x: x - 50, y: 0 } },
+    }) as unknown as InvocationCtx;
+    const handle = invoker.start(ctx(50));
+    handle.onMove!(ctx(350));
+    handle.onEnd!(ctx(350), 'commit');
+    return scene.renderOrderNodes().find((n) => n.dependsOn !== undefined)!;
+  }
+
+  it('commits an edge drawn with the edgeDerivePath it is given, as the preview drew it', () => {
+    const derivePath = edgeDerivePath<Rect>({ routers });
+    const edge = connect({ edgeDerivePath: derivePath });
+    expect(edge.derivePath).toBe(derivePath);
+    expect(diagramEdgeOf(edge)?.router).toBe('wavy');
+  });
+
+  it('warns in development when the commit cannot draw the routers the preview does', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      connect({ id: 'test.unmatchedRouters' });
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('edgeDerivePath'));
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

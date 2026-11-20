@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createElement, type ReactNode } from 'react';
 import { renderHook } from '@testing-library/react';
 import { commitOps, createPageRun, createScene, DepRegistryProvider, IDENTITY_POSE_COMPOSITION, scenePoseFrame, type NodeId, type PoseComposition, useDepRegistry, useDepSource, type ActionDeps, type InsertDep, type RectPose } from '@weasel-js/core';
+import { relayoutBodies, type RelayoutScene } from './bodyRelayout';
 import { withDiagramRegistry } from './edge';
 import { FLOWCHART_STENCILS, stencilInsertOps, stencilKind } from './stencil';
 import { DEFAULT_NODE_STYLE } from './fromData';
@@ -57,6 +58,16 @@ describe('stencilInsertOps', () => {
     expect(text!.parent).toBe(id);
     expect(text!.data.text).toBe('');
     expect((text!.data as { style?: { align?: string } }).style?.align).toBe('center');
+  });
+
+  it('measures its rows in the face it stores, so laying the body out again changes nothing', () => {
+    const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+    const { id, ops } = stencilInsertOps(byId('process'), { x: 10, y: 20, width: 0, height: 0 }, { layer: 'main', newId: () => scene.mintId() });
+    commitOps({ scene } as unknown as ActionDeps, ops, 'Insert Process');
+    const data = () => scene.get(id as never)!.data;
+    const before = data();
+    relayoutBodies(scene as unknown as RelayoutScene, [id]);
+    expect(data()).toBe(before);
   });
 
   it('keeps a dragged box where it was drawn', () => {
@@ -151,6 +162,17 @@ describe('useStencilInsert', () => {
     expect(scene.historyEntries().map((e) => e.label)).toEqual(['Insert Terminal']);
     expect(scene.undo()).toBe(true);
     expect(scene.get(id!)).toBeUndefined();
+  });
+
+  it('warns in development of a stencil kind it was handed no stencil for', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const { dep } = insertDep();
+      dep.commit({ x: 0, y: 0, width: 0, height: 0 }, { kind: stencilKind(CONTAINER_STENCILS[0]!.id) } as never);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining(`"${CONTAINER_STENCILS[0]!.id}"`));
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('hands a kind no stencil names to the insert dep it displaced', () => {

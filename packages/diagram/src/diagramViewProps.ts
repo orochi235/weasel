@@ -150,8 +150,10 @@ export interface DiagramViewProps {
    *  dragged out of the container's box becomes a move, as `onMove` reports
    *  one, and lands wherever it is dropped. */
   onReorder?: (change: ReorderChange) => void;
-  /** Set to report a double-click on an edge, for its label to be edited. */
-  onEditLabel?: (edge: string) => void;
+  /** Set to report a double-click on an edge, for its label to be edited: its
+   *  `endLabels` entry at `end` when the double-click landed on an end label,
+   *  else its middle label. */
+  onEditLabel?: (edge: string, end?: 'from' | 'to') => void;
   /** Set to edit the sequences `sequenceSpecs` drew: drag a message, note, or fragment to another row, a head
    *  to another column, a message end to another lifeline, double-click text to edit it in place, click a part
    *  to select it, and press Delete to remove it. Reports each edit as the sequence's new data and draws
@@ -214,7 +216,9 @@ export interface DiagramViewProps {
    *  reports nothing. Default: everywhere. */
   canDropItem?: CanDropItem;
   /** How ports look and answer the pointer, and the router a connect's
-   *  preview draws with. */
+   *  preview draws with, which the edge `onConnect` reports names. Unset, the
+   *  preview draws `'bezier'`, the router an edge naming none is drawn with,
+   *  and the report names none. */
   portOptions?: Pick<
     DiagramContributionOptions<RectPose>,
     'fill' | 'stroke' | 'shape' | 'sizePx' | 'hitRadiusPx' | 'cursor' | 'shows' | 'showsPort' | 'snapRadius' | 'router'

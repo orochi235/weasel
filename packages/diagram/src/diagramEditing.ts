@@ -8,8 +8,9 @@ import { useMemo } from 'react';
 import { isBodyEnd } from './connectTargets';
 import { diagramContainerOf, titleIdOf } from './containers/trait';
 import { createDiagramLabelsContribution, createDiagramPortsContribution, createDiagramWaypointsContribution } from './contribution';
-import { createEditEdgeLabelAction, editEdgeLabelBinding } from './edgeLabel';
+import { createEditEdgeLabelAction, editEdgeLabelBinding, labelEndOf } from './edgeLabel';
 import { diagramEdgeOf } from './edgeTrait';
+import { DEFAULT_DATA_ROUTER, isDiagramRouter } from './dataEdges';
 import type { DiagramSpec } from './dataTypes';
 import type { ParticipantSource } from './portAffordance';
 import { createPortLayer } from './portLayer';
@@ -168,6 +169,8 @@ export function useDiagramEditing(
   const ports = useMemo(() => mode === 'connect'
     ? createDiagramPortsContribution<RectPose>({
         ...portOptions,
+        // Unset, the preview draws the router `diagramScene` gives an edge that names none.
+        router: portOptions?.router ?? DEFAULT_DATA_ROUTER,
         participants: source,
         bodies: connectBodies === true,
         ...(canConnect ? { canConnect } : {}),
@@ -176,6 +179,7 @@ export function useDiagramEditing(
           ...(isBodyEnd(from) ? {} : { fromPort: from.id }),
           to: to.nodeId,
           ...(isBodyEnd(to) ? {} : { toPort: to.id }),
+          ...(portOptions?.router !== undefined && isDiagramRouter(portOptions.router) ? { router: portOptions.router } : {}),
         }),
       })
     : null, [mode, source, canConnect, portOptions, connectBodies, report]);
@@ -214,7 +218,13 @@ export function useDiagramEditing(
     ? {
         id: 'weasel-diagram-edge-label',
         eligibility: { always: true },
-        actions: [createEditEdgeLabelAction({ commit: (edgeId) => report.current.onEditLabel?.(edgeId) })],
+        actions: [createEditEdgeLabelAction({
+          commit: (edgeId, _ctx, labelId) => {
+            const end = labelEndOf(edgeId, labelId);
+            if (end === null) report.current.onEditLabel?.(edgeId);
+            else report.current.onEditLabel?.(edgeId, end);
+          },
+        })],
         bindings: [editEdgeLabelBinding()],
       }
     : null, [labels, report]);

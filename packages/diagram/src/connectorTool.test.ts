@@ -54,4 +54,20 @@ describe('useConnectorTool', () => {
   it('starts nothing from a press on open canvas', () => {
     expect(connectorInvoker({ participants: PARTICIPANTS }).start(ctxAt(200, 200))).toEqual({});
   });
+
+  it('rebuilds when only its frame changes', () => {
+    const frameA = {
+      box: (p: Rect) => p,
+      translate: (p: Rect, dx: number, dy: number) => ({ ...p, x: p.x + dx, y: p.y + dy }),
+      fromBox: (b: Rect) => b,
+    };
+    const frameB = { ...frameA };
+    const opts = { participants: PARTICIPANTS };
+    const { result, rerender } = renderHook(({ frame }) => useConnectorTool<Rect>({ ...opts, frame }), {
+      initialProps: { frame: frameA },
+    });
+    const first = result.current;
+    rerender({ frame: frameB });
+    expect(result.current).not.toBe(first);
+  });
 });

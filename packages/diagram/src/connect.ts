@@ -29,10 +29,11 @@ import {
   type Stroke,
   type Vec2,
 } from '@weasel-js/core';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, isDev } from '@weasel-js/registry';
 import { bodyAt, createTargets, DEFAULT_SNAP_RADIUS, isBodyEnd, type ConnectEnd } from './connectTargets';
 import { DEFAULT_EDGE_STYLE } from './dataStyles';
-import { EDGE_DERIVE_PATH, ROUTERS, type Router } from './edge';
+import { EDGE_DERIVE_PATH, ROUTERS, type edgeDerivePath, type Router } from './edge';
+import { firstSight } from './firstSight';
 import { edgeStrokeOf } from './edgeStroke';
 import type { FrameOptions } from './layoutFrame';
 import type { DiagramEdge, EdgeEnd } from './edgeTrait';
@@ -117,6 +118,15 @@ export interface ConnectActionOptions<TPose> extends FrameOptions<TPose> {
   /** What the default commit draws the edge with. Default {@link DEFAULT_EDGE_STROKE}.
    *  Ignored when `commit` is given. */
   edgeStroke?: Stroke;
+  /**
+   * The `derivePath` the default commit gives the edge. Default
+   * {@link EDGE_DERIVE_PATH}, which draws with the shipped `ROUTERS` on the pose's
+   * own plane. With `routers` or `frame`, pass the one built over them
+   * (`edgeDerivePath({ routers, frame })`) and registered in the scene's
+   * registry, so the edge draws as its preview did and survives `toJSON`; without
+   * one, development warns. Ignored when `commit` is given.
+   */
+  edgeDerivePath?: ReturnType<typeof edgeDerivePath<TPose>>;
 }
 
 /** What a connect-authored edge is drawn with, when the consumer overrides
@@ -193,7 +203,7 @@ export function claimPressBindings(
  * (`followerHome`).
  */
 export function commitEdgeToScene(
-  edge: PendingEdge, ctx: InvocationCtx, opts: { stroke?: Stroke } = {},
+  edge: PendingEdge, ctx: InvocationCtx, opts: { stroke?: Stroke; derivePath?: ReturnType<typeof edgeDerivePath> } = {},
 ): void {
   const scene = ctx.deps.scene;
   if (scene === undefined) return;
@@ -214,13 +224,27 @@ export function commitEdgeToScene(
     // Without this the edge re-resolves on every dependency move and paints
     // nothing. `EDGE_DERIVE_PATH` rather than a fresh `edgeDerivePath()` so the
     // scene can find its registry key and the edge survives `toJSON`.
-    derivePath: EDGE_DERIVE_PATH as never,
+    derivePath: (opts.derivePath ?? EDGE_DERIVE_PATH) as never,
   });
 }
 
 /** A body end names no port, so the edge resolves the facing one. */
 export function edgeEndOf(end: ConnectEnd): EdgeEnd {
   return isBodyEnd(end) ? {} : { port: end.id };
+}
+
+const unwarned = firstSight();
+
+/** In dev, warns once per action id that its preview reads `routers` or `frame` while the
+ *  default commit's `EDGE_DERIVE_PATH` reads neither, so the edge redraws on release. */
+function warnUnmatchedCommit(id: string, opts: Pick<ConnectActionOptions<unknown>, 'routers' | 'frame'>): void {
+  if (!isDev()) return;
+  const routers = opts.routers !== undefined && opts.routers !== ROUTERS;
+  if ((!routers && opts.frame === undefined) || !unwarned(id)) return;
+  console.warn(
+    `@weasel-js/diagram: connect action "${id}" previews with its ${routers ? '`routers`' : '`frame`'} but commits `
+    + 'EDGE_DERIVE_PATH, which reads neither; pass `edgeDerivePath` built over them, or `commit`',
+  );
 }
 
 /**
@@ -235,8 +259,13 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
     router: routerKey = DEFAULT_ROUTER,
   } = opts;
   const stroke = opts.edgeStroke;
+  const derivePath = opts.edgeDerivePath as ReturnType<typeof edgeDerivePath> | undefined;
+  if (opts.commit === undefined && derivePath === undefined) warnUnmatchedCommit(id, opts);
   const commit = opts.commit
-    ?? ((edge: PendingEdge, ctx: InvocationCtx) => commitEdgeToScene(edge, ctx, stroke ? { stroke } : {}));
+    ?? ((edge: PendingEdge, ctx: InvocationCtx) => commitEdgeToScene(edge, ctx, {
+      ...(stroke ? { stroke } : {}),
+      ...(derivePath ? { derivePath } : {}),
+    }));
   const routers = opts.routers ?? ROUTERS;
   const route: Router = getOwn(routers, routerKey) ?? getOwn(routers, 'straight') ?? ROUTERS['straight']!;
   const targets = createTargets({ ...opts, canConnect, snapRadius, bodies: opts.bodies ?? false });

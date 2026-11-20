@@ -3,6 +3,9 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DiagramView, type DiagramViewApi, type DiagramViewProps } from './DiagramView';
+import { AUTO_POSE_DESCRIPTOR, createScene, effectivePose, type RectPose } from '@weasel-js/core';
+import { withDiagramRegistry } from './edge';
+import { endLabelIdOf } from './edgeLabel';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
 
 afterEach(() => { cleanup(); });
@@ -87,12 +90,37 @@ describe('DiagramView editing', () => {
     expect(onConnect).toHaveBeenCalledWith({ from: 'a', fromPort: expect.any(String), to: 'c' });
   });
 
+  it('reports a connect with the router its preview drew with', () => {
+    const onConnect = vi.fn();
+    const { canvas } = mount({ onConnect, connectBodies: true, portOptions: { router: 'orthogonal' } });
+    act(() => {
+      pointer(canvas, 'pointerdown', 100, 20);
+      pointer(canvas, 'pointermove', 200, 120);
+      pointer(canvas, 'pointermove', 350, 220);
+      pointer(canvas, 'pointerup', 350, 220);
+    });
+    expect(onConnect).toHaveBeenCalledWith({ from: 'a', fromPort: expect.any(String), to: 'c', router: 'orthogonal' });
+  });
+
   it('reports a double-click on an edge for its label', () => {
     const onEditLabel = vi.fn();
     const { canvas } = mount({ onEditLabel });
     click(canvas, 200, 20);
     click(canvas, 200, 20);
     expect(onEditLabel).toHaveBeenCalledWith(AB);
+  });
+
+  it('reports which end label a double-click lands on', () => {
+    const data: DiagramData = { ...DATA, edges: [{ from: 'a', to: 'b', endLabels: { to: '0..*' } }] };
+    const specs = diagramScene(data, { layout: 'none' });
+    const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], initial: specs as never, registry: withDiagramRegistry() });
+    const box = AUTO_POSE_DESCRIPTOR.getBounds(effectivePose(scene as never, scene.get(endLabelIdOf(AB, 'to') as never)! as never));
+    const at = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    const onEditLabel = vi.fn();
+    const { canvas } = mount({ specs, onEditLabel });
+    click(canvas, at.x, at.y);
+    click(canvas, at.x, at.y);
+    expect(onEditLabel).toHaveBeenCalledWith(AB, 'to');
   });
 
   it('maps client points to world points through the view', () => {

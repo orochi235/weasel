@@ -94,7 +94,7 @@ export interface DiagramFitting {
 export function useDiagramFit(args: {
   canvasRef: RefObject<SceneCanvasApi | null>;
   specs: readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[];
-  /** The nodes as they stand now, at the poses they are drawn at. */
+  /** The nodes as they stand now, at the world poses they are drawn at; any `parent` is ignored. */
   current: () => readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[];
   controlled: boolean;
   size: { width: number; height: number };
@@ -147,7 +147,8 @@ export function useDiagramFit(args: {
   return useMemo(() => {
     const now = () => {
       const { size: box, fit: f, extra: more, current } = opts.current;
-      return fitDiagram(current(), box, f, more);
+      // Already world: a `parent` left on would fold the container's pose in again.
+      return fitDiagram(current().map((n) => ({ ...n, parent: null })), box, f, more);
     };
     return {
       defaultView,

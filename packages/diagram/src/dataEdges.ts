@@ -3,7 +3,7 @@ import { polylineFromPoints } from '@weasel-js/core';
 import type { WireLabel } from './dataClusters';
 import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
-import type { DataEdge, DiagramSceneOptions, DiagramSpec } from './dataTypes';
+import type { DataEdge, DiagramRouter, DiagramSceneOptions, DiagramSpec } from './dataTypes';
 import { ownEdgeStyle, withColors } from './dataColors';
 import { END_LABEL_PLACEMENT, edgeLabelIdOf, edgeLabelSpec, endLabelIdOf, labelSize, labelStyleOf } from './edgeLabel';
 import { labelCenter } from './label';
@@ -65,12 +65,20 @@ export function wireLabels(edges: readonly DataEdge[], ctx: EdgeSpecContext): Wi
 const endOf = (own: string | undefined, port: string | undefined) =>
   !port ? {} : own === undefined ? { port, laidOut: port } : { port };
 
+/** The router an edge is drawn with when neither it nor `DiagramSceneOptions.router` names one. */
+export const DEFAULT_DATA_ROUTER: DiagramRouter = 'bezier';
+
+const DATA_ROUTERS: ReadonlySet<string> = new Set<DiagramRouter>(['straight', 'bezier', 'orthogonal', 'avoid']);
+
+/** Whether `key` is a router a `DataEdge` can name. */
+export const isDiagramRouter = (key: string): key is DiagramRouter => DATA_ROUTERS.has(key);
+
 export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): DiagramSpec[] {
   const specs: DiagramSpec[] = [];
   for (const e of edges) {
     const id = ctx.idOf(e);
     const route = ctx.routes?.get(id);
-    const router = e.router ?? ctx.opts.router ?? 'bezier';
+    const router = e.router ?? ctx.opts.router ?? DEFAULT_DATA_ROUTER;
     const planned = route ?? {
       fromPort: e.fromPort ?? e.routedPorts?.from,
       toPort: e.toPort ?? e.routedPorts?.to,

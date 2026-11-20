@@ -43,7 +43,9 @@ const SHIPPED_STENCILS: readonly Pick<DiagramStencil, 'id' | 'label' | 'descript
 /**
  * Every tool in {@link DIAGRAM_TOOLS}, keyed by id, for `<SceneCanvas tools>`: the connector, a tool per stencil, and
  * the sequence tools. The stencils draw through `@weasel-js/editing`'s `insert` action, so the canvas needs
- * `presets.insert` on, and `useStencilInsert` beside them.
+ * `presets.insert` on, and `useStencilInsert` beside them handed every stencil given a tool here: the shape
+ * stencils as its `stencils`, and `CONTAINER_STENCILS` as its `containers` option. A stencil it was not handed
+ * warns in development and goes to the insert dep `useStencilInsert` displaced.
  */
 export function useDiagramTools<TPose>(options: UseDiagramToolsOptions<TPose>): Record<string, Tool> {
   const { stencils = SHIPPED_STENCILS } = options;
