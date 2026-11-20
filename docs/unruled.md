@@ -3016,3 +3016,11 @@ Calls the lanes made without a ruling:
   differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
   family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
   family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.
+
+## Audit round fifty-three (2026-11-20): modes
+
+- 2026-11-20 (the fixer's call): the shipped `ModeDefinition`s and `DEFAULT_MODES` are deeply frozen, so
+  `NORMAL.allows.push(…)` throws; an app copies a preset to change it. `createModeRegistry` still neither
+  copies nor freezes an app's own definitions, so mutating one after registering it leaves
+  `createActiveModeReader` serving the old tags until the next `setMode`. Copying them on registration was
+  the alternative, at the cost of `byId` no longer returning the object passed in.
