@@ -32,6 +32,8 @@ test('a grapheme of several code points stays whole and in its own order', () =>
 
 test('bidi controls alone drop out', () => {
   expect(visualGraphemes(['a', '‫', 'b', '‬'], 'ltr')).toEqual(['a', 'b']);
+  // Marks and isolates, which the engine keeps in its order, drop out too.
+  expect(visualGraphemes(['a', '\u200f', 'b', '\u2067', 'c', '\u2069', '\u061c'], 'ltr')).toEqual(['a', 'b', 'c']);
 });
 
 test('with no engine registered, graphemes keep their logical order and controls drop out', () => {
