@@ -3016,3 +3016,11 @@ Calls the lanes made without a ruling:
   differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
   family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
   family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.
+
+## Audit round fifty-one (2026-11-20): measure
+
+- Open: a node with `data.measure` off its `Measurements.layer` (moved by a layers panel, or loaded that way) is
+  still painted by `MEASURE_PAINTER` and offered as a snap target by `measureEndSource`, which read every node, but
+  `measureIds`, and so picking, editing, Delete and Clear all, reads only `ms.layer`. Either `measureIds` reads the
+  whole scene, which puts a walk of every node on each pointer move's hit test (`measureEndSource.test.ts` holds
+  that it must not), or the painter and the snap source take only `ms.layer`'s nodes and the rest go undrawn.
