@@ -1,5 +1,6 @@
 import { type ConfigSchema, type ConfigShape, isConfigBranch, configValueAt } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
+import { type PrefLeaf, type PrefObject, prefSectionLeaves } from '@weasel-js/prefs-schema';
 import { type StoryGlobals, stableStringify } from '../protocol/messages';
 import { setOwn, getOwn } from '@weasel-js/registry';
 import { GLOBALS_KEY } from '../shell/globals';
@@ -63,12 +64,21 @@ export function reservedParams(params: Readonly<Record<string, string>>): Record
   return Object.fromEntries(Object.entries(params).filter(([name]) => !isKnobParam(name)));
 }
 
-/** What a knob's value is decoded against: its schema leaf's declared kind, its default, and its choices. */
+/** What a knob's value is decoded against: its schema leaf's declared kind, its default, and below its kind an
+ *  enum's choices and the leaves a list, a map, an object or a union holds. */
 export interface KnobLeaf {
   kind: string | null;
   default: unknown;
-  annotations?: { options?: readonly { value: string }[]; item?: { kind?: unknown } };
+  annotations?: {
+    options?: readonly { value: string }[];
+    item?: PrefLeaf;
+    children?: PrefObject['children'];
+    tag?: string;
+    variants?: Readonly<Record<string, PrefObject>>;
+  };
 }
+
+type KnobParts = NonNullable<KnobLeaf['annotations']>;
 
 type Codec = 'number' | 'boolean' | 'string' | 'enum' | 'json';
 
@@ -83,6 +93,9 @@ function codecOf(leaf: KnobLeaf): Codec | null {
     case 'color':
       return 'string';
     case 'list':
+    case 'map':
+    case 'object':
+    case 'union':
     case 'json':
       return 'json';
   }
@@ -106,22 +119,56 @@ export function encodeKnob(value: unknown): string | undefined {
   }
 }
 
-/** The `typeof` a list entry of leaf kind `kind` has; null for an entry whose kind no primitive type names. */
-function itemType(kind: unknown): 'string' | 'number' | 'boolean' | null {
-  if (kind === 'number' || kind === 'boolean') return kind;
-  return kind === 'string' || kind === 'enum' || kind === 'color' ? 'string' : null;
+/** Whether `value` is something a leaf of kind `kind` holding `parts` could hold. A leaf of a kind it does not know
+ *  holds anything; an object's or a union's field left out is at its default. */
+function holds(kind: unknown, parts: KnobParts, value: unknown): boolean {
+  switch (kind) {
+    case 'number':
+    case 'boolean':
+      return typeof value === kind;
+    case 'string':
+    case 'color':
+      return typeof value === 'string';
+    case 'enum':
+      return typeof value === 'string' && (!parts.options || parts.options.some((o) => o.value === value));
+    case 'list':
+      // A list given no item holds strings, as `f.list` makes one.
+      return Array.isArray(value) && value.every((entry) => (parts.item ? nestedHolds(parts.item, entry) : typeof entry === 'string'));
+    case 'map':
+      return isPlainObject(value) && (!parts.item || Object.values(value).every((entry) => nestedHolds(parts.item!, entry)));
+    case 'object':
+      return isPlainObject(value) && fieldsHold(parts.children, value);
+    case 'union': {
+      if (!isPlainObject(value)) return false;
+      if (parts.tag === undefined || !parts.variants) return true;
+      const name = getOwn(value, parts.tag);
+      const variant = typeof name === 'string' ? getOwn(parts.variants, name) : undefined;
+      return variant !== undefined && fieldsHold(variant.children, value, parts.tag);
+    }
+    default:
+      return true;
+  }
+}
+
+/** A nested leaf with an `encoding` stores whatever its encoding writes, so only its own reader can judge it. */
+const nestedHolds = (leaf: PrefLeaf, value: unknown): boolean =>
+  'encoding' in leaf || holds(leaf.kind, leaf as KnobParts, value);
+
+function fieldsHold(children: KnobParts['children'], value: Record<string, unknown>, tag?: string): boolean {
+  if (!children) return true;
+  return prefSectionLeaves(children).every(
+    ([key, child]) => key === tag || getOwn(value, key) === undefined || nestedHolds(child, value[key]),
+  );
 }
 
 /** Whether `value` is something a leaf of codec `codec` could hold, so a well-formed param of the wrong type is refused. */
 function fits(codec: Codec, value: unknown, leaf: KnobLeaf): boolean {
   if (codec !== 'json') return true;
-  const d = leaf.default;
-  if (Array.isArray(d)) {
-    if (!Array.isArray(value)) return false;
-    if (leaf.kind !== 'list') return true;
-    const entry = itemType(leaf.annotations?.item?.kind ?? 'string');
-    return entry === null || value.every((item) => typeof item === entry);
+  if (leaf.kind === 'list' || leaf.kind === 'map' || leaf.kind === 'object' || leaf.kind === 'union') {
+    return holds(leaf.kind, leaf.annotations ?? {}, value);
   }
+  const d = leaf.default;
+  if (Array.isArray(d)) return Array.isArray(value);
   if (isPlainObject(d)) return isPlainObject(value);
   return true;
 }
