@@ -8,7 +8,7 @@ export type RegionRenderArgs = Pick<RenderSceneToPixelsArgs<unknown, string, Rec
 export interface RegionRenderArgsOptions {
   /** Output pixels per world unit. */
   scale: number;
-  /** The color painted under the region, or a function reading it from `scene`. Default none: transparent. */
+  /** The color painted under the region, or a function reading it from the document drawn. Default none: transparent. */
   background?: ExportBackground;
 }
 
@@ -22,9 +22,10 @@ export interface RegionRenderArgsOptions {
  * region from Node.
  */
 export function regionRenderArgs(scene: ExportScene, region: ExportRegion, opts: RegionRenderArgsOptions): RegionRenderArgs {
-  const background = exportBackgroundOf(opts.background, scene);
+  const doc = documentOf(scene);
+  const background = exportBackgroundOf(opts.background, doc);
   return {
-    scene: documentOf(scene),
+    scene: doc,
     sourceRect: { x: region.x, y: region.y, width: region.width, height: region.height },
     scale: { x: opts.scale, y: opts.scale },
     ...(background !== null ? { background } : {}),

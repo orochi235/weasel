@@ -19,18 +19,21 @@ on neither.
 
 ```ts
 import { placedPagesOf, viewportWorldRect } from '@weasel-js/core';
-import { exportPages, exportRegions, selectionRegion } from '@weasel-js/export';
+import { exportPages, exportRegions, selectionRegionsSource } from '@weasel-js/export';
 
 const pages = placedPagesOf(scene);
 const png = await exportPages(scene, [pages[0]], 'png', { scale: 2, background: '#ffffff' });
 const shown = await exportRegions(scene, [viewportWorldRect(view, { width, height })], 'png');
-const picked = await exportRegions(scene, [selectionRegion(scene, selection.get())!], 'svg');
+const picked = await exportRegions(scene, selectionRegionsSource(selection.get()), 'svg');
 ```
 
 A region is an `ExportRegion`: `{ x, y, width, height, name? }` in world
 units. `exportPages` makes one of each `PlacedPage`, named as the page order
 shows it; `viewportWorldRect(view, size)` is the one a view shows;
-`selectionRegion(scene, ids)` is the box the ids draw, strokes included.
+`selectionRegion(scene, ids, { scale })` is the box the ids draw, strokes
+included, measured at the export's `scale`; `selectionRegionsSource(ids)` reads
+that box from the revision the export draws, as `pageRegionsSource` does for
+pages, and fails the export when the selection draws nothing.
 `name` labels a PDF page and titles an SVG.
 
 A region is of the document: every format draws each layer at its document

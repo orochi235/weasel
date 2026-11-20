@@ -38,8 +38,9 @@ export const exportBackgroundOf = (background: ExportBackground | undefined, doc
 
 /** What every format takes. */
 export interface ExportOptions {
-  /** The color painted under each region. Default none: core holds no page color. */
-  background?: string | null;
+  /** The color painted under each region, or a function reading it from the document the export draws.
+   *  Default none: core holds no page color. */
+  background?: ExportBackground;
   /** Hears each thing the export could not draw or load, once: a picture or face
    *  that failed, a paint kind or shader nothing can draw, what the format cannot hold. */
   onDiagnostic?: (diagnostic: RenderDiagnostic) => void;
