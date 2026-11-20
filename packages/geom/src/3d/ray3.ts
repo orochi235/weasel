@@ -135,7 +135,8 @@ export function nearestPointOnSegment(p: Vec3, a: Vec3, b: Vec3): Vec3 {
 /**
  * The nearest pair of points between a ray and the infinite line through
  * `origin` along `direction`. `t` is the ray parameter (never negative) and
- * `s` the line's. A line parallel to the ray pairs with the ray's origin.
+ * `s` the line's. A line parallel to the ray pairs with the ray's origin; a zero direction makes the line
+ * the point `origin`, paired with the ray's point nearest it.
  */
 export function nearestPointsRayLine(
   ray: Ray,
@@ -152,7 +153,8 @@ export function nearestPointsRayLine(
   const e = dot(v, w);
   const denom = a * c - b * b;
   let t = 0;
-  if (a > 0 && denom > SINGULAR_RATIO * a * c) t = Math.max(0, (b * e - c * d) / denom);
+  if (a > 0 && c === 0) t = Math.max(0, -d / a);
+  else if (a > 0 && denom > SINGULAR_RATIO * a * c) t = Math.max(0, (b * e - c * d) / denom);
   const onRay = add(ray.origin, scale(u, t));
   const s = c > 0 ? dot(sub(onRay, origin), v) / c : 0;
   return { onRay, onLine: add(origin, scale(v, s)), t: t / ku, s: s / kv };

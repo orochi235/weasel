@@ -36,3 +36,22 @@ describe('3D lengths at either end of the double range', () => {
     });
   }
 });
+
+describe('nearestPointsRayLine with a line of no direction', () => {
+  it('pairs the point with the ray point nearest it', () => {
+    const r = nearestPointsRayLine(
+      { origin: { x: 0, y: 0, z: 0 }, direction: { x: 1, y: 0, z: 0 } }, { x: 5, y: 3, z: 0 }, { x: 0, y: 0, z: 0 },
+    );
+    expect(r.t).toBe(5);
+    expect(r.onRay).toEqual({ x: 5, y: 0, z: 0 });
+    expect(r.onLine).toEqual({ x: 5, y: 3, z: 0 });
+    expect(r.s).toBe(0);
+  });
+
+  it('pairs a point behind the ray with its origin', () => {
+    const r = nearestPointsRayLine(
+      { origin: { x: 0, y: 0, z: 0 }, direction: { x: 1, y: 0, z: 0 } }, { x: -5, y: 3, z: 0 }, { x: 0, y: 0, z: 0 },
+    );
+    expect(r.t).toBe(0);
+  });
+});
