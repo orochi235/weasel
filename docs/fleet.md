@@ -87,5 +87,16 @@ audit runs it only when started with `--sweep`; how it judges a control is in `s
 From a clean `npm ci` it runs that build and every ci.yml step after it — the manifest, tree-shake
 and React-free checks, both consumer smokes, the site builds, draw's e2e suite — reading the list from ci.yml through
 `scripts/lib/ci-steps.mjs`, as the gate does. It builds in a node tree of its own
-(`weasel-postbuild`), so no test run shares its `dist`. It took 3.4–5.0 min wall on 2026-10-21; a batch
-runs it beside `test:fleet` on its tip before `main` fast-forwards.
+(`weasel-postbuild`), so no test run shares its `dist`. It took 3.4–5.0 min wall on 2026-10-21.
+
+**A batch runs `npm run test:batch -- <ref>`**: `test:fleet` and `test:fleet:postbuild` at once, the
+postbuild on a usable node the suite's jobs left free, with one exit status and a closing `test-batch:`
+line naming which failed. Either failing stops the other, onto jobs included.
+
+**The browser project goes to an idle GPU.** Before launching, `test:fleet` probes each usable node's
+GPU and keyboard idle time (`scripts/lib/fleet-nodes.mjs`). When one has its GPU at most 30% busy and
+nobody at it for ten minutes, the browser project runs there as its own job (tree `weasel-browser`, suite
+scope `browser`) beside a job running the rest (scope `full-rest` or `branch-rest`), and the run's exit
+covers both; with none, it stays one job and the node overlaps or not as above. The browser part's lines
+in the log start `browser| `. `WEASEL_FLEET_SPLIT=0`, or naming a node, keeps it one job. On 2026-11-19
+the same 415 browser files took 746 s on an idle teitou and 1,239 s on one someone was using.

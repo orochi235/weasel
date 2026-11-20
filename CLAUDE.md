@@ -231,8 +231,8 @@ on itself, which runs only the files whose imports reach what it changed; never 
 does not stand in for the batch run.
 Quick fixes from a `docs/TODO.md` pass go in as one commit each; grouping them is the agent's call,
 not Mike's, and the report says which went in. The controller merges every ready branch and fix into
-one `batch/<date>` branch in a worktree, and runs `test:fleet` (which includes the `gate` project) and
-`test:fleet:postbuild` once on its tip; it covers the whole batch, since a branch run selects tests
+one `batch/<date>` branch in a worktree, and runs `npm run test:batch` once on its tip, which runs
+`test:fleet` (with the `gate` project) and `test:fleet:postbuild` at once on separate nodes; it covers the whole batch, since a branch run selects tests
 from the diff against the merge-base. Green, `main` fast-forwards to that tip, and that run is
 `main`'s post-merge run, since `main` is then the commit it tested. Red, the failing file says whose it
 is: fix that branch or drop it, and rerun the batch. Hold a ready branch for the next batch rather
