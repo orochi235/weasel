@@ -20,7 +20,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { createClaimPressAction, claimPressBindings } from '../connect';
 import { addLane, canReleaseMembers, lanesOf, releaseMembers } from './containerStencils';
 import {
-  addLaneLocked, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneLayer, laneResizeLocked, laneScratchOf, poolsOf, type LaneLayerOptions,
+  addLaneLocked, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneLayer, laneResizeLocked, laneScratchOf, poolsOf, stackDirection, type LaneLayerOptions,
   type PoolLanes,
 } from './laneBoundaryLayer';
 import { MIN_LANE_SIZE } from './laneStack';
@@ -129,7 +129,10 @@ export function createLaneResizeAction(opts: LaneActionOptions): Action {
         const lane = pool.lanes[index]!;
         const start = pool.axis === 'y' ? lane.pose.height : lane.pose.width;
         const press: Vec2 = ctx.drag?.start ?? ctx.world;
-        const sizeAt = (at: Vec2) => Math.max(MIN_LANE_SIZE, start + (pool.axis === 'y' ? at.y - press.y : at.x - press.x));
+        // Measured along the stack as the lane is drawn, turned or scaled with its pool, in its stored units.
+        const { dir, length } = stackDirection(pool.axis, lane.at);
+        const perWorld = length > 0 ? start / length : 1;
+        const sizeAt = (at: Vec2) => Math.max(MIN_LANE_SIZE, start + ((at.x - press.x) * dir.x + (at.y - press.y) * dir.y) * perWorld);
         let frame: Map<string, RectPose> | null = null;
         let open = true;
         return {
