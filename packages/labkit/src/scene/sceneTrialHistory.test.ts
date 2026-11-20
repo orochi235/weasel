@@ -1,5 +1,6 @@
 import { createScene, type Op, type RectPose } from '@weasel-js/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { TRIAL_EDIT_OP } from '../trial/trialEditOp';
 import { editStamp } from '../undo/editStamp';
 import { sceneTrialHistory, stampSceneEdits } from './sceneTrialHistory';
 
@@ -95,5 +96,36 @@ describe('sceneTrialHistory', () => {
     scene.redo();
     expect(scene.nodes.size).toBe(2);
     expect(settings.n).toBe(1);
+  });
+
+  it('restores into the same scene again, from a second source too, rebuilding with the latest', () => {
+    const scene = make();
+    const recorded: Op = {
+      name: TRIAL_EDIT_OP,
+      args: { n: 1 },
+      label: 'settings',
+      apply: () => {},
+      invert: () => recorded,
+    };
+    sceneTrialHistory(scene).record(recorded, 'settings');
+    const saved = sceneTrialHistory(scene).serialize?.();
+    const undone: string[] = [];
+    const rebuildAs = (who: string) => (): Op => ({
+      label: 'settings',
+      apply: () => {},
+      invert: () => ({
+        label: 'settings',
+        apply: () => {
+          undone.push(who);
+        },
+        invert: () => recorded,
+      }),
+    });
+    const source = sceneTrialHistory(scene);
+    source.restore?.(saved, rebuildAs('first'));
+    expect(() => source.restore?.(saved, rebuildAs('first'))).not.toThrow();
+    expect(() => sceneTrialHistory(scene).restore?.(saved, rebuildAs('second'))).not.toThrow();
+    scene.undo();
+    expect(undone).toEqual(['second']);
   });
 });
