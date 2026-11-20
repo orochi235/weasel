@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { asNodeId, createScene, type RectPose } from '@weasel-js/core';
 import { solidFill } from '@weasel-js/paint';
 import { plainScene } from './testing/plainScene';
-import { selectionRegion } from './selectionRegion';
+import { selectionRegion, selectionRegionSource, selectionRegionsSource } from './selectionRegion';
 
 describe('selectionRegion leaves out what no export draws', () => {
   it('drops a node on an annotation layer, and answers null when that is all there is', () => {
@@ -35,5 +35,21 @@ describe('selectionRegion at an export scale', () => {
     // 10 output px at scale 0.5 is 20 world units: a half-width of 10 past each edge.
     expect(selectionRegion(scene, ['r'], { scale: 0.5 })).toEqual({ x: 10, y: 10, width: 80, height: 60 });
     expect(selectionRegion(scene, ['r'], { scale: 2, name: 'S' })).toEqual({ x: 17.5, y: 17.5, width: 65, height: 45, name: 'S' });
+  });
+});
+
+describe('selectionRegionSource', () => {
+  it('reads the bounds from the document it is handed', () => {
+    const { scene } = plainScene();
+    const read = selectionRegionSource(['r'], { name: 'Selection' });
+    expect(read(scene)).toEqual({ x: 20, y: 20, width: 60, height: 40, name: 'Selection' });
+    scene.setPose(asNodeId('r'), { x: 30, y: 20, width: 90, height: 40 });
+    expect(read(scene)).toMatchObject({ x: 30, width: 90 });
+    expect(selectionRegionsSource(['r'])(scene)).toEqual([{ x: 30, y: 20, width: 90, height: 40 }]);
+  });
+
+  it('fails when the selection draws nothing in that document', () => {
+    const { scene } = plainScene();
+    expect(() => selectionRegionSource(['n'])(scene)).toThrow(/draws nothing/);
   });
 });

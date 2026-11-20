@@ -51,3 +51,23 @@ function shownIds(doc: ExportScene, ids: readonly string[]): NodeId[] {
   };
   return ids.flatMap((id) => shown(id as NodeId));
 }
+
+/**
+ * `ids`' region read from the document an export draws, so the bounds belong to
+ * the revision drawn in them: the region source of a single-region export. A
+ * selection that draws nothing in that document fails the export.
+ */
+export function selectionRegionSource(ids: readonly string[], opts?: SelectionRegionOptions): (doc: ExportScene) => ExportRegion {
+  const held = [...ids];
+  return (doc) => {
+    const region = selectionRegion(doc, held, opts);
+    if (region === null) throw new Error(`exportRegions: the selection (${held.join(', ')}) draws nothing in the document exported`);
+    return region;
+  };
+}
+
+/** {@link selectionRegionSource} as the regions `exportRegions` takes. */
+export function selectionRegionsSource(ids: readonly string[], opts?: SelectionRegionOptions): (doc: ExportScene) => readonly ExportRegion[] {
+  const read = selectionRegionSource(ids, opts);
+  return (doc) => [read(doc)];
+}

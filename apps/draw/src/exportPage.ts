@@ -1,5 +1,5 @@
 import { pageName, type PlacedPage } from '@weasel-js/core';
-import { exportPages, exportRegions, selectionRegion, type ExportFormat, type ExportOptions, type ExportScene } from '@weasel-js/export';
+import { exportPages, exportRegions, selectionRegion, selectionRegionsSource, type ExportFormat, type ExportOptions } from '@weasel-js/export';
 import { downloadBlob, reportFileWarnings } from '@weasel-js/editor';
 import { registerPdfExport } from '@weasel-js/pdf/export';
 import { registerSvgExport } from '@weasel-js/svg';
@@ -59,9 +59,7 @@ export function exportPagesFile(scene: DrawScene, format: ExportFormat, pages: r
 export function exportSelectionFile(scene: DrawScene, format: ExportFormat, ids: readonly string[], doc: SavedDoc): Promise<void> {
   const name = `${baseName(doc)} - Selection`;
   if (selectionRegion(scene, ids) === null) return Promise.resolve();
-  const regions = (at: ExportScene) => {
-    const region = selectionRegion(at, ids, 'Selection');
-    return region === null ? [] : [region];
-  };
+  const reads: readonly string[] | undefined = format.options;
+  const regions = selectionRegionsSource(ids, { name: 'Selection', ...(reads?.includes('scale') ? { scale: PNG_SCALE } : {}) });
   return writeExport(format, name, doc, (opts) => exportRegions(scene, regions, format.id, opts));
 }
