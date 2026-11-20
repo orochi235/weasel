@@ -223,3 +223,20 @@ describe('d3Bind transition — an item waiting out its delay', () => {
     expect(o.at(-1)).toBeCloseTo(80, 6);
   });
 });
+
+describe('d3Bind join — mappers', () => {
+  it('asks .pose() once per entering datum, so an entering node snaps in to that pose', () => {
+    const s = setup();
+    let calls = 0;
+    act(() => {
+      const sel = d3Bind(s.scene.current, [{ id: 'a', x: 0 }], { key: (d) => d.id, animator: s.animator() })
+        .pose(() => ({ x: ++calls * 100, y: 0, width: 10, height: 10 }))
+        .join();
+      void sel.transition().duration(100).end();
+    });
+    expect(calls).toBe(1);
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(50));
+    expect(s.x('a')).toBe(100);
+  });
+});

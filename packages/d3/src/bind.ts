@@ -15,6 +15,14 @@ interface JoinMappers<TData, TPose, TPayload> {
   enterFrom: ((d: TData, i: number) => TPose) | null;
 }
 
+/** What a join writes, every mapper asked once: each entering datum's pose and payload, and
+ *  each updating one's, where the binding maps them. In the order of the diff's lists. */
+interface JoinValues<TPose, TPayload> {
+  enter: Array<{ pose: TPose; payload: TPayload; from: TPose }>;
+  /** Present only for the mappers the binding has. */
+  update: Array<{ pose?: [TPose]; payload?: [TPayload] }>;
+}
+
 /** A join's diff: each datum's node id, which data enter and update (by index), and which nodes exit. */
 interface JoinDiff {
   keys: NodeId[];
@@ -77,8 +85,9 @@ export function d3Bind<
 
       // Captured BEFORE the batch mutates them so `.transition()` can
       // interpolate from prior → new.
-      const priorPoses = priorPosesOf(scene, data, diff, mappers);
-      applyJoin(scene, data, diff, layer, mappers, exitFn === null);
+      const values = joinValues(data, diff, mappers);
+      const priorPoses = priorPosesOf(scene, diff, values);
+      applyJoin(scene, diff, layer, values, exitFn === null);
       if (exitFn) exitFn(exitSelection(scene, diff.exit, options));
 
       return createSelection<TData, TPose>(
@@ -123,12 +132,35 @@ function diffJoin<TData>(
   return { keys, enter, update, exit };
 }
 
-/** The pose each bound node transitions from: an updating node's current pose, an entering one's `enterFrom` or declared pose. */
-function priorPosesOf<TData, TPose, TPayload>(
-  scene: Scene<unknown, string, TPose>,
+/** Ask each mapper once per datum it maps. Throws, having changed nothing, on an entering
+ *  datum with no pose or on a mapper that throws. */
+function joinValues<TData, TPose, TPayload>(
   data: readonly TData[],
   diff: JoinDiff,
   mappers: JoinMappers<TData, TPose, TPayload>,
+): JoinValues<TPose, TPayload> {
+  const { pose: poseFn, payload: payloadFn, enterFrom } = mappers;
+  const enter = diff.enter.map((i) => {
+    const pose = poseFn ? poseFn(data[i], i) : undefined;
+    if (pose === undefined) {
+      throw new Error('d3Bind.join: enter node has no pose. Call `.pose(fn)` before `.join()`.');
+    }
+    // An entering node transitions from `enterFrom`, or snaps in at its own pose.
+    const from = enterFrom ? enterFrom(data[i], i) : pose;
+    return { pose, from, payload: payloadFn ? payloadFn(data[i], i) : ({} as TPayload) };
+  });
+  const update = diff.update.map((i) => ({
+    pose: poseFn ? [poseFn(data[i], i)] as [TPose] : undefined,
+    payload: payloadFn ? [payloadFn(data[i], i)] as [TPayload] : undefined,
+  }));
+  return { enter, update };
+}
+
+/** The pose each bound node transitions from: an updating node's current pose, an entering one's `enterFrom` or declared pose. */
+function priorPosesOf<TPose, TPayload>(
+  scene: Scene<unknown, string, TPose>,
+  diff: JoinDiff,
+  values: JoinValues<TPose, TPayload>,
 ): Map<NodeId, TPose> {
   const priorPoses = new Map<NodeId, TPose>();
   for (const i of diff.update) {
@@ -136,51 +168,29 @@ function priorPosesOf<TData, TPose, TPayload>(
     const node = scene.get(id);
     if (node) priorPoses.set(id, node.pose);
   }
-  // Entering nodes use enterFrom if set, otherwise their declared pose (snap-in).
-  for (const i of diff.enter) {
-    const id = diff.keys[i];
-    if (mappers.enterFrom) {
-      priorPoses.set(id, mappers.enterFrom(data[i], i));
-    } else if (mappers.pose) {
-      priorPoses.set(id, mappers.pose(data[i], i));
-    }
-  }
+  diff.enter.forEach((i, k) => priorPoses.set(diff.keys[i], values.enter[k].from));
   return priorPoses;
 }
 
 /** Add the entering marks, write the updating ones, and remove the exiting ones when `removeExits`, in one batch. */
-function applyJoin<TData, TLayer extends string, TPose, TPayload>(
+function applyJoin<TLayer extends string, TPose, TPayload>(
   scene: Scene<TPayload, TLayer, TPose>,
-  data: readonly TData[],
   diff: JoinDiff,
   layer: TLayer,
-  mappers: JoinMappers<TData, TPose, TPayload>,
+  values: JoinValues<TPose, TPayload>,
   removeExits: boolean,
 ): void {
-  const { pose: poseFn, payload: payloadFn } = mappers;
   scene.batch('d3Bind.join', () => {
-    for (const i of diff.enter) {
+    diff.enter.forEach((i, k) => {
+      const { pose, payload } = values.enter[k];
+      scene.add({ id: diff.keys[i], kind: 'mark', layer, pose, data: payload });
+    });
+    diff.update.forEach((i, k) => {
       const id = diff.keys[i];
-      const pose = poseFn ? poseFn(data[i], i) : (undefined as unknown as TPose);
-      const payload = payloadFn ? payloadFn(data[i], i) : ({} as TPayload);
-      if (pose === undefined) {
-        throw new Error(
-          'd3Bind.join: enter node has no pose. Call `.pose(fn)` before `.join()`.',
-        );
-      }
-      scene.add({
-        id,
-        kind: 'mark',
-        layer,
-        pose,
-        data: payload,
-      });
-    }
-    for (const i of diff.update) {
-      const id = diff.keys[i];
-      if (poseFn) scene.setPose(id, poseFn(data[i], i));
-      if (payloadFn) scene.update(id, { data: payloadFn(data[i], i) });
-    }
+      const { pose, payload } = values.update[k];
+      if (pose) scene.setPose(id, pose[0]);
+      if (payload) scene.update(id, { data: payload[0] });
+    });
     if (removeExits) {
       for (const id of diff.exit) scene.remove(id);
     }
