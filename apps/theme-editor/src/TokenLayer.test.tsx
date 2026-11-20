@@ -22,6 +22,7 @@ function renderLayer(layer: LayerId, def: ThemeDefinition = tiny, highlight: rea
       layer={layer}
       draft={def}
       result={derive(def, { mode: 'dark' }, lookup)}
+      selection={{ mode: 'dark' }}
       highlight={highlight}
       onChange={onChange}
     />,
@@ -97,6 +98,32 @@ describe('<TokenLayer>', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'seeds.unit value' }), { target: { value: '8' } });
     fireEvent.blur(screen.getByRole('textbox', { name: 'seeds.unit value' }));
     expect(nextDef(onChange).seeds).toEqual({ unit: 8 });
+  });
+
+  it('edits only the branch of a by-axis pin the row shows', () => {
+    const def = {
+      ...tiny,
+      pins: { 'brand-ink': { by: 'mode', dark: { value: '#111111', type: 'color' }, light: { value: '#eeeeee', type: 'color' } } },
+    } as ThemeDefinition;
+    const onChange = renderLayer('pins', def);
+    const field = screen.getByRole('textbox', { name: 'brand-ink value' });
+    expect(field).toHaveValue('#111111');
+    fireEvent.change(field, { target: { value: '#222222' } });
+    expect(nextDef(onChange).pins?.['brand-ink']).toEqual({
+      by: 'mode',
+      dark: { value: '#222222', type: 'color' },
+      light: { value: '#eeeeee', type: 'color' },
+    });
+  });
+
+  it('edits only the branch of a by-axis seed the row shows', () => {
+    const def = { ...tiny, seeds: { unit: { by: 'mode', dark: 4, light: 6 } } } as ThemeDefinition;
+    const onChange = renderLayer('seeds', def);
+    const field = screen.getByRole('textbox', { name: 'seeds.unit value' });
+    expect(field).toHaveValue('4');
+    fireEvent.change(field, { target: { value: '8' } });
+    fireEvent.blur(field);
+    expect(nextDef(onChange).seeds).toEqual({ unit: { by: 'mode', dark: 8, light: 6 } });
   });
 
   // jsdom defines no scrollIntoView at all — which is why the component calls it

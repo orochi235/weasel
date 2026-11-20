@@ -111,7 +111,7 @@ export function PaletteLab() {
               {unmetGates(constraints, palette.stats).join('; ') || 'Loosen a gate or ask for fewer colors.'}
             </p>
           )}
-          <PalettePreview palette={palette} surface={constraints.surface} />
+          <PalettePreview palette={palette} constraints={constraints} />
         </main>
       </div>
       <SwatchPanel anchors={anchors} onChange={setAnchors} count={c.count} />

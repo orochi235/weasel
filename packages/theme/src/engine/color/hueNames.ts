@@ -9,13 +9,18 @@ export function hueName(H: number): string {
   return 'rose';
 }
 
-/** Disambiguate repeats: two hues can land in one name's band. */
-export function uniqueNames(hues: number[]): string[] {
-  const seen = new Map<string, number>();
-  return hues.map((h) => {
-    const base = hueName(h);
-    const n = (seen.get(base) ?? 0) + 1;
-    seen.set(base, n);
-    return n === 1 ? base : `${base}-${n}`;
-  });
+/**
+ * A distinct name for each hue. A `fixed` name, an anchor's own, is claimed first and the rest are named for their hue;
+ * a repeat of either takes the next free `-2`, `-3`.
+ */
+export function uniqueNames(hues: readonly number[], fixed: readonly (string | undefined)[] = []): string[] {
+  const taken = new Set<string>();
+  const claim = (base: string) => {
+    let name = base;
+    for (let n = 2; taken.has(name); n += 1) name = `${base}-${n}`;
+    taken.add(name);
+    return name;
+  };
+  const out = hues.map((_, i) => (fixed[i] === undefined ? undefined : claim(fixed[i])));
+  return hues.map((h, i) => out[i] ?? claim(hueName(h)));
 }

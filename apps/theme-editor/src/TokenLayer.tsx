@@ -1,25 +1,27 @@
 import { getOwn } from '@weasel-js/registry';
-import type { ThemeDefinition } from '@weasel-js/theme';
+import type { AxisChoice, ThemeDefinition } from '@weasel-js/theme';
 import type { DeriveResult } from '@weasel-js/theme/engine';
 import { TokenPanel } from '@weasel-js/ui/components/TokenPanel';
 import { useEffect, useRef } from 'react';
 import styles from './ThemeEditor.module.css';
 import { layerEntries } from './theme/entries';
-import { LAYERS, keepNumberness, tokenValueFromText, removePin, setPin, type LayerId } from './theme/model';
+import { LAYERS, keepNumberness, leafAt, tokenValueFromText, removePin, setPin, writeAt, type LayerId } from './theme/model';
 
 export interface TokenLayerProps {
   readonly layer: LayerId;
   readonly draft: ThemeDefinition;
   readonly result: DeriveResult;
+  /** The selection `result` was derived at; an edit to a value that varies by axis writes only its branch here. */
+  readonly selection: AxisChoice;
   /** Tokens click-to-inspect jumped to; the first is scrolled into view. */
   readonly highlight: readonly string[];
   readonly onChange: (next: ThemeDefinition, key: string, label?: string) => void;
 }
 
 /** Seeds, Components and Pins, edited by token type through weasel-ui's `TokenPanel`. */
-export function TokenLayer({ layer, draft, result, highlight, onChange }: TokenLayerProps) {
+export function TokenLayer({ layer, draft, result, selection, highlight, onChange }: TokenLayerProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const entries = layerEntries(layer, draft, result);
+  const entries = layerEntries(layer, draft, result, selection);
   const label = LAYERS.find((l) => l.id === layer)!.label;
 
   useEffect(() => {
@@ -33,8 +35,10 @@ export function TokenLayer({ layer, draft, result, highlight, onChange }: TokenL
     if (layer === 'seeds') {
       if (value === null) return;
       const key = name.slice('seeds.'.length);
+      const seed = getOwn(draft.seeds ?? {}, key);
+      const leaf = keepNumberness(value, leafAt(seed, selection));
       onChange(
-        { ...draft, seeds: { ...draft.seeds, [key]: keepNumberness(value, getOwn(draft.seeds ?? {}, key)) } },
+        { ...draft, seeds: { ...draft.seeds, [key]: writeAt(seed, selection, leaf) } },
         `seed:${key}`,
         `Edit ${name}`,
       );
@@ -45,12 +49,13 @@ export function TokenLayer({ layer, draft, result, highlight, onChange }: TokenL
       return;
     }
     const token = getOwn(result.tokens, name);
+    const pin = {
+      value: tokenValueFromText(token?.type, value, token?.value),
+      type: token?.type,
+      ...(token?.alpha === undefined ? {} : { alpha: token.alpha }),
+    };
     onChange(
-      setPin(draft, name, {
-        value: tokenValueFromText(token?.type, value, token?.value),
-        type: token?.type,
-        ...(token?.alpha === undefined ? {} : { alpha: token.alpha }),
-      }),
+      setPin(draft, name, writeAt(getOwn(draft.pins ?? {}, name), selection, pin)),
       `pin:${name}`,
       `Edit ${name}`,
     );

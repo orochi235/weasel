@@ -185,4 +185,18 @@ describe('<ThemeWorkbench>', () => {
     await userEvent.click(within(status).getByRole('button', { name: 'Reload from disk' }));
     expect(props.onReload).toHaveBeenCalled();
   });
+
+  it('opens New theme empty each time, without the last attempt or its error', async () => {
+    renderBench({ onNew: vi.fn(() => 'Use lowercase letters.') });
+    await userEvent.click(screen.getByRole('button', { name: 'New theme' }));
+    let dialog = await screen.findByRole('dialog');
+    await userEvent.type(within(dialog).getByRole('textbox', { name: 'Name' }), 'Bad Name');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Create' }));
+    expect(within(dialog).getByText('Use lowercase letters.')).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'New theme' }));
+    dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('textbox', { name: 'Name' })).toHaveValue('');
+    expect(within(dialog).queryByText('Use lowercase letters.')).toBeNull();
+  });
 });

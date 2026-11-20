@@ -191,6 +191,8 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
         const issues = issuesOf(name);
         const authored = view.steps.some((s) => getOwn(derived.primary.result.provenance, s.token)?.layer === 'pins');
         const own = Object.hasOwn(draft.ramps ?? {}, name);
+        // Generated drops only the draft's own pins, so a ramp pinned only by a parent has nothing to compare or adopt.
+        const ownPinned = view.steps.some((s) => s.pinned && ownPin(s.token));
         const infeasible = allIssues.some((i) => i.kind === 'infeasible-ramp' && i.ramp === name);
         return (
           <section key={name} className={focused === name ? `${styles.ramp} ${styles.rampFocused}` : styles.ramp} aria-label={`${name} ramp`}>
@@ -205,12 +207,12 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
                     Make {name} this theme&apos;s own
                   </Button>
                 )}
-                {(view.anyPinned || focused === name) && (
+                {(ownPinned || focused === name) && (
                   <Button size="sm" pressed={focused === name} onClick={() => onFocus(focused === name ? null : name)}>
                     Compare in preview
                   </Button>
                 )}
-                <Button size="sm" disabled={!view.steps.some((s) => s.pinned && ownPin(s.token))} onClick={() => requestAdopt(name)}>
+                <Button size="sm" disabled={!ownPinned} onClick={() => requestAdopt(name)}>
                   Adopt generated
                 </Button>
                 {entry.kind === 'categorical' && (

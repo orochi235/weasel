@@ -1,12 +1,10 @@
 import { getOwn } from '@weasel-js/registry';
-import { serializeTokenValue, type ThemeDefinition } from '@weasel-js/theme';
+import { serializeTokenValue, type AxisChoice, type ThemeDefinition } from '@weasel-js/theme';
 import type { DeriveResult } from '@weasel-js/theme/engine';
 import { inferTokenType, type TokenEntry } from '@weasel-js/ui/components/TokenPanel';
-import { ownTokenNames, pinApplies, type LayerId } from './model';
+import { leafAt, ownTokenNames, pinApplies, type LayerId } from './model';
 
-/** A seed is a number or a string, or varies by axis — which only JSON shows. */
-const seedText = (v: unknown) =>
-  typeof v === 'string' ? v : typeof v === 'number' ? String(v) : JSON.stringify(v);
+const seedText = (v: string | number) => (typeof v === 'string' ? v : String(v));
 
 /** `emitManifest` groups a token by its name up to the first hyphen. */
 const groupOf = (name: string) => name.split('-')[0] ?? name;
@@ -17,15 +15,16 @@ const groupOf = (name: string) => name.split('-')[0] ?? name;
  * The value is the one a pin writes back, not the one the read-only list draws:
  * a pinned alpha reads `{fg}` here rather than `{fg} at 10%`, because the field's
  * contents go straight into the pin and the percentage would land in the value.
+ * A seed that varies by axis shows its value at `selection`, the one an edit writes;
+ * one with no value there is left out, as a pin that does not apply is.
  */
-export function layerEntries(layer: LayerId, def: ThemeDefinition, result: DeriveResult): TokenEntry[] {
+export function layerEntries(layer: LayerId, def: ThemeDefinition, result: DeriveResult, selection: AxisChoice): TokenEntry[] {
   if (layer === 'seeds') {
-    return Object.entries(def.seeds ?? {}).map(([name, v]) => ({
-      name: `seeds.${name}`,
-      type: inferTokenType(seedText(v)),
-      group: 'seeds',
-      value: seedText(v),
-    }));
+    return Object.entries(def.seeds ?? {}).flatMap(([name, v]) => {
+      const leaf = leafAt(v, selection);
+      if (typeof leaf !== 'string' && typeof leaf !== 'number') return [];
+      return [{ name: `seeds.${name}`, type: inferTokenType(seedText(leaf)), group: 'seeds', value: seedText(leaf) }];
+    });
   }
   const names =
     layer === 'pins'

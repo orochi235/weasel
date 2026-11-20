@@ -90,6 +90,14 @@ describe('<RampsLayer>', () => {
     expect(button).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('offers no Compare in preview on a ramp whose pins are all inherited, which Generated would keep', () => {
+    const lookup = lookupOf(child);
+    renderWithIcons(<RampsLayer draft={child} derived={deriveDraft(child, lookup, {})} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={vi.fn()} />);
+    const gray = within(screen.getByRole('region', { name: 'gray ramp' }));
+    expect(gray.getAllByRole('button', { name: /^Unpin gray-/ }).length).toBeGreaterThan(0);
+    expect(gray.queryByRole('button', { name: 'Compare in preview' })).toBeNull();
+  });
+
   it("pins each mode's own color", async () => {
     const tint = { kind: 'lightness', steps: ['a', 'b'], lightness: { by: 'mode', dark: [0.3, 0.5], light: [0.8, 0.6] }, hue: 200, chroma: { peak: 0.05 } };
     const draft = { ...weasel, ramps: { ...weasel.ramps!, tint } } as unknown as ThemeDefinition;

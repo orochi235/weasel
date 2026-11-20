@@ -1,5 +1,6 @@
-const VAR = /var\(\s*--wzl-([\w-]+)/g;
-const CUSTOM_DECLARATION = /--[\w-]+\s*:[^;]*;?/g;
+const VAR = /var\(\s*--([\w-]+)/g;
+const DECLARATION = /([\w-]+)\s*:([^;]*)/g;
+const TOKEN = 'wzl-';
 
 function matches(el: Element, selector: string): boolean {
   try {
@@ -12,12 +13,14 @@ function matches(el: Element, selector: string): boolean {
 
 /**
  * Every `--wzl-*` token read by a stylesheet rule in force matching `target` or an element between it and `root` (exclusive), in
- * the order the rules appear. Custom property declarations are skipped: those define tokens, like the theme's own rules.
+ * the order the rules appear. A custom property declaration counts only through a property that reads it, as a component's
+ * `--btn-radius: var(--wzl-button-radius)` does through `border-radius: var(--btn-radius)`; one nothing reads adds nothing.
  */
 export function tokensReadAt(target: Element, root: Element, sheets: Iterable<CSSStyleSheet>): string[] {
   const chain: Element[] = [];
   for (let el: Element | null = target; el && el !== root; el = el.parentElement) chain.push(el);
-  const names = new Set<string>();
+  const reads: string[] = [];
+  const holds = new Map<string, string[]>();
   // A media or supports rule the page does not meet adds nothing; one this environment cannot test counts.
   const view = target.ownerDocument.defaultView;
   const applies = (rule: CSSRule): boolean => {
@@ -28,7 +31,11 @@ export function tokensReadAt(target: Element, root: Element, sheets: Iterable<CS
   const visit = (rules: CSSRuleList) => {
     for (const rule of Array.from(rules)) {
       if (rule instanceof CSSStyleRule && chain.some((el) => matches(el, rule.selectorText))) {
-        for (const m of rule.style.cssText.replace(CUSTOM_DECLARATION, '').matchAll(VAR)) names.add(m[1]);
+        for (const [, prop, value] of rule.style.cssText.matchAll(DECLARATION)) {
+          const read = Array.from(value.matchAll(VAR), (m) => m[1]);
+          if (!prop.startsWith('--')) reads.push(...read);
+          else if (read.length > 0) holds.set(prop.slice(2), [...(holds.get(prop.slice(2)) ?? []), ...read]);
+        }
       }
       const nested = (rule as Partial<CSSGroupingRule>).cssRules;
       if (nested && applies(rule)) visit(nested);
@@ -44,7 +51,16 @@ export function tokensReadAt(target: Element, root: Element, sheets: Iterable<CS
     }
     visit(rules);
   }
-  return [...names];
+  const seen = new Set<string>();
+  const names: string[] = [];
+  const follow = (name: string) => {
+    if (seen.has(name)) return;
+    seen.add(name);
+    if (name.startsWith(TOKEN)) names.push(name.slice(TOKEN.length));
+    for (const next of holds.get(name) ?? []) follow(next);
+  };
+  for (const name of reads) follow(name);
+  return names;
 }
 
 export function documentSheets(doc: Document = document): CSSStyleSheet[] {
