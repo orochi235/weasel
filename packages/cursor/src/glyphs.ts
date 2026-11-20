@@ -154,6 +154,23 @@ export const GLYPHS = {
         "d": "M 19.78 14.07 L 15.38 10.77 L 21.02 8.72 Z"
       }
     ]
+  },
+  "swap": {
+    "box": 24,
+    "hotspot": [
+      12,
+      12
+    ],
+    "paths": [
+      {
+        "role": "ink",
+        "d": "M 3 6 L 15 6 L 15 3.5 L 21 7.5 L 15 11.5 L 15 9 L 3 9 Z"
+      },
+      {
+        "role": "ink",
+        "d": "M 21 15 L 9 15 L 9 12.5 L 3 16.5 L 9 20.5 L 9 18 L 21 18 Z"
+      }
+    ]
   }
 } as const satisfies Record<string, CursorGlyph>;
 

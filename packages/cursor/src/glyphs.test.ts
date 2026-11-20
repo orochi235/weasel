@@ -3,11 +3,11 @@ import { GLYPHS, MARKS } from './glyphs';
 import { cursorGlyph } from './registry';
 import { haloFitsInBox, rotationFitsInBox } from './types';
 
-const NAMES = ['pencil', 'pen', 'eyedropper', 'brush', 'crosshair', 'resize', 'rotate'] as const;
+const NAMES = ['pencil', 'pen', 'eyedropper', 'brush', 'crosshair', 'resize', 'rotate', 'swap'] as const;
 
 /** Glyphs with a filled silhouette. `brush` is a bare ring and `crosshair` four arms: both measure or point rather
  *  than depict, so neither has a fill to assert. */
-const SILHOUETTE = ['pencil', 'pen', 'eyedropper', 'resize', 'rotate'] as const;
+const SILHOUETTE = ['pencil', 'pen', 'eyedropper', 'resize', 'rotate', 'swap'] as const;
 
 /** Every glyph with a slot, with every mark: what a tool can ask for. */
 const MARKED = (Object.keys(GLYPHS) as (keyof typeof GLYPHS)[])
