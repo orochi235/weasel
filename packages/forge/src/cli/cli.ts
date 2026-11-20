@@ -20,7 +20,7 @@ async function run(configFile: string): Promise<void> {
   }
   const loaded = await loadConfigFromFile({ command: 'build', mode: 'production' }, configFile);
   const cwd = process.cwd();
-  const policy = outDirPolicy(cli.out, cwd, loaded?.config.root ?? cwd);
+  const policy = outDirPolicy(cli.out, cwd, loaded?.config.root ?? cwd, loaded?.config.build?.emptyOutDir ?? undefined);
   if (!policy.ok) {
     console.error(`weaselforge: ${policy.reason}\n\n${USAGE}`);
     process.exit(2);

@@ -199,6 +199,25 @@ describe('startFrame', () => {
     expect(screen.getByTestId('mode').textContent).toBe('dark');
   });
 
+  it("applies a story's own globals to the document over the toolbar's", async () => {
+    const [themed] = loadNativeModule(
+      {
+        default: meta({ title: 'Test/Pinned' }),
+        Pinned: story({ render: ({ globals }) => <p data-testid="mode">{String(globals.mode)}</p> }),
+      },
+      'Test/Auto',
+    );
+    const applyGlobals = vi.fn();
+    const { shell } = start({ ...themed!, globals: { mode: 'dark' } }, { applyGlobals });
+    shell.send({ type: 'init', config: {}, state: null, globals: { mode: 'light', lang: 'fr' } });
+    await flush();
+    expect(applyGlobals).toHaveBeenLastCalledWith({ mode: 'dark', lang: 'fr' }, expect.anything());
+    expect(screen.getByTestId('mode').textContent).toBe('dark');
+    shell.send({ type: 'globals', globals: { mode: 'light' } });
+    await flush();
+    expect(applyGlobals).toHaveBeenLastCalledWith({ mode: 'dark' }, expect.anything());
+  });
+
   it('faults, carrying the input count, when applying globals throws on init or on a globals message', async () => {
     const applyGlobals = vi.fn((globals: Record<string, unknown>) => {
       if (globals.mode === 'bad') throw new Error('no such mode');

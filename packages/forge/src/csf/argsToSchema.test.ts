@@ -82,6 +82,25 @@ describe('argsToSchema', () => {
       .toEqual({ kind: 'enum', default: 'serif', options: options('sans', 'serif') });
   });
 
+  it('draws options that are not strings as a choice of their string forms', () => {
+    for (const control of ['select', 'radio', undefined]) {
+      const node = leaf({ size: 12 }, { size: { ...(control ? { control } : {}), options: [8, 12, 16] } }, 'size');
+      expect(node).toMatchObject({ kind: 'enum', default: '12', annotations: { options: options('8', '12', '16') } });
+    }
+    expect(leaf({ at: null }, { at: { control: 'select', options: ['auto', 0, null] } }, 'at'))
+      .toMatchObject({ kind: 'enum', default: 'null', annotations: { options: options('auto', '0', 'null') } });
+  });
+
+  it('warns, and falls back to the value, for options no enum can tell apart', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(shape(leaf({ n: 1 }, { n: { control: 'select', options: [1, '1'] } }, 'n'))).toEqual({ kind: 'number', default: 1 });
+    expect(shape(leaf({ o: { a: 1 } }, { o: { control: 'radio', options: [{ a: 1 }, { a: 2 }] } }, 'o')))
+      .toEqual({ kind: 'json', default: { a: 1 } });
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn.mock.calls[0]?.[0]).toMatch(/"n" control's options/);
+    warn.mockRestore();
+  });
+
   it('maps options with no control to an enum', () => {
     expect(shape(leaf({ mode: '2d' }, { mode: { options: ['1d', '2d'] } }, 'mode')))
       .toEqual({ kind: 'enum', default: '2d', options: options('1d', '2d') });
@@ -106,9 +125,19 @@ describe('argsToSchema', () => {
       .toEqual({ kind: 'number', default: 200, min: 100, max: 800, step: 20, control: 'input' });
   });
 
-  it('drops bounds labkit cannot hold, an endless, unreadable, reversed or lone bound, keeps the control, and warns', () => {
+  it('keeps a lone finite bound, as Storybook does', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    for (const [min, max] of [[0, Infinity], [Number.NaN, 10], [100, 0], [5, undefined]]) {
+    expect(shape(leaf({ n: 4 }, { n: { control: { type: 'number', min: 0 } } }, 'n'))).toEqual({ kind: 'number', default: 4, min: 0 });
+    expect(shape(leaf({ n: 4 }, { n: { control: { type: 'number', max: 9 } } }, 'n'))).toEqual({ kind: 'number', default: 4, max: 9 });
+    expect(shape(leaf({ n: 4 }, { n: { control: { type: 'range', min: 1 } } }, 'n')))
+      .toEqual({ kind: 'number', default: 4, min: 1, control: 'slider' });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('drops bounds labkit cannot hold, an endless, unreadable or reversed pair, keeps the control, and warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    for (const [min, max] of [[0, Infinity], [Number.NaN, 10], [100, 0], [Number.NaN, undefined]]) {
       warn.mockClear();
       expect(shape(leaf({ size: 4 }, { size: { control: { type: 'range', min, max } } }, 'size')))
         .toEqual({ kind: 'number', default: 4, control: 'slider' });
@@ -318,8 +347,11 @@ describe('argsToSchema', () => {
       expect(at({ truthy: false }, { mode: '' })).toBe(true);
       expect(at({ truthy: false }, { mode: 'a' })).toBe(false);
       expect(at({ exists: true }, { mode: 'a' })).toBe(true);
-      expect(at({ exists: true }, {})).toBe(false);
-      expect(at({ exists: false }, {})).toBe(true);
+      const absent = (condition: Record<string, unknown>, config: Record<string, unknown>) =>
+        shownWhen({ gridDivisions: { control: 'number', if: { arg: 'absent', ...condition } } }, 'gridDivisions', config);
+      expect(absent({ exists: true }, {})).toBe(false);
+      expect(absent({ exists: false }, {})).toBe(true);
+      expect(absent({ exists: true }, { absent: 1 })).toBe(true);
       expect(at({ eq: 'b' }, { mode: 'b' })).toBe(true);
       expect(at({ eq: 'b' }, { mode: 'a' })).toBe(false);
       expect(at({ neq: 'b' }, { mode: 'a' })).toBe(true);
@@ -333,6 +365,24 @@ describe('argsToSchema', () => {
       expect(at({ eq: { a: 1 } }, { mode: { a: 1 } })).toBe(true);
       expect(at({ neq: [1, 2] }, { mode: [1, 2] })).toBe(false);
       expect(at({ eq: [1, 2] }, { mode: [2, 1] })).toBe(false);
+    });
+
+    it("reads an arg with no control, or one config holds nothing for, as the story's own", () => {
+      const withIcon = { icon: createElement('span'), iconPosition: 'start' };
+      const argTypes = { iconPosition: { control: 'radio', options: ['start', 'end'], if: { arg: 'icon' } } } as const;
+      const node = argsToSchema(withIcon, argTypes).nodes.iconPosition as ConfigNode<unknown>;
+      expect(node.options.showIf?.({ iconPosition: 'start' })).toBe(true);
+      expect(shownWhen({ gridDivisions: { control: 'number', if: { arg: 'mode' } } }, 'gridDivisions', { mode: undefined })).toBe(true);
+    });
+
+    it('compares a choice of non-string options by the option the config value stands for', () => {
+      const argTypes = {
+        size: { control: 'select', options: [8, 12] },
+        gap: { control: 'number', if: { arg: 'size', eq: 12 } },
+      } as const;
+      const node = argsToSchema({ size: 8, gap: 1 }, argTypes).nodes.gap as ConfigNode<unknown>;
+      expect(node.options.showIf?.({ size: '12' })).toBe(true);
+      expect(node.options.showIf?.({ size: '8' })).toBe(false);
     });
 
     it('ignores a condition on a global, which a story’s config does not hold', () => {

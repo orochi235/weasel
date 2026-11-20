@@ -114,7 +114,7 @@ export function createStorySession({
       input(() => {
         initialized = true;
         config = msg.config;
-        globals = msg.globals;
+        globals = { ...msg.globals, ...story.globals };
         state = msg.state;
         if (state === null && story.initialState) {
           state = story.initialState(config);
@@ -132,7 +132,7 @@ export function createStorySession({
       }),
     setGlobals: (next) =>
       input(() => {
-        globals = next;
+        globals = { ...next, ...story.globals };
         applyGlobals(globals);
       }),
   };

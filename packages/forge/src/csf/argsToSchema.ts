@@ -68,9 +68,47 @@ function controlOf(argType: ArgType): Control | false {
   return { type: control?.type, min: control?.min, max: control?.max, step: control?.step, icons: control?.icons };
 }
 
-function stringOptions(argType: ArgType): string[] | null {
+/** A choice control's options, as the strings an enum holds, with the values they stand for. */
+export interface OptionChoice {
+  labels: readonly string[];
+  values: readonly unknown[];
+}
+
+const CHOICE_CONTROLS: ReadonlySet<string | undefined> = new Set(['select', 'radio', 'inline-radio', undefined]);
+
+const hasStringForm = (o: unknown): boolean =>
+  o === null || o === undefined || ['string', 'number', 'boolean', 'bigint'].includes(typeof o);
+
+/** `argType`'s options as a choice, each read as `String(option)`; null for none, or for options that have no string
+ *  form or read alike, which no enum can tell apart. */
+function optionChoice(argType: ArgType): OptionChoice | null {
   const opts = argType.options;
-  return opts && opts.length > 0 && opts.every((o) => typeof o === 'string') ? (opts as string[]) : null;
+  if (!opts || opts.length === 0 || !opts.every(hasStringForm)) return null;
+  const labels = opts.map(String);
+  return new Set(labels).size === labels.length ? { labels, values: opts } : null;
+}
+
+/** The choice each key's control offers, for every key whose argType draws its options as one. */
+export function argChoices(argTypes: Readonly<Record<string, ArgType | undefined>>): Record<string, OptionChoice> {
+  const out: Record<string, OptionChoice> = {};
+  for (const [key, argType] of Object.entries(argTypes)) {
+    const control = argType ? controlOf(argType) : false;
+    const choice = control && CHOICE_CONTROLS.has(control.type) ? optionChoice(argType!) : null;
+    if (choice) setOwn(out, key, choice);
+  }
+  return out;
+}
+
+/** The option a choice's config value stands for; any other value as it is. */
+export function choiceValue(choice: OptionChoice | undefined, value: unknown): unknown {
+  const at = choice && typeof value === 'string' ? choice.labels.indexOf(value) : -1;
+  return at === -1 ? value : choice!.values[at];
+}
+
+/** The config value standing for an option of a choice; any other value as it is. */
+export function choiceLabel(choice: OptionChoice | undefined, value: unknown): unknown {
+  const at = choice ? choice.values.findIndex((v) => Object.is(v, value)) : -1;
+  return at === -1 ? value : choice!.labels[at];
 }
 
 function inferred(value: unknown): Leaf | null {
@@ -165,30 +203,46 @@ function structured(argType: ArgType, value: unknown): Leaf | null {
   return (argType.type ? shaped(argType.type, value) : null) ?? inferred(value);
 }
 
-/** Whether `control` gives both bounds, finite and in order: anything else Storybook draws unbounded, and labkit
- *  refuses as a range. */
-const hasRange = (control: Control): control is Control & { min: number; max: number } =>
-  Number.isFinite(control.min) && Number.isFinite(control.max) && (control.min as number) <= (control.max as number);
+/** A bound Storybook draws and labkit holds: finite, or left out. */
+const usable = (bound: number | undefined): boolean => bound === undefined || Number.isFinite(bound);
 
-/** Warns when `control` names bounds that {@link hasRange} drops, so a story's author learns why its control is
+/** The bounds of `control` labkit can hold: each one given finite, in order. Anything else Storybook draws
+ *  unbounded, and labkit refuses. */
+function boundsOf(control: Control): { min?: number; max?: number } {
+  const { min, max } = control;
+  if (!usable(min) || !usable(max) || (min !== undefined && max !== undefined && min > max)) return {};
+  return { ...(min === undefined ? {} : { min }), ...(max === undefined ? {} : { max }) };
+}
+
+/** Whether `control` gives both bounds, finite and in order. */
+const hasRange = (control: Control): boolean => {
+  const { min, max } = boundsOf(control);
+  return min !== undefined && max !== undefined;
+};
+
+/** Warns when `control` names bounds that {@link boundsOf} drops, so a story's author learns why its control is
  *  unbounded. */
 function warnUnusableBounds(key: string, control: Control): void {
-  if ((control.min === undefined && control.max === undefined) || hasRange(control)) return;
+  if (control.min === undefined && control.max === undefined) return;
+  const { min, max } = boundsOf(control);
+  if (min !== undefined || max !== undefined) return;
   console.warn(
-    `forge: the "${key}" control's bounds (min ${String(control.min)}, max ${String(control.max)}) are not both ` +
+    `forge: the "${key}" control's bounds (min ${String(control.min)}, max ${String(control.max)}) are not ` +
       'finite and in order, so it is drawn unbounded',
   );
 }
 
 function bounded(node: ReturnType<typeof f.number>, control: Control) {
+  const { min, max } = boundsOf(control);
   let out = node;
-  if (hasRange(control)) out = out.range(control.min, control.max);
+  if (min !== undefined && max !== undefined) out = out.range(min, max);
+  else if (min !== undefined) out = out.min(min);
+  else if (max !== undefined) out = out.max(max);
   if (control.step !== undefined) out = out.step(control.step);
   return out;
 }
 
-function controlled(control: Control, argType: ArgType, has: boolean, value: unknown): Leaf | null {
-  const options = stringOptions(argType);
+function controlled(control: Control, key: string, argType: ArgType, has: boolean, value: unknown): Leaf | null {
   // Storybook passes an argTypes-only key as undefined, so the component's own default applies.
   const def = <T>() => (has ? value : undefined) as T;
   switch (control.type) {
@@ -212,14 +266,23 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
     case 'radio':
     case 'inline-radio':
     case undefined: {
-      if (!options) return control.type === undefined && has ? structured(argType, value) : null;
+      const choice = optionChoice(argType);
+      if (!choice) {
+        if (argType.options && argType.options.length > 0) {
+          console.warn(
+            `forge: the "${key}" control's options are not each a string, number, boolean, null or undefined that ` +
+              'reads apart from the rest, so it is not drawn as a choice',
+          );
+        }
+        return has ? structured(argType, value) : null;
+      }
       const { icons } = control;
       const node = f.enum(
-        def<string>(),
-        icons ? options.map((value) => {
+        choiceLabel(choice, def()) as string,
+        icons ? choice.labels.map((value) => {
           const ref = iconFromData(getOwn(icons, value));
           return { value, label: value, ...(ref ? { icon: ref } : {}) };
-        }) : options,
+        }) : choice.labels,
       );
       return control.type === 'radio' || control.type === 'inline-radio' ? node.radio() : node;
     }
@@ -230,12 +293,16 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
   }
 }
 
+/** Reads one arg as the story sees it under `config`: config's value, as the option it stands for, or the story's own
+ *  arg where config holds none — an arg with no control included. */
+type ArgReader = (config: Record<string, unknown>, arg: string) => unknown;
+
 /** The config predicate for an `if`; null for a condition on a global, which a story's config does not hold. */
-function conditionOf(condition: ArgCondition): ((config: Record<string, unknown>) => boolean) | null {
+function conditionOf(condition: ArgCondition, read: ArgReader): ((config: Record<string, unknown>) => boolean) | null {
   if (!('arg' in condition)) return null;
   const { arg } = condition;
   return (config) => {
-    const value = getOwn(config, arg);
+    const value = read(config, arg);
     if (condition.exists !== undefined) return (value !== undefined) === condition.exists;
     if ('eq' in condition) return sameKnob(value, condition.eq);
     if ('neq' in condition) return !sameKnob(value, condition.neq);
@@ -252,7 +319,7 @@ export interface ControlMatchers {
 
 /** Storybook's rule: a string arg with no control or options whose name matches `color` gets a color picker. */
 function matched(key: string, value: unknown, argType: ArgType | undefined, matchers: ControlMatchers): Leaf | null {
-  if (typeof value !== 'string' || argType?.control !== undefined || stringOptions(argType ?? {})) return null;
+  if (typeof value !== 'string' || argType?.control !== undefined || (argType?.options?.length ?? 0) > 0) return null;
   return matchers.color?.test(key) ? f.color(value) : null;
 }
 
@@ -263,6 +330,11 @@ export function argsToSchema(
   matchers: ControlMatchers = {},
 ): ConfigSchema<unknown> {
   const nodes: Record<string, Leaf> = {};
+  const choices = argChoices(argTypes);
+  const read: ArgReader = (config, arg) => {
+    const held = getOwn(config, arg);
+    return held === undefined ? getOwn(args, arg) : choiceValue(getOwn(choices, arg), held);
+  };
   for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes)])) {
     const has = Object.hasOwn(args, key);
     // A control carries only what crosses the port; the frame puts the rest back from `args` (`withUnsent`).
@@ -275,12 +347,12 @@ export function argsToSchema(
 
     let node: Leaf | null =
       (has ? matched(key, value, argType, matchers) : null) ??
-      (control ? controlled(control, argType ?? {}, has, value) : has ? inferred(value) : null);
+      (control ? controlled(control, key, argType ?? {}, has, value) : has ? inferred(value) : null);
     if (!node) continue;
     if (argType && (argType.control === false || argType.table?.disable)) node = node.hidden();
     if (argType?.description) node = node.describe(argType.description);
     if (argType?.name) node = node.label(argType.name);
-    const shownWhen = argType?.if ? conditionOf(argType.if) : null;
+    const shownWhen = argType?.if ? conditionOf(argType.if, read) : null;
     if (shownWhen) node = node.showIf(shownWhen);
     setOwn(nodes, key, node);
   }

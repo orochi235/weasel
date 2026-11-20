@@ -13,7 +13,7 @@ import { DEFAULT_LAYOUT, type StoryGlobals, type StoryLayout, type StoryViewport
 import { storyId, storyNameFromExport } from '../story/ids';
 import type { Decorator, LoadedStory, PlayContext, StoryContext } from '../story/types';
 import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } from './argsContext';
-import { type ArgType, argsToSchema, type ControlMatchers } from './argsToSchema';
+import { type ArgType, argChoices, argsToSchema, choiceLabel, choiceValue, type ControlMatchers } from './argsToSchema';
 import { isPlainObject } from '@weasel-js/core';
 import { withUnsent } from './portSafe';
 import { getOwn, setOwn } from '@weasel-js/registry';
@@ -168,11 +168,9 @@ export function loadCsfModule(
     const render = spec.render ?? meta.render;
     // A render that takes no args draws the same thing whatever a prop's control says.
     const fromProps = render === undefined || render.length > 0 ? propArgTypes : undefined;
-    const config = argsToSchema(
-      args,
-      combineParameters(fromProps, meta.argTypes, spec.argTypes) as Record<string, ArgType>,
-      isPlainObject(matchers) ? matchers : {},
-    );
+    const argTypes = combineParameters(fromProps, meta.argTypes, spec.argTypes) as Record<string, ArgType>;
+    const config = argsToSchema(args, argTypes, isPlainObject(matchers) ? matchers : {});
+    const choices = argChoices(argTypes);
     const defaults = config.defaults() as Args;
     const storyGlobals = { ...meta.globals, ...spec.globals };
     const component = meta.component;
@@ -181,11 +179,14 @@ export function loadCsfModule(
 
     const withArgs = (config: Args): Args =>
       Object.fromEntries(
-        Object.entries(withoutUndefined(config)).map(([key, value]) => [key, Object.hasOwn(args, key) ? withUnsent(value, args[key]) : value]),
+        Object.entries(withoutUndefined(config)).map(([key, held]) => {
+          const value = choiceValue(getOwn(choices, key), held);
+          return [key, Object.hasOwn(args, key) ? withUnsent(value, args[key]) : value];
+        }),
       );
     const csfContext = (config: unknown, globals: StoryGlobals, local: LocalArgs = {}): CsfContext => ({
       args: withoutUndefined({ ...args, ...withArgs(config as Args), ...appliedLocal(local, config as Args) }),
-      globals,
+      globals: { ...globals, ...storyGlobals },
       parameters,
       title,
       name,
@@ -202,7 +203,7 @@ export function loadCsfModule(
             config: ctx.config as Args,
             defaults,
             original: args,
-            setConfig: ctx.setConfig,
+            setConfig: (path, value) => ctx.setConfig(path, choiceLabel(getOwn(choices, path), value)),
             setLocal,
           };
           return [scope, context];
@@ -238,6 +239,7 @@ export function loadCsfModule(
       decorators: [...asArray(spec.decorators), ...asArray(meta.decorators)].map(adapt),
       layout: layout && LAYOUTS.includes(layout) ? layout : DEFAULT_LAYOUT,
       viewport: resolveViewport(parameters, storyGlobals),
+      globals: storyGlobals,
       isolate: typeof isolate === 'string' ? isolate : null,
       play: play
         ? ({ canvasElement, config, globals }: PlayContext) =>

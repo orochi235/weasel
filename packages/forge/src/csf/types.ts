@@ -47,6 +47,7 @@ export interface CsfShared<T> {
   args?: Partial<ArgsOf<T>>;
   argTypes?: Partial<Record<keyof ArgsOf<T> & string, ArgType>> & Record<string, ArgType>;
   parameters?: Record<string, unknown>;
+  /** Globals set over the toolbar's while this story shows, as Storybook 9's per-story globals. A story's win over its meta's. */
   globals?: Record<string, unknown>;
   decorators?: CsfDecorator | CsfDecorator[];
   render?: (args: ArgsOf<T>, context: CsfStoryContext) => ReactNode;

@@ -114,6 +114,8 @@ export interface LoadedStory {
   layout: StoryLayout;
   viewport: StoryViewport | null;
   isolate: string | null;
+  /** Globals the story sets for itself, over whatever the toolbar sets: a CSF story's and its meta's `globals`. */
+  globals?: StoryGlobals;
   play: ((ctx: PlayContext) => void | Promise<void>) | null;
   /** The timeline the story declares, for a config; null when it declares none. */
   timeline: ((config: unknown) => TimelineSpec) | null;
