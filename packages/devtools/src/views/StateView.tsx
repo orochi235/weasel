@@ -1,10 +1,14 @@
-/** The State tab: selection, view, the active tool and the overlay flags, with the two the panel may steer. */
+/**
+ * The State tab: selection, view, the active tool and the overlay flags, with
+ * the two the panel may steer. Overlay flags and probes change with no notice,
+ * so this also polls while the tab is open.
+ */
 import type { ReactElement } from 'react';
 import { DEBUG_FEATURES } from '@weasel-js/core';
 import { Code } from '@weasel-js/ui/components/Code';
 import { Select } from '@weasel-js/ui/components/Select';
 import { CheckboxGroup } from '@weasel-js/ui/components/CheckboxGroup';
-import { useRootQuery } from '../hooks';
+import { usePoll, useRootQuery } from '../hooks';
 import type { DevtoolsViewProps } from '../tabs';
 import { ValueView } from './ValueView';
 import s from './StateView.module.css';
@@ -12,8 +16,11 @@ import s from './StateView.module.css';
 /** The tool picker's value for "no tool": a select key cannot be null. */
 const NO_TOOL = '\u0000none';
 
+const POLL_MS = 500;
+
 export function StateView({ client, rootId }: DevtoolsViewProps): ReactElement {
   const state = useRootQuery(client, rootId, ['selection', 'view', 'tool'], () => client.request(rootId, { type: 'get-state' }));
+  usePoll(state.refresh, POLL_MS, true);
   if (state.error) return <p className={s.note}>{state.error}</p>;
   const st = state.data;
   if (!st) return <p className={s.note}>Loading…</p>;
@@ -52,8 +59,9 @@ export function StateView({ client, rootId }: DevtoolsViewProps): ReactElement {
           sweep
           items={DEBUG_FEATURES.map((flag) => ({ value: flag, label: flag }))}
           value={DEBUG_FEATURES.filter((flag) => st.overlays[flag] === true)}
+          // Every flag, not only those differing from this render: a sweep's later steps are diffed against a stale one.
           onChange={(on) => {
-            const overlays = Object.fromEntries(DEBUG_FEATURES.filter((flag) => on.includes(flag) !== (st.overlays[flag] === true)).map((flag) => [flag, on.includes(flag)]));
+            const overlays = Object.fromEntries(DEBUG_FEATURES.map((flag) => [flag, on.includes(flag)]));
             steer(client.request(rootId, { type: 'set-overlays', overlays }));
           }}
         />

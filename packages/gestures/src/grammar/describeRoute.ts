@@ -113,9 +113,11 @@ function userDoes(required: readonly string[], verb: string): string {
 
 const isKeyGesture = (g: GestureName): boolean => g === 'keyDown' || g === 'keyUp' || g === 'keyHeld';
 
-/** A key route's key and its optional modifiers, the latter folded into the
- *  route's own. A key route that does not parse is read as the key itself. */
-function keyRouteOf(parsed: ParsedRoute): { arg: string | undefined; modifiers: ParsedModifiers } {
+/** A route's concrete arg (undefined for the `'*'` wildcard) and its
+ *  modifiers; for a key gesture, the arg's key route is split, its key kept
+ *  as the arg and its optional modifiers folded into the route's own. A key
+ *  route that does not parse is read as the key itself. */
+export function foldKeyRoute(parsed: ParsedRoute): { arg: string | undefined; modifiers: ParsedModifiers } {
   const arg = concreteArg(parsed);
   if (arg === undefined || !isKeyGesture(parsed.gesture)) return { arg, modifiers: parsed.modifiers };
   let keyRoute: ParsedKeyRoute;
@@ -208,7 +210,7 @@ export function describeRouteParts(
   opts: DescribeRouteOptions = {},
 ): readonly RouteDescriptionPart[] {
   const { capitalize = true, period = true } = opts;
-  const { arg, modifiers } = keyRouteOf(parsed);
+  const { arg, modifiers } = foldKeyRoute(parsed);
   const { required, optional } = partitionModifiers(modifiers);
   const action = actionClause(parsed, arg, required);
   const optClause = optional.length > 0

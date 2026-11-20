@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import { serializedNumber, type SerializedValue } from '../protocol';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
 import { formatAge } from './formatAge';
+import type { Sequenced } from './sequenced';
 import s from './TraceTable.module.css';
 
 /** A coordinate as it crosses: a number, or a tag for one that is not finite. */
@@ -23,8 +24,8 @@ const DISPLAY_LIMIT = 100;
 const fixed = (n: Coord, digits = 1): string => serializedNumber(n).toFixed(digits).padStart(8, ' ');
 const pair = (x: Coord, y: Coord): string => `${fixed(x)} ${fixed(y)}`;
 
-export function CoordTable({ entries, now }: { entries: readonly CoordEntry[]; now: number }): ReactElement {
-  const rows = entries.slice(-DISPLAY_LIMIT).map((entry, i) => ({ id: `${entry.ts}-${i}`, entry })).reverse();
+export function CoordTable({ entries, now }: { entries: readonly Sequenced<CoordEntry>[]; now: number }): ReactElement {
+  const rows = entries.slice(-DISPLAY_LIMIT).map(({ seq, record }) => ({ id: String(seq), entry: record })).reverse();
   const columns: readonly DataGridColumn<(typeof rows)[number]>[] = [
     { id: 'age', header: 'Age', sortable: false, className: s.age, render: ({ entry }) => formatAge(Math.max(0, now - entry.ts)) },
     { id: 'client', header: 'Client', sortable: false, className: s.count, render: ({ entry }) => pair(entry.clientX, entry.clientY) },

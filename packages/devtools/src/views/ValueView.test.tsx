@@ -1,5 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { serialize } from '../protocol';
 import { ValueView } from './ValueView';
 
@@ -36,5 +36,16 @@ describe('ValueView', () => {
   it('notes how many entries were cut', () => {
     render(<ValueView value={serialize({ a: 1, b: 2, c: 3 }, { items: 1 })} label="Data" />);
     expect(screen.getByRole('group', { name: 'Data' }).textContent).toContain('… 2 more');
+  });
+
+  it("gives a cut object's own … key a row apart from the cut's", () => {
+    const warn = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      render(<ValueView value={serialize({ '…': 1, a: 2, b: 3 }, { items: 1 })} label="Data" />);
+      expect(warn.mock.calls.some((c) => String(c[0]).includes('same key'))).toBe(false);
+      expect(screen.getAllByText('…')).toHaveLength(2);
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

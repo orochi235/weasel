@@ -9,24 +9,27 @@ type Obj = { [key: string]: SerializedValue };
 const isObj = (v: SerializedValue): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
 const tagOf = (v: SerializedValue): string | null => (isObj(v) && typeof v.$type === 'string' ? v.$type : null);
 
-/** The row that stands for entries cut past the item limit. */
-const moreRow = (count: SerializedValue): [string, SerializedValue] => ['…', { $type: 'more', count }];
+/** A container's child: `id` tells it from its siblings, `name` is what its row shows. */
+type Row = [id: string, name: string, value: SerializedValue];
+
+/** The row that stands for entries cut past the item limit; its id is the serializer's own key, which no real key escapes to. */
+const moreRow = (count: SerializedValue): Row => ['$more', '…', { $type: 'more', count }];
 
 /** An array's rows, a `more` tag at its end named `…` rather than by index. */
-const listed = (items: readonly SerializedValue[]): [string, SerializedValue][] =>
-  items.map((x, i) => [tagOf(x) === 'more' ? '…' : String(i), x]);
+const listed = (items: readonly SerializedValue[]): Row[] =>
+  items.map((x, i) => [String(i), tagOf(x) === 'more' ? '…' : String(i), x]);
 
 /** The children a container lists, or null for a value shown on one line. */
-function entriesOf(v: SerializedValue): [string, SerializedValue][] | null {
+function entriesOf(v: SerializedValue): Row[] | null {
   if (Array.isArray(v)) return listed(v);
   if (!isObj(v)) return null;
   const tag = tagOf(v);
   if (tag === 'Map' || tag === 'Set') return listed(Array.isArray(v.entries) ? v.entries : []);
   if (tag !== null) return null;
-  const rows: [string, SerializedValue][] = [];
+  const rows: Row[] = [];
   for (const [key, value] of Object.entries(v)) {
     const name = unescapeKey(key);
-    if (name !== null) rows.push([name, value]);
+    if (name !== null) rows.push([key, name, value]);
   }
   if (v.$more !== undefined) rows.push(moreRow(v.$more));
   return rows;
@@ -90,7 +93,7 @@ function Entry({ name, value, depth }: { name: ReactNode; value: SerializedValue
       </div>
       {open && (
         <div className={s.children}>
-          {entries.map(([k, v]) => <Entry key={k} name={k} value={v} depth={depth + 1} />)}
+          {entries.map(([id, k, v]) => <Entry key={id} name={k} value={v} depth={depth + 1} />)}
         </div>
       )}
     </div>
@@ -109,7 +112,7 @@ export function ValueView({ value, label }: ValueViewProps): ReactElement {
   return (
     <div className={s.value} role="group" aria-label={label}>
       {entries && entries.length > 0
-        ? entries.map(([k, v]) => <Entry key={k} name={k} value={v} depth={1} />)
+        ? entries.map(([id, k, v]) => <Entry key={id} name={k} value={v} depth={1} />)
         : <Scalar value={value} />}
     </div>
   );

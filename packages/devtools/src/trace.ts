@@ -9,6 +9,8 @@ export interface TraceRead {
   cursor: number;
   live: SerializedValue;
   coords?: SerializedValue[];
+  /** Where the coord records stand after `coords`, as `cursor` does for `entries`; present with `coords`. */
+  coordCursor?: number;
 }
 
 /** A cursor over one root's dispatch trace, and over its coord records once asked. */
@@ -37,6 +39,7 @@ export function followTrace(client: DevtoolsClient, rootId: string): TraceFollow
     if (slice.coords && coordCursor !== null && run === coordRun) {
       coordCursor = slice.coords.cursor;
       out.coords = slice.coords.entries;
+      out.coordCursor = slice.coords.cursor;
     }
     return out;
   };
