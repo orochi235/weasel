@@ -53,7 +53,11 @@ export function attachInput(
   let disposed = false;
   // Dispatcher-only overlays (marquee, lasso) repaint on nothing else, and
   // the event that closes a gesture still has to clear its overlay.
-  const redraw = dispatcherWatch(src.requestRedraw);
+  let cursor: HoverCursorInput | null = null;
+  const redraw = dispatcherWatch(() => {
+    src.requestRedraw();
+    cursor?.changed();
+  });
   redraw.sync(src.dispatchers());
   const core = createDispatchCore({
     canvas,
@@ -72,6 +76,7 @@ export function attachInput(
   const ingest = ingestInput(core);
   const held = canvas ? heldPointers(canvas) : null;
   const hover = hoverCursorInput(core, src.paintedCursor, () => held?.count() ?? 0, src.cursorSink);
+  cursor = hover;
   const pointer: PointerInput = pointerInput(core, {
     longPress: src.longPress,
     kitSettings: src.kitSettings,

@@ -29,3 +29,6 @@ export const REORDER_GROUP = 'reorder';
 
 /** The boolean operations on shapes. */
 export const PATHFINDER_GROUP = 'pathfinder';
+
+/** Trading two nodes' places. */
+export const SWAP_GROUP = 'swap';

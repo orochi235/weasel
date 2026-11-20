@@ -35,12 +35,18 @@ export type PickParams = Pick<ImmediateParams, 'world' | 'mods' | 'viewId'>;
  *  moved node at the top of the container under the cursor. `'above'` lands it immediately above the hit sibling
  *  in z-order (falling back to `'top'` when the hit is itself a container or shares no parent with the moved node). */
 export type ReparentOnDrop = 'off' | 'top' | 'above';
-/** `move`'s params: its history and lifecycle, where a drop lands the moved nodes, and the ids a drag carries. */
+/** Allowed values for `move`'s `swapOnDrop` param. `'off'` (the default) never swaps. `'dwell'` arms a swap when
+ *  one dragged node is held still for a second over a node it may trade places with (`swappable`), and a release
+ *  while armed trades them. */
+export type SwapOnDrop = 'off' | 'dwell';
+/** `move`'s params: its history and lifecycle, where a drop lands the moved nodes, whether it swaps them, and
+ *  the ids a drag carries. */
 export type MoveParams = RunLifecycleOptions & {
   reparentOnDrop?: ReparentOnDrop;
   /** Which layout container takes the drop when several contain the drop point, for both the drag-time reflow
    *  preview and the commit. Default `'innermost'`. */
   layoutDropTarget?: LayoutDropTargetMode;
+  swapOnDrop?: SwapOnDrop;
   expandIds?: (ids: string[]) => string[];
 };
 /** `rotate`'s params: its history and lifecycle, and the pivot a multi-selection turns about. */

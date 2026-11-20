@@ -4,6 +4,7 @@ import {
 import { reorderBackwardAction, reorderForwardAction } from '../actions/reorder/reorder';
 import { distributeHorizontalAction, distributeVerticalAction } from '../actions/distribute/action';
 import { flipAction } from '../actions/flip/action';
+import { swapAction } from '../actions/swap/action';
 import type { FeaturePreset } from '@weasel-js/core';
 import { selectionPreset } from './selection';
 
@@ -14,6 +15,8 @@ export const reorderPreset: FeaturePreset = {
   id: 'reorder', label: 'Reorder', actions: [reorderForwardAction, reorderBackwardAction],
   includes: [selectionPreset],
 };
+/** Trading two selected nodes' places. */
+export const swapPreset: FeaturePreset = { id: 'swap', label: 'Swap', actions: [swapAction], includes: [selectionPreset] };
 /** Aligning edges and centers. */
 export const alignPreset: FeaturePreset = {
   id: 'align',
@@ -27,9 +30,9 @@ export const distributePreset: FeaturePreset = {
   includes: [selectionPreset],
 };
 
-/** Align, distribute, reorder, and flip. */
+/** Align, distribute, reorder, flip, and swap. */
 export const arrangePreset: FeaturePreset = {
   id: 'arrange',
   label: 'Arrange',
-  includes: [flipPreset, reorderPreset, alignPreset, distributePreset],
+  includes: [flipPreset, reorderPreset, alignPreset, distributePreset, swapPreset],
 };

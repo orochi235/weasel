@@ -15,7 +15,7 @@
 export { view, viewTools } from '@weasel-js/core/presets';
 export {
   alignPreset as align, arrangePreset as arrange, distributePreset as distribute, flipPreset as flip,
-  reorderPreset as reorder,
+  reorderPreset as reorder, swapPreset as swap,
 } from './presets/arrange';
 export { booleansPreset as booleans } from './presets/booleans';
 export { drawPreset as draw, pickPreset as pick, transformPreset as transform } from './presets/composites';

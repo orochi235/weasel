@@ -428,7 +428,7 @@ Each action pins the proposed/result shape; pick the matching alias
 
 **Reference behaviors in the source:**
 
-- `packages/core/src/interactions/actions/move/behaviors/snapToContainer.ts` — scratch state, dwell timer, custom `onEnd`.
+- `packages/editing/src/actions/move/behaviors/snapToContainer.ts` — scratch state, dwell timer, custom `onEnd`.
 - `packages/core/src/interactions/actions/resize/behaviors/clampMinSize.ts` — width/height clamp.
 
 ### Move behaviors
@@ -444,8 +444,10 @@ adds itself:
 | Behavior | From | What it does | Turned on by |
 |---|---|---|---|
 | `snapToContainer(...)` | `@weasel-js/editing` | After the pointer dwells over a container, snaps each dragged node to the slot `findTarget` gives it, and reparents on release. | in `behaviors` |
+| `swapOnDrop(...)` | `@weasel-js/editing` | After one dragged node rests over another it may trade places with for `dwellMs`, previews the other in the dragged one's start place, outlines it and shows the `swap` cursor; released there, the two trade places, parents and stacking order. | in `behaviors`, for a `targetAt` or wait of its own |
 | `snapBackOrDelete(...)` | `@weasel-js/editing` | Released near where it started, the selection returns home; released far away, it returns or is deleted. | in `behaviors` |
 | `momentum(...)` | `@weasel-js/core` | Keeps a flicked node coasting after release, and records the whole flick as one undo step. | in `behaviors` |
+| swap drop | the move action | `swapOnDrop(...)` with its defaults, ahead of the drops below: the target is the node `nodeAtPoint` hits, or its first ancestor `swappable` accepts. | the move binding's `swapOnDrop: 'dwell'` param |
 | layout drop | the move action | Drops the selection into the layout container under it: previews the slot and the siblings that make room, and commits the container's `commitDrop`. Released outside every layout container, each source container's `releaseDrop` decides, and a node let go outside its container leaves it. | a layout on a container (`SceneNode.layout`) |
 | page drop | the move action | Keeps a paged scene's content on its pages: a page's child released on another page moves into it, and one released off every page goes to the top of the tree with the pasteboard on, or stays in its page with the pasteboard off. | a paged scene |
 | reparent on drop | the move action | Reparents the selection under the node the pointer is released over, keeping where it was dropped. | the move binding's `reparentOnDrop: 'top' \| 'above'` param |
@@ -456,19 +458,28 @@ Order decides two things:
   left it, so the layout drop, which runs last, places the selection where a
   snap already put it.
 - **Who commits.** On release the first behavior to return ops owns the commit.
-  A binding's behavior that claims it preempts a layout drop, a layout drop
+  A binding's behavior that claims it preempts a swap drop, an armed swap preempts a layout drop, a layout drop
   preempts a page drop, and a page drop preempts a reparent. `end.answered` tells a later behavior that this has
   happened.
 
 The ones the action adds are built from its deps for each drag, and are not
 exported: a layout is configured on its container, a page drop by the scene
-having pages, and reparenting by the binding's param. They use the same hooks as any other behavior:
+having pages, and swapping and reparenting by the binding's params.
+Which two nodes may swap is the `canSwap` dep's to say, after the fixed rules
+in `swappable` (two different nodes, neither inside the other, neither locked);
+without one, two nodes of one `kind` and one size swap. The `swap` action, in
+`presets.arrange` and `presets.swap`, trades two selected nodes by the same rule
+and the same commit, `swapOps`. They use the same hooks as any other behavior:
 
 | Hook | Layout drop | Page drop | Reparent on drop |
 |---|---|---|---|
 | `onMove` | Picks the container, places each dragged node, and returns the displaced siblings as `poses` and `opaque`; with a reflow transition it glides them there | — | — |
 | `onEnd` | Returns the drop's ops, or the release and exit ops with the default translate for what no container claimed; aborts the commit when a drop or release it took has nothing to write | Returns the moves onto, off, or between pages for a drag that crosses one; aborts when one is refused | Returns reparent, layer, and transform ops for the node under `end.pointer` |
 | `onSettled` | Settles each glide onto the pose the document now holds | — | — |
+
+A behavior can also set the cursor the drag shows by returning `cursor` from
+`onMove`; the last behavior to name one wins, and the swap drop names the
+`swap` glyph while it is armed.
 
 `end.pointer` is where the pointer was let go, in world coordinates; without one
 on the release, it is the last move's.

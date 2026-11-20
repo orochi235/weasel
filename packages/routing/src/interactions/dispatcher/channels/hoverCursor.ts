@@ -33,7 +33,23 @@ export interface HoverCursorInput {
   onLeave(): void;
   /** A modifier or hotkey changed, which re-routes the predicted drag with no pointer movement. */
   onKey(e: KeyboardEvent): void;
+  /** A dispatcher changed: a gesture in flight may show another cursor with no input to carry it, as a
+   *  dwell elapsing under a held pointer does. */
+  changed(): void;
   clear(): void;
+}
+
+/** Where the hover cursor writes: the surface's own sink, else one on `canvas`. */
+function cursorOverride(
+  canvas: HTMLElement | null,
+  paintedCursor: () => PaintedCursorState | undefined,
+  cursorSink: () => CursorSink | undefined,
+): { apply(spec: CursorSpec | null): void; clear(): void } {
+  const ownSink = createCursorSink({ element: () => canvas, painted: paintedCursor });
+  return {
+    apply: (spec) => (cursorSink() ?? ownSink).setOverride(spec === null ? null : resolveCursor(spec)),
+    clear: () => (cursorSink() ?? ownSink).setOverride(null),
+  };
 }
 
 /**
@@ -52,12 +68,7 @@ export function hoverCursorInput(
   cursorSink: () => CursorSink | undefined = () => undefined,
 ): HoverCursorInput {
   const { canvas, routeAt, toWorld, target, dispatch, dispatcherNow, ctxNow } = core;
-  const ownSink = createCursorSink({ element: () => canvas, painted: paintedCursor });
-  const override = {
-    apply: (spec: CursorSpec | null): void =>
-      (cursorSink() ?? ownSink).setOverride(spec === null ? null : resolveCursor(spec)),
-    clear: (): void => (cursorSink() ?? ownSink).setOverride(null),
-  };
+  const override = cursorOverride(canvas, paintedCursor, cursorSink);
   let last: Hover | null = null;
   /** What the last move found under the pointer, so its hover and its cursor hit-test once. */
   let facts: { at: Hover; where: UnderPointer } | null = null;
@@ -156,6 +167,9 @@ export function hoverCursorInput(
       // A modifier changing over a resting pointer is a hover with new modifiers.
       if (changed && hears()) hoverAt(last);
       refreshSoon();
+    },
+    changed() {
+      if (canvas && last && dispatcherNow().inFlight().size > 0) override.apply(dispatcherNow().inFlightCursor());
     },
     clear: override.clear,
   };

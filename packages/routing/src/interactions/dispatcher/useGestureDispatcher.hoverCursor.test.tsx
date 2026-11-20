@@ -104,6 +104,38 @@ describe('hover-cursor pump', () => {
     expect(canvas.style.cursor).toBe('grabbing');
   });
 
+  it('follows the handle\u2019s own cursor when the handle says it changed, with the pointer still', () => {
+    let spec: string | undefined;
+    let changed = (): void => {};
+    const dwelling: Action = {
+      ...panAction,
+      activeCursor: 'grabbing',
+      invoker: {
+        timing: 'ongoing',
+        start: () => ({
+          onMove: () => {},
+          onEnd: () => {},
+          cursor: () => spec,
+          subscribe: (fn) => { changed = fn; return () => { changed = () => {}; }; },
+        }),
+      },
+    };
+    const { container } = render(
+      <Harness>
+        <Probe actionDef={dwelling} classifyTarget={() => ({ bodyTarget: 'empty' })} />
+      </Harness>,
+    );
+    const canvas = container.querySelector('canvas')!;
+    act(() => { fire(canvas, 'pointermove', { clientX: 0, clientY: 0 }); });
+    act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1 }); });
+    act(() => { fire(canvas, 'pointermove', { clientX: 30, clientY: 30, pointerId: 1 }); });
+    expect(canvas.style.cursor).toBe('grabbing');
+    act(() => { spec = 'copy'; changed(); });
+    expect(canvas.style.cursor).toBe('copy');
+    act(() => { spec = undefined; changed(); });
+    expect(canvas.style.cursor).toBe('grabbing');
+  });
+
   it('an in-flight action with no activeCursor holds its hover hint', () => {
     const { container } = render(
       <Harness>

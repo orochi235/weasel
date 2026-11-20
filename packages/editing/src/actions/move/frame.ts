@@ -2,6 +2,7 @@ import type { InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
 import { pointerStateOf, quantizedPreview } from '@weasel-js/core';
 import type { NodeId, GestureReaders } from '@weasel-js/core';
 import type { BehaviorResult, GroupTransform } from '@weasel-js/core/engine';
+import type { CursorSpec } from '@weasel-js/cursor';
 import { draggedStoredPose } from './delta';
 import { snappedDelta } from './dragSnap';
 import type { MoveFrame, MoveSession } from './session';
@@ -12,7 +13,7 @@ function foldBehaviors(
   moveCtx: InvocationCtx,
   dx: number,
   dy: number,
-): { dx: number; dy: number; posed: Map<NodeId, unknown>; opaque: Set<NodeId>; overlays: OngoingOverlay[] } {
+): { dx: number; dy: number; posed: Map<NodeId, unknown>; opaque: Set<NodeId>; overlays: OngoingOverlay[]; cursor?: CursorSpec } {
   const posed = new Map<NodeId, unknown>();
   const opaque = new Set<NodeId>();
   const overlays: OngoingOverlay[] = [];
@@ -31,16 +32,18 @@ function foldBehaviors(
     gctx.current.set(id as string, draggedStoredPose(session, id, ori, dx, dy));
   }
   let transform: GroupTransform = { kind: 'translate', dx, dy };
+  let cursor: CursorSpec | undefined;
   for (const b of session.behaviors) {
     const r: BehaviorResult<unknown> | void = b.onMove?.(gctx, transform);
     if (!r) continue;
     if (r.poses) for (const [id, pose] of r.poses) posed.set(id as NodeId, pose);
     if (r.opaque) for (const id of r.opaque) opaque.add(id as NodeId);
     if (r.overlays) overlays.push(...r.overlays);
+    if (r.cursor !== undefined) cursor = r.cursor;
     if (r.transform) transform = r.transform;
     if (r.snap !== undefined) gctx.snap = r.snap;
   }
-  return { dx: transform.dx, dy: transform.dy, posed, opaque, overlays };
+  return { dx: transform.dx, dy: transform.dy, posed, opaque, overlays, ...(cursor !== undefined ? { cursor } : {}) };
 }
 
 /** One move's delta and previews: the pointer's delta as the behaviors shaped
@@ -48,7 +51,7 @@ function foldBehaviors(
  *  behaviors posed. */
 export function nextFrame(session: MoveSession, readers: GestureReaders, moveCtx: InvocationCtx): MoveFrame {
   const snapped = snappedDelta(session, moveCtx);
-  const { dx, dy, posed, opaque, overlays } = foldBehaviors(session, readers, moveCtx, snapped.dx, snapped.dy);
+  const { dx, dy, posed, opaque, overlays, cursor } = foldBehaviors(session, readers, moveCtx, snapped.dx, snapped.dy);
 
   // The delta stays in the frame — no scene writes, no history entries.
   const delta = { dx, dy };
@@ -60,5 +63,5 @@ export function nextFrame(session: MoveSession, readers: GestureReaders, moveCtx
     previews.set(id, quantizedPreview(session.scene, id, session.carried.has(id) ? dragged : posed.get(id) ?? dragged));
   }
   for (const [id, pose] of posed) if (!session.startPoses.has(id)) previews.set(id, quantizedPreview(session.scene, id, pose));
-  return { delta, previews, opaque, overlays };
+  return { delta, previews, opaque, overlays, ...(cursor !== undefined ? { cursor } : {}) };
 }

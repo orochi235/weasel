@@ -26,7 +26,7 @@ import * as presets from '@weasel-js/editing/presets';
 `presets.pick` (select and the selection's outline), `presets.transform` (resize
 and rotate handles), `presets.move`, `presets.edit` (escape, select all, delete,
 duplicate, group, nudge, style and the clipboard, each also a preset of its
-own), `presets.arrange` (flip, reorder, align, distribute), `presets.pathfinder`,
+own), `presets.arrange` (flip, reorder, align, distribute, swap), `presets.pathfinder`,
 `presets.ingest`, and the tool presets `presets.selectTools` and
 `presets.shapeTools`. Core's `presets.view` pans and zooms; a canvas given only it
 is a viewer, whose selection nothing it runs writes. The presets are on

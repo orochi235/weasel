@@ -759,8 +759,8 @@ runs after either, once the document holds the result. `ctx.scratch` is per-gest
 makes a move, resize or rotate commit without a history entry unless
 `transient` is set explicitly. See [extending.md](./extending.md) for writing one.
 
-Built-in behaviors: `snapToContainer(...)` and `snapBackOrDelete(...)` for
-move; `clampMinSize` for resize. A clone drag takes the move behaviors that
+Built-in behaviors: `snapToContainer(...)`, `snapBackOrDelete(...)` and
+`swapOnDrop(...)` for move; `clampMinSize` for resize. A clone drag takes the move behaviors that
 only reshape the translation, as `CloneBehavior`. Snapping is not a behavior:
 every snapping action asks the `snap` dep's session, which ranks every snap
 source together, before its behaviors run — see [snapping.md](./snapping.md).

@@ -6,7 +6,7 @@
  */
 import type { Action } from '@weasel-js/routing';
 import type { FeaturePreset } from '@weasel-js/core';
-import { alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset } from './presets/arrange';
+import { alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset, swapPreset } from './presets/arrange';
 import { drawPreset, pickPreset, transformPreset } from './presets/composites';
 import {
   clipboardPreset, contextMenuPreset, deletePreset, duplicatePreset, editPreset, escapePreset, groupPreset,
@@ -56,6 +56,7 @@ export const FEATURE_PRESETS = {
   reorder: reorderPreset,
   align: alignPreset,
   distribute: distributePreset,
+  swap: swapPreset,
   arrange: arrangePreset,
   booleans: booleansPreset,
   pathfinder: pathfinderPreset,
