@@ -37,6 +37,12 @@ export function fakeGpuDevice(width = 64, height = 64): FakeGpuDevice {
   const lost = new Promise<GPUDeviceLostInfo>((resolve) => { lose = resolve; });
   const scopes: (unknown | null)[] = [];
   const state = { failMaps: false, failPipelines: false };
+  const events = new EventTarget();
+  /** Into the innermost open scope, keeping its first error, or out as `uncapturederror` with none open. */
+  const raise = (error: { message: string }): void => {
+    if (scopes.length > 0) scopes[scopes.length - 1] ??= error;
+    else events.dispatchEvent(Object.assign(new Event('uncapturederror'), { error }));
+  };
 
   const buffer = (desc: GPUBufferDescriptor) => {
     const record: FakeGpuObject = { label: desc.label ?? 'buffer', desc: { ...desc }, destroyed: false };
@@ -80,11 +86,15 @@ export function fakeGpuDevice(width = 64, height = 64): FakeGpuDevice {
     createPipelineLayout: () => ({}),
     createShaderModule: () => ({ getCompilationInfo: () => Promise.resolve({ messages: [] }) }),
     createRenderPipeline: () => {
-      if (state.failPipelines && scopes.length > 0) scopes[scopes.length - 1] ??= { message: 'invalid pipeline' };
+      if (state.failPipelines) raise({ message: 'invalid pipeline' });
       return { getBindGroupLayout: () => ({}) };
     },
     pushErrorScope: () => { scopes.push(null); },
-    popErrorScope: () => Promise.resolve(scopes.pop() ?? null),
+    popErrorScope: () => (scopes.length === 0
+      ? Promise.reject(new DOMException('no error scope to pop', 'OperationError'))
+      : Promise.resolve(scopes.pop() ?? null)),
+    addEventListener: events.addEventListener.bind(events),
+    removeEventListener: events.removeEventListener.bind(events),
     createCommandEncoder: () => ({
       beginRenderPass: renderPass,
       copyTextureToBuffer() {}, copyTextureToTexture() {},

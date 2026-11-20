@@ -21,4 +21,18 @@ describe('fakeGpuDevice', () => {
     const resized = fake.context.getCurrentTexture();
     expect([resized.width, resized.height]).toEqual([128, 64]);
   });
+
+  it('rejects a pop with no scope open, as a real device does', async () => {
+    const { device } = fakeGpuDevice();
+    await expect(device.popErrorScope()).rejects.toThrow(/no error scope/);
+  });
+
+  it('raises a pipeline error with no scope open as uncapturederror', () => {
+    const fake = fakeGpuDevice();
+    const seen: string[] = [];
+    fake.device.addEventListener('uncapturederror', (e) => seen.push((e as GPUUncapturedErrorEvent).error.message));
+    fake.failPipelines = true;
+    fake.device.createRenderPipeline({} as GPURenderPipelineDescriptor);
+    expect(seen).toEqual(['invalid pipeline']);
+  });
 });
