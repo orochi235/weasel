@@ -193,4 +193,9 @@ describe('lanes order', () => {
     }
     expect(laneTypeOf(order.items[1]!.id)).toBe('number');
   });
+
+  it('throws, naming it, on a stage whose id it keeps for a lane node', () => {
+    const p = { stages: [{ id: '~lane:image', title: 'x', outputs: [{ id: 'out', type: 'image' }] }], wires: [] };
+    expect(() => lanes(p)).toThrow('the lanes look can\'t draw stage "~lane:image"');
+  });
 });

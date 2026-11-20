@@ -118,4 +118,9 @@ describe('checkPipeline', () => {
   it('does not throw on an empty pipeline', () => {
     expect(checkPipeline({ stages: [], wires: [] })).toEqual([]);
   });
+
+  it('reports a stage or port id starting with "~", which the looks keep for their own', () => {
+    const p = { stages: [{ id: '~lane:image', title: 'x', outputs: [{ id: 'out', type: 'image' }] }, { id: 'b', title: 'b', inputs: [{ id: '~tap:in', type: 'image' }] }], wires: [] };
+    expect(checkPipeline(p).filter((q) => q.kind === 'reserved-id').map((q) => [q.stage, q.port])).toEqual([['~lane:image', undefined], ['b', '~tap:in']]);
+  });
 });

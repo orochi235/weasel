@@ -1,4 +1,5 @@
 import { maxOf, minOf, type Rect } from '@weasel-js/geom';
+import { assertNoReservedIds } from './check';
 import type { MeasureRowText } from '../body';
 import { insetOf } from '../cluster';
 import { clusterLabelIdOf } from '../dataClusters';
@@ -222,6 +223,7 @@ function place(plan: Plan, insets: readonly number[]) {
  *  and a cluster's members hold columns no other stage stands in. A wire runs around the stages between its ends along the lane edges, each
  *  sharing one on a track of its own. */
 export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
+  assertNoReservedIds(pipeline, 'lanes');
   const theme = options.theme ?? LOOK_THEME;
   const color = typeColors(pipeline, options.colors, theme.series);
   const stages = uniqueStages(pipeline);

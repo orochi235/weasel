@@ -3,7 +3,7 @@ import type { EffectCluster, EffectPipeline, EffectStage } from './types';
 /** One thing wrong with a pipeline, and where. */
 export interface EffectProblem {
   kind: 'missing-stage' | 'missing-port' | 'wrong-direction' | 'type-mismatch'
-    | 'duplicate-stage' | 'duplicate-port' | 'duplicate-cluster' | 'missing-member' | 'cluster-loop' | 'bad-split';
+    | 'duplicate-stage' | 'duplicate-port' | 'duplicate-cluster' | 'missing-member' | 'cluster-loop' | 'bad-split' | 'reserved-id';
   message: string;
   stage?: string;
   port?: string;
@@ -27,6 +27,28 @@ export function splitProblem(stage: EffectStage): string | null {
   return null;
 }
 
+/** What a stage or port id starts with when a look made it: the lanes look's
+ *  lane nodes, the rack look's skip and tap ports. No pipeline's may. */
+export const RESERVED_ID_PREFIX = '~';
+
+/** The first stage or port id in `pipeline` that starts with `RESERVED_ID_PREFIX`. */
+function firstReserved(pipeline: EffectPipeline): { stage: string; port?: string } | undefined {
+  for (const stage of pipeline.stages) {
+    if (stage.id.startsWith(RESERVED_ID_PREFIX)) return { stage: stage.id };
+    const port = [...(stage.inputs ?? []), ...(stage.outputs ?? [])].find((p) => p.id.startsWith(RESERVED_ID_PREFIX));
+    if (port !== undefined) return { stage: stage.id, port: port.id };
+  }
+  return undefined;
+}
+
+/** Throws when `pipeline` has a stage or port id a look keeps for its own, naming `look`. */
+export function assertNoReservedIds(pipeline: EffectPipeline, look: string): void {
+  const at = firstReserved(pipeline);
+  if (at === undefined) return;
+  const what = at.port === undefined ? `stage "${at.stage}"` : `port "${at.stage}.${at.port}"`;
+  throw new Error(`the ${look} look can't draw ${what}: ids starting with "${RESERVED_ID_PREFIX}" are kept for the ones looks make`);
+}
+
 /** Everything wrong with `pipeline`. Never throws. */
 export function checkPipeline(pipeline: EffectPipeline): EffectProblem[] {
   const out: EffectProblem[] = [];
@@ -37,8 +59,14 @@ export function checkPipeline(pipeline: EffectPipeline): EffectProblem[] {
       continue;
     }
     stages.set(stage.id, stage);
+    if (stage.id.startsWith(RESERVED_ID_PREFIX)) {
+      out.push({ kind: 'reserved-id', stage: stage.id, message: `Stage "${stage.id}" starts with "${RESERVED_ID_PREFIX}", which is kept for the ids looks make.` });
+    }
     const seen = new Set<string>();
     for (const port of [...(stage.inputs ?? []), ...(stage.outputs ?? [])]) {
+      if (port.id.startsWith(RESERVED_ID_PREFIX)) {
+        out.push({ kind: 'reserved-id', stage: stage.id, port: port.id, message: `Port "${stage.id}.${port.id}" starts with "${RESERVED_ID_PREFIX}", which is kept for the ids looks make.` });
+      }
       if (seen.has(port.id)) {
         out.push({ kind: 'duplicate-port', stage: stage.id, port: port.id, message: `Stage "${stage.id}" has two ports called "${port.id}".` });
       }

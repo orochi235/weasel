@@ -2819,3 +2819,7 @@ Calls the lanes made without a ruling:
   array of every reached wire's value, in the pipeline's wire order, and a bypassed stage passes the first of them
   on. Before, the evaluator got the first wire's value alone. Summing like the audio runner was the alternative; the
   image runner can't know how a value type combines, so the evaluator does.
+- 2026-11-20 (the fixer's call): a stage or port id starting with `~` is reserved for the ids the looks make (the lanes
+  look's lane nodes, the rack look's skip and tap ports). `checkPipeline` reports one as `reserved-id`, and `rack` and
+  `lanes` throw naming it; before, lanes threw from `diagramScene` on a shared id and rack misread such a port. Giving the
+  looks' ids a prefix no pipeline uses, found per pipeline, was the alternative; `laneTypeOf` reads a lane id on its own.
