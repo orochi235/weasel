@@ -35,7 +35,9 @@ export type TileGridOverflow = 'reject' | 'grow' | 'scroll';
 
 /** Options for `tileGrid`. */
 export interface TileGridOptions<TPose> {
+  /** Columns, rounded down. Under one, or not finite, the grid has no cells. */
   cols: number;
+  /** Rows, rounded down. Under one, or not finite, the grid has no cells. */
   rows: number;
   /** Gap between cells, in world units. Default 0. */
   gap?: number;
@@ -185,6 +187,19 @@ function dropOps<TPose>(
   return ops;
 }
 
+/** A grid with no cells: it moves nobody, offers no drop, and refuses every arrival. */
+function cellless<TPose>(snap: LayoutSnap<TPose>): LayoutStrategy<TPose> {
+  return {
+    snap,
+    childPoses: () => new Map(),
+    getDropTargets: () => [],
+    reflowPoses: () => new Map(),
+    commitDrop: (_container, _children, dragged, target) => dropOps(dragged, target, () => null, (_cell, pose) => pose),
+    arrive: () => null,
+    depart: () => ({ poses: new Map() }),
+  };
+}
+
 /**
  * Layout strategy that arranges children into a grid of cells, one child per
  * cell. What happens past `cols × rows` children is the `overflow` policy.
@@ -198,7 +213,8 @@ function dropOps<TPose>(
 export function tileGrid<TPose>(
   opts: TileGridOptions<TPose>,
 ): LayoutStrategy<TPose> {
-  const { cols, rows } = opts;
+  const cols = Math.floor(opts.cols);
+  const rows = Math.floor(opts.rows);
   const byColumn = opts.flow === 'column';
   const overflow = opts.overflow ?? 'reject';
   const snap = opts.snap ?? cellThenNearest<TPose>();
@@ -220,6 +236,7 @@ export function tileGrid<TPose>(
       return { ...(dragged as object), ...cell } as TPose;
     });
   const gridOf = (bounds: LayoutContainer['bounds'], n: number) => tileGridOf(shape, bounds, n);
+  if (!(cols >= 1 && cols < Infinity && rows >= 1 && rows < Infinity)) return cellless(snap);
 
   return {
     snap,

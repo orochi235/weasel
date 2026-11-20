@@ -2935,3 +2935,9 @@ Calls the lanes made without a ruling:
   then `DFLT`'s, then the rest in ScriptList order, and taking the first whose lookups cover the pair. Layout knows
   no run's script, so picking one script for every pair was the alternative, and loses kerning other scripts' lookups
   alone carry.
+## Audit round forty-nine (2026-11-20): guides' layouts
+
+- 2026-11-20 (the fixer's call): `tileGrid` rounds `cols` and `rows` down, and a grid with either under one, or not
+  finite, has no cells: it moves no child, offers no drop and refuses every arrival, under any `overflow`. This is
+  `gridSlots`' rule, except that `rows` is required here and so has no default to fall back to. Before, zero wrote
+  `NaN` poses and a fraction laid cells past the container.

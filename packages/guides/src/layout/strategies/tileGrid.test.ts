@@ -313,5 +313,19 @@ describe('tileGrid', () => {
       expect(reflow.get('b')).toEqual(cell(50));
     });
   });
-});
 
+  it('rounds its counts down, and has no cells under one column or row', () => {
+    const fractional = tileGrid<P>({ cols: 2.5, rows: 2 });
+    const children = [{ id: 'a', pose: { x: 0, y: 0, width: 1, height: 1 } }, { id: 'b', pose: { x: 0, y: 0, width: 1, height: 1 } }, { id: 'c', pose: { x: 0, y: 0, width: 1, height: 1 } }];
+    expect(fractional.childPoses(container, children).get('c')).toEqual({ x: 0, y: 50, width: 50, height: 50 });
+    for (const [cols, rows] of [[0, 2], [2, 0], [NaN, 2], [Infinity, 1], [-1, 2]] as const) {
+      for (const overflow of ['reject', 'grow', 'scroll'] as const) {
+        const none = tileGrid<P>({ cols, rows, overflow });
+        const dragged = { id: 'z', originPose: children[0]!.pose, pose: children[0]!.pose, sourceContainerId: null };
+        expect(none.childPoses(container, children).size).toBe(0);
+        expect(none.getDropTargets(container, children, dragged)).toEqual([]);
+        expect(none.arrive!(container, children, new Set(['c']))).toBeNull();
+      }
+    }
+  });
+});
