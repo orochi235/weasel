@@ -1,4 +1,4 @@
-import { createMemoryAdapter } from '@weasel-js/labkit';
+import { createMemoryAdapter, type LabContextValue } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -179,5 +179,29 @@ describe('knobs in the URL', () => {
       location.hash = '#/x--a?look.px=12';
     });
     await shows('hi/12/false');
+  });
+  it('writes the knobs of a trial the focus moves to into the URL, rather than reading the URL over them', async () => {
+    let lab: LabContextValue | undefined;
+    const config: ShellConfig = { labChrome: [{ id: 'probe', region: 'overlay', render: (ctx) => ((lab = ctx), null) }] };
+    history.replaceState(null, '', '/#/x--a');
+    renderWithIcons(<Workshop index={[a, b]} frameUrl="/frame.html" config={config} importers={importers()} storage={createMemoryAdapter()} />);
+    await shows('hi/4/false');
+    const first = lab!.focusedTrialId!;
+    fireEvent.change(screen.getByRole('textbox', { name: 'Label' }), { target: { value: 'Save' } });
+    await waitFor(() => expect(location.hash).toBe('#/x--a?label=Save'));
+    act(() => lab!.addTrial('x--a'));
+    const second = lab!.focusedTrialId!;
+    expect(second).not.toBe(first);
+    await waitFor(() => expect(screen.getAllByTestId('story')).toHaveLength(2));
+    const labelOf = (id: string) => (lab!.trials.find((t) => t.id === id)?.config as { label?: string } | undefined)?.label;
+    fireEvent.change(screen.getAllByRole('textbox', { name: 'Label' }).at(-1)!, { target: { value: 'Other' } });
+    await waitFor(() => expect(labelOf(second)).toBe('Other'));
+    await waitFor(() => expect(location.hash).toBe('#/x--a?label=Other'));
+    act(() => lab!.focusTrial(first));
+    expect(lab!.focusedTrialId).toBe(first);
+    await act(() => new Promise((r) => setTimeout(r, 50)));
+    expect(location.hash).toBe('#/x--a?label=Save');
+    expect(labelOf(first)).toBe('Save');
+    expect(labelOf(second)).toBe('Other');
   });
 });

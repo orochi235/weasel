@@ -5,9 +5,9 @@ import { useEffect, useRef, useState } from 'react';
 import { knobPaths, knobsToParams, paramsToKnobs, paramsToPins, reservedParams, sameKnob, withoutPins } from '../route/url';
 import { routedTrial } from './routedTrial';
 import { readRouteParams, replaceRouteParams, takeRouteFromTrial, useRoute } from './useRoute';
-import { compositeKey } from '@weasel-js/registry';
 
 interface KnobSyncProps {
+  trialId: string;
   schema: ConfigSchema<unknown>;
   config: unknown;
 }
@@ -16,11 +16,13 @@ interface KnobSyncProps {
  * Keeps one trial's knobs and the URL in step. On mount, and whenever the hash changes under it, the URL's knobs are
  * written over the trial's config, with every leaf the URL could name and does not set returned to its default, and the
  * globals it pins pinned; after that each change to the config is written back to the URL in place, without the pins.
- * A route written for this trial as it stood skips that first read.
+ * A route written for this trial as it stood skips that first read, and so does a move of the routed trial to another
+ * one showing the same story: that trial's knobs are its own, so they are written to the URL, not read from it.
  */
-function KnobSync({ schema, config }: KnobSyncProps) {
+function KnobSync({ trialId, schema, config }: KnobSyncProps) {
   const { setConfig } = useTrialState();
   const reading = useRef(true);
+  const syncedTrial = useRef(trialId);
   const [typed, setTyped] = useState(0);
 
   useWindowEvent('hashchange', () => {
@@ -29,6 +31,10 @@ function KnobSync({ schema, config }: KnobSyncProps) {
   });
 
   useEffect(() => {
+    if (syncedTrial.current !== trialId) {
+      syncedTrial.current = trialId;
+      reading.current = false;
+    }
     if (reading.current && takeRouteFromTrial()) reading.current = false;
     if (reading.current) {
       reading.current = false;
@@ -52,7 +58,7 @@ function KnobSync({ schema, config }: KnobSyncProps) {
     }
     const knobs = knobsToParams(schema, config);
     replaceRouteParams((params) => ({ ...knobs, ...withoutPins(reservedParams(params)) }));
-  }, [schema, config, setConfig, typed]);
+  }, [trialId, schema, config, setConfig, typed]);
 
   return null;
 }
@@ -71,7 +77,7 @@ export function RouteKnobs({ instruments, isReady }: { instruments: InstrumentLi
   if (!trial || !schema) return null;
   return (
     <TrialIdContext.Provider value={trial.id}>
-      <KnobSync key={compositeKey([trial.id, route])} schema={schema as ConfigSchema<unknown>} config={trial.config} />
+      <KnobSync key={route} trialId={trial.id} schema={schema as ConfigSchema<unknown>} config={trial.config} />
     </TrialIdContext.Provider>
   );
 }

@@ -8,30 +8,30 @@ export function folderPathsOf(path: string): string[] {
   return segments.map((_, i) => segments.slice(0, i + 1).join('/'));
 }
 
-/** The folder at `path` in `list` or below it. */
-function folderAt(list: readonly StoryNode[], path: string): StoryFolder | undefined {
+/** The folder at `path` in `list` or below it, after the folders it sits in, outermost first. */
+function folderAt(list: readonly StoryNode[], path: string): StoryFolder[] | undefined {
   for (const node of list) {
     if (node.kind !== 'folder') continue;
-    if (node.path === path) return node;
+    if (node.path === path) return [node];
     const inner = folderAt(node.children, path);
-    if (inner) return inner;
+    if (inner) return [node, ...inner];
   }
   return undefined;
 }
 
 /**
- * The folder a reveal of `path` shows, and the view it is in: the first of `order` holding the path, failing all of
- * them the nearest folder above it.
+ * The folder a reveal of `path` shows, the folders it sits in (outermost first), and the view it is in: the first of
+ * `order` holding the path, failing all of them the nearest folder above it.
  */
 export function revealedFolderIn<V>(
   path: string,
   order: readonly V[],
   nodesOf: (view: V) => readonly StoryNode[],
-): { folder: StoryFolder; view: V } | undefined {
+): { folder: StoryFolder; ancestors: StoryFolder[]; view: V } | undefined {
   for (let at = path; at; at = at.includes('/') ? at.slice(0, at.lastIndexOf('/')) : '') {
     for (const view of order) {
-      const folder = folderAt(nodesOf(view), at);
-      if (folder) return { folder, view };
+      const chain = folderAt(nodesOf(view), at);
+      if (chain) return { folder: chain.at(-1)!, ancestors: chain.slice(0, -1), view };
     }
   }
   return undefined;
