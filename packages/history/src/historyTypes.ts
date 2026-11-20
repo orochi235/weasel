@@ -52,7 +52,8 @@ export interface HistoryBranch {
  *
  * - `'push'` — an entry was added: `applyOps`, `apply`, `recordEntry`, a journal's commit.
  * - `'coalesce'` — a push merged into the entry on top; `ops` are the ones it brought.
- * - `'undo'` / `'redo'` / `'goto'` — the entries walked across, in the order walked.
+ * - `'undo'` / `'redo'` / `'goto'` — the entries walked across, in the order walked. A `goto` that threw
+ *   and could not walk all the way back lists both walks, so an entry can appear twice.
  * - `'branch'` — `switchBranch` made another future the redo stack: its entries, next redo first.
  * - `'prune'` — the undo entries `prune` evicted, oldest first.
  * - `'drop'` — the redo entries `dropRedo` took off the redo stack, next redo first.
@@ -76,7 +77,10 @@ export interface HistoryStep {
 
 /** Op-batched undo/redo controller returned by `createHistory`. */
 export interface History {
+  /** Throws while a journal is active, as `undo` does: an entry pushed beneath the journal's edits would
+   *  sit below its commit though it ran after them. */
   apply(op: Op, label?: string): void;
+  /** Throws while a journal is active, as `apply` does. */
   applyOps(ops: Op[], label: string): void;
   /** Throws while a journal is active: the journal's edits sit over this stack's top. */
   undo(): void;
@@ -161,12 +165,12 @@ export interface History {
    *  report. A snapshot of the wrong shape (one storage corrupted) is refused
    *  whole: a strict restore throws `HistoryRestoreError`, a best-effort one
    *  warns and reports `restored: false`. Bumps `version` and notifies
-   *  subscribers exactly once. */
+   *  subscribers exactly once. Throws while a journal is active. */
   restore(snapshot: SerializedHistory, options?: RestoreOptions): HistoryRestoreReport;
   /** Push an entry whose ops have already been applied to the adapter.
    *  Unlike `applyOps`, does NOT call `op.apply()`. Used by Journal.commit
    *  to flush a session's net forward ops to the parent as one entry without
-   *  re-mutating the scene. */
+   *  re-mutating the scene. Throws while a journal is active, as `apply` does. */
   recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void;
   /** Concatenated forwardOps of every undo-stack entry, in order. Snapshot
    *  of "what changes are currently applied via this history" — useful for

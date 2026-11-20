@@ -43,4 +43,24 @@ describe('Journal.suspend', () => {
     expect(() => j.undo()).toThrow();
     expect(() => j.redo()).toThrow();
   });
+
+  it('throws while a journal opened inside it is active, and leaves both active', () => {
+    const parent = createHistory({ values: [] as number[] });
+    const outer = parent.beginJournal({ label: 'outer' });
+    const child = outer.beginJournal({ label: 'child' });
+
+    expect(() => outer.suspend()).toThrow(/inside this one is still active/);
+    expect(outer.isActive()).toBe(true);
+    expect(child.isActive()).toBe(true);
+    expect(() => parent.beginJournal({ label: 'second' })).toThrow();
+  });
+
+  it('suspends once the journal inside it is suspended', () => {
+    const parent = createHistory({ values: [] as number[] });
+    const outer = parent.beginJournal({ label: 'outer' });
+    outer.beginJournal({ label: 'child' }).suspend();
+
+    outer.suspend();
+    expect(outer.isActive()).toBe(false);
+  });
 });

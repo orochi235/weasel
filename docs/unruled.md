@@ -2984,3 +2984,14 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): `quadtree` rounds `maxDepth` down and holds it to 0–7, so a 128 × 128 grid at its
   finest, the order of `snapPoint`'s 129 × 129 cap; `NaN` is the default 4. Past 31 the cell arithmetic overflowed and
   its scan never ended, and at 8 a container of point-sized children took seconds per edit.
+## Audit round forty-nine (2026-11-20): history
+
+- 2026-11-20 (the fixer's call): `Journal.suspend()` throws while a journal opened inside it is active; suspend that
+  one first. Suspending the inner journals along with it was the alternative; `resumeJournal` would then have had to
+  bring them back too.
+- 2026-11-20 (the fixer's call): a raw `History`'s `apply`, `applyOps`, `recordEntry` and `restore` throw while a
+  journal is active, as `undo`, `redo` and `goto` do; a suspended journal still lets them through. `clear`, `prune`,
+  `dropRedo` and `switchBranch` still run, since none leaves an entry describing a state the document is not in.
+- Open: edits interleaved between suspended sibling journals (one edits, a second opens and edits, the first resumes
+  and edits again) cannot be taken back exactly by the enclosing journal's `cancel`, which unwinds one journal at a
+  time, latest edit first. Doing it exactly needs one log of edits across the siblings.

@@ -27,7 +27,7 @@ export function createSwapOp<V>({ name, label, before, after, emit, coalesceKey 
     args: { before, after } satisfies SwapArgs<V>,
     ...(coalesceKey !== undefined ? { coalesceKey } : {}),
     apply: () => emit(after),
-    invert: () => ({ label, apply: () => emit(before), invert: () => forward }),
+    invert: () => ({ label, name, args: { before: after, after: before } satisfies SwapArgs<V>, apply: () => emit(before), invert: () => forward }),
   };
   return forward;
 }

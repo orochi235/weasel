@@ -516,4 +516,19 @@ describe('createHistory — serialize / restore', () => {
     h.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
     expect(h.entries().undo.map((e) => e.id)).toEqual([10]);
   });
+
+  it('restore bumps nextEntryId past the floor and every branch fork point', () => {
+    const h = createHistory(makeAdapter() as any);
+    h.restore({
+      version: 1,
+      undoStack: [],
+      redoStack: [],
+      floor: 4,
+      branches: [{ at: 6, entries: [restoredEntry(2)] }],
+      nextEntryId: 1,
+      droppedEntries: 0,
+    }, { recovery: 'best-effort' });
+    h.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    expect(h.entries().undo.map((e) => e.id)).toEqual([7]);
+  });
 });

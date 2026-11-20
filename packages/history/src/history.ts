@@ -70,8 +70,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
 
   const applyAllOrNothing = createApplier(adapter, logger);
 
-  const { walkTo, walkOrReturn, readSelection } = createWalk({
-    undoStack, redoStack, selection, applyAllOrNothing, refuse: journals.refuse, logger,
+  const { walkTo, walkOrReturn, reported, readSelection } = createWalk({
+    undoStack, redoStack, selection, applyAllOrNothing, logger, report: clock.bump,
   });
 
   const recorder = createRecorder({
@@ -82,20 +82,20 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const history: History = {
     ...createStackView(undoStack, redoStack),
     apply(op, label) {
+      journals.refuse();
       pushOrCoalesce([op], label ?? op.label ?? '', true);
     },
     applyOps(ops, label) {
+      journals.refuse();
       pushOrCoalesce(ops, label);
     },
     undo() {
-      if (undoStack.length === 0) return;
-      const { walked, applied } = walkTo(undoStack.length - 1);
-      clock.bump(stepOf('undo', walked, applied));
+      journals.refuse();
+      if (undoStack.length > 0) reported('undo', (into) => walkTo(undoStack.length - 1, into));
     },
     redo() {
-      if (redoStack.length === 0) return;
-      const { walked, applied } = walkTo(undoStack.length + 1);
-      clock.bump(stepOf('redo', walked, applied));
+      journals.refuse();
+      if (redoStack.length > 0) reported('redo', (into) => walkTo(undoStack.length + 1, into));
     },
     seal() {
       clock.seal();
@@ -108,9 +108,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
     goto(n) {
       // Total length stays constant during this walk: entries only move between the two stacks.
-      if (gotoDepth(n, undoStack.length + redoStack.length) === undoStack.length) return;
-      const walked = walkOrReturn(n, () => clock.bump());
-      clock.bump(stepOf('goto', walked.walked, walked.applied));
+      const depth = gotoDepth(n, undoStack.length + redoStack.length);
+      journals.refuse();
+      if (depth === undoStack.length) return;
+      reported('goto', (into) => walkOrReturn(n, into));
     },
     prune(t) {
       const evicted = forks.evictBefore(t);
@@ -132,6 +133,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     observe: clock.observe,
     serialize: () => snapshot({ undoStack, redoStack, ...forks.state(), nextEntryId: recorder.nextEntryId() }, logger),
     recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
+      journals.refuse();
       record(ops, ops, label, options);
     },
     nextEntryId: recorder.nextEntryId,
@@ -139,6 +141,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     activeJournal: journals.active,
     resumeJournal: (journal) => journals.resume(history, journal),
     restore(serialized: SerializedHistory, restoreOptions: RestoreOptions = {}): HistoryRestoreReport {
+      journals.refuse();
       const fault = snapshotFault(serialized);
       if (fault) {
         const report = { restored: false, unresolved: [] };
