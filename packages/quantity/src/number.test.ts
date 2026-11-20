@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { formatCompact, formatNumber, parseNumber } from './localized';
 import { MINUS_SIGN, parseSignedNumber } from './number';
 import { parseAs, qty } from './present';
-import { bytes, unit } from './kinds/measure';
+import { bytes, duration, unit } from './kinds/measure';
 import { zoom } from './kinds/proportion';
 
 const formatZoom = (z: number) => qty(z, zoom()).text;
@@ -335,5 +335,14 @@ describe('compound unit text, long', () => {
     expect(parseAs('1.5ft .5in', feet)).toBe(18.5);
     expect(parseAs('5FT 3IN', feet)).toBe(63);
     expect(parseAs('5ft 3', feet)).toBeNaN();
+  });
+});
+
+describe('a unit scale past the range of a number', () => {
+  it('reads as NaN, not an infinity', () => {
+    expect(parseAs('1e308ft', unit('in', { accepts: { ft: 12, in: 1 } }))).toBeNaN();
+    expect(parseAs('1e306TB', bytes())).toBeNaN();
+    expect(parseAs('1e306h', duration())).toBeNaN();
+    expect(parseAs(`${'9'.repeat(400)}:00`, duration())).toBeNaN();
   });
 });

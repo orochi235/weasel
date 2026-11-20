@@ -97,10 +97,10 @@ function readNumber(text: string, units?: Readonly<UnitTable>): number {
     const unit = unitEndingAt(trimmed, trimmed.length, named);
     if (unit !== undefined) {
       const terms = compoundTermsOf(trimmed, named);
-      if (terms !== undefined && terms.length > 1) return compoundValue(terms, trimmed);
+      if (terms !== undefined && terms.length > 1) return finiteOrNaN(compoundValue(terms, trimmed));
       const [name, entry] = unit;
       const { factor, offset } = entryScale(entry);
-      return scaled(readNumber(trimmed.slice(0, -name.length)), factor) + offset;
+      return finiteOrNaN(scaled(readNumber(trimmed.slice(0, -name.length)), factor) + offset);
     }
   }
   let t = hyphenated(text.trim());
