@@ -6,7 +6,7 @@
  */
 import type { ActionDeps } from './invoker';
 import { ActionDisabledReason, type Action, type ActionUnavailable } from './action';
-import { isDev } from '@weasel-js/react';
+import { isDev } from '@weasel-js/registry';
 
 /**
  * Result of evaluating an Action's `enabled` predicate.

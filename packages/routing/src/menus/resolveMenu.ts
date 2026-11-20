@@ -13,7 +13,7 @@ import { actionItems, type ActionItem } from '../interactions/actions/actionItem
 import { actionItemShortcuts, type ActionShortcut } from '../interactions/actions/actionShortcuts';
 import { checkActive, checkEnabled, type ActionEnabledResult } from '../interactions/actions/actionEnabled';
 import { actionSettingsParams, readActionSettings } from '../interactions/actions/actionSettings';
-import { isDev } from '@weasel-js/react';
+import { isDev } from '@weasel-js/registry';
 import { sep, tidy, withReason } from './separators';
 import { booleanRows, colorRows, enumRows, numberRows, stringRows } from './valueRows';
 import type { MenuDef } from './types';

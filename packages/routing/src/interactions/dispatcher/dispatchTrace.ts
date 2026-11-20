@@ -2,9 +2,8 @@
  * What a canvas's dispatchers did: one record per resolved input and one per
  * mode switch, in a rolling buffer the devtools hook reads.
  */
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, isDev } from '@weasel-js/registry';
 import type { DispatchRecord } from './dispatchRecord';
-import { isDev } from '@weasel-js/react';
 
 /** One entry per "mode change" — a kit state transition that isn't a
  *  dispatched input event but explains why an input was (or wasn't) handled

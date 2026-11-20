@@ -8,7 +8,7 @@
 import type { Action } from './action';
 import type { DepRegistry } from './depNode';
 import type { ActionDeps } from './invoker';
-import { isDev } from '@weasel-js/react';
+import { isDev } from '@weasel-js/registry';
 
 /** True in dev builds; false in production. Tree-shakes the Proxy out of
  *  prod entirely. (Mirrors the dispatcher's own `DEV` const.) */

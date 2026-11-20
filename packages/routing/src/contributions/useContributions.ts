@@ -16,10 +16,9 @@ import { assembleEntries } from './assemble';
 import { liveScope, type EligibilityState } from './eligibility';
 import { useInnermostKeymap } from '../keymaps/useInnermostKeymap';
 import type { Contribution, OverlayPosition } from './types';
-import { isDev } from '@weasel-js/react';
 import { sameList, useStableByContent } from '@weasel-js/react';
 import type { KernelOverlay } from '../index';
-import { compositeKey } from '@weasel-js/registry';
+import { compositeKey, isDev } from '@weasel-js/registry';
 
 const NO_SUBSCRIBE = (): (() => void) => () => {};
 
