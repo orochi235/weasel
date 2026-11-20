@@ -52,6 +52,17 @@ describe('nested <svg>', () => {
     });
   });
 
+  it('keeps its opacity and its transform', () => {
+    const r = parseSvg(
+      `<svg xmlns="${SVG}" viewBox="0 0 100 100">`
+      + `<svg x="5" opacity="0.5" transform="translate(10 0)"><rect width="10" height="10"/></svg></svg>`,
+    );
+    expect(r.warnings).toEqual([]);
+    expect(r.nodes[0]).toMatchObject({
+      kind: 'group', opacity: 0.5, children: [{ path: { kind: 'rect', x: 15, y: 0, width: 10, height: 10 } }],
+    });
+  });
+
   it('warns that a nested viewBox is not rescaled', () => {
     const r = parseSvg(
       `<svg xmlns="${SVG}"><svg viewBox="0 0 10 10" width="5" height="5">`

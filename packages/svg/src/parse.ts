@@ -229,7 +229,10 @@ function parseElement(
     if (el.hasAttribute('viewBox')) {
       onWarn('nested <svg> viewBox is not modeled; its children are not rescaled');
     }
-    return parseChildren(el.children, multiply(ctm, offset), childStyle, viewportPaintFrom(el, from), gradients, clips, onWarn, uriToPrefix, keepHidden);
+    const own = multiply(ctm, parseTransform(el.getAttribute('transform'), onWarn));
+    const children = parseChildren(el.children, multiply(own, offset), childStyle, viewportPaintFrom(el, from), gradients, clips, onWarn, uriToPrefix, keepHidden);
+    const opacity = ownValue(el, 'opacity');
+    return opacity == null ? children : { kind: 'group', children, opacity };
   }
   return parseLeaf(el, tag, ctm, style, from, gradients, onWarn, uriToPrefix);
 }
