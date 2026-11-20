@@ -193,15 +193,20 @@ export function collectShapeTrait(
   tools: readonly ToolEntry[] = [],
 ): readonly ShapeKindEntry[] {
   const toolById = new Map(tools.map((t) => [t.id, t]));
-  return SHAPE_KIND_IDS.map((id) => ({
-    kind: 'shapeKind',
-    trait: 'shape',
-    id,
-    label: id,
-    tool: id,
-    hookName: toolById.get(id)?.hookName,
-    icon: toolById.get(id)?.presentation?.icon ?? kindIcon(id),
-  }));
+  return SHAPE_KIND_IDS.map((id) => {
+    const tool = toolById.get(id);
+    return {
+      kind: 'shapeKind',
+      trait: 'shape',
+      id,
+      label: id,
+      // Only a mounted tool authors the kind; `image` has none, and a canvas
+      // may leave out `pen` or `pencil`.
+      tool: tool ? id : undefined,
+      hookName: tool?.hookName,
+      icon: tool?.presentation?.icon ?? kindIcon(id),
+    };
+  });
 }
 
 /** The glyph a kind declares for itself, for a kind no mounted tool covers. */

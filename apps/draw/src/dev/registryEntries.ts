@@ -167,7 +167,7 @@ export interface ShapeKindEntry {
   /** Id of the tool that mints objects of this kind (`rect` → `rect`).
    *  Same value as `id` for the built-ins; carried as a separate field so
    *  the inspector can drill from kind → tool without re-encoding the
-   *  assumption. */
+   *  assumption. Absent when no mounted tool mints the kind (`image`). */
   tool?: string;
   /** Hook the authoring tool is exported as. Read off the live tool's
    *  `hookName` field (set by each builtin hook on its `defineTool` spec). */

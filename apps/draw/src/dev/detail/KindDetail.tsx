@@ -19,7 +19,10 @@ export function ShapeKindDetail({
   entry: ShapeKindEntry;
   onNavigate: Props['onNavigate'];
 }) {
-  const match = findSourceMatch(entry.hookName ?? entry.id);
+  // The source shown is the authoring tool's hook. A bare kind id (`image`)
+  // would match whatever export happens to share the word, so a kind with no
+  // hook shows no source.
+  const match = entry.hookName ? findSourceMatch(entry.hookName) : undefined;
   const opTargets = collectOpKindsTargeting(entry.id);
   return (
     <div>

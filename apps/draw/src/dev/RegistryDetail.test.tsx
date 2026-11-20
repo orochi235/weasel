@@ -4,7 +4,8 @@ import { renderWithIcons } from '../testIcons';
 import { RegistryDetail } from './RegistryDetail';
 import { icon } from '../icons.gen';
 import { RouteBadge } from './detail/RouteBadge';
-import type { ActionEntry, TreeEntry } from './registryEntries';
+import type { ActionEntry, ToolEntry, TreeEntry } from './registryEntries';
+import { collectShapeTrait } from './registryData';
 
 describe('RegistryDetail', () => {
   it('pairs each fact about an entry with its label in a description list', () => {
@@ -184,5 +185,20 @@ describe('phase output detail', () => {
     const entry: TreeEntry = { kind: 'phaseOutput', id, label: id };
     const { container } = renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(container.textContent).not.toMatch(/initial\.overlay|claimsAll|pointerdown/);
+  });
+});
+
+describe('shape kind detail with no authoring tool', () => {
+  it('names no authoring tool and no source for a kind no mounted tool mints', () => {
+    const image = collectShapeTrait([]).find((k) => k.id === 'image')!;
+    expect(image.tool).toBeUndefined();
+    renderWithIcons(<RegistryDetail entry={image} tools={[]} actions={[]} onNavigate={() => {}} />);
+    expect(screen.queryByText('authored by', { selector: 'dt' })).toBeNull();
+    expect(screen.queryByText('source', { selector: 'dt' })).toBeNull();
+  });
+
+  it('still names the tool that mints a kind when it is mounted', () => {
+    const rect = { kind: 'tool', id: 'rect', hookName: 'useRectTool' } as unknown as ToolEntry;
+    expect(collectShapeTrait([rect]).find((k) => k.id === 'rect')?.tool).toBe('rect');
   });
 });
