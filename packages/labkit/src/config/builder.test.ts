@@ -246,7 +246,7 @@ describe('auto on a node', () => {
 
   it('rejects anything but the sentinel, for a caller TypeScript is not checking', () => {
     const n = f.number(3) as unknown as { initial: (value: unknown) => unknown };
-    expect(() => n.initial(5)).toThrow(/takes `auto`/);
-    expect(() => n.initial(Symbol('auto'))).toThrow(/takes `auto`/);
+    expect(() => n.initial(5)).toThrow(/takes `AUTO`/);
+    expect(() => n.initial(Symbol('auto'))).toThrow(/takes `AUTO`/);
   });
 });
