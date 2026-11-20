@@ -46,20 +46,23 @@ function holdFrames(): () => void {
   let held = true;
   const due: { id: number; run: () => void }[] = [];
   const canceled = new Set<number>();
-  scope.requestAnimationFrame = (callback) => {
+  const holdingRequest: Frames['requestAnimationFrame'] = (callback) => {
     const id = request.call(scope, (time) => {
       if (held) due.push({ id, run: () => callback(time) });
       else callback(time);
     });
     return id;
   };
-  scope.cancelAnimationFrame = (id) => {
+  const holdingCancel: Frames['cancelAnimationFrame'] = (id) => {
     canceled.add(id);
     cancel.call(scope, id);
   };
+  scope.requestAnimationFrame = holdingRequest;
+  scope.cancelAnimationFrame = holdingCancel;
   return () => {
-    scope.requestAnimationFrame = request;
-    scope.cancelAnimationFrame = cancel;
+    // A stub the held function installed in the meantime is left in place.
+    if (scope.requestAnimationFrame === holdingRequest) scope.requestAnimationFrame = request;
+    if (scope.cancelAnimationFrame === holdingCancel) scope.cancelAnimationFrame = cancel;
     holding = held = false;
     const runs = due.filter((frame) => !canceled.has(frame.id));
     if (runs.length > 0) act(() => runs.forEach((frame) => frame.run()));
