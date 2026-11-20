@@ -18,8 +18,8 @@ export interface AutosaveOptions {
   /** When given, a save is scheduled on mount and then only when it changes. Without it, every
    *  render schedules one. */
   revision?: unknown;
-  /** Called after every save attempt with whether the primary entry was written, and the error when `write` threw.
-   *  Without it, a throwing `write` is logged with `console.error`. An `onSaved` that throws is logged the same way,
+  /** Called after every save attempt with whether the primary entry was written, and the error when `write` threw or
+   *  the save itself did. Without it, either error is logged with `console.error`. An `onSaved` that throws is logged the same way,
    *  and the saves queued behind it still run. */
   onSaved?: (ok: boolean, error?: unknown) => void;
   /** Where the entries are kept, their keys the records' names. Defaults to `localStorage`, under the keys
@@ -76,7 +76,10 @@ export function useAutosave(write: () => SessionWrite | null, opts: AutosaveOpti
       const { slot } = slotsFor(records);
       const { primary, dependents } = entries;
       const start = (): Promise<void> =>
-        writeSlots(slot, primary, dependents).then((ok) => report(ok), () => report(false));
+        writeSlots(slot, primary, dependents).then((ok) => report(ok), (error: unknown) => {
+          if (onSaved) report(false, error);
+          else console.error('weasel useAutosave: the save failed, so nothing was saved.', error);
+        });
       // One save at a time, so each hears whether its own entries landed. With none on its way, this one starts now:
       // a save on `pagehide` cannot wait. Whatever the one before did, this one still starts.
       const run = busyRef.current ? busyRef.current.then(start, start) : start();

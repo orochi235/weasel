@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { createMemoryAdapter, openRecordsSync } from '@weasel-js/storage';
+import { createMemoryAdapter, openRecordsSync, type RecordCache } from '@weasel-js/storage';
 import { useAutosave, type SessionWrite } from './useAutosave';
 
 afterEach(() => {
@@ -84,6 +84,20 @@ describe('useAutosave', () => {
     renderHook(() => useAutosave(write('a'), { onSaved }));
     await vi.advanceTimersByTimeAsync(300);
     expect(onSaved).toHaveBeenLastCalledWith(false);
+  });
+
+  it('passes on the error of a save that throws, and logs it when there is no onSaved', async () => {
+    vi.useFakeTimers();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const broken = new Error('broken cache');
+    const records = { get writable(): boolean { throw broken; } } as unknown as RecordCache;
+    const onSaved = vi.fn();
+    renderHook(() => useAutosave(write('a'), { records, onSaved }));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(onSaved).toHaveBeenLastCalledWith(false, broken);
+    renderHook(() => useAutosave(write('a'), { records }));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('save failed'), broken);
   });
 
   it('runs the save queued behind one whose onSaved threw, and logs the throw', async () => {
