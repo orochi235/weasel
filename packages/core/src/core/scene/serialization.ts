@@ -55,6 +55,36 @@ export function layerFromSerialized<TLayer extends string>(
     : { ...base, kind: 'system' };
 }
 
+/** One node as `toJSON` writes it, with `copy` applied to its pose, `data` and declared fields. */
+export function serializeNode<TData, TLayer extends string, TPose>(
+  n: Node<TData, TLayer, TPose>,
+  fnFields: readonly NodeFnField[],
+  copy: <T>(value: T) => T = detach,
+): SerializedNode<TData, TLayer, TPose> {
+  const id = n.id;
+  const out: SerializedNode<TData, TLayer, TPose> = {
+    id,
+    kind: n.kind,
+    layer: n.layer,
+    pose: copy(n.pose),
+    data: copy(n.data),
+  };
+  if (n.parent != null) out.parent = n.parent;
+  if (n.dependsOn === 'children') out.dependsOn = 'children';
+  else if (n.dependsOn && n.dependsOn.length > 0) out.dependsOn = copy(n.dependsOn);
+  Object.assign(out, statedFields(n, copy));
+  Object.assign(
+    out,
+    fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey', (field) => {
+      throw new Error(
+        `Scene.toJSON: node '${id}' has ${field.spec.field} but no matching registry key. ` +
+        `The function must be registered via createScene's registry option to round-trip.`
+      );
+    }),
+  );
+  return out;
+}
+
 /** The snapshot of `state`: layers in order, nodes in tree preorder, and the
  *  document values when there are any. Throws
  *  when a node carries a function the registry has no key for. */
@@ -66,30 +96,7 @@ export function serializeScene<TData, TLayer extends string, TPose>(
   copy: <T>(value: T) => T = detach,
 ): SerializedScene<TData, TLayer, TPose> {
   const nodes: SerializedNode<TData, TLayer, TPose>[] = [];
-  for (const n of treePreorder(state.roots, state.nodes)) {
-    const id = n.id;
-    const out: SerializedNode<TData, TLayer, TPose> = {
-      id,
-      kind: n.kind,
-      layer: n.layer,
-      pose: copy(n.pose),
-      data: copy(n.data),
-    };
-    if (n.parent != null) out.parent = n.parent;
-    if (n.dependsOn === 'children') out.dependsOn = 'children';
-    else if (n.dependsOn && n.dependsOn.length > 0) out.dependsOn = copy(n.dependsOn);
-    Object.assign(out, statedFields(n, copy));
-    Object.assign(
-      out,
-      fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey', (field) => {
-        throw new Error(
-          `Scene.toJSON: node '${id}' has ${field.spec.field} but no matching registry key. ` +
-          `The function must be registered via createScene's registry option to round-trip.`
-        );
-      }),
-    );
-    nodes.push(out);
-  }
+  for (const n of treePreorder(state.roots, state.nodes)) nodes.push(serializeNode(n, fnFields, copy));
   const systemLayers = state.layers.map((l) => {
     const layer: SerializedLayer<TLayer> = { id: l.id };
     if (l.visible === false) layer.visible = false;

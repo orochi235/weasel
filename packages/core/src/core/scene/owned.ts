@@ -55,11 +55,12 @@ function freezePlain(value: unknown): void {
   for (const key of Object.keys(value)) freezePlain((value as Record<string, unknown>)[key]);
 }
 
-const sharedSnapshots = new WeakMap<object, () => unknown>();
+const sharedSnapshots = new WeakMap<object, { whole: () => unknown; node: (id: string) => unknown }>();
 
-/** Pairs a scene's `toJSON` with the snapshot {@link sharedJSON} reads in its place. */
-export function registerSharedJSON(toJSON: () => unknown, read: () => unknown): void {
-  sharedSnapshots.set(toJSON, read);
+/** Pairs a scene's `toJSON` with the snapshot {@link sharedJSON} reads in its place, and the one node of it
+ *  {@link sharedNodeJSON} reads. */
+export function registerSharedJSON(toJSON: () => unknown, read: () => unknown, node: (id: string) => unknown): void {
+  sharedSnapshots.set(toJSON, { whole: read, node });
 }
 
 /**
@@ -69,5 +70,12 @@ export function registerSharedJSON(toJSON: () => unknown, read: () => unknown): 
  */
 export function sharedJSON<S extends { toJSON(): unknown }>(scene: S): ReturnType<S['toJSON']> {
   const read = sharedSnapshots.get(scene.toJSON);
-  return (read ? read() : scene.toJSON()) as ReturnType<S['toJSON']>;
+  return (read ? read.whole() : scene.toJSON()) as ReturnType<S['toJSON']>;
+}
+
+/** One node of {@link sharedJSON}'s snapshot, `undefined` for an id the scene does not hold, or null for a scene
+ *  whose `toJSON` is not the kit's, which cannot answer one node alone. */
+export function sharedNodeJSON(scene: { toJSON(): unknown }, id: string): unknown {
+  const read = sharedSnapshots.get(scene.toJSON);
+  return read ? read.node(id) : null;
 }
