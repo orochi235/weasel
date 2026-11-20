@@ -45,7 +45,7 @@ export interface TextShaper {
    *
    * `language` is a BCP 47 tag (`'sr'`, `'ur'`) and selects the face's forms
    * for that language: Serbian Cyrillic italics, Urdu digits. Absent, the
-   * face's default forms are drawn.
+   * face's default forms are drawn. A tag holding anything outside ASCII is refused.
    *
    * Glyphs come in logical order: clusters by ascending `cluster`, and a
    * cluster's own glyphs in the order they are drawn, left to right. The array
@@ -54,7 +54,7 @@ export interface TextShaper {
   shape(face: ArrayBuffer, text: string, features?: readonly string[], language?: string): readonly ShapedGlyph[];
   /** Em-space SVG path data for glyph `gid` of `face`, moved by `(dx, dy)`
    *  ems; y grows downward and the origin is the pen on the baseline. Null for
-   *  a glyph with no contours. */
+   *  a glyph with no contours. Throws a `RangeError` for an offset that is not finite. */
   glyphD(face: ArrayBuffer, gid: number, dx?: number, dy?: number): string | null;
   /** Whether `face` has the OpenType feature `tag` (`'smcp'`, `'liga'`) in its
    *  substitutions or positioning. */
@@ -75,9 +75,15 @@ interface FaceRecord {
 /** Shapings held per face before they are dropped together. */
 const SHAPE_CACHE_LIMIT = 512;
 
+/** Parsed feature settings held before they are dropped together. */
+const FEATURE_CACHE_LIMIT = 256;
+
 /** Decimal places kept in path data: 1e-5 em, and never exponent notation,
  *  which an SVG path tokenizer would read as a command. */
 const PRECISION = 1e5;
+
+/** HarfBuzz reads its strings as ASCII, and throws from mid-allocation on anything else. */
+const ASCII = /^[\x00-\x7f]*$/;
 
 const fmt = (v: number): string => {
   const scaled = v * PRECISION;
@@ -114,9 +120,10 @@ class HarfBuzzShaper implements TextShaper {
   #feature(tag: string): HbFeature {
     let f = this.#features.get(tag);
     if (!f) {
-      const parsed = this.#hb.Feature.fromString(tag);
+      const parsed = ASCII.test(tag) ? this.#hb.Feature.fromString(tag) : undefined;
       if (!parsed) throw new Error(`weasel shape: "${tag}" is not an OpenType feature setting; pass one per entry, a tag such as "smcp" or a setting such as "liga=0"`);
       f = parsed;
+      if (this.#features.size >= FEATURE_CACHE_LIMIT) this.#features.clear();
       this.#features.set(tag, f);
     }
     return f;
@@ -127,6 +134,9 @@ class HarfBuzzShaper implements TextShaper {
   ): readonly ShapedGlyph[] {
     const rec = this.#face(bytes);
     const lang = language || undefined;
+    if (lang !== undefined && !ASCII.test(lang)) {
+      throw new Error(`weasel shape: "${lang}" is not a BCP 47 language tag; a tag is ASCII letters, digits, and hyphens, such as "sr-Latn"`);
+    }
     // Refused before the cache is read, so a bad setting is refused whatever was shaped before.
     const hbFeatures = features.map((tag) => this.#feature(tag));
     // Length-prefixed, so no feature, language, or text can run into the next and answer another's key.
@@ -187,6 +197,9 @@ class HarfBuzzShaper implements TextShaper {
   }
 
   glyphD(bytes: ArrayBuffer, gid: number, dx = 0, dy = 0): string | null {
+    if (!Number.isFinite(dx) || !Number.isFinite(dy)) {
+      throw new RangeError(`weasel glyphD: the offset (${dx}, ${dy}) is not finite; a glyph is drawn at a finite pen position`);
+    }
     const rec = this.#face(bytes);
     let cmds = rec.paths.get(gid);
     if (cmds === undefined) {
@@ -243,6 +256,12 @@ export function loadShaper(): Promise<TextShaper> {
  * package build points at the copy it writes beside the built JavaScript.
  */
 function wasmLocation(): { locateFile: () => string } {
-  const isNode = typeof process === 'object' && !!process.versions?.node;
-  return { locateFile: () => (isNode ? import.meta.resolve('harfbuzzjs/dist/harfbuzz.wasm') : wasmUrl) };
+  const node = isNodeRuntime(typeof process === 'object' ? process : undefined);
+  return { locateFile: () => (node ? import.meta.resolve('harfbuzzjs/dist/harfbuzz.wasm') : wasmUrl) };
+}
+
+/** Whether harfbuzzjs's loader reads its WebAssembly from disk here, by the loader's own test: an Electron
+ *  renderer has Node's `process` but loads as a web page. */
+export function isNodeRuntime(proc: { versions?: { node?: string }; type?: string } | undefined): boolean {
+  return !!proc?.versions?.node && proc.type !== 'renderer';
 }

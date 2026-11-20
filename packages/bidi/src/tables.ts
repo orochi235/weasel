@@ -211,3 +211,15 @@ export function mirrorOf(cp: number): number | null {
   }
   return mirrors.get(cp) ?? null;
 }
+
+/**
+ * BD16 requires canonical equivalents to pair with each other, and there is
+ * exactly one such case in the data: the angle brackets U+2329/U+232A are
+ * canonically equivalent to U+3008/U+3009. `a⟨b.1〉` is a real pair and matching
+ * raw code points misses it.
+ */
+export function canonicalBracket(cp: number): number {
+  if (cp === 0x3008) return 0x2329;
+  if (cp === 0x3009) return 0x232a;
+  return cp;
+}

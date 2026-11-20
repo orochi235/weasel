@@ -3136,3 +3136,12 @@ Calls the lanes made without a ruling:
 - Ruled 2026-11-20 (my call, audit): a run grammar's delimiter is one UTF-16 unit, and `runsToMarkdown` and
   `markdownToRuns` throw for any other, an astral character or `'~~'` included. The reader finds delimiters one unit
   at a time, so the writer wrote what it could not read back; a doubled marker is spelled with `repeat`.
+## Audit round fifty-five (2026-11-20): text-shaping
+
+- 2026-11-20 (the fixer's call): text-shaping's `glyphD` throws a `RangeError` for an offset that is not finite. An
+  infinite one threw `BigInt`'s own `RangeError` and a `NaN` one returned path data reading `NaN`; there is no
+  override, since no such offset places a glyph. Passing the value through into the path data was the alternative.
+- 2026-11-20 (the fixer's call): text-shaping's `shape` throws for a `language` holding a character outside ASCII
+  (`'sr‑Latn'`), naming the tag, before it reads its cache. HarfBuzz threw its own "Expected ASCII text" for one
+  and leaked the copy. No BCP 47 tag holds such a character, so there is no override; shaping as though no language
+  were given was the alternative, which draws the default forms with no sign the tag went unread.

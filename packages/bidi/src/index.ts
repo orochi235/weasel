@@ -17,7 +17,7 @@ import { bidiClassOf, mirrorOf } from './tables';
 export type { BidiClass, PairedBracket } from './types';
 export type { BidiDirection, BidiResult } from './resolve';
 export type { ReorderedLine } from './reorder';
-export { bidiClassOf, mirrorOf, pairedBracket, UNICODE_VERSION } from './tables';
+export { bidiClassOf, canonicalBracket, mirrorOf, pairedBracket, UNICODE_VERSION } from './tables';
 export { resolveLevels } from './resolve';
 export { reorderLine } from './reorder';
 

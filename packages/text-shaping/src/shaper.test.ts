@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { Feature } from './vendor/harfbuzzjs/index';
 import { loadShaper, type TextShaper } from './index';
 import { ARABIC, DEVANAGARI, LATIN } from './__fixtures__/fonts';
 
@@ -100,5 +101,37 @@ describe('loadShaper — features, outlines and mixed scripts', () => {
 
   it('hands back the same array for the same request', () => {
     expect(shaper.shape(LATIN, 'Abc')).toBe(shaper.shape(LATIN, 'Abc'));
+  });
+});
+
+describe('loadShaper — refusals', () => {
+  it('refuses a non-finite glyph offset', () => {
+    const [a] = shaper.shape(LATIN, 'A');
+    for (const [dx, dy] of [[Infinity, 0], [0, -Infinity], [NaN, 0], [0, NaN]]) {
+      expect(() => shaper.glyphD(LATIN, a.gid, dx, dy)).toThrow(/weasel glyphD: the offset .* is not finite/);
+    }
+  });
+
+  it('refuses a feature setting holding a character outside ASCII with its own error', () => {
+    for (const tag of ['smcp\u200B', '“liga”']) {
+      expect(() => shaper.shape(LATIN, 'abc', [tag])).toThrow(/weasel shape: ".*" is not an OpenType feature setting/);
+    }
+  });
+
+  it('refuses a language tag holding a character outside ASCII with its own error', () => {
+    expect(() => shaper.shape(LATIN, 'abc', [], 'sr\u2011Latn')).toThrow(/weasel shape: ".*" is not a BCP 47 language tag/);
+  });
+
+  it('keeps a bounded number of parsed feature settings', () => {
+    const parse = vi.spyOn(Feature, 'fromString');
+    try {
+      shaper.shape(LATIN, 'abc', ['kern[0:1]']);
+      for (let k = 1; k <= 1000; k++) shaper.shape(LATIN, 'abc', [`kern[0:${k + 1}]`]);
+      parse.mockClear();
+      shaper.shape(LATIN, 'abd', ['kern[0:1]']);
+      expect(parse).toHaveBeenCalledTimes(1);
+    } finally {
+      parse.mockRestore();
+    }
   });
 });
