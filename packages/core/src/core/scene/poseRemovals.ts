@@ -97,10 +97,14 @@ export function createRemovalLog<TPose, TNode>(
       };
     },
     takeBack(id) {
-      const g = roots.get(id);
-      roots.delete(id);
-      if (g) gone.delete(id);
-      return g?.pose;
+      const g = gone.get(id);
+      if (!g) return undefined;
+      gone.delete(id);
+      if (g.up) g.up.children.splice(g.up.children.indexOf(g), 1);
+      else roots.delete(id);
+      // What it took along and is not back yet is still removed, now from it.
+      for (const c of g.children) asRoot(c);
+      return g.pose;
     },
     drain() {
       if (roots.size === 0) return [];
