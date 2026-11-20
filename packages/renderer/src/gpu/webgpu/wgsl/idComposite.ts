@@ -7,7 +7,7 @@ import { SOURCE_QUAD_LOCATIONS, SOURCE_QUAD_WGSL } from './composite';
  * write mask of 0. `u_ids` is read with `textureLoad` and has no sampler.
  */
 export const ID_COMPOSITE_WGSL = /* wgsl */ `${uniformsWgsl([
-  'u_groupId: vec4f', 'u_resolution: vec2f', 'u_alpha: f32',
+  'u_colorMatrix: mat4x4f', 'u_colorBias: vec4f', 'u_groupId: vec4f', 'u_resolution: vec2f', 'u_alpha: f32',
 ], false)}
 ${textureWgsl('u_source', 0)}@group(1) @binding(2) var u_ids: texture_2d<f32>;
 ${SOURCE_QUAD_WGSL}
@@ -16,7 +16,9 @@ struct IdOut {
 }
 
 @fragment fn fs(in: VOut) -> IdOut {
-  let a = textureSample(u_source, u_source_sampler, in.uv).a * u.u_alpha;
+  let src = textureSample(u_source, u_source_sampler, in.uv);
+  let rgb = select(vec3f(0.0), src.rgb / src.a, src.a > 0.0);
+  let a = (u.u_colorMatrix * vec4f(rgb, src.a) + u.u_colorBias).a * u.u_alpha;
   // in.uv is already top-down, so this is GL's texel row turned over within
   // u_ids, which is stored the other way up from GL.
   let rows = i32(textureDimensions(u_ids).y);
