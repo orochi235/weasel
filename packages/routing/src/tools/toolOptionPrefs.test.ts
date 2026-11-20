@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { SHARED_TOOL_OPTIONS, toolOptionParams, setToolOption, type ToolOptionsSpec } from './toolOptions';
 import { prefLeaves } from '@weasel-js/prefs-schema';
+import { defineTool } from './defineTool';
 import { prefsToolOptionValues, toolOptionsPrefs, type ToolOptionPrefsStore } from './toolOptionPrefs';
 
 /** A store over a flat map of paths, filling in the shared fill's default as a `PrefsStore` does. */
@@ -176,5 +177,20 @@ describe('tool options of a dotted tool id in a prefs store', () => {
   it('nests a dotted id’s group where the store keeps it, beside the options of the tool it sits in', () => {
     const schema = toolOptionsPrefs([sized('path.brush'), sized('path', 'pen')]);
     expect([...prefLeaves(schema).keys()]).toEqual(['path.brush.size', 'path.pen']);
+  });
+});
+
+describe('a tool id that names the shared group', () => {
+  const own = (id: string) => ({
+    id,
+    options: { actionId: 'paint', prefs: { name: 'S', children: { fill: { kind: 'color', name: 'Fill', description: '', default: '#000' } } } } as ToolOptionsSpec,
+  });
+
+  it('is refused, alone or as a dotted id under it', () => {
+    expect(() => toolOptionsPrefs([own(SHARED_TOOL_OPTIONS), RECT])).toThrow(/shared/);
+    expect(() => toolOptionsPrefs([own(`${SHARED_TOOL_OPTIONS}.x`)])).toThrow(/shared/);
+    expect(() => defineTool({ id: SHARED_TOOL_OPTIONS, options: own('x').options })).toThrow(/shared/);
+    expect(() => defineTool({ id: SHARED_TOOL_OPTIONS })).not.toThrow();
+    expect(() => toolOptionsPrefs([own('sharedish')])).not.toThrow();
   });
 });

@@ -4,7 +4,7 @@
  */
 import type { PrefGroup, PrefLeaf, PrefNumber } from '@weasel-js/prefs-schema';
 import { deepEqual, getOwn, setOwn } from '@weasel-js/registry';
-import { SHARED_TOOL_OPTIONS, toolOptionSlot, type ToolOptionsSpec, type ToolOptionValues } from './toolOptions';
+import { checkToolOptionOwner, SHARED_TOOL_OPTIONS, toolOptionSlot, type ToolOptionsSpec, type ToolOptionValues } from './toolOptions';
 
 /** A tool as these read it: its id and its options. */
 export interface OptionedTool {
@@ -86,6 +86,7 @@ export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOption
   for (const tool of tools) {
     const options = tool.options;
     if (!options) continue;
+    checkToolOptionOwner(tool.id);
     const own: Record<string, PrefLeaf | PrefGroup> = {};
     for (const [key, leaf] of Object.entries(options.prefs.children)) {
       const slot = toolOptionSlot(tool.id, options, key);

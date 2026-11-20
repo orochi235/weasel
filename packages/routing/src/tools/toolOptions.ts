@@ -96,6 +96,14 @@ export function toolOptionActionIds(options: ToolOptionsSpec): readonly string[]
   return typeof options.actionId === 'string' ? [options.actionId] : options.actionId;
 }
 
+/** Throws for a tool id whose options would land in the {@link SHARED_TOOL_OPTIONS} group: `shared` itself, or an id
+ *  under it (`shared.x`), as a prefs store nests a dotted name. */
+export function checkToolOptionOwner(toolId: string): void {
+  if (toolId === SHARED_TOOL_OPTIONS || toolId.startsWith(`${SHARED_TOOL_OPTIONS}.`)) {
+    throw new Error(`weasel: tool id "${toolId}" with options would share the "${SHARED_TOOL_OPTIONS}" group every tool's shared options are kept in`);
+  }
+}
+
 /** The tool whose options are live: the newest held on its key (of those `among` names, when given), else the
  *  active one. Routing walks held tools the same way. */
 export function liveTool(
