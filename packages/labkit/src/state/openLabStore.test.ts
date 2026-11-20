@@ -375,6 +375,20 @@ describe('openLabStore — what a change writes', () => {
     expect(set.mock.calls.map(([key]) => key)).toEqual([`${P}trial:b`]);
   });
 
+  it('writes nothing when an instrument is set again as an equal new object', async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, { trials: [trial('a')], saves: [{ ...SNAPSHOT, trialId: 'a' }] });
+    const { storage, set } = counting(backing);
+    const make = (): Instrument => ({ name: 'T', initialState: () => ({}), render: () => null });
+    const opened = await openLabStore({ storageKey: 'test', storage, instruments: [make()] });
+    const before = opened.store.getState();
+    opened.store.getState().setInstruments([make()]);
+    expect(opened.store.getState().trials[0]).toBe(before.trials[0]);
+    expect(opened.store.getState().savedSnapshots[0]).toBe(before.savedSnapshots[0]);
+    await opened.close();
+    expect(set).not.toHaveBeenCalled();
+  });
+
   it('writes nothing for a change to undo history alone', async () => {
     const backing = new Map<string, unknown>();
     storeLab(backing, { trials: [trial('a')] });
