@@ -1,6 +1,6 @@
 import { getOwn, setOwn } from '@weasel-js/registry';
 import { isPrefLeaf, type PrefAlias } from '../index';
-import { checkKey, keysTakenAt, takesDottedKey, uniqueKey } from './schemaKeys';
+import { checkKey, keysTakenAt, takesDottedKey, uniqueKey, uniqueLeafKey } from './schemaKeys';
 import {
   checkFits, childrenOf, editChildren, insertAt, isUnder, joinPath, keyOf, nodeAt, outermost, parentPath,
   type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
@@ -78,7 +78,7 @@ export function rekeyed<R extends SchemaRoot>(root: R, path: string, next: strin
   const host = nodeAt(root, parentPath(path));
   const node = nodeAt(root, path);
   return editChildren(root, parentPath(path), (kids) => {
-    checkKey(keysTakenAt(root, parentPath(path), !!node && isPrefLeaf(node)), next, !!host && !!node && takesDottedKey(host, node));
+    checkKey(keysTakenAt(root, parentPath(path), !!node && isPrefLeaf(node)), next, !!host && !!node && takesDottedKey(host, node), node);
     return Object.fromEntries(Object.entries(kids).map(([k, v]) => [k === key ? next : k, v]));
   });
 }
@@ -152,7 +152,7 @@ export function shiftNodes<R extends SchemaRoot>(
     const taken: ChildMap = { ...keysTakenAt(lifted, dest, false) };
     const leafKeys: ChildMap = { ...keysTakenAt(lifted, dest, true) };
     const entries: Array<[string, SchemaNode]> = moving.map((m) => {
-      const key = uniqueKey(isPrefLeaf(m.node) ? leafKeys : taken, m.key);
+      const key = isPrefLeaf(m.node) ? uniqueLeafKey(leafKeys, m.key) : uniqueKey(taken, m.key);
       setOwn(taken, key, m.node);
       setOwn(leafKeys, key, m.node);
       out.push(joinPath(dest, key));

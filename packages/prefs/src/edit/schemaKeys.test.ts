@@ -75,6 +75,15 @@ describe('an edit that would give two leaves one value path', () => {
     expect(nodeAt(addNode(NODE, 'look', 'pose', { name: 'Pose', members: {} }), 'look/pose')).toBeDefined();
   });
 
+  it('is refused where one leaf would hold its value inside another\'s under a section root', () => {
+    const grid: PrefSection = { name: 'Rect', members: { look: { name: 'Look', members: { grid: num('Grid') } }, size: num('Size') } };
+    expect(() => addNode(grid, null, 'grid.size', num('Grid size'))).toThrow(/"grid\.size" would hold its value inside "grid"'s/);
+    expect(() => renameKey(grid, 'size', 'grid.size')).toThrow(/inside "grid"'s/);
+    const dotted = addNode(grid, null, 'grid2.size', num('Other'));
+    expect(() => renameKey(dotted, 'look/grid', 'grid2')).toThrow(/"grid2\.size" would hold its value inside "grid2"'s/);
+    expect(nodeAt(renameKey(grid, 'look/grid', 'grid.on'), 'look/grid.on')).toBeDefined();
+  });
+
   it('is refused where it would give a section and a leaf one name under a section root', () => {
     expect(() => addNode(NODE, null, 'opacity', { name: 'Opacity', members: {} })).toThrow(/"opacity" is taken here/);
     expect(() => renameKey(NODE, 'layout', 'opacity')).toThrow(/"opacity" is taken here/);
@@ -92,6 +101,11 @@ describe('an edit that would give two leaves one value path', () => {
     expect(moveNodes(root, ['a/opacity'], { parentPath: null, index: 0 }).paths).toEqual(['opacity2']);
     expect(moveNodes(root, ['a/b'], { parentPath: 'b', index: 0 }).paths).toEqual(['b/b2']);
     expect(copyNodes(root, ['b'], { parentPath: 'a', index: 0 }).paths).toEqual(['a/b2']);
+  });
+
+  it('numbers a moved leaf that would hold its value inside another leaf\'s where it lands', () => {
+    const root: PrefSection = { name: 'Rect', members: { a: { name: 'A', members: { 'grid.size': num('Size') } }, grid: num('Grid') } };
+    expect(moveNodes(root, ['a/grid.size'], { parentPath: null, index: 0 }).paths).toEqual(['grid2.size']);
   });
 
   it('numbers a field moved out of an object leaf into a scope that holds its key', () => {
@@ -114,6 +128,14 @@ describe('keyClashes', () => {
     expect([...keyClashes(shared)].sort()).toEqual([
       ['look/opacity', '"opacity" is taken here.'],
       ['opacity', '"opacity" is taken here.'],
+    ]);
+  });
+
+  it('names two leaves where one holds its value inside the other\'s, in a schema made elsewhere', () => {
+    const inside: PrefSection = { name: 'Rect', members: { a: { name: 'A', members: { grid: num('Grid') } }, 'grid.size': num('Size') } };
+    expect([...keyClashes(inside)].sort()).toEqual([
+      ['a/grid', '"grid.size" would hold its value inside "grid"\'s.'],
+      ['grid.size', '"grid.size" would hold its value inside "grid"\'s.'],
     ]);
   });
 

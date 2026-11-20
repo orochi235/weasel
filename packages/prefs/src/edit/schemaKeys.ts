@@ -1,5 +1,5 @@
 import { setOwn } from '@weasel-js/registry';
-import { isPrefLeaf, isPrefSection } from '../index';
+import { isPrefLeaf, isPrefSection, prefHoldsValue } from '../index';
 import { branchUnder, childrenOf, joinPath, nodeAt, parentPath, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaTree';
 
 const KEY = /^[A-Za-z_$][\w$]*$/;
@@ -38,16 +38,40 @@ export function uniqueKey(kids: Readonly<Record<string, unknown>>, base: string)
 }
 
 const taken = (key: string): string => `"${key}" is taken here.`;
+const nested = (inner: string, outer: string): string => `"${inner}" would hold its value inside "${outer}"'s.`;
+
+const holdsValue = (node: SchemaNode): boolean => isPrefLeaf(node) && prefHoldsValue(node);
+
+/** The leaf key of `a` and `b` that names a path inside the other's value; `undefined` for neither. */
+const insideOf = (a: string, b: string): [inner: string, outer: string] | undefined =>
+  (a.startsWith(`${b}.`) ? [a, b] : b.startsWith(`${a}.`) ? [b, a] : undefined);
+
+/** `key`, or `key` with the first number from 2 after its first step, so that no key of `kids` holds it and no leaf
+ *  of `kids` holds a value inside it or around it: a free key for a leaf, as {@link uniqueKey} is for any node. */
+export function uniqueLeafKey(kids: ChildMap, key: string): string {
+  const free = (k: string): boolean => !Object.hasOwn(kids, k) && Object.entries(kids).every(([at, kid]) => !holdsValue(kid) || !insideOf(k, at));
+  if (free(key)) return key;
+  const [head, ...rest] = key.split('.');
+  let n = 2;
+  while (!free([`${head}${n}`, ...rest].join('.'))) n++;
+  return [`${head}${n}`, ...rest].join('.');
+}
 
 /** Why `key` cannot join `kids`, in words for the person typing it; `null` when it can. `kids` is what
- *  {@link keysTakenAt} gives for where the node goes. `dotted`: see {@link takesDottedKey}. */
-export function keyProblem(kids: ChildMap, key: string, dotted = false): string | null {
+ *  {@link keysTakenAt} gives for where the node goes, and `self` the node being re-keyed, if one is. `dotted`: see
+ *  {@link takesDottedKey}; such a key may not name a path inside the value of a leaf holding one, nor around it. */
+export function keyProblem(kids: ChildMap, key: string, dotted = false, self?: SchemaNode): string | null {
   const parts = dotted ? key.split('.') : [key];
   if (!parts.every(isValidKey)) {
     return `"${key}" is not a valid key: use letters, digits, _ or $, not starting with a digit${dotted ? ', with . between the steps of a path' : ''}.`;
   }
   if (parts.includes('__proto__')) return `"${key}" is reserved.`;
   if (Object.hasOwn(kids, key)) return taken(key);
+  if (!dotted) return null;
+  for (const [k, kid] of Object.entries(kids)) {
+    const pair = kid !== self && holdsValue(kid) ? insideOf(key, k) : undefined;
+    if (pair) return nested(...pair);
+  }
   return null;
 }
 
@@ -94,13 +118,19 @@ export function keyClashes(root: SchemaRoot): Map<string, string> {
   const out = new Map<string, string>();
   const scope = (host: SchemaNode, path: string | null): void => {
     const [leaves, sections] = [new Map<string, string[]>(), new Map<string, string[]>()];
+    const valued = new Set<string>();
     eachScoped(host, path, (key, node, at) => {
       const held = isPrefLeaf(node) ? leaves : sections;
       held.set(key, [...(held.get(key) ?? []), at]);
+      if (holdsValue(node)) valued.add(key);
     });
     for (const [key, paths] of leaves) {
       const named = path === null && isPrefSection(host) ? sections.get(key) ?? [] : [];
       if (paths.length + named.length > 1) for (const at of [...paths, ...named]) out.set(at, taken(key));
+      for (const other of valued) {
+        const pair = valued.has(key) ? insideOf(key, other) : undefined;
+        if (pair && pair[0] === key) for (const at of [...paths, ...leaves.get(other)!]) if (!out.has(at)) out.set(at, nested(...pair));
+      }
     }
   };
   const walk = (node: SchemaNode, path: string | null): void => {
@@ -111,7 +141,7 @@ export function keyClashes(root: SchemaRoot): Map<string, string> {
   return out;
 }
 
-export function checkKey(kids: ChildMap, key: string, dotted: boolean): void {
-  const problem = keyProblem(kids, key, dotted);
+export function checkKey(kids: ChildMap, key: string, dotted: boolean, self?: SchemaNode): void {
+  const problem = keyProblem(kids, key, dotted, self);
   if (problem) throw new Error(`schemaEdit: ${problem}`);
 }
