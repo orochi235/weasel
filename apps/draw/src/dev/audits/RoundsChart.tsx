@@ -1,6 +1,6 @@
 import { niceDomain, stepTicks, tickStep } from '@weasel-js/scale';
 import { useId } from 'react';
-import type { AuditRound } from './skulkMap.types';
+import type { AuditArea, AuditRound } from './skulkMap.types';
 import s from './RoundsChart.module.css';
 
 const W = 272, H = 150;
@@ -17,8 +17,17 @@ export function ticksFor(max: number, count = 4): number[] {
 /** `n` of a round's defects per area it read, so a round of 8 areas and one of 16 stand on one scale. */
 const perArea = (n: number, r: AuditRound) => (r.areas > 0 ? n / r.areas : 0);
 
-/** Each round's distinct defects found per area, against Chapman's estimate per area of what its areas held. */
-export function RoundsChart({ rounds }: { rounds: readonly AuditRound[] }) {
+/** An area's passes as rounds of one area each, so the chart draws them on the same terms. */
+export const areaRoundsOf = (area: AuditArea): AuditRound[] => area.passes.map((p) => ({
+  round: p.round, date: p.date, areas: 1, files: area.files, distinct: p.distinct, est: p.est,
+  ...(p.provisional ? { pending: 'live' as const } : {}),
+}));
+
+/** Each round's distinct defects found per area, against Chapman's estimate per area of what its areas held; or,
+ *  given an `area`, each of that area's passes. */
+export function RoundsChart({ rounds: all, area }: { rounds: readonly AuditRound[]; area?: AuditArea | null }) {
+  const rounds = area ? areaRoundsOf(area) : all;
+  const unit = area ? 'defects' : 'defects per area';
   const ticks = ticksFor(Math.max(0, ...rounds.map((r) => perArea(Math.max(r.est, r.distinct), r))));
   const top = ticks.at(-1) || 1;
   const y = (v: number) => H - M.bottom - ((H - M.top - M.bottom) * v) / top;
@@ -29,13 +38,14 @@ export function RoundsChart({ rounds }: { rounds: readonly AuditRound[] }) {
   return (
     <>
       {rounds.length > 0 && (
-        <svg className={s.chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Defects found and estimated per area, by round">
+        <svg className={s.chart} viewBox={`0 0 ${W} ${H}`} role="img"
+          aria-label={area ? `Defects found and estimated in ${area.id}, by round` : 'Defects found and estimated per area, by round'}>
           <defs>
             <pattern id={hatch} width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
               <line className={s.hatch} x1="0" y1="0" x2="0" y2="4" />
             </pattern>
           </defs>
-          <text className={s.title} transform={`translate(11 ${(M.top + H - M.bottom) / 2}) rotate(-90)`} textAnchor="middle">defects per area</text>
+          <text className={s.title} transform={`translate(11 ${(M.top + H - M.bottom) / 2}) rotate(-90)`} textAnchor="middle">{unit}</text>
           {ticks.map((t) => (
             <g key={t}>
               <line className={s.grid} x1={M.left} x2={W - M.right} y1={y(t)} y2={y(t)} />
@@ -47,7 +57,9 @@ export function RoundsChart({ rounds }: { rounds: readonly AuditRound[] }) {
               <rect className={s.est} x={x(i)} width={bar} y={y(perArea(r.est, r))} height={y(0) - y(perArea(r.est, r))} />
               <rect className={r.pending ? s.pending : s.found} x={x(i)} width={bar} y={y(perArea(r.distinct, r))} height={y(0) - y(perArea(r.distinct, r))}
                 fill={r.pending ? `url(#${hatch})` : undefined}>
-                <title>{`round ${r.round}${r.pending ? ` (${PENDING_LABEL[r.pending]})` : ''}: ${perArea(r.distinct, r).toFixed(1)} found and ${perArea(r.est, r).toFixed(1)} estimated per area; ${r.distinct} and ${r.est} over ${r.areas} areas`}</title>
+                <title>{area
+                  ? `round ${r.round}${r.pending ? ` (${PENDING_LABEL[r.pending]})` : ''}: ${r.distinct} found and ${r.est.toFixed(1)} estimated in ${area.id}`
+                  : `round ${r.round}${r.pending ? ` (${PENDING_LABEL[r.pending]})` : ''}: ${perArea(r.distinct, r).toFixed(1)} found and ${perArea(r.est, r).toFixed(1)} estimated per area; ${r.distinct} and ${r.est} over ${r.areas} areas`}</title>
               </rect>
               {r.pending && <text className={s.tag} x={x(i) + bar / 2} y={Math.max(M.top + 6, y(perArea(Math.max(r.est, r.distinct), r)) - 3)} textAnchor="middle">{PENDING_LABEL[r.pending]}</text>}
               <text className={s.axis} x={x(i) + bar / 2} y={H - 8} textAnchor="middle">{r.round}</text>
@@ -55,8 +67,9 @@ export function RoundsChart({ rounds }: { rounds: readonly AuditRound[] }) {
           ))}
         </svg>
       )}
+      {area && rounds.length === 0 && <p className={s.hint}>{area.id} has not been audited yet.</p>}
       <p className={s.hint}>
-        Per area the round read. Solid: distinct defects found. Dashed: Chapman&apos;s estimate of what those areas held. Hatched: a round not merged
+        {area ? <><strong>{area.id}</strong>, each round that read it.</> : 'Per area the round read.'} Solid: distinct defects found. Dashed: Chapman&apos;s estimate of what those areas held. Hatched: a round not merged
         yet, or still running, read from its run&apos;s own results.
       </p>
     </>
