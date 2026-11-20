@@ -103,6 +103,11 @@ describe('reading Mermaid', () => {
     expect(titled.warnings).toEqual(['Mermaid accessible titles were dropped; the page is named by the title.']);
   });
 
+  it('reads an apostrophe inside a plain metadata value as text, and a quoted value past a brace', () => {
+    expect(node(readFlowchart('flowchart TD\n  A@{ shape: rect, label: it\'s done }').document.pages[0]!.data as DiagramData, 'A').lines).toEqual(['it\'s done']);
+    expect(node(readFlowchart('flowchart TD\n  A@{ label: \'a } b\' }').document.pages[0]!.data as DiagramData, 'A').lines).toEqual(['a } b']);
+  });
+
   it('warns that front matter other than the title was dropped', () => {
     expect(readFlowchart('---\nconfig:\n  look: handDrawn\n---\nflowchart TD\nA --> B').warnings)
       .toEqual(['Mermaid front matter other than the title was dropped.']);
