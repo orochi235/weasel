@@ -2,6 +2,6 @@
 '@weasel-js/geom': patch
 ---
 
-A shifted closed track read past its seam, by an open `at` or `nearest`, goes round the shifted track again, so items placed past the end of a run over it land where they belong.
+A shifted closed track read past its seam goes round the shifted track again. An open `at` or `nearest` past 1, as items placed past a run's end use, lands where it belongs.
 
 <!-- entry: fix -->
