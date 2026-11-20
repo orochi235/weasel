@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   5
+  ]
+ ],
+ "a": [
+  "Two view-backed loupes on one canvas share the lens view id, so the second's view replaces the first's and the first paints the second's picture",
+  "A host atlas passed as `font` is never used once the bundled one is registered; the attach logs \"failed to register default font\" instead, and the docs call a repeat call a no-op",
+  "A pointerdown focuses a widget that does not claim `pointer`, though the press itself falls through to the scene",
+  "The hover tracker keeps a widget removed from the HUD and later sends it `hoverleave` after it is disposed"
+ ],
+ "b": [
+  "Two view-backed loupes on one canvas share the view id `weasel-loupe:lens`, so the second replaces the first's view and the first draws the second's picture",
+  "`useLoupe` drops the pane region on the `source` path, so a pixel lens on a pane of a shared canvas reads the wrong pixels",
+  "A loupe window removed with `hud.remove` keeps its canvas view routing input until the next hover",
+  "`stubHudFonts` replaces `global.fetch` and `global.createImageBitmap` with no restore",
+  "`HudHost.registerLayer` is never called, so a custom host as `host.ts` describes it never receives the HUD's layer",
+  "A widget removed from the HUD stays in hover and open-press state and gets events after it is disposed"
+ ]
+}

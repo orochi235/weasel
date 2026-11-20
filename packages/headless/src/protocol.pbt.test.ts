@@ -73,10 +73,13 @@ describe('scene snapshots on the wire', () => {
 });
 
 const num = fc.double({ min: -1e6, max: 1e6, noNaN: true }).filter((n) => !Object.is(n, -0));
+const side = fc.double({ min: Number.MIN_VALUE, max: 1e3, noNaN: true });
+const axisScale = fc.double({ min: -10, max: 10, noNaN: true }).filter((n) => n !== 0);
 const request: fc.Arbitrary<PageRequest> = fc.record({
   scene: fc.constant({ nodes: [], layers: [] }),
-  sourceRect: fc.record({ x: num, y: num, width: num.filter((v) => v > 0), height: num.filter((v) => v > 0) }),
-  scale: fc.record({ x: num.filter((v) => v !== 0), y: num.filter((v) => v !== 0) }),
+  // Sized so an RGBA render's bytes fit one result: at most 10 000 pixels a side.
+  sourceRect: fc.record({ x: num, y: num, width: side, height: side }),
+  scale: fc.record({ x: axisScale, y: axisScale }),
   format: fc.constantFrom('rgba' as const, 'png' as const),
   background: fc.option(fc.constantFrom('#fff', 'transparent'), { nil: undefined }),
   flattenTolerancePx: fc.option(num, { nil: undefined }),

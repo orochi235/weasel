@@ -32,23 +32,26 @@ export function targetBoxes(q: SnapCollect, scene: AnyScene, filter?: TargetFilt
 }
 
 /**
- * `derive` over the query's target boxes, kept while the scene's version and
- * the excluded ids stand still: a drag asks every frame, and nothing it
- * reads changes until it commits.
+ * `derive` over the query's target boxes, kept while the scene's version, the
+ * excluded ids and the session's `drawnBox` stand still: a drag asks every
+ * frame, and nothing it reads changes until it commits. Each session measures
+ * its boxes through a `drawnBox` of its own, at the zoom and stroke setting it
+ * began with, so a later gesture never reuses boxes an earlier one measured.
  */
 export function cachedPerScene<T>(
   derive: (boxes: readonly Bounds[]) => T, filter?: TargetFilter,
 ): (q: SnapCollect) => T | null {
-  let key: { scene: AnyScene; version: number; exclude: string } | null = null;
+  let key: { scene: AnyScene; version: number; exclude: string; drawnBox: SnapCollect['drawnBox'] } | null = null;
   let value: T | null = null;
   return (q) => {
     const scene = q.scene;
     if (!scene) return null;
     const version = scene.getVersion();
     const exclude = q.exclude.join('\n');
-    if (key === null || key.scene !== scene || key.version !== version || key.exclude !== exclude) {
+    if (key === null || key.scene !== scene || key.version !== version || key.exclude !== exclude
+      || key.drawnBox !== q.drawnBox) {
       value = derive(targetBoxes(q, scene, filter));
-      key = { scene, version, exclude };
+      key = { scene, version, exclude, drawnBox: q.drawnBox };
     }
     return value;
   };

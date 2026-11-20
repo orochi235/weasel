@@ -1,6 +1,6 @@
 import { getOwn, isFiniteNumber } from '@weasel-js/registry';
 import {
-  EASINGS, reviveTypedArrays, tagTypedArrays, type BezierEasing, type EasingName, type EasingSpec,
+  EASINGS, reviveTypedArrays, tagTypedArray, tagTypedArrays, type BezierEasing, type EasingName, type EasingSpec,
 } from '@weasel-js/geom';
 import { axisIndexes } from '../axisNames';
 import { checkClip } from './clipShape';
@@ -162,15 +162,16 @@ const EASING_NAMES = new Map<unknown, EasingName>(
   (Object.keys(EASINGS) as EasingName[]).map((name) => [EASINGS[name], name]),
 );
 
-function isClipValue(v: unknown): v is ClipValue {
+/** Whether `v` round-trips through JSON, read before `tagTypedArrays`, which writes a `Map` as `{}`. With
+ *  `typedArrays`, a typed array of finite numbers passes, as `tagTypedArrays` tags it. */
+function isClipValue(v: unknown, typedArrays: boolean): boolean {
   if (v === null || typeof v === 'string' || typeof v === 'boolean') return true;
   if (typeof v === 'number') return Number.isFinite(v);
-  if (Array.isArray(v)) return v.every(isClipValue);
+  if (Array.isArray(v)) return v.every((m) => isClipValue(m, typedArrays));
+  const tagged = typedArrays ? tagTypedArray(v) : undefined;
+  if (tagged) return tagged.data.every((d) => d === '-0' || isFiniteNumber(d));
   if (typeof v !== 'object' || Object.prototype.toString.call(v) !== '[object Object]') return false;
-  // A tagged typed array names its non-finite numbers, which a clip refuses as it does a bare one.
-  const { __ta, data } = v as { __ta?: unknown; data?: unknown };
-  if (typeof __ta === 'string' && Array.isArray(data)) return data.every((d) => d === '-0' || isFiniteNumber(d));
-  return Object.values(v as object).every((member) => member === undefined || isClipValue(member));
+  return Object.values(v as object).every((member) => member === undefined || isClipValue(member, typedArrays));
 }
 
 /** `n`, refused where it is not finite: JSON writes that as `null`, which `bindClip` refuses. */
@@ -204,9 +205,8 @@ function sampledToClip(track: SampledTrack<any>, where: string): ClipSampledTrac
     label: track.label,
     target: track.targetName,
     keys: track.keys.map((k) => {
-      const value = tagTypedArrays(k.value);
-      if (!isClipValue(value)) throw new Error(`toClip: ${where} holds a value JSON cannot round-trip, at t = ${k.t}.`);
-      return defined<ClipKey>({ t: finiteOr(k.t, `${where} has a key at t = #`), value, easing: easingOf(k.easing, where) });
+      if (!isClipValue(k.value, true)) throw new Error(`toClip: ${where} holds a value JSON cannot round-trip, at t = ${k.t}.`);
+      return defined<ClipKey>({ t: finiteOr(k.t, `${where} has a key at t = #`), value: tagTypedArrays(k.value) as ClipValue, easing: easingOf(k.easing, where) });
     }),
     interpolate: track.interpolateName,
     weight: typeof track.weight === 'function' ? track.weightName
@@ -228,7 +228,7 @@ function trackToClip(track: Track, index: number): ClipTrack {
     label: track.label,
     events: track.events.map((e) => {
       if (e.name === undefined) throw new Error(`toClip: ${where} has an event with no name, at t = ${e.t}.`);
-      if (e.data !== undefined && !isClipValue(e.data)) throw new Error(`toClip: ${where} carries data JSON cannot round-trip, at t = ${e.t}.`);
+      if (e.data !== undefined && !isClipValue(e.data, false)) throw new Error(`toClip: ${where} carries data JSON cannot round-trip, at t = ${e.t}.`);
       return defined({ t: finiteOr(e.t, `${where} has an event at t = #`), name: e.name, data: e.data as ClipValue | undefined });
     }),
   });

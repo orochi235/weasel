@@ -1,0 +1,12 @@
+packages/guides/src/grid/axes.ts
+packages/guides/src/grid/cellHighlight.ts
+packages/guides/src/grid/fit.ts
+packages/guides/src/grid/index.ts
+packages/guides/src/grid/lattice.ts
+packages/guides/src/grid/layer.ts
+packages/guides/src/grid/pointToGridCell.ts
+packages/guides/src/grid/preset.ts
+packages/guides/src/grid/reading.ts
+packages/guides/src/grid/regions.ts
+packages/guides/src/grid/roundToCell.ts
+packages/guides/src/grid/useGridCellHover.ts

@@ -3,6 +3,9 @@ import { pathUnion } from './index';
 import { PATH_M, PATH_L, PATH_C, PATH_Z } from '../commands';
 import type { RectPath, PolygonPath } from '../path';
 import { pathContainsPoint } from '../pathHitTest';
+import { pathSignedArea } from '../paths/winding';
+import { circle } from './curveShapes.fixtures';
+import { pathTrim } from './ops';
 
 const r = (x: number, y: number, w: number, h: number): RectPath => ({
   kind: 'rect', x, y, width: w, height: h,
@@ -262,5 +265,56 @@ describe('holes', () => {
     const i = pathIntersect(donut('nonzero', true), r(-10, -10, 200, 200));
     expect(pathContainsPoint(i, 10, 10)).toBe(true);
     expect(pathContainsPoint(i, 50, 50)).toBe(false);
+  });
+});
+
+describe('booleans on straight contours that partly overlap', () => {
+  /** Two squares (0,0)–(10,10) and (5,5)–(15,15) in one path, the second wound `turn`. */
+  const pair = (fillRule: 'nonzero' | 'evenodd', turn: 1 | -1): PolygonPath => {
+    const b = turn === 1 ? [5, 5, 15, 5, 15, 15, 5, 15] : [5, 5, 5, 15, 15, 15, 15, 5];
+    return {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z, PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10, ...b]),
+      fillRule,
+    };
+  };
+
+  it('leaves the overlap empty where the fill rule does', () => {
+    for (const p of [pair('evenodd', 1), pair('nonzero', -1)]) {
+      const u = pathUnion(p);
+      expect(pathContainsPoint(u, 7, 7)).toBe(false);
+      expect(pathContainsPoint(u, 2, 2)).toBe(true);
+      expect(pathContainsPoint(u, 12, 12)).toBe(true);
+      expect(pathContainsPoint(pathIntersect(p, r(-1, -1, 20, 20)), 7, 7)).toBe(false);
+    }
+  });
+
+  it('fills the overlap where the fill rule does', () => {
+    expect(pathContainsPoint(pathUnion(pair('nonzero', 1)), 7, 7)).toBe(true);
+  });
+});
+
+describe('booleans the clipper answers, on small curved inputs', () => {
+  /** A unit square at x = 10 drawn with more segments than the curve-keeping booleans take on. */
+  const many = (): PolygonPath => {
+    const n = 5000;
+    const xs: number[] = [];
+    for (let k = 0; k <= n; k++) xs.push(10 + k / n, 0);
+    xs.push(11, 1, 10, 1);
+    return {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, ...new Array<number>(n + 2).fill(PATH_L), PATH_Z]),
+      coords: new Float32Array(xs),
+      fillRule: 'nonzero',
+    };
+  };
+
+  it('flattens a unit circle finely enough to stay round', () => {
+    const u = pathUnion(circle(0, 0, 1), many());
+    expect(u.commands.includes(PATH_C)).toBe(false);
+    expect(Math.abs(pathSignedArea(u))).toBeCloseTo(Math.PI + 1, 2);
+    const [shown] = pathTrim(circle(0, 0, 1), many());
+    expect(Math.abs(pathSignedArea(shown.path))).toBeCloseTo(Math.PI, 2);
   });
 });

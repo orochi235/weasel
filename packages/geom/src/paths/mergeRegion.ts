@@ -9,7 +9,7 @@ import type { Path, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
 import { lineSegment, pathToCubicContours, splitSegment, type CubicSegment } from './cubicContours';
 import { crossingsAmong } from './crossingsAmong';
-import { pathSignedArea } from './winding';
+import { closedSignedArea } from './winding';
 import { lerp } from '../scalar';
 
 /** Options for {@link mergeRegion}. */
@@ -46,12 +46,14 @@ export function mergeRegion(path: Path, opts: MergeRegionOptions = {}): PolygonP
   const snap = tol * 1e-3;
   const all = weld(contours.flatMap((c) => closeContour(c.segs, snap)), snap);
   // A positively wound region fills to the right of travel (`growRegion`).
-  const fillLeft = pathSignedArea(path) < 0;
+  const fillLeft = closedSignedArea(path) < 0;
   // A segment another contour already runs along carries no edge of its own; its twin decides that.
   const segs = distinct(all, snap);
   const cuts: Cut[][] = segs.map(() => []);
+  // Edges crossing at one point get a point per pair, a few ulps apart: every cut there takes the first.
+  const shared = welder(snap);
   for (const x of crossingsAmong(segs)) {
-    const p = crossingPoint(segs[x.a]!, x.s, segs[x.b]!, x.t, snap);
+    const p = shared(crossingPoint(segs[x.a]!, x.s, segs[x.b]!, x.t, snap));
     cuts[x.a]!.push({ t: x.s, p });
     cuts[x.b]!.push({ t: x.t, p });
   }
@@ -178,9 +180,24 @@ function closeContour(given: readonly CubicSegment[], snap: number): CubicSegmen
  */
 function weld(segs: readonly CubicSegment[], snap: number): CubicSegment[] {
   if (!(snap > 0)) return [...segs];
+  const at = welder(snap);
+  const out: CubicSegment[] = [];
+  for (const s of segs) {
+    const a = at([s.c[0], s.c[1]]),
+      b = at([s.c[6], s.c[7]]);
+    if (s.line && a === b) continue;
+    out.push(a[0] === s.c[0] && a[1] === s.c[1] && b[0] === s.c[6] && b[1] === s.c[7] ? s : moveEnds(s, a, b));
+  }
+  return out;
+}
+
+/** A map from a point to the first point it was given within `snap` of it,
+ *  or to itself when there is none. */
+function welder(snap: number): (p: Pt) => Pt {
+  if (!(snap > 0)) return (p) => p;
   const grid = new Map<string, Pt[]>();
   const cell = (v: number) => Math.floor(v / snap);
-  const at = (x: number, y: number): Pt => {
+  return ([x, y]) => {
     const cx = cell(x),
       cy = cell(y);
     for (let i = cx - 1; i <= cx + 1; i++) {
@@ -193,14 +210,6 @@ function weld(segs: readonly CubicSegment[], snap: number): CubicSegment[] {
     grid.set(k, [...(grid.get(k) ?? []), p]);
     return p;
   };
-  const out: CubicSegment[] = [];
-  for (const s of segs) {
-    const a = at(s.c[0], s.c[1]),
-      b = at(s.c[6], s.c[7]);
-    if (s.line && a === b) continue;
-    out.push(a[0] === s.c[0] && a[1] === s.c[1] && b[0] === s.c[6] && b[1] === s.c[7] ? s : moveEnds(s, a, b));
-  }
-  return out;
 }
 
 /** One point for a crossing: an end of either segment when it falls there,

@@ -4,6 +4,7 @@ import { act } from '@testing-library/react';
 import { LONG_PRESS_MS } from '@weasel-js/core';
 import type { ClaimableGesture } from '@weasel-js/core';
 import type { HudPointerEvent, Widget } from './widget';
+import type { Hud } from './hud';
 import { mountHud, pointer, send, stubHudFonts, types } from './hudCanvas.fixture';
 
 /** A widget over (10, 10)–(70, 34), recording what reaches it. */
@@ -97,6 +98,18 @@ describe('a press no click or drag closes', () => {
     send(canvas, pointer('pointerup', 'touch', 30, 20));
     settle();
     expect(types(seen)).toEqual(['down', 'longpress', 'cancel']);
+  });
+
+  it('sends no cancel to a widget taken off the HUD before the finger lifts', async () => {
+    const seen: HudPointerEvent[] = [];
+    const widget = panel(seen);
+    let hud: Hud | null = null;
+    const canvas = await mountHud(widget, undefined, (h) => { hud = h; });
+    hold(canvas, 'touch', LONG_PRESS_MS);
+    act(() => { hud!.remove(widget); });
+    send(canvas, pointer('pointerup', 'touch', 30, 20));
+    settle();
+    expect(types(seen)).toEqual(['down', 'longpress']);
   });
 
   it('a tap still ends in up, with no cancel after it', async () => {

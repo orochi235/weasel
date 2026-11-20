@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "`slots` reorders siblings after a drop from outside: `arrive` orders the already-shifted siblings against the slot set for one fewer child",
+  "`pack({ overflow: 'grow' })` stops following its content when a reorder, a child resize or a width change alters how many shelves there are",
+  "`tileGrid({ overflow: 'grow' })` previews and commits the second member of a multi-select drop into a full grid at a halved pitch, on top of a sibling",
+  "`pack({ overflow: 'grow' })` collapses the container to `minHeight` on a departure when some remaining child is wider than the container"
+ ],
+ "b": [
+  "tileGrid offers empty cells as drop targets, then childPoses compacts the dropped child out of them",
+  "pack's `'grow'` overflow never resizes on a drop that reorders, or on a width change",
+  "tileGrid takes `cols`/`rows` unvalidated: 0 writes NaN poses, a fraction lays cells off-grid",
+  "slots: a drop from outside can swap two existing children, because `arrive` reads them against the pre-drop slot count",
+  "quadtree's `maxDepth` is unbounded, and its free-cell scan is 4^depth per child"
+ ]
+}

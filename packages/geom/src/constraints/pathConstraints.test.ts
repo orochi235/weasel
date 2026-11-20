@@ -3,6 +3,7 @@ import { PathBuilder, polygonFromPoints } from '../paths/builder';
 import { deleteAnchorsAt, insertAnchorOnSegment, moveHandleTo, translateAnchorBy } from '../paths/anchorEdits';
 import { editAnchorSetTracked } from '../paths/anchorOrigins';
 import { pathToAnchors } from '../paths/anchors';
+import { reverseSubpaths } from '../paths/pathStructure';
 import type { PolygonPath } from '../path';
 import { pathAnchorPoints, remapConstraints, anchorsBefore, segmentBetween, solvePathConstraints } from './pathConstraints';
 import { constrainPathEdit } from './pathsEdit';
@@ -146,6 +147,17 @@ describe('onPath through an edit', () => {
     const r = constrainPathEdit(before, edit.path, ON, { origins: edit.origins });
     expect(r.constraints).toEqual([]);
   });
+
+  it('turns its segment round with a subpath the edit reversed, so the curve it reads stays the drawn one', () => {
+    // Anchor 3 sits on the curve from anchor 0 to anchor 1, at its middle.
+    const before = new PathBuilder().moveTo(0, 0).curveTo(30, -40, 70, -40, 100, 0)
+      .lineTo(100, 100).lineTo(50, -30).build() as PolygonPath;
+    const edit = editAnchorSetTracked(before, (set) => { reverseSubpaths(set); })!;
+    const r = constrainPathEdit(before, edit.path, [{ kind: 'onPath', anchor: 3, segment: [0, 1] }], { origins: edit.origins });
+    expect(r.converged).toBe(true);
+    expect(r.constraints).toEqual([{ kind: 'onPath', anchor: 0, segment: [2, 3] }]);
+    expect(pathAnchorPoints(r.path)).toEqual(pathAnchorPoints(edit.path));
+  });
 });
 
 describe('segmentBetween', () => {
@@ -154,6 +166,38 @@ describe('segmentBetween', () => {
     expect(segmentBetween(path, 2, 1)).toEqual([1, 2]);
     expect(segmentBetween(path, 0, 3)).toEqual([3, 0]);
     expect(segmentBetween(path, 0, 2)).toBeNull();
+  });
+
+  it('answers either segment of a closed subpath of two anchors', () => {
+    const lens = new PathBuilder().moveTo(0, 0).curveTo(30, -40, 70, -40, 100, 0)
+      .curveTo(70, 40, 30, 40, 0, 0).close().build() as PolygonPath;
+    expect(segmentBetween(lens, 0, 1)).toEqual([0, 1]);
+    expect(segmentBetween(lens, 1, 0)).toEqual([1, 0]);
+  });
+
+  it('answers no closing segment for a closed subpath of one anchor', () => {
+    const dot = new PathBuilder().moveTo(0, 0).close().moveTo(10, 0).lineTo(20, 0).build() as PolygonPath;
+    expect(segmentBetween(dot, 0, 0)).toBeNull();
+  });
+});
+
+describe('anchorsBefore', () => {
+  const open = () => new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).build() as PolygonPath;
+
+  it('answers no anchor for one the edit added past an open subpath\'s end', () => {
+    const before = open();
+    const prepended = editAnchorSetTracked(before, (set) => { set.anchors[0].unshift({ x: -50, y: 20 }); })!;
+    expect(anchorsBefore(before, prepended.path, prepended.origins)).toEqual([undefined, 0, 1, 2]);
+    const appended = editAnchorSetTracked(before, (set) => { set.anchors[0].push({ x: 150, y: 120 }); })!;
+    expect(anchorsBefore(before, appended.path, appended.origins)).toEqual([0, 1, 2, undefined]);
+  });
+
+  it('keeps a fixed anchor\'s constraint on it when the edit adds one before it', () => {
+    const before = open();
+    const edit = editAnchorSetTracked(before, (set) => { set.anchors[0].unshift({ x: -50, y: 20 }); })!;
+    const r = constrainPathEdit(before, edit.path, [{ kind: 'fixed', anchor: 0 }], { origins: edit.origins });
+    expect(r.constraints).toEqual([{ kind: 'fixed', anchor: 1 }]);
+    expect(pathAnchorPoints(r.path)[0]).toEqual({ x: -50, y: 20 });
   });
 });
 

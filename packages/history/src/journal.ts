@@ -95,10 +95,32 @@ export interface Journal {
   /** Flushes the journal to its parent as one entry labelled `label`, or the label it was
    *  opened with. Throws while a journal opened inside this one is still active or suspended. */
   commit(label?: string): void;
-  /** Cancels every journal still open inside this one first, suspended ones included. */
+  /** Cancels every journal still open inside this one first, suspended ones included, the one
+   *  that edited last first. */
   cancel(): void;
+  /** Throws while a journal opened inside this one is active. */
   suspend(): void;
   isActive(): boolean;
+}
+
+/** The journals opened inside one: each leaves `RESUMERS` when it closes. */
+function createChildren() {
+  const children: Journal[] = [];
+  /** When each child last changed the adapter, counted in opens and edits. */
+  const lastEdit = new Map<Journal, number>();
+  let edits = 0;
+  const openChildren = (): Journal[] => children.filter((c) => RESUMERS.has(c));
+  return {
+    adopt(child: Journal): void {
+      children.push(child);
+      lastEdit.set(child, ++edits);
+      child.observe(() => lastEdit.set(child, ++edits));
+    },
+    openChildren,
+    /** The open ones, latest edit first. Edits interleaved between suspended siblings cannot be
+     *  unwound exactly in any order. */
+    latestFirst: (): Journal[] => openChildren().sort((x, y) => lastEdit.get(y)! - lastEdit.get(x)!),
+  };
 }
 
 /** Internal factory used by `createHistory`'s `beginJournal` method.
@@ -131,9 +153,7 @@ export function createJournalInternal(
   type State = 'active' | 'suspended' | 'closed';
   let state: State = 'active';
   const targetId = opts.targetId;
-  /** Journals opened inside this one; each leaves `RESUMERS` when it closes. */
-  const children: Journal[] = [];
-  const openChildren = (): Journal[] => children.filter((c) => RESUMERS.has(c));
+  const { adopt, openChildren, latestFirst } = createChildren();
 
   const journal: Journal = {
     targetId,
@@ -173,7 +193,7 @@ export function createJournalInternal(
       const child = inner.beginJournal(nested);
       ENCLOSING.set(child, journal);
       OWNER.set(child, inner);
-      children.push(child);
+      adopt(child);
       return child;
     },
     getVersion: () => version,
@@ -194,7 +214,7 @@ export function createJournalInternal(
     },
     cancel(): void {
       if (state !== 'active') throw new Error('Journal is not active');
-      for (const child of openChildren().reverse()) {
+      for (const child of latestFirst()) {
         if (!child.isActive()) RESUMERS.get(child)!();
         child.cancel();
       }
@@ -206,6 +226,8 @@ export function createJournalInternal(
     },
     suspend(): void {
       if (state !== 'active') throw new Error('Journal is not active');
+      // It would go on writing to the adapter while the history counts no journal open.
+      if (openChildren().some((c) => c.isActive())) throw new Error('A journal inside this one is still active — commit, cancel, or suspend it first');
       state = 'suspended';
       onClose?.();
       bump();

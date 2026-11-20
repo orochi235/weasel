@@ -144,6 +144,57 @@ describe('useGridCellHover', () => {
   });
 });
 
+describe('useGridCellHover — a still pointer', () => {
+  it('reads the cell again when the view zooms under it, at the next getCell', () => {
+    const el = makeEl();
+    const ref = createRef<HTMLElement>();
+    (ref as { current: HTMLElement }).current = el;
+    let view = identityView;
+    const onChange = vi.fn();
+    const { result } = renderHook(() => useGridCellHover({ ref, view: () => view, spacing: 10, onChange }));
+    act(() => { fire(el, 'pointermove', { clientX: 25, clientY: 7 }); });
+    view = { panX: 0, panY: 0, zoom: { x: 2, y: 2 } };
+    act(() => { expect(result.current.getCell()).toMatchObject({ col: 1, row: 0 }); });
+    expect(result.current.cell).toMatchObject({ col: 1, row: 0 });
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ col: 1, row: 0 }));
+  });
+
+  it('reads the cell again when the spacing changes', () => {
+    const el = makeEl();
+    const ref = createRef<HTMLElement>();
+    (ref as { current: HTMLElement }).current = el;
+    const { result, rerender } = renderHook(({ spacing }) =>
+      useGridCellHover({ ref, view: () => identityView, spacing }), { initialProps: { spacing: 10 } });
+    act(() => { fire(el, 'pointermove', { clientX: 25, clientY: 7 }); });
+    rerender({ spacing: 5 });
+    expect(result.current.cell).toMatchObject({ col: 5, row: 1 });
+  });
+
+  it('moves its listeners to the element the ref holds after a render', () => {
+    const first = makeEl();
+    const second = makeEl();
+    const ref = createRef<HTMLElement>();
+    (ref as { current: HTMLElement }).current = first;
+    const { result, rerender } = renderHook(() => useGridCellHover({ ref, view: () => identityView, spacing: 10 }));
+    (ref as { current: HTMLElement }).current = second;
+    rerender();
+    act(() => { fire(first, 'pointermove', { clientX: 5, clientY: 5 }); });
+    expect(result.current.cell).toBeNull();
+    act(() => { fire(second, 'pointermove', { clientX: 25, clientY: 7 }); });
+    expect(result.current.cell).toMatchObject({ col: 2, row: 0 });
+  });
+
+  it('binds an element the ref gains after mount, once the component renders', () => {
+    const el = makeEl();
+    const ref = createRef<HTMLElement>();
+    const { result, rerender } = renderHook(() => useGridCellHover({ ref, view: () => identityView, spacing: 10 }));
+    (ref as { current: HTMLElement }).current = el;
+    rerender();
+    act(() => { fire(el, 'pointermove', { clientX: 25, clientY: 7 }); });
+    expect(result.current.cell).toMatchObject({ col: 2, row: 0 });
+  });
+});
+
 describe('useGridCellHover — abandoned renders', () => {
   it('maps the pointer with the committed options, not an abandoned render\'s', () => {
     const el = makeEl();

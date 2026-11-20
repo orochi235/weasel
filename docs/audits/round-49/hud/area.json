@@ -1,0 +1,76 @@
+{
+ "id": "hud",
+ "commit": "2f3b11aab7ae249a1690ff9a4409dbdf440e5222",
+ "date": "2026-11-20",
+ "files": [
+  "packages/hud/src/accessibleMirror.ts",
+  "packages/hud/src/actionParamSchema.ts",
+  "packages/hud/src/attach.ts",
+  "packages/hud/src/boxShadow.ts",
+  "packages/hud/src/colors.ts",
+  "packages/hud/src/domFocus.ts",
+  "packages/hud/src/fonts/registerDefaultFont.ts",
+  "packages/hud/src/glyph.ts",
+  "packages/hud/src/host.ts",
+  "packages/hud/src/hover.ts",
+  "packages/hud/src/hud.ts",
+  "packages/hud/src/hudCanvas.fixture.tsx",
+  "packages/hud/src/index.ts",
+  "packages/hud/src/layerDeps.ts",
+  "packages/hud/src/layerDraw.ts",
+  "packages/hud/src/loupe/aimInput.ts",
+  "packages/hud/src/loupe/contentWatch.ts",
+  "packages/hud/src/loupe/createLoupe.ts",
+  "packages/hud/src/loupe/loupeColors.ts",
+  "packages/hud/src/loupe/loupeRoutes.ts",
+  "packages/hud/src/loupe/pixelReadback.ts",
+  "packages/hud/src/loupe/vectorLens.ts",
+  "packages/hud/src/measureEnv.ts",
+  "packages/hud/src/openPresses.ts",
+  "packages/hud/src/pbt.fixture.ts",
+  "packages/hud/src/react/index.ts",
+  "packages/hud/src/react/useHud.ts",
+  "packages/hud/src/react/useLoupe.ts",
+  "packages/hud/src/textInputHost.ts",
+  "packages/hud/src/tool.ts",
+  "packages/hud/src/widget.ts"
+ ],
+ "a": 4,
+ "b": 6,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 10.7,
+ "unfound": 2.7,
+ "read": {
+  "A": 31,
+  "B": 31
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 10,
+   "B": 6.4,
+   "match": 0.2,
+   "fix": 16.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 2615401,
+  "costUsd": 7.5
+ },
+ "fixCommits": [
+  "1f8e77496ba0e048a122390fda4c30bb7d7b2b89",
+  "568e0668de603f96b51131e142c5570fd43280e2",
+  "155ff9fef49e7030d2e3e810385dd801491a9919",
+  "fe373768896cd0233286b7d7ea55a2ace4a0edb8",
+  "7b9b172662370795a5382444549dee944c1b19ac",
+  "0e16d0fa86d6c5c7b40abc4c992bf73f4b4c6598",
+  "6c85f778257a71b8997e7b4b6d1dad7da88ca273",
+  "dc3303d5e44a57c0cbdda9ebb03f81ed5c5e0d7d"
+ ]
+}

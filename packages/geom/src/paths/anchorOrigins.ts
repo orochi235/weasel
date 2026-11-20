@@ -4,7 +4,7 @@
  */
 
 import type { PolygonPath } from '../path';
-import { anchorsToPath, pathToAnchors, type PenAnchor } from './anchors';
+import { anchorsToPath, decodeAnchors, pathToAnchors, type PenAnchor } from './anchors';
 import type { AnchorSet } from './anchorEdits';
 import type { Point } from './cubicMath';
 import { worldCoords } from './pathOrigin';
@@ -18,6 +18,8 @@ export interface PointOrigin {
   a: number;
   b: number;
   t: number;
+  /** On a point of an anchor the edit made: it was no anchor's before, even where `t` is 0 and it copies `a`. */
+  made?: true;
   /** On an anchor's own point: its subpath now runs the other way through it. */
   reversed?: true;
 }
@@ -37,13 +39,14 @@ const keyOf = (p: Point): string => `${p.x},${p.y}`;
 
 /**
  * Which point of `path` each anchor of `set` was decoded from. `pathToAnchors` runs again
- * over a path whose every point holds its own index, so the two walks cannot disagree.
+ * over a path whose every point holds its own index, so the two walks cannot disagree; it runs
+ * without elevating quadratics, so both handles of one read its control point's index.
  */
 function heldBy(path: PolygonPath, set: AnchorSet): Held[][] {
   const coords = new Float32Array(path.coords.length);
   for (let i = 0; i < coords.length; i++) coords[i] = i >> 1;
   const { origin: _indicesHaveNone, ...bare } = path;
-  const indexed = pathToAnchors({ ...bare, coords }).anchors;
+  const indexed = decodeAnchors({ ...bare, coords }, false).anchors;
   return indexed.map((sub, s) => {
     // No two index points coincide, so a closing curve the real walk folded is unfolded here.
     if (sub.length === set.anchors[s].length + 1) sub[0].inHandle = sub.pop()!.inHandle;
@@ -97,10 +100,10 @@ function blended(
   if (p === -1 && n === -1) return null;
   const a = held[p === -1 ? n : p]!.point;
   const b = held[n === -1 ? p : n]!.point;
-  if (p === -1 || n === -1 || a === b) return { a, b: a, t: 0 };
+  if (p === -1 || n === -1 || a === b) return { a, b: a, t: 0, made: true };
   const dp = Math.hypot(anchors[i].x - anchors[p].x, anchors[i].y - anchors[p].y);
   const dn = Math.hypot(anchors[i].x - anchors[n].x, anchors[i].y - anchors[n].y);
-  return { a, b, t: dp + dn > 0 ? dp / (dp + dn) : 0 };
+  return { a, b, t: dp + dn > 0 ? dp / (dp + dn) : 0, made: true };
 }
 
 /**
@@ -147,8 +150,8 @@ function copied(anchor: PenAnchor, byPlace: ReadonlyMap<string, Held>): Held | u
  * An anchor the edit kept, moved or not, keeps its points. One the edit put exactly where an
  * anchor was takes that anchor's, each handle by where it is, so a subpath turned around
  * keeps its weights. A handle an edit gave an anchor that had none takes the anchor's point. An anchor the edit made is a blend of the nearest kept anchors either side
- * of it in its subpath, by its distance to each, or a copy of the one it has; its origin is
- * `null` when its subpath has none.
+ * of it in its subpath, by its distance to each, or a copy of the one it has, marked `made`;
+ * its origin is `null` when its subpath has none.
  */
 export function editAnchorSetTracked(
   path: PolygonPath,

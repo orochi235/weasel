@@ -1,0 +1,58 @@
+{
+ "id": "guides.layout",
+ "commit": "2f3b11aab7ae249a1690ff9a4409dbdf440e5222",
+ "date": "2026-11-20",
+ "files": [
+  "packages/guides/src/layout/perContainer.ts",
+  "packages/guides/src/layout/snaps.ts",
+  "packages/guides/src/layout/strategies/arrangements.ts",
+  "packages/guides/src/layout/strategies/freeform.ts",
+  "packages/guides/src/layout/strategies/index.ts",
+  "packages/guides/src/layout/strategies/pack.ts",
+  "packages/guides/src/layout/strategies/quadtree.ts",
+  "packages/guides/src/layout/strategies/sequence.ts",
+  "packages/guides/src/layout/strategies/slots.ts",
+  "packages/guides/src/layout/strategies/snapPoint.ts",
+  "packages/guides/src/layout/strategies/testing/moveLayoutStubs.ts",
+  "packages/guides/src/layout/strategies/tileCells.ts",
+  "packages/guides/src/layout/strategies/tileGrid.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 13,
+  "B": 13
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.1,
+   "B": 6.4,
+   "match": 0.2,
+   "fix": 17.2
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2546109,
+  "costUsd": 7.39
+ },
+ "fixCommits": [
+  "c76ca6e2c7daaab599fd7df8e8e60e56b8786ac8",
+  "aa23f5b45cacf02da46949276a3cc148314cb11d",
+  "c22c9a6cd04b53bc434719632da5716fa377a042",
+  "3e93cbecc7482eb0cad025a3749737139fdfae5c",
+  "642cf3e39ad1b82e2d00e153cd84410659a1b8bb",
+  "e000f0a872e63a6e64394bce009af8e13b11f2b4",
+  "c8db0508b3db1d6dd8ead6cd866009eb9e79f5c5",
+  "a2036cf8b6ac6993da77dedb67a0a342c79ae4af"
+ ]
+}

@@ -37,6 +37,12 @@ describe('reachToMeet', () => {
     expect(coords(r.path).slice(-2)).toEqual([10, 0]);
   });
 
+  it('lengthens a straight end to the stroke ahead in curvature mode too', () => {
+    const r = reachToMeet(pathFromD('M0 0 H5'), walls, { sub: 0, end: 'last' }, { mode: 'curvature' })!;
+    expect(r.distance).toBeCloseTo(5, 9);
+    expect(coords(r.path)).toEqual([0, 0, 10, 0]);
+  });
+
   it('declines when the tangent meets nothing', () => {
     expect(reachToMeet(pathFromD('M0 0 H5'), [pathFromD('M0 10 H30')], { sub: 0, end: 'last' })).toBeNull();
   });

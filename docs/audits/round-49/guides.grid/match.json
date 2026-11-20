@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "Unscoped grids resolve a tagged pitch with the unit's offset; scoped grids subtract it",
+  "With `bounds`, the grid layer emits every line across the bounds, not just the visible part",
+  "Grid line and clip coordinates are written as world-space Float32, so lines far from the origin snap to float32 steps",
+  "useGridCellHover keeps a stale cell when the view, spacing or regions change without a pointer move",
+  "sceneGridRegions builds its child lists by copying the array for every node, quadratic in sibling containers, on every paint and pointermove"
+ ],
+ "b": [
+  "Grid lines and clip outlines are written as absolute world coordinates in a Float32Array with no `origin`, so they land off their positions far from world zero",
+  "Without `scopes`, a tagged grid length is read with its unit's offset, so a unit with an affine offset moves the pitch; with `scopes` the same length is read offset-free",
+  "A NaN or infinite `offset` passes validation and `cellOf` returns a cell of NaNs instead of `null`",
+  "`useGridCellHover` reads `ref.current` once per effect run, so an element attached after mount, or swapped for another, never gets listeners"
+ ]
+}

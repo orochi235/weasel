@@ -10,9 +10,15 @@ import { withoutCorners } from './cornerSpec';
  *  interior "holes" lose the hole semantics — each subpath becomes its own
  *  filled region. Each subpath keeps the corner specs of its own anchors. */
 export function splitSubpaths(path: PolygonPath): PolygonPath[] {
+  return placeSubpaths(path).map((p) => p.sub);
+}
+
+/** {@link splitSubpaths}, each subpath with `sources`: for each of its anchor
+ *  commands, the anchor command of `path` it came from, or -1 for an added `M`. */
+export function placeSubpaths(path: PolygonPath): { sub: PolygonPath; sources: Int32Array }[] {
   const { commands, coords } = path;
   const bare = withoutCorners(path);
-  const out: PolygonPath[] = [];
+  const out: { sub: PolygonPath; sources: Int32Array }[] = [];
 
   // Walk the command stream, tracking the (cmdStart, coordStart) of the
   // active subpath. On each subsequent `M`, slice out the previous subpath.
@@ -32,7 +38,7 @@ export function splitSubpaths(path: PolygonPath): PolygonPath[] {
       sources = Int32Array.of(-1, ...sources);
     }
     const sub = { ...bare, commands: cmds, coords: xs };
-    out.push(path.corners ? carryCorners(path, sub, sources) : sub);
+    out.push({ sub: path.corners ? carryCorners(path, sub, sources) : sub, sources });
     anchorStart = anchors;
   };
 

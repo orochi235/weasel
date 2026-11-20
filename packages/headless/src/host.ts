@@ -36,7 +36,8 @@ export interface NodeRenderArgs extends SerializableRenderArgs {
 
 /** A Chromium page holding one raster session, kept across renders. */
 export interface NodeRasterHost {
-  /** Render to straight RGBA, top-down, as `renderSceneToPixels` returns it. Rejects once disposed. */
+  /** Render to straight RGBA, top-down, as `renderSceneToPixels` returns it. Rejects once disposed, and
+   *  for a render or PNG of more than `MAX_RESULT_BYTES`: render a larger one in tiles. */
   render(args: NodeRenderArgs): Promise<RasterImage>;
   /** Render and encode as PNG. The page encodes through a 2D canvas, which stores premultiplied
    *  color, so a translucent pixel's color can move by a step; `render` returns the exact bytes. */
@@ -78,8 +79,8 @@ async function open(options: NodeRasterHostOptions): Promise<Open> {
     if (!ready) throw new Error('node raster host: the page script ran but never called `serveHeadlessPage`');
     return opened;
   } catch (err) {
-    if (!options.browser) await browser.close();
-    else await context?.close();
+    // A cleanup that fails too, as on a browser already gone, must not replace the error that caused it.
+    await (options.browser ? context?.close() : browser.close())?.catch(() => undefined);
     throw err;
   }
 }
@@ -100,6 +101,26 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
     const req = readPageRequest({
       ...rest, scene: sceneToWire(scene), format, ...(screen ? { screen: Array.from(screen) } : {}),
     });
+    let { pending, opened } = await live();
+    // Gone between renders, as a page that crashed while idle: open another rather than fail this render on it.
+    if (gone(opened)) {
+      drop(pending, opened);
+      ({ pending, opened } = await live());
+    }
+    try {
+      return await opened.page.evaluate(
+        ([key, r]) => ((globalThis as unknown as Record<string, PageApi>)[key]!).render(r),
+        [PAGE_GLOBAL, req] as const,
+      );
+    } catch (err) {
+      // Gone during the render: the next render opens another rather than failing on it too.
+      if (gone(opened)) drop(pending, opened);
+      throw err;
+    }
+  }
+
+  /** The open page, opening one if there is none. */
+  async function live(): Promise<{ pending: Promise<Open>; opened: Open }> {
     opening ??= open(options).catch((err: unknown) => {
       opening = null;
       throw err;
@@ -108,19 +129,19 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
     const opened = await pending;
     // Disposed while the page opened: the dispose closes it, and this render would fail as a closed page.
     if (disposed) throw new Error('node raster host: render on a disposed host');
-    try {
-      return await opened.page.evaluate(
-        ([key, r]) => ((globalThis as unknown as Record<string, PageApi>)[key]!).render(r),
-        [PAGE_GLOBAL, req] as const,
-      );
-    } catch (err) {
-      // A page crashed, or a page or browser gone for good: the next render opens another rather than failing on it too.
-      if (opening === pending && (opened.crashed || opened.page.isClosed() || !opened.browser.isConnected())) {
-        opening = null;
-        void close(opened).catch(() => undefined);
-      }
-      throw err;
-    }
+    return { pending, opened };
+  }
+
+  /** A page crashed, or a page or browser gone for good. */
+  function gone(opened: Open): boolean {
+    return opened.crashed || opened.page.isClosed() || !opened.browser.isConnected();
+  }
+
+  /** Forget a page that is gone, so the next render opens another, unless another render already did. */
+  function drop(pending: Promise<Open>, opened: Open): void {
+    if (opening !== pending) return;
+    opening = null;
+    void close(opened).catch(() => undefined);
   }
 
   /** Close what `open` opened: the context in a caller's browser, or the browser the host launched. */

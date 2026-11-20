@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "lengthTable measures a straight segment as length 0 when its squared length over- or underflows",
+  "3D `len` and `distance` overflow and underflow where `normalize` does not",
+  "Quadratic and NURBS curve reps zero a small curve's curvature on an absolute threshold; the cubic rep judges it by scale",
+  "pathCrossings never finds a cubic segment crossing itself"
+ ],
+ "b": [
+  "nearestPointsRayLine pairs a zero-direction line (a point) with the ray's origin instead of the ray's nearest point to it",
+  "pathCrossings never tests a segment against itself, so a looped cubic's self-crossing is never reported",
+  "The curve representations' `toPath` write world coordinates straight into a Float32Array with no `origin`, losing precision far from the origin",
+  "A subpath opened after `Z` without an `M` restarts at the previous subpath's anchor id, so the length table's anchor breakpoints stop ascending and its anchor queries answer on the wrong subpath"
+ ]
+}

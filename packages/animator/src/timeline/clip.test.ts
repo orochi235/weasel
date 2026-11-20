@@ -138,6 +138,7 @@ describe('toClip', () => {
     expect(clip({ ...base, weight: () => 1 } as never)).toThrow(/track "x" has a function for its weight and no weightName/);
     expect(clip({ ...base, keys: [{ t: 0, value: 1, easing: (u: number) => u * u }] } as never)).toThrow(/track "x" eases a key by a function that is not a built-in/);
     expect(clip({ ...base, keys: [{ t: 0, value: new Map() }] } as never)).toThrow(/track "x" holds a value JSON cannot/);
+    expect(clip({ ...base, keys: [{ t: 0, value: { at: new Date(0) } }] } as never)).toThrow(/track "x" holds a value JSON cannot/);
     expect(clip({ ...base, keys: [{ t: 0, value: Float32Array.of(NaN) }] } as never)).toThrow(/track "x" holds a value JSON cannot/);
     expect(clip({ kind: 'event', label: 'e', events: [{ t: 0, fire: () => {} }] })).toThrow(/track "e" has an event with no name/);
   });

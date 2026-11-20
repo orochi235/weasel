@@ -93,10 +93,14 @@ function nearestIndex<TPose>(
 export function sequenceLayout<TPose>(seq: Sequencer<TPose>): LayoutStrategy<TPose> {
   const { centerOf } = seq;
 
-  const moved = (a: TPose, b: TPose): boolean => {
+  /** Whether `a` and `b` sit at different centers; with `within`, past rounding at that container's scale. */
+  const moved = (a: TPose, b: TPose, within?: LayoutContainer): boolean => {
     const p = centerOf(a);
     const q = centerOf(b);
-    return p.x !== q.x || p.y !== q.y;
+    if (!within) return p.x !== q.x || p.y !== q.y;
+    const { x, y, width, height } = within.bounds;
+    const tol = 1e-9 * (Math.abs(x) + Math.abs(y) + width + height);
+    return !(Math.abs(p.x - q.x) <= tol && Math.abs(p.y - q.y) <= tol);
   };
 
   const arranged = (
@@ -118,13 +122,22 @@ export function sequenceLayout<TPose>(seq: Sequencer<TPose>): LayoutStrategy<TPo
     return poses;
   };
 
+  const resting = (container: LayoutContainer, children: ReadonlyArray<LayoutChild<TPose>>) => {
+    const sequence = seq.order(container, children, children.length);
+    return { sequence, poses: seq.place(container, sequence) ?? new Map(children.map((c) => [c.id, c.pose])) };
+  };
+
   return {
     snap: seq.snap,
 
-    childPoses(container, children) {
-      const sequence = seq.order(container, children, children.length);
-      return seq.place(container, sequence) ?? new Map(children.map((c) => [c.id, c.pose]));
-    },
+    childPoses: (container, children) => resting(container, children).poses,
+
+    ...(seq.resize && {
+      fit(container: LayoutContainer, children: ReadonlyArray<LayoutChild<TPose>>) {
+        const { sequence, poses } = resting(container, children);
+        return arranged(container, sequence, poses);
+      },
+    }),
 
     getDropTargets(container, children, dragged) {
       const others = othersOf(seq, container, children, dragged);
@@ -163,6 +176,13 @@ export function sequenceLayout<TPose>(seq: Sequencer<TPose>): LayoutStrategy<TPo
     },
 
     arrive(container, children, arrivals) {
+      // A drag lands here after commitDrop has already arranged everyone for
+      // the new count; read against the old one, two siblings can share a slot.
+      const all = seq.order(container, children, children.length);
+      const resting = seq.place(container, all);
+      if (resting && children.every((c) => !moved(c.pose, resting.get(c.id)!, container))) {
+        return arranged(container, all, resting);
+      }
       const held = children.filter((c) => !arrivals.has(c.id));
       let sequence = seq.order(container, held, held.length);
       for (const c of children) {

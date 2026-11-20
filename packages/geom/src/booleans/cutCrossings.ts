@@ -14,16 +14,18 @@ export interface Crossing extends Station {
 /**
  * Where along cut segment `k` of `cut` a point on its line falls, as a
  * position on the whole cut, or null when it is off that segment. A point at a
- * joint belongs to the segment that starts there, so it is counted once.
+ * joint belongs to the segment that starts there, so it is counted once; a
+ * closed cut's last point is its first, a joint like the others.
  */
 export function cutPosition(cut: Point[], k: number, pt: Point): number | null {
   const a = cut[k], b = cut[k + 1];
   const d = { x: b.x - a.x, y: b.y - a.y };
   const s = ((pt.x - a.x) * d.x + (pt.y - a.y) * d.y) / (d.x * d.x + d.y * d.y);
   const eps = 1e-9;
-  const last = k + 2 === cut.length;
-  if (s < (k === 0 ? 0 : -eps)) return null;
-  if (last ? s > 1 : s >= 1 - eps) return null;
+  const end = cut[cut.length - 1];
+  const open = end.x !== cut[0].x || end.y !== cut[0].y;
+  if (s < (k === 0 && open ? 0 : -eps)) return null;
+  if (k + 2 === cut.length && open ? s > 1 : s >= 1 - eps) return null;
   return k + Math.min(1, Math.max(0, s));
 }
 

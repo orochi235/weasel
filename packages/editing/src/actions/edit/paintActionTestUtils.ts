@@ -1,4 +1,5 @@
 import { vi, type Mock } from 'vitest';
+import { getOwn } from '@weasel-js/registry';
 import { stubDepsForTests as stubDeps } from '@weasel-js/core/test-seams';
 import { asNodeId } from '@weasel-js/core/engine';
 import type { NodeId, Op } from '@weasel-js/core';
@@ -10,7 +11,7 @@ import type { Action, InvocationCtx, OngoingHandle, BindingOptions } from '@weas
  * — `{ fill }` or `{ stroke }`.
  */
 
-interface FakeNode<TData> { id: NodeId; kind: 'mark'; pose: unknown; data: TData }
+interface FakeNode<TData> { id: NodeId; kind: 'mark'; pose: unknown; data: TData; parent: string | null }
 
 export interface FakeScene<TData> {
   get(id: NodeId): FakeNode<TData> | null;
@@ -31,23 +32,26 @@ export interface FakeSelection {
 }
 
 /**
- * A scene recording what the action wrote.
+ * A scene recording what the action wrote. `parents` names a node's parent by id.
  *
  * `applyBatch` mirrors the real one: it records a single undo entry and applies
  * each op through the supplied adapter. The actions pass `defaultCommitAdapter`,
  * whose `setData` calls `scene.update({ data })` — so every op routes back
  * through `update` here and populates `updates`.
  */
-export function makeScene<TData extends object>(nodes: Record<string, TData>): FakeScene<TData> {
+export function makeScene<TData extends object>(
+  nodes: Record<string, TData>,
+  parents: Record<string, string> = {},
+): FakeScene<TData> {
   const current = new Map<string, FakeNode<TData>>();
   for (const [id, d] of Object.entries(nodes)) {
-    current.set(id, { id: asNodeId(id), kind: 'mark', pose: {}, data: { ...d } });
+    current.set(id, { id: asNodeId(id), kind: 'mark', pose: {}, data: { ...d }, parent: getOwn(parents, id) ?? null });
   }
   const updates: Array<{ id: string; data: unknown }> = [];
   const batches: string[] = [];
   return {
     get: (id: NodeId) => current.get(id as unknown as string) ?? null,
-    childrenOf: () => [],
+    childrenOf: (id: NodeId) => Object.keys(parents).filter((c) => parents[c] === (id as unknown as string)).map(asNodeId),
     update: vi.fn((id: NodeId, patch: { data: unknown }) => {
       updates.push({ id: id as unknown as string, data: patch.data });
       current.get(id as unknown as string)!.data = patch.data as never;

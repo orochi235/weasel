@@ -1,0 +1,55 @@
+{
+ "id": "guides.grid",
+ "commit": "2f3b11aab7ae249a1690ff9a4409dbdf440e5222",
+ "date": "2026-11-20",
+ "files": [
+  "packages/guides/src/grid/axes.ts",
+  "packages/guides/src/grid/cellHighlight.ts",
+  "packages/guides/src/grid/fit.ts",
+  "packages/guides/src/grid/index.ts",
+  "packages/guides/src/grid/lattice.ts",
+  "packages/guides/src/grid/layer.ts",
+  "packages/guides/src/grid/pointToGridCell.ts",
+  "packages/guides/src/grid/preset.ts",
+  "packages/guides/src/grid/reading.ts",
+  "packages/guides/src/grid/regions.ts",
+  "packages/guides/src/grid/roundToCell.ts",
+  "packages/guides/src/grid/useGridCellHover.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.7,
+   "B": 2.7,
+   "match": 5.7,
+   "fix": 20
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "weightedTokens": 1430690,
+  "costUsd": 4.38
+ },
+ "fixCommits": [
+  "129e59559499ee9ca50ab02e2beb4527c7603a74",
+  "5170c0dbe5ce90ef7654242b8804e22958c26cff",
+  "f245e2399757f86bbc09734577b163a2b36fb839",
+  "0b0b1ef0ab609340349de25e63c7b06436497fd6",
+  "dbb1aee34ba5c9f1f4dde27cd37a4fe8749bfc89",
+  "d6f1b4de0f5f584146ee2af370817e78656ec014"
+ ]
+}

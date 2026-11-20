@@ -98,3 +98,13 @@ describe('pathThroughPoseFrame on rounded corners', () => {
     expect((pathThroughPoseFrame(box, { ...pose([1, 0, 0, 1]), rotation: 0.6 }) as PolygonPath).corners).toBeDefined();
   });
 });
+
+describe('poseFrameInverseOf and pathThroughPoseFrame on no pose', () => {
+  it('answer no frame and the path as it is', () => {
+    const rect = { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } as const;
+    expect(poseFrameInverseOf(null)).toBeNull();
+    expect(poseFrameInverseOf(undefined)).toBeNull();
+    expect(pathThroughPoseFrame(rect, null)).toBe(rect);
+    expect(pathThroughPoseFrame(rect, undefined)).toBe(rect);
+  });
+});

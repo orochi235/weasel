@@ -36,12 +36,11 @@
   box-sizing: border-box;
   background: color-mix(in oklab, var(--span-color, var(--wzl-accent)) 16%, transparent);
   color: var(--span-ink, var(--wzl-fg));
-  /* One line of a stripe: its share of the strip's height inside the strip's border. */
-  --span-segment-line: calc((var(--span-strip-height, 22px) - 2px) * var(--span-track-span, 1) / var(--span-tracks, 1));
+  --span-stripe-height: calc((var(--span-strip-height, 22px) - 2px) * var(--span-track-span, 1) / var(--span-tracks, 1));
   /* A stripe's text shrinks to fit its stripe when the strip's tracks leave it less room than the strip's text needs. */
-  font-size: min(var(--span-strip-text, var(--wzl-font-size-2xs)), calc(var(--span-segment-line) * 0.8));
+  font-size: min(var(--span-strip-text, var(--wzl-font-size-2xs)), calc(var(--span-stripe-height) * 0.8));
   font-weight: var(--wzl-font-weight-bold);
-  line-height: var(--span-segment-line);
+  line-height: var(--span-stripe-height);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;

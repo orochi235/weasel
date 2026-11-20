@@ -1,0 +1,12 @@
+packages/guides/src/guides/alignment/derive.ts
+packages/guides/src/guides/alignment/finite.ts
+packages/guides/src/guides/alignment/index.ts
+packages/guides/src/guides/alignment/match.ts
+packages/guides/src/guides/alignment/sceneBounds.ts
+packages/guides/src/guides/alignment/spacing.ts
+packages/guides/src/guides/alignment/types.ts
+packages/guides/src/guides/index.ts
+packages/guides/src/guides/layer.ts
+packages/guides/src/guides/ops.ts
+packages/guides/src/guides/types.ts
+packages/guides/src/guides/useGuides.ts

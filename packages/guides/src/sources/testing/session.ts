@@ -71,14 +71,16 @@ export function drive(opts: DriveOptions) {
 }
 
 /** A move dragged by `by`, from a press at the origin: the delta it settles
- *  on. With no `scene`, the subject is one unstroked rect at `box`. */
+ *  on. With no `scene`, the subject is one unstroked rect at `box`; with a
+ *  `scene` and no `ids`, the move has no subject. */
 export function moveBy(opts: Omit<DriveOptions, 'gesture' | 'press'> & { box?: Bounds }) {
   const own = opts.scene ? null : sceneOf(opts.box ? [opts.box] : []);
+  const ids = opts.ids ?? own?.ids;
   const d = drive({
     ...opts,
     gesture: 'move',
     scene: opts.scene ?? own!.scene,
-    ids: opts.ids ?? own!.ids,
+    ...(ids ? { ids } : {}),
   });
   return { ...d, by: (dx: number, dy: number, mods?: SnapMods) => d.at({ x: dx, y: dy }, mods) };
 }

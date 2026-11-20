@@ -5,14 +5,14 @@
  */
 
 import type { PolygonPath } from '../path';
-import type { PointOrigin } from '../paths/anchorOrigins';
+import { anchorPointIndices, type PointOrigin } from '../paths/anchorOrigins';
 import { unsatisfiedConstraints } from './check';
 import {
   anchorsBefore, pathAnchorPoints, remapConstraints, segmentBetween, withAnchorPoints,
 } from './pathConstraints';
 import type { ConstraintPoint, HandleRef } from './points';
 import { solveConstraints } from './solve';
-import { mapConstraintAnchors, type PathConstraint } from './types';
+import { constraintFits, mapConstraintAnchors, type PathConstraint } from './types';
 
 /** Options for {@link constrainPathEdit}. */
 export interface ConstrainPathEditOptions {
@@ -130,8 +130,10 @@ export function constrainPathsEdit(items: readonly PathsEditItem[], links: reado
   // Every constraint numbered over all the anchors before the edit, the items' own first.
   const all: PathConstraint[] = [];
   const angles: (number | undefined)[] = [];
+  // One naming an anchor its own path lacks names no anchor at all, rather than another path's.
   items.forEach((it, i) => it.constraints.forEach((c) => {
-    all.push(mapConstraintAnchors(c, (a) => wasStart[i] + a)!);
+    all.push((constraintFits(c, was[i].length) && mapConstraintAnchors(c, (a) => wasStart[i] + a))
+      || { kind: 'fixed', anchor: -1 });
     angles.push(it.axisAngle);
   }));
   const ownCount = all.length;
@@ -144,15 +146,19 @@ export function constrainPathsEdit(items: readonly PathsEditItem[], links: reado
   const wasAll = was.flat();
   const nowAll = now.flat();
   const broken = new Set(unsatisfiedConstraints(wasAll, all, { axisAngles: angles }));
-  // An `onPath` whose segment the edit split or broke has no segment left to hold its anchor on.
+  // An `onPath` whose segment the edit split or broke has no segment left to hold its anchor on;
+  // one whose subpath the edit turned round reads its segment the way the path now runs it.
   const remapped = remapConstraints(all, wasAnchor);
-  const joined = remapped.constraints.map((c) => {
-    if (c.kind !== 'onPath') return true;
-    const [a, b] = c.segment.map((g) => itemOf(g, nowStart));
-    return a.item === b.item && !!segmentBetween(items[a.item].after, a.anchor, b.anchor);
+  const turned = items.flatMap((it, i) => anchorsTurned(it, now[i].length));
+  const oriented = remapped.constraints.map((c): PathConstraint | null => {
+    if (c.kind !== 'onPath') return c;
+    const [a, b] = (turned[c.segment[0]] && turned[c.segment[1]] ? [c.segment[1], c.segment[0]] : c.segment)
+      .map((g) => itemOf(g, nowStart));
+    const run = a.item === b.item ? segmentBetween(items[a.item].after, a.anchor, b.anchor) : null;
+    return run && { ...c, segment: [run[0] + nowStart[a.item], run[1] + nowStart[a.item]] };
   });
-  const kept = remapped.constraints.filter((_, i) => joined[i]);
-  const from = remapped.from.filter((_, i) => joined[i]);
+  const kept = oriented.filter((c): c is PathConstraint => c !== null);
+  const from = remapped.from.filter((_, i) => oriented[i] !== null);
   const skip = from.flatMap((old, i) => (broken.has(old) ? [i] : []));
   const reference = wasAnchor.map((old) => (old === undefined ? undefined : wasAll[old]));
   // A path the edit left alone gives way only when the edited ones cannot, but an anchor held
@@ -197,6 +203,13 @@ export function constrainPathsEdit(items: readonly PathsEditItem[], links: reado
     outLinks[old - ownCount] = { constraint: mapConstraintAnchors(c, toLocal), satisfied: !failing.has(k) };
   });
   return { items: outItems, links: outLinks, converged: solved.converged };
+}
+
+/** For each anchor of `it.after`, whether its subpath now runs the other way through it. */
+function anchorsTurned(it: PathsEditItem, count: number): boolean[] {
+  const { origins } = it;
+  if (!origins) return Array<boolean>(count).fill(false);
+  return anchorPointIndices(it.after).map((point) => origins[point]?.reversed === true);
 }
 
 function constraintFirstAnchor(c: PathConstraint): number {

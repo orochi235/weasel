@@ -12,6 +12,8 @@ import type {} from './actionParamSchema';
 /** What the HUD layer's `hitTest` resolves and hands to the actions below. */
 export interface HudHitPayload {
   widget: Widget;
+  /** The HUD `widget` is on. */
+  hud?: Hud;
 }
 
 /** Affordance kind `<SceneCanvas>` stamps on a hit from the HUD's layer:
@@ -62,7 +64,7 @@ function pressAction(presses: OpenPresses): Action {
         const widget = widgetIn(params?.affordance);
         if (!widget || !params?.world) return;
         const [x, y] = toScreen(deps, params.world.x, params.world.y);
-        presses.opened(widget);
+        presses.opened(widget, (params.affordance as { payload?: HudHitPayload }).payload?.hud);
         widget.onPointer({ type: 'down', x, y, native: null } satisfies HudPointerEvent);
       },
     },

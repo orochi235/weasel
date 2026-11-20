@@ -74,6 +74,7 @@ describe('routeToSpec', () => {
     expect(spec('[*:*] hover(leave)')).toEqual({ kind: 'hover', motion: 'leave' });
     expect(spec('[*:*] hover(move)')).toEqual({ kind: 'hover' });
     expect(spec('[*:*] hover')).toEqual({ kind: 'hover' });
+    expect(() => spec('[*:*] hover(*)')).toThrow(/concrete motion/);
   });
 
   it('maps a hover that keeps reporting while a button is held', () => {

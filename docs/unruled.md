@@ -20,6 +20,12 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - Ruled 2026-11-10: `keySpecRoute` writes a spec's phase in the route's phase slot, and gives `null` for a
   spec with a physical key `code` or more than one key, which the route grammar has no form for.
 
+- 2026-11-20: `CONTROL_SELECTOR` names everything `focusedControlOwnsKey` leaves Space and Enter to:
+  `summary` and roles `tab`, `option`, `radio`, `menuitemcheckbox` and `menuitemradio` now count as
+  controls a host leaves a press to, and the last three also own Space and Enter. A dispatcher surface
+  whose children carry those roles takes them with `controls: 'take'`, as the segment sweep does.
+- 2026-11-20: `routeToSpec` (and so `bindingSpec`) throws on `hover(*)` rather than reading it as
+  `hover(move)`: a `HoverSpec` moves or leaves, never both, so a binding for both is two routes.
 - 2026-10-20 (overnight pass): The pointer recognizer measures the double-click window and the
   multitouch tap's hold from a sample's `timeStamp` (the pointer channel passes `e.timeStamp`),
   falling back to handling time when the stamp is missing, 0, or later than the clock (jsdom stamps
@@ -384,6 +390,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   can leave it). A selection command stays enabled when its result is the selection already held.
 - 2026-11-10 (property tests): Align, Distribute, Flip, and the reorder commands follow the ruling above:
   `NotApplicable` where they would change nothing, through the same plan their `run` commits.
+- 2026-11-20 (the fixer's call): the paint actions (`setFill`, `setStroke`, their opacity actions, `setStrokeWidth`
+  and `setVertexColor`) are ongoing, and their params usually arrive with the drag's moves rather than with the
+  binding, so their `enabled` cannot answer from params: a picker drag bound with the current color would be
+  declined before its first move. They are `NotApplicable` only where no operand holds anything they could ever
+  write, which today is `setVertexColor` with no selected node carrying `vertexColors`. A run that would write
+  what each node already wears stays enabled and commits no undo entry.
 - Ruled 2026-11-10 (my call, overnight sweep): a reorder that would shift a locked node's place in the stack
   is disabled with `Locked`, after the 2026-11-09 ruling (a node it would move is locked). It used to throw
   from the scene partway through.
@@ -619,6 +631,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   through any of them, so it draws what nothing can pick. Whether projection should refuse those cameras too, or
   `rayAt` cast from the eye for a near plane at 0, is unsettled. A near plane past the far one draws depth mirrored,
   and its rays run back toward the eye.
+- 2026-11-20 (my call, audit round 49): headless refuses a result past `MAX_RESULT_BYTES` (its base64 must fit one
+  V8 string), an RGBA render in Node before a browser starts and a PNG in the page once encoded, rather than send a
+  larger one in pieces. Whether the host should instead carry a large result across in chunks is unsettled.
 - 2026-11-11 (my call, icons second property pass): headless also refuses in Node a `sourceRect` whose width or
   height is zero or less and a `scale` with a zero axis, which the page's `renderSceneToPixels` refuses, so such a
   request no longer starts Chromium to fail there.
@@ -735,6 +750,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   stroke then also runs along the cut, where the painter shows none.
 
 ## SVG and paths
+
+- Ruled 2026-11-20 (my call, audit round 49): `circlePath` throws a `RangeError` for `segments` that is not a
+  whole number of at least 3, and `roundRectPath` for `cornerSamples` that is not a whole number of at least 1,
+  rather than clamping; they built NaN coordinates or a bare `Z`.
+- Ruled 2026-11-20 (my call, audit round 49): `joinPaths` gives the joined path the `openFill` its parts holding
+  an open subpath share; where they disagree it takes the first such part's and warns, since one path holds one rule.
 
 - Ruled 2026-11-10 (my call, overnight sweep): `serializeSvg` writes a character XML 1.0 cannot hold (a
   control, U+FFFE, U+FFFF, or half a surrogate pair) as U+FFFD and warns once, where it used to drop it
@@ -2943,3 +2964,55 @@ Calls the lanes made without a ruling:
   then `DFLT`'s, then the rest in ScriptList order, and taking the first whose lookups cover the pair. Layout knows
   no run's script, so picking one script for every pair was the alternative, and loses kerning other scripts' lookups
   alone carry.
+## Audit round forty-nine (2026-11-20): geom booleans
+
+- 2026-11-20 (the fixer's call): `pathFaceArrangement` throws a `RangeError` for a `flattenTolerance` that is not a
+  positive finite number. Clamping it to some floor, or reading it as the default, was the alternative.
+## Audit round forty-nine (2026-11-20): geometry, part two
+
+- 2026-11-20 (the fixer's call): geom's `stepLine` throws a `RangeError` for a `step` that is zero or not finite, and so
+  does a gesture whose `constrain: { step }` holds one; it had answered a line of `NaN` direction, which froze the drag
+  at the press. Reading such a step as no rounding, the raw direction, was the alternative.
+
+## Audit round forty-nine (2026-11-20): fill tessellation
+
+- 2026-11-20 (the fixer's call): a nonzero fill whose resolved boundary would not close into loops draws its
+  unresolved outline, as an even-odd one keeps the stencil, rather than drawing the loops that did close and dropping
+  the rest. No outline is known to reach it since boundary pieces are judged on a ray, not at an offset point.
+- 2026-11-20 (the fixer's call): resolving a nonzero fill's crossings has no work cap. The even-odd cap falls back to
+  the parity stencil, and the renderer has no nonzero stencil to fall back to, so a cap would draw a wrong fill rather
+  than a slow one. A nonzero stencil pass (increment front faces, decrement back) is what would let it have one.
+## Audit round forty-nine (2026-11-20): guides' layouts
+
+- 2026-11-20 (the fixer's call): `tileGrid` rounds `cols` and `rows` down, and a grid with either under one, or not
+  finite, has no cells: it moves no child, offers no drop and refuses every arrival, under any `overflow`. This is
+  `gridSlots`' rule, except that `rows` is required here and so has no default to fall back to. Before, zero wrote
+  `NaN` poses and a fraction laid cells past the container.
+- 2026-11-20 (the fixer's call): `tileGrid`'s resting arrangement keeps each child in the cell it sits in, so a drop on
+  an empty cell, from inside or out, stays there through later edits to its siblings; only a departure closes the
+  gaps, as before. A child off the grid, past its cells, or in a cell an earlier one holds takes the first free cell.
+  Compacting every rearrangement, and so offering a drop only the cells at the end of the run, was the alternative.
+  editing's drag-out preview now runs the source's `depart`, as its commit does, rather than `childPoses`. A resize
+  still reads each child's cell from its pose at the new pitch, so a child in a gap can change cell when the grid is
+  resized.
+- 2026-11-20 (the fixer's call): `quadtree` rounds `maxDepth` down and holds it to 0–7, so a 128 × 128 grid at its
+  finest, the order of `snapPoint`'s 129 × 129 cap; `NaN` is the default 4. Past 31 the cell arithmetic overflowed and
+  its scan never ended, and at 8 a container of point-sized children took seconds per edit.
+## Audit round forty-nine (2026-11-20): history
+
+- 2026-11-20 (the fixer's call): `Journal.suspend()` throws while a journal opened inside it is active; suspend that
+  one first. Suspending the inner journals along with it was the alternative; `resumeJournal` would then have had to
+  bring them back too.
+- 2026-11-20 (the fixer's call): a raw `History`'s `apply`, `applyOps`, `recordEntry` and `restore` throw while a
+  journal is active, as `undo`, `redo` and `goto` do; a suspended journal still lets them through. `clear`, `prune`,
+  `dropRedo` and `switchBranch` still run, since none leaves an entry describing a state the document is not in.
+- Open: edits interleaved between suspended sibling journals (one edits, a second opens and edits, the first resumes
+  and edits again) cannot be taken back exactly by the enclosing journal's `cancel`, which unwinds one journal at a
+  time, latest edit first. Doing it exactly needs one log of edits across the siblings.
+
+## Audit round forty-nine (2026-11-20): hud
+
+- 2026-11-20 (the fixer's call): `attachHud` throws, attaching nothing, when its `font` pair (or the bundled atlas)
+  differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
+  family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
+  family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.

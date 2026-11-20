@@ -97,4 +97,35 @@ describe('journal exclusivity', () => {
     h.undo();
     expect(adapter.values).toEqual([]);
   });
+
+  it('refuses undo, redo and goto while a journal is active, with nothing to step too', () => {
+    const h = createHistory({ values: [] as number[] });
+    h.beginJournal({ label: 'a' });
+    expect(() => h.undo()).toThrow(/already active/);
+    expect(() => h.redo()).toThrow(/already active/);
+    expect(() => h.goto(0)).toThrow(/already active/);
+  });
+
+  it('refuses a push onto the history while a journal is active, leaving the document alone', () => {
+    const adapter = { values: [] as number[] };
+    const h = createHistory(adapter);
+    const j = h.beginJournal({ label: 'j' });
+    j.applyOps([pushOp(1)], 'one');
+    expect(() => h.applyOps([pushOp(2)], 'two')).toThrow(/already active/);
+    expect(() => h.apply(pushOp(2))).toThrow(/already active/);
+    expect(() => h.recordEntry([pushOp(2)], 'two')).toThrow(/already active/);
+    expect(() => h.restore(h.serialize())).toThrow(/already active/);
+    expect(adapter.values).toEqual([1]);
+    j.commit();
+    h.undo();
+    expect(adapter.values).toEqual([]);
+  });
+
+  it('takes pushes while the journal is suspended', () => {
+    const adapter = { values: [] as number[] };
+    const h = createHistory(adapter);
+    h.beginJournal({ label: 'j' }).suspend();
+    h.applyOps([pushOp(2)], 'two');
+    expect(adapter.values).toEqual([2]);
+  });
 });

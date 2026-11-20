@@ -74,3 +74,23 @@ describe('polygonIntersectsPath — a path nothing fills', () => {
     });
   }
 });
+
+describe('polygonIntersectsPath unfilled, on an open subpath', () => {
+  // A "C" open on its right: (100,0) → (0,0) → (0,100) → (100,100), no Z.
+  const c: Path = {
+    kind: 'polygon',
+    commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L]),
+    coords: new Float32Array([100, 0, 0, 0, 0, 100, 100, 100]),
+    fillRule: 'nonzero',
+  };
+  // A thin lasso across the C's mouth, touching no drawn line.
+  const MOUTH = [{ x: 90, y: 40 }, { x: 110, y: 40 }, { x: 110, y: 60 }, { x: 90, y: 60 }];
+
+  it('ignores the closing edge no stroke draws', () => {
+    expect(polygonIntersectsPath(MOUTH, c, { filled: false })).toBe(false);
+  });
+
+  it('still counts it when the open subpath is filled', () => {
+    expect(polygonIntersectsPath(MOUTH, c)).toBe(true);
+  });
+});

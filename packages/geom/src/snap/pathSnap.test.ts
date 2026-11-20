@@ -36,6 +36,13 @@ describe('findPathSnap', () => {
     expect(right?.y).toBeCloseTo(0, 6);
   });
 
+  it("centers the quadrant points on the box a dome's curve reaches, not its handles'", () => {
+    // The curve tops out at y = -75; its handles reach -100.
+    const dome = createPathSnapIndex([pathFromD('M0 0 C0 -100 100 -100 100 0 Z')]);
+    const left = findPathSnap(dome, { x: -1, y: -40 }, { radius: 10, kinds: ['quadrant'] });
+    expect(left?.y).toBeCloseTo(-37.5, 6);
+  });
+
   it('finds the quadrant points of a closed outline of 200,000 segments', () => {
     const n = 200_000;
     let d = 'M10 0';

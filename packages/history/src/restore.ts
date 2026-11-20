@@ -126,12 +126,13 @@ export function rebuilt(
     else forks.set(b.at, [entries]);
   }
   if (unresolved.length > 0 && recovery === 'strict') throw new HistoryRestoreError({ restored: false, unresolved });
-  // Seed nextEntryId from the snapshot, then defensively bump past any
-  // restored id — a malformed snapshot with duplicate or out-of-range
-  // ids should never produce a collision with future entries.
+  // Seed nextEntryId from the snapshot, then bump past every id it names, the
+  // floor and fork points included: a new entry taking one would inherit its branches.
   let nextEntryId = snapshot.nextEntryId;
-  const seen = [undoStack, redoStack, ...[...forks.values()].flat()];
-  for (const entries of seen) for (const e of entries) if (e.id >= nextEntryId) nextEntryId = e.id + 1;
+  const past = (id: number): void => { if (id >= nextEntryId) nextEntryId = id + 1; };
+  past(snapshot.floor ?? 0);
+  for (const at of forks.keys()) past(at);
+  for (const entries of [undoStack, redoStack, ...[...forks.values()].flat()]) for (const e of entries) past(e.id);
   return { stacks: { undoStack, redoStack, forks, floorId: snapshot.floor ?? 0, nextEntryId }, unresolved };
 }
 

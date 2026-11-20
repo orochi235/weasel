@@ -1,0 +1,35 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "The alignment and spacing sources' target cache ignores the zoom and stroke setting the drawn boxes depend on",
+  "Two spacing-hints presets given ids still both add a `distanceReadout` contribution, so the canvas throws",
+  "The Alt-hover distance readout measures pose boxes while the spacing snap it accompanies measures ink boxes",
+  "A guide with a `span` is hit along the whole canvas, though it is drawn only over its span"
+ ],
+ "b": [
+  "cachedPerScene keeps target boxes measured at an old zoom, so alignment and spacing snap to stale ink boxes after a zoom",
+  "The Alt-hover distance readout measures pose boxes while spacing snap measures stroke-included ink boxes, so one gap gets two values",
+  "Two spacing-hint presets on one canvas collide on the distance readout, though the `id` option promises they can share it",
+  "The rulers' hit layer picks a spanned guide anywhere along its infinite line, though the guides layer draws it as a segment",
+  "Detaching the rulers leaves view, pointer and draft in their state, so layout() keeps describing a canvas that is gone",
+  "The test helper moveBy throws when given a scene without ids",
+  "The rulers' and distance readout's `leave` bindings set no `mods`, so leaving the canvas with a key held never clears them; the readout's own Alt is such a key"
+ ]
+}

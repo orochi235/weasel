@@ -141,7 +141,8 @@ export function ellipseShape(spec: EllipseTrackSpec): EllipseTrackShape {
   const sign = spec.direction === 'ccw' ? -1 : 1;
   const param = (seenDeg: number) => Math.atan2(b * Math.sin(seenDeg * DEG_TO_RAD), a * Math.cos(seenDeg * DEG_TO_RAD)) / DEG_TO_RAD;
   const e: Param = { center, a, b, t0: param(spec.start), sign };
-  const raw = wrapPositive(sign * (param(spec.end) - e.t0), 360);
+  // Whole by the spec's own angles, as an arc's is: mapped to the parameter, `end: 360` comes back a rounding off 0.
+  const raw = wrapPositive(spec.end - spec.start, 360) === 0 ? 0 : wrapPositive(sign * (param(spec.end) - e.t0), 360);
   const sweep = raw === 0 ? 360 : raw;
   const { length, lengthTo, offsetAt } = lengthTable(e, sweep);
   /** The offset `f` of the length along, `f` outside 0..1: a whole ellipse wraps; an arc carries on round its ellipse. */

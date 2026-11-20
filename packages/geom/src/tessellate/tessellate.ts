@@ -11,7 +11,7 @@ import {
   flattenQuadraticWithArcLen,
 } from '../flatten';
 import type { Mesh } from './mesh';
-import { resolveCrossings, resolveEvenOdd, type FlattenedContours } from './crossings';
+import { nonzeroContours, resolveEvenOdd, type FlattenedContours } from './crossings';
 import { nestRings, type Ring } from './nesting';
 import { evenOddRings } from './evenOdd';
 
@@ -54,10 +54,12 @@ export function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedCont
     if (!closed.has(c)) return;
     const end = c + 1 < all.contourStarts.length ? all.contourStarts[c + 1] : all.coords.length / 2;
     kept.contourStarts.push(kept.coords.length / 2);
-    kept.coords.push(...all.coords.slice(start * 2, end * 2));
-    kept.anchorA.push(...all.anchorA.slice(start, end));
-    kept.anchorB.push(...all.anchorB.slice(start, end));
-    kept.anchorT.push(...all.anchorT.slice(start, end));
+    for (let i = start * 2; i < end * 2; i++) kept.coords.push(all.coords[i]);
+    for (let i = start; i < end; i++) {
+      kept.anchorA.push(all.anchorA[i]);
+      kept.anchorB.push(all.anchorB[i]);
+      kept.anchorT.push(all.anchorT[i]);
+    }
   });
   return kept;
 }
@@ -171,13 +173,8 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
     const { coords, contourStarts, anchorA, anchorB, anchorT } = flat;
     return tessellateEvenoddWithAnchors(coords, contourStarts, anchorA, anchorB, anchorT);
   }
-  const crossed = resolveCrossings(flat);
-  if (crossed) return tessellateNonzero(crossed, nestRings(crossed));
-  const rings = nestRings(flat);
-  if (rings.every((r) => Math.abs(r.winding) <= 1)) return tessellateNonzero(flat, rings);
-  // Nested same-wound rings would cover the region they share twice.
-  const rebuilt = resolveCrossings(flat, true)!;
-  return tessellateNonzero(rebuilt, nestRings(rebuilt));
+  const { contours, rings } = nonzeroContours(flat);
+  return tessellateNonzero(contours, rings);
 }
 
 /** Triangulate rings that do not cross and wind at most once anywhere: each

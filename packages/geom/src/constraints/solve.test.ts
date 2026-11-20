@@ -60,6 +60,19 @@ describe('solveConstraints', () => {
     expect(dist(equal.points[0], equal.points[1])).toBeCloseTo(dist(equal.points[2], equal.points[3]), 5);
   });
 
+  it('opens a segment that starts with no length to the length it is given', () => {
+    const r = solveConstraints([P(5, 5), P(5, 5)], [{ kind: 'length', segment: [0, 1], length: 10 }]);
+    expect(r.converged).toBe(true);
+    expect(dist(r.points[0], r.points[1])).toBeCloseTo(10, 5);
+    const equal = solveConstraints(
+      [P(0, 0), P(0, 0), P(50, 0), P(80, 0)],
+      [{ kind: 'equalLength', segments: [[0, 1], [2, 3]] }],
+      { held: [2, 3] },
+    );
+    expect(equal.converged).toBe(true);
+    expect(dist(equal.points[0], equal.points[1])).toBeCloseTo(30, 3);
+  });
+
   it('sets a length and joins coincident anchors', () => {
     const length = solveConstraints([P(0, 0), P(30, 40)], [{ kind: 'length', segment: [0, 1], length: 100 }]);
     expect(dist(length.points[0], length.points[1])).toBeCloseTo(100, 5);

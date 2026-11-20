@@ -15,6 +15,7 @@ import { resolveTheme, weaselTheme, type ColorSourceContext, type ResolvedTheme 
 import { hudColor } from './colors';
 import { wireFocus } from './domFocus';
 import { createHover } from './hover';
+import { onHud } from './openPresses';
 import { createLayerDeps } from './layerDeps';
 import { createLayerDraw } from './layerDraw';
 
@@ -36,6 +37,10 @@ export interface AttachHudOptions {
    *   the host's copy of the atlas rather than the bundled one.
    *
    * Unset, the bundled atlas is fetched and registered.
+   *
+   * The pair and the bundled atlas register one family that every HUD on a
+   * page shares, so `attachHud` throws where another HUD registered it from
+   * other URLs.
    */
   readonly font?: string | FontAtlasUrls;
 }
@@ -46,7 +51,7 @@ export interface AttachHudOptions {
  * the detach function.
  *
  * Throws if the HUD is already attached — a HUD belongs to one canvas at a
- * time.
+ * time — or if its `font` pair differs from the one another HUD registered.
  */
 export function attachHud(
   api: CanvasExtensionApi,
@@ -59,7 +64,7 @@ export function attachHud(
   return () => { forget(); detach(); };
 }
 
-/** Registers the bundled font, and redraws the canvas once it arrives while the HUD is still `attached` there. */
+/** Registers the HUD's font, throwing where the family already holds other URLs, and redraws the canvas once it arrives while the HUD is still `attached` there. */
 function loadDefaultFont(api: CanvasExtensionApi, urls: FontAtlasUrls | undefined, attached: () => boolean): void {
   registerDefaultFont(urls)
     .then(() => { if (attached()) api.requestRedraw(); })
@@ -99,7 +104,7 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
   if (typeof font !== 'string') loadDefaultFont(api, font, () => attached);
 
   const hitAt = (sx: number, sy: number): Widget | null => widgetAt(hud, sx, sy);
-  const hover = createHover(() => api.requestRedraw());
+  const hover = createHover(() => api.requestRedraw(), (w) => onHud(hud, w));
 
   const layerDeps = createLayerDeps(hud);
   const depsCtx: HudDrawCtx = { dims: { width: 0, height: 0 }, defaultFont, tokens: theme, color };
@@ -122,7 +127,7 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
       // Exclusive: hud chrome floats over the scene, so a press on it is not a
       // press on whatever sits underneath.
       return {
-        initialScratch: { widget: hit },
+        initialScratch: { widget: hit, hud },
         strength: 'exclusive',
         claimedKinds: claimsOf(hit),
         ...(cursor !== undefined ? { cursor } : {}),
@@ -139,7 +144,6 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
   const detachLayer = api.registerLayer(layer);
   const detachFocus = api.element ? wireFocus(api.element, hud, hitAt) : () => {};
 
-  // registerLayer is a no-op: the HUD's one layer is registered on `api` above.
   hud.bind(canvasHost(api));
 
   return () => {
@@ -158,7 +162,6 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
 function canvasHost(api: CanvasExtensionApi): HudHost {
   return {
     requestRedraw: api.requestRedraw,
-    registerLayer: () => () => {},
     subscribeFrame: api.subscribeFrame,
     toCanvas: (client) => {
       const element = api.element;

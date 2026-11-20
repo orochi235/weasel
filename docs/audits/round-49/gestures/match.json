@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "fixedSeat misses most of the CSS that makes an ancestor the containing block for fixed descendants",
+  "fixedSeat measures the containing block from its border box, but fixed children are placed from its padding box",
+  "CONTROL_SELECTOR misses `contenteditable=\"plaintext-only\"`, which isEditableTarget counts as editable",
+  "keySpecRoute writes, and parseRoute cannot read, a `)` key with an optional modifier",
+  "formatShortcut drops an optional shift from the key but draws it as required on leader steps",
+  "The property tests' fakeClock fires a timer that an earlier timer in the same advance cleared"
+ ],
+ "b": [
+  "chordKey keeps a chord's ASCII punctuation, so Mod+1 never fires on AZERTY",
+  "fixedSeat misses containers made by `container-type` and `will-change`, so a ghost lands offset",
+  "fixedSeat offsets by the border box, but fixed descendants are placed against the padding box",
+  "`hover(*)` parses, then silently means `hover(move)`: the leave half of the wildcard is dropped",
+  "Which elements count as their own control is answered two ways in one package"
+ ]
+}

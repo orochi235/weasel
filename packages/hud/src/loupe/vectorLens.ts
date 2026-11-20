@@ -10,10 +10,7 @@ import type { HudContentCtx, WidgetBounds } from '../widget';
 /** The canvas a lens can be a view on. */
 export type LensHost = Pick<SceneCanvasApi, 'addView' | 'getSurfaceRect'> & Partial<Pick<SceneCanvasApi, 'getPaintedVersion' | 'viewAt'>>;
 
-/** The id the lens's view takes on its canvas. */
-const LENS_VIEW = 'weasel-loupe:lens';
-
-/** Where an interactive lens routes while its window is hidden: nowhere. */
+/** Where an interactive lens routes while its window is hidden or gone: nowhere. */
 const NO_RECT = { x: 0, y: 0, width: 0, height: 0 };
 
 /** The lens camera aimed at `aim`: magnifying the view under it, or the
@@ -54,13 +51,16 @@ export interface VectorLensSetup {
 
 export function createVectorLens(setup: VectorLensSetup): VectorLens {
   const { host, source, interactive, win, aim, factor, background, backdrop } = setup;
-  const aimedView = () => host?.viewAt?.(aim(), { except: LENS_VIEW }) ?? null;
+  // The window's id is unique to its loupe, so two lenses on one canvas never
+  // take each other's view.
+  const viewId = `${win.id}:lens`;
+  const aimedView = () => host?.viewAt?.(aim(), { except: viewId }) ?? null;
   const innerView = (outer: View, rect: WidgetBounds): View => lensCamera(aim(), aimedView(), outer, rect, factor());
 
   let lens: CanvasViewHandle | null = host ? host.addView({
-    id: LENS_VIEW,
+    id: viewId,
     label: 'Loupe',
-    bounds: () => (win.hidden ? NO_RECT : win.contentRect),
+    bounds: () => (win.hidden || win.disposed === true ? NO_RECT : win.contentRect),
     view: (outer) => innerView(outer, win.contentRect),
     paint: false,
     interactive,
@@ -75,7 +75,7 @@ export function createVectorLens(setup: VectorLensSetup): VectorLens {
       // A fresh lens per frame: CreateViewportLayerOptions.view is static, and the
       // inner view moves with the pointer.
       const picture = createViewportLayer<unknown>({
-        id: `${win.id}:lens`,
+        id: viewId,
         label: 'Loupe content',
         source: source ?? [],
         view: innerView(ctx.view, ctx.rect),

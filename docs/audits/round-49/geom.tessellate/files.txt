@@ -1,0 +1,11 @@
+packages/geom/src/tessellate/anchorParams.ts
+packages/geom/src/tessellate/atCurve.ts
+packages/geom/src/tessellate/crossings.ts
+packages/geom/src/tessellate/evenOdd.ts
+packages/geom/src/tessellate/index.ts
+packages/geom/src/tessellate/mesh.ts
+packages/geom/src/tessellate/nesting.ts
+packages/geom/src/tessellate/polyline.ts
+packages/geom/src/tessellate/sweep.ts
+packages/geom/src/tessellate/tessellate.ts
+packages/geom/src/tessellate/trim.ts

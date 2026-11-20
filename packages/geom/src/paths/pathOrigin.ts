@@ -3,7 +3,11 @@
  * `PolygonPath.origin`, added in doubles. Every reader that answers in that
  * space (hit tests, anchors, booleans, SVG data) reads through here.
  */
-import type { PolygonPath } from '../path';
+import { PATH_M, PATH_Z } from '../commands';
+import { fillsOpenSubpaths } from '../openFill';
+import type { PathOpenFill, PolygonPath } from '../path';
+import { flatAnchorIndices } from './cornerCarry';
+import { compactCorners, type CornerSpec } from './cornerSpec';
 import type { Point } from './cubicMath';
 
 const ZERO: { readonly x: number; readonly y: number } = Object.freeze({ x: 0, y: 0 });
@@ -77,18 +81,88 @@ export function originFor(xy: ArrayLike<number>): { x: number; y: number } | und
   return { x: Math.round((minX + maxX) / 2), y: Math.round((minY + maxY) / 2) };
 }
 
-/** `parts` as one `'nonzero'` compound path, measured from the first part's
- *  origin: a part measured from another is re-measured from it in doubles. */
+/**
+ * `parts` as one `'nonzero'` compound path. It is measured from the first
+ * part's origin while every part lies within {@link ORIGIN_THRESHOLD} of it,
+ * else from {@link originFor} over every part; a part measured from another
+ * origin is re-measured in doubles. Each part's corner specs move with its
+ * anchors. `openFill` is the one the parts holding an open subpath share; where
+ * they disagree it is the first such part's, with a warning.
+ */
 export function joinPaths(parts: readonly PolygonPath[]): PolygonPath {
   let nc = 0, nk = 0;
   for (const p of parts) { nc += p.commands.length; nk += p.coords.length; }
-  const origin = parts[0]?.origin;
+  const origin = joinedOrigin(parts, nk);
   const commands = new Uint8Array(nc);
   const coords = new Float32Array(nk);
   let ci = 0, ki = 0;
   for (const p of parts) {
     commands.set(p.commands, ci); ci += p.commands.length;
-    coords.set(p.origin === origin ? p.coords : coordsFrom(origin, worldCoords(p)), ki); ki += p.coords.length;
+    coords.set(sameOrigin(p.origin, origin) ? p.coords : coordsFrom(origin, worldCoords(p)), ki); ki += p.coords.length;
   }
-  return { kind: 'polygon', commands, coords, fillRule: 'nonzero', ...(origin ? { origin } : {}) };
+  const corners = joinedCorners(parts);
+  const openFill = joinedOpenFill(parts);
+  return {
+    kind: 'polygon', commands, coords, fillRule: 'nonzero',
+    ...(openFill !== undefined ? { openFill } : {}),
+    ...(corners ? { corners } : {}),
+    ...(origin ? { origin } : {}),
+  };
+}
+
+type Origin = { readonly x: number; readonly y: number } | undefined;
+
+const sameOrigin = (a: Origin, b: Origin): boolean =>
+  a === b || ((a?.x ?? 0) === (b?.x ?? 0) && (a?.y ?? 0) === (b?.y ?? 0));
+
+function joinedOrigin(parts: readonly PolygonPath[], nk: number): Origin {
+  const first = parts[0]?.origin;
+  const fx = first?.x ?? 0, fy = first?.y ?? 0;
+  const world = new Float64Array(nk);
+  let at = 0, fits = true;
+  for (const p of parts) {
+    const w = worldCoords(p);
+    world.set(w, at); at += w.length;
+    for (let i = 0; i + 1 < w.length && fits; i += 2) {
+      if (!(Math.abs(w[i] - fx) < ORIGIN_THRESHOLD && Math.abs(w[i + 1] - fy) < ORIGIN_THRESHOLD)) fits = false;
+    }
+  }
+  return fits ? first : originFor(world);
+}
+
+function joinedCorners(parts: readonly PolygonPath[]): (CornerSpec | null)[] | undefined {
+  if (!parts.some((p) => p.corners)) return undefined;
+  const next: (CornerSpec | null)[] = [];
+  let offset = 0;
+  for (const p of parts) {
+    const flat = flatAnchorIndices(p);
+    const specs = p.corners;
+    if (specs) for (let j = 0; j < specs.length; j++) if (specs[j]) next[offset + j] = specs[j];
+    let count = 0;
+    for (let k = 0; k < flat.length; k++) count = Math.max(count, flat[k] + 1);
+    offset += count;
+  }
+  return compactCorners(next);
+}
+
+/** Whether a subpath of `commands` is left without the `Z` that closes it. */
+function holdsOpenSubpath(commands: Uint8Array): boolean {
+  let open = false;
+  for (let i = 0; i < commands.length; i++) {
+    const c = commands[i];
+    if (c === PATH_Z) open = false;
+    else if (c === PATH_M && open) return true;
+    else open = true;
+  }
+  return open;
+}
+
+function joinedOpenFill(parts: readonly PolygonPath[]): PathOpenFill | undefined {
+  const open = parts.filter((p) => holdsOpenSubpath(p.commands));
+  if (open.length === 0) return parts.find((p) => p.openFill !== undefined)?.openFill;
+  const rule = open[0].openFill;
+  if (open.some((p) => fillsOpenSubpaths(p) !== fillsOpenSubpaths(open[0]))) {
+    console.warn('joinPaths: parts disagree on openFill; the joined path takes the first open part\'s');
+  }
+  return rule;
 }

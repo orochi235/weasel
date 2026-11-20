@@ -45,10 +45,13 @@ export function linesFor(shape: TileShape<unknown>, n: number): number {
 /** The grid over `bounds` while it holds `n` children: its cell pitch, and
  *  how many cells it offers before running past the container. A growing
  *  grid spreads its lines over the container, which it keeps sized to fit
- *  them; the others always lay the declared grid over it. */
-export function tileGridOf<TPose>(shape: TileShape<TPose>, bounds: ContainerBounds, n: number): TileGrid<TPose> {
+ *  them — the lines `sized` children fill, when the container has not grown
+ *  for all `n` yet; the others always lay the declared grid over it. */
+export function tileGridOf<TPose>(
+  shape: TileShape<TPose>, bounds: ContainerBounds, n: number, sized = n,
+): TileGrid<TPose> {
   const { cols, rows, gap, byColumn, overflow, perLine, minLines } = shape;
-  const lines = overflow === 'grow' ? linesFor(shape, n) : minLines;
+  const lines = overflow === 'grow' ? linesFor(shape, sized) : minLines;
   const c = byColumn ? lines : cols;
   const r = byColumn ? rows : lines;
   const cw = (bounds.width - gap * (c - 1)) / c;
@@ -109,8 +112,51 @@ export function packTiles<TPose>(
   children: ReadonlyArray<LayoutChild<TPose>>,
   cellToPose: (cell: Rect, dragged: TPose) => TPose,
 ): Map<string, TPose> {
-  const ordered = children
-    .map((c) => ({ c, cell: from.indexOf(c.pose) }))
+  const ordered = byCell(from, children);
+  const out = new Map<string, TPose>();
+  for (let i = 0; i < ordered.length; i++) {
+    out.set(ordered[i].c.id, cellToPose(into.rectAt(i), ordered[i].c.pose));
+  }
+  return out;
+}
+
+/**
+ * Every child a cell of `grid`: its own while that is one of the grid's cells
+ * and nobody earlier in cell order holds it, and otherwise the first free
+ * one, so gaps a drop or an arrival left stay open.
+ */
+export function settleTiles<TPose>(
+  grid: TileGrid<TPose>,
+  children: ReadonlyArray<LayoutChild<TPose>>,
+  cellToPose: (cell: Rect, dragged: TPose) => TPose,
+): Map<string, TPose> {
+  const taken = new Set<number>();
+  const strays: LayoutChild<TPose>[] = [];
+  const out = new Map<string, TPose>();
+  for (const { c, cell } of byCell(grid, children)) {
+    if (cell !== null && cell < grid.cells && !taken.has(cell)) {
+      taken.add(cell);
+      out.set(c.id, cellToPose(grid.rectAt(cell), c.pose));
+    } else {
+      strays.push(c);
+    }
+  }
+  let next = 0;
+  for (const c of strays) {
+    while (taken.has(next)) next++;
+    taken.add(next);
+    out.set(c.id, cellToPose(grid.rectAt(next), c.pose));
+  }
+  return out;
+}
+
+/** `children` in the order of the cells they sit in on `grid`, those in none last, ties by id. */
+function byCell<TPose>(
+  grid: TileGrid<TPose>,
+  children: ReadonlyArray<LayoutChild<TPose>>,
+): { c: LayoutChild<TPose>; cell: number | null }[] {
+  return children
+    .map((c) => ({ c, cell: grid.indexOf(c.pose) }))
     .sort((a, b) => {
       if (a.cell !== b.cell) {
         if (a.cell === null) return 1;
@@ -119,11 +165,6 @@ export function packTiles<TPose>(
       }
       return a.c.id < b.c.id ? -1 : a.c.id > b.c.id ? 1 : 0;
     });
-  const out = new Map<string, TPose>();
-  for (let i = 0; i < ordered.length; i++) {
-    out.set(ordered[i].c.id, cellToPose(into.rectAt(i), ordered[i].c.pose));
-  }
-  return out;
 }
 
 /** The free cell among the first `slots` whose center is nearest `at`, or -1 when none is free. */

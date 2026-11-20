@@ -1,0 +1,43 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   4,
+   6
+  ],
+  [
+   6,
+   4
+  ],
+  [
+   7,
+   5
+  ]
+ ],
+ "a": [
+  "Suspending a journal with an active journal inside it leaves that inner journal writing while the history counts no journal open",
+  "The parent history's `apply` / `applyOps` / `recordEntry` run under an active journal, while `undo`/`redo`/`goto` refuse",
+  "A `selection.set` that throws during undo/redo leaves the entry on a stack its ops have already left",
+  "A restored snapshot with an empty branch makes `branches()` and `switchBranch()` throw TypeError",
+  "`createSwapOp`'s inverse has no `name`/`args`, so an observed undo reports applied ops that can't be identified or replayed",
+  "A goto whose return walk also throws moves the stacks and bumps the version without telling `observe`",
+  "`restore` keeps a future id from colliding with the restored entries but not with the restored floor or branch fork points",
+  "`restore` accepts a snapshot of any `version`"
+ ],
+ "b": [
+  "Suspending a journal leaves a journal opened inside it active, so the history accepts undo and a second journal while that child still writes",
+  "A raw history's apply, applyOps, recordEntry, clear, restore, prune, dropRedo and switchBranch do not refuse while a journal is active, so an entry can land beneath a journal's later commit",
+  "Canceling a journal unwinds its children in the order they were created, not the order their edits ran",
+  "`History.undo`/`redo` skip the journal refusal when their stack is empty",
+  "`restore` bumps `nextEntryId` past every restored entry id but not past `floor` or a branch's `at`, so a new entry can take the floor's id",
+  "`History.restore` never checks the snapshot's `version`",
+  "`createSwapOp`'s inverse has no `name` or `args`, so an observed undo of a swap reports an anonymous op"
+ ]
+}

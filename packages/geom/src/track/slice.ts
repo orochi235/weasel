@@ -35,12 +35,8 @@ export function trackSlice(shape: TrackShape, from: number, to: number): TrackSh
     closed: false,
     at: (f, options) => shape.at(lo + (options?.open ? f : clamp(f, 0, 1)) * span, options),
     nearest(p) {
-      const n = shape.nearest(p);
-      if (span === 0) return { f: 0, distance: distanceAt(shape, lo, p) };
-      if (n.f >= lo && n.f <= hi) return { f: (n.f - lo) / span, distance: n.distance };
-      // The whole shape's nearest point is off the stretch, which says nothing of where the stretch's own is.
-      const f = nearestWithin(shape, lo, hi, p);
-      return { f: (f - lo) / span, distance: distanceAt(shape, f, p) };
+      const f = nearestInStretch(shape, lo, hi, p);
+      return { f: span === 0 ? 0 : (f - lo) / span, distance: distanceAt(shape, f, p) };
     },
   };
 }
@@ -52,6 +48,15 @@ const distanceAt = (shape: TrackShape, f: number, p: { x: number; y: number }): 
 
 /** Samples a stretch is searched at before the best of them is refined. */
 const SLICE_SAMPLES = 64;
+
+/** The fraction of `shape` in `lo..hi` nearest `p`: the whole shape's nearest where that falls in the stretch, else the
+ *  stretch's own, searched for. */
+export function nearestInStretch(shape: TrackShape, lo: number, hi: number, p: { x: number; y: number }): number {
+  const { f } = shape.nearest(p);
+  if (f >= lo && f <= hi) return f;
+  // The whole shape's nearest point is off the stretch, which says nothing of where the stretch's own is.
+  return hi === lo ? lo : nearestWithin(shape, lo, hi, p);
+}
 
 /** The fraction of `shape` in `lo..hi` nearest `p`: the best of evenly spaced samples, narrowed by golden section
  *  between its neighbors. */

@@ -12,14 +12,17 @@ import { createPart } from '@weasel-js/registry';
  * For each anchor command of `path` (each M, L, C, or Q, as `countPathAnchors`
  * numbers them), its flat anchor index, the numbering `PolygonPath.corners`
  * uses: a closing curve that ends on its subpath's first point folds onto
- * that anchor, as `pathToAnchors` folds it.
+ * that anchor, as `pathToAnchors` folds it. A subpath a drawing command opens
+ * without an `M` starts at the pen, an anchor no command draws and no index
+ * numbers; a closing curve folded onto it reads -1.
  */
 export const flatAnchorIndices: (path: PolygonPath) => Int32Array = createPart((path: PolygonPath): Int32Array => {
   const { commands, coords } = path;
   const out: number[] = [];
   let flat = 0, first = 0, count = 0;
   let sx = 0, sy = 0, ex = 0, ey = 0, curve = false;
-  forEachSegment(commands, coords, (cmd, ci) => {
+  forEachSegment(commands, coords, (cmd, ci, penX, penY, _i, opensSubpath) => {
+    if (opensSubpath && cmd !== PATH_M) { first = -1; sx = penX; sy = penY; count = 1; }
     if (cmd === PATH_Z) {
       if (count > 1 && curve && ex === sx && ey === sy) { out[out.length - 1] = first; flat--; }
       count = 0;
@@ -28,7 +31,7 @@ export const flatAnchorIndices: (path: PolygonPath) => Int32Array = createPart((
     const n = pathCommandCoordCount(cmd);
     ex = coords[ci + n - 2]; ey = coords[ci + n - 1];
     curve = cmd === PATH_C || cmd === PATH_Q;
-    if (cmd === PATH_M || count === 0) { first = flat; sx = ex; sy = ey; count = 0; }
+    if (cmd === PATH_M) { first = flat; sx = ex; sy = ey; count = 0; }
     count++;
     out.push(flat++);
   });
@@ -51,7 +54,7 @@ export function carryCorners(from: PolygonPath, to: PolygonPath, sources: ArrayL
   const next: (CornerSpec | null)[] = [];
   for (let k = 0; k < toFlat.length; k++) {
     const s = sources[k];
-    if (s === undefined || s < 0 || s >= fromFlat.length) continue;
+    if (s === undefined || s < 0 || s >= fromFlat.length || toFlat[k]! < 0) continue;
     const f = fromFlat[s];
     const spec = specs[f];
     if (!spec || placed.has(f)) continue;

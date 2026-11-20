@@ -5,7 +5,7 @@
  * piece of an input curve, cut by de Casteljau subdivision.
  */
 
-import type { Path, PolygonPath } from '../path';
+import type { Path, PathFillRule, PolygonPath } from '../path';
 import { PATH_C, PATH_Q } from '../commands';
 import { resolveCorners } from '../paths/corners';
 import { type Contour, type Seg, reverseContour, signedArea } from './contourSegments';
@@ -49,16 +49,20 @@ export interface CurveCut {
  */
 export function cutPaths(paths: readonly Path[]): CurveCut | null {
   if (!paths.some(hasCurve)) return null;
-  const operands = paths.map((p) => parseContours(p));
+  return cutContours(
+    paths.map((p) => parseContours(p)),
+    paths.map((p): PathFillRule => (p.kind === 'polygon' ? p.fillRule : 'nonzero')),
+  );
+}
+
+/** {@link cutPaths} on operands already read into contours, each filled by its own rule, straight lines or not. */
+export function cutContours(operands: readonly Contour[][], rules: readonly PathFillRule[]): CurveCut | null {
   const count = operands.reduce((n, cs) => n + cs.reduce((m, c) => m + c.length, 0), 0);
   if (count === 0 || count > MAX_SEGMENTS) return null;
 
   const extent = extentOf(operands.flat()) || 1;
   const arrangement = cutEdges(operands, extent * 1e-6);
-  const sets = operands.map((cs, i) => {
-    const p = paths[i];
-    return windingSet(cs, p.kind === 'polygon' ? p.fillRule : 'nonzero');
-  });
+  const sets = operands.map((cs, i) => windingSet(cs, rules[i]));
   const edges = coverEdges(arrangement.edges, sets, extent * 1e-7);
   if (!edges) return null;
   return { edges, vertexCount: arrangement.points.length, clockwise: operands.map(clockwiseFirst) };

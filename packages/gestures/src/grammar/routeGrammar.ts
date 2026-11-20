@@ -206,13 +206,18 @@ export function parseRoute(input: string): ParsedRoute {
 }
 
 /** The index of the `)` closing the arg slot that opens `rest`: the first one
- *  the route could go on from, so a `)` inside the slot is the arg's own. */
+ *  the route could go on from, so a `)` inside the slot is the arg's own. An
+ *  empty slot is never valid, so a `)` straight after the `(` closes it only
+ *  when no later one could: `keyDown()?shift)` is the `)` key, optional Shift. */
 function argClose(rest: string): number {
+  let first = -1;
   for (let i = rest.indexOf(')'); i >= 0; i = rest.indexOf(')', i + 1)) {
     const next = rest[i + 1];
-    if (next === undefined || /[\s+?=]/.test(next)) return i;
+    if (next !== undefined && !/[\s+?=]/.test(next)) continue;
+    if (i > 1) return i;
+    first = i;
   }
-  return -1;
+  return first;
 }
 
 /** The modSlot atom for a pressed button. */

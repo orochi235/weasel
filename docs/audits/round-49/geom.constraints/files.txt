@@ -1,0 +1,10 @@
+packages/geom/src/constraints/check.ts
+packages/geom/src/constraints/conflicts.ts
+packages/geom/src/constraints/index.ts
+packages/geom/src/constraints/pathConstraints.ts
+packages/geom/src/constraints/pathsEdit.ts
+packages/geom/src/constraints/points.ts
+packages/geom/src/constraints/residuals.ts
+packages/geom/src/constraints/solve.ts
+packages/geom/src/constraints/sparse.ts
+packages/geom/src/constraints/types.ts

@@ -148,6 +148,9 @@ export interface LoupeHandle {
   dispose(): void;
 }
 
+/** Numbers each loupe, so its window and lens view take ids of their own. */
+let loupeCount = 0;
+
 /**
  * Build a magnifier: a HUD window whose interior shows the canvas around an
  * aim point, enlarged. Adds the window to the HUD; `dispose` removes it again.
@@ -193,7 +196,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   });
 
   const win = hud.window({
-    id: 'weasel-loupe',
+    id: `weasel-loupe-${++loupeCount}`,
     x: b.x, y: b.y, width: b.width, height: b.height,
     title: opts.title ?? 'Loupe',
     titlebar: opts.titlebar,
@@ -209,6 +212,8 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   // Subscribed ahead of the model, so the frame that lands first is already
   // readable by the time the model samples on it.
   const unsubscribeFrame = hud.subscribeFrame(() => {
+    // A window taken off the HUD takes its loupe with it, on the frame its removal asks for.
+    if (win.disposed === true) { model.dispose(); return; }
     pixels.land();
     if (watch.changed() || refreshAsked) {
       refreshAsked = false;

@@ -1,0 +1,34 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   4
+  ]
+ ],
+ "a": [
+  "joinPaths measures every part from the first part's origin, so a far part joined after a near one loses its float32 precision",
+  "simplifyAnchorsAt rotates a closed subpath so it starts on a different anchor",
+  "splitByClosure gives corner specs to the wrong anchors after a subpath that starts without an M",
+  "solveSpiro forces the tangent at a point next to a coincident neighbor to +X",
+  "schneiderFit breaks the tangent at every split, so a fitted pencil stroke has a corner at each joint",
+  "roundRectPath with cornerSamples 0, and circlePath with segments 0, build NaN or empty geometry",
+  "mergeRegion can leave a ring open where three edges cross at one point, and emit then closes it with a chord"
+ ],
+ "b": [
+  "joinPaths measures every part from the first part's origin, so a far part joined after a near one loses its precision",
+  "joinPaths drops every part's `corners` and `openFill`",
+  "translatePath leaves a far-moved origin-free polygon in raw float32, where transformPath gives it an origin",
+  "reachToMeet in `'curvature'` mode on a straight end, with no `maxDistance`, grows an infinitely long line and finds nothing",
+  "splitByClosure misnumbers corner sources after a subpath opened without an `M`",
+  "simplifyAnchorsAt leaves a closed subpath rotated to a new start anchor",
+  "mergeRegion reads its winding from a fill-dependent area while treating every subpath as closed"
+ ]
+}

@@ -7,7 +7,7 @@
  * strategy has `arrive` then places them through it (and may refuse, or
  * grow). Any other changed container — one that reordered children, was
  * resized, had a child moved, or gained or lost children with neither hook —
- * is put back in its resting arrangement, `childPoses`.
+ * is put back in its resting arrangement, `fit` or `childPoses`.
  *
  * A strategy sees the container upright: an upright container and its
  * children in world, and a turned one in its own frame, placed where its
@@ -206,7 +206,7 @@ export function runLayoutPass<TPose>(
     } else if (!arranged || joined !== undefined) {
       const at = frameOf(containerId);
       if (at === null) continue;
-      apply(containerId, at, { poses: layout.childPoses(at.container, at.children) });
+      apply(containerId, at, layout.fit?.(at.container, at.children) ?? { poses: layout.childPoses(at.container, at.children) });
     }
   }
   return out;

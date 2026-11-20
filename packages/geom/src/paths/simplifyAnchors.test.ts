@@ -114,6 +114,23 @@ describe('simplifyAnchorsAt', () => {
     expect(sub.some((a) => Math.abs(a.x + 100) < 1e-9 && Math.abs(a.y) < 1e-6)).toBe(true);
   });
 
+  it('keeps a closed subpath starting on the anchor it started on', () => {
+    const ringOf = (): AnchorSet => ({
+      anchors: [range(0, 99).map((i) => {
+        const t = (i / 100) * Math.PI * 2;
+        return { x: 100 * Math.cos(t), y: 100 * Math.sin(t) };
+      })],
+      closed: [true],
+    });
+    const ring = ringOf();
+    expect(simplifyAnchorsAt(ring, range(20, 40), 0.5)).toBe(true);
+    expect(ring.anchors[0][0]).toMatchObject(ringOf().anchors[0][0]);
+    // A start inside a run moves to the run's last anchor, the next one kept.
+    const seam = ringOf();
+    expect(simplifyAnchorsAt(seam, [...range(90, 99), ...range(0, 10)], 0.5)).toBe(true);
+    expect(seam.anchors[0][0]).toMatchObject(ringOf().anchors[0][10]);
+  });
+
   it('simplifies a whole closed subpath when every anchor is brushed', () => {
     const ring: AnchorSet = {
       anchors: [range(0, 199).map((i) => {

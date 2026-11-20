@@ -16,6 +16,12 @@ import { resolveCorners } from './corners';
 const GL_T = [0.5 - Math.sqrt(15) / 10, 0.5, 0.5 + Math.sqrt(15) / 10];
 const GL_W = [5 / 18, 8 / 18, 5 / 18];
 
+/** {@link pathSignedArea} with every subpath counted as closed, whatever
+ *  `openFill` says: for a reader that closes every subpath itself. */
+export function closedSignedArea(path: Path): number {
+  return pathSignedArea(path.kind === 'polygon' ? { ...path, openFill: 'close' } : path);
+}
+
 /**
  * Signed area enclosed by `path`, summed over its contours. Positive for a
  * contour that turns clockwise on a y-down screen (the shoelace sign), so a

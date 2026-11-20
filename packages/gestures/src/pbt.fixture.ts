@@ -27,22 +27,29 @@ export const ALL_MODIFIER_STATES: readonly EventModifiers[] = Array.from({ lengt
   altKey: (i & 1) !== 0, ctrlKey: (i & 2) !== 0, metaKey: (i & 4) !== 0, shiftKey: (i & 8) !== 0,
 }));
 
-/** A clock that only moves when told to, firing the timers it passes. */
+/** A clock that only moves when told to, firing the timers it passes in the order they fall due, each at its own
+ *  time. A timer cleared by an earlier one never fires, and one set by a callback fires if it falls in the step. */
 export function fakeClock() {
   let t = 0;
   let seq = 0;
   const timers = new Map<number, { at: number; fn: () => void }>();
+  const nextDue = (until: number): [number, { at: number; fn: () => void }] | undefined => {
+    let due: [number, { at: number; fn: () => void }] | undefined;
+    for (const entry of timers) if (entry[1].at <= until && (!due || entry[1].at < due[1].at)) due = entry;
+    return due;
+  };
   return {
     now: () => t,
     setTimer: (fn: () => void, ms: number) => { timers.set(++seq, { at: t + ms, fn }); return seq; },
     clearTimer: (id: unknown) => { timers.delete(id as number); },
     advance(ms: number) {
-      t += ms;
-      for (const [id, timer] of [...timers]) {
-        if (timer.at > t) continue;
-        timers.delete(id);
-        timer.fn();
+      const until = t + ms;
+      for (let due = nextDue(until); due; due = nextDue(until)) {
+        timers.delete(due[0]);
+        t = Math.max(t, due[1].at);
+        due[1].fn();
       }
+      t = until;
     },
     pending: () => timers.size,
   };

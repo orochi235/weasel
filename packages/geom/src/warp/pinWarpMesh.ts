@@ -10,7 +10,7 @@ import type { Point } from '../paths/cubicMath';
 import { boundsOfPath } from '../paths/bounds';
 import { polygonContainsPoint } from '../polyline';
 import { flattenPolygon } from '../tessellate/tessellate';
-import { resolveCrossings, type FlattenedContours } from '../tessellate/crossings';
+import { nonzeroContours, type FlattenedContours } from '../tessellate/crossings';
 import { nestRings } from '../tessellate/nesting';
 import type { ArapMesh } from './arap';
 import { refineTriangulation } from './refine';
@@ -46,11 +46,7 @@ function ringsOf(path: PolygonPath, tolerance: number): { flat: FlattenedContour
   const flat = flattenPolygon(path, tolerance);
   addOrigin(path, flat.coords);
   if (path.fillRule === 'evenodd') return { flat, filled: (w) => w % 2 !== 0 };
-  const crossed = resolveCrossings(flat);
-  const nonzero = (w: number) => w !== 0;
-  if (crossed) return { flat: crossed, filled: nonzero };
-  const simple = nestRings(flat).every((r) => Math.abs(r.winding) <= 1);
-  return { flat: simple ? flat : resolveCrossings(flat, true)!, filled: nonzero };
+  return { flat: nonzeroContours(flat).contours, filled: (w) => w !== 0 };
 }
 
 /** The ring from vertex `start` to `end` of `coords`, with no edge longer than `h`. */

@@ -90,4 +90,18 @@ describe('constrainPathsEdit', () => {
     expect(b.y).toBeCloseTo(20, 2);
     expect(c).toEqual({ x: -50, y: 0 });
   });
+
+  it('keeps an item\'s own constraint naming an anchor past its path off the next path\'s anchors', () => {
+    const tri = triangle();
+    const sq = square();
+    const edit = drag(sq, 1, 0, 40);
+    const r = constrainPathsEdit([
+      { before: tri, after: tri, constraints: [{ kind: 'fixed', anchor: 4 }] },
+      { before: sq, after: edit.path, constraints: [{ kind: 'horizontal', segment: [-1, 0] }], origins: edit.origins },
+    ]);
+    expect(pathAnchorPoints(r.items[1].path)[1]).toEqual({ x: 100, y: 40 });
+    expect(pathAnchorPoints(r.items[1].path)[0]).toEqual({ x: 0, y: 0 });
+    expect(r.items[0].constraints).toEqual([]);
+    expect(r.items[1].constraints).toEqual([]);
+  });
 });

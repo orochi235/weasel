@@ -1,11 +1,10 @@
 import { PATH_Z } from '../commands';
 import type { Path, PolygonPath } from '../path';
-import { countPathAnchors } from './anchors';
-import { anchorRange, carryCorners } from './cornerCarry';
+import { carryCorners } from './cornerCarry';
 import { withoutCorners } from './cornerSpec';
-import { splitSubpaths } from './splitSubpaths';
+import { placeSubpaths, splitSubpaths } from './splitSubpaths';
 
-interface Placed { sub: PolygonPath; first: number; count: number }
+interface Placed { sub: PolygonPath; sources: Int32Array }
 
 const endsInZ = (sub: PolygonPath): boolean => sub.commands[sub.commands.length - 1] === PATH_Z;
 
@@ -26,12 +25,7 @@ export function splitByClosure(
   const closed: Placed[] = [];
   const open: Placed[] = [];
   if (path.commands.length > 0) {
-    let first = 0;
-    for (const sub of splitSubpaths(path)) {
-      const count = countPathAnchors(sub);
-      (endsInZ(sub) ? closed : open).push({ sub, first, count });
-      first += count;
-    }
+    for (const placed of placeSubpaths(path)) (endsInZ(placed.sub) ? closed : open).push(placed);
   }
   const join = (placed: Placed[]): PolygonPath | null => {
     if (placed.length === 0) return null;
@@ -47,9 +41,9 @@ export function splitByClosure(
     }
     const joined = { ...withoutCorners(path), commands, coords };
     if (!path.corners) return joined;
-    const sources = new Int32Array(placed.reduce((n, p) => n + p.count, 0));
+    const sources = new Int32Array(placed.reduce((n, p) => n + p.sources.length, 0));
     let at = 0;
-    for (const p of placed) { sources.set(anchorRange(p.first, p.count), at); at += p.count; }
+    for (const p of placed) { sources.set(p.sources, at); at += p.sources.length; }
     return carryCorners(path, joined, sources);
   };
   return { closed: join(closed), open: join(open) };

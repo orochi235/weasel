@@ -14,6 +14,12 @@ import { createGridLayer } from './layer';
 import { pointToGridCell } from './pointToGridCell';
 import { sceneGridRegions, type GridRegion } from './regions';
 
+/** A path's coordinates in world units: `coords` measured from its `origin`. */
+const worldCoords = (path: unknown): number[] => {
+  const { coords, origin } = path as { coords: ArrayLike<number>; origin?: { x: number; y: number } };
+  return Array.from(coords, (v, i) => v + (i % 2 ? origin?.y ?? 0 : origin?.x ?? 0));
+};
+
 const ROOT: UnitScope = { system: { base: 'u', units: { u: 1 } } };
 /** Ten of its units are five of the root's. */
 const HALF: UnitScope = { system: { base: 'h', units: { h: 1 } }, scale: 0.5 };
@@ -31,8 +37,10 @@ const square = (x: number, y: number, size: number) => [
 const verticals = (g: DrawCommand): number[] =>
   (g as GroupDrawCommand).children
     .filter((c): c is PathDrawCommand => c.kind === 'path')
-    .filter((c) => c.path.kind === 'polygon' && c.path.coords[0] === c.path.coords[2])
-    .map((c) => (c.path as { coords: Float32Array }).coords[0]!);
+    .filter((c) => c.path.kind === 'polygon')
+    .map((c) => worldCoords(c.path))
+    .filter((c) => c[0] === c[2])
+    .map((c) => c[0]!);
 
 /** How many closed contours a group's clip has. */
 const contours = (g: DrawCommand): number =>
@@ -70,7 +78,7 @@ describe('createGridLayer — unit scopes', () => {
     // Its 0.5-unit lines sit under the 4 px floor at this zoom, so the nested
     // region draws nothing; at 8x they show.
     expect(far).toHaveLength(2);
-    const near = layer.draw(undefined, { x: 0, y: 0, scale: { x: 8, y: 8 } }, DIMS);
+    const near = layer.draw(undefined, { x: 0, y: 0, scale: { x: 8, y: 8 } }, { ...DIMS, width: 800, height: 800 });
     expect(verticals(near[2]!)).toEqual(Array.from({ length: 21 }, (_, k) => 30 + k / 2));
   });
 
@@ -164,7 +172,7 @@ describe('createGridLayer — a region\'s own frame', () => {
       regions: () => [{ outline: squareIn(frame, 0, 0, 40), chain: [ROOT, HALF], frame }],
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
-    const [, inner] = layer.draw(undefined, { x: 0, y: 0, scale: { x: 2, y: 2 } }, DIMS);
+    const [, inner] = layer.draw(undefined, { x: 0, y: 0, scale: { x: 2, y: 2 } }, { ...DIMS, width: 200, height: 200 });
     const turned = (inner as GroupDrawCommand).children[0] as GroupDrawCommand;
     expect(turned.transform).toEqual(mat3.fromAffine(frame));
     expect(verticals(turned)).toEqual([0, 5, 10, 15, 20, 25, 30, 35, 40]);
