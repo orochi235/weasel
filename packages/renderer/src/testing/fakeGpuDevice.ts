@@ -71,7 +71,7 @@ export function fakeGpuDevice(width = 64, height = 64): FakeGpuDevice {
   const device = {
     limits: { maxTextureDimension2D: 8192, minUniformBufferOffsetAlignment: 256 },
     lost,
-    queue: { writeBuffer() {}, writeTexture() {}, copyExternalImageToTexture() {}, submit() {} },
+    queue: { writeBuffer() {}, writeTexture() {}, copyExternalImageToTexture() {}, submit: () => { present(); } },
     createBuffer: buffer,
     createTexture: texture,
     createSampler: () => ({}),
@@ -92,13 +92,23 @@ export function fakeGpuDevice(width = 64, height = 64): FakeGpuDevice {
     }),
   } as unknown as GPUDevice;
 
-  let current: GPUTexture | null = null;
+  // A real context's texture lasts one frame, sized to the canvas when it was
+  // taken; a submit stands in for the frame's end.
+  let current: { texture: GPUTexture; record: FakeGpuObject } | null = null;
+  const present = (): void => {
+    if (current) current.record.destroyed = true;
+    current = null;
+  };
   const canvas = { width, height };
   const context = {
     configure() {},
     getCurrentTexture: () => {
-      current ??= texture({ label: 'context', size: [canvas.width, canvas.height], format: 'rgba8unorm', usage: 0 });
-      return current;
+      if (current && (current.texture.width !== canvas.width || current.texture.height !== canvas.height)) present();
+      if (!current) {
+        const tex = texture({ label: 'context', size: [canvas.width, canvas.height], format: 'rgba8unorm', usage: 0 });
+        current = { texture: tex, record: textures[textures.length - 1] };
+      }
+      return current.texture;
     },
   } as unknown as GPUCanvasContext;
 
