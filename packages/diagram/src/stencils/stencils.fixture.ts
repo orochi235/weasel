@@ -1,7 +1,7 @@
 /** The checks every stencil group's test runs on each of its stencils. */
 import { expect, vi } from 'vitest';
 import { RIGID_POSE_COMPOSITION, boundsOfPath, worldPosesOf } from '@weasel-js/core';
-import type { MeasureRowText } from '../body';
+import type { MeasureRowText, Row } from '../body';
 import type { ContainerStencil } from '../containers/containerStencils';
 import type { StencilGroup } from '../diagramTypes/types';
 import { contentBox, outlinePath } from '../outline';
@@ -9,7 +9,10 @@ import { resolveOutline } from '../outlines/table';
 import { stencilInsertOps, type DiagramStencil } from '../stencil';
 import type { Rect } from '@weasel-js/geom';
 
-type Built = { id: string; parent?: string | null; pose: Rect; data: { diagram?: { outline?: unknown }; text?: string } };
+type Built = {
+  id: string; parent?: string | null; pose: Rect;
+  data: { diagram?: { outline?: unknown }; text?: string; bodyRow?: number; bodyAside?: true };
+};
 
 /** Roughly a 12px sans-serif's advance, and `canvasMeasure`'s line height, so a row too narrow for its text shows. */
 export const measure: MeasureRowText = (text, s) => {
@@ -36,25 +39,36 @@ export function builtNodes(stencil: DiagramStencil): Built[] {
 export function expectStencilsBuild(group: StencilGroup): void {
   const shapes = group.stencils.filter((s): s is DiagramStencil => !('role' in (s as ContainerStencil)));
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-  for (const stencil of shapes) {
-    const { outline } = stencil;
-    if (typeof outline === 'string' && outline !== 'rect') {
-      expect(resolveOutline(outline), `${stencil.id}: '${outline}' is registered`).not.toBe(resolveOutline('rect'));
-    }
-    const [body, ...rows] = builtNodes(stencil);
-    expect(body!.data.diagram?.outline, stencil.id).toBe(outline);
-    expect(body!.pose, stencil.id).toMatchObject(stencil.size);
-    const textRows = (stencil.rows ?? [{ kind: 'label' }]).filter((r) => r.kind === 'label' || r.kind === 'field');
-    expect(rows.length, `${stencil.id} builds one node per text row`).toBe(textRows.length);
-    const content = contentBox(outline, body!.pose);
-    for (const row of rows) {
-      expect(inside(row.pose, content), `${stencil.id}'s row`).toBe(true);
-      expect(measure(row.data.text ?? '', {}).width, `${stencil.id}'s row text`).toBeLessThanOrEqual(row.pose.width);
-    }
-    expect(stencil.icon, `${stencil.id}'s glyph`).toBeDefined();
+  try {
+    for (const stencil of shapes) expectStencilBuilds(stencil);
+    expect(warn).not.toHaveBeenCalled();
+  } finally {
+    warn.mockRestore();
   }
-  expect(warn).not.toHaveBeenCalled();
-  warn.mockRestore();
+}
+
+/** One node per row `stencilInsertOps` writes text for: a label, a field, a header, and a header's aside. */
+const textNodeCount = (rows: readonly Row[]): number =>
+  rows.reduce((n, r) => n + (r.kind === 'label' || r.kind === 'field' ? 1 : r.kind === 'header' ? (r.aside === undefined ? 1 : 2) : 0), 0);
+
+function expectStencilBuilds(stencil: DiagramStencil): void {
+  const { outline } = stencil;
+  if (typeof outline === 'string' && outline !== 'rect') {
+    expect(resolveOutline(outline), `${stencil.id}: '${outline}' is registered`).not.toBe(resolveOutline('rect'));
+  }
+  const [body, ...rows] = builtNodes(stencil);
+  expect(body!.data.diagram?.outline, stencil.id).toBe(outline);
+  expect(body!.pose, stencil.id).toMatchObject(stencil.size);
+  const declared = stencil.rows ?? [{ kind: 'label', text: '' }];
+  expect(rows.length, `${stencil.id} builds one node per text row`).toBe(textNodeCount(declared));
+  const content = contentBox(outline, body!.pose);
+  for (const row of rows) {
+    expect(inside(row.pose, content), `${stencil.id}'s row`).toBe(true);
+    const source = row.data.bodyRow === undefined ? undefined : declared[row.data.bodyRow];
+    const style = source !== undefined && 'style' in source ? source.style ?? {} : {};
+    expect(measure(row.data.text ?? '', style).width, `${stencil.id}'s row text`).toBeLessThanOrEqual(row.pose.width);
+  }
+  expect(stencil.icon, `${stencil.id}'s glyph`).toBeDefined();
 }
 
 /** The drawing of a figure stencil stands wholly above the strip its label lays out in. */
