@@ -34,22 +34,31 @@ const isHorizontal = (side: AxisSide) => side === 'top' || side === 'bottom';
 /** Which way leads away from the plot across the axis. */
 const outward = (side: AxisSide) => (side === 'bottom' || side === 'right' ? 1 : -1);
 
-/** How an axis writes each of the ticks it asks its scale for. */
-function labelOf<T>({ scale, ticks }: AxisOptions<T>): (value: T) => string {
-  return scale.tickFormat?.(ticks) ?? ((value) => scale.format(value));
+/** One tick of an axis: its value, where that stands along the scale's range, and how it is written. */
+export interface AxisTick<T> {
+  value: T;
+  position: number;
+  label: string;
+}
+
+/** The ticks an axis asks `scale` for, placed and written: what any renderer draws an axis from, in whatever space it
+ *  lays the scale's range. */
+export function axisTicks<T>({ scale, ticks }: Pick<AxisOptions<T>, 'scale' | 'ticks'>): AxisTick<T>[] {
+  const write = scale.tickFormat?.(ticks) ?? ((value: T) => scale.format(value));
+  return scale.ticks(ticks).map((value) => ({ value, position: scale.position(value), label: write(value) }));
 }
 
 /** How far an axis reaches out from its line: ticks, labels and title. */
 export function axisRoom<T>(opts: AxisOptions<T>): number {
-  const { scale, side, theme, measure } = opts;
-  const write = labelOf(opts);
-  const sizes = scale.ticks(opts.ticks).map((t) => measure(write(t), theme.font));
+  const { side, theme, measure } = opts;
+  const sizes = axisTicks(opts).map((t) => measure(t.label, theme.font));
   const labels = sizes.length === 0 ? 0 : maxOf(sizes, (s) => (isHorizontal(side) ? s.height : s.width));
   const title = opts.title ? measure(opts.title, theme.font).height + GAP : 0;
   return TICK + GAP + labels + title;
 }
 
-/** Every mark one axis is drawn with. Keys: `<key>:rule`, `<key>:tick:<i>`, `<key>:label:<i>`, `<key>:grid:<i>`, `<key>:title`. */
+/** Every mark one axis is drawn with, in 2D, from {@link axisTicks}. Keys: `<key>:rule`, `<key>:tick:<i>`,
+ *  `<key>:label:<i>`, `<key>:grid:<i>`, `<key>:title`. */
 export function axisMarks<T>(opts: AxisOptions<T>): PlotMark[] {
   const { scale, side, at, theme, measure } = opts;
   const key = opts.key ?? `axis:${side}`;
@@ -58,22 +67,20 @@ export function axisMarks<T>(opts: AxisOptions<T>): PlotMark[] {
   const pt = (along: number, across: number) => (h ? { x: along, y: across } : { x: across, y: along });
   const [r0, r1] = scale.range;
   const marks: PlotMark[] = [];
-  const ticks = scale.ticks(opts.ticks);
-  const write = labelOf(opts);
-  ticks.forEach((t, i) => {
-    const p = scale.position(t);
-    if (opts.gridTo !== undefined) {
-      marks.push(ruleMark({ key: `${key}:grid:${i}`, from: pt(p, at), to: pt(p, opts.gridTo), color: theme.grid }));
-    }
-  });
+  const ticks = axisTicks(opts);
+  if (opts.gridTo !== undefined) {
+    const gridTo = opts.gridTo;
+    ticks.forEach(({ position: p }, i) => {
+      marks.push(ruleMark({ key: `${key}:grid:${i}`, from: pt(p, at), to: pt(p, gridTo), color: theme.grid }));
+    });
+  }
   marks.push(ruleMark({ key: `${key}:rule`, from: pt(r0, at), to: pt(r1, at), color: theme.axis }));
   let reach = 0;
-  ticks.forEach((t, i) => {
-    const p = scale.position(t);
+  ticks.forEach(({ position: p, label: text }, i) => {
     marks.push(ruleMark({ key: `${key}:tick:${i}`, from: pt(p, at), to: pt(p, at + out * TICK), color: theme.axis }));
     const anchorAt = pt(p, at + out * (TICK + GAP));
     const label = textMark({
-      key: `${key}:label:${i}`, text: write(t), ...anchorAt, font: theme.font, color: theme.text, measure,
+      key: `${key}:label:${i}`, text, ...anchorAt, font: theme.font, color: theme.text, measure,
       anchor: h ? 'middle' : out > 0 ? 'start' : 'end',
       baseline: h ? (out > 0 ? 'top' : 'bottom') : 'middle',
     });

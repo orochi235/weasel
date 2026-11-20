@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PLOT_THEME, seriesColor } from '../theme';
-import { compileXyChart, xyLength, xyValueDomain } from './compile';
+import { compileXyChart, xyLength, xyScales, xyValueDomain } from './compile';
 import { setXyValue, xyValueAt } from './edit';
 import { handlesOf } from '../editing/editors';
 import { xyEditor } from './editor';
@@ -109,8 +109,38 @@ describe('xychart edits', () => {
 
   it('xyValueAt reads the value axis, rounded to a tenth of a tick', () => {
     const { layout } = byKey(SALES);
-    expect(xyValueAt(layout, { x: 0, y: layout.value.position(42.3) })).toBe(42);
-    expect(xyValueAt(layout, { x: 0, y: layout.value.position(57.8) })).toBe(58);
+    expect(xyValueAt(layout.value, layout.value.position(42.3))).toBe(42);
+    expect(xyValueAt(layout.value, layout.value.position(57.8))).toBe(58);
+  });
+});
+
+describe('xyScales', () => {
+  it('maps the data over the ranges it is given, with no box: the ones compileXyChart lays in its plot', () => {
+    const { layout } = byKey(SALES);
+    const { plot } = layout;
+    const scales = xyScales(SALES, [plot.y + plot.height, plot.y], [plot.x, plot.x + plot.width]);
+    expect(scales.value.domain).toEqual(layout.value.domain);
+    expect(scales.value.range).toEqual(layout.value.range);
+    expect(scales.slots).toEqual(layout.slots);
+    expect(scales.slotWidth).toBeCloseTo(layout.slotWidth);
+  });
+
+  it('lays each axis along any one-dimensional range, a depth axis included', () => {
+    const scales = xyScales(SALES, [0, 1], [-5, 5]);
+    const [lo, hi] = scales.value.domain;
+    expect(scales.value.position(lo)).toBe(0);
+    expect(scales.value.position(hi)).toBe(1);
+    expect(scales.slots).toHaveLength(3);
+    expect(scales.slots[0]!).toBeGreaterThan(-5);
+    expect(scales.slots[2]!).toBeLessThan(5);
+    expect(scales.slots[1]!).toBeCloseTo(0);
+    expect((scales.category as { format(v: string): string }).format('0')).toBe('jan');
+  });
+
+  it('places a range axis\'s rows evenly across its range', () => {
+    const scales = xyScales({ ...SALES, x: { kind: 'range', min: 0, max: 30 } }, [0, 1], [0, 300]);
+    expect(scales.slots).toEqual([50, 150, 250]);
+    expect(scales.category.position(15 as never)).toBe(150);
   });
 
   it('the editor puts a bar\'s handle on its value end when the bar runs down from the baseline', () => {

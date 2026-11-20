@@ -13,17 +13,25 @@ import type { Scale } from '@weasel-js/scale';
 import { seriesColor, type PlotTheme } from '../theme';
 import type { XyChartData } from './types';
 
-/** Where an xychart's parts landed: the plot area, the value scale, and each value index's place across it. */
-export interface XyLayout {
-  orientation: 'vertical' | 'horizontal';
-  /** The area the marks are drawn in, inside the axes. */
-  plot: Rect;
-  /** Values along y for a vertical chart, along x for a horizontal one. */
+/** An xychart's data mapped to positions, with no box: each axis is one-dimensional, so a host lays it along whichever
+ *  direction of its own space it likes. */
+export interface XyScales {
+  /** Values along the value axis. */
   value: LinearScale;
+  /** The category axis: a band per row, or the range axis's numbers. */
+  category: Scale<string> | Scale<number>;
   /** Each value index's center along the category axis. */
   slots: readonly number[];
   /** How much of the category axis each index's bars share. */
   slotWidth: number;
+}
+
+/** Where an xychart's parts landed: the plot area, the value scale, and each value index's place across it. */
+export interface XyLayout extends Pick<XyScales, 'value' | 'slots' | 'slotWidth'> {
+  orientation: 'vertical' | 'horizontal';
+  /** The area the marks are drawn in, inside the axes. The value axis runs along its y for a vertical chart, along its
+   *  x for a horizontal one. */
+  plot: Rect;
 }
 
 const BAND_PADDING = 0.2;
@@ -55,21 +63,26 @@ export function xyValueDomain(data: XyChartData): [number, number] {
   return min === max ? [min, min + 1] : [min, max];
 }
 
+/** `data`'s scales: its values over `valueRange`, and its category axis over `categoryRange`. */
+export function xyScales(data: XyChartData, valueRange: [number, number], categoryRange: [number, number]): XyScales {
+  return { value: linearScale({ domain: xyValueDomain(data), range: valueRange }), ...categoryAxis(data, categoryRange) };
+}
+
 /** The category axis's scale over `range`, and each value index's center and share along it. */
-function categoryAxis(data: XyChartData, range: [number, number]): { scale: Scale<string> | Scale<number>; slots: number[]; slotWidth: number } {
+function categoryAxis(data: XyChartData, range: [number, number]): Omit<XyScales, 'value'> {
   const n = xyLength(data);
   if (data.x?.kind === 'range') {
-    const scale = linearScale({ domain: [data.x.min, data.x.max], range });
+    const category = linearScale({ domain: [data.x.min, data.x.max], range });
     const step = (range[1] - range[0]) / Math.max(1, n);
     const slots = Array.from({ length: n }, (_, i) => range[0] + step * (i + 0.5));
-    return { scale, slots, slotWidth: Math.abs(step) * (1 - BAND_PADDING) };
+    return { category, slots, slotWidth: Math.abs(step) * (1 - BAND_PADDING) };
   }
   // Banded by row, so a label written twice still gets two bands.
   const categories = categoriesOf(data);
   const bands = bandScale({ domain: categories.map((_, i) => String(i)), range, paddingInner: BAND_PADDING });
-  const scale: Scale<string> = { ...bands, format: (row) => categories[Number(row)] ?? row };
+  const category: Scale<string> = { ...bands, format: (row) => categories[Number(row)] ?? row };
   const slots = Array.from({ length: n }, (_, i) => bands.position(String(i)));
-  return { scale, slots, slotWidth: bands.bandwidth };
+  return { category, slots, slotWidth: bands.bandwidth };
 }
 
 /** Lays out an xychart in a box of `size`: its title, axes, bars, lines and points. */
@@ -78,13 +91,12 @@ export function compileXyChart(
 ): { marks: PlotMark[]; layout: XyLayout } {
   const vertical = data.orientation !== 'horizontal';
   const { marks, top } = chartTitle(data.title, size.width, theme, measure);
-  const domain = xyValueDomain(data);
   const base = { theme, measure, at: 0 };
   const valueTitle = data.y?.title !== undefined ? { title: data.y.title } : {};
   const categoryTitle = data.x?.title !== undefined ? { title: data.x.title } : {};
-  const probe = categoryAxis(data, [0, 1]);
-  const valueRoom = axisRoom({ ...base, ...valueTitle, scale: linearScale({ domain, range: [0, 1] }), side: vertical ? 'left' : 'bottom' });
-  const categoryRoom = axisRoom({ ...base, ...categoryTitle, scale: probe.scale as Scale<unknown>, side: vertical ? 'bottom' : 'left' });
+  const probe = xyScales(data, [0, 1], [0, 1]);
+  const valueRoom = axisRoom({ ...base, ...valueTitle, scale: probe.value, side: vertical ? 'left' : 'bottom' });
+  const categoryRoom = axisRoom({ ...base, ...categoryTitle, scale: probe.category as Scale<unknown>, side: vertical ? 'bottom' : 'left' });
   const left = PAD + (vertical ? valueRoom : categoryRoom);
   const bottom = size.height - PAD - (vertical ? categoryRoom : valueRoom);
   const plot = { x: left, y: top, width: Math.max(1, size.width - PAD - left), height: Math.max(1, bottom - top) };
@@ -92,12 +104,11 @@ export function compileXyChart(
   // The plot's own foot, which a box too short for its axes holds below its top.
   const foot = plot.y + plot.height;
 
-  const value = linearScale({ domain, range: vertical ? [foot, top] : [left, right] });
-  const category = categoryAxis(data, vertical ? [left, right] : [top, foot]);
+  const { value, category, slots, slotWidth } = xyScales(data, vertical ? [foot, top] : [left, right], vertical ? [left, right] : [top, foot]);
   marks.push(...axisMarks({ ...base, ...valueTitle, key: 'axis:value', scale: value, side: vertical ? 'left' : 'bottom', at: vertical ? left : foot, gridTo: vertical ? right : top }));
-  marks.push(...axisMarks({ ...base, ...categoryTitle, key: 'axis:category', scale: category.scale as Scale<unknown>, side: vertical ? 'bottom' : 'left', at: vertical ? foot : left }));
+  marks.push(...axisMarks({ ...base, ...categoryTitle, key: 'axis:category', scale: category as Scale<unknown>, side: vertical ? 'bottom' : 'left', at: vertical ? foot : left }));
 
-  const layout: XyLayout = { orientation: vertical ? 'vertical' : 'horizontal', plot, value, slots: category.slots, slotWidth: category.slotWidth };
+  const layout: XyLayout = { orientation: vertical ? 'vertical' : 'horizontal', plot, value, slots, slotWidth };
   marks.push(...seriesMarks(data, layout, theme));
   return { marks, layout };
 }

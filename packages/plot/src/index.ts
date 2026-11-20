@@ -16,14 +16,14 @@ export {
   type LineMarkOptions, type RuleMarkOptions, type AreaMarkOptions, type ArcMarkOptions, type RibbonMarkOptions,
 } from './marks/paths';
 export { textMark, type TextMarkOptions } from './marks/text';
-export { axisMarks, axisRoom, type AxisOptions, type AxisSide } from './axes';
+export { axisMarks, axisRoom, axisTicks, type AxisOptions, type AxisSide, type AxisTick } from './axes';
 
 export { PLOT_FONT, PLOT_THEME, plotThemeFrom, seriesColor, type PlotFont, type PlotTheme } from './theme';
 export { textMeasure, type PlotMeasure } from './measure';
 
 export { compilePlot, type PlotCompiler, type PlotData, type PlotKind } from './plotData';
 export type { XyBandAxis, XyChartData, XyRangeAxis, XySeries, XyValueAxis } from './xychart/types';
-export { compileXyChart, xyLength, xyValueDomain, type XyLayout } from './xychart/compile';
+export { compileXyChart, xyLength, xyScales, xyValueDomain, type XyLayout, type XyScales } from './xychart/compile';
 export { setXyValue, xyRows, xyValueAt } from './xychart/edit';
 export type { GanttData, GanttEnd, GanttSection, GanttStart, GanttTag, GanttTask, GanttUnit } from './gantt/types';
 export { compileGantt, type GanttLayout } from './gantt/compile';
@@ -68,8 +68,8 @@ export {
 export { handlesOf, plotEditorOf, type PlotEditor, type PlotHandle } from './editing/editors';
 export { foldPlotText, isPlotText, plotTextDatumOf, usePlotTextEdit } from './editing/textEdit';
 export {
-  PLOT_HANDLE_AFFORDANCE_KIND, PLOT_HANDLE_LAYER_ID, createPlotHandleLayer, plotHandles, plotHandleScratchOf, plotOrigin,
-  type PlotHandleScratch,
+  PLOT_HANDLE_AFFORDANCE_KIND, PLOT_HANDLE_LAYER_ID, createPlotFrame, createPlotHandleLayer, plotHandles, plotHandleScratchOf,
+  plotOrigin, type PlotFrame, type PlotHandleScratch,
 } from './editing/handleLayer';
 export { EDIT_PLOT_VALUE_ACTION_ID, commitPlotToScene, createPlotDragAction, type PlotDragOptions, type PlotEdit } from './editing/dragAction';
 export { GRAB_PLOT_HANDLE_ACTION_ID, createPlotEditingContribution } from './editing/createPlotEditingContribution';
