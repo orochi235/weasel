@@ -29,6 +29,20 @@ export interface DitherOptions {
   protect?: { texture: TextureHandle; width: number; height: number };
 }
 
+// Past it no protect mask can reach the buffer, and float32 still counts dots one by one.
+const DOT_OFFSET_LIMIT = 2 ** 23;
+
+/** `origin` moved by whole Bayer cells (4 dots) to within one cell of the
+ *  buffer's top left, and the dots it moved by. `deviceGrid` gives the origin
+ *  in float64, and it grows with the view's distance from it; the shader works
+ *  in float32, where a far origin would round every dot edge. */
+function reduceOrigin(origin: number, pitch: number): [origin: number, dotOffset: number] {
+  const cells = Math.floor(origin / (4 * pitch));
+  if (!Number.isFinite(cells)) return [origin, 0];
+  const offset = Math.min(DOT_OFFSET_LIMIT, Math.max(-DOT_OFFSET_LIMIT, -4 * cells));
+  return [origin - cells * 4 * pitch, offset];
+}
+
 const premultiplied = ([r, g, b, a]: Rgba): number[] => {
   const k = a / 255;
   return [(r / 255) * k, (g / 255) * k, (b / 255) * k, k];
@@ -46,6 +60,8 @@ export function dither(options: DitherOptions = {}): Effect[] {
   }
   const background = options.background ?? WHITE;
   const reach = grid === SCREEN ? 0 : Math.ceil(Math.max(Math.abs(grid.pitch[0]), Math.abs(grid.pitch[1])));
+  const [originX, offsetX] = reduceOrigin(grid.origin[0], grid.pitch[0]);
+  const [originY, offsetY] = reduceOrigin(grid.origin[1], grid.pitch[1]);
   return [{
     program: PROGRAM,
     reach,
@@ -57,7 +73,8 @@ export function dither(options: DitherOptions = {}): Effect[] {
       u_ink: premultiplied(options.ink ?? INK),
       u_blank: premultiplied(options.blank ?? BLANK),
       u_pitch: [grid.pitch[0], grid.pitch[1]],
-      u_gridOrigin: [grid.origin[0], grid.origin[1]],
+      u_gridOrigin: [originX, originY],
+      u_dotOffset: [offsetX, offsetY],
       ...(options.protect
         ? { u_protect: options.protect.texture, u_protectSize: [options.protect.width, options.protect.height] }
         : { u_protectSize: [0, 0] }),
