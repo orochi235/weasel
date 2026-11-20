@@ -70,4 +70,20 @@ describe('TiledSurface', () => {
     expect(frames[0]?.retiled).toBe(true);
     expect([...(frames[0]?.dirty ?? [])].sort()).toEqual(['a', 'b']);
   });
+
+  it('tells scope listeners when a tile is placed or dropped under a scope', () => {
+    const surface = new TiledSurface();
+    const scope = div();
+    surface.setScope(scope);
+    const heard = vi.fn();
+    surface.subscribeScope(heard);
+    const tile = document.createElement('div');
+    scope.append(tile);
+    expect(surface.inScope('t')).toBe(false);
+    surface.placeTile('t', tile);
+    expect(heard).toHaveBeenCalledTimes(1);
+    expect(surface.inScope('t')).toBe(true);
+    surface.placeTile('t', null);
+    expect(heard).toHaveBeenCalledTimes(2);
+  });
 });

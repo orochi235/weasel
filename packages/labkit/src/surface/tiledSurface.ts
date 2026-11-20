@@ -158,6 +158,8 @@ export class TiledSurface {
       this.dirty.delete(id);
     }
     this.stale = true;
+    // Under a scope, which tiles are inside it is what changed.
+    if (this.scopeEl) this.scopeChanged.emit();
     return true;
   }
 
@@ -169,7 +171,8 @@ export class TiledSurface {
     return hold(this.painters, 'painter', id, paint);
   }
 
-  /** Narrow to the tiles inside `el`, telling every scope listener. Returns whether that changed anything. */
+  /** Narrow to the tiles inside `el`, telling every scope listener, as placing or dropping a tile under a scope
+   *  does. Returns whether that changed anything. */
   setScope(el: SurfaceScope): boolean {
     if (sameScope(this.scopeEl, el)) return false;
     this.scopeEl = el;
