@@ -137,6 +137,19 @@ describe('joinPaths', () => {
     expect(w[0]).toBeCloseTo(1e6, 4);
     expect(w[6]).toBeCloseTo(1e6 + 0.3, 4);
   });
+
+  it('carries each part\'s corner specs onto its own anchors', () => {
+    const spec: CornerSpec = { shape: 'round', radius: 2 };
+    const a = { ...new PathBuilder().moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).close().build(), corners: [null, spec] };
+    const b = { ...new PathBuilder().moveTo(20, 0).lineTo(30, 0).lineTo(30, 10).close().build(), corners: [null, null, spec] };
+    expect(joinPaths([a, b]).corners).toEqual([null, spec, null, null, null, spec]);
+  });
+
+  it('keeps the openFill its open parts share', () => {
+    const open = { ...new PathBuilder().moveTo(0, 0).lineTo(10, 0).build(), openFill: 'none' as const };
+    const closed = new PathBuilder().moveTo(20, 0).lineTo(30, 0).lineTo(30, 10).close().build();
+    expect(joinPaths([closed, open]).openFill).toBe('none');
+  });
 });
 
 describe('producers that pick an origin', () => {
