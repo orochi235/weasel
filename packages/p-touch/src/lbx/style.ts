@@ -3,7 +3,7 @@
  * what an `.lbx` object cannot state, and the command goes to the rasterizer instead.
  */
 import type { GlMat3 } from '@weasel-js/geom';
-import { isSolidPaint, parseColor, resolveScreenLength, rgbaToHex, type CommandStroke, type Fill } from '@weasel-js/paint';
+import { DEFAULT_MITER_LIMIT, isSolidPaint, parseColor, resolveScreenLength, rgbaToHex, type CommandStroke, type Fill } from '@weasel-js/paint';
 
 /** The transform and opacity a command draws under. */
 export interface DrawState {
@@ -57,7 +57,13 @@ export interface PlainStroke {
   width: number;
   cap: 'butt' | 'round' | 'square';
   join: 'miter' | 'round' | 'bevel';
+  miterLimit: number;
   align: 'center' | 'inner' | 'outer';
+}
+
+/** Whether a corner whose miter is `ratio` stroke widths long is drawn mitered, not beveled or rounded. */
+export function mitersAt(stroke: PlainStroke, ratio: number): boolean {
+  return stroke.join === 'miter' && ratio <= stroke.miterLimit;
 }
 
 export function plainStroke(stroke: CommandStroke | undefined, alpha: number, scale: number): PlainStroke | null | undefined {
@@ -71,5 +77,5 @@ export function plainStroke(stroke: CommandStroke | undefined, alpha: number, sc
   const width = resolveScreenLength(stroke.width ?? 1, scale) * scale;
   if (!(width > 0)) return null;
   if (!Number.isFinite(width)) return undefined;
-  return { color, width, cap: stroke.cap ?? 'butt', join: stroke.join ?? 'miter', align: stroke.align ?? 'center' };
+  return { color, width, cap: stroke.cap ?? 'butt', join: stroke.join ?? 'miter', miterLimit: stroke.miterLimit ?? DEFAULT_MITER_LIMIT, align: stroke.align ?? 'center' };
 }

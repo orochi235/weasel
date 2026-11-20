@@ -5,7 +5,7 @@
 import { mat3, PATH_CMD_LENGTHS, PATH_L, PATH_M, type PolygonPath, maxOf, minOf } from '@weasel-js/geom';
 import type { PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import type { ArrowStyle, HorizontalAlignment, LineObject, RectObject, TextObject, VerticalAlignment } from 'bil-lbx';
-import { axisMap, fillColor, plainStroke, uniformScale, type DrawState } from './style';
+import { axisMap, fillColor, mitersAt, plainStroke, uniformScale, type DrawState } from './style';
 
 const NO_PEN = { style: 'NULL' as const };
 const NO_BRUSH = { style: 'NULL' as const };
@@ -20,7 +20,7 @@ export function rectObject(cmd: PathDrawCommand, state: DrawState): RectObject[]
   const scale = cmd.stroke?.paint === undefined ? map.sx : uniformScale(map);
   if (scale === undefined) return undefined;
   const stroke = plainStroke(cmd.stroke, state.alpha, scale);
-  if (stroke === undefined || (stroke && stroke.join !== 'miter')) return undefined;
+  if (stroke === undefined || (stroke && !mitersAt(stroke, Math.SQRT2))) return undefined;
   if (fill === null && stroke === null) return [];
   const { path } = cmd;
   const x = Math.min(path.x, path.x + path.width);
