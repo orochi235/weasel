@@ -24,10 +24,10 @@ export interface DiagramStyleState {
 }
 
 /** The style state of a shape (a body) or a connector, or `null` for anything else — a text row,
- *  a label, a cluster, a container. */
+ *  a label, a cluster, a container, a sequence or one of its parts, which it draws from its data. */
 export function diagramStyleOf(node: { data: unknown }): DiagramStyleState | null {
   const trait = (node.data as Data | null)?.diagram;
-  if (trait === null || typeof trait !== 'object') return null;
+  if (trait === null || typeof trait !== 'object' || 'seq' in trait || 'sequence' in trait) return null;
   const kind = 'from' in trait && 'to' in trait ? 'connector' : 'outline' in trait && !('cluster' in trait) && !('container' in trait) ? 'shape' : null;
   if (kind === null) return null;
   const role = trait.style as string | undefined;
