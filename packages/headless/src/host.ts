@@ -78,8 +78,8 @@ async function open(options: NodeRasterHostOptions): Promise<Open> {
     if (!ready) throw new Error('node raster host: the page script ran but never called `serveHeadlessPage`');
     return opened;
   } catch (err) {
-    if (!options.browser) await browser.close();
-    else await context?.close();
+    // A cleanup that fails too, as on a browser already gone, must not replace the error that caused it.
+    await (options.browser ? context?.close() : browser.close())?.catch(() => undefined);
     throw err;
   }
 }
