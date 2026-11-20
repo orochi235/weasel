@@ -58,6 +58,9 @@ const BROWSER_TESTS = ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser
 const BROWSER_SETUP = './vitest.browser.setup.ts';
 // Every WebGPU file, in a Chromium of its own: a WebGPU device lost there takes every tab of its
 // process with it (docs/traps/testing.md).
+// forge's axe sweep runs every story through axe twice; out of every run unless asked for (`npm run test:a11y`).
+const A11Y_TESTS = ['apps/forge/a11y.*.browser.test.tsx'];
+const A11Y_EXCLUDED = process.env.WEASEL_A11Y === '1' ? [] : A11Y_TESTS;
 const WEBGPU_TESTS = ['packages/renderer/src/gpu/webgpu/**/*.browser.test.ts', 'packages/core/src/canvas/canvasBackend.browser.test.tsx'];
 // A fake audio sink: on a node whose output device does not run, a real one leaves an AudioContext
 // "running" with its clock stopped, and the tests sound on every node. The GPU's flags put WebGL and
@@ -339,7 +342,7 @@ export default defineConfig({
             commands: browserCommands,
             headless: true,
             instances: [
-              { browser: 'chromium', exclude: ['**/node_modules/**', '**/dist/**', ...WEBGPU_TESTS] },
+              { browser: 'chromium', exclude: ['**/node_modules/**', '**/dist/**', ...WEBGPU_TESTS, ...A11Y_EXCLUDED] },
               { browser: 'chromium', name: 'browser (webgpu)', include: WEBGPU_TESTS },
             ],
           },

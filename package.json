@@ -56,6 +56,7 @@
     "test:batch": "node scripts/fleet-batch.mjs",
     "sweep:controls": "node scripts/control-sweep-fleet.mjs",
     "test:browser": "node scripts/vitest-overlap.mjs run --project=browser",
+    "test:a11y": "WEASEL_A11Y=1 vitest run --project=browser apps/forge/a11y",
     "test:smoke:consumer": "node scripts/smoke-consumer-bundle.mjs",
     "test:smoke:install": "node scripts/smoke-consumer-install.mjs",
     "check:first-publish": "node scripts/check-first-publish.mjs",
