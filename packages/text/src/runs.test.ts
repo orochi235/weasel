@@ -216,3 +216,13 @@ describe('runsToMarkdown with an empty styled run', () => {
     expect(markdownToRuns(md)).toEqual([{ text: 'x' }]);
   });
 });
+
+describe('run grammar delimiters', () => {
+  it('refuses a delimiter of more than one UTF-16 unit, in the writer and the reader alike', () => {
+    for (const delimiter of ['\u{1f31f}', '~~', '']) {
+      const g: RunGrammar = { markers: [{ delimiter, repeat: 1, flags: ['bold'] }] };
+      expect(() => runsToMarkdown([{ text: 'a', bold: true }], g)).toThrow(/delimiter/);
+      expect(() => markdownToRuns('a', g)).toThrow(/delimiter/);
+    }
+  });
+});

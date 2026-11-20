@@ -125,6 +125,7 @@ export type RunFlag = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'overl
 /** One inline marker: a delimiter repeated `repeat` times, and the flags it
  *  turns on between its opening and closing occurrence. */
 export interface RunMarker {
+  /** One character of one UTF-16 unit; a longer one throws. */
   delimiter: string;
   repeat: number;
   flags: readonly RunFlag[];
