@@ -56,6 +56,18 @@ describe('gitgraph structure', () => {
     compiles(trunk);
   });
 
+  it('carries a branch\'s new name into the checkouts and merges after it, refusing one another branch holds', () => {
+    const d: GitGraphData = { kind: 'gitgraph', commands: [
+      { kind: 'commit' }, { kind: 'branch', name: 'dev' }, { kind: 'commit' }, { kind: 'checkout', name: 'main' }, { kind: 'merge', branch: 'dev' },
+      { kind: 'checkout', name: 'dev' }, { kind: 'branch', name: 'other' },
+    ] };
+    const renamed = setGitCommandField(d, 1, 'name', 'feature');
+    expect(renamed.commands.slice(4, 6)).toEqual([{ kind: 'merge', branch: 'feature' }, { kind: 'checkout', name: 'feature' }]);
+    expect(replayGitGraph(renamed).error).toBeUndefined();
+    expect(() => setGitCommandField(d, 1, 'name', 'other')).toThrow(/already called "other"/);
+    expect(() => setGitCommandField(d, 1, 'name', 'main')).toThrow(/already called "main"/);
+  });
+
   it('fills a new merge or cherry-pick from the history before it', () => {
     const d: GitGraphData = { kind: 'gitgraph', commands: [
       { kind: 'commit', id: 'm1' }, { kind: 'branch', name: 'dev' }, { kind: 'commit', id: 'd1' }, { kind: 'commit' },

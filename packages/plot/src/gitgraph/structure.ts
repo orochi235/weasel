@@ -93,8 +93,9 @@ function pickable(data: GitGraphData, at: number): string {
 const TYPES: readonly GitCommitType[] = ['NORMAL', 'REVERSE', 'HIGHLIGHT'];
 
 /**
- * `data` with field `field` of command `at` set to `value`; `undefined` drops an optional field. Throws on a field its
- * kind does not hold, a value of the wrong type, or dropping a field the kind needs.
+ * `data` with field `field` of command `at` set to `value`; `undefined` drops an optional field. A branch's new name
+ * follows into the checkouts and merges after it. Throws on a field its kind does not hold, a value of the wrong type,
+ * dropping a field the kind needs, or a branch name another holds.
  */
 export function setGitCommandField(data: GitGraphData, at: number, field: GitCommandField, value: string | number | undefined): GitGraphData {
   const cmd = data.commands[at];
@@ -105,8 +106,23 @@ export function setGitCommandField(data: GitGraphData, at: number, field: GitCom
   if (value !== undefined && (field === 'order') !== (typeof value === 'number')) throw new Error(`setGitCommandField: ${field} takes a ${field === 'order' ? 'number' : 'string'}`);
   if (field === 'type' && value !== undefined && !TYPES.includes(value as GitCommitType)) throw new Error(`setGitCommandField: no commit type "${value}"`);
   if ((cmd as Record<string, unknown>)[field] === value) return data;
-  return setGitCommand(data, at, withOptional(cmd as Record<string, unknown>, field, value) as GitCommand);
+  if (cmd.kind === 'branch' && field === 'name' && gitBranchNames(data).includes(value as string)) {
+    throw new Error(`setGitCommandField: a branch is already called "${value}"`);
+  }
+  const next = setGitCommand(data, at, withOptional(cmd as Record<string, unknown>, field, value) as GitCommand);
+  if (cmd.kind === 'branch' && field === 'name') {
+    return cmd.name === mainOf(data) ? next : renameAfter(next, at, (c) => {
+      if (c.kind === 'checkout' && c.name === cmd.name) return { ...c, name: value as string };
+      if (c.kind === 'merge' && c.branch === cmd.name) return { ...c, branch: value as string };
+      return c;
+    });
+  }
+  return next;
 }
+
+/** `data` with every command after `at` run through `rename`. */
+const renameAfter = (data: GitGraphData, at: number, rename: (c: GitCommand) => GitCommand): GitGraphData =>
+  ({ ...data, commands: data.commands.map((c, i) => (i > at ? rename(c) : c)) });
 
 /** `data` drawn left to right (the default), top to bottom, or bottom to top. */
 export const setGitOrientation = (data: GitGraphData, orientation: 'LR' | 'TB' | 'BT'): GitGraphData =>
