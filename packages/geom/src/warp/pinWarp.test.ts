@@ -78,6 +78,17 @@ describe('createArapSolver', () => {
       close({ x: out[2 * v], y: out[2 * v + 1] }, move(mesh.vertices[2 * v], mesh.vertices[2 * v + 1]), 6);
     }
   });
+
+  it('moves a piece too degenerate to solve over with its own pins', () => {
+    // A piece whose one triangle has no area, holding two pins, beside a piece with a pin of its own.
+    const flatMesh = {
+      vertices: Float64Array.from([0, 0, 0, 0, 0, 0, 100, 100, 110, 100, 100, 110]),
+      triangles: Uint32Array.from([0, 1, 2, 3, 4, 5]),
+    };
+    const out = createArapSolver(flatMesh, [0, 1, 3]).solve([7, 5, 7, 5, 100, 100]);
+    close({ x: out[4], y: out[5] }, { x: 7, y: 5 });
+    close({ x: out[8], y: out[9] }, { x: 110, y: 100 });
+  });
 });
 
 describe('pinWarpMap', () => {

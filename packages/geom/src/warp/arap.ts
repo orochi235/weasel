@@ -123,8 +123,9 @@ function rigidFit(from: readonly number[], to: ArrayLike<number>): (x: number, y
 /**
  * Factor the deformation of `mesh` with vertices `pinned` held. A piece of
  * the mesh holding two pins or more deforms as rigidly as they allow; one
- * holding a single pin moves with it; one holding none moves rigidly with the
- * pins as a whole.
+ * holding a single pin moves with it, as does one whose triangles are too
+ * degenerate to solve over, rigidly with its own pins; one holding none moves
+ * rigidly with the pins as a whole.
  */
 export function createArapSolver(mesh: ArapMesh, pinned: readonly number[]): ArapSolver {
   const n = mesh.vertices.length >> 1;
@@ -133,27 +134,24 @@ export function createArapSolver(mesh: ArapMesh, pinned: readonly number[]): Ara
   const local = new Int32Array(n);
   const pinFrom = pinned.flatMap((v) => [mesh.vertices[2 * v], mesh.vertices[2 * v + 1]]);
   const solved: Piece[] = [];
-  const carried: { verts: number[]; pin: number }[] = [];
+  const carried: { verts: number[]; pins: number[] }[] = [];
   for (const p of piecesOf(mesh)) {
     const pins = [...new Set(p.verts.filter((v) => pinAt.has(v)).map((v) => pinAt.get(v)!))];
     const piece = pins.length >= 2 ? buildPiece(mesh, p.verts, p.tris, pinAt, local) : null;
     if (piece) solved.push(piece);
-    else carried.push({ verts: p.verts, pin: pins.length === 1 ? pins[0] : -1 });
+    else carried.push({ verts: p.verts, pins });
   }
   return {
     solve(targets, opts = {}) {
       const out = Float64Array.from(mesh.vertices);
-      const whole = carried.some((c) => c.pin < 0) && pinned.length > 0 ? rigidFit(pinFrom, targets) : null;
-      for (const { verts, pin } of carried) {
-        for (const v of verts) {
-          const x = mesh.vertices[2 * v], y = mesh.vertices[2 * v + 1];
-          if (pin >= 0) {
-            out[2 * v] = x + targets[2 * pin] - pinFrom[2 * pin];
-            out[2 * v + 1] = y + targets[2 * pin + 1] - pinFrom[2 * pin + 1];
-          } else if (whole) {
-            [out[2 * v], out[2 * v + 1]] = whole(x, y);
-          }
-        }
+      const whole = carried.some((c) => c.pins.length === 0) && pinned.length > 0 ? rigidFit(pinFrom, targets) : null;
+      // A piece holding pins that it could not solve over moves rigidly with its own pins.
+      for (const { verts, pins } of carried) {
+        const fit = pins.length > 0
+          ? rigidFit(pins.flatMap((k) => [pinFrom[2 * k], pinFrom[2 * k + 1]]), pins.flatMap((k) => [targets[2 * k], targets[2 * k + 1]]))
+          : whole;
+        if (!fit) continue;
+        for (const v of verts) [out[2 * v], out[2 * v + 1]] = fit(mesh.vertices[2 * v], mesh.vertices[2 * v + 1]);
       }
       const { trace } = opts;
       const report = (stage: ArapStage, round: number) => trace?.({ stage, round, vertices: Float64Array.from(out) });
