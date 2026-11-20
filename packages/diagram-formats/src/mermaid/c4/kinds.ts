@@ -12,6 +12,8 @@ export interface C4Kind {
   external: boolean;
 }
 
+const cap = (s: string): string => s[0]!.toUpperCase() + s.slice(1);
+
 /** The element macros: `Person`, `SystemDb_Ext`, `ContainerQueue`, … */
 const ELEMENT = /^(Person|System|Container|Component)(Db|Queue)?(_Ext)?$/;
 
@@ -27,7 +29,6 @@ export function kindOfMacro(macro: string): C4Kind | null {
 
 /** The macro naming `kind`. */
 export function macroOf(kind: C4Kind): string {
-  const cap = (s: string) => s[0]!.toUpperCase() + s.slice(1);
   return `${cap(kind.base)}${kind.variant !== undefined ? cap(kind.variant) : ''}${kind.external ? '_Ext' : ''}`;
 }
 
@@ -38,11 +39,11 @@ export const hasTechnology = (kind: C4Kind): boolean => kind.base === 'container
 export const stereotypeOf = (kind: C4Kind): string =>
   `${kind.external ? 'external_' : ''}${kind.base}${kind.variant !== undefined ? `_${kind.variant}` : ''}`;
 
-/** The kind a `<<…>>` row names, or null. */
+/** The kind a `<<…>>` row names, or null, for one naming a kind no macro does (`<<person_db>>`) too. */
 export function kindOfStereotype(text: string): C4Kind | null {
   const m = /^<<(external_)?(person|system|container|component)(?:_(db|queue))?>>$/.exec(text);
   if (m === null) return null;
-  return { base: m[2] as C4Kind['base'], external: m[1] !== undefined, ...(m[3] !== undefined ? { variant: m[3] as 'db' | 'queue' } : {}) };
+  return kindOfMacro(`${cap(m[2]!)}${m[3] !== undefined ? cap(m[3]) : ''}${m[1] !== undefined ? '_Ext' : ''}`);
 }
 
 /** The outline an element of `kind` is drawn in. */
@@ -66,9 +67,11 @@ export function elementRows(kind: C4Kind, name: string, technology: string | und
   ];
 }
 
-/** An element's parts again from its rows; a box with no `<<kind>>` row is a system, or a person, store, or queue by its outline. */
-export function elementParts(lines: readonly string[], outline: Outline | undefined, role: string | undefined) {
-  const named = kindOfStereotype(lines[0] ?? '');
+/** An element's parts again from its rows, `warn` hearing of a kind row naming a kind C4 lacks; a box with no `<<kind>>` row is a system, or a person, store, or queue by its outline. */
+export function elementParts(lines: readonly string[], outline: Outline | undefined, role: string | undefined, warn: (m: string) => void) {
+  const person = /^<<(external_)?person_(?:db|queue)>>$/.exec(lines[0] ?? '');
+  if (person !== null) warn('Mermaid C4 has no store or queue of people; they were written as people.');
+  const named = person !== null ? { base: 'person' as const, external: person[1] !== undefined } : kindOfStereotype(lines[0] ?? '');
   const rest = named !== null ? lines.slice(1) : lines;
   const kind: C4Kind = named ?? {
     base: outline === 'person' || outline === 'actor' ? 'person' : 'system', external: role === 'muted',

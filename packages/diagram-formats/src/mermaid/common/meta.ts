@@ -16,15 +16,18 @@ export function metaOf(meta: string, line: number, what = 'node metadata'): [str
   return out;
 }
 
-/** Where the `}` closing metadata that opens at `from` stands, past any quoted `}`; -1 for none. */
+/** Where the `}` closing metadata that opens at `from` stands, past any quoted `}`; -1 for none. A quote opens a
+ *  quoted value only where it starts the value, as in YAML, so an apostrophe inside a plain one is text. */
 export function metaEnd(text: string, from: number): number {
   let quote: string | null = null;
+  let last = ',';
   for (let i = from; i < text.length; i++) {
     const c = text[i]!;
     if (quote !== null) {
       if (c === quote) quote = null;
-    } else if (c === '"' || c === "'") quote = c;
+    } else if ((c === '"' || c === "'") && (last === ':' || last === ',')) quote = c;
     else if (c === '}') return i;
+    if (quote === null && !/\s/.test(c)) last = c;
   }
   return -1;
 }

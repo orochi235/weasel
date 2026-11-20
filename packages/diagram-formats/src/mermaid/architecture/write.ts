@@ -76,6 +76,9 @@ class ArchWriter {
 
   edge(e: DataEdge): void {
     const style = edgeStyleIn(this.out, e);
+    if ([e.fromPort, e.toPort].some((p) => p !== undefined && !PORT_SIDES.has(p))) {
+      this.out.warnings.add('Mermaid architecture edges meet a service on its n, s, e or w side; other ports were written as its right or left.');
+    }
     const from = this.end(e.from, e.fromPort ?? e.routedPorts?.from, 'R');
     const to = this.end(e.to, e.toPort ?? e.routedPorts?.to, 'L');
     if (from === null || to === null) {

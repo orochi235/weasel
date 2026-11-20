@@ -3,9 +3,9 @@ import type { MarkerRef } from '@weasel-js/core';
 import type { DataEdge, DataNode, LayoutDirection, Row } from '@weasel-js/diagram';
 import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
-import { edgeStyleIn, graphOut, type Cluster, type GraphOut } from '../../graphWrite';
+import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { readsAsStatement, titleLines } from '../common/lines';
-import { styleProps } from '../common/styles';
+import { dropPorts, styleProps } from '../common/styles';
 import { mermaidIds, oneLine, spelledBreaks } from '../common/text';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT', right: 'LR', left: 'RL' };
@@ -101,7 +101,7 @@ class ClassWriter {
 
   noteLines(): void {
     for (const [id, target] of this.notes) {
-      const text = (this.out.byId.get(id)!.lines ?? []).map((l) => spelled(l).replace(/\\/g, '#92;')).join('\\n');
+      const text = nodeLines(this.out.byId.get(id)!, this.out.warnings, 'Mermaid').map((l) => spelled(l).replace(/\\/g, '#92;')).join('\\n');
       this.lines.push(target === null ? `  note "${text}"` : `  note for ${this.id(target.to)} "${text}"`);
     }
   }
@@ -132,6 +132,7 @@ export function writeClassDiagram(doc: DiagramDocument, opts?: WriteOptions): Ex
       out.warnings.add('Mermaid class relations join classes; connectors to namespaces were dropped.');
       continue;
     }
+    dropPorts(e, (m) => out.warnings.add(m));
     w.lines.push(w.relation(e));
   }
   w.noteLines();

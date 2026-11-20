@@ -23,6 +23,8 @@ export interface MermaidLex {
   tokens: MermaidToken[];
   /** The front matter's `title`. */
   title?: string;
+  /** The front matter's lines other than its title. */
+  frontConfig?: string;
   /** How many `%%{…}%%` directives there were. */
   directives: number;
 }
@@ -56,6 +58,7 @@ class MermaidLexer {
   i = 0;
   line = 1;
   title: string | undefined;
+  frontConfig: string | undefined;
   directives = 0;
 
   constructor(source: string) {
@@ -86,6 +89,7 @@ class MermaidLexer {
   frontMatter(): void {
     const front = frontMatter(this.text);
     this.title = front.title;
+    this.frontConfig = front.config;
     this.i = front.length;
     this.line += front.lines;
   }
@@ -109,7 +113,12 @@ class MermaidLexer {
         this.word(c);
       }
     }
-    return { tokens: this.tokens, ...(this.title !== undefined ? { title: this.title } : {}), directives: this.directives };
+    return {
+      tokens: this.tokens,
+      ...(this.title !== undefined ? { title: this.title } : {}),
+      ...(this.frontConfig !== undefined ? { frontConfig: this.frontConfig } : {}),
+      directives: this.directives,
+    };
   }
 
   directive(): void {

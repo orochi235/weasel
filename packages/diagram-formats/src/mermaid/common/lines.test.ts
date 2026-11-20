@@ -12,6 +12,11 @@ describe('statementsOf', () => {
     expect(src.body).toEqual([{ text: 'root', line: 12, indent: 2 }, { text: 'child', line: 13, indent: 4 }]);
   });
 
+  it('skips an empty front matter block', () => {
+    const src = statementsOf('---\n---\nclassDiagram\n  class A');
+    expect(src.header).toEqual({ text: 'classDiagram', line: 3, indent: 0 });
+  });
+
   it('closes an accDescr block on the line it opens on', () => {
     const src = statementsOf('pie\naccDescr { one line }\n"a" : 1');
     expect(src.accDescr).toBe('one line');

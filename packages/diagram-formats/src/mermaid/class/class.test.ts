@@ -14,6 +14,12 @@ const node = (text: string, id: string) => page(text).data.nodes.find((n) => n.i
 const edge = (text: string, from: string, to: string) => page(text).data.edges.find((e) => e.from === from && e.to === to)!;
 
 describe('reading a Mermaid class diagram', () => {
+  it('warns that front matter other than the title was dropped, as it does for a directive', () => {
+    const { warnings } = readClassDiagram('---\ntitle: T\nconfig:\n  theme: dark\n---\nclassDiagram\n  class A');
+    expect(warnings).toEqual(['Mermaid front matter other than the title was dropped.']);
+    expect(readClassDiagram('---\ntitle: T\n---\nclassDiagram\n  class A').warnings).toEqual([]);
+  });
+
   it('reads a page of notation class, named and run as the file says', () => {
     expect(page(SHOP)).toMatchObject({ name: 'Shop model', direction: 'right', notation: 'class' });
   });
@@ -112,6 +118,11 @@ describe('writing a Mermaid class diagram', () => {
   it('keeps a class\'s name when its id is written cleaned', () => {
     const text = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'my class', lines: ['my class'] }], edges: [] } }] }).text;
     expect(page(text).data.nodes[0]!.rows).toContainEqual({ kind: 'label', text: 'my class' });
+  });
+
+  it('writes a note whose text is in its rows', () => {
+    const text = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'n', outline: 'note', rows: [{ kind: 'label', text: 'remember' }] }], edges: [] } }] }).text;
+    expect(text).toContain('  note "remember"');
   });
 
   it('keeps a backslash and the n after it in a note line', () => {

@@ -9,9 +9,11 @@ export function jsonString(quoted: string): string {
   }
 }
 
-/** A `---` block before the diagram: its `title`, and how many characters and lines it takes. */
+/** A `---` block before the diagram: its `title`, the rest of its lines, and how many characters and lines it takes. */
 export interface FrontMatter {
   title?: string;
+  /** Its lines other than the title, such as a `config:` block, when there are any. */
+  config?: string;
   length: number;
   lines: number;
 }
@@ -25,12 +27,15 @@ export function frontTitle(raw: string): string {
 
 /** The front matter at the start of `text`, `length` 0 when there is none. Newlines are `\n`. */
 export function frontMatter(text: string): FrontMatter {
-  const front = /^---[ \t]*\n([\s\S]*?)\n---[ \t]*(?:\n|$)/.exec(text);
+  const front = /^---[ \t]*\n(?:([\s\S]*?)\n)?---[ \t]*(?:\n|$)/.exec(text);
   if (front === null) return { length: 0, lines: 0 };
-  const t = /^title:[ \t]*([^\n]*)$/m.exec(front[1]!)?.[1];
+  const body = front[1] ?? '';
+  const t = /^title:[ \t]*([^\n]*)$/m.exec(body)?.[1];
   const title = t === undefined ? undefined : frontTitle(t);
+  const config = body.split('\n').filter((l) => l.trim() !== '' && !/^title:/.test(l)).join('\n');
   return {
     ...(title !== undefined ? { title } : {}),
+    ...(config !== '' ? { config } : {}),
     length: front[0].length,
     lines: front[0].split('\n').length - (front[0].endsWith('\n') ? 1 : 0),
   };

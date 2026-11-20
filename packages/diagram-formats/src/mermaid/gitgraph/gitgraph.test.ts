@@ -53,9 +53,20 @@ describe('reading a Mermaid gitGraph', () => {
     expect((plotOf('gitGraph:\n  commit').data as GitGraphData).orientation).toBeUndefined();
   });
 
+  it('names the main branch by a mainBranchName setting, in front matter or a directive', () => {
+    const front = readMermaidGitGraph('---\nconfig:\n  gitGraph:\n    mainBranchName: develop\n---\ngitGraph\n  commit\n  branch feature\n  checkout develop\n  commit');
+    expect((front.document.pages[0] as PlotPage).data).toMatchObject({ mainBranch: 'develop' });
+    expect(front.warnings).toEqual([]);
+    const directive = readMermaidGitGraph('%%{init: {\'gitGraph\': {\'mainBranchName\': \'trunk\'}}}%%\ngitGraph\n  commit\n  checkout trunk');
+    expect((directive.document.pages[0] as PlotPage).data).toMatchObject({ mainBranch: 'trunk' });
+    expect(directive.warnings).toEqual([]);
+  });
+
   it('warns on what it drops', () => {
-    expect(readMermaidGitGraph('%%{init: {\'gitGraph\': {\'mainBranchName\': \'trunk\'}}}%%\ngitGraph\n  commit').warnings)
+    expect(readMermaidGitGraph('%%{init: {\'theme\': \'dark\', \'gitGraph\': {\'mainBranchName\': \'trunk\'}}}%%\ngitGraph\n  commit').warnings)
       .toEqual(['Mermaid configuration directives were dropped.']);
+    expect(readMermaidGitGraph('---\nconfig:\n  theme: dark\n---\ngitGraph\n  commit').warnings)
+      .toEqual(['Mermaid front matter other than the title was dropped.']);
   });
 
   it('throws, naming the line, on what it cannot read', () => {
@@ -110,13 +121,22 @@ describe('writing a Mermaid gitGraph', () => {
       commands: [{ kind: 'commit', tag: 'say "hi"' }, { kind: 'branch', name: 'b' }, { kind: 'checkout', name: 'trunk' }],
     };
     const { text, warnings } = writeMermaidGitGraph(pageOf(trunk));
-    expect(text).toBe('gitGraph\n  commit tag: "say \'hi\'"\n  branch b\n  checkout main\n');
-    expect(warnings).toEqual([
-      'Mermaid\'s main branch is "main"; "trunk" was written as main.',
-      'Mermaid strings hold no double quotes; they were written as single quotes.',
-    ]);
-    expect(() => writeMermaidGitGraph(pageOf({ ...trunk, commands: [{ kind: 'branch', name: 'main' }] }))).toThrow(/another branch by that name/);
+    expect(text).toBe('---\nconfig:\n  gitGraph:\n    mainBranchName: "trunk"\n---\ngitGraph\n  commit tag: "say \'hi\'"\n  branch b\n  checkout trunk\n');
+    expect(warnings).toEqual(['Mermaid strings hold no double quotes; they were written as single quotes.']);
     expect(() => writeMermaidGitGraph({ ...pageOf(trunk), data: { kind: 'pie', slices: [] } as never })).toThrow(/as a gitGraph only/);
+  });
+
+  it('writes a main branch not named main as a mainBranchName setting, which reads back', () => {
+    const data: GitGraphData = {
+      kind: 'gitgraph', title: 'T', mainBranch: 'trunk',
+      commands: [{ kind: 'commit' }, { kind: 'branch', name: 'main' }, { kind: 'commit' }, { kind: 'checkout', name: 'trunk' }, { kind: 'merge', branch: 'main' }],
+    };
+    const { text, warnings } = writeMermaidGitGraph(pageOf(data));
+    expect(text.startsWith('---\ntitle: "T"\nconfig:\n  gitGraph:\n    mainBranchName: "trunk"\n---\n')).toBe(true);
+    expect(warnings).toEqual([]);
+    const back = readMermaidGitGraph(text);
+    expect((back.document.pages[0] as PlotPage).data).toEqual(data);
+    expect(back.warnings).toEqual([]);
   });
 
   it('rounds a branch order that is not a whole number, and drops one below zero or not a number, with warnings', () => {

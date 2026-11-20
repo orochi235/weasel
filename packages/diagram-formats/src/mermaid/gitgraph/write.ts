@@ -33,23 +33,30 @@ function branchOrder(order: number | undefined, warn: Warn): number | undefined 
   return n;
 }
 
-function commandLine(cmd: GitCommand, main: (name: string) => string, warn: Warn): string {
+function commandLine(cmd: GitCommand, warn: Warn): string {
   switch (cmd.kind) {
     case 'commit':
       return `commit${attrs([['id', cmd.id, true], ['type', cmd.type, false], ['tag', cmd.tag, true], ['msg', cmd.message, true]], warn)}`;
     case 'branch':
-      return `branch ${branchName(main(cmd.name), warn)}${attrs([['order', branchOrder(cmd.order, warn), false]], warn)}`;
+      return `branch ${branchName(cmd.name, warn)}${attrs([['order', branchOrder(cmd.order, warn), false]], warn)}`;
     case 'checkout':
-      return `checkout ${branchName(main(cmd.name), warn)}`;
+      return `checkout ${branchName(cmd.name, warn)}`;
     case 'merge':
-      return `merge ${branchName(main(cmd.branch), warn)}${attrs([['id', cmd.id, true], ['type', cmd.type, false], ['tag', cmd.tag, true]], warn)}`;
+      return `merge ${branchName(cmd.branch, warn)}${attrs([['id', cmd.id, true], ['type', cmd.type, false], ['tag', cmd.tag, true]], warn)}`;
     case 'cherry-pick':
       return `cherry-pick${attrs([['id', cmd.id, true], ['tag', cmd.tag, true], ['parent', cmd.parent, true]], warn)}`;
   }
 }
 
-/** Writes `page`'s gitgraph as Mermaid. Throws on a page holding another kind of chart, or one whose main branch is
- *  not `main` while another branch is. */
+/** Front matter naming the chart and, when it is not `main`, its main branch. */
+function frontLines(title: string | undefined, mainBranch: string): string[] {
+  const named = titleLines(title);
+  if (mainBranch === 'main') return named;
+  const config = ['config:', '  gitGraph:', `    mainBranchName: ${JSON.stringify(mainBranch)}`];
+  return named.length === 0 ? ['---', ...config, '---'] : [...named.slice(0, -1), ...config, '---'];
+}
+
+/** Writes `page`'s gitgraph as Mermaid. Throws on a page holding another kind of chart. */
 export function writeMermaidGitGraph(page: PlotPage): ExportResult {
   const data = page.data;
   if (data.kind !== 'gitgraph') throw new Error(`Mermaid writes this chart as a gitGraph only; the page holds a ${(data as { kind: string }).kind}`);
@@ -57,15 +64,7 @@ export function writeMermaidGitGraph(page: PlotPage): ExportResult {
   const warn: Warn = (m) => {
     if (!warnings.includes(m)) warnings.push(m);
   };
-  const mainBranch = data.mainBranch ?? 'main';
-  if (mainBranch !== 'main') {
-    if (data.commands.some((c) => c.kind === 'branch' && c.name === 'main')) {
-      throw new Error(`Mermaid's main branch is "main", and this graph has another branch by that name besides its main branch "${mainBranch}"`);
-    }
-    warn(`Mermaid's main branch is "main"; "${mainBranch}" was written as main.`);
-  }
-  const main = (name: string) => (name === mainBranch ? 'main' : name);
   const header = data.orientation === undefined ? 'gitGraph' : `gitGraph ${data.orientation}:`;
-  const lines = [...titleLines(data.title), header, ...data.commands.map((c) => `  ${commandLine(c, main, warn)}`)];
+  const lines = [...frontLines(data.title, data.mainBranch ?? 'main'), header, ...data.commands.map((c) => `  ${commandLine(c, warn)}`)];
   return { text: `${lines.join('\n')}\n`, warnings };
 }

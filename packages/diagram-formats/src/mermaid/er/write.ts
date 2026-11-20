@@ -5,7 +5,7 @@ import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, type GraphOut } from '../../graphWrite';
 import { readsAsStatement, titleLines } from '../common/lines';
-import { styleProps } from '../common/styles';
+import { dropPorts, styleProps } from '../common/styles';
 import { mermaidEscaped, mermaidIds, oneLine } from '../common/text';
 import { ATTRIBUTE } from './parse';
 
@@ -56,6 +56,7 @@ export function writeErDiagram(doc: DiagramDocument, opts?: WriteOptions): Expor
   }
   for (const e of out.edges) {
     if (!ids.has(e.from) || !ids.has(e.to)) continue;
+    dropPorts(e, (m) => out.warnings.add(m));
     const style = edgeStyleIn(out, e);
     const body = style.dash !== undefined ? '..' : '--';
     lines.push(`  ${ids.get(e.from)} ${end(out, style.markerStart, 0)}${body}${end(out, style.markerEnd, 1)} ${ids.get(e.to)} : "${mermaidEscaped([e.label ?? ''])}"`);

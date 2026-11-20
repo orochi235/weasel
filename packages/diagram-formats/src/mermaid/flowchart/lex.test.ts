@@ -26,6 +26,11 @@ describe('lexFlowchart', () => {
     expect(lex('click A "https://x" "one; two"')).toEqual(['word:click', 'rest:A "https://x" "one; two"']);
   });
 
+  it('skips an empty front matter block', () => {
+    const out = lexFlowchart('---\n---\nflowchart TD\nA');
+    expect(out.tokens[0]).toMatchObject({ kind: 'word', value: 'flowchart', line: 3 });
+  });
+
   it('reads front matter, directives, and comments apart from the statements', () => {
     const out = lexFlowchart('---\ntitle: "A: b"\n---\n%%{init: {}}%%\nflowchart TD\n%% note\nA');
     expect(out.title).toBe('A: b');

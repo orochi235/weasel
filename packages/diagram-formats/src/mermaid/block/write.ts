@@ -4,7 +4,7 @@ import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { titleLines } from '../common/lines';
-import { arrowHead, styleProps } from '../common/styles';
+import { arrowHead, dropPorts, styleProps } from '../common/styles';
 import { mermaidIds, mermaidText } from '../common/text';
 import { BRACKETS } from '../flowchart/write';
 
@@ -20,11 +20,15 @@ class BlockWriter {
   readonly ids: Map<string, string>;
   readonly grid: GridOptions;
   readonly order: ReadonlyMap<string, number>;
+  /** Groups an edge or a style line names, which must be written with their id even where the reader would mint it. */
+  readonly named: ReadonlySet<string>;
 
   constructor(readonly out: GraphOut) {
     this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true, reserved: BLOCK_WORDS });
     this.grid = out.page.layout?.name === 'grid' ? out.page.layout.options?.grid ?? {} : {};
     this.order = new Map(out.page.data.nodes.map((n, i) => [n.id, i]));
+    const styled = (out.page.data.containers ?? []).filter((c) => c.colors !== undefined && styleProps(c.colors) !== '').map((c) => c.id);
+    this.named = new Set([...out.edges.flatMap((e) => [e.from, e.to]), ...styled]);
   }
 
   id(id: string): string {
@@ -68,7 +72,7 @@ class BlockWriter {
   }
 
   group(c: Cluster, indent: string): void {
-    const named = !ANONYMOUS.test(c.id) || this.span(c.id) !== '';
+    const named = !ANONYMOUS.test(c.id) || this.span(c.id) !== '' || this.named.has(c.id);
     this.lines.push(`${indent}block${named ? `:${this.id(c.id)}${this.span(c.id)}` : ''}`);
     const columns = this.grid.clusterColumns && getOwn(this.grid.clusterColumns, c.id);
     if (columns !== undefined) this.lines.push(`${indent}  columns ${columns}`);
@@ -81,6 +85,7 @@ class BlockWriter {
     const { markerStart, markerEnd, dash, width } = edgeStyleIn(this.out, e);
     const body = dash !== undefined ? '-.-' : (width ?? 0) >= 3 ? '==' : '--';
     const warn = (m: string) => this.out.warnings.add(m);
+    dropPorts(e, warn);
     const end = arrowHead(markerEnd, 'block diagram', warn);
     const start = arrowHead(markerStart, 'block diagram', warn);
     const tail = end ? '>' : body === '--' ? '-' : body === '==' ? '=' : '';

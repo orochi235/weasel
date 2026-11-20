@@ -3,7 +3,7 @@ import { deepEqual, getOwn } from '@weasel-js/registry';
 import type { DataEdge, DataNode, LayoutDirection, Outline } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type Cluster, type GraphOut } from '../../graphWrite';
-import { styleProps } from '../common/styles';
+import { dropPorts, styleProps } from '../common/styles';
 import { mermaidIds, mermaidText } from '../common/text';
 import { withEdgeIds } from '../../graphRead';
 import { REST_KEYWORDS } from './lex';
@@ -98,7 +98,7 @@ class MermaidWriter {
 
   edges(): void {
     for (const e of this.out.edges) {
-      if (e.fromPort !== undefined || e.toPort !== undefined) this.out.warnings.add('Mermaid has no ports; connectors\' ports were dropped.');
+      dropPorts(e, (m) => this.out.warnings.add(m));
       if (e.endLabels !== undefined) this.out.warnings.add('Mermaid flowcharts have no labels at a connector\'s ends; they were dropped.');
       const label = e.label !== undefined && e.label !== '' ? `|${mermaidText([e.label])}|` : '';
       const id = this.named.has(e) ? `${e.id!}@` : '';

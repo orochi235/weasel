@@ -36,11 +36,14 @@ export type MermaidStmt =
   | { kind: 'class'; ids: string[]; className: string; line: number }
   | { kind: 'style'; id: string; props: StyleProps; line: number }
   | { kind: 'linkStyle'; indexes: number[] | 'default'; props: StyleProps; line: number }
+  | { kind: 'acc'; of: 'title' | 'descr'; text: string; line: number }
   | { kind: 'other'; keyword: string; line: number };
 
 /** A whole flowchart. */
 export interface MermaidFlowchart {
   title?: string;
+  /** The front matter's lines other than its title. */
+  frontConfig?: string;
   /** As written: `TB`, `TD`, `BT`, `LR`, or `RL`. */
   direction: string;
   directives: number;
@@ -59,6 +62,7 @@ const SUBGRAPH =/^(?:"([^"]*)"|([^\s[]+)\s*(?:\[\s*(?:"([^"]*)"|([^\]]*))\s*\])?
 
 /** A keyword statement other than `subgraph`, from the rest of its line. */
 function statementOf(keyword: string, rest: string, line: number): MermaidStmt {
+  if (keyword === 'accTitle' || keyword === 'accDescr') return { kind: 'acc', of: keyword === 'accTitle' ? 'title' : 'descr', text: rest, line };
   if (keyword === 'direction') return { kind: 'direction', value: rest.toUpperCase(), line };
   const [first = '', ...more] = rest.split(/\s+/);
   const remainder = rest.slice(first.length).trim();
@@ -76,7 +80,7 @@ function statementOf(keyword: string, rest: string, line: number): MermaidStmt {
 
 /** Parses a Mermaid flowchart. Throws, naming the line, on text that is not one. */
 export function parseFlowchart(text: string): MermaidFlowchart {
-  const { tokens, title, directives } = lexFlowchart(text);
+  const { tokens, title, frontConfig, directives } = lexFlowchart(text);
   let i = 0;
   const peek = () => tokens[i];
   const lastLine = text.split('\n').length;
@@ -93,7 +97,11 @@ export function parseFlowchart(text: string): MermaidFlowchart {
   i++;
   const direction = restOf().toUpperCase() || 'TB';
   const stmts = block(null);
-  return { ...(title !== undefined ? { title } : {}), direction, directives, stmts };
+  return {
+    ...(title !== undefined ? { title } : {}),
+    ...(frontConfig !== undefined ? { frontConfig } : {}),
+    direction, directives, stmts,
+  };
 
   function block(opened: number | null): MermaidStmt[] {
     const out: MermaidStmt[] = [];

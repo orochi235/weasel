@@ -118,6 +118,16 @@ describe('writing a Mermaid block diagram', () => {
     expect(text).toContain('  style gateway fill:#ffeecc,stroke:#aa6600\n');
   });
 
+  it('names a group whose id looks minted when an edge or a style names it, so both read back onto it', () => {
+    const text = 'block-beta\n  block:block-1\n    a\n  end\n  x\n  x --> block-1\n  style block-1 fill:#f00';
+    const back = page(writeBlockDiagram(readBlockDiagram(text).document).text);
+    expect(back.data.nodes.map((n) => n.id).sort()).toEqual(['a', 'x']);
+    const group = back.data.containers![0]!;
+    expect(group.colors).toEqual({ fill: '#ff0000' });
+    expect(back.data.edges.map((e) => [e.from, e.to])).toEqual([['x', group.id]]);
+    expect(writeBlockDiagram(readBlockDiagram('block-beta\n  block\n    a\n  end').document).text).toContain('  block\n');
+  });
+
   it('writes a page laid out some other way as one row', () => {
     const { text } = writeBlockDiagram({ pages: [{
       kind: 'graph', id: 'p', width: 100, height: 100,
