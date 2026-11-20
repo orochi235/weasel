@@ -1,4 +1,4 @@
-import { type CSSProperties, createRef, type RefObject, useLayoutEffect, useRef } from 'react';
+import { type CSSProperties, type RefObject, useLayoutEffect, useRef } from 'react';
 import { f } from '../../config/builder';
 import { defineInstrument } from '../../instrument/defineInstrument';
 import type { Instrument } from '../../instrument/types';
@@ -15,6 +15,7 @@ import {
   ZOOMS,
 } from './condition';
 import { CONTENT, EXERCISES } from './exercises';
+import { type TrialPictures, trialPictures, useTrialPicture } from './trialPictures';
 import './Calibration.less';
 
 function schema(start: CalibrationConfig) {
@@ -83,6 +84,24 @@ function Stage({
   );
 }
 
+function Trial({
+  config,
+  trial,
+  pictures,
+}: {
+  config: CalibrationConfig;
+  trial: string;
+  pictures: TrialPictures;
+}) {
+  const ref = useTrialPicture(pictures, trial);
+  return (
+    <div className="lk-cal">
+      <Stage config={config} picture={ref} />
+      <CalibrationResults config={config} picture={ref} />
+    </div>
+  );
+}
+
 /**
  * A coloring book for annotation marks: faint guides to trace with the lab's annotation tools, each scored against
  * the mark drawn on it. `start` sets the condition a new trial opens in.
@@ -91,25 +110,14 @@ export function calibrationInstrument(
   start: Partial<CalibrationConfig> = {},
 ): Instrument<Record<string, never>, CalibrationConfig> {
   // One picture element per trial: every trial declares the same target id, and each must track its own.
-  const pictures = new Map<string, RefObject<HTMLDivElement | null>>();
-  const pictureFor = (trial: string) => {
-    let ref = pictures.get(trial);
-    if (!ref) {
-      ref = createRef<HTMLDivElement>();
-      pictures.set(trial, ref);
-    }
-    return ref;
-  };
+  // Released when the trial unmounts, so the map holds only the trials on screen.
+  const pictures = trialPictures();
+  const { pictureFor } = pictures;
   return defineInstrument<Record<string, never>, CalibrationConfig>({
     name: 'Calibration',
     config: schema({ ...DEFAULT_CONDITION, ...start }),
     initialState: () => ({}),
-    render: ({ config, trial }) => (
-      <div className="lk-cal">
-        <Stage config={config} picture={pictureFor(trial.id)} />
-        <CalibrationResults config={config} picture={pictureFor(trial.id)} />
-      </div>
-    ),
+    render: ({ config, trial }) => <Trial config={config} trial={trial.id} pictures={pictures} />,
     annotations: {
       tools: ['pointer', 'select', 'stroke', 'line', 'arrow', 'rect', 'ellipse', 'text'],
       targets: (_state, config, trial) => {

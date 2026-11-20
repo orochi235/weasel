@@ -2,6 +2,7 @@ import { asNodeId } from '@weasel-js/core';
 import { fromShape, roundFrac, roundPoints, worldToFrac } from './frac';
 import { markIdOf, splitMarkId } from './markId';
 import type { MarkPose, MarkScene } from './markScenes';
+import { settledMarkData } from './markShape';
 import type { Annotation, AnnotationTargetInfo } from './types';
 
 type Content = { width: number; height: number };
@@ -41,8 +42,10 @@ export function createMarkReads({ scenes, targets, contentOf }: MarkReadsOptions
   const project = (target: string, node: string): Annotation | undefined => {
     const found = scenes.get(target)?.get(asNodeId(node));
     if (!found) return undefined;
-    const { shape, ...data } = found.data;
-    const frac = roundFrac(worldToFrac(found.pose as MarkPose, contentOf(target)));
+    const content = contentOf(target);
+    const pose = found.pose as MarkPose;
+    const { shape, ...data } = settledMarkData(found.data, pose, content);
+    const frac = roundFrac(worldToFrac(pose, content));
     const points =
       data.kind === 'point'
         ? [{ x: frac.x, y: frac.y }]

@@ -45,8 +45,9 @@ export function worldToFrac(r: WorldRect, content: { width: number; height: numb
 
 const DP = 10_000;
 
-/** Snap to 4dp. Positions are diffed by humans in stored documents, so the
- *  last digits of a float are noise that hides the change that matters. */
+/** Snap to 4dp, for what a read reports. Positions are diffed by humans in reported fractions, so the
+ *  last digits of a float are noise that hides the change that matters. A write does not snap: the scene holds
+ *  world units, and 4dp of a long side is whole units. */
 export function roundFrac(f: FracRect): FracRect {
   return {
     x: Math.round(f.x * DP) / DP,

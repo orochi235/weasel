@@ -3021,3 +3021,10 @@ Calls the lanes made without a ruling:
   differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
   family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
   family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.
+## Audit round fifty (2026-11-20): labkit annotations
+
+- 2026-11-20 (the fixer's call): a mark store reads a target's marks against the last content box with an area it
+  was given, so a target the instrument stops declaring, or whose element has not sized again, keeps reporting
+  where its marks are. `add`, and an `update` that moves a mark (`frac` or `points`), throw on a target whose content
+  box was never known or has no area; an `update` of meaning alone still lands. Skipping such writes silently, as
+  an unknown id is, was the alternative.

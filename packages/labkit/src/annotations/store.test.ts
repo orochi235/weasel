@@ -542,6 +542,136 @@ describe('a moved mark', () => {
     const [node] = (store.toJSON().scenes.naive as { nodes: { data: unknown }[] }).nodes;
     expect(node?.data).toEqual({ target: 'naive', kind: 'line', points: LINE.points });
   });
+
+  it('reads and draws a legacy save restored before its target had a content box', () => {
+    // A target sized from its element reports 0x0 until its ref attaches, after the store is built.
+    let targets: AnnotationTargetInfo[] = [{ id: 'naive', content: { width: 0, height: 0 } }];
+    const store = loadAnnotations(legacyLine(), () => targets);
+    targets = TARGETS;
+    expect(store.get('naive/n1')?.points).toEqual(LINE.points);
+    expectNear(drawn(store), LINE.points ?? []);
+  });
+
+  it('keeps such a save following its bounds through an update', () => {
+    let targets: AnnotationTargetInfo[] = [{ id: 'naive', content: { width: 0, height: 0 } }];
+    const store = loadAnnotations(legacyLine(), () => targets);
+    targets = TARGETS;
+    const before = store.get('naive/n1');
+    if (!before) throw new Error('no mark');
+    store.update('naive/n1', { frac: { ...before.frac, x: before.frac.x + 0.1 } });
+    const moved = (LINE.points ?? []).map((p) => ({ x: p.x + 0.1, y: p.y }));
+    expectNear(store.get('naive/n1')?.points ?? [], moved);
+    const [node] = (store.toJSON().scenes.naive as { nodes: { data: object }[] }).nodes;
+    expect(node?.data).not.toHaveProperty('points');
+  });
+});
+
+/** A store saved before vertices followed the bounds: one line, its points in content fractions. */
+function legacyLine() {
+  return {
+    version: 1,
+    scenes: {
+      naive: {
+        version: 1,
+        systemLayers: [{ id: 'marks' }],
+        nodes: [
+          {
+            id: 'n1',
+            kind: 'mark',
+            layer: 'marks',
+            pose: { x: 0.1 * 256, y: 0.2 * 170, width: 0.5 * 256, height: 0.4 * 170 },
+            data: {
+              target: 'naive',
+              kind: 'line',
+              points: [
+                { x: 0.1, y: 0.6 },
+                { x: 0.6, y: 0.2 },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  };
+}
+
+describe('a mark on a long target', () => {
+  const LONG: AnnotationTargetInfo[] = [{ id: 'trace', content: { width: 60_000, height: 2_000 } }];
+
+  it('is placed and moved where it was asked, not on a 1/10,000 grid of the target', () => {
+    const store = createMarkStore({ targets: () => LONG });
+    const id = store.add({
+      target: 'trace',
+      kind: 'rect',
+      frac: { x: 12_345 / 60_000, y: 0.25, width: 0.01, height: 0.25 },
+    });
+    const pose = () => {
+      const [painted] = store.paintedMarks('trace');
+      return painted?.mark.pose;
+    };
+    expect(pose()?.x).toBeCloseTo(12_345, 6);
+    store.update(id, { frac: { x: 12_346 / 60_000, y: 0.25, width: 0.01, height: 0.25 } });
+    expect(pose()?.x).toBeCloseTo(12_346, 6);
+  });
+});
+
+describe('a target with no content box', () => {
+  const RECT: AnnotationInit = {
+    target: 'naive',
+    kind: 'rect',
+    frac: { x: 0.25, y: 0.5, width: 0.25, height: 0.25 },
+  };
+
+  it('reads its marks where they were once the instrument stops declaring it', () => {
+    let targets: AnnotationTargetInfo[] = TARGETS;
+    const store = createMarkStore({ targets: () => targets });
+    const id = store.add(RECT);
+    expect(store.get(id)?.frac).toEqual(RECT.frac);
+    targets = [];
+    expect(store.get(id)?.frac).toEqual(RECT.frac);
+    expect(store.query()).toHaveLength(1);
+  });
+
+  it('refuses a write that would place a mark against no content box', () => {
+    let targets: AnnotationTargetInfo[] = [{ id: 'naive', content: { width: 0, height: 0 } }];
+    const store = createMarkStore({ targets: () => targets });
+    expect(() => store.add(RECT)).toThrow(/content box/);
+    targets = TARGETS;
+    const id = store.add(RECT);
+    targets = [];
+    // Meaning still lands; a title does not need to know where the mark is.
+    store.update(id, { title: 'kept' });
+    expect(store.get(id)?.title).toBe('kept');
+  });
+
+  it('refuses a move on a target whose content box was never known', () => {
+    const store = loadAnnotations(
+      {
+        version: 1,
+        scenes: {
+          gone: {
+            version: 1,
+            systemLayers: [{ id: 'marks' }],
+            nodes: [
+              {
+                id: 'n1',
+                kind: 'mark',
+                layer: 'marks',
+                pose: { x: 10, y: 10, width: 20, height: 20 },
+                data: { target: 'gone', kind: 'rect' },
+              },
+            ],
+          },
+        },
+      },
+      () => [],
+    );
+    expect(() => store.update('gone/n1', { frac: RECT.frac })).toThrow(/content box/);
+    const [node] = (store.toJSON().scenes.gone as { nodes: { pose: object }[] }).nodes;
+    expect(node?.pose).toEqual({ x: 10, y: 10, width: 20, height: 20 });
+    store.update('gone/n1', { title: 'still named' });
+    expect(store.get('gone/n1')?.title).toBe('still named');
+  });
 });
 
 describe('paintedMarks', () => {

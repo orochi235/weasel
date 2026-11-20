@@ -29,6 +29,26 @@ describe('a mark set saved with its history', () => {
     expect(again.canRedo()).toBe(false);
   });
 
+  it('undoes a restyle that spanned targets as one step after a reload, apart from a later one', () => {
+    const first = createMarkStore({ targets });
+    const a = first.add({ target: 'a', kind: 'rect', frac: FRAC });
+    const b = first.add({ target: 'b', kind: 'rect', frac: FRAC });
+    first.update(a, { width: 3 }, { coalesceKey: 'restyle:1' });
+    first.update(b, { width: 3 }, { coalesceKey: 'restyle:1' });
+
+    const again = loadAnnotations(JSON.parse(JSON.stringify(first.toJSON())), targets);
+    // A key the earlier session used, handed out again: it must not join the saved group.
+    again.update(a, { width: 5 }, { coalesceKey: 'restyle:1' });
+    again.update(b, { width: 5 }, { coalesceKey: 'restyle:1' });
+    again.undo();
+    expect(again.get(a)?.width).toBe(3);
+    expect(again.get(b)?.width).toBe(3);
+    again.undo();
+    expect(again.get(a)?.width).toBeUndefined();
+    expect(again.get(b)?.width).toBeUndefined();
+    expect(again.query()).toHaveLength(2);
+  });
+
   it('opens with nothing to undo where it was saved without one', () => {
     const first = createMarkStore({ targets });
     first.add({ target: 'a', kind: 'rect', frac: FRAC });

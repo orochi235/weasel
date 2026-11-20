@@ -29,8 +29,8 @@ export { insertedGeometry } from './markTools';
 /** Props for `<AnnotationOverlay>`. */
 export interface AnnotationOverlayProps {
   target: AnnotationTarget;
-  /** The trial's mark scene — shared by every target; a mark's own `target`
-   *  field is what separates them. */
+  /** This target's own mark scene, as `AnnotationsApi.openScene(target.id)` gives it. Never one shared by several
+   *  targets: the pane hit-tests, marquees and paints every mark in the scene it is given. */
   scene: MarkScene;
   /** Snapshotted onto each new mark, so staleness can be answered later. */
   config: unknown;

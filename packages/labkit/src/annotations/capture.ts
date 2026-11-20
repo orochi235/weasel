@@ -1,6 +1,7 @@
 import { asNodeId, renderSceneToPixels, warmRender } from '@weasel-js/core';
 import { serializeSvg } from '@weasel-js/svg';
 import { createMarkDrawOne, type MarkDrawOptions, resolveMarkStyle } from './drawOne';
+import { settledMarkData } from './markShape';
 import type { MarkScene } from './store';
 import { markSvgNodes } from './svgNodes';
 import type { AnnotationData, CaptureOptions, CaptureResult, CaptureSource } from './types';
@@ -65,7 +66,10 @@ function markNodesOf(scene: MarkScene, draw: MarkDrawOptions, scale: number) {
     const node = scene.get(asNodeId(String(id)));
     if (!node) return [];
     return markSvgNodes(
-      { pose: node.pose, data: node.data as AnnotationData },
+      {
+        pose: node.pose,
+        data: settledMarkData(node.data as AnnotationData, node.pose, draw.content),
+      },
       resolveMarkStyle(node.data as AnnotationData, draw),
       { x: scale, y: scale },
     );

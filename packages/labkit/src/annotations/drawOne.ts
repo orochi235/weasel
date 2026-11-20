@@ -1,5 +1,6 @@
 import type { DrawCommand, SceneNode, View } from '@weasel-js/core';
 import type { WorldRect } from './frac';
+import { settledMarkData } from './markShape';
 import { type MarkStyle, markCommands } from './paint';
 import { isStale } from './staleness';
 import type { AnnotationData, AnnotationMeaning } from './types';
@@ -31,7 +32,11 @@ export function createMarkDrawOne(
   view: View,
 ) => DrawCommand[] {
   return (node, pose, view) =>
-    markCommands({ pose, data: node.data }, resolveMarkStyle(node.data, opts), view.scale);
+    markCommands(
+      { pose, data: settledMarkData(node.data, pose, opts.content) },
+      resolveMarkStyle(node.data, opts),
+      view.scale,
+    );
 }
 
 /** How a mark looks, as opposed to where it is. Separate from the callback

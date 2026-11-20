@@ -73,6 +73,16 @@ describe('<MarkList>', () => {
     expect((screen.getAllByRole('combobox')[0] as HTMLSelectElement).value).toBe('fixed');
   });
 
+  it('clears a status on "—", as though the mark never had one', () => {
+    const store = seeded();
+    mount(store, MEANING);
+    const picker = screen.getAllByRole('combobox')[0];
+    if (!picker) throw new Error('no status picker');
+    fireEvent.change(picker, { target: { value: '' } });
+    expect(store.query({ where: (a) => a.status === undefined })).toHaveLength(2);
+    expect(JSON.stringify(store.toJSON())).not.toContain('"status":""');
+  });
+
   it('renames a mark through the store', () => {
     const store = seeded();
     mount(store, MEANING);
@@ -80,6 +90,18 @@ describe('<MarkList>', () => {
     if (!field) throw new Error('no title field');
     fireEvent.change(field, { target: { value: 'missing edge' } });
     expect(store.query({ where: (a) => a.title === 'missing edge' })).toHaveLength(1);
+  });
+
+  it('takes back a burst of typing in a title as one undo step', () => {
+    const store = seeded();
+    mount(store, MEANING);
+    const field = () => screen.getAllByRole('textbox')[0] as HTMLElement;
+    for (const value of ['c', 'cr', 'cra', 'crac', 'crack']) {
+      fireEvent.change(field(), { target: { value } });
+    }
+    expect(store.query({ where: (a) => a.title === 'crack' })).toHaveLength(1);
+    store.undo();
+    expect(store.query({ where: (a) => a.title === 'spurious ring' })).toHaveLength(1);
   });
 
   it("marks a row stale when its target's declared config moved", () => {
