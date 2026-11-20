@@ -266,6 +266,17 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P2) [agent] Nothing checks that fonts cascade the way a component expects.** A component that sets or resets
+  `font-family` (or the `font` shorthand) on its root replaces what its consumer's container chose, and nothing
+  catches it: on 2026-11-19 the audit page's lanes, rebuilt on ui's new `SpanStrip`, silently changed from the
+  page's narrow font to another. Wants a rule for which elements may set a family (the theme's roots, text inputs,
+  mono readouts by token) and a check that holds components to it: a static check over `*.module.css` in the
+  style of `check:numeric` / `check:spacing` for families set outside the allowed places, plus a browser test
+  rendering each ui and labkit component inside a container with a distinctive family and asserting every text
+  node's computed `font-family` is the container's unless the component documents an exception. Then audit
+  ui, labkit, forge and the apps, fixing what it finds. Closes when the check runs in the gate, the browser test
+  covers every exported ui and labkit component, and both pass on main.
+
 - **(P3) [maintainer] Trials in one labkit workspace have no way to share params.** Each trial owns its own
   settings, so two trials meant to show one setting from different angles each get their own copy, and editing it
   in one leaves the other behind. Wants a way for trials to declare that a param is shared, and a decision on where
