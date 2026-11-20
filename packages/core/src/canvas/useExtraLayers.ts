@@ -30,10 +30,24 @@ export function useExtraLayers(
 ): ExtraLayers {
   const [extrasVersion, setExtrasVersion] = useState(0);
   const extrasRef = useRef<Set<RenderLayer<unknown>>>(new Set());
+  // One layer object can be registered by several owners; it stays until the last lets go.
+  const holdsRef = useRef(new Map<RenderLayer<unknown>, number>());
   const registerLayer = useCallback((layer: RenderLayer<unknown>) => {
+    const holds = holdsRef.current;
+    holds.set(layer, (holds.get(layer) ?? 0) + 1);
+    extrasRef.current.delete(layer);
     extrasRef.current.add(layer);
     setExtrasVersion(n => n + 1);
+    let released = false;
     return () => {
+      if (released) return;
+      released = true;
+      const left = (holds.get(layer) ?? 1) - 1;
+      if (left > 0) {
+        holds.set(layer, left);
+        return;
+      }
+      holds.delete(layer);
       extrasRef.current.delete(layer);
       setExtrasVersion(n => n + 1);
     };

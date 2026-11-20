@@ -204,7 +204,9 @@ export interface CanvasExtensionApi {
    *  the whole stack of canvases. `null` when the page paints it all. */
   readonly worker: WorkerCanvasHandle | null;
   /** Register an externally-owned RenderLayer. The layer participates in the
-   *  draw stack and, if it implements `hitTest`, in {@link hitTestExtras}. */
+   *  draw stack and, if it implements `hitTest`, in {@link hitTestExtras}.
+   *  Registering a layer again moves it to the top; it stays until every
+   *  registration of it is released. */
   registerLayer(layer: RenderLayer<unknown>): () => void;
   /**
    * Hit-test the registered layers (topmost-first, last-registered wins) at a
