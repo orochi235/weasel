@@ -308,7 +308,8 @@ export function meshGradientXml(id: string, mesh: MeshGradientPaint): string {
     ? ` interpolate="${mesh.interpolate}"` : '';
   const patches = mesh.patches.map((patch) => {
     const points = patch.points.map((p) => `${trimNumber(p.x)},${trimNumber(p.y)}`).join(' ');
-    const colors = patch.colors.join(' ');
+    // `;`, not a space: a CSS color such as `rgb(255, 0, 0)` holds spaces of its own.
+    const colors = patch.colors.join(';');
     return `<${P}:patch points="${points}" colors="${colors}"/>`;
   }).join('');
   return (

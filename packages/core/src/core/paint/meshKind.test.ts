@@ -88,7 +88,7 @@ describe('the mesh-gradient kind', () => {
     // Twelve points, so a reader never has to infer a shared edge.
     const points = /points="([^"]+)"/.exec(xml)![1].split(' ');
     expect(points).toHaveLength(12);
-    const colors = /colors="([^"]+)"/.exec(xml)![1].split(' ');
+    const colors = /colors="([^"]+)"/.exec(xml)![1].split(';');
     expect(colors).toHaveLength(4);
     expect(colors[0]).toBe('#ff0000ff');
   });

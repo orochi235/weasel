@@ -241,7 +241,9 @@ function readMeshGradient(el: Element, onWarn?: (m: string) => void): Paint | nu
         const [x, y] = pair.split(',').map(Number);
         return { x, y };
       });
-    const colors = (child.getAttribute('colors') ?? '').trim().split(/\s+/).filter(Boolean);
+    const colorList = (child.getAttribute('colors') ?? '').trim();
+    // Written `;`-separated; a file from before that is space-separated hex.
+    const colors = colorList.split(colorList.includes(';') ? ';' : /\s+/).map((c) => c.trim()).filter(Boolean);
     const sane = (points.length === 12 || points.length === 16)
       && points.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y))
       && colors.length === 4;

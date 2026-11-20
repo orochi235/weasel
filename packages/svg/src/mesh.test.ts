@@ -47,6 +47,18 @@ describe('mesh gradients in SVG', () => {
     });
   });
 
+  it('round-trips corner colors written in functional notation', () => {
+    const colors = ['rgb(255, 0, 0)', 'oklch(0.7 0.1 30)', 'hsl(120 50% 50% / 0.5)', '#fff'];
+    const mesh = { ...MESH, patches: [{ ...MESH.patches[0], colors }] };
+    const back = paintOf(serializeSvg(meshSquare(mesh))) as unknown as typeof MESH;
+    expect(back.patches[0].colors).toEqual(colors);
+  });
+
+  it('reads the space-separated colors of a file written before the separator was `;`', () => {
+    const svg = serializeSvg(meshSquare()).replace(/colors="([^"]+)"/, (_, c: string) => `colors="${c.split(';').join(' ')}"`);
+    expect((paintOf(svg) as unknown as typeof MESH).patches[0].colors).toEqual(MESH.patches[0].colors);
+  });
+
   it('round-trips the blend space', () => {
     const svg = serializeSvg(meshSquare({ ...MESH, interpolate: 'oklch' }));
     expect(svg).toContain('interpolate="oklch"');
