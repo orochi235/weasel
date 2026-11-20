@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { SvgGroupNode, SvgPathNode } from './types';
 import {
   deriveStyle, EMPTY_STYLE, ownProp, parseDeclarations, parseStylesheet, resolveCurrentColor, specificity,
 } from './cascade';
@@ -250,6 +251,11 @@ describe('resolveCurrentColor', () => {
   });
   it('defaults to black when color is unset', () => {
     expect(resolveCurrentColor('currentColor', EMPTY_STYLE)).toBe('#000000');
+  });
+  it('resolves a currentColor fallback after a url() reference', () => {
+    expect(resolveCurrentColor('url(#missing) currentColor', { color: '#ff0000' })).toBe('url(#missing) #ff0000');
+    const { nodes } = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><g color="red"><rect width="1" height="1" fill="url(#missing) currentColor"/></g></svg>');
+    expect(((nodes[0] as SvgGroupNode).children[0] as SvgPathNode).fill).toEqual({ kind: 'solid', color: '#ff0000' });
   });
   it('passes other values through unchanged', () => {
     expect(resolveCurrentColor('#123456', { color: '#00ff00' })).toBe('#123456');
