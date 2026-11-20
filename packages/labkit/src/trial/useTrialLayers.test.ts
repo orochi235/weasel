@@ -5,7 +5,12 @@ import { useTrialLayers } from './useTrialLayers';
 
 const draw = () => undefined;
 
-function layersOf(canvas: string[], listed: string[], layerOrder: string[] | null) {
+function layersOf(
+  canvas: string[],
+  listed: (string | { id: string; label: string; alwaysOn?: boolean })[],
+  layerOrder: string[] | null,
+  layerVisibility: Record<string, boolean> = {},
+) {
   const instrument = {
     name: 'Probe',
     initialState: () => ({}),
@@ -19,7 +24,7 @@ function layersOf(canvas: string[], listed: string[], layerOrder: string[] | nul
       state: {},
       config: {},
       over: undefined,
-      layerVisibility: {},
+      layerVisibility,
       layerOrder,
       clock: undefined,
     }),
@@ -45,5 +50,20 @@ describe('useTrialLayers', () => {
   it('lists the layers in the order the canvas draws them', () => {
     const { layerItems } = layersOf(['a', 'b', 'c'], ['a', 'b', 'c'], ['c', 'a', 'b']);
     expect(layerItems.map((l) => l.id)).toEqual(['c', 'a', 'b']);
+  });
+
+  it('draws an always-on layer whatever its visibility says, as the list shows it', () => {
+    const { canvasLayers, visibleLayers, layerItems } = layersOf(
+      ['grid', 'hud'],
+      ['grid', { id: 'hud', label: 'HUD', alwaysOn: true }],
+      null,
+      { grid: false, hud: false },
+    );
+    expect(canvasLayers.map((l) => [l.id, l.visible])).toEqual([
+      ['grid', false],
+      ['hud', true],
+    ]);
+    expect([...visibleLayers]).toEqual(['hud']);
+    expect(layerItems.find((l) => l.id === 'hud')?.visible).toBe(true);
   });
 });

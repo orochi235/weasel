@@ -28,12 +28,20 @@ export function useTrialLayers({
   layerOrder,
   clock,
 }: TrialLayersInput) {
+  const layerDescriptors: LayerDescriptor[] = useMemo(() => {
+    if (!instrument.layers) return [];
+    return instrument.layers.ids.map((l) => (typeof l === 'string' ? { id: l, label: l } : l));
+  }, [instrument.layers]);
+
+  // An always-on layer is shown whatever its visibility says, as its row in the list shows it.
+  const shown = useMemo(() => {
+    const alwaysOn = new Set(layerDescriptors.filter((l) => l.alwaysOn).map((l) => l.id));
+    return (id: string): boolean => alwaysOn.has(id) || getOwn(layerVisibility, id) !== false;
+  }, [layerDescriptors, layerVisibility]);
+
   const visibleLayers = useMemo(
-    () =>
-      (instrument.canvas?.layers ?? [])
-        .filter((l) => getOwn(layerVisibility, l.id) !== false)
-        .map((l) => l.id),
-    [instrument.canvas, layerVisibility],
+    () => (instrument.canvas?.layers ?? []).filter((l) => shown(l.id)).map((l) => l.id),
+    [instrument.canvas, shown],
   );
 
   const canvasLayers: CanvasLayerDescriptor[] = useMemo(() => {
@@ -42,7 +50,7 @@ export function useTrialLayers({
     const ordered = layerOrder ? inListedOrder(baseLayers, layerOrder) : baseLayers;
     return ordered.map((layer) => ({
       id: layer.id,
-      visible: getOwn(layerVisibility, layer.id) !== false,
+      visible: shown(layer.id),
       timed: layer.timed === true,
       render: (ctx, view, frame) => {
         // Camera applied here, so a layer draws in world coordinates. `zoom`
@@ -59,12 +67,7 @@ export function useTrialLayers({
         });
       },
     }));
-  }, [instrument.canvas, state, config, over, layerVisibility, layerOrder, clock]);
-
-  const layerDescriptors: LayerDescriptor[] = useMemo(() => {
-    if (!instrument.layers) return [];
-    return instrument.layers.ids.map((l) => (typeof l === 'string' ? { id: l, label: l } : l));
-  }, [instrument.layers]);
+  }, [instrument.canvas, state, config, over, shown, layerOrder, clock]);
 
   // In the order the canvas draws them, with the always-on layers pinned
   // below the rest, where a drag cannot reach past them.
@@ -78,9 +81,9 @@ export function useTrialLayers({
       id: l.id,
       label: l.label,
       fixed: l.alwaysOn === true,
-      visible: l.alwaysOn === true || getOwn(layerVisibility, l.id) !== false,
+      visible: shown(l.id),
     }));
-  }, [layerDescriptors, layerOrder, layerVisibility]);
+  }, [layerDescriptors, layerOrder, shown]);
 
   return { visibleLayers, canvasLayers, layerDescriptors, layerItems };
 }
