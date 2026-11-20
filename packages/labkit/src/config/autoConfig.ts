@@ -110,7 +110,9 @@ function demand(
   resolvers: ReadonlyMap<string, Resolver | undefined>,
   need: (path: string) => void,
 ): Record<string, unknown> {
-  return new Proxy(read(), {
+  // A target of its own, never the config: every trap reads `read()`, and a frozen config as the target would
+  // make reporting a key a resolver has since written break the proxy's invariants.
+  return new Proxy({} as Record<string, unknown>, {
     get(_target, key) {
       if (typeof key === 'string' && resolvers.has(key)) need(key);
       return Reflect.get(read(), key);
@@ -122,7 +124,8 @@ function demand(
       return Reflect.ownKeys(read());
     },
     getOwnPropertyDescriptor(_target, key) {
-      return Reflect.getOwnPropertyDescriptor(read(), key);
+      const found = Reflect.getOwnPropertyDescriptor(read(), key);
+      return found && { ...found, configurable: true };
     },
   });
 }
