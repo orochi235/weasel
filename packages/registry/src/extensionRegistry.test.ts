@@ -95,4 +95,14 @@ describe('createExtensionRegistry', () => {
     child.register('b', 'two');
     expect(onChange).toHaveBeenCalledTimes(2);
   });
+
+  it('lists its ids and its parent\'s in the order each was first registered', () => {
+    const parent = make();
+    const child = make(parent);
+    child.register('a', 'one');
+    parent.register('b', 'two');
+    parent.register('c', 'three');
+    child.register('c', 'mine', { replace: true });
+    expect(child.entries().map((e) => [e.key, e.value])).toEqual([['a', 'one'], ['b', 'two'], ['c', 'mine']]);
+  });
 });
