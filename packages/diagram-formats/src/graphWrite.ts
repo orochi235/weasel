@@ -121,13 +121,14 @@ export function graphOut(doc: DiagramDocument, opts: WriteOptions | undefined, f
 
 /**
  * A CSS color in a spelling every graph format reads: any color function (`rgb()`, `hsl()`, `oklch()`, `color()`) as
- * hex, short hex long. A name passes through.
+ * hex, short hex long. A name passes through, unless `names` is `'hex'`: Graphviz reads a bare name as X11, where
+ * `green`, `gray`, `maroon` and `purple` are other colors than CSS's, so DOT writes every name but `transparent` as hex.
  */
-export function hexColor(css: string): string {
+export function hexColor(css: string, names: 'keep' | 'hex' = 'keep'): string {
   if (css.startsWith('#')) return tryNormalizeHex(css) ?? css;
   const rgba = tryParseColor(css);
   if (!rgba) return css;
-  if (/^[a-z]+$/i.test(css.trim())) return css;
+  if (/^[a-z]+$/i.test(css.trim()) && (names === 'keep' || css.trim().toLowerCase() === 'transparent')) return css;
   // An alpha written out is kept, `ff` included: a fourth comma-separated value or one after `/`.
   return normalizeHex(rgbaToHex(rgba), /\/|(?:,[^,]*){3}/.test(css) || rgba[3] < 1 ? 'rgba' : 'rgb');
 }

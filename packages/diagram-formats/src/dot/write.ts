@@ -21,7 +21,7 @@ const attrList = (attrs: readonly (string | null)[]) => {
   const set = attrs.filter((a): a is string => a !== null);
   return set.length > 0 ? ` [${set.join(', ')}]` : '';
 };
-const color = (key: string, value: string | undefined) => (value === undefined ? null : `${key}="${hexColor(value)}"`);
+const color = (key: string, value: string | undefined) => (value === undefined ? null : `${key}="${hexColor(value, 'hex')}"`);
 
 function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
   const { shape, rounded, missing, marked } = shapeOf(node.outline);

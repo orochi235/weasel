@@ -50,8 +50,27 @@ function hsvHex(h: number, s: number, v: number): string {
   return rgbaToHex([f(5), f(3), f(1)]);
 }
 
-/** A color as CSS reads it: the first of a list, an HSV triple as hex, `none` as transparent, and an X11 or SVG scheme
- *  dropped. `undefined`
+/** The X11 names Graphviz reads as other colors than CSS gives them. */
+const X11_NOT_CSS: Readonly<Record<string, string>> = {
+  gray: '#bebebe', grey: '#bebebe', green: '#00ff00', maroon: '#b03060', purple: '#a020f0',
+};
+
+/** An X11 name as CSS reads it: one {@link X11_NOT_CSS} names as its hex, `grayN` and `greyN` (N of 100) as a gray, and
+ *  any other as itself. */
+function x11Color(name: string): string {
+  const lower = name.toLowerCase();
+  const differs = getOwn(X11_NOT_CSS, lower);
+  if (differs !== undefined) return differs;
+  const level = /^gr[ae]y(\d{1,3})$/.exec(lower);
+  if (level !== null && Number(level[1]) <= 100) {
+    const v = Math.round(Number(level[1]) * 2.55) / 255;
+    return rgbaToHex([v, v, v]);
+  }
+  return name;
+}
+
+/** A color as CSS reads it: the first of a list, an HSV triple as hex, `none` as transparent, a bare or X11 name as
+ *  Graphviz's X11 scheme draws it, and an SVG scheme's name as CSS's. `undefined`
  *  for a color in another scheme, such as Brewer's `/blues9/3`, which names an entry of a palette CSS does not have. */
 export function dotColor(value: string): string | undefined {
   const first = value.split(':')[0]!.split(';')[0]!.trim();
@@ -59,8 +78,9 @@ export function dotColor(value: string): string | undefined {
   if (hsv !== null) return hsvHex(Number(hsv[1]), Number(hsv[2]), Number(hsv[3]));
   if (first.toLowerCase() === 'none') return 'transparent';
   const scheme = /^\/([^/]*)\/(.*)$/.exec(first);
-  if (scheme === null) return first;
-  return /^(?:|x11|svg)$/i.test(scheme[1]!) ? scheme[2] : undefined;
+  if (scheme === null) return first.startsWith('#') ? first : x11Color(first);
+  if (/^svg$/i.test(scheme[1]!)) return scheme[2];
+  return /^(?:|x11)$/i.test(scheme[1]!) ? x11Color(scheme[2]!) : undefined;
 }
 
 const OUTLINES: Readonly<Record<string, Outline>> = {

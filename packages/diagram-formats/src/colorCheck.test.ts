@@ -19,10 +19,10 @@ describe('one color check for every reader', () => {
   });
 
   it('DOT drops a color it cannot draw, an X11 name CSS lacks or a palette entry, and reads none as transparent', () => {
-    const r = readDot('digraph { a [color="grey50", fontcolor="/blues9/3", style=filled, fillcolor=none]; a -> b [color="red"] }');
+    const r = readDot('digraph { a [color="lightgoldenrod", fontcolor="/blues9/3", style=filled, fillcolor=none]; a -> b [color="red"] }');
     expect(graph(r).data.nodes[0]!.colors).toEqual({ fill: 'transparent' });
     expect(graph(r).data.edges[0]!.colors).toEqual({ stroke: 'red' });
-    expect(r.warnings).toContain('DOT colors a diagram cannot draw were dropped: grey50, /blues9/3.');
+    expect(r.warnings).toContain('DOT colors a diagram cannot draw were dropped: lightgoldenrod, /blues9/3.');
   });
 
   it('a Mermaid flowchart drops a style or link style color it cannot draw', () => {

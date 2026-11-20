@@ -16,6 +16,24 @@ describe('DOT values', () => {
     expect(hexColor('color(srgb 0 0 1)')).toBe('#0000ff');
   });
 
+  it('writes a name as hex where DOT would read it as another X11 color', () => {
+    expect(hexColor('green')).toBe('green');
+    expect(hexColor('green', 'hex')).toBe('#008000');
+    expect(hexColor('transparent', 'hex')).toBe('transparent');
+    expect(dotColor(hexColor('gray', 'hex'))).toBe('#808080');
+  });
+
+  it('reads a bare or X11 name as Graphviz draws it, and an SVG one as CSS', () => {
+    expect(dotColor('green')).toBe('#00ff00');
+    expect(dotColor('/x11/Gray')).toBe('#bebebe');
+    expect(dotColor('purple')).toBe('#a020f0');
+    expect(dotColor('/svg/green')).toBe('green');
+    expect(dotColor('gray50')).toBe('#7f7f7f');
+    expect(dotColor('gray90')).toBe('#e5e5e5');
+    expect(dotColor('grey100')).toBe('#ffffff');
+    expect(dotColor('steelblue')).toBe('steelblue');
+  });
+
   it('reads back what it writes', () => {
     expect(dotColor(hexColor('rgba(0, 0, 255, 1)'))).toBe('#0000ffff');
     const lines = ['say "hi"', 'back\\slash'];
