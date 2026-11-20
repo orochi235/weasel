@@ -1,3 +1,4 @@
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import { useMemo, useState } from 'react';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
@@ -48,7 +49,7 @@ export function JobsFeed({ runs, onLight }: { runs: readonly AuditRun[]; onLight
                     >
                       {job.area}
                     </td>
-                    <td className={`${s.l} ${s.what}`}>{job.what}</td>
+                    <td className={`${s.l} ${s.what}`}><InlineMarkdown text={job.what} /></td>
                     <td className={`${s.l} ${s.area}`}>{job.node ?? ''}</td>
                     <td>{job.minutes !== undefined ? job.minutes.toFixed(1) : ''}</td>
                     <td>{job.tokens !== undefined ? job.tokens.toFixed(2) : ''}</td>

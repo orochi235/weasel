@@ -1,3 +1,4 @@
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import { useLayoutEffect, useRef } from 'react';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
@@ -81,7 +82,7 @@ function RunStrip({ run, now, mode, onMode, hideComplete, onHideComplete, on }: 
     <section className={s.run} aria-label={`Round ${run.round}`}>
       <div className={s.pulse} aria-hidden="true" />
       <div className={s.what}>{headlineOf(run)}</div>
-      <div className={s.line} title={lastLineOf(run)}>{lastLineOf(run)}</div>
+      <div className={s.line} title={lastLineOf(run)}><InlineMarkdown text={lastLineOf(run)} /></div>
       <div className={s.view}>
         <Checkbox isSelected={hideComplete} onChange={onHideComplete}>Hide complete</Checkbox>
         <SegmentedBar aria-label="Lane view" size="sm" items={MODES} value={mode} onChange={(v) => v && onMode(v)} />

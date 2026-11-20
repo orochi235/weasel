@@ -1,3 +1,4 @@
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import type { Grade } from '@weasel-js/theme';
@@ -17,8 +18,8 @@ function Defect({ d }: { d: AuditDefect }) {
         <Badge shape="pill" size="xs" variant={d.verdict === 'fixed' ? 'solid' : 'outline'} {...(grade ? { grade } : {})}>{d.verdict}</Badge>
         {d.from && <span className={s.from}>{d.from}</span>}
       </div>
-      <div className={s.claim}>{d.claim}</div>
-      {d.note && <div className={s.note}>{d.note}</div>}
+      <div className={s.claim}><InlineMarkdown text={d.claim} /></div>
+      {d.note && <div className={s.note}><InlineMarkdown text={d.note} /></div>}
     </li>
   );
 }
@@ -41,7 +42,7 @@ export function AreaDefects({ id, version }: { id: string; version: string }) {
           {r.commits && r.commits.length > 0 && (
             <>
               <p className={s.hint}>Its commits:</p>
-              <ul className={s.commits}>{r.commits.map((c, i) => <li key={i}>{c}</li>)}</ul>
+              <ul className={s.commits}>{r.commits.map((c, i) => <li key={i}><InlineMarkdown text={c} /></li>)}</ul>
               <p className={s.hint}>What the reviewers found:</p>
             </>
           )}
