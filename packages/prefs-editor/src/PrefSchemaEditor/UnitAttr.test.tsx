@@ -96,6 +96,19 @@ describe('the unit attribute', () => {
     expect(seen.unit!.accepts).toEqual({ mil: 0.1, m: 100 });
   });
 
+  it('lets a suffix be typed through a name another holds, writing it only once it is its own', () => {
+    const seen: Seen = {};
+    renderWithIcons(<Unit seen={seen} start={{ scale: 10, accepts: { m: 100 } }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add accepted suffix' }));
+    type('Accepted suffix 2', 'm');
+    expect(box('Accepted suffix 2')).toHaveValue('m');
+    expect(box('Accepted suffix 2')).toHaveAttribute('aria-invalid', 'true');
+    expect(seen.unit).toEqual({ scale: 10, accepts: { m: 100 } });
+    type('Accepted suffix 2', 'mm');
+    expect(box('Accepted suffix 2')).not.toHaveAttribute('aria-invalid');
+    expect(seen.unit).toEqual({ scale: 10, accepts: { m: 100, mm: 1 } });
+  });
+
   it('refuses an accepted suffix that starts with a digit, which a typed number would end in', () => {
     const seen: Seen = {};
     renderWithIcons(<Unit seen={seen} start={{ scale: 10, accepts: { mm: 0.1, m: 100 } }} />);

@@ -36,16 +36,22 @@ export function UnitEditor({ ctx }: { ctx: LeafContext }) {
   const write = (patch: Partial<PrefLinearUnit>) => ctx.setValue(tidy({ ...unit, ...patch }));
   const held: Accepted = Object.entries(unit.accepts ?? {});
   const [rows, setRows] = useState(held);
-  if (!sameRows(named(rows), held)) setRows(held);
+  // A name another row holds, shown in row `at` as it is typed and written only once it is that row's own.
+  const [clash, setClash] = useState<{ at: number; name: string } | null>(null);
+  if (!sameRows(named(rows), held)) {
+    setRows(held);
+    setClash(null);
+  }
   const setAccepted = (next: Accepted) => {
     setRows(next);
+    setClash(null);
     write({ accepts: Object.fromEntries(named(next)) });
   };
   const rename = (i: number, name: string) => {
-    if (name !== '' && rows.some(([other], j) => j !== i && other === name)) return;
     // `52` would read as 5 of a unit named `2`, and an all-digit key leaves its place in the object's order.
     if (/^\d/.test(name)) return;
-    setAccepted(rows.map((row, j) => (j === i ? [name, row[1]] : row)));
+    if (name !== '' && rows.some(([other], j) => j !== i && other === name)) setClash({ at: i, name });
+    else setAccepted(rows.map((row, j) => (j === i ? [name, row[1]] : row)));
   };
   const rescale = (i: number, patch: Partial<Required<UnitScale>>) => {
     const next = { ...entryScale(rows[i]![1]), ...patch };
@@ -78,14 +84,14 @@ export function UnitEditor({ ctx }: { ctx: LeafContext }) {
         const label = `Accepted suffix ${i + 1}`;
         return (
           <div key={i} className={s.acceptRow}>
-            <Input aria-label={label} value={name} onChange={(v) => rename(i, v)} />
+            <Input aria-label={label} value={clash?.at === i ? clash.name : name} invalid={clash?.at === i} onChange={(v) => rename(i, v)} />
             <NumberText label={`${label} scale`} value={factor} accept={nonZero} onCommit={(n) => rescale(i, { factor: n ?? 1 })} />
             <NumberText label={`${label} offset`} value={offset === 0 ? undefined : offset} onCommit={(n) => rescale(i, { offset: n ?? 0 })} />
             <Button {...CLOSE_BUTTON_PROPS} aria-label={`Remove accepted suffix ${i + 1}`} onClick={() => setAccepted(rows.filter((_, j) => j !== i))} />
           </div>
         );
       })}
-      <Button size="sm" onClick={() => setRows([...rows, ['', 1]])}>Add accepted suffix</Button>
+      <Button size="sm" onClick={() => { setRows([...rows, ['', 1]]); setClash(null); }}>Add accepted suffix</Button>
     </div>
   );
 }
