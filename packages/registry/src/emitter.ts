@@ -62,7 +62,8 @@ export interface KeyedEmitter<K, TArgs extends unknown[] = []> {
   subscribe(key: K, listener: (...args: TArgs) => void): () => void;
   /** Call every listener `key` held when the call began, as {@link Emitter.emit} does. */
   emit(key: K, ...args: TArgs): void;
-  /** Forget every listener under `key`. An unsubscribe from before it touches no later subscription. */
+  /** Forget every listener under `key`; one a pass running now has not reached yet is not called. An unsubscribe
+   *  from before it touches no later subscription. */
   clear(key: K): void;
   /** How many listeners `key` holds. */
   size(key: K): number;
@@ -74,29 +75,36 @@ export interface KeyedEmitter<K, TArgs extends unknown[] = []> {
  * or after `clear` — removes only its own subscription, never the emitter a later one made.
  */
 export function createKeyedEmitter<K, TArgs extends unknown[] = []>(): KeyedEmitter<K, TArgs> {
-  const byKey = new Map<K, Emitter<TArgs>>();
+  /** Each key's emitter, and the unsubscribe of every subscription it holds, so `clear` can end them mid-pass. */
+  const byKey = new Map<K, { emitter: Emitter<TArgs>; offs: Set<() => void> }>();
   return {
     subscribe(key, listener) {
-      let emitter = byKey.get(key);
-      if (!emitter) {
-        emitter = createEmitter<TArgs>();
-        byKey.set(key, emitter);
+      let mine = byKey.get(key);
+      if (!mine) {
+        mine = { emitter: createEmitter<TArgs>(), offs: new Set() };
+        byKey.set(key, mine);
       }
-      const mine = emitter;
-      const off = mine.subscribe(listener);
+      const held = mine;
+      const off = held.emitter.subscribe(listener);
+      held.offs.add(off);
       return () => {
         off();
-        if (mine.size === 0 && byKey.get(key) === mine) byKey.delete(key);
+        held.offs.delete(off);
+        if (held.emitter.size === 0 && byKey.get(key) === held) byKey.delete(key);
       };
     },
     emit(key, ...args) {
-      byKey.get(key)?.emit(...args);
+      byKey.get(key)?.emitter.emit(...args);
     },
     clear(key) {
+      const held = byKey.get(key);
+      if (!held) return;
       byKey.delete(key);
+      for (const off of held.offs) off();
+      held.offs.clear();
     },
     size(key) {
-      return byKey.get(key)?.size ?? 0;
+      return byKey.get(key)?.emitter.size ?? 0;
     },
   };
 }
