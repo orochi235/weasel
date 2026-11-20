@@ -394,4 +394,12 @@ describe('writeText', () => {
       expectOutlinedInk((await render(textCmd([run('H', { ...bold, ...over })], { style }))).content, paint);
     }
   });
+
+  it('draws nothing for faked bold with no fill and a stroke whose dash is non-finite', async () => {
+    await registerAtlas('faux');
+    const over = { fill: undefined, stroke: { paint: { color: '#ff0000' }, width: 2, dash: [NaN, 2] } };
+    const { content, skipped } = await render(textCmd([run('H', { fontFamily: 'faux', fontWeight: 700, ...over })], { style: { fontFamily: 'faux', fontSize: SIZE } }));
+    expect(content).not.toMatch(/\n(f|S|Tj|TJ)\n/);
+    expect(skipped).toEqual([]);
+  });
 });
