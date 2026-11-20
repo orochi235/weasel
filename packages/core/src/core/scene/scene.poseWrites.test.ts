@@ -116,6 +116,51 @@ describe('Scene.onPoseWrite', () => {
     expect(seen).toEqual([[expect.objectContaining({ id: A, from: at(0), to: at(6) })]]);
   });
 
+  it('leaves out a descendant the change both added and removed', () => {
+    const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
+    const g = scene.add({ kind: 'group', layer: 'l', pose: at(0), data: null });
+    const k = scene.add({ kind: 'mark', layer: 'l', parent: g, pose: at(4), data: null });
+    const removed: PoseRemoval<RectPose>[] = [];
+    const seen: PoseWrite<RectPose>[] = [];
+    scene.onPoseWrite((w, r) => { seen.push(...w); removed.push(...r); });
+    scene.batch('fill and drop', () => {
+      scene.add({ kind: 'mark', layer: 'l', parent: g, pose: at(8), data: null });
+      scene.remove(g);
+    });
+    expect(seen).toEqual([]);
+    expect(removed.map((r) => r.id)).toEqual([g]);
+    expect(removed[0]!.children.map((c) => (c.node as { id: NodeId }).id)).toEqual([k]);
+  });
+
+  it('reports a child removed with its parent and put back within one change as moved', () => {
+    const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
+    const g = scene.add({ kind: 'group', layer: 'l', pose: at(0), data: null });
+    const k = scene.add({ kind: 'mark', layer: 'l', parent: g, pose: at(4), data: null });
+    const removed: PoseRemoval<RectPose>[] = [];
+    const seen: PoseWrite<RectPose>[] = [];
+    scene.onPoseWrite((w, r) => { seen.push(...w); removed.push(...r); });
+    scene.batch('reinsert', () => {
+      scene.remove(g);
+      scene.add({ id: g, kind: 'group', layer: 'l', pose: at(0), data: null });
+      scene.add({ id: k, kind: 'mark', layer: 'l', parent: g, pose: at(5), data: null });
+    });
+    expect(removed).toEqual([]);
+    expect(seen).toEqual([expect.objectContaining({ id: k, from: at(4), to: at(5) })]);
+  });
+
+  it('still reports a child as removed when only its parent is put back', () => {
+    const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
+    const g = scene.add({ kind: 'group', layer: 'l', pose: at(0), data: null });
+    const k = scene.add({ kind: 'mark', layer: 'l', parent: g, pose: at(4), data: null });
+    const removed: PoseRemoval<RectPose>[] = [];
+    scene.onPoseWrite((_w, r) => removed.push(...r));
+    scene.batch('reinsert', () => {
+      scene.remove(g);
+      scene.add({ id: g, kind: 'group', layer: 'l', pose: at(0), data: null });
+    });
+    expect(removed.map((r) => [r.id, r.parent, r.pose])).toEqual([[k, g, at(4)]]);
+  });
+
   it('reports a node an undo brings back as added', () => {
     const { scene, seen } = setup();
     scene.remove(A);

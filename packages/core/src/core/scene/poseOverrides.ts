@@ -66,10 +66,21 @@ export function createSceneOverrides<TPose, TData = unknown>(
     fold.drop(id);
   }
 
+  function claim(id: NodeId, entry: Entry): void {
+    stacks.claim(id, entry);
+    invalidate(id);
+  }
+
+  function release(id: NodeId, entry: Entry | undefined): boolean {
+    if (!(entry === undefined ? stacks.drop(id) : stacks.release(id, entry))) return false;
+    if (!plies.has(id)) forget(id);
+    invalidate(id);
+    return true;
+  }
+
   const table: PoseOverrides<TPose, TData> = {
     set(id, entry) {
-      stacks.claim(id, entry);
-      invalidate(id);
+      claim(id, entry);
       published();
     },
     get(id) {
@@ -98,10 +109,7 @@ export function createSceneOverrides<TPose, TData = unknown>(
       return [...plies.keys()];
     },
     clear(id, entry) {
-      if (!(entry === undefined ? stacks.drop(id) : stacks.release(id, entry))) return;
-      if (!plies.has(id)) forget(id);
-      invalidate(id);
-      published();
+      if (release(id, entry)) published();
     },
     clearAll() {
       if (plies.size === 0) return;
@@ -120,7 +128,11 @@ export function createSceneOverrides<TPose, TData = unknown>(
     getGeneration() {
       return generation;
     },
-    hold: () => createPoseHold(table, (id) => plies.get(id)),
+    // A hold's frame claims and releases without a notice each, and its `commit` gives the one.
+    hold: () => createPoseHold(
+      { set: claim, clear: (id, entry) => { release(id, entry); }, has: table.has, ids: table.ids, commit: table.commit },
+      (id) => plies.get(id),
+    ),
   };
   return table;
 }

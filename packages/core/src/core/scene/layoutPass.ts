@@ -16,7 +16,8 @@
  * after. A child already where the strategy puts it is left out, so a pass
  * that changes nothing writes nothing. A child the pass moves takes its own
  * descendants along (`carriedDescendants`). A container this pass resizes is
- * arranged in turn, so nested layouts settle in the same edit.
+ * arranged in turn, and so is the laid-out parent of any node it resizes, so
+ * nested layouts settle in the same edit.
  */
 import {
   composeWorldPose,
@@ -83,6 +84,13 @@ export function resized<TPose>(frame: ResolvedLayoutFrame<TPose>, id: NodeId, fr
  *  only nested layouts that keep resizing each other get close. */
 const MAX_PASSES = 16;
 
+/** Queue each of `ids` that has a layout and is not the container arranging now. */
+function queueLaidOut(
+  queue: NodeId[], ids: readonly (NodeId | null)[], current: NodeId | null, layoutOf: (id: NodeId) => unknown,
+): void {
+  for (const c of ids) if (c !== null && c !== current && layoutOf(c) !== null && !queue.includes(c)) queue.push(c);
+}
+
 export function runLayoutPass<TPose>(
   source: LayoutPassSource<TPose>,
   layoutOf: (id: NodeId) => LayoutStrategy<TPose> | null,
@@ -114,9 +122,9 @@ export function runLayoutPass<TPose>(
     const before = poseOf(id);
     if (samePoseValue(before, pose)) return;
     out.set(id, pose);
-    // A container its own `depart` or `arrive` resized is arranged already.
-    if (id !== current && layoutOf(id) !== null
-      && resized(frame, id, before, pose)) queue.push(id);
+    if (!resized(frame, id, before, pose)) return;
+    // One its own `depart` or `arrive` resized is arranged already; its parent's arrangement is laid out around it.
+    queueLaidOut(queue, [id, source.get(id)?.parent ?? null], current, layoutOf);
   };
   let current: NodeId | null = null;
 

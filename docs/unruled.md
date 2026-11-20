@@ -2782,3 +2782,8 @@ Calls the lanes made without a ruling:
 - 2026-11-19 (the fixer's call): `createPageRun` throws on a scene that already has a page run. A second run's pages
   drew and clipped, but `pageRunOf` finds only the first, so every page reader and edit missed them. Handing the call
   to `setPages` on the existing run was the alternative.
+## Audit round forty-one (2026-11-19): core's scene
+
+- 2026-11-19 (the fixer's call): a tween draws at most 4096 steps (`MAX_TWEEN_STEPS`), and warns in development when its
+  `steps` or `distance` asks for more; a `steps` of `NaN` draws none. Drawing every step asked for, which ran out of
+  memory or never returned on a tiny `distance` or an infinite `steps`, was the alternative.

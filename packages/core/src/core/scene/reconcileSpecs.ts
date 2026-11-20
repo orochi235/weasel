@@ -120,8 +120,13 @@ function reorderToSpecs<TData, TLayer extends string, TPose>(
     const siblings = parent === null ? scene.roots : scene.childrenOf(parent);
     const slots = siblings.flatMap((id, i) => (named.has(id) ? [i] : []));
     const order = wanted.filter((id) => siblings.includes(id));
-    // Filling the slots left to right, each move leaves every earlier slot as it should end.
-    order.forEach((id, k) => scene.reorder(id, slots[k]!));
+    const final = [...siblings];
+    slots.forEach((slot, k) => { final[slot] = order[k]!; });
+    // Left to right, each move brings a later child forward and leaves every earlier place as it ends.
+    final.forEach((id, i) => {
+      const now = parent === null ? scene.roots : scene.childrenOf(parent);
+      if (now[i] !== id) scene.reorder(id, i);
+    });
   }
 }
 
