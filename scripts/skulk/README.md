@@ -17,7 +17,7 @@ completes (`review 3/16 …`).
 |---|---|
 | plan | Areas come from the partition (below). The round number is one past the highest used by a `docs/audits/round-<N>/` directory, `docs/hardening.md`, or a branch named `audit<N>-…`. |
 | freeze | A detached worktree at `main`'s tip, `.worktrees/audit<N>-frozen-night`. That sha is the round's commit. |
-| sweep | The control sweep (below) at the frozen commit, one `onto do --gui` job that starts with the reviews and runs beside them. Its dead controls go to one fixer. The night patches nothing until both are done. |
+| sweep | Only with `--sweep`: the control sweep (below) at the frozen commit, one `onto do --gui` job that starts with the reviews and runs beside them. Its dead controls go to one fixer. The night patches nothing until both are done. |
 | review | Per area, two reviewer jobs, each `onto do` from the frozen tree with the brief in `briefs/reviewer.md` and the area's file list. Reviewers may read, search, and run `git log/show/diff/blame`, and write only `.skulk/out/`. Each lists the files it read. |
 | match | One haiku job per area pairs the two lists (`briefs/matcher.md`); the script keeps only one-to-one pairs and computes the estimate. |
 | fix | Per area with findings, one fixer job (`briefs/fixer.md`), permissions bypassed, in the node's own synced tree. It first commits the synced tree and checks it hashes to the frozen commit's tree, installs if the lockfile changed, then hands back its commits as an mbox. |
@@ -39,7 +39,7 @@ Flags:
 | `--nodes a,b` | | only these nodes (onto's own quiet hours still apply) |
 | `--dry` | | print the plan (round, nodes, areas and their files, jobs) and stop |
 | `--no-merge` | | leave `main` alone even when the batch is green; the batch and branches are kept |
-| `--no-sweep` | | skip the control sweep |
+| `--sweep` | | run the control sweep too; a night leaves it out unless asked (2026-11-19) |
 | `--cap-usd N` | 80 | list-price dollars the night may spend, summed from each job's cost |
 | `--budget-review USD`, `--budget-match USD`, `--budget-fix USD` | 8, 1, 15 | each job's `--max-budget-usd` |
 
@@ -71,7 +71,7 @@ is not waived.
 
     npm run sweep:controls -- --only lab-tween,scene     # on the fleet, at HEAD; records in .control-sweep/
 
-In a night it is the sweep step; its findings, the fixer's report and the run's summary land in
+In a night started with `--sweep` it is the sweep step; its findings, the fixer's report and the run's summary land in
 `docs/audits/round-<N>/control-sweep/`, and the round's README lists the dead controls.
 
 ## Which areas, and when
@@ -126,7 +126,7 @@ line, each echoing its `id`:
 | `{"ping":true}` | `pong` and the main checkout's commit |
 | `{"status":true}` | whether a night runs, its round, step, areas, and tokens and list-price dollars used against the dollar cap; the last night's summary |
 | `{"plan":true}` | what a night started now would pick |
-| `{"start":true}` | starts a night now; takes `areas`, `only`, `nodes`, `capUsd`, `budget` (`{review, match, fix}`) and `merge: false`, as the flags above |
+| `{"start":true}` | starts a night now; takes `areas`, `only`, `nodes`, `capUsd`, `budget` (`{review, match, fix}`), `merge: false` and `sweep: true`, as the flags above |
 | `{"stop":true}` | no new jobs start; running ones finish, then the night patches, batches and records what completed |
 
     onto call skulk '{"id":1,"status":true}'

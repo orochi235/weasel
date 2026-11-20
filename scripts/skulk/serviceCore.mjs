@@ -41,7 +41,7 @@ export const startArgs = (req) => {
     args.push(`--budget-${role}`, String(usd));
   }
   if (req.merge === false) args.push('--no-merge');
-  if (req.sweep === false) args.push('--no-sweep');
+  if (req.sweep === true) args.push('--sweep');
   return args;
 };
 

@@ -3,7 +3,7 @@
  * One night of blind-pair audit rounds. README.md beside this file is its documentation.
  *
  *   node scripts/skulk/night.mjs [--areas K] [--only <id>,…] [--nodes <a>,…] [--dry] [--no-merge]
- *     [--cap-usd N] [--budget-review USD] [--budget-match USD] [--budget-fix USD] [--no-sweep]
+ *     [--cap-usd N] [--budget-review USD] [--budget-match USD] [--budget-fix USD] [--sweep]
  */
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -76,7 +76,7 @@ export const parseArgs = (argv) => {
     nodes: value('--nodes')?.split(',').filter(Boolean),
     dry: argv.includes('--dry'),
     merge: !argv.includes('--no-merge'),
-    sweep: !argv.includes('--no-sweep'),
+    sweep: argv.includes('--sweep'),
     capUsd: number('--cap-usd', NIGHT_USD_CAP),
     budget: {
       review: number('--budget-review', JOB_BUDGET_USD.review),
@@ -145,7 +145,7 @@ const printPlan = (p, args, say) => {
     say(`  ${area.id}: ${area.files.length} files${last ? `, last pass round ${last.round} (${last.distinct} distinct, ~${last.unfound} left)` : ', never audited'}`);
     say(`    ${area.files.slice(0, 4).join(' ')}${area.files.length > 4 ? ' …' : ''}`);
   }
-  say(args.sweep ? 'control sweep: one browser job at the frozen commit beside the reviews, and a fixer for what it finds dead' : 'control sweep: off (--no-sweep)');
+  say(args.sweep ? 'control sweep: one browser job at the frozen commit beside the reviews, and a fixer for what it finds dead' : 'control sweep: off (it runs only with --sweep)');
   say(`jobs: ${p.picked.length * 2} reviews, up to ${p.picked.length} matches and ${p.picked.length} fixes; then batch/${localDate()}-audit${p.round}`);
 };
 
@@ -326,7 +326,7 @@ export const runNight = async (argv = process.argv.slice(2), say = (line) => con
   const results = [];
   const outcomes = {};
   let report = '';
-  let sweep = { skipped: 'off (--no-sweep)' };
+  let sweep = { skipped: 'off (it runs only with --sweep)' };
   try {
     mkdirSync(join(frozen, JOB_IN), { recursive: true });
     // The sweep is one browser job on one node; the reviews fill every other slot while it runs.
