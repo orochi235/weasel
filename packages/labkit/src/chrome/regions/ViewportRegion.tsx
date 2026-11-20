@@ -3,6 +3,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { useRovingTabIndex } from '@weasel-js/ui/roving-tab-index';
 import type { TrialChromeContext, TrialContribution } from '../types';
+import { inLayoutOrder } from './groupsOf';
 
 /** Props for `<ViewportRegion>`. */
 export interface ViewportRegionProps {
@@ -12,7 +13,8 @@ export interface ViewportRegionProps {
 
 /**
  * Controls acting on the view of a trial. Anchored inside the content well
- * rather than in the toolbar, which acts on the trial itself.
+ * rather than in the toolbar, which acts on the trial itself. A group's
+ * controls sit together; groups marked `end` come last.
  */
 export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
   const { rootRef, onKeyDown } = useRovingTabIndex<HTMLDivElement>({ orientation: 'horizontal' });
@@ -25,7 +27,7 @@ export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
       aria-label="View"
       onKeyDown={onKeyDown}
     >
-      {contributions.map((c) => {
+      {inLayoutOrder(contributions).map((c) => {
         if (c.render) {
           return (
             <span key={c.id} className="lk-viewport-controls__item">
