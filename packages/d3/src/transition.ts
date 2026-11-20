@@ -163,12 +163,16 @@ function makeStage<TData, TPose>(
   const runItem = (i: number): void => {
     // Dropped already: interrupted on its node while it waited its turn on a microtask.
     if (progress.canceled || progress.done(i) || lost(i)) return;
-    const ends = itemEnds(ctx, i, settings.pose, seeds);
-    // With nothing to tween it still starts on its node, interrupting the transition of its name there.
-    const jobs = itemJobs(ctx, settings, i, ends, () => lost(i));
-    progress.start();
     const delayMs = settings.delay ? Math.max(0, settings.delay(data[i], i)) : 0;
-    runs.launch(i, jobs, delayMs, () => progress.canceled, () => finishItem(i));
+    // Read when the delay ends, as d3 does: where the node stands then, and `start` only then.
+    // With nothing to tween it still starts on its node, interrupting the transition of its name there.
+    const prepare = (): readonly TweenJob[] | null => {
+      if (lost(i)) return null;
+      const jobs = itemJobs(ctx, settings, i, itemEnds(ctx, i, settings.pose, seeds), () => lost(i));
+      progress.start();
+      return jobs;
+    };
+    runs.launch(i, prepare, delayMs, () => progress.canceled || progress.done(i), () => finishItem(i));
   };
 
   const removal = createStageRemoval(scene, ids, {

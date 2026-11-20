@@ -175,3 +175,50 @@ describe('d3Bind transition — a second transition on one selection', () => {
     expect(opacity.at(-1)).toBe(1);
   });
 });
+
+describe('d3Bind transition — an item waiting out its delay', () => {
+  it("fires 'start' when the delay ends, and never for an item interrupted during it", () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const s = setup();
+    act(() => void s.bind([{ id: 'a', x: 0 }]));
+    const started = vi.fn();
+    const interrupted = vi.fn();
+    act(() => {
+      const sel = s.bind([{ id: 'a', x: 100 }]);
+      void sel.transition('m').delay(500).on('start', started).end();
+      const t = sel.transition('n').delay(500).on('start', interrupted);
+      void t.end();
+      t.interrupt();
+    });
+    expect(started).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(500));
+    expect(started).toHaveBeenCalledTimes(1);
+    expect(interrupted).not.toHaveBeenCalled();
+  });
+
+  it('reads its starting values when the delay ends', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const s = setup();
+    act(() => void s.bind([{ id: 'a', x: 0 }]));
+    const sel = s.bind([{ id: 'a', x: 0 }]);
+    act(() => void sel.transition().end());
+    s.play(300);
+    let from = 0;
+    const o: number[] = [];
+    act(() => {
+      void sel.transition().delay(500).duration(100).ease(linear)
+        .pose(() => ({ x: 100, y: 0, width: 10, height: 10 }))
+        .tween({ name: 'o', from: () => from, to: () => 100, apply: (_d, _id, v) => o.push(v) })
+        .end();
+    });
+    act(() => {
+      s.scene.current.setPose('a' as never, { x: 60, y: 0, width: 10, height: 10 });
+      from = 60;
+    });
+    act(() => vi.advanceTimersByTime(500));
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(50));
+    expect(s.x('a')).toBeCloseTo(80, 6);
+    expect(o.at(-1)).toBeCloseTo(80, 6);
+  });
+});

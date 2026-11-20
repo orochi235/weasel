@@ -8,12 +8,15 @@ export interface ItemRuns {
   /** Run `fn` after `ms`, unless item `i` is stopped first. */
   wait(i: number, ms: number, fn: () => void): void;
   /**
-   * After `delayMs`, unless `canceled()` by then, interrupt other chains on item `i`'s node and
-   * start its `jobs`, calling `onDone` once every one has finished, or at once with none. A job stopped short of its
+   * After `delayMs`, unless `canceled()` by then, build item `i`'s jobs with `prepare` (null: it
+   * has gone), interrupt other chains on its node and start them, calling `onDone` once every
+   * one has finished, or at once with none. A job stopped short of its
    * end from outside (`animator.cancelKey`, `cancelAll`, a tick that threw) stops the item
    * through `stops[i]`, as an interrupt, since that job will never finish.
    */
-  launch(i: number, jobs: readonly TweenJob[], delayMs: number, canceled: () => boolean, onDone: () => void): void;
+  launch(
+    i: number, prepare: () => readonly TweenJob[] | null, delayMs: number, canceled: () => boolean, onDone: () => void,
+  ): void;
   /** Register item `i` as running on its node, under the chain `root()` names. */
   track(i: number): void;
   untrack(i: number): void;
@@ -42,13 +45,15 @@ export function createItemRuns(
         fn();
       }));
     },
-    launch(i, jobs, delayMs, canceled, onDone) {
-      let jobsLeft = jobs.length;
-      const jobDone = (): void => {
-        if (--jobsLeft === 0) onDone();
-      };
+    launch(i, prepare, delayMs, canceled, onDone) {
       const spawn = (): void => {
         if (canceled()) return;
+        const jobs = prepare();
+        if (!jobs) return;
+        let jobsLeft = jobs.length;
+        const jobDone = (): void => {
+          if (--jobsLeft === 0) onDone();
+        };
         interruptNode(animator, keys[i], root());
         const list = handles.get(i) ?? [];
         handles.set(i, list);
