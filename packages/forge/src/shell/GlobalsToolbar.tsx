@@ -19,7 +19,8 @@ const RECORD = 'fg-globals';
  */
 export function useLabGlobals(declarations: GlobalDeclarations): [StoryGlobals, (key: string, value: string) => void] {
   const [stored, setStored] = usePersistedState<unknown>(RECORD, null, { scope: 'lab' });
-  const values = useMemo(() => labGlobals(declarations, stored), [declarations, stored]);
+  const { mode } = useLabContext();
+  const values = useMemo(() => labGlobals(declarations, stored, { mode }), [declarations, stored, mode]);
   const set = useCallback(
     (key: string, value: string) => setStored((prev: unknown) => ({ ...(isPlainObject(prev) ? prev : {}), [key]: value })),
     [setStored],
@@ -42,18 +43,20 @@ interface GlobalSelectProps {
   name: string;
   declaration: GlobalDeclaration;
   values: StoryGlobals;
+  /** `values` with each `App` resolved, which `shows` is asked with. */
+  asked: StoryGlobals;
   set: (key: string, value: string) => void;
   labeled?: boolean;
 }
 
-function GlobalSelect({ name, declaration, values, set, labeled = false }: GlobalSelectProps) {
+function GlobalSelect({ name, declaration, values, asked, set, labeled = false }: GlobalSelectProps) {
   return (
     <Select
       {...(labeled ? { label: declaration.label } : { 'aria-label': declaration.label })}
       width={labeled ? 'fill' : 'fit'}
       selectedKey={String(getOwn(values, name))}
       onSelectionChange={(value) => set(name, value)}
-      options={labOptions(declaration, values).map(selectOption)}
+      options={labOptions(declaration, asked).map(selectOption)}
     />
   );
 }
@@ -64,13 +67,15 @@ function GlobalSelect({ name, declaration, values, set, labeled = false }: Globa
  */
 export function GlobalsToolbar({ declarations }: { declarations: GlobalDeclarations }) {
   const [values, set] = useLabGlobals(declarations);
+  const { mode } = useLabContext();
+  const asked = useMemo(() => followApp(declarations, values, { mode }), [declarations, values, mode]);
   const entries = Object.entries(declarations);
   const top = entries.filter(([, declaration]) => declaration.under === undefined);
   return (
     <div className="fg-globals" role="toolbar" aria-label="Globals">
       {top.map(([key, declaration]) => (
         <div key={key} className="fg-globals__item">
-          <GlobalSelect name={key} declaration={declaration} values={values} set={set} />
+          <GlobalSelect name={key} declaration={declaration} values={values} asked={asked} set={set} />
         </div>
       ))}
       {top.map(([key, declaration]) => {
@@ -82,6 +87,7 @@ export function GlobalsToolbar({ declarations }: { declarations: GlobalDeclarati
             icon={declaration.icon ?? glyph('core:tune')}
             nested={nested}
             values={values}
+            asked={asked}
             set={set}
           />
         ) : null;
@@ -95,12 +101,14 @@ function NestedGlobals({
   icon,
   nested,
   values,
+  asked,
   set,
 }: {
   label: string;
   icon: IconSpec;
   nested: readonly [string, GlobalDeclaration][];
   values: StoryGlobals;
+  asked: StoryGlobals;
   set: (key: string, value: string) => void;
 }) {
   const anchor = useRef<HTMLButtonElement>(null);
@@ -128,7 +136,7 @@ function NestedGlobals({
         className="fg-globals__popover"
       >
         {nested.map(([key, declaration]) => (
-          <GlobalSelect key={key} name={key} declaration={declaration} values={values} set={set} labeled />
+          <GlobalSelect key={key} name={key} declaration={declaration} values={values} asked={asked} set={set} labeled />
         ))}
       </Callout>
     </>
