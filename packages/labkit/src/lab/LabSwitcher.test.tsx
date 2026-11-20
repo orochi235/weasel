@@ -37,6 +37,26 @@ describe('currentPage', () => {
     expect(currentPage('/bench', pages)).toBe(-1);
   });
 
+  it('marks the page the path names over one whose path is a suffix of it', () => {
+    const pages = [
+      { href: '/stats', label: 'Stats' },
+      { href: '/sub/stats', label: 'Sub stats' },
+    ];
+    expect(currentPage('/sub/stats', pages)).toBe(1);
+    expect(currentPage('/stats', pages)).toBe(0);
+    expect(currentPage('/lab/sub/stats', pages)).toBe(1);
+  });
+
+  it('marks the deepest hash route the path is on', () => {
+    const pages = [
+      { href: '#/dev', label: 'Dev' },
+      { href: '#/dev/tools', label: 'Tools' },
+    ];
+    expect(currentPage('/#/dev/tools', pages)).toBe(1);
+    expect(currentPage('/#/dev/tools/x', pages)).toBe(1);
+    expect(currentPage('/#/dev/other', pages)).toBe(0);
+  });
+
   it('reports -1 for a page that is not one of them', () => {
     expect(currentPage('/bench', PAGES)).toBe(-1);
   });

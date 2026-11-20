@@ -74,6 +74,27 @@ describe('<Lab> with a storageKey', () => {
     expect(screen.queryByRole('region', { name: /trial/i })).toBeNull();
   });
 
+  it('draws the shell it will draw once loaded: no header bar with `header={false}`, and its nebula', async () => {
+    const { storage, release } = gated();
+    const { container } = renderWithIcons(
+      <Lab
+        instruments={[stub]}
+        storageKey="gate"
+        storage={storage}
+        title="Waiting"
+        header={false}
+        mode="dark"
+        nebula={['#ff0000', '#00ff00']}
+      />,
+    );
+    const themed = () => container.querySelector('.lk-lab')?.getAttribute('style');
+    const loading = themed();
+    expect(screen.queryByText('Waiting')).toBeNull();
+    await act(async () => release());
+    expect(await screen.findByTestId('stub-content')).toBeInTheDocument();
+    expect(themed()).toBe(loading);
+  });
+
   it('opens the lab once under StrictMode', async () => {
     const storage = createMemoryAdapter();
     const list = vi.spyOn(storage, 'list');

@@ -23,7 +23,7 @@ import { atScale, viewMiddle } from '../canvas/cameraZoom';
 import { icon } from '../icons.gen';
 import { LabStoreContext } from '../state/context';
 import { LabActions, useInLabActions } from './LabActions';
-import { useLabCommands } from './LabContext';
+import { useLabCommandsOptional } from './LabContext';
 
 const ZOOM_ID = 'lab.zoom';
 
@@ -64,7 +64,9 @@ function forZoom(camera: CameraView): ViewApi {
  * focus. The percentage resets to actual size. They run `lab.zoom` — core's
  * zoom on the focused trial's camera, with its keys Mod+=, Mod+- and Mod+0 —
  * on the lab's actions registry, so the buttons and the keys are one path.
- * Outside a `<Lab>` it brings a registry of its own. Over a trial with no
+ * It needs a lab's store and commands: a `<Lab>`'s, or a host's own
+ * `<LabStoreProvider>` and lab commands, under which it brings an actions
+ * registry of its own when no `<LabActions>` is above it. Over a trial with no
  * camera the group stays, disabled, so the header does not reflow as the
  * focus moves.
  */
@@ -79,10 +81,13 @@ export function LabZoom() {
 
 function LabZoomControls() {
   const registry = useActionsRegistry() as ActionsRegistry;
-  const { focusedTrialId } = useLabCommands();
+  const commands = useLabCommandsOptional();
   const cameras = useContext(CameraRegistryContext);
   const storeCtx = useContext(LabStoreContext);
-  if (!storeCtx) throw new Error('[labkit] <LabZoom> requires <LabStoreProvider>');
+  if (!storeCtx || !commands) {
+    throw new Error("[labkit] <LabZoom> needs a lab's store and commands: mount it inside <Lab>");
+  }
+  const { focusedTrialId } = commands;
 
   const camera = useSyncExternalStore(cameras?.subscribe ?? noSubscribe, () =>
     cameras && focusedTrialId ? cameras.get(focusedTrialId) : null,
