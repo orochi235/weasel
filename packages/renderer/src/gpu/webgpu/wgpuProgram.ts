@@ -47,6 +47,12 @@ interface BlockSlot {
   lap: number;
 }
 
+interface Member {
+  readonly slot: BlockSlot;
+  readonly member: string;
+  readonly array?: GpuUniformArray;
+}
+
 interface Binding {
   readonly binding: number;
   readonly kind: 'uniform' | 'texture' | 'sampler';
@@ -87,8 +93,9 @@ export class WgpuProgram implements GpuProgram {
    *  a draw with it would void every command submitted beside it. */
   refused = false;
   private readonly groupLayouts: GPUBindGroupLayout[];
-  private readonly members = new Map<string, { slot: BlockSlot; member: string }>();
-  private readonly arrays = new Map<string, GpuUniformArray>();
+  /** Each block member by name; WGSL lets two blocks' structs share a member name. */
+  private readonly members = new Map<string, Member[]>();
+  private readonly textureArrays = new Map<string, GpuUniformArray>();
   private readonly textures = new Map<string, WgpuTexture | null>();
   private readonly blocks: BlockSlot[] = [];
   private readonly bindGroups = new Map<string, GPUBindGroup>();
@@ -120,8 +127,10 @@ export class WgpuProgram implements GpuProgram {
         const slot: BlockSlot = { group: b.group, binding: b.binding, block, dirty: true, offset: 0, lap: -1 };
         this.blocks.push(slot);
         for (const m of reflection.structs.get(b.struct!)!.members) {
-          this.members.set(m.name, { slot, member: m.name });
-          if (m.type.kind === 'array') this.arrays.set(m.name, { type: glslType(m.type, reflection.structs), size: m.type.count });
+          const array = m.type.kind === 'array' ? { type: glslType(m.type, reflection.structs), size: m.type.count } : undefined;
+          const named = this.members.get(m.name) ?? [];
+          named.push({ slot, member: m.name, array });
+          this.members.set(m.name, named);
         }
         list.push({ binding: b.binding, kind: 'uniform', block: slot });
       } else if (b.kind === 'texture') {
@@ -151,7 +160,7 @@ export class WgpuProgram implements GpuProgram {
       const m = /^(\w+)_(\d+)$/.exec(name);
       if (m) counts.set(m[1], Math.max(counts.get(m[1]) ?? 0, Number(m[2]) + 1));
     }
-    for (const [name, size] of counts) this.arrays.set(name, { type: 'sampler2D', size });
+    for (const [name, size] of counts) this.textureArrays.set(name, { type: 'sampler2D', size });
   }
 
   /** Stop drawing with the pipeline of `key` once the GPU's refusal of it
@@ -163,10 +172,19 @@ export class WgpuProgram implements GpuProgram {
     console.error(`weasel: the GPU refused a WGSL program's pipeline, which then draws nothing: ${message}`);
   }
 
+  /** The member `name` names: a kit name's member of the prelude's group-0 block, else the program's own
+   *  member of that name before a kit block's. */
+  private member(name: string): Member | undefined {
+    const alias = getOwn(ALIASES, name);
+    const kit = alias ? this.members.get(alias)?.find((m) => m.slot.group === 0) : undefined;
+    if (kit) return kit;
+    const named = this.members.get(name);
+    return named?.find((m) => m.slot.group === 1) ?? named?.[0];
+  }
+
   /** The block member `name` writes: a member, an alias of one, or one slot of an array member (`u_ripples[2]`). */
   private resolve(name: string): { slot: BlockSlot; member: string } | undefined {
-    const alias = getOwn(ALIASES, name);
-    const hit = this.members.get(name) ?? (alias ? this.members.get(alias) : undefined);
+    const hit = this.member(name);
     if (hit || !name.endsWith(']')) return hit;
     const m = /^(\w+)\[(\d+)\]$/.exec(name);
     const base = m ? this.resolve(m[1]) : undefined;
@@ -192,8 +210,10 @@ export class WgpuProgram implements GpuProgram {
   }
 
   array(name: string): GpuUniformArray | undefined {
+    const member = this.member(name);
+    if (member) return member.array;
     const alias = getOwn(ALIASES, name);
-    return this.arrays.get(name) ?? (alias ? this.arrays.get(alias) : undefined);
+    return this.textureArrays.get(name) ?? (alias ? this.textureArrays.get(alias) : undefined);
   }
 
   attribute(name: string): number | undefined {

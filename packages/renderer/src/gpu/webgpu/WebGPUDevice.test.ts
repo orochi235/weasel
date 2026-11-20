@@ -83,6 +83,27 @@ describe('a WGSL program written by array slot', () => {
   });
 });
 
+describe('a WGSL program whose own struct shares a member name with the kit block', () => {
+  it('writes the kit name to the kit block and the bare name to its own', () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const program = gpu.createProgram({ wgsl: [
+      'struct Kit { bounds: vec4f }',
+      '@group(0) @binding(0) var<uniform> kit: Kit;',
+      'struct Params { bounds: vec4f }',
+      '@group(1) @binding(0) var<uniform> params: Params;',
+      '@vertex fn vs(@location(0) a_position: vec2f) -> @builtin(position) vec4f { return vec4f(a_position, 0.0, 1.0); }',
+      '@fragment fn fs() -> @location(0) vec4f { return kit.bounds + params.bounds; }',
+    ].join('\n') }) as WgpuProgram;
+    program.set4f('u_bounds', 1, 2, 3, 4);
+    program.set4f('bounds', 5, 6, 7, 8);
+    const mirror = new Uint8Array(program.uploadBytes(0, 256));
+    program.upload(mirror, 0, 0, 256);
+    expect(Array.from(new Float32Array(mirror.buffer, 0, 4))).toEqual([1, 2, 3, 4]);
+    expect(Array.from(new Float32Array(mirror.buffer, 256, 4))).toEqual([5, 6, 7, 8]);
+  });
+});
+
 describe('WebGPU renderers built and freed on one shared device', () => {
   /** `fake`, with each reaction registered on its `device.lost` counted. A reaction on a promise that
    *  never settles holds what it closes over for as long as the device lives. */
