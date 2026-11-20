@@ -34,6 +34,11 @@ function makeMockCtx() {
 const mockMeasure = (text: string) => text.length * 10;
 
 describe('layoutCanvasRuns', () => {
+  it('rejoins a surrogate pair that two runs split, as the GL tier does', () => {
+    const result = layoutCanvasRuns([{ text: 'a\ud83d', bold: true }, { text: '\ude00b' }], Infinity, 13, mockMeasure);
+    expect(result.lines[0].runs.map((r) => r.text)).toEqual(['a\u{1f600}', 'b']);
+  });
+
   it('lays out plain text on one line', () => {
     const runs = markdownToRuns('hello');
     const result = layoutCanvasRuns(runs, Infinity, 13, mockMeasure);
