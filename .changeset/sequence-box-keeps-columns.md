@@ -2,6 +2,8 @@
 '@weasel-js/diagram': patch
 ---
 
-A sequence participant dragged or added between two members of a box joins that box, and a member dragged away from the rest of its box leaves it, so a box never draws around a lifeline it does not hold.
+A sequence box never draws around a lifeline it does not hold when a participant is dragged or added.
+
+One landing between two members of a box joins it, and a member dragged away from the rest of its box leaves it.
 
 <!-- entry: fix -->
