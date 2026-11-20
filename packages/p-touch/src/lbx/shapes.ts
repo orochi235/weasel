@@ -59,7 +59,8 @@ function polylinePoints(path: PolygonPath): { x: number; y: number }[] | undefin
   return points.length >= 2 ? points : undefined;
 }
 
-const ARROW_FOR_CAP: Record<'butt' | 'round' | 'square', ArrowStyle> = { butt: 'SQUARE', round: 'ROUND', square: 'SQUARE' };
+// No end style reaches past the point, as a square cap does.
+const ARROW_FOR_CAP: Record<'butt' | 'round', ArrowStyle> = { butt: 'SQUARE', round: 'ROUND' };
 
 /** Whether every interior corner of `points` is drawn mitered, the join P-touch draws a polyline with. */
 function cornersMiter(points: readonly { x: number; y: number }[], stroke: PlainStroke): boolean {
@@ -83,7 +84,7 @@ export function lineObject(cmd: PathDrawCommand, state: DrawState): LineObject |
   if (!map || scale === undefined) return undefined;
   const local = polylinePoints(cmd.path);
   const stroke = plainStroke(cmd.stroke, state.alpha, scale);
-  if (!local || !stroke || stroke.align !== 'center') return undefined;
+  if (!local || !stroke || stroke.align !== 'center' || stroke.cap === 'square') return undefined;
   const points = local.map((p) => {
     const [x, y] = mat3.transformPoint(state.transform, p.x, p.y);
     return { x, y };

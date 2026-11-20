@@ -36,4 +36,9 @@ describe('polylines', () => {
     expect(await types([line([[0, 0], [5, 40], [10, 0]])])).toEqual([]);
     expect(await types([line([[0, 0], [60, 0]], { join: 'round' })])).toEqual(['line']);
   });
+
+  it('rasterizes a square-capped line, whose ends reach past its points', async () => {
+    expect(await types([line([[0, 0], [60, 0]], { cap: 'square' })])).toEqual([]);
+    expect(await types([line([[0, 0], [60, 0]], { cap: 'butt' })])).toEqual(['line']);
+  });
 });
