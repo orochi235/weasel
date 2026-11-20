@@ -37,6 +37,10 @@ export interface AvoidRouter {
    *  this is a preview. Answers only the connectors it rerouted, or moved
    *  while spreading a channel they share. */
   update(input: AvoidInput, opts?: AvoidUpdateOptions): AvoidRoutes;
+  /** Drop what the router holds for connectors `ids`, so the next update
+   *  reroutes them: for routes the host did not store, such as a locked
+   *  connector's. */
+  forget(ids: Iterable<string>): void;
 }
 
 const now = (): number => globalThis.performance?.now() ?? Date.now();
@@ -185,6 +189,9 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       const dirty = dirtyEdges(input.edges, keys, changed, (e) => [routeOf(e), rawOf(e)], pathless);
       forget(input);
       return commit(input, dirty, obstacles);
+    },
+    forget(ids) {
+      for (const id of ids) for (const map of [keys, raw, shown, pathless]) map.delete(id);
     },
   };
 }
