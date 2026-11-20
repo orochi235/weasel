@@ -1,5 +1,5 @@
 import type { FontStyle } from './fontStyle';
-import { tryDynamicFace } from './dynamic/dynamicAtlas';
+import { isExplicitCanvasFont, tryDynamicFace } from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy } from './fallback';
 import type { ResolveResult } from './resolveResult';
 
@@ -13,15 +13,16 @@ import type { ResolveResult } from './resolveResult';
  *
  * Returns a canvas-tier `ResolveResult` whose `dynamicFace` the caller drives
  * with `requestGlyph(cp)`, or `null` when escalation isn't available: under
- * policy `'none'`, which documents a miss as a *hard* miss, or with no canvas
- * to rasterize into (SSR, a jsdom test without one).
+ * policy `'none'`, which documents a miss as a *hard* miss, unless the family
+ * was passed to `registerCanvasFont`, which outranks the policy; or with no
+ * canvas to rasterize into (SSR, a jsdom test without one).
  */
 export function resolveCanvasFallback(
   family: string,
   weight: number,
   style: FontStyle,
 ): ResolveResult | null {
-  if (getFontFallbackPolicy() === 'none') return null;
+  if (getFontFallbackPolicy() === 'none' && !isExplicitCanvasFont(family)) return null;
   const dynamicFace = tryDynamicFace(family, weight, style);
   return dynamicFace ? {
     entry: null,

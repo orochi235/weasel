@@ -481,6 +481,13 @@ describe('resolveCanvasFallback', () => {
     expect(resolveCanvasFallback('Inter', 400, 'normal')).toBeNull();
   });
 
+  it('escalates under the "none" policy for a family passed to registerCanvasFont', () => {
+    stubRasterizer();
+    setFontFallbackPolicy('none');
+    registerCanvasFont('Inter');
+    expect(resolveCanvasFallback('Inter', 400, 'normal')?.dynamicFace).toBeDefined();
+  });
+
   it('declines rather than throwing when the rasterizer cannot serve', () => {
     // The environments this guards are SSR and any headless context without a
     // canvas, where constructing the rasterizer throws outright. Standing in

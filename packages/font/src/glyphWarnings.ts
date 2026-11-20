@@ -6,6 +6,7 @@
 import { claimFallbackWarning, fallbackWarningClaimed } from './fallback';
 import type { FontStyle } from './fontStyle';
 import { isFontPending } from './registerFont';
+import { isExplicitCanvasFont } from './dynamic/dynamicAtlas';
 
 /** Say, once per family and code point, that no tier has a glyph for it. */
 export function warnMissingGlyph(family: string, cp: number): void {
@@ -14,9 +15,11 @@ export function warnMissingGlyph(family: string, cp: number): void {
   console.warn(
     `weasel: no glyph for U+${cp.toString(16).toUpperCase().padStart(4, '0')} ` +
     `(${JSON.stringify(ch)}) in "${family}", and the dynamic tier could not ` +
-    `rasterize it — skipping the character. Bake it into the atlas, or call ` +
-    `registerCanvasFont("${family}") to serve missing codepoints from ` +
-    `installed fonts.`,
+    `rasterize it — skipping the character. ` +
+    (isExplicitCanvasFont(family)
+      ? 'No installed font the browser matches for it has the character either.'
+      : `Bake it into the atlas, or call registerCanvasFont("${family}") to serve ` +
+        'missing codepoints from installed fonts.'),
   );
 }
 
