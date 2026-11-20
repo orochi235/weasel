@@ -39,3 +39,28 @@ describe('a clone under a quantize rule', () => {
     expect(scene.get(copy)!.pose).toEqual(preview);
   });
 });
+
+describe('a clone of a node in a singular frame', () => {
+  it('previews nothing for it and never hands the rule a null pose', () => {
+    const seen: unknown[] = [];
+    const rule: QuantizeRule<Data, RectPose> = { ...RULE, stored: (node, grid) => { seen.push(node.pose); return RULE.stored!(node, grid); } };
+    const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }], quantize: rule, doc: { [OUTPUT_GRID_KEY]: GRID } });
+    const flat = scene.add({ kind: 'group', layer: 'main', data: { kind: 'box' }, pose: { x: 0, y: 0, width: 100, height: 100, transform: [0, 0, 0, 1] } });
+    scene.add({ id: BOX, kind: 'mark', layer: 'main', parent: flat, data: { kind: 'box' }, pose: { x: 10, y: 10, width: 4, height: 2 } });
+    const ctx = (dx: number) => ({
+      world: { x: dx, y: 0 },
+      screen: { x: 0, y: 0 },
+      modifiers: { alt: true, ctrl: false, meta: false, shift: false },
+      deps: { operands: { get: () => [BOX], set: () => {} }, scene },
+      drag: { start: { x: 0, y: 0 }, current: { x: dx, y: 0 }, delta: { x: dx, y: 0 } },
+    }) as unknown as InvocationCtx;
+    const invoker = cloneAction.invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(ctx(0), undefined);
+    seen.length = 0;
+    handle.onMove!(ctx(5));
+    expect(seen).not.toContain(null);
+    expect(handle.previewPose!(BOX)).toBeNull();
+    handle.onEnd!(ctx(5), 'cancel');
+  });
+});

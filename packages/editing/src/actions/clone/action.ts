@@ -168,7 +168,10 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
           if (delta.dx === 0 && delta.dy === 0) return { delta, previews };
           // As the scene's quantize rule will store the copy, which shares its source's data.
           for (const id of scratch.originPoses.keys()) {
-            previews.set(id, quantizedPreview(scene, id, landed(scratch, id, delta.dx, delta.dy)!));
+            const stored = landed(scratch, id, delta.dx, delta.dy);
+            // A copy in a singular frame has no stored pose, and the commit refuses it.
+            if (stored === null || stored === undefined) continue;
+            previews.set(id, quantizedPreview(scene, id, stored));
           }
           return { delta, previews };
         }, (f) => f.previews);
