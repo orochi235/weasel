@@ -33,6 +33,7 @@ export function useHostAnchor(
 ): { ref: (el: HTMLElement | null) => void; style: HostAnchorStyle | null } {
   const [panel, setPanel] = useState<HTMLElement | null>(null);
   const [style, setStyle] = useState<HostAnchorStyle | null>(null);
+  const [host, setHost] = useState<Element | null>(null);
   const ref = useCallback((el: HTMLElement | null) => setPanel(el), []);
 
   // Held in a ref so a caller passing an inline arrow doesn't re-subscribe
@@ -45,6 +46,7 @@ export function useHostAnchor(
 
   const recompute = useCallback(() => {
     const hostEl = resolve.current();
+    setHost(hostEl);
     if (!hostEl) {
       setStyle(null);
       return;
@@ -74,18 +76,27 @@ export function useHostAnchor(
     const schedule = () => raf.request();
     window.addEventListener('scroll', schedule, true);
     window.addEventListener('resize', schedule);
-    const hostEl = resolve.current();
-    const unwatchResize = watchResize([panel, hostEl], schedule);
-    const unwatchMove = hostEl ? watchElementMove(hostEl, schedule) : undefined;
-
     return () => {
       window.removeEventListener('scroll', schedule, true);
       window.removeEventListener('resize', schedule);
       raf.cancel();
-      unwatchResize();
-      unwatchMove?.();
     };
-  }, [recompute, raf, panel, resolve]);
+  }, [recompute, raf]);
+
+  // The host the last recompute found is the one watched, so a host that
+  // appears, or a selector that starts naming another element, moves the watch.
+  useEffect(() => {
+    const schedule = () => raf.request();
+    const unwatchResize = watchResize([panel, host], schedule);
+    if (host) {
+      const unwatchMove = watchElementMove(host, schedule);
+      return () => { unwatchResize(); unwatchMove(); };
+    }
+    // Nothing else says when an unresolved host mounts.
+    const mounts = typeof MutationObserver === 'undefined' ? null : new MutationObserver(schedule);
+    mounts?.observe(document, { childList: true, subtree: true, attributes: true });
+    return () => { unwatchResize(); mounts?.disconnect(); };
+  }, [panel, host, raf]);
 
   return { ref, style };
 }

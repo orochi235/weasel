@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { act, cleanup } from '@testing-library/react';
+import { act, cleanup, render } from '@testing-library/react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { useHostAnchor } from './useHostAnchor';
 
@@ -26,5 +26,28 @@ describe('useHostAnchor after an abandoned render', () => {
 
     expect(a).toHaveBeenCalled();
     expect(b).not.toHaveBeenCalled();
+  });
+});
+
+describe('useHostAnchor with a host that mounts late', () => {
+  it('places the panel once the host appears, with no scroll or resize', async () => {
+    let host: Element | null = null;
+    let style: unknown = 'unset';
+    function Probe() {
+      style = useHostAnchor(() => host, { align: { x: 'start', y: 'start' }, offset: { x: 0, y: 0 } }).style;
+      return null;
+    }
+    render(<Probe />);
+    expect(style).toBeNull();
+
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    host = el;
+    try {
+      await act(async () => { await Promise.resolve(); await frame(); });
+      expect(style).not.toBeNull();
+    } finally {
+      el.remove();
+    }
   });
 });
