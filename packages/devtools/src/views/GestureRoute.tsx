@@ -35,7 +35,7 @@ export interface RouteSegment extends Pick<AppearanceProps, 'emphasis' | 'grade'
 
 /**
  * The segments {@link GestureRoute} draws for a route string: phase atoms, then
- * `gesture(arg)`, then the held modifiers as one chord, then the target.
+ * `gesture(arg)`, then the held modifiers as one chord, a hover's `held`, then the target.
  * A descriptor's default arg and a wildcard target stay visible, muted, so
  * the strip shows the whole binding. A route the grammar rejects, as from a
  * page on another kit version, is drawn as its own text.
@@ -78,6 +78,7 @@ export function gestureRouteSegments(route: string): RouteSegment[] {
     const text = modKeys.map((k) => `${k.optional ? '?' : '+'}${k.label}`).join('');
     segments.push({ text, emphasis: 'low', variant: 'solid' });
   }
+  if (parsed.held) segments.push({ text: `${parsed.held === 'required' ? '+' : '?'}held`, emphasis: 'low', variant: 'solid' });
   if (hasTarget) {
     segments.push({
       text: parsed.target,

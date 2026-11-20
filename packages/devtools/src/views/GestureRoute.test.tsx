@@ -19,6 +19,12 @@ describe('gestureRouteSegments', () => {
     expect(texts('[initial] keyDown(Escape)')).toHaveLength(2);
   });
 
+  it("shows a hover's held slot, required or optional", () => {
+    expect(texts('[*] hover +held')).toContain('+held');
+    expect(texts('[*] hover ?held')).toContain('?held');
+    expect(texts('[*] hover')).not.toContain('+held');
+  });
+
   it('draws a route its grammar rejects as its own text rather than throwing', () => {
     expect(texts('[initial] dblTap => node')).toEqual(['[initial] dblTap => node']);
   });
