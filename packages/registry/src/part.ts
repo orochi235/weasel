@@ -22,9 +22,29 @@ export function createPart<O extends object, P>(make: (owner: O) => P): (owner: 
 let nextSerial = 0;
 const serialOf = createPart((_owner: object): number => nextSerial++);
 
+/** Engines that cannot hold a symbol weakly hold one strongly: an unregistered symbol is rarely made in bulk. */
+const symbolSerials: { get(s: symbol): number | undefined; set(s: symbol, n: number): unknown } = (() => {
+  try {
+    const weak = new WeakMap<object, number>();
+    weak.set(Symbol() as unknown as object, 0);
+    return weak as unknown as Map<symbol, number>;
+  } catch {
+    return new Map<symbol, number>();
+  }
+})();
+
+function symbolKeyOf(s: symbol): string {
+  const registered = Symbol.keyFor(s);
+  if (registered !== undefined) return `symbol.for:${registered}`;
+  let serial = symbolSerials.get(s);
+  if (serial === undefined) symbolSerials.set(s, (serial = nextSerial++));
+  return `#${serial}`;
+}
+
 /** A string naming `v` for a cache or memo key: its type and value when primitive, and a serial of its own when an
- *  object or function, so two values share a key only when they are equal primitives or the same object. */
+ *  object, a function or a symbol, so two values share a key only when they are equal primitives or the same object. */
 export function identityKeyOf(v: unknown): string {
+  if (typeof v === 'symbol') return symbolKeyOf(v);
   if ((typeof v !== 'object' && typeof v !== 'function') || v === null) return `${typeof v}:${String(v)}`;
   return `#${serialOf(v)}`;
 }
