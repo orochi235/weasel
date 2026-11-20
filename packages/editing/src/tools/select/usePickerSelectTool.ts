@@ -6,7 +6,7 @@ import { defineTool, topmostOf, rangeAmong } from '@weasel-js/core';
 import type { WorldPoint } from '@weasel-js/routing';
 import { ANY_MODS } from '@weasel-js/gestures';
 import { createSelectPickAction } from './selectPick';
-import { createCollapseDeferredAction } from './collapseDeferred';
+import { createCollapseDeferredAction, type DeferredClick } from './collapseDeferred';
 import { GROUP_LEAVE_PRESS_BINDING } from './groupEntry';
 import { createSelectDeepAction } from './selectDeep';
 import { isBodyOffChrome, isEmptyOffChrome } from './selectionContributions';
@@ -115,9 +115,9 @@ interface PressClassification {
    *
    * The selection is deliberately NOT collapsed on the press: the user may be
    * starting a drag of the whole set, or of the group. If the gesture turns out to be a click,
-   * `select.collapseDeferred` collapses to this id on release.
+   * `select.collapseDeferred` collapses to this id on release, with the press's modifiers.
    */
-  deferredClickId: string | null;
+  deferred: DeferredClick | null;
 }
 
 
@@ -219,7 +219,7 @@ export function createPickerSelectTool<TNode extends { id: string }, TPose>(
 ): Tool {
   // What the last press classified. Written by `select.pick`, read by
   // `select.collapseDeferred` and the cursor. See `PressClassification`.
-  const pressRef: { current: PressClassification } = { current: { deferredClickId: null } };
+  const pressRef: { current: PressClassification } = { current: { deferred: null } };
 
   // The node under a point, before any group above it is considered.
   const pickHit = (world: WorldPoint, alt: boolean, sel: readonly string[], viewId?: string | null): string | null => {
@@ -231,7 +231,7 @@ export function createPickerSelectTool<TNode extends { id: string }, TPose>(
   };
 
   const extendLocked = () => options().extendClickLocked?.() === true;
-  const settled = () => { pressRef.current = { deferredClickId: null }; };
+  const settled = () => { pressRef.current = { deferred: null }; };
   // A range among what a press inside `level` selects.
   const rangeIn = (level: string | null) => {
     const between = options().between;
@@ -244,7 +244,7 @@ export function createPickerSelectTool<TNode extends { id: string }, TPose>(
   const pickAction = createSelectPickAction({
     pickHit, extendLocked, rangeIn,
     tree: () => adapter(),
-    pressed: (deferred) => { pressRef.current = { deferredClickId: deferred }; },
+    pressed: (deferred) => { pressRef.current = { deferred }; },
   });
   const collapseDeferredAction = createCollapseDeferredAction(pressRef);
 

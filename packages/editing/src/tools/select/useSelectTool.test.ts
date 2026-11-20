@@ -182,6 +182,16 @@ describe('useSelectTool', () => {
       .toBe(ActionDisabledReason.NotApplicable);
   });
 
+  it('a deferred collapse applies the modifiers the press was classified with, not the release\'s', () => {
+    // Shift pressed only after the button went down must not turn the
+    // collapse into a toggle that drops the pressed node.
+    const tool = mount({ pickEvery: () => ['a'] });
+    const sel = selectionStub(['a', 'b', 'c']);
+    press(tool, sel.api);
+    expect(release(tool, sel.api, { shift: true })).toBe('ran');
+    expect(sel.applyClick).toHaveBeenCalledWith('a', NO_MODS);
+  });
+
   it('a locked Shift-press defers nothing, so its release leaves the selection alone', () => {
     // Shift reads as a replace here, but the anchor edit owns Shift-click.
     const tool = mount({ pickEvery: () => ['a'], extendClickLocked: () => true });

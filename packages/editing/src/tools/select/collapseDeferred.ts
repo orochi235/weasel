@@ -2,17 +2,26 @@ import type { RefObject } from 'react';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { NodeId } from '@weasel-js/core';
+import type { SelectModifiers } from '@weasel-js/select';
 import type {} from '@weasel-js/core';
+
+/** A click held back on the press: the id, and the modifiers the press was classified with. */
+export interface DeferredClick {
+  id: string;
+  mods: SelectModifiers;
+}
 
 /**
  * `select.collapseDeferred` — the release half of the deferred multi-click.
  *
  * Pressing an already-selected node inside a multi-selection leaves the
  * selection alone so the press can start a drag of the whole set. If the
- * gesture ends without a drag, this collapses to the clicked node.
+ * gesture ends without a drag, this collapses to the clicked node, with the
+ * modifiers of the press: a key pressed or let go before release does not
+ * turn the collapse into a toggle or a range the press never was.
  */
 export function createCollapseDeferredAction(
-  pressRef: RefObject<{ deferredClickId: string | null }>,
+  pressRef: RefObject<{ deferred: DeferredClick | null }>,
 ): Action {
   return defineAction({
     id: 'select.collapseDeferred',
@@ -24,21 +33,18 @@ export function createCollapseDeferredAction(
     // without the gate it would outrank ambient click bindings like
     // `selectAnchor` and silently break anchor selection.
     enabled: () =>
-      pressRef.current.deferredClickId !== null
+      pressRef.current.deferred !== null
         ? true
         : ActionDisabledReason.NotApplicable,
     invoker: {
       timing: 'immediate',
-      run: (deps, params) => {
-        const deferred = pressRef.current.deferredClickId;
-        pressRef.current = { deferredClickId: null };
+      run: (deps) => {
+        const deferred = pressRef.current.deferred;
+        pressRef.current = { deferred: null };
         if (deferred === null) return;
         const selection = deps.selection;
         if (!selection) return;
-        selection.applyClick(
-          deferred as NodeId,
-          params?.mods ?? { alt: false, ctrl: false, meta: false, shift: false },
-        );
+        selection.applyClick(deferred.id as NodeId, deferred.mods);
       },
     },
   });
