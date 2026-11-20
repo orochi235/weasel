@@ -6,8 +6,9 @@
  * (`./poseFrame`) composes the two, and is what a reader that draws, bounds,
  * or picks the node wants; this module is the angle and pivot alone.
  */
-import { forEachSegment, pathCommandCoordCount, PATH_L, PATH_M, PATH_Z } from './commands';
-import type { Path, PolygonPath } from './path';
+import type { Affine } from './affine';
+import type { Path, PolygonPath, RectPath } from './path';
+import { PathBuilder } from './paths/builder';
 import { transformPath } from './paths/transformPath';
 
 /** Pivot (`cx`, `cy`) and angle resolved from a pose's rotation convention. */
@@ -34,50 +35,24 @@ export function poseRotationOf(pose: unknown): PoseRotation | null {
 /**
  * Rotate every coordinate of `path` about `(cx, cy)` by `rotation` radians.
  * A `rect` promotes to a four-corner polygon (axis-aligned rects can't encode
- * rotation). Returns a fresh `PolygonPath`; never mutates the input.
+ * rotation). Returns a fresh `PolygonPath`; never mutates the input. A result
+ * landing far from 0 is measured from an origin, as `transformPath` gives one,
+ * so the rotation's doubles survive the float32 coords.
  */
 export function rotatePathAbout(path: Path, cx: number, cy: number, rotation: number): PolygonPath {
-  if (path.kind === 'rect') {
-    return rotateRectCorners(path.x, path.y, path.width, path.height, cx, cy, rotation);
-  }
-  return rotatePolygon(path, cx, cy, rotation);
-}
-
-function rotatePolygon(path: PolygonPath, cx: number, cy: number, rotation: number): PolygonPath {
   const cos = Math.cos(rotation);
   const sin = Math.sin(rotation);
-  if (path.origin) {
-    return transformPath(path, [cos, sin, -sin, cos, cx - cx * cos + cy * sin, cy - cx * sin - cy * cos]) as PolygonPath;
-  }
-  const { commands, coords } = path;
-  const next = new Float32Array(coords.length);
-  forEachSegment(commands, coords, (cmd, ci) => {
-    for (let k = 0, len = pathCommandCoordCount(cmd); k < len; k += 2) {
-      const dx = coords[ci + k] - cx;
-      const dy = coords[ci + k + 1] - cy;
-      next[ci + k] = cx + dx * cos - dy * sin;
-      next[ci + k + 1] = cy + dx * sin + dy * cos;
-    }
-  });
-  return { ...path, coords: next };
+  const about: Affine = [cos, sin, -sin, cos, cx - cx * cos + cy * sin, cy - cx * sin - cy * cos];
+  return transformPath(path.kind === 'rect' ? rectCorners(path) : path, about) as PolygonPath;
 }
 
-function rotateRectCorners(
-  x: number, y: number, w: number, h: number,
-  cx: number, cy: number, rotation: number,
-): PolygonPath {
-  const cos = Math.cos(rotation);
-  const sin = Math.sin(rotation);
-  const rotate = (px: number, py: number): [number, number] => {
-    const dx = px - cx;
-    const dy = py - cy;
-    return [cx + dx * cos - dy * sin, cy + dx * sin + dy * cos];
-  };
-  const [x0, y0] = rotate(x, y);
-  const [x1, y1] = rotate(x + w, y);
-  const [x2, y2] = rotate(x + w, y + h);
-  const [x3, y3] = rotate(x, y + h);
-  const commands = new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]);
-  const coords = new Float32Array([x0, y0, x1, y1, x2, y2, x3, y3]);
-  return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
+/** A rect's four corners as a closed polygon, measured from an origin where they lie far out. */
+function rectCorners({ x, y, width, height }: RectPath): PolygonPath {
+  return new PathBuilder().autoOrigin()
+    .moveTo(x, y)
+    .lineTo(x + width, y)
+    .lineTo(x + width, y + height)
+    .lineTo(x, y + height)
+    .close()
+    .build();
 }
