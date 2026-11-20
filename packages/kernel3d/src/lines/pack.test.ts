@@ -129,4 +129,34 @@ describe('packLines', () => {
   it('packs nothing for a line of one point', () => {
     expect(packLines([line([v(2, 2, 2)])])).toHaveLength(0);
   });
+
+  it('packs every position less the origin, subtracted in doubles before the float32 write', () => {
+    const R = 6.4e6;
+    const o = v(R, R, R);
+    const model = compose(v(R + 0.25, 0, 0), quatIdentity(), v(1, 1, 1));
+    const vs = vertices(packLines([line([v(0, R + 0.3, R), v(1, R + 0.3, R), v(1, R + 1.7, R)], { model })], o));
+    // As float32 from the world, 6.4e6 + 0.55 would land on a half-meter step; from the origin it keeps its digits.
+    const POSITIONS = [0, 3, 6, 18, 21];
+    const seen = new Set<string>();
+    for (const x of vs) {
+      for (const at of POSITIONS) {
+        const p = x.slice(at, at + 3);
+        seen.add(p.map((c) => c.toFixed(6)).join());
+      }
+    }
+    expect([...seen].sort()).toEqual(['0.250000,0.300000,0.000000', '1.250000,0.300000,0.000000', '1.250000,1.700000,0.000000']);
+  });
+
+  it('packs at the world’s origin by default', () => {
+    const at = v(3, 4, 5);
+    expect(packLines([line([v(0), v(1)])], at)[0]).toBe(-3);
+    expect(packLines([line([v(0), v(1)])])[0]).toBe(0);
+  });
+
+  it('leaves everything but the positions alone under an origin', () => {
+    const plain = vertices(packLines([line([v(0), v(1), v(3)])]));
+    const moved = vertices(packLines([line([v(0), v(1), v(3)])], v(7, -2, 9)));
+    const rest = (x: number[]) => [...x.slice(9, 18), x[24], ...x.slice(25)];
+    expect(moved.map(rest)).toEqual(plain.map(rest));
+  });
 });

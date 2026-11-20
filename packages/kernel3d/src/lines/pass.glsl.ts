@@ -1,3 +1,4 @@
+import { LOG_DEPTH_GLSL } from '../logDepth';
 import { HEAD_OVERDRAW } from './head';
 import { ROLE_SHAFT_END, ROLE_TIP } from './pack';
 
@@ -125,4 +126,16 @@ in vec4 v_color;
 out vec4 fragColor;
 void main() {
   fragColor = v_color;
+}`;
+
+/** {@link LINE_FS}, writing log depth. */
+export const LINE_FS_LOG_DEPTH = `#version 300 es
+precision highp float;
+in vec4 v_color;
+uniform vec3 u_logDepth;
+out vec4 fragColor;
+${LOG_DEPTH_GLSL}
+void main() {
+  fragColor = v_color;
+  gl_FragDepth = weaselLogDepth(u_logDepth);
 }`;

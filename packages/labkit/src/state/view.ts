@@ -67,6 +67,7 @@ export function as3DView(view: unknown, limits?: Partial<OrbitLimits>): ViewTran
         ...(positive(v.fov) ? { fov: v.fov } : {}),
         ...(positive(v.near) ? { near: v.near } : {}),
         ...(positive(v.far) ? { far: v.far } : {}),
+        ...(v.depth === 'log' || v.depth === 'standard' ? { depth: v.depth } : {}),
       });
   return clampCamera(camera, limits);
 }

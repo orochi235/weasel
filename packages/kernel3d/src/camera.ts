@@ -18,6 +18,7 @@ import {
   type Vec3,
 } from '@weasel-js/geom/3d';
 import { clamp } from '@weasel-js/geom';
+import type { LogDepth } from './logDepth';
 
 /** An orbit camera. The eye sits `distance` world units from `target` at
  *  `yaw`/`pitch`; `fov` is the vertical field of view in radians, and
@@ -33,14 +34,21 @@ export interface Camera3d {
   fov: number;
   near: number;
   far: number;
+  /** How depth is written. `'standard'` is GL's, from `perspective`; `'log'` spreads it by distance, for a near/far
+   *  ratio past about 1e4, which standard depth leaves z-fighting far away. A host drawing meshes beside the line
+   *  pass writes the same depth (`LOG_DEPTH_GLSL`). Default `'standard'`. */
+  depth?: CameraDepth;
 }
+
+/** How a camera's depth is written; see {@link Camera3d.depth}. */
+export type CameraDepth = 'standard' | 'log';
 
 /** Short of vertical: at exactly ±π/2 the eye lands on the up axis and `lookAt` degenerates. */
 export const MAX_PITCH = Math.PI / 2 - 0.01;
 const Y_UP: Vec3 = { x: 0, y: 1, z: 0 };
 
 /** A camera with defaults for every field not given: origin target, level at
- *  yaw 0, distance 10, fov π/4, near 0.1, far 1000. */
+ *  yaw 0, distance 10, fov π/4, near 0.1, far 1000, standard depth. */
 export function createCamera(init: Partial<Camera3d>): Camera3d {
   return {
     target: init.target ?? { x: 0, y: 0, z: 0 },
@@ -50,6 +58,7 @@ export function createCamera(init: Partial<Camera3d>): Camera3d {
     fov: init.fov ?? Math.PI / 4,
     near: init.near ?? 0.1,
     far: init.far ?? 1000,
+    depth: init.depth ?? 'standard',
   };
 }
 
@@ -127,9 +136,41 @@ export function cameraView(camera: Camera3d, worldUp?: Vec3): Mat4 {
   return lookAt(eye, camera.target, orbitUp);
 }
 
-/** World-to-clip matrix for a pane of the given width/height `aspect`. */
+/** World-to-clip matrix for a pane of the given width/height `aspect`. Far from the world's origin a float32 copy of
+ *  it loses the eye's place; a GPU draw takes {@link cameraFrame}'s instead. */
 export function cameraViewProjection(camera: Camera3d, aspect: number, worldUp?: Vec3): Mat4 {
-  return multiply(perspective(camera.fov, aspect, camera.near, camera.far), cameraView(camera, worldUp));
+  return cameraFrame(camera, aspect, worldUp, ORIGIN).viewProjection;
+}
+
+const ORIGIN: Vec3 = { x: 0, y: 0, z: 0 };
+
+/** What a GPU draw needs of a camera: a view-projection taking points given relative to `origin`, and its depth. */
+export interface CameraFrame {
+  /** The point positions are given relative to; `packLines` takes it. */
+  origin: Vec3;
+  /** From a point less `origin` to clip space. */
+  viewProjection: Mat4;
+  /** `null` for standard depth. */
+  logDepth: LogDepth | null;
+}
+
+/** The camera's {@link CameraFrame} for a pane of width/height `aspect`, relative to `origin` (default the eye).
+ *  Relative to the eye the matrix holds no translation, so a float32 copy of it keeps the precision a position near
+ *  the eye has, however far both are from the world's origin. */
+export function cameraFrame(camera: Camera3d, aspect: number, worldUp?: Vec3, origin?: Vec3): CameraFrame {
+  const { eye, orbitUp } = cameraBasis(camera, worldUp);
+  const o = origin ?? eye;
+  const view = lookAt(sub(eye, o), sub(camera.target, o), orbitUp);
+  return {
+    origin: o,
+    viewProjection: multiply(perspective(camera.fov, aspect, camera.near, camera.far), view),
+    logDepth: cameraLogDepth(camera),
+  };
+}
+
+/** The camera's log depth, `null` when its depth is standard. The knee is the geometric mean of near and far. */
+export function cameraLogDepth(camera: Camera3d): LogDepth | null {
+  return camera.depth === 'log' ? { knee: Math.sqrt(camera.near * camera.far), far: camera.far } : null;
 }
 
 /** How far an orbit camera may turn and travel. Distances are in world units,

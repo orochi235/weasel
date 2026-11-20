@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   createCamera,
   cameraEye,
+  cameraFrame,
+  cameraLogDepth,
   cameraViewProjection,
   orbitBy,
   dollyBy,
@@ -165,5 +167,41 @@ describe('cameraViewProjection', () => {
     const vp = cameraViewProjection(cam, RECT.width / RECT.height);
     const ray = rayThroughScreenPoint({ x: 400, y: 300 }, RECT, vp)!;
     expectVecClose(normalize(ray.direction), normalize(sub(cam.target, eye)), 4);
+  });
+});
+
+describe('cameraFrame', () => {
+  const R = 6.4e6;
+  const cam = createCamera({ distance: 10, yaw: 0.3, pitch: 0.2, target: { x: R, y: 0.5 * R, z: -R } });
+  const aspect = RECT.width / RECT.height;
+  const clip = (m: readonly number[], p: Vec3) => transformPoint4(m, p);
+
+  it('takes a point less the eye where cameraViewProjection takes the point', () => {
+    const frame = cameraFrame(cam, aspect);
+    expect(frame.origin).toEqual(cameraEye(cam));
+    const p = { x: R + 1, y: 0.5 * R - 2, z: -R + 3 };
+    const want = clip(cameraViewProjection(cam, aspect), p);
+    const got = clip(frame.viewProjection, sub(p, frame.origin));
+    // The absolute matrix carries 1e7-sized terms, so it agrees only to its own rounding.
+    for (let i = 0; i < 4; i++) expect(got[i]).toBeCloseTo(want[i], 5);
+  });
+
+  it('holds no translation relative to the eye, only the projection’s depth term', () => {
+    const m = cameraFrame(cam, aspect).viewProjection;
+    expect([m[12], m[13], m[15]]).toEqual([0, 0, 0]);
+    expect(Math.abs(m[14])).toBeLessThan(1);
+  });
+
+  it('is cameraViewProjection relative to the world’s origin', () => {
+    expect(cameraFrame(cam, aspect, undefined, { x: 0, y: 0, z: 0 }).viewProjection)
+      .toEqual(cameraViewProjection(cam, aspect));
+  });
+
+  it('carries log depth only for a log camera, with the knee at the mean of near and far', () => {
+    expect(cameraFrame(cam, aspect).logDepth).toBeNull();
+    expect(createCamera({}).depth).toBe('standard');
+    const log = { ...cam, depth: 'log' as const, near: 0.1, far: 1e7 };
+    expect(cameraLogDepth(log)).toEqual({ knee: 1000, far: 1e7 });
+    expect(cameraFrame(log, aspect).logDepth).toEqual(cameraLogDepth(log));
   });
 });
