@@ -240,6 +240,15 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
+- **(P2) [agent] A scene layout moves a fitted container as one rigid box, where `diagramScene` lays its members
+  out.** A `DataContainer` with no `box` comes out `container.fitted`, and `diagramScene` lays it out as a cluster
+  around its members (`containerLayoutNodes`, `packages/diagram/src/dataContainers.ts`). `buildGraph`'s
+  `outermostRegions` (`packages/diagram/src/graph.ts`) counts it a region, so `layoutDiagram`, `diagram.layout`
+  and `useLiveLayout` move it whole and never rearrange what it holds. Making it a graph cluster is the easy half;
+  the rest is re-fitting the container's box after each write and each live frame, while its members are stored in
+  its frame, which `layoutPoses` (translate only) cannot yet express. Closes when one diagram with a fitted
+  container lays its members out the same way from `diagramScene` and from `layoutDiagram` on the scene it built.
+
 ### Extension authoring and published consumers
 
 ---
