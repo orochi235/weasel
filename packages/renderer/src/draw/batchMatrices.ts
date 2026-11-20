@@ -18,20 +18,26 @@ export interface BatchMatrix {
 
 /**
  * The index this matrix and alpha have in `matrices`, the next free one if
- * they are new to it, or -1 if it is full.
+ * they are new to it, or -1 if it already holds `slots`.
  *
  * By value, not by reference: a group carrying an identity color matrix still
  * goes through `composeColorMatrix`, which allocates a new array holding equal numbers.
  */
 export function matrixIndex(
-  matrices: readonly BatchMatrix[], colorMatrix: Float32Array, alpha: number,
+  matrices: readonly BatchMatrix[], colorMatrix: Float32Array, alpha: number, slots: number,
 ): number {
   for (let i = 0; i < matrices.length; i++) {
     const m = matrices[i];
     if (m.alpha === alpha
         && (m.colorMatrix === colorMatrix || sameValues(m.colorMatrix, colorMatrix))) return i;
   }
-  return matrices.length < (colorFolding.enabled ? BATCH_MATRIX_SLOTS : 1) ? matrices.length : -1;
+  return matrices.length < slots ? matrices.length : -1;
+}
+
+/** How many matrices a run may hold: one unless folding is on and a program
+ *  declaring more is there to draw it. */
+export function matrixSlots(ctx: DrawContext): number {
+  return colorFolding.enabled && ctx.batchVariants !== undefined ? BATCH_MATRIX_SLOTS : 1;
 }
 
 const MATRICES = new Float32Array(16 * BATCH_MATRIX_SLOTS);

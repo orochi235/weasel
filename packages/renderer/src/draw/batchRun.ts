@@ -1,6 +1,6 @@
 import { BATCH_TEXTURE_SLOTS, RAMP_SLOT, withHull } from '../shaders/batchFill';
 import { HULL_POOL, type HullSet } from '../batchHull';
-import { type BatchMatrix, matrixIndex } from './batchMatrices';
+import { type BatchMatrix, matrixIndex, matrixSlots } from './batchMatrices';
 import { liveHulls, runClipDepth } from './clip';
 import type { DrawContext } from './drawContext';
 
@@ -115,7 +115,7 @@ export function runTakes(
   ctx: DrawContext, staged: StagedBatchState, colorMatrix: Float32Array, alpha: number,
 ): boolean {
   return staged.clipDepth === runClipDepth(ctx)
-    && matrixIndex(staged.matrices, colorMatrix, alpha) >= 0
+    && matrixIndex(staged.matrices, colorMatrix, alpha, matrixSlots(ctx)) >= 0
     && hullFits(staged, liveHulls(ctx));
 }
 
@@ -161,7 +161,7 @@ export function takeHulls(ctx: DrawContext, staged: StagedBatchState, slot: numb
 export function takeMatrix(
   staged: StagedBatchState, colorMatrix: Float32Array, alpha: number,
 ): number {
-  const index = matrixIndex(staged.matrices, colorMatrix, alpha);
+  const index = matrixIndex(staged.matrices, colorMatrix, alpha, Infinity);
   if (index === staged.matrices.length) staged.matrices.push({ colorMatrix, alpha });
   return index;
 }
