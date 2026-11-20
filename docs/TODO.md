@@ -545,6 +545,12 @@ comparing pezlie's wall, which pans a 1.1M-cell corpus at 60 fps). Arc 1, render
 
 ## Release-gate & build hygiene
 
+- **(P3) [waiting] forge's axe sweep failed `Field.stories.tsx` and `ClockFrames.stories.tsx` in both modes** in
+  the full run of `006b44f98a` (2026-11-19), the first in msb-uai's new `weasel-browser` tree (cold install and
+  transforms, 14 Chromiums): `aria-input-field-name` on Field's two `Slider` thumbs. On the same node and tree
+  minutes later, the shard files and the old single-file sweep both passed those stories. Closes on a second
+  sighting, with whatever it shares with this one, or after five more full runs without it.
+
 - **(P3) [waiting] The gate's `npm run lint` step failed in 93 ms with no output** in the full run of
   `0852e33894` (2026-11-18), while `npm run lint` alone on the same commit on the fleet linted the repo and exited
   0. 93 ms is too short for eslint to have linted anything, so it died starting up, printing nothing. The gate
