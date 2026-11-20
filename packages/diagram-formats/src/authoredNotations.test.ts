@@ -114,4 +114,12 @@ describe('a chart drawn from a notation type\'s stencils writes that notation, a
     const pool = graph(back).data.containers![0]!;
     expect(pool.lanes?.map((l) => [l.label, l.members?.length ?? 0])).toEqual([['To do', 1], ['In progress', 0], ['Done', 1]]);
   });
+  it('ER', () => {
+    const { text, back } = drawn('erd', [{ stencil: 'erd-entity', at: { x: 100, y: 100 } }]);
+    expect(text).toMatch(/^erDiagram/m);
+    expect(text).toMatch(/\{\n\s+int id PK\n\s+string name\n\s+int owner_id FK\n\s+\}/);
+    const fields = (graph(back).data.nodes[0]!.rows ?? []).flatMap((r) => (r.kind === 'field' ? [[r.label, r.value]] : []));
+    expect(fields).toEqual([['int', 'id PK'], ['string', 'name'], ['int', 'owner_id FK']]);
+  });
+
 });

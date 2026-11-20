@@ -2,16 +2,17 @@ import { icon } from '../icons.gen';
 import type { StencilGroup } from '../diagramTypes/types';
 import type { DiagramStencil } from '../stencil';
 
-/** An entity-relationship diagram's symbols: a crow's-foot entity table beside Chen's shapes. */
+/** An entity-relationship diagram's symbols: a crow's-foot entity table, each field its type then its name and keys, beside
+ *  Chen's shapes. */
 export const ERD_STENCILS: readonly DiagramStencil[] = [
   {
     id: 'erd-entity', label: 'Entity', outline: 'rect', size: { width: 140, height: 100 }, verticalAlign: 'top', icon: icon('erdEntity'),
     rows: [
       { kind: 'label', text: 'Entity', style: { bold: true } },
       { kind: 'divider' },
-      { kind: 'field', label: 'id', value: 'PK' },
-      { kind: 'field', label: 'name', value: 'text' },
-      { kind: 'field', label: 'owner_id', value: 'FK' },
+      { kind: 'field', label: 'int', value: 'id PK' },
+      { kind: 'field', label: 'string', value: 'name' },
+      { kind: 'field', label: 'int', value: 'owner_id FK' },
     ],
   },
   { id: 'erd-weak-entity', label: 'Weak entity', outline: 'doubleRect', size: { width: 130, height: 60 }, icon: icon('erdWeakEntity') },
