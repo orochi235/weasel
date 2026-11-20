@@ -164,27 +164,19 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     producer.current = producerFor(graph, plan, o);
   }, [optsRef, eased]);
 
-  const step = useCallback((ctx: PoseRunCtx<TPose>): PoseRunStep<TPose> => {
+  // A step that throws ends the run with its node overrides released; the routes go with them.
+  const step = useCallback((ctx: PoseRunCtx<TPose>): PoseRunStep<TPose> => droppingOnThrow(eased, () => {
     const o = optsRef.current;
     if (producer.current === null) return { poses: [], done: true };
     if (ctx.pinned.size > 0) held.current = true;
     const frame = producerFrame.current++;
     const { result, done } = producer.current({ pinned: ctx.pinned, frame });
-    // A pinned participant takes its subtree out of the frame with it: its
-    // rows and labels are ids of their own, and left in they would be
-    // published from the pose the document still holds.
-    let placed = result;
-    if (ctx.pinned.size > 0) {
-      const held = new Map(result);
-      for (const id of ctx.pinned.keys()) held.delete(id as string);
-      placed = held;
-    }
-    const poses = layoutPoses(o.scene, placed, frameFor(o));
+    const poses = layoutPoses(o.scene, withoutPinned(result, ctx.pinned), frameFor(o));
     // Routes ease only toward where they will be written, which a held run never writes.
     const { u } = progress(frame, o.frames ?? EASE_FRAMES, o.easing ?? easeInOutQuad);
     eased.show(o.scene, held.current ? null : u, (id) => poses.get(id) ?? ctx.pinned.get(id as NodeId), frameFor(o));
     return { poses: [...poses] as [NodeId, TPose][], done };
-  }, [optsRef, eased]);
+  }), [optsRef, eased]);
 
   const run = usePoseRun<TPose>({
     scene: opts.scene,
@@ -231,8 +223,9 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
   const restart = useCallback((): void => {
     pending.drop();
     run.cancel();
+    eased.drop();
     if (build()) run.start();
-  }, [pending, run, build]);
+  }, [pending, run, build, eased]);
 
   // A node or edge appearing or disappearing is a new problem, so the run
   // re-heats rather than finishing the one it started on. A planner is asked
@@ -252,11 +245,30 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
       if (run.isRunning() || pending.isWaiting()) return;
       if (build()) run.start();
     },
-    stop: () => { pending.drop(); run.stop(); },
+    stop: () => { pending.drop(); run.stop(); eased.drop(); },
     cancel: () => { pending.drop(); run.cancel(); eased.drop(); },
     restart,
     isRunning: () => run.isRunning() || pending.isWaiting(),
   }), [run, build, restart, eased, pending]);
+}
+
+/** `result` less the pinned participants. A pinned one takes its subtree out
+ *  of the frame with it: its rows and labels are ids of their own, and left in
+ *  they would be published from the pose the document still holds. */
+function withoutPinned<T>(result: ReadonlyMap<string, T>, pinned: ReadonlyMap<NodeId, unknown>): ReadonlyMap<string, T> {
+  if (pinned.size === 0) return result;
+  const kept = new Map(result);
+  for (const id of pinned.keys()) kept.delete(id as string);
+  return kept;
+}
+
+function droppingOnThrow<T>(eased: { drop(): void }, run: () => T): T {
+  try {
+    return run();
+  } catch (err) {
+    eased.drop();
+    throw err;
+  }
 }
 
 /** The layouts that ease rather than relax, for a consumer choosing one. */
