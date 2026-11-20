@@ -44,6 +44,13 @@ describe("an instrument history's last saved form, kept once it unmounts", () =>
     expect(saved(store)?.undo).toEqual({ own: { steps: 3 } });
   });
 
+  it('is dropped when the trial closes', () => {
+    const store = storeWithTrial();
+    holdOwnUndo(store, 't', source)();
+    store.getState().removeTrial('t');
+    expect(ownUndoOf(store, 't')).toBeUndefined();
+  });
+
   it('is dropped by a Reset, so the next save writes no stack', () => {
     const store = storeWithTrial();
     holdOwnUndo(store, 't', source)();
