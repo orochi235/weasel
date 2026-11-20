@@ -67,6 +67,8 @@ export function placeOverlay(
 ): void {
   if (!pose) {
     el.style.display = 'none';
+    // The box keeps its size, and so its scroll offset, for when the node comes back.
+    boxes.scroll.style.pointerEvents = 'none';
     return;
   }
   // `clip` rather than `hidden`: a `hidden` box is still scrollable, and the
