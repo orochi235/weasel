@@ -10,7 +10,9 @@ type Scope = ReadonlySet<string>;
 
 const FUNCTIONS = new Set(['FunctionDeclaration', 'FunctionExpression', 'ArrowFunctionExpression']);
 /** Nodes a `var` does not hoist out of. */
-const VAR_BARRIERS = new Set([...FUNCTIONS, 'ClassBody', 'TSModuleDeclaration']);
+const VAR_BARRIERS = new Set([...FUNCTIONS, 'ClassBody', 'StaticBlock', 'TSModuleDeclaration']);
+/** Bodies that are a `var` scope of their own, as a function body is. */
+const VAR_SCOPES = new Set(['StaticBlock', 'TSModuleBlock']);
 const LEXICAL_DECLARATIONS = new Set(['ClassDeclaration', 'FunctionDeclaration', 'TSEnumDeclaration', 'TSModuleDeclaration']);
 
 const isNode = (value: unknown): value is Node =>
@@ -44,10 +46,11 @@ function bindingNames(pattern: unknown, out: string[] = []): string[] {
 
 const declaratorNames = (decl: Node) => (decl.declarations as Node[]).flatMap((d) => bindingNames(d.id));
 
-/** The names `let`, `const`, `class` and `function` declarations directly in `statements` bind. */
+/** The names `let`, `const`, `class` and `function` declarations directly in `statements` bind, exported ones included. */
 function lexicalNames(statements: readonly Node[]): string[] {
   const out: string[] = [];
-  for (const s of statements) {
+  for (const statement of statements) {
+    const s = statement.type === 'ExportNamedDeclaration' && isNode(statement.declaration) ? statement.declaration : statement;
     if (s.type === 'VariableDeclaration' && s.kind !== 'var') out.push(...declaratorNames(s));
     else if (LEXICAL_DECLARATIONS.has(s.type) && isNode(s.id) && s.id.type === 'Identifier') out.push(s.id.name as string);
   }
@@ -103,7 +106,11 @@ export function unshadowedCalls(program: Program, names: ReadonlySet<string>, on
       }
       case 'BlockStatement':
       case 'StaticBlock':
-        return visit(node.body, scope(hidden, lexicalNames(node.body as Node[])));
+      case 'TSModuleBlock': {
+        const body = node.body as Node[];
+        const vars = VAR_SCOPES.has(node.type) ? varNames(body) : [];
+        return visit(body, scope(hidden, [...vars, ...lexicalNames(body)]));
+      }
       case 'SwitchStatement': {
         visit(node.discriminant, hidden);
         const cases = node.cases as Node[];

@@ -197,6 +197,23 @@ describe('rewriteIconCalls on a local that shadows the import', () => {
     expect(refs(src)).toEqual(['core:default']);
   });
 
+  it('leaves a call through a var in a class static block', () => {
+    const src = `${head}class K { static { var icon = String; K.v = icon('static'); } }\nicon('outside');\n`;
+    expect(refs(src)).toEqual(['core:outside']);
+  });
+
+  it('leaves a call through a declaration in a namespace body', () => {
+    const src = [
+      head,
+      `namespace A { const icon = (s: string) => s; export const x = icon('const'); }`,
+      `namespace B { export function icon(s: string) { return s; } icon('exported'); }`,
+      `namespace C { if (x) { var icon = id; } icon('var'); }`,
+      `namespace D.E { let icon = id; icon('dotted'); }`,
+      `icon('outside');`,
+    ].join('\n');
+    expect(refs(src)).toEqual(['core:outside']);
+  });
+
   it('tracks an aliased import by its local name', () => {
     const src = [
       `import { icon as i } from './icons.gen';`,
