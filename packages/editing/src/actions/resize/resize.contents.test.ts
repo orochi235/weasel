@@ -5,9 +5,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { createScene, unionOfChildren, scenePoseFrame } from '@weasel-js/core/engine';
+import { createScene, unionOfChildren, scenePoseFrame, defaultCommitAdapter } from '@weasel-js/core/engine';
 import { asNodeId, type NodeId, type RectPose, type Scene } from '@weasel-js/core';
 import { resizeAction } from './action';
+import { resizeSelectionOps } from './replay';
 
 const BOX = asNodeId('box');
 const KID = asNodeId('kid');
@@ -63,5 +64,16 @@ describe('resizing a frame', () => {
     expect(scene.historyEntries()).toHaveLength(entries + 1);
     scene.undo();
     expect(scene.get(KID)!.pose).toMatchObject({ x: 50, y: 50 });
+  });
+
+  it('leaves its contents where they drew when the resize is replayed by command', () => {
+    const scene = makeScene();
+    // The drag above, from 200 × 100 to 260 × 140 holding the bottom-right corner.
+    const units = { x: -0.3, y: -0.4, width: 1.3, height: 1.4 };
+    const ops = resizeSelectionOps(scene, [BOX], { x: 'max', y: 'max' }, units, {}, 'Scale');
+    scene.applyBatch(ops, 'Scale', defaultCommitAdapter(scene));
+    expect(scene.get(BOX)!.pose).toMatchObject({ x: 40, y: 60, width: 260, height: 140 });
+    expect(worldAt(scene, KID)).toEqual({ x: 150, y: 150 });
+    expect(worldAt(scene, INNER)).toEqual({ x: 200, y: 120 });
   });
 });

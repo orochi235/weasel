@@ -2,6 +2,7 @@ import type { ActionDeps, ResizeAnchor } from '@weasel-js/routing';
 import type { Op, NodeId, Scene, Bounds } from '@weasel-js/core';
 import { resizeOps } from './commit';
 import { posesInBox } from './frame';
+import { holdInPlace } from './held';
 import { captureResize } from './session';
 
 /** `to`, given in units of `from` (`{ x: 0, y: 0, width: 1, height: 1 }` is
@@ -25,7 +26,8 @@ export function unitsOfBox(from: Bounds, to: Bounds): Bounds {
 
 /** The ops that resize `selected` the way a handle drag would, taking the box
  *  it would resize to `units` of itself. The resize policy's expansion
- *  applies; its constraints and point snaps, which shape a pointer, do not. */
+ *  applies, and a written frame's contents are held where they draw; its
+ *  constraints and point snaps, which shape a pointer, do not. */
 export function resizeSelectionOps(
   scene: Scene<unknown, string, unknown>,
   selected: readonly string[],
@@ -39,5 +41,6 @@ export function resizeSelectionOps(
   if (!captured) return [];
   const { place } = captured;
   const { previews } = posesInBox(place, boxInUnits(place.box.bounds, units));
-  return resizeOps({ ...place, geometryProjection: deps.geometryProjection }, previews, label);
+  // As the drag does: a frame's contents stay where they draw.
+  return resizeOps({ ...place, geometryProjection: deps.geometryProjection }, holdInPlace(previews, place.held, place.poseFrame), label);
 }
