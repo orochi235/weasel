@@ -604,6 +604,18 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Open 2026-11-11: coordinates past PDF's customary real range (about ±3.4e38) are written as plain integers of
   up to 309 digits, which some readers cannot hold. Whether to drop such a command as `num` drops a non-finite
   one is unasked.
+- 2026-11-20 (my call, audit round 53): the `.lbx` writer takes P-touch to miter a polyline's corners, as it does a
+  rect's, and to end a `SQUARE` arrow at the point, as a butt cap does. A polyline with a corner the canvas rounds,
+  bevels, or cuts at its miter limit, and a square-capped line, are rasterized. Neither reading of P-touch was
+  checked against a printed label.
+- 2026-11-20 (my call, audit round 53): the `.lbx` writer takes P-touch's own line spacing and tab stops to match
+  the default `lineHeight` and `tabSize`, and rasterizes a text box that sets more than one line at another line
+  height or holds a tab at another tab size, rather than write `lineSpace`, whose unit bil-lbx does not state.
+- 2026-11-20 (my call, audit round 53): under `autoLength`, the `.lbx` writer rasterizes a shape or text box
+  reaching past either end of the label, so it is cropped there as rasterized paint is, rather than let P-touch
+  grow the label for it. An `lbxObjectsCommand` past the end is still written whole, since it cannot be
+  rasterized; whether it should be skipped instead is unasked. A carried object under a transform that scales an
+  axis to zero is dropped with no report, as paint there draws nothing.
 - Ruled 2026-11-10 (my call, overnight sweep): the `.lbx` writer writes each of UAX #14's hard breaks in a text
   box (`\r\n`, `\r`, VT, FF, NEL, U+2028, U+2029) as one `\n`, the break P-touch reads; a bare `\r` read back
   as a second line feed.
