@@ -149,7 +149,7 @@ export function numericWeight(w: number | string): number {
   if (typeof w === 'number') return w;
   if (w === 'bold' || w === 'bolder') return 700;
   if (w === 'normal') return 400;
-  const parsed = Number(w);
+  const parsed = w.trim() === '' ? NaN : Number(w);
   return Number.isFinite(parsed) ? parsed : 400;
 }
 
