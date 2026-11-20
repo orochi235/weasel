@@ -58,6 +58,8 @@ export function extensionlessHref(href: string): string {
  *  to `stats.html` serves both spellings, and a bookmark from before the URLs
  *  lost their extension still resolves to the same page.
  *
+ *  Where several pages match, the longest match is the one marked.
+ *
  *  A page whose `href` carries a hash is a route on a single document and wins
  *  when the path's hash is that route or one under it. A page without one
  *  ignores the hash, so an in-page anchor does not lose it. */
@@ -75,21 +77,26 @@ export function currentPage(path: string, pages: readonly LabPage[]): number {
   };
   // Every other doc starts with `/`, so its suffix match ends on a segment; the root's is empty and would match all.
   const onDoc = (doc: string) => (doc === '' ? here.doc === '' : here.doc.endsWith(doc));
-  const routed = pages.findIndex((p) => {
-    if (!p.href.includes('#')) return false;
-    const page = target(p.href);
-    return (
-      page !== undefined &&
-      onDoc(page.doc) &&
-      (here.route === page.route || here.route.startsWith(`${page.route}/`))
-    );
-  });
+  // The longest match wins, so `/sub/stats` is not taken for `/stats` nor `#/dev/tools` for `#/dev`; ties go to the first.
+  const best = (score: (page: { doc: string; route: string }, href: string) => number | null) => {
+    let at = -1;
+    let top = -1;
+    pages.forEach((p, i) => {
+      const page = target(p.href);
+      const s = page === undefined ? null : score(page, p.href);
+      if (s !== null && s > top) [at, top] = [i, s];
+    });
+    return at;
+  };
+  const routed = best((page, href) =>
+    href.includes('#') &&
+    onDoc(page.doc) &&
+    (here.route === page.route || here.route.startsWith(`${page.route}/`))
+      ? page.route.length * 1e4 + page.doc.length
+      : null,
+  );
   if (routed >= 0) return routed;
-  return pages.findIndex((p) => {
-    if (p.href.includes('#')) return false;
-    const page = target(p.href);
-    return page !== undefined && onDoc(page.doc);
-  });
+  return best((page, href) => (!href.includes('#') && onDoc(page.doc) ? page.doc.length : null));
 }
 
 /** A project's lab title, doubling as the way to reach its other labs.
