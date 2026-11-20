@@ -52,6 +52,9 @@ export interface TextClustersOptions extends TextToPathOptions {
    *  in, as the node's own layout does. Default `Infinity`: one line per
    *  paragraph. */
   width?: number;
+  /** The node's box height, which a `fit: 'shrink'` node shrinks to fit as its
+   *  own layout does. Default `Infinity`: it shrinks to `width` alone. */
+  height?: number;
 }
 
 // Where a face reports no x-height: half of a typical 0.5 em one.
@@ -70,32 +73,33 @@ const MIDDLE_FALLBACK = 0.25;
  * with no `paths`. Only a code point that inks its slot is drawn, so a color
  * cluster's leading code points stay blank too.
  *
- * Remembered per `data` object: the same `data`, `width` and `scale` hand
+ * Remembered per `data` object: the same `data`, `width`, `height` and `scale` hand
  * back the same array until a face or glyph, or the registered bidi engine or
  * shaper, changes, so treat `data` as
  * immutable and don't mutate the result. A throw is not remembered.
  */
 export function textClusters(data: TextOutlineSource, opts: TextClustersOptions = {}): TextCluster[] {
   const width = opts.width ?? Infinity;
+  const height = opts.height ?? Infinity;
   const scale = opts.scale ?? 1;
   const generation = glyphGeneration();
   const engines = textEngineGeneration();
   const hit = remembered.get(data);
-  if (hit && hit.width === width && hit.scale === scale && hit.generation === generation
+  if (hit && hit.width === width && hit.height === height && hit.scale === scale && hit.generation === generation
     && hit.engines === engines) return hit.clusters;
-  const clusters = clustersOf(data, width, scale);
-  remembered.set(data, { width, scale, generation, engines, clusters });
+  const clusters = clustersOf(data, width, height, scale);
+  remembered.set(data, { width, height, scale, generation, engines, clusters });
   return clusters;
 }
 
 // One slot per data object: a resize drag replaces it rather than piling up a width per frame.
 const remembered = new WeakMap<TextOutlineSource, {
-  width: number; scale: number; generation: number; engines: number; clusters: TextCluster[];
+  width: number; height: number; scale: number; generation: number; engines: number; clusters: TextCluster[];
 }>();
 
-function clustersOf(data: TextOutlineSource, width: number, scale: number): TextCluster[] {
+function clustersOf(data: TextOutlineSource, width: number, height: number, scale: number): TextCluster[] {
   const opts = { scale };
-  const box = { x: 0, y: 0, width, height: 0 };
+  const box = { x: 0, y: 0, width, height };
   const { runs, opts: layoutOpts } = outlineLayoutInput(data, box, opts, 'textClusters');
   const line = layoutRuns(runs, layoutOpts).lines[0];
   if (!line || line.cells.length === 0) return [];
