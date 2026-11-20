@@ -230,7 +230,7 @@ export {
   withShownPath,
   type PathNode,
 } from '../interactions/actions/pathCommands/pathNodes';
-export { nodeFrameOf, shownIn, shownNodeOf, storesEdits, type NodeFrame } from '../domains/paths/nodeFrame';
+export { nodeFrameOf, shownIn, shownNodeOf, storesEdits, type FramedNode, type NodeFrame } from '../domains/paths/nodeFrame';
 export { anchorDataPatch } from '../domains/paths/anchorData';
 export { representationOf } from '../domains/paths/pathRepresentation';
 export { segmentUnder } from '../interactions/actions/defaults/segmentUnder';

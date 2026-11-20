@@ -382,6 +382,7 @@
     "FontStyle": "type",
     "FontVariant": "type",
     "FrameStats": "type",
+    "FramedNode": "type",
     "GEOMETRY_BOUND_DATA": "const",
     "GateLayerOptions": "type",
     "GateSource": "type",

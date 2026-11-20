@@ -19,7 +19,8 @@ export interface NodeFrame {
   inverts: boolean;
 }
 
-type FramedNode = { id: string; parent?: string | null; pose: unknown };
+/** What a frame lookup reads of a node: its id, its parent, and its stored pose. */
+export type FramedNode = { id: string; parent?: string | null; pose: unknown };
 
 /** `node`'s frame, or null where its stored pose is already world: a root, or
  *  a polygon pose, which draws as stored. */
