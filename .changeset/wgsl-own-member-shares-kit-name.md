@@ -2,6 +2,8 @@
 '@weasel-js/renderer': patch
 ---
 
-A WGSL effect, custom program, or paint kind whose own uniform struct has a member named like one of the kit's, such as `bounds` or `resolution`, keeps its own value, and the kit's value reaches the kit's member.
+A WGSL program's own uniform member named like a kit member, such as `bounds` or `resolution`, keeps its own value.
+
+The kit's value reaches the kit's member, in effects, custom programs, and paint kinds alike.
 
 <!-- entry: fix visual -->
