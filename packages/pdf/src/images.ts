@@ -204,7 +204,7 @@ export function texturePattern(ctx: PageCtx, paint: TextureFill, state: DrawStat
   const [ma, mb, mc, md, me, mf] = mat3.toAffine(m);
   const matrix = [ma * w, mb * w, mc * h, md * h, me, mf];
 
-  const key = `pattern ${paint.texture.id} ${matrix.join(',')} ${state.colorMatrix?.join(',') ?? ''}`;
+  const key = `pattern ${idOf(entry.source)} ${matrix.join(',')} ${state.colorMatrix?.join(',') ?? ''}`;
   const cache = memo(ctx);
   let ref = cache.get(key);
   if (!ref) {
