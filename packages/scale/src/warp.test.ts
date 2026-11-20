@@ -25,14 +25,14 @@ describe('warpScale', () => {
     expect(warpScale({ domain: [1, 4], range: [2, 2], to: Math.sqrt, from: (w) => w * w }).invert(2)).toBe(1);
   });
 
-  it('ticks on round values spaced evenly along the range, not bunched at one end, each labeled as written', () => {
+  it('ticks on round values spaced evenly along the range, whole ones where the domain has enough, each labeled as written', () => {
     expect(cube.ticks()).toEqual([0, 1, 1.5, 2]);
     expect(cube.format(1.5)).toBe('1.5');
     expect(cube.tickFormat(5)(1)).toBe('1');
     const log1p = warpScale({ domain: [0, 12], range: [0, 1], to: Math.log1p, from: Math.expm1 });
     const ticks = log1p.ticks(4);
-    expect(ticks).toEqual([0, 1, 2.5, 6, 10]);
-    expect(ticks.map(log1p.tickFormat(4))).toEqual(['0', '1', '2.5', '6', '10']);
+    expect(ticks).toEqual([0, 1, 3, 6, 10]);
+    expect(ticks.map(log1p.tickFormat(4))).toEqual(['0', '1', '3', '6', '10']);
     const gaps = ticks.slice(1).map((t, i) => log1p.position(t) - log1p.position(ticks[i]!));
     expect(Math.max(...gaps) / Math.min(...gaps)).toBeLessThan(1.6);
   });

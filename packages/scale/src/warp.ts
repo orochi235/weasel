@@ -28,18 +28,22 @@ const MANTISSAS = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10] as const;
 /** `m` times `p` without the float noise a bare product carries. */
 const times = (m: number, p: number) => Number((m * p).toPrecision(12));
 
-/** The round value inside `lo`..`hi` nearest `v` along a scale warped by `to`, or null for none there. */
-function roundNear(v: number, to: (value: number) => number, lo: number, hi: number): number | null {
-  if (v === 0) return lo <= 0 && hi >= 0 ? 0 : null;
+/**
+ * The round value inside `lo`..`hi` nearest `v` along a scale warped by `to`, not one already `taken`, and a whole
+ * number where `whole`; null for none there.
+ */
+function roundNear(v: number, to: (value: number) => number, lo: number, hi: number, whole: boolean, taken: readonly number[]): number | null {
+  if (v === 0) return lo <= 0 && hi >= 0 && !taken.includes(0) ? 0 : null;
   const p = 10 ** Math.floor(Math.log10(Math.abs(v)));
-  const near = MANTISSAS.map((m) => Math.sign(v) * times(m, p)).filter((c) => c >= lo && c <= hi);
+  const near = MANTISSAS.map((m) => Math.sign(v) * times(m, p))
+    .filter((c) => c >= lo && c <= hi && !taken.includes(c) && (!whole || Number.isInteger(c)));
   if (near.length === 0) return null;
   return near.reduce((best, c) => (Math.abs(to(c) - to(v)) < Math.abs(to(best) - to(v)) ? c : best));
 }
 
 /**
- * About `count` ticks spaced evenly along a scale warped by `to`, each moved to the round value nearest its place,
- * in the domain's direction. Evenly spaced values bunch at one end of a warped axis, so the spacing is the warped one.
+ * About `count` ticks spaced evenly along a scale warped by `to`, each moved to the round value nearest its place, in
+ * the domain's direction: whole numbers only, where the domain holds one for every tick. Evenly spaced values bunch at one end of a warped axis, so the spacing is the warped one.
  */
 export function warpTicks(domain: readonly [number, number], to: (value: number) => number, from: (warped: number) => number, count = DEFAULT_TICKS): number[] {
   const [d0, d1] = domain;
@@ -50,9 +54,11 @@ export function warpTicks(domain: readonly [number, number], to: (value: number)
   const hi = Math.max(d0, d1);
   const n = Math.max(1, Math.round(count));
   const out: number[] = [];
+  // A domain holding a whole number for every tick ticks on whole numbers only.
+  const whole = Math.floor(hi) - Math.ceil(lo) + 1 >= n + 1;
   for (let i = 0; i <= n; i++) {
-    const tick = roundNear(from(lerp(w0, w1, i / n)), to, lo, hi);
-    if (tick !== null && !out.includes(tick)) out.push(tick);
+    const tick = roundNear(from(lerp(w0, w1, i / n)), to, lo, hi, whole, out);
+    if (tick !== null) out.push(tick);
   }
   return out.sort((a, b) => (d0 <= d1 ? a - b : b - a));
 }
