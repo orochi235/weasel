@@ -32,12 +32,13 @@ const records: Record<string, unknown>[] = [];
 const fmt = (v: number) => v.toFixed(3).padStart(9);
 const median = (xs: readonly number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? NaN;
 let step = 0;
-const TOTAL = 33;
+/** Cases in this run, for the `n/total` progress; `VIS_GROUPS` picks which groups run. */
+let total = 0;
 
 function report(name: string, times: readonly number[], extra: Record<string, unknown> = {}, unit = 'ms'): void {
   step++;
   records.push({ case: name, unit, times, ...extra });
-  console.log(`${String(step).padStart(2)}/${TOTAL}  ${name.padEnd(48)} median ${fmt(median(times))} ${unit.padEnd(5)} n=${String(times.length).padStart(3)}${extra.builds !== undefined ? `  builds ${String(extra.builds)}` : ''}`);
+  console.log(`${String(step).padStart(2)}/${total}  ${name.padEnd(48)} median ${fmt(median(times))} ${unit.padEnd(5)} n=${String(times.length).padStart(3)}${extra.builds !== undefined ? `  builds ${String(extra.builds)}` : ''}`);
 }
 
 function frame(scene: BenchScene, view: View, w: number, h: number, cull: boolean): number {
@@ -171,13 +172,18 @@ it('render visibility: frame, edit and memory cost', async () => {
   const s = await seams();
   const started = machine();
   console.log(`index seams ${s.withoutCull ? 'present' : 'absent'} at ${String(started.sha)} on ${String(started.host)}`);
-  smallScenes();
-  closingScenes(s);
-  edits(1000);
-  edits(100_000);
-  memory(s);
+  const groups = (process.env.VIS_GROUPS ?? 'small,closing,edits,memory').split(',');
+  total = (groups.includes('small') ? 6 : 0) + (groups.includes('closing') ? 5 : 0)
+    + (groups.includes('edits') ? 20 : 0) + (groups.includes('memory') ? 2 : 0);
+  if (groups.includes('small')) smallScenes();
+  if (groups.includes('closing')) closingScenes(s);
+  if (groups.includes('edits')) {
+    edits(1000);
+    edits(100_000);
+  }
+  if (groups.includes('memory')) memory(s);
   const file = OUT.endsWith('.json') ? OUT : join(OUT, `visibility-${Date.now()}.json`);
   mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, JSON.stringify({ schema: 'weasel-visibility-bench/1', started, ended: machine(), indexed: s.withoutCull !== undefined, frames: FRAMES, records }, null, 1));
+  writeFileSync(file, JSON.stringify({ schema: 'weasel-visibility-bench/1', started, ended: machine(), indexed: s.withoutCull !== undefined, frames: FRAMES, groups, records }, null, 1));
   console.log(`wrote ${file}`);
 }, 3_600_000);

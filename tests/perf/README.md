@@ -678,6 +678,38 @@ commands inside a layer's group, every tile staged every command, and the tiled 
 (`tests/perf/recorded/retain-2026-11-03/`). Its timer-query column exceeds the frame's own time on tiled
 frames there, so read GPU time from it for untiled frames only.
 
+## A culled frame of a large scene
+
+`scene/visibility.bench.ts` times what building a culled frame's commands costs on the CPU
+(`buildSceneViewCommands` with paint bounds, no GL), what an edit costs and the frame after it, and the
+heap the visibility index holds (`docs/concepts.md`, "Visibility index"). It runs as one vitest test under
+the scene-bench config, reads only what the merge-base before the index had, and keeps every frame time:
+
+    onto do --kind bench -- npx vitest run --config tests/perf/vitest.scene-bench.config.ts tests/perf/scene/visibility.bench.ts
+
+`VIS_GROUPS=small,closing,edits,memory` picks groups. On msb-uai (Apple M3 Max) on 2026-11-19, medians
+of 200 frames (300 for a drag), merge-base `4d40952c` against the branch at `f9760950`:
+
+| case | before (ms) | after (ms) |
+|---|---:|---:|
+| 100k flat, 1% on screen | 92.136 | 1.698 |
+| 100k nested 10×10×1000, 1% on screen | 89.666 | 1.666 |
+| 1k alone, all on screen | 1.118 | 1.115 |
+| 100k flat, one node dragged | 94.357 | 1.412 |
+| 100k flat, frame after a setPose | 81.579 | 1.290 |
+| 100k flat, frame after a 1k-op batch | 80.609 | 3.057 |
+| 100k flat, frame after an add / a remove / a reparent | 80.2 / 82.8 / 80.0 | 1.319 / 1.302 / 1.292 |
+| 10k all on screen, cull on | 11.200 | 11.399 |
+| 1k all on screen, cull on | 1.167 | 1.152 |
+
+So a frame of 100k nodes showing 1% costs 1.5× the same thousand alone, and a drag of one node builds
+nothing. Scenes small or wholly on screen cost what they did: a second pass of the small cases read
+−3% to +7% either way across both sides, which is the noise at these sizes, and a scene under 512 nodes
+is walked whole. The index holds about 218 bytes a node. The edits themselves cost what they did, a 1k-op
+batch about 0.7 ms either side. `animation-stress.spec.ts`, the one perf spec that drives a `SceneCanvas`,
+read a 448.5 ms mean cycle before and 448.4 after on the same node; it does not cull. The runs are in
+`tests/perf/recorded/visibility-2026-11-19/`.
+
 ## An image's upload through the 2D canvas
 
 WebGL draws every `ImageBitmap` bound for an image texture into a scratch 2D canvas and uploads the

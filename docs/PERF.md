@@ -10,16 +10,6 @@ When work merges, retire its entry here in the same change.
 
 ## Renderer and the batch
 
-- **(P2) [agent] A frame walks every node, on screen or not.** `buildSceneViewCommands` builds the whole
-  hierarchy and asks `paintBounds` of each node (`packages/core/src/canvas/sceneViewRender.ts:178-195`); a
-  culled node skips only its own painter and its children are still walked (`buildSceneTree.ts:101,176`), and
-  `cullDrawCommands` makes a second linear pass. The BVH (`scenePickIndex.ts`) serves picking only and is
-  rebuilt whole after a change. Arc 1 of the scale arcs in `docs/TODO.md`, "Scale": a visibility index on the
-  render path, updated incrementally, that prunes a subtree whose bounds miss the view, and that kernel3d can
-  share. Design: `docs/proposals/2026-11-19-render-visibility.md`. Closes when a frame of a scene with 100k
-  nodes, 1% on screen, costs within 2x of the same 1k nodes alone (measured in `tests/perf/`), and the
-  index updates on an edit without a rebuild.
-
 - **(P3) [waiting] Whether the batched path costs a co-tenant on the same page.** Reported, not measured
   here. A consumer benchmarking its wall against a canvas2d control found that at one rung the
   *canvas2d* side went from ~8.8 ms to 102-160 ms, and only when the page also held a build with
