@@ -5,7 +5,7 @@ import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { SpanStrips, type SpanStripSpan, type SpanStripsRow } from '@weasel-js/ui/components/SpanStrip';
 import { clockRuler } from './clock';
 import { laneStepsOf, laneViewOf, passDone, runClockOf, type LaneView } from './phases';
-import { headlineOf, lastLineOf, sharedLaneOf, spendOf } from './runData';
+import { NODE_SEP, headlineOf, lastLineOf, sharedLaneOf, spendOf } from './runData';
 import { useViewerPref } from './viewerPref';
 import type { AuditLane, AuditRun } from './skulkMap.types';
 import s from './LiveRuns.module.css';
@@ -18,11 +18,18 @@ export interface AreaHandlers {
   readonly onLight: (id: string | null) => void;
 }
 
+/** A running span with its node's name marked, so the name alone pulses. */
+function withNode(span: SpanStripSpan): SpanStripSpan {
+  const at = span.state === 'active' ? span.label.indexOf(NODE_SEP) : -1;
+  if (at <= 0) return span;
+  return { ...span, content: <><span className={s.node}>{span.label.slice(0, at)}</span>{span.label.slice(at)}</> };
+}
+
 /** An area's lane as a stack row: its name, and `spans`, its steps in the view chosen. */
 function laneRow(lane: AuditLane, view: LaneView, on: AreaHandlers, spans: SpanStripSpan[]): SpanStripsRow {
   return {
     id: lane.id,
-    spans,
+    spans: spans.map(withNode),
     'aria-label': lane.id,
     valueText: view.elapsed ? `${view.phase}, ${view.elapsed} in` : view.phase,
     lead: (
