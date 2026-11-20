@@ -14,6 +14,7 @@ import { nearestOnCubic, nearestOnSegment } from '../nearest';
 import type { Path, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
 import { worldCoords } from './pathOrigin';
+import { lerp } from '../scalar';
 import { compactCorners, cornerSpecAt, withoutCorners, type CornerSpec } from './cornerSpec';
 
 /** One anchor of an editable path: its on-curve point plus the two control
@@ -36,12 +37,24 @@ export interface PenAnchor {
  * Cubic-segment control points become the outHandle of the previous anchor
  * and the inHandle of the next anchor. A closed subpath whose last curve ends
  * exactly on its first point holds that point twice; the two are one anchor,
- * and the curve's second control is that anchor's inHandle. Quadratic segments are upgraded to
- * cubics (each control reused for both adjacent handles) — this loses no
- * geometry. Linear segments produce anchors with no handles.
+ * and the curve's second control is that anchor's inHandle. Quadratic segments are
+ * degree-elevated to the cubic that traces the same curve (each handle two thirds of the way
+ * from its end to the control point), so re-encoding the anchors loses no geometry. Linear
+ * segments produce anchors with no handles.
  */
 export function pathToAnchors(
   path: PolygonPath,
+): { anchors: PenAnchor[][]; closed: boolean[] } {
+  return decodeAnchors(path, true);
+}
+
+/**
+ * `pathToAnchors`, with `elevate: false` giving both handles of a quadratic its one control
+ * point unchanged: not the same curve, but a walk that says which point each handle came from.
+ */
+export function decodeAnchors(
+  path: PolygonPath,
+  elevate: boolean,
 ): { anchors: PenAnchor[][]; closed: boolean[] } {
   const { commands } = path;
   const coords = worldCoords(path);
@@ -81,11 +94,12 @@ export function pathToAnchors(
       }
       case PATH_Q: {
         if (!current) throw new Error('pathToAnchors: Q without prior M');
-        // Quadratic → cubic: handle is the same control point on both sides.
-        const handle = { x: coords[ci], y: coords[ci + 1] };
+        const qx = coords[ci], qy = coords[ci + 1];
+        const ex = coords[ci + 2], ey = coords[ci + 3];
         const prev = current[current.length - 1];
-        prev.outHandle = handle;
-        current.push({ x: coords[ci + 2], y: coords[ci + 3], inHandle: { ...handle } });
+        const k = elevate ? 2 / 3 : 1;
+        prev.outHandle = { x: lerp(prev.x, qx, k), y: lerp(prev.y, qy, k) };
+        current.push({ x: ex, y: ey, inHandle: { x: lerp(ex, qx, k), y: lerp(ey, qy, k) } });
         break;
       }
       case PATH_Z: {

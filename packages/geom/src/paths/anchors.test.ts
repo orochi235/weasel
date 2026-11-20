@@ -5,6 +5,17 @@ import { PATH_L, PATH_M, PATH_Z } from '../commands';
 import type { PolygonPath } from '../path';
 
 describe('pathToAnchors', () => {
+  it('elevates a quadratic to the cubic that traces the same curve', () => {
+    const { anchors, closed } = pathToAnchors(new PathBuilder().moveTo(0, 0).quadTo(50, 100, 100, 0).build());
+    expect(anchors[0][0].outHandle!.x).toBeCloseTo(100 / 3);
+    expect(anchors[0][0].outHandle!.y).toBeCloseTo(200 / 3);
+    expect(anchors[0][1].inHandle!.x).toBeCloseTo(200 / 3);
+    expect(anchors[0][1].inHandle!.y).toBeCloseTo(200 / 3);
+    // Re-encoded, its peak is still the quadratic's: y = 50 at t = 0.5.
+    const c = anchorsToPath(anchors, closed).coords;
+    expect(0.375 * c[3] + 0.375 * c[5]).toBeCloseTo(50);
+  });
+
   it('extracts a single open subpath of corner anchors from M+L+L', () => {
     const path = new PathBuilder()
       .moveTo(0, 0).lineTo(10, 0).lineTo(10, 10)

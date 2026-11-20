@@ -4,7 +4,7 @@
  */
 
 import type { PolygonPath } from '../path';
-import { anchorsToPath, pathToAnchors, type PenAnchor } from './anchors';
+import { anchorsToPath, decodeAnchors, pathToAnchors, type PenAnchor } from './anchors';
 import type { AnchorSet } from './anchorEdits';
 import type { Point } from './cubicMath';
 import { worldCoords } from './pathOrigin';
@@ -37,13 +37,14 @@ const keyOf = (p: Point): string => `${p.x},${p.y}`;
 
 /**
  * Which point of `path` each anchor of `set` was decoded from. `pathToAnchors` runs again
- * over a path whose every point holds its own index, so the two walks cannot disagree.
+ * over a path whose every point holds its own index, so the two walks cannot disagree; it runs
+ * without elevating quadratics, so both handles of one read its control point's index.
  */
 function heldBy(path: PolygonPath, set: AnchorSet): Held[][] {
   const coords = new Float32Array(path.coords.length);
   for (let i = 0; i < coords.length; i++) coords[i] = i >> 1;
   const { origin: _indicesHaveNone, ...bare } = path;
-  const indexed = pathToAnchors({ ...bare, coords }).anchors;
+  const indexed = decodeAnchors({ ...bare, coords }, false).anchors;
   return indexed.map((sub, s) => {
     // No two index points coincide, so a closing curve the real walk folded is unfolded here.
     if (sub.length === set.anchors[s].length + 1) sub[0].inHandle = sub.pop()!.inHandle;
