@@ -65,6 +65,37 @@ function fanOut(clients: () => readonly AnyRenderWorker[]): WorkerAnimator {
   };
 }
 
+type Held = { release: () => void; off: () => void };
+
+/** Hold a worker for every worker run with a canvas, each followed by `relay` and recorded in
+ *  `clients`. `spent` when a canvas can take no worker, and the holds stop there. A hold that
+ *  throws lets go of those already taken first. */
+function holdRuns(
+  runs: readonly LayerRun[], canvases: ReadonlyMap<number, HTMLCanvasElement>, surface: CanvasWorkerSurface,
+  at: { viewRef: { readonly current: View }; dims: () => { width: number; height: number }; requestRedraw: () => void;
+    relay: ReturnType<typeof createStatusRelay>; clients: Map<number, AnyRenderWorker> },
+): { held: Held[]; spent: boolean } {
+  const held: Held[] = [];
+  const options = surface.timeout === undefined ? undefined : { timeout: surface.timeout };
+  try {
+    for (const [i, run] of runs.entries()) {
+      const canvas = run.by === 'worker' ? canvases.get(i) : undefined;
+      if (!canvas) continue;
+      const hold = holdRenderWorker(canvas, surface.start, { ...surface.inputs(), view: at.viewRef.current, ...at.dims() }, options);
+      if (!hold) return { held, spent: true };
+      at.clients.set(i, hold.client);
+      const offDue = hold.client.subscribe(at.requestRedraw);
+      const offStatus = at.relay.follow(hold.client);
+      held.push({ release: hold.release, off: () => { offDue(); offStatus(); } });
+    }
+  } catch (e) {
+    for (const h of held) { h.off(); h.release(); }
+    at.clients.clear();
+    throw e;
+  }
+  return { held, spent: false };
+}
+
 export function useWorkerStack(
   surface: CanvasWorkerSurface | undefined,
   layers: readonly RenderLayer<unknown>[],
@@ -92,33 +123,12 @@ export function useWorkerStack(
   useLayoutEffect(() => {
     const current = surfaceRef.current;
     if (!current) return;
-    const { viewRef, dims, requestRedraw } = frameRef.current;
-    const held: { release: () => void; off: () => void }[] = [];
-    let spent = false;
-    const letGo = () => {
-      for (const h of held) { h.off(); h.release(); }
-      clients.current.clear();
-    };
-    try {
-      runsRef.current.forEach((run, i) => {
-        if (run.by !== 'worker' || spent) return;
-        const canvas = canvases.current.get(i);
-        if (!canvas) return;
-        const options = current.timeout === undefined ? undefined : { timeout: current.timeout };
-        const hold = holdRenderWorker(canvas, current.start, { ...current.inputs(), view: viewRef.current, ...dims() }, options);
-        if (!hold) { spent = true; return; }
-        clients.current.set(i, hold.client);
-        const offDue = hold.client.subscribe(requestRedraw);
-        const offStatus = relay.follow(hold.client);
-        held.push({ release: hold.release, off: () => { offDue(); offStatus(); } });
-      });
-    } catch (e) {
-      letGo();
-      throw e;
-    }
+    const { requestRedraw } = frameRef.current;
+    const { held, spent } = holdRuns(runsRef.current, canvases.current, current, { ...frameRef.current, relay, clients: clients.current });
     if (spent) {
       // A canvas the stack kept went with its worker; new ones take every run.
-      letGo();
+      for (const h of held) { h.off(); h.release(); }
+      clients.current.clear();
       setGeneration((g) => g + 1);
       return;
     }

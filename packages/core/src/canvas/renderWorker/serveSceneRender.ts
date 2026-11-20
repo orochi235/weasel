@@ -102,6 +102,38 @@ function openPainting(
   };
 }
 
+/** Bring the worker's copy and `painting` to what `msg` carries. Each input that fails is skipped
+ *  and the rest still land; returns what each failure threw. */
+function takeInputs(
+  msg: Extract<ToWorker, { type: 'frame' }>, mirror: SceneMirror, alphas: Map<string, number>, painting: Painting,
+): unknown[] {
+  const errors: unknown[] = [];
+  const step = (fn: () => void) => {
+    try { fn(); } catch (e) { errors.push(e); }
+  };
+  if (msg.scene) {
+    const delta = msg.scene;
+    if (delta.reset) alphas.clear();
+    step(() => mirror.apply(delta));
+  }
+  if (msg.overrides) step(() => mirror.setOverrides(msg.overrides!));
+  if (msg.scroll) step(() => mirror.setScroll(msg.scroll!));
+  for (const [id, a] of msg.alpha ?? []) {
+    if (a === 1) alphas.delete(id);
+    else alphas.set(id, a);
+  }
+  if (msg.view) painting.view = msg.view;
+  if (msg.layers) painting.inputs.layers = msg.layers;
+  if (msg.cull !== undefined) painting.inputs.cull = msg.cull;
+  if (msg.extraCommands !== undefined) painting.inputs.extraCommands = msg.extraCommands;
+  if (msg.size) {
+    const size = msg.size;
+    painting.size = size;
+    step(() => painting.renderer.resize(size));
+  }
+  return errors;
+}
+
 /** Paint the scene over `port`. {@link serveSceneRender} is this over the worker's own scope.
  *  Several hosts can share a worker, one per port; the function returned stops this one, and
  *  lets go of its renderer. */
@@ -130,30 +162,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
    *  counts the frame lost and sends everything next. */
   const frame = (msg: Extract<ToWorker, { type: 'frame' }>): boolean => {
     if (!painting) return true;
-    const p = painting;
-    const errors: unknown[] = [];
-    const step = (fn: () => void) => {
-      try { fn(); } catch (e) { errors.push(e); }
-    };
-    if (msg.scene) {
-      const delta = msg.scene;
-      if (delta.reset) alphas.clear();
-      step(() => mirror.apply(delta));
-    }
-    if (msg.overrides) step(() => mirror.setOverrides(msg.overrides!));
-    if (msg.scroll) step(() => mirror.setScroll(msg.scroll!));
-    for (const [id, a] of msg.alpha ?? []) {
-      if (a === 1) alphas.delete(id);
-      else alphas.set(id, a);
-    }
-    if (msg.view) p.view = msg.view;
-    if (msg.layers) p.inputs.layers = msg.layers;
-    if (msg.cull !== undefined) p.inputs.cull = msg.cull;
-    if (msg.extraCommands !== undefined) p.inputs.extraCommands = msg.extraCommands;
-    if (msg.size) {
-      p.size = msg.size;
-      step(() => p.renderer.resize(msg.size!));
-    }
+    const errors = takeInputs(msg, mirror, alphas, painting);
     const landed = errors.length === 0;
     if (landed) refusedRetried = false;
     else if (!refusedRetried) { refusedRetried = true; dirty(); }
