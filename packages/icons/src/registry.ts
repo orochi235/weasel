@@ -52,7 +52,8 @@ function isGlyph(value: unknown): value is IconGlyph {
 
 /** A registry, optionally seeded with tables; each `add` and `override` returns its own release function. */
 export function createIconRegistry(initial?: IconTable | readonly IconTable[]): IconRegistry {
-  const glyphs = createReflectable<IconGlyph>({ name: 'icons' });
+  // A provider whose `icons` change identity releases and re-adds the same tables in one tick; their glyphs keep their place.
+  const glyphs = createReflectable<IconGlyph>({ name: 'icons', holdPlace: true });
   // How many live tables hold each namespace, and whose it is while any do.
   const claims = new Map<string, { owner: string; count: number }>();
   let snapshot: { from: readonly ReflectedEntry<IconGlyph>[]; entries: readonly IconEntry[] } | null = null;

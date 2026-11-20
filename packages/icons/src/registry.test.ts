@@ -74,6 +74,19 @@ describe('createIconRegistry', () => {
     expect(r.owner('core')).toBeUndefined();
   });
 
+  it('keeps a glyph in its place when its table is released and added back in the same tick', async () => {
+    const r = createIconRegistry();
+    const base = core({ undo: 'u' });
+    const off = r.add(base);
+    r.add({ namespace: 'ui', owner: '@weasel-js/ui', icons: { layer: glyph('l') } });
+    off();
+    expect(r.get('core:undo')).toBeUndefined();
+    r.add(base);
+    expect(r.entries().map((e) => e.ref)).toEqual(['core:undo', 'ui:layer']);
+    await Promise.resolve();
+    expect(r.entries().map((e) => e.ref)).toEqual(['core:undo', 'ui:layer']);
+  });
+
   it('notifies subscribers and advances its version on change', () => {
     const r = createIconRegistry();
     const listener = vi.fn();
