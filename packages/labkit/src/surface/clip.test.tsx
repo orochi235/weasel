@@ -70,6 +70,30 @@ describe('clipToAncestors', () => {
     expect(clipToAncestors(tile, box)).toEqual({ left: 150, top: 100, width: 50, height: 100 });
   });
 
+  it('climbs out of a shadow root to the clipping ancestors around its host', () => {
+    const { outer, inner } = nest(BOTH, '');
+    const root = inner.attachShadow({ mode: 'open' });
+    const tile = document.createElement('div');
+    root.append(tile);
+    stubBox(outer, 150, 0, 1000, 1000);
+    expect(clipToAncestors(tile, box)).toEqual({ left: 150, top: 100, width: 150, height: 100 });
+  });
+
+  it('follows a slotted element through its slot', () => {
+    const { outer } = nest('', '');
+    const host = document.createElement('div');
+    outer.append(host);
+    const root = host.attachShadow({ mode: 'open' });
+    const pane = document.createElement('div');
+    pane.style.cssText = BOTH;
+    pane.append(document.createElement('slot'));
+    root.append(pane);
+    const tile = document.createElement('div');
+    host.append(tile);
+    stubBox(pane, 0, 120, 1000, 40);
+    expect(clipToAncestors(tile, box)).toEqual({ left: 100, top: 120, width: 200, height: 40 });
+  });
+
   it('is zero-sized where nothing shows', () => {
     const { outer, tile } = nest(BOTH, '');
     stubBox(outer, 400, 0, 100, 1000);

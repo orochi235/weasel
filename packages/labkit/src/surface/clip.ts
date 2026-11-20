@@ -34,13 +34,23 @@ function inTopLayer(el: Element): boolean {
   }
 }
 
+/** The element `el`'s box is laid out inside: its slot when it is slotted, its shadow host when it heads a shadow
+ *  tree, otherwise its parent element. */
+function boxParent(el: Element): Element | null {
+  if (el.assignedSlot) return el.assignedSlot;
+  if (el.parentElement) return el.parentElement;
+  const root = el.parentNode;
+  return root instanceof ShadowRoot ? root.host : null;
+}
+
 /**
  * The part of `box` — `el`'s own, in viewport px — that every ancestor
  * clipping its overflow leaves showing. Each axis is cut only by the ancestors
  * that clip that axis. Where nothing is left the box comes back with a zero
  * width or height.
  *
- * Follows DOM ancestors up to the first one in the top layer. An ancestor an
+ * Follows ancestors in the flattened tree, through slots and out of shadow roots, up to the first one in the top
+ * layer. An ancestor an
  * absolutely or fixed positioned element escapes is still counted.
  */
 export function clipToAncestors(el: Element, box: Box): Box {
@@ -50,7 +60,7 @@ export function clipToAncestors(el: Element, box: Box): Box {
     right: box.left + box.width,
     bottom: box.top + box.height,
   };
-  for (let a = inTopLayer(el) ? null : el.parentElement; a; a = a.parentElement) {
+  for (let a = inTopLayer(el) ? null : boxParent(el); a; a = boxParent(a)) {
     const style = getComputedStyle(a);
     const x = clips(style.overflowX);
     const y = clips(style.overflowY);
