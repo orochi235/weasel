@@ -1,10 +1,10 @@
-import type { AudioEngine, AudioGraph, GraphPatch } from '@weasel-js/audio';
+import type { AudioEngine, AudioGraph, GraphNodeDef, GraphPatch } from '@weasel-js/audio';
 import { createEmitter, getOwn, setOwn } from '@weasel-js/registry';
 import type { EffectPipeline, EffectRun } from '../types';
 import { audioStageNodes, type AudioSources, type AudioStageNodes } from './nodes';
 import { createLivePreviews, errorsRun } from './livePreviews';
-import { diffPlans } from './patches';
-import { EMPTY_PLAN, livePlan, type LivePlan } from './plan';
+import { diffPlans, type BuildNode } from './patches';
+import { EMPTY_PLAN, livePlan, type LivePlan, type PlanEdge } from './plan';
 import type { AudioPreview } from './scope';
 
 /** What a live runner last published: its run, and whether it plays. */
@@ -74,6 +74,16 @@ function applySets(graph: AudioGraph, sets: readonly GraphPatch[], failures: Rec
   }
 }
 
+/** `plan` without the nodes in `drop` and the edges touching them. */
+function prune(plan: LivePlan, drop: ReadonlySet<string>): LivePlan {
+  const touches = (e: PlanEdge) => drop.has(e.from) || ('node' in e.to && drop.has(e.to.node));
+  return {
+    nodes: Object.fromEntries(Object.entries(plan.nodes).filter(([id]) => !drop.has(id))),
+    edges: plan.edges.filter((e) => !touches(e)),
+    errors: plan.errors,
+  };
+}
+
 /** A runner over `opts.pipeline` holding a fresh graph on `opts.engine`, not playing. */
 export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRunner {
   const { engine, bus } = opts;
@@ -101,21 +111,40 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     set({ run: errorsRun(next) });
   };
 
+  /**
+   * The plan `pipeline` and `sources` give, less any node whose `build` throws, which is put in
+   * `errors` under its stage. The defs built are returned for the patches to use.
+   */
+  const buildable = (from: LivePlan, errors: Record<string, string>) => {
+    const planned = livePlan(pipeline, nodes, sources);
+    Object.assign(errors, planned.errors);
+    const defs = new Map<string, GraphNodeDef>();
+    const failed = new Set<string>();
+    diffPlans(from, planned, (id, n) => {
+      try {
+        defs.set(id, getOwn(nodes, n.type)!.build(engine.context, n.settings, n.levels));
+      } catch (err) {
+        failed.add(id);
+        setOwn(errors, id, messageOf(err));
+      }
+      return defs.get(id)!;
+    });
+    const next = failed.size > 0 ? prune(planned, failed) : planned;
+    return { next, defs };
+  };
+
   /** Brings the graph from `from` to the plan `pipeline` and `sources` now give. Structure goes first
    *  in its own apply: a throw there changed nothing, while a throw from the sets means structure landed. */
   const sync = (from: LivePlan) => {
-    const next = livePlan(pipeline, nodes, sources);
-    const merged: Record<string, string> = { ...next.errors };
+    const merged: Record<string, string> = {};
+    const { next, defs } = buildable(from, merged);
+    const build: BuildNode = (id) => defs.get(id)!;
+    const patches = diffPlans(from, next, build);
+    const structural = patches.filter((p) => p.kind !== 'set');
+    let sets = patches.filter((p) => p.kind === 'set');
     let adopted = next;
-    let structural: GraphPatch[] = [];
-    let removed: string[] = [];
-    let sets: GraphPatch[] = [];
     try {
-      const patches = diffPlans(from, next, (_id, n) => getOwn(nodes, n.type)!.build(engine.context, n.settings, n.levels));
-      structural = patches.filter((p) => p.kind !== 'set');
-      sets = patches.filter((p) => p.kind === 'set');
       if (structural.length > 0) graph.apply(structural);
-      removed = structural.flatMap((p) => (p.kind === 'remove' ? [p.id] : []));
     } catch (err) {
       const message = messageOf(err);
       const id = failingStage(structural, message);
@@ -126,6 +155,7 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     }
     applySets(graph, sets, merged);
     plan = adopted;
+    const removed = adopted === next ? structural.flatMap((p) => (p.kind === 'remove' ? [p.id] : [])) : [];
     previews.follow(graph, removed, Object.keys(adopted.nodes));
     publishErrors(merged);
   };

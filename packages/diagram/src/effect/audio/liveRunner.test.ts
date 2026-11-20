@@ -20,17 +20,28 @@ interface FakeGraph extends AudioGraph {
   applies: GraphPatch[][];
   calls: string[];
   failWhen: ((patches: readonly GraphPatch[]) => unknown) | undefined;
+  /** A failing apply still lands its patches first, as one whose source fails to start does. */
+  landOnFail: boolean;
 }
 const fakeGraph = (): FakeGraph => {
   const g = {
     applies: [] as GraphPatch[][],
     calls: [] as string[],
     failWhen: undefined as FakeGraph['failWhen'],
+    landOnFail: false,
+    live: new Set<string>(),
     apply(patches: readonly GraphPatch[]) {
       g.applies.push([...patches]);
       const err = g.failWhen?.(patches);
+      if (err === undefined || g.landOnFail) {
+        for (const p of patches) {
+          if (p.kind === 'add') g.live.add(p.id);
+          if (p.kind === 'remove') g.live.delete(p.id);
+        }
+      }
       if (err !== undefined) throw err;
     },
+    has: (id: string) => g.live.has(id),
     start: () => { g.calls.push('start'); },
     stop: () => { g.calls.push('stop'); },
     dispose: () => { g.calls.push('dispose'); },
@@ -185,6 +196,20 @@ describe('createLiveAudioRunner', () => {
     expect(runner.state.run?.stages.gain?.error).toMatch(/no param/);
     expect(runner.state.run?.stages.osc?.error).toBeUndefined();
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves out a node whose build throws, names its stage, and keeps following the rest', () => {
+    const { runner, graph } = setup();
+    const withReverb = (frequency: number): EffectPipeline => ({
+      stages: [stage('osc', 'audio.oscillator', { frequency }), stage('verb', 'audio.reverb', { seconds: 0 }), stage('out', 'audio.output')],
+      wires: [wire('osc', 'verb'), wire('verb', 'out')],
+    });
+    runner.setPipeline(withReverb(440));
+    expect(runner.state.run?.stages.verb?.error).toMatch(/impulse length 0/);
+    expect(graph.applies.flat().some((p) => 'id' in p && p.id === 'verb')).toBe(false);
+    expect(kinds(graph.applies[1]!)).toEqual(['disconnect osc']);
+    runner.setPipeline(withReverb(220));
+    expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
   });
 
   it('resets onto a fresh graph holding the current plan, not playing', async () => {
