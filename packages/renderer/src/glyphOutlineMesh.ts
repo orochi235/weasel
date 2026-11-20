@@ -13,8 +13,8 @@ import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCac
 import { SYNTHETIC_ITALIC_RADIANS, glyphTurn } from '@weasel-js/text';
 
 /**
- * Merge a group's glyphs into one world-space mesh, or `null` when nothing in
- * it has area.
+ * Merge a group's glyphs into one mesh measured from `(dx, dy)`, its
+ * `origin`, or `null` when nothing in it has area.
  *
  * Every glyph mesh here is `'nonzero'`, so concatenating their triangles is
  * sound — an even-odd mesh only resolves correctly through a stencil pass, and
@@ -78,7 +78,8 @@ const shearOf = (group: LaidOutGroup): number =>
   group.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
 
 /**
- * Transform each glyph's em-space mesh into world space and concatenate. The
+ * Transform each glyph's em-space mesh into the group's space, measured from
+ * `(dx, dy)` so a far-off command keeps float32 precision, and concatenate. The
  * fill and stroke paths share the placement math: it must not fork, or an
  * outline would drift off the glyph it outlines.
  */
@@ -118,11 +119,11 @@ function mergeGlyphMeshes(
       const ex = mesh.vertices[k];
       const ey = mesh.vertices[k + 1];
       const lx = (ex - ey * shear) * scale, ly = ey * scale;
-      vertices[vi++] = x + dx + lx * cos - ly * sin;
-      vertices[vi++] = baselineY + dy + lx * sin + ly * cos;
+      vertices[vi++] = x + lx * cos - ly * sin;
+      vertices[vi++] = baselineY + lx * sin + ly * cos;
     }
     for (let k = 0; k < mesh.indices.length; k++) indices[ii++] = base + mesh.indices[k];
     base += mesh.vertices.length / 2;
   }
-  return { vertices, indices };
+  return { vertices, indices, origin: { x: dx, y: dy } };
 }

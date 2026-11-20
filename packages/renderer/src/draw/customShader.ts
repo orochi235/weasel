@@ -85,10 +85,10 @@ export function setUniform(ctx: DrawContext, program: ShaderProgram, name: strin
   if (typeof value === 'number') program.set1f(name, value);
 }
 
-type ArrayValue = readonly number[] | Float32Array | Int32Array | Uint32Array;
+type ArrayValue = readonly number[] | Float32Array | Float64Array | Int32Array | Uint32Array;
 
 function isArrayValue(value: UniformValue): value is ArrayValue {
-  return Array.isArray(value) || value instanceof Float32Array
+  return Array.isArray(value) || value instanceof Float32Array || value instanceof Float64Array
     || value instanceof Int32Array || value instanceof Uint32Array;
 }
 
@@ -111,7 +111,7 @@ function setUniformArray(program: ShaderProgram, name: string, arr: UniformArray
     return;
   }
   if (value.length === 0) return;
-  program.set(name, type, value);
+  program.set(name, type, value instanceof Float64Array ? Float32Array.from(value) : value);
 }
 
 /** Write every entry of a command's `uniforms` map. A key naming an array

@@ -160,7 +160,7 @@ export function drawGroupWithEffects(
     // The color alone: the ids composite next, from the group's own.
     compositeOver(ctx, composite, front.target.color!, rect, composited, { stencil, blend, ids: false });
     if (ids && own.target.ids) {
-      compositeIds(ctx, ids, front.target.color!, own.target.ids, rect, composited.alpha, groupId, stencil);
+      compositeIds(ctx, ids, front.target.color!, own.target.ids, rect, composited, groupId, stencil);
     }
   }
   if (front !== own) targets.release(front);

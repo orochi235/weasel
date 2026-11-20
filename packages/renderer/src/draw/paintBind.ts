@@ -9,6 +9,7 @@ import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { patternTileSpace } from '../math/patternSpace';
 import type { DrawContext } from './drawContext';
 import { drawModel, setAlphaUniform, setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms } from './uniforms';
+import { isIdentityColorMatrix } from './foldColor';
 import { gradientSpaceInverse, spaceInverseAbout, spaceToDevice } from './gradient';
 import { tileExtent } from './patternBatch';
 import { createPart, isDev } from '@weasel-js/registry';
@@ -47,8 +48,10 @@ const unownedPaintResources = createPart<GpuDevice, PaintResources>(() => create
 
 /**
  * Bind a registered kind's paint: the program its `bind` names, `u_proj` and
- * `u_model` (under `model` and `proj` where given), and the uniforms it hands
- * back. `null` where the kind declines the paint or its program is missing.
+ * `u_model` (under `model` and `proj` where given), the group's color matrix
+ * as `u_colorMatrix` and `u_colorBias` where the program declares them, and
+ * the uniforms it hands back. `null` where the kind declines the paint or its
+ * program is missing.
  */
 export function bindPaintKind(
   ctx: DrawContext, fill: Paint, model?: GlMat3, proj?: GlMat3,
@@ -59,8 +62,21 @@ export function bindPaintKind(
   const prog = ctx.ensureProgram?.(binding.program) ?? ctx.programRegistry.get(binding.program) ?? null;
   if (!prog) return null;
   setProjAndModel(ctx, prog, model, proj);
+  bindKindColorMatrix(ctx, prog, binding.program);
   if (binding.uniforms) setUniforms(ctx, prog, binding.program, binding.uniforms, false);
   return prog;
+}
+
+function bindKindColorMatrix(ctx: DrawContext, prog: ShaderProgram, program: string): void {
+  if (prog.has('u_colorMatrix')) {
+    setColorMatrixUniforms(ctx, prog);
+    return;
+  }
+  if (isDev() && !isIdentityColorMatrix(ctx.state.colorMatrix)) {
+    warnOnce(`paint-kind-color-matrix:${program}`, `weasel: program "${program}" declares no u_colorMatrix, so a `
+      + "group's color matrix does not reach the paint it draws; declare u_colorMatrix (mat4) and u_colorBias (vec4) "
+      + 'and apply them as clamp(u_colorMatrix * color + u_colorBias, 0.0, 1.0).');
+  }
 }
 
 /** The draw half for `kind`, warning once in development for a kind nothing

@@ -64,6 +64,23 @@ describe('array uniforms', () => {
     expect(Array.from(calls[0].args[1] as Float32Array)).toEqual(Array.from(data));
   });
 
+  it('uploads a Float64Array to an array as float32, a kit matrix array included', () => {
+    const h = registerProgram('arr-f64', { glsl: { frag: frag('uniform vec2 u_pts[4];\nuniform mat3 u_ms[2];') } });
+    r.registerProgram(h);
+    const pts = new Float64Array(8).map((_, i) => i + 0.5);
+    const ms = new Float64Array(18).map((_, i) => i);
+    mark();
+    r.render([shader(h, { u_pts: pts, u_ms: ms })]);
+
+    const vec2 = uploads(rec, 'uniform2fv');
+    expect(vec2).toHaveLength(1);
+    expect(vec2[0].args[0]).toBe(locationOf(rec, 'u_pts[0]'));
+    expect(Array.from(vec2[0].args[1] as Float32Array)).toEqual(Array.from(pts));
+    const mat3 = uploads(rec, 'uniformMatrix3fv').filter((c) => c.args[0] === locationOf(rec, 'u_ms[0]'));
+    expect(mat3).toHaveLength(1);
+    expect(Array.from(mat3[0].args[2] as Float32Array)).toEqual(Array.from(ms));
+  });
+
   it('asks for the base slot of an array declared in the vertex stage', () => {
     const vert = `#version 300 es
 in vec2 a_position;

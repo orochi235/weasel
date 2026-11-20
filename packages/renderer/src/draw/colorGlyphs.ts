@@ -23,7 +23,7 @@ export function drawColorGlyphs(ctx: DrawContext, group: LaidOutGroup, dx: numbe
   const fill = group.fill?.paint;
   if (fill === undefined || group.quads.length === 0) return;
   if (!syncColorPageTexture(ctx.textureCache, group.page)) return;
-  const opacity = isSolidPaint(fill) ? solidColor(fill)[3] : 1;
+  const opacity = isSolidPaint(fill) ? solidColor(fill)[3] : (fill.opacity ?? 1);
   const baseId = colorPageTextureId(group.page);
 
   const batch = ctx.drawBatch;

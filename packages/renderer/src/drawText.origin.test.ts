@@ -13,6 +13,7 @@
  * *that* carries a rounding error the renderer never incurs.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { viewToMat3 } from '@weasel-js/geom';
 import { registerFont, FIXTURE_FONT, registerFontOutlines, glyphOutline } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { createGLRecorder } from './testing/glRecorder';
@@ -219,5 +220,63 @@ describe('drawText places the layout rather than baking it', () => {
       r.render([cmd(o.x, o.y)]);
       expectTranslated(base, o.x, o.y, `outline @ ${JSON.stringify(o)}`);
     }
+  });
+});
+
+/**
+ * Text far from the world origin, at world x = 2^23 and 8x: a float32 there
+ * sits on a whole-unit grid, 8 px. What reaches the screen must not depend on
+ * how far out the text and the view both are.
+ */
+describe('drawText far from the origin', () => {
+  const FAR = 8_388_608;
+  const ZOOM = 8;
+
+  /** Each buffer's vertex positions, which are screen points for the batch. */
+  function screenVertices(cmd: (x: number) => DrawCommand, at: number): number[][] {
+    recorder.reset();
+    const view = viewToMat3({ x: at, y: 0, scale: { x: ZOOM, y: ZOOM } });
+    r.render([{ kind: 'group', transform: view, children: [cmd(at + 0.3)] }], view);
+    return uploaded().map((b) => Array.from(b.data).filter((_, i) => i % b.stride < 2));
+  }
+
+  function expectSame(cmd: (x: number) => DrawCommand): void {
+    const near = screenVertices(cmd, 0);
+    const far = screenVertices(cmd, FAR);
+    expect(far.length).toBe(near.length);
+    expect(near.length).toBeGreaterThan(0);
+    for (let b = 0; b < near.length; b++) {
+      for (let i = 0; i < near[b].length; i++) expect(far[b][i]).toBeCloseTo(near[b][i], 2);
+    }
+  }
+
+  const GRADIENT = {
+    kind: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, units: 'local' as const,
+    stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }],
+  };
+
+  it('keeps a gradient underline under its glyphs', () => {
+    expectSame((x) => ({
+      kind: 'text', x, y: 0, runs: [RUN('AB', { underline: true, fill: { paint: GRADIENT } })],
+      maxWidth: Infinity, align: 'left', style: {},
+    } as DrawCommand));
+  });
+
+  it('keeps tessellated outline glyphs where they belong', async () => {
+    registerFontOutlines('inter', {}, new ArrayBuffer(4), {
+      parser: () => ({
+        unitsPerEm: 1000,
+        ascender: 0.8,
+        advanceOf: (cp: number) => (cp === 32 ? 0.25 : 0.6),
+        kernOf: () => 0,
+        glyphD: (cp: number) => (cp === 32 ? null : 'M0 0L0.5 -0.7L1 0Z'),
+      }),
+    });
+    glyphOutline('inter', 400, 'normal', 65);
+    await new Promise<void>((res) => setTimeout(res, 0));
+    expectSame((x) => ({
+      kind: 'text', x, y: 0, runs: [RUN('AB', { fontSize: 64 })],
+      maxWidth: Infinity, align: 'left', style: {},
+    } as DrawCommand));
   });
 });

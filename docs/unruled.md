@@ -3075,3 +3075,9 @@ Calls the lanes made without a ruling:
   one (`grid.size` beside `grid`), or around it, is refused whatever the new node's kind, a label among them; a moved
   leaf that would clash is numbered after its first step (`grid2.size`). A bundle whose id takes another's tree key
   gets the next number (`editingShapes2`) and keeps its id.
+## Audit round fifty-four (2026-11-20): renderer.draw
+
+- 2026-11-20 (the fixer's call): a registered paint kind's program is handed the group's color matrix as
+  `u_colorMatrix` and `u_colorBias` where it declares them, the convention the built-in programs use; one that
+  declares neither draws unmapped and development warns once per program. Exposing the matrix on
+  `PaintBindContext` for the kind to upload itself was the alternative.
