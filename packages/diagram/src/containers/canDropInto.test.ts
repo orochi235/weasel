@@ -130,4 +130,17 @@ describe('diagramDropParentAt', () => {
     expect(diagramDropParentAt(scene as never, at, null, (parent) => parent !== 'inner')).toBe('outer');
     expect(diagramDropParentAt(scene as never, at, null)).toBe('inner');
   });
+
+  it('finds a turned container where it draws', () => {
+    const specs = diagramScene({
+      nodes: [], edges: [],
+      containers: [{ id: 'box', role: 'container', box: { x: 0, y: 0, width: 400, height: 100 }, pinned: true }],
+    }, { layout: 'none' });
+    const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+    for (const spec of specs) scene.add(spec as never);
+    scene.setPose('box' as NodeId, { ...(scene.get('box' as NodeId)!.pose as RectPose), rotation: Math.PI / 2 });
+    // Turned a quarter about (200, 50), the box spans x 150..250 and y -150..250.
+    expect(diagramDropParentAt(scene as never, { x: 200, y: 200 }, null)).toBe('box');
+    expect(diagramDropParentAt(scene as never, { x: 350, y: 50 }, null)).toBeNull();
+  });
 });

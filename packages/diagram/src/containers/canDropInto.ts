@@ -2,7 +2,7 @@ import { rectContainsPointHalfOpen, type Rect } from '@weasel-js/geom';
 import { diagramEdgeOf } from '../edgeTrait';
 import { diagramLabelOf } from '../labelTrait';
 import { DIAGRAM_TRAIT_KEY } from '../trait';
-import { childVerdict, definesFrame, type CanDropIntoDep, type ChildReader, type DropVerdict } from '@weasel-js/core';
+import { childVerdict, definesFrame, targetTransformOf, worldToLocal, type CanDropIntoDep, type ChildReader, type DropVerdict } from '@weasel-js/core';
 import { bodyBox, diagramContainerOf, type ContainerRole } from './trait';
 
 /** Whether the nodes `ids` may move into the container or lane `container`. */
@@ -94,7 +94,8 @@ export function diagramDropParentAt(
       const trait = diagramContainerOf(node);
       // Only a region's box bounds what it holds; a plain group's or an envelope's need not.
       if (trait !== null) {
-        if (!rectContainsPointHalfOpen(bodyBox(world, trait.header), point.x, point.y)) continue;
+        const p = worldToLocal(targetTransformOf(world), point.x, point.y);
+        if (p === null || !rectContainsPointHalfOpen(bodyBox(world, trait.header), p.x, p.y)) continue;
         const takes = trait.role === 'container' || trait.role === 'lane';
         if (takes && childVerdict(scene as unknown as ChildReader, id as never, [], verdict) === true) best = id;
       }
