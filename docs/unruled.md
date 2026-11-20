@@ -2812,3 +2812,8 @@ Calls the lanes made without a ruling:
   and the end only where none does, so `present.go` reaches every page by its id and old callers keep working.
   Keeping the ends ahead of the ids, so such a page was unreachable by id, was the alternative; so was dropping
   `to: 'first' | 'last'` outright.
+
+## Audit round forty-six (2026-11-20): diagram's outlines
+
+- 2026-11-20 (the fixer's call): `roundRectOutline` throws a `RangeError` on a negative or `NaN` radius, and takes
+  `Infinity` as "a sixth of the shorter side always". Clamping a negative radius to 0 was the alternative.
