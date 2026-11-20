@@ -42,7 +42,22 @@ void main() {
   v_color = a_color;
   vec4 ca = u_viewProjection * vec4(a_from, 1.0);
   vec4 cb = u_viewProjection * vec4(a_to, 1.0);
-  /* An end behind the eye projects to a line across the whole screen; drop the segment instead. */
+  float s0 = a_along.x;
+  float s1 = a_along.y;
+  /* An end past the near plane projects through the eye, so a segment straddling it is clipped there, as
+     projectAabbToScreen clips a box's edges; one wholly past it is dropped. Clip space is linear in the
+     world, so the cut's fraction of the segment is its fraction of the run's length too. */
+  float na = ca.z + ca.w;
+  float nb = cb.z + cb.w;
+  if (na < 0.0 && nb < 0.0) { gl_Position = CULLED; return; }
+  bool cutFrom = na < 0.0;
+  bool cutTo = nb < 0.0;
+  if (cutFrom || cutTo) {
+    float t = na / (na - nb);
+    vec4 cn = mix(ca, cb, t);
+    float sn = mix(s0, s1, t);
+    if (cutFrom) { ca = cn; s0 = sn; } else { cb = cn; s1 = sn; }
+  }
   if (ca.w <= 0.0 || cb.w <= 0.0) { gl_Position = CULLED; return; }
   vec2 sa = screenOf(ca);
   vec2 sb = screenOf(cb);
@@ -52,8 +67,6 @@ void main() {
   vec2 perp = vec2(-dir.y, dir.x);
   float role = a_corner.x;
   float side = a_corner.y;
-  float s0 = a_along.x;
-  float s1 = a_along.y;
   float total = a_along.z;
   float span = s1 - s0;
 
@@ -74,7 +87,9 @@ void main() {
   float headHalf = 0.0;
   float shaft = shaftHalf;
   float shaftEnd = total;
-  if (wanted > 0.0 && density > 0.0) {
+  /* A tip past the near plane has no head, and its shaft runs to the cut. */
+  bool tipSeen = cp.z + cp.w >= 0.0;
+  if (wanted > 0.0 && density > 0.0 && tipSeen) {
     headPx = max(0.0, min(wanted, a_shape.z * density * total));
     headHalf = headPx * a_shape.w;
     shaft = min(shaftHalf * (headPx / wanted), headHalf);
@@ -96,8 +111,8 @@ void main() {
   vec4 c = mix(ca, cb, atEnd ? (to - s0) / span : 0.0);
   vec2 miter = perp;
   float stretch = 1.0;
-  /* Only an end that meets its neighbor miters; a shaft cut short under the head stays square. */
-  if (!atEnd || to >= s1) {
+  /* Only an end that meets its neighbor miters; a shaft cut short under the head, or at the near plane, stays square. */
+  if (atEnd ? to >= s1 && !cutTo : !cutFrom) {
     vec4 cj = u_viewProjection * vec4(a_adj, 1.0);
     if (cj.w > 0.0) {
       vec2 sj = screenOf(cj);
