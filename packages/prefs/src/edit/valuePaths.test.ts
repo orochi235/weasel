@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { nodeAt, renameKey } from './schemaEdit';
+import { moveNodes, nodeAt, renameKey } from './schemaEdit';
 import { valuePathOf, valuePathsAt } from './valuePaths';
 
 const num = (name: string, more: object = {}): PrefLeaf => ({ kind: 'number', name, description: '', default: 0, ...more });
@@ -18,6 +18,23 @@ const NODE: PrefSection = {
     width: num('Width', { showIf: { path: 'stroke.width', above: 0 }, enableIf: { path: 'pose.x', above: 0 } }),
   },
 };
+
+describe('a section moved between object leaves', () => {
+  const obj = (name: string, children: object): PrefLeaf => ({ kind: 'object', name, description: '', default: {}, children } as unknown as PrefLeaf);
+  const root: PrefSection = { name: 'Rect', members: {
+    a: obj('A', { s: { name: 'S', members: { x: num('X') } } }),
+    b: obj('B', {}),
+    shown: num('Shown', { showIf: { path: 'a.x', above: 0 } }),
+  } };
+
+  it('takes the conditions that read the leaves inside it along', () => {
+    const into = moveNodes(root, ['a/s'], { parentPath: 'b', index: 0 }).root;
+    expect(valuePathOf(into, 'b/s/x')).toBe('b.x');
+    expect((nodeAt(into, 'shown') as { showIf: unknown }).showIf).toEqual({ path: 'b.x', above: 0 });
+    const out = moveNodes(root, ['a/s'], { parentPath: null, index: 0 }).root;
+    expect((nodeAt(out, 'shown') as { showIf: unknown }).showIf).toEqual({ path: 'x', above: 0 });
+  });
+});
 
 describe('value paths under a section root', () => {
   it('are a leaf\'s own key, and for a field of an object leaf, the leaf\'s key then the field\'s', () => {

@@ -5,14 +5,14 @@ import {
   checkFits, childrenOf, editChildren, insertAt, isUnder, joinPath, keyOf, nodeAt, outermost, parentPath,
   type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaTree';
-import { rebaseValuePaths, valueMove, valuePathsAt } from './valuePaths';
+import { rebaseValuePaths, valueMoves, valuePathsAt } from './valuePaths';
 
 export {
   branchUnder, childrenOf, entryHolderAt, fitsUnder, isUnder, joinPath, keyOf, keysOf, levelsOf, nodeAt, outermost, ownChildrenOf,
   ownSlotOf, parentPath, pathOf, slotOf, withinDepth, type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaTree';
 export { isValidKey, keyClashes, keyFromName, keyProblem, keysTakenAt, takesDottedKey, undigit, uniqueKey } from './schemaKeys';
-export { heldValuePaths, rebaseValuePaths, valueMove, valuePathOf, valuePathsAt, type ValueMove } from './valuePaths';
+export { heldValuePaths, rebaseValuePaths, valueMoves, valuePathOf, valuePathsAt, type ValueMove } from './valuePaths';
 export { aliasNodes, aliasOf, canAlias, copyNodes, VALUE_LINKS, type LinkRule } from './schemaCopy';
 
 /** `root` with `node` under `parent` (`null` is the root) at `key`, at `index` or last. Throws where `node` cannot nest. */
@@ -68,7 +68,7 @@ export function removeNodes<R extends SchemaRoot>(root: R, paths: readonly strin
 /** `root` with the node at `path` keyed `next`, and every value path that named it rebased. */
 export function renameKey<R extends SchemaRoot>(root: R, path: string, next: string): R {
   const renamed = rekeyed(root, path, next);
-  return renamed === root ? root : rebaseValuePaths(renamed, [valueMove(root, path, joinPath(parentPath(path), next))]);
+  return renamed === root ? root : rebaseValuePaths(renamed, valueMoves(root, path, renamed, joinPath(parentPath(path), next)));
 }
 
 /** `root` with the node at `path` under the key `next`, where it sat; no value path held anywhere follows it. */
@@ -120,7 +120,7 @@ export function moveNodes<R extends SchemaRoot>(
 ): { root: R; from: string[]; paths: string[] } {
   const moved = shiftNodes(root, paths, target);
   if (moved.root === root) return moved;
-  return { ...moved, root: rebaseValuePaths(moved.root, moved.from.map((f, i) => valueMove(root, f, moved.paths[i]!))) };
+  return { ...moved, root: rebaseValuePaths(moved.root, moved.from.flatMap((f, i) => valueMoves(root, f, moved.root, moved.paths[i]!))) };
 }
 
 /** {@link moveNodes} as far as the tree goes: no value path held anywhere follows a moved node. */
