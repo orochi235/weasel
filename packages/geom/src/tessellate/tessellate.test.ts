@@ -462,6 +462,18 @@ describe('tessellate (PolygonPath, nonzero, crossing or nested outlines)', () =>
     expect(coverage(sameWound, 4.3, 3.1)).toBe(1);
     expect(area(sameWound)).toBeCloseTo(100);
   });
+  it('resolves outlines that meet only at vertices or along a shared stretch', () => {
+    const rects = (b: number[]) => poly([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z, PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z], [
+      0, 0, 10, 0, 10, 10, 0, 10, ...b,
+    ]);
+    const same = tessellate(rects([5, 0, 15, 0, 15, 10, 5, 10]));
+    expect(area(same)).toBeCloseTo(150);
+    expect(coverage(same, 7.3, 4.1)).toBe(1);
+    const opposite = tessellate(rects([5, 0, 5, 10, 15, 10, 15, 0]));
+    expect(area(opposite)).toBeCloseTo(100);
+    expect(coverage(opposite, 7.3, 4.1)).toBe(0);
+  });
+
   it('blends the anchors of a crossing cut inside a straight edge', () => {
     const a = square(0, 0, 10, true), b = square(5, 5, 10, true);
     const mesh = tessellate(poly([...a.cmds, ...b.cmds], [...a.xy, ...b.xy]));

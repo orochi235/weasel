@@ -3,6 +3,8 @@
 import { forEachCrossing } from './sweep';
 import { lerp } from '../scalar';
 import { anchorParamsBetween } from './anchorParams';
+import { anyContact } from './evenOdd';
+import { nestRings, type Ring } from './nesting';
 
 /** Flattened contours with each vertex's anchor parameterization. */
 export interface FlattenedContours {
@@ -36,13 +38,19 @@ interface Piece {
 const keyOf = (n: Node): string => `${n.x},${n.y}`;
 
 /**
- * The boundary of `flat`'s nonzero fill as loops that do not cross, each with
- * the fill on its left, or `null` when no two edges cross and `always` is
- * not set.
+ * Contours drawing `flat`'s nonzero fill that triangulate ring by ring, with
+ * their rings: `flat` itself when no two edges meet and nothing winds past 1,
+ * else the fill's boundary as loops that neither cross nor overlap. `flat`
+ * too, unresolved, when that boundary would not close into loops.
  */
-export function resolveCrossings(flat: FlattenedContours, always = false): FlattenedContours | null {
-  if (!always && !anyCrossing(flat)) return null;
-  return resolve(flat, (w) => w !== 0)!.contours;
+export function nonzeroContours(flat: FlattenedContours): { contours: FlattenedContours; rings: Ring[] } {
+  if (!anyContact(flat)) {
+    const rings = nestRings(flat);
+    if (rings.every((r) => Math.abs(r.winding) <= 1)) return { contours: flat, rings };
+  }
+  const out = resolve(flat, (w) => w !== 0)!;
+  const contours = out.complete ? out.contours : flat;
+  return { contours, rings: nestRings(contours) };
 }
 
 /**
@@ -92,28 +100,6 @@ function edgeCount(flat: FlattenedContours): number {
     }
   });
   return n;
-}
-
-/** Whether any two edges of `flat` cross. Every nonzero fill asks this, and
- *  most cross nowhere, so it reads the coordinates without building edges. */
-export function anyCrossing(flat: FlattenedContours): boolean {
-  const { coords, contourStarts } = flat;
-  const total = coords.length / 2;
-  const ends = new Float64Array(total * 4);
-  let n = 0;
-  contourStarts.forEach((start, c) => {
-    const end = c + 1 < contourStarts.length ? contourStarts[c + 1] : total;
-    for (let i = start; i < end; i++) {
-      const j = i + 1 < end ? i + 1 : start;
-      const x0 = coords[i * 2], y0 = coords[i * 2 + 1], x1 = coords[j * 2], y1 = coords[j * 2 + 1];
-      if (x0 === x1 && y0 === y1) continue;
-      ends[n * 4] = x0; ends[n * 4 + 1] = y0; ends[n * 4 + 2] = x1; ends[n * 4 + 3] = y1;
-      n++;
-    }
-  });
-  let found = false;
-  forEachCrossing(ends, n, () => (found = true));
-  return found;
 }
 
 function edgesOf(flat: FlattenedContours): Edge[] {

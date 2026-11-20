@@ -2935,3 +2935,12 @@ Calls the lanes made without a ruling:
   then `DFLT`'s, then the rest in ScriptList order, and taking the first whose lookups cover the pair. Layout knows
   no run's script, so picking one script for every pair was the alternative, and loses kerning other scripts' lookups
   alone carry.
+
+## Audit round forty-nine (2026-11-20): fill tessellation
+
+- 2026-11-20 (the fixer's call): a nonzero fill whose resolved boundary would not close into loops draws its
+  unresolved outline, as an even-odd one keeps the stencil, rather than drawing the loops that did close and dropping
+  the rest. No outline is known to reach it since boundary pieces are judged on a ray, not at an offset point.
+- 2026-11-20 (the fixer's call): resolving a nonzero fill's crossings has no work cap. The even-odd cap falls back to
+  the parity stencil, and the renderer has no nonzero stencil to fall back to, so a cap would draw a wrong fill rather
+  than a slow one. A nonzero stencil pass (increment front faces, decrement back) is what would let it have one.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { anyCrossing, resolveCrossings, resolveEvenOdd, type FlattenedContours } from './crossings';
+import { nonzeroContours, resolveEvenOdd, type FlattenedContours } from './crossings';
 
 const contours = (...rings: number[][]): FlattenedContours => {
   const flat: FlattenedContours = { coords: [], contourStarts: [], anchorA: [], anchorB: [], anchorT: [] };
@@ -14,30 +14,6 @@ const contours = (...rings: number[][]): FlattenedContours => {
   }
   return flat;
 };
-
-describe('anyCrossing', () => {
-  it('finds a figure eight crossing itself', () => {
-    expect(anyCrossing(contours([0, 0, 10, 10, 10, 0, 0, 10]))).toBe(true);
-  });
-
-  it('finds two outlines crossing each other', () => {
-    expect(anyCrossing(contours([0, 0, 10, 0, 10, 10, 0, 10], [5, 5, 15, 5, 15, 15, 5, 15]))).toBe(true);
-  });
-
-  it('finds no crossing in a square, or in a hole inside it', () => {
-    expect(anyCrossing(contours([0, 0, 10, 0, 10, 10, 0, 10]))).toBe(false);
-    expect(anyCrossing(contours([0, 0, 10, 0, 10, 10, 0, 10], [3, 3, 3, 7, 7, 7, 7, 3]))).toBe(false);
-  });
-
-  it('counts neither a shared vertex nor a shared edge as a crossing', () => {
-    expect(anyCrossing(contours([0, 0, 10, 0, 10, 10, 0, 10], [10, 10, 20, 10, 20, 20, 10, 20]))).toBe(false);
-    expect(anyCrossing(contours([0, 0, 10, 0, 10, 10, 0, 10], [10, 0, 20, 0, 20, 10, 10, 10]))).toBe(false);
-  });
-
-  it('skips a repeated vertex', () => {
-    expect(anyCrossing(contours([0, 0, 10, 0, 10, 0, 10, 10, 0, 10]))).toBe(false);
-  });
-});
 
 /** Area where `filled` holds of the winding number, sampled on a grid. */
 const sampledArea = (flat: FlattenedContours, filled: (w: number) => boolean, size: number, n: number): number => {
@@ -90,7 +66,7 @@ describe('resolving crossings', () => {
 
   it('closes every boundary loop around a sliver', () => {
     for (const flat of slivers) {
-      const nonzero = resolveCrossings(flat, true)!;
+      const nonzero = nonzeroContours(flat).contours;
       expect(Math.abs(signedArea(nonzero))).toBeCloseTo(sampledArea(flat, (w) => w !== 0, 1000, 400), -3);
       const evenOdd = resolveEvenOdd(flat);
       expect(evenOdd).not.toBeNull();

@@ -11,7 +11,7 @@ import {
   flattenQuadraticWithArcLen,
 } from '../flatten';
 import type { Mesh } from './mesh';
-import { resolveCrossings, resolveEvenOdd, type FlattenedContours } from './crossings';
+import { nonzeroContours, resolveEvenOdd, type FlattenedContours } from './crossings';
 import { nestRings, type Ring } from './nesting';
 import { evenOddRings } from './evenOdd';
 
@@ -173,13 +173,8 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
     const { coords, contourStarts, anchorA, anchorB, anchorT } = flat;
     return tessellateEvenoddWithAnchors(coords, contourStarts, anchorA, anchorB, anchorT);
   }
-  const crossed = resolveCrossings(flat);
-  if (crossed) return tessellateNonzero(crossed, nestRings(crossed));
-  const rings = nestRings(flat);
-  if (rings.every((r) => Math.abs(r.winding) <= 1)) return tessellateNonzero(flat, rings);
-  // Nested same-wound rings would cover the region they share twice.
-  const rebuilt = resolveCrossings(flat, true)!;
-  return tessellateNonzero(rebuilt, nestRings(rebuilt));
+  const { contours, rings } = nonzeroContours(flat);
+  return tessellateNonzero(contours, rings);
 }
 
 /** Triangulate rings that do not cross and wind at most once anywhere: each
