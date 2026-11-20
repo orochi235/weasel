@@ -19,6 +19,10 @@ describe('gestureRouteSegments', () => {
     expect(texts('[initial] keyDown(Escape)')).toHaveLength(2);
   });
 
+  it('draws a route its grammar rejects as its own text rather than throwing', () => {
+    expect(texts('[initial] dblTap => node')).toEqual(['[initial] dblTap => node']);
+  });
+
   it('chevrons every segment but the last', () => {
     const caps = gestureRouteSegments('[initial] click => handle +shift').map((seg) => seg.endCap);
     expect(caps).toEqual(['chevron', 'chevron', 'chevron', undefined]);

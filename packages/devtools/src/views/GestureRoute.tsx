@@ -4,6 +4,7 @@ import {
   type GestureName,
   type ModifierKey,
   type ParsedModifiers,
+  type ParsedRoute,
 } from '@weasel-js/core/routing';
 import type { ReactNode } from 'react';
 import { Badge, type BadgeVariant } from '@weasel-js/ui/components/Badge';
@@ -36,10 +37,12 @@ export interface RouteSegment extends Pick<AppearanceProps, 'emphasis' | 'grade'
  * The segments {@link GestureRoute} draws for a route string: phase atoms, then
  * `gesture(arg)`, then the held modifiers as one chord, then the target.
  * A descriptor's default arg and a wildcard target stay visible, muted, so
- * the strip shows the whole binding.
+ * the strip shows the whole binding. A route the grammar rejects, as from a
+ * page on another kit version, is drawn as its own text.
  */
 export function gestureRouteSegments(route: string): RouteSegment[] {
-  const parsed = parseRoute(route);
+  let parsed: ParsedRoute;
+  try { parsed = parseRoute(route); } catch { return [{ text: route, variant: 'subtle' }]; }
   const desc = getGestureDescriptor(parsed.gesture as GestureName);
   const hasArg = !!desc.arg && parsed.arg !== undefined;
   const argIsKey = hasArg && desc.arg?.name === 'key';
