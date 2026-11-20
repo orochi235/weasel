@@ -3,8 +3,11 @@
  * takes it back.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { act, createRef } from 'react';
 import { render } from '@testing-library/react';
 import { Canvas } from '@weasel-js/core/testing/BareCanvas';
+import type { RenderLayer } from 'core/layers/render';
+import type { CanvasExtensionApi } from './canvasExtension';
 import { ViewRegistryProvider, useOptionalViewRegistry, type SurfaceHandle, type ViewRegistration, type ViewRegistry } from './viewRegistry';
 
 beforeAll(() => {
@@ -58,6 +61,26 @@ describe('<Canvas> surface attachment', () => {
     registry.attachSurface(second);
     detachFirst();
     expect(registry.surface()).toBe(second);
+  });
+});
+
+function claiming(id: string): RenderLayer<unknown> {
+  return { id, label: id, space: 'screen', draw: () => [], hitTest: () => ({}) };
+}
+
+describe('<Canvas> claimsAbove', () => {
+  it('answers for registered layers only: the slot stack paints under the views', () => {
+    let registry!: ViewRegistry;
+    const ref = createRef<CanvasExtensionApi>();
+    render(
+      <ViewRegistryProvider>
+        <Probe onRegistry={(r) => { registry = r; }} />
+        <Canvas ref={ref} width={100} height={100} layers={{ handles: { layer: claiming('slot'), after: 'scene' } }} />
+      </ViewRegistryProvider>,
+    );
+    expect(registry.surface()!.claimsAbove(10, 10)).toBe(false);
+    act(() => { ref.current!.registerLayer(claiming('hud')); });
+    expect(registry.surface()!.claimsAbove(10, 10)).toBe(true);
   });
 });
 

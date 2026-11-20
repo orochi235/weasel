@@ -17,6 +17,8 @@ export interface SurfaceFrame {
 export interface SurfaceServices {
   requestRedraw: () => void;
   hitTestExtrasIn: SurfaceHandle['hitTestExtras'];
+  /** The layers registered from outside `layers`, which paint over every view. */
+  extrasRef: { readonly current: ReadonlySet<RenderLayer<unknown>> };
   clientToWorld: SurfaceHandle['clientToWorld'];
   setView: NonNullable<SurfaceHandle['setView']>;
 }
@@ -34,7 +36,7 @@ export function useViewRegistrySurface(
 ): void {
   const surfaceLayersRef = useLatest<readonly RenderLayer<unknown>[]>(layers);
   const { viewRef, dimsRef, helpersRef } = frame;
-  const { requestRedraw, hitTestExtrasIn, clientToWorld, setView } = services;
+  const { requestRedraw, hitTestExtrasIn, extrasRef, clientToWorld, setView } = services;
   useEffect(() => {
     return viewRegistry?.attachSurface({
       view: () => viewRef.current,
@@ -48,8 +50,9 @@ export function useViewRegistrySurface(
       claimsAbove: (x, y) => {
         const view = viewRef.current;
         const world = viewScreenToWorld(view, { x, y });
-        return hitTestExtrasIn(world.x, world.y, view, dimsRef.current, helpersRef.current) !== null;
+        const above = [...extrasRef.current];
+        return hitTestExtrasIn(world.x, world.y, view, dimsRef.current, helpersRef.current, above) !== null;
       },
     });
-  }, [viewRegistry, requestRedraw, hitTestExtrasIn, dimsRef, surfaceLayersRef, viewRef, helpersRef, clientToWorld, setView]);
+  }, [viewRegistry, requestRedraw, hitTestExtrasIn, extrasRef, dimsRef, surfaceLayersRef, viewRef, helpersRef, clientToWorld, setView]);
 }
