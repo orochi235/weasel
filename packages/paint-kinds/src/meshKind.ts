@@ -10,8 +10,9 @@ import type { PaintKindEntry } from './paintKindEntry';
 const asMesh = (fill: Paint): MeshGradientPaint => fill as unknown as MeshGradientPaint;
 const asFill = (mesh: MeshGradientPaint): Paint => mesh as unknown as Paint;
 
-/** The `mesh-gradient` kind's registry entry. `./registerMesh` registers it;
- *  the paint-kind registry loads it on demand otherwise. */
+/** The `mesh-gradient` kind's registry entry. Importing
+ *  `@weasel-js/paint-kinds/mesh` registers it; the paint-kind registry loads
+ *  it on demand otherwise. */
 export const meshGradientKind: PaintKindEntry = {
   ...meshDrawKind,
   label: 'Mesh',
