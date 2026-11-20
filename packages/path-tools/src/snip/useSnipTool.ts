@@ -28,11 +28,13 @@ export function useSnipTool(options: UseSnipToolOptions = {}): Tool {
       id: SNIP_PREVIEW_ID,
       label: 'Snip: show the piece under the pointer',
       eligible: { capability: 'creates-shapes' },
-      requires: ['scene', 'view'],
+      requires: ['scene', 'view', 'actionParams'],
       invoker: {
         timing: 'immediate',
         run: (deps, params) => {
-          const plan = deps.scene ? planSnip(deps, params) : null;
+          // The click's reach, `snipPath`'s tunings included.
+          const reach = deps.actionParams?.('snipPath', params ?? {}) ?? params;
+          const plan = deps.scene ? planSnip(deps, reach) : null;
           const scene = deps.scene as AnyScene | undefined;
           preview.show(plan && scene ? { path: plan.result.removed as PolygonPath, scene } : null);
         },

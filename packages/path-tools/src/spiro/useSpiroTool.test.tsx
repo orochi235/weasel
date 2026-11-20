@@ -67,4 +67,36 @@ describe('useSpiroTool', () => {
     place(15, 0);
     expect(committed).toHaveLength(1);
   });
+
+  it('ends its pointer follow and its cursor\'s snap session when deactivated', () => {
+    const insert = { commit: () => 'n' } as unknown as InsertDep;
+    let subscribed = 0;
+    const pointer = {
+      get: () => ({ world: { x: 40, y: 10 } }),
+      subscribe: () => { subscribed++; return () => { subscribed--; }; },
+    };
+    let open = 0;
+    const snap = {
+      begin: () => {
+        open++;
+        return { at: (p: { x: number; y: number }) => ({ point: p }), end: () => { open--; } };
+      },
+    };
+    const deps = {
+      insert, pointer, snap, operands: { get: () => [], set: () => {} },
+      view: { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) },
+    } as unknown as ActionDeps;
+    const { result } = renderHook(() => useSpiroTool());
+    const place = (x: number, y: number) => {
+      const action = result.current.actions!.find((a) => a.id === 'spiro.placePoint')!;
+      act(() => { (action.invoker as ImmediateInvoker).run(deps, { press: { x, y } }); });
+    };
+    place(0, 0);
+    place(30, 0);
+    expect(subscribed).toBe(1);
+    expect(open).toBe(1);
+    act(() => { result.current.onDeactivate?.(); });
+    expect(subscribed).toBe(0);
+    expect(open).toBe(0);
+  });
 });

@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import type { IconRef } from '@weasel-js/icons';
 import { useLatest } from '@weasel-js/react';
 import type { PlaneMode, ClothMapping } from '@weasel-js/geom/warp';
-import type { Action, ActionParamsOf, GestureBinding, ToolKeybinding } from '@weasel-js/routing';
+import type { Action, GestureBinding, ToolKeybinding } from '@weasel-js/routing';
 import {
   type CanvasExtensionApi, type ContributionDepReader, defineTool, type SurfaceContribution, type Tool,
 } from '@weasel-js/core';
@@ -73,29 +73,23 @@ function definedOf(settings: WarpSettings): WarpSettings {
 
 const KEYS: Record<WarpKind, ToolKeybinding> = { plane: { key: 'F' }, cloth: { key: 'F', shift: true }, pin: { key: 'B' } };
 
-/** What a warp tool keeps between renders: whether it is active, the canvas
+/** What a warp tool keeps between renders: whether it is active, the canvases
  *  it is attached to, and the in-flight drag its controls follow. */
 function createWarpToolState() {
   let active = false;
-  let api: CanvasExtensionApi | null = null;
-  let deps: ContributionDepReader | null = null;
+  const attached = new Set<CanvasExtensionApi>();
   const live = createWarpLive();
   return {
     live,
     active: () => active,
-    scene: () => deps?.get('scene') as never,
-    outlines: () => deps?.get('createOutlinesAdapter'),
-    /** What an invocation of `actionId` passing `given` starts with here,
-     *  its tunings included. */
-    paramsOf: <Id extends string>(actionId: Id, given: Partial<ActionParamsOf<Id>>) =>
-      deps?.get('actionParams')?.(actionId, given) ?? given,
     setActive(next: boolean): void {
       active = next;
-      api?.requestRedraw();
+      for (const api of attached) api.requestRedraw();
     },
-    attachTo(nextApi: CanvasExtensionApi | null, nextDeps: ContributionDepReader | null): void {
-      api = nextApi;
-      deps = nextDeps;
+    /** Hold `api` for redraws until the returned release. */
+    attach(api: CanvasExtensionApi): () => void {
+      attached.add(api);
+      return () => { attached.delete(api); };
     },
   };
 }
@@ -105,24 +99,26 @@ function useWarpTool(kind: WarpKind, options: WarpToolOptions, settings: WarpSet
   const settingsRef = useLatest(settings);
   const state = useMemo(() => createWarpToolState(), []);
 
-  const attach = useMemo(() => {
+  // Each canvas gets a layer of its own, reading that canvas's deps.
+  const attach = useMemo(() => (api: CanvasExtensionApi, deps: ContributionDepReader) => {
     const layer = createWarpHandleLayer({
       kind,
       active: state.active,
-      settings: () => state.paramsOf(`${kind}.drag` as const, definedOf(settingsRef.current)),
-      scene: state.scene,
-      outlines: state.outlines,
+      settings: () => {
+        const given = definedOf(settingsRef.current);
+        return deps.get('actionParams')?.(`${kind}.drag` as const, given) ?? given;
+      },
+      scene: () => deps.get('scene') as never,
+      outlines: () => deps.get('createOutlinesAdapter'),
       live: state.live,
     });
-    return (api: CanvasExtensionApi, deps: ContributionDepReader) => {
-      state.attachTo(api, deps);
-      const unregister = api.registerLayer(layer);
-      const unlisten = state.live.subscribe(() => api.requestRedraw());
-      return () => {
-        unlisten();
-        unregister();
-        state.attachTo(null, null);
-      };
+    const release = state.attach(api);
+    const unregister = api.registerLayer(layer);
+    const unlisten = state.live.subscribe(() => api.requestRedraw());
+    return () => {
+      unlisten();
+      unregister();
+      release();
     };
   }, [kind, settingsRef, state]);
 

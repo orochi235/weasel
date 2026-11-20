@@ -39,9 +39,10 @@ interface SpiroActionsHost {
 
 const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: false };
 
-/** The spiro tool's actions. Each point placed, and the cursor, snaps
- *  through the `snap` dep's `point` sessions about the point placed before. */
-function spiroActions(host: SpiroActionsHost): Action[] {
+/** The spiro tool's actions, and `discard`, which drops every point placed and
+ *  ends the cursor's pointer follow and snap session. Each point placed, and the
+ *  cursor, snaps through the `snap` dep's `point` sessions about the point placed before. */
+function spiroActions(host: SpiroActionsHost): { actions: Action[]; discard(): void } {
   const s = host.scratch;
   // The deps last followed through, whose camera and snap the cursor reads.
   let followed: ActionDeps | undefined;
@@ -75,8 +76,9 @@ function spiroActions(host: SpiroActionsHost): Action[] {
     track();
   };
   const placing = () => (s().points.length > 0 ? true : ActionDisabledReason.NotApplicable);
+  const discard = (): void => { host.reset(); track(); };
 
-  return [
+  const actions: Action[] = [
     defineAction<'spiro.placePoint'>({
       id: 'spiro.placePoint',
       label: 'Spiro — place point',
@@ -126,9 +128,10 @@ function spiroActions(host: SpiroActionsHost): Action[] {
       eligible: { capability: 'creates-paths' },
       // Declining with nothing placed passes Escape on to `escape`.
       enabled: placing,
-      invoker: { timing: 'immediate', run: () => { host.reset(); track(); } },
+      invoker: { timing: 'immediate', run: discard },
     },
   ];
+  return { actions, discard };
 }
 
 /**
@@ -154,7 +157,7 @@ export function useSpiroTool(options: UseSpiroToolOptions = {}): Tool {
   const [, forceRender] = useReducer((n: number) => n + 1, 0);
   const [overlay] = useState(() => createSpiroPreviewLayer({ state: () => scratchRef.current! }));
 
-  const actions = useMemo(() => spiroActions({
+  const { actions, discard } = useMemo(() => spiroActions({
     scratch: () => scratchRef.current!,
     reset: () => { scratchRef.current = fresh(); },
     options: () => ({
@@ -174,10 +177,7 @@ export function useSpiroTool(options: UseSpiroToolOptions = {}): Tool {
     actions,
     overlay,
     overlayPosition: 'before-selection',
-    onDeactivate: () => {
-      scratchRef.current = fresh();
-      forceRender();
-    },
+    onDeactivate: discard,
     bindings: [
       { spec: { kind: 'click', mods: { shift: 'optional' } }, actionId: 'spiro.placePoint', opts: { id: 'spiro.placePoint' } },
       { spec: { kind: 'click', mods: { alt: true, shift: 'optional' } }, actionId: 'spiro.placePoint', opts: { id: 'spiro.placeCorner', params: { kind: 'corner' } } },
@@ -187,5 +187,5 @@ export function useSpiroTool(options: UseSpiroToolOptions = {}): Tool {
       { spec: { kind: 'key', key: 'Backspace' }, actionId: 'spiro.removeLast', opts: { id: 'spiro.removeLast' } },
       { spec: { kind: 'key', key: 'Escape' }, actionId: 'spiro.cancel', opts: { id: 'spiro.cancel' } },
     ],
-  }), [actions, overlay]);
+  }), [actions, discard, overlay]);
 }
