@@ -113,9 +113,10 @@ function groupRow<TC extends Record<string, unknown>>(
         title={group.name}
         motif={s.resolved.motifs?.get(path)}
         disabled={!s.enabled(path)}
+        actions={headingActions(lifted.control, reset)}
         {...folds}
       >
-        {draw.body(group, path, rows)}
+        {draw.body(group, path, rows, lifted.path)}
       </Subpanel>
     );
   }
