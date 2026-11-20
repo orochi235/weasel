@@ -87,16 +87,19 @@ function fitted(e: InsertPreviewExtent, to: Bounds): InsertPreviewExtent {
 function extentOf(ov: InsertPreviewLike): InsertPreviewExtent {
   const b = ov.bounds;
   const box = { x: b.x, y: b.y, width: b.width, height: b.height };
+  // `extras` is `unknown`: a custom action may publish none, and a missing payload
+  // falls back to the drag rect the same way a missing field does.
+  const extras: object = typeof ov.extras === 'object' && ov.extras !== null ? ov.extras : {};
 
   switch (ov.shape) {
     case 'line': {
-      const e = ov.extras as Partial<{ a: Point; b: Point }>;
+      const e = extras as Partial<{ a: Point; b: Point }>;
       const a = e.a ?? { x: b.x, y: b.y };
       const b2 = e.b ?? { x: b.x + b.width, y: b.y + b.height };
       return { shape: ov.shape, bounds: aabbOf([a, b2]) ?? box, geometry: { kind: 'line', a, b: b2 } };
     }
     case 'polygon': {
-      const e = ov.extras as Partial<{
+      const e = extras as Partial<{
         sides: number; rotation: number; center: Point; radius: number;
       }>;
       const center = e.center ?? { x: b.x + b.width / 2, y: b.y + b.height / 2 };
@@ -110,7 +113,7 @@ function extentOf(ov: InsertPreviewLike): InsertPreviewExtent {
       };
     }
     case 'star': {
-      const e = ov.extras as Partial<{
+      const e = extras as Partial<{
         points: number; innerRadiusRatio: number; rotation: number;
         center: Point; outerRadius: number;
       }>;
@@ -126,7 +129,7 @@ function extentOf(ov: InsertPreviewLike): InsertPreviewExtent {
       };
     }
     case 'pencil': {
-      const e = ov.extras as Partial<{ samples: ReadonlyArray<Point> }>;
+      const e = extras as Partial<{ samples: ReadonlyArray<Point> }>;
       const samples = e.samples ?? [];
       return {
         shape: ov.shape,
