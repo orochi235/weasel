@@ -59,7 +59,8 @@ export interface RunStoryOptions {
 let leftover: (() => unknown) | null = null;
 
 /**
- * Renders one story in the test page the way the workshop does — defaults, no state, no globals — then plays it.
+ * Renders one story in the test page the way the workshop does — its defaults and initial state, under `globals` —
+ * then plays it.
  * Throws on a render the story's boundary caught, or a play function that fails.
  */
 export async function runStory(
