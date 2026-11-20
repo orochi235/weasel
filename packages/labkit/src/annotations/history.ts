@@ -31,6 +31,8 @@ export interface HistoryScene {
  */
 export class MarkHistory {
   private readonly depth = new Map<string, number>();
+  /** Every scene followed, by target. */
+  private readonly followed = new Map<string, HistoryScene>();
   /** Per target, the ids of the entries its scene could redo when last seen. */
   private readonly ahead = new Map<string, ReadonlySet<string>>();
   /** Per change, its target and when it was first made. */
@@ -48,6 +50,7 @@ export class MarkHistory {
   /** Start following `scene` under `target`. Idempotent per target. */
   track(target: string, scene: HistoryScene): void {
     if (this.depth.has(target)) return;
+    this.followed.set(target, scene);
     this.see(target, scene);
   }
 
@@ -60,8 +63,14 @@ export class MarkHistory {
       // Depth cannot tell a redo from a change, whoever ran it: the entry that became current can.
       const isRedo = current !== undefined && redoable?.has(current) === true;
       const redone = isRedo ? drop(this.redoable, target) : undefined;
-      // A change drops whatever was redoable — weasel's own scene did the same to its stack.
-      if (!isRedo) this.redoable = [];
+      // A change drops whatever was redoable. Its own scene did the same to its stack; every
+      // other target's scene still holds its redo, which a pane's own Redo would bring back.
+      if (!isRedo) {
+        this.redoable = [];
+        for (const [other, s] of this.followed) {
+          if (other !== target && s.canRedo()) s.history?.dropRedo?.();
+        }
+      }
       this.undoable.push(redone ?? { target, stamp: editStamp() });
     } else if (now < before) {
       const undone = drop(this.undoable, target);

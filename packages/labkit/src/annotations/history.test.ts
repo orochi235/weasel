@@ -65,6 +65,19 @@ describe('undo across targets', () => {
     expect(s.canRedo()).toBe(false);
   });
 
+  it("drops another target's scene redo when a change lands, so its pane cannot redo it", () => {
+    const s = store();
+    s.add({ ...MARK, target: 'left' });
+    s.add({ ...MARK, target: 'right' });
+    s.undo();
+    s.add({ ...MARK, target: 'left' });
+
+    expect(s.canRedo()).toBe(false);
+    expect(s.openScene('right').canRedo()).toBe(false);
+    expect(s.openScene('right').redo()).toBe(false);
+    expect(s.query({ target: 'right' })).toHaveLength(0);
+  });
+
   it('follows an undo driven from inside a pane, not just its own', () => {
     // A pane's own Cmd+Z calls scene.undo() directly. Tracking the ordering
     // off the subscribe callback alone would read that as one more change and
