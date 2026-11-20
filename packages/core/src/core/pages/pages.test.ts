@@ -57,6 +57,17 @@ describe('finding a page', () => {
     expect(pageOfBounds(placed, { x: 50, y: 50, width: 0, height: 0 })?.id).toBe('a');
   });
 
+  it('answers the page a zero-thickness box runs along most', () => {
+    const pair = layoutPages([{ id: 'a', width: 100, height: 50 }, { id: 'b', width: 100, height: 50 }], { gap: 10 });
+    expect(pageOfBounds(pair, { x: 90, y: 10, width: 110, height: 0 })?.id).toBe('b');
+    expect(pageOfBounds(pair, { x: 50, y: 10, width: 70, height: 0 })?.id).toBe('a');
+    const column = layoutPages([{ id: 'a', width: 50, height: 100 }, { id: 'b', width: 50, height: 100 }], {
+      direction: 'column', gap: 10,
+    });
+    expect(pageOfBounds(column, { x: 10, y: 90, width: 0, height: 110 })?.id).toBe('b');
+    expect(pageHolding(pair, { x: 90, y: 10, width: 110, height: 0 })?.id).toBe('b');
+  });
+
   it('bounds every page, and nothing when there are none', () => {
     expect(pagesBounds(placed)).toEqual({ x: 0, y: 0, width: 470, height: 200 });
     expect(pagesBounds([])).toBeNull();

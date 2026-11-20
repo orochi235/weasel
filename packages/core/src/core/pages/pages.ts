@@ -74,25 +74,28 @@ export function pageAt(
   return pageOfBounds(pages, { x: point.x, y: point.y, width: 0, height: 0 });
 }
 
-function overlap(page: PlacedPage, b: Bounds): number | null {
+/** How much of `b` lies on `page`: the overlap's area, then its width plus height, which ranks a box of no
+ *  area (a straight line) by the length of it on the page. `null` when they do not touch. */
+function overlap(page: PlacedPage, b: Bounds): readonly [area: number, span: number] | null {
   const w = Math.min(page.x + page.width, b.x + b.width) - Math.max(page.x, b.x);
   const h = Math.min(page.y + page.height, b.y + b.height) - Math.max(page.y, b.y);
-  return w < 0 || h < 0 ? null : w * h;
+  return w < 0 || h < 0 ? null : [w * h, w + h];
 }
 
 /**
  * The page a world-space box belongs to: the one it overlaps most, the earlier
- * of two it overlaps equally, and `null` when it touches none. This is the
- * rule that says which page an object is on.
+ * of two it overlaps equally, and `null` when it touches none. A box of no
+ * area, such as a straight line's, overlaps most the page holding most of its
+ * length. This is the rule that says which page an object is on.
  */
 export function pageOfBounds(pages: readonly PlacedPage[], bounds: Bounds): PlacedPage | null {
   let best: PlacedPage | null = null;
-  let most = -1;
+  let most: readonly [number, number] = [-1, -1];
   for (const page of pages) {
-    const area = overlap(page, bounds);
-    if (area !== null && area > most) {
+    const o = overlap(page, bounds);
+    if (o !== null && (o[0] > most[0] || (o[0] === most[0] && o[1] > most[1]))) {
       best = page;
-      most = area;
+      most = o;
     }
   }
   return best;
