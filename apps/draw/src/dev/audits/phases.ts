@@ -132,6 +132,24 @@ export function patchFillOf(lane: AuditLane): number {
   return fix.of ? Math.min(1, fix.fixed / fix.of) : 1;
 }
 
+/**
+ * A patch span split by what its fixer left: the share it fixed, shaded as the patch is, then the share it filed
+ * rather than fixed, hatched red. Whole where the fixer fixed everything, has not reported, or gave no tally.
+ */
+export function withUnfixed(span: SpanStripSpan, lane: AuditLane): SpanStripSpan[] {
+  const { fix } = lane.steps;
+  if (fix.state !== 'done' || fix.fixed === undefined || !fix.of || fix.fixed >= fix.of) return [span];
+  const share = fix.fixed / fix.of;
+  const left = fix.of - fix.fixed;
+  return [
+    { ...span, ms: span.ms * share, fill: 1 },
+    {
+      ...span, id: `${span.id}-unfixed`, label: '', start: undefined, ms: span.ms * (1 - share), fill: 1, state: 'failed',
+      color: phaseColor('conflict'), title: `${left} of ${fix.of} filed rather than fixed`, content: undefined,
+    },
+  ];
+}
+
 /** The area's tally, its patch segment's caption: how many of the findings its fixer answered it fixed, and the
  *  extras it fixed besides; before the fixer reports, or where its report gives no tally, what the reviews found. */
 export function tallyOf(lane: AuditLane): string {
@@ -194,7 +212,7 @@ export function laneViewOf(lane: AuditLane, now: number, roundStart: number): La
       id: p.part, label: partLabel(lane, p, now), start, ms: Math.max(0, end - start), color: phaseColor(phase), state: SPAN_STATE[p.state], title,
       ...(waitsForBatch ? { fill: patchFillOf(lane) } : p.state === 'waiting' ? { fill: 0 } : {}),
     };
-  });
+  }).flatMap((span) => (span.id === 'patch' ? withUnfixed(span, lane) : [span]));
   return { phase: phaseOf(lane), finished: isFinished(lane), spans, elapsed, ended };
 }
 
@@ -239,5 +257,5 @@ export function laneStepsOf(lane: AuditLane, now: number): SpanStripSpan[] {
       label: step === 'patch' && s.state !== 'failed' ? tallyOf(lane) : s.state === 'waiting' ? '' : stepText(step, s, now),
       color: phaseColor(s.state === 'failed' ? 'conflict' : phase),
     };
-  });
+  }).flatMap((span) => (span.id === 'patch' && span.state !== 'failed' ? withUnfixed(span, lane) : [span]));
 }

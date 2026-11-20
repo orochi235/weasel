@@ -69,11 +69,21 @@ describe('laneViewOf', () => {
 
   it('captions and shades the patch with the fixer\'s tally of what it fixed', () => {
     const fixed = { A: done({ findings: 3 }), B: done({ findings: 2 }), match: matched(3, 2, 1), fix: done({ minutes: 9, commits: 6, fixed: 3, of: 4, extra: 1 }) };
-    expect(laneViewOf(lane(fixed), NOW, START).spans.at(-1)?.label).toBe('3 of 4 fixed +1 extra');
-    expect(laneStepsOf(lane({ ...fixed, patch: done({ commits: 6 }) }), NOW).at(-1)?.label).toBe('3 of 4 fixed +1 extra');
+    const patchOf = (spans: { id: string }[]) => spans.find((s) => s.id === 'patch') as { label: string; ms: number; fill?: number } | undefined;
+    expect(patchOf(laneViewOf(lane(fixed), NOW, START).spans)?.label).toBe('3 of 4 fixed +1 extra');
+    expect(patchOf(laneStepsOf(lane({ ...fixed, patch: done({ commits: 6 }) }), NOW))?.label).toBe('3 of 4 fixed +1 extra');
     expect(laneViewOf(lane({ ...fixed, fix: done({ minutes: 9, commits: 6 }) }), NOW, START).spans.at(-1)?.label).toBe('4 found');
-    expect(laneViewOf(lane(fixed), NOW, START).spans.at(-1)?.fill).toBe(0.75);
-    expect(laneStepsOf(lane(fixed), NOW).at(-1)?.fill).toBe(0.75);
+  });
+
+  it('splits the patch into the share fixed, shaded, and the share filed rather than fixed, hatched red', () => {
+    const fixed = { A: done({ findings: 3 }), B: done({ findings: 2 }), match: matched(3, 2, 1), fix: done({ minutes: 9, commits: 6, fixed: 3, of: 4 }) };
+    for (const spans of [laneStepsOf(lane(fixed), NOW), laneStepsOf(lane({ ...fixed, patch: done({ commits: 6 }) }), NOW)]) {
+      const [kept, filed] = spans.slice(-2);
+      expect([kept!.id, kept!.ms, kept!.fill]).toEqual(['patch', 0.75, 1]);
+      expect([filed!.id, filed!.ms, filed!.state, filed!.color, filed!.label]).toEqual(['patch-unfixed', 0.25, 'failed', phaseColor('conflict'), '']);
+    }
+    const all = { ...fixed, fix: done({ minutes: 9, commits: 6, fixed: 4, of: 4 }) };
+    expect(laneStepsOf(lane(all), NOW).map((s) => s.id)).not.toContain('patch-unfixed');
   });
 
   it('counts an area\'s pass done once its fixer is, and gives the map that pass, provisionally', () => {

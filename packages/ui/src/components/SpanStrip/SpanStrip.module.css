@@ -63,6 +63,7 @@
   color: oklch(from var(--span-color, var(--wzl-accent)) clamp(0, (0.564 - l) * 1000, 1) 0 0);
 }
 
+.segment[data-state='failed'],
 .played > .segment[data-state='failed'] {
   background-image: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in oklab, black 22%, transparent) 4px 6px);
 }
