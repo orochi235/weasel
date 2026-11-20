@@ -57,7 +57,7 @@ export const mutation: fc.Arbitrary<Mutation> = fc.oneof(
   fc.oneof(hostileLeaf, junk, fc.constant([]), fc.constant({})).map((to) => ({ op: 'retype', to }) as const),
 );
 
-const clone = (v: unknown): unknown => JSON.parse(JSON.stringify(v)) as unknown;
+const clone = (v: unknown): unknown => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)) as unknown);
 
 /** A copy of JSON value `v` with the value at `path` dropped (removed from its array or object), duplicated (an
  *  array entry twice, an object field wrapped in a two-entry array) or retyped (replaced). The root retyped is `to`. */
