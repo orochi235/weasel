@@ -99,21 +99,31 @@ function between(a: Bounds, b: Bounds, others: readonly Bounds[], axes: LayoutAx
 }
 
 /**
- * Two waypoints past whichever of `a` and `b` reaches further toward the next
- * rank, one beyond each one's middle: half `rankGap` out, or half way to the
- * nearest box beyond in the way of the run between them.
+ * Two waypoints past whichever of `a`, `b` and the boxes the run between them
+ * would cross reaches furthest toward the next rank, one beyond each end's
+ * middle: half `rankGap` out, or half way to the nearest box beyond in the way
+ * of the run.
  */
 function around(a: Bounds, b: Bounds, others: readonly Bounds[], axes: LayoutAxes, rankGap: number): Vec2[] {
   const ahead = (box: Bounds) => (axes.sign === 1 ? spanOf(box, axes.rank).hi : -spanOf(box, axes.rank).lo);
   const behind = (box: Bounds) => (axes.sign === 1 ? spanOf(box, axes.rank).lo : -spanOf(box, axes.rank).hi);
-  const edge = Math.max(ahead(a), ahead(b));
   const [ma, mb] = [center(a, axes.cross), center(b, axes.cross)];
   const run = { lo: Math.min(ma, mb), hi: Math.max(ma, mb) };
-  let standoff = rankGap / 2;
-  for (const o of others) {
-    const room = behind(o) - edge;
+  const inRun = others.filter((o) => {
     const c = spanOf(o, axes.cross);
-    if (room > 0 && c.lo <= run.hi && c.hi >= run.lo) standoff = Math.min(standoff, room / 2);
+    return c.lo <= run.hi && c.hi >= run.lo;
+  });
+  let edge = Math.max(ahead(a), ahead(b));
+  for (let moved = true; moved; ) {
+    moved = false;
+    for (const o of inRun) {
+      if (behind(o) <= edge && ahead(o) > edge) [edge, moved] = [ahead(o), true];
+    }
+  }
+  let standoff = rankGap / 2;
+  for (const o of inRun) {
+    const room = behind(o) - edge;
+    if (room > 0) standoff = Math.min(standoff, room / 2);
   }
   const rank = axes.sign * (edge + standoff);
   const point = (cross: number): Vec2 => (axes.cross === 'x' ? { x: cross, y: rank } : { x: rank, y: cross });

@@ -5,8 +5,8 @@ import { layeredPlan } from '../layered';
 import type { LayoutDirection } from '../layout';
 
 /** Every node pinned where it is given, and an edge for each pair. */
-function pinnedGraph(at: Record<string, { x: number; y: number }>, pairs: [string, string][]): Graph {
-  const nodes: GraphNode[] = Object.entries(at).map(([id, p]) => ({ id, bounds: { ...p, width: 80, height: 30 }, pinned: true }));
+function pinnedGraph(at: Record<string, { x: number; y: number; height?: number }>, pairs: [string, string][]): Graph {
+  const nodes: GraphNode[] = Object.entries(at).map(([id, p]) => ({ id, bounds: { width: 80, height: 30, ...p }, pinned: true }));
   const edges = pairs.map(([from, to]) => ({ id: `${from}${to}`, from, to }));
   const byId = new Map(nodes.map((n) => [n.id, n]));
   return {
@@ -49,6 +49,12 @@ describe('layered, an edge between two nodes level along the rank axis', () => {
     const graph = pinnedGraph({ a: { x: 0, y: 0 }, m: { x: 200, y: 0 }, b: { x: 400, y: 0 }, z: { x: 200, y: 50 } }, [['a', 'b']]);
     const plan = layeredPlan(graph, { rankGap: 96 });
     expect(plan.waypoints.get('ab')).toEqual([{ x: 40, y: 40 }, { x: 440, y: 40 }]);
+  });
+
+  it('goes around past a node between them that reaches further toward the next rank than either end', () => {
+    const graph = pinnedGraph({ a: { x: 0, y: 30, height: 40 }, c: { x: 200, y: 0, height: 140 }, b: { x: 400, y: 30, height: 40 } }, [['a', 'b']]);
+    const plan = layeredPlan(graph, { rankGap: 96 });
+    expect(plan.waypoints.get('ab')).toEqual([{ x: 40, y: 188 }, { x: 440, y: 188 }]);
   });
 
   it('keeps the rank faces for nodes that are not level', () => {
