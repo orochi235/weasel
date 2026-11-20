@@ -219,4 +219,10 @@ describe('one arrival across kit handlers', () => {
     expect(xs).toEqual([100, 124]);
   });
 
+  it('inserts an SVG file once when its markup rides beside it as text/plain', async () => {
+    const items = [item(svgFile('a.svg')), svgTextItem()];
+    const c = ctx({ point: { x: 0, y: 0 }, items });
+    await kitSvgHandler.handle(items, c);
+    expect(c.insert.commit).toHaveBeenCalledTimes(1);
+  });
 });

@@ -101,11 +101,11 @@ export const kitSvgHandler: ContentHandlerEntry = {
   priority: -90,
   handle(items, ctx: IngestCtx) {
     const files = items.flatMap((it) => (it.kind === 'file' ? [it.file] : []));
-    // String items are skipped when the weasel-JSON handler already pasted
-    // this event's copy: ingesting both flavors would double-paste.
+    // String items are other spellings of the copy: skipped when a file rides
+    // beside them, or when the weasel-JSON handler already pasted this event's copy.
     // WARNING: this read must stay before any `await` in this handle — the
     // sync-ordering of handler microtasks is what makes the flag visible.
-    if (!ctx.consumedWeaselPayload) {
+    if (!ctx.consumedWeaselPayload && !(ctx.items ?? items).some((it) => it.kind === 'file')) {
       for (const it of items) {
         if (it.kind === 'string') files.push(new File([it.text], 'pasted.svg', { type: SVG_MIME }));
       }
