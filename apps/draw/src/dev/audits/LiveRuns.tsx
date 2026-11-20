@@ -4,7 +4,7 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { SpanStrips, type SpanStripSpan, type SpanStripsRow } from '@weasel-js/ui/components/SpanStrip';
 import { clockRuler } from './clock';
-import { laneStepsOf, laneViewOf, passDone, runClockOf, type LaneView } from './phases';
+import { STEP_COLUMN_COUNT, laneStepsOf, laneViewOf, passDone, runClockOf, type LaneView } from './phases';
 import { NODE_SEP, headlineOf, lastLineOf, sharedLaneOf, spendOf, startedText } from './runData';
 import { useViewerPref } from './viewerPref';
 import type { AuditLane, AuditRun } from './skulkMap.types';
@@ -58,7 +58,7 @@ function useHideComplete(): [boolean, (hide: boolean) => void] {
   return [hide, (next) => { setHide(next); keep(next); }];
 }
 
-const STEPS_WINDOW = { from: 0, to: 5 };
+const STEPS_WINDOW = { from: 0, to: STEP_COLUMN_COUNT };
 
 /** The run's areas, on the run's clock or as a grid of steps; a finished one stays, filled, until the run ends, unless
  *  the viewer hides those whose pass is done, as the map shows them. */
@@ -105,7 +105,7 @@ function RunStrip({ run, now, mode, onMode, hideComplete, onHideComplete, on }: 
       </div>
       <div className={s.spend}>{spendOf(run)}</div>
       {run.lanes.length > 0 && (
-        <div className={s.lanes}>
+        <div className={s.lanes} data-mode={mode}>
           <Lanes run={run} now={now} mode={mode} hideComplete={hideComplete} on={on} />
           <div className={s.sharedRow}>
             <span className={s.nameCell}>all areas</span>

@@ -1,6 +1,8 @@
 /* A consumer sizes the strips with `--span-strip-height` and `--span-strip-text` on any ancestor.
    `--at` (the playhead, 0 to 1) is set on the strip from its ref; each segment's `--span-from`, `--span-share` (its
-   start and length, as fractions of the window) and `--span-color` from its own, and each seam's `--seam-at`.
+   start and length, as fractions of the window), `--span-track`, `--span-track-span` and `--span-tracks` (its first
+   stripe, how many it covers, and how many there are) and
+   `--span-color` from its own, and each seam's `--seam-at`.
    No rule here sets a font family: the text takes its container's. */
 .strip {
   position: relative;
@@ -25,7 +27,8 @@
 
 .segment {
   position: absolute;
-  inset-block: 0;
+  top: calc(var(--span-track, 0) * 100% / var(--span-tracks, 1));
+  height: calc(var(--span-track-span, 1) * 100% / var(--span-tracks, 1));
   left: calc(var(--span-from, 0) * 100%);
   width: calc(var(--span-share, 1) * 100%);
   overflow: hidden;
@@ -33,9 +36,10 @@
   box-sizing: border-box;
   background: color-mix(in oklab, var(--span-color, var(--wzl-accent)) 16%, transparent);
   color: var(--wzl-fg);
-  font-size: var(--span-strip-text, var(--wzl-font-size-2xs));
+  /* A stripe's text shrinks to fit its stripe when the strip's tracks leave it less room than the strip's text needs. */
+  font-size: min(var(--span-strip-text, var(--wzl-font-size-2xs)), calc((var(--span-strip-height, 22px) - 2px) * var(--span-track-span, 1) / var(--span-tracks, 1) * 0.8));
   font-weight: var(--wzl-font-weight-bold);
-  line-height: calc(var(--span-strip-height, 22px) - 2px);
+  line-height: calc((var(--span-strip-height, 22px) - 2px) * var(--span-track-span, 1) / var(--span-tracks, 1));
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -65,7 +69,8 @@
 
 .seam {
   position: absolute;
-  inset-block: 0;
+  top: calc(var(--span-track, 0) * 100% / var(--span-tracks, 1));
+  height: calc(var(--span-track-span, 1) * 100% / var(--span-tracks, 1));
   left: calc(var(--seam-at) * 100%);
   margin-inline-start: -1px;
   border-inline-start: 2px dotted white;

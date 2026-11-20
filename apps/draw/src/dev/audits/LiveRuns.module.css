@@ -77,6 +77,9 @@
   text-overflow: ellipsis;
 }
 
+/* The steps view stacks A over B in one row, so its rows are tall enough for two stripes of small text. */
+.lanes[data-mode='steps'] { --span-strip-height: 28px; }
+
 .lanes {
   --span-strip-height: 18px;
   --span-strip-text: var(--wzl-font-size-xs);
