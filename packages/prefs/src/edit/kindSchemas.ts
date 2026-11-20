@@ -255,8 +255,6 @@ export function blankSection(): PrefSection {
   return { name: 'New section', description: '', members: {} };
 }
 
-const SHARED = ['name', 'description', 'tags', 'hidden', 'showIf', 'enableIf', 'disabledReason', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'readout'];
-
 const PRIMITIVES = new Set(['string', 'number', 'boolean']);
 
 /** Whether `v` can stand as the default of `made`, a converted leaf, against the options it ends up holding. */
@@ -285,12 +283,17 @@ export function convertLeaf(leaf: PrefLeaf, choice: string, custom: CustomKinds 
   const typed = typeNamed(choice) !== undefined;
   const blank = leafOf(choice, types, custom) as unknown as Record<string, unknown>;
   const attrs = kindAttrs(choice, custom);
-  const keep = new Set([...SHARED, ...(typed ? [] : Object.keys(attrs))]);
+  const made = blank as unknown as PrefLeaf;
+  const keep = new Set([...Object.keys(sharedAttrs(made)), ...(typed ? [] : Object.keys(attrs))]);
   const next: Record<string, unknown> = { ...blank };
   const dropped: string[] = [];
   for (const [k, v] of Object.entries(leaf)) {
     if (k === 'kind' || k === 'type' || k === 'default' || v === undefined) continue;
     if (k === 'auto') {
+      if (!prefHoldsValue(made)) {
+        dropped.push('auto');
+        continue;
+      }
       // What it reads while auto is a value of the old kind.
       const kept = withAutoRow(v as LeafAuto, 'value', undefined);
       if (kept !== undefined) next.auto = kept;
