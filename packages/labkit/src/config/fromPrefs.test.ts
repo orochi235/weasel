@@ -161,4 +161,32 @@ describe('f.prefs', () => {
       expect(isRowEnabled(resolved, 'data.stroke.on', config('a', false))).toBe(true);
     });
   });
+  it("leaves a section's switch live inside a group's object leaf, where its key is relative", () => {
+    const grid: PrefSection = {
+      name: '',
+      members: {
+        grid: {
+          kind: 'object',
+          name: 'Grid',
+          description: '',
+          default: { on: false, size: 8 },
+          group: {},
+          children: {
+            lines: {
+              name: 'Lines',
+              enableIf: { path: 'grid.on', is: true },
+              members: {
+                on: { kind: 'boolean', name: 'On', description: '', default: false } as PrefLeaf,
+                size: num('Size', { default: 8 }),
+              },
+            },
+          },
+        } as unknown as PrefLeaf,
+      },
+    };
+    const resolved = resolveConfigSchema(f.prefs(grid), []);
+    const off = { grid: { on: false, size: 8 } };
+    expect(isRowEnabled(resolved, 'grid.on', off)).toBe(true);
+    expect(isRowEnabled(resolved, 'grid.size', off)).toBe(false);
+  });
 });
