@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RenderLayer, drawLayers, drawOneLayer, isLayerVisible, paintedLayers } from './render';
+import { warnLayersOnce } from './unknownOrderIds';
 import { viewToMat3, type DrawCommand } from '@weasel-js/renderer';
 
 describe('drawLayers', () => {
@@ -544,6 +545,20 @@ describe('a layer listed twice in the order', () => {
     const out = drawLayers(layers, null, {}, ['twice', 'b', 'twice'], undefined, DIMS);
     expect(out).toEqual([a, b]);
     expect(warn.mock.calls.some(([m]) => String(m).includes('"twice" more than once'))).toBe(true);
+    warn.mockRestore();
+  });
+});
+
+describe('warnLayersOnce', () => {
+  it('keeps a bounded memory of what it has warned', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    warnLayersOnce('bounded: first');
+    warnLayersOnce('bounded: first');
+    expect(warn).toHaveBeenCalledTimes(1);
+    for (let i = 0; i < 1000; i++) warnLayersOnce(`bounded: ${i}`);
+    warn.mockClear();
+    warnLayersOnce('bounded: first');
+    expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
   });
 });

@@ -1,12 +1,15 @@
 import { isDev } from '@weasel-js/registry';
 
+/** Messages already warned, oldest first; capped, since a message embeds ids a session can mint without end. */
 const warned = new Set<string>();
+const WARNED_CAP = 256;
 
 /** Warns `message`, in development and once: for a mistake in how the layers are set up, which the frame loop meets
  *  again on every paint. */
 export function warnLayersOnce(message: string): void {
   if (!isDev() || warned.has(message)) return;
   warned.add(message);
+  if (warned.size > WARNED_CAP) warned.delete(warned.values().next().value!);
   console.warn(message);
 }
 
