@@ -93,6 +93,30 @@ describe('registerFont', () => {
     await registerFont('inter', {}, '/b.json', '/b.png');
   });
 
+  it('closes the atlas image a replacement takes the place of, and a superseded fetch\'s', async () => {
+    const made: { close: ReturnType<typeof vi.fn> }[] = [];
+    global.createImageBitmap = vi.fn(() => {
+      const bitmap = { width: 512, height: 512, close: vi.fn() };
+      made.push(bitmap);
+      return Promise.resolve(bitmap as unknown as ImageBitmap);
+    }) as unknown as typeof createImageBitmap;
+    await registerFont('inter', {}, '/a.json', '/a.png');
+    await registerFont('inter', {}, '/b.json', '/b.png', { replace: true });
+    expect(made.map((b) => b.close.mock.calls.length)).toEqual([1, 0]);
+
+    const stub = global.fetch as ReturnType<typeof vi.fn>;
+    const answer = stub.getMockImplementation() as (url: string) => Promise<Response>;
+    let release!: () => void;
+    const held = new Promise<void>((r) => { release = r; });
+    stub.mockImplementation((url: string) => (url.startsWith('/c') ? held.then(() => answer(url)) : answer(url)));
+    const slow = registerFont('inter', {}, '/c.json', '/c.png', { replace: true });
+    await registerFont('inter', {}, '/d.json', '/d.png', { replace: true });
+    release();
+    await slow;
+    expect(made.map((b) => b.close.mock.calls.length)).toEqual([1, 1, 0, 1]);
+    expect(getAtlasFont('inter')!.bitmap).toBe(made[2]);
+  });
+
   it('holds the URLs of the atlas still drawn when a replacement fails to fetch', async () => {
     await registerFont('inter', {}, '/a.json', '/a.png');
     const first = getAtlasFont('inter', 400, 'normal');

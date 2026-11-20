@@ -200,8 +200,14 @@ async function fetchVariant(
     const face = await fetchAtlasFace(metricsUrl, atlasUrl);
     // Copy the family as it is now, not as it was before the await: another
     // variant of it may have landed meanwhile, and a stale copy would drop it.
+    // A bitmap nothing draws from is closed, so its decoded image is freed now
+    // rather than at some later collection: the one replaced, or a superseded fetch's.
     if (landFontUrls(family, key, metricsUrl, atlasUrl)) {
+      const before = registry.get(family)?.get(key);
       registry.set(family, new Map(registry.get(family)).set(key, face));
+      if (before && before.bitmap !== face.bitmap) before.bitmap.close();
+    } else if (registry.get(family)?.get(key)?.bitmap !== face.bitmap) {
+      face.bitmap.close();
     }
     settle(family, token);
     // Same meaning the lazy tiers give it: text that was painting from a
