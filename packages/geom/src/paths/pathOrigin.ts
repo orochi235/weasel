@@ -77,18 +77,42 @@ export function originFor(xy: ArrayLike<number>): { x: number; y: number } | und
   return { x: Math.round((minX + maxX) / 2), y: Math.round((minY + maxY) / 2) };
 }
 
-/** `parts` as one `'nonzero'` compound path, measured from the first part's
- *  origin: a part measured from another is re-measured from it in doubles. */
+/**
+ * `parts` as one `'nonzero'` compound path. It is measured from the first
+ * part's origin while every part lies within {@link ORIGIN_THRESHOLD} of it,
+ * else from {@link originFor} over every part; a part measured from another
+ * origin is re-measured in doubles.
+ */
 export function joinPaths(parts: readonly PolygonPath[]): PolygonPath {
   let nc = 0, nk = 0;
   for (const p of parts) { nc += p.commands.length; nk += p.coords.length; }
-  const origin = parts[0]?.origin;
+  const origin = joinedOrigin(parts, nk);
   const commands = new Uint8Array(nc);
   const coords = new Float32Array(nk);
   let ci = 0, ki = 0;
   for (const p of parts) {
     commands.set(p.commands, ci); ci += p.commands.length;
-    coords.set(p.origin === origin ? p.coords : coordsFrom(origin, worldCoords(p)), ki); ki += p.coords.length;
+    coords.set(sameOrigin(p.origin, origin) ? p.coords : coordsFrom(origin, worldCoords(p)), ki); ki += p.coords.length;
   }
   return { kind: 'polygon', commands, coords, fillRule: 'nonzero', ...(origin ? { origin } : {}) };
+}
+
+type Origin = { readonly x: number; readonly y: number } | undefined;
+
+const sameOrigin = (a: Origin, b: Origin): boolean =>
+  a === b || ((a?.x ?? 0) === (b?.x ?? 0) && (a?.y ?? 0) === (b?.y ?? 0));
+
+function joinedOrigin(parts: readonly PolygonPath[], nk: number): Origin {
+  const first = parts[0]?.origin;
+  const fx = first?.x ?? 0, fy = first?.y ?? 0;
+  const world = new Float64Array(nk);
+  let at = 0, fits = true;
+  for (const p of parts) {
+    const w = worldCoords(p);
+    world.set(w, at); at += w.length;
+    for (let i = 0; i + 1 < w.length && fits; i += 2) {
+      if (!(Math.abs(w[i] - fx) < ORIGIN_THRESHOLD && Math.abs(w[i + 1] - fy) < ORIGIN_THRESHOLD)) fits = false;
+    }
+  }
+  return fits ? first : originFor(world);
 }

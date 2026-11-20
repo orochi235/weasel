@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { PATH_L, PATH_M, PATH_Z } from '../commands';
 import { PathBuilder, ellipsePath, linePath, polygonFromPoints, polylineFromPoints, regularPolygonPath, starPath } from './builder';
 import { anchorsToPath, pathToAnchors } from './anchors';
 import { anchorPointIndices } from './anchorOrigins';
@@ -19,6 +20,7 @@ import { tweenPaths } from './tweenPaths';
 import { zigzagPath } from './zigzagPath';
 import { schneiderFit } from './schneiderFit';
 import type { Path } from '../path';
+import type { CornerSpec } from './cornerSpec';
 import { pointAtLength } from '../along/positions';
 import { pathFromD } from './pathFromD';
 import { ORIGIN_THRESHOLD, joinPaths, originFor, worldCoords } from './pathOrigin';
@@ -124,6 +126,16 @@ describe('joinPaths', () => {
     const a = new PathBuilder().moveTo(1, 1).lineTo(2, 1).build();
     expect(joinPaths([a, a]).origin).toBeUndefined();
     expect(joinPaths([a, a]).coords.length).toBe(8);
+  });
+
+  it('picks an origin covering every part when the first has none to measure a far part from', () => {
+    const whole = { kind: 'polygon' as const, commands: Uint8Array.of(PATH_M, PATH_L, PATH_L, PATH_Z), coords: Float32Array.of(1e6, 1e6, 1e6 + 1, 1e6, 1e6 + 1, 1e6 + 1), fillRule: 'nonzero' as const };
+    const far = new PathBuilder().setOrigin(1e6, 1e6).moveTo(1e6 + 0.3, 1e6 + 0.3).lineTo(1e6 + 1.3, 1e6 + 0.3).close().build();
+    const joined = joinPaths([whole, far]);
+    expect(joined.origin).toBeDefined();
+    const w = worldCoords(joined);
+    expect(w[0]).toBeCloseTo(1e6, 4);
+    expect(w[6]).toBeCloseTo(1e6 + 0.3, 4);
   });
 });
 
