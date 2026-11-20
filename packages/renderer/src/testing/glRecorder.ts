@@ -142,6 +142,8 @@ function snapshot(value: unknown): unknown {
 /** A WebGL2 stand-in that records every call and draws nothing. */
 export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
   const calls: GLCall[] = [];
+  // Not `calls.length`, which a reset rewinds: handles minted after it would equal earlier ones.
+  let minted = 0;
   const {
     drawingBufferWidth = 800,
     drawingBufferHeight = 600,
@@ -166,11 +168,11 @@ export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
       case 'createTexture':
       case 'createFramebuffer':
       case 'createRenderbuffer':
-        result = syntheticHandle(name, calls.length);
+        result = syntheticHandle(name, minted++);
         break;
       case 'getUniformLocation':
       case 'getAttribLocation':
-        result = calls.length;
+        result = minted++;
         break;
       case 'getShaderParameter':
       case 'getProgramParameter':

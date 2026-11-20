@@ -52,4 +52,16 @@ describe('createGLRecorder', () => {
     const noStencil = createGLRecorder({ contextAttributes: { stencil: false } });
     expect(noStencil.gl.getContextAttributes()).toMatchObject({ stencil: false });
   });
+
+  it('mints handles and locations that a reset does not repeat', () => {
+    const recorder = createGLRecorder();
+    const { gl } = recorder;
+    const first = gl.createBuffer();
+    const firstLoc = gl.getUniformLocation(gl.createProgram()!, 'u_x');
+    recorder.reset();
+    const second = gl.createBuffer();
+    const secondLoc = gl.getUniformLocation(gl.createProgram()!, 'u_x');
+    expect(second).not.toEqual(first);
+    expect(secondLoc).not.toBe(firstLoc);
+  });
 });
