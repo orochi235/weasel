@@ -119,6 +119,25 @@ describe('pinWarpMap', () => {
     close(unwarpPoint(map, map(p), map(p), 1e-9), p, 5);
   });
 
+  it.each([90, 180, 270])('undoes a map that turns the shape %i degrees', (deg) => {
+    const a = (deg * Math.PI) / 180, c = { x: 50, y: 50 };
+    const turn = (p: Point) => ({
+      x: c.x + Math.cos(a) * (p.x - c.x) - Math.sin(a) * (p.y - c.y),
+      y: c.y + Math.sin(a) * (p.x - c.x) + Math.cos(a) * (p.y - c.y),
+    });
+    const p = { x: 20, y: 85 };
+    close(unwarpPoint(turn, turn(p)), p, 3);
+  });
+
+  it('undoes a pin warp that turns the shape half over', () => {
+    const map = pinWarpMap(square(), [
+      { from: { x: 0, y: 0 }, to: { x: 100, y: 100 } },
+      { from: { x: 100, y: 100 }, to: { x: 0, y: 0 } },
+    ]);
+    const p = { x: 30, y: 60 };
+    close(unwarpPoint(map, map(p), map(p), 1e-9), p, 5);
+  });
+
   it('moves the whole shape with one pin, and leaves it be with none', () => {
     close(pinWarpMap(square(), [])({ x: 3, y: 4 }), { x: 3, y: 4 });
     close(pinWarpMap(square(), [{ from: { x: 50, y: 50 }, to: { x: 55, y: 57 } }])({ x: 10, y: 10 }), { x: 15, y: 17 });

@@ -115,9 +115,10 @@ function spotOf(rig: Rig, p: Point): MeshSpot | null {
 }
 
 /**
- * The point `map` sends to `target`, found by stepping from `guess` by the
- * miss until it is within `tolerance` — for a map that stays close to rigid,
- * as a pin warp's does, a few steps suffice. Returns the best point found.
+ * The point `map` sends to `target`, found by Newton steps from `guess` through
+ * the map's local Jacobian, each halved until it shrinks the miss, until the
+ * miss is within `tolerance`. A smooth map that turns the shape any amount
+ * converges in a few steps. Returns the point with the smallest miss found.
  */
 export function unwarpPoint(
   map: (p: Point) => Point,
@@ -125,12 +126,34 @@ export function unwarpPoint(
   guess: Point = target,
   tolerance = 1e-3,
 ): Point {
-  let p = { x: guess.x, y: guess.y };
-  for (let k = 0; k < 50; k++) {
+  const missAt = (p: Point) => {
     const at = map(p);
-    const ex = target.x - at.x, ey = target.y - at.y;
-    if (Math.hypot(ex, ey) <= tolerance) break;
-    p = { x: p.x + ex, y: p.y + ey };
+    return { x: target.x - at.x, y: target.y - at.y };
+  };
+  let p = { x: guess.x, y: guess.y };
+  let e = missAt(p);
+  let miss = Math.hypot(e.x, e.y);
+  for (let k = 0; k < 50 && miss > tolerance; k++) {
+    const d = 1e-6 * Math.max(1, Math.abs(p.x), Math.abs(p.y));
+    const ax = map({ x: p.x + d, y: p.y }), bx = map({ x: p.x - d, y: p.y });
+    const ay = map({ x: p.x, y: p.y + d }), by = map({ x: p.x, y: p.y - d });
+    const j00 = (ax.x - bx.x) / (2 * d), j10 = (ax.y - bx.y) / (2 * d);
+    const j01 = (ay.x - by.x) / (2 * d), j11 = (ay.y - by.y) / (2 * d);
+    const det = j00 * j11 - j01 * j10;
+    // Where the map folds flat here, step by the miss itself.
+    let sx = e.x, sy = e.y;
+    if (Number.isFinite(det) && det !== 0) {
+      sx = (j11 * e.x - j01 * e.y) / det;
+      sy = (j00 * e.y - j10 * e.x) / det;
+    }
+    let moved = false;
+    for (let t = 1; t > 1e-6; t /= 2) {
+      const q = { x: p.x + t * sx, y: p.y + t * sy };
+      const f = missAt(q);
+      const m = Math.hypot(f.x, f.y);
+      if (m < miss) { p = q; e = f; miss = m; moved = true; break; }
+    }
+    if (!moved) break;
   }
   return p;
 }
