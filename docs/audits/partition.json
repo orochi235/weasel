@@ -628,13 +628,13 @@
    "apps/site/demos/DiagramDropDemo.module.css",
    "apps/site/demos/DiagramDropDemo.tsx",
    "apps/site/demos/DiagramEdgesDemo.tsx",
-   "apps/site/demos/DiagramElkDemo.tsx"
+   "apps/site/demos/DiagramElkDemo.tsx",
+   "apps/site/demos/DiagramLayoutDemo.tsx"
   ]
  },
  {
   "id": "apps.site.demos.part2",
   "files": [
-   "apps/site/demos/DiagramLayoutDemo.tsx",
    "apps/site/demos/DiagramLiveDemo.tsx",
    "apps/site/demos/DiagramNodesDemo.tsx",
    "apps/site/demos/DiagramOverlaysDemo.tsx",
@@ -680,14 +680,14 @@
    "apps/site/demos/IconsDemo.tsx",
    "apps/site/demos/ImageDemo.tsx",
    "apps/site/demos/IngestionDemo.tsx",
-   "apps/site/demos/InsertDemo.tsx"
+   "apps/site/demos/InsertDemo.tsx",
+   "apps/site/demos/Kernel3dDemo.module.css",
+   "apps/site/demos/Kernel3dDemo.tsx"
   ]
  },
  {
   "id": "apps.site.demos.part3",
   "files": [
-   "apps/site/demos/Kernel3dDemo.module.css",
-   "apps/site/demos/Kernel3dDemo.tsx",
    "apps/site/demos/KeymapDemo.module.css",
    "apps/site/demos/KeymapDemo.tsx",
    "apps/site/demos/KitSettingsDemo.module.css",
@@ -732,15 +732,15 @@
    "apps/site/demos/PathAnchorEditDemo.tsx",
    "apps/site/demos/PathConstraintsLabDemo.module.css",
    "apps/site/demos/PathConstraintsLabDemo.tsx",
-   "apps/site/demos/PathDirectionLabDemo.tsx"
+   "apps/site/demos/PathDirectionLabDemo.tsx",
+   "apps/site/demos/PathMotionDemo.tsx",
+   "apps/site/demos/PathPoseDemo.tsx",
+   "apps/site/demos/PathSnapLabDemo.tsx"
   ]
  },
  {
   "id": "apps.site.demos.part4",
   "files": [
-   "apps/site/demos/PathMotionDemo.tsx",
-   "apps/site/demos/PathPoseDemo.tsx",
-   "apps/site/demos/PathSnapLabDemo.tsx",
    "apps/site/demos/PdfDemo.module.css",
    "apps/site/demos/PdfDemo.tsx",
    "apps/site/demos/PerAxisZoomDemo.module.css",
@@ -784,16 +784,16 @@
    "apps/site/demos/RotatedResizeMathDemo.tsx",
    "apps/site/demos/RoutingDemo.module.css",
    "apps/site/demos/RoutingDemo.tsx",
-   "apps/site/demos/RulersDemo.tsx"
+   "apps/site/demos/RulersDemo.tsx",
+   "apps/site/demos/SandLabDemo.tsx",
+   "apps/site/demos/ScaleDemo.module.css",
+   "apps/site/demos/ScaleDemo.tsx",
+   "apps/site/demos/SceneDemo.tsx"
   ]
  },
  {
   "id": "apps.site.demos.part5",
   "files": [
-   "apps/site/demos/SandLabDemo.tsx",
-   "apps/site/demos/ScaleDemo.module.css",
-   "apps/site/demos/ScaleDemo.tsx",
-   "apps/site/demos/SceneDemo.tsx",
    "apps/site/demos/SceneLabDemo.tsx",
    "apps/site/demos/SceneScrollerDemo.module.css",
    "apps/site/demos/SceneScrollerDemo.tsx",
@@ -826,6 +826,7 @@
    "apps/site/demos/StrokeWidthLabDemo.tsx",
    "apps/site/demos/SvgDemo.module.css",
    "apps/site/demos/SvgDemo.tsx",
+   "apps/site/demos/SwapDemo.tsx",
    "apps/site/demos/SymmetryLabDemo.tsx",
    "apps/site/demos/TextDemo.tsx",
    "apps/site/demos/TextDomDemo.module.css",
@@ -836,16 +837,16 @@
    "apps/site/demos/TextScriptDemo.tsx",
    "apps/site/demos/TextShapingDemo.module.css",
    "apps/site/demos/TextShapingDemo.tsx",
-   "apps/site/demos/ThemeDemo.module.css"
+   "apps/site/demos/ThemeDemo.module.css",
+   "apps/site/demos/ThemeDemo.tsx",
+   "apps/site/demos/TiledSurfaceDemo.tsx",
+   "apps/site/demos/TimelineDemo.tsx",
+   "apps/site/demos/TimelineFramesDemo.tsx"
   ]
  },
  {
   "id": "apps.site.demos.part6",
   "files": [
-   "apps/site/demos/ThemeDemo.tsx",
-   "apps/site/demos/TiledSurfaceDemo.tsx",
-   "apps/site/demos/TimelineDemo.tsx",
-   "apps/site/demos/TimelineFramesDemo.tsx",
    "apps/site/demos/ToolReflectionDemo.module.css",
    "apps/site/demos/ToolReflectionDemo.tsx",
    "apps/site/demos/TransformDemo.tsx",
@@ -1366,7 +1367,6 @@
    "packages/core/src/canvas/deps/poseDescriptor.ts",
    "packages/core/src/canvas/deps/previewPaths.ts",
    "packages/core/src/canvas/deps/selectionSnapshot.ts",
-   "packages/core/src/canvas/deps/slice.ts",
    "packages/core/src/canvas/deps/snap.ts",
    "packages/core/src/canvas/deps/surface.ts",
    "packages/core/src/canvas/deps/transformFollowers.ts",
@@ -1991,6 +1991,7 @@
    "packages/core/src/interactions/actions/actionParams.extension.fixture.ts",
    "packages/core/src/interactions/actions/actionParams.typetest.ts",
    "packages/core/src/interactions/actions/admitsChild.ts",
+   "packages/core/src/interactions/actions/canSwap.ts",
    "packages/core/src/interactions/actions/defaultCommitAdapter.ts",
    "packages/core/src/interactions/actions/depSchema.ts",
    "packages/core/src/interactions/actions/drawnBoxes.ts",
@@ -2827,6 +2828,8 @@
    "packages/editing/src/actions/rotate/session.ts",
    "packages/editing/src/actions/select/areaSelect.ts",
    "packages/editing/src/actions/select/clearSelection.ts",
+   "packages/editing/src/actions/swap/action.ts",
+   "packages/editing/src/actions/swap/swapOps.ts",
    "packages/editing/src/actions/transformAgain/action.ts",
    "packages/editing/src/actions/transformAgain/transformSelection.ts"
   ]
@@ -2880,6 +2883,7 @@
    "packages/editing/src/actions/move/behaviors/reparentOnDrop.ts",
    "packages/editing/src/actions/move/behaviors/snapBackOrDelete.ts",
    "packages/editing/src/actions/move/behaviors/snapToContainer.ts",
+   "packages/editing/src/actions/move/behaviors/swapOnDrop.ts",
    "packages/editing/src/actions/move/capture.ts",
    "packages/editing/src/actions/move/commit/index.ts",
    "packages/editing/src/actions/move/commit/layoutDrop.ts",
@@ -2902,6 +2906,7 @@
    "packages/editing/src/actions/move/layout/view.ts",
    "packages/editing/src/actions/move/refusal.ts",
    "packages/editing/src/actions/move/session.ts",
+   "packages/editing/src/actions/move/sessionOf.ts",
    "packages/editing/src/actions/move/translate.ts"
   ]
  },
@@ -4736,13 +4741,13 @@
    "packages/path-tools/src/index.ts",
    "packages/path-tools/src/kitSettings.ts",
    "packages/path-tools/src/knead/knead.ts",
-   "packages/path-tools/src/knead/kneadTargets.ts"
+   "packages/path-tools/src/knead/kneadTargets.ts",
+   "packages/path-tools/src/knead/useKneadTool.ts"
   ]
  },
  {
   "id": "path-tools.part2",
   "files": [
-   "packages/path-tools/src/knead/useKneadTool.ts",
    "packages/path-tools/src/outlines/createOutlines.ts",
    "packages/path-tools/src/outlines/createOutlinesAction.tsx",
    "packages/path-tools/src/outlines/outlineStroke.ts",
@@ -4777,14 +4782,14 @@
    "packages/path-tools/src/sand/useSandTool.ts",
    "packages/path-tools/src/segmentType/convertSegments.ts",
    "packages/path-tools/src/settingsFields.ts",
-   "packages/path-tools/src/shapeBuilder/index.ts"
+   "packages/path-tools/src/shapeBuilder/index.ts",
+   "packages/path-tools/src/shapeBuilder/shapeBuilder.ts",
+   "packages/path-tools/src/shapeBuilder/shapeBuilderActions.ts"
   ]
  },
  {
   "id": "path-tools.part3",
   "files": [
-   "packages/path-tools/src/shapeBuilder/shapeBuilder.ts",
-   "packages/path-tools/src/shapeBuilder/shapeBuilderActions.ts",
    "packages/path-tools/src/shapeBuilder/useShapeBuilderTool.ts",
    "packages/path-tools/src/shared/outlineSession.ts",
    "packages/path-tools/src/shared/scenePaths.ts",
@@ -4793,6 +4798,7 @@
    "packages/path-tools/src/shared/testing/lastOperation.tsx",
    "packages/path-tools/src/shared/testing/outlineScene.ts",
    "packages/path-tools/src/slice/slice.ts",
+   "packages/path-tools/src/slice/slicePaths.ts",
    "packages/path-tools/src/slice/slicePendingCut.ts",
    "packages/path-tools/src/slice/slicePendingCutLayer.ts",
    "packages/path-tools/src/slice/useSliceTool.ts",

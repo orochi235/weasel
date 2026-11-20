@@ -1,0 +1,52 @@
+{
+ "id": "core.interactions.gestures",
+ "commit": "a31056c5f3adeb20052a681c149c8af782f0f7b5",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/interactions/gestures/dragGesture/dragGesture.ts",
+  "packages/core/src/interactions/gestures/dragGesture/dragPointOf.ts",
+  "packages/core/src/interactions/gestures/dragGesture/index.ts",
+  "packages/core/src/interactions/gestures/dragRadial/dragRadial.ts",
+  "packages/core/src/interactions/gestures/dragRadial/index.ts",
+  "packages/core/src/interactions/gestures/dragRect/dragRect.ts",
+  "packages/core/src/interactions/gestures/dragRect/index.ts",
+  "packages/core/src/interactions/gestures/frames.ts",
+  "packages/core/src/interactions/gestures/pointerDrag/index.ts",
+  "packages/core/src/interactions/gestures/pointerDrag/pointerDrag.ts",
+  "packages/core/src/interactions/gestures/resizeHandles.ts",
+  "packages/core/src/interactions/gestures/shared/index.ts",
+  "packages/core/src/interactions/gestures/shared/originProjection.ts",
+  "packages/core/src/interactions/gestures/shared/screenTolerance.ts",
+  "packages/core/src/interactions/gestures/spec.ts",
+  "packages/core/src/interactions/gestures/types.ts"
+ ],
+ "a": 4,
+ "b": 8,
+ "m": 2,
+ "distinct": 10,
+ "chapman": 14,
+ "unfound": 4,
+ "read": {
+  "A": 16,
+  "B": 16
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9.3,
+   "B": 3.5,
+   "match": 0.1,
+   "fix": 0.2
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "tokens": 3566123,
+  "costUsd": 2.64
+ },
+ "fixCommits": []
+}

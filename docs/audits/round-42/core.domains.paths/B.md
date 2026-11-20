@@ -1,0 +1,6 @@
+## anchorIndexUnder tests and ranks anchors by world distance, so under a view that scales its axes apart it reaches past the click radius and picks the wrong anchor
+- where: packages/core/src/domains/paths/anchorUnder.ts:18 (anchorIndexUnder)
+- scenario: view scale `{ x: 1, y: 10 }` (a chart-style view; `View.scale` is per axis and `strokeRegion` handles the same case), default 10 px reach. `pxReach` returns the larger per-axis extent, 10 world units, and the test is a world-space circle of that radius. An anchor 5 world units above the click is 50 screen px away and still counts as a hit. With anchor A 5 world units up (50 px) and anchor B 8 world units left (8 px), A wins because it is nearer in world terms, though B is the one under the pointer. Expected: compare on screen (`withinPxRadius`, which `pxReach`'s own doc says to prefer "where the comparison can stay on screen", and which pen/spiro/slice targets use) and rank by screen distance. As written, `editAnchors.anchorUnder`'s answer to "which anchor did this click land on" disagrees with the pen tool's.
+- evidence: read (geom/src/pxExtent.ts:45-52 for pxReach; path-tools/src/pen/penTargets.ts:33 uses withinPxRadius)
+- severity: low
+

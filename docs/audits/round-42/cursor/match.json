@@ -1,0 +1,40 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   2
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   4,
+   5
+  ]
+ ],
+ "a": [
+  "The fit guards measure every path's halo as half the halo width, so a stroke path's halo can leave the box unseen — and the marked crosshair's does",
+  "A marked glyph accepts an angle but is never checked for rotation, and the crosshair's marks fall outside the box when rotated",
+  "The bake cache's key takes any size and any fallback string, so it is unbounded despite its comment",
+  "The fit guards' path walk accepts absolute H, V, C, Q, S and T without throwing, and mis-measures H and V",
+  "The arc bound uses the authored radius even when SVG scales it up, under-reporting an arc whose radius is shorter than half its chord",
+  "markedGlyph drops a glyph's own `over` layer instead of keeping and shifting it"
+ ],
+ "b": [
+  "haloFitsInBox and rotationFitsInBox ignore a stroke path's own width, so a stroked glyph whose halo is clipped passes both guards",
+  "A marked glyph is baked rotated, but its mark sits outside the inscribed circle and loses its corners",
+  "The cursorFor cache claims a bounded key space, but `size` and `fallback` are free-form, so it grows without limit",
+  "A world-unit brush ring of radius 0 is drawn at the 24 px default, while a px ring of radius 0 is drawn at 1 px",
+  "walk() accepts absolute H, V, C, S, Q and T but reads them as x,y pairs, so the fit guards mis-measure instead of throwing",
+  "walk() bounds an arc whose radius is too small for its chord by the authored radius, not the radius SVG scales it up to"
+ ]
+}

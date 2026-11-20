@@ -1,0 +1,12 @@
+packages/devtools/src/page/attach.ts
+packages/devtools/src/page/handlers.ts
+packages/devtools/src/page/history.ts
+packages/devtools/src/page/hook.ts
+packages/devtools/src/page/messageShape.ts
+packages/devtools/src/page/notices.ts
+packages/devtools/src/page/protocol.ts
+packages/devtools/src/page/registry.ts
+packages/devtools/src/page/root.ts
+packages/devtools/src/page/serialize.ts
+packages/devtools/src/page/session.ts
+packages/devtools/src/page/transport.ts

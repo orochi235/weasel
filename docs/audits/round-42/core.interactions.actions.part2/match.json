@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "`useNotices` throws outside a `<DepRegistryProvider>`, though its doc says it silently does nothing there",
+  "`resolvePreviews` returns a previewed node twice when a non-previewed container sits between it and a previewed frame",
+  "`insertExtrasFromPlane` rewrites a consumer insert kind's extras, though it says those pass through opaque",
+  "`resolveSpatialReference` accepts NaN and Infinity as a reference point"
+ ],
+ "b": [
+  "translateTargets drops a group's children under IDENTITY_POSE_COMPOSITION, where uncarried keeps them",
+  "actionReferenceSources answers 'pointer' in the camera's world and `{ node }` in the node's plane, then align/flip apply it to poses in another plane",
+  "resolveSpatialReference accepts non-finite x/y/width/height"
+ ]
+}

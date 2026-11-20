@@ -1,0 +1,14 @@
+packages/d3/src/bind.ts
+packages/d3/src/cancelKey.ts
+packages/d3/src/index.ts
+packages/d3/src/liveTransitions.ts
+packages/d3/src/pbt.fixture.ts
+packages/d3/src/pendingRemovals.ts
+packages/d3/src/selection.ts
+packages/d3/src/transition.ts
+packages/d3/src/transitionHandle.ts
+packages/d3/src/transitionProgress.ts
+packages/d3/src/transitionRemoval.ts
+packages/d3/src/transitionRuns.ts
+packages/d3/src/transitionTweens.ts
+packages/d3/src/types.ts
