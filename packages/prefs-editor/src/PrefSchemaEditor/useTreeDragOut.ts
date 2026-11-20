@@ -35,10 +35,10 @@ export function useTreeDragOut(
     // Let go over the unplaced list, a node comes off its page.
     const off = point !== null && canLand(ids, effect) && overUnplaced(ids, point);
     setUnplacing(off);
-    if (off || !outside) return off;
-    if (point) return canLand(ids, effect) && outside.over(landing(ids, effect), effect === 'move' ? ids : [], point);
+    if (!outside) return off;
+    if (!off && point && canLand(ids, effect)) return outside.over(landing(ids, effect), effect === 'move' ? ids : [], point);
     outside.end();
-    return false;
+    return off;
   };
   const onDropOutside = (ids: readonly string[], point: Point, effect: TreeDragEffect): void => {
     setUnplacing(false);
