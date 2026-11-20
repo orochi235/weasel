@@ -89,9 +89,14 @@ export function ganttDurationBetween(start: number, end: number, unit: GanttUnit
   const fixed = FIXED[unit];
   if (fixed !== undefined) return Math.round((end - start) / fixed);
   if (unit === 'M' || unit === 'y') return monthsBetween(start, end, unit === 'y' ? 12 : 1);
-  const steps = Math.min(WALK_LIMIT, Math.round((end - start) / DAY));
-  let days = 0;
-  for (let k = 0; k < steps; k++) if (!excluded(start + k * DAY)) days++;
+  const span = Math.round((end - start) / DAY);
+  // endAfter walks only durations up to WALK_LIMIT days, which span at most a week for each.
+  let days = span;
+  if (span > 0 && span <= 7 * (WALK_LIMIT + 1) && Math.abs(start) <= MAX_INSTANT) {
+    let counted = 0;
+    for (let k = 0; k < span; k++) if (!excluded(start + k * DAY)) counted++;
+    if (counted <= WALK_LIMIT) days = counted;
+  }
   return unit === 'w' ? Math.round(days / 7) : days;
 }
 

@@ -19,3 +19,18 @@ describe('gantt month durations', () => {
     expect(ganttDurationBetween(at('2024-02-29'), at('2025-02-28'), 'y', none)).toBe(1);
   });
 });
+
+describe('ganttDurationBetween', () => {
+  const weekends = (t: number) => [0, 6].includes(new Date(t).getUTCDay());
+
+  it('counts calendar days past the span addGanttDuration walks, as it does', () => {
+    const start = at('2024-01-01');
+    expect(ganttDurationBetween(start, addGanttDuration(start, 150_000, 'd', weekends), 'd', weekends)).toBe(150_000);
+  });
+
+  it('counts only days not excluded up to that span', () => {
+    const start = at('2024-01-01');
+    expect(ganttDurationBetween(start, addGanttDuration(start, 99_000, 'd', weekends), 'd', weekends)).toBe(99_000);
+    expect(ganttDurationBetween(start, addGanttDuration(start, 10, 'd', weekends), 'd', weekends)).toBe(10);
+  });
+});
