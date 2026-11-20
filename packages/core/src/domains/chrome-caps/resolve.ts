@@ -16,7 +16,7 @@ export function resolveVisibility(
     : defaultVisibilityRules;
   return (id) => {
     if (ruleCtx.hiddenChrome?.has(id)) return false;
-    const entry = merged[id];
+    const entry = Object.hasOwn(merged, id) ? merged[id] : undefined;
     if (entry === undefined) return true;
     if (typeof entry === 'function') return entry(ruleCtx);
     return evaluate(entry, ruleCtx);
