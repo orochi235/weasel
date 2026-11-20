@@ -369,7 +369,10 @@ void main() { gl_Position = vec4((u_ownMatrix * u_model * vec3(a_position, 1.0))
     r.registerProgram(handle);
     rec.reset();
     r.registerProgram(handle);
-    expect(rec.calls.filter((c) => c.name === 'deleteProgram').length).toBe(1);
+    expect(rec.calls.filter((c) => c.name === 'deleteProgram')).toHaveLength(0);
+    registerProgram('reregister-test-prog', { glsl: { frag: `${MINIMAL_FRAG}\n` } }, { replace: true });
+    r.registerProgram(handle);
+    expect(rec.calls.filter((c) => c.name === 'deleteProgram')).toHaveLength(1);
   });
 
   it('ignores registerProgram() after dispose (does not compile into the cleared registry)', () => {

@@ -97,6 +97,28 @@ describe('CustomPrograms re-registration', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
+  it('compiles nothing again for a program already built from its registered source', () => {
+    const { gpu, state } = countingDevice();
+    const programs = new CustomPrograms(gpu);
+    registerProgram('fx', { glsl: { frag: FRAG } });
+    programs.register('fx');
+    const epoch = programs.epoch;
+    programs.register('fx');
+    expect(state.made).toHaveLength(1);
+    expect(state.deleted).toHaveLength(0);
+    expect(programs.epoch).toBe(epoch);
+  });
+
+  it('still throws from register for a re-registered source that failed to recompile', () => {
+    const { gpu } = countingDevice();
+    const programs = new CustomPrograms(gpu);
+    registerProgram('fx', { glsl: { frag: FRAG } });
+    programs.register('fx');
+    registerProgram('fx', { glsl: { frag: `${FRAG}// BROKEN\n` } }, { replace: true });
+    programs.refresh();
+    expect(() => programs.register('fx')).toThrow();
+  });
+
   it('drops and deletes a compiled program once its source is released', () => {
     const { gpu, state } = countingDevice();
     const programs = new CustomPrograms(gpu);

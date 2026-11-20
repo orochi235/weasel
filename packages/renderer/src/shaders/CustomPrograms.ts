@@ -56,13 +56,18 @@ export class CustomPrograms {
 
   constructor(private readonly gpu: GpuDevice) {}
 
-  /** Compile `id`'s registered source. Throws when there is none, or on a
-   *  compile failure. */
+  /** Compile `id`'s registered source, unless the program held is already
+   *  built from it. Throws when there is none, or on a compile failure. */
   register(id: string): void {
     const src = getProgramSource(id);
     if (!src) {
       throw new Error(`WeaselRenderer.registerProgram: program "${id}" not found in source registry. `
         + 'Call the module-level registerProgram() first.');
+    }
+    const compiled = this.sources.get(id);
+    if (compiled && sameProgramSource(src, compiled)) {
+      this.sources.set(id, src);
+      return;
     }
     this.install(id, src, compileCustomProgram(this.gpu, id, src));
   }
