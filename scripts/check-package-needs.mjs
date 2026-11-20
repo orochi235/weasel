@@ -11,7 +11,7 @@
  */
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { packageTraits, probeEntries, repoRoot } from './package-traits.mjs';
+import { packageTraits, repoRoot } from './package-traits.mjs';
 import { REACT_FREE_ENTRIES } from './react-free-entries.mjs';
 import { renderReadme } from './readme-packages.mjs';
 import { exitUnlessOwnInstall } from './lib/own-install.mjs';
@@ -22,12 +22,10 @@ exitUnlessOwnInstall(repoRoot);
 const write = process.argv.includes('--write');
 const problems = [];
 
-const traits = await packageTraits({
+// One pool for both lists: two, one after the other, left most cores idle while the first drained.
+const { traits, extra: free } = await packageTraits({
+  also: REACT_FREE_ENTRIES.map((e) => e.spec),
   onProbe: (done, total, name) => console.log(`${String(done).padStart(2)}/${total} ${name}`),
-});
-
-const free = await probeEntries(REACT_FREE_ENTRIES.map((e) => e.spec), {
-  onProbe: (done, total, spec) => console.log(`${String(done).padStart(2)}/${total} ${spec} (React-free)`),
 });
 for (const { spec, dom } of REACT_FREE_ENTRIES) {
   const p = free.get(spec);

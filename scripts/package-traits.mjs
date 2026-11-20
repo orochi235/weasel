@@ -138,16 +138,18 @@ export async function probeEntries(specs, { onProbe } = {}) {
 }
 
 /**
- * Traits for every published package:
+ * Traits for every published package, by name in `traits`:
  * `{ react: 'needs'|'optional'|'none', dom, webgl2, webaudio, standalone }`.
- * `onProbe(done, total, name)` reports progress; a full run takes about half
- * a minute.
+ * `onProbe(done, total, name)` reports progress. `also` names further specifiers probed in the
+ * same pool, answered in `extra`, so a caller with more to probe does not wait for one pool to drain
+ * before starting the next.
  */
-export async function packageTraits({ onProbe } = {}) {
+export async function packageTraits({ onProbe, also = [] } = {}) {
   const manifests = readManifests();
   const names = [...manifests.keys()];
-  const probes = await probeEntries(names.map((n) => `@weasel-js/${n}`), {
-    onProbe: onProbe && ((done, total, spec) => onProbe(done, total, spec.slice('@weasel-js/'.length))),
+  const specs = [...new Set([...names.map((n) => `@weasel-js/${n}`), ...also])];
+  const probes = await probeEntries(specs, {
+    onProbe: onProbe && ((done, total, spec) => onProbe(done, total, spec.replace(/^@weasel-js\//, ''))),
   });
   const out = new Map();
   for (const name of names) {
@@ -163,5 +165,5 @@ export async function packageTraits({ onProbe } = {}) {
       standalone: !Object.keys({ ...pkg.dependencies, ...pkg.peerDependencies }).some((d) => d.startsWith('@weasel-js/')),
     });
   }
-  return out;
+  return { traits: out, extra: new Map(also.map((spec) => [spec, probes.get(spec)])) };
 }
