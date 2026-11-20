@@ -17,6 +17,11 @@ describe('titleCase', () => {
     expect(titleCase('useHDR')).toBe('Use hdr');
     expect(titleCase('seed')).toBe('Seed');
   });
+
+  it('ends an acronym before the capitalized word after it', () => {
+    expect(titleCase('maxURLLength')).toBe('Max url length');
+    expect(titleCase('useGPUCache')).toBe('Use gpu cache');
+  });
 });
 
 describe('resolveConfigSchema', () => {
@@ -370,5 +375,43 @@ describe('resolveConfigSchema / nested groups', () => {
         radial: { kind: 'object', name: 'Round', default: { radius: 1 } },
       },
     });
+  });
+});
+
+describe("a leaf inside another's value", () => {
+  const colors: ConfigRule = (ctx) => (/Color$/.test(ctx.key) ? { kind: 'color' } : null);
+  const fieldsOf = (r: ReturnType<typeof resolveConfigSchema>, k: string) =>
+    (r.group.children[k] as unknown as { children: Record<string, Record<string, unknown>> })
+      .children;
+
+  it("answers to the lab's rules and labkit's own, as the same leaf in the schema does", () => {
+    const r = resolveConfigSchema(
+      f.schema({
+        look: f.object({
+          fillColor: f.value('#fff'),
+          pair: f.value([1, 2]),
+          size: f.number(0).range(0, 9),
+        }),
+      }),
+      [colors],
+    );
+    const fields = fieldsOf(r, 'look');
+    expect(fields.fillColor).toMatchObject({ kind: 'color', name: 'Fill color' });
+    expect(fields.pair).toMatchObject({ kind: 'list' });
+    expect(fields.size).toMatchObject({ control: 'slider' });
+  });
+
+  it('reaches the fields of an object inside a list', () => {
+    const r = resolveConfigSchema(
+      f.schema({ stops: f.list([], f.object({ stopColor: f.value('#000') })) }),
+      [colors],
+    );
+    const item = (r.group.children.stops as unknown as { item: { children: object } }).item;
+    expect(item.children).toMatchObject({ stopColor: { kind: 'color' } });
+  });
+
+  it('refuses what only a row of its own does', () => {
+    expect(() => f.object({ n: f.number(0).showIf(() => true) })).toThrow(/field "n".*\.showIf/);
+    expect(() => f.list([], f.number(0).auto())).toThrow(/an item.*\.auto/);
   });
 });

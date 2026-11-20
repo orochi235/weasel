@@ -115,4 +115,29 @@ describe('resolveAutoConfig', () => {
     resolveAutoConfig(resolved, raw, new Set(['gap', 'grid.size']));
     expect(raw).toEqual(before);
   });
+
+  it('forces an auto key a resolver enumerates or tests with `in`, whatever order they were declared in', () => {
+    const order = resolveConfigSchema(
+      f.schema({
+        a: f
+          .number(0)
+          .auto((c) => ('b' in c ? 1 : 0) + Object.keys(c).filter((k) => k === 'b').length),
+        b: f.number(0).auto(() => 7),
+      }),
+    );
+    expect(resolveAutoConfig(order, { a: 0, b: 0 }, new Set(['a', 'b']))).toEqual({ a: 2, b: 7 });
+  });
+
+  it('hands a resolver a config it can enumerate when the config given was frozen', () => {
+    const frozen = resolveConfigSchema(
+      f.schema({
+        m: f.number(0).auto((c) => (c.n as number) + Object.keys({ ...c }).length),
+        n: f.number(0).auto(() => 5),
+      }),
+    );
+    expect(resolveAutoConfig(frozen, Object.freeze({}), new Set(['n', 'm']))).toEqual({
+      m: 6,
+      n: 5,
+    });
+  });
 });

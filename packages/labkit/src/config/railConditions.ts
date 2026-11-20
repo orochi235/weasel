@@ -13,8 +13,9 @@ import {
   prefJudge,
   prefLeafAt,
 } from '@weasel-js/prefs';
-import { configValueAt, setOwn } from './path';
+import { setOwn } from './path';
 import type { ResolvedConfig } from './types';
+import { conditionReader } from './visible';
 
 const ALWAYS: PrefCondition = { all: [] };
 const NEVER: PrefCondition = { any: [] };
@@ -129,12 +130,14 @@ function settleInside(leaf: PrefLeaf, holds: PrefConditionJudge): PrefLeaf {
   return leaf;
 }
 
-/** Answer every condition of `resolved` against `config`, data and function alike. */
+/** Answer every condition of `resolved` against `config`, data and function alike, reading a path only
+ *  `resolved.over` holds as the panel does. */
 export function configVerdict(
   resolved: ResolvedConfig,
   config: Record<string, unknown>,
 ): ConfigVerdict {
-  const holds = prefJudge(resolved.group, (at) => configValueAt(config, at));
+  const { over } = resolved;
+  const holds = prefJudge(resolved.group, conditionReader(resolved, config, over), undefined, over);
   const { shown, disabled } = applyPrefConditions(withFunctions(resolved, config), holds, {
     keepEmpty: true,
   });

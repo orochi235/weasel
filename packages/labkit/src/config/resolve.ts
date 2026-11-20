@@ -9,6 +9,7 @@ import {
 import { isDev } from '@weasel-js/react';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { isConfigBranch } from './builder';
+import { innerLeaves } from './compound';
 import { setOwn } from './path';
 import { applyRules, builtinRules, titleCase } from './rules';
 import type {
@@ -20,6 +21,7 @@ import type {
   DialogSpec,
   LeafPatch,
   LeafRenderer,
+  NodeOptions,
   ResolvedConfig,
   SectionSpec,
 } from './types';
@@ -48,6 +50,7 @@ interface Sink {
   enableIf: Map<string, ConfigPredicate>;
   renderers: Record<string, LeafRenderer>;
   dialogs: Record<string, DialogSpec>;
+  validators: Map<string, NonNullable<NodeOptions['validate']>>;
   motifs: Map<string, Motif>;
   chain: readonly ConfigRule[];
 }
@@ -72,6 +75,7 @@ export function resolveConfigSchema<TC>(
     enableIf: new Map(),
     renderers: {},
     dialogs: {},
+    validators: new Map(),
     motifs: new Map(),
     chain: [...rules, ...builtinRules],
   };
@@ -93,6 +97,7 @@ export function resolveConfigSchema<TC>(
     enableIf: sink.enableIf,
     renderers: sink.renderers,
     dialogs: sink.dialogs,
+    validators: sink.validators,
     motifs: sink.motifs,
     ...(drawnOver === undefined ? {} : { over: drawnOver }),
   };
@@ -137,6 +142,8 @@ function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink):
       setOwn(sink.renderers, path, entry.options.render);
     if (!isConfigBranch(entry) && entry.options.dialog)
       setOwn(sink.dialogs, path, entry.options.dialog);
+    if (!isConfigBranch(entry) && entry.options.validate)
+      sink.validators.set(path, entry.options.validate);
   }
 
   return { name, children };
@@ -175,6 +182,8 @@ function resolveEntry(
   const { autoResolve, autoQuote, auto } = entry.options;
   return {
     ...patch,
+    // Fields, an item and variants answer to the lab's rules as a leaf of the schema does.
+    ...innerLeaves(patch, sink.chain, path),
     default: entry.default,
     // Extra keys survive onto the leaf at runtime; `ControlPanel` reads them
     // back with its `extra<T>` helper, the same as `min`, `step` and the rest.

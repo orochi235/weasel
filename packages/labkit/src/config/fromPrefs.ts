@@ -26,12 +26,13 @@ type OpenShape = Record<string, ConfigEntry>;
 
 /** The options `prefsFromConfig` put on a node beside its prefs fields, and those fields without them. */
 function optionsOn(node: Record<string, unknown>): [Record<string, unknown>, NodeOptions] {
-  const { render, dialog, showWhen, enableWhen, autoResolve, autoQuote, ...rest } = node;
+  const { render, dialog, showWhen, enableWhen, validate, autoResolve, autoQuote, ...rest } = node;
   const options: Record<string, unknown> = {
     render,
     dialog,
     showIf: showWhen,
     enableIf: enableWhen,
+    validate,
     autoResolve,
     autoQuote,
   };
@@ -97,8 +98,13 @@ function conditioned(leaf: PrefLeaf, above: Conditions): PrefLeaf {
 }
 
 /** Each leaf in `section` at its path, under its own and every enclosing section's `showIf` and `enableIf`. A
- *  section's `enableIf` passes over a leaf directly in it that the condition reads: that leaf is its switch. */
-function sectionLeaves(section: PrefSection, above: Conditions): Array<[string, PrefLeaf]> {
+ *  section's `enableIf` passes over a leaf directly in it that the condition reads: that leaf is its switch. Keys
+ *  are relative to `at`, and conditions read root paths. */
+function sectionLeaves(
+  section: PrefSection,
+  at: string,
+  above: Conditions,
+): Array<[string, PrefLeaf]> {
   const { showIf, enableIf } = section;
   const reads = enableIf === undefined ? [] : prefConditionPaths(enableIf);
   const within: Conditions = {
@@ -106,8 +112,10 @@ function sectionLeaves(section: PrefSection, above: Conditions): Array<[string, 
     enableIf: enableIf === undefined ? above.enableIf : [...above.enableIf, enableIf],
   };
   return Object.entries(section.members).flatMap(([key, child]): Array<[string, PrefLeaf]> => {
-    if (!isPrefLeaf(child)) return sectionLeaves(child, within);
-    const sits = reads.includes(key) ? { ...within, enableIf: above.enableIf } : within;
+    if (!isPrefLeaf(child)) return sectionLeaves(child, at, within);
+    const sits = reads.includes(at === '' ? key : `${at}.${key}`)
+      ? { ...within, enableIf: above.enableIf }
+      : within;
     return [[key, conditioned(child, sits)]];
   });
 }
@@ -179,7 +187,7 @@ function shapeOf(
       continue;
     }
     const options: NodeOptions = child.name === '' ? {} : { section: sectionOption(child) };
-    for (const [k, leaf] of sectionLeaves(child, NONE)) add(k, leaf, options);
+    for (const [k, leaf] of sectionLeaves(child, at, NONE)) add(k, leaf, options);
   }
   return shape;
 }
@@ -200,14 +208,17 @@ function shapeOf(
  *
  * It reads back what `prefsFromConfig` writes: an `object` leaf marked
  * `group` is that group, its children keyed below it, and what that wrote
- * beside a node's or a section's prefs fields is its options again.
+ * beside a node's or a section's prefs fields is its options again, and an
+ * `admits` on `given` the selectors the schema admits.
  */
 export function configFromPrefs(given: PrefSection): ConfigSchema<Record<string, unknown>> {
   const schema = resolvePrefGroupConditions(given);
   const leaves: Array<[string, PrefLeaf]> = [];
   const nodes = shapeOf(schema.members, '', leaves);
+  const { admits } = given as PrefSection & { admits?: readonly string[] };
   return {
     nodes: nodes as ConfigShape,
+    ...(admits?.length ? { admitted: admits } : {}),
     defaults: () =>
       leaves.reduce<Record<string, unknown>>(
         (config, [path, leaf]) =>

@@ -1,7 +1,8 @@
 import type { PrefLeaf, PrefObject } from '@weasel-js/prefs';
 import { BaseNode } from './baseNode';
-import { titleCase } from './rules';
-import type { ConfigActionRun, ConfigNode, NodeValue } from './types';
+import { setOwn } from './path';
+import { applyRules, builtinRules } from './rules';
+import type { ConfigActionRun, ConfigNode, ConfigRule, LeafPatch, NodeValue } from './types';
 
 /** A list leaf, built by `f.list`: strings, unless it was given what an entry is. */
 export class ListNode<T = string> extends BaseNode<T[]> {
@@ -39,22 +40,77 @@ export class SeparatorNode extends BaseNode<undefined> {
   readonly kind = 'separator';
 }
 
-/** A node as a leaf inside another's value: a list's or a map's item, an object's field, a union's variant.
- *  Named for `key` where it has one and no label of its own. */
-function itemLeaf(node: ConfigNode, key?: string): PrefLeaf {
-  const kind = node.kind ?? typeof node.default;
-  if (node.kind === null && kind !== 'string' && kind !== 'number' && kind !== 'boolean') {
+/** The node each leaf inside another's value was built from, so resolving a schema can run its rules over it again. */
+const sources = new WeakMap<PrefLeaf, ConfigNode>();
+
+/** A field, an item or a variant has no row of its own, so what only a row does has no place there. */
+function refuseRowOptions(node: ConfigNode, key: string | undefined): void {
+  const said = Object.entries(node.options)
+    .filter(([, v]) => v !== undefined)
+    .map(([k]) => k);
+  if (said.length === 0) return;
+  throw new Error(
+    `[labkit] ${key === undefined ? 'an item' : `field "${key}"`} inside another leaf says ${said.map((k) => `.${k}`).join(', ')}, which only a row of its own has; write a condition as data (\`{ path, is }\`) and put the rest on the outer leaf`,
+  );
+}
+
+/** `annotations`' fields, item and variants, each built again under `chain` where it was built by `itemLeaf`. */
+export function innerLeaves(
+  annotations: object,
+  chain: readonly ConfigRule[],
+  at: string,
+): Record<string, unknown> {
+  const again = (leaf: PrefLeaf, key: string | undefined, path: string): PrefLeaf => {
+    const node = sources.get(leaf);
+    return node ? itemLeaf(node, key, chain, path) : leaf;
+  };
+  const each = <L extends PrefLeaf>(
+    record: Readonly<Record<string, L>>,
+    pathOf: (key: string) => string,
+  ): Record<string, L> => {
+    const out: Record<string, L> = {};
+    for (const [key, leaf] of Object.entries(record))
+      setOwn(out, key, again(leaf, key, pathOf(key)) as L);
+    return out;
+  };
+  const { children, item, variants } = annotations as {
+    children?: Record<string, PrefLeaf>;
+    item?: PrefLeaf;
+    variants?: Record<string, PrefObject>;
+  };
+  const out: Record<string, unknown> = {};
+  if (children) out.children = each(children, (key) => `${at}.${key}`);
+  if (item) out.item = again(item, undefined, at);
+  if (variants) out.variants = each(variants, () => at);
+  return out;
+}
+
+/** A node as a leaf inside another's value: a list's or a map's item, an object's field, a union's variant, through
+ *  the rule chain as a leaf of the schema is. Named for `key` where it has one and no label of its own. */
+function itemLeaf(
+  node: ConfigNode,
+  key?: string,
+  chain: readonly ConfigRule[] = builtinRules,
+  path: string = key ?? '',
+): PrefLeaf {
+  refuseRowOptions(node, key);
+  const seed: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(node.annotations)) if (v !== undefined) setOwn(seed, k, v);
+  if (node.kind !== null) seed.kind = node.kind;
+  Object.assign(seed, innerLeaves(node.annotations, chain, path));
+  const patch = applyRules(
+    seed as LeafPatch,
+    { key: key ?? '', path, default: node.default },
+    chain,
+  );
+  if (patch.kind === undefined) {
     throw new Error(
       `[labkit] an f.value inside another leaf has a kind that cannot be inferred from its default (${String(node.default)})`,
     );
   }
-  return {
-    name: key === undefined ? '' : titleCase(key),
-    description: '',
-    ...node.annotations,
-    kind,
-    default: node.default,
-  } as PrefLeaf;
+  const leaf = { ...patch, default: node.default } as PrefLeaf;
+  sources.set(leaf, node);
+  return leaf;
 }
 
 function createListNode(def: readonly string[]): ListNode;

@@ -41,7 +41,7 @@ export function aliasTargetsOf(
  * holds, and for a path only `over` holds, that leaf's default where
  * `config` holds nothing.
  */
-function conditionReader(
+export function conditionReader(
   resolved: ResolvedConfig,
   config: Record<string, unknown>,
   over: PrefGroup | PrefSection | undefined,

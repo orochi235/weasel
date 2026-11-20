@@ -3046,3 +3046,9 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): a clock's transport hold takes each speed a redeclaration gives the clock until a
   transport sets a speed of its own; working the clock otherwise (a pause, a loop toggle, a seek) does not stop it
   following. Following only while the hold is untouched was the alternative.
+## Audit round fifty (2026-11-20): labkit's config
+
+- 2026-11-20 (the fixer's call): a field of `f.object`, the item of `f.list` or `f.map`, or a variant of `f.union`
+  that says `.showIf`/`.enableIf` as a function, `.render`, `.dialog`, `.auto`, `.initial(AUTO)`, `.quote`,
+  `.section`, or carries `f.custom`'s `validate` throws when the outer leaf is built, since none of those has a row
+  to act on there. Dropping them silently, as before, or warning and dropping was the alternative.

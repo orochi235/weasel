@@ -164,7 +164,7 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
    *
    * Make a lever auto wherever the instrument can work out a good value for it
    * (a count from the data, a spacing from the size, a scale that fits the
-   * view), and add {@link BaseNode.initial}`(auto)` when that value is the
+   * view), and add {@link BaseNode.initial}`(AUTO)` when that value is the
    * better start. Don't add a separate "Auto X" checkbox beside the lever.
    * Leave it pinned-only when `undefined` must never reach the instrument.
    */
@@ -179,11 +179,11 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
 
   /**
    * Start this leaf auto rather than pinned at its default, which also lets it
-   * be auto. Takes `auto` and nothing else — the constructor argument already
+   * be auto. Takes `AUTO` and nothing else — the constructor argument already
    * declares the value, and a second way to say it would fight with the first.
    */
   initial(value: Auto): this {
-    if (!isAuto(value)) throw new Error('[labkit] .initial() takes `auto` and nothing else');
+    if (!isAuto(value)) throw new Error('[labkit] .initial() takes `AUTO` and nothing else');
     return this.opt({ auto: { ...this.options.auto, on: true } });
   }
 
