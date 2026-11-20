@@ -6,7 +6,7 @@ import {
 } from '@weasel-js/diagram';
 import type { CellGeometry, RawCell } from './cells';
 import { cellLines } from './cellText';
-import { BOX_NAMES, ORTHOGONAL_EDGE_STYLES, STADIUM_ARC, markerOf, shapeEntry } from './mapping';
+import { BOX_NAMES, ORTHOGONAL_EDGE_STYLES, STADIUM_ARC, markerOf, shapeEntry, turnedAway } from './mapping';
 import { checkedColor } from '../colorCheck';
 import { hasStyleName, shapeOf, styleFlag, styleNumber, type CellStyle } from './style';
 import { getOwn } from '@weasel-js/registry';
@@ -15,11 +15,15 @@ import { getOwn } from '@weasel-js/registry';
  *  starts `message` and names every item. */
 export type Warn = (message: string, item?: string) => void;
 
-/** The outline a vertex draws as. A shape it does not know is a rect, with a warning. */
+/** The outline a vertex draws as. A shape it does not know is a rect, and one its `direction` turns from how the diagram
+ *  draws it is drawn unturned, each with a warning. */
 export function outlineOf(style: CellStyle, warn: Warn): Outline {
   const shape = shapeOf(style);
   const known = shapeEntry(shape, (key) => style.values.get(key));
-  if (known !== undefined) return known.outline;
+  if (known !== undefined) {
+    if (turnedAway(known, style.values.get('direction'))) warn(`Shapes of kind "${shape}" turned another way were drawn as the diagram turns them.`);
+    return known.outline;
+  }
   if (styleFlag(style, 'rounded')) return (styleNumber(style, 'arcSize') ?? 0) >= STADIUM_ARC ? 'stadium' : 'roundRect';
   if (shape !== undefined && !BOX_NAMES.has(shape)) warn(`Shapes of kind "${shape}" were drawn as rects.`);
   return 'rect';

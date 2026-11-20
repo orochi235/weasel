@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { DataEdge } from '@weasel-js/diagram';
 import { DIAGRAM_DRAW_XML } from './format';
 import { asGraph } from '../testing/asGraph';
+import { outlineOf } from './readStyle';
+import { parseStyle } from './style';
 
 const read = (cells: string) => Promise.resolve(DIAGRAM_DRAW_XML.read!(
   `<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>${cells}</root></mxGraphModel>`,
@@ -97,5 +99,26 @@ describe('reading pools', () => {
     const { data } = await page(`<mxCell id="p" value="P" style="swimlane;" vertex="1" parent="1"><mxGeometry x="0" y="0" width="200" height="200" as="geometry"/></mxCell>`
       + lane('l1', 0) + lane('l2', 100));
     expect(data.containers!.map((c) => [c.id, c.role, c.lanes?.map((l) => l.id)])).toEqual([['p', 'pool', ['l1', 'l2']]]);
+  });
+});
+
+describe('reading outlines', () => {
+  const outline = (style: string) => {
+    const warnings: string[] = [];
+    return { outline: outlineOf(parseStyle(style), (w) => warnings.push(w)), warnings };
+  };
+
+  it('reads a triangle or trapezoid turned as the writer turns it with no warning', () => {
+    expect(outline('triangle;direction=north;')).toEqual({ outline: 'triangle', warnings: [] });
+    expect(outline('shape=trapezoid;direction=north;')).toEqual({ outline: 'trapezoid', warnings: [] });
+    expect(outline('ellipse;direction=south;')).toEqual({ outline: 'ellipse', warnings: [] });
+  });
+
+  it('warns of a shape the file turns another way than the diagram draws it', () => {
+    expect(outline('triangle;')).toEqual({ outline: 'triangle', warnings: ['Shapes of kind "triangle" turned another way were drawn as the diagram turns them.'] });
+    expect(outline('triangle;direction=south;').warnings).toHaveLength(1);
+    expect(outline('shape=trapezoid;direction=west;').warnings).toHaveLength(1);
+    expect(outline('shape=document;direction=south;').warnings).toHaveLength(1);
+    expect(outline('shape=document;direction=east;').warnings).toEqual([]);
   });
 });

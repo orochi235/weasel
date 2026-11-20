@@ -79,6 +79,16 @@ export const SHAPES: ReadonlyArray<{
   { name: 'mxgraph.office.concepts.globe_internet', outline: 'globe', write: [['shape', 'mxgraph.office.concepts.globe_internet'], ...LABEL_BELOW] },
 ];
 
+/** Shapes a quarter or half turn draws the same in their box, so a `direction` does not change them. */
+const TURN_SYMMETRIC: ReadonlySet<string> = new Set(['rhombus', 'ellipse', 'doubleEllipse', 'startState', 'endState']);
+
+/** Whether a cell turned to `direction` (a draw app's default is `east`) draws `entry` turned other than its outline. */
+export function turnedAway(entry: (typeof SHAPES)[number], direction: string | undefined): boolean {
+  if (TURN_SYMMETRIC.has(entry.name)) return false;
+  const written = entry.write?.find((part) => Array.isArray(part) && part[0] === 'direction');
+  return (direction ?? 'east') !== (Array.isArray(written) ? String(written[1]) : 'east');
+}
+
 /** The entry a cell's style reads as: its shape name, and the pair that narrows it where one does. */
 export function shapeEntry(name: string | undefined, value: (key: string) => string | undefined): (typeof SHAPES)[number] | undefined {
   return SHAPES.find((s) => s.name === name && (s.when === undefined || value(s.when[0]) === s.when[1]));
