@@ -370,6 +370,12 @@ describe('viewportDragPanAction inertia', () => {
     expect(() => fling(view, { inertia: { friction: 0.9 } })).not.toThrow();
   });
 
+  it('refuses an inertia friction that never comes to rest at the press, not the release', () => {
+    const { view, calls } = makeDecayView();
+    expect(() => invoker.start(makeCtx(view), { params: { inertia: { friction: 1 } } })).toThrow(RangeError);
+    expect(calls).toHaveLength(0);
+  });
+
   it('forwards boundary and bounds to the decay loop', () => {
     const { view, calls } = makeDecayView();
     const bounds = { minX: -50, maxX: 50 };

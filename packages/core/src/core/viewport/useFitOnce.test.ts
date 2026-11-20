@@ -4,7 +4,7 @@ import { useFitOnce } from './useFitOnce';
 import { fitSize } from './fitSize';
 import { fitSize as fitSizeFromEntry } from '../../index';
 
-const fitFilled = (vw: number, vh: number, cw: number, ch: number, fill = 0.85) => fitSize(vw, vh, cw, ch, 0, undefined, fill);
+const fitFilled = (vw: number, vh: number, cw: number, ch: number, fill = 0.85) => fitSize(vw, vh, cw, ch, 0, { min: 0, max: Infinity }, fill);
 
 describe('fitSize with a fill is reachable from the public entry', () => {
   it('centers content in a viewport', () => {
@@ -59,8 +59,8 @@ describe('useFitOnce', () => {
     );
     expect(setZoom).not.toHaveBeenCalled();
     expect(setPan).not.toHaveBeenCalled();
-    rerender({ c: 10 });
-    expect(setZoom).toHaveBeenCalledWith(17);
+    rerender({ c: 100 });
+    expect(setZoom).toHaveBeenCalledWith(1.7);
     expect(setPan).toHaveBeenCalledWith(15, 15);
   });
 
@@ -92,9 +92,17 @@ describe('useFitOnce', () => {
   it('passes computed fit values to setters', () => {
     const setZoom = vi.fn();
     const setPan = vi.fn();
-    renderHook(() => useFitOnce(200, 200, 10, 10, setZoom, setPan));
-    // Default padRatio 0.85 -> zoom 17, pan 15
-    expect(setZoom).toHaveBeenCalledWith(17);
+    renderHook(() => useFitOnce(200, 200, 100, 100, setZoom, setPan));
+    // Default padRatio 0.85 -> zoom 1.7, pan 15
+    expect(setZoom).toHaveBeenCalledWith(1.7);
     expect(setPan).toHaveBeenCalledWith(15, 15);
+  });
+
+  it('keeps the fit inside the kit-wide zoom clamp', () => {
+    const setZoom = vi.fn();
+    const setPan = vi.fn();
+    renderHook(() => useFitOnce(800, 600, 4, 3, setZoom, setPan));
+    expect(setZoom).toHaveBeenCalledWith(8);
+    expect(setPan).toHaveBeenCalledWith(384, 288);
   });
 });

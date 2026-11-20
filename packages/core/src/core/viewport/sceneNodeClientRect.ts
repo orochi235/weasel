@@ -1,9 +1,7 @@
 import type { Bounds } from './fitViewToBounds';
 import type { View } from './view';
-import { viewToTransform } from './view';
-import { worldToScreen } from './viewTransform';
 import { canvasToClient } from '@weasel-js/routing';
-import type { Rect } from '@weasel-js/geom';
+import { viewWorldToScreen, type Rect } from '@weasel-js/geom';
 
 /** Options for {@link sceneNodeClientRect}. */
 export interface SceneNodeClientRectOptions {
@@ -34,9 +32,8 @@ export type NodeClientRect = Rect;
 export function sceneNodeClientRect(opts: SceneNodeClientRectOptions): NodeClientRect | null {
   const bounds = opts.getWorldBounds(opts.id);
   if (bounds === null) return null;
-  const t = viewToTransform(opts.view);
-  const [x0, y0] = worldToScreen(bounds.x, bounds.y, t);
-  const [x1, y1] = worldToScreen(bounds.x + bounds.width, bounds.y + bounds.height, t);
+  const { x: x0, y: y0 } = viewWorldToScreen(opts.view, bounds);
+  const { x: x1, y: y1 } = viewWorldToScreen(opts.view, { x: bounds.x + bounds.width, y: bounds.y + bounds.height });
   // Through the canvas's own scale, which an ancestor transform sets.
   const [cx0, cy0] = canvasToClient(opts.canvas, x0, y0);
   const [cx1, cy1] = canvasToClient(opts.canvas, x1, y1);

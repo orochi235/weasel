@@ -27,7 +27,8 @@ function zoomBy(factor: number): number {
 export type ZoomAxis = 'both' | 'x' | 'y';
 
 /** `factor` held to one axis: the other axis's factor is 1, so `zoomAt` leaves
- *  its scale and its translation where they were. */
+ *  its scale and its translation where they were, unless that scale is outside
+ *  the clamp, which `zoomAt` brings it back inside. */
 export function axisZoomFactor(factor: number, axis: ZoomAxis): ZoomFactor {
   if (axis === 'x') return { x: factor, y: 1 };
   if (axis === 'y') return { x: 1, y: factor };
@@ -39,7 +40,8 @@ export function axisZoomFactor(factor: number, axis: ZoomAxis): ZoomFactor {
  * by `factor` (per-axis, clamped) and whose translation is adjusted so
  * that the world point currently under `anchor` (screen coords relative
  * to the canvas top-left) stays under the same screen pixel after the
- * zoom — independently on each axis.
+ * zoom — independently on each axis. Every axis of the result is inside the
+ * clamp, a factor of 1 included, so a view given out of range comes back in.
  *
  * `factor: number` means "apply uniformly to both axes". `factor: {x, y}`
  * applies per-axis factors. Likewise for `opts.min` / `opts.max`.

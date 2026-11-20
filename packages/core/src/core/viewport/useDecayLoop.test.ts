@@ -102,7 +102,7 @@ describe('useDecayLoop', () => {
     act(() => {
       result.current.start({
         velocity: { vx: -10, vy: 0 },  // moving left
-        friction: 1,                     // no friction — keeps constant velocity
+        friction: 0.999999,                     // next to no friction — keeps constant velocity
         minSpeed: 0.001,
         viewBounds: { minX: -5 },        // wall at x = -5, starting at x = 0
         boundary: 'stop',
@@ -125,7 +125,7 @@ describe('useDecayLoop', () => {
     act(() => {
       result.current.start({
         velocity: { vx: -10, vy: 0 },  // moving left
-        friction: 1,                     // no friction
+        friction: 0.999999,                     // next to no friction
         minSpeed: 0.001,
         viewBounds: { minX: -5 },        // wall at x = -5, starting at x = 0
         boundary: 'bounce',
@@ -148,7 +148,7 @@ describe('useDecayLoop', () => {
     act(() => {
       result.current.start({
         velocity: { vx: -10, vy: 0 },
-        friction: 1,                     // no friction — isolate spring damping
+        friction: 0.999999,                     // next to no friction — isolate spring damping
         minSpeed: 0.001,
         viewBounds: { minX: -8 },        // wall farther than damped rebound (5)
         boundary: 'spring',
@@ -174,7 +174,7 @@ describe('useDecayLoop', () => {
     act(() => {
       result.current.start({
         velocity: { vx: -2, vy: 0 },
-        friction: 1,                     // no friction — only spring damping shrinks velocity
+        friction: 0.999999,                     // next to no friction — only spring damping shrinks velocity
         minSpeed: 0.5,                   // high threshold so settle is reached quickly
         viewBounds: { minX: -1, maxX: 1 },
         boundary: 'spring',
@@ -195,7 +195,7 @@ describe('useDecayLoop', () => {
     act(() => {
       result.current.start({
         velocity: { vx: 10, vy: 0 },     // moving right
-        friction: 1,
+        friction: 0.999999,
         minSpeed: 0.001,
         viewBounds: { minX: -100, maxX: 8 }, // wall farther than damped rebound (5)
         boundary: 'spring',
@@ -209,5 +209,18 @@ describe('useDecayLoop', () => {
     expect(ticks[0]).toBeCloseTo(8);   // clamped at maxX
     expect(ticks[1]).toBeLessThan(0);  // reflected leftward
     expect(Math.abs(ticks[1])).toBeLessThan(Math.abs(ticks[0]));
+  });
+
+  it('refuses a friction outside (0, 1) or a minSpeed that is not positive, which never come to rest', () => {
+    const onTick = vi.fn();
+    const { result } = renderHook(() => useDecayLoop());
+    for (const friction of [1, 1.5, 0, -0.5, NaN]) {
+      expect(() => result.current.start({ velocity: { vx: 1, vy: 0 }, friction, onTick })).toThrow(RangeError);
+    }
+    for (const minSpeed of [0, -1, NaN]) {
+      expect(() => result.current.start({ velocity: { vx: 1, vy: 0 }, minSpeed, onTick })).toThrow(RangeError);
+    }
+    act(() => { stepRAF(16); });
+    expect(onTick).not.toHaveBeenCalled();
   });
 });

@@ -110,4 +110,24 @@ describe('interpolateView', () => {
       expect(mid.scale.y).toBeCloseTo(3, 10);  // still geometric
     });
   });
+
+  it('holds the zoom anchor on a flipped (y-up) axis, whose scales are both negative', () => {
+    const anchor = { x: 400, y: 300 };
+    const from: View = { x: 0, y: 0, scale: { x: 1, y: -1 } };
+    const to = zoomAt(from, anchor, 4);
+    const f = interpolateView(from, to);
+    const w = worldAt(from, anchor);
+    for (const t of [0.13, 0.5, 0.77]) {
+      const v = f(t);
+      expect(v.scale.y).toBeCloseTo(-Math.pow(to.scale.x, t), 10);
+      expect(worldAt(v, anchor).y).toBeCloseTo(w.y, 9);
+    }
+    expectViewCloseTo(f(1), to);
+  });
+  it('stays close to a pan when the scales differ by a hair', () => {
+    const from = V(0, 0, 1);
+    const to = V(1e6, 0, 1 + 1e-11);
+    const f = interpolateView(from, to);
+    for (const t of [0.1, 0.25, 0.5, 0.9]) expect(Math.abs(f(t).x - 1e6 * t)).toBeLessThan(1e-3);
+  });
 });
