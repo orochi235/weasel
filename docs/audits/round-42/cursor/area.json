@@ -1,0 +1,50 @@
+{
+ "id": "cursor",
+ "commit": "a31056c5f3adeb20052a681c149c8af782f0f7b5",
+ "date": "2026-11-19",
+ "files": [
+  "packages/cursor/src/bake.ts",
+  "packages/cursor/src/brushRing.ts",
+  "packages/cursor/src/cursorSink.ts",
+  "packages/cursor/src/glyphs.ts",
+  "packages/cursor/src/index.ts",
+  "packages/cursor/src/mark.ts",
+  "packages/cursor/src/paint.ts",
+  "packages/cursor/src/paintedCursorState.ts",
+  "packages/cursor/src/pbt.fixture.ts",
+  "packages/cursor/src/registry.ts",
+  "packages/cursor/src/resolve.ts",
+  "packages/cursor/src/types.ts"
+ ],
+ "a": 6,
+ "b": 6,
+ "m": 5,
+ "distinct": 7,
+ "chapman": 7.2,
+ "unfound": 0.2,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 1,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.9,
+   "B": 5.9,
+   "match": 1.3,
+   "fix": 3.4
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "tokens": 3263741,
+  "costUsd": 3.22
+ },
+ "fixCommits": [
+  "d8007e8705d4e651852f23dd51707dcd330046ae"
+ ]
+}

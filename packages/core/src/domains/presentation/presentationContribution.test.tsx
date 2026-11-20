@@ -88,4 +88,14 @@ describe('createPresentationContribution', () => {
     expect(bare.view()).toEqual(START);
     expect(bare.arrived).toEqual([]);
   });
+
+  it("goes to either end with Home and End on a deck whose page ids are 'first' and 'last'", () => {
+    const ids = ['x', 'last', 'first'];
+    const s = mount({ pages: (deps) => placedPagesOf(deps.scene!).map((p, i) => ({ ...p, id: ids[i]! })) });
+    s.press('End');
+    expect(s.view()).toEqual(s.fitOf(2));
+    s.press('Home');
+    expect(s.view()).toEqual(s.fitOf(0));
+    expect(s.arrived).toEqual(['first', 'x']);
+  });
 });

@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   3
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "test-seams' header promises a paint-kind reset, an insert-dep source and an area hit test it no longer exports",
+  "mesh.ts says core's package.json lists a `register` entry under `sideEffects`; there is none",
+  "`ops.swap` is history's generic value-swap op, not a core op and not the new node swap",
+  "engine.ts' header still says it carries \"the actions and tools such a host binds\""
+ ],
+ "b": [
+  "The `@weasel-js/core/ops` package doc's example commits through an API that does not exist",
+  "`ops.ts` says every factory is core's own `create…Op`, but `ops.swap` is history's generic value swap",
+  "The test-seams doc promises a paint-kind registry reset that the entry does not export",
+  "`mesh.ts` says core's manifest lists a `register` entry under `sideEffects`; there is none",
+  "test-seams exports the same fixture functions under two names each"
+ ]
+}

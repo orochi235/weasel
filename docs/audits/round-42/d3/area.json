@@ -1,0 +1,51 @@
+{
+ "id": "d3",
+ "commit": "a31056c5f3adeb20052a681c149c8af782f0f7b5",
+ "date": "2026-11-19",
+ "files": [
+  "packages/d3/src/bind.ts",
+  "packages/d3/src/cancelKey.ts",
+  "packages/d3/src/index.ts",
+  "packages/d3/src/liveTransitions.ts",
+  "packages/d3/src/pbt.fixture.ts",
+  "packages/d3/src/pendingRemovals.ts",
+  "packages/d3/src/selection.ts",
+  "packages/d3/src/transition.ts",
+  "packages/d3/src/transitionHandle.ts",
+  "packages/d3/src/transitionProgress.ts",
+  "packages/d3/src/transitionRemoval.ts",
+  "packages/d3/src/transitionRuns.ts",
+  "packages/d3/src/transitionTweens.ts",
+  "packages/d3/src/types.ts"
+ ],
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "incomplete": [
+  "A",
+  "B"
+ ],
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0.2,
+   "B": 0.2,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio"
+  },
+  "tokens": 0,
+  "costUsd": 0
+ },
+ "fixCommits": []
+}

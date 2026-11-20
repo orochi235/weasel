@@ -1,0 +1,17 @@
+{
+ "pairs": [],
+ "a": [
+  "resolveVisibility looks a chrome id up through Object.prototype",
+  "A consumer rule set to `undefined` replaces the kit default with \"always visible\"",
+  "createCanvasCamera keeps a glide target after the glide ends, and reports it during someone else's glide",
+  "present.go cannot reach a page whose id is `'first'` or `'last'`"
+ ],
+ "b": [
+  "resolveVisibility looks chrome ids up through the prototype chain",
+  "arrivalBounds applies its \"px\" cascade offset in world units",
+  "A throwing `step` leaves usePoseRun stuck as running forever",
+  "enteredGroupScope only bumps its version while someone is subscribed",
+  "createCanvasCamera.target() returns a stale heading during a glide it didn't start",
+  "`present.go { to: 'first' | 'last' }` can't reach a page with that id"
+ ]
+}

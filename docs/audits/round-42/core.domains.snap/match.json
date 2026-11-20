@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "pointSnap's trail always snaps with free modifiers, so the cursor preview disagrees with the click under Ctrl or Shift",
+  "SnapCollect.include is documented and read by pathSnapSource, but no session ever sets it",
+  "createSnapSession2d cannot express SnapBegin's `along`, per-gesture `sources` or `omit`",
+  "The test sessionDep ignores a request's `sources` and `omit`, unlike the canvas dep it stands in for",
+  "The debug snap overlay places a segment or bounded-face candidate on its unbounded flat"
+ ],
+ "b": [
+  "A move of a group never finds its own geometry: the default `geometryAt` is handed the group's id, not its subtree",
+  "`SpanSnap.anchor` moves the start but leaves `startHeld()` reporting the old snap"
+ ]
+}

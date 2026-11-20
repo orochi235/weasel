@@ -1,0 +1,59 @@
+{
+ "id": "core.domains.paths",
+ "commit": "a31056c5f3adeb20052a681c149c8af782f0f7b5",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/domains/paths/anchorData.ts",
+  "packages/core/src/domains/paths/anchorMarkers.ts",
+  "packages/core/src/domains/paths/anchorUnder.ts",
+  "packages/core/src/domains/paths/editablePath.ts",
+  "packages/core/src/domains/paths/index.ts",
+  "packages/core/src/domains/paths/nodeFrame.ts",
+  "packages/core/src/domains/paths/originProjection.ts",
+  "packages/core/src/domains/paths/pathEditExtension.ts",
+  "packages/core/src/domains/paths/pathEditState.ts",
+  "packages/core/src/domains/paths/pathEditingOverlayLayer.ts",
+  "packages/core/src/domains/paths/pathLayer.ts",
+  "packages/core/src/domains/paths/pathNode.ts",
+  "packages/core/src/domains/paths/pathRepresentation.ts",
+  "packages/core/src/domains/paths/pathSnap/glyphs.ts",
+  "packages/core/src/domains/paths/pathSnap/pathSnapSource.ts",
+  "packages/core/src/domains/paths/pathSnap/sceneIndex.ts",
+  "packages/core/src/domains/paths/pathSnap/snapGeometry.ts",
+  "packages/core/src/domains/paths/shapeGenerator.ts",
+  "packages/core/src/domains/paths/strokeOutline.ts",
+  "packages/core/src/domains/paths/strokeRegion.ts",
+  "packages/core/src/domains/paths/useAnchorFields.ts",
+  "packages/core/src/domains/paths/usePathEdit.ts"
+ ],
+ "a": 4,
+ "b": 1,
+ "m": 0,
+ "distinct": 5,
+ "incomplete": [
+  "B"
+ ],
+ "read": {
+  "A": 22,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.9,
+   "B": 11.4,
+   "match": 0.2,
+   "fix": 0.4
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "tokens": 7976969,
+  "costUsd": 4.23
+ },
+ "fixCommits": []
+}

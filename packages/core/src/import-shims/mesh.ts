@@ -1,5 +1,5 @@
 // Registers the kind for any import of this subpath, which is why core's
-// package.json lists this entry and `register` under `sideEffects`.
+// package.json lists this entry (source and built) under `sideEffects`.
 import '@weasel-js/paint-kinds/mesh';
 
 export {

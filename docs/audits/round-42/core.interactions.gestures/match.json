@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   3,
+   4
+  ]
+ ],
+ "a": [
+  "A drop zone whose `accepts` throws strands the drag for every later drag in the page",
+  "Nested drop zones resolve by registration order, not by which zone is innermost",
+  "`useDragHandle` calls the press-time `getPayload`, not the current one, at threshold",
+  "`useDragRect`/`useDragRadial` `isActive` disagrees with the base controller's"
+ ],
+ "b": [
+  "useDragHandle's default ghost is sized in client px but drawn in its seat's scaled px",
+  "When drop zones nest, the one registered first wins, not the innermost",
+  "useDragHandle starts a drag from a press on an SVG icon inside a button",
+  "A useDragGesture onActivate that cancels hands onMove a ctx whose fields throw",
+  "useDragRect and useDragRadial report isActive from render state, while useDragGesture reports it synchronously",
+  "screenTolerance ignores the gesture's parallax plane",
+  "useDragGesture never closes onGestureStart's pairing when its owner unmounts mid-gesture",
+  "The default drag ghost clones the source's id attributes into the document"
+ ]
+}

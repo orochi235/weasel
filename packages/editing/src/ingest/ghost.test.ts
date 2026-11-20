@@ -66,6 +66,17 @@ describe('previewIngest', () => {
     expect(d.hide).toHaveBeenCalledTimes(1);
   });
 
+  it("cascades a multi-file ghost by screen px, read off the ingestion dep's worldPerPx", () => {
+    const show = vi.fn(() => () => {});
+    const ingestion = { viewportWorldRect: () => ({ x: 0, y: 0, width: 1200, height: 600 }), worldPerPx: () => ({ x: 0.5, y: 0.5 }) };
+    const files = [pending('file', 'image/png'), pending('file', 'image/png')];
+    previewIngest({ ingestion, previewPaths: { show } }, { items: files, world: { x: 500, y: 500 } }, IMAGES_AND_TEXT);
+    expect(show).toHaveBeenCalledWith([
+      { path: { kind: 'rect', x: 450, y: 450, width: 100, height: 100 } },
+      { path: { kind: 'rect', x: 462, y: 462, width: 100, height: 100 } },
+    ]);
+  });
+
   it('draws nothing for a drag nothing could claim, or with no items', () => {
     const d = deps();
     expect(previewIngest(d.deps, { items: [pending('string', 'text/csv')] }, IMAGES_AND_TEXT)).toBeUndefined();

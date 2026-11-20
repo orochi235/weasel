@@ -1,0 +1,54 @@
+{
+ "id": "core.import-shims",
+ "commit": "a31056c5f3adeb20052a681c149c8af782f0f7b5",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/import-shims/engine.ts",
+  "packages/core/src/import-shims/groups.ts",
+  "packages/core/src/import-shims/icons.ts",
+  "packages/core/src/import-shims/json.ts",
+  "packages/core/src/import-shims/math.ts",
+  "packages/core/src/import-shims/mesh.ts",
+  "packages/core/src/import-shims/ops.ts",
+  "packages/core/src/import-shims/patterns-builtin.ts",
+  "packages/core/src/import-shims/presets.ts",
+  "packages/core/src/import-shims/render-worker.ts",
+  "packages/core/src/import-shims/renderer.ts",
+  "packages/core/src/import-shims/routing.ts",
+  "packages/core/src/import-shims/test-seams.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 3,
+ "distinct": 6,
+ "chapman": 6.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 13,
+  "B": 13
+ },
+ "patches": 4,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.5,
+   "B": 7.1,
+   "match": 0.2,
+   "fix": 4.5
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "tokens": 12848924,
+  "costUsd": 6.01
+ },
+ "fixCommits": [
+  "f61f5aca4900c0a05c6857f166a0e0af9a9dc620",
+  "500dbc3474fbd100007ef9f19ec1c302d0e39bd4",
+  "9569bad067414a2a10a952f389d46c1ea02492d4",
+  "92f54ed86b2ab2c59a4573beadcc18b5e5b21f78"
+ ]
+}

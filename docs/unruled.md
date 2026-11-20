@@ -2804,3 +2804,11 @@ Calls the lanes made without a ruling:
 - 2026-11-19 (the fixer's call): `scene.loadState` throws while a journal is open, a suspended one opened on
   `scene.history` included; commit or cancel it first. Closing every open journal along with the history was the
   alternative; it would end a modality or an edit session from under its owner.
+
+## Audit round forty-two (2026-11-19): core's domains
+
+- 2026-11-19 (the fixer's call): a `PageRequest` names an end as `{ end: 'first' | 'last' }`, and `present.step`'s
+  Home and End variants send that. A `{ to }` of `'first'` or `'last'` names the page with that id where one has it,
+  and the end only where none does, so `present.go` reaches every page by its id and old callers keep working.
+  Keeping the ends ahead of the ids, so such a page was unreachable by id, was the alternative; so was dropping
+  `to: 'first' | 'last'` outright.

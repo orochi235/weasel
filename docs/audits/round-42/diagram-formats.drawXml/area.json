@@ -1,0 +1,51 @@
+{
+ "id": "diagram-formats.drawXml",
+ "commit": "a31056c5f3adeb20052a681c149c8af782f0f7b5",
+ "date": "2026-11-19",
+ "files": [
+  "packages/diagram-formats/src/drawXml/cellText.ts",
+  "packages/diagram-formats/src/drawXml/cells.ts",
+  "packages/diagram-formats/src/drawXml/format.ts",
+  "packages/diagram-formats/src/drawXml/mapping.ts",
+  "packages/diagram-formats/src/drawXml/pageCells.ts",
+  "packages/diagram-formats/src/drawXml/read.ts",
+  "packages/diagram-formats/src/drawXml/readPage.ts",
+  "packages/diagram-formats/src/drawXml/readStyle.ts",
+  "packages/diagram-formats/src/drawXml/style.ts",
+  "packages/diagram-formats/src/drawXml/write.ts",
+  "packages/diagram-formats/src/drawXml/writeEdge.ts",
+  "packages/diagram-formats/src/drawXml/writePage.ts",
+  "packages/diagram-formats/src/drawXml/writeStyle.ts",
+  "packages/diagram-formats/src/drawXml/writeXml.ts"
+ ],
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "incomplete": [
+  "A",
+  "B"
+ ],
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0.4,
+   "B": 0.4,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou"
+  },
+  "tokens": 0,
+  "costUsd": 0
+ },
+ "fixCommits": []
+}

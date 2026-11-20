@@ -19,7 +19,15 @@ export function createEnteredGroupScope(opts: {
   const dim = opts.dimAlpha ?? OUT_OF_SCOPE_ALPHA;
   const listeners = createEmitter();
   let version = 0;
+  // The entered group the version last counted, so a change made while nobody
+  // listened still bumps it when it is next read.
+  let seen = entered.get();
   let stop: (() => void) | null = null;
+  const versionNow = (): number => {
+    const now = entered.get();
+    if (now !== seen) { seen = now; version++; }
+    return version;
+  };
 
   return {
     alphaFor: (id) => {
@@ -27,9 +35,9 @@ export function createEnteredGroupScope(opts: {
       return id === group || reachableInGroup(scene, group, id) ? 1 : dim;
     },
     isPointerInteractive: (id) => reachableInGroup(scene, entered.get(), id),
-    getVersion: () => version,
+    getVersion: versionNow,
     subscribe(fn) {
-      if (stop === null) stop = entered.subscribe(() => { version++; listeners.emit(); });
+      if (stop === null) stop = entered.subscribe(() => { seen = entered.get(); version++; listeners.emit(); });
       const off = listeners.subscribe(fn);
       return () => {
         off();

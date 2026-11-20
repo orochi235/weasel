@@ -1,0 +1,49 @@
+{
+ "id": "devtools.page",
+ "commit": "a31056c5f3adeb20052a681c149c8af782f0f7b5",
+ "date": "2026-11-19",
+ "files": [
+  "packages/devtools/src/page/attach.ts",
+  "packages/devtools/src/page/handlers.ts",
+  "packages/devtools/src/page/history.ts",
+  "packages/devtools/src/page/hook.ts",
+  "packages/devtools/src/page/messageShape.ts",
+  "packages/devtools/src/page/notices.ts",
+  "packages/devtools/src/page/protocol.ts",
+  "packages/devtools/src/page/registry.ts",
+  "packages/devtools/src/page/root.ts",
+  "packages/devtools/src/page/serialize.ts",
+  "packages/devtools/src/page/session.ts",
+  "packages/devtools/src/page/transport.ts"
+ ],
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "incomplete": [
+  "A",
+  "B"
+ ],
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0.3,
+   "B": 0.3,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio"
+  },
+  "tokens": 0,
+  "costUsd": 0
+ },
+ "fixCommits": []
+}

@@ -85,9 +85,9 @@ export const CURSOR_MAX_CSS_PX = 128;
  * extreme of the circle, which is where the half-circle idiom these glyphs use
  * puts it.
  *
- * The authored dialect is absolute `M`/`L`/`A`/`Z` with circular arcs. A
- * relative command would be measured as if absolute and silently under-report,
- * so it throws.
+ * The authored dialect is absolute `M`/`L`/`A`/`Z` with circular arcs, as
+ * `placeCursorPath` reads it. Anything else would be measured wrong, a relative
+ * command as if absolute and an `H` as no point at all, so it throws.
  */
 function walk(d: string, see: (x: number, y: number) => void): void {
   let cx = 0;
@@ -96,11 +96,17 @@ function walk(d: string, see: (x: number, y: number) => void): void {
     if (cmd !== cmd.toUpperCase()) {
       throw new Error(`cursor glyph path uses a relative command '${cmd}': ${d}`);
     }
+    const arity = cmd === 'M' || cmd === 'L' ? 2 : cmd === 'A' ? 7 : cmd === 'Z' ? 0 : -1;
+    if (arity < 0) throw new Error(`cursor glyph path uses '${cmd}', outside the M, L, A and Z the fit guards read: ${d}`);
+    if (arity > 0 && (nums.length === 0 || nums.length % arity !== 0)) {
+      throw new Error(`cursor glyph path '${cmd}' has ${nums.length} numbers, which are not whole points: ${d}`);
+    }
     if (cmd === 'Z') continue;
     if (cmd === 'A') {
       for (let i = 0; i + 7 <= nums.length; i += 7) {
         const [rx, ry, , largeArc, sweep, x, y] = nums.slice(i, i + 7) as [number, number, number, number, number, number, number];
-        const r = Math.max(rx, ry);
+        if (rx !== ry) throw new Error(`cursor glyph path has an elliptical arc (${rx} by ${ry}): ${d}`);
+        const r = rx;
         const dx = x - cx;
         const dy = y - cy;
         const half = Math.hypot(dx, dy) / 2;

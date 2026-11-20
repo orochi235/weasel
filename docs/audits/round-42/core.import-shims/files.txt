@@ -1,0 +1,13 @@
+packages/core/src/import-shims/engine.ts
+packages/core/src/import-shims/groups.ts
+packages/core/src/import-shims/icons.ts
+packages/core/src/import-shims/json.ts
+packages/core/src/import-shims/math.ts
+packages/core/src/import-shims/mesh.ts
+packages/core/src/import-shims/ops.ts
+packages/core/src/import-shims/patterns-builtin.ts
+packages/core/src/import-shims/presets.ts
+packages/core/src/import-shims/render-worker.ts
+packages/core/src/import-shims/renderer.ts
+packages/core/src/import-shims/routing.ts
+packages/core/src/import-shims/test-seams.ts

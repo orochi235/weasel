@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "pathNode drops a `place.pose`'s `transform` (skew / per-axis scale)",
+  "anchorIndexUnder measures its screen-pixel reach as a world circle, so a view that scales its axes apart reaches far past `reachPx` on one axis",
+  "The path-edit overlay draws a node's anchors at its stored pose, not its effective one, so a derived or overridden node's anchors sit off its drawn outline",
+  "The path-snap index snaps to each node at its stored pose, not the pose it is drawn at"
+ ],
+ "b": [
+  "anchorIndexUnder tests and ranks anchors by world distance, so under a view that scales its axes apart it reaches past the click radius and picks the wrong anchor"
+ ]
+}

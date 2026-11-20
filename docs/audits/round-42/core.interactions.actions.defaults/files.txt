@@ -1,0 +1,17 @@
+packages/core/src/interactions/actions/defaults/cancelAll.ts
+packages/core/src/interactions/actions/defaults/containerScroll.ts
+packages/core/src/interactions/actions/defaults/contextMenu.ts
+packages/core/src/interactions/actions/defaults/copySubtree.ts
+packages/core/src/interactions/actions/defaults/index.ts
+packages/core/src/interactions/actions/defaults/lockedReach.ts
+packages/core/src/interactions/actions/defaults/nudgeSteps.ts
+packages/core/src/interactions/actions/defaults/requiresOperands.ts
+packages/core/src/interactions/actions/defaults/segmentUnder.ts
+packages/core/src/interactions/actions/defaults/sliceOps.ts
+packages/core/src/interactions/actions/defaults/toolActivate.ts
+packages/core/src/interactions/actions/defaults/toolResetToDefault.ts
+packages/core/src/interactions/actions/defaults/touchZoom.ts
+packages/core/src/interactions/actions/defaults/undoRedo.ts
+packages/core/src/interactions/actions/defaults/viewportDragPan.ts
+packages/core/src/interactions/actions/defaults/viewportWheelPan.ts
+packages/core/src/interactions/actions/defaults/viewportZoom.ts
