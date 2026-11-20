@@ -1,6 +1,14 @@
 import type { ClockRegistry } from '@weasel-js/clock';
 import { ActionDisabledReason, useCommand } from '@weasel-js/core';
-import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { useStore } from 'zustand/react';
 import { TrialRootContext } from '../clock/contexts';
 import type { LabStore } from '../state/store';
@@ -26,6 +34,8 @@ interface PresentationContextValue extends Presentation {
   transport: PresentedTransportOptions | null;
   /** Whether a lab held still has been painted; `null` for any other lab. */
   still: 'pending' | 'ready' | null;
+  /** Whether the lab's document is framed, so presenting hands it back to its embedder. */
+  framed: boolean;
 }
 
 /** How a lab starts: presenting or not, and held still or not. */
@@ -45,10 +55,19 @@ export function presentationStart(
 }
 
 /** The class of a lab's root, which says how it is presenting. */
-export function labClassName({ active, still }: PresentationContextValue): string {
+export function labClassName({ active, still, framed }: PresentationContextValue): string {
   if (!active) return 'lk-lab';
-  if (still === null) return 'lk-lab lk-lab--present';
-  return `lk-lab lk-lab--present lk-lab--still${still === 'ready' ? ' lk-lab--still-ready' : ''}`;
+  const present = framed ? 'lk-lab lk-lab--present lk-lab--framed' : 'lk-lab lk-lab--present';
+  if (still === null) return present;
+  return `${present} lk-lab--still${still === 'ready' ? ' lk-lab--still-ready' : ''}`;
+}
+
+const NEVER = () => () => {};
+const isFramed = () => window.self !== window.top;
+
+/** Whether the page is in a frame; `false` while rendering on a server. */
+function useFramed(): boolean {
+  return useSyncExternalStore(NEVER, isFramed, () => false);
 }
 
 /** How a presented trial shows its play controls. */
@@ -88,6 +107,7 @@ export function useLabPresentation(
   );
   const presenting = presentedBy !== null;
   const still = useStill(start.still, clocks, labBody);
+  const framed = useFramed();
   const clocked = useStore(store, (s) => {
     const record = s.trials.find((t) => t.id === focusedTrialId);
     const declared = record && s.instruments?.find((i) => i.name === record.instrumentName)?.clock;
@@ -114,8 +134,9 @@ export function useLabPresentation(
       returns: presentedBy === 'enter',
       transport: minWidth === null ? null : { minWidth, ...(formatRate ? { formatRate } : {}) },
       still,
+      framed,
     }),
-    [presenting, presentedBy, focusedTrialId, minWidth, formatRate, still],
+    [presenting, presentedBy, focusedTrialId, minWidth, formatRate, still, framed],
   );
 }
 

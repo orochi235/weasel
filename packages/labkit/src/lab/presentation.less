@@ -1,6 +1,7 @@
 // An iframe whose root color-scheme differs from its embedder's is painted
-// opaque, so a presenting lab hands the page back its own.
-:root:has(.lk-lab--present) {
+// opaque, so a presenting lab hands the page back its own. A lab inline in a
+// page leaves that page's root alone.
+:root:has(.lk-lab--framed) {
   color-scheme: normal;
   background: transparent;
 

@@ -80,6 +80,15 @@ describe('<Lab present>', () => {
     expect(await storage.list(labPrefix('lab'))).toEqual([]);
   });
 
+  it('claims the document root only inside a frame', async () => {
+    const inline = await mountLab({ present: true });
+    expect(root(inline.container).classList.contains('lk-lab--framed')).toBe(false);
+    inline.unmount();
+    vi.spyOn(window, 'self', 'get').mockReturnValue({} as Window & typeof globalThis);
+    const framed = await mountLab({ present: true });
+    expect(root(framed.container).classList.contains('lk-lab--framed')).toBe(true);
+  });
+
   it('does not leave on Escape, having nowhere to go back to', async () => {
     const { container } = await mountLab({ present: true });
     fireEvent.keyDown(document, { key: 'Escape' });

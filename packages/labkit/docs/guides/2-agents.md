@@ -188,9 +188,10 @@ visible from the code:
   (`display: contents`) and hides their siblings, so nothing remounts and a
   round trip leaves every canvas and GL context in place. The presented trial
   scopes the shared surface to itself, as the lightbox does.
-- **The document root's `color-scheme` is reset while presenting.** An iframe
-  whose root scheme differs from its embedder's is painted opaque, and
-  `tokens.css` sets one on `:root`.
+- **A framed document's root `color-scheme` is reset while presenting.** An
+  iframe whose root scheme differs from its embedder's is painted opaque, and
+  `tokens.css` sets one on `:root`. The lab root wears `lk-lab--framed` only
+  inside a frame, so a lab presenting inline leaves its page's root alone.
 - **A lab that starts presenting has its own store** (`storageKey:present`):
   an embed on the lab's origin shares its IndexedDB. The seed's fingerprint
   (`stableStringify`) is kept beside it; a different seed at mount replaces the
