@@ -10,7 +10,7 @@ import {
   snapshot,
   type Entry, type HistoryLogger, type SerializedHistory,
 } from './serialized';
-import { HistoryRestoreError, rebuilt, type HistoryRestoreReport, type RestoreOptions } from './restore';
+import { HistoryRestoreError, rebuilt, type HistoryRestoreReport, type RebuildOp, type RestoreOptions } from './restore';
 import { snapshotFault } from './snapshotShape';
 import type { CreateHistoryOptions, History, RecordEntryOptions } from './historyTypes';
 
@@ -150,7 +150,11 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
         logger.warn(`${message} — dropped`);
         return report;
       }
-      const { stacks: next, unresolved } = rebuilt(serialized, customRebuild, restoreOptions, logger);
+      const first = restoreOptions.rebuildOp;
+      const rebuild: RebuildOp | undefined = first
+        ? (name, args, context) => first(name, args, context) ?? customRebuild?.(name, args, context) ?? null
+        : customRebuild;
+      const { stacks: next, unresolved } = rebuilt(serialized, rebuild, restoreOptions, logger);
       undoStack.splice(0, undoStack.length, ...next.undoStack);
       redoStack.splice(0, redoStack.length, ...next.redoStack);
       forks.replace(next);
