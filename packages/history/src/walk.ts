@@ -79,18 +79,17 @@ export function createWalk(env: WalkEnv) {
   /** Walk to `n`, or, when that throws, back to where the walk began rather
    *  than stopping partway, and rethrow. A second throw on the way back is
    *  logged: the stacks still match the state, at whatever depth that walk
-   *  reached. `moved` runs when the stacks end somewhere other than they began. */
-  function walkOrReturn(n: number, moved: () => void): Walked {
+   *  reached. Both walks record into `into`, in the order they ran. */
+  function walkOrReturn(n: number, into: Walked): void {
     const start = undoStack.length;
     try {
-      return walkTo(n);
+      walkTo(n, into);
     } catch (err) {
       try {
-        walkTo(start);
+        walkTo(start, into);
       } catch (back) {
         env.logger.warn(`goto: returning to depth ${start} threw: ${String(back)}`);
       }
-      if (undoStack.length !== start) moved();
       throw err;
     }
   }

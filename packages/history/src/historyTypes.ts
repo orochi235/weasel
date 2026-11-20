@@ -52,7 +52,8 @@ export interface HistoryBranch {
  *
  * - `'push'` — an entry was added: `applyOps`, `apply`, `recordEntry`, a journal's commit.
  * - `'coalesce'` — a push merged into the entry on top; `ops` are the ones it brought.
- * - `'undo'` / `'redo'` / `'goto'` — the entries walked across, in the order walked.
+ * - `'undo'` / `'redo'` / `'goto'` — the entries walked across, in the order walked. A `goto` that threw
+ *   and could not walk all the way back lists both walks, so an entry can appear twice.
  * - `'branch'` — `switchBranch` made another future the redo stack: its entries, next redo first.
  * - `'prune'` — the undo entries `prune` evicted, oldest first.
  * - `'drop'` — the redo entries `dropRedo` took off the redo stack, next redo first.

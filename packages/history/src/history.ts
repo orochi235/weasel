@@ -79,13 +79,15 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   });
   const { pushOrCoalesce, record } = recorder;
 
-  /** Run a walk and report what it moved, a throw partway through included. */
+  /** Run a walk and report what it applied whenever it leaves the stacks somewhere new, a throw
+   *  partway through included. */
   function reported(kind: 'undo' | 'redo' | 'goto', walk: (into: Walked) => void): void {
+    const start = undoStack.length;
     const into: Walked = { walked: [], applied: [] };
     try {
       walk(into);
     } finally {
-      if (into.walked.length > 0) clock.bump(stepOf(kind, into.walked, into.applied));
+      if (undoStack.length !== start) clock.bump(stepOf(kind, into.walked, into.applied));
     }
   }
 
@@ -121,8 +123,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       const depth = gotoDepth(n, undoStack.length + redoStack.length);
       journals.refuse();
       if (depth === undoStack.length) return;
-      const walked = walkOrReturn(n, () => clock.bump());
-      clock.bump(stepOf('goto', walked.walked, walked.applied));
+      reported('goto', (into) => walkOrReturn(n, into));
     },
     prune(t) {
       const evicted = forks.evictBefore(t);

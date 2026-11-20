@@ -101,6 +101,33 @@ describe('History — a step that throws', () => {
     expect(cells).toEqual({ a: 1, b: 1, c: 1 });
   });
 
+  it('goto reports what it applied when the walk back throws too', () => {
+    const { cells, history } = open();
+    // Undoing b breaks c, so the walk back fails redoing c.
+    const b: Op = {
+      ...setOp('b', 0, 1),
+      invert: () => ({ ...setOp('b', 1, 0), apply(a: Cells) { a.b = 0; broken.add('c'); } }) as Op,
+    };
+    history.applyOps([setOp('a', 0, 1)], 'a');
+    history.applyOps([b], 'b');
+    history.applyOps([setOp('c', 0, 1)], 'c');
+    const steps: { kind: string; ids: number[]; applied: string[] }[] = [];
+    history.observe((step) => steps.push({
+      kind: step.kind,
+      ids: step.entries.map((e) => e.id),
+      applied: step.entries.flatMap((e) => e.applied.map((op) => {
+        const { key, to } = op.args as { key: string; to: number };
+        return `${key}=${to}`;
+      })),
+    }));
+
+    broken.add('a');
+    expect(() => history.goto(0)).toThrow('cannot write a');
+    expect(cells).toEqual({ a: 1, b: 1, c: 0 });
+    expect(depths(history)).toEqual([2, 1]);
+    expect(steps).toEqual([{ kind: 'goto', ids: [3, 2, 2], applied: ['c=0', 'b=0', 'b=1'] }]);
+  });
+
   it('applyOps records nothing and reverts the ops that ran before the throw', () => {
     const { cells, history } = open();
     broken.add('c');
