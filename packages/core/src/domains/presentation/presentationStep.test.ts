@@ -38,6 +38,16 @@ describe('requestedPage', () => {
     expect(requestedPage(PAGES, null, { to: 1 })?.id).toBe('b');
     expect(requestedPage(PAGES, null, { to: 'last' })?.id).toBe('c');
     expect(requestedPage(PAGES, null, { to: 'first' })?.id).toBe('a');
+    expect(requestedPage(PAGES, null, { end: 'last' })?.id).toBe('c');
+    expect(requestedPage(PAGES, null, { end: 'first' })?.id).toBe('a');
+  });
+
+  it("names a page whose id is 'first' or 'last' by that id, and its end by `end`", () => {
+    const pages = PAGES.map((p, i) => ({ ...p, id: ['x', 'last', 'first'][i]! }));
+    expect(requestedPage(pages, null, { to: 'first' })?.id).toBe('first');
+    expect(requestedPage(pages, null, { to: 'last' })?.id).toBe('last');
+    expect(requestedPage(pages, null, { end: 'first' })?.id).toBe('x');
+    expect(requestedPage(pages, null, { end: 'last' })?.id).toBe('first');
     expect(requestedPage(PAGES, null, { to: 'z' })).toBeNull();
   });
 });

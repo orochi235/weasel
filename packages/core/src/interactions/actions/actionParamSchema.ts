@@ -87,7 +87,8 @@ declare module '@weasel-js/routing' {
     'group.enter': Pick<ImmediateParams, 'world' | 'viewId'>;
     'group.leave': Pick<ImmediateParams, 'world'>;
     'eyedropper.pick': Pick<ImmediateParams, 'press'>;
-    'present.step': { by?: number; to?: 'first' | 'last' };
+    /** `to` is the older spelling of `end`. */
+    'present.step': { by?: number; end?: 'first' | 'last'; to?: 'first' | 'last' };
     'present.go': { to?: string | number };
     setFill: PaintParams;
     setStroke: PaintParams;

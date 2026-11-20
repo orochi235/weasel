@@ -2772,3 +2772,11 @@ Calls the lanes made without a ruling:
 - 2026-11-19 (the fixer's call): `stableStringify` writes an object of the caller's own with a `$type` key as
   `{"$type":"object","value":…}`, so `{ $type: 'bigint', value: '10' }` and `10n` no longer give one string. Leaving
   such an object as JSON writes it, and the two colliding, was the alternative.
+
+## Audit round forty-two (2026-11-19): core's domains
+
+- 2026-11-19 (the fixer's call): a `PageRequest` names an end as `{ end: 'first' | 'last' }`, and `present.step`'s
+  Home and End variants send that. A `{ to }` of `'first'` or `'last'` names the page with that id where one has it,
+  and the end only where none does, so `present.go` reaches every page by its id and old callers keep working.
+  Keeping the ends ahead of the ids, so such a page was unreachable by id, was the alternative; so was dropping
+  `to: 'first' | 'last'` outright.
