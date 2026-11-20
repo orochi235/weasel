@@ -1,7 +1,7 @@
 import type { Op } from './op';
 import { appliedHalves, createApplier, stepOf } from './entryOps';
 import { createStackView } from './stackView';
-import { createWalk } from './walk';
+import { createWalk, type Walked } from './walk';
 import { createVersionClock } from './versionClock';
 import { createForks } from './forks';
 import { createRecorder } from './recording';
@@ -79,6 +79,16 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   });
   const { pushOrCoalesce, record } = recorder;
 
+  /** Run a walk and report what it moved, a throw partway through included. */
+  function reported(kind: 'undo' | 'redo' | 'goto', walk: (into: Walked) => void): void {
+    const into: Walked = { walked: [], applied: [] };
+    try {
+      walk(into);
+    } finally {
+      if (into.walked.length > 0) clock.bump(stepOf(kind, into.walked, into.applied));
+    }
+  }
+
   const history: History = {
     ...createStackView(undoStack, redoStack),
     apply(op, label) {
@@ -91,15 +101,11 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
     undo() {
       journals.refuse();
-      if (undoStack.length === 0) return;
-      const { walked, applied } = walkTo(undoStack.length - 1);
-      clock.bump(stepOf('undo', walked, applied));
+      if (undoStack.length > 0) reported('undo', (into) => walkTo(undoStack.length - 1, into));
     },
     redo() {
       journals.refuse();
-      if (redoStack.length === 0) return;
-      const { walked, applied } = walkTo(undoStack.length + 1);
-      clock.bump(stepOf('redo', walked, applied));
+      if (redoStack.length > 0) reported('redo', (into) => walkTo(undoStack.length + 1, into));
     },
     seal() {
       clock.seal();

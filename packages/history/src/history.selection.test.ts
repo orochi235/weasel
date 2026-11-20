@@ -170,4 +170,26 @@ describe('history — selection snapshots', () => {
 
     expect(history.entries().undo[0].selectionBefore).toEqual(['a']);
   });
+
+  it('a selection writer that throws leaves the entry moved with its ops, and tells subscribers', () => {
+    const store: string[] = [];
+    const selection = makeSelection(['a']);
+    let refuse = false;
+    const strict = { ...selection, set: (ids: readonly string[]) => { if (refuse) throw new Error('no such id'); selection.set(ids); } };
+    const history = createHistory(undefined, { selection: strict });
+    history.applyOps([addOp(store, 'c')], 'add c');
+    const steps: string[] = [];
+    history.observe((step) => steps.push(step.kind));
+
+    refuse = true;
+    expect(() => history.undo()).toThrow('no such id');
+    expect(store).toEqual([]);
+    expect([history.undoDepth(), history.redoDepth()]).toEqual([0, 1]);
+    expect(steps).toEqual(['undo']);
+
+    expect(() => history.redo()).toThrow('no such id');
+    expect(store).toEqual(['c']);
+    expect([history.undoDepth(), history.redoDepth()]).toEqual([1, 0]);
+    expect(steps).toEqual(['undo', 'redo']);
+  });
 });
