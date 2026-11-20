@@ -301,6 +301,8 @@ export const areaSelectAnchorsAction: Action & { requires: string[] } = inPlane(
           // band sweeps them, rather than only on release.
           const hits = anchorsOfPathInRect(worldPath, rect);
           dep.setSelectedAnchors(additive ? new Set([...base, ...hits]) : hits);
+          // Replacing the selection with what the band holds replaces a mark too, as a bare click away does.
+          if (!additive) dep.setSelectedMark?.(null);
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           dep.setMarquee(null);

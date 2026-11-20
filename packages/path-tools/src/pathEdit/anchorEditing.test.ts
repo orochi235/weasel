@@ -163,6 +163,30 @@ describe('areaSelectAnchors', () => {
     expect(dep.marquee).toBeNull();
   });
 
+  it('replaces a selected mark', () => {
+    const mark = { owner: 'x', id: 'm' } as never;
+    const withMark = () => {
+      const { dep } = depOverPath(triangle());
+      let selectedMark: unknown = mark;
+      Object.defineProperty(dep, 'selectedMark', { get: () => selectedMark });
+      const setAnchors = dep.setSelectedAnchors.bind(dep);
+      // As core's dep: a non-empty anchor selection clears the mark, and a mark clears the anchors.
+      Object.assign(dep, {
+        setSelectedAnchors: (next: Iterable<number>) => { const set = new Set(next); if (set.size > 0) selectedMark = null; setAnchors(set); },
+        setSelectedMark: (next: unknown) => { if (next) setAnchors([]); selectedMark = next; },
+      });
+      return dep as typeof dep & { selectedMark: unknown };
+    };
+    const sweep = (dep: ReturnType<typeof withMark>, to: { x: number; y: number }, reason: 'commit' | 'cancel') => {
+      const handle = ongoing(areaSelectAnchorsAction).start(ctxWith({ editAnchors: dep }, { world: { x: -1, y: -1 } }), undefined);
+      handle.onMove?.(ctxWith({ editAnchors: dep }, { world: to }));
+      handle.onEnd?.(ctxWith({ editAnchors: dep }), reason);
+    };
+    const empty = withMark();
+    sweep(empty, { x: -5, y: -5 }, 'commit');
+    expect(empty.selectedMark).toBeNull();
+  });
+
   it('adds to the existing selection when shift is held', () => {
     const { dep } = depOverPath(triangle(), [2]);
     const handle = ongoing(areaSelectAnchorsAction).start(
