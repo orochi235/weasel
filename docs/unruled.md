@@ -1465,6 +1465,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   namespace `a:b` with glyph `c` share the slot `a:b:c` under two owners. Whether such a table is refused.
 - Open (icons second property pass, 2026-11-11): in dev, icons-plugin's tables still follow the order modules were
   transformed in, so `virtual:weasel-icons/all` lists them in that order; the build path sorts by module id.
+- 2026-11-20 (my call, audit round 50): icons-plugin warns on an imported `icon` used other than as a direct call
+  (`list.map(icon)`, `const f = icon`, a tagged template) rather than failing the build; `icon!('x')` and `(icon)('x')`
+  are rewritten as calls. In dev, a regenerated table's new glyphs reload every loaded variant, and a glyph it drops
+  stays until a restart. `weaselIcons.vite()`, `.rollup()` and `.rolldown()` return two plugins, the second ordered
+  `post` to read modules another plugin compiles to JS.
 - 2026-10-19 (pass 7): The rule forbidding the `@weasel-js/ui` barrel covers site, theme-editor,
   and forge's and labkit's `src` as well as draw and chart. Files importing a name no subpath
   publishes are exempted by path in `eslint.config.js` rather than given new ui subpaths, whose

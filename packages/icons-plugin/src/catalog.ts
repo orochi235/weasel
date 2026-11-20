@@ -1,4 +1,4 @@
-import type { IconTable } from '@weasel-js/icons';
+import type { IconGlyph, IconTable } from '@weasel-js/icons';
 // Relative, and so bundled in: vite and tsup configs load this from source, before any dist exists.
 import { splitIconRef } from '../../icons/src/names.ts';
 import { declaredTable, tableBeside } from './tables.ts';
@@ -12,6 +12,9 @@ export interface ModuleUse {
   readonly pkg: string | undefined;
   readonly refs: readonly string[];
 }
+
+const sameGlyph = (a: IconGlyph, b: IconGlyph) =>
+  a.body === b.body && a.fill === b.fill && a.group === b.group && a.tags.length === b.tags.length && a.tags.every((t, i) => t === b.tags[i]);
 
 /** Report through the bundler when its context can, and throw in case it only records. */
 export function fail(ctx: object, message: string): never {
@@ -33,7 +36,8 @@ export function iconCatalog(variants: Record<string, VariantFilter>) {
   const tables = new Map<string, IconTable>();
   const uses = new Map<string, ModuleUse>();
 
-  const add = (ctx: object, table: IconTable) => {
+  /** Take in `table`, and say whether that changed any table held. */
+  const add = (ctx: object, table: IconTable): boolean => {
     const held = tables.get(table.namespace);
     if (held && held.owner !== table.owner) {
       fail(ctx, `the icon namespace "${table.namespace}" is claimed by both ${held.owner} and ${table.owner}`);
@@ -41,7 +45,11 @@ export function iconCatalog(variants: Record<string, VariantFilter>) {
     if (Object.hasOwn(variants, table.namespace)) {
       fail(ctx, `the custom icon variant "${table.namespace}" has the name of ${table.owner}'s icon namespace`);
     }
+    const same = (name: string) =>
+      Object.hasOwn(held!.icons, name) && Object.hasOwn(table.icons, name) && sameGlyph(held!.icons[name]!, table.icons[name]!);
+    if (held && Object.keys(table.icons).every(same)) return false;
     tables.set(table.namespace, held ? { ...table, icons: { ...held.icons, ...table.icons } } : table);
+    return true;
   };
 
   return {

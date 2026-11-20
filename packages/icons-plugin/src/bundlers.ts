@@ -8,7 +8,7 @@ const BUNDLERS: Record<Mode, readonly string[]> = {
 
 /** Throws unless `framework` runs every hook `mode` relies on. */
 export function assertBundler(mode: Mode, framework: string): void {
-  const allowed = BUNDLERS[mode];
+  const allowed = Object.hasOwn(BUNDLERS, mode) ? BUNDLERS[mode] : undefined;
   if (!allowed) throw new Error(`weaselIcons: mode must be 'library' or 'app', not ${JSON.stringify(mode)}`);
   if (allowed.includes(framework)) return;
   const why = mode === 'app' ? '; its virtual modules would ship as unfilled placeholders' : '';

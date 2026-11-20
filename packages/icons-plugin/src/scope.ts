@@ -10,7 +10,9 @@ type Scope = ReadonlySet<string>;
 
 const FUNCTIONS = new Set(['FunctionDeclaration', 'FunctionExpression', 'ArrowFunctionExpression']);
 /** Nodes a `var` does not hoist out of. */
-const VAR_BARRIERS = new Set([...FUNCTIONS, 'ClassBody', 'TSModuleDeclaration']);
+const VAR_BARRIERS = new Set([...FUNCTIONS, 'ClassBody', 'StaticBlock', 'TSModuleDeclaration']);
+/** Bodies that are a `var` scope of their own, as a function body is. */
+const VAR_SCOPES = new Set(['StaticBlock', 'TSModuleBlock']);
 const LEXICAL_DECLARATIONS = new Set(['ClassDeclaration', 'FunctionDeclaration', 'TSEnumDeclaration', 'TSModuleDeclaration']);
 
 const isNode = (value: unknown): value is Node =>
@@ -44,10 +46,11 @@ function bindingNames(pattern: unknown, out: string[] = []): string[] {
 
 const declaratorNames = (decl: Node) => (decl.declarations as Node[]).flatMap((d) => bindingNames(d.id));
 
-/** The names `let`, `const`, `class` and `function` declarations directly in `statements` bind. */
+/** The names `let`, `const`, `class` and `function` declarations directly in `statements` bind, exported ones included. */
 function lexicalNames(statements: readonly Node[]): string[] {
   const out: string[] = [];
-  for (const s of statements) {
+  for (const statement of statements) {
+    const s = statement.type === 'ExportNamedDeclaration' && isNode(statement.declaration) ? statement.declaration : statement;
     if (s.type === 'VariableDeclaration' && s.kind !== 'var') out.push(...declaratorNames(s));
     else if (LEXICAL_DECLARATIONS.has(s.type) && isNode(s.id) && s.id.type === 'Identifier') out.push(s.id.name as string);
   }
@@ -66,11 +69,50 @@ function varNames(node: unknown, out: string[] = []): string[] {
   return out;
 }
 
+/** Nodes whose non-computed `key` names a property, not a binding. */
+const KEYED = new Set([
+  'Property',
+  'MethodDefinition',
+  'PropertyDefinition',
+  'AccessorProperty',
+  'TSAbstractMethodDefinition',
+  'TSAbstractPropertyDefinition',
+  'TSAbstractAccessorProperty',
+  'TSPropertySignature',
+  'TSMethodSignature',
+]);
+/** Type-level nodes and module syntax the caller reads itself: no value reference sits under them. */
+const OPAQUE = new Set([
+  'ImportDeclaration',
+  'ExportAllDeclaration',
+  'MetaProperty',
+  'TSTypeAnnotation',
+  'TSTypeAliasDeclaration',
+  'TSInterfaceDeclaration',
+  'TSTypeParameterDeclaration',
+  'TSTypeParameterInstantiation',
+]);
+const LABELED = new Set(['LabeledStatement', 'BreakStatement', 'ContinueStatement']);
+const one = (key: string): ReadonlySet<string> => new Set([key]);
+
+/** The identifier a callee names through any parentheses and non-null assertions around it. */
+function calleeName(callee: Node): string | undefined {
+  let n = callee;
+  while (n.type === 'ParenthesizedExpression' || n.type === 'TSNonNullExpression') n = n.expression as Node;
+  return n.type === 'Identifier' ? (n.name as string) : undefined;
+}
+
 /**
  * Calls `onCall` on each call whose callee is one of `names` and resolves to the module-level
- * binding: a parameter or local declaration of the same name in an enclosing scope hides it.
+ * binding, and `onOther` on each other value reference to that binding: a parameter or local
+ * declaration of the same name in an enclosing scope hides it. Export specifiers are left to the caller.
  */
-export function unshadowedCalls(program: Program, names: ReadonlySet<string>, onCall: (node: Node) => void): void {
+export function unshadowedUses(
+  program: Program,
+  names: ReadonlySet<string>,
+  onCall: (node: Node, name: string) => void,
+  onOther: (node: Node) => void,
+): void {
   const scope = (outer: Scope, declared: readonly string[]): Scope => {
     const hidden = declared.filter((n) => names.has(n) && !outer.has(n));
     return hidden.length === 0 ? outer : new Set([...outer, ...hidden]);
@@ -85,6 +127,12 @@ export function unshadowedCalls(program: Program, names: ReadonlySet<string>, on
     }
     if (!isNode(value)) return;
     const node = value;
+    if (OPAQUE.has(node.type)) return;
+    const resolves = (name: string | undefined): name is string => name !== undefined && names.has(name) && !hidden.has(name);
+    if (node.type === 'Identifier') {
+      if (resolves(node.name as string)) onOther(node);
+      return children(node, hidden);
+    }
     if (FUNCTIONS.has(node.type)) {
       const self = node.type === 'FunctionExpression' && isNode(node.id) ? [node.id.name as string] : [];
       const params = scope(hidden, [...self, ...(node.params as Node[]).flatMap((p) => bindingNames(p))]);
@@ -97,13 +145,27 @@ export function unshadowedCalls(program: Program, names: ReadonlySet<string>, on
     }
     switch (node.type) {
       case 'CallExpression': {
-        const callee = node.callee as Node;
-        if (callee.type === 'Identifier' && names.has(callee.name as string) && !hidden.has(callee.name as string)) onCall(node);
-        break;
+        const name = calleeName(node.callee as Node);
+        if (!resolves(name)) break;
+        onCall(node, name);
+        return children(node, hidden, one('callee'));
       }
+      case 'MemberExpression':
+        return children(node, hidden, node.computed ? undefined : one('property'));
+      case 'ExportNamedDeclaration':
+        return children(node, hidden, one('specifiers'));
+      case 'ExportDefaultDeclaration':
+        if ((node.declaration as Node).type === 'Identifier') return;
+        break;
+      case 'TSModuleDeclaration':
+        return children(node, hidden, one('id'));
       case 'BlockStatement':
       case 'StaticBlock':
-        return visit(node.body, scope(hidden, lexicalNames(node.body as Node[])));
+      case 'TSModuleBlock': {
+        const body = node.body as Node[];
+        const vars = VAR_SCOPES.has(node.type) ? varNames(body) : [];
+        return visit(body, scope(hidden, [...vars, ...lexicalNames(body)]));
+      }
       case 'SwitchStatement': {
         visit(node.discriminant, hidden);
         const cases = node.cases as Node[];
@@ -122,6 +184,8 @@ export function unshadowedCalls(program: Program, names: ReadonlySet<string>, on
         if (isNode(node.id)) return children(node, scope(hidden, [node.id.name as string]));
         break;
     }
+    if (KEYED.has(node.type) && !node.computed) return children(node, hidden, one('key'));
+    if (LABELED.has(node.type)) return children(node, hidden, one('label'));
     children(node, hidden);
   };
   visit(program.body, new Set());

@@ -1,7 +1,7 @@
 import MagicString, { type SourceMap } from 'magic-string';
 import { qualify } from '../../icons/src/names.ts';
 import { parseModule } from './parse.ts';
-import { unshadowedCalls } from './scope.ts';
+import { unshadowedUses } from './scope.ts';
 
 const ICONS_GEN = /icons\.gen(?:\.[cm]?[jt]sx?)?$/;
 const NAME = /^[^'"`\s\\]+$/;
@@ -83,8 +83,8 @@ export function rewriteIconCalls(
   if (locals.size === 0) return null;
   const s = new MagicString(code);
   let dynamic = 0;
-  unshadowedCalls(parsed.program, new Set(locals.keys()), (node) => {
-    const callee = (node.callee as Node & { name: string }).name;
+  let others = 0;
+  unshadowedUses(parsed.program, new Set(locals.keys()), (node, callee) => {
     const name = literalArg(node.arguments as Node[]);
     if (name === undefined || !NAME.test(name)) {
       dynamic++;
@@ -93,6 +93,9 @@ export function rewriteIconCalls(
     // A lone surrogate written bare reaches the bundler's UTF-8 output as U+FFFD, naming another glyph.
     const ref = qualify(locals.get(callee)!, name).replace(LONE_SURROGATE, (c) => `\\u${c.charCodeAt(0).toString(16)}`);
     s.overwrite(node.start as number, node.end as number, `/* @icon */ '${ref}'`);
-  });
+  }, () => others++);
+  if (others > 0) {
+    warn?.(`${id}: icon from an icons.gen module is used other than as a direct call in ${others} place(s), which are not rewritten, so their glyphs can miss a trimmed build`);
+  }
   return { code: s.toString(), map: s.generateMap({ source: id, hires: true }), dynamic };
 }

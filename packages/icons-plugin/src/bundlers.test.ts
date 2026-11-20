@@ -17,6 +17,12 @@ describe('the bundlers weaselIcons runs under', () => {
     for (const b of OTHERS) expect(() => assertBundler('library', b)).toThrow(`library mode runs under vite, rollup, rolldown, esbuild, not ${b}`);
   });
 
+  it('refuses a mode that only an object prototype holds', () => {
+    for (const mode of ['toString', 'constructor', '__proto__']) {
+      expect(() => assertBundler(mode as 'app', 'vite')).toThrow(`mode must be 'library' or 'app', not "${mode}"`);
+    }
+  });
+
   it('refuses through the adapters themselves when they are created', () => {
     expect(() => weaselIcons.esbuild({ mode: 'app' })).toThrow(/not esbuild/);
     expect(() => weaselIcons.farm({ mode: 'library' })).toThrow(/not farm/);

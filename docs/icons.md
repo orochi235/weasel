@@ -300,6 +300,8 @@ It rewrites every call to an `icon` imported by name from a module named `icons.
 annotated, qualified literal, `icon('undo')` becoming `/* @icon */ 'core:undo'`, reading the
 namespace from that module's `scopedIcon<…>('ns')` call. A call whose argument is not a literal is
 left alone and the build warns; its glyph resolves only from a loaded variant.
+So does any other use of the imported `icon` than a direct call, such as `names.map(icon)`. A module
+another plugin compiles to JS, such as a Vue or Svelte component, is read once that plugin is done.
 
 | | `mode: 'library'` | `mode: 'app'` |
 |---|---|---|
@@ -339,6 +341,8 @@ vite pre-bundles `node_modules` with esbuild, which never runs the plugin's hook
 refs are invisible there. It reaches the app's own source tables, each `node_modules` up to the
 nearest workspace root, and the source tables of that workspace's packages, and stops there: a git
 worktree sits inside its main checkout, whose packages are not the ones the worktree serves.
+A table a transform meets later, or one regenerated while the server runs, reloads every loaded
+variant; a glyph a regenerated table drops stays until the server restarts.
 
 Chunk sizes from `npm run build:draw` at `46e968c97`. The last column is what the variant would
 weigh, gzipped, if it held only names, groups and tags, with bodies and fills stripped; no build

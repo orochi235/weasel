@@ -1,6 +1,9 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
+import type { IconTable } from '@weasel-js/icons';
 import MagicString from 'magic-string';
-import { createUnplugin, type UnpluginInstance } from 'unplugin';
+import type { ViteDevServer } from 'vite';
+import { createUnplugin, type UnpluginBuildContext, type UnpluginContext, type UnpluginInstance } from 'unplugin';
 import { libraryAnnotations } from './annotate.ts';
 import { assertBundler } from './bundlers.ts';
 import { fail, iconCatalog, tablesFrom } from './catalog.ts';
@@ -47,6 +50,39 @@ async function genFiles(ctx: object, code: string, file: string, id: string): Pr
   return out;
 }
 
+const TABLE = 'icons.table.json';
+const GEN_FILE = /^icons\.gen\.[cm]?[jt]sx?$/;
+
+/** Drop every loaded `virtual:weasel-icons` module, so the next request reads the catalog afresh. */
+function invalidateVariants(server: ViteDevServer): void {
+  for (const env of Object.values(server.environments)) {
+    let hit = false;
+    for (const [id, mod] of env.moduleGraph.idToModuleMap) {
+      if (variantOf(id) === undefined) continue;
+      env.moduleGraph.invalidateModule(mod);
+      hit = true;
+    }
+    if (hit) env.hot.send({ type: 'full-reload' });
+  }
+}
+
+/**
+ * Takes each table regenerated while serving in through `add`, so its new glyphs reach the next load.
+ * A glyph it drops stays until a restart.
+ */
+function watchTables(server: ViteDevServer, add: (table: IconTable) => boolean): void {
+  const reread = (file: string) => {
+    if (basename(file) !== TABLE || !readdirSync(dirname(file)).some((n) => GEN_FILE.test(n))) return;
+    try {
+      if (add(JSON.parse(readFileSync(file, 'utf8')) as IconTable)) invalidateVariants(server);
+    } catch (error) {
+      server.config.logger.warn(`weasel-icons: ${file} was not read: ${(error as Error).message}`);
+    }
+  };
+  server.watcher.on('change', reread);
+  server.watcher.on('add', reread);
+}
+
 /** The ids of every module in the build, when the bundler's context can list them. */
 function liveModules(ctx: object): Set<string> | undefined {
   if (!('getModuleIds' in ctx) || typeof ctx.getModuleIds !== 'function') return undefined;
@@ -58,7 +94,7 @@ function liveModules(ctx: object): Set<string> | undefined {
  * literal. In `app` mode it also emits `virtual:weasel-icons`, holding only the glyphs the build
  * names, plus `/all`, `/<namespace>` and each custom variant, every one its own chunk.
  */
-export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUnplugin((options: WeaselIconsOptions, meta) => {
+export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnplugin((options: WeaselIconsOptions, meta) => {
   assertBundler(options.mode, meta.framework);
   const variants = options.variants ?? {};
   for (const name of Object.keys(variants)) {
@@ -70,6 +106,7 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
   const seenPackages = new Set<string>();
   const library = libraryAnnotations();
   let dev = false;
+  let server: ViteDevServer | undefined;
 
   // Runs after every module is transformed, so `refs` and `tables` are complete.
   function renderChunk(this: object, code: string, chunk: { fileName: string }) {
@@ -91,67 +128,89 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     if (stripped) fail(this, stripped);
   }
 
-  return {
-    name: 'weasel-icons',
-    enforce: 'pre',
-    transformInclude: (id) => !id.startsWith('\0') && SOURCE.test(id.split('?')[0]!),
-    async transform(code, id) {
-      const file = id.split('?')[0]!;
-      const gens: string[] = [];
-      const found = await genFiles(this, code, file, id);
-      const out = rewriteIconCalls(
-        code,
-        file,
-        (spec) => {
-          const gen = found.get(spec) ?? genFile(spec, file);
-          if (gen) gens.push(gen);
-          return gen && namespaceIn(gen);
-        },
-        (message) => this.warn(message),
-      );
-      if (out && out.dynamic > 0) {
-        this.warn(`${file}: ${out.dynamic} icon() call(s) with a computed name resolve only from a loaded variant`);
-      }
-      const named = collectIconRefs(out?.code ?? code, file);
-      if (!app) {
-        library.record(id, named);
-      } else {
-        const pkg = packageDir(file);
-        if (!dev) {
-          catalog.record(id, { file, gens, pkg, refs: named });
-        } else {
-          const fresh = pkg && !seenPackages.has(pkg) ? [pkg] : [];
-          fresh.forEach((d) => seenPackages.add(d));
-          for (const t of tablesFrom(gens, fresh)) catalog.add(this, t);
-        }
-      }
-      return out ? { code: out.code, map: out.map } : null;
-    },
-    resolveId: (id) => (app && (id === PREFIX || id.startsWith(PREFIX + '/')) ? '\0' + id : null),
-    loadInclude: (id) => variantOf(id) !== undefined,
-    load(id) {
-      const variant = variantOf(id);
-      if (variant === undefined) return null;
-      return dev ? `export default ${JSON.stringify(catalog.variant(this, variant, dev))};` : moduleFor(variant);
-    },
-    buildEnd() {
-      if (dev) return;
-      const live = liveModules(this);
-      if (live) {
-        catalog.keep(live);
-        library.keep(live);
-      }
-      if (app) catalog.settle(this);
-    },
-    vite: {
-      configResolved(config) {
-        dev = config.command === 'serve' || config.mode === 'test';
-        if (app && dev) for (const t of reachableTables(config.root)) catalog.add(this, t);
+  async function transform(this: UnpluginBuildContext & UnpluginContext, code: string, id: string) {
+    const file = id.split('?')[0]!;
+    const gens: string[] = [];
+    const found = await genFiles(this, code, file, id);
+    const out = rewriteIconCalls(
+      code,
+      file,
+      (spec) => {
+        const gen = found.get(spec) ?? genFile(spec, file);
+        if (gen) gens.push(gen);
+        return gen && namespaceIn(gen);
       },
-      renderChunk: lastRenderChunk,
-      generateBundle,
+      (message) => this.warn(message),
+    );
+    if (out && out.dynamic > 0) {
+      this.warn(`${file}: ${out.dynamic} icon() call(s) with a computed name resolve only from a loaded variant`);
+    }
+    const named = collectIconRefs(out?.code ?? code, file);
+    if (!app) {
+      library.record(id, named);
+    } else {
+      const pkg = packageDir(file);
+      if (!dev) {
+        catalog.record(id, { file, gens, pkg, refs: named });
+      } else {
+        const fresh = pkg && !seenPackages.has(pkg) ? [pkg] : [];
+        fresh.forEach((d) => seenPackages.add(d));
+        const changed = tablesFrom(gens, fresh).map((t) => catalog.add(this, t)).includes(true);
+        server?.watcher.add(gens.map((g) => join(dirname(g), TABLE)));
+        if (changed && server) invalidateVariants(server);
+      }
+    }
+    return out ? { code: out.code, map: out.map } : null;
+  }
+
+  // A module another plugin compiles to JS, such as a single-file component, is read once that is done.
+  const compiled = {
+    name: 'weasel-icons:compiled',
+    enforce: 'post' as const,
+    transformInclude: (id: string) => !id.startsWith('\0') && !SOURCE.test(id.split('?')[0]!),
+    transform(this: UnpluginBuildContext & UnpluginContext, code: string, id: string) {
+      return code.includes('icons.gen') || code.includes('@icon') ? transform.call(this, code, id) : null;
     },
-    rollup: { renderChunk: lastRenderChunk, generateBundle },
-    rolldown: { renderChunk: lastRenderChunk, generateBundle },
   };
+
+  return [
+    {
+      name: 'weasel-icons',
+      enforce: 'pre',
+      transformInclude: (id) => !id.startsWith('\0') && SOURCE.test(id.split('?')[0]!),
+      transform,
+      resolveId: (id) => (app && (id === PREFIX || id.startsWith(PREFIX + '/')) ? '\0' + id : null),
+      loadInclude: (id) => variantOf(id) !== undefined,
+      load(id) {
+        const variant = variantOf(id);
+        if (variant === undefined) return null;
+        return dev ? `export default ${JSON.stringify(catalog.variant(this, variant, dev))};` : moduleFor(variant);
+      },
+      buildEnd() {
+        if (dev) return;
+        const live = liveModules(this);
+        if (live) {
+          catalog.keep(live);
+          library.keep(live);
+        }
+        if (app) catalog.settle(this);
+      },
+      vite: {
+        configResolved(config) {
+          dev = config.command === 'serve';
+          if (app && dev) for (const t of reachableTables(config.root)) catalog.add(this, t);
+        },
+        configureServer(devServer) {
+          if (!app) return;
+          server = devServer;
+          watchTables(devServer, (table) => catalog.add({}, table));
+        },
+        renderChunk: lastRenderChunk,
+        generateBundle,
+      },
+      rollup: { renderChunk: lastRenderChunk, generateBundle },
+      rolldown: { renderChunk: lastRenderChunk, generateBundle },
+    },
+    compiled,
+  ];
 });
