@@ -98,7 +98,7 @@ function matchKeyOrCode(
  *  Russian layout is Ctrl+Z. Every handler matching a shortcut by hand reads it this way, so a layout reaches all
  *  of them alike. */
 export function matchKeyEvent(
-  e: { key: string; code?: string; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean },
+  e: { key: string; code?: string; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean },
   specKey: string | readonly string[],
 ): boolean {
   return matchKey(e.key, specKey) || matchKey(chordKey(e), specKey);
