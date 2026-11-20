@@ -10,6 +10,7 @@ import { mixOklab } from './mix';
 import { isGradientPaint } from './gradient';
 import { lerp } from './scalar';
 import { shortArc } from './shortArc';
+import { vertexHalfWidths, vertexWidthFromSides, type VertexWidth } from './vertexWidth';
 import type { Fill, GradStop, GradientPaint, Paint, ScreenLength, Stroke } from './paint';
 
 type Rgba = [number, number, number, number];
@@ -132,9 +133,31 @@ function lerpWidth(a: ScreenLength | undefined, b: ScreenLength | undefined, t: 
   return t < 0.5 ? a : b;
 }
 
+const widthNumber = (s: Stroke): number => (typeof s.width === 'object' ? s.width.px : s.width ?? 1);
+
+/** Per-anchor widths `t` of the way from `a`'s to `b`'s, each side's missing entries read as its own width. */
+function lerpVertexWidths(a: Stroke, b: Stroke, t: number): VertexWidth[] {
+  const wa = widthNumber(a), wb = widthNumber(b);
+  return a.vertexWidths!.map((entry, i) => {
+    const p = vertexHalfWidths(entry, wa), q = vertexHalfWidths(b.vertexWidths![i], wb);
+    return vertexWidthFromSides(lerp(p.left, q.left, t), lerp(p.right, q.right, t));
+  });
+}
+
+/** A per-anchor array of `t` of the way between the two sides' when both hold one of one length; the nearer side's otherwise. */
+function lerpPerAnchor<T>(
+  a: Stroke | null | undefined, b: Stroke | null | undefined, near: Stroke,
+  read: (s: Stroke) => readonly unknown[] | undefined, mix: (a: Stroke, b: Stroke) => T[],
+): T[] | undefined {
+  const from = a ? read(a) : undefined, to = b ? read(b) : undefined;
+  if (from && to && from.length === to.length) return mix(a!, b!);
+  return read(near) as T[] | undefined;
+}
+
 /**
- * The stroke `t` of the way from `a` to `b`: width and paint interpolate, and
- * every other field is the nearer side's. A `null` or missing side is a
+ * The stroke `t` of the way from `a` to `b`: width, paint, and per-anchor
+ * widths and colors of one length on both sides interpolate, and every other
+ * field is the nearer side's. A `null` or missing side is a
  * stroke of no width in the other's color made transparent, so a stroke
  * thins and fades in or out.
  */
@@ -149,10 +172,14 @@ export function lerpStroke(a: Stroke | null | undefined, b: Stroke | null | unde
   // An offset slides the pattern, so it moves smoothly where the dash itself snaps.
   const from = a?.dashOffset, to = b?.dashOffset;
   const dashOffset = from === undefined && to === undefined ? undefined : lerp(from ?? 0, to ?? 0, t);
+  const vertexWidths = lerpPerAnchor(a, b, near, (s) => s.vertexWidths, (p, q) => lerpVertexWidths(p, q, t));
+  const vertexColors = lerpPerAnchor(a, b, near, (s) => s.vertexColors, (p, q) => p.vertexColors!.map((c, i) => lerp(c, q.vertexColors![i]!, t)));
   return {
     ...rest,
     ...(paint === undefined ? {} : { paint }),
     ...(width === undefined ? {} : { width }),
     ...(dashOffset === undefined ? {} : { dashOffset }),
+    ...(vertexWidths === undefined ? {} : { vertexWidths }),
+    ...(vertexColors === undefined ? {} : { vertexColors }),
   };
 }
