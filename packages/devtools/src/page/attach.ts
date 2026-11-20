@@ -22,7 +22,10 @@ function labelOf(el: HTMLElement | null, framed: string | null | undefined): str
     || el?.parentElement?.closest('[aria-label]')?.getAttribute('aria-label') || '';
 }
 
-function dimensionOf(scene: Scene<unknown, string, unknown> | null): '2d' | '3d' {
+/** A canvas with a 3D camera is 3D, empty or not; failing one, its first root node's pose says. */
+function dimensionOf(scene: Scene<unknown, string, unknown> | null, deps: ContributionDepReader): '2d' | '3d' {
+  // `camera3d` is kernel3d's dep, which core's dep names know only where kernel3d is loaded.
+  if ((deps.get as (name: string) => unknown)('camera3d')) return '3d';
   const first = scene?.roots[0];
   const pose = first ? scene?.get(first)?.pose : undefined;
   return typeof (pose as { position?: { z?: unknown } } | undefined)?.position?.z === 'number' ? '3d' : '2d';
@@ -52,9 +55,9 @@ export function canvasRoot(api: CanvasExtensionApi, deps: ContributionDepReader)
   const scene = (): Scene<unknown, string, unknown> | null => deps.get('scene') ?? null;
   // Each scene gets a ring of its own, so a swapped scene's steps never sit beside the new one's position.
   let historyRing = createTraceRing<DevtoolsHistoryRecord>();
-  const history = followRing(() => historyRing);
+  const history = followRing<DevtoolsHistoryRecord>(() => historyRing);
   const trace = followTrace(() => deps.get('dispatchTrace') ?? NO_TRACE);
-  const coords = followRing(() => inspection()?.coords() ?? NO_COORDS);
+  const coords = followRing<CoordTraceEntry>(() => inspection()?.coords() ?? NO_COORDS);
   let recorded: Scene<unknown, string, unknown> | null = null;
   let stopRecording: (() => void) | null = null;
   const followHistory = (): void => {
@@ -70,7 +73,7 @@ export function canvasRoot(api: CanvasExtensionApi, deps: ContributionDepReader)
   };
   const source: DevtoolsRootSource = {
     label: () => labelOf(api.element, inspection()?.label()),
-    get dimension() { return dimensionOf(scene()); },
+    get dimension() { return dimensionOf(scene(), deps); },
     scene,
     selection: () => (deps.get('selection')?.current as readonly string[] | undefined) ?? [],
     select: (ids) => deps.get('selection')?.set([...ids] as never),

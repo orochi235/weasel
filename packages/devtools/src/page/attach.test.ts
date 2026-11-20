@@ -33,6 +33,7 @@ function swappable() {
   const inspectionListeners = new Set<(change: string) => void>();
   const inspection = {
     setDebugOverride: () => {},
+    label: () => null,
     coords: () => undefined,
     deps: () => ({ subscribe: (l: () => void) => { registryListeners.add(l); return () => registryListeners.delete(l); } }),
     subscribe: (l: (change: string) => void) => { inspectionListeners.add(l); return () => inspectionListeners.delete(l); },
@@ -93,6 +94,16 @@ describe('a root over a canvas whose scene is swapped', () => {
     expect(historySlice(t.root as never, 0, false).entries).toHaveLength(1);
     expect(t.root.source.history!.since(cursor).entries).toHaveLength(1);
     release();
+  });
+});
+
+describe('a root\'s dimension', () => {
+  it('is 3d for a canvas with a 3D camera whose scene is empty', () => {
+    const t = swappable();
+    t.swapScene(createScene({ systemLayers: [{ id: 'main' }] }));
+    expect(t.root.info().dimension).toBe('2d');
+    t.republish('camera3d', {});
+    expect(t.root.info().dimension).toBe('3d');
   });
 });
 

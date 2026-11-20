@@ -91,7 +91,10 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
         dropFor((id) => !m.roots.some((r) => r.id === id));
         return;
       case 'root-added':
-        set({ roots: [...state.roots.filter((r) => r.id !== m.root.id), m.root] });
+        // A root already listed is re-announced when its label or dimension changes; it keeps its place.
+        set({ roots: state.roots.some((r) => r.id === m.root.id)
+          ? state.roots.map((r) => (r.id === m.root.id ? m.root : r))
+          : [...state.roots, m.root] });
         return;
       case 'root-removed':
         set({ roots: state.roots.filter((r) => r.id !== m.rootId) });

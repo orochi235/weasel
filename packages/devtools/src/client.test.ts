@@ -158,6 +158,17 @@ describe('connectDevtools', () => {
     expect(client.state()).toBe(held);
   });
 
+  it('keeps a re-announced root in its place', () => {
+    const page = new Set<(m: PageMessage) => void>();
+    const transport: PanelTransport = { send: () => {}, onMessage: (l) => { page.add(l); return () => page.delete(l); } };
+    const emit = (m: PageMessage): void => { for (const l of page) l(m); };
+    const client = connectDevtools(transport);
+    const info = (id: string, dimension: '2d' | '3d' = '2d') => ({ id, label: id, dimension });
+    emit({ type: 'sup', protocol: DEVTOOLS_PROTOCOL, kitVersion: '1', roots: [info('a'), info('b')] });
+    emit({ type: 'root-added', protocol: DEVTOOLS_PROTOCOL, root: info('a', '3d') });
+    expect(client.state().roots).toEqual([info('a', '3d'), info('b')]);
+  });
+
   it('rejects a request still pending about a root the page removes, and keeps the rest', async () => {
     const page = new Set<(m: PageMessage) => void>();
     const sent: PanelMessage[] = [];
