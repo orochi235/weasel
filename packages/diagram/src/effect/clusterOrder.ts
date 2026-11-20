@@ -4,7 +4,7 @@ import { maxOf, minOf, rectContainsPoint, type Rect } from '@weasel-js/geom';
 import { clusterLabelIdOf } from '../dataClusters';
 import { slotsAlong, type ReorderItem, type ReorderSlots } from '../reorder';
 import type { ReorderSource } from './editorReorder';
-import { clusterContents } from './clusterEdit';
+import { clusterContents, clusterDepth, clusterParents } from './clusterEdit';
 import { mainChain } from './mainChain';
 import type { EffectDoc, EffectPipeline } from './types';
 
@@ -49,21 +49,12 @@ export function unitStages(doc: EffectDoc, unit: string): Set<string> {
   return doc.pipeline.clusters?.some((g) => g.id === unit) ? clusterContents(doc, unit).stages : new Set([unit]);
 }
 
-/** Each cluster member's id, mapped to the cluster that names it. */
-function parentsOf(doc: EffectDoc): Map<string, string> {
-  const parent = new Map<string, string>();
-  for (const g of doc.pipeline.clusters ?? []) for (const m of g.members) parent.set(m, g.id);
-  return parent;
-}
+const parentsOf = (doc: EffectDoc): Map<string, string> => clusterParents(doc.pipeline.clusters ?? []);
 
 /** The innermost cluster whose grip holds `at`, of those `among` admits. */
 export function clusterAt(doc: EffectDoc, boxOf: ReorderSource['boxOf'], at: Vec2, among: (cluster: string) => boolean = () => true): string | undefined {
   const parent = parentsOf(doc);
-  const depth = (id: string): number => {
-    const seen = new Set<string>();
-    for (let at = parent.get(id); at !== undefined && !seen.has(at); at = parent.get(at)) seen.add(at);
-    return seen.size;
-  };
+  const depth = (id: string): number => clusterDepth(parent, id);
   const held = (doc.pipeline.clusters ?? []).filter((g) => {
     const grip = among(g.id) ? clusterGripOf(doc, g.id, boxOf) : undefined;
     return grip !== undefined && rectContainsPoint(grip, at.x, at.y);
