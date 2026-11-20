@@ -101,7 +101,7 @@ export function contoursIntersect(contours: Contour[], tol: number): boolean {
     const e = edges[i];
     for (let j = i + 1; j < edges.length; j++) {
       const f = edges[j];
-      if (e.c === f.c && (j - i === 1 || (i === 0 && f.i === f.n - 1))) continue;
+      if (e.c === f.c && (j - i === 1 || (e.i === 0 && f.i === f.n - 1))) continue;
       if (Math.max(e.x0, e.x1) < Math.min(f.x0, f.x1) || Math.max(f.x0, f.x1) < Math.min(e.x0, e.x1)) continue;
       if (Math.max(e.y0, e.y1) < Math.min(f.y0, f.y1) || Math.max(f.y0, f.y1) < Math.min(e.y0, e.y1)) continue;
       if (segmentsCross(e.x0, e.y0, e.x1, e.y1, f.x0, f.y0, f.x1, f.y1)) return true;
