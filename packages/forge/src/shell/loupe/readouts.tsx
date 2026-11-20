@@ -6,6 +6,7 @@ import {
   type LoupePoint,
   readBitmap,
   requestsOf,
+  useCaptureDelay,
   useShownSource,
 } from '@weasel-js/labkit/loupe';
 import { Fragment, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
@@ -146,6 +147,7 @@ export function ContrastReadout({ lens, settings, sources, reticle, size, interi
   // The cell's own request, so a change to anything it is taken from (a DPR, the size) captures again.
   const request = kind === 'pixels' ? requestsOf(source, lens, settings, reticle, size)[0] : undefined;
   const latest = useLatest(request);
+  const captureDelay = useCaptureDelay();
   const { factor, conditions, dpr } = request ?? {};
   const { width: w, height: h } = request?.size ?? {};
   // biome-ignore lint/correctness/useExhaustiveDependencies: the request's fields and `tick` are the signal to capture again; the capture reads `latest`
@@ -163,12 +165,13 @@ export function ContrastReadout({ lens, settings, sources, reticle, size, interi
           if (current) setPixels({ unavailable: `Capture failed: ${messageOf(err)}` });
         },
       );
-    }, 0);
+      // At once the first time; after that, once whatever moved has come to rest, as the lens's own capture waits.
+    }, captureDelay());
     return () => {
       current = false;
       clearTimeout(timer);
     };
-  }, [source, reticle.x, reticle.y, factor, w, h, conditions, dpr, tick, latest]);
+  }, [source, reticle.x, reticle.y, factor, w, h, conditions, dpr, tick, latest, captureDelay]);
   const text = kind === 'live' ? live : kind === 'pixels' && pixels ? textOf(pixels) : null;
   return text ? <span className="fg-lens-contrast">{text}</span> : null;
 }

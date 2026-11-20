@@ -1,6 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
 import type { LensCapture, LensIds, LensSettings, LensSource, LensSources } from '@weasel-js/labkit/loupe';
-import { LENS_DEFAULTS } from '@weasel-js/labkit/loupe';
+import { LENS_DEFAULTS, LENS_REST_MS } from '@weasel-js/labkit/loupe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cssRulesOf } from '../../frame/cssVarUse';
 import type { ForgeComparison } from './conditions';
@@ -322,6 +322,22 @@ describe('ContrastReadout over Pixels, as the lens changes', () => {
     vi.useRealTimers();
   });
 
+  it('captures at once the first time, then only once the reticle has rested, as the lens does', async () => {
+    vi.useFakeTimers();
+    pixels.image = image(10, 10, () => [0, 0, 0]);
+    const { asked, sources } = capturing();
+    const { rerender } = render(readout(sources, 10));
+    await act(async () => vi.advanceTimersByTimeAsync(0));
+    expect(asked.map((a) => a.x)).toEqual([10]);
+    for (const x of [11, 12, 13, 14]) {
+      rerender(readout(sources, x));
+      await act(async () => vi.advanceTimersByTimeAsync(16));
+    }
+    expect(asked.map((a) => a.x)).toEqual([10]);
+    await act(async () => vi.advanceTimersByTimeAsync(LENS_REST_MS));
+    expect(asked.map((a) => a.x)).toEqual([10, 14]);
+  });
+
   it('captures again at the lens’s new DPR under a still reticle', async () => {
     vi.useFakeTimers();
     pixels.image = image(30, 30, () => [0, 0, 0]);
@@ -329,7 +345,7 @@ describe('ContrastReadout over Pixels, as the lens changes', () => {
     const { rerender } = render(readout(sources, 10, [1]));
     await act(async () => vi.advanceTimersByTimeAsync(0));
     rerender(readout(sources, 10, [3]));
-    await act(async () => vi.advanceTimersByTimeAsync(0));
+    await act(async () => vi.advanceTimersByTimeAsync(LENS_REST_MS));
     expect(asked.map((a) => a.dpr)).toEqual([1, 3]);
   });
 });
