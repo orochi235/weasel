@@ -229,7 +229,8 @@ way the connector travels, and to the left of travel on a diagonal. A crossing
 within `2 × size` of either connector's ends or within `size` of a bend makes no
 hop, nor does a collinear overlap; hops closer than `2 × size` merge into one
 longer hop. A connector split across pages takes no part: its stubs are too
-short to hold a hop clear of their ends, and the run between them is not drawn.
+short to hold a hop clear of their ends, and the run between them is not drawn. A hidden
+connector takes no part either.
 
 Each connector stores its hops as `diagram.hops`, `{ at, over, r }` in world
 units, so a saved file draws them with no pass running. `edgeDerivePath` draws
