@@ -34,6 +34,8 @@ export interface PrefsCssSource {
 export const kebab = (path: string): string => path.replace(/\./g, '-').replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 
 const IDENT = /^-?[A-Za-z_][\w-]*$/;
+/** Idents a custom property takes as a keyword rather than as its value. */
+const CSS_WIDE = /^(?:inherit|initial|unset|revert|revert-layer|default)$/i;
 /** Text no CSS color holds, which would end a declaration, a block, or the rest of the sheet. */
 const UNSAFE_COLOR = /[;{}'"\\\n\r\f]|\/\*/;
 const quoted = (text: string): string => `'${text.replace(/[\\']/g, '\\$&').replace(/\r\n|[\n\r\f]/g, '\\a ')}'`;
@@ -55,7 +57,7 @@ function cssValue(leaf: PrefLeaf, value: unknown): string | null {
       return typeof value === 'string' && value !== '' && !UNSAFE_COLOR.test(value) ? value : null;
     case 'enum':
       if (typeof value !== 'string' || (leaf as PrefEnum).encoding) return null;
-      return IDENT.test(value) ? value : quoted(value);
+      return IDENT.test(value) && !CSS_WIDE.test(value) ? value : quoted(value);
     case 'string':
       return typeof value === 'string' ? quoted(value) : null;
     default:
