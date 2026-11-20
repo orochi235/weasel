@@ -30,6 +30,8 @@ function sameRequest(a: LiveRequest | null, b: LiveRequest): boolean {
     a.hit.local.x === b.hit.local.x &&
     a.hit.local.y === b.hit.local.y &&
     a.hit.scale === b.hit.scale &&
+    a.hit.width === b.hit.width &&
+    a.hit.height === b.hit.height &&
     a.factor === b.factor &&
     a.size.width === b.size.width &&
     a.size.height === b.size.height &&

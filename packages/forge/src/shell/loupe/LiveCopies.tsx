@@ -64,8 +64,8 @@ const px = (n: number) => `${n}px`;
 function placement(request: LiveRequest): CSSProperties {
   const { hit, factor, size } = request;
   return {
-    ['--fg-lens-copy-w' as string]: px(hit.host.offsetWidth),
-    ['--fg-lens-copy-h' as string]: px(hit.host.offsetHeight),
+    ['--fg-lens-copy-w' as string]: px(hit.width),
+    ['--fg-lens-copy-h' as string]: px(hit.height),
     ['--fg-lens-copy-x' as string]: px(size.width / 2 - hit.local.x * factor),
     ['--fg-lens-copy-y' as string]: px(size.height / 2 - hit.local.y * factor),
     ['--fg-lens-copy-f' as string]: String(factor),

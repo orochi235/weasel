@@ -9,6 +9,9 @@ export interface TrialHit {
   local: LoupePoint;
   /** Client px per host px. */
   scale: number;
+  /** The host's own layout size, in host px: what a copy of it lays out at. */
+  width: number;
+  height: number;
 }
 
 /** The element an in-document story scrolls in, inside its host; null for a host with none, as a frame's. */
@@ -32,6 +35,8 @@ export function trialAt(client: LoupePoint, doc: Document = document): TrialHit 
       host,
       local: { x: (client.x - left) / scale.x, y: (client.y - top) / scale.y },
       scale: scale.x,
+      width: host.offsetWidth,
+      height: host.offsetHeight,
     };
   }
   return null;
