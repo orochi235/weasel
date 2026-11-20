@@ -14,12 +14,12 @@ const now = Date.parse(map.generated);
 describe('lanes', () => {
   it('says what each step of an area has done, or how long it has been running', () => {
     const ops = live.lanes[0]!;
-    expect(stepText('A', ops.steps.A, now)).toBe('5 found · 2.8m');
+    expect(stepText('A', ops.steps.A, now)).toBe('5 found · 2.8 min');
     expect(stepText('match', ops.steps.match, now)).toBe('5 total, 2 shared');
-    expect(stepText('fix', ops.steps.fix, now)).toBe('studio · 12m');
+    expect(stepText('fix', ops.steps.fix, now)).toBe('studio · 12 min');
     expect(stepText('patch', ops.steps.patch, now)).toBe('after fix');
-    expect(stepText('B', live.lanes[1]!.steps.B, now)).toBe('studio · <1m');
-    expect(stepText('fix', { state: 'done', commits: 1, minutes: 7.6 }, now)).toBe('1 commit · 8m');
+    expect(stepText('B', live.lanes[1]!.steps.B, now)).toBe('studio · <1 min');
+    expect(stepText('fix', { state: 'done', commits: 1, minutes: 7.6 }, now)).toBe('1 commit · 7.6 min');
     expect(stepText('patch', { state: 'failed', why: 'conflicts; left out of the batch' }, now)).toBe('conflicts; left out of the batch');
   });
 
