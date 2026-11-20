@@ -15,7 +15,7 @@ export function stepText(step: LaneStepName, s: LaneStep, now: number): string {
   if (s.state === 'failed') return s.why ?? 'failed';
   if (s.state !== 'done') return step === 'patch' ? 'after fix' : 'waiting';
   if (step === 'A' || step === 'B') return `${s.findings ?? 0} found · ${(s.minutes ?? 0).toFixed(1)}m`;
-  if (step === 'match') return `${s.shared ?? 0} shared of ${s.a ?? 0}+${s.b ?? 0}`;
+  if (step === 'match') return matchText(s.shared ?? 0, s.a ?? 0, s.b ?? 0);
   if (step === 'fix') return `${plural(s.commits ?? 0, 'commit')} · ${(s.minutes ?? 0).toFixed(0)}m`;
   return `${s.commits ?? 0} applied`;
 }
@@ -62,10 +62,13 @@ export interface Job {
   readonly bad: boolean;
 }
 
+/** A match's result: the distinct findings of the two reviews, then how many both found. */
+export const matchText = (shared: number, a: number, b: number) => `${a + b - shared} total, ${shared} shared`;
+
 /** The job a `night.log` line reports, or null for a line that reports none. */
 export function parseJob(line: string): Job | null {
   let m: RegExpExecArray | null;
-  if ((m = /^review (\d+)\/(\d+) (\S+) ([AB]) on (\S+): (\d+) findings, (\d+)\/(\d+) files read, ([\d.]+) min, ([\d.]+)M tokens(.*)$/.exec(line))) {
+  if ((m = /^review (\d+)\/(\d+) (\S+) ([AB]) on (\S+): (\d+) findings, (\d+)\/(\d+) files read, ([\d.]+) min, ([\d.]+)M (?:weighted )?tokens(.*)$/.exec(line))) {
     const tail = m[11]!;
     return {
       kind: 'review', label: `review ${m[4]}`, area: m[3]!, what: `${plural(Number(m[6]), 'finding')}, read ${m[7]} of ${m[8]} files${tail}`,
@@ -73,9 +76,9 @@ export function parseJob(line: string): Job | null {
     };
   }
   if ((m = /^match (\d+)\/(\d+) (\S+): (\d+) shared of (\d+) \+ (\d+)/.exec(line))) {
-    return { kind: 'match', label: 'match', area: m[3]!, what: `${m[4]} found by both, of ${m[5]} + ${m[6]}`, of: `${m[1]}/${m[2]}`, bad: false };
+    return { kind: 'match', label: 'match', area: m[3]!, what: matchText(Number(m[4]), Number(m[5]), Number(m[6])), of: `${m[1]}/${m[2]}`, bad: false };
   }
-  if ((m = /^fix (\d+)\/(\d+) (\S+) on (\S+): (\d+) commits, ([\d.]+) min, ([\d.]+)M tokens/.exec(line))) {
+  if ((m = /^fix (\d+)\/(\d+) (\S+) on (\S+): (\d+) commits, ([\d.]+) min, ([\d.]+)M (?:weighted )?tokens/.exec(line))) {
     return {
       kind: 'fix', label: 'fix', area: m[3]!, what: plural(Number(m[5]), 'commit'),
       node: m[4], minutes: Number(m[6]), tokens: Number(m[7]), of: `${m[1]}/${m[2]}`, bad: false,

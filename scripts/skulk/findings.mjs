@@ -1,4 +1,5 @@
 /** Reading a reviewer's findings file and checking the matcher's answer against the two lists. */
+import { FIXED_MARK } from './progress.mjs';
 
 /** The `##` sections of a findings file, each `{ claim, where, body }`. */
 export const parseFindings = (text) => {
@@ -68,4 +69,75 @@ export const firstJson = (text) => {
 export const matchPrompt = (brief, a, b) => {
   const list = (findings) => findings.map((f, i) => `${i}. ${f.claim}\n   where: ${f.where}`).join('\n');
   return `${brief}\n\n# List A\n\n${list(a) || '(empty)'}\n\n# List B\n\n${list(b) || '(empty)'}\n`;
+};
+
+const TALLY = /^tally: (\d+) of (\d+) fixed, (\d+) extra fixed\s*$/im;
+const VERDICT = /\bfixed (?:in )?`?[0-9a-f]{7,}|\bnot a defect\b|\bquestion\b|\bduplicate of\b|\bnot fixed\b|\bdeclined\b/i;
+const EXTRAS = /^\W*(?:any )?extra\b/i;
+const CHECKS = /^\W*checks\b/i;
+const SOURCE = /\((A\+B|A|B|sweep)\)|,\s*(A\+B|A|B|sweep)\s*:/;
+const SHAS = /^(?:fixed (?:in )?)?`?[0-9a-f]{7,}`?(?:(?:,| and) `?[0-9a-f]{7,}`?)*[-\w]*/i;
+
+/** A report's text with markdown emphasis and list marks off. */
+const plain = (text) => text.replace(/^\s*[-*]\s+/, '').replace(/\*\*/g, '').trim();
+
+/** What a verdict paragraph says of its finding: fixed, not a defect, a question, or a duplicate. */
+const verdictOf = (text) => (FIXED_MARK.test(text) ? 'fixed'
+  : /\bnot a defect\b/i.test(text) ? 'not a defect'
+  : /\bduplicate of\b/i.test(text) ? 'duplicate'
+  : /\bquestion\b/i.test(text) ? 'question'
+  : 'not fixed');
+
+/**
+ * One defect as a fixer's report tells it: what was broken (`claim`), which reviewer listed it (`from`, `extra` for one
+ * the fixer found itself), what became of it, and what the fix changed (`note`), from either way fixers write a line:
+ * `claim (A): fixed <sha>. note`, or `fixed <sha> | claim (A). note`.
+ */
+const itemOf = (para, extra) => {
+  const text = plain(para);
+  const source = SOURCE.exec(text);
+  const from = extra ? 'extra' : source ? source[1] ?? source[2] : '';
+  const verdict = verdictOf(text);
+  const piped = /^([^|]{0,80})\|\s*(.*)$/s.exec(text);
+  let claim; let note;
+  if (piped && VERDICT.test(piped[1])) {
+    const rest = piped[2];
+    const at = source ? rest.indexOf(source[0]) : -1;
+    claim = at === -1 ? rest.split(/(?<=\.)\s/)[0] : rest.slice(0, at);
+    note = at === -1 ? rest.slice(claim.length) : rest.slice(at + source[0].length);
+  } else {
+    const at = text.search(VERDICT);
+    claim = text.slice(0, at === -1 ? text.length : at);
+    note = at === -1 ? '' : text.slice(at).replace(SHAS, '');
+  }
+  claim = claim.replace(SOURCE, '').replace(/[\s:,.;—-]+$/, '').trim();
+  note = note.replace(/^[\s.:;,)—-]+/, '').replace(/^not a defect\b[\s.:;,—-]*/i, '').trim();
+  return { claim, from, verdict, note };
+};
+
+/**
+ * Every defect a fixer's report answers, in its order: those it was handed, then the extras it found, the checks left
+ * out. A paragraph is a defect when it gives a verdict.
+ */
+export const reportItems = (report) => {
+  const paras = report.split(/\n\s*\n|\n(?=\S)/).map((p) => p.trim()).filter(Boolean);
+  const checks = paras.findIndex((p) => CHECKS.test(p));
+  const body = checks === -1 ? paras : paras.slice(0, checks);
+  const cut = body.findIndex((p) => EXTRAS.test(p));
+  return body.flatMap((p, i) => (VERDICT.test(p) && !/^tally: /i.test(p) && !EXTRAS.test(p) ? [itemOf(p, cut !== -1 && i > cut)] : []));
+};
+
+/**
+ * What a fixer's report says it did: of the `of` findings it answered, how many it `fixed`, and the `extra` defects
+ * nobody had listed that it fixed besides. From the closing `tally:` line, or else counted from {@link reportItems}.
+ * The fixer's own list splits and joins findings unlike the match, so `of` is its count, not the round's. Null for a
+ * report with no verdicts.
+ */
+export const fixTallyOf = (report) => {
+  const t = TALLY.exec(report);
+  if (t) return { fixed: Number(t[1]), of: Number(t[2]), extra: Number(t[3]) };
+  const items = reportItems(report);
+  const listed = items.filter((i) => i.from !== 'extra');
+  if (listed.length === 0) return null;
+  return { fixed: listed.filter((i) => i.verdict === 'fixed').length, of: listed.length, extra: items.filter((i) => i.from === 'extra' && i.verdict === 'fixed').length };
 };

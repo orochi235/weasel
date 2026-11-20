@@ -61,7 +61,7 @@ describe('progress.mjs', () => {
     expect(run.stdout.split('\n').filter(Boolean)).toEqual(['onto: progress 0/3', 'onto: progress 1/3', 'onto: progress 2/3', 'onto: progress 3/3']);
     const raw = readFileSync(join(dir, 'claude.json'), 'utf8');
     expect(raw).toBe(`${RESULT}\n`);
-    expect(parseEnvelope(raw).record).toMatchObject({ terminalReason: 'completed', budgetHit: false, costUsd: 0.51, totalTokens: 535192 });
+    expect(parseEnvelope(raw).record).toMatchObject({ terminalReason: 'completed', budgetHit: false, costUsd: 0.51, weightedTokens: 121779 });
   });
 
   it('leaves an empty result file when the stream ends without a result, as a killed json run does', () => {
@@ -78,6 +78,19 @@ describe('progress.mjs', () => {
 
 describe('createCommitProgress', () => {
   const bash = (command: string) => JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command } }] } });
+  it('keeps the fixer\'s last report in its result when its final reply is about something else', () => {
+    const say = (text: string) => JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text }] } });
+    const result = (text: string) => JSON.stringify({ type: 'result', subtype: 'success', result: text });
+    const { feed } = createCommitProgress(1);
+    feed(say('fixed 1a2b3c4d | a thing (A)\ntally: 1 of 1 fixed, 0 extra fixed'));
+    feed(say('A background watcher hit its time limit; nothing was lost.'));
+    const kept = feed(result('A background watcher hit its time limit; nothing was lost.')).result!;
+    expect(parseEnvelope(kept).reply).toBe('fixed 1a2b3c4d | a thing (A)\ntally: 1 of 1 fixed, 0 extra fixed');
+    const plain = createCommitProgress(1);
+    plain.feed(say('fixed 1a2b3c4d | a thing (A)'));
+    expect(JSON.parse(plain.feed(result('fixed 1a2b3c4d | a thing (A)')).result!)).not.toHaveProperty('report');
+  });
+
   it('steps once per git commit the fixer runs, out of its findings, and raises the total past them', () => {
     const { start, feed } = createCommitProgress(2);
     expect(start).toBe('onto: progress 0/2');

@@ -5,7 +5,7 @@
 
 .run {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--wzl-space-3) 18px;
   padding: var(--wzl-space-3) var(--wzl-space-4);
@@ -42,6 +42,14 @@
 .what {
   min-width: 0;
   font-weight: var(--wzl-font-weight-bold);
+  white-space: nowrap;
+}
+
+.view {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  font-size: var(--wzl-font-size-sm);
 }
 
 .spend {
@@ -51,20 +59,24 @@
   white-space: nowrap;
 }
 
+/* The last log line, beside the headline: it changes every few seconds, so it takes the slack and is cut short there
+   rather than moving what follows it. */
 .line {
-  grid-column: 2 / -1;
+  min-width: 0;
   font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-md);
   color: var(--audit-muted);
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .lanes {
-  --span-strip-height: 26px;
+  --span-strip-height: 18px;
   --span-strip-text: var(--wzl-font-size-xs);
   grid-column: 1 / -1;
   display: grid;
-  gap: var(--wzl-space-3);
+  gap: var(--wzl-space-2);
   min-width: 0;
   margin-top: var(--wzl-space-2);
 }
@@ -79,8 +91,8 @@
   min-width: calc(var(--audit-lead-ch, 0) * 1ch);
   font: inherit;
   font-family: var(--wzl-font-ui);
-  font-size: var(--wzl-font-size-md);
-  line-height: 24px;
+  font-size: var(--wzl-font-size-sm);
+  line-height: 16px;
   text-align: start;
   color: var(--audit-ink);
   cursor: pointer;
@@ -103,7 +115,7 @@
 }
 
 .shared {
-  padding: var(--wzl-space-2) var(--wzl-space-3);
+  padding: var(--wzl-space-1) var(--wzl-space-3);
   border: 1px dashed var(--audit-rule);
   border-radius: 3px;
   font-family: var(--wzl-font-ui);

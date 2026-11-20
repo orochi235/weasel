@@ -1,0 +1,58 @@
+.id {
+  font-family: var(--wzl-font-mono);
+  font-weight: var(--wzl-font-weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-normal);
+  color: var(--audit-muted);
+}
+
+.round { margin-top: var(--wzl-space-3); }
+
+.title {
+  margin: 0 0 var(--wzl-space-2);
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
+}
+
+.list {
+  display: grid;
+  gap: var(--wzl-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: var(--wzl-space-1);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+}
+
+.from {
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-xs);
+  color: var(--audit-muted);
+}
+
+.claim { font-size: var(--wzl-font-size-sm); }
+
+.note {
+  font-size: var(--wzl-font-size-xs);
+  color: var(--audit-muted);
+}
+
+.commits {
+  margin: 0 0 var(--wzl-space-2);
+  padding-left: var(--wzl-space-4);
+  font-size: var(--wzl-font-size-sm);
+}

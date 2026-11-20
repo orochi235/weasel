@@ -2,7 +2,7 @@
 import { getOwn } from '@weasel-js/registry';
 import type { SpanState, SpanStripSpan } from '@weasel-js/ui/components/SpanStrip';
 import { stepText } from './runData';
-import type { AuditLane, AuditRun, LaneStep, LaneStepName } from './skulkMap.types';
+import type { AuditArea, AuditLane, AuditRun, LaneStep, LaneStepName } from './skulkMap.types';
 import palette from './palette.module.css';
 
 /** Where every area goes, in order, `reviewed` once one of its two reviews is in: their colors run along one sweep,
@@ -81,9 +81,23 @@ function partPhase(p: PartState): AuditPhase {
   return p.part;
 }
 
-/** Every area a live run holds, by id, and its phase. */
+/** Whether the round's pass over an area is done: it is through, or its fixer has finished and only its patch, which
+ *  lands with the round's batch, is left. */
+export const passDone = (lane: AuditLane): boolean => isFinished(lane) || lane.steps.fix.state === 'done';
+
+/** Every area a live run holds, by id, and its phase on the map: `done` once its pass is. */
 export function phasesOf(runs: readonly AuditRun[]): ReadonlyMap<string, AuditPhase> {
-  return new Map(runs.filter((r) => r.running).flatMap((r) => r.lanes.map((lane) => [lane.id, phaseOf(lane)] as const)));
+  return new Map(runs.filter((r) => r.running).flatMap((r) => r.lanes.map((lane) => [lane.id, passDone(lane) ? 'done' : phaseOf(lane)] as const)));
+}
+
+/** `areas`, each whose pass a live run has done carrying that pass, provisional until the round's record lands. */
+export function withLivePasses(areas: readonly AuditArea[], runs: readonly AuditRun[]): readonly AuditArea[] {
+  const live = new Map(runs.filter((r) => r.running).flatMap((r) => r.lanes.filter((l) => l.pass && passDone(l)).map((l) => [l.id, l.pass!] as const)));
+  if (live.size === 0) return areas;
+  return areas.map((a) => {
+    const pass = live.get(a.id);
+    return pass && !a.passes.some((p) => p.round === pass.round) ? { ...a, passes: [...a.passes, { ...pass, provisional: true }] } : a;
+  });
 }
 
 const ms = (iso: string | undefined): number | null => {
@@ -110,8 +124,27 @@ function measuredOf(p: PartState): number | null {
 
 const SPAN_STATE: Readonly<Record<LaneStep['state'], SpanState>> = { waiting: 'pending', running: 'active', done: 'done', failed: 'failed' };
 
-/** What a part shows in its segment: the node, what it found or made, and its minutes, never the phase's name. */
-function partLabel(p: PartState, now: number): string {
+/** How much of the patch to shade once the fixer reports: the share of the findings it answered that it fixed, all of
+ *  it once the patch is applied, and none before the fixer reports or where it gives no tally. */
+export function patchFillOf(lane: AuditLane): number {
+  const { fix, patch } = lane.steps;
+  if (patch.state === 'done') return 1;
+  if (fix.state !== 'done' || fix.fixed === undefined) return 0;
+  return fix.of ? Math.min(1, fix.fixed / fix.of) : 1;
+}
+
+/** The area's tally, its patch segment's caption: how many of the findings its fixer answered it fixed, and the
+ *  extras it fixed besides; before the fixer reports, or where its report gives no tally, what the reviews found. */
+export function tallyOf(lane: AuditLane): string {
+  const { match, fix } = lane.steps;
+  if (fix.state === 'done' && fix.fixed !== undefined) return `${fix.fixed} of ${fix.of ?? fix.fixed} fixed${fix.extra ? ` +${fix.extra} extra` : ''}`;
+  return match.state === 'done' ? `${(match.a ?? 0) + (match.b ?? 0) - (match.shared ?? 0)} found` : '';
+}
+
+/** What a part shows in its segment: the node, what it found or made, and its minutes, never the phase's name; the
+ *  patch shows the area's tally unless it failed. */
+function partLabel(lane: AuditLane, p: PartState, now: number): string {
+  if (p.part === 'patch' && p.state !== 'failed') return tallyOf(lane);
   if (p.state === 'waiting') return '';
   const running = p.steps.find((s) => s.state === 'running');
   if (running) return stepText(p.part === 'review' ? 'A' : p.part, running, now);
@@ -147,16 +180,20 @@ export function laneViewOf(lane: AuditLane, now: number, roundStart: number): La
   const spans = partsOf(lane).map((p): SpanStripSpan => {
     const phase = partPhase(p);
     const times = timesOf(p, now);
-    // A part not begun yet can begin no earlier than now.
-    const start = times.start ?? (p.state === 'waiting' ? Math.max(cursor, now) : cursor);
-    const end = times.end ?? start + (p.state === 'done' ? measuredOf(p) ?? TYPICAL_MINUTES[p.part] : TYPICAL_MINUTES[p.part]) * MIN;
+    // A patch waits from its fix's end for the round's batch, shaded by what the fix did; any other part not begun yet
+    // can begin no earlier than now.
+    const waitsForBatch = p.part === 'patch' && p.state === 'waiting' && lane.steps.fix.state === 'done';
+    const start = times.start ?? (p.state === 'waiting' && !waitsForBatch ? Math.max(cursor, now) : cursor);
+    const end = times.end ?? (waitsForBatch
+      ? Math.max(now, start + TYPICAL_MINUTES.patch * MIN)
+      : start + (p.state === 'done' ? measuredOf(p) ?? TYPICAL_MINUTES[p.part] : TYPICAL_MINUTES[p.part]) * MIN);
     if (p.state === 'running') elapsed = minutesText((now - start) / MIN);
     if (p.state === 'done' || p.state === 'failed') ended = Math.max(ended ?? end, end);
     cursor = end;
     const title = STEPS_OF[p.part].map((name) => `${name}: ${stepText(name, lane.steps[name], now)}`).join('; ');
     return {
-      id: p.part, label: partLabel(p, now), start, ms: Math.max(0, end - start), color: phaseColor(phase), state: SPAN_STATE[p.state], title,
-      ...(p.state === 'waiting' ? { fill: 0 } : {}),
+      id: p.part, label: partLabel(lane, p, now), start, ms: Math.max(0, end - start), color: phaseColor(phase), state: SPAN_STATE[p.state], title,
+      ...(waitsForBatch ? { fill: patchFillOf(lane) } : p.state === 'waiting' ? { fill: 0 } : {}),
     };
   });
   return { phase: phaseOf(lane), finished: isFinished(lane), spans, elapsed, ended };
@@ -190,11 +227,12 @@ export function laneStepsOf(lane: AuditLane, now: number): SpanStripSpan[] {
     const s = lane.steps[step];
     const since = s.state === 'running' ? ms(s.since) : null;
     const fill = s.state === 'done' || s.state === 'failed' ? 1
+      : step === 'patch' ? patchFillOf(lane)
       : since !== null ? Math.min(RUNNING_FILL_CAP, (now - since) / (TYPICAL_MINUTES[part] * MIN))
       : 0;
     return {
       id: step, ms: 1, fill, state: SPAN_STATE[s.state], title: `${step}: ${stepText(step, s, now)}`,
-      label: s.state === 'waiting' ? '' : stepText(step, s, now),
+      label: step === 'patch' && s.state !== 'failed' ? tallyOf(lane) : s.state === 'waiting' ? '' : stepText(step, s, now),
       color: phaseColor(s.state === 'failed' ? 'conflict' : phase),
     };
   });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { citedPaths, firstJson, isFinished, parseFilesRead, parseFindings, reviewText, validPairs } from './findings.mjs';
+import { citedPaths, firstJson, fixTallyOf, isFinished, reportItems, parseFilesRead, parseFindings, reviewText, validPairs } from './findings.mjs';
 import { appendRecordRow } from './record.mjs';
 import { mayStartArea, parseEnvelope } from './usage.mjs';
 
@@ -49,17 +49,57 @@ describe('validPairs', () => {
   });
 });
 
+describe('fixTallyOf', () => {
+  it('reads the fixer\'s closing tally line, and nothing from a report with no verdicts', () => {
+    expect(fixTallyOf('fixed 1a2b3c4d | a thing (A)\nChecks: pass\ntally: 3 of 4 fixed, 1 extra fixed\n')).toEqual({ fixed: 3, of: 4, extra: 1 });
+    expect(fixTallyOf('A note about a watcher; nothing was lost.')).toBeNull();
+  });
+
+  it('counts a report with no tally from its verdict lines, extras apart and checks left out', () => {
+    const report = [
+      'fixed 1a2b3c4d | a thing (A)', 'not a defect (it is documented) | another (B)', 'fixed 5e6f7a8b | a third (A+B)',
+      'Extra defects found while fixing:', 'fixed 9c0d1e2f | an extra (sweep)', 'Checks:', '- vitest: fixed 3 files, pass',
+    ].join('\n');
+    expect(fixTallyOf(report)).toEqual({ fixed: 2, of: 3, extra: 1 });
+  });
+});
+
+describe('reportItems', () => {
+  it('reads what was broken and what the fix changed from either way a fixer writes a line', () => {
+    const report = [
+      'Held routes go stale after undo (A+B): fixed b34f6924a4. The pass now drops them on every write.',
+      'fixed 1ed6ba02a9 | **A level drag commits nothing** (A). The commit check now tests the preview\'s extent.',
+      '- Make Boolean Group doesn\'t strip page structure (B): not a defect. `rootsAmong` already does.',
+      'Extra defects found while fixing:', '- `createSpecHops` made edges hop over hidden specs (sweep): fixed 8cd35da9bf',
+      'Checks:', '- vitest: pass',
+    ].join('\n');
+    expect(reportItems(report)).toEqual([
+      { claim: 'Held routes go stale after undo', from: 'A+B', verdict: 'fixed', note: 'The pass now drops them on every write.' },
+      { claim: 'A level drag commits nothing', from: 'A', verdict: 'fixed', note: 'The commit check now tests the preview\'s extent.' },
+      { claim: 'Make Boolean Group doesn\'t strip page structure', from: 'B', verdict: 'not a defect', note: '`rootsAmong` already does.' },
+      { claim: '`createSpecHops` made edges hop over hidden specs', from: 'extra', verdict: 'fixed', note: '' },
+    ]);
+  });
+});
+
 describe('usage', () => {
-  it('sums every kind of token in an envelope and flags a job stopped by its dollar ceiling', () => {
+  it('weights each kind of token by its price against an input token, one-hour cache writes at twice an input token', () => {
+    const { record } = parseEnvelope(JSON.stringify({
+      usage: { input_tokens: 0, output_tokens: 0, cache_creation_input_tokens: 300, cache_read_input_tokens: 0, cache_creation: { ephemeral_1h_input_tokens: 100, ephemeral_5m_input_tokens: 200 } },
+    }));
+    expect(record.weightedTokens).toBe(450);
+  });
+
+  it('weights every kind of token in an envelope and flags a job stopped by its dollar ceiling', () => {
     const { reply, record } = parseEnvelope(JSON.stringify({
       result: 'ok', total_cost_usd: 1.5, duration_ms: 900, terminal_reason: 'completed', subtype: 'success',
       usage: { input_tokens: 2, output_tokens: 10, cache_creation_input_tokens: 100, cache_read_input_tokens: 1000 },
       modelUsage: { 'claude-x': { costUSD: 1.5 } },
     }));
     expect(reply).toBe('ok');
-    expect(record).toMatchObject({ totalTokens: 1112, costUsd: 1.5, models: ['claude-x'], budgetHit: false });
+    expect(record).toMatchObject({ weightedTokens: 277, costUsd: 1.5, models: ['claude-x'], budgetHit: false });
     expect(parseEnvelope(JSON.stringify({ subtype: 'error_max_budget_usd' })).record.budgetHit).toBe(true);
-    expect(parseEnvelope('').record).toMatchObject({ totalTokens: 0, terminalReason: 'no envelope' });
+    expect(parseEnvelope('').record).toMatchObject({ weightedTokens: 0, terminalReason: 'no envelope' });
   });
 
   it('starts another area only while the running areas and it fit under the dollar cap', () => {

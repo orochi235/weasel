@@ -95,7 +95,7 @@ const review = async (ctx, area, side) => {
   const findings = parseFindings(text);
   const read = parseFilesRead(text).filter((f) => area.files.includes(f)).length;
   if (!run.launched) ctx.say(`review ${area.id} ${side}: never launched; the area is recorded incomplete`);
-  ctx.progress('review', `${area.id} ${side} on ${run.node}: ${findings.length} findings, ${read}/${area.files.length} files read, ${run.minutes.toFixed(1)} min, ${(run.usage.totalTokens / 1e6).toFixed(2)}M tokens${run.usage.budgetHit ? ', hit its ceiling' : ''}${run.launched && !isFinished(text) ? ', unfinished: not counted as a pass' : ''}`, ctx.total.review);
+  ctx.progress('review', `${area.id} ${side} on ${run.node}: ${findings.length} findings, ${read}/${area.files.length} files read, ${run.minutes.toFixed(1)} min, ${(run.usage.weightedTokens / 1e6).toFixed(2)}M weighted tokens${run.usage.budgetHit ? ', hit its ceiling' : ''}${run.launched && !isFinished(text) ? ', unfinished: not counted as a pass' : ''}`, ctx.total.review);
   return { text, findings, read, ...run };
 };
 
@@ -141,7 +141,7 @@ export const fix = async (ctx, area, findings, source = reviewedSource(ctx, area
   const patches = existsSync(mbox) ? (readFileSync(mbox, 'utf8').match(/^From [0-9a-f]{40} /gm) ?? []).length : 0;
   const mismatch = readIf(join(to, 'tree-mismatch')).trim();
   if (mismatch) ctx.say(`fix ${area.id}: ${mismatch}`);
-  ctx.progress('fix', `${area.id} on ${run.node}: ${patches} commits, ${run.minutes.toFixed(1)} min, ${(run.usage.totalTokens / 1e6).toFixed(2)}M tokens${run.usage.budgetHit ? ', hit its ceiling' : ''}`, ctx.total.fix);
+  ctx.progress('fix', `${area.id} on ${run.node}: ${patches} commits, ${run.minutes.toFixed(1)} min, ${(run.usage.weightedTokens / 1e6).toFixed(2)}M weighted tokens${run.usage.budgetHit ? ', hit its ceiling' : ''}`, ctx.total.fix);
   return { mbox: patches > 0 ? mbox : undefined, patches, report: run.reply, ...run };
 };
 
@@ -191,7 +191,7 @@ export const runArea = async (ctx, area, { previous, changedSince }) => {
     jobs: {
       minutes: { A: round1(a.minutes), B: round1(b.minutes), match: round1(matched.minutes), fix: round1(fixed?.minutes ?? 0) },
       nodes: { A: a.node, B: b.node, fix: fixed?.node },
-      tokens: spent.tokens,
+      weightedTokens: spent.weightedTokens,
       costUsd: cents(spent.costUsd),
     },
     fixCommits: [],

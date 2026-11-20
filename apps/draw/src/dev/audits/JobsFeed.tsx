@@ -1,3 +1,4 @@
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import { useMemo, useState } from 'react';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
@@ -13,7 +14,7 @@ function gradeOf(job: Job): Grade | undefined {
 }
 
 /** The jobs each run's log reports finished, newest first; a row that arrived since the last poll flashes. */
-export function JobsFeed({ runs }: { runs: readonly AuditRun[] }) {
+export function JobsFeed({ runs, onLight }: { runs: readonly AuditRun[]; onLight: (id: string | null) => void }) {
   const jobs = useMemo(() => recentJobsOf(runs), [runs]);
   const [shown, setShown] = useState<{ jobs: readonly RunJob[]; fresh: ReadonlySet<string> }>({ jobs, fresh: new Set() });
   if (shown.jobs !== jobs) {
@@ -28,7 +29,7 @@ export function JobsFeed({ runs }: { runs: readonly AuditRun[] }) {
             <thead>
               <tr>
                 <th className={s.l}>job</th><th>round</th><th className={s.l}>area</th><th className={s.l}>result</th>
-                <th className={s.l}>node</th><th>min</th><th>M tokens</th><th>of</th>
+                <th className={s.l}>node</th><th>min</th><th>M weighted tokens</th><th>of</th>
               </tr>
             </thead>
             <tbody>
@@ -42,8 +43,13 @@ export function JobsFeed({ runs }: { runs: readonly AuditRun[] }) {
                       </Badge>
                     </td>
                     <td>{round}</td>
-                    <td className={`${s.l} ${s.area}`}>{job.area}</td>
-                    <td className={`${s.l} ${s.what}`}>{job.what}</td>
+                    <td
+                      className={`${s.l} ${s.area}`}
+                      {...(job.area ? { onPointerEnter: () => onLight(job.area), onPointerLeave: () => onLight(null) } : {})}
+                    >
+                      {job.area}
+                    </td>
+                    <td className={`${s.l} ${s.what}`}><InlineMarkdown text={job.what} /></td>
                     <td className={`${s.l} ${s.area}`}>{job.node ?? ''}</td>
                     <td>{job.minutes !== undefined ? job.minutes.toFixed(1) : ''}</td>
                     <td>{job.tokens !== undefined ? job.tokens.toFixed(2) : ''}</td>

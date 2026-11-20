@@ -12,6 +12,8 @@ export interface AuditPass {
   readonly distinct: number;
   readonly est: number;
   readonly left: number;
+  /** A live run's pass, its area's pass done and its round's record not yet landed. */
+  readonly provisional?: boolean;
 }
 
 export interface AuditArea {
@@ -38,6 +40,11 @@ export interface LaneStep {
   readonly a?: number;
   readonly b?: number;
   readonly commits?: number;
+  /** A done fix's tally, where its report gives one: of the `of` findings it was given, how many it fixed, and the
+   *  defects nobody had listed it fixed besides. */
+  readonly fixed?: number;
+  readonly of?: number;
+  readonly extra?: number;
   readonly why?: string;
   /** When a done step began and ended, from onto's record of the job that ran it. */
   readonly started?: string;
@@ -47,6 +54,8 @@ export interface LaneStep {
 export interface AuditLane {
   readonly id: string;
   readonly steps: Readonly<Record<LaneStepName, LaneStep>>;
+  /** The pass this round has made of the area, once matched, as its record will hold it. */
+  readonly pass?: AuditPass;
 }
 
 export interface AuditRun {
@@ -84,4 +93,23 @@ export interface SkulkMap {
   readonly runs: readonly AuditRun[];
   readonly areas: readonly AuditArea[];
   readonly rounds: readonly AuditRound[];
+}
+
+/** One defect as a round tells it: what was broken, who listed it, what became of it, and what the fix changed. */
+export interface AuditDefect {
+  readonly claim: string;
+  /** `A`, `B`, `A+B`, `sweep`, or `extra` for one the fixer found itself. */
+  readonly from: string;
+  readonly verdict: 'fixed' | 'not a defect' | 'duplicate' | 'question' | 'not fixed' | 'open';
+  readonly note: string;
+}
+
+/** One round's defects in an area: from its record once landed, and from its fixer's report once it has one. */
+export interface AuditAreaRound {
+  readonly round: number;
+  readonly recorded: boolean;
+  readonly fixed: boolean;
+  readonly items: readonly AuditDefect[];
+  /** The subjects of a fixer's commits where it left commits but no report, as one stopped partway does. */
+  readonly commits?: readonly string[];
 }

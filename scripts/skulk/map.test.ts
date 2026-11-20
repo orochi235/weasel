@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { nightLanes, nightRoundOf, nightStages, nightsOf, readRuns } from './map.mjs';
+import { nightLanes, nightRoundOf, nightStages, nightsOf, readRuns, withPasses } from './map.mjs';
 import { claimRound, writeStatus, writeSummary } from './runs.mjs';
 
 const dirs: string[] = [];
@@ -34,6 +34,18 @@ describe('nightStages', () => {
 });
 
 describe('nightLanes', () => {
+  it('counts a match done, nothing shared, when one reviewer found nothing', () => {
+    const log = 'review 1/4 p A on studio: 1 findings, 12/12 files read, 3.0 min\nreview 2/4 p B on teitou: 0 findings, 12/12 files read, 5.3 min';
+    expect(nightLanes(log, ['p'])[0]!.steps.match).toMatchObject({ state: 'done', shared: 0, a: 1, b: 0 });
+  });
+
+  it('gives a done fix its report\'s tally, and leaves one with no tally as it was', () => {
+    const log = 'fix 1/2 a on studio: 5 commits, 8.0 min, 0.5M weighted tokens\nfix 2/2 b on studio: 2 commits, 3.0 min, 0.2M weighted tokens';
+    const lanes = nightLanes(log, ['a', 'b'], [], new Map([['a', 'tally: 3 of 4 fixed, 1 extra fixed'], ['b', 'A note about a watcher; nothing was lost.']]));
+    expect(lanes.find((l) => l.id === 'a')!.steps.fix).toMatchObject({ commits: 5, fixed: 3, of: 4, extra: 1 });
+    expect(lanes.find((l) => l.id === 'b')!.steps.fix).not.toHaveProperty('fixed');
+  });
+
   it("fills each area's thread from the log, and marks a step running from onto's running tasks", () => {
     const log = [
       'review 1/4 core.core.ops A on studio: 5 findings, 24/24 files read, 2.8 min, 1.30M tokens',
@@ -64,6 +76,16 @@ describe('nightLanes', () => {
   it("fails a patch that did not apply", () => {
     const [ops] = nightLanes('patch core.core.ops: did not apply: conflict in a.ts', ['core.core.ops']);
     expect(ops.steps.patch).toEqual({ state: 'failed', why: 'did not apply' });
+  });
+});
+
+describe('withPasses', () => {
+  it('gives a matched lane the pass its round made of the area, and an unmatched one none', () => {
+    const W = { state: 'waiting' };
+    const matched = { id: 'a', steps: { A: W, B: W, match: { state: 'done', a: 7, b: 4, shared: 1 }, fix: W, patch: W } };
+    const [a, b] = withPasses([matched, { id: 'b', steps: { A: W, B: W, match: W, fix: W, patch: W } }], { round: 47, started: '2026-11-20T14:11:24.920Z' });
+    expect(a!.pass).toEqual({ round: 47, date: '2026-11-20', a: 7, b: 4, shared: 1, distinct: 10, est: 19, left: 9 });
+    expect(b).not.toHaveProperty('pass');
   });
 });
 

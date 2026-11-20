@@ -105,8 +105,8 @@ export interface MapCell extends Box {
   readonly parent: string | null;
 }
 
-/** How a frame is padded: outside, between its children, and above them when it is titled, a top-level package more
- *  than a frame inside one. */
+/** How a frame is padded: outside, between its children, and above and below them, more above when it is titled, a
+ *  top-level package more than a frame inside one. Never at its sides. */
 export const MAP_PADDING = { outer: 2, inner: 1.5, title: 18, nestedPad: 1.5, nestedTitle: 15 } as const;
 
 /** The title's height and the padding on a frame at `depth`. */
@@ -131,12 +131,13 @@ export function layoutMap(
         cells.push({ id: node.id, parent, ...snapped(inset(placed, MAP_PADDING.inner / 2)) });
         continue;
       }
-      const frame = snapped(inset(placed, MAP_PADDING.inner / 2));
+      // A frame takes no room at its sides, so the areas in neighboring frames space as they do within one.
+      const frame = snapped({ ...placed, y: placed.y + MAP_PADDING.inner / 2, height: Math.max(0, placed.height - MAP_PADDING.inner) });
       const titled = titledAt(frame, depth);
       frames.push({ ...frame, name: node.name, parent, depth, files: node.files, titled });
       const { pad, title } = framePadOf(depth);
       const top = titled ? title : pad;
-      place(node.children, { x: frame.x + pad, y: frame.y + top, width: frame.width - 2 * pad, height: frame.height - top - pad }, depth + 1, node.name);
+      place(node.children, { x: frame.x, y: frame.y + top, width: frame.width, height: frame.height - top - pad }, depth + 1, node.name);
     }
   };
   place(areaTree(areas), inset({ x: 0, y: 0, width, height }, MAP_PADDING.outer), 0, null);

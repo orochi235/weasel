@@ -9,9 +9,11 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gitIn } from './batch.mjs';
 import { STATE_DIR } from './config.mjs';
+import { fixTallyOf } from './findings.mjs';
 import { partitionAt } from './partition.mjs';
 import { chapman, gitTouched, pickAreas, readPasses } from './rounds.mjs';
 import { lastFinished, liveRuns, readJson } from './runs.mjs';
+import { parseEnvelope } from './usage.mjs';
 
 /** Each area's furthest step in a night's log, from the lines `night.mjs` prints as jobs finish. */
 export const nightStages = (log) => {
@@ -45,9 +47,9 @@ const bestFinished = (jobs, minutes) => {
  * Each area's lane: for every step of its thread (reviews A and B, match, fix, patch), whether it is done,
  * with what the log says it produced, or running, from `jobs`' `audit<N>-<area>-<step>` onto tasks. A job with
  * no `finished` is running, and gives its step's `since`; a finished one gives a done step its `ended`, and its
- * `started` as that less the minutes the log reports.
+ * `started` as that less the minutes the log reports. A done fix takes its report's tally from `reports`, by area.
  */
-export const nightLanes = (log, areas, jobs = []) => {
+export const nightLanes = (log, areas, jobs = [], reports = new Map()) => {
   const lanes = new Map(areas.map((id) => [id, Object.fromEntries(LANE_STEPS.map((s) => [s, { state: 'waiting' }]))]));
   const at = (id, step) => lanes.get(id)?.[step];
   for (const line of log.split('\n')) {
@@ -57,13 +59,21 @@ export const nightLanes = (log, areas, jobs = []) => {
     } else if ((m = /^match \d+\/\d+ (\S+): (\d+) shared of (\d+) \+ (\d+)/.exec(line))) {
       Object.assign(at(m[1], 'match') ?? {}, { state: 'done', shared: Number(m[2]), a: Number(m[3]), b: Number(m[4]) });
     } else if ((m = /^fix \d+\/\d+ (\S+) on (\S+): (\d+) commits, ([\d.]+) min/.exec(line))) {
-      Object.assign(at(m[1], 'fix') ?? {}, { state: 'done', node: m[2], commits: Number(m[3]), minutes: Number(m[4]) });
+      const tally = fixTallyOf(reports.get(m[1]) ?? '');
+      Object.assign(at(m[1], 'fix') ?? {}, { state: 'done', node: m[2], commits: Number(m[3]), minutes: Number(m[4]), ...(tally ?? {}) });
     } else if ((m = /^patch (\S+): (\d+) commits on /.exec(line))) {
       Object.assign(at(m[1], 'patch') ?? {}, { state: 'done', commits: Number(m[2]) });
     } else if ((m = /^patch (\S+): did not apply/.exec(line))) {
       Object.assign(at(m[1], 'patch') ?? {}, { state: 'failed', why: 'did not apply' });
     } else if ((m = /^batch: audit\d+-(\S+) conflicts/.exec(line))) {
       Object.assign(at(m[1], 'patch') ?? {}, { state: 'failed', why: 'conflicts; left out of the batch' });
+    }
+  }
+  // A reviewer who found nothing leaves nothing to pair, so no matcher runs and no match line is written.
+  for (const steps of lanes.values()) {
+    const { A, B, match } = steps;
+    if (match.state === 'waiting' && A.state === 'done' && B.state === 'done' && (A.findings === 0 || B.findings === 0)) {
+      Object.assign(match, { state: 'done', shared: 0, a: A.findings, b: B.findings, minutes: 0 });
     }
   }
   const finished = new Map();
@@ -109,6 +119,20 @@ const nightDirOf = (run, state) => {
   return name ? join(nights, name) : null;
 };
 
+/** Each lane with the pass its round has made of the area once matched, as the record will hold it. */
+export const withPasses = (lanes, run) => lanes.map((lane) => {
+  const { match } = lane.steps;
+  if (match.state !== 'done') return lane;
+  const { a = 0, b = 0, shared = 0 } = match;
+  return { ...lane, pass: passOf(run.round, run.started?.slice(0, 10) ?? '', a, b, shared, a + b - shared) };
+});
+
+/** Each area's fixer report that has come home, by area. */
+const fixReports = (nightDir, ids) => new Map(nightDir ? ids.flatMap((id) => {
+  const file = join(nightDir, 'jobs', id, 'fix', 'claude.json');
+  return existsSync(file) ? [[id, parseEnvelope(readFileSync(file, 'utf8')).reply]] : [];
+}) : []);
+
 /** What one run, live (`running`) or finished, says about its areas; `jobs` are onto's jobs, running and finished. */
 export const readRun = (found, running, jobs = [], state = STATE_DIR) => {
   const run = { ...found, nightDir: nightDirOf(found, state) };
@@ -128,7 +152,7 @@ export const readRun = (found, running, jobs = [], state = STATE_DIR) => {
     report: run.report ?? null,
     areas: areaIds,
     stages: Object.fromEntries(nightStages(log)),
-    lanes: nightLanes(log, areaIds, running ? own : own.filter((j) => j.finished)),
+    lanes: withPasses(nightLanes(log, areaIds, running ? own : own.filter((j) => j.finished), fixReports(run.nightDir, areaIds)), run),
     sweepRunning: running && jobs.some((j) => !j.finished && /control-sweep$/.test(j.task ?? '')),
     nightDir: run.nightDir ?? null,
     lastLine: lines.at(-1) ?? null,
@@ -197,6 +221,12 @@ export const nightsOf = (runs, state = STATE_DIR) => {
   return [...latest.values()];
 };
 
+/** A pass as the map draws it: the reviews' counts, Chapman's estimate of what the area held, and what is left. */
+const passOf = (round, date, a, b, shared, distinct) => {
+  const est = chapman(a, b, shared);
+  return { round, date, a, b, shared, distinct, est: Math.round(est * 10) / 10, left: Math.max(0, Math.round((est - distinct) * 10) / 10) };
+};
+
 export const buildMap = (root) => {
   const git = gitIn(root);
   const head = git('rev-parse', '--short', 'HEAD');
@@ -210,10 +240,7 @@ export const buildMap = (root) => {
   const holder = new Map(runs.filter((r) => r.running).flatMap((r) => r.areas.map((id) => [id, r])));
 
   const out = areas.map((area) => {
-    const history = (passes.get(area.id) ?? []).map((p) => {
-      const est = chapman(p.a, p.b, p.m);
-      return { round: p.round, date: p.date, a: p.a, b: p.b, shared: p.m, distinct: p.distinct, est: Math.round(est * 10) / 10, left: Math.max(0, Math.round((est - p.distinct) * 10) / 10) };
-    });
+    const history = (passes.get(area.id) ?? []).map((p) => passOf(p.round, p.date, p.a, p.b, p.m, p.distinct));
     const run = holder.get(area.id);
     const status = run ? 'tonight' : settledSet.has(area.id) ? 'settled' : history.length ? 'due' : 'unaudited';
     return {

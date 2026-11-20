@@ -25,6 +25,8 @@ export interface AuditCellData {
   readonly settled?: boolean;
   /** One per pass, up to four. */
   readonly dots: number;
+  /** A glow's color while something naming the area elsewhere on the page is hovered. */
+  readonly glow?: string;
   /** The live outline's opacity, which the page breathes. */
   readonly pulse: number;
   /** The faces its words and its numbers are set in. */
@@ -70,6 +72,8 @@ function filled(path: Path, paint: PosedPaint): DrawCommand[] {
   return resolved ? [{ kind: 'path', path, fill: { paint: resolved } }] : [];
 }
 
+const GLOW = [[1.5, 1], [4.5, 0.5], [7.5, 0.22]] as const;
+
 function paintCell(d: AuditCellData, p: RectPose): DrawCommand[] {
   const out: DrawCommand[] = [
     ...filled(rect(p), d.fill),
@@ -77,6 +81,8 @@ function paintCell(d: AuditCellData, p: RectPose): DrawCommand[] {
     { kind: 'path', path: rect(p), stroke: { paint: { color: d.edge }, width: 0.5 } },
   ];
   if (d.live) out.push({ kind: 'path', path: rect(p, 1.5), stroke: { paint: { color: d.live, opacity: d.pulse }, width: 2.5 } });
+  // Drawn inward, since a neighbor paints over anything outside the cell.
+  if (d.glow) for (const [by, opacity] of GLOW) out.push({ kind: 'path', path: rect(p, by), stroke: { paint: { color: d.glow, opacity }, width: 3 } });
   if (d.settled && p.width >= 16 && p.height >= 16) {
     const x = p.x + p.width - 13, y = p.y + p.height - 12;
     const check = pathFromD(`M ${x} ${y + 4} L ${x + 3} ${y + 7} L ${x + 9} ${y}`);
@@ -105,7 +111,9 @@ function paintCell(d: AuditCellData, p: RectPose): DrawCommand[] {
 }
 
 function paintFrame(d: AuditFrameData, p: RectPose): DrawCommand[] {
-  const out: DrawCommand[] = [{ kind: 'path', path: rect(p), stroke: { paint: { color: d.edge, opacity: d.depth === 0 ? 0.55 : 0.3 }, width: 1 } }];
+  // Top and bottom edges only: side edges would stand between areas the layout lines up across frames.
+  const edges = pathFromD(`M ${p.x} ${p.y + 0.5} H ${p.x + p.width} M ${p.x} ${p.y + p.height - 0.5} H ${p.x + p.width}`);
+  const out: DrawCommand[] = [{ kind: 'path', path: edges, stroke: { paint: { color: d.edge, opacity: d.depth === 0 ? 0.55 : 0.3 }, width: 1 } }];
   if (d.title) {
     const room = framePadOf(d.depth).title;
     out.push(...filled(rect({ ...p, height: Math.min(p.height, room) }, 0.5), { color: d.band }));

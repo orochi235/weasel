@@ -4,7 +4,7 @@
   flex-direction: column;
   gap: var(--wzl-space-4);
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
   padding: var(--wzl-space-4);
   box-sizing: border-box;
   color: var(--audit-ink);
@@ -20,7 +20,8 @@
 
 .main {
   flex: 1 1 0;
-  min-height: 320px;
+  /* The map's canvas floor, its legend and its padding. */
+  min-height: 240px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto var(--audit-aside-width, 300px);
   grid-template-rows: minmax(0, 1fr);
@@ -36,12 +37,27 @@
   overflow: auto;
 }
 
-.root > .jobs {
-  max-height: 30%;
+/* The runs strip and the jobs feed each take the height their seam is dragged to, and scroll inside it; the map
+   takes the rest. A runs strip shorter than its height keeps its own. */
+.root > .top {
+  flex: 0 1 auto;
+  max-height: var(--audit-top-height, 260px);
+  min-height: 0;
   overflow: auto;
 }
 
+/* Gives way before the window would cut it off. */
+.root > .jobs {
+  flex: 0 1 var(--audit-jobs-height, 220px);
+  min-height: 80px;
+  overflow: auto;
+}
+
+.root > .seam { margin-block: calc(-1 * var(--wzl-space-3)); }
+
 @media (max-width: 860px) {
+  .root { overflow: auto; }
+
   .root > .main {
     flex: none;
     grid-template-columns: minmax(0, 1fr);

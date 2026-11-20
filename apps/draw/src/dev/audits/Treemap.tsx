@@ -22,11 +22,13 @@ export interface TreemapProps {
   /** Each area a live run holds, and its phase. */
   readonly phases: ReadonlyMap<string, AuditPhase>;
   readonly onHover: (id: string | null) => void;
+  /** The area to glow: one something else on the page names and is hovered. */
+  readonly lit?: string | null;
 }
 
 /** Every audit area as a cell of a treemap drawn on the scene graph: hover and click pick through the canvas's
  *  own hit testing and selection. */
-export function Treemap({ scene, selection, areas, palette, phases, onHover }: TreemapProps) {
+export function Treemap({ scene, selection, areas, palette, phases, onHover, lit = null }: TreemapProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   useLayoutEffect(() => {
@@ -43,8 +45,8 @@ export function Treemap({ scene, selection, areas, palette, phases, onHover }: T
   const heat = useMemo(() => heatScaleOf(areas), [areas]);
   const layout = useMemo(() => layoutMap(areas, size.width, size.height), [areas, size]);
   useLayoutEffect(() => {
-    syncAuditScene(scene, auditNodeSpecs(areas, layout, palette, phases));
-  }, [scene, areas, layout, palette, phases]);
+    syncAuditScene(scene, auditNodeSpecs(areas, layout, palette, phases, lit));
+  }, [scene, areas, layout, palette, phases, lit]);
 
   // The map's text is set in the theme's faces, which the canvas draws from the document's fonts once each loads.
   useEffect(() => {
