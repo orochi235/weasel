@@ -175,3 +175,17 @@ describe('xyScales', () => {
     expect(xyLength({ kind: 'xychart', series })).toBe(3);
   });
 });
+
+describe('xyValueDomain with one end set', () => {
+  const at = (y: XyChartData['y']): XyChartData => ({ kind: 'xychart', ...(y ? { y } : {}), series: [{ kind: 'bar', values: [1, 3, 5] }] });
+
+  it('fits the other end beyond the set one, so the axis never flips', () => {
+    expect(xyValueDomain(at({ min: 10 }))).toEqual([10, 11]);
+    expect(xyValueDomain(at({ max: -3 }))).toEqual([-4, -3]);
+    expect(xyValueDomain(at({ min: 2 }))).toEqual([2, 5]);
+  });
+
+  it('keeps a reversed domain both of whose ends are set', () => {
+    expect(xyValueDomain(at({ min: 10, max: 0 }))).toEqual([10, 0]);
+  });
+});

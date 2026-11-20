@@ -45,7 +45,8 @@ function categoriesOf(data: XyChartData): string[] {
   return Array.from({ length: Math.max(own.length, xyLength(data)) }, (_, i) => own[i] ?? String(i + 1));
 }
 
-/** The value axis's domain: its own ends, and where one is missing, the values' reach with zero in it, made round. */
+/** The value axis's domain: its own ends, and where one is missing, the values' reach with zero in it, made round,
+ *  or a unit past the set end where that reach falls short of it. */
 export function xyValueDomain(data: XyChartData): [number, number] {
   // A loop, not a spread: a spread of a long series overflows the call stack.
   let lo = 0;
@@ -58,8 +59,9 @@ export function xyValueDomain(data: XyChartData): [number, number] {
     }
   }
   const [niceLo, niceHi] = niceDomain([lo, hi === lo ? lo + 1 : hi]);
-  const min = data.y?.min ?? niceLo;
-  const max = data.y?.max ?? niceHi;
+  const set = data.y ?? {};
+  const min = set.min ?? (set.max !== undefined && niceLo >= set.max ? set.max - 1 : niceLo);
+  const max = set.max ?? (set.min !== undefined && niceHi <= set.min ? set.min + 1 : niceHi);
   return min === max ? [min, min + 1] : [min, max];
 }
 
