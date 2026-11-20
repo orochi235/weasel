@@ -114,7 +114,7 @@ export { scenePoseAdapter, sceneViewPoseAdapter } from '../core/scene/scenePoseA
 export type { NodeUpgrade, SavedNode, SceneRegistry } from '../core/scene/sceneRegistry';
 export { sceneHistorySelection } from '../core/scene/sceneSelection';
 export type { SceneSelectionMembers } from '../core/scene/sceneSelection';
-export type { SceneTouches } from '../core/scene/sceneTouches';
+export type { SceneTouches, SceneTouchesMembers } from '../core/scene/sceneTouches';
 export { createScrollOffsets, scrolledFrames, viewPoseAdapter } from '../core/scene/scrollOffsets';
 export type { SceneScroll, ScrollOffsets, ScrollSource } from '../core/scene/scrollOffsets';
 export { isSerializedScene, savedNodeKind, specsFromSerialized } from '../core/scene/serialization';
