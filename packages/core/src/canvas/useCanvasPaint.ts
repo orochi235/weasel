@@ -101,7 +101,8 @@ export function useCanvasPaint(
     } = inputsRef.current;
     if (w === 0 || h === 0) return false;
 
-    const debugFrame = beginDebugFrame(sink, timed, paintLayers);
+    const { layerVisibility: vis, layerOrder: order } = gateRef.current;
+    const debugFrame = beginDebugFrame(sink, timed, paintLayers, vis ?? NO_LAYER_VISIBILITY, order);
 
     const renderer = lease.bind(c, { width: w, height: h, dpr: dprIn }, {
       tile: rect,
@@ -116,7 +117,6 @@ export function useCanvasPaint(
     const dpr = resolveDpr(dprIn);
     // The renderer's own device pixels to the CSS pixel, from its rounded buffer width.
     const view = snapRef.current.draw(viewRef.current, Math.round(w * dpr) / w, retain !== false && retain?.whole !== false);
-    const { layerVisibility: vis, layerOrder: order } = gateRef.current;
     const stack = stackRef.current;
     if (stack) {
       stack.paint({

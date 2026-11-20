@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { RenderStats } from '@weasel-js/renderer';
-import type { LayerDrawSpan, RenderLayer } from 'core/layers/render';
+import { paintedLayers, type LayerDrawSpan, type RenderLayer } from 'core/layers/render';
 import type { CanvasDebugSink, DebugFlags } from './types';
 import { resolveDebugFlags } from './parseDebugFlags';
 import { createDebugSink } from './createDebugSink';
@@ -52,17 +52,21 @@ export interface DebugFrame {
 
 /**
  * Open a paint's recording: clear the sink's per-frame records and note the
- * stack about to be drawn, bottom first. Returns `null` with no sink.
+ * stack about to be drawn, bottom first: the layers `visibility` and `order`
+ * leave painted, as `drawLayers` reads them. Returns `null` with no sink.
  */
 export function beginDebugFrame(
   sink: CanvasDebugSink | null,
   frameStats: boolean,
   layers: readonly RenderLayer<unknown>[],
+  visibility: Record<string, boolean>,
+  order: readonly string[] | undefined,
 ): DebugFrame | null {
   if (!sink) return null;
   sink.beginFrame();
-  for (let i = 0; i < layers.length; i++) {
-    const layer = layers[i]!;
+  const painted = paintedLayers(layers, visibility, order);
+  for (let i = 0; i < painted.length; i++) {
+    const layer = painted[i]!;
     if (layer.id === DEBUG_OVERLAY_ID) continue;
     sink.recordLayer(layer.id, layer.label, layer.space ?? 'world', i);
   }
