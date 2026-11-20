@@ -44,7 +44,7 @@ export function operandPathNodes(deps: ActionDeps | undefined): PathNode[] {
  *  `shapeOf` stands in a node's pose and data, as an in-flight gesture would
  *  leave them, for its own. */
 export function pathNodesOf(
-  scene: Pick<Scene<unknown, string, unknown>, 'get'>,
+  scene: Scene<unknown, string, unknown>,
   ids: readonly string[],
   shapeOf?: (id: string) => { pose: unknown; data: unknown } | undefined,
 ): PathNode[] {

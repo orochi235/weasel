@@ -40,11 +40,7 @@ export function pressOf(deps: ActionDeps, p: Readonly<StrokePressParams> | undef
   return { at, radius };
 }
 
-type OrderedScene = Pick<AnyScene, 'get'> & {
-  renderOrderNodes?(): readonly AnyNode[];
-  isLocked?(id: NodeId): boolean;
-  isHidden?(id: NodeId): boolean;
-};
+type OrderedScene = AnyScene;
 
 function renderOrder(deps: ActionDeps | undefined): readonly AnyNode[] {
   const scene = deps?.scene as OrderedScene | undefined;

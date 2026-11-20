@@ -195,6 +195,16 @@ describe('ownGeometryAt', () => {
     expect(ownGeometryAt(cross, { x: 3, y: 2 }, ['a'], ONE, 3)).toEqual({ x: expect.closeTo(2.5, 9), y: expect.closeTo(2.5, 9) });
     expect(ownGeometryAt(cross, { x: 3, y: 2 }, ['a'], ONE, 0.5)).toBeNull();
   });
+
+  it('takes a whole scene, since a node under a container reads the scene\'s frames', () => {
+    const child = {
+      id: asNodeId('c'), kind: 'mark' as const, layer: 'default', parent: asNodeId('g'),
+      pose: { x: 0, y: 0, width: 4, height: 4 }, data: {},
+    };
+    const partial = { nodes: new Map([[child.id, child]]), layers: [{ id: 'default' }], getVersion: () => 1 };
+    // @ts-expect-error -- nodes, layers and getVersion alone are not enough to place a parented node
+    expect(() => ownGeometryAt(partial, { x: 0, y: 0 }, ['c'], ONE)).toThrow();
+  });
 });
 
 describe('createSceneSnapIndexer', () => {
