@@ -351,6 +351,23 @@ describe('loadCsfModule', () => {
     });
   });
 
+  it("sets the story's and meta's globals over the toolbar's, for render and play", async () => {
+    const seen: unknown[] = [];
+    const play = vi.fn();
+    const [story] = loadCsfModule(
+      {
+        default: { title: 'ui/Button', globals: { mode: 'light', density: 'compact' } },
+        Dark: { globals: { mode: 'dark' }, render: (_a: unknown, ctx: { globals: unknown }) => (seen.push(ctx.globals), null), play },
+      },
+      AUTO_TITLE,
+    );
+    expect(story?.globals).toEqual({ mode: 'dark', density: 'compact' });
+    show(story!, ctxFor(story!, { globals: { mode: 'light', lang: 'fr' } }));
+    expect(seen.at(-1)).toEqual({ mode: 'dark', density: 'compact', lang: 'fr' });
+    await story?.play?.({ canvasElement: document.createElement('div'), config: {}, globals: { mode: 'light' } });
+    expect(play.mock.calls[0]?.[0]).toMatchObject({ globals: { mode: 'dark', density: 'compact' } });
+  });
+
   it('has no play when the story and meta have none', () => {
     expect(loadCsfModule({ default: { title: 'ui/B' }, A: {} }, AUTO_TITLE)[0]?.play).toBeNull();
   });

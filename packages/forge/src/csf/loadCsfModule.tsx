@@ -186,7 +186,7 @@ export function loadCsfModule(
       );
     const csfContext = (config: unknown, globals: StoryGlobals, local: LocalArgs = {}): CsfContext => ({
       args: withoutUndefined({ ...args, ...withArgs(config as Args), ...appliedLocal(local, config as Args) }),
-      globals,
+      globals: { ...globals, ...storyGlobals },
       parameters,
       title,
       name,
@@ -239,6 +239,7 @@ export function loadCsfModule(
       decorators: [...asArray(spec.decorators), ...asArray(meta.decorators)].map(adapt),
       layout: layout && LAYOUTS.includes(layout) ? layout : DEFAULT_LAYOUT,
       viewport: resolveViewport(parameters, storyGlobals),
+      globals: storyGlobals,
       isolate: typeof isolate === 'string' ? isolate : null,
       play: play
         ? ({ canvasElement, config, globals }: PlayContext) =>
