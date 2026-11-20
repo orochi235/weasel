@@ -84,4 +84,10 @@ describe('text boxes', () => {
       off();
     }
   });
+
+  it('rasterizes a box whose runs turn on font features or hold their line at another size', async () => {
+    expect(await written(box({}, [run('Label', { fontFeatures: ['smcp'] })]))).toBeUndefined();
+    expect(await written(box({}, [run('a'), run('b', { strutSize: 16 })]))).toBeUndefined();
+    expect(await written(box({}, [run('Label', { fontFeatures: [], strutSize: 12 })]))).toBeDefined();
+  });
 });
