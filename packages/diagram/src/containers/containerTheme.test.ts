@@ -43,4 +43,17 @@ describe('containers in a theme', () => {
     applyDiagramTheme(scene as never, DIAGRAM_THEMES.blueprint!);
     expect(JSON.stringify(scene.get(added as never)!.data)).toBe(before);
   });
+
+  it('colors a lane added at the start of the stack by its place there, and restripes the lanes after it', () => {
+    const scene = makeScene();
+    let n = 0;
+    const built = containerBuild(POOL, AT, { layer: 'main', newId: () => `p${n++}` });
+    commitOps({ scene } as unknown as ActionDeps, built.ops, 'Insert');
+    const theme = DIAGRAM_THEMES.paper!;
+    applyDiagramTheme(scene as never, theme);
+    addLane(scene as never, built.id, 0);
+    const fills = lanesOf(scene as never, built.id).map((id) => fillOf(scene, id));
+    const bodies = theme.lane.bodies;
+    expect(fills).toEqual(fills.map((_, i) => bodies[i % bodies.length]!.fill));
+  });
 });

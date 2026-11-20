@@ -115,9 +115,10 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
   }), scene.composition as PoseComposition<RectPose>);
   scene.batch('Add lane', () => {
     for (const spec of specs) scene.add(spec as never);
-    // A themed scene colors the lane as a theme change would, by its place in the stack.
+    // A themed scene colors the lanes as a theme change would, by their places in the stack: the new one, and
+    // those after it, which it moved along one.
     if (style === undefined && scene.doc.get(DIAGRAM_THEME_KEY) !== undefined) {
-      const writes = themeWrites(scene as unknown as ThemedScene, diagramThemeOf(scene), new Set([id]));
+      const writes = themeWrites(scene as unknown as ThemedScene, diagramThemeOf(scene), new Set([id, ...lanes]));
       for (const [at, data] of writes) scene.update(at as never, { data } as never);
     }
   });
