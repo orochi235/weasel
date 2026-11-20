@@ -33,29 +33,45 @@ export interface PixelsSourceOptions {
  */
 export function createPixelsSource(opts: PixelsSourceOptions): PixelsSource {
   const client = createCaptureClient(opts.base, opts.fetch ?? ((input, init) => globalThis.fetch(input, init)));
-  const shared: PixelsShared = { take: client.take, payloadFor: opts.payloadFor, revision: opts.revision, shots: new Map<string, Shot>() };
+  const shots = new Map<string, Shot>();
   const lenses = new Set<PixelsLens>();
   let unrevise: (() => void) | null = null;
   const remeasured = createEmitter<[]>();
+  // The source owns every bitmap in `shots`: a capture it handed out is good until its side's next one, or until the
+  // shot is dropped. Closed once let go of, unless another side still holds the same bitmap.
+  const letGo = (shot: Shot | undefined) => {
+    if (!shot) return;
+    for (const held of shots.values()) if (held.bitmap === shot.bitmap) return;
+    shot.bitmap.close();
+  };
+  const drop = (side: string) => {
+    const shot = shots.get(side);
+    shots.delete(side);
+    letGo(shot);
+  };
   // A side only `capture` writes has no detach to drop it: a stale one goes at the next write, and past
   // `LOOSE_SHOTS` the longest unwritten go.
   const keep = (side: string, shot: Shot) => {
-    const { shots } = shared;
+    const replaced = shots.get(side);
     shots.delete(side);
     shots.set(side, shot);
+    letGo(replaced);
     const attached = new Set([...lenses].map((l) => l.side()));
     const loose = [...shots].filter(([s]) => !attached.has(s));
     let over = loose.length - LOOSE_SHOTS;
     for (const [s, held] of loose) {
       if (s === side) continue;
       if (held.revision !== opts.revision() || over > 0) {
-        shots.delete(s);
+        drop(s);
         over -= 1;
       }
     }
   };
+  const shared: PixelsShared = { take: client.take, payloadFor: opts.payloadFor, revision: opts.revision, shots, keep };
   const revised = () => {
-    shared.shots.clear();
+    const bitmaps = new Set([...shots.values()].map((s) => s.bitmap));
+    shots.clear();
+    for (const bitmap of bitmaps) bitmap.close();
     for (const lens of [...lenses]) lens.revised();
   };
 
@@ -77,6 +93,8 @@ export function createPixelsSource(opts: PixelsSourceOptions): PixelsSource {
       unrevise ??= opts.subscribeRevision(revised);
       const lens = attachPixelsLens(slot, first, shared, () => {
         lenses.delete(lens);
+        const side = lens.side();
+        if (![...lenses].some((l) => l.side() === side)) drop(side);
         if (lenses.size > 0) return;
         unrevise?.();
         unrevise = null;
@@ -88,7 +106,7 @@ export function createPixelsSource(opts: PixelsSourceOptions): PixelsSource {
       const aimed = aim(shared, request, document);
       if ('reason' in aimed) return { reason: aimed.reason };
       const side = sideOf(request);
-      let shot = shared.shots.get(side);
+      let shot = shots.get(side);
       if (!fresh(shared, shot, aimed.key)) {
         const at = opts.revision();
         const bitmap = await client.take(aimed.payload);
