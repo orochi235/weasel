@@ -206,6 +206,9 @@ function clockwiseFirst(contours: readonly Contour[]): boolean {
   return best < 0;
 }
 
+/** `faceOf` for a covered cycle too thin to be a face: no neighbor across its edges, covered or not. */
+const SLIVER = -2;
+
 const maskOf = (sources: readonly number[]): bigint => sources.reduce((m, i) => m | (1n << BigInt(i)), 0n);
 
 /**
@@ -242,7 +245,8 @@ export function curveFaces(paths: readonly Path[], tolerance?: number, polish = 
   const found: { face: CurveFace; mask: bigint; at: [number, number]; cycle: number }[] = [];
   c.cycles.forEach((cycle, i) => {
     const key = kept.key[cycle[0]];
-    if (outsides.has(i) || c.area[i] <= minArea || key === '') return;
+    if (outsides.has(i) || key === '') return;
+    if (c.area[i] <= minArea) { faceOf[i] = SLIVER; return; }
     faceOf[i] = found.length;
     const sources = key.split(',').map(Number);
     const v = leftmost(kept, cycle);
@@ -272,7 +276,7 @@ function neighborsOf(a: Kept, c: Cycles, faceOf: Int32Array, rank: Int32Array): 
   const n = rank.length + 1;
   for (let e = 0; 2 * e < a.origin.length; e++) {
     const l = faceOf[c.cycleOf[2 * e]], r = faceOf[c.cycleOf[2 * e + 1]];
-    if (l === r) continue;
+    if (l === r || l === SLIVER || r === SLIVER) continue;
     const x = l < 0 ? -1 : rank[l], y = r < 0 ? -1 : rank[r];
     const [lo, hi] = x < y ? [x, y] : [y, x];
     const u = a.origin[2 * e], v = a.origin[2 * e + 1];

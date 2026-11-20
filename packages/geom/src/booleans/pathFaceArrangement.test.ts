@@ -8,6 +8,7 @@ import { curveFaces, type CurveFaceSet } from './curveFaces';
 import { parseContours } from './contours';
 import { segmentCrossings } from '../intersect/segmentIntersections';
 import { DIGITS, glyphCell } from './glyphCell.fixture';
+import { PathBuilder } from '../paths/builder';
 
 /** One path drawing both of `a`'s and `b`'s contours. */
 const both = (a: PolygonPath, b: PolygonPath): PolygonPath => ({
@@ -140,5 +141,18 @@ describe('pathFaceArrangement far from the origin', () => {
     const far = pathFaceArrangement([circle(1e8, 0, 1), circle(1e8 + 1.2, 0, 0.8)]).faces;
     expect(far.map((f) => f.sources)).toEqual(near.map((f) => f.sources));
     far.forEach((f, i) => expect(area(f.path)).toBeCloseTo(area(near[i].path), 3));
+  });
+});
+
+describe('pathFaceArrangement neighbors beside a dropped sliver', () => {
+  it('does not report the edge a covered sliver shares with a face as bordering uncovered space', () => {
+    // B's thin wedge pokes out of the square to x = -5; the part outside the square is too thin to be a face beside
+    // the far square widening the extent.
+    const wedge = new PathBuilder().moveTo(5, 0).lineTo(15, 0).lineTo(15, 10).lineTo(5, 10)
+      .lineTo(5, 5.001).lineTo(-5, 5).lineTo(5, 4.999).close().build();
+    const { faces, neighbors } = pathFaceArrangement([rect(0, 0, 10, 10), wedge, rect(1e5, 0, 1, 1)]);
+    const both = faces.findIndex((f) => f.sources.join() === '0,1');
+    const open = neighbors.find((n) => n.a === -1 && n.b === both)!;
+    expect(open.length).toBeCloseTo(10, 6);
   });
 });
