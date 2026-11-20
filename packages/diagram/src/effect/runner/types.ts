@@ -4,7 +4,8 @@ import type { EffectStage } from '../types';
 export interface EffectEvalContext {
   stage: EffectStage;
   /** The value on each input a wire feeds, by port id. An input no reached
-   *  wire feeds is absent. */
+   *  wire feeds is absent. A `many` input's is an array of every reached
+   *  wire's value, in the pipeline's wire order, for the evaluator to combine. */
   inputs: Readonly<Record<string, unknown>>;
   /** Each param's control value (its display string when it has no
    *  control), by param id, or by label for a param without one. */
@@ -26,7 +27,8 @@ export interface EffectEvalResult {
 }
 
 /** Evaluates one stage. Throw to fail it: the run records the message as the
- *  stage's `error` and leaves what it feeds unreached. */
+ *  stage's `error` and leaves what it feeds unreached. A value kind whose
+ *  `show` or `preview` throws or rejects fails the stage the same way. */
 export type EffectEvaluator = (ctx: EffectEvalContext) => EffectEvalResult | Promise<EffectEvalResult>;
 
 /** Evaluators by stage `type`. */

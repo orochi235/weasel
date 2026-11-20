@@ -15,6 +15,7 @@ export interface EffectPipeline {
 
 /** One step of a pipeline: what it reads and writes, and what its box shows. */
 export interface EffectStage {
+  /** Never starts with `~`, which the looks keep for ids of their own. */
   id: string;
   title: string;
   /** What sort of stage this is, for a look to read. The shipped looks know
@@ -40,13 +41,15 @@ export interface EffectStage {
 
 /** One input or output of a stage, carrying a value of one type. */
 export interface EffectPort {
-  /** Unique among the stage's inputs and outputs together. */
+  /** Unique among the stage's inputs and outputs together. Never starts with
+   *  `~`, which the looks keep for ids of their own. */
   id: string;
   /** Default the id. */
   label?: string;
   type: string;
   /** An input that takes any number of wires, which a runner combines: the
-   *  audio runner sums them, as Web Audio does. Default one wire. */
+   *  audio runner sums them, as Web Audio does, and `runPipeline` hands the
+   *  evaluator every reached wire's value as an array. Default one wire. */
   many?: boolean;
 }
 

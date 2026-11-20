@@ -18,6 +18,23 @@ describe('mainChain', () => {
     expect(new Set(line).size).toBe(line.length);
   });
 
+  it('finds the longest path past a feedback loop, whatever order the stages are listed in', () => {
+    const st = (id: string) => ({ id, title: id, inputs: [{ id: 'in', type: 'image' }], outputs: [{ id: 'out', type: 'image' }] });
+    const wire = (a: string, b: string) => ({ from: { stage: a, port: 'out' }, to: { stage: b, port: 'in' } });
+    const wires = [wire('A', 'B'), wire('B', 'C'), wire('C', 'A'), wire('C', 'D')];
+    expect(mainChain({ stages: ['C', 'A', 'B', 'D'].map(st), wires })).toEqual(['A', 'B', 'C', 'D']);
+    expect(mainChain({ stages: ['A', 'B', 'C', 'D'].map(st), wires })).toEqual(['A', 'B', 'C', 'D']);
+    const into = [wire('A', 'B'), wire('B', 'C'), wire('C', 'A'), wire('D', 'B')];
+    expect(mainChain({ stages: ['A', 'B', 'C', 'D'].map(st), wires: into })).toEqual(['D', 'B', 'C', 'A']);
+  });
+
+  it('answers a dense loop of many stages', () => {
+    const ids = Array.from({ length: 40 }, (_, i) => `s${i}`);
+    const stages = ids.map((id) => ({ id, title: id, inputs: [{ id: 'in', type: 'image' }], outputs: [{ id: 'out', type: 'image' }] }));
+    const wires = ids.flatMap((a) => ids.filter((b) => b !== a).map((b) => ({ from: { stage: a, port: 'out' }, to: { stage: b, port: 'in' } })));
+    expect(mainChain({ stages, wires }).length).toBeGreaterThan(1);
+  });
+
   it('is empty for an empty pipeline', () => {
     expect(mainChain({ stages: [], wires: [] })).toEqual([]);
   });

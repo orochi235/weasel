@@ -41,11 +41,16 @@ export interface EffectRunner {
   /** The next run, step, or played frame follows `pipeline`. A step run under
    *  way starts over. */
   setPipeline(pipeline: EffectPipeline): void;
-  setSources(sources: Readonly<Record<string, unknown>>): void;
+  /** The next run, step, or played frame reads `sources`; `undefined` hands
+   *  none. A step run under way starts over. */
+  setSources(sources: Readonly<Record<string, unknown>> | undefined): void;
   /** Settles once every run and step asked for so far has finished, failed or been dropped; then
    *  no run reads the sources it was handed before, so their owner may close them. */
   idle(): Promise<void>;
-  setOptions(opts: Partial<Omit<EffectRunnerOptions, 'pipeline' | 'sources'>>): void;
+  /** Sets each option `opts` names; one named as `undefined` goes back to its
+   *  default (`evaluators`, which has none, stays), and one left out stays. A step run under way starts over when
+   *  any of them changes. */
+  setOptions(opts: { [K in keyof RunnerSettings]?: RunnerSettings[K] | undefined }): void;
   /** Says `run` is on screen: every preview of an older run that `run` does
    *  not show is closed. */
   drawn(run: EffectRun | undefined): void;
@@ -53,6 +58,9 @@ export interface EffectRunner {
   /** Resets and closes every preview it still holds. The runner stays usable. */
   dispose(): void;
 }
+
+/** What `setOptions` sets. */
+type RunnerSettings = Omit<EffectRunnerOptions, 'pipeline' | 'sources'>;
 
 /** The pass a runner steps, if one is under way. */
 interface Stepping {
@@ -175,11 +183,17 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
     setSources(sources) {
       if (sources === options.sources) return;
       options = { ...options, sources };
+      if (sources === undefined) delete options.sources;
       dropStepping();
     },
     idle: () => tail,
     setOptions(next) {
-      options = { ...options, ...next };
+      const merged = { ...options, ...next, evaluators: next.evaluators ?? options.evaluators };
+      const keys = Object.keys(next) as Array<keyof RunnerSettings>;
+      if (keys.every((key) => merged[key] === options[key])) return;
+      for (const key of keys) if (merged[key] === undefined) delete merged[key];
+      options = merged;
+      dropStepping();
     },
     drawn(run) {
       const at = run === undefined ? published.length : published.indexOf(run);

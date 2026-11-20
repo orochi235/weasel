@@ -1,4 +1,5 @@
 import type { PortAnchor, PortSpec } from '../types';
+import { assertNoReservedIds } from './check';
 import { edgeIdOf } from '../fromData';
 import {
   LOOK_THEME, boxNode, drawableWires, exitLabel, isControl, kindOf, portOn, sceneStyles, stageStyle, typeColors,
@@ -177,6 +178,7 @@ function portsOf(stage: EffectStage, line: Line, wires: readonly RackWire[], fra
 /** The rack look: the main signal on one straight line with its stages in
  *  order, and whatever feeds a stage from the side hung beside it. */
 export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
+  assertNoReservedIds(pipeline, 'rack');
   const theme = options.theme ?? LOOK_THEME;
   const color = typeColors(pipeline, options.colors, theme.series);
   const down = options.direction === 'down';

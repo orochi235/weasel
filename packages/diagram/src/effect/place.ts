@@ -19,8 +19,12 @@ export function freeSpot(boxes: readonly Rect[], size: { width: number; height: 
   if (view !== null) {
     const right = view.x + view.width - PLACE_GAP - size.width;
     const bottom = view.y + view.height - PLACE_GAP - size.height;
-    for (let y = view.y + PLACE_GAP; y <= bottom; y += STEP) {
-      for (let x = view.x + PLACE_GAP; x <= right; x += STEP) {
+    // Counted in steps from the corner, not summed: far from the origin a
+    // step is below the spacing of floats, and `x += STEP` would never move.
+    const left = view.x + PLACE_GAP;
+    const top = view.y + PLACE_GAP;
+    for (let j = 0, y = top; y <= bottom; j++, y = top + j * STEP) {
+      for (let i = 0, x = left; x <= right; i++, x = left + i * STEP) {
         if (clear(x, y, size, boxes)) return { x, y };
       }
     }

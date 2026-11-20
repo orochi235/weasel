@@ -301,4 +301,9 @@ describe('rack direction: down', () => {
       expect(gaps[k]!.a.y).toBeLessThan(b.y);
     }
   });
+
+  it('throws, naming it, on a port whose id it keeps for a skip or tap port', () => {
+    const p = { stages: [{ id: 'a', title: 'a', outputs: [{ id: '~tap:out', type: 'image' }] }], wires: [] };
+    expect(() => rack(p)).toThrow('the rack look can\'t draw port "a.~tap:out"');
+  });
 });

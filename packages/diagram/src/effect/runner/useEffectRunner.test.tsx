@@ -83,4 +83,19 @@ describe('useEffectRunner', () => {
     act(() => result.current.runner.pause());
     expect(clock.rate).toBe(0);
   });
+
+  it('lets go of an option the caller stops passing', async () => {
+    const seen: unknown[] = [];
+    const given: EffectEvaluators = { clock: ({ sources }) => { seen.push(sources.n); return { outputs: { out: 0 } }; } };
+    const kinds = { number: { show: () => 'kind' } };
+    const { result, rerender } = renderHook((props: { sources?: Record<string, unknown>; kinds?: typeof kinds }) => useEffectRunner({ pipeline: PIPELINE, evaluators: given, ...props }), {
+      initialProps: { sources: { n: 1 }, kinds } as { sources?: Record<string, unknown>; kinds?: typeof kinds },
+    });
+    await act(() => result.current.runner.run());
+    expect(result.current.run?.stages.t?.values).toEqual({ out: 'kind' });
+    rerender({});
+    await act(() => result.current.runner.run());
+    expect(seen).toEqual([1, undefined]);
+    expect(result.current.run?.stages.t?.values).toEqual({ out: '0' });
+  });
 });
