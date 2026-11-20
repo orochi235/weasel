@@ -64,6 +64,29 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe('openLabStore — a store that cannot be built', () => {
+  it('rejects, and stops hearing storage', async () => {
+    const memory = createMemoryAdapter(new Map());
+    let listening = 0;
+    const storage: StorageAdapter = {
+      ...memory,
+      subscribe: (prefix, on) => {
+        listening += 1;
+        const stop = memory.subscribe?.(prefix, on);
+        return () => {
+          listening -= 1;
+          stop?.();
+        };
+      },
+    };
+    const t: Instrument = { name: 'T', render: () => null } as never;
+    await expect(
+      openLabStore({ storageKey: 'test', storage, instruments: [t, { ...t }] }),
+    ).rejects.toThrow('two instruments are named "T"');
+    expect(listening).toBe(0);
+  });
+});
+
 describe('openLabStore — round trips', () => {
   it('reopens a trial it stored, with no live undo history until the trial restores one', async () => {
     const backing = new Map<string, unknown>();

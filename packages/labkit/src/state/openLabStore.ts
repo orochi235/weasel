@@ -62,6 +62,18 @@ export async function openLabStore(options: OpenLabStoreOptions): Promise<Opened
     storage: options.storage,
     prefix: labPrefix(options.storageKey),
   });
+  try {
+    return await bindOpened(options, records);
+  } catch (error) {
+    await records.close();
+    throw error;
+  }
+}
+
+async function bindOpened(
+  options: OpenLabStoreOptions,
+  records: OwnedRecordCache,
+): Promise<OpenedLabStore> {
   let unbind = (): void => {};
   let closed = false;
   let store: LabStore;
