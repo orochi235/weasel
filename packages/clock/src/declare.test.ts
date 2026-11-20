@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createClock } from './clock';
+import { createClock, declaredSpeed } from './clock';
 
 describe('clock origin, speed and declare', () => {
   it('shows elapsed 0 at its origin', () => {
@@ -157,5 +157,14 @@ describe('clock origin, speed and declare', () => {
     h.clock.rate = -0.5;
     h.declare({ duration: 2000 });
     expect(h.clock.speed).toBe(1);
+  });
+});
+
+describe('declaredSpeed', () => {
+  it('reads `speed`, else `rate` unsigned, else 1, as the clock opens at', () => {
+    for (const spec of [{ speed: 0.5, rate: 2 }, { rate: -2 }, { rate: 0 }, {}])
+      expect(declaredSpeed(spec)).toBe(createClock(spec).clock.speed);
+    expect(declaredSpeed({ rate: -2 })).toBe(2);
+    expect(declaredSpeed({})).toBe(1);
   });
 });

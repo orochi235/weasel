@@ -92,6 +92,13 @@ describe('a clock declared from config', () => {
     expect(readout()).toHaveTextContent('1500/3000');
   });
 
+  it('takes the speed a new `rate` declares', async () => {
+    await mount((s) => ({ duration: 10_000, rate: s }));
+    expect(handle?.clock.speed).toBe(2);
+    await click('four');
+    expect(handle?.clock.speed).toBe(4);
+  });
+
   it('drops the clock on null and opens a fresh one at the start on return', async () => {
     await mount((s) => (s > 0 ? { duration: s * 1000 } : null));
     await click('seek');
