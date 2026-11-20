@@ -318,7 +318,7 @@ export function imageLoadsSettled(): Promise<number> {
 
 /** Current load status for `src` (`'idle'` if never requested). */
 export function imageStatus(src: string): ImageStatus {
-  if (mintedHere(src)) return getImageBitmap(src) === undefined ? 'idle' : 'ready';
+  if (mintedHere(src)) return namedBitmap(src) === undefined ? 'idle' : 'ready';
   return cache.get(src)?.status ?? 'idle';
 }
 
