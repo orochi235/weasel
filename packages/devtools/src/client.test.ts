@@ -242,6 +242,27 @@ describe('followTrace', () => {
     expect((await follower.read()).coords).toEqual([]);
   });
 
+  it('restarts coords from the oldest record when they are turned off and on during a read', async () => {
+    const t = setup();
+    let toggle = false;
+    const client = connectDevtools({
+      send: (m) => {
+        t.transport.send(m);
+        // The answer is already on its way when the reader turns coords off and on again.
+        if (toggle && m.type === 'get-trace') { toggle = false; follower.setCoords(false); follower.setCoords(true); }
+      },
+      onMessage: t.transport.onMessage,
+    });
+    const follower = followTrace(client, t.root.id);
+    follower.setCoords(true);
+    t.coords.push({ ts: 1 } as never);
+    t.coords.push({ ts: 2 } as never);
+    await follower.read();
+    toggle = true;
+    expect((await follower.read()).coords).toBeUndefined();
+    expect((await follower.read()).coords).toMatchObject([{ ts: 1 }, { ts: 2 }]);
+  });
+
   it('reads one at a time, so two reads never hand back the same entries', async () => {
     const t = setup();
     const client = connectDevtools(t.transport);

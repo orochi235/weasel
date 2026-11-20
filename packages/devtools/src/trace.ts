@@ -23,15 +23,18 @@ export interface TraceFollower {
 export function followTrace(client: DevtoolsClient, rootId: string): TraceFollower {
   let cursor = 0;
   let coordCursor: number | null = null;
+  // Bumped each time coords are turned on, so an answer to a read sent before then is not taken as the restart.
+  let coordRun = 0;
   let last: Promise<unknown> = Promise.resolve();
 
   const readOnce = async (): Promise<TraceRead> => {
+    const run = coordRun;
     const slice = await client.request(rootId, {
       type: 'get-trace', cursor, ...(coordCursor !== null ? { coordCursor } : {}),
     });
     cursor = slice.cursor;
     const out: TraceRead = { entries: slice.entries, cursor: slice.cursor, live: slice.live };
-    if (slice.coords && coordCursor !== null) {
+    if (slice.coords && coordCursor !== null && run === coordRun) {
       coordCursor = slice.coords.cursor;
       out.coords = slice.coords.entries;
     }
@@ -45,7 +48,7 @@ export function followTrace(client: DevtoolsClient, rootId: string): TraceFollow
       return next;
     },
     setCoords(on) {
-      if (on && coordCursor === null) coordCursor = 0;
+      if (on && coordCursor === null) { coordCursor = 0; coordRun++; }
       else if (!on) coordCursor = null;
     },
   };
