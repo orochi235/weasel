@@ -32,11 +32,13 @@ export function useSkulkMap(options: UseSkulkMapOptions = {}): SkulkMapState {
     let live = true;
     let stop = () => {};
     let held = false;
+    const noServer = () =>
+      setState((was) => (was.status === 'ready' ? { ...was, error: 'the dev server no longer answers the route' } : { status: 'no-server' }));
     const ask = async () => {
       try {
         const res = await fetch(url, { cache: 'no-store' });
         if (!live) return;
-        if (res.status === 404) return setState({ status: 'no-server' });
+        if (res.status === 404) return noServer();
         if (!res.ok) throw new Error(`${res.status} ${(await res.text()).slice(0, 200)}`);
         const map = (await res.json()) as SkulkMap;
         if (live) setState({ status: 'ready', map });
