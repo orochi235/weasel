@@ -85,6 +85,19 @@ describe('slots', () => {
     expect(centers(got.poses, ['a', 'new', 'b'])).toEqual([[50, 50], [150, 50], [250, 50]]);
   });
 
+  it('leaves a drop from outside where it was shown when the layout pass arrives it', () => {
+    const narrow = { id: 'C', bounds: { x: 0, y: 0, width: 120, height: 100 } };
+    const children = [at('z', 30), at('y', 90)];
+    const dragged = { id: 'X', originPose: at('X', 900).pose, pose: at('X', 110).pose, sourceContainerId: null };
+    const target = layout.getDropTargets(narrow, children, dragged)[2]!;
+    const shifted = layout.reflowPoses(narrow, children, dragged, target);
+    // The scene after commitDrop: the siblings shifted, the drop at its slot.
+    const dropped = [...children.map((c) => ({ id: c.id, pose: shifted.get(c.id) ?? c.pose })), { id: 'X', pose: target.pose }];
+    const got = layout.arrive!(narrow, dropped, new Set(['X']))!;
+    const final = (id: string) => got.poses.get(id) ?? dropped.find((c) => c.id === id)!.pose;
+    expect(['z', 'y', 'X'].map((id) => final(id).x + 5)).toEqual([20, 60, 100]);
+  });
+
   it('closes up in order when a child departs', () => {
     const children = [at('a', 50), at('c', 250)];
     const got = layout.depart!(container, children, new Set(['b']));
