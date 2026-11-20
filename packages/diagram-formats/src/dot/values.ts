@@ -13,10 +13,23 @@ export interface EdgeNames {
   head: string;
 }
 
+/** An HTML label's lines as Graphviz draws them: a run of the source's own whitespace, line breaks included, as one
+ *  space; a `<br>` and the end of a table row as a break; cells of one row a space apart. Empty lines at either end are
+ *  dropped, and those between two `<br>`s kept. */
+function htmlLines(markup: string): string[] {
+  const folded = markup.replace(/\s+/g, ' ').replace(/<\/tr\s*>/gi, '<br/>').replace(/<\/t[dh]\s*>/gi, ' ');
+  const lines = markupLines(folded).map((l) => l.replace(/ {2,}/g, ' '));
+  let from = 0;
+  let to = lines.length;
+  while (from < to && lines[from] === '') from++;
+  while (to > from && lines[to - 1] === '') to--;
+  return lines.slice(from, to);
+}
+
 /** A label's lines: an HTML label's text, else the string with its escapes read. `\N` names `self`, `\G` the graph,
  *  and on an edge `\E`, `\T` and `\H` the edge, its tail, and its head. */
 export function labelLines(label: DotValue, self: string, graph: string, edge?: EdgeNames): string[] {
-  if (label.html) return markupLines(label.value).filter((l, i, all) => l !== '' || (i > 0 && i < all.length - 1));
+  if (label.html) return htmlLines(label.value);
   const lines = [''];
   const text = label.value;
   for (let i = 0; i < text.length; i++) {
@@ -50,8 +63,27 @@ function hsvHex(h: number, s: number, v: number): string {
   return rgbaToHex([f(5), f(3), f(1)]);
 }
 
-/** A color as CSS reads it: the first of a list, an HSV triple as hex, `none` as transparent, and an X11 or SVG scheme
- *  dropped. `undefined`
+/** The X11 names Graphviz reads as other colors than CSS gives them. */
+const X11_NOT_CSS: Readonly<Record<string, string>> = {
+  gray: '#bebebe', grey: '#bebebe', green: '#00ff00', maroon: '#b03060', purple: '#a020f0',
+};
+
+/** An X11 name as CSS reads it: one {@link X11_NOT_CSS} names as its hex, `grayN` and `greyN` (N of 100) as a gray, and
+ *  any other as itself. */
+function x11Color(name: string): string {
+  const lower = name.toLowerCase();
+  const differs = getOwn(X11_NOT_CSS, lower);
+  if (differs !== undefined) return differs;
+  const level = /^gr[ae]y(\d{1,3})$/.exec(lower);
+  if (level !== null && Number(level[1]) <= 100) {
+    const v = Math.round(Number(level[1]) * 2.55) / 255;
+    return rgbaToHex([v, v, v]);
+  }
+  return name;
+}
+
+/** A color as CSS reads it: the first of a list, an HSV triple as hex, `none` as transparent, a bare or X11 name as
+ *  Graphviz's X11 scheme draws it, and an SVG scheme's name as CSS's. `undefined`
  *  for a color in another scheme, such as Brewer's `/blues9/3`, which names an entry of a palette CSS does not have. */
 export function dotColor(value: string): string | undefined {
   const first = value.split(':')[0]!.split(';')[0]!.trim();
@@ -59,8 +91,9 @@ export function dotColor(value: string): string | undefined {
   if (hsv !== null) return hsvHex(Number(hsv[1]), Number(hsv[2]), Number(hsv[3]));
   if (first.toLowerCase() === 'none') return 'transparent';
   const scheme = /^\/([^/]*)\/(.*)$/.exec(first);
-  if (scheme === null) return first;
-  return /^(?:|x11|svg)$/i.test(scheme[1]!) ? scheme[2] : undefined;
+  if (scheme === null) return first.startsWith('#') ? first : x11Color(first);
+  if (/^svg$/i.test(scheme[1]!)) return scheme[2];
+  return /^(?:|x11)$/i.test(scheme[1]!) ? x11Color(scheme[2]!) : undefined;
 }
 
 const OUTLINES: Readonly<Record<string, Outline>> = {

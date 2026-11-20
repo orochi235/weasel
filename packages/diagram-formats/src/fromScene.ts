@@ -12,6 +12,7 @@ import { graphPageSettingsOf } from './graphPageMeta';
 import { plotPageOf } from './plotPages';
 import { kindOf, readCluster, readEdge, readRegion, readShape, type EndLabelNodes, type ReadNode, type ReadScene } from './sceneReaders';
 import { exportPageOf } from './exportPage';
+import { pageRootsOf } from './pageRoots';
 
 /** Options for {@link documentFromScene}. */
 export interface DocumentFromSceneOptions {
@@ -27,7 +28,7 @@ type AnyScene = ReadScene & {
 
 interface PageBucket {
   nodes: DataNode[]; edges: DataEdge[]; clusters: DataCluster[]; containers: DataContainer[];
-  /** The first sequence on the page, which makes it a sequence page. */
+  /** The sequence `pageRootsOf` names for the page, which makes it a sequence page. */
   sequence?: SequenceData;
 }
 
@@ -46,7 +47,7 @@ function contentPage(scene: AnyScene): PlacedPage {
  * Reads a diagram scene into a document: one page per page node (one page
  * around everything when it has none), each holding the shapes, connectors,
  * containers and pools, and clusters on it, in coordinates from the page's
- * corner; a page holding a plot root is a plot page of its spec, and whatever
+ * corner; a page holding a plot root (an outermost one, `pageRootsOf`) is a plot page of its spec, and whatever
  * else is on it is left out. A shape belongs to the page it is under
  * (`pageIdOf`); one on the pasteboard, to the page its outermost container
  * overlaps most, or the nearest one when it overlaps none. A connector whose
@@ -76,10 +77,11 @@ export function documentFromScene<TData, TLayer extends string>(
     return pageCache.get(node.id)!;
   };
 
+  const roots = pageRootsOf(scene, pages);
   const plots = new Map<string, PlotPage>();
-  for (const node of s.renderOrderNodes()) {
-    const page = plotPageOf(pageOf(node), node);
-    if (page !== null && !plots.has(page.id)) plots.set(page.id, page);
+  for (const [pageId, root] of roots) {
+    const page = root.kind === 'plot' ? plotPageOf(byId.get(pageId)!, s.get(root.id as never)!) : null;
+    if (page !== null) plots.set(pageId, page);
   }
 
   const labels = new Map<string, ReadNode>();
@@ -105,7 +107,7 @@ export function documentFromScene<TData, TLayer extends string>(
     itemPage.set(node.id, page);
     const bucket = buckets.get(page.id)!;
     if (kind === 'sequence') {
-      bucket.sequence ??= sequenceRootOf(node)!.sequence;
+      if (roots.get(page.id)?.id === node.id) bucket.sequence = sequenceRootOf(node)!.sequence;
       continue;
     }
     if (kind === 'shape') bucket.nodes.push(readShape(s, node, page, theme));

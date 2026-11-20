@@ -87,7 +87,7 @@ opens with the UML stencils.
 `PAGE_TEMPLATES` holds a new page of every kind: an empty graph page per diagram type, in its notation; a small
 sequence diagram; and a small chart of each plot kind, each with the `group` a menu lists it under. `templateSpecs`
 draws one as a new one-page document, the diagram type it names included, and `addTemplatePage(scene, template)`
-adds one as another page, what it draws with it, as one undo entry. `pageSpecs` draws any one page placed where a
+adds one as another page, what it draws with it, as one undo entry, in the theme the scene names unless given one. `pageSpecs` draws any one page placed where a
 page list would place it.
 
 ## Formats

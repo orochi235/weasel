@@ -2,7 +2,7 @@
 import {
   addOnPages, addPage, layoutPages, nextPageId, pagesOf, type AddNodeSpec, type Page, type Scene,
 } from '@weasel-js/core';
-import { DIAGRAM_TYPE_DOC_KEY, diagramTypeDocValue } from '@weasel-js/diagram';
+import { DIAGRAM_TYPE_DOC_KEY, diagramThemeOf, diagramTypeDocValue, type DiagramTheme } from '@weasel-js/diagram';
 import { documentSpecs, pageSpecs, type DocumentScene, type DocumentSpecsOptions } from '../toScene';
 import type { PageTemplate } from './catalog';
 
@@ -23,6 +23,8 @@ export interface AddTemplatePageOptions<TLayer extends string = 'main'> extends 
   index?: number;
   /** A graph page's size. Default the template's. */
   size?: { width: number; height: number };
+  /** The theme to draw in. Default the one the scene names (`diagram:theme`), else the night theme. */
+  theme?: DiagramTheme;
 }
 
 /** Adds a page made from `template` to `scene`, and what it draws on it, as one undo entry, `Add page`. Returns the new
@@ -30,7 +32,8 @@ export interface AddTemplatePageOptions<TLayer extends string = 'main'> extends 
 export function addTemplatePage<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>, template: PageTemplate, opts: AddTemplatePageOptions<TLayer> = {},
 ): string {
-  const { index, size, ...draw } = opts;
+  const { index, size, theme, ...rest } = opts;
+  const draw = { ...rest, theme: theme ?? diagramThemeOf(scene) };
   const doc = pagesOf(scene as never);
   const pages = doc?.pages ?? [];
   const id = nextPageId(pages);

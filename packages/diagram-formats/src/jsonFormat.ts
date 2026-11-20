@@ -23,6 +23,24 @@ function parsed(text: string): unknown {
 const isDiagramJson = (value: unknown): value is Partial<DiagramJson> =>
   value !== null && typeof value === 'object' && (value as { format?: unknown }).format === FORMAT;
 
+/** What keeps `page` from being drawn, as the end of a sentence, or `null` for none: an id, a finite size, and a `data`
+ *  object, a graph's holding `nodes` and `edges` lists. */
+function pageProblem(page: Record<string, unknown>, kind: PageKind): string | null {
+  const label = typeof page.id === 'string' ? `${JSON.stringify(page.id)} ` : '';
+  if (typeof page.id !== 'string') return 'with no string id';
+  for (const key of ['width', 'height'] as const) {
+    const n = page[key];
+    if (typeof n !== 'number' || !Number.isFinite(n) || n < 0) return `${label}whose ${key} is not a finite size`;
+  }
+  const data = page.data;
+  if (data === null || typeof data !== 'object' || Array.isArray(data)) return `${label}with no data object`;
+  if (kind === 'graph') {
+    const d = data as Record<string, unknown>;
+    if (!Array.isArray(d.nodes) || !Array.isArray(d.edges)) return `${label}whose graph data has no nodes and edges lists`;
+  }
+  return null;
+}
+
 function read(text: string): ImportResult {
   const json = parsed(text);
   if (!isDiagramJson(json)) throw new Error('Not a weasel diagram document');
@@ -36,6 +54,8 @@ function read(text: string): ImportResult {
     if (kind !== undefined && !(KINDS as readonly unknown[]).includes(kind)) {
       throw new Error(`A weasel diagram document with a page of kind ${JSON.stringify(kind)}, which this reader does not know`);
     }
+    const problem = pageProblem(p as Record<string, unknown>, (kind as PageKind | undefined) ?? 'graph');
+    if (problem !== null) throw new Error(`A weasel diagram document with a page ${problem}`);
   }
   const theme = (json as { theme?: unknown }).theme;
   if (theme !== undefined && typeof theme !== 'string') {

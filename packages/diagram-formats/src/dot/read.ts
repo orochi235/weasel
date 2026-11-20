@@ -236,10 +236,12 @@ function readCluster(r: DotReader, id: string, attrs: Attrs, ids: ReadonlyMap<st
   const fill = colorAttr(r, attrs, 'fillcolor') ?? color ?? bg;
   const stroke = colorAttr(r, attrs, 'pencolor') ?? color;
   const text = colorAttr(r, attrs, 'fontcolor');
+  const dash = dashOf(styles);
   const colors: Partial<NodeStyle> = {
     ...(styles.includes('filled') && fill !== undefined ? { fill } : bg !== undefined ? { fill: bg } : {}),
     ...(stroke !== undefined ? { stroke } : {}),
     ...(text !== undefined ? { text } : {}),
+    ...(dash !== undefined ? { dash } : {}),
   };
   const label = attrs.get('label');
   const lines = label === undefined ? [] : labelLines(label, id, r.graph.id ?? '');

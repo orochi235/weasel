@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { pagesOf, placedPagesOf } from '@weasel-js/core';
-import { DIAGRAM_TYPES, DIAGRAM_TYPE_DOC_KEY, type DiagramTypeDoc } from '@weasel-js/diagram';
+import { isPageStructure, pageIdOf, pagesOf, placedPagesOf } from '@weasel-js/core';
+import { DIAGRAM_THEMES, DIAGRAM_THEME_KEY, DIAGRAM_TYPES, DIAGRAM_TYPE_DOC_KEY, type DiagramTheme, type DiagramTypeDoc } from '@weasel-js/diagram';
 import type { PlotKind } from '@weasel-js/plot';
 import type { DiagramDocument, GraphPage } from '../document';
 import { documentFromScene } from '../fromScene';
@@ -69,5 +69,17 @@ describe('page templates', () => {
     scene.undo();
     expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['page-1']);
     expect(documentFromScene(scene).pages).toHaveLength(1);
+  });
+
+  it('draws an added page in the theme the scene names, when given none', () => {
+    const paper = DIAGRAM_THEMES.paper!;
+    const added = (opts: { theme?: DiagramTheme }) => {
+      const scene = drawnScene(templateSpecs(PAGE_TEMPLATES.flowchart!, { theme: paper, measure: MEASURE }));
+      scene.doc.set(DIAGRAM_THEME_KEY, 'paper');
+      const id = addTemplatePage(scene, PAGE_TEMPLATES['plot:pie']!, { measure: MEASURE, ...opts });
+      return scene.renderOrderNodes().filter((n) => pageIdOf(scene, n.id) === id && !isPageStructure(n)).map((n) => n.data);
+    };
+    expect(added({})).toEqual(added({ theme: paper }));
+    expect(added({})).not.toEqual(added({ theme: DIAGRAM_THEMES.night! }));
   });
 });

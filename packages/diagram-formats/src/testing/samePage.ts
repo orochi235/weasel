@@ -4,17 +4,22 @@ import type { DiagramDocument, GraphPage } from '../document';
 const byId = <T extends { id?: string }>(items: readonly T[] | undefined): T[] | undefined =>
   items === undefined ? undefined : [...items].sort((a, b) => (a.id ?? '').localeCompare(b.id ?? ''));
 
-/** `page` with its nodes, edges, containers, lanes, and members each sorted by id. */
+/** `page` with its nodes, edges, containers, clusters, and every member list sorted by id. A pool's lanes keep their
+ *  order, which is the order they are drawn in; only their members are sorted. */
 export function sortedPage(page: GraphPage): GraphPage {
   const { data } = page;
   const containers = byId(data.containers)?.map((c) => ({
     ...c,
     ...(c.members !== undefined ? { members: [...c.members].sort() } : {}),
-    ...(c.lanes !== undefined ? { lanes: byId(c.lanes)!.map((l) => ({ ...l, ...(l.members ? { members: [...l.members].sort() } : {}) })) } : {}),
+    ...(c.lanes !== undefined ? { lanes: c.lanes.map((l) => ({ ...l, ...(l.members ? { members: [...l.members].sort() } : {}) })) } : {}),
   }));
+  const clusters = byId(data.clusters)?.map((c) => ({ ...c, members: [...c.members].sort() }));
   return {
     ...page,
-    data: { ...data, nodes: byId(data.nodes)!, edges: byId(data.edges)!, ...(containers !== undefined ? { containers } : {}) },
+    data: {
+      ...data, nodes: byId(data.nodes)!, edges: byId(data.edges)!,
+      ...(containers !== undefined ? { containers } : {}), ...(clusters !== undefined ? { clusters } : {}),
+    },
   };
 }
 

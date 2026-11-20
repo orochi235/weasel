@@ -51,7 +51,11 @@ export function nodeLines(node: DataNode, warnings: Warnings, format: string): s
 function clusterTree(page: GraphPage, theme: DiagramTheme, warnings: Warnings, format: string, holdsPools: boolean) {
   const parent = new Map<string, string>();
   const claim = (member: string, owner: string) => {
-    if (parent.has(member) || member === owner) return;
+    if (member === owner) return;
+    if (parent.has(member)) {
+      if (parent.get(member) !== owner) warnings.list(`${format} puts a shape or box in one box only; these were left out of the others`, member);
+      return;
+    }
     for (let at: string | undefined = owner; at !== undefined; at = parent.get(at)) {
       if (at === member) {
         warnings.add(`${format} nests a box only inside another; boxes that held each other in a loop were written apart.`);
@@ -119,14 +123,18 @@ export function graphOut(doc: DiagramDocument, opts: WriteOptions | undefined, f
   return { page, theme, ...tree, byId, edges: [...page.data.edges], warnings };
 }
 
-/** A CSS color in a spelling every graph format reads: `rgb()` and `rgba()` as hex, short hex long. Names pass through. */
-export function hexColor(css: string): string {
+/**
+ * A CSS color in a spelling every graph format reads: any color function (`rgb()`, `hsl()`, `oklch()`, `color()`) as
+ * hex, short hex long. A name passes through, unless `names` is `'hex'`: Graphviz reads a bare name as X11, where
+ * `green`, `gray`, `maroon` and `purple` are other colors than CSS's, so DOT writes every name but `transparent` as hex.
+ */
+export function hexColor(css: string, names: 'keep' | 'hex' = 'keep'): string {
   if (css.startsWith('#')) return tryNormalizeHex(css) ?? css;
-  if (!/^rgba?\(/i.test(css)) return css;
   const rgba = tryParseColor(css);
   if (!rgba) return css;
+  if (/^[a-z]+$/i.test(css.trim()) && (names === 'keep' || css.trim().toLowerCase() === 'transparent')) return css;
   // An alpha written out is kept, `ff` included: a fourth comma-separated value or one after `/`.
-  return normalizeHex(rgbaToHex(rgba), /\/|(?:,[^,]*){3}/.test(css) ? 'rgba' : 'rgb');
+  return normalizeHex(rgbaToHex(rgba), /\/|(?:,[^,]*){3}/.test(css) || rgba[3] < 1 ? 'rgba' : 'rgb');
 }
 
 /** `style`'s fields that differ from `base`. */
