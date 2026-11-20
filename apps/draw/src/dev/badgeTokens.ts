@@ -106,7 +106,7 @@ const booleanTokenSet: BadgeTokenSet = {
   id: 'boolean',
   label: 'Boolean',
   description:
-    'Yes/no rendering for boolean fields (e.g. tool capability flags, claimsAll). '
+    'Yes/no rendering for boolean fields (e.g. tool capability flags). '
     + 'True reads as a positive accent; false fades into the panel.',
   entries: [
     { value: 'true', props: BOOLEAN_BADGE_PROPS.true },

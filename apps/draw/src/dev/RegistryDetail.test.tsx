@@ -151,3 +151,20 @@ describe('op kind detail', () => {
     expect(screen.queryByText('ops.transform')).toBeNull();
   });
 });
+
+describe('gesture detail', () => {
+  const gesture: TreeEntry = { kind: 'gesture', id: 'key', label: 'key' };
+
+  it('does not describe tool bindings as a phase grammar', () => {
+    const { container } = renderWithIcons(<RegistryDetail entry={gesture} tools={[]} actions={[]} onNavigate={() => {}} />);
+    expect(container.textContent).not.toMatch(/phase grammar/);
+  });
+});
+
+describe('phase output detail', () => {
+  it.each(['overlay', 'cursor'] as const)('describes %s without the removed phase tables', (id) => {
+    const entry: TreeEntry = { kind: 'phaseOutput', id, label: id };
+    const { container } = renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    expect(container.textContent).not.toMatch(/initial\.overlay|claimsAll|pointerdown/);
+  });
+});
