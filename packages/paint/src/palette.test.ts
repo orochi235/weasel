@@ -169,6 +169,12 @@ describe('resolvePaletteColors', () => {
 });
 
 describe('colorLiteralToHex', () => {
+  it('converts hsl and srgb-linear', () => {
+    expect(colorLiteralToHex({ space: 'hsl', coords: [120, 100, 25] })).toBe('#008000');
+    expect(colorLiteralToHex({ space: 'hsl', coords: [0, 100, 50], alpha: 0.5 })).toBe('#ff000080');
+    expect(colorLiteralToHex({ space: 'srgb-linear', coords: [1, 0.2158605, 0] })).toBe('#ff8000');
+  });
+
   it('converts srgb, oklab and oklch', () => {
     expect(colorLiteralToHex({ space: 'srgb', coords: [1, 0.5, 0] })).toBe('#ff8000');
     expect(colorLiteralToHex({ space: 'oklab', coords: [1, 0, 0] })).toBe('#ffffff');
@@ -233,8 +239,8 @@ describe('colorLiteralToCss', () => {
     expect(colorLiteralToCss({ space: 'display-p3', coords: [1, 0, 0], alpha: 0.25 })).toBe('color(display-p3 1 0 0 / 0.25)');
   });
 
-  it('writes a space CSS gives a function of its own as that function', () => {
-    expect(colorLiteralToCss({ space: 'hsl', coords: [210, 50, 40] })).toBe('hsl(210 50% 40%)');
+  it('writes a space CSS gives a function of its own as that function, or hex where it converts', () => {
+    expect(colorLiteralToCss({ space: 'hsl', coords: [210, 50, 40] })).toBe('#336699');
     expect(colorLiteralToCss({ space: 'hwb', coords: [210, 10, 20], alpha: 0.5 })).toBe('hwb(210 10% 20% / 0.5)');
     expect(colorLiteralToCss({ space: 'lab', coords: [50, 20, -30] })).toBe('lab(50 20 -30)');
     expect(colorLiteralToCss({ space: 'lch', coords: [50, 30, 120] })).toBe('lch(50 30 120)');

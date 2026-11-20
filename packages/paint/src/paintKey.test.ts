@@ -63,6 +63,13 @@ describe('paintKey', () => {
 });
 
 describe('strokeHasInk', () => {
+  it('is false for a stroke whose dash is non-finite, which draws nothing', () => {
+    const stroke: Stroke = { paint: { color: '#000' }, width: 2, dash: [Number.NaN, 4] };
+    expect(strokeHasInk(stroke)).toBe(false);
+    expect(strokeKey(stroke)).toBe('none');
+    expect(strokeHasInk({ ...stroke, dash: [2, 4] })).toBe(true);
+  });
+
   it('is false with no paint or no width', () => {
     expect(strokeHasInk(undefined)).toBe(false);
     expect(strokeHasInk({ width: 2 })).toBe(false);

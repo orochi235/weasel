@@ -11,11 +11,24 @@ describe('solid', () => {
     expect(solid('#ff0000')).toEqual({ color: '#ff0000' });
     expect(solid('#f00')).toEqual({ color: '#f00' });
   });
+
+  it('moves the alpha of a functional or named color to opacity', () => {
+    expect(solid('rgba(255, 0, 0, 0.5)')).toEqual({ color: '#ff0000', opacity: 0.5 });
+    expect(solid('hsl(0 100% 50% / 25%)')).toEqual({ color: '#ff0000', opacity: 0.25 });
+    expect(solid('transparent')).toEqual({ color: '#000000', opacity: 0 });
+    expect(solid('rgb(255, 0, 0)')).toEqual({ color: 'rgb(255, 0, 0)' });
+    expect(solid('var(--ink)')).toEqual({ color: 'var(--ink)' });
+  });
 });
 
 describe('paintWithColor', () => {
   it("lets a short hex alpha channel win over the paint's opacity", () => {
     expect(paintWithColor({ color: '#000', opacity: 0.5 }, '#f008')).toEqual({ color: '#ff0000', opacity: 0x88 / 255 });
+  });
+
+  it("lets a functional color's alpha win over the paint's opacity", () => {
+    expect(paintWithColor({ color: '#000', opacity: 0.5 }, 'rgba(0, 0, 0, 0.5)')).toEqual({ color: '#000000', opacity: 0.5 });
+    expect(paintWithColor({ color: '#000', opacity: 0.5 }, 'rgb(0, 0, 0)')).toEqual({ color: 'rgb(0, 0, 0)', opacity: 0.5 });
   });
 });
 

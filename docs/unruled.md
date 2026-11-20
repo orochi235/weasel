@@ -572,6 +572,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-10 (property tests): `hslToSrgb` reads a hue of any number of turns, as CSS `hsl()` does.
   `srgbToHsl` caps saturation at 1, so a color past sRGB's gamut, which its doc does not take, no
   longer reports more. `lerpPaint` and `lerpStroke` answer `b`'s numbers exactly at `t = 1`.
+- 2026-11-20: `lerpStroke` interpolates `vertexWidths` and `vertexColors` entry by entry when both strokes hold an
+  array of one length, reading a missing width entry as that stroke's width; otherwise it keeps the nearer side's
+  array as written, as it keeps every other field.
 - Ruled 2026-11-10: `paintKey` keys every fully transparent solid as one, whatever its color; none draws anything.
   It still keys apart from no paint (`'none'`).
 - 2026-11-10 (property tests): `RetainedSurfaces.reserve` drops the surface's key, so until `commit` names a new
@@ -1799,7 +1802,6 @@ Calls the lanes made without a ruling:
 - A Mermaid flowchart keyword line's `;` inside double quotes doesn't end the line. Sequence participant ids hold no
   whitespace in messages, notes, and activations, as in declarations. Numbers past the double range are refused at
   read; `niceDomain` keeps an end that would overflow, and a span too fine to cut.
-- Open: `lerpStroke` drops `vertexWidths` and `vertexColors`, since the two strokes can differ in anchor count.
 - Open: a clearable number pref with a numeric default reads back as the default once cleared in a store.
 - Open: negative stroke widths pass through the draw.io, DOT, and Mermaid readers unchanged.
 - Open: `Slider` commits through `onChange` when a press or keystroke moves nothing.

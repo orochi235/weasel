@@ -75,6 +75,11 @@ function parseColorUncached(input: string): [number, number, number, number] {
   throw new Error(`parseColor: unrecognized color "${input}"`);
 }
 
+/** Whether `name` is one of CSS's named colors, in any case. */
+export function isNamedColor(name: string): boolean {
+  return getOwn(NAMED_COLORS, name.trim().toLowerCase()) !== undefined;
+}
+
 /** @internal Test-only: drops the color cache so tests can assert behavior in
  *  isolation. Never call from production code. */
 export function __resetParseColorCache(): void {
