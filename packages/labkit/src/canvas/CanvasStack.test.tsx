@@ -243,6 +243,28 @@ describe('<CanvasStack> zoom invariant', () => {
 });
 
 describe('<CanvasStack ticks>', () => {
+  it('does not repaint for an equal inline world spec on a parent render', async () => {
+    const layer: CanvasLayerDescriptor = { id: 'still', visible: true, render: vi.fn() };
+    const layers = [layer];
+    const view = { zoom: 1, pan: { x: 0, y: 0 } };
+    const onViewChange = vi.fn();
+    const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r(null)));
+    const stack = () => (
+      <CanvasStack
+        layers={layers}
+        view={view}
+        onViewChange={onViewChange}
+        worldSpec={{ origin: { x: 0.5, y: 0.5 }, yAxis: 'up' }}
+      />
+    );
+    const { rerender } = render(stack());
+    await nextFrame();
+    vi.mocked(layer.render).mockClear();
+    rerender(stack());
+    await nextFrame();
+    expect(layer.render).not.toHaveBeenCalled();
+  });
+
   it('repaints only the timed layers on a tick', async () => {
     const still: CanvasLayerDescriptor = { id: 'still', visible: true, render: vi.fn() };
     const moving: CanvasLayerDescriptor = {
