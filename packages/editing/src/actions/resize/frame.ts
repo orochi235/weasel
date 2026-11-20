@@ -103,7 +103,7 @@ export function posesInBox(
   asked: Bounds,
 ): { previews: Map<NodeId, unknown>; proposed: Bounds; lone?: { id: NodeId; g: PoseDescriptor<unknown>; world: unknown } } {
   const { box } = place;
-  const proposed = (place.minimum && clampToMinSize(asked, box.anchor, place.minimum)) ?? asked;
+  const proposed = (place.minimum && clampToMinSize(asked, box.anchor, place.minimum, box.bounds)) ?? asked;
   const previews = new Map<NodeId, unknown>();
   const worldOf = (id: NodeId): unknown => {
     const start = place.startWorlds.get(id);

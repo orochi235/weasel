@@ -111,4 +111,19 @@ describe('resize — a node\'s minimum size', () => {
     drag(scene, [A], { x: 'min', y: 'free' }, { x: 100, y: 50 }, { x: -50, y: 50 });
     expectSamePose(scene.get(A)!.pose as RectPose, { x: 0, y: 0, width: -50, height: 100 });
   });
+
+  it('keeps a flipped lone node flipped, held to the minimum by its size', () => {
+    const scene = makeScene({ pose: { x: 100, y: 0, width: -50, height: 100 } });
+    // The east handle of a box flipped on x sits at its x + width, 50; anchored there at 'min' is x = 100.
+    drag(scene, [A], { x: 'min', y: 'free' }, { x: 50, y: 50 }, { x: 51, y: 50 });
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 100, y: 0, width: -49, height: 100 });
+    drag(scene, [A], { x: 'min', y: 'free' }, { x: 51, y: 50 }, { x: 95, y: 50 });
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 100, y: 0, width: -48, height: 100 });
+  });
+
+  it('holds a flipped member of a shared box to its minimum as it holds an unflipped one', () => {
+    const scene = makeScene({ pose: { x: 100, y: 0, width: -100, height: 100 } });
+    drag(scene, [A, B], BOTTOM_RIGHT, { x: 200, y: 100 }, { x: 20, y: 10 });
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 48, y: 0, width: -48, height: 48 });
+  });
 });
