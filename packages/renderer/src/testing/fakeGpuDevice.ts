@@ -5,6 +5,8 @@
  * steer the promises a real device settles (`lose`, `failMaps`, `failPipelines`).
  */
 
+import { NOT_METHODS } from './standInKeys';
+
 export interface FakeGpuObject {
   readonly label: string;
   readonly desc: Record<string, unknown>;
@@ -61,7 +63,9 @@ export function fakeGpuDevice(width = 64, height = 64): FakeGpuDevice {
   };
 
   const renderPass = () => new Proxy({}, {
-    get: (_, method: string) => (...args: unknown[]) => { passCalls.push([method, ...args]); },
+    get: (_, method: string | symbol) => (typeof method !== 'string' || NOT_METHODS.has(method)
+      ? undefined
+      : (...args: unknown[]) => { passCalls.push([method, ...args]); }),
   }) as GPURenderPassEncoder;
 
   const device = {

@@ -11,6 +11,7 @@
 import { paintTextures } from '../draw/paintBind';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import type { PaintBindContext } from '../paintKinds';
+import { NOT_METHODS } from './standInKeys';
 
 /** One recorded call on the context: its name, its arguments, and what it returned. */
 export interface GLCall {
@@ -199,9 +200,9 @@ export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
     {},
     {
       get(_, prop: string | symbol) {
-        if (typeof prop !== 'string') return undefined;
-        if (prop in DATA_PROPERTIES) return DATA_PROPERTIES[prop];
-        if (prop in GL_CONSTANTS) return GL_CONSTANTS[prop];
+        if (typeof prop !== 'string' || NOT_METHODS.has(prop)) return undefined;
+        if (Object.hasOwn(DATA_PROPERTIES, prop)) return DATA_PROPERTIES[prop];
+        if (Object.hasOwn(GL_CONSTANTS, prop)) return GL_CONSTANTS[prop];
         if (/^[A-Z_0-9]+$/.test(prop)) return 0; // unknown all-caps constant → 0
         return handler(prop);
       },

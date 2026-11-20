@@ -64,4 +64,17 @@ describe('createGLRecorder', () => {
     expect(second).not.toEqual(first);
     expect(secondLoc).not.toBe(firstLoc);
   });
+
+  it('is not a thenable, so a promise resolves with it', async () => {
+    const recorder = createGLRecorder();
+    await expect(Promise.resolve(recorder.gl)).resolves.toBe(recorder.gl);
+    expect(JSON.stringify({ gl: recorder.gl })).toBe('{"gl":{}}');
+    expect(recorder.calls).toEqual([]);
+  });
+
+  it('records a method Object.prototype also names', () => {
+    const recorder = createGLRecorder();
+    (recorder.gl as unknown as { valueOf(): unknown }).valueOf();
+    expect(recorder.calls.map((c) => c.name)).toEqual(['valueOf']);
+  });
 });
