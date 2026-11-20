@@ -7,6 +7,7 @@
  *  it is not a point, and `[x, y, z, w]` is the layout three.js and glMatrix
  *  both use. */
 
+import { lengthOf3 } from '../points';
 import { lerp as lerpScalar } from '../scalar';
 
 /** A point or direction in 3D. */
@@ -54,11 +55,11 @@ export function len2(a: Vec3): number {
 }
 
 /** The smallest positive double with full precision. */
-export const MIN_NORMAL = 2.2250738585072014e-308;
+const MIN_NORMAL = 2.2250738585072014e-308;
 
 /** Euclidean length. */
 export function len(a: Vec3): number {
-  return Math.hypot(a.x, a.y, a.z);
+  return lengthOf3(a.x, a.y, a.z);
 }
 
 /** A vector with no length, or no finite one, normalizes to the zero vector
@@ -86,7 +87,7 @@ export function distance2(a: Vec3, b: Vec3): number {
 
 /** Euclidean distance between two points. */
 export function distance(a: Vec3, b: Vec3): number {
-  return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+  return lengthOf3(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
 /** The point `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. */

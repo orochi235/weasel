@@ -1,8 +1,8 @@
 /** Rays, axis-aligned boxes, and the intersections picking is built from. */
 
-import { nearestPointOnSegment as nearestPointOnSegmentN } from '../points';
+import { nearestPointOnSegment as nearestPointOnSegmentN, squaresHeld } from '../points';
 import { SINGULAR_RATIO } from '../scalar';
-import { add, dot, len, len2, MIN_NORMAL, scale, sub, type Vec3 } from './vec3';
+import { add, dot, len, len2, scale, sub, type Vec3 } from './vec3';
 import { transformPoint, type Mat4 } from './mat4';
 
 /** A ray from `origin` along `direction`, which need not be unit length: the
@@ -118,8 +118,7 @@ export function nearestPointOnLine(p: Vec3, origin: Vec3, direction: Vec3): Vec3
  *  divisor `k`: the projections here are unchanged by the direction's length, and its square must not
  *  over- or underflow. `k` is 1 for every vector that squares in range, so those answer bit for bit as before. */
 function squarable(v: Vec3): { v: Vec3; k: number } {
-  const l2 = len2(v);
-  if (l2 >= MIN_NORMAL && l2 < Infinity) return { v, k: 1 };
+  if (squaresHeld(len2(v))) return { v, k: 1 };
   const k = Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z));
   if (!(k > 0 && k < Infinity)) return { v, k: 1 };
   return { v: scale(v, 1 / k), k };

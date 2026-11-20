@@ -2,6 +2,8 @@ import { segmentLength } from '../paths/segmentLength';
 import { arcLookup, type ArcLookup } from './arcLookup';
 import { segmentCoords } from './bezier';
 import { lerp } from '../scalar';
+import { lengthOf3 } from '../points';
+import { lengthOf } from '../points2';
 
 /** One subpath of a path in pen order: points joined by straight segments, or by curves where `controls` gives them. */
 export interface LengthRun {
@@ -201,8 +203,8 @@ function runLengths(run: LengthRun, dim: 2 | 3, base: number): Float64Array {
     const a = (i - 1) * dim;
     const b = (i % n) * dim;
     const len = dim === 2
-      ? Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1])
-      : Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
+      ? lengthOf(p[b] - p[a], p[b + 1] - p[a + 1])
+      : lengthOf3(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
     c[i] = c[i - 1] + (Number.isFinite(len) ? len : 0);
   }
   return c;
