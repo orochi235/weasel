@@ -91,7 +91,8 @@ describe('window widget', () => {
 
     it('draws a title that follows the text color as a concrete color, since a canvas has no currentColor', () => {
       for (const stance of [undefined, 'aside'] as const) {
-        expect(title(createWindow({ ...opts, stance }).draw(ctx))).toMatch(/"color":"rgba\(230, 231, 233, 0\.\d+\)"/);
+        // A color function's alpha moves to the paint's opacity, so the color itself is the solid hex.
+        expect(title(createWindow({ ...opts, stance }).draw(ctx))).toMatch(/"color":"#e6e7e9","opacity":0\.\d+/);
       }
     });
 
