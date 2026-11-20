@@ -15,7 +15,7 @@ export const mergeLock = (state = STATE_DIR) => join(state, 'merge.lock');
 /** Held from reading what other runs hold through writing this run's status, so two plans never pick one area. */
 export const planLock = (state = STATE_DIR) => join(state, 'plan.lock');
 
-const readJson = (path) => {
+export const readJson = (path) => {
   try {
     return JSON.parse(readFileSync(path, 'utf8'));
   } catch {

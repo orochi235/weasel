@@ -11,7 +11,7 @@ import { gitIn } from './batch.mjs';
 import { STATE_DIR } from './config.mjs';
 import { partitionAt } from './partition.mjs';
 import { chapman, gitTouched, pickAreas, readPasses } from './rounds.mjs';
-import { lastFinished, liveRuns } from './runs.mjs';
+import { lastFinished, liveRuns, readJson } from './runs.mjs';
 
 /** Each area's furthest step in a night's log, from the lines `night.mjs` prints as jobs finish. */
 export const nightStages = (log) => {
@@ -100,8 +100,11 @@ export const readRun = (run, running, jobs = []) => {
 
 /** Every live run, then the one that finished last. */
 export const readRuns = (state = STATE_DIR, jobs = null) => {
-  const last = lastFinished(state);
-  const live = liveRuns(state);
+  const legacy = !existsSync(join(state, 'runs'));
+  const current = legacy ? readJson(join(state, 'current.json')) : null;
+  // A service still on the one-night runner keeps current.json and last.json instead of runs/.
+  const last = legacy ? (current ? null : readJson(join(state, 'last.json'))) : lastFinished(state);
+  const live = legacy ? (current ? [current] : []) : liveRuns(state);
   const running = live.length ? (jobs ?? runningJobs()) : [];
   return [...live.map((r) => readRun(r, true, running)), ...(last ? [readRun(last, false)] : [])];
 };
