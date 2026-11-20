@@ -16,6 +16,15 @@ describe('lerpPaint', () => {
     expect(g).toBeGreaterThan(0x90);
   });
 
+  it("turns a conic gradient's start angle the short way round", () => {
+    const stops = [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }];
+    const conic = (angle: number) => ({ kind: 'conic-gradient' as const, center: { x: 0, y: 0 }, angle, stops });
+    const mid = lerpPaint(conic(3), conic(-3), 0.5) as { angle: number };
+    expect(Math.abs(Math.abs(mid.angle) - Math.PI)).toBeLessThan(1e-9);
+    expect((lerpPaint(conic(6.2), conic(0.1), 1) as { angle: number }).angle).toBe(0.1);
+    expect((lerpPaint(conic(6.2), conic(0.1), 0.5) as { angle: number }).angle).toBeCloseTo(6.2 + (0.1 + 2 * Math.PI - 6.2) / 2);
+  });
+
   it('fades a missing side in as transparent', () => {
     expect(lerpPaint(undefined, { color: '#0000ff' }, 0.5)).toEqual({ color: '#0000ff', opacity: 0.5 });
   });

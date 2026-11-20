@@ -9,6 +9,7 @@ import { isSolidPaint } from './commandPaint';
 import { mixOklab } from './mix';
 import { isGradientPaint } from './gradient';
 import { lerp } from './scalar';
+import { shortArc } from './shortArc';
 import type { Fill, GradStop, GradientPaint, Paint, ScreenLength, Stroke } from './paint';
 
 type Rgba = [number, number, number, number];
@@ -83,6 +84,11 @@ function mixStopColor(a: string, b: string, t: number): string {
   return rgbaToHex([r, g, bl, 0]);
 }
 
+/** `t` of the way from angle `a` to `b` in radians, the short way round; exactly `b` at `t = 1`. */
+function lerpAngle(a: number, b: number, t: number): number {
+  return t === 1 ? b : a + shortArc(b - a) * t;
+}
+
 function lerpGradient(a: GradientPaint, b: GradientPaint, t: number): Paint | null {
   if (a.kind !== b.kind || a.stops.length !== b.stops.length) return null;
   if ((a.units ?? 'screen') !== (b.units ?? 'screen')) return null;
@@ -105,7 +111,7 @@ function lerpGradient(a: GradientPaint, b: GradientPaint, t: number): Paint | nu
     return { kind: 'radial-gradient', center: pt(a.center, b.center), radius: lerp(a.radius, b.radius, t), ...common };
   }
   if (a.kind === 'conic-gradient' && b.kind === 'conic-gradient') {
-    return { kind: 'conic-gradient', center: pt(a.center, b.center), angle: lerp(a.angle, b.angle, t), ...common };
+    return { kind: 'conic-gradient', center: pt(a.center, b.center), angle: lerpAngle(a.angle, b.angle, t), ...common };
   }
   return null;
 }
