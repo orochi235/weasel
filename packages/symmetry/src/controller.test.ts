@@ -4,6 +4,7 @@ import {
 } from '@weasel-js/core';
 import { transformPoint, boundsOfPath, rectPath } from '@weasel-js/geom';
 import { createSymmetry } from './controller';
+import { reachFrom } from './frames';
 import { editSymmetries, isSymmetryGroup, symmetryCopies, symmetryGroupSpec, symmetryRegistry } from './group';
 import { VERTICAL_AXIS } from './kinds';
 
@@ -360,5 +361,24 @@ describe('createSymmetry, subscribe', () => {
     scene.remove(group);
     expect(calls).toBeGreaterThan(before);
     expect(sym.active()).toBeNull();
+  });
+});
+
+describe('createSymmetry, under a scrolled container', () => {
+  it('writes back the center it reads unchanged, and measures reach in the same reading', () => {
+    const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: symmetryRegistry });
+    const box = scene.add({ kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {} });
+    const sym = createSymmetry(scene as never);
+    const group = sym.create({ center: { x: 50, y: 50 }, parent: box });
+    scene.scroll.set(box, { x: 0, y: 200 });
+    const pose = scene.get(group)!.pose;
+    const steps = scene.history.undoDepth;
+    sym.update(group, { center: sym.read(group)!.center });
+    expect(scene.get(group)!.pose).toEqual(pose);
+    expect(scene.history.undoDepth).toBe(steps);
+    sym.update(group, { center: { x: sym.read(group)!.center.x + 10, y: sym.read(group)!.center.y } });
+    expect(scene.get(group)!.pose).toMatchObject({ x: pose.x + 10, y: pose.y });
+    scene.add({ kind: 'mark', layer: 'main', parent: group, pose: { x: 10, y: 0, width: 0, height: 0 }, data: {} });
+    expect(reachFrom(scene as never, group, sym.read(group)!.center)).toBeCloseTo(10);
   });
 });

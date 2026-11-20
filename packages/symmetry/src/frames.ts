@@ -31,7 +31,7 @@ export function keepContentsPut(scene: AnyScene, id: NodeId, change: () => void)
 }
 
 /**
- * How far from `center` anything inside `id` draws: the farthest corner of
+ * How far from `center`, a shown world point, anything inside `id` draws: the farthest corner of
  * any descendant's drawn box, rotation included. A symmetry's copies turn and
  * reflect about `center`, so they reach no further.
  */
@@ -41,7 +41,7 @@ export function reachFrom(scene: AnyScene, id: NodeId, center: Point): number {
     for (const c of scene.childrenOf(at)) {
       const node = scene.get(c);
       if (!node) continue;
-      const b = visualBoundsViaDescriptor(worldPoseOf(scene, c, 'document'), poseDescriptorForNode(AUTO_POSE_DESCRIPTOR, node));
+      const b = visualBoundsViaDescriptor(worldPoseOf(scene, c, 'shown'), poseDescriptorForNode(AUTO_POSE_DESCRIPTOR, node));
       const dx = Math.max(Math.abs(b.x - center.x), Math.abs(b.x + b.width - center.x));
       const dy = Math.max(Math.abs(b.y - center.y), Math.abs(b.y + b.height - center.y));
       const r = Math.hypot(dx, dy);
