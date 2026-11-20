@@ -84,6 +84,17 @@ describe('createFramePool', () => {
     expect(pool.claim()).toBe(next);
   });
 
+  it('hands out no frame once disposed, though one had said hello', () => {
+    proto.moveBefore = () => {};
+    pool = createFramePool('/frame.html', 1);
+    idle();
+    hello(shelved()[0] as HTMLIFrameElement);
+    pool.dispose();
+    expect(pool.claim()).toBeNull();
+    idle();
+    expect(shelved()).toHaveLength(0);
+  });
+
   it('takes its frames out of the document when disposed', () => {
     proto.moveBefore = () => {};
     pool = createFramePool('/frame.html', 1);

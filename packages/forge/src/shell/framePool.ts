@@ -8,6 +8,7 @@ export interface FramePool {
    * `moveBefore`; null when none is ready or the browser cannot move an iframe without reloading it.
    */
   claim(): HTMLIFrameElement | null;
+  /** Stops loading frames and drops the ones loaded; `claim` returns null from then on. */
   dispose(): void;
 }
 
@@ -86,7 +87,7 @@ export function createFramePool(frameUrl: string, size = 2): FramePool {
 
   return {
     claim() {
-      if (!canMoveFrames()) return null;
+      if (disposed || !canMoveFrames()) return null;
       const frame = warm.shift() ?? null;
       refill();
       return frame;
@@ -95,6 +96,7 @@ export function createFramePool(frameUrl: string, size = 2): FramePool {
       disposed = true;
       cancelRefill?.();
       for (const stop of [...waits]) stop();
+      warm.length = 0;
       shelf.remove();
     },
   };
