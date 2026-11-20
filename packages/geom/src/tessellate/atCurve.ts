@@ -44,12 +44,19 @@ export function polylineAtCurve(pl: Polyline, segment: number, t: number, run?: 
   return { length: length + u * chordLength(p, n, chord), x, y };
 }
 
-/** The indices of `pl`'s anchor-aligned points, then `n` for a closed one's return to its first. */
+/** The indices of `pl`'s anchor-aligned points, then `n` for a closed one's return to its first. A
+ *  corner split into two coincident points, as a nib splits it, counts once, at its first. */
 function anchorIndices(pl: Polyline, n: number): number[] {
-  const { anchorA: A, anchorB: B } = pl;
+  const { anchorA: A, anchorB: B, points: p } = pl;
   const out: number[] = [];
-  for (let i = 0; i < n; i++) if (!A || !B || A[i] === B[i]) out.push(i);
-  if (pl.closed && n >= 2) out.push(n);
+  const same = (i: number, j: number) => A?.[i] === A?.[j] && p[i * 2] === p[j * 2] && p[i * 2 + 1] === p[j * 2 + 1];
+  for (let i = 0; i < n; i++) {
+    if (A && B && A[i] !== B[i]) continue;
+    if (A && out.length > 0 && same(i, out[out.length - 1])) continue;
+    out.push(i);
+  }
+  const last = out[out.length - 1];
+  if (pl.closed && n >= 2 && !(A && last > 0 && same(last, 0))) out.push(n);
   return out;
 }
 

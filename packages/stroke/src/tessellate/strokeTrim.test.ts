@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { tessellateStroke } from './stroke';
-import { PATH_M, PATH_L, type PolygonPath } from '@weasel-js/geom';
+import { PATH_M, PATH_L, PathBuilder, type PolygonPath } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
 
 const LINE: PolygonPath = {
@@ -64,5 +64,30 @@ describe('inset trimming in tessellateStroke', () => {
     const trimmed = tessellateStroke(LINE, dashed, { endInset: 30 });
     expect(spanX(trimmed)[1]).toBeLessThan(spanX(plain)[1]);
     expect(spanX(trimmed)[1]).toBeLessThanOrEqual(70 + 1e-4);
+  });
+});
+
+describe('a trimmed stroke whose widths split its corners', () => {
+  const ELBOW = new PathBuilder().moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).build();
+  const minY = (mesh: { vertices: Float32Array }) => {
+    let lo = Infinity;
+    for (let i = 1; i < mesh.vertices.length; i += 2) lo = Math.min(lo, mesh.vertices[i]);
+    return lo;
+  };
+
+  it('cuts a nibbed stroke where it cuts a plain one', () => {
+    const plain = tessellateStroke(ELBOW, { ...BASE, trim: { start: 0.75 } });
+    const nibbed = tessellateStroke(ELBOW, { ...BASE, nib: { angle: 0.3, ratio: 0.5 }, trim: { start: 0.75 } });
+    expect(minY(plain)).toBeCloseTo(5, 4);
+    expect(minY(nibbed)).toBeCloseTo(5, 4);
+  });
+
+  it('cuts a closed nibbed stroke where it cuts a plain one', () => {
+    const square = new PathBuilder().moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).lineTo(0, 10).close().build();
+    const trim = { start: 0.625, end: 0.875 };
+    const nibbed = tessellateStroke(square, { ...BASE, nib: { angle: 0.3, ratio: 0.5 }, trim });
+    // From (5, 10) along the top edge and down the closing one to (0, 5), each end a butt cap.
+    expect(spanX(nibbed)[1]).toBeCloseTo(5, 4);
+    expect(minY(nibbed)).toBeCloseTo(5, 4);
   });
 });
