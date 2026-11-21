@@ -1,6 +1,6 @@
 import { clamp, maxOf, type Rect } from '@weasel-js/geom';
 import {
-  centeredBaseline, envNumber, envPx,
+  centeredBaseline, envFontWeight, envNumber, envPx,
   type Constraints, type FontSpec, type MeasureEnv, type Measured,
 } from './measure';
 
@@ -54,7 +54,7 @@ export function menuPanelMetrics(env: MeasureEnv): MenuPanelMetrics {
     minWidth: MENU_MIN_WIDTH,
     iconSize: MENU_ICON_SIZE,
     font,
-    currentFont: { ...font, weight: envNumber(env, '--wzl-font-weight-bold', 700) },
+    currentFont: { ...font, weight: envFontWeight(env, '--wzl-font-weight-bold', 700) },
     lineHeight: size * envNumber(env, '--wzl-leading-snug', 1.2),
   };
 }

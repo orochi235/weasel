@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buttonParts, measureButton } from './button';
+import { buttonMetrics, buttonParts, measureButton } from './button';
 import { exactly, UNBOUNDED, type MeasureEnv } from './measure';
 
 /** A theme with round numbers and text 6px a character, ascent 10, descent 2. */
@@ -63,5 +63,12 @@ describe('measureButton', () => {
     expect(wide.layout.parts[0]!.rect.x).toBe(38);
     const narrow = measureButton({ label: 'Save' }, exactly(30, 28), env());
     expect(narrow.layout.parts[0]!.rect).toMatchObject({ x: 12, width: 6 });
+  });
+});
+
+describe('buttonMetrics', () => {
+  it('reads a keyword font weight as the weight CSS draws', () => {
+    expect(buttonMetrics(env({ '--wzl-button-font-weight': 'bold' })).font.weight).toBe(700);
+    expect(buttonMetrics(env({ '--wzl-font-weight-medium': 'normal' })).font.weight).toBe(400);
   });
 });

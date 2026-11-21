@@ -1,6 +1,6 @@
 import { clamp, type Rect } from '@weasel-js/geom';
 import {
-  centeredBaseline, envNumber, envPx,
+  centeredBaseline, envFontWeight, envPx,
   type Constraints, type FontSpec, type MeasureEnv, type Measured, type TextExtent,
 } from './measure';
 import type { ControlSize } from './controlSize';
@@ -78,7 +78,7 @@ export function buttonMetrics(env: MeasureEnv, size: ButtonSize = 'md', iconOnly
     font: {
       family: env.token('--wzl-font-ui'),
       size: envPx(env, '--wzl-field-font-size', z.font),
-      weight: envNumber(env, '--wzl-button-font-weight', envNumber(env, '--wzl-font-weight-medium', 500)),
+      weight: envFontWeight(env, '--wzl-button-font-weight', envFontWeight(env, '--wzl-font-weight-medium', 500)),
     },
   };
 }

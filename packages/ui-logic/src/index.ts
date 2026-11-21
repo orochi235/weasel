@@ -5,7 +5,7 @@
  * @packageDocumentation
  */
 export type { FocusScope, FocusScopeOptions } from './focus';
-export { UNBOUNDED, exactly, fixedWidth, envPx, envNumber, centeredBaseline, offsetRect } from './measure';
+export { UNBOUNDED, exactly, fixedWidth, envPx, envNumber, envFontWeight, centeredBaseline, offsetRect } from './measure';
 export type { Constraints, FontSpec, TextExtent, MeasureEnv, Measured, HeadlessComponent } from './measure';
 export { resolveControlSize } from './controlSize';
 export type { ControlSize } from './controlSize';

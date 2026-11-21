@@ -80,6 +80,16 @@ export function envNumber(env: MeasureEnv, name: string, fallback: number): numb
   return Number.isFinite(n) ? n : fallback;
 }
 
+/** A font-weight token as the number CSS draws it at, `normal` and `bold` included, else `fallback`: a weight
+ *  outside 1–1000, or `bolder` and `lighter`, which resolve against an inherited weight a token cannot see. */
+export function envFontWeight(env: MeasureEnv, name: string, fallback: number): number {
+  const raw = env.token(name)?.trim().toLowerCase();
+  if (raw === 'normal') return 400;
+  if (raw === 'bold') return 700;
+  const n = envNumber(env, name, NaN);
+  return n >= 1 && n <= 1000 ? n : fallback;
+}
+
 /** A box's size, its first baseline, and where its parts sit inside it. */
 export interface Measured<L> {
   readonly width: number;
