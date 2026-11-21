@@ -74,7 +74,9 @@ function collectNamespacedElement(
     const prefix = uriToPrefix.get(c.namespaceURI);
     if (!prefix) continue;  // child in undeclared NS: drop
     hasChildElements = true;
-    const list = ownSlot((result.children ??= {}), c.localName, () => []);
+    // A child in another namespace than its parent's keeps its prefix, so it is written back in its own.
+    const key = c.namespaceURI === el.namespaceURI ? c.localName : `${prefix}:${c.localName}`;
+    const list = ownSlot((result.children ??= {}), key, () => []);
     list.push(collectNamespacedElement(c, uriToPrefix));
   }
 

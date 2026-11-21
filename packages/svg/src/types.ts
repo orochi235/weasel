@@ -35,7 +35,7 @@ export interface NamespacedElement {
   attrs: Record<string, string>;
   /** Text content, when the element contains only text (no child elements). */
   text?: string;
-  /** Nested namespaced children, keyed by local name (recursive). */
+  /** Nested namespaced children, keyed by local name, or `prefix:local` for one in another namespace than this element's (recursive). */
   children?: Record<string, NamespacedElement[]>;
 }
 
