@@ -53,7 +53,7 @@ function RenameField({ item, props, close }: { item: LayerListItem; props: Layer
     closed.current = true;
     close();
     const name = draft.trim();
-    if (commit && name !== '' && name !== item.label) props.onRename?.(item.id, name);
+    if (commit && draft !== item.label && name !== '' && name !== item.label) props.onRename?.(item.id, name);
     row?.focus();
   };
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {

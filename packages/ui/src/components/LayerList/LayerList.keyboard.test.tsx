@@ -186,6 +186,18 @@ describe('LayerList rename', () => {
     expect(onRename.mock.calls).toEqual([['a', 'Al']]);
   });
 
+  it('reports no rename for a field left untouched on a label with surrounding spaces, but trims an edit', () => {
+    const onRename = vi.fn();
+    list({ items: [{ id: 'a', label: 'Alpha ' }], onRename });
+    fireEvent.doubleClick(screen.getByText('Alpha'));
+    fireEvent.blur(screen.getByRole('textbox'));
+    expect(onRename).not.toHaveBeenCalled();
+    fireEvent.doubleClick(screen.getByText('Alpha'));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Alpha' } });
+    fireEvent.blur(screen.getByRole('textbox'));
+    expect(onRename.mock.calls).toEqual([['a', 'Alpha']]);
+  });
+
   it('offers no rename on a fixed, locked, or unrenamable row, or without onRename', () => {
     const onRename = vi.fn();
     const { rerender } = list();
