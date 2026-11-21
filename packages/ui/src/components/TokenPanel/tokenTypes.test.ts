@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { inferTokenType, tokenCategory } from './tokenTypes';
+import { inferTokenType, refitScale, tokenCategory, type TokenScale } from './tokenTypes';
 
 describe('tokenCategory', () => {
   it('files each DTCG type under its section', () => {
@@ -43,5 +43,14 @@ describe('inferTokenType', () => {
     expect(inferTokenType('auto')).toBe('string');
     expect(inferTokenType('calc(100% - 4px)')).toBe('string');
     expect(inferTokenType('')).toBe('string');
+  });
+});
+
+describe('refitScale', () => {
+  const scale: TokenScale = { tokens: ['--a', '--b', '--c'], base: 2, rule: { kind: 'step', step: 1 } };
+
+  it('fits a ratio of 1 when the steps do not grow by any positive ratio', () => {
+    expect(refitScale(scale, 'ratio', [2, 3, -4]).rule).toEqual({ kind: 'ratio', ratio: 1 });
+    expect(refitScale(scale, 'ratio', [2, 3, 0]).rule).toEqual({ kind: 'ratio', ratio: 1 });
   });
 });
