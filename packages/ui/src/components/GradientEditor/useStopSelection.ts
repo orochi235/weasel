@@ -30,7 +30,7 @@ export function useStopSelection(
   const selected = asked >= 0 && asked < stops.length ? asked : order[0];
 
   const select = (index: number): void => {
-    if (index === selected) return;
+    if (index === asked) return;
     setOwn(index);
     onSelect?.(index);
   };

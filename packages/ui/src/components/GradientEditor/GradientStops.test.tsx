@@ -205,6 +205,13 @@ describe('GradientEditor stops', () => {
       expect(onSelectionChange).toHaveBeenCalledWith(1);
       expect(screen.getByLabelText('Stop 1')).toBeInTheDocument();
     });
+
+    it('reports a pick of the stop an out-of-range selection reads as', () => {
+      const onSelectionChange = vi.fn();
+      renderWithIcons(<GradientEditor value={THREE} selectedStop={5} onSelectionChange={onSelectionChange} onChange={() => {}} />);
+      fireEvent.focus(handle(1));
+      expect(onSelectionChange).toHaveBeenCalledWith(0);
+    });
   });
 
   describe('disabled', () => {
