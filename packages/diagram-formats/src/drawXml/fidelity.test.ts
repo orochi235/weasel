@@ -48,3 +48,20 @@ describe('draw-style XML bar markers', () => {
     expect(warnings).toContain('Arrowheads of kind "dash" were drawn as bars.');
   });
 });
+
+describe('draw-style XML rounded boxes', () => {
+  it('reads an absoluteArcSize arc in pixels against the box', async () => {
+    const { data } = await readCells(
+      vertex('wide', 'rounded=1;absoluteArcSize=1;arcSize=50;', 'width="200" height="150"')
+      + vertex('flat', 'rounded=1;absoluteArcSize=1;arcSize=40;', 'y="200" width="200" height="40"'),
+    );
+    expect(node(data, 'wide').outline).toBe('roundRect');
+    expect(node(data, 'flat').outline).toBe('stadium');
+  });
+
+  it('warns of an unknown shape it draws as a rounded rect', async () => {
+    const { data, warnings } = await readCells(vertex('s', 'shape=step;rounded=1;', 'width="100" height="40"'));
+    expect(node(data, 's').outline).toBe('roundRect');
+    expect(warnings).toContain('Shapes of kind "step" were drawn as rounded rects.');
+  });
+});

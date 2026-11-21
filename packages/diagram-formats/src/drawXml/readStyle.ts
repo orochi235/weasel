@@ -36,8 +36,9 @@ export function outlineOf(style: CellStyle, warn: Warn, box?: { width: number; h
     if (turnedAway(known, style.values.get('direction'))) warn(`Shapes of kind "${shape}" turned another way were drawn as the diagram turns them.`);
     return known.outline;
   }
-  if (styleFlag(style, 'rounded')) return roundEnded(style, box) ? 'stadium' : 'roundRect';
-  if (shape !== undefined && !BOX_NAMES.has(shape)) warn(`Shapes of kind "${shape}" were drawn as rects.`);
+  const rounded = styleFlag(style, 'rounded');
+  if (shape !== undefined && !BOX_NAMES.has(shape)) warn(`Shapes of kind "${shape}" were drawn as ${rounded ? 'rounded ' : ''}rects.`);
+  if (rounded) return roundEnded(style, box) ? 'stadium' : 'roundRect';
   return 'rect';
 }
 
