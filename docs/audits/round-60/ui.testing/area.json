@@ -1,0 +1,58 @@
+{
+ "id": "ui.testing",
+ "commit": "deaf03bd8ed407174fa289a1262d2699ffbe97db",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/testing/badge.ts",
+  "packages/ui/src/testing/composeStory.tsx",
+  "packages/ui/src/testing/contextMenu.ts",
+  "packages/ui/src/testing/geometry.ts",
+  "packages/ui/src/testing/icon.ts",
+  "packages/ui/src/testing/labViews.ts",
+  "packages/ui/src/testing/paintedContrast.ts",
+  "packages/ui/src/testing/paramsText.ts",
+  "packages/ui/src/testing/prefs.ts",
+  "packages/ui/src/testing/readModuleCss.ts",
+  "packages/ui/src/testing/selectRow.ts",
+  "packages/ui/src/testing/sweep.ts",
+  "packages/ui/src/testing/teardown.tsx",
+  "packages/ui/src/testing/withIcons.tsx"
+ ],
+ "a": 5,
+ "b": 7,
+ "m": 3,
+ "distinct": 9,
+ "chapman": 11,
+ "unfound": 2,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9.8,
+   "B": 4.9,
+   "match": 2.3,
+   "fix": 13.5
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1695876,
+  "costUsd": 4.99
+ },
+ "fixCommits": [
+  "26ea478ba6ed6614b0acea8862f301fb9214d8f5",
+  "6ee020a9161b119a63c8c91254135afa1cf5c5fd",
+  "ecb2edaec43accee6b506e46dd5dbcb6c398208b",
+  "e4d68ab65cc07373c8690cd1d5a5f81b0b520d2d",
+  "53547e2c9db2ea5b9a4288c83441bb4574d58452",
+  "3c91096792d9431017d981bf8da4a60a2833c9e8",
+  "87c9dcb9a05f94d6bb5b670e07016106c5205a29"
+ ]
+}

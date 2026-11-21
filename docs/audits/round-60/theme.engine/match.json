@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   4,
+   0
+  ]
+ ],
+ "a": [
+  "A pin's or component's `description` (and `alpha`, `type`) is never type-checked, and a non-string description crashes `emitCss`",
+  "`equalize` changes a muted anchor's chroma upward, which its doc says never happens",
+  "`generate` reports `feasible: true` for a palette that equalizing pushed outside the gates",
+  "A child's own by-axis pin is filled from a parent pin that the child's own ramp shadows",
+  "An inherited pin silently overrides a semantic the child redefines, while ramp and scale steps the child redefines drop the parent's pin",
+  "`axisDependencies` keeps the last producer of a duplicated name; `derive` keeps the first",
+  "`generate` returns more swatches than `count` when there are more anchors than `count`"
+ ],
+ "b": [
+  "A parent's pin overrides a child's own semantic or component of the same name",
+  "derive throws a TypeError on an axis loaded as null instead of reporting it",
+  "Pins and components are not shape-checked, though a semantic rule with the same fields is",
+  "`{seeds.x}` inside a pin or component list is never resolved; inside a semantic `value` it is",
+  "emitThemes writes user-keyed records as object literals, so an axis value or theme named `__proto__` is lost",
+  "The hue search can return hue 360, which `order: 'hue'` sorts last instead of first"
+ ]
+}

@@ -1,0 +1,32 @@
+{
+ "pairs": [
+  [
+   1,
+   4
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   4,
+   6
+  ]
+ ],
+ "a": [
+  "`painted` quietly keeps the previous fill when given a color the canvas cannot parse, so a test can pass without checking anything",
+  "`trigger(label)` builds a RegExp from the label without escaping it and without anchoring it",
+  "`painted` and `lineContrast` report a translucent result as if it were opaque",
+  "`storiesOf` composes CSF stories differently from forge's loader: it ignores `include/excludeStories` and CSF2 hoisted annotations, and drops `parameters` and `globals`",
+  "`readModuleCss` inlines only single-quoted `./` imports, though its doc says \"each relative `@import`\""
+ ],
+ "b": [
+  "storiesOf runs every non-story export of a native story file as a CSF story, where forge takes only `story()` exports",
+  "storiesOf ignores a CSF meta's includeStories/excludeStories",
+  "storiesOf drops a CSF 2 function story's hoisted annotations (`Story.args`, `Story.decorators`)",
+  "csf()'s story context leaves out the story's own `globals` and its display name",
+  "selectRow's `trigger` builds a RegExp from the label without escaping it",
+  "painted() composites over a transparent canvas, so a translucent or transparent ground does not give \"what a screen shows\"",
+  "readModuleCss inlines only `./`-relative, single-quoted @imports, though its doc says \"each relative @import\""
+ ]
+}

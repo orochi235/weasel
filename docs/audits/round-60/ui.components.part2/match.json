@@ -1,0 +1,44 @@
+{
+ "pairs": [
+  [
+   2,
+   0
+  ],
+  [
+   4,
+   3
+  ],
+  [
+   5,
+   5
+  ],
+  [
+   6,
+   1
+  ],
+  [
+   7,
+   7
+  ]
+ ],
+ "a": [
+  "ComboBox reports an Escape as an option commit when `selectedKey` and `inputValue` are both controlled",
+  "A stacked ContainedModal loses its inert background when the modal under it closes first",
+  "`DetailList` with `layout=\"block\"` and `values=\"figures\"` draws inline",
+  "DataGrid's empty-state cell and disclosure column lose their alignment and padding to `.table th/td`",
+  "Dialog's contained path silently drops most `ModalOverlay` props",
+  "Dialog's `Basic` story tells the reader to click outside to close, but the story is not `dismissable`",
+  "ComboBox fires no `onCommit` when the user picks the option that is already selected",
+  "CycleButton throws on an empty `options`"
+ ],
+ "b": [
+  "`layout=\"block\"` with `values=\"figures\"` puts the label back beside the value",
+  "Choosing the already-selected option again fires `onCommit` only when `selectedKey` and `inputValue` are both controlled",
+  "The command palette's list turns into \"No matching actions.\" while the dialog fades out",
+  "A contained `Dialog` ignores every `ModalOverlay` prop except `defaultOpen` and `shouldCloseOnInteractOutside`",
+  "`inertOutside` leaves content added to the root after the modal opens interactive",
+  "Dialog's Basic story says clicking outside closes it, but it doesn't",
+  "DataGrid sorts strings by UTF-16 code unit, and compares mixed string and number values inconsistently",
+  "`CycleButton` throws on an empty `options`"
+ ]
+}

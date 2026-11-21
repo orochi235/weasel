@@ -1,0 +1,77 @@
+{
+ "id": "theme.engine",
+ "commit": "deaf03bd8ed407174fa289a1262d2699ffbe97db",
+ "date": "2026-11-20",
+ "files": [
+  "packages/theme/src/engine/axisIssues.ts",
+  "packages/theme/src/engine/bake.ts",
+  "packages/theme/src/engine/color/generate.ts",
+  "packages/theme/src/engine/color/hueNames.ts",
+  "packages/theme/src/engine/color/hueSearch.ts",
+  "packages/theme/src/engine/color/oklch.ts",
+  "packages/theme/src/engine/color/paletteStats.ts",
+  "packages/theme/src/engine/color/placement.ts",
+  "packages/theme/src/engine/definition.fixture.ts",
+  "packages/theme/src/engine/deps.ts",
+  "packages/theme/src/engine/derive.ts",
+  "packages/theme/src/engine/emit/css.ts",
+  "packages/theme/src/engine/emit/dtcg.ts",
+  "packages/theme/src/engine/emit/e.tokens.css",
+  "packages/theme/src/engine/emit/manifest.ts",
+  "packages/theme/src/engine/emit/themes.ts",
+  "packages/theme/src/engine/emit/tokens.ts",
+  "packages/theme/src/engine/entries.ts",
+  "packages/theme/src/engine/merge.ts",
+  "packages/theme/src/engine/pinValues.ts",
+  "packages/theme/src/engine/ramps.ts",
+  "packages/theme/src/engine/references.ts",
+  "packages/theme/src/engine/ruleShape.ts",
+  "packages/theme/src/engine/safeNames.ts",
+  "packages/theme/src/engine/scales.ts",
+  "packages/theme/src/engine/semantics.ts",
+  "packages/theme/src/engine/steps.ts",
+  "packages/theme/src/engine/tokenSink.ts",
+  "packages/theme/src/engine/types.ts"
+ ],
+ "a": 7,
+ "b": 6,
+ "m": 2,
+ "distinct": 11,
+ "chapman": 17.7,
+ "unfound": 6.7,
+ "read": {
+  "A": 29,
+  "B": 29
+ },
+ "patches": 11,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.1,
+   "B": 6,
+   "match": 0.2,
+   "fix": 35.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 2713017,
+  "costUsd": 7.94
+ },
+ "fixCommits": [
+  "bcf156e6fc003555dc212c8839620724fcd1a910",
+  "ae102fe7f66f1949c00da703567cacf49039d929",
+  "613fb76630a111bbbd92fb38c9b68fa53ee37d8e",
+  "2dbf2ba7f5baad9a0e18498196b73b7ceab42f4f",
+  "378f057a2b745cb2dd246072949fa459bd102a75",
+  "13f859af62d25cfbf568d874920ce5d0e384e7a4",
+  "ce0c92a0deaf9a89c26e9e9c8a8ebdb9850c1cc7",
+  "8ac733d232cce5cb6320dd01eed7ea06ce18c81e",
+  "ae7832aeb33b5de60fbb958f698539d7a2dd5ba7",
+  "85a07367034965500594f0a6bc9523fafde5839b",
+  "f7d58d1217f8d8e153d2a8810f2e5fdf29720f81"
+ ]
+}

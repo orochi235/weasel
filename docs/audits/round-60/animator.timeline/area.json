@@ -1,0 +1,72 @@
+{
+ "id": "animator.timeline",
+ "commit": "deaf03bd8ed407174fa289a1262d2699ffbe97db",
+ "date": "2026-11-20",
+ "files": [
+  "packages/animator/src/timeline/booking.ts",
+  "packages/animator/src/timeline/clip.ts",
+  "packages/animator/src/timeline/clipShape.ts",
+  "packages/animator/src/timeline/clockEstimate.ts",
+  "packages/animator/src/timeline/createTimeline.test-harness.ts",
+  "packages/animator/src/timeline/createTimeline.ts",
+  "packages/animator/src/timeline/crossings.ts",
+  "packages/animator/src/timeline/entry.ts",
+  "packages/animator/src/timeline/fireEvents.ts",
+  "packages/animator/src/timeline/index.ts",
+  "packages/animator/src/timeline/length.ts",
+  "packages/animator/src/timeline/playhead.ts",
+  "packages/animator/src/timeline/sampleTrack.ts",
+  "packages/animator/src/timeline/targetStops.ts",
+  "packages/animator/src/timeline/timeline.fixture.ts",
+  "packages/animator/src/timeline/trackHolds.ts",
+  "packages/animator/src/timeline/types.ts"
+ ],
+ "a": 5,
+ "b": 7,
+ "m": 4,
+ "distinct": 8,
+ "chapman": 8.6,
+ "unfound": 0.6,
+ "read": {
+  "A": 17,
+  "B": 17
+ },
+ "newCode": {
+  "since": 33,
+  "changedFiles": 7,
+  "findings": 9
+ },
+ "previous": {
+  "round": 33,
+  "chapman": 10.2,
+  "unfound": 1.2
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.3,
+   "B": 6.7,
+   "match": 2.9,
+   "fix": 14.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1931345,
+  "costUsd": 5.83
+ },
+ "fixCommits": [
+  "9e1861aea83c5fb193fcc4b715dfe9a440b53c08",
+  "e0e02f929847b2be359840c02353c9c1b3c95cd2",
+  "eb5c5f9ef9baf7149addb701dd4c23d75dba88ae",
+  "91bd0518aa876d3cafcb8eb6ac9667fe0847a15f",
+  "d4888ddb06b7bd42401d84a5f6f7547ab6948104",
+  "d497853670a17b35ecfbd387d3ef081a18365dd2",
+  "e2f8ef61a5d4306edcff3a7113da183a393bfda2",
+  "f19cbf21e9683817248245ec19181d5d4ee1a5b9"
+ ]
+}

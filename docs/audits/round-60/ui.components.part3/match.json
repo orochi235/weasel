@@ -1,0 +1,49 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   2
+  ],
+  [
+   6,
+   7
+  ],
+  [
+   7,
+   6
+  ]
+ ],
+ "a": [
+  "`Disclosure` ignores `<Disabled>`/`<ReadOnly>` scopes and takes no `disabledReason`",
+  "EasingPicker's \"Convert to bezier\" replaces 21 of the 31 named curves with CSS `ease`",
+  "FillStrokeSwatch's chips ignore a `<Disabled>`/`<ReadOnly>` scope, so shift-click still toggles a paint to none",
+  "EffectCard's name field and Duplicate/Remove buttons stay reachable \"to tell a reason\" but never tell it",
+  "A FitScope keeps `data-fit-spent` after its label set changes to one that fits",
+  "`--fit-natural` is measured in client (transformed) px on one branch and layout px on the other",
+  "The scale stage listens to the global `document.fonts`, the label stepper to the element's own document",
+  "Uncontrolled FloatingPanel ignores a change to `anchor` before it has ever been dragged",
+  "useHoldReason binds its tooltip listeners to one element for as long as the reason is unchanged"
+ ],
+ "b": [
+  "FillStrokeSwatch ignores Disabled/ReadOnly scopes: its chips still open the paint editor and commit edits",
+  "EasingPicker's \"Convert to bezier\" replaces 21 of the 31 named curves with CSS `ease`",
+  "EffectList keeps its name field and buttons focusable \"to tell\" a reason, but never tells it",
+  "Disclosure ignores Disabled scopes, unlike every other kit control",
+  "EasingPicker's Convert button under read-only is unmarked, where controlHold marks change-making buttons",
+  "EffectList's held Duplicate/Remove buttons look and hover exactly like live ones",
+  "Uncontrolled FloatingPanel ignores a changed `anchor` even before it has ever been dragged",
+  "FitLabel's scale stage watches font loads on the global `document`, its step stage on the element's own"
+ ]
+}

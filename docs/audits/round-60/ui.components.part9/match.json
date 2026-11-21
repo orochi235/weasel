@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   4,
+   3
+  ]
+ ],
+ "a": [
+  "Adding the last token allowed by `maxItems` disables the focused input and drops focus to the body",
+  "A `Tab` laid along a run drops a function `style`",
+  "Pasted text with commas becomes one token, though \"a comma is never text\"",
+  "`ToggleChips` blocks touch scrolling over the whole set even without `sweep`",
+  "The arc lab's `tabs` knob leaves the controlled `selectedKey` naming a tab that no longer exists"
+ ],
+ "b": [
+  "TokenField's Backspace leaves a non-empty field and turns its text into a token",
+  "Reaching maxItems from the keyboard disables the focused input, and focus drops to the body",
+  "A Tab's function `style` is dropped once its list is laid along a run",
+  "The arc lab's tab-count knob can leave the controlled Tabs pointing at a tab that no longer exists"
+ ]
+}

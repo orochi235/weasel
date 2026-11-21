@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "The indices slider re-sorts its thumbs mid-drag, so the held thumb's styling and focus jump to the neighbor it passes",
+  "A failed PDF write leaves the previous file's download link up beside the error"
+ ],
+ "b": [
+  "Tightening the bounds mode can invert the ordered L range",
+  "A failed PDF write still offers the previous PDF for download"
+ ]
+}
