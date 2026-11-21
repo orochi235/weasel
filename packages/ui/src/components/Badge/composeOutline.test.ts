@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { inwardReach } from './composeOutline';
+import { composeOutline, inwardReach, outlineRegion } from './composeOutline';
 import { polygonSampler } from './bases/polygonSampler';
 
 describe('inwardReach', () => {
@@ -44,5 +44,21 @@ describe('inwardReach', () => {
       const below = { left: 10, top: 55, right: 90, bottom: 90 };
       expect(inwardReach(notched, undefined, 3, box, below)).toBe(0);
     });
+  });
+});
+
+describe('outlineRegion', () => {
+  const box = { width: 80, height: 20 };
+  const square = polygonSampler([[0, 0], [100, 0], [100, 100], [0, 100]], box.width, box.height);
+
+  it('is the viewBox and its margin for an outline inside it', () => {
+    expect(outlineRegion(square, 10)).toEqual({ x: -10, y: -10, width: 120, height: 120 });
+  });
+
+  it('reaches past an outline bloat pushes beyond the viewBox', () => {
+    const bloated = composeOutline(square, undefined, 8, box, 0);
+    const r = outlineRegion(bloated, 10);
+    expect(r.y).toBeLessThanOrEqual(-40 - 10 + 0.5);
+    expect(r.y + r.height).toBeGreaterThanOrEqual(140 + 10 - 0.5);
   });
 });

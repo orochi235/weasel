@@ -1,7 +1,7 @@
 import { useId, type RefObject } from 'react';
 import s from './Badge.module.css';
 import { EFFECTS, type BadgeEffectSpec } from './effects';
-import { composeOutline, effectParams, offsetOutline } from './composeOutline';
+import { composeOutline, effectParams, offsetOutline, outlineRegion } from './composeOutline';
 import type { ComposeSpec } from './composeSpec';
 import type { BadgeVariant, ShapeModule } from './types';
 import { registryEntry } from './registryEntry';
@@ -42,12 +42,13 @@ export function BadgeDeco({ svgRef, compose, shapeModule, params, box, bloat, va
       const effParams = effectParams(mod, eff);
       return <EffComponent key={`${eff.type as string}-${i}`} sampler={outline} boxW={box.width} boxH={box.height} variant={variant} params={effParams} phase={phase} />;
     };
+    const region = mask.length > 0 ? outlineRegion(outline, 10) : null;
     return (
       <svg ref={svgRef} className={s.deco} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        {mask.length > 0 && (
+        {region && (
           <defs>
-            <mask id={bodyMaskId} maskUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="120">
-              <rect x="-10" y="-10" width="120" height="120" fill="white" />
+            <mask id={bodyMaskId} maskUnits="userSpaceOnUse" {...region}>
+              <rect {...region} fill="white" />
               {mask.map(render)}
             </mask>
           </defs>

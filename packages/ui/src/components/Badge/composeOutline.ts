@@ -120,3 +120,16 @@ export function offsetOutline(outline: BaseSampler, offsetCss: number, box: Box)
     return { x: pt.x + pt.nx * offsetCss * sx, y: pt.y + pt.ny * offsetCss * sy };
   }, outline.totalCss);
 }
+
+/** A box around `outline`, in its own viewBox units, grown by `margin` on every side and never smaller than the viewBox's. */
+export function outlineRegion(outline: BaseSampler, margin: number): { x: number; y: number; width: number; height: number } {
+  let minX = 0, minY = 0, maxX = 100, maxY = 100;
+  for (let i = 0; i < SAMPLES; i++) {
+    const p = outline.perimeterAt((i / SAMPLES) * outline.totalCss);
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { x: minX - margin, y: minY - margin, width: maxX - minX + 2 * margin, height: maxY - minY + 2 * margin };
+}

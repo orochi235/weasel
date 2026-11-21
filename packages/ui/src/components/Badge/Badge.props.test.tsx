@@ -67,3 +67,12 @@ describe('Badge registry keys', () => {
     expect(() => render(<Badge base="rounded-rect" effects={[{ type: 'constructor' as never }]}>x</Badge>)).not.toThrow();
   });
 });
+
+describe('Badge mask effects', () => {
+  it('masks the whole body that bloat pushes past the viewBox', () => {
+    const { container } = render(<Badge base="rounded-rect" bloat={40} effects={[{ type: 'perforations' }]}>X</Badge>);
+    const mask = container.querySelector('mask') as SVGMaskElement;
+    expect(Number(mask.getAttribute('y'))).toBeLessThan(-10);
+    expect(Number(mask.querySelector('rect')!.getAttribute('height'))).toBeGreaterThan(120);
+  });
+});
