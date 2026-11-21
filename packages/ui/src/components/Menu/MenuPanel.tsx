@@ -28,7 +28,17 @@ export function MenuPanel(props: {
   const ref = useRef<HTMLDivElement>(null);
   // The color row whose picker is open.
   const [picking, setPicking] = useState<number | null>(null);
-  const pick = (i: number) => { const at = entries[i]; if (at?.kind === 'color' && editsColor(at)) setPicking(i); };
+  // What Enter, Space or a click does to a value row: focus its field or open its picker. False for any other row.
+  const activate = (i: number): boolean => {
+    const at = entries[i];
+    if ((at?.kind === 'number' || at?.kind === 'text') && !at.disabled) {
+      document.getElementById(menuFieldId(`${idBase}-${level}-${i}`))?.focus();
+      return true;
+    }
+    if (at?.kind !== 'color') return false;
+    if (editsColor(at)) setPicking(i);
+    return true;
+  };
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -62,15 +72,8 @@ export function MenuPanel(props: {
       return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    const at = highlight == null ? undefined : entries[highlight];
-    if (e.key === 'Enter' && (at?.kind === 'number' || at?.kind === 'text') && !at.disabled) {
+    if ((e.key === 'Enter' || e.key === ' ') && highlight != null && activate(highlight)) {
       e.preventDefault();
-      document.getElementById(menuFieldId(`${idBase}-${level}-${highlight}`))?.focus();
-      return;
-    }
-    if (e.key === 'Enter' && at?.kind === 'color' && highlight != null) {
-      e.preventDefault();
-      pick(highlight);
       return;
     }
     if (c.key(e.key, inlineDirection(e.currentTarget))) e.preventDefault();
@@ -100,7 +103,7 @@ export function MenuPanel(props: {
           expanded={highlight === i && props.childOpen}
           controls={`${idBase}-panel-${level + 1}`}
           onHover={(e) => c.hover(level, i, { x: e.clientX, y: e.clientY })}
-          onPress={() => { c.press(level, i); pick(i); }}
+          onPress={() => { c.press(level, i); activate(i); }}
           picking={picking === i}
           onPicked={() => setPicking(null)}
           onLeave={props.close}

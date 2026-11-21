@@ -142,6 +142,13 @@ describe('a color row in a DOM menu', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
+  it('opens on Space while highlighted, as on Enter', () => {
+    const { menu } = openColor();
+    key(menu, 'ArrowDown');
+    key(menu, ' ');
+    expect(picker()).not.toBeNull();
+  });
+
   it('offers opacity when the entry has alpha', () => {
     const { row } = openColor({ alpha: true });
     fireEvent.click(row);
@@ -245,6 +252,13 @@ describe('a text row in a DOM menu', () => {
     expect(document.activeElement).toBe(box());
     key(box(), 'c');
     expect(menu.getAttribute('aria-activedescendant')).toBe(row.id);
+  });
+
+  it('takes focus on Space while highlighted, as on Enter', () => {
+    const { menu } = openText();
+    key(menu, 'ArrowDown');
+    key(menu, ' ');
+    expect(document.activeElement).toBe(box());
   });
 
   it('cannot be edited while disabled', () => {
