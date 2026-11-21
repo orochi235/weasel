@@ -42,3 +42,12 @@ it('drops the last frame when the fps overlay turns off, rather than showing it 
   expect(screen.queryByText(/9\.50/)).toBeNull();
 });
 
+it("shows why the root's state could not be read, not the overlay note", async () => {
+  const client = {
+    onChanged: () => () => {},
+    request: async () => { throw new Error('no canvas r'); },
+  } as unknown as DevtoolsClient;
+  renderWithIcons(<FrameView client={client} rootId="r" />);
+  expect(await screen.findByText('no canvas r')).toBeTruthy();
+  expect(screen.queryByText(/measures its paints only while/)).toBeNull();
+});

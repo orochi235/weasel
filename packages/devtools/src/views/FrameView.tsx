@@ -54,6 +54,8 @@ export function FrameView({ client, rootId }: DevtoolsViewProps): ReactElement {
     client.request(rootId, { type: 'set-overlays', overlays: { fps: on } }).then(state.refresh, state.refresh);
   };
 
+  if (state.error) return <p className={s.note}>{state.error}</p>;
+
   return (
     <div className={s.frame}>
       <Switch isSelected={fps} onChange={setFps} disabled={!state.data}>fps overlay</Switch>
