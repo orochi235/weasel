@@ -83,7 +83,7 @@ export function QuantityText(props: QuantityTextProps) {
         <span aria-hidden={reads || undefined}>
           <data value={String(amount(props.value))}>
             <span className={s.math} dangerouslySetInnerHTML={{ __html: mathml }} />
-            <span className={s.hidden}>{text}</span>
+            <span className={s.hidden} aria-hidden="true">{text}</span>
           </data>
         </span>
       ) : (
