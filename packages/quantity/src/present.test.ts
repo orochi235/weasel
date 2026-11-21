@@ -424,6 +424,14 @@ describe('infinity', () => {
     expect(parseAs('12ms', d)).toBe(12);
   });
 
+  it('reads the built-in spellings in upper case under a locale with a dotless i', () => {
+    for (const locale of ['tr-TR', 'az']) {
+      expect(parseAs('Infinity', decimal(), { locale })).toBe(Infinity);
+      expect(parseAs('-INF', decimal(), { locale })).toBe(-Infinity);
+      expect(parseAs('INFINITE', decimal(), { locale })).toBe(Infinity);
+    }
+  });
+
   it('reads text holding a line break as no number, without throwing', () => {
     for (const text of ['1\n2', '1\r2', '1\u20282', 'inf\ninity']) expect(parseAs(text, decimal())).toBeNaN();
   });
