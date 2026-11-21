@@ -100,4 +100,17 @@ describe('Slider endless', () => {
     expect(onAddThumb).toHaveBeenCalledWith(Infinity);
     expect(onChange).toHaveBeenLastCalledWith([{ value: 10 }, { value: Infinity }]);
   });
+
+  it('reaches the finite end by pointer when the range is not a whole number of steps', () => {
+    const onInput = vi.fn();
+    const { container } = render(<Slider min={0} max={100} step={30} endless="max" thumbs={[{ value: 0 }]} onInput={onInput} />);
+    stubRect(container.querySelector('[data-slider-rail]')!, { left: 0, width: 260 });
+    const press = (x: number) => fireEvent.pointerDown(container.querySelector('[data-slider-track]')!, { clientX: x, clientY: 12, button: 0 });
+    // 260px across 0..130: 105 lies past max but nearer it than the end stop.
+    press(210);
+    expect(onInput).toHaveBeenLastCalledWith([{ value: 100 }]);
+    fireEvent.pointerUp(document, {});
+    press(256);
+    expect(onInput).toHaveBeenLastCalledWith([{ value: Infinity }]);
+  });
 });
