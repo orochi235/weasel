@@ -3273,3 +3273,5 @@ Calls the lanes made without a ruling:
   it as a socket; reading it as the default was the alternative.
 - 2026-11-20 (the fixer's call): An `octant-spline` or `octant-bspline` badge's `samples` runs 48..1024, the bound
   `quatrefoil` had, and a `puzzle` badge's `arcSamples` 6..256. The upper bounds are picked to keep a render finite.
+- 2026-11-20 (the fixer's call): `NaN` in a badge base param reads as that param's default, as round 57 ruled for shape
+  params, and an infinite `rotation` or powerline `depth`, which no bound holds, reads as its default too.

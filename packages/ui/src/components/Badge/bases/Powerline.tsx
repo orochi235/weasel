@@ -1,5 +1,5 @@
 import { resolveEdge, type EdgeCap, type EdgePoint } from './edgeProfiles';
-import { withDefaults } from '../shapes/params';
+import { finiteOr, withDefaults } from '../shapes/params';
 import type { BaseModule, BaseSampler } from './types';
 import { polygonSampler } from './polygonSampler';
 import { maxOf, trimNumber } from '@weasel-js/geom';
@@ -27,8 +27,9 @@ const INSETS_HEIGHT = 20;
 const Powerline: BaseModule<BadgePowerlineBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = withDefaults(DEFAULTS, params);
-    const left = resolveEdge(cfg.leftEdge)(cfg.depth, boxH);
-    const right = resolveEdge(cfg.rightEdge)(cfg.depth, boxH);
+    const depth = finiteOr(cfg.depth, DEFAULTS.depth);
+    const left = resolveEdge(cfg.leftEdge)(depth, boxH);
+    const right = resolveEdge(cfg.rightEdge)(depth, boxH);
     const sx = 100 / boxW;
     const sy = 100 / boxH;
 
@@ -56,7 +57,8 @@ const Powerline: BaseModule<BadgePowerlineBaseParams> = {
   },
   defaults: DEFAULTS,
   insets: (params) => {
-    const { depth, leftEdge: leftCap, rightEdge: rightCap } = withDefaults(DEFAULTS, params);
+    const { depth: givenDepth, leftEdge: leftCap, rightEdge: rightCap } = withDefaults(DEFAULTS, params);
+    const depth = finiteOr(givenDepth, DEFAULTS.depth);
     const left = resolveEdge(leftCap)(depth, INSETS_HEIGHT);
     const right = resolveEdge(rightCap)(depth, INSETS_HEIGHT);
     // Each side's (a) average offset, used to shift padding so text reads

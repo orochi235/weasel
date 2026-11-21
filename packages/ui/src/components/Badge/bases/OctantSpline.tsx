@@ -1,5 +1,5 @@
 import type { BaseModule } from './types';
-import { repeatCount, withDefaults } from '../shapes/params';
+import { clampParam, finiteOr, repeatCount, withDefaults } from '../shapes/params';
 import { MAX_SAMPLES, polygonSampler } from './polygonSampler';
 import { DEG_TO_RAD, wrapPositive } from '@weasel-js/geom';
 
@@ -72,9 +72,9 @@ export function extractAnchorPairs(params: BadgeOctantSplineBaseParams = {}, min
   const pairs: Anchor[] = [];
   for (let i = 0; i < count; i++) {
     pairs.push({
-      s: Math.max(0, Math.min(1, Number(cfg[sKeys[i]]))),
-      r: Math.max(0, Number(cfg[rKeys[i]])),
-      w: Math.max(minWeight, Number(cfg[wKeys[i]] ?? 1)),
+      s: clampParam(Number(cfg[sKeys[i]]), 0, 1, Number(DEFAULTS[sKeys[i]])),
+      r: clampParam(Number(cfg[rKeys[i]]), 0, Infinity, Number(DEFAULTS[rKeys[i]])),
+      w: clampParam(Number(cfg[wKeys[i]]), minWeight, Infinity, Number(DEFAULTS[wKeys[i]])),
     });
   }
   pairs.sort((a, b) => a.s - b.s);
@@ -190,7 +190,7 @@ export function splineVertices(
   cfg: Pick<Required<BadgeOctantSplineBaseParams>, 'mode' | 'rotation' | 'samples'>,
   radiusAt: (s: number) => number,
 ): [number, number][] {
-  const rot = cfg.rotation * DEG_TO_RAD;
+  const rot = finiteOr(cfg.rotation, DEFAULTS.rotation) * DEG_TO_RAD;
   const N = repeatCount(cfg.samples, 48, MAX_SAMPLES);
   const cx = 50, cy = 50;
   const verts: [number, number][] = [];

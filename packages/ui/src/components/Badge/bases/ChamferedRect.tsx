@@ -1,5 +1,5 @@
 import { polygonSampler } from './polygonSampler';
-import { withDefaults } from '../shapes/params';
+import { clampParam, withDefaults } from '../shapes/params';
 import type { BaseModule } from './types';
 
 /** What `baseParams` takes on a badge whose `base` is `chamfered-rect`. */
@@ -15,7 +15,7 @@ const ChamferedRect: BaseModule<BadgeChamferedRectBaseParams> = {
     const cfg = withDefaults(DEFAULTS, params);
     const sx = 100 / boxW;
     const sy = 100 / boxH;
-    const chamfer = Math.max(0, Math.min(cfg.chamfer, boxW / 2, boxH / 2));
+    const chamfer = clampParam(cfg.chamfer, 0, Math.min(boxW, boxH) / 2, DEFAULTS.chamfer);
     const cx = chamfer * sx;
     const cy = chamfer * sy;
     // 8 vertices traced clockwise from top-left chamfer start.

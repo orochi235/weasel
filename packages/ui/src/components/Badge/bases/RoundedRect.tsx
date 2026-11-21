@@ -1,5 +1,5 @@
 import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
-import { withDefaults } from '../shapes/params';
+import { clampParam, withDefaults } from '../shapes/params';
 import { lerp, trimNumber, wrapPositive } from '@weasel-js/geom';
 
 /** What `baseParams` takes on a badge whose `base` is `rounded-rect`. */
@@ -56,7 +56,7 @@ interface Corners {
 function cornersFor(erosion: number, eccentricity: number, boxW: number, boxH: number): Corners {
   const sx = 100 / boxW;
   const sy = 100 / boxH;
-  const ecc = Math.max(0.1, Math.min(eccentricity, 10));
+  const ecc = clampParam(eccentricity, 0.1, 10, DEFAULTS.eccentricity);
   // Max corner radius in CSS = half of the shorter axis (so erosion=1 gives a full pill/ellipse).
   const cornerCss = erosion * (Math.min(boxW, boxH) / 2);
   const rx = Math.max(0, Math.min(cornerCss * sx * ecc, 50));
@@ -193,11 +193,11 @@ const RoundedRect: BaseModule<BadgeRoundedRectBaseParams> = {
     const cfg = withDefaults<BadgeRoundedRectBaseParams & typeof DEFAULTS>(DEFAULTS, params);
     const half = Math.min(boxW, boxH) / 2;
     const byRadius = cfg.radius !== undefined && !Number.isNaN(cfg.radius) && half > 0;
-    const erosion = Math.max(0, Math.min(byRadius ? cfg.radius! / half : cfg.erosion, 1));
+    const erosion = clampParam(byRadius ? cfg.radius! / half : cfg.erosion, 0, 1, DEFAULTS.erosion);
     const corners = cornersFor(erosion, cfg.eccentricity, boxW, boxH);
     const outline = roundedRectOutline(corners);
     // Erosion supersedes pinch: a fully rounded end already tapers to the centerline, so a full pill ignores it.
-    const pinch = Math.max(0, Math.min(cfg.pinch, 1)) * (1 - erosion);
+    const pinch = clampParam(cfg.pinch, 0, 1, DEFAULTS.pinch) * (1 - erosion);
     if (pinch !== 0) return pinchedSampler(outline, pinch, corners);
     const sampler: BaseSampler = { bodyPath: roundedRectPath(corners), ...outline };
     return sampler;

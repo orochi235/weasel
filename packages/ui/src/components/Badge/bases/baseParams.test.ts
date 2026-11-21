@@ -48,3 +48,37 @@ describe('an end or edge no base names', () => {
     expect(() => BASES.puzzle.build({ top: 'sideways' as never }, 80, 20)).toThrow(RangeError);
   });
 });
+
+describe('a NaN base param', () => {
+  const cases: [keyof typeof BASES, Record<string, number>][] = [
+    ['chamfered-rect', { chamfer: NaN }],
+    ['rounded-rect', { erosion: NaN }],
+    ['rounded-rect', { eccentricity: NaN }],
+    ['rounded-rect', { pinch: NaN }],
+    ['ribbon', { taperWidth: NaN }],
+    ['puzzle', { tabSize: NaN }],
+    ['quatrefoil', { spikeR: NaN, lobeR: NaN, valleyR: NaN, valleyAt: NaN }],
+    ['quatrefoil', { spikeCurvature: NaN, spikeBend: NaN, spikeTipErosion: NaN, valleySmooth: NaN }],
+    ['quatrefoil', { lobeCurvature: NaN, lobeBend: NaN, lobeTipErosion: NaN, rotation: NaN }],
+    ['octant-spline', { s1: NaN, r2: NaN, w3: NaN, rotation: NaN }],
+    ['octant-bspline', { s1: NaN, r2: NaN, w3: NaN, rotation: NaN }],
+  ];
+  for (const [key, params] of cases) {
+    it(`reads as its default on ${key} (${Object.keys(params).join(', ')})`, () => {
+      const base = BASES[key];
+      expect(base.build(params as never, 80, 20).bodyPath).toBe(base.build({} as never, 80, 20).bodyPath);
+    });
+  }
+
+  it('draws and pads a powerline cap by the default depth', () => {
+    const insets = BASES.powerline.insets as (p: object) => object;
+    expect(BASES.powerline.build({ leftEdge: 'chevron', depth: NaN }, 80, 20).bodyPath)
+      .toBe(BASES.powerline.build({ leftEdge: 'chevron' }, 80, 20).bodyPath);
+    expect(insets({ leftEdge: 'chevron', depth: NaN })).toEqual(insets({ leftEdge: 'chevron' }));
+  });
+
+  it('pads a ribbon by the default taper', () => {
+    const insets = BASES.ribbon.insets as (p: object) => object;
+    expect(insets({ taperWidth: NaN })).toEqual(insets({}));
+  });
+});
