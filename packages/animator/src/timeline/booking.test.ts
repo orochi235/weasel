@@ -269,6 +269,22 @@ describe('event booking across transport changes', () => {
     expect(r.log.map((b) => b.label)).toEqual(['@3050']);
   });
 
+  it('books a nested track moved back to where it was from the playhead on, not from where it left', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const nested = { kind: 'timeline' as const, at: 0, timeline: { tracks: [track] } };
+    const r = rig({ duration: 10000, tracks: [nested] });
+    track.events = Array.from({ length: 40 }, (_, i) => bookingEvent(r.log, (i + 1) * 100));
+    r.frame(0);
+    r.frame(150);
+    expect(r.log.map((b) => b.label)).toEqual(['@100', '@200']);
+    r.handle.edit(() => { nested.at = 20000; });
+    r.frame(1000);
+    r.frame(3000);
+    r.handle.edit(() => { nested.at = 0; });
+    r.frame(3010);
+    expect(r.log.map((b) => b.label)).toEqual(['@100', '@200', '@3100']);
+  });
+
   it('retracts pending bookings when canceled', () => {
     const r = withEvents({ duration: 1000 }, [80]);
     r.frame(0);
