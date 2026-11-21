@@ -38,6 +38,9 @@ describe('inferTokenType', () => {
     expect(inferTokenType('cubic-bezier(0.33, 1, 0.68, 1)')).toBe('cubicBezier');
     expect(inferTokenType('1.4')).toBe('number');
     expect(inferTokenType('0 1px 3px rgba(0, 0, 0, 0.3)')).toBe('shadow');
+    expect(inferTokenType('inset 0 1px 2px red')).toBe('shadow');
+    expect(inferTokenType('0 1px 2px red inset')).toBe('shadow');
+    expect(inferTokenType('0 1px 2px red INSET, 0 0 1px blue')).toBe('shadow');
     expect(inferTokenType('linear-gradient(red, blue)')).toBe('gradient');
   });
 

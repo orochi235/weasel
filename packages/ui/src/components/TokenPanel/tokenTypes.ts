@@ -137,9 +137,12 @@ function layersOf(value: string): string[] {
 
 function isShadow(value: string): boolean {
   return layersOf(value).every((layer) => {
-    const parts = layer.trim().replace(/^inset\s+/i, '').match(PARTS) ?? [];
-    const lengths = parts.filter((part) => LENGTH.test(part));
-    const rest = parts.filter((part) => !LENGTH.test(part));
+    const parts = layer.trim().match(PARTS) ?? [];
+    // `inset` may lead or trail the layer.
+    const inset = /^inset$/i;
+    const body = inset.test(parts[0] ?? '') ? parts.slice(1) : inset.test(parts.at(-1) ?? '') ? parts.slice(0, -1) : parts;
+    const lengths = body.filter((part) => LENGTH.test(part));
+    const rest = body.filter((part) => !LENGTH.test(part));
     return lengths.length >= 2 && lengths.length <= 4 && rest.length <= 1 && rest.every((part) => parsesAsColor(part));
   });
 }
