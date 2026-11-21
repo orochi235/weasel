@@ -1,5 +1,5 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
-import { withDefaults } from './params';
+import { repeatCount, withDefaults } from './params';
 
 /** What `shapeParams` takes on a `beavis` badge. */
 export interface BadgeBeavisShapeParams {
@@ -31,7 +31,7 @@ const Beavis: ShapeModule<BadgeBeavisShapeParams> = {
         {
           type: 'spikes',
           params: {
-            count: cfg.points,
+            count: repeatCount(cfg.points, 3),
             length: cfg.spikeLen,
             baseWidth: cfg.spikeBaseWidth,
             vertScale: 1,

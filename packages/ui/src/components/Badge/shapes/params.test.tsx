@@ -54,6 +54,12 @@ describe('a repeat count', () => {
       expect(vertices(pathOf(name, { points: Infinity }))).toBe(MAX_REPEATS * 2);
     });
   }
+  it('beavis takes its spike count through the same bounds', () => {
+    const count = (points: number) => (SHAPES.beavis.compose!({ points }).effects![0].params as { count: number }).count;
+    expect(count(Infinity)).toBe(MAX_REPEATS);
+    expect(count(NaN)).toBe(3);
+    expect(count(5.9)).toBe(5);
+  });
   it('receipt caps an infinite tooth count', () => {
     expect(pathOf('receipt', { teeth: Infinity }).length).toBeGreaterThan(0);
   });
