@@ -202,6 +202,18 @@ describe('createPrefsStore', () => {
     warn.mockRestore();
   });
 
+  it('reads a write made after close', async () => {
+    const { store } = make();
+    store.get('name');
+    store.stored();
+    await store.close();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    store.set('name', 'late');
+    warn.mockRestore();
+    expect(store.get('name')).toBe('late');
+    expect(store.stored()).toMatchObject({ name: 'late' });
+  });
+
   it('exposes its schema', () => {
     expect(make().store.schema).toBe(SCHEMA);
   });

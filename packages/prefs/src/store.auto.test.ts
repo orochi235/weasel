@@ -35,6 +35,14 @@ const make = (backing = new Map<string, unknown>()) => {
 };
 
 describe('a prefs store honors auto', () => {
+  it('leaves an auto mark out of stored()', () => {
+    const { store } = make();
+    store.setAuto('view.size', true);
+    store.set('name', 'kept');
+    expect(store.stored()).toEqual({ name: 'kept' });
+    expect(store.isSet('view.size')).toBe(true);
+  });
+
   it('lets a leaf be auto only where its schema declares `auto`', () => {
     expect(prefCanAuto(SCHEMA.children.view.children.size)).toBe(true);
     expect(prefCanAuto(SCHEMA.children.name)).toBe(true);

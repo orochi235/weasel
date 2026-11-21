@@ -16,6 +16,11 @@ describe('resolveOrder', () => {
 });
 
 describe('orderPrefGroup', () => {
+  it('returns the group itself where an actions leaf already holds the stored order', () => {
+    const held: PrefGroup = { name: 'T', children: { tools: { name: 'Tools', children: { run: { ...run, order: ['a', 'b'] } } } } };
+    expect(orderPrefGroup(held, { 'tools.run': ['a', 'b'] })).toBe(held);
+  });
+
   const group: PrefGroup = {
     name: 'T',
     children: {

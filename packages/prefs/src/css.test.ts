@@ -165,3 +165,19 @@ describe('prefsCssAttributes', () => {
     expect(prefsCssAttributes(store, { attribute: (selector) => `data-${selector.split('.').pop()}` })).toEqual({ 'data-mode': 'light', 'data-density': 'compact' });
   });
 });
+
+describe('prefsCss root block', () => {
+  it('writes a selector that starts auto at its auto value, as a store at defaults reads it', () => {
+    const schema = pref.group('Prefs', {
+      mode: { ...pref.enum('Mode', 'light', ['light', 'dark']), auto: { on: true, value: 'dark' } },
+      accent: pref.color('Accent', '#ffffff', { scopes: [{ selector: 'mode' }] }),
+    });
+    const store = createPrefsStore(schema, createRecordCache({
+      storage: createMemoryAdapter(), prefix: 'p.', initial: [['accent', { $by: 'mode', $in: { light: '#ffffff', dark: '#000000' } }]],
+    }));
+    expect(store.get('mode')).toBe('dark');
+    const root = blocksOf(prefsCss(store))[':where(:root)'];
+    expect(root).toContain('--mode: dark;');
+    expect(root).toContain('--accent: #000000;');
+  });
+});

@@ -1,13 +1,17 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { VERSION_RECORD } from '@weasel-js/prefs-schema';
-import { isAutoRecord, readRecord, stampRecord } from './stamp';
+import { autoRecord, isAutoRecord, readRecord, stampRecord } from './stamp';
 
 const isVersion = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0;
 
 /** Takes stored values from one version to the next: rename, transform or
  *  delete entries in `records`, keyed by leaf path. It sees the values, not
- *  the stamps they are stored under, and only those at its own version. */
-export type PrefsMigration = (records: Map<string, unknown>) => void;
+ *  the stamps they are stored under, and only those at its own version.
+ *  `auto` holds the paths of the leaves marked auto at its version; a
+ *  migration renaming a leaf renames it there too. A path left in both is
+ *  written as its value in `records`. `runPrefsMigrations` always passes
+ *  `auto`; it is optional so a migration can be run on values alone. */
+export type PrefsMigration = (records: Map<string, unknown>, auto?: Set<string>) => void;
 
 /**
  * Bring `cache` up to `migrations.length`, the current version. Each record
@@ -39,8 +43,9 @@ export function runPrefsMigrations(
   }
   const stored = cache.has(VERSION_RECORD) ? (raw as number) : 0;
   const entries = cache.entries().filter(([name]) => name !== VERSION_RECORD);
-  // A mark that a leaf is auto holds no value to migrate, and is only read for the version it was written at.
-  const marks = entries.flatMap(([, record]) => (isAutoRecord(record) ? [record.$at] : []));
+  // A mark that a leaf is auto holds no value, so a migration sees only its path.
+  const marked = new Map(entries.flatMap(([name, record]) => (isAutoRecord(record) ? [[name, record.$at] as const] : [])));
+  const marks = [...marked.values()];
   const held = entries
     .filter(([, record]) => !isAutoRecord(record))
     .map(([name, record]) => ({ name, ...readRecord(record, Math.min(stored, target)) }));
@@ -57,11 +62,14 @@ export function runPrefsMigrations(
   // Where each record now stands, and the records that are behind.
   const at = new Map(held.filter((r) => r.at < target).map((r) => [r.name, r.at]));
   const records = new Map(held.filter((r) => at.has(r.name)).map((r): [string, unknown] => [r.name, structuredClone(r.value)]));
-  for (let v = [...at.values()].reduce((least, a) => Math.min(least, a), target); v < target; v++) {
+  const autoAt = new Map([...marked].filter(([, a]) => a < target));
+  for (let v = [...at.values(), ...autoAt.values()].reduce((least, a) => Math.min(least, a), target); v < target; v++) {
     const due = new Map([...records].filter(([name]) => at.get(name)! <= v));
     const before = [...due.keys()];
+    const dueAuto = new Set([...autoAt].filter(([, a]) => a <= v).map(([name]) => name));
+    const autoBefore = [...dueAuto];
     try {
-      migrations[v]!(due);
+      migrations[v]!(due, dueAuto);
     } catch (error) {
       console.warn(
         `[prefs] migration ${v} → ${v + 1} for "${cache.prefix}" threw; opening read-only on the unmigrated records`,
@@ -75,6 +83,8 @@ export function runPrefsMigrations(
       records.set(name, value);
       at.set(name, v + 1);
     }
+    for (const name of autoBefore) if (!dueAuto.has(name)) autoAt.delete(name);
+    for (const name of dueAuto) autoAt.set(name, v + 1);
   }
   let wrote = false;
   for (const r of held) {
@@ -85,6 +95,18 @@ export function runPrefsMigrations(
       cache.set(r.name, stampRecord(r.value, target));
       wrote = true;
     }
+  }
+  const current = new Set(held.filter((r) => !at.has(r.name)).map((r) => r.name));
+  for (const [name, was] of marked) {
+    if (was < target && !autoAt.has(name)) {
+      cache.delete(name);
+      wrote = true;
+    }
+  }
+  for (const name of autoAt.keys()) {
+    if (records.has(name) || current.has(name)) continue;
+    cache.set(name, autoRecord(target));
+    wrote = true;
   }
   for (const [name, value] of records) {
     if (value === undefined) cache.delete(name);

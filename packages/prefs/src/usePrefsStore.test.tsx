@@ -194,8 +194,10 @@ describe('usePrefsStore', () => {
     await settle();
     expect(closed.closed).toBe(true);
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(closed.get('density')).toBe(72);
     closed.set('density', 100);
     warn.mockRestore();
+    expect(closed.get('density')).toBe(100);
     expect(b.result.current.get('density')).toBe(72);
     expect(await b.result.current.flush()).toBe(true);
     expect(backing.has('p.density')).toBe(false);

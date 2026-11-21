@@ -6,8 +6,8 @@ import { getOwn, isFiniteNumber } from '@weasel-js/registry';
 
 /**
  * Folds a split value's alternatives into the one value read. `members` holds
- * two or more, each weighing more than nothing, and their weights need not
- * sum to 1.
+ * two or more, each weighing more than nothing and the heaviest 1, and their
+ * weights need not sum to 1.
  */
 export type PrefBlend = (members: readonly PrefWeighted[], leaf: PrefLeaf) => unknown;
 
@@ -47,12 +47,14 @@ export const PREF_BLENDS: Readonly<Record<string, PrefBlend>> = { number: blendN
 /**
  * `members` as a blend takes them: where any weighs infinitely, those alone at
  * equal weight, the limit of an ever-heavier weight; where a product of
- * nested weights underflowed so that none weighs anything, all at equal weight.
+ * nested weights underflowed so that none weighs anything, all at equal weight;
+ * otherwise each weight scaled to the heaviest, so no blend's total overflows.
  */
 function foldWeights(members: readonly PrefWeighted[]): readonly PrefWeighted[] {
   if (members.some((m) => m.weight === Infinity)) return members.filter((m) => m.weight === Infinity).map((m) => ({ value: m.value, weight: 1 }));
   if (members.every((m) => m.weight === 0)) return members.map((m) => ({ value: m.value, weight: 1 }));
-  return members;
+  const most = members.reduce((heaviest, m) => Math.max(heaviest, m.weight), 0);
+  return members.map((m) => ({ value: m.value, weight: m.weight / most })).filter((m) => m.weight > 0);
 }
 
 /**

@@ -38,4 +38,11 @@ describe('mergePrefGroups', () => {
     mergePrefGroups('Kit', ui, core);
     expect(Object.keys(ui.children.targets.children)).toEqual(['curveHitPx']);
   });
+
+  it('admits every selector any of the groups admits', () => {
+    const a = { ...pref.group('A', { x: pref.number('X', 1) }), admits: ['doc.layout'] };
+    const b = { ...pref.group('B', { y: pref.number('Y', 2) }), admits: ['doc.layout', 'doc.page'] };
+    expect(mergePrefGroups('Kit', a, b).admits).toEqual(['doc.layout', 'doc.page']);
+    expect(mergePrefGroups('Kit', ui, core)).not.toHaveProperty('admits');
+  });
 });

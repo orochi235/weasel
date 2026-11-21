@@ -1,5 +1,5 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
-import { recordValue } from './stamp';
+import { autoRecord, recordValue } from './stamp';
 import { describe, expect, it, vi } from 'vitest';
 import { type PrefsMigration, runPrefsMigrations, watchPrefsVersion } from './migrate';
 import { VERSION_RECORD } from '@weasel-js/prefs-schema';
@@ -19,6 +19,26 @@ const doubleDensity: PrefsMigration = (records) => {
 };
 
 describe('runPrefsMigrations', () => {
+  it('carries an auto mark through a migration that renames its leaf', () => {
+    const cache = cacheWith([['grid.size', autoRecord(0)], ['grid.other', autoRecord(0)]]);
+    runPrefsMigrations(cache, [(_records, auto) => {
+      if (auto?.delete('grid.size')) auto.add('grid.step');
+    }]);
+    expect(cache.has('grid.size')).toBe(false);
+    expect(cache.get('grid.step')).toEqual(autoRecord(1));
+    expect(cache.get('grid.other')).toEqual(autoRecord(1));
+  });
+
+  it('drops an auto mark a migration deletes, and writes a value left at a marked path', () => {
+    const cache = cacheWith([['a', autoRecord(0)], ['b', autoRecord(0)]]);
+    runPrefsMigrations(cache, [(records, auto) => {
+      auto?.delete('a');
+      records.set('b', 3);
+    }]);
+    expect(cache.has('a')).toBe(false);
+    expect(recordValue(cache.get('b'))).toBe(3);
+  });
+
   it('runs every migration from the stored version up, in order, and records the new version', () => {
     const cache = cacheWith([['view.gridOn', false], ['view.density', 10]]);
     runPrefsMigrations(cache, [renameGrid, doubleDensity]);
@@ -112,7 +132,7 @@ describe('record stamps', () => {
 
   it('migrates each record from its own stamp, and shows a migration only the records at its version', () => {
     const seen: string[][] = [];
-    const spy = (inner: PrefsMigration): PrefsMigration => (records) => { seen.push([...records.keys()]); inner(records); };
+    const spy = (inner: PrefsMigration): PrefsMigration => (records, auto) => { seen.push([...records.keys()]); inner(records, auto); };
     const cache = cacheWith([
       [VERSION_RECORD, 1],
       ['view.gridOn', { $at: 0, value: true }],

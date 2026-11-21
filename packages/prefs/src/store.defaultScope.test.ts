@@ -34,6 +34,17 @@ const make = (initial: [string, unknown][] = []) => {
 };
 
 describe('a leaf whose default is split', () => {
+  it('reads its split default where its stored scope is split by a selector the schema lacks', () => {
+    const { store } = make([['gap', { $by: 'theme', $in: { a: 9 } }]]);
+    expect(store.get('gap', { at: { mode: 'light' } })).toBe(6);
+  });
+
+  it('reads nothing while auto where its auto value is split by a selector the schema lacks', () => {
+    const schema = { name: 'T', children: { ...SCHEMA.children, size: { kind: 'number', name: 'Size', description: '', default: 3, auto: { on: true, value: { $by: 'theme', $in: { a: 9 } } } } } } satisfies PrefGroup;
+    const store = createPrefsStore(schema, createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.' }));
+    expect(store.get('size')).toBeUndefined();
+  });
+
   it('reads the member the selector is set to while it is unset', () => {
     const { store } = make();
     expect(store.get('gap')).toBe(4);
