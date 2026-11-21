@@ -89,4 +89,13 @@ describe('useDragHandle press', () => {
     firePointer('pointerup', 30, 0);
   });
 
+  it('does not start a drag from a press on an SVG icon inside a button', () => {
+    document.body.innerHTML = '<div id="src"><button><svg><path id="icon"></path></svg></button></div>';
+    const getPayload = vi.fn(() => ({ kind: 'item', ids: ['a'] }));
+    const { result } = renderHook(() => useDragHandle(getPayload));
+    press(result.current, document.getElementById('src')!, document.getElementById('icon')!);
+    firePointer('pointermove', 100, 0);
+    expect(getPayload).not.toHaveBeenCalled();
+    firePointer('pointerup', 100, 0);
+  });
 });
