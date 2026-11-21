@@ -63,7 +63,10 @@ export function ColorControl(p: PropertyColorFieldProps) {
       disabledReason={p.disabledReason}
       onInput={live}
       onChange={settled}
-      onCancel={p.onCancel}
+      onCancel={() => {
+        moved.current = { rgb: false, alpha: false };
+        p.onCancel?.();
+      }}
       aria-label={text}
     />
   );
@@ -91,7 +94,10 @@ export function PaintControl(p: PropertyPaintFieldProps) {
       inherit={p.inherit}
       onChange={p.onChange}
       onInput={p.onInput}
-      onCancel={p.onCancel}
+      onCancel={() => {
+        moved.current = { rgb: false, alpha: false };
+        p.onCancel?.();
+      }}
       aria-label={text}
     />
   );
