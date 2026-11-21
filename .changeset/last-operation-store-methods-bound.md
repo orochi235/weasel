@@ -3,6 +3,6 @@
 '@weasel-js/routing': patch
 ---
 
-`LastOperationPanel` and `useLastOperation` work with a `LastOperationStore` written as a class: they call its methods on the store rather than detached.
+`LastOperationPanel` and `useLastOperation` work with a `LastOperationStore` written as a class.
 
 <!-- entry: fix -->
