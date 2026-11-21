@@ -2,6 +2,6 @@
 '@weasel-js/diagram-formats': patch
 ---
 
-The Mermaid kanban writer keeps a `column-N` or `card-N` id across a round trip. It leaves one out only where the reader gives the same id back.
+A Mermaid kanban card with a generated id keeps it when the page holds nodes the board does not write. This covers ids such as `card-2` and `column-3`.
 
-<!-- entry: fix data -->
+<!-- entry: fix -->
