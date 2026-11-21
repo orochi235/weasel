@@ -32,7 +32,7 @@ describe('enterTextEditAction (descriptor)', () => {
     expect(startEdit).toHaveBeenCalledWith('node-1');
   });
 
-  it('is a no-op when selection is empty', () => {
+  it('passes the gesture on when selection is empty', () => {
     const startEdit = vi.fn();
     const deps = {
       operands: { get: () => [], set: vi.fn() },
@@ -40,11 +40,11 @@ describe('enterTextEditAction (descriptor)', () => {
     };
     const inv = enterTextEditAction.invoker;
     if (!inv || inv.timing !== 'immediate') throw new Error('expected immediate invoker');
-    inv.run(deps as any, undefined);
+    expect(inv.run(deps as any, undefined)).toBe('pass');
     expect(startEdit).not.toHaveBeenCalled();
   });
 
-  it('is a no-op when selection has multiple ids', () => {
+  it('passes the gesture on when selection has multiple ids', () => {
     const startEdit = vi.fn();
     const deps = {
       operands: { get: () => ['node-1', 'node-2'], set: vi.fn() },
@@ -52,7 +52,7 @@ describe('enterTextEditAction (descriptor)', () => {
     };
     const inv = enterTextEditAction.invoker;
     if (!inv || inv.timing !== 'immediate') throw new Error('expected immediate invoker');
-    inv.run(deps as any, undefined);
+    expect(inv.run(deps as any, undefined)).toBe('pass');
     expect(startEdit).not.toHaveBeenCalled();
   });
 
@@ -87,7 +87,7 @@ describe('enterTextEditAction (descriptor)', () => {
       expect(startEdit).toHaveBeenCalledOnce();
     });
 
-    it('is a no-op when isTextNode returns false (non-text node selected)', () => {
+    it('passes the gesture on when isTextNode returns false (non-text node selected)', () => {
       const startEdit = vi.fn();
       const deps = {
         operands: { get: () => ['rect-1'], set: vi.fn() },
@@ -95,7 +95,7 @@ describe('enterTextEditAction (descriptor)', () => {
       };
       const inv = enterTextEditAction.invoker;
       if (!inv || inv.timing !== 'immediate') throw new Error('expected immediate invoker');
-      inv.run(deps as any, undefined);
+      expect(inv.run(deps as any, undefined)).toBe('pass');
       expect(startEdit).not.toHaveBeenCalled();
     });
 

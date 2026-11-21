@@ -5,9 +5,10 @@ import type { Action } from '@weasel-js/routing';
  * `defaultBinding`: it fires only via `Tool.bindings`.
  *
  * A `'selected-body'` target matches any selected node kind, so the action
- * skips a node `TextEditDep.isTextNode` rejects. With no `isTextNode` it fires
- * unconditionally, and the binding spec is the only gate; a binding can
- * pre-filter with `target: 'kind:text:selected'` instead.
+ * passes the gesture on (`'pass'`) for a node `TextEditDep.isTextNode` rejects,
+ * and for a selection of other than one node, letting the next binding (a
+ * sticky tool's `place`) take the click. With no `isTextNode` it opens any one
+ * selected node; a binding can pre-filter with `target: 'kind:text:selected'`.
  */
 export const enterTextEditAction: Action & { requires: string[] } = {
   id: 'enterTextEdit',
@@ -18,16 +19,16 @@ export const enterTextEditAction: Action & { requires: string[] } = {
     timing: 'immediate',
     run: (deps) => {
       const sel = deps.operands?.get() ?? [];
-      if (sel.length !== 1) return;
+      if (sel.length !== 1) return 'pass';
 
       const id = sel[0];
       const textEdit = deps.textEdit;
-      if (!textEdit) return;
+      if (!textEdit) return 'pass';
 
-      // Self-guard: skip non-text nodes when the predicate is supplied.
-      if (textEdit.isTextNode && !textEdit.isTextNode(id)) return;
+      if (textEdit.isTextNode && !textEdit.isTextNode(id)) return 'pass';
 
       textEdit.startEdit(id);
+      return undefined;
     },
   },
 };
