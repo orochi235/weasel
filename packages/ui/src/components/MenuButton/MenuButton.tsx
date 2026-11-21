@@ -110,6 +110,7 @@ export function MenuButton<T extends string = string>({
         tip={{ tooltip, shortcut, ariaLabel, label }}
         disabled={disabled}
         disabledReason={disabledReason}
+        holdsValue={current === true}
       >
         <button
           ref={setButton}
