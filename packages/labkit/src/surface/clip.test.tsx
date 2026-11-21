@@ -144,6 +144,18 @@ describe('clipToAncestors', () => {
       expect(clipToAncestors(tile, onScreen)).toEqual(onScreen);
     });
 
+    it('cuts to a body containing its paint, which keeps its overflow from the viewport', () => {
+      scrolled();
+      stubBox(document.body, 0, -500, 250, 3000);
+      document.body.style.cssText = 'contain: paint';
+      const { tile } = nest('', '');
+      expect(clipToAncestors(tile, onScreen)).toEqual({ ...onScreen, width: 150 });
+
+      document.body.style.cssText = BOTH;
+      root.style.cssText = 'contain: paint';
+      expect(clipToAncestors(tile, onScreen)).toEqual({ ...onScreen, width: 150 });
+    });
+
     it('cuts a tile scrolled below the fold of a page nothing clips', () => {
       scrolled();
       const { tile } = nest('', '');

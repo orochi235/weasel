@@ -32,6 +32,12 @@ function paddingEdges(el: Element): Edges {
   const sy = r.height / el.offsetHeight;
   const left = r.left + el.clientLeft * sx;
   const top = r.top + el.clientTop * sy;
+  if (el === el.ownerDocument.documentElement) {
+    // The root's client size is the viewport's, not its own.
+    const style = getComputedStyle(el);
+    const right = r.right - (Number.parseFloat(style.borderRightWidth) || 0) * sx;
+    return { left, top, right, bottom: r.bottom - (Number.parseFloat(style.borderBottomWidth) || 0) * sy };
+  }
   return { left, top, right: left + el.clientWidth * sx, bottom: top + el.clientHeight * sy };
 }
 
@@ -43,13 +49,13 @@ function viewportEdges(doc: Document): Edges | null {
 }
 
 /** Whether the `overflow` `a` computes to goes to the viewport rather than `a`'s own box: the root's always does,
- *  and the body's does when the root's is `visible` on both axes. */
-function overflowToViewport(a: Element): boolean {
+ *  and the body's does when the root's is `visible` on both axes and neither contains its paint. */
+function overflowToViewport(a: Element, style: CSSStyleDeclaration): boolean {
   const doc = a.ownerDocument;
   if (a === doc.documentElement) return true;
-  if (a !== doc.body) return false;
+  if (a !== doc.body || containsPaint(style)) return false;
   const root = getComputedStyle(doc.documentElement);
-  return !clips(root.overflowX) && !clips(root.overflowY);
+  return !clips(root.overflowX) && !clips(root.overflowY) && !containsPaint(root);
 }
 
 const cut = (out: Edges, edges: Edges, x: boolean, y: boolean): void => {
@@ -103,7 +109,7 @@ export function clipToAncestors(el: Element, box: Box): Box {
     const style = getComputedStyle(a);
     const boxed = hasClipBox(style.display);
     const contained = boxed && containsPaint(style);
-    const scrolls = boxed && !overflowToViewport(a);
+    const scrolls = boxed && !overflowToViewport(a, style);
     const x = contained || (scrolls && clips(style.overflowX));
     const y = contained || (scrolls && clips(style.overflowY));
     if (x || y) cut(out, paddingEdges(a), x, y);
