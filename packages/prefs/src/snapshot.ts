@@ -43,14 +43,20 @@ export interface SnapshotSource {
  * What `stored` reads as for `leaf`: a scope with each value repaired, else
  * the value repaired. A scope by any selector of the schema reads, not only
  * one the pref declares, so a value stored before its scopes changed reads as
- * it did until its first write rebuilds it.
+ * it did until its first write rebuilds it. A scope split by a selector the
+ * schema lacks, or by one twice, reads as `unreadable`.
  */
-export function readStored(source: Pick<SnapshotSource, 'selectors' | 'admitted' | 'validators'>, leaf: PrefLeaf, stored: unknown): unknown {
+export function readStored(
+  source: Pick<SnapshotSource, 'selectors' | 'admitted' | 'validators'>,
+  leaf: PrefLeaf,
+  stored: unknown,
+  unreadable: () => unknown = () => leaf.default,
+): unknown {
   const repair = (value: unknown): unknown => repairPrefValue(leaf, value, source.validators);
   if (!isPrefScope(stored)) return repair(stored);
   const known = [...source.selectors.keys(), ...(source.admitted ?? [])];
   const read = repairScope(stored, known, (path) => optionsOf(source, path), repair, prefOverridesLookup(leaf));
-  return read === undefined ? leaf.default : read;
+  return read === undefined ? unreadable() : read;
 }
 
 /** A selector's options: `null` for an admitted one, and `undefined` for a path that is neither. */
@@ -71,7 +77,7 @@ function pinnedUnsetHeld(source: Pick<SnapshotSource, 'selectors' | 'admitted' |
 /** What an auto leaf holds: its `auto.value`, repaired. A store computes nothing else, so else `undefined`. */
 function autoHeldOf(source: Pick<SnapshotSource, 'selectors' | 'admitted' | 'validators'>, leaf: PrefLeaf): unknown {
   const declared = leaf.auto?.value;
-  return declared === undefined ? undefined : readStored(source, leaf, declared);
+  return declared === undefined ? undefined : readStored(source, leaf, declared, () => undefined);
 }
 
 /** What a leaf with nothing stored holds: auto where its schema starts it so, else pinned. */
@@ -118,7 +124,7 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
       const record = cache.get(path);
       raw.set(path, record);
       const same = previous?.raw.has(path) && previous.raw.get(path) === record;
-      held.set(path, same ? previous!.held.get(path) : readStored(source, leaf, recordValue(record)));
+      held.set(path, same ? previous!.held.get(path) : readStored(source, leaf, recordValue(record), () => unsetHeld(path, leaf)));
     }
     previous = { raw, held };
 
