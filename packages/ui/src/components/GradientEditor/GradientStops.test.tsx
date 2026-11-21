@@ -186,6 +186,24 @@ describe('GradientEditor stops', () => {
       expect(onChange).not.toHaveBeenCalled();
     });
 
+    it('moves focus to the newly selected stop when a right-click removes the focused one', () => {
+      const FOUR: GradientPaint = { ...THREE, stops: [THREE.stops[0], { offset: 0.3, color: '#00ff00ff' }, { offset: 0.6, color: '#ffff00ff' }, THREE.stops[2]] };
+      renderWithIcons(<Live initial={FOUR} />);
+      handle(2).focus();
+      fireEvent.focus(handle(2));
+      fireEvent.contextMenu(handle(2));
+      expect(screen.getByRole('group', { name: 'Stop 1 of 3' })).toBeInTheDocument();
+      expect(document.activeElement).toBe(handle(1));
+    });
+
+    it('keeps focus on its stop when a right-click removes one before it', () => {
+      renderWithIcons(<Live initial={THREE} />);
+      handle(3).focus();
+      fireEvent.focus(handle(3));
+      fireEvent.contextMenu(handle(1));
+      expect(document.activeElement).toBe(handle(2));
+    });
+
     it('follows a stop the track removed', () => {
       renderWithIcons(<Live initial={THREE} />);
       fireEvent.focus(handle(3));

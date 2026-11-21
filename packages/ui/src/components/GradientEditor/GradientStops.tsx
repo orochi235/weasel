@@ -75,10 +75,14 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
     withStops(next.map((t) => ({ offset: t.value, color: t.color })));
 
   const removable = !props.disabled && stops.length > MIN_STOPS;
+  // Handles are keyed by index, so focus left on the track would stay on whatever stop shifts into its place.
+  const removed = (index: number, refocus: boolean): void => {
+    const next = removing(index);
+    if (refocus || trackRef.current?.contains(document.activeElement)) focusNext.current = { index: next, count: stops.length - 1 };
+  };
   const remove = (index: number, refocus: boolean): void => {
     if (!removable) return;
-    const next = removing(index);
-    if (refocus) focusNext.current = { index: next, count: stops.length - 1 };
+    removed(index, refocus);
     onChange(withStops(stops.filter((_, i) => i !== index)));
   };
 
@@ -132,7 +136,7 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
           }}
           onRemoveThumb={(index) => {
             if (!removable) return false;
-            removing(index);
+            removed(index, false);
             return true;
           }}
           renderTrack={(ctx) => (
