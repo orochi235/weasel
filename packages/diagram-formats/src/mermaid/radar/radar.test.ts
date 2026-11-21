@@ -63,9 +63,9 @@ describe('reading a Mermaid radar', () => {
   it('warns on what it drops', () => {
     const { warnings } = readMermaidRadar('---\ntitle: Top\n---\n%%{init: {}}%%\nradar-beta\n  accDescr: d\n  title Body\n  axis x');
     expect(warnings).toEqual([
-      'The front matter title was dropped; the title statement names the chart.',
       'Mermaid configuration directives were dropped.',
       'Mermaid accessible descriptions were dropped.',
+      'The front matter title was dropped; the title statement names the chart.',
     ]);
   });
 
@@ -146,7 +146,7 @@ describe('writing radar ids Mermaid has to rewrite', () => {
       kind: 'plot', id: 'p', width: 10, height: 10,
       data: { kind: 'radar', axes: [{ id: 'a b' }, { id: 'a.b' }, { id: 'a_b' }, { id: '1x' }], curves: [{ id: 'x y', values: [1, 2, 3, 4] }, { id: 'x.y', values: [4, 3, 2, 1] }] },
     };
-    const back = plotOf(writeMermaidRadar(page).text).data as { axes: { id: string }[]; curves: { id: string }[] };
+    const back = plotOf(writeMermaidRadar(page).text).data as Extract<PlotPage['data'], { kind: 'radar' }>;
     expect(new Set(back.axes.map((a) => a.id)).size).toBe(4);
     expect(new Set(back.curves.map((c) => c.id)).size).toBe(2);
   });

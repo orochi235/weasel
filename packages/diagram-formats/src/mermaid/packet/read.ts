@@ -49,7 +49,6 @@ export function readMermaidPacket(text: string): ImportResult {
     if (field.label !== '') fields.push(field);
   }
   const named = readPageName(src, warnings, title);
-  if (title !== undefined && src.title !== undefined && src.title !== title) warnings.add('The front matter title was dropped; the chart is titled by its own.');
   title ??= src.title;
   const data: PacketData = { kind: 'packet', ...(title !== undefined ? { title } : {}), fields };
   const name = title ?? named;

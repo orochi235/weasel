@@ -44,7 +44,7 @@ describe('reading a Mermaid pie', () => {
     expect(warnings).toEqual([
       'Mermaid keeps the first of slices sharing a label; the others were dropped: a.',
       'Mermaid configuration directives were dropped.',
-      'The front matter title was dropped; the chart is titled by its own.',
+      'The front matter title was dropped; the title statement names the chart.',
     ]);
   });
 

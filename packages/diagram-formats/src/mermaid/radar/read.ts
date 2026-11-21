@@ -17,9 +17,6 @@ export function readMermaidRadar(text: string): ImportResult {
   const parsed = parseRadarBody(src.body);
   // An empty title statement titles nothing, so the front matter's title or the accessible one still names the page.
   const own = parsed.title === '' ? undefined : parsed.title;
-  if (own !== undefined && src.title !== undefined && own !== src.title) {
-    warnings.add('The front matter title was dropped; the title statement names the chart.');
-  }
   const title = own ?? (src.title === '' ? undefined : src.title);
   const name = readPageName(src, warnings, own);
   const data: RadarData = { ...parsed.data, ...(title !== undefined ? { title } : {}) };
