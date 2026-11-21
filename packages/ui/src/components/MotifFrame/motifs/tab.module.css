@@ -11,6 +11,7 @@
 
 .tabRow[data-align='start'] {
   justify-content: start;
+  padding-inline-start: 0;
 }
 
 .tabRow[data-align='center'] {
@@ -19,6 +20,7 @@
 
 .tabRow[data-align='end'] {
   justify-content: end;
+  padding-inline-end: 0;
 }
 
 .label {

@@ -1,4 +1,6 @@
 import { cssColorLiteral } from '@weasel-js/paint';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { DefaultMotif, MotifFrame } from './MotifFrame';
@@ -27,6 +29,16 @@ describe('MotifFrame', () => {
     expect(group).toContainElement(screen.getByText('body'));
     expect(group).toContainElement(screen.getByText('handle'));
     expect(group).toContainElement(screen.getByRole('button', { name: 'Remove' }));
+  });
+
+  it.each([...MOTIFS, ['sheet', sheet], ['well', () => well()]] as [string, () => Motif][])('%s: an empty title draws as no title', (_, make) => {
+    const { container } = render(
+      <MotifFrame title="" motif={make()}>
+        <p>body</p>
+      </MotifFrame>,
+    );
+    expect(screen.queryByRole('group')).toBeNull();
+    expect(container.querySelector('h1, h2, h3, h4, h5, h6, legend')).toBeNull();
   });
 
   it.each([...MOTIFS, ['sheet', sheet], ['well', () => well()]] as [string, () => Motif][])('%s: a twisty at the end follows the title, and one at the start leads it', (_, make) => {
@@ -157,5 +169,37 @@ describe('an inverted stereo frame', () => {
     // A proxy: the CSS-module proxy answers any key, so this shows only that the title asked to dim.
     expect(screen.getByText('Glow').className).toMatch(/_titleDisabled_/);
     expect(screen.getByRole('checkbox', { name: 'on' }).closest('[class*="_titleDisabled_"]')).toBeNull();
+  });
+
+  it.each([
+    ['plaque', plaque, 'content'],
+    ['titlebar', titlebar, 'strip'],
+  ] as [string, () => Motif, string][])('%s: controls on its redrawn part take the frame’s emphasis in that part’s colors', (id, make, part) => {
+    render(
+      <MotifFrame title="Audio" motif={make()} emphasis="high" actions={<button type="button">Clear</button>}>
+        <p>body</p>
+      </MotifFrame>,
+    );
+    const group = screen.getByRole('group', { name: 'Audio' });
+    const redrawn = screen.getByRole('button', { name: 'Clear' }).closest('[style]');
+    expect(redrawn).not.toBe(group);
+    expect((redrawn as HTMLElement).style.getPropertyValue('--wzl-emphasis-fg')).toBe('var(--wzl-accent-fg)');
+    const css = readFileSync(resolve(__dirname, `motifs/${id}.module.css`), 'utf8');
+    const rule = new RegExp(`\\.${part}\\s*\\{[^}]*--wzl-emphasis-fg:\\s*initial`);
+    expect(css).toMatch(rule);
+    expect(css).toMatch(new RegExp(`\\.${part}\\s*\\{[^}]*--wzl-accent-fg:`));
+  });
+
+  it('keeps a frame inside a panel from inheriting the slots only a panel sets', () => {
+    const css = readFileSync(resolve(__dirname, 'MotifFrame.module.css'), 'utf8');
+    const base = /:where\(\.frame\)\s*\{[^}]*\}/.exec(css)?.[0] ?? '';
+    expect(base).toMatch(/--_s-blur:\s*initial/);
+    expect(base).toMatch(/--_s-title-inset:\s*initial/);
+  });
+
+  it('drops the tab row’s inset on the side where a tab squares the box’s corner', () => {
+    const css = readFileSync(resolve(__dirname, 'motifs/tab.module.css'), 'utf8');
+    expect(css).toMatch(/\.tabRow\[data-align='start'\]\s*\{[^}]*padding-inline-start:\s*0/);
+    expect(css).toMatch(/\.tabRow\[data-align='end'\]\s*\{[^}]*padding-inline-end:\s*0/);
   });
 });

@@ -3,7 +3,8 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { cssColorLiteral } from '@weasel-js/paint';
 import type { CSSProperties } from 'react';
 import { afterEach, expect, it } from 'vitest';
-import { MotifFrame, sheet, stereo, well } from '@weasel-js/ui/components/MotifFrame';
+import { MotifFrame, sheet, stereo, tab, well } from '@weasel-js/ui/components/MotifFrame';
+import { PropertyPanel } from '@weasel-js/ui/components/Properties';
 
 // Which side an edge lands on under a writing direction is a cascade question only a browser answers.
 
@@ -31,21 +32,19 @@ it('draws a tinted rule frame’s edge at the start of the line, in either direc
   expect(getComputedStyle(group('Rtl')).borderLeftWidth).not.toBe('4px');
 });
 
-it('sets no backdrop filter on a sheet with no blur, and the blur on one given it', () => {
+it('blurs behind a panel given a blur, but not behind a sheet frame inside it', () => {
   render(
-    <>
-      <MotifFrame title="Plain" motif={sheet()}>
-        x
-      </MotifFrame>
-      <div style={{ '--_s-blur': '3px' } as CSSProperties}>
-        <MotifFrame title="Blurred" motif={sheet()}>
+    <div style={{ '--wzl-panel-blur': '3px', '--wzl-panel-title-inset': '0 7px' } as CSSProperties}>
+      <PropertyPanel title="Blurred">
+        <MotifFrame title="Plain" motif={sheet()}>
           x
         </MotifFrame>
-      </div>
-    </>,
+      </PropertyPanel>
+    </div>,
   );
-  expect(getComputedStyle(group('Plain')).backdropFilter).toBe('none');
   expect(getComputedStyle(group('Blurred')).backdropFilter).toBe('blur(3px)');
+  expect(getComputedStyle(group('Plain')).backdropFilter).toBe('none');
+  expect(getComputedStyle(screen.getByRole('heading', { name: 'Plain' })).paddingInlineStart).toBe('0px');
 });
 
 it('sets a well’s title as a label without setting the titles of wells inside it', () => {
@@ -77,4 +76,25 @@ it.each(['left', 'right'] as const)('runs a %s stereo bar along that edge, with 
   else expect(barBox.left).toBeGreaterThanOrEqual(bodyBox.right - 1);
   const inset = getComputedStyle(body)[side === 'left' ? 'borderLeftWidth' : 'borderRightWidth'];
   expect(parseFloat(inset)).toBeGreaterThan(0);
+});
+
+it('runs a tab flush with the box edge whose corner it squares', () => {
+  render(
+    <>
+      <MotifFrame title="Start" motif={tab()}>
+        x
+      </MotifFrame>
+      <MotifFrame title="End" motif={tab({ align: 'end' })}>
+        x
+      </MotifFrame>
+    </>,
+  );
+  const rects = (name: string) => {
+    const root = group(name);
+    return { tab: screen.getByText(name).parentElement!.getBoundingClientRect(), box: root.lastElementChild!.getBoundingClientRect() };
+  };
+  const start = rects('Start');
+  expect(start.tab.left).toBeCloseTo(start.box.left, 0);
+  const end = rects('End');
+  expect(end.tab.right).toBeCloseTo(end.box.right, 0);
 });
