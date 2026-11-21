@@ -4,7 +4,7 @@ import { ColorField } from '../ColorField';
 import { Popover, PopoverDialog } from '../Popover';
 import { Swatch } from '../Properties/PropertyReadout';
 import { useOverlayPortal } from '../../overlays/portalHost';
-import { useMenuPart } from './menuParts';
+import { MENU_PART_OF, useMenuPart } from './menuParts';
 import s from './Menu.module.css';
 
 /** True for a color row the menu can edit: one with a `set`, not disabled. */
@@ -12,10 +12,11 @@ export const editsColor = (e: MenuColorEntry): boolean => e.set !== undefined &&
 
 /** A color row's swatch and hex, or a dash for none. While `picking`, the kit's color field sits in a popover
  *  beside the row, and each color it commits is written through the controller; the menu stays open. */
-export function MenuColorValue({ entry: e, controller: c, row, picking, onPicked }: {
+export function MenuColorValue({ entry: e, controller: c, row, rowId, picking, onPicked }: {
   entry: MenuColorEntry; controller: MenuController;
-  /** The row the popover sits beside. */
+  /** The row the popover sits beside, and its id. */
   row: RefObject<HTMLElement | null>;
+  rowId: string;
   picking: boolean;
   onPicked(): void;
 }) {
@@ -35,6 +36,7 @@ export function MenuColorValue({ entry: e, controller: c, row, picking, onPicked
           onOpenChange={(open) => { if (!open) onPicked(); }}
           placement="end top"
           data-weasel-overlay=""
+          {...{ [MENU_PART_OF]: rowId }}
         >
           <PopoverDialog className={s.picker} aria-label={`${e.label} color`}>
             <ColorField
