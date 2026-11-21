@@ -149,6 +149,17 @@ describe('Slider regions', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('reports a canceled thumb drag that came back to its start through onCancel, committing nothing', () => {
+    const { container, onInput, onChange, onCancel } = setup();
+    fireEvent.pointerDown(container.querySelector('[role="slider"]')!, { clientX: 80, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 12 });
+    fireEvent.pointerMove(document, { clientX: 80, clientY: 12 });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(values(onInput)).toEqual([20, 60]);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('reports a canceled thumb drag through onCancel', () => {
     const { container, onCancel } = setup();
     fireEvent.pointerDown(container.querySelector('[role="slider"]')!, { clientX: 80, clientY: 12, button: 0 });
