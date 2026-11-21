@@ -234,6 +234,12 @@ export function ownValue<K extends PropertyName>(
 }
 
 /** The inherited value of `prop` in effect at `style`, read by the property's one reader. */
+/** Whether `style`'s `visibility` leaves what it applies to undrawn. */
+export function visibilityHides(style: StyleContext): boolean {
+  const v = styleValue(style, 'visibility');
+  return v === 'hidden' || v === 'collapse';
+}
+
 export function styleValue<K extends InheritedPropertyName>(
   style: StyleContext, prop: K, warn?: Warn,
 ): PropertyValue<K> | undefined {

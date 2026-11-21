@@ -10,7 +10,7 @@ import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
 import { fontSizeOf } from './fontSize';
 import { ownLang } from './textLang';
 import type { GradientTable } from './readGradients';
-import { deriveStyle, ownProp, ownValue, setsOwn, type StyleContext } from './cascade';
+import { deriveStyle, ownProp, ownValue, setsOwn, visibilityHides, type StyleContext } from './cascade';
 import { readStroke, isNonScalingStroke, setsOwnStroke, coreStroke, coreTextFill } from './readPaint';
 import { withOutlinedStroke } from './strokeOutlineSvg';
 
@@ -61,7 +61,7 @@ export function readRuns(
       else if (child.nodeType !== 3 /* TEXT_NODE */) return [];
       const t = child.textContent ?? '';
       return t ? [{ tspan: null, run: { text: t, ...inheritedShift } }] : [];
-    });
+    }).map((p) => (visibilityHides(p.tspan ? deriveStyle(leafStyle, p.tspan) : leafStyle) ? { ...p, run: unpainted(p.run) } : p));
     const shifts = new TextShifts(el, onWarn, pieces, textStyle, lineOpenings(el, pieces));
     for (const { tspan: sp, run } of pieces) {
       if (!sp) {
@@ -84,6 +84,11 @@ export function readRuns(
   }
   if (!preservesSpace(el)) for (const line of runLines) collapseRunWhitespace(line);
   return { runs: joinLines(runLines, leading), lead };
+}
+
+/** `run` taking its place on the line and painting nothing, as a hidden glyph does. */
+function unpainted(run: StyledRun): StyledRun {
+  return { ...run, fill: null, stroke: {} };
 }
 
 /** For each of `pieces`, whether it opens a line, as `readRuns` walking them

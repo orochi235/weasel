@@ -22,7 +22,7 @@ import { isNonUniform, paintThroughMatrix, strokeThroughMatrix } from './paintTh
 import { collectGradients, type GradientTable } from './readGradients';
 import { collectPatterns } from './patterns';
 import {
-  bindStylesheets, deriveStyle, EMPTY_STYLE, ownProp, ownValue, styleValue, type StyleContext,
+  bindStylesheets, deriveStyle, EMPTY_STYLE, ownProp, ownValue, styleValue, visibilityHides, type StyleContext,
 } from './cascade';
 import { mediaEnvironmentFor } from './media';
 import { readProperty } from './properties';
@@ -382,6 +382,8 @@ function isHiddenElement(el: Element, style: StyleContext): boolean {
   if (IGNORED_TAGS.has(tag)) return false;
   if (ownValue(el, 'display') === 'none') return true;
   if (SUPPORTED_GROUP_TAGS.has(tag) || tag === 'a' || tag === 'switch' || tag === 'use') return false;
-  const v = styleValue(deriveStyle(style, el), 'visibility');
-  return v === 'hidden' || v === 'collapse';
+  const own = deriveStyle(style, el);
+  if (!visibilityHides(own)) return false;
+  // A hidden text draws a tspan that turns itself back on; its other runs paint nothing.
+  return tag !== 'text' || !Array.from(el.children).some((c) => c.tagName.toLowerCase() === 'tspan' && !visibilityHides(deriveStyle(own, c)));
 }
