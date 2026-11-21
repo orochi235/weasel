@@ -53,14 +53,11 @@ export type SelectIndicator = 'chevron' | 'underline' | 'none';
 /** Where a {@link Select}'s list opens relative to its trigger. */
 export type SelectPopup = 'over' | 'below';
 
-/** React Aria's second spelling of the selection, which would outrank `selectedKey`; `selectedKey` is the only one here. */
-type RacValueProps = 'value' | 'defaultValue' | 'onChange' | 'selectionMode';
-
 /**
  * Props for {@link Select}, on top of React Aria's `Select` props, with the
  * selection key narrowed to the option value type.
  */
-export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | RacValueProps | 'isDisabled' | 'isOpen' | 'isInvalid' | 'isRequired'> & FieldSlotProps & FieldStateProps & HoldProps & ControlSizeProps & {
+export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | 'value' | 'defaultValue' | 'onChange' | 'selectionMode' | 'isDisabled' | 'isOpen' | 'isInvalid' | 'isRequired'> & FieldSlotProps & FieldStateProps & HoldProps & ControlSizeProps & {
   /** Whether the list is open, controlled; pairs with `defaultOpen` and `onOpenChange`. */
   open?: boolean;
   placeholder?: string;
@@ -156,7 +153,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   } = hold.rest;
   // Dropped at run time too, for a caller the types do not reach.
   const { value: _value, defaultValue: _defaultValue, onChange: _onChange, selectionMode: _mode, ...rest } =
-    given as typeof given & Partial<Pick<RACSelectProps<object>, RacValueProps>>;
+    given as typeof given & Partial<Pick<RACSelectProps<object>, 'value' | 'defaultValue' | 'onChange' | 'selectionMode'>>;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   // Uncontrolled, the key is held here rather than by React Aria, whose closed trigger changes it from the keyboard
