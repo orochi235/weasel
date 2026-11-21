@@ -110,7 +110,7 @@ describe('round-trip', () => {
     const { documentMeta, nodes } = parseSvg(svg, { namespaces });
     expect(Object.hasOwn(documentMeta!.foo.attrs!, 'constructor')).toBe(true);
     const el = getOwn(documentMeta!.foo.elements!, 'constructor')![0]!;
-    expect(Object.hasOwn(el.attrs, '__proto__')).toBe(true);
+    expect(Object.hasOwn(el.attrs, 'foo:__proto__')).toBe(true);
     expect(Object.getPrototypeOf(el.attrs)).toBe(Object.prototype);
     expect(getOwn(el.children!, 'toString')).toHaveLength(1);
     expect(getOwn(nodes[0].meta!.foo.attrs!, 'toString')).toBe('t');
@@ -124,5 +124,18 @@ describe('round-trip', () => {
       documentMeta: {},
     });
     expect(out).toContain('xmlns:constructor=');
+  });
+});
+
+describe('a namespaced element whose attributes share a local name', () => {
+  it('keeps id and foo:id apart through parse and serialize', () => {
+    const namespaces = { foo: 'https://example.com/foo' };
+    const src = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:foo="https://example.com/foo" xmlns:xlink="http://www.w3.org/1999/xlink">'
+      + '<foo:item id="a" foo:id="b" xml:lang="en" xlink:href="#x"/><rect width="1" height="1"/></svg>';
+    const first = parseSvg(src, { namespaces });
+    const item = first.documentMeta?.foo?.elements?.item[0];
+    expect(item?.attrs).toEqual({ id: 'a', 'foo:id': 'b', 'xml:lang': 'en' });
+    const out = serializeSvg(first.nodes, { namespaces, documentMeta: first.documentMeta });
+    expect(parseSvg(out, { namespaces }).documentMeta).toEqual(first.documentMeta);
   });
 });

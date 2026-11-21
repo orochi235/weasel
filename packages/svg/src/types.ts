@@ -31,7 +31,7 @@ export interface NamespaceMeta {
 
 /** Opaque structured representation of a namespaced element. */
 export interface NamespacedElement {
-  /** Attribute local-name → string-value. */
+  /** Attribute name → string-value: the local name, or `prefix:local` for one in a declared namespace or `xml`. */
   attrs: Record<string, string>;
   /** Text content, when the element contains only text (no child elements). */
   text?: string;

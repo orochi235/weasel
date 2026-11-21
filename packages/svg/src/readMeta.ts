@@ -47,6 +47,8 @@ export function collectDocumentMeta(
   return Object.keys(meta).length > 0 ? meta : undefined;
 }
 
+const XML_NS = 'http://www.w3.org/XML/1998/namespace';
+
 function collectNamespacedElement(
   el: Element,
   uriToPrefix: Map<string, string>,
@@ -58,7 +60,11 @@ function collectNamespacedElement(
     // not) under the element — unlike root attrs where we filter by NS.
     // Treat `xmlns:*` as structural and skip.
     if (a.name.startsWith('xmlns')) continue;
-    setOwn(result.attrs, a.localName, a.value);
+    // A namespaced attribute keeps its prefix, so `id` and `foo:id` stay apart; one in an undeclared
+    // namespace is dropped, as an undeclared child is.
+    const prefix = a.namespaceURI == null ? '' : a.namespaceURI === XML_NS ? 'xml' : uriToPrefix.get(a.namespaceURI);
+    if (prefix == null) continue;
+    setOwn(result.attrs, prefix ? `${prefix}:${a.localName}` : a.localName, a.value);
   }
 
   let hasChildElements = false;
