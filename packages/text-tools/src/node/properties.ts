@@ -113,7 +113,6 @@ const TYPOGRAPHY: PrefSection = {
   },
 };
 
-/** The `text` kind's properties, for a `SelectionPanel` given `textTools.text`. */
 const isHighSurrogate = (s: string, i: number): boolean => i >= 0 && i < s.length && (s.charCodeAt(i) & 0xfc00) === 0xd800;
 
 /**
@@ -139,6 +138,7 @@ function settleText(next: { pose: unknown; data: unknown }): { pose: unknown; da
   return { ...next, data: { ...data, runs: respellRuns(data.runs, data.text) } };
 }
 
+/** The `text` kind's properties, for a `SelectionPanel` given `textTools.text`. */
 export const TEXT_PROPERTIES: NodePropertiesEntry = {
   name: 'text',
   settle: settleText,
