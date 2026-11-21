@@ -92,6 +92,13 @@ describe('a repeat count', () => {
     expect(count(NaN)).toBe(3);
     expect(count(5.9)).toBe(5);
   });
+  it('receipt keeps its two tears from crossing', () => {
+    const xs = (d: string) => [...d.matchAll(/L ([\d.]+) ([\d.]+)/g)].map((m) => Number(m[1]));
+    const d = pathOf('receipt', { tearDepth: 1000 });
+    const half = d.indexOf('L 0 100');
+    expect(Math.min(...xs(d.slice(0, half)))).toBeGreaterThan(50);
+    expect(Math.max(...xs(d.slice(half)))).toBeLessThan(50);
+  });
   it('receipt caps an infinite tooth count', () => {
     expect(pathOf('receipt', { teeth: Infinity }).length).toBeGreaterThan(0);
   });

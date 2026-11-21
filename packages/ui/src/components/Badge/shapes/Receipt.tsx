@@ -5,15 +5,19 @@ import type { ShapeModule } from '../types';
 /** What `shapeParams` takes on a `receipt` badge. */
 export interface BadgeReceiptShapeParams {
   teeth?: number;
+  /** How far each tear reaches in, 1 to 45 viewBox units. */
   tearDepth?: number;
   sideToTopRatio?: number;
 }
 
 const DEFAULTS: Required<BadgeReceiptShapeParams> = { teeth: 11, tearDepth: 4, sideToTopRatio: 3 };
 
+/** The deepest a tear's base reaches, so its deepest tooth (1.1 times it) stops short of the centerline. */
+const MAX_TEAR_DEPTH = 45;
+
 function receiptPath(teeth: number, depth: number) {
   const N = repeatCount(teeth, 3);
-  const baseDepth = clampParam(depth, 1, Infinity, DEFAULTS.tearDepth);
+  const baseDepth = clampParam(depth, 1, MAX_TEAR_DEPTH, DEFAULTS.tearDepth);
   const depthAt = (i: number) => baseDepth * (0.55 + 0.55 * Math.abs(Math.sin(i * 1.73 + 0.5)));
   let d = `M 0 0 L 100 0`;
   for (let i = 0; i < N; i++) {
