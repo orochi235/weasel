@@ -3266,3 +3266,11 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+## Audit round sixty-one (2026-11-20): Badge
+
+- 2026-11-20 (the fixer's call): A badge rendered `as="span"` never runs `onClick`, including on a removable one whose
+  tooltip splits the label off, where the label had run it. A span badge has no role or key handling to make a click
+  reachable; running `onClick` on every span badge was the alternative.
+- 2026-11-20 (the fixer's call): A badge's `padding` prop, and padding in its `style`, replaces the shape's insets on
+  each side it sets, as it always has and as the story describes it, so a fitted base refits around the other sides
+  alone. Adding the insets to the given padding, as the size's own padding does, was the alternative.

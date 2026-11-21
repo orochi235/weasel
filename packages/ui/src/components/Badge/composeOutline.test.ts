@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { inwardReach } from './composeOutline';
+import { composeOutline, inwardReach } from './composeOutline';
 import { polygonSampler } from './bases/polygonSampler';
 
 describe('inwardReach', () => {
@@ -44,5 +44,15 @@ describe('inwardReach', () => {
       const below = { left: 10, top: 55, right: 90, bottom: 90 };
       expect(inwardReach(notched, undefined, 3, box, below)).toBe(0);
     });
+  });
+});
+
+describe('composeOutline', () => {
+  it('keeps an effect default for a param given as undefined', () => {
+    const box = { width: 80, height: 24 };
+    const square = polygonSampler([[0, 0], [100, 0], [100, 100], [0, 100]], 80, 24);
+    const outline = composeOutline(square, [{ type: 'spikes', params: { count: undefined } }], 0, box, 0);
+    const p = outline.perimeterAt(5);
+    expect(Number.isFinite(p.x) && Number.isFinite(p.y)).toBe(true);
   });
 });

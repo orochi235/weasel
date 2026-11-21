@@ -15,6 +15,7 @@ import Sunbeams, { type BadgeSunbeamsEffectParams } from './Sunbeams';
 import Aqua, { type BadgeAquaEffectParams } from './Aqua';
 import Metal, { type BadgeMetalEffectParams } from './Metal';
 import { registryTable } from '../registryTable';
+import { withDefaults } from '../shapes/params';
 
 /** The treatments a composed badge can layer over its base. */
 export type BadgeEffect =
@@ -64,4 +65,9 @@ export const EFFECTS: Record<BadgeEffect, EffectModule<any>> = registryTable({
 export interface BadgeEffectSpec<E extends BadgeEffect = BadgeEffect> {
   type: E;
   params?: BadgeEffectParams[E];
+}
+
+/** The params an effect runs with: its defaults under `eff.params`, where a key set to `undefined` keeps its default. */
+export function effectParams(eff: BadgeEffectSpec): Record<string, unknown> {
+  return withDefaults<Record<string, unknown>>(EFFECTS[eff.type]?.defaults ?? {}, eff.params as Record<string, unknown> | undefined);
 }

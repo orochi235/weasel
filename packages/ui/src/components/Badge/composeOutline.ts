@@ -1,6 +1,6 @@
 import { trimNumber, wrapPositive } from '@weasel-js/geom';
 import type { BaseSampler } from './bases/types';
-import { EFFECTS, type BadgeEffectSpec } from './effects';
+import { EFFECTS, effectParams, type BadgeEffectSpec } from './effects';
 
 const SAMPLES = 600;
 
@@ -27,7 +27,7 @@ function displacer(base: BaseSampler, effects: readonly BadgeEffectSpec[] | unde
   const offsetMods = (effects ?? []).flatMap((eff) => {
     const mod = EFFECTS[eff.type];
     if (!mod?.offsetAt) return [];
-    return [{ offsetAt: mod.offsetAt, params: { ...(mod.defaults ?? {}), ...(eff.params ?? {}) } }];
+    return [{ offsetAt: mod.offsetAt, params: effectParams(eff) }];
   });
   if (offsetMods.length === 0 && bloatCss === 0) return null;
   const totalCss = base.totalCss;

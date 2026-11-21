@@ -3,6 +3,7 @@ import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
 import type { BaseModule } from './bases/types';
 import type { BadgeEffectSpec } from './effects';
 import type { InsetSource } from './useInsets';
+import { withDefaults } from './shapes/params';
 
 /** What a badge is composed from, or a null `base` for one its shape draws itself. */
 export interface ComposeSpec {
@@ -28,7 +29,7 @@ export function resolveCompose(
   const given = own.base ? own.baseParams : spec?.baseParams;
   return {
     base,
-    baseParams: base ? { ...(base.defaults ?? {}), ...(given ?? {}) } : null,
+    baseParams: base ? withDefaults<Record<string, unknown>>(base.defaults ?? {}, given as Record<string, unknown> | undefined) : null,
     effects: own.base ? own.effects : (spec?.effects as BadgeEffectSpec[] | undefined) ?? own.effects,
   };
 }
