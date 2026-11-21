@@ -3,15 +3,20 @@ import { decodeEntities } from '../graphRead';
 
 const OPEN = '\u0001';
 const CLOSE = '\u0002';
+/** The elements a browser lays out as blocks, each on lines of its own. */
+const BLOCKS = 'address|article|aside|blockquote|caption|center|dd|details|dialog|div|dl|dt|fieldset|figcaption|figure|footer|form|'
+  + 'h[1-6]|header|hr|li|main|nav|ol|p|pre|section|summary|table|tbody|tfoot|thead|tr|ul';
+const BLOCK_OPEN = new RegExp(`<(?:${BLOCKS})\\b[^>]*>`, 'gi');
+const BLOCK_CLOSE = new RegExp(`<\\/(?:${BLOCKS})\\s*>`, 'gi');
 
 /** HTML as text, where a break is a line break, a block starts and ends a line, and a run of whitespace is one space,
  *  dropped at either end of a line, as a browser lays it out. */
 function htmlText(html: string): string {
   const marked = html
     .replace(/[ \t\n\r\f]+/g, ' ')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<(div|p|li|h[1-6])\b[^>]*>/gi, OPEN)
-    .replace(/<\/(div|p|li|h[1-6])\s*>/gi, CLOSE)
+    .replace(/<br\b[^>]*>/gi, '\n')
+    .replace(BLOCK_OPEN, OPEN)
+    .replace(BLOCK_CLOSE, CLOSE)
     .replace(/<[^>]*>/g, '');
   let out = '';
   for (const ch of marked) {
