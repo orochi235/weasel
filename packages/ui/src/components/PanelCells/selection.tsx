@@ -16,18 +16,22 @@ export const PanelMarksContext = createContext<PanelMarks>({});
 
 /**
  * The path a panel draws a row for when asked for `path`: one of `rows`, a field of an object leaf among them, or
- * the nearest of those `path` lies inside. Null when `rows` holds none.
+ * the nearest of those `path` lies inside. Null when `rows` holds none. A row's `fields` is the path its fields are
+ * drawn under, where that is not its own (an alias's target); a field is named under either.
  */
-export function panelShownPath(rows: Iterable<readonly [path: string, leaf: PrefLeaf]>, path: string): string | null {
-  let best: readonly [string, PrefLeaf] | undefined;
-  for (const row of rows) {
-    if (pathWithin(row[0], path) && (best === undefined || row[0].length > best[0].length)) best = row;
+export function panelShownPath(
+  rows: Iterable<readonly [path: string, leaf: PrefLeaf, fields?: string]>, path: string,
+): string | null {
+  let best: { at: string; leaf: PrefLeaf; fields: string; by: string } | undefined;
+  for (const [at, leaf, fields = at] of rows) {
+    const by = pathWithin(at, path) ? at : pathWithin(fields, path) ? fields : undefined;
+    if (by !== undefined && (best === undefined || by.length > best.by.length)) best = { at, leaf, fields, by };
   }
   if (best === undefined) return null;
-  const [at, leaf] = best;
-  if (at === path || leaf.kind !== 'object') return at;
-  const fields = prefSectionLeaves((leaf as PrefObject).children).map(([key, field]) => [`${at}.${key}`, field] as const);
-  return panelShownPath(fields, path) ?? at;
+  const { at, leaf, fields, by } = best;
+  if (by === path || leaf.kind !== 'object') return at;
+  const inner = (leaf as PrefObject).children;
+  return panelShownPath(prefSectionLeaves(inner).map(([key, field]) => [`${fields}.${key}`, field] as const), fields + path.slice(by.length)) ?? at;
 }
 
 /** A run of `items` sharing one pair, as a bar draws it: each flag after the first of a run of them is drawn in the
@@ -85,7 +89,7 @@ function sharedRows(rows: readonly PanelRow[], renderers: Record<string, LeafRen
     const first = panelLeafKey(row.leaves[0]!);
     for (const item of row.leaves) {
       if (row.leaves.length > 1) out.set(panelLeafKey(item), first);
-      if (item.leaf.kind === 'object') sharedFields(item.leaf as PrefObject, panelLeafKey(item), renderers, out);
+      if (item.leaf.kind === 'object') sharedFields(item.leaf as PrefObject, item.path, renderers, out);
     }
   }
   return out;
@@ -127,7 +131,7 @@ export function panelMarkedPaths(
 ): string[] {
   const all = everySection(sections);
   const rowsIn = (bar: boolean): PanelRow[] => all.filter((at) => at.inBar === bar).flatMap((at) => panelOwnRows(at.section));
-  const drawn = all.flatMap((at) => panelOwnRows(at.section)).flatMap((row) => row.leaves.map((item) => [panelLeafKey(item), item.leaf] as const));
+  const drawn = all.flatMap((at) => panelOwnRows(at.section)).flatMap((row) => row.leaves.map((item) => [panelLeafKey(item), item.leaf, item.path] as const));
   // A bar draws a cell a leaf, and no row for a pair to share.
   const shared = sharedRows(rowsIn(false), renderers);
   const fused = fusedFlags(rowsIn(true), renderers);
@@ -140,11 +144,11 @@ export function panelMarkedPaths(
   return [...new Set(out)];
 }
 
-/** Whether `section` holds `lead`: as its own key, a nested section's, or a leaf inside it. */
+/** Whether `section` holds `lead`: as its own key, a nested section's, a leaf inside it, or a field of one. */
 export function sectionHolds(section: PanelSection, lead: string | null | undefined): boolean {
   if (lead == null) return false;
   return section.key === lead || section.items.some((item) =>
-    isPanelSection(item) ? sectionHolds(item, lead) : item.leaves.some((leaf) => pathWithin(panelLeafKey(leaf), lead)));
+    isPanelSection(item) ? sectionHolds(item, lead) : item.leaves.some((leaf) => pathWithin(panelLeafKey(leaf), lead) || lead.startsWith(`${leaf.path}.`)));
 }
 
 /** One tab of a {@link PanelTabs} strip, and whether the panel's lead mark lies in it. */
