@@ -31,8 +31,16 @@ export interface TrackSampler {
   release(): void;
 }
 
+/** What a hold was opened with: an edit that changes any of it reopens the hold. */
+interface Opened {
+  target: Target<unknown>;
+  weight: SampledTrack<unknown>['weight'];
+  axes: readonly (number | string)[] | undefined;
+}
+
 interface Held {
   hold: TrackHold | null;
+  opened?: Opened;
   value: unknown;
   /** Where the playhead last stood against the track's keys. */
   where: 'before' | 'inside' | 'after' | null;
@@ -40,6 +48,9 @@ interface Held {
   edit: number;
   pass: number;
 }
+
+const sameAxes = (a: readonly (number | string)[] | undefined, b: readonly (number | string)[] | undefined): boolean =>
+  a === b || (a !== undefined && b !== undefined && a.length === b.length && a.every((x, i) => x === b[i]));
 
 /** `gone` says the timeline was canceled, by a track's `onTick` among others: the tracks after it are not sampled. */
 export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = () => false): TrackSampler {
@@ -56,15 +67,24 @@ export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = (
 
   const openOn = (st: SampledTrack<unknown>, h: Held): TrackHold => {
     if (!open) throw new Error('timeline: a track with a `target` needs a timeline made by an animator');
+    h.opened = { target: st.target!, weight: st.weight, axes: st.axes && [...st.axes] };
     const w = st.weight ?? 1;
     return typeof w === 'function'
       ? open(st.target!, () => h.value, w, st.axes)
       : open(st.target!, () => h.value, () => w, st.axes, true);
   };
 
+  const stale = (st: SampledTrack<unknown>, o: Opened): boolean =>
+    o.target !== st.target || o.weight !== st.weight || !sameAxes(o.axes, st.axes);
+
   const place = (st: SampledTrack<unknown>, value: unknown, t: number): void => {
     let h = held.get(st);
     if (!h) held.set(st, h = { hold: null, value, where: null, t, edit, pass });
+    if (h.hold && h.edit !== edit && stale(st, h.opened!)) {
+      // A target the track no longer names keeps what it shows, as one whose track was removed does.
+      h.hold.leave(h.opened!.target !== st.target);
+      h.hold = null;
+    }
     const moved = h.t !== t || h.edit !== edit;
     h.value = value;
     h.t = t;
