@@ -16,7 +16,7 @@ describe('DialogRow', () => {
         {() => <Body />}
       </DialogRow>,
     );
-    expect(screen.getByRole('button', { name: 'Edit Globs' }).textContent).toContain('a, b');
+    expect(screen.getByRole('button', { name: 'Edit Globs' })).toHaveAccessibleDescription('a, b');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(mounted).toBe(0);
   });

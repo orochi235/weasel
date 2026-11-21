@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, it, vi } from 'vitest';
-import { PropertyField } from './PropertyField';
+import { PropertyControl, PropertyField } from './PropertyField';
 
 function slider() {
   const onChange = vi.fn();
@@ -46,4 +46,12 @@ it('writes nothing when a readout showing a rounded value is focused and left un
 it('leaves the track in the tab order while there is no value for the readout to edit', () => {
   render(<PropertyField kind="number" control="slider" label="Width" value={undefined} min={0} max={100} onChange={vi.fn()} />);
   expect(screen.getByRole('slider', { name: 'Width' })).not.toHaveAttribute('tabindex', '-1');
+});
+
+it('keeps a standalone slider disabled for a reason reachable through its readout, described by the reason', () => {
+  render(<PropertyControl kind="number" control="slider" name="Blur" value={4} min={0} max={10} disabled disabledReason="Locked" onChange={() => {}} />);
+  const readout = screen.getByRole('spinbutton', { name: 'Blur' });
+  expect(readout).not.toBeDisabled();
+  expect(readout).toHaveAttribute('aria-disabled', 'true');
+  expect(readout).toHaveAccessibleDescription('Locked');
 });

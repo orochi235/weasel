@@ -3,13 +3,15 @@ import { Select } from '../Select';
 import type { PropertyFontFamilyFieldProps, PropertyFontWeightFieldProps } from './fieldTypes';
 
 export function FontFamilyControl(p: PropertyFontFamilyFieldProps) {
-  const value = p.mixed ? undefined : p.value;
+  const value = p.mixed || p.unset ? undefined : p.value;
   const options = useFontFamilyOptions({ value, weight: p.weight, fontStyle: p.fontStyle });
   return (
     <Select<string>
       className={p.className}
+      id={p.id}
       options={options}
       selectedKey={value ?? null}
+      placeholder={p.unset ? '—' : undefined}
       mixed={p.mixed}
       disabled={p.disabled}
       disabledReason={p.disabledReason}
@@ -20,13 +22,15 @@ export function FontFamilyControl(p: PropertyFontFamilyFieldProps) {
 }
 
 export function FontWeightControl(p: PropertyFontWeightFieldProps) {
-  const value = p.mixed ? undefined : p.value;
+  const value = p.mixed || p.unset ? undefined : p.value;
   const options = useFontWeightOptions({ family: p.family, value });
   return (
     <Select<string>
       className={p.className}
+      id={p.id}
       options={options}
       selectedKey={value === undefined ? null : String(value)}
+      placeholder={p.unset ? '—' : undefined}
       mixed={p.mixed}
       disabled={p.disabled}
       disabledReason={p.disabledReason}

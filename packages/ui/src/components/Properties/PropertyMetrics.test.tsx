@@ -120,8 +120,23 @@ describe('one-up packing', () => {
         <PropertyField kind="color" label="Fill" value="#ffffff" onChange={() => {}} />
       </PropertyGroup>,
     );
-    expect(container.querySelector(`.${s.group}`)?.className).toContain(s.groupOneUp);
-    expect(sheet).toMatch(/\.groupOneUp \.groupBody > \* \{\s*grid-column: 1 \/ -1;/);
+    expect(container.querySelector(`.${s.groupBody}`)?.className).toContain(s.groupOneUp);
+    expect(sheet).toMatch(/\.groupBody\.groupOneUp > \* \{\s*grid-column: 1 \/ -1;/);
+  });
+
+  it('packs a group nested in another by its own packing alone', () => {
+    const { container } = render(
+      <PropertyGroup title="Outer">
+        <PropertyGroup title="Inner" pack="pairs">
+          <PropertyField kind="number" label="X" value={0} onChange={() => {}} />
+        </PropertyGroup>
+      </PropertyGroup>,
+    );
+    const [outer, inner] = container.querySelectorAll(`.${s.groupBody}`);
+    expect(outer.className).not.toContain(s.groupPairs);
+    expect(inner.className).toContain(s.groupPairs);
+    // A descendant combinator between a group and its body would reach the body of a group nested in it.
+    expect(sheet).not.toMatch(/\.group[\w:().-]*\s+\.groupBody/);
   });
 });
 
