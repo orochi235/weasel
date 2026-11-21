@@ -46,6 +46,10 @@ export function dot(a: Float64Array, b: Float64Array): number {
 function remember(m: StepMemory, g: Float64Array, bent: Float64Array): void {
   const { lastGrad, lastStep, lastBent } = m;
   if (!lastGrad || !lastStep || !lastBent) return;
+  let sy = 0;
+  for (let i = 0; i < g.length; i++) sy += (g[i] - lastGrad[i]) * lastStep[i];
+  // Checked before the slot is written: when the memory is full it holds the oldest pair, still in use.
+  if (!(sy > 1e-12)) return;
   const slot = (m.newest + 1) % DEPTH;
   if (m.steps.length <= slot || m.steps[slot].length !== g.length) {
     m.steps[slot] = new Float64Array(g.length);
@@ -53,14 +57,11 @@ function remember(m: StepMemory, g: Float64Array, bent: Float64Array): void {
     m.bentTurns[slot] = new Float64Array(g.length);
   }
   const s = m.steps[slot], y = m.turns[slot], py = m.bentTurns[slot];
-  let sy = 0;
   for (let i = 0; i < g.length; i++) {
     s[i] = lastStep[i];
     y[i] = g[i] - lastGrad[i];
     py[i] = bent[i] - lastBent[i];
-    sy += y[i] * s[i];
   }
-  if (!(sy > 1e-12)) return;
   m.rho[slot] = 1 / sy;
   m.newest = slot;
   m.count = Math.min(DEPTH, m.count + 1);

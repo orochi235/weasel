@@ -46,4 +46,30 @@ describe('descent', () => {
       x = next;
     }
   });
+
+  it('keeps every remembered pair when a full memory drops a step that saw no positive curvature', () => {
+    const m = stepMemory();
+    let x = Float64Array.from([1, -2, 0.5, 3, -1]);
+    const pairs: { s: Float64Array; y: Float64Array }[] = [];
+    for (let round = 0; round < 7; round++) {
+      const g = grad(x);
+      descent(m, g, P);
+      const step = Float64Array.from({ length: 5 }, (_, j) => (j === round % 5 ? 0.3 : 0.05 * (j - round)));
+      const next = x.map((v, j) => v + step[j]);
+      pairs.push({ s: step, y: grad(next).map((v, j) => v - g[j]) });
+      m.lastGrad = g;
+      m.lastStep = step;
+      x = next;
+    }
+    const g = grad(x);
+    descent(m, g, P);
+    expect(m.count).toBe(6);
+    // A step whose gradient change runs against it: s·y < 0.
+    m.lastGrad = g;
+    m.lastStep = g.map((v) => -v);
+    const turned = g.map((v) => v + 0.5 * v);
+    const d = descent(m, turned, P);
+    reference(pairs.slice(-6), turned, P, 1).forEach((v, j) => expect(d[j]).toBeCloseTo(v, 10));
+  });
 });
+

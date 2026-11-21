@@ -5,6 +5,7 @@
  * weights, extended past its edge.
  */
 import type { ArapMesh } from './arap';
+import { pointSegmentDistance2 } from '../points2';
 
 /** A triangle and a point's weights on its three corners. */
 export interface MeshSpot {
@@ -32,6 +33,16 @@ function weights(V: Float64Array, T: Uint32Array, t: number, x: number, y: numbe
 /** How far outside its triangle a spot lies, in weight terms; 0 inside. */
 const outside = (s: MeshSpot) => Math.max(0, -s.w0, -s.w1, -s.w2);
 
+/** The squared distance from `(x, y)` to triangle `t`'s edges. */
+function edgeDistance2(V: Float64Array, T: Uint32Array, t: number, x: number, y: number): number {
+  let d = Infinity;
+  for (let e = 0; e < 3; e++) {
+    const a = T[3 * t + e], b = T[3 * t + (e + 1) % 3];
+    d = Math.min(d, pointSegmentDistance2(x, y, V[2 * a], V[2 * a + 1], V[2 * b], V[2 * b + 1]));
+  }
+  return d;
+}
+
 /** A lookup of the spot each point of the plane takes in `mesh`, through a bucket grid. */
 export function meshLocator(mesh: ArapMesh): (x: number, y: number) => MeshSpot | null {
   const V = mesh.vertices, T = mesh.triangles;
@@ -56,12 +67,13 @@ export function meshLocator(mesh: ArapMesh): (x: number, y: number) => MeshSpot 
       for (let j = cell(ty0, y0, ch); j <= cell(ty1, y0, ch); j++) buckets[j * side + i].push(t);
     }
   }
+  const step = Math.min(cw, ch);
   return (x, y) => {
     const ci = cell(x, x0, cw), cj = cell(y, y0, ch);
     let best: MeshSpot | null = null;
-    let bestOut = Infinity;
+    let bestD = Infinity, bestOut = Infinity;
     // Widen the search ring by ring until a triangle holds the point, or the
-    // nearest found cannot be beaten by a farther ring.
+    // nearest found is no farther than any triangle not yet met can be.
     for (let r = 0; r < side; r++) {
       for (let i = ci - r; i <= ci + r; i++) {
         for (let j = cj - r; j <= cj + r; j++) {
@@ -72,11 +84,13 @@ export function meshLocator(mesh: ArapMesh): (x: number, y: number) => MeshSpot 
             if (!s) continue;
             const o = outside(s);
             if (o <= EPS) return s;
-            if (o < bestOut) { bestOut = o; best = s; }
+            const d = edgeDistance2(V, T, t, x, y);
+            if (d < bestD || (d === bestD && o < bestOut)) { bestD = d; bestOut = o; best = s; }
           }
         }
       }
-      if (best && r >= 1) return best;
+      // A triangle first met past ring r lies wholly in cells at least r cells from this one.
+      if (best && bestD <= (r * step) ** 2) return best;
     }
     return best;
   };

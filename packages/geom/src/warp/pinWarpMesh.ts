@@ -10,8 +10,9 @@ import type { Point } from '../paths/cubicMath';
 import { boundsOfPath } from '../paths/bounds';
 import { polygonContainsPoint } from '../polyline';
 import { flattenPolygon } from '../tessellate/tessellate';
-import { nonzeroContours, type FlattenedContours } from '../tessellate/crossings';
-import { nestRings } from '../tessellate/nesting';
+import { nonzeroContours, resolveEvenOdd, type FlattenedContours } from '../tessellate/crossings';
+import { evenOddRings } from '../tessellate/evenOdd';
+import { nestRings, type Ring } from '../tessellate/nesting';
 import type { ArapMesh } from './arap';
 import { refineTriangulation } from './refine';
 import { addOrigin } from '../paths/pathOrigin';
@@ -42,11 +43,20 @@ interface Region {
   inner: MeshPoint[];
 }
 
-function ringsOf(path: PolygonPath, tolerance: number): { flat: FlattenedContours; filled: (w: number) => boolean } {
+/** `path`'s outline as rings that do not cross, nested, and which windings are fill; as the renderer resolves it. */
+function ringsOf(path: PolygonPath, tolerance: number): { flat: FlattenedContours; rings: Ring[]; filled: (w: number) => boolean } {
   const flat = flattenPolygon(path, tolerance);
   addOrigin(path, flat.coords);
-  if (path.fillRule === 'evenodd') return { flat, filled: (w) => w % 2 !== 0 };
-  return { flat: nonzeroContours(flat).contours, filled: (w) => w !== 0 };
+  const nonzero = (w: number) => w !== 0;
+  if (path.fillRule === 'evenodd') {
+    const rings = evenOddRings(flat);
+    if (rings) return { flat, rings, filled: nonzero };
+    const resolved = resolveEvenOdd(flat);
+    if (resolved) return { flat: resolved, rings: nestRings(resolved), filled: nonzero };
+    return { flat, rings: nestRings(flat), filled: (w) => w % 2 !== 0 };
+  }
+  const { contours, rings } = nonzeroContours(flat);
+  return { flat: contours, rings, filled: nonzero };
 }
 
 /** The ring from vertex `start` to `end` of `coords`, with no edge longer than `h`. */
@@ -68,8 +78,7 @@ function resample(coords: number[], start: number, end: number, h: number): Mesh
 }
 
 function regionsOf(path: PolygonPath, tolerance: number, h: number): { regions: Region[]; area: number } {
-  const { flat, filled } = ringsOf(path, tolerance);
-  const rings = nestRings(flat);
+  const { flat, rings, filled } = ringsOf(path, tolerance);
   const regions = new Map<number, Region>();
   let area = 0;
   rings.forEach((r, i) => {
@@ -215,8 +224,10 @@ export function pinWarpMesh(path: PolygonPath, pins: readonly Point[], opts: Pin
     const offset = vertices.length / 2;
     const coords = points.flatMap((p) => [p.x, p.y]);
     const outline = earcut(coords.slice(0, 2 * at), holes.length > 0 ? holes : undefined);
-    for (const t of refineTriangulation(coords, outline, at)) triangles.push(t + offset);
-    points.forEach((p, i) => { for (const k of p.pins) pinVertex[k] = offset + i; });
+    const held = new Uint8Array(points.length);
+    for (const t of refineTriangulation(coords, outline)) { held[t] = 1; triangles.push(t + offset); }
+    // A pin whose point no triangle holds is left unplaced, as one off every region is.
+    points.forEach((p, i) => { if (held[i]) for (const k of p.pins) pinVertex[k] = offset + i; });
     vertices.push(...coords);
   }
   return { vertices: Float64Array.from(vertices), triangles: Uint32Array.from(triangles), pinVertex };

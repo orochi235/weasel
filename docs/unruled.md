@@ -852,6 +852,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-18: A pin warp's map is smooth across its mesh (Clough–Tocher) where it was affine
   per triangle, so every pin-warped shape, saved ones included, redraws slightly differently:
   its bends lose their small corners.
+- 2026-11-20 (the fixer's call): Pin-warp pins that snap to one outline vertex (two pins off the shape on
+  one side, or two outline pins within a quarter of the mesh spacing) move it by the mean of their drags.
+  Giving each its own vertex is impossible where both snap to one point, and keeping the first pin's drag
+  left the second's handle moving with no effect on the shape.
 - 2026-10-19: Constraint links on whole-node transforms. The transformed nodes are held as
   transformed and every node a link reaches gives way, its own constraints kept; their own
   constraints are carried unsolved, as before, and so is a link whose nodes all moved. A link that

@@ -78,6 +78,17 @@ describe('createArapSolver', () => {
       close({ x: out[2 * v], y: out[2 * v + 1] }, move(mesh.vertices[2 * v], mesh.vertices[2 * v + 1]), 6);
     }
   });
+
+  it('moves a piece too degenerate to solve over with its own pins', () => {
+    // A piece whose one triangle has no area, holding two pins, beside a piece with a pin of its own.
+    const flatMesh = {
+      vertices: Float64Array.from([0, 0, 0, 0, 0, 0, 100, 100, 110, 100, 100, 110]),
+      triangles: Uint32Array.from([0, 1, 2, 3, 4, 5]),
+    };
+    const out = createArapSolver(flatMesh, [0, 1, 3]).solve([7, 5, 7, 5, 100, 100]);
+    close({ x: out[4], y: out[5] }, { x: 7, y: 5 });
+    close({ x: out[8], y: out[9] }, { x: 110, y: 100 });
+  });
 });
 
 describe('pinWarpMap', () => {
@@ -117,6 +128,77 @@ describe('pinWarpMap', () => {
     ]);
     const p = { x: 40, y: 70 };
     close(unwarpPoint(map, map(p), map(p), 1e-9), p, 5);
+  });
+
+  it.each([90, 180, 270])('undoes a map that turns the shape %i degrees', (deg) => {
+    const a = (deg * Math.PI) / 180, c = { x: 50, y: 50 };
+    const turn = (p: Point) => ({
+      x: c.x + Math.cos(a) * (p.x - c.x) - Math.sin(a) * (p.y - c.y),
+      y: c.y + Math.sin(a) * (p.x - c.x) + Math.cos(a) * (p.y - c.y),
+    });
+    const p = { x: 20, y: 85 };
+    close(unwarpPoint(turn, turn(p)), p, 3);
+  });
+
+  it('undoes a pin warp that turns the shape half over', () => {
+    const map = pinWarpMap(square(), [
+      { from: { x: 0, y: 0 }, to: { x: 100, y: 100 } },
+      { from: { x: 100, y: 100 }, to: { x: 0, y: 0 } },
+    ]);
+    const p = { x: 30, y: 60 };
+    close(unwarpPoint(map, map(p), map(p), 1e-9), p, 5);
+  });
+
+  it('moves an outline point by the mean drag of the pins that snapped to it', () => {
+    const pins = [
+      { from: { x: -50, y: 50 }, to: { x: -50, y: 50 } },
+      { from: { x: -10, y: 50 }, to: { x: -10, y: 80 } },
+      { from: { x: 100, y: 50 }, to: { x: 100, y: 50 } },
+    ];
+    expect(pinWarpMesh(square(), pins.map((p) => p.from)).pinVertex[0]).toBe(pinWarpMesh(square(), pins.map((p) => p.from)).pinVertex[1]);
+    close(pinWarpMap(square(), pins)({ x: 0, y: 50 }), { x: 0, y: 65 }, 3);
+  });
+
+  it('meshes the whole fill, and puts every pin at its target', () => {
+    const pts = [[154, 100], [120, 114], [128, 187], [90, 130], [33, 149], [60, 100], [47, 62], [87, 60], [119, 42], [177, 44]];
+    const b = new PathBuilder();
+    pts.forEach(([x, y], i) => (i ? b.lineTo(x, y) : b.moveTo(x, y)));
+    const shape = b.close().build();
+    const froms = [{ x: 131, y: 110 }, { x: 100, y: 103 }, { x: 103, y: 73 }];
+    const mesh = pinWarpMesh(shape, froms);
+    const T = mesh.triangles, V = mesh.vertices;
+    let area = 0;
+    for (let t = 0; t < T.length; t += 3) {
+      const [a, b2, c] = [T[t], T[t + 1], T[t + 2]];
+      area += ((V[2 * b2] - V[2 * a]) * (V[2 * c + 1] - V[2 * a + 1]) - (V[2 * c] - V[2 * a]) * (V[2 * b2 + 1] - V[2 * a + 1])) / 2;
+    }
+    expect(Math.abs(area)).toBeCloseTo(9190, 6);
+    const held = new Set(mesh.triangles);
+    mesh.pinVertex.forEach((v) => { expect(v).toBeGreaterThanOrEqual(0); expect(held.has(v)).toBe(true); });
+    const pins = froms.map((p, k) => ({ from: p, to: { x: p.x + 4 * k, y: p.y - 3 * k } }));
+    const { vertices } = pinWarpSolve(shape, pins)!;
+    mesh.pinVertex.forEach((v, k) => close({ x: vertices[2 * v], y: vertices[2 * v + 1] }, { x: mesh.vertices[2 * v] + 4 * k, y: mesh.vertices[2 * v + 1] - 3 * k }));
+  });
+
+  it('meshes an even-odd pentagram without its empty center', () => {
+    const b = new PathBuilder();
+    for (let i = 0; i < 5; i++) {
+      const a = Math.PI / 2 + (i * 4 * Math.PI) / 5;
+      if (i) b.lineTo(100 + 100 * Math.cos(a), 100 + 100 * Math.sin(a)); else b.moveTo(100 + 100 * Math.cos(a), 100 + 100 * Math.sin(a));
+    }
+    const star = { ...b.close().build(), fillRule: 'evenodd' as const };
+    const mesh = pinWarpMesh(star, []);
+    const T = mesh.triangles, V = mesh.vertices;
+    let area = 0;
+    for (let t = 0; t < T.length; t += 3) {
+      const [a, b2, c] = [T[t], T[t + 1], T[t + 2]];
+      area += Math.abs((V[2 * b2] - V[2 * a]) * (V[2 * c + 1] - V[2 * a + 1]) - (V[2 * c] - V[2 * a]) * (V[2 * b2 + 1] - V[2 * a + 1])) / 2;
+    }
+    // Five tips, each a triangle on one side of the inner pentagon, whose circumradius is R·sin18°/sin126°.
+    const r = (100 * Math.sin(Math.PI / 10)) / Math.sin((7 * Math.PI) / 10);
+    const side = 2 * r * Math.sin(Math.PI / 5);
+    const tips = 5 * 0.5 * side * (side / 2) * Math.tan((2 * Math.PI) / 5);
+    expect(area).toBeCloseTo(tips, 0);
   });
 
   it('moves the whole shape with one pin, and leaves it be with none', () => {
