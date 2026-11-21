@@ -305,6 +305,24 @@ describe('useFloatingPlacement dragging', () => {
     fireEvent.pointerDown(screen.getByRole('button'), { clientX: 5, clientY: 5 });
     expect(onDown).toHaveBeenCalledTimes(1);
   });
+
+  it('leaves a press in a text box or a control by role to that control', () => {
+    for (const child of [
+      <div contentEditable="true" suppressContentEditableWarning key="e">edit me</div>,
+      <span role="switch" aria-checked="false" key="s">edit me</span>,
+      <span role="tab" key="t">edit me</span>,
+    ]) {
+      const onDown = vi.fn();
+      const { unmount } = render(
+        <div onPointerDown={onDown}>
+          <Harness>{child}</Harness>
+        </div>,
+      );
+      fireEvent.pointerDown(screen.getByText('edit me'), { clientX: 5, clientY: 5 });
+      expect(onDown).toHaveBeenCalledTimes(1);
+      unmount();
+    }
+  });
 });
 
 describe('a clickable row nested in the panel', () => {

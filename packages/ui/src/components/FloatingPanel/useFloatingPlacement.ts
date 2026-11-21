@@ -13,7 +13,7 @@ import {
 import { type Corner, DEFAULT_INSET, type FloatingPlacement } from 'windease';
 import { dragPlacement, floatingItem, ITEM_ID, STRATEGY } from './dragPlacement';
 import { cssPx } from '../../cssPx';
-import { isPrimaryPress } from '@weasel-js/gestures';
+import { isInControlWithin, isPrimaryPress } from '@weasel-js/gestures';
 
 /** What {@link useFloatingPlacement} reads. */
 export interface FloatingPlacementOptions {
@@ -63,10 +63,10 @@ function contentBoxOf(el: Element): { w: number; h: number } {
   };
 }
 
-/** A pointerdown on one of these is the child's, not a drag. */
-function isInteractive(target: EventTarget | null): boolean {
+/** A pointerdown on a control, or on a child opting out, is the child's, not a drag. */
+function isInteractive(target: EventTarget | null, panel: Element): boolean {
   if (!(target instanceof Element)) return false;
-  return target.closest('input, button, a, select, textarea, [data-no-drag]') !== null;
+  return isInControlWithin(target, panel) || target.closest('[data-no-drag]') !== null;
 }
 
 /**
@@ -142,7 +142,7 @@ export function useFloatingPlacement({
   useEffect(() => () => drag.current?.cancel(), []);
 
   const startDrag = (e: ReactPointerEvent): void => {
-    if (!isPrimaryPress(e) || isInteractive(e.target)) return;
+    if (!isPrimaryPress(e) || isInteractive(e.target, e.currentTarget as Element)) return;
     // The canvas stack underneath owns pan/zoom on the same pointer events.
     e.stopPropagation();
     drag.current?.cancel();
