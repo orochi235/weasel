@@ -101,3 +101,17 @@ describe('an irregular bump', () => {
     });
   }
 });
+
+describe('spikes', () => {
+  it('holds irregularity to 0..1, so every spike points outward', () => {
+    const totalCss = 400;
+    for (let s = 0; s < totalCss; s += 0.5) {
+      const { dy } = Spikes.offsetAt!(s, { params: { irregularity: 5 }, phase: 0, totalCss, perimeterAt: line });
+      expect(Number.isFinite(dy)).toBe(true);
+      expect(dy).toBeLessThanOrEqual(0);
+    }
+    const tipAt = (irregularity: number) =>
+      Spikes.offsetAt!(totalCss / 44, { params: { irregularity }, phase: 0, totalCss, perimeterAt: line }).dy;
+    expect(tipAt(5)).toBe(tipAt(1));
+  });
+});
