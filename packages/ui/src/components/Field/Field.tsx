@@ -58,7 +58,9 @@ export function Field({ orientation = 'stacked', label, output, description, err
   const invalid = shows(error);
   const ids = useFieldIds({ label: named, description: described, error: invalid });
   const cls = [s.field, orientation === 'row' && s.row, (described || invalid) && s.footed, className].filter(Boolean).join(' ');
-  const labelEl = named && <span id={ids.labelId} className={s.label}>{label}</span>;
+  const labelEl = named && (group
+    ? <span id={ids.labelId} className={s.label}>{label}</span>
+    : <label id={ids.labelId} htmlFor={ids.id} className={s.label}>{label}</label>);
   // The control announces its own value; a live region here would say it twice through a drag.
   const outputEl = output !== undefined && <output aria-live="off" className={s.output}>{output}</output>;
   const foot = <NativeFieldFoot ids={ids} description={description} error={error} />;
