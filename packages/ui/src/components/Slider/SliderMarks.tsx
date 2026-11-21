@@ -35,31 +35,30 @@ export function labeledStopsOf(stopList: readonly SliderStop[], mode: NonNullabl
     .filter(({ stop, i }) => stop.label !== undefined && (mode === 'all' || i === 0 || i === last));
 }
 
-/** Which edge of a straight track stop `i` of `0..last` stands at, if either. */
-function edgeOf(i: number, last: number, direction: 'ltr' | 'rtl'): 'left' | 'right' | undefined {
-  const [left, right] = direction === 'rtl' ? [last, 0] : [0, last];
-  return i === left ? 'left' : i === right ? 'right' : undefined;
+/** Which edge of a straight track a stop at fraction `f` stands at, if either. */
+function edgeOf(f: number, direction: 'ltr' | 'rtl'): 'left' | 'right' | undefined {
+  if (f !== 0 && f !== 1) return undefined;
+  return (f === 0) === (direction === 'ltr') ? 'left' : 'right';
 }
 
 /** The labels under their stops. Inside the track so it shares the track's width, not the row's: an inline
  *  readout beside the track would otherwise shift every label off its stop. On a curve an end label is not
  *  held to the track's edge, which a curve does not have. */
-export function SliderStopLabels({ labeled, last, selected, valueToFraction, geometry }: {
+export function SliderStopLabels({ labeled, selected, valueToFraction, geometry }: {
   labeled: readonly LabeledStop[];
-  last: number;
   selected: readonly number[];
   valueToFraction: (v: number) => number;
   geometry: SliderGeometry;
 }): ReactElement {
   return (
     <div className={s.stopLabels} data-slider-stop-labels aria-hidden="true">
-      {labeled.map(({ stop, i }) => (
+      {labeled.map(({ stop }) => (
         <span
           key={stop.value}
           className={geometry.curved ? `${s.stopLabel} ${on.onRun}` : s.stopLabel}
           data-slider-stop-label
           data-selected={selected.includes(stop.value) ? 'true' : undefined}
-          data-edge={geometry.curved ? undefined : edgeOf(i, last, geometry.direction)}
+          data-edge={geometry.curved ? undefined : edgeOf(valueToFraction(stop.value), geometry.direction)}
           style={geometry.place(valueToFraction(stop.value))}
         >
           {stop.label}

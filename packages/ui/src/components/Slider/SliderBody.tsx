@@ -88,7 +88,7 @@ export function SliderBody<T extends Thumb = Thumb>(
     <>
       {(props.showStops ?? true) && stops.length > 0 && <SliderTicks stops={stops} valueToFraction={valueToFraction} geometry={geometry} />}
       {labeled.length > 0 && (
-        <SliderStopLabels labeled={labeled} last={stopList.length - 1} selected={thumbs.map(t => t.value)} valueToFraction={valueToFraction} geometry={geometry} />
+        <SliderStopLabels labeled={labeled} selected={thumbs.map(t => t.value)} valueToFraction={valueToFraction} geometry={geometry} />
       )}
       {/* One keyed list, so a region keeps its element, and its focus, as thumbs come and go after it. */}
       {[...thumbs.flatMap((thumb, i) => [
