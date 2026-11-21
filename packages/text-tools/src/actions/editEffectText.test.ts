@@ -44,7 +44,7 @@ describe('editEffectText', () => {
     const { deps, startEdit } = depsFor({ under: 'fx' });
     expect(editEffectTextAction.enabled!(deps as never, AT)).toBe(true);
     click(deps);
-    expect(startEdit).toHaveBeenCalledWith('t', { caret: 5 });
+    expect(startEdit).toHaveBeenCalledWith('t', { caret: 'end' });
   });
 
   it('stands aside off the effect, on an effect showing its text, and with no path open', () => {
