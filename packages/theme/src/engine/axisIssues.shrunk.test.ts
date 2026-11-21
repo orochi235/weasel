@@ -15,6 +15,17 @@ describe('axes loaded malformed', () => {
     expect(() => axisDependencies(def)).not.toThrow();
   });
 
+  it('reports an axis loaded as null or another non-object, and derives the rest', () => {
+    for (const axis of ['null', '[null]', '5']) {
+      const def = loaded(`{"name":"t","axes":{"mode":${axis}},"pins":{"x":{"value":"4px","type":"dimension"}}}`);
+      expect(derive(def).issues).toEqual([{ kind: 'invalid', path: 'axes.mode', message: 'axis "mode" must be an object with values and a default' }]);
+      expect(derive(def).tokens.x!.value).toBe('4px');
+      expect(() => bake(def)).not.toThrow();
+      expect(() => axisDependencies(def)).not.toThrow();
+      expect(() => derive({ name: 'c', extends: 't', axes: { mode: null } } as unknown as ThemeDefinition, {}, () => def)).not.toThrow();
+    }
+  });
+
   it('reports an axis named __proto__, which a selection cannot hold', () => {
     const def = loaded('{"name":"t","axes":{"__proto__":{"default":"a","values":{"a":{}}}}}');
     expect(derive(def).issues).toEqual([{ kind: 'invalid', path: 'axes.__proto__', message: '"__proto__" cannot name an axis' }]);
