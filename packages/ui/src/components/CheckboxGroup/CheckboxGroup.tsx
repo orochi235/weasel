@@ -65,7 +65,7 @@ export function CheckboxGroup<V extends string | number = string>(props: Checkbo
           <div key={String(item.value)} className={s.item} {...(props.sweep ? { [SWEEP_INDEX_ATTR]: i } : {})}>
             <Box
               isSelected={state === 'on'}
-              {...(control === 'checkbox' ? { indeterminate: state === 'mixed' } : {})}
+              indeterminate={state === 'mixed'}
               disabled={item.disabled}
               disabledReason={item.disabledReason}
               aria-label={item.ariaLabel}
