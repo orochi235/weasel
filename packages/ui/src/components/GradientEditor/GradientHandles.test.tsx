@@ -302,4 +302,16 @@ describe('GradientHandles edits', () => {
     expect(tipDistance(0.05)).toBeCloseTo(tipDistance(20));
     expect(tipDistance(0.05)).toBeGreaterThan(20);
   });
+
+  it('draws the radius guide through the transform, as an ellipse under an anisotropic one', () => {
+    const stretch = (p: { x: number; y: number }) => ({ x: p.x * 2, y: p.y });
+    const back = (p: { x: number; y: number }) => ({ x: p.x / 2, y: p.y });
+    const { container } = render(<GradientHandles value={{ ...radial, center: { x: 100, y: 100 }, radius: 20 }} toScreen={stretch} toLocal={back} onChange={() => {}} width={400} height={300} />);
+    const d = container.querySelector('path')!.getAttribute('d')!;
+    const nums = d.match(/-?\d+(\.\d+)?/g)!.map(Number);
+    const xs = nums.filter((_, i) => i % 2 === 0);
+    const ys = nums.filter((_, i) => i % 2 === 1);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(80, 0);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeCloseTo(40, 0);
+  });
 });

@@ -99,7 +99,7 @@ function renderForKind(
     const floor = distance(toLocal({ x: center.x + 1, y: center.y }), toLocal(center));
     return (
       <>
-        <circle className={s.guide} cx={center.x} cy={center.y} r={distance(center, edge)} />
+        <path className={s.guide} d={circlePath(value.center, value.radius, toScreen)} />
         <DragPoint
           radius={handleRadius}
           at={center}
@@ -150,6 +150,9 @@ function renderForKind(
 /** The conic angle arm's length, in overlay pixels. */
 const CONIC_ARM = 60;
 
+/** Segments in the radius guide, which is the circle sampled through `toScreen`. */
+const GUIDE_SEGMENTS = 64;
+
 function distance(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
@@ -160,3 +163,12 @@ function unit(a: Point, b: Point): Point {
   return d > 0 ? { x: (b.x - a.x) / d, y: (b.y - a.y) / d } : { x: 1, y: 0 };
 }
 
+function circlePath(center: Point, radius: number, toScreen: (p: Point) => Point): string {
+  let d = '';
+  for (let i = 0; i < GUIDE_SEGMENTS; i++) {
+    const a = (i / GUIDE_SEGMENTS) * 2 * Math.PI;
+    const p = toScreen({ x: center.x + Math.cos(a) * radius, y: center.y + Math.sin(a) * radius });
+    d += `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`;
+  }
+  return `${d}Z`;
+}
