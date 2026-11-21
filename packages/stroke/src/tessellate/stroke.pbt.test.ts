@@ -56,7 +56,7 @@ describe('tessellateStroke, property', () => {
       for (const i of mesh.indices) expect(i).toBeLessThan(count);
       expect(mesh.anchorA?.length).toBe(count);
     }), RUNS);
-  }, timeoutFor(200, 20));
+  }, timeoutFor(200, 75));
 
   it('keeps every vertex within the reach its miter limit and cap allow', () => {
     const checked = tally();

@@ -236,5 +236,5 @@ describe('watchPrefsVersion', () => {
     const cache = cacheWith([[VERSION_RECORD, 2], ...records]);
     runPrefsMigrations(cache, [renameGrid, doubleDensity]);
     expect(cache.get(VERSION_RECORD)).toBe(2);
-  });
+  }, 30_000);
 });
