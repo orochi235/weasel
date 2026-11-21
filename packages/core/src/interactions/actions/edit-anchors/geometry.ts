@@ -14,8 +14,13 @@ export interface PathAnchor {
   controlIn?: { x: number; y: number; coordIndex: number };
   /** Outgoing control (from the next segment, when it is C/Q). */
   controlOut?: { x: number; y: number; coordIndex: number };
-  /** Index of the anchor's on-curve x in `coords`. */
+  /** Index of the anchor's on-curve x in `coords`. An implicit anchor's is
+   *  the point it shares, the opening point of the subpath a `Z` closed, or
+   *  -1 when it lies on no coordinate. */
   coordIndex: number;
+  /** Set on the anchor a drawing command opens a subpath at without an `M`:
+   *  no command draws it, but `pathToAnchors` counts it, so it is numbered. */
+  implicit?: true;
   /** Set on the first anchor of a closed subpath whose last curve ends
    *  exactly on it: the index of that curve's end x, the same point again. */
   closeCoordIndex?: number;
@@ -24,7 +29,9 @@ export interface PathAnchor {
 /** Walk a PolygonPath's command stream and yield one `PathAnchor` per
  *  on-curve point. Adjacent C/Q control points are attached as
  *  `controlIn`/`controlOut`. Subpath boundaries (M after a previous M or Z)
- *  start fresh — the new M's anchor has no `controlIn` from a Z. A closing
+ *  start fresh — the new M's anchor has no `controlIn` from a Z — and a
+ *  drawing command after a Z opens one at an {@link PathAnchor.implicit}
+ *  anchor on the closed subpath's opening point. A closing
  *  curve that ends exactly on the subpath's first point is not a second
  *  anchor: its control becomes the first anchor's `controlIn`, the way
  *  `pathToAnchors` reads it, so the two walkers count alike. */
@@ -34,6 +41,7 @@ export function enumerateAnchors(path: PolygonPath): PathAnchor[] {
   const anchors: PathAnchor[] = [];
   let lastAnchor: PathAnchor | null = null;
   let firstInSubpath: PathAnchor | null = null;
+  let openingCi = -1;
 
   const push = (coordIndex: number, controlIn?: PathAnchor['controlIn']): void => {
     const a: PathAnchor = {
@@ -47,11 +55,18 @@ export function enumerateAnchors(path: PolygonPath): PathAnchor[] {
     lastAnchor = a;
   };
 
-  forEachSegment(commands, coords, (cmd, ci) => {
+  forEachSegment(commands, coords, (cmd, ci, penX, penY, _i, opensSubpath) => {
+    if (opensSubpath) {
+      const a: PathAnchor = { anchorIndex: anchors.length, x: penX, y: penY, coordIndex: openingCi, implicit: true };
+      anchors.push(a);
+      lastAnchor = a;
+      firstInSubpath = a;
+    }
     switch (cmd) {
       case PATH_M:
         push(ci);
         firstInSubpath = lastAnchor;
+        openingCi = ci;
         break;
       case PATH_L:
         push(ci);
@@ -113,8 +128,10 @@ export function translateAnchor(
   if (!a) return path;
   const next = new Float32Array(path.coords);
   // Anchor itself.
-  next[a.coordIndex] += dx;
-  next[a.coordIndex + 1] += dy;
+  if (a.coordIndex >= 0) {
+    next[a.coordIndex] += dx;
+    next[a.coordIndex + 1] += dy;
+  }
   if (a.closeCoordIndex !== undefined) {
     next[a.closeCoordIndex] += dx;
     next[a.closeCoordIndex + 1] += dy;
@@ -125,8 +142,8 @@ export function translateAnchor(
     next[a.controlIn.coordIndex + 1] += dy;
   }
   // Out-handle: the leading pair of the OUTGOING C/Q. Owned by this
-  // anchor's segment.
-  if (a.controlOut) {
+  // anchor's segment. A one-segment quadratic loop's control is both handles.
+  if (a.controlOut && a.controlOut.coordIndex !== a.controlIn?.coordIndex) {
     next[a.controlOut.coordIndex] += dx;
     next[a.controlOut.coordIndex + 1] += dy;
   }

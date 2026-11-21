@@ -60,3 +60,15 @@ describe('swappable', () => {
     expect(swappable(s, a, b, { poseDescriptor: byX as never })).toBe(false);
   });
 });
+
+describe('swappable across parents', () => {
+  it('refuses a swap that lands a node in a container that would not take it', () => {
+    const { s, raw, a } = scene();
+    const g = raw.add({ kind: 'group', layer: 'main', data: {}, pose: box(100, 0, 40, 40) });
+    const inG = raw.add({ kind: 'mark', layer: 'main', data: {}, parent: g, pose: box(5, 5) });
+    expect(swappable(s, a, inG)).toBe(true);
+    expect(swappable(s, a, inG, { canDropInto: (parent) => parent !== g })).toBe(false);
+    raw.setHidden(g, true);
+    expect(swappable(s, a, inG)).toBe(false);
+  });
+});

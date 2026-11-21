@@ -2,6 +2,7 @@ import type { ActionDeps } from '@weasel-js/routing';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
 import { documentOf } from 'core/scene/documentOf';
 import { isPageStructure } from 'core/scene/nodeGates';
+import { admitsChild } from './admitsChild';
 import { nodeDescriptors, poseDescriptorOf } from './poseDescriptorDep';
 import { scenePoseFrame } from './poseFrame';
 
@@ -30,7 +31,8 @@ function within(scene: Scene<unknown, string, unknown>, id: NodeId, of: NodeId):
 
 /**
  * The one rule for whether `a` and `b` can trade places, by a drop or the `swap` command. Two different
- * nodes, neither inside the other, neither locked, and neither a page or the page run. Then the `canSwap`
+ * nodes, neither inside the other, neither locked, neither a page or the page run, and, under two parents, each
+ * one a child the other's parent takes (`childVerdict`, with the `canDropInto` dep). Then the `canSwap`
  * dep decides when present, else they swap when they are of one `kind` and their bounds, as the
  * `poseDescriptor` dep measures them, are one size.
  */
@@ -38,7 +40,7 @@ export function swappable(
   scene: Scene<unknown, string, unknown>,
   a: string,
   b: string,
-  deps: Pick<ActionDeps, 'canSwap' | 'poseDescriptor'> = {},
+  deps: Pick<ActionDeps, 'canSwap' | 'canDropInto' | 'poseDescriptor'> = {},
 ): boolean {
   const ia = asNodeId(a);
   const ib = asNodeId(b);
@@ -48,6 +50,12 @@ export function swappable(
   if (isPageStructure(na) || isPageStructure(nb)) return false;
   if (scene.isLocked(ia) || scene.isLocked(ib)) return false;
   if (within(scene, ia, ib) || within(scene, ib, ia)) return false;
+  const pa = na.parent ?? null;
+  const pb = nb.parent ?? null;
+  if (pa !== pb) {
+    const takes = (parent: NodeId | null, id: string) => parent === null || admitsChild(scene, parent, [id], deps.canDropInto);
+    if (!takes(pb, a) || !takes(pa, b)) return false;
+  }
   if (deps.canSwap !== undefined) return deps.canSwap(a, b);
   if (na.kind !== nb.kind) return false;
   const doc = documentOf(scene);

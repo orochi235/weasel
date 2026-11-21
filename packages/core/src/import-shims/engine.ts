@@ -169,6 +169,8 @@ export type { AngleCandidate, AngleCollect, Locus, SceneCanvasSnap, SnapAnchors,
 export { aimRectOf, aimSpace2d, isRectAim, rectAim, viewForAim } from '../domains/viewports/aim';
 export type { AimOutline, AimPoint, AimRect, AimSpace, RectAim, ViewAim } from '../domains/viewports/aim';
 export type { CoreIconName } from '../icons.gen';
+export { childVerdict } from '../interactions/actions/admitsChild';
+export type { ChildReader } from '../interactions/actions/admitsChild';
 export { swappable } from '../interactions/actions/canSwap';
 export type { CanSwapDep } from '../interactions/actions/canSwap';
 export { commitOps, commitSelectionFrom, createCommitSelectionOps, defaultCommitAdapter, operandMethods } from '../interactions/actions/defaultCommitAdapter';

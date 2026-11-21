@@ -30,7 +30,7 @@ export const swapAction = defineAction({
   icon: icon('swap'),
   tags: ['exchange', 'trade places'],
   eligible: { capability: 'transforms-selection' },
-  requires: ['operands', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'canSwap', 'transformFollowers'],
+  requires: ['operands', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'canSwap', 'canDropInto', 'transformFollowers'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {

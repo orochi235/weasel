@@ -15,6 +15,7 @@ import {
   PathBuilder,
   worldCoords,
   type PolygonPath,
+  pathToAnchors,
 } from '@weasel-js/geom';
 
 const path = (commands: number[], coords: number[]): PolygonPath => ({
@@ -175,5 +176,27 @@ describe('a path measured from an origin', () => {
     const moved = withCoord(far, anchors[1].coordIndex, FAR + 1.8, 1);
     expect(moved.origin).toEqual(far.origin);
     expect(worldCoords(moved)[2]).toBeCloseTo(FAR + 1.8, 6);
+  });
+});
+
+describe('a subpath a drawing command opens after Z', () => {
+  // A closed triangle, then an L that opens a second subpath at its start.
+  const p = path([PATH_M, PATH_L, PATH_L, PATH_Z, PATH_L, PATH_L], [0, 0, 10, 0, 10, 10, 0, 20, 20, 20]);
+
+  it('numbers its implicit start anchor as pathToAnchors does', () => {
+    const flat = pathToAnchors(p).anchors.flat();
+    const a = enumerateAnchors(p);
+    expect(a.map(({ x, y }) => ({ x, y }))).toEqual(flat.map(({ x, y }) => ({ x, y })));
+    expect(a[3]).toMatchObject({ implicit: true, coordIndex: 0 });
+  });
+});
+
+describe('a one-segment quadratic loop', () => {
+  // M p0, Q c p0, Z: the one control is both the seam anchor's in and out handle.
+  const p = path([PATH_M, PATH_Q, PATH_Z], [0, 0, 10, 10, 0, 0]);
+
+  it('moves its control once with the anchor', () => {
+    const moved = translateAnchor(p, 0, 5, 0);
+    expect([...moved.coords]).toEqual([5, 0, 15, 10, 5, 0]);
   });
 });

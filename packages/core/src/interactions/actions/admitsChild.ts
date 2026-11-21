@@ -37,8 +37,8 @@ function followerPages(scene: ChildReader, parent: NodeId, ids: readonly string[
 
 /** The one rule for whether `parent` takes `ids` as children, by drop, insert or paste. A locked parent
  *  takes none, nor does a hidden one, which would put what lands in it out of sight, nor one whose frame is
- *  singular, where nothing can keep its place (`frameInverts`). The page run takes only nodes that follow others across pages, and no insert; a page takes a
- *  node following others only when everything it follows is on that page. Otherwise `canDropInto` decides
+ *  singular, where nothing can keep its place (`frameInverts`). The page run takes only nodes that follow others across pages, and no insert; a page, and a
+ *  container on one, takes a node following others only when everything it follows is on that page. Otherwise `canDropInto` decides
  *  when present, else a group does and a mark does not. */
 export function childVerdict(
   scene: ChildReader,
@@ -51,7 +51,7 @@ export function childVerdict(
   if (target?.pageRun !== undefined) {
     return ids.length > 0 && followerPages(scene, parent, ids).every((page) => page === null);
   }
-  const own = target?.page === undefined ? null : pageIdOf(scene, parent);
+  const own = pageIdOf(scene, parent);
   if (own !== null && followerPages(scene, parent, ids).some((page) => page !== undefined && page !== own)) {
     return false;
   }
