@@ -186,6 +186,7 @@
     "CommandPaint": "type",
     "CommandPaintUnits": "type",
     "CommandRasterizer": "type",
+    "CommandRasterizerOptions": "type",
     "CommandSettings": "type",
     "CommandStroke": "type",
     "CommitSelection": "type",
