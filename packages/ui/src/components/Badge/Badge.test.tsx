@@ -257,6 +257,13 @@ describe('Badge removable with an action of its own', () => {
     expect(target.classList.length).toBeGreaterThan(1);
   });
 
+  it('leaves a plain removable badge unmarked while its remove control holds focus', () => {
+    const { container } = render(<Badge shape="notched" onRemove={() => {}}>tag</Badge>);
+    const root = container.firstElementChild as HTMLElement;
+    fireEvent.focus(screen.getByRole('button', { name: 'Remove' }));
+    expect(root.hasAttribute('data-focused')).toBe(false);
+  });
+
   it('describes the click target with the tooltip', () => {
     render(<Badge tooltip="Filter by tag" onClick={() => {}} onRemove={() => {}}>tag</Badge>);
     const target = screen.getByRole('button', { name: 'tag' });
