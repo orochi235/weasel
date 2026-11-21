@@ -29,6 +29,16 @@ describe('MotifFrame', () => {
     expect(group).toContainElement(screen.getByRole('button', { name: 'Remove' }));
   });
 
+  it.each([...MOTIFS, ['sheet', sheet], ['well', () => well()]] as [string, () => Motif][])('%s: an empty title draws as no title', (_, make) => {
+    const { container } = render(
+      <MotifFrame title="" motif={make()}>
+        <p>body</p>
+      </MotifFrame>,
+    );
+    expect(screen.queryByRole('group')).toBeNull();
+    expect(container.querySelector('h1, h2, h3, h4, h5, h6, legend')).toBeNull();
+  });
+
   it.each([...MOTIFS, ['sheet', sheet], ['well', () => well()]] as [string, () => Motif][])('%s: a twisty at the end follows the title, and one at the start leads it', (_, make) => {
     const order = (twistyAt: 'start' | 'end') => {
       const { unmount } = render(
