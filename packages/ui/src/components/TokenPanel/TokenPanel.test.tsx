@@ -162,7 +162,7 @@ describe('TokenPanel', () => {
       fireEvent.keyDown(family.getByRole('slider', { name: '--f-lg' }), { key: 'ArrowRight' });
       expect(onScaleChange).toHaveBeenLastCalledWith('f', {
         ...byFactors,
-        rule: { kind: 'factors', factors: [0.8, 1, 1.583] },
+        rule: { kind: 'factors', factors: [0.8, 1, 1.5833] },
       });
       expect(onChange).not.toHaveBeenCalled();
     });
@@ -174,7 +174,7 @@ describe('TokenPanel', () => {
       fireEvent.click(family.getByRole('radio', { name: 'step' }));
       expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byFactors, base: 10, rule: { kind: 'step', step: 4 } });
       fireEvent.click(family.getByRole('radio', { name: 'ratio' }));
-      expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byFactors, base: 10, rule: { kind: 'ratio', ratio: 1.34 } });
+      expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byFactors, base: 10, rule: { kind: 'ratio', ratio: 1.3416 } });
     });
 
     it('overrides a dragged step that no factor can reach', () => {

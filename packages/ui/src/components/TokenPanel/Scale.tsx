@@ -11,6 +11,7 @@ import {
   NUMBER_FORMAT,
   type OnTokenChange,
   refitScale,
+  roundFit,
   shownAlike,
   splitUnit,
   type TokenEntry,
@@ -144,7 +145,7 @@ function ScaleSlider({
       if (factors && generator && generator.base > 0 && at >= 0 && at < factors.length) {
         onScaleChange?.(group, {
           ...generator,
-          rule: { kind: 'factors', factors: factors.map((f, j) => (j === at ? Number((amount / generator.base).toFixed(3)) || f : f)) },
+          rule: { kind: 'factors', factors: factors.map((f, j) => (j === at ? roundFit(amount / generator.base) || f : f)) },
         });
       } else {
         onChange(thumb.token, `${amount}${unit}`);

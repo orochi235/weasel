@@ -41,7 +41,9 @@ export interface TokenScale {
   rule: TokenScaleRule;
 }
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
+/** A fitted multiplier, ratio or step, kept to the places a number field shows, so a refit regenerates the steps it
+ *  was fitted to. */
+export const roundFit = (n: number) => Number(n.toFixed(NUMBER_FORMAT.maximumFractionDigits));
 
 /**
  * The same scale under another rule, fitted to the amounts its steps have now.
@@ -54,11 +56,11 @@ export function refitScale(scale: TokenScale, kind: TokenScaleRule['kind'], amou
   const spans = Math.max(1, amounts.length - 1);
   switch (kind) {
     case 'factors':
-      return { ...scale, rule: { kind, factors: amounts.map((a) => (scale.base > 0 ? round2(a / scale.base) : 1)) } };
+      return { ...scale, rule: { kind, factors: amounts.map((a) => (scale.base > 0 ? roundFit(a / scale.base) : 1)) } };
     case 'ratio':
-      return { ...scale, base: first, rule: { kind, ratio: first > 0 && last > 0 ? round2((last / first) ** (1 / spans)) : 1 } };
+      return { ...scale, base: first, rule: { kind, ratio: first > 0 && last > 0 ? roundFit((last / first) ** (1 / spans)) : 1 } };
     case 'step':
-      return { ...scale, base: first, rule: { kind, step: round2((last - first) / spans) } };
+      return { ...scale, base: first, rule: { kind, step: roundFit((last - first) / spans) } };
   }
 }
 

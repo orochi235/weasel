@@ -53,4 +53,15 @@ describe('refitScale', () => {
     expect(refitScale(scale, 'ratio', [2, 3, -4]).rule).toEqual({ kind: 'ratio', ratio: 1 });
     expect(refitScale(scale, 'ratio', [2, 3, 0]).rule).toEqual({ kind: 'ratio', ratio: 1 });
   });
+
+  it('fits a ratio and factors that regenerate the steps they were fitted to', () => {
+    const amounts = [16, 21.33, 28.43, 37.9, 50.52];
+    const steps = { ...scale, tokens: ['--a', '--b', '--c', '--d', '--e'], base: 16 };
+    const ratio = refitScale(steps, 'ratio', amounts).rule;
+    expect(ratio.kind === 'ratio' && Math.abs(16 * ratio.ratio ** 4 - 50.52)).toBeLessThan(0.05);
+    const factors = refitScale(steps, 'factors', amounts).rule;
+    const regenerated = factors.kind === 'factors' ? factors.factors.map((f) => 16 * f) : [];
+    expect(regenerated).toHaveLength(5);
+    regenerated.forEach((amount, i) => expect(Math.abs(amount - amounts[i]!)).toBeLessThan(0.005));
+  });
 });
