@@ -11,9 +11,21 @@ const inClosedDetails = (el: HTMLElement): boolean => {
   return false;
 };
 
+/** Whether `el` is drawn: no `display: none` on it or above it, and not `visibility` hidden or collapsed. */
+const isRendered = (el: HTMLElement): boolean => {
+  if (typeof el.checkVisibility === 'function') return el.checkVisibility({ visibilityProperty: true });
+  const view = el.ownerDocument.defaultView;
+  if (!view) return true;
+  if (view.getComputedStyle(el).visibility !== 'visible') return false;
+  for (let at: Element | null = el; at; at = at.parentElement) {
+    if (view.getComputedStyle(at).display === 'none') return false;
+  }
+  return true;
+};
+
 const isTabbable = (el: HTMLElement): boolean =>
   el.tabIndex >= 0 && !el.matches(':disabled') && el.closest('[hidden], [inert]') === null
-  && (el as HTMLInputElement).type !== 'hidden' && !inClosedDetails(el);
+  && (el as HTMLInputElement).type !== 'hidden' && !inClosedDetails(el) && isRendered(el);
 
 /** `els` with each named radio group down to the one radio Tab stops on: the checked one, else the first. */
 function oneRadioPerGroup(els: readonly HTMLElement[]): HTMLElement[] {
@@ -40,8 +52,8 @@ const follows = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUM
 /**
  * Keyboard focus inside `root` as a headless `FocusScope`, the contract a HUD's widget focus answers too. Its
  * targets are the elements under `root`; Tab order is the browser's — a positive `tabindex` first, ascending, then
- * document order — over those not disabled, hidden, inert or in a closed `<details>`, and one radio per named group.
- * Holds no state: it reads and moves the DOM's own focus.
+ * document order — over those not disabled, hidden, inert, unrendered (`display: none`, `visibility: hidden`) or
+ * in a closed `<details>`, and one radio per named group. Holds no state: it reads and moves the DOM's own focus.
  */
 export function createDomFocusScope(root: HTMLElement): FocusScope<HTMLElement> {
   const doc = root.ownerDocument;
