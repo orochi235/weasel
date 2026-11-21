@@ -139,6 +139,20 @@ describe('useRovingTabIndex — arrow navigation', () => {
     expect(document.activeElement).toBe(segs[2]);
   });
 
+  it('passes over an item that is hidden or not drawn, and never gives it the tab stop', () => {
+    const segs = renderBar({ items: [{ label: 'a' }, { label: 'b' }, { label: 'c' }, { label: 'd' }], tabStopIndex: 1 });
+    segs[1]!.hidden = true;
+    segs[2]!.style.display = 'none';
+    act(() => segs[0]!.focus());
+    const onNavigate = vi.fn();
+    segs.view.rerender(<Bar items={[{ label: 'a' }, { label: 'b' }, { label: 'c' }, { label: 'd' }]} tabStopIndex={1} onNavigate={onNavigate} />);
+    fireEvent.keyDown(segs[0]!, { key: 'ArrowRight' });
+    expect(onNavigate).toHaveBeenCalledWith(3);
+    expect(document.activeElement).toBe(segs[3]);
+    act(() => segs[3]!.blur());
+    expect(tabIndexes(segs)).toEqual([0, -1, -1, -1]);
+  });
+
   it('skips aria-disabled items, which stay focusable', () => {
     const segs = renderBar({ items: [{ label: 'a' }, { label: 'b', ariaDisabled: true }, { label: 'c' }] });
     fireEvent.keyDown(segs[0], { key: 'ArrowRight' });
@@ -181,6 +195,19 @@ describe('useRovingTabIndex — arrow navigation', () => {
     const e = press(segs[0], 'ArrowRight');
     expect(onNavigate).not.toHaveBeenCalled();
     expect(e.defaultPrevented).toBe(false);
+  });
+
+  it('leaves an arrow, Home, or End held with a modifier to the browser and the item', () => {
+    const segs = renderBar();
+    act(() => segs[1]!.focus());
+    for (const mod of ['altKey', 'ctrlKey', 'metaKey', 'shiftKey'] as const) {
+      for (const key of ['ArrowLeft', 'ArrowRight', 'Home', 'End']) {
+        const e = new KeyboardEvent('keydown', { key, [mod]: true, bubbles: true, cancelable: true });
+        segs[1]!.dispatchEvent(e);
+        expect(e.defaultPrevented).toBe(false);
+        expect(document.activeElement).toBe(segs[1]);
+      }
+    }
   });
 
   it('leaves other keys to the browser', () => {
@@ -325,6 +352,12 @@ describe('useRovingTabIndex — columns', () => {
     expect(document.activeElement).toBe(byName('e'));
     fireEvent.keyDown(byName('c'), { key: 'ArrowDown' });
     expect(document.activeElement).toBe(byName('d'));
+  });
+
+  it('rows a fractional column count as the grid draws it, its whole part across', () => {
+    render(<Grid columns={2.5} groups={[['a', 'b', 'c', 'd', 'e']]} />);
+    fireEvent.keyDown(byName('a'), { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(byName('c'));
   });
 
   it('leaves Up and Down to the page at the edges', () => {

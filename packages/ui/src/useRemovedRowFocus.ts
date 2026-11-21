@@ -25,7 +25,8 @@ export function heirOf(rows: readonly FocusRow[], id: string, alive: (id: string
 
 /**
  * Keeps focus in a list when the row holding it is removed: a consumer's own delete control, or a branch folded
- * away under the focused row. Removing the focused element drops focus to the page, and the next arrow key goes
+ * away under the focused row. A focused row drawn again on a new element, as a move into another branch remounts it,
+ * gets focus back there. Removing the focused element drops focus to the page, and the next arrow key goes
  * nowhere.
  *
  * `rows` is every row in drawn order. Put `rowRef(id)` on each row's element; `focus(id)` moves focus to the row
@@ -36,8 +37,9 @@ export function useRemovedRowFocus<E extends HTMLElement>(
   focus: (id: string, els: ReadonlyMap<string, E>) => void,
 ): { els: { readonly current: Map<string, E> }; rowRef(id: string): (el: E | null) => void } {
   const els = useRef(new Map<string, E>());
-  /** Rows that held focus when their ref let go this commit. A row still drawn takes its ref straight back. */
-  const held = useRef(new Set<string>());
+  /** Rows that held focus when their ref let go this commit, and the element they let go of. A row still drawn takes
+   *  its ref straight back, on that element or, remounted under a new parent, on a new one. */
+  const held = useRef(new Map<string, E>());
   const drawn = useRef(rows);
 
   // React lets go of a ref before it takes the element out of the page, so focus can still be read here.
@@ -47,19 +49,26 @@ export function useRemovedRowFocus<E extends HTMLElement>(
       return;
     }
     const was = els.current.get(id);
-    if (was?.contains(was.ownerDocument.activeElement)) held.current.add(id);
+    if (was?.contains(was.ownerDocument.activeElement)) held.current.set(id, was);
     els.current.delete(id);
   };
 
   useLayoutEffect(() => {
     const before = drawn.current;
     drawn.current = rows;
-    const gone = before.find((r) => held.current.has(r.id) && !els.current.has(r.id));
+    const lost = [...held.current];
     held.current.clear();
-    if (!gone) return;
+    if (lost.length === 0) return;
     // Something else took focus in the same commit: leave it there.
     const active = document.activeElement;
     if (active && active !== document.body) return;
+    const moved = lost.find(([id, was]) => els.current.has(id) && els.current.get(id) !== was);
+    if (moved) {
+      focus(moved[0], els.current);
+      return;
+    }
+    const gone = before.find((r) => !els.current.has(r.id) && lost.some(([id]) => id === r.id));
+    if (!gone) return;
     const heir = heirOf(before, gone.id, (id) => els.current.has(id));
     if (heir != null) focus(heir, els.current);
   });

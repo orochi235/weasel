@@ -1,4 +1,4 @@
-import { gridLayout, rovingGridTarget, rovingKey, type LastRow } from '@weasel-js/ui-input';
+import { gridLayout, rovingGridTarget, rovingKey, wholeColumns, type LastRow } from '@weasel-js/ui-input';
 import {
   useCallback,
   useEffect,
@@ -8,6 +8,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type RefObject,
 } from 'react';
+import { isRendered } from './isRendered';
 
 /** Which arrow keys walk the items. `'both'` answers to all four, the way a
  *  radio group does; a one-axis toolbar leaves the cross-axis arrows to the
@@ -71,9 +72,10 @@ function isEnabled(el: HTMLElement): boolean {
   return !el.matches(':disabled') && el.getAttribute('aria-disabled') !== 'true';
 }
 
-/** Whether focus can land on `el` under `disabled`. */
+/** Whether focus can land on `el` under `disabled`: never on one hidden, inert, or not drawn. */
 function canStop(el: HTMLElement, disabled: RovingDisabled): boolean {
-  return disabled === 'stop' ? !el.matches(':disabled') : isEnabled(el);
+  const allowed = disabled === 'stop' ? !el.matches(':disabled') : isEnabled(el);
+  return allowed && el.closest('[hidden], [inert]') === null && isRendered(el);
 }
 
 /** The inline direction `el` lays its children out in, from its computed `direction`. */
@@ -97,8 +99,9 @@ export function rovingTarget(
   return step.handled ? step.at : null;
 }
 
-/** `items` split into rows `columns` long, a new row starting wherever the group changes. */
-function gridRows(items: readonly HTMLElement[], columns: number, groupSelector?: string): number[][] {
+/** `items` split into rows `across` long, as a grid lays them out, a new row starting wherever the group changes. */
+function gridRows(items: readonly HTMLElement[], across: number, groupSelector?: string): number[][] {
+  const columns = wholeColumns(across);
   const rows: number[][] = [];
   let group: Element | null | undefined;
   for (const [i, el] of items.entries()) {
@@ -126,7 +129,7 @@ function listen(
   mo.observe(root, {
     childList: true,
     subtree: true,
-    attributeFilter: ['disabled', 'aria-disabled'],
+    attributeFilter: ['disabled', 'aria-disabled', 'hidden', 'inert'],
   });
   const onFocusIn = (e: FocusEvent) => {
     const target = e.target as HTMLElement;
@@ -156,7 +159,8 @@ function listen(
  * and last of the items they can land on. Space and Enter pass over an
  * `aria-disabled` item's `onAction`. Under a
  * right-to-left layout — the container's computed `direction`, or the `dir`
- * option — Left and Right swap. While focus is
+ * option — Left and Right swap. An arrow, Home, or End held with a modifier is left to
+ * the browser and the item. While focus is
  * inside, the focused item holds the tab stop, so Tab and Shift+Tab both leave
  * the container.
  *
@@ -164,6 +168,8 @@ function listen(
  * container can hold arbitrary children; callers must not render `tabIndex` on
  * the items themselves. Adding, removing, disabling or enabling an item moves
  * the stop without the container re-rendering.
+ *
+ * An item that is `hidden`, inert, or not drawn is passed over as a disabled one is, under either `disabled`.
  *
  * With every item disabled there is no tab stop and the container drops out of
  * the tab order entirely.
@@ -197,14 +203,15 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
     (focused: HTMLElement | null) => {
       const found = items();
       const { tabStopIndex: controlled, disabled = 'skip' } = latest.current;
-      const enabled = found.map((el) => canStop(el, disabled));
+      // Asked lazily: whether an item is drawn reads its computed style, and the first candidate usually answers.
+      const can = (i: number) => i >= 0 && i < found.length && canStop(found[i]!, disabled);
       let stop = focused ? found.indexOf(focused) : -1;
-      if (stop < 0 && controlled !== undefined && enabled[controlled]) stop = controlled;
+      if (stop < 0 && controlled !== undefined && can(controlled)) stop = controlled;
       if (stop < 0 && controlled === undefined && last.current) {
         const i = found.indexOf(last.current);
-        if (enabled[i]) stop = i;
+        if (can(i)) stop = i;
       }
-      if (stop < 0) stop = enabled.indexOf(true);
+      if (stop < 0) stop = found.findIndex((_, i) => can(i));
       for (const [i, el] of found.entries()) el.tabIndex = i === stop ? 0 : -1;
     },
     [items],
@@ -251,6 +258,8 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
         if (isEnabled(found[current]!)) onAction(current, e);
         return;
       }
+      // A modified arrow, Home, or End is a chord for the browser or the item (Alt+Left is Back), not a step.
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
       const enabled = found.map((el) => canStop(el, disabled));
       const dir = across ?? latest.current.dir ?? inlineDirection(e.currentTarget);
       const rows = columns ? gridRows(found, columns, groupSelector) : [];
