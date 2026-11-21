@@ -208,15 +208,16 @@ function readConicGradient(
   el: Element, elements: ElementTable, onWarn?: (m: string) => void,
 ): Paint | null {
   warnGradientTransform(el, elements, onWarn);
+  const units = readGradientUnits(el, elements);
   return {
     kind: 'conic-gradient',
     center: {
-      x: num(inheritedAttr(el, elements, 'cx'), 0.5),
-      y: num(inheritedAttr(el, elements, 'cy'), 0.5),
+      x: coord(el, elements, 'cx', 'x', 0.5, units, onWarn),
+      y: coord(el, elements, 'cy', 'y', 0.5, units, onWarn),
     },
     angle: num(inheritedAttr(el, elements, 'angle'), 0),
     stops: inheritedStops(el, elements, onWarn),
-    units: readGradientUnits(el, elements),
+    units,
     interpolate: readInterpolate(el, elements),
   };
 }

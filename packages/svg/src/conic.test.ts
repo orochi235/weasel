@@ -85,3 +85,12 @@ describe('unresolvable paint references', () => {
     expect(r.warnings.join(' ')).toContain('#mesh1');
   });
 });
+
+describe('a conic gradient in user space', () => {
+  it('reads a percentage center against the viewport, as linear and radial gradients do', () => {
+    const { nodes } = parseSvg('<svg xmlns="http://www.w3.org/2000/svg" xmlns:wzl="urn:weasel-js:svg" viewBox="0 0 200 100">'
+      + '<defs><wzl:conicGradient id="c" gradientUnits="userSpaceOnUse" cx="50%" cy="50%"><stop offset="0" stop-color="red"/><stop offset="1" stop-color="blue"/></wzl:conicGradient></defs>'
+      + '<rect width="200" height="100" fill="url(#c)"/></svg>');
+    expect(JSON.stringify(nodes[0])).toContain('"center":{"x":100,"y":50}');
+  });
+});
