@@ -76,6 +76,22 @@ describe("an instrument history's last saved form, kept once it unmounts", () =>
     expect(copy).not.toHaveProperty('undo');
   });
 
+  it('is taken up by the history the instrument mounts next, while the trial stays open', () => {
+    const store = storeWithTrial();
+    holdOwnUndo(store, 't', source)();
+    const adopt = vi.fn();
+    holdOwnUndo(store, 't', { ...source, serialize: () => ({ steps: 0 }) }, adopt);
+    expect(adopt).toHaveBeenCalledWith({ steps: 3 });
+  });
+
+  it('is not handed back to the history that saved it', () => {
+    const store = storeWithTrial();
+    holdOwnUndo(store, 't', source)();
+    const adopt = vi.fn();
+    holdOwnUndo(store, 't', source, adopt);
+    expect(adopt).not.toHaveBeenCalled();
+  });
+
   it('is not kept for a trial closed before its history unmounted', () => {
     const store = storeWithTrial();
     const release = holdOwnUndo(store, 't', source);

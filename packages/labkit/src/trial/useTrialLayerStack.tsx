@@ -13,7 +13,7 @@ export interface TrialLayerStackSources {
   config: unknown;
   over: OverAccess | undefined;
   clock: TrialClock | undefined;
-  /** The trial's snapshot-if-needed, which a change in the list takes first, with the step that undoes it. */
+  /** The trial's snapshot-if-needed, which a change in the list takes first, with the entry that steps it. */
   snapshot: (event: string, op: Op) => void;
 }
 

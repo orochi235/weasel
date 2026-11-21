@@ -4,7 +4,7 @@ import type {
   SerializedHistoryEntry,
   SerializedOp,
 } from '@weasel-js/core';
-import { TRIAL_EDIT_OP, type TrialEditArgs } from '../trial/trialEditOp';
+import { TRIAL_EDIT_OP, TRIAL_LAYERS_OP, type TrialEditArgs } from '../trial/trialEditOp';
 import type { InstrumentSerializers } from './types';
 
 type Serializer = InstrumentSerializers[string];
@@ -19,12 +19,13 @@ export interface SavedTrialUndo {
   own?: unknown;
 }
 
-/** `history` as a trial's record saves it: undefined with nothing to undo or redo. */
+/** `history` as a trial's record saves it, without the layer-list steps, whose layer state is not saved:
+ *  undefined with nothing to undo or redo. */
 export function savedTrialHistory(
   history: History,
   serializer: Serializer,
 ): SerializedHistory | undefined {
-  const out = history.serialize();
+  const out = withoutLayerSteps(history.serialize());
   if (out.undoStack.length === 0 && out.redoStack.length === 0 && !out.branches) return undefined;
   const serialize = serializer?.serialize;
   return serialize ? withEditStates(out, (state) => serialize(state)) : out;
@@ -47,6 +48,26 @@ export function latestStamp(saved: SerializedHistory): number {
     ...(saved.branches ?? []).flatMap((b) => b.entries),
   ];
   return entries.reduce((max, e) => Math.max(max, e.timestamp ?? 0), Number.NEGATIVE_INFINITY);
+}
+
+const isLayerStep = (e: SerializedHistoryEntry): boolean =>
+  e.forwardOps.length > 0 && e.forwardOps.every((o) => o.name === TRIAL_LAYERS_OP);
+
+/** `saved` without the entries that step only the trial's layers. */
+function withoutLayerSteps(saved: SerializedHistory): SerializedHistory {
+  const keep = (entries: SerializedHistoryEntry[]) => entries.filter((e) => !isLayerStep(e));
+  return {
+    ...saved,
+    undoStack: keep(saved.undoStack),
+    redoStack: keep(saved.redoStack),
+    ...(saved.branches
+      ? {
+          branches: saved.branches
+            .map((b) => ({ ...b, entries: keep(b.entries) }))
+            .filter((b) => b.entries.length > 0),
+        }
+      : {}),
+  };
 }
 
 /** `saved`, with `map` run over the state each trial edit holds. */

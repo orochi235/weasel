@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
-import { trialEditOf } from '../trial/trialEditOp';
+import { TRIAL_LAYERS_OP, trialEditOf } from '../trial/trialEditOp';
 import { trialUndoHistory } from '../trial/useRestoredHistory';
 import { serializeTrials } from './helpers';
 import { createLabStore } from './store';
@@ -44,6 +44,25 @@ describe("a trial's saved history", () => {
     const [saved] = serializeTrials(store.getState().trials, {});
     expect(saved?.undo?.trial?.undoStack).toHaveLength(1);
     expect(saved?.undo?.trial?.droppedEntries).toBe(3);
+  });
+
+  it('leaves out a layer-list step and keeps the steps before it', () => {
+    const store = storeWithTrial();
+    const history = trialUndoHistory(50);
+    store.getState().setTrialHistory('t', history);
+    history.recordEntry([trialEditOf(record(store), 'edit', store)], 'state.change');
+    const layers = {
+      name: TRIAL_LAYERS_OP,
+      apply: () => {},
+      invert: () => ({ name: TRIAL_LAYERS_OP, apply: () => {}, invert: () => layers }),
+    };
+    history.recordEntry([layers], 'layers.toggle');
+    history.recordEntry([trialEditOf(record(store), 'edit', store)], 'state.change');
+    const [saved] = serializeTrials(store.getState().trials, {});
+    expect(saved?.undo?.trial?.undoStack.map((e) => e.label)).toEqual([
+      'state.change',
+      'state.change',
+    ]);
   });
 
   it('is left out while there is nothing to undo or redo', () => {

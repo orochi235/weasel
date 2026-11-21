@@ -11,6 +11,10 @@ import {
 /** The name a trial's own undo entries go by in a saved history. */
 export const TRIAL_EDIT_OP = 'labkit:trialEdit';
 
+/** The name a trial's layer-list steps go by: a saved history leaves them out, since the trial does not save
+ *  the layer order and visibility they step. */
+export const TRIAL_LAYERS_OP = 'labkit:trialLayers';
+
 /** A trial edit entry's args: plain data, so the entry survives a reload. */
 export interface TrialEditArgs {
   /** `'settings'` steps the trial's config and auto paths; `'edit'`, its state with them. */

@@ -28,23 +28,29 @@ export function useTrialLayers({
   layerOrder,
   clock,
 }: TrialLayersInput) {
+  const layerDescriptors: LayerDescriptor[] = useMemo(() => {
+    if (!instrument.layers) return [];
+    return instrument.layers.ids.map((l) => (typeof l === 'string' ? { id: l, label: l } : l));
+  }, [instrument.layers]);
+
+  // An always-on layer is shown whatever its visibility says, as its row in the list shows it.
+  const shown = useMemo(() => {
+    const alwaysOn = new Set(layerDescriptors.filter((l) => l.alwaysOn).map((l) => l.id));
+    return (id: string): boolean => alwaysOn.has(id) || getOwn(layerVisibility, id) !== false;
+  }, [layerDescriptors, layerVisibility]);
+
   const visibleLayers = useMemo(
-    () =>
-      (instrument.canvas?.layers ?? [])
-        .filter((l) => getOwn(layerVisibility, l.id) !== false)
-        .map((l) => l.id),
-    [instrument.canvas, layerVisibility],
+    () => (instrument.canvas?.layers ?? []).filter((l) => shown(l.id)).map((l) => l.id),
+    [instrument.canvas, shown],
   );
 
   const canvasLayers: CanvasLayerDescriptor[] = useMemo(() => {
     if (!instrument.canvas) return [];
     const baseLayers = instrument.canvas.layers;
-    const ordered = layerOrder
-      ? [...baseLayers].sort((a, b) => layerOrder.indexOf(a.id) - layerOrder.indexOf(b.id))
-      : baseLayers;
+    const ordered = layerOrder ? inListedOrder(baseLayers, layerOrder) : baseLayers;
     return ordered.map((layer) => ({
       id: layer.id,
-      visible: getOwn(layerVisibility, layer.id) !== false,
+      visible: shown(layer.id),
       timed: layer.timed === true,
       render: (ctx, view, frame) => {
         // Camera applied here, so a layer draws in world coordinates. `zoom`
@@ -61,19 +67,12 @@ export function useTrialLayers({
         });
       },
     }));
-  }, [instrument.canvas, state, config, over, layerVisibility, layerOrder, clock]);
-
-  const layerDescriptors: LayerDescriptor[] = useMemo(() => {
-    if (!instrument.layers) return [];
-    return instrument.layers.ids.map((l) => (typeof l === 'string' ? { id: l, label: l } : l));
-  }, [instrument.layers]);
+  }, [instrument.canvas, state, config, over, shown, layerOrder, clock]);
 
   // In the order the canvas draws them, with the always-on layers pinned
   // below the rest, where a drag cannot reach past them.
   const layerItems: LayerListItem[] = useMemo(() => {
-    const ordered = layerOrder
-      ? [...layerDescriptors].sort((a, b) => layerOrder.indexOf(a.id) - layerOrder.indexOf(b.id))
-      : layerDescriptors;
+    const ordered = layerOrder ? inListedOrder(layerDescriptors, layerOrder) : layerDescriptors;
     const pinnedLast = [
       ...ordered.filter((l) => !l.alwaysOn),
       ...ordered.filter((l) => l.alwaysOn),
@@ -82,9 +81,22 @@ export function useTrialLayers({
       id: l.id,
       label: l.label,
       fixed: l.alwaysOn === true,
-      visible: l.alwaysOn === true || getOwn(layerVisibility, l.id) !== false,
+      visible: shown(l.id),
     }));
-  }, [layerDescriptors, layerOrder, layerVisibility]);
+  }, [layerDescriptors, layerOrder, shown]);
 
   return { visibleLayers, canvasLayers, layerDescriptors, layerItems };
+}
+
+/** `layers` with the ones `order` names put in its order, among the places they hold; a layer it does not name
+ *  keeps its own place. */
+function inListedOrder<T extends { id: string }>(
+  layers: readonly T[],
+  order: readonly string[],
+): T[] {
+  const rank = new Map(order.map((id, i) => [id, i]));
+  const at = (l: T): number => rank.get(l.id) ?? -1;
+  const listed = layers.filter((l) => at(l) >= 0).sort((a, b) => at(a) - at(b));
+  let next = 0;
+  return layers.map((l) => (at(l) >= 0 ? (listed[next++] ?? l) : l));
 }
