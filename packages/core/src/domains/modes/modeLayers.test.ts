@@ -93,6 +93,17 @@ describe('createWorkspaceTintLayer', () => {
     expect(rects[0]).toMatchObject({ x: 0, y: 50, width: 200, height: 50 });
   });
 
+  it('cuts the page out exactly when it sits far from the origin', () => {
+    const registry = createModeRegistry({ modes: MODES, initial: 'wash' });
+    const far = 1e12;
+    const layer = createWorkspaceTintLayer({ registry, page: () => ({ x: far + 0.03, y: far + 0.07, width: 0.1, height: 0.02 }) });
+    const rects = draw(layer, { x: far, y: far, scale: { x: 1e3, y: 1e3 } }).map((c) => c.path);
+    const left = (far + 0.03 - far) * 1e3;
+    const top = (far + 0.07 - far) * 1e3;
+    expect(rects[0]!.height).toBe(top);
+    expect(rects[2]!.width).toBe(left);
+  });
+
   it('washes the whole viewport when the page is scrolled out of it', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'wash' });
     const layer = createWorkspaceTintLayer({ registry, page: () => ({ x: 500, y: 500, width: 10, height: 10 }) });
