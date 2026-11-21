@@ -135,6 +135,16 @@ describe('TokenPanel', () => {
     fireEvent.pointerUp(document, at(16));
   });
 
+  it('steps a scale of whole amounts finer than a whole unit', () => {
+    const rems: TokenEntry[] = ['1', '2', '4'].map((n) => ({ name: `--r-${n}`, type: 'dimension', group: 'r', value: `${n}rem` }));
+    const onChange = vi.fn();
+    renderWithIcons(<TokenPanel tokens={rems} onChange={onChange} />);
+    const first = within(screen.getByRole('group', { name: 'r' })).getByRole('slider', { name: '--r-1' });
+    fireEvent.keyDown(first, { key: 'ArrowRight' });
+    fireEvent.keyDown(first, { key: 'ArrowLeft' });
+    expect(onChange.mock.calls).toEqual([['--r-1', '1.1rem'], ['--r-1', '0.9rem']]);
+  });
+
   it('puts back each step and the rule a drag wrote when Escape cancels it', () => {
     const steps: TokenEntry[] = [
       { name: '--s-sm', type: 'dimension', group: 's', value: '8px' },
@@ -251,7 +261,7 @@ describe('TokenPanel', () => {
       renderWithIcons(<TokenPanel tokens={tiny} onChange={onChange} scales={{ t: scale }} onScaleChange={onScaleChange} />);
       fireEvent.keyDown(within(screen.getByRole('group', { name: 't' })).getByRole('slider', { name: '--t-sm' }), { key: 'ArrowRight' });
       expect(onScaleChange).not.toHaveBeenCalled();
-      expect(onChange).toHaveBeenCalledWith('--t-sm', '0.02px');
+      expect(onChange).toHaveBeenCalledWith('--t-sm', '0.011px');
     });
 
     it('refits factors of 1 from a base that is not positive', () => {
