@@ -102,6 +102,28 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
     ...setupFiles.map((file) => resolve(repoRoot, file)),
   ];
   const resolved = new Map<string, string | undefined>();
+  // npm puts a version conflicting with the root's in the package's own `node_modules`. Listed bare, vite would
+  // pre-bundle the root's copy and hand it to that package too, so it is listed through the package instead.
+  const homes = new Map<string, { dir: string; name: string } | null>();
+  const homeOf = (file: string): { dir: string; name: string } | null => {
+    const dir = dirname(file);
+    if (!homes.has(dir)) {
+      const manifest = join(dir, 'package.json');
+      homes.set(
+        dir,
+        dir === repoRoot || dir === dirname(dir) ? null
+        : isFile(manifest) ? { dir, name: JSON.parse(readFileSync(manifest, 'utf8')).name }
+        : homeOf(dir),
+      );
+    }
+    return homes.get(dir)!;
+  };
+  const listed = (specifier: string, file: string) => {
+    const home = homeOf(file);
+    return home && existsSync(join(home.dir, 'node_modules', packageOf(specifier))) ?
+        `${home.name} > ${specifier}`
+      : specifier;
+  };
   const visit = (path: string) => {
     if (!resolved.has(path)) resolved.set(path, sourceAt(path));
     const file = resolved.get(path);
@@ -129,7 +151,7 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(listed(specifier, file));
     }
   }
   return [...found].sort();

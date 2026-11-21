@@ -137,6 +137,11 @@ describe('browserDeps', () => {
     expect(deps()).toEqual(['@testing-library/react', 'zustand/vanilla']);
   });
 
+  it('lists a dependency a package has its own copy of through that package', () => {
+    put('packages/kit/node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '5.0.0' }));
+    expect(deps()).toEqual(['@fixture/kit > zustand/vanilla', '@testing-library/react']);
+  });
+
   it('leaves out what vite cannot or must not pre-bundle', () => {
     put('packages/app/src/raw.ts', `import 'raw-only';\n`);
     put(
