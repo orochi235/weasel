@@ -36,21 +36,44 @@ export interface SegmentSweeperProps<V> {
   model: SelectionModel;
   sweep: SegmentSweep<V>;
   /** Called as a sweep ends, so the click the release makes is not taken for a press. */
-  swept(): void;
+  swept(how: 'commit' | 'cancel'): void;
 }
 
 /** A click guard for a bar with a sweep: `swept` as a sweep ends, and `sweeping()` is true until the click its
- *  release makes has passed. */
-export function useSweepGuard(): { swept: () => void; sweeping: () => boolean } {
+ *  release makes has passed. A canceled sweep's pointer may still be down, so its guard holds until that release,
+ *  or until the next press or key. */
+export function useSweepGuard(): { swept: (how?: 'commit' | 'cancel') => void; sweeping: () => boolean } {
   const just = useRef(false);
   return {
-    swept: () => {
+    swept: (how = 'commit') => {
       just.current = true;
-      setTimeout(() => { just.current = false; }, 0);
+      const clear = (): void => { just.current = false; };
+      if (how === 'commit') {
+        setTimeout(clear, 0);
+        return;
+      }
+      const released = (): void => { stop(); setTimeout(clear, 0); };
+      const pressed = (): void => { stop(); clear(); };
+      const keyed = (event: KeyboardEvent): void => {
+        if (event.repeat || event.key === 'Escape' || MODIFIER_KEYS.has(event.key)) return;
+        pressed();
+      };
+      const stop = (): void => {
+        document.removeEventListener('pointerup', released, true);
+        document.removeEventListener('pointercancel', released, true);
+        document.removeEventListener('pointerdown', pressed, true);
+        document.removeEventListener('keydown', keyed, true);
+      };
+      document.addEventListener('pointerup', released, true);
+      document.addEventListener('pointercancel', released, true);
+      document.addEventListener('pointerdown', pressed, true);
+      document.addEventListener('keydown', keyed, true);
     },
     sweeping: () => just.current,
   };
 }
+
+const MODIFIER_KEYS = new Set(['Alt', 'Control', 'Meta', 'Shift']);
 
 const CHANNELS = { pointer: true, wheel: false, pinch: false, contextMenu: false, ingest: false, carry: false } as const;
 const NO_ENTRIES = new Map();
@@ -78,7 +101,7 @@ function Dispatch<V>(props: SegmentSweeperProps<V>): null {
       return {
         enter: ({ key: index }) => flushSync(() => run.reach(index)),
         end: (how) => {
-          latest.current.swept();
+          latest.current.swept(how);
           if (how === 'cancel') run.revert();
         },
       };

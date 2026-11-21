@@ -89,6 +89,24 @@ describe('SegmentedBar sweep', () => {
     expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'true']);
   });
 
+  it('does not take the click a held release makes after the sweep is canceled for a toggle', async () => {
+    const { seen, fire, buttons, pressed } = setup({});
+    fire('pointerdown', 5);
+    fire('pointermove', 15);
+    fire('pointermove', 5);
+    act(() => { window.dispatchEvent(new Event('blur')); });
+    expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'false']);
+    await act(() => new Promise((r) => setTimeout(r, 10)));
+    fire('pointerup', 5, { buttons: 0 });
+    fireEvent.click(buttons[0]!, { detail: 1 });
+    expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'false']);
+    await act(() => new Promise((r) => setTimeout(r, 0)));
+    const before = seen.length;
+    fireEvent.click(buttons[0]!, { detail: 1 });
+    expect(seen.length).toBe(before + 1);
+    expect(pressed()[0]).toBe('true');
+  });
+
   it('sweeps across the rows of a wrapped bar, along the line the drag takes', () => {
     const seen: string[][] = [];
     const cells = Array.from({ length: 9 }, (_, i) => ({ value: String(i), label: String(i) }));
