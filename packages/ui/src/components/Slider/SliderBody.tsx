@@ -56,8 +56,8 @@ export function SliderBody<T extends Thumb = Thumb>(
   const bandRef = useRef<SVGPathElement | null>(null);
   const thumbEls = useRef<(HTMLDivElement | null)[]>([]);
   // The track, the rail and the painted layer, then each thumb, in their own px as the pointers are.
-  const boxes = useBoxes(() => [trackRef.current, railRef.current, paintRef.current, ...thumbs.map((_, i) => thumbEls.current[i] ?? null)], thumbs.length, { untransformed: true });
-  const thumbLength = useBoxes(() => [thumbEls.current[0] ?? null], thumbs.length, { untransformed: true })[0]?.width || 14;
+  const boxes = useBoxes(() => [trackRef.current, railRef.current, paintRef.current, ...thumbs.map((_, i) => thumbEls.current[i] ?? null)], { untransformed: true });
+  const thumbLength = useBoxes(() => [thumbEls.current[0] ?? null], { untransformed: true })[0]?.width || 14;
   const shape = useRun().shape;
   const direction = useInlineDirection(trackRef);
   const { geometry, run } = useSliderGeometry({
