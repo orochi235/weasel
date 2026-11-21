@@ -49,10 +49,13 @@ function colorOf(style: CellStyle, key: string, warn: Warn, otherwise?: string):
   return raw === 'none' ? 'transparent' : checkedColor(raw, 'Draw-style XML', warn);
 }
 
+/** A stroke's dash in world units. A draw app scales `dashPattern` by the stroke's width unless `fixDash` is set. */
 function dashOf(style: CellStyle): number[] | undefined {
   if (!styleFlag(style, 'dashed')) return undefined;
-  const pattern = (style.values.get('dashPattern') ?? '').split(/\s+/).map(Number).filter((n) => Number.isFinite(n) && n > 0);
-  return pattern.length > 0 ? pattern : [3, 3];
+  const parsed = (style.values.get('dashPattern') ?? '').split(/\s+/).map(Number).filter((n) => Number.isFinite(n) && n > 0);
+  const pattern = parsed.length > 0 ? parsed : [3, 3];
+  const scale = styleFlag(style, 'fixDash') ? 1 : styleNumber(style, 'strokeWidth') ?? 1;
+  return scale > 0 ? pattern.map((n) => n * scale) : pattern;
 }
 
 const defined = <T extends object>(o: { [K in keyof T]?: T[K] | undefined }): Partial<T> | undefined => {

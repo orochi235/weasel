@@ -114,6 +114,20 @@ describe('draw-style XML clusters', () => {
   });
 });
 
+describe('draw-style XML dashes', () => {
+  it('reads a dash pattern scaled by the stroke width, as a draw app draws it, unless the style fixes it', async () => {
+    const at = (style: string) => vertex('n', style, 'width="80" height="40"');
+    expect(node((await readCells(at('strokeWidth=3;dashed=1;dashPattern=3 2;'))).data, 'n').colors?.dash).toEqual([9, 6]);
+    expect(node((await readCells(at('strokeWidth=3;dashed=1;dashPattern=3 2;fixDash=1;'))).data, 'n').colors?.dash).toEqual([3, 2]);
+  });
+
+  it('writes a dash fixed to its lengths and reads it back the same', async () => {
+    const { text, data } = await roundTrip({ nodes: [{ id: 'n', lines: ['N'], at: { x: 0, y: 0 }, colors: { dash: [6, 4] } }], edges: [] });
+    expect(text).toContain('fixDash=1;');
+    expect(node(data, 'n').colors?.dash).toEqual([6, 4]);
+  });
+});
+
 describe('draw-style XML routers', () => {
   it('warns that an obstacle-avoiding connector is written orthogonal', () => {
     const { warnings } = DIAGRAM_DRAW_XML.write!(doc({ nodes: TWO, edges: [{ id: 'e', from: 'a', to: 'b', router: 'avoid' }] }));

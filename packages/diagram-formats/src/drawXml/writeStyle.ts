@@ -14,7 +14,7 @@ const colorValue = (color: string | undefined): string | undefined =>
   (color === undefined ? undefined : color === 'transparent' ? 'none' : color);
 
 const dashParts = (dash: readonly number[] | undefined): StylePart[] =>
-  (dash !== undefined && dash.length > 0 ? [['dashed', 1], ['dashPattern', dash.join(' ')]] : []);
+  (dash !== undefined && dash.length > 0 ? [['dashed', 1], ['dashPattern', dash.join(' ')], ['fixDash', 1]] : []);
 
 function colorParts(style: NodeStyle, fill: boolean): StylePart[] {
   return [
