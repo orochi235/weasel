@@ -442,6 +442,15 @@ describe('infinity', () => {
   });
 });
 
+describe('percentages round the number they show', () => {
+  it('speaks the number percent shows where the binary product falls under a half', () => {
+    for (const [value, shown] of [[0.145, '15'], [0.285, '29'], [0.565, '57']] as const) {
+      expect(qty(value, percent()).text).toBe(`${shown}%`);
+      expect(qty(value, percent()).spoken).toBe(`${shown} percent`);
+    }
+  });
+});
+
 describe('whole-number kinds round a half the one way', () => {
   it('away from zero, as the integer display shows it, in every kind and in what a typed fraction reads as', () => {
     expect(qty(-2.5, integer()).text).toBe('−3');

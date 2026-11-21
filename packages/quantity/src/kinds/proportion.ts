@@ -1,5 +1,5 @@
 import { escapeMarkup, intlParts, numberPart, signed, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
-import { finiteOrNaN, latinDigits, MINUS_SIGN, parseNumberIn, unsignedZero } from '../number';
+import { finiteOrNaN, latinDigits, MINUS_SIGN, parseNumberIn, shiftedDecimal, unsignedZero } from '../number';
 
 /** A share of one as a percentage: 0.25 shows `25%`. Typed text reads as
  *  percent with or without the sign. */
@@ -22,7 +22,7 @@ export const percentKind: DisplayKind<PercentDisplay> = {
   speak: (value, d, ctx) =>
     spokenSign(
       textOf(
-        intlParts(value * 100, ctx.locale, {
+        intlParts(shiftedDecimal(value, 2), ctx.locale, {
           style: 'unit',
           unit: 'percent',
           unitDisplay: 'long',

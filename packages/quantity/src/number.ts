@@ -86,6 +86,13 @@ export function parseNumberIn(text: string, units: Readonly<UnitTable> | undefin
 }
 
 /** `n`, or NaN when it is infinite: an infinity reads only from a word for it, never from digits. */
+/** `n` times `10 ** power`, moved through its shortest decimal form so 0.145 at 2 is 14.5 and not 14.499999999999998. */
+export function shiftedDecimal(n: number, power: number): number {
+  if (!Number.isFinite(n)) return n;
+  const [mantissa, exponent = '0'] = String(n).split('e');
+  return Number(`${mantissa}e${Number(exponent) + power}`);
+}
+
 export const finiteOrNaN = (n: number): number => (Number.isFinite(n) ? n : Number.NaN);
 
 /** `parseNumber` once every number in the text is in `en-US` form with no grouping. */
