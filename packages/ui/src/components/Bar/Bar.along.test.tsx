@@ -5,6 +5,8 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Along, arcInBox } from '../Along';
 import { isApplePlatform } from '@weasel-js/gestures';
 import { PrefsBar } from '../PrefsBar/PrefsBar';
+import { Bar } from './Bar';
+import { FitLabel } from '../FitLabel/FitLabel';
 import alongStyles from '../Along/Along.module.css';
 
 // jsdom lays nothing out: an Along is 200 by 200 untransformed and every other element 40 wide; every box is 200 by
@@ -346,5 +348,20 @@ describe('Bar along a curve: dragging the run', () => {
     expect(items()[0]).toHaveAttribute('data-clipped', 'none');
     drag({});
     expect(items()[0]).not.toHaveAttribute('data-clipped', 'none');
+  });
+});
+
+describe('a fitted bar along a curve', () => {
+  const shape = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 });
+  const cells = (n: number) => Array.from({ length: n }, (_, i) => <button key={`k${i}`} type="button"><FitLabel forms={[`Long${i}`, `S${i}`]} /></button>);
+
+  test('shortens its labels together once its items overrun the run', () => {
+    render(<Along shape={shape}><Bar label="Tools" fit>{cells(6)}</Bar></Along>);
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['S0', 'S1', 'S2', 'S3', 'S4', 'S5']);
+  });
+
+  test('keeps the full labels while the run holds every item', () => {
+    render(<Along shape={shape}><Bar label="Tools" fit>{cells(3)}</Bar></Along>);
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['Long0', 'Long1', 'Long2']);
   });
 });
