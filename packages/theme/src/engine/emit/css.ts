@@ -105,7 +105,12 @@ interface Plan {
   readonly all: (name: string) => readonly string[];
   readonly own: (name: string) => readonly string[];
   readonly value: (name: string, sel: AxisChoice) => RawToken | undefined;
+  /** Whether the theme has the token at some selection. */
+  readonly has: (name: string) => boolean;
 }
+
+/** Declarations clearing tokens a theme lacks, so its subtree inherits none from an outer theme that has them. */
+const unset = (names: readonly string[]) => names.map((n) => `  --wzl-${n}: initial;`);
 
 function blocks(lines: string[], plan: Plan, selector: (attrs: string) => string[]): void {
   const { axes, names } = plan;
@@ -170,6 +175,7 @@ export function emitCss(themes: readonly EmitInput[]): string {
     all: (n) => union(axes, getOwn(t.deps, n)?.all, getOwn(def.deps, n)?.all),
     own: (n) => union(axes, getOwn(t.deps, n)?.own, getOwn(def.deps, n)?.own),
     value: (n, sel) => resolved.token(n, sel),
+    has: (n) => resolved.names.includes(n),
   }));
 
   const lines = [
@@ -195,8 +201,15 @@ export function emitCss(themes: readonly EmitInput[]): string {
   lines.push('}', '');
 
   const reset = Object.keys(rootValues).filter((n) => redeclared.has(n) && (getOwn(def.deps, n)?.all.length ?? 0) === 0);
-  if (reset.length > 0) {
-    lines.push(`${wzlAttr('theme', theme)} {`, ...reset.map((n) => `  --wzl-${n}: ${cssValue(n, getOwn(rootValues, n)!)};`), '}', '');
+  const defaultLacks = [...redeclared].filter((n) => !Object.hasOwn(def.baked.tokens, n));
+  if (reset.length + defaultLacks.length > 0) {
+    lines.push(
+      `${wzlAttr('theme', theme)} {`,
+      ...reset.map((n) => `  --wzl-${n}: ${cssValue(n, getOwn(rootValues, n)!)};`),
+      ...unset(defaultLacks),
+      '}',
+      '',
+    );
   }
 
   blocks(
@@ -209,13 +222,15 @@ export function emitCss(themes: readonly EmitInput[]): string {
       all: (n) => getOwn(def.deps, n)?.all ?? [],
       own: (n) => getOwn(def.deps, n)?.own ?? [],
       value: (n, sel) => getOwn(pickAll(def.baked.tokens, fullAxisChoice(axes, sel)), n),
+      has: (n) => Object.hasOwn(def.baked.tokens, n),
     },
     (attrs) => [`${wzlAttr('theme', theme)}${attrs},`, `${attrs} {`],
   );
 
   for (const plan of others) {
     const invariant = plan.names.filter((n) => plan.all(n).length === 0);
-    if (invariant.length > 0) {
+    const lacks = [...redeclared].filter((n) => !plan.has(n));
+    if (invariant.length + lacks.length > 0) {
       // `[data-wzl-theme='x']` alone already ties the default's `:root` on specificity and wins on source
       // order, since the default emits first; `:root[...]` guards only against that emission order changing.
       lines.push(`:root${wzlAttr('theme', plan.theme)},`, `${wzlAttr('theme', plan.theme)} {`);
@@ -223,7 +238,7 @@ export function emitCss(themes: readonly EmitInput[]): string {
         const token = plan.value(n, {});
         if (token) lines.push(`  --wzl-${n}: ${cssValue(n, token)};`);
       }
-      lines.push('}', '');
+      lines.push(...unset(lacks), '}', '');
     }
     blocks(lines, plan, (attrs) => [`${wzlAttr('theme', plan.theme)}${attrs} {`]);
   }

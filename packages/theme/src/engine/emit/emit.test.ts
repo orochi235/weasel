@@ -193,6 +193,15 @@ describe('emitCss', () => {
     expect(got['--wzl-fg-on-accent']).toBe('#f5f5f5');
   });
 
+  it('clears a token only an outer theme declares inside a subtree of a theme without it', () => {
+    const extra: ThemeDefinition = { ...child, name: 'extra', pins: { ...child.pins, brand: { value: '#abcdef', type: 'color' } } };
+    const sheet = emitCss([input(base), input(child, false), { ...input(extra, false) }]);
+    expect(computed(sheet, [{}, { theme: 'extra', mode: 'dark' }])['--wzl-brand']).toBe('#abcdef');
+    for (const inner of ['base', 'child']) {
+      expect(computed(sheet, [{}, { theme: 'extra', mode: 'dark' }, { theme: inner, mode: 'dark' }])['--wzl-brand']).toBe('initial');
+    }
+  });
+
   it('computes every token of every theme, at the root or nested, in either emission order', () => {
     const all = [base, child, grand, aaa];
     const sheets = [emitCss(all.map((d) => input(d, d === base))), emitCss([...all].reverse().map((d) => input(d, d === base)))];
