@@ -92,10 +92,10 @@ export function moveEachOps(
   const claimed = new Set<NodeId>();
   const ops: Op[] = [];
   for (const { ids, dx, dy } of moves) {
-    if (dx === 0 && dy === 0) continue;
     const sources = moveSources(scene, ids);
     const targets = translateTargets(scene, frame, sources).filter((id) => !claimed.has(id));
     for (const id of targets) claimed.add(id);
+    if (dx === 0 && dy === 0) continue;
     // The first one leads the rest, as in a drag: each is moved by its world change.
     const first = targets.find((id) => id === sources[0]) ?? targets[0];
     const from = first === undefined ? undefined : frame.world(first);
