@@ -175,4 +175,22 @@ describe('SegmentedBar sweep', () => {
     }
     expect(seen.at(-1)).toEqual(['a', 'b']);
   });
+
+  it('puts the value back on Escape, and takes no later move or release for a step', async () => {
+    const { seen, fire, buttons, pressed } = setup({ initial: ['e'] });
+    fire('pointerdown', 5);
+    fire('pointermove', 15);
+    fire('pointermove', 5);
+    act(() => { buttons[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+    expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'true']);
+    fire('pointermove', 35);
+    await act(() => new Promise((r) => setTimeout(r, 10)));
+    fire('pointerup', 5, { buttons: 0 });
+    fireEvent.click(buttons[0]!, { detail: 1 });
+    expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'true']);
+    await act(() => new Promise((r) => setTimeout(r, 0)));
+    const before = seen.length;
+    fireEvent.click(buttons[0]!, { detail: 1 });
+    expect(seen.length).toBe(before + 1);
+  });
 });

@@ -98,12 +98,25 @@ function Dispatch<V>(props: SegmentSweeperProps<V>): null {
       const run = ctx.modifiers.alt
         ? soloSweepFrom(model, key, p.values.length, p.sweepable)
         : sweepFrom(model, key);
+      let over = false;
+      const finish = (how: 'commit' | 'cancel'): void => {
+        if (over) return;
+        over = true;
+        window.removeEventListener('keydown', onKey, true);
+        latest.current.swept(how);
+        if (how === 'cancel') run.revert();
+      };
+      // The dispatcher hears no keys here, so the sweep takes its own Escape, and stops it there as a drag's does.
+      const onKey = (event: KeyboardEvent): void => {
+        if (event.key !== 'Escape' || event.isComposing) return;
+        event.preventDefault();
+        event.stopPropagation();
+        finish('cancel');
+      };
+      window.addEventListener('keydown', onKey, true);
       return {
-        enter: ({ key: index }) => flushSync(() => run.reach(index)),
-        end: (how) => {
-          latest.current.swept(how);
-          if (how === 'cancel') run.revert();
-        },
+        enter: ({ key: index }) => { if (!over) flushSync(() => run.reach(index)); },
+        end: finish,
       };
     },
   }), [latest]);
