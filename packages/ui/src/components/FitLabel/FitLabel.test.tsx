@@ -53,4 +53,24 @@ describe('useFitScope', () => {
       delete (document as { fonts?: unknown }).fonts;
     }
   });
+
+  it('clears its spent mark when its labels change to ones that fit', () => {
+    let overflowing = true;
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(() => (overflowing ? 120 : 80));
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(() => 100);
+    function Swapped({ forms }: { forms: string[] }) {
+      const ref = useRef<HTMLDivElement>(null);
+      const scope = useFitScope(ref);
+      return (
+        <div ref={ref} data-testid="room">
+          <FitScope value={scope}><FitLabel key={forms.join()} forms={forms} /></FitScope>
+        </div>
+      );
+    }
+    const { getByTestId, rerender } = render(<Swapped forms={['Tracking', 'VA']} />);
+    expect(getByTestId('room')).toHaveAttribute('data-fit-spent');
+    overflowing = false;
+    rerender(<Swapped forms={['Size', 'S']} />);
+    expect(getByTestId('room')).not.toHaveAttribute('data-fit-spent');
+  });
 });

@@ -1,5 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
 import { composeHandler, type DataAttributes } from '../../nativeProps';
+import type { DisableableProps } from '../Disabled';
+import { useNativeHold } from '../Disabled/nativeHold';
 import s from './Disclosure.module.css';
 
 /** Props for `<DisclosureMark>`. */
@@ -43,8 +45,8 @@ export function DisclosureMark({ open, size = 13, className }: DisclosureMarkPro
  *  through: `aria-controls` names the section it opens, and `tabIndex={-1}` keeps it out of the tab order for a row
  *  whose own keys fold it. */
 export type DisclosureProps = Omit<
-  ButtonHTMLAttributes<HTMLButtonElement>, 'aria-expanded' | 'aria-label' | 'type' | 'children'
-> & DataAttributes & {
+  ButtonHTMLAttributes<HTMLButtonElement>, 'aria-expanded' | 'aria-label' | 'type' | 'children' | 'disabled'
+> & DataAttributes & DisableableProps & {
   /** Whether the section it controls is open. The consumer owns this. */
   open: boolean;
   /** Called with the state a press asks for, after `onClick`; an `onClick` that calls `preventDefault()` skips it. */
@@ -70,24 +72,29 @@ export type DisclosureProps = Omit<
  * larger than the mark. And it is a sibling of the row's label rather than a
  * child, so clicking to expand does not actuate the label's own control.
  *
+ * Disabled, by its own props or a `<Disabled>` scope, it ignores presses; read-only only looks, so it still folds.
+ *
  * `ref` forwards to the `<button>`.
  */
 export const Disclosure = forwardRef(function Disclosure(
-  { open, onOpenChange, label, size = 13, className, onClick, ...native }: DisclosureProps,
+  { open, onOpenChange, label, size = 13, className, onClick, disabled, disabledReason, ...native }: DisclosureProps,
   ref: Ref<HTMLButtonElement>,
 ) {
-  return (
+  const hold = useNativeHold({ disabled, disabledReason, 'aria-describedby': native['aria-describedby'] }, { readonlyRole: false });
+  const off = hold.access.state === 'disabled';
+  return hold.wrap(
     <button
       {...native}
+      {...hold.attrs}
       ref={ref}
       type="button"
       className={className ? `${s.twisty} ${className}` : s.twisty}
       aria-expanded={open}
       aria-label={label}
-      onClick={composeHandler(onClick, () => onOpenChange(!open))}
+      onClick={off ? undefined : composeHandler(onClick, () => onOpenChange(!open))}
     >
       <DisclosureMark open={open} size={size} />
-    </button>
+    </button>,
   );
 });
 

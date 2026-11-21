@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { FitScope, useFitScale, useFitScope } from './FitLabel';
@@ -86,6 +86,34 @@ describe('useFitScope with a scale stage', () => {
     rerender(<Scope min={0.4}><Member fit={fit} heard={heard} /></Scope>);
     expect(heard).toHaveBeenCalledTimes(1);
     expect(scaleOf(getByTestId('scope'))).toBe('0.5');
+  });
+
+  it('measures its members again when a font loads in the document it is drawn in, not the opener\'s', () => {
+    const frame = document.body.appendChild(document.createElement('iframe'));
+    const popout = frame.contentDocument!;
+    const fonts = new EventTarget();
+    Object.defineProperty(popout, 'fonts', { value: fonts, configurable: true });
+    const fit = { scale: 0.9, shared: true };
+    const measure = vi.fn(() => fit);
+    function Measured() {
+      const ref = useRef<HTMLSpanElement>(null);
+      const scale = useFitScale();
+      useLayoutEffect(() => {
+        if (!scale || !ref.current) return;
+        scale.join('m', { el: ref.current, measure, onFit: () => {} });
+        return () => scale.leave('m');
+      }, [scale]);
+      return <span ref={ref} />;
+    }
+    const { unmount } = render(<Scope min={0.6}><Measured /></Scope>, { container: popout.body.appendChild(popout.createElement('div')) });
+    try {
+      const before = measure.mock.calls.length;
+      act(() => { fonts.dispatchEvent(new Event('loadingdone')); });
+      expect(measure.mock.calls.length).toBeGreaterThan(before);
+    } finally {
+      unmount();
+      frame.remove();
+    }
   });
 
   it('is passed on by a nested scope that runs none, and absent outside one', () => {

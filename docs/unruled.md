@@ -3327,3 +3327,9 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): A `CycleButton` given no `options` renders disabled, named and tooltipped by its
   `aria-label` alone, rather than throwing; a filtered rotation can come out empty. Throwing on an empty list was
   the alternative.
+## Audit round sixty (2026-11-20): ui components, part three
+
+- 2026-11-20 (the fixer's call): `Disclosure` follows a `<Disabled>` scope and takes `disabledReason`, but not a
+  `<ReadOnly>` scope: folding a section changes no value, so a read-only twisty still folds.
+- 2026-11-20 (the fixer's call): a read-only `FillStrokeSwatch`'s chips still pick the target slot, since that
+  changes no paint, and do not open the paint editor; a disabled one's chips pick nothing.

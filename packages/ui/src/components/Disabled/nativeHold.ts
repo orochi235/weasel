@@ -26,15 +26,16 @@ export interface NativeHold {
 }
 
 /** A native control's hold, from its own props and the scopes around it. `aria-readonly` is left off for a role
- *  that does not take it; pass `readonlyRole: false` there. */
+ *  that does not take it; pass `readonlyRole: false` there. A button whose press makes a change passes
+ *  `changes: true`, and read-only marks it as disabled. */
 export function useNativeHold(
   own: HoldProps & { 'aria-describedby'?: string },
-  { readonlyRole = true }: { readonlyRole?: boolean } = {},
+  { readonlyRole = true, changes = false }: { readonlyRole?: boolean; changes?: boolean } = {},
 ): NativeHold {
   const access = useControlAccess(own);
   const reason = useHoldReason(access.reason);
   const attrs: NativeHoldAttrs = { 'aria-describedby': describedBy(own['aria-describedby'], reason.describedBy) };
-  if (access.state === 'disabled') {
+  if (access.state === 'disabled' || (changes && access.state === 'readOnly')) {
     if (access.reachable) Object.assign(attrs, { 'aria-disabled': true, 'data-disabled': '' });
     else attrs.disabled = true;
   } else if (access.state === 'readOnly' && readonlyRole) attrs['aria-readonly'] = true;
