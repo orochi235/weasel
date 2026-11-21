@@ -3136,3 +3136,9 @@ Calls the lanes made without a ruling:
   a caller who passed it as an increment now gets that number as the half-height.
 - 2026-11-20: A badge shape's repeat counts (`sparkler` and `starburst` `points`, `receipt` `teeth`) stop at 256, and a
   `perforated` badge's `holePitch` at no less than 1px. Both bounds are picked to keep a render finite, not ruled.
+
+## Audit round fifty-seven (2026-11-20): Bar
+
+- 2026-11-20 (my call): Two children of one `Bar` that share a key, as two arrays mapped from lists sharing an id can,
+  keep the first under that key; the later one is keyed by its place in the children, warns, and is not a unit a
+  reorder moves, since an `order` naming that key could mean either.

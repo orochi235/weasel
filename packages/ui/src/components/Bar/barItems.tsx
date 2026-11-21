@@ -1,4 +1,4 @@
-import { Children, Fragment, isValidElement, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import { Fragment, isValidElement, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import { resolveIcon } from '../Icon/resolveIcon';
 import { offTitle } from '../Prefs/offTitle';
 import type { BarSide } from './barSide';
@@ -25,11 +25,20 @@ export interface LineItem {
 
 type Pending = Omit<LineItem, 'key'> & { key?: string };
 
-/** The direct children of a bar, fragments and arrays opened, with their own keys. */
-function flatChildren(children: ReactNode, out: ReactNode[] = []): ReactNode[] {
-  Children.forEach(children, (child) => {
-    if (isValidElement<{ children?: ReactNode }>(child) && child.type === Fragment) flatChildren(child.props.children, out);
-    else if (child != null && typeof child !== 'boolean') out.push(child);
+/** A bar's child and its slot's path, as React keys it: empty slots counted, scoped by array and fragment. */
+interface Slotted {
+  child: ReactNode;
+  path: string;
+}
+
+/** The direct children of a bar, fragments and arrays opened, each with its slot's path. */
+function flatChildren(children: ReactNode, prefix = '', out: Slotted[] = []): Slotted[] {
+  const list: readonly ReactNode[] = Array.isArray(children) ? children : [children];
+  list.forEach((child, i) => {
+    const path = `${prefix}${isValidElement(child) && child.key !== null ? `$${child.key}` : i}`;
+    if (Array.isArray(child)) flatChildren(child as ReactNode[], `${path}:`, out);
+    else if (isValidElement<{ children?: ReactNode }>(child) && child.type === Fragment) flatChildren(child.props.children, `${path}:`, out);
+    else if (child != null && typeof child !== 'boolean') out.push({ child, path: `.${path}` });
   });
   return out;
 }
@@ -37,26 +46,39 @@ function flatChildren(children: ReactNode, out: ReactNode[] = []): ReactNode[] {
 /**
  * A bar's children as the items of its line. A `Bar.Group` is one unit with a divider on each side, and an `end` one
  * has a spacer ahead of it; a `Bar.Item` carries its own key, container, and attributes. `mark` gives every keyed
- * unit a container, so a reorder can move it.
+ * unit a container, so a reorder can move it. A keyless child is keyed by its slot, so a conditional child ahead of it
+ * leaves it mounted; a key an earlier child already holds falls back to the slot, with a warning.
  */
 export function lineItems(children: ReactNode, mark: boolean): LineItem[] {
   const items: Pending[] = [];
-  flatChildren(children).forEach((child, i) => {
-    const key = isValidElement(child) && child.key !== null ? String(child.key) : `.${i}`;
+  const taken = new Set<string>();
+  const own = (key: string | null, path: string): string => {
+    if (key === null) return path;
+    if (!taken.has(key)) {
+      taken.add(key);
+      return key;
+    }
+    console.warn(`weasel: two of a Bar's children share the key "${key}", so the later one is keyed by its place and is not a unit a reorder moves. Give each child of a bar a key of its own.`);
+    return path;
+  };
+  const unit = (key: string, child: ReactElement) => (mark && key === child.key ? { in: '' } : {});
+  flatChildren(children).forEach(({ child, path }) => {
     if (!isValidElement(child)) {
-      items.push({ key, content: child });
+      items.push({ key: path, content: child });
     } else if (child.type === BarDivider) {
       items.push({ divider: true });
     } else if (child.type === BarSpacer) {
-      items.push({ key, spacer: true });
+      items.push({ key: own(child.key, path), spacer: true });
     } else if (child.type === BarItem) {
       const p = child.props as { id: string; in?: string; rule?: boolean; attrs?: Record<string, string | undefined>; children?: ReactNode };
-      items.push({ key: p.id, content: p.children, ...(p.rule ? { rule: true } : {}), ...(p.attrs ? { attrs: p.attrs } : {}), ...(mark && p.in !== undefined ? { in: p.in } : {}) });
+      items.push({ key: own(p.id, path), content: p.children, ...(p.rule ? { rule: true } : {}), ...(p.attrs ? { attrs: p.attrs } : {}), ...(mark && p.in !== undefined ? { in: p.in } : {}) });
     } else if (child.type === BarGroup) {
+      const key = own(child.key, path);
       if ((child.props as { end?: boolean }).end) items.push({ key: `${key}:end`, spacer: true });
       items.push({ divider: true }, { key, content: child }, { divider: true });
     } else {
-      items.push({ key, content: child, ...(mark && child.key !== null ? { in: '' } : {}) });
+      const key = own(child.key, path);
+      items.push({ key, content: child, ...unit(key, child) });
     }
   });
   return tidyDividers(items);
