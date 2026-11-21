@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { releaseImageSource } from '../cache/GLImageCache';
+import { imageReadsDuring } from './imageReads';
 import {
   __setImageLoaderForTests, _resetImageCacheForTests, adoptBitmapSrc, bitmapSrc, getImageBitmap, imageStatus, isBitmapSrc,
 } from './imageCache';
@@ -24,6 +25,13 @@ describe('a bitmap name another realm minted', () => {
     adoptBitmapSrc(foreign, b);
     expect(getImageBitmap(foreign)).toBe(b);
     expect(imageStatus(foreign)).toBe('ready');
+  });
+
+  it('is not counted as a read by imageStatus, as no other src is', () => {
+    const mine = bitmapSrc(bitmap());
+    const { value, srcs } = imageReadsDuring(() => [imageStatus(mine), imageStatus('a.png')]);
+    expect(value).toEqual(['ready', 'idle']);
+    expect(srcs).toEqual([]);
   });
 
   it('goes to the loader when it is not held, where a name minted here never does', async () => {

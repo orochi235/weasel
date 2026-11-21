@@ -22,7 +22,8 @@ function topDown(bytes: Uint8Array, width: number, height: number): Uint8Array {
 }
 
 export function readPixels(gpu: GpuDevice, rect: Rect): Promise<Uint8Array> {
-  return gpu.readCanvas(checked(gpu, rect)).then((bytes) => topDown(bytes, rect.width, rect.height));
+  return new Promise<Uint8Array>((resolve) => resolve(gpu.readCanvas(checked(gpu, rect))))
+    .then((bytes) => topDown(bytes, rect.width, rect.height));
 }
 
 export function readPixelsSync(gpu: GpuDevice, rect: Rect): Uint8Array {

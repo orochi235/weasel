@@ -7,9 +7,6 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { killJob, ontoWhenFree } from './commit-tree.mjs';
 
-/** The browser part's tree on its node: its own, so the rest's job may land on the same node without waiting on it. */
-export const BROWSER_TREE = 'weasel-browser';
-
 const runLine = (tree) => readFileSync(join(tree, '.onto/tests'), 'utf8').split('\n').find((l) => l.startsWith('run:')) ?? '';
 
 /** Whether to try a node of its own for the browser project: the plan runs it, and nothing pinned the run's placement. */
@@ -37,7 +34,7 @@ export const runSuite = async ({ tree, base, scope, ontoArgs, say, jobs = [] }) 
   say('launching 2 jobs');
   const parts = [
     { part: 'rest', args: [...testArgs, '--scope', `${scope}-rest`, ...ontoArgs] },
-    { part: 'browser', args: [...testArgs, '--scope', 'browser', '--in', BROWSER_TREE, ...ontoArgs], prefix: 'browser| ' },
+    { part: 'browser', args: [...testArgs, '--scope', 'browser', ...ontoArgs], prefix: 'browser| ' },
   ];
   const results = await Promise.all(parts.map(async ({ part, args, prefix }) => {
     const started = Date.now();

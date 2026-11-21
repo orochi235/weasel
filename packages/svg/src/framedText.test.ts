@@ -65,17 +65,17 @@ describe('svgLeafFromKit on a text node with a shadow and an edge', () => {
   const data: SvgKitLeafData = {
     text: 'a', background: { paint: solid('#ffffff') }, edge: { width: 4, shade: 0.2 }, shadow: { x: 4, y: 6, blur: 0, alpha: 0.5 },
   };
-  type Parts = { children: [{ children: SvgPathNode[] }, { children: [SvgPathNode, SvgPathNode] }] };
+  type Parts = { children: [{ children: { opacity?: number; children: [SvgPathNode] }[] }, { children: [SvgPathNode, SvgPathNode] }] };
 
   it('writes the shadow where it falls and the edge inside the box, as the canvas draws them', () => {
     const [shadow, framed] = (svgLeafFromKit(data, BOX) as unknown as Parts).children;
-    expect(boundsOfPath(shadow.children[0]!.path)).toMatchObject({ x: 14, y: 26, width: 160, height: 120 });
+    expect(boundsOfPath(shadow.children[0]!.children[0].path)).toMatchObject({ x: 14, y: 26, width: 160, height: 120 });
     expect(framed.children[1].path).toEqual({ kind: 'rect', x: 12, y: 22, width: 156, height: 116 });
   });
 
   it('turns the shadow about the box center under a rotation', () => {
     const [shadow] = (svgLeafFromKit(data, { ...BOX, rotation: Math.PI / 2 }) as unknown as Parts).children;
-    const b = boundsOfPath(shadow.children[0]!.path);
+    const b = boundsOfPath(shadow.children[0]!.children[0].path);
     // The box center is (90, 80); the (4, 6) offset turns to (-6, 4).
     expect(b.x + b.width / 2).toBeCloseTo(84, 4);
     expect(b.y + b.height / 2).toBeCloseTo(84, 4);

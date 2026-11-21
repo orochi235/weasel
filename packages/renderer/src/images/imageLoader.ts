@@ -4,6 +4,10 @@
  * worker. A vector source needs an `<img>` to draw from, so only a window rasterizes one.
  */
 import type { ImageRasterSize } from './imageCache';
+import { maxImageTextureSide } from '../cache/GLImageCache';
+
+/** One vector raster may hold at most 64MB of RGBA. */
+export const MAX_VECTOR_RASTER_PIXELS = 4096 * 4096;
 
 /** Turns `src` into a bitmap. `size` is absent for the first load, which decodes at natural
  *  size; a vector source is asked again at each size it is drawn at. */
@@ -53,8 +57,8 @@ export function forgetDecodedVector(src?: string): void {
 // than re-drawing it, so vectors go through a canvas `drawImage` at full size.
 async function rasterizeVector(src: string, size?: ImageRasterSize): Promise<ImageBitmap> {
   const img = await decodeVector(src);
-  const width = size?.width ?? (img.naturalWidth || FALLBACK_WIDTH);
-  const height = size?.height ?? (img.naturalHeight || FALLBACK_HEIGHT);
+  const { width, height } = size
+    ?? firstVectorRasterSize(img.naturalWidth || FALLBACK_WIDTH, img.naturalHeight || FALLBACK_HEIGHT);
   const canvas: OffscreenCanvas | HTMLCanvasElement = typeof OffscreenCanvas !== 'undefined'
     ? new OffscreenCanvas(width, height)
     : Object.assign(document.createElement('canvas'), { width, height });
@@ -62,6 +66,14 @@ async function rasterizeVector(src: string, size?: ImageRasterSize): Promise<Ima
   if (!c2d) throw new Error('weasel imageCache: no 2D context to rasterize an SVG');
   c2d.drawImage(img, 0, 0, width, height);
   return createImageBitmap(canvas);
+}
+
+/** A vector's first raster: its declared size, scaled down to fit the texture side and
+ *  {@link MAX_VECTOR_RASTER_PIXELS} as every later raster is. */
+export function firstVectorRasterSize(width: number, height: number): ImageRasterSize {
+  const side = maxImageTextureSide();
+  const scale = Math.min(1, side / width, side / height, Math.sqrt(MAX_VECTOR_RASTER_PIXELS / (width * height)));
+  return { width: Math.max(1, Math.floor(width * scale)), height: Math.max(1, Math.floor(height * scale)) };
 }
 
 /** `fetch` with CORS and no credentials, which is what `crossOrigin = 'anonymous'` asks of an `<img>`. */

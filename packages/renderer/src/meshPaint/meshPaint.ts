@@ -127,14 +127,20 @@ function bandPatch(x0: number, x1: number, left: string, right: string): MeshPat
 
 /**
  * A stop list as a mesh: one full-height band per gap between neighboring
- * stops, colored left to right. The bands blend exactly the way the ramp
- * does, so a horizontal gradient survives the switch unchanged. A zero-width
- * gap is a hard break and gets no band.
+ * stops, colored left to right, and a band in the end color from 0 to the
+ * first stop and from the last to 1, as a ramp pads. The bands blend exactly
+ * the way the ramp does, so a horizontal gradient survives the switch
+ * unchanged. A zero-width gap is a hard break and gets no band.
  */
 export function meshFromStops(stops: readonly GradStop[]): MeshGradientPaint {
-  const sorted = [...stops].sort((a, b) => a.offset - b.offset);
-  if (sorted.length === 1) sorted.push({ offset: 1, color: sorted[0].color });
-  if (sorted.length === 0) return seedMeshPatch('#000000ff');
+  if (stops.length === 0) return seedMeshPatch('#000000ff');
+  const sorted = stops
+    .map((s) => ({ offset: Math.min(1, Math.max(0, s.offset)), color: s.color }))
+    .sort((a, b) => a.offset - b.offset);
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  if (first.offset > 0) sorted.unshift({ offset: 0, color: first.color });
+  if (last.offset < 1) sorted.push({ offset: 1, color: last.color });
   const patches: MeshPatch[] = [];
   for (let i = 0; i < sorted.length - 1; i++) {
     const a = sorted[i];
@@ -167,7 +173,11 @@ export function meshStops(mesh: MeshGradientPaint): GradStop[] {
       stops.push({ offset, color });
     }
   }
-  return stops.sort((a, b) => a.offset - b.offset);
+  stops.sort((a, b) => a.offset - b.offset);
+  // An end stop repeating its neighbor's color is a pad band's, which the ramp pads by itself.
+  while (stops.length > 1 && stops[0].color === stops[1].color) stops.shift();
+  while (stops.length > 1 && stops[stops.length - 1].color === stops[stops.length - 2].color) stops.pop();
+  return stops;
 }
 
 /** Every patch mapped through `move`. */
@@ -308,7 +318,8 @@ export function meshGradientXml(id: string, mesh: MeshGradientPaint): string {
     ? ` interpolate="${mesh.interpolate}"` : '';
   const patches = mesh.patches.map((patch) => {
     const points = patch.points.map((p) => `${trimNumber(p.x)},${trimNumber(p.y)}`).join(' ');
-    const colors = patch.colors.join(' ');
+    // `;`, not a space: a CSS color such as `rgb(255, 0, 0)` holds spaces of its own.
+    const colors = patch.colors.join(';');
     return `<${P}:patch points="${points}" colors="${colors}"/>`;
   }).join('');
   return (

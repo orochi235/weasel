@@ -86,16 +86,18 @@ audit runs it only when started with `--sweep`; how it judges a control is in sk
 **The gate stops at ci.yml's first build; `npm run test:fleet:postbuild -- <ref>` runs the rest.**
 From a clean `npm ci` it runs that build and every ci.yml step after it — the manifest, tree-shake
 and React-free checks, both consumer smokes, the site builds, draw's e2e suite — reading the list from ci.yml through
-`scripts/lib/ci-steps.mjs`, as the gate does. It builds in a node tree of its own
-(`weasel-postbuild`), so no test run shares its `dist`. It took 3.4–5.0 min wall on 2026-10-21.
+`scripts/lib/ci-steps.mjs`, as the gate does. It builds in a pooled tree no test job holds, so no
+test run shares its `dist`. It took 3.4–5.0 min wall on 2026-10-21.
 
 **A batch runs `npm run test:batch -- <ref>`**: `test:fleet` and `test:fleet:postbuild` at once, the
-postbuild on a usable node the suite's jobs left free, with one exit status and a closing `test-batch:`
+postbuild alongside, with one exit status and a closing `test-batch:`
 line naming which failed. Either failing stops the other, onto jobs included.
 
-**onto places every part.** The browser project runs as its own job (tree `weasel-browser`, suite scope `browser`)
+**onto places every part, and picks its tree.** The browser project runs as its own job (suite scope `browser`)
 beside a job running the rest (scope `full-rest` or `branch-rest`), and the postbuild as a third; no part is pinned to a
-node (2026-11-20). A part bound at launch to the node that looked best then waited hours there once that node filled,
+node or names a tree (2026-11-20). A job with no `--in` runs in one of onto's pooled trees, `weasel-wt1` to `weasel-wt6`
+on each node, and onto refuses an `--in` naming a tree the node lacks: an ad hoc tree is made on purpose with
+`onto sync --in`, as `dev:fleet` makes `weasel-dev`. Only a `--spread` run stays on the plain `weasel` tree. A part bound at launch to the node that looked best then waited hours there once that node filled,
 while others sat idle. The browser part's lines in the log start `browser| `; `WEASEL_FLEET_SPLIT=0`, or naming a node,
 keeps the suite one job. On 2026-11-19 the same 415 browser files took 746 s on an idle teitou and 1,239 s on one
 someone was using: an idle-GPU node is faster, but only onto can wait for one fairly, and `onto test` has no `--gui`

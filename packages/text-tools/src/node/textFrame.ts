@@ -25,8 +25,9 @@ export interface TextShadow {
 
 /** A text node's frame, ready to draw: each part `null` when there is none. */
 export interface TextFrame {
-  /** Filled in `color`, each at `opacity`, under the background. */
-  shadow: { paths: Path[]; color: string; opacity: number } | null;
+  /** Filled in `color`, each path at its own entry in `alphas`, under the background. `opacity` is deprecated:
+   *  one value for every path, which leaves a blurred shadow's interior at about 70% of `color`. */
+  shadow: { paths: Path[]; alphas: number[]; color: string; opacity: number } | null;
   /** Stroked in `color` at `width`, over the background. */
   edge: { path: Path; color: string; width: number } | null;
 }
@@ -53,8 +54,8 @@ export function textFrameOf(
 
 function shadowOf(s: TextShadow | undefined, box: Rect): TextFrame['shadow'] {
   if (!s || !(s.alpha > 0)) return null;
-  const { paths, alpha } = dropShadowLayers(box, 0, s);
-  return { paths, color: rgbaToHex([0, 0, 0, Math.min(1, s.alpha)]), opacity: alpha };
+  const { paths, alphas, alpha } = dropShadowLayers(box, 0, s);
+  return { paths, alphas, color: rgbaToHex([0, 0, 0, Math.min(1, s.alpha)]), opacity: alpha };
 }
 
 function edgeOf(edge: TextEdge | undefined, bg: Fill, box: Rect): TextFrame['edge'] {

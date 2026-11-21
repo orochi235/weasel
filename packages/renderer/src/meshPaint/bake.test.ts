@@ -111,4 +111,22 @@ describe('bakeMesh', () => {
     // sRGB's midpoint is a dark purple; OKLCh's travels around and stays bright.
     expect(b[0] + b[1] + b[2]).toBeGreaterThan(a[0] + a[1] + a[2]);
   });
+
+  it('bakes premultiplied texels, so a translucent corner keeps its color under bilinear sampling', () => {
+    const baked = bakeMesh([squarePatch(undefined, ['#ff000080', '#ff000080', '#ff000080', '#ff000080'])], 'rgb', 16)!;
+    const [r, g, b, a] = texel(baked, 0.5, 0.5);
+    expect(a).toBeCloseTo(128, -1);
+    expect(r).toBeCloseTo(a, -1);
+    expect(g + b).toBe(0);
+  });
+
+  it('skips a patch whose color does not parse, or that has fewer than four colors, rather than throwing', () => {
+    const bad = squarePatch({ x: 0, y: 0, width: 1, height: 1 }, ['red', 'red', 'red', 'bogus']);
+    const short = { ...squarePatch({ x: 1, y: 0, width: 1, height: 1 }), colors: ['red', 'red', 'red'] } as unknown as MeshPatch;
+    const good = squarePatch({ x: 2, y: 0, width: 1, height: 1 });
+    const baked = bakeMesh([bad, short, good], 'rgb', 30)!;
+    expect(baked.box).toEqual({ x: 0, y: 0, width: 3, height: 1 });
+    expect(texel(baked, 0.1, 0.5)[3]).toBe(0);
+    expect(texel(baked, 0.85, 0.5)[3]).toBe(255);
+  });
 });

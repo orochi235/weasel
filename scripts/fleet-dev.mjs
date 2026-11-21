@@ -53,13 +53,22 @@ if (serving && !take) {
 // Reinstall only when the lockfile differs from the one last installed, so a warm tree starts in seconds.
 const base = git('merge-base', 'HEAD', 'origin/main');
 const install = 'cmp -s package-lock.json node_modules/.fleet-dev-lock || (npm ci --no-audit --no-fund && cp package-lock.json node_modules/.fleet-dev-lock)';
-say(`installing into ${tree} on ${pinned ?? 'the node onto picks'}`);
+// A job no longer makes a named tree (onto pools them), so the tree is made by a sync on a node chosen first.
+const chosenNode = () => {
+  const ran = onto(['do', '--ref', base, '--kind', 'build', '--icon', 'hammer', '--task', `${tree}-place`,
+    '--about', 'Lets onto choose the node fleet-dev serves from.', '--expect', '1m', '--', 'true']);
+  return `${ran.stdout}${ran.stderr}`.match(/^(\S+)\s+chosen:/m)?.[1];
+};
+const node = pinned ?? serving ?? chosenNode();
+if (!node) throw new Error('fleet-dev: could not tell which node onto picked; pass --node');
+if (onto(['sync', '--ref', base, '--in', tree, node], { stdio: 'inherit' }).status !== 0) process.exit(1);
+say(`installing into ${tree} on ${node}`);
 const started = Date.now();
 // Streamed rather than captured: an install runs for minutes, and onto names the node it picked as it goes.
 const ran = await new Promise((done) => {
   const child = spawn('onto', ['do', '--ref', base, '--in', tree, '--kind', 'build', '--icon', 'hammer', '--task', `${tree}-install`,
     '--about', 'Installs dependencies in the scratch tree fleet-dev serves dev servers from.', '--expect', '5m',
-    ...(pinned ? ['--node', pinned] : []), '--', 'sh', '-c', install], { cwd: ROOT, stdio: ['inherit', 'pipe', 'pipe'] });
+    '--node', node, '--', 'sh', '-c', install], { cwd: ROOT, stdio: ['inherit', 'pipe', 'pipe'] });
   let text = '';
   for (const [from, to] of [[child.stdout, process.stdout], [child.stderr, process.stderr]]) {
     from.on('data', (chunk) => { text += chunk; to.write(chunk); });
@@ -67,8 +76,6 @@ const ran = await new Promise((done) => {
   child.on('close', (status) => done({ status, text }));
 });
 if (ran.status !== 0) process.exit(ran.status ?? 1);
-const node = pinned ?? ran.text.match(/^(\S+)\s+chosen:/m)?.[1];
-if (!node) throw new Error('fleet-dev: could not tell which node onto picked; pass --node');
 say(`installed on ${node} in ${Math.round((Date.now() - started) / 1000)}s`);
 
 // One service, since a node runs one job per tree. WAKE_EXTRA keeps each vite from taking over another copy's port.

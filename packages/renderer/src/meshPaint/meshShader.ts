@@ -46,8 +46,7 @@ void main() {
   vec2 texels = vec2(textureSize(u_sampler, 0));
   vec2 uv = (t * (texels - 1.0) + 0.5) / texels;
   vec4 texel = texture(u_sampler, uv);
-  float a = texel.a * u_opacity * u_alpha;
-  outColor = vec4(texel.rgb * a, a);
+  outColor = texel * (u_opacity * u_alpha);
 }
 `;
 

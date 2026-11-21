@@ -3250,3 +3250,8 @@ Calls the lanes made without a ruling:
   the two disagreed inside one; a scoped caller passes `size`.
 - 2026-11-20 (the fixer's call): `domButton.measure` throws on a `link` Button. A link draws as inline text in the
   font around it, which no token in a `MeasureEnv` names, so a measured box would be the control box it never draws.
+## Audit round fifty-four (2026-11-20): the renderer, part one
+
+- 2026-11-20 (my call, audit round 54): a group or layer `composite` string that is no `CompositeOp` (`'multiply'`,
+  or an inherited name such as `'constructor'`) throws a `RangeError` naming it and listing the operators, rather
+  than being drawn as `source-over`. It still ends the frame, as the bare `TypeError` it replaces did.
