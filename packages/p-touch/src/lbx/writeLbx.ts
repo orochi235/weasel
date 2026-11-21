@@ -15,7 +15,7 @@ import {
 } from 'bil-lbx';
 import type { Tape } from '../tape';
 import { carriedObjects, placeCarried } from './carried';
-import { lineObject, rectObject, textObject } from './shapes';
+import { inkSpanX, lineObject, rectObject, textObject } from './shapes';
 import { keepsAxes, type DrawState } from './style';
 
 /** One label: its size and the commands painted on it, in points with the origin at its top left. */
@@ -26,7 +26,7 @@ export interface LbxPage {
   commands: readonly DrawCommand[];
   /** What a `world`-unit paint in `commands` resolves through, as `PdfPage.view`. */
   view?: GlMat3;
-  /** Let P-touch size the label to what is on it. `length` is still written as the fitted length. */
+  /** Let P-touch size the label to what is on it. `length` is still written as the fitted length, and is at most `AUTO_LENGTH_MAX_PT` (1000mm). */
   autoLength?: boolean;
   /** Where the printer cuts, in points along the label: a strip of labels in one file. */
   cuts?: readonly number[];
@@ -53,7 +53,8 @@ export interface LbxResult {
   skipped: readonly LbxSkip[];
 }
 
-type Item = { object: LabelObject } | { raster: DrawCommand };
+/** `source` is the command as the caller wrote it, `raster` that command placed in the page's frame. */
+type Item = { object: LabelObject } | { raster: DrawCommand; source: DrawCommand };
 
 /** A clip above the commands being walked, with the transform it is drawn under. */
 interface Clip {
@@ -111,7 +112,8 @@ function finiteObject(v: unknown): boolean {
 
 /** Whether an object lies along the tape within `[0, end]`, the stretch the rasterizer draws. */
 function withinLength(object: LabelObject, end: number): boolean {
-  return object.position.x >= -CLIP_EPS && object.position.x + object.position.width <= end + CLIP_EPS;
+  const { x0, x1 } = inkSpanX(object);
+  return x0 >= -CLIP_EPS && x1 <= end + CLIP_EPS;
 }
 
 /** `end`: under auto length, the label's length, past which P-touch would grow the label for an object. */
@@ -120,7 +122,7 @@ function collect(
 ): void {
   const raster = (cmd: DrawCommand) => {
     const at = placed(cmd, state, clips);
-    if (at) out.push({ raster: at });
+    if (at) out.push({ raster: at, source: cmd });
   };
   for (const cmd of commands) {
     const carried = carriedObjects(cmd);
@@ -210,19 +212,19 @@ async function rasterObject(
 /** Each run of commands an object cannot state, drawn as one image, in paint order with the objects around it. */
 async function settle(items: Item[], page: LbxPage, opts: WriteLbxOptions, skipped: LbxSkip[]): Promise<LabelObject[]> {
   const objects: LabelObject[] = [];
-  let run: DrawCommand[] = [];
+  let run: Extract<Item, { raster: DrawCommand }>[] = [];
   const flush = async () => {
     if (run.length === 0) return;
     if (opts.rasterize) {
-      const image = await rasterObject(run, page, opts.rasterize, opts.rasterDpi ?? 180);
+      const image = await rasterObject(run.map((item) => item.raster), page, opts.rasterize, opts.rasterDpi ?? 180);
       if (image) objects.push(image);
     } else {
-      for (const cmd of run) skipped.push({ kind: innermost(cmd).kind, detail: 'no rasterize hook for what .lbx cannot draw' });
+      for (const { source } of run) skipped.push({ kind: source.kind, detail: 'no rasterize hook for what .lbx cannot draw' });
     }
     run = [];
   };
   for (const item of items) {
-    if ('raster' in item) run.push(item.raster);
+    if ('raster' in item) run.push(item);
     else {
       await flush();
       objects.push(item.object);
@@ -232,14 +234,15 @@ async function settle(items: Item[], page: LbxPage, opts: WriteLbxOptions, skipp
   return objects;
 }
 
-function innermost(cmd: DrawCommand): DrawCommand {
-  return cmd.kind === 'group' && cmd.children.length === 1 ? innermost(cmd.children[0]!) : cmd;
-}
-
 /** The `.lbx` label `page` describes, without the file: its paper, cuts and objects. */
 export async function lbxConfig(page: LbxPage, opts: WriteLbxOptions = {}): Promise<{ config: LabelConfig; skipped: LbxSkip[] }> {
   if (!Number.isFinite(page.length) || page.length <= 0) {
     throw new RangeError(`writeLbx: a label's length must be a positive finite number of points, got ${page.length}`);
+  }
+  if (page.autoLength && page.length > AUTO_LENGTH_MAX_PT) {
+    throw new RangeError(
+      `writeLbx: an auto-length label can be at most ${AUTO_LENGTH_MAX_PT}pt (1000mm) long, got ${page.length}; write it at a fixed length instead`,
+    );
   }
   const items: Item[] = [];
   const skipped: LbxSkip[] = [];

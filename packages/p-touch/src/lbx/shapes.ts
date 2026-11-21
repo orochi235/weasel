@@ -5,7 +5,7 @@
 import { mat3, PATH_CMD_LENGTHS, PATH_L, PATH_M, type PolygonPath, maxOf, minOf } from '@weasel-js/geom';
 import type { PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import { DEFAULT_TEXT_STYLE, paragraphDirection } from '@weasel-js/text';
-import type { ArrowStyle, HorizontalAlignment, LineObject, RectObject, TextObject, VerticalAlignment } from 'bil-lbx';
+import type { ArrowStyle, HorizontalAlignment, LabelObject, LineObject, RectObject, TextObject, VerticalAlignment } from 'bil-lbx';
 import { axisMap, fillColor, mitersAt, plainStroke, uniformScale, type DrawState, type PlainStroke } from './style';
 
 const NO_PEN = { style: 'NULL' as const };
@@ -63,18 +63,40 @@ function polylinePoints(path: PolygonPath): { x: number; y: number }[] | undefin
 // No end style reaches past the point, as a square cap does.
 const ARROW_FOR_CAP: Record<'butt' | 'round', ArrowStyle> = { butt: 'SQUARE', round: 'ROUND' };
 
+type Point = { x: number; y: number };
+
+/** How many stroke widths the miter at corner `b` reaches, 1 / sin(θ / 2) at a corner of angle θ; infinite at a degenerate one. */
+function miterRatio(a: Point, b: Point, c: Point): number {
+  const ux = a.x - b.x, uy = a.y - b.y, vx = c.x - b.x, vy = c.y - b.y;
+  const lengths = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+  if (!(lengths > 0)) return Infinity;
+  return 1 / Math.sqrt(Math.max(0, (1 - (ux * vx + uy * vy) / lengths) / 2));
+}
+
 /** Whether every interior corner of `points` is drawn mitered, the join P-touch draws a polyline with. */
-function cornersMiter(points: readonly { x: number; y: number }[], stroke: PlainStroke): boolean {
+function cornersMiter(points: readonly Point[], stroke: PlainStroke): boolean {
   for (let i = 1; i < points.length - 1; i++) {
-    const a = points[i - 1]!, b = points[i]!, c = points[i + 1]!;
-    const ux = a.x - b.x, uy = a.y - b.y, vx = c.x - b.x, vy = c.y - b.y;
-    const lengths = Math.hypot(ux, uy) * Math.hypot(vx, vy);
-    if (!(lengths > 0)) return false;
-    // A miter is 1 / sin(θ / 2) stroke widths long at a corner of angle θ.
-    const sinHalf = Math.sqrt(Math.max(0, (1 - (ux * vx + uy * vy) / lengths) / 2));
-    if (!mitersAt(stroke, 1 / sinHalf)) return false;
+    if (!mitersAt(stroke, miterRatio(points[i - 1]!, points[i]!, points[i + 1]!))) return false;
   }
   return true;
+}
+
+/**
+ * The stretch along the tape an object's ink covers: its position, or for a line, every point
+ * widened by how far its stroke reaches from it (half the width at an end, the miter at a corner).
+ */
+export function inkSpanX(object: LabelObject): { x0: number; x1: number } {
+  if (object.type !== 'line') return { x0: object.position.x, x1: object.position.x + object.position.width };
+  const { points } = object;
+  const half = !object.pen || object.pen.style === 'NULL' ? 0 : (object.pen.widthX ?? 0) / 2;
+  let x0 = Infinity, x1 = -Infinity;
+  for (let i = 0; i < points.length; i++) {
+    const inner = i > 0 && i < points.length - 1;
+    const reach = half * (inner ? miterRatio(points[i - 1]!, points[i]!, points[i + 1]!) : 1);
+    x0 = Math.min(x0, points[i]!.x - reach);
+    x1 = Math.max(x1, points[i]!.x + reach);
+  }
+  return { x0, x1 };
 }
 
 /** An open polyline stroked in a solid color, unfilled, as a `draw:poly`. */
@@ -151,7 +173,10 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
   // Only text the canvas lays out left to right is an object: `start` and `end` map to LEFT and RIGHT.
   const direction = cmd.direction ?? cmd.style.direction ?? 'auto';
   if (data.split('\n').some((line) => paragraphDirection(line, direction) === 'rtl')) return undefined;
-  const align = cmd.justify ? 'justify' : (cmd.align ?? cmd.style.align ?? 'left');
+  const align = cmd.align ?? cmd.style.align ?? DEFAULT_TEXT_STYLE.align;
+  // The canvas sets a line it does not spread by `align`; P-touch sets a justified box's at the left.
+  const spreads = (cmd.justify || align === 'justify') && Number.isFinite(cmd.maxWidth);
+  if (spreads && H_ALIGN[align] !== 'LEFT' && align !== 'justify') return undefined;
   return {
     type: 'text',
     position: { x: cmd.x * map.sx + map.tx, y: cmd.y * map.sy + map.ty, width: boxWidth * scale, height: cmd.height * scale },
@@ -160,7 +185,7 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
     control: 'FIXEDFRAME',
     shrink: false,
     autoLF: Number.isFinite(cmd.maxWidth),
-    horizontalAlignment: H_ALIGN[align] ?? 'LEFT',
+    horizontalAlignment: spreads ? 'JUSTIFY' : (H_ALIGN[align === 'justify' ? 'left' : align] ?? 'LEFT'),
     verticalAlignment: V_ALIGN[cmd.verticalAlign ?? 'top'] ?? 'TOP',
     data,
   };

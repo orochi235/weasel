@@ -110,11 +110,22 @@ describe('lbxConfig', () => {
     expect(skipped).toEqual([{ kind: 'path', detail: 'no rasterize hook for what .lbx cannot draw' }]);
   });
 
+  it('reports a skipped group by its own kind, not its only child\'s', async () => {
+    const blurred: DrawCommand = { kind: 'group', isolate: true, children: [rect(0, 0, 5, 5, { fill: { paint: { color: '#000' } } })] };
+    expect((await lbxConfig(page([blurred]))).skipped).toEqual([{ kind: 'group', detail: 'no rasterize hook for what .lbx cannot draw' }]);
+  });
+
   it('rasterizes an object reaching past the label under auto length, as it crops what it rasterizes there', async () => {
     const over = rect(120, 2, 40, 5, { fill: { paint: { color: '#000' } } });
     expect((await lbxConfig({ ...page([over]), autoLength: true })).config.objects).toEqual([]);
     expect((await lbxConfig({ ...page([rect(-5, 2, 40, 5, { fill: { paint: { color: '#000' } } })]), autoLength: true })).config.objects).toEqual([]);
     expect((await lbxConfig(page([over]))).config.objects.map((o) => o.type)).toEqual(['rect']);
+  });
+
+  it('refuses an auto-length label longer than the ceiling P-touch parks its paper at', async () => {
+    await expect(lbxConfig({ ...page([]), length: 3000, autoLength: true })).rejects.toThrow(RangeError);
+    await expect(lbxConfig({ ...page([]), length: 2834.4, autoLength: true })).resolves.toBeDefined();
+    await expect(lbxConfig({ ...page([]), length: 3000 })).resolves.toBeDefined();
   });
 
   it('writes the tape, the length and the cuts', async () => {
@@ -226,9 +237,9 @@ describe('writeLbx', () => {
   });
 
   it('writes a polyline of a million points without overflowing the call stack', async () => {
-    const b = new PathBuilder().moveTo(0, 0);
-    for (let i = 1; i < 1_000_000; i++) b.lineTo(i % 60, i % 2 === 0 ? 0 : 10);
+    const b = new PathBuilder().moveTo(20, 0);
+    for (let i = 1; i < 1_000_000; i++) b.lineTo(20 + (i % 60), i % 2 === 0 ? 0 : 10);
     const { config } = await lbxConfig(page([{ kind: 'path', path: b.build(), stroke: { paint: { color: '#000' }, width: 1, cap: 'round', miterLimit: 20 } }]));
-    expect((config.objects[0] as LineObject).position).toEqual({ x: 0, y: 0, width: 59, height: 10 });
+    expect((config.objects[0] as LineObject).position).toEqual({ x: 20, y: 0, width: 59, height: 10 });
   });
 });

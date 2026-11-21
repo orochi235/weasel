@@ -28,6 +28,8 @@ export const coord = fc.oneof(
   fc.integer({ min: -200, max: 200 }),
   fc.double({ min: -1e9, max: 1e9, noNaN: true, noDefaultInfinity: true }),
 );
+/** A coordinate past a label's start: most shapes at one stay on the label, so the writer states them as objects. */
+const onLabel = fc.double({ min: 10, max: 400, noNaN: true });
 const extent = fc.oneof(fc.double({ min: 0.01, max: 300, noNaN: true }), fc.integer({ min: 1, max: 100 }));
 
 /** Text as a label holds it: XML's specials, line breaks of every kind, controls, astral and lone surrogates. */
@@ -44,7 +46,7 @@ export const labelText = fc.oneof(
 const color = fc.constantFrom('#000000', '#ffffff', 'red', '#123456', 'rgb(10, 200, 30)');
 
 export const solidRect: fc.Arbitrary<DrawCommand> = fc.record({
-  x: coord, y: coord, width: fc.oneof(extent, extent.map((e) => -e)), height: fc.oneof(extent, extent.map((e) => -e)),
+  x: fc.oneof(coord, onLabel), y: coord, width: fc.oneof(extent, extent.map((e) => -e)), height: fc.oneof(extent, extent.map((e) => -e)),
   fill: fc.option(color, { nil: undefined }), stroke: fc.option(fc.tuple(color, extent), { nil: undefined }),
 }).filter((r) => r.fill !== undefined || r.stroke !== undefined).map((r) => ({
   kind: 'path',
@@ -54,8 +56,12 @@ export const solidRect: fc.Arbitrary<DrawCommand> = fc.record({
 }));
 
 export const polyline: fc.Arbitrary<DrawCommand> = fc.record({
-  points: fc.oneof(fc.array(fc.tuple(coord, coord), { minLength: 2, maxLength: 5 }), fc.tuple(fc.tuple(coord, coord), fc.tuple(coord, coord))),
-  color, width: extent, cap: fc.constantFrom('butt' as const, 'round' as const, 'square' as const),
+  points: fc.oneof(
+    fc.array(fc.tuple(coord, coord), { minLength: 2, maxLength: 5 }),
+    fc.tuple(fc.tuple(coord, coord), fc.tuple(coord, coord)),
+    fc.tuple(fc.tuple(onLabel, coord), fc.tuple(onLabel, coord)),
+  ),
+  color, width: fc.oneof(fc.double({ min: 0.01, max: 8, noNaN: true }), fc.integer({ min: 1, max: 8 })), cap: fc.constantFrom('butt' as const, 'round' as const, 'square' as const),
   join: fc.constantFrom('miter' as const, 'miter' as const, 'round' as const, 'bevel' as const),
   miterLimit: fc.option(fc.double({ min: 1, max: 1e4, noNaN: true }), { nil: undefined }),
 }).map(({ points, color, width, cap, join, miterLimit }) => {

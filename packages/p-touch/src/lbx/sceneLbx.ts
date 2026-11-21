@@ -39,14 +39,14 @@ export async function sceneToLbx<TData, TLayer extends string, TPose>(
   const { length, tape, origin = { x: 0, y: 0 }, autoLength, cuts, rasterDpi, ...render } = args;
   const plan = { ...render, sourceRect: { x: origin.x, y: origin.y, width: length, height: tape.widthPt }, scale: { x: 1, y: 1 } };
   await warmRender({ render: plan });
-  const { commands, view } = planPixelRender(plan);
+  const { commands, view, screen } = planPixelRender(plan);
   const session = createRasterSession();
   // The commands hold bitmaps across the write's awaits.
   const release = holdImageBitmaps();
   try {
     return await writeLbx(
       { length, tape, commands, view: viewToMat3(view), autoLength, cuts },
-      { rasterize: commandRasterizer(session), rasterDpi },
+      { rasterize: commandRasterizer(session, { screen: render.screen ?? screen, flattenTolerancePx: render.flattenTolerancePx }), rasterDpi },
     );
   } finally {
     release();
