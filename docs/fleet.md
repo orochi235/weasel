@@ -93,10 +93,10 @@ and React-free checks, both consumer smokes, the site builds, draw's e2e suite â
 postbuild on a usable node the suite's jobs left free, with one exit status and a closing `test-batch:`
 line naming which failed. Either failing stops the other, onto jobs included.
 
-**The browser project goes to an idle GPU.** Before launching, `test:fleet` probes each usable node's
-GPU and keyboard idle time (`scripts/lib/fleet-nodes.mjs`). When one has its GPU at most 30% busy and
-nobody at it for ten minutes, the browser project runs there as its own job (tree `weasel-browser`, suite
-scope `browser`) beside a job running the rest (scope `full-rest` or `branch-rest`) on the other unattended node with the most free cores, or onto's pick when there is none, and the run's exit
-covers both; with none, it stays one job and the node overlaps or not as above. The browser part's lines
-in the log start `browser| `. `WEASEL_FLEET_SPLIT=0`, or naming a node, keeps it one job. On 2026-11-19
-the same 415 browser files took 746 s on an idle teitou and 1,239 s on one someone was using.
+**onto places every part.** The browser project runs as its own job (tree `weasel-browser`, suite scope `browser`)
+beside a job running the rest (scope `full-rest` or `branch-rest`), and the postbuild as a third; no part is pinned to a
+node (2026-11-20). A part bound at launch to the node that looked best then waited hours there once that node filled,
+while others sat idle. The browser part's lines in the log start `browser| `; `WEASEL_FLEET_SPLIT=0`, or naming a node,
+keeps the suite one job. On 2026-11-19 the same 415 browser files took 746 s on an idle teitou and 1,239 s on one
+someone was using: an idle-GPU node is faster, but only onto can wait for one fairly, and `onto test` has no `--gui`
+placement hint yet.
