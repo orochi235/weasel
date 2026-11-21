@@ -1,7 +1,11 @@
 .label {
+  pointer-events: none;
+}
+
+/* Laid along a run, the label spans the box the run's coordinates are drawn across. */
+.label[data-laid] {
   position: absolute;
   inset: 0;
-  pointer-events: none;
 }
 
 .char {

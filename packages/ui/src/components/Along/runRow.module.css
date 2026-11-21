@@ -46,8 +46,9 @@
   opacity: 0.7;
 }
 
-/* An overflowing run is dragged along itself, so a touch on it must not pan the page instead. */
-.root[data-scrolls] > .item,
+/* An overflowing run is dragged along itself, so a touch on it must not pan the page instead. A slot host's items sit
+ * under a list inside the root, not directly in it. */
+.root[data-scrolls] .item,
 .root[data-scrolls] > .band {
   touch-action: none;
 }

@@ -83,4 +83,11 @@ describe('bendAt and insideOf', () => {
     expect(bendAt(run, 0.5)).toBe(0);
     expect(insideOf(run, 0.5)).toBe('bottom');
   });
+
+  test('parts whose keys join to the same string as the ones before them still take places of their own', () => {
+    const view = render(<Row><Chip id={'a\nb'} /></Row>);
+    view.rerender(<Row><Chip id="a" /><Chip id="b" /></Row>);
+    expect(x('a')).not.toBe('');
+    expect(x('b')).not.toBe(x('a'));
+  });
 });
