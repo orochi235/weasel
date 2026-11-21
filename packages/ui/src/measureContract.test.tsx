@@ -4,6 +4,7 @@ import { UNBOUNDED, type MeasureEnv } from '@weasel-js/ui-logic';
 import { buttonFaceOf, domButton } from './components/Button';
 import { domItemList, itemListFaceOf } from './components/ItemList';
 import { nodeText } from './nodeText';
+import { ControlSizeScope } from './components/ControlSize';
 
 afterEach(cleanup);
 
@@ -24,6 +25,25 @@ describe('domButton', () => {
     expect(buttonFaceOf({ children: <span>Go</span> })).toMatchObject({ label: 'Go', size: 'md' });
     expect(buttonFaceOf({ iconOnly: true, 'aria-label': 'Add', children: '+' })).toMatchObject({ iconOnly: true, icon: '+' });
     expect(buttonFaceOf({}).label).toBeUndefined();
+  });
+
+  it('draws an unsized button at the size it measures, inside a ControlSizeScope too', () => {
+    render(<ControlSizeScope size="sm">{domButton.draw({ children: 'Save' }, {})}</ControlSizeScope>);
+    expect(domButton.measure({ children: 'Save' }, UNBOUNDED, env).height).toBe(28);
+    expect(screen.getByRole('button').className).toMatch(/size_md/);
+  });
+
+  it('refuses to measure a link button, which the surrounding text sizes', () => {
+    expect(() => domButton.measure({ variant: 'link', children: 'More' }, UNBOUNDED, env)).toThrow(/link/);
+  });
+
+  it('gives a label that renders nothing no label part', () => {
+    for (const children of [null, false, true, '']) {
+      expect(buttonFaceOf({ leadingIcon: '+', children }).label).toBeUndefined();
+      render(domButton.draw({ leadingIcon: '+', children }, {}));
+      expect(screen.getByRole('button').children).toHaveLength(1);
+      cleanup();
+    }
   });
 
   it('measures through the shared measure and draws the button', () => {

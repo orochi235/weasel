@@ -105,6 +105,9 @@
   outline-offset: 1px;
 }
 
+/* A held toggle keeps its state on show, but neither invites a press nor answers one. */
+.button[data-readonly] { cursor: default; }
+
 .button:is(:disabled, [data-disabled]) {
   opacity: 0.5;
   filter: var(--wzl-disabled-filter);
@@ -130,6 +133,7 @@
   background: var(--wzl-button-confirm-surface, var(--btn-glass));
   text-shadow: var(--wzl-button-text-shadow, var(--btn-engraving));
   box-shadow: var(--wzl-button-confirm-bevel, var(--wzl-bevel-raised, var(--btn-relief)));
+  --btn-hover-filter: brightness(1.08) saturate(1.06);
   --_flat-fill: color-mix(in srgb, var(--wzl-accent) var(--_flat), transparent);
   --btn-glass: linear-gradient(var(--_flat-fill), var(--_flat-fill)), linear-gradient(
     180deg,
@@ -160,11 +164,7 @@
     0 3px 6px rgba(0, 0, 0, calc(var(--btn-drop-far) * var(--wzl-gloss)));
 }
 
-.variant_solid[data-stance='confirm']:hover:not(:disabled, [data-disabled]) {
-  filter: brightness(1.08) saturate(1.06);
-}
-
-.variant_solid[data-stance='confirm']:active:not(:disabled, [data-disabled]) {
+.variant_solid[data-stance='confirm']:active:not(:disabled, [data-disabled], [data-readonly]) {
   background: var(--wzl-button-confirm-pressed-surface, var(--btn-glass-pressed));
   box-shadow: var(--wzl-bevel-pressed, var(--btn-relief-pressed));
   --_flat-fill: color-mix(in srgb, color-mix(in srgb, var(--wzl-accent) 85%, black) var(--_flat), transparent);
@@ -180,7 +180,7 @@
     0 0 0 1px rgba(0, 0, 0, calc((var(--btn-rim) + 0.06) * var(--wzl-gloss)));
   transform: translateY(0.5px);
 }
-.variant_solid[data-stance='confirm']:active::before { opacity: calc(0.3 * var(--wzl-gloss)); }
+.variant_solid[data-stance='confirm']:active:not([data-readonly])::before { opacity: calc(0.3 * var(--wzl-gloss)); }
 
 /* Solid: neutral glass — drained of color. Flat, it is the raised
    surface, which needs a line around it to read as a button on a panel of
@@ -189,6 +189,7 @@
   background: var(--wzl-button-surface, var(--btn-glass));
   text-shadow: var(--wzl-button-text-shadow, var(--btn-engraving));
   box-shadow: var(--wzl-bevel-raised, var(--btn-relief));
+  --btn-hover-filter: brightness(1.1);
   --_flat-fill: color-mix(in srgb, var(--wzl-surface-raised) var(--_flat), transparent);
   --btn-glass: linear-gradient(var(--_flat-fill), var(--_flat-fill)), linear-gradient(
     180deg,
@@ -216,9 +217,9 @@
     0 3px 6px rgba(0, 0, 0, calc(var(--btn-drop-far) * 0.89 * var(--wzl-gloss)));
 }
 
-.variant_solid:hover:not(:disabled, [data-disabled]) { filter: brightness(1.1); }
+.variant_solid:hover:not(:disabled, [data-disabled], [data-readonly]) { filter: var(--btn-hover-filter); }
 
-.variant_solid:active:not(:disabled, [data-disabled]) {
+.variant_solid:active:not(:disabled, [data-disabled], [data-readonly]) {
   background: var(--wzl-button-pressed-surface, var(--btn-glass-pressed));
   box-shadow: var(--wzl-bevel-pressed, var(--btn-relief-pressed));
   --_flat-fill: color-mix(in srgb, var(--wzl-surface-sunken) var(--_flat), transparent);
@@ -230,31 +231,32 @@
     0 0 0 1px rgba(0, 0, 0, calc(0.3 * var(--wzl-gloss)));
   transform: translateY(0.5px);
 }
-.variant_solid:active::before { opacity: calc(0.2 * var(--wzl-gloss)); }
+.variant_solid:active:not([data-readonly])::before { opacity: calc(0.2 * var(--wzl-gloss)); }
 
 /* Ghost: silhouette only — no glass body, no gloss. Low emphasis mutes it until pointed at. */
 .variant_ghost {
+  --btn-hover-surface: var(--wzl-surface-hover);
   background: transparent;
   color: var(--wzl-emphasis-fg, var(--wzl-fg));
   box-shadow: none;
 }
 .variant_ghost::before { display: none; }
 
-.variant_ghost:hover:not(:disabled, [data-disabled]):not(.pressed) {
-  background: var(--wzl-surface-hover);
+.variant_ghost:hover:not(:disabled, [data-disabled], [data-readonly]):not(.pressed) {
+  background: var(--btn-hover-surface);
 }
 
-.variant_ghost[data-emphasis='low']:hover:not(:disabled, [data-disabled]) {
+.variant_ghost[data-emphasis='low']:hover:not(:disabled, [data-disabled], [data-readonly]) {
   color: var(--wzl-fg);
 }
 
 /* A graded ghost stays quiet until pointed at, then shows its grade: a discard in a toolbar reddens on hover. */
-.variant_ghost[data-grade]:hover:not(:disabled, [data-disabled]) {
+.variant_ghost[data-grade]:hover:not(:disabled, [data-disabled], [data-readonly]) {
   color: var(--_s-accent);
   box-shadow: inset 0 0 0 1px var(--_s-accent);
 }
 
-.variant_ghost:active:not(:disabled, [data-disabled]) {
+.variant_ghost:active:not(:disabled, [data-disabled], [data-readonly]) {
   background: var(--wzl-surface-pressed);
 }
 
@@ -281,19 +283,21 @@
 .variant_link::before { display: none; }
 .variant_link .label { display: inline; }
 
-.variant_link:hover:not(:disabled, [data-disabled]) {
+.variant_link:hover:not(:disabled, [data-disabled], [data-readonly]) {
   text-decoration-thickness: 2px;
 }
 
 /* ---------- Modifiers ---------- */
 
-.pressed:not(:disabled, [data-disabled]) {
+/* A confirm button keeps its accent body when pressed; the rule after this dims it instead. */
+.pressed:not(:disabled, [data-disabled]):not(:where(.variant_solid[data-stance='confirm'])) {
   background: var(--wzl-surface-pressed);
   color: var(--wzl-fg);
   box-shadow: var(--wzl-bevel-pressed, inset 0 1px 2px rgb(0 0 0 / 18%));
 }
 
-.variant_solid[data-stance='confirm'].pressed:not(:disabled, [data-disabled]) { filter: brightness(0.92); }
+.variant_solid[data-stance='confirm']/* A confirm button keeps its accent body when pressed; the rule after this dims it instead. */
+.pressed:not(:disabled, [data-disabled]):not(:where(.variant_solid[data-stance='confirm'])) { filter: brightness(0.92); }
 
 .fullWidth { width: 100%; }
 .loading .label { opacity: 0.7; }

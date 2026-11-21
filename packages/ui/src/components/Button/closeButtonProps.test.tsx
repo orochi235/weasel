@@ -16,6 +16,10 @@ describe('CLOSE_BUTTON_PROPS', () => {
     expect(svg.getAttribute('aria-hidden')).toBe('true');
   });
 
+  it('leaves the glyph to the button size, which sets it', () => {
+    expect(CLOSE_BUTTON_PROPS.children.props).not.toHaveProperty('size');
+  });
+
   it('is a quiet icon-only ghost', () => {
     renderWithIcons(<Button {...CLOSE_BUTTON_PROPS} aria-label="Close" />);
     const btn = screen.getByRole('button');

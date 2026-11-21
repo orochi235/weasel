@@ -8,6 +8,8 @@ import { BADGE_LOOKS, lookProps } from '../Badge/looks';
 import { Sequence, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import s from './Button.stories.module.css';
 
+const SIZES: ButtonSize[] = ['xs', 'sm', 'md'];
+
 const meta: Meta<typeof Button> = {
   title: 'ui/Button',
   component: Button,
@@ -20,7 +22,7 @@ const meta: Meta<typeof Button> = {
     grade: { control: { type: 'inline-radio', icons: GRADE_ICONS }, options: [undefined, ...GRADES] },
     emphasis: { control: { type: 'inline-radio', icons: EMPHASIS_ICONS }, options: [undefined, ...EMPHASES] },
     variant: { control: { type: 'inline-radio', icons: BUTTON_VARIANT_ICONS }, options: ['solid', 'ghost', 'link'] },
-    size: { control: 'inline-radio', options: ['sm', 'md'] },
+    size: { control: 'inline-radio', options: SIZES },
     disabled: { control: 'boolean' },
     loading: { control: 'boolean' },
     fullWidth: { control: 'boolean' },
@@ -204,7 +206,6 @@ export const FullWidth: Story = {
 };
 
 const VARIANTS: ButtonVariant[] = ['solid', 'ghost'];
-const SIZES: ButtonSize[] = ['xs', 'sm', 'md'];
 
 export const Matrix: Story = {
   tags: ['gallery'],

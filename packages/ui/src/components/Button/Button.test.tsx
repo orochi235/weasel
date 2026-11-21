@@ -272,3 +272,10 @@ describe('a disabled Button', () => {
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
 });
+
+describe('the Button stories', () => {
+  it('offer every size in the size control', async () => {
+    const { default: meta } = await import('./Button.stories');
+    expect(meta.argTypes?.size?.options).toEqual(['xs', 'sm', 'md']);
+  });
+});

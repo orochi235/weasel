@@ -3243,3 +3243,10 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (my call): Two children of one `Bar` that share a key, as two arrays mapped from lists sharing an id can,
   keep the first under that key; the later one is keyed by its place in the children, warns, and is not a unit a
   reorder moves, since an `order` naming that key could mean either.
+## Audit round fifty-seven (2026-11-20): Button
+
+- 2026-11-20 (the fixer's call): `domButton.draw` renders an unsized button at `md`, the size `measure` gives it,
+  rather than at the nearest `ControlSizeScope`'s. A scope is React context, which `measure` has no way to read, so
+  the two disagreed inside one; a scoped caller passes `size`.
+- 2026-11-20 (the fixer's call): `domButton.measure` throws on a `link` Button. A link draws as inline text in the
+  font around it, which no token in a `MeasureEnv` names, so a measured box would be the control box it never draws.

@@ -3,6 +3,7 @@ import { describe, it, expect, expectTypeOf, vi } from 'vitest';
 import { act, render, fireEvent, screen } from '@testing-library/react';
 import { Button, type ButtonProps } from './Button';
 import { Disabled } from '../Disabled';
+import { RovingToolbar } from './Button.native.stories';
 
 describe('Button forwards the native <button> contract', () => {
   it('passes aria, focus, key, and form attributes through', () => {
@@ -177,5 +178,14 @@ describe('Button forwards the native <button> contract', () => {
     expectTypeOf<ButtonProps>().not.toHaveProperty('aria-busy');
     // @ts-expect-error a native button has no `href`
     void (<Button href="/x">x</Button>);
+  });
+});
+
+describe('the RovingToolbar story', () => {
+  it('moves its tab stop to the member that takes focus', () => {
+    render(<>{RovingToolbar.render!({} as never, {} as never)}</>);
+    act(() => screen.getByRole('button', { name: 'Right' }).focus());
+    expect(screen.getByRole('button', { name: 'Right' }).tabIndex).toBe(0);
+    expect(screen.getByRole('button', { name: 'Left' }).tabIndex).toBe(-1);
   });
 });
