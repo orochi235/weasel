@@ -3273,3 +3273,8 @@ Calls the lanes made without a ruling:
   icon, pair, control, conditions), never in a default, a bound, an option's value, a field, or a function such as an
   action's `run`. Reading and writing each node under its own kind's leaf was the alternative, and would keep such a
   leaf on the panel.
+## Audit round fifty-nine (2026-11-20): segmented bars
+
+- 2026-11-20 (my call, audit round 59): a `SegmentedBar` whose `steps` stop at the default `SWEEP_CAP` warns once,
+  naming the bar, and draws the first 256; a bar given `cap` takes the cut as meant and does not warn. Showing a
+  note in the bar, as `Sequence` does, was the alternative, and has no room in a row of segments.

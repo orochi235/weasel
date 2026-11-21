@@ -235,7 +235,7 @@
   border-radius: var(--wzl-radius-sm);
 }
 
-.variant_minimal .segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected) {
+.variant_minimal .segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected, .segmentMixed) {
   color: var(--wzl-fg);
   background: var(--wzl-surface-hover);
 }
@@ -277,7 +277,7 @@
 }
 
 /* Adjacent cells share one rule rather than stacking two. */
-.variant_flat .segment ~ .segment {
+.variant_flat:not(.tiled) .segment ~ .segment {
   margin-inline-start: -1px;
 }
 
@@ -291,9 +291,20 @@
   border-end-end-radius: var(--wzl-radius-sm);
 }
 
-.variant_flat .segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected) {
+.variant_flat .segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected, .segmentMixed) {
   background: var(--wzl-surface-hover);
   color: var(--wzl-fg);
+}
+
+/* The mixed wash over the sunken cell, which `.variant_flat .segment` otherwise paints over it. */
+.variant_flat .segmentMixed {
+  background: linear-gradient(color-mix(in srgb, var(--wzl-accent) 22%, transparent), color-mix(in srgb, var(--wzl-accent) 22%, transparent)), var(--wzl-surface-sunken);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wzl-accent) 45%, transparent);
+  color: var(--wzl-fg);
+}
+
+.variant_flat .segmentMixed:hover:not(:disabled, [data-disabled]) {
+  background: linear-gradient(color-mix(in srgb, var(--wzl-accent) 32%, transparent), color-mix(in srgb, var(--wzl-accent) 32%, transparent)), var(--wzl-surface-sunken);
 }
 
 .variant_flat .segmentSelected {
@@ -331,6 +342,18 @@
 .root.tiled .segment {
   min-width: 0;
   border-radius: 0;
+}
+
+/* A flat grid's cells share their rules both ways: each overlaps its neighbors above and before, and the well makes
+   room for the first row and column to do the same. */
+.root.tiled.variant_flat {
+  padding-block-start: 1px;
+  padding-inline-start: 1px;
+}
+
+.root.tiled.variant_flat .segment {
+  margin-block-start: -1px;
+  margin-inline-start: -1px;
 }
 
 .root.tiled .segment[data-tile-corners~='ss'] { border-start-start-radius: var(--_tile-r); }

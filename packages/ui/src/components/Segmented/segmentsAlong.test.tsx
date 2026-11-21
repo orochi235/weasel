@@ -150,6 +150,27 @@ describe('segmented controls along a curve', () => {
     expect(at(screen.getByRole('button', { name: 'X' })).x).toBeCloseTo(run.at(0.5).point.x);
   });
 
+  test("a lit end segment runs under the rim's cap though the segments arrive after mount", () => {
+    const realHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')!;
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, get(this: HTMLElement) { return this.hasAttribute('data-segment') ? 20 : 0; } });
+    try {
+      const bar = (items: typeof ITEMS) => (
+        <Along shape={shape}>
+          <SegmentedBar aria-label="Pick" items={items} value="a" onChange={() => {}} />
+        </Along>
+      );
+      const litD = () => screen.getByRole('radiogroup').querySelector('[data-lit]')!.getAttribute('d');
+      const fresh = render(bar(ITEMS));
+      const want = litD();
+      fresh.unmount();
+      const late = render(bar([]));
+      late.rerender(bar(ITEMS));
+      expect(litD()).toBe(want);
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, 'offsetHeight', realHeight);
+    }
+  });
+
   test('outside an Along a bar keeps its straight well', () => {
     render(<SegmentedBar aria-label="Pick" items={ITEMS} value="b" onChange={() => {}} />);
     expect(screen.getByRole('radiogroup')).not.toHaveAttribute('data-shape');

@@ -1,9 +1,10 @@
-import { type ReactElement, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactElement, type ReactNode } from 'react';
 import {
   createSelectionModel,
   createEachSelectionModel,
   soloFrom,
   stepsOf,
+  SWEEP_CAP,
   type MultipleSelection,
   type OwnSelection,
   type SelectionModel,
@@ -12,7 +13,7 @@ import {
 } from '@weasel-js/ui-input';
 import { SegmentSweeper, SWEEP_INDEX_ATTR, useSweepGuard, type SegmentSweep } from './segmentSweep';
 import s from './segmentedControl.module.css';
-import { SegmentedRow, segmentClassName, segmentPlaceProps, useSegmentedTiling, type SegmentedGridProps, type SegmentState } from './segmentedRow';
+import { SegmentedRow, segmentClassName, segmentPlaceProps, useCurvedRun, useSegmentedTiling, type SegmentedGridProps, type SegmentState } from './segmentedRow';
 import type { SegmentedVariant } from './segmentedVariant';
 import { tilingRoving } from '../../tiling';
 import { selectionRoving } from '../../selectionRoving';
@@ -44,8 +45,15 @@ export type SegmentedMomentaryItem<V extends string | number = string> = Segment
 
 /** Where a bar's segments come from: a list of items, or every step of a `Sweep`, labeled by it. */
 export type SegmentedSource<V extends string | number, I> =
-  | { items: readonly I[]; steps?: never }
-  | { /** One segment per step, walked by `stepsOf` as `Sequence` walks it. */ steps: Sweep<V>; items?: never };
+  | { items: readonly I[]; steps?: never; cap?: never }
+  | {
+      /** One segment per step, walked by `stepsOf` as `Sequence` walks it. */
+      steps: Sweep<V>;
+      /** Steps taken from a sweep that has not ended by then. Default `SWEEP_CAP`; a bar cut short by the default
+       *  warns, and one given a `cap` takes the cut as meant. */
+      cap?: number;
+      items?: never;
+    };
 
 /** What a {@link SegmentedBar} takes in every mode. `disabled` holds every segment; in a mode that shows a value,
  *  `readOnly` and a `ReadOnly` scope hold them too, and a momentary bar's action buttons ignore read-only. */
@@ -93,11 +101,22 @@ export type SegmentedBarProps<V extends string | number = string> =
       onAction?: (value: V) => void;
     });
 
-/** The items `props` lists, or one per step of its `steps`. */
-function itemsOf<V extends string | number>(props: SegmentedBarProps<V>): readonly SegmentedMomentaryItem<V>[] {
-  if (props.items) return props.items;
-  const sweep = (props as { steps: Sweep<V> }).steps;
-  return stepsOf(sweep).steps.map((value) => ({ value, label: sweep.label(value) }));
+/** The items `props` lists, or one per step of its `steps`, and whether those stopped at the cap. */
+function itemsOf<V extends string | number>(props: SegmentedBarProps<V>): { items: readonly SegmentedMomentaryItem<V>[]; capped: boolean } {
+  if (props.items) return { items: props.items, capped: false };
+  const { steps: sweep, cap } = props as { steps: Sweep<V>; cap?: number };
+  const walked = stepsOf(sweep, cap);
+  return { items: walked.steps.map((value) => ({ value, label: sweep.label(value) })), capped: walked.capped && cap === undefined };
+}
+
+/** Warns once when a bar's steps stopped at the default cap, which drops every step past it unseen. */
+function useWarnCapped(capped: boolean, label: string | undefined): void {
+  const warned = useRef(false);
+  useEffect(() => {
+    if (!capped || warned.current) return;
+    warned.current = true;
+    console.warn(`weasel: SegmentedBar${label ? ` "${label}"` : ''} draws only the first ${SWEEP_CAP} steps of its \`steps\`, a sweep that does not end by then. Give it a sweep that ends, or pass \`cap\` if cutting it short is meant.`);
+  });
 }
 
 /** How a bar's mode reads in its markup and its keys. */
@@ -150,7 +169,8 @@ function behaviorOf<V extends string | number>(
 export function SegmentedBar<V extends string | number = string>(props: SegmentedBarProps<V>): ReactElement {
   const { className, height, size, variant, orientation } = props;
   const naming = useFieldControl({ 'aria-label': props['aria-label'], 'aria-labelledby': props['aria-labelledby'], 'aria-describedby': props['aria-describedby'] });
-  const items = itemsOf(props);
+  const { items, capped } = itemsOf(props);
+  useWarnCapped(capped, props['aria-label']);
   const holdsValue = props.mode !== 'momentary';
   const held = useButtonAccess({ ...props, holdsValue }).state !== 'enabled';
   const usable = (i: number): boolean => !held && items[i] !== undefined && !items[i].disabled;
@@ -164,6 +184,8 @@ export function SegmentedBar<V extends string | number = string>(props: Segmente
   };
 
   const tiles = useSegmentedTiling(props);
+  // The sweep's dispatcher attaches to the row's root once, and a row turning curved or straight draws a new one.
+  const curved = useCurvedRun() !== undefined;
   const roving = useRovingTabIndex({ itemSelector: `.${s.segment}`, ...(tiles ? tilingRoving(tiles) : {}), ...behavior.keys });
   // Segment labels drawn as `FitLabel`s shorten together when the bar is squeezed or will not fit where it sits.
   const fit = useFitScope(roving.rootRef);
@@ -209,7 +231,7 @@ export function SegmentedBar<V extends string | number = string>(props: Segmente
   return (
     <>
       {holdScope(props, row)}
-      <SegmentSweeper rootRef={roving.rootRef} values={items.map((it) => it.value)} sweepable={usable} model={behavior.model} sweep={sweep} swept={guard.swept} />
+      <SegmentSweeper key={curved ? 'curved' : 'straight'} rootRef={roving.rootRef} values={items.map((it) => it.value)} sweepable={usable} model={behavior.model} sweep={sweep} swept={guard.swept} />
     </>
   );
 }
