@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { makeTimeline, type MakeTimelineOptions } from './createTimeline.test-harness';
-import type { EventTrack, TimelineEvent } from './types';
+import type { EventTrack, TimelineEvent, Track } from './types';
 
 const START = 5000;
 
@@ -254,6 +254,19 @@ describe('event booking across transport changes', () => {
       { label: '@80', when: START + 80, stopped: true },
       { label: '@80', when: START + 90, stopped: false },
     ]);
+  });
+
+  it('books a track an edit adds from the playhead on, as it fires it', () => {
+    const tracks: Track[] = [];
+    const r = rig({ duration: 10000, tracks });
+    r.frame(0);
+    r.frame(3000);
+    r.setClock(3000);
+    r.handle.edit(() => {
+      tracks.push({ kind: 'event', events: [100, 2000, 3050].map((t) => bookingEvent(r.log, t)) });
+    });
+    r.frame(3010);
+    expect(r.log.map((b) => b.label)).toEqual(['@3050']);
   });
 
   it('retracts pending bookings when canceled', () => {

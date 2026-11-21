@@ -90,6 +90,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
   const lookahead = opts.lookahead ?? 100;
   const maxLate = opts.maxLate ?? Infinity;
   const cursors: Cursors = new Map();
+  // Where a track first met starts from: the playhead the last scan reached, as firing does.
   let start: Cursor = { lap: 0, r: -Infinity };
   let bookings: Booking[] = [];
   const clock = createClockEstimate();
@@ -184,6 +185,8 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       const duration = host.duration();
       const lastLap = host.lap() + (duration > 0 ? host.lapsLeft() : 0);
       visit(host.tracks, 0, Infinity, playhead + lookahead * scale, lastLap, now, scale);
+      const reached = playheadCursor();
+      if (isAfter(reached, start)) start = reached;
     },
     retract() {
       stopWhere(opts.clock.now(), () => true);
