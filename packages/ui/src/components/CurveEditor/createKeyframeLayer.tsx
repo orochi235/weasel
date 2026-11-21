@@ -173,10 +173,12 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
 
     const handleEl = target.closest('[data-handle-index]');
     const bezier = activeBezier(state);
-    if (handleEl && bezier && state.selectedSegment !== null && move) {
+    const seg = state.selectedSegment;
+    if (handleEl && bezier && seg !== null && move) {
       e.preventDefault();
-      const next = nudgedBezier(bezier, Number(handleEl.getAttribute('data-handle-index')), move.dx, move.dy);
-      const moved = applyKeyframeDrag({ ...state, drag: { kind: 'handle', segment: state.selectedSegment, bezier: next } });
+      const descending = state.keys[seg].value < state.keys[seg - 1].value;
+      const next = nudgedBezier(bezier, Number(handleEl.getAttribute('data-handle-index')), move.dx, move.dy, descending);
+      const moved = applyKeyframeDrag({ ...state, drag: { kind: 'handle', segment: seg, bezier: next } });
       if (moved.keys !== state.keys) extra.commit({ ...state, ...moved, drag: null });
     }
   }

@@ -261,6 +261,15 @@ describe('createKeyframeLayer — segments', () => {
     expect(onCommit).not.toHaveBeenCalled();
   });
 
+  it('raises a handle on a falling segment with ArrowUp', () => {
+    const keys = [KEYS[0], KEYS[1], { ...KEYS[2], easing: { bezier: [0.4, 0.5, 0.6, 0.5] as const } }];
+    render(<Harness initial={{ keys, selectedSegment: 2 }} />);
+    const handle = () => document.querySelector('[data-handle-index="0"]')!;
+    const before = Number(handle().getAttribute('cy'));
+    fireEvent.keyDown(handle(), { key: 'ArrowUp' });
+    expect(Number(handle().getAttribute('cy'))).toBeLessThan(before);
+  });
+
   it('previews a handle drag without resolving a fresh spec on every move', async () => {
     const core = await import('@weasel-js/core');
     const spy = vi.spyOn(core, 'resolveEasing');

@@ -113,11 +113,14 @@ export function nudgedKey(
 
 const HANDLE_STEP = 0.01;
 
-/** `bezier` with handle `h` moved by `dx`, `dy` key steps; a handle's x stays within its segment. */
-export function nudgedBezier(bezier: Bezier, h: number, dx: number, dy: number): Bezier {
+/**
+ * `bezier` with handle `h` moved by `dx`, `dy` key steps in model terms; a handle's x stays within its segment.
+ * `descending` says the segment's value falls, so a handle's y fraction runs against its value.
+ */
+export function nudgedBezier(bezier: Bezier, h: number, dx: number, dy: number, descending = false): Bezier {
   const next = [...bezier] as [number, number, number, number];
   next[h * 2] = Math.min(1, Math.max(0, next[h * 2] + dx * HANDLE_STEP));
-  next[h * 2 + 1] += dy * HANDLE_STEP;
+  next[h * 2 + 1] += (descending ? -dy : dy) * HANDLE_STEP;
   return next;
 }
 
