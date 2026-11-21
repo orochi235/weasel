@@ -67,6 +67,7 @@ function Dimmed({ mixed, unset, children }: { mixed?: boolean; unset?: boolean; 
 
 function BooleanControl(p: PropertyBooleanFieldProps) {
   const on = !p.mixed && p.value === true;
+  const unset = !p.mixed && (p.unset === true || p.value === undefined);
   const box = useRef<HTMLInputElement>(null);
   const named = useFieldControl({ id: p.id, 'aria-label': p.name });
   const hold = useNativeHold({ ...p, 'aria-describedby': named['aria-describedby'] });
@@ -94,7 +95,7 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
   }
   if (p.control === 'switch') {
     return (
-      <Dimmed mixed={p.mixed} unset={p.unset}>
+      <Dimmed mixed={p.mixed} unset={unset}>
         <Switch className={p.className} isSelected={on} disabled={p.disabled} disabledReason={p.disabledReason} onChange={(next) => p.onChange(next)} aria-label={p.name} />
       </Dimmed>
     );
@@ -103,7 +104,7 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
   // of its own, which may not sit inside the row's, and without the row's the
   // label text would no longer toggle it.
   return (
-    <Dimmed unset={p.unset}>
+    <Dimmed unset={unset}>
       {hold.wrap(<input
         ref={box}
         {...named}

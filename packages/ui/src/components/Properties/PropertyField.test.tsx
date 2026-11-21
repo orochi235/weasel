@@ -39,6 +39,19 @@ describe('PropertyField mixed and unset', () => {
     expect(screen.getByRole('switch', { name: 'Snap' }).closest('[title="Not set"]')).not.toBeNull();
   });
 
+  it('dims a boolean with no value as not set, as its readout draws the dash', () => {
+    render(
+      <>
+        <PropertyField kind="boolean" control="switch" label="Snap" value={undefined} onChange={() => {}} />
+        <PropertyField kind="boolean" label="Visible" value={undefined} onChange={() => {}} />
+        <PropertyField kind="boolean" label="Locked" value={undefined} mixed onChange={() => {}} />
+      </>,
+    );
+    expect(screen.getByRole('switch', { name: 'Snap' }).closest('[title="Not set"]')).not.toBeNull();
+    expect(screen.getByRole('checkbox', { name: 'Visible' }).closest('[title="Not set"]')).not.toBeNull();
+    expect(screen.getByRole('checkbox', { name: 'Locked' }).closest('[title="Not set"]')).toBeNull();
+  });
+
   it('leaves a mixed number empty and says so', () => {
     render(<PropertyField kind="number" label="Radius" value={4} mixed onChange={() => {}} />);
     const field = screen.getByRole('spinbutton', { name: 'Radius' });
