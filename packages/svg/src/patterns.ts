@@ -26,6 +26,11 @@ import { applyMatrix, formatMatrix, isIdentity, parseTransform, trimNumber } fro
 export type PatternTable = Map<string, Paint>;
 
 export function patternXml(id: string, paint: PatternPaint, onWarn?: (m: string) => void): string {
+  // An SVG pattern sized in user space cannot anchor to the box of each shape it fills.
+  if (paint.units === 'bounds') {
+    onWarn?.("pattern fill with units 'bounds' is written anchored at the user-space origin;"
+      + ' resolve it against its node first (paintToLocalUnits)');
+  }
   if (isImagePatternPaint(paint)) return imagePatternXml(id, paint, onWarn);
   if (!isTilePaint(paint)) {
     onWarn?.('texture fill carries a TextureHandle, which has no vector form — omitted from <defs>');

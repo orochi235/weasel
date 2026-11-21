@@ -3304,3 +3304,10 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+
+## Audit round sixty-three (2026-11-21): svg, part two
+
+- 2026-11-21 (the fixer's call): `serializeSvg` warns when it writes a pattern paint with `units: 'bounds'`, which it
+  still writes anchored at the user-space origin; the kit's export path resolves such a paint with
+  `paintToLocalUnits` first and never warns. Writing a def per node, each placed against that node's box, was the
+  alternative.

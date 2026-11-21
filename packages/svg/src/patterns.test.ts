@@ -211,6 +211,12 @@ describe('pattern serialization', () => {
 });
 
 describe('pattern placement warnings', () => {
+  it("warns that a pattern in 'bounds' units is written in user space", () => {
+    const warnings: string[] = [];
+    serializeSvg(patternedRect({ ...TILES[0], units: 'bounds', origin: { x: 5, y: 5 } } as Paint), { onWarn: (m) => warnings.push(m) });
+    expect(warnings.some((w) => w.includes("'bounds'"))).toBe(true);
+  });
+
   it("reports an image pattern's unreadable patternTransform", () => {
     const { warnings } = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><defs><pattern id="p" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="skewQ(3)"><image href="a.png" width="10" height="10"/></pattern></defs><rect width="5" height="5" fill="url(#p)"/></svg>');
     expect(warnings.some((w) => w.includes('skewQ'))).toBe(true);
