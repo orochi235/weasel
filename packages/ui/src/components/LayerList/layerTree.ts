@@ -4,9 +4,18 @@ import type { LayerListItem, LayerMove } from './layerListProps';
 type Items = readonly LayerListItem[];
 
 /** Returns `items` with `move` applied, for a consumer that holds the tree as state. Layers the move leaves alone
- *  keep their identity. */
+ *  keep their identity. Throws when `move.parentId` is not in `items`, or is a moved layer or inside one. */
 export function moveLayers(items: LayerListItem[], move: LayerMove): LayerListItem[] {
   const moving = new Set(move.ids);
+  if (move.parentId !== null) {
+    const parent = move.parentId;
+    if (!findLayer(items, parent)) throw new Error(`moveLayers: no layer "${parent}" to move into`);
+    const inMove = move.ids.some((id) => {
+      const it = findLayer(items, id);
+      return id === parent || (it?.children !== undefined && findLayer(it.children, parent) !== undefined);
+    });
+    if (inMove) throw new Error(`moveLayers: cannot move layers into "${parent}", which is among them`);
+  }
   const taken = new Map<string, LayerListItem>();
   const lift = (list: LayerListItem[]): LayerListItem[] => {
     let changed = false;
@@ -59,10 +68,10 @@ export function collectCollapsed(
   return into;
 }
 
-/** Every layer with children, shown or folded away, in list order. */
+/** Every layer that holds children, even none yet, shown or folded away, in list order. */
 export function branchIds(items: Items, into: string[] = []): string[] {
   for (const item of items) {
-    if (item.children?.length) {
+    if (item.children) {
       into.push(item.id);
       branchIds(item.children, into);
     }
@@ -77,6 +86,15 @@ export function findLayer(items: Items, id: string): LayerListItem | undefined {
     if (hit) return hit;
   }
   return undefined;
+}
+
+/** Whether `id`'s layer is locked or sits inside one that is. */
+export function underLock(items: Items, id: string): boolean {
+  for (const it of items) {
+    if (it.id === id) return it.locked === true;
+    if (it.children && findLayer(it.children, id)) return it.locked === true || underLock(it.children, id);
+  }
+  return false;
 }
 
 function siblingsAt(items: Items, parentId: string | null): Items {

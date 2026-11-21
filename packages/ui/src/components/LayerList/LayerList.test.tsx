@@ -202,6 +202,26 @@ describe('LayerList reordering', () => {
     expect(onReorder).toHaveBeenCalledWith({ ids: ['b'], parentId: 'g', index: 2 });
   });
 
+  it('keeps a locked layer\'s children in it: none drags out, renames, or offers removal', () => {
+    const onReorder = vi.fn();
+    const onRename = vi.fn();
+    list({ items: [{ ...TREE[0]!, locked: true }, TREE[1]!], onReorder, onRename, onRemove: vi.fn() });
+    drag('One', 4 * ROW_H - 2, ROW_H + 4);
+    expect(onReorder).not.toHaveBeenCalled();
+    fireEvent.doubleClick(screen.getByText('One'));
+    fireEvent.keyDown(row('Two'), { key: 'F2' });
+    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove One' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Remove Beta' })).toBeInTheDocument();
+  });
+
+  it('drops a row into a layer whose children are empty', () => {
+    const onReorder = vi.fn();
+    list({ items: [{ id: 'g', label: 'Group', children: [] }, { id: 'b', label: 'Beta' }], onReorder });
+    drag('Beta', ROW_H / 2, ROW_H + 4);
+    expect(onReorder).toHaveBeenCalledWith({ ids: ['b'], parentId: 'g', index: 0 });
+  });
+
   it('drops nothing into a locked layer, or where canMove refuses', () => {
     const onReorder = vi.fn();
     const { rerender } = list({ items: [{ ...TREE[0]!, locked: true }, TREE[1]!], onReorder });
@@ -334,5 +354,11 @@ describe('moveLayers', () => {
     const next = moveLayers(TREE, { ids: ['b', 'g2'], parentId: 'g', index: 0 });
     expect(next.map((l) => l.id)).toEqual(['g']);
     expect(next[0]?.children?.map((l) => l.id)).toEqual(['b', 'g2', 'g1']);
+  });
+
+  it('throws rather than drop the layers when the parent is missing or among the moved', () => {
+    expect(() => moveLayers(TREE, { ids: ['b'], parentId: 'gone', index: 0 })).toThrow(/gone/);
+    expect(() => moveLayers(TREE, { ids: ['g'], parentId: 'g1', index: 0 })).toThrow(/g1/);
+    expect(() => moveLayers(TREE, { ids: ['g'], parentId: 'g', index: 0 })).toThrow(/"g"/);
   });
 });

@@ -3259,3 +3259,8 @@ Calls the lanes made without a ruling:
   padding, and its shape's insets add to it as they add to the default padding, so a `shield` given `padding={4}` keeps
   its point clear. Before, either one replaced the insets, so the label could run into the outline; the alternative was
   to keep that and stop a fitted base from counting insets the padding no longer held.
+## Audit round fifty-eight (2026-11-20): LayerList
+
+- 2026-11-20 (the fixer's call): `moveLayers` throws when the move's `parentId` names no layer in the tree, or names a
+  moved layer or one inside it, where it had dropped the moved layers from the result. Returning the tree unchanged
+  was the alternative.

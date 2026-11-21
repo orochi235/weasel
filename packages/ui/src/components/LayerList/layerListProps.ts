@@ -15,7 +15,7 @@ export interface LayerListItem {
   fixed?: boolean;
   /** The layer's content is locked: shown pressed by the lock toggle when the
    *  list has `onLockChange`. A locked layer can still be hidden and unlocked,
-   *  but not dragged, renamed, removed or dropped into. Default false. */
+   *  but not dragged, renamed, removed or dropped into, and neither can the layers inside it. Default false. */
   locked?: boolean;
   /** Shown or not, when the list has `onVisibilityChange`. Default true. */
   visible?: boolean;
@@ -68,7 +68,7 @@ export interface LayerListProps extends HoldProps {
   /** Lets a row be renamed: a double-click on its label, or F2 on the focused
    *  row, opens a field; Enter or leaving it reports the new name, Escape drops it. */
   onRename?: (id: string, label: string) => void;
-  /** Adds a remove button to every layer that is neither fixed nor locked. */
+  /** Adds a remove button to every layer that is neither fixed nor locked, nor inside a locked layer. */
   onRemove?: (id: string) => void;
   /** A right-click on a row. Select the row here if it should be; the
    *  handler decides whether the browser menu is blocked. */

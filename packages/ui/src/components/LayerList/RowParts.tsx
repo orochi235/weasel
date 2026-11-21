@@ -11,9 +11,9 @@ import { Icon } from '../Icon/Icon';
 // Keeps a press or a double-click in the rename field the field's own.
 const stop = (e: { stopPropagation(): void }) => e.stopPropagation();
 
-/** Whether `item`'s label can be edited in place under `props`. */
-export function canRename(props: LayerListProps, item: LayerListItem): boolean {
-  return props.onRename !== undefined && !item.fixed && !item.locked && item.renamable !== false;
+/** Whether `item`'s label can be edited in place under `props`; `locked` is whether it or a layer around it is. */
+export function canRename(props: LayerListProps, item: LayerListItem, locked: boolean): boolean {
+  return props.onRename !== undefined && !item.fixed && !locked && item.renamable !== false;
 }
 
 /**
@@ -24,16 +24,18 @@ export function canRename(props: LayerListProps, item: LayerListItem): boolean {
 export function RowLabel({
   item,
   props,
+  locked,
   renaming,
   setRenaming,
 }: {
   item: LayerListItem;
   props: LayerListProps;
+  locked: boolean;
   renaming: boolean;
   setRenaming: (on: boolean) => void;
 }) {
   const held = useControlAccess().state !== 'enabled';
-  const renamable = canRename(props, item) && !held;
+  const renamable = canRename(props, item, locked) && !held;
   if (renaming && renamable) return <RenameField item={item} props={props} close={() => setRenaming(false)} />;
   return (
     <span onDoubleClick={renamable ? () => setRenaming(true) : undefined}>
@@ -51,7 +53,7 @@ function RenameField({ item, props, close }: { item: LayerListItem; props: Layer
     closed.current = true;
     close();
     const name = draft.trim();
-    if (commit && name !== '' && name !== item.label) props.onRename?.(item.id, name);
+    if (commit && draft !== item.label && name !== '' && name !== item.label) props.onRename?.(item.id, name);
     row?.focus();
   };
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
