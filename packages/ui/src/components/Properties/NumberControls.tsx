@@ -230,6 +230,7 @@ function SliderReadout(p: PropertyNumberFieldProps) {
       format={p.format}
       unit={p.unit}
       disabled={p.disabled}
+      disabledReason={p.disabledReason}
       onChange={(next) => {
         p.onInput?.(next);
         p.onChange(next);
@@ -276,6 +277,7 @@ interface EditableReadoutProps {
   format?: (value: number) => ReactNode;
   unit?: ReactNode;
   disabled?: boolean;
+  disabledReason?: string;
   onChange: (next: number) => void;
 }
 
@@ -284,11 +286,11 @@ interface EditableReadoutProps {
  * cancels on Escape, and steps like the track beside it. Clicks are stopped so
  * a wrapping <label> doesn't forward focus to the slider thumb.
  */
-function EditableReadout({ named, value, min, max, step, reach, settle, toTrack, stops = [], display, format, unit, disabled, onChange }: EditableReadoutProps) {
+function EditableReadout({ named, value, min, max, step, reach, settle, toTrack, stops = [], display, format, unit, disabled, disabledReason, onChange }: EditableReadoutProps) {
   // Draft is non-null only while the input is focused; the live value mirrors
   // into the input otherwise.
   const [draft, setDraft] = useState<string | null>(null);
-  const hold = useNativeHold({ disabled, 'aria-describedby': named['aria-describedby'] });
+  const hold = useNativeHold({ disabled, disabledReason, 'aria-describedby': named['aria-describedby'] });
   const locale = { locale: useFieldLocale() };
   const text = (n: number) => (format ? String(format(n)) : qty(n, display, locale).text);
   const read = (typed: string) => parseAs(typed, display, locale);
@@ -310,7 +312,7 @@ function EditableReadout({ named, value, min, max, step, reach, settle, toTrack,
     setDraft(null);
   };
 
-  return (
+  return hold.wrap(
     <span className={attachesUnit(unit) ? `${s.readoutGroup} ${s.unitHost}` : s.readoutGroup}>
       <input
         type="text"
@@ -362,6 +364,6 @@ function EditableReadout({ named, value, min, max, step, reach, settle, toTrack,
       />
       {/* A word for infinity stands alone: `never`, not `never ms`. */}
       {Number.isFinite(value) && <UnitSuffix unit={unit} className={s.readoutUnit} />}
-    </span>
+    </span>,
   );
 }
