@@ -227,7 +227,11 @@ function parseElement(
       return image;
     }
   }
-  if (tag === 'use') return nested(onWarn, () => parseUse(el, ctm, style, (t, m, s) => readChild(t, m, s, from, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn)) ?? null;
+  if (tag === 'use') {
+    // A paint the `<use>` sets belongs to no group, as a nested `<svg>`'s does.
+    const inner = viewportPaintFrom(el, from);
+    return nested(onWarn, () => parseUse(el, ctm, style, (t, m, s) => readChild(t, m, s, inner, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn)) ?? null;
+  }
   if (tag === 'g' || tag === 'a' || tag === 'switch') return parseGroup(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden);
   const clipRaw = ownProp(el, 'clip-path');
   if (clipRaw != null && readProperty('clip-path', clipRaw) !== 'none') {

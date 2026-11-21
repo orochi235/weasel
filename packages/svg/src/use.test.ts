@@ -53,4 +53,12 @@ describe('<use>', () => {
     expect(out.nodes.map((node) => (node as SvgPathNode).path)).toEqual([{ kind: 'rect', x: 0, y: 0, width: 2, height: 2 }]);
     expect(out.warnings.some((w) => /nest more than \d+ deep/.test(w))).toBe(true);
   });
+
+  it('keeps a paint the <use> sets as its target\'s own, not its group\'s', () => {
+    const out = parse('<defs><rect id="r" width="1" height="1"/></defs><g fill="red"><use href="#r" fill="blue"/><use href="#r"/></g>');
+    const [own, taken] = (out.nodes[0] as SvgGroupNode).children as SvgPathNode[];
+    expect(own.fill).toEqual({ kind: 'solid', color: '#0000ff' });
+    expect(own.inherits).toBeUndefined();
+    expect(taken.inherits).toEqual({ fill: true });
+  });
 });
