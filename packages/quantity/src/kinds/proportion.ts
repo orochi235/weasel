@@ -323,9 +323,10 @@ export const multiplierKind: DisplayKind<MultiplierDisplay> = {
   ],
   speak: (value, d, ctx) => spokenSign(`${numberPart(value, ctx.locale, multiplierDigits(d)).value} times`),
   parse: (text, d, ctx) => {
-    const own = d.symbol !== undefined && text.trimEnd().endsWith(d.symbol)
-      ? text.trimEnd().slice(0, -d.symbol.length)
-      : text.trimEnd().replace(/[x×X]$/, '');
+    const t = text.trimEnd();
+    const own = d.symbol && t.endsWith(d.symbol)
+      ? t.slice(0, t.length - d.symbol.length)
+      : t.replace(/[x×X]$/, '');
     return parseNumberIn(own, undefined, ctx.locale);
   },
 };

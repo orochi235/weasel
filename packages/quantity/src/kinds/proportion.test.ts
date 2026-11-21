@@ -73,6 +73,14 @@ describe('fraction counted in e', () => {
   });
 });
 
+describe('multiplier', () => {
+  it('reads back the bare number a display with an empty symbol shows', () => {
+    const d = multiplier({ symbol: '' });
+    expect(parseAs('2.5', d)).toBe(2.5);
+    expect(parseAs('2.5x', d)).toBe(2.5);
+  });
+});
+
 describe('typed digits never read as an infinity', () => {
   it('reads a division by zero as NaN', () => {
     expect(parseAs('1/0', fraction())).toBeNaN();
