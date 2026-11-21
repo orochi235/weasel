@@ -53,7 +53,8 @@ export interface LbxResult {
   skipped: readonly LbxSkip[];
 }
 
-type Item = { object: LabelObject } | { raster: DrawCommand };
+/** `source` is the command as the caller wrote it, `raster` that command placed in the page's frame. */
+type Item = { object: LabelObject } | { raster: DrawCommand; source: DrawCommand };
 
 /** A clip above the commands being walked, with the transform it is drawn under. */
 interface Clip {
@@ -120,7 +121,7 @@ function collect(
 ): void {
   const raster = (cmd: DrawCommand) => {
     const at = placed(cmd, state, clips);
-    if (at) out.push({ raster: at });
+    if (at) out.push({ raster: at, source: cmd });
   };
   for (const cmd of commands) {
     const carried = carriedObjects(cmd);
@@ -210,19 +211,19 @@ async function rasterObject(
 /** Each run of commands an object cannot state, drawn as one image, in paint order with the objects around it. */
 async function settle(items: Item[], page: LbxPage, opts: WriteLbxOptions, skipped: LbxSkip[]): Promise<LabelObject[]> {
   const objects: LabelObject[] = [];
-  let run: DrawCommand[] = [];
+  let run: Extract<Item, { raster: DrawCommand }>[] = [];
   const flush = async () => {
     if (run.length === 0) return;
     if (opts.rasterize) {
-      const image = await rasterObject(run, page, opts.rasterize, opts.rasterDpi ?? 180);
+      const image = await rasterObject(run.map((item) => item.raster), page, opts.rasterize, opts.rasterDpi ?? 180);
       if (image) objects.push(image);
     } else {
-      for (const cmd of run) skipped.push({ kind: innermost(cmd).kind, detail: 'no rasterize hook for what .lbx cannot draw' });
+      for (const { source } of run) skipped.push({ kind: source.kind, detail: 'no rasterize hook for what .lbx cannot draw' });
     }
     run = [];
   };
   for (const item of items) {
-    if ('raster' in item) run.push(item.raster);
+    if ('raster' in item) run.push(item);
     else {
       await flush();
       objects.push(item.object);
@@ -230,10 +231,6 @@ async function settle(items: Item[], page: LbxPage, opts: WriteLbxOptions, skipp
   }
   await flush();
   return objects;
-}
-
-function innermost(cmd: DrawCommand): DrawCommand {
-  return cmd.kind === 'group' && cmd.children.length === 1 ? innermost(cmd.children[0]!) : cmd;
 }
 
 /** The `.lbx` label `page` describes, without the file: its paper, cuts and objects. */

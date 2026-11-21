@@ -110,6 +110,11 @@ describe('lbxConfig', () => {
     expect(skipped).toEqual([{ kind: 'path', detail: 'no rasterize hook for what .lbx cannot draw' }]);
   });
 
+  it('reports a skipped group by its own kind, not its only child\'s', async () => {
+    const blurred: DrawCommand = { kind: 'group', isolate: true, children: [rect(0, 0, 5, 5, { fill: { paint: { color: '#000' } } })] };
+    expect((await lbxConfig(page([blurred]))).skipped).toEqual([{ kind: 'group', detail: 'no rasterize hook for what .lbx cannot draw' }]);
+  });
+
   it('rasterizes an object reaching past the label under auto length, as it crops what it rasterizes there', async () => {
     const over = rect(120, 2, 40, 5, { fill: { paint: { color: '#000' } } });
     expect((await lbxConfig({ ...page([over]), autoLength: true })).config.objects).toEqual([]);
