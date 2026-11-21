@@ -65,7 +65,8 @@ describe('the fleet triggers', () => {
   it('list every test that lists or globs a directory, and this one, which reads every test file', () => {
     // The tree itself, not git's index: a fleet node syncs files into a tree whose index can be another commit's.
     const tests = globSync('**/*.test.{ts,tsx,mts,mjs}', { cwd: ROOT, exclude: (name) => name === 'node_modules' || name === 'dist' || name.startsWith('.') });
-    const readers = tests.filter((file) => /\b(readdirSync|globSync)\(/.test(readFileSync(join(ROOT, file), 'utf8')));
+    // A browser run leaves screenshot directories named for their test files.
+    const readers = tests.filter((file) => statSync(join(ROOT, file)).isFile()).filter((file) => /\b(readdirSync|globSync)\(/.test(readFileSync(join(ROOT, file), 'utf8')));
     const want = new Set([...readers, 'scripts/lib/fleet-triggers.test.ts']);
     const listed = new Set<string>(TREE_READERS);
     expect({ unlisted: [...want].filter((f) => !listed.has(f)).sort(), stale: [...listed].filter((f) => !want.has(f)).sort() })
