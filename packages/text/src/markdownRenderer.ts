@@ -3,14 +3,14 @@
  * is given and paints each positioned run, tracking and decoration rules
  * included, where the layout put it.
  */
-import { faceMetricsFor, type FaceMetrics } from '@weasel-js/font';
+import { cssFamilyName, faceMetricsFor, type FaceMetrics } from '@weasel-js/font';
 import { markdownToRuns, type StyledRun } from './runs';
 import { fontString } from './textStyle';
 import { graphemeEnds } from './measure/graphemes';
 import { glyphTurn } from './glyphTurn';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/decorationMetrics';
 import {
-  layoutCanvasRuns, type FaceMetricsFn, type MarkdownFontOptions, type CanvasMeasureFn, type CanvasPositionedRun,
+  layoutCanvasRuns, type FaceMetricsFn, type MarkdownFont, type MarkdownFontOptions, type CanvasMeasureFn, type CanvasPositionedRun,
 } from './markdownText';
 
 /** Pluggable text-painting strategy. The default fills white at `(x, y)`; markdown renderers replace this. */
@@ -24,9 +24,15 @@ export type TextRenderer = (
 /** Whether `ctx` tracks text itself (`CanvasRenderingContext2D.letterSpacing`). */
 const tracksItself = (ctx: CanvasRenderingContext2D): boolean => typeof ctx.letterSpacing === 'string';
 
+/** `font` as the canvas `font` shorthand, naming small caps where the face draws its own. */
+function canvasFont(font: MarkdownFont): string {
+  if (!font.fontVariantCaps) return fontString(font);
+  return `${font.fontStyle} small-caps ${font.fontWeight} ${font.fontSize}px ${cssFamilyName(font.fontFamily)}`;
+}
+
 function canvasMeasure(ctx: CanvasRenderingContext2D): CanvasMeasureFn {
   return (text, font) => {
-    ctx.font = fontString(font);
+    ctx.font = canvasFont(font);
     if (!tracksItself(ctx) || ctx.letterSpacing === '0px') return ctx.measureText(text).width;
     const held = ctx.letterSpacing;
     ctx.letterSpacing = '0px';
@@ -140,7 +146,7 @@ export function createMarkdownRenderer(
     layout.lines.forEach((line, li) => {
       const lineLeft = left + (layout.width - line.width) * share;
       for (const run of line.runs) {
-        c.font = fontString(run.font);
+        c.font = canvasFont(run.font);
         drawRun(run, lineLeft + run.x, lineY + run.y, li);
       }
       lineY += line.height;

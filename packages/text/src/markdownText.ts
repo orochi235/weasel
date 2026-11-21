@@ -5,7 +5,7 @@ import { resolveRunFace, scriptMetrics } from './runs/resolveRuns';
 import { graphemeCount } from './measure/graphemes';
 import { transformRunTexts } from './runs/textTransform';
 import { rejoinSplitPairs } from './runs/codePointCuts';
-import { smallCapsScale, smallCapsText } from './runs/smallCaps';
+import { hasOwnSmallCaps, smallCapsScale, smallCapsText } from './runs/smallCaps';
 import { endsHyphenated, hangs, wrapLines, type HyphenWidth } from './layout/lineBreak/wrapLines';
 import { DEFAULT_TAB_SIZE, tabAdvance, widthWithTabs, type TabStop } from './layout/tabStops';
 
@@ -19,6 +19,9 @@ export interface MarkdownFont {
   fontWeight: number;
   fontStyle: FontStyle;
   fontSize: number;
+  /** Set where the face draws small caps from its own `smcp` glyphs, which the
+   *  canvas font then names; a synthesized small cap is a capital at a smaller size. */
+  fontVariantCaps?: 'small-caps';
 }
 
 /** Width of `text` set in `font`, glyphs only: `layoutCanvasRuns` adds a run's
@@ -76,7 +79,7 @@ function runMetrics(run: StyledRun, fontSize: number, face: FaceMetrics | undefi
 
 /** A run as `layoutCanvasRuns` walks it: small caps has split it where its
  *  size changes, and marked the pieces drawn at the small size. */
-type Segment = StyledRun & { smallCaps?: true; source?: StyledRun };
+type Segment = StyledRun & { smallCaps?: true; ownSmallCaps?: true; source?: StyledRun };
 
 /** A single laid-out line of text: its positioned runs, total width, and computed line height. */
 export interface CanvasRunsLine {
@@ -94,7 +97,7 @@ export interface CanvasRunsLayout {
 
 /** `runs` as drawn: transformed, and split by small caps where the size
  *  changes, with the small pieces marked. */
-function segmentsOf(authored: readonly StyledRun[]): Segment[] {
+function segmentsOf(authored: readonly StyledRun[], node: Parameters<typeof resolveRunFace>[1]): Segment[] {
   const runs = rejoinSplitPairs(authored);
   // No caret reads this layout, so the transformed text simply replaces the source.
   const shown = transformRunTexts(
@@ -104,6 +107,11 @@ function segmentsOf(authored: readonly StyledRun[]): Segment[] {
   runs.forEach((r, i) => {
     const text = shown[i].text;
     if (r.fontVariantCaps !== 'small-caps') { segs.push(text === r.text ? r : { ...r, text }); return; }
+    const face = resolveRunFace(r, node);
+    if (hasOwnSmallCaps(face.fontFamily, face.fontWeight, face.fontStyle)) {
+      segs.push({ ...r, text, ownSmallCaps: true });
+      return;
+    }
     const caps = smallCapsText(text, undefined, r.lang);
     if (!caps.small) { segs.push({ ...r, text: caps.text }); return; }
     let at = 0;
@@ -137,17 +145,21 @@ export function layoutCanvasRuns(
     fontFamily: opts.family ?? 'sans-serif', fontWeight: opts.weight ?? 400, fontStyle: 'normal' as const,
   };
   if (runs.length === 0) return { lines: [], width: 0, height: 0 };
-  const segs = segmentsOf(runs);
+  const segs = segmentsOf(runs, node);
 
   // One sequence across every run, so a break opportunity that depends on a
   // neighbor in the next run is found the way `layoutRuns` finds it.
   const { cps, runOf, startOf, endOf } = codePointsOf(segs);
   // Already a screen-pixel layout, so a run's `{ px }` size is its size.
-  const placed = segs.map(({ smallCaps, source: _source, ...run }) => {
+  const placed = segs.map(({ smallCaps, ownSmallCaps, source: _source, ...run }) => {
     const runFace = resolveRunFace(run, node);
     const face = opts.faceOf?.(runFace);
     const { size: runSize, y } = runMetrics(run, fontSize, face);
-    const font: MarkdownFont = { ...runFace, fontSize: smallCaps ? runSize * smallCapsScale(face) : runSize };
+    const font: MarkdownFont = {
+      ...runFace,
+      fontSize: smallCaps ? runSize * smallCapsScale(face) : runSize,
+      ...(ownSmallCaps ? { fontVariantCaps: 'small-caps' as const } : {}),
+    };
     const tracking = run.letterSpacing !== undefined
       ? resolveScreenLength(run.letterSpacing, 1)
       : opts.letterSpacing ?? 0;
