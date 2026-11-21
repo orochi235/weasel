@@ -73,6 +73,15 @@ function globbed(file: string, patterns: string[], repoRoot: string, aliases: Vi
   );
 }
 
+/** The directory `pkg` is installed in for a module in `fromDir`, found the way node walks up `node_modules`. */
+function installedFrom(fromDir: string, pkg: string, repoRoot: string): string | undefined {
+  for (let dir = fromDir; ; dir = dirname(dir)) {
+    const candidate = join(dir, 'node_modules', pkg);
+    if (existsSync(join(candidate, 'package.json'))) return candidate;
+    if (dir === repoRoot || dirname(dir) === dir) return undefined;
+  }
+}
+
 export interface BrowserDepsOptions {
   /** Globs of the test files, relative to the root: the project's `include`. */
   entries: string[];
@@ -87,7 +96,18 @@ export interface BrowserDepsOptions {
  */
 export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: BrowserDepsOptions): string[] {
   const aliases = weaselAliases(repoRoot);
-  const workspace = new Set(workspaceEntries(repoRoot).map(({ name }) => name));
+  const packages = workspaceEntries(repoRoot);
+  const workspace = new Set(packages.map(({ name }) => name));
+  // A bare `include` entry resolves from the root, and vite hands that bundle to every importer of the
+  // name. A package with its own copy (font's opentype.js 2 over the root's 1.3.4) is named through
+  // itself, `owner > dep`, so vite bundles the copy it resolves.
+  const listed = (specifier: string, file: string) => {
+    const pkg = packageOf(specifier);
+    const own = installedFrom(dirname(file), pkg, repoRoot);
+    if (!own || own === join(repoRoot, 'node_modules', pkg)) return specifier;
+    const owner = packages.find(({ dir }) => file.startsWith(dir + '/'));
+    return owner ? `${owner.name} > ${specifier}` : specifier;
+  };
   const ownedElsewhere = (pkg: string) =>
     workspace.has(pkg) || BUILTINS.has(pkg) || pkg === 'vitest' || pkg.startsWith('@vitest/');
 
@@ -129,7 +149,7 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(listed(specifier, file));
     }
   }
   return [...found].sort();

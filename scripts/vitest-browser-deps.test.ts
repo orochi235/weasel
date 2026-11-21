@@ -43,6 +43,12 @@ describe('browserDeps', () => {
     expect(deps()).toEqual(['@testing-library/react', 'zustand/vanilla']);
   });
 
+  it('names a dependency through the package holding its own copy, so vite bundles that copy', () => {
+    put('node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '4.0.0' }));
+    put('packages/kit/node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '5.0.0' }));
+    expect(deps()).toEqual(['@fixture/kit > zustand/vanilla', '@testing-library/react']);
+  });
+
   it('gains a specifier first imported anywhere in an entry’s graph', () => {
     put(
       'packages/kit/src/store.ts',
