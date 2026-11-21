@@ -11,12 +11,13 @@ describe('quatrefoilRadius', () => {
     expect(r(1)).toBeCloseTo(42, 10);
   });
 
-  it('lifts every radius by the smooth maximum of the two segments', () => {
+  it('lifts the valley by half its smoothing and leaves the tips at their radii', () => {
     const r = quatrefoilRadius();
-    expect(r(0)).toBeCloseTo((75 + Math.sqrt(634)) / 2, 10);
-    expect(r(0.25)).toBeCloseTo((62.5 + Math.sqrt(165.25)) / 2, 10);
+    expect(r(0)).toBeCloseTo(50, 10);
+    expect(r(0.25)).toBeCloseTo(37.5, 10);
     expect(r(0.5)).toBeCloseTo(26.5, 10);
-    expect(r(1)).toBeCloseTo((67 + Math.sqrt(298)) / 2, 10);
+    expect(r(1)).toBeCloseTo(42, 10);
+    expect(quatrefoilRadius({ valleySmooth: 20 })(0)).toBeCloseTo(50, 10);
   });
 
   it('truncates a tip by its erosion', () => {

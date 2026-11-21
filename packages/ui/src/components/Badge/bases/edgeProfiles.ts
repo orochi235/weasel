@@ -120,5 +120,5 @@ const PATHS: Record<BuiltInEdgeName, EdgePath> = {
 
 export function resolveEdge(cap: EdgeCap): EdgePath {
   if (typeof cap === 'function') return profilePath(cap);
-  return PATHS[cap] ?? PATHS.flat;
+  return Object.hasOwn(PATHS, cap) ? PATHS[cap] : PATHS.flat;
 }

@@ -1,6 +1,7 @@
 import { resolveEdge, type EdgeCap, type EdgePoint } from './edgeProfiles';
-import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
-import { maxOf, lerp, trimNumber, wrapPositive } from '@weasel-js/geom';
+import type { BaseModule, BaseSampler } from './types';
+import { polygonSampler } from './polygonSampler';
+import { maxOf, trimNumber } from '@weasel-js/geom';
 
 /** What `baseParams` takes on a badge whose `base` is `powerline`. */
 export interface BadgePowerlineBaseParams {
@@ -30,74 +31,22 @@ const Powerline: BaseModule<BadgePowerlineBaseParams> = {
     const sx = 100 / boxW;
     const sy = 100 / boxH;
 
-    const pts: { x: number; y: number; nx: number; ny: number }[] = [];
+    const pts: [number, number][] = [];
 
     // Top corners are the edges' own first points, so a profile that
     // protrudes/cuts at the top (e.g. slant-up) doesn't introduce a corner
     // kink between the flat top and the edge.
-    const lTop = left[0];
-    const rTop = right[0];
-    pts.push({ x: lTop.x * sx, y: lTop.y * sy, nx: 0, ny: -1 });
-    pts.push({ x: (boxW + rTop.x) * sx, y: rTop.y * sy, nx: 0, ny: -1 });
-
-    for (let i = 1; i < right.length - 1; i++) {
-      pts.push({ x: (boxW + right[i].x) * sx, y: right[i].y * sy, nx: 1, ny: 0 });
+    pts.push([left[0].x * sx, left[0].y * sy]);
+    for (let i = 0; i < right.length; i++) {
+      pts.push([(boxW + right[i].x) * sx, right[i].y * sy]);
     }
-
-    const rBot = right[right.length - 1];
-    const lBot = left[left.length - 1];
-    pts.push({ x: (boxW + rBot.x) * sx, y: rBot.y * sy, nx: 0, ny: 1 });
-    pts.push({ x: lBot.x * sx, y: lBot.y * sy, nx: 0, ny: 1 });
-
-    for (let i = left.length - 2; i >= 1; i--) {
-      pts.push({ x: left[i].x * sx, y: left[i].y * sy, nx: -1, ny: 0 });
+    for (let i = left.length - 1; i >= 1; i--) {
+      pts.push([left[i].x * sx, left[i].y * sy]);
     }
-
-    const cum: number[] = [0];
-    for (let i = 1; i < pts.length; i++) {
-      const a = pts[i - 1];
-      const b = pts[i];
-      const dxCss = (b.x - a.x) / sx;
-      const dyCss = (b.y - a.y) / sy;
-      cum.push(cum[i - 1] + Math.hypot(dxCss, dyCss));
-    }
-    const last = pts[pts.length - 1];
-    const first = pts[0];
-    const closeLen = Math.hypot((first.x - last.x) / sx, (first.y - last.y) / sy);
-    const totalCss = cum[cum.length - 1] + closeLen;
-
-    const perimeterAt = (s: number): PerimeterPoint => {
-      const sm = wrapPositive(s, totalCss);
-      for (let i = 1; i < pts.length; i++) {
-        if (sm <= cum[i]) {
-          const segLen = cum[i] - cum[i - 1];
-          const t = segLen > 0 ? (sm - cum[i - 1]) / segLen : 0;
-          const a = pts[i - 1];
-          const b = pts[i];
-          return {
-            x: lerp(a.x, b.x, t),
-            y: lerp(a.y, b.y, t),
-            nx: b.nx,
-            ny: b.ny,
-          };
-        }
-      }
-      const lastIdx = pts.length - 1;
-      const segLen = closeLen;
-      const t = segLen > 0 ? (sm - cum[lastIdx]) / segLen : 0;
-      return {
-        x: lerp(pts[lastIdx].x, first.x, t),
-        y: lerp(pts[lastIdx].y, first.y, t),
-        nx: 0,
-        ny: 1,
-      };
-    };
+    const { perimeterAt, totalCss } = polygonSampler(pts, boxW, boxH);
 
     const bodyPath = pts.reduce(
-      (acc, p, i) =>
-        acc + (i === 0
-          ? `M ${trimNumber(p.x, 3)} ${trimNumber(p.y, 3)}`
-          : ` L ${trimNumber(p.x, 3)} ${trimNumber(p.y, 3)}`),
+      (acc, [x, y], i) => `${acc}${i === 0 ? 'M' : ' L'} ${trimNumber(x, 3)} ${trimNumber(y, 3)}`,
       ''
     ) + ' Z';
 

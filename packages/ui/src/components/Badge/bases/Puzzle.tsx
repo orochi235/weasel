@@ -11,7 +11,7 @@ export interface BadgePuzzleBaseParams {
   right?: BadgePuzzleEdge;
   bottom?: BadgePuzzleEdge;
   left?: BadgePuzzleEdge;
-  /** Tab radius in viewBox units (0..50). */
+  /** Tab radius in viewBox units, held to 2..40. */
   tabSize?: number;
   /** Sample density per tab arc. */
   arcSamples?: number;

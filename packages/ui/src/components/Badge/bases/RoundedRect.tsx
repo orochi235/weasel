@@ -177,7 +177,9 @@ function pinchedSampler({ perimeterAt, totalCss }: Outline, pinch: number, { sx,
     const bx = b.x, by = pinchY(b.x, b.y);
     const tx = (bx - ax) / sx;
     const ty = (by - ay) / sy;
-    const tl = Math.hypot(tx, ty) || 1;
+    const tl = Math.hypot(tx, ty);
+    // A full pinch collapses each end edge to a point, where the warped tangent vanishes.
+    if (tl < 1e-9) return { x, y, nx: pt.nx, ny: pt.ny };
     return { x, y, nx: ty / tl, ny: -tx / tl };
   };
   return { bodyPath, perimeterAt: pinchedAt, totalCss };

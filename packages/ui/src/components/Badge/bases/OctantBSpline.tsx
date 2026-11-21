@@ -126,8 +126,6 @@ function evalNurbsAtU(u: number, nurbs: CompiledNurbs): { s: number; r: number }
 /** Invert S(u) = s by bisection. The NURBS is monotonic in s because the underlying knot
  *  vector and control sequence are monotonic, so bisection converges quickly. */
 function evalNurbsAtS(s: number, nurbs: CompiledNurbs): number {
-  if (s <= 0) return evalNurbsAtU(0, nurbs).r;
-  if (s >= 1) return evalNurbsAtU(1, nurbs).r;
   let lo = 0, hi = 1;
   for (let iter = 0; iter < 30; iter++) {
     const mid = (lo + hi) * 0.5;
@@ -140,7 +138,7 @@ function evalNurbsAtS(s: number, nurbs: CompiledNurbs): number {
 
 /**
  * The radius r(s) of the approximating `octant-bspline` curve over `anchors`, which are in order along it from
- * s = 0 to s = 1: a cubic NURBS their weights pull toward each one, through the two ends only. A weight under
+ * s = 0 to s = 1: a cubic NURBS their weights pull toward each one, passing through none of them. A weight under
  * {@link OCTANT_BSPLINE_MIN_WEIGHT} draws as that.
  */
 export function octantBSplineRadius(anchors: readonly Anchor[]): (s: number) => number {

@@ -8,7 +8,7 @@ export type BadgeRibbonEnd = 'inward' | 'outward' | 'flat';
 export interface BadgeRibbonBaseParams {
   left?: BadgeRibbonEnd;
   right?: BadgeRibbonEnd;
-  /** Taper depth in CSS px. Stays fixed regardless of badge width — viewBox
+  /** Taper depth in CSS px, held to half the badge's width. Stays fixed regardless of badge width — viewBox
    *  vertices are computed at build time using `boxW`. */
   taperWidth?: number;
 }
@@ -52,7 +52,7 @@ function sideInsetCss(mode: BadgeRibbonEnd, taperCss: number): number {
 const Ribbon: BaseModule<BadgeRibbonBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = { ...DEFAULTS, ...params };
-    const taperCss = Math.max(0, cfg.taperWidth);
+    const taperCss = Math.max(0, Math.min(cfg.taperWidth, boxW / 2));
     // Convert CSS px taper into viewBox-x units so the rendered pointer
     // is the same CSS-px depth regardless of badge width.
     const taperVb = boxW > 0 ? (taperCss / boxW) * 100 : 0;
