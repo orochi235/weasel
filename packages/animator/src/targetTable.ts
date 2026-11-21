@@ -192,6 +192,12 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
     opts.set?.(row);
   };
 
+  const fillRows = (columns: (group: object) => LaneColumns | null): void => {
+    last = columns;
+    pass(shown, committed, n, holds, moves, columns(rows), columns(moves.group), stamp, ++passes);
+    flush();
+  };
+
   const rows: RowTable = {
     mark: (row) => { marks.add(row); },
     settle() {
@@ -200,17 +206,13 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
       marks.clear();
     },
     fill(columns) {
-      last = columns;
-      pass(shown, committed, n, holds, moves, columns(rows), columns(moves.group), stamp, ++passes);
-      flush();
+      fillRows(columns);
       opts.show?.();
     },
     move: moves.move,
     beside: moves.beside,
     refill() {
-      const { show } = opts;
-      opts.show = undefined;
-      try { rows.fill(last); } finally { opts.show = show; }
+      fillRows(last);
     },
     rows: index.rows,
     holds: () => (holds ??= createHoldStore(n, committed.length / n, (row, out, at) => {
