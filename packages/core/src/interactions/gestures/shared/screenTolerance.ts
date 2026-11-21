@@ -5,14 +5,17 @@ import type { GestureContext } from '../types';
 import type { ActionDeps } from '@weasel-js/routing';
 import type { KitSettingsStore } from '@weasel-js/react';
 
-/** A screen-pixel tolerance in world units, per axis, through the camera of
- *  the view the gesture landed in. With no view, one pixel is one unit. */
+/** A screen-pixel tolerance in the units of the gesture's poses, per axis:
+ *  through the camera of the view the gesture landed in, then its parallax
+ *  plane when it has one. With no view, one pixel is one unit. */
 export function screenTolerance(
   px: number,
-  ctx: Pick<GestureContext<unknown>, 'view'>,
+  ctx: Pick<GestureContext<unknown>, 'view' | 'plane'>,
 ): { x: number; y: number } {
   const view: View | null = ctx.view;
-  return view ? pxExtent(px, view.scale) : { x: px, y: px };
+  const t = view ? pxExtent(px, view.scale) : { x: px, y: px };
+  const plane = ctx.plane;
+  return plane ? { x: t.x * Math.abs(plane.scale.x), y: t.y * Math.abs(plane.scale.y) } : t;
 }
 
 /** Reads the camera the gesture's `deps.view` answers for — the routed
