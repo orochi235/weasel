@@ -4,6 +4,7 @@
  * through `WeaselRenderer.render`.
  */
 
+import { onTestFinished } from 'vitest';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/geom';
 import type { PolygonPath } from '@weasel-js/geom';
 import { createGLRecorder } from './glRecorder';
@@ -17,11 +18,13 @@ import { rendererParts } from '../rendererParts';
 
 /**
  * Build a DrawContext backed by a GL recorder. Mirrors what WeaselRenderer.render
- * assembles internally, using the _*() accessors exposed for testing.
+ * assembles internally, using the _*() accessors exposed for testing. Call it
+ * inside a test: the renderer is disposed when that test finishes.
  */
 export function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof createGLRecorder>['calls']; gl: ReturnType<typeof createGLRecorder>['gl'] } {
   const recorder = createGLRecorder();
   const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+  onTestFinished(() => r.dispose());
   // Built before the reset, as they were when the renderer built them all eagerly.
   const programs = {
     pathFill: r._pathFill(),

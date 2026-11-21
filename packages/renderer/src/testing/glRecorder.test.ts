@@ -12,6 +12,21 @@ import { createGLRecorder } from './glRecorder';
 import { WeaselRenderer } from '../WeaselRenderer';
 
 describe('createGLRecorder', () => {
+  it('answers one location per program and name, honoring bindAttribLocation', () => {
+    const { gl } = createGLRecorder();
+    const a = gl.createProgram()!;
+    const b = gl.createProgram()!;
+    gl.bindAttribLocation(a, 3, 'a_position');
+    expect(gl.getAttribLocation(a, 'a_position')).toBe(3);
+    const color = gl.getAttribLocation(a, 'a_color');
+    expect([0, 1, 2]).toContain(color);
+    expect(gl.getAttribLocation(a, 'a_color')).toBe(color);
+    expect(gl.getAttribLocation(b, 'a_position')).toBe(0);
+    const u = gl.getUniformLocation(a, 'u_color');
+    expect(gl.getUniformLocation(a, 'u_color')).toBe(u);
+    expect(gl.getUniformLocation(b, 'u_color')).not.toBe(u);
+  });
+
   it('gives every framebuffer constant a real, distinct value', () => {
     const { gl } = createGLRecorder();
     const names = [

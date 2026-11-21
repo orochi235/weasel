@@ -3,6 +3,7 @@ import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel
 import type { DrawCommand } from './DrawCommand';
 import { dispatch } from './draw';
 import { createRecorderCtx } from './testing/recorderCtx';
+import { glProgramHandle } from './gpu/webgl/GlProgram';
 import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { FLOATS_PER_VERTEX } from './drawBatch';
@@ -49,11 +50,17 @@ describe('per-vertex color buffer lifetime', () => {
     (_name, cmd) => {
       const { ctx, calls } = createRecorderCtx();
       const colorLoc = ctx.pathFillVColor.attribute('a_vertexColor');
+      const program = glProgramHandle(ctx.pathFillVColor);
       dispatch(ctx, cmd);
 
-      const enable = calls.findIndex((c) => c.name === 'enableVertexAttribArray' && c.args[0] === colorLoc);
-      const made = calls.slice(0, enable).filter((c) => c.name === 'createVertexArray').at(-1)?.result;
-      const draw = calls.findIndex((c, i) => i > enable && c.name === 'drawElements');
+      let bound: unknown = null;
+      const draw = calls.findIndex((c) => {
+        if (c.name === 'useProgram') bound = c.args[0];
+        return c.name === 'drawElements' && bound === program;
+      });
+      const made = calls.slice(0, draw).filter((c) => c.name === 'bindVertexArray' && c.args[0] !== null).at(-1)?.args[0];
+      const createdAt = calls.findIndex((c) => c.name === 'createVertexArray' && c.result === made);
+      const enable = calls.findIndex((c, i) => i > createdAt && i < draw && c.name === 'enableVertexAttribArray' && c.args[0] === colorLoc);
       const freed = calls.findIndex((c, i) => i > draw && c.name === 'deleteVertexArray' && c.args[0] === made);
       const del = calls.findIndex((c, i) => i > freed && c.name === 'deleteBuffer');
       expect(enable).toBeGreaterThanOrEqual(0);

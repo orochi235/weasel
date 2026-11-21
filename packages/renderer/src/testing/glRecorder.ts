@@ -160,6 +160,15 @@ export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
   const calls: GLCall[] = [];
   // Not `calls.length`, which a reset rewinds: handles minted after it would equal earlier ones.
   let minted = 0;
+  // Per program, as a real context keeps them: an attribute's index, which `bindAttribLocation` sets and
+  // a lookup otherwise picks the lowest free one for, and a uniform's location.
+  const attributes = new Map<unknown, Map<string, number>>();
+  const uniforms = new Map<unknown, Map<string, number>>();
+  const namesOf = (table: Map<unknown, Map<string, number>>, program: unknown): Map<string, number> => {
+    let names = table.get(program);
+    if (!names) table.set(program, names = new Map());
+    return names;
+  };
   const {
     drawingBufferWidth = 800,
     drawingBufferHeight = 600,
@@ -192,10 +201,27 @@ export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
       case 'createRenderbuffer':
         result = syntheticHandle(name, minted++);
         break;
-      case 'getUniformLocation':
-      case 'getAttribLocation':
-        result = minted++;
+      case 'bindAttribLocation':
+        namesOf(attributes, args[0]).set(args[2] as string, args[1] as number);
         break;
+      case 'getAttribLocation': {
+        const names = namesOf(attributes, args[0]);
+        let index = names.get(args[1] as string);
+        if (index === undefined) {
+          const taken = new Set(names.values());
+          for (index = 0; taken.has(index); index++);
+          names.set(args[1] as string, index);
+        }
+        result = index;
+        break;
+      }
+      case 'getUniformLocation': {
+        const names = namesOf(uniforms, args[0]);
+        let location = names.get(args[1] as string);
+        if (location === undefined) names.set(args[1] as string, location = minted++);
+        result = location;
+        break;
+      }
       case 'getShaderParameter':
       case 'getProgramParameter':
         result = true;
