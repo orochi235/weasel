@@ -74,6 +74,12 @@ Owner tags, after the priority (2026-10-26):
 
 ## Paths & booleans
 
+- **(P3) [agent] A stroke that paints nothing still draws its marker heads.** SVG draws `marker-*` under
+  `stroke="none"`, and SVG import now keeps them on an `SvgStroke` whose paint is `none`, but
+  `svgNodesToKitDrafts` drops that stroke and the renderer's `drawPath` draws no heads for a stroke with no
+  `paint`. Closes when a kit `Stroke` with no `paint` and a `markerEnd` draws its head (one painted in its own
+  color; a `'line'` paint draws nothing), and SVG import carries such a stroke into the kit draft.
+
 ### Path editing tricks
 
 - **(P2) [maintainer] Tune Poise hands-on, with the maintainer driving.** First-draft behavior: a

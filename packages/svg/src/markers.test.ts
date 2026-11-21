@@ -35,6 +35,15 @@ describe('marker parsing', () => {
     expect(path.stroke?.markerEnd).toBe('arrow');
   });
 
+  it('keeps a marker on a path whose stroke is none or unset, as SVG draws it', () => {
+    const { nodes } = parseSvg(wrap(
+      '<path d="M0 0L50 0" marker-end="url(#arrow)"/><path d="M0 0L50 0" stroke="none" marker-start="url(#circle)"/>',
+    ));
+    expect((nodes[0] as SvgPathNode).stroke).toMatchObject({ paint: { kind: 'none' }, markerEnd: 'arrow' });
+    expect((nodes[1] as SvgPathNode).stroke).toMatchObject({ paint: { kind: 'none' }, markerStart: 'circle' });
+    expect(serializeSvg([nodes[1]])).toMatch(/<path [^>]*stroke="none"[^>]*marker-start="url\(#circle\)"/);
+  });
+
   it('inherits markers from a parent group', () => {
     const { nodes } = parseSvg(wrap(
       '<g stroke="#000" marker-end="url(#arrow)"><line x1="0" y1="0" x2="50" y2="0"/></g>',

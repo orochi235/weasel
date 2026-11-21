@@ -65,15 +65,28 @@ export function readStroke(
   onWarn: (msg: string) => void,
   nonScaling = false,
 ): SvgStroke | undefined {
+  const markers: Pick<SvgStroke, 'markerStart' | 'markerMid' | 'markerEnd'> = {};
+  for (const [attr, field] of [
+    ['marker-start', 'markerStart'],
+    ['marker-mid', 'markerMid'],
+    ['marker-end', 'markerEnd'],
+  ] as const) {
+    // An id with no registered entry stays as-is for `ingestMarkers`, which
+    // reads the document's own `<marker>` once the tree is built.
+    const id = styleValue(style, attr, onWarn);
+    if (id) markers[field] = id;
+  }
+  // SVG draws markers whatever the stroke paints, so a stroke carrying one is kept under `none`.
+  const marked = Object.keys(markers).length > 0;
   const inheritedStroke = style['stroke'] ?? null;
   const inheritedWidth = style['stroke-width'] ?? null;
-  if (inheritedStroke == null && inheritedWidth == null) return undefined;
+  if (inheritedStroke == null && inheritedWidth == null && !marked) return undefined;
   const paint = readPaint(style, 'stroke', '#000000', gradients, onWarn);
-  if (paint.kind === 'none') return undefined;
+  if (paint.kind === 'none' && !marked) return undefined;
   const n = styleValue(style, 'stroke-width', onWarn) ?? 1;
   const stroke: SvgStroke = { paint, width: nonScaling ? { px: n } : n };
   // The paint already carries `stroke-opacity`, times a color's own alpha.
-  if (styleValue(style, 'stroke-opacity', onWarn) != null) {
+  if (styleValue(style, 'stroke-opacity', onWarn) != null && paint.kind !== 'none') {
     stroke.opacity = paint.kind === 'solid' ? paint.opacity : paint.paint.opacity;
   }
   const cap = styleValue(style, 'stroke-linecap', onWarn);
@@ -86,17 +99,7 @@ export function readStroke(
   if (dashOffset) stroke.dashOffset = dashOffset;
   const miterLimit = styleValue(style, 'stroke-miterlimit', onWarn);
   if (miterLimit != null) stroke.miterLimit = miterLimit;
-  for (const [attr, field] of [
-    ['marker-start', 'markerStart'],
-    ['marker-mid', 'markerMid'],
-    ['marker-end', 'markerEnd'],
-  ] as const) {
-    // An id with no registered entry stays as-is for `ingestMarkers`, which
-    // reads the document's own `<marker>` once the tree is built.
-    const id = styleValue(style, attr, onWarn);
-    if (id) stroke[field] = id;
-  }
-  return stroke;
+  return Object.assign(stroke, markers);
 }
 
 /** The stroke keys `readStroke` consults. */
