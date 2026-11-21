@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { browserDeps, nestedDeps } from './vitest-browser-deps.ts';
+import { browserDeps } from './vitest-browser-deps.ts';
 
 const ENTRIES = ['packages/**/*.browser.test.{ts,tsx}'];
 
@@ -163,24 +163,3 @@ describe('browserDeps', () => {
   });
 });
 
-describe('nestedDeps', () => {
-  it('names what the lockfile installs inside a workspace package, which browserDeps lists under its importer', () => {
-    put(
-      'package-lock.json',
-      JSON.stringify({
-        packages: {
-          'node_modules/zustand': {},
-          'packages/kit/node_modules/zustand': {},
-          'packages/app/node_modules/@scope/dep': {},
-          'packages/app/node_modules/@scope/dep/node_modules/inner': {},
-        },
-      }),
-    );
-    expect(nestedDeps(root)).toEqual(['@scope/dep', 'zustand']);
-    expect(deps()).toEqual(['@fixture/kit > zustand/vanilla', '@testing-library/react']);
-  });
-
-  it('is empty without a lockfile', () => {
-    expect(nestedDeps(root)).toEqual([]);
-  });
-});
