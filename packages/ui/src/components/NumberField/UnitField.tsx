@@ -23,8 +23,9 @@ export interface UnitFieldProps extends HoldProps, ControlSizeProps, Omit<FieldS
    *  blur or Enter, and on every step. */
   onChange: (value: number) => void;
   /** The live value: every keystroke that reads as a number, and every step.
-   *  Typing that ends in Escape, or in text the field cannot read, sends the
-   *  value it began from, so a caller holding the live value gets it back. */
+   *  Typing that ends in Escape, in text the field cannot read, in the value it
+   *  began from, or in an offset for `onOffset`, sends the value it began from,
+   *  so a caller holding the live value gets it back. */
   onInput?: (value: number) => void;
   /**
    * An amount typed as `+=` or `-=` and a number — `+=5`, `-=2mm` — committed

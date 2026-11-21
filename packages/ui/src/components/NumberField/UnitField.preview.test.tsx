@@ -37,4 +37,32 @@ describe('UnitField previewed through onInput', () => {
     fireEvent.blur(field);
     expect(onChange).toHaveBeenCalledExactlyOnceWith(100);
   });
+
+  it('adds an offset to the value typing began from, not to the preview', () => {
+    const { onChange, field } = previewing(10);
+    fireEvent.change(field, { target: { value: '3' } });
+    fireEvent.change(field, { target: { value: '+=3' } });
+    fireEvent.blur(field);
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(13);
+  });
+
+  it('gives the starting value back before sending an offset to onOffset', () => {
+    const calls: string[] = [];
+    const { field } = previewing(10, { onOffset: (by) => calls.push(`offset ${by}`) });
+    fireEvent.change(field, { target: { value: '5' } });
+    fireEvent.change(field, { target: { value: '+=5' } });
+    fireEvent.blur(field);
+    expect(field).toHaveValue('10');
+    expect(calls).toEqual(['offset 5']);
+  });
+
+  it('gives the starting value back when typing commits to where it began', () => {
+    const { onChange, onInput, field } = previewing(10);
+    fireEvent.change(field, { target: { value: '5' } });
+    fireEvent.change(field, { target: { value: '+=0' } });
+    fireEvent.blur(field);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onInput).toHaveBeenLastCalledWith(10);
+    expect(field).toHaveValue('10');
+  });
 });
