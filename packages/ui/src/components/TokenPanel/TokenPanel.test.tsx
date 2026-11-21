@@ -210,6 +210,21 @@ describe('TokenPanel', () => {
       }
     });
 
+    it('overrides a dragged step whose factor rounds to nothing', () => {
+      const tiny: TokenEntry[] = [
+        { name: '--t-sm', type: 'dimension', group: 't', value: '0.01px' },
+        { name: '--t-md', type: 'dimension', group: 't', value: '0.02px' },
+        { name: '--t-lg', type: 'dimension', group: 't', value: '0.04px' },
+      ];
+      const scale: TokenScale = { tokens: tiny.map((t) => t.name), base: 1000, rule: { kind: 'factors', factors: [0.0001, 0.0001, 0.0001] } };
+      const onScaleChange = vi.fn();
+      const onChange = vi.fn();
+      renderWithIcons(<TokenPanel tokens={tiny} onChange={onChange} scales={{ t: scale }} onScaleChange={onScaleChange} />);
+      fireEvent.keyDown(within(screen.getByRole('group', { name: 't' })).getByRole('slider', { name: '--t-sm' }), { key: 'ArrowRight' });
+      expect(onScaleChange).not.toHaveBeenCalled();
+      expect(onChange).toHaveBeenCalledWith('--t-sm', '0.02px');
+    });
+
     it('refits factors of 1 from a base that is not positive', () => {
       const onScaleChange = vi.fn();
       const byStep: TokenScale = { ...byFactors, base: -1, rule: { kind: 'step', step: 4 } };

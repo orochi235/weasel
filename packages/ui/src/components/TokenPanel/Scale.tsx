@@ -144,9 +144,11 @@ function ScaleSlider({
       const amount = round(2 ** thumb.value);
       if (amount === amounts[i] || amount <= 0) return;
       const at = generator ? generator.tokens.indexOf(thumb.token) : -1;
-      // A factor reaches the dragged amount only from a positive base, and only for a step it has an entry for.
-      if (fitted && generator && generator.base > 0 && at >= 0 && at < fitted.length) {
-        fitted = fitted.map((f, j) => (j === at ? roundFit(amount / generator.base) || f : f));
+      const factor = generator && generator.base > 0 ? roundFit(amount / generator.base) : 0;
+      // A factor reaches the dragged amount only from a positive base, only for a step it has an entry for, and only
+      // when it does not round away to nothing.
+      if (fitted && factor > 0 && at >= 0 && at < fitted.length) {
+        fitted = fitted.map((f, j) => (j === at ? factor : f));
       } else {
         onChange(thumb.token, `${amount}${unit}`);
       }
