@@ -1,5 +1,4 @@
 import {
-  boundsOfPath,
   pathThroughPoseFrame,
   PATH_L,
   PATH_M,
@@ -156,7 +155,7 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const outline = textOutlineOf(d, { ...pose, ...textBoxOf(d, pose) }, ctx?.inherited);
     if (d.overflow !== 'clip') return outline;
     const clip = pathThroughPoseFrame({ kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height }, pose);
-    return clippedOutline(outline, clip, boundsOfPath(clip));
+    return clippedOutline(outline, clip);
   },
   // Line boxes and glyphs follow the faces and the registered layout engines.
   geometryGeneration: () => faceGeneration() + textEngineGeneration(),

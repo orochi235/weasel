@@ -19,9 +19,11 @@ export function textOutlineOf(d: TextNodeData, box: PathInWorldPose, inherited?:
   };
 }
 
-/** `outline` cut to `clip`, a world-space path whose bounds are `box`: what a clipped text node draws. */
-export function clippedOutline(outline: NodeOutline, clip: Path, box: Rect): NodeOutline {
-  const cut = (path: Path): Path => (inside(boundsOfPath(path), box) ? path : pathIntersect(path, clip));
+/** `outline` cut to `clip`, a world-space path: what a clipped text node draws. */
+export function clippedOutline(outline: NodeOutline, clip: Path): NodeOutline {
+  // Only a rect clip covers all of its bounds; a rotated one leaves corners a glyph can sit in.
+  const box = clip.kind === 'rect' ? clip : null;
+  const cut = (path: Path): Path => (box && inside(boundsOfPath(path), box) ? path : pathIntersect(path, clip));
   return {
     stroked: outline.stroked,
     path: () => cut(outline.path()),
