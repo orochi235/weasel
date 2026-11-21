@@ -186,6 +186,36 @@ describe('PatternPicker images', () => {
       expect(onChange.mock.calls.map((c) => c[0].kind)).toEqual(['dots']);
     });
 
+    it('commits nothing when the picker is held before the read finishes', async () => {
+      const onChange = vi.fn();
+      const { pending, readImage } = reads();
+      const el = (disabled: boolean) => (
+        <PatternPicker value={seedPattern('hatch', '#123456')} color="#123456" onChange={onChange} readImage={readImage} disabled={disabled} />
+      );
+      const { rerender } = render(el(false));
+      upload();
+      rerender(el(true));
+      pending[0]?.resolve(READ);
+      await settle();
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('commits through the onChange of the render the read finishes in', async () => {
+      const first = vi.fn();
+      const second = vi.fn();
+      const { pending, readImage } = reads();
+      const el = (onChange: () => void) => (
+        <PatternPicker value={seedPattern('hatch', '#123456')} color="#123456" onChange={onChange} readImage={readImage} />
+      );
+      const { rerender } = render(el(first));
+      upload();
+      rerender(el(second));
+      pending[0]?.resolve(READ);
+      await settle();
+      expect(first).not.toHaveBeenCalled();
+      expect(second).toHaveBeenCalledTimes(1);
+    });
+
     it('commits nothing once the picker has unmounted', async () => {
       const onChange = vi.fn();
       const { pending, readImage } = reads();
