@@ -48,7 +48,8 @@ export interface PresentationMessageOptions {
   /** Names this lab, for a page that holds several: a message whose `lab` is
    *  another name is ignored, and every `labkit:state` carries this one. */
   name?: string;
-  /** The origins a message is taken from, and the only ones a `labkit:state` is posted to. Default: any. */
+  /** The origins a message is taken from, and the only ones a `labkit:state` is posted to: `'*'` for any, `'/'` for
+   *  the lab's own, or a URL, of which only the origin counts. Default: any; empty, none. */
   origins?: readonly string[];
 }
 
@@ -101,6 +102,24 @@ export function presentationState(
   };
 }
 
+/** `origins` as a message's `origin` reads them: each URL cut to its origin, and any of them `'*'` makes
+ *  them all `['*']`. `'/'`, the lab's own origin, stays as `postMessage` takes it. Throws on one that is not
+ *  `'*'`, `'/'` or a URL with an origin. */
+function presentationOrigins(origins: readonly string[] | undefined): string[] {
+  if (origins === undefined || origins.includes('*')) return ['*'];
+  const cut = origins.map((o) => {
+    if (o === '/') return o;
+    let origin = 'null';
+    try {
+      origin = new URL(o).origin;
+    } catch {}
+    if (origin === 'null')
+      throw new Error(`[labkit] messages.origins: "${o}" is not '*', '/' or an http(s) URL`);
+    return origin;
+  });
+  return [...new Set(cut)];
+}
+
 function run(command: PresentationCommand, handle: TrialClockHandle): void {
   const hold = transportHoldOf(handle.clock);
   hold.touch();
@@ -128,18 +147,23 @@ export function usePresentationMessages(
   const handle = useSyncExternalStore(clocks.subscribe, () =>
     trialId === null ? null : clocks.get(trialId),
   );
-  const allowed = origins?.join(' ');
+  const allowed = JSON.stringify(presentationOrigins(origins));
   useEffect(() => {
-    if (!active || !view || (clocked && !handle)) return;
+    const targets = JSON.parse(allowed) as string[];
+    if (!active || !view || (clocked && !handle) || targets.length === 0) return;
     const host = view.parent;
-    const targets = allowed === undefined ? ['*'] : allowed.split(' ');
     const post = (): void => {
       const state = presentationState(handle, name);
       for (const target of targets) host.postMessage(state, target);
     };
     const onMessage = (event: MessageEvent): void => {
       if (event.source !== host && event.source !== view) return;
-      if (allowed !== undefined && !targets.includes(event.origin)) return;
+      if (
+        !targets.some(
+          (t) => t === '*' || t === event.origin || (t === '/' && event.origin === view.origin),
+        )
+      )
+        return;
       const command = presentationCommand(event.data, name);
       if (!command) return;
       if (command.type === 'labkit:query') post();

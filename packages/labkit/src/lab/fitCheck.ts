@@ -81,8 +81,9 @@ function overflows(el: Element): boolean {
 export function explainLabScroll(lab: Element, shellBody: Element): string | null {
   if (overflows(shellBody)) {
     const r = shellBody.getBoundingClientRect();
-    const top = r.top + shellBody.clientTop;
-    const left = r.left + shellBody.clientLeft;
+    // Where the padding box would sit unscrolled, since its descendants' rects move with the scroll.
+    const top = r.top + shellBody.clientTop - shellBody.scrollTop;
+    const left = r.left + shellBody.clientLeft - shellBody.scrollLeft;
     const bound = {
       top,
       left,

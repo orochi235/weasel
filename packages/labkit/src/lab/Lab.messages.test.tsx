@@ -231,6 +231,33 @@ describe('a presented lab’s messages', () => {
     expect(new Set(targets)).toEqual(new Set(origins));
   });
 
+  it('takes commands from an origin given with a path', async ({ host }) => {
+    const origins = ['https://host.example/', 'https://docs.example/embed/'];
+    await host.mount({ duration: SPAN }, { messages: { origins } });
+    await host.send({ type: 'labkit:play' }, { origin: 'https://docs.example' });
+    expect(c().rate).toBe(1);
+  });
+
+  it("takes commands from any origin under '*'", async ({ host }) => {
+    await host.mount({ duration: SPAN }, { messages: { origins: ['*'] } });
+    await host.send({ type: 'labkit:play' }, { origin: 'https://elsewhere.example' });
+    expect(c().rate).toBe(1);
+  });
+
+  it('neither posts nor listens given no origins', async ({ host }) => {
+    await host.mount({ duration: SPAN }, { messages: { origins: [] } });
+    expect(states()).toEqual([]);
+    await host.send({ type: 'labkit:play' });
+    expect(c().rate).toBe(0);
+  });
+
+  it('throws on an origin that is not a URL', async ({ host }) => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    await expect(
+      host.mount({ duration: SPAN }, { messages: { origins: ['host.example'] } }),
+    ).rejects.toThrow(/host\.example/);
+  });
+
   it('takes a message addressed to another lab as not its own', async ({ host }) => {
     await host.mount({ duration: SPAN }, { messages: { name: 'hero' } });
     await host.send({ type: 'labkit:play', lab: 'other' });

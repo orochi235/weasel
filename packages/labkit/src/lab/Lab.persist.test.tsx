@@ -184,6 +184,34 @@ describe('<Lab> with a storageKey', () => {
     expect(backing.has(`${P}trial:ok`)).toBe(true);
   });
 
+  it('opens in the mode it was last switched to over its `mode` prop', async () => {
+    const P = labPrefix('kept-mode');
+    const backing = new Map<string, unknown>([
+      [`${P}meta`, { version: CURRENT_DOCUMENT_VERSION, mode: 'dark' }],
+    ]);
+    const storage = createMemoryAdapter(backing);
+    const { container } = renderWithIcons(
+      <Lab instruments={[stub]} storageKey="kept-mode" storage={storage} mode="light" />,
+    );
+    await screen.findByTestId('stub-content');
+    await act(async () => {});
+    expect(container.querySelector('.lk-lab')?.getAttribute('data-wzl-mode')).toBe('dark');
+    expect(backing.get(`${P}meta`)).toMatchObject({ mode: 'dark' });
+  });
+
+  it('switches to a `mode` prop that changes after mount', async () => {
+    const storage = createMemoryAdapter();
+    const view = renderWithIcons(
+      <Lab instruments={[stub]} storageKey="moved-mode" storage={storage} mode="light" />,
+    );
+    await screen.findByTestId('stub-content');
+    view.rerender(
+      <Lab instruments={[stub]} storageKey="moved-mode" storage={storage} mode="dark" />,
+    );
+    const root = view.container.querySelector('.lk-lab');
+    await waitFor(() => expect(root?.getAttribute('data-wzl-mode')).toBe('dark'));
+  });
+
   it('closes the lab on unmount, sending what was queued', async () => {
     const backing = new Map<string, unknown>();
     const view = renderWithIcons(
