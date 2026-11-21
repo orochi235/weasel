@@ -135,6 +135,8 @@ export function breakLines(
   cur = entries;
   wrapSpans(cps, opts, tabCount === 0 ? flatWidth : tabbedWidth, pushSpan, hyphenWidth);
   cur = NONE;
+  // A pooled line this call left unused would otherwise hold the last layout's entries for good.
+  for (let i = brokenCount; i < broken.length; i++) truncate(broken[i].entries, 0);
   broken.length = brokenCount;
 
   let breaks: Uint8Array | null = null;

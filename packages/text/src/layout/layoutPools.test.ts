@@ -4,6 +4,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutRuns, type LaidOutRuns } from './layoutRuns';
+import { breakLines } from './layoutLines';
+import { measureRuns } from './layoutEntries';
 import type { LayoutRunsOptions } from './layoutOpts';
 import { layoutAndPaint } from './testing/layoutAndPaint';
 import type { PaintedRuns } from './paintRuns';
@@ -45,6 +47,14 @@ describe('layout pools', () => {
     layoutRuns([RUN_PLAIN('BA\nAB\nA B A B A B')], { maxWidth: 40, lineHeight: 2, align: 'right' });
     expect(laid.lines).toHaveLength(lines);
     expect(laid.lines.map((l) => [l.x0, l.x1, l.y0, l.y1, l.baselineY])).toEqual(box);
+  });
+
+  it('keeps no entries on a line the next layout leaves unused', () => {
+    const entries = measureRuns([RUN_PLAIN('AB\nBA\nAB\nBA')], 4);
+    const lines = [...breakLines(entries, entries.map((e) => e.cp), { maxWidth: 120, alignWidth: 120, lineHeight: 1.2, justify: true })];
+    expect(lines).toHaveLength(4);
+    layoutRuns([RUN_PLAIN('AB')], WRAPPED);
+    expect(lines.slice(1).map((l) => l.entries.length)).toEqual([0, 0, 0]);
   });
 
   it('paints a text the same before and after one with more groups, and leaves a painting as it was', () => {
