@@ -26,18 +26,15 @@ const DEFAULTS: Required<BadgeOutlineEffectParams> = {
 };
 
 const Outline: EffectModule<BadgeOutlineEffectParams> = {
-  Component: ({ sampler, boxW, boxH, params }) => {
+  Component: ({ sampler, params }) => {
     const cfg = { ...DEFAULTS, ...params };
     const css = useColorCss();
-    const sx = 100 / boxW;
-    const sy = 100 / boxH;
-    const widthVb = cfg.width * Math.max(sx, sy);
     return (
       <path
         d={sampler.bodyPath}
         fill="none"
         stroke={css(cfg.color)}
-        strokeWidth={widthVb}
+        strokeWidth={cfg.width}
         strokeDasharray={cfg.dash || undefined}
         strokeOpacity={cfg.opacity}
         vectorEffect="non-scaling-stroke"

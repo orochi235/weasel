@@ -60,7 +60,7 @@ const DEFAULTS: Required<BadgeAquaEffectParams> = {
 };
 
 const Aqua: EffectModule<BadgeAquaEffectParams> = {
-  Component: ({ sampler, boxW, boxH, variant, params }) => {
+  Component: ({ sampler, variant, params }) => {
     const bodyGradId = useId();
     const glossGradId = useId();
     const glossClipId = useId();
@@ -110,7 +110,7 @@ const Aqua: EffectModule<BadgeAquaEffectParams> = {
 
         {/* 3. Bezel and 4. rim */}
         <GlassStrokes
-          sampler={sampler} boxW={boxW} boxH={boxH}
+          sampler={sampler}
           bezelAlpha={cfg.bezelAlpha} bezelWidth={cfg.bezelWidth} rimAlpha={cfg.rimAlpha} rimWidth={cfg.rimWidth}
         />
       </>

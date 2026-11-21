@@ -50,7 +50,7 @@ const DEFAULTS: Required<BadgeMetalEffectParams> = {
 };
 
 const Metal: EffectModule<BadgeMetalEffectParams> = {
-  Component: ({ sampler, boxW, boxH, variant, params }) => {
+  Component: ({ sampler, variant, params }) => {
     const bodyGradId = useId();
     const glossGradId = useId();
     const glossClipId = useId();
@@ -112,7 +112,7 @@ const Metal: EffectModule<BadgeMetalEffectParams> = {
         )}
 
         <GlassStrokes
-          sampler={sampler} boxW={boxW} boxH={boxH}
+          sampler={sampler}
           bezelAlpha={bezelAlpha} bezelWidth={cfg.bezelWidth} rimAlpha={rimAlpha} rimWidth={cfg.rimWidth}
         />
       </>
