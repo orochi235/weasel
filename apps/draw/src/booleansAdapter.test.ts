@@ -116,6 +116,20 @@ describe('drawBooleansAdapter result data', () => {
     expect(data).toMatchObject({ label: 'ring', fill: { paint: { color: '#f00' } } });
     expect(data.stroke).toBeUndefined();
   });
+
+  it('leaves a note\'s frame and minimum size off the path made from it', () => {
+    const { scene, adapter } = setup();
+    scene.update(asNodeId('b'), {
+      data: {
+        path: rectPath(0, 0, 10, 10), label: 'note', background: { color: '#ff0' }, padding: 8,
+        overflow: 'clip', edge: 'torn', shadow: true, minSize: { width: 48, height: 48 },
+      } as unknown as WeaselDrawData,
+    });
+    scene.setSelection([asNodeId('a'), asNodeId('b')]);
+    const result = applyBooleanOp(adapter, 'union');
+    const [id] = result.kind === 'applied' ? result.resultIds : [];
+    expect(Object.keys(scene.get(asNodeId(id!))!.data).sort()).toEqual(['label', 'path']);
+  });
 });
 
 describe('drawBooleansAdapter with strokes counted', () => {
