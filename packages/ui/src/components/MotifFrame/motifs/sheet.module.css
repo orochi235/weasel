@@ -6,8 +6,10 @@
   border-radius: var(--_s-radius);
   padding: var(--_s-pad);
   box-shadow: var(--wzl-bevel-raised, none);
-  backdrop-filter: blur(var(--_s-blur, 0));
-  -webkit-backdrop-filter: blur(var(--_s-blur, 0));
+  /* With no blur set this is none: any other filter makes the sheet a containing block for fixed descendants. */
+  --_s-backdrop: blur(var(--_s-blur));
+  backdrop-filter: var(--_s-backdrop, none);
+  -webkit-backdrop-filter: var(--_s-backdrop, none);
 }
 
 .title {
