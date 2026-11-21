@@ -53,6 +53,9 @@ export function useContainedRoot(explicit?: Element | null): Element | null {
 }
 
 /** The `portalContainer` prop every weasel overlay accepts. */
+/** `ModalOverlay` props an overlay drawn in a contained root cannot honor, which it warns about rather than drops. */
+export const CONTAINED_UNHELD_OVERLAY_PROPS = ['onEnter', 'onExit', 'UNSTABLE_deferUntilEntered', 'render'] as const;
+
 export interface OverlayPortalProps {
   /**
    * Where the overlay's portal mounts. Defaults to the nearest ancestor of
