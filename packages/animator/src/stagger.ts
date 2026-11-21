@@ -161,11 +161,11 @@ class CompositeHandle implements AnimationHandle {
   }
 
   timeScale(): number {
-    return this.timeScale_;
+    return this.supervisor.timeScale();
   }
 
   isPaused(): boolean {
-    return this.paused_;
+    return this.supervisor.isPaused();
   }
 }
 

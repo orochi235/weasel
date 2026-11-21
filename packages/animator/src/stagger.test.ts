@@ -287,3 +287,20 @@ describe('animator.stagger', () => {
     expect(ticking).toEqual([false, false]);
   });
 });
+
+describe('a stagger handle once it has ended', () => {
+  it('reads a time scale of 1 and unpaused, as a loop handle does', () => {
+    const { animator, advance } = mountAnimator();
+    const h = animator.stagger([0, 1], 50, () => animator.tween({ from: 0, to: 1, ms: 100, onTick: () => {} }));
+    h.setTimeScale(2);
+    expect(h.timeScale()).toBe(2);
+    advance(1000);
+    expect(animator.isActive()).toBe(false);
+    expect(h.timeScale()).toBe(1);
+    const paused = animator.stagger([0], 0, () => animator.tween({ from: 0, to: 1, ms: 100, onTick: () => {} }));
+    paused.pause();
+    expect(paused.isPaused()).toBe(true);
+    paused.cancel();
+    expect(paused.isPaused()).toBe(false);
+  });
+});

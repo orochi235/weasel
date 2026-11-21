@@ -18,7 +18,8 @@ export interface TargetAxes<T> {
    *  which `spine` does not reach. Without it, every dot in a name is a step. */
   paths?: readonly (readonly string[])[];
   /** Optional. `value` with `delta` added axis by axis: what `from` answers for `to(value)`
-   *  plus `delta`, built with no array between. A read of a moving target goes through it. */
+   *  plus `delta`, built with no array between. A read of a moving target goes through it.
+   *  `delta` is `count` long and is reused once the call returns: copy what must outlive it. */
   add?(value: T, delta: ArrayLike<number>): T;
   /** Optional. Puts `value`'s axes into `out` from `at`: what `to` answers, with no array
    *  built. `readInto` goes through it. */
@@ -213,8 +214,10 @@ export interface TargetState<T = unknown> {
 
 const states = new WeakMap<object, TargetState>();
 
-/** Where a read gathers what a target's animations add, on the way to `axes.add`. */
-let scratch = new Float64Array(16);
+/** Where a read gathers what a target's animations add for `axes.add`, one per axis count. */
+const scratches: (Float64Array | undefined)[] = [];
+/** Whether an `axes.add` is running: one that reads another target gets a `delta` of its own. */
+let adding = false;
 
 /** How much of the voices of an animation with destination its target shows, on one axis: all
  *  but the share that is its move, which shows by what `cover` of holds leave of it and `kept`
@@ -304,11 +307,11 @@ export function readTarget<T>(s: TargetState<T>): T {
     return axes.from(a);
   }
   const n = axes.count;
-  if (scratch.length < n) scratch = new Float64Array(n);
-  const d = scratch;
-  d.fill(0, 0, n);
+  const d = adding ? new Float64Array(n) : (scratches[n] ??= new Float64Array(n)).fill(0);
   addMoving(s, d, 0);
-  return axes.add(committed, d);
+  if (adding) return axes.add(committed, d);
+  adding = true;
+  try { return axes.add(committed, d); } finally { adding = false; }
 }
 
 /** The value `s` shows now, as its axes, in `out` from `at`. */

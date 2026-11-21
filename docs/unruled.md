@@ -3518,3 +3518,8 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): a run grammar whose delimiter is a backslash throws in `runsToMarkdown` and
   `markdownToRuns`, since the reader takes a backslash for an escape and loses the marker. Reading a backslash run as
   a marker before trying it as an escape was the alternative, which leaves no way to write a literal backslash.
+
+## Audit round sixty-five (2026-11-21): animator
+
+- 2026-11-21 (the fixer's call): `createTargetTable` throws for a `capacity` that is not a whole number (2.5, NaN,
+  Infinity), naming `capacity`, and still treats one below 1 as 1. Rounding a fraction up was the alternative.

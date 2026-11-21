@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { createTargetTable } from './targetTable';
+import { describe, expect, it, vi } from 'vitest';
+import { createTargetTable, rowTableOf } from './targetTable';
 
 describe("a target table's rows", () => {
   it('refuses to remove a row twice, so no two adds answer one row', () => {
@@ -42,5 +42,21 @@ describe("a target table's rows", () => {
     expect(t.add([1, 2, 3])).toBe(a);
     expect(() => t.add([1])).toThrow(/3 numbers/);
     expect(t.add([4, 5, 6])).toBe(1);
+  });
+});
+
+describe('a target table made from frozen options', () => {
+  it('fills its rows again without writing to the options', () => {
+    const show = vi.fn();
+    const t = createTargetTable(Object.freeze({ axes: 1, show }));
+    t.add([0]);
+    expect(() => rowTableOf(t).refill()).not.toThrow();
+    expect(show).not.toHaveBeenCalled();
+  });
+});
+
+describe('a target table capacity', () => {
+  it.each([2.5, Number.NaN, Infinity])('refuses %s rows, naming capacity', (capacity) => {
+    expect(() => createTargetTable({ axes: 2, capacity })).toThrow(/`capacity` is a whole number/);
   });
 });

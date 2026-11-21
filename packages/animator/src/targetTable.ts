@@ -13,7 +13,7 @@ export interface TargetTableOptions<S extends ShownArray = Float64Array> {
   /** The kind of array to keep `shown` in. Default `Float64Array`. Pass `Float32Array` for a
    *  painter that uploads it: the table then fills that each frame, and no copy is made. */
   shown?: new (length: number) => S;
-  /** Rows to make room for at first. The table grows past it. Default 64. */
+  /** Rows to make room for at first, a whole number. The table grows past it. Default 64. */
   capacity?: number;
   /** Called after `row` is committed: by `set`, by an animation starting on it, and by one
    *  canceled on it. */
@@ -154,12 +154,17 @@ export function rowTableOf(table: TargetTable<ShownArray>): RowTable {
   return rows;
 }
 
+function rowsAtFirst(capacity = 64): number {
+  if (!Number.isInteger(capacity)) throw new Error(`createTargetTable: \`capacity\` is a whole number of rows, not ${capacity}`);
+  return Math.max(capacity, 1);
+}
+
 /** Make a {@link TargetTable} whose rows each hold `axes` numbers. */
 export function createTargetTable<S extends ShownArray = Float64Array>(opts: TargetTableOptions<S>): TargetTable<S> {
   const n = opts.axes;
   const Shown = opts.shown ?? (Float64Array as unknown as new (length: number) => S);
   if (!Number.isInteger(n) || n < 1) throw new Error('createTargetTable: `axes` is a whole number of at least 1');
-  let committed = new Float64Array(Math.max(opts.capacity ?? 64, 1) * n);
+  let committed = new Float64Array(rowsAtFirst(opts.capacity) * n);
   let shown = new Shown(committed.length);
   const index = createRowIndex();
   const targets: (Target<number[]> | undefined)[] = [];
@@ -192,6 +197,12 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
     opts.set?.(row);
   };
 
+  const fillRows = (columns: (group: object) => LaneColumns | null): void => {
+    last = columns;
+    pass(shown, committed, n, holds, moves, columns(rows), columns(moves.group), stamp, ++passes);
+    flush();
+  };
+
   const rows: RowTable = {
     mark: (row) => { marks.add(row); },
     settle() {
@@ -200,17 +211,13 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
       marks.clear();
     },
     fill(columns) {
-      last = columns;
-      pass(shown, committed, n, holds, moves, columns(rows), columns(moves.group), stamp, ++passes);
-      flush();
+      fillRows(columns);
       opts.show?.();
     },
     move: moves.move,
     beside: moves.beside,
     refill() {
-      const { show } = opts;
-      opts.show = undefined;
-      try { rows.fill(last); } finally { opts.show = show; }
+      fillRows(last);
     },
     rows: index.rows,
     holds: () => (holds ??= createHoldStore(n, committed.length / n, (row, out, at) => {

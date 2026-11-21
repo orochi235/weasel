@@ -61,7 +61,7 @@ export function axisIndexes(
       if (how === 'name') asName = true;
       else asPath = true;
     }
-    if (paths && asName && asPath) {
+    if (asName && asPath) {
       throw new Error(`${what} names "${w}", which is both an axis and the start of other axes' paths`);
     }
     if (out.length === before) {

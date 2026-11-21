@@ -22,8 +22,14 @@ export function setJointWeights(
   for (const [i, raw] of weights) {
     if (i < 0 || i >= count) continue;
     const w = Math.min(1, Math.max(0, raw));
+    // Only a weight above 0 counts, as `skinPath` applies them; a negative or NaN one is zeroed.
     let others = 0;
-    for (const name in next) if (name !== joint) others += next[name][i];
+    for (const name in next) {
+      if (name === joint) continue;
+      const v = next[name][i]!;
+      if (v > 0) others += v;
+      else next[name][i] = 0;
+    }
     if (others > 0) {
       for (const name in next) if (name !== joint) next[name][i] *= (1 - w) / others;
       own[i] = w;
