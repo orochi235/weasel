@@ -1,12 +1,20 @@
 import { luminanceContrast, relativeLuminance } from '@weasel-js/paint';
 
+/** Fills the pixel with `color`, throwing where a canvas would ignore the color and keep the last fill. */
+function fill(ctx: CanvasRenderingContext2D, color: string): void {
+  ctx.fillStyle = '#010203';
+  ctx.fillStyle = color;
+  const first = ctx.fillStyle;
+  ctx.fillStyle = '#040506';
+  ctx.fillStyle = color;
+  if (ctx.fillStyle !== first) throw new Error(`painted: a canvas cannot parse the color ${JSON.stringify(color)}`);
+  ctx.fillRect(0, 0, 1, 1);
+}
+
 /** `color` painted over `ground`, as the three channels a screen shows. Browser only: it reads a canvas. */
 export function painted(color: string, ground: string): [number, number, number] {
   const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!;
-  for (const fill of [ground, color]) {
-    ctx.fillStyle = fill;
-    ctx.fillRect(0, 0, 1, 1);
-  }
+  for (const layer of [ground, color]) fill(ctx, layer);
   const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
   return [r, g, b];
 }
