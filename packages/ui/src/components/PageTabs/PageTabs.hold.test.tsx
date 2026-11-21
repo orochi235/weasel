@@ -79,4 +79,20 @@ describe('PageTabs held', () => {
     expect(calls.onAdd).not.toHaveBeenCalled();
     expect(add()).toHaveAccessibleDescription('Busy');
   });
+
+  it('ends a rename the hold cuts off, and does not reopen it when the hold lifts', () => {
+    const calls = { onSelect: vi.fn(), onRename: vi.fn(), onMove: vi.fn() };
+    const view = render(<PageTabs aria-label="Pages" pages={PAGES} current="a" labelOf={pageName} {...calls} />);
+    const list = screen.getByRole('tablist');
+    list.setPointerCapture = vi.fn();
+    list.releasePointerCapture = vi.fn();
+    press(tab('Page 2'));
+    press(tab('Page 2'));
+    expect(screen.getByLabelText('Page name')).toBeInTheDocument();
+    view.rerender(<PageTabs aria-label="Pages" pages={PAGES} current="a" labelOf={pageName} {...calls} disabled />);
+    expect(screen.queryByLabelText('Page name')).toBeNull();
+    view.rerender(<PageTabs aria-label="Pages" pages={PAGES} current="a" labelOf={pageName} {...calls} />);
+    expect(screen.queryByLabelText('Page name')).toBeNull();
+    expect(calls.onRename).not.toHaveBeenCalled();
+  });
 });

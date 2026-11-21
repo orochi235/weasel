@@ -44,6 +44,8 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
   const onMove = hold.refuses ? undefined : props.onMove;
   const { labelOf } = props;
   const [editing, setEditing] = useState<string | null>(null);
+  // A hold ends a rename under way; lifting it must not reopen the field.
+  if (editing !== null && !onRename) setEditing(null);
   const lastPress = useRef<{ id: string; at: number } | null>(null);
   const doubleMs = useKitSetting('gestures.doubleClickMs') ?? DOUBLE_CLICK_MAX_MS;
   /** The tab React Aria selected during the press under way, which the press must not report again. */
