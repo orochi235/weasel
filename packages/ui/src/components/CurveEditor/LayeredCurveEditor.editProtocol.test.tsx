@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { fireEvent, render } from '@testing-library/react';
 import { keyframeLayerState, type KeyframeLayerState } from './createKeyframeLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
@@ -7,6 +7,8 @@ import { KeyframeLayer } from './KeyframeLayer';
 import { FunctionLayer } from './FunctionLayer';
 import { functionLayerState } from './createFunctionLayer';
 import { CurveEditor } from './CurveEditor';
+import { CustomLayer } from './CustomLayer';
+import type { CurveLayer } from './layerTypes';
 
 // The edit protocol, docs/conventions.md "Edit callbacks", as the curve editors keep it.
 // Plot is 200×100 over t 0..1000, value 0..10: x = t / 5, y = 100 - value * 10.
@@ -134,5 +136,38 @@ describe('CurveEditor and the edit protocol', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
     fireEvent.pointerUp(document, { clientX: 120, clientY: 30, pointerId: 1 });
     expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe('two layers editing on one key', () => {
+  const counter = (id: string): CurveLayer<number> => ({
+    id,
+    render: (n) => <text data-count={id}>{n}</text>,
+    onKeyDown: (n, e, _ctx, { commit }) => { if (e.key === 'Enter') commit(n + 1); },
+  });
+  const top = counter('top');
+  const bottom = counter('bottom');
+
+  function Two(): ReactElement {
+    const [a, setA] = useState(0);
+    const [b, setB] = useState(0);
+    return (
+      <LayeredCurveEditor width={200} height={100}>
+        <CustomLayer layer={bottom} state={b} onInput={setB} />
+        <CustomLayer layer={top} state={a} onInput={setA} />
+      </LayeredCurveEditor>
+    );
+  }
+
+  it('records an undo step for each, so one undo reverts only the last', () => {
+    const { container } = render(<Two />);
+    const svg = container.querySelector('svg')!;
+    const count = (id: string) => container.querySelector(`[data-count="${id}"]`)!.textContent;
+    fireEvent.keyDown(svg, { key: 'Enter' });
+    expect([count('top'), count('bottom')]).toEqual(['1', '1']);
+    fireEvent.keyDown(svg, { key: 'z', ctrlKey: true });
+    expect([count('top'), count('bottom')]).toEqual(['1', '0']);
+    fireEvent.keyDown(svg, { key: 'z', ctrlKey: true });
+    expect([count('top'), count('bottom')]).toEqual(['0', '0']);
   });
 });

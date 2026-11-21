@@ -136,7 +136,11 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     }
     // A layer prevents default on the native event, which the synthetic
     // event's `isDefaultPrevented` does not observe.
-    dispatchKey(layers(), e.nativeEvent, makeCtx(readModifiers(e)), snapshot, settleEdit);
+    dispatchKey(layers(), e.nativeEvent, makeCtx(readModifiers(e)), (made) => {
+      const snap = snapshot();
+      for (const edit of made) snap.set(edit.entry, edit.next);
+      return snap;
+    }, settleEdit);
   }, [busy, historyEnabled, undo, redo, makeCtx, snapshot, settleEdit, layers]);
 
   const onSvgContextMenu = useCallback((
