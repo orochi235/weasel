@@ -3235,3 +3235,8 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (my call, audit round 54): a group or layer `composite` string that is no `CompositeOp` (`'multiply'`,
   or an inherited name such as `'constructor'`) throws a `RangeError` naming it and listing the operators, rather
   than being drawn as `source-over`. It still ends the frame, as the bare `TypeError` it replaces did.
+## Audit round fifty-nine (2026-11-20): segmented bars
+
+- 2026-11-20 (my call, audit round 59): a `SegmentedBar` whose `steps` stop at the default `SWEEP_CAP` warns once,
+  naming the bar, and draws the first 256; a bar given `cap` takes the cut as meant and does not warn. Showing a
+  note in the bar, as `Sequence` does, was the alternative, and has no room in a row of segments.
