@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useActionsRegistry, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import {
   actionItems,
@@ -22,16 +22,24 @@ export interface PaletteItems {
 
 const ENABLED: ActionEnabledResult = { enabled: true };
 
+const NONE: readonly ActionItem[] = [];
+
 /** The registry's entries and each one's `enabled` state, both read when
- *  `open` turns true, narrowed to `query`. */
+ *  `open` turns true, narrowed to `query`. Once closed, the last list stays,
+ *  so a dialog fading out still shows what it held. */
 export function usePaletteItems(open: boolean, query: string): PaletteItems {
   const registry = useActionsRegistry();
   const depReg = useOptionalDepRegistry();
 
-  const allItems = useMemo<readonly ActionItem[]>(
-    () => (registry && open ? registry.list().flatMap(actionItems) : []),
-    [registry, open],
+  const [read, setRead] = useState<{ open: boolean; registry: ActionsRegistry | null; items: readonly ActionItem[] }>(
+    () => ({ open, registry, items: registry && open ? registry.list().flatMap(actionItems) : NONE }),
   );
+  if (open && (!read.open || read.registry !== registry)) {
+    setRead({ open, registry, items: registry ? registry.list().flatMap(actionItems) : NONE });
+  } else if (!open && read.open) {
+    setRead({ ...read, open });
+  }
+  const allItems = registry ? read.items : NONE;
 
   const enabledByKey = useMemo<ReadonlyMap<string, ActionEnabledResult>>(() => {
     const m = new Map<string, ActionEnabledResult>();
