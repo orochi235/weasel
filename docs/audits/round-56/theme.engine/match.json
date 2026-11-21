@@ -1,0 +1,18 @@
+{
+ "pairs": [],
+ "a": [],
+ "b": [
+  "An offset rule with a fractional offset derives a reference to `<ramp>-undefined`, and derive throws",
+  "A child's by-axis pin brings back the parent's pin at the axis values it leaves out, even on a step the child generates itself",
+  "A gray anchor on a lightness ramp contributes a noise hue that the steps between it and a chromatic anchor blend toward",
+  "Equalizing chroma raises an anchor's chroma, though anchors are documented as only ever desaturated",
+  "`feasible` describes the palette before equalization, so the returned swatches can break the gates it vouches for",
+  "`order: 'hue'` sorts anchors by their raw hue, so an anchor given as -30° or 400° lands at the wrong place in the ring",
+  "A token that depends on two axes is declared only in blocks naming both, so setting one axis attribute leaves it at `:root`'s value",
+  "A token only a non-default theme declares is never reset, so a nested theme subtree inherits it from the outer theme",
+  "The generated `themes.ts` fails to typecheck as soon as one theme or selection lacks a token another declares",
+  "`emitThemes` writes user-keyed records as JSON object literals, so a seed, axis value or theme named `__proto__` is lost in the generated module",
+  "`derive` reads a dotted reference whole while every other reader strips its group, so `{color.accent}` throws in derive and resolves everywhere else",
+  "An `away` offset rule's dependencies leave out the step it lands on, so a pin varying that step is missed"
+ ]
+}

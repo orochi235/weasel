@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "Notched's corner arcs overrun the badge when eccentricity is not 1, turning the outline into a self-crossing path",
+  "Perforated hangs the render when holePitch is 0, and allocates without bound for a tiny pitch",
+  "Shield's top-corner arcs reach below the shoulder when erosion is high and shoulderY is low, so the path folds back upward",
+  "Coffin reads shoulderHalfHeight as an increment over headHalfHeight, so most of its range does nothing",
+  "Sparkler and Starburst don't validate `points`: 0 emits an invalid path, a fractional count breaks the alternation, and Infinity hangs",
+  "A shapeParams key set explicitly to undefined overrides the default and turns the geometry into NaN"
+ ],
+ "b": []
+}

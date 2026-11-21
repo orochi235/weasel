@@ -1,0 +1,9 @@
+{
+ "pairs": [],
+ "a": [],
+ "b": [
+  "useEditDraft keeps a stale draft that reappears when the value returns to where the draft began",
+  "ui's `holdsPositioned` misses `container-type`, `content-visibility: auto` and `will-change: contain`, which gestures' `containsFixed` already answers",
+  "Row and roving focus read the main window's `document.activeElement`, so in a popout window focus restore and the tab stop go wrong"
+ ]
+}

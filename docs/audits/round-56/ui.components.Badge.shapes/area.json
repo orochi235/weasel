@@ -1,0 +1,68 @@
+{
+ "id": "ui.components.Badge.shapes",
+ "commit": "b8bed07d81b65bf8aef03565da2f604b0db44025",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Badge/shapes/Beavis.tsx",
+  "packages/ui/src/components/Badge/shapes/Cloud.tsx",
+  "packages/ui/src/components/Badge/shapes/Coffin.tsx",
+  "packages/ui/src/components/Badge/shapes/Crest.tsx",
+  "packages/ui/src/components/Badge/shapes/Hexagon.tsx",
+  "packages/ui/src/components/Badge/shapes/House.tsx",
+  "packages/ui/src/components/Badge/shapes/Notched.tsx",
+  "packages/ui/src/components/Badge/shapes/Perforated.tsx",
+  "packages/ui/src/components/Badge/shapes/Pill.tsx",
+  "packages/ui/src/components/Badge/shapes/Plain.tsx",
+  "packages/ui/src/components/Badge/shapes/Plaque.tsx",
+  "packages/ui/src/components/Badge/shapes/Postage.tsx",
+  "packages/ui/src/components/Badge/shapes/Quatrefoil.tsx",
+  "packages/ui/src/components/Badge/shapes/Receipt.tsx",
+  "packages/ui/src/components/Badge/shapes/Ribbon.tsx",
+  "packages/ui/src/components/Badge/shapes/Scalloped.tsx",
+  "packages/ui/src/components/Badge/shapes/Shield.tsx",
+  "packages/ui/src/components/Badge/shapes/Sparkler.tsx",
+  "packages/ui/src/components/Badge/shapes/Square.tsx",
+  "packages/ui/src/components/Badge/shapes/Starburst.tsx",
+  "packages/ui/src/components/Badge/shapes/Urn.tsx",
+  "packages/ui/src/components/Badge/shapes/Wood.tsx",
+  "packages/ui/src/components/Badge/shapes/index.ts"
+ ],
+ "a": 6,
+ "b": 0,
+ "m": 0,
+ "distinct": 6,
+ "incomplete": [
+  "B"
+ ],
+ "read": {
+  "A": 23,
+  "B": 0
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.2,
+   "B": 1.1,
+   "match": 0,
+   "fix": 9.7
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 864717,
+  "costUsd": 2.67
+ },
+ "fixCommits": [
+  "25561f07cf867b08cc848cf7aac6c054260ae388",
+  "2fa47df7ac177fefce0ff7c4917f6c1b86aa6b36",
+  "6c7e360f4e14612e4732d4ec48aad460659036fc",
+  "7e52e88424b2b90d60dc6f0bd050b9bf1d5cfdf5",
+  "cacb8d2b99d6c884a79fa44c86ae42285050e0a6",
+  "198cf5bd46c463206d9f8f0dfea50a02cac1c2b9",
+  "2c019884a5dd2736f7d57ed9ba1a302542bb9220"
+ ]
+}

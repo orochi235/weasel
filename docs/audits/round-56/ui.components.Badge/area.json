@@ -1,0 +1,58 @@
+{
+ "id": "ui.components.Badge",
+ "commit": "b8bed07d81b65bf8aef03565da2f604b0db44025",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Badge/Badge.module.css",
+  "packages/ui/src/components/Badge/Badge.stories.module.css",
+  "packages/ui/src/components/Badge/Badge.stories.tsx",
+  "packages/ui/src/components/Badge/Badge.tsx",
+  "packages/ui/src/components/Badge/BadgeDeco.tsx",
+  "packages/ui/src/components/Badge/BadgeLabel.tsx",
+  "packages/ui/src/components/Badge/BadgeRoot.tsx",
+  "packages/ui/src/components/Badge/badgeRoles.ts",
+  "packages/ui/src/components/Badge/catalog.ts",
+  "packages/ui/src/components/Badge/composeOutline.ts",
+  "packages/ui/src/components/Badge/composeSpec.ts",
+  "packages/ui/src/components/Badge/geometry.ts",
+  "packages/ui/src/components/Badge/index.ts",
+  "packages/ui/src/components/Badge/looks.ts",
+  "packages/ui/src/components/Badge/paddingSides.ts",
+  "packages/ui/src/components/Badge/powerlineProps.ts",
+  "packages/ui/src/components/Badge/types.ts",
+  "packages/ui/src/components/Badge/useCrawlPhase.ts",
+  "packages/ui/src/components/Badge/useInsets.ts",
+  "packages/ui/src/components/Badge/useSvgBox.ts",
+  "packages/ui/src/components/Badge/variantIcons.ts"
+ ],
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "incomplete": [
+  "A",
+  "B"
+ ],
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0.9,
+   "B": 0.9,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou"
+  },
+  "weightedTokens": 0,
+  "costUsd": 0
+ },
+ "fixCommits": []
+}
