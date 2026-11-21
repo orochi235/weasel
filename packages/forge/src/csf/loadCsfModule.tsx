@@ -89,6 +89,20 @@ function resolveViewport(parameters: Record<string, unknown>, globals: Record<st
   return selected?.isRotated ? { width: height, height: width } : { width, height };
 }
 
+/** Whether `fn` declares a parameter. `length` stops at the first default or rest one, so a render written
+ *  `(args = {}) =>` or `(...a) =>` counts none; its source still shows them. Unreadable source counts as taking args. */
+function takesArgs(fn: (...args: never[]) => unknown): boolean {
+  if (fn.length > 0) return true;
+  let source: string;
+  try {
+    source = Function.prototype.toString.call(fn);
+  } catch {
+    return true;
+  }
+  const open = source.indexOf('(');
+  return open === -1 || source.includes('[native code]') || !/^\(\s*\)/.test(source.slice(open));
+}
+
 const InnerStory = createContext<(() => ReactNode) | null>(null);
 
 function Story(): ReactNode {
@@ -167,7 +181,7 @@ export function loadCsfModule(
     const matchers = (parameters.controls as { matchers?: ControlMatchers } | undefined)?.matchers;
     const render = spec.render ?? meta.render;
     // A render that takes no args draws the same thing whatever a prop's control says.
-    const fromProps = render === undefined || render.length > 0 ? propArgTypes : undefined;
+    const fromProps = render === undefined || takesArgs(render) ? propArgTypes : undefined;
     const argTypes = combineParameters(fromProps, meta.argTypes, spec.argTypes) as Record<string, ArgType>;
     const config = argsToSchema(args, argTypes, isPlainObject(matchers) ? matchers : {});
     const choices = argChoices(argTypes);
