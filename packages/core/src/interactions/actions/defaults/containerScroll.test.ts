@@ -130,4 +130,11 @@ describe('containerScrollAction', () => {
     for (let i = 0; i < 5; i++) scene.add({ kind: 'mark', layer: 'l', pose: { x: 0, y: 0, width: 5, height: 5 }, data: null, parent: C });
     expect(scrollRange(scene as never, C, AUTO_POSE_DESCRIPTOR)).toBeNull();
   });
+
+  it('keeps the z of a scroll offset it moves', () => {
+    const { scene, deps } = setup();
+    scene.scroll.set(C, { x: 0, y: 10, z: 5 });
+    wheel(deps, { x: 120, y: 150 }, 60);
+    expect(scene.scroll.get(C)).toEqual({ x: 0, y: 40, z: 5 });
+  });
 });

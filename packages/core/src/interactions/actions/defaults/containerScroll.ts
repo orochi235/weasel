@@ -158,7 +158,7 @@ export const containerScrollAction = defineAction({
       const by = wheelPan({ x: 0, y: 0, scale: view.scale }, delta, { swapAxis: params?.swapAxis === true });
       for (const hit of scrollablesAt(scene, world, poseDescriptorOf(deps.poseDescriptor))) {
         const from = scene.scroll.get(hit.id) ?? { x: 0, y: 0 };
-        const to = { x: clamp(from.x + by.x, ...hit.range.x), y: clamp(from.y + by.y, ...hit.range.y) };
+        const to = { ...from, x: clamp(from.x + by.x, ...hit.range.x), y: clamp(from.y + by.y, ...hit.range.y) };
         if (to.x === from.x && to.y === from.y) continue;
         scene.scroll.set(hit.id, to);
         return undefined;
