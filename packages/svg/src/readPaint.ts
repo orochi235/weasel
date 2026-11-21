@@ -41,8 +41,9 @@ export function readPaint(
         if (a != null) (flat as { opacity?: number }).opacity = a;
         return flat;
       }
-      onWarn(`${attr} references unknown gradient #${parsed.id}`);
-      return { kind: 'solid', color: defaultColor };
+      // SVG paints an unresolvable reference with no fallback as `none`.
+      onWarn(`${attr} references unknown gradient #${parsed.id}; painted as none`);
+      return { kind: 'none' };
     }
     return { kind: 'gradient', paint: opacity != null ? { ...paint, opacity } : paint };
   }
