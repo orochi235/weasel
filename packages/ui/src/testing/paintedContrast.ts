@@ -11,23 +11,29 @@ function fill(ctx: CanvasRenderingContext2D, color: string): void {
   ctx.fillRect(0, 0, 1, 1);
 }
 
-/** `layers` painted bottom first. Throws when the result is not opaque, since what shows then depends on what is behind. */
-function paint(layers: string[]): [number, number, number] {
+/**
+ * `top` painted over `ground`, whose layers go bottom first. Throws when the ground is not opaque, since what shows then
+ * depends on what is behind it; an opaque `top` would otherwise hide that.
+ */
+function paint(ground: string[], top?: string): [number, number, number] {
   const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!;
-  for (const layer of layers) fill(ctx, layer);
-  const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
-  if (a !== 255) throw new Error(`painted: ${JSON.stringify(layers[0])} is not opaque; pass the backdrop it is drawn over`);
+  for (const layer of ground) fill(ctx, layer);
+  if (ctx.getImageData(0, 0, 1, 1).data[3] !== 255) {
+    throw new Error(`painted: ${JSON.stringify(ground[ground.length - 1])} is not opaque; pass the backdrop it is drawn over`);
+  }
+  if (top !== undefined) fill(ctx, top);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
   return [r, g, b];
 }
 
-const under = (backdrop: string | undefined, ...layers: string[]) => (backdrop === undefined ? layers : [backdrop, ...layers]);
+const under = (backdrop: string | undefined, ground: string) => (backdrop === undefined ? [ground] : [backdrop, ground]);
 
 /**
  * `color` painted over `ground`, as the three channels a screen shows. A translucent ground throws unless given the
  * `backdrop` it is drawn over. Browser only: it reads a canvas.
  */
 export function painted(color: string, ground: string, backdrop?: string): [number, number, number] {
-  return paint(under(backdrop, ground, color));
+  return paint(under(backdrop, ground), color);
 }
 
 const luminance = ([r, g, b]: [number, number, number]): number => relativeLuminance(r / 255, g / 255, b / 255);
@@ -39,5 +45,5 @@ export function contrast(a: [number, number, number], b: [number, number, number
 
 /** The contrast of a line drawn in `line` on a fill of `fill`, both CSS colors, over `backdrop` if `fill` is translucent. */
 export function lineContrast(line: string, fill: string, backdrop?: string): number {
-  return contrast(paint(under(backdrop, fill, line)), paint(under(backdrop, fill)));
+  return contrast(paint(under(backdrop, fill), line), paint(under(backdrop, fill)));
 }

@@ -48,7 +48,7 @@ export function BadgeTarget(props: BadgeTargetProps) {
     onBlur: (e: FocusEvent<HTMLElement>) => { extra?.onBlur?.(e); onFocusChange(false); },
     onClick: (e: MouseEvent<HTMLElement>) => {
       extra?.onClick?.(e);
-      if (!e.defaultPrevented && element !== 'span') onClick?.();
+      if (!e.defaultPrevented) onClick?.();
     },
   };
   const onOwnKey = (key: string, act: (e: KeyboardEvent) => void) => (e: KeyboardEvent) => {

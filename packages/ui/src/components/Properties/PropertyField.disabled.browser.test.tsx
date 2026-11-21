@@ -41,7 +41,8 @@ it('leaves an enabled row at full strength', () => {
 it('dims a textarea disabled with a reason', () => {
   render(<PropertyField kind="string" control="textarea" label="Notes" value="x" disabled disabledReason="Locked" onChange={() => {}} />);
   const area = screen.getByRole('textbox', { name: 'Notes' });
-  expect(area).not.toBeDisabled();
+  expect(area.matches(':disabled')).toBe(false);
+  expect(area).toHaveAttribute('aria-disabled', 'true');
   expect(opacityOf(area)).toBe(0.5);
 });
 

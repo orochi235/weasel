@@ -101,20 +101,7 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
     onSelect(String(key));
   };
 
-  // Captured ahead of the tab list, which would take Alt+arrow as a plain arrow and move focus.
-  const onKeyDownCapture = (e: KeyboardEvent) => {
-    const tab = (e.target as Element).closest('[role="tab"]');
-    const [back, on] = tab && inlineDirection(tab) === 'rtl' ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
-    const by = onMove ? nudgeOf(e, back, on) : null;
-    const at = tab ? Array.from(tab.parentElement?.children ?? []).indexOf(tab) : -1;
-    // React Aria selects nothing for the lit tab, so choosing it from the keyboard is reported here.
-    if (e.target === tab && current !== null && pages[at]?.id === current && isActivation(e)) return onSelect(current);
-    // Keys inside the rename field are the field's: Alt+arrow moves its caret by a word.
-    if (by === null || e.target !== tab || pages[at] === undefined) return;
-    e.preventDefault();
-    e.stopPropagation();
-    drag.nudge(pages[at].id, at, by);
-  };
+  const onKeyDownCapture = createKeyCapture(pages, current, onSelect, onMove ? drag.nudge : undefined);
 
   const tabs = pages.map((page, i) => {
     const cls = [s.tab];
@@ -156,6 +143,28 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
         </DragGhost>
       )
       : null,
+  };
+}
+
+/** Captured ahead of the tab list, which would take Alt+arrow as a plain arrow and move focus. */
+function createKeyCapture(
+  pages: readonly PageTabItem[],
+  current: string | null,
+  onSelect: (id: string) => void,
+  nudge: ((id: string, at: number, by: -1 | 1) => unknown) | undefined,
+): (e: KeyboardEvent) => void {
+  return (e) => {
+    const tab = (e.target as Element).closest('[role="tab"]');
+    const [back, on] = tab && inlineDirection(tab) === 'rtl' ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
+    const by = nudge ? nudgeOf(e, back, on) : null;
+    const at = tab ? Array.from(tab.parentElement?.children ?? []).indexOf(tab) : -1;
+    // React Aria selects nothing for the lit tab, so choosing it from the keyboard is reported here.
+    if (e.target === tab && current !== null && pages[at]?.id === current && isActivation(e)) return onSelect(current);
+    // Keys inside the rename field are the field's: Alt+arrow moves its caret by a word.
+    if (by === null || !nudge || e.target !== tab || pages[at] === undefined) return;
+    e.preventDefault();
+    e.stopPropagation();
+    nudge(pages[at].id, at, by);
   };
 }
 

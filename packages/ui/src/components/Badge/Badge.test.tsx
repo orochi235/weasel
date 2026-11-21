@@ -292,16 +292,6 @@ describe('Badge removable with an action of its own', () => {
     expect(root.hasAttribute('data-focused')).toBe(false);
   });
 
-  it('runs no onClick on a span badge, whether or not a tooltip splits its label off', () => {
-    const onClick = vi.fn();
-    const { container, rerender } = render(<Badge as="span" onClick={onClick} onRemove={() => {}}>tag</Badge>);
-    fireEvent.click(screen.getByText('tag'));
-    rerender(<Badge as="span" tooltip="t" onClick={onClick} onRemove={() => {}}>tag</Badge>);
-    fireEvent.click(screen.getByText('tag'));
-    fireEvent.click(container.firstElementChild as HTMLElement);
-    expect(onClick).not.toHaveBeenCalled();
-  });
-
   it('describes the click target with the tooltip', () => {
     render(<Badge tooltip="Filter by tag" onClick={() => {}} onRemove={() => {}}>tag</Badge>);
     const target = screen.getByRole('button', { name: 'tag' });
