@@ -8,7 +8,7 @@ export const INPUTS = ['**/package.json', 'package-lock.json', '**/tsconfig*.jso
 
 /**
  * What `vitest.config.ts`, the run's launcher and the setup files load, and nothing else: a plugin
- * only a dev server or a build loads (draw's `vite-plugin-skulk-map.ts`) reaches only the tests that
+ * only a dev server or a build loads (`scripts/vite-site-proxy.ts`) reaches only the tests that
  * import it. `fleet-triggers.test.ts` fails on a loaded file none of these covers, and on one these
  * cover that nothing loads.
  */

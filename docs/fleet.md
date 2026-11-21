@@ -81,7 +81,7 @@ its cores busy (`scripts/bench-typecheck.runs.jsonl`). `npm run typecheck` runs 
 
 **`npm run sweep:controls -- [--only id,id]` runs the control sweep on a node with a browser** (`onto do --gui`,
 tree `weasel-control-sweep`): it operates every demo control and lists each that changes nothing. A nightly
-audit runs it only when started with `--sweep`; how it judges a control is in `scripts/skulk/README.md`, "The control sweep".
+audit runs it only when started with `--sweep`; how it judges a control is in skulkr's README, "The control sweep".
 
 **The gate stops at ci.yml's first build; `npm run test:fleet:postbuild -- <ref>` runs the rest.**
 From a clean `npm ci` it runs that build and every ci.yml step after it — the manifest, tree-shake
