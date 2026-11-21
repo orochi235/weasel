@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { lineItems } from './barItems';
+import { BarGroup } from './barParts';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -31,4 +32,8 @@ describe('lineItems', () => {
     expect(warn).toHaveBeenCalledOnce();
   });
 
+  it('marks a keyed group as a unit of the top level', () => {
+    const items = lineItems([<BarGroup key="history"><b /></BarGroup>, <i key="save" />], true);
+    expect(items.filter((item) => !item.divider).map((item) => [item.key, item.in])).toEqual([['history', ''], ['save', '']]);
+  });
 });

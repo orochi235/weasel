@@ -75,7 +75,7 @@ export function lineItems(children: ReactNode, mark: boolean): LineItem[] {
     } else if (child.type === BarGroup) {
       const key = own(child.key, path);
       if ((child.props as { end?: boolean }).end) items.push({ key: `${key}:end`, spacer: true });
-      items.push({ divider: true }, { key, content: child }, { divider: true });
+      items.push({ divider: true }, { key, content: child, ...unit(key, child) }, { divider: true });
     } else {
       const key = own(child.key, path);
       items.push({ key, content: child, ...unit(key, child) });
