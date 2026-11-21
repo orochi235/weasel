@@ -3230,3 +3230,10 @@ Calls the lanes made without a ruling:
   a caller who passed it as an increment now gets that number as the half-height.
 - 2026-11-20: A badge shape's repeat counts (`sparkler` and `starburst` `points`, `receipt` `teeth`) stop at 256, and a
   `perforated` badge's `holePitch` at no less than 1px. Both bounds are picked to keep a render finite, not ruled.
+
+## Audit round fifty-eight (2026-11-20): Badge
+
+- 2026-11-20 (the fixer's call): a `Badge`'s `padding` prop, and padding given through `style`, is the badge's own
+  padding, and its shape's insets add to it as they add to the default padding, so a `shield` given `padding={4}` keeps
+  its point clear. Before, either one replaced the insets, so the label could run into the outline; the alternative was
+  to keep that and stop a fitted base from counting insets the padding no longer held.

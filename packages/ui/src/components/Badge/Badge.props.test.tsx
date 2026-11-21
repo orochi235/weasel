@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { Badge } from './Badge';
@@ -74,5 +76,17 @@ describe('Badge mask effects', () => {
     const mask = container.querySelector('mask') as SVGMaskElement;
     expect(Number(mask.getAttribute('y'))).toBeLessThan(-10);
     expect(Number(mask.querySelector('rect')!.getAttribute('height'))).toBeGreaterThan(120);
+  });
+});
+
+describe('Badge padding', () => {
+  const css = readFileSync(resolve(__dirname, 'Badge.module.css'), 'utf8');
+
+  it("adds a shape's insets to the padding prop on every side, not only to the default padding", () => {
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      const rules = [...css.matchAll(new RegExp(`--_pad-${side}: ([^;]+);`, 'g'))].map((m) => m[1]);
+      expect(rules.length).toBeGreaterThan(0);
+      for (const rule of rules) expect(rule).toMatch(new RegExp(`^calc\\(var\\(--badge-pad-${side}, .*\\) \\+ var\\(--badge-inset-${side}, 0px\\)\\)$`));
+    }
   });
 });

@@ -85,12 +85,12 @@
    variants (above) reuse it as the text color — re-assert the muted fg. */
 .badge:not([data-grade]):not([data-variant='solid']) { --badge-fg: var(--_s-accent, var(--wzl-emphasis-fg, var(--wzl-fg-muted))); }
 
-/* The `padding` prop arrives as the --badge-pad-<side> properties. */
+/* The `padding` prop arrives as the --badge-pad-<side> properties; a shape's insets add to it. */
 .badge {
-  --_pad-top: var(--badge-pad-top, calc(var(--badge-pad-y, 1px) + var(--badge-inset-top, 0px)));
-  --_pad-right: var(--badge-pad-right, calc(var(--badge-pad-x, 6px) + var(--badge-inset-right, 0px)));
-  --_pad-bottom: var(--badge-pad-bottom, calc(var(--badge-pad-y, 1px) + var(--badge-inset-bottom, 0px)));
-  --_pad-left: var(--badge-pad-left, calc(var(--badge-pad-x, 6px) + var(--badge-inset-left, 0px)));
+  --_pad-top: calc(var(--badge-pad-top, var(--badge-pad-y, 1px)) + var(--badge-inset-top, 0px));
+  --_pad-right: calc(var(--badge-pad-right, var(--badge-pad-x, 6px)) + var(--badge-inset-right, 0px));
+  --_pad-bottom: calc(var(--badge-pad-bottom, var(--badge-pad-y, 1px)) + var(--badge-inset-bottom, 0px));
+  --_pad-left: calc(var(--badge-pad-left, var(--badge-pad-x, 6px)) + var(--badge-inset-left, 0px));
   padding: var(--_pad-top) var(--_pad-right) var(--_pad-bottom) var(--_pad-left);
 }
 
@@ -128,10 +128,10 @@
 .badge[data-shape='plain'] {
   display: inline;
   background: transparent;
-  --_pad-top: var(--badge-pad-top, 0px);
-  --_pad-right: var(--badge-pad-right, 0px);
-  --_pad-bottom: var(--badge-pad-bottom, 0px);
-  --_pad-left: var(--badge-pad-left, 0px);
+  --_pad-top: calc(var(--badge-pad-top, 0px) + var(--badge-inset-top, 0px));
+  --_pad-right: calc(var(--badge-pad-right, 0px) + var(--badge-inset-right, 0px));
+  --_pad-bottom: calc(var(--badge-pad-bottom, 0px) + var(--badge-inset-bottom, 0px));
+  --_pad-left: calc(var(--badge-pad-left, 0px) + var(--badge-inset-left, 0px));
   letter-spacing: 0.04em;
   text-transform: none;
   color: var(--badge-fg);
