@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { colorItemAt, generatedPaletteCount } from './colorListItems';
+import { colorCount, colorItemAt, generatedPaletteCount } from './colorListItems';
 
 describe('generated color lists', () => {
   it('keeps a bounded number of generated palettes however many counts are asked for', () => {
@@ -7,4 +7,9 @@ describe('generated color lists', () => {
     expect(generatedPaletteCount()).toBeLessThanOrEqual(16);
   });
 
+  it('counts the colors colorAt wraps over, not the count asked for', () => {
+    const list = { generate: { count: 2.5 } };
+    expect(colorCount(list)).toBe(2);
+    expect(colorItemAt(list, 2)).toBe(colorItemAt(list, 0));
+  });
 });

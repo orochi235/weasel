@@ -109,5 +109,5 @@ export function colorItemAt(list: Exclude<ColorList, RampColors>, i: number): Co
 export function colorCount(list: ColorList, ctx: ColorContext = defaultContext()): number | undefined {
   if (typeof list === 'function') return undefined;
   if ('ramp' in list) return rampSteps(ctx.theme, list.ramp).length;
-  return 'generate' in list ? list.generate.count : list.length;
+  return 'generate' in list ? generatedColors(list).length : list.length;
 }
