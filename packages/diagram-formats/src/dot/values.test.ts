@@ -32,6 +32,11 @@ describe('DOT values', () => {
     expect(dotColor('gray90')).toBe('#e5e5e5');
     expect(dotColor('grey100')).toBe('#ffffff');
     expect(dotColor('steelblue')).toBe('steelblue');
+    expect(dotColor('red3')).toBe('#cd0000');
+    expect(dotColor('SteelBlue1')).toBe('#63b8ff');
+    expect(dotColor('navyblue')).toBe('#000080');
+    expect(dotColor('/x11/LightGoldenrod')).toBe('#eedd82');
+    expect(dotColor('constructor')).toBe('constructor');
   });
 
   it('reads back what it writes', () => {
