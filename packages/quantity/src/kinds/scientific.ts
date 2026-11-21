@@ -58,6 +58,7 @@ function asENotation(text: string): string {
 export const scientificKind: DisplayKind<ScientificDisplay> = {
   kind: 'scientific',
   format: (value, d, ctx) => {
+    if (!Number.isFinite(value)) return [{ type: 'number', value: String(value) }];
     const s = split(value, d, ctx.locale);
     if (s === null) return zeroParts(ctx.locale);
     if (d.form === 'e') {
@@ -72,12 +73,14 @@ export const scientificKind: DisplayKind<ScientificDisplay> = {
     ];
   },
   speak: (value, d, ctx: FormatContext) => {
+    if (!Number.isFinite(value)) return String(value);
     const s = split(value, d, ctx.locale);
     if (s === null) return zeroParts(ctx.locale)[0]!.value;
     return spokenSign(`${s.mantissa} times 10 to the power of ${spokenSign(String(s.exponent))}`);
   },
   parse: (text, _d, ctx) => parseNumberIn(asENotation(latinDigits(text, ctx.locale)), undefined, ctx.locale),
   mathml: (value, d, ctx) => {
+    if (!Number.isFinite(value)) return undefined;
     const s = split(value, d, ctx.locale);
     if (s === null) return undefined;
     const sign = s.mantissa.startsWith(MINUS_SIGN) ? `<mo>${MINUS_SIGN}</mo>` : '';

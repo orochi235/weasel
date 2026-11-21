@@ -1,5 +1,6 @@
 import { entryScale, type UnitEntry } from './units';
 import { unitSpellings } from './catalog';
+import { remembered } from './memo';
 
 /**
  * The real MINUS SIGN (U+2212), which display formatting uses instead of the
@@ -86,6 +87,13 @@ export function parseNumberIn(text: string, units: Readonly<UnitTable> | undefin
 }
 
 /** `n`, or NaN when it is infinite: an infinity reads only from a word for it, never from digits. */
+/** `n` times `10 ** power`, moved through its shortest decimal form so 0.145 at 2 is 14.5 and not 14.499999999999998. */
+export function shiftedDecimal(n: number, power: number): number {
+  if (!Number.isFinite(n)) return n;
+  const [mantissa, exponent = '0'] = String(n).split('e');
+  return Number(`${mantissa}e${Number(exponent) + power}`);
+}
+
 export const finiteOrNaN = (n: number): number => (Number.isFinite(n) ? n : Number.NaN);
 
 /** `parseNumber` once every number in the text is in `en-US` form with no grouping. */
@@ -130,8 +138,10 @@ const shapes = new Map<string, NumberShape>();
 
 /** How `locale` writes a number, read off `Intl`: its separators and group sizes (`12,34,567` in `en-IN`). */
 function shapeOf(locale: string): NumberShape {
-  const known = shapes.get(locale);
-  if (known) return known;
+  return remembered(shapes, locale, () => readShape(locale));
+}
+
+function readShape(locale: string): NumberShape {
   const parts = new Intl.NumberFormat(locale).formatToParts(123_456_789.5);
   const sizes = parts.filter((p) => p.type === 'integer').map((p) => p.value.length);
   const primary = sizes.at(-1)!;
@@ -146,15 +156,13 @@ function shapeOf(locale: string): NumberShape {
     : { pattern: new RegExp(`[${own.join('')}]`, 'gu'), latin: new Map(own.map((c, i) => [c, String(i)])) };
   const d = escapeClass(decimal);
   const integer = String.raw`\d{1,${secondary}}(?:[${g}]\d{${secondary}})*[${g}]\d{${primary}}|\d*`;
-  const shape: NumberShape = {
+  return {
     run: new RegExp(String.raw`(?:\d|[${d}]\d)(?:[\d${g}${d}]*\d)?[${d}]?`, 'g'),
     whole: new RegExp(String.raw`^(?:${integer})(?:[${d}]\d*)?$`),
     group: new RegExp(`[${g}]`, 'g'),
     decimal,
     digits,
   };
-  shapes.set(locale, shape);
-  return shape;
 }
 
 export const escapeClass = (c: string) => c.replace(/[\\\]^-]/g, '\\$&');

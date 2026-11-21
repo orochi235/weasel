@@ -1,5 +1,5 @@
 import { escapeMarkup, intlParts, numberPart, signed, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
-import { finiteOrNaN, latinDigits, MINUS_SIGN, parseNumberIn, unsignedZero } from '../number';
+import { finiteOrNaN, latinDigits, MINUS_SIGN, parseNumberIn, shiftedDecimal, unsignedZero } from '../number';
 
 /** A share of one as a percentage: 0.25 shows `25%`. Typed text reads as
  *  percent with or without the sign. */
@@ -22,7 +22,7 @@ export const percentKind: DisplayKind<PercentDisplay> = {
   speak: (value, d, ctx) =>
     spokenSign(
       textOf(
-        intlParts(value * 100, ctx.locale, {
+        intlParts(shiftedDecimal(value, 2), ctx.locale, {
           style: 'unit',
           unit: 'percent',
           unitDisplay: 'long',
@@ -238,7 +238,7 @@ export const fractionKind: DisplayKind<FractionDisplay> = {
     const sign = /^[-−+]/.test(rest) ? rest[0]! : '';
     const body = rest.slice(sign.length).trimStart();
     const coefficient = body === '' || /^[/⁄]/.test(body) ? `${sign}1${body}` : rest;
-    return parseFraction(coefficient, ctx.locale) * constant.value;
+    return finiteOrNaN(parseFraction(coefficient, ctx.locale) * constant.value);
   },
   mathml: (value, d) => {
     if (!Number.isFinite(value)) return undefined;
@@ -323,9 +323,10 @@ export const multiplierKind: DisplayKind<MultiplierDisplay> = {
   ],
   speak: (value, d, ctx) => spokenSign(`${numberPart(value, ctx.locale, multiplierDigits(d)).value} times`),
   parse: (text, d, ctx) => {
-    const own = d.symbol !== undefined && text.trimEnd().endsWith(d.symbol)
-      ? text.trimEnd().slice(0, -d.symbol.length)
-      : text.trimEnd().replace(/[x×X]$/, '');
+    const t = text.trimEnd();
+    const own = d.symbol && t.endsWith(d.symbol)
+      ? t.slice(0, t.length - d.symbol.length)
+      : t.replace(/[x×X]$/, '');
     return parseNumberIn(own, undefined, ctx.locale);
   },
 };
@@ -351,7 +352,7 @@ function zoomParts(z: number, locale: string): Part[] {
       type: 'number',
       value: signed(unsignedZero(v, (x) => x.toLocaleString(locale, { useGrouping: grouping, maximumFractionDigits: 1 }))),
     });
-  if (z <= 2) return [n(Math.round(z * 100)), { type: 'percentSign', value: '%' }];
+  if (z <= 2) return [n(Math.round(shiftedDecimal(z, 2))), { type: 'percentSign', value: '%' }];
   if (z >= 100) return [n(Math.round(z), true), { type: 'symbol', value: 'x' }];
   return [n(Math.round(z * 10) / 10), { type: 'symbol', value: 'x' }];
 }

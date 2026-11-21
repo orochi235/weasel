@@ -32,11 +32,15 @@ export function infinityParts(value: number, display: Display | undefined): Part
 /** Typed text as ±Infinity when it names it — the display's own words, `∞`,
  *  `inf`, `infinity` or `infinite`, signed or not — else `undefined`. */
 export function readInfinity(text: string, display: Display | undefined, locale: string): number | undefined {
-  const typed = text.trim().toLocaleLowerCase(locale);
-  const is = (w: Word) => w.text.toLocaleLowerCase(locale) === typed || w.spoken.toLocaleLowerCase(locale) === typed;
+  const trimmed = text.trim();
+  const typed = trimmed.toLocaleLowerCase(locale);
+  // The built-in spellings are English, so `INF` in `tr-TR` lowers to `inf` and not to `ınf`.
+  const english = trimmed.toLowerCase();
+  const same = (word: string) => word.toLocaleLowerCase(locale) === typed || word.toLowerCase() === english;
+  const is = (w: Word) => same(w.text) || same(w.spoken);
   if (is(infinityWord(display, 1))) return Infinity;
   if (is(infinityWord(display, -1))) return -Infinity;
-  const m = /^([+\-−]?)\s*(.*)$/.exec(typed)!;
+  const m = /^([+\-−]?)\s*(.*)$/s.exec(english)!;
   if (!SPELLINGS.includes(m[2]!)) return undefined;
   return m[1] === '-' || m[1] === MINUS_SIGN ? -Infinity : Infinity;
 }

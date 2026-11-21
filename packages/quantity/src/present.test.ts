@@ -84,6 +84,15 @@ describe('quantity shape', () => {
     expect(qty(tag(12, unit('mm', { places: 3 }), 'mm')).to('cm', METRIC_MM).raw)
       .toEqual({ value: 1.2, unit: 'cm', display: unit('cm', { places: 3 }) });
   });
+
+  it('reads typed text in the target unit once converted', () => {
+    const accepts = { mm: 1, cm: 10 };
+    const named = qty(tag(12, unit('mm', { accepts }), 'mm')).to('cm', METRIC_MM);
+    expect(named.parse('1.2cm')).toBe(1.2);
+    expect(named.parse('20mm')).toBe(2);
+    const tagged = qty(tag(12, unit(undefined, { accepts }), 'mm')).to('cm', METRIC_MM);
+    expect(tagged.parse('3cm')).toBe(3);
+  });
 });
 
 /** [display, value, text, spoken] */
@@ -415,9 +424,32 @@ describe('infinity', () => {
     expect(parseAs('12ms', d)).toBe(12);
   });
 
+  it('reads the built-in spellings in upper case under a locale with a dotless i', () => {
+    for (const locale of ['tr-TR', 'az']) {
+      expect(parseAs('Infinity', decimal(), { locale })).toBe(Infinity);
+      expect(parseAs('-INF', decimal(), { locale })).toBe(-Infinity);
+      expect(parseAs('INFINITE', decimal(), { locale })).toBe(Infinity);
+    }
+  });
+
+  it('reads text holding a line break as no number, without throwing', () => {
+    for (const text of ['1\n2', '1\r2', '1\u20282', 'inf\ninity']) expect(parseAs(text, decimal())).toBeNaN();
+  });
+
   it('keeps the word through a tag', () => {
     const q = tag(Infinity, withInfinity(integer(), 'unlimited'));
     expect(qty(retag(q, Infinity)).text).toBe('unlimited');
+  });
+});
+
+describe('percentages round the number they show', () => {
+  it('speaks the number percent shows, and zoom shows the one percent would, where the binary product falls under a half', () => {
+    for (const [value, shown] of [[0.145, '15'], [0.285, '29'], [0.565, '57']] as const) {
+      expect(qty(value, percent()).text).toBe(`${shown}%`);
+      expect(qty(value, percent()).spoken).toBe(`${shown} percent`);
+    }
+    expect(qty(1.005, zoom()).text).toBe('101%');
+    expect(qty(1.005, zoom()).spoken).toBe('101 percent');
   });
 });
 

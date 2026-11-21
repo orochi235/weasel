@@ -73,6 +73,14 @@ describe('fraction counted in e', () => {
   });
 });
 
+describe('multiplier', () => {
+  it('reads back the bare number a display with an empty symbol shows', () => {
+    const d = multiplier({ symbol: '' });
+    expect(parseAs('2.5', d)).toBe(2.5);
+    expect(parseAs('2.5x', d)).toBe(2.5);
+  });
+});
+
 describe('typed digits never read as an infinity', () => {
   it('reads a division by zero as NaN', () => {
     expect(parseAs('1/0', fraction())).toBeNaN();
@@ -85,5 +93,10 @@ describe('typed digits never read as an infinity', () => {
   it('still reads the infinity word', () => {
     expect(parseAs('∞', fraction())).toBe(Infinity);
     expect(parseAs('-∞', ratio())).toBe(-Infinity);
+  });
+
+  it('reads digits counted in a constant past the range of a number as NaN, not infinity', () => {
+    expect(parseAs('1e308π', fraction({ of: 'π' }))).toBeNaN();
+    expect(parseAs('-1e308π', fraction({ of: 'π' }))).toBeNaN();
   });
 });

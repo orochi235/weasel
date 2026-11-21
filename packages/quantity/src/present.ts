@@ -6,10 +6,10 @@ import { bytesKind, currencyKind, durationKind, unitKind } from './kinds/measure
 import { ordinalKind, romanKind } from './kinds/numeral';
 import { scientificKind } from './kinds/scientific';
 import { infinityParts, infinityWord, readInfinity } from './infinity';
-import { parseNumberIn } from './number';
+import { parseNumberIn, type UnitTable } from './number';
 import { defaultLocale } from './localized';
 import { amount, displayOf, retag, tag, unitOf, type Display, type Quantity, type Tagged } from './quantity';
-import { unitScale, type Unit, type UnitSystem } from './units';
+import { entryScale, unitScale, type UnitScale, type Unit, type UnitSystem } from './units';
 
 // Seeded from a static table rather than by each kind registering itself at import, so the package stays
 // free of side effects and a bundler can drop what nobody imports.
@@ -183,7 +183,15 @@ export class QuantityView<Q extends Quantity = Quantity> {
     const to = unitScale(system, target);
     const base = this.value * from.factor + from.offset;
     const value = (base - to.offset) / to.factor;
-    const shown = (d: Display | undefined) => (d?.kind === 'unit' && d['unit'] !== undefined ? { ...d, unit: target } : d);
+    const shown = (d: Display | undefined): Display | undefined => {
+      if (d?.kind !== 'unit') return d;
+      const accepts = d['accepts'] as UnitTable | undefined;
+      return {
+        ...d,
+        ...(d['unit'] === undefined ? {} : { unit: target }),
+        ...(accepts === undefined ? {} : { accepts: rescaled(accepts, from, to) }),
+      };
+    };
     const own = typeof this.raw === 'number' ? undefined : this.raw.display;
     const raw = typeof this.raw === 'number'
       ? tag(value, undefined, target)
@@ -193,6 +201,17 @@ export class QuantityView<Q extends Quantity = Quantity> {
   toJSON(): Q {
     return this.raw;
   }
+}
+
+/** `accepts`, whose entries convert into a unit at `from`, converting into the one at `to` instead. */
+function rescaled(accepts: UnitTable, from: Required<UnitScale>, to: Required<UnitScale>): UnitTable {
+  return Object.fromEntries(Object.entries(accepts).map(([name, entry]) => {
+    const { factor, offset } = entryScale(entry);
+    return [name, {
+      factor: (factor * from.factor) / to.factor,
+      offset: (offset * from.factor + from.offset - to.offset) / to.factor,
+    }];
+  }));
 }
 
 /** Wraps `q` for display: `qty(band.from, fraction()).text`. `fallback` is the

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MINUS_SIGN as MINUS } from '../number';
 import { parseAs, partsOf, present } from '../present';
 import type { Display } from '../quantity';
+import { fraction } from './proportion';
 import { scientific } from './scientific';
 
 /** [display, value, text, spoken] */
@@ -92,5 +93,16 @@ describe('scientific', () => {
 describe('scientific text with surrounding whitespace', () => {
   it.each([' 1.23 × 10⁶ ', '\t10⁻³\n'])('reads %s', (text) => {
     expect(parseAs(text, scientific())).toBe(parseAs(text.trim(), scientific()));
+  });
+});
+
+describe('scientific NaN', () => {
+  it('shows and speaks NaN alone, as the other kinds do, with no power of ten', () => {
+    for (const d of [scientific(), scientific({ form: 'e' })]) {
+      const shown = present(NaN, d);
+      expect(shown.text).toBe('NaN');
+      expect(shown.spoken).toBe('NaN');
+      expect(shown.mathml).toBe(present(NaN, fraction()).mathml);
+    }
   });
 });
