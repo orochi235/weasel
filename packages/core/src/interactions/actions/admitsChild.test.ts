@@ -49,6 +49,16 @@ describe('childVerdict on a page', () => {
   });
 });
 
+describe('childVerdict on a container on a page', () => {
+  it('holds a follower to the page the container is on', () => {
+    const { scene, near } = withFollower();
+    const g = scene.add({ kind: 'group', layer: 'ink', parent: PAGE_B, pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const h = scene.add({ kind: 'group', layer: 'ink', parent: PAGE_A, pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    expect(childVerdict(scene, g, [near], undefined)).toBe(false);
+    expect(childVerdict(scene, h, [near], undefined)).toBe(true);
+  });
+});
+
 describe('childVerdict on a locked container', () => {
   it('refuses a page locked by its own flag, and a group under it, whatever canDropInto says', () => {
     const { scene } = pagedScene();
