@@ -7,7 +7,9 @@
  * `MIXED` becomes a path in the bar's `mixed` set, so each control shows its
  * own indeterminate presentation.
  */
-import { isSolidPaint, resolveFill, resolveScreenLength, type ScreenLength } from '@weasel-js/paint';
+import {
+  isSolidPaint, paintWithColor, resolveFill, resolveScreenLength, rgbaToHex, tryParseColor, type ScreenLength,
+} from '@weasel-js/paint';
 import { MIXED } from '@weasel-js/registry';
 import { numericWeight, SCRIPT_METRICS, scriptMetricsFor } from '@weasel-js/text';
 import { CHARACTER_OPTIONS } from './characterSchema';
@@ -57,7 +59,7 @@ export function CharacterOptions({ value, onChange, children, className }: Chara
       schema={editing ? CHARACTER_OPTIONS : undefined}
       values={editing ? characterValues(value) : undefined}
       mixed={editing ? characterMixed(value) : undefined}
-      onChange={(path, next) => onChange(characterPatch(path, next))}
+      onChange={(path, next) => onChange(characterPatch(path, next, value))}
     >
       {children}
     </ToolOptionsBar>
@@ -67,8 +69,11 @@ export function CharacterOptions({ value, onChange, children, className }: Chara
 /** One control's edit as a run patch. Only `fill` needs shaping: the schema
  *  draws a color and a chip for none, and a run's fill is a record holding
  *  a `Paint`, or `null`. Turning the chip off fills with the color the field shows beside it. */
-function characterPatch(path: string, value: unknown): RunStylePatch {
-  if (path === 'fill') return { fill: { paint: { color: value as string } } satisfies StyledRun['fill'] };
+function characterPatch(path: string, value: unknown, style: RangeStyle | null | undefined): RunStylePatch {
+  if (path === 'fill') {
+    const prev = style?.fill === MIXED ? undefined : resolveFill(style?.fill)?.paint;
+    return { fill: { paint: paintWithColor(isSolidPaint(prev) ? prev : undefined, value as string) } satisfies StyledRun['fill'] };
+  }
   if (path === 'noFill') {
     return { fill: value === true ? null : { paint: { color: CHARACTER_OPTIONS.children.fill.default } } };
   }
@@ -136,7 +141,11 @@ function pick(style: RangeStyle): Record<string, unknown> {
 function solidFill(fill: RangeStyle['fill']): string | undefined {
   if (fill === MIXED) return undefined;
   const paint = resolveFill(fill)?.paint;
-  return isSolidPaint(paint) ? paint.color : undefined;
+  if (!isSolidPaint(paint)) return undefined;
+  if (paint.opacity === undefined || paint.opacity === 1) return paint.color;
+  // The swatch has one alpha to show: the color's own times the paint's opacity.
+  const rgba = tryParseColor(paint.color);
+  return rgba === null ? paint.color : rgbaToHex([rgba[0], rgba[1], rgba[2], rgba[3] * paint.opacity]);
 }
 
 function worldSize(v: ScreenLength | typeof MIXED | undefined): number | undefined {
