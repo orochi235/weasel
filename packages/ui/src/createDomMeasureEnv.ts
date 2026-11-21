@@ -19,7 +19,7 @@ export function createDomMeasureEnv(element: Element): MeasureEnv {
     text(text, font) {
       context ??= element.ownerDocument.createElement('canvas').getContext('2d');
       if (!context) return { width: 0, ascent: font.size * 0.8, descent: font.size * 0.2 };
-      context.font = `${font.weight ?? 400} ${font.size}px ${cssFamilyName(font.family ?? 'sans-serif')}`;
+      context.font = `${font.style ?? 'normal'} ${font.weight ?? 400} ${font.size}px ${cssFamilyName(font.family ?? 'sans-serif')}`;
       const m = context.measureText(text);
       const extent = { width: m.width, ascent: m.fontBoundingBoxAscent, descent: m.fontBoundingBoxDescent };
       return trimsToCaps(element) ? { ...extent, capHeight: context.measureText('H').actualBoundingBoxAscent } : extent;

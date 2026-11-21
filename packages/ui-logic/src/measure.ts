@@ -27,6 +27,8 @@ export interface FontSpec {
   readonly family?: string;
   readonly size: number;
   readonly weight?: number;
+  /** Default `'normal'`. */
+  readonly style?: 'normal' | 'italic';
 }
 
 /** A run of text's advance width and the ascent and descent its line is set with, in px. */

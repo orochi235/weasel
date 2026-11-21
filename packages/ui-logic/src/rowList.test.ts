@@ -65,3 +65,10 @@ describe('measureRowList', () => {
     expect(measureRowList({ rows: many }, UNBOUNDED, env).width).toBe(measureRowList({ rows: [many[5]!] }, UNBOUNDED, env).width);
   });
 });
+
+describe('the empty state', () => {
+  it('is measured in italic, as ItemList sets it', () => {
+    const styled: MeasureEnv = { ...env, text: (t, f) => ({ width: t.length * (f.style === 'italic' ? 6 : 5), ascent: 10, descent: 3 }) };
+    expect(measureRowList({ rows: [], empty: 'None' }, UNBOUNDED, styled).width).toBe(4 * 6 + 8 * 2);
+  });
+});
