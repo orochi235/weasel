@@ -147,7 +147,7 @@ function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
   const items = groupTools(list, groupOrder, toolOrder).flatMap(({ key, tools: group }) =>
     placeSlots(group, shown, stackOf, placed).map((slot): ToolRailItem => (slot.kind === 'tool'
       ? button(slot.tool, key)
-      : { id: slot.members[0].id, group: key, members: slot.members.map((t) => button(t, key)) })));
+      : { id: slot.key, group: key, members: slot.members.map((t) => button(t, key)) })));
 
   return (
     <>

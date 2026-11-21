@@ -63,6 +63,15 @@ describe('ToolPalette stacks', () => {
     expect(stack()).not.toHaveAttribute('aria-current');
   });
 
+  it('keeps the tool last used from it when its first tool stops showing', () => {
+    const { rerender } = renderWithIcons(<Palette />);
+    press(stack());
+    fireEvent.click(screen.getByRole('menuitem', { name: /star/ }));
+    press(screen.getByRole('button', { name: /pen/ }));
+    rerender(<Palette include={(t) => t.id !== 'rect'} />);
+    expect(stack()).toHaveTextContent('star');
+  });
+
   it('draws a stack left with one shown tool as a plain button', () => {
     renderWithIcons(<Palette include={(t) => t.id !== 'ellipse' && t.id !== 'star'} />);
     expect(screen.getByRole('button', { name: /rect/ })).not.toHaveAttribute('aria-haspopup');

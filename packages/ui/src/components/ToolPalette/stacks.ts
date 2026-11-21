@@ -1,10 +1,11 @@
 import type { Tool } from '@weasel-js/routing';
 import { isDev } from '@weasel-js/registry';
 
-/** One button's worth of a palette: a lone tool, or a stack of tools sharing a button. */
+/** One button's worth of a palette: a lone tool, or a stack of tools sharing a button, keyed by the stack's first
+ *  listed id whichever of its tools show, so its button keeps its state as they change. */
 export type PaletteSlot =
   | { kind: 'tool'; tool: Tool }
-  | { kind: 'stack'; members: Tool[] };
+  | { kind: 'stack'; members: Tool[]; key: string };
 
 /**
  * Lays one group's tools out as buttons. A stack takes the place of the first of its members that
@@ -24,7 +25,7 @@ export function placeSlots(
     if (placed.has(stack)) continue;
     placed.add(stack);
     const members = stack.flatMap((id) => shown.get(id) ?? []);
-    slots.push(members.length === 1 ? { kind: 'tool', tool: members[0] } : { kind: 'stack', members });
+    slots.push(members.length === 1 ? { kind: 'tool', tool: members[0] } : { kind: 'stack', members, key: stack[0] });
   }
   return slots;
 }
