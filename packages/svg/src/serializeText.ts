@@ -197,8 +197,11 @@ function runAttrs(
       attrs.push(...(own.length || !writesOpacity(nodeFillOpacity) ? own : ['fill-opacity="1"']));
     }
   }
-  for (const a of coreStrokeAttrs(run.stroke, registry, warn)) attrs.push(a);
-  if (run.stroke) attrs.push(...strokeResets(run.stroke, nodeStroke));
+  const runStroke = coreStrokeAttrs(run.stroke, registry, warn);
+  attrs.push(...runStroke);
+  // A run stroke that draws nothing still replaces the node's, which the `<tspan>` would otherwise inherit.
+  if (run.stroke && runStroke.length === 0 && nodeStroke) attrs.push('stroke="none"');
+  else if (run.stroke) attrs.push(...strokeResets(run.stroke, nodeStroke));
   // `none` included: on a run it overrides a transform the node would pass down.
   if (run.textTransform) attrs.push(`style="text-transform:${run.textTransform}"`);
   // One value turns every glyph of the tspan: a glyph past a list's end takes its last.

@@ -49,6 +49,21 @@ describe('a run stroke that replaces a fuller node stroke', () => {
   });
 });
 
+describe('a run stroke that draws nothing under a node stroke', () => {
+  it('writes stroke none, so the tspan does not take the node\'s', async () => {
+    const { serializeSvg } = await import('./serialize');
+    const node: SvgTextNode = {
+      kind: 'text', x: 0, y: 20, width: 40, height: 14, text: 'ab',
+      stroke: { paint: { kind: 'solid', color: '#ff0000' }, width: 2 },
+      runs: [{ text: 'a' }, { text: 'b', stroke: { paint: { kind: 'solid', color: '#ff0000' }, width: 0 } }],
+    };
+    const svg = serializeSvg([node]);
+    expect(svg).toMatch(/<tspan[^>]*stroke="none"[^>]*>b</);
+    const back = parseSvg(svg).nodes[0] as SvgTextNode;
+    expect(back.runs?.[1]?.stroke).toEqual({});
+  });
+});
+
 describe("a <tspan>'s user-space stroke gradient under the text's transform", () => {
   it('moves with the glyphs as the fill gradient does', () => {
     const grad = '<defs><linearGradient id="g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="10" y2="0">'
