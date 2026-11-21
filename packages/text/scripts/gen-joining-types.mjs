@@ -2,15 +2,16 @@
 //
 //   npm run gen:joining-types
 //
-// Only the joining types D, R, L and C are kept. Everything ArabicShaping.txt leaves out is U, or T where its
-// General_Category is Mn, Me or Cf, which a caller tests with a regex rather than a table.
+// The joining types D, R, L, C and U are kept. Everything ArabicShaping.txt leaves out is U, or T where its
+// General_Category is Mn, Me or Cf, which a caller tests with a regex rather than a table; a listed U row keeps a
+// Cf such as U+0600 ARABIC NUMBER SIGN out of that fallback.
 
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const UNICODE_VERSION = '16.0.0';
 const url = `https://www.unicode.org/Public/${UNICODE_VERSION}/ucd/ArabicShaping.txt`;
-const KEPT = new Set(['D', 'R', 'L', 'C']);
+const KEPT = new Set(['D', 'R', 'L', 'C', 'U']);
 
 const res = await fetch(url);
 if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
@@ -41,7 +42,7 @@ const out = `/**
  * Regenerate with \`npm run gen:joining-types\`.
  */
 
-/** Runs of code points joining as D, R, L or C, each \`start.length\` in base 36 and its type. */
+/** Runs of code points joining as D, R, L, C or U, each \`start.length\` in base 36 and its type. */
 export const JOINING_RUNS = '${packed}';
 `;
 

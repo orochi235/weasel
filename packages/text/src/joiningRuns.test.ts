@@ -33,3 +33,9 @@ test('Syriac and N\'Ko join too', () => {
   expect(joiningRuns([...'ܒܐܒ'])).toEqual(['ܒܐ', 'ܒ']);
   expect(joiningRuns([...'ߒߞߏ'])).toEqual(['ߒߞߏ']);
 });
+
+test('a format character the Unicode data lists as non-joining breaks the letters around it', () => {
+  // U+0600 ARABIC NUMBER SIGN is Cf, but ArabicShaping.txt makes it U, not transparent.
+  expect(joiningRuns(['ب', '؀١', 'ب'])).toEqual(['ب', '؀١', 'ب']);
+  expect(joiningRuns(['ب', '⁧', 'ب'])).toEqual(['ب', '⁧', 'ب']);
+});
