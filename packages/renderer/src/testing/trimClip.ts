@@ -22,13 +22,16 @@ const W = 200;
 const H = 160;
 const TOLERANCE = 0.25;
 
-const renderers: WeaselRenderer[] = [];
+const painted: { renderer: WeaselRenderer; gl: WebGL2RenderingContext }[] = [];
 
-/** Disposes every renderer `paint` made, after each test of the file that calls it. */
+/** Disposes every renderer `paint` made, after each test of the file that calls it, and lets go of its
+ *  context now rather than at collection: a page holds only so many. */
 export function disposeAfterEach(): void {
   afterEach(() => {
-    for (const r of renderers) r.dispose();
-    renderers.length = 0;
+    for (const { renderer, gl } of painted.splice(0)) {
+      renderer.dispose();
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+    }
   });
 }
 
@@ -40,7 +43,7 @@ export function paint(commands: DrawCommand[], antialias: boolean, clip: boolean
   canvas.height = H;
   const gl = canvas.getContext('webgl2', { stencil: true, preserveDrawingBuffer: true, antialias })!;
   const r = new WeaselRenderer({ gl, width: W, height: H, dpr: 1, flattenTolerance: TOLERANCE });
-  renderers.push(r);
+  painted.push({ renderer: r, gl });
   if (!clip) Object.defineProperty(rendererParts(r).batchVariants, 'trimClip', { value: false });
   let used = 0;
   const select = gl.useProgram.bind(gl);
