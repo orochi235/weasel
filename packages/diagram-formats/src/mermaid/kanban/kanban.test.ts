@@ -128,4 +128,9 @@ describe('writing a Mermaid kanban board\'s ids', () => {
     expect(ids(out.text)).toEqual(['card-1', 'card-3']);
   });
 
+  it('writes an id a flowchart reads as a keyword as it is, since a kanban reads it as an id', () => {
+    const out = writeKanban(doc([{ id: 'end', lines: ['a'] }, { id: 'default', lines: ['b'] }], [{ id: 'class', members: ['end', 'default'] }]));
+    expect(ids(out.text)).toEqual(['end', 'default']);
+    expect(page(out.text).data.containers![0]!.lanes![0]!.id).toBe('class');
+  });
 });

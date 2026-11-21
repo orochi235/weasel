@@ -31,7 +31,7 @@ class KanbanWriter {
 
   constructor(readonly out: GraphOut, pool: DataContainer | undefined) {
     const lanes = (out.page.data.containers ?? []).flatMap((c) => (c.lanes ?? []).map((l) => l.id));
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...lanes], { unicode: true, id: ITEM_ID });
+    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...lanes], { unicode: true, id: ITEM_ID, keywords: [] });
     if (pool !== undefined) this.leaveUnwritten(pool);
   }
 
