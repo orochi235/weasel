@@ -20,7 +20,7 @@ const annotationLayerOf = (row: string | null): string | null =>
 export interface SceneLayerListAnnotations {
   /** The picked annotation node, which reads as a selected row. */
   picked: string | null;
-  /** Selecting an annotation row picks it; the content selection stays. */
+  /** Selecting an annotation row picks it, leaving the content selection as it was; a selection holding no annotation picks `null`. */
   pick(id: string | null): void;
   /** The row label for annotation layer `layer`. Default: its id. */
   labelOf?(layer: string): string;
@@ -174,11 +174,14 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
     selectedIds: [...selection.current.map(String), ...(picked !== null ? [picked] : [])],
     onSelectionChange: (ids) => {
       const notes = ids.filter(isAnnotation);
-      if (notes.length > 0) {
-        annotations?.pick(notes.at(-1)!);
-        return;
+      const added = notes.filter((id) => id !== picked).at(-1);
+      if (annotations) {
+        const next = added ?? (picked !== null && notes.includes(picked) ? picked : null);
+        if (next !== picked) annotations.pick(next);
       }
-      selection.set([...withoutPageStructure(scene, ids.filter((id) => !id.startsWith(ANNOTATION_LAYER_ROW)).map(asNodeId))]);
+      // A click that picks an annotation leaves the content selection as it was.
+      if (added !== undefined) return;
+      selection.set([...withoutPageStructure(scene, ids.filter((id) => !isAnnotation(id) && !id.startsWith(ANNOTATION_LAYER_ROW)).map(asNodeId))]);
     },
     canMove: ({ ids, parentId }) => {
       if (ids.some((id) => id.startsWith(ANNOTATION_LAYER_ROW))) return false;

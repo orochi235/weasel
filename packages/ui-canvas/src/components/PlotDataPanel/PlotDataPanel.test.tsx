@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { pick } from '@weasel-js/ui/testing/selectRow';
+import { plotSchemaOf } from '@weasel-js/plot';
 import { PlotDataPanel } from './PlotDataPanel';
 
 function Host({ initial, onChange }: { initial: PlotData; onChange?: (next: PlotData, label: string) => void }) {
@@ -71,5 +72,30 @@ describe('PlotDataPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove A' }));
     const toggles = screen.getAllByRole('button', { name: /details$/ }).map((b) => b.getAttribute('aria-label'));
     expect(toggles).toEqual(['Show details', 'Hide details']);
+  });
+
+  it('drops a failed edit\'s error once a different chart is passed in, and lets the host\'s own error through', () => {
+    const field = plotSchemaOf(PIE).fields.find((f) => f.key === 'showData')!;
+    const set = vi.spyOn(field, 'set').mockImplementationOnce(() => { throw new Error('no such value'); });
+    const { rerender } = render(<PlotDataPanel data={PIE} onChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Show values' }));
+    expect(screen.getByText('no such value')).toBeInTheDocument();
+    rerender(<PlotDataPanel data={{ ...PIE, slices: PIE.slices.slice(1) }} onChange={vi.fn()} />);
+    expect(screen.queryByText('no such value')).toBeNull();
+    set.mockRestore();
+    const host = () => { throw new Error('host failed'); };
+    rerender(<PlotDataPanel data={PIE} onChange={host} />);
+    const thrown: unknown[] = [];
+    const onError = (e: ErrorEvent) => { thrown.push(e.error); e.preventDefault(); };
+    window.addEventListener('error', onError);
+    try {
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Show values' }));
+    } catch (e) {
+      thrown.push(e);
+    } finally {
+      window.removeEventListener('error', onError);
+    }
+    expect(thrown).toEqual([expect.objectContaining({ message: 'host failed' })]);
+    expect(screen.queryByText('host failed')).toBeNull();
   });
 });

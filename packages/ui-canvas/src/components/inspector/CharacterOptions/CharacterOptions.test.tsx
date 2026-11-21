@@ -186,7 +186,20 @@ describe('CharacterOptions — fill', () => {
     const input = screen.getByLabelText('Color');
     fireEvent.input(input, { target: { value: '#00ff00' } });
     fireEvent.blur(input);
-    expect(onChange).toHaveBeenCalledWith({ fill: { paint: { color: '#00ff00ff' } } });
+    expect(onChange).toHaveBeenCalledWith({ fill: { paint: { color: '#00ff00' } } });
+  });
+
+  it('keeps a solid fill\'s opacity through a color edit', () => {
+    const onChange = vi.fn();
+    renderWithIcons(
+      <CharacterOptions value={{ fill: { paint: { color: '#ff0000', opacity: 0.5 } } }} onChange={onChange} />,
+    );
+    const input = screen.getByLabelText('Color');
+    fireEvent.input(input, { target: { value: '#00ff00' } });
+    fireEvent.blur(input);
+    const paint = onChange.mock.calls[0]![0].fill.paint;
+    expect(paint.color).toBe('#00ff00');
+    expect(paint.opacity).toBeCloseTo(0.5, 2);
   });
 
   it('treats a non-solid fill as indeterminate rather than inventing a swatch', () => {

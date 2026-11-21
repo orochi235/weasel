@@ -34,7 +34,7 @@ export function leafField(ctx: LeafContext, surface: ParamsSurface, nested = fal
   const { settles, textWaitMs } = ctx;
   const settled = prefFieldProps(ctx.pref, state, surface, settles, textWaitMs);
   const field = settled && ctx.drafts
-    ? withDrafts(settled, prefFieldProps(ctx.pref, drafting(state, ctx.drafts), surface, settles), surface, settles)
+    ? withDrafts(settled, prefFieldProps(ctx.pref, drafting(state, ctx.drafts), surface, settles), surface, settles, ctx.drafts.cancel)
     : settled;
   return field?.kind === 'paint' && nested ? nestedPaint(ctx, field) : field;
 }

@@ -24,6 +24,14 @@ describe('withDrafts', () => {
     expect(field).toMatchObject({ onChange, onInput: drafted.onChange });
   });
 
+  it('puts the drafts back when the edit is canceled, after the field\'s own cancel', () => {
+    const calls: string[] = [];
+    const own = { ...slider, onCancel: () => calls.push('own') } as PropertyControlProps;
+    const field = withDrafts(withCommitPolicy(own, 'panel'), drafts(slider), 'panel', undefined, () => calls.push('drafts'));
+    (field as { onCancel?: () => void }).onCancel?.();
+    expect(calls).toEqual(['own', 'drafts']);
+  });
+
   it('drafts typed text a panel leaves live, and commits it through its own writer once the edit settles', () => {
     const live = { ...PARAMS_SETTLES.panel, string: false };
     const drafted = drafts(text);

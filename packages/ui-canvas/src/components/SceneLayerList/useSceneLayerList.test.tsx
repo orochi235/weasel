@@ -152,6 +152,24 @@ describe('useSceneLayerList — annotation layers', () => {
     expect(selection.set).not.toHaveBeenCalled();
   });
 
+  it('adds a Cmd-clicked content row to the selection while an annotation stays picked', () => {
+    const pick = vi.fn();
+    const { hook, scene, selection } = annotated({ picked: 'n1', pick });
+    scene.add({ id: asNodeId('c'), kind: 'mark', layer: 'main', pose: box, data: { name: 'c' } });
+    hook.rerender();
+    hook.result.current.onSelectionChange(['box', 'n1', 'c']);
+    expect(pick).not.toHaveBeenCalled();
+    expect(selection.set).toHaveBeenCalledWith(['box', 'c']);
+  });
+
+  it('unpicks the annotation when its row leaves the selection', () => {
+    const pick = vi.fn();
+    const { hook, selection } = annotated({ picked: 'n1', pick });
+    hook.result.current.onSelectionChange(['box']);
+    expect(pick).toHaveBeenCalledWith(null);
+    expect(selection.set).toHaveBeenCalledWith(['box']);
+  });
+
   it('applies an Alt-click\'s changes as one undo step', () => {
     const { scene, selection } = setup();
     const hook = renderHook(() => useSceneLayerList({ scene, selection, itemFor: (n) => ({ label: n.data.name }) }));

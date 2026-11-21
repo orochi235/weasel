@@ -36,8 +36,9 @@ export interface LeafContext<T = unknown> extends LeafReading<T> {
   /** Write into every target a value derived from what it holds: see {@link PrefsSource.update}. */
   update: (fn: (prev: unknown, siblings?: Record<string, unknown>) => unknown) => void;
   /** `setValue` and `update` for the values an edit passes through, as a slider's drag does: kept out of undo,
-   *  and the `setValue` or `update` that ends the edit records one step. Absent where the surface has no drafts. */
-  drafts?: Pick<LeafContext, 'setValue' | 'update'>;
+   *  and the `setValue` or `update` that ends the edit records one step; `cancel` puts back what they wrote over,
+   *  for an edit that ends in a cancel. Absent where the surface has no drafts. */
+  drafts?: Pick<LeafContext, 'setValue' | 'update'> & { cancel?: () => void };
   /** Unpin the leaf or pin it; a no-op for one that cannot be auto here. */
   setAuto: (next: boolean) => void;
   /** Put the leaf back as its schema starts it. Absent while it already is. */

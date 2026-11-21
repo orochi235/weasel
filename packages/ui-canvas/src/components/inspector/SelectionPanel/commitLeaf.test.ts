@@ -16,6 +16,20 @@ function setup() {
 }
 
 describe('leafWrites', () => {
+  it('puts each node back as it was when its edit is canceled, outside undo', () => {
+    const { scene, selection, pose } = setup();
+    scene.add({ id: asNodeId('b'), kind: 'mark', layer: 'default', pose: { x: 0, opacity: 0.2 }, data: { kind: 'thing' } });
+    const both = { current: [...selection.current, asNodeId('b')] };
+    const before = scene.historyEntries().length;
+    const w = leafWrites(scene);
+    w.draft(both, leaf, () => 0.7);
+    // A canceled edit hands its one starting value back through the drafts first, over a mixed selection too.
+    w.draft(both, leaf, () => 0.5);
+    w.cancel!(leaf);
+    expect([pose().opacity, scene.get(asNodeId('b'))!.pose.opacity]).toEqual([0.5, 0.2]);
+    expect(scene.historyEntries()).toHaveLength(before);
+  });
+
   it('keeps a change made between a draft that never committed and the next edit', () => {
     const { scene, selection, pose } = setup();
     const w = leafWrites(scene);

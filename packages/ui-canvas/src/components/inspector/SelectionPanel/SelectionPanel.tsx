@@ -160,6 +160,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     renderers,
     commit: (leaf, next) => writes.commit(selection, leaf, next),
     draft: (leaf, next) => writes.draft(selection, leaf, next),
+    cancel: (leaf) => writes.cancel?.(leaf),
     source: panelSource({
       records,
       leaves: panelLeaves,

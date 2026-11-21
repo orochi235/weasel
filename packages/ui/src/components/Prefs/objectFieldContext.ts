@@ -54,7 +54,7 @@ export function objectFieldContext(
     eachSiblings: eachObject,
     update,
     setValue: (v) => update(() => v),
-    ...(draft ? { drafts: { update: draft, setValue: (v: unknown) => draft(() => v) } } : {}),
+    ...(draft ? { drafts: { update: draft, setValue: (v: unknown) => draft(() => v), cancel: ctx.drafts?.cancel } } : {}),
     mixedAt: ctx.mixedAt,
     setValueAt,
     // A field is not pinned on its own: it shares the state of the object leaf it hangs off.

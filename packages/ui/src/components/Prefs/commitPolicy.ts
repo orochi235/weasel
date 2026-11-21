@@ -34,19 +34,23 @@ export function liveControl(field: PropertyControlProps): LiveControl | null {
  * `field` where `surface` leaves its control live, sending the values on the way through `drafts`' writer and
  * the one the edit settles on through its own. `drafts` is the same leaf's field built over a writer that keeps
  * its writes out of undo. A control the surface settles, and one that is not live, come back as they are.
- * `settles` stands in for the surface's defaults: what `useParamsPolicy` resolves from the kit settings.
+ * `settles` stands in for the surface's defaults: what `useParamsPolicy` resolves from the kit settings. `cancel`
+ * puts back what the drafts wrote, run when the edit ends in a cancel, after the field's own `onCancel`.
  */
 export function withDrafts(
   field: PropertyControlProps,
   drafts: PropertyControlProps | null,
   surface: ParamsSurface,
   settles: Readonly<Record<LiveControl, boolean>> = PARAMS_SETTLES[surface],
+  cancel?: () => void,
 ): PropertyControlProps {
   const live = liveControl(field);
   if (live === null || settles[live] || drafts === null) return field;
-  if (field.kind === 'number' && drafts.kind === 'number') return { ...field, onInput: drafts.onChange };
-  if (field.kind === 'string' && drafts.kind === 'string') return { ...field, onInput: drafts.onChange };
-  if (field.kind === 'color' && drafts.kind === 'color') return { ...field, onInput: drafts.onChange };
+  const own = 'onCancel' in field ? field.onCancel : undefined;
+  const onCancel = cancel ? () => { own?.(); cancel(); } : own;
+  if (field.kind === 'number' && drafts.kind === 'number') return { ...field, onInput: drafts.onChange, onCancel };
+  if (field.kind === 'string' && drafts.kind === 'string') return { ...field, onInput: drafts.onChange, onCancel };
+  if (field.kind === 'color' && drafts.kind === 'color') return { ...field, onInput: drafts.onChange, onCancel };
   return field;
 }
 

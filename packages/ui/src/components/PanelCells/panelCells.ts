@@ -26,6 +26,8 @@ export interface PanelCellScope {
   commit: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void;
   /** A value on the way to the one `commit` takes: written, and kept out of undo. */
   draft: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void;
+  /** Put back what the drafts of `leaf`'s edit in flight wrote over, for an edit that ends in a cancel. */
+  cancel?: (leaf: PanelLeaf) => void;
   /** Where the panel's leaves are read and reset. */
   source: SelectionSource;
   selectionKey: string;
@@ -71,6 +73,7 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): LeafContext {
     drafts: {
       setValue: (v) => source.write(path, v, { draft: true }),
       update: (fn) => source.update(path, fn, { draft: true }),
+      ...(scope.cancel ? { cancel: () => scope.cancel!(panelLeaf) } : {}),
     },
     selectionKey,
     fields,
