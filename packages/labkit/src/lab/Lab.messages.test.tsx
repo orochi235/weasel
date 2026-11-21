@@ -110,6 +110,21 @@ describe('a presented lab’s messages', () => {
     }
   });
 
+  it('starts an ended run over on play when its clock cannot seek', async ({ host }) => {
+    vi.useFakeTimers();
+    try {
+      await host.mount({ duration: 300, seekable: false, step: 100, rate: 1 });
+      await act(async () => vi.advanceTimersByTime(1000));
+      expect(c().ended).toBe(true);
+      await host.send({ type: 'labkit:play' });
+      expect(c().ended).toBe(false);
+      expect(c().elapsed).toBe(0);
+      expect(c().rate).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('seeks within the pass', async ({ host }) => {
     await host.mount({ duration: 4000 });
     await host.send({ type: 'labkit:seek', time: 1500 });

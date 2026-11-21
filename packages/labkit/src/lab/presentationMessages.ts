@@ -104,7 +104,7 @@ export function presentationState(
 function run(command: PresentationCommand, handle: TrialClockHandle): void {
   const hold = transportHoldOf(handle.clock);
   hold.touch();
-  const control = transportControl(handle.clock, hold.get(), hold.set);
+  const control = transportControl(handle.clock, hold.get(), hold.set, hold.touch, handle.reset);
   if (command.type === 'labkit:play') control.play();
   else if (command.type === 'labkit:pause') control.pause();
   else if (command.type === 'labkit:seek') control.seek(command.time);
