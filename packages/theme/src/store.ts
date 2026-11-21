@@ -37,6 +37,11 @@ export type PutResult =
 /** Record order is emission order, so keys are never sorted. */
 export const serializeDefinition = (definition: ThemeDefinition): string => `${JSON.stringify(definition, null, 2)}\n`;
 
+/** Whether a theme store can hold a theme of this name; `list` is the route that lists them. */
+export const isStorableThemeName = (name: string): boolean => /^[a-z][a-z0-9-]*$/.test(name) && name !== 'list';
+
+const notAName = (name: string): string => `"${name}" is not a theme name`;
+
 /** Reads and writes theme definition files. `put` sends the hash it last read, or null to create a new file. */
 export interface ThemeApi {
   list(): Promise<StoredTheme[]>;
@@ -56,9 +61,12 @@ export function httpThemeApi(
   };
   return {
     list: async () => (await read<{ themes: StoredTheme[] }>(await fetchImpl(url('list'), undefined))).themes,
-    get: async (name) => read<StoredTheme>(await fetchImpl(url(name), undefined)),
+    get: async (name) => {
+      if (!isStorableThemeName(name)) throw new Error(notAName(name));
+      return read<StoredTheme>(await fetchImpl(url(name), undefined));
+    },
     put: async (name, definition, baseHash) =>
-      read<PutResult>(
+      !isStorableThemeName(name) ? { status: 'invalid', message: notAName(name) } : read<PutResult>(
         await fetchImpl(url(name), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

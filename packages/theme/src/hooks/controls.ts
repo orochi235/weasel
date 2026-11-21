@@ -19,12 +19,14 @@ export const CONTROL_HOOKS: readonly TokenHook[] = [
     type: 'dimension',
     value: '14px',
     description: 'The glyph in a Button. Unset, 12px at xs and sm and 14px at md.',
+    varies: true,
   },
   {
     name: 'button-h',
     type: 'dimension',
     value: 'var(--wzl-control-h)',
     description: 'Height of a Button below the container that sets it, at every size; an icon-only one stays square. Unset, the control height of its size: `--wzl-control-h-xs`, `-sm`, or `--wzl-control-h`.',
+    varies: true,
   },
   {
     name: 'button-radius',
@@ -67,6 +69,7 @@ export const CONTROL_HOOKS: readonly TokenHook[] = [
     type: 'shadow',
     value: 'var(--wzl-bevel-raised)',
     description: 'Box shadow of a confirm Button, where it differs from --wzl-bevel-raised: the heavier frame of a default button.',
+    varies: true,
   },
   {
     name: 'button-gloss',
@@ -89,13 +92,13 @@ export const CONTROL_HOOKS: readonly TokenHook[] = [
   {
     name: 'disclosure-fill',
     type: 'color',
-    value: 'var(--wzl-accent-fg)',
+    value: 'var(--wzl-accent)',
     description: 'Fill of a Disclosure’s fold mark.',
   },
   {
     name: 'disclosure-target',
     type: 'dimension',
-    value: '20px',
+    value: 'var(--wzl-control-h-sm)',
     description: 'Hit-target square of a Disclosure twisty.',
   },
   {
@@ -117,6 +120,7 @@ export const CONTROL_HOOKS: readonly TokenHook[] = [
     value: 'var(--wzl-font-size)',
     description:
       'Font size of the text in a field, a select, a radio, a segmented bar or a button. Unset, each takes its own size; a params row sets it to --wzl-params-text-size.',
+    varies: true,
   },
   {
     name: 'select-border',
@@ -124,6 +128,7 @@ export const CONTROL_HOOKS: readonly TokenHook[] = [
     value: '1px solid var(--wzl-border)',
     description:
       'Border of a Select’s trigger. Unset, a boxed trigger draws --wzl-border and a bare one a transparent border of the same width.',
+    varies: true,
   },
   {
     name: 'select-fg',
@@ -142,6 +147,7 @@ export const CONTROL_HOOKS: readonly TokenHook[] = [
     type: 'dimension',
     value: 'calc(var(--wzl-control-h-xs) + var(--wzl-space-2))',
     description: 'Indent of each Tree level. Unset, it is one twisty and one gap, so a child’s twisty sits under its parent’s label.',
+    varies: true,
   },
   {
     name: 'tree-font-size',
@@ -184,12 +190,14 @@ export const CONTROL_HOOKS: readonly TokenHook[] = [
     type: 'dimension',
     value: 'auto',
     description: 'Side of the square every leading glyph of a Tree sits centered in, and the gutter a hung glyph takes. Unset, each glyph keeps its own size.',
+    varies: true,
   },
   {
     name: 'button-pad-x',
     type: 'dimension',
     value: 'var(--wzl-space-6)',
     description: 'Inline padding of a text Button below the container that sets it, at every size. Unset, `--wzl-space-2` at xs, `--wzl-space-4` at sm and `--wzl-space-6` at md. Icon-only buttons stay square.',
+    varies: true,
   },
   {
     name: 'button-font-weight',

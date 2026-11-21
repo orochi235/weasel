@@ -26,12 +26,14 @@ export const PANEL_HOOKS: readonly TokenHook[] = [
     value: 'var(--wzl-tracking-wide)',
     description:
       'Letter spacing of every label and title in PropertyPanel, Prefs and labkit’s ControlPanel. Unset, rows take --wzl-tracking-wide and titles --wzl-tracking-wider.',
+    varies: true,
   },
   {
     name: 'params-label-width',
     type: 'dimension',
     value: 'auto',
-    description: 'Inline size of row labels in PropertyPanel, Prefs and labkit’s ControlPanel.',
+    description: 'Inline size of row labels in PropertyPanel, Prefs and labkit’s ControlPanel. Unset, a label takes its own width, and a Prefs rail layout’s row as much as 240px.',
+    varies: true,
   },
   {
     name: 'params-text-size',
@@ -43,7 +45,7 @@ export const PANEL_HOOKS: readonly TokenHook[] = [
   {
     name: 'prefs-rail-width',
     type: 'dimension',
-    value: '216px',
+    value: '176px',
     description: 'Width of the Prefs navigation rail.',
   },
   {
@@ -82,7 +84,7 @@ export const PANEL_HOOKS: readonly TokenHook[] = [
   {
     name: 'prop-row-h',
     type: 'dimension',
-    value: '20px',
+    value: 'var(--wzl-field-h, var(--wzl-control-h))',
     description:
       'Floor under every Properties row, whatever control it holds. Unset, it is the panel’s own field height, so it follows density — 20px at the default one.',
   },

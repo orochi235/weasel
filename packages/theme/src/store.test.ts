@@ -22,4 +22,14 @@ describe('httpThemeApi', () => {
   it('throws on a failure the store does not describe', async () => {
     await expect(httpThemeApi('http://h/', async () => respond(500, {})).list()).rejects.toThrow('500');
   });
+
+  it('refuses a name the store cannot hold without asking it', async () => {
+    const fetchImpl = vi.fn(async () => respond(200, { themes: [] }));
+    const api = httpThemeApi('http://h/', fetchImpl);
+    for (const name of ['list', 'Weasel', 'a#b', '']) {
+      await expect(api.get(name)).rejects.toThrow('not a theme name');
+      expect(await api.put(name, { name }, null)).toMatchObject({ status: 'invalid' });
+    }
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
 });

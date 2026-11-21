@@ -14,8 +14,8 @@ export type StyleRoot = Document | ShadowRoot;
 const STYLE_ID = 'wzl-themes';
 
 interface Variant {
-  /** 0 is the definition that has the bare selector; a second, different
-   *  definition held at once under the same name and selection gets its own. */
+  /** 0 is the definition whose elements carry no `data-wzl-variant`; a second,
+   *  different definition held at once under the same name and selection gets its own. */
   id: number;
   body: string;
   holds: number;
@@ -43,13 +43,12 @@ export function styleRootOf(el: Element): StyleRoot {
 
 const documentOf = (root: StyleRoot): Document => ('host' in root ? root.ownerDocument : root);
 
-/** The selector suffix that keeps a variant's rule off the other definitions' elements, at no cost in specificity. */
-const only = (id: number): string => (id === 0 ? '' : `:where([data-wzl-variant='${id}'])`);
+/** The selector suffix that keeps each definition's rule off the others' elements, at no cost in specificity. */
+const only = (id: number): string => (id === 0 ? ':where(:not([data-wzl-variant]))' : `:where([data-wzl-variant='${id}'])`);
 
 function write(root: StyleRoot, held: RootSheet): void {
   const css = [...held.rules]
     .flatMap(([selector, variants]) =>
-      // The bare rule first: it matches a variant's elements too, and the variant's has to win the tie.
       [...variants].sort((a, b) => a.id - b.id).map((v) => `${selector}${only(v.id)} { ${v.body} }`))
     .join('\n');
   // Not `@weasel-js/react`'s `adoptCss`: this entry loads without React.
