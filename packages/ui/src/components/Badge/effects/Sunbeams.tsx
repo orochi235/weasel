@@ -24,7 +24,7 @@ export interface BadgeSunbeamsEffectParams {
   /** 0..1 perturbs each beam's width, opacity, and angle slightly with a deterministic
    *  per-beam noise; 0 = perfectly regular. */
   irregularity?: number;
-  /** Gradient mask angle in degrees. 0 = left→right, 90 = top→bottom. */
+  /** Gradient mask angle in degrees, on screen as `angle` is. 0 = left→right, 90 = top→bottom. */
   gradientAngle?: number;
   /** Position along the gradient axis (0..1) where the mask is fully opaque (beams visible). */
   gradientStart?: number;
@@ -96,16 +96,17 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
       cursorX += nominalWidthVb + gapVb;
     }
 
-    // The fade runs along `gradientAngle`, with 0 and 1 on the outline region's farthest corners.
+    // The fade runs along `gradientAngle` on screen, with 0 and 1 on the outline region's farthest
+    // corners. The viewBox stretches to the box, so the screen direction (cos, sin) is laid in it as
+    // (cos * boxW, sin * boxH), which keeps the isolines square to it once stretched.
     const ga = cfg.gradientAngle * DEG_TO_RAD;
-    const cosA = Math.cos(ga), sinA = Math.sin(ga);
-    const cx = region.x + region.width / 2;
-    const cy = region.y + region.height / 2;
-    const span = region.width * Math.abs(cosA) + region.height * Math.abs(sinA);
-    const x1g = cx - cosA * span / 2;
-    const y1g = cy - sinA * span / 2;
-    const x2g = cx + cosA * span / 2;
-    const y2g = cy + sinA * span / 2;
+    const wx = Math.cos(ga) * boxW, wy = Math.sin(ga) * boxH;
+    const wl = Math.hypot(wx, wy) || 1;
+    const ux = wx / wl, uy = wy / wl;
+    const along = [region.x, region.x + region.width].flatMap((x) => [region.y, region.y + region.height].map((y) => x * ux + y * uy));
+    const tMin = Math.min(...along), tMax = Math.max(...along);
+    const x1g = ux * tMin, y1g = uy * tMin;
+    const x2g = ux * tMax, y2g = uy * tMax;
 
     const gs = Math.max(0, Math.min(cfg.gradientStart, 1));
     const ge = Math.max(0, Math.min(cfg.gradientEnd, 1));

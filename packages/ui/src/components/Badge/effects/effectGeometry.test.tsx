@@ -119,13 +119,21 @@ describe('spikes', () => {
 });
 
 describe('sunbeams', () => {
+  const fadeAt = (grad: Element, x: number, y: number) => {
+    const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map((k) => Number(grad.getAttribute(k)));
+    return ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / ((x2 - x1) ** 2 + (y2 - y1) ** 2);
+  };
+
   it('reaches the badge corners at 0 and 1 along a diagonal gradient', () => {
     const grad = draw(Sunbeams, { gradientAngle: 45 }).querySelector('linearGradient')!;
-    const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map((k) => Number(grad.getAttribute(k)));
-    expect(x1).toBeCloseTo(0);
-    expect(y1).toBeCloseTo(0);
-    expect(x2).toBeCloseTo(100);
-    expect(y2).toBeCloseTo(100);
+    expect(fadeAt(grad, 0, 0)).toBeCloseTo(0);
+    expect(fadeAt(grad, 100, 100)).toBeCloseTo(1);
+  });
+
+  it('lays `gradientAngle` on screen, as the beams lean by `angle`', () => {
+    // On a 200×30 badge, 10 CSS px right and 10 up is (5, -33.3) in the viewBox: one isoline at 45°.
+    const grad = draw(Sunbeams, { gradientAngle: 45 }).querySelector('linearGradient')!;
+    expect(fadeAt(grad, 50 + 5, 50 - 100 / 3)).toBeCloseTo(fadeAt(grad, 50, 50));
   });
 });
 
