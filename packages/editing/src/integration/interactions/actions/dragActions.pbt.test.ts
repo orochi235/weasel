@@ -12,7 +12,7 @@ import type { NodeId } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core/engine';
 import { defaultCommitAdapter } from '@weasel-js/core/engine';
 import { hitTestRect } from '@weasel-js/core';
-import { depsOfForTests as depsOf, makeSceneForTests as makeScene, runsForTests as runs, tallyForTests as tally, timeoutForForTests as timeoutFor, type TestSceneForTests as TestScene, assertFiniteForTests as assertFinite, driveForTests as drive, type PtForTests as Pt } from '@weasel-js/core/test-seams';
+import { depsOfForTests as depsOf, makeSceneForTests as makeScene, pbtRunsForTests as runs, pbtTallyForTests as tally, pbtTimeoutForTests as timeoutFor, type TestSceneForTests as TestScene, assertFiniteForTests as assertFinite, driveForTests as drive, type PtForTests as Pt } from '@weasel-js/core/test-seams';
 import { rectPose } from './pbt.fixture';
 import { alignCenterXAction, alignLeftAction, distributeHorizontalAction, reorderForwardAction, flipAction, nudgeRightAction, duplicateAction, groupAction, ungroupAction, deleteAction } from '@weasel-js/editing';
 import { moveAction } from '../../../actions/move/action';

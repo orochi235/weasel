@@ -6,7 +6,7 @@ import type { NodeId } from '@weasel-js/core';
 import type { InsertDep, SnapDep } from '@weasel-js/core/engine';
 import { SHAPE_KINDS, shapeKindsWhere } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
-import { gridSourceForTests as gridSource, sessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
+import { gridSnapSourceForTests as gridSource, snapSessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
 
 // ---------------------------------------------------------------------------
 // Stub insert dep

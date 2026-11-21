@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { ActionDeps } from '@weasel-js/routing';
 import type { NodeId } from '@weasel-js/core';
 import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core/engine';
-import { gridSourceForTests as gridSource, sessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
+import { gridSnapSourceForTests as gridSource, snapSessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
 import type { InsertDep, SnapDep } from '@weasel-js/core/engine';
 import { placeAction } from './placeAction';
 
