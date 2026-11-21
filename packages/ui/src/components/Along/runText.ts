@@ -5,6 +5,7 @@ import row from './runRow.module.css';
 import s from './runText.module.css';
 import { pathThrough } from '../../pathThrough';
 import { boxPoint } from './boxPoint';
+import { measureContextIn } from '../../measureContext';
 
 /** Marks the copy of a text node drawn along the run, and the element whose own glyphs that copy stands in for. */
 const BEND = 'data-run-text-bend';
@@ -181,13 +182,11 @@ function lay(bend: Bend, run: TrackRun, center: Point, origin: Point, turn: numb
 }
 
 
-let measure: CanvasRenderingContext2D | null | undefined;
-
 /** The ascent and descent of `parent`'s font, and the width of `data` set in it. */
 function metricsOf(parent: Element, data: string): { ascent: number; descent: number; width: number } {
   const style = getComputedStyle(parent);
   const size = Number.parseFloat(style.fontSize) || 16;
-  measure ??= document.createElement('canvas').getContext('2d');
+  const measure = measureContextIn(parent.ownerDocument);
   if (measure == null) return { ascent: size * 0.8, descent: size * 0.2, width: data.length * size * 0.6 };
   measure.font = style.font || `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
   const m = measure.measureText(data);
