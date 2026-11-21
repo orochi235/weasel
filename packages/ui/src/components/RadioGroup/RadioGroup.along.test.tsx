@@ -47,6 +47,19 @@ const hint = () => document.querySelector('[data-radio-hint]') as HTMLElement;
 const fromCenter = (p: Point) => Math.hypot(p.x - CENTER.x, p.y - CENTER.y);
 
 describe('RadioGroup along a curve', () => {
+  test('a radio\'s function style is kept beside its place on the run', () => {
+    render(
+      <Along arc={TOP}>
+        <RadioGroup label="Color" defaultValue="r">
+          <Radio value="r" style={({ isSelected }) => ({ color: isSelected ? 'red' : 'blue' })}>Red</Radio>
+          <Radio value="g">Green</Radio>
+        </RadioGroup>
+      </Along>,
+    );
+    expect(labelOf('Red').style.color).toBe('red');
+    expect(labelOf('Red').style.getPropertyValue('--at-x')).not.toBe('');
+  });
+
   test('lays the label first and the radios after it, along the run', () => {
     render(<Sample arc={TOP} />);
     const run = runOf(TOP);
