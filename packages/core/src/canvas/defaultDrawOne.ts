@@ -11,6 +11,7 @@ import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { textCommandFromRuns } from '@weasel-js/renderer';
 import { findNodeShape, findShapeBounds, type NodePaintCtx } from './NodeShape';
+import type { NodeShapes } from './nodeShapeRegistry';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { overChildren } from './overChildren';
 import { INHERIT } from '@weasel-js/paint';
@@ -34,8 +35,7 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
   view?: View,
   ctx?: NodePaintCtx,
 ): DrawCommand[] {
-  // No painter claims a group: its data's `fill`, `stroke`, `path` or `shape` are its children's.
-  const painter = node.kind === 'group' ? undefined : findNodeShape(node, ctx?.shapes);
+  const painter = painterOf(node, ctx?.shapes);
   // A frame builder that knows the density it paints at fills `pixelScale`; the window's is the fallback.
   const paintCtx = !view || ctx?.pixelScale !== undefined
     ? ctx
@@ -63,6 +63,12 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
   // the scene walks and the preview-ghost layer, so that consumer-supplied painters get
   // them too.
   return primary;
+}
+
+/** The painter {@link defaultDrawOne} paints `node` with. No painter claims a group: its data's
+ *  `fill`, `stroke`, `path` or `shape` are its children's. */
+function painterOf(node: Node<unknown, string, unknown>, shapes: NodeShapes | undefined) {
+  return node.kind === 'group' ? undefined : findNodeShape(node, shapes);
 }
 
 /** The `data.label` the kit lays over a node a painter does not label, or none for a text node. */
@@ -93,7 +99,7 @@ export function defaultPaintBounds<TData, TLayer extends string, TPose>(
   ctx?: Pick<NodePaintCtx, 'inherited' | 'shapes' | 'derivedPath'>,
 ): Bounds | null {
   const data = node.data as { stroke?: unknown } | null;
-  if (overlaidLabelOf(node) !== undefined && !findNodeShape(node, ctx?.shapes)?.drawsLabel) return null;
+  if (overlaidLabelOf(node) !== undefined && !painterOf(node, ctx?.shapes)?.drawsLabel) return null;
   const inherited = ctx?.inherited;
   if (node.kind === 'group') return groupBoxBounds(node.data, pose, screenScalesOf(view, pose));
   if (data?.stroke === INHERIT && inherited === undefined) return null;
