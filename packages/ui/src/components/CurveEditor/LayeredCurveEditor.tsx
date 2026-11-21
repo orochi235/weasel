@@ -118,7 +118,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     if (press.gesture) {
       // A press in empty space may publish an insert and then drag it: that
       // gesture starts from before the insert, so one undo removes both.
-      start(press.entry, e, press.gesture, !press.claimed && press.edit ? before : snapshot());
+      start(press.entry, e, press.gesture, !press.claimed && press.edit ? before : snapshot(), press.edit ? { state: press.edit.next } : undefined);
       return;
     }
     if (press.edit) settleEdit(before, press.edit);

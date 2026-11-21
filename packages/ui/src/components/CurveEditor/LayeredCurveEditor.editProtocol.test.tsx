@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { useState, type ReactElement } from 'react';
-import { fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import { keyframeLayerState, type KeyframeLayerState } from './createKeyframeLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
 import { KeyframeLayer } from './KeyframeLayer';
@@ -70,6 +70,26 @@ describe('curve layers and the edit protocol', () => {
     expect(onChange).toHaveBeenCalledTimes(1);
     expect((onChange.mock.calls[0][0] as KeyframeLayerState).keys[1].t).toBe(510);
     expect((onInput.mock.calls.at(-1)![0] as KeyframeLayerState).keys[1].t).toBe(510);
+  });
+
+  it('a caller that follows onInput without writing it back still has the drag committed', () => {
+    const onKeys = vi.fn();
+    render(editor(<KeyframeLayer label="x" state={STATE} onInput={() => {}} onChange={onKeys} />));
+    down(100, 0);
+    move(140, 20);
+    up(140, 20);
+    expect(onKeys).toHaveBeenCalledTimes(1);
+    expect((onKeys.mock.calls[0][0] as KeyframeLayerState).keys[1].t).toBe(700);
+    cleanup();
+
+    const onPoints = vi.fn();
+    const points = functionLayerState([{ x: 0, y: 0 }, { x: 500, y: 5 }, { x: 1000, y: 10 }]);
+    render(editor(<FunctionLayer state={points} onInput={() => {}} onChange={onPoints} />));
+    down(100, 50);
+    move(100, 20);
+    up(100, 20);
+    expect(onPoints).toHaveBeenCalledTimes(1);
+    expect((onPoints.mock.calls[0][0] as typeof points).points[1].y).toBeCloseTo(8);
   });
 
   it('Escape cancels a drag: the preview goes back, onCancel fires, nothing commits', () => {
