@@ -74,3 +74,19 @@ describe('useDropZone resolution', () => {
     expect(goodDrop).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('useDragHandle press', () => {
+  it('reads the getPayload of the latest render when the threshold is crossed', () => {
+    document.body.innerHTML = '<div id="src"></div>';
+    const first = vi.fn(() => ({ kind: 'item', ids: ['old'] }));
+    const second = vi.fn(() => ({ kind: 'item', ids: ['new'] }));
+    const { result, rerender } = renderHook(({ get }) => useDragHandle(get), { initialProps: { get: first } });
+    press(result.current, document.getElementById('src')!);
+    rerender({ get: second });
+    firePointer('pointermove', 30, 0);
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledTimes(1);
+    firePointer('pointerup', 30, 0);
+  });
+
+});

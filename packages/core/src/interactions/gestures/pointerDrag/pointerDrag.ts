@@ -177,6 +177,7 @@ export function useDragHandle(
   options?: DragHandleOptions,
 ) {
   const optsRef = useLatest(options);
+  const getPayloadRef = useLatest(getPayload);
   const kitSettingsRef = useLatest(useKitSettings());
   // One session spans the whole press, threshold and all, so a release that
   // never arrives — the row unmounts under the pointer — cannot strand the
@@ -207,7 +208,7 @@ export function useDragHandle(
         if (past) return;
         if (!pastDragThreshold(start, ev, kitSettingsRef.current.get('gestures.dragPx'))) return;
         past = true;
-        const payload = getPayload();
+        const payload = getPayloadRef.current();
         if (!payload) return;
         dropClickGuard = swallowClick(target);
         ghost = beginPointerDrag(
@@ -232,7 +233,7 @@ export function useDragHandle(
         else dropClickGuard();
       },
     }, { capture: false });
-  }, [getPayload, optsRef, kitSettingsRef]);
+  }, [getPayloadRef, optsRef, kitSettingsRef]);
 
   return { onPointerDown, style: { touchAction: 'none' as const } };
 }
