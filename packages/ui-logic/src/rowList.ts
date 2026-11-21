@@ -59,6 +59,8 @@ export interface RowListMetrics {
   /** The empty state's inset from top and bottom. */
   readonly emptyPadY: number;
   readonly font: FontSpec;
+  /** The empty state's font: {@link font} in italic, as `.empty` sets it. */
+  readonly emptyFont: FontSpec;
   /** A line of text's height: the font size times `--wzl-leading-snug`, which `.list` sets. */
   readonly lineHeight: number;
 }
@@ -66,12 +68,14 @@ export interface RowListMetrics {
 /** The tokens a row list is sized by: the ones `ItemList.module.css` lays it out with. */
 export function rowListMetrics(env: MeasureEnv): RowListMetrics {
   const size = envPx(env, '--wzl-font-size-sm');
+  const font = { family: env.token('--wzl-font-ui'), size, weight: 400 };
   return {
     rowHeight: envPx(env, '--wzl-control-h'),
     padX: envPx(env, '--wzl-space-4'),
     gap: envPx(env, '--wzl-space-4'),
     emptyPadY: envPx(env, '--wzl-space-6'),
-    font: { family: env.token('--wzl-font-ui'), size, weight: 400 },
+    font,
+    emptyFont: { ...font, style: 'italic' },
     lineHeight: size * envNumber(env, '--wzl-leading-snug', 1.2),
   };
 }
@@ -101,7 +105,7 @@ export interface RowListLayout {
 export function measureRowList(face: RowListFace, c: Constraints, env: MeasureEnv): Measured<RowListLayout> {
   const m = rowListMetrics(env);
   if (face.rows.length === 0) {
-    const t = env.text(face.empty ?? '—', m.font);
+    const t = env.text(face.empty ?? '—', m.emptyFont);
     const line = m.lineHeight;
     const width = clamp(t.width + m.padX * 2, c.minWidth, c.maxWidth);
     const height = clamp(line + m.emptyPadY * 2, c.minHeight, c.maxHeight);

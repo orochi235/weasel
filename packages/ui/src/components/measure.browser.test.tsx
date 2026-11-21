@@ -72,6 +72,16 @@ describe('a DOM button is the box measureButton gives', () => {
     expect(Math.abs(got - m.baseline)).toBeLessThanOrEqual(0.5);
   });
 
+  test('a button held narrower than its content gives up its label\'s width, on one line', () => {
+    const props: ButtonProps = { children: 'Save all changes', leadingIcon: ICON };
+    render(<div style={{ width: 60 }}><Button fullWidth {...props} /></div>);
+    const button = screen.getByRole('button');
+    const m = domButton.measure(props, fixedWidth(60), createDomMeasureEnv(button));
+    const label = button.lastElementChild!;
+    near(boxIn(label, button).width, m.layout.parts[1]!.rect.width);
+    near(boxIn(label, button).height, m.layout.parts[1]!.rect.height);
+  });
+
   test('a full-width button centers its parts in the width it is given', () => {
     render(<div style={{ width: 300 }}><Button fullWidth>Go</Button></div>);
     const button = screen.getByRole('button');

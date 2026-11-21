@@ -19,7 +19,7 @@ export const NO_HOLD: Hold = Object.freeze({ on: false });
  */
 export function nestHold(outer: Hold, on: boolean | undefined, reason?: string): Hold {
   if (!on) return outer;
-  const nearest = reason || outer.reason;
+  const nearest = reason || (outer.on ? outer.reason : undefined);
   if (outer.on && outer.reason === nearest) return outer;
   return nearest ? { on: true, reason: nearest } : { on: true };
 }
@@ -38,8 +38,11 @@ export interface ControlAccess {
 
 /** A control's access from its disabled and read-only holds. */
 export function controlAccess(disabled: Hold, readOnly: Hold = NO_HOLD): ControlAccess {
-  if (disabled.on) return { state: 'disabled', reachable: disabled.reason !== undefined, reason: disabled.reason };
-  if (readOnly.on) return { state: 'readOnly', reachable: true, reason: readOnly.reason };
+  if (disabled.on) {
+    const reason = disabled.reason || undefined;
+    return { state: 'disabled', reachable: reason !== undefined, reason };
+  }
+  if (readOnly.on) return { state: 'readOnly', reachable: true, reason: readOnly.reason || undefined };
   return ENABLED;
 }
 

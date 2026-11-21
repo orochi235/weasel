@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { envPx, type MeasureEnv } from './measure';
+import { envNumber, envPx, type MeasureEnv } from './measure';
 
 const env = (tokens: Record<string, string>): MeasureEnv => ({
   token: (name) => tokens[name],
@@ -19,5 +19,19 @@ describe('envPx', () => {
 
   it('throws where neither the token nor the fallback is a px length', () => {
     expect(() => envPx(env({ '--a': '1em' }), '--a')).toThrow(/--a is not a px length/);
+  });
+});
+
+describe('envNumber', () => {
+  it('reads a unitless number, else the fallback', () => {
+    expect(envNumber(env({ '--a': ' 1.5 ' }), '--a', 1.2)).toBe(1.5);
+    expect(envNumber(env({ '--a': '600' }), '--a', 400)).toBe(600);
+    expect(envNumber(env({}), '--a', 1.2)).toBe(1.2);
+  });
+
+  it('falls back on a value with a unit, which is not a multiplier', () => {
+    for (const raw of ['150%', '18px', '1.5em', 'normal', '1.5 2']) {
+      expect(envNumber(env({ '--a': raw }), '--a', 1.2), raw).toBe(1.2);
+    }
   });
 });

@@ -279,7 +279,7 @@
 .variant_link { --btn-link-fg: var(--wzl-emphasis-fg, var(--wzl-accent-fg)); }
 
 .variant_link::before { display: none; }
-.variant_link .label { display: inline; }
+.variant_link .label { display: inline; white-space: normal; }
 
 .variant_link:hover:not(:disabled, [data-disabled]) {
   text-decoration-thickness: 2px;
@@ -318,6 +318,12 @@
 .label {
   composes: capText from '@weasel-js/theme/capText.module.css';
   display: inline-block;
+  /* In a button too narrow for its parts the label gives up width first, as measureButton and the HUD button lay
+     it out. `clip` on x alone leaves the trimmed line's ascenders and descenders unclipped. */
+  min-width: 0;
+  white-space: nowrap;
+  overflow-x: clip;
+  text-overflow: ellipsis;
 }
 
 /* ---------- Spinner ---------- */

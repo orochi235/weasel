@@ -21,11 +21,21 @@ describe('nestHold', () => {
   it('ignores the reason of a level that is off', () => {
     expect(nestHold(NO_HOLD, false, 'Locked')).toBe(NO_HOLD);
   });
+
+  it('ignores the reason of an outer level that is off', () => {
+    expect(nestHold({ on: false, reason: 'Locked' }, true)).toEqual({ on: true });
+    expect(nestHold({ on: false, reason: 'Locked' }, true, 'Busy')).toEqual({ on: true, reason: 'Busy' });
+  });
 });
 
 describe('controlAccess', () => {
   it('leaves a disabled control with no reason unreachable', () => {
     expect(controlAccess({ on: true })).toEqual({ state: 'disabled', reachable: false, reason: undefined });
+  });
+
+  it('reads an empty reason as none, as nestHold does', () => {
+    expect(controlAccess({ on: true, reason: '' })).toEqual({ state: 'disabled', reachable: false, reason: undefined });
+    expect(controlAccess(NO_HOLD, { on: true, reason: '' })).toEqual({ state: 'readOnly', reachable: true, reason: undefined });
   });
 
   it('keeps a disabled control with a reason reachable', () => {

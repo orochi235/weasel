@@ -113,6 +113,14 @@ describe('Button', () => {
     expect(getByRole('button').getAttribute('aria-pressed')).toBeNull();
   });
 
+  it('lets its label give up width on one line, as measureButton lays it out', () => {
+    const css = readFileSync(resolve(__dirname, 'Button.module.css'), 'utf8');
+    const body = css.match(/\n\.label\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(body).toMatch(/min-width:\s*0;/);
+    expect(body).toMatch(/white-space:\s*nowrap;/);
+    expect(body).toMatch(/text-overflow:\s*ellipsis;/);
+  });
+
   describe('link variant', () => {
     const css = readFileSync(resolve(__dirname, 'Button.module.css'), 'utf8');
     const rule = (sel: string) => {
