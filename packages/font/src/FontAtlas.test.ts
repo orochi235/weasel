@@ -48,6 +48,11 @@ describe('parseBmFont', () => {
     expect(parseBmFont(FIXTURE_FONT).distanceRange).toBeUndefined();
   });
 
+  it('ignores a field range that is not finite, as it does one that is not positive', () => {
+    const font = parseBmFont({ ...FIXTURE_FONT, distanceField: { fieldType: 'msdf', distanceRange: Infinity } });
+    expect(font.distanceRange).toBeUndefined();
+  });
+
   it('accepts JSON with no kernings array (defaults to [])', () => {
     const noKern = { ...FIXTURE_FONT, kernings: undefined };
     const font = parseBmFont(noKern);

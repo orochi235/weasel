@@ -147,6 +147,6 @@ export function parseBmFont(raw: unknown): BmFont {
   return {
     info, common, chars, kernings, charMap, kerningMap,
     ...(faceMetrics ? { faceMetrics } : {}),
-    ...(typeof range === 'number' && range > 0 ? { distanceRange: range } : {}),
+    ...(isFiniteNumber(range) && range > 0 ? { distanceRange: range } : {}),
   };
 }
