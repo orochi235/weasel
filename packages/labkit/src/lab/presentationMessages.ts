@@ -48,7 +48,7 @@ export interface PresentationMessageOptions {
   /** Names this lab, for a page that holds several: a message whose `lab` is
    *  another name is ignored, and every `labkit:state` carries this one. */
   name?: string;
-  /** The origins a message is taken from. Default: any. */
+  /** The origins a message is taken from, and the only ones a `labkit:state` is posted to. Default: any. */
   origins?: readonly string[];
 }
 
@@ -104,7 +104,7 @@ export function presentationState(
 function run(command: PresentationCommand, handle: TrialClockHandle): void {
   const hold = transportHoldOf(handle.clock);
   hold.touch();
-  const control = transportControl(handle.clock, hold.get(), hold.set);
+  const control = transportControl(handle.clock, hold.get(), hold.set, hold.touch, handle.reset);
   if (command.type === 'labkit:play') control.play();
   else if (command.type === 'labkit:pause') control.pause();
   else if (command.type === 'labkit:seek') control.seek(command.time);
@@ -132,10 +132,14 @@ export function usePresentationMessages(
   useEffect(() => {
     if (!active || !view || (clocked && !handle)) return;
     const host = view.parent;
-    const post = (): void => host.postMessage(presentationState(handle, name), '*');
+    const targets = allowed === undefined ? ['*'] : allowed.split(' ');
+    const post = (): void => {
+      const state = presentationState(handle, name);
+      for (const target of targets) host.postMessage(state, target);
+    };
     const onMessage = (event: MessageEvent): void => {
       if (event.source !== host && event.source !== view) return;
-      if (allowed !== undefined && !allowed.split(' ').includes(event.origin)) return;
+      if (allowed !== undefined && !targets.includes(event.origin)) return;
       const command = presentationCommand(event.data, name);
       if (!command) return;
       if (command.type === 'labkit:query') post();

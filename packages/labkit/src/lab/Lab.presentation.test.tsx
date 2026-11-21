@@ -89,6 +89,23 @@ describe('<Lab present>', () => {
     expect(root(framed.container).classList.contains('lk-lab--framed')).toBe(true);
   });
 
+  it('answers framed for the window the lab is rendered into', async () => {
+    const frame = document.body.appendChild(document.createElement('iframe'));
+    try {
+      const frameDoc = frame.contentDocument as Document;
+      const container = frameDoc.body.appendChild(frameDoc.createElement('div'));
+      const lab = await renderSettled(<Lab instruments={[stub]} present />, {
+        container,
+        baseElement: frameDoc.body,
+        wrapper: withIcons,
+      });
+      expect(root(container).classList.contains('lk-lab--framed')).toBe(true);
+      lab.unmount();
+    } finally {
+      frame.remove();
+    }
+  });
+
   it('does not leave on Escape, having nowhere to go back to', async () => {
     const { container } = await mountLab({ present: true });
     fireEvent.keyDown(document, { key: 'Escape' });

@@ -98,6 +98,13 @@ export function Workspace({
   expandOnDoubleClick = false,
 }: WorkspaceProps) {
   const items = Children.toArray(children);
+  // `toArray` drops an empty child (`null`, `false`), which still holds its place in `ids`.
+  const slots: number[] = [];
+  let slot = 0;
+  Children.forEach(children, (child) => {
+    if (child !== null && child !== undefined && typeof child !== 'boolean') slots.push(slot);
+    slot++;
+  });
   const tilePanels = useMemo(() => (panels ?? []).filter((p) => p.as === 'tile'), [panels]);
   const floatPanels = useMemo(() => (panels ?? []).filter((p) => p.as === 'floating'), [panels]);
   // Identity has to be stable while the id *contents* are unchanged: the sync
@@ -105,7 +112,7 @@ export function Workspace({
   // every tile forever.
   const panelKey = JSON.stringify(tilePanels.map((p) => panelNodeId(p.key)));
   const idKey = JSON.stringify([
-    ...items.map((_, i) => ids?.[i] ?? `lk-ws-${i}`),
+    ...slots.map((i) => ids?.[i] ?? `lk-ws-${i}`),
     ...JSON.parse(panelKey),
   ]);
   const nodeIds = useMemo(() => (JSON.parse(idKey) as string[]).map(asNodeId), [idKey]);

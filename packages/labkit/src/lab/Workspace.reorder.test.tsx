@@ -32,6 +32,25 @@ describe('Workspace reorderable', () => {
     expect(mounts).toEqual(['a', 'b']);
   });
 
+  test('matches ids to children by position, an empty child holding its place', async () => {
+    const mounts: string[] = [];
+    function Probe({ label }: { label: string }) {
+      useEffect(() => void mounts.push(label), [label]);
+      return <span>{label}</span>;
+    }
+    const tiles = (showB: boolean) => (
+      <Workspace ids={['a', 'b', 'c']} viewport={VIEWPORT}>
+        <Probe label="a" />
+        {showB && <Probe label="b" />}
+        <Probe label="c" />
+      </Workspace>
+    );
+    const { rerender } = await renderSettled(tiles(false), { wrapper: withIcons });
+    expect(mounts.sort()).toEqual(['a', 'c']);
+    await act(async () => rerender(tiles(true)));
+    expect(mounts.sort()).toEqual(['a', 'b', 'c']);
+  });
+
   test('reports only the children’s ids, not a tile panel’s', async () => {
     // jsdom lays nothing out, so a drop is hit-tested against each element's inline rect.
     vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
