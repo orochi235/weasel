@@ -74,6 +74,15 @@ describe('CycleButton', () => {
     expect(onChange).toHaveBeenCalledWith('a');
   });
 
+  it('renders disabled under its own name when the rotation is empty', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<CycleButton value="a" onChange={onChange} options={[]} aria-label="Palette" />);
+    const button = screen.getByRole('button', { name: 'Palette' });
+    fireEvent.click(button);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(button.getAttribute('aria-disabled') === 'true' || (button as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it('treats a value outside the list as the first option', () => {
     const onChange = vi.fn();
     renderWithIcons(<Mode value={'sepia' as 'auto'} onChange={onChange} />);

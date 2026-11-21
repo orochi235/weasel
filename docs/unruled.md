@@ -3273,3 +3273,6 @@ Calls the lanes made without a ruling:
   `style`, `isEntering` and `isExiting` on its overlay, and warns that it ignores `onEnter`, `onExit`,
   `UNSTABLE_deferUntilEntered` and `render`, since it unmounts at once and draws its own overlay. Giving the
   contained modal an exit animation, so those work, was the alternative.
+- 2026-11-20 (the fixer's call): A `CycleButton` given no `options` renders disabled, named and tooltipped by its
+  `aria-label` alone, rather than throwing; a filtered rotation can come out empty. Throwing on an empty list was
+  the alternative.

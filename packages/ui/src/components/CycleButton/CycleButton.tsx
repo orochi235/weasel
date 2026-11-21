@@ -46,6 +46,9 @@ function CycleButtonInner<T extends string = string>(
 ): ReactElement {
   const resolved = useControlSize(size, 'sm');
   const count = options.length;
+  if (count === 0) {
+    return <Button {...rest} ref={ref} variant={variant} size={resolved} iconOnly aria-label={ariaLabel} tooltip={ariaLabel} disabled />;
+  }
   const index = Math.max(0, options.findIndex((o) => o.value === value));
   const current = options[index];
   const next = options[(index + 1) % count];
@@ -72,7 +75,7 @@ function CycleButtonInner<T extends string = string>(
  * One icon button that steps through a list of options: a click moves to the
  * next, a shift-click to the previous, both wrapping. It shows the current
  * option's icon, and its name and tooltip say what is current and what a
- * click chooses. With {@link COLOR_MODE_OPTIONS} it is the compact alternative
+ * click chooses, and with no options it is disabled. With {@link COLOR_MODE_OPTIONS} it is the compact alternative
  * to `ColorModeControl`'s three segments; pair it with `useColorModePreference`
  * from `@weasel-js/theme/react`. Controlled.
  *
