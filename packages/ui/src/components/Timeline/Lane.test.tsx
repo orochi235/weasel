@@ -53,6 +53,13 @@ describe('Lane', () => {
     expect(screen.getByTestId('timeline-after-end')).toBeTruthy();
   });
 
+  it('draws a nested timeline\'s bar from its own `at` for its duration', () => {
+    const nested = { kind: 'timeline', label: 'n', at: 600, timeline: { duration: 400, tracks: [sampled] } } as Track;
+    render(<Lane {...base} row={laneOf(nested)} />);
+    const bar = screen.getByTestId('timeline-nested');
+    expect([bar.style.left, bar.style.width]).toEqual(['60%', '40%']);
+  });
+
   it('draws no past-end band on a row that plays to the end', () => {
     render(<Lane {...base} row={laneOf(sampled)} />);
     expect(screen.queryByTestId('timeline-after-end')).toBeNull();

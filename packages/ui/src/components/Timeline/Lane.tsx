@@ -124,7 +124,7 @@ export function Lane(props: LaneProps): ReactElement {
               <div
                 className={s.nestedBar}
                 data-testid="timeline-nested"
-                style={{ left: pct(0), width: spanPercent(win, (row.track as TimelineTrack).timeline.duration ?? 0) }}
+                style={{ left: pct((row.track as TimelineTrack).at), width: spanPercent(win, (row.track as TimelineTrack).timeline.duration ?? 0) }}
               />
             ) : null}
             {row.kind === 'sampled' ? (
