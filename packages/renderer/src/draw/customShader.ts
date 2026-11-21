@@ -2,7 +2,7 @@ import type { ShaderDrawCommand } from '../DrawCommand';
 import { getTexture, type TextureHandle } from '../textures/registerTexture';
 import type { ShaderUniform } from '../shaders/registerProgram';
 import type { ShaderProgram, UniformArray } from '../shaders/ShaderProgram';
-import type { GpuTexture } from '../gpu/types';
+import type { GpuTexture, GpuUniformType } from '../gpu/types';
 import { UNIFORM_COMPONENTS, isUniformType } from '../gpu/uniformTypes';
 import { quadGeometry } from './quad';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
@@ -23,6 +23,11 @@ export function warnOnceUniform(programId: string, name: string): void {
 
 type UniformValue = ShaderUniform | GpuTexture;
 
+const INT_VECTORS: Readonly<Record<'int' | 'uint', readonly (GpuUniformType | undefined)[]>> = {
+  int: [undefined, 'int', 'ivec2', 'ivec3', 'ivec4'],
+  uint: [undefined, 'uint', 'uvec2', 'uvec3', 'uvec4'],
+};
+
 function isGpuTexture(value: UniformValue): value is GpuTexture {
   return typeof value === 'object' && value !== null && (value as GpuTexture).kind === 'texture';
 }
@@ -34,8 +39,9 @@ function isGpuTexture(value: UniformValue): value is GpuTexture {
  *   1. A texture: a `GpuTexture`, or a registered TextureHandle (object with
  *      string `.id`), uploaded first.
  *   2. Float32Array — length 9 → mat3, length 16 → mat4. Other lengths throw in dev.
- *   3. Array — vec2 / vec3 / vec4 by length.
- *   4. number — float.
+ *   3. Int32Array / Uint32Array — int / ivecN or uint / uvecN by length.
+ *   4. Array — vec2 / vec3 / vec4 by length.
+ *   5. number — float.
  */
 export function setUniform(ctx: DrawContext, program: ShaderProgram, name: string, value: UniformValue): void {
   if (isGpuTexture(value)) {
@@ -66,6 +72,13 @@ export function setUniform(ctx: DrawContext, program: ShaderProgram, name: strin
     } else {
       if (isDev()) throw new TypeError(`weasel setUniform: Float32Array must be length 9 (mat3) or 16 (mat4), got ${value.length}`);
     }
+    return;
+  }
+
+  if (value instanceof Int32Array || value instanceof Uint32Array) {
+    const type = INT_VECTORS[value instanceof Int32Array ? 'int' : 'uint'][value.length];
+    if (type) program.set(name, type, value);
+    else if (isDev()) throw new TypeError(`weasel setUniform: integer array length ${value.length} not supported`);
     return;
   }
 
