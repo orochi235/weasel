@@ -48,7 +48,16 @@ export const ReorderHandle = forwardRef(function ReorderHandle(
         const delta = nudgeOf(e);
         if (delta === null) return;
         e.preventDefault();
-        if (onNudge(delta) === true) refocus.current = true;
+        if (onNudge(delta) !== true) return;
+        refocus.current = true;
+        // A memoized row moves without rendering its handle, so the flag is settled once the move has committed.
+        setTimeout(() => {
+          if (!refocus.current) return;
+          refocus.current = false;
+          const el = button.current;
+          const active = el?.ownerDocument.activeElement;
+          if (el?.isConnected && (!active || active === el.ownerDocument.body)) el.focus();
+        });
       }
     : undefined;
 
