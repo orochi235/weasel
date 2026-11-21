@@ -16,7 +16,7 @@ import {
 } from 'react-aria-components';
 import { Popover } from '../Popover';
 import { heldItemProps, useHeldAriaRef, useHeldPick } from '../heldItem';
-import { AlignOverTrigger, NO_NUDGE, type Press } from './alignOverTrigger';
+import { AlignOverTrigger, BELOW, NO_NUDGE, type Press } from './alignOverTrigger';
 import { FieldFoot, fieldRootClass, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { useRacField } from '../Field/racField';
@@ -52,11 +52,14 @@ export type SelectIndicator = 'chevron' | 'underline' | 'none';
 /** Where a {@link Select}'s list opens relative to its trigger. */
 export type SelectPopup = 'over' | 'below';
 
+/** React Aria's second spelling of the selection, which would outrank `selectedKey`; `selectedKey` is the only one here. */
+type RacValueProps = 'value' | 'defaultValue' | 'onChange' | 'selectionMode';
+
 /**
  * Props for {@link Select}, on top of React Aria's `Select` props, with the
  * selection key narrowed to the option value type.
  */
-export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | 'isDisabled' | 'isOpen' | 'isInvalid' | 'isRequired'> & FieldSlotProps & FieldStateProps & HoldProps & ControlSizeProps & {
+export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | RacValueProps | 'isDisabled' | 'isOpen' | 'isInvalid' | 'isRequired'> & FieldSlotProps & FieldStateProps & HoldProps & ControlSizeProps & {
   /** Whether the list is open, controlled; pairs with `defaultOpen` and `onOpenChange`. */
   open?: boolean;
   placeholder?: string;
@@ -148,8 +151,11 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
     open,
     invalid,
     required,
-    ...rest
+    ...given
   } = hold.rest;
+  // Dropped at run time too, for a caller the types do not reach.
+  const { value: _value, defaultValue: _defaultValue, onChange: _onChange, selectionMode: _mode, ...rest } =
+    given as typeof given & Partial<Pick<RACSelectProps<object>, RacValueProps>>;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   // Uncontrolled, the key is held here rather than by React Aria, whose closed trigger changes it from the keyboard
@@ -191,7 +197,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           ref={triggerRef}
           className={`${f.frame} ${s.trigger}`}
           onPointerDown={(e) => {
-            pressRef.current = { x: e.clientX, y: e.clientY, at: performance.now() };
+            pressRef.current = { x: e.clientX, y: e.clientY, at: performance.now(), pointerType: e.pointerType };
           }}
         >
           <SelectValue className={s.value}>
@@ -217,7 +223,8 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           placement="bottom start"
           offset={popup === 'over' ? nudge.offset : undefined}
           crossOffset={popup === 'over' ? nudge.crossOffset : undefined}
-          shouldFlip={popup !== 'over'}
+          // With no selected row to land on the trigger, an 'over' list hangs below it and flips like one.
+          shouldFlip={popup !== 'over' || nudge === BELOW}
         >
           {popup === 'over' && (
             <AlignOverTrigger
@@ -255,6 +262,7 @@ function selectClass({ orientation, width, variant, indicator, className }: Pick
 
 /** A select's list: its `options`, or else its `children`. */
 function SelectList<T extends OptionKey>({ options, children }: Pick<SelectProps<T>, 'options' | 'children'>) {
+  if (options !== undefined) assertDistinct(options);
   return (
     <RACListBox className={listbox.list}>
       {options !== undefined
@@ -270,6 +278,16 @@ function SelectList<T extends OptionKey>({ options, children }: Pick<SelectProps
         : children}
     </RACListBox>
   );
+}
+
+/** Throws on two option values that read the same as text, as `1` and `'1'` do: React Aria keys rows by that text. */
+function assertDistinct<T extends OptionKey>(options: ReadonlyArray<ListOption<T> | SelectOptionGroup<T>>): void {
+  const seen = new Set<string>();
+  for (const o of options.flatMap((e) => (isGroup(e) ? e.options : [e]))) {
+    const text = String(o.value);
+    if (seen.has(text)) throw new RangeError(`weasel: Select has two options whose values read "${text}"; each option's value must differ from every other's as text.`);
+    seen.add(text);
+  }
 }
 
 /** True inside `SelectValue`'s copy of the selected row, which shows its label and not its note. */

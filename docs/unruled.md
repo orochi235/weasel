@@ -3278,3 +3278,9 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (my call, audit round 59): a `SegmentedBar` whose `steps` stop at the default `SWEEP_CAP` warns once,
   naming the bar, and draws the first 256; a bar given `cap` takes the cut as meant and does not warn. Showing a
   note in the bar, as `Sequence` does, was the alternative, and has no room in a row of segments.
+
+## Audit round fifty-nine (2026-11-20): Select
+
+- 2026-11-20: A `Select` whose `options` hold two values that read the same as text (`1` and `'1'`, or one value
+  twice) throws a `RangeError` naming it, with no override: React Aria keys its rows by that text, so the two
+  cannot be drawn apart.
