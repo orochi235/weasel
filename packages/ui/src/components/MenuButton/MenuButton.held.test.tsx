@@ -1,8 +1,13 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { REST_MS } from '../Tree/useRowTip';
 import { ReadOnly } from '../Disabled';
 import { MenuButton } from './MenuButton';
+import s from './MenuButton.module.css';
+
+const css = readFileSync(resolve(__dirname, 'MenuButton.module.css'), 'utf8');
 
 afterEach(() => {
   cleanup();
@@ -44,5 +49,17 @@ describe('a MenuButton in a read-only scope', () => {
     render(<ReadOnly when reason="Locked"><MenuButton label="Add trial…" items={ITEMS} /></ReadOnly>);
     fireEvent.click(screen.getByRole('button', { name: /Add trial…/ }));
     expect(screen.getByRole('menu')).toBeTruthy();
+  });
+});
+
+describe('a bare MenuButton disabled for a reason', () => {
+  it('is marked data-disabled, and dimmed and kept from its hover color by that mark', () => {
+    render(<MenuButton bare label="Dashboard" disabled disabledReason="No pages yet" items={ITEMS} />);
+    const trigger = screen.getByRole('button', { name: /Dashboard/ });
+    expect(trigger).toHaveClass(s.bare!);
+    expect(trigger).not.toBeDisabled();
+    expect(trigger).toHaveAttribute('data-disabled');
+    expect(css).toContain('.bare:is(:disabled, [data-disabled]) {');
+    expect(css).toContain('.bare:hover:not(:disabled, [data-disabled]) {');
   });
 });
