@@ -3136,3 +3136,15 @@ Calls the lanes made without a ruling:
   a caller who passed it as an increment now gets that number as the half-height.
 - 2026-11-20: A badge shape's repeat counts (`sparkler` and `starburst` `points`, `receipt` `teeth`) stop at 256, and a
   `perforated` badge's `holePitch` at no less than 1px. Both bounds are picked to keep a render finite, not ruled.
+
+## Audit round fifty-seven (2026-11-20): badge shapes
+
+- 2026-11-20 (the fixer's call): A `quatrefoil` badge's `samples` runs 24..1024 and a `beavis` badge's `points` 3..256,
+  a `receipt` badge's `tearDepth` stops at 45 and a `house` badge's `peakHeight` at its `eaveY`. The bounds keep a
+  render finite and an outline simple; the numbers are picked, not ruled.
+- 2026-11-20 (the fixer's call): `NaN` in a bounded badge shape param reads as that param's default, where a repeat
+  count reads it as its least. Reading it as the lower bound was the alternative.
+- 2026-11-20 (the fixer's call): A shape that composes itself from a base pads by its own `insets`, fitted against the
+  base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
+  rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
+  pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
