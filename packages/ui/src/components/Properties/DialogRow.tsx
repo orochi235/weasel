@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
 import { Button } from '../Button';
 import { Dialog } from '../Dialog';
 import { type PropertyRowLayout, PropertyRow } from './PropertyRow';
@@ -70,6 +70,7 @@ export function DialogRow({
     onCancel?.();
   };
   const name = typeof label === 'string' ? label : undefined;
+  const summaryId = `${useId()}-summary`;
   return (
     <PropertyRow
       label={label}
@@ -90,6 +91,8 @@ export function DialogRow({
         className={s.dialogTrigger}
         aria-haspopup="dialog"
         aria-label={name === undefined ? undefined : `Edit ${name}`}
+        // The label replaces the button's text as its name, so the value it shows has to come back as its description.
+        aria-describedby={name === undefined ? undefined : summaryId}
         disabled={disabled && reason === undefined}
         aria-disabled={disabled || undefined}
         onClick={() => {
@@ -98,7 +101,7 @@ export function DialogRow({
           onOpen?.();
         }}
       >
-        <span className={s.dialogSummary}>{summary}</span>
+        <span id={summaryId} className={s.dialogSummary}>{summary}</span>
         <span className={s.dialogGlyph} aria-hidden="true">
           …
         </span>
