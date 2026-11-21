@@ -124,6 +124,9 @@ export function AlignOverTrigger({
       if (pastDragThreshold({ clientX: press.x, clientY: press.y }, e, dragPx)) return;
       e.preventDefault();
       e.stopPropagation();
+      // Stopped short of the row, the release also misses every document listener waiting for this pointer to
+      // lift, the trigger's own press among them: tell them it is over.
+      doc.dispatchEvent(new PointerEvent('pointercancel', { pointerId: e.pointerId, pointerType: e.pointerType, bubbles: true }));
     };
     doc.addEventListener('pointerup', onUp, true);
     return () => doc.removeEventListener('pointerup', onUp, true);

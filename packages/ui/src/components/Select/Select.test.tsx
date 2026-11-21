@@ -474,3 +474,23 @@ describe('Select tooltip', () => {
     });
   });
 });
+
+describe('the release that opens or follows it', () => {
+  it('ends the trigger press it hides from the list', () => {
+    render(<Select label="Color" options={OPTIONS} defaultSelectedKey="g" />);
+    const trigger = screen.getByRole('button', { name: /Color/ });
+    act(() => { fireEvent.pointerDown(trigger, { pointerId: 1, button: 0, pointerType: 'mouse', clientX: 20, clientY: 10 }); });
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    expect(trigger).toHaveAttribute('data-pressed');
+    const row = screen.getByRole('option', { name: 'Green' });
+    const up = createEvent.pointerUp(row, { pointerId: 1, button: 0, pointerType: 'mouse', clientX: 20, clientY: 10 });
+    act(() => { fireEvent(row, up); });
+    expect(up.defaultPrevented).toBe(true);
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    // React Aria marks the trigger pressed while its list is open; shut, it should be pressed no longer.
+    act(() => { fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' }); });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(trigger).not.toHaveAttribute('data-pressed');
+  });
+
+});
