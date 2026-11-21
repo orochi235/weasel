@@ -40,4 +40,14 @@ describe('Switch', () => {
     render(<Switch>Visible</Switch>);
     expect(screen.getByText('Visible')).toBeTruthy();
   });
+
+  it('draws and announces a mixed state, and drops it when no longer indeterminate', () => {
+    const { rerender } = render(<Switch indeterminate>Snap</Switch>);
+    const sw = screen.getByRole('switch');
+    expect(sw).toHaveAttribute('aria-checked', 'mixed');
+    expect(sw.closest('label')).toHaveAttribute('data-indeterminate');
+    rerender(<Switch>Snap</Switch>);
+    expect(sw).not.toHaveAttribute('aria-checked');
+    expect(sw.closest('label')).not.toHaveAttribute('data-indeterminate');
+  });
 });
