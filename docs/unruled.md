@@ -3252,3 +3252,10 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): a token's alpha is a number from 0 to 1. `fromDtcg` and `defineTheme` throw on
   another, `derive` reports one on a `ref` rule, and a hand-built theme's is held to that range wherever it is
   written, so `rgba()` and `color-mix()` agree. Clamping on read instead was the alternative.
+
+## Audit round fifty-eight (2026-11-20): Badge
+
+- 2026-11-20 (the fixer's call): a `Badge`'s `padding` prop, and padding given through `style`, is the badge's own
+  padding, and its shape's insets add to it as they add to the default padding, so a `shield` given `padding={4}` keeps
+  its point clear. Before, either one replaced the insets, so the label could run into the outline; the alternative was
+  to keep that and stop a fitted base from counting insets the padding no longer held.

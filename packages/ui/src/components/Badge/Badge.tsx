@@ -17,6 +17,7 @@ import { useSvgBox } from './useSvgBox';
 import { BadgeRemove, BadgeTarget } from './BadgeLabel';
 import { BadgeRoot } from './BadgeRoot';
 import { badgeRoles } from './badgeRoles';
+import { registryEntry } from './registryEntry';
 import { type AppearanceProps, useAppearance } from '../appearance';
 import type { EdgeCap } from './bases/edgeProfiles';
 import { PowerlineSlotContext } from '../Powerline/slot';
@@ -152,8 +153,9 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
   } = usePowerlineProps(props);
   const { element, tooltipOnPlainBadge, split, ariaLabel } = badgeRoles(props);
   const [focused, setFocused] = useState(false);
-  const shapeModule = SHAPES[shape] ?? SHAPES.pill;
-  const resolvedShape = SHAPES[shape] ? shape : 'pill';
+  const known = registryEntry(SHAPES, shape);
+  const shapeModule = known ?? SHAPES.pill;
+  const resolvedShape = known ? shape : 'pill';
   const params = withDefaults<Record<string, unknown>>(shapeModule.defaults ?? {}, shapeParams as Record<string, unknown> | undefined);
 
   const phase = useCrawlPhase(crawl);
@@ -187,7 +189,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     'data-size': size,
     'data-break': breakStyle,
     'data-focused': focused ? 'true' : undefined,
-    onFocus: (e: FocusEvent<HTMLElement>) => { if (!split) setFocused(true); onFocus?.(e); },
+    onFocus: (e: FocusEvent<HTMLElement>) => { if (!split && e.target === e.currentTarget) setFocused(true); onFocus?.(e); },
     onBlur: (e: FocusEvent<HTMLElement>) => { if (!split) setFocused(false); onBlur?.(e); },
     'aria-label': split ? undefined : ariaLabel,
   };

@@ -1,9 +1,10 @@
 import { useId, type RefObject } from 'react';
 import s from './Badge.module.css';
 import { EFFECTS, type BadgeEffectSpec } from './effects';
-import { composeOutline, offsetOutline } from './composeOutline';
+import { composeOutline, effectParams, offsetOutline, outlineRegion } from './composeOutline';
 import type { ComposeSpec } from './composeSpec';
 import type { BadgeVariant, ShapeModule } from './types';
+import { registryEntry } from './registryEntry';
 
 /** CSS px between a composed badge's outline and its focus ring. */
 const FOCUS_RING_OFFSET = 2;
@@ -29,24 +30,25 @@ export function BadgeDeco({ svgRef, compose, shapeModule, params, box, bloat, va
   const ShapeBody = shapeModule.Component;
 
   if (compose.base && outline) {
-    const decoEffects = (compose.effects ?? []).filter((eff) => EFFECTS[eff.type as keyof typeof EFFECTS]?.Component);
+    const decoEffects = (compose.effects ?? []).filter((eff) => registryEntry(EFFECTS, eff.type)?.Component);
     const zoneOf = (eff: BadgeEffectSpec) => EFFECTS[eff.type as keyof typeof EFFECTS].zone ?? 'foreground';
     const background = decoEffects.filter((eff) => zoneOf(eff) === 'background');
     const foreground = decoEffects.filter((eff) => zoneOf(eff) === 'foreground');
     const mask = decoEffects.filter((eff) => zoneOf(eff) === 'mask');
     const render = (eff: BadgeEffectSpec, i: number) => {
-      const mod = EFFECTS[eff.type as keyof typeof EFFECTS];
+      const mod = registryEntry(EFFECTS, eff.type);
       const EffComponent = mod?.Component;
       if (!EffComponent) return null;
-      const effParams = { ...(mod.defaults ?? {}), ...(eff.params ?? {}) };
+      const effParams = effectParams(mod, eff);
       return <EffComponent key={`${eff.type as string}-${i}`} sampler={outline} boxW={box.width} boxH={box.height} variant={variant} params={effParams} phase={phase} />;
     };
+    const region = mask.length > 0 ? outlineRegion(outline, 10) : null;
     return (
       <svg ref={svgRef} className={s.deco} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        {mask.length > 0 && (
+        {region && (
           <defs>
-            <mask id={bodyMaskId} maskUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="120">
-              <rect x="-10" y="-10" width="120" height="120" fill="white" />
+            <mask id={bodyMaskId} maskUnits="userSpaceOnUse" {...region}>
+              <rect {...region} fill="white" />
               {mask.map(render)}
             </mask>
           </defs>

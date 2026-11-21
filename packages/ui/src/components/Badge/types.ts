@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 /**
- * Built-in badge silhouettes. `pill`, `plain` and `square` are drawn in CSS;
+ * Built-in badge silhouettes. `pill` and `plain` are drawn in CSS;
  * the rest are SVG outlines, several of which route through the compose
  * pipeline (a base shape plus perimeter effects).
  */

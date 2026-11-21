@@ -54,6 +54,14 @@ function useMeasured(ref: RefObject<HTMLElement | null>, enabled: boolean): Meas
       if (box) set(box.inlineSize, box.blockSize);
     });
   }, [ref, enabled]);
+  // A padding change resizes the badge, not the content the observer watches, so this reads it after every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- no dep says the padding changed; the setter keeps unchanged state.
+  useLayoutEffect(() => {
+    const badge = enabled ? ref.current?.parentElement : null;
+    if (!badge) return;
+    const pad = ownPadding(badge);
+    setMeasured((was) => (was && !SIDES.every((side) => was.pad[side] === pad[side]) ? { ...was, pad } : was));
+  });
   return enabled ? measured : null;
 }
 

@@ -1,6 +1,8 @@
 import { trimNumber, wrapPositive } from '@weasel-js/geom';
 import type { BaseSampler } from './bases/types';
 import { EFFECTS, type BadgeEffectSpec } from './effects';
+import { registryEntry } from './registryEntry';
+import { withDefaults } from './shapes/params';
 
 const SAMPLES = 600;
 
@@ -18,6 +20,11 @@ function closedPath(at: (sCss: number) => { x: number; y: number }, totalCss: nu
   return `${d} Z`;
 }
 
+/** The params `eff` draws with: its own over `mod`'s defaults, where a key set to `undefined` keeps its default. */
+export function effectParams(mod: { defaults?: object }, eff: BadgeEffectSpec): Record<string, unknown> {
+  return withDefaults<Record<string, unknown>>({ ...mod.defaults }, eff.params as Record<string, unknown> | undefined);
+}
+
 /**
  * Where `bloat` and every perimeter-warping effect move the point of `base` at arc length
  * `s`, in CSS px, with the point itself. Each effect's offset is summed, so stacked effects
@@ -25,9 +32,9 @@ function closedPath(at: (sCss: number) => { x: number; y: number }, totalCss: nu
  */
 function displacer(base: BaseSampler, effects: readonly BadgeEffectSpec[] | undefined, bloatCss: number, phase: number) {
   const offsetMods = (effects ?? []).flatMap((eff) => {
-    const mod = EFFECTS[eff.type];
+    const mod = registryEntry(EFFECTS, eff.type);
     if (!mod?.offsetAt) return [];
-    return [{ offsetAt: mod.offsetAt, params: { ...(mod.defaults ?? {}), ...(eff.params ?? {}) } }];
+    return [{ offsetAt: mod.offsetAt, params: effectParams(mod, eff) }];
   });
   if (offsetMods.length === 0 && bloatCss === 0) return null;
   const totalCss = base.totalCss;
@@ -112,4 +119,17 @@ export function offsetOutline(outline: BaseSampler, offsetCss: number, box: Box)
     const pt = outline.perimeterAt(s);
     return { x: pt.x + pt.nx * offsetCss * sx, y: pt.y + pt.ny * offsetCss * sy };
   }, outline.totalCss);
+}
+
+/** A box around `outline`, in its own viewBox units, grown by `margin` on every side and never smaller than the viewBox's. */
+export function outlineRegion(outline: BaseSampler, margin: number): { x: number; y: number; width: number; height: number } {
+  let minX = 0, minY = 0, maxX = 100, maxY = 100;
+  for (let i = 0; i < SAMPLES; i++) {
+    const p = outline.perimeterAt((i / SAMPLES) * outline.totalCss);
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { x: minX - margin, y: minY - margin, width: maxX - minX + 2 * margin, height: maxY - minY + 2 * margin };
 }
