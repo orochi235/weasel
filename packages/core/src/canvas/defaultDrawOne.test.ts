@@ -160,4 +160,18 @@ describe('defaultDrawOne', () => {
       dispose();
     }
   });
+
+  it('does not bound a labeled group by its box alone, even when a painter claiming groups draws its own labels', () => {
+    const dispose = registerNodeShape(
+      { id: 'test:group-label', matches: (n) => n.kind === 'group', paint: () => [], drawsLabel: true },
+      { priority: 'high' },
+    );
+    try {
+      const g = { ...node({ label: 'A group', background: { paint: solid('#eee') } }), kind: 'group' } as Node<unknown, 'default', typeof POSE>;
+      expect(defaultDrawOne(g, POSE).some((c) => c.kind === 'group' || c.kind === 'text')).toBe(true);
+      expect(defaultPaintBounds(g, POSE, { x: 0, y: 0, scale: { x: 1, y: 1 } })).toBeNull();
+    } finally {
+      dispose();
+    }
+  });
 });

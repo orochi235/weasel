@@ -57,6 +57,12 @@ describe('browserDeps', () => {
     expect(deps()).toEqual(['@testing-library/react', 'earcut', 'zustand/vanilla']);
   });
 
+  it('names the package a dependency comes from when that package installs a copy of its own', () => {
+    put('node_modules/zustand/package.json', '{}');
+    put('packages/kit/node_modules/zustand/package.json', '{}');
+    expect(deps()).toEqual(['@fixture/kit > zustand/vanilla', '@testing-library/react']);
+  });
+
   it('is unchanged by an edit that imports nothing new', () => {
     const before = deps();
     put('packages/kit/src/more.ts', `import type { Draft } from 'immer';\nexport const more = 1;\n`);

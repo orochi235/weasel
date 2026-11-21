@@ -8,7 +8,7 @@
  */
 import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
-import { dirname, join, matchesGlob, relative, resolve } from 'node:path';
+import { dirname, join, matchesGlob, relative, resolve, sep } from 'node:path';
 import { SOURCE, isBare, packageOf, scanImports } from './lib/imports.mjs';
 import { workspaceEntries } from './lib/packageEntries.mjs';
 import { type ViteAlias, weaselAliases } from './vite-aliases.ts';
@@ -87,7 +87,16 @@ export interface BrowserDepsOptions {
  */
 export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: BrowserDepsOptions): string[] {
   const aliases = weaselAliases(repoRoot);
-  const workspace = new Set(workspaceEntries(repoRoot).map(({ name }) => name));
+  const packages = workspaceEntries(repoRoot);
+  const workspace = new Set(packages.map(({ name }) => name));
+  // A bare entry is bundled from the root's install and then answers that specifier from every importer, so a
+  // package with a copy of its own (font's opentype.js 2 beside the root's 1.x) is listed in vite's nested form.
+  const owner = (file: string) => packages.find(({ dir }) => file.startsWith(dir + sep));
+  const entryFor = (specifier: string, file: string) => {
+    const pkg = owner(file);
+    const nested = pkg && existsSync(join(pkg.dir, 'node_modules', packageOf(specifier), 'package.json'));
+    return nested ? `${pkg.name} > ${specifier}` : specifier;
+  };
   const ownedElsewhere = (pkg: string) =>
     workspace.has(pkg) || BUILTINS.has(pkg) || pkg === 'vitest' || pkg.startsWith('@vitest/');
 
@@ -129,7 +138,7 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(entryFor(specifier, file));
     }
   }
   return [...found].sort();

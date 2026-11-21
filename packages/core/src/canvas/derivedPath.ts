@@ -117,6 +117,7 @@ export function sceneDepLookup<TData, TLayer extends string, TPose>(
     shown: sceneOverridePathOf(scene, toPose) as (node: unknown) => Path | undefined,
     childrenOf: (id: NodeId) => scene.childrenOf(id),
     scene: shownLookup(scene) as never,
+    source: scene,
     lookup: (id: NodeId) => {
       const node = scene.get(id);
       return node === undefined ? undefined : new SlotDep(nodeAsShown(scene.overrides, node), ctx);
@@ -136,6 +137,8 @@ interface SlotLookup<TPose> {
   lookup: (id: NodeId) => DerivedDep<TPose> | undefined;
   /** Where a node's `'inherit'` paint is looked up. */
   scene: { get(id: NodeId): Node<unknown, string, TPose> | undefined };
+  /** The scene read, whose painters outline each dependency. */
+  source: object;
 }
 
 /** A class, not an object literal with a `get path()` — see `SceneDep` in
@@ -159,6 +162,10 @@ class SlotDep<TPose> implements DerivedDep<TPose> {
 
   get inherited(): InheritedPaint | undefined {
     return inheritedPaintIn(this.ctx.scene, this.node);
+  }
+
+  get scene(): object {
+    return this.ctx.source;
   }
 
   // Every pose this lookup answers is the painted one, so a child needs no rebase.
