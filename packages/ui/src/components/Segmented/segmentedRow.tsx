@@ -49,8 +49,8 @@ export interface SegmentedRowProps {
   orientation?: Orientation;
   /** Wraps the segments, for a context they read. */
   wrap?: (segments: ReactNode) => ReactNode;
-  /** Lays the segments out as a grid in one well, rounded at the grid's outer corners. A curved `Along` still bends
-   *  the row into one line. */
+  /** Lays the segments out as a grid in one well, rounded at the grid's outer corners whatever `orientation` says. A
+   *  curved `Along` still bends the row into one line. */
   tiling?: Tiling;
 }
 
@@ -112,7 +112,7 @@ export function SegmentedRow(props: SegmentedRowProps): ReactElement {
     : undefined;
   const drawn = segments.map((segment, i) => <Fragment key={segment.key}>{segment.draw(placeOf(segment, i))}</Fragment>);
   return (
-    <div ref={roving.rootRef} onKeyDown={roving.onKeyDown} className={rootCls} role={role} {...naming} data-orientation={orientation} style={style}>
+    <div ref={roving.rootRef} onKeyDown={roving.onKeyDown} className={rootCls} role={role} {...naming} data-orientation={tiles ? undefined : orientation} style={style}>
       {wrap ? wrap(drawn) : drawn}
     </div>
   );
