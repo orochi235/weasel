@@ -22,8 +22,8 @@ export function scenePageKinds<TData, TLayer extends string, TPose>(
   const pages = placed.length > 0 ? placed : [{ id: 'page-1', x: 0, y: 0, width: 0, height: 0, index: 0 }];
   const roots = pageRootsOf(scene, pages);
   const kindOf = (page: string): PageKind => roots.get(page)?.kind ?? 'graph';
-  if ('page' in opts && placed.length > 0) {
-    const written = opts.page === undefined ? placed[0]! : placed.find((p) => p.id === opts.page);
+  if ('page' in opts) {
+    const written = opts.page === undefined ? pages[0]! : pages.find((p) => p.id === opts.page);
     if (written === undefined) throw new RangeError(`The scene has no page ${JSON.stringify(opts.page)} to write`);
     return new Set([kindOf(written.id)]);
   }

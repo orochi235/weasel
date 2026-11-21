@@ -1,3 +1,4 @@
+import { createScene } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
 import type { SequenceData } from '@weasel-js/diagram';
 import type { DiagramDocument } from './document';
@@ -25,5 +26,15 @@ describe('a page holding both a plot root and a sequence root', () => {
     expect(documentFromScene(scene).pages.map((p) => [p.id, p.kind])).toEqual([['p1', 'plot'], ['p2', 'graph']]);
     expect([...scenePageKinds(scene, { page: 'p1' })]).toEqual(['plot']);
     expect([...scenePageKinds(scene)].sort()).toEqual(['graph', 'plot']);
+  });
+});
+
+describe('scenePageKinds on a scene with no page list', () => {
+  it('answers for the one page documentFromScene makes, and throws for any other name, as writtenPage does', () => {
+    const scene = createScene<unknown, string, { x: number; y: number; width: number; height: number }>({ systemLayers: [{ id: 'main' }] });
+    const [page] = documentFromScene(scene).pages;
+    expect([...scenePageKinds(scene, { page: page!.id })]).toEqual(['graph']);
+    expect([...scenePageKinds(scene, { page: undefined })]).toEqual(['graph']);
+    expect(() => scenePageKinds(scene, { page: 'p2' })).toThrow(RangeError);
   });
 });
