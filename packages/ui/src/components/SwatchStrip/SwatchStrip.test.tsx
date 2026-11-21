@@ -120,4 +120,21 @@ describe('SwatchStrip', () => {
     fireEvent.keyDown(a, { key: 'ArrowRight' });
     expect(document.activeElement).toBe(b);
   });
+
+  it('keeps its swatches mounted when its store becomes the provider\'s', () => {
+    const own = createRecentColorsStore({ storage: null });
+    own.record(['#111111ff']);
+    const other = createRecentColorsStore({ storage: null });
+    const view = (ctx: typeof own) => (
+      <RecentColorsProvider store={ctx}>
+        <SwatchStrip store={own} palettes={[WARM]} onSelect={() => {}} />
+      </RecentColorsProvider>
+    );
+    const { rerender } = render(view(other));
+    const red = screen.getByRole('button', { name: 'Red' });
+    red.focus();
+    rerender(view(own));
+    expect(screen.getByRole('button', { name: 'Red' })).toBe(red);
+    expect(document.activeElement).toBe(red);
+  });
 });

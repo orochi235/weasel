@@ -177,9 +177,10 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
       aria-label={props['aria-label'] ?? 'Swatches'}
       data-held={heldState(access)}
     >
-      {/* A store given by prop is where applies here record too. */}
-      {holdScope(props, props.store && props.store !== ctxStore
-        ? <RecentColorsProvider store={props.store}>{grids}</RecentColorsProvider>
+      {/* A store given by prop is where applies here record too. Wrapped whenever there is a store, so a prop that
+          becomes the context's store, or stops being it, does not remount the grids. */}
+      {holdScope(props, store
+        ? <RecentColorsProvider store={store}>{grids}</RecentColorsProvider>
         : grids)}
     </div>
   );
