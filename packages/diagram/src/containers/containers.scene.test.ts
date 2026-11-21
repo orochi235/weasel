@@ -168,6 +168,15 @@ describe('pools in a scene', () => {
     expect(parentOf(scene, 't')).toBe(null);
   });
 
+  it('hold their lanes when resized smaller than the lanes can shrink to', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    const [, second] = lanesOf(scene as never, pool);
+    scene.setPose(pool as NodeId, { ...(scene.get(pool as NodeId)!.pose as RectPose), height: 100 });
+    expect(pose(scene, second!)).toMatchObject({ y: 120, height: 40 });
+    expect(pose(scene, pool)).toMatchObject({ height: 160 });
+  });
+
   it('grow by a lane added at the end, in one entry', () => {
     const scene = makeScene();
     const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
