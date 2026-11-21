@@ -1,12 +1,15 @@
 import { useRef, useState, type ReactElement } from 'react';
 import { paintPreviewCss, type PaintSlot, type Paint } from '@weasel-js/paint';
 import { Button } from '../Button';
+import type { HoldProps } from '../Disabled';
+import { useControlHold, type ButtonHoldAttrs } from '../Disabled/controlHold';
 import { PaintEditorPopover } from '../PaintField/PaintEditorPopover';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import s from './FillStrokeSwatch.module.css';
 
-/** Props for {@link FillStrokeSwatch}. */
-export interface FillStrokeSwatchProps extends OverlayPortalProps {
+/** Props for {@link FillStrokeSwatch}. Disabled, by its own props or a scope, it takes no press; read-only, its chips
+ *  still pick the target and every paint change is refused. */
+export interface FillStrokeSwatchProps extends OverlayPortalProps, HoldProps {
   /** `null` is an explicit "no paint". */
   fill: Paint | null | undefined;
   stroke: Paint | null | undefined;
@@ -44,8 +47,10 @@ function Chip(props: {
   onInput?: (slot: PaintSlot, paint: Paint | null) => void;
   onChange: (slot: PaintSlot, paint: Paint | null) => Paint | null | void;
   onToggleNone?: (slot: PaintSlot) => void;
+  /** The swatch's hold, as the trigger's attributes and what it refuses. */
+  held: { attrs: ButtonHoldAttrs & { 'aria-describedby'?: string }; refuses: boolean; disabled: boolean };
 }): ReactElement {
-  const { slot, paint, targeted } = props;
+  const { slot, paint, targeted, held } = props;
   const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const { anchor, provide, ready } = useOverlayPortal(props.portalContainer);
@@ -71,9 +76,12 @@ function Chip(props: {
         aria-current={targeted ? 'true' : undefined}
         aria-haspopup="dialog"
         aria-expanded={open}
-        onFocus={() => props.onTargetChange(slot)}
+        {...held.attrs}
+        onFocus={() => { if (!held.disabled) props.onTargetChange(slot); }}
         onClick={(e) => {
+          if (held.disabled) return;
           props.onTargetChange(slot);
+          if (held.refuses) return;
           // Shift-click is the none toggle, and leaves the editor shut.
           if (e.shiftKey && props.onToggleNone) {
             props.onToggleNone(slot);
@@ -113,12 +121,23 @@ export function FillStrokeSwatch(props: FillStrokeSwatchProps): ReactElement {
   const {
     fill, stroke, target, onTargetChange, onInput, onChange,
     onToggleNone, onSwap, onReset, shortcuts, className, portalContainer,
+    disabled, disabledReason, readOnly, readOnlyReason,
   } = props;
+  const hold = useControlHold({ disabled, disabledReason, readOnly, readOnlyReason }, { readonlyRole: false });
+  const held = {
+    attrs: { ...hold.button(true), 'aria-describedby': hold.focus['aria-describedby'] },
+    refuses: hold.refuses,
+    disabled: hold.disabled,
+  };
   const targetPaint = target === 'fill' ? fill : stroke;
-  const chip = { onTargetChange, onInput, onChange, onToggleNone, portalContainer };
+  const chip = { onTargetChange, onInput, onChange, onToggleNone, portalContainer, held };
   const anyButton = onToggleNone || onSwap || onReset;
+  // Read-only refuses Swap and Default as it does the None toggle, which follows it by being pressed.
+  const readOnlyButton = hold.access.state === 'readOnly'
+    ? { disabled: true, disabledReason: hold.access.reason }
+    : {};
 
-  return (
+  return hold.wrap(
     <div
       className={[s.root, className].filter(Boolean).join(' ')}
       role="group"
@@ -128,31 +147,31 @@ export function FillStrokeSwatch(props: FillStrokeSwatchProps): ReactElement {
         <Chip slot="fill" paint={fill} targeted={target === 'fill'} {...chip} />
         <Chip slot="stroke" paint={stroke} targeted={target === 'stroke'} {...chip} />
       </div>
-      {anyButton && (
+      {anyButton && hold.scope(
         <div className={s.buttons}>
           {onToggleNone && (
             <Button
               variant="ghost"
               size="sm"
               pressed={targetPaint === null}
-              onClick={() => onToggleNone(target)}
+              onClick={hold.gate(() => onToggleNone(target))}
               shortcut={shortcuts?.none}
             >
               None
             </Button>
           )}
           {onSwap && (
-            <Button variant="ghost" size="sm" onClick={onSwap} shortcut={shortcuts?.swap}>
+            <Button variant="ghost" size="sm" {...readOnlyButton} onClick={hold.gate(onSwap)} shortcut={shortcuts?.swap}>
               Swap
             </Button>
           )}
           {onReset && (
-            <Button variant="ghost" size="sm" onClick={onReset} shortcut={shortcuts?.reset}>
+            <Button variant="ghost" size="sm" {...readOnlyButton} onClick={hold.gate(onReset)} shortcut={shortcuts?.reset}>
               Default
             </Button>
           )}
-        </div>
+        </div>,
       )}
-    </div>
+    </div>,
   );
 }
