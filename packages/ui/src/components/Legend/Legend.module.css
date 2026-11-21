@@ -35,7 +35,8 @@
 .swatch[data-mark='dot'] {
   width: 6px;
   height: 6px;
-  margin: 0 var(--wzl-space-2) 0 5px;
+  margin-block: 0;
+  margin-inline: 5px var(--wzl-space-2);
   border-radius: 50%;
   background: var(--legend-ink);
 }
