@@ -191,7 +191,7 @@ export function runsToDom(
       span.setAttribute('data-font-weight', String(run.fontWeight));
       if (run.bold) span.setAttribute(BOLD_ATTR, '');
     } else if (run.bold) span.style.fontWeight = '700';
-    if (run.italic) span.style.fontStyle = 'italic';
+    if (run.italic != null) span.style.fontStyle = run.italic ? 'italic' : 'normal';
     // An absolute size wins over a relative one, as it does in `resolveRuns`.
     if (run.fontSize != null) {
       setLength(span, 'fontSize', FONT_SIZE_PX_ATTR, run.fontSize);

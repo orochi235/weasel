@@ -154,7 +154,7 @@ function runAttrs(
   const attrs: string[] = [];
   if (run.fontWeight != null) attrs.push(`font-weight="${run.fontWeight}"`);
   else if (run.bold) attrs.push(`font-weight="700"`);
-  if (run.italic) attrs.push(`font-style="italic"`);
+  if (run.italic != null) attrs.push(`font-style="${run.italic ? 'italic' : 'normal'}"`);
   // `normal` included: on a run it overrides small caps the node passes down.
   if (run.fontVariantCaps) attrs.push(`font-variant="${run.fontVariantCaps}"`);
   if (run.fontFamily) attrs.push(`font-family="${escapeAttr(run.fontFamily)}"`);

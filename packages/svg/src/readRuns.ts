@@ -99,7 +99,8 @@ function readTspanRun(
   if (fw === 'bold' || fw === 'bolder' || fw === 700) run.bold = true;
   else if (fw === 'normal') run.fontWeight = 400;
   else if (typeof fw === 'number') run.fontWeight = fw;
-  if (ownValue(el, 'font-style', onWarn) === 'italic') run.italic = true;
+  const fs = ownValue(el, 'font-style', onWarn);
+  if (fs) run.italic = fs === 'italic';
   const ff = ownValue(el, 'font-family', onWarn);
   if (ff) run.fontFamily = ff;
   const size = ownValue(el, 'font-size', onWarn);

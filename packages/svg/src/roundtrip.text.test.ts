@@ -234,3 +234,12 @@ describe('text fill opacity', () => {
     });
   });
 });
+
+describe('an upright run in italic text', () => {
+  it('reads and writes a tspan that sets font-style back to normal', () => {
+    const node = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><text font-style="italic">a<tspan font-style="normal">b</tspan></text></svg>').nodes[0];
+    expect(node).toMatchObject({ style: { fontStyle: 'italic' }, runs: [{ text: 'a' }, { text: 'b', italic: false }] });
+    expect(serializeSvg([node])).toContain('font-style="normal"');
+    expect(parseSvg(serializeSvg([node])).nodes[0]).toMatchObject({ runs: [{ text: 'a' }, { text: 'b', italic: false }] });
+  });
+});

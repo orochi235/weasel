@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isBoldWeight, numericWeight, resolveRuns, type ResolvedRun } from './resolveRuns';
+import { isBoldWeight, numericWeight, resolveRunFace, resolveRuns, type ResolvedRun } from './resolveRuns';
 import { SMALL_CAPS_SCALE, smallCapsScale } from './smallCaps';
 import { resolveTextStyle } from '../textStyle';
 import type { StyledRun } from '../runs';
@@ -362,5 +362,14 @@ describe('numericWeight', () => {
     expect(numericWeight('')).toBe(400);
     expect(numericWeight('  ')).toBe(400);
     expect(numericWeight(' 300 ')).toBe(300);
+  });
+});
+
+describe('resolveRunFace italic', () => {
+  const style = { fontFamily: 'sans-serif', fontWeight: 400, fontStyle: 'italic' as const };
+  it('sets a run upright under an italic node when italic is false', () => {
+    expect(resolveRunFace({ text: 'a', italic: false }, style).fontStyle).toBe('normal');
+    expect(resolveRunFace({ text: 'a' }, style).fontStyle).toBe('italic');
+    expect(resolveRunFace({ text: 'a', italic: true }, { ...style, fontStyle: 'normal' }).fontStyle).toBe('italic');
   });
 });

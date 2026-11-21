@@ -5,7 +5,7 @@
  * either form into the array shape used by the renderer.
  *
  * Every field except `text` is optional; missing fields fall back to the
- * node-level `TextStyle`. `bold`/`italic` are toggles; `fontWeight` is the
+ * node-level `TextStyle`. `bold` is a toggle and `italic` sets either style; `fontWeight` is the
  * numeric weight `bold` is a preset over.
  */
 
@@ -26,6 +26,7 @@ export interface StyledRun {
   bold?: boolean;
   /** Numeric weight, 100–900. Overrides the node's weight and `bold`. */
   fontWeight?: number;
+  /** `true` sets the run italic and `false` upright, under a node of either style; absent inherits. */
   italic?: boolean;
   fontFamily?: string;
   /** World units, or `{ px }` for screen pixels — resolved against the view
