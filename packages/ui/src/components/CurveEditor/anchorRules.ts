@@ -14,5 +14,5 @@ export function canAnchorMove(points: readonly ControlPoint[], index: number, en
 
 /** Whether anchor `index` goes undrawn: one that cannot move, under `hideNonInteractive`. Undrawn, it takes no press. */
 export function isHiddenAnchor(points: readonly ControlPoint[], index: number, endpoints: EndpointMode, hideNonInteractive: boolean | undefined): boolean {
-  return !!hideNonInteractive && (points[index]?.locked === true || isPinnedEndpointAt(index, points.length, endpoints));
+  return !!hideNonInteractive && !canAnchorMove(points, index, endpoints);
 }
