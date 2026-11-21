@@ -103,3 +103,11 @@ describe('the octant-bspline curve', () => {
     }
   });
 });
+
+describe('a spline base anchor count', () => {
+  it('reads NaN as its least', () => {
+    const least = extractAnchorPairs({ count: 3 });
+    expect(extractAnchorPairs({ count: NaN })).toEqual(least);
+    expect(extractAnchorPairs({ count: NaN }, OCTANT_BSPLINE_MIN_WEIGHT)).toEqual(extractAnchorPairs({ count: 3 }, OCTANT_BSPLINE_MIN_WEIGHT));
+  });
+});

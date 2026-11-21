@@ -65,7 +65,7 @@ type Anchor = BadgeSplineAnchor;
 /** The anchors `params` name, in order along the curve with its ends pinned to s = 0 and s = 1; no weight under `minWeight`. */
 export function extractAnchorPairs(params: BadgeOctantSplineBaseParams = {}, minWeight = 0): Anchor[] {
   const cfg = withDefaults(DEFAULTS, params);
-  const count = Math.max(OCTANT_SPLINE_MIN_ANCHORS, Math.min(Math.floor(cfg.count), OCTANT_SPLINE_MAX_ANCHORS));
+  const count = repeatCount(cfg.count, OCTANT_SPLINE_MIN_ANCHORS, OCTANT_SPLINE_MAX_ANCHORS);
   const sKeys: (keyof Required<BadgeOctantSplineBaseParams>)[] = ['s0','s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11'];
   const rKeys: (keyof Required<BadgeOctantSplineBaseParams>)[] = ['r0','r1','r2','r3','r4','r5','r6','r7','r8','r9','r10','r11'];
   const wKeys: (keyof Required<BadgeOctantSplineBaseParams>)[] = ['w0','w1','w2','w3','w4','w5','w6','w7','w8','w9','w10','w11'];
