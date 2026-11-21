@@ -41,8 +41,14 @@ export type DefaultMotifProps = Partial<Record<FrameKind, Motif>> & {
 export function DefaultMotif({ children, named, ...kinds }: DefaultMotifProps) {
   const outer = useContext(MotifContext);
   const outerNamed = useContext(NamedMotifContext);
-  const frames = <MotifContext.Provider value={{ ...outer, ...kinds }}>{children}</MotifContext.Provider>;
-  return named ? <NamedMotifContext.Provider value={{ ...outerNamed, ...named }}>{frames}</NamedMotifContext.Provider> : frames;
+  const frames = <MotifContext.Provider value={over(outer, kinds)}>{children}</MotifContext.Provider>;
+  return named ? <NamedMotifContext.Provider value={over(outerNamed, named)}>{frames}</NamedMotifContext.Provider> : frames;
+}
+
+/** `outer` with each motif `inner` gives laid over it; a key given as `undefined` keeps the outer motif. */
+function over<T extends Readonly<Record<string, Motif | undefined>>>(outer: T, inner: { readonly [K in keyof T]?: Motif }): T {
+  const given = Object.entries(inner).filter(([, motif]) => motif !== undefined);
+  return Object.fromEntries([...Object.entries(outer), ...given]) as T;
 }
 
 /**

@@ -69,3 +69,20 @@ describe('heading parts given as false or null', () => {
     expect(strip(given)).toBe(strip(left));
   });
 });
+
+describe('DefaultMotif', () => {
+  it('keeps the outer motif for a kind given as undefined', () => {
+    render(
+      <DefaultMotif group={tab()} named={{ x: stereo() }}>
+        <DefaultMotif group={undefined} named={{ x: undefined as unknown as Motif }}>
+          <MotifFrame title="Kind">x</MotifFrame>
+          <MotifFrame title="Named" motif="x">
+            x
+          </MotifFrame>
+        </DefaultMotif>
+      </DefaultMotif>,
+    );
+    expect(screen.getByRole('group', { name: 'Kind' })).toHaveAttribute('data-motif', 'tab');
+    expect(screen.getByRole('group', { name: 'Named' })).toHaveAttribute('data-motif', 'stereo');
+  });
+});
