@@ -346,6 +346,26 @@ describe('full pages', () => {
     expect(notified).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the pages refilling after an emptying a later tick ran, until a frame after it asks for nothing', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const notified = vi.fn();
+    const face = getDynamicFace('Big', 400, 'normal');
+    resetBakeBudget(0);
+    for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
+    // A frame that asks for nothing while the bakes left over land, and one misses.
+    resetBakeBudget(0);
+    vi.runAllTimers();
+    expect(face.font.charMap.size).toBe(0);
+    subscribeGlyphReady(notified);
+
+    resetBakeBudget(Infinity);
+    for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
+    vi.runAllTimers();
+    expect(notified).not.toHaveBeenCalled();
+    expect(face.font.charMap.size).toBe(5);
+    expect(warn.mock.calls.at(-1)?.[0]).toMatch(/more glyphs/);
+  });
+
   it('does not empty the pages for a glyph no page could hold', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     __setGlyphRasterizerForTests({

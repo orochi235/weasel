@@ -30,10 +30,16 @@ interface Room {
   /** False from an emptying of the pages until a frame asks for no new glyph
    *  with none waiting to bake: until what was on screen has baked again. */
   settled: boolean;
+  /** Emptied since the frame began, so that frame's quiet says nothing of
+   *  what has baked again. */
+  emptied: boolean;
   reclaimScheduled: boolean;
 }
 
-const newRoom = (): Room => ({ packer: new ShelfPacker(PAGE_SIZE, MAX_PAGES), settled: true, reclaimScheduled: false });
+const newRoom = (): Room => ({
+  packer: new ShelfPacker(PAGE_SIZE, MAX_PAGES), settled: true, emptied: false, reclaimScheduled: false,
+});
+const emptiedRoom = (): Room => ({ ...newRoom(), settled: false, emptied: true });
 
 let fieldRoom = newRoom();
 let colorRoom = newRoom();
@@ -180,9 +186,9 @@ function warnOnce(message: string): void {
  * drawn has already placed quads on the rects this gives away.
  */
 function reclaim(): void {
-  fieldRoom = { ...newRoom(), settled: false };
-  colorRoom = { ...newRoom(), settled: false };
-  sharpRoom = { ...newRoom(), settled: false };
+  fieldRoom = emptiedRoom();
+  colorRoom = emptiedRoom();
+  sharpRoom = emptiedRoom();
   pending = [];
   starved = new Map();
   clearPages();
@@ -194,7 +200,7 @@ function reclaim(): void {
 /** `reclaim` for the sharp color pages alone. Every glyph keeps its base bake
  *  and draws from that until a sharper one lands again. */
 function reclaimSharp(): void {
-  sharpRoom = { ...newRoom(), settled: false };
+  sharpRoom = emptiedRoom();
   pending = pending.filter((job) => !job.sharp);
   clearSharpPages();
   forgetSharp();
@@ -225,11 +231,12 @@ function flushPending(): void {
  *  `renderSceneToPixels` path passes Infinity so print never defers. */
 export function resetBakeBudget(n: number = DEFAULT_BAKE_BUDGET): void {
   budget = n;
-  if (asked === 0 && pending.length === 0) {
-    if (starvedRetry === 'emptying') starvedRetry = 'idle';
-    fieldRoom.settled = true;
-    colorRoom.settled = true;
-    sharpRoom.settled = true;
+  const rooms = [fieldRoom, colorRoom, sharpRoom];
+  const quiet = asked === 0 && pending.length === 0;
+  if (quiet && starvedRetry === 'emptying' && !rooms.some((room) => room.emptied)) starvedRetry = 'idle';
+  for (const room of rooms) {
+    if (quiet && !room.emptied) room.settled = true;
+    room.emptied = false;
   }
   asked = 0;
 }
