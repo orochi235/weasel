@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { paintKindOf } from '@weasel-js/paint-kinds';
 import { qty, unitSymbol } from '@weasel-js/quantity';
 import { solidColorOf, INHERIT, withAlpha01 } from '@weasel-js/paint';
+import { fontWeightLabel } from '../FontOptions/fontOptions';
 import { useFieldLocale } from '../../useFieldLocale';
 import { stepDisplay } from './NumberControls';
 import type { PropertyControlProps, PropertyNumberFieldProps } from './fieldTypes';
@@ -56,7 +57,7 @@ function readoutBody(p: PropertyControlProps): ReactNode {
     case 'font-family':
       return p.value ? p.value : none();
     case 'font-weight':
-      return p.value === undefined ? none() : String(p.value);
+      return p.value === undefined ? none() : fontWeightLabel(p.value);
     default: {
       const _exhaustive: never = p;
       return String((_exhaustive as { value?: unknown }).value ?? '');

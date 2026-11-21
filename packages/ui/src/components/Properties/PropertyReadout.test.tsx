@@ -65,4 +65,9 @@ describe('a read-only field', () => {
     expect(shown('Width')).toBe('—');
     expect(shown('Title')).toBe('—');
   });
+
+  it('names a font weight as its select does', () => {
+    render(<PropertyControl kind="font-weight" name="Weight" value={700} readOnly onChange={noop} />);
+    expect(shown('Weight')).toBe('700 Bold');
+  });
 });
