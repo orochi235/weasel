@@ -57,3 +57,11 @@ describe("a <tspan>'s user-space stroke gradient under the text's transform", ()
     expect(run.stroke?.paint).toEqual(fill.paint);
   });
 });
+
+describe('a <tspan> inside a <tspan>', () => {
+  it('reports the styling it drops', () => {
+    const { runs, warnings } = runsOf('<text><tspan font-weight="bold">a<tspan fill="red">b</tspan></tspan></text>');
+    expect(runs.map((r) => r.text).join('')).toBe('ab');
+    expect(warnings.some((w) => w.includes('inside a <tspan>'))).toBe(true);
+  });
+});

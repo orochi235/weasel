@@ -54,6 +54,9 @@ export function readRuns(
     const pieces = Array.from(el.childNodes).flatMap((child): Piece[] => {
       if (child.nodeType === 1 && (child as Element).tagName.toLowerCase() === 'tspan') {
         const sp = child as Element;
+        for (const inner of Array.from(sp.children)) {
+          onWarn(`<${inner.tagName}> inside a <tspan> is read as that tspan's text: its own styling and position are dropped`);
+        }
         const run = readTspanRun(sp, gradients, leafStyle, onWarn);
         return [{ tspan: sp, run: ownProp(sp, 'baseline-shift') == null ? { ...run, ...inheritedShift } : run }];
       }
