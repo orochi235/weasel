@@ -148,4 +148,12 @@ describe('mergeRegion where three edges cross at one point', () => {
     const two = pathFromD('M0 0H10V10H0Z M5 5H15V15H5Z');
     for (const tolerance of [0, -0.01, NaN, Infinity]) expect(() => mergeRegion(two, { tolerance })).toThrow(RangeError);
   });
+
+  it('keeps a contour whole where near-duplicate vertices leave gaps wider than the weld', () => {
+    // Each corner's two short edges are dropped, leaving a gap of 1.6e-5 against a weld of 1e-5.
+    const src = pathFromD('M0 0L10 0L10 0.000008L10 0.000016L10 10L0 10L0 9.999992L0 9.999984Z M5 5H15V15H5Z');
+    const merged = mergeRegion(src);
+    expect(merged.commands.filter((c) => c === PATH_M)).toHaveLength(1);
+    expectSameRegion(src, merged, 0.5);
+  });
 });

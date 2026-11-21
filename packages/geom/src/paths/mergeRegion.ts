@@ -158,21 +158,29 @@ function distinct(segs: readonly CubicSegment[], snap: number): CubicSegment[] {
   });
 }
 
-/** `segs` with every straight edge no longer than `snap` dropped, the gap it
- *  leaves closed by moving the next start back, and ending where it starts. */
+/** `segs` with every straight edge no longer than `snap` dropped, each gap
+ *  that leaves closed by moving the next start back, or bridged by a straight
+ *  edge where it is wider, and ending where it starts. */
 function closeContour(given: readonly CubicSegment[], snap: number): CubicSegment[] {
   const short = (s: CubicSegment) => s.line && Math.hypot(s.c[6] - s.c[0], s.c[7] - s.c[1]) <= snap;
   const segs = given.filter((s) => !short(s));
   if (segs.length === 0) return [];
+  const out: CubicSegment[] = [];
+  let bridge: CubicSegment | null = null;
   for (let i = 0; i < segs.length; i++) {
-    const prev = segs[(i + segs.length - 1) % segs.length]!.c,
-      s = segs[i]!;
-    if (prev[6] !== s.c[0] || prev[7] !== s.c[1]) {
-      if (Math.hypot(prev[6] - s.c[0], prev[7] - s.c[1]) <= snap) segs[i] = moveEnds(s, [prev[6], prev[7]], [s.c[6], s.c[7]]);
-      else if (i === 0) segs.push(lineSegment(prev[6], prev[7], s.c[0], s.c[1]));
+    const s = segs[i]!;
+    const prev = (i === 0 ? segs[segs.length - 1]! : out[out.length - 1]!).c;
+    if (prev[6] === s.c[0] && prev[7] === s.c[1]) out.push(s);
+    else if (Math.hypot(prev[6] - s.c[0], prev[7] - s.c[1]) <= snap) out.push(moveEnds(s, [prev[6], prev[7]], [s.c[6], s.c[7]]));
+    else {
+      const gap = lineSegment(prev[6], prev[7], s.c[0], s.c[1]);
+      if (i === 0) bridge = gap;
+      else out.push(gap);
+      out.push(s);
     }
   }
-  return segs;
+  if (bridge) out.push(bridge);
+  return out;
 }
 
 /**
