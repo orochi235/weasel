@@ -6,8 +6,8 @@
  *
  * The commit (HEAD unless `--ref`) is checked out into a throwaway worktree and shipped from there, as
  * `test:fleet` does. The run comes back to `<out>/<run>` (`.control-sweep` by default), which keeps its
- * newest 7 runs. `--tree` names the node tree it runs in, so a second sweep need not sync over a
- * running one. Exits with the sweep's code: 1 when a control is dead.
+ * newest 7 runs. `--tree` names a node tree to run in; without it onto picks a pooled tree on any node with
+ * room. Exits with the sweep's code: 1 when a control is dead.
  */
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

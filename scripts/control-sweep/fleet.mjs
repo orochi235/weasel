@@ -6,8 +6,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-/** The node tree the sweep installs and builds in, apart from every test tree. */
-export const SWEEP_TREE = 'weasel-control-sweep';
 /** Where the sweep writes on the node, relative to that tree. */
 export const NODE_OUT = '.control-sweep';
 export const EXPECT = '30m';
@@ -31,9 +29,12 @@ export const sweepShell = (run, sweepArgs = []) => [
   'exit 0',
 ].join('\n');
 
-/** `onto do`'s arguments for one sweep in node tree `tree`, its output brought into `to`. */
-export const ontoArgs = ({ run, to, task, about, ref, node, tree = SWEEP_TREE, sweepArgs = [] }) => [
-  'do', '--gui', '--kind', 'test', '--icon', 'slider.horizontal.3', '--in', tree, '--force',
+/**
+ * `onto do`'s arguments for one sweep, its output brought into `to`. Without `tree` it runs in one of the node's pooled
+ * trees, so onto can place it on any node with room: a named tree only exists where a sweep ran before.
+ */
+export const ontoArgs = ({ run, to, task, about, ref, node, tree, sweepArgs = [] }) => [
+  'do', '--gui', '--kind', 'test', '--icon', 'slider.horizontal.3', ...(tree ? ['--in', tree] : []), '--force',
   ...(ref ? ['--ref', ref] : []), ...(node ? ['--node', node] : []),
   '--task', task, '--about', about, '--expect', EXPECT, '--timeout', TIMEOUT,
   '--out', `${NODE_OUT}/${run}`, '--to', to,
