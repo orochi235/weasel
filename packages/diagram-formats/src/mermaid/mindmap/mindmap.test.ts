@@ -56,7 +56,7 @@ describe('writing a Mermaid mind map', () => {
   it('writes the tree indented, ids only where a node gives its own, and brackets in plain text escaped', () => {
     const text = writeMindmap({ pages: [page(LAUNCH)] }).text;
     expect(text).toContain('mindmap\n  root((Launch))\n    Research\n      Interviews\n');
-    expect(text).toContain('    risks))Risks((\n');
+    expect(text).toContain('    risks)Risks(\n');
     expect(text).toContain('      (Blog posts)\n');
     const odd = writeMindmap({ pages: [{
       kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a', lines: ['f(x)'] }, { id: 'b' }, { id: 'c' }], edges: [{ from: 'a', to: 'b' }] },
@@ -84,5 +84,14 @@ describe('writing a Mermaid mind map', () => {
     expect(out.text).toBe('mindmap\n  A\n    B\n      D\n    C\n');
     expect(out.warnings).toEqual([LOOP]);
     expect(writeMindmap(graph(['a', 'b'], [['a', 'b']])).warnings).toEqual([]);
+  });
+});
+
+describe('writing a mind map\'s cloud', () => {
+  it('writes a cloud in a cloud\'s brackets, not a bang\'s', () => {
+    const doc = { pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'sky', outline: 'cloud', lines: ['Sky'] }], edges: [] } as never }] };
+    const text = writeMindmap(doc).text;
+    expect(text).toContain('  sky)Sky(\n');
+    expect(parseMindmap(text).root).toMatchObject({ id: 'sky', shape: 'cloud' });
   });
 });

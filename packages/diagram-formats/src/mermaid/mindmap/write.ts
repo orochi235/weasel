@@ -8,7 +8,7 @@ import { mindmapIds } from './read';
 import { getOwn } from '@weasel-js/registry';
 
 const BRACKETS: Readonly<Record<string, readonly [string, string]>> = {
-  rect: ['[', ']'], roundRect: ['(', ')'], ellipse: ['((', '))'], cloud: ['))', '(('], hexagon: ['{{', '}}'],
+  rect: ['[', ']'], roundRect: ['(', ')'], ellipse: ['((', '))'], cloud: [')', '('], hexagon: ['{{', '}}'],
 };
 
 /** Writes the page `opts.page` names, else the first, as a Mermaid mind map. */
