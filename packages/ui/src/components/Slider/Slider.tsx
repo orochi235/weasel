@@ -11,6 +11,10 @@ import { useEditDraft } from '../../useEditDraft';
 
 export type { BoundsCtx, SliderProps, SliderRegionCtx, SliderStop, Thumb, ThumbRenderCtx, ThumbShape, TrackCtx } from './types';
 
+/** A thumb given ±Infinity, sat on the end stop that stands for it. */
+const onTrack = (t: PlainThumb, lo: number, hi: number): PlainThumb =>
+  (t.value === Infinity ? { ...t, value: hi } : t.value === -Infinity ? { ...t, value: lo } : t);
+
 /**
  * Multi-thumb slider over a shared track. The thumb list is controlled, and every change arrives as a whole new
  * array through the edit protocol (`docs/conventions.md`, "Edit callbacks"). Thumbs are draggable, and
@@ -46,10 +50,7 @@ export function Slider<T extends Thumb<Quantity> = Thumb>(props: SliderProps<T>)
   const track = { min: lower.min, max: upper.max };
   const fromTrack = (v: number) => (v > span.max ? upper.fromTrack(v) : lower.fromTrack(v));
   const tagged = edit.shown.some(t => typeof t.value !== 'number');
-  const thumbs = useMemo(
-    () => edit.shown.map(untagThumb).map(t => (t.value === Infinity ? { ...t, value: track.max } : t.value === -Infinity ? { ...t, value: track.min } : t)),
-    [edit.shown, track.min, track.max],
-  );
+  const thumbs = useMemo(() => edit.shown.map(t => onTrack(untagThumb(t), track.min, track.max)), [edit.shown, track.min, track.max]);
   // The infinity stops join whatever stops there are, so arrow keys and a
   // strict drag can land on them; they are labeled only among labeled stops.
   const stops = useMemo(() => {
@@ -76,7 +77,10 @@ export function Slider<T extends Thumb<Quantity> = Thumb>(props: SliderProps<T>)
       onInput={next => onInput(outward(next))}
       onChange={next => onChange(outward(next))}
       keyStep={keyStep && ((t, steps, i) => keyStep(shown(t), steps, i))}
-      onAddThumb={onAddThumb && (at => { const made = onAddThumb(at); return made && untagThumb(made); })}
+      onAddThumb={onAddThumb && (at => {
+        const made = onAddThumb(endless === undefined ? at : fromTrack(at));
+        return made && onTrack(untagThumb(made), track.min, track.max);
+      })}
       renderRegion={renderRegion && endless !== undefined ? (r => renderRegion({ ...r, from: fromTrack(r.from), to: fromTrack(r.to) })) : renderRegion}
       renderReadout={(t, i) => (renderReadout ? renderReadout(shown(t), i) : <QuantityText value={shown(t).value} display={display ?? READOUT} locale={locale} mute />)}
       spokenAt={(v, t) => {

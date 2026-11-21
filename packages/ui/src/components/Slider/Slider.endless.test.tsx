@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { Slider } from './Slider';
 import { withInfinity, unit } from '@weasel-js/quantity';
+import { stubRect } from './testing/stubRect';
 
 describe('Slider endless', () => {
   it('sits a thumb given Infinity at a stop one step past the range, and reads the display’s word', () => {
@@ -85,5 +86,18 @@ describe('Slider endless', () => {
     );
     fireEvent.keyDown(getByRole('slider'), { key: 'ArrowRight' });
     expect(onInput).toHaveBeenLastCalledWith([{ value: Infinity }]);
+  });
+
+  it('hands onAddThumb the value a press stands for, and sits a returned Infinity on the end stop', () => {
+    const onAddThumb = vi.fn((at: number) => ({ value: at }));
+    const onChange = vi.fn();
+    const { container } = render(
+      <Slider min={0} max={100} step={10} endless="max" thumbs={[{ value: 10 }]} onInput={() => {}} onChange={onChange} onAddThumb={onAddThumb} />,
+    );
+    stubRect(container.querySelector('[data-slider-rail]')!, { left: 0, width: 220 });
+    // 220px across 0..110: the press at 218 lands on the end stop at 110.
+    fireEvent.pointerDown(container.querySelector('[data-slider-track]')!, { clientX: 218, clientY: 12, button: 0 });
+    expect(onAddThumb).toHaveBeenCalledWith(Infinity);
+    expect(onChange).toHaveBeenLastCalledWith([{ value: 10 }, { value: Infinity }]);
   });
 });
