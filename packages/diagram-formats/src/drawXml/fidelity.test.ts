@@ -107,3 +107,12 @@ describe('draw-style XML routers', () => {
     expect(warnings).toContain('Connectors routed around shapes were written as orthogonal connectors.');
   });
 });
+
+describe('draw-style XML self-loop labels', () => {
+  it('keeps a dragged label on a self-loop where it was dragged', async () => {
+    const { data } = await readCells(vertex('a', 'rounded=0;', 'x="100" y="100" width="80" height="40"')
+      + '<mxCell id="e" value="loop" edge="1" parent="1" source="a" target="a" style=""><mxGeometry relative="1" as="geometry">'
+      + '<mxPoint x="40" y="-30" as="offset"/></mxGeometry></mxCell>');
+    expect(edge(data, 'e').labelPlacement).toEqual({ at: { near: { x: 180, y: 90 } } });
+  });
+});

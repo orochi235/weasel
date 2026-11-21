@@ -186,6 +186,11 @@ export function labelPlacementOf(cell: RawCell, geo: CellGeometry, line: readonl
     const offset = geo.y + across;
     return { at: { near: { x: anchor.at.x + anchor.dir.x * along, y: anchor.at.y + anchor.dir.y * along } }, ...(offset !== 0 ? { offset } : {}) };
   }
+  if (moved && line.length > 0) {
+    // A line of no length, as a self-loop's with no bends is, has no direction to turn `offset` by.
+    const at = line[0]!;
+    return { at: { near: { x: at.x + off.x, y: at.y + off.y } }, ...(geo.y !== 0 ? { offset: geo.y } : {}) };
+  }
   const at = fraction === 0.5 ? 'mid' : fraction === 0 ? 'start' : fraction === 1 ? 'end' : fraction;
   return { at, ...(geo.y !== 0 ? { offset: geo.y } : {}) };
 }
