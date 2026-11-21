@@ -34,4 +34,15 @@ describe('PageSetupDialog', () => {
     expect(onApply).toHaveBeenCalledWith({ width: 794, height: 1123 });
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('turns the Orientation field with a custom size typed the other way up', () => {
+    const { onApply } = setup();
+    pick('Size', 'Custom');
+    const width = screen.getByRole('spinbutton', { name: /Width/ });
+    act(() => { fireEvent.change(width, { target: { value: '500' } }); fireEvent.blur(width); });
+    expect(screen.getByRole('button', { name: /Orientation/ }).textContent).toContain('Portrait');
+    pick('Orientation', 'Landscape');
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Apply' })); });
+    expect(onApply).toHaveBeenCalledWith({ width: 816, height: 500 });
+  });
 });
