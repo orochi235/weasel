@@ -14,6 +14,10 @@ export interface ThemesInput {
 const quoted = (text: string): string =>
   `'${text.replace(/[\\']/g, '\\$&').replace(/[\n\r\u2028\u2029]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)}'`;
 
+/** `value` as a JavaScript literal. A `"__proto__"` key in an object literal sets the prototype, so it is written computed. */
+const literal = (value: unknown, space?: number): string =>
+  JSON.stringify(value, null, space).replace(/(?<!\\)"__proto__":/g, '["__proto__"]:');
+
 /** `baked` and every theme above it, root first. */
 function chainOf(baked: BakedTheme, byName: ReadonlyMap<string, BakedTheme>): BakedTheme[] {
   const parent = baked.extends ? byName.get(baked.extends) : undefined;
@@ -35,9 +39,9 @@ export function emitThemes(themes: readonly ThemesInput[]): string {
       return `      ${quoted(axisChoiceKey(baked.axes, sel))}: {\n${body}\n      },`;
     });
     return [
-      `  ${JSON.stringify(baked.name)}: {`,
+      `  ${baked.name === '__proto__' ? '["__proto__"]' : JSON.stringify(baked.name)}: {`,
       `    name: ${JSON.stringify(baked.name)},`,
-      `    axes: ${JSON.stringify(baked.axes)},`,
+      `    axes: ${literal(baked.axes)},`,
       '    selections: {',
       selections.join('\n'),
       '    },',
@@ -76,11 +80,11 @@ export function emitThemes(themes: readonly ThemesInput[]): string {
     '} as const satisfies Record<string, GeneratedTheme>;',
     '',
     '/** The built-in themes as authored: their unbaked definitions. */',
-    `export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = ${JSON.stringify(sources, null, 2)};`,
+    `export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = ${literal(sources, 2)};`,
     '',
     '/** The built-in themes with every rule run and references intact. This is',
     ' *  what `weaselTheme` is built from, so the runtime entry bundles no generator. */',
-    `export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = ${JSON.stringify(bakedAll, null, 2)};`,
+    `export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = ${literal(bakedAll, 2)};`,
     '',
   ].join('\n');
 }
