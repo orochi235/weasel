@@ -35,7 +35,8 @@ export function menuFace(
     rows: entries.map((e): MenuRowFace => {
       if (e.kind === 'separator') return { kind: 'separator' };
       const trailing = valueRowWidth(e, m, measure) ?? shortcutOf(e) ?? (e.kind === 'submenu' ? MENU_CARET_SIZE : undefined);
-      return { kind: 'row', label: e.label, ...(trailing !== undefined ? { trailing } : {}) };
+      const current = e.kind === 'item' && e.current === true;
+      return { kind: 'row', label: e.label, ...(trailing !== undefined ? { trailing } : {}), ...(current ? { current } : {}) };
     }),
   };
 }

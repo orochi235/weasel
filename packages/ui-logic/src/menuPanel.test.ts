@@ -65,3 +65,22 @@ describe('measureMenuPanel', () => {
     expect([2, 5, 30, 34, 81, 82].map((y) => menuRowAtY(spans, y))).toEqual([null, 0, 1, 2, 3, null]);
   });
 });
+
+describe('a current row', () => {
+  const weighted: MeasureEnv = {
+    token: (n) => ({ ...TOKENS, '--wzl-font-weight-bold': '700' })[n],
+    text: (t, f) => ({ width: t.length * ((f.weight ?? 400) >= 700 ? 6 : 5), ascent: 8, descent: 2 }),
+  };
+  const label = 'L'.repeat(40);
+
+  it('is measured at --wzl-font-weight-bold, as the DOM draws it', () => {
+    expect(menuPanelMetrics(weighted).currentFont).toMatchObject({ size: 10, weight: 700 });
+    const plain = measureMenuPanel({ rows: [{ kind: 'row', label }] }, UNBOUNDED, weighted);
+    const current = measureMenuPanel({ rows: [{ kind: 'row', label, current: true }] }, UNBOUNDED, weighted);
+    expect(current.width - plain.width).toBe(40);
+  });
+
+  it('falls back to 700 where the theme sets no bold weight', () => {
+    expect(menuPanelMetrics(env).currentFont.weight).toBe(700);
+  });
+});

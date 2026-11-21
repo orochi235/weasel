@@ -32,6 +32,8 @@ export interface MenuPanelMetrics {
   readonly minWidth: number;
   readonly iconSize: number;
   readonly font: FontSpec;
+  /** A current row's font: {@link font} at `--wzl-font-weight-bold`, which `.current` sets. */
+  readonly currentFont: FontSpec;
   /** A line of text's height: the font size times `--wzl-leading-snug`, which `.row` sets. */
   readonly lineHeight: number;
 }
@@ -40,6 +42,7 @@ export interface MenuPanelMetrics {
 export function menuPanelMetrics(env: MeasureEnv): MenuPanelMetrics {
   const inset = MENU_BORDER_WIDTH + envPx(env, '--wzl-space-2');
   const size = envPx(env, '--wzl-font-size');
+  const font = { family: env.token('--wzl-font-ui'), size, weight: 400 };
   return {
     rowHeight: envPx(env, '--wzl-control-h-sm'),
     inset,
@@ -50,16 +53,18 @@ export function menuPanelMetrics(env: MeasureEnv): MenuPanelMetrics {
     separatorHeight: envPx(env, '--wzl-space-1') * 2 + 1,
     minWidth: MENU_MIN_WIDTH,
     iconSize: MENU_ICON_SIZE,
-    font: { family: env.token('--wzl-font-ui'), size, weight: 400 },
+    font,
+    currentFont: { ...font, weight: envNumber(env, '--wzl-font-weight-bold', 700) },
     lineHeight: size * envNumber(env, '--wzl-leading-snug', 1.2),
   };
 }
 
 /** One line of a menu panel as measuring reads it. A row's `trailing` is its last column: text (a shortcut) is
- *  measured in the panel's font, a number (a caret, a value field) is a width. */
+ *  measured in the panel's font, a number (a caret, a value field) is a width. A `current` row's label is
+ *  measured bold, as the DOM draws it. */
 export type MenuRowFace =
   | { readonly kind: 'separator' }
-  | { readonly kind: 'row'; readonly label: string; readonly trailing?: string | number };
+  | { readonly kind: 'row'; readonly label: string; readonly trailing?: string | number; readonly current?: boolean };
 
 /** A menu panel as measuring reads it. */
 export interface MenuPanelFace {
@@ -107,8 +112,9 @@ export function measureMenuPanel(face: MenuPanelFace, c: Constraints, env: Measu
   const spans = menuRowSpans(face.rows, m);
   const trailingWidth = (t: string | number | undefined) =>
     (t === undefined ? 0 : typeof t === 'number' ? t : env.text(t, m.font).width);
+  const labelText = (r: { label: string; current?: boolean }) => env.text(r.label, r.current ? m.currentFont : m.font);
   const intrinsic = maxOf(face.rows, (r) => (r.kind === 'separator' ? 0
-    : m.padX * 2 + m.iconSize + m.gap * 2 + env.text(r.label, m.font).width + m.labelPad + trailingWidth(r.trailing)));
+    : m.padX * 2 + m.iconSize + m.gap * 2 + labelText(r).width + m.labelPad + trailingWidth(r.trailing)));
   const width = clamp(Math.max(m.minWidth, Math.ceil(intrinsic)), c.minWidth, c.maxWidth);
   const last = spans.at(-1);
   const height = clamp((last ? last.y + last.h : m.padY) + m.padY, c.minHeight, c.maxHeight);
@@ -130,7 +136,7 @@ export function measureMenuPanel(face: MenuPanelFace, c: Constraints, env: Measu
   const first = face.rows.findIndex((r) => r.kind === 'row');
   const firstRow = face.rows[first];
   const baseline = firstRow?.kind === 'row'
-    ? spans[first]!.y + centeredBaseline(m.rowHeight, m.lineHeight, env.text(firstRow.label, m.font))
+    ? spans[first]!.y + centeredBaseline(m.rowHeight, m.lineHeight, labelText(firstRow))
     : height;
   return { width, height, baseline, layout: { rows, metrics: m } };
 }

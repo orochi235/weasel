@@ -3,7 +3,7 @@ import { formatShortcut } from '@weasel-js/gestures';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { MenuEntry } from '@weasel-js/menu';
 import type { HudDrawCtx } from '../widget';
-import { panelCommands, measurePanel } from './panelCommands';
+import { menuFace, panelCommands, measurePanel } from './panelCommands';
 import { charEnv, menuTokens, THEME_METRICS as m } from './menu.fixture';
 
 const ctx = {
@@ -75,6 +75,11 @@ describe('panelCommands', () => {
     const columns = m.padX * 2 + m.iconSize + m.gap * 2 + m.labelPad;
     expect(measurePanel([chip], env).width).toBe(columns + label.length * 7 + text.length * 7);
     expect(measurePanel([plain], env).width).toBe(columns + label.length * 7);
+  });
+
+  it('marks a current item current, so its label is measured bold', () => {
+    const rows = menuFace([{ kind: 'item', key: 'a', label: 'A', current: true, run }, { kind: 'item', key: 'b', label: 'B', run }], m, () => 0).rows;
+    expect(rows).toEqual([{ kind: 'row', label: 'A', current: true }, { kind: 'row', label: 'B' }]);
   });
 
   it('rounds the panel by --wzl-radius-md and casts a shadow in --wzl-shadow beneath it', () => {
