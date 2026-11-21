@@ -1,0 +1,74 @@
+{
+ "id": "ui.components.MotifFrame",
+ "commit": "b400d7039e8ac2f03166b3332ac613eba61c689f",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/MotifFrame/MotifFrame.module.css",
+  "packages/ui/src/components/MotifFrame/MotifFrame.stories.module.css",
+  "packages/ui/src/components/MotifFrame/MotifFrame.stories.tsx",
+  "packages/ui/src/components/MotifFrame/MotifFrame.tsx",
+  "packages/ui/src/components/MotifFrame/index.ts",
+  "packages/ui/src/components/MotifFrame/motifs/divider.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/divider.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/index.ts",
+  "packages/ui/src/components/MotifFrame/motifs/notch.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/notch.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/plaque.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/plaque.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/rule.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/rule.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/sheet.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/sheet.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/stereo.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/stereo.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/tab.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/tab.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/titlebar.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/titlebar.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/well.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/well.tsx",
+  "packages/ui/src/components/MotifFrame/root.ts",
+  "packages/ui/src/components/MotifFrame/types.ts"
+ ],
+ "a": 8,
+ "b": 6,
+ "m": 3,
+ "distinct": 11,
+ "chapman": 14.8,
+ "unfound": 3.8,
+ "read": {
+  "A": 26,
+  "B": 26
+ },
+ "patches": 11,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.4,
+   "B": 3.3,
+   "match": 0.1,
+   "fix": 17.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1689710,
+  "costUsd": 4.99
+ },
+ "fixCommits": [
+  "39c9f49d98a1b9c9e6f3176441b930878a667a2e",
+  "d14d16a2ce8e5d325f437757a7c006f970bda6c9",
+  "9df088899e51c80c7cb9f82b1a7a2a174604ccca",
+  "2fa2172f54c3021c7345acbc9bb2042a76fa6664",
+  "7c8117de3cefb32a26650d30109e681b4c49cff5",
+  "0cfdb6c676b98514ec75ef056c34c576a22b0fc8",
+  "0c2a7981c77cd59a9f7231fbc15e9cedf60da6c9",
+  "772f457c64fe7d89bc0d7ededf2e88f29d559dd6",
+  "4dcf2d3231ef6af776c6c53acc75854c938d3cbd",
+  "b5df5b3936537130fde7ad9a8ef40c8e01fd6d4a",
+  "ef93a6d83caa456c08187ae27b7565492a978d78"
+ ]
+}

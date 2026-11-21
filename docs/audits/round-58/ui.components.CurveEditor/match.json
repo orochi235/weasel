@@ -1,0 +1,45 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ],
+  [
+   3,
+   5
+  ],
+  [
+   4,
+   3
+  ],
+  [
+   9,
+   4
+  ]
+ ],
+ "a": [
+  "hideNonInteractive hides pinned-x endpoints, which can still be dragged in y",
+  "A curve press beside a locked anchor drags the locked anchor",
+  "Ordered anchors under an inverted x range jump to xMin and break their order",
+  "Arrow keys move a bezier handle the wrong way on a descending segment",
+  "Undo, redo and arrow keys run while a drag is in flight",
+  "One-shot edits commit and record an undo step even when nothing changed",
+  "Two layers committing on one key leave a dead undo step",
+  "Selected segment's bezier handles stay at the old key positions during a key drag",
+  "RimContour story: the partition layer swallows every press at the seam, so the seam's y cannot be dragged",
+  "A per-layer `--curve-line` recolors only the line, not that layer's anchors or default fill"
+ ],
+ "b": [
+  "A click-empty insert ignores the layer's `xClamp`, so it drops an anchor outside the layer's sub-range",
+  "On an inverted x range the strict-function spacing epsilon goes negative, so anchors may cross and crowd detection never fires",
+  "A press on the curve beside a locked (or hidden) anchor drags that anchor",
+  "Undo, redo and arrow keys run while a drag is in flight, and the drag then records an undo step over them",
+  "A curve layer's color override reaches the curve but not its anchors or default fill",
+  "Arrow keys on a bezier handle of a descending segment move it the wrong way",
+  "Arrow keys move anchors and keys backwards on an inverted axis",
+  "Dragging a handle on a flat keyframe segment zeroes that handle's stored y",
+  "Enter on an already-selected key or segment records an empty undo step",
+  "A key one layer commits without preventing default is undone together with the next layer's edit",
+  "A drag already in flight keeps editing and commits after the editor goes disabled or read-only"
+ ]
+}

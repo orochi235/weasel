@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "measureMenuPanel sizes every label at weight 400, but the DOM menu draws the current row bold",
+  "nestHold carries an outer hold's reason in even while that outer hold is off",
+  "controlAccess counts an empty reason as a reason, but nestHold treats it as none",
+  "measureRowList measures the empty state upright, but ItemList sets it in italic",
+  "runs() passes a fractional or infinite WEASEL_PBT_RUNS straight to fast-check"
+ ],
+ "b": [
+  "measureButton shrinks the label to any width, but the DOM label it claims to match cannot shrink below its min-content",
+  "envNumber reads any CSS value by parseFloat, so a percentage or length line-height token is taken as a multiplier",
+  "measureMenuPanel measures every label at weight 400, but the DOM draws a current row bold",
+  "measureRowList measures the empty state upright, but the DOM sets it in italic"
+ ]
+}

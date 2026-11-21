@@ -1,0 +1,65 @@
+{
+ "id": "ui-input",
+ "commit": "b400d7039e8ac2f03166b3332ac613eba61c689f",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui-input/src/createLiveSelectionModel.ts",
+  "packages/ui-input/src/edgeScroll.ts",
+  "packages/ui-input/src/grid.ts",
+  "packages/ui-input/src/heldAt.ts",
+  "packages/ui-input/src/index.ts",
+  "packages/ui-input/src/keySteps.ts",
+  "packages/ui-input/src/list.ts",
+  "packages/ui-input/src/pbt.fixture.ts",
+  "packages/ui-input/src/press.ts",
+  "packages/ui-input/src/reorder.ts",
+  "packages/ui-input/src/scheduler.ts",
+  "packages/ui-input/src/selection.ts",
+  "packages/ui-input/src/slider.ts",
+  "packages/ui-input/src/solo.ts",
+  "packages/ui-input/src/span.ts",
+  "packages/ui-input/src/spatial.ts",
+  "packages/ui-input/src/stepRepeat.ts",
+  "packages/ui-input/src/sweep.ts",
+  "packages/ui-input/src/tabOrder.ts",
+  "packages/ui-input/src/textCommit.ts",
+  "packages/ui-input/src/tree.ts",
+  "packages/ui-input/src/typeahead.ts",
+  "packages/ui-input/src/wheel.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 2,
+ "distinct": 5,
+ "chapman": 5.7,
+ "unfound": 0.7,
+ "read": {
+  "A": 23,
+  "B": 23
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.3,
+   "B": 14.7,
+   "match": 1.6,
+   "fix": 12.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1652961,
+  "costUsd": 5.02
+ },
+ "fixCommits": [
+  "65e8eced8231d31de9ca135f7bd4f555a0320a0b",
+  "d868c48fdb056179012d7f4f1cfc186d3736587c",
+  "00a0e966c936eb9a7b5d9c2bc66df099ddee2a0a",
+  "26cdc897a585054086d4035c25ead0fd826f4334",
+  "dc5efa8679d84c2990b12c08e6162108651b7dd3"
+ ]
+}

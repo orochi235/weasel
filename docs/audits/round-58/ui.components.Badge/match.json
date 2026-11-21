@@ -1,0 +1,43 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   2,
+   4
+  ],
+  [
+   3,
+   3
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   6,
+   6
+  ]
+ ],
+ "a": [
+  "`as=\"span\"` with `onClick` silently drops the click handler on an unsplit badge",
+  "Base and effect params merge with a plain spread, so an `undefined` value overrides its default — unlike shape params",
+  "The `padding` prop replaces the shape's insets, and useInsets then miscounts the badge's own padding",
+  "Fitted insets go stale when only the badge's padding changes",
+  "Focus ring shows on an unsplit removable badge when only its remove button is focused, but not on a split one",
+  "Crawl phase leaves 0..1 for a negative `crawl`",
+  "Unknown `shape` keys resolve through the prototype chain"
+ ],
+ "b": [
+  "A plain removable badge marks itself focused when its remove control takes focus",
+  "`as=\"span\"` with `onClick` drops the click handler on a plain badge but calls it on a removable one",
+  "`labelProps.className` and `aria-label` are overwritten on a removable badge's label",
+  "A fitted base reads its own padding only on mount and on content resize, so a padding change leaves the fit stale",
+  "With a `padding` prop, a fitted base's insets are computed and then thrown away, so the content can overlap the outline",
+  "A composed badge with a mask-zone effect clips its body beyond 10% of the box",
+  "The unknown-shape fallback is bypassed by prototype keys, and a bad `base` key throws",
+  "The `BadgeShape` doc says `square` is drawn in CSS, but it is a composed rounded-rect"
+ ]
+}

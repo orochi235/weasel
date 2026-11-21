@@ -1,0 +1,57 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   4,
+   4
+  ],
+  [
+   5,
+   6
+  ],
+  [
+   6,
+   11
+  ],
+  [
+   7,
+   10
+  ],
+  [
+   8,
+   9
+  ]
+ ],
+ "a": [
+  "keyLegendsFromFormatted drops or garbles the `+` key in a `+`-joined legend",
+  "With a layout, KeyDiagram drops the `label` given in its `keys` prop",
+  "Without a layout, KeyDiagram ignores a key's `width`",
+  "useLinger shows the diagram again after `linger` is switched on later",
+  "`data-captioned` counts marks for keys the diagram doesn't draw",
+  "keyGlyph upper-cases whole key names, which keyLegendFromKey doesn't",
+  "The KeySequence story describes `joins: 'key'` differently from the code",
+  "The KeyCap gallery labels `⎋` as `wide`, but it renders square",
+  "The story relabeler maps `⇪` (Caps Lock) to the `meta` modifier"
+ ],
+ "b": [
+  "keyLegendsFromFormatted drops or swallows the plus key in a `+`-joined legend (`Ctrl++`, `Ctrl+Shift++`)",
+  "keyLegendsFromChord treats Ctrl and Meta as the key and drops the real key after them",
+  "keyLegendsFromChord orders modifiers one way when there is a key and another way when there is none",
+  "useHeldKeys releases every non-modifier when Meta comes up, on every platform",
+  "KeyDiagram reserves caption room for marks on keys it does not draw",
+  "KeyDiagram ignores a `keys` entry's `label` and `width` when a layout is given",
+  "keyGlyph upper-cases whole key names, unlike keyLegendFromKey",
+  "Legend fitting measures a symbol's font character, but the key draws an icon at 1.25× the legend size",
+  "KeyBank story's key-width control has no effect below about 1.45 key heights",
+  "KeyCap story helper relabels Caps Lock (⇪) as Meta",
+  "KeyCap Gallery labels ⎋ as `wide`, though inferKeycapKind makes it `square`",
+  "KeySequence story describes `joins: 'key'` as one separator, which the code does not do"
+ ]
+}

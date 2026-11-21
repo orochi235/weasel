@@ -1,0 +1,71 @@
+{
+ "id": "text.layout",
+ "commit": "b400d7039e8ac2f03166b3332ac613eba61c689f",
+ "date": "2026-11-20",
+ "files": [
+  "packages/text/src/layout/arrayPool.ts",
+  "packages/text/src/layout/bidiLines.ts",
+  "packages/text/src/layout/bidiRegistry.ts",
+  "packages/text/src/layout/bidiSeam.ts",
+  "packages/text/src/layout/decorationMetrics.ts",
+  "packages/text/src/layout/engineGeneration.ts",
+  "packages/text/src/layout/engineSlot.ts",
+  "packages/text/src/layout/glyphQuads.ts",
+  "packages/text/src/layout/layoutCache.ts",
+  "packages/text/src/layout/layoutColumns.ts",
+  "packages/text/src/layout/layoutEntries.ts",
+  "packages/text/src/layout/layoutLines.ts",
+  "packages/text/src/layout/layoutOpts.ts",
+  "packages/text/src/layout/layoutRuns.ts",
+  "packages/text/src/layout/lineBreak/lineBreakTable.ts",
+  "packages/text/src/layout/lineBreak/lineBreaks.ts",
+  "packages/text/src/layout/lineBreak/wrapLines.ts",
+  "packages/text/src/layout/paintCache.ts",
+  "packages/text/src/layout/paintGroups.ts",
+  "packages/text/src/layout/paintRuns.ts",
+  "packages/text/src/layout/runsEntries.ts",
+  "packages/text/src/layout/runsKey.ts",
+  "packages/text/src/layout/shapedRuns.ts",
+  "packages/text/src/layout/shaperRegistry.ts",
+  "packages/text/src/layout/shaperSeam.ts",
+  "packages/text/src/layout/tabStops.ts",
+  "packages/text/src/layout/testing/fontFixtures.ts",
+  "packages/text/src/layout/testing/layoutAndPaint.ts",
+  "packages/text/src/layout/textFit.ts",
+  "packages/text/src/layout/textPoseLayout.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 7,
+ "unfound": 2,
+ "read": {
+  "A": 30,
+  "B": 30
+ },
+ "patches": 4,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 17.3,
+   "B": 11.9,
+   "match": 0.8,
+   "fix": 14.2
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 3330385,
+  "costUsd": 9.83
+ },
+ "fixCommits": [
+  "f9ed89fa12c35b7b92e90d407b7278df277c26da",
+  "c3f3d9a3cf4331bbb90de5865478aa44f35a7ac5",
+  "c356829d67bfa5542b1d462857ecf3398a2580c2",
+  "9199cb536da8e674230161a45793786fe3c79d5c"
+ ]
+}

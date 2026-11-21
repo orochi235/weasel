@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   7
+  ]
+ ],
+ "a": [
+  "The canvas's own editor stands down for a host editor of a different scene, and the dep then falls to the no-op stub",
+  "editEffectText places the caret by the default `data.text` shape, not the editor's `getText`, and reads stored rather than shown data",
+  "enterTextEdit swallows the sticky tool's click on a selected non-text node (or a multi-selection) instead of passing it on",
+  "A sticky `background` or `fill` with no `paint` is replaced by the default yellow paper / default ink"
+ ],
+ "b": [
+  "The canvas's own editor stands down for a host editor of a different scene, leaving the canvas with no editor",
+  "The properties panel's \"Text\" field writes `data.text` alone, so on a node with runs the edit never shows",
+  "A rotated clipped text node's outline keeps glyphs past its box when they fall inside the box's axis-aligned bounds",
+  "`kit:text`'s `drawnBounds` and `ink` read only the node's stroke, so a stroke set on a run is left out of its reach",
+  "A `fit: 'shrink'` text node keeps the size it was fitted at before its face loaded",
+  "A double-click on text drawn past its box does not open it, though a click there selects it",
+  "The canvas's own editor hides the edited node's glyphs in every canvas of the scene sharing its offset parent",
+  "`useStickyTool({ background: {} })` (a note with no paper) still makes yellow notes"
+ ]
+}

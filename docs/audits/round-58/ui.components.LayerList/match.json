@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "An open rename field that closes because of a hold, a lock or a removal leaves `renaming` set, so it reopens later and takes focus",
+  "A locked layer's children can be moved out of it, though moves into it and among its children are refused",
+  "A layer whose `children` is empty is drawn as a leaf, so an emptied group can never be dropped into again",
+  "The empty remove slot's width ignores `--wzl-button-h`, which the remove button's own width reads"
+ ],
+ "b": [
+  "A locked layer refuses drops into it but lets its children be dragged out, renamed and removed",
+  "A rename left open when the list is held reopens by itself and steals focus when the hold lifts",
+  "Opening and leaving the rename field renames a layer whose label has surrounding whitespace",
+  "The uncontrolled fold map keeps every toggled id forever",
+  "`moveLayers` silently drops the moved layers when the target parent is missing or is being moved"
+ ]
+}

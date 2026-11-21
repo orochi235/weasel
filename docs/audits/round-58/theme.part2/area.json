@@ -1,0 +1,67 @@
+{
+ "id": "theme.part2",
+ "commit": "b400d7039e8ac2f03166b3332ac613eba61c689f",
+ "date": "2026-11-20",
+ "files": [
+  "packages/theme/src/hooks/controls.ts",
+  "packages/theme/src/hooks/frame.ts",
+  "packages/theme/src/hooks/panels.ts",
+  "packages/theme/src/index.ts",
+  "packages/theme/src/inherited.module.css",
+  "packages/theme/src/numeric.module.css",
+  "packages/theme/src/panel.ts",
+  "packages/theme/src/pbt.fixture.ts",
+  "packages/theme/src/prefs.ts",
+  "packages/theme/src/prefs/leaf.ts",
+  "packages/theme/src/prefs/pins.ts",
+  "packages/theme/src/prefs/schema.ts",
+  "packages/theme/src/prefs/tokens.ts",
+  "packages/theme/src/react.tsx",
+  "packages/theme/src/resolveTheme.ts",
+  "packages/theme/src/sizer.module.css",
+  "packages/theme/src/store.ts",
+  "packages/theme/src/testing/computedColor.ts",
+  "packages/theme/src/testing/themeGate.ts",
+  "packages/theme/src/theme.ts",
+  "packages/theme/src/themeSheet.ts",
+  "packages/theme/src/themes/platinum.ts",
+  "packages/theme/src/themes/win9x.ts",
+  "packages/theme/src/tokenGroup.ts",
+  "packages/theme/src/tokenPx.ts",
+  "packages/theme/src/useColorMode.ts",
+  "packages/theme/src/warnOnce.ts"
+ ],
+ "a": 1,
+ "b": 2,
+ "m": 0,
+ "distinct": 3,
+ "chapman": 5,
+ "unfound": 2,
+ "read": {
+  "A": 27,
+  "B": 27
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 15.8,
+   "B": 4.9,
+   "match": 2.2,
+   "fix": 6.4
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1400413,
+  "costUsd": 4.32
+ },
+ "fixCommits": [
+  "8f1cf206197deb24a74dbf64196d8edf29522ec9",
+  "aa5bf43b34c3eaba5be3f0cede70803a9e9842e5",
+  "dc784c710b00e5d1ea7d2cbd2648140428ba5b09"
+ ]
+}

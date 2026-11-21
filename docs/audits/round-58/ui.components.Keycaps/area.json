@@ -1,0 +1,77 @@
+{
+ "id": "ui.components.Keycaps",
+ "commit": "b400d7039e8ac2f03166b3332ac613eba61c689f",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Keycaps/KeyBank.stories.tsx",
+  "packages/ui/src/components/Keycaps/KeyBank.tsx",
+  "packages/ui/src/components/Keycaps/KeyDiagram.module.css",
+  "packages/ui/src/components/Keycaps/KeyDiagram.stories.tsx",
+  "packages/ui/src/components/Keycaps/KeyDiagram.tsx",
+  "packages/ui/src/components/Keycaps/KeySequence.stories.tsx",
+  "packages/ui/src/components/Keycaps/KeyboardLayout.stories.tsx",
+  "packages/ui/src/components/Keycaps/Keycap.stories.tsx",
+  "packages/ui/src/components/Keycaps/Keycap.tsx",
+  "packages/ui/src/components/Keycaps/Keycaps.module.css",
+  "packages/ui/src/components/Keycaps/Keycaps.stories.module.css",
+  "packages/ui/src/components/Keycaps/Keycaps.tsx",
+  "packages/ui/src/components/Keycaps/ShortcutKeys.stories.tsx",
+  "packages/ui/src/components/Keycaps/ShortcutKeys.tsx",
+  "packages/ui/src/components/Keycaps/index.ts",
+  "packages/ui/src/components/Keycaps/keyBankContext.ts",
+  "packages/ui/src/components/Keycaps/keyGlyph.ts",
+  "packages/ui/src/components/Keycaps/keyLegendsFromChord.ts",
+  "packages/ui/src/components/Keycaps/keyLegendsFromFormatted.ts",
+  "packages/ui/src/components/Keycaps/keyboardLayout.ts",
+  "packages/ui/src/components/Keycaps/keycapFonts.story.ts",
+  "packages/ui/src/components/Keycaps/keycapLegends.story.ts",
+  "packages/ui/src/components/Keycaps/legendFit.ts",
+  "packages/ui/src/components/Keycaps/legendMeasure.ts",
+  "packages/ui/src/components/Keycaps/useHeldKeys.ts",
+  "packages/ui/src/components/Keycaps/useLegendFit.ts",
+  "packages/ui/src/components/Keycaps/variantIcons.ts"
+ ],
+ "a": 9,
+ "b": 12,
+ "m": 7,
+ "distinct": 14,
+ "chapman": 15.3,
+ "unfound": 1.3,
+ "read": {
+  "A": 27,
+  "B": 27
+ },
+ "patches": 13,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 12.2,
+   "B": 4.7,
+   "match": 0.2,
+   "fix": 10.2
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1614814,
+  "costUsd": 4.89
+ },
+ "fixCommits": [
+  "5e5d64e63922266a07e3c4f7c28c3d3beaf4bc58",
+  "42715a5e195750fbc1d907894cacf43461ee2a7c",
+  "356ce6101095a8f89de222b8002d4a287e75aabf",
+  "f0e000b892da16a46b03f00fba86dcfe59f2009b",
+  "a9029084d6714de20ba8aa97514f12e3389006ea",
+  "611540e0137eacf15bae0d17c9fe998ade962bca",
+  "2075cbd6fc5cea77f6a4140f8ca1fab5951b9b10",
+  "ac5c1bdc20872b884bd62d99fca65e883b4a1e60",
+  "a283eaa2129fd474beb10d62a87e575b540997ea",
+  "65b8f2ae044d09344e0fc99c87cd49c4b3365a24",
+  "eee444009eda3f541c87f96aabd887a605dd9586",
+  "48e01159b51f20fb167d8c099dd11e5d0dcd9f0e",
+  "23f4a5f9c0a9e02c08d2c4a8cda800c699ddcebc"
+ ]
+}

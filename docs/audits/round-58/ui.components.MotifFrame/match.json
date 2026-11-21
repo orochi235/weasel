@@ -1,0 +1,34 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "Untitled frames draw an empty heading in rule, divider, notch, tab, titlebar, stereo and plaque, while sheet and well draw none",
+  "An untitled notch frame is named by its legend's controls",
+  "`<DefaultMotif panel={undefined}>` wipes out the outer default instead of keeping it",
+  "sheet and well silently drop `inline` when the frame has no title",
+  "The titlebar clips the focus ring of an `inline` control in the title strip",
+  "Rule and divider treat `null`/`false` actions and leading as present, and sheet/well as absent",
+  "Rule draws its tint edge on the physical left, so in RTL it ends up on the trailing edge",
+  "sheet always sets a backdrop-filter, making every panel a containing block for fixed descendants"
+ ],
+ "b": [
+  "`<DefaultMotif>` given a kind as `undefined` erases the outer default instead of keeping it",
+  "Most motifs draw a heading for an untitled frame; only `sheet` and `well` keep the \"untitled draws no heading\" contract",
+  "`inline` is dropped for an untitled frame in `sheet` and `well` but drawn by every other motif",
+  "A `well({ label })` styles the titles of every well nested inside it",
+  "`stereo`'s extra body inset uses physical sides while the bar's placement follows the inline direction, so they part in RTL",
+  "`plaque({ mix })` outside 0–100 makes the whole fill and ink invalid"
+ ]
+}

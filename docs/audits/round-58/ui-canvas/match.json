@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "While an annotation is picked, a multi-select change to content rows is dropped, and the pick can never be toggled off",
+  "A range whose fill is MIXED between none and a color shows \"No fill\" as plainly off, not mixed",
+  "PlotDataPanel keeps showing an edit's error after the chart changes from elsewhere",
+  "AnchorFields' SeveralAnchors story says `+=10` moves both anchors, but its stand-in writer sets a Mixed field to 10"
+ ],
+ "b": [
+  "useSceneLayerList's onSelectionChange swallows a content row added while an annotation is picked, and never unpicks",
+  "SceneGradientHandles edits `nodeId`'s gradient but commits it to the selection's nodes",
+  "A SelectionPanel draft that ends in a cancel stays in the scene, outside undo",
+  "PlotDataPanel offers no way to unset an optional color or boolean field",
+  "CharacterOptions drops a solid fill's `opacity`, shows it, and erases it on the next color edit"
+ ]
+}

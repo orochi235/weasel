@@ -1,0 +1,51 @@
+{
+ "id": "ui.components.MenuBar",
+ "commit": "b400d7039e8ac2f03166b3332ac613eba61c689f",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/MenuBar/MenuBar.module.css",
+  "packages/ui/src/components/MenuBar/MenuBar.stories.module.css",
+  "packages/ui/src/components/MenuBar/MenuBar.stories.tsx",
+  "packages/ui/src/components/MenuBar/MenuBar.tsx",
+  "packages/ui/src/components/MenuBar/MenuBarTitle.tsx",
+  "packages/ui/src/components/MenuBar/index.ts",
+  "packages/ui/src/components/MenuBar/menuBarHandle.ts",
+  "packages/ui/src/components/MenuBar/menuBarTitles.ts",
+  "packages/ui/src/components/MenuBar/useMenuBarFocus.ts",
+  "packages/ui/src/components/MenuBar/useMenuBarKeys.tsx"
+ ],
+ "a": 4,
+ "b": 2,
+ "m": 2,
+ "distinct": 4,
+ "chapman": 4,
+ "unfound": 0,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 4,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.9,
+   "B": 2.8,
+   "match": 0.2,
+   "fix": 3
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 960352,
+  "costUsd": 2.98
+ },
+ "fixCommits": [
+  "30a4077bb446d15d8136519e1297a0b4d6c4e657",
+  "7983c4e46c6860b2a5715b6ce8b0cea62a0d0453",
+  "f2c5695491b83151a2fe0e75b04aef1fe9066a27",
+  "0450fcab87db1f0999dadd78d990ddc05f7fdbb8"
+ ]
+}

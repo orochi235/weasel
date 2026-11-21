@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "A control's explicit `invalid={false}` overrides its Field's error in every React Aria control, but not in UnitField",
+  "An empty `label` or `description` (`null`, `false`, `''`) counts as present, though an empty `error` does not"
+ ],
+ "b": [
+  "A Field's error paints every frame inside it red, including controls the hook leaves valid",
+  "A Field's label is a `<span>`, so it neither points at the id it hands its control nor focuses it on click",
+  "`label` and `description` count `null`/`false`/`''` as present, unlike `error`, so the control is named or described by an empty element",
+  "The story's `NativeInput` overwrites the consumer's own id and name instead of passing them through `useFieldControl`"
+ ]
+}

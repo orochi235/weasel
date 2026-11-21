@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "themePrefsValues splits a token's value along an axis where the schema's own leaf holds one value, and shows it as undefined at the selections the token is missing from"
+ ],
+ "b": [
+  "A dimension token whose value is a bare `0` gets a unitless number leaf, so editing it pins an invalid length",
+  "A token a theme sets at only some axis values shows another selection's value at the rest"
+ ]
+}

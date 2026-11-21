@@ -1,0 +1,60 @@
+{
+ "id": "ui.components.GradientEditor",
+ "commit": "b400d7039e8ac2f03166b3332ac613eba61c689f",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/GradientEditor/GradientEditor.module.css",
+  "packages/ui/src/components/GradientEditor/GradientEditor.stories.tsx",
+  "packages/ui/src/components/GradientEditor/GradientEditor.tsx",
+  "packages/ui/src/components/GradientEditor/GradientHandles.stories.module.css",
+  "packages/ui/src/components/GradientEditor/GradientHandles.stories.tsx",
+  "packages/ui/src/components/GradientEditor/GradientHandles.tsx",
+  "packages/ui/src/components/GradientEditor/GradientStops.module.css",
+  "packages/ui/src/components/GradientEditor/GradientStops.tsx",
+  "packages/ui/src/components/GradientEditor/StopEditor.tsx",
+  "packages/ui/src/components/GradientEditor/handleOverlay.module.css",
+  "packages/ui/src/components/GradientEditor/handleOverlay.tsx",
+  "packages/ui/src/components/GradientEditor/index.ts",
+  "packages/ui/src/components/GradientEditor/useStopSelection.ts"
+ ],
+ "a": 7,
+ "b": 6,
+ "m": 3,
+ "distinct": 10,
+ "chapman": 13,
+ "unfound": 3,
+ "read": {
+  "A": 13,
+  "B": 13
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.6,
+   "B": 4.3,
+   "match": 0.2,
+   "fix": 15.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1878272,
+  "costUsd": 5.59
+ },
+ "fixCommits": [
+  "425b3bdfafdc7ab75c80192c1fd23b77570c1edc",
+  "f60f91abac807a1ebd4bb816288b23109dfe9308",
+  "8a9d9b038345ff6b652f863c51aea0b20f133393",
+  "7221d698e8c234bbefefe5c324cce474221abe11",
+  "f60eb1d921ef09eeec10a00bc809726e491b5d6e",
+  "d7d80afb6df188c1b0ad74dcf23f190d958b8f7a",
+  "72497cea7e5d5f0b3903abebe7b9b6cda46a624d",
+  "57ceaee8c9033c5f8267bbd5b1e2f286404a092f",
+  "76b506fe26bad0f072ee7e760704aba073131216",
+  "0c6899205fb37267fd1b1c5a3f00a043fb03e399"
+ ]
+}

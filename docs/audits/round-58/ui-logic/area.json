@@ -1,0 +1,53 @@
+{
+ "id": "ui-logic",
+ "commit": "b400d7039e8ac2f03166b3332ac613eba61c689f",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui-logic/src/button.ts",
+  "packages/ui-logic/src/controlSize.ts",
+  "packages/ui-logic/src/focus.ts",
+  "packages/ui-logic/src/hold.ts",
+  "packages/ui-logic/src/index.ts",
+  "packages/ui-logic/src/measure.ts",
+  "packages/ui-logic/src/menuPanel.ts",
+  "packages/ui-logic/src/pbt.fixture.ts",
+  "packages/ui-logic/src/rowList.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 9,
+  "B": 9
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.3,
+   "B": 7.9,
+   "match": 0.1,
+   "fix": 22.3
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1261847,
+  "costUsd": 3.73
+ },
+ "fixCommits": [
+  "8aeb22447976e29dc85b72da6398acbc4410f99d",
+  "b1989a6d5c0d3d96a444af9aaeea3c427fe203fa",
+  "a842cde4c2614ffd8f7a6967c65023c4034c1971",
+  "4434e35747a222cb6644a71a56356e625bf4fbe3",
+  "70756b36c34cda037dab3c83a41c9f66609b6e00",
+  "4c908085ae7761265dc4b55959dc29a90f96d6c8",
+  "0ab1ba7a502430338c207fa7ab2c4401b22a669b"
+ ]
+}

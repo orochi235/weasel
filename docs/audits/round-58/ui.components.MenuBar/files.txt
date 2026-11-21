@@ -1,0 +1,10 @@
+packages/ui/src/components/MenuBar/MenuBar.module.css
+packages/ui/src/components/MenuBar/MenuBar.stories.module.css
+packages/ui/src/components/MenuBar/MenuBar.stories.tsx
+packages/ui/src/components/MenuBar/MenuBar.tsx
+packages/ui/src/components/MenuBar/MenuBarTitle.tsx
+packages/ui/src/components/MenuBar/index.ts
+packages/ui/src/components/MenuBar/menuBarHandle.ts
+packages/ui/src/components/MenuBar/menuBarTitles.ts
+packages/ui/src/components/MenuBar/useMenuBarFocus.ts
+packages/ui/src/components/MenuBar/useMenuBarKeys.tsx

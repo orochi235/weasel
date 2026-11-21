@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   4,
+   1
+  ]
+ ],
+ "a": [
+  "useContextMenu opens a keyboard-invoked context menu as a pointer one, so no row is highlighted",
+  "Space on a color, number or text row does nothing, where Enter opens its picker or field",
+  "AccessLabel folds a label's clusters differently from the access letter, so a final sigma is never underlined",
+  "A DOM menu taller than the viewport cannot be scrolled, and the keyboard highlight runs off screen",
+  "A modified release over a link row opens it with `window.open` and no `noopener`, handing the new page `window.opener`"
+ ],
+ "b": [
+  "A release over a color row presses it but never opens its picker, while a click on the same row does",
+  "A modified release on a link row opens the tab with `window.open` and no `noopener`, so the opened page gets `window.opener`",
+  "Text typed into a menu text or number row is thrown away when the menu is dismissed by a press outside or a window blur",
+  "A silently opened trigger menu drops focus to `<body>` when it closes while focus is in a color row's picker",
+  "Enter on the color picker's native color input pulls focus out to the panel, so the window blur from the native dialog then closes the menu"
+ ]
+}

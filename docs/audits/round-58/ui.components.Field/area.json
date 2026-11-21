@@ -1,0 +1,52 @@
+{
+ "id": "ui.components.Field",
+ "commit": "b400d7039e8ac2f03166b3332ac613eba61c689f",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Field/Field.module.css",
+  "packages/ui/src/components/Field/Field.stories.tsx",
+  "packages/ui/src/components/Field/Field.tsx",
+  "packages/ui/src/components/Field/fieldSemantics.tsx",
+  "packages/ui/src/components/Field/fieldSize.module.css",
+  "packages/ui/src/components/Field/fieldSize.ts",
+  "packages/ui/src/components/Field/fieldSlots.tsx",
+  "packages/ui/src/components/Field/index.ts",
+  "packages/ui/src/components/Field/mixedHint.ts",
+  "packages/ui/src/components/Field/racField.ts"
+ ],
+ "a": 2,
+ "b": 4,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 6.5,
+ "unfound": 1.5,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 12.9,
+   "B": 1.7,
+   "match": 0.2,
+   "fix": 13.8
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 654127,
+  "costUsd": 3.55
+ },
+ "fixCommits": [
+  "99b239186fde00a974bc33a13c383b04acba916f",
+  "85536484bdf795936f22e3baee0ab2174bb284f9",
+  "ebcef7d21bff9d1448eb3f4dcfedd8b5d4d1e467",
+  "65c7201ea24b264197d5895564cbfb3269207266",
+  "0350a239f1988fec45963145d7b98c171e66abb4"
+ ]
+}

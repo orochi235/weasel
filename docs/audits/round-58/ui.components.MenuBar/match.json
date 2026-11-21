@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "Pressing a disabled title while another title's menu is open does nothing, and that menu stays open",
+  "Moving from an open menu onto a title whose menu has no rows sends focus out of the bar",
+  "On touch, tapping a second title while a menu is open can open that menu and close it at once",
+  "The story's blurb puts the zoom readout between Edit and View, but MenuBar draws it after View"
+ ],
+ "b": [
+  "A touch tap on a second title while a menu is open closes every menu instead of switching to that title",
+  "The story's description says the readout sits between Edit and View, but MenuBar draws every non-menu run after all the titles"
+ ]
+}

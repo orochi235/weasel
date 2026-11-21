@@ -1,0 +1,76 @@
+{
+ "id": "theme.part1",
+ "commit": "b400d7039e8ac2f03166b3332ac613eba61c689f",
+ "date": "2026-11-20",
+ "files": [
+  "packages/theme/src/appearance.ts",
+  "packages/theme/src/applyTheme.ts",
+  "packages/theme/src/axes.ts",
+  "packages/theme/src/blendTheme.ts",
+  "packages/theme/src/boxShadow.ts",
+  "packages/theme/src/capText.module.css",
+  "packages/theme/src/chainTokens.ts",
+  "packages/theme/src/colorList.ts",
+  "packages/theme/src/colorListItems.ts",
+  "packages/theme/src/colorMode.ts",
+  "packages/theme/src/colorSource.ts",
+  "packages/theme/src/cssNumber.ts",
+  "packages/theme/src/currentColor.ts",
+  "packages/theme/src/definition.ts",
+  "packages/theme/src/dtcg/axesExtension.ts",
+  "packages/theme/src/dtcg/color.ts",
+  "packages/theme/src/dtcg/flatten.ts",
+  "packages/theme/src/dtcg/resolve.ts",
+  "packages/theme/src/dtcg/types.ts",
+  "packages/theme/src/dtcg/value.ts",
+  "packages/theme/src/engine.ts",
+  "packages/theme/src/faces.css",
+  "packages/theme/src/fonts.css",
+  "packages/theme/src/fromDtcg.ts",
+  "packages/theme/src/generated/manifest.ts",
+  "packages/theme/src/generated/themes.ts",
+  "packages/theme/src/generated/tokens.css",
+  "packages/theme/src/hooks.ts"
+ ],
+ "a": 7,
+ "b": 10,
+ "m": 6,
+ "distinct": 11,
+ "chapman": 11.6,
+ "unfound": 0.6,
+ "read": {
+  "A": 26,
+  "B": 25
+ },
+ "patches": 11,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.7,
+   "B": 13.2,
+   "match": 2.7,
+   "fix": 17.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2108544,
+  "costUsd": 6.25
+ },
+ "fixCommits": [
+  "bd1187895db4ad2bcfaa874cbdcc39676007340b",
+  "3aafef688c74909ca7ba10da6e9dda661326cd9a",
+  "5e352977d153a61bc62eec1b61123e5a78f58a50",
+  "47af125f912c34431800bac0c2bd1bc0d1a1db34",
+  "4bbf7c052d7129f50aaffff2719e0bc4463fd5c2",
+  "e8148f63ef407c12248cd4dc5dac192620ed7a46",
+  "9331aee1bee430440057addb89ea5c5d9dbd63b6",
+  "dab3f16cc4675a05333eeab73d38cb826b90ad35",
+  "81da21ac7dc5fceb07558a19843905ee5713b78d",
+  "2509807e05db4300b216cdd8d9c881538e3ef010",
+  "a722c3d20a614c551a8be78a7859c96e8104e9a1"
+ ]
+}

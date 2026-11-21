@@ -1,0 +1,33 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   4,
+   1
+  ]
+ ],
+ "a": [
+  "A canceled handle drag sends onInput a recomputed value, not the value the drag began from",
+  "The radius floor is 1 gradient unit, whatever the gradient's units are",
+  "A commit-only GradientEditor does not show a stop drag or a color drag on its track",
+  "Removing a stop by dragging it off the track or by right-click leaves focus on a different stop than the selection",
+  "A focus request that the consumer never satisfies stays pending and steals focus later",
+  "An out-of-range selection is never written back, so it comes back when the list grows",
+  "Up and Down on the radial radius handle both grow the radius"
+ ],
+ "b": [
+  "Removing a stop by dragging it off the track or right-clicking it leaves focus on a different handle than the stop the editor now shows",
+  "A track-click add that the caller declines leaves the selection and a pending focus aimed at a stop that does not exist",
+  "Canceling a handle drag sends `onInput` a value rebuilt through toLocal(toScreen(...)), not the value the drag began from",
+  "The conic angle handle sits a fixed 50 gradient units from the center whatever the zoom, so it can land on top of the center handle or off screen",
+  "The radial guide is a screen circle, so under the anisotropic transform the comment plans for it does not trace the painted gradient",
+  "Arrow keys on the radius or angle handle commit through `onChange` even when the step changed nothing"
+ ]
+}

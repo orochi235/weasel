@@ -1,0 +1,49 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   2,
+   6
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   5,
+   7
+  ],
+  [
+   6,
+   8
+  ]
+ ],
+ "a": [
+  "axisScheme recurses forever when an axis's default is not one of its values",
+  "fromDtcg accepts an axis named `theme` or `variant`, which defineTheme and bake refuse",
+  "blendTheme snaps a length between a bare `0` and a px value instead of mixing it",
+  "The generated color list cache grows without bound",
+  "fromDtcg passes a non-string `$description` through, and emitCss then throws on it",
+  "A DTCG alpha above 1 or below 0 is accepted and becomes an invalid color-mix()",
+  "fontStack writes a family name holding an apostrophe as a broken string"
+ ],
+ "b": [
+  "axisScheme recurses forever when an axis default names no value of the axis",
+  "axisScheme throws on an axis with no `values`, which fullAxisChoice deliberately tolerates",
+  "fromDtcg accepts axis names defineTheme rejects (`theme`, `variant`, `__proto__`)",
+  "Axis names are never checked as attribute or CSS identifiers, so applyTheme throws or its rule silently drops",
+  "generatedColors caches every count/gates combination forever",
+  "colorCount reports the requested `count`, not the colors colorAt actually wraps over",
+  "blendTheme cannot blend a unitless 0 with a length, so a `0` ↔ `4px` token jumps",
+  "withAlpha and mixAlpha disagree on an alpha outside 0–1, which flattenTokens never checks",
+  "fontStack writes a family holding a quote as broken CSS",
+  "parseBoxShadow reads a calc() length as part of the color instead of throwing"
+ ]
+}

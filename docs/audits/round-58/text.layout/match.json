@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "Shrink-to-fit scales every run size but not its stroke width, so a shrunk outlined text keeps its full-size outline",
+  "A covered code point in a right-to-left shaped cluster reads as left-to-right, so a mirrorable one is drawn a second time",
+  "A code point the bidi engine removed reports level 0 inside a right-to-left line, so the hyphen a wrapped RTL line draws hit-tests the wrong way"
+ ],
+ "b": [
+  "The pooled `Line` objects keep the previous layout's entries, defeating `POOL_MAX`'s bound",
+  "Positions the bidi engine removed (X9) get level 0, not the level of the character they are placed beside",
+  "`JOINED_ENDS` grows to the longest text ever measured and never shrinks, unlike every sibling scratch, which caps at 2^16"
+ ]
+}

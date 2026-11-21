@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "framesSweep's default `'first'` pass walks a whole pass of a run shorter than one (loop below 1)",
+  "rangeSweep with a step treats finite ends whose difference overflows as an endless range",
+  "movedIndex answers a different index than moveItems uses for a gap past the end or an index outside the list",
+  "soloFrom and soloSweepFrom ignore `enabled` in a single selection"
+ ],
+ "b": [
+  "sliderAt returns NaN for a stepped track whose min is -Infinity",
+  "framesSweep counts a clock's passes differently from the clock: loop 0, a fraction below 1, or a negative count",
+  "movedIndex and isNoopDrop read a gap past the end differently from moveItems"
+ ]
+}
