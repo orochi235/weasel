@@ -7,7 +7,7 @@ import {
 import type { Vec2 } from '@weasel-js/core/math';
 import { offsetOf, type CellGeometry, type RawCell } from './cells';
 import { cellLines } from './cellText';
-import { BOX_NAMES, ORTHOGONAL_EDGE_STYLES, STADIUM_ARC, markerOf, shapeEntry, turnedAway } from './mapping';
+import { BOX_NAMES, ORTHOGONAL_EDGE_STYLES, STADIUM_ARC, flippedAway, markerOf, shapeEntry, turnedAway } from './mapping';
 import { checkedColor } from '../colorCheck';
 import { hasStyleName, shapeOf, styleFlag, styleNumber, type CellStyle } from './style';
 import { getOwn } from '@weasel-js/registry';
@@ -27,13 +27,15 @@ function roundEnded(style: CellStyle, box: { width: number; height: number } | u
   return (styleNumber(style, 'arcSize') ?? ABSOLUTE_ARC) >= Math.min(box.width, box.height);
 }
 
-/** The outline a vertex `box` big draws as. A shape it does not know is a rect, and one its `direction` turns from how
- *  the diagram draws it is drawn unturned, each with a warning. */
+/** The outline a vertex `box` big draws as. A shape it does not know is a rect, and one its `direction`, `rotation`, or a flip
+ *  turns from how the diagram draws it is drawn unturned, each with a warning. */
 export function outlineOf(style: CellStyle, warn: Warn, box?: { width: number; height: number }): Outline {
+  if ((styleNumber(style, 'rotation') ?? 0) % 360 !== 0) warn('Rotated shapes were drawn unrotated.');
   const shape = shapeOf(style);
   const known = shapeEntry(shape, (key) => style.values.get(key));
   if (known !== undefined) {
     if (turnedAway(known, style.values.get('direction'))) warn(`Shapes of kind "${shape}" turned another way were drawn as the diagram turns them.`);
+    if (flippedAway(known, (key) => style.values.get(key))) warn(`Shapes of kind "${shape}" flipped another way were drawn as the diagram draws them.`);
     return known.outline;
   }
   const rounded = styleFlag(style, 'rounded');

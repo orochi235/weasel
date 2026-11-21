@@ -48,6 +48,23 @@ describe('draw-style XML bar markers', () => {
   });
 });
 
+describe('draw-style XML rotated and flipped shapes', () => {
+  const warningsOf = async (style: string) => (await readCells(vertex('n', style, 'width="80" height="40"'))).warnings;
+
+  it('warns of a rotated shape, drawn unrotated', async () => {
+    expect(await warningsOf('rounded=0;rotation=45;')).toContain('Rotated shapes were drawn unrotated.');
+    expect(await warningsOf('rounded=0;rotation=360;')).toEqual([]);
+  });
+
+  it('warns of a flip that changes a shape, and not of one its written style holds or that draws the same', async () => {
+    expect(await warningsOf('triangle;direction=north;flipV=1;')).toContain('Shapes of kind "triangle" flipped another way were drawn as the diagram draws them.');
+    expect(await warningsOf('shape=cube;boundedLbl=1;')).toContain('Shapes of kind "cube" flipped another way were drawn as the diagram draws them.');
+    expect(await warningsOf('shape=cube;boundedLbl=1;flipH=1;')).toEqual([]);
+    expect(await warningsOf('ellipse;flipH=1;')).toEqual([]);
+    expect(await warningsOf('rounded=0;flipV=1;')).toEqual([]);
+  });
+});
+
 describe('draw-style XML rounded boxes', () => {
   it('reads an absoluteArcSize arc in pixels against the box', async () => {
     const { data } = await readCells(

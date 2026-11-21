@@ -90,6 +90,15 @@ export function turnedAway(entry: (typeof SHAPES)[number], direction: string | u
   return (direction ?? 'east') !== (Array.isArray(written) ? String(written[1]) : 'east');
 }
 
+/** Whether a cell flipped as `value` says draws `entry`, or a plain box when there is none, other than its outline. */
+export function flippedAway(entry: (typeof SHAPES)[number] | undefined, value: (key: string) => string | undefined): boolean {
+  if (entry === undefined || TURN_SYMMETRIC.has(entry.name)) return false;
+  return ['flipH', 'flipV'].some((key) => {
+    const written = entry.write?.find((part) => Array.isArray(part) && part[0] === key);
+    return (value(key) === '1') !== (Array.isArray(written) && String(written[1]) === '1');
+  });
+}
+
 /** The entry a cell's style reads as: its shape name, and the pair that narrows it where one does. */
 export function shapeEntry(name: string | undefined, value: (key: string) => string | undefined): (typeof SHAPES)[number] | undefined {
   return SHAPES.find((s) => s.name === name && (s.when === undefined || value(s.when[0]) === s.when[1]));
