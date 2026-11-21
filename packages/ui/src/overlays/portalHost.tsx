@@ -52,6 +52,10 @@ export function useContainedRoot(explicit?: Element | null): Element | null {
   return explicit === undefined && fromProvider?.contained ? fromProvider.container : null;
 }
 
+/** `ModalOverlay` props a contained modal cannot honor, which it warns about rather than drops. Kept here, in the
+ *  module quarantined for React Aria's unstable surface, because one of them is named `UNSTABLE_`. */
+export const CONTAINED_MODAL_UNHELD = ['onEnter', 'onExit', 'UNSTABLE_deferUntilEntered', 'render'] as const;
+
 /** The `portalContainer` prop every weasel overlay accepts. */
 export interface OverlayPortalProps {
   /**
