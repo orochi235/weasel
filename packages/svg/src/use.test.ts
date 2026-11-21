@@ -74,4 +74,10 @@ describe('<use>', () => {
     expect(g.clip).toBeDefined();
     expect((g.children[0] as SvgPathNode).path).toMatchObject({ x: 2 });
   });
+
+  it('draws a descendant that turns visibility back on under a hidden <use>', () => {
+    const out = parse('<defs><g id="g"><rect visibility="visible" width="1" height="1"/><circle r="1"/></g></defs><use href="#g" visibility="hidden"/>');
+    const g = out.nodes[0] as SvgGroupNode;
+    expect(g.children.map((n) => (n as SvgPathNode).path.kind)).toEqual(['rect']);
+  });
 });
