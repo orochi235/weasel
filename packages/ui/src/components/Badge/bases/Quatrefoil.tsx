@@ -1,6 +1,7 @@
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
 import { DEG_TO_RAD, lerp } from '@weasel-js/geom';
+import { repeatCount } from '../shapes/params';
 
 /**
  * 8-fold-symmetric polar shape. The whole silhouette is defined by a single curve r(s)
@@ -41,9 +42,12 @@ export interface BadgeQuatrefoilBaseParams {
   valleySmooth?: number;
   /** Rotate the pattern in degrees. */
   rotation?: number;
-  /** Polygon sample count. */
+  /** Polygon sample count, 24 to 1024. */
   samples?: number;
 }
+
+/** The most vertices an outline samples, so a huge or infinite `samples` cannot hang a render. */
+export const MAX_SAMPLES = 1024;
 
 const DEFAULTS: Required<BadgeQuatrefoilBaseParams> = {
   spikeR: 50,
@@ -109,7 +113,7 @@ export function quatrefoilVertices(params: BadgeQuatrefoilBaseParams = {}): [num
   const cfg = { ...DEFAULTS, ...params };
   const radiusAt = quatrefoilRadius(cfg);
   const rot = cfg.rotation * DEG_TO_RAD;
-  const N = Math.max(24, Math.floor(cfg.samples));
+  const N = repeatCount(cfg.samples, 24, MAX_SAMPLES);
   const cx = 50, cy = 50;
   const verts: [number, number][] = [];
   for (let i = 0; i < N; i++) {

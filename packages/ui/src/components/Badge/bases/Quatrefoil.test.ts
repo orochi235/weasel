@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { quatrefoilRadius, quatrefoilVertices } from './Quatrefoil';
+import { MAX_SAMPLES, quatrefoilRadius, quatrefoilVertices } from './Quatrefoil';
 
 describe('quatrefoilRadius', () => {
   it('runs from the spike radius to the lobe radius through the valley when the join is sharp', () => {
@@ -45,5 +45,11 @@ describe('quatrefoilVertices', () => {
     expect(verts[6][1]).toBeCloseTo(50 + 42 * Math.SQRT1_2, 10);
     expect(verts[12][0]).toBeCloseTo(50, 10);
     expect(verts[12][1]).toBeCloseTo(100, 10);
+  });
+
+  it('caps an infinite sample count and reads NaN as the least', () => {
+    expect(quatrefoilVertices({ samples: Infinity })).toHaveLength(MAX_SAMPLES);
+    expect(quatrefoilVertices({ samples: 1e8 })).toHaveLength(MAX_SAMPLES);
+    expect(quatrefoilVertices({ samples: NaN })).toHaveLength(24);
   });
 });
