@@ -91,4 +91,10 @@ describe('fromDtcg', () => {
       fromDtcg({ name: 'one', modes, $extensions: { 'com.weasel.axes': { axes: { density: { default: 'cozy', values: { compact: {} } } } } } }),
     ).toThrow(/axis "density" defaults to "cozy"/);
   });
+
+  it('refuses an axis name defineTheme refuses', () => {
+    const doc = (name: string) => ({ name: 'one', $extensions: { 'com.weasel.axes': { axes: { [name]: { default: 'a', values: { a: {} } } } } } });
+    expect(() => fromDtcg(doc('theme'))).toThrow(/"theme" is reserved/);
+    expect(() => fromDtcg(doc('my axis'))).toThrow(/"my axis" cannot name an axis/);
+  });
 });
