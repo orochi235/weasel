@@ -28,6 +28,7 @@ export function PropertyReadout(p: PropertyControlProps) {
 
 function readoutBody(p: PropertyControlProps): ReactNode {
   if (p.mixed) return <span className={s.none}>Mixed</span>;
+  if (p.unset) return none();
   switch (p.kind) {
     case 'boolean':
       return p.value === undefined ? none() : p.value ? 'On' : 'Off';

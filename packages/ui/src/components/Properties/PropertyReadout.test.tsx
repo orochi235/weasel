@@ -52,4 +52,17 @@ describe('a read-only field', () => {
     const swatch = screen.getByRole('status', { name: 'Tint' }).querySelector('[aria-hidden]') as HTMLElement;
     expect(swatch.style.getPropertyValue('--readout-swatch')).toBe('#ff000080');
   });
+
+  it('draws an unset field of any kind as the dash, not the value it was passed', () => {
+    render(
+      <>
+        <PropertyControl kind="color" name="Tint" value="#ff0000" unset readOnly onChange={noop} />
+        <PropertyControl kind="number" name="Width" value={12} unset readOnly onChange={noop} />
+        <PropertyControl kind="string" name="Title" value="Hi" unset readOnly onChange={noop} />
+      </>,
+    );
+    expect(shown('Tint')).toBe('—');
+    expect(shown('Width')).toBe('—');
+    expect(shown('Title')).toBe('—');
+  });
 });
