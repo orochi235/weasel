@@ -193,7 +193,7 @@ function UnitFieldBody({
     latestSpent.current = typing.spent;
   });
 
-  useWheelSteps(input, latestSpin);
+  useWheelSteps(input, latestSpin, latestSpent);
 
   return (
     <div
@@ -242,20 +242,21 @@ function UnitFieldBody({
 }
 
 /** The wheel steps only a focused field, so scrolling past one changes nothing.
- *  Not passive, so it can keep the page from scrolling under it. */
+ *  Not passive, so a step can keep the page from scrolling under it; a wheel that steps nothing scrolls it. */
 function useWheelSteps(
   input: RefObject<HTMLInputElement | null>,
   spin: RefObject<(key: string) => boolean>,
+  spent: RefObject<(key: string) => boolean>,
 ): void {
   useEffect(() => {
     const el = input.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       if (document.activeElement !== el || e.deltaY === 0) return;
-      e.preventDefault();
-      spin.current(e.deltaY < 0 ? 'ArrowUp' : 'ArrowDown');
+      const key = e.deltaY < 0 ? 'ArrowUp' : 'ArrowDown';
+      if (!spent.current(key) && spin.current(key)) e.preventDefault();
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [input, spin]);
+  }, [input, spin, spent]);
 }
