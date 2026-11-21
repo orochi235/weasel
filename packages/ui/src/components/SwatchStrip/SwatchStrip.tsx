@@ -1,5 +1,5 @@
 import { useId, useState, type ReactElement } from 'react';
-import { hexAlpha } from '@weasel-js/paint';
+import { hexAlpha, normalizeHex, rgbaToHex, tryParseColor } from '@weasel-js/paint';
 import type { RunAlign } from '@weasel-js/geom';
 import { useRun } from '../Run';
 import { SwatchGrid, swatchId, type SwatchSelect, type SwatchGridOption } from '../SwatchGrid';
@@ -60,9 +60,15 @@ export function describeColor(color: string): string {
   return alpha === 100 ? c.slice(0, 7) : `${c.slice(0, 7)}, ${alpha}% opacity`;
 }
 
+/** One spelling per color: whatever paint can read as `#rrggbbaa`, anything else as the recent colors spell it. */
+function colorKey(color: string): string | null {
+  const rgba = tryParseColor(color);
+  return rgba ? normalizeHex(rgbaToHex(rgba), 'rgba') : normalizeRecentColor(color);
+}
+
 function same(a: string | null, b: string | null): boolean {
   if (a === null || b === null) return a === b;
-  return normalizeRecentColor(a) === normalizeRecentColor(b);
+  return colorKey(a) === colorKey(b);
 }
 
 /**
@@ -99,7 +105,7 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
   };
 
   const recentOptions: SwatchGridOption[] = recent.map((c) => ({ value: c, label: describeColor(c) }));
-  // Match on the color, not its spelling, so `#F00` lights `#ff0000ff`.
+  // Match on the color, not its spelling, so `#F00` and `red` light `#ff0000ff`.
   const currentIn = (options: readonly SwatchGridOption[]): string | null | undefined => {
     const match = value === undefined ? undefined : options.find((o) => same(o.value, value));
     return match && swatchId(match);
@@ -177,9 +183,10 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
       aria-label={props['aria-label'] ?? 'Swatches'}
       data-held={heldState(access)}
     >
-      {/* A store given by prop is where applies here record too. */}
-      {holdScope(props, props.store && props.store !== ctxStore
-        ? <RecentColorsProvider store={props.store}>{grids}</RecentColorsProvider>
+      {/* A store given by prop is where applies here record too. Wrapped whenever there is a store, so a prop that
+          becomes the context's store, or stops being it, does not remount the grids. */}
+      {holdScope(props, store
+        ? <RecentColorsProvider store={store}>{grids}</RecentColorsProvider>
         : grids)}
     </div>
   );
