@@ -29,13 +29,16 @@ const SLACK = 0.5;
  * several bars into one line leaves each this much. Undefined until the first
  * item has been measured.
  *
- * `lead` says whether the bar draws a lead, so that one appearing or leaving measures the line again.
+ * `lead` says whether the bar draws a lead, so that one appearing or leaving measures the line again. `first`
+ * is the key of the first item that is a cell, which stands in for the button until it is drawn: a spacer has no
+ * length of its own to keep.
  */
 export function useBarOverflow(
   on: boolean,
   keys: readonly string[],
   vertical: boolean,
   lead = false,
+  first: string | undefined = keys[0],
 ): { bar: RefObject<HTMLDivElement | null>; kept: number; natural: number | undefined; least: number | undefined } {
   const bar = useRef<HTMLDivElement | null>(null);
   const sizes = useRef(new Map<string, number>());
@@ -66,14 +69,14 @@ export function useBarOverflow(
       const lead0 = lead === null ? 0 : along(lead) + (all.length > 0 ? room.gap : 0);
       const frame = frameOf(el, vertical);
       setNatural(line === undefined ? undefined : Math.ceil(line + lead0 + frame));
-      const first = all.length === 0 ? 0 : sizes.current.get(all[0]!);
-      // Until the button has been drawn, the first item stands in for it.
-      const end = all.length > 1 && more.current > 0 ? more.current : first;
+      const cell = first === undefined ? 0 : sizes.current.get(first);
+      // Until the button has been drawn, the first cell stands in for it.
+      const end = all.length > 1 && more.current > 0 ? more.current : cell;
       setLeast(end === undefined ? undefined : Math.ceil(end + lead0 + frame));
     };
     measure();
     return watchResize([el, ...el.children], measure);
-  }, [on, signature, kept, vertical, keysRef, lead]);
+  }, [on, signature, kept, vertical, keysRef, lead, first]);
 
   return { bar, kept: on ? Math.min(kept, keys.length) : keys.length, natural: on ? natural : undefined, least: on ? least : undefined };
 }
