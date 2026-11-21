@@ -117,3 +117,14 @@ test('a minimal single-mode bar draws its segments as a minimal each-mode bar do
   const toggleSegs = screen.getAllByRole('radio');
   toggleSegs.forEach((seg, i) => expect(look(seg), LABELS[i]).toBe(look(optionSegs[i])));
 });
+
+test.each(['flat', 'minimal'] as const)('a mixed segment of a %s bar draws apart from an off one at rest', (variant) => {
+  render(
+    <SegmentedBar mode="multiple" variant={variant} aria-label="Mixed" items={TEXT.map((t) => ({ value: t.label, label: t.label }))}
+      value={[]} mixedValues={['Components']} onChange={() => {}} />,
+  );
+  const [off, mixed] = screen.getAllByRole('button');
+  expect(mixed).toHaveAttribute('aria-pressed', 'mixed');
+  expect(getComputedStyle(mixed!).backgroundImage + getComputedStyle(mixed!).backgroundColor)
+    .not.toBe(getComputedStyle(off!).backgroundImage + getComputedStyle(off!).backgroundColor);
+});

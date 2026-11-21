@@ -235,7 +235,7 @@
   border-radius: var(--wzl-radius-sm);
 }
 
-.variant_minimal .segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected) {
+.variant_minimal .segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected, .segmentMixed) {
   color: var(--wzl-fg);
   background: var(--wzl-surface-hover);
 }
@@ -291,9 +291,20 @@
   border-end-end-radius: var(--wzl-radius-sm);
 }
 
-.variant_flat .segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected) {
+.variant_flat .segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected, .segmentMixed) {
   background: var(--wzl-surface-hover);
   color: var(--wzl-fg);
+}
+
+/* The mixed wash over the sunken cell, which `.variant_flat .segment` otherwise paints over it. */
+.variant_flat .segmentMixed {
+  background: linear-gradient(color-mix(in srgb, var(--wzl-accent) 22%, transparent), color-mix(in srgb, var(--wzl-accent) 22%, transparent)), var(--wzl-surface-sunken);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wzl-accent) 45%, transparent);
+  color: var(--wzl-fg);
+}
+
+.variant_flat .segmentMixed:hover:not(:disabled, [data-disabled]) {
+  background: linear-gradient(color-mix(in srgb, var(--wzl-accent) 32%, transparent), color-mix(in srgb, var(--wzl-accent) 32%, transparent)), var(--wzl-surface-sunken);
 }
 
 .variant_flat .segmentSelected {
