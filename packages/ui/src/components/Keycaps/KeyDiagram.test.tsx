@@ -32,6 +32,11 @@ describe('KeyDiagram', () => {
     expect([...container.querySelectorAll('kbd')].map((k) => k.textContent)).toEqual(['⎋', 'Undo']);
   });
 
+  it('prints a key\'s own label in a layout\'s place for it', () => {
+    const { container } = render(<KeyDiagram layout={KEYBOARD_LAYOUTS.macos} keys={[{ code: 'KeyW', label: 'Fwd' }, 'KeyA']} />);
+    expect([...container.querySelectorAll('kbd')].map((k) => k.textContent)).toEqual(['Fwd', 'A']);
+  });
+
   it('lights the keys held, and marks the keys it is given', () => {
     const { container } = render(
       <KeyDiagram

@@ -27,9 +27,9 @@ export interface KeyDiagramProps {
   /** Where the keys sit and how they group. Without one, the keys in `keys` are drawn in a row,
    *  ungrouped. */
   layout?: KeyboardLayout;
-  /** The keys to draw. With a layout, only the layout's keys these name are drawn, in their places,
-   *  and the diagram shrinks to fit them; without, each is drawn in turn. Defaults to every key the
-   *  layout has. */
+  /** The keys to draw. With a layout, only the layout's keys these name are drawn, in their places and at
+   *  the layout's widths, and the diagram shrinks to fit them; without, each is drawn in turn. A key's
+   *  `label` replaces its legend either way. Defaults to every key the layout has. */
   keys?: readonly KeyboardKey[];
   /** Whose legends the keys print. Defaults to the layout's, then to the reader's. */
   platform?: Platform;
@@ -69,7 +69,14 @@ export function KeyDiagram({
   );
   const placement = useMemo(() => {
     if (!layout) return null;
-    return placeKeys(layout, keys ? new Set(keys.map((k) => (typeof k === 'string' ? k : k.code))) : undefined);
+    if (!keys) return placeKeys(layout);
+    const asked = new Map(keys.map((k) => [asKey(k).code, asKey(k).label]));
+    const placed = placeKeys(layout, new Set(asked.keys()));
+    const relabel = (k: PlacedKey) => {
+      const label = asked.get(k.code);
+      return label === undefined ? k : { ...k, label };
+    };
+    return { ...placed, banks: placed.banks.map((bank) => ({ ...bank, keys: bank.keys.map(relabel) })) };
   }, [layout, keys]);
   const css = useColorCss();
   const up = useLinger(held.size > 0, linger);
