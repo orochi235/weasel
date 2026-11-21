@@ -26,6 +26,7 @@
 
 import type { FontStyle } from '../fontStyle';
 import { cssFamilyName } from '../cssFamily';
+import { claimFallbackWarning } from '../fallback';
 
 export const BAKE_SIZE = 48;
 export const PAD = 8;
@@ -116,6 +117,19 @@ type Canvas2D = OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
 /** Engines report font-box metrics in whole pixels, so they are read at a
  *  size where that rounding is a thousandth of an em, not a fiftieth. */
 const METRICS_SIZE = 1000;
+
+/**
+ * `weight` as a canvas `font` string takes it: within CSS's 1 to 1000, or 400
+ * for one that is not a number. A canvas keeps its last font for a string it
+ * cannot parse, which would measure this face in another's.
+ */
+export function canvasWeight(family: string, weight: number): number {
+  if (Number.isFinite(weight)) return Math.min(1000, Math.max(1, weight));
+  if (claimFallbackWarning(`canvas-weight|${family}|${weight}`)) {
+    console.warn(`weasel DynamicGlyphAtlas: weight ${weight} for "${family}" is not a number; drawing it at 400.`);
+  }
+  return 400;
+}
 
 function cssFontString(weight: number, style: FontStyle, family: string, size = BAKE_SIZE): string {
   return `${style === 'italic' ? 'italic ' : ''}${weight} ${size}px ${cssFamilyName(family)}`;

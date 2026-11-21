@@ -6,6 +6,7 @@ import {
 import { _getColorPagesForTests, _getSharpColorPagesForTests } from './dynamicPages';
 import { sharperColorGlyph, MAX_SHARP_LEVEL } from './sharpColor';
 import { BAKE_SIZE, type GlyphRasterizer } from './glyphRasterizer';
+import { subscribeGlyphReady } from '../glyphReady';
 
 /** A color glyph whose box scales with the size it is drawn at: 0.5em
  *  square plus a 2px pad, hung 2px left of the pen and 0.6em above the
@@ -108,6 +109,56 @@ describe('sharperColorGlyph', () => {
     expect(after).not.toBe(before);
     expect(sharperColorGlyph(after, 4)).not.toBeNull();
     expect(sizes).toEqual([BAKE_SIZE, BAKE_SIZE * 4, BAKE_SIZE, BAKE_SIZE * 4]);
+  });
+});
+
+/** Base color bakes 8px square; every sharper one, and every field glyph, a whole page. */
+function pageRasterizer(): GlyphRasterizer {
+  const square = (side: number) => ({ width: side, height: side, left: 0, top: side, advance: side });
+  return {
+    faceMetrics: () => ({ ascent: 40, descent: 8 }),
+    rasterize: () => ({ ...square(PAGE_SIZE), alpha: new Uint8ClampedArray(PAGE_SIZE * PAGE_SIZE) }),
+    rasterizeColor: (_family, _weight, _style, _text, size = BAKE_SIZE) => {
+      const side = size === BAKE_SIZE ? 8 : PAGE_SIZE;
+      return { ...square(side), rgba: new Uint8ClampedArray(side * side * 4) };
+    },
+  };
+}
+
+describe('full sharp pages', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    __setGlyphRasterizerForTests(pageRasterizer());
+    resetBakeBudget(Infinity);
+  });
+
+  it('bakes a sharper level that found no room while the pages refilled, once text asks for it after they settle', () => {
+    const face = getDynamicFace('Arial', 400, 'normal');
+    const chars = ['a', 'b', 'c', 'd', 'e'].map((text) => face.requestCluster(text)!);
+    for (const char of chars) sharperColorGlyph(char, 2);
+    vi.runAllTimers();
+    resetBakeBudget(Infinity);
+    for (const char of chars) sharperColorGlyph(char, 2);
+    vi.runAllTimers();
+    expect(sharperColorGlyph(chars[4], 2)).toBeNull();
+
+    // The pages settle, and only the glyph that found no room stays on screen.
+    resetBakeBudget(Infinity);
+    resetBakeBudget(Infinity);
+    sharperColorGlyph(chars[4], 2);
+    vi.runAllTimers();
+    expect(sharperColorGlyph(chars[4], 2)).toMatchObject({ level: 1, glyph: { page: 0 } });
+  });
+
+  it('is not emptied again by an emptying of its own that an emptying of every page overtook', () => {
+    const notified = vi.fn();
+    subscribeGlyphReady(notified);
+    const face = getDynamicFace('Arial', 400, 'normal');
+    for (let cp = 65; cp < 70; cp++) face.requestGlyph(cp);
+    const chars = ['a', 'b', 'c', 'd', 'e'].map((text) => face.requestCluster(text)!);
+    for (const char of chars) sharperColorGlyph(char, 2);
+    vi.runAllTimers();
+    expect(notified).toHaveBeenCalledTimes(1);
   });
 });
 

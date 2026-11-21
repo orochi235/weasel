@@ -3450,3 +3450,9 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): a sweep's `at` throws a `RangeError` for a `NaN` fraction, from `rangeSweep`,
   `valuesSweep` and `framesSweep` alike, where it had answered `NaN` or `undefined`. Reading `NaN` as 0, the start,
   was the alternative.
+
+## Audit round sixty-three (2026-11-21): font
+
+- 2026-11-21 (the fixer's call): the canvas font tier draws a weight outside 1 to 1000 at the nearer end, and a weight
+  that is not a number at 400 with a one-time warning, rather than throwing. A canvas ignores a `font` string with such
+  a weight and measured the face in whatever font it last held.

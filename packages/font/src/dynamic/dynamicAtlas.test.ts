@@ -157,6 +157,21 @@ describe('getDynamicFace', () => {
     expect(face.font.charMap.size).toBe(0);
   });
 
+  it('draws a weight outside 1 to 1000 at the nearest end, and one that is not a number at 400', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const weights: number[] = [];
+    const fake = fakeRasterizer();
+    __setGlyphRasterizerForTests({
+      ...fake,
+      faceMetrics: (family, weight, style) => { weights.push(weight); return fake.faceMetrics(family, weight, style); },
+    });
+    expect(getDynamicFace('X', 1100, 'normal')).toBe(getDynamicFace('X', 1000, 'normal'));
+    expect(getDynamicFace('X', 0, 'normal').weight).toBe(1);
+    expect(getDynamicFace('X', NaN, 'normal')).toBe(getDynamicFace('X', 400, 'normal'));
+    expect(weights).toEqual([1000, 1, 400]);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
   it('caches faces per (family, weight, style)', () => {
     const a = getDynamicFace('Futura', 400, 'normal');
     expect(getDynamicFace('Futura', 400, 'normal')).toBe(a);
@@ -331,6 +346,26 @@ describe('full pages', () => {
     expect(notified).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the pages refilling after an emptying a later tick ran, until a frame after it asks for nothing', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const notified = vi.fn();
+    const face = getDynamicFace('Big', 400, 'normal');
+    resetBakeBudget(0);
+    for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
+    // A frame that asks for nothing while the bakes left over land, and one misses.
+    resetBakeBudget(0);
+    vi.runAllTimers();
+    expect(face.font.charMap.size).toBe(0);
+    subscribeGlyphReady(notified);
+
+    resetBakeBudget(Infinity);
+    for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
+    vi.runAllTimers();
+    expect(notified).not.toHaveBeenCalled();
+    expect(face.font.charMap.size).toBe(5);
+    expect(warn.mock.calls.at(-1)?.[0]).toMatch(/more glyphs/);
+  });
+
   it('does not empty the pages for a glyph no page could hold', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     __setGlyphRasterizerForTests({
@@ -355,6 +390,16 @@ describe('how many faces it keeps', () => {
     for (let i = 1; i <= MAX_DYNAMIC_FACES; i++) getDynamicFace('Tween', 400 + i / 100, 'normal');
     expect(getDynamicFace('Tween', 401, 'normal')).toBe(getDynamicFace('Tween', 401, 'normal'));
     expect(getDynamicFace('Tween', 400, 'normal')).not.toBe(first);
+  });
+
+  it('drops the face used longest ago, not the one made first', () => {
+    const ui = getDynamicFace('UI', 400, 'normal');
+    const second = getDynamicFace('Tween', 400, 'normal');
+    for (let i = 1; i <= MAX_DYNAMIC_FACES - 2; i++) getDynamicFace('Tween', 400 + i / 100, 'normal');
+    expect(getDynamicFace('UI', 400, 'normal')).toBe(ui);
+    getDynamicFace('Tween', 500, 'normal');
+    expect(getDynamicFace('UI', 400, 'normal')).toBe(ui);
+    expect(getDynamicFace('Tween', 400, 'normal')).not.toBe(second);
   });
 });
 

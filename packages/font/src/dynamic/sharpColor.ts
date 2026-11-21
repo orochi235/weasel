@@ -8,7 +8,7 @@
  */
 
 import type { BmFontChar } from '../FontAtlas';
-import { onSharpPagesEmptied, requestBake } from './bakeQueue';
+import { onSharpPagesEmptied, requestBake, retryStarved } from './bakeQueue';
 import { BAKE_SIZE, type RasterizedColorGlyph } from './glyphRasterizer';
 
 /** The largest level baked: `BAKE_SIZE × 2^3`, 384px. */
@@ -68,7 +68,10 @@ export function sharpBakesOf(char: BmFontChar): BmFontChar[] {
 function requestLevel(source: Source, level: number): SharperColorGlyph | null {
   const levels = levelsOf(source);
   const known = levels[level];
-  if (known !== undefined) return known;
+  if (known !== undefined) {
+    if (known?.glyph.page === -1) retryStarved(known.glyph);
+    return known;
+  }
   const k = 2 ** level;
   const raster = source.raster(BAKE_SIZE * k);
   const sharp: SharperColorGlyph | null = raster && {
