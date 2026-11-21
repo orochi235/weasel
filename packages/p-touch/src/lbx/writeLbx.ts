@@ -15,7 +15,7 @@ import {
 } from 'bil-lbx';
 import type { Tape } from '../tape';
 import { carriedObjects, placeCarried } from './carried';
-import { lineObject, rectObject, textObject } from './shapes';
+import { inkSpanX, lineObject, rectObject, textObject } from './shapes';
 import { keepsAxes, type DrawState } from './style';
 
 /** One label: its size and the commands painted on it, in points with the origin at its top left. */
@@ -112,7 +112,8 @@ function finiteObject(v: unknown): boolean {
 
 /** Whether an object lies along the tape within `[0, end]`, the stretch the rasterizer draws. */
 function withinLength(object: LabelObject, end: number): boolean {
-  return object.position.x >= -CLIP_EPS && object.position.x + object.position.width <= end + CLIP_EPS;
+  const { x0, x1 } = inkSpanX(object);
+  return x0 >= -CLIP_EPS && x1 <= end + CLIP_EPS;
 }
 
 /** `end`: under auto length, the label's length, past which P-touch would grow the label for an object. */

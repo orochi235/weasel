@@ -29,19 +29,28 @@ describe('polylines', () => {
     for (const p of points.slice(1)) b.lineTo(...p);
     return { kind: 'path', path: b.build(), stroke: { paint: { color: '#000' }, width: 1, ...stroke } };
   };
-  const corner: [number, number][] = [[0, 0], [30, 10], [60, 0]];
+  const corner: [number, number][] = [[5, 0], [35, 10], [65, 0]];
 
   it('rasterizes a polyline whose corners are rounded, beveled, or past the miter limit', async () => {
     expect(await types([line(corner)])).toEqual(['line']);
     expect(await types([line(corner, { join: 'round' })])).toEqual([]);
     expect(await types([line(corner, { join: 'bevel' })])).toEqual([]);
-    expect(await types([line([[0, 0], [5, 40], [10, 0]])])).toEqual([]);
-    expect(await types([line([[0, 0], [60, 0]], { join: 'round' })])).toEqual(['line']);
+    expect(await types([line([[5, 0], [10, 40], [15, 0]])])).toEqual([]);
+    expect(await types([line([[5, 0], [65, 0]], { join: 'round' })])).toEqual(['line']);
+  });
+
+  it('rasterizes a line under auto length whose stroke reaches past the end, though its points do not', async () => {
+    const auto = async (cmd: DrawCommand) =>
+      (await lbxConfig({ length: 100, tape, commands: [cmd], autoLength: true })).config.objects.map((o) => o.type);
+    expect(await auto(line([[10, 5], [100, 5]], { width: 6, cap: 'round' }))).toEqual([]);
+    expect(await auto(line([[99, 5], [99, 30]], { width: 4, cap: 'butt' }))).toEqual([]);
+    expect(await auto(line([[20, 5], [3, 10], [20, 15]], { width: 4 }))).toEqual([]);
+    expect(await auto(line([[3, 5], [97, 5]], { width: 6, cap: 'round' }))).toEqual(['line']);
   });
 
   it('rasterizes a square-capped line, whose ends reach past its points', async () => {
-    expect(await types([line([[0, 0], [60, 0]], { cap: 'square' })])).toEqual([]);
-    expect(await types([line([[0, 0], [60, 0]], { cap: 'butt' })])).toEqual(['line']);
+    expect(await types([line([[5, 0], [65, 0]], { cap: 'square' })])).toEqual([]);
+    expect(await types([line([[5, 0], [65, 0]], { cap: 'butt' })])).toEqual(['line']);
   });
 });
 
