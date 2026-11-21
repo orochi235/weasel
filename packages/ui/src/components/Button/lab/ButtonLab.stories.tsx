@@ -1,5 +1,5 @@
 import { f, meta, story } from '@weasel-js/forge';
-import { BUTTON_LAB_DEFAULTS as D, type ButtonLabConfig } from './buttonLabConfig';
+import { BUTTON_LAB_DEFAULTS as D, BUTTON_LAB_WEIGHTS, type ButtonLabConfig } from './buttonLabConfig';
 import { ButtonLabView } from './ButtonLabView';
 
 export default meta({ title: 'ui/Button', layout: 'fullscreen', tags: ['lab'] });
@@ -15,11 +15,11 @@ export const Lab = story({
     label: f.string(D.label).label('Label'),
     accent: f.color(D.accent).label('Accent'),
     shape: f.group({
-      radius: knob(D.shape.radius, 0, 999, 1).suffix('px').label('Radius'),
+      radius: knob(D.shape.radius, 0, 50, 1).suffix('% of height').label('Radius'),
       height: knob(D.shape.height, 16, 64, 1).suffix('px').label('Height'),
       padx: knob(D.shape.padx, 0, 32, 1).suffix('px').label('Pad x'),
       fontsize: knob(D.shape.fontsize, 10, 24, 0.5).suffix('px').label('Font size'),
-      fontweight: f.enum(D.shape.fontweight, ['200', '300', '400']).radio().label('Weight'),
+      fontweight: f.enum(D.shape.fontweight, BUTTON_LAB_WEIGHTS).radio().label('Weight'),
     }).label('Shape & type'),
     body: f.group({
       topAlpha: knob(D.body.topAlpha, 0, 100, 1).suffix('%').label('Top α'),
