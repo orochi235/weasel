@@ -51,4 +51,19 @@ describe('<DispatchView>', () => {
     expect((await filter('handled')).getAttribute('aria-pressed')).toBe('true');
     expect((await filter('unhandled')).getAttribute('aria-pressed')).toBe('true');
   });
+
+  it('clears the coord rows along with the trace, and offers to when only coord rows are shown', async () => {
+    const coord = { ts: 0, clientX: 3, clientY: 4, view: null, world: { x: 3, y: 4 }, fallback: true };
+    const page = fakePage((async (_root: string, m: { coordCursor?: number }) => ({
+      entries: [], cursor: 0, live: null,
+      ...(m.coordCursor !== undefined ? { coords: { entries: m.coordCursor === 0 ? [coord] : [], cursor: 1 } } : {}),
+    })) as () => Promise<unknown>);
+    renderWithIcons(<DispatchView client={page.client} rootId="r" />);
+    fireEvent.click(await screen.findByRole('switch', { name: 'coords' }));
+    expect(await screen.findByText('fallback')).toBeTruthy();
+    const clear = screen.getByRole('button', { name: 'Clear' });
+    expect(clear.hasAttribute('disabled') || clear.getAttribute('aria-disabled') === 'true').toBe(false);
+    fireEvent.click(clear);
+    expect(await screen.findByText('No conversions recorded yet.')).toBeTruthy();
+  });
 });

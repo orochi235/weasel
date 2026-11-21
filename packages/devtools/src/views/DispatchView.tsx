@@ -86,7 +86,12 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
           onChange={(next) => setShown(next)}
         />
         <Switch isSelected={showCoords} onChange={toggleCoords}>coords</Switch>
-        <Button size="sm" variant="ghost" disabled={entries.length === 0} onClick={() => setEntries([])}>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={entries.length === 0 && coords.length === 0}
+          onClick={() => { setEntries([]); setCoords([]); }}
+        >
           Clear
         </Button>
         <span className={s.count}>{entries.length} {entries.length === 1 ? 'record' : 'records'}</span>
