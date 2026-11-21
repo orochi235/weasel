@@ -43,3 +43,17 @@ describe('a run stroke that replaces a fuller node stroke', () => {
     });
   });
 });
+
+describe("a <tspan>'s user-space stroke gradient under the text's transform", () => {
+  it('moves with the glyphs as the fill gradient does', () => {
+    const grad = '<defs><linearGradient id="g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="10" y2="0">'
+      + '<stop offset="0" stop-color="red"/><stop offset="1" stop-color="blue"/></linearGradient></defs>';
+    const parsed = parseSvg(`<svg xmlns="http://www.w3.org/2000/svg">${grad}`
+      + '<text transform="translate(100 0) scale(2)">a<tspan fill="url(#g)" stroke="url(#g)">x</tspan></text></svg>');
+    let n = parsed.nodes[0];
+    while (n?.kind === 'group') n = n.children[0];
+    const run = (n as SvgTextNode).runs![1];
+    const fill = run.fill as { paint: unknown };
+    expect(run.stroke?.paint).toEqual(fill.paint);
+  });
+});

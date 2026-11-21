@@ -73,7 +73,13 @@ export function placeTextNode(node: SvgTextNode, m: Matrix, onWarn: (m: string) 
     node.stroke = carryUserScale(node.stroke, { ...node.stroke, paint: fillThroughMatrix(node.stroke.paint, inBox) });
   }
   if (node.runs) {
-    node.runs = node.runs.map((r) => (r.fill ? { ...r, fill: mapFillPaint(r.fill, (p) => fillThroughMatrix(p, inBox)) } : r));
+    node.runs = node.runs.map((r) => {
+      if (!r.fill && !r.stroke?.paint) return r;
+      const out = { ...r };
+      if (r.fill) out.fill = mapFillPaint(r.fill, (p) => fillThroughMatrix(p, inBox));
+      if (r.stroke?.paint) out.stroke = carryUserScale(r.stroke, { ...r.stroke, paint: fillThroughMatrix(r.stroke.paint, inBox) });
+      return out;
+    });
   }
 }
 
