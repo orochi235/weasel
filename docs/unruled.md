@@ -3266,3 +3266,7 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+## Audit round sixty (2026-11-20): ui components, part three
+
+- 2026-11-20 (the fixer's call): `Disclosure` follows a `<Disabled>` scope and takes `disabledReason`, but not a
+  `<ReadOnly>` scope: folding a section changes no value, so a read-only twisty still folds.
