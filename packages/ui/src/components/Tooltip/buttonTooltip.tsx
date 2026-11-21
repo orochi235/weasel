@@ -104,11 +104,12 @@ export function TriggerTooltip({ content, disabled, children }: {
   disabled?: boolean;
   children: ReactElement;
 }): ReactElement {
-  if (content === undefined || content === null || content === false) return children;
+  const none = content === undefined || content === null || content === false;
+  // Wrapped with no content too, so a trigger that gains a tooltip is not remounted.
   return (
-    <TooltipTrigger isDisabled={disabled}>
+    <TooltipTrigger isDisabled={disabled || none}>
       {children}
-      <Tooltip>{content}</Tooltip>
+      {none ? null : <Tooltip>{content}</Tooltip>}
     </TooltipTrigger>
   );
 }

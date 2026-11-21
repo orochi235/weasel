@@ -12,6 +12,15 @@ const OPTIONS = [
 ];
 
 describe('Select', () => {
+  it('keeps its trigger, and its focus, when it gains a tooltip', () => {
+    const { rerender } = render(<Select aria-label="Color" options={OPTIONS} />);
+    const trigger = screen.getByRole('button');
+    trigger.focus();
+    rerender(<Select aria-label="Color" options={OPTIONS} tooltip="Pick a color" />);
+    expect(screen.getByRole('button')).toBe(trigger);
+    expect(document.activeElement).toBe(trigger);
+  });
+
   it('renders a button trigger labeled by the select', () => {
     render(<Select label="Color" options={OPTIONS} placeholder="—" />);
     const trigger = screen.getByRole('button', { name: /Color/ });
