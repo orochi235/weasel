@@ -4,6 +4,7 @@ import { quadrantClassEntries, type QuadrantAxis, type QuadrantPointStyle } from
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { mermaidIds, mermaidQuoted, oneLine } from '../common/text';
+import { warnDroppedPageName } from '../common/lines';
 
 /** A first word that would read as a statement of its own, or a comment, rather than a point. */
 const STATEMENT = /^(?:(?:title|x-axis|y-axis|quadrant-[1-4]|classDef)(?:\s|$)|%%|acc(?:Title|Descr))/;
@@ -59,6 +60,7 @@ export function writeMermaidQuadrant(page: PlotPage): ExportResult {
   if (data.kind !== 'quadrant') throw new Error(`Mermaid writes this chart as a quadrant chart only; the page holds a ${(data as { kind: string }).kind}`);
   const warnings = new Warnings();
   const lines = ['quadrantChart'];
+  warnDroppedPageName(page, (m) => warnings.add(m));
   const title = data.title === undefined ? '' : oneLine(data.title, 'quadrant chart', (m) => warnings.add(m)).trim();
   if (title) lines.push(`  title ${title}`);
   for (const axis of ['x', 'y'] as const) {

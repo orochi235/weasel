@@ -1,6 +1,7 @@
 /** A plot page holding a radar as Mermaid `radar-beta` text. */
 import type { ExportResult, PlotPage } from '../../document';
 import { mermaidIds, oneLine } from '../common/text';
+import { warnDroppedPageName } from '../common/lines';
 
 const ID = /^[A-Za-z_][\w-]*$/;
 
@@ -35,6 +36,7 @@ export function writeMermaidRadar(page: PlotPage): ExportResult {
   const warn = (m: string) => {
     if (!warnings.includes(m)) warnings.push(m);
   };
+  warnDroppedPageName(page, warn);
   const lines = ['radar-beta'];
   if (data.title !== undefined) lines.push(`  title ${oneLine(data.title, 'radar', warn)}`);
   if (data.axes.length > 0) lines.push(`  axis ${items(data.axes, warn).join(', ')}`);

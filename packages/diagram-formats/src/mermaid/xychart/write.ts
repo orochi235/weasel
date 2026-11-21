@@ -2,6 +2,7 @@
 import type { XyChartData } from '@weasel-js/plot';
 import type { ExportResult, PlotPage } from '../../document';
 import { mermaidQuoted } from '../common/text';
+import { warnDroppedPageName } from '../common/lines';
 
 
 /** A category bare where Mermaid reads it back the same, else quoted. */
@@ -37,6 +38,7 @@ export function writeMermaidXychart(page: PlotPage): ExportResult {
   const warn = (m: string) => {
     if (!warnings.includes(m)) warnings.push(m);
   };
+  warnDroppedPageName(page, warn);
   const lines = [data.orientation === 'horizontal' ? 'xychart-beta horizontal' : 'xychart-beta'];
   if (data.title !== undefined) lines.push(`  title ${mermaidQuoted(data.title)}`);
   const x = data.x && xAxisLine(data.x, warn);

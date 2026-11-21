@@ -2,6 +2,7 @@
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineOpening, spelledLine } from '../common/text';
+import { warnDroppedPageName } from '../common/lines';
 
 
 /** The label a period with none is written with, since a line with no label adds events to the period above. */
@@ -14,6 +15,7 @@ export function writeMermaidTimeline(page: PlotPage): ExportResult {
   if (data.kind !== 'timeline') throw new Error(`Mermaid writes this chart as a timeline only; the page holds a ${(data as { kind: string }).kind}`);
   const warnings = new Warnings();
   const text = (s: string) => spelledLine(s, 'timeline', (m) => warnings.add(m));
+  warnDroppedPageName(page, (m) => warnings.add(m));
   const lines = ['timeline'];
   if (data.title !== undefined) lines.push(`  title ${text(data.title)}`);
   let named = false;

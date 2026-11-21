@@ -115,6 +115,11 @@ export function readPageName(
   return title ?? src.accTitle;
 }
 
+/** Warns where a chart page's name is not its chart's title, which is all a Mermaid chart names it by. */
+export function warnDroppedPageName(page: { name?: string; data: { title?: string } }, warn: (message: string) => void): void {
+  if (page.name !== undefined && page.name !== '' && page.name !== page.data.title) warn('Mermaid names a chart by its title; a page name the title does not match was dropped.');
+}
+
 /** The front matter naming a page, as lines to start a diagram with. */
 export const titleLines = (name: string | undefined): string[] => (name === undefined ? [] : ['---', `title: ${JSON.stringify(name)}`, '---']);
 
