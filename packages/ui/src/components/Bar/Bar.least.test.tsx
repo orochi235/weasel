@@ -5,7 +5,7 @@ import { DockBarContext } from '../ToolbarDock/dockContext';
 
 // jsdom lays nothing out: each cell is 30 px long, a spacer 0, and the bar 500 px, so its line holds every cell.
 const realRect = Element.prototype.getBoundingClientRect;
-const realWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')!;
+const realWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
 beforeAll(() => {
   Element.prototype.getBoundingClientRect = function box(this: Element) {
     const width = this.matches('[data-bar-item]:not([aria-hidden])') ? 30 : 0;
@@ -15,7 +15,8 @@ beforeAll(() => {
 });
 afterAll(() => {
   Element.prototype.getBoundingClientRect = realRect;
-  Object.defineProperty(HTMLElement.prototype, 'clientWidth', realWidth);
+  if (realWidth) Object.defineProperty(HTMLElement.prototype, 'clientWidth', realWidth);
+  else Reflect.deleteProperty(HTMLElement.prototype, 'clientWidth');
 });
 afterEach(cleanup);
 
