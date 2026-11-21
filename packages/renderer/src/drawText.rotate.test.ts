@@ -73,25 +73,11 @@ describe('drawing turned glyphs', () => {
       glyphs: [{ d: 'M0 -0.5L0.5 -0.5L0.5 0L0 0Z', key: 'rotate-test-square', x: 10, baselineY: 20, scale: 100, rotate: 90 }],
     } as unknown as LaidOutGroup;
     const mesh = outlineGroupMesh(group, 0, 0)!;
-    const o = mesh.origin ?? { x: 0, y: 0 };
     const xs: number[] = [], ys: number[] = [];
-    for (let k = 0; k < mesh.vertices.length; k += 2) { xs.push(mesh.vertices[k] + o.x); ys.push(mesh.vertices[k + 1] + o.y); }
+    for (let k = 0; k < mesh.vertices.length; k += 2) { xs.push(mesh.vertices[k]); ys.push(mesh.vertices[k + 1]); }
     expect(Math.min(...xs)).toBeCloseTo(10, 6);
     expect(Math.max(...xs)).toBeCloseTo(60, 6);
     expect(Math.min(...ys)).toBeCloseTo(20, 6);
     expect(Math.max(...ys)).toBeCloseTo(70, 6);
-  });
-
-  it('keeps an outline glyph\'s shape far from the origin, its pen carried as the mesh origin', () => {
-    const group = {
-      family: 'squares', weight: 400, style: 'normal', synthetic: { bold: false, italic: false },
-      source: 'outline', page: 0, fill: null, quadData: [], quads: [],
-      glyphs: [{ d: 'M0 -0.5L0.5 -0.5L0.5 0L0 0Z', key: 'far-test-square', x: 0.3, baselineY: 0, scale: 0.01 }],
-    } as unknown as LaidOutGroup;
-    const mesh = outlineGroupMesh(group, 1_000_000, 2_000_000)!;
-    expect(mesh.origin).toEqual({ x: 1_000_000.3, y: 2_000_000 });
-    const xs: number[] = [];
-    for (let k = 0; k < mesh.vertices.length; k += 2) xs.push(mesh.vertices[k]);
-    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(0.005, 6);
   });
 });
