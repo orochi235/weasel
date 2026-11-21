@@ -1,7 +1,7 @@
 import { act, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, it, vi } from 'vitest';
-import type { RegionContribution, TrialChromeContext } from '../types';
+import type { RegionContribution, SidebarSection, TrialChromeContext } from '../types';
 import { SidebarPanes } from './SidebarPanes';
 
 const ctx = {
@@ -10,7 +10,7 @@ const ctx = {
 } as unknown as TrialChromeContext;
 
 const contributions: RegionContribution<TrialChromeContext>[] = [
-  { id: 'a', region: 'sidebar', item: { title: 'Vars', body: 'vars body', fill: true } },
+  { id: 'a', region: 'sidebar', item: { title: 'Vars', body: 'vars body' } },
   { id: 'b', region: 'sidebar', item: { title: 'Checks', body: 'checks body' } },
   { id: 'c', region: 'sidebar', item: { title: 'Notes', body: 'notes body' } },
 ];
@@ -46,6 +46,23 @@ describe('<SidebarPanes>', () => {
     expect([a, b]).toEqual([200, 150]);
     expect(c).toBeGreaterThan(200);
     expect(c).toBeLessThan(260);
+  });
+
+  it('gives the spare height to an open section that fills, ahead of the last', async () => {
+    const filling = contributions.map((c) =>
+      c.id === 'a' ? { ...c, item: { ...(c.item as SidebarSection), fill: true } } : c,
+    );
+    const { container } = await renderSettled(
+      <SidebarPanes
+        contributions={filling}
+        ctx={ctx}
+        viewport={VIEWPORT}
+        heights={{ a: 100, b: 150, c: 120 }}
+      />,
+    );
+    const [a, b, c] = paneHeights(container);
+    expect([b, c]).toEqual([150, 120]);
+    expect(a).toBeGreaterThan(300);
   });
 
   it('holds a folded section to its bar and hands its height to the open ones', async () => {

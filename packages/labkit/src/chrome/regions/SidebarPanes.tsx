@@ -150,7 +150,7 @@ export interface SidebarPanesProps<TCtx extends SidebarSlotContext = TrialChrome
  * Lays a region's sections out as a stack of panes that share the height of the
  * pane holding them, with a draggable seam between each two. A section's bar
  * stays put and its body scrolls under it; a folded section is as tall as its
- * bar. The last open section takes whatever height the others leave.
+ * bar. The first open section that fills, else the last open one, takes whatever height the others leave.
  */
 export function SidebarPanes<TCtx extends SidebarSlotContext = TrialChromeContext>({
   contributions,
@@ -170,7 +170,8 @@ export function SidebarPanes<TCtx extends SidebarSlotContext = TrialChromeContex
   if (shown.length === 0) return null;
   const folded = (c: RegionContribution<TCtx>) =>
     getOwn(ctx.collapsedSections, c.id) ?? (c.item as SidebarSection).defaultCollapsed ?? false;
-  const filler = shown.filter((c) => !c.render && !folded(c)).at(-1)?.id;
+  const open = shown.filter((c) => !c.render && !folded(c));
+  const filler = (open.find((c) => (c.item as SidebarSection).fill) ?? open.at(-1))?.id;
 
   return (
     <div className="lk-sidebar-panes">
