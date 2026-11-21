@@ -86,9 +86,9 @@ export function applyKeyframeDrag(state: KeyframeLayerState): KeyframeDragResult
   return { ...unchanged, keys: next };
 }
 
-/** `v` held inside `range`, or as it is with none. */
+/** `v` held inside `range`, given either end first, or as it is with none. */
 export function clampTo(v: number, range?: readonly [number, number]): number {
-  return range ? clamp(v, range[0], range[1]) : v;
+  return range ? clamp(v, Math.min(range[0], range[1]), Math.max(range[0], range[1])) : v;
 }
 
 /**
