@@ -33,17 +33,20 @@ export function createCrossings(
   }) : null;
   const events = createEventCursor(createEventFirer(report, booker !== null), gone);
   let rate = 0;
+  // A handler on the outgoing lap's tail that seeks ends the frame's crossings, as one in `fire` does.
+  let tailSought = false;
 
   return {
-    frame(r) { rate = r; },
+    frame(r) { rate = r; tailSought = false; },
     // Flush the outgoing pass's tail before re-arming, or an event between the
     // last tick and `duration` is dropped whenever a frame straddles the seam.
     wrapped(laps) {
       const sought = rate !== 0 && laps > 0 && events.to(opts.tracks, pos.duration());
+      tailSought ||= sought;
       if (!sought) events.place(laps > 0 ? -Infinity : pos.time(), false);
       if (report?.watched) report.lap(pos.lap());
     },
-    fire: () => (rate > 0 ? events.to(opts.tracks, pos.time()) : rate < 0 && events.back(pos.time())),
+    fire: () => tailSought || (rate > 0 ? events.to(opts.tracks, pos.time()) : rate < 0 && events.back(pos.time())),
     book(virtualNow) { booker?.tick(virtualNow, rate); },
     retract() { booker?.retract(); },
     sought(landed) {
