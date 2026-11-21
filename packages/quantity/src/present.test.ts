@@ -424,6 +424,10 @@ describe('infinity', () => {
     expect(parseAs('12ms', d)).toBe(12);
   });
 
+  it('reads text holding a line break as no number, without throwing', () => {
+    for (const text of ['1\n2', '1\r2', '1\u20282', 'inf\ninity']) expect(parseAs(text, decimal())).toBeNaN();
+  });
+
   it('keeps the word through a tag', () => {
     const q = tag(Infinity, withInfinity(integer(), 'unlimited'));
     expect(qty(retag(q, Infinity)).text).toBe('unlimited');

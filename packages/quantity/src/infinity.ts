@@ -36,7 +36,7 @@ export function readInfinity(text: string, display: Display | undefined, locale:
   const is = (w: Word) => w.text.toLocaleLowerCase(locale) === typed || w.spoken.toLocaleLowerCase(locale) === typed;
   if (is(infinityWord(display, 1))) return Infinity;
   if (is(infinityWord(display, -1))) return -Infinity;
-  const m = /^([+\-−]?)\s*(.*)$/.exec(typed)!;
+  const m = /^([+\-−]?)\s*(.*)$/s.exec(typed)!;
   if (!SPELLINGS.includes(m[2]!)) return undefined;
   return m[1] === '-' || m[1] === MINUS_SIGN ? -Infinity : Infinity;
 }
