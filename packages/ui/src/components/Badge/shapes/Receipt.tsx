@@ -1,4 +1,5 @@
 import { trimNumber } from '@weasel-js/geom';
+import { repeatCount, withDefaults } from './params';
 import type { ShapeModule } from '../types';
 
 /** What `shapeParams` takes on a `receipt` badge. */
@@ -11,7 +12,7 @@ export interface BadgeReceiptShapeParams {
 const DEFAULTS: Required<BadgeReceiptShapeParams> = { teeth: 11, tearDepth: 4, sideToTopRatio: 3 };
 
 function receiptPath(teeth: number, depth: number) {
-  const N = Math.max(3, Math.floor(teeth));
+  const N = repeatCount(teeth, 3);
   const baseDepth = Math.max(1, depth);
   const depthAt = (i: number) => baseDepth * (0.55 + 0.55 * Math.abs(Math.sin(i * 1.73 + 0.5)));
   let d = `M 0 0 L 100 0`;
@@ -33,7 +34,7 @@ const BASE_TOP = 2;
 
 const Receipt: ShapeModule<BadgeReceiptShapeParams> = {
   Component: ({ variant, focused, params }) => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     const d = receiptPath(cfg.teeth, cfg.tearDepth);
     return (
       <>

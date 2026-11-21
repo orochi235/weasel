@@ -3128,3 +3128,11 @@ Calls the lanes made without a ruling:
   `measureIds`, and so picking, editing, Delete and Clear all, reads only `ms.layer`. Either `measureIds` reads the
   whole scene, which puts a walk of every node on each pointer move's hit test (`measureEndSource.test.ts` holds
   that it must not), or the painter and the snap source take only `ms.layer`'s nodes and the rest go undrawn.
+
+## Audit round fifty-six (2026-11-20): badge shapes
+
+- 2026-11-20: A `coffin` badge's `shoulderHalfHeight` is a half-height of its own, 2..50 like `headHalfHeight` and
+  `footHalfHeight`, where it had been added to the head's. Its default became 50, which draws what the old default did;
+  a caller who passed it as an increment now gets that number as the half-height.
+- 2026-11-20: A badge shape's repeat counts (`sparkler` and `starburst` `points`, `receipt` `teeth`) stop at 256, and a
+  `perforated` badge's `holePitch` at no less than 1px. Both bounds are picked to keep a render finite, not ruled.
