@@ -106,3 +106,13 @@ describe('writing a Mermaid requirement diagram', () => {
     ]);
   });
 });
+
+describe('writing a requirement box with no name row', () => {
+  it('names it by its id, never by a row past the divider', () => {
+    const text = writeRequirementDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'r1', rows: [{ kind: 'label', text: '<<requirement>>' }, { kind: 'divider' }, { kind: 'label', text: 'id: 1' }] }], edges: [],
+    } as never }] }).text;
+    expect(text).toContain('requirement r1 {');
+    expect(text).not.toContain('"id: 1"');
+  });
+});
