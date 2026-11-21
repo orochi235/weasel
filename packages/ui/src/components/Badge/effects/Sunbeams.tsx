@@ -3,6 +3,7 @@ import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 import { DEG_TO_RAD, trimNumber } from '@weasel-js/geom';
+import { outlineRegion } from '../composeOutline';
 
 /** What an effect of type `sunbeams` takes as `params`. */
 export interface BadgeSunbeamsEffectParams {
@@ -68,8 +69,11 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
     const offsetVb = cfg.offset * sx;
     const totalWidth = cfg.count * nominalWidthVb + (cfg.count - 1) * gapVb;
     let cursorX = 50 - totalWidth / 2 + offsetVb;
-    const yTop = -50;
-    const yBot = 150;
+    const region = outlineRegion(sampler, 0);
+    // Beams stay centered on y = 50 and run past the outline's farther edge from it.
+    const reach = Math.max(100, 50 - region.y, region.y + region.height - 50);
+    const yTop = 50 - reach;
+    const yBot = 50 + reach;
 
     const beams: { points: string; opacity: number }[] = [];
     for (let i = 0; i < cfg.count; i++) {
@@ -92,16 +96,16 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
       cursorX += nominalWidthVb + gapVb;
     }
 
-    // Gradient mask geometry: define a linear gradient from one edge of the viewBox to the
-    // other along `gradientAngle`. Position the start/end stops along that 0..1 axis.
+    // The fade runs along `gradientAngle`, with 0 and 1 on the outline region's farthest corners.
     const ga = cfg.gradientAngle * DEG_TO_RAD;
     const cosA = Math.cos(ga), sinA = Math.sin(ga);
-    // The viewBox's extent along the axis, so 0 and 1 land on its farthest corners at any angle.
-    const span = 100 * (Math.abs(cosA) + Math.abs(sinA));
-    const x1g = 50 - cosA * span / 2;
-    const y1g = 50 - sinA * span / 2;
-    const x2g = 50 + cosA * span / 2;
-    const y2g = 50 + sinA * span / 2;
+    const cx = region.x + region.width / 2;
+    const cy = region.y + region.height / 2;
+    const span = region.width * Math.abs(cosA) + region.height * Math.abs(sinA);
+    const x1g = cx - cosA * span / 2;
+    const y1g = cy - sinA * span / 2;
+    const x2g = cx + cosA * span / 2;
+    const y2g = cy + sinA * span / 2;
 
     const gs = Math.max(0, Math.min(cfg.gradientStart, 1));
     const ge = Math.max(0, Math.min(cfg.gradientEnd, 1));
@@ -130,8 +134,8 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
           <linearGradient id={gradId} x1={x1g} y1={y1g} x2={x2g} y2={y2g} gradientUnits="userSpaceOnUse">
             {stops.map((s, i) => <stop key={i} offset={s.offset} stopColor={s.color} />)}
           </linearGradient>
-          <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
-            <rect x="0" y="0" width="100" height="100" fill={`url(#${gradId})`} />
+          <mask id={maskId} maskUnits="userSpaceOnUse" {...region}>
+            <rect {...region} fill={`url(#${gradId})`} />
           </mask>
         </defs>
         <g clipPath={`url(#${clipId})`} mask={`url(#${maskId})`}>

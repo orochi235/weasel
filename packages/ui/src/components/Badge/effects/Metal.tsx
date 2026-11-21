@@ -2,6 +2,7 @@ import { cssColorLiteral, type ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
+import { outlineRegion } from '../composeOutline';
 import { GlassStrokes } from './glassStrokes';
 
 /**
@@ -58,6 +59,7 @@ const Metal: EffectModule<BadgeMetalEffectParams> = {
     if (variant !== 'solid' && variant !== 'subtle' && variant !== 'outline') return null;
     const cfg = { ...DEFAULTS, ...params };
     const accent = css(cfg.accent);
+    const region = outlineRegion(sampler, 0);
     const spec = Math.max(0, Math.min(cfg.specularity, 1));
 
     const equatorLo = Math.max(0, cfg.equator - cfg.equatorSpread);
@@ -81,14 +83,14 @@ const Metal: EffectModule<BadgeMetalEffectParams> = {
     return (
       <>
         <defs>
-          <linearGradient id={bodyGradId} x1="0%" y1="0%" x2="0%" y2="100%">
+          <linearGradient id={bodyGradId} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="100">
             <stop offset="0%" style={{ stopColor: topDarkColor }} />
             <stop offset={`${equatorLo}%`} style={{ stopColor: upperBrightColor }} />
             <stop offset={`${cfg.equator}%`} style={{ stopColor: equatorColor }} />
             <stop offset={`${equatorHi}%`} style={{ stopColor: lowerBrightColor }} />
             <stop offset="100%" style={{ stopColor: baseDarkColor }} />
           </linearGradient>
-          <linearGradient id={glossGradId} x1="0%" y1="0%" x2="0%" y2="100%">
+          <linearGradient id={glossGradId} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2={cfg.glossExtent}>
             <stop offset="0%" style={{ stopColor: 'white', stopOpacity: glossAlpha }} />
             <stop offset="100%" style={{ stopColor: 'white', stopOpacity: 0 }} />
           </linearGradient>
@@ -101,10 +103,10 @@ const Metal: EffectModule<BadgeMetalEffectParams> = {
 
         {glossAlpha > 0 && (
           <rect
-            x="0"
-            y="0"
-            width="100"
-            height={cfg.glossExtent}
+            x={region.x}
+            y={region.y}
+            width={region.width}
+            height={Math.max(0, cfg.glossExtent - region.y)}
             fill={`url(#${glossGradId})`}
             clipPath={`url(#${glossClipId})`}
             style={{ pointerEvents: 'none' }}

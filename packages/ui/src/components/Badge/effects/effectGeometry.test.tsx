@@ -10,6 +10,7 @@ import Metal from './Metal';
 import Outline from './Outline';
 import Perforations from './Perforations';
 import Scallops from './Scallops';
+import Sheen from './Sheen';
 import Spikes from './Spikes';
 import Sunbeams from './Sunbeams';
 
@@ -42,14 +43,15 @@ describe('a Badge effect stroke', () => {
 });
 
 describe('a glassy effect gloss', () => {
-  it('fades out at the bottom of the rect it fills, `glossExtent` units down', () => {
+  it('fades out `glossExtent` units down', () => {
     for (const effect of [Aqua, Metal] as EffectModule<{ glossExtent: number; specularity?: number }>[]) {
       const c = draw(effect, { glossExtent: 40, specularity: 1 });
       const rect = c.querySelector('rect[clip-path]')!;
       expect(rect.getAttribute('height')).toBe('40');
       const id = rect.getAttribute('fill')!.match(/url\(#(.+)\)/)![1];
       const grad = [...c.querySelectorAll('linearGradient')].find((g) => g.id === id)!;
-      expect(grad.getAttribute('y2')).toBe('100%');
+      expect(grad.getAttribute('y1')).toBe('0');
+      expect(grad.getAttribute('y2')).toBe('40');
     }
   });
 });
@@ -124,5 +126,31 @@ describe('sunbeams', () => {
     expect(y1).toBeCloseTo(0);
     expect(x2).toBeCloseTo(100);
     expect(y2).toBeCloseTo(100);
+  });
+});
+
+describe('a decoration on an outline that reaches past the viewBox', () => {
+  const tall: [number, number][] = [[-10, -20], [110, -20], [110, 120], [-10, 120]];
+  const region = { x: -10, y: -20, width: 120, height: 140 };
+  const boxOf = (el: Element) => ['x', 'y', 'width', 'height'].map((k) => Number(el.getAttribute(k)));
+  const drawTall = <P,>(effect: EffectModule<P>, params: P) => draw(effect, params, 200, 30, polygonSampler(tall, 200, 30));
+
+  it('sheen covers the whole outline', () => {
+    expect(boxOf(drawTall(Sheen, {}).querySelector('rect')!)).toEqual(Object.values(region));
+  });
+
+  it('sunbeams fade over the whole outline', () => {
+    const c = drawTall(Sunbeams, { gradientAngle: 90 });
+    expect(boxOf(c.querySelector('mask')!)).toEqual(Object.values(region));
+    const grad = c.querySelector('linearGradient')!;
+    expect(Number(grad.getAttribute('y1'))).toBeCloseTo(-20);
+    expect(Number(grad.getAttribute('y2'))).toBeCloseTo(120);
+  });
+
+  it('the aqua and metal gloss starts at the outline top', () => {
+    for (const effect of [Aqua, Metal] as EffectModule<{ glossExtent: number; specularity?: number }>[]) {
+      const rect = drawTall(effect, { glossExtent: 50, specularity: 1 }).querySelector('rect[clip-path]')!;
+      expect(boxOf(rect)).toEqual([-10, -20, 120, 70]);
+    }
   });
 });
