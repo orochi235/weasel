@@ -101,7 +101,7 @@ export function ListEditor<T>({
   const list = entries.typed;
 
   const insert = (at: number, make: () => T): void => {
-    if (disabled || list.length >= maxItems) return;
+    if (disabled || list.length >= maxItems) return entries.settle();
     entries.write([...list.slice(0, at), make(), ...list.slice(at)]);
     focus.request({ at, to: 'input' });
   };
@@ -115,7 +115,7 @@ export function ListEditor<T>({
     if (imeKey(e.nativeEvent)) return;
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (kinds[0]) insert(at + 1, kinds[0].make);
+      if (kinds[0]) insert(at + 1, kinds[0].make); else entries.settle();
     } else if (e.key === 'Backspace' && entries.shown(at) === '') {
       e.preventDefault();
       remove(at);

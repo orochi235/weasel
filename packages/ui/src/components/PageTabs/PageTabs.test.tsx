@@ -1,7 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { pageName } from '@weasel-js/core';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { PageTabs, type PageTabsProps } from './PageTabs';
+
+const css = readFileSync(resolve(__dirname, 'PageTabs.module.css'), 'utf8');
+const rule = (sel: string): string | undefined => css.split(`${sel} {`)[1]?.split('}')[0]?.trim();
 
 const PAGES = [{ id: 'a', name: 'Cover' }, { id: 'b' }, { id: 'c' }];
 
@@ -179,5 +184,14 @@ describe('PageTabs', () => {
     expect(ev.defaultPrevented).toBe(false);
     expect(onMove).not.toHaveBeenCalled();
     expect(screen.getByLabelText('Page name')).toBe(field);
+  });
+});
+
+describe('PageTabs drop line', () => {
+  it('lights the edge a tab is dropped against on its reading side, in either direction', () => {
+    expect(rule('.strip .dropBefore')).toBe('box-shadow: inset 2px 0 0 var(--wzl-accent);');
+    expect(rule('.strip .dropAfter')).toBe('box-shadow: inset -2px 0 0 var(--wzl-accent);');
+    expect(rule('.strip:dir(rtl) .dropBefore')).toBe('box-shadow: inset -2px 0 0 var(--wzl-accent);');
+    expect(rule('.strip:dir(rtl) .dropAfter')).toBe('box-shadow: inset 2px 0 0 var(--wzl-accent);');
   });
 });

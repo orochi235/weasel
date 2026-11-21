@@ -104,7 +104,7 @@ function jogParts(props: JogProps, access: ControlAccess): JogParts {
         size="sm"
         variant="ghost"
         aria-label={playing ? 'Pause' : 'Play'}
-        disabled={held || count < 2}
+        disabled={held || (!playing && count < 2)}
         disabledReason={held ? reason : undefined}
         onClick={() => onPlayingChange(!playing)}
       >
@@ -149,7 +149,7 @@ function jogParts(props: JogProps, access: ControlAccess): JogParts {
         {pad(ordinal, count)}/{count}
       </span>
     ),
-    caption: caption ? <span className={s.caption} dir="auto">{caption}</span> : null,
+    caption: caption != null && caption !== false && caption !== '' ? <span className={s.caption} dir="auto">{caption}</span> : null,
   };
 }
 

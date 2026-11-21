@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { ActionsProvider, DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
 import { createKeymapStack, type Action, type GestureBinding } from '@weasel-js/routing';
 import { held, key } from '@weasel-js/gestures';
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
@@ -22,11 +22,11 @@ const BINDINGS: readonly GestureBinding[] = [
 
 /** A keymap labeled `label`, open, with a key, a pointer and a held binding. */
 function Open({ label }: { label: string }) {
-  const [stack] = useState(() => {
+  const stack = useMemo(() => {
     const s = createKeymapStack();
     s.push('demo', label, { bindings: BINDINGS });
     return s;
-  });
+  }, [label]);
   return (
     <DepRegistryProvider>
       <ActionsProvider>

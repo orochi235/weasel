@@ -1,9 +1,11 @@
-import { type ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import type { Paint } from '@weasel-js/paint';
 import { meshGuides, meshHandles, moveMeshHandle, type MeshGradientPaint, type MeshHandle } from '@weasel-js/renderer/mesh';
 import { asPaint } from '@weasel-js/paint-kinds';
 import { useTints } from '@weasel-js/theme/react';
 import { handleHalf } from '../../handles';
+import { ownHold } from '../Disabled/controlHold';
+import type { HoldProps } from '../Disabled';
 import {
   DragPoint,
   Edge,
@@ -17,7 +19,7 @@ import '@weasel-js/paint-kinds/mesh';
 
 /** Props for {@link MeshHandles}. `onInput`, `onChange` and `onCancel` are the kit's edit protocol
  *  (`docs/conventions.md`, "Edit callbacks"): a drag or an arrow-key step is one edit, and Escape cancels a drag. */
-export interface MeshHandlesProps {
+export interface MeshHandlesProps extends HoldProps {
   /** The mesh whose points these handles move, in the space `toScreen`
    *  maps from. A `units: 'bounds'` mesh is resolved first with
    *  `paintToLocalUnits(fill, box)`, and edits converted back with
@@ -55,10 +57,15 @@ export function MeshHandles(props: MeshHandlesProps): ReactElement {
     onCancel: props.onCancel,
   });
   const { edges, arms } = meshGuides(value);
-  const handles = meshHandles(value);
+  // Which points are one handle is settled when a gesture starts, so a point carried onto another keeps its own
+  // handle, and its focus and pointer, until the gesture ends.
+  const [frozen, setFrozen] = useState<readonly MeshHandle[] | null>(null);
+  const groups = frozen ?? meshHandles(value);
+  const handles = frozen ? frozen.map((h) => ({ ...h, at: pointOf(value, h.refs[0]) ?? h.at })) : groups;
   const { resolved } = useTints();
 
   const emit = (handle: MeshHandle, p: Point, phase: EditPhase): void => {
+    setFrozen(phase === 'input' ? groups : null);
     emitMesh(moveMeshHandle(value, handle, toLocal(p)), phase);
   };
 
@@ -70,7 +77,7 @@ export function MeshHandles(props: MeshHandlesProps): ReactElement {
   ];
 
   return (
-    <HandleOverlay width={width} height={height} className={className} session={session}>
+    <HandleOverlay width={width} height={height} className={className} session={{ ...session, cancel: (sent) => { setFrozen(null); session.cancel(sent); } }} hold={ownHold(props)}>
       {edges.map((edge, i) => (
         // Guides have no identity beyond their place in the walk.
         <Edge key={`e${i}`} points={[toScreen(edge[0]), toScreen(edge[1]), toScreen(edge[2]), toScreen(edge[3])]} />
@@ -92,6 +99,10 @@ export function MeshHandles(props: MeshHandlesProps): ReactElement {
       ))}
     </HandleOverlay>
   );
+}
+
+function pointOf(mesh: MeshGradientPaint, ref: MeshHandle['refs'][number] | undefined): Point | undefined {
+  return ref && mesh.patches[ref.patch]?.points[ref.index];
 }
 
 /** Numbered in the patch's own walk, matching `MeshEditor`'s corner fields. */

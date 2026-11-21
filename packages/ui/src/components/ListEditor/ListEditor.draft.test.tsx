@@ -13,7 +13,9 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function Controlled({ initial, onChange, settleWhenIdle }: { initial: string[]; onChange: (v: string[]) => void; settleWhenIdle?: boolean }) {
+type Extra = { maxItems?: number; newEntry?: [] };
+
+function Controlled({ initial, onChange, settleWhenIdle, extra }: { initial: string[]; onChange: (v: string[]) => void; settleWhenIdle?: boolean; extra?: Extra }) {
   const [value, setValue] = useState(initial);
   return (
     <ListEditor
@@ -21,6 +23,7 @@ function Controlled({ initial, onChange, settleWhenIdle }: { initial: string[]; 
       value={value}
       reorder
       settleWhenIdle={settleWhenIdle}
+      {...extra}
       onChange={(next) => {
         setValue(next);
         onChange(next);
@@ -29,11 +32,11 @@ function Controlled({ initial, onChange, settleWhenIdle }: { initial: string[]; 
   );
 }
 
-function setup(initial: string[], { kit = false, settleWhenIdle }: { kit?: boolean; settleWhenIdle?: boolean } = {}) {
+function setup(initial: string[], { kit = false, settleWhenIdle, extra }: { kit?: boolean; settleWhenIdle?: boolean; extra?: Extra } = {}) {
   const onChange = vi.fn();
   render(
     <KitSettingsProvider value={{ typing: { settleWhenIdle: kit } }}>
-      <Controlled initial={initial} onChange={onChange} settleWhenIdle={settleWhenIdle} />
+      <Controlled initial={initial} onChange={onChange} settleWhenIdle={settleWhenIdle} extra={extra} />
     </KitSettingsProvider>,
   );
   const entry = (n: number) => screen.getByRole('textbox', { name: `Glob ${n}` }) as HTMLInputElement;
@@ -63,6 +66,20 @@ describe('ListEditor text entries hold a draft', () => {
     expect(onChange.mock.calls).toEqual([[['ab', '', 'b']]]);
     expect(document.activeElement).toBe(entry(2));
     expect(entry(1)).toHaveValue('ab');
+  });
+
+  it('Enter commits the typed entry when the list is full', () => {
+    const { onChange, entry } = setup(['a', 'b'], { extra: { maxItems: 2 } });
+    type(entry(2), 'bx');
+    fireEvent.keyDown(entry(2), { key: 'Enter' });
+    expect(onChange.mock.calls).toEqual([[['a', 'bx']]]);
+  });
+
+  it('Enter commits the typed entry when there is no kind to add', () => {
+    const { onChange, entry } = setup(['a'], { extra: { newEntry: [] } });
+    type(entry(1), 'ax');
+    fireEvent.keyDown(entry(1), { key: 'Enter' });
+    expect(onChange.mock.calls).toEqual([[['ax']]]);
   });
 
   it('Backspace in an entry typed empty removes it, without first writing it empty', () => {

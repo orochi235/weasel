@@ -50,6 +50,14 @@
   box-shadow: inset -2px 0 0 var(--wzl-accent);
 }
 
+.strip:dir(rtl) .dropBefore {
+  box-shadow: inset -2px 0 0 var(--wzl-accent);
+}
+
+.strip:dir(rtl) .dropAfter {
+  box-shadow: inset 2px 0 0 var(--wzl-accent);
+}
+
 .rename {
   width: 12ch;
   padding: 0 var(--wzl-space-1);

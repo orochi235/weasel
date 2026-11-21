@@ -56,7 +56,8 @@ function same(a: MeshPoint, b: MeshPoint): boolean {
 /**
  * Every draggable point of `mesh`, in walk order: each patch's corners and
  * edge controls, then a tensor patch's interior. Coincident points of one
- * kind merge into one handle. A patch that cannot be evaluated has none.
+ * kind from different patches merge into one handle; two of one patch stay
+ * two. A patch that cannot be evaluated has none.
  */
 export function meshHandles(mesh: MeshGradientPaint): MeshHandle[] {
   const handles: { id: string; kind: MeshHandleKind; at: MeshPoint; refs: MeshPointRef[] }[] = [];
@@ -64,7 +65,8 @@ export function meshHandles(mesh: MeshGradientPaint): MeshHandle[] {
     if (!isValidPatch(patch)) return;
     patch.points.forEach((at, index) => {
       const kind = kindOf(index);
-      const twin = handles.find((h) => h.kind === kind && same(h.at, at));
+      // Two points of one patch are never copies of each other, however close they sit.
+      const twin = handles.find((h) => h.kind === kind && same(h.at, at) && !h.refs.some((r) => r.patch === p));
       if (twin) twin.refs.push({ patch: p, index });
       else handles.push({ id: `${p}:${index}`, kind, at, refs: [{ patch: p, index }] });
     });

@@ -1,6 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Legend } from './Legend';
+
+const css = readFileSync(resolve(__dirname, 'Legend.module.css'), 'utf8');
 
 const entries = [
   { key: 'contour', label: 'contour', color: '#7d7f86' },
@@ -47,5 +51,13 @@ describe('Legend', () => {
   it('accepts an extra class name', () => {
     render(<Legend entries={[]} className="is-mine" />);
     expect(screen.getByRole('list').className).toContain('is-mine');
+  });
+});
+
+describe('Legend dot swatch', () => {
+  it('pads the dot to the swatch column on its inline sides, so it lines up in either direction', () => {
+    const dot = css.split(".swatch[data-mark='dot'] {")[1]?.split('}')[0] ?? '';
+    expect(dot).toContain('margin-inline: 5px var(--wzl-space-2);');
+    expect(dot).not.toMatch(/margin(-left|-right)?:/);
   });
 });

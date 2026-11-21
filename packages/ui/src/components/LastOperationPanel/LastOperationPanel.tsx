@@ -30,7 +30,7 @@ export function LastOperationPanel({ store, closeLabel = 'Close', className }: L
     <section className={[s.panel, className].filter(Boolean).join(' ')} aria-label={op.label}>
       <header className={s.header}>
         <h2 className={s.title}>{op.label}</h2>
-        <Button {...CLOSE_BUTTON_PROPS} aria-label={closeLabel} onClick={source.dismiss} />
+        <Button {...CLOSE_BUTTON_PROPS} aria-label={closeLabel} onClick={() => source.dismiss()} />
       </header>
       <PrefsForm schema={op.schema} layout="list" values={op.values} onChange={(path, value) => source.adjust({ [path]: value })} />
     </section>

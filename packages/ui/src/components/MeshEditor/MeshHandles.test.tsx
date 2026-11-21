@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { meshFromStops, seedMeshPatch, type MeshGradientPaint } from '@weasel-js/renderer/mesh';
 import { handleHalf } from '../../handles';
+import { useState } from 'react';
+import type { Paint } from '@weasel-js/paint';
 import { MeshHandles } from './MeshHandles';
 import '@weasel-js/paint-kinds/mesh';
 
@@ -92,5 +94,24 @@ describe('MeshHandles', () => {
     const next = onChange.mock.calls[0][0] as unknown as MeshGradientPaint;
     // Ten overlay pixels at 2× is five mesh units.
     expect(next.patches[0].points[0]).toEqual({ x: 5, y: 0 });
+  });
+
+  it('keeps a point dragged onto another patch\'s point its own handle until the drag lands', () => {
+    const one = local(seedMeshPatch('#3366ccff'));
+    const two = { ...one, patches: [...one.patches, ...one.patches.map((p) => ({ ...p, points: p.points.map((q) => ({ x: q.x + 100, y: q.y })) }))] };
+    function Live() {
+      const [value, setValue] = useState<MeshGradientPaint>(two);
+      const take = (next: Paint) => setValue(next as unknown as MeshGradientPaint);
+      return <MeshHandles value={value} toScreen={toScreen} toLocal={toLocal} onInput={take} onChange={take} width={400} height={300} />;
+    }
+    render(<Live />);
+    const moving = screen.getAllByRole('button').find((b) => /^Patch 2 edge \d control/.test(b.getAttribute('aria-label') ?? ''))!;
+    const target = screen.getByLabelText('Patch 1 edge 1 control 1');
+    const label = moving.getAttribute('aria-label')!;
+    fireEvent.pointerDown(moving, { clientX: Number(moving.getAttribute('cx')), clientY: Number(moving.getAttribute('cy')), pointerId: 1 });
+    fireEvent.pointerMove(moving, { clientX: Number(target.getAttribute('cx')), clientY: Number(target.getAttribute('cy')), pointerId: 1 });
+    expect(moving.isConnected).toBe(true);
+    expect(screen.getByLabelText(label)).toBe(moving);
+    expect(moving.getAttribute('cx')).toBe(target.getAttribute('cx'));
   });
 });

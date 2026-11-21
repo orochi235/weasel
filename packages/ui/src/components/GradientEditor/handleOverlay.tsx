@@ -5,6 +5,8 @@ import { useLatest } from '@weasel-js/react';
 import { deepEqual } from '@weasel-js/registry';
 import { useEditDraft, type EditCallbacks } from '../../useEditDraft';
 import { ARROW_KEYSHORTCUTS } from '../../handles';
+import { useControlHold, type ControlHold } from '../Disabled/controlHold';
+import type { HoldProps } from '../Disabled';
 import s from './handleOverlay.module.css';
 
 /** The pieces every paint-geometry overlay draws with — `GradientHandles`
@@ -28,6 +30,8 @@ export interface EditSession {
 }
 
 const SessionContext = createContext<EditSession>({ begin: () => {}, cancel: () => {} });
+/** The overlay's hold, which every point it draws answers to. */
+const HoldContext = createContext<ControlHold | null>(null);
 
 /**
  * The edit protocol an overlay runs over its whole value: the draft a commit-only caller sees, a commit that
@@ -64,23 +68,28 @@ export function useOverlayEdit<V>(value: V, cb: EditCallbacks<V>): {
 }
 
 /** The SVG overlay itself: covers its container, passes pointer input
- *  through everywhere but the handles. */
+ *  through everywhere but the handles. Held disabled or read-only, by `hold` or a scope, its points move nothing. */
 export function HandleOverlay(props: {
   width: number;
   height: number;
   className?: string;
   /** From {@link useOverlayEdit}: where the overlay's points report a drag starting and one canceled. */
   session: EditSession;
+  hold?: HoldProps;
   children: ReactNode;
 }): ReactElement {
-  return (
+  const hold = useControlHold(props.hold ?? {});
+  return hold.wrap(
     <svg
       className={[s.overlay, props.className].filter(Boolean).join(' ')}
       width={props.width}
       height={props.height}
+      data-held={hold.held}
     >
-      <SessionContext.Provider value={props.session}>{props.children}</SessionContext.Provider>
-    </svg>
+      <HoldContext.Provider value={hold}>
+        <SessionContext.Provider value={props.session}>{props.children}</SessionContext.Provider>
+      </HoldContext.Provider>
+    </svg>,
   );
 }
 
@@ -107,7 +116,7 @@ export function DragPoint({
   radius,
   variant = 'handle',
   axis,
-  onDrag,
+  onDrag: onPointDrag,
 }: {
   at: OverlayPoint;
   label: string;
@@ -119,6 +128,8 @@ export function DragPoint({
   onDrag: (p: OverlayPoint, phase: EditPhase) => void;
 }): ReactElement {
   const session = useContext(SessionContext);
+  const hold = useContext(HoldContext);
+  const onDrag = hold ? hold.gate(onPointDrag) : onPointDrag;
   const sent = useRef(false);
   // Where on the handle the press landed, so the point keeps that offset from the pointer.
   const grab = useRef<OverlayPoint>({ x: 0, y: 0 });
@@ -162,7 +173,8 @@ export function DragPoint({
       role="button"
       aria-label={label}
       aria-keyshortcuts={ARROW_KEYSHORTCUTS}
-      tabIndex={0}
+      tabIndex={hold ? hold.tabIndex(0) : 0}
+      {...hold?.focus}
       onKeyDown={onKeyDown}
       {...drag}
     />

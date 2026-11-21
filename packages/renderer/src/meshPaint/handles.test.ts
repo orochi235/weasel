@@ -64,6 +64,15 @@ describe('meshHandles', () => {
     expect(handleAt(handles, 'corner', 1, 0).refs).toHaveLength(2);
   });
 
+  it('keeps two points of one patch apart when one is moved onto the other', () => {
+    const before = meshHandles(mesh(square()));
+    const first = before.find((h) => h.id === '0:1')!;
+    const second = before.find((h) => h.id === '0:2')!;
+    const after = meshHandles(moveMeshHandle(mesh(square()), first, second.at));
+    expect(after.map((h) => h.id)).toEqual(before.map((h) => h.id));
+    expect(after.every((h) => h.refs.length === 1)).toBe(true);
+  });
+
   it('skips a patch that cannot be evaluated', () => {
     const broken: MeshPatch = { points: square().points.slice(0, 5), colors: square().colors };
     expect(meshHandles(mesh(broken))).toHaveLength(0);

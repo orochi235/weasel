@@ -35,7 +35,7 @@
   text-box: normal;
 }
 
-.bare:hover:not(:disabled) {
+.bare:hover:not(:disabled, [data-disabled]) {
   color: var(--wzl-accent-fg);
 }
 
@@ -44,7 +44,7 @@
   outline-offset: 2px;
 }
 
-.bare:disabled {
+.bare:is(:disabled, [data-disabled]) {
   opacity: 0.5;
   filter: var(--wzl-disabled-filter);
   cursor: not-allowed;
