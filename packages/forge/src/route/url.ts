@@ -1,7 +1,7 @@
 import { type ConfigSchema, type ConfigShape, isConfigBranch, configValueAt, hasConfigPath } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
 import { type PrefLeaf, type PrefObject, prefSectionLeaves } from '@weasel-js/prefs-schema';
-import { type StoryGlobals, stableStringify } from '../protocol/messages';
+import type { StoryGlobals } from '../protocol/messages';
 import { setOwn, getOwn } from '@weasel-js/registry';
 import { GLOBALS_KEY } from '../shell/globals';
 
@@ -233,9 +233,25 @@ export function knobPaths(schema: Pick<ConfigSchema<unknown>, 'nodes'>): KnobPat
   return out;
 }
 
-/** Whether two knob values are the same value, compared as data. */
+/** Whether two knob values are the same value, compared as data: `NaN` is itself, and `0` is `-0`, which no param tells
+ *  apart. */
 export function sameKnob(a: unknown, b: unknown): boolean {
-  return Object.is(a, b) || stableStringify(a) === stableStringify(b);
+  // Pairs already being compared hold unless something else differs, so a cycle compares as the tree it unrolls to.
+  const open = new Map<object, Set<object>>();
+  const same = (x: unknown, y: unknown): boolean => {
+    if (x === y || (Number.isNaN(x) && Number.isNaN(y))) return true;
+    const array = Array.isArray(x);
+    if (array ? !Array.isArray(y) : !isPlainObject(x) || !isPlainObject(y) || Array.isArray(y)) return false;
+    const xo = x as Record<string, unknown>;
+    const yo = y as Record<string, unknown>;
+    const against = open.get(xo) ?? new Set<object>();
+    if (against.has(yo)) return true;
+    open.set(xo, against.add(yo));
+    const keys = Object.keys(xo).filter((key) => xo[key] !== undefined);
+    const others = Object.keys(yo).filter((key) => yo[key] !== undefined);
+    return keys.length === others.length && keys.every((key) => Object.hasOwn(yo, key) && same(xo[key], yo[key]));
+  };
+  return same(a, b);
 }
 
 /** Whether `config` holds `leaf` at `path` cleared: a clearable leaf set to `undefined`, which its default is not. */

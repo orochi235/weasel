@@ -12,6 +12,7 @@ import {
   parseRoute,
   pinParams,
   reservedParams,
+  sameKnob,
   storyHref,
   withoutPins,
 } from './url';
@@ -252,5 +253,21 @@ describe('pins in the URL', () => {
     expect(paramsToPins(pinned, { '$globals.mode': 'dark', '$globals.font': 'serif', label: 'Go' })).toEqual({ '$globals.mode': 'dark' });
     expect(paramsToPins(pinned, { '$globals.mode': 'sepia' })).toEqual({});
     expect(paramsToPins(schema, { '$globals.mode': 'dark' })).toEqual({});
+  });
+});
+
+describe('sameKnob', () => {
+  it('tells the infinities, NaN, and null apart', () => {
+    expect(sameKnob(Infinity, -Infinity)).toBe(false);
+    expect(sameKnob(NaN, null)).toBe(false);
+    expect(sameKnob([Infinity], [null])).toBe(false);
+    expect(sameKnob(NaN, NaN)).toBe(true);
+    expect(sameKnob({ a: [1, { b: 2 }] }, { a: [1, { b: 2 }] })).toBe(true);
+    expect(sameKnob(0, -0)).toBe(true);
+  });
+
+  it('writes a param for a value that differs from its default only as an infinity', () => {
+    const endless = f.schema({ reach: f.number(Infinity).endless('never', 'both') });
+    expect(knobsToParams(endless, { reach: -Infinity })).toEqual({ reach: '-Infinity' });
   });
 });
