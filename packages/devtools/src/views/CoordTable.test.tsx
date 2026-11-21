@@ -17,3 +17,10 @@ it('keeps a row mounted while the window slides past the records before it', () 
   rerender(<CoordTable entries={all.slice(1)} now={2000} />);
   expect(screen.getByText(/^\s*1050\.0 /).closest('tr')).toBe(row);
 });
+
+it("shows the camera a conversion was read under: both scales and the offset", () => {
+  const e: CoordEntry = { ...entry(1000), view: { x: -40, y: 25, scaleX: 2, scaleY: 0.5 }, fallback: false };
+  render(<CoordTable entries={sequenced([e], 1)} now={2000} />);
+  expect(screen.getByText(/^\s*2\.000\s+0\.500$/)).toBeTruthy();
+  expect(screen.getByText(/^\s*-40\.0\s+25\.0$/)).toBeTruthy();
+});

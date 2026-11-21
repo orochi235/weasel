@@ -22,7 +22,7 @@ export interface CoordEntry {
 const DISPLAY_LIMIT = 100;
 /** Wide enough for a coordinate in the tens of thousands, sign included, at one decimal. */
 const fixed = (n: Coord, digits = 1): string => serializedNumber(n).toFixed(digits).padStart(8, ' ');
-const pair = (x: Coord, y: Coord): string => `${fixed(x)} ${fixed(y)}`;
+const pair = (x: Coord, y: Coord, digits = 1): string => `${fixed(x, digits)} ${fixed(y, digits)}`;
 
 export function CoordTable({ entries, now }: { entries: readonly Sequenced<CoordEntry>[]; now: number }): ReactElement {
   const rows = entries.slice(-DISPLAY_LIMIT).map(({ seq, record }) => ({ id: String(seq), entry: record })).reverse();
@@ -35,7 +35,14 @@ export function CoordTable({ entries, now }: { entries: readonly Sequenced<Coord
       header: 'Scale',
       sortable: false,
       className: s.count,
-      render: ({ entry }) => (entry.view ? fixed(entry.view.scaleX, 3) : 'fallback'),
+      render: ({ entry }) => (entry.view ? pair(entry.view.scaleX, entry.view.scaleY, 3) : 'fallback'),
+    },
+    {
+      id: 'offset',
+      header: 'Offset',
+      sortable: false,
+      className: s.count,
+      render: ({ entry }) => (entry.view ? pair(entry.view.x, entry.view.y) : ''),
     },
   ];
   return (
