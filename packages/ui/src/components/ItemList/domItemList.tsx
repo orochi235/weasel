@@ -22,7 +22,7 @@ export function itemListFaceOf(state: DomItemListState): RowListFace {
     rows: state.props.rows.map((r) => ({
       id: r.id, label: nodeText(r.label), leadingWidth: width(r, 'leading'), trailingWidth: width(r, 'trailing'),
     })),
-    ...(state.props.empty !== undefined ? { empty: nodeText(state.props.empty) } : {}),
+    ...(state.props.empty != null ? { empty: nodeText(state.props.empty) } : {}),
   };
 }
 

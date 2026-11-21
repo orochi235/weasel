@@ -82,5 +82,20 @@ describe('InlineRange held', () => {
   it('nested scopes hold it, the nearest reason told', () => {
     expect(renderHeld((n) => <Disabled reason="Outer"><Disabled reason="Inner">{n}</Disabled></Disabled>)).toHaveAccessibleDescription('Inner');
   });
-});
 
+  it.each([
+    ['read-only', { readOnly: true }],
+    ['disabled for a reason', { disabled: true, disabledReason: 'Locked' }],
+  ])('draws %s with no controlled-value warning', (_, held) => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<InlineRange aria-label="Width" value={40} {...held} />);
+    const warned = error.mock.calls.some((c) => String(c[0]).includes('onChange'));
+    error.mockRestore();
+    expect(warned).toBe(false);
+  });
+
+  it('ends the fill under the thumb center, measured over the content box', () => {
+    render(<InlineRange aria-label="Width" min={0} max={100} value={10} onChange={() => {}} />);
+    expect(screen.getByLabelText('Width').style.getPropertyValue('--slider-fill-at')).toBe('calc(10% + 0.4 * var(--wzl-slider-thumb-size))');
+  });
+});

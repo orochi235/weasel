@@ -76,7 +76,7 @@ function isInteractive(target: EventTarget | null, panel: Element): boolean {
  * no zone tree, so the node model would be all cost. The drag is threshold-gated and captures the pointer only once
  * it is a drag, so a press on a non-native control inside the box still clicks it. The box follows the pointer
  * while dragging; the release reports the result once, and the box stays where it was dropped until `placement`
- * changes or the next press. That hold compares `placement` by identity, so a host passes a stable object, not one
+ * first changes or the next press. That hold compares `placement` by identity, so a host passes a stable object, not one
  * built afresh each render. Each move places the box from where it was pressed by the pointer's whole travel, so a
  * corner it passed or an edge it was held against does not offset it from the pointer. Only the primary button drags.
  * Escape puts it back. Persists nothing.
@@ -97,6 +97,8 @@ export function useFloatingPlacement({
   // Where a drag has the box, and the placement it started from. After the release it holds until `placement` moves
   // off that one, so a host that commits a tick later never shows the box back where it was.
   const [live, setLive] = useState<{ at: FloatingPlacement; over: FloatingPlacement; dragging: boolean } | null>(null);
+  // A placement that moved ends the hold, so the placement coming back to where the drag began does not revive it.
+  if (live && !live.dragging && live.over !== placement) setLive(null);
   const shown = live && (live.dragging || live.over === placement) ? live.at : placement;
 
   const item = useMemo(() => floatingItem(size, snapCorners), [size, snapCorners]);

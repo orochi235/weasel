@@ -31,4 +31,11 @@ describe('parseInline', () => {
       { type: 'text', text: ' after' },
     ]);
   });
+
+  it('reads a triple mark as emphasis around strong, with no stray asterisk', () => {
+    expect(parseInline('***important*** now')).toEqual([
+      { type: 'em', children: [{ type: 'strong', children: [{ type: 'text', text: 'important' }] }] },
+      { type: 'text', text: ' now' },
+    ]);
+  });
 });

@@ -35,20 +35,24 @@ function marksStyle(marks: readonly number[]): Record<string, string> {
   };
 }
 
+/** The fill's edge, under the thumb's center as {@link marksStyle} places a mark: `t/2 + f·(W − t)` of the content box. */
+const fillAt = (f: number) => `calc(${f * 100}% + ${0.5 - f} * var(--wzl-slider-thumb-size))`;
+
 const VALUE_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']);
+
+const NOOP = () => {};
 
 /** A held range's handlers: none of the caller's, and the native thumb kept from moving under a key or a press. */
 const REFUSED = {
   onInput: undefined,
-  onChange: undefined,
+  // A handler still, or React warns of a controlled value with none; `useRangeEdit` refuses the edit itself.
+  onChange: NOOP,
   onPointerDown: undefined,
   onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => {
     if (VALUE_KEYS.has(e.key)) e.preventDefault();
   },
   onMouseDown: (e: MouseEvent<HTMLInputElement>) => e.preventDefault(),
 };
-
-const NOOP = () => {};
 
 /**
  * Compact range input for a property row: one track, no label, no output.
@@ -82,7 +86,7 @@ export const InlineRange = forwardRef(function InlineRange(
   const filled = span > 0 ? ((Math.min(Math.max(value, min), max) - min) / span) * 100 : 0;
   const marked = marks !== undefined && marks.length > 0;
   const vars = {
-    ...(fill ? { '--slider-fill': `${filled}%` } : {}),
+    ...(fill ? { '--slider-fill': `${filled}%`, '--slider-fill-at': fillAt(filled / 100) } : {}),
     ...(marked ? marksStyle(marks) : {}),
   };
   return hold.wrap(
