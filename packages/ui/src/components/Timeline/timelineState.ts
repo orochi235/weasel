@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { KeySelection } from './keys';
+import { spanClamp } from '@weasel-js/ui-input';
 import type { TimeWindow } from './timeScale';
 
 /** A value held here unless `given` is, reporting each change to `onChange` either way. */
@@ -12,7 +13,8 @@ export function useHeld<T>(given: T | undefined, initial: T, onChange?: (next: T
   return [given !== undefined ? given : own, set];
 }
 
-/** The time window a timeline shows: `given` when controlled, else its own, which is the whole duration until zoomed. */
+/** The time window a timeline shows: `given` when controlled, else its own, which is the whole duration until zoomed
+ *  and is kept inside a duration that shrinks under it. */
 export function useTimeWindow(given: TimeWindow | undefined, duration: number, onWindowChange?: (w: TimeWindow) => void) {
   // Null until the user zooms in, so the window follows a duration that changes.
   const [own, setOwn] = useState<TimeWindow | null>(null);
@@ -21,7 +23,7 @@ export function useTimeWindow(given: TimeWindow | undefined, duration: number, o
     if (given === undefined) setOwn(w.from <= 0 && w.to >= duration ? null : w);
     onWindowChange?.(w);
   };
-  return { win: given ?? own ?? bounds, bounds, setWindow };
+  return { win: given ?? (own ? spanClamp(own, bounds) : bounds), bounds, setWindow };
 }
 
 /**
