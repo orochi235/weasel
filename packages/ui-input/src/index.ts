@@ -38,7 +38,7 @@ export { createStepRepeat, REPEAT_DELAY_MS, REPEAT_EVERY_MS } from './stepRepeat
 export type { StepRepeat, StepRepeatOptions } from './stepRepeat';
 export { SWEEP_CAP, stepsOf, rangeSweep, valuesSweep, framesSweep, sweepUntil } from './sweep';
 export type { Sweep, RangeSpec, FrameSpan, FrameOptions } from './sweep';
-export { rowOffset, tileGrid, tileRows, tileKey, gridLayout, rovingGridTarget } from './grid';
+export { rowOffset, tileGrid, tileRows, tileKey, gridLayout, rovingGridTarget, wholeColumns } from './grid';
 export type { LastRow, Tiling, TileGrid, GridLayout } from './grid';
 export { createSelectionModel, createEachSelectionModel, selectionKeys, soloFrom, soloSweepFrom, sweepFrom } from './selection';
 export { createLiveSelectionModel } from './createLiveSelectionModel';

@@ -53,7 +53,7 @@ const MAX_COLUMNS = 2 ** 24;
 
 /** A column count as a grid can lay out: its whole part, one for anything below one or not a number, and
  *  {@link MAX_COLUMNS} for anything past it, `Infinity` included. */
-const wholeColumns = (columns: number): number => (columns >= 1 ? Math.min(Math.floor(columns), MAX_COLUMNS) : 1);
+export const wholeColumns = (columns: number): number => (columns >= 1 ? Math.min(Math.floor(columns), MAX_COLUMNS) : 1);
 
 /** How `count` items tile under `spec`. */
 export function tileGrid(count: number, spec: Tiling): TileGrid {

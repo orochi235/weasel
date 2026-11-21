@@ -327,6 +327,12 @@ describe('useRovingTabIndex — columns', () => {
     expect(document.activeElement).toBe(byName('d'));
   });
 
+  it('rows a fractional column count as the grid draws it, its whole part across', () => {
+    render(<Grid columns={2.5} groups={[['a', 'b', 'c', 'd', 'e']]} />);
+    fireEvent.keyDown(byName('a'), { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(byName('c'));
+  });
+
   it('leaves Up and Down to the page at the edges', () => {
     render(<Grid columns={2} groups={[['a', 'b', 'c']]} />);
     expect(press(byName('a'), 'ArrowUp').defaultPrevented).toBe(false);

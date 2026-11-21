@@ -1,4 +1,4 @@
-import { gridLayout, rovingGridTarget, rovingKey, type LastRow } from '@weasel-js/ui-input';
+import { gridLayout, rovingGridTarget, rovingKey, wholeColumns, type LastRow } from '@weasel-js/ui-input';
 import {
   useCallback,
   useEffect,
@@ -97,8 +97,9 @@ export function rovingTarget(
   return step.handled ? step.at : null;
 }
 
-/** `items` split into rows `columns` long, a new row starting wherever the group changes. */
-function gridRows(items: readonly HTMLElement[], columns: number, groupSelector?: string): number[][] {
+/** `items` split into rows `across` long, as a grid lays them out, a new row starting wherever the group changes. */
+function gridRows(items: readonly HTMLElement[], across: number, groupSelector?: string): number[][] {
+  const columns = wholeColumns(across);
   const rows: number[][] = [];
   let group: Element | null | undefined;
   for (const [i, el] of items.entries()) {
