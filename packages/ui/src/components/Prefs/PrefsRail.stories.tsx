@@ -12,10 +12,12 @@ const SCHEMA: PrefGroup = {
         showGrid: { kind: 'boolean', name: 'Show grid', description: '', default: true },
         snapping: {
           name: 'Snapping',
+          as: 'page',
           children: {
             enabled: { kind: 'boolean', name: 'Enabled', description: '', default: true },
             wrap: {
               name: 'Wrapping',
+              as: 'page',
               children: { atEdge: { kind: 'boolean', name: 'Wrap at edge', description: '', default: false } },
             },
           },
