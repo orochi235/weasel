@@ -337,6 +337,19 @@ describe('TokenPanel', () => {
     }
   });
 
+  it('labels a family’s picked step with the group as its rail draws it', () => {
+    renderWithIcons(
+      <TokenPanel
+        tokens={['50', '100', '200'].map((step) => ({ name: `--wzl-gray-${step}`, type: 'color', group: 'wzl-gray', value: '#808080' }))}
+        onChange={() => {}}
+        namePrefix="--wzl-"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '--wzl-gray-100' }));
+    const editor = screen.getByRole('group', { name: '--wzl-gray-100' });
+    expect(editor.querySelector('span')?.textContent).toBe('gray 100');
+  });
+
   it('leaves a token alone when its number field is focused and blurred untouched', () => {
     const onChange = vi.fn();
     renderWithIcons(

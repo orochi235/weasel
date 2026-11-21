@@ -209,7 +209,7 @@ function Family({
           }}
         />
       ) : null}
-      {token ? <TokenRow token={token} label={`${group} ${labels[at] ?? ''}`.trim()} onChange={onChange} /> : null}
+      {token ? <TokenRow token={token} label={`${shortName(group, prefix)} ${labels[at] ?? ''}`.trim()} onChange={onChange} /> : null}
     </div>
   );
 }
