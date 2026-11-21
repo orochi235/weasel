@@ -26,6 +26,15 @@ const ruler = (): HTMLElement => screen.getByTestId('timeline-ruler');
 const tickLabels = (): (string | null)[] => [...ruler().querySelectorAll('[data-tick-at]')].map((el) => el.textContent);
 
 describe('TimeRuler', () => {
+  it('seeks through the window on screen when it changes mid-scrub', () => {
+    const onSeek = vi.fn();
+    const { rerender } = render(<TimeRuler {...props} onSeek={onSeek} />);
+    fireEvent.pointerDown(ruler(), { clientX: 250, button: 0 });
+    rerender(<TimeRuler {...props} window={{ from: 1000, to: 2000 }} bounds={{ from: 0, to: 2000 }} onSeek={onSeek} />);
+    fireEvent.pointerMove(document, { clientX: 250 });
+    expect(onSeek.mock.calls).toEqual([[500], [1500]]);
+  });
+
   it('renders tick labels', () => {
     render(<TimeRuler {...props} />);
     expect(tickLabels().length).toBeGreaterThan(1);
