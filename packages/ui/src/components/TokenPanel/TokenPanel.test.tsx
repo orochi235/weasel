@@ -350,6 +350,22 @@ describe('TokenPanel', () => {
     expect(editor.querySelector('span')?.textContent).toBe('gray 100');
   });
 
+  it('shows the group on a run’s row named as the group, wherever it stands', () => {
+    renderWithIcons(
+      <TokenPanel
+        tokens={[
+          { name: '--wzl-space-1', type: 'string', group: 'space', value: 'a' },
+          { name: '--wzl-space', type: 'string', group: 'space', value: 'b' },
+        ]}
+        onChange={() => {}}
+        namePrefix="--wzl-"
+      />,
+    );
+    const rail = screen.getByRole('group', { name: '--wzl-space' }).querySelector('span') as HTMLElement;
+    expect(rail.textContent).toBe('space');
+    expect(rail.querySelector('[data-hidden]')).toBeNull();
+  });
+
   it('leaves a token alone when its number field is focused and blurred untouched', () => {
     const onChange = vi.fn();
     renderWithIcons(
