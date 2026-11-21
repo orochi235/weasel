@@ -3136,3 +3136,9 @@ Calls the lanes made without a ruling:
   a caller who passed it as an increment now gets that number as the half-height.
 - 2026-11-20: A badge shape's repeat counts (`sparkler` and `starburst` `points`, `receipt` `teeth`) stop at 256, and a
   `perforated` badge's `holePitch` at no less than 1px. Both bounds are picked to keep a render finite, not ruled.
+
+## Audit round fifty-seven (2026-11-20): Button
+
+- 2026-11-20 (the fixer's call): `domButton.draw` renders an unsized button at `md`, the size `measure` gives it,
+  rather than at the nearest `ControlSizeScope`'s. A scope is React context, which `measure` has no way to read, so
+  the two disagreed inside one; a scoped caller passes `size`.
