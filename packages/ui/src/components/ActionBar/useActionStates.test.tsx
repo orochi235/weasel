@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
-import type { Action, DepName } from '@weasel-js/routing';
+import type { Action, ActionItem, DepName } from '@weasel-js/routing';
 import { useActionStates } from './useActionStates';
 
 const action: Action = {
@@ -12,13 +12,15 @@ const action: Action = {
   enabled: (deps) => (deps as Record<string, unknown> | undefined)?.gate as 'selection-required' | 'locked',
 };
 
+const item: ActionItem = { key: 'gated', action, label: 'Gated', tags: [] };
+
 function Gate({ reason }: { reason: string }) {
   useDepSource('gate' as DepName, () => reason as never);
   return null;
 }
 
 function Reason() {
-  const [state] = useActionStates([{ action }]);
+  const [state] = useActionStates([item]);
   return <span data-testid="reason">{state!.disabledReason}</span>;
 }
 
