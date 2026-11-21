@@ -99,18 +99,19 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   },
   // Memoized because the renderer's layout cache keys on the `ResolvedRun[]` array
   // identity: a fresh runs array per frame would leave that cache missing on every
-  // draw. Both resolvers are pure style merging — no font reads — so `(data, pose)` is
-  // the whole key, with the view scale beside it for `{ px }` text. See PAINT_SLOT.
+  // draw. `fit: 'shrink'` measures, so the faces and layout engines are in the key
+  // beside `(data, pose)` and the view scale for `{ px }` text. See PAINT_SLOT.
   paint: (node, pose, ctx) => {
     const d = node.data as TextNodeData;
     const inherited = ctx?.inherited;
     const scale = textLayoutScale(d, ctx?.scale);
-    if (scale === 1) return nodeMemo(node, PAINT_SLOT, pose, () => paintText(d, pose, inherited, 1), inherited);
-    const held = nodeMemo(node, SCREEN_PAINT_SLOT, pose,
-      (): ScreenPaint => ({ scale, inherited, cmds: paintText(d, pose, inherited, scale) }));
-    if (held.scale !== scale || held.inherited !== inherited) {
+    const layout = layoutGeneration();
+    const held = nodeMemo(node, scale === 1 ? PAINT_SLOT : SCREEN_PAINT_SLOT, pose,
+      (): HeldPaint => ({ scale, inherited, layout, cmds: paintText(d, pose, inherited, scale) }));
+    if (held.scale !== scale || held.inherited !== inherited || held.layout !== layout) {
       held.scale = scale;
       held.inherited = inherited;
+      held.layout = layout;
       held.cmds = paintText(d, pose, inherited, scale);
     }
     return held.cmds;
@@ -172,7 +173,7 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     return clippedOutline(outline, clip);
   },
   // Line boxes and glyphs follow the faces and the registered layout engines.
-  geometryGeneration: () => faceGeneration() + textEngineGeneration(),
+  geometryGeneration: () => layoutGeneration(),
   silhouetteKey: (node, ctx) => textLayoutScale(node.data as TextNodeData, ctx?.scale),
   effectItems: (node, pose) => {
     const d = node.data as TextNodeData;
@@ -190,7 +191,9 @@ export function textLayoutScale(d: Pick<TextNodeData, 'style' | 'runs'>, scale: 
 }
 
 /** A `{ px }` text node's commands and the scale and inherited paint they were laid out under. */
-interface ScreenPaint { scale: number; inherited: InheritedPaint | undefined; cmds: DrawCommand[] }
+interface HeldPaint { scale: number; inherited: InheritedPaint | undefined; layout: number; cmds: DrawCommand[] }
+
+const layoutGeneration = (): number => faceGeneration() + textEngineGeneration();
 
 const SCREEN_PAINT_SLOT = 'shape:paint:text-screen';
 
