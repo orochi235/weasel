@@ -90,11 +90,12 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
         setup={setup}
         config={ctx.config}
         hostRef={host}
+        {...(story.globals ? { storyGlobals: story.globals } : {})}
         {...(onRendered ? { onRendered } : {})}
       >
         {render}
       </TrialHost>
-      <LiveCopies trialId={trialId} layout={story.layout} setup={setup} trialConfig={ctx.config}>
+      <LiveCopies trialId={trialId} layout={story.layout} setup={setup} trialConfig={ctx.config} {...(story.globals ? { storyGlobals: story.globals } : {})}>
         {(globals, args) => <StoryCopy body={body} clock={clock} globals={globals} args={args} />}
       </LiveCopies>
     </>

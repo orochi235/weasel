@@ -45,6 +45,8 @@ export interface TrialHostProps {
    * computed ones, carries `data-fg-copy`, and stays out of the frame registry, the a11y highlighter and `onRendered`.
    */
   copy?: { id: string; globals: StoryGlobals };
+  /** Globals the story sets for itself, over the toolbar's, its pins, and a copy's, as a frame applies them. */
+  storyGlobals?: StoryGlobals;
 }
 
 /**
@@ -65,13 +67,17 @@ function StoryContent({ host, children }: { host: HTMLElement; children: ReactNo
  * itself, keeps its CSS variable overrides on itself, contains fixed-position descendants and portals, reports its
  * vars and audits to the trial's frame registry, and unmounts its content while out of view unless something holds it shown.
  */
-export function TrialHost({ layout, setup, config, children, hostRef, onRendered, copy }: TrialHostProps) {
+export function TrialHost({ layout, setup, config, children, hostRef, onRendered, copy, storyGlobals }: TrialHostProps) {
   const trialId = useContext(TrialIdContext);
   const frames = useContext(TrialFramesContext);
   const labGlobals = useContext(StoryGlobalsContext);
   const pins = (config as Record<string, unknown> | null | undefined)?.[GLOBALS_KEY];
   const computed = useMemo(() => effectiveGlobals(labGlobals, pins), [labGlobals, pins]);
-  const globals = copy?.globals ?? computed;
+  const base = copy?.globals ?? computed;
+  const globals = useMemo(
+    () => (storyGlobals && Object.keys(storyGlobals).length > 0 ? { ...base, ...storyGlobals } : base),
+    [base, storyGlobals],
+  );
   const [persisted] = useCssOverrides();
   const reactId = useId();
   const hostId = copy?.id ?? trialId ?? reactId;
