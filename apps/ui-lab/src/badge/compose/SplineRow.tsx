@@ -43,7 +43,7 @@ function SplineRow({ path, value, values, setValue, drafts, disabled }: RowConte
         anchors={anchors}
         mode={mode}
         disabled={disabled}
-        evalAtS={splineEvaluator(base, anchors)}
+        evalAtS={splineEvaluator(base, anchors, mode)}
         onAnchorDraft={(idx, next) => draft(withAnchor(bag, idx, next))}
         onAnchorChange={(idx, next) => write(withAnchor(bag, idx, next))}
         onAnchorDelete={(idx) => write(withoutAnchor(bag, idx))}
