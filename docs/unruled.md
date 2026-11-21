@@ -3438,3 +3438,10 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): a `perforations` effect's holes sit at least 1 CSS px apart, and a negative
   `holeRadius` reads as 0, as the `perforated` shape's `holePitch` and `holeRadius` already did. A radius and a
   spacing of 0 had asked for holes without end. Throwing on them was the alternative.
+
+## Audit round sixty-two (2026-11-21): text.layout
+
+- 2026-11-21 (the fixer's call): `paintRuns` and `cachedPaintRuns` throw a `RangeError` for an `outlineMinSize` of
+  `NaN`, which the paint cache read as a threshold no run reaches while every glyph drew as an outline. Omitting it is
+  how to ask for no outlines; the renderer passes none when a degenerate transform makes its world threshold `NaN`.
+  Reading `NaN` as omitted was the alternative.

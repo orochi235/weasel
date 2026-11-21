@@ -13,6 +13,7 @@ import {
 } from '@weasel-js/font/test-seams';
 import { cachedLayoutRuns, _resetLayoutCacheForTests } from './layoutCache';
 import { layoutRuns } from './layoutRuns';
+import { paintRuns } from './paintRuns';
 import { cachedPaintRuns, PAINT_CACHE_VARIANT_LIMIT } from './paintCache';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
@@ -219,5 +220,13 @@ describe('cachedPaintRuns', () => {
     const baked = cachedPaintRuns(laid, runs);
     expect(baked).not.toBe(waiting);
     expect(baked.groups.map((g) => [g.source, g.quads.length])).toEqual([['canvas', 2]]);
+  });
+
+  it('refuses a NaN outlineMinSize, rather than caching it as no outlines and painting outlines', () => {
+    const runs = [run('AB', 100)];
+    const laid = cachedLayoutRuns(runs, OPTS);
+    cachedPaintRuns(laid, runs, { outlineMinSize: Infinity });
+    expect(() => cachedPaintRuns(laid, runs, { outlineMinSize: NaN })).toThrow(RangeError);
+    expect(() => paintRuns(laid, runs, { outlineMinSize: NaN })).toThrow(RangeError);
   });
 });

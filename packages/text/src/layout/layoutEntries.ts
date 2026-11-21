@@ -137,13 +137,16 @@ export function measureRuns(
     let clusterStart = 0;
     /** The color glyph of the cluster being walked, when it has one. */
     let color: ResolvedGlyph | null = null;
+    /** Where a shaped cluster ends that opened on a code point measured on its own; the
+     *  code points it covers are measured on their own too, or nothing would draw them. */
+    let unshapedEnd = 0;
     let at = 0;
     const text = run.text;
 
     while (at < text.length) {
       const cp = text.codePointAt(at)!;
       const len = cp > 0xffff ? 2 : 1;
-      const slot = shaped?.[at];
+      const slot = at < unshapedEnd ? undefined : shaped?.[at];
       const fontSize = run.sizeMap ? run.sizeMap[at] : run.fontSize;
       if (at === clusterStart) {
         color = resolveColorCluster(
@@ -163,6 +166,9 @@ export function measureRuns(
       at += len;
       srcIndex = map ? runBase + map.length : srcEnd;
 
+      if (slot !== undefined && slot.cluster.text.length > len && (color || isHardLineBreak(cp) || cp === SOFT_HYPHEN || cp === 9 || cp === 32)) {
+        unshapedEnd = at - len + slot.cluster.text.length;
+      }
       const mark = isNonspacingMark(cp);
       const kerningBefore = prev && !mark
         ? prev.metrics.kernOf(prev.cp, cp) * (prev.fontSize / prev.metrics.size)
@@ -348,51 +354,4 @@ function shape(e: Entry, slot: ShapedSlot): Entry {
   e.advance = slot.advance * e.fontSize;
   e.drawsInk = slot.cluster.d !== null;
   return e;
-}
-
-/**
- * One line's entries with each bracket in a right-to-left stretch painting as
- * its mirror (UAX #9 L4). `levels` holds the line's resolved level per entry.
- *
- * The outline tier reads the code point directly; the atlas tiers need the
- * other glyph looked up, which may come from another tier, and a face without
- * it keeps the unmirrored one. The advance stays the one the wrap measured.
- *
- * A shaped entry already shows the mirror when it was shaped right to left.
- * Where that disagrees with its level — a bracket shaped with the text on one
- * side of it and resolved to the direction of the other — it gives up its
- * shaped glyph for its code point's own.
- */
-export function mirrorEntries(
-  entries: readonly Entry[],
-  levels: readonly number[],
-  mirror: (cp: number) => number | null,
-  runs: readonly ResolvedRun[],
-): Entry[] {
-  return entries.map((entry, pos) => {
-    const odd = levels[pos] % 2 === 1;
-    if (entry.shaped !== null && entry.shaped.rtl !== odd) {
-      const flipped = mirror(entry.cp);
-      if (flipped !== null && flipped !== entry.cp) entry = unshaped(entry, runs[entry.run]);
-    }
-    if (!odd) return entry;
-    if (entry.shaped !== null) return entry;
-    const cp = mirror(entry.cp);
-    if (cp === null || cp === entry.cp) return entry;
-    if (entry.font === null) return { ...entry, cp };
-    const run = runs[entry.run];
-    const hit = resolveGlyph(entry.resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp, false);
-    if (!hit) return entry;
-    return { ...entry, cp, resolved: hit.resolved, metrics: hit.metrics, font: hit.font, glyph: hit.glyph };
-  });
-}
-
-/** `entry` drawing its own code point's glyph rather than its shaped cluster: on an atlas, the
- *  glyph's record, which shaping left out. */
-function unshaped(entry: Entry, run: ResolvedRun): Entry {
-  if (entry.resolved.source === 'outline') return { ...entry, shaped: null };
-  const hit = resolveGlyph(entry.resolved, run.fontFamily, run.fontWeight, run.fontStyle, entry.cp, false);
-  return hit
-    ? { ...entry, shaped: null, resolved: hit.resolved, metrics: hit.metrics, font: hit.font, glyph: hit.glyph }
-    : { ...entry, shaped: null };
 }

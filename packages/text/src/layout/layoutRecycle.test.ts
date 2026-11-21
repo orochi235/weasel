@@ -194,4 +194,18 @@ describe('recycling a layout', () => {
     expect(b.painted.groups).not.toContain(group);
     expect(b.painted.groups.map((g) => g.quads)).toEqual(paintRuns(fresh, [RUN_PLAIN('BAB')]).groups.map((g) => g.quads));
   });
+
+  it('leaves no listed layout pointing at recycled arrays when the layout evicting it throws', () => {
+    const a = draw('AB 12');
+    evictRuns(a.runs);
+    fillBehind('x');
+    const throwing = {
+      analyze: () => { throw new Error('bidi'); },
+    } as unknown as NonNullable<Parameters<typeof cachedLayoutRuns>[1]['bidi']>;
+    expect(() => cachedLayoutRuns([RUN_PLAIN('CD 34')], { ...OPTS, bidi: throwing }, 'read')).toThrow('bidi');
+    const b = draw('BA 21');
+    const again = cachedLayoutRuns([RUN_PLAIN('AB 12')], OPTS, 'read');
+    expect(numsOf(again)).not.toBe(numsOf(b.laid));
+    expect(again.lines.map((l) => l.cells)).toEqual(layoutRuns([RUN_PLAIN('AB 12')], OPTS).lines.map((l) => l.cells));
+  });
 });

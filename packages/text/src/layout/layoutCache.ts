@@ -259,7 +259,7 @@ function structuralLayout(
   }
   // Evicted before laying out, so the new layout can take its arrays.
   const full = structural.length >= LAYOUT_CACHE_STRUCTURAL_LIMIT;
-  if (full) unlist(structural[oldest]);
+  if (full) blank(structural[oldest]);
   const laid = layoutRuns(runs, opts);
   // The evicted entry is refilled in place.
   const filled = full ? fill(structural[oldest], opts, bidi, laid) : structuralEntry(opts, bidi, laid);
@@ -288,8 +288,7 @@ export function evictRunsForRefill(runs: readonly ResolvedRun[]): void {
   const s = entry.listed;
   if (s !== null && s.runs === runs) {
     // Left in the list unmatchable and oldest, for the next layout to refill.
-    unlist(s);
-    s.laid = NO_LAYOUT; s.runs = NO_RUNS; s.hash = -1; s.used = 0;
+    blank(s);
   }
   const p = entry.painting;
   disown(entry.variants);
@@ -305,6 +304,13 @@ function structuralEntry(opts: LayoutRunsOptions, bidi: Variant['bidi'], laid: L
     maxWidth: 0, alignWidth: 0, lineHeight: 0, align: 'left', justify: false, direction: 'auto', tabSize: 0,
     bidi: null, shaper: null, laid, hash: 0, runs: [], used: 0,
   }, opts, bidi, laid);
+}
+
+/** `s` let go of, and left unmatchable and oldest: a layout that throws before refilling it
+ *  must not leave it handing out arrays it gave back. */
+function blank(s: Structural): void {
+  unlist(s);
+  s.laid = NO_LAYOUT; s.runs = NO_RUNS; s.hash = -1; s.used = 0;
 }
 
 function unlist(s: Structural): void {

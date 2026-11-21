@@ -21,7 +21,7 @@ import { doubles, takeDoubles, truncate } from './arrayPool';
 import { blankGlyph, LineBox } from './layoutColumns';
 import type { LaidOutRuns, PlacedGlyph } from './layoutRuns';
 import { hasGlyphQuad, QUAD_STRIDE, writeGlyphQuad, type LaidOutQuad } from './glyphQuads';
-import { groupFor, NO_QUADS, takeGroups } from './paintGroups';
+import { groupFor, NO_QUADS, openGroups, takeGroups } from './paintGroups';
 
 
 /**
@@ -112,9 +112,15 @@ export interface PaintRunsOptions {
    * default) to keep every glyph on its SDF tier.
    *
    * Ignored for a family that resolved to the outline tier because it has no
-   * atlas: there the geometry is the only rendering.
+   * atlas: there the geometry is the only rendering. `NaN` throws a `RangeError`.
    */
   outlineMinSize?: number;
+}
+
+/** Throws on a `NaN` {@link PaintRunsOptions.outlineMinSize}, which no size is at or above
+ *  and none below: the paint cache and the glyph gate would each read it their own way. */
+export function checkPaintOpts(opts: PaintRunsOptions): void {
+  if (Number.isNaN(opts.outlineMinSize)) throw new RangeError('paintRuns: outlineMinSize is NaN; omit it to draw no outlines');
 }
 
 /** What {@link paintRuns} returns. Relative to the text's own top-left, as the layout is. */
@@ -226,9 +232,11 @@ export function paintRunsInto(
   opts: PaintRunsOptions,
   out: PaintedRuns,
 ): PaintedRuns {
+  checkPaintOpts(opts);
   const { groups, decorations } = out;
   truncate(groups, 0);
   truncate(decorations, 0);
+  openGroups();
   const faceOf = runs.some(isDecorated) ? runFaces(runs) : null;
   const rulePaint = faceOf && rulePaintOf(runs);
   // Most text is one group. The first to take a quad fills a scratch array

@@ -61,9 +61,8 @@ export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   // Screen threshold → world threshold: a 12px label at 8× zoom is 96 screen
   // pixels of text and wants outlines exactly as much as a 96px heading does.
   const minScreen = ctx.textOutlineMinScreenSize ?? OUTLINE_MIN_SCREEN_PX;
-  const outlineMinSize = Number.isFinite(minScreen)
-    ? minScreen / modelScale(ctx.state.transform)
-    : undefined;
+  const world = minScreen / modelScale(ctx.state.transform);
+  const outlineMinSize = Number.isFinite(minScreen) && !Number.isNaN(world) ? world : undefined;
 
   const { laid, dx, dy } = laidOutText(cmd);
   paintOpts.outlineMinSize = outlineMinSize;

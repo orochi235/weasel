@@ -37,7 +37,8 @@ import { analyzeParagraphs, isParagraphSeparator, orderLine } from './bidiLines'
 import { directionOfLevel, warnRtlWithoutEngine } from './bidiRegistry';
 import { warnShapingWithoutEngine } from './shaperRegistry';
 import { LayoutColumns } from './layoutColumns';
-import { measureRuns, mirrorEntries, type Entry } from './layoutEntries';
+import { measureRuns, type Entry } from './layoutEntries';
+import { mirrorEntries } from './mirrorEntries';
 import { breakLines, placeLine, type LineOptions } from './layoutLines';
 import { resolveLayoutOpts, type LayoutRunsOptions } from './layoutOpts';
 import { rejoinSplitPairs } from '../runs/codePointCuts';
