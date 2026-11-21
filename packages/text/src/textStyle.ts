@@ -205,7 +205,8 @@ export interface TextPaint {
    * Only glyphs on the outline tier are stroked: below
    * `textOutlineMinScreenSize` a glyph is a sampled distance field with no
    * geometry to stroke, and it renders unstroked. `width` is in world units —
-   * it does not scale with `fontSize`.
+   * it does not scale with `fontSize`, though `fit: 'shrink'` scales it, and its
+   * dash, with the rest of the text.
    */
   stroke?: Stroke | null;
 }
