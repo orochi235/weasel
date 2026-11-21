@@ -125,7 +125,8 @@ export type SliderStop = Stop<ReactNode>;
  * thumb lands `steps` key presses away. Home and End still go to the ends.
  *
  * `constraint: 'ordered'` keeps thumbs from crossing each other. Supplying
- * `onAddThumb` makes a click on empty track create a thumb, and supplying
+ * `onAddThumb` makes a click on empty track create a thumb (in value order under
+ * `'ordered'`, otherwise appended), and supplying
  * `onRemoveThumb` lets a right-click or a drag off the track remove one —
  * both callbacks can decline by returning `null`/`false`. `allowShiftAll`
  * makes shift-drag translate every thumb together.
