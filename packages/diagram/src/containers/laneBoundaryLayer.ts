@@ -92,6 +92,12 @@ export function laneResizeLocked(scene: AnyScene, pool: PoolLanes, index: number
     || reachesLocked(scene as never, pool.lanes.slice(index + 1).map((l) => l.id as NodeId));
 }
 
+/** Whether the boundary after the lane at `index` of `pool` is offered, and its resize runs: the lane is drawn, and
+ *  the resize would write no locked node. */
+export function laneResizable(scene: AnyScene, pool: PoolLanes, index: number): boolean {
+  return !scene.isHidden(pool.lanes[index]!.id as NodeId) && !laneResizeLocked(scene, pool, index);
+}
+
 /** Whether adding a lane at the end of `pool` would write a locked node: the pool's title, which grows with it. The
  *  add-lane button is offered, and the add runs, only where this is false. */
 export function addLaneLocked(scene: AnyScene, pool: Pick<PoolLanes, 'id'>): boolean {
@@ -170,7 +176,7 @@ export function createLaneAffordance(scene: AnyScene, opts: LaneLayerOptions = {
         if (!paintsLayer(state, scene.get(pool.id as NodeId)!.layer)) continue;
         const cursor = pool.axis === 'y' ? 'row-resize' : 'col-resize';
         for (const [index, lane] of pool.lanes.entries()) {
-          if (laneResizeLocked(scene, pool, index)) continue;
+          if (!laneResizable(scene, pool, index)) continue;
           out.push({
             id: `${lane.id}:boundary`,
             targetId: null,

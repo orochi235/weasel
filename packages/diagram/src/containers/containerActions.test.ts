@@ -109,6 +109,15 @@ describe('the lane resize action', () => {
     expect(resize(h, { x: 200, y: 150 })).toEqual({});
   });
 
+  it('offers no boundary after a hidden lane, and takes no drag on one', () => {
+    const h = pool();
+    h.scene.setHidden(h.first as NodeId, true);
+    const regions = createLaneAffordance(h.scene as never).regions({} as never).map((r) => r.id);
+    expect(regions).not.toContain(`${h.first}:boundary`);
+    expect(regions).toContain(`${h.second}:boundary`);
+    expect(resize(h, { x: 200, y: 150 })).toEqual({});
+  });
+
   it('keeps the lanes in order when one grows past the lanes after it', () => {
     const h = pool();
     resize(h, { x: 200, y: 370 });

@@ -25,7 +25,7 @@ import { boxFrameOf, transformPoint } from '@weasel-js/geom';
 import { createClaimPressAction, claimPressBindings } from '../connect';
 import { addLane, canReleaseMembers, releaseMembers } from './containerStencils';
 import {
-  addLaneLocked, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneLayer, laneResizeLocked, laneScratchOf, poolLanesOf, poolsOf, stackDirection, type LaneLayerOptions,
+  addLaneLocked, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneLayer, laneResizable, laneScratchOf, poolLanesOf, poolsOf, stackDirection, type LaneLayerOptions,
   type PoolLanes,
 } from './laneBoundaryLayer';
 import { MIN_LANE_SIZE } from './laneStack';
@@ -155,7 +155,7 @@ export function createLaneResizeAction(opts: LaneActionOptions): Action {
         const pressed = laneScratchOf(ctx.drag?.affordance);
         const pool = poolsOf(opts.scene).find((p) => p.id === pressed?.poolId);
         const index = pool?.lanes.findIndex((l) => l.id === pressed?.laneId) ?? -1;
-        if (pressed === null || pool === undefined || index < 0 || laneResizeLocked(opts.scene, pool, index)) return {};
+        if (pressed === null || pool === undefined || index < 0 || !laneResizable(opts.scene, pool, index)) return {};
         const lane = pool.lanes[index]!;
         const start = pool.axis === 'y' ? lane.pose.height : lane.pose.width;
         const press: Vec2 = ctx.drag?.start ?? ctx.world;
