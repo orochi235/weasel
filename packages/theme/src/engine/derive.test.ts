@@ -291,6 +291,19 @@ describe('derive', () => {
     expect(tokens).toEqual({});
   });
 
+  it('resolves a seed inside a component or pin list, as in a semantic value', () => {
+    const { tokens, issues } = derive({
+      name: 'x',
+      seeds: { font: 'Inter' },
+      components: { 'font-ui': { value: ['{seeds.font}', 'sans-serif'], type: 'fontFamily' } },
+      pins: { 'font-mono': { value: ['{seeds.font}', 'monospace'], type: 'fontFamily' }, 'font-bad': ['{seeds.nope}'] },
+    });
+    expect(tokens['font-ui'].value).toEqual(['Inter', 'sans-serif']);
+    expect(tokens['font-mono'].value).toEqual(['Inter', 'monospace']);
+    expect(tokens).not.toHaveProperty('font-bad');
+    expect(issues).toEqual([{ kind: 'invalid', path: 'pins.font-bad.0', message: 'unknown seed "nope"' }]);
+  });
+
   it('reports a categorical ramp with more anchors than steps', () => {
     const anchors = [10, 120, 240].map((hue, i) => ({ name: `a${i}`, hue, lightness: 0.7 }));
     const { tokens, issues } = derive({ name: 'x', ramps: { sw: { kind: 'categorical', steps: ['a', 'b'], anchors } } });
