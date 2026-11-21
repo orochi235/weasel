@@ -46,4 +46,8 @@ describe('AccessLabel', () => {
       unmount();
     }
   });
+  it('underlines a final sigma that the access letter folds to σ', () => {
+    const { container } = render(<AccessLabel label="Λόγος" access="ς" />);
+    expect(container.querySelector('span span')?.textContent).toBe('ς');
+  });
 });
