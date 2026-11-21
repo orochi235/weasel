@@ -46,6 +46,14 @@ describe('AccessLabel', () => {
       unmount();
     }
   });
+  it('underlines the cluster a typed letter picks, when that cluster has more than one code point', () => {
+    for (const [label, access, cluster] of [['किताब', 'क', 'कि'], ['किताब', 'कि', 'कि'], ['👍🏽 Like', '👍🏽', '👍🏽'], ['Te\u0323\u0301st', 'ẹ', 'e\u0323\u0301']]) {
+      const { container, unmount } = render(<AccessLabel label={label!} access={access} />);
+      expect(container.querySelector('span span')?.textContent, label).toBe(cluster);
+      unmount();
+    }
+  });
+
   it('underlines a final sigma that the access letter folds to σ', () => {
     const { container } = render(<AccessLabel label="Λόγος" access="ς" />);
     expect(container.querySelector('span span')?.textContent).toBe('ς');
