@@ -17,6 +17,8 @@ export interface RegionDragArgs<T extends Thumb> {
   max: number;
   scale: Pick<ReturnType<typeof useScale>, 'valueToFraction' | 'fractionToValue'>;
   geometry: SliderGeometry;
+  /** Whether another of the slider's drags holds it, so a press here is a second finger and starts nothing. */
+  busy: () => boolean;
 }
 
 /** How far, as a fraction of the track, the two thumbs bounding region `index` can travel together. */
@@ -35,16 +37,17 @@ function regionReach<T extends Thumb>(thumbs: readonly T[], index: number, f: re
 }
 
 /** The press handler for region `index`: dragged, it moves the thumbs either side of it by the same track distance. An
- *  end region has a track end for one side, and does not move. */
-export function useRegionDrag<T extends Thumb>({ props, min, max, scale, geometry }: RegionDragArgs<T>) {
+ *  end region has a track end for one side, and does not move. `held` says whether a region drag is running. */
+export function useRegionDrag<T extends Thumb>({ props, min, max, scale, geometry, busy }: RegionDragArgs<T>) {
   const { onInput, onChange, onCancel } = useLatestHandlers(props);
   const { valueToFraction, fractionToValue } = scale;
   const dragPx = useKitSetting('gestures.dragPx');
   const sessionRef = useRef<PointerSession | null>(null);
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
-  return (index: number) => (e: ReactPointerEvent) => {
-    if (!isPrimaryPress(e) || sessionRef.current?.active) return;
+  const held = (): boolean => sessionRef.current?.active === true;
+  const down = (index: number) => (e: ReactPointerEvent) => {
+    if (!isPrimaryPress(e) || held() || busy()) return;
     const { thumbs } = props;
     if (index === 0 || index >= thumbs.length) return;
     const start = geometry.measure(e.clientX, e.clientY);
@@ -77,4 +80,5 @@ export function useRegionDrag<T extends Thumb>({ props, min, max, scale, geometr
       },
     }, { capture: false, escape: true });
   };
+  return { down, held };
 }

@@ -68,8 +68,11 @@ export function SliderBody<T extends Thumb = Thumb>(
   const { valueToFraction, valueAt } = scale;
   const drags = useThumbDrags<T>({ props, span, scale, geometry });
   const hold = useSliderHold(props);
-  const regionAt = useSliderRegions<T>({ props: hold.refuses ? { ...props, regionDrag: false } : props, min, max, scale, geometry, direction });
-  const pointer = hold.pointer(useSliderPointer<T>({ thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput: drags.onInput, onChange: drags.onChange, drags }));
+  const regions = useSliderRegions<T>({ props: hold.refuses ? { ...props, regionDrag: false } : props, min, max, scale, geometry, direction, busy: drags.held });
+  const regionAt = regions.at;
+  // One press owns the slider: a second finger starts neither a thumb drag nor a region drag.
+  const held = () => drags.held() || regions.held();
+  const pointer = hold.pointer(useSliderPointer<T>({ thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput: drags.onInput, onChange: drags.onChange, drags: { ...drags, held } }));
   const keyDown = hold.keys(onThumbKeyDown<T>({ thumbs, stops, min, max, step, constraint, keyStep: props.keyStep, range: props.range, onInput: drags.onInput, onChange: drags.onChange, direction: run ? screenDirection(run) : direction }));
 
   const placement = props.readoutPlacement ?? 'none';

@@ -117,6 +117,29 @@ describe('Slider regions', () => {
     expect(onAddThumb).not.toHaveBeenCalled();
   });
 
+  it('takes no second finger: a region press during a thumb drag, nor a thumb press during a region drag', () => {
+    const { container, region, onInput, onChange } = setup();
+    const thumb = container.querySelectorAll<HTMLElement>('[role="slider"]')[0]!;
+    fireEvent.pointerDown(thumb, { clientX: 80, clientY: 12, button: 0, pointerId: 1 });
+    fireEvent.pointerDown(region(1), { clientX: 160, clientY: 12, button: 0, pointerId: 2 });
+    fireEvent.pointerMove(document, { clientX: 100, clientY: 12, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 200, clientY: 12, pointerId: 2 });
+    fireEvent.pointerUp(document, { clientX: 100, clientY: 12, pointerId: 1 });
+    fireEvent.pointerUp(document, { clientX: 200, clientY: 12, pointerId: 2 });
+    expect(onInput.mock.calls.map((_, i) => values(onInput, i))).toEqual([[25, 60]]);
+    expect(values(onChange)).toEqual([25, 60]);
+    onInput.mockClear();
+    onChange.mockClear();
+    fireEvent.pointerDown(region(1), { clientX: 160, clientY: 12, button: 0, pointerId: 3 });
+    fireEvent.pointerDown(thumb, { clientX: 80, clientY: 12, button: 0, pointerId: 4 });
+    fireEvent.pointerMove(document, { clientX: 200, clientY: 12, pointerId: 3 });
+    fireEvent.pointerMove(document, { clientX: 40, clientY: 12, pointerId: 4 });
+    fireEvent.pointerUp(document, { clientX: 40, clientY: 12, pointerId: 4 });
+    fireEvent.pointerUp(document, { clientX: 200, clientY: 12, pointerId: 3 });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(values(onChange)).toEqual([30, 70]);
+  });
+
   it('reports a canceled region drag through onCancel, committing nothing', () => {
     const { region, onChange, onCancel } = setup();
     fireEvent.pointerDown(region(1), { clientX: 160, clientY: 12, button: 0 });
