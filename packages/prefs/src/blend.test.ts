@@ -6,6 +6,12 @@ const leaf = (kind: string, extra: object = {}): PrefLeaf => ({ kind, name: 'x',
 const at = (...pairs: [unknown, number][]) => pairs.map(([value, weight]) => ({ value, weight }));
 
 describe('blendPref', () => {
+  it('mixes colors at weights whose total overflows, as it does numbers', () => {
+    const huge = Number.MAX_VALUE;
+    expect(blendPref(leaf('color'), at(['#000000', huge], ['#ffffff', huge]))).toBe(blendPref(leaf('color'), at(['#000000', 1], ['#ffffff', 1])));
+    expect(blendPref(leaf('number'), at([0, huge], [10, huge]))).toBe(5);
+  });
+
   it('is the one member, untouched, where only one weighs anything', () => {
     const value = { a: 1 };
     expect(blendPref(leaf('object'), at([value, 1]))).toBe(value);
