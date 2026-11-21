@@ -74,7 +74,7 @@ export interface SliderAtShape extends TrackMap {
   min: number;
   max: number;
   step?: number;
-  /** Where the step grid starts. Default `min`. */
+  /** Where the step grid starts. Default `min`, or `max` where `min` is infinite, or 0 where both are. */
   origin?: number;
   /** Values the pointer is pulled onto. */
   stops?: readonly number[];
@@ -92,7 +92,9 @@ export function sliderAt(f: number, shape: SliderAtShape): number {
   const stops = shape.stops ?? [];
   const v = shape.toValue(f);
   if (shape.strict) return attract(v, stops, Infinity, shape.toFraction);
-  const q = clamp(snapToStep(v, shape.step, shape.origin ?? shape.min), shape.min, shape.max);
+  const { min, max } = shape;
+  const origin = shape.origin ?? (Number.isFinite(min) ? min : Number.isFinite(max) ? max : 0);
+  const q = clamp(snapToStep(v, shape.step, origin), min, max);
   return stops.length > 0 && !shape.free ? attract(q, stops, shape.pull ?? 0, shape.toFraction) : q;
 }
 

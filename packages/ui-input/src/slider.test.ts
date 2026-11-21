@@ -118,6 +118,12 @@ describe('sliderAt', () => {
     expect(sliderAt(0.26, { ...track, step: 10, origin: 3 })).toBe(23);
   });
 
+  it('starts the step grid at a finite end where min is infinite', () => {
+    const map = spanMap({ from: -100, to: 100 });
+    expect(sliderAt(0.62, { ...map, min: -Infinity, max: 95, step: 10 })).toBe(25);
+    expect(sliderAt(0.62, { ...map, min: -Infinity, max: Infinity, step: 10 })).toBe(20);
+  });
+
   it('pulls onto a stop within reach, and passes it by when free', () => {
     const stops = [40, 80];
     expect(sliderAt(0.42, { ...track, stops, pull: 0.03 })).toBe(40);
