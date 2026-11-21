@@ -57,6 +57,7 @@ export function AlignOverTrigger({
     // its placeholder hangs its list below, like any other dropdown.
     const label = popover.querySelector(`[data-selected] .${s.optionLabel}`);
     if (!value || !label) {
+      delete popover.dataset.align;
       if (applied.offset !== BELOW.offset || applied.crossOffset !== BELOW.crossOffset)
         onMeasure(BELOW);
       return;
