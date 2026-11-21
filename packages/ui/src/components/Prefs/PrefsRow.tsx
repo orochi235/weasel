@@ -184,7 +184,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
   const { path, auto: inherited, setAuto } = renderCtx;
 
   const marked = marksHidden(ctx.hidden, own);
-  const custom = rendererOf(ctx.renderers, pref.kind);
+  const custom = rendererOf(ctx.renderers, own, pref.kind);
   if (prefDrawsNoControl(pref) && !custom) {
     return (
       <div className={s.rowSlot} data-wide="" {...selectionAttrs(own, ctx, true)}>
@@ -196,7 +196,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
   const control = custom ? custom(renderCtx) : renderBuiltin(renderCtx, ctx.renderers);
   if (custom && control === null) return null;
 
-  const width = rowWidthOf(pref, ctx.renderers);
+  const width = rowWidthOf(pref, ctx.renderers, own);
   const stacked = width !== 'column';
   const split = splitRowState(ctx.split, ctx.values, pref, own, path, at !== undefined, renderCtx.mixedAt?.(path, true) === true);
   const toggleSplit = (): void => ctx.split!.setOpen(own, !split!.open);
@@ -230,7 +230,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       description={pref.description}
       layout={stacked ? 'block' : 'inline'}
       className={stacked ? `${s.row} ${s.rowStacked}` : s.row}
-      group={rowIsGroup(renderCtx, ctx.renderers)}
+      group={rowIsGroup(renderCtx, ctx.renderers, undefined, own)}
       hint={marked || split ? <>{marked && <HiddenBadge />}{inheritHint}{split && <SplitMarks levels={split.shape.levels} />}</> : inheritHint}
       disabled={renderCtx.disabled}
       disabledReason={pref.disabledReason}
@@ -256,7 +256,7 @@ function formParts(renderers: Record<string, LeafRenderer> | undefined): LeafPar
         ctx={ctx}
         renderField={(field, held, on) => renderPrefControl(field, renderers, held, on)}
         isGroup={(field, held) => rowIsGroup(field, renderers, held)}
-        rowWidth={(leaf) => rowWidthOf(leaf, renderers)}
+        rowWidth={(leaf, path) => rowWidthOf(leaf, renderers, path)}
       />
     ),
     control: (field, _ctx, name) =>
@@ -284,14 +284,16 @@ function renderBuiltin(ctx: LeafContext, renderers: Record<string, LeafRenderer>
   return renderLeaf(ctx, formParts(renderers));
 }
 
-/** Whether a leaf's row is a group and not a `<label>`: its control is several, or one a label may not wrap. */
+/** Whether a leaf's row is a group and not a `<label>`: its control is several, or one a label may not wrap. `own` is
+ *  the path its renderer is named for, where that is not the one its value lives at. */
 function rowIsGroup(
   ctx: LeafContext,
   renderers: Record<string, LeafRenderer> | undefined,
   siblings?: Record<string, unknown>,
+  own = ctx.path,
 ): boolean {
   if (prefDrawsSeveral(ctx.pref)) return true;
-  const custom = rendererOf(renderers, ctx.pref.kind);
+  const custom = rendererOf(renderers, own, ctx.pref.kind);
   if (custom) return typeof custom.group === 'function' ? custom.group(ctx) : custom.group === true;
   const field = leafField(within(ctx, siblings), 'form');
   return field !== null && controlIsGroup(field);

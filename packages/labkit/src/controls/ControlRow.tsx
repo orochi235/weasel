@@ -157,7 +157,7 @@ function CompoundControl({
   // Plain text entries keep the list's own fields, and the placeholder only they have.
   if (leaf.kind === 'list' && prefListIsText(leaf as PrefList, renderers?.string !== undefined)) {
     const list = leaf as PrefList;
-    const texts = prefListTexts(value);
+    const texts = prefListTexts(value, list);
     const ctx = { path, disabledAt: inside.disabledAt, entryAt: inside.entryAt };
     return (
       <PrefTextList
