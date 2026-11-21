@@ -61,7 +61,7 @@ export { createLayerSampler, planLayerSample } from '../canvas/layerSample';
 export type { LayerSampleArgs, LayerSamplePlan, LayerSampler } from '../canvas/layerSample';
 export { scenePickIds, type ScenePickIds } from '../canvas/scenePickIds';
 export { commandRasterizer } from '../canvas/commandRasterizer';
-export type { CommandRasterizer, RasterRect } from '../canvas/commandRasterizer';
+export type { CommandRasterizer, CommandRasterizerOptions, RasterRect } from '../canvas/commandRasterizer';
 export { renderNeeds } from '../canvas/renderNeeds';
 export type { RenderNeeds } from '../canvas/renderNeeds';
 export type {

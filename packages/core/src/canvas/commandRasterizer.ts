@@ -24,14 +24,23 @@ export type CommandRasterizer = (
   view: GlMat3 | undefined,
 ) => Promise<RasterImage>;
 
+/** How a {@link commandRasterizer} draws what it is handed. */
+export interface CommandRasterizerOptions {
+  /** Screen space → page units: where `screen`-unit paint is measured. Default the page itself. */
+  screen?: GlMat3;
+  /** Curve tessellation tolerance in raster pixels, as `renderSceneToPixels` takes it. Default 0.25. */
+  flattenTolerancePx?: number;
+}
+
 /**
  * A {@link CommandRasterizer} drawing through `session`. The renderer reads `world`-unit paint
  * through the session's view, so that view is the page view followed by the move from page units to
  * raster pixels, written as the source rect and scale the session plans it from. `screen`-unit paint
- * is in page units too, so the session's screen space is the page.
+ * is in page units too unless `options.screen` says otherwise.
  */
-export function commandRasterizer(session: RasterSession): CommandRasterizer {
+export function commandRasterizer(session: RasterSession, options: CommandRasterizerOptions = {}): CommandRasterizer {
   const empty = createScene<unknown, 'main'>({ systemLayers: [{ id: 'main' }] });
+  const { screen, flattenTolerancePx } = options;
   return async (commands, rect, scale, view) => {
     await warmRender({ commands });
     const toPixels = mat3.translated(mat3.scaled(mat3.identity(), scale, scale), -rect.x, -rect.y);
@@ -43,7 +52,8 @@ export function commandRasterizer(session: RasterSession): CommandRasterizer {
       sourceRect: { x: -toRaster[6]! / sx, y: -toRaster[7]! / sy, width: (rect.width * scale) / sx, height: (rect.height * scale) / sy },
       scale: { x: sx, y: sy },
       overlay: [{ kind: 'group', transform: toPixels, children: [...commands] }],
-      screen: toPixels,
+      screen: screen ? mat3.multiply(Float64Array.from(toPixels), screen) : toPixels,
+      ...(flattenTolerancePx === undefined ? {} : { flattenTolerancePx }),
     });
   };
 }
