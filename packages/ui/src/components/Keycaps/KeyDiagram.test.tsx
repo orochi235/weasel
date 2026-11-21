@@ -9,6 +9,7 @@ import { useHeldKeys } from './useHeldKeys';
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 const slot = (root: HTMLElement, code: string) => root.querySelector<HTMLElement>(`[data-code="${code}"]`);
@@ -79,7 +80,8 @@ describe('useHeldKeys', () => {
     expect(result.current.size).toBe(0);
   });
 
-  it('lets go of every key but the modifiers when Command is let go', () => {
+  it('lets go of every key but the modifiers when Command is let go on macOS', () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
     const { result } = renderHook(() => useHeldKeys());
     for (const code of ['MetaLeft', 'ShiftLeft', 'KeyK']) act(() => { fireEvent.keyDown(window, { code }); });
     act(() => { fireEvent.keyUp(window, { code: 'MetaLeft' }); });

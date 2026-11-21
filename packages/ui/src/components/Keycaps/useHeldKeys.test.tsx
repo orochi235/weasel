@@ -1,8 +1,11 @@
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, renderHook } from '@testing-library/react';
 import { useHeldKeys } from './useHeldKeys';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 it('lets go of every key when focus leaves an element target', () => {
   const el = document.createElement('div');
@@ -19,4 +22,24 @@ it('lets go of every key when focus leaves an element target', () => {
   expect([...result.current]).toEqual([]);
   el.remove();
   other.remove();
+});
+
+const holdWThenTapMeta = () => {
+  const { result } = renderHook(() => useHeldKeys());
+  act(() => {
+    fireEvent.keyDown(window, { code: 'KeyW' });
+    fireEvent.keyDown(window, { code: 'MetaLeft' });
+    fireEvent.keyUp(window, { code: 'MetaLeft' });
+  });
+  return [...result.current];
+};
+
+it('lets go of the other keys with Command on macOS, which sends no key-up for them', () => {
+  vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
+  expect(holdWThenTapMeta()).toEqual([]);
+});
+
+it('keeps a key held through a tap of Win or Super elsewhere', () => {
+  vi.spyOn(navigator, 'platform', 'get').mockReturnValue('Win32');
+  expect(holdWThenTapMeta()).toEqual(['KeyW']);
 });
