@@ -63,7 +63,7 @@ export type { TreeNode, TreeProps, TreeSelectionMode } from './treeTypes';
  * **Held.** Disabled, by `disabled` or a `Disabled` scope, nothing activates, folds, selects or moves: focus alone
  * moves between rows, and with no reason anywhere the tree leaves the tab order. Read-only, rows still fold, select
  * and activate, since choosing a row only looks at it; nothing moves, by drag or by key. Either way the rows'
- * `controls` are held with it.
+ * `controls` are held with it, and a drop from outside the tree lands nowhere: `dropRef` answers `null`.
  *
  * **Filtering** is the consumer's: narrow `nodes` with `filterTree`, and pass
  * `treeBranchIds` of the result as `expandedIds` so every match shows.
@@ -107,7 +107,7 @@ export const Tree = forwardRef(function Tree(
   useUntabbedControls(grid, treeEl);
   const drag = useTreeDrag({
     enabled: !!onMove,
-    onDragOutside, onDropOutside, externalDrag, dropRef,
+    onDragOutside, onDropOutside, externalDrag, dropRef, held: hold.refuses,
     nodes, visible, expanded, selected,
     container: () => treeEl.current,
     rowEl: rowBox,

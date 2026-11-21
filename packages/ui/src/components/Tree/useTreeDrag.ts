@@ -46,6 +46,8 @@ export interface UseTreeDragOptions {
   onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null, effect: TreeDragEffect): boolean;
   onDropOutside?(ids: string[], point: { x: number; y: number }, effect: TreeDragEffect): void;
   externalDrag?: { x: number; y: number } | null;
+  /** The tree is disabled or read-only, and takes no drop from outside it either. */
+  held: boolean;
   dropRef?: Ref<TreeDropHandle>;
   /** A press released without dragging — the row's activation. */
   onPress(id: string, mods: EventModifiers): void;
@@ -144,7 +146,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     setState(IDLE);
   }, [leaveOutside, hover]);
 
-  const external = useOutsideDrop({ at: opts.externalDrag, latest: o, resolve, handle: opts.dropRef });
+  const external = useOutsideDrop({ at: opts.externalDrag, latest: o, resolve, handle: opts.dropRef, held: opts.held });
 
   const onPointerDown = useCallback((id: string, e: ReactPointerEvent<HTMLElement>) => {
     const { enabled, container } = o.current;
