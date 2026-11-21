@@ -238,4 +238,15 @@ describe('axisDependencies', () => {
     expect(Object.keys(deps).sort()).toEqual(['gray-500', 'gray-600', 'gray-900']);
     expect(deps['gray-500'].all).toEqual(['mode']);
   });
+
+  it('gives an offset rule from a component the ramp the component names', () => {
+    const def: ThemeDefinition = {
+      name: 't',
+      axes: D.axes,
+      ramps: { gray: { kind: 'lightness', steps: { by: 'density', comfortable: ['50', '900'], compact: ['50', '500', '900'] }, lightness: [0.97, 0.16] } },
+      components: { chip: '{gray-50}' },
+      semantics: { chipRef: { ref: 'chip' }, chipHover: { from: 'chipRef', offset: 1, dir: 'away' } },
+    };
+    expect(axisDependencies(def).chipHover.all).toEqual(['density']);
+  });
 });

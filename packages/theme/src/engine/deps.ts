@@ -153,7 +153,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     for (const step of declaredSteps(s)) produce(`${name}-${step}`, n, always.has(step));
   }
 
-  /** Every ramp a token could sit on: its own, or the ones its semantic rule leaves or pins lead to. */
+  /** Every ramp a token could sit on: its own, or the ones its semantic rule leaves, pins, or components lead to. */
   const rampsOf = (name: string, seen = new Set<string>()): Set<string> => {
     const out = new Set<string>(stepRamps.get(name));
     if (seen.has(name)) return out;
@@ -167,10 +167,10 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
       else if ('from' in l) add(l.from);
       else if ('ref' in l) add(l.ref);
     }
-    const pin = getOwn(def.pins ?? {}, name);
-    if (pin !== undefined) {
+    for (const v of [getOwn(def.pins ?? {}, name), getOwn(def.components ?? {}, name)]) {
+      if (v === undefined) continue;
       const n = node();
-      scan(pin, n);
+      scan(v, n);
       for (const e of n.edges) add(e);
     }
     return out;

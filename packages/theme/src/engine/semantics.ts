@@ -99,12 +99,13 @@ export function deriveSemantics(
     if (depth > MAX_DEPTH) return undefined;
     const step = rampStep(name);
     if (step) return step;
-    const pin = ctx.pinned(name);
-    if (pin) {
-      const target = refTarget(pin.value);
+    const follow = (v: { readonly value: TokenValue } | undefined) => {
+      const target = v ? refTarget(v.value) : null;
       return target === null ? undefined : positionAt(target, depth + 1);
-    }
-    return Object.hasOwn(rules, name) ? get(name)?.position : undefined;
+    };
+    const pin = ctx.pinned(name);
+    if (pin) return follow(pin);
+    return Object.hasOwn(rules, name) ? get(name)?.position : follow(ctx.component(name));
   };
   const positionOf: Env['positionOf'] = (name) => (Object.hasOwn(rules, name) ? positionAt(name) : undefined);
 

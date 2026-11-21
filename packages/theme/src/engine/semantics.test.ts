@@ -292,3 +292,15 @@ describe('a ref cycle a pin breaks', () => {
     expect(tokens.b).toMatchObject({ value: '{a}' });
   });
 });
+
+describe('a rule reading a component', () => {
+  it('follows the component to the ramp step it names', () => {
+    const { tokens, issues } = derive({
+      ...W,
+      components: { chip: '{gray-500}' },
+      semantics: { chipRef: { ref: 'chip' }, chipHover: { from: 'chipRef', offset: 1, dir: 'darker' } },
+    });
+    expect(issues).toEqual([]);
+    expect(tokens.chipHover.value).toBe('{gray-600}');
+  });
+});
