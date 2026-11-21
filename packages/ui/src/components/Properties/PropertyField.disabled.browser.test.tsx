@@ -36,3 +36,17 @@ it('leaves an enabled row at full strength', () => {
   expect(drawnAt(screen.getByRole('spinbutton', { name: 'Blur' }))).toBe(1);
   expect(drawnAt(screen.getByText('Blur'))).toBe(1);
 });
+
+// Disabled with a reason, a control keeps focus for the reason's tooltip, so it is `aria-disabled`, not `:disabled`.
+it('dims a textarea disabled with a reason', () => {
+  render(<PropertyField kind="string" control="textarea" label="Notes" value="x" disabled disabledReason="Locked" onChange={() => {}} />);
+  const area = screen.getByRole('textbox', { name: 'Notes' });
+  expect(area).not.toBeDisabled();
+  expect(opacityOf(area)).toBe(0.5);
+});
+
+it('draws a slider row disabled with a reason at one strength', () => {
+  render(<PropertyField kind="number" control="slider" label="Blur" value={4} min={0} max={10} disabled disabledReason="Locked" onChange={() => {}} />);
+  expect(drawnAt(screen.getByRole('spinbutton', { name: 'Blur' }))).toBe(0.5);
+  expect(drawnAt(screen.getByText('Blur'))).toBe(0.5);
+});
