@@ -43,7 +43,8 @@ export function mergeChain(def: ThemeDefinition, lookup?: Lookup, seen: Readonly
   const inherited = Object.entries(parent.pins ?? {}).filter(([name]) => !shadowed.has(name));
   const axes = mergeAxes(parent.axes ?? {}, def.axes ?? {});
   const parentPins: Record<string, unknown> = parent.pins ?? {};
-    const own = Object.entries(def.pins ?? {}).map(([name, v]) => [name, fillFromParent(v, getOwn(parentPins, name), axes)]);
+  const parentPin = (name: string) => (shadowed.has(name) ? undefined : getOwn(parentPins, name));
+  const own = Object.entries(def.pins ?? {}).map(([name, v]) => [name, fillFromParent(v, parentPin(name), axes)]);
   out.pins = { ...Object.fromEntries(inherited), ...Object.fromEntries(own) };
   out.axes = axes;
   out.tints = def.tints ?? parent.tints;
