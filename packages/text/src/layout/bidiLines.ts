@@ -184,5 +184,21 @@ function reorderedLine(paragraphs: AnalyzedParagraphs, start: number, count: num
     const pos = at - start;
     if (Number.isInteger(pos) && pos >= 0 && pos < count) kept.add(pos);
   }
-  return { visual: restoreRemoved([...kept], count, (pos) => levels[pos] % 2 === 1), levels };
+  const visual = restoreRemoved([...kept], count, (pos) => levels[pos] % 2 === 1);
+  if (kept.size < count) levelRemoved(levels, kept, count, paragraphs.baseLevel(start));
+  return { visual, levels };
+}
+
+/** Gives each position the engine removed the level of the kept one {@link restoreRemoved} placed it
+ *  beside (UAX #9 §5.2), and the paragraph's level on a line that keeps none. */
+function levelRemoved(levels: number[], kept: ReadonlySet<number>, count: number, base: number): void {
+  let anchor = -1;
+  for (let pos = 0; pos < count; pos++) {
+    if (kept.has(pos)) anchor = pos;
+    else if (anchor >= 0) levels[pos] = levels[anchor]!;
+  }
+  let first = 0;
+  while (first < count && !kept.has(first)) first++;
+  const lead = first < count ? levels[first]! : base;
+  for (let pos = 0; pos < first; pos++) levels[pos] = lead;
 }

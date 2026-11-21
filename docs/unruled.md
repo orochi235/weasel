@@ -775,6 +775,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-16 (audit 29, the lane's call): a clipped text node's outline (`overflow: 'clip'`) is its glyphs cut to its
   box with `pathIntersect`, curves kept, so Create Outlines and a boolean take only the ink it draws. A stroked part's
   stroke then also runs along the cut, where the painter shows none.
+- 2026-11-20 (the fixer's call, audit round 58): `fit: 'shrink'` scales a stroke's width, dash, and dash offset with
+  the text, a `{ px }` width included, as it scales a `{ px }` `fontSize`; `bakeTextFit` writes the scaled stroke out.
 
 ## SVG and paths
 

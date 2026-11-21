@@ -215,6 +215,8 @@ export function measureRuns(
 /** Per UTF-16 offset into the texts of `runs` joined, 1 where a grapheme
  *  cluster closes. Refilled for each measure that needs it. */
 let JOINED_ENDS = new Uint8Array(64);
+/** UTF-16 units past which a measure builds its own ends rather than growing the shared ones for good. */
+const JOINED_ENDS_MAX = 1 << 16;
 
 /** {@link JOINED_ENDS} for `runs`, or null when no run boundary can fall
  *  inside a cluster: one between two units below U+0300, other than a CR,
@@ -231,11 +233,17 @@ function clusterEndsAcross(runs: readonly ResolvedRun[]): Uint8Array | null {
   if (!spans) return null;
   let joined = '';
   for (let i = 0; i < runs.length; i++) joined += runs[i].text;
-  if (JOINED_ENDS.length < joined.length + 1) JOINED_ENDS = new Uint8Array(Math.max(joined.length + 1, JOINED_ENDS.length * 2));
-  JOINED_ENDS.fill(0, 0, joined.length + 1);
+  const n = joined.length + 1;
+  if (n <= JOINED_ENDS_MAX && JOINED_ENDS.length < n) JOINED_ENDS = new Uint8Array(Math.min(JOINED_ENDS_MAX, Math.max(n, JOINED_ENDS.length * 2)));
+  const out = n <= JOINED_ENDS_MAX ? JOINED_ENDS.fill(0, 0, n) : new Uint8Array(n);
   const ends = graphemeEnds(joined, CLUSTER_ENDS);
-  for (let k = 0; k < ends.length; k++) JOINED_ENDS[ends[k]] = 1;
-  return JOINED_ENDS;
+  for (let k = 0; k < ends.length; k++) out[ends[k]] = 1;
+  return out;
+}
+
+/** Test helper. Do not call from product code. */
+export function _joinedEndsSizeForTests(): number {
+  return JOINED_ENDS.length;
 }
 
 /** No nonspacing mark sits below U+0300, so Latin text builds no string to ask. */

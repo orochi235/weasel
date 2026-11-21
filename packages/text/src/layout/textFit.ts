@@ -5,6 +5,7 @@
  * smaller size lays out into.
  */
 import { faceGeneration } from '@weasel-js/font';
+import type { ScreenLength, Stroke } from '@weasel-js/paint';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import type { ResolvedTextStyle } from '../textStyle';
 import { layoutBidi, layoutShaper, type LayoutRunsOptions } from './layoutOpts';
@@ -52,13 +53,27 @@ const sameOpts = (a: LayoutRunsOptions, b: LayoutRunsOptions): boolean =>
   same(a.maxWidth, b.maxWidth) && same(a.alignWidth, b.alignWidth) && same(a.lineHeight, b.lineHeight)
   && a.align === b.align && a.justify === b.justify && a.direction === b.direction && same(a.tabSize, b.tabSize);
 
-/** `run` set at `k` times its size: its glyphs, tracking, rise and strut. */
+/** `v` at `k` times its length, in its own units. */
+export function scaledLength(v: ScreenLength, k: number): ScreenLength {
+  return typeof v === 'number' ? v * k : { px: v.px * k };
+}
+
+/** `stroke` drawn at `k` times its weight: its width, dash and dash offset. */
+export function scaledStroke<S extends Omit<Stroke, 'trim'>>(stroke: S, k: number): S {
+  const out: S = { ...stroke, width: scaledLength(stroke.width ?? 1, k) };
+  if (stroke.dash) out.dash = stroke.dash.map((d) => d * k);
+  if (stroke.dashOffset !== undefined) out.dashOffset = stroke.dashOffset * k;
+  return out;
+}
+
+/** `run` set at `k` times its size: its glyphs, tracking, rise, strut and stroke. */
 function scaledRun(run: ResolvedRun, k: number): ResolvedRun {
   const out: ResolvedRun = {
     ...run, fontSize: run.fontSize * k, letterSpacing: run.letterSpacing * k, baselineShift: run.baselineShift * k,
   };
   if (run.sizeMap) out.sizeMap = run.sizeMap.map((s) => s * k);
   if (run.strutSize !== undefined) out.strutSize = run.strutSize * k;
+  if (run.stroke) out.stroke = scaledStroke(run.stroke, k);
   return out;
 }
 
@@ -67,9 +82,11 @@ export function scaleRuns(runs: readonly ResolvedRun[], k: number): ResolvedRun[
   return runs.map((r) => scaledRun(r, k));
 }
 
-/** `style` at `k` times its size and tracking. */
+/** `style` at `k` times its size, tracking and stroke. */
 export function scaleStyle(style: ResolvedTextStyle, k: number): ResolvedTextStyle {
-  return { ...style, fontSize: style.fontSize * k, letterSpacing: style.letterSpacing * k };
+  const out = { ...style, fontSize: style.fontSize * k, letterSpacing: style.letterSpacing * k };
+  if (style.stroke) out.stroke = scaledStroke(style.stroke, k);
+  return out;
 }
 
 /** The bounds of `runs` set at `k` times their size, laid out uncached, their arrays given straight back. */

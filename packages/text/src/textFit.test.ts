@@ -76,6 +76,21 @@ describe("fit: 'shrink'", () => {
     expect(runs[1]!.letterSpacing).toBeCloseTo(4 * k, 9);
   });
 
+  it('scales a stroke\'s width and dash with the text', () => {
+    const pose = headline({
+      stroke: { paint: INK.paint, width: 4, dash: [6, 2], dashOffset: 1 },
+      runs: [{ text: 'HEAD' }, { text: 'LINE', stroke: { paint: INK.paint, width: { px: 2 } } }],
+    });
+    const k = textFitScale(pose);
+    const { runs, style } = textPoseLayoutInput(pose);
+    expect(style.stroke).toMatchObject({ width: 4 * k, dash: [6 * k, 2 * k], dashOffset: k });
+    expect(runs[0]!.stroke).toMatchObject({ width: 4 * k, dash: [6 * k, 2 * k], dashOffset: k });
+    expect(runs[1]!.stroke!.width).toEqual({ px: 2 * k });
+    const settled = bakeTextFit(pose);
+    expect(settled.stroke).toMatchObject({ width: 4 * k, dash: [6 * k, 2 * k] });
+    expect(settled.runs![1]!.stroke!.width).toEqual({ px: 2 * k });
+  });
+
   it('never sets the text above its own size', () => {
     const pose = headline({ text: 'Hi', width: 2000, height: 2000 });
     expect(textFitScale(pose)).toBe(1);

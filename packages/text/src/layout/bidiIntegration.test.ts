@@ -203,6 +203,12 @@ describe('characters the engine removes', () => {
     expect(cells[1].x).toBeLessThanOrEqual(cells[0].x);
   });
 
+  it('reads at the level of the character it sits beside', () => {
+    const cells = layoutAndPaint([RUN('א‍ב')], OPTS).lines[0].cells;
+    expect(cells.map((c) => c.level)).toEqual([1, 1, 1]);
+    expect(layoutAndPaint([RUN('‍א')], { ...OPTS, direction: 'rtl' }).lines[0].cells[0].level).toBe(1);
+  });
+
   it('places one opening the line at the line\'s start', () => {
     const cells = layoutAndPaint([RUN('‍AB')], OPTS).lines[0].cells;
     expect(cells[0].x).toBeLessThanOrEqual(cells[1].x);
