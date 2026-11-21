@@ -69,8 +69,8 @@ export function useUnitTyping({ value, read, bounds, disabled, settleWhenIdle, c
     if (next !== value) onChange(next);
     return true;
   };
-  /** Whether `key` has nowhere left to step to. */
-  const spent = (key: string): boolean => !canSpin(key, from(), bounds);
+  /** Whether `key` has nowhere left to step to, as it has nowhere while the field refuses input: that ends a hold. */
+  const spent = (key: string): boolean => disabled || !canSpin(key, from(), bounds);
 
   const type = (typed: string) => {
     setDraft(typed);
