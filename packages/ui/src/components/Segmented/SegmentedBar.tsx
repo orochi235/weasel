@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/ui-input';
 import { SegmentSweeper, SWEEP_INDEX_ATTR, useSweepGuard, type SegmentSweep } from './segmentSweep';
 import s from './segmentedControl.module.css';
-import { SegmentedRow, segmentClassName, segmentPlaceProps, useSegmentedTiling, type SegmentedGridProps, type SegmentState } from './segmentedRow';
+import { SegmentedRow, segmentClassName, segmentPlaceProps, useCurvedRun, useSegmentedTiling, type SegmentedGridProps, type SegmentState } from './segmentedRow';
 import type { SegmentedVariant } from './segmentedVariant';
 import { tilingRoving } from '../../tiling';
 import { selectionRoving } from '../../selectionRoving';
@@ -164,6 +164,8 @@ export function SegmentedBar<V extends string | number = string>(props: Segmente
   };
 
   const tiles = useSegmentedTiling(props);
+  // The sweep's dispatcher attaches to the row's root once, and a row turning curved or straight draws a new one.
+  const curved = useCurvedRun() !== undefined;
   const roving = useRovingTabIndex({ itemSelector: `.${s.segment}`, ...(tiles ? tilingRoving(tiles) : {}), ...behavior.keys });
   // Segment labels drawn as `FitLabel`s shorten together when the bar is squeezed or will not fit where it sits.
   const fit = useFitScope(roving.rootRef);
@@ -209,7 +211,7 @@ export function SegmentedBar<V extends string | number = string>(props: Segmente
   return (
     <>
       {holdScope(props, row)}
-      <SegmentSweeper rootRef={roving.rootRef} values={items.map((it) => it.value)} sweepable={usable} model={behavior.model} sweep={sweep} swept={guard.swept} />
+      <SegmentSweeper key={curved ? 'curved' : 'straight'} rootRef={roving.rootRef} values={items.map((it) => it.value)} sweepable={usable} model={behavior.model} sweep={sweep} swept={guard.swept} />
     </>
   );
 }

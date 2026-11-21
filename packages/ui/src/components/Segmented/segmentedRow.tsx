@@ -7,6 +7,7 @@ import { useControlSize, type ControlSize } from '../ControlSize';
 import s from './segmentedControl.module.css';
 import type { LastRow, SelectState, Tiling } from '@weasel-js/ui-input';
 import { tiling } from '../../tiling';
+import type { RunAlign, TrackShape } from '@weasel-js/geom';
 import type { FieldControlAttrs } from '../Field/fieldSemantics';
 
 /** Whether a segment is on, off, or mixed: its sources disagree. */
@@ -61,11 +62,17 @@ export interface SegmentedGridProps {
   lastRow?: LastRow;
 }
 
+/** The curved shape the enclosing run lays a segmented row along, or `undefined` where the row stays straight. A row
+ *  turning from one to the other is drawn in a new root element. */
+export function useCurvedRun(): { shape: TrackShape; align: RunAlign } | undefined {
+  const { shape, align } = useRun();
+  return shape !== undefined && shape.kind !== 'line' ? { shape, align: align ?? 'center' } : undefined;
+}
+
 /** The tiling `props` ask for, or `undefined` for a bar on one line, a curved `Along` bending it into one whatever
  *  `columns` says. Hand it to `SegmentedRow` and, through `tilingRoving`, to the bar's `useRovingTabIndex`. */
 export function useSegmentedTiling(props: SegmentedGridProps): Tiling | undefined {
-  const { shape } = useRun();
-  if (shape !== undefined && shape.kind !== 'line') return undefined;
+  if (useCurvedRun() !== undefined) return undefined;
   return props.columns ? { columns: props.columns, lastRow: props.lastRow } : undefined;
 }
 
@@ -88,8 +95,9 @@ export function segmentPlaceProps(place: SegmentPlace | undefined): Partial<Omit
  */
 export function SegmentedRow(props: SegmentedRowProps): ReactElement {
   const enclosing = useRun();
+  const curved = useCurvedRun();
   const size = useControlSize(props.size);
-  if (enclosing.shape !== undefined && enclosing.shape.kind !== 'line') return <SegmentsAlong {...props} size={size} shape={enclosing.shape} align={enclosing.align ?? 'center'} />;
+  if (curved) return <SegmentsAlong {...props} size={size} shape={curved.shape} align={curved.align} />;
   const { roving, role, naming, className, height, variant, segments, wrap } = props;
   const tiles = props.tiling ? tiling(segments.length, props.tiling) : null;
   const style = {

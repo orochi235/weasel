@@ -3,6 +3,8 @@ import { act, fireEvent, render } from '@testing-library/react';
 import { useState } from 'react';
 import { SegmentedBar } from './SegmentedBar';
 import type { SegmentSweep } from './segmentSweep';
+import { arcShape, lineShape, type TrackShape } from '@weasel-js/geom';
+import { Along } from '../Along';
 
 const ITEMS = [
   { value: 'a', label: 'A' },
@@ -159,5 +161,18 @@ describe('SegmentedBar sweep', () => {
     expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'true']);
     fireEvent.click(buttons[4]!, { altKey: true });
     expect(pressed()).toEqual(['true', 'true', 'false', 'true', 'true']);
+  });
+
+  it('still sweeps after the row it lies in turns from straight to curved', () => {
+    const seen: string[][] = [];
+    const Swept = ({ shape }: { shape: TrackShape }) => <Along shape={shape}><Bar seen={seen} /></Along>;
+    const utils = render(<Swept shape={lineShape({ x: 0, y: 0 }, { x: 200, y: 0 })} />);
+    utils.rerender(<Swept shape={arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 })} />);
+    const buttons = utils.getAllByRole('button');
+    document.elementFromPoint = (x: number) => buttons[Math.floor(x / 10)] ?? null;
+    for (const [type, x] of [['pointerdown', 5], ['pointermove', 15], ['pointerup', 15]] as const) {
+      act(() => { buttons[0]!.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, button: 0, buttons: 1, clientX: x, clientY: 5 })); });
+    }
+    expect(seen.at(-1)).toEqual(['a', 'b']);
   });
 });
