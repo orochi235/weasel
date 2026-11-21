@@ -2,6 +2,6 @@
 '@weasel-js/text-dom': minor
 ---
 
-`replaceRunRange` and `runStyleAt` are exported: splice text into styled runs at a character range, and read the style a character typed at an offset joins.
+`replaceRunRange` and `runStyleAt` are exported, to splice text into styled runs and read the style typed text joins.
 
 <!-- entry: api -->
