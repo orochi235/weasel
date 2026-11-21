@@ -43,7 +43,8 @@ export function PrefControl({ pref, path = '', value, values, onChange, renderer
       values,
       ...(fields ? { fields } : {}),
       disabled,
-      disabledAt,
+      // A field answers by `disabledAt` alone, so a disabled control has to answer every path disabled.
+      disabledAt: disabled ? () => true : disabledAt,
       ...(entryAt ? { entryAt } : {}),
       settles,
       textWaitMs,
