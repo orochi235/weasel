@@ -29,23 +29,33 @@ function registerDropZone(zone: DropZone): () => void {
   };
 }
 
+/** The innermost zone under the point that accepts `kind`. */
 function findZone(x: number, y: number, kind: string): DropZone | null {
   const el = document.elementFromPoint(x, y);
   if (!el) return null;
+  let best: DropZone | null = null;
   for (const z of dropZones) {
-    if (z.el.contains(el) && z.accepts(kind)) return z;
+    if (!z.el.contains(el) || (best && !best.el.contains(z.el))) continue;
+    if (zoneAccepts(z, kind)) best = z;
   }
-  return null;
+  return best;
 }
 
-function defaultGhost(source: HTMLElement, payload: DragPayload): HTMLElement {
+function zoneAccepts(zone: DropZone, kind: string): boolean {
+  let ok = false;
+  zoneCall('accepts', () => { ok = zone.accepts(kind); });
+  return ok;
+}
+
+function defaultGhost(source: HTMLElement, payload: DragPayload, seat: FixedSeat): HTMLElement {
   const rect = source.getBoundingClientRect();
   const clone = source.cloneNode(true) as HTMLElement;
+  for (const el of [clone, ...clone.querySelectorAll('[id]')]) el.removeAttribute('id');
   clone.style.position = 'fixed';
   clone.style.left = '0';
   clone.style.top = '0';
-  clone.style.width = `${rect.width}px`;
-  clone.style.height = `${rect.height}px`;
+  clone.style.width = `${rect.width / seat.scale.x}px`;
+  clone.style.height = `${rect.height / seat.scale.y}px`;
   clone.style.margin = '0';
   clone.style.pointerEvents = 'none';
   clone.style.opacity = '0.85';
@@ -99,11 +109,11 @@ function beginPointerDrag(
   source: HTMLElement,
   startX: number,
   startY: number,
-  ghostFn: (source: HTMLElement, payload: DragPayload) => HTMLElement,
+  createGhost: ((source: HTMLElement, payload: DragPayload) => HTMLElement) | undefined,
 ): GhostDrag | null {
   if (activeDrag) return null;
-  const ghost = ghostFn(source, payload);
   const seat = fixedSeat(source);
+  const ghost = createGhost ? createGhost(source, payload) : defaultGhost(source, payload, seat);
   seat.host.appendChild(ghost);
   positionGhost(ghost, seat, startX, startY);
   activeDrag = { payload, ghost, seat, lastZone: null };
@@ -168,6 +178,7 @@ export function useDragHandle(
   options?: DragHandleOptions,
 ) {
   const optsRef = useLatest(options);
+  const getPayloadRef = useLatest(getPayload);
   const kitSettingsRef = useLatest(useKitSettings());
   // One session spans the whole press, threshold and all, so a release that
   // never arrives — the row unmounts under the pointer — cannot strand the
@@ -182,7 +193,7 @@ export function useDragHandle(
     // the ref while the first drag runs on with nothing to cancel it.
     if (live.current) return;
     const target = e.currentTarget as HTMLElement;
-    if (e.target instanceof HTMLElement && e.target.closest('input, button, select, textarea')) return;
+    if (e.target instanceof Element && e.target.closest('input, button, select, textarea')) return;
     const start = { clientX: e.clientX, clientY: e.clientY };
     const pointerId = e.pointerId;
     let ghost: GhostDrag | null = null;
@@ -198,12 +209,11 @@ export function useDragHandle(
         if (past) return;
         if (!pastDragThreshold(start, ev, kitSettingsRef.current.get('gestures.dragPx'))) return;
         past = true;
-        const payload = getPayload();
+        const payload = getPayloadRef.current();
         if (!payload) return;
         dropClickGuard = swallowClick(target);
         ghost = beginPointerDrag(
-          payload, target, ev.clientX, ev.clientY,
-          optsRef.current?.createGhost ?? defaultGhost,
+          payload, target, ev.clientX, ev.clientY, optsRef.current?.createGhost,
         );
       },
       onEnd: (ev) => {
@@ -223,7 +233,7 @@ export function useDragHandle(
         else dropClickGuard();
       },
     }, { capture: false });
-  }, [getPayload, optsRef, kitSettingsRef]);
+  }, [getPayloadRef, optsRef, kitSettingsRef]);
 
   return { onPointerDown, style: { touchAction: 'none' as const } };
 }

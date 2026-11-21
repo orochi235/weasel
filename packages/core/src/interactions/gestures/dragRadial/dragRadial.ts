@@ -176,6 +176,6 @@ export function useDragRadial<TScratch = unknown>(
     end: gesture.end,
     cancel: gesture.cancel,
     overlay,
-    isActive: overlay !== null,
-  }), [start, move, gesture.end, gesture.cancel, overlay]);
+    get isActive() { return gesture.isActive; },
+  }), [start, move, gesture, overlay]);
 }
