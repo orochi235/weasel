@@ -6,8 +6,9 @@ import { PATH_L, PATH_M, pathFromD, rectPath, type PolygonPath, type PathSnapKin
 import { textCommand, textCommandFromRuns, type CommandStroke, type DrawCommand } from '@weasel-js/renderer';
 import { pathSnapGlyph } from 'domains/paths/pathSnap/glyphs';
 
-const PILL_FONT = { fontSize: 10 };
-// No text measurer in a layer: a 10px digit advances about 6px.
+const PILL_FONT = { fontSize: 10, align: 'center' } as const;
+// No text measurer in a layer: a 10px digit advances about 6px. Only the pill's width is guessed;
+// the renderer centers the text in it on the glyphs' real advances.
 const PILL_CHAR_W = 6;
 const PILL_H = 14;
 const PILL_PAD_X = 4;
@@ -41,7 +42,10 @@ export function pillCommands(cx: number, cy: number, text: string, color: string
   const top = cy - PILL_H / 2;
   return [
     { kind: 'path', path: rectPath(left, top, w, PILL_H), fill: { paint: { kind: 'solid', color } } },
-    textCommandFromRuns(left + PILL_PAD_X, top + 2, [{ text, fill: { paint: { kind: 'solid', color: '#fff' } } }], PILL_FONT),
+    textCommandFromRuns(
+      left, top, [{ text, fill: { paint: { kind: 'solid', color: '#fff' } } }], PILL_FONT,
+      undefined, PILL_H, 'center', undefined, w,
+    ),
   ];
 }
 
