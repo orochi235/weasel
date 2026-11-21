@@ -162,7 +162,33 @@ describe('writing a Mermaid state diagram', () => {
 
   it('colors a [*] given a class in a transition', () => {
     expect(node('stateDiagram-v2\n  classDef go fill:#f00\n  [*]:::go --> A', '[start]').colors).toMatchObject({ fill: '#f00' });
-    expect(writeStateDiagram(graph({ nodes: [{ id: 's', outline: 'start', colors: { fill: '#f00' } }] })).warnings)
+    expect(writeStateDiagram(graph({ nodes: [{ id: 's', outline: 'start', colors: { fill: '#f00' } }, { id: 'a' }], edges: [{ from: 's', to: 'a' }] })).warnings)
       .toEqual(['Mermaid start and end states hold no colors here; they were dropped.']);
+  });
+});
+
+describe('writing start and end shapes a Mermaid state diagram cannot keep apart', () => {
+  const graph = (data: object) => ({ pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: { edges: [], ...data } as never }] });
+  const WARNING = 'Mermaid holds one start and one end per composite, a start only leaving it and an end only arriving; other start and end shapes were merged or dropped.';
+  const warnings = (data: object) => writeStateDiagram(graph(data)).warnings;
+
+  it('warns of a second start in one scope, which reads back merged with the first', () => {
+    const data = { nodes: [{ id: 's1', outline: 'start' }, { id: 's2', outline: 'start' }, { id: 'a' }, { id: 'b' }], edges: [{ from: 's1', to: 'a' }, { from: 's2', to: 'b' }] };
+    expect(warnings(data)).toContain(WARNING);
+    expect(page(writeStateDiagram(graph(data)).text).data.nodes.filter((n) => n.outline === 'start')).toHaveLength(1);
+  });
+
+  it('warns of a start a transition arrives at, an end one leaves, and one no transition names', () => {
+    expect(warnings({ nodes: [{ id: 's', outline: 'start' }, { id: 'x' }], edges: [{ from: 'x', to: 's' }] })).toContain(WARNING);
+    expect(warnings({ nodes: [{ id: 'e', outline: 'end' }, { id: 'x' }], edges: [{ from: 'e', to: 'x' }] })).toContain(WARNING);
+    expect(warnings({ nodes: [{ id: 's', outline: 'start' }, { id: 'x' }] })).toContain(WARNING);
+  });
+
+  it('stays quiet for one start and one end in each scope', () => {
+    expect(warnings({
+      nodes: [{ id: 's', outline: 'start' }, { id: 'e', outline: 'end' }, { id: 'x' }, { id: 's2', outline: 'start' }, { id: 'y' }],
+      edges: [{ from: 's', to: 'x' }, { from: 'x', to: 'e' }, { from: 's2', to: 'y' }],
+      containers: [{ id: 'C', role: 'container', members: ['s2', 'y'] }],
+    })).not.toContain(WARNING);
   });
 });

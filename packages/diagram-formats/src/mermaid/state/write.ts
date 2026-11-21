@@ -122,6 +122,22 @@ class StateWriter {
     return `${indent}${this.id(e.from)} --> ${this.id(e.to)}${label}`;
   }
 
+  /** Warns of start and end shapes `[*]` cannot keep apart: a scope reads one start and one end, a start only before
+   *  an arrow and an end only after one, and none that no transition names. */
+  pseudoWarnings(): void {
+    const seen = new Set<string>();
+    for (const n of this.out.page.data.nodes) {
+      if (!isPseudo(n)) continue;
+      const key = `${n.outline}:${this.scopeOf.get(n.id) ?? ''}`;
+      const written = this.out.edges.filter((e) => (e.from === n.id || e.to === n.id) && this.edgeScope(e) !== undefined);
+      const wrongWay = written.some((e) => (n.outline === 'start' ? e.to : e.from) === n.id);
+      if (seen.has(key) || wrongWay || written.length === 0) {
+        this.out.warnings.add('Mermaid holds one start and one end per composite, a start only leaving it and an end only arriving; other start and end shapes were merged or dropped.');
+      }
+      seen.add(key);
+    }
+  }
+
   noteLines(): void {
     for (const id of this.notes) {
       const joined = this.out.edges.filter((e) => e.from === id || e.to === id);
@@ -163,6 +179,7 @@ export function writeStateDiagram(doc: DiagramDocument, opts?: WriteOptions): Ex
   if (out.edges.some((e) => w.crossesScope(e))) {
     out.warnings.add('Mermaid joins a composite\'s [*] only to states inside it; transitions joining one to a state outside were dropped.');
   }
+  w.pseudoWarnings();
   w.noteLines();
   w.styles();
   return { text: `${w.lines.join('\n')}\n`, warnings: out.warnings.all() };
