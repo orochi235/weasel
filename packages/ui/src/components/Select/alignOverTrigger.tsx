@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 import { LONG_PRESS_MS, pastDragThreshold } from '@weasel-js/gestures';
 import { useKitSetting } from '@weasel-js/react';
+import { blockFrame, realRect } from '../../overlays/blockFrame';
 import s from './Select.module.css';
 
 export type Nudge = { offset: number; crossOffset: number };
@@ -80,17 +81,23 @@ export function AlignOverTrigger({
     const seat = trigger.getBoundingClientRect();
     const row = label.getBoundingClientRect();
     const shown = value.getBoundingClientRect();
+    // Measured in client px, applied in the px of the box the list is drawn in,
+    // which a `transform: scale()` or `zoom` above it makes differ.
+    const { scaleX, scaleY } = blockFrame(popover);
     // React Aria holds the list inside the viewport across the trigger but not
     // along it, and `offset` moves it along: the selected row sits on the
-    // trigger only as far as the rest of the list still fits on screen.
+    // trigger only as far as the rest of the list still fits on screen. A list
+    // placed in an overlay frame is held to the frame's part of the viewport.
+    const frame = popover.closest('[data-weasel-overlay-frame]');
+    const view = frame ? realRect(frame) : { top: 0, bottom: trigger.ownerDocument.documentElement.clientHeight };
     const over = shown.top + shown.height / 2 - seat.top - (row.top + row.height / 2 - box.top) - seat.height;
-    const viewHeight = trigger.ownerDocument.documentElement.clientHeight;
-    const lowest = viewHeight - EDGE - box.height - seat.bottom;
+    const lowest = view.bottom - EDGE * scaleY - box.height - seat.bottom;
+    const highest = view.top + EDGE * scaleY - seat.bottom;
     const next = {
-      offset: Math.max(EDGE - seat.bottom, Math.min(over, lowest)),
-      crossOffset: toEnd
+      offset: Math.max(highest, Math.min(over, lowest)) / scaleY,
+      crossOffset: (toEnd
         ? shown.right - seat.left - (row.right - box.left)
-        : shown.left - seat.left - (row.left - box.left),
+        : shown.left - seat.left - (row.left - box.left)) / scaleX,
     };
     if (Math.abs(next.offset - applied.offset) < 0.5 && Math.abs(next.crossOffset - applied.crossOffset) < 0.5)
       return;
