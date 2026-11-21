@@ -316,7 +316,9 @@ function HeldTokenPanel({
     const sections = new Map<TokenCategory, TokenEntry[]>();
     for (const token of tokens) {
       const category = categorize(token);
-      sections.set(category, [...(sections.get(category) ?? []), token]);
+      const section = sections.get(category);
+      if (section) section.push(token);
+      else sections.set(category, [token]);
     }
     return sections;
   }, [tokens, categorize]);
