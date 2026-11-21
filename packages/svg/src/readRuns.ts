@@ -2,7 +2,7 @@
 
 import { resolveScreenLength } from '@weasel-js/core';
 import { type StyledRun, type TextStyle } from '@weasel-js/text';
-import { holdsOnlyText, joinLines, type LineTracker, statesLines } from './tspanLines';
+import { holdsOnlyText, joinLines, LineTracker, statesLines } from './tspanLines';
 import { TextTurns, turnRuns, turnsOf } from './glyphTurns';
 import { type Piece, placeTspanRun, TextShifts } from './glyphShifts';
 import { type Moves, movesOf, NO_MOVES, raiseRuns, risesOver, TextMoves } from './glyphRises';
@@ -62,7 +62,7 @@ export function readRuns(
       const t = child.textContent ?? '';
       return t ? [{ tspan: null, run: { text: t, ...inheritedShift } }] : [];
     });
-    const shifts = new TextShifts(el, onWarn, pieces, textStyle);
+    const shifts = new TextShifts(el, onWarn, pieces, textStyle, lineOpenings(el, pieces));
     for (const { tspan: sp, run } of pieces) {
       if (!sp) {
         lead += shifts.place(run, runLines, textStyle);
@@ -84,6 +84,25 @@ export function readRuns(
   }
   if (!preservesSpace(el)) for (const line of runLines) collapseRunWhitespace(line);
   return { runs: joinLines(runLines, leading), lead };
+}
+
+/** For each of `pieces`, whether it opens a line, as `readRuns` walking them
+ *  in order will find: its `x` list has to be read before that walk. */
+function lineOpenings(el: Element, pieces: readonly Piece[]): boolean[] {
+  const quiet = (): void => {};
+  const tracker = new LineTracker(el, quiet);
+  const moves = new TextMoves(el, quiet);
+  let afterText = false;
+  return pieces.map(({ tspan, run }) => {
+    const glyphs = Array.from(run.text);
+    const inherited = moves.take(glyphs.length);
+    const from = tracker.baseline;
+    if (tspan) tracker.startsLine(tspan, afterText, { y: inherited.y[0], dy: inherited.dy[0] });
+    const opens = tracker.baseline !== from;
+    risesOver(glyphs, tspan ? movesOf(tspan, quiet) : NO_MOVES, inherited, tracker, tspan !== null);
+    if (run.text.trim() !== '') afterText = true;
+    return opens;
+  });
 }
 
 function readTspanRun(

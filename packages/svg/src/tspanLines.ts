@@ -85,6 +85,9 @@ export class LineTracker {
     this.at = this.lineY = readLength(text, 'y', 'y', 0, onWarn);
   }
 
+  /** The current line's baseline, in user units. */
+  get baseline(): number { return this.lineY; }
+
   /** How far the pen sits above the current line's baseline, in user units. */
   get rise(): number { return this.lineY - this.at; }
 

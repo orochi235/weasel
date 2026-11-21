@@ -178,6 +178,20 @@ describe('a per-glyph x list, where a loaded face measures the glyphs', () => {
     expect(spacing(node)).toEqual([['A', undefined], ['\nB', 28], ['A', undefined]]);
   });
 
+  it('reads a tspan x that stays on the line, and a y that does not move it, as spacing on that line', () => {
+    const { node, warnings } = text('<text font-family="inter" font-size="32" x="0 30 99" y="40">AB<tspan x="70" y="40">A</tspan></text>');
+    expect(warnings).toEqual([]);
+    expect(node.text).toBe('ABA');
+    expect(spacing(node)).toEqual([['A', 8], ['B', 18], ['A', undefined]]);
+  });
+
+  it('reads a lone tspan x on the line it shares as spacing, with no x list on the text', () => {
+    const { node, warnings } = text('<text font-family="inter" font-size="32" y="40">AB<tspan x="70">A</tspan></text>');
+    expect(warnings).toEqual([]);
+    expect(node.text).toBe('ABA');
+    expect(spacing(node)).toEqual([['A', undefined], ['B', 26], ['A', undefined]]);
+  });
+
   it('reads a tspan\'s own list on a line it opens, measured on that line', () => {
     const { node, warnings } = text('<text font-family="inter" font-size="32" x="0 30 99" y="40">AB<tspan x="0 30" y="80">BA</tspan></text>');
     expect(warnings).toEqual([]);
@@ -190,6 +204,11 @@ describe('a per-glyph x list with no face loaded', () => {
   it('is left unread on a text holding tspans, and says why', () => {
     const { warnings } = text('<text font-size="32" x="0 30 50">A<tspan fill="red">BA</tspan></text>');
     expect(warnings).toEqual([expect.stringMatching(/<text x="0 30 50"> positions each glyph; only the first value is read: no loaded face/)]);
+  });
+
+  it('says so where a lone tspan x on the line it shares is left unread', () => {
+    const { warnings } = text('<text font-size="32" y="40">AB<tspan x="70">A</tspan></text>');
+    expect(warnings).toEqual([expect.stringMatching(/<tspan x="70"> places a glyph on the line before it; it is not read: no loaded face/)]);
   });
 
   it('is left unread, and says so', () => {
