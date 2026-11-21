@@ -5,6 +5,7 @@ import f from '../Field/Field.module.css';
 import { TokenChip } from './TokenChip';
 import { useTokenDrag } from './tokenDrag';
 import { TokenEditor, TokenText } from './TokenEditor';
+import { useTokenDraft } from './tokenDraft';
 import { chipKey, useTokenFocus } from './tokenFocus';
 import s from './TokenField.module.css';
 import { useControlAccess, type HoldProps } from '../Disabled';
@@ -74,43 +75,14 @@ export function TokenField<T>({
   className, ...hold
 }: TokenFieldProps<T>) {
   const disabled = useControlAccess(hold).state !== 'enabled';
-  const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState<number | null>(null);
   const focus = useTokenFocus();
   const movable = reorder && !disabled;
   const removable = !disabled && value.length > minItems;
-  const full = value.length >= maxItems;
   const edit = (at: number): void => { if (!disabled && locked?.(at) !== true) setEditing(at); };
   const { drag, ref } = useTokenDrag(value, (next, at) => { onChange(next); focus.request(at); }, edit);
+  const { draft, full, commit, type } = useTokenDraft({ value, onChange, create, maxItems, focusChip: focus.request });
 
-  /** Adds a token for each text that makes one while there is room, and returns the rest. `focused` while the text
-   *  field keeps focus: filling the list disables the field, so focus moves to the last chip. */
-  const add = (texts: readonly string[], focused: boolean): string[] => {
-    const made: T[] = [];
-    const left: string[] = [];
-    for (const raw of texts) {
-      const text = raw.trim();
-      if (text === '') continue;
-      const token = value.length + made.length < maxItems ? create(text) : undefined;
-      if (token === undefined) left.push(text);
-      else made.push(token);
-    }
-    if (made.length === 0) return left;
-    onChange([...value, ...made]);
-    if (focused && value.length + made.length >= maxItems) focus.request(value.length + made.length - 1);
-    return left;
-  };
-  const commit = (focused: boolean): void => {
-    if (draft.trim() !== '' && !full) setDraft(add(draft.split(','), focused).join(', '));
-  };
-  // Pasted or composed text can hold commas, which end tokens as a typed one does.
-  const type = (text: string): void => {
-    if (!text.includes(',')) { setDraft(text); return; }
-    const parts = text.split(',');
-    const tail = parts.pop()!;
-    const left = add(parts, true);
-    setDraft(left.length === 0 ? tail : [...left, tail.trimStart()].join(', '));
-  };
   const remove = (at: number): void => {
     if (!removable) return;
     onChange(value.filter((_, i) => i !== at));
