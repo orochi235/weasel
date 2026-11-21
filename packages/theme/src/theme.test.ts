@@ -43,4 +43,20 @@ describe('defineTheme', () => {
   it('exposes the built-in theme with both modes', () => {
     expect(Object.keys(weaselTheme.axes.mode.values).sort()).toEqual(['dark', 'light']);
   });
+
+  it('refuses an axis whose default names none of its values, or its parent\'s', () => {
+    expect(() => defineTheme({ name: 'x', axes: { density: { default: 'cozy', values: { compact: {} } } } })).toThrow(
+      /axis "density" defaults to "cozy"/,
+    );
+    expect(() => defineTheme({ name: 'x', axes: { mode: { default: 'light', values: { dim: {} } } } })).not.toThrow();
+  });
+
+  it('refuses an axis name an attribute or selector cannot carry', () => {
+    expect(() => defineTheme({ name: 'x', axes: { 'my axis': { default: 'a', values: { a: {} } } } })).toThrow(/"my axis" cannot name an axis/);
+    expect(() => defineTheme({ name: 'x', axes: { 'a.b': { default: 'a', values: { a: {} } } } })).toThrow(/"a\.b" cannot name an axis/);
+  });
+
+  it('refuses a pin alpha outside 0 to 1', () => {
+    expect(() => defineTheme({ name: 'x', pins: { line: { value: '{surface}', alpha: 1.5 } } })).toThrow(/alpha 1\.5 is not a number from 0 to 1/);
+  });
 });

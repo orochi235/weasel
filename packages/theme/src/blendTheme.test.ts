@@ -32,6 +32,13 @@ describe('blendTheme', () => {
     expect(half['--wzl-control-h']).toBe(`${(at('compact') + at('roomy')) / 2}px`);
   });
 
+  it('mixes a bare 0 with a length in the length\'s unit, and not with a unitless number', () => {
+    const theme = defineTheme({ name: 'x', pins: { 'radius-sm': { by: 'mode', dark: '0', light: '8px' }, 'line-x': { by: 'mode', dark: '0', light: '1.5' } } });
+    const half = blendTheme(theme, { mode: { dark: 1, light: 1 } });
+    expect(half['--wzl-radius-sm']).toBe('4px');
+    expect((half as Readonly<Record<string, string>>)['--wzl-line-x']).toBe('0.75');
+  });
+
   it('leaves a token both modes agree on as written, and gives one that cannot mix the heaviest', () => {
     const half = blendTheme(weaselTheme, { mode: { dark: 0.4, light: 0.6 } });
     expect(half['--wzl-font-mono']).toBe(dark['--wzl-font-mono']);

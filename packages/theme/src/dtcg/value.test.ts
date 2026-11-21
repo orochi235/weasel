@@ -12,6 +12,13 @@ describe('serializeTokenValue', () => {
     );
   });
 
+  it('quotes and escapes a family holding a quote, and quotes one that is not an identifier', () => {
+    const stack = ["Joe's Hand", '3Dumb', 'a, b', 'serif'];
+    const css = serializeTokenValue('fontFamily', stack);
+    expect(css).toBe("'Joe\\'s Hand', '3Dumb', 'a, b', serif");
+    expect(parseTokenValue('fontFamily', css)).toEqual(stack);
+  });
+
   it('joins any other list with commas', () => {
     expect(serializeTokenValue('string', ['a', 'b'])).toBe('a, b');
   });

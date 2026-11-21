@@ -67,6 +67,9 @@ export function expandVars(value: string, tokens: Readonly<Record<string, string
   }
 }
 
+/** A math function, which in a shadow computes a length; a color is never one. */
+const MATH = /^(?:calc|min|max|clamp|round|mod|rem|abs|sign)\(/i;
+
 /** A `box-shadow` value's layers, first (topmost) first; `none` has none. Lengths must be px or a bare 0. */
 export function parseBoxShadow(value: string): BoxShadow[] {
   if (value.trim() === 'none') return [];
@@ -75,10 +78,11 @@ export function parseBoxShadow(value: string): BoxShadow[] {
     const lengths: number[] = [];
     const color: string[] = [];
     for (const word of splitTop(layer, /\s/)) {
-      if (word === 'inset') { inset = true; continue; }
+      if (word.toLowerCase() === 'inset') { inset = true; continue; }
       const n = readCssNumber(word);
-      if (n && (n.unit === 'px' || (n.unit === '' && n.value === 0))) { lengths.push(n.value); continue; }
-      if (n) throw new Error(`parseBoxShadow: ${word} is not a px length`);
+      const unit = n?.unit.toLowerCase();
+      if (n && (unit === 'px' || (unit === '' && n.value === 0))) { lengths.push(n.value); continue; }
+      if (n || MATH.test(word)) throw new Error(`parseBoxShadow: ${word} is not a px length`);
       color.push(word);
     }
     if (lengths.length < 2 || lengths.length > 4) throw new Error(`parseBoxShadow: cannot read "${layer}"`);

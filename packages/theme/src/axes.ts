@@ -35,6 +35,7 @@ const RESERVED_AXES = ['theme', 'variant'];
 export function axisNameProblem(name: string): string | undefined {
   if (name === '__proto__') return '"__proto__" cannot name an axis';
   if (RESERVED_AXES.includes(name)) return `"${name}" is reserved and cannot name an axis: its data-wzl-${name} attribute is the theme's own`;
+  if (!/^[A-Za-z0-9_-]+$/.test(name)) return `"${name}" cannot name an axis: its data-wzl-* attribute takes only letters, digits, "-", and "_"`;
   return undefined;
 }
 
@@ -78,8 +79,11 @@ export function enumerateAxisChoices(axes: AxisDefs): AxisChoice[] {
 export function axisScheme(axes: AxisDefs, axis: string, value: string): string | undefined {
   const def = getOwn(axes, axis);
   if (!def) return undefined;
-  if (!Object.hasOwn(def.values, value)) return axisScheme(axes, axis, def.default);
-  return def.values[value].scheme ?? (Object.values(def.values).some((v) => v.scheme) ? 'normal' : undefined);
+  const values = def.values ?? {};
+  if (!Object.hasOwn(values, value)) {
+    return value !== def.default && typeof def.default === 'string' ? axisScheme(axes, axis, def.default) : undefined;
+  }
+  return values[value]!.scheme ?? (Object.values(values).some((v) => v.scheme) ? 'normal' : undefined);
 }
 
 /** A theme name or axis value as its `data-wzl-*` attribute holds it: NUL as U+FFFD, which is how CSS reads one, escaped or not. */

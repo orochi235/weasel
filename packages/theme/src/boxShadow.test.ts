@@ -46,3 +46,13 @@ describe('parseBoxShadow', () => {
     expect(() => parseBoxShadow('0 1em 2px #000')).toThrow(/px/);
   });
 });
+
+describe('parseBoxShadow on lengths it cannot read', () => {
+  it('throws on a math function rather than reading it as color', () => {
+    expect(() => parseBoxShadow('0 calc(1px * 2) 4px rgba(0,0,0,.5)')).toThrow(/calc\(1px \* 2\) is not a px length/);
+  });
+
+  it('reads px and inset in any case, as CSS does', () => {
+    expect(parseBoxShadow('INSET 2PX 1Px red')).toEqual([{ inset: true, x: 2, y: 1, blur: 0, spread: 0, color: 'red' }]);
+  });
+});

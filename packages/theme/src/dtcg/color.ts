@@ -10,6 +10,7 @@ import { tryParseColor } from '@weasel-js/paint';
  * side writes, which the browser resolves.
  */
 export function withAlpha(color: string, alpha: number): string {
+  alpha = clampAlpha(alpha);
   const rgba = parseRgba(color.trim());
   if (!rgba) return mixAlpha(color.trim(), alpha);
   const [r, g, b, a] = rgba;
@@ -18,11 +19,12 @@ export function withAlpha(color: string, alpha: number): string {
 
 /** `color` at `alpha` as a `color-mix()` with transparent, for a color only the browser can resolve. */
 export function mixAlpha(color: string, alpha: number): string {
-  return `color-mix(in srgb, ${color} ${round(alpha * 100, 4)}%, transparent)`;
+  return `color-mix(in srgb, ${color} ${round(clampAlpha(alpha) * 100, 4)}%, transparent)`;
 }
 
 /** A resolved color with its alpha replaced by `alpha`, as `rgb(from c r g b / alpha)` computes it. */
 export function atAlpha(color: string, alpha: number): string {
+  alpha = clampAlpha(alpha);
   const rgba = parseRgba(color.trim());
   if (!rgba) return `rgb(from ${color.trim()} r g b / ${alpha})`;
   const [r, g, b] = rgba;
@@ -30,6 +32,9 @@ export function atAlpha(color: string, alpha: number): string {
 }
 
 type Rgba = [number, number, number, number];
+
+/** An alpha held to 0–1, as `rgba()` holds one; `color-mix()` refuses a share past 100%. */
+const clampAlpha = (alpha: number): number => Math.min(1, Math.max(0, alpha));
 
 function round(n: number, places: number): number {
   return Number(n.toFixed(places));

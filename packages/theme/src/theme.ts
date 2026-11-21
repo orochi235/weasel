@@ -1,9 +1,10 @@
-import { isPlainObject, setOwn } from '@weasel-js/registry';
-import { axisNameProblem, isByAxis, type AxisDefs, type Varying } from './axes.ts';
+import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
+import { axisNameProblem, isByAxis, mergeAxes, type AxisDefs, type Varying } from './axes.ts';
 import type { SerializableColorList } from './colorListItems.ts';
 import type { PinObject, PinValue, ThemeDefinition } from './definition.ts';
-import { isSafeTokenName, unsafeTokenName, type RawToken, type TokenValue } from './dtcg/types.ts';
+import { isAlpha, isSafeTokenName, unsafeTokenName, type RawToken, type TokenValue } from './dtcg/types.ts';
 import { BAKED_THEMES } from './generated/themes.ts';
+import { themeAxes } from './resolveTheme.ts';
 
 /**
  * A theme ready to resolve: its axes and its tokens, each plain or varying by
@@ -34,6 +35,7 @@ function toRaw(v: Varying<PinValue>): Varying<RawToken> {
     return out as Varying<RawToken>;
   }
   const obj: PinObject = isPinObject(v) ? v : { value: v as TokenValue };
+  if (obj.alpha !== undefined && !isAlpha(obj.alpha)) throw new Error(`alpha ${String(obj.alpha)} is not a number from 0 to 1`);
   const raw = { type: obj.type ?? 'unknown', value: obj.value, alpha: obj.alpha, description: obj.description };
   return obj.scope === undefined ? raw : { ...raw, scope: obj.scope };
 }
@@ -65,9 +67,14 @@ export function defineTheme(input: ThemeInput): Theme {
       `Theme "${input.name}" has ${rules.join(', ')}, which need deriving. Bake it with \`bake\` from @weasel-js/theme/engine.`,
     );
   }
-  for (const axis of Object.keys(input.axes ?? {})) {
+  const base = input.extends === undefined ? weaselTheme : input.extends;
+  const all = mergeAxes(base ? themeAxes(base) : {}, input.axes ?? {});
+  for (const [axis, def] of Object.entries(input.axes ?? {})) {
     const problem = axisNameProblem(axis);
     if (problem) throw new Error(`Theme "${input.name}": ${problem}`);
+    if (!Object.hasOwn(getOwn(all, axis)?.values ?? {}, def.default)) {
+      throw new Error(`Theme "${input.name}": axis "${axis}" defaults to "${def.default}", which is not one of its values`);
+    }
   }
   const tokens: Record<string, Varying<RawToken>> = {};
   for (const [name, v] of Object.entries({ ...input.components, ...input.pins })) {
@@ -76,7 +83,7 @@ export function defineTheme(input: ThemeInput): Theme {
   }
   return {
     name: input.name,
-    extends: input.extends === undefined ? weaselTheme : input.extends,
+    extends: base,
     axes: input.axes ?? {},
     tokens,
     ...(input.tints !== undefined ? { tints: input.tints } : {}),

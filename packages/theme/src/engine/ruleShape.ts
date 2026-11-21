@@ -1,5 +1,6 @@
 import { isPlainObject, isFiniteNumber } from '@weasel-js/registry';
 import { isByAxis } from '../axes.ts';
+import { isAlpha } from '../dtcg/types.ts';
 
 const DIRS = ['lighter', 'darker', 'away'];
 
@@ -28,7 +29,7 @@ export function ruleProblem(r: Readonly<Record<string, unknown>>): string | unde
   if ('value' in r) return isTokenValue(r.value) ? undefined : 'value must be a string, a number, or a list of those';
   if ('ref' in r) {
     if (!isString(r.ref)) return 'ref must name a token';
-    return r.alpha === undefined || isFiniteNumber(r.alpha) ? undefined : 'alpha must be a number';
+    return r.alpha === undefined || isAlpha(r.alpha) ? undefined : 'alpha must be a number from 0 to 1';
   }
   if ('step' in r) return isString(r.ramp) && everyLeaf(r.step, isString) ? undefined : 'a step rule needs a ramp name and a step name';
   if ('from' in r) {

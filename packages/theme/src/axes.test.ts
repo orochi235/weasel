@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { enumerateAxisChoices, fullAxisChoice, isByAxis, pick, axisChoiceKey, type AxisDefs } from './axes';
+import { axisScheme, enumerateAxisChoices, fullAxisChoice, isByAxis, pick, axisChoiceKey, type AxisDefs } from './axes';
 import { overrideKey } from './dtcg/axesExtension';
 import type { LightnessRampDef, ThemeDefinition } from './definition';
 
@@ -81,5 +81,18 @@ describe('axes', () => {
     expect(pick(def.semantics!.fg, fullAxisChoice(AXES, { mode: 'dark', density: 'compact' }))).toEqual({
       ok: true, value: { ramp: 'gray', step: '800' },
     });
+  });
+});
+
+describe('axisScheme on axes loaded malformed', () => {
+  it('answers no scheme when the default names none of the values', () => {
+    const axes = { density: { default: 'cozy', values: { compact: { scheme: 'dark' } } } } as AxisDefs;
+    expect(axisScheme(axes, 'density', 'cozy')).toBeUndefined();
+    expect(axisScheme(axes, 'density', 'roomy')).toBeUndefined();
+  });
+
+  it('answers no scheme for an axis with no values', () => {
+    const axes = { density: { default: 'x' } } as unknown as AxisDefs;
+    expect(axisScheme(axes, 'density', 'x')).toBeUndefined();
   });
 });

@@ -3237,3 +3237,16 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (my call, audit round 54): a group or layer `composite` string that is no `CompositeOp` (`'multiply'`,
   or an inherited name such as `'constructor'`) throws a `RangeError` naming it and listing the operators, rather
   than being drawn as `source-over`. It still ends the frame, as the bare `TypeError` it replaces did.
+## Audit round fifty-eight (2026-11-20): theme, part one
+
+- 2026-11-20 (the fixer's call): `defineTheme` and `fromDtcg` throw on an axis whose default names none of its values,
+  its parent's included, as `derive` reports one. A DTCG document with no base and no `dark` mode defaults its mode to
+  its first. `axisScheme` answers no scheme for such an axis rather than recursing. Loading it and letting the default
+  fall back to the first value was the alternative.
+- 2026-11-20 (the fixer's call): an axis name takes only ASCII letters, digits, `-`, and `_`, the characters its
+  `data-wzl-*` attribute and that attribute's selector both carry unescaped; `defineTheme` and `fromDtcg` throw on
+  another, and `derive` reports it. `fromDtcg` refuses `theme`, `variant`, and `__proto__` as `defineTheme` does.
+  Escaping the name in the selector was the alternative, but `setAttribute` refuses a space whatever the selector does.
+- 2026-11-20 (the fixer's call): a token's alpha is a number from 0 to 1. `fromDtcg` and `defineTheme` throw on
+  another, `derive` reports one on a `ref` rule, and a hand-built theme's is held to that range wherever it is
+  written, so `rgba()` and `color-mix()` agree. Clamping on read instead was the alternative.

@@ -2,13 +2,43 @@ import { cssColorNotation, rgbaToHex } from '@weasel-js/paint';
 import type { TokenValue } from './types.ts';
 import { isPlainObject, isFiniteNumber } from '@weasel-js/registry';
 
-/**
- * Quote family names containing whitespace; leave everything else bare.
- * Generic keywords (`sans-serif`) and hyphen-prefixed identifiers
- * (`-apple-system`) break if quoted, and neither contains a space.
- */
+/** A family CSS reads bare: one identifier. Generic keywords (`sans-serif`) and `-apple-system` break if quoted, and all are one. */
+const BARE_FAMILY = /^-?[A-Za-z_][\w-]*$/;
+
+/** Quote, escaped, each family name that is not a bare identifier; leave the rest bare. */
 function fontStack(value: readonly (string | number)[]): string {
-  return value.map((f) => (typeof f === 'string' && /\s/.test(f) ? `'${f}'` : String(f))).join(', ');
+  return value
+    .map((f) => (typeof f === 'number' || BARE_FAMILY.test(f) ? String(f) : `'${String(f).replace(/[\\']/g, '\\$&').replace(/[\n\r\f]/g, (c) => `\\${c.charCodeAt(0).toString(16)} `)}'`))
+    .join(', ');
+}
+
+const QUOTED_FAMILY = /^(['"])((?:\\[\s\S]|(?!\1)[^\\])*)\1$/;
+
+/** A font stack's families, split at commas outside a name quoted from its start, a name quoted whole unescaped. */
+function readFontStack(text: string): string[] {
+  const pieces: string[] = [];
+  let cur = '';
+  let quote: string | undefined;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]!;
+    cur += c;
+    if (quote) {
+      if (c === '\\') cur += text[++i] ?? '';
+      else if (c === quote) quote = undefined;
+    } else if ((c === "'" || c === '"') && cur.trim() === c) quote = c;
+    else if (c === ',') {
+      pieces.push(cur.slice(0, -1));
+      cur = '';
+    }
+  }
+  pieces.push(cur);
+  return pieces
+    .map((p) => {
+      const f = p.trim();
+      const m = QUOTED_FAMILY.exec(f);
+      return m ? m[2]!.replace(/\\([0-9a-f]{1,6} ?|[\s\S])/gi, (_, e: string) => (/^[0-9a-f]/i.test(e) ? String.fromCodePoint(Number.parseInt(e, 16)) : e)) : f;
+    })
+    .filter((f) => f !== '');
 }
 
 /**
@@ -40,10 +70,7 @@ export function parseTokenValue(type: string, text: string): TokenValue {
     return parts.length === 4 && parts.every((n) => Number.isFinite(n)) ? parts : raw;
   }
   if (type === 'fontFamily') {
-    const families = raw
-      .split(',')
-      .map((f) => f.trim().replace(/^(['"])(.*)\1$/s, '$2').trim())
-      .filter((f) => f !== '');
+    const families = readFontStack(raw);
     return families.length > 0 ? families : raw;
   }
   return raw;

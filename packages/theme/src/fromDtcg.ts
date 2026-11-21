@@ -1,5 +1,5 @@
 import { isPlainObject, setOwn, getOwn } from '@weasel-js/registry';
-import { mergeAxes, type AxisDef, type AxisDefs, type AxisChoice, type Varying } from './axes';
+import { axisNameProblem, mergeAxes, type AxisDef, type AxisDefs, type AxisChoice, type Varying } from './axes';
 import type { SerializableColorList } from './colorListItems';
 import { AXES_EXT, overrideKey, RAMPS_EXT, TINTS_EXT, type DtcgAxesExtension } from './dtcg/axesExtension';
 import { flattenTokens } from './dtcg/flatten';
@@ -38,6 +38,8 @@ function readAxesExtension(raw: unknown): DtcgAxesExtension | undefined {
   for (const [name, def] of Object.entries(raw.axes)) {
     const ok = isRecord(def) && typeof def.default === 'string' && isRecord(def.values) && Object.values(def.values).every(isRecord);
     if (!ok) throw new Error(`DTCG "$extensions.${AXES_EXT}" axis "${name}" needs a string "default" and an object of "values"`);
+    const problem = axisNameProblem(name);
+    if (problem) throw new Error(`DTCG "$extensions.${AXES_EXT}": ${problem}`);
   }
   const varies = isRecord(raw.varies) ? raw.varies : {};
   for (const [name, axes] of Object.entries(varies)) {
@@ -99,7 +101,7 @@ export function fromDtcg(doc: DtcgDocument): Theme {
   };
 
   const inherited = base ? themeAxes(base).mode?.default : undefined;
-  const defaultMode = typeof doc.defaultMode === 'string' ? doc.defaultMode : (ext?.axes.mode?.default ?? inherited ?? 'dark');
+  const defaultMode = typeof doc.defaultMode === 'string' ? doc.defaultMode : (ext?.axes.mode?.default ?? inherited ?? (modeNames.includes('dark') || modeNames.length === 0 ? 'dark' : modeNames[0]!));
   const modeAxis: AxisDef = {
     default: defaultMode,
     values: Object.fromEntries(modeNames.map((m) => [m, getOwn(ext?.axes.mode?.values, m) ?? {}])),
@@ -111,6 +113,11 @@ export function fromDtcg(doc: DtcgDocument): Theme {
   }
   if (modeNames.length > 0) axes.mode ??= modeAxis;
   const all = mergeAxes(base ? themeAxes(base) : {}, axes);
+  for (const [name, def] of Object.entries(axes)) {
+    if (!Object.hasOwn(getOwn(all, name)?.values ?? {}, def.default)) {
+      throw new Error(`DTCG document "${doc.name}": axis "${name}" defaults to "${def.default}", which is not one of its values`);
+    }
+  }
 
   /** Rebuild a token's tree over the axes it varies by, one override layer per leaf. */
   const nest = (name: string, vary: readonly string[], combo: AxisChoice): Varying<RawToken> | undefined => {
