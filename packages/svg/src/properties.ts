@@ -276,13 +276,21 @@ function readClipRef(v: string): { id: string } | 'none' | undefined {
   return url && url.rest === '' ? { id: url.id } : undefined;
 }
 
-/** `'unread'` says the reader is the property's whole grammar: what it cannot read, CSS cannot either. */
-type Invalid = 'unread' | ((v: string) => boolean);
+/** `'unread'` says the reader is the property's whole grammar: what it cannot read, CSS cannot either.
+ *  `'plain'` says so of every value but a function, such as `calc()`, which the reader may not know. */
+type Invalid = 'unread' | 'plain' | ((v: string) => boolean);
 
 const invalidOf = <T>(read: PropertyDef<T>['read'], invalid?: Invalid): { invalid?: (v: string) => boolean } => {
-  if (invalid === 'unread') return { invalid: (v) => read(v.toLowerCase(), () => {}, '', DEFAULT_FONT_SIZE) === undefined };
+  const unread = (v: string): boolean => read(v.toLowerCase(), () => {}, '', DEFAULT_FONT_SIZE) === undefined;
+  if (invalid === 'unread') return { invalid: unread };
+  if (invalid === 'plain') return { invalid: (v) => !v.includes('(') && unread(v) };
   return invalid ? { invalid } : {};
 };
+
+/** The `<geometry-box>` keywords `clip-path` takes, which name no clip this parser reads. */
+const GEOMETRY_BOXES: ReadonlySet<string> = new Set([
+  'border-box', 'padding-box', 'content-box', 'margin-box', 'fill-box', 'stroke-box', 'view-box',
+]);
 const inherited = <T>(read: PropertyDef<T>['read'], invalid?: Invalid): PropertyDef<T> & { inherits: true } =>
   ({ inherits: true, read, ...invalidOf(read, invalid) });
 const own = <T>(read: PropertyDef<T>['read'], invalid?: Invalid): PropertyDef<T> & { inherits: false } =>
@@ -297,18 +305,18 @@ export const PROPERTIES = {
   'fill-opacity': inherited(readRatio, 'unread'),
   'fill-rule': inherited(keyword('nonzero', 'evenodd'), 'unread'),
   'stroke': inherited(readPaint, unreadColor(readPaint)),
-  'stroke-width': inherited(readStrokeWidth, isNegative),
+  'stroke-width': inherited(readStrokeWidth, 'plain'),
   'stroke-opacity': inherited(readRatio, 'unread'),
   'stroke-linecap': inherited(readLinecap, 'unread'),
   'stroke-linejoin': inherited(readLinejoin, 'unread'),
-  'stroke-dasharray': inherited(readDashArray),
-  'stroke-dashoffset': inherited(worldLength),
+  'stroke-dasharray': inherited(readDashArray, 'plain'),
+  'stroke-dashoffset': inherited(worldLength, 'plain'),
   'stroke-miterlimit': inherited(readMiterLimit, 'unread'),
-  'marker-start': inherited(readMarkerRef),
-  'marker-mid': inherited(readMarkerRef),
-  'marker-end': inherited(readMarkerRef),
+  'marker-start': inherited(readMarkerRef, 'plain'),
+  'marker-mid': inherited(readMarkerRef, 'plain'),
+  'marker-end': inherited(readMarkerRef, 'plain'),
   'color': inherited(readColor, unreadColor(readColor)),
-  'font-size': inherited(readFontSize, isNegative),
+  'font-size': inherited(readFontSize, 'plain'),
   'font-family': inherited((v) => (v.length > 0 ? v : undefined)),
   'font-weight': inherited(readFontWeight, 'unread'),
   'font-style': inherited(readFontStyle),
@@ -317,7 +325,7 @@ export const PROPERTIES = {
     'auto', 'alphabetic', 'ideographic', 'middle', 'central', 'mathematical', 'hanging', 'text-top', 'text-bottom',
     'use-script', 'no-change', 'reset-size', 'text-before-edge', 'text-after-edge',
   ), 'unread'),
-  'letter-spacing': inherited(readLetterSpacing),
+  'letter-spacing': inherited(readLetterSpacing, 'plain'),
   'text-decoration': inherited(readDecoration),
   'direction': inherited(keyword('ltr', 'rtl'), 'unread'),
   'text-transform': inherited(readTextTransform),
@@ -327,7 +335,7 @@ export const PROPERTIES = {
   'stop-opacity': own(readRatio, 'unread'),
   'baseline-shift': own(readBaselineShift),
   'vector-effect': own(keyword('none', 'non-scaling-stroke'), 'unread'),
-  'clip-path': own(readClipRef),
+  'clip-path': own(readClipRef, (v) => !v.includes('(') && !GEOMETRY_BOXES.has(v.toLowerCase()) && readClipRef(v) === undefined),
   'clip-rule': inherited(keyword('nonzero', 'evenodd'), 'unread'),
   'display': own(keyword('none', 'inline')),
   'visibility': inherited(keyword('visible', 'hidden', 'collapse'), 'unread'),

@@ -382,6 +382,17 @@ describe('declarations CSS rejects', () => {
     expect(fill).toEqual({ kind: 'solid', color: '#00ff00' });
   });
 
+  it('a length, dash, or url() CSS rejects leaves the presentation attribute standing', () => {
+    const { nodes } = parseSvg(`<svg ${NS}><path d="M0 0H10" stroke="#000" stroke-width="5" stroke-dasharray="2 1"`
+      + ` stroke-dashoffset="1" marker-end="url(#arrow)" style="stroke-width: thick; stroke-dasharray: -1 2;`
+      + ` stroke-dashoffset: far; marker-end: arrow-head"/>`
+      + `<text font-size="20" letter-spacing="2" style="font-size: big; letter-spacing: wide">t</text></svg>`);
+    const stroke = (nodes[0] as { stroke?: Record<string, unknown> }).stroke;
+    expect(stroke).toMatchObject({ width: 5, dash: [2, 1], dashOffset: 1, markerEnd: 'arrow' });
+    const text = nodes[1] as { style?: { fontSize?: unknown; letterSpacing?: unknown } };
+    expect(text.style).toMatchObject({ fontSize: 20, letterSpacing: 2 });
+  });
+
   it('a value this parser only cannot read still wins the cascade', () => {
     const get = els('<svg><rect id="r" display="none" style="display: block"/></svg>');
     expect(ownProp(get('r'), 'display')).toBe('block');
