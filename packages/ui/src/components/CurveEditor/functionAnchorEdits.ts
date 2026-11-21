@@ -161,9 +161,15 @@ export function pressOnCurve(
 export function withEmptyInsert(
   state: FunctionLayerState, model: ModelPoint, range: ModelRange, rules: AnchorRules,
 ): FunctionLayerState | null {
-  const p = insertPoint(model, range, rules);
-  const index = emptyInsertIndex(state.points, p.x, rules);
+  const at = insertPoint(model, range, rules);
+  const index = emptyInsertIndex(state.points, at.x, rules);
   if (index === null) return null;
+  const gap = anchorGap(range, rules);
+  const left = state.points[index - 1];
+  // On a strict layer a click on an anchor's x adds its point just right of it, and none where there is no room.
+  const p = gap > 0 && left && at.x < left.x + gap ? { ...at, x: left.x + gap } : at;
+  const right = state.points[index];
+  if (gap > 0 && (p.x > layerXBounds(range, rules)[1] || (right && p.x > right.x - gap))) return null;
   return { ...state, points: withPointAt(state.points, index, p), activeIndex: null };
 }
 

@@ -82,3 +82,20 @@ describe('an anchor added by a press on an ordered curve', () => {
     expect(next.points[index].x).toBeGreaterThanOrEqual(0.5);
   });
 });
+
+describe('an anchor added by a click in empty space on a strict layer', () => {
+  const range = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+  const rules = anchorRulesFor({ constrain: 'function' });
+
+  it('keeps off the x of the anchor it was clicked above', () => {
+    const next = withEmptyInsert(state([0, 0.5, 1]), { x: 0.5, y: 0.9 }, range, rules)!;
+    const xs = next.points.map((p) => p.x);
+    expect(xs).toHaveLength(4);
+    expect(xs[2]).toBeGreaterThan(0.5);
+    expect(xs[2]).toBeLessThan(xs[3]);
+  });
+
+  it('is not added past an anchor already at the end of the range', () => {
+    expect(withEmptyInsert(state([0, 1]), { x: 1.2, y: 0.9 }, range, rules)).toBeNull();
+  });
+});
