@@ -4,12 +4,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { TokenField } from './TokenField';
 import { renderWithIcons } from '../../testing/withIcons';
 
-function Controlled({ initial, onChange, reorder }: { initial: string[]; onChange?: (v: string[]) => void; reorder?: boolean }) {
+function Controlled({ initial, onChange, reorder, maxItems }: { initial: string[]; onChange?: (v: string[]) => void; reorder?: boolean; maxItems?: number }) {
   const [value, setValue] = useState(initial);
   return (
     <TokenField
       aria-label="Tag"
       reorder={reorder}
+      maxItems={maxItems}
       value={value}
       onChange={(next) => {
         setValue(next);
@@ -180,4 +181,15 @@ describe('TokenField', () => {
     expect((field() as HTMLInputElement).disabled).toBe(true);
     expect(screen.queryByRole('button', { name: 'Remove a' })).toBeNull();
   });
+  it('leaves Backspace to the text when the caret is at its start', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Controlled initial={['a']} onChange={onChange} />);
+    act(() => field().focus());
+    fireEvent.change(field(), { target: { value: 'bc' } });
+    (field() as HTMLInputElement).setSelectionRange(0, 0);
+    expect(fireEvent.keyDown(field(), { key: 'Backspace' })).toBe(true);
+    expect(document.activeElement).toBe(field());
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
 });

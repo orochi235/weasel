@@ -105,7 +105,7 @@ export function TokenField<T>({
     if (SEPARATORS.has(e.key) && (e.key !== 'Enter' || draft.trim() !== '')) {
       e.preventDefault();
       if (draft.trim() !== '') commit();
-    } else if (value.length > 0 && caretAtStart && (e.key === 'Backspace' || arrowDir(e.key, { orientation: 'horizontal', dir: inlineDirection(e.currentTarget) }) === -1)) {
+    } else if (value.length > 0 && caretAtStart && ((e.key === 'Backspace' && draft === '') || arrowDir(e.key, { orientation: 'horizontal', dir: inlineDirection(e.currentTarget) }) === -1)) {
       e.preventDefault();
       focus.request(value.length - 1);
     }
