@@ -67,6 +67,7 @@ function ids(instrument: Instrument, c: TrialChromeContext = ctx): string[] {
 describe('builtinContributions', () => {
   it('always contributes the trial actions', () => {
     expect(ids({ ...withCanvas, undo: false }, ctxWithZoom(null))).toEqual([
+      'fps',
       'clone',
       'reset',
       'snapshot',
@@ -97,6 +98,7 @@ describe('builtinContributions', () => {
   it('contributes the expand toggle only inside a lightbox, ahead of the trial actions', () => {
     expect(ids(bare)).not.toContain('expand');
     expect(ids({ ...withCanvas, undo: false }, { ...ctx, zoom: null, canExpand: true })).toEqual([
+      'fps',
       'expand',
       'clone',
       'reset',
@@ -146,6 +148,10 @@ describe('builtinContributions', () => {
 
   it('contributes no viewport controls when the view is not 2D', () => {
     expect(ids(withCanvas, ctxWithZoom(null))).not.toContain('zoom-in');
+  });
+
+  it('meters a canvas’s frames whether or not its view reports a zoom', () => {
+    expect(ids(withCanvas, ctxWithZoom(null))).toContain('fps');
   });
 
   it('copies the settings as JSON from the title bar, when there are settings', () => {
