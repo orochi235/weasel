@@ -8,6 +8,7 @@ import {
   type KeyframeLayerState,
 } from './createKeyframeLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
+import { withHandleAt } from './keyframeEdits';
 import { KeyframeLayer } from './KeyframeLayer';
 import { handleSize } from '../../handles';
 
@@ -259,6 +260,16 @@ describe('createKeyframeLayer — segments', () => {
     render(<Harness initial={{ keys, selectedSegment: 1 }} onCommit={onCommit} />);
     fireEvent.keyDown(document.querySelector('[data-handle-index="0"]')!, { key: 'ArrowRight' });
     expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  it('keeps a handle\'s y when it is dragged on a flat segment', () => {
+    const state = {
+      ...keyframeLayerState([{ t: 0, value: 5 }, { t: 1000, value: 5, easing: { bezier: [0.2, 0.9, 0.3, 1] as const } }]),
+      selectedSegment: 1,
+      drag: { kind: 'handle' as const, segment: 1, bezier: [0.2, 0.9, 0.3, 1] as const },
+    };
+    const next = withHandleAt(state, 1, 0, { x: 500, y: 7 });
+    expect(next.drag).toEqual({ kind: 'handle', segment: 1, bezier: [0.5, 0.9, 0.3, 1] });
   });
 
   it('raises a handle on a falling segment with ArrowUp', () => {

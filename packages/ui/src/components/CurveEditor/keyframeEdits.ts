@@ -136,10 +136,10 @@ export function withHandleAt(
   const d = state.drag;
   if (!a || !b || d?.kind !== 'handle') return state;
   const xf = b.t === a.t ? 0 : Math.min(1, Math.max(0, (model.x - a.t) / (b.t - a.t)));
-  const yf = b.value === a.value ? 0 : (model.y - a.value) / (b.value - a.value);
   const bezier = [...d.bezier] as [number, number, number, number];
   bezier[handle * 2] = xf;
-  bezier[handle * 2 + 1] = yf;
+  // On a flat segment the pointer says nothing about a handle's y, so it keeps the one it has.
+  if (b.value !== a.value) bezier[handle * 2 + 1] = (model.y - a.value) / (b.value - a.value);
   return { ...state, drag: { kind: 'handle', segment, bezier } };
 }
 
