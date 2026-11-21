@@ -3230,3 +3230,9 @@ Calls the lanes made without a ruling:
   a caller who passed it as an increment now gets that number as the half-height.
 - 2026-11-20: A badge shape's repeat counts (`sparkler` and `starburst` `points`, `receipt` `teeth`) stop at 256, and a
   `perforated` badge's `holePitch` at no less than 1px. Both bounds are picked to keep a render finite, not ruled.
+## Audit round fifty-eight (2026-11-20): theme, part one
+
+- 2026-11-20 (the fixer's call): `defineTheme` and `fromDtcg` throw on an axis whose default names none of its values,
+  its parent's included, as `derive` reports one. A DTCG document with no base and no `dark` mode defaults its mode to
+  its first. `axisScheme` answers no scheme for such an axis rather than recursing. Loading it and letting the default
+  fall back to the first value was the alternative.

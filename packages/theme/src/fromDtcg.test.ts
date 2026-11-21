@@ -77,4 +77,18 @@ describe('fromDtcg', () => {
     const theme = fromDtcg({ ...doc, $extensions: { 'com.example.other': { anything: true } } });
     expect(theme).toEqual(fromDtcg(doc));
   });
+
+  it('defaults mode to the only mode a document with no base declares', () => {
+    const theme = fromDtcg({ name: 'one', extends: null, modes: { light: { color: { $type: 'color', surface: { $value: '#ffffff' } } } } });
+    expect(theme.axes.mode!.default).toBe('light');
+    expect(resolveTheme(theme)['--wzl-surface']).toBe('#ffffff');
+  });
+
+  it('refuses an axis default that names none of its values', () => {
+    const modes = { light: { color: { $type: 'color', surface: { $value: '#ffffff' } } } };
+    expect(() => fromDtcg({ name: 'one', extends: null, defaultMode: 'foo', modes })).toThrow(/axis "mode" defaults to "foo"/);
+    expect(() =>
+      fromDtcg({ name: 'one', modes, $extensions: { 'com.weasel.axes': { axes: { density: { default: 'cozy', values: { compact: {} } } } } } }),
+    ).toThrow(/axis "density" defaults to "cozy"/);
+  });
 });

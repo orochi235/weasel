@@ -43,4 +43,11 @@ describe('defineTheme', () => {
   it('exposes the built-in theme with both modes', () => {
     expect(Object.keys(weaselTheme.axes.mode.values).sort()).toEqual(['dark', 'light']);
   });
+
+  it('refuses an axis whose default names none of its values, or its parent\'s', () => {
+    expect(() => defineTheme({ name: 'x', axes: { density: { default: 'cozy', values: { compact: {} } } } })).toThrow(
+      /axis "density" defaults to "cozy"/,
+    );
+    expect(() => defineTheme({ name: 'x', axes: { mode: { default: 'light', values: { dim: {} } } } })).not.toThrow();
+  });
 });
