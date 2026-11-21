@@ -30,7 +30,7 @@ describe('the default drag ghost', () => {
     document.body.innerHTML = '<div id="src">row</div>';
     dragFrom(document.getElementById('src')!);
     const ghost = document.body.lastElementChild as HTMLElement;
-    expect(ghost.id).toBe('src');
+    expect(ghost.hasAttribute('id')).toBe(false);
     expect(ghost).not.toBe(document.getElementById('src'));
     expect(ghost.style.transform).toContain('translate(100px, 60px)');
     firePointer('pointerup', 100, 60);

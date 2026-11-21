@@ -99,3 +99,16 @@ describe('useDragHandle press', () => {
     firePointer('pointerup', 100, 0);
   });
 });
+
+describe('the default drag ghost', () => {
+  it('carries none of its source tree\'s ids', () => {
+    document.body.innerHTML = '<div id="src"><label id="lbl">row</label></div>';
+    const { result } = renderHook(() => useDragHandle(() => ({ kind: 'row', ids: ['a'] })));
+    press(result.current, document.getElementById('src')!);
+    firePointer('pointermove', 100, 60);
+    expect(document.querySelectorAll('#src')).toHaveLength(1);
+    expect(document.querySelectorAll('#lbl')).toHaveLength(1);
+    firePointer('pointerup', 100, 60);
+  });
+
+});

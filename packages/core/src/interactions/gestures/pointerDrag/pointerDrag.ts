@@ -50,6 +50,7 @@ function zoneAccepts(zone: DropZone, kind: string): boolean {
 function defaultGhost(source: HTMLElement, payload: DragPayload): HTMLElement {
   const rect = source.getBoundingClientRect();
   const clone = source.cloneNode(true) as HTMLElement;
+  for (const el of [clone, ...clone.querySelectorAll('[id]')]) el.removeAttribute('id');
   clone.style.position = 'fixed';
   clone.style.left = '0';
   clone.style.top = '0';
