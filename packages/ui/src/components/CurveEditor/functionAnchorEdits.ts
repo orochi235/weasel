@@ -38,6 +38,12 @@ export function clampToModelRange(p: ModelPoint, m: ModelRange): ModelPoint {
   };
 }
 
+/** The x range a layer's anchors stay in, low to high: its `xClamp`, else the plot's. */
+function layerXBounds(range: ModelRange, rules: AnchorRules): [number, number] {
+  const [a, b] = rules.xClamp ?? [range.xMin, range.xMax];
+  return [Math.min(a, b), Math.max(a, b)];
+}
+
 /** The state with the anchor at `index` moved toward `model`, as far as the rules let it go, and made active. */
 export function withAnchorMoved(
   state: FunctionLayerState,
@@ -48,8 +54,8 @@ export function withAnchorMoved(
 ): FunctionLayerState {
   const points = state.points;
   if (index < 0 || index >= points.length) return state;
-  const xMin = rules.xClamp ? rules.xClamp[0] : range.xMin;
-  const xMax = rules.xClamp ? rules.xClamp[1] : range.xMax;
+  // Anchors sit in ascending x whichever way the axis runs, so the bounds are taken low to high.
+  const [xLo, xHi] = layerXBounds(range, rules);
   let nx = model.x;
   let ny = model.y;
   const isEndpoint = index === 0 || index === points.length - 1;
@@ -58,22 +64,16 @@ export function withAnchorMoved(
     nx = points[index].x;
     ny = points[index].y;
   } else if (rules.endpoints === 'pinned-x' && isEndpoint) {
-    nx = index === 0 ? xMin : xMax;
+    nx = index === 0 ? xLo : xHi;
   } else if (rules.ordered) {
-    const epsilon = rules.strict ? (xMax - xMin) / 1000 : 0;
-    const left = index > 0 ? points[index - 1].x + epsilon : xMin;
-    const right = index < points.length - 1 ? points[index + 1].x - epsilon : xMax;
+    const epsilon = rules.strict ? (xHi - xLo) / 1000 : 0;
+    const left = index > 0 ? points[index - 1].x + epsilon : xLo;
+    const right = index < points.length - 1 ? points[index + 1].x - epsilon : xHi;
     nx = Math.max(left, Math.min(right, nx));
   }
 
-  // Always clamp x to the layer's own range (so free-mode
-  // interior anchors of a sub-range layer can't escape it).
-  // Normalize bounds for inverted ranges.
-  {
-    const lo = Math.min(xMin, xMax);
-    const hi = Math.max(xMin, xMax);
-    nx = Math.max(lo, Math.min(hi, nx));
-  }
+  // A sub-range layer's free interior anchors stay inside it too.
+  nx = Math.max(xLo, Math.min(xHi, nx));
   const clamped = clampToModelRange({ x: nx, y: ny }, range);
   const next = points.slice();
   next[index] = { ...points[index], x: clamped.x, y: clamped.y };
@@ -100,7 +100,7 @@ function crowdedNeighbor(
   rules: AnchorRules,
 ): number | null {
   if (!rules.ordered) return null;
-  const epsilon = rules.strict ? (range.xMax - range.xMin) / 1000 : 0;
+  const epsilon = rules.strict ? Math.abs(range.xMax - range.xMin) / 1000 : 0;
   const left = insertIndex > 0 ? points[insertIndex - 1] : null;
   const right = insertIndex < points.length ? points[insertIndex] : null;
   if (left && Math.abs(x - left.x) < epsilon * 2) return insertIndex - 1;
