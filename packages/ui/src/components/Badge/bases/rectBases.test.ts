@@ -15,6 +15,14 @@ function measured(sampler: BaseSampler, boxW: number, boxH: number, n = 4000): n
 }
 
 describe('the rounded-rect base', () => {
+  it('gives every point a unit normal at full pinch, where its end edges collapse to points', () => {
+    const sampler = RoundedRect.build({ erosion: 0, pinch: 1 }, 40, 40);
+    for (let i = 0; i < 400; i++) {
+      const p = sampler.perimeterAt((i / 400) * sampler.totalCss);
+      expect(Math.hypot(p.nx, p.ny)).toBeCloseTo(1, 6);
+    }
+  });
+
   it('measures elliptical corners by their arc length', () => {
     const sampler = RoundedRect.build({ eccentricity: 3, erosion: 0.5 }, 120, 24);
     expect(sampler.totalCss).toBeCloseTo(281.38, 1);
