@@ -29,14 +29,26 @@ const COLUMNS: readonly DataGridColumn<LayerRow>[] = [
   { id: 'ms', header: 'CPU ms', sortable: false, className: s.figure, render: (r) => ms(r.ms) },
 ];
 
+/** A `get-frame` answer, and the stretch of the fps overlay being on that it was read in. */
+interface FrameRead { span: number; value: SerializedValue; error: string | null }
+
 export function FrameView({ client, rootId }: DevtoolsViewProps): ReactElement {
   const state = useRootQuery(client, rootId, [], () => client.request(rootId, { type: 'get-state' }));
   const fps = state.data?.overlays.fps === true;
-  const [frame, setFrame] = useState<SerializedValue>(null);
+  // A new span each time the overlay turns on or off, so a frame read before is never shown as the current one.
+  const [span, setSpan] = useState({ fps, id: 0 });
+  if (span.fps !== fps) setSpan({ fps, id: span.id + 1 });
+  const [read, setRead] = useState<FrameRead | null>(null);
   usePoll(state.refresh, POLL_MS, true);
   usePoll(() => {
-    client.request(rootId, { type: 'get-frame' }).then(setFrame, () => {});
+    const at = span.id;
+    client.request(rootId, { type: 'get-frame' }).then(
+      (value) => setRead({ span: at, value, error: null }),
+      (err: Error) => setRead({ span: at, value: null, error: err.message }),
+    );
   }, POLL_MS, fps);
+  const current = read?.span === span.id ? read : null;
+  const frame = current?.value ?? null;
 
   const setFps = (on: boolean): void => {
     client.request(rootId, { type: 'set-overlays', overlays: { fps: on } }).then(state.refresh, state.refresh);
@@ -55,6 +67,8 @@ export function FrameView({ client, rootId }: DevtoolsViewProps): ReactElement {
           </DetailList>
           <DataGrid className={s.layers} rows={frame.layers.map((l) => ({ ...l }))} columns={COLUMNS} empty="No layers painted." />
         </>
+      ) : current?.error ? (
+        <p className={s.note}>{current.error}</p>
       ) : frame === null ? (
         <p className={s.note}>No paint measured yet.</p>
       ) : (
