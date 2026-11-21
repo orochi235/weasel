@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { parseSvg } from './parse';
 import type { SvgPathNode, SvgTextNode } from './types';
 import { serializeSvg } from './serialize';
-import { registerMarker, type MarkerEntry, type PolygonPath } from '@weasel-js/core';
+import { pathFromD, registerMarker, type MarkerEntry, type PolygonPath } from '@weasel-js/core';
 
 const wrap = (body: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">${body}</svg>`;
@@ -196,5 +196,27 @@ describe('ingesting a marker the kit has no key for', () => {
       expect(back.fill).toEqual(m.fill);
       expect(back.orient).toEqual(m.orient);
     }
+  });
+});
+
+describe('a document marker sharing a kit key', () => {
+  it("draws the document's own def, not the kit's", () => {
+    const { nodes } = parseSvg(wrap(
+      '<defs><marker id="arrow" viewBox="0 0 10 10" markerWidth="6" markerHeight="6"><circle cx="5" cy="5" r="5"/></marker></defs>'
+      + '<line x1="0" y1="0" x2="50" y2="0" stroke="#000" marker-end="url(#arrow)"/>',
+    ));
+    const end = (nodes[0] as SvgPathNode).stroke?.markerEnd;
+    expect(end).toBeDefined();
+    expect(end).not.toBe('arrow');
+  });
+
+  it("reads this package's own export of a kit marker back as the kit marker", () => {
+    const line = {
+      kind: 'path', path: pathFromD('M0 0 L50 0'), fill: { kind: 'none' },
+      stroke: { paint: { kind: 'solid', color: '#000' }, width: 2, markerEnd: 'arrow' },
+    } as SvgPathNode;
+    const svg = serializeSvg([line]);
+    expect(svg).toContain('<marker id="arrow"');
+    expect((parseSvg(svg).nodes[0] as SvgPathNode).stroke?.markerEnd).toBe('arrow');
   });
 });

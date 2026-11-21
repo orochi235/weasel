@@ -61,7 +61,7 @@ export const STROKE_STYLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox
   <polyline points="10,5 15,15 20,5" fill="none" stroke="#000" stroke-width="3" stroke-linejoin="miter" stroke-miterlimit="2"/>
 </svg>`;
 
-export const MARKER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120">
+export const MARKER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wzl="urn:weasel-js:svg" width="200" height="120">
   <defs>
     <marker id="arrow" markerUnits="strokeWidth" markerWidth="8" markerHeight="8"
       refX="0" refY="0" orient="auto" overflow="visible">

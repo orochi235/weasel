@@ -58,6 +58,8 @@ export function ingestMarkers(
     if (id && !defs.has(id)) defs.set(id, all[i]);
   }
   const minted = new Map<string, MarkerEntry | null>();
+  // A document this package wrote names a kit marker by its key; any other document's def of that id is its own.
+  const ours = declaresWeaselNamespace(root.ownerDocument?.documentElement ?? root);
 
   const resolve = (
     stroke: { markerStart?: unknown; markerMid?: unknown; markerEnd?: unknown },
@@ -68,8 +70,9 @@ export function ingestMarkers(
     const s = userScaleOf(stroke);
     for (const [field, role, attr] of MARKER_FIELDS) {
       const id = stroke[field];
-      if (typeof id !== 'string' || getMarker(id) !== undefined) continue;
+      if (typeof id !== 'string') continue;
       const el = defs.get(id);
+      if (getMarker(id) !== undefined && (!el || (ours && !keyedMarkerRef(el)))) continue;
       if (!el) {
         onWarn(`${attr} references #${id}, which is neither a kit marker nor defined in the document`);
         delete stroke[field];
@@ -121,6 +124,10 @@ function weaselAttr(el: Element, name: string): string | null {
 /** The reference a def this package wrote under an id other than its key
  *  stands for, read off the private namespace: its key, and its size when it
  *  has one. */
+function declaresWeaselNamespace(el: Element): boolean {
+  return Array.from(el.attributes).some((a) => a.name.startsWith('xmlns:') && a.value === WEASEL_NS);
+}
+
 function keyedMarkerRef(el: Element): { key: string; size?: ScreenLength } | undefined {
   const key = weaselAttr(el, 'key');
   if (!key) return undefined;
