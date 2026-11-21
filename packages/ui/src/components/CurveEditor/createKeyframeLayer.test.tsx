@@ -272,6 +272,16 @@ describe('createKeyframeLayer — segments', () => {
     expect(next.drag).toEqual({ kind: 'handle', segment: 1, bezier: [0.5, 0.9, 0.3, 1] });
   });
 
+  it('draws the selected segment\'s handles from a key in flight', () => {
+    render(<Harness initial={{ selectedSegment: 1 }} />);
+    const stem = () => document.querySelectorAll('line:not([data-plot-element])')[1];
+    // Drag the key at (500, 10), plot (100, 0), down to value 5.
+    down(100, 0);
+    move(100, 50);
+    expect(Number(stem().getAttribute('y1'))).toBe(50);
+    up(100, 50);
+  });
+
   it('raises a handle on a falling segment with ArrowUp', () => {
     const keys = [KEYS[0], KEYS[1], { ...KEYS[2], easing: { bezier: [0.4, 0.5, 0.6, 0.5] as const } }];
     render(<Harness initial={{ keys, selectedSegment: 2 }} />);
