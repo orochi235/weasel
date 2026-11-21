@@ -13,7 +13,7 @@ const clips = (overflow: string): boolean => overflow !== '' && overflow !== 'vi
 function containsPaint(style: CSSStyleDeclaration): boolean {
   const contain = style.contain.split(/\s+/);
   if (contain.some((v) => v === 'paint' || v === 'content' || v === 'strict')) return true;
-  return style.contentVisibility === 'auto' || style.contentVisibility === 'hidden';
+  return style.contentVisibility === 'auto';
 }
 
 /** Whether an element displayed as `display` has a box its `overflow` applies to: `contents` has none, and a
@@ -126,8 +126,8 @@ function boxParent(el: Element): Element | null {
 
 /**
  * The part of `box` — `el`'s own, in viewport px — that every ancestor
- * clipping its overflow, or containing its paint, leaves showing. Each axis is cut only by the ancestors
- * that clip that axis. Where nothing is left the box comes back with a zero
+ * clipping its overflow, or containing its paint, leaves showing; nothing under `content-visibility: hidden`.
+ * Each axis is cut only by the ancestors that clip that axis. Where nothing is left the box comes back with a zero
  * width or height.
  *
  * Follows ancestors in the flattened tree, through slots and out of shadow roots, up to the first one in the top
@@ -144,6 +144,9 @@ export function clipToAncestors(el: Element, box: Box): Box {
   for (let a = inTopLayer(el) ? null : boxParent(el); a; a = boxParent(a)) {
     const style = getComputedStyle(a);
     const boxed = hasClipBox(style.display);
+    if (boxed && style.contentVisibility === 'hidden') {
+      return { left: out.left, top: out.top, width: 0, height: 0 };
+    }
     const contained = boxed && containsPaint(style);
     const own = boxed && !overflowToViewport(a, style);
     // A scroll container cuts to its padding box; `overflow: clip` and paint containment to the clip edge.

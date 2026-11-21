@@ -127,6 +127,12 @@ describe('clipToAncestors', () => {
     expect(clipToAncestors(tile, box)).toEqual({ left: 150, top: 120, width: 100, height: 40 });
   });
 
+  it('leaves nothing showing under an ancestor that skips its contents', () => {
+    const { tile } = nest('content-visibility: hidden', '');
+    const shown = clipToAncestors(tile, box);
+    expect([shown.width, shown.height]).toEqual([0, 0]);
+  });
+
   it('skips an ancestor whose overflow applies to no box', () => {
     for (const display of ['contents', 'inline']) {
       const { inner, tile } = nest('', `display: ${display}; ${BOTH}`);
