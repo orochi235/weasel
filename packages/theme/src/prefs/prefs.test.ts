@@ -255,3 +255,14 @@ describe('a token a theme resolves at only some selections', () => {
     expect(leaf.auto?.value).toEqual({ $by: 'axis.mode', $in: { light: 'inset 1px 1px #ffffff', dark: 'none' } });
   });
 });
+
+describe('a dimension token at a bare 0', () => {
+  it('is a number in px, so an edit pins a length', () => {
+    const leaf = LEAVES.get('titlebar.titlebar-inset') as PrefNumber;
+    expect(leaf.unit).toEqual({ scale: 1, suffix: 'px' });
+    expect(leaf.default).toBe(0);
+    const store = open(SCHEMA);
+    store.set('titlebar.titlebar-inset', 4);
+    expect(themePrefsPins(store)['titlebar-inset']).toBe('4px');
+  });
+});
