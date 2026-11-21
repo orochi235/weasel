@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { DIAGRAM_THEMES, type DataContainer, type DataEdge, type DataNode, type DiagramData } from '@weasel-js/diagram';
+import { type DataContainer, type DataEdge, type DataNode, type DiagramData } from '@weasel-js/diagram';
 import type { DiagramDocument } from '../document';
 import { DIAGRAM_DRAW_XML } from './format';
 import { asGraph } from '../testing/asGraph';
 
-const THEME = DIAGRAM_THEMES.paper!;
 
 const xml = (cells: string): string =>
   `<mxfile><diagram id="p" name="P"><mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>${cells}</root></mxGraphModel></diagram></mxfile>`;
@@ -24,7 +23,7 @@ const region = (data: DiagramData, id: string): DataContainer => data.containers
 const doc = (data: DiagramData): DiagramDocument => ({ pages: [{ kind: 'graph', id: 'p', width: 800, height: 600, data }] });
 
 async function roundTrip(data: DiagramData) {
-  const written = DIAGRAM_DRAW_XML.write!(doc(data), { theme: THEME });
+  const written = DIAGRAM_DRAW_XML.write!(doc(data));
   const read = await Promise.resolve(DIAGRAM_DRAW_XML.read!(written.text));
   return { text: written.text, writeWarnings: written.warnings, data: asGraph(read.document.pages[0]!).data };
 }
@@ -103,7 +102,7 @@ describe('draw-style XML clusters', () => {
 
 describe('draw-style XML routers', () => {
   it('warns that an obstacle-avoiding connector is written orthogonal', () => {
-    const { warnings } = DIAGRAM_DRAW_XML.write!(doc({ nodes: TWO, edges: [{ id: 'e', from: 'a', to: 'b', router: 'avoid' }] }), { theme: THEME });
+    const { warnings } = DIAGRAM_DRAW_XML.write!(doc({ nodes: TWO, edges: [{ id: 'e', from: 'a', to: 'b', router: 'avoid' }] }));
     expect(warnings).toContain('Connectors routed around shapes were written as orthogonal connectors.');
   });
 });
@@ -129,7 +128,7 @@ describe('draw-style XML fonts', () => {
   it('writes a heavy weight as bold and a regular one as not', () => {
     const write = (s: object) => DIAGRAM_DRAW_XML.write!(doc({
       nodes: [{ id: 'n', at: { x: 0, y: 0 }, rows: [{ kind: 'label', text: 'T', style: s }] }], edges: [],
-    }), { theme: THEME }).text;
+    })).text;
     expect(style(write({ weight: 700 }))).toContain('fontStyle=1;');
     expect(style(write({ bold: true, weight: 400 }))).not.toContain('fontStyle');
   });
@@ -137,7 +136,7 @@ describe('draw-style XML fonts', () => {
   it('writes a header row\'s font', () => {
     const { text } = DIAGRAM_DRAW_XML.write!(doc({
       nodes: [{ id: 'n', at: { x: 0, y: 0 }, rows: [{ kind: 'header', text: 'H', style: { fontSize: 16, bold: true } }] }], edges: [],
-    }), { theme: THEME });
+    }));
     expect(style(text)).toContain('fontSize=16;');
     expect(style(text)).toContain('fontStyle=1;');
   });
@@ -147,7 +146,7 @@ describe('draw-style XML fonts', () => {
       nodes: [{ id: 'n', at: { x: 0, y: 0 }, rows: [
         { kind: 'label', text: 'T', style: { fontSize: 16 } }, { kind: 'label', text: 'U', style: { fontSize: 10 } },
       ] }], edges: [],
-    }), { theme: THEME });
+    }));
     expect(warnings).toContain('Text rows styled apart within one shape were written in its first row\'s style.');
   });
 });
