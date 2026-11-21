@@ -87,7 +87,15 @@ export interface BrowserDepsOptions {
  */
 export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: BrowserDepsOptions): string[] {
   const aliases = weaselAliases(repoRoot);
-  const workspace = new Set(workspaceEntries(repoRoot).map(({ name }) => name));
+  const packages = workspaceEntries(repoRoot);
+  const workspace = new Set(packages.map(({ name }) => name));
+  // A package holding its own copy of a dependency is named for vite as `pkg > dep`: a bare `dep`
+  // pre-bundles the root's copy, which can be another major (font's opentype.js 2 beside a tool's 1).
+  const listed = (specifier: string, file: string) => {
+    const owner = packages.find(({ dir }) => file.startsWith(dir + '/'));
+    const nested = owner && existsSync(join(owner.dir, 'node_modules', packageOf(specifier)));
+    return nested ? `${owner.name} > ${specifier}` : specifier;
+  };
   const ownedElsewhere = (pkg: string) =>
     workspace.has(pkg) || BUILTINS.has(pkg) || pkg === 'vitest' || pkg.startsWith('@vitest/');
 
@@ -129,7 +137,7 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(listed(specifier, file));
     }
   }
   return [...found].sort();
