@@ -5,7 +5,8 @@ import { catalogUnit } from '@weasel-js/quantity';
 import { trimNumber } from '@weasel-js/geom';
 import { type PrefGroup, prefHoldsValue, prefLeaves, prefValueAt, isPrefScope, type PrefScope, type PrefOverridesLookup, type PrefSelection, type PrefEnum, type PrefLeaf, type PrefNumber, resolvePrefUnit } from '@weasel-js/prefs-schema';
 import { prefScopeOptionValue, prefOverridesLookup } from '@weasel-js/prefs-schema/internal';
-import { prefSelectors } from './splitCheck';
+import { admittedSelectors, prefSelectors } from './splitCheck';
+import { unsetHeldOf } from './snapshot';
 import { compositeKey, isFiniteNumber } from '@weasel-js/registry';
 
 /** How {@link prefsCss} names and writes things. */
@@ -96,7 +97,7 @@ function toldApart(held: unknown, optionsOf: (selector: string) => readonly stri
  * The store's values as CSS custom properties.
  *
  * The first block sets every leaf on `root`, a split one at the member the
- * selectors' defaults name, so a page that sets no attribute still has a
+ * selectors name with nothing stored (an auto one at its `auto.value`), so a page that sets no attribute still has a
  * value for each. A block follows for each choice of options some value tells
  * apart, matched by an attribute per selector on that same element; a selector
  * is written under each of its own options too. Every block is inside
@@ -115,7 +116,12 @@ export function prefsCss(store: PrefsCssSource, options: PrefsCssOptions = {}): 
   const attribute = options.attribute ?? ((selector: string): string => `data-${kebab(selector)}`);
   const leaves = new Map([...prefLeaves(store.schema)].filter(([, leaf]) => prefHoldsValue(leaf)));
   const selectors = prefSelectors(leaves);
-  const defaults = Object.fromEntries([...selectors.keys()].map((path) => [path, leaves.get(path)!.default as string]));
+  const admitted = admittedSelectors(store.schema);
+  const defaults = Object.fromEntries([...selectors.keys()].map((path) => {
+    const leaf = leaves.get(path)!;
+    const held = unsetHeldOf({ selectors, admitted }, leaf);
+    return [path, typeof held === 'string' ? held : leaf.default as string];
+  }));
   const base = store.values({ at: defaults });
 
   const blocks = new Map<string, { under: Told['under']; lines: string[] }>();
