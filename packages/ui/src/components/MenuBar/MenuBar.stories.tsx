@@ -29,7 +29,7 @@ const SCHEMA: PrefGroup = pref.group('', {
     history: pref.group('', { undo: pref.action('edit.undo'), redo: pref.action('edit.redo') }),
     clip: pref.group('', { cut: pref.action('edit.cut'), copy: pref.action('edit.copy') }),
   }, { as: 'menu' }),
-  zoom: { ...pref.number('Zoom', 100, { description: 'A leaf between menus, drawn as a bar draws it.' }), readout: true },
+  zoom: { ...pref.number('Zoom', 100, { description: 'A leaf beside the menus, drawn after the titles as a bar draws it.' }), readout: true },
   view: {
     ...pref.group('View', {
       grid: pref.boolean('Grid', true),
@@ -52,7 +52,7 @@ function AppMenuBar(args: Partial<MenuBarProps>) {
   );
 }
 
-/** File, Edit and View as titles, with a readout between Edit and View. File and View declare access letters,
+/** File, Edit and View as titles, with a readout after them. File and View declare access letters,
  *  drawn underlined; Edit declares none. Press a title and drag to a row to run it, or walk the titles with the
  *  arrow keys. */
 export const FileEditView: Story = { render: (args) => <AppMenuBar {...args} /> };

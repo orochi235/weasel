@@ -3264,3 +3264,8 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): `moveLayers` throws when the move's `parentId` names no layer in the tree, or names a
   moved layer or one inside it, where it had dropped the moved layers from the result. Returning the tree unchanged
   was the alternative.
+
+## Audit round fifty-eight (2026-11-20): MenuBar
+
+- 2026-11-20: A press on a disabled `MenuBar` title while another title's menu is open closes that menu, as a press
+  anywhere off it does. The pointer moving onto a disabled title leaves the open menu as it is.

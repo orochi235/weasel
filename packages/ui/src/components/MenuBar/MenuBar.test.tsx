@@ -83,6 +83,14 @@ describe('MenuBar', () => {
     expect(rowNames()).toEqual(['Undo']);
   });
 
+  it('switches to another title’s menu on a touch tap, whose pointerenter comes just before its press', () => {
+    const { file, edit } = setup();
+    fireEvent.pointerDown(file);
+    fireEvent.pointerEnter(edit, { pointerType: 'touch' });
+    fireEvent.pointerDown(edit, { pointerType: 'touch' });
+    expect(screen.getByRole('menu').getAttribute('aria-labelledby')).toBe(edit.id);
+  });
+
   it('runs the row a press on a title is released over', () => {
     const { file } = setup();
     fireEvent.pointerDown(file);
@@ -317,6 +325,43 @@ describe('MenuBar conditions', () => {
     rerender(tree(false));
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Before' }));
+  });
+
+  const MIXED: PrefGroup = pref.group('', {
+    on: pref.boolean('On', false),
+    file: { ...pref.group('File', { new: pref.action('file.new') }, { as: 'menu' }) },
+    edit: { ...pref.group('Edit', { undo: pref.action('edit.undo') }, { as: 'menu' }), enableIf: { path: 'on' } },
+    view: pref.group('View', { undo: { ...pref.action('edit.undo'), showIf: { path: 'on' } } }, { as: 'menu' }),
+  });
+  /** File's menu open by press, with focus first on Before. */
+  const openFile = () => {
+    render(
+      <ActionsProvider>
+        <RegisterActions actions={ACTIONS} />
+        <button type="button">Before</button>
+        <MenuBar schema={MIXED} values={{ on: false }} />
+      </ActionsProvider>,
+    );
+    act(() => screen.getByRole('button', { name: 'Before' }).focus());
+    const file = screen.getByRole('menuitem', { name: 'File' });
+    fireEvent.pointerDown(file);
+    expect(screen.getByRole('menu')).toBeDefined();
+    return file;
+  };
+
+  it('closes an open menu when a disabled title is pressed', () => {
+    const file = openFile();
+    fireEvent.pointerDown(screen.getByRole('menuitem', { name: 'Edit' }));
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(file.getAttribute('aria-expanded')).not.toBe('true');
+  });
+
+  it('keeps focus in the bar when the pointer moves from an open menu onto a title with no rows', () => {
+    openFile();
+    const view = screen.getByRole('menuitem', { name: 'View' });
+    fireEvent.pointerEnter(view);
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(view);
   });
 
   it('closes an open menu whose title becomes disabled', () => {

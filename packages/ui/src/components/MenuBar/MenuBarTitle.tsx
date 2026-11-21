@@ -32,7 +32,8 @@ export function MenuBarTitle(props: {
       // The menu takes focus as it opens; the press must not move it back to the title.
       onMouseDown={(e) => e.preventDefault()}
       onPointerDown={(e) => { if (isPrimaryPress(e)) props.onPress(); }}
-      onPointerEnter={(e) => props.onEnter((e.buttons & 1) === 1)}
+      // A touch fires pointerenter just before its press, which then toggles the menu the enter opened.
+      onPointerEnter={(e) => { if (e.pointerType !== 'touch') props.onEnter((e.buttons & 1) === 1); }}
       onClick={(e) => { if (e.detail === 0) props.onActivate(); }}
       onKeyDown={props.onKey}
     >
