@@ -35,20 +35,14 @@ export function useActionStates(items: readonly ActionItem[]): ActionState[] {
   };
   // The snapshot is what the chrome shows, so a notice that changes none of
   // it costs no render.
-  const states = (): string => items.map((item) => {
-    const now = read(item);
-    return `${now.disabled}/${now.active}/${now.disabledReason ?? ''}`;
-  }).join();
+  const key = (state: ActionState): string => `${state.disabled}/${state.active}/${state.disabledReason ?? ''}`;
+  const states = (): string => items.map((item) => key(read(item))).join();
   useSyncExternalStore(depReg?.subscribe ?? noSubscribe, states, states);
 
   const shown = items.map(read);
   const [, recheck] = useReducer((n: number) => n + 1, 0);
   useLayoutEffect(() => {
-    const stale = items.some((item, i) => {
-      const now = read(item);
-      return now.disabled !== shown[i]!.disabled || now.active !== shown[i]!.active;
-    });
-    if (stale) recheck();
+    if (states() !== shown.map(key).join()) recheck();
   });
   return shown;
 }
