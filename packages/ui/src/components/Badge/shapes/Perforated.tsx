@@ -10,6 +10,8 @@ export interface BadgePerforatedShapeParams {
 }
 
 const DEFAULTS: Required<BadgePerforatedShapeParams> = { holeRadius: 3.5, holePitch: 11 };
+/** The closest holes sit, in CSS px, so a tiny pitch cannot mint a hole per fraction of a pixel. */
+const MIN_HOLE_PITCH = 1;
 
 function PerforatedComponent({ variant, focused, params }: {
   variant: 'outline' | 'solid' | 'subtle';
@@ -24,8 +26,9 @@ function PerforatedComponent({ variant, focused, params }: {
   // Convert CSS-px hole sizing into viewBox units so holes look circular on either axis.
   const rx = (cfg.holeRadius / box.width) * 100;
   const ry = (cfg.holeRadius / box.height) * 100;
-  const nH = Math.max(2, Math.round(box.width / cfg.holePitch));
-  const nV = Math.max(2, Math.round(box.height / cfg.holePitch));
+  const pitch = Math.max(MIN_HOLE_PITCH, cfg.holePitch);
+  const nH = Math.max(2, Math.round(box.width / pitch));
+  const nV = Math.max(2, Math.round(box.height / pitch));
 
   const notches: { cx: number; cy: number }[] = [];
   for (let i = 0; i < nH; i++) {
