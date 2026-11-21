@@ -20,6 +20,7 @@ import { AlignOverTrigger, NO_NUDGE, type Press } from './alignOverTrigger';
 import { FieldFoot, fieldRootClass, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { useRacField } from '../Field/racField';
+import { shows } from '../Field/fieldSemantics';
 import f from '../Field/Field.module.css';
 import listbox from './listbox.module.css';
 import s from './Select.module.css';
@@ -162,7 +163,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const { probe, pick } = useHeldPick(SelectStateContext, triggerRef);
   const [nudge, setNudge] = useState(NO_NUDGE);
   const sized = useFieldSizeClass(size, className);
-  const { id: triggerId, ...field } = useRacField({ id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': racHeld['aria-describedby'], invalid, required, labeled: label !== undefined });
+  const { id: triggerId, ...field } = useRacField({ id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': racHeld['aria-describedby'], invalid, required, labeled: shows(label) });
 
   return hold.wrap(
     <RACSelect
@@ -181,7 +182,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
       className={selectClass({ orientation, width, variant, indicator, className: sized })}
     >
       {anchor}{probe}
-      {label !== undefined && <Label className={f.label}>{label}</Label>}
+      {shows(label) && <Label className={f.label}>{label}</Label>}
       <TriggerTooltip
         content={tooltipContent({ tooltip, shortcut, ariaLabel: rest['aria-label'], label })}
         disabled={!hold.access.reachable || hold.access.reason !== undefined}

@@ -7,6 +7,7 @@ import { useRacHold } from '../Disabled/racHold';
 import type { ControlSizeProps } from '../ControlSize';
 import { useFieldSizeClass } from '../Field/fieldSize';
 import { useRacField } from '../Field/racField';
+import { shows } from '../Field/fieldSemantics';
 import f from '../Field/Field.module.css';
 import s from './TextArea.module.css';
 
@@ -34,10 +35,10 @@ export const TextArea = forwardRef(function TextArea(props: TextAreaProps, ref: 
   const hold = useRacHold(props);
   const { label, orientation, description, errorMessage, placeholder, mixed, rows = 4, className, size, invalid, required, ...textFieldProps } = hold.rest;
   const sized = useFieldSizeClass(size, className);
-  const field = useRacField({ id: textFieldProps.id, 'aria-label': textFieldProps['aria-label'], 'aria-labelledby': textFieldProps['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], invalid, required, labeled: label !== undefined });
+  const field = useRacField({ id: textFieldProps.id, 'aria-label': textFieldProps['aria-label'], 'aria-labelledby': textFieldProps['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], invalid, required, labeled: shows(label) });
   return hold.wrap(
     <TextField {...textFieldProps} {...hold.rac} {...field} className={fieldRootClass({ orientation, className: sized })}>
-      {label !== undefined && <Label className={f.label}>{label}</Label>}
+      {shows(label) && <Label className={f.label}>{label}</Label>}
       <div className={`${f.frame} ${s.frame}`}>
         <RACTextArea ref={ref} placeholder={mixed ? MIXED_HINT : placeholder} rows={rows} />
       </div>

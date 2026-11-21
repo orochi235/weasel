@@ -53,6 +53,14 @@ describe('Field', () => {
     expect(screen.getByRole('slider')).not.toHaveAttribute('aria-invalid');
   });
 
+  it.each([null, false, ''])('draws no label or description for an empty one (%j)', (empty) => {
+    const { container } = render(<Field orientation="row" label={empty} description={empty}><Knob /></Field>);
+    const knob = screen.getByRole('slider');
+    expect(knob).not.toHaveAttribute('aria-labelledby');
+    expect(knob).not.toHaveAttribute('aria-describedby');
+    expect(container.firstElementChild!.children).toHaveLength(1);
+  });
+
   describe('group', () => {
     it('is a group named and described by the field, its members named by themselves', () => {
       render(

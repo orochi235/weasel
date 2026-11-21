@@ -15,6 +15,7 @@ import { RadioGroupAlong, RadioSlotsContext } from './RadioGroupAlong';
 import { useControlAccess, type HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
 import { useRacField } from '../Field/racField';
+import { shows } from '../Field/fieldSemantics';
 import s from './RadioGroup.module.css';
 
 /** Props for {@link RadioGroup}, on top of React Aria's `RadioGroup` props. */
@@ -35,7 +36,7 @@ export type RadioGroupProps = Omit<RACRadioGroupProps, 'children' | 'className' 
 export function RadioGroup(props: RadioGroupProps) {
   const enclosing = useRun();
   const { rest: { invalid, required, ...own }, rac, wrap } = useRacHold(props);
-  const field = useRacField({ id: own.id, 'aria-label': own['aria-label'], 'aria-labelledby': own['aria-labelledby'], 'aria-describedby': rac['aria-describedby'], invalid, required, labeled: own.label !== undefined });
+  const field = useRacField({ id: own.id, 'aria-label': own['aria-label'], 'aria-labelledby': own['aria-labelledby'], 'aria-describedby': rac['aria-describedby'], invalid, required, labeled: shows(own.label) });
   if (enclosing.shape !== undefined && enclosing.shape.kind !== 'line') return wrap(<RadioGroupAlong {...own} {...rac} {...field} shape={enclosing.shape} align={enclosing.align ?? 'center'} />);
   const { label, description, errorMessage, children, className, ...rest } = own;
   return wrap(
@@ -45,7 +46,7 @@ export function RadioGroup(props: RadioGroupProps) {
       {...field}
       className={[s.group, fieldClasses.root, className].filter(Boolean).join(' ')}
     >
-      {label !== undefined && <Label className={s.legend}>{label}</Label>}
+      {shows(label) && <Label className={s.legend}>{label}</Label>}
       {children}
       <FieldFoot description={description} errorMessage={errorMessage} />
     </RACRadioGroup>,

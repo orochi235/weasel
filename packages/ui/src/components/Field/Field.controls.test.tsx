@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import { cloneElement, type ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import { Checkbox } from '../Checkbox/Checkbox';
 import { ComboBox } from '../ComboBox/ComboBox';
@@ -76,6 +76,15 @@ describe('a control with a name of its own in a Field', () => {
   it('keeps a SegmentedBar named by its own aria-label', () => {
     renderWithIcons(<Field label="Amount"><SegmentedBar aria-label="Policy" items={OPTIONS} value="a" onChange={none} /></Field>);
     expect(screen.getByRole('radiogroup')).toHaveAccessibleName('Policy');
+  });
+
+  it.each(boxed)('%s with an empty label of its own takes the field label', (name) => {
+    const make = boxed.find(([n]) => n === name)![1];
+    renderWithIcons(<Field label="Amount">{cloneElement(make() as ReactElement<{ label?: unknown; description?: unknown }>, { label: null, description: '' })}</Field>);
+    expect(screen.getAllByText('Amount')).toHaveLength(1);
+    const control = screen.queryByRole('textbox') ?? screen.queryByRole('spinbutton') ?? screen.queryByRole('combobox') ?? screen.getAllByRole('button')[0]!;
+    expect(control).toHaveAccessibleName(expect.stringContaining('Amount'));
+    expect(control).not.toHaveAttribute('aria-describedby');
   });
 
   it('keeps its own label', () => {

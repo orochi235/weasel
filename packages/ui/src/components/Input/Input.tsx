@@ -12,6 +12,7 @@ import { useRacHold } from '../Disabled/racHold';
 import type { ControlSizeProps } from '../ControlSize';
 import { useFieldSizeClass } from '../Field/fieldSize';
 import { useRacField } from '../Field/racField';
+import { shows } from '../Field/fieldSemantics';
 import f from '../Field/Field.module.css';
 import s from './Input.module.css';
 
@@ -66,7 +67,7 @@ export const Input = forwardRef(function Input(
     ...textFieldProps
   } = hold.rest;
   const sized = useFieldSizeClass(size, className);
-  const field = useRacField({ id: textFieldProps.id, 'aria-label': textFieldProps['aria-label'], 'aria-labelledby': textFieldProps['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], invalid, required, labeled: label !== undefined });
+  const field = useRacField({ id: textFieldProps.id, 'aria-label': textFieldProps['aria-label'], 'aria-labelledby': textFieldProps['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], invalid, required, labeled: shows(label) });
 
   return hold.wrap(
     <TextField
@@ -76,7 +77,7 @@ export const Input = forwardRef(function Input(
       spellCheck={spellCheck === undefined ? undefined : String(spellCheck)}
       className={fieldRootClass({ orientation, className: sized })}
     >
-      {label !== undefined && <Label className={f.label}>{label}</Label>}
+      {shows(label) && <Label className={f.label}>{label}</Label>}
       <div className={`${f.frame} ${s.frame}`}>
         {leadingAdornment !== undefined && <span className={s.adornment} data-wzl-subordinate="">{leadingAdornment}</span>}
         <RACInput ref={ref} enterKeyHint={enterKeyHint} autoCapitalize={autoCapitalize} placeholder={mixed ? MIXED_HINT : placeholder} />

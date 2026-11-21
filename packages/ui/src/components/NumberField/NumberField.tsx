@@ -15,6 +15,7 @@ import { useRacHold } from '../Disabled/racHold';
 import type { ControlSizeProps } from '../ControlSize';
 import { useFieldSizeClass } from '../Field/fieldSize';
 import { useRacField } from '../Field/racField';
+import { shows } from '../Field/fieldSemantics';
 import f from '../Field/Field.module.css';
 import s from './NumberField.module.css';
 
@@ -75,7 +76,7 @@ export const NumberField = forwardRef(function NumberField(
     ...rest
   } = hold.rest;
   const sized = useFieldSizeClass(size, className);
-  const field = useRacField({ id: rest.id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], invalid, required, labeled: label !== undefined });
+  const field = useRacField({ id: rest.id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], invalid, required, labeled: shows(label) });
   return hold.wrap(
     <RACNumberField
       {...rest}
@@ -84,7 +85,7 @@ export const NumberField = forwardRef(function NumberField(
       value={mixed ? NaN : rest.value}
       className={fieldRootClass({ orientation, width, fit: s.fit, className: sized })}
     >
-      {label !== undefined && <Label className={f.label}>{label}</Label>}
+      {shows(label) && <Label className={f.label}>{label}</Label>}
       <Group
         className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}
         data-stepper-side={stepperSide}

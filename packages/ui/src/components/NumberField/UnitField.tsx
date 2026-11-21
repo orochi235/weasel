@@ -124,9 +124,9 @@ function reader(accepts: Readonly<UnitTable> | undefined, display: Display, loca
 export function UnitField(props: UnitFieldProps) {
   const { disabled, disabledReason, readOnly, readOnlyReason, label, orientation, description, errorMessage, invalid: invalidProp, required, name, width = 'fill', className, size, ...body } = props;
   const sized = useFieldSizeClass(size, className);
-  const own = useFieldIds({ id: props.id, label: label !== undefined, description: description !== undefined, error: !!invalidProp && shows(errorMessage) });
+  const own = useFieldIds({ id: props.id, label: shows(label), description: shows(description), error: !!invalidProp && shows(errorMessage) });
   const field = useFieldControl({
-    id: label === undefined ? props.id : own.id,
+    id: own.labelId === undefined ? props.id : own.id,
     'aria-label': props['aria-label'],
     'aria-labelledby': props['aria-labelledby'] ?? own.labelId,
     'aria-describedby': describedBy(own.describedBy, props['aria-describedby']),
@@ -136,7 +136,7 @@ export function UnitField(props: UnitFieldProps) {
   const shown = props.mixed ? Number.NaN : props.value;
   return hold.wrap(
     <div className={fieldRootClass({ orientation, width, fit: s.fit, className: sized })} {...(invalid ? { 'data-invalid': '' } : {})}>
-      {label !== undefined && <label id={own.labelId} htmlFor={field.id} className={f.label}>{label}</label>}
+      {own.labelId !== undefined && <label id={own.labelId} htmlFor={field.id} className={f.label}>{label}</label>}
       <UnitFieldBody {...body} field={{ ...field, 'aria-invalid': invalid || undefined }} required={required} hold={hold} />
       {name !== undefined && <input type="hidden" name={name} value={Number.isNaN(shown) ? '' : String(shown)} />}
       <NativeFieldFoot ids={own} description={description} error={errorMessage} />
