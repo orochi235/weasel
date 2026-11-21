@@ -1,5 +1,301 @@
 # @weasel-js/ui-logic
 
+## 2.0.0
+
+### Major Changes
+
+- 97cce9d: The many-at-once selection mode is `'multiple'` everywhere, as React Aria spells it, and a mode prop is `selectionMode`.
+  
+  `SelectionMode` is `'single' | 'multiple'`, so `useSelection`'s `mode`, `selectionOptions` and `<SceneCanvas selectionMode>` take `'multiple'` in place of `'multi'`. `<ItemList>`'s `selection` prop, `ListModeInput.selection` and the HUD list's `selection` option are `selectionMode`.
+  
+  ```tsx
+  // before
+  useSelection({ scene, mode: 'multi' });
+  <ItemList rows={rows} selection="multi" />
+  // after
+  useSelection({ scene, mode: 'multiple' });
+  <ItemList rows={rows} selectionMode="multiple" />
+  ```
+  
+  <!-- entry: breaking api -->
+- e7383b3: `ControlSize` replaces `ButtonSize`, `SegmentedSize`, `ToggleBarSize`, `ButtonBarSize`, and `OptionsBarSize`.
+  
+  Each was `'sm' | 'md'`, so only the name changes. `ControlSize` is exported from `@weasel-js/ui`, `@weasel-js/ui/components/Density`, `@weasel-js/ui-logic`, and `@weasel-js/labkit`.
+  
+  ```ts
+  // before
+  import type { ToggleBarSize } from '@weasel-js/ui';
+  // after
+  import type { ControlSize } from '@weasel-js/ui';
+  ```
+  
+  <!-- entry: breaking api -->
+- b8bb2d4: `dropSide` is imported from `@weasel-js/ui-input`, beside `dropBand` and `nearestGap`, instead of `@weasel-js/ui-logic`.
+  
+  Its behavior is unchanged; ui-logic no longer exports it.
+  
+  ```ts
+  // before
+  import { dropSide } from '@weasel-js/ui-logic';
+  // after
+  import { dropSide } from '@weasel-js/ui-input';
+  ```
+  
+  <!-- entry: breaking api -->
+- b8bb2d4: `pressStep`, `isPressKey`, and `IDLE_PRESS` move from `@weasel-js/ui-logic` to `@weasel-js/ui-input`.
+  
+  The `PressState` and `PressInput` types move with them.
+  
+  Their behavior is unchanged; ui-logic no longer exports them.
+  
+  ```ts
+  // before
+  import { IDLE_PRESS, pressStep } from '@weasel-js/ui-logic';
+  // after
+  import { IDLE_PRESS, pressStep } from '@weasel-js/ui-input';
+  ```
+  
+  <!-- entry: breaking api -->
+- a24bc4e: ui-logic's deprecated `clampTo` is removed; use `clamp` from `@weasel-js/geom`, which takes the same arguments.
+  
+  ```ts
+  // before
+  import { clampTo } from '@weasel-js/ui-logic';
+  // after
+  import { clamp } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking -->
+
+### Minor Changes
+
+- b508e1a: `--wzl-button-h` sets the height of every `Button` below the element that sets it, at any size.
+  
+  An icon-only button stays square at that height, and `measureButton` reads it too. Unset, a button keeps its size's control height.
+  
+  ```css
+  .my-title-bar { --wzl-button-h: 18px; }
+  ```
+  
+  <!-- entry: new api -->
+- 36757b1: `Button` takes `size="xs"`, a 22px button for dense chrome such as a title bar.
+  
+  It stands at `--wzl-control-h-xs` with the small type, a 12px glyph and tight padding, and is square when icon-only. `measureButton` and the HUD button take it too, through the new `ButtonSize` type. Only a button takes `xs`: `ControlSize` and `ControlSizeScope` stay `sm` / `md`, since no other control has a design at that height.
+  
+  <!-- entry: new api -->
+- 70756b3: A measured menu panel fits its current row's label at the bold weight the DOM menu draws it in, so the HUD panel is as wide as the DOM one.
+  
+  `MenuRowFace` takes `current`, and `MenuPanelMetrics` gives the `currentFont` it is measured in.
+  
+  <!-- entry: fix api -->
+- 4c90808: A measured row list sizes its empty state in italic, as `ItemList` draws it, so the measured box matches the DOM one.
+  
+  `FontSpec` takes `style` (`'normal'` or `'italic'`), which `createDomMeasureEnv` measures in, and `RowListMetrics` gives the `emptyFont` the empty state is measured in.
+  
+  <!-- entry: fix api -->
+- e7383b3: New `<Density size>` sets the size of every `sm`/`md` control inside it, and `useDensity` reads it.
+  
+  The nearest scope wins, and a control's own `size` wins over any scope. With no scope, each control keeps its default: `md`, or `sm` for `CycleButton`. `Button`, `SegmentedBar`, `ColorModeControl`, `CycleButton`, and `Bar` read it. ui-logic's `resolveControlSize(own, scope, fallback)` is the same rule without React, for a host such as hud.
+  
+  ```tsx
+  <Density size="sm">
+    <Button>Apply</Button>              {/* sm */}
+    <Button size="md">Cancel</Button>   {/* md: its own size wins */}
+  </Density>
+  ```
+  
+  labkit re-exports `Density`, `useDensity`, `ControlSize`, `DensityProps`, and `DensityScopeProps`.
+  
+  <!-- entry: rank=5 new api -->
+- 8d5e1f9: New `nestHold` and `controlAccess`: the rule disabled and read-only scopes follow, with no React, for any host.
+  
+  `nestHold(outer, on, reason)` is the hold one level adds inside another: a level that is on holds everything inside it, an inner `false` adds nothing, and the nearest reason wins. `controlAccess(disabled, readOnly)` says how a control responds: disabled beats read-only, and a disabled control with no reason is the only one that leaves the tab order.
+  
+  <!-- entry: api -->
+- a94c342: A button or menu's current row measures a font-weight token of `bold` or `normal` at 700 or 400, the weight CSS draws, not the fallback.
+  
+  The reader is exported as `envFontWeight(env, name, fallback)`: it also falls back on `bolder`, `lighter`, and a weight outside 1–1000.
+  
+  <!-- entry: fix api -->
+- 85bd4fb: `measureMenuPanel` sizes a menu panel from theme tokens, so a DOM menu and a canvas-drawn one lay out alike.
+  
+  `menuPanelMetrics(env)` reads the row height (`--wzl-control-h-sm`), padding and gaps (`--wzl-space-1`,
+  `--wzl-space-2`), and font (`--wzl-font-size`, `--wzl-font-ui`, `--wzl-leading-snug`). `measureMenuPanel(face,
+  constraints, env)` returns the panel's box and where each row's icon, label, and trailing column sit;
+  `menuRowSpans` and `menuRowAtY` hit-test rows. `MENU_MIN_WIDTH`, `MENU_BORDER_WIDTH`, `MENU_ICON_SIZE`, and
+  `MENU_CARET_SIZE` are the fixed lengths the stylesheet uses.
+  
+  <!-- entry: api new -->
+- 7cd52a0: `FocusScope.tabOrder` takes an optional `'next'` or `'prev'`, for a scope whose stops differ going back. Called without one, it answers the Tab order as before.
+  
+  <!-- entry: api -->
+- 2f7a43c: `TextExtent.capHeight` lets a measure env say a control's label is trimmed to its capitals, and `measureButton` lays the label out that way.
+  
+  With it, the label part is `capHeight` tall and centered, and the baseline sits half a cap below the button's middle; without it, the label keeps its whole line box as before. ui's `createDomMeasureEnv` reports it in browsers that support `text-box`.
+  
+  <!-- entry: api new -->
+
+### Patch Changes
+
+- b1989a6: `controlAccess` reads an empty reason as none, so a control disabled with `reason: ''` leaves the tab order and shows no tooltip.
+  
+  <!-- entry: fix -->
+- 4434e35: A measured menu or row list reads a `--wzl-leading-snug` given as a length or percentage as unset, not as a multiplier.
+  
+  <!-- entry: fix -->
+- 8aeb224: `nestHold` no longer carries an outer hold's reason in while that outer hold is off.
+  
+  <!-- entry: fix -->
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [d764d06]
+- Updated dependencies [a98ad34]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [9249b26]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [4f264d0]
+- Updated dependencies [29d293c]
+- Updated dependencies [c3da788]
+- Updated dependencies [ece64a6]
+- Updated dependencies [fcc5602]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [0046729]
+- Updated dependencies [fcc5602]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [36dac61]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [8c2d558]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [7863d23]
+- Updated dependencies [de8f61d]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [de8f61d]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [adb1290]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [ff4504e]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [70076bc]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [dd5a540]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [56fda8d]
+- Updated dependencies [f88d616]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [1d8e163]
+- Updated dependencies [e08d172]
+- Updated dependencies [429e80c]
+- Updated dependencies [002ff57]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [9521334]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [415e5b8]
+- Updated dependencies [e68cb62]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [c11f37e]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [60c082d]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [1f05956]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [774e9cc]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [0d977b8]
+- Updated dependencies [12816b7]
+- Updated dependencies [aec0cec]
+- Updated dependencies [174070d]
+  - @weasel-js/geom@2.0.0
+
 ## 1.19.1
 
 ### Patch Changes

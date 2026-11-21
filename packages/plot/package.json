@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/plot",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "Charts on weasel's scene graph: axes and marks over @weasel-js/scale that keep their data, and chart specs compiled to them, edited by dragging the marks.",
   "weasel": {
     "tier": "plugin"
@@ -41,17 +41,17 @@
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
-    "@weasel-js/editing": "1.19.1",
-    "@weasel-js/geom": "1.19.1",
-    "@weasel-js/quantity": "1.19.1",
-    "@weasel-js/registry": "1.19.1",
-    "@weasel-js/scale": "1.19.1",
-    "@weasel-js/text": "1.19.1",
-    "@weasel-js/theme": "1.19.1"
+    "@weasel-js/editing": "2.0.0",
+    "@weasel-js/geom": "2.0.0",
+    "@weasel-js/quantity": "2.0.0",
+    "@weasel-js/registry": "2.0.0",
+    "@weasel-js/scale": "2.0.0",
+    "@weasel-js/text": "2.0.0",
+    "@weasel-js/theme": "2.0.0"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.19.1",
-    "@weasel-js/text-tools": "1.19.1",
+    "@weasel-js/core": "2.0.0",
+    "@weasel-js/text-tools": "2.0.0",
     "react": ">=18"
   },
   "publishConfig": {

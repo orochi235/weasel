@@ -1,5 +1,532 @@
 # @weasel-js/animator
 
+## 2.0.0
+
+### Major Changes
+
+- 420e20a: `hostAnimator` is `createHostedAnimator`, spelled like the other factories.
+  
+  ```ts
+  // before
+  const hosted = hostAnimator({ now, requestFrame });
+  // after
+  const hosted = createHostedAnimator({ now, requestFrame });
+  ```
+  
+  <!-- entry: breaking api -->
+- c8c9daa: Animator's override registries are built with `createColorOverrideRegistry()` and `createTrimOverrideRegistry()`, not `new`.
+  
+  `ColorOverrideRegistry` and `TrimOverrideRegistry` are exported as types only.
+  
+  ```ts
+  // before
+  const colors = new ColorOverrideRegistry();
+  // after
+  const colors = createColorOverrideRegistry();
+  ```
+  
+  <!-- entry: breaking api -->
+- 6b9ca79: `setWeights` is `setJointWeights`: it sets one joint's weights on a skin.
+  
+  ```ts
+  // before
+  const next = setWeights(skin, count, 'arm', hits);
+  // after
+  const next = setJointWeights(skin, count, 'arm', hits);
+  ```
+  
+  <!-- entry: breaking api -->
+- 2a07382: The animator's `Pose` type is `SkeletonPose`, since it holds joint deltas and is not a scene node's pose.
+  
+  ```ts
+  // before
+  const track: SampledTrack<Pose> = { … };
+  // after
+  const track: SampledTrack<SkeletonPose> = { … };
+  ```
+  
+  <!-- entry: breaking api -->
+- 9fa0d8d: A timeline's `loop: n` runs n passes, as a clock's does, not n passes after the first.
+  
+  `setLoop(n)` and `loop()` count passes the same way, the one under way included. A timeline that should play three times took `loop: 2` and takes `loop: 3` now.
+  
+  ```ts
+  // Before: three passes
+  animator.timeline({ tracks, loop: 2 });
+  
+  // After: three passes
+  animator.timeline({ tracks, loop: 3 });
+  ```
+  
+  <!-- entry: breaking behavior -->
+- 2c152a0: `skinnable` is `toSkinPolygon`: it converts a path into the polygon a skin indexes.
+  
+  ```ts
+  // before
+  const polygon = skinnable(rest);
+  // after
+  const polygon = toSkinPolygon(rest);
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- b550d25: `animator.cancelAll()` ends a running `cycleVertexColors`, clearing its colors, where the cycle had frozen on screen.
+  
+  `keepAlive` takes an optional `onCancel`, which hears the entry end through its release function or from `cancelAll`.
+  
+  <!-- entry: fix api -->
+- b5b0782: A joint named with a dot, as Blender's `spine.001` is, no longer comes along with `axes: ['spine']`: a name reaches its own joint's axes only.
+  
+  `TargetAxes` takes an optional `paths`, each axis's name as its path's steps, which `skeletonAxes` and plain objects' axes now give. A name that is both one axis's and the start of another's path throws.
+  
+  <!-- entry: fix api -->
+- df2ae04: `OnTarget` and `StaggerOnTarget`, the options every target animation and every target stagger share, are exported from `@weasel-js/animator`.
+  
+  <!-- entry: rank=-1 api -->
+- 00ef3bb: A tween takes an `onCancel`, which runs when it stops short of its end.
+  
+  It runs on a cancel by handle, by `cancelKey` or by `cancelAll`, when another animation takes its key, and when a tick that threw retires it. Exactly one of `onDone` and `onCancel` runs.
+  
+  ```ts
+  animator.tween({ from: 0, to: 1, ms: 300, onTick, onDone: finish, onCancel: abandon });
+  ```
+  
+  <!-- entry: api -->
+- 460b0ac: `@weasel-js/animator/react` exports `UseAnimatorOptions`, the type of what `useAnimator` takes, as simulation exports `UseSimulationOptions`.
+  
+  <!-- entry: api -->
+- 74f7bf4: `brushWeights` takes an optional `from` point and sweeps the brush from there to `(x, y)`, weighing each point by its distance to that segment.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 76b3ad2: A looping timeline played backward onto exactly 0 with laps behind it goes on into the lap before, rather than ending there.
+  
+  <!-- entry: fix -->
+- 8994b94: A finished timeline set to play backward revives on a seek away from 0; one that finished at 0 stays finished, with no second `onDone`.
+  
+  <!-- entry: fix -->
+- 3e90820: `bindClip` refuses a clip with a field of the wrong type, such as a null track or an unknown easing name, naming where it is.
+  
+  <!-- entry: fix -->
+- cefbb9f: `bindClip` refuses a clip key with no `value`, naming it, rather than binding a track that throws when first sampled between keys.
+  
+  <!-- entry: fix -->
+- a124808: A booked timeline books an event track at every place it sits, as it fires it, when a track or nested timeline is used twice.
+  
+  <!-- entry: fix -->
+- dec059b: `animator.cancelAll()` called from an `onDone` reports no `cancel` event for the animation that just ended, as `handle.cancel()` reports none.
+  
+  <!-- entry: fix -->
+- acb98a5: Canceling an animation whose target's setter throws still takes it off the animator before the error is thrown. `cancelAll` cancels every other animation first.
+  
+  <!-- entry: fix -->
+- f2eb510: `animator.colorOverrides.set` repaints nothing when a channel is given the colors, or the function, it already holds.
+  
+  <!-- entry: fix -->
+- c8a41db: `animator.colorOverrides.set` keeps a copy of an array it is given, so setting the same array again after editing it in place repaints.
+  
+  <!-- entry: fix -->
+- 5aaee6b: Asking `colorOverrides.target` for a new length tells subscribers when it drops colors an earlier animation left painted.
+  
+  <!-- entry: fix -->
+- de547d5: A loop or stagger whose factory throws is canceled, with what it started, rather than staying active and keeping the frame loop running.
+  
+  <!-- entry: fix -->
+- 139e26a: `decay` throws a `RangeError` for a friction out of range, as `tween` and the clock do for their bad numbers.
+  
+  <!-- entry: fix -->
+- 0bcb260: `createElementTarget` throws when given `get` without `set`, or `set` without `get`, where an animation on it had come to rest back where it started.
+  
+  <!-- entry: fix -->
+- 670ec07: A booked timeline of infinite `duration` books each event within its `lookahead`, at a real clock time, and retimes it when the rate changes.
+  
+  <!-- entry: fix -->
+- 99c457e: An animation whose hold or interpolator throws is retired with an `error` event, and the rest keep running. This covers a hold's `value` and `weight`, and a target tween's `easing`, `interpolate` and `interpolator`.
+  
+  <!-- entry: fix -->
+- 3b7ffd3: A compositor tween or spring checks its input before it interrupts its `cancelKey`, as one on the main thread does. That is its `to`, `from`, `velocity` and spring constants.
+  
+  <!-- entry: fix -->
+- 3b7ffd3: A compositor spring that falls back to the main thread runs under the id its `interrupt` event named. It also keeps the velocity it took over.
+  
+  <!-- entry: fix -->
+- 7a9a5c7: A target tween with `ms: Infinity` and `compositor: 'auto'` runs on the main thread rather than throwing. `compositor: 'require'` refuses it.
+  
+  <!-- entry: fix -->
+- 357c9f1: A hold on every axis shows on a target-table row added after another hold in its layer named only some axes.
+  
+  <!-- entry: fix -->
+- e765b9c: `animator.holdRows` holds none of its rows when one of them throws. A row not in the table refuses the call before it interrupts its `cancelKey`.
+  
+  <!-- entry: fix -->
+- 12ded8a: `jointShares` counts only weights above 0, as the skin applies them, so a negative or `NaN` weight no longer skews the weight brush.
+  
+  <!-- entry: fix -->
+- e225656: `animator.loop` and `animator.tweenLoop` throw a `RangeError` for a `count` that is not a whole number or `Infinity`, such as `NaN` or `2.5`.
+  
+  <!-- entry: fix -->
+- 50e06ce: A nested timeline whose `duration` is below 0 samples its tracks and books its events as one of 0, as it already fired them.
+  
+  <!-- entry: fix -->
+- e0afaa7: Joint, field and interpolation names like `constructor` or `__proto__` read and write as their own entries, not `Object.prototype` members.
+  
+  A pose, skin or IK limit table without a joint named `constructor` treats it as absent in `mirrorPose`, `resolveSkeleton`, `solveIk`, `skeletonAxes` and `setJointWeights`; a pose with a `__proto__` joint keeps it as an own key; a clip naming interpolation `toString` reports it missing; and an element style key `__proto__` is skipped.
+  
+  <!-- entry: fix -->
+- 4b16186: A target spring that interrupts a target tween with an interpolator takes over its velocity, as from a plain tween.
+  
+  <!-- entry: fix -->
+- 5aa7bc1: Canceling an animation from another's `onTick` asks for no extra frame. A paint that `onTick` requests is no longer followed by a frame that paints nothing.
+  
+  <!-- entry: fix -->
+- e3b0356: `staggerVertexColors` with `anchorMs: 0` steps each anchor to its color in turn, and refuses a negative or non-finite time or origin.
+  
+  <!-- entry: fix -->
+- 9bd892d: `Target.commit` on a target nothing is moving shows the value at once, so an element target's style follows a commit.
+  
+  <!-- entry: fix -->
+- feec844: A target table throws on `remove`, `set` or `target` of a row that is not in use, and `add` with a value of the wrong length takes no row.
+  
+  <!-- entry: fix -->
+- f834acb: A frame ticks animations in the order they registered, also after a delayed one starts or one turns backward.
+  
+  <!-- entry: fix -->
+- 19d6faa: A timeline canceled by an event at a lap's seam, or by a track's `onTick`, holds no target afterward and fires nothing more that frame.
+  
+  <!-- entry: fix -->
+- 2d723fd: `toClip` throws, naming where, on a time, `duration`, `at`, weight or bezier point that is not finite, which JSON would write as `null`.
+  
+  <!-- entry: fix -->
+- dce9e3e: `animator.trimOverrides.set` repaints nothing when a node is given the trim override it already holds.
+  
+  <!-- entry: fix -->
+- ca79b0e: `animator.trimOverrides.set` with neither `start` nor `end` drops the node's override, so `has` no longer reports a trim that paints nothing.
+  
+  <!-- entry: fix -->
+- f2ba5e1: `target.axisIndexes`, and a hold's `axes`, refuse a name that is both an axis and the start of others' names, with or without `paths`.
+  
+  <!-- entry: fix -->
+- 4f264d0: Values held between two bounds go through geom's `clamp` and `clamp01` rather than local copies.
+  
+  A loupe whose `minFactor` is above its `maxFactor` now settles on the low bound, as `clamp` does, where it settled on the high one.
+  
+  <!-- entry: rank=-5 behavior -->
+- a83c9bd: A `cycleVertexColors` cycle with `direction: -1` eases each cycle as a forward one does, only turning the other way.
+  
+  <!-- entry: fix visual -->
+- 14a0949: A `cycleVertexColors` cycle ends, and lets the animator's frame loop stop, once `colorOverrides.set`, `clear`, or `clearAll` replaces or removes it.
+  
+  <!-- entry: fix perf -->
+- ef687f1: `setJointWeights` gives a joint the share asked for where another joint weighs a negative number or NaN. It zeroes those weights.
+  
+  <!-- entry: fix -->
+- 4bda721: Own-key lookups go through registry's `getOwn` and `hasOwnKey` rather than hand-written `Object.hasOwn` checks.
+  
+  <!-- entry: internal -->
+- 1347e05: A stagger's handle reads a time scale of 1 and unpaused once it has finished or been canceled, as every other `AnimationHandle` does.
+  
+  <!-- entry: fix -->
+- 012b439: A custom `TargetAxes.add` gets a `delta` exactly as long as the target's axes, and one of its own when it reads another target while it runs.
+  
+  <!-- entry: fix -->
+- 780c368: `createTargetTable` refuses a `capacity` that is not a whole number, with an error naming `capacity`.
+  
+  <!-- entry: fix -->
+- b5e97b8: A target table made from frozen options works under `animator.holdRows`. Refilling its rows no longer writes to the options object.
+  
+  <!-- entry: fix -->
+- d497853: A booked timeline forgets event tracks an edit removed and placements a nested track moved away from.
+  
+  Dragging a nested timeline along the ruler no longer grows its memory, and moving one back books from the playhead on.
+  
+  <!-- entry: fix -->
+- d4888dd: An event track added by `edit` to a booked timeline books its events from the playhead on.
+  
+  The same holds for a nested track moved to a new `at`; events behind the playhead are no longer booked at once.
+  
+  <!-- entry: fix -->
+- 91bd051: An `edit` that shortens a timeline below its playhead brings the playhead to the new end.
+  
+  A timeline playing backward goes on back from there instead of finishing or taking a lap forward.
+  
+  <!-- entry: fix -->
+- e2f8ef6: An `edit` to a sampled track's `target`, `weight`, or `axes` takes effect while the playhead is within its keys.
+  
+  A target the track no longer names keeps what it was showing.
+  
+  <!-- entry: fix -->
+- f19cbf2: A targeted sampled track nested at two places moves its target through each placement in turn.
+  
+  One placement no longer undoes the other's hold every frame.
+  
+  <!-- entry: fix -->
+- 9e1861a: A timeline played again after it finished reports its next end and cancel to `animator.watch`.
+  
+  When one of its tracks throws, it lets go of its targets.
+  
+  <!-- entry: fix -->
+- 8992639: A frame rendered right after a timeline's `seek` or `edit` draws the time it seeked to, not the frame before.
+  
+  <!-- entry: fix -->
+- eb5c5f9: A finished timeline seeked under a backward `animator.setTimeScale` plays back from where it lands.
+  
+  One seeked to its start stays finished instead of calling `onDone` again.
+  
+  <!-- entry: fix -->
+- e0e02f9: A handler that seeks from the end of a lap stops that frame's events, as from any other handler.
+  
+  An event exactly where the seek lands fires when playback next advances.
+  
+  <!-- entry: fix -->
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [d764d06]
+- Updated dependencies [a98ad34]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [9249b26]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [af88833]
+- Updated dependencies [b29cf9e]
+- Updated dependencies [6821bac]
+- Updated dependencies [9707f7c]
+- Updated dependencies [f88b38b]
+- Updated dependencies [b68c9a2]
+- Updated dependencies [39f4ad4]
+- Updated dependencies [a66885d]
+- Updated dependencies [b90239c]
+- Updated dependencies [35a99f3]
+- Updated dependencies [687d98f]
+- Updated dependencies [105a6bf]
+- Updated dependencies [c71fb10]
+- Updated dependencies [cc3910a]
+- Updated dependencies [4f451f8]
+- Updated dependencies [29d293c]
+- Updated dependencies [6cef61c]
+- Updated dependencies [fcc5602]
+- Updated dependencies [c3da788]
+- Updated dependencies [ece64a6]
+- Updated dependencies [fcc5602]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [0046729]
+- Updated dependencies [fcc5602]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [b6863aa]
+- Updated dependencies [36dac61]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [8c2d558]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [e6871f1]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [7863d23]
+- Updated dependencies [de8f61d]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [de8f61d]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [85f85ba]
+- Updated dependencies [adb1290]
+- Updated dependencies [b98bad7]
+- Updated dependencies [0d377ec]
+- Updated dependencies [435c248]
+- Updated dependencies [e1e7241]
+- Updated dependencies [977164c]
+- Updated dependencies [9aed377]
+- Updated dependencies [c491f93]
+- Updated dependencies [aadb086]
+- Updated dependencies [09f0c86]
+- Updated dependencies [d11dc30]
+- Updated dependencies [5ad7bc0]
+- Updated dependencies [481218b]
+- Updated dependencies [f8172cf]
+- Updated dependencies [e5395a6]
+- Updated dependencies [cd7ffdb]
+- Updated dependencies [8ced7e2]
+- Updated dependencies [5ed6215]
+- Updated dependencies [9cacd4b]
+- Updated dependencies [f95e342]
+- Updated dependencies [d6ba47e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [fcc5602]
+- Updated dependencies [880cbbf]
+- Updated dependencies [2932eb2]
+- Updated dependencies [c1a3072]
+- Updated dependencies [968362b]
+- Updated dependencies [f4bfab5]
+- Updated dependencies [e6c888e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [56089ae]
+- Updated dependencies [f544aeb]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [ff4504e]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [70076bc]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [4d31cf0]
+- Updated dependencies [af132bc]
+- Updated dependencies [2d57c94]
+- Updated dependencies [f004638]
+- Updated dependencies [3c27e36]
+- Updated dependencies [3c27e36]
+- Updated dependencies [ce5d609]
+- Updated dependencies [dd5a540]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [56fda8d]
+- Updated dependencies [f88d616]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [1d8e163]
+- Updated dependencies [e08d172]
+- Updated dependencies [429e80c]
+- Updated dependencies [002ff57]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [9521334]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [415e5b8]
+- Updated dependencies [e68cb62]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [c11f37e]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [60c082d]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [1f05956]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [774e9cc]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [0d977b8]
+- Updated dependencies [5dd240d]
+- Updated dependencies [8b01b26]
+- Updated dependencies [2c0f2fe]
+- Updated dependencies [12816b7]
+- Updated dependencies [6803209]
+- Updated dependencies [f857c86]
+- Updated dependencies [aec0cec]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/clock@2.0.0
+  - @weasel-js/paint@2.0.0
+  - @weasel-js/react@2.0.0
+
 ## 1.19.1
 
 ### Patch Changes

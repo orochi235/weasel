@@ -1,5 +1,2058 @@
 # @weasel-js/path-tools
 
+## 2.0.0
+
+### Major Changes
+
+- 03c5f2f: Bindings, `trigger`, `begin`, `preview` and `useOngoingAction` check params against the id's `ActionParamSchema` entry, as tunings do.
+  
+  This is breaking. An id the schema names takes its whole entry, required keys included, as a record or a thunk; passing no params at all is still allowed, as a palette runs an action. An id the schema does not name takes no params, so a binding or a trigger that hands params to one either adds a schema entry for it or passes the id as `dynamicActionId(id)`, the deliberate path for an id held only at runtime. A plain `string` id is one of those.
+  
+  ```ts
+  declare module '@weasel-js/routing' {
+    interface ActionParamSchema { 'review.stamp': { size: number } }
+  }
+  
+  registry.trigger('review.stamp', { size: 2 });          // checked
+  registry.trigger('review.stamp', { size: 'wrong' });    // now an error
+  registry.trigger(dynamicActionId(item.action.id), item.params); // an id read at runtime
+  ```
+  
+  The kit's own actions that read params have entries: `insert`, `place`, `move`, `rotate`, `viewport.dragPan`, `lassoSelect`, `slice`, `measure`, `ingest`, `setFill`, `setStroke`, `setStrokeWidth`, `setVertexColor`, `simplifyPath`, `offsetPath`, `present.step`, `present.go`, `spiro.finish`, `girth.drag` and others. `AlignParams`, `FlipParams` and `SetFilletsParams` make each field optional, since each action defaults it. `holdPreviewId` returns a `DynamicActionId`, and the `actionParams` dep is typed as `ActionsRegistry['paramsOf']`.
+  
+  <!-- entry: rank=10 breaking api -->
+- 29d293c: The Envelope mesh tool is now Cloth warp, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useEnvelopeTool`, `UseEnvelopeToolOptions` | `useClothWarpTool`, `UseClothWarpToolOptions` |
+  | `DEFAULT_ENVELOPE_SIZE` | `DEFAULT_CLOTH_SIZE` |
+  | tool id and `WarpKind` `'envelope'` | `'cloth'` |
+  | actions `envelope.drag`, `envelope.grab` | `cloth.drag`, `cloth.grab` |
+  | icon `path-tools:envelope` | `path-tools:clothWarp` |
+  | `EnvelopeWarp`, `EnvelopeMapping` (`@weasel-js/geom/warp`) | `ClothWarp`, `ClothMapping` |
+  | `envelopeOver`, `resizeEnvelope` | `clothOver`, `resizeCloth` |
+  | a held warp's `kind: 'envelope'` | `kind: 'cloth'` |
+  
+  The tool keeps its Shift+F key. A document saved with an envelope warp held on a path needs that warp's `data.warp.warp.kind` rewritten to `'cloth'`.
+  
+  ```ts
+  // before
+  const envelope = useEnvelopeTool({ rows: 4 });
+  <SceneCanvas tools={{ envelope }} tune={{ 'envelope.drag': { params: { cols: 4 } } }} />
+  // after
+  const cloth = useClothWarpTool({ rows: 4 });
+  <SceneCanvas tools={{ cloth }} tune={{ 'cloth.drag': { params: { cols: 4 } } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api data -->
+- 0046729: Soft selection is now Drape, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `createSoftSelectionPreset`, preset id `'softSelection'` | `createDrapePreset`, `'drape'` |
+  | `createSoftSelectionExtension`, extension id `'softSelection'`, `SoftSelectionOptions` | `createDrapeExtension`, `'drape'`, `DrapeOptions` |
+  | `softSelectionWeights`, `softSelectionBand`, `softFalloff`, `SoftFalloff` (`@weasel-js/geom`) | `drapeWeights`, `drapeBand`, `drapeFalloff`, `DrapeFalloff` |
+  
+  ```ts
+  // before
+  <SceneCanvas features={['paths', createSoftSelectionPreset(() => ({ radiusPx: 80 }))]} />
+  // after
+  <SceneCanvas features={['paths', createDrapePreset(() => ({ radiusPx: 80 }))]} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 644baad: Harmonize curvature is now Fairing, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `harmonizePreset`, preset id `'harmonize'` | `pathTools.fairing`, `'fairing'` |
+  | action `harmonizeAnchors`, `harmonizeAnchorsAction` | `fairAnchors`, `fairAnchorsAction` |
+  | `harmonizeAnchors` (`@weasel-js/geom`) | `fairAnchors` |
+  | icon `core:harmonize` | `core:fairing` |
+  
+  ```ts
+  // before
+  <SceneCanvas features={['paths', harmonizePreset]} tune={{ harmonizeAnchors: { bindings: [{ kind: 'key', key: 'h' }] } }} />
+  // after
+  <SceneCanvas features={['paths', pathTools.fairing]} tune={{ fairAnchors: { bindings: [{ kind: 'key', key: 'h' }] } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- c3da9af: The Corner shape tool is now Fillet, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `cornerShapePreset`, `createCornerShapePreset`, preset id `'cornerShape'` | `pathTools.fillet`, `createFilletPreset`, `'fillet'` |
+  | action `editCorner`, its binding `editCorner.drag`, `editCornerAction`, `EDIT_CORNER_PARAMS`, `EditCornerParams` | `editFillet`, `editFillet.drag`, `editFilletAction`, `EDIT_FILLET_PARAMS`, `EditFilletParams` |
+  | action `setCorners`, `setCornersAction` | `setFillets`, `setFilletsAction` |
+  | action `cycleCornerShape`, `cycleCornerShapeAction`, `CYCLE_CORNER_SHAPE_PARAMS`, `CycleCornerShapeParams` | `cycleFillet`, `cycleFilletAction`, `CYCLE_FILLET_PARAMS`, `CycleFilletParams` |
+  | `CORNER_SHAPE_OPTIONS`, `DEFAULT_CORNER_SHAPE`, `DEFAULT_CORNER_TRIM_SHARE` | `FILLET_SHAPE_OPTIONS`, `DEFAULT_FILLET_SHAPE`, `DEFAULT_FILLET_TRIM_SHARE` |
+  | `CORNER_CONTROLS`, `CORNER_CONTROLS_PROMPT`, `CORNER_K_SLIDER_RANGE`, `cornerControlsParams`, `cornerControlsState`, `CornerControlsState` | `FILLET_CONTROLS`, `FILLET_CONTROLS_PROMPT`, `FILLET_K_SLIDER_RANGE`, `filletControlsParams`, `filletControlsState`, `FilletControlsState` |
+  | `useCornerControls`, `CornerControlsScene`, `CornerControlsSelection`, `UseCornerControlsReturn` | `useFilletControls`, `FilletControlsScene`, `FilletControlsSelection`, `UseFilletControlsReturn` |
+  | `createCornerWidgetsExtension`, `cornerWidgetCommands`, `cornerWidgetFrames`, `CORNER_WIDGET_STANDOFF_PX`, `CornerWidgetStyle` | `createFilletWidgetsExtension`, `filletWidgetCommands`, `filletWidgetFrames`, `FILLET_WIDGET_STANDOFF_PX`, `FilletWidgetStyle` |
+  | chrome id `path-edit.corners`, `PATH_CORNERS_CHROME_ID` | `path-edit.fillets`, `PATH_FILLETS_CHROME_ID` |
+  | toggle `pathEdit.show.corners`, `showCornersAction` | `pathEdit.show.fillets`, `showFilletsAction` |
+  | widget hit kind `corner:N`, routing's `isCornerWidget` | `fillet:N`, `isFilletWidget` |
+  | icon `path-tools:cornerShape` | `path-tools:fillet` |
+  
+  Core's CSS `corner-shape` model keeps its names: `CornerSpec`, a polygon's `corners`, `resolveCorners`, `CornerShape`, and the keywords, so saved documents load as before.
+  
+  ```ts
+  // before
+  <SceneCanvas features={['paths', cornerShapePreset]} tune={{ cycleCornerShape: { bindings: [{ kind: 'key', key: 'k' }] } }} />
+  // after
+  <SceneCanvas features={['paths', pathTools.fillet]} tune={{ cycleFillet: { bindings: [{ kind: 'key', key: 'k' }] } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 1022f0f: The Girth drag's grab reach is `reachPx`, in its params and in `useGirthTool`'s options, as every other screen-px param is named.
+  
+  ```ts
+  // before
+  useGirthTool({ reach: 10 });
+  registry.trigger('girth.drag', { reach: 10 });
+  // after
+  useGirthTool({ reachPx: 10 });
+  registry.trigger('girth.drag', { reachPx: 10 });
+  ```
+  
+  <!-- entry: breaking -->
+- fe8d797: Handle snapping takes its angles in radians, as `angleStep` and `reachRad`, the names core's measure tool and snap sessions use.
+  
+  `HandleSnapOptions`' `stepDeg` and `reachDeg` (degrees) are now `angleStep` and `reachRad` (radians); the defaults are unchanged at 45° and 6°.
+  
+  ```ts
+  import { DEG_TO_RAD } from '@weasel-js/geom';
+  // before
+  createHandleSnapPreset({ stepDeg: 15, reachDeg: 4 });
+  // after
+  createHandleSnapPreset({ angleStep: 15 * DEG_TO_RAD, reachRad: 4 * DEG_TO_RAD });
+  ```
+  
+  <!-- entry: breaking api -->
+- 7e5b389: The kit settings area types are read from their packages' schemas, so they are type aliases and can no longer be augmented.
+  
+  That covers `GestureKitSettings`, `CoreKitTargetSettings`, `ViewKitSettings`, `LoupeKitSettings`, `Orbit3dKitSettings`,
+  `RigKitTargetSettings` and `PathToolsKitTargetSettings`. Add a setting by augmenting `@weasel-js/react`'s `KitSettings` or `KitTargetSettings`, as before:
+  
+  ```ts
+  declare module '@weasel-js/react' {
+    interface KitTargetSettings { myHandlePx: number }
+  }
+  ```
+  
+  <!-- entry: breaking -->
+- 1ad4f25: The Smudge brush is now Knead, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useSmudgeBrushTool`, `UseSmudgeBrushToolOptions`, `SMUDGE_BRUSH_OPTIONS` | `useKneadTool`, `UseKneadToolOptions`, `KNEAD_TOOL_OPTIONS` |
+  | `smudgePreset`, preset id `'smudge'` | `pathTools.knead`, `'knead'` |
+  | tool id, action id, and `PathToolId` `'smudgeBrush'` | `'knead'` |
+  | `smudgeBrushAction`, `SMUDGE_BRUSH_PARAMS`, `SmudgeBrushParams` | `kneadAction`, `KNEAD_PARAMS`, `KneadParams` |
+  | `DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` | `DEFAULT_KNEAD_RADIUS_PX`, `DEFAULT_KNEAD_STRENGTH` |
+  | `smudgePath`, `SmudgePathOptions` (`@weasel-js/geom`, re-exported by core) | `kneadPath`, `KneadPathOptions` |
+  | icon `path-tools:smudgeBrush` | `path-tools:knead` |
+  
+  The tool keeps its U key. Tool options saved under the `smudgeBrush` id start from their defaults under `knead`.
+  
+  ```ts
+  // before
+  const smudgeBrush = useSmudgeBrushTool();
+  <SceneCanvas features={['draw', smudgePreset]} tools={{ smudgeBrush }} />
+  // after
+  const knead = useKneadTool();
+  <SceneCanvas features={['draw', pathTools.knead]} tools={{ knead }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- e549ad3: Functions that place a node in world take the whole scene, as a node under a container needs.
+  
+  They are `nodeFrameOf`, `shownNodeOf`, `storesEdits`, `ownGeometryAt`, and path-tools' `brokenConstraintLink`, `brokenConstraintLinks` and `constraintLinkConflictsOf`.
+  
+  This is breaking for a caller that passed an object with only a few of the scene's methods: one with a node under a container threw. Pass the scene itself.
+  
+  ```ts
+  // before
+  shownNodeOf({ get: (id) => scene.get(id) }, id);
+  // after
+  shownNodeOf(scene, id);
+  ```
+  
+  <!-- entry: breaking fix -->
+- 744fbce: The path, text, rig, diagram and measure actions act on the `operands` dep, the selection by default.
+  
+  This is breaking for code that runs these actions with deps it builds by hand: each now declares `operands` in `requires` and reads it where it read `selection`, as core's editing actions do. On a `<SceneCanvas>` nothing changes, since `operands` answers with the selection unless a host sources its own. Selecting actions (diagram's edge pick and sequence-part pick, following an off-page tag) still read `selection`.
+  
+  ```ts
+  // before
+  snipAtCrossingsAction.invoker.run({ scene, selection, applyOps });
+  // after
+  snipAtCrossingsAction.invoker.run({ scene, operands: selection, applyOps });
+  ```
+  
+  <!-- entry: rank=0 breaking api -->
+- 8fac6ca: Bindings and triggers of path-tools' actions check their params against `ActionParamSchema`, including the click, hover, and drag actions.
+  
+  New schema entries: `snipPath`, `snip.preview`, `linkAnchor`, `editFillet`, `cycleFillet`, `textAlong`, `girth.clear`, `girth.hover`, `shapeBuilder.showFace`, `shapeBuilder.takeFace`, and `equalizeHandles`; `girth.drag`, `pin.addPin`, `spiro.placePoint`, `convertSegmentAt`, `configureWarp`, and `editPathEffect` now name every param they read, the event's `press`, `world`, or `mods` included. Two types are new exports: `StrokePressParams`, what a click command reads to find its stroke, and `ConfigureWarpParams`.
+  
+  This is breaking in two places. `planSnip` takes `StrokePressParams` rather than `unknown`. `WarpSettings`, `GirthDragParams`, `KneadParams`, `TugPathParams`, `LinkAnchorParams`, `EditFilletParams`, and `CycleFilletParams` are type aliases now, so declaration merging no longer extends them.
+  
+  ```ts
+  planSnip(deps, { press, radiusPx: 4 });        // checked
+  planSnip(deps, event as unknown);              // now an error
+  ```
+  
+  <!-- entry: api breaking -->
+- 72c4da1: Path edit's drag that selects anchors in a box has the action id `areaSelectAnchors`, matching core's `areaSelect`.
+  
+  Its default binding's id is `areaSelectAnchors.drag`.
+  
+  ```ts
+  // before
+  { spec: { kind: 'drag', target: 'empty' }, actionId: 'marqueeAnchors' }
+  // after
+  { spec: { kind: 'drag', target: 'empty' }, actionId: 'areaSelectAnchors' }
+  ```
+  
+  <!-- entry: breaking api -->
+- 4ba13d5: `createHandleCommand` is `createHandleEditAction`: it builds an action that edits handles.
+  
+  ```ts
+  // before
+  const smooth = createHandleCommand('smoothHandles', 'Smooth', icon, edit);
+  // after
+  const smooth = createHandleEditAction('smoothHandles', 'Smooth', icon, edit);
+  ```
+  
+  <!-- entry: breaking api -->
+- 3e75a05: `joinPathsCommand` is `createJoinPathsAction`: it builds an action, and "command" in path-tools means a draw command.
+  
+  ```ts
+  // before
+  const join = joinPathsCommand({ id: 'join', label: 'Join' }, () => ({}));
+  // after
+  const join = createJoinPathsAction({ id: 'join', label: 'Join' }, () => ({}));
+  ```
+  
+  <!-- entry: breaking api -->
+- 9cff861: `livePathEdit` is `createLivePathEditAction`, spelled like the other action factories.
+  
+  ```ts
+  // before
+  const inset = livePathEdit({ id: 'inset', label: 'Inset', param: 'distance', params, edit, commit });
+  // after
+  const inset = createLivePathEditAction({ id: 'inset', label: 'Inset', param: 'distance', params, edit, commit });
+  ```
+  
+  <!-- entry: breaking api -->
+- c75b38f: `showOverlayAction` is `createOverlayToggleAction`: it builds the toggle that shows or hides a path-edit overlay.
+  
+  ```ts
+  // before
+  const comb = showOverlayAction('comb', 'pathEdit.comb', 'Curvature comb', glyph);
+  // after
+  const comb = createOverlayToggleAction('comb', 'pathEdit.comb', 'Curvature comb', glyph);
+  ```
+  
+  <!-- entry: breaking api -->
+- 76664c0: `pathEditPreview`, which core exported, is path-tools' `createPathEditPreview`, spelled like the other factories.
+  
+  This is a breaking rename, with no alias. Its arguments are unchanged.
+  
+  ```ts
+  // before
+  import { pathEditPreview } from '@weasel-js/core';
+  const preview = pathEditPreview(dep, id, current);
+  // after
+  import { createPathEditPreview } from '@weasel-js/path-tools';
+  const preview = createPathEditPreview(dep, id, current);
+  ```
+  
+  <!-- entry: breaking api -->
+- d8c2af0: `DRAW_TOOLS` includes the spiro pen beside the pen and the pencil, as its `draw` palette group already did.
+  
+  A host that mounts `DRAW_TOOLS` now mounts `spiro` too, so it passes the spiro tool in `tools` (`usePathToolsTools` builds it) or drops it:
+  
+  ```ts
+  // to keep the pen and pencil alone
+  const draw = withoutTools(DRAW_TOOLS, 'spiro');
+  ```
+  
+  <!-- entry: breaking api -->
+- 58a8915: The girth tool's types are `GirthTarget`, `GirthEdgeHit` and `GirthGrip`, named for the tool.
+  
+  ```ts
+  // before
+  import type { WidthTarget, WidthEdgeHit, WidthGrip } from '@weasel-js/path-tools';
+  // after
+  import type { GirthTarget, GirthEdgeHit, GirthGrip } from '@weasel-js/path-tools';
+  ```
+  
+  <!-- entry: breaking api -->
+- b67db58: path-tools' action groups move from its main entry's `…_GROUP` constants to `@weasel-js/path-tools/groups`
+  
+  ```tsx
+  // before
+  import { ANCHOR_SELECTION_GROUP } from '@weasel-js/path-tools';
+  <ActionBar group={ANCHOR_SELECTION_GROUP} />
+  
+  // after
+  import * as pathToolsGroups from '@weasel-js/path-tools/groups';
+  <ActionBar group={pathToolsGroups.anchorSelection} />
+  ```
+  
+  `ANCHOR_SELECTION_GROUP`, `PATH_EFFECTS_GROUP` and `PATH_OVERLAYS_GROUP` are gone from the main entry; the new one names `anchorSelection`, `pathEffects` and `pathOverlays`. Each is the same string as before.
+  
+  <!-- entry: breaking api -->
+- 1d280b0: The action that leaves path edit is `leavePathEdit`, the verb `group.leave` uses for leaving a group.
+  
+  Its label is "Leave path edit" and its Escape binding's id is `leavePathEdit.key`.
+  
+  ```ts
+  // before
+  actions.trigger('exitPathEdit');
+  // after
+  actions.trigger('leavePathEdit');
+  ```
+  
+  <!-- entry: breaking api -->
+- 1e51ab5: `depOf` is `openPathEditOf`: the `editAnchors` dep while a path is open for editing, or null.
+  
+  ```ts
+  // before
+  const dep = depOf(deps);
+  // after
+  const dep = openPathEditOf(deps);
+  ```
+  
+  <!-- entry: breaking api -->
+- 81de83f: Path-tools' all-families preset `pathTools` moves to `@weasel-js/path-tools/presets`, beside every other path-tools preset.
+  
+  Its preset id is still `'pathTools'`.
+  
+  ```tsx
+  // before
+  import { pathTools } from '@weasel-js/path-tools';
+  <SceneCanvas features={[presets.draw, pathTools]} tools={tools} />
+  // after
+  import * as pathTools from '@weasel-js/path-tools/presets';
+  <SceneCanvas features={[presets.draw, pathTools.pathTools]} tools={tools} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 659a2f6: Path-tools' presets move off the main entry to `@weasel-js/path-tools/presets`, each under its short name.
+  
+  The main entry no longer exports any `…Preset`: `pathToolsPreset` is `pathTools.pathTools`, `pathsPreset` is `pathTools.paths`, `spiroPreset` is `pathTools.spiro`, and so on for each. The factories, `createFilletPreset`, `createDrapePreset` and the rest, stay on the main entry.
+  
+  ```tsx
+  // before
+  import { pathToolsPreset, usePathToolsTools } from '@weasel-js/path-tools';
+  <SceneCanvas features={[drawPreset, pathToolsPreset]} tools={usePathToolsTools()} />;
+  
+  // after
+  import { usePathToolsTools } from '@weasel-js/path-tools';
+  import * as pathTools from '@weasel-js/path-tools/presets';
+  <SceneCanvas features={[presets.draw, pathTools.pathTools]} tools={usePathToolsTools()} />;
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 4104e09: The Shape Builder's action ids are `'shapeBuilder.showFace'` and `'shapeBuilder.takeFace'`, naming what they do.
+  
+  They were `'shapeBuilder.hover'` and `'shapeBuilder.click'`. The tool's binding ids are unchanged.
+  
+  ```ts
+  // before
+  { spec: { kind: 'click' }, actionId: 'shapeBuilder.click' }
+  // after
+  { spec: { kind: 'click' }, actionId: 'shapeBuilder.takeFace' }
+  ```
+  
+  <!-- entry: breaking api -->
+- 5cfe2fd: The knife's tool set, `SLICE_TOOLS`, has the id `'slice'`, and the slice tool sits in the `slice` palette group.
+  
+  Both were `'page'`; a palette `groupOrder` or a check that names the old group names the new one.
+  
+  ```tsx
+  // before
+  groupOrder={['select', 'view', 'shape', 'page']}
+  // after
+  groupOrder={['select', 'view', 'shape', 'slice']}
+  ```
+  
+  <!-- entry: breaking api -->
+- 0f60e3d: Puppet warp is now Pin warp, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `usePuppetTool`, `UsePuppetToolOptions` | `usePinWarpTool`, `UsePinWarpToolOptions` |
+  | tool id, `PathToolId`, and `WarpKind` `'puppet'` | `'pin'` |
+  | actions `puppet.drag`, `puppet.addPin`, `puppet.removePin` | `pin.drag`, `pin.addPin`, `pin.removePin` |
+  | icon `path-tools:puppetWarp` | `path-tools:pinWarp` |
+  | `PuppetWarp`, `PuppetPin` (`@weasel-js/geom/warp`) | `PinWarp`, `WarpPin` |
+  | `puppetMap`, `puppetSolve`, `puppetMesh`, `PuppetMesh`, `PuppetMeshOptions` | `pinWarpMap`, `pinWarpSolve`, `pinWarpMesh`, `PinWarpMesh`, `PinWarpMeshOptions` |
+  | a held warp's `kind: 'puppet'` | `kind: 'pin'` |
+  
+  The tool keeps its B key. A document saved with a puppet warp held on a path needs that warp's `data.warp.warp.kind` rewritten to `'pin'`.
+  
+  ```ts
+  // before
+  const puppet = usePuppetTool({ tolerance: 1 });
+  <SceneCanvas tools={{ puppet }} tune={{ 'puppet.addPin': { params: { tolerance: 1 } } }} />
+  // after
+  const pin = usePinWarpTool({ tolerance: 1 });
+  <SceneCanvas tools={{ pin }} tune={{ 'pin.addPin': { params: { tolerance: 1 } } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api data -->
+- 0f60e3d: Perspective and free distort is now Plane warp, and every name it carried changes with it; this is breaking, with no aliases. Its two modes are still `free` and `perspective`.
+  
+  | Before | After |
+  |---|---|
+  | `useDistortTool`, `UseDistortToolOptions` | `usePlaneWarpTool`, `UsePlaneWarpToolOptions` |
+  | tool id, `PathToolId`, and `WarpKind` `'distort'` | `'plane'` |
+  | action `distort.drag`, its layer's hit kind `layer:warp-distort` | `plane.drag`, `layer:warp-plane` |
+  | warp settings fields `distorts` and `distort.mode` | `planes` and `plane.mode` |
+  | icon `path-tools:distort` | `path-tools:planeWarp` |
+  | `DistortWarp`, `DistortMode`, `distortOver` (`@weasel-js/geom/warp`) | `PlaneWarp`, `PlaneMode`, `planeOver` |
+  | a held warp's `kind: 'distort'` | `kind: 'plane'` |
+  
+  The tool keeps its F key. A document saved with a distort held on a path needs that warp's `data.warp.warp.kind` rewritten to `'plane'`.
+  
+  ```ts
+  // before
+  const distort = useDistortTool({ mode: 'perspective' });
+  <SceneCanvas tools={{ distort }} tune={{ 'distort.drag': { params: { mode: 'perspective' } } }} />
+  // after
+  const plane = usePlaneWarpTool({ mode: 'perspective' });
+  <SceneCanvas tools={{ plane }} tune={{ 'plane.drag': { params: { mode: 'perspective' } } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api data -->
+- e49aa18: Balance handles is now Poise, and every name it carried changes with it; this is breaking, with no aliases. Equalize handles keeps its name.
+  
+  | Before | After |
+  |---|---|
+  | `balancePreset`, `createBalancePreset`, preset id `'balance'` | `pathTools.poise`, `createPoisePreset`, `'poise'` |
+  | action `balanceHandles`, its binding `balanceHandles.drag`, `balanceHandlesAction` | `poiseHandles`, `poiseHandles.drag`, `poiseHandlesAction` |
+  | chrome id `path-edit.balance`, `PATH_BALANCE_CHROME_ID` | `path-edit.poise`, `PATH_POISE_CHROME_ID` |
+  | toggle `pathEdit.show.balance`, `showBalanceAction` | `pathEdit.show.poise`, `showPoiseAction` |
+  | `createBalanceExtension`, `balanceCommands`, `PathEditBalanceStyle` | `createPoiseExtension`, `poiseCommands`, `PathEditPoiseStyle` |
+  | grip hit kind `balance:N`, routing's `isBalanceGrip` | `poise:N`, `isPoiseGrip` |
+  | `handleBalances`, `HandleBalance`, `balanceFactorToward` (`@weasel-js/geom`) | `poiseLines`, `PoiseLine`, `poiseFactorToward` |
+  | icon `path-tools:balanceHandles` | `path-tools:poise` |
+  
+  ```ts
+  // before
+  const balance = createBalancePreset({ color: '#a0f' });
+  <SceneCanvas features={['paths', balance]} tune={{ balanceHandles: { bindings: [{ kind: 'key', key: 'b' }] } }} />
+  // after
+  const poise = createPoisePreset({ color: '#a0f' });
+  <SceneCanvas features={['paths', poise]} tune={{ poiseHandles: { bindings: [{ kind: 'key', key: 'b' }] } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 3f553ff: The Extend to next path tool is now Reach, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useExtendTool`, `UseExtendToolOptions` | `useReachTool`, `UseReachToolOptions` |
+  | `extendPreset`, preset id `'extend'` | `pathTools.reach`, `'reach'` |
+  | tool id and `PathToolId` `'extend'` | `'reach'` |
+  | action `extendToMeet`, `extendToMeetAction`, `EXTEND_TO_MEET_PARAMS`, `ExtendToMeetParams` | `reachToMeet`, `reachToMeetAction`, `REACH_TO_MEET_PARAMS`, `ReachToMeetParams` |
+  | `extendToMeet`, `ExtendToMeetOptions` (`@weasel-js/geom`, re-exported by core) | `reachToMeet`, `ReachToMeetOptions` |
+  | icon `path-tools:extend` | `path-tools:reach` |
+  
+  The tool keeps its Shift+U key.
+  
+  ```ts
+  // before
+  const extend = useExtendTool();
+  <SceneCanvas features={['draw', extendPreset]} tools={{ extend }} tune={{ extendToMeet: { params: { shape: 'straight' } } }} />
+  // after
+  const reach = useReachTool();
+  <SceneCanvas features={['draw', pathTools.reach]} tools={{ reach }} tune={{ reachToMeet: { params: { shape: 'straight' } } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- bf1cf7b: The Simplify brush is now Sand, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useSimplifyBrushTool`, `UseSimplifyBrushToolOptions`, `SIMPLIFY_BRUSH_OPTIONS` | `useSandTool`, `UseSandToolOptions`, `SAND_TOOL_OPTIONS` |
+  | `simplifyBrushPreset`, preset id `'simplifyBrush'` | `pathTools.sand`, `'sand'` |
+  | tool id, action id, and `PathEditToolId` `'simplifyBrush'`, binding `simplifyBrush.drag` | `'sand'`, `sand.drag` |
+  | `simplifyBrushAction`, `SIMPLIFY_BRUSH_PARAMS`, `SIMPLIFY_BRUSH_RADIUS_PX`, `SimplifyBrushParams` | `sandAction`, `SAND_PARAMS`, `SAND_RADIUS_PX`, `SandParams` |
+  | icon `core:simplifyBrush` | `core:sand` |
+  
+  Core's Simplify command is unchanged. Tool options saved under the `simplifyBrush` id start from their defaults under `sand`.
+  
+  ```ts
+  // before
+  const simplifyBrush = useSimplifyBrushTool();
+  <SceneCanvas features={['paths', simplifyBrushPreset]} tools={{ simplifyBrush }} />
+  // after
+  const sand = useSandTool();
+  <SceneCanvas features={['paths', pathTools.sand]} tools={{ sand }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 16e4b0b: A slice's commit is set on the tool or action, `useSliceTool({ commit })` or `createSliceAction({ commit })`, not through a `slice` dep.
+  
+  This is breaking. The `slice` dep, `SliceDep` and `useSliceDepSource` are gone, and `<SceneCanvas>` no longer publishes one. The default commit is path-tools' `slicePaths(cut, deps)`, which cuts every path the cut crosses as before; it reads the deps in `SLICE_PATHS_REQUIRES`. A custom commit names the deps it reads in `requires`, and gets them as its second argument. `OpsApplier` is still exported from core.
+  
+  ```tsx
+  // before
+  useDepSource('slice', () => ({ commit: (cut) => cutMine(cut) }));
+  const slice = useSliceTool();
+  // after
+  const slice = useSliceTool({ commit: (cut, deps) => cutMine(cut, deps.scene), requires: ['scene'] });
+  // or, for the action alone
+  <SceneCanvas actions={{ slice: createSliceAction({ commit, requires: ['scene'] }) }} />
+  ```
+  
+  <!-- entry: breaking api -->
+- fb702eb: The Trim segment tool is now Snip, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useTrimTool`, `UseTrimToolOptions` | `useSnipTool`, `UseSnipToolOptions` |
+  | `trimPreset`, preset id `'trim'` | `pathTools.snip`, `'snip'` |
+  | tool id and `PathToolId` `'trim'`, bindings `trim.hover`, `trim.leave`, actions `trim.preview`, `trim.unpreview` | `'snip'`, `snip.hover`, `snip.leave`, `snip.preview`, `snip.unpreview` |
+  | action `trimPath`, `trimPathAction`, `TRIM_PATH_PARAMS`, `planTrim` | `snipPath`, `snipPathAction`, `SNIP_PATH_PARAMS`, `planSnip` |
+  | `trimPathAt`, `TrimPathOptions`, `TrimResult` (`@weasel-js/geom`, re-exported by core) | `snipPathAt`, `SnipPathOptions`, `SnipResult` |
+  | icon `path-tools:trim` | `path-tools:snip` |
+  
+  The tool keeps its Y key. A stroke's `trim`, core's boolean Trim, and `pathTrim` are unrelated and keep their names.
+  
+  ```ts
+  // before
+  const trim = useTrimTool();
+  <SceneCanvas features={['draw', trimPreset]} tools={{ trim }} />
+  // after
+  const snip = useSnipTool();
+  <SceneCanvas features={['draw', pathTools.snip]} tools={{ snip }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- cbcc46b: The Spiro tool's finishing bindings are named `spiro.finish.click`, `spiro.finish.doubleClick`, and `spiro.finish.key`.
+  
+  They now follow the `<owner>.<role>` pattern every kit binding does.
+  
+  A stored binding override names them by the new ids:
+  
+  ```ts
+  // Before
+  registry.overrideBindings({ 'spiro.finishKey': key('Mod+Enter') });
+  // After
+  registry.overrideBindings({ 'spiro.finish.key': key('Mod+Enter') });
+  ```
+  
+  <!-- entry: breaking -->
+- e841e68: The Lengthen tool is now Tug, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useLengthenTool` | `useTugTool` |
+  | `lengthenPreset`, preset id `'lengthen'` | `pathTools.tug`, `'tug'` |
+  | tool id and `PathEditToolId` `'lengthen'`, binding `lengthenPath.drag` | `'tug'`, `tug.drag` |
+  | action `lengthenPath`, `lengthenPathAction`, `LENGTHEN_PATH_PARAMS`, `LengthenPathParams` | `tugPath`, `tugPathAction`, `TUG_PATH_PARAMS`, `TugPathParams` |
+  | `lengthenPathEnd`, `lengthenOpenEnd`, `LengthenMode` (`@weasel-js/geom`; core re-exports `lengthenOpenEnd`) | `tugPathEnd`, `tugOpenEnd`, `TugMode` |
+  | icon `path-tools:lengthen` | `path-tools:tug` |
+  
+  A saved binding override keyed `lengthenPath.drag` moves to `tug.drag`. The tool still has no key of its own, and the undo label of a drag that shortens the path is still Shorten path.
+  
+  ```ts
+  // before
+  <SceneCanvas features={['paths', lengthenPreset]} tools={{ lengthen: useLengthenTool() }} tune={{ lengthenPath: { params: { mode: 'curvature' } } }} />
+  // after
+  <SceneCanvas features={['paths', pathTools.tug]} tools={{ tug: useTugTool() }} tune={{ tugPath: { params: { mode: 'curvature' } } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- a5caeed: The Blend path effect is now Tween, and every name it carried changes with it; this is breaking, with no aliases. Color blending, `blendMode`, and the renderer's blend state are unrelated and keep their names.
+  
+  | Before | After |
+  |---|---|
+  | path effect `kind: 'blend'`, `BlendEffect` (core) | `kind: 'tween'`, `TweenEffect` |
+  | action `blend`, `blendAction` | `tween`, `tweenAction` |
+  | actions `setBlendSpine`, `releaseBlendSpine`, `setBlendSpineAction`, `releaseBlendSpineAction` | `setTweenSpine`, `releaseTweenSpine`, `setTweenSpineAction`, `releaseTweenSpineAction` |
+  | the path-effect settings form's `blends` count | `tweens` |
+  | `blendPaths`, `prepareBlend`, `BlendPathsOptions`, `PathBlend` (`@weasel-js/geom`, re-exported by core) | `tweenPaths`, `prepareTween`, `TweenPathsOptions`, `PathTween` |
+  | icons `path-tools:blend`, `path-tools:setBlendSpine`, `path-tools:releaseBlendSpine` | `path-tools:tween`, `path-tools:setTweenSpine`, `path-tools:releaseTweenSpine` |
+  
+  The action keeps its key. A document saved with a live blend needs that node's `data.pathEffect.kind` rewritten to `'tween'`.
+  
+  ```ts
+  // before
+  pathEffectNode({ kind: 'blend', steps: 3 }, [a, b], 'main', PATH_EFFECT_DERIVATIONS);
+  // after
+  pathEffectNode({ kind: 'tween', steps: 3 }, [a, b], 'main', PATH_EFFECT_DERIVATIONS);
+  ```
+  
+  <!-- entry: rank=5 breaking api data -->
+
+### Minor Changes
+
+- 96839c7: Select every Nth anchor declares its count as a params form, `SELECT_EVERY_NTH_ANCHOR_PARAMS`, with a range of 1 to 100.
+  
+  <!-- entry: api -->
+- 7e5b389: A settings page built from the kit settings schemas shows help text on the gesture, target, view, loupe and orbit rows.
+  
+  <!-- entry: new -->
+- 5da2046: A node deleted while Create Outlines waits for a face no longer stays selected after the conversion.
+  
+  `runCreateOutlines` takes the ids to convert as an optional third argument, and `applyOutlineStroke` as an optional third argument after its options; both default to the selection.
+  
+  <!-- entry: fix api -->
+- 845819b: New `pathEditAidsSchema`: path edit's aids as a prefs group, with `pathEditAidsVisibility` and `PATH_EDIT_AID_CHROME_IDS` to show them.
+  
+  <!-- entry: api -->
+- 527f214: `createPathEditHost` can take the open path from a mode machine, and can leave out nodes with no anchors to edit.
+  
+  `target: { get, open, close }` reads the open path from the machine's path-edit mode and enters and leaves that mode through it, instead of the host holding an id of its own. `editable: (id) => boolean` names no path while the open one fails it; the default allows every id.
+  
+  <!-- entry: api -->
+- 6d2bb1e: Path edit, the pen, the pencil, the knife, the path commands, and Create Outlines move from `@weasel-js/core` to `@weasel-js/path-tools`.
+  
+  This is breaking. `presets.draw` no longer opens a path for editing, and `<SceneCanvas>` no longer builds in the `pen`, `pencil`, `slice` or `anchors` tools. A canvas gets them back from path-tools: `pathTools.paths` (path edit, its anchor keys, the path commands, and outlines), which `pathTools.pathTools` includes, and `usePathToolsTools`, which now builds the pen, the pencil, the knife and the anchors tool beside the rest.
+  
+  ```tsx
+  // before
+  import { drawPreset, SceneCanvas } from '@weasel-js/core';
+  <SceneCanvas features={[drawPreset]} defaultTools={['select', 'pen', 'pencil', 'slice']} />;
+  
+  // after
+  import { SceneCanvas } from '@weasel-js/core';
+  import * as presets from '@weasel-js/editing/presets';
+  import { usePathToolsTools } from '@weasel-js/path-tools';
+  import * as pathTools from '@weasel-js/path-tools/presets';
+  const tools = usePathToolsTools();
+  <SceneCanvas features={[presets.draw, pathTools.pathTools]} defaultTools={['select']} tools={tools} />;
+  ```
+  
+  These exports leave core and are path-tools' now: the presets `pathTools.paths`, `pathTools.pathEdit`, `pathTools.anchorKeys`, `pathTools.outlines` and `pathTools.pathCommands`, on `@weasel-js/path-tools/presets`; `usePenTool`, `PEN_TOOL_OPTIONS`, `createPenPreviewLayer`, `PEN_CLOSE_HIT_PX`, `usePencilTool`, `PENCIL_TOOL_OPTIONS`, `useSliceTool`, `sliceAction`, `anchorsTool`, `ANCHORS_TOOL_ID`; `editAnchorsAction`, `selectAnchorAction`, `deleteAnchorsAction`, the `nudgeAnchors*Action`s, `hitAnchor`, `commitAnchorEdit`, `anchorEditWouldChange`, `openPathEditOf`, `requiresAnchorSelection`, `createHandleEditAction`, `joinSelectedAnchors`, `editTargetOf`, `markUnder`, `deleteSelectedMark`, `finishPathEditFrame`, `editedPathSymmetries`, `locksInForce`, `HANDLE_LOCK_ROLES`; `createLivePathEditAction`, `createJoinPathsAction`, `planJoin`, `SIMPLIFY_PATH_PARAMS`, `OFFSET_PATH_PARAMS`, `DEFAULT_SIMPLIFY_TOLERANCE`, `OffsetPathParams`; `applyCreateOutlines`, `applyOutlineStroke`, `useCreateOutlinesAdapter`, and their types.
+  
+  Core's tool sets lose `ANCHOR_TOOLS`, `DRAW_TOOLS` and `PAGE_TOOLS`, and its presets `drawToolsPreset` and `pageToolsPreset` with their `tools:draw` and `tools:page` names: path-tools' `PATH_EDIT_TOOLS` now leads with the anchors tool, and `DRAW_TOOLS` and `SLICE_TOOLS` hold the pen and pencil and the knife. `TOOL_GROUP_ORDER` names core's groups only, so a palette showing path-tools' tools passes its own `groupOrder`. The `pen` and `pencil` shape kinds stay core's, with `tool: false`.
+  
+  <!-- entry: rank=20 breaking api -->
+- 4202a36: A path effect just made shows its settings in the last-operation panel, where a change remakes it in place.
+  
+  Each effect's settings are one form, `PATH_EFFECT_PARAMS[kind]`, which the making action declares as its `params` and `editPathEffect`'s settings form shows as a section, so a new effect's defaults and the ones the form shows are the same values. Every number in them now has a range.
+  
+  <!-- entry: new api -->
+- 6d2bb1e: The pen's and the knife's kit settings move to `pathToolsKitSettingsSchema` in `@weasel-js/path-tools`.
+  
+  `targets.penAnchorRadiusPx`, `targets.penHandleDotRadiusPx`, `targets.penCloseHintRadiusPx`, `targets.penCloseHitPx`, `targets.sliceVertexRadiusPx` and `targets.sliceCloseHitPx` keep their paths and defaults; `coreKitSettingsSchema` and `CoreKitTargetSettings` no longer list them, and path-tools' `PathToolsKitTargetSettings` does. A settings page merges the new schema beside core's:
+  
+  ```ts
+  import { coreKitSettingsSchema } from '@weasel-js/core';
+  import { pathToolsKitSettingsSchema } from '@weasel-js/path-tools';
+  const kit = mergePrefGroups('Kit settings', coreKitSettingsSchema, pathToolsKitSettingsSchema);
+  ```
+  
+  <!-- entry: breaking api -->
+- `@weasel-js/path-tools` exports `createOutlinesAction`, `runCreateOutlines`, and `outlineStrokeAction`.
+  
+  <!-- entry: api -->
+- bfc26b4: The params types of the path-effect and `setFillets` actions are exported.
+  
+  `PathEffectParams`, `TweenParams`, `SetFilletsParams` and `EditPathEffectParams`, as `ActionParamSchema` names them.
+  
+  <!-- entry: api -->
+- fada84a: `createPathEditHost()` holds which path is open and which anchors are selected, for `<SceneCanvas pathEdit>`, `redrawOn`, and a panel to read.
+  
+  ```ts
+  const host = createPathEditHost({ id: 'outline', anchors: [2] });
+  <SceneCanvas pathEdit={host} redrawOn={[host]} … />
+  ```
+  
+  Given `{ modes }`, path edit is a mode: opening a path enters `'path-edit'`, closing it returns to `'normal'` (`mode` and `exitMode` rename them), and a path counts as open only while the registry is in that mode.
+  
+  <!-- entry: api -->
+- 52e0851: Shape Builder cuts the nodes a host's `operands` names, and hands what it made back to it, rather than cutting the selection.
+  
+  `planShapeBuilder` takes the ids to cut as an optional third argument, defaulting to the selection.
+  
+  <!-- entry: fix api -->
+- 8d7296a: A tool set can carry a `label`, and every set the kit ships has one: `toolSet('make', ids, { label: 'Make' })`.
+  
+  A shortcut sheet heads a set's tools with it, and `withoutTools` keeps it.
+  
+  <!-- entry: api -->
+- 527f214: `usePathEditMode` builds a mode registry and a path-edit host that drives it, for `<SceneCanvas modes pathEdit>`.
+  
+  ```tsx
+  const { modes, pathEdit } = usePathEditMode({ id: 'curve' });
+  return <SceneCanvas modes={modes} pathEdit={pathEdit} … />;
+  ```
+  
+  It starts in the path-edit mode on `id` when given one, and takes the host's other options, plus `definitions` for the modes (default `DEFAULT_MODES`).
+  
+  <!-- entry: api new -->
+
+### Patch Changes
+
+- 5cd31ff: Add extremes is disabled where the axis its params name would add no anchor, as it already was for both axes.
+  
+  <!-- entry: fix -->
+- 9a03912: An anchor or handle drag on a constrained path commits the shape its preview showed.
+  
+  <!-- entry: fix -->
+- 2d649c0: An anchor or handle drag released where it started, or snapped back onto its own press point, records no undo step.
+  
+  <!-- entry: fix -->
+- 666ff95: A Shift-press that takes an anchor out of the selection no longer shows snap feedback while the pointer moves, since it drags nothing.
+  
+  <!-- entry: fix -->
+- d302e54: Canceling a marquee in path edit gives back the extension mark that was selected when it began.
+  
+  <!-- entry: fix -->
+- 099cdcb: A marquee in path edit that sweeps no anchor deselects a selected extension mark, as a click on empty canvas does.
+  
+  <!-- entry: fix -->
+- 373becd: Bending a segment past where a path's constraints can follow keeps the last shape they could, and releases to it, as an anchor drag does.
+  
+  <!-- entry: fix -->
+- c80f586: The Sand, Knead and weight brushes' Size shows its unit, px, in the tool options and the last-operation panel.
+  
+  <!-- entry: fix -->
+- 4f264d0: Values held between two bounds go through geom's `clamp` and `clamp01` rather than local copies.
+  
+  A loupe whose `minFactor` is above its `maxFactor` now settles on the low bound, as `clamp` does, where it settled on the high one.
+  
+  <!-- entry: rank=-5 behavior -->
+- 7bd4b01: A length constraint given a negative or non-finite `length` holds the pair's measured length instead.
+  
+  <!-- entry: fix -->
+- b2facdc: "Make segments straight" and "Make segments curved" are disabled when the selected segments are already that type.
+  
+  <!-- entry: fix -->
+- 2a0b5f3: `AnyNode`, a scene node of any payload, layer, and pose, is exported beside `AnyScene`.
+  
+  ui's `AnyNode` from the SelectionPanel is now the same type, re-exported from core.
+  
+  <!-- entry: api -->
+- 08d04fb: `cutPathAtAnchor` is disabled off every anchor and on an open subpath, so the click falls through to other bindings.
+  
+  <!-- entry: fix -->
+- bfc26b4: Every type a public signature names can now be written down by a consumer.
+  
+  Types the declarations named through private aliases are written out, or are geom's `Point` and `Rect`.
+  
+  <!-- entry: internal -->
+- 9e68f8b: `editPathEffect` runs on the effects its `ids` name while the selection holds none of them, as its params say it does.
+  
+  <!-- entry: fix -->
+- 32a624a: A fillet drag or `setFillets` on two selected corners sharing an edge splits it, so each corner stores the radius it draws.
+  
+  <!-- entry: fix -->
+- cb6aa03: Changing a Girth drag's options in the last-operation panel replays it at the zoom it was made at.
+  
+  <!-- entry: fix -->
+- 26d113c: A held warp of a kind this build does not know, such as one a later build adds, is ignored instead of throwing.
+  
+  <!-- entry: fix data -->
+- 9c0aeb4: A Link anchor drop where no link can be made stays where it was dropped, as a plain move, instead of snapping back.
+  
+  <!-- entry: fix -->
+- 6623aa9: Create Outlines and Outline Stroke convert the nodes a host's `operands` names, not the selection.
+  
+  What replaced them is handed back to `operands`.
+  
+  <!-- entry: fix -->
+- d88f17e: Create Outlines and Outline Stroke warn the user when a text face fails to load, rather than failing silently.
+  
+  <!-- entry: fix -->
+- 5da2046: Create Outlines no longer throws when its face finishes loading and the adapter is a class with private fields.
+  
+  <!-- entry: fix -->
+- 4bda721: Own-key lookups go through registry's `getOwn` and `hasOwnKey` rather than hand-written `Object.hasOwn` checks.
+  
+  <!-- entry: internal -->
+- 4c95425: A `createPathEditHost` run as a mode tells its subscribers once when opening or closing a path switches the mode, not twice.
+  
+  <!-- entry: fix -->
+- 6366c9f: A path-edit host given a mode `target` tells its subscribers when the open path moves from one node to another.
+  
+  <!-- entry: fix -->
+- 70fdef4: Edits under a `pathSymmetry` dep keep moving each anchor's images on a path far from the origin.
+  
+  <!-- entry: fix -->
+- 62aede0: An install that nests `@weasel-js/geom` under path-tools now resolves `earcut` and `polygon-clipping`, which path-tools depends on.
+  
+  geom's `./warp` and `./booleans` load them, and geom lists them only as optional peers.
+  
+  <!-- entry: fix -->
+- e3a1721: Installing @weasel-js/path-tools no longer brings in the prefs store: it depends on @weasel-js/prefs-schema.
+  
+  <!-- entry: perf -->
+- 963f8fd: Path-tools' command keys wait for a drag in flight to end, as core's editing keys do.
+  
+  That covers Bridge, Add Extremes, the path effects, Convert Segments, and the anchor-selection keys.
+  
+  <!-- entry: fix -->
+- 8fac6ca: The Warp Settings and path-effect settings forms make no params from a field value of the wrong type.
+  
+  <!-- entry: behavior -->
+- d82703e: Path-effect and path-command settings named like `constructor` or `__proto__` are kept as data instead of reaching built-ins.
+  
+  <!-- entry: fix -->
+- 0bee7f4: Finishing a path the pen continued drops a lone anchor clicked after a close, as finishing a new path does.
+  
+  <!-- entry: fix -->
+- e89b2a4: Double-clicking with the pen on another open path's end joins the two and leaves the pen idle, rather than starting a new path at the joint.
+  
+  <!-- entry: fix -->
+- 2429e15: Dragging with the pen from a path's first anchor closes the path and pulls that anchor's handles, as a click there closes it.
+  
+  <!-- entry: fix -->
+- cbf665c: The pen joins onto an open path inside a group or frame where that path draws, rather than where its pose is stored.
+  
+  <!-- entry: fix -->
+- 5b827ec: Reach on a selected path keeps its per-anchor stroke widths and colors when an end grows new segments, as it already did in path edit.
+  
+  <!-- entry: fix -->
+- 79e22dc: Inserting, deleting, joining, or bridging anchors on a path whose constraints refuse the edit leaves the anchor selection as it was.
+  
+  <!-- entry: fix -->
+- 790e88a: Sand's preview follows a tolerance changed mid-stroke, so the path previewed is the one committed on release.
+  
+  <!-- entry: fix -->
+- 1ca4e09: `setAnchorField` is disabled for an entry that would change nothing.
+  
+  That covers the value the anchors already hold, a handle field the anchor has no handle for, a non-finite number, and a selection naming no anchor of the path.
+  
+  <!-- entry: fix -->
+- 7a46f5c: Shape Builder takes a face from the shape now on top when the selection was restacked after the face was shown.
+  
+  <!-- entry: fix -->
+- 415e5b8: Sand and `simplifyAnchorsAt` leave a closed subpath starting on the anchor it started on.
+  
+  <!-- entry: fix -->
+- b88f9f5: The Knead tool's default key is U and the Reach tool's is Shift+U, so Knead no longer shares S with the sticky tool.
+  
+  Pass `keybinding` to either hook to keep the old key.
+  
+  <!-- entry: behavior -->
+- d22725a: The Snip tool's hover preview reaches as far as a tuned `snipPath` click does, so the dashed piece is the one a click removes.
+  
+  <!-- entry: fix -->
+- 34e0794: Switching away from the spiro tool mid-curve ends its cursor's snap session and its pointer subscription.
+  
+  <!-- entry: fix -->
+- cb6e47b: The Spiro tool closes a curve within the pen's close reach, the `targets.penCloseHitPx` kit setting, when no `closeHitRadius` is given.
+  
+  Core exports that setting's default as `PEN_CLOSE_HIT_PX`.
+  
+  <!-- entry: fix api -->
+- 0d977b8: Add Pin places the pin on a pin-warped shape turned past 60°, since `unwarpPoint` now inverts such a warp.
+  
+  It now steps through the map's local Jacobian and returns the point with the smallest miss it found.
+  
+  <!-- entry: fix -->
+- 2075087: A path saved holding a distort, envelope, or puppet warp opens with it editable as the plane, cloth, or pin warp it was renamed to.
+  
+  `heldPathWarpOf` reads the old kinds as their new ones, and the next edit writes the warp back under the new kind.
+  
+  <!-- entry: fix data -->
+- 9c6db6a: Warp Settings keeps a warp's rows, columns, and tolerance when handed a non-finite number, such as a cleared field.
+  
+  <!-- entry: fix -->
+- 15c0856: `configureWarp`'s settings form reads each field's choices from the warp's own field definitions.
+  
+  <!-- entry: internal -->
+- ce89f4c: Warp Settings is disabled for a selection whose warps an edit has left stale; Expand Warp still drops them.
+  
+  <!-- entry: fix -->
+- 361fce4: A warp drag begun over text whose font is still loading converts and warps the text once the font loads.
+  
+  <!-- entry: fix -->
+- 9fa2d45: A warp tool passed to two canvases shows and redraws its controls on each, and one canvas unmounting leaves the other's controls in place.
+  
+  <!-- entry: fix -->
+- Updated dependencies [5099ca3]
+- Updated dependencies [e5f53c6]
+- Updated dependencies [74e52e2]
+- Updated dependencies [617fd6c]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [fe3c2df]
+- Updated dependencies [cd84e27]
+- Updated dependencies [8d7296a]
+- Updated dependencies [33d9b95]
+- Updated dependencies [2a3a075]
+- Updated dependencies [5ad99b6]
+- Updated dependencies [4204bdb]
+- Updated dependencies [e4b8859]
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [9c88969]
+- Updated dependencies [d764d06]
+- Updated dependencies [f1bc116]
+- Updated dependencies [effe879]
+- Updated dependencies [db9988a]
+- Updated dependencies [a98ad34]
+- Updated dependencies [7f25db9]
+- Updated dependencies [c3a8dea]
+- Updated dependencies [c7e5656]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [e72e26a]
+- Updated dependencies [0090147]
+- Updated dependencies [643c699]
+- Updated dependencies [0dc7968]
+- Updated dependencies [ca5bcb0]
+- Updated dependencies [f4d8b83]
+- Updated dependencies [6da5a3b]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [e468edc]
+- Updated dependencies [a7dab9f]
+- Updated dependencies [63fbbdf]
+- Updated dependencies [6355d18]
+- Updated dependencies [3f23bc8]
+- Updated dependencies [691b592]
+- Updated dependencies [4a642f5]
+- Updated dependencies [3b803d7]
+- Updated dependencies [9249b26]
+- Updated dependencies [f20931c]
+- Updated dependencies [44848fe]
+- Updated dependencies [9a3bf41]
+- Updated dependencies [edcd3a6]
+- Updated dependencies [3bf5d6c]
+- Updated dependencies [b5d4882]
+- Updated dependencies [315f5ee]
+- Updated dependencies [97f1f86]
+- Updated dependencies [1566d81]
+- Updated dependencies [6bbc0e5]
+- Updated dependencies [33c1e37]
+- Updated dependencies [62f5560]
+- Updated dependencies [7199e23]
+- Updated dependencies [88f90f5]
+- Updated dependencies [df7ba95]
+- Updated dependencies [da5f6da]
+- Updated dependencies [6fb8869]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [063b00c]
+- Updated dependencies [bfc8672]
+- Updated dependencies [8dd351a]
+- Updated dependencies [8a1c306]
+- Updated dependencies [c4cb671]
+- Updated dependencies [defc1cd]
+- Updated dependencies [840a01b]
+- Updated dependencies [f172abc]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [7b0562e]
+- Updated dependencies [e8df1fc]
+- Updated dependencies [39fd347]
+- Updated dependencies [f5058e3]
+- Updated dependencies [cf2a57b]
+- Updated dependencies [7a5e072]
+- Updated dependencies [bb5880a]
+- Updated dependencies [29d293c]
+- Updated dependencies [a63b723]
+- Updated dependencies [0c07b8d]
+- Updated dependencies [6cef61c]
+- Updated dependencies [76a1854]
+- Updated dependencies [fcc5602]
+- Updated dependencies [aaa6a30]
+- Updated dependencies [1857565]
+- Updated dependencies [41c0399]
+- Updated dependencies [d07c5f1]
+- Updated dependencies [26b779a]
+- Updated dependencies [c3935f7]
+- Updated dependencies [fcc31eb]
+- Updated dependencies [8bc6d64]
+- Updated dependencies [c3da788]
+- Updated dependencies [9621063]
+- Updated dependencies [869d865]
+- Updated dependencies [42aab0c]
+- Updated dependencies [d3d65f1]
+- Updated dependencies [3a00602]
+- Updated dependencies [ab7f613]
+- Updated dependencies [95ddf7a]
+- Updated dependencies [daa7a4d]
+- Updated dependencies [9f5155f]
+- Updated dependencies [86e1580]
+- Updated dependencies [06303a3]
+- Updated dependencies [8278212]
+- Updated dependencies [1b27b2f]
+- Updated dependencies [2a0b5f3]
+- Updated dependencies [a529c26]
+- Updated dependencies [f44131a]
+- Updated dependencies [394cc06]
+- Updated dependencies [a4e0df7]
+- Updated dependencies [bfef616]
+- Updated dependencies [d0ec6bd]
+- Updated dependencies [3742696]
+- Updated dependencies [fd63c16]
+- Updated dependencies [8c58288]
+- Updated dependencies [964a242]
+- Updated dependencies [7cfda30]
+- Updated dependencies [93b6009]
+- Updated dependencies [37baa8c]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [5a8ac8c]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [963f8fd]
+- Updated dependencies [5c345b8]
+- Updated dependencies [b0905a2]
+- Updated dependencies [1c9986a]
+- Updated dependencies [1c9986a]
+- Updated dependencies [83ad38f]
+- Updated dependencies [0200213]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [b05583a]
+- Updated dependencies [77bfacf]
+- Updated dependencies [f585154]
+- Updated dependencies [15a05d9]
+- Updated dependencies [74202d3]
+- Updated dependencies [c30911d]
+- Updated dependencies [c569caf]
+- Updated dependencies [280f9fc]
+- Updated dependencies [4844d4d]
+- Updated dependencies [43fb985]
+- Updated dependencies [59944c1]
+- Updated dependencies [6d2bb1e]
+- Updated dependencies [106749f]
+- Updated dependencies [e9897c7]
+- Updated dependencies [075971c]
+- Updated dependencies [04cd5f3]
+- Updated dependencies [2940a77]
+- Updated dependencies [2ab2678]
+- Updated dependencies [93a7c62]
+- Updated dependencies [b05583a]
+- Updated dependencies [6f94fe3]
+- Updated dependencies [0a2be4b]
+- Updated dependencies [5477214]
+- Updated dependencies [5f6ebf3]
+- Updated dependencies [b76c25e]
+- Updated dependencies [5614b4e]
+- Updated dependencies [e21ec2d]
+- Updated dependencies [386bbfc]
+- Updated dependencies [ac792e8]
+- Updated dependencies [3fdbc32]
+- Updated dependencies [9430cf9]
+- Updated dependencies [5f6ebf3]
+- Updated dependencies [95d06c3]
+- Updated dependencies [3e32141]
+- Updated dependencies [9231556]
+- Updated dependencies [63c1844]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [b0905a2]
+- Updated dependencies [a8d34ac]
+- Updated dependencies [66e447b]
+- Updated dependencies [e9f7adf]
+- Updated dependencies [bfb8442]
+- Updated dependencies [4a2b3cc]
+- Updated dependencies [1bd148d]
+- Updated dependencies [7064286]
+- Updated dependencies [e67d322]
+- Updated dependencies [6316070]
+- Updated dependencies [0d810a1]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9249b26]
+- Updated dependencies [d8007e8]
+- Updated dependencies [d917fd4]
+- Updated dependencies [b4acc4d]
+- Updated dependencies [37c0385]
+- Updated dependencies [fcc5602]
+- Updated dependencies [a2df698]
+- Updated dependencies [794862e]
+- Updated dependencies [5cf9f61]
+- Updated dependencies [5db5049]
+- Updated dependencies [656a653]
+- Updated dependencies [42d49af]
+- Updated dependencies [94c8e4c]
+- Updated dependencies [4a93e4b]
+- Updated dependencies [eca2b03]
+- Updated dependencies [fcfefd4]
+- Updated dependencies [7252e96]
+- Updated dependencies [f4ac9bc]
+- Updated dependencies [81b7535]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [2503372]
+- Updated dependencies [bde7b24]
+- Updated dependencies [929a2d2]
+- Updated dependencies [53ba27c]
+- Updated dependencies [de462a6]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [8764186]
+- Updated dependencies [f3c2f12]
+- Updated dependencies [81f2080]
+- Updated dependencies [84a4212]
+- Updated dependencies [47fa777]
+- Updated dependencies [7542fc9]
+- Updated dependencies [319879e]
+- Updated dependencies [8d7296a]
+- Updated dependencies [398b575]
+- Updated dependencies [e6ec996]
+- Updated dependencies [9a3bf41]
+- Updated dependencies [d3d3973]
+- Updated dependencies [22c6086]
+- Updated dependencies [df9dba4]
+- Updated dependencies [3833307]
+- Updated dependencies [2729716]
+- Updated dependencies [966b087]
+- Updated dependencies [2f56e64]
+- Updated dependencies [85fd57d]
+- Updated dependencies [2f7e04a]
+- Updated dependencies [a5bed98]
+- Updated dependencies [9b8f83b]
+- Updated dependencies [143e763]
+- Updated dependencies [746912f]
+- Updated dependencies [3a0b3b7]
+- Updated dependencies [e000f0a]
+- Updated dependencies [b667930]
+- Updated dependencies [dc92ea4]
+- Updated dependencies [15328d8]
+- Updated dependencies [ebd0424]
+- Updated dependencies [0046729]
+- Updated dependencies [6babdc5]
+- Updated dependencies [2ee9af5]
+- Updated dependencies [cfc0732]
+- Updated dependencies [711be7d]
+- Updated dependencies [3a8b706]
+- Updated dependencies [15d434b]
+- Updated dependencies [60ca157]
+- Updated dependencies [15a08cc]
+- Updated dependencies [5a805e9]
+- Updated dependencies [81f2080]
+- Updated dependencies [fcc5602]
+- Updated dependencies [8c58288]
+- Updated dependencies [084198c]
+- Updated dependencies [b0d7740]
+- Updated dependencies [df9a774]
+- Updated dependencies [a639e4d]
+- Updated dependencies [040af35]
+- Updated dependencies [51376ec]
+- Updated dependencies [e7c03a3]
+- Updated dependencies [62aede0]
+- Updated dependencies [64fed84]
+- Updated dependencies [bbbe801]
+- Updated dependencies [43fb985]
+- Updated dependencies [75f0443]
+- Updated dependencies [f1a886d]
+- Updated dependencies [c70da31]
+- Updated dependencies [33ddb2e]
+- Updated dependencies [964a242]
+- Updated dependencies [17e237b]
+- Updated dependencies [2b283ed]
+- Updated dependencies [d074d01]
+- Updated dependencies [1566d81]
+- Updated dependencies [f37a70e]
+- Updated dependencies [2755b11]
+- Updated dependencies [49aa4d8]
+- Updated dependencies [dc881e4]
+- Updated dependencies [583bd6d]
+- Updated dependencies [d353c85]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [b6863aa]
+- Updated dependencies [95ca540]
+- Updated dependencies [180ec74]
+- Updated dependencies [36dac61]
+- Updated dependencies [b85869b]
+- Updated dependencies [4674f07]
+- Updated dependencies [9787bca]
+- Updated dependencies [16a2eed]
+- Updated dependencies [3eb3209]
+- Updated dependencies [2ac34a7]
+- Updated dependencies [7e60049]
+- Updated dependencies [c7db707]
+- Updated dependencies [d26152c]
+- Updated dependencies [a3136aa]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [7f49a0e]
+- Updated dependencies [cde17d1]
+- Updated dependencies [3b37bd1]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [c3da9af]
+- Updated dependencies [824eca6]
+- Updated dependencies [6bb95ac]
+- Updated dependencies [6619ff1]
+- Updated dependencies [3c212ef]
+- Updated dependencies [23d94db]
+- Updated dependencies [8c17e91]
+- Updated dependencies [50900c3]
+- Updated dependencies [cc5b0c3]
+- Updated dependencies [b1cfa76]
+- Updated dependencies [4be1a3f]
+- Updated dependencies [896cfc6]
+- Updated dependencies [8c2d558]
+- Updated dependencies [2ddb6a5]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [1bf22f4]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [79d4797]
+- Updated dependencies [a947127]
+- Updated dependencies [7e5b389]
+- Updated dependencies [cf24657]
+- Updated dependencies [1d5a968]
+- Updated dependencies [95bd84c]
+- Updated dependencies [2338cee]
+- Updated dependencies [034f292]
+- Updated dependencies [1d207f7]
+- Updated dependencies [eeef48a]
+- Updated dependencies [736df4e]
+- Updated dependencies [6aedb33]
+- Updated dependencies [3dc96c8]
+- Updated dependencies [972a96c]
+- Updated dependencies [94ea28e]
+- Updated dependencies [4f7976e]
+- Updated dependencies [ed0fff4]
+- Updated dependencies [4bb7f17]
+- Updated dependencies [8764186]
+- Updated dependencies [9606e24]
+- Updated dependencies [a7dab9f]
+- Updated dependencies [3a1bfaa]
+- Updated dependencies [42f1123]
+- Updated dependencies [6416860]
+- Updated dependencies [6943c8d]
+- Updated dependencies [9b7e01c]
+- Updated dependencies [aedb49f]
+- Updated dependencies [0aa5132]
+- Updated dependencies [7ba3e69]
+- Updated dependencies [e044df2]
+- Updated dependencies [4a18e17]
+- Updated dependencies [27649f2]
+- Updated dependencies [5117a3c]
+- Updated dependencies [a0f437e]
+- Updated dependencies [158f868]
+- Updated dependencies [ffcde61]
+- Updated dependencies [19f8e39]
+- Updated dependencies [c57e67c]
+- Updated dependencies [201d32f]
+- Updated dependencies [8e43f3f]
+- Updated dependencies [5ffc43b]
+- Updated dependencies [813a306]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [df2ae04]
+- Updated dependencies [d22292c]
+- Updated dependencies [7d89cf6]
+- Updated dependencies [8882b53]
+- Updated dependencies [c7db707]
+- Updated dependencies [452e669]
+- Updated dependencies [0618a25]
+- Updated dependencies [e7561c7]
+- Updated dependencies [76c5562]
+- Updated dependencies [477eb15]
+- Updated dependencies [8649268]
+- Updated dependencies [8a24c29]
+- Updated dependencies [e4f2133]
+- Updated dependencies [e4f2133]
+- Updated dependencies [4e9c237]
+- Updated dependencies [7cace1d]
+- Updated dependencies [60b38f5]
+- Updated dependencies [74261df]
+- Updated dependencies [a86bd34]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [d059b75]
+- Updated dependencies [a86bd34]
+- Updated dependencies [7165e31]
+- Updated dependencies [e5e7aef]
+- Updated dependencies [9566a40]
+- Updated dependencies [3fe1323]
+- Updated dependencies [22a1496]
+- Updated dependencies [c3bcbf9]
+- Updated dependencies [ea0eef2]
+- Updated dependencies [d061e79]
+- Updated dependencies [b44408d]
+- Updated dependencies [51dc6ab]
+- Updated dependencies [f9ab55b]
+- Updated dependencies [e70f4da]
+- Updated dependencies [174d6ef]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [8c63002]
+- Updated dependencies [1026606]
+- Updated dependencies [5ddbb1f]
+- Updated dependencies [aa1dfd3]
+- Updated dependencies [e6871f1]
+- Updated dependencies [daf6f2e]
+- Updated dependencies [595b596]
+- Updated dependencies [10e17bb]
+- Updated dependencies [8e6f5d2]
+- Updated dependencies [9236a1e]
+- Updated dependencies [7e5b389]
+- Updated dependencies [7e5b389]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [01b8a73]
+- Updated dependencies [6eefcb6]
+- Updated dependencies [37daa58]
+- Updated dependencies [7863d23]
+- Updated dependencies [6b7317b]
+- Updated dependencies [181fbb3]
+- Updated dependencies [24fe665]
+- Updated dependencies [082dd1d]
+- Updated dependencies [79bd6cc]
+- Updated dependencies [5886c61]
+- Updated dependencies [a34b3fc]
+- Updated dependencies [e7d5f5a]
+- Updated dependencies [0b82615]
+- Updated dependencies [a0070e8]
+- Updated dependencies [b584cc5]
+- Updated dependencies [4d469aa]
+- Updated dependencies [5886c61]
+- Updated dependencies [1526249]
+- Updated dependencies [0b29cea]
+- Updated dependencies [3e89500]
+- Updated dependencies [c22c9a6]
+- Updated dependencies [2dd5e34]
+- Updated dependencies [0ac8104]
+- Updated dependencies [b1e9d32]
+- Updated dependencies [de8f61d]
+- Updated dependencies [a5166b0]
+- Updated dependencies [8b65c38]
+- Updated dependencies [56784d5]
+- Updated dependencies [033c46f]
+- Updated dependencies [4cc61de]
+- Updated dependencies [f219a71]
+- Updated dependencies [7f35ade]
+- Updated dependencies [597f68d]
+- Updated dependencies [812c469]
+- Updated dependencies [b54ab5f]
+- Updated dependencies [3c8e227]
+- Updated dependencies [8c7d44b]
+- Updated dependencies [b2b79f1]
+- Updated dependencies [ea36901]
+- Updated dependencies [65ac904]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [d2002e0]
+- Updated dependencies [34090f0]
+- Updated dependencies [b0905a2]
+- Updated dependencies [bfc31d6]
+- Updated dependencies [de8f61d]
+- Updated dependencies [a23ebea]
+- Updated dependencies [b10e05f]
+- Updated dependencies [44148c3]
+- Updated dependencies [e72e26a]
+- Updated dependencies [b9f3a12]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [1aa0af1]
+- Updated dependencies [f88fa83]
+- Updated dependencies [9eb084a]
+- Updated dependencies [066e590]
+- Updated dependencies [7c01199]
+- Updated dependencies [5792fce]
+- Updated dependencies [b3b9f5e]
+- Updated dependencies [1ba9061]
+- Updated dependencies [10ba95e]
+- Updated dependencies [7618831]
+- Updated dependencies [dc710e2]
+- Updated dependencies [0c1b6a6]
+- Updated dependencies [c3a9456]
+- Updated dependencies [cd290f3]
+- Updated dependencies [2907e97]
+- Updated dependencies [9b7a29c]
+- Updated dependencies [3cdeca9]
+- Updated dependencies [d9af6f2]
+- Updated dependencies [26aa3d2]
+- Updated dependencies [b6ae714]
+- Updated dependencies [a64cc29]
+- Updated dependencies [e737c0f]
+- Updated dependencies [69399bc]
+- Updated dependencies [d9c51c0]
+- Updated dependencies [d19f8cc]
+- Updated dependencies [717a531]
+- Updated dependencies [3a50e80]
+- Updated dependencies [921e20e]
+- Updated dependencies [2202a32]
+- Updated dependencies [f522122]
+- Updated dependencies [36dc93a]
+- Updated dependencies [36b25c8]
+- Updated dependencies [87f3d38]
+- Updated dependencies [11b0336]
+- Updated dependencies [fa288ff]
+- Updated dependencies [02087eb]
+- Updated dependencies [75ef9fb]
+- Updated dependencies [85f85ba]
+- Updated dependencies [e549ad3]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [dc881e4]
+- Updated dependencies [fb4710c]
+- Updated dependencies [46440b6]
+- Updated dependencies [db54baf]
+- Updated dependencies [bbf58f0]
+- Updated dependencies [65703dc]
+- Updated dependencies [42aab0c]
+- Updated dependencies [ac18636]
+- Updated dependencies [5d3b9b7]
+- Updated dependencies [adb1290]
+- Updated dependencies [9204311]
+- Updated dependencies [3f575e2]
+- Updated dependencies [a0bb229]
+- Updated dependencies [aedb49f]
+- Updated dependencies [df97f39]
+- Updated dependencies [9a3e262]
+- Updated dependencies [067cf55]
+- Updated dependencies [b750660]
+- Updated dependencies [5b5d307]
+- Updated dependencies [6661cbf]
+- Updated dependencies [dc881e4]
+- Updated dependencies [9c4c2ff]
+- Updated dependencies [0a05da3]
+- Updated dependencies [3e108b4]
+- Updated dependencies [f4e98a4]
+- Updated dependencies [b323f97]
+- Updated dependencies [0bb71da]
+- Updated dependencies [fa5c2d9]
+- Updated dependencies [4810ef4]
+- Updated dependencies [4bda721]
+- Updated dependencies [b29a94e]
+- Updated dependencies [5531792]
+- Updated dependencies [c129ce1]
+- Updated dependencies [43bf365]
+- Updated dependencies [c8f84f3]
+- Updated dependencies [c0d43ee]
+- Updated dependencies [a37a658]
+- Updated dependencies [9d4db71]
+- Updated dependencies [d73bd9f]
+- Updated dependencies [4ee45ab]
+- Updated dependencies [b98bad7]
+- Updated dependencies [0d377ec]
+- Updated dependencies [435c248]
+- Updated dependencies [e1e7241]
+- Updated dependencies [977164c]
+- Updated dependencies [9aed377]
+- Updated dependencies [c491f93]
+- Updated dependencies [aadb086]
+- Updated dependencies [b1bbd39]
+- Updated dependencies [8934e48]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [aeda396]
+- Updated dependencies [c1da54a]
+- Updated dependencies [aeda396]
+- Updated dependencies [e30b99b]
+- Updated dependencies [d8dc6bf]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [a791e92]
+- Updated dependencies [09f0c86]
+- Updated dependencies [d11dc30]
+- Updated dependencies [5ad7bc0]
+- Updated dependencies [481218b]
+- Updated dependencies [f8172cf]
+- Updated dependencies [e5395a6]
+- Updated dependencies [cd7ffdb]
+- Updated dependencies [8ced7e2]
+- Updated dependencies [5ed6215]
+- Updated dependencies [9cacd4b]
+- Updated dependencies [f95e342]
+- Updated dependencies [d6ba47e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [fcc5602]
+- Updated dependencies [880cbbf]
+- Updated dependencies [2932eb2]
+- Updated dependencies [c1a3072]
+- Updated dependencies [968362b]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [f4bfab5]
+- Updated dependencies [e6c888e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [c5e5476]
+- Updated dependencies [56089ae]
+- Updated dependencies [d7de41f]
+- Updated dependencies [f544aeb]
+- Updated dependencies [c8b8348]
+- Updated dependencies [1e1d4c6]
+- Updated dependencies [33b9074]
+- Updated dependencies [dd3fdb0]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ccd6f25]
+- Updated dependencies [527f214]
+- Updated dependencies [42169f9]
+- Updated dependencies [6d2bb1e]
+- Updated dependencies [c4304d4]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [edfe71a]
+- Updated dependencies [1a03017]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [be3711c]
+- Updated dependencies [4f03b5d]
+- Updated dependencies [c0555fb]
+- Updated dependencies [094ba4d]
+- Updated dependencies [7d598c5]
+- Updated dependencies [6d2bb1e]
+- Updated dependencies [cff801a]
+- Updated dependencies [ff4504e]
+- Updated dependencies [cbb78ec]
+- Updated dependencies [0ae8b0c]
+- Updated dependencies [d897c83]
+- Updated dependencies [3d5d715]
+- Updated dependencies [8078d25]
+- Updated dependencies [c428e9e]
+- Updated dependencies [bf94421]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [7645aaa]
+- Updated dependencies [7dd8e23]
+- Updated dependencies [e265bdc]
+- Updated dependencies [1fbfa96]
+- Updated dependencies [9aa8036]
+- Updated dependencies [76c5562]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [768acf7]
+- Updated dependencies [4bf376e]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [45e100f]
+- Updated dependencies [6ab962a]
+- Updated dependencies [6ab962a]
+- Updated dependencies [0e01d7f]
+- Updated dependencies [70076bc]
+- Updated dependencies [f8f4954]
+- Updated dependencies [b1c09d3]
+- Updated dependencies [fa9657c]
+- Updated dependencies [f5b75cb]
+- Updated dependencies [f41f7ed]
+- Updated dependencies [4b3a525]
+- Updated dependencies [15e923d]
+- Updated dependencies [4c8749c]
+- Updated dependencies [9057ecb]
+- Updated dependencies [2823dca]
+- Updated dependencies [1c43dbf]
+- Updated dependencies [a3b1735]
+- Updated dependencies [d01d5a2]
+- Updated dependencies [bcc5c05]
+- Updated dependencies [e11a52e]
+- Updated dependencies [3744131]
+- Updated dependencies [5477214]
+- Updated dependencies [594d4ce]
+- Updated dependencies [7e5b389]
+- Updated dependencies [2e7bd80]
+- Updated dependencies [6c3e486]
+- Updated dependencies [e7bee92]
+- Updated dependencies [7affd45]
+- Updated dependencies [bef9c67]
+- Updated dependencies [470d4be]
+- Updated dependencies [2668893]
+- Updated dependencies [7e5b389]
+- Updated dependencies [1e9c740]
+- Updated dependencies [586b6c1]
+- Updated dependencies [53fb0eb]
+- Updated dependencies [47fa777]
+- Updated dependencies [47fa777]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [9566a40]
+- Updated dependencies [9566a40]
+- Updated dependencies [68d5da4]
+- Updated dependencies [7d67497]
+- Updated dependencies [5fa6d0a]
+- Updated dependencies [fc665a9]
+- Updated dependencies [bb8b8cb]
+- Updated dependencies [5fa6d0a]
+- Updated dependencies [9566a40]
+- Updated dependencies [68d5da4]
+- Updated dependencies [914ba92]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [4d469aa]
+- Updated dependencies [419b1f1]
+- Updated dependencies [a3136aa]
+- Updated dependencies [5b156c6]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [f976095]
+- Updated dependencies [4d31cf0]
+- Updated dependencies [af132bc]
+- Updated dependencies [2d57c94]
+- Updated dependencies [f004638]
+- Updated dependencies [3c27e36]
+- Updated dependencies [3c27e36]
+- Updated dependencies [ce5d609]
+- Updated dependencies [9333b1a]
+- Updated dependencies [fc62432]
+- Updated dependencies [dd5a540]
+- Updated dependencies [85d3d17]
+- Updated dependencies [921d4f8]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [305f0ce]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [8602bbc]
+- Updated dependencies [a3958dc]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [0e80f73]
+- Updated dependencies [c873b55]
+- Updated dependencies [aedb49f]
+- Updated dependencies [31cd706]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [d58694b]
+- Updated dependencies [74e37d7]
+- Updated dependencies [8f61f88]
+- Updated dependencies [231eec5]
+- Updated dependencies [6355d18]
+- Updated dependencies [fcfefd4]
+- Updated dependencies [eeb7c5a]
+- Updated dependencies [44848fe]
+- Updated dependencies [c4d5642]
+- Updated dependencies [aba9531]
+- Updated dependencies [c25237f]
+- Updated dependencies [b934739]
+- Updated dependencies [f1e9773]
+- Updated dependencies [b822d40]
+- Updated dependencies [88a19c0]
+- Updated dependencies [44848fe]
+- Updated dependencies [48e0ecd]
+- Updated dependencies [c8ed2ce]
+- Updated dependencies [f5e0446]
+- Updated dependencies [62aede0]
+- Updated dependencies [dc3eb53]
+- Updated dependencies [f6c305d]
+- Updated dependencies [2a7e9e0]
+- Updated dependencies [139f3f0]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [00a1f20]
+- Updated dependencies [9c46d22]
+- Updated dependencies [6451f0c]
+- Updated dependencies [3dab4ca]
+- Updated dependencies [c8ed2ce]
+- Updated dependencies [f3a1232]
+- Updated dependencies [d55c488]
+- Updated dependencies [56fda8d]
+- Updated dependencies [e04e543]
+- Updated dependencies [32356ff]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [df73bc8]
+- Updated dependencies [5c778a0]
+- Updated dependencies [261488b]
+- Updated dependencies [55ab2c6]
+- Updated dependencies [7e1ab6c]
+- Updated dependencies [162f816]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [52e0851]
+- Updated dependencies [f88d616]
+- Updated dependencies [3cb3a67]
+- Updated dependencies [a97fe65]
+- Updated dependencies [c60fc3d]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [834d2ca]
+- Updated dependencies [457fbc3]
+- Updated dependencies [1e80440]
+- Updated dependencies [d3b20b9]
+- Updated dependencies [86b5903]
+- Updated dependencies [647b21c]
+- Updated dependencies
+- Updated dependencies [1d8e163]
+- Updated dependencies [b0bc4cd]
+- Updated dependencies [c23c975]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e08d172]
+- Updated dependencies [2076b1b]
+- Updated dependencies [429e80c]
+- Updated dependencies [49b3b13]
+- Updated dependencies [b425d50]
+- Updated dependencies [d962a91]
+- Updated dependencies [46ec294]
+- Updated dependencies [17d184b]
+- Updated dependencies [19387a6]
+- Updated dependencies [cabffe5]
+- Updated dependencies [f92300d]
+- Updated dependencies [07f5db2]
+- Updated dependencies [16eca51]
+- Updated dependencies [08512ea]
+- Updated dependencies [e0bea5a]
+- Updated dependencies [82f3868]
+- Updated dependencies [6c1ea88]
+- Updated dependencies [83ad38f]
+- Updated dependencies [82e481d]
+- Updated dependencies [87a8b06]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [d569abf]
+- Updated dependencies [36a20d4]
+- Updated dependencies [410ba5e]
+- Updated dependencies [4e4ddb5]
+- Updated dependencies [9d459cd]
+- Updated dependencies [76ca845]
+- Updated dependencies [431aa8e]
+- Updated dependencies [1ac16c5]
+- Updated dependencies [a82e65b]
+- Updated dependencies [b835405]
+- Updated dependencies [bf1cf7b]
+- Updated dependencies [c3e773c]
+- Updated dependencies [8558f40]
+- Updated dependencies [fa8902c]
+- Updated dependencies [96de590]
+- Updated dependencies [0ac8104]
+- Updated dependencies [9bbe3e4]
+- Updated dependencies [0c77c8d]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [56f8264]
+- Updated dependencies [1c6f913]
+- Updated dependencies [f20931c]
+- Updated dependencies [2241860]
+- Updated dependencies [5d7b7b8]
+- Updated dependencies [447f742]
+- Updated dependencies [0fe19aa]
+- Updated dependencies [5339aec]
+- Updated dependencies [3a71a1a]
+- Updated dependencies [a979682]
+- Updated dependencies [d8c22e6]
+- Updated dependencies [f11549d]
+- Updated dependencies [814994a]
+- Updated dependencies [ab56471]
+- Updated dependencies [86b43d1]
+- Updated dependencies [eaefc65]
+- Updated dependencies [8cce06e]
+- Updated dependencies [16d4fab]
+- Updated dependencies [edcc040]
+- Updated dependencies [1ceadbf]
+- Updated dependencies [a47e5ed]
+- Updated dependencies [6829ab9]
+- Updated dependencies [865ccae]
+- Updated dependencies [a47e5ed]
+- Updated dependencies [eb82ac9]
+- Updated dependencies [795f517]
+- Updated dependencies [a26f70d]
+- Updated dependencies [aedb49f]
+- Updated dependencies [95da921]
+- Updated dependencies [6ac9c99]
+- Updated dependencies [f39b469]
+- Updated dependencies [e752074]
+- Updated dependencies [8b73d9a]
+- Updated dependencies [002ff57]
+- Updated dependencies [31dd479]
+- Updated dependencies [2557ab3]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [a23923e]
+- Updated dependencies [9217b8a]
+- Updated dependencies [9246f97]
+- Updated dependencies [843859b]
+- Updated dependencies [4816dc3]
+- Updated dependencies [97cce9d]
+- Updated dependencies [deda510]
+- Updated dependencies [6bfce5e]
+- Updated dependencies [9f9a61a]
+- Updated dependencies [b646c27]
+- Updated dependencies [850db0a]
+- Updated dependencies [ef3ebdd]
+- Updated dependencies [0828a03]
+- Updated dependencies [b92bf56]
+- Updated dependencies [0828a03]
+- Updated dependencies [f23829c]
+- Updated dependencies [7dadcf2]
+- Updated dependencies [87e8475]
+- Updated dependencies [9521334]
+- Updated dependencies [0177219]
+- Updated dependencies [091bd67]
+- Updated dependencies [670aeb3]
+- Updated dependencies [6a9b37e]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [f86aaa2]
+- Updated dependencies [6222db5]
+- Updated dependencies [415e5b8]
+- Updated dependencies [033c46f]
+- Updated dependencies [e68cb62]
+- Updated dependencies [29135cb]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [16e4b0b]
+- Updated dependencies [7bc2c18]
+- Updated dependencies [fb69a95]
+- Updated dependencies [a45338c]
+- Updated dependencies [fb69a95]
+- Updated dependencies [3f575e2]
+- Updated dependencies [c6b831f]
+- Updated dependencies [4f9848f]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [7cace1d]
+- Updated dependencies [a86bd34]
+- Updated dependencies [c11f37e]
+- Updated dependencies [cb6e47b]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [1c0046a]
+- Updated dependencies [a34f319]
+- Updated dependencies [cbcd314]
+- Updated dependencies [9e23aea]
+- Updated dependencies [dee342f]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [d455bd2]
+- Updated dependencies [12df18a]
+- Updated dependencies [62aede0]
+- Updated dependencies [bda75b2]
+- Updated dependencies [5bf7f01]
+- Updated dependencies [7293e22]
+- Updated dependencies [6bdf14d]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [2f2e3ca]
+- Updated dependencies [a9a0abc]
+- Updated dependencies [880ed50]
+- Updated dependencies [6975d7b]
+- Updated dependencies [a8ae2f7]
+- Updated dependencies [6bea0c5]
+- Updated dependencies [8635c1a]
+- Updated dependencies [555bd8d]
+- Updated dependencies [ae6b2a5]
+- Updated dependencies [7e90922]
+- Updated dependencies [5b0df8a]
+- Updated dependencies [78dd590]
+- Updated dependencies [d7a156b]
+- Updated dependencies [d3f717d]
+- Updated dependencies [1a9548b]
+- Updated dependencies [27704ec]
+- Updated dependencies [60c082d]
+- Updated dependencies [46ec294]
+- Updated dependencies [ae15ab8]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [de2d442]
+- Updated dependencies [4c592ae]
+- Updated dependencies [3a28bbb]
+- Updated dependencies [a0d5f84]
+- Updated dependencies [6153ae7]
+- Updated dependencies [3551ece]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [959f804]
+- Updated dependencies [6b5336b]
+- Updated dependencies [dc881e4]
+- Updated dependencies [30e2485]
+- Updated dependencies [95083bc]
+- Updated dependencies [cbaa22a]
+- Updated dependencies [bb03b55]
+- Updated dependencies [1377fab]
+- Updated dependencies [9199cb5]
+- Updated dependencies [8ac8a64]
+- Updated dependencies [de1e1c0]
+- Updated dependencies [4aaefe7]
+- Updated dependencies [c356829]
+- Updated dependencies [fcc5602]
+- Updated dependencies [f3130d5]
+- Updated dependencies [95b6eb4]
+- Updated dependencies [cbf500e]
+- Updated dependencies [c5a7102]
+- Updated dependencies [3871e2f]
+- Updated dependencies [c3f3d9a]
+- Updated dependencies [5548d73]
+- Updated dependencies [e824816]
+- Updated dependencies [5a94e2b]
+- Updated dependencies [3871e2f]
+- Updated dependencies [4377fe2]
+- Updated dependencies [45559fc]
+- Updated dependencies [685bc3d]
+- Updated dependencies [6111c56]
+- Updated dependencies [accc590]
+- Updated dependencies [4b0b9df]
+- Updated dependencies [f9ed89f]
+- Updated dependencies [a23ebea]
+- Updated dependencies [8d3c536]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [9d1f28d]
+- Updated dependencies [f4115e7]
+- Updated dependencies [c62a3d3]
+- Updated dependencies [67cb364]
+- Updated dependencies [f9427e6]
+- Updated dependencies [02f9570]
+- Updated dependencies [8fda190]
+- Updated dependencies [368fb5f]
+- Updated dependencies [dd7e196]
+- Updated dependencies [8ec6662]
+- Updated dependencies [963f8fd]
+- Updated dependencies [ba59515]
+- Updated dependencies [7a75fd1]
+- Updated dependencies [e063817]
+- Updated dependencies [de71f7d]
+- Updated dependencies [b2d7ddb]
+- Updated dependencies [87d7436]
+- Updated dependencies [ae7d97c]
+- Updated dependencies [95ca540]
+- Updated dependencies [8d7296a]
+- Updated dependencies [d6f8aac]
+- Updated dependencies [1f05956]
+- Updated dependencies [c4f5447]
+- Updated dependencies [c4f5447]
+- Updated dependencies [f57aa89]
+- Updated dependencies [a453821]
+- Updated dependencies [9566a40]
+- Updated dependencies [129da4b]
+- Updated dependencies [cd410a7]
+- Updated dependencies [29f3da2]
+- Updated dependencies [b70bc7f]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [6a423ea]
+- Updated dependencies [774e9cc]
+- Updated dependencies [9e8b91e]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [4c6e74f]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [a0d7dfc]
+- Updated dependencies [7d77794]
+- Updated dependencies [a5c1865]
+- Updated dependencies [0d977b8]
+- Updated dependencies [01d3e39]
+- Updated dependencies [6494d25]
+- Updated dependencies [30bf620]
+- Updated dependencies [41f0773]
+- Updated dependencies [371b695]
+- Updated dependencies [bdc9108]
+- Updated dependencies [0c18df0]
+- Updated dependencies [d268d21]
+- Updated dependencies [95cd658]
+- Updated dependencies [c4783b4]
+- Updated dependencies [de9d942]
+- Updated dependencies [cdede50]
+- Updated dependencies [ce8655e]
+- Updated dependencies [edcb456]
+- Updated dependencies [f2b94bc]
+- Updated dependencies [4198fea]
+- Updated dependencies [0ac8104]
+- Updated dependencies [475c725]
+- Updated dependencies [adca5ed]
+- Updated dependencies [5dd240d]
+- Updated dependencies [8b01b26]
+- Updated dependencies [2c0f2fe]
+- Updated dependencies [793ac72]
+- Updated dependencies [c7db707]
+- Updated dependencies [ca65c7b]
+- Updated dependencies [987dd51]
+- Updated dependencies [d2002e0]
+- Updated dependencies [904ff6b]
+- Updated dependencies [812c469]
+- Updated dependencies [f71667e]
+- Updated dependencies [12816b7]
+- Updated dependencies [6803209]
+- Updated dependencies [f857c86]
+- Updated dependencies [5b8e066]
+- Updated dependencies [fca9c3c]
+- Updated dependencies [f62be4d]
+- Updated dependencies [f776161]
+- Updated dependencies [087e02c]
+- Updated dependencies [f873d0e]
+- Updated dependencies [5046776]
+- Updated dependencies [232d77f]
+- Updated dependencies [0f2cc79]
+- Updated dependencies [542e4e2]
+- Updated dependencies [abdc064]
+- Updated dependencies [5b08bd0]
+- Updated dependencies [2eb84fc]
+- Updated dependencies [413e38c]
+- Updated dependencies [55fd480]
+- Updated dependencies [aec0cec]
+- Updated dependencies [3e39fea]
+- Updated dependencies [eb070dc]
+- Updated dependencies [42ec713]
+- Updated dependencies [a9b8fbb]
+- Updated dependencies [73f1cf1]
+- Updated dependencies [cbc7e4b]
+- Updated dependencies [0d0c238]
+- Updated dependencies [5354da3]
+- Updated dependencies [787ca7b]
+- Updated dependencies [721585e]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/routing@2.0.0
+  - @weasel-js/core@2.0.0
+  - @weasel-js/editing@2.0.0
+  - @weasel-js/stroke@2.0.0
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/text@2.0.0
+  - @weasel-js/renderer@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/paint@2.0.0
+  - @weasel-js/cursor@2.0.0
+  - @weasel-js/react@2.0.0
+  - @weasel-js/icons@2.0.0
+  - @weasel-js/modes@2.0.0
+  - @weasel-js/prefs-schema@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

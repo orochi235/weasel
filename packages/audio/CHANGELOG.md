@@ -1,5 +1,225 @@
 # @weasel-js/audio
 
+## 2.0.0
+
+### Major Changes
+
+- 2395f92: The audio engine's `stopKey(key)` is `cancelKey(key)`, the name of the play option it reads and of the animator's method that does the same.
+  
+  ```ts
+  // Before
+  engine.play('hit', { cancelKey: 'sfx-hit' });
+  engine.stopKey('sfx-hit');
+  
+  // After
+  engine.play('hit', { cancelKey: 'sfx-hit' });
+  engine.cancelKey('sfx-hit');
+  ```
+  
+  <!-- entry: breaking api -->
+- 8ec33cf: Audio's constant tables are `PARTIAL_PRESETS`, `SCORE_CUES` and `SCORE_MODES`, in SCREAMING_CASE like the rest.
+  
+  They were `partialPresets`, `scoreCues` and `scoreModes`.
+  
+  ```ts
+  // before
+  const bell = partialPresets.bell;
+  // after
+  const bell = PARTIAL_PRESETS.bell;
+  ```
+  
+  <!-- entry: breaking api -->
+- bf69022: Audio's graph node factories are spelled `create…Node`, like `createGainNode`.
+  
+  `filterNode`, `delayNode`, `reverbNode`, `compressorNode` and `insertNode` are `createFilterNode`, `createDelayNode`, `createReverbNode`, `createCompressorNode` and `createInsertNode`.
+  
+  Their arguments are unchanged.
+  
+  ```ts
+  // before
+  const delay = delayNode(ctx, { time: 250 });
+  // after
+  const delay = createDelayNode(ctx, { time: 250 });
+  ```
+  
+  <!-- entry: breaking api -->
+- e3f3d97: audio's deprecated `Vec2` type is removed; use `SpatialPoint`, which takes the same `x` and `y` and an optional `z`.
+  
+  ```ts
+  // before
+  import type { Vec2 } from '@weasel-js/audio';
+  // after
+  import type { SpatialPoint } from '@weasel-js/audio';
+  ```
+  
+  <!-- entry: breaking -->
+- 73ed793: A pattern player, a score and an audio graph answer `isPlaying()`, as a voice handle does, in place of `playing()`.
+  
+  ```ts
+  // Before
+  if (pattern.playing()) pattern.stop();
+  
+  // After
+  if (pattern.isPlaying()) pattern.stop();
+  ```
+  
+  <!-- entry: breaking api -->
+- 8f614dd: `PatternLoadOptions` is `PatternVoicePeaksOptions`, named for `patternVoicePeaks`, which takes it.
+  
+  ```ts
+  // before
+  const opts: PatternLoadOptions = { tempo: 120 };
+  // after
+  const opts: PatternVoicePeaksOptions = { tempo: 120 };
+  ```
+  
+  <!-- entry: breaking api -->
+- dba05ed: `scoreParams` is `resolveScoreMood` and its result type `ScoreSettings`; "params" is the kit's word for the settings-editing surfaces.
+  
+  ```ts
+  // before
+  const settings: ScoreParams = scoreParams(mood);
+  // after
+  const settings: ScoreSettings = resolveScoreMood(mood);
+  ```
+  
+  <!-- entry: breaking api -->
+- 9bc4172: `Acquisition` is `VoiceAcquisition`, the result of `VoicePool.acquire`, named beside `VoicePool` and `VoiceRecord`.
+  
+  ```ts
+  // before
+  const got: Acquisition = pool.acquire(record);
+  // after
+  const got: VoiceAcquisition = pool.acquire(record);
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- 78aa95d: `checkWave`, `checkFilterType` and `checkNoiseColor` are exported.
+  
+  A caller can refuse a wave, filter type or noise color before building the node that would throw on it.
+  
+  <!-- entry: api -->
+- 78a0bd6: `createPatternPlayer` takes `beforeStep`, called before a step's events are booked, so events and a tempo set there apply to that step.
+  
+  ```ts
+  createPatternPlayer(engine, {
+    tempo: 120,
+    beforeStep(step, when, count) {
+      if (step === 0) player.setEvents(nextBar());
+    },
+  });
+  ```
+  
+  <!-- entry: api new -->
+- df2ae04: `Timers`, the timer pair `InsertChainOptions` and `AudioGraphOptions` take, is exported from `@weasel-js/audio`.
+  
+  <!-- entry: rank=-1 api -->
+
+### Patch Changes
+
+- 3edbcb1: `createAudioEngine` throws a `RangeError` on a `lookahead`, `tickInterval` or `insertFadeMs` it could not run with.
+  
+  That is a lookahead or fade that is negative or not finite, or an interval not above 0 and at most 2^31 − 1 ms. `createScheduler`, `createInsertChain` and `createAudioGraph` refuse the same of their own options. A NaN lookahead fired nothing, an infinite interval ran passes back to back, and a NaN fade left an insert chain half wired.
+  
+  <!-- entry: fix -->
+- 92c64fe: `stop(fadeMs)` fades a voice that is releasing or already fading from where it is, rather than cutting it dead.
+  
+  `release()` on a fading voice leaves it to its fade, too.
+  
+  <!-- entry: fix -->
+- daccd3c: A non-looping file source stopped after it played to its end starts again from the top, even when its end had not yet been reported.
+  
+  <!-- entry: fix -->
+- 9a73a90: Voice filters, `createFilterEffect`, `createFilterNode`, and `biquadCoefficients` throw a `RangeError` on an unknown filter `type`.
+  
+  <!-- entry: fix -->
+- 9a9fbab: A linear glide ends on its target frequency exactly.
+  
+  <!-- entry: fix -->
+- aca518c: An audio graph's `add` and `replace` throw on a def the graph already holds: each node takes a def of its own.
+  
+  <!-- entry: fix -->
+- 67c3b2c: `createAudioGraph` throws a `RangeError` on a `fadeMs` that is not finite or is below 0.
+  
+  <!-- entry: fix -->
+- ecf98ab: `createOscillatorNode` throws a `RangeError` on a non-finite `frequency` when it is built, as `createGainNode` does.
+  
+  <!-- entry: fix -->
+- 193c9dc: An audio graph's `settled()` waits for a new connection to finish fading in, as it waits for the output's fade-in.
+  
+  <!-- entry: fix -->
+- ecf98ab: A graph source whose `start` throws no longer keeps the sources after it from starting. `start()` starts the rest, leaves that one stopped so a later start retries it, and rethrows; `apply` goes on past it, as past a throwing `set`.
+  
+  <!-- entry: fix -->
+- 4c1e42c: `playNote` and `createNoteKernel` throw a `RangeError` at the call on a harmonic `wave` that is empty or holds a level that is not finite.
+  
+  <!-- entry: fix -->
+- ad37a86: An insert chain's `settled()` resolves at once once its bus graph is disposed, even when the dispose came mid-crossfade.
+  
+  <!-- entry: fix -->
+- 1ed1116: `playNoise` and `createNoiseNode` throw a `RangeError` on a noise color other than `white`, `pink`, or `brown`.
+  
+  <!-- entry: fix -->
+- 6eb73fc: `createOscillatorNode` throws a `RangeError` on an unknown wave name, an empty or non-finite harmonic wave, or partials.
+  
+  <!-- entry: fix -->
+- f9a83f5: A pattern player keeps playing past an event that throws at its play call: the rest of that step sounds and later steps are booked.
+  
+  Such an event is one with an unreadable pitch or an unknown bus, say. The error still reaches the console through the scheduler.
+  
+  <!-- entry: fix -->
+- 1f5fce4: `createPatternPlayer` and `setEvents` throw a `RangeError` on an event whose `step` is not finite, which was never played.
+  
+  <!-- entry: fix -->
+- 1187c1d: Harmonic waves are cached per context up to the 64 most recently played, so a timbre varied note by note stays bounded.
+  
+  Levels that differ only in scale share one wave.
+  
+  <!-- entry: fix perf -->
+- 1006f01: `patternVoicePeaks` counts a bus named `__proto__` as its own entry.
+  
+  <!-- entry: fix -->
+- d62b081: Restreaming an element leaves its current stream playing when the new `stream` call throws or is dropped.
+  
+  A call naming an unknown bus, or made while the context is locked or the engine disposed, used to stop the music first.
+  
+  <!-- entry: fix -->
+- 577483a: A score plays a bar's own events from the first step booked in it, even when a stall skipped the bar line.
+  
+  A mood set late in a bar now lands on the next bar line too.
+  
+  <!-- entry: fix -->
+- 5d46bea: `createScore`, `setMood`, `readScoreCue` and `resolveScoreMood` throw a `RangeError` on a mood with a NaN axis, and `setMood` keeps the mood it had.
+  
+  A NaN axis used to throw a `TypeError` at every bar line of a running score, which then replayed its last bar.
+  
+  <!-- entry: fix -->
+- 5fad4f9: A second engine on the same `AudioContext` can stream a media element an earlier engine streamed, as after a remount that rebuilds the engine.
+  
+  <!-- entry: fix -->
+- 5161d64: `stream` throws a `RangeError` at the call on an `offset` that is negative or not finite, and leaves the element's current stream playing.
+  
+  <!-- entry: fix -->
+- 013e9cb: `playNote` and `playNoise` throw a `RangeError` at the call on a patch number their voice could not play.
+  
+  That is a `duration` or glide `ms` that is negative or not finite, a non-finite envelope time or sustain, filter number or partial gain, or a partial decay of `Infinity`. `createNoteKernel` and `createNoiseKernel` refuse the same. Such a voice used to drop as `failed` when it came due, or mix NaN into its bus under `synthVoices: 'worklet'`.
+  
+  <!-- entry: fix -->
+- 6b1a5a6: `AudioEngine.unlock()` resolves, rather than rejecting, when `dispose()` closes the context during its resume.
+  
+  <!-- entry: fix -->
+- 9629632: A voice's `rate`, and `setRate` on its handle, throw a `RangeError` on 0 or below, as they do on a rate that is not finite.
+  
+  A note's nodes threw a `TypeError` on one, and a noise voice under `synthVoices: 'worklet'` mixed NaN into its bus. A buffer voice at rate 0 or below is refused too; nothing replaces playing one frozen or backward.
+  
+  <!-- entry: fix behavior -->
+- 426933f: `playNote` throws a `RangeError` at the call on a wave name other than `sine`, `square`, `sawtooth`, or `triangle`.
+  
+  <!-- entry: fix -->
+
 ## 1.19.1
 
 No changes in this release.

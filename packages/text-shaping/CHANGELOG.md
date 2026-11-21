@@ -1,5 +1,65 @@
 # @weasel-js/text-shaping
 
+## 2.0.0
+
+### Major Changes
+
+- 95083bc: `BidiResolver` is renamed `BidiEngine`, and text-shaping's `Shaper` is renamed `TextShaper`.
+  
+  Each engine contract now has one name across packages: `@weasel-js/bidi` already called the first `BidiEngine`, and `@weasel-js/text` already called the second `TextShaper`.
+  
+  ```ts
+  // before
+  import type { BidiResolver } from '@weasel-js/text';
+  import type { Shaper } from '@weasel-js/text-shaping';
+  // after
+  import type { BidiEngine } from '@weasel-js/text';
+  import type { TextShaper } from '@weasel-js/text-shaping';
+  ```
+  
+  <!-- entry: breaking -->
+
+### Patch Changes
+
+- e824816: Errors about a face or engine that cannot serve text now say what to do about it.
+  
+  A fallback face with no outlines is named with the call that registers it, a failed outline load points at its logged reason, a bad shaping feature shows the forms it takes, and `enableLocalFontOutlines` names `canQueryLocalFonts()`.
+  
+  <!-- entry: fix -->
+- edddd2e: A closing angle bracket that is a canonical equivalent of its opener's pair now goes with the opener's script.
+  
+  `〈שלום〉` written with U+2329 and U+3009 pairs as `@weasel-js/bidi` pairs it, so the closer is shaped with the text after the brackets.
+  
+  <!-- entry: fix visual -->
+- 82bd42f: `loadShaper` fetches its WebAssembly from the bundled URL in an Electron renderer with Node integration, as it does in any other web page.
+  
+  <!-- entry: fix -->
+- 8fc276a: The shaper holds at most 256 parsed feature settings, so distinct ranged settings no longer grow its memory without end.
+  
+  <!-- entry: fix -->
+- 0a7c47a: `glyphD` throws a `RangeError` naming the offset when `dx` or `dy` is not finite.
+  
+  <!-- entry: fix -->
+- 92d7510: A feature setting holding a character outside ASCII, such as `“liga”`, is refused as not an OpenType feature setting.
+  
+  It no longer reaches HarfBuzz, so a refused setting leaks no WebAssembly memory however often it is retried.
+  
+  <!-- entry: fix -->
+- e6f671b: `shape` refuses a language tag holding a character outside ASCII, naming the tag.
+  
+  <!-- entry: fix -->
+- Updated dependencies [edddd2e]
+- Updated dependencies [dfbad15]
+- Updated dependencies [90f2b51]
+- Updated dependencies [fb8ce2f]
+- Updated dependencies [0dc7968]
+- Updated dependencies [fe6c2d2]
+- Updated dependencies [2cff4ac]
+- Updated dependencies [7e53cbc]
+- Updated dependencies [a9e7040]
+- Updated dependencies [e347542]
+  - @weasel-js/bidi@2.0.0
+
 ## 1.19.1
 
 ### Patch Changes

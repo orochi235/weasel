@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/editing",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "Editing for a weasel canvas, as presets an app opts into: selecting, moving, resizing and rotating, the edit, arrange and Pathfinder commands, and paste and drop.",
   "weasel": {
     "tier": "plugin"
@@ -64,22 +64,22 @@
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
-    "@weasel-js/cursor": "1.19.1",
-    "@weasel-js/gestures": "1.19.1",
-    "@weasel-js/icons": "1.19.1",
-    "@weasel-js/paint": "1.19.1",
-    "@weasel-js/prefs-schema": "1.19.1",
-    "@weasel-js/react": "1.19.1",
-    "@weasel-js/registry": "1.19.1",
-    "@weasel-js/renderer": "1.19.1",
-    "@weasel-js/routing": "1.19.1",
-    "@weasel-js/select": "1.19.1",
-    "@weasel-js/stroke": "1.19.1",
+    "@weasel-js/cursor": "2.0.0",
+    "@weasel-js/gestures": "2.0.0",
+    "@weasel-js/icons": "2.0.0",
+    "@weasel-js/paint": "2.0.0",
+    "@weasel-js/prefs-schema": "2.0.0",
+    "@weasel-js/react": "2.0.0",
+    "@weasel-js/registry": "2.0.0",
+    "@weasel-js/renderer": "2.0.0",
+    "@weasel-js/routing": "2.0.0",
+    "@weasel-js/select": "2.0.0",
+    "@weasel-js/stroke": "2.0.0",
     "polygon-clipping": "^0.15.7"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.19.1",
-    "@weasel-js/geom": "1.19.1",
+    "@weasel-js/core": "2.0.0",
+    "@weasel-js/geom": "2.0.0",
     "react": ">=18"
   },
   "publishConfig": {

@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/ui-canvas",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "The ui components bound to a weasel canvas: the selection inspector and its anchor and character fields, scene-bound layer lists and gradient handles, rulers, the plot data panel, and every kit icon table at once.",
   "weasel": {
     "tier": "plugin"
@@ -34,24 +34,24 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.19.1",
-    "@weasel-js/icons": "1.19.1",
-    "@weasel-js/paint": "1.19.1",
-    "@weasel-js/paint-kinds": "1.19.1",
-    "@weasel-js/plot": "1.19.1",
-    "@weasel-js/prefs": "1.19.1",
-    "@weasel-js/quantity": "1.19.1",
-    "@weasel-js/react": "1.19.1",
-    "@weasel-js/registry": "1.19.1",
-    "@weasel-js/renderer": "1.19.1",
-    "@weasel-js/routing": "1.19.1",
-    "@weasel-js/text": "1.19.1",
-    "@weasel-js/ui": "1.19.1"
+    "@weasel-js/geom": "2.0.0",
+    "@weasel-js/icons": "2.0.0",
+    "@weasel-js/paint": "2.0.0",
+    "@weasel-js/paint-kinds": "2.0.0",
+    "@weasel-js/plot": "2.0.0",
+    "@weasel-js/prefs": "2.0.0",
+    "@weasel-js/quantity": "2.0.0",
+    "@weasel-js/react": "2.0.0",
+    "@weasel-js/registry": "2.0.0",
+    "@weasel-js/renderer": "2.0.0",
+    "@weasel-js/routing": "2.0.0",
+    "@weasel-js/text": "2.0.0",
+    "@weasel-js/ui": "2.0.0"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.19.1",
-    "@weasel-js/editing": "1.19.1",
-    "@weasel-js/guides": "1.19.1",
+    "@weasel-js/core": "2.0.0",
+    "@weasel-js/editing": "2.0.0",
+    "@weasel-js/guides": "2.0.0",
     "react": ">=18",
     "react-dom": ">=18"
   },
@@ -82,6 +82,6 @@
     "provenance": true
   },
   "devDependencies": {
-    "@weasel-js/history": "1.19.1"
+    "@weasel-js/history": "2.0.0"
   }
 }

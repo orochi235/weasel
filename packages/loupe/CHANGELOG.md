@@ -1,5 +1,421 @@
 # @weasel-js/loupe
 
+## 2.0.0
+
+### Major Changes
+
+- 6205afe: `LoupeRect` is geom's `Rect`: a lens' rectangle names its size `width` and `height`.
+  
+  ```ts
+  // before
+  const lens: LoupeRect = { x: 0, y: 0, w: 192, h: 192 };
+  // after
+  const lens: LoupeRect = { x: 0, y: 0, width: 192, height: 192 };
+  ```
+  
+  <!-- entry: breaking api -->
+- 6559075: `SourceBox` is gone from `@weasel-js/loupe` and `@weasel-js/labkit/loupe`; a canvas source's `box` is geom's `Rect`, the same `x`, `y`, `width`, `height`.
+  
+  ```ts
+  // before
+  import type { SourceBox } from '@weasel-js/loupe';
+  // after
+  import type { Rect } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking api -->
+- be6f965: `WHEEL_RATE` is `LOUPE_WHEEL_RATE`, named for the loupe whose magnification it steps.
+  
+  ```ts
+  // before
+  import { WHEEL_RATE } from '@weasel-js/loupe';
+  // after
+  import { LOUPE_WHEEL_RATE } from '@weasel-js/loupe';
+  ```
+  
+  <!-- entry: breaking api -->
+- 0362193: Bindings and triggers of the plugin packages' actions that read params are checked against their `ActionParamSchema` entries.
+  
+  Each package merges its entries into routing's schema from its own `actionParamSchema.ts`: the diagram's label, waypoint, lane, container-title, off-page, rename-group, and sequence actions; `hud.press`, `hud.release`, `hud.doubleClick`, `hud.contextMenu`, `hud.longPress`, and `hud.wheel`; `loupe.aim` and `loupe.magnify`; `minimap.center` and `minimap.zoom`; `bone.pick`, `weight.paint`, and `weight.click`; `lab.zoom`, `camera.tap`, and `loupe.follow`; `loupe.compare.with` and `loupe.compare.dpr`; and `camera.dolly`. New exported types: diagram's `DrawMessageParams` and `WrapFragmentParams`, `HudPointParams`, `HudWheelParams`, `LoupeAimParams`, `MinimapZoomParams`, `WeightBrushParams`, `LabZoomParams`, `DollyParams`, guides' `DistanceReadoutParams`, and forge's `ForgeCompareParams` and `ForgeComparison` from `@weasel-js/forge/shell`.
+  
+  This is breaking for code that passes one of these ids params its entry does not declare: that is now a type error. `useDocClipboard`'s `commands.paste.keys` takes `clipboard.paste`'s params. The diagram's `*ScratchOf` readers take the hit as `unknown`.
+  
+  <!-- entry: breaking api -->
+
+### Patch Changes
+
+- 4f264d0: Values held between two bounds go through geom's `clamp` and `clamp01` rather than local copies.
+  
+  A loupe whose `minFactor` is above its `maxFactor` now settles on the low bound, as `clamp` does, where it settled on the high one.
+  
+  <!-- entry: rank=-5 behavior -->
+- 250660c: An eyedropper whose latest hover's read fails settles `color` on `null`, not the previous point's color.
+  
+  `onColorChange` reports the `null`.
+  
+  <!-- entry: fix -->
+- ca88052: A loupe model starts at its `factor` clamped to `minFactor` and `maxFactor`, as `setFactor` clamps.
+  
+  A stored factor outside the range no longer makes the first zoom in jump the other way.
+  
+  <!-- entry: fix -->
+- f4c19d4: A loupe model tears itself down on any call or landed frame once its surface reports the lens gone.
+  
+  <!-- entry: fix -->
+- 2f920b2: `canvasPixelSource` scales a point to the frame it reads, so a canvas resized since its capture reads right.
+  
+  <!-- entry: fix -->
+- 5f5b06c: A captured `CanvasSource` captured at zero size answers no frame, rather than its last copy.
+  
+  Its frame subscribers hear of it.
+  
+  <!-- entry: fix -->
+- 547e39b: A captured `CanvasSource` answers no frame once its last reader releases it, and warns when read unheld.
+  
+  A sampler reading a captured source through `canvasPixelSource` holds it with `retain()` for as long as it reads.
+  
+  <!-- entry: fix behavior -->
+- 6585e6c: A loupe model throws a `TypeError` when its surface's `sample` answers with a promise.
+  
+  An asynchronous sampler, one with a WebGPU readback in its stack, goes to `createEyedropperModel` alone; a loupe's surface samples with one that answers at once.
+  
+  <!-- entry: fix behavior -->
+- Updated dependencies [5099ca3]
+- Updated dependencies [e5f53c6]
+- Updated dependencies [617fd6c]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [cd84e27]
+- Updated dependencies [8d7296a]
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [d764d06]
+- Updated dependencies [a98ad34]
+- Updated dependencies [7f25db9]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [e72e26a]
+- Updated dependencies [0090147]
+- Updated dependencies [643c699]
+- Updated dependencies [f4d8b83]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [4a642f5]
+- Updated dependencies [9249b26]
+- Updated dependencies [97f1f86]
+- Updated dependencies [7199e23]
+- Updated dependencies [88f90f5]
+- Updated dependencies [df7ba95]
+- Updated dependencies [da5f6da]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [840a01b]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [29d293c]
+- Updated dependencies [6cef61c]
+- Updated dependencies [fcc5602]
+- Updated dependencies [c3da788]
+- Updated dependencies [ab7f613]
+- Updated dependencies [5477214]
+- Updated dependencies [ece64a6]
+- Updated dependencies [fcc5602]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [53ba27c]
+- Updated dependencies [de462a6]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [47fa777]
+- Updated dependencies [8d7296a]
+- Updated dependencies [3833307]
+- Updated dependencies [2729716]
+- Updated dependencies [966b087]
+- Updated dependencies [2f56e64]
+- Updated dependencies [85fd57d]
+- Updated dependencies [0046729]
+- Updated dependencies [711be7d]
+- Updated dependencies [fcc5602]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [95ca540]
+- Updated dependencies [180ec74]
+- Updated dependencies [36dac61]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [c3da9af]
+- Updated dependencies [8c2d558]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [a947127]
+- Updated dependencies [7e5b389]
+- Updated dependencies [95bd84c]
+- Updated dependencies [2338cee]
+- Updated dependencies [3a1bfaa]
+- Updated dependencies [6416860]
+- Updated dependencies [0aa5132]
+- Updated dependencies [7ba3e69]
+- Updated dependencies [8882b53]
+- Updated dependencies [e7561c7]
+- Updated dependencies [76c5562]
+- Updated dependencies [174d6ef]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [e6871f1]
+- Updated dependencies [daf6f2e]
+- Updated dependencies [595b596]
+- Updated dependencies [7e5b389]
+- Updated dependencies [7e5b389]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [7863d23]
+- Updated dependencies [6b7317b]
+- Updated dependencies [181fbb3]
+- Updated dependencies [24fe665]
+- Updated dependencies [082dd1d]
+- Updated dependencies [79bd6cc]
+- Updated dependencies [de8f61d]
+- Updated dependencies [b54ab5f]
+- Updated dependencies [3c8e227]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [de8f61d]
+- Updated dependencies [44148c3]
+- Updated dependencies [e72e26a]
+- Updated dependencies [b9f3a12]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [1ba9061]
+- Updated dependencies [dc710e2]
+- Updated dependencies [fa288ff]
+- Updated dependencies [02087eb]
+- Updated dependencies [adb1290]
+- Updated dependencies [3f575e2]
+- Updated dependencies [9a3e262]
+- Updated dependencies [b750660]
+- Updated dependencies [fa5c2d9]
+- Updated dependencies [4810ef4]
+- Updated dependencies [4bda721]
+- Updated dependencies [b98bad7]
+- Updated dependencies [0d377ec]
+- Updated dependencies [435c248]
+- Updated dependencies [e1e7241]
+- Updated dependencies [977164c]
+- Updated dependencies [9aed377]
+- Updated dependencies [c491f93]
+- Updated dependencies [aadb086]
+- Updated dependencies [09f0c86]
+- Updated dependencies [d11dc30]
+- Updated dependencies [5ad7bc0]
+- Updated dependencies [481218b]
+- Updated dependencies [f8172cf]
+- Updated dependencies [e5395a6]
+- Updated dependencies [cd7ffdb]
+- Updated dependencies [8ced7e2]
+- Updated dependencies [5ed6215]
+- Updated dependencies [9cacd4b]
+- Updated dependencies [f95e342]
+- Updated dependencies [d6ba47e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [fcc5602]
+- Updated dependencies [880cbbf]
+- Updated dependencies [2932eb2]
+- Updated dependencies [c1a3072]
+- Updated dependencies [968362b]
+- Updated dependencies [f4bfab5]
+- Updated dependencies [e6c888e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [56089ae]
+- Updated dependencies [d7de41f]
+- Updated dependencies [f544aeb]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [ff4504e]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [7645aaa]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [70076bc]
+- Updated dependencies [f41f7ed]
+- Updated dependencies [4c8749c]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [dd5a540]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [8602bbc]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [56fda8d]
+- Updated dependencies [e04e543]
+- Updated dependencies [f88d616]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [1d8e163]
+- Updated dependencies [e08d172]
+- Updated dependencies [429e80c]
+- Updated dependencies [b425d50]
+- Updated dependencies [d962a91]
+- Updated dependencies [46ec294]
+- Updated dependencies [17d184b]
+- Updated dependencies [19387a6]
+- Updated dependencies [cabffe5]
+- Updated dependencies [f92300d]
+- Updated dependencies [07f5db2]
+- Updated dependencies [16eca51]
+- Updated dependencies [08512ea]
+- Updated dependencies [e0bea5a]
+- Updated dependencies [82f3868]
+- Updated dependencies [6c1ea88]
+- Updated dependencies [83ad38f]
+- Updated dependencies [82e481d]
+- Updated dependencies [87a8b06]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [d569abf]
+- Updated dependencies [36a20d4]
+- Updated dependencies [410ba5e]
+- Updated dependencies [4e4ddb5]
+- Updated dependencies [9d459cd]
+- Updated dependencies [76ca845]
+- Updated dependencies [002ff57]
+- Updated dependencies [31dd479]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [97cce9d]
+- Updated dependencies [9521334]
+- Updated dependencies [0177219]
+- Updated dependencies [6a9b37e]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [415e5b8]
+- Updated dependencies [e68cb62]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [c11f37e]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [7e90922]
+- Updated dependencies [1a9548b]
+- Updated dependencies [27704ec]
+- Updated dependencies [60c082d]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [67cb364]
+- Updated dependencies [f9427e6]
+- Updated dependencies [02f9570]
+- Updated dependencies [dd7e196]
+- Updated dependencies [8ec6662]
+- Updated dependencies [7a75fd1]
+- Updated dependencies [e063817]
+- Updated dependencies [b2d7ddb]
+- Updated dependencies [87d7436]
+- Updated dependencies [ae7d97c]
+- Updated dependencies [95ca540]
+- Updated dependencies [8d7296a]
+- Updated dependencies [1f05956]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [774e9cc]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [a0d7dfc]
+- Updated dependencies [7d77794]
+- Updated dependencies [0d977b8]
+- Updated dependencies [41f0773]
+- Updated dependencies [0c18df0]
+- Updated dependencies [475c725]
+- Updated dependencies [12816b7]
+- Updated dependencies [abdc064]
+- Updated dependencies [aec0cec]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/routing@2.0.0
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/paint@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

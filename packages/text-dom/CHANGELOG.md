@@ -1,5 +1,333 @@
 # @weasel-js/text-dom
 
+## 2.0.0
+
+### Major Changes
+
+- 6153ae7: `useTextEdit` and `useSceneTextEdit` return `commitEdit` where they returned `commit`.
+  
+  It sits beside `startEdit` and `cancelEdit`. The `commit` option, which receives the edit, keeps its name.
+  
+  ```ts
+  // before
+  edit.commit();
+  // after
+  edit.commitEdit();
+  ```
+  
+  <!-- entry: breaking -->
+- 6db4410: `useTextEdit`'s `commit` and `onDraft` options are `onChange` and `onInput`: the finished edit, and the live value while typing.
+  
+  ```ts
+  // before
+  useTextEdit({ ...opts, commit: (id, edit) => write(id, edit), onDraft: (id, draft) => follow(id, draft) });
+  // after
+  useTextEdit({ ...opts, onChange: (id, edit) => write(id, edit), onInput: (id, draft) => follow(id, draft) });
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- f8d3623: `replaceRunRange` and `runStyleAt` are exported, to splice text into styled runs and read the style typed text joins.
+  
+  <!-- entry: api -->
+- 6a06f54: `startEdit` takes `caret: 'end'`, which opens an edit with the caret after the last character of the text the editor shows.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 46447ca: A lone carriage return in plain text pasted into a text edit breaks the line, as it does when pasted as HTML.
+  
+  <!-- entry: fix -->
+- a82e65b: A run with `italic: false` is drawn upright inside italic text, and keeps that through the edit overlay.
+  
+  A run without `italic` still takes the node's style.
+  
+  <!-- entry: behavior fix -->
+- 10a0453: The edit overlay ignores a `selectionBackground` or `selectionColor` that is not a CSS color, with a warning.
+  
+  A stored value can no longer restyle the rest of the page through the overlay's `::selection` rule.
+  
+  <!-- entry: fix -->
+- f83fa78: A line break typed as a `<br>` inside small-caps text in the edit overlay is kept, and the caret stays where it was.
+  
+  <!-- entry: fix -->
+- 112ebc0: `startEdit` with a negative `caret` opens the edit with the caret at the start of the text instead of throwing.
+  
+  <!-- entry: fix -->
+- 56c48ed: Arming a fill at the caret that the next character already takes arms nothing.
+  
+  <!-- entry: fix -->
+- f4cc120: A style armed at the caret keeps a key named `__proto__` as data, where it used to replace the style object's prototype.
+  
+  <!-- entry: fix -->
+- 7dcad9e: The text edit overlay records no undo step for a change that leaves its runs as they were.
+  
+  <!-- entry: fix -->
+- bfed2a6: Pasted markup whose `data-fill` or `data-stroke` holds JSON that is not a fill or a stroke is ignored.
+  
+  <!-- entry: fix -->
+- e30213e: Applying a style from editor chrome no longer scrolls a clipped text node's edit back to its first line, or scrolls the page.
+  
+  <!-- entry: fix -->
+- f882cb5: While an edited node that clips its text is off screen or gone, presses where its box was reach the canvas and end the edit.
+  
+  <!-- entry: fix -->
+- d4e48a0: `useTextEdit` keeps the overlay hidden for the whole of a `fontHold` past 2³¹ − 1 ms, and an infinite one waits for the face.
+  
+  <!-- entry: fix -->
+- 337905d: A canceled text edit stays canceled, and a committed one is written once, when the app's `onEnd` moves focus.
+  
+  <!-- entry: fix -->
+- f2a95e3: After a styling change rewrites the edited node's own style, the edit overlay stays at the size and baseline of the style it now shows.
+  
+  <!-- entry: fix visual -->
+- 008dce5: Undo and redo in the text edit overlay do nothing while its current state cannot be read, rather than lose it.
+  
+  <!-- entry: fix -->
+- Updated dependencies [5f856dc]
+- Updated dependencies [e6b28fe]
+- Updated dependencies [0dc7968]
+- Updated dependencies [15072f4]
+- Updated dependencies [edcd3a6]
+- Updated dependencies [b5d4882]
+- Updated dependencies [97f1f86]
+- Updated dependencies [6fb8869]
+- Updated dependencies [174d6ef]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [6cef61c]
+- Updated dependencies [fcc5602]
+- Updated dependencies [269320b]
+- Updated dependencies [c3da788]
+- Updated dependencies [a2df698]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [f6ee3ea]
+- Updated dependencies [583bd6d]
+- Updated dependencies [d353c85]
+- Updated dependencies [b6863aa]
+- Updated dependencies [4674f07]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [824eca6]
+- Updated dependencies [ac8e807]
+- Updated dependencies [fb47e9b]
+- Updated dependencies [d916cae]
+- Updated dependencies [98df398]
+- Updated dependencies [77670c1]
+- Updated dependencies [c131bff]
+- Updated dependencies [c117e62]
+- Updated dependencies [89f4197]
+- Updated dependencies [95a1a63]
+- Updated dependencies [a343f1b]
+- Updated dependencies [221fe20]
+- Updated dependencies [cc5b0c3]
+- Updated dependencies [9455fc1]
+- Updated dependencies [6606d90]
+- Updated dependencies [5879169]
+- Updated dependencies [959af37]
+- Updated dependencies [890ce71]
+- Updated dependencies [5e44587]
+- Updated dependencies [da15963]
+- Updated dependencies [e95a396]
+- Updated dependencies [8e5f1cf]
+- Updated dependencies [57df97b]
+- Updated dependencies [4daf896]
+- Updated dependencies [dbf591e]
+- Updated dependencies [d4a593d]
+- Updated dependencies [662f94f]
+- Updated dependencies [956a71a]
+- Updated dependencies [7001f43]
+- Updated dependencies [558f742]
+- Updated dependencies [39422f9]
+- Updated dependencies [b1cfa76]
+- Updated dependencies [bb7be0b]
+- Updated dependencies [1cee200]
+- Updated dependencies [9339b45]
+- Updated dependencies [4be1a3f]
+- Updated dependencies [787c496]
+- Updated dependencies [37514fc]
+- Updated dependencies [bebd64f]
+- Updated dependencies [4baee32]
+- Updated dependencies [8745b50]
+- Updated dependencies [df2ae04]
+- Updated dependencies [7dbeddb]
+- Updated dependencies [dbf591e]
+- Updated dependencies [839a4b2]
+- Updated dependencies [1810479]
+- Updated dependencies [d598b83]
+- Updated dependencies [65e8ece]
+- Updated dependencies [a947127]
+- Updated dependencies [95bd84c]
+- Updated dependencies [b7e560b]
+- Updated dependencies [174d6ef]
+- Updated dependencies [cfbecdb]
+- Updated dependencies [9c2b3d6]
+- Updated dependencies [03f84f2]
+- Updated dependencies [8457029]
+- Updated dependencies [22eec46]
+- Updated dependencies [8fd3d6d]
+- Updated dependencies [5b84825]
+- Updated dependencies [516bc59]
+- Updated dependencies [2338cee]
+- Updated dependencies [57a59be]
+- Updated dependencies [67968c3]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [8c63002]
+- Updated dependencies [38e795b]
+- Updated dependencies [e6871f1]
+- Updated dependencies [56784d5]
+- Updated dependencies [b54ab5f]
+- Updated dependencies [ea36901]
+- Updated dependencies [65ac904]
+- Updated dependencies [0ecff6a]
+- Updated dependencies [a23ebea]
+- Updated dependencies [00a0e96]
+- Updated dependencies [85f85ba]
+- Updated dependencies [9204311]
+- Updated dependencies [0bb9ac6]
+- Updated dependencies [7b298cb]
+- Updated dependencies [4bda721]
+- Updated dependencies [b98bad7]
+- Updated dependencies [0d377ec]
+- Updated dependencies [435c248]
+- Updated dependencies [e1e7241]
+- Updated dependencies [977164c]
+- Updated dependencies [9aed377]
+- Updated dependencies [c491f93]
+- Updated dependencies [aadb086]
+- Updated dependencies [09f0c86]
+- Updated dependencies [d11dc30]
+- Updated dependencies [5ad7bc0]
+- Updated dependencies [481218b]
+- Updated dependencies [f8172cf]
+- Updated dependencies [e5395a6]
+- Updated dependencies [cd7ffdb]
+- Updated dependencies [8ced7e2]
+- Updated dependencies [5ed6215]
+- Updated dependencies [9cacd4b]
+- Updated dependencies [f95e342]
+- Updated dependencies [d6ba47e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [fcc5602]
+- Updated dependencies [880cbbf]
+- Updated dependencies [2932eb2]
+- Updated dependencies [c1a3072]
+- Updated dependencies [968362b]
+- Updated dependencies [f4bfab5]
+- Updated dependencies [e6c888e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [56089ae]
+- Updated dependencies [f544aeb]
+- Updated dependencies [dd3fdb0]
+- Updated dependencies [7645aaa]
+- Updated dependencies [24bca7a]
+- Updated dependencies [d868c48]
+- Updated dependencies [4d31cf0]
+- Updated dependencies [af132bc]
+- Updated dependencies [2d57c94]
+- Updated dependencies [f004638]
+- Updated dependencies [3c27e36]
+- Updated dependencies [3c27e36]
+- Updated dependencies [ce5d609]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [59e80c0]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [f3a1232]
+- Updated dependencies [bd25e62]
+- Updated dependencies [431aa8e]
+- Updated dependencies [1ac16c5]
+- Updated dependencies [a82e65b]
+- Updated dependencies [6222db5]
+- Updated dependencies [dc5efa8]
+- Updated dependencies [510347b]
+- Updated dependencies [8f28726]
+- Updated dependencies [ff8c1f9]
+- Updated dependencies [a6e8651]
+- Updated dependencies [26cdc89]
+- Updated dependencies [ad94222]
+- Updated dependencies [2b0def2]
+- Updated dependencies [80b8f57]
+- Updated dependencies [de2d442]
+- Updated dependencies [3a28bbb]
+- Updated dependencies [a0d5f84]
+- Updated dependencies [30e2485]
+- Updated dependencies [95083bc]
+- Updated dependencies [cbaa22a]
+- Updated dependencies [bb03b55]
+- Updated dependencies [1377fab]
+- Updated dependencies [9199cb5]
+- Updated dependencies [8ac8a64]
+- Updated dependencies [de1e1c0]
+- Updated dependencies [c356829]
+- Updated dependencies [fcc5602]
+- Updated dependencies [cbf500e]
+- Updated dependencies [c5a7102]
+- Updated dependencies [3871e2f]
+- Updated dependencies [c3f3d9a]
+- Updated dependencies [5548d73]
+- Updated dependencies [e824816]
+- Updated dependencies [4377fe2]
+- Updated dependencies [45559fc]
+- Updated dependencies [685bc3d]
+- Updated dependencies [6111c56]
+- Updated dependencies [accc590]
+- Updated dependencies [4b0b9df]
+- Updated dependencies [f9ed89f]
+- Updated dependencies [a23ebea]
+- Updated dependencies [8d3c536]
+- Updated dependencies [9d1f28d]
+- Updated dependencies [f4115e7]
+- Updated dependencies [1fe6cab]
+- Updated dependencies [0481f49]
+- Updated dependencies [b8bb2d4]
+- Updated dependencies [6276cc6]
+- Updated dependencies [6276cc6]
+- Updated dependencies [677a841]
+- Updated dependencies [b8bb2d4]
+- Updated dependencies [cafdd8c]
+- Updated dependencies [969aab0]
+- Updated dependencies [61c9926]
+- Updated dependencies [09dcf56]
+- Updated dependencies [5024537]
+- Updated dependencies [7489853]
+- Updated dependencies [5dd240d]
+- Updated dependencies [8b01b26]
+- Updated dependencies [2c0f2fe]
+- Updated dependencies [793ac72]
+- Updated dependencies [6803209]
+- Updated dependencies [f857c86]
+- Updated dependencies [5202a9f]
+  - @weasel-js/ui-input@2.0.0
+  - @weasel-js/gestures@2.0.0
+  - @weasel-js/text@2.0.0
+  - @weasel-js/font@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/paint@2.0.0
+  - @weasel-js/react@2.0.0
+
 ## 1.19.1
 
 ### Patch Changes

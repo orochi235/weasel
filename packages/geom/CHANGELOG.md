@@ -1,5 +1,965 @@
 # @weasel-js/geom
 
+## 2.0.0
+
+### Major Changes
+
+- 29d293c: The Envelope mesh tool is now Cloth warp, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useEnvelopeTool`, `UseEnvelopeToolOptions` | `useClothWarpTool`, `UseClothWarpToolOptions` |
+  | `DEFAULT_ENVELOPE_SIZE` | `DEFAULT_CLOTH_SIZE` |
+  | tool id and `WarpKind` `'envelope'` | `'cloth'` |
+  | actions `envelope.drag`, `envelope.grab` | `cloth.drag`, `cloth.grab` |
+  | icon `path-tools:envelope` | `path-tools:clothWarp` |
+  | `EnvelopeWarp`, `EnvelopeMapping` (`@weasel-js/geom/warp`) | `ClothWarp`, `ClothMapping` |
+  | `envelopeOver`, `resizeEnvelope` | `clothOver`, `resizeCloth` |
+  | a held warp's `kind: 'envelope'` | `kind: 'cloth'` |
+  
+  The tool keeps its Shift+F key. A document saved with an envelope warp held on a path needs that warp's `data.warp.warp.kind` rewritten to `'cloth'`.
+  
+  ```ts
+  // before
+  const envelope = useEnvelopeTool({ rows: 4 });
+  <SceneCanvas tools={{ envelope }} tune={{ 'envelope.drag': { params: { cols: 4 } } }} />
+  // after
+  const cloth = useClothWarpTool({ rows: 4 });
+  <SceneCanvas tools={{ cloth }} tune={{ 'cloth.drag': { params: { cols: 4 } } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api data -->
+- c3da788: Point-containment tests are named `xContainsPoint`, as `pathContainsPoint` is.
+  
+  geom's `pointInPolygon` is `polygonContainsPoint`, core's `pointInRotatedRect` is `rotatedRectContainsPoint`, and text's `pointInTextPose` is `textPoseContainsPoint`. Arguments are unchanged.
+  
+  ```ts
+  // before
+  if (pointInPolygon(coords, x, y)) …
+  // after
+  if (polygonContainsPoint(coords, x, y)) …
+  ```
+  
+  <!-- entry: breaking api -->
+- ece64a6: `cubicContoursToPath` takes the path whose fill settings the result copies, instead of a fill rule.
+  
+  The result keeps that path's `fillRule` and `openFill`, and is measured from an origin picked for its own points.
+  
+  ```ts
+  // before
+  cubicContoursToPath(contours, path.kind === 'polygon' ? path.fillRule : 'nonzero');
+  // after
+  cubicContoursToPath(contours, path);
+  ```
+  
+  <!-- entry: breaking -->
+- fcc5602: `sampleByInterpolation` and `InterpolationMode` moved from `@weasel-js/ui` to `@weasel-js/geom`, beside the samplers they pick from.
+  
+  `sampleCatmullRom` and `sampleMonotone` are new exports. ui's `CurveSamplePoint` is gone: the samplers take and return geom's `Point`.
+  
+  ```ts
+  // before
+  import { sampleByInterpolation, type CurveSamplePoint } from '@weasel-js/ui';
+  // after
+  import { sampleByInterpolation, type Point } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking api -->
+- 0046729: Soft selection is now Drape, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `createSoftSelectionPreset`, preset id `'softSelection'` | `createDrapePreset`, `'drape'` |
+  | `createSoftSelectionExtension`, extension id `'softSelection'`, `SoftSelectionOptions` | `createDrapeExtension`, `'drape'`, `DrapeOptions` |
+  | `softSelectionWeights`, `softSelectionBand`, `softFalloff`, `SoftFalloff` (`@weasel-js/geom`) | `drapeWeights`, `drapeBand`, `drapeFalloff`, `DrapeFalloff` |
+  
+  ```ts
+  // before
+  <SceneCanvas features={['paths', createSoftSelectionPreset(() => ({ radiusPx: 80 }))]} />
+  // after
+  <SceneCanvas features={['paths', createDrapePreset(() => ({ radiusPx: 80 }))]} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- fcc5602: `easingLabel`, `easingBezier`, `sampleEasing` and `EASING_NAMES` moved from `@weasel-js/ui` to `@weasel-js/geom`, beside `EasingSpec`.
+  
+  ```ts
+  // before
+  import { easingLabel, sampleEasing } from '@weasel-js/ui';
+  // after
+  import { easingLabel, sampleEasing } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking api -->
+- 644baad: Harmonize curvature is now Fairing, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `harmonizePreset`, preset id `'harmonize'` | `pathTools.fairing`, `'fairing'` |
+  | action `harmonizeAnchors`, `harmonizeAnchorsAction` | `fairAnchors`, `fairAnchorsAction` |
+  | `harmonizeAnchors` (`@weasel-js/geom`) | `fairAnchors` |
+  | icon `core:harmonize` | `core:fairing` |
+  
+  ```ts
+  // before
+  <SceneCanvas features={['paths', harmonizePreset]} tune={{ harmonizeAnchors: { bindings: [{ kind: 'key', key: 'h' }] } }} />
+  // after
+  <SceneCanvas features={['paths', pathTools.fairing]} tune={{ fairAnchors: { bindings: [{ kind: 'key', key: 'h' }] } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 5d79d0e: `@weasel-js/geom/3d` names its point helpers the way the root barrel does: `lerpPoint`, `cubicPointAt` and `pointAtLength`, and it gains `distance2`.
+  
+  `lerp` read as the root barrel's scalar `lerp`, and the `3` on `pointAtLength3` repeated what the subpath already says.
+  
+  ```ts
+  // before
+  import { cubicAt, lerp, pointAtLength3 } from '@weasel-js/geom/3d';
+  // after
+  import { cubicPointAt, lerpPoint, pointAtLength } from '@weasel-js/geom/3d';
+  ```
+  
+  <!-- entry: breaking api -->
+- 43e65cf: `aabbOfPoints([])` returns `null`, as `boundsOfCoords` and `unionRects` do for nothing to bound, not an inverted box at ±Infinity.
+  
+  ```ts
+  // before
+  const box = aabbOfPoints(points); // min +Infinity, max -Infinity when empty
+  // after
+  const box = aabbOfPoints(points); // null when empty
+  if (box) …
+  ```
+  
+  <!-- entry: breaking -->
+- f889447: `unionBoundsPath` is renamed `boundsOfPaths`, the plural of `boundsOfPath`.
+  
+  ```ts
+  // before
+  const box = unionBoundsPath([a, b]);
+  // after
+  const box = boundsOfPaths([a, b]);
+  ```
+  
+  <!-- entry: breaking api -->
+- ced5841: geom's nearest-point results name their distance `distance`, not `dist`.
+  
+  This covers `CurveNearest`, `TrackNearest` and `PathNearestStation`.
+  
+  ```ts
+  // before
+  const { t, dist } = nearestOnLine(px, py, ax, ay, bx, by);
+  // after
+  const { t, distance } = nearestOnLine(px, py, ax, ay, bx, by);
+  ```
+  
+  <!-- entry: breaking api -->
+- 4949266: The `easeIn`, `easeOut` and `easeInOut` aliases are removed from geom and core; use `easeInQuad`, `easeOutQuad` and `easeInOutQuad`.
+  
+  ```ts
+  // before
+  import { easeOut } from '@weasel-js/geom';
+  // after
+  import { easeOutQuad } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking -->
+- f54c013: `scalePathToBounds` is renamed `fitPathToRect`: it scales and translates a path so its bounds land on the target rect.
+  
+  ```ts
+  // before
+  const fitted = scalePathToBounds(path, target);
+  // after
+  const fitted = fitPathToRect(path, target);
+  ```
+  
+  <!-- entry: breaking api -->
+- 2acda2a: The path hit tests, `pathToMultiPolygon` and `pathFaceArrangement` call their flattening tolerance `flattenTolerance`.
+  
+  That is its name in `tessellate`, `measurePath` and the stroke options.
+  
+  `tolerance` stays the name for how far a fitted result may stray (`resamplePath`, `warpPath`, `simplifyPath`).
+  
+  ```ts
+  // before
+  pathContainsPoint(path, x, y, { tolerance: 0.1 });
+  strokeHitTest(path, x, y, r, { tolerance: 0.1 });
+  pathToMultiPolygon(path, { tolerance: 0.1 });
+  // after
+  pathContainsPoint(path, x, y, { flattenTolerance: 0.1 });
+  strokeHitTest(path, x, y, r, { flattenTolerance: 0.1 });
+  pathToMultiPolygon(path, { flattenTolerance: 0.1 });
+  ```
+  
+  <!-- entry: breaking -->
+- 4f2ce5c: `intersectRayAabb` takes an `Aabb`, the way `transformAabb` and `aabbAround` already do.
+  
+  ```ts
+  // before
+  intersectRayAabb(ray, box.min, box.max);
+  // after
+  intersectRayAabb(ray, box);
+  ```
+  
+  <!-- entry: breaking -->
+- 27f0928: `mat3.apply` is renamed `mat3.transformPoint`, matching the affine `transformPoint` it mirrors.
+  
+  ```ts
+  // before
+  const [x, y] = mat3.apply(m, px, py);
+  // after
+  const [x, y] = mat3.transformPoint(m, px, py);
+  ```
+  
+  <!-- entry: breaking api -->
+- 0157b15: `@weasel-js/geom/nd` names its point helpers as the root barrel and `./3d` do: `lerpPoint` and `cubicPointAt`, not `lerp` and `cubicAt`.
+  
+  ```ts
+  // before
+  import { cubicAt, lerp } from '@weasel-js/geom/nd';
+  // after
+  import { cubicPointAt, lerpPoint } from '@weasel-js/geom/nd';
+  ```
+  
+  <!-- entry: breaking -->
+- 4f35254: geom's `closest…` functions are `nearest…`, the word the rest of the kit uses for the same idea.
+  
+  `closestPointOnSegment`, `closestOpenEnds`, `closestOnFlat` and `closestBetweenFlats` are `nearestPointOnSegment`, `nearestOpenEnds`, `nearestOnFlat` and `nearestBetweenFlats`; `@weasel-js/geom/3d`'s `closestPointOnLine`, `closestPointOnSegment` and `closestPointsRayLine` are `nearestPointOnLine`, `nearestPointOnSegment` and `nearestPointsRayLine`.
+  
+  ```ts
+  // before
+  const p = closestPointOnSegment(point, a, b);
+  // after
+  const p = nearestPointOnSegment(point, a, b);
+  ```
+  
+  <!-- entry: breaking api -->
+- 0118cd0: `nearestOnLine` is renamed `nearestOnSegment`, since it clamps to the segment's ends.
+  
+  `closestPointOnLine` in `@weasel-js/geom/3d` is the one that reads an infinite line.
+  
+  ```ts
+  // before
+  const hit = nearestOnLine(px, py, x0, y0, x1, y1);
+  // after
+  const hit = nearestOnSegment(px, py, x0, y0, x1, y1);
+  ```
+  
+  <!-- entry: breaking api -->
+- 11c9e5f: `PointInPathOptions` is renamed `PathHitTestOptions`: it is the options type of every path-versus-region test, not only the point test.
+  
+  ```ts
+  // before
+  const opts: PointInPathOptions = { flattenTolerance: 0.25 };
+  // after
+  const opts: PathHitTestOptions = { flattenTolerance: 0.25 };
+  ```
+  
+  <!-- entry: breaking api -->
+- 241446a: `pathInPoseFrame` is renamed `pathInPoseBox`: it rebases a path onto the pose box and applies no frame, which `pathThroughPoseFrame` does.
+  
+  ```ts
+  // before
+  const local = pathInPoseFrame(path, pose);
+  // after
+  const local = pathInPoseBox(path, pose);
+  ```
+  
+  <!-- entry: breaking api -->
+- e0a11e4: `pointInPath` is removed; `pathContainsPoint`, which it was a second name for, answers the same question.
+  
+  ```ts
+  // before
+  const inside = pointInPath(path, x, y);
+  // after
+  const inside = pathContainsPoint(path, x, y);
+  ```
+  
+  <!-- entry: breaking api -->
+- a7fd87a: `pointSegmentDist` and `pointSegmentDist2` are renamed `pointSegmentDistance` and `pointSegmentDistance2`.
+  
+  Both the main entry and `@weasel-js/geom/nd` carry the new names, matching `distance` and `distance2`.
+  
+  ```ts
+  // before
+  const d = pointSegmentDist(px, py, ax, ay, bx, by);
+  // after
+  const d = pointSegmentDistance(px, py, ax, ay, bx, by);
+  ```
+  
+  <!-- entry: breaking api -->
+- c4d419b: geom's `boxToBox` is renamed `rectToRect`, since it maps an x/y/width/height rect and geom's `Box` is a min/max tuple.
+  
+  ```ts
+  // before
+  const m = boxToBox(sx, sy, sw, sh, dx, dy, dw, dh);
+  // after
+  const m = rectToRect(sx, sy, sw, sh, dx, dy, dw, dh);
+  ```
+  
+  <!-- entry: breaking api -->
+- da7dd2e: `rotatePathAround` is renamed `rotatePathAbout`, the pivot word the rest of the kit uses (`rotateAboutPoint`).
+  
+  ```ts
+  // before
+  const turned = rotatePathAround(path, cx, cy, rad);
+  // after
+  const turned = rotatePathAbout(path, cx, cy, rad);
+  ```
+  
+  <!-- entry: breaking api -->
+- 8cbcaf4: `runStationAt` is renamed `runPlaceAt`, since it returns a `TrackPlace`, like its neighbor `runPlaces`.
+  
+  ```ts
+  // before
+  const place = runStationAt(run, distance);
+  // after
+  const place = runPlaceAt(run, distance);
+  ```
+  
+  <!-- entry: breaking api -->
+- 02900a7: `intersectSegments` is renamed `segmentCrossings`: it returns the crossings of two segments, as its twin `pathCrossings` does for two paths.
+  
+  ```ts
+  // before
+  const hits = intersectSegments(a, b);
+  // after
+  const hits = segmentCrossings(a, b);
+  ```
+  
+  <!-- entry: breaking api -->
+- b2ecf6d: `SnapProblem`'s on-the-locus tolerance is named `tolerance`, like every other geom options bag, not `eps`.
+  
+  ```ts
+  // before
+  resolveSnap({ ...problem, eps: 1e-4 });
+  // after
+  resolveSnap({ ...problem, tolerance: 1e-4 });
+  ```
+  
+  <!-- entry: breaking -->
+- 8af195e: `splitCubicAtT` is renamed `splitCubicPoints`: it is the point-shaped form of `splitCubicAt`.
+  
+  ```ts
+  // before
+  const { left, right } = splitCubicAtT(p0, p1, p2, p3, t);
+  // after
+  const { left, right } = splitCubicPoints(p0, p1, p2, p3, t);
+  ```
+  
+  <!-- entry: breaking api -->
+- 7459739: `transformCoords` takes the matrix first, as `transformPoint` does.
+  
+  ```ts
+  // before
+  const out = transformCoords(path.coords, m);
+  // after
+  const out = transformCoords(m, path.coords);
+  ```
+  
+  <!-- entry: breaking api -->
+- 5d43ec9: geom's `applyToPoint` is renamed `transformPoint`, as `@weasel-js/geom/3d` names it, beside `transformCoords` and `transformPath`.
+  
+  ```ts
+  // before
+  const [x, y] = applyToPoint(m, px, py);
+  // after
+  const [x, y] = transformPoint(m, px, py);
+  ```
+  
+  <!-- entry: breaking -->
+- 1ad4f25: The Smudge brush is now Knead, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useSmudgeBrushTool`, `UseSmudgeBrushToolOptions`, `SMUDGE_BRUSH_OPTIONS` | `useKneadTool`, `UseKneadToolOptions`, `KNEAD_TOOL_OPTIONS` |
+  | `smudgePreset`, preset id `'smudge'` | `pathTools.knead`, `'knead'` |
+  | tool id, action id, and `PathToolId` `'smudgeBrush'` | `'knead'` |
+  | `smudgeBrushAction`, `SMUDGE_BRUSH_PARAMS`, `SmudgeBrushParams` | `kneadAction`, `KNEAD_PARAMS`, `KneadParams` |
+  | `DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` | `DEFAULT_KNEAD_RADIUS_PX`, `DEFAULT_KNEAD_STRENGTH` |
+  | `smudgePath`, `SmudgePathOptions` (`@weasel-js/geom`, re-exported by core) | `kneadPath`, `KneadPathOptions` |
+  | icon `path-tools:smudgeBrush` | `path-tools:knead` |
+  
+  The tool keeps its U key. Tool options saved under the `smudgeBrush` id start from their defaults under `knead`.
+  
+  ```ts
+  // before
+  const smudgeBrush = useSmudgeBrushTool();
+  <SceneCanvas features={['draw', smudgePreset]} tools={{ smudgeBrush }} />
+  // after
+  const knead = useKneadTool();
+  <SceneCanvas features={['draw', pathTools.knead]} tools={{ knead }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 0f60e3d: Puppet warp is now Pin warp, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `usePuppetTool`, `UsePuppetToolOptions` | `usePinWarpTool`, `UsePinWarpToolOptions` |
+  | tool id, `PathToolId`, and `WarpKind` `'puppet'` | `'pin'` |
+  | actions `puppet.drag`, `puppet.addPin`, `puppet.removePin` | `pin.drag`, `pin.addPin`, `pin.removePin` |
+  | icon `path-tools:puppetWarp` | `path-tools:pinWarp` |
+  | `PuppetWarp`, `PuppetPin` (`@weasel-js/geom/warp`) | `PinWarp`, `WarpPin` |
+  | `puppetMap`, `puppetSolve`, `puppetMesh`, `PuppetMesh`, `PuppetMeshOptions` | `pinWarpMap`, `pinWarpSolve`, `pinWarpMesh`, `PinWarpMesh`, `PinWarpMeshOptions` |
+  | a held warp's `kind: 'puppet'` | `kind: 'pin'` |
+  
+  The tool keeps its B key. A document saved with a puppet warp held on a path needs that warp's `data.warp.warp.kind` rewritten to `'pin'`.
+  
+  ```ts
+  // before
+  const puppet = usePuppetTool({ tolerance: 1 });
+  <SceneCanvas tools={{ puppet }} tune={{ 'puppet.addPin': { params: { tolerance: 1 } } }} />
+  // after
+  const pin = usePinWarpTool({ tolerance: 1 });
+  <SceneCanvas tools={{ pin }} tune={{ 'pin.addPin': { params: { tolerance: 1 } } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api data -->
+- 0f60e3d: Perspective and free distort is now Plane warp, and every name it carried changes with it; this is breaking, with no aliases. Its two modes are still `free` and `perspective`.
+  
+  | Before | After |
+  |---|---|
+  | `useDistortTool`, `UseDistortToolOptions` | `usePlaneWarpTool`, `UsePlaneWarpToolOptions` |
+  | tool id, `PathToolId`, and `WarpKind` `'distort'` | `'plane'` |
+  | action `distort.drag`, its layer's hit kind `layer:warp-distort` | `plane.drag`, `layer:warp-plane` |
+  | warp settings fields `distorts` and `distort.mode` | `planes` and `plane.mode` |
+  | icon `path-tools:distort` | `path-tools:planeWarp` |
+  | `DistortWarp`, `DistortMode`, `distortOver` (`@weasel-js/geom/warp`) | `PlaneWarp`, `PlaneMode`, `planeOver` |
+  | a held warp's `kind: 'distort'` | `kind: 'plane'` |
+  
+  The tool keeps its F key. A document saved with a distort held on a path needs that warp's `data.warp.warp.kind` rewritten to `'plane'`.
+  
+  ```ts
+  // before
+  const distort = useDistortTool({ mode: 'perspective' });
+  <SceneCanvas tools={{ distort }} tune={{ 'distort.drag': { params: { mode: 'perspective' } } }} />
+  // after
+  const plane = usePlaneWarpTool({ mode: 'perspective' });
+  <SceneCanvas tools={{ plane }} tune={{ 'plane.drag': { params: { mode: 'perspective' } } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api data -->
+- e49aa18: Balance handles is now Poise, and every name it carried changes with it; this is breaking, with no aliases. Equalize handles keeps its name.
+  
+  | Before | After |
+  |---|---|
+  | `balancePreset`, `createBalancePreset`, preset id `'balance'` | `pathTools.poise`, `createPoisePreset`, `'poise'` |
+  | action `balanceHandles`, its binding `balanceHandles.drag`, `balanceHandlesAction` | `poiseHandles`, `poiseHandles.drag`, `poiseHandlesAction` |
+  | chrome id `path-edit.balance`, `PATH_BALANCE_CHROME_ID` | `path-edit.poise`, `PATH_POISE_CHROME_ID` |
+  | toggle `pathEdit.show.balance`, `showBalanceAction` | `pathEdit.show.poise`, `showPoiseAction` |
+  | `createBalanceExtension`, `balanceCommands`, `PathEditBalanceStyle` | `createPoiseExtension`, `poiseCommands`, `PathEditPoiseStyle` |
+  | grip hit kind `balance:N`, routing's `isBalanceGrip` | `poise:N`, `isPoiseGrip` |
+  | `handleBalances`, `HandleBalance`, `balanceFactorToward` (`@weasel-js/geom`) | `poiseLines`, `PoiseLine`, `poiseFactorToward` |
+  | icon `path-tools:balanceHandles` | `path-tools:poise` |
+  
+  ```ts
+  // before
+  const balance = createBalancePreset({ color: '#a0f' });
+  <SceneCanvas features={['paths', balance]} tune={{ balanceHandles: { bindings: [{ kind: 'key', key: 'b' }] } }} />
+  // after
+  const poise = createPoisePreset({ color: '#a0f' });
+  <SceneCanvas features={['paths', poise]} tune={{ poiseHandles: { bindings: [{ kind: 'key', key: 'b' }] } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 3f553ff: The Extend to next path tool is now Reach, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useExtendTool`, `UseExtendToolOptions` | `useReachTool`, `UseReachToolOptions` |
+  | `extendPreset`, preset id `'extend'` | `pathTools.reach`, `'reach'` |
+  | tool id and `PathToolId` `'extend'` | `'reach'` |
+  | action `extendToMeet`, `extendToMeetAction`, `EXTEND_TO_MEET_PARAMS`, `ExtendToMeetParams` | `reachToMeet`, `reachToMeetAction`, `REACH_TO_MEET_PARAMS`, `ReachToMeetParams` |
+  | `extendToMeet`, `ExtendToMeetOptions` (`@weasel-js/geom`, re-exported by core) | `reachToMeet`, `ReachToMeetOptions` |
+  | icon `path-tools:extend` | `path-tools:reach` |
+  
+  The tool keeps its Shift+U key.
+  
+  ```ts
+  // before
+  const extend = useExtendTool();
+  <SceneCanvas features={['draw', extendPreset]} tools={{ extend }} tune={{ extendToMeet: { params: { shape: 'straight' } } }} />
+  // after
+  const reach = useReachTool();
+  <SceneCanvas features={['draw', pathTools.reach]} tools={{ reach }} tune={{ reachToMeet: { params: { shape: 'straight' } } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 4a4d7c9: `FramedBox`, `WarpBox` and `MeshBox` are `FramedRect`, `WarpRect` and `MeshRect`, since each is an `{ x, y, width, height }`.
+  
+  geom names that shape `Rect` and keeps `Box` for a min/max pair. `FramedBox` and `WarpBox` are geom's; `MeshBox` is renderer's.
+  
+  ```ts
+  // before
+  import type { FramedBox, WarpBox } from '@weasel-js/geom';
+  // after
+  import type { FramedRect, WarpRect } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking api -->
+- e68cb62: `simplifyPath`'s `cornerAngle` is in radians, as every other angle geom takes; the default is unchanged at 40°.
+  
+  ```ts
+  // before
+  simplifyPath(path, 0.5, { cornerAngle: 30 });
+  // after
+  simplifyPath(path, 0.5, { cornerAngle: 30 * DEG_TO_RAD });
+  ```
+  
+  <!-- entry: breaking api -->
+- fb702eb: The Trim segment tool is now Snip, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useTrimTool`, `UseTrimToolOptions` | `useSnipTool`, `UseSnipToolOptions` |
+  | `trimPreset`, preset id `'trim'` | `pathTools.snip`, `'snip'` |
+  | tool id and `PathToolId` `'trim'`, bindings `trim.hover`, `trim.leave`, actions `trim.preview`, `trim.unpreview` | `'snip'`, `snip.hover`, `snip.leave`, `snip.preview`, `snip.unpreview` |
+  | action `trimPath`, `trimPathAction`, `TRIM_PATH_PARAMS`, `planTrim` | `snipPath`, `snipPathAction`, `SNIP_PATH_PARAMS`, `planSnip` |
+  | `trimPathAt`, `TrimPathOptions`, `TrimResult` (`@weasel-js/geom`, re-exported by core) | `snipPathAt`, `SnipPathOptions`, `SnipResult` |
+  | icon `path-tools:trim` | `path-tools:snip` |
+  
+  The tool keeps its Y key. A stroke's `trim`, core's boolean Trim, and `pathTrim` are unrelated and keep their names.
+  
+  ```ts
+  // before
+  const trim = useTrimTool();
+  <SceneCanvas features={['draw', trimPreset]} tools={{ trim }} />
+  // after
+  const snip = useSnipTool();
+  <SceneCanvas features={['draw', pathTools.snip]} tools={{ snip }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- e841e68: The Lengthen tool is now Tug, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useLengthenTool` | `useTugTool` |
+  | `lengthenPreset`, preset id `'lengthen'` | `pathTools.tug`, `'tug'` |
+  | tool id and `PathEditToolId` `'lengthen'`, binding `lengthenPath.drag` | `'tug'`, `tug.drag` |
+  | action `lengthenPath`, `lengthenPathAction`, `LENGTHEN_PATH_PARAMS`, `LengthenPathParams` | `tugPath`, `tugPathAction`, `TUG_PATH_PARAMS`, `TugPathParams` |
+  | `lengthenPathEnd`, `lengthenOpenEnd`, `LengthenMode` (`@weasel-js/geom`; core re-exports `lengthenOpenEnd`) | `tugPathEnd`, `tugOpenEnd`, `TugMode` |
+  | icon `path-tools:lengthen` | `path-tools:tug` |
+  
+  A saved binding override keyed `lengthenPath.drag` moves to `tug.drag`. The tool still has no key of its own, and the undo label of a drag that shortens the path is still Shorten path.
+  
+  ```ts
+  // before
+  <SceneCanvas features={['paths', lengthenPreset]} tools={{ lengthen: useLengthenTool() }} tune={{ lengthenPath: { params: { mode: 'curvature' } } }} />
+  // after
+  <SceneCanvas features={['paths', pathTools.tug]} tools={{ tug: useTugTool() }} tune={{ tugPath: { params: { mode: 'curvature' } } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- a5caeed: The Blend path effect is now Tween, and every name it carried changes with it; this is breaking, with no aliases. Color blending, `blendMode`, and the renderer's blend state are unrelated and keep their names.
+  
+  | Before | After |
+  |---|---|
+  | path effect `kind: 'blend'`, `BlendEffect` (core) | `kind: 'tween'`, `TweenEffect` |
+  | action `blend`, `blendAction` | `tween`, `tweenAction` |
+  | actions `setBlendSpine`, `releaseBlendSpine`, `setBlendSpineAction`, `releaseBlendSpineAction` | `setTweenSpine`, `releaseTweenSpine`, `setTweenSpineAction`, `releaseTweenSpineAction` |
+  | the path-effect settings form's `blends` count | `tweens` |
+  | `blendPaths`, `prepareBlend`, `BlendPathsOptions`, `PathBlend` (`@weasel-js/geom`, re-exported by core) | `tweenPaths`, `prepareTween`, `TweenPathsOptions`, `PathTween` |
+  | icons `path-tools:blend`, `path-tools:setBlendSpine`, `path-tools:releaseBlendSpine` | `path-tools:tween`, `path-tools:setTweenSpine`, `path-tools:releaseTweenSpine` |
+  
+  The action keeps its key. A document saved with a live blend needs that node's `data.pathEffect.kind` rewritten to `'tween'`.
+  
+  ```ts
+  // before
+  pathEffectNode({ kind: 'blend', steps: 3 }, [a, b], 'main', PATH_EFFECT_DERIVATIONS);
+  // after
+  pathEffectNode({ kind: 'tween', steps: 3 }, [a, b], 'main', PATH_EFFECT_DERIVATIONS);
+  ```
+  
+  <!-- entry: rank=5 breaking api data -->
+
+### Minor Changes
+
+- 9249b26: A `Bvh` answers a box holding every item it holds, with `bounds(out)`.
+  
+  It is false, writing nothing, while the tree is empty, and can be looser than the items' union after updates.
+  
+  <!-- entry: api -->
+- 6a9cd12: `@weasel-js/geom/3d` builds a 3D path's length table with `lengthTable3(points, closed)`, and adds `quatFromBasis` and `quatSlerp`.
+  
+  `quatFromBasis(x, y, z)` is the rotation taking the local axes to an orthonormal, right-handed basis; `quatSlerp(a, b, t)` interpolates along the shorter arc. The `LengthTable` type is exported from the subpath too.
+  
+  <!-- entry: api new -->
+- 3588b89: `growRect(r, by)` returns a rect grown by `by` on every side about the same center, or shrunk for a negative `by`.
+  
+  <!-- entry: api -->
+- 4e54b4e: `invertible` and `SINGULAR_RATIO`, the conditioning rule both `invert`s refuse a matrix by, are exported.
+  
+  <!-- entry: api -->
+- a3f0833: `@weasel-js/geom/nd` exports `dot`, the dot product of two number arrays of one dimension.
+  
+  <!-- entry: api -->
+- 70213a5: `niceStep` rounds a number to 1, 2 or 5 times a power of ten, up, down or to the nearest.
+  
+  ```ts
+  import { niceStep } from '@weasel-js/geom';
+  
+  niceStep(47.6); // 50: up by default, never under
+  niceStep(0.8, 'down'); // 0.5: never over, as a scale bar that has to fit
+  niceStep(3.1, 'nearest'); // 2: the closer by ratio, as an axis asking for about five ticks
+  ```
+  
+  <!-- entry: api -->
+- 4f9848f: `numberName` and `namedNumber` convert between a number JSON cannot hold and the name a tagged typed array writes it under.
+  
+  Those numbers are `NaN`, `Infinity`, `-Infinity` and `-0`.
+  
+  ```ts
+  numberName(-Infinity); // '-Infinity'
+  numberName(3);         // undefined
+  namedNumber('-0');     // -0
+  ```
+  
+  <!-- entry: api -->
+- d455bd2: `PathCrossingsOptions` names the options bag `pathCrossings` takes, so a caller can type one it builds ahead.
+  
+  <!-- entry: api -->
+- e280844: `PointOrigin` gains `made`, which `editAnchorSetTracked` sets on the points of an anchor the edit made.
+  
+  <!-- entry: api -->
+- 2d649c0: `samePolygon(a, b)` answers whether two polygon paths are the same shape: commands, stored coords, origin, fill rules, and corners.
+  
+  <!-- entry: api -->
+- de8f61d: `pathMotion` moves a pose along a path measured from an `origin` where the path is, read from the new `LengthTable.origin`.
+  
+  `pathLengthTable(path)` carries the path's `origin`; a point read off the table plus it is in the path's own space.
+  
+  <!-- entry: api fix -->
+- 4f2d1e0: `PathBuilder.fromPath` keeps the seed path's `openFill` and corner shapes, and the new `setOpenFill(rule)` sets a built path's `openFill`.
+  
+  <!-- entry: api fix -->
+- ece64a6: New `PathBuilder.like(path)` starts a path with `path`'s fill rule and `openFill`, measured from an origin of its own.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- e973dcd: `pathLengthTable` and `pointAtLength` keep a finite length and a tangent for curves past 1e154 or below 1e-154.
+  
+  <!-- entry: fix -->
+- 851a4d3: `anchorAtLength` answers the later anchor where a pen lift sits at the path's start, as it does elsewhere along it.
+  
+  <!-- entry: fix -->
+- d764d06: Per-anchor colors blend smoothly where a trim inset, a dash end or a fill crossing cuts between two anchors.
+  
+  <!-- entry: fix visual -->
+- a98ad34: A pin warp moves a part of a shape too thin to deform with the pins on that part, rather than with every pin on the shape.
+  
+  <!-- entry: fix -->
+- 2c2ab71: Average anchors is disabled where the selected anchors already sit on their mean or name no anchor of the path.
+  
+  `averageAnchorsAt` returns false, changing nothing, when every anchor already sits on the mean.
+  
+  <!-- entry: fix -->
+- 4fb8cbf: A boolean that falls back to flattening its curves keeps a small circle round. It now flattens to within a ten-thousandth of the inputs' size, at most half a unit.
+  
+  <!-- entry: fix -->
+- ec44e4c: `sampleCatmullRom` answers finite points for anchors spaced past 1e154 or below 1e-154 apart, instead of `NaN`.
+  
+  <!-- entry: fix -->
+- 4f264d0: Values held between two bounds go through geom's `clamp` and `clamp01` rather than local copies.
+  
+  A loupe whose `minFactor` is above its `maxFactor` now settles on the low bound, as `clamp` does, where it settled on the high one.
+  
+  <!-- entry: rank=-5 behavior -->
+- bfc26b4: Every type a public signature names can now be written down by a consumer.
+  
+  Types the declarations named through private aliases are written out, or are geom's `Point` and `Rect`.
+  
+  <!-- entry: internal -->
+- ece64a6: Path effects, `growRegion`, `mergeRegion` and `bendAlongPath` keep a far-out shape's fractions, measuring their result from an origin of its own.
+  
+  <!-- entry: fix -->
+- ece64a6: `puckerBloatPath`, `roughenPath`, `zigzagPath`, `tweenPaths` and `bendAlongPath` keep the source path's `openFill`.
+  
+  <!-- entry: fix -->
+- 36dac61: `ellipseShape` from `start: 0` to `end: 360` is the whole ellipse, closed. It is whole as `arcShape` and `trackShapeD` take it.
+  
+  <!-- entry: fix -->
+- daba59f: `pathFaceArrangement`, `pathDivide` and `pathFacePieces` cut small curved shapes far from the origin as finely as near it.
+  
+  <!-- entry: fix -->
+- 7a053e0: `pathFaceArrangement` throws a `RangeError` for a `flattenTolerance` that is not a positive number. That includes zero, negatives, NaN and Infinity.
+  
+  <!-- entry: fix behavior -->
+- acb38fe: `pathFaceArrangement` no longer reports a face's edge along a too-thin covered sliver as bordering uncovered space.
+  
+  <!-- entry: fix -->
+- cbd9a26: A self-crossing fill with a hairline spike or a near-triple crossing fills all of its region, even-odd ones without the stencil.
+  
+  <!-- entry: fix visual -->
+- 8c2d558: `trackShapeD` and the draw.io writer write a non-finite coordinate as `0`, not `NaN`, as the SVG writer does.
+  
+  Both now write their four-place numbers through `trimNumber`.
+  
+  <!-- entry: fix data -->
+- af85c85: `len` and `distance` in `@weasel-js/geom/3d` measure very large and very small vectors, and `intersectRayPlane` meets planes along them.
+  
+  <!-- entry: fix -->
+- af85c85: `nearestPointOnLine` and `nearestPointsRayLine` in `@weasel-js/geom/3d` project onto a line with a very short or very long direction.
+  
+  <!-- entry: fix -->
+- e280844: A constraint on an open path's end anchor stays on it when an edit adds an anchor past that end.
+  
+  <!-- entry: fix -->
+- b9a8c62: Corner specs carried through a split, rejoin or reversal stay on their own anchors in a path whose subpath opens after a `Z` without an `M`.
+  
+  <!-- entry: fix -->
+- a3caa9d: The quadratic and NURBS curve representations answer a small curve's curvature instead of 0.
+  
+  Every curve representation's `curvatureAt` now holds for curves of any size.
+  
+  <!-- entry: fix -->
+- 1dc92ce: Curve representations' `toPath` gives a path far from 0 an `origin`, so its points land on the anchors.
+  
+  <!-- entry: fix -->
+- 9f6da2d: `@weasel-js/geom`'s optional `earcut` peer accepts any 3.x from 3.2.4, where it named 3.2.4 alone.
+  
+  <!-- entry: fix -->
+- 15a78d8: Splitting, measuring, warping, and editing paths land exactly on a segment's end point where the parameter reaches 1.
+  
+  <!-- entry: fix -->
+- 1cc8fea: `growRegion` grows every separate shape of a compound path outward, including one wound the other way from the rest, while holes still shrink.
+  
+  <!-- entry: fix visual -->
+- 9a45d4a: `growRegion` with `join: 'round'` caps a U-turn outward at either end of a line or spike, instead of bowing one cap back into the shape.
+  
+  <!-- entry: fix visual -->
+- 2b26641: A `length` or `equalLength` constraint opens a segment whose two anchors start on one point.
+  
+  <!-- entry: fix -->
+- eec8a23: A path's length table measures straight segments with very large or very small coordinates at their true length.
+  
+  <!-- entry: fix -->
+- 353033f: A path's length table answers anchor queries on the right subpath when a drawing command opens a subpath after `Z` with no `M`.
+  
+  The segment that opens such a subpath has no anchor of its own at its start, so it takes no share of the anchor range.
+  
+  <!-- entry: fix -->
+- 4c0bb1b: `offsetCornerTraces` places a convex `square` corner outside a grown outline, so an offset path keeps that corner as an editable corner.
+  
+  <!-- entry: fix -->
+- 4dff167: An `onPath` constraint keeps its anchor on the drawn curve through an edit that reverses its subpath.
+  
+  <!-- entry: fix -->
+- 514f6ad: `pathCrossings` and `crossingStops` report where a single cubic segment loops over itself, so a trim can cut at a loop's crossing.
+  
+  <!-- entry: fix -->
+- 81cc3f8: `constrainPathsEdit` drops an own constraint naming an anchor its path lacks, rather than applying it to another path.
+  
+  <!-- entry: fix -->
+- 0f0c7e5: `pathToAnchors` turns a quadratic into the cubic tracing the same curve, so an anchor edit no longer bulges a path's `Q` segments.
+  
+  <!-- entry: fix visual -->
+- ce89e1f: `nearestPointsRayLine` pairs a zero-direction line, a single point, with the ray's point nearest it.
+  
+  <!-- entry: fix -->
+- 5b84935: `segmentBetween` answers the closing segment of a closed subpath of two anchors.
+  
+  <!-- entry: fix -->
+- 308226e: `isAnchorSmooth` reads an anchor whose two handles point the same way as a corner, so fairing and handle drags leave such a cusp alone.
+  
+  <!-- entry: fix -->
+- 57af464: `trimNumber` leaves a large number that already has no more decimals than asked as it is, rather than moving its last digits.
+  
+  <!-- entry: fix -->
+- a20fc8c: `joinPaths` keeps each part's rounded corners and the `openFill` its open parts share, so a blended or repeated shape keeps its corners.
+  
+  <!-- entry: fix -->
+- a2fbf00: `joinPaths` measures the joined path from an origin that covers every part, so a far part joined after one with no origin keeps its precision.
+  
+  <!-- entry: fix -->
+- 1eb7552: The knife cuts a donut or two separate shapes without uniting them first, so the pieces keep their curves.
+  
+  <!-- entry: fix -->
+- 7863d23: A lasso crossing only the gap between an unfilled open path's ends no longer selects it. `polygonIntersectsPath` with `filled: false` tests an open subpath's drawn line alone.
+  
+  <!-- entry: fix -->
+- ec23b4e: `circlePath` throws a `RangeError` for fewer than 3 segments, and `roundRectPath` for no corner samples.
+  
+  They built empty or NaN geometry.
+  
+  <!-- entry: fix behavior -->
+- de8f61d: `measurePath` and `pointAlongPath` answer in the path's own space for a path measured from an `origin`.
+  
+  So do `bendAlongPath`'s spine, `repeatAlongPath` and track paths, which read through it.
+  
+  <!-- entry: fix -->
+- 28b5165: `mergeRegion` keeps a contour whole where runs of near-duplicate vertices sit, with no straight edges drawn across the shape.
+  
+  <!-- entry: fix visual -->
+- ff70ebe: `mergeRegion` outlines two curves crossing nearly tangent cleanly, with no spikes or slivers between them.
+  
+  A synthetic bold glyph baked with round corners showed them where its strokes nearly touch.
+  
+  <!-- entry: fix visual -->
+- 0f43324: `mergeRegion` cuts every edge crossing at one point at that same point, leaving no stray sliver of fill.
+  
+  <!-- entry: fix visual -->
+- f4b9a4a: `mergeRegion` throws a `RangeError` for a `tolerance` that is not a positive finite number, where a zero tolerance used to erase the whole shape.
+  
+  <!-- entry: fix -->
+- adb1290: A nonzero fill whose outlines overlap but meet only at vertices or shared edges covers the overlap once, or not where it cancels.
+  
+  <!-- entry: fix visual -->
+- 9c507b5: `pathFromD` ends a path before an arc holding a number past the double range, with a warning, rather than dropping the arc silently.
+  
+  <!-- entry: fix -->
+- 9c507b5: `pathFromD` draws an arc whose radius is vastly larger than its chord as the near-straight curve it is, instead of leaving it out.
+  
+  <!-- entry: fix visual -->
+- ff4504e: The paths guide names `nearestOnPath`'s result field `distance` and the hit tests' option `flattenTolerance`, as the code has them.
+  
+  <!-- entry: fix -->
+- 58f9d2e: A pin warp on a self-crossing even-odd path, such as a one-contour pentagram, deforms only the area the path fills.
+  
+  <!-- entry: fix -->
+- c67bcfa: A pin warp moves the whole of a shape's fill, and every pin reaches where it was dragged.
+  
+  Its mesh no longer loses triangles, which left part of some shapes unmoved.
+  
+  <!-- entry: fix visual -->
+- f04bbbc: A pin warp carries a point off its mesh (in a hole, a notch or past the outline) by the nearest triangle.
+  
+  <!-- entry: fix visual -->
+- 5124d5a: Dragging a pin-warp pin moves the shape when another pin snapped to the same outline point.
+  
+  Pins sharing a point move it by the mean of their drags.
+  
+  <!-- entry: fix -->
+- 3207a40: `distance`, `pointSegmentDistance`, `segmentT`, and `nearestOnSegment` stay finite and exact for points past 1e154 or below 1e-154 apart.
+  
+  <!-- entry: fix -->
+- 70076bc: `poseFrameInverseOf` and `pathThroughPoseFrame` accept a `null` or `undefined` pose. They answer `null` and the path as it is, as `poseFrameOf` does, rather than throwing.
+  
+  <!-- entry: fix -->
+- 6a9a3dc: Quadrant snap points center on the box a closed curve reaches, not its control points' box. A teardrop or a dome gets them where its outline is.
+  
+  <!-- entry: fix -->
+- 5d75785: `reachToMeet` in `'curvature'` mode lengthens a straight end to the stroke ahead of it, as the other modes do, where it found nothing.
+  
+  <!-- entry: fix -->
+- dd5a540: `pathDistanceToPoint` measures a rect path with a negative width or height from the square it draws.
+  
+  <!-- entry: fix -->
+- 6fcc7aa: `mergeRegion` and `growRegion` read an open path's winding as they draw it, closed, whatever its `openFill`.
+  
+  An open path under `openFill: 'none'` merges unchanged and grows outward.
+  
+  <!-- entry: fix -->
+- 56fda8d: `stationsAlongPath` and `repeatAlongPath` read a `count` that is not a finite number as unset rather than throwing.
+  
+  <!-- entry: fix -->
+- f88d616: `resolveEasing` throws for a name like `'constructor'` or `'toString'` instead of returning an `Object` method as the easing.
+  
+  <!-- entry: fix -->
+- 1c2c1ac: `reversePath` keeps a closed contour's anchor count when its closing edge is implicit, so reversing twice gives the original path back.
+  
+  <!-- entry: fix -->
+- 1d8e163: `ringSignedArea` keeps a ring's sign and area however far from 0 it lies. A small ring far out keeps the winding the renderer and tessellation read.
+  
+  <!-- entry: fix -->
+- e08d172: A rotated node far from 0 keeps its silhouette to the fraction. `rotatePathAbout` and `pathThroughPoseFrame` measure a far-out result from an origin, as `transformPath` does.
+  
+  <!-- entry: fix -->
+- 429e80c: `roughenPath` roughens differently for seeds that differ only in their fraction or past 32 bits.
+  
+  Whole-number seeds roughen as before.
+  
+  <!-- entry: fix -->
+- 002ff57: `schneiderFit` joins its cubics smoothly, so a fitted pencil stroke has no corner at each joint.
+  
+  A repeated first or last sample no longer pins its handle onto its anchor.
+  
+  <!-- entry: fix visual -->
+- 7a7ea82: `segmentsCross` answers true for two collinear segments meeting end to end at one point.
+  
+  <!-- entry: fix -->
+- 9521334: `schneiderFit`, `polygonFromPoints`, `polylineFromPoints`, `linePath`, `ellipsePath`, `regularPolygonPath` and `starPath` keep far-out fractions.
+  
+  Each measures a shape past `ORIGIN_THRESHOLD` from an origin of its own, so a freehand pencil stroke drawn far from 0 no longer snaps to float32's grid.
+  
+  <!-- entry: fix -->
+- 12cfcfc: A shifted closed track read past its seam goes round the shifted track again. An open `at` or `nearest` past 1, as items placed past a run's end use, lands where it belongs.
+  
+  <!-- entry: fix -->
+- 415e5b8: Sand and `simplifyAnchorsAt` leave a closed subpath starting on the anchor it started on.
+  
+  <!-- entry: fix -->
+- 0ee2887: `snipPathsAtCrossings` cuts where a path crosses a closed outline at its start point, such as a rect's top-left corner.
+  
+  <!-- entry: fix -->
+- 767af8a: `snipPathAt` removes one piece, not two, when the probe is nearest a crossing that sits on an anchor of the path.
+  
+  A closed subpath crossed only there comes back in `removed` once around, not twice.
+  
+  <!-- entry: fix -->
+- c11f37e: A spiro curve beside a point snapped onto its neighbor keeps its own direction, where it used to be bent to arrive heading along +X.
+  
+  <!-- entry: fix -->
+- e39dbc5: `splitByClosure` keeps each rounded corner on its own anchor after a subpath that starts without an `M`.
+  
+  <!-- entry: fix -->
+- 98d2f9a: `stepLine` throws a `RangeError` for a step that is zero or not finite. A step of that kind has no multiples to hold a direction to.
+  
+  <!-- entry: fix behavior -->
+- cf2ad81: Booleans on straight-line paths with overlapping contours honor the path's fill rule. An even-odd overlap, or one between opposite windings, stays empty, as with curves.
+  
+  <!-- entry: fix -->
+- 60c082d: `tagTypedArrays` copies an object as `JSON.stringify` writes it, through its `toJSON` or its own keys. It tags and escapes the same values `typedArrayReplacer` does.
+  
+  <!-- entry: fix data -->
+- 1e58c0d: `tessellate` fills a path with `openFill: 'none'` whose closed contour flattens to hundreds of thousands of points.
+  
+  <!-- entry: fix -->
+- d3b462a: A nonzero fill covers a contour traced over another once, even where a vertex differs from it by rounding.
+  
+  <!-- entry: fix visual -->
+- 49f1f5b: A translucent nonzero fill whose same-wound contours share edges or coincide draws the shared region once, not darker.
+  
+  <!-- entry: fix visual -->
+- 1f05956: `trackRun`'s `nearest` finds the nearest point on the run itself, as `trackSlice` does. A point past one end of a run over part of a shape snaps to that end.
+  
+  <!-- entry: fix -->
+- a8efdf5: `translatePath` gives a polygon moved far from 0 an origin, as `transformPath` does, keeping its precision.
+  
+  <!-- entry: fix -->
+- 774e9cc: A trimmed stroke with a `nib`, or with per-vertex widths under a stretching metric, is cut where the same trim cuts a plain stroke.
+  
+  `polylineAtCurve` counts a corner split into two coincident points as one anchor.
+  
+  <!-- entry: fix visual -->
+- 18f7289: `tweenPaths` from a closed contour to an open one gives the first shape, closed, at 0, and the second, open, at 1.
+  
+  <!-- entry: fix -->
+- 34b8a3f: A tween's steps no longer jump between two shapes as a source is stretched.
+  
+  <!-- entry: fix visual -->
+- e3148d0: A saved typed array holding an object where a number belongs loads with `NaN` there, rather than throwing a `TypeError`.
+  
+  <!-- entry: fix data -->
+- 0d977b8: Add Pin places the pin on a pin-warped shape turned past 60°, since `unwarpPoint` now inverts such a warp.
+  
+  It now steps through the map's local Jacobian and returns the point with the smallest miss it found.
+  
+  <!-- entry: fix -->
+- 12816b7: A pin warp that untangles a fold no longer corrupts the oldest step its descent remembers when it drops a step that saw no curvature.
+  
+  <!-- entry: fix -->
+- aec0cec: A very wide stroke outlines in a fraction of the time, through `trianglesToPath`, `strokeToPath` and pdf's outlined strokes.
+  
+  A round stroke a million wide on a path 200 across, about 3,500 triangles, now unions in under a second where it took minutes.
+  
+  <!-- entry: perf -->
+- 174070d: `zigzagPath` alternates sides across a closed contour's seam when the contour would otherwise have an odd number of points.
+  
+  <!-- entry: fix visual -->
+
 ## 1.19.1
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/export",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "Exports regions of a @weasel-js/core scene: a page, a selection or any rect, as PNG or any format another package registers (SVG, PDF), with a diagnostics report and a retry when the scene changes mid-export.",
   "weasel": {
     "tier": "plugin"
@@ -41,15 +41,15 @@
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.19.1",
-    "@weasel-js/registry": "1.19.1",
-    "@weasel-js/renderer": "1.19.1"
+    "@weasel-js/geom": "2.0.0",
+    "@weasel-js/registry": "2.0.0",
+    "@weasel-js/renderer": "2.0.0"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.19.1"
+    "@weasel-js/core": "2.0.0"
   },
   "devDependencies": {
-    "@weasel-js/paint": "1.19.1"
+    "@weasel-js/paint": "2.0.0"
   },
   "publishConfig": {
     "access": "public",

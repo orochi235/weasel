@@ -1,5 +1,241 @@
 # @weasel-js/paint
 
+## 2.0.0
+
+### Major Changes
+
+- fcc5602: The color ramp helpers moved from `@weasel-js/ui` to `@weasel-js/paint`, and `oklchToHex` gives way to paint's `oklchDegToHex`.
+  
+  `rampColor`, `colorRamp`, `ColorRampOptions`, `chromaAt`, `ChromaCurve` and `ChromaCurvePoint` move. ui's `./color` subpath is gone.
+  
+  ```ts
+  // before
+  import { chromaAt, oklchToHex, type ChromaCurve } from '@weasel-js/ui/color';
+  // after
+  import { chromaAt, oklchDegToHex, type ChromaCurve } from '@weasel-js/paint';
+  ```
+  
+  <!-- entry: breaking api -->
+- e1e7241: `GHOST_STROKE` is renamed `GHOST_STROKE_COLOR`: it is a color string, named like `DEFAULT_STROKE_COLOR` beside it.
+  
+  ```ts
+  // before
+  const stroke = solidStroke(GHOST_STROKE);
+  // after
+  const stroke = solidStroke(GHOST_STROKE_COLOR);
+  ```
+  
+  <!-- entry: breaking api -->
+- 9aed377: `getAlpha01` is renamed `hexAlpha`, the alpha of a hex color, beside `paintAlpha` for a paint.
+  
+  ```ts
+  // before
+  const a = getAlpha01('#ff000080');
+  // after
+  const a = hexAlpha('#ff000080');
+  ```
+  
+  <!-- entry: breaking api -->
+- cd7ffdb: `rgbaHex` is renamed `opaqueHexOfBytes`: it reads 0..255 bytes and drops alpha, where `rgbaToHex` reads 0..1 floats and keeps it.
+  
+  ```ts
+  // before
+  const hex = rgbaHex(pixel);
+  // after
+  const hex = opaqueHexOfBytes(pixel);
+  ```
+  
+  <!-- entry: breaking api -->
+- 8ced7e2: `cycleFill` is renamed `paletteColorAt`: it returns the palette's n-th color as a hex string, wrapping past the end.
+  
+  ```ts
+  // before
+  const color = cycleFill(seq);
+  // after
+  const color = paletteColorAt(seq);
+  ```
+  
+  <!-- entry: breaking api -->
+- 5ed6215: `parseColorToRgba255` is renamed `parseColorBytes`, matching `parseHexBytes` and `hexToRgbBytes`, the other readers that return 0..255 channels.
+  
+  ```ts
+  // before
+  const [r, g, b, a] = parseColorToRgba255(css);
+  // after
+  const [r, g, b, a] = parseColorBytes(css);
+  ```
+  
+  <!-- entry: breaking -->
+- 9cacd4b: `resolveColor` is gone; `parseColor` and `tryParseColor` now return the read-only tuple it did, since all three share one cache.
+  
+  ```ts
+  // before
+  const [r, g, b, a] = resolveColor(css);
+  // after
+  const [r, g, b, a] = parseColor(css);
+  ```
+  
+  A caller that wrote into `parseColor`'s result copies it first: `[...parseColor(css)]`.
+  
+  <!-- entry: breaking -->
+- fcc5602: `paintPreviewCss` is imported from `@weasel-js/paint`, beside a new `sampledCssStops`; `@weasel-js/ui` no longer exports it.
+  
+  `sampledCssStops(colorAt, samples, positionOf)` writes `samples + 1` evenly spaced CSS color stops, for a gradient CSS cannot blend in the right space by itself.
+  
+  ```ts
+  // before
+  import { paintPreviewCss } from '@weasel-js/ui';
+  // after
+  import { paintPreviewCss } from '@weasel-js/paint';
+  ```
+  
+  <!-- entry: breaking api -->
+- 880cbbf: `Region` names its size `width` and `height`, not `w` and `h`.
+  
+  ```ts
+  // before
+  const region: Region = { x: 0, y: 0, w: 100, h: 50, shape: 'rectangle' };
+  // after
+  const region: Region = { x: 0, y: 0, width: 100, height: 50, shape: 'rectangle' };
+  ```
+  
+  <!-- entry: breaking api -->
+- 968362b: `strokeOf` is renamed `solidStroke`: it builds a solid stroke from a color, beside `strokeWith` for any paint.
+  
+  ```ts
+  // before
+  const stroke = strokeOf('#1c1c1c', 2);
+  // after
+  const stroke = solidStroke('#1c1c1c', 2);
+  ```
+  
+  <!-- entry: breaking api -->
+- e6c888e: `tryNormalizeHex` returns `null` for a string that is no hex color, as `tryParseColor` and `parseHexBytes` do, not `undefined`.
+  
+  ```ts
+  // before
+  if (tryNormalizeHex(text) === undefined) …
+  // after
+  if (tryNormalizeHex(text) === null) …
+  ```
+  
+  <!-- entry: breaking -->
+- fcc5602: `solidColorOf`, `strokeColorOf` and `PaintSlot` moved from `@weasel-js/ui` to `@weasel-js/paint`, and ui's `./paint-value` subpath is gone.
+  
+  `@weasel-js/ui/components/GradientEditor` no longer exports `PaintSlot` either.
+  
+  ```ts
+  // before
+  import { solidColorOf, type PaintSlot } from '@weasel-js/ui/paint-value';
+  import type { PaintSlot } from '@weasel-js/ui/components/GradientEditor';
+  // after
+  import { solidColorOf, type PaintSlot } from '@weasel-js/paint';
+  ```
+  
+  <!-- entry: breaking api -->
+- 56089ae: Resolving a color against a palette with two entries of the same name throws, naming the name.
+  
+  A palette like this used to resolve `red` to its first entry; now `resolvePaletteColor` and `resolvePaletteColors` throw:
+  
+  ```ts
+  const palette = { entries: [{ name: 'red', color: red }, { name: 'red', color: crimson }] };
+  resolvePaletteColor(palette, { ref: 'red' }); // throws: two entries are named "red"
+  ```
+  
+  Give each entry its own name.
+  
+  <!-- entry: breaking fix -->
+
+### Minor Changes
+
+- 977164c: The hex-alpha helpers and the kit's default paints move from `@weasel-js/core` to `@weasel-js/paint`: `solid`, `solidStroke`, `toHex8` and the rest.
+  
+  This is breaking: import `toHex8`, `hexAlpha`, `withAlpha01`, `mergeAlphaFromPrev`, `solid`, `solidStroke`, `strokeWith`, `paintAlpha`, `paintWithAlpha`, `paintWithColor`, `paletteColorAt`, `DEFAULT_FILL_COLOR`, `DEFAULT_STROKE_COLOR`, `DEFAULT_PALETTE` and `GHOST_STROKE_COLOR` from `@weasel-js/paint`.
+  
+  ```ts
+  import { solid, solidStroke } from '@weasel-js/paint';
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- aadb086: `isPaint(value)` says whether a value read from storage or a file is a `Paint` at all.
+  
+  <!-- entry: api -->
+- fcc5602: `parsesAsColor` says whether a string is a CSS color: the browser's answer where it has `CSS.supports`, a small parser's otherwise.
+  
+  A second argument replaces the browser's check, or passes `null` to use only the parser. `var()` and CSS-wide keywords such as `inherit` never count as colors.
+  
+  <!-- entry: new api -->
+- 2932eb2: New `solidFill(color)`: a fill of one color, `{ paint: { kind: 'solid', color } }`, that fits both `Fill` and `CommandFill`.
+  
+  An alpha channel in a hex color moves to `opacity`, as `solid` moves it.
+  
+  <!-- entry: api -->
+- 3cf6a17: `wrapDeg` is exported: it brings an angle in degrees into `[0, 360)`.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 6cef61c: `parsesAsColor` turns away a value no color could be, such as a long run of brackets that overflowed jsdom's CSS parser.
+  
+  A value holding brackets, braces, or semicolons, or nesting parentheses more than 16 deep, is answered `false` without asking `CSS.supports`.
+  
+  <!-- entry: fix -->
+- bfc26b4: Every type a public signature names can now be written down by a consumer.
+  
+  Types the declarations named through private aliases are written out, or are geom's `Point` and `Rect`.
+  
+  <!-- entry: internal -->
+- b98bad7: `chromaAt` gives a curve's peak and top chroma exactly at their lightness.
+  
+  <!-- entry: fix -->
+- 0d377ec: A gradient sampled exactly where two stops share an offset takes the later stop's color, as CSS draws a hard break.
+  
+  <!-- entry: fix visual -->
+- 435c248: `colorLiteralToHex` converts `hsl` and `srgb-linear` literals, so `paletteColorAt` answers their color, not the fallback.
+  
+  <!-- entry: fix -->
+- c491f93: `hexToRgbBytes`'s error names the function and the forms it reads, and points at `parseColor` for other CSS colors.
+  
+  <!-- entry: fix -->
+- 09f0c86: `lerpPaint`, `lerpFill` and `lerpStroke` keep the color of a fully transparent solid, and of the clear end of a fade, rather than answering black.
+  
+  <!-- entry: fix -->
+- d11dc30: `lerpPaint` turns a conic gradient's start angle the short way round, so a blend between two nearly equal angles no longer spins the gradient.
+  
+  <!-- entry: fix visual -->
+- 5ad7bc0: Paint and stroke lerps stay finite where the two ends are too far apart to subtract.
+  
+  <!-- entry: fix -->
+- 481218b: `lerpStroke` keeps a stroke's `vertexWidths` and `vertexColors`, so a tapered stroke stays tapered through a blend.
+  
+  Two arrays of one length interpolate entry by entry; otherwise the result carries the nearer side's array.
+  
+  <!-- entry: fix visual -->
+- f8172cf: `parseColor` reads a color function holding a very long run of digits in time linear in its length.
+  
+  <!-- entry: fix perf -->
+- e5395a6: paint's color parsing and color-space conversion share one `clamp01`, kept beside its `lerp`, rather than a copy each.
+  
+  <!-- entry: internal -->
+- f95e342: `parsesAsColor` reads every CSS named color, such as `coral` and `rebeccapurple`, where there is no `CSS.supports` (SSR, workers, jsdom).
+  
+  <!-- entry: fix -->
+- d6ba47e: Without `CSS.supports`, `parsesAsColor` refuses a value that only starts with a color function, such as a shadow.
+  
+  <!-- entry: fix -->
+- c1a3072: `solid` and `paintWithColor` move an `rgba()` or `hsl(… / a)` color's alpha to `opacity`, so it is not applied twice.
+  
+  `solidFill` and `solidStroke` do the same.
+  
+  <!-- entry: fix visual -->
+- f4bfab5: `strokeHasInk` is false, and `strokeKey` is `'none'`, for a stroke whose `dash` holds a NaN or infinite entry, which draws nothing.
+  
+  <!-- entry: fix -->
+- f544aeb: `parsesAsColor`, without `CSS.supports` to ask, refuses a color function holding a brace or semicolon.
+  
+  <!-- entry: fix -->
+
 ## 1.19.1
 
 ### Minor Changes

@@ -1,5 +1,119 @@
 # @weasel-js/modes
 
+## 2.0.0
+
+### Major Changes
+
+- c3a9456: `getActiveModeFor` is `createActiveModeReader`, since it builds a memoized reader rather than returning the active mode.
+  
+  ```ts
+  // before
+  const readMode = getActiveModeFor(registry);
+  // after
+  const readMode = createActiveModeReader(registry);
+  ```
+  
+  <!-- entry: breaking api -->
+- 2907e97: The preset lookup `byId` is `defaultModeById`, so it no longer reads as the registry's `byId`, which finds the app's own modes too.
+  
+  ```ts
+  // before
+  import { byId } from '@weasel-js/modes';
+  const mode = byId('path-edit');
+  // after
+  import { defaultModeById } from '@weasel-js/modes';
+  const mode = defaultModeById('path-edit');
+  ```
+  
+  <!-- entry: breaking api -->
+- 9b7a29c: `eligibleTool` is `isToolEligible` and `eligibleContribution` is `isContributionEligible`, named as the predicates they are.
+  
+  ```ts
+  // before
+  if (eligibleTool(registry, tool)) …
+  // after
+  if (isToolEligible(registry, tool)) …
+  ```
+  
+  <!-- entry: breaking api -->
+- 26aa3d2: `ALL_TAGS` is `SHIPPED_TAGS` and `isCapabilityTag` is `isShippedTag`, since an app's own capability tags are valid but not in the list.
+  
+  ```ts
+  // before
+  if (isCapabilityTag(tag)) ALL_TAGS.indexOf(tag);
+  // after
+  if (isShippedTag(tag)) SHIPPED_TAGS.indexOf(tag);
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- cd290f3: `ContributionLike` names what `isContributionEligible` reads from an entry, beside `isToolEligible`'s `ToolLike`.
+  
+  <!-- entry: api -->
+- 3cdeca9: `isShippedTag(tag)` narrows `tag` to one of the shipped tags, and leaves a string it rejects typed as a string.
+  
+  `ShippedTag` names that union.
+  
+  ```ts
+  if (isShippedTag(tag)) SHIPPED_TAGS.indexOf(tag);
+  else warn(`unknown tag ${tag}`);
+  ```
+  
+  <!-- entry: fix api -->
+
+### Patch Changes
+
+- 10ba95e: Mode decoration painters registered for the same mode stack: the newest paints, and releasing it brings back the one beneath.
+  
+  Releasing a buried painter removes only it. Before, a second registration replaced the first for good.
+  
+  <!-- entry: fix behavior -->
+- 7618831: `ModeDecorations.register` throws for a mode id its registry does not have, as `byId` does.
+  
+  Calls that used to pass silently now throw: a painter registered under a misspelled mode id never painted.
+  
+  <!-- entry: fix behavior -->
+- d9af6f2: The shipped modes in `DEFAULT_MODES` are frozen: changing one in place throws rather than changing it for every canvas.
+  
+  Customize a shipped mode by copying it:
+  
+  ```ts
+  const normal = { ...NORMAL, allows: [...NORMAL.allows, 'edits-text'] };
+  ```
+  
+  <!-- entry: fix -->
+- Updated dependencies [84028cb]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [e6871f1]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [5202a9f]
+  - @weasel-js/registry@2.0.0
+
 ## 1.19.1
 
 ### Patch Changes

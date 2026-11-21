@@ -1,5 +1,156 @@
 # @weasel-js/registry
 
+## 2.0.0
+
+### Minor Changes
+
+- aedb49f: `createExtensionRegistry` makes a registry whose conflicts throw unless the call asks to replace, and which can fall back to a parent.
+  
+  The same value again is no change, a different one throws `ExtensionConflictError` unless the call passes `replace: true`, and each registration returns its release. Op factories and shader sources are built on it. Core re-exports it.
+  
+  ```ts
+  const shared = createExtensionRegistry<Widget>({ kind: 'widget' });
+  const mine = createExtensionRegistry<Widget>({ kind: 'widget', parent: shared });
+  const release = mine.register('dial', dial);
+  mine.register('dial', other);                    // throws ExtensionConflictError
+  mine.register('dial', other, { replace: true }); // replaces; `release` now does nothing
+  ```
+  
+  <!-- entry: rank=5 new api -->
+- 2338cee: `getOwn` takes a record that may be `undefined` or `null`, and reads nothing from it.
+  
+  ```ts
+  getOwn(opts.labels, key); // was: opts.labels && getOwn(opts.labels, key)
+  ```
+  
+  <!-- entry: api -->
+- 174d6ef: `isOneChar` moved from `@weasel-js/ui-input` to `@weasel-js/registry`, beside `codePointFloor`; it is unchanged.
+  
+  ```ts
+  // before
+  import { isOneChar } from '@weasel-js/ui-input';
+  // after
+  import { isOneChar } from '@weasel-js/registry';
+  ```
+  
+  <!-- entry: breaking api -->
+- 73f549e: A key released and registered again in the same tick can keep its place in a registry's order, with `createReflectable({ holdPlace: true })`.
+  
+  With `holdPlace`, a key whose last registrant is released keeps its place in `entries()` until the current microtasks have run, reading as absent meanwhile, so a React effect that releases and re-registers when its value changes leaves the key where it was.
+  
+  <!-- entry: api -->
+- 73f549e: A registry whose registrants are meant to stack can opt out of the clash warning with `createReflectable({ layered: true })`.
+  
+  In a layered store every push over a live registrant is an override, so none draws the development clash warning. Use it where stacking is the registry's contract, as with a source that composes over the one beneath it; elsewhere, mark the default with `fallback` or push the override at a higher `rank`.
+  
+  <!-- entry: api -->
+- a13982c: `createReflectable`'s `push` takes a `rank`, its `set` returns a release, and its new `batch` announces several changes as one.
+  
+  A registrant pushed with `rank` stacks under every higher-ranked one, so an override tier stays live over registrants that arrive after it; the reflection reports each registrant's `rank`. The release `set` returns removes that registrant and does nothing once a later `set` replaced it. `batch(fn)` runs `fn` and announces what it changed as one version step and one notification.
+  
+  ```ts
+  store.push('app:save', glyph, { rank: 1, source: 'override' });
+  const release = store.set(runId, handle);
+  store.batch(() => { for (const [k, v] of rows) store.push(k, v); });
+  ```
+  
+  <!-- entry: api -->
+- 73f549e: A `createReflectable` store reads one key's whole stack of registrants with `stack(key)`.
+  
+  `stack(key)` returns the key's registrants live last, the order `entries()` reports as `shadowed` then `live`, without building the store's entries. The array is frozen and stays the same object until that key changes; a key holding none gives an empty array.
+  
+  <!-- entry: api -->
+- 4bcea5f: `createValuesReader(reflection)` returns a reader of a reflection's live values in key order, the same frozen array until its entries change.
+  
+  <!-- entry: api -->
+- eb8fe62: `codePointFloor(s, at)` gives the longest cut of `s` at most `at` UTF-16 units long that keeps every code point whole.
+  
+  <!-- entry: api -->
+- e9613f8: `compositeKey(parts)` builds one string key for a tuple of parts that no other tuple shares, whatever separators the parts hold.
+  
+  <!-- entry: api -->
+- f004638: `createLatest` hands out tickets for async work, so an answer overtaken by a newer request can be dropped.
+  
+  `take()` returns a check that holds while its request is the newest; `drop()` retires every ticket out, for an owner that has gone or an answer that arrived another way.
+  
+  <!-- entry: api -->
+- 52d9d64: `createPart(make)` returns a reader that gives each owner one part, made on its first read and held weakly with the owner.
+  
+  ```ts
+  export const transportHoldOf = createPart((clock: TrialClock) => createTransportHold(clock));
+  ```
+  
+  <!-- entry: api -->
+- e3c67e9: New `createValueStore(initial, equal?)`: a store of one value that notifies only when a write changes it.
+  
+  `equal` is `Object.is` by default; pass `sameList` or `deepEqual` for a value rebuilt on every write. Core's measurement cells (`MeasureCell`) are built on it.
+  
+  <!-- entry: api -->
+- 34090f0: `createWarnOnce(cap?)` gives a development-only `console.warn` that says each message once, remembering the last `cap` messages (256 by default).
+  
+  <!-- entry: rank=-5 api -->
+- 03b9392: `@weasel-js/registry` exports `getOwn` and `hasOwnKey`, which read and test a key among an object's own keys only.
+  
+  A key named `constructor` or `toString` reads as absent, where `table[key]` and `key in table` find `Object.prototype`'s member.
+  
+  <!-- entry: api -->
+- 15e923d: New `GRADES` and `Grade`: the grades a notice, a menu row, an action or a control's tint takes, declared once for every package.
+  
+  <!-- entry: api -->
+- 5962dc2: `identityKeyOf(v)` names any value for a cache or memo key: a primitive by its type and value, an object or function by its identity.
+  
+  <!-- entry: api -->
+- 5dae54d: `isFiniteNumber(value)` says whether a value is a finite number, and narrows it to `number` where `Number.isFinite` does not.
+  
+  ```ts
+  import { isFiniteNumber } from '@weasel-js/registry';
+  
+  const zoom = isFiniteNumber(stored.zoom) ? stored.zoom : 1;
+  ```
+  
+  <!-- entry: api -->
+- 0208a3b: `createKeyedEmitter` files listeners by key with `createEmitter`'s semantics, and forgets a key once its last listener leaves.
+  
+  `subscribe(key, fn)` returns the unsubscribe, `emit(key, ...args)` calls the key's listeners, and `clear(key)` drops them all; an unsubscribe called twice or after a `clear` never removes a later subscription.
+  
+  <!-- entry: api -->
+- bb7bb11: `LONGEST_TIMER_MS` is the longest delay one `setTimeout` or `setInterval` keeps, 2^31 − 1 ms, for capping a computed delay.
+  
+  <!-- entry: rank=-5 api -->
+- ee1de44: A registry warns in development when a second registrant claims a taken id, unless the first is an engine default marked with `fallback`.
+  
+  `push(key, value, { fallback: true })` marks a registrant as a default meant to be replaced. Pushing over a registrant of the same rank that is not a fallback logs one `console.warn` per clash, naming the key and both `source`s; pushing over a fallback, or at a higher `rank`, stays silent, and so does `set`. Registering, releasing and registering again, as StrictMode and HMR do, is not a clash. Every `Registrant` and `ReflectedEntry` reports `fallback: true` when it was pushed as one, and an entry now carries its live registrant's `rank` too.
+  
+  `createReflectable({ name })` names a registry: its reflection reports `name`, and the warning leads with it (`weasel paint kinds: …`), so two registries clashing on one id are told apart. Every kit registry is named, and an extension registry takes its `kind` as its name.
+  
+  <!-- entry: rank=10 new api behavior -->
+- 5202a9f: `escapeAttr` and `escapeText` move from `@weasel-js/svg` to `@weasel-js/registry`, with `holdsNonXmlChar` beside them.
+  
+  This is breaking: import them from `@weasel-js/registry`. They escape the same.
+  
+  <!-- entry: breaking api -->
+
+### Patch Changes
+
+- 84028cb: The development clash warning no longer says the newer registrant is live when a higher-ranked registrant above it still is.
+  
+  <!-- entry: fix -->
+- 27eb7f9: A child extension registry's `entries()` lists its ids and its parent's in the order each was first registered.
+  
+  <!-- entry: fix -->
+- 754e0c6: Ending a subscription to an extension registry no longer ends the same listener's own subscription to its parent or to its `own` reflection.
+  
+  <!-- entry: fix -->
+- 8882b53: `identityKeyOf` gives each symbol a key of its own, so two symbols with the same description no longer share a memo or conflict key.
+  
+  <!-- entry: fix -->
+- e6871f1: A keyed emitter's `clear(key)` called from a listener stops that emit from calling the key's listeners that have not had their turn yet.
+  
+  <!-- entry: fix -->
+- 52ee422: A reflectable's `set` keeps the rank of the registrant it replaces, so a later lower-rank `push` no longer goes live over a higher-rank one.
+  
+  <!-- entry: fix -->
+
 ## 1.19.1
 
 ### Minor Changes

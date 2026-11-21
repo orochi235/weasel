@@ -1,5 +1,170 @@
 # @weasel-js/history
 
+## 2.0.0
+
+### Major Changes
+
+- 6943c8d: `swapOp` is `createSwapOp` in `@weasel-js/history` and core's re-export, spelled like the other op factories.
+  
+  Prefs' own `swapOp` in `@weasel-js/prefs/edit` keeps its name.
+  
+  ```ts
+  // before
+  history.apply(swapOp({ name: 'rename', label: 'Rename', before, after, emit }));
+  // after
+  history.apply(createSwapOp({ name: 'rename', label: 'Rename', before, after, emit }));
+  ```
+  
+  <!-- entry: breaking api -->
+- 19d0c9f: `History.currentEntryId()` is `nextEntryId()`: it always returned the id the next pushed entry will take, not one an entry already has.
+  
+  ```ts
+  // before
+  const forkPoint = history.currentEntryId();
+  // after
+  const forkPoint = history.nextEntryId();
+  ```
+  
+  <!-- entry: breaking api -->
+- aedb49f: `History.restore` refuses a snapshot naming an op it cannot rebuild, and returns a report of what it restored.
+  
+  This is a breaking change. A strict restore, the default, throws `HistoryRestoreError`, whose `report.unresolved` lists each op with its entry and reason, and leaves the history as it was. `{ recovery: 'best-effort' }` puts a placeholder that changes nothing in each such op's place, as every restore did before, lists them in the returned report, and calls `onSkip` each time an undo or redo steps past one. A `rebuildOp` hook is now passed a third argument naming the op's entry and the recovery, and may answer `{ unresolved: reason }`.
+  
+  ```ts
+  // before
+  history.restore(saved);
+  // after: strict, or keep what can be kept
+  try {
+    history.restore(saved);
+  } catch (err) {
+    if (!(err instanceof HistoryRestoreError)) throw err;
+    const { unresolved } = history.restore(saved, { recovery: 'best-effort', onSkip: log });
+  }
+  ```
+  
+  <!-- entry: rank=10 breaking api behavior -->
+- 22b57c5: `touchedIdsFromOps` is `touchedIdsOf`: the node ids an op list touches.
+  
+  ```ts
+  // before
+  const ids = touchedIdsFromOps(ops);
+  // after
+  const ids = touchedIdsOf(ops);
+  ```
+  
+  <!-- entry: breaking api -->
+- 67f9f88: A journal applies ops with `applyOps`, the same name its `History` uses; `Journal.applyBatch` is gone.
+  
+  ```ts
+  // before
+  journal.applyBatch(ops, 'Rename');
+  // after
+  journal.applyOps(ops, 'Rename');
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- 0e9f123: `HistoryEntry.touchedIds` is always present, so reading it needs no `?.` or `!`.
+  
+  <!-- entry: api -->
+- 53a1558: `History.restore` takes a `rebuildOp`, asked before the history's own, for ops an owner learns to rebuild only after creating it.
+  
+  ```ts
+  history.restore(saved, { rebuildOp: (name, args) => (name === 'my:op' ? myOp(args) : null) });
+  ```
+  
+  <!-- entry: api -->
+- c6f965b: Each entry `History.observe` reports carries `applied`: the ops that step applied for it, an undo's inverses included.
+  
+  Applying them in order to a copy of the state the step started from makes the same change: a push's or a coalesce's ops, a redo's forward ops, an undo's inverses newest first, and nothing for a step that only moved the stacks (`prune`, `drop`, `branch`, `clear`, `restore`). `ops` stays the entry's forward ops.
+  
+  ```ts
+  history.observe((step) => {
+    send(step.entries.flatMap((e) => e.applied).map((op) => ({ name: op.name!, args: op.args })));
+  });
+  ```
+  
+  <!-- entry: rank=5 api -->
+- bc67ae1: A journal's `commit()` labels its entry with the `label` it was opened with when it names none.
+  
+  `commit('Edit Path')` still names the entry itself.
+  
+  <!-- entry: api fix -->
+
+### Patch Changes
+
+- 8887919: `Journal.cancel()` unwinds the journals open inside it latest edit first. It had gone by the order they were opened.
+  
+  <!-- entry: fix -->
+- 9078cfb: `history.goto(n)` throws a `RangeError` for an `n` that is NaN, not a whole number, below 0, or past the last entry.
+  
+  Calls that used to pass silently now throw. A timeline that can be clicked after the stack shrinks clamps its target before calling.
+  
+  <!-- entry: fix behavior -->
+- ff75b6f: A `goto` that throws and cannot walk back reports its step to `observe`. The step lists every op both walks applied, so a listener mirroring the history through `applied` stays in step.
+  
+  <!-- entry: fix -->
+- a2f20ae: `History.apply()`, `applyOps()`, `recordEntry()` and `restore()` throw while a journal is active, as `undo()` does. An edit can no longer land beneath the journal's later commit.
+  
+  <!-- entry: fix -->
+- fb96bd3: `History.restore()` refuses a snapshot whose `version` is not 1. It throws `HistoryRestoreError` when strict and reports `restored: false` when best-effort, as a scene snapshot in an unsupported version is refused.
+  
+  <!-- entry: fix -->
+- 17fa534: A restored history numbers new entries past its floor and every branch's fork point. A new entry can no longer take an id that kept branches fork from.
+  
+  <!-- entry: fix -->
+- f50c6d9: `History.restore()` refuses a snapshot holding a branch with no entries. `branches()` and `switchBranch()` had thrown a `TypeError` on one later.
+  
+  <!-- entry: fix -->
+- 4fb24ca: `History.restore` refuses a snapshot of the wrong shape with `HistoryRestoreError` and leaves the history as it was.
+  
+  A best-effort restore warns and reports `restored: false` instead.
+  
+  <!-- entry: fix data -->
+- 10dd276: An undo or redo whose `HistorySelection.set` throws still moves its entry and notifies subscribers. The next undo no longer inverts the same entry twice.
+  
+  <!-- entry: fix -->
+- 3c7a87a: `Journal.suspend()` throws while a journal opened inside it is still active, so a history never has an open journal it does not count.
+  
+  <!-- entry: fix -->
+- 1b00300: The inverse of a `createSwapOp` op carries the op's `name` and swapped `args`. An `observe` listener can read what an undo of a swap applied.
+  
+  <!-- entry: fix -->
+- 2e12700: `History.undo()`, `redo()` and `goto()` throw while a journal is active even when there is nothing to step, as they do when there is.
+  
+  <!-- entry: fix -->
+- Updated dependencies [84028cb]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [e6871f1]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [5202a9f]
+  - @weasel-js/registry@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

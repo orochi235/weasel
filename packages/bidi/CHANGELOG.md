@@ -1,5 +1,73 @@
 # @weasel-js/bidi
 
+## 2.0.0
+
+### Major Changes
+
+- 90f2b51: Bidi's top-level `mirror` is gone; it was a second name for `mirrorOf`.
+  
+  `BidiEngine`'s `mirror` method is unchanged.
+  
+  ```ts
+  // before
+  import { mirror } from '@weasel-js/bidi';
+  const glyph = mirror(cp);
+  // after
+  import { mirrorOf } from '@weasel-js/bidi';
+  const glyph = mirrorOf(cp);
+  ```
+  
+  <!-- entry: breaking api -->
+- 0dc7968: Bidi's `baseLevel` is `paragraphLevel`, the field it returns, and so is the `BidiEngine` method in `@weasel-js/bidi` and `@weasel-js/text`.
+  
+  A custom engine passed to `registerBidi` or `layoutRuns` renames its method.
+  
+  ```ts
+  // before
+  const engine: BidiEngine = { analyze, reorder, mirror, baseLevel: (a) => a.paragraphLevel };
+  // after
+  const engine: BidiEngine = { analyze, reorder, mirror, paragraphLevel: (a) => a.paragraphLevel };
+  ```
+  
+  <!-- entry: breaking api -->
+- e347542: `BIDI_UNICODE_VERSION` is gone; the Unicode version the tables were built from is `UNICODE_VERSION`, the name it already had beside it.
+  
+  ```ts
+  // before
+  import { BIDI_UNICODE_VERSION } from '@weasel-js/bidi';
+  // after
+  import { UNICODE_VERSION } from '@weasel-js/bidi';
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- edddd2e: `canonicalBracket(cp)` maps a paired bracket to the code point it pairs as under BD16, so U+3008 and U+2329 compare equal.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- dfbad15: `bidiClassOf`'s documentation names the `ET` and `BN` defaults that some unassigned code points get.
+  
+  <!-- entry: fix -->
+- fb8ce2f: `analyze` handles a paragraph whose text sits at one level for hundreds of thousands of characters, rather than throwing a `RangeError`.
+  
+  <!-- entry: fix -->
+- fe6c2d2: Text after a paragraph separator in one `analyze` call resolves as its own paragraph, with no characters from before the separator as context.
+  
+  <!-- entry: fix -->
+- 2cff4ac: `reorder` throws a `RangeError` for a line range outside the analyzed paragraph, reversed, or not whole numbers.
+  
+  <!-- entry: fix -->
+- 7e53cbc: `ReorderedLine.levels` is documented as indexed by line position: the character at original index `i` is `levels[i - start]`.
+  
+  <!-- entry: fix rank=-5 -->
+- a9e7040: `analyze` takes linear time over text holding many isolate initiators with no closing `PDI`, where 50,000 of them used to stall it for seconds.
+  
+  <!-- entry: fix perf -->
+
 ## 1.19.1
 
 No changes in this release.

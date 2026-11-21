@@ -1,5 +1,315 @@
 # @weasel-js/font
 
+## 2.0.0
+
+### Major Changes
+
+- cc5b0c3: `cssFontFamily` and `cssFontFamilyLoading` take a weight and a style after the family, instead of an object.
+  
+  That is how `getAtlasFont`, `isFontPending` and the other face lookups take them.
+  
+  ```ts
+  // before
+  cssFontFamily('Inter', { weight: 700, style: 'italic' });
+  // after
+  cssFontFamily('Inter', 700, 'italic');
+  ```
+  
+  <!-- entry: breaking -->
+- 959af37: `markAllFontsNotUploaded` is gone from `@weasel-js/font`; it had done nothing since each texture cache started deduplicating its own uploads.
+  
+  Delete the call. A renderer restoring a lost context re-uploads atlases through its new texture cache without it.
+  
+  ```ts
+  // before
+  markAllFontsNotUploaded();
+  // after: nothing
+  ```
+  
+  <!-- entry: breaking -->
+- da15963: `getFont` is `getAtlasFont`: it looks up a registered atlas face only, never an outline or canvas one.
+  
+  ```ts
+  // before
+  const entry = getFont('Inter', 700);
+  // after
+  const entry = getAtlasFont('Inter', 700);
+  ```
+  
+  <!-- entry: breaking api -->
+- e95a396: `metricsOf` is `glyphMetricsOf`: the `GlyphMetrics` of the tier a font resolved to.
+  
+  ```ts
+  // before
+  const metrics = metricsOf(cachedFontVariant(family, 400, 'normal'));
+  // after
+  const metrics = glyphMetricsOf(cachedFontVariant(family, 400, 'normal'));
+  ```
+  
+  <!-- entry: breaking api -->
+- 4daf896: `fontPending` is `isFontPending`, prefixed like the other predicates.
+  
+  ```ts
+  // before
+  if (fontPending('Inter', 700)) return;
+  // after
+  if (isFontPending('Inter', 700)) return;
+  ```
+  
+  <!-- entry: breaking api -->
+- d4a593d: `listFonts` is `listAtlasFonts`: it lists the atlas tier only, beside `listFontOutlines` and `listCanvasFonts`.
+  
+  ```ts
+  // before
+  const families = listFonts().map((f) => f.family);
+  // after
+  const families = listAtlasFonts().map((f) => f.family);
+  ```
+  
+  <!-- entry: breaking api -->
+- 558f742: `outlineMetrics` is `outlineFace`, named for the `OutlineFace` it returns.
+  
+  ```ts
+  // before
+  const face = outlineMetrics(family, 400, 'normal');
+  // after
+  const face = outlineFace(family, 400, 'normal');
+  ```
+  
+  <!-- entry: breaking api -->
+- b1cfa76: `OutlineVariant` is gone; `registerFontOutlines`, `unregisterFontOutlines` and `loadFontOutlines` take the same `FontVariant` that `registerFont` does.
+  
+  The two types were identical. Import `FontVariant` instead:
+  
+  ```ts
+  // before
+  import type { OutlineVariant } from '@weasel-js/font';
+  // after
+  import type { FontVariant } from '@weasel-js/font';
+  ```
+  
+  <!-- entry: breaking -->
+- 9339b45: `OutlineFontOptions` is `RegisterFontOutlinesOptions`, named for `registerFontOutlines`, which takes it.
+  
+  ```ts
+  // before
+  const opts: OutlineFontOptions = { cssSrc: 'local("Inter")' };
+  // after
+  const opts: RegisterFontOutlinesOptions = { cssSrc: 'local("Inter")' };
+  ```
+  
+  <!-- entry: breaking api -->
+- 787c496: `resolveGlyphFallback` is `resolveCanvasFallback`: it resolves a face's canvas tier and takes no glyph.
+  
+  ```ts
+  // before
+  const fallback = resolveGlyphFallback(family, 400, 'normal');
+  // after
+  const fallback = resolveCanvasFallback(family, 400, 'normal');
+  ```
+  
+  <!-- entry: breaking api -->
+- 59e80c0: `registerFont` throws when a variant already registered is registered again with other URLs, unless the call passes `{ replace: true }`.
+  
+  Calls that used to keep the first URLs in silence now throw, naming the family, the variant and both pairs of URLs. Registering the same URLs again is still a no-op. To swap in another atlas:
+  
+  ```ts
+  registerFont('Inter', {}, '/b.json', '/b.png', { replace: true });
+  ```
+  
+  A replaced variant that has loaded, or is loading, fetches the new files, and a lazy one fetches them when first used.
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- 6606d90: `cssString` is exported: text as a CSS string token that reads back as the same text, line breaks included.
+  
+  <!-- entry: api -->
+- 4be1a3f: `registerFontOutlines` and `registerCanvasFont` return a function that takes the registration out again.
+  
+  So do `registerBidi`, `registerShaper` and `registerDisplayKind`.
+  
+  A registration a later one replaced is left alone, so the function is safe to call from an effect's cleanup:
+  
+  ```ts
+  useEffect(() => registerFontOutlines('Inter', { weight: 700 }, '/fonts/inter-bold.ttf'), []);
+  ```
+  
+  <!-- entry: api -->
+- df2ae04: `@weasel-js/font/test-seams` exports the types its seams take and return.
+  
+  New exports: `DynamicPage`, `GlyphRasterizer`, `RasterFaceMetrics`, `RasterizedGlyph`, and `RasterizedColorGlyph`.
+  
+  <!-- entry: rank=-1 api -->
+- f3a1232: A `text-layer` draw command keeps text on the GPU.
+  
+  `{ kind: 'text-layer', texts }` draws its `TextDrawCommand`s as drawing each in turn would, but uploads every glyph once, as one instance, and draws it with one call a frame however the view moves.
+  
+  At 114,400 glyphs, a frame of unchanged text drops from 8 ms of CPU to 0.1 ms, and from 11 ms to 3 ms end to end, still or moving; at 1.28M, from 103 ms to 26 ms (`tests/perf/text-wall.spec.ts`). The layer is kept by the identity of `texts` and freed at the end of a frame that does not draw it. A layer holding an underline, a stroke, a fill that is not a solid color, a color glyph, or a glyph big enough on screen for the outline tier is drawn text by text instead.
+  
+  ```ts
+  const wall: DrawCommand = { kind: 'text-layer', texts: lines.map((l, i) => textCommandFromRuns(0, i * 16, l, style)) };
+  renderer.render([wall], view);
+  ```
+  
+  `GpuDevice.draw` takes an instance count, and a vertex buffer layout's `step: 'instance'` advances once an instance. `@weasel-js/core` exports `TextLayerDrawCommand`, and `renderNeeds` reads a layer's fonts and paints. `@weasel-js/pdf` writes a layer's texts. `@weasel-js/font` exports `GLYPH_AREA_FROM`.
+  
+  <!-- entry: api perf -->
+
+### Patch Changes
+
+- 15072f4: `registerCanvasFont` keeps a family registered until every caller that registered it has called its disposer.
+  
+  Each call's disposer now releases that call's own hold. `unregisterCanvasFont` still removes the family outright.
+  
+  <!-- entry: fix behavior -->
+- d916cae: Past its cap of canvas faces, the canvas font tier drops the face used longest ago, not a face still drawn every frame.
+  
+  <!-- entry: fix perf -->
+- 98df398: A canvas glyph that found no room in a full atlas draws once the text using it fits, not only after a new glyph is asked for.
+  
+  <!-- entry: fix visual -->
+- 77670c1: The canvas font tier draws a weight outside 1 to 1000 at the nearer end, and one that is not a number at 400.
+  
+  A weight that is not a number also warns once.
+  
+  <!-- entry: fix visual -->
+- c131bff: The canvas font tier keeps at most 256 faces, so a weight tween or families typed into a font field no longer grow its memory.
+  
+  <!-- entry: fix perf -->
+- c117e62: `listAtlasFonts` and `listFontWeights` list an eagerly registered variant while it fetches, as they already listed a lazily declared one.
+  
+  <!-- entry: fix -->
+- 89f4197: A font holding a damaged CFF table under a TrueType signature fails to load as an outline face instead of holding the parser.
+  
+  <!-- entry: fix -->
+- 95a1a63: A CID-keyed CFF font whose FDArray holds a damaged Private DICT fails to load as an outline face instead of holding the parser for a minute.
+  
+  <!-- entry: fix -->
+- a343f1b: Replacing a registered atlas closes the old atlas image, as does a fetch a later replacement overtook, freeing the memory at once.
+  
+  <!-- entry: fix perf -->
+- 221fe20: A family name holding an apostrophe or a quote, such as `Hoefler's Text`, is quoted for CSS, so canvas text and the edit overlay draw in it.
+  
+  <!-- entry: fix visual -->
+- 9455fc1: `cssFontFamily` quotes a family the DOM draws as it stands, so the edit overlay can set a name like `Font 3D`.
+  
+  <!-- entry: fix -->
+- 5879169: `parseBmFont` ignores a `distanceField.distanceRange` that is not finite, so such an atlas draws antialiased text.
+  
+  <!-- entry: fix visual -->
+- 890ce71: A font variant whose `replace` fetch fails keeps holding the URLs of the atlas it still draws.
+  
+  Registering it again with other URLs throws, or takes `replace`, as it would before the failed attempt.
+  
+  <!-- entry: fix -->
+- 5e44587: A family registered with only a 300, only a 700 or only an italic face draws in its nearest face, not in another family.
+  
+  The outline tier and `registerCanvasFont` still serve the request first when either has the family.
+  
+  <!-- entry: fix visual -->
+- 8e5f1cf: An outline face's kerning lookups keep a bounded memory however many distinct glyph pairs a long session sets.
+  
+  <!-- entry: fix perf -->
+- 57df97b: An outline face kerns a pair by one script's `kern` lookups, rather than adding up every script's lookups that cover it.
+  
+  <!-- entry: fix -->
+- dbf591e: Text resolving a font face fetches only the lazily declared variant it will draw in, never the family's other declared variants.
+  
+  <!-- entry: fix perf -->
+- 662f94f: `loadFontOutlines` and `fontEmbedding` answer for the face registered when its load settles, not one replaced while it loaded.
+  
+  A PDF export no longer loses a face's embedded font to a re-registration during the load.
+  
+  <!-- entry: fix -->
+- 956a71a: Resolving a canvas-served font where there is no canvas, as under SSR or in a worker without `OffscreenCanvas`, misses instead of throwing.
+  
+  <!-- entry: fix -->
+- 7001f43: Under the `'none'` policy, a family passed to `registerCanvasFont` draws characters its atlas lacks, and emoji, from installed fonts.
+  
+  <!-- entry: fix visual -->
+- 39422f9: An outline face's function or `Blob` source is read once when DOM text needs the face before the canvas does.
+  
+  <!-- entry: fix -->
+- bb7be0b: Text using more canvas glyphs than the atlas pages hold no longer empties the pages over and over as they refill.
+  
+  The glyphs that do not fit stay undrawn, with one warning, and the rest hold steady.
+  
+  <!-- entry: fix visual perf -->
+- 1cee200: `registerFont` refuses a multi-page BMFont atlas, naming the first glyph past page 0, rather than drawing those glyphs from page 0's image.
+  
+  <!-- entry: fix -->
+- 37514fc: A large emoji whose sharper bake found no room while the sharp pages refilled is baked sharp once they settle.
+  
+  <!-- entry: fix visual -->
+- bebd64f: Emptying every canvas atlas page no longer also empties the sharp emoji pages a moment later.
+  
+  <!-- entry: fix perf -->
+- 4baee32: The `'substitute'` policy draws in a default family registered only with `registerFontOutlines`, rather than drawing nothing.
+  
+  <!-- entry: fix visual -->
+- 8745b50: `_resetDynamicFontsForTests` cancels a pending atlas emptying and forgets what each texture cache was sent.
+  
+  <!-- entry: fix -->
+- 7dbeddb: A local variable font's named instances other than its default keep their text on the SDF tier instead of drawing the default's outlines.
+  
+  `enableLocalFontOutlines` registers each instance, and the outline parser can draw only the default.
+  
+  <!-- entry: fix behavior -->
+- dbf591e: Text waits for the font variant it will draw in while it fetches, rather than laying out in another and reflowing.
+  
+  <!-- entry: fix visual -->
+- 839a4b2: `warmFonts` rejects for a family whose atlas load already failed, until that variant is registered again.
+  
+  <!-- entry: fix -->
+- 1810479: A WOFF outline face kerns, embeds in a PDF, and has its tables checked for damage exactly as the same font's TTF or OTF does.
+  
+  <!-- entry: fix -->
+- d598b83: A WOFF2 file given to `registerFontOutlines` fails with a warning saying to register its TTF, OTF or WOFF file instead.
+  
+  <!-- entry: fix -->
+- 0bb9ac6: Outline fonts no longer fail in a browser build that resolves `opentype.js` from the workspace root, where a 1.3.4 copy used to sit.
+  
+  <!-- entry: fix -->
+- 7b298cb: An outline face fails to load with a clear error under an opentype.js older than 2, instead of drawing every glyph as a box.
+  
+  <!-- entry: fix -->
+- e824816: Errors about a face or engine that cannot serve text now say what to do about it.
+  
+  A fallback face with no outlines is named with the call that registers it, a failed outline load points at its logged reason, a bad shaping feature shows the forms it takes, and `enableLocalFontOutlines` names `canQueryLocalFonts()`.
+  
+  <!-- entry: fix -->
+- Updated dependencies [84028cb]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [e6871f1]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [5202a9f]
+  - @weasel-js/registry@2.0.0
+
 ## 1.19.1
 
 ### Patch Changes

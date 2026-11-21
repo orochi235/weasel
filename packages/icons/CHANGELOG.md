@@ -1,5 +1,86 @@
 # @weasel-js/icons
 
+## 2.0.0
+
+### Minor Changes
+
+- 19f8e39: `IconRegistryProvider`, `useIconGlyph` and the rest of the icon registry's React side move from `@weasel-js/core` to `@weasel-js/icons/react`.
+  
+  This is breaking: import `IconRegistryProvider`, `IconRegistryProviderIfRoot`, `IconRegistryScope`, `useIconRegistry`, `useIconGlyph`, `useIconVariant` and `IconRegistryProviderProps` from `@weasel-js/icons/react`. `@weasel-js/core/engine` no longer carries `IconRegistryProvider`. React is an optional peer of `@weasel-js/icons`; its main entry still loads none.
+  
+  ```tsx
+  import { IconRegistryProvider } from '@weasel-js/icons/react';
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- c57e67c: `IconRegistry.reflection` lists every icon ref with the table or override behind its glyph and the registrations it displaced.
+  
+  Each entry's `source` is the table's owner or the override's source; an override sits over the tables at `rank` 1. The registry's storage is now `@weasel-js/registry`'s `createReflectable`, and lookups, overrides and change notifications behave as before.
+  
+  <!-- entry: api -->
+- df2ae04: `ShapeIconNames`, the `shape:` names that `IconName` extends, is exported from `@weasel-js/icons`.
+  
+  <!-- entry: rank=-1 api -->
+
+### Patch Changes
+
+- 158f868: `useIconGlyph` and `useIconVariant` server-render, reading the icon registry as it stands instead of throwing for a missing server snapshot.
+  
+  <!-- entry: fix -->
+- ffcde61: Icon registry entries keep their order when a table is released and added back in one tick.
+  
+  An `IconRegistryProvider` handed a new `icons` array each render does this.
+  
+  <!-- entry: fix -->
+- 201d32f: The icon registry's `add` throws a `TypeError` for a batch holding a malformed glyph, and registers none of it.
+  
+  A glyph needs a string `body` and `group` and an array of `tags`.
+  
+  <!-- entry: fix -->
+- 8e43f3f: `toIconSpec` reads `{ name, mark: null }` as the subject with no mark, rather than as no icon.
+  
+  <!-- entry: fix -->
+- 5ffc43b: An icon variant loads once when a registry listener asks for it again while it is starting to load.
+  
+  <!-- entry: fix -->
+- 813a306: A failed icon variant given a new loader reads as `idle` again, so a mounted `useIconVariant` loads it from the new one.
+  
+  <!-- entry: fix -->
+- e0f4c91: A later table of the same namespace and owner, such as a loaded variant, replaces a glyph without a development warning.
+  
+  Two overrides of one glyph do warn.
+  
+  <!-- entry: behavior -->
+- Updated dependencies [84028cb]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [e6871f1]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [5202a9f]
+  - @weasel-js/registry@2.0.0
+
 ## 1.19.1
 
 ### Patch Changes

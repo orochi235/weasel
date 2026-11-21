@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/headless",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "Render a scene to pixels from Node: renderSceneToPixels in a headless Chromium page, kept open across renders.",
   "weasel": {
     "tier": "other",
@@ -48,8 +48,8 @@
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
-    "@weasel-js/core": "1.19.1",
-    "@weasel-js/geom": "1.19.1",
+    "@weasel-js/core": "2.0.0",
+    "@weasel-js/geom": "2.0.0",
     "playwright-core": "^1.63.0"
   },
   "publishConfig": {

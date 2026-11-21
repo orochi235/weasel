@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/icons",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "Namespaced icon names, the icon registry, and the plain shape glyphs. No React, no DOM, outside the registry's React provider and hooks in ./react.",
   "weasel": {
     "tier": "base"
@@ -25,7 +25,7 @@
   "engines": { "node": ">=24" },
   "files": ["dist", "README.md", "LICENSE"],
   "scripts": { "build": "tsup && cp src/icons.table.json dist/", "test": "node ../../scripts/package-test.mjs" },
-  "dependencies": { "@weasel-js/registry": "1.19.1" },
+  "dependencies": { "@weasel-js/registry": "2.0.0" },
   "peerDependencies": { "react": ">=18" },
   "peerDependenciesMeta": { "react": { "optional": true } },
   "publishConfig": { "access": "public", "provenance": true }

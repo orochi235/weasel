@@ -1,5 +1,353 @@
 # @weasel-js/quantity
 
+## 2.0.0
+
+### Major Changes
+
+- e7d580b: `formatUnit`, `formatScoped` and `formatAxes` take their decimal places as `places`, as quantity's displays do; the option was `precision`.
+  
+  ```ts
+  // before
+  formatUnit(13, 'ft', IMPERIAL_INCHES, { precision: 3 });
+  // after
+  formatUnit(13, 'ft', IMPERIAL_INCHES, { places: 3 });
+  ```
+  
+  <!-- entry: breaking api -->
+- 586ca31: `endless` is `withInfinity`, since it returns a display with its own word for infinity rather than making anything endless.
+  
+  ```ts
+  // before
+  const timeout = endless(unit('ms'), 'never');
+  // after
+  const timeout = withInfinity(unit('ms'), 'never');
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- 5f856dc: `arrowMove` moved from `@weasel-js/ui-input` to `@weasel-js/quantity`, beside `COARSE_STEPS`; it is unchanged.
+  
+  ```ts
+  // before
+  import { arrowMove } from '@weasel-js/ui-input';
+  // after
+  import { arrowMove } from '@weasel-js/quantity';
+  ```
+  
+  <!-- entry: breaking api -->
+- 935346c: `displayKindRegistry` lists every display kind by its tag, with the kinds each `registerDisplayKind` call shadows.
+  
+  It holds the built-ins, which report source `'kit'`, and what `registerDisplayKind` added.
+  
+  <!-- entry: api -->
+- e06225e: A number shown with no locale given is written in the browser's language, and `en-US` where there is no browser.
+  
+  `present`, `qty`, `parseAs`, `formatNumber`, `formatCompact`, `parseNumber` and `menuNumberText` used to default to `en-US`; they now default to `defaultLocale()`, a new export: `navigator.language` narrowed by `fieldLocale` to one whose numbers read back as shown. Text written to be saved or read by a program passes `{ locale: 'en-US' }` itself.
+  
+  <!-- entry: rank=10 api behavior -->
+- 7785bd5: `multiplier({ figures })` shows a factor to that many significant figures in place of `places` decimals, so `0.0254×` and `1,230×` both read whole.
+  
+  <!-- entry: api -->
+- 758459f: `scaleBar` takes a `locale` and writes its label's number in it.
+  
+  It defaults to `defaultLocale()`, the browser's language, as `present` does: `scaleBar({ pxPerUnit, scopes, locale: 'de-DE' }).label` reads `0,2in`.
+  
+  <!-- entry: api fix -->
+- 8fb09ad: `unitRegistry` lists the unit catalog by every name, symbol and alias, with the units a registered one shadows there.
+  
+  The built-ins report source `'kit'`. `catalogUnits()` now lists the built-ins in their order, a registered unit in place of a built-in of its name, then the other registered units in the order their names were first registered.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 8257aa7: `formatUnit` writes a value of 1e21 or more with its whole exponent: `1.5e+30mm`, where it wrote `1.5e+3mm`.
+  
+  <!-- entry: fix -->
+- e0f4c91: Registering a unit or display kind over a built-in one replaces it without a development warning.
+  
+  <!-- entry: behavior -->
+- 38095a2: A field with typed units, such as `unit()` with `accepts` or `bytes()`, reads a long pasted compound value in time linear in its length.
+  
+  <!-- entry: fix perf -->
+- d30164d: A `fraction({ of })` field reads a long run of spaces in linear time, and reads a constant with a spaced sign (`- π`) as its negative.
+  
+  <!-- entry: fix perf -->
+- 04d5af6: Currency fields read scientific notation with its exponent and sign intact.
+  
+  <!-- entry: fix -->
+- 04d5af6: Currency fields preserve en-US decimal and grouping marks when reading input in another locale.
+  
+  <!-- entry: fix -->
+- c98a300: Reading a long run of spaces as a duration takes time linear in its length.
+  
+  <!-- entry: fix perf -->
+- 04d5af6: Numbers with a magnitude suffix also read an exponent, so `1e3k` reads as one million.
+  
+  <!-- entry: fix -->
+- cdbafb8: A `fraction` counted in a constant reads typed digits too large for a number, such as `1e308π`, as NaN rather than as infinity.
+  
+  <!-- entry: fix -->
+- 3005391: A `fraction({ of: 'e' })` field reads exponent notation such as `1e3` as the number it writes, and `e` as a factor only where it stands as one.
+  
+  <!-- entry: fix -->
+- 3311dde: A `fraction()` or `ratio()` field reads a typed division by zero, such as `1/0` or `-1:0`, as NaN rather than an infinity.
+  
+  <!-- entry: fix -->
+- 5b11625: Typed `Infinity`, `INF`, and `INFINITE` read as infinity in Turkish and Azerbaijani locales, as they do in every other.
+  
+  <!-- entry: fix -->
+- afbe8c3: Parsing and `fieldLocale` cache at most 64 locales, so a page seeing many distinct locale tags no longer grows memory for each.
+  
+  <!-- entry: fix perf -->
+- 8bf1866: Reading a long run of typed digits takes time linear in its length.
+  
+  <!-- entry: fix perf -->
+- c4bcb94: A `multiplier` display with `symbol: ''` reads typed numbers back instead of reading every one as NaN.
+  
+  <!-- entry: fix -->
+- e59f1ae: A `multiplier()` field reads a long run of spaces in linear time.
+  
+  <!-- entry: fix perf -->
+- a8ff1e9: `parseAs` and a quantity's `.parse()` read text holding a line break as NaN instead of throwing a `TypeError`.
+  
+  <!-- entry: fix -->
+- 25e8f76: A `percent` display speaks the number it shows: 0.145 shows `15%` and is now spoken `15 percent`, not `14 percent`.
+  
+  <!-- entry: fix -->
+- 3a07b60: Reading a long run of spaces as a fraction, percent or ratio takes time linear in its length.
+  
+  <!-- entry: fix perf -->
+- b73c8ef: A range's dash is spaced only when an end shows a minus sign, so a negative end that rounds to `0` writes `0–5`, not `0 – 5`.
+  
+  <!-- entry: fix visual -->
+- 6274bad: A `roman()` field rounds a typed decimal to the whole number it shows, as `integer()` and `ordinal()` fields do: `2.5` reads as 3.
+  
+  <!-- entry: fix -->
+- 70213a5: `scaleBar` picks its default length with geom's `niceStep`, and so depends on `@weasel-js/geom`.
+  
+  <!-- entry: internal -->
+- b72cf48: `scaleBar` labels a bar shorter than one of every unit in the system's smallest unit, such as `0.001mm`, where it showed `0m`.
+  
+  <!-- entry: fix -->
+- b34f11e: A `scientific` display shows and speaks NaN as `NaN`, as every other display does, rather than as `NaN × 10⁰`, and writes no MathML for it.
+  
+  <!-- entry: fix -->
+- 04d5af6: Scientific notation reads with spaces or line breaks around the value.
+  
+  <!-- entry: fix -->
+- 5603bef: `spinKey` brings a value already past an endless `max` or `min` back to that bound, as it does without `endless`, instead of sending it to infinity.
+  
+  <!-- entry: fix -->
+- 126d17f: A negative under `ordinal()`, or under a registered kind with no `speak` of its own, is spoken with the word `minus`: `minus 3rd`.
+  
+  <!-- entry: fix -->
+- d17a134: A quantity converted with `.to()` reads typed text in the unit it now shows, through a unit display's `accepts` table rescaled into that unit.
+  
+  <!-- entry: fix -->
+- 4e68cf0: `resolveUnitExpr` resolves a sum, a product, or a compound value of tens of thousands of terms instead of overflowing the stack.
+  
+  <!-- entry: fix -->
+- ff5f066: A typed number whose unit scales it past the range of a number, such as `1e308ft` shown in inches, reads as NaN rather than an infinity.
+  
+  This holds in `unit()`, `bytes()`, and `duration()` fields and in `parseNumber`.
+  
+  <!-- entry: fix -->
+- f164d0e: `QuantityView.to` shows the converted value in the target unit when its display names a unit.
+  
+  `qty(tag(12, unit('mm'), 'mm')).to('cm', METRIC_MM).text` is `1.2cm`.
+  
+  <!-- entry: fix -->
+- ba8d3a0: A `zoom` display at 2x or below shows the percentage a `percent` display would: 1.005 shows `101%`, not `100%`.
+  
+  <!-- entry: fix -->
+- 857e1fc: A range of values written in several units, such as a duration in `units` style, keeps every unit on both ends: `2m 5s–3m 5s`.
+  
+  <!-- entry: fix -->
+- ba7e062: `resolveUnitExpr` throws its own `unitExpr:` error for parentheses or signs nested more than 1000 deep, rather than overflowing the stack.
+  
+  <!-- entry: fix -->
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [d764d06]
+- Updated dependencies [a98ad34]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [9249b26]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [29d293c]
+- Updated dependencies [c3da788]
+- Updated dependencies [ece64a6]
+- Updated dependencies [fcc5602]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [0046729]
+- Updated dependencies [fcc5602]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [36dac61]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [8c2d558]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [e6871f1]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [7863d23]
+- Updated dependencies [de8f61d]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [de8f61d]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [adb1290]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [ff4504e]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [70076bc]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [dd5a540]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [56fda8d]
+- Updated dependencies [f88d616]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [1d8e163]
+- Updated dependencies [e08d172]
+- Updated dependencies [429e80c]
+- Updated dependencies [002ff57]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [9521334]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [415e5b8]
+- Updated dependencies [e68cb62]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [c11f37e]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [60c082d]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [1f05956]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [774e9cc]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [0d977b8]
+- Updated dependencies [12816b7]
+- Updated dependencies [aec0cec]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/registry@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

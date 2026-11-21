@@ -1,5 +1,928 @@
 # @weasel-js/prefs
 
+## 2.0.0
+
+### Major Changes
+
+- 4b3a525: A linear pref unit names its decimal places `places`, as quantity's displays do; it was `precision`.
+  
+  The rename covers `PrefLinearUnit`, `ResolvedPrefUnit`, and the options of `prefUnit` and `unitScopedPrefUnit`.
+  `PrefSchemaEditor` writes `places`. Drafts and submissions it saved with `precision` still open with the same
+  rounding: they are read as `places` when loaded, and written as `places` from then on.
+  
+  ```ts
+  // before
+  const degrees = prefUnit(ANGLE_RADIANS, 'deg', { precision: 1, suffix: '°' });
+  const percent: PrefLinearUnit = { scale: 0.01, precision: 0, suffix: '%' };
+  // after
+  const degrees = prefUnit(ANGLE_RADIANS, 'deg', { places: 1, suffix: '°' });
+  const percent: PrefLinearUnit = { scale: 0.01, places: 0, suffix: '%' };
+  ```
+  
+  <!-- entry: breaking api data -->
+- 6555ec8: The set of assets an `AssetEditor` holds is an `AssetSet`, since "workspace" names the area around the page everywhere else in weasel.
+  
+  `Workspace`, `asWorkspace`, `workspaceCodec` and `workspaceChanges` are `AssetSet`, `asAssetSet`, `assetSetCodec` and `assetSetChanges`, and `AssetEditor`'s `workspace` prop is `assetSet`.
+  
+  ```tsx
+  // before
+  <AssetEditor workspace={workspace} original={BASE} onChange={setWorkspace} codec={workspaceCodec([])} />
+  // after
+  <AssetEditor assetSet={assetSet} original={BASE} onChange={setAssetSet} codec={assetSetCodec([])} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 2909824: A leaf is auto only where its schema declares `auto`, so `auto: false` is gone: a leaf without `auto` is always pinned.
+  
+  ```ts
+  // Before
+  const grid = { kind: 'boolean', name: 'Grid', description: '', default: true, auto: false };
+  
+  // After
+  const grid = { kind: 'boolean', name: 'Grid', description: '', default: true };
+  // and a leaf that may be auto says so, with neither field if it needs none
+  const size = { kind: 'number', name: 'Size', description: '', default: 10, auto: {} };
+  ```
+  
+  <!-- entry: rank=10 breaking api behavior -->
+- ae4a042: `checkPrefSplits` and `PrefSplitProblem` are renamed `checkPrefScopes` and `PrefScopeProblem`, after the `scopes` they validate.
+  
+  ```ts
+  // before
+  const problems: PrefSplitProblem[] = checkPrefSplits(schema);
+  // after
+  const problems: PrefScopeProblem[] = checkPrefScopes(schema);
+  ```
+  
+  <!-- entry: breaking api -->
+- 1e031a5: prefs' factories are spelled `create…`, like every other factory. `prefsDefaultsSource`, `prefWeightAxes` and `prefAliasTargets` are renamed `createDefaultsSource`, `createWeightAxes` and `createAliasTargets`.
+  
+  ```ts
+  // before
+  const axes = prefWeightAxes(schema);
+  // after
+  const axes = createWeightAxes(schema);
+  ```
+  
+  <!-- entry: breaking api -->
+- 7534a19: `@weasel-js/prefs/edit` names its alias helpers for aliases rather than pointers. `pointerTarget` is `aliasTargetIn`, `pointerAttributes` is `aliasAttributes`, `POINTER_ATTRS` is `ALIAS_ATTRS`, `deadPointers` is `deadAliases`, `pointable` is `isAliasable`, `pointersTo` is `aliasesTo` and `pointedAt` is `aliasedPaths`.
+  
+  ```ts
+  // before
+  const dead = deadPointers(layout, settings);
+  const target = pointerTarget(settings, alias);
+  // after
+  const dead = deadAliases(layout, settings);
+  const target = aliasTargetIn(settings, alias);
+  ```
+  
+  <!-- entry: breaking api -->
+- 60ca6e8: A `weasel-bundles/1` export marks a bundle that changed package with `op: 'repackage'`.
+  
+  `op: 'move'` now always means a member moved between bundles, an included bundle as well.
+  The document's `bundles` now also lists the package holding the bundles an included bundle moved between.
+  
+  ```ts
+  // before: a package move, and an included bundle moved between bundles, both read
+  { op: 'move', kind: 'bundle', id, from, to }
+  // after: a package move
+  { op: 'repackage', kind: 'bundle', id, from: oldPackage, to: newPackage }
+  ```
+  
+  <!-- entry: breaking data fix -->
+- 6597fc4: `filed` from `@weasel-js/prefs/edit` is renamed `fileActions`: it adds a catalog pref for each action not yet in the catalog.
+  
+  ```ts
+  // before
+  const root = filed(catalog, actions);
+  // after
+  const root = fileActions(catalog, actions);
+  ```
+  
+  <!-- entry: breaking api -->
+- 15e923d: `PrefGrade` is removed: an action leaf's `grade` is `Grade` from @weasel-js/registry, the same type theme and ui use.
+  
+  ```ts
+  import type { Grade } from '@weasel-js/registry'; // was: import type { PrefGrade } from '@weasel-js/prefs'
+  ```
+  
+  <!-- entry: breaking -->
+- 08d9309: `isShown` from `@weasel-js/prefs/edit` is renamed `isTreeAsset`. It says whether the structure tree shows an asset, which every kind but the action catalog is.
+  
+  ```ts
+  // before
+  assets.filter(isShown);
+  // after
+  assets.filter(isTreeAsset);
+  ```
+  
+  <!-- entry: breaking api -->
+- 07c3852: A source's `stateAt` returns a `PrefLeafStatus`: `PrefStatus`'s `shown` and `enabled`, plus `active`. It replaces `LeafState`, and `FREE_LEAF_STATUS` replaces `LEAF_FREE`.
+  
+  ```ts
+  // before
+  stateAt: (path): LeafState => ({ disabled: !on(path), hidden: !seen(path), active: false }),
+  const free = LEAF_FREE;
+  // after
+  stateAt: (path): PrefLeafStatus => ({ enabled: on(path), shown: seen(path), active: false }),
+  const free = FREE_LEAF_STATUS;
+  ```
+  
+  <!-- entry: breaking api -->
+- 93d4fce: `ONE` from `@weasel-js/prefs/edit` is renamed `LONE_SCHEMA_ID`: the asset id a lone schema is edited as.
+  
+  ```ts
+  // before
+  const mine = assets.find((a) => a.id === ONE);
+  // after
+  const mine = assets.find((a) => a.id === LONE_SCHEMA_ID);
+  ```
+  
+  <!-- entry: breaking api -->
+- 14143c7: `prefType` is renamed `namedPrefType`: it stamps a type name on a leaf.
+  
+  ```ts
+  // before
+  const Stop = prefType('GradientStop', leaf);
+  // after
+  const Stop = namedPrefType('GradientStop', leaf);
+  ```
+  
+  <!-- entry: breaking api -->
+- 0f8da6b: `carried` from `@weasel-js/prefs/edit` is renamed `outermostInOrder`: the outermost of the paths given, in schema order.
+  
+  ```ts
+  // before
+  const paths = carried(root, chosen);
+  // after
+  const paths = outermostInOrder(root, chosen);
+  ```
+  
+  <!-- entry: breaking api -->
+- d4532e3: `prefIsReset` is renamed `prefIsAtReset`, matching the other `…IsAtReset` checks.
+  
+  ```ts
+  // before
+  prefIsReset(leaf, { auto, value });
+  // after
+  prefIsAtReset(leaf, { auto, value });
+  ```
+  
+  <!-- entry: breaking api -->
+- ea67ced: `leafIsAtReset` is renamed `readingIsAtReset` and `leafAtReset` is renamed `sourceLeafIsAtReset`, so the two names no longer differ by one letter.
+  
+  ```ts
+  // before
+  leafIsAtReset(leaf, reading); leafAtReset(source, path, leaf);
+  // after
+  readingIsAtReset(leaf, reading); sourceLeafIsAtReset(source, path, leaf);
+  ```
+  
+  <!-- entry: breaking api -->
+- af6d87c: `resetPlanAt` is renamed `resetPlans`, since it takes a list of paths.
+  
+  ```ts
+  // before
+  resetPlanAt(schema, ['grid', 'seed'], read);
+  // after
+  resetPlans(schema, ['grid', 'seed'], read);
+  ```
+  
+  <!-- entry: breaking api -->
+- 4602a76: `resetReading` is renamed `resetReader`, since it returns a reader function.
+  
+  ```ts
+  // before
+  const read = resetReading(source);
+  // after
+  const read = resetReader(source);
+  ```
+  
+  <!-- entry: breaking api -->
+- 16ce408: A `ResetWrite`'s `write` field is renamed `value`: it holds the value the reset writes.
+  
+  ```ts
+  // before
+  for (const { path, write } of plan) set(path, write);
+  // after
+  for (const { path, value } of plan) set(path, value);
+  ```
+  
+  <!-- entry: breaking api -->
+- 9057ecb: `prefNumberAt` is renamed `prefBoundedNumber`: it takes a reader, not a path.
+  
+  ```ts
+  // before
+  const n = prefNumberAt(leaf, read);
+  // after
+  const n = prefBoundedNumber(leaf, read);
+  ```
+  
+  <!-- entry: breaking api -->
+- 1c43dbf: `prefShownValue` is renamed `prefDecodedValue`: it reads a stored value through the leaf's `encoding`, with no fallback to the default.
+  
+  ```ts
+  // before
+  const shown = prefShownValue(leaf, stored);
+  // after
+  const shown = prefDecodedValue(leaf, stored);
+  ```
+  
+  <!-- entry: breaking api -->
+- d01d5a2: `prefAsBox` is renamed `prefDrawsAsBox`, since it is a predicate.
+  
+  ```ts
+  // before
+  if (prefAsBox(group.as)) drawBox(group);
+  // after
+  if (prefDrawsAsBox(group.as)) drawBox(group);
+  ```
+  
+  <!-- entry: breaking api -->
+- 594d4ce: `pairRowsOf` is renamed `prefPairRows`, like every other prefs-schema export.
+  
+  ```ts
+  // before
+  const rows = pairRowsOf(leaves);
+  // after
+  const rows = prefPairRows(leaves);
+  ```
+  
+  <!-- entry: breaking api -->
+- e7bee92: `PREF_STATUS` is renamed `ROOT_PREF_STATUS`: it is the status a schema's root sits in.
+  
+  ```ts
+  // before
+  let status = PREF_STATUS;
+  // after
+  let status = ROOT_PREF_STATUS;
+  ```
+  
+  <!-- entry: breaking api -->
+- bef9c67: `prefScopeSelectors` is renamed `prefStoredSelectors`: it reads the selectors a stored value is split by, not the ones a pref declares.
+  
+  ```ts
+  // before
+  const by = prefScopeSelectors(held);
+  // after
+  const by = prefStoredSelectors(held);
+  ```
+  
+  <!-- entry: breaking api -->
+- 2668893: `prefLeafValue` is renamed `prefValueOrDefault`: it returns the held value, else the leaf's default.
+  
+  ```ts
+  // before
+  const shown = prefLeafValue(leaf, held);
+  // after
+  const shown = prefValueOrDefault(leaf, held);
+  ```
+  
+  <!-- entry: breaking api -->
+- 33f8369: A prefs store keeps which leaves are auto: only one whose schema declares `auto`, reading its `auto.value` while auto, never its default.
+  
+  `store.auto()`, `store.isAuto(path)` and `store.setAuto(path, next)` are new, and `store.reset(path)` puts a leaf back as its schema says: auto where it says `auto.on`, else at its default. A leaf that opts in with no `auto.value` reads `undefined` while auto. `usePrefsState(store).form` binds `auto` to `store.auto()`, `onAutoChange` to `store.setAuto` and the new `onReset` to `store.reset`, so a leaf with nothing stored no longer shows as auto, and a leaf that declares no `auto` offers no Auto toggle. A stored auto mark for a leaf that declares no `auto` reads as nothing stored.
+  
+  ```ts
+  // Before: every unset leaf read as auto in a store-bound form
+  const gap = { kind: 'number', name: 'Gap', description: '', default: 4 };
+  
+  // After: a leaf opts in to be auto at all, and says what it reads while auto
+  const gap = { kind: 'number', name: 'Gap', description: '', default: 4, auto: { on: true, value: 8 } };
+  store.setAuto('gap', true);
+  ```
+  
+  <!-- entry: rank=10 breaking behavior api -->
+- fb0e6cd: `scopedPrefUnit` and `prefLeafInScopes` are renamed `unitScopedPrefUnit` and `prefLeafInUnitScopes`: the scopes they apply are unit scopes.
+  
+  ```ts
+  // before
+  const leaf = prefLeafInScopes(field, scopes);
+  // after
+  const leaf = prefLeafInUnitScopes(field, scopes);
+  ```
+  
+  <!-- entry: breaking api -->
+- ca89da9: `usePrefsValues` is renamed `usePrefsState`: it returns the whole store as state, setters included.
+  
+  ```ts
+  // before
+  const { form } = usePrefsValues(store);
+  // after
+  const { form } = usePrefsState(store);
+  ```
+  
+  <!-- entry: breaking api -->
+- 728e0da: `writePlan` is renamed `writeResetPlan`.
+  
+  ```ts
+  // before
+  writePlan(plan, write);
+  // after
+  writeResetPlan(plan, write);
+  ```
+  
+  <!-- entry: breaking api -->
+- d268d21: The functions that read or write a value at a dotted path drop `Path` from their names, as the kit's `…At` functions do.
+  
+  prefs-schema's (and prefs') `prefValueAtPath` is `prefValueAt`, and `assignPrefValueAtPath` is `assignPrefValueAt`. labkit's `valueAtPath`, `withValueAtPath` and `schemaNodeAtPath` are `configValueAt`, `withConfigValueAt` and `schemaNodeAt`.
+  
+  ```ts
+  // before
+  const v = valueAtPath(config, 'grid.size');
+  const next = withValueAtPath(config, 'grid.size', 12);
+  // after
+  const v = configValueAt(config, 'grid.size');
+  const next = withConfigValueAt(config, 'grid.size', 12);
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- 8b96ffe: `PrefAliasTargets` answers `activeAt(path)`: whether the action at a path of the schema the aliases point into has an `activeIf` that holds.
+  
+  <!-- entry: api -->
+- 33f8369: New helpers say whether a leaf can be auto, what it reads while auto, and what a reset makes of it.
+  
+  They are `prefCanAuto`, `prefStartsAuto`, `prefAutoValue`, `prefResetOf`, `prefIsAtReset`, `prefResets` and `prefStoredReset`. `prefAutoValue(leaf, computed)` is what the owner computed, else the leaf's `auto.value`, and never its default. `PrefGroup` and `PrefSection` take `resettable`, which gives the group's heading a reset of everything under it.
+  
+  <!-- entry: api new -->
+- b7b87f4: The condition editor names a test read from its group (`from: 'group'`) for the group's pref, and offers the group's prefs to read that way.
+  
+  `conditionLeaves` takes the group's value path as a fourth argument, and `prefConditionFlow` as a `group` option, to name such a test the same way.
+  
+  <!-- entry: fix api -->
+- 2ab2678: New `@weasel-js/prefs/edit`: the model behind a schema editor, with no React and no DOM.
+  
+  It edits a schema's tree (`addNode`, `moveNodes`, `renameKey`, `copyNodes`, `aliasNodes`) and a leaf's kind and attributes (`changeKind`, `setAttribute`), prints a schema as source and diffs two (`printSchema`, `diffSchemas`), holds an `AssetSet` of schema, layout, action, and bundle assets with its `assetSetCodec` and drafts, and lays a condition out as rows and as a flow (`prefConditionFlow`). These are the functions `@weasel-js/ui`'s schema editor used to keep to itself; the condition rows' `leafOf` is `conditionLeafOf` here, beside the kind table's `leafOf`.
+  
+  ```ts
+  import { addNode, printSchema } from '@weasel-js/prefs/edit';
+  
+  const next = addNode(schema, null, 'grid', { kind: 'boolean', name: 'Grid', description: '', default: true });
+  console.log(printSchema(next));
+  ```
+  
+  <!-- entry: rank=5 new api -->
+- 4c8749c: A condition test can read its path from the group its node is declared in, so a settings group mounts anywhere.
+  
+  ```ts
+  axis: pref.enum('Axis', 'x', ['x', 'y'], { enableIf: { from: 'group', path: 'on' } }), // reads <group>.on
+  ```
+  
+  `applyPrefConditions`, `prefStatusAt`, `checkPrefConditions`, settings menus and labkit's `configFromPrefs` resolve these tests themselves. Code that evaluates a schema's conditions any other way resolves them first with `resolvePrefGroupConditions(schema)`, or `prefConditionInGroup(condition, group)` for one condition; one that reaches a reader unresolved warns. `checkPrefCondition` checks one against `site.group`, which the schema editor's marks and `PrefConditionEditor`'s new `group` prop supply (`conditionGroupAt` finds it).
+  
+  <!-- entry: api -->
+- 1eb7bcb: A `PrefsMigration` is handed `auto`, the leaves marked auto at its version, so a migration that renames a leaf can keep it auto.
+  
+  ```ts
+  const renameGrid: PrefsMigration = (records, auto) => {
+    if (records.has('grid.size')) records.set('grid.step', records.get('grid.size'));
+    records.delete('grid.size');
+    if (auto?.delete('grid.size')) auto.add('grid.step');
+  };
+  ```
+  
+  A migration that ignores `auto` leaves every mark where it was, now stamped with the version reached.
+  
+  <!-- entry: api fix -->
+- df2ae04: Every type a `@weasel-js/prefs` signature names can now be imported, from the root or from `@weasel-js/prefs/edit`.
+  
+  The root adds `PrefFieldsOf`, `PrefLeafRest`, `PrefOverridesLookup`, and `PrefUnitText`; `@weasel-js/prefs/edit` adds `AssetBase`, `AttributeAggregate`, `AttributeSchema`, `ConditionMark`, `Folds`, `NodeOrigins`, `Operator`, `OriginOf`, `PrefAtom`, `RegisteredAction`, and `ValueMove`.
+  
+  <!-- entry: rank=-1 api -->
+- a0ad214: `nestPrefValues` turns values keyed by dotted path, as `PrefsBar` and `BarMenu` take them, into the nested tree `PrefsForm` reads.
+  
+  It writes every key as the tree's own, so a path through `__proto__` or `constructor` lands in the tree and never on a prototype. It is the inverse of `flattenPrefValues`.
+  
+  <!-- entry: api -->
+- 4a102bd: A number pref takes a `placeholder` and a string pref a `maxLength`, and `PrefsForm` honors both as labkit's `ControlPanel` already did.
+  
+  A stored string longer than its leaf's `maxLength` reads cut to it. Labkit's `.placeholder()` and `.maxLength()` write these same fields.
+  
+  <!-- entry: api -->
+- c80f586: `PX_UNIT` is the display unit of a number leaf measured in CSS pixels on screen.
+  
+  Write `unit: PX_UNIT` on a leaf keyed `…Px` (a brush radius, a click's reach) rather than spelling `{ scale: 1, suffix: 'px' }`; the kit's own settings and action params now do.
+  
+  <!-- entry: api -->
+- 5477214: `@weasel-js/prefs` re-exports its schema from `@weasel-js/prefs-schema`, and every import from it works as before
+  
+  The builders, types and helpers moved to `@weasel-js/prefs-schema` and prefs re-exports each by name, so nothing changes for code importing from `@weasel-js/prefs`. Its root also exports `PresetDescription` now, beside `@weasel-js/prefs/edit`.
+  
+  <!-- entry: api -->
+- 8ff14a0: New `resetPlan` and `readingIsAtReset`: the writes a reset of a leaf or a group makes, read from what a surface shows.
+  
+  `read(path)` returns a `LeafReading` (`{ value, mixed, each, auto }`, one entry of `each` per target), or `undefined` for a leaf the reset should not reach. A plan leaves out readouts and leaves already at their reset, and writes `AUTO` for a leaf that starts auto only where `auto` is defined. `prefNodeAt` finds the leaf, group, or section at a path. labkit's `auto` sentinel is now this same symbol.
+  
+  <!-- entry: api new -->
+- 764f27d: `usePrefsState` returns `setAuto`, the handler `PrefsForm`'s `onAutoChange` takes: false pins a leaf at the value it reads now, true unpins it.
+  
+  It is `store.setAuto`, which does nothing to a leaf whose schema declares no `auto`.
+  
+  ```tsx
+  const { values, set, auto, setAuto } = usePrefsState(store);
+  <PrefsForm schema={schema} values={values} onChange={set} auto={auto} onAutoChange={setAuto} />
+  ```
+  
+  <!-- entry: api fix -->
+- 8ff14a0: New `PrefsSource`: where a params surface reads, writes, and resets its leaves, over a values map, a selection, or a lab config.
+  
+  A `PrefsSource` (`@weasel-js/prefs`) answers `valueAt(path)`, `write(path, value, { draft })`, `update`, `autoAt`, `setAuto`, `stateAt(path)` (`enableIf`, `showIf`, `activeIf`), and `reset(paths)`. It needs no React, so a DOM host builds one with prefs' `createValuesSource(schema, get, set, options)`, which reads the values through `get` each time, or `createSelectionSource({ leaves, read, write, reset })` over any set of targets, or `createRecordSource` over values keyed by whole dotted paths. `sourceResetPlan`, `sourceIsAtReset`, and `sourceLeafIsAtReset` answer what a reset does over one.
+  
+  In React, `useValuesSource(schema, values, onChange, options)`, `useSelectionSource(input)`, and labkit's `useLabConfigSource(...)` build one (labkit's plain factory is `createLabConfigSource`), and ui's `<PrefsSource source>` and `usePrefsSource()` hand it down.
+  
+  <!-- entry: api new -->
+- 23c35b1: `usePrefsState` returns `form`, which binds a `PrefsForm` or `PrefsDialog` to the store in one spread: values, Auto, and scoped values.
+  
+  ```tsx
+  const { form } = usePrefsState(store);
+  <PrefsForm layout="list" {...form} />
+  ```
+  
+  The type is `PrefsFormBinding`, from `@weasel-js/prefs/react`.
+  
+  <!-- entry: api -->
+- 7e5b389: `PrefValuesOf<typeof group>` types the values a prefs group holds, so options can be typed from the schema that draws them.
+  
+  ```ts
+  const grid = pref.group('Grid', { visible: pref.boolean('Shown', true), pitch: pref.number('Pitch', 8) });
+  type GridValues = PrefValuesOf<typeof grid>; // { visible: boolean; pitch: number }
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- 2f8f458: An alias row's Reset in a form drawn over another schema puts the aliased setting back, where it did nothing.
+  
+  A source may name the schema its aliases point into as `PrefsSource.over`; `createValuesSource` sets it from its `over` option, and `sourceResetPlan` and `sourceIsAtReset` find a path there that `schema` lacks.
+  
+  <!-- entry: fix api -->
+- 371b695: `usePrefGroup(store, path)` reads one prefs group as an object of its values, and writes the leaves a patch names.
+  
+  Its paths are typed by `PrefGroupPath`, and its value by `PrefValuesOf<PrefGroupAt<S, P>>`.
+  
+  <!-- entry: rank=5 api -->
+
+### Patch Changes
+
+- 56784d5: Comparisons of two lists entry by entry go through registry's `sameList` rather than hand-written loops.
+  
+  <!-- entry: internal -->
+- 4bda721: Own-key lookups go through registry's `getOwn` and `hasOwnKey` rather than hand-written `Object.hasOwn` checks.
+  
+  <!-- entry: internal -->
+- ea5f41b: A split color pref read under weights mixes members written as color names or `rgb()`, `hsl()` and `oklch()` strings, not only hex.
+  
+  <!-- entry: fix visual -->
+- 6227913: A split color blends its members under weights whose total overflows, as a split number does. A custom `PrefBlend` is handed weights scaled so the heaviest is 1.
+  
+  <!-- entry: fix -->
+- 53f5ea0: The bundle editor no longer marks an atom as named twice when bundles loaded together each include it, as it already left a shared bundle.
+  
+  <!-- entry: fix -->
+- 1dfa234: A schema edit carried onto a changed source keeps a key the reader added named `toString` or `__proto__`.
+  
+  <!-- entry: fix -->
+- ae411f0: Writing `undefined` to a split pref clears only the option the write names, or the current one, and leaves every other option's value.
+  
+  <!-- entry: fix -->
+- 6e3d5ef: A write through a store from `usePrefsStore` after it has closed no longer reaches storage or another component's store on the same prefix.
+  
+  <!-- entry: fix -->
+- 0c073ec: A closed prefs store reads back a write made after `close`, as `closed` documents, instead of the values it held when it closed.
+  
+  <!-- entry: fix -->
+- 9e84dfc: Copying, removing, or moving schema nodes with a path named twice acts on that node once; a copy no longer makes two.
+  
+  <!-- entry: fix -->
+- 67b97e4: `prefsCss` keeps the block for two selectors apart from one option whose name reads like both, such as `a&b=c`.
+  
+  <!-- entry: fix -->
+- 0b49560: `prefsCss` writes its root block at the option a store with nothing stored reads: a selector that starts auto at its `auto.value`.
+  
+  <!-- entry: fix visual -->
+- 7d11dc3: `prefsCss` quotes an enum option that is a CSS-wide keyword, such as `inherit`, so the custom property holds the option.
+  
+  The keywords are `inherit`, `initial`, `unset`, `revert`, `revert-layer` and `default`.
+  
+  <!-- entry: fix -->
+- c43e329: `createDefaultsSource`, and so the Vite plugin's stylesheet, reads a leaf that starts auto at its `auto.value`, as a store does.
+  
+  <!-- entry: fix -->
+- ac347a7: The schema editor's drafts and sent copies go through `@weasel-js/storage`'s `readLocal` and `writeLocal`.
+  
+  They are kept in `localStorage` or the `draftStorage` given, as before. Text under a draft's key that is not JSON still reads as no draft; a sent copy that is not JSON now reads back as its text rather than `null`.
+  
+  <!-- entry: rank=-5 behavior -->
+- a3bb40a: An asset set's draft undone back to its baseline reopens with its steps to redo, as a single schema's draft does.
+  
+  <!-- entry: fix -->
+- 313dd71: The Bundles tree keeps two bundles apart whose ids differ only in punctuation. Ids like `editing:shapes` and `editing.shapes` each get a group, and each link reaches its own.
+  
+  <!-- entry: fix -->
+- 97d6826: Clearing the last field of an object attribute in the schema editor, such as `frame.edge`, removes the attribute instead of leaving `{}`.
+  
+  <!-- entry: fix -->
+- a5aa92f: Changing a pref's kind keeps exactly the shared attributes the new kind offers. A menu letter carries between kinds that take one, and a kind with no value drops `readout` and `auto`.
+  
+  <!-- entry: fix -->
+- e37086f: A schema editor draft reopens with a plain value whose keys are `$type`, `$num`, `$from`, `$stub` or `$unset` as it was saved.
+  
+  <!-- entry: fix data -->
+- a25a444: Changing a pref that carries its own options to an enum keeps its default when that default is one of those options.
+  
+  <!-- entry: fix -->
+- 2d2a16e: The schema editor shows the attributes of a group whose `as` is a name such as `toString` instead of throwing.
+  
+  <!-- entry: fix -->
+- 87bd085: Under a section root, the schema editor refuses a leaf key inside another leaf's value, such as `grid.size` beside `grid`.
+  
+  A leaf moved there is numbered instead.
+  
+  `keyClashes` reports such pairs in a schema made elsewhere.
+  
+  <!-- entry: fix -->
+- c4f9031: Conditions, aliases, and layout pointers follow the prefs inside a section moved into, out of, or between `object` prefs.
+  
+  <!-- entry: fix -->
+- dba7a95: `createFolds` keeps a reader's folded rows through `@weasel-js/storage`'s `readLocal` and `writeLocal`.
+  
+  <!-- entry: rank=-5 internal -->
+- eb8fe62: A stored string longer than its pref's `maxLength` reads cut before an emoji that straddles the limit rather than through the middle of it.
+  
+  <!-- entry: fix -->
+- 7c44ba5: `mergePrefGroups` keeps the selectors its schemas' roots admit, so a merged schema reads and writes under them.
+  
+  <!-- entry: fix -->
+- 607ab80: `prefNodeAt` finds nothing at a nested section's key, as its docs say, so `resetPlans` given one writes nothing rather than paths no leaf has.
+  
+  <!-- entry: fix -->
+- c240900: `orderPrefGroup` returns the group itself where each `actions` leaf the order names already holds that order.
+  
+  <!-- entry: fix -->
+- d5bcd74: Pref paths, schema keys and selector options named like `constructor` or `__proto__` read and write as data, not as `Object.prototype` members.
+  
+  `createRecordSource` reads such a path as holding nothing, the schema editor's `setAttribute` throws for a missing node at such a key instead of editing `Object`, and `createWeightAxes(…).from` keeps a `__proto__` selector as an entry rather than writing onto `Object.prototype`.
+  
+  <!-- entry: fix -->
+- cd473d6: A store warns of, and does not split by, an enum selector that can be auto with no option as its auto value.
+  
+  <!-- entry: fix -->
+- aadb086: A stored `color` pref that is no color, or a `paint` pref that is no paint, reads as the leaf's default.
+  
+  <!-- entry: fix data -->
+- f9cd1ea: `PrefsStore.reset(path)` warns when no leaf is at or under `path`, as `set` and `setAuto` do for a path the schema lacks.
+  
+  <!-- entry: fix -->
+- 5512513: `unitScopedPrefUnit` keeps its scale exact under a unit scope whose offset is far larger than its factor.
+  
+  <!-- entry: fix -->
+- 2dfa806: Writing one option of a split pref that is auto, or pinning it, keeps every other option at the value it read while auto.
+  
+  <!-- entry: fix -->
+- 4ef636a: A prefs store's `stored()` leaves out a leaf marked auto rather than showing the mark's record as its value. `auto()` names those leaves.
+  
+  <!-- entry: fix -->
+- 00ad78a: A stored split value split by a selector the schema lacks reads as the leaf does with nothing stored, its `defaultScope` included. An `auto.value` split that way reads nothing while auto, never the leaf's `default`.
+  
+  <!-- entry: fix -->
+- a06c164: Prefs' CSS values, a blended theme's lengths and plot mark path data write their numbers with `@weasel-js/geom`'s `trimNumber`.
+  
+  <!-- entry: rank=-5 internal -->
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [d764d06]
+- Updated dependencies [a98ad34]
+- Updated dependencies [5f856dc]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [9249b26]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [29d293c]
+- Updated dependencies [6cef61c]
+- Updated dependencies [fcc5602]
+- Updated dependencies [c3da788]
+- Updated dependencies [ece64a6]
+- Updated dependencies [fcc5602]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [935346c]
+- Updated dependencies [0046729]
+- Updated dependencies [fcc5602]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [b6863aa]
+- Updated dependencies [36dac61]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [8257aa7]
+- Updated dependencies [8c2d558]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [2338cee]
+- Updated dependencies [8887919]
+- Updated dependencies [6943c8d]
+- Updated dependencies [0e9f123]
+- Updated dependencies [9078cfb]
+- Updated dependencies [ff75b6f]
+- Updated dependencies [19d0c9f]
+- Updated dependencies [a2f20ae]
+- Updated dependencies [fb96bd3]
+- Updated dependencies [17fa534]
+- Updated dependencies [53a1558]
+- Updated dependencies [f50c6d9]
+- Updated dependencies [4fb24ca]
+- Updated dependencies [aedb49f]
+- Updated dependencies [10dd276]
+- Updated dependencies [c6f965b]
+- Updated dependencies [3c7a87a]
+- Updated dependencies [1b00300]
+- Updated dependencies [22b57c5]
+- Updated dependencies [2e12700]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [67f9f88]
+- Updated dependencies [bc67ae1]
+- Updated dependencies [e6871f1]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [7863d23]
+- Updated dependencies [de8f61d]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [de8f61d]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [85f85ba]
+- Updated dependencies [adb1290]
+- Updated dependencies [b98bad7]
+- Updated dependencies [0d377ec]
+- Updated dependencies [435c248]
+- Updated dependencies [e1e7241]
+- Updated dependencies [977164c]
+- Updated dependencies [9aed377]
+- Updated dependencies [c491f93]
+- Updated dependencies [aadb086]
+- Updated dependencies [09f0c86]
+- Updated dependencies [d11dc30]
+- Updated dependencies [5ad7bc0]
+- Updated dependencies [481218b]
+- Updated dependencies [f8172cf]
+- Updated dependencies [e5395a6]
+- Updated dependencies [cd7ffdb]
+- Updated dependencies [8ced7e2]
+- Updated dependencies [5ed6215]
+- Updated dependencies [9cacd4b]
+- Updated dependencies [f95e342]
+- Updated dependencies [d6ba47e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [fcc5602]
+- Updated dependencies [880cbbf]
+- Updated dependencies [2932eb2]
+- Updated dependencies [c1a3072]
+- Updated dependencies [968362b]
+- Updated dependencies [f4bfab5]
+- Updated dependencies [e6c888e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [56089ae]
+- Updated dependencies [f544aeb]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [ff4504e]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [70076bc]
+- Updated dependencies [4b3a525]
+- Updated dependencies [15e923d]
+- Updated dependencies [4c8749c]
+- Updated dependencies [9057ecb]
+- Updated dependencies [2823dca]
+- Updated dependencies [1c43dbf]
+- Updated dependencies [a3b1735]
+- Updated dependencies [d01d5a2]
+- Updated dependencies [bcc5c05]
+- Updated dependencies [e11a52e]
+- Updated dependencies [3744131]
+- Updated dependencies [5477214]
+- Updated dependencies [594d4ce]
+- Updated dependencies [7e5b389]
+- Updated dependencies [2e7bd80]
+- Updated dependencies [6c3e486]
+- Updated dependencies [e7bee92]
+- Updated dependencies [7affd45]
+- Updated dependencies [bef9c67]
+- Updated dependencies [470d4be]
+- Updated dependencies [2668893]
+- Updated dependencies [7e5b389]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [e06225e]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [38095a2]
+- Updated dependencies [d30164d]
+- Updated dependencies [04d5af6]
+- Updated dependencies [04d5af6]
+- Updated dependencies [c98a300]
+- Updated dependencies [04d5af6]
+- Updated dependencies [e7d580b]
+- Updated dependencies [cdbafb8]
+- Updated dependencies [3005391]
+- Updated dependencies [3311dde]
+- Updated dependencies [5b11625]
+- Updated dependencies [afbe8c3]
+- Updated dependencies [8bf1866]
+- Updated dependencies [c4bcb94]
+- Updated dependencies [7785bd5]
+- Updated dependencies [e59f1ae]
+- Updated dependencies [a8ff1e9]
+- Updated dependencies [25e8f76]
+- Updated dependencies [3a07b60]
+- Updated dependencies [b73c8ef]
+- Updated dependencies [6274bad]
+- Updated dependencies [758459f]
+- Updated dependencies [70213a5]
+- Updated dependencies [b72cf48]
+- Updated dependencies [b34f11e]
+- Updated dependencies [04d5af6]
+- Updated dependencies [5603bef]
+- Updated dependencies [126d17f]
+- Updated dependencies [d17a134]
+- Updated dependencies [4e68cf0]
+- Updated dependencies [ff5f066]
+- Updated dependencies [f164d0e]
+- Updated dependencies [586ca31]
+- Updated dependencies [ba8d3a0]
+- Updated dependencies [857e1fc]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [4d31cf0]
+- Updated dependencies [af132bc]
+- Updated dependencies [2d57c94]
+- Updated dependencies [f004638]
+- Updated dependencies [3c27e36]
+- Updated dependencies [3c27e36]
+- Updated dependencies [ce5d609]
+- Updated dependencies [70e7b25]
+- Updated dependencies [b9006ad]
+- Updated dependencies [b9006ad]
+- Updated dependencies [dd5a540]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [56fda8d]
+- Updated dependencies [f88d616]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [1d8e163]
+- Updated dependencies [e08d172]
+- Updated dependencies [429e80c]
+- Updated dependencies [002ff57]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [9521334]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [415e5b8]
+- Updated dependencies [e68cb62]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [c11f37e]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [3381131]
+- Updated dependencies [4f23eaa]
+- Updated dependencies [817c4a0]
+- Updated dependencies [f822a1d]
+- Updated dependencies [99ca079]
+- Updated dependencies [55af93c]
+- Updated dependencies [c438a4b]
+- Updated dependencies [da233f8]
+- Updated dependencies [e45a847]
+- Updated dependencies [ea981c8]
+- Updated dependencies [3637a58]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [60c082d]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [1f05956]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [774e9cc]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [8fb09ad]
+- Updated dependencies [ba7e062]
+- Updated dependencies [0d977b8]
+- Updated dependencies [371b695]
+- Updated dependencies [d268d21]
+- Updated dependencies [5dd240d]
+- Updated dependencies [8b01b26]
+- Updated dependencies [2c0f2fe]
+- Updated dependencies [12816b7]
+- Updated dependencies [6803209]
+- Updated dependencies [f857c86]
+- Updated dependencies [aec0cec]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/quantity@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/paint@2.0.0
+  - @weasel-js/react@2.0.0
+  - @weasel-js/history@2.0.0
+  - @weasel-js/prefs-schema@2.0.0
+  - @weasel-js/storage@2.0.0
+
 ## 1.19.1
 
 ### Patch Changes

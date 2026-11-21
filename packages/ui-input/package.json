@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/ui-input",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "What a key or a pointer does to a control, as pure functions: arrow steps, sliders and windowed tracks, list and grid roving, typeahead, selection, reorder and drop gaps, edge scroll, directional focus. No React, no DOM.",
   "weasel": {
     "tier": "base"
@@ -41,10 +41,10 @@
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.19.1",
-    "@weasel-js/gestures": "1.19.1",
-    "@weasel-js/quantity": "1.19.1",
-    "@weasel-js/registry": "1.19.1"
+    "@weasel-js/geom": "2.0.0",
+    "@weasel-js/gestures": "2.0.0",
+    "@weasel-js/quantity": "2.0.0",
+    "@weasel-js/registry": "2.0.0"
   },
   "publishConfig": {
     "access": "public",

@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/d3",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "d3 bridge for weasel: data-join + transition chain over useScene and useAnimator. d3-force already integrates via useSimulation in @weasel-js/simulation.",
   "weasel": {
     "tier": "other"
@@ -19,12 +19,12 @@
     "./package.json": "./package.json"
   },
   "peerDependencies": {
-    "@weasel-js/animator": "1.19.1",
-    "@weasel-js/core": "1.19.1"
+    "@weasel-js/animator": "2.0.0",
+    "@weasel-js/core": "2.0.0"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.19.1",
-    "@weasel-js/registry": "1.19.1"
+    "@weasel-js/geom": "2.0.0",
+    "@weasel-js/registry": "2.0.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

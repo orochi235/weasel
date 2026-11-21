@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/prefs-schema",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "The declaration half of @weasel-js/prefs: pref builders, leaf, group and section types, units, conditions and leaf status, and repairing a value against a leaf. No store, no storage, no React.",
   "weasel": {
     "tier": "base"
@@ -33,10 +33,10 @@
     "url": "https://github.com/orochi235/weasel/issues"
   },
   "dependencies": {
-    "@weasel-js/icons": "1.19.1",
-    "@weasel-js/paint": "1.19.1",
-    "@weasel-js/quantity": "1.19.1",
-    "@weasel-js/registry": "1.19.1"
+    "@weasel-js/icons": "2.0.0",
+    "@weasel-js/paint": "2.0.0",
+    "@weasel-js/quantity": "2.0.0",
+    "@weasel-js/registry": "2.0.0"
   },
   "engines": {
     "node": ">=24"
