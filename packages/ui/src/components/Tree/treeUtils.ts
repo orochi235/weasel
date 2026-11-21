@@ -33,7 +33,8 @@ export function useControlledSet(
   return [controlled ?? own, set];
 }
 
-/** Which branches are open, held unless `value` is, and the two ways a branch changes: folded either way, or opened. */
+/** Which branches are open, held unless `value` is, and the two ways a branch changes: folded either way, or opened.
+ *  Neither changes a disabled node, nor anything in a held tree. */
 export function useTreeFold(
   value: Iterable<string> | undefined,
   initial: Iterable<string> | undefined,
@@ -50,7 +51,12 @@ export function useTreeFold(
     setExpanded(next);
     return true;
   };
-  const expand = (id: string): void => { if (!expanded.has(id)) setExpanded(new Set(expanded).add(id)); };
+  /** Open a branch; false where it cannot be folded at all. */
+  const expand = (node: TreeNode): boolean => {
+    if (!node.children || node.disabled || held) return false;
+    if (!expanded.has(node.id)) setExpanded(new Set(expanded).add(node.id));
+    return true;
+  };
   return { expanded, setExpanded, toggle, expand };
 }
 

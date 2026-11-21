@@ -81,7 +81,7 @@ export const Tree = forwardRef(function Tree(
   ref: Ref<HTMLElement>,
 ) {
   const hold = useControlHold({ disabled: off, disabledReason, readOnly, readOnlyReason }, { readonlyRole: false });
-  const { expanded, setExpanded, toggle, expand } = useTreeFold(expandedIds, defaultExpandedIds, onExpandedChange, hold.disabled);
+  const { expanded, toggle, expand } = useTreeFold(expandedIds, defaultExpandedIds, onExpandedChange, hold.disabled);
   const rowTip = useRowTip();
   const baseId = useId();
   const grid = useMemo(() => hasControls(nodes), [nodes]);
@@ -113,7 +113,7 @@ export const Tree = forwardRef(function Tree(
     rowEl: rowBox,
     canDrop, onMove, onCopy, onLink,
     onPress: (id, mods) => { const node = nodeAt(id); if (node) activate(node, mods); },
-    expand,
+    expand: (id) => { const node = nodeAt(id); if (node) expand(node); },
   });
 
   if (nodes.length === 0) {
@@ -122,7 +122,7 @@ export const Tree = forwardRef(function Tree(
 
   const keysHost: TreeRowKeysHost = {
     grid, expanded, onRowKeyDown,
-    moves: onMove && { nodes, selected, expanded, setExpanded, canDrop, onMove, focusAfterMove: nav.focusLater },
+    moves: onMove && { nodes, selected, expanded, expand, canDrop, onMove, focusAfterMove: nav.focusLater },
     step: (id, delta, extend) => nav.go(id, (indexOf.get(id) ?? 0) + delta, extend),
     navKey: nav.onKeyDown,
   };

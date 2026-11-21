@@ -13,7 +13,8 @@ export interface MoveKeyCtx {
   nodes: readonly TreeNode[];
   selected: ReadonlySet<string>;
   expanded: ReadonlySet<string>;
-  setExpanded(next: Set<string>): void;
+  /** Opens a branch; false where it cannot open. */
+  expand(node: TreeNode): boolean;
   canDrop?(ids: readonly string[], target: TreeDropTarget, effect: TreeDragEffect): boolean;
   onMove(ids: string[], target: TreeDropTarget): void;
   /** Called with the moved node's id once a move is issued, so focus can follow it. */
@@ -36,8 +37,9 @@ export function handleMoveKey(e: KeyboardEvent<HTMLElement>, nodeId: string, ctx
   if (!target || landsInside(nodes, ids, target) || isNoopMove(nodes, ids, target) || (canDrop && !canDrop(ids, target, 'move'))) {
     return true;
   }
-  if (dir === 'in' && target.parentId !== null && !ctx.expanded.has(target.parentId)) {
-    ctx.setExpanded(new Set(ctx.expanded).add(target.parentId));
+  // A row moved into a branch that cannot open would leave the view with focus on it.
+  if (dir === 'in' && target.parentId !== null && !ctx.expanded.has(target.parentId) && !ctx.expand(nodeById(nodes, target.parentId)!)) {
+    return true;
   }
   ctx.focusAfterMove(nodeId);
   ctx.onMove(ids, target);
