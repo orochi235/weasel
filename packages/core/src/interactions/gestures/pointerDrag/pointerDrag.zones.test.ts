@@ -111,4 +111,20 @@ describe('the default drag ghost', () => {
     firePointer('pointerup', 100, 60);
   });
 
+  it("is sized in its seat's own px, so a seat drawn at twice its size shows it at the source's size", () => {
+    document.body.innerHTML = '<div id="host" data-wzl-theme="x" style="transform: scale(2)"><div id="src">row</div></div>';
+    const host = document.getElementById('host')!;
+    Object.defineProperty(host, 'offsetWidth', { value: 100 });
+    Object.defineProperty(host, 'offsetHeight', { value: 50 });
+    host.getBoundingClientRect = () => DOMRect.fromRect({ x: 0, y: 0, width: 200, height: 100 });
+    const src = document.getElementById('src')!;
+    src.getBoundingClientRect = () => DOMRect.fromRect({ x: 0, y: 0, width: 80, height: 20 });
+    const { result } = renderHook(() => useDragHandle(() => ({ kind: 'row', ids: ['a'] })));
+    press(result.current, src);
+    firePointer('pointermove', 100, 60);
+    const ghost = host.lastElementChild as HTMLElement;
+    expect(ghost.style.width).toBe('40px');
+    expect(ghost.style.height).toBe('10px');
+    firePointer('pointerup', 100, 60);
+  });
 });

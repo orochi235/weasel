@@ -47,15 +47,15 @@ function zoneAccepts(zone: DropZone, kind: string): boolean {
   return ok;
 }
 
-function defaultGhost(source: HTMLElement, payload: DragPayload): HTMLElement {
+function defaultGhost(source: HTMLElement, payload: DragPayload, seat: FixedSeat): HTMLElement {
   const rect = source.getBoundingClientRect();
   const clone = source.cloneNode(true) as HTMLElement;
   for (const el of [clone, ...clone.querySelectorAll('[id]')]) el.removeAttribute('id');
   clone.style.position = 'fixed';
   clone.style.left = '0';
   clone.style.top = '0';
-  clone.style.width = `${rect.width}px`;
-  clone.style.height = `${rect.height}px`;
+  clone.style.width = `${rect.width / seat.scale.x}px`;
+  clone.style.height = `${rect.height / seat.scale.y}px`;
   clone.style.margin = '0';
   clone.style.pointerEvents = 'none';
   clone.style.opacity = '0.85';
@@ -109,11 +109,11 @@ function beginPointerDrag(
   source: HTMLElement,
   startX: number,
   startY: number,
-  ghostFn: (source: HTMLElement, payload: DragPayload) => HTMLElement,
+  createGhost: ((source: HTMLElement, payload: DragPayload) => HTMLElement) | undefined,
 ): GhostDrag | null {
   if (activeDrag) return null;
-  const ghost = ghostFn(source, payload);
   const seat = fixedSeat(source);
+  const ghost = createGhost ? createGhost(source, payload) : defaultGhost(source, payload, seat);
   seat.host.appendChild(ghost);
   positionGhost(ghost, seat, startX, startY);
   activeDrag = { payload, ghost, seat, lastZone: null };
@@ -213,8 +213,7 @@ export function useDragHandle(
         if (!payload) return;
         dropClickGuard = swallowClick(target);
         ghost = beginPointerDrag(
-          payload, target, ev.clientX, ev.clientY,
-          optsRef.current?.createGhost ?? defaultGhost,
+          payload, target, ev.clientX, ev.clientY, optsRef.current?.createGhost,
         );
       },
       onEnd: (ev) => {
