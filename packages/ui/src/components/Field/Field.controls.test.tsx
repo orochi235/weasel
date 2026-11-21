@@ -49,6 +49,24 @@ describe.each(controls)('%s in a Field', (_, make, control) => {
   });
 });
 
+// The boxed controls taking `invalid`, each told it is valid by a binding that knows only its own error.
+const boxed: Array<[string, () => ReactElement]> = [
+  ['Input', () => <Input invalid={false} />],
+  ['TextArea', () => <TextArea invalid={false} />],
+  ['NumberField', () => <NumberField invalid={false} />],
+  ['UnitField', () => <UnitField invalid={false} value={1} onChange={none} />],
+  ['ComboBox', () => <ComboBox invalid={false} options={OPTIONS} />],
+  ['Select', () => <Select invalid={false} options={OPTIONS} />],
+];
+
+describe.each(boxed)('%s with invalid={false} in a Field showing an error', (_, make) => {
+  it('reads as invalid, as the field shows', () => {
+    const { container } = renderWithIcons(<Field label="Amount" error="Too many.">{make()}</Field>);
+    const root = container.firstElementChild!;
+    expect([...root.querySelectorAll('[data-invalid]')].length).toBeGreaterThan(0);
+  });
+});
+
 describe('a control with a name of its own in a Field', () => {
   it('keeps it', () => {
     renderWithIcons(<Field label="Amount"><Input aria-label="Count" /></Field>);
