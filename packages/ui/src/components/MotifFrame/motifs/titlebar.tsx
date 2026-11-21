@@ -1,4 +1,4 @@
-import { drawn, headed, withMotifClass, twistySides } from '../root';
+import { drawn, emphasisStyle, headed, withMotifClass, twistySides } from '../root';
 import type { Motif } from '../types';
 import s from './titlebar.module.css';
 
@@ -19,7 +19,7 @@ export function titlebar(): Motif<Record<string, never>> {
       return (
         <div {...withMotifClass(root, s.titlebar)}>
           {headed(heading) && (
-            <div className={s.strip}>
+            <div className={s.strip} style={emphasisStyle(root)}>
               {fold.start}
               {leading}
               <span className={s.mid}>

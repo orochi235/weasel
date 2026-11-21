@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { EMPHASIS_FG, type Emphasis } from '@weasel-js/theme';
+import type { CSSProperties, ReactNode } from 'react';
 import type { HeadingLevel, HeadingParts, RootProps } from './types';
 
 /** `root` with `className` added — for a motif's own class on the frame's root. */
@@ -24,4 +25,11 @@ export function drawn(node: ReactNode): boolean {
 /** Whether a frame's heading row has anything to draw: an untitled frame with no controls draws none. */
 export function headed({ title, inline, twisty, leading, actions }: HeadingParts): boolean {
   return [title, inline, twisty, leading, actions].some(drawn);
+}
+
+/** The frame's own emphasis resolved again, for an element under its root that redraws the theme's colors. */
+export function emphasisStyle(root: RootProps): CSSProperties | undefined {
+  const emphasis = root['data-emphasis'];
+  if (emphasis === undefined || !Object.hasOwn(EMPHASIS_FG, emphasis)) return undefined;
+  return { '--wzl-emphasis-fg': EMPHASIS_FG[emphasis as Emphasis] } as CSSProperties;
 }

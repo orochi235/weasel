@@ -14,6 +14,8 @@
 .content {
   /* A plaque inside this one names its own mix or takes the default, never this one's. */
   --wzl-plaque-mix: initial;
+  /* An emphasis resolved above against other colors; the frame's own is set again here, inline. */
+  --wzl-emphasis-fg: initial;
   --wzl-fg: var(--_edge-ink);
   --wzl-fg-muted: color-mix(in oklab, var(--_edge-ink) 78%, var(--_edge));
   --wzl-fg-subtle: color-mix(in oklab, var(--_edge-ink) 60%, var(--_edge));

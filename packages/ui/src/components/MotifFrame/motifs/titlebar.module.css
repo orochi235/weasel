@@ -20,6 +20,10 @@
   /* What sits on the strip is drawn in its ink: the fold mark, a ghost button. */
   --wzl-fg: var(--_strip-ink);
   --wzl-disclosure-fill: var(--_strip-ink);
+  /* An emphasis resolved above against other colors; the frame's own is set again here, inline. */
+  --wzl-emphasis-fg: initial;
+  --wzl-accent-fg: var(--_strip-ink);
+  --wzl-fg-muted: color-mix(in oklab, var(--_strip-ink) 78%, var(--_strip));
   display: flex;
   align-items: center;
   gap: var(--wzl-space-3);

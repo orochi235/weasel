@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { drawn, headed, withMotifClass, twistySides } from '../root';
+import { drawn, emphasisStyle, headed, withMotifClass, twistySides } from '../root';
 import type { Motif } from '../types';
 import s from './plaque.module.css';
 
@@ -32,7 +32,7 @@ export function plaque(params: PlaqueParams = {}): Motif<PlaqueParams> {
             } as CSSProperties);
       return (
         <div {...rooted} style={style}>
-          <div className={s.content}>
+          <div className={s.content} style={emphasisStyle(root)}>
             {headed(heading) && (
               <div className={s.head}>
                 {fold.start}
