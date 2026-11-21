@@ -36,4 +36,20 @@ describe('useDragGesture ended from inside or outside', () => {
     expect(seen).toEqual([]);
   });
 
+  it('unmounting mid-gesture cancels it, closing onGestureStart with onGestureEnd(false)', () => {
+    const onGestureEnd = vi.fn();
+    const onCancel = vi.fn();
+    const { result, unmount } = renderHook(() => useDragGesture({ onGestureEnd, onCancel }));
+    act(() => result.current.start(P(0, 0), NO_MODS));
+    unmount();
+    expect(onCancel).toHaveBeenCalledOnce();
+    expect(onGestureEnd).toHaveBeenCalledExactlyOnceWith(false);
+  });
+
+  it('unmounting while idle fires nothing', () => {
+    const onGestureEnd = vi.fn();
+    const { unmount } = renderHook(() => useDragGesture({ onGestureEnd }));
+    unmount();
+    expect(onGestureEnd).not.toHaveBeenCalled();
+  });
 });

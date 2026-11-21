@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { ModifierState } from '../types';
 
@@ -177,6 +177,8 @@ export function useDragGesture<TScratch = unknown>(
       opts.onGestureEnd?.(false);
     }
   }, [buildCtx, bumpPhase, optsRef]);
+
+  useEffect(() => cancel, [cancel]);
 
   return useMemo<DragGestureController>(() => ({
     start, move, end, cancel,
