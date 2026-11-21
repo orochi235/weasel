@@ -7,7 +7,7 @@ const BIDI_CONTROLS = /^[؜‎‏‪-‮⁦-⁩]+$/;
  * `graphemes`, one paragraph in logical order, as a run reading `direction` lays them: in display order left to right
  * under `'ltr'`, right to left under `'rtl'`. A grapheme in a right-to-left stretch takes its mirrored glyph, `(` for
  * `)`. Graphemes holding only bidi controls drop out. Reordering takes the engine `registerBidi` was given; with none,
- * the graphemes keep their logical order.
+ * the graphemes show in logical order left to right, as a line of left-to-right text shows them.
  */
 export function visualGraphemes(
   graphemes: readonly string[],
@@ -25,7 +25,8 @@ export function visualGraphemes(
   if (codePoints.length === 0) return [];
   if (bidi === null) {
     warnRtlWithoutEngine(codePoints, 'weasel visualGraphemes');
-    return graphemes.filter((g) => !BIDI_CONTROLS.test(g));
+    const logical = graphemes.filter((g) => !BIDI_CONTROLS.test(g));
+    return direction === 'rtl' ? logical.reverse() : logical;
   }
   const { order, levels } = bidi.reorder(bidi.analyze(codePoints, direction), 0, codePoints.length);
   const seen = new Set<number>();
