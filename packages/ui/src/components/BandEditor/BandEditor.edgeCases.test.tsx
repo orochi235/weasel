@@ -50,3 +50,16 @@ describe('a caller previewing an edge drag', () => {
     expect(container.querySelector<HTMLElement>('[data-band-strip]')!.style.getPropertyValue('--be-to')).toBe('75%');
   });
 });
+
+describe('a range end on the keyboard', () => {
+  it('steps ten on PageUp and PageDown, as the seams beside it do', () => {
+    const onRangeChange = vi.fn();
+    const { container } = render(
+      <BandEditor value={BANDS} min={0} max={100} scale="linear" onChange={vi.fn()} onRangeChange={onRangeChange} />,
+    );
+    fireEvent.keyDown(container.querySelector('[data-range-edge="max"]')!, { key: 'PageUp' });
+    fireEvent.keyDown(container.querySelector('[data-range-edge="min"]')!, { key: 'PageDown' });
+    const ends = onRangeChange.mock.calls.map(([lo, hi]) => [lo, hi].map((v: number) => Math.round(v * 1e9) / 1e9));
+    expect(ends).toEqual([[0, 110], [-10, 100]]);
+  });
+});

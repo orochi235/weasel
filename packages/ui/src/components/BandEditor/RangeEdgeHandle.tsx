@@ -10,7 +10,8 @@ import { edgeReach, scaleEdges, unitEdges, type Band, type RangeEdge } from './b
 import type { ContinuousScaleFactory } from '@weasel-js/scale';
 import { unitScale } from './scale';
 import { useFieldLocale } from '../../useFieldLocale';
-import { arrowStep, pct } from './track';
+import { KEY_STEP, pct } from './track';
+import { rangeKey } from '@weasel-js/ui-input';
 import { isPrimaryPress } from '@weasel-js/gestures';
 import type { ControlHold } from '../Disabled/controlHold';
 
@@ -95,14 +96,9 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
   };
 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
-    let to: number;
-    if (e.key === 'Home' && Number.isFinite(reachLo)) to = reachLo;
-    else if (e.key === 'End' && Number.isFinite(reachHi)) to = reachHi;
-    else {
-      const delta = arrowStep(e);
-      if (delta === null) return;
-      to = (edge === 'min' ? 0 : 1) + delta;
-    }
+    const key = rangeKey(e.key, e.shiftKey);
+    const to = key === 'home' ? reachLo : key === 'end' ? reachHi : key === null ? NaN : (edge === 'min' ? 0 : 1) + key * KEY_STEP;
+    if (!Number.isFinite(to)) return;
     e.preventDefault();
     const edit = fit(to);
     if (edit && edit.bands !== committed) props.onChange(edit);

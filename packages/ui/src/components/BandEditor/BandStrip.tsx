@@ -6,11 +6,8 @@ import type { ContinuousScaleFactory } from '@weasel-js/scale';
 import s from './BandEditor.module.css';
 import { bandBounds, type Band } from './bands';
 import { bandName } from './retag';
-import { pct } from './track';
+import { KEY_STEP, pct } from './track';
 import type { ControlHold } from '../Disabled/controlHold';
-
-/** One arrow-key step, as a fraction of the track; `shift` takes ten. */
-const KEY_STEP = 0.01;
 
 /** A seam draws nothing of its own: its line is the stylesheet's. */
 const SEAM_SHAPE = { render: () => null };
