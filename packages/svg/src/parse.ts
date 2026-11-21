@@ -39,7 +39,7 @@ import { booleanAttrOf } from './booleanGroup';
 import { textFrameAttrOf } from './framedText';
 import { groupBoxAttrOf } from './groupBox';
 import { conditionsHold, drawnChildren } from './conditional';
-import { parseUse, useSpace } from './use';
+import { parseUse, spaceOfUse } from './use';
 import { collectDocumentMeta, collectElementMeta } from './readMeta';
 
 const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
@@ -234,7 +234,7 @@ function parseElement(
     const drawn = nested(onWarn, () => parseUse(el, ctm, style, (t, m, s) => readChild(t, m, s, inner, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn));
     if (!drawn) return null;
     const opacity = ownValue(el, 'opacity');
-    const clip = ownProp(el, 'clip-path') == null ? undefined : clipFor(el, useSpace(el, ctm, style, onWarn), clips, onWarn);
+    const clip = ownProp(el, 'clip-path') == null ? undefined : clipFor(el, spaceOfUse(el, ctm, style, onWarn), clips, onWarn);
     if (opacity == null && !clip) return drawn;
     return { kind: 'group', children: Array.isArray(drawn) ? drawn : [drawn], ...(clip ? { clip } : {}), ...(opacity != null ? { opacity } : {}) };
   }

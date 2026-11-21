@@ -132,7 +132,7 @@ describe('exporting a path drawn otherwise than its group’s stroke', () => {
       commands.push(4);
       coords.push(...sub);
     }
-    return { kind: 'polygon', commands, coords } as SvgPathNode['path'];
+    return { kind: 'polygon', commands, coords, fillRule: 'nonzero' } as unknown as SvgPathNode['path'];
   };
   /** The markup after the marker definitions. */
   const inGroup = (path: SvgPathNode['path']) => {
