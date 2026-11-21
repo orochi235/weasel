@@ -256,9 +256,17 @@ describe('GradientHandles edits', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
+  it('lets a radius be dragged below one gradient unit', () => {
+    const onChange = vi.fn();
+    const small: GradientPaint = { ...radial, center: { x: 0, y: 0 }, radius: 0.4 };
+    render(<GradientHandles value={small} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
+    drag('Gradient radius', { x: 11.6, y: 20 });
+    expect(onChange.mock.calls[0][0].radius).toBeCloseTo(0.8);
+  });
+
   it('commits nothing for an arrow key that leaves the radius where it was', () => {
     const onChange = vi.fn();
-    const floor: GradientPaint = { ...radial, radius: 1 };
+    const floor: GradientPaint = { ...radial, radius: 0.5 };
     render(<GradientHandles value={floor} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
     fireEvent.keyDown(screen.getByLabelText('Gradient radius'), { key: 'ArrowLeft' });
     expect(onChange).not.toHaveBeenCalled();

@@ -94,6 +94,8 @@ function renderForKind(
   if (value.kind === 'radial-gradient') {
     const center = toScreen(value.center);
     const edge = toScreen({ x: value.center.x + value.radius, y: value.center.y });
+    // One overlay pixel, so the floor holds whatever the gradient's units are.
+    const floor = distance(toLocal({ x: center.x + 1, y: center.y }), toLocal(center));
     return (
       <>
         <circle className={s.guide} cx={center.x} cy={center.y} r={distance(center, edge)} />
@@ -108,7 +110,7 @@ function renderForKind(
           at={edge}
           label="Gradient radius"
           onDrag={(p, phase) => {
-            emit({ ...value, radius: Math.max(MIN_RADIUS, distance(toLocal(p), value.center)) }, phase);
+            emit({ ...value, radius: Math.max(floor, distance(toLocal(p), value.center)) }, phase);
           }}
         />
       </>
@@ -143,9 +145,6 @@ function renderForKind(
     </>
   );
 }
-
-/** A radius of zero divides by zero in the shader's `t`; keep it off the floor. */
-const MIN_RADIUS = 1;
 
 function distance(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
