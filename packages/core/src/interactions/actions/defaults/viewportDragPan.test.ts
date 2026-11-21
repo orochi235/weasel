@@ -332,6 +332,16 @@ describe('viewportDragPanAction inertia', () => {
     }
   }
 
+  it('stops the previous coast when a new drag presses, with or without inertia', () => {
+    for (const params of [undefined, { inertia: {} }]) {
+      const { view } = makeDecayView();
+      const stop = vi.fn();
+      view.stopDecay = stop;
+      invoker.start(makeCtx(view), params ? { params } : undefined);
+      expect(stop).toHaveBeenCalledTimes(1);
+    }
+  });
+
   it('starts a decay on commit when inertia is configured', () => {
     const { view, calls } = makeDecayView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
     fling(view, { inertia: { friction: 0.9 } });
