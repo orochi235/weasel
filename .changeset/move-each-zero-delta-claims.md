@@ -2,6 +2,6 @@
 '@weasel-js/core': patch
 ---
 
-`moveEachOps` leaves a node where its first entry puts it even when that entry's delta is zero, so align and distribute no longer move an already-placed node through a later entry.
+`moveEachOps` leaves a node where a zero-delta entry reaches it, even when a later entry reaches it too.
 
 <!-- entry: fix -->
