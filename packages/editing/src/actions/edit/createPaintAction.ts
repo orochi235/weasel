@@ -1,11 +1,11 @@
-import type { Action, InvocationCtx } from '@weasel-js/routing';
+import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
 import type { Scene, NodeId, Op } from '@weasel-js/core';
 import { commitOps, inheritedPaintIn, paintInheritors } from '@weasel-js/core/engine';
 import { INHERIT } from '@weasel-js/paint';
 import { deepEqual, isFiniteNumber } from '@weasel-js/registry';
 import * as coreOps from '@weasel-js/core/ops';
-import { operandContent, requiresContent } from '@weasel-js/core';
+import { asNodeId, operandContent, requiresContent, withoutPageStructure } from '@weasel-js/core';
 
 /** The node data one paint action reads and writes: its own key, nothing else. */
 type PaintData<K extends string, TValue> = { [P in K]?: TValue | null };
@@ -60,6 +60,19 @@ interface Scratch<TState, TValue, K extends string> {
   previews: Map<NodeId, PaintData<K, TValue>>;
 }
 
+/** The nodes a paint action edits: the params' `ids` when given, else the selection's content. */
+function targetsOf(deps: ActionDeps | undefined, params: Readonly<Record<string, unknown>> | undefined): readonly NodeId[] {
+  const ids = explicitIds(params);
+  if (ids === undefined) return operandContent(deps);
+  const scene = deps?.scene;
+  return scene ? withoutPageStructure(scene, ids.map(asNodeId)) : ids.map(asNodeId);
+}
+
+function explicitIds(params: Readonly<Record<string, unknown>> | undefined): readonly string[] | undefined {
+  const ids = params?.ids;
+  return Array.isArray(ids) ? (ids as readonly string[]) : undefined;
+}
+
 /**
  * The ongoing-action body the paint actions share: it previews without
  * touching the scene, and commits one batch (one undo entry) through
@@ -105,10 +118,11 @@ export function createPaintAction<TState, TValue, K extends string, P>(
 
         if (!selection || !scene) return {};
 
-        const ids = [...operandContent(ctx.deps)];
+        const fallback = resolveParams(opts?.params);
+        type Targeted = { ids?: unknown } | undefined;
+        const ids = [...targetsOf(ctx.deps, { ids: (ctx.params as Targeted)?.ids ?? (fallback as Targeted)?.ids })];
         if (ids.length === 0) return {};
 
-        const fallback = resolveParams(opts?.params);
         // `??` would lose a `paint: null`, which is None, not "no paint given".
         const pick: PickParam<P> = (key) => (ctx.params?.[key] !== undefined ? ctx.params[key] : fallback?.[key]);
 
@@ -166,11 +180,11 @@ export function createPaintAction<TState, TValue, K extends string, P>(
         };
       },
     },
-    enabled: (deps) => {
-      const given = requiresContent(1)(deps);
+    enabled: (deps, _at, _carried, params) => {
+      const given = explicitIds(params) !== undefined ? true : requiresContent(1)(deps);
       const scene = deps?.scene as Scene<Data, string, unknown> | undefined;
       if (given !== true || !spec.writable || !scene) return given;
-      const ids = operandContent(deps);
+      const ids = targetsOf(deps, params);
       return ids.some((id) => scene.get(id) && spec.writable!(baseOf(scene, id))) ? true : ActionDisabledReason.NotApplicable;
     },
   });

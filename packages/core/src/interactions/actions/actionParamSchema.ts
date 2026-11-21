@@ -54,8 +54,9 @@ export type RotateParams = RunLifecycleOptions & { pivot?: 'each' | 'union' };
 /** The params of an action finishing a path being drawn: `viaDoubleClick` when a double-click finished it, whose
  *  first click placed a point to take back. */
 export type FinishPathParams = { viaDoubleClick?: boolean };
-/** `setFill`'s and `setStroke`'s params: a hex color, or a whole paint, which shadows the color. */
-export type PaintParams = { color?: string; paint?: Paint | null };
+/** `setFill`'s and `setStroke`'s params: a hex color, or a whole paint, which shadows the color. `ids` names the
+ *  nodes to paint in place of the selection. */
+export type PaintParams = { color?: string; paint?: Paint | null; ids?: readonly string[] };
 /** `ingest`'s params: what a drop or a paste brings and where it landed. */
 export type IngestParams = { items?: readonly IngestItem[]; world?: WorldPoint };
 
