@@ -294,6 +294,7 @@ export function readRegion(scene: ReadScene, node: ReadNode, page: Vec2, theme: 
     role,
     ...optional('label', textOf(scene, titleIdOf(node.id))),
     ...(members.length > 0 ? { members } : {}),
+    ...(role === 'container' ? optional('reorder', container.reorder) : {}),
     ...(role === 'pool' ? { axis, lanes: lanesOf(scene, node.id, axis, theme) } : {}),
     ...(container.fitted === true ? {} : { box: { ...moved(pose, page), width: pose.width, height: pose.height } }),
     ...(trait.pinned === true ? { pinned: true } : {}),

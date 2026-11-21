@@ -121,6 +121,15 @@ describe('documentFromScene', () => {
     expect(edgeOf(scene, 'bm')).toMatchObject({ router: 'avoid', routed: [{ x: 300, y: 260 }] });
   });
 
+  it("reads a container's reorder axis, as it does a cluster's", () => {
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 300, height: 200, data: {
+      nodes: [{ id: 'a', lines: ['A'], at: { x: 20, y: 40 } }, { id: 'b', lines: ['B'], at: { x: 120, y: 40 } }], edges: [],
+      containers: [{ id: 'k', role: 'container', members: ['a', 'b'], reorder: 'y' }],
+    } }] };
+    const back = documentFromScene(drawnScene(documentSpecs(doc, { measure: MEASURE, theme: THEME })));
+    expect(asGraph(back.pages[0]!).data.containers?.[0]).toMatchObject({ id: 'k', reorder: 'y' });
+  });
+
   it('reads containers, with their members and boxes on their page', () => {
     const scene = docScene();
     expect(pageOf(scene, 'p1').data.containers).toEqual([
