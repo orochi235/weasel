@@ -189,4 +189,11 @@ describe('an inverted stereo frame', () => {
     expect(css).toMatch(rule);
     expect(css).toMatch(new RegExp(`\\.${part}\\s*\\{[^}]*--wzl-accent-fg:`));
   });
+
+  it('keeps a frame inside a panel from inheriting the slots only a panel sets', () => {
+    const css = readFileSync(resolve(__dirname, 'MotifFrame.module.css'), 'utf8');
+    const base = /:where\(\.frame\)\s*\{[^}]*\}/.exec(css)?.[0] ?? '';
+    expect(base).toMatch(/--_s-blur:\s*initial/);
+    expect(base).toMatch(/--_s-title-inset:\s*initial/);
+  });
 });

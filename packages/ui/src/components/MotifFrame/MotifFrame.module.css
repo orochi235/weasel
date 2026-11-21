@@ -15,6 +15,9 @@
      which the two reach WCAG's 4.5:1 together; the switch has to sit within a
      hundredth of it, or the losing side falls short there. */
   --_edge-ink: oklch(from var(--_edge) clamp(0, (0.564 - l) * 1000, 1) 0 0);
+  /* Only a panel's slots set these; a frame inside a panel would inherit them. */
+  --_s-blur: initial;
+  --_s-title-inset: initial;
 }
 
 /* The motifs that paint the frame's fill, which is sunken by default, as a field's frame is. */
