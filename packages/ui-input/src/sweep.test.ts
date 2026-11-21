@@ -4,6 +4,19 @@ import { framesSweep, rangeSweep, stepsOf, sweepUntil, valuesSweep } from './swe
 const all = <V>(s: { walk(): Iterable<V> }): V[] => [...s.walk()];
 
 describe('rangeSweep', () => {
+  it('ends a range whose finite ends lie too far apart to subtract', () => {
+    const stepped = rangeSweep({ from: -1e308, to: 1e308, step: 1e307 });
+    const steps = stepsOf(stepped, 100);
+    expect(steps.capped).toBe(false);
+    expect(steps.steps).toHaveLength(21);
+    expect(steps.steps.every(Number.isFinite)).toBe(true);
+    expect(steps.steps.at(-1)).toBeCloseTo(1e308, -295);
+    expect(stepped.at(0.5)).toBeCloseTo(0, -295);
+    const counted = rangeSweep({ from: -1e308, to: 1e308, count: 3 });
+    expect(all(counted)).toEqual([-1e308, 0, 1e308]);
+    expect(counted.at(0.75)).toBe(5e307);
+  });
+
   it('walks the digits, both ends included', () => {
     expect(all(rangeSweep({ from: 0, to: 9, step: 1 }))).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
   });

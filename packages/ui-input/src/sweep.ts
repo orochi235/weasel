@@ -1,4 +1,4 @@
-import { clamp01 } from '@weasel-js/geom';
+import { clamp01, lerp } from '@weasel-js/geom';
 
 /**
  * A parameter's domain, apart from how it is walked. A scrubber reads it
@@ -62,9 +62,16 @@ export function rangeSweep(spec: RangeSpec): Sweep<number> {
   if (spec.step !== undefined) {
     const step = spec.step;
     if (!(step > 0)) throw new RangeError(`a range's step is above 0, not ${step}`);
-    const last = Number.isFinite(span) ? Math.floor(tidy(Math.abs(span) / step)) : Infinity;
+    // Finite ends far enough apart overflow `span`; halving both sides keeps the sums finite.
+    const last = !Number.isFinite(to) ? Infinity
+      : Number.isFinite(span) ? Math.floor(tidy(Math.abs(span) / step))
+      : Math.floor(Math.abs(to / 2 - from / 2) / (step / 2));
     const dir = span < 0 ? -1 : 1;
-    const nth = (i: number): number => (i === 0 ? from : tidy(from + dir * step * i, Math.max(Math.abs(from), step * i)));
+    const nth = (i: number): number => {
+      if (i === 0) return from;
+      const v = from + dir * step * i;
+      return Number.isFinite(v) ? tidy(v, Math.max(Math.abs(from), step * i)) : 2 * (from / 2 + dir * (step / 2) * i);
+    };
     return {
       at: (u) => {
         if (!Number.isFinite(last)) throw new RangeError('an endless range has no point a fraction of the way along');
@@ -78,15 +85,15 @@ export function rangeSweep(spec: RangeSpec): Sweep<number> {
   }
   const count = spec.count;
   if (!(Number.isInteger(count) && count > 0)) throw new RangeError(`a range's count is a whole number above 0, not ${count}`);
-  if (!Number.isFinite(span)) throw new RangeError('a range given a count needs a finite end');
+  if (!Number.isFinite(to)) throw new RangeError('a range given a count needs a finite end');
   const scale = Math.max(Math.abs(from), Math.abs(to));
   const [lo, hi] = from <= to ? [from, to] : [to, from];
-  const along = (u: number): number => (u <= 0 ? from : u >= 1 ? to : Math.min(hi, Math.max(lo, tidy(from + span * u, scale))));
+  const along = (u: number): number => (u <= 0 ? from : u >= 1 ? to : Math.min(hi, Math.max(lo, tidy(lerp(from, to, u), scale))));
   return {
     at: (u) => along(clamp01(u)),
     *walk() {
       if (count === 1) yield from;
-      else for (let i = 0; i < count; i++) yield i === 0 ? from : i === count - 1 ? to : tidy(from + (span * i) / (count - 1), scale);
+      else for (let i = 0; i < count; i++) yield i === 0 ? from : i === count - 1 ? to : Number.isFinite(span) ? tidy(from + (span * i) / (count - 1), scale) : along(i / (count - 1));
     },
     label: spec.label ?? plain,
   };
