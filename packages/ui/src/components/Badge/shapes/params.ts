@@ -8,3 +8,11 @@ export function withDefaults<P extends object>(defaults: P, params: Partial<P> |
   }
   return out;
 }
+
+/** The most repeats (points, teeth) a shape draws, so a huge or infinite count cannot hang a render. */
+export const MAX_REPEATS = 256;
+
+/** A whole repeat count in `[min, MAX_REPEATS]`; NaN and anything below `min` read as `min`. */
+export function repeatCount(n: number, min: number): number {
+  return Math.min(MAX_REPEATS, Math.max(min, Math.floor(n) || min));
+}

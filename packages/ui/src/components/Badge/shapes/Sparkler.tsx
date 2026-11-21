@@ -1,5 +1,5 @@
 import type { ShapeModule } from '../types';
-import { withDefaults } from './params';
+import { repeatCount, withDefaults } from './params';
 import { DEG_TO_RAD, trimNumber } from '@weasel-js/geom';
 
 /** What `shapeParams` takes on a `sparkler` badge. */
@@ -19,7 +19,7 @@ const DEFAULTS: Required<BadgeSparklerShapeParams> = {
 
 function sparklerPath(points: number, outerR: number, innerR: number, rotation: number) {
   const cx = 50, cy = 50;
-  const total = points * 2;
+  const total = repeatCount(points, 3) * 2;
   const step = (Math.PI * 2) / total;
   const start = rotation * DEG_TO_RAD;
   let d = '';
