@@ -19,6 +19,8 @@ export interface LightnessParams {
 
 // Above anything sRGB holds, so the gamut clamp in toHex decides.
 const MAX_CHROMA = 0.4;
+/** Below this OKLCH chroma an anchor is a neutral: white, black, or a gray. */
+const ACHROMATIC = 1e-4;
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
 const envelope = (t: number, lightBias: number, darkBias: number) => Math.sin(Math.PI * t) + lightBias * (1 - t) + darkBias * t;
@@ -36,6 +38,7 @@ function envelopeMax(lightBias: number, darkBias: number): number {
  * An anchored step emits its anchor exactly, and the anchor replaces `hue` and `peak`: its OKLCH hue becomes the hue and
  * its chroma becomes the peak, unscaled by the envelope. With several anchors, both blend linearly by step between
  * consecutive anchors, hue along the shorter arc; steps before the first anchor or after the last take that anchor's.
+ * A neutral anchor (white, black, a gray) has no hue of its own and takes its nearest chromatic anchor's, or `hue`.
  */
 export function lightnessRamp(p: LightnessParams): Record<string, string> {
   const n = p.steps.length;
@@ -43,11 +46,18 @@ export function lightnessRamp(p: LightnessParams): Record<string, string> {
   const lightBias = p.lightBias ?? 0;
   const max = envelopeMax(lightBias, p.darkBias);
 
-  const anchors = p.steps.flatMap((s, i) => {
+  const measured = p.steps.flatMap((s, i) => {
     const hex = getOwn(p.anchor ?? {}, s);
     if (hex === undefined) return [];
     const { C, H } = toLch(hex);
     return [{ i, hue: H, peak: C }];
+  });
+  // A neutral's hue is atan2 of rounding noise, so it borrows the nearest chromatic anchor's.
+  const chromatic = measured.filter((a) => a.peak >= ACHROMATIC);
+  const anchors = measured.map((a) => {
+    if (a.peak >= ACHROMATIC) return a;
+    const near = chromatic.reduce<(typeof a) | undefined>((best, b) => (best && Math.abs(best.i - a.i) <= Math.abs(b.i - a.i) ? best : b), undefined);
+    return { ...a, hue: near?.hue ?? p.hue };
   });
   const hueAndPeak = (i: number): { hue: number; peak: number } => {
     if (anchors.length === 0) return p;

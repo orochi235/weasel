@@ -127,3 +127,11 @@ describe('several anchors', () => {
     expect(hueGap(toLch(ramp['900']).H, hb)).toBeLessThan(4);
   });
 });
+
+describe('an achromatic anchor', () => {
+  it('takes the hue of the chromatic anchor beside it', () => {
+    const ramp = lightnessRamp({ steps: ['50', '300', '500', '700', '900'], lightness: [0.98, 0.35], curve: 0, hue: 0, peak: 0, darkBias: 0, anchor: { '50': '#ffffff', '900': '#2563eb' } });
+    const blue = toLch('#2563eb').H;
+    for (const step of ['300', '500', '700']) expect(hueGap(toLch(ramp[step]).H, blue)).toBeLessThan(3);
+  });
+});
