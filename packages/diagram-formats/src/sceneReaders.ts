@@ -11,6 +11,7 @@ import {
   layoutOwnsRoute, poolAxisOf, sequencePartOf, sequenceRootOf, titleIdOf, type DataContainer, type DataEdge, type DataCluster, type DataLane, type DataNode, type DiagramLabel,
   type DiagramRouter, type DiagramTheme, type EdgeStyle, type NodeStyle, type BodyDivider, type BodyLayout, type HeaderBand, type Row,
 } from '@weasel-js/diagram';
+import { readMarks } from './markReaders';
 
 /** A scene node as the readers see it. The formats are 2D documents, so its pose is a rect. */
 export interface ReadNode {
@@ -162,6 +163,7 @@ export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: D
   const dividers = body?.dividers ?? [];
   const fields = rows.some((r) => typeof dataOf(r).bodyField === 'string');
   const slots = slotRows(scene, node, body, texts, band !== undefined && rows.some(isHeader));
+  const marks = readMarks(scene, node, { stroke: colorOf(data.stroke), text: colors?.text ?? themed.text }, theme);
   return {
     id: node.id,
     outline: trait.outline as DataNode['outline'],
@@ -179,6 +181,7 @@ export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: D
     ...(trait.pinned === true ? { pinned: true } : {}),
     ...(body !== undefined ? { padding: body.padding, gap: body.gap, verticalAlign: body.verticalAlign } : {}),
     ...(trait.ports !== undefined && !same(trait.ports, DEFAULT_PORTS) ? { ports: trait.ports as DataNode['ports'] } : {}),
+    ...(marks.length > 0 ? { marks } : {}),
   };
 }
 

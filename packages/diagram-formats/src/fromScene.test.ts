@@ -3,7 +3,8 @@ import { composeWorldPose, createScene, scenePoseAdapter, type InvocationCtx, ty
 import { diagramScene, offPageOps, setDiagramColor, withDiagramRegistry, type DataEdge, type DataNode } from '@weasel-js/diagram';
 import { documentFromScene } from './fromScene';
 import { documentSpecs } from './toScene';
-import { DOC_DATA, MEASURE, docScene, drawnScene, type DocScene } from './testing/docScene';
+import { DOC_DATA, MEASURE, THEME, docScene, drawnScene, type DocScene } from './testing/docScene';
+import type { DiagramDocument } from './document';
 import { asGraph } from './testing/asGraph';
 import { moveAction } from '@weasel-js/editing';
 
@@ -66,6 +67,20 @@ describe('documentFromScene', () => {
     const b = scene.get('b' as never)!.pose as { width: number; height: number };
     expect(nodeOf(scene, 'p1', 'b')).toMatchObject({ outline: 'diamond', lines: ['Check'], width: b.width, height: b.height });
     expect(nodeOf(scene, 'p1', 'a').style).toBe('accent');
+  });
+
+  it("reads a shape's marks back, leaving out what they default to", () => {
+    const marks: DataNode['marks'] = [
+      { d: 'M0 0 L1 1' },
+      { d: 'M0 1 L1 0', fill: '#ff0000', opacity: 0.5 },
+      { d: 'M0 0 L1 0', stroke: '#00ff00', strokeWidth: 3, dash: [2, 2] },
+      { text: 'note', at: { u: 1, v: 0 }, self: { u: 0, v: 1 }, offset: { x: 2, y: -2 }, color: '#0000ff', style: { fontSize: 9, bold: true, italic: true } },
+      { text: 'plain', at: { u: 0.5, v: 1 } },
+    ];
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 300, height: 200,
+      data: { nodes: [{ id: 'a', lines: ['A'], at: { x: 10, y: 10 }, width: 80, height: 40, marks }], edges: [] } }] };
+    const back = documentFromScene(drawnScene(documentSpecs(doc, { measure: MEASURE, theme: THEME })));
+    expect(asGraph(back.pages[0]!).data.nodes[0]!.marks).toEqual(marks);
   });
 
   it('keeps only the colors the theme does not give', () => {
