@@ -107,7 +107,7 @@ export function MenuPanel(props: {
           onRelease={(modified) => {
             if (!props.releaseRuns.current) return;
             if (modified && entry.kind === 'item' && entry.href !== undefined) {
-              window.open(entry.href, '_blank');
+              window.open(entry.href, '_blank', 'noopener');
               props.close();
             } else c.press(level, i);
           }}
