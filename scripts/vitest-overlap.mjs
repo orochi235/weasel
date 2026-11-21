@@ -84,10 +84,9 @@ const emit = (line) => {
   }
 };
 
-// The suite's last total belongs to the merged bar. A child told 1 reports the tests it has
-// collected and skips its own estimate, which would otherwise overshoot that total.
+// The suite's last total is the whole run's, not any one child's: each child estimates its own share.
 const expected = Number(process.env.ONTO_EXPECT_TESTS) || 0;
-const env = { ...process.env, ONTO_EXPECT_TESTS: expected ? '1' : '' };
+const env = { ...process.env, ONTO_EXPECT_TESTS: '' };
 const merge = mergeProgress(runs.length, expected);
 
 const reports = mkdtempSync(join(tmpdir(), 'weasel-load-'));
