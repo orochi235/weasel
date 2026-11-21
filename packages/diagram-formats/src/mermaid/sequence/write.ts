@@ -85,7 +85,7 @@ class SequenceWriter {
       done.add(box.id);
       if (box.colors !== undefined && Object.keys(box.colors).some((k) => k !== 'fill')) this.warnings.add('Box colors other than the fill were dropped.');
       const label = box.label === undefined ? undefined : mermaidSeqText(box.label);
-      const color = box.colors?.fill ?? (label !== undefined && leadingColor(label) !== undefined ? 'transparent' : undefined);
+      const color = this.fill(box.colors?.fill) ?? (label !== undefined && leadingColor(label) !== undefined ? 'transparent' : undefined);
       this.out(1, ['box', color, label].filter((t) => t !== undefined).join(' '));
       const members = new Set(box.members.filter((m) => boxOf.get(m) === box && kept(m)));
       for (const q of this.data.participants) if (members.has(q.id)) declare(q, 2);
@@ -95,6 +95,13 @@ class SequenceWriter {
     const order = this.data.participants.map((p) => p.id).filter((id) => !created.has(id));
     const moved = written.filter((id) => declared.has(id));
     if (order.some((id, k) => moved[k] !== id)) this.warnings.add('Mermaid declares a box\'s members together; members declared apart were moved beside each other.');
+  }
+
+  /** A box's or a rect's fill as Mermaid reads one back, or none, with a warning, for a fill it would not. */
+  fill(fill: string | undefined): string | undefined {
+    if (fill === undefined || leadingColor(fill) === fill) return fill;
+    this.warnings.add('Mermaid box and rect colors are hex, rgb(), hsl(), or a color name; others were dropped.');
+    return undefined;
   }
 
   steps(steps: readonly SeqStep[], depth: number): void {
@@ -118,7 +125,7 @@ class SequenceWriter {
         const label = (k: number) => (s.sections[k]?.label === undefined ? '' : ` ${mermaidSeqText(s.sections[k]!.label!)}`);
         if (s.type === 'region') {
           if (s.sections.some((sec) => sec.label !== undefined)) this.warnings.add('Labels on colored regions were dropped.');
-          this.out(depth, `rect ${s.colors?.fill ?? 'rgba(128, 128, 128, 0.1)'}`);
+          this.out(depth, `rect ${this.fill(s.colors?.fill) ?? 'rgba(128, 128, 128, 0.1)'}`);
         } else {
           if (s.colors !== undefined) this.warnings.add('Colors on loops, alts, and other fragments were dropped.');
           this.out(depth, `${s.type}${label(0)}`);

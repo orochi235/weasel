@@ -95,3 +95,16 @@ describe('writeMermaidSequence', () => {
     expect(pageOf(out.text).data.autonumber).toBe(1);
   });
 });
+
+describe('writing a sequence box\'s or region\'s fill', () => {
+  it('drops a fill Mermaid would not read back as a color, with a warning, so a box keeps its label', () => {
+    const out = writeMermaidSequence(page({
+      participants: [{ id: 'A' }],
+      boxes: [{ id: 'b', label: 'Team', members: ['A'], colors: { fill: 'var(--brand)' } }],
+      steps: [{ kind: 'fragment', id: 'f', type: 'region', colors: { fill: 'oklch(70% 0.1 200)' }, sections: [{ steps: [] }] }],
+    } as SequenceData));
+    expect(out.warnings).toContain('Mermaid box and rect colors are hex, rgb(), hsl(), or a color name; others were dropped.');
+    expect(pageOf(out.text).data.boxes![0]!.label).toBe('Team');
+    expect(out.text).not.toContain('oklch');
+  });
+});
