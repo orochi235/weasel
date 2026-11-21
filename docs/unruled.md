@@ -3302,3 +3302,12 @@ Calls the lanes made without a ruling:
 
 - 2026-11-20: Alt+Right refuses to indent a `Tree` row under a closed disabled branch, which cannot open to show it; a drag may
   still drop into one.
+
+## Audit round fifty-nine (2026-11-20): ui components, part one
+
+- 2026-11-20 (my call, audit round 59): a `ColorField` pick that closes, or loses focus, on the color it began from
+  after `onInput` ticks calls `onCancel`, which until now meant only an abandoned opacity drag. A pick with no ticks
+  calls nothing.
+- 2026-11-20 (my call, audit round 59): a mixed `Switch` (`indeterminate`, and so a mixed item in a `CheckboxGroup`
+  with `control="switch"`) writes `aria-checked="mixed"` on its input, though ARIA gives `switch` no mixed state and
+  a reader may announce it as off; its thumb sits mid-track.

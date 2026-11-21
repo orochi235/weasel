@@ -101,6 +101,7 @@ export const ActionButton = forwardRef(function ActionButton(props: ActionButton
         aria-label={label}
         {...(palette ? { 'aria-current': active ? 'true' : undefined } : { 'aria-pressed': active })}
         {...appearance}
+        style={appearance.style || native.style ? { ...appearance.style, ...native.style } : undefined}
         {...(popup ? { 'aria-haspopup': popup.type, 'aria-expanded': popup.expanded } : {})}
         className={cls.filter(Boolean).join(' ')}
         {...(dead ? { 'data-missing': missing } : {})}

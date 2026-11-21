@@ -33,7 +33,8 @@ export interface ColorFieldProps extends HoldProps {
    *  per user gesture; pair with an undoable write. Return the color actually
    *  applied when it differs, and the recent colors record that instead. */
   onChange: (hex: string) => AppliedColor;
-  /** An opacity drag was abandoned, by Escape or an unmount, after `onInput` got its starting color back. */
+  /** A gesture ended with nothing to commit, after `onInput` got its starting color back: an opacity drag abandoned by
+   *  Escape or an unmount, or a pick that closed on the color it began from. */
   onCancel?: () => void;
   /** Id for the color input, for a `<label htmlFor>` outside it. */
   id?: string;
@@ -109,6 +110,10 @@ export function ColorField(props: ColorFieldProps) {
             setPicked(null);
             setAlphaDraft(null);
             return apply(compose(rgb, visibleAlpha));
+          }}
+          onCancel={() => {
+            setPicked(null);
+            onCancel?.();
           }}
         />
       </span>)}

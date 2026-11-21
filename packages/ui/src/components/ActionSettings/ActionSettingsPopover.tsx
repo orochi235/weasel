@@ -3,6 +3,7 @@ import { Popover, PopoverDialog } from '../Popover';
 import { useOverlayPortal } from '../../overlays/portalHost';
 import { ActionButton, type ActionButtonProps } from '../ActionButton/ActionButton';
 import { FormScope } from '../ActionButton/controlForm';
+import { useDisabled } from '../Disabled';
 import { PrefsForm } from '../Prefs/PrefsForm';
 import type { ActionSettingsForm } from './useActionSettings';
 import bar from '../Bar/Bar.module.css';
@@ -23,7 +24,7 @@ export function ActionSettingsPopover({ settings, ...button }: ActionSettingsPop
   const trigger = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
   const { anchor, provide, ready } = useOverlayPortal();
-  const available = !button.disabled && button.missing === undefined;
+  const available = !useDisabled(button).disabled && button.missing === undefined;
   // The action going away closes the form for good, so its coming back does not reopen it unasked.
   if (open && !available) setOpen(false);
   const shown = open && available;

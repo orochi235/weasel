@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import { ColorField } from './ColorField';
 
 describe('ColorField', () => {
@@ -65,6 +65,38 @@ describe('ColorField', () => {
     fireEvent.input(input, { target: { value: '#112233' } });
     fireEvent.blur(input);
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('commits a pick whose last input and the picker closing arrive in one task', () => {
+    const onChange = vi.fn();
+    render(<ColorField value="#112233ff" alpha onChange={onChange} aria-label="Fill" />);
+    const input = screen.getByLabelText('Fill') as HTMLInputElement;
+    act(() => {
+      input.value = '#445566';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('#445566ff');
+  });
+
+  it('cancels a pick that closes on the color it began from, and composes opacity against value after it', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    const onCancel = vi.fn();
+    const at = (value: string) => (
+      <ColorField value={value} alpha onInput={onInput} onChange={onChange} onCancel={onCancel} aria-label="Fill" />
+    );
+    const { rerender } = render(at('#112233ff'));
+    const input = screen.getByLabelText('Fill');
+    fireEvent.input(input, { target: { value: '#445566' } });
+    fireEvent.input(input, { target: { value: '#112233' } });
+    fireEvent(input, new Event('change', { bubbles: true }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    rerender(at('#aabbccff'));
+    fireEvent.input(screen.getByRole('slider'), { target: { value: '50' } });
+    expect(onInput).toHaveBeenLastCalledWith('#aabbcc80');
   });
 
   it('does not commit on blur with no preceding input (no-op-blur guard)', () => {
