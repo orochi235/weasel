@@ -1,3 +1,5 @@
+import { clientScaleOf } from '@weasel-js/gestures';
+
 /** What a fit scope remembers of its element's room, as the element's own width. */
 export interface FitRoom {
   /** The width when the last step was taken: growing past it retries the full forms. */
@@ -22,7 +24,9 @@ function naturalWidth(el: HTMLElement): number {
   const style = getComputedStyle(el);
   const border = px(style.borderLeftWidth) + px(style.borderRightWidth);
   // scrollWidth is rounded to a whole pixel; the box's own width is exact once nothing overflows it.
-  const outer = el.scrollWidth > el.clientWidth ? el.scrollWidth + 1 + border : el.getBoundingClientRect().width;
+  // Both in layout px: the client rect is divided by the scale ancestor transforms give it.
+  const rect = el.getBoundingClientRect();
+  const outer = el.scrollWidth > el.clientWidth ? el.scrollWidth + 1 + border : rect.width / clientScaleOf(el, rect).x;
   if (style.boxSizing === 'border-box') return outer;
   return outer - border - px(style.paddingLeft) - px(style.paddingRight);
 }
