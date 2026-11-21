@@ -102,6 +102,13 @@ describe('the lane resize action', () => {
     }
   });
 
+  it('offers no boundary, and hands the drag on, where the resize would move a locked member of a later lane', () => {
+    const h = pool();
+    h.scene.setLocked('m' as NodeId, true);
+    expect(createLaneAffordance(h.scene as never).regions({} as never).map((r) => r.id)).not.toContain(`${h.first}:boundary`);
+    expect(resize(h, { x: 200, y: 150 })).toEqual({});
+  });
+
   it('keeps the lanes in order when one grows past the lanes after it', () => {
     const h = pool();
     resize(h, { x: 200, y: 370 });

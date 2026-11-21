@@ -11,6 +11,7 @@ import {
   paintsLayer,
   PathBuilder,
   polylineFromPoints,
+  reachesLocked,
   rotatedRectCorners,
   viewToTransform,
   type Affordance,
@@ -82,11 +83,13 @@ export function poolsOf(scene: AnyScene): PoolLanes[] {
   return out;
 }
 
-/** Whether resizing the lane at `index` of `pool` would write a locked node: the lane, the lanes after it, or the
- *  lane's or the pool's title. The boundary is offered, and the resize runs, only where this is false. */
+/** Whether resizing the lane at `index` of `pool` would write a locked node: the lane, the lane's or the pool's
+ *  title, or a lane after it or anything it holds, which moves with it. The boundary is offered, and the resize
+ *  runs, only where this is false. */
 export function laneResizeLocked(scene: AnyScene, pool: PoolLanes, index: number): boolean {
-  const writes = [titleIdOf(pool.id), titleIdOf(pool.lanes[index]!.id), ...pool.lanes.slice(index).map((l) => l.id)];
-  return writes.some((id) => scene.isLocked(id as NodeId));
+  const writes = [titleIdOf(pool.id), titleIdOf(pool.lanes[index]!.id), pool.lanes[index]!.id];
+  return writes.some((id) => scene.isLocked(id as NodeId))
+    || reachesLocked(scene as never, pool.lanes.slice(index + 1).map((l) => l.id as NodeId));
 }
 
 /** Whether adding a lane at the end of `pool` would write a locked node: the pool's title, which grows with it. The
