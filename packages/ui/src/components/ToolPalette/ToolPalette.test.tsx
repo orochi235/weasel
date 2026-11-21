@@ -366,6 +366,17 @@ describe('ToolPalette — mode eligibility', () => {
     expect(anchorBtn.getAttribute('aria-disabled')).toBeNull();
   });
 
+  it('redraws eligibility and the reason when the mode changes', () => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
+    const tools = makeTools(selectTool, anchorTool, handTool);
+    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} />);
+    expect(screen.getByRole('button', { name: /select/i }).getAttribute('aria-disabled')).toBeNull();
+    act(() => { reg.setMode('path-edit'); });
+    const selectBtn = screen.getByRole('button', { name: /select/i });
+    expect(selectBtn.getAttribute('aria-disabled')).toBe('true');
+    expect(selectBtn.getAttribute('aria-description')).toMatch(/path-edit/);
+  });
+
   it('ineligible button does not invoke setActive when clicked', () => {
     const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
     const tools = makeTools(selectTool, anchorTool, handTool);
