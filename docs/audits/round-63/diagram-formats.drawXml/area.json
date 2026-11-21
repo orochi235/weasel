@@ -1,0 +1,72 @@
+{
+ "id": "diagram-formats.drawXml",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-21",
+ "files": [
+  "packages/diagram-formats/src/drawXml/cellText.ts",
+  "packages/diagram-formats/src/drawXml/cells.ts",
+  "packages/diagram-formats/src/drawXml/format.ts",
+  "packages/diagram-formats/src/drawXml/mapping.ts",
+  "packages/diagram-formats/src/drawXml/pageCells.ts",
+  "packages/diagram-formats/src/drawXml/read.ts",
+  "packages/diagram-formats/src/drawXml/readPage.ts",
+  "packages/diagram-formats/src/drawXml/readStyle.ts",
+  "packages/diagram-formats/src/drawXml/style.ts",
+  "packages/diagram-formats/src/drawXml/write.ts",
+  "packages/diagram-formats/src/drawXml/writeEdge.ts",
+  "packages/diagram-formats/src/drawXml/writePage.ts",
+  "packages/diagram-formats/src/drawXml/writeStyle.ts",
+  "packages/diagram-formats/src/drawXml/writeXml.ts"
+ ],
+ "a": 8,
+ "b": 7,
+ "m": 3,
+ "distinct": 12,
+ "chapman": 17,
+ "unfound": 5,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "newCode": {
+  "since": 46,
+  "changedFiles": 1,
+  "findings": 1
+ },
+ "previous": {
+  "round": 46,
+  "chapman": 25.7,
+  "unfound": 11.7
+ },
+ "patches": 13,
+ "verify": {
+  "ok": true,
+  "files": 24,
+  "testFiles": {
+   "failed": 0,
+   "passed": 5868,
+   "total": 5868
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.6,
+   "B": 34.6,
+   "match": 0.2,
+   "fix": 18.2,
+   "repair": 19.8
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2654481,
+  "costUsd": 7.88
+ },
+ "fixCommits": []
+}

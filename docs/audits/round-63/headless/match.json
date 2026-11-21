@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   2,
+   4
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "The host refuses a page script that calls `serveHeadlessPage` asynchronously, as one that waits for its fonts to load before serving",
+  "A page script that throws loses its error: the host reports \"never called `serveHeadlessPage`\" in its place",
+  "`MAX_RESULT_BYTES` bounds only the base64 string, not the CDP message carrying it; a result just under the limit breaks Playwright's pipe",
+  "`dispose()` resolves before the browser of a crashed page has finished closing",
+  "The `difference` test helper compares rasters by byte length only, so a transposed or reshaped result passes as identical"
+ ],
+ "b": [
+  "`NodeRenderArgs` cannot name `camera`, `layers` or `pixelRatio`, though they cross to the page and work there",
+  "A raw snapshot's own data under a `coords` or `commands` key reaches the page as a Float32Array or Uint8Array",
+  "A page whose replacement session never gets a WebGL2 context stays broken for the host's life",
+  "`dispose()` can resolve while a dropped page's browser is still closing, and it never waits on that close",
+  "`MAX_RESULT_BYTES` bounds the base64 string itself, but the CDP message carrying it is longer"
+ ]
+}

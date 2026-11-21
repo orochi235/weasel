@@ -10,8 +10,8 @@ export interface NodeRasterHostOptions {
   /** Launch options for the Chromium the host starts. Ignored with `browser`. */
   launch?: LaunchOptions;
   /** The page script's source: one classic script that calls `serveHeadlessPage` from
-   *  `@weasel-js/headless/page`. Default: `dist/page.global.js`, which calls it with no options.
-   *  Bundle your own to register fonts, paint kinds or node shapes, and to give the page your
+   *  `@weasel-js/headless/page`, at once or within 30 seconds, as after its fonts load. Default:
+   *  `dist/page.global.js`, which calls it with no options. Bundle your own to register fonts, paint kinds or node shapes, and to give the page your
    *  scenes' registry, composition, layout frame and quantize rule. */
   pageScript?: string;
 }
@@ -26,7 +26,9 @@ export interface RasterImage {
 
 /** One render: `renderSceneToPixels`'s arguments, the scene as JSON and no function-valued fields. */
 export interface NodeRenderArgs extends SerializableRenderArgs {
-  /** A live `Scene`, or its `toJSON()` snapshot, raw or encoded (`encodeSnapshot`). The page reads
+  /** A live `Scene`, or its `toJSON()` snapshot, raw or encoded (`encodeSnapshot`). A raw one holding no
+   *  typed array reads as encoded, so pass the scene or encode it when its data holds plain numbers under
+   *  `coords` or `commands`. The page reads
    *  it back with the scene options its page script served; a scene naming a registry function the
    *  page lacks is refused. */
   scene: object;
@@ -64,6 +66,9 @@ function defaultPageScript(): string {
   }
 }
 
+/** How long a page script may take to call `serveHeadlessPage`, as one that waits for its fonts to load. */
+const READY_MS = 30_000;
+
 async function open(options: NodeRasterHostOptions): Promise<Open> {
   const script = options.pageScript ?? defaultPageScript();
   const browser = options.browser
@@ -74,9 +79,25 @@ async function open(options: NodeRasterHostOptions): Promise<Open> {
     const page = await context.newPage();
     const opened: Open = { browser, context, page, crashed: false };
     page.on('crash', () => { opened.crashed = true; });
+    let threw: (err: Error) => void = () => {};
+    const thrown = new Promise<Error>((resolve) => { threw = resolve; });
+    page.on('pageerror', (err) => threw(err));
     await page.addScriptTag({ content: script });
-    const ready = await page.evaluate((key) => Object.hasOwn(globalThis, key), PAGE_GLOBAL);
-    if (!ready) throw new Error('node raster host: the page script ran but never called `serveHeadlessPage`');
+    const ready = page.evaluate(([key, ms]) => new Promise<boolean>((resolve) => {
+      const until = Date.now() + ms;
+      const poll = (): void => {
+        if (Object.hasOwn(globalThis, key)) resolve(true);
+        else if (Date.now() >= until) resolve(false);
+        else setTimeout(poll, 10);
+      };
+      poll();
+    }), [PAGE_GLOBAL, READY_MS] as const);
+    ready.catch(() => undefined);
+    const outcome = await Promise.race([ready, thrown]);
+    if (outcome instanceof Error) {
+      throw new Error(`node raster host: the page script threw before calling \`serveHeadlessPage\`: ${outcome.message}`, { cause: outcome });
+    }
+    if (!outcome) throw new Error(`node raster host: the page script never called \`serveHeadlessPage\` within ${READY_MS} ms`);
     return opened;
   } catch (err) {
     // A cleanup that fails too, as on a browser already gone, must not replace the error that caused it.
@@ -93,6 +114,8 @@ async function open(options: NodeRasterHostOptions): Promise<Open> {
 export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeRasterHost {
   let opening: Promise<Open> | null = null;
   let disposed = false;
+  /** Closes `drop` started without waiting, which `dispose` waits out. */
+  const closing = new Set<Promise<void>>();
 
   async function call(args: NodeRenderArgs, format: PageRequest['format']): Promise<PageResult> {
     if (disposed) throw new Error('node raster host: render on a disposed host');
@@ -113,10 +136,17 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
         [PAGE_GLOBAL, req] as const,
       );
     } catch (err) {
-      // Gone during the render: the next render opens another rather than failing on it too.
-      if (gone(opened)) drop(pending, opened);
+      // Gone during the render, or left unable to render: the next render opens another rather than failing on it too.
+      if (gone(opened) || !await usable(opened)) drop(pending, opened);
       throw err;
     }
+  }
+
+  async function usable(opened: Open): Promise<boolean> {
+    return opened.page.evaluate(
+      ([key]) => ((globalThis as unknown as Record<string, PageApi>)[key]!).usable(),
+      [PAGE_GLOBAL] as const,
+    ).catch(() => false);
   }
 
   /** The open page, opening one if there is none. */
@@ -141,7 +171,8 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
   function drop(pending: Promise<Open>, opened: Open): void {
     if (opening !== pending) return;
     opening = null;
-    void close(opened).catch(() => undefined);
+    const closed = close(opened).catch(() => undefined).finally(() => closing.delete(closed));
+    closing.add(closed);
   }
 
   /** Close what `open` opened: the context in a caller's browser, or the browser the host launched. */
@@ -155,9 +186,8 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
     disposed = true;
     const pending = opening;
     opening = null;
-    if (!pending) return;
-    const opened = await pending.catch(() => null);
-    if (opened) await close(opened);
+    const opened = pending ? await pending.catch(() => null) : null;
+    await Promise.all([...closing, opened ? close(opened) : undefined]);
   }
 
   return {

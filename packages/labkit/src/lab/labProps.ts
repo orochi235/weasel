@@ -165,7 +165,7 @@ export interface LabBaseProps {
   /** Whether a presented lab answers its host page's `labkit:play`,
    *  `labkit:pause`, `labkit:seek` and `labkit:query` messages and posts its
    *  `labkit:state` back. Default `true`; options name the lab and say which
-   *  origins it takes messages from. */
+   *  origins it takes messages from and posts its state to. */
   messages?: boolean | PresentationMessageOptions;
 }
 

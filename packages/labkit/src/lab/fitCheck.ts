@@ -52,9 +52,23 @@ function edgesOf(el: Element): Edges {
   return { top: r.top, left: r.left, bottom: r.bottom, right: r.right };
 }
 
+function clips(el: Element): boolean {
+  const style = el.ownerDocument.defaultView?.getComputedStyle(el);
+  return !!style && (style.overflowX !== 'visible' || style.overflowY !== 'visible');
+}
+
+/** `root`'s descendants with their edges, in document order. What a box that
+ *  clips its overflow holds cannot reach past it, so its subtree is not walked. */
+function* descendants(root: Element): Iterable<{ item: Element; edges: Edges }> {
+  for (const el of root.children) {
+    yield { item: el, edges: edgesOf(el) };
+    if (!clips(el)) yield* descendants(el);
+  }
+}
+
 function* candidates(root: Element): Iterable<{ item: Element; edges: Edges }> {
   yield { item: root, edges: edgesOf(root) };
-  for (const el of root.querySelectorAll('*')) yield { item: el, edges: edgesOf(el) };
+  yield* descendants(root);
 }
 
 function overflows(el: Element): boolean {
@@ -67,19 +81,21 @@ function overflows(el: Element): boolean {
 export function explainLabScroll(lab: Element, shellBody: Element): string | null {
   if (overflows(shellBody)) {
     const r = shellBody.getBoundingClientRect();
+    const top = r.top + shellBody.clientTop;
+    const left = r.left + shellBody.clientLeft;
     const bound = {
-      top: r.top,
-      left: r.left,
-      bottom: r.top + shellBody.clientHeight,
-      right: r.left + shellBody.clientWidth,
+      top,
+      left,
+      bottom: top + shellBody.clientHeight,
+      right: left + shellBody.clientWidth,
     };
-    const hit = findOvershoot(bound, candidates(shellBody));
+    const hit = findOvershoot(bound, descendants(shellBody));
     return hit
       ? `.lk-shell-body scrolls: ${describeElement(hit.item)} reaches ${Math.round(hit.by)}px past it (${hit.axis})`
       : '.lk-shell-body scrolls';
   }
 
-  const doc = document.scrollingElement ?? document.documentElement;
+  const doc = lab.ownerDocument.scrollingElement ?? lab.ownerDocument.documentElement;
   if (!overflows(doc)) return null;
   const r = lab.getBoundingClientRect();
   const bound = {
@@ -108,7 +124,7 @@ export function useLabFitWarning(labBody: Element | null): void {
     // A shrinking window overflows for a frame or two before the workspace
     // re-lays out, so only overflow that outlasts the resize is reported.
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const stop = watchResize([document.documentElement, lab, shellBody, labBody], () => {
+    const stop = watchResize([lab.ownerDocument.documentElement, lab, shellBody, labBody], () => {
       clearTimeout(timer);
       timer = setTimeout(() => {
         const why = explainLabScroll(lab, shellBody);

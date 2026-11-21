@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "Style panel's Role field shows no role for a shape whose role the theme no longer has, though it draws in the default role",
+  "The browser-test `at()` helper hard-codes the page fit's padding instead of using the app's constant"
+ ],
+ "b": [
+  "The chart's \"only bodies\" filter is dropped on the Alt distance readout, so Alt over a connector or edge label measures to it",
+  "A theme imported from an exported shipped theme keeps the shipped id but is treated as custom: its menu item never reads as held and the copy-on-edit never happens",
+  "mountChartApp sets `document.body.style.margin` and unmountChartApp never restores it"
+ ]
+}

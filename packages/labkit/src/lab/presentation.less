@@ -14,6 +14,11 @@
   --wzl-backdrop: none;
   background: transparent;
 
+  // The starfield is backdrop too, and would land on the host page.
+  &::before {
+    display: none;
+  }
+
   .lk-shell-header,
   .lk-shell-footer,
   .lk-lab__main > .lk-palette-region,

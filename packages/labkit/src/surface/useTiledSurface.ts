@@ -3,6 +3,7 @@ import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SurfaceScope } from './measureTiles';
 import type { Box } from './rect';
+import { ShadowScrolls } from './shadowScrolls';
 import {
   type SurfaceClear,
   type SurfaceFrame,
@@ -67,7 +68,7 @@ export interface UseTiledSurfaceOptions {
  * behind `watch` report that only after the frame has drawn: a press in between lands on the box of whatever tile
  * was there. The scroll event comes ahead of the frame's callbacks, so measuring on it moves the boxes in the frame
  * the scroll draws in. The whole document, since the scroller holding a tile need not be inside the container: a
- * lab's is a layer beside its trials.
+ * lab's is a layer beside its trials. A scroll inside a shadow tree stops at its root: `ShadowScrolls` hears those.
  */
 function onAnyScroll(doc: Document, onScroll: () => void): () => void {
   doc.addEventListener('scroll', onScroll, { capture: true, passive: true });
@@ -92,6 +93,7 @@ function createSurfaceHandle(
   invalidateRects: () => void,
   watch: ReturnType<typeof useElementWatch>['watch'],
   unlistenWindow: { current: (() => void) | null },
+  shadowScrolls: ShadowScrolls,
 ): SurfaceHandle {
   return {
     invalidate: (id) => {
@@ -109,11 +111,13 @@ function createSurfaceHandle(
     registerTile: (id, el) => {
       if (surface.placeTile(id, el)) {
         watch(`tile:${id}`, el, { moves: true });
+        shadowScrolls.place(id, el);
         schedule();
       }
       return () => {
         if (!el || !surface.releaseTile(id, el)) return;
         watch(`tile:${id}`, null);
+        shadowScrolls.place(id, null);
         schedule();
       };
     },
@@ -166,8 +170,15 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
 
   const { watch } = useElementWatch(invalidateRects);
   const unlistenWindow = useRef<(() => void) | null>(null);
+  const invalidateRef = useLatest(invalidateRects);
+  const [shadowScrolls] = useState(() => new ShadowScrolls(() => invalidateRef.current()));
 
   useEffect(() => () => frameLoop.cancel(), [frameLoop]);
+
+  useEffect(() => {
+    shadowScrolls.setAttached(true);
+    return () => shadowScrolls.setAttached(false);
+  }, [shadowScrolls]);
 
   // A host need never call `containerRef(null)`, so the window listeners go with the hook. The body puts them back
   // after StrictMode's unmount and remount, which calls no ref with the same element again.
@@ -181,7 +192,8 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   }, [surface, invalidateRects]);
 
   return useMemo(
-    () => createSurfaceHandle(surface, schedule, invalidateRects, watch, unlistenWindow),
-    [surface, schedule, invalidateRects, watch],
+    () =>
+      createSurfaceHandle(surface, schedule, invalidateRects, watch, unlistenWindow, shadowScrolls),
+    [surface, schedule, invalidateRects, watch, shadowScrolls],
   );
 }

@@ -39,7 +39,7 @@ export function StylePanel({ scene, selected, theme }: { scene: ChartScene; sele
   });
   const ids = styled.map((s) => s.id);
   const roles: PropertyOption<string>[] = themeRoles(theme).map((r) => ({ value: r.id, label: r.label, glyph: swatch(theme, r.id) }));
-  const role = common(styled.map((s) => s.state.role ?? theme.defaultRole));
+  const role = common(styled.map((s) => (s.state.role !== undefined && getOwn(theme.roles, s.state.role) !== undefined ? s.state.role : theme.defaultRole)));
   const size = common(styled.map((s) => diagramFontSizeOf(scene, s.id)));
   const field = (name: StyleField, label: string, among: readonly Styled[]) => {
     const color = common(among.map((s) => colorOf(scene, s, name)));

@@ -2,7 +2,7 @@
 // than from core, whose types reach React and the DOM, neither of which a Node caller has.
 import { decodeSnapshot, encodeSnapshot } from '@weasel-js/core/json';
 import { checkPixelRenderRect, pixelRenderSize } from '@weasel-js/core/math';
-import type { Rect } from '@weasel-js/geom';
+import type { Rect, View } from '@weasel-js/geom';
 
 /** The page script's global, set once the script has run. */
 export const PAGE_GLOBAL = '__weaselHeadless';
@@ -22,6 +22,12 @@ export interface SerializableRenderArgs {
   overlay?: readonly object[];
   /** Draw the scene's annotation layers. Default `false`. */
   annotations?: boolean;
+  /** The camera a parallax layer is placed from, for a capture of what that camera shows. */
+  camera?: View;
+  /** Which scene layers to draw: `'scene:<layerId>'` for one, `'scene'` for all of them. */
+  layers?: readonly string[];
+  /** Output pixels per CSS pixel. Default 1. */
+  pixelRatio?: number;
 }
 
 export interface PageRequest extends SerializableRenderArgs {
@@ -39,16 +45,33 @@ export interface PageResult {
 
 export interface PageApi {
   render(req: PageRequest): Promise<PageResult>;
+  /** Whether the page can still render: `false` once a session opened for a lost context got no context. */
+  usable(): boolean;
 }
 
-/** A live scene or its snapshot, as JSON carries it: encoded by core's snapshot codec. A snapshot already
- *  encoded passes through unchanged; a live scene's `toJSON()` is always decoded, so it is encoded as it is. */
+/** A live scene or its snapshot, as JSON carries it: encoded by core's snapshot codec. A live scene's `toJSON()`,
+ *  and a snapshot holding a typed array, are decoded, so they are encoded as they are. Any other snapshot is read as
+ *  encoded, as a file holds it, so plain numbers under `coords` or `commands` read as a path's typed arrays. */
 export function sceneToWire(scene: object): object {
   if (!isRecord(scene)) refuse('scene', 'an object', scene);
   const toJSON = (scene as { toJSON?: unknown }).toJSON;
   if (typeof toJSON === 'function') return encodeSnapshot(toJSON.call(scene)) as object;
+  if (holdsTypedArray(scene)) return encodeSnapshot(scene) as object;
   // Read back first, so arrays the snapshot holds already tagged are tagged once rather than escaped as data.
   return encodeSnapshot(decodeSnapshot(scene)) as object;
+}
+
+function holdsTypedArray(value: object): boolean {
+  const pending: unknown[] = [value];
+  const seen = new Set<object>();
+  while (pending.length) {
+    const v = pending.pop();
+    if (v === null || typeof v !== 'object' || seen.has(v)) continue;
+    if (ArrayBuffer.isView(v)) return true;
+    seen.add(v);
+    pending.push(...(Array.isArray(v) ? v : Object.values(v)));
+  }
+  return false;
 }
 
 /** The snapshot `sceneToWire` sent, its typed arrays restored. */
@@ -56,9 +79,10 @@ export function sceneFromWire(wire: object): object {
   return decodeSnapshot(wire) as object;
 }
 
-/** The most bytes a result can hold: their base64 crosses as one string, and V8 caps a string at 2^29 − 24
- *  characters. An RGBA render past it is about 10 000 × 10 000 pixels. */
-export const MAX_RESULT_BYTES = Math.floor((2 ** 29 - 24) / 4) * 3;
+/** The most bytes a result can hold: their base64 crosses inside one protocol message, which Node reads as one
+ *  string, and V8 caps a string at 2^29 − 24 characters. 1 MiB of it is left for the message around the base64.
+ *  An RGBA render past it is about 10 000 × 10 000 pixels. */
+export const MAX_RESULT_BYTES = Math.floor((2 ** 29 - 24 - 2 ** 20) / 4) * 3;
 
 /** Throw unless `bytes` of a `what` fit one result, naming the limit and the way past it. */
 export function checkResultBytes(bytes: number, what: string): void {
@@ -104,6 +128,24 @@ export function readPageRequest(value: unknown): PageRequest {
   if (value.annotations !== undefined && typeof value.annotations !== 'boolean') refuse('annotations', 'a boolean', value.annotations);
   if (value.overlay !== undefined && !(Array.isArray(value.overlay) && value.overlay.every(isRecord))) {
     refuse('overlay', 'an array of draw commands', value.overlay);
+  }
+  if (value.camera !== undefined) {
+    const { camera } = value;
+    if (!isRecord(camera) || !isRecord(camera.scale)) refuse('camera', 'a view', camera);
+    const view = camera as Record<string, unknown> & { scale: Record<string, unknown> };
+    finite('camera.x', view.x);
+    finite('camera.y', view.y);
+    for (const axis of ['x', 'y'] as const) {
+      const v = view.scale[axis];
+      if (typeof v !== 'number' || !Number.isFinite(v) || v === 0) refuse(`camera.scale.${axis}`, 'a finite number other than 0', v);
+    }
+  }
+  if (value.layers !== undefined && !(Array.isArray(value.layers) && value.layers.every((l) => typeof l === 'string'))) {
+    refuse('layers', 'an array of layer names', value.layers);
+  }
+  if (value.pixelRatio !== undefined) {
+    const { pixelRatio } = value;
+    if (typeof pixelRatio !== 'number' || !Number.isFinite(pixelRatio) || pixelRatio <= 0) refuse('pixelRatio', 'a positive finite number', pixelRatio);
   }
   if (value.screen !== undefined) {
     const { screen } = value;

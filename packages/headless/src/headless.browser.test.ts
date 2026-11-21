@@ -36,7 +36,7 @@ describe('rendering from Node', () => {
       const there = nodePixels(fromNode.images[i]!);
       expect([there.width, there.height]).toEqual([here.width, here.height]);
       expect(there.data.length).toBe(here.data.length);
-      expect(difference(there.data, here)).toEqual({ pixels: 0, maxStep: 0 });
+      expect(difference(there, here)).toEqual({ pixels: 0, maxStep: 0 });
     }
     // Not a blank canvas on both sides: the red rect is where the fixture put it.
     const first = nodePixels(fromNode.images[0]!);

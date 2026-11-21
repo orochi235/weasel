@@ -1,8 +1,9 @@
 import { useCommand } from '@weasel-js/core';
 import {
-  DIAGRAM_THEME_EXTENSION, DIAGRAM_THEMES, diagramThemeOf, parseDiagramTheme, rendererMeasure, themeToJson,
+  DIAGRAM_THEME_EXTENSION, DIAGRAM_THEMES, diagramThemeOf, forkTheme, parseDiagramTheme, rendererMeasure, themeToJson,
   type DiagramTheme,
 } from '@weasel-js/diagram';
+import { deepEqual, getOwn } from '@weasel-js/registry';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { downloadBlob, pickFile, menuRun } from '@weasel-js/editor';
 import type { ReactElement } from 'react';
@@ -41,12 +42,21 @@ function ThemeCommand({ scene, theme }: { scene: ChartScene; theme: DiagramTheme
 export const themeFileName = (theme: DiagramTheme): string =>
   `${theme.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'theme'}${DIAGRAM_THEME_EXTENSION}`;
 
+/** What a chart takes in for a theme read from a file: the shipped theme it matches, or a copy under
+ *  its own id when it claims a shipped theme's id but differs from it. */
+export function importedTheme(theme: DiagramTheme): DiagramTheme {
+  const shipped = getOwn(DIAGRAM_THEMES, theme.id);
+  if (shipped === undefined) return theme;
+  return deepEqual(theme, shipped) ? shipped : forkTheme(theme);
+}
+
 async function importTheme(scene: ChartScene): Promise<void> {
   const file = await pickFile(`${DIAGRAM_THEME_EXTENSION},application/json`);
   if (file === null) return;
   const result = parseDiagramTheme(await file.text());
   if ('errors' in result) throw new Error(result.errors.join('; '));
-  applyChartTheme(scene, result.theme, `Import theme: ${result.theme.name}`, { from: chartThemeOf(scene), measure: rendererMeasure });
+  const theme = importedTheme(result.theme);
+  applyChartTheme(scene, theme, `Import theme: ${theme.name}`, { from: chartThemeOf(scene), measure: rendererMeasure });
 }
 
 /** Registers Format › Theme's commands. Each shipped theme applies as one undo entry and reads as

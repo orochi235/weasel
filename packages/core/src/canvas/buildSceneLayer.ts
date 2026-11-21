@@ -7,7 +7,9 @@ import type { Dims, LayerDims, RenderLayer } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import { cullDrawCommands, viewToMat3, type DrawCommand } from '@weasel-js/renderer';
-import { adapterDerivedPathOf } from './adapterDerivedPath';
+import { adapterDerivedPathOf, type DerivingAdapter } from './adapterDerivedPath';
+import { composeWorldPose, type PoseAdapter } from 'core/scene/composeFrame';
+import { definesFrame } from 'core/scene/effectivePose';
 import { buildSceneTree, type HierarchicalAdapter, type SubtreeCullFor } from './buildSceneTree';
 import type { Rect } from '@weasel-js/geom';
 import { debugSinkFrom } from './drawEnvelope';
@@ -102,20 +104,39 @@ function withAdapterDerivedPaths<TNode extends { id: string }, TPose>(
 ): Pick<SceneSlotConfig<TNode, TPose>, 'drawOne' | 'derivedPathOf'> {
   const drawOne = cfg.drawOne;
   if (cfg.derivedPathOf !== undefined || !drawOne || !adapter) return cfg;
-  const pathOf = adapterDerivedPathOf<TPose>(cfg.toPose === undefined ? adapter : {
-    getNode: (id) => adapter.getNode(id),
-    getPose: (id) => {
-      const obj = adapter.getNode(id);
-      return obj ? toPose(obj) : adapter.getPose(id);
-    },
-    getChildren: (id) => adapter.getChildren(id),
-  });
+  const pathOf = adapterDerivedPathOf<TPose>(cfg.toPose === undefined ? adapter : toPoseReads(adapter, toPose));
   return {
     derivedPathOf: (obj) => pathOf(obj.id),
     drawOne: (obj, pose, view, ctx) => ((obj as { dependsOn?: unknown }).dependsOn === undefined
       ? drawOne(obj, pose, view, ctx)
       : drawOne(obj, pose, view, { ...ctx, derivedPath: pathOf(obj.id) })),
   };
+}
+
+/** What deriving reads of `adapter` when `toPose` says where each node is: the local pose, which a
+ *  composing adapter folds up the parent chain as the walk does, so a dependency is read where it is drawn. */
+function toPoseReads<TNode extends { id: string }, TPose>(
+  adapter: HierarchicalAdapter<TNode, TPose> & { getParent?(id: string): string | null },
+  toPose: (obj: TNode) => TPose,
+): DerivingAdapter<TPose> {
+  const getPose = (id: string): TPose => {
+    const obj = adapter.getNode(id);
+    return obj ? toPose(obj) : adapter.getPose(id);
+  };
+  const reads = { getNode: (id: string) => adapter.getNode(id), getPose, getChildren: (id: string | null) => adapter.getChildren(id) };
+  const compose = adapter.composePose?.bind(adapter);
+  if (compose === undefined) return reads;
+  const frames: PoseAdapter<TPose> = {
+    getPose,
+    getParent: (id) => adapter.getParent?.(id)
+      ?? (adapter.getNode(id) as { parentId?: string | null } | undefined)?.parentId ?? null,
+    definesFrame: (id) => {
+      const obj = adapter.getNode(id);
+      return obj === undefined || definesFrame(obj as never);
+    },
+    ...(adapter.childFrame ? { childFrame: adapter.childFrame.bind(adapter) } : {}),
+  };
+  return { ...reads, getWorldPose: (id) => composeWorldPose(frames, id, compose) };
 }
 
 /**

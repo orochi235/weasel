@@ -84,6 +84,7 @@ const VARYING_SILHOUETTE_SLOT = 'shape:silhouette:varying';
 /** A silhouette and the painter's `geometryGeneration` and `silhouetteKey` it was built under. */
 interface VaryingSilhouette { generation: number; key: number; path: Path | null }
 const TRIM_PICK_SLOT = 'shape:trim-pick';
+interface TrimmedPick { sil: Path; outline: TrimmedOutline }
 
 /** Memo slot names for `shapes`'s lookups; the default registry keeps the bare names. */
 const slotFor = (slot: string, shapes: NodeShapes): string => {
@@ -240,22 +241,27 @@ export function shapeCoversPoint<TData, TPose>(
   if (parts !== undefined) return partsCover(node, parts, pose, x, y, opts);
   const ink = findShapeInk(node, pose, { scale: opts.scale, inherited: opts.inherited, shapes }) ?? DEFAULT_INK;
   const trim = ink.stroke?.trim;
-  const trimmed = trim === undefined ? undefined : trimmedOutlineOf(node, pose, sil, trim, opts.derivedPath, shapes ?? defaultNodeShapes);
+  const trimmed = trim === undefined ? undefined : trimmedOutlineOf(node, pose, sil, trim, opts.derivedPath, shapes ?? defaultNodeShapes, opts.scale);
   return inkCovers(sil, ink, trimmed, x, y, opts);
 }
 
 /** {@link trimmedOutline} for `node`'s silhouette `sil`, memoized as the silhouette is. */
 function trimmedOutlineOf<TData, TPose>(
   node: Node<TData, string, TPose>, pose: TPose, sil: Path, trim: StrokeTrim, derivedPath: Path | null | undefined,
-  shapes: NodeShapes,
+  shapes: NodeShapes, scale: number | undefined,
 ): TrimmedOutline {
   const build = (): TrimmedOutline => {
-    const local = poseFrameOf(pose) === null ? sil : localSilhouette(node, pose, { derivedPath, shapes }) ?? sil;
+    const local = poseFrameOf(pose) === null ? sil : localSilhouette(node, pose, { derivedPath, scale, shapes }) ?? sil;
     return trimmedOutline(local, sil, pose, trim);
   };
   // The trim may be inherited, rebuilt per query, so its value keys the memo beside the node;
   // see `findShapeSilhouette` for the derived path.
-  return derivedPath != null ? build() : nodeMemo(node as { data?: unknown }, slotFor(TRIM_PICK_SLOT, shapes), pose, build, strokeTrimKey(trim));
+  if (derivedPath != null) return build();
+  // `sil` is rebuilt when a varying painter's generation or key moves, so the outline follows it.
+  const held = nodeMemo(node as { data?: unknown }, slotFor(TRIM_PICK_SLOT, shapes), pose,
+    (): TrimmedPick => ({ sil, outline: build() }), strokeTrimKey(trim));
+  if (held.sil !== sil) { held.sil = sil; held.outline = build(); }
+  return held.outline;
 }
 
 /** The painters `shapes` resolves, in evaluation order — `'high'` tier first, then `'normal'`,

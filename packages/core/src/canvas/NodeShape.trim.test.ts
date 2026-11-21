@@ -9,6 +9,7 @@ import { pathFromParts, type DerivedPart } from 'core/scene/derivedParts';
 import { _framedPartOutlineForTests } from './nodeShapes/derivedPainter';
 import type { Node } from 'core/scene/types';
 import { findShapeInk, shapeCoversPoint } from './NodeShape';
+import { createNodeShapes } from './nodeShapeRegistry';
 
 type Pose = {
   x: number; y: number; width: number; height: number; rotation?: number; transform?: [number, number, number, number];
@@ -228,5 +229,25 @@ describe('shapeCoversPoint on a derived path in parts', () => {
     const parts: DerivedPart[] = [{ path: A, stroke: INHERIT }, { path: B, stroke: stroke({ trim: { start: 1 } }) }];
     expect(covers(stroke(), parts, 75, 0)).toBe(true);
     expect(covers(stroke(), parts, 50, 50)).toBe(false);
+  });
+});
+
+describe('shapeCoversPoint under a stroke trim, for a silhouette that varies', () => {
+  it('trims the silhouette as it is now, not as it was first built', () => {
+    let generation = 0;
+    const shapes = createNodeShapes();
+    shapes.register({
+      id: 'test:turning',
+      matches: (n: { data?: unknown }) => (n.data as { turning?: boolean }).turning === true,
+      paint: () => [],
+      silhouette: () => (generation === 0 ? pathFromD('M0 0 L100 0') : pathFromD('M0 0 L0 100')),
+      ink: () => ({ filled: false, outset: 1, inset: 1, stroke: stroke({ trim: { end: 0.5 } }) }),
+      geometryGeneration: () => generation,
+    } as never);
+    const n = node({ turning: true }, LINE_POSE);
+    expect(shapeCoversPoint(n, n.pose, 25, 0, { shapes })).toBe(true);
+    generation = 1;
+    expect(shapeCoversPoint(n, n.pose, 0, 25, { shapes })).toBe(true);
+    expect(shapeCoversPoint(n, n.pose, 25, 0, { shapes })).toBe(false);
   });
 });

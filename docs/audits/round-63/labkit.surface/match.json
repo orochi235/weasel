@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A scroll inside a shadow root never reaches the surface's document scroll listener, so a shadow-hosted tile's box lags the scroll by a frame",
+  "Scope membership walks the DOM tree, clipping walks the flattened tree: a slotted tile under a scope element inside a shadow root drops out of scope",
+  "Paint containment on `<body>` cuts a tile to the viewport rather than to the body's box"
+ ],
+ "b": [
+  "A scroll inside a shadow root never reaches the surface's scroll listener, so tiles in a shadow-tree scroller lag a frame behind",
+  "Scope membership walks the DOM tree while clipping walks the flattened tree, so a slotted tile drops out of a scope that holds its slot",
+  "A container resize that moves no tile delivers no frame, so the owner never resizes its buffers to the new size",
+  "A tile scrolled out of a normally scrolling page keeps a full `visible` rect",
+  "`overflow: clip` is cut to the padding box, ignoring `overflow-clip-margin`",
+  "A `content-visibility: hidden` ancestor leaves its tiles a nonzero `visible` rect"
+ ]
+}

@@ -1,0 +1,33 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ],
+  [
+   2,
+   4
+  ]
+ ],
+ "a": [
+  "The viewBox parser rejects abutting numbers that the transform parser accepts",
+  "Negative stroke-width and font-size are kept instead of dropped",
+  "A tspan's `font-style=\"normal\"` silently fails to undo an italic `<text>`",
+  "An unclosed style block loses the last character of its body",
+  "font-weight `lighter` is not read",
+  "`dominant-baseline=\"text-top\"` is read as a baseline anchor",
+  "Pattern export ignores the paint's `units`"
+ ],
+ "b": [
+  "A document's own `<marker>` is ignored whenever its id matches a kit marker key",
+  "An image pattern's `patternTransform` parse warnings are dropped",
+  "Negative `stroke-width` and `font-size` are kept instead of being invalid declarations",
+  "A conic gradient's center ignores `gradientUnits=\"userSpaceOnUse\"` length semantics",
+  "A `<tspan font-style=\"normal\">` inside italic text stays italic, silently",
+  "A tspan's user-space stroke gradient is not carried through the text's transform",
+  "A run's fill takes on the node's `fill-opacity` when written, and an opacity-1 run stroke takes the node's `stroke-opacity`",
+  "A `<tspan>` nested inside a `<tspan>` loses its styling silently",
+  "Two attributes of a namespaced element with the same local name overwrite each other",
+  "Every imported document's markers stay registered globally, with no way to release them"
+ ]
+}

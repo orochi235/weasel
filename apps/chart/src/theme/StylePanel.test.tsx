@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { createScene, type RectPose } from '@weasel-js/core';
-import { DIAGRAM_THEMES, diagramScene, setDiagramColor, withDiagramRegistry } from '@weasel-js/diagram';
+import { DIAGRAM_THEMES, addThemeRole, diagramScene, setDiagramColor, setDiagramStyle, withDiagramRegistry } from '@weasel-js/diagram';
 import { iconsWrapper } from '@weasel-js/ui/testing/withIcons';
 import type { ChartScene } from '../chartDocument';
 import { StylePanel } from './StylePanel';
@@ -36,6 +36,15 @@ describe('StylePanel', () => {
     setup(['a']);
     const roles = screen.getAllByRole('radio');
     expect(roles.map((r) => r.getAttribute('aria-label') ?? r.textContent)).toEqual(['Default', 'Accent', 'Muted', 'Positive', 'Warning', 'Negative']);
+    expect(roles[0]!.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('reads a role the theme no longer has as its default role, the one the shape is drawn in', () => {
+    setup(['a', 'b'], (scene) => {
+      const added = addThemeRole(theme, 'Gone');
+      setDiagramStyle(scene, ['a'], added.id, { theme: added.theme });
+    });
+    const roles = screen.getAllByRole('radio');
     expect(roles[0]!.getAttribute('aria-checked')).toBe('true');
   });
 

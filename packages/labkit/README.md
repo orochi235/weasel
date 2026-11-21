@@ -170,7 +170,7 @@ a host that plays on load waits for that first state.
 draws its own. `<Lab messages={{ name: 'hero' }}>` names a lab on a page with
 several: a message carrying `lab: 'hero'` reaches only it, and its state says
 `lab: 'hero'`. `messages={{ origins: [...] }}` says which origins it takes
-messages from, and `messages={false}` turns the channel off. The types are
+messages from and posts its state to, and `messages={false}` turns the channel off. The types are
 `PresentationCommand` and `PresentationState`.
 
 `<Lab still>`, or `?still` in the URL, presents the lab held still for a

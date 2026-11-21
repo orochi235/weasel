@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A lasso drawn while zoomed in reads as a click and clears the selection, because its \"tiny\" test and vertex spacing are in world units",
+  "Cut deletes the `operands` but copies whatever the clipboard dep's own selection reader names, so with host-supplied operands it deletes nodes it never copied",
+  "Make Boolean Group does not re-express an envelope operand's children, so they jump when the operand changes frame",
+  "`useAlign` / `useDistribute` write `setPose` on a selected derived-pose node, so an envelope group in the selection does not move (the actions move its sources)",
+  "Reorder reports enabled with no `scene` dep, though its run does nothing without one",
+  "Copy and Cut report enabled without a `clipboard` dep, so Cmd+C / Cmd+X are claimed and do nothing"
+ ],
+ "b": [
+  "A lasso's \"tiny, so a click\" threshold is a fixed 4 world px², so a real lasso when zoomed in, or a long straight one, clears the selection",
+  "Cut copies the clipboard dep's selection but deletes the `operands`, so with a host-supplied operand list the deleted nodes never reach the clipboard",
+  "Pathfinder actions gate on `operands` but run on the booleans adapter's own selection",
+  "Rotate with `pivot: 'each'` takes a selected derived-pose group apart: each child turns about its own center, while Flip `'each'` treats the group as one item"
+ ]
+}

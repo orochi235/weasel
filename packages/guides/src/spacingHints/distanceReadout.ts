@@ -1,6 +1,7 @@
 import { ANY_MODS, defineAction, drawnBoxes, dynamicActionId, sceneMagnification, scenePoseFrame, unionAabb, type Action, type ActionDeps, type Bounds, type GestureBinding, type ModSpec, type NodeId, type SnapMark, type SnapOutcomeStore, type SurfaceContribution } from '@weasel-js/core';
 import { measureDistances, type DistanceReadout } from './distance';
 import type { ImmediateParams, AnyScene } from '@weasel-js/core';
+import type { TargetFilter } from '../sources/targets';
 
 
 /** Options for `createDistanceReadoutContribution`. */
@@ -11,6 +12,8 @@ export interface DistanceReadoutOptions {
   color?: string;
   /** Contribution id, and the prefix of its action's. Default `'distanceReadout'`. */
   id?: string;
+  /** Which nodes it measures to: over one this refuses, it shows nothing. Default every node. */
+  filter?: TargetFilter;
 }
 
 /** The readout as snap marks: a `distance` per gap, its value divided by the
@@ -103,7 +106,8 @@ export function createDistanceReadoutContribution(opts: DistanceReadoutOptions =
           show(EMPTY);
           return;
         }
-        const hit = nodeAtPoint(params.world, subtreeOf(scene, ids));
+        const picked = nodeAtPoint(params.world, subtreeOf(scene, ids));
+        const hit = picked !== null && opts.filter !== undefined && !opts.filter(scene.get(picked)!) ? null : picked;
         const own = drawnBoundsOf(deps, scene, ids);
         const from = own.length === 0 ? null : unionAabb(own);
         const [to] = hit === null ? [] : drawnBoundsOf(deps, scene, [hit]);

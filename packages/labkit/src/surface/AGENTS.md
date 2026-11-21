@@ -14,10 +14,11 @@ than a few 3D tiles have to share one surface.
 |---|---|
 | `rect.ts` | The `Rect` and `Box` types |
 | `composeRects.ts` | Tile boxes into surface-relative rects; both are viewport-relative, so it is a subtraction |
-| `clip.ts` | `clipToAncestors` — a tile's box cut by every ancestor that clips its overflow |
+| `clip.ts` | `clipToAncestors` — a tile's box cut by every ancestor that clips its overflow, and by the viewport |
 | `measureTiles.ts` | Every tile's rect and its visible part, measured in one pass |
 | `deviceRect.ts` | `toDeviceRect` — y-flip and device-grid snapping for a GL viewport |
 | `useTiledSurface.ts` | Dirty set, rAF coalescing, DPR, re-tile clears |
+| `shadowScrolls.ts` | Re-measures on a scroll inside a shadow root holding a tile, which never reaches the document |
 | `useElementWatch.ts` | Re-measures on a tile or the container resizing, and on a tile moving with nothing resizing |
 | `SurfaceContext.ts` | Carries the handle down |
 | `useSurfaceTile.ts` | `useSurfaceTile(id)`, `useTileId(id)`, `useSurface()`, `useSurfaceOptional()` |

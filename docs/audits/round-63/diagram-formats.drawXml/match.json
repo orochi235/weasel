@@ -1,0 +1,35 @@
+{
+ "pairs": [
+  [
+   1,
+   4
+  ],
+  [
+   6,
+   2
+  ],
+  [
+   7,
+   6
+  ]
+ ],
+ "a": [
+  "The `bar` marker is written as draw.io's `dash`, which is a diagonal slash, and `dash` reads back as a perpendicular bar",
+  "`absoluteArcSize=1` is ignored, so a rounded box is read as a stadium or round rect by the wrong measure",
+  "A shape the reader does not know is drawn as a round rect with no warning when its style also says `rounded=1`",
+  "The writer cannot tell a container from a pool, so a container holding one tall container reads back as a pool with one lane",
+  "A cluster whose members all sit in an earlier cluster is nested inside it and takes those members, though the earlier cluster should keep them",
+  "The `avoid` router is written as a plain orthogonal edge with no warning",
+  "An HTML label keeps literal newlines and runs of spaces, which the draw app collapses",
+  "A dragged connector label on a self-loop with no bends loses its offset without a warning"
+ ],
+ "b": [
+  "Draw-style XML claims only `.xml`, so the chart app's Import picker cannot choose a `.drawio` file",
+  "The writer's font style ignores `weight`, header rows, and every row after the first",
+  "An HTML label's literal newlines and runs of spaces are read as line breaks and kept, where the draw app collapses them",
+  "A `UserObject` label with `placeholders=\"1\"` is read with its `%name%` placeholders unsubstituted",
+  "`absoluteArcSize=1` is ignored, so a rounded box with a pixel arc reads as the wrong outline",
+  "An empty pool is written as a swimlane the reader takes for a plain container",
+  "A moved edge label on a self-loop or zero-length line loses its offset silently"
+ ]
+}

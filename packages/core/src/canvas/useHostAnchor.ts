@@ -53,7 +53,7 @@ export function useHostAnchor(
     }
     const h = hostEl.getBoundingClientRect();
     const p = panel?.getBoundingClientRect();
-    const viewport = { width: window.innerWidth, height: window.innerHeight };
+    const viewport = layoutViewport();
     const align = { x: alignX, y: alignY };
     const rect = hostAnchorRect({
       host: { x: h.left, y: h.top, width: h.width, height: h.height },
@@ -99,4 +99,11 @@ export function useHostAnchor(
   }, [panel, host, raf]);
 
   return { ref, style };
+}
+
+/** The box a fixed-position element's edges are measured from: the window less its scrollbars. Falls back
+ *  to the window where the document reports no size, as an unrendered one does. */
+function layoutViewport(): { width: number; height: number } {
+  const root = document.documentElement;
+  return { width: root.clientWidth || window.innerWidth, height: root.clientHeight || window.innerHeight };
 }

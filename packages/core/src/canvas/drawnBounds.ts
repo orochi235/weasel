@@ -15,6 +15,7 @@ import {
 import { targetCorners, targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
 import { axisAlignedBounds, unionBounds } from 'core/geometry/unionBounds';
 import type { Node, NodeId } from 'core/scene/types';
+import { hidesSubtree } from 'core/scene/nodeGates';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { boundsOfPath, meanScale, type Path, type Scale2 } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
@@ -79,7 +80,11 @@ export function inkExtentsOf(
   if (!node) return NO_INK_EXTENTS;
   const own = framedBounds(pose, descriptorFor(scene, id, opts));
   const unframed = { x: own.x, y: own.y, width: own.width, height: own.height };
-  const members = scene.childrenOf?.(id) ?? [];
+  // Only members the walk paints: a consumed child is an operand, and a hidden one shows nothing.
+  const members = node.consumesChildren === true ? [] : (scene.childrenOf?.(id) ?? []).filter((m) => {
+    const member = scene.get(m);
+    return member !== undefined && !hidesSubtree(member);
+  });
   const reached = members.length > 0 ? membersExtents(scene, members, own, opts) : NO_INK_EXTENTS;
   const ctx = inkCtx(opts.scale, own);
   const drawn = node.kind === 'group'

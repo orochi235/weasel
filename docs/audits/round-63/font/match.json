@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "A sharp color bake that finds no room while the sharp pages refill is never asked for again",
+  "A canvas face whose CSS `font` string is invalid is measured and rasterized in the previous face's font and size",
+  "The canvas tier's face cap evicts by creation order, so the face in use longest is the first dropped"
+ ],
+ "b": [
+  "The rooms settle at the first frame after a timer-run reclaim, before anything has baked again, so text needing more than the pages hold empties them on every refill",
+  "The 256-face cap drops the face made first, not the face used longest ago, so a font in steady use is evicted and re-baked",
+  "A sharp color bake that misses while the sharp pages refill is never asked for again, so that emoji stays on a softer bake until some other sharp bake empties the pages",
+  "A `reclaimSharp` timer scheduled before a full `reclaim` still fires afterward and empties the freshly refilled sharp pages",
+  "`parseBmFont` accepts `distanceField.distanceRange: Infinity`, which zeroes the field scale and makes synthetic bold Infinity"
+ ]
+}

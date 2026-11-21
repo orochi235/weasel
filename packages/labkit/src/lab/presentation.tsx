@@ -65,11 +65,18 @@ export function labClassName({ active, still, framed }: PresentationContextValue
 }
 
 const NEVER = () => () => {};
-const isFramed = () => window.self !== window.top;
 
-/** Whether the page is in a frame; `false` while rendering on a server. */
-function useFramed(): boolean {
-  return useSyncExternalStore(NEVER, isFramed, () => false);
+/** Whether the window `labBody` is rendered into, or this script's before it mounts, is in a frame;
+ *  `false` while rendering on a server. */
+function useFramed(labBody: HTMLElement | null): boolean {
+  return useSyncExternalStore(
+    NEVER,
+    () => {
+      const view = labBody?.ownerDocument.defaultView ?? window;
+      return view.self !== view.top;
+    },
+    () => false,
+  );
 }
 
 /** How a presented trial shows its play controls. */
@@ -109,7 +116,7 @@ export function useLabPresentation(
   );
   const presenting = presentedBy !== null;
   const still = useStill(start.still, clocks, labBody);
-  const framed = useFramed();
+  const framed = useFramed(labBody);
   const clocked = useStore(store, (s) => {
     const record = s.trials.find((t) => t.id === focusedTrialId);
     const declared = record && s.instruments?.find((i) => i.name === record.instrumentName)?.clock;

@@ -1,0 +1,76 @@
+{
+ "id": "headless",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-21",
+ "files": [
+  "packages/headless/src/defaultPage.ts",
+  "packages/headless/src/host.ts",
+  "packages/headless/src/index.ts",
+  "packages/headless/src/page.ts",
+  "packages/headless/src/pageLoad.ts",
+  "packages/headless/src/protocol.ts",
+  "packages/headless/src/testing/compareRaster.ts",
+  "packages/headless/src/testing/fixtureScene.ts",
+  "packages/headless/src/testing/protocol.ts",
+  "packages/headless/src/testing/registeredPage.ts",
+  "packages/headless/src/testing/registeredScene.ts"
+ ],
+ "a": 5,
+ "b": 5,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 11,
+ "unfound": 3,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "newCode": {
+  "since": 49,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 49,
+  "chapman": 15,
+  "unfound": 9
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 18,
+  "testFiles": {
+   "failed": 0,
+   "passed": 10,
+   "total": 10
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 11.1,
+   "B": 40.7,
+   "match": 5.1,
+   "fix": 19.1
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1983444,
+  "costUsd": 5.83
+ },
+ "fixCommits": [
+  "caabd5ffddcbf2a2948f908b462f8f11196da98e",
+  "54cc86034531ec1c6ab348361e42baaedd15fdd9",
+  "ee83714c788f6f67a226e735bac4d5b535f532b5",
+  "4bdb39b372e2a2e66ec30448cc31cf5675675f9a",
+  "ea1ce2726f76835078ee52f9af3f880dd22b7e5a",
+  "ff0a61f5d1c0424a055554b7cfc7347d2f35e90b",
+  "b90e4f3378cd610ca19b6084726886f8f58e7d84"
+ ]
+}
