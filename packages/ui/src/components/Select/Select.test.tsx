@@ -537,3 +537,16 @@ describe("React Aria's value props", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 });
+
+describe('Select trigger identity', () => {
+  it('keeps its trigger and focus when a tooltip comes and goes', () => {
+    const { rerender } = render(<Select aria-label="Color" options={OPTIONS} defaultSelectedKey="r" />);
+    const trigger = screen.getByRole('button', { name: /Color/ });
+    act(() => trigger.focus());
+    rerender(<Select aria-label="Color" options={OPTIONS} defaultSelectedKey="r" tooltip="Hint" />);
+    expect(screen.getByRole('button', { name: /Color/ })).toBe(trigger);
+    rerender(<Select aria-label="Color" options={OPTIONS} defaultSelectedKey="r" />);
+    expect(screen.getByRole('button', { name: /Color/ })).toBe(trigger);
+    expect(document.activeElement).toBe(trigger);
+  });
+});
