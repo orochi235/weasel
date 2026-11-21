@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { useState, type ReactElement } from 'react';
+import { useRef, useState, type ReactElement } from 'react';
 import { fireEvent, render } from '@testing-library/react';
 import { CurveEditor, type ControlPoint } from './CurveEditor';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
 import { FunctionLayer } from './FunctionLayer';
-import { functionLayerState } from './createFunctionLayer';
+import { functionLayerState, type FunctionLayerState } from './createFunctionLayer';
 
 function Controlled(): ReactElement {
   const [value, setValue] = useState<ControlPoint[]>([{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]);
@@ -184,5 +184,28 @@ describe('LayeredCurveEditor — built-in undo', () => {
     undo();
     expect(anchorOf('edited').getAttribute('cy')).toBe('50');
     expect(onOther).not.toHaveBeenCalled();
+  });
+
+  it('skips a step a declined edit left, so an undo reaches the last edit that landed', () => {
+    let accept = true;
+    function Host(): ReactElement {
+      const [s, setS] = useState(functionLayerState(POINTS));
+      const take = useRef((n: FunctionLayerState) => { if (accept) setS(n); }).current;
+      return (
+        <LayeredCurveEditor width={200} height={100}>
+          <FunctionLayer id="edited" state={s} onInput={take} onChange={take} />
+        </LayeredCurveEditor>
+      );
+    }
+    render(<Host />);
+    fireEvent.keyDown(anchorOf('edited'), { key: 'ArrowUp' });
+    const nudged = anchorOf('edited').getAttribute('cy');
+    expect(nudged).not.toBe('50');
+    accept = false;
+    fireEvent.keyDown(anchorOf('edited'), { key: 'ArrowUp' });
+    expect(anchorOf('edited').getAttribute('cy')).toBe(nudged);
+    accept = true;
+    undo();
+    expect(anchorOf('edited').getAttribute('cy')).toBe('50');
   });
 });
