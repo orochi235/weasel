@@ -18,12 +18,12 @@ import Woodgrain from './Woodgrain';
 
 const square: [number, number][] = [[0, 0], [100, 0], [100, 100], [0, 100]];
 
-function draw<P>(effect: EffectModule<P>, params: P, boxW = 200, boxH = 30, sampler?: BaseSampler) {
+function draw<P>(effect: EffectModule<P>, params: P, boxW = 200, boxH = 30, sampler?: BaseSampler, phase = 0) {
   const Component = effect.Component!;
   const s = sampler ?? polygonSampler(square, boxW, boxH);
   const { container } = render(
     <svg>
-      <Component sampler={s} boxW={boxW} boxH={boxH} variant="solid" params={params} phase={0} />
+      <Component sampler={s} boxW={boxW} boxH={boxH} variant="solid" params={params} phase={phase} />
     </svg>,
   );
   return container;
@@ -63,6 +63,15 @@ describe('perforations', () => {
     const holes = draw(Perforations, { holeRadius: 0, holeSpacing: 0 }).querySelectorAll('ellipse');
     expect(holes.length).toBeGreaterThan(0);
     expect(holes.length).toBeLessThanOrEqual(Math.ceil(polygonSampler(square, 200, 30).totalCss));
+  });
+
+  it('moves its holes along the outline by `phase`, as the bump effects do', () => {
+    const s = polygonSampler(square, 200, 30);
+    const first = (phase: number) => draw(Perforations, { holeSpacing: 23 }, 200, 30, s, phase).querySelector('ellipse')!;
+    const step = s.totalCss / Math.round(s.totalCss / 23);
+    const moved = s.perimeterAt(0.75 * step);
+    expect(Number(first(0.25).getAttribute('cx'))).toBeCloseTo(moved.x);
+    expect(Number(first(0).getAttribute('cx'))).not.toBeCloseTo(moved.x);
   });
 
   it('draws no hole with a negative radius', () => {
