@@ -60,6 +60,15 @@ describe('KeyDiagram', () => {
     expect(root(container).dataset.up).toBeUndefined();
   });
 
+  it('stays hidden when a linger is turned on after keys were let go without one', () => {
+    vi.useFakeTimers();
+    const root = (c: HTMLElement) => c.firstElementChild as HTMLElement;
+    const { container, rerender } = render(<KeyDiagram layout={KEYBOARD_LAYOUTS.macos} held={new Set(['KeyA'])} />);
+    rerender(<KeyDiagram layout={KEYBOARD_LAYOUTS.macos} />);
+    rerender(<KeyDiagram layout={KEYBOARD_LAYOUTS.macos} linger={2} />);
+    expect(root(container).dataset.up).toBeUndefined();
+  });
+
   it('stays up for the whole of a linger longer than one timer holds', () => {
     vi.useFakeTimers();
     const root = (c: HTMLElement) => c.firstElementChild as HTMLElement;

@@ -130,7 +130,9 @@ function useLinger(busy: boolean, linger: number | undefined): boolean {
   const [lingering, setLingering] = useState(false);
   if (busy !== wasBusy) {
     setWasBusy(busy);
-    setLingering(!busy);
+    setLingering(!busy && linger !== undefined);
+  } else if (lingering && linger === undefined) {
+    setLingering(false);
   }
   useEffect(() => {
     if (!lingering || linger === undefined) return;
