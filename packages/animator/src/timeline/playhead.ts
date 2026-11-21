@@ -52,6 +52,7 @@ function lapsCrossed(playhead: number, duration: number, loopsLeft: number, lap:
 export interface Playhead {
   time(): number;
   duration(): number;
+  /** Sets the lap's length, bringing a playhead past it back to its end. */
   setDuration(duration: number): void;
   /** Laps taken since creation. Never reset, so a (lap, root time) pair names one crossing for good. */
   lap(): number;
@@ -84,7 +85,10 @@ export function createPlayhead(duration: number, loop: boolean | number): Playhe
   return {
     time: () => t,
     duration: () => duration,
-    setDuration(d) { duration = d; },
+    setDuration(d) {
+      duration = d;
+      if (t > d) { offset -= t - d; t = d; }
+    },
     lap: () => lap,
     lapsLeft: () => loopsLeft,
     loop: () => (loopsLeft === Infinity ? true : loopsLeft === 0 ? false : loopsLeft + 1),
