@@ -1,9 +1,9 @@
 import { createContext } from 'react';
-import { prefDrawsAsBox, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { isPrefLeaf, pairRuns, prefDrawsAsBox, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { GroupTabs, type GroupTab } from '../Prefs/GroupTabs';
 import { pathWithin, useHeldTab, type PrefMarks } from '../Prefs/selection';
 import { isFlagLeaf } from './cells';
-import { isPanelSection, pairRows, panelLeafKey, panelOwnRows, type PanelRow, type PanelSection } from './model';
+import { isPanelSection, panelLeafKey, panelOwnRows, type PanelRow, type PanelSection } from './model';
 import type { LeafRenderer } from './renderContext';
 
 /** What a panel marks while it draws, and the one of those it brings into view. */
@@ -30,18 +30,62 @@ export function panelShownPath(rows: Iterable<readonly [path: string, leaf: Pref
   return panelShownPath(fields, path) ?? at;
 }
 
+/** A run of `items` sharing one pair, as a bar draws it: each flag after the first of a run of them is drawn in the
+ *  first's cell, and any other item in a cell of its own. */
+function fuseFlags(
+  items: readonly { key: string; path: string; leaf: PrefLeaf }[], renderers: Record<string, LeafRenderer> | undefined, out: Map<string, string>,
+): void {
+  let first: string | null = null;
+  for (const item of items) {
+    if (!isFlagLeaf(item.leaf, item.path, renderers)) first = null;
+    else if (first === null) first = item.key;
+    else out.set(item.key, first);
+  }
+}
+
+/**
+ * Each field of the object leaf at `base` drawn in a row or a cell for another, by that other, as `ObjectLeaf`
+ * draws them: a pair shares a row only within one run of neighboring fields, and in a bar only a run of paired
+ * flags shares a cell.
+ */
+function sharedFields(
+  leaf: PrefObject, base: string, renderers: Record<string, LeafRenderer> | undefined, out: Map<string, string>,
+): void {
+  const walk = (members: PrefObject['children'], inBar: boolean): void => {
+    let run: Array<readonly [string, PrefLeaf]> = [];
+    const flush = (): void => {
+      for (const { items, pair } of pairRuns(run, (field) => field)) {
+        if (pair === undefined) continue;
+        if (inBar) fuseFlags(items.map(([path, field]) => ({ key: path, path, leaf: field })), renderers, out);
+        else for (const [path] of items) out.set(path, items[0]![0]);
+      }
+      for (const [path, field] of run) if (field.kind === 'object') sharedFields(field as PrefObject, path, renderers, out);
+      run = [];
+    };
+    for (const [key, child] of Object.entries(members)) {
+      if (isPrefLeaf(child)) {
+        run.push([`${base}.${key}`, child]);
+        continue;
+      }
+      flush();
+      walk(child.members, inBar || child.as === 'bar');
+    }
+    flush();
+  };
+  walk(leaf.children, false);
+}
+
 /**
  * Each leaf that shares its row with others, by the leaf that row is drawn for: its first, as a cell a bar fuses
  * from several leaves stands for its first.
  */
-function sharedRows(rows: readonly PanelRow[], out = new Map<string, string>()): Map<string, string> {
+function sharedRows(rows: readonly PanelRow[], renderers: Record<string, LeafRenderer> | undefined): Map<string, string> {
+  const out = new Map<string, string>();
   for (const row of rows) {
     const first = panelLeafKey(row.leaves[0]!);
     for (const item of row.leaves) {
       if (row.leaves.length > 1) out.set(panelLeafKey(item), first);
-      if (item.leaf.kind !== 'object') continue;
-      const fields = prefSectionLeaves((item.leaf as PrefObject).children);
-      sharedRows(pairRows(fields.map(([key, leaf]) => ({ path: `${panelLeafKey(item)}.${key}`, leaf }))), out);
+      if (item.leaf.kind === 'object') sharedFields(item.leaf as PrefObject, panelLeafKey(item), renderers, out);
     }
   }
   return out;
@@ -51,13 +95,7 @@ function sharedRows(rows: readonly PanelRow[], out = new Map<string, string>()):
 function fusedFlags(rows: readonly PanelRow[], renderers: Record<string, LeafRenderer> | undefined): Map<string, string> {
   const out = new Map<string, string>();
   for (const row of rows) {
-    if (row.pair === undefined) continue;
-    let first: string | null = null;
-    for (const item of row.leaves) {
-      if (!isFlagLeaf(item.leaf, item.path, renderers)) first = null;
-      else if (first === null) first = panelLeafKey(item);
-      else out.set(panelLeafKey(item), first);
-    }
+    if (row.pair !== undefined) fuseFlags(row.leaves.map((item) => ({ key: panelLeafKey(item), path: item.path, leaf: item.leaf })), renderers, out);
   }
   return out;
 }
@@ -91,7 +129,7 @@ export function panelMarkedPaths(
   const rowsIn = (bar: boolean): PanelRow[] => all.filter((at) => at.inBar === bar).flatMap((at) => panelOwnRows(at.section));
   const drawn = all.flatMap((at) => panelOwnRows(at.section)).flatMap((row) => row.leaves.map((item) => [panelLeafKey(item), item.leaf] as const));
   // A bar draws a cell a leaf, and no row for a pair to share.
-  const shared = sharedRows(rowsIn(false));
+  const shared = sharedRows(rowsIn(false), renderers);
   const fused = fusedFlags(rowsIn(true), renderers);
   const keys = new Set(all.filter((at) => !at.inBar && sectionNamed(at.section)).map((at) => at.section.key));
   const out = selected.flatMap((path) => {
