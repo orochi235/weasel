@@ -15,6 +15,18 @@ describe('keyLegendsFromChord', () => {
     expect(labels('Mod++', 'windows')).toEqual(['Ctrl', '+']);
   });
 
+  it('reads Ctrl and Meta as modifiers, and keeps every key after them', () => {
+    expect(labels('Ctrl+Z', 'windows')).toEqual(['Ctrl', 'Z']);
+    expect(labels('Meta+K', 'macos')).toEqual(['⌘', 'K']);
+    expect(labels('Mod+K+L', 'windows')).toEqual(['Ctrl', 'K', 'L']);
+  });
+
+  it('draws modifiers in one order, once each, with or without a key', () => {
+    expect(labels('Shift+Mod', 'macos')).toEqual(['⌘', '⇧']);
+    expect(labels('Mod+Mod', 'macos')).toEqual(['⌘']);
+    expect(labels('Shift+Mod+Z', 'macos')).toEqual(['⌘', '⇧', 'Z']);
+  });
+
   it('reads a part named like an Object.prototype member as the key, not a modifier', () => {
     expect(labels('Shift+constructor', 'windows')).toEqual(labels('Shift+x', 'windows').slice(0, -1).concat(['constructor']));
   });
