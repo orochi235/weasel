@@ -1,7 +1,7 @@
 import { tabSort, tabStep } from '@weasel-js/ui-input';
 import { type FocusScope, type FocusScopeOptions } from '@weasel-js/ui-logic';
 
-const TABBABLE = 'a[href], area[href], button, input, select, textarea, iframe, summary, [tabindex], [contenteditable]:not([contenteditable="false"])';
+const TABBABLE = 'a[href], area[href], button, input, select, textarea, iframe, summary, audio[controls], video[controls], [tabindex], [contenteditable]:not([contenteditable="false"])';
 
 /** Whether a closed `<details>` hides `el`: everything in one but its own summary. */
 const inClosedDetails = (el: HTMLElement): boolean => {
@@ -23,8 +23,12 @@ const isRendered = (el: HTMLElement): boolean => {
   return true;
 };
 
+/** A player showing its controls takes a Tab stop, though `tabIndex` reads -1 for one with no `tabindex`. */
+const tabIndexOf = (el: HTMLElement): number =>
+  el.matches('audio[controls]:not([tabindex]), video[controls]:not([tabindex])') ? 0 : el.tabIndex;
+
 const isTabbable = (el: HTMLElement): boolean =>
-  el.tabIndex >= 0 && !el.matches(':disabled') && el.closest('[hidden], [inert]') === null
+  tabIndexOf(el) >= 0 && !el.matches(':disabled') && el.closest('[hidden], [inert]') === null
   && (el as HTMLInputElement).type !== 'hidden' && !inClosedDetails(el) && isRendered(el);
 
 /** `els` with each named radio group down to the one radio Tab stops on: the checked one, else the first going

@@ -28,6 +28,11 @@ describe('createDomFocusScope', () => {
     expect(scope.tabOrder().map((e) => e.id)).toEqual(['a', 'b']);
   });
 
+  it('stops on an audio or video player that shows its controls, as Tab does', () => {
+    const { scope } = mount('<button id="a">a</button><video id="v" controls></video><audio id="s"></audio><audio id="m" controls></audio>');
+    expect(scope.tabOrder().map((e) => e.id)).toEqual(['a', 'v', 'm']);
+  });
+
   it('skips a control a disabled fieldset disables', () => {
     const { scope } = mount('<button id="a">a</button><fieldset disabled><button id="x">x</button><input id="y"></fieldset>');
     expect(scope.tabOrder().map((e) => e.id)).toEqual(['a']);
