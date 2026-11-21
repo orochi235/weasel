@@ -86,4 +86,10 @@ describe('flattenTokens', () => {
   it('refuses a $description that is not a string', () => {
     expect(() => flattenTokens({ color: { $type: 'color', a: { $value: '#000000', $description: 5 } } })).toThrow(/"a" has a \$description that is not a string/);
   });
+
+  it('refuses an alpha outside 0 to 1', () => {
+    for (const alpha of [1.5, -0.25, Number.NaN, '0.5']) {
+      expect(() => flattenTokens({ color: { $type: 'color', a: { $value: 'red', $extensions: { 'com.weasel.alpha': alpha } } } })).toThrow(/"a" has a com\.weasel\.alpha/);
+    }
+  });
 });

@@ -1,5 +1,7 @@
 /** A token's alpha, as a token's `$extensions` key. */
 export const ALPHA_EXT = 'com.weasel.alpha';
+/** Whether `x` can be a token's alpha: a number from 0 to 1. */
+export const isAlpha = (x: unknown): x is number => typeof x === 'number' && x >= 0 && x <= 1;
 /** The axes a token's pref is scoped by, as a token's `$extensions` key. */
 export const SCOPE_EXT = 'com.weasel.scope';
 

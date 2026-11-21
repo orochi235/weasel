@@ -2,7 +2,7 @@ import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 import { axisNameProblem, isByAxis, mergeAxes, type AxisDefs, type Varying } from './axes.ts';
 import type { SerializableColorList } from './colorListItems.ts';
 import type { PinObject, PinValue, ThemeDefinition } from './definition.ts';
-import { isSafeTokenName, unsafeTokenName, type RawToken, type TokenValue } from './dtcg/types.ts';
+import { isAlpha, isSafeTokenName, unsafeTokenName, type RawToken, type TokenValue } from './dtcg/types.ts';
 import { BAKED_THEMES } from './generated/themes.ts';
 import { themeAxes } from './resolveTheme.ts';
 
@@ -35,6 +35,7 @@ function toRaw(v: Varying<PinValue>): Varying<RawToken> {
     return out as Varying<RawToken>;
   }
   const obj: PinObject = isPinObject(v) ? v : { value: v as TokenValue };
+  if (obj.alpha !== undefined && !isAlpha(obj.alpha)) throw new Error(`alpha ${String(obj.alpha)} is not a number from 0 to 1`);
   const raw = { type: obj.type ?? 'unknown', value: obj.value, alpha: obj.alpha, description: obj.description };
   return obj.scope === undefined ? raw : { ...raw, scope: obj.scope };
 }

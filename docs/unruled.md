@@ -3240,3 +3240,6 @@ Calls the lanes made without a ruling:
   `data-wzl-*` attribute and that attribute's selector both carry unescaped; `defineTheme` and `fromDtcg` throw on
   another, and `derive` reports it. `fromDtcg` refuses `theme`, `variant`, and `__proto__` as `defineTheme` does.
   Escaping the name in the selector was the alternative, but `setAttribute` refuses a space whatever the selector does.
+- 2026-11-20 (the fixer's call): a token's alpha is a number from 0 to 1. `fromDtcg` and `defineTheme` throw on
+  another, `derive` reports one on a `ref` rule, and a hand-built theme's is held to that range wherever it is
+  written, so `rgba()` and `color-mix()` agree. Clamping on read instead was the alternative.

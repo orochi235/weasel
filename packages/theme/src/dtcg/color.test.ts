@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { withAlpha } from './color';
+import { mixAlpha, withAlpha } from './color';
 
 describe('withAlpha', () => {
   it('expands 6-digit hex', () => {
@@ -33,5 +33,11 @@ describe('withAlpha', () => {
   it('defers anything it cannot parse to color-mix(), which composes the same way', () => {
     expect(withAlpha('rebeccapurple', 0.5)).toBe('color-mix(in srgb, rebeccapurple 50%, transparent)');
     expect(withAlpha('oklch(0.7 0.1 250)', 0.07)).toBe('color-mix(in srgb, oklch(0.7 0.1 250) 7%, transparent)');
+  });
+
+  it('holds an alpha outside 0 to 1 to that range in every notation', () => {
+    expect(withAlpha('#ff0000', 1.5)).toBe('rgba(255, 0, 0, 1)');
+    expect(withAlpha('red', 1.5)).toBe('color-mix(in srgb, red 100%, transparent)');
+    expect(mixAlpha('red', -1)).toBe('color-mix(in srgb, red 0%, transparent)');
   });
 });

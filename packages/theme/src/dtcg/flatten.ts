@@ -1,5 +1,5 @@
 import { setOwn } from '@weasel-js/registry';
-import { ALPHA_EXT, isSafeTokenName, SCOPE_EXT, unsafeTokenName, type FlatTokens, type RawToken } from './types';
+import { ALPHA_EXT, isAlpha, isSafeTokenName, SCOPE_EXT, unsafeTokenName, type FlatTokens, type RawToken } from './types';
 import { readDtcgValue } from './value';
 
 interface DtcgToken {
@@ -47,12 +47,13 @@ export function flattenTokens(doc: Record<string, unknown>): FlatTokens {
         throw new Error(`Token "${leaf}" has a $description that is not a string`);
       }
       const alphaRaw = node.$extensions?.[ALPHA_EXT];
+      if (alphaRaw !== undefined && !isAlpha(alphaRaw)) throw new Error(`Token "${leaf}" has a ${ALPHA_EXT} that is not a number from 0 to 1`);
       const scopeRaw = node.$extensions?.[SCOPE_EXT];
       const scope = Array.isArray(scopeRaw) ? scopeRaw.filter((axis): axis is string => typeof axis === 'string') : undefined;
       const token: RawToken = {
         type,
         value: readDtcgValue(leaf, type, node.$value),
-        alpha: typeof alphaRaw === 'number' ? alphaRaw : undefined,
+        alpha: alphaRaw,
         description: node.$description,
         ...(scope ? { scope } : {}),
       };

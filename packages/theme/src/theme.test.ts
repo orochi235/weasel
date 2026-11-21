@@ -55,4 +55,8 @@ describe('defineTheme', () => {
     expect(() => defineTheme({ name: 'x', axes: { 'my axis': { default: 'a', values: { a: {} } } } })).toThrow(/"my axis" cannot name an axis/);
     expect(() => defineTheme({ name: 'x', axes: { 'a.b': { default: 'a', values: { a: {} } } } })).toThrow(/"a\.b" cannot name an axis/);
   });
+
+  it('refuses a pin alpha outside 0 to 1', () => {
+    expect(() => defineTheme({ name: 'x', pins: { line: { value: '{surface}', alpha: 1.5 } } })).toThrow(/alpha 1\.5 is not a number from 0 to 1/);
+  });
 });
