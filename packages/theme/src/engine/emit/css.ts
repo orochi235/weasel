@@ -110,7 +110,8 @@ interface Plan {
 function blocks(lines: string[], plan: Plan, selector: (attrs: string) => string[]): void {
   const { axes, names } = plan;
   for (const set of axisSets(axes)) {
-    const members = names.filter((n) => plan.all(n).join(',') === set.join(','));
+    // A token joins every set inside its own, so an element stamping only some of its axes reads the rest at their defaults.
+    const members = names.filter((n) => plan.all(n).length > 0 && set.every((a) => plan.all(n).includes(a)));
     const hasOwn = (n: string) => plan.own(n).length > 0;
     const ownFirst = [...members.filter(hasOwn), ...members.filter((n) => !hasOwn(n))];
     const schemeAxis = set.length === 1 ? set[0] : undefined;

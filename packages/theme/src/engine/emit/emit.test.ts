@@ -132,19 +132,18 @@ describe('emitCss', () => {
 
   it('writes a block per axis value: own values first, then what depends through a reference', () => {
     expect(css).toContain(
-      "[data-wzl-theme='e'][data-wzl-mode='light'],\n[data-wzl-mode='light'] {\n  color-scheme: light;\n  --wzl-surface: var(--wzl-paper);\n  --wzl-line: color-mix(in srgb, var(--wzl-surface) 20%, transparent);\n}\n",
+      "[data-wzl-theme='e'][data-wzl-mode='light'],\n[data-wzl-mode='light'] {\n  color-scheme: light;\n  --wzl-surface: var(--wzl-paper);\n  --wzl-pad-edge: 0px;\n  --wzl-line: color-mix(in srgb, var(--wzl-surface) 20%, transparent);\n}\n",
     );
     expect(css).toContain(
-      "[data-wzl-theme='e'][data-wzl-density='compact'],\n[data-wzl-density='compact'] {\n  --wzl-gap: 3px;\n  --wzl-pad: var(--wzl-gap);\n}\n",
+      "[data-wzl-theme='e'][data-wzl-density='compact'],\n[data-wzl-density='compact'] {\n  --wzl-gap: 3px;\n  --wzl-pad-edge: var(--wzl-pad);\n  --wzl-pad: var(--wzl-gap);\n}\n",
     );
   });
 
-  it('puts a token that depends on two axes in the compound blocks only', () => {
+  it('puts a token that depends on two axes in the compound blocks, and in each axis block alone at the other axis default', () => {
     expect(css).toContain(
       "[data-wzl-theme='e'][data-wzl-mode='light'][data-wzl-density='compact'],\n[data-wzl-mode='light'][data-wzl-density='compact'] {\n  --wzl-pad-edge: 0px;\n}\n",
     );
-    const single = css.split('\n\n').filter((b) => /^\[data-wzl-theme='e'\]\[data-wzl-\w+='\w+'\],/.test(b));
-    expect(single.some((b) => b.includes('--wzl-pad-edge'))).toBe(false);
+    for (const attrs of [{ mode: 'light' }, { density: 'compact' }, { theme: 'e', mode: 'light' }] as Attrs[]) expect(wrong(css, E, [{}, attrs])).toEqual([]);
   });
 
   it('emits a lone default theme exactly as before other themes were diffed against it', () => {
