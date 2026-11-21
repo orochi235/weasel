@@ -23,7 +23,8 @@ export interface LensRimConfig {
 }
 
 const ZOOM_STOPS = [1, 2, 4, 8].map((v) => ({ value: v, label: `${v}×` }));
-const SAVED = 'weasel-lens-rim-lab-v1';
+// Marks are shares of the picture across, so one marks the same spot at any lens size.
+const SAVED = 'weasel-lens-rim-lab-v2';
 /** The most marks the lens keeps, and saves: a new one past it drops the oldest. */
 export const MARK_LIMIT = 100;
 
@@ -75,7 +76,8 @@ export function LensRimView({ config }: { config: LensRimConfig }): ReactElement
 
   const mark = (e: ReactPointerEvent<HTMLDivElement>) => {
     const lens = e.currentTarget.getBoundingClientRect();
-    setMarks((prev) => withMark(prev, pictureAt({ x: e.clientX, y: e.clientY }, lens, size, turn, z)));
+    const at = pictureAt({ x: e.clientX, y: e.clientY }, lens, size, turn, z);
+    setMarks((prev) => withMark(prev, { x: at.x / size, y: at.y / size }));
     setPressed('picture');
   };
   const vars = { '--lens': `${size}px`, '--turn': `${turn}deg`, '--zoom': String(z) } as CSSProperties;
@@ -90,7 +92,7 @@ export function LensRimView({ config }: { config: LensRimConfig }): ReactElement
               <div className={s.picture}>
                 <img className={s.image} src={LENS_IMAGE} alt="" draggable={false} />
                 {marks.map((m, i) => (
-                  <span key={i} className={s.mark} data-mark style={{ '--x': `${m.x}px`, '--y': `${m.y}px` } as CSSProperties} />
+                  <span key={i} className={s.mark} data-mark style={{ '--x': `${m.x * size}px`, '--y': `${m.y * size}px` } as CSSProperties} />
                 ))}
               </div>
               <div className={s.rim} />
@@ -112,7 +114,7 @@ export function LensRimView({ config }: { config: LensRimConfig }): ReactElement
               { id: 'turn', label: 'turned', value: `${num(turn, 5, 0)}°` },
               { id: 'pressed', label: 'last press', value: pressed },
               { id: 'marks', label: 'marks', value: String(marks.length) },
-              { id: 'last-mark', label: 'last mark', value: last ? `${num(last.x, 6, 1)}, ${num(last.y, 6, 1)}` : '—' },
+              { id: 'last-mark', label: 'last mark', value: last ? `${num(last.x * size, 6, 1)}, ${num(last.y * size, 6, 1)}` : '—' },
             ]}
           />
           <p className={lab.note}>
