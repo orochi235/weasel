@@ -32,6 +32,13 @@ describe('KeyDiagram', () => {
     expect([...container.querySelectorAll('kbd')].map((k) => k.textContent)).toEqual(['⎋', 'Undo']);
   });
 
+  it('draws a key at the width it is given in a row', () => {
+    const { container } = render(<KeyDiagram keys={[{ code: 'Space', width: 6 }, 'KeyA']} />);
+    expect(slot(container, 'Space')!.style.getPropertyValue('--w')).toBe('6');
+    expect(slot(container, 'Space')!.dataset.sized).toBe('true');
+    expect(slot(container, 'KeyA')!.dataset.sized).toBeUndefined();
+  });
+
   it('prints a key\'s own label in a layout\'s place for it', () => {
     const { container } = render(<KeyDiagram layout={KEYBOARD_LAYOUTS.macos} keys={[{ code: 'KeyW', label: 'Fwd' }, 'KeyA']} />);
     expect([...container.querySelectorAll('kbd')].map((k) => k.textContent)).toEqual(['Fwd', 'A']);

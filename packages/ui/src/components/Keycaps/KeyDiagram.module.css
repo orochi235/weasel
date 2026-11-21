@@ -46,11 +46,14 @@
   position: absolute;
   left: calc(var(--x) * var(--pitch));
   top: calc(var(--y) * var(--pitch-y));
+}
+
+.slot[data-sized] {
   width: calc(var(--w) * var(--pitch) - var(--gap));
 }
 
-/* Outranks the keycap's own width rules, (0,2,0): in a layout the slot sets the width. */
-.board .slot > kbd.cap {
+/* Outranks the keycap's own width rules, (0,2,0): a key given a width takes the slot's. */
+.slot[data-sized] > kbd.cap {
   width: 100%;
   min-width: 0;
   padding: 0 var(--wzl-space-1);

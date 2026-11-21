@@ -86,11 +86,13 @@ export function KeyDiagram({
     return mark?.caption !== undefined || mark?.icon !== undefined;
   });
 
-  const slot = (key: Pick<PlacedKey, 'code' | 'label'>, place?: PlacedKey) => {
+  const slot = (key: Pick<PlacedKey, 'code' | 'label'> & { width?: number }, place?: PlacedKey) => {
+    const width = place?.width ?? key.width;
     const mark = marks && getOwn(marks, key.code);
     const tint = css(tintSource(mark?.tint));
     const vars = {
-      ...(place && { '--x': place.x, '--y': place.y, '--w': place.width }),
+      ...(place && { '--x': place.x, '--y': place.y }),
+      ...(width !== undefined && { '--w': width }),
       ...(tint && { '--tint': tint }),
     } as CSSProperties;
     const under = mark?.icon ?? mark?.caption;
@@ -101,11 +103,12 @@ export function KeyDiagram({
         // Places and tints are the caller's data, with no static home in the stylesheet.
         style={vars}
         data-code={key.code}
+        data-sized={width !== undefined || undefined}
         data-held={held.has(key.code) || undefined}
         data-tinted={tint ? true : undefined}
         data-dimmed={mark?.dimmed || undefined}
       >
-        <KeyCap className={s.cap} label={key.label ?? keyLegendFromCode(key.code, legendOpts).label} font={font} fixed={place !== undefined} />
+        <KeyCap className={s.cap} label={key.label ?? keyLegendFromCode(key.code, legendOpts).label} font={font} fixed={width !== undefined} />
         {under === undefined ? null : <span className={s.caption}>{under}</span>}
       </span>
     );
