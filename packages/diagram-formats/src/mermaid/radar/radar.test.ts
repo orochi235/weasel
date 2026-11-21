@@ -139,3 +139,15 @@ describe('the Mermaid format', () => {
     expect(DIAGRAM_MERMAID.write!(document).text.startsWith('radar-beta\n')).toBe(true);
   });
 });
+
+describe('writing radar ids Mermaid has to rewrite', () => {
+  it('rewrites each to an id no other axis or curve takes', () => {
+    const page: PlotPage = {
+      kind: 'plot', id: 'p', width: 10, height: 10,
+      data: { kind: 'radar', axes: [{ id: 'a b' }, { id: 'a.b' }, { id: 'a_b' }, { id: '1x' }], curves: [{ id: 'x y', values: [1, 2, 3, 4] }, { id: 'x.y', values: [4, 3, 2, 1] }] },
+    };
+    const back = plotOf(writeMermaidRadar(page).text).data as { axes: { id: string }[]; curves: { id: string }[] };
+    expect(new Set(back.axes.map((a) => a.id)).size).toBe(4);
+    expect(new Set(back.curves.map((c) => c.id)).size).toBe(2);
+  });
+});
