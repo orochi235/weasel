@@ -28,11 +28,14 @@ const SLACK = 0.5;
  * lead: its only item, or the button that opens the rest. A host squeezing
  * several bars into one line leaves each this much. Undefined until the first
  * item has been measured.
+ *
+ * `lead` says whether the bar draws a lead, so that one appearing or leaving measures the line again.
  */
 export function useBarOverflow(
   on: boolean,
   keys: readonly string[],
   vertical: boolean,
+  lead = false,
 ): { bar: RefObject<HTMLDivElement | null>; kept: number; natural: number | undefined; least: number | undefined } {
   const bar = useRef<HTMLDivElement | null>(null);
   const sizes = useRef(new Map<string, number>());
@@ -70,7 +73,7 @@ export function useBarOverflow(
     };
     measure();
     return watchResize([el, ...el.children], measure);
-  }, [on, signature, kept, vertical, keysRef]);
+  }, [on, signature, kept, vertical, keysRef, lead]);
 
   return { bar, kept: on ? Math.min(kept, keys.length) : keys.length, natural: on ? natural : undefined, least: on ? least : undefined };
 }
