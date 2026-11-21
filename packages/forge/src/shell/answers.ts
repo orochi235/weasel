@@ -1,10 +1,11 @@
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, getOwn } from '@weasel-js/registry';
 import { type ConfigAnswers, stableStringify } from '../protocol/messages';
 import type { SchemaAnswers } from '../protocol/schema';
 import { storyConfig } from './globals';
 
 export interface AnswerBook extends SchemaAnswers {
   disabled(path: string, config: unknown): boolean;
+  resolved(path: string, config: unknown): unknown;
   record(answers: ConfigAnswers): void;
   /** Marks `config` as one an open trial shows until the returned release runs. */
   hold(config: unknown): () => void;
@@ -13,15 +14,20 @@ export interface AnswerBook extends SchemaAnswers {
 
 const KEPT_CONFIGS = 50;
 
-const UNANSWERED = stableStringify({ hidden: [], errors: {}, disabled: [] });
+const UNANSWERED = stableStringify({ hidden: [], errors: {}, disabled: [], resolved: {} });
+
+interface Answer {
+  hidden: readonly string[];
+  errors: Readonly<Record<string, string[]>>;
+  disabled: readonly string[];
+  resolved: Readonly<Record<string, unknown>>;
+  key: string;
+}
 
 /** Keeps the last 50 configs' answers. A config it has no answer for shows every node and reports no errors.
  *  Subscribers hear of an answer only when it differs from the one kept for its config, and a trial holds that config. */
 export function createAnswerBook(): AnswerBook {
-  const byConfig = new Map<
-    string,
-    { hidden: readonly string[]; errors: Readonly<Record<string, string[]>>; disabled: readonly string[]; key: string }
-  >();
+  const byConfig = new Map<string, Answer>();
   const answered = createEmitter();
   const held = new Map<string, number>();
   const keyOf = (config: unknown) => stableStringify(storyConfig(config));
@@ -30,10 +36,11 @@ export function createAnswerBook(): AnswerBook {
   return {
     record(answers) {
       const disabled = answers.disabled ?? [];
-      const key = stableStringify({ hidden: answers.hidden, errors: answers.errors, disabled });
+      const resolved = answers.resolved ?? {};
+      const key = stableStringify({ hidden: answers.hidden, errors: answers.errors, disabled, resolved });
       const changed = key !== (byConfig.get(answers.configKey)?.key ?? UNANSWERED);
       byConfig.delete(answers.configKey);
-      byConfig.set(answers.configKey, { hidden: answers.hidden, errors: answers.errors, disabled, key });
+      byConfig.set(answers.configKey, { hidden: answers.hidden, errors: answers.errors, disabled, resolved, key });
       if (byConfig.size > KEPT_CONFIGS) {
         const oldest = byConfig.keys().next().value;
         if (oldest !== undefined) byConfig.delete(oldest);
@@ -58,6 +65,10 @@ export function createAnswerBook(): AnswerBook {
     },
     disabled(path, config) {
       return answerFor(config)?.disabled.includes(path) ?? false;
+    },
+    resolved(path, config) {
+      const resolved = answerFor(config)?.resolved;
+      return resolved ? getOwn(resolved, path) : undefined;
     },
     errors(path, config) {
       const errors = answerFor(config)?.errors;

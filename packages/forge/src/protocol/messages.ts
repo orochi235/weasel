@@ -34,6 +34,8 @@ export interface ConfigAnswers {
   errors: Record<string, string[]>;
   /** The paths whose own `.enableIf` predicate, written as code, does not hold. */
   disabled?: string[];
+  /** What each auto leaf's `autoResolve` computes, by path, where that crosses a port. */
+  resolved?: Record<string, unknown>;
 }
 
 /** One element axe faulted on, inside the frame's own document. */

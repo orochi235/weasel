@@ -1,4 +1,6 @@
-import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
+import { f, resolveAutoConfig, resolveConfigSchema } from '@weasel-js/labkit/config';
+import { createAnswerBook } from '../shell/answers';
+import { stableStringify } from './messages';
 import { describe, expect, it, vi } from 'vitest';
 import { answerSchema, describeSchema, schemaActionAt, schemaFromDescription } from './schema';
 
@@ -59,6 +61,44 @@ describe('schema descriptions', () => {
     const resolved = resolveConfigSchema(rebuilt, []);
     expect(resolved.enableIf?.get('size')?.(off)).toBe(false);
     expect(resolved.group.children.look).toMatchObject({ resettable: true });
+  });
+
+  it('carries an auto leaf, quoting it, and answers its autoResolve in the frame', () => {
+    const schema = f.schema({
+      size: f.number(10),
+      gap: f.number(2).auto((c) => (c.size as number) / 5).quote(),
+      pad: f.number(1).auto(),
+    });
+    const config = { size: 20, gap: 2, pad: 1 };
+    const { resolved } = answerSchema(schema, config);
+    expect(resolved).toEqual({ gap: 4 });
+    const rebuilt = schemaFromDescription(structuredClone(describeSchema(schema)), {
+      ...noAnswers,
+      resolved: (path) => resolved[path],
+    });
+    const nodes = rebuilt.nodes as Record<string, { options: Record<string, unknown> }>;
+    const own = schema.nodes as Record<string, { options: Record<string, unknown> }>;
+    const gap = nodes.gap!.options;
+    expect(gap.auto).toEqual(own.gap!.options.auto);
+    expect(gap.autoQuote).toBe(true);
+    expect((gap.autoResolve as (c: unknown) => unknown)(config)).toBe(4);
+    expect(nodes.pad!.options.auto).toEqual(own.pad!.options.auto);
+    expect(own.pad!.options.auto).toBeDefined();
+    expect(nodes.pad!.options.autoResolve).toBeUndefined();
+  });
+
+  it("resolves an auto leaf in the workshop from the frame's answer for the config it was handed", () => {
+    const schema = f.schema({ size: f.number(10), gap: f.number(2).auto((c) => (c.size as number) / 5) });
+    const book = createAnswerBook();
+    const rebuilt = resolveConfigSchema(schemaFromDescription(structuredClone(describeSchema(schema)), book), []);
+    const auto = new Set(['gap']);
+    // The trial's instrument reads the stored config with each auto path resolved; the frame answers what it gets.
+    let sent = resolveAutoConfig(rebuilt, { size: 20, gap: 2 }, auto);
+    for (let i = 0; i < 3; i++) {
+      book.record({ configKey: stableStringify(sent), ...answerSchema(schema, sent) });
+      sent = resolveAutoConfig(rebuilt, { size: 20, gap: 2 }, auto);
+    }
+    expect(sent).toEqual({ size: 20, gap: 4 });
   });
 
   it('answers a showIf written as data too, and ships the condition itself', () => {

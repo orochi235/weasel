@@ -3476,3 +3476,8 @@ Calls the lanes made without a ruling:
   edited entry, which equals none, takes the unclaimed original at its index. An entry that equals more than one
   original once the list's length changed (two bare callbacks, both sent as `null`, one removed) gets nothing back
   rather than a guess. Pairing by index alone, as before, was the alternative.
+- 2026-11-21 (the fixer's call): an isolated forge story's panel carries a leaf's `.auto()`, `.quote()`, and
+  `autoResolve`, the last answered by the frame against the story's config as it stands, where labkit resolves it
+  against a config with the other auto paths already resolved. A group's `motif` and a leaf's `.dialog` are not carried:
+  each is a renderer that runs in the frame's document, as a custom `.render` is, and the workshop draws the plain card
+  and row.
