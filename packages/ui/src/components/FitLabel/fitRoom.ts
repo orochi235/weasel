@@ -45,6 +45,14 @@ export function prepareRoom(el: HTMLElement, room: FitRoom, depth: number, atFul
   room.measured = true;
 }
 
+/** Forgets what `el`'s room learned of the old labels, so labels that may now fit are tried at their full forms. */
+export function forgetRoom(el: HTMLElement | null, room: FitRoom): void {
+  room.steppedAt = null;
+  room.spentAt = null;
+  room.measured = false;
+  el?.removeAttribute(SPENT);
+}
+
 /** Clears a spent mark `el` has grown out of, then marks it spent where it overflows at its labels' last forms. */
 export function settleSpent(el: HTMLElement, room: FitRoom, atLastForms: boolean): void {
   if (room.spentAt !== null && el.clientWidth > room.spentAt + 0.5) {
