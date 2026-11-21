@@ -21,16 +21,20 @@ export interface PlotDataPanelProps {
  * per table whose rows can be added, removed, reordered, and opened onto the tables they hold.
  */
 export function PlotDataPanel({ data, onChange, title = 'Data', className }: PlotDataPanelProps): ReactElement {
-  const [error, setError] = useState<string | null>(null);
+  // An edit's error belongs to the chart it failed on; a chart passed in from elsewhere drops it.
+  const [failed, setFailed] = useState<{ data: PlotData; message: string } | null>(null);
+  const error = failed?.data === data ? failed.message : null;
   const schema = plotSchemaOf(data);
   const edit = (change: (d: PlotData) => PlotData, label: string) => {
+    let next: PlotData;
     try {
-      const next = change(data);
-      setError(null);
-      if (next !== data) onChange(next, label);
+      next = change(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setFailed({ data, message: e instanceof Error ? e.message : String(e) });
+      return;
     }
+    setFailed(null);
+    if (next !== data) onChange(next, label);
   };
   const fields = schema.fields.filter((f) => f.applies?.(data) !== false);
   return (
