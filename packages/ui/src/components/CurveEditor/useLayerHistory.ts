@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { createHistory, type Op } from '@weasel-js/history';
+import { deepEqual } from '@weasel-js/registry';
 import type { LayerEntry } from './layerHost';
 
 /** Undo steps the built-in history keeps. */
@@ -40,11 +41,14 @@ export function useLayerHistory(layers: () => readonly LayerEntry[]) {
     return m;
   }, [layers]);
 
+  // Whether the last step restored any layer: one an edit its consumer declined left restores none.
+  const restored = useRef(false);
   const restore = useLatest((snap: LayerSnapshot) => {
     for (const entry of layers()) {
       const prev = snap.get(entry);
       const current = entry.state;
-      if (prev !== undefined && prev !== current) {
+      if (prev !== undefined && !deepEqual(prev, current)) {
+        restored.current = true;
         entry.onInput?.(prev);
         entry.onChange?.(prev, current);
       }
@@ -56,8 +60,13 @@ export function useLayerHistory(layers: () => readonly LayerEntry[]) {
     history.recordEntry([editOp(before, snapshot, (snap) => restore.current(snap))], 'edit');
   }, [history, snapshot, restore]);
 
-  const undo = useCallback(() => history.undo(), [history]);
-  const redo = useCallback(() => history.redo(), [history]);
+  /** Take steps until one restores something, so a step that would change nothing never spends a press. */
+  const step = useCallback((can: () => boolean, take: () => void) => {
+    restored.current = false;
+    while (!restored.current && can()) take();
+  }, []);
+  const undo = useCallback(() => step(() => history.canUndo(), () => history.undo()), [history, step]);
+  const redo = useCallback(() => step(() => history.canRedo(), () => history.redo()), [history, step]);
 
   return { snapshot, record, undo, redo };
 }

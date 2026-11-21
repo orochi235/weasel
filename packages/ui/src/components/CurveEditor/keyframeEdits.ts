@@ -86,9 +86,9 @@ export function applyKeyframeDrag(state: KeyframeLayerState): KeyframeDragResult
   return { ...unchanged, keys: next };
 }
 
-/** `v` held inside `range`, or as it is with none. */
+/** `v` held inside `range`, given either end first, or as it is with none. */
 export function clampTo(v: number, range?: readonly [number, number]): number {
-  return range ? clamp(v, range[0], range[1]) : v;
+  return range ? clamp(v, Math.min(range[0], range[1]), Math.max(range[0], range[1])) : v;
 }
 
 /**
@@ -114,13 +114,16 @@ export function nudgedKey(
 const HANDLE_STEP = 0.01;
 
 /**
- * `bezier` with handle `h` moved by `dx`, `dy` key steps in model terms; a handle's x stays within its segment.
- * `descending` says the segment's value falls, so a handle's y fraction runs against its value.
+ * `bezier` of the segment from key `a` to key `b` with handle `h` moved by `move`, in key steps in model terms. A
+ * handle's x stays within its segment, and on a flat segment its y, which draws nowhere, stays as it is.
  */
-export function nudgedBezier(bezier: Bezier, h: number, dx: number, dy: number, descending = false): Bezier {
+export function nudgedBezier(
+  bezier: Bezier, h: number, move: { dx: number; dy: number }, a: { value: number }, b: { value: number },
+): Bezier {
   const next = [...bezier] as [number, number, number, number];
-  next[h * 2] = Math.min(1, Math.max(0, next[h * 2] + dx * HANDLE_STEP));
-  next[h * 2 + 1] += (descending ? -dy : dy) * HANDLE_STEP;
+  next[h * 2] = Math.min(1, Math.max(0, next[h * 2] + move.dx * HANDLE_STEP));
+  // A handle's y is a fraction of the segment's rise, so on a falling segment it runs against the value.
+  if (b.value !== a.value) next[h * 2 + 1] += (b.value < a.value ? -move.dy : move.dy) * HANDLE_STEP;
   return next;
 }
 

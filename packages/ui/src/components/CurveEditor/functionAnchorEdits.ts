@@ -44,6 +44,13 @@ function layerXBounds(range: ModelRange, rules: AnchorRules): [number, number] {
   return [Math.min(a, b), Math.max(a, b)];
 }
 
+/** The sliver of x a strict layer keeps between neighboring anchors, a thousandth of its x range; none otherwise. */
+function anchorGap(range: ModelRange, rules: AnchorRules): number {
+  if (!rules.strict) return 0;
+  const [xLo, xHi] = layerXBounds(range, rules);
+  return (xHi - xLo) / 1000;
+}
+
 /** Where an anchor added at `model` goes: inside the plot, and inside the layer's x range. */
 function insertPoint(model: ModelPoint, range: ModelRange, rules: AnchorRules): ModelPoint {
   const p = clampToModelRange(model, range);
@@ -73,7 +80,7 @@ export function withAnchorMoved(
   } else if (rules.endpoints === 'pinned-x' && isEndpoint) {
     nx = index === 0 ? xLo : xHi;
   } else if (rules.ordered) {
-    const epsilon = rules.strict ? (xHi - xLo) / 1000 : 0;
+    const epsilon = anchorGap(range, rules);
     const left = index > 0 ? points[index - 1].x + epsilon : xLo;
     const right = index < points.length - 1 ? points[index + 1].x - epsilon : xHi;
     nx = Math.max(left, Math.min(right, nx));
@@ -107,7 +114,7 @@ function crowdedNeighbor(
   rules: AnchorRules,
 ): number | null {
   if (!rules.ordered) return null;
-  const epsilon = rules.strict ? Math.abs(range.xMax - range.xMin) / 1000 : 0;
+  const epsilon = anchorGap(range, rules);
   const left = insertIndex > 0 ? points[insertIndex - 1] : null;
   const right = insertIndex < points.length ? points[insertIndex] : null;
   if (left && Math.abs(x - left.x) < epsilon * 2) return insertIndex - 1;
@@ -139,7 +146,11 @@ export function pressOnCurve(
   state: FunctionLayerState, segIdx: number, model: ModelPoint, range: ModelRange, rules: AnchorRules,
 ): { next: FunctionLayerState; index: number } | null {
   const insertIndex = segIdx + 1;
-  const p = insertPoint(model, range, rules);
+  const at = insertPoint(model, range, rules);
+  // A press beside a steep segment, or on a spline overshooting its anchors, lies outside the segment's x span.
+  const p = rules.ordered
+    ? { ...at, x: Math.max(state.points[segIdx].x, Math.min(state.points[insertIndex].x, at.x)) }
+    : at;
   const neighbor = crowdedNeighbor(state.points, insertIndex, p.x, range, rules);
   if (neighbor !== null && !canAnchorMove(state.points, neighbor, rules.endpoints)) return null;
   if (neighbor !== null) return { next: { ...state, activeIndex: neighbor }, index: neighbor };
@@ -150,9 +161,15 @@ export function pressOnCurve(
 export function withEmptyInsert(
   state: FunctionLayerState, model: ModelPoint, range: ModelRange, rules: AnchorRules,
 ): FunctionLayerState | null {
-  const p = insertPoint(model, range, rules);
-  const index = emptyInsertIndex(state.points, p.x, rules);
+  const at = insertPoint(model, range, rules);
+  const index = emptyInsertIndex(state.points, at.x, rules);
   if (index === null) return null;
+  const gap = anchorGap(range, rules);
+  const left = state.points[index - 1];
+  // On a strict layer a click on an anchor's x adds its point just right of it, and none where there is no room.
+  const p = gap > 0 && left && at.x < left.x + gap ? { ...at, x: left.x + gap } : at;
+  const right = state.points[index];
+  if (gap > 0 && (p.x > layerXBounds(range, rules)[1] || (right && p.x > right.x - gap))) return null;
   return { ...state, points: withPointAt(state.points, index, p), activeIndex: null };
 }
 

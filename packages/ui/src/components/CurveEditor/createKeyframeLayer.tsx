@@ -46,10 +46,9 @@ export interface KeyframeLayerOptions {
 
 export { CURVE_HIT_PX, HANDLE_HIT_PX, KEY_HIT_PX } from './keyframeCurve';
 
-/** A gesture ends by applying its drag, or by dropping it. */
+/** A gesture ends by applying its drag; a cancel returns to the state the press began from, selection and all. */
 const settleDrag = {
   onCommit(state: KeyframeLayerState) { return { ...state, ...applyKeyframeDrag(state), drag: null }; },
-  onCancel(state: KeyframeLayerState) { return { ...state, drag: null }; },
 };
 
 function handleGesture(segment: number, handle: 0 | 1): LayerGesture<KeyframeLayerState> {
@@ -176,8 +175,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
     const seg = state.selectedSegment;
     if (handleEl && bezier && seg !== null && move) {
       e.preventDefault();
-      const descending = state.keys[seg].value < state.keys[seg - 1].value;
-      const next = nudgedBezier(bezier, Number(handleEl.getAttribute('data-handle-index')), move.dx, move.dy, descending);
+      const next = nudgedBezier(bezier, Number(handleEl.getAttribute('data-handle-index')), move, state.keys[seg - 1], state.keys[seg]);
       const moved = applyKeyframeDrag({ ...state, drag: { kind: 'handle', segment: seg, bezier: next } });
       if (moved.keys !== state.keys) extra.commit({ ...state, ...moved, drag: null });
     }

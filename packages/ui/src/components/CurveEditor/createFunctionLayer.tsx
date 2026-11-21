@@ -119,7 +119,8 @@ export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<
     extra: EmptyDownArgs<FunctionLayerState>,
   ): LayerGesture<FunctionLayerState> | void {
     if (!interactive || !isPrimaryPress(e)) return;
-    if (addPointMode !== 'click-empty') return;
+    // Fewer than two anchors draw no curve to press, so a click-curve layer takes the click anywhere until they do.
+    if (addPointMode !== 'click-empty' && !(curveTakesPresses && state.points.length < 2)) return;
     if (full(state)) return;
     const next = withEmptyInsert(state, model, ctx.modelRange, rules);
     if (next) extra.commit(next);

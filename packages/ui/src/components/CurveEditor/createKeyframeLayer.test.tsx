@@ -200,6 +200,17 @@ describe('createKeyframeLayer — key drag', () => {
     expect(last.drag).toBeNull();
     expect(last.keys).toBe(KEYS);
   });
+
+  it('restores the selection a canceled key drag began from', () => {
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+    down(100, 0);
+    move(150, 0);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    const last = onChange.mock.calls.at(-1)![0] as KeyframeLayerState;
+    expect(last.selectedKey).toBeNull();
+    expect(last.keys).toBe(KEYS);
+  });
 });
 
 describe('createKeyframeLayer — segments', () => {
@@ -280,6 +291,22 @@ describe('createKeyframeLayer — segments', () => {
     move(100, 50);
     expect(Number(stem().getAttribute('y1'))).toBe(50);
     up(100, 50);
+  });
+
+  it('commits nothing for a vertical arrow on a flat segment\'s handle, and keeps its y on a sideways one', () => {
+    const onCommit = vi.fn();
+    const keys = [{ t: 0, value: 5 }, { t: 1000, value: 5, easing: { bezier: [0.2, 0.9, 0.3, 1] as const } }];
+    render(<Harness initial={{ keys, selectedSegment: 1 }} onCommit={onCommit} />);
+    const handle = () => document.querySelector('[data-handle-index="0"]')!;
+    fireEvent.keyDown(handle(), { key: 'ArrowUp' });
+    expect(onCommit).not.toHaveBeenCalled();
+    fireEvent.keyDown(handle(), { key: 'ArrowUp', shiftKey: true });
+    fireEvent.keyDown(handle(), { key: 'ArrowRight' });
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    const next = onCommit.mock.calls[0][0] as KeyframeLayerState;
+    const [x1, y1] = (next.keys[1].easing as { bezier: readonly number[] }).bezier;
+    expect(x1).toBeCloseTo(0.21);
+    expect(y1).toBe(0.9);
   });
 
   it('raises a handle on a falling segment with ArrowUp', () => {

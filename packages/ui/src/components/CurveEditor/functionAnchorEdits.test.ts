@@ -59,3 +59,43 @@ describe('a locked anchor', () => {
     expect(withAnchorMoved(locked, 1, { x: 0.7, y: 0.9 }, range, rules)).toBe(locked);
   });
 });
+
+describe('the gap a strict layer with an xClamp keeps', () => {
+  const range = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+  const rules = anchorRulesFor({ constrain: 'function', xClamp: [0, 0.1] });
+
+  it('lets a press on the curve insert as close to a neighbor as a drag may bring an anchor', () => {
+    const { index, next } = pressOnCurve(state([0, 0.05, 0.1]), 1, { x: 0.0515, y: 0.5 }, range, rules)!;
+    expect(index).toBe(2);
+    expect(next.points).toHaveLength(4);
+  });
+});
+
+describe('an anchor added by a press on an ordered curve', () => {
+  const range = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+
+  it.each(['1d', 'function'] as const)('stays inside its segment\'s x span (%s)', (kind) => {
+    const rules = anchorRulesFor(kind === '1d' ? { domain: '1d' } : { constrain: 'function' });
+    const { index, next } = pressOnCurve(state([0, 0.5, 0.52, 1]), 1, { x: 0.4875, y: 0.5 }, range, rules)!;
+    const xs = next.points.map((p) => p.x);
+    expect(xs).toEqual([...xs].sort((a, b) => a - b));
+    expect(next.points[index].x).toBeGreaterThanOrEqual(0.5);
+  });
+});
+
+describe('an anchor added by a click in empty space on a strict layer', () => {
+  const range = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+  const rules = anchorRulesFor({ constrain: 'function' });
+
+  it('keeps off the x of the anchor it was clicked above', () => {
+    const next = withEmptyInsert(state([0, 0.5, 1]), { x: 0.5, y: 0.9 }, range, rules)!;
+    const xs = next.points.map((p) => p.x);
+    expect(xs).toHaveLength(4);
+    expect(xs[2]).toBeGreaterThan(0.5);
+    expect(xs[2]).toBeLessThan(xs[3]);
+  });
+
+  it('is not added past an anchor already at the end of the range', () => {
+    expect(withEmptyInsert(state([0, 1]), { x: 1.2, y: 0.9 }, range, rules)).toBeNull();
+  });
+});

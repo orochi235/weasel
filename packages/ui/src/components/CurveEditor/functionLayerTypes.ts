@@ -23,8 +23,9 @@ export type CurveDomain = '1d' | '2d';
  */
 export type EndpointMode = 'free' | 'pinned-x' | 'pinned-both';
 /**
- * Where a click adds a new anchor — on the curve itself, anywhere in the
- * plot, or nowhere.
+ * Where a click adds a new anchor — on the curve itself (anywhere in the
+ * plot while fewer than two anchors draw no curve), anywhere in the plot,
+ * or nowhere.
  */
 export type AddPointMode = 'click-curve' | 'click-empty' | 'never';
 

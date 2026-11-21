@@ -72,7 +72,8 @@ interface PartitionState {
   x: number;
 }
 
-function createPartitionLayer(): CurveLayer<PartitionState> {
+/** The seam's grip, held between `lo` and `hi`. */
+function createPartitionLayer(lo: number, hi: number): CurveLayer<PartitionState> {
   return {
     id: 'partition',
     render(state, ctx) {
@@ -110,11 +111,7 @@ function createPartitionLayer(): CurveLayer<PartitionState> {
     onPointerDown(_state, hit, e) {
       if (hit.kind !== 'handle' || !isPrimaryPress(e)) return;
       return {
-        onMove(_state, model, _e, ctx) {
-          const span = ctx.modelRange.xMax - ctx.modelRange.xMin;
-          const pad = span * 0.05;
-          const lo = ctx.modelRange.xMin + pad;
-          const hi = ctx.modelRange.xMax - pad;
+        onMove(_state, model) {
           return { x: Math.max(lo, Math.min(hi, model.x)) };
         },
       };
@@ -127,57 +124,45 @@ interface RimContourArgs {
   width: number;
 }
 
-function clampPointsToRange(
-  points: readonly ControlPoint[],
-  range: readonly [number, number],
-  pinFirstAtLeft: boolean,
-  pinLastAtRight: boolean,
-): ControlPoint[] {
-  const [lo, hi] = range;
-  return points.map((p, i, arr) => {
-    let x = p.x;
-    if (pinFirstAtLeft && i === 0) x = lo;
-    else if (pinLastAtRight && i === arr.length - 1) x = hi;
-    else x = Math.max(lo, Math.min(hi, x));
-    return { ...p, x };
-  });
+const BEVEL: readonly ControlPoint[] = [{ x: 0, y: 0.0 }, { x: 0.1, y: 0.55 }, { x: 0.25, y: 0.78 }];
+// The spline's first anchor is the seam, whose y must match the bevel's last.
+const SPLINE: readonly ControlPoint[] = [{ x: 0.25, y: 0.78 }, { x: 0.5, y: 0.55 }, { x: 0.85, y: 0.35 }, { x: 1.0, y: 0.2 }];
+
+/**
+ * Where the seam may sit: inside the plot's margin, and a sliver past each curve's nearest interior anchor, so moving
+ * it never stacks an anchor on the seam's.
+ */
+function seamBounds(bevel: readonly ControlPoint[], spline: readonly ControlPoint[]): readonly [number, number] {
+  const sliver = HALF_WIDTH / 100;
+  return [
+    Math.max(HALF_WIDTH * 0.05, bevel[bevel.length - 2].x + sliver),
+    Math.min(HALF_WIDTH * 0.95, spline[1].x - sliver),
+  ];
+}
+
+function clampSeam(x: number, [lo, hi]: readonly [number, number]): number {
+  return Math.max(lo, Math.min(hi, x));
+}
+
+/** `points` with the first anchor at `lo` and the last at `hi`. */
+function withEnds(points: readonly ControlPoint[], lo: number, hi: number): ControlPoint[] {
+  return points.map((p, i) => (i === 0 ? { ...p, x: lo } : i === points.length - 1 ? { ...p, x: hi } : p));
 }
 
 function RimContourDemo(args: RimContourArgs) {
-  const [b, setB] = useState(args.initialB);
+  const [b, setB] = useState(() => clampSeam(args.initialB, seamBounds(BEVEL, SPLINE)));
+  const [bevelState, setBevelState] = useState<FunctionLayerState>(() => functionLayerState(withEnds(BEVEL, 0, b)));
+  const [splineState, setSplineState] = useState<FunctionLayerState>(() => functionLayerState(withEnds(SPLINE, b, HALF_WIDTH)));
+  const [partitionState, setPartitionState] = useState<PartitionState>(() => ({ x: b }));
+  const [seamLo, seamHi] = seamBounds(bevelState.points, splineState.points);
 
-  // Initial anchor sets — interior anchors capture the visual shape;
-  // endpoints will be pinned in place by the layers.
-  const [bevelState, setBevelState] = useState<FunctionLayerState>(() => ({
-    points: clampPointsToRange([
-      { x: 0, y: 0.0 },
-      { x: 0.1, y: 0.55 },
-      { x: 0.25, y: 0.78 },
-    ], [0, args.initialB], true, true),
-    activeIndex: null,
-  }));
-  const [splineState, setSplineState] = useState<FunctionLayerState>(() => ({
-    points: clampPointsToRange([
-      { x: 0.25, y: 0.78 },  // seam — y must match bevel's last
-      { x: 0.5, y: 0.55 },
-      { x: 0.85, y: 0.35 },
-      { x: 1.0, y: 0.2 },
-    ], [args.initialB, HALF_WIDTH], true, true),
-    activeIndex: null,
-  }));
-  const [partitionState, setPartitionState] = useState<PartitionState>(() => ({ x: args.initialB }));
-
-  // Moving the seam (handle drag or the initialB control) re-anchors both curves to it.
-  const moveSeam = (next: number) => {
+  // Moving the seam (handle drag or the initialB control) moves both curves' ends with it; the bounds keep it clear of
+  // their interior anchors, so a cancel that moves it back leaves both curves as they were.
+  const moveSeam = (to: number) => {
+    const next = clampSeam(to, [seamLo, seamHi]);
     setB(next);
-    setBevelState((prev) => ({
-      ...prev,
-      points: clampPointsToRange(prev.points, [0, next], true, true),
-    }));
-    setSplineState((prev) => ({
-      ...prev,
-      points: clampPointsToRange(prev.points, [next, HALF_WIDTH], true, true),
-    }));
+    setBevelState((prev) => ({ ...prev, points: withEnds(prev.points, 0, next) }));
+    setSplineState((prev) => ({ ...prev, points: withEnds(prev.points, next, HALF_WIDTH) }));
     setPartitionState((prev) => prev.x === next ? prev : { x: next });
   };
   const [initialB, setInitialB] = useState(args.initialB);
@@ -188,7 +173,7 @@ function RimContourDemo(args: RimContourArgs) {
 
   const bevelClamp = useMemo(() => [0, b] as const, [b]);
   const splineClamp = useMemo(() => [b, HALF_WIDTH] as const, [b]);
-  const partitionLayer = useMemo(() => createPartitionLayer(), []);
+  const partitionLayer = useMemo(() => createPartitionLayer(seamLo, seamHi), [seamLo, seamHi]);
 
   const onBevelChange = (next: FunctionLayerState) => {
     setBevelState(next);

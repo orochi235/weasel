@@ -3583,3 +3583,9 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): `NaN` or an infinite number in a `spikes`, `puffs`, `bites`, or `scallops` param reads
   as that param's default, as round 60 ruled for badge base params; `spikes`' `count`, and the `sunbeams` `count` and
   `woodgrain` `lines` and `knots`, are repeat counts, whole numbers up to 256 where `NaN` reads as the least.
+
+## Audit round sixty-five (2026-11-21): CurveEditor
+
+- 2026-11-21 (the fixer's call): a `'click-curve'` function layer with fewer than two anchors, which draws no curve to
+  press, adds a point from a click anywhere in the plot until it has two. Holding `minPoints` at 2 in that mode, so a
+  delete could never leave it there, was the alternative; it would not help a state the consumer passes in that short.
