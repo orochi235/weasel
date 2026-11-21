@@ -196,4 +196,10 @@ describe('an inverted stereo frame', () => {
     expect(base).toMatch(/--_s-blur:\s*initial/);
     expect(base).toMatch(/--_s-title-inset:\s*initial/);
   });
+
+  it('drops the tab row’s inset on the side where a tab squares the box’s corner', () => {
+    const css = readFileSync(resolve(__dirname, 'motifs/tab.module.css'), 'utf8');
+    expect(css).toMatch(/\.tabRow\[data-align='start'\]\s*\{[^}]*padding-inline-start:\s*0/);
+    expect(css).toMatch(/\.tabRow\[data-align='end'\]\s*\{[^}]*padding-inline-end:\s*0/);
+  });
 });

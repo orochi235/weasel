@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { cssColorLiteral } from '@weasel-js/paint';
 import type { CSSProperties } from 'react';
 import { afterEach, expect, it } from 'vitest';
-import { MotifFrame, sheet, stereo, well } from '@weasel-js/ui/components/MotifFrame';
+import { MotifFrame, sheet, stereo, tab, well } from '@weasel-js/ui/components/MotifFrame';
 import { PropertyPanel } from '@weasel-js/ui/components/Properties';
 
 // Which side an edge lands on under a writing direction is a cascade question only a browser answers.
@@ -76,4 +76,25 @@ it.each(['left', 'right'] as const)('runs a %s stereo bar along that edge, with 
   else expect(barBox.left).toBeGreaterThanOrEqual(bodyBox.right - 1);
   const inset = getComputedStyle(body)[side === 'left' ? 'borderLeftWidth' : 'borderRightWidth'];
   expect(parseFloat(inset)).toBeGreaterThan(0);
+});
+
+it('runs a tab flush with the box edge whose corner it squares', () => {
+  render(
+    <>
+      <MotifFrame title="Start" motif={tab()}>
+        x
+      </MotifFrame>
+      <MotifFrame title="End" motif={tab({ align: 'end' })}>
+        x
+      </MotifFrame>
+    </>,
+  );
+  const rects = (name: string) => {
+    const root = group(name);
+    return { tab: screen.getByText(name).parentElement!.getBoundingClientRect(), box: root.lastElementChild!.getBoundingClientRect() };
+  };
+  const start = rects('Start');
+  expect(start.tab.left).toBeCloseTo(start.box.left, 0);
+  const end = rects('End');
+  expect(end.tab.right).toBeCloseTo(end.box.right, 0);
 });
