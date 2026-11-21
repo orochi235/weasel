@@ -192,3 +192,13 @@ describe('writing start and end shapes a Mermaid state diagram cannot keep apart
     })).not.toContain(WARNING);
   });
 });
+
+describe('writing a Mermaid state diagram\'s shapes and notes', () => {
+  const graph = (data: object) => ({ pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: { edges: [], ...data } as never }] });
+
+  it('warns that a diamond with text is written as a plain state', () => {
+    const out = writeStateDiagram(graph({ nodes: [{ id: 'x', outline: 'diamond', lines: ['Valid?'] }] }));
+    expect(out.warnings).toContain('Mermaid choices hold no text; diamonds with text were written as plain states.');
+    expect(writeStateDiagram(graph({ nodes: [{ id: 'x', outline: 'diamond', lines: [] }] })).warnings).toEqual([]);
+  });
+});
