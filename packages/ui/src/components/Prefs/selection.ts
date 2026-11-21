@@ -127,11 +127,16 @@ export function useSelectedRow(
   const pending = useRef(false);
   const reported = useRef<string | null>(null);
   const lead = selected.at(-1);
+  const selectedKey = selected.join('\n');
+  // `null` until the first selection is seen, so one given at mount scrolls into view.
+  const shownLead = useRef<string | undefined | null>(null);
   useEffect(() => {
-    // A selection the reader made here is already under their pointer; scrolling it would move it mid-click.
-    pending.current = lead !== undefined && lead !== reported.current;
+    // A selection the reader made here, a toggle that leaves an earlier row last included, is under their pointer;
+    // scrolling would move it mid-click.
+    if (lead !== shownLead.current) pending.current = lead !== undefined && reported.current === null;
+    shownLead.current = lead;
     reported.current = null;
-  }, [lead]);
+  }, [selectedKey, lead]);
   // A press on one of several selected rows waits for the click: it may be the start of a drag of them all.
   const held = useRef<string | null>(null);
   // The focus that follows a press is the same pick, not a second one.
