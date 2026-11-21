@@ -11,7 +11,8 @@ import {
   composesFrames,
   RIGID_POSE_COMPOSITION,
   sceneCarrySource,
-  scenePoseFrame,
+  poseFrame,
+  scenePoseAdapter,
   type PoseComposition,
   type Action,
   type SurfaceContribution,
@@ -76,7 +77,8 @@ function grownFrom(r: RectPose, axis: 'x' | 'y', by: number): RectPose {
 export function laneResizeFrame(scene: AnyScene, pool: PoolLanes, index: number, size: number): Map<string, RectPose> {
   const { axis } = pool;
   const pc = scene.composition as PoseComposition<RectPose>;
-  const frame = scenePoseFrame(scene);
+  // As the document holds it: mid-drag the scene shows the last preview, which this frame replaces.
+  const frame = poseFrame(scenePoseAdapter(scene as never), pc);
   const along = (r: RectPose) => (axis === 'y' ? r.height : r.width);
   const shift = (r: RectPose, by: number): RectPose => (axis === 'y' ? { ...r, y: r.y + by } : { ...r, x: r.x + by });
   // The box a region lays its children out in. A layout sees a region upright where poses do not compose.
