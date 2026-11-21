@@ -107,6 +107,32 @@ describe('clipToAncestors', () => {
     }
   });
 
+  it('grows an `overflow: clip` or a paint-contained cut by `overflow-clip-margin`, from the box it names', () => {
+    for (const rule of ['overflow-x: clip; overflow-y: clip', 'contain: paint']) {
+      const { outer, tile } = nest(`${rule}; overflow-clip-margin: 20px`, '');
+      stubBox(outer, 150, 120, 100, 40);
+      expect(clipToAncestors(tile, box)).toEqual({ left: 130, top: 100, width: 140, height: 80 });
+    }
+    const { outer, tile } = nest(
+      'overflow-x: clip; padding: 10px; overflow-clip-margin: content-box 5px',
+      '',
+    );
+    stubBox(outer, 150, 120, 100, 40);
+    expect(clipToAncestors(tile, box)).toEqual({ left: 155, top: 100, width: 90, height: 100 });
+  });
+
+  it('cuts a scroll container to its padding box, whatever its `overflow-clip-margin`', () => {
+    const { outer, tile } = nest(`${BOTH}; overflow-clip-margin: 20px`, '');
+    stubBox(outer, 150, 120, 100, 40);
+    expect(clipToAncestors(tile, box)).toEqual({ left: 150, top: 120, width: 100, height: 40 });
+  });
+
+  it('leaves nothing showing under an ancestor that skips its contents', () => {
+    const { tile } = nest('content-visibility: hidden', '');
+    const shown = clipToAncestors(tile, box);
+    expect([shown.width, shown.height]).toEqual([0, 0]);
+  });
+
   it('skips an ancestor whose overflow applies to no box', () => {
     for (const display of ['contents', 'inline']) {
       const { inner, tile } = nest('', `display: ${display}; ${BOTH}`);
@@ -142,6 +168,25 @@ describe('clipToAncestors', () => {
       root.style.cssText = 'overflow-x: hidden; overflow-y: scroll';
       const { tile } = nest('', '');
       expect(clipToAncestors(tile, onScreen)).toEqual(onScreen);
+    });
+
+    it('cuts to a body containing its paint, which keeps its overflow from the viewport', () => {
+      scrolled();
+      stubBox(document.body, 0, -500, 250, 3000);
+      document.body.style.cssText = 'contain: paint';
+      const { tile } = nest('', '');
+      expect(clipToAncestors(tile, onScreen)).toEqual({ ...onScreen, width: 150 });
+
+      document.body.style.cssText = BOTH;
+      root.style.cssText = 'contain: paint';
+      expect(clipToAncestors(tile, onScreen)).toEqual({ ...onScreen, width: 150 });
+    });
+
+    it('cuts a tile scrolled below the fold of a page nothing clips', () => {
+      scrolled();
+      const { tile } = nest('', '');
+      expect(clipToAncestors(tile, { ...onScreen, top: 900 }).height).toBe(0);
+      expect(clipToAncestors(tile, { ...onScreen, top: 750 }).height).toBe(50);
     });
 
     it("reads a body's overflow, handed to the viewport, as the viewport's", () => {

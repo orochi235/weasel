@@ -359,6 +359,45 @@ describe('useTiledSurface', () => {
     expect(frames[0]?.rects.get('b')).toEqual({ x: 300, y: 0, width: 400, height: 600 });
   });
 
+  it('re-measures on a scroll inside a shadow root a tile sits under, until the tile leaves', () => {
+    const frames: SurfaceFrame[] = [];
+    let handle: SurfaceHandle | null = null;
+    render(
+      <StrictMode>
+        <Harness
+          frames={frames}
+          onHandle={(h) => {
+            handle = h;
+          }}
+        />
+      </StrictMode>,
+    );
+    flushFrames();
+    const host = document.createElement('div');
+    document.body.append(host);
+    const root = host.attachShadow({ mode: 'open' });
+    const scroller = document.createElement('div');
+    const tile = document.createElement('div');
+    scroller.append(tile);
+    root.append(scroller);
+    stubBox(tile, 0, 0, 50, 50);
+    const release = (handle as unknown as SurfaceHandle).registerTile('k', tile);
+    flushFrames();
+    frames.length = 0;
+
+    stubBox(tile, 0, -30, 50, 50);
+    act(() => {
+      scroller.dispatchEvent(new Event('scroll'));
+    });
+    flushFrames();
+    expect(frames[0]?.rects.get('k')).toEqual({ x: 0, y: -30, width: 50, height: 50 });
+
+    const off = vi.spyOn(root, 'removeEventListener');
+    act(() => release());
+    expect(off.mock.calls.some(([type]) => type === 'scroll')).toBe(true);
+    host.remove();
+  });
+
   it("leaves a tile's newer element be when the older one's release runs late", () => {
     const frames: SurfaceFrame[] = [];
     let handle: SurfaceHandle | null = null;

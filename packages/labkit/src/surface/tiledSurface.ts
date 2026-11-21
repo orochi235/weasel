@@ -109,6 +109,8 @@ export class TiledSurface {
    *  pixels may sit where no rect now is, or none sit where one is. */
   private retileDue = false;
   private lastDpr = 0;
+  /** The container's size at the last measurement, which a frame's `size` sizes the buffer to. */
+  private size = { width: -1, height: -1 };
   private scopeEl: SurfaceScope = null;
   private readonly scopeChanged = createEmitter();
 
@@ -242,12 +244,17 @@ export class TiledSurface {
     return moved;
   }
 
-  /** Measure every tile if anything asked; `moved` when the geometry changed or a retile was due. */
+  /** Measure every tile if anything asked; `moved` when the geometry or the container's size changed, or a retile
+   *  was due. */
   private remeasure(el: HTMLElement): { moved: boolean; forced: boolean } {
     if (!this.stale) return { moved: false, forced: false };
     this.stale = false;
     const next = measureTiles(el, this.tiles, this.scopeEl);
-    const changed = !sameRects(this.rects, next.rects) || !sameRects(this.visible, next.visible);
+    const { width, height } = el.getBoundingClientRect();
+    const resized = width !== this.size.width || height !== this.size.height;
+    this.size = { width, height };
+    const changed =
+      resized || !sameRects(this.rects, next.rects) || !sameRects(this.visible, next.visible);
     this.rects = next.rects;
     this.visible = next.visible;
     const forced = this.retileDue;

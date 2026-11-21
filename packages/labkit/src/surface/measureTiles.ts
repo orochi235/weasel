@@ -1,5 +1,5 @@
 import { sameList } from '@weasel-js/registry';
-import { clipToAncestors } from './clip';
+import { boxParent, clipToAncestors } from './clip';
 import { composeRects, rectsEqual } from './composeRects';
 import type { Box, Rect } from './rect';
 
@@ -14,16 +14,17 @@ export interface TileGeometry {
  *  of several. Null is every tile. */
 export type SurfaceScope = HTMLElement | readonly HTMLElement[] | null;
 
-/** Whether `el` is `node` or holds it, counting what is inside shadow roots below it. */
-function holds(el: Node, node: Node): boolean {
-  for (let n: Node | null = node; n; n = n instanceof ShadowRoot ? n.host : n.parentNode) {
+/** Whether `el` is `node` or holds it in the flattened tree: through the slot `node` is assigned to, and out of
+ *  shadow roots, as `clipToAncestors` climbs. */
+function holds(el: Element, node: Element): boolean {
+  for (let n: Element | null = node; n; n = boxParent(n)) {
     if (n === el) return true;
   }
   return false;
 }
 
-/** Whether `tile` is inside `scope`, shadow trees included. */
-export function scopeHolds(scope: SurfaceScope, tile: Node): boolean {
+/** Whether `tile` is inside `scope`, shadow trees and slots included. */
+export function scopeHolds(scope: SurfaceScope, tile: Element): boolean {
   if (!scope) return true;
   if ('contains' in scope) return holds(scope, tile);
   return scope.some((el) => holds(el, tile));
