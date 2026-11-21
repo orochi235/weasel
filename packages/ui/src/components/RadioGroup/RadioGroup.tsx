@@ -8,7 +8,7 @@ import {
   type RadioProps as RACRadioProps,
 } from 'react-aria-components';
 import { useRun } from '../Run';
-import { slotClass, useRunSlot } from '../Along/runSlots';
+import { slotClass, slotStyle, useRunSlot } from '../Along/runSlots';
 import { fieldClasses } from '../Field/Field';
 import { FieldFoot, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import { RadioGroupAlong, RadioSlotsContext } from './RadioGroupAlong';
@@ -77,7 +77,7 @@ export function Radio({ children, className, description, disabled: own, disable
   const held = own === true || (access.state !== 'enabled' && !group?.isDisabled && !group?.isReadOnly);
   const disabled = held || undefined;
   const note = (held && access.reason) || description;
-  const { className: _, style, ...at } = slot ?? {};
+  const { className: _, style: __, ...at } = slot ?? {};
   return (
     <RACRadio
       {...rest}
@@ -85,7 +85,7 @@ export function Radio({ children, className, description, disabled: own, disable
       aria-describedby={describedBy(rest['aria-describedby'], note ? noteId : undefined)}
       {...at}
       className={slotClass(slot, [s.radio, className].filter(Boolean).join(' '))}
-      style={slot ? { ...(typeof rest.style === 'object' ? rest.style : null), ...style } : rest.style}
+      style={slotStyle(slot, rest.style)}
     >
       <span className={s.dot} />
       {children !== undefined && <span>{children}</span>}

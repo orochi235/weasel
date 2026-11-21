@@ -77,6 +77,16 @@ export function slotClass(slot: RunSlotProps | undefined, className: string | un
   return [className, slot?.className].filter(Boolean).join(' ') || undefined;
 }
 
+/** A part's own `style`, a React Aria render-prop function included, with `slot`'s placement over it. */
+export function slotStyle<R>(
+  slot: RunSlotProps | undefined,
+  own: CSSProperties | ((values: R) => CSSProperties | undefined) | undefined,
+): CSSProperties | ((values: R) => CSSProperties | undefined) | undefined {
+  const place = slot?.style;
+  if (place === undefined) return own;
+  return typeof own === 'function' ? (values) => ({ ...own(values), ...place }) : { ...own, ...place };
+}
+
 const keyOf: RunKeyOf = (el) => el.getAttribute(RUN_SLOT);
 
 /** The slots under `root` in document order that no nearer host holds. */

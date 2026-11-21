@@ -47,7 +47,7 @@ export function ToggleChips<V extends string | number = string>(props: ToggleChi
   const roving = useRovingTabIndex({ itemSelector: `.${s.chip}`, ...selectionRoving(model, items.length, usable) });
 
   const set = (
-    <div ref={roving.rootRef} onKeyDown={roving.onKeyDown} role="group" {...naming} className={[s.root, className].filter(Boolean).join(' ')}>
+    <div ref={roving.rootRef} onKeyDown={roving.onKeyDown} role="group" {...naming} className={[s.root, props.sweep && s.sweep, className].filter(Boolean).join(' ')}>
       {items.map((item, i) => {
         const state = model.stateOf(i);
         return (

@@ -5,6 +5,7 @@ import f from '../Field/Field.module.css';
 import { TokenChip } from './TokenChip';
 import { useTokenDrag } from './tokenDrag';
 import { TokenEditor, TokenText } from './TokenEditor';
+import { useTokenDraft } from './tokenDraft';
 import { chipKey, useTokenFocus } from './tokenFocus';
 import s from './TokenField.module.css';
 import { useControlAccess, type HoldProps } from '../Disabled';
@@ -48,8 +49,8 @@ const SEPARATORS = new Set(['Enter', ',']);
 
 /**
  * A list edited as a row of chips that wraps, with a text field after them. Typing and pressing Enter or a comma
- * adds a token, and so does leaving the field with text in it. A click on a chip, or Enter on a focused one, opens
- * a popover that edits it; its × removes it.
+ * adds a token, as does each comma in pasted text and leaving the field with text in it. A click on a chip, or Enter
+ * on a focused one, opens a popover that edits it; its × removes it.
  *
  * From the keyboard, Left and Right move between the chips and the field, Backspace or Delete removes a focused
  * chip, and Backspace in the empty field moves to the last chip. With `reorder`, chips are dragged into place or
@@ -74,23 +75,14 @@ export function TokenField<T>({
   className, ...hold
 }: TokenFieldProps<T>) {
   const disabled = useControlAccess(hold).state !== 'enabled';
-  const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState<number | null>(null);
   const focus = useTokenFocus();
   const movable = reorder && !disabled;
   const removable = !disabled && value.length > minItems;
-  const full = value.length >= maxItems;
   const edit = (at: number): void => { if (!disabled && locked?.(at) !== true) setEditing(at); };
   const { drag, ref } = useTokenDrag(value, (next, at) => { onChange(next); focus.request(at); }, edit);
+  const { draft, full, commit, type } = useTokenDraft({ value, onChange, create, maxItems, focusChip: focus.request });
 
-  const commit = (): void => {
-    const text = draft.trim();
-    if (text === '' || full) return;
-    const token = create(text);
-    if (token === undefined) return;
-    onChange([...value, token]);
-    setDraft('');
-  };
   const remove = (at: number): void => {
     if (!removable) return;
     onChange(value.filter((_, i) => i !== at));
@@ -104,8 +96,8 @@ export function TokenField<T>({
     // A comma is never text: typed into an empty field it would become the next token. Enter there is left alone.
     if (SEPARATORS.has(e.key) && (e.key !== 'Enter' || draft.trim() !== '')) {
       e.preventDefault();
-      if (draft.trim() !== '') commit();
-    } else if (value.length > 0 && caretAtStart && (e.key === 'Backspace' || arrowDir(e.key, { orientation: 'horizontal', dir: inlineDirection(e.currentTarget) }) === -1)) {
+      if (draft.trim() !== '') commit(true);
+    } else if (value.length > 0 && caretAtStart && ((e.key === 'Backspace' && draft === '') || arrowDir(e.key, { orientation: 'horizontal', dir: inlineDirection(e.currentTarget) }) === -1)) {
       e.preventDefault();
       focus.request(value.length - 1);
     }
@@ -156,9 +148,9 @@ export function TokenField<T>({
         value={draft}
         placeholder={placeholder}
         disabled={disabled || full}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={(e) => type(e.target.value)}
         onKeyDown={onInputKey}
-        onBlur={commit}
+        onBlur={() => commit(false)}
       />
       {open !== null && (
         <TokenEditor

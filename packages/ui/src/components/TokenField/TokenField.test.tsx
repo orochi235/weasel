@@ -4,12 +4,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { TokenField } from './TokenField';
 import { renderWithIcons } from '../../testing/withIcons';
 
-function Controlled({ initial, onChange, reorder }: { initial: string[]; onChange?: (v: string[]) => void; reorder?: boolean }) {
+function Controlled({ initial, onChange, reorder, maxItems }: { initial: string[]; onChange?: (v: string[]) => void; reorder?: boolean; maxItems?: number }) {
   const [value, setValue] = useState(initial);
   return (
     <TokenField
       aria-label="Tag"
       reorder={reorder}
+      maxItems={maxItems}
       value={value}
       onChange={(next) => {
         setValue(next);
@@ -179,5 +180,43 @@ describe('TokenField', () => {
     renderWithIcons(<TokenField aria-label="Tag" value={['a']} onChange={() => {}} disabled />);
     expect((field() as HTMLInputElement).disabled).toBe(true);
     expect(screen.queryByRole('button', { name: 'Remove a' })).toBeNull();
+  });
+  it('leaves Backspace to the text when the caret is at its start', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Controlled initial={['a']} onChange={onChange} />);
+    act(() => field().focus());
+    fireEvent.change(field(), { target: { value: 'bc' } });
+    (field() as HTMLInputElement).setSelectionRange(0, 0);
+    expect(fireEvent.keyDown(field(), { key: 'Backspace' })).toBe(true);
+    expect(document.activeElement).toBe(field());
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('moves focus to the new last chip when an add fills the field', () => {
+    renderWithIcons(<Controlled initial={['a', 'b']} maxItems={3} />);
+    act(() => field().focus());
+    fireEvent.change(field(), { target: { value: 'c' } });
+    fireEvent.keyDown(field(), { key: 'Enter' });
+    expect(document.activeElement).toBe(chip('c'));
+  });
+
+  it('ends a token at each comma in pasted text', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Controlled initial={[]} onChange={onChange} />);
+    fireEvent.change(field(), { target: { value: 'red, green,, blue' } });
+    expect(onChange).toHaveBeenLastCalledWith(['red', 'green']);
+    expect((field() as HTMLInputElement).value).toBe(' blue');
+    fireEvent.keyDown(field(), { key: 'Enter' });
+    expect(onChange).toHaveBeenLastCalledWith(['red', 'green', 'blue']);
+  });
+
+  it('keeps the pasted text past maxItems in the field', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Controlled initial={[]} onChange={onChange} maxItems={2} />);
+    act(() => field().focus());
+    fireEvent.change(field(), { target: { value: 'a,b,c,d' } });
+    expect(onChange).toHaveBeenLastCalledWith(['a', 'b']);
+    expect((field() as HTMLInputElement).value).toBe('c, d');
+    expect(document.activeElement).toBe(chip('b'));
   });
 });
