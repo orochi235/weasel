@@ -22,4 +22,9 @@ describe('InlineRange marks', () => {
     const { container } = render(<InlineRange aria-label="Width" value={40} fill={false} marks={[0.5]} onChange={() => {}} />);
     expect(layers(container.querySelector('input')!)).toBe(1);
   });
+
+  test('measure the fill over the content box, where the thumb travels', () => {
+    const { container } = render(<InlineRange aria-label="Width" value={40} marks={[0.5]} onChange={() => {}} />);
+    expect(getComputedStyle(container.querySelector('input')!).backgroundOrigin).toBe('content-box, content-box');
+  });
 });

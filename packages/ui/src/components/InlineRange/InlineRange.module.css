@@ -98,18 +98,20 @@
   background-image: var(--wzl-range-stop-marks), var(--wzl-range-bg);
   background-position: var(--wzl-range-stop-at), 0 0;
   background-size: var(--wzl-range-stop-size), auto;
-  background-origin: var(--wzl-range-stop-origin), padding-box;
+  background-origin: var(--wzl-range-stop-origin), content-box;
 }
 
-/* `fill`: the filled-to-N% paint. `--slider-fill` carries the value, since no
-   static rule expresses it. */
+/* `fill`: the filled-to-N% paint. `--slider-fill` carries the value and
+   `--slider-fill-at` the edge under the thumb, since no static rule expresses them. */
 .filled {
   flex: 1;
   --wzl-range-bg: linear-gradient(
     to right,
-    var(--wzl-accent) 0 var(--slider-fill, 0%),
-    var(--wzl-border-strong) var(--slider-fill, 0%) 100%
+    var(--wzl-accent) 0 var(--slider-fill-at, 0%),
+    var(--wzl-border-strong) var(--slider-fill-at, 0%) 100%
   );
+  /* `--slider-fill-at` is measured over the content box, where the thumb travels. */
+  background-origin: content-box;
   --wzl-range-box-h: var(--wzl-slider-track-h);
   /* The gradient above IS the track, so the shared track paint must not land on top of it. */
   --wzl-range-track-bg: transparent;

@@ -93,4 +93,9 @@ describe('InlineRange held', () => {
     error.mockRestore();
     expect(warned).toBe(false);
   });
+
+  it('ends the fill under the thumb center, measured over the content box', () => {
+    render(<InlineRange aria-label="Width" min={0} max={100} value={10} onChange={() => {}} />);
+    expect(screen.getByLabelText('Width').style.getPropertyValue('--slider-fill-at')).toBe('calc(10% + 0.4 * var(--wzl-slider-thumb-size))');
+  });
 });

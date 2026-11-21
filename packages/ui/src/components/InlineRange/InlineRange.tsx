@@ -35,6 +35,9 @@ function marksStyle(marks: readonly number[]): Record<string, string> {
   };
 }
 
+/** The fill's edge, under the thumb's center as {@link marksStyle} places a mark: `t/2 + f·(W − t)` of the content box. */
+const fillAt = (f: number) => `calc(${f * 100}% + ${0.5 - f} * var(--wzl-slider-thumb-size))`;
+
 const VALUE_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']);
 
 const NOOP = () => {};
@@ -83,7 +86,7 @@ export const InlineRange = forwardRef(function InlineRange(
   const filled = span > 0 ? ((Math.min(Math.max(value, min), max) - min) / span) * 100 : 0;
   const marked = marks !== undefined && marks.length > 0;
   const vars = {
-    ...(fill ? { '--slider-fill': `${filled}%` } : {}),
+    ...(fill ? { '--slider-fill': `${filled}%`, '--slider-fill-at': fillAt(filled / 100) } : {}),
     ...(marked ? marksStyle(marks) : {}),
   };
   return hold.wrap(
