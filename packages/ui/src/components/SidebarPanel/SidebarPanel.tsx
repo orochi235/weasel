@@ -56,13 +56,15 @@ export function SidebarPanel(props: SidebarPanelProps) {
   const collapsed = fold.folded;
   const appearance = useAppearance(props);
   const titleBox = cx(s.titleBox, props.titleClassName);
+  const header = title !== undefined || fold.folds || actions !== undefined || trailing !== undefined
+    || onHide !== undefined || headerRef !== undefined;
   return (
     <div
       className={cx(s.panel, collapsed && s.collapsed, props.className)}
       data-fill={fill && !collapsed ? '' : undefined}
       {...appearance}
     >
-      {title !== undefined && (
+      {header && (
         <div className={cx(s.titleRow, props.headerClassName)} ref={headerRef}>
           {fold.folds ? (
             <button
@@ -71,13 +73,14 @@ export function SidebarPanel(props: SidebarPanelProps) {
               {...fold.control}
               // The body is unmounted while folded, so there is nothing to name.
               aria-controls={collapsed ? undefined : fold.body.id}
+              aria-label={title === undefined ? 'Contents' : undefined}
             >
               <DisclosureMark open={!collapsed} />
-              <span className={s.title}>{title}</span>
+              {title !== undefined && <span className={s.title}>{title}</span>}
             </button>
-          ) : (
+          ) : title !== undefined ? (
             <span className={cx(s.title, titleBox)}>{title}</span>
-          )}
+          ) : null}
           {actions !== undefined && <div className={s.actions}>{actions}</div>}
           {trailing !== undefined && <div className={s.trailing}>{trailing}</div>}
           {onHide !== undefined && (

@@ -3266,3 +3266,9 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+
+## Audit round sixty (2026-11-20): the component kit, part eight
+
+- 2026-11-20 (the fixer's call): A `SidebarPanel` with no `title` still draws its header row when it folds or is given
+  `onHide`, `actions`, `trailing` or `headerRef`; its fold control is then named "Contents". Making `title` required was
+  the alternative.
