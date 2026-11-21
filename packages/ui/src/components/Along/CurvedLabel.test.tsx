@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { bidi } from '@weasel-js/bidi';
@@ -5,6 +7,7 @@ import { lineShape } from '@weasel-js/geom';
 import { registerBidi } from '@weasel-js/text';
 import { Along } from './Along';
 import { CurvedLabel } from './CurvedLabel';
+import s from './CurvedLabel.module.css';
 
 // jsdom lays nothing out: every grapheme is 10 wide.
 const realOffset = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')!;
@@ -55,4 +58,19 @@ test('outside an Along it is its text on one line, still named by it', () => {
   expect(spans()).toHaveLength(0);
   expect(document.querySelector('[role="img"]')).toHaveTextContent('abc');
   expect(document.querySelector('[role="img"]')).toHaveAttribute('aria-label', 'abc');
+});
+
+test('outside an Along the label takes its place in the flow, and along one it spans the run’s box', () => {
+  const style = document.createElement('style');
+  style.textContent = readFileSync(resolve(__dirname, 'CurvedLabel.module.css'), 'utf8').replaceAll('.label', `.${s.label!.split(' ')[0]}`);
+  document.head.append(style);
+  try {
+    const plain = render(<CurvedLabel text="abc" />);
+    expect(getComputedStyle(plain.getByRole('img')).position).not.toBe('absolute');
+    plain.unmount();
+    const laid = render(<Along shape={shape}><CurvedLabel text="abc" /></Along>);
+    expect(getComputedStyle(laid.getByRole('img')).position).toBe('absolute');
+  } finally {
+    style.remove();
+  }
 });
