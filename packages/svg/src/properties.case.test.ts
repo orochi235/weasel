@@ -66,3 +66,21 @@ describe('a style block left open', () => {
     expect(fillOf('@media all{rect{fill:red}')).toContain('#ff0000');
   });
 });
+
+describe('relative font weights', () => {
+  const textOf = (body: string) => {
+    let n = parse(body).nodes[0];
+    while (n?.kind === 'group') n = n.children[0];
+    return n as { style?: { fontWeight?: unknown }; runs?: { fontWeight?: number; bold?: boolean }[] };
+  };
+  it('computes lighter and bolder over the inherited weight', () => {
+    expect(textOf('<g font-weight="bold"><text font-weight="lighter">a</text></g>').style?.fontWeight).toBe(400);
+    expect(textOf('<g font-weight="300"><text font-weight="bolder">a</text></g>').style?.fontWeight).toBe(400);
+    expect(textOf('<text font-weight="bold">a<tspan font-weight="lighter">b</tspan></text>').runs?.[1]).toMatchObject({ fontWeight: 400 });
+    expect(isDeclarationHonored('font-weight', 'lighter')).toBe(true);
+  });
+
+  it('lets the inherited weight stand under one CSS rejects', () => {
+    expect(textOf('<g font-weight="bold"><text font-weight="heavy">a</text></g>').style?.fontWeight).toBe('bold');
+  });
+});

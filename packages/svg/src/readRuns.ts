@@ -10,7 +10,7 @@ import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
 import { fontSizeOf } from './fontSize';
 import { ownLang } from './textLang';
 import type { GradientTable } from './readGradients';
-import { deriveStyle, ownProp, ownValue, setsOwn, type StyleContext } from './cascade';
+import { deriveStyle, ownProp, ownValue, setsOwn, styleValue, type StyleContext } from './cascade';
 import { readStroke, isNonScalingStroke, setsOwnStroke, coreStroke, coreTextFill } from './readPaint';
 import { withOutlinedStroke } from './strokeOutlineSvg';
 
@@ -94,9 +94,12 @@ function readTspanRun(
 ): StyledRun {
   const text = el.textContent ?? '';
   const run: StyledRun = { text };
-  const fw = ownValue(el, 'font-weight', onWarn);
+  const tspanStyle = deriveStyle(style, el);
+  const own = ownValue(el, 'font-weight', onWarn);
+  // `bolder` and `lighter` are read as the weight they compute to over the text's.
+  const fw = own === 'bolder' || own === 'lighter' ? styleValue(tspanStyle, 'font-weight') : own;
   // 700 is the bold flag's own spelling; any other weight is the run's.
-  if (fw === 'bold' || fw === 'bolder' || fw === 700) run.bold = true;
+  if (fw === 'bold' || fw === 700) run.bold = true;
   else if (fw === 'normal') run.fontWeight = 400;
   else if (typeof fw === 'number') run.fontWeight = fw;
   const fs = ownValue(el, 'font-style', onWarn);
@@ -106,7 +109,6 @@ function readTspanRun(
   const size = ownValue(el, 'font-size', onWarn);
   if (size?.fontSize != null) run.fontSize = size.fontSize;
   if (size?.fontScale != null) run.fontScale = size.fontScale;
-  const tspanStyle = deriveStyle(style, el);
   const ls = ownValue(el, 'letter-spacing', onWarn, fontSizeOf(tspanStyle));
   if (ls != null) run.letterSpacing = ls;
   const shift = ownValue(el, 'baseline-shift', onWarn, fontSizeOf(tspanStyle));

@@ -173,8 +173,8 @@ function readFontSize(
   return n == null ? undefined : { fontSize: n };
 }
 
-function readFontWeight(v: string): 'normal' | 'bold' | 'bolder' | number | undefined {
-  const word = keyword('normal', 'bold', 'bolder')(v);
+function readFontWeight(v: string): 'normal' | 'bold' | 'bolder' | 'lighter' | number | undefined {
+  const word = keyword('normal', 'bold', 'bolder', 'lighter')(v);
   if (word) return word;
   const d = dimension(v);
   return d && d.unit === '' && d.n >= 1 && d.n <= 1000 ? d.n : undefined;
@@ -188,6 +188,20 @@ function readFontStyle(v: string, warn: Warn): 'normal' | 'italic' | undefined {
     return 'italic';
   }
   return undefined;
+}
+
+/** The weight `bolder` or `lighter` computes to over an inherited `parent`, by CSS Fonts 4's table. */
+export function relativeWeight(word: 'bolder' | 'lighter', parent: number): number {
+  if (word === 'bolder') return parent < 350 ? 400 : parent < 550 ? 700 : parent < 900 ? 900 : parent;
+  return parent < 100 ? parent : parent < 550 ? 100 : parent < 750 ? 400 : 700;
+}
+
+/** A read `font-weight` as a number, `bolder` and `lighter` taken over `parent`. */
+export function numericFontWeight(w: ReturnType<typeof readFontWeight>, parent = 400): number | undefined {
+  if (w === 'normal') return 400;
+  if (w === 'bold') return 700;
+  if (w === 'bolder' || w === 'lighter') return relativeWeight(w, parent);
+  return w;
 }
 
 /** `null` is `normal`. */
@@ -289,7 +303,7 @@ export const PROPERTIES = {
   'color': inherited(readColor, unreadColor(readColor)),
   'font-size': inherited(readFontSize, isNegative),
   'font-family': inherited((v) => (v.length > 0 ? v : undefined)),
-  'font-weight': inherited(readFontWeight),
+  'font-weight': inherited(readFontWeight, 'unread'),
   'font-style': inherited(readFontStyle),
   'text-anchor': inherited(keyword('start', 'middle', 'end'), 'unread'),
   'dominant-baseline': inherited(keyword(

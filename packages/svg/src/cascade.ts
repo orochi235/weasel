@@ -16,7 +16,7 @@ import {
   DEFAULT_MEDIA_ENVIRONMENT, evaluateMediaQuery, mediaEnvironmentFor, type SvgMediaEnvironment,
 } from './media';
 import {
-  INHERITED_PROPERTIES, isDeclarationInvalid, PROPERTIES, readProperty, type InheritedPropertyName, type PropertyName, type PropertyValue, type Warn,
+  INHERITED_PROPERTIES, isDeclarationInvalid, numericFontWeight, PROPERTIES, readProperty, type InheritedPropertyName, type PropertyName, type PropertyValue, type Warn,
 } from './properties';
 import {
   CascadeLayers, parseStylesheet, type StyleRule, type StylesheetContext,
@@ -206,7 +206,14 @@ export function deriveStyle(parent: StyleContext, el: Element): StyleContext {
     if (own.trim().toLowerCase() === 'initial') delete next[prop];
     else next[prop] = own;
   }
-  if (next) computeFontRelative(next, fontSizeOf(parent));
+  if (next) {
+    computeFontRelative(next, fontSizeOf(parent));
+    const fw = readProperty('font-weight', next['font-weight']);
+    // A child inherits the weight `bolder` or `lighter` computes to, not the keyword.
+    if (fw === 'bolder' || fw === 'lighter') {
+      next['font-weight'] = String(numericFontWeight(fw, numericFontWeight(readProperty('font-weight', parent['font-weight'])) ?? 400));
+    }
+  }
   return next ?? parent;
 }
 
