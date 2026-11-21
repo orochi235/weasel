@@ -290,13 +290,15 @@
 
 /* ---------- Modifiers ---------- */
 
-.pressed:not(:disabled, [data-disabled]) {
+/* A confirm button keeps its accent body when pressed; the rule after this dims it instead. */
+.pressed:not(:disabled, [data-disabled]):not(:where(.variant_solid[data-stance='confirm'])) {
   background: var(--wzl-surface-pressed);
   color: var(--wzl-fg);
   box-shadow: var(--wzl-bevel-pressed, inset 0 1px 2px rgb(0 0 0 / 18%));
 }
 
-.variant_solid[data-stance='confirm'].pressed:not(:disabled, [data-disabled]) { filter: brightness(0.92); }
+.variant_solid[data-stance='confirm']/* A confirm button keeps its accent body when pressed; the rule after this dims it instead. */
+.pressed:not(:disabled, [data-disabled]):not(:where(.variant_solid[data-stance='confirm'])) { filter: brightness(0.92); }
 
 .fullWidth { width: 100%; }
 .loading .label { opacity: 0.7; }

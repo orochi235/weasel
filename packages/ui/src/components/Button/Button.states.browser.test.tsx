@@ -13,3 +13,16 @@ test('a read-only toggle does not show the pointer cursor', () => {
   expect(getComputedStyle(button).cursor).toBe('default');
 });
 
+test('a pressed confirm button keeps its accent body', () => {
+  render(
+    <>
+      <Button stance="confirm">Rest</Button>
+      <Button stance="confirm" pressed>Held</Button>
+    </>,
+  );
+  const rest = getComputedStyle(screen.getByRole('button', { name: 'Rest' }));
+  const held = getComputedStyle(screen.getByRole('button', { name: 'Held' }));
+  expect(held.backgroundColor).toBe(rest.backgroundColor);
+  expect(held.backgroundImage).toBe(rest.backgroundImage);
+  expect(held.color).toBe(rest.color);
+});
