@@ -66,7 +66,7 @@ export function useItemLengths(root: RefObject<HTMLElement | null>, keys: readon
       observer.current?.disconnect();
       observer.current = null;
     };
-  }, [root, signature, keyOf, itemsOf]);
+  }, [root, signature, keyOf, itemsOf, named]);
   return lengths;
 }
 
