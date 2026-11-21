@@ -15,7 +15,8 @@ import type {
  * A named position in the lab's own chrome — a box the shell owns, outside any
  * one trial. `header` and `footer` are the shell's two bars, named as
  * `<LabShell>` names them; `palette` is the tool rail down the side of the
- * workspace; `sidebar` is a column of sections left of the tool rail.
+ * workspace; `sidebar` is a column of sections left of the tool rail, and
+ * `aside` a column of them on the far side of the workspace.
  * `overlay` sits over the trials inside the lab's drawing surface; it takes
  * only the `render` form, and whatever it renders lays itself out.
  */
