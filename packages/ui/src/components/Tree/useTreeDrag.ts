@@ -126,9 +126,9 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
   }, [o]);
 
   // Whether something outside the tree has said it would take the drag in flight.
-  const outside = useRef<readonly string[] | null>(null);
+  const outside = useRef<{ ids: readonly string[]; effect: TreeDragEffect } | null>(null);
   const leaveOutside = useCallback(() => {
-    if (outside.current) o.current.onDragOutside?.(outside.current, null, 'move');
+    if (outside.current) o.current.onDragOutside?.(outside.current.ids, null, outside.current.effect);
     outside.current = null;
   }, [o]);
 
@@ -163,7 +163,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       const how = effectFor(ev, o.current);
       const out = outsideOf(box, ev.clientX, ev.clientY);
       const taken = out && o.current.onDragOutside?.(ids, { x: ev.clientX, y: ev.clientY }, how) === true;
-      if (taken) outside.current = ids;
+      if (taken) outside.current = { ids, effect: how };
       else leaveOutside();
       const hit = taken ? null : resolve(ids, ev.clientX, ev.clientY, how);
       const into = hit?.mark?.where === 'into' ? hit.mark.id : null;

@@ -307,6 +307,19 @@ describe('Tree — drag to reorder', () => {
     expect([...onExpandedChange.mock.calls.at(-1)![0]]).toEqual(['g']);
   });
 
+  it('tells an outside target it has left with the effect the drag was in', () => {
+    const onDragOutside = vi.fn(() => true);
+    const { tree, row } = setup({ onCopy: vi.fn(), onDragOutside });
+    Object.defineProperty(tree, 'getBoundingClientRect', {
+      configurable: true, value: () => ({ top: 0, left: 0, right: 200, bottom: 72, width: 200, height: 72 } as DOMRect),
+    });
+    press(row('Zed'), 60);
+    move(60, 400, true);
+    move(60, 100, true);
+    release(60, 100, true);
+    expect(onDragOutside).toHaveBeenLastCalledWith(['z'], null, 'copy');
+  });
+
   it('leaves a disabled branch closed however long a drag rests over it', () => {
     vi.useFakeTimers();
     const onExpandedChange = vi.fn();
