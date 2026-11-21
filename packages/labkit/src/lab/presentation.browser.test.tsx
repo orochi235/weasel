@@ -105,6 +105,20 @@ test('a presenting lab hands the page back its own color-scheme and a clear grou
   expect(getComputedStyle(document.documentElement).colorScheme).not.toBe('normal');
 });
 
+test('a presenting lab in dark mode draws no starfield over the page', () => {
+  const stars = (present: boolean) => {
+    renderWithIcons(<Lab instruments={[Painted]} present={present} mode="dark" />);
+    const display = getComputedStyle(
+      document.querySelector('.lk-lab') as Element,
+      '::before',
+    ).display;
+    cleanup();
+    return display;
+  };
+  expect(stars(false)).not.toBe('none');
+  expect(stars(true)).toBe('none');
+});
+
 test('entering and leaving keeps every trial’s canvas element', async () => {
   const { container } = mount(false);
   await act(async () => lab?.addTrial('Painted'));
