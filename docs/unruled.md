@@ -3424,3 +3424,8 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): A `puzzle` badge's `tabSize` stops where two sockets would touch, about 30.9 with
   two opposite and 24.6 with two adjacent, rather than at 40. Shrinking only the sockets, so a tab keeps the size
   asked for, was the alternative.
+## Audit round sixty-two (2026-11-21): Badge effects
+
+- 2026-11-21 (the fixer's call): a `perforations` effect's holes sit at least 1 CSS px apart, and a negative
+  `holeRadius` reads as 0, as the `perforated` shape's `holePitch` and `holeRadius` already did. A radius and a
+  spacing of 0 had asked for holes without end. Throwing on them was the alternative.

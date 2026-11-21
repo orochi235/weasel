@@ -1,0 +1,64 @@
+{
+ "findings": [
+  {
+   "id": "r42-1",
+   "claim": "`commitOps` reads `deps.operands` with no `select`, the one read its own comment says must be skipped",
+   "where": "packages/core/src/interactions/actions/defaultCommitAdapter.ts:84 (commitOps)",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-2",
+   "claim": "`moveEachOps` lets a later entry move a node an earlier zero-delta entry reached, against \"a node two entries reach takes the first one's delta\"",
+   "where": "packages/core/src/interactions/actions/moveNodes.ts:95 (moveEachOps)",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-3",
+   "claim": "`enumerateAnchors` ignores a subpath a drawing command opens after `Z`, so it and `pathToAnchors` number anchors differently",
+   "where": "packages/core/src/interactions/actions/edit-anchors/geometry.ts:50 (enumerateAnchors)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-4",
+   "claim": "`translateAnchor` moves a one-segment quadratic loop's control twice",
+   "where": "packages/core/src/interactions/actions/edit-anchors/geometry.ts:123 (translateAnchor)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-5",
+   "claim": "`swappable` lets a cross-parent swap land a node in a container `childVerdict` would refuse it",
+   "where": "packages/core/src/interactions/actions/canSwap.ts:37 (swappable)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-6",
+   "claim": "`childVerdict` holds the follower page rule only for a page itself, not for a container on that page",
+   "where": "packages/core/src/interactions/actions/admitsChild.ts:54 (childVerdict)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  }
+ ]
+}

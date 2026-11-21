@@ -1,0 +1,58 @@
+{
+ "id": "core.import-shims",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/core/src/import-shims/engine.ts",
+  "packages/core/src/import-shims/groups.ts",
+  "packages/core/src/import-shims/icons.ts",
+  "packages/core/src/import-shims/json.ts",
+  "packages/core/src/import-shims/math.ts",
+  "packages/core/src/import-shims/mesh.ts",
+  "packages/core/src/import-shims/ops.ts",
+  "packages/core/src/import-shims/patterns-builtin.ts",
+  "packages/core/src/import-shims/presets.ts",
+  "packages/core/src/import-shims/render-worker.ts",
+  "packages/core/src/import-shims/renderer.ts",
+  "packages/core/src/import-shims/routing.ts",
+  "packages/core/src/import-shims/test-seams.ts"
+ ],
+ "fixOnly": true,
+ "carried": 6,
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 2,
+ "verify": {
+  "ok": true,
+  "files": 15,
+  "testFiles": {
+   "failed": 0,
+   "passed": 203,
+   "total": 203
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "fix": 10.6
+  },
+  "nodes": {
+   "fix": "teitou"
+  },
+  "weightedTokens": 272963,
+  "costUsd": 0.85
+ },
+ "fixCommits": [
+  "f62dde0b40b02e68413e28c47021252f5c1adc0d",
+  "8ede20b99da4bf75ba7a06e60528b67a11d2731a"
+ ]
+}

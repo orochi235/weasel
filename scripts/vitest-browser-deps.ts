@@ -73,6 +73,21 @@ function globbed(file: string, patterns: string[], repoRoot: string, aliases: Vi
   );
 }
 
+const NESTED = /^(?:packages|apps)\/[^/]+\/node_modules\/((?:@[^/]+\/)?[^/]+)$/;
+
+/**
+ * The dependencies the lockfile installs in a workspace package's own `node_modules` as well as the root's,
+ * sorted. vite resolves a bare `include` from the root and hands that bundle to every importer, so a package
+ * with its own copy would load the root's (font's opentype.js 2 got 1.3.4). `browserDeps` lists these as
+ * `<importer> > <dep>`, which vite resolves from the importer.
+ */
+export function nestedDeps(repoRoot: string): string[] {
+  const lock = join(repoRoot, 'package-lock.json');
+  if (!existsSync(lock)) return [];
+  const packages = Object.keys((JSON.parse(readFileSync(lock, 'utf8')) as { packages?: object }).packages ?? {});
+  return [...new Set(packages.map((path) => NESTED.exec(path)?.[1]).filter((name) => name !== undefined))].sort();
+}
+
 export interface BrowserDepsOptions {
   /** Globs of the test files, relative to the root: the project's `include`. */
   entries: string[];
@@ -82,12 +97,19 @@ export interface BrowserDepsOptions {
 
 /**
  * Every bare specifier reachable from the entries and setup files, sorted. A workspace package is
- * followed into its source and never listed; vitest's own modules are left to vitest. Throws on an
+ * followed into its source and never listed; vitest's own modules are left to vitest. One of `nestedDeps`
+ * is listed once per workspace package importing it, as `<package> > <specifier>`. Throws on an
  * `import()` or `import.meta.glob` it cannot read, which could reach a dependency it would not list.
  */
 export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: BrowserDepsOptions): string[] {
   const aliases = weaselAliases(repoRoot);
-  const workspace = new Set(workspaceEntries(repoRoot).map(({ name }) => name));
+  const packages = workspaceEntries(repoRoot).map(({ dir, name }) => ({ dir: `${dir}/`, name }));
+  const workspace = new Set(packages.map(({ name }) => name));
+  const nested = new Set(nestedDeps(repoRoot));
+  const listed = (specifier: string, file: string) => {
+    const importer = nested.has(packageOf(specifier)) && packages.find(({ dir }) => file.startsWith(dir));
+    return importer ? `${importer.name} > ${specifier}` : specifier;
+  };
   const ownedElsewhere = (pkg: string) =>
     workspace.has(pkg) || BUILTINS.has(pkg) || pkg === 'vitest' || pkg.startsWith('@vitest/');
 
@@ -129,7 +151,7 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(listed(specifier, file));
     }
   }
   return [...found].sort();

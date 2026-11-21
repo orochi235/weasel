@@ -1,0 +1,74 @@
+{
+ "findings": [
+  {
+   "id": "r42-1",
+   "claim": "containerScroll hit-tests a nested scroll container even where its scrolled parent clips it out of view",
+   "where": "packages/core/src/interactions/actions/defaults/containerScroll.ts:86 (scrollablesAt visit / shownAt)",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-2",
+   "claim": "segmentUnder tests the world point against the plane-world path, while the segment affordance tests the camera-projected one",
+   "where": "packages/core/src/interactions/actions/defaults/segmentUnder.ts:20 (segmentUnder)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-3",
+   "claim": "A new drag-pan does not stop the previous drag's inertia coast",
+   "where": "packages/core/src/interactions/actions/defaults/viewportDragPan.ts:77 (viewportDragPanAction start) and :145 (onEnd)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-4",
+   "claim": "buildToolActivateBindings mints the same binding id twice for a third spec of one tool on one key",
+   "where": "packages/core/src/interactions/actions/defaults/toolActivate.ts:32 (buildToolActivateBindings)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-5",
+   "claim": "Fit Content ignores `axis`, though the option says key zoom holds to one axis and only Cmd+0 resets both",
+   "where": "packages/core/src/interactions/actions/defaults/viewportZoom.ts:199 (createViewportZoomAction, `case 'fit'`)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-6",
+   "claim": "container.scroll drops a container's z scroll offset on every wheel step",
+   "where": "packages/core/src/interactions/actions/defaults/containerScroll.ts:160 (containerScrollAction.invoker.run)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-7",
+   "claim": "container.scroll moves a scaled container's content by world units, not its own",
+   "where": "packages/core/src/interactions/actions/defaults/containerScroll.ts:158 (containerScrollAction.invoker.run)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  }
+ ]
+}

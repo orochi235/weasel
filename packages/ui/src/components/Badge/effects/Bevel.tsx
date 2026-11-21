@@ -1,7 +1,7 @@
-import { trimNumber } from '@weasel-js/geom';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 import type { BadgeCorner } from '../types';
+import { bevelBands } from './bevelBands';
 
 /** What an effect of type `bevel` takes as `params`. */
 export interface BadgeBevelEffectParams {
@@ -32,60 +32,13 @@ function bevelClasses(lightFrom: BadgeCorner): Record<Side, string> {
   };
 }
 
-const SAMPLES = 240;
-
 const Bevel: EffectModule<BadgeBevelEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
     const cfg = { ...DEFAULTS, ...params };
-    const sx = 100 / boxW;
-    const sy = 100 / boxH;
     const cls = bevelClasses(cfg.lightFrom);
-    const total = sampler.totalCss;
-
-    // Sample outer + inset rings; tag each sample with the side it belongs to.
-    const outer: { x: number; y: number; side: Side }[] = [];
-    const inner: { x: number; y: number }[] = [];
-    for (let i = 0; i < SAMPLES; i++) {
-      const pt = sampler.perimeterAt((i / SAMPLES) * total);
-      outer.push({ x: pt.x, y: pt.y, side: sideForNormal(pt.nx, pt.ny) });
-      inner.push({
-        x: pt.x - pt.nx * cfg.bevelWidth * sx,
-        y: pt.y - pt.ny * cfg.bevelWidth * sy,
-      });
-    }
-
-    // Group consecutive samples sharing a side into runs (wrap-aware).
-    interface Run { side: Side; idxs: number[] }
-    const runs: Run[] = [];
-    let cur: Run | null = null;
-    for (let i = 0; i < SAMPLES; i++) {
-      const side = outer[i].side;
-      if (!cur || cur.side !== side) {
-        cur = { side, idxs: [i] };
-        runs.push(cur);
-      } else {
-        cur.idxs.push(i);
-      }
-    }
-    // Merge first and last runs if they wrap and share a side.
-    if (runs.length > 1 && runs[0].side === runs[runs.length - 1].side) {
-      runs[runs.length - 1].idxs = runs[runs.length - 1].idxs.concat(runs[0].idxs);
-      runs.shift();
-    }
-
-    const pathFor = (run: Run): string => {
-      const outerPts = run.idxs.map((i) => outer[i]);
-      const innerPts = run.idxs.map((i) => inner[i]).reverse();
-      const pts = [...outerPts, ...innerPts];
-      if (pts.length === 0) return '';
-      let d = `M ${trimNumber(pts[0].x, 3)} ${trimNumber(pts[0].y, 3)}`;
-      for (let i = 1; i < pts.length; i++) {
-        d += ` L ${trimNumber(pts[i].x, 3)} ${trimNumber(pts[i].y, 3)}`;
-      }
-      return d + ' Z';
-    };
+    const bands = bevelBands(sampler, boxW, boxH, cfg.bevelWidth, sideForNormal);
 
     return (
       <>
@@ -95,8 +48,8 @@ const Bevel: EffectModule<BadgeBevelEffectParams> = {
           </clipPath>
         </defs>
         <g clipPath={`url(#${clipId})`}>
-          {runs.map((run, i) => (
-            <path key={i} className={cls[run.side]} d={pathFor(run)} />
+          {bands.map((band, i) => (
+            <path key={i} className={cls[band.key]} d={band.d} />
           ))}
         </g>
       </>

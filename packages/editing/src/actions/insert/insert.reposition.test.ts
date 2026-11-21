@@ -5,7 +5,7 @@ import { insertRepositionAction } from './repositionAction';
 import type { InsertDep, InsertExtras, InsertLive } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
-import { gridSourceForTests as gridSource, sessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
+import { gridSnapSourceForTests as gridSource, snapSessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
 
 type Bounds = { x: number; y: number; width: number; height: number };
 

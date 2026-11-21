@@ -40,11 +40,11 @@ export type { FrameFixtureData as FrameFixtureDataForTests, FrameFixtureLayer as
 
 export { assertFinite as assertFiniteForTests, drive as driveForTests } from '../interactions/actions/drag.pbt.fixture';
 export type { Pt as PtForTests } from '../interactions/actions/drag.pbt.fixture';
-export { depsOf as depsOfForTests, makeScene as makeSceneForTests, runs as runsForTests, tally as tallyForTests, timeoutFor as timeoutForForTests } from '../interactions/actions/pbtScene.fixture';
+export { depsOf as depsOfForTests, makeScene as makeSceneForTests } from '../interactions/actions/pbtScene.fixture';
 export type { TestScene as TestSceneForTests } from '../interactions/actions/pbtScene.fixture';
 
 export { ON_PAGE as ON_PAGEForTests, PAGE_A as PAGE_AForTests, PAGE_B as PAGE_BForTests, pagedScene as pagedSceneForTests } from '../core/pages/pagedFixture';
-export { gridSource as gridSourceForTests, lineSource as lineSourceForTests, sessionDep as sessionDepForTests } from '../domains/snap/testing/sessionDep';
+export { lineSource as lineSourceForTests } from '../domains/snap/testing/sessionDep';
 export { dragCtx as dragCtxForTests, handleAffordance as handleAffordanceForTests } from '../interactions/actions/drag.pbt.fixture';
 export type { Gesture as GestureForTests } from '../interactions/actions/drag.pbt.fixture';
 export { heldPose as heldPoseForTests, moveEnd as moveEndForTests } from '../interactions/actions/testUtils';

@@ -1,0 +1,73 @@
+{
+ "id": "text.layout",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/text/src/layout/arrayPool.ts",
+  "packages/text/src/layout/bidiLines.ts",
+  "packages/text/src/layout/bidiRegistry.ts",
+  "packages/text/src/layout/bidiSeam.ts",
+  "packages/text/src/layout/decorationMetrics.ts",
+  "packages/text/src/layout/engineGeneration.ts",
+  "packages/text/src/layout/engineSlot.ts",
+  "packages/text/src/layout/glyphQuads.ts",
+  "packages/text/src/layout/layoutCache.ts",
+  "packages/text/src/layout/layoutColumns.ts",
+  "packages/text/src/layout/layoutEntries.ts",
+  "packages/text/src/layout/layoutLines.ts",
+  "packages/text/src/layout/layoutOpts.ts",
+  "packages/text/src/layout/layoutRuns.ts",
+  "packages/text/src/layout/lineBreak/lineBreakTable.ts",
+  "packages/text/src/layout/lineBreak/lineBreaks.ts",
+  "packages/text/src/layout/lineBreak/wrapLines.ts",
+  "packages/text/src/layout/paintCache.ts",
+  "packages/text/src/layout/paintGroups.ts",
+  "packages/text/src/layout/paintRuns.ts",
+  "packages/text/src/layout/runsEntries.ts",
+  "packages/text/src/layout/runsKey.ts",
+  "packages/text/src/layout/shapedRuns.ts",
+  "packages/text/src/layout/shaperRegistry.ts",
+  "packages/text/src/layout/shaperSeam.ts",
+  "packages/text/src/layout/tabStops.ts",
+  "packages/text/src/layout/testing/fontFixtures.ts",
+  "packages/text/src/layout/testing/layoutAndPaint.ts",
+  "packages/text/src/layout/textFit.ts",
+  "packages/text/src/layout/textPoseLayout.ts"
+ ],
+ "fixOnly": true,
+ "carried": 4,
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 19,
+  "testFiles": {
+   "failed": 0,
+   "passed": 5868,
+   "total": 5868
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "fix": 53.7,
+   "repair": 18.9
+  },
+  "nodes": {
+   "fix": "studio"
+  },
+  "weightedTokens": 1166545,
+  "costUsd": 3.36
+ },
+ "fixCommits": []
+}

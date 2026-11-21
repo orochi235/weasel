@@ -1,0 +1,45 @@
+{
+ "findings": [
+  {
+   "id": "r42-1",
+   "claim": "pathNode drops a `place.pose`'s `transform` (skew / per-axis scale)",
+   "where": "packages/core/src/domains/paths/pathNode.ts:44-50 (pathNode)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-2",
+   "claim": "anchorIndexUnder measures its screen-pixel reach as a world circle, so a view that scales its axes apart reaches far past `reachPx` on one axis",
+   "where": "packages/core/src/domains/paths/anchorUnder.ts:18-28 (anchorIndexUnder)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42,
+    42
+   ]
+  },
+  {
+   "id": "r42-3",
+   "claim": "The path-edit overlay draws a node's anchors at its stored pose, not its effective one, so a derived or overridden node's anchors sit off its drawn outline",
+   "where": "packages/core/src/domains/paths/editablePath.ts:141-142 (previewedShape), used by liveEditablePath / usePathEdit.ts:73-77 (getPose)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-4",
+   "claim": "The path-snap index snaps to each node at its stored pose, not the pose it is drawn at",
+   "where": "packages/core/src/domains/paths/pathSnap/sceneIndex.ts:54 (createSceneSnapIndexer)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  }
+ ]
+}

@@ -1,0 +1,24 @@
+{
+ "findings": [
+  {
+   "id": "r53-1",
+   "claim": "Hovering a separator leaves a pending submenu open running, where hovering a panel's padding cancels it",
+   "where": "packages/menu/src/controller.ts:155 (createMenuController → hover)",
+   "from": "A",
+   "round": 53,
+   "rounds": [
+    53
+   ]
+  },
+  {
+   "id": "r53-2",
+   "claim": "A letter typed mid-search is taken as an access letter (or a number-row step) instead of extending the search",
+   "where": "packages/menu/src/keyPlan.ts:28-43 (planKey)",
+   "from": "B",
+   "round": 53,
+   "rounds": [
+    53
+   ]
+  }
+ ]
+}

@@ -1,0 +1,65 @@
+{
+ "id": "cursor",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/cursor/src/bake.ts",
+  "packages/cursor/src/brushRing.ts",
+  "packages/cursor/src/cursorSink.ts",
+  "packages/cursor/src/glyphs.ts",
+  "packages/cursor/src/index.ts",
+  "packages/cursor/src/mark.ts",
+  "packages/cursor/src/paint.ts",
+  "packages/cursor/src/paintedCursorState.ts",
+  "packages/cursor/src/pbt.fixture.ts",
+  "packages/cursor/src/registry.ts",
+  "packages/cursor/src/resolve.ts",
+  "packages/cursor/src/types.ts"
+ ],
+ "fixOnly": true,
+ "carried": 7,
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 7,
+ "verify": {
+  "ok": false,
+  "why": "7 of 527 test files failed",
+  "files": 26,
+  "testFiles": {
+   "failed": 7,
+   "passed": 3318,
+   "total": 3325
+  },
+  "failedFiles": [
+   "packages/core/src/canvas/anisotropicStroke.browser.test.ts",
+   "packages/core/src/canvas/syntheticBoldStroke.browser.test.ts",
+   "packages/text-tools/src/node/syntheticBoldOutline.browser.test.ts",
+   "packages/text-tools/src/node/textOverflow.browser.test.ts",
+   "packages/text-tools/src/node/textPaint.browser.test.ts",
+   "packages/diagram-formats/src/pagesPdf.browser.test.ts",
+   "packages/text-tools/src/editor/overlayAlignment.browser.test.tsx"
+  ],
+  "gui": true,
+  "repairs": 2
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "fix": 23,
+   "repair": 76.8
+  },
+  "nodes": {
+   "fix": "studio"
+  },
+  "weightedTokens": 1080410,
+  "costUsd": 3.27
+ },
+ "fixCommits": []
+}

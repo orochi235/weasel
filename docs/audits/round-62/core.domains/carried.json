@@ -1,0 +1,14 @@
+{
+ "findings": [
+  {
+   "id": "r42-9",
+   "claim": "createCanvasCamera.target() returns a stale heading during a glide it didn't start",
+   "where": "packages/core/src/domains/presentation/presentationStep.ts:110-121 (createCanvasCamera)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  }
+ ]
+}

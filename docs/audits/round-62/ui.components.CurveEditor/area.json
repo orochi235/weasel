@@ -1,0 +1,77 @@
+{
+ "id": "ui.components.CurveEditor",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/CurveEditor/CurveEditor.module.css",
+  "packages/ui/src/components/CurveEditor/CurveEditor.pointPlotter.stories.tsx",
+  "packages/ui/src/components/CurveEditor/CurveEditor.stories.tsx",
+  "packages/ui/src/components/CurveEditor/CurveEditor.tsx",
+  "packages/ui/src/components/CurveEditor/CurveFill.tsx",
+  "packages/ui/src/components/CurveEditor/CustomLayer.tsx",
+  "packages/ui/src/components/CurveEditor/Diamond.tsx",
+  "packages/ui/src/components/CurveEditor/FunctionLayer.tsx",
+  "packages/ui/src/components/CurveEditor/KeyframeLayer.tsx",
+  "packages/ui/src/components/CurveEditor/LayeredCurveEditor.stories.module.css",
+  "packages/ui/src/components/CurveEditor/LayeredCurveEditor.stories.tsx",
+  "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx",
+  "packages/ui/src/components/CurveEditor/anchorRules.ts",
+  "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx",
+  "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx",
+  "packages/ui/src/components/CurveEditor/functionAnchorEdits.ts",
+  "packages/ui/src/components/CurveEditor/functionCurve.ts",
+  "packages/ui/src/components/CurveEditor/functionLayerTypes.ts",
+  "packages/ui/src/components/CurveEditor/functionMarks.tsx",
+  "packages/ui/src/components/CurveEditor/hitTest.ts",
+  "packages/ui/src/components/CurveEditor/index.ts",
+  "packages/ui/src/components/CurveEditor/keyframeCurve.ts",
+  "packages/ui/src/components/CurveEditor/keyframeEdits.ts",
+  "packages/ui/src/components/CurveEditor/keyframeMarks.tsx",
+  "packages/ui/src/components/CurveEditor/layerCtx.ts",
+  "packages/ui/src/components/CurveEditor/layerDispatch.ts",
+  "packages/ui/src/components/CurveEditor/layerHost.ts",
+  "packages/ui/src/components/CurveEditor/layerMarks.ts",
+  "packages/ui/src/components/CurveEditor/layerTypes.ts",
+  "packages/ui/src/components/CurveEditor/presets.ts",
+  "packages/ui/src/components/CurveEditor/setCurveOp.ts",
+  "packages/ui/src/components/CurveEditor/useLayerGesture.ts",
+  "packages/ui/src/components/CurveEditor/useLayerHistory.ts"
+ ],
+ "fixOnly": true,
+ "carried": 1,
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 1,
+ "verify": {
+  "ok": true,
+  "files": 1,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1,
+   "total": 1
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "fix": 12
+  },
+  "nodes": {
+   "fix": "teitou"
+  },
+  "weightedTokens": 159545,
+  "costUsd": 0.53
+ },
+ "fixCommits": [
+  "de15e2cf54e5c1e81a964f3eb8892d06a0ac30a1"
+ ]
+}

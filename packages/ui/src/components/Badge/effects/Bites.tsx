@@ -1,5 +1,5 @@
 import type { EffectModule } from '../bases/types';
-import { bumpWobble, nearestBump } from './bumps';
+import { bumpRadius, nearestBump } from './bumps';
 import { rangeMask, type BadgeRangeMaskParams } from './rangeMask';
 
 /** What an effect of type `bites` takes as `params`. */
@@ -24,8 +24,7 @@ const Bites: EffectModule<BadgeBitesEffectParams> = {
     const bs = Math.max(2 * br + 0.5, cfg.biteSpacing);
     const N = Math.max(2, Math.floor(totalCss / bs));
     const { index, offset: ds } = nearestBump(s, totalCss, N, phase);
-    const irr = Math.max(0, Math.min(cfg.irregularity, 1));
-    const localR = br * (1 + irr * 0.55 * bumpWobble(index));
+    const localR = bumpRadius(br, cfg.irregularity, index, totalCss / N);
     if (Math.abs(ds) > localR) return { dx: 0, dy: 0 };
     // Triangular inward dent: deepest at ds=0 (peak −localR), zero at ds=±localR.
     const t = 1 - Math.abs(ds) / localR;

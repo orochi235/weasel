@@ -1,0 +1,116 @@
+{
+ "findings": [
+  {
+   "id": "r56-1",
+   "claim": "Stroke widths documented as CSS px are multiplied by the viewBox scale and then drawn with non-scaling-stroke, so they come out too thick",
+   "where": "packages/ui/src/components/Badge/effects/glassStrokes.tsx:66 (GlassStrokes); packages/ui/src/components/Badge/effects/Outline.tsx:34 (Outline.Component)",
+   "from": "A",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-2",
+   "claim": "Aqua's and Metal's gloss gradient ends at glossExtent² / 100, not at glossExtent",
+   "where": "packages/ui/src/components/Badge/effects/Aqua.tsx:87 (Aqua.Component); packages/ui/src/components/Badge/effects/Metal.tsx:91 (Metal.Component)",
+   "from": "A",
+   "round": 56,
+   "rounds": [
+    56,
+    56
+   ]
+  },
+  {
+   "id": "r56-3",
+   "claim": "Perforations hangs when holeRadius and holeSpacing are both 0",
+   "where": "packages/ui/src/components/Badge/effects/Perforations.tsx:23 (Perforations.Component)",
+   "from": "A",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-4",
+   "claim": "Bevel leaves an unpainted gap at every seam between its side bands; Bevel2 overlaps its bands to close the same gap",
+   "where": "packages/ui/src/components/Badge/effects/Bevel.tsx:78 (pathFor)",
+   "from": "A",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-5",
+   "claim": "Bites and Scallops cut a bump off at the midpoint between bumps when irregularity widens it past half a step, leaving a jump in the outline",
+   "where": "packages/ui/src/components/Badge/effects/Bites.tsx:28 (Bites.offsetAt); packages/ui/src/components/Badge/effects/Scallops.tsx:28 (Scallops.offsetAt)",
+   "from": "A",
+   "round": 56,
+   "rounds": [
+    56,
+    56
+   ]
+  },
+  {
+   "id": "r56-6",
+   "claim": "Spikes does not clamp irregularity, unlike its siblings; past 2 the spike length goes negative, and the corner compensation can flip it back outward or divide by zero",
+   "where": "packages/ui/src/components/Badge/effects/Spikes.tsx:57 (Spikes.offsetAt)",
+   "from": "A",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-7",
+   "claim": "Sunbeams' gradient axis is 100 viewBox units long at every angle, so at diagonal angles 0..1 does not reach the badge's corners",
+   "where": "packages/ui/src/components/Badge/effects/Sunbeams.tsx:101 (Sunbeams.Component)",
+   "from": "A",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-8",
+   "claim": "Bevel and Bevel2 inset the inner ring along the viewBox normal instead of the CSS normal, so on a non-square badge the band is skewed and thinner than bevelWidth on slanted edges",
+   "where": "packages/ui/src/components/Badge/effects/Bevel.tsx:53; packages/ui/src/components/Badge/effects/Bevel2.tsx:56 (Component)",
+   "from": "A",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-9",
+   "claim": "Outline effect scales a non-scaling stroke a second time, so `width` is not CSS px",
+   "where": "packages/ui/src/components/Badge/effects/Outline.tsx:34 (Outline.Component)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-10",
+   "claim": "Aqua and Metal bezel and rim strokes are scaled twice in the same way",
+   "where": "packages/ui/src/components/Badge/effects/glassStrokes.tsx:66 (GlassStrokes)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-13",
+   "claim": "Spikes leaves `irregularity` unclamped, unlike its sibling bump effects; values above 2 draw inverted or unbounded spikes",
+   "where": "packages/ui/src/components/Badge/effects/Spikes.tsx:57 (Spikes.offsetAt)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  }
+ ]
+}

@@ -1,0 +1,74 @@
+{
+ "findings": [
+  {
+   "id": "r56-1",
+   "claim": "Three stories use CSS classes that a 2026-11-14 commit deleted, so they render unstyled",
+   "where": "packages/ui/src/components/Bar/BarField.stories.tsx:25 (Strip), :67 (RowBesideBar); packages/ui/src/components/Bar/BarMenu.stories.tsx:37 (Host); packages/ui/src/components/Bar/BarPopover.stories.tsx:31 (Rows)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-2",
+   "claim": "A held bar's menu button still opens its menu, with live rows",
+   "where": "packages/ui/src/components/Bar/BarMenu.tsx:45 (BarMenu)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-3",
+   "claim": "On a wrapped bar, a drag-reorder drop on the second line picks its gap by x alone",
+   "where": "packages/ui/src/components/Bar/BarLine.tsx:45 (BarLine, the `measure` passed to useBarReorder)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-4",
+   "claim": "A curved bar drops `fit`, so its FitLabels never shorten together",
+   "where": "packages/ui/src/components/Bar/BarAlong.tsx:40 (BarAlong)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-6",
+   "claim": "useMenuLeast reports a near-zero minimum width under right-to-left",
+   "where": "packages/ui/src/components/Bar/useMenuLeast.ts:17 (measure)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-7",
+   "claim": "Alt+arrow at the end of a container moves roving focus instead of doing nothing",
+   "where": "packages/ui/src/components/Bar/useBarReorderKeys.ts:95 (onKeyDownCapture), with BarLine.tsx:71",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-8",
+   "claim": "useBarOverflow's size cache keeps every key it has ever seen",
+   "where": "packages/ui/src/components/Bar/useBarOverflow.ts:38 (`sizes`)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  }
+ ]
+}

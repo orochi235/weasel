@@ -1,0 +1,24 @@
+{
+ "findings": [
+  {
+   "id": "r37-3",
+   "claim": "`stream()` stops the element's current stream before the new call is known to start",
+   "where": "packages/audio/src/createAudioEngine.ts:260-267 (stream)",
+   "from": "A+B",
+   "round": 37,
+   "rounds": [
+    37
+   ]
+  },
+  {
+   "id": "r37-10",
+   "claim": "A non-finite `insertFadeMs` / `fadeMs` throws out of `InsertChain.add` halfway through a splice, leaving the dry route permanently wired beside the effect",
+   "where": "packages/audio/src/inserts.ts:86,95 (createInsertChain fade), packages/audio/src/insertRoute.ts:52-62 (spliceIn), packages/audio/src/createAudioEngine.ts:218",
+   "from": "B",
+   "round": 37,
+   "rounds": [
+    37
+   ]
+  }
+ ]
+}

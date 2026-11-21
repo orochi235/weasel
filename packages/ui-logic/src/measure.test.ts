@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { envNumber, envPx, type MeasureEnv } from './measure';
+import { envFontWeight, envNumber, envPx, type MeasureEnv } from './measure';
 
 const env = (tokens: Record<string, string>): MeasureEnv => ({
   token: (name) => tokens[name],
@@ -32,6 +32,20 @@ describe('envNumber', () => {
   it('falls back on a value with a unit, which is not a multiplier', () => {
     for (const raw of ['150%', '18px', '1.5em', 'normal', '1.5 2']) {
       expect(envNumber(env({ '--a': raw }), '--a', 1.2), raw).toBe(1.2);
+    }
+  });
+});
+
+describe('envFontWeight', () => {
+  it('reads the keywords CSS gives a weight for, and a number in range', () => {
+    expect(envFontWeight(env({ '--w': 'bold' }), '--w', 500)).toBe(700);
+    expect(envFontWeight(env({ '--w': ' Normal ' }), '--w', 500)).toBe(400);
+    expect(envFontWeight(env({ '--w': '650' }), '--w', 500)).toBe(650);
+  });
+
+  it('falls back on a relative keyword or a weight CSS rejects', () => {
+    for (const raw of ['bolder', 'lighter', '0', '1001', '50%', 'heavy']) {
+      expect(envFontWeight(env({ '--w': raw }), '--w', 500), raw).toBe(500);
     }
   });
 });

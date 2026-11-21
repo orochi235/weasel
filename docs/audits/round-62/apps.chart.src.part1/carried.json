@@ -1,0 +1,14 @@
+{
+ "findings": [
+  {
+   "id": "r33-1",
+   "claim": "The Sequence panel's \"Adds\" picker reads any non-actor head as \"Participant\", so a database/queue/boundary head cannot be set to a plain participant from it",
+   "where": "apps/chart/src/SequencePanel.tsx:75 (SequencePanel, participant Select)",
+   "from": "A",
+   "round": 33,
+   "rounds": [
+    33
+   ]
+  }
+ ]
+}

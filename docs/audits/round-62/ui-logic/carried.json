@@ -1,0 +1,24 @@
+{
+ "findings": [
+  {
+   "id": "r56-4",
+   "claim": "envNumber reads a keyword font weight as the fallback, not the weight CSS draws",
+   "where": "packages/ui-logic/src/measure.ts:72-75 (envNumber), used by button.ts:81 (buttonMetrics)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r57-5",
+   "claim": "envNumber reads a percentage or a keyword as a bare number",
+   "where": "packages/ui-logic/src/measure.ts:72-75 (envNumber)",
+   "from": "B",
+   "round": 57,
+   "rounds": [
+    57
+   ]
+  }
+ ]
+}

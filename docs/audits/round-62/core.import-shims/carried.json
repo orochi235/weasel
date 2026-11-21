@@ -1,0 +1,64 @@
+{
+ "findings": [
+  {
+   "id": "r42-1",
+   "claim": "test-seams' header promises a paint-kind reset, an insert-dep source and an area hit test it no longer exports",
+   "where": "packages/core/src/import-shims/test-seams.ts:4-11 (module doc)",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-2",
+   "claim": "mesh.ts says core's package.json lists a `register` entry under `sideEffects`; there is none",
+   "where": "packages/core/src/import-shims/mesh.ts:1-2 (module comment)",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-3",
+   "claim": "`ops.swap` is history's generic value-swap op, not a core op and not the new node swap",
+   "where": "packages/core/src/import-shims/ops.ts:2,14 (module doc; `createSwapOp as swap`)",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-4",
+   "claim": "engine.ts' header still says it carries \"the actions and tools such a host binds\"",
+   "where": "packages/core/src/import-shims/engine.ts:1-2 (generated header, from scripts/gen-engine-entry.mjs:30)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-5",
+   "claim": "The `@weasel-js/core/ops` package doc's example commits through an API that does not exist",
+   "where": "packages/core/src/import-shims/ops.ts:7 (package doc)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-6",
+   "claim": "test-seams exports the same fixture functions under two names each",
+   "where": "packages/core/src/import-shims/test-seams.ts:29 and 48 (`gridSource` as `gridSnapSourceForTests` and `gridSourceForTests`; `sessionDep` as `snapSessionDepForTests` and `sessionDepForTests`), 34 and 44 (`runs`, `tally` and `timeoutFor` as `pbtRunsForTests`/`runsForTests`, `pbtTallyForTests`/`tallyForTests`, `pbtTimeoutForTests`/`timeoutForForTests`)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  }
+ ]
+}

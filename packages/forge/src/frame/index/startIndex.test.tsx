@@ -1,5 +1,5 @@
 import { f } from '@weasel-js/labkit/config';
-import { act, fireEvent, screen, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { openChannel } from '../../protocol/channel';
 import type { FromFrame, ToFrame } from '../../protocol/messages';
@@ -187,12 +187,14 @@ describe('startIndex', () => {
     };
     const { shell, received } = start({ render });
     await init(shell);
-    expect(received.find((m) => m.type === 'fault')).toMatchObject({
-      phase: 'render',
-      message: 'bad page',
-      stack: expect.stringContaining('bad page'),
-      seq: 1,
-    });
+    await waitFor(() =>
+      expect(received.find((m) => m.type === 'fault')).toMatchObject({
+        phase: 'render',
+        message: 'bad page',
+        stack: expect.stringContaining('bad page'),
+        seq: 1,
+      }),
+    );
   });
 
   it('outlines the elements an a11y.highlight names, and clears them on an empty one', async () => {
@@ -241,7 +243,10 @@ describe('startIndex', () => {
     });
     const { shell, received } = start({ setup: { applyGlobals } });
     await init(shell);
-    expect(received.find((m) => m.type === 'fault')).toMatchObject({ phase: 'render', message: 'no such mode', seq: 1 });
+    // The fault is a round trip over a MessageChannel, which one timer tick does not outlast on a loaded machine.
+    await waitFor(() =>
+      expect(received.find((m) => m.type === 'fault')).toMatchObject({ phase: 'render', message: 'no such mode', seq: 1 }),
+    );
     expect(received.some((m) => m.type === 'rendered')).toBe(false);
   });
 });

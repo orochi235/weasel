@@ -17,7 +17,7 @@ import { cloneAction } from '../../../actions/clone/action';
 import { areaSelectAction } from '../../../actions/select/areaSelect';
 import { insertAction } from '../../../actions/insert/action';
 import { scenePoseFrame } from '@weasel-js/core/engine';
-import { depsOfForTests as depsOf, makeSceneForTests as makeScene, runsForTests as runs, tallyForTests as tally, type TestSceneForTests as TestScene, assertFiniteForTests as assertFinite, driveForTests as drive, type GestureForTests as Gesture, type PtForTests as Pt } from '@weasel-js/core/test-seams';
+import { depsOfForTests as depsOf, makeSceneForTests as makeScene, pbtRunsForTests as runs, pbtTallyForTests as tally, type TestSceneForTests as TestScene, assertFiniteForTests as assertFinite, driveForTests as drive, type GestureForTests as Gesture, type PtForTests as Pt } from '@weasel-js/core/test-seams';
 
 const N = 100;
 const seen = tally();

@@ -49,8 +49,6 @@ export function upwardRunPaths(sampler: BaseSampler): string[] {
 
 interface GlassStrokesProps {
   sampler: BaseSampler;
-  boxW: number;
-  boxH: number;
   bezelAlpha: number;
   /** CSS px. */
   bezelWidth: number;
@@ -60,10 +58,7 @@ interface GlassStrokesProps {
 }
 
 /** The glassy effects' top two passes: a white bezel along the upward-facing perimeter, then a dark rim all round. */
-export function GlassStrokes({ sampler, boxW, boxH, bezelAlpha, bezelWidth, rimAlpha, rimWidth }: GlassStrokesProps) {
-  // The badge SVG is 100×100 with preserveAspectRatio="none"; the larger inverse scale keeps
-  // the stroke from getting too thin in either axis.
-  const widthScale = Math.max(100 / boxW, 100 / boxH);
+export function GlassStrokes({ sampler, bezelAlpha, bezelWidth, rimAlpha, rimWidth }: GlassStrokesProps) {
   return (
     <>
       {upwardRunPaths(sampler).map((d, i) => (
@@ -73,7 +68,7 @@ export function GlassStrokes({ sampler, boxW, boxH, bezelAlpha, bezelWidth, rimA
           fill="none"
           stroke="white"
           strokeOpacity={bezelAlpha}
-          strokeWidth={bezelWidth * widthScale}
+          strokeWidth={bezelWidth}
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
           style={{ pointerEvents: 'none' }}
@@ -84,7 +79,7 @@ export function GlassStrokes({ sampler, boxW, boxH, bezelAlpha, bezelWidth, rimA
         fill="none"
         stroke="black"
         strokeOpacity={rimAlpha}
-        strokeWidth={rimWidth * widthScale}
+        strokeWidth={rimWidth}
         vectorEffect="non-scaling-stroke"
         style={{ pointerEvents: 'none' }}
       />

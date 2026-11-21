@@ -1,0 +1,34 @@
+{
+ "findings": [
+  {
+   "id": "r56-4",
+   "claim": "sliderAt under `strict` with no stops returns the raw track value, unclamped and unsnapped",
+   "where": "packages/ui-input/src/slider.ts:94 (sliderAt)",
+   "from": "A",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r57-2",
+   "claim": "sliderKey with stops and `ordered` lands a thumb between stops when the next stop is its neighbor's",
+   "where": "packages/ui-input/src/slider.ts:205,217 (sliderKey)",
+   "from": "A",
+   "round": 57,
+   "rounds": [
+    57
+   ]
+  },
+  {
+   "id": "r57-4",
+   "claim": "A sweep's `at` answers NaN (or `undefined` from valuesSweep) for a NaN fraction, though documented as clamped",
+   "where": "packages/ui-input/src/sweep.ts:99 (valuesSweep), :71 and :86 (rangeSweep), :150 (framesSweep)",
+   "from": "A",
+   "round": 57,
+   "rounds": [
+    57
+   ]
+  }
+ ]
+}
