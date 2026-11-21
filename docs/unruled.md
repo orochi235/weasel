@@ -3266,3 +3266,9 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+
+## Audit round sixty (2026-11-20): ui's test helpers
+
+- 2026-11-20 (the fixer's call): `painted` and `lineContrast` in `packages/ui/src/testing/paintedContrast.ts` throw
+  when the ground is translucent, unless passed the `backdrop` it is drawn over. Measuring against the ground as if
+  it were opaque was the alternative.
