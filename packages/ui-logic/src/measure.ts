@@ -68,9 +68,13 @@ export function envPx(env: MeasureEnv, name: string, fallback?: number | string)
   throw new Error(`envPx: ${name} is not a px length (${raw ?? 'unset'})`);
 }
 
-/** A unitless numeric token, else `fallback`. */
+/** A CSS number with no unit. */
+const CSS_NUMBER = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?$/i;
+
+/** A unitless numeric token, else `fallback`: a length or a percentage is not a multiplier, so it falls back too. */
 export function envNumber(env: MeasureEnv, name: string, fallback: number): number {
-  const n = Number.parseFloat(env.token(name) ?? '');
+  const raw = env.token(name)?.trim();
+  const n = raw && CSS_NUMBER.test(raw) ? Number(raw) : NaN;
   return Number.isFinite(n) ? n : fallback;
 }
 
