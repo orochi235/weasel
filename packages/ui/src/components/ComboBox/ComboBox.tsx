@@ -201,8 +201,8 @@ function ComboBoxFrame({
   inputRef?: Ref<HTMLInputElement>;
   placeholder?: string;
   loading?: boolean;
-  /** Set while React Aria puts the selection back on a blur, or on an Enter with no option highlighted: with both
-   *  `selectedKey` and `inputValue` controlled it reports that as a selection, which nobody picked. */
+  /** Set while React Aria puts the selection back on a blur, an Escape, or an Enter with no option highlighted: with
+   *  both `selectedKey` and `inputValue` controlled it reports that as a selection, which nobody picked. */
   revertingRef: RefObject<boolean>;
   onCommitText?: (text: string) => void;
   children?: ReactNode;
@@ -213,7 +213,12 @@ function ComboBoxFrame({
   // clears the focused key, so by then there is no way to tell an option
   // commit from a text one.
   const onKeyDownCapture = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter' || imeKey(e.nativeEvent)) return;
+    if (imeKey(e.nativeEvent)) return;
+    if (e.key === 'Escape') {
+      revertingRef.current = true;
+      return;
+    }
+    if (e.key !== 'Enter') return;
     const focused = state?.isOpen ? state.selectionManager.focusedKey : null;
     // React Aria's commit would clear the selection and close the list on a held option.
     if (focused != null && isHeldKey(state!.collection, focused)) {
