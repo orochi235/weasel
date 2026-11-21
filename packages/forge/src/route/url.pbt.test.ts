@@ -7,7 +7,7 @@ import { type ConfigEntry, type ConfigSchema, f, isConfigBranch } from '@weasel-
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { anyFinite, json, jsonObject, key, runs, tally, text, timeoutFor } from '../pbt.fixture';
-import { withGlobals } from '../shell/globals';
+import { isForgePath, withGlobals } from '../shell/globals';
 import {
   decodeKnob,
   encodeKnob,
@@ -54,7 +54,7 @@ const spec: fc.Arbitrary<Spec> = fc.oneof(
   fc.array(json, { maxLength: 3 }).map((d) => ({ node: f.value(d), value: fc.array(json, { maxLength: 3 }) })),
 );
 
-const schemaKey = fc.oneof({ weight: 6, arbitrary: key }, { weight: 1, arbitrary: fc.constantFrom('t', '$x', 'a.b', '') });
+const schemaKey = fc.oneof({ weight: 6, arbitrary: key }, { weight: 1, arbitrary: fc.constantFrom('t', '$x', '$globals', 'a.b', '') });
 
 /** A schema of leaves and one level of groups, with a config setting some of its leaves. */
 const schemaAndConfig: fc.Arbitrary<{ schema: ConfigSchema<unknown>; config: Record<string, unknown> }> = fc
@@ -99,10 +99,11 @@ function own(target: Record<string, unknown>, k: string, value: unknown): void {
   Object.defineProperty(target, k, { value, enumerable: true, writable: true, configurable: true });
 }
 
-/** Every leaf in a shape, by dotted path, keys empty, holding a dot, or starting with `$` skipped as `knobPaths` does. */
+/** Every leaf in a shape, by dotted path, keys empty or holding a dot and the top-level keys forge owns skipped as
+ *  `knobPaths` does. */
 function leaves(shape: Record<string, ConfigEntry>, at = ''): [string, KnobLeaf][] {
   return Object.entries(shape).flatMap(([k, entry]): [string, KnobLeaf][] => {
-    if (k === '' || k.startsWith('$') || k.includes('.')) return [];
+    if (k === '' || k.includes('.') || (at === '' && isForgePath(k))) return [];
     const path = at === '' ? k : `${at}.${k}`;
     return isConfigBranch(entry) ? leaves(entry.children as Record<string, ConfigEntry>, path) : [[path, entry as KnobLeaf]];
   });

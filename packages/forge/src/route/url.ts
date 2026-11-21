@@ -3,7 +3,7 @@ import { isPlainObject } from '@weasel-js/core';
 import { type PrefLeaf, type PrefNumber, type PrefObject, prefClampNumber, prefSectionLeaves } from '@weasel-js/prefs-schema';
 import type { StoryGlobals } from '../protocol/messages';
 import { setOwn, getOwn } from '@weasel-js/registry';
-import { GLOBALS_KEY } from '../shell/globals';
+import { GLOBALS_KEY, isForgePath } from '../shell/globals';
 
 /**
  * Forge's URL, as pure functions: `#/<story id>?<params>`. The story and its params share the hash, so the page's
@@ -16,9 +16,6 @@ export const PLAYHEAD_PARAM = 't';
 
 /** Param names that are never knobs. */
 export const RESERVED_PARAMS: ReadonlySet<string> = new Set([PLAYHEAD_PARAM]);
-
-/** Config keys forge keeps for itself, such as the `$globals` pins, start with this and never reach the URL. */
-const INTERNAL_PREFIX = '$';
 
 /** What a forge hash holds: the story it names, and every param after it, knobs and reserved alike, in order. */
 export interface ForgeRoute {
@@ -49,9 +46,9 @@ export function formatRoute(route: ForgeRoute): string {
   return `#/${encodeURIComponent((route.story ?? '').replace(/\p{Cs}/gu, '\uFFFD'))}${query ? `?${query}` : ''}`;
 }
 
-/** Whether a param name can be a knob: not reserved and not one of forge's own config keys. */
+/** Whether a param name can be a knob: not reserved and not under one of forge's own config keys (`$globals`). */
 export function isKnobParam(name: string): boolean {
-  return name !== '' && !RESERVED_PARAMS.has(name) && !name.startsWith(INTERNAL_PREFIX);
+  return name !== '' && !RESERVED_PARAMS.has(name) && !isForgePath(name);
 }
 
 /** The params that are knobs, with the reserved ones left out. */
@@ -262,13 +259,14 @@ export function knobPaths(schema: Pick<ConfigSchema<unknown>, 'nodes'>): KnobPat
   const walk = (shape: ConfigShape, at: string): void => {
     for (const [key, entry] of Object.entries(shape)) {
       // An empty key's path would read as its parent's, so like a dotted one it has no param.
-      if (key === '' || key.startsWith(INTERNAL_PREFIX) || key.includes('.')) continue;
+      if (key === '' || key.includes('.')) continue;
       const path = at === '' ? key : `${at}.${key}`;
       if (isConfigBranch(entry)) walk(entry.children, path);
       else if (codecOf(entry) !== null && isKnobParam(path)) out.push({ path, leaf: entry });
     }
   };
-  walk(schema.nodes, '');
+  const own = Object.fromEntries(Object.entries(schema.nodes as ConfigShape).filter(([key]) => !isForgePath(key)));
+  walk(own, '');
   return out;
 }
 

@@ -284,3 +284,14 @@ describe('sameKnob', () => {
     expect(knobsToParams(endless, { reach: -Infinity })).toEqual({ reach: '-Infinity' });
   });
 });
+
+describe('a story key starting with $', () => {
+  const dollar = f.schema({ $tint: f.string('red'), look: f.group({ $px: f.number(1) }) });
+
+  it('is a knob, as only the keys forge owns are not', () => {
+    expect(knobPaths(dollar).map((k) => k.path)).toEqual(['$tint', 'look.$px']);
+    expect(knobsToParams(dollar, { $tint: 'blue', look: { $px: 2 } })).toEqual({ $tint: 'blue', 'look.$px': '2' });
+    expect(paramsToKnobs(dollar, { $tint: 'green' })).toEqual({ $tint: 'green' });
+    expect(knobParams({ $tint: 'x', '$globals.mode': 'dark', t: '1' })).toEqual({ $tint: 'x' });
+  });
+});
