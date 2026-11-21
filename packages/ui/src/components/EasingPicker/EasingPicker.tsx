@@ -54,6 +54,7 @@ export interface EasingPickerProps extends HoldProps {
 export function EasingPicker(props: EasingPickerProps): ReactElement {
   const { value } = props;
   const hold = useNativeHold(props);
+  const convertHold = useNativeHold(props, { readonlyRole: false, changes: true });
   const onChange = (next: EasingSpec | undefined) => { if (!hold.refuses) props.onChange(next); };
   const row = usePropertyRow();
   const shown = props.label ?? (row ? false : 'Easing');
@@ -83,30 +84,29 @@ export function EasingPicker(props: EasingPickerProps): ReactElement {
     </select>
   );
 
-  return hold.wrap(
+  return (
     <div className={s.easingPicker}>
-      {shown === false ? menu : (
+      {hold.wrap(shown === false ? menu : (
         <label>
           {shown}
           {menu}
         </label>
-      )}
+      ))}
 
-      {custom ? <span className={s.easingLabel}>{label}</span> : convertible && (
+      {custom ? <span className={s.easingLabel}>{label}</span> : convertible && convertHold.wrap(
         <button
           type="button"
           className={s.convert}
-          {...hold.attrs}
-          aria-readonly={undefined}
+          {...convertHold.attrs}
           onClick={() => onChange({ bezier: convertible })}
         >
           Convert to bezier
-        </button>
+        </button>,
       )}
 
       <svg className={s.easingPreview} data-testid="easing-preview" viewBox="0 0 100 100" preserveAspectRatio="none">
         <polyline points={points} vectorEffect="non-scaling-stroke" />
       </svg>
-    </div>,
+    </div>
   );
 }

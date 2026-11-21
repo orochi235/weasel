@@ -74,6 +74,17 @@ describe('EasingPicker', () => {
     }
   });
 
+  it('marks its convert button as held while read-only, and tells the reason', () => {
+    const onChange = vi.fn();
+    render(<EasingPicker value="easeInOutCubic" onChange={onChange} readOnly readOnlyReason="Shared" />);
+    const convert = screen.getByRole('button', { name: /convert to bezier/i });
+    expect(convert).toHaveAttribute('aria-disabled', 'true');
+    expect(convert).toHaveAttribute('data-disabled');
+    expect(convert).toHaveAccessibleDescription('Shared');
+    fireEvent.click(convert);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('draws the curve it is showing', () => {
     render(<EasingPicker value="easeInQuad" onChange={() => {}} />);
     const pts = screen.getByTestId('easing-preview').querySelector('polyline')!.getAttribute('points')!
