@@ -138,7 +138,7 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
               tabbable={t.key === activeKey}
               register={(el) => { if (el) buttons.current.set(t.key, el); else buttons.current.delete(t.key); }}
               onFocus={() => setActive(t.key)}
-              onPress={() => { if (opened?.key === t.key) close(); else show(t.key, 'pointer', true); }}
+              onPress={() => { if (opened?.key === t.key || (opened && disabled.has(t.key))) close(); else show(t.key, 'pointer', true); }}
               onEnter={(held) => { if (opened && opened.key !== t.key) show(t.key, 'pointer', held); }}
               onActivate={() => { if (opened?.key !== t.key) show(t.key, 'keyboard'); }}
               onKey={(e) => onTitleKey(e, t.key)}

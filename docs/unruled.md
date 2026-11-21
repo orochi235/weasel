@@ -3230,3 +3230,8 @@ Calls the lanes made without a ruling:
   a caller who passed it as an increment now gets that number as the half-height.
 - 2026-11-20: A badge shape's repeat counts (`sparkler` and `starburst` `points`, `receipt` `teeth`) stop at 256, and a
   `perforated` badge's `holePitch` at no less than 1px. Both bounds are picked to keep a render finite, not ruled.
+
+## Audit round fifty-eight (2026-11-20): MenuBar
+
+- 2026-11-20: A press on a disabled `MenuBar` title while another title's menu is open closes that menu, as a press
+  anywhere off it does. The pointer moving onto a disabled title leaves the open menu as it is.
