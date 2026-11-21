@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
 import type { MenuController, MenuEntry, MenuSide, MenuRect } from '@weasel-js/menu';
 import { placeMenu, placeMenuUnder, placeSubmenu } from '@weasel-js/menu';
 import { inlineDirection } from '../../useRovingTabIndex';
@@ -17,7 +17,7 @@ export function MenuPanel(props: {
   highlight: number | null; childOpen: boolean; idBase: string;
   /** The row a submenu hangs from. */
   labelledBy?: string;
-  anchor: { client: { x: number; y: number }; under?: MenuRect; side?: MenuSide } | null;
+  anchor: PanelAnchor;
   parentRow: () => MenuRect | null;
   focus: boolean;
   /** While true, a pointerup over a row presses it. Read at the event, never rendered from. */
@@ -41,25 +41,7 @@ export function MenuPanel(props: {
     return true;
   };
 
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    // Placed in client px, and written in the px of the box the panel is fixed in, which a magnifier may draw larger.
-    const frame = blockFrame(containingBlock(el));
-    const size = { width: el.offsetWidth * frame.scaleX, height: el.offsetHeight * frame.scaleY };
-    const bounds = { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
-    const row = parentRow();
-    const dir = inlineDirection(el);
-    const at = row ? placeSubmenu(size, row, bounds, dir)
-      : anchor?.under ? placeMenuUnder(size, anchor.under, bounds, anchor.side, dir)
-        : placeMenu(size, anchor?.client ?? { x: 0, y: 0 }, bounds, dir);
-    const own = clientToBlock(at, frame);
-    el.style.left = `${own.x}px`;
-    el.style.top = `${own.y}px`;
-    c.setPanel(level, { x: at.x, y: at.y, width: size.width, height: size.height });
-    // Placed once per mount: the host remounts a panel when the row it hangs from changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [c, level, anchor]);
+  usePlacement(ref, c, level, anchor, parentRow);
 
   useLayoutEffect(() => { if (focus) ref.current?.focus(); }, [focus]);
 
@@ -133,4 +115,31 @@ export function MenuPanel(props: {
       />
     </div>
   );
+}
+
+type PanelAnchor = { client: { x: number; y: number }; under?: MenuRect; side?: MenuSide } | null;
+
+/** Place panel `ref` in the viewport: beside the row it hangs from, under `anchor.under`, or at `anchor.client`. */
+function usePlacement(
+  ref: RefObject<HTMLDivElement | null>, c: MenuController, level: number, anchor: PanelAnchor, parentRow: () => MenuRect | null,
+): void {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // Placed in client px, and written in the px of the box the panel is fixed in, which a magnifier may draw larger.
+    const frame = blockFrame(containingBlock(el));
+    const size = { width: el.offsetWidth * frame.scaleX, height: el.offsetHeight * frame.scaleY };
+    const bounds = { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
+    const row = parentRow();
+    const dir = inlineDirection(el);
+    const at = row ? placeSubmenu(size, row, bounds, dir)
+      : anchor?.under ? placeMenuUnder(size, anchor.under, bounds, anchor.side, dir)
+        : placeMenu(size, anchor?.client ?? { x: 0, y: 0 }, bounds, dir);
+    const own = clientToBlock(at, frame);
+    el.style.left = `${own.x}px`;
+    el.style.top = `${own.y}px`;
+    c.setPanel(level, { x: at.x, y: at.y, width: size.width, height: size.height });
+    // Placed once per mount: the host remounts a panel when the row it hangs from changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [c, level, anchor]);
 }
