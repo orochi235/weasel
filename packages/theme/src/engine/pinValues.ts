@@ -4,6 +4,7 @@ import type { PinObject, PinValue } from '../definition.ts';
 import type { RawToken } from '../dtcg/types.ts';
 import type { SettleContext } from './entries.ts';
 import { UNTYPED } from './references.ts';
+import { pinProblem } from './ruleShape.ts';
 
 const SEED_REF = /^\{seeds\.([\w-]+)\}$/;
 
@@ -46,5 +47,10 @@ export function pinToken(v: Varying<PinValue>, path: string, prior: RawToken | u
   }
   const obj = seeded(isPinObject(picked.value) ? picked.value : { value: picked.value }, ctx, path);
   if (!obj) return undefined;
+  const problem = pinProblem(obj as unknown as Record<string, unknown>);
+  if (problem) {
+    ctx.issues.push({ kind: 'invalid', path, message: problem });
+    return undefined;
+  }
   return { type: obj.type ?? prior?.type ?? UNTYPED, value: obj.value, alpha: obj.alpha, description: obj.description ?? prior?.description, scope: obj.scope };
 }

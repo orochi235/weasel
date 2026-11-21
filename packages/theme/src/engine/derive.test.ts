@@ -291,6 +291,30 @@ describe('derive', () => {
     expect(tokens).toEqual({});
   });
 
+  it('reports a pin or component whose fields have the wrong types, and keeps what a rule produced', () => {
+    const loaded: ThemeDefinition = JSON.parse(`{
+      "name": "x",
+      "semantics": { "surface": { "value": "#000000", "type": "color" } },
+      "components": { "card": { "value": "#ffffff", "type": "color", "description": 5 }, "bag": { "r": 1 } },
+      "pins": { "surface": { "value": "{card}", "alpha": "half" }, "veil": { "value": "{card}", "alpha": 50 }, "odd": { "value": "1px", "type": 5 } }
+    }`);
+    const { tokens, issues } = derive(loaded);
+    expect(issues).toEqual([
+      { kind: 'invalid', path: 'components.card', message: 'description must be a string' },
+      { kind: 'invalid', path: 'components.bag', message: 'value must be a string, a number, or a list of those' },
+      { kind: 'invalid', path: 'pins.surface', message: 'alpha must be a number from 0 to 1' },
+      { kind: 'invalid', path: 'pins.veil', message: 'alpha must be a number from 0 to 1' },
+      { kind: 'invalid', path: 'pins.odd', message: 'type must be a string' },
+    ]);
+    expect(Object.keys(tokens)).toEqual(['surface']);
+    expect(tokens.surface.value).toBe('#000000');
+  });
+
+  it('reports a semantic alpha outside 0 to 1', () => {
+    const { issues } = derive({ name: 'x', pins: { a: { value: '#000000', type: 'color' } }, semantics: { veil: { ref: 'a', alpha: 50 } } });
+    expect(issues).toEqual([{ kind: 'invalid', path: 'semantics.veil', message: 'alpha must be a number from 0 to 1' }]);
+  });
+
   it('resolves a seed inside a component or pin list, as in a semantic value', () => {
     const { tokens, issues } = derive({
       name: 'x',
