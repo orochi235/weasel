@@ -8,6 +8,7 @@ export function FontFamilyControl(p: PropertyFontFamilyFieldProps) {
   return (
     <Select<string>
       className={p.className}
+      id={p.id}
       options={options}
       selectedKey={value ?? null}
       placeholder={p.unset ? '—' : undefined}
@@ -26,6 +27,7 @@ export function FontWeightControl(p: PropertyFontWeightFieldProps) {
   return (
     <Select<string>
       className={p.className}
+      id={p.id}
       options={options}
       selectedKey={value === undefined ? null : String(value)}
       placeholder={p.unset ? '—' : undefined}
