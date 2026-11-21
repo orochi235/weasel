@@ -52,9 +52,23 @@ function edgesOf(el: Element): Edges {
   return { top: r.top, left: r.left, bottom: r.bottom, right: r.right };
 }
 
+function clips(el: Element): boolean {
+  const style = el.ownerDocument.defaultView?.getComputedStyle(el);
+  return !!style && (style.overflowX !== 'visible' || style.overflowY !== 'visible');
+}
+
+/** `root`'s descendants with their edges, in document order. What a box that
+ *  clips its overflow holds cannot reach past it, so its subtree is not walked. */
+function* descendants(root: Element): Iterable<{ item: Element; edges: Edges }> {
+  for (const el of root.children) {
+    yield { item: el, edges: edgesOf(el) };
+    if (!clips(el)) yield* descendants(el);
+  }
+}
+
 function* candidates(root: Element): Iterable<{ item: Element; edges: Edges }> {
   yield { item: root, edges: edgesOf(root) };
-  for (const el of root.querySelectorAll('*')) yield { item: el, edges: edgesOf(el) };
+  yield* descendants(root);
 }
 
 function overflows(el: Element): boolean {
