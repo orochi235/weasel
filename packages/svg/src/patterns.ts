@@ -139,7 +139,7 @@ function readImagePattern(el: Element, onWarn?: (m: string) => void): ImagePatte
   if (fit && fit !== 'none') {
     onWarn?.(`<pattern id="${el.getAttribute('id')}"> <image> preserveAspectRatio is not modeled; the tile is filled stretched`);
   }
-  return { kind: 'image', src, width, height, ...readPlacement(el) };
+  return { kind: 'image', src, width, height, ...readPlacement(el, onWarn) };
 }
 
 /** A pattern element's `x` / `y` and `patternTransform`, as a paint's

@@ -209,3 +209,10 @@ describe('pattern serialization', () => {
     expect(warnings.join(' ')).not.toContain('unsupported <defs> child');
   });
 });
+
+describe('pattern placement warnings', () => {
+  it("reports an image pattern's unreadable patternTransform", () => {
+    const { warnings } = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><defs><pattern id="p" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="skewQ(3)"><image href="a.png" width="10" height="10"/></pattern></defs><rect width="5" height="5" fill="url(#p)"/></svg>');
+    expect(warnings.some((w) => w.includes('skewQ'))).toBe(true);
+  });
+});
