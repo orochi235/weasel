@@ -33,6 +33,11 @@ describe('controlAccess', () => {
     expect(controlAccess({ on: true })).toEqual({ state: 'disabled', reachable: false, reason: undefined });
   });
 
+  it('reads an empty reason as none, as nestHold does', () => {
+    expect(controlAccess({ on: true, reason: '' })).toEqual({ state: 'disabled', reachable: false, reason: undefined });
+    expect(controlAccess(NO_HOLD, { on: true, reason: '' })).toEqual({ state: 'readOnly', reachable: true, reason: undefined });
+  });
+
   it('keeps a disabled control with a reason reachable', () => {
     expect(controlAccess({ on: true, reason: 'Locked' })).toEqual({ state: 'disabled', reachable: true, reason: 'Locked' });
   });
