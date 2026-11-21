@@ -49,8 +49,9 @@ function useOpenState({ open: controlled, defaultOpen, onOpenChange }: Contained
 const holds = new WeakMap<Element, number>();
 
 /**
- * Makes inert every element under `root` that does not hold `keep`, and returns the undo. Elements that were
- * inert by some other hand are left as they were.
+ * Makes inert every element under `root` that does not hold `keep`, including one that joins later, until the
+ * returned undo. Elements that were inert by some other hand are left as they were, and so are overlays
+ * (`data-weasel-overlay`), which sit above the modal: a popover it opens, or a modal stacked on it.
  */
 export function inertOutside(root: Element, keep: Element): () => void {
   const made: Element[] = [];
@@ -61,14 +62,25 @@ export function inertOutside(root: Element, keep: Element): () => void {
     if (n === undefined) el.setAttribute('inert', '');
     made.push(el);
   };
+  const parents: Element[] = [];
   for (let node: Element | null = keep; node && node !== root; node = node.parentElement) {
     const parent: Element | null = node.parentElement;
     if (!parent) break;
+    parents.push(parent);
     for (const sibling of Array.from<Element>(parent.children)) {
       if (sibling !== node) hold(sibling);
     }
   }
+  const observer = new MutationObserver((records) => {
+    for (const r of records) {
+      for (const added of Array.from(r.addedNodes)) {
+        if (added instanceof Element && !added.contains(keep) && !added.hasAttribute('data-weasel-overlay')) hold(added);
+      }
+    }
+  });
+  for (const parent of parents) observer.observe(parent, { childList: true });
   return () => {
+    observer.disconnect();
     for (const el of made) {
       const n = holds.get(el) ?? 1;
       if (n > 1) {

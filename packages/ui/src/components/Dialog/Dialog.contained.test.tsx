@@ -123,6 +123,23 @@ describe('Dialog in a contained portal', () => {
 });
 
 describe('inertOutside', () => {
+  it('makes inert what joins the root while it holds, but not an overlay', async () => {
+    const root = document.createElement('div');
+    const keep = document.createElement('div');
+    root.append(keep);
+    document.body.append(root);
+    const release = inertOutside(root, keep);
+    const late = document.createElement('div');
+    const overlay = document.createElement('div');
+    overlay.setAttribute('data-weasel-overlay', '');
+    root.append(late, overlay);
+    await waitFor(() => expect(late.hasAttribute('inert')).toBe(true));
+    expect(overlay.hasAttribute('inert')).toBe(false);
+    release();
+    expect(late.hasAttribute('inert')).toBe(false);
+    root.remove();
+  });
+
   it('leaves alone what was inert before it', () => {
     const root = document.createElement('div');
     const keep = document.createElement('div');
