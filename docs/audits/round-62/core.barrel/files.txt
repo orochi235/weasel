@@ -1,0 +1,15 @@
+packages/core/src/barrel/canvas.ts
+packages/core/src/barrel/chrome.ts
+packages/core/src/barrel/editingSeams.ts
+packages/core/src/barrel/icons.ts
+packages/core/src/barrel/input.ts
+packages/core/src/barrel/interactions.ts
+packages/core/src/barrel/outlines.ts
+packages/core/src/barrel/paint.ts
+packages/core/src/barrel/paths.ts
+packages/core/src/barrel/persistence.ts
+packages/core/src/barrel/renderer.ts
+packages/core/src/barrel/routing.ts
+packages/core/src/barrel/scene.ts
+packages/core/src/barrel/snap.ts
+packages/core/src/barrel/viewport.ts

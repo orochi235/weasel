@@ -1,0 +1,74 @@
+{
+ "findings": [
+  {
+   "id": "r42-1",
+   "claim": "pointSnap's trail always snaps with free modifiers, so the cursor preview disagrees with the click under Ctrl or Shift",
+   "where": "packages/core/src/domains/snap/pointSnap.ts:44 (pointSnap → trail)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-2",
+   "claim": "SnapCollect.include is documented and read by pathSnapSource, but no session ever sets it",
+   "where": "packages/core/src/domains/snap/types.ts:97 (SnapCollect.include); packages/core/src/domains/snap/session2d.ts:103 (collectAtPress)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-3",
+   "claim": "createSnapSession2d cannot express SnapBegin's `along`, per-gesture `sources` or `omit`",
+   "where": "packages/core/src/domains/snap/sceneSession2d.ts:137 (createSnapSession2d)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-4",
+   "claim": "The test sessionDep ignores a request's `sources` and `omit`, unlike the canvas dep it stands in for",
+   "where": "packages/core/src/domains/snap/testing/sessionDep.ts:50 (sessionDep)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-5",
+   "claim": "The debug snap overlay places a segment or bounded-face candidate on its unbounded flat",
+   "where": "packages/core/src/domains/snap/debugCandidates.ts:23 (recordSnapCandidates)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-6",
+   "claim": "A move of a group never finds its own geometry: the default `geometryAt` is handed the group's id, not its subtree",
+   "where": "packages/core/src/domains/snap/sceneSession2d.ts:45-46 (createSceneSession2d, default geometryAt)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-7",
+   "claim": "`SpanSnap.anchor` moves the start but leaves `startHeld()` reporting the old snap",
+   "where": "packages/core/src/domains/snap/spanSnap.ts:88-94 (createSpanSnap, anchor)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  }
+ ]
+}

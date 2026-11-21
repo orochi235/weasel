@@ -1,0 +1,46 @@
+{
+ "id": "menu",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/menu/src/access.ts",
+  "packages/menu/src/controller.ts",
+  "packages/menu/src/dismiss.ts",
+  "packages/menu/src/entries.ts",
+  "packages/menu/src/heldValues.ts",
+  "packages/menu/src/index.ts",
+  "packages/menu/src/keyPlan.ts",
+  "packages/menu/src/keys.ts",
+  "packages/menu/src/links.ts",
+  "packages/menu/src/numberText.ts",
+  "packages/menu/src/numberValues.ts",
+  "packages/menu/src/pbt.fixture.ts",
+  "packages/menu/src/placement.ts",
+  "packages/menu/src/triangle.ts",
+  "packages/menu/src/typeahead.ts"
+ ],
+ "fixOnly": true,
+ "carried": 2,
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "fix": 3.9
+  },
+  "nodes": {
+   "fix": "teitou"
+  },
+  "weightedTokens": 96029,
+  "costUsd": 0.35
+ },
+ "fixCommits": []
+}

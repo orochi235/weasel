@@ -1,0 +1,57 @@
+{
+ "id": "core.animation",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/core/src/animation/behaviors/coast.ts",
+  "packages/core/src/animation/behaviors/coastByWrite.ts",
+  "packages/core/src/animation/behaviors/coastOnTargets.ts",
+  "packages/core/src/animation/behaviors/momentum.ts",
+  "packages/core/src/animation/clipTargets.ts",
+  "packages/core/src/animation/departures.ts",
+  "packages/core/src/animation/index.ts",
+  "packages/core/src/animation/motionMs.ts",
+  "packages/core/src/animation/pathMotion.ts",
+  "packages/core/src/animation/poseHelpers.ts",
+  "packages/core/src/animation/poseTarget.ts",
+  "packages/core/src/animation/poseTransition.ts",
+  "packages/core/src/animation/reflow.ts",
+  "packages/core/src/animation/reflowGlide.ts",
+  "packages/core/src/animation/rewind.ts",
+  "packages/core/src/animation/rig/bindRig.ts",
+  "packages/core/src/animation/rig/index.ts",
+  "packages/core/src/animation/rig/rigNode.ts",
+  "packages/core/src/animation/rig/rigSeat.ts",
+  "packages/core/src/animation/rig/skinBinding.ts",
+  "packages/core/src/animation/rig/useRig.ts",
+  "packages/core/src/animation/wrappers/animateLifecycle.ts",
+  "packages/core/src/animation/wrappers/animateOnSetPose.ts",
+  "packages/core/src/animation/wrappers/index.ts",
+  "packages/core/src/animation/wrappers/instantPose.ts",
+  "packages/core/src/animation/writtenPoseTarget.ts"
+ ],
+ "fixOnly": true,
+ "carried": 1,
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "fix": 0.6
+  },
+  "nodes": {
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 118199,
+  "costUsd": 0.42
+ },
+ "fixCommits": []
+}

@@ -1,0 +1,44 @@
+{
+ "findings": [
+  {
+   "id": "r57-1",
+   "claim": "Code points handled before the shaped-slot check (space, tab, soft hyphen) throw away their shaped slot, so a mark clustered onto them is never drawn",
+   "where": "packages/text/src/layout/layoutEntries.ts:184-196 (measureRuns)",
+   "from": "A",
+   "round": 57,
+   "rounds": [
+    57
+   ]
+  },
+  {
+   "id": "r57-2",
+   "claim": "A throw inside `layoutRuns` on a structural-list eviction leaves a listed entry pointing at recycled columns",
+   "where": "packages/text/src/layout/layoutCache.ts:261-265 (structuralLayout)",
+   "from": "A",
+   "round": 57,
+   "rounds": [
+    57
+   ]
+  },
+  {
+   "id": "r57-3",
+   "claim": "A throw mid-painting leaves the group slots filled, and the next painting returns the previous one's groups, including one whose quadData is the shared scratch",
+   "where": "packages/text/src/layout/paintGroups.ts:126-142 (slots/last, takeGroups); packages/text/src/layout/paintRuns.ts:246-310 (paintRunsInto)",
+   "from": "A",
+   "round": 57,
+   "rounds": [
+    57
+   ]
+  },
+  {
+   "id": "r57-4",
+   "claim": "`outlineMinSize: NaN` lands in the same paint-cache bucket as a threshold no run reaches, but paints every glyph as an outline",
+   "where": "packages/text/src/layout/paintCache.ts:103-114 (outlineBucket) vs packages/text/src/layout/paintRuns.ts:146 (glyphOutlineD)",
+   "from": "A",
+   "round": 57,
+   "rounds": [
+    57
+   ]
+  }
+ ]
+}

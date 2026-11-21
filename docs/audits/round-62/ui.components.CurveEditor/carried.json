@@ -1,0 +1,14 @@
+{
+ "findings": [
+  {
+   "id": "r58-16",
+   "claim": "A key one layer commits without preventing default is undone together with the next layer's edit",
+   "where": "packages/ui/src/components/CurveEditor/layerDispatch.ts:96 (dispatchKey), packages/ui/src/components/CurveEditor/useLayerHistory.ts:37 (snapshot)",
+   "from": "B",
+   "round": 58,
+   "rounds": [
+    58
+   ]
+  }
+ ]
+}

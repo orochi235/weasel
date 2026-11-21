@@ -1,0 +1,70 @@
+{
+ "id": "core.interactions.actions.part1",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/core/src/interactions/actions/actionGroups.ts",
+  "packages/core/src/interactions/actions/actionParamSchema.ts",
+  "packages/core/src/interactions/actions/actionParams.extension.fixture.ts",
+  "packages/core/src/interactions/actions/actionParams.typetest.ts",
+  "packages/core/src/interactions/actions/admitsChild.ts",
+  "packages/core/src/interactions/actions/canSwap.ts",
+  "packages/core/src/interactions/actions/defaultCommitAdapter.ts",
+  "packages/core/src/interactions/actions/depSchema.ts",
+  "packages/core/src/interactions/actions/drawnBoxes.ts",
+  "packages/core/src/interactions/actions/dropVerdict.ts",
+  "packages/core/src/interactions/actions/duplicateOffset.ts",
+  "packages/core/src/interactions/actions/edit-anchors/geometry.ts",
+  "packages/core/src/interactions/actions/edit-anchors/params.ts",
+  "packages/core/src/interactions/actions/editAnchorsDep.ts",
+  "packages/core/src/interactions/actions/editDeps.ts",
+  "packages/core/src/interactions/actions/engineDeps.ts",
+  "packages/core/src/interactions/actions/finiteFrame.ts",
+  "packages/core/src/interactions/actions/followerMoves.ts",
+  "packages/core/src/interactions/actions/geometryProjection.ts",
+  "packages/core/src/interactions/actions/gestureFrames.ts",
+  "packages/core/src/interactions/actions/groupSlot.ts",
+  "packages/core/src/interactions/actions/hitSelection.ts",
+  "packages/core/src/interactions/actions/ingestionDeps.ts",
+  "packages/core/src/interactions/actions/insertDeps.ts",
+  "packages/core/src/interactions/actions/layoutDeps.ts",
+  "packages/core/src/interactions/actions/magnification.ts",
+  "packages/core/src/interactions/actions/moveNodes.ts"
+ ],
+ "fixOnly": true,
+ "carried": 6,
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 10,
+ "verify": {
+  "ok": true,
+  "files": 21,
+  "testFiles": {
+   "failed": 0,
+   "passed": 5868,
+   "total": 5868
+  },
+  "gui": true,
+  "repairs": 2
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "fix": 43.9,
+   "repair": 33.8
+  },
+  "nodes": {
+   "fix": "studio"
+  },
+  "weightedTokens": 425349,
+  "costUsd": 3.52
+ },
+ "fixCommits": []
+}

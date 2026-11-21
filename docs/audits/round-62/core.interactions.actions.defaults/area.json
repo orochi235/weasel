@@ -1,0 +1,60 @@
+{
+ "id": "core.interactions.actions.defaults",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/core/src/interactions/actions/defaults/cancelAll.ts",
+  "packages/core/src/interactions/actions/defaults/containerScroll.ts",
+  "packages/core/src/interactions/actions/defaults/contextMenu.ts",
+  "packages/core/src/interactions/actions/defaults/copySubtree.ts",
+  "packages/core/src/interactions/actions/defaults/index.ts",
+  "packages/core/src/interactions/actions/defaults/lockedReach.ts",
+  "packages/core/src/interactions/actions/defaults/nudgeSteps.ts",
+  "packages/core/src/interactions/actions/defaults/requiresOperands.ts",
+  "packages/core/src/interactions/actions/defaults/segmentUnder.ts",
+  "packages/core/src/interactions/actions/defaults/sliceOps.ts",
+  "packages/core/src/interactions/actions/defaults/toolActivate.ts",
+  "packages/core/src/interactions/actions/defaults/toolResetToDefault.ts",
+  "packages/core/src/interactions/actions/defaults/touchZoom.ts",
+  "packages/core/src/interactions/actions/defaults/undoRedo.ts",
+  "packages/core/src/interactions/actions/defaults/viewportDragPan.ts",
+  "packages/core/src/interactions/actions/defaults/viewportWheelPan.ts",
+  "packages/core/src/interactions/actions/defaults/viewportZoom.ts"
+ ],
+ "fixOnly": true,
+ "carried": 7,
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 20,
+  "testFiles": {
+   "failed": 0,
+   "passed": 5867,
+   "total": 5867
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "fix": 17.7,
+   "repair": 10.6
+  },
+  "nodes": {
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1515171,
+  "costUsd": 4.2
+ },
+ "fixCommits": []
+}

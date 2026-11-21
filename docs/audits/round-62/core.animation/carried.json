@@ -1,0 +1,14 @@
+{
+ "findings": [
+  {
+   "id": "r38-5",
+   "claim": "A coast canceled from outside leaves its preview on screen and records nothing, though the drag's own commit was suppressed",
+   "where": "packages/core/src/animation/behaviors/coastByWrite.ts:41 (coast.stop / commitFlick); packages/core/src/animation/behaviors/coastOnTargets.ts:126 (coast.stop); packages/core/src/animation/behaviors/momentum.ts:140 (onEnd)",
+   "from": "B",
+   "round": 38,
+   "rounds": [
+    38
+   ]
+  }
+ ]
+}

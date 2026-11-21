@@ -6300,6 +6300,7 @@
    "packages/ui/src/overlays/portalHost.tsx",
    "packages/ui/src/pathThrough.ts",
    "packages/ui/src/pbt.fixture.ts",
+   "packages/ui/src/revealInBox.ts",
    "packages/ui/src/rowControls.ts",
    "packages/ui/src/selectionRoving.ts",
    "packages/ui/src/snap.ts",
@@ -6478,6 +6479,7 @@
    "packages/ui/src/components/Badge/looks.ts",
    "packages/ui/src/components/Badge/paddingSides.ts",
    "packages/ui/src/components/Badge/powerlineProps.ts",
+   "packages/ui/src/components/Badge/registryEntry.ts",
    "packages/ui/src/components/Badge/registryTable.ts",
    "packages/ui/src/components/Badge/types.ts",
    "packages/ui/src/components/Badge/useCrawlPhase.ts",
@@ -6712,6 +6714,7 @@
    "packages/ui/src/components/GradientEditor/handleOverlay.module.css",
    "packages/ui/src/components/GradientEditor/handleOverlay.tsx",
    "packages/ui/src/components/GradientEditor/index.ts",
+   "packages/ui/src/components/GradientEditor/useFocusAfterCommit.ts",
    "packages/ui/src/components/GradientEditor/useStopSelection.ts"
   ]
  },
@@ -6741,6 +6744,7 @@
    "packages/ui/src/components/Keycaps/keycapFonts.story.ts",
    "packages/ui/src/components/Keycaps/keycapLegends.story.ts",
    "packages/ui/src/components/Keycaps/legendFit.ts",
+   "packages/ui/src/components/Keycaps/legendIcons.ts",
    "packages/ui/src/components/Keycaps/legendMeasure.ts",
    "packages/ui/src/components/Keycaps/useHeldKeys.ts",
    "packages/ui/src/components/Keycaps/useLegendFit.ts",

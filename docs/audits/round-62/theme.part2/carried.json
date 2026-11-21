@@ -1,0 +1,25 @@
+{
+ "findings": [
+  {
+   "id": "r56-1",
+   "claim": "`tree-indent` hook records a fallback the Tree's CSS never takes",
+   "where": "packages/theme/src/hooks/controls.ts:141 (CONTROL_HOOKS, `tree-indent`)",
+   "from": "A",
+   "round": 56,
+   "rounds": [
+    56,
+    57
+   ]
+  },
+  {
+   "id": "r57-3",
+   "claim": "`useColorModePreference` keeps the old storage's choice when `storage` changes under the same key",
+   "where": "packages/theme/src/useColorMode.ts:59-64 (useColorModePreference)",
+   "from": "A",
+   "round": 57,
+   "rounds": [
+    57
+   ]
+  }
+ ]
+}

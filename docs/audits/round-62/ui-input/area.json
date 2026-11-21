@@ -1,0 +1,66 @@
+{
+ "id": "ui-input",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui-input/src/createLiveSelectionModel.ts",
+  "packages/ui-input/src/edgeScroll.ts",
+  "packages/ui-input/src/grid.ts",
+  "packages/ui-input/src/heldAt.ts",
+  "packages/ui-input/src/index.ts",
+  "packages/ui-input/src/keySteps.ts",
+  "packages/ui-input/src/list.ts",
+  "packages/ui-input/src/pbt.fixture.ts",
+  "packages/ui-input/src/press.ts",
+  "packages/ui-input/src/reorder.ts",
+  "packages/ui-input/src/scheduler.ts",
+  "packages/ui-input/src/selection.ts",
+  "packages/ui-input/src/slider.ts",
+  "packages/ui-input/src/solo.ts",
+  "packages/ui-input/src/span.ts",
+  "packages/ui-input/src/spatial.ts",
+  "packages/ui-input/src/stepRepeat.ts",
+  "packages/ui-input/src/sweep.ts",
+  "packages/ui-input/src/tabOrder.ts",
+  "packages/ui-input/src/textCommit.ts",
+  "packages/ui-input/src/tree.ts",
+  "packages/ui-input/src/typeahead.ts",
+  "packages/ui-input/src/wheel.ts"
+ ],
+ "fixOnly": true,
+ "carried": 3,
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 11,
+  "testFiles": {
+   "failed": 0,
+   "passed": 5867,
+   "total": 5867
+  },
+  "gui": true,
+  "repairs": 2
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "fix": 13.3,
+   "repair": 21.5
+  },
+  "nodes": {
+   "fix": "teitou"
+  },
+  "weightedTokens": 841063,
+  "costUsd": 2.62
+ },
+ "fixCommits": []
+}

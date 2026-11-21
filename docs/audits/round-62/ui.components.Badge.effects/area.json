@@ -1,0 +1,71 @@
+{
+ "id": "ui.components.Badge.effects",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Badge/effects/Aqua.tsx",
+  "packages/ui/src/components/Badge/effects/Bevel.tsx",
+  "packages/ui/src/components/Badge/effects/Bevel2.tsx",
+  "packages/ui/src/components/Badge/effects/Bites.tsx",
+  "packages/ui/src/components/Badge/effects/Metal.tsx",
+  "packages/ui/src/components/Badge/effects/Outline.tsx",
+  "packages/ui/src/components/Badge/effects/Perforations.tsx",
+  "packages/ui/src/components/Badge/effects/Puffs.tsx",
+  "packages/ui/src/components/Badge/effects/Rivets.tsx",
+  "packages/ui/src/components/Badge/effects/Scallops.tsx",
+  "packages/ui/src/components/Badge/effects/Shadow.tsx",
+  "packages/ui/src/components/Badge/effects/Sheen.tsx",
+  "packages/ui/src/components/Badge/effects/Spikes.tsx",
+  "packages/ui/src/components/Badge/effects/Sunbeams.tsx",
+  "packages/ui/src/components/Badge/effects/Woodgrain.tsx",
+  "packages/ui/src/components/Badge/effects/bumps.ts",
+  "packages/ui/src/components/Badge/effects/glassStrokes.tsx",
+  "packages/ui/src/components/Badge/effects/index.ts",
+  "packages/ui/src/components/Badge/effects/rangeMask.ts"
+ ],
+ "fixOnly": true,
+ "carried": 11,
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 23,
+  "testFiles": {
+   "failed": 0,
+   "passed": 957,
+   "total": 957
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "fix": 12.4,
+   "repair": 12.9
+  },
+  "nodes": {
+   "fix": "teitou"
+  },
+  "weightedTokens": 738003,
+  "costUsd": 2.29
+ },
+ "fixCommits": [
+  "c2b9114c203e4ceea29f94c6a1928d05727926ca",
+  "13a7faa428b9f02209c0c21f3adebc20ce39e8c6",
+  "0df21c4896c98469ad355c49cdc0b02cd8289c51",
+  "0f72977e5cd63c92cd115bf72640d00d05fcce49",
+  "f0f4cac9a9b4bbae4ccedd32719fcced92510b88",
+  "c48cefb64a502eb60551ebe5d7aac452a12cfd68",
+  "4de2fc3e95cb18ff26f8667bad7ff35afb30eb31",
+  "abd5959c0a45be8cb66b58e3d1cff0538c87e35d"
+ ]
+}

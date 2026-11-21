@@ -1,0 +1,59 @@
+{
+ "id": "core.interactions.gestures",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/core/src/interactions/gestures/dragGesture/dragGesture.ts",
+  "packages/core/src/interactions/gestures/dragGesture/dragPointOf.ts",
+  "packages/core/src/interactions/gestures/dragGesture/index.ts",
+  "packages/core/src/interactions/gestures/dragRadial/dragRadial.ts",
+  "packages/core/src/interactions/gestures/dragRadial/index.ts",
+  "packages/core/src/interactions/gestures/dragRect/dragRect.ts",
+  "packages/core/src/interactions/gestures/dragRect/index.ts",
+  "packages/core/src/interactions/gestures/frames.ts",
+  "packages/core/src/interactions/gestures/pointerDrag/index.ts",
+  "packages/core/src/interactions/gestures/pointerDrag/pointerDrag.ts",
+  "packages/core/src/interactions/gestures/resizeHandles.ts",
+  "packages/core/src/interactions/gestures/shared/index.ts",
+  "packages/core/src/interactions/gestures/shared/originProjection.ts",
+  "packages/core/src/interactions/gestures/shared/screenTolerance.ts",
+  "packages/core/src/interactions/gestures/spec.ts",
+  "packages/core/src/interactions/gestures/types.ts"
+ ],
+ "fixOnly": true,
+ "carried": 10,
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 11,
+ "verify": {
+  "ok": true,
+  "files": 22,
+  "testFiles": {
+   "failed": 0,
+   "passed": 5871,
+   "total": 5871
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "fix": 16.1,
+   "repair": 12.8
+  },
+  "nodes": {
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1139540,
+  "costUsd": 3.35
+ },
+ "fixCommits": []
+}

@@ -1,0 +1,14 @@
+{
+ "findings": [
+  {
+   "id": "r39-6",
+   "claim": "The main entry still hands out the full content-handler list the canvas barrel says it deliberately withholds",
+   "where": "packages/core/src/barrel/canvas.ts:149 (ingestion section comment) and packages/core/src/barrel/editingSeams.ts:24 (`handlersFor`, `runIngest`, `couldClaim`)",
+   "from": "B",
+   "round": 39,
+   "rounds": [
+    39
+   ]
+  }
+ ]
+}

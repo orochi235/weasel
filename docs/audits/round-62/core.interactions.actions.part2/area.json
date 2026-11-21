@@ -1,0 +1,72 @@
+{
+ "id": "core.interactions.actions.part2",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/core/src/interactions/actions/moveOptions.ts",
+  "packages/core/src/interactions/actions/notices.ts",
+  "packages/core/src/interactions/actions/operands.ts",
+  "packages/core/src/interactions/actions/pathCommands/pathNodes.ts",
+  "packages/core/src/interactions/actions/pathGestureTags.ts",
+  "packages/core/src/interactions/actions/pbt.fixture.ts",
+  "packages/core/src/interactions/actions/pbtScene.fixture.ts",
+  "packages/core/src/interactions/actions/planeInput.ts",
+  "packages/core/src/interactions/actions/pointerState.ts",
+  "packages/core/src/interactions/actions/poseDescriptorDep.ts",
+  "packages/core/src/interactions/actions/poseFrame.ts",
+  "packages/core/src/interactions/actions/regionSelectDeps.ts",
+  "packages/core/src/interactions/actions/resizeOptions.ts",
+  "packages/core/src/interactions/actions/resolveOverlays.ts",
+  "packages/core/src/interactions/actions/resolvePreviews.ts",
+  "packages/core/src/interactions/actions/rotateOptions.ts",
+  "packages/core/src/interactions/actions/runLifecycle.ts",
+  "packages/core/src/interactions/actions/selectionSubtree.ts",
+  "packages/core/src/interactions/actions/settleWithinRounding.ts",
+  "packages/core/src/interactions/actions/snapDep.ts",
+  "packages/core/src/interactions/actions/spatialReference.ts",
+  "packages/core/src/interactions/actions/testUtils.ts",
+  "packages/core/src/interactions/actions/transform-again/memory.ts",
+  "packages/core/src/interactions/actions/transformFinish.ts",
+  "packages/core/src/interactions/actions/useActionSet.ts",
+  "packages/core/src/interactions/actions/useNotices.ts"
+ ],
+ "fixOnly": true,
+ "carried": 6,
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 8,
+ "verify": {
+  "ok": false,
+  "why": "1 of 5231 test files failed",
+  "files": 26,
+  "testFiles": {
+   "failed": 1,
+   "passed": 5230,
+   "total": 5231
+  },
+  "failedFiles": [
+   "scripts/core-inventory.test.ts"
+  ],
+  "repairs": 2
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "fix": 16.9,
+   "repair": 31.9
+  },
+  "nodes": {
+   "fix": "teitou"
+  },
+  "weightedTokens": 1776714,
+  "costUsd": 5.02
+ },
+ "fixCommits": []
+}

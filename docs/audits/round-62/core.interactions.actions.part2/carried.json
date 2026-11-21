@@ -1,0 +1,64 @@
+{
+ "findings": [
+  {
+   "id": "r42-1",
+   "claim": "`resolveSpatialReference` accepts NaN and Infinity as a reference point",
+   "where": "packages/core/src/interactions/actions/spatialReference.ts:47 (resolveSpatialReference)",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-2",
+   "claim": "`useNotices` throws outside a `<DepRegistryProvider>`, though its doc says it silently does nothing there",
+   "where": "packages/core/src/interactions/actions/useNotices.ts:8 (useNotices)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-3",
+   "claim": "`resolvePreviews` returns a previewed node twice when a non-previewed container sits between it and a previewed frame",
+   "where": "packages/core/src/interactions/actions/resolvePreviews.ts:124 (resolvePreviews, root loop) with :104-110 (build)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-4",
+   "claim": "`insertExtrasFromPlane` rewrites a consumer insert kind's extras, though it says those pass through opaque",
+   "where": "packages/core/src/interactions/actions/planeInput.ts:314 (insertExtrasFromPlane)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-5",
+   "claim": "translateTargets drops a group's children under IDENTITY_POSE_COMPOSITION, where uncarried keeps them",
+   "where": "packages/core/src/interactions/actions/selectionSubtree.ts:128 (translateTargets)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-6",
+   "claim": "actionReferenceSources answers 'pointer' in the camera's world and `{ node }` in the node's plane, then align/flip apply it to poses in another plane",
+   "where": "packages/core/src/interactions/actions/spatialReference.ts:66 (actionReferenceSources)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  }
+ ]
+}

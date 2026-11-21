@@ -1,0 +1,54 @@
+{
+ "findings": [
+  {
+   "id": "r47-1",
+   "claim": "A `select`/`radio` control whose `options` are not all strings disappears, and with no control type it becomes a free field",
+   "where": "packages/forge/src/csf/argsToSchema.ts:71-74 (`stringOptions`), 211-225 (`controlled`)",
+   "from": "A+B",
+   "round": 47,
+   "rounds": [
+    47
+   ]
+  },
+  {
+   "id": "r47-6",
+   "claim": "`describeSchema` copies function-valued annotations into the `ready` message, which a port cannot clone",
+   "where": "packages/forge/src/protocol/schema.ts:66 (describeShape, `annotations: { ...entry.annotations }`)",
+   "from": "B",
+   "round": 47,
+   "rounds": [
+    47
+   ]
+  },
+  {
+   "id": "r47-8",
+   "claim": "The schema description drops `enableIf`, `auto`, `resettable`, `motif` and `dialog`, so the workshop panel ignores them",
+   "where": "packages/forge/src/protocol/schema.ts:64 (describeShape reads only `section` and `showIf` from `entry.options`) and :93 (rebuildShape)",
+   "from": "B",
+   "round": 47,
+   "rounds": [
+    47
+   ]
+  },
+  {
+   "id": "r47-9",
+   "claim": "A cleared clearable number writes no URL param, so the link reopens it at its default",
+   "where": "packages/forge/src/route/url.ts:199 (knobsToParams), :137 (decodeKnob, number)",
+   "from": "B",
+   "round": 47,
+   "rounds": [
+    47
+   ]
+  },
+  {
+   "id": "r47-11",
+   "claim": "An arg holding a Proxy gets a control, and its default then fails the `ready` post",
+   "where": "packages/forge/src/csf/argsToSchema.ts:269 (`portSafePart`), packages/forge/src/csf/portSafe.ts:39 (isPortSafe); contrast packages/forge/src/csf/shims/preview-api.ts:8 (sendable)",
+   "from": "B",
+   "round": 47,
+   "rounds": [
+    47
+   ]
+  }
+ ]
+}

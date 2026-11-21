@@ -1,0 +1,74 @@
+{
+ "findings": [
+  {
+   "id": "r42-1",
+   "claim": "The fit guards measure every path's halo as half the halo width, so a stroke path's halo can leave the box unseen — and the marked crosshair's does",
+   "where": "packages/cursor/src/types.ts:137 (haloFitsInBox), packages/cursor/src/types.ts:158 (rotationFitsInBox)",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-2",
+   "claim": "A marked glyph accepts an angle but is never checked for rotation, and the crosshair's marks fall outside the box when rotated",
+   "where": "packages/cursor/src/resolve.ts:63 (resolveCursor), packages/cursor/src/registry.ts:68 (cursorFor)",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-3",
+   "claim": "The bake cache's key takes any size and any fallback string, so it is unbounded despite its comment",
+   "where": "packages/cursor/src/registry.ts:68 (cursorFor)",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-4",
+   "claim": "The fit guards' path walk accepts absolute H, V, C, Q, S and T without throwing, and mis-measures H and V",
+   "where": "packages/cursor/src/types.ts:92 (walk)",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-5",
+   "claim": "The arc bound uses the authored radius even when SVG scales it up, under-reporting an arc whose radius is shorter than half its chord",
+   "where": "packages/cursor/src/types.ts:103 (walk)",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-6",
+   "claim": "markedGlyph drops a glyph's own `over` layer instead of keeping and shifting it",
+   "where": "packages/cursor/src/mark.ts:50 (markedGlyph)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-7",
+   "claim": "A world-unit brush ring of radius 0 is drawn at the 24 px default, while a px ring of radius 0 is drawn at 1 px",
+   "where": "packages/cursor/src/brushRing.ts:13 (brushRing), with packages/cursor/src/resolve.ts:67",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  }
+ ]
+}

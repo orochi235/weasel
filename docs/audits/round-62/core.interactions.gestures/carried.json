@@ -1,0 +1,104 @@
+{
+ "findings": [
+  {
+   "id": "r42-1",
+   "claim": "Nested drop zones resolve by registration order, not by which zone is innermost",
+   "where": "packages/core/src/interactions/gestures/pointerDrag/pointerDrag.ts:35 (findZone)",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-2",
+   "claim": "`useDragRect`/`useDragRadial` `isActive` disagrees with the base controller's",
+   "where": "packages/core/src/interactions/gestures/dragRect/dragRect.ts:196, packages/core/src/interactions/gestures/dragRadial/dragRadial.ts:179",
+   "from": "A+B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-3",
+   "claim": "A drop zone whose `accepts` throws strands the drag for every later drag in the page",
+   "where": "packages/core/src/interactions/gestures/pointerDrag/pointerDrag.ts:131 (beginPointerDrag → drop), :120 (move), :36 (findZone)",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-4",
+   "claim": "`useDragHandle` calls the press-time `getPayload`, not the current one, at threshold",
+   "where": "packages/core/src/interactions/gestures/pointerDrag/pointerDrag.ts:201 (useDragHandle onPointerDown/onMove), :226",
+   "from": "A",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-5",
+   "claim": "useDragHandle's default ghost is sized in client px but drawn in its seat's scaled px",
+   "where": "packages/core/src/interactions/gestures/pointerDrag/pointerDrag.ts:47 (defaultGhost)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-6",
+   "claim": "useDragHandle starts a drag from a press on an SVG icon inside a button",
+   "where": "packages/core/src/interactions/gestures/pointerDrag/pointerDrag.ts:185 (useDragHandle onPointerDown)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-7",
+   "claim": "A useDragGesture onActivate that cancels hands onMove a ctx whose fields throw",
+   "where": "packages/core/src/interactions/gestures/dragGesture/dragGesture.ts:136-139 (move)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-8",
+   "claim": "screenTolerance ignores the gesture's parallax plane",
+   "where": "packages/core/src/interactions/gestures/shared/screenTolerance.ts:10 (screenTolerance)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-9",
+   "claim": "useDragGesture never closes onGestureStart's pairing when its owner unmounts mid-gesture",
+   "where": "packages/core/src/interactions/gestures/dragGesture/dragGesture.ts:85 (useDragGesture; no unmount effect)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  },
+  {
+   "id": "r42-10",
+   "claim": "The default drag ghost clones the source's id attributes into the document",
+   "where": "packages/core/src/interactions/gestures/pointerDrag/pointerDrag.ts:43 (defaultGhost)",
+   "from": "B",
+   "round": 42,
+   "rounds": [
+    42
+   ]
+  }
+ ]
+}
