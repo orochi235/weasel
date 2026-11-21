@@ -43,18 +43,24 @@ export interface ColorSourceContext extends ColorContext {
 
 const wrap = (i: number, n: number) => ((Math.trunc(i) % n) + n) % n;
 
+const GENERATED_KEPT = 16;
 const generated = new Map<string, readonly string[]>();
 
 function generatedColors({ generate: g }: GeneratedColors): readonly string[] {
   const key = JSON.stringify([g.count, g.gates ?? {}]);
   let colors = generated.get(key);
-  if (!colors) {
+  if (colors) generated.delete(key);
+  else {
     const palette = generate({ ...DEFAULT_CONSTRAINTS, ...(g.gates as Partial<Constraints>), count: g.count, anchors: [] });
     colors = palette.swatches.map((s) => s.hex.toLowerCase());
-    generated.set(key, colors);
+    if (generated.size >= GENERATED_KEPT) generated.delete(generated.keys().next().value!);
   }
+  generated.set(key, colors);
   return colors;
 }
+
+/** How many palettes `colorAt` keeps generated, for a test to check the bound. */
+export const generatedPaletteCount = (): number => generated.size;
 
 /** `rampSteps`, answering `undefined` for a ramp the chain lacks. */
 export function findRampSteps(theme: Theme, ramp: string): readonly string[] | undefined {
