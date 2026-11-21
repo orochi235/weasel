@@ -43,7 +43,7 @@ export function renderBarLeaf({ leaf, path, name, field, disabled, active, row }
   const body = row();
   if (body == null || !prefIsCompound(leaf)) return body;
   return (
-    <BarPopover label={leaf.name} icon={resolveIcon(leaf.icon)}>
+    <BarPopover label={leaf.name} icon={resolveIcon(leaf.icon)} disabled={disabled}>
       {body}
     </BarPopover>
   );
