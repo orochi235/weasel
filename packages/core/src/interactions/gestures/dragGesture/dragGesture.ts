@@ -134,6 +134,7 @@ export function useDragGesture<TScratch = unknown>(
         s.phase = 'active';
         bumpPhase('active');
         opts.onActivate?.(buildCtx());
+        if (stateRef.current !== s) return true;
       }
     }
     opts.onMove?.(buildCtx());
