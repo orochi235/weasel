@@ -29,4 +29,13 @@ describe('the document background', () => {
     setBackground(scene, '#ffffff');
     expect(scene.toJSON().doc).toBeUndefined();
   });
+
+  it('keeps no value for white written as #fff or with an opaque alpha, as the Background field writes it', () => {
+    for (const white of ['#ffffffff', '#FFF', '#ffff']) {
+      const scene = drawScene();
+      setBackground(scene, white);
+      expect(scene.toJSON().doc).toBeUndefined();
+      expect(scene.historyEntries()).toHaveLength(0);
+    }
+  });
 });
