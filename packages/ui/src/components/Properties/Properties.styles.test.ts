@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -29,5 +29,16 @@ describe('the property family stylesheet', () => {
   // An imported sheet is inlined into the module, so a second import would define its rules twice.
   it('imports each sheet once', () => {
     expect(new Set(parts()).size).toBe(parts().length);
+  });
+
+  // Safari reads only the prefixed property, so a rule setting one without the other leaves it at the row's `none`.
+  it('sets -webkit-user-select beside every user-select', () => {
+    for (const name of readdirSync(here).filter((f) => f.endsWith('.css'))) {
+      for (const [, body] of stripComments(read(name)).matchAll(/\{([^{}]*)\}/g)) {
+        const plain = [...body.matchAll(/(?<![-\w])user-select:\s*([\w-]+)/g)].map((m) => m[1]);
+        const prefixed = [...body.matchAll(/-webkit-user-select:\s*([\w-]+)/g)].map((m) => m[1]);
+        expect(prefixed, name).toEqual(plain);
+      }
+    }
   });
 });
