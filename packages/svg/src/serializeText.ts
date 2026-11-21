@@ -120,7 +120,7 @@ export function textXml(
   if (frame) attrs.push(frame);
 
   const pieces = node.runs && node.runs.length > 0
-    ? node.runs.map((r) => ({ text: r.text, attrs: runAttrs(r, style, node.stroke, registry, warn) }))
+    ? node.runs.map((r) => ({ text: r.text, attrs: runAttrs(r, style, node.fill?.paint?.opacity, node.stroke, registry, warn) }))
     : [{ text: node.text, attrs: null }];
   const body = layout
     ? laidLinesXml(pieces, layout, { anchor, rtl: direction === 'rtl' })
@@ -147,6 +147,7 @@ export function scriptSizeFace(
 function runAttrs(
   run: StyledRun,
   style: SvgTextNode['style'],
+  nodeFillOpacity: number | undefined,
   nodeStroke: Stroke | null | undefined,
   registry: PaintServerRegistry,
   warn: Warn,
@@ -191,7 +192,9 @@ function runAttrs(
     if (!paint) attrs.push('fill="none"');
     else {
       attrs.push(`fill="${isSolidPaint(paint) ? escapeAttr(paint.color) : registry.ref(paint)}"`);
-      attrs.push(...opacityAttr('fill-opacity', paint.opacity));
+      // A run's fill replaces the node's, where a `<tspan>` would inherit its `fill-opacity`.
+      const own = opacityAttr('fill-opacity', paint.opacity);
+      attrs.push(...(own.length || !writesOpacity(nodeFillOpacity) ? own : ['fill-opacity="1"']));
     }
   }
   for (const a of coreStrokeAttrs(run.stroke, registry, warn)) attrs.push(a);
@@ -203,13 +206,15 @@ function runAttrs(
   return attrs;
 }
 
-/** The flags as an SVG `text-decoration` value, or `null` when none is set. */
+/** Whether `opacityAttr` writes `v` out. */
+const writesOpacity = (v: number | undefined): boolean => opacityAttr('', v).length > 0;
+
 /** The initial values of the stroke properties `node` sets and `run` leaves
  *  unset: a run's stroke replaces the node's, where a `<tspan>` would inherit them. */
 function strokeResets(run: Stroke, node: Stroke | null | undefined): string[] {
   if (!node) return [];
   const out: string[] = [];
-  if (node.paint?.opacity != null && run.paint?.opacity == null) out.push('stroke-opacity="1"');
+  if (writesOpacity(node.paint?.opacity) && !writesOpacity(run.paint?.opacity)) out.push('stroke-opacity="1"');
   if (node.cap && !run.cap) out.push('stroke-linecap="butt"');
   if (node.join && !run.join) out.push('stroke-linejoin="miter"');
   if (node.dash?.length && !run.dash?.length) out.push('stroke-dasharray="none"');
@@ -218,6 +223,7 @@ function strokeResets(run: Stroke, node: Stroke | null | undefined): string[] {
   return out;
 }
 
+/** The flags as an SVG `text-decoration` value, or `null` when none is set. */
 function textDecorationValue(
   underline: boolean | undefined,
   strikethrough: boolean | undefined,

@@ -243,3 +243,24 @@ describe('an upright run in italic text', () => {
     expect(parseSvg(serializeSvg([node])).nodes[0]).toMatchObject({ runs: [{ text: 'a' }, { text: 'b', italic: false }] });
   });
 });
+
+describe("a run's opacity against the node's", () => {
+  it("keeps an opaque run fill opaque under a translucent node fill", () => {
+    const node: SvgNode = {
+      kind: 'text', x: 0, y: 0, width: 40, height: 20, text: 'ab',
+      fill: { paint: { kind: 'solid', color: '#0000ff', opacity: 0.5 } },
+      runs: [{ text: 'a' }, { text: 'b', fill: { paint: { kind: 'solid', color: '#ff0000' } } }],
+    } as SvgNode;
+    const back = parseSvg(serializeSvg([node])).nodes[0] as { runs: { fill?: { paint: { opacity?: number } } }[] };
+    expect(back.runs[1].fill?.paint.opacity ?? 1).toBe(1);
+  });
+
+  it("keeps a run stroke at opacity 1 opaque under a translucent node stroke", () => {
+    const node = {
+      kind: 'text', x: 0, y: 0, width: 40, height: 20, text: 'ab',
+      stroke: { paint: { kind: 'solid', color: '#0000ff', opacity: 0.5 }, width: 1 },
+      runs: [{ text: 'a' }, { text: 'b', stroke: { paint: { kind: 'solid', color: '#ff0000', opacity: 1 }, width: 1 } }],
+    } as unknown as SvgNode;
+    expect(serializeSvg([node])).toMatch(/<tspan[^>]*stroke-opacity="1"/);
+  });
+});
