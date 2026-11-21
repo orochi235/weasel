@@ -86,3 +86,29 @@ describe('pathCrossings', () => {
     expect(pathCrossings([bowtie], { self: false })).toHaveLength(0);
   });
 });
+
+describe('a cubic that loops over itself', () => {
+  for (const d of ['M 0 0 C 150 100 -50 100 100 0', 'M 0 0 C 300 300 -200 300 100 0']) {
+    it(`reports its crossing in ${d}`, () => {
+      const hits = pathCrossings([pathFromD(d)]);
+      expect(hits).toHaveLength(1);
+      const [h] = hits;
+      expect(h.a.index).toBe(0);
+      expect(h.b.index).toBe(0);
+      expect(h.a.t).toBeLessThan(h.b.t);
+      const [x0, y0, x1, y1, x2, y2, x3, y3] = d.replace(/[MC]/g, '').trim().split(/\s+/).map(Number);
+      for (const t of [h.a.t, h.b.t]) {
+        const [x, y] = cubicEvalAt(x0!, y0!, x1!, y1!, x2!, y2!, x3!, y3!, t);
+        expect(x).toBeCloseTo(h.x, 6);
+        expect(y).toBeCloseTo(h.y, 6);
+      }
+      expect(pathCrossings([pathFromD(d)], { self: false })).toHaveLength(0);
+    });
+  }
+
+  it('reports no crossing for a cubic that does not loop, or a quadratic', () => {
+    expect(pathCrossings([pathFromD('M 0 0 C 30 50 70 50 100 0')])).toHaveLength(0);
+    expect(pathCrossings([pathFromD('M 0 0 C 30 50 70 -50 100 0')])).toHaveLength(0);
+    expect(pathCrossings([pathFromD('M 0 0 Q 50 80 100 0')])).toHaveLength(0);
+  });
+});

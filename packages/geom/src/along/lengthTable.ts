@@ -2,6 +2,8 @@ import { segmentLength } from '../paths/segmentLength';
 import { arcLookup, type ArcLookup } from './arcLookup';
 import { segmentCoords } from './bezier';
 import { lerp } from '../scalar';
+import { lengthOf3 } from '../points';
+import { lengthOf } from '../points2';
 
 /** One subpath of a path in pen order: points joined by straight segments, or by curves where `controls` gives them. */
 export interface LengthRun {
@@ -200,9 +202,10 @@ function runLengths(run: LengthRun, dim: 2 | 3, base: number): Float64Array {
     }
     const a = (i - 1) * dim;
     const b = (i % n) * dim;
-    let d2 = 0;
-    for (let k = 0; k < dim; k++) d2 += (p[b + k] - p[a + k]) ** 2;
-    c[i] = c[i - 1] + (Number.isFinite(d2) ? Math.sqrt(d2) : 0);
+    const len = dim === 2
+      ? lengthOf(p[b] - p[a], p[b + 1] - p[a + 1])
+      : lengthOf3(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
+    c[i] = c[i - 1] + (Number.isFinite(len) ? len : 0);
   }
   return c;
 }
@@ -217,6 +220,7 @@ function anchorBreakpoints(
   const runAnchor = new Float64Array(runs.length * 2);
   let segments = 0;
   let next = 0;
+  let floor = -Infinity;
   runs.forEach((run, r) => {
     const n = Math.floor(run.points.length / dim);
     const c = cum[r];
@@ -224,6 +228,9 @@ function anchorBreakpoints(
     next += n;
     const folded = foldToAuthored(raw, sources, wraps(run, n));
     if (folded.ids.length === 0) return;
+    // A subpath a drawing command opens after Z starts on the closed one's first anchor, and has no id of its own
+    // there: held at the anchor the run before ended on, so the ids stay ascending and that first segment spans none.
+    for (let k = 0; k < folded.ids.length && folded.ids[k] < floor; k++) folded.ids[k] = floor;
     const first = folded.ids[0];
     let last = folded.ids[folded.ids.length - 1];
     if (wraps(run, n)) {
@@ -234,6 +241,7 @@ function anchorBreakpoints(
     runAnchor[r * 2] = first;
     runAnchor[r * 2 + 1] = last;
     segments += last - first;
+    floor = last;
     ids.push(...folded.ids);
     lens.push(...folded.lens);
   });

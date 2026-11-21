@@ -5,7 +5,7 @@
  */
 import { PATH_M, PATH_Z } from '../commands';
 import { fillsOpenSubpaths } from '../openFill';
-import type { PathOpenFill, PolygonPath } from '../path';
+import type { PathFillRule, PathOpenFill, PolygonPath } from '../path';
 import { flatAnchorIndices } from './cornerCarry';
 import { compactCorners, type CornerSpec } from './cornerSpec';
 import type { Point } from './cubicMath';
@@ -53,6 +53,15 @@ export function coordsFrom(origin: { readonly x: number; readonly y: number } | 
     out[i + 1] = world[i + 1] - oy;
   }
   return out;
+}
+
+/** A polygon path of `commands` through `world`, interleaved pairs in the path's own space, measured from
+ *  the origin {@link originFor} picks for them. */
+export function polygonPathFrom(commands: ArrayLike<number>, world: ArrayLike<number>, fillRule: PathFillRule): PolygonPath {
+  const origin = originFor(world);
+  return {
+    kind: 'polygon', commands: commands instanceof Uint8Array ? commands : Uint8Array.from(commands), coords: coordsFrom(origin, world), fillRule, ...(origin ? { origin } : {}),
+  };
 }
 
 /**

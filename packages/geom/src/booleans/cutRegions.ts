@@ -5,7 +5,7 @@ import type { PolygonPath, PathFillRule } from '../path';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import { type Contour, evalSeg, sampleContour, signedArea } from './contourSegments';
 import type { Subpath } from './contours';
-import { coordsFrom, originFor } from '../paths/pathOrigin';
+import { polygonPathFrom } from '../paths/pathOrigin';
 
 /** Group loops into regions: each positive loop with the holes it immediately contains. */
 export function assembleRegions(outers: Contour[], holes: Contour[]): Contour[][] {
@@ -38,8 +38,5 @@ export function writePath(subpaths: Subpath[], fillRule: PathFillRule): PolygonP
     }
     if (closed) cmds.push(PATH_Z);
   }
-  const origin = originFor(xs);
-  return {
-    kind: 'polygon', commands: new Uint8Array(cmds), coords: coordsFrom(origin, xs), fillRule, ...(origin ? { origin } : {}),
-  };
+  return polygonPathFrom(cmds, xs, fillRule);
 }

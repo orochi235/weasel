@@ -1,6 +1,8 @@
 import type { CurveRepresentation, Discriminator, SharedAnchor } from './types';
+import { polygonPathFrom } from '../paths/pathOrigin';
 import { PATH_L, PATH_M } from '../commands';
 import { clamp01 } from '../scalar';
+import { curvatureFromDerivatives } from '../paths/curvature';
 
 const DEGREE = 3;
 const WEIGHT_MIN = 1e-3;
@@ -55,6 +57,13 @@ function basisFunctions(i: number, u: number, p: number, knots: number[]): numbe
   return N;
 }
 
+/** The length of the control polygon, which a NURBS curve's speed is judged against. */
+function controlReach(anchors: readonly SharedAnchor[]): number {
+  let reach = 0;
+  for (let i = 1; i < anchors.length; i++) reach += Math.hypot(anchors[i].x - anchors[i - 1].x, anchors[i].y - anchors[i - 1].y);
+  return reach;
+}
+
 function weightOf(a: SharedAnchor): number {
   const w = a.weight ?? 1;
   return Math.max(WEIGHT_MIN, Math.min(WEIGHT_MAX, w));
@@ -103,12 +112,7 @@ export const nurbs: CurveRepresentation = {
       xs.push(p.x, p.y);
       if (s > 0) cmds.push(PATH_L);
     }
-    return {
-      kind: 'polygon',
-      commands: new Uint8Array(cmds),
-      coords: new Float32Array(xs),
-      fillRule: 'nonzero',
-    };
+    return polygonPathFrom(cmds, xs, 'nonzero');
   },
   curvatureAt(anchors, t) {
     if (anchors.length < 2) return 0;
@@ -124,10 +128,7 @@ export const nurbs: CurveRepresentation = {
     const d1y = (p2.y - p0.y) / (t1 - t0);
     const d2x = (p2.x - 2 * pm.x + p0.x) / (eps * eps);
     const d2y = (p2.y - 2 * pm.y + p0.y) / (eps * eps);
-    const num = d1x * d2y - d1y * d2x;
-    const den = Math.pow(d1x * d1x + d1y * d1y, 1.5);
-    if (den < 1e-12) return 0;
-    return num / den;
+    return curvatureFromDerivatives({ x: d1x, y: d1y }, { x: d2x, y: d2y }, controlReach(anchors));
   },
   discriminators(anchors) {
     const out: Discriminator[] = [];

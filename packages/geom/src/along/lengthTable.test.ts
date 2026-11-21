@@ -167,3 +167,26 @@ describe('lengthTable', () => {
   });
 });
 
+
+describe('a subpath a drawing command opens after Z, with no M', () => {
+  // M0 0 L10 0 L10 10 Z L20 20: the last L draws from the closed triangle's start, and is anchor 3.
+  const path = {
+    kind: 'polygon' as const, commands: new Uint8Array([0, 1, 1, 4, 1]),
+    coords: new Float32Array([0, 0, 10, 0, 10, 10, 20, 20]), fillRule: 'nonzero' as const,
+  };
+  const t = pathLengthTable(path);
+  const triangle = 20 + Math.hypot(10, 10);
+
+  it('keeps its anchor queries on the subpath that length is on', () => {
+    expect(anchorAtLength(t, 40)).toBe(3);
+    expect(anchorAtLength(t, 10)).toBe(1);
+    expect(lengthAtAnchor(t, 0.5)).toBe(5);
+    expect(lengthAtAnchor(t, 2.5)).toBeCloseTo(20 + Math.hypot(10, 10) / 2, 9);
+  });
+
+  it('gives the segment with no start anchor no share of the anchor range', () => {
+    expect(t.segments).toBe(3);
+    expect(lengthAtSegmentFraction(t, 0.5)).toBeCloseTo(15, 9);
+    expect(lengthAtSegmentFraction(t, 2.5 / 3)).toBeCloseTo(triangle - Math.hypot(10, 10) / 2, 9);
+  });
+});

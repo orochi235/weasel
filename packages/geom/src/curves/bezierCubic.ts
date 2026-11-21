@@ -1,4 +1,5 @@
 import type { CurveRepresentation, Discriminator } from './types';
+import { polygonPathFrom } from '../paths/pathOrigin';
 import { defaultInHandle, defaultOutHandle, segmentAt } from './anchorHandles';
 import { PATH_C, PATH_M } from '../commands';
 import { cubicPointAt } from '../paths/cubicMath';
@@ -28,12 +29,7 @@ export const bezierCubic: CurveRepresentation = {
       cmds.push(PATH_C);
       xs.push(c1.x, c1.y, c2.x, c2.y, b.x, b.y);
     }
-    return {
-      kind: 'polygon',
-      commands: new Uint8Array(cmds),
-      coords: new Float32Array(xs),
-      fillRule: 'nonzero',
-    };
+    return polygonPathFrom(cmds, xs, 'nonzero');
   },
   curvatureAt(anchors, t) {
     if (anchors.length < 2) return 0;

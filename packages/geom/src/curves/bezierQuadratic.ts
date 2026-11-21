@@ -1,6 +1,8 @@
 import type { CurveRepresentation, Discriminator, SharedAnchor } from './types';
+import { polygonPathFrom } from '../paths/pathOrigin';
 import { PATH_M, PATH_Q } from '../commands';
 import { defaultInHandle, defaultOutHandle, segmentAt } from './anchorHandles';
+import { curvatureFromDerivatives } from '../paths/curvature';
 
 function quadControl(anchors: SharedAnchor[], i: number): { x: number; y: number } {
   const c1 = defaultOutHandle(anchors, i);
@@ -68,12 +70,7 @@ export const bezierQuadratic: CurveRepresentation = {
       cmds.push(PATH_Q);
       xs.push(q.x, q.y, b.x, b.y);
     }
-    return {
-      kind: 'polygon',
-      commands: new Uint8Array(cmds),
-      coords: new Float32Array(xs),
-      fillRule: 'nonzero',
-    };
+    return polygonPathFrom(cmds, xs, 'nonzero');
   },
   curvatureAt(anchors, t) {
     if (anchors.length < 2) return 0;
@@ -83,10 +80,7 @@ export const bezierQuadratic: CurveRepresentation = {
     const p1 = quadControl(anchors, segIdx);
     const d1 = quadDeriv1(a, p1, b, localT);
     const d2 = quadDeriv2(a, p1, b);
-    const num = d1.x * d2.y - d1.y * d2.x;
-    const den = Math.pow(d1.x * d1.x + d1.y * d1.y, 1.5);
-    if (den < 1e-12) return 0;
-    return num / den;
+    return curvatureFromDerivatives(d1, d2, Math.hypot(p1.x - a.x, p1.y - a.y) + Math.hypot(b.x - p1.x, b.y - p1.y));
   },
   discriminators(_anchors): Discriminator[] {
     // Quadratic has no user-facing controls — each segment's quadratic

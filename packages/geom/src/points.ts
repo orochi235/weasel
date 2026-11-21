@@ -35,6 +35,18 @@ export function squaresHeld(s: number): boolean {
   return s > 1e-290 && s < Infinity;
 }
 
+/** The length of (dx, dy, dz) by the same steps as {@link distance}, without an array. Shared with `./3d` and
+ *  the length table; not public. */
+export function lengthOf3(dx: number, dy: number, dz: number): number {
+  const s = dx * dx + dy * dy + dz * dz;
+  if (squaresHeld(s)) return Math.sqrt(s);
+  const most = Math.max(Math.abs(dx), Math.abs(dy), Math.abs(dz));
+  if (!(most > 0) || most === Infinity) return Math.sqrt(s);
+  const qx = dx / most, qy = dy / most, qz = dz / most;
+  // eslint-disable-next-line no-restricted-syntax -- each term is scaled into [-1, 1]
+  return most * Math.sqrt(qx * qx + qy * qy + qz * qz);
+}
+
 /** Euclidean distance between two points, finite wherever the distance itself is. */
 export function distance(a: readonly number[], b: readonly number[]): number {
   const s = distance2(a, b);

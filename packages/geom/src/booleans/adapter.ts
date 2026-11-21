@@ -19,7 +19,7 @@ import { DEFAULT_FLATTEN_TOLERANCE, flattenCubic } from '../flatten';
 import { fillsOpenSubpaths } from '../openFill';
 import type { Path, PolygonPath } from '../path';
 import { resolveCorners } from '../paths/corners';
-import { coordsFrom, originFor, worldCoords } from '../paths/pathOrigin';
+import { polygonPathFrom, worldCoords } from '../paths/pathOrigin';
 import { resolveRingFill } from './ringFill';
 
 /** A `[x, y]` 2-tuple. */
@@ -281,6 +281,5 @@ export function multiPolygonToPath(mp: MultiPolygon): PolygonPath {
       commands[ci++] = PATH_Z;
     }
   }
-  const origin = originFor(world);
-  return { kind: 'polygon', commands, coords: coordsFrom(origin, world), fillRule: 'nonzero', ...(origin ? { origin } : {}) };
+  return polygonPathFrom(commands, world, 'nonzero');
 }

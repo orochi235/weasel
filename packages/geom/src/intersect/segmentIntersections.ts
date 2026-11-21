@@ -171,3 +171,29 @@ export function segmentCrossings(a: Point[], b: Point[], maxHits = MAX_HITS): Se
   }
   return out.sort((h, k) => h.ta - k.ta);
 }
+
+/**
+ * Where segment `pts` crosses itself, or null: only a cubic can, at the one double point of its loop. With the
+ * curve as `a t³ + b t² + c t + d`, `B(s) = B(t)` for `s ≠ t` reduces to `a (σ² − π) + b σ + c = 0` in
+ * `σ = s + t` and `π = s t`, two linear equations solved for both.
+ */
+export function segmentSelfCrossing(pts: readonly Point[]): SegmentCrossing | null {
+  if (pts.length !== 4) return null;
+  const [p0, p1, p2, p3] = pts;
+  const ax = -p0.x + 3 * p1.x - 3 * p2.x + p3.x, ay = -p0.y + 3 * p1.y - 3 * p2.y + p3.y;
+  const bx = 3 * (p0.x - 2 * p1.x + p2.x), by = 3 * (p0.y - 2 * p1.y + p2.y);
+  const cx = 3 * (p1.x - p0.x), cy = 3 * (p1.y - p0.y);
+  const ab = ax * by - ay * bx;
+  if (nearlyParallel(ax, ay, bx, by)) return null;
+  const sigma = -(ax * cy - ay * cx) / ab;
+  const pi = Math.abs(ax) >= Math.abs(ay)
+    ? sigma * sigma + (bx * sigma + cx) / ax
+    : sigma * sigma + (by * sigma + cy) / ay;
+  const disc = sigma * sigma - 4 * pi;
+  if (!(disc > 0)) return null;
+  const root = Math.sqrt(disc);
+  const ta = (sigma - root) / 2, tb = (sigma + root) / 2;
+  if (!(ta >= 0 && tb <= 1) || tb - ta < SAME_T) return null;
+  const at = evalSeg(pts as Seg, ta), bt = evalSeg(pts as Seg, tb);
+  return { ta, tb, x: (at.x + bt.x) / 2, y: (at.y + bt.y) / 2 };
+}

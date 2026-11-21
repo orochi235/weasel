@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { segmentLength } from '../paths/segmentLength';
 import { arcLookup } from './arcLookup';
+import { lengthTable } from './lengthTable';
 import { bezierDirection } from './bezier';
 
 const K = 0.5522847498;
@@ -21,6 +22,17 @@ describe('a curve at either end of the double range', () => {
         expect(d).not.toBeNull();
         expect(Math.hypot(...d!)).toBeCloseTo(1, 12);
       }
+    });
+  }
+});
+
+describe('a straight segment at either end of the double range', () => {
+  for (const scale of [1e-170, 1e160]) {
+    it(`measures a line of ${scale} at its length`, () => {
+      const run = { points: [0, 0, 3 * scale, 4 * scale], closed: false };
+      expect(lengthTable([run], 2).total / scale).toBeCloseTo(5, 12);
+      const run3 = { points: [0, 0, 0, 2 * scale, 3 * scale, 6 * scale], closed: false };
+      expect(lengthTable([run3], 3).total / scale).toBeCloseTo(7, 12);
     });
   }
 });

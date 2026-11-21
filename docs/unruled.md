@@ -3563,3 +3563,10 @@ Calls the lanes made without a ruling:
   has, or to as many as move its smallest step by a third of itself, whichever is finer, capped at four; so
   `1rem 2rem 4rem` steps by 0.1rem and `3px 5px 14px` by 1px. Taking the resolution from the unit was the
   alternative.
+## Audit round forty-nine (2026-11-20): geom, part one
+
+- 2026-11-20 (the fixer's call): in a length table, a subpath a drawing command opens after `Z` with no `M` has no
+  anchor of its own at its start, so its first segment spans no anchor range: `anchorAtLength` along it answers the
+  anchor it ends on, and `lengthAtSegmentFraction` gives it no share. Its start had taken the closed subpath's first
+  anchor, and the anchor queries answered on the wrong subpath. Numbering the implicit start, which would shift every
+  later authored anchor, was the alternative.
