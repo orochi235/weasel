@@ -39,6 +39,7 @@ export function PdfDemo() {
 
   const write = async () => {
     setBusy(true);
+    setFile(null);
     const heard: string[] = [];
     try {
       setFile(await exportRegionsPdf(scene as unknown as ExportScene, PAGES, {
