@@ -24,4 +24,11 @@ describe('parseInline', () => {
       { type: 'strong', children: [{ type: 'text', text: 'see ' }, { type: 'code', text: 'a**b' }] },
     ]);
   });
+
+  it('keeps balanced parentheses in a link address', () => {
+    expect(parseInline('[x](https://en.wikipedia.org/wiki/Foo_(bar)) after')).toEqual([
+      { type: 'link', href: 'https://en.wikipedia.org/wiki/Foo_(bar)', children: [{ type: 'text', text: 'x' }] },
+      { type: 'text', text: ' after' },
+    ]);
+  });
 });
