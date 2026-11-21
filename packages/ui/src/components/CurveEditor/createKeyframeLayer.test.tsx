@@ -200,6 +200,17 @@ describe('createKeyframeLayer — key drag', () => {
     expect(last.drag).toBeNull();
     expect(last.keys).toBe(KEYS);
   });
+
+  it('restores the selection a canceled key drag began from', () => {
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+    down(100, 0);
+    move(150, 0);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    const last = onChange.mock.calls.at(-1)![0] as KeyframeLayerState;
+    expect(last.selectedKey).toBeNull();
+    expect(last.keys).toBe(KEYS);
+  });
 });
 
 describe('createKeyframeLayer — segments', () => {

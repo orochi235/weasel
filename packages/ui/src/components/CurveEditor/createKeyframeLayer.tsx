@@ -46,10 +46,9 @@ export interface KeyframeLayerOptions {
 
 export { CURVE_HIT_PX, HANDLE_HIT_PX, KEY_HIT_PX } from './keyframeCurve';
 
-/** A gesture ends by applying its drag, or by dropping it. */
+/** A gesture ends by applying its drag; a cancel returns to the state the press began from, selection and all. */
 const settleDrag = {
   onCommit(state: KeyframeLayerState) { return { ...state, ...applyKeyframeDrag(state), drag: null }; },
-  onCancel(state: KeyframeLayerState) { return { ...state, drag: null }; },
 };
 
 function handleGesture(segment: number, handle: 0 | 1): LayerGesture<KeyframeLayerState> {
