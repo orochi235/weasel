@@ -101,9 +101,9 @@ export const Tree = forwardRef(function Tree(
 
   const treeEl = useRef<HTMLElement | null>(null);
   const isEmpty = nodes.length === 0;
-  // The element behind the ref changes when the tree swaps with the empty state.
+  // The element behind the ref changes when the tree swaps with the empty state, or between a list and a treegrid.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useImperativeHandle(ref, () => treeEl.current as HTMLElement, [isEmpty]);
+  useImperativeHandle(ref, () => treeEl.current as HTMLElement, [isEmpty, grid]);
   useUntabbedControls(grid, treeEl);
   const drag = useTreeDrag({
     enabled: !!onMove,

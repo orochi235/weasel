@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createRef } from 'react';
 import { Tree, type TreeNode } from './Tree';
 
 afterEach(cleanup);
@@ -46,6 +47,19 @@ describe('Tree with row controls', () => {
     expect(document.activeElement).toBe(screen.getByLabelText('Hide Ex'));
     fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(row('Zed'));
+  });
+});
+
+describe('Tree ref', () => {
+  it('follows the tree when its first controls make it a treegrid, and when its last go', () => {
+    const ref = createRef<HTMLElement>();
+    const plain: TreeNode[] = [{ id: 'z', label: 'Zed' }];
+    const { rerender } = render(<Tree ref={ref} aria-label="T" nodes={plain} />);
+    expect(ref.current).toBe(screen.getByRole('tree'));
+    rerender(<Tree ref={ref} aria-label="T" nodes={NODES} />);
+    expect(ref.current).toBe(screen.getByRole('treegrid'));
+    rerender(<Tree ref={ref} aria-label="T" nodes={plain} />);
+    expect(ref.current).toBe(screen.getByRole('tree'));
   });
 });
 
