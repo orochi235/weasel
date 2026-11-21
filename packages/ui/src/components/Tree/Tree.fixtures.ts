@@ -1,21 +1,33 @@
-import type { TreeDropTarget, TreeNode } from '@weasel-js/ui/components/Tree';
-import { siblingsOf } from './treeMoves';
+import type { TreeDropTarget } from '../../dropTarget';
+import type { TreeNode } from './treeTypes';
 
-/** Applies an `onMove` result to a node list, for stories and tests that need rows to land. */
-export function applyMove(nodes: readonly TreeNode[], ids: readonly string[], t: TreeDropTarget): TreeNode[] {
+/** `nodes` with `ids` taken out and put back, in tree order, at `target`, whose index counts before they leave. */
+export function applyMove(nodes: readonly TreeNode[], ids: readonly string[], target: TreeDropTarget): TreeNode[] {
+  const set = new Set(ids);
   const taken: TreeNode[] = [];
-  const strip = (list: readonly TreeNode[]): TreeNode[] =>
-    list.flatMap((n) => {
-      if (ids.includes(n.id)) { taken.push(n); return []; }
-      return [n.children ? { ...n, children: strip(n.children) } : n];
-    });
-  const rest = strip(nodes);
-  const at = siblingsOf(nodes, t.parentId).slice(0, t.index).filter((n) => !ids.includes(n.id)).length;
-  const insert = (list: readonly TreeNode[], parent: string | null): TreeNode[] => {
-    if (parent === t.parentId) return [...list.slice(0, at), ...taken, ...list.slice(at)];
-    return list.map((n) => (n.children ? { ...n, children: insert(n.children, n.id) } : n));
+  const lift = (list: readonly TreeNode[]): TreeNode[] => list.flatMap((n) => {
+    if (set.has(n.id)) { taken.push(n); return []; }
+    return [n.children ? { ...n, children: lift(n.children) } : n];
+  });
+  const siblingsBefore = (list: readonly TreeNode[]): number =>
+    list.slice(0, target.index).filter((n) => set.has(n.id)).length;
+  const place = (list: readonly TreeNode[], original: readonly TreeNode[]): TreeNode[] => {
+    const out = [...list];
+    out.splice(target.index - siblingsBefore(original), 0, ...taken);
+    return out;
   };
-  return insert(rest, null);
+  const findIn = (list: readonly TreeNode[], id: string): TreeNode | undefined => {
+    for (const n of list) { if (n.id === id) return n; const hit = n.children && findIn(n.children, id); if (hit) return hit; }
+    return undefined;
+  };
+  const lifted = lift(nodes);
+  if (target.parentId === null) return place(lifted, nodes);
+  const original = findIn(nodes, target.parentId)?.children ?? [];
+  const into = (list: readonly TreeNode[]): TreeNode[] => list.map((n) => {
+    if (n.id === target.parentId) return { ...n, children: place(n.children ?? [], original) };
+    return n.children ? { ...n, children: into(n.children) } : n;
+  });
+  return into(lifted);
 }
 
 /** Applies an `onCopy` result to a node list: a copy of each row lands, under an id of its own. */
