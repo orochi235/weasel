@@ -20,7 +20,6 @@ export function checkProblem(check: unknown): string | undefined {
   return undefined;
 }
 
-const isAlpha = (x: unknown) => isFiniteNumber(x) && x >= 0 && x <= 1;
 
 /** Why a pin or component value (already picked for a selection, seeds resolved) cannot be read, or undefined when its fields have the types they need. */
 export function pinProblem(p: Readonly<Record<string, unknown>>): string | undefined {
