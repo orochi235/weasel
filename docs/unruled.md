@@ -3508,3 +3508,13 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): `addLane` throws a `RangeError` for a negative or fractional `index`, and still
   adds at the end for one past the last lane. Clamping a negative index to 0 and rounding a fractional one was the
   alternative.
+## Audit round sixty-four (2026-11-21): text
+
+- 2026-11-21 (the fixer's call): `markdownToRuns` reads a marker that turns on a flag nothing turns off again as
+  literal text (`5 * 3`, `2**10`); where several are open at the end, the last one to open is made text and the input
+  read again, until none is. `runsToMarkdown` now closes every flag it opens, fitting the spelling where the plain
+  closing markers would misread, rather than leaving them off. Reading an unclosed marker as styling to the end, as
+  the reader did, was the alternative; CommonMark's flanking rules were another, and need a design of their own.
+- 2026-11-21 (the fixer's call): a run grammar whose delimiter is a backslash throws in `runsToMarkdown` and
+  `markdownToRuns`, since the reader takes a backslash for an escape and loses the marker. Reading a backslash run as
+  a marker before trying it as an escape was the alternative, which leaves no way to write a literal backslash.

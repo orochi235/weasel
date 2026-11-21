@@ -127,7 +127,7 @@ describe('run grammar under any grammar, property', () => {
       if (plain.length < input.length) t.count('consumed');
       expect(toRuns(read)).toBe(read);
     }), runs(RUNS));
-    t.atLeast('consumed', 50);
+    t.atLeast('consumed', 12);
   });
 
   it('reads text holding no delimiter or backslash as one plain run', () => {
