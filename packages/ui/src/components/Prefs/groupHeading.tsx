@@ -31,7 +31,7 @@ export const groupOff = (ctx: WalkCtx, path: string): boolean => ctx.disabled?.h
 
 /**
  * The leaf of `group` marked `heading`, lifted out of its rows into the
- * heading. It stays a row where the form has its own renderer for its kind,
+ * heading. It stays a row where the form has its own renderer for it,
  * whose control the form knows nothing of the size of, and where the surface
  * draws its own leaves.
  */
@@ -42,10 +42,10 @@ export function groupHeading(ctx: WalkCtx, group: PrefGroup, path: string): Grou
   const key = prefHeadingKey(group);
   const leaf = key === undefined ? undefined : getOwn(group.children, key);
   const reset = groupReset(ctx, group, path);
-  if (key === undefined || leaf === undefined || !isPrefLeaf(leaf) || rendererOf(ctx.renderers, leaf.kind) || ctx.leaves) {
+  const own = key === undefined ? '' : path === '' ? key : `${path}.${key}`;
+  if (key === undefined || leaf === undefined || !isPrefLeaf(leaf) || rendererOf(ctx.renderers, own, leaf.kind) || ctx.leaves) {
     return { off, name, className: undefined, control: reset, entries };
   }
-  const own = path === '' ? key : `${path}.${key}`;
   const shown = shownLeaf(ctx, leaf);
   if (!shown) return { off, name, className: undefined, control: reset, entries };
   const { renderCtx } = prefRenderContext(ctx, own, { ...shown.pref, name: group.name }, shown.at);

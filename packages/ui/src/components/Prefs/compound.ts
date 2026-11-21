@@ -6,11 +6,16 @@ import { rendererOf } from '../PrefsSource/rendererOf';
 export type RowWidth = 'column' | 'stacked' | 'filled';
 
 /**
- * The room a leaf's control needs: `filled` where the renderer that draws its kind asks (`wide`), `stacked` where
- * its control is rows of its own, and the control column otherwise.
+ * The room a leaf's control needs: `filled` where the renderer that draws it, named for its `path` or its kind, asks
+ * (`wide`), `stacked` where its control is rows of its own, and the control column otherwise.
  */
-export function rowWidthOf(leaf: PrefLeaf, renderers?: Record<string, { wide?: boolean } | undefined>): RowWidth {
-  if (rendererOf(renderers, leaf.kind)?.wide === true) return 'filled';
+export function rowWidthOf(
+  leaf: PrefLeaf,
+  renderers?: Record<string, { wide?: boolean } | undefined>,
+  path?: string,
+): RowWidth {
+  const custom = path === undefined ? rendererOf(renderers, leaf.kind) : rendererOf(renderers, path, leaf.kind);
+  if (custom?.wide === true) return 'filled';
   if (leaf.kind === 'map' || leaf.kind === 'union') return 'stacked';
   const item = leaf.kind === 'list' ? (leaf as Partial<PrefList>).item : undefined;
   return item !== undefined && prefIsCompound(item) ? 'stacked' : 'column';

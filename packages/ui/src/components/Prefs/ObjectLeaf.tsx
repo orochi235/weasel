@@ -20,15 +20,15 @@ export function ObjectLeaf({
   ctx,
   renderField,
   isGroup,
-  rowWidth = rowWidthOf,
+  rowWidth = (leaf) => rowWidthOf(leaf),
 }: {
   ctx: LeafContext;
   /** Draws one field, for a row or for a bar. `siblings` is the object it is a field of. */
   renderField: (ctx: LeafContext, siblings: Record<string, unknown> | undefined, surface?: ControlForm) => ReactNode;
   /** Whether a field's row is a group and not a `<label>`. */
   isGroup: (ctx: LeafContext, siblings: Record<string, unknown> | undefined) => boolean;
-  /** The room a field's control needs. Default: by its kind alone. */
-  rowWidth?: (leaf: PrefLeaf) => RowWidth;
+  /** The room a field's control needs; `path` is the field's. Default: by its kind alone. */
+  rowWidth?: (leaf: PrefLeaf, path: string) => RowWidth;
 }) {
   const pref = ctx.pref as PrefObject;
   const held = typeof ctx.value === 'object' && ctx.value !== null
@@ -40,7 +40,7 @@ export function ObjectLeaf({
     off,
     cell: (key, child) => ({ key, child, field: objectFieldContext(ctx, key, child, prefValueOrDefault) }),
     rows: (cells) => cells.map(({ key, child, field }) => {
-      const width = rowWidth(child);
+      const width = rowWidth(child, field.path);
       const stacked = width !== 'column';
       // The leaf's own mark covers its fields; a field hidden on its own carries one.
       const marked = field.hidden === true && ctx.hidden !== true;

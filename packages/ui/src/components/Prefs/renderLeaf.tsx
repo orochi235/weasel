@@ -139,9 +139,9 @@ export function renderLeaf(ctx: LeafContext, parts: LeafParts, name = ctx.pref.n
   return parts.control(field, ctx, name);
 }
 
-/** A leaf's renderer for its kind where the surface has one, else the built-in; for a bar, with its words. */
+/** A leaf's renderer for its path or its kind where the surface has one, else the built-in; for a bar, with its words. */
 export function renderLeafControl(ctx: LeafContext, parts: LeafParts, form: ControlForm = 'row', name?: string): ReactNode {
-  const custom = rendererOf(parts.renderers, ctx.pref.kind);
+  const custom = rendererOf(parts.renderers, ctx.path, ctx.pref.kind);
   if (!custom) return renderLeaf(ctx, parts, name, form);
   return drawsBarForm(form) ? withBarLabel(ctx.pref, custom(ctx)) : custom(ctx);
 }
