@@ -23,13 +23,16 @@ export function tokenLeafKind(row: TokenRow): Pick<PrefNumber, 'kind' | 'unit'> 
   if (row.type === 'color' && values.every((css) => hexOf(css) !== undefined)) return { kind: 'color', alpha: true };
   if (NUMERIC_TYPES.has(row.type)) {
     const read = values.map(readCssNumber);
-    const unit = read[0]?.unit;
-    if (read.every((r) => r !== undefined && r.unit === unit)) {
+    // A length may drop its unit only at 0, so a bare 0 takes the unit of the rest, px where there is none.
+    const unit = row.type === 'dimension' ? (read.find((r) => r && !isBareZero(r))?.unit || 'px') : read[0]?.unit;
+    if (read.every((r) => r !== undefined && (r.unit === unit || (unit !== '' && isBareZero(r))))) {
       return unit ? { kind: 'number', unit: { scale: 1, suffix: unit } } : { kind: 'number' };
     }
   }
   return { kind: 'string' };
 }
+
+const isBareZero = (read: { value: number; unit: string }): boolean => read.value === 0 && read.unit === '';
 
 const suffixOf = (leaf: PrefLeaf): string => ((leaf as PrefNumber).unit as PrefLinearUnit | undefined)?.suffix ?? '';
 
@@ -39,7 +42,7 @@ export function prefOfCss(leaf: PrefLeaf, css: string | undefined): unknown {
   if (leaf.kind === 'color') return hexOf(css);
   if (leaf.kind !== 'number') return css;
   const read = readCssNumber(css);
-  return read && read.unit === suffixOf(leaf) ? read.value : undefined;
+  return read && (read.unit === suffixOf(leaf) || isBareZero(read)) ? read.value : undefined;
 }
 
 /** The CSS text of a value `leaf` holds. */

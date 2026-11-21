@@ -1,11 +1,11 @@
 import { isPrefScope, PREF_ELSE, prefLeaves, type PrefEnum, type PrefGroup, type PrefLeaf, type PrefScope } from '@weasel-js/prefs';
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { axisChoiceKey, type AxisChoice, type Varying } from '../axes.ts';
+import type { AxisChoice, Varying } from '../axes.ts';
 import type { PinValue } from '../definition.ts';
 import { defineTheme, type Theme } from '../theme.ts';
 import { cssOfPref, prefOfCss } from './leaf.ts';
 import { scopeByAxis, themeAxisOf, themeTokenOf } from './schema.ts';
-import { foldAxes, tokenTable } from './tokens.ts';
+import { foldAxes, rowCssAt, tokenTable } from './tokens.ts';
 
 /** What the bridge reads of a store over a {@link themePrefsSchema}: any `PrefsStore` is one. */
 export interface ThemePrefsSource {
@@ -85,19 +85,19 @@ export function themePrefsValues(
   base: Theme,
 ): { values: Record<string, unknown>; scopes: ReadonlyMap<string, PrefScope> } {
   const { axes, rows } = tokenTable(themeFromPrefs(store, base));
-  const css = new Map(rows.map((row) => [row.name, row.css]));
-  const now = axisChoiceKey(axes, themePrefsSelection(store));
+  const byName = new Map(rows.map((row) => [row.name, row]));
+  const now = themePrefsSelection(store);
   const values: Record<string, unknown> = { ...store.values() };
   const scopes = new Map(store.scopes());
   const copied = new Set<string>();
   for (const [path, leaf] of prefLeaves(store.schema)) {
     if (themeAxisOf(path) !== undefined || store.isSet(path)) continue;
-    const resolved = css.get(themeTokenOf(path));
-    if (!resolved || Object.values(resolved).some((text) => prefOfCss(leaf, text) === undefined)) continue;
-    const held = foldAxes(axes, (selection) => prefOfCss(leaf, getOwn(resolved, axisChoiceKey(axes, selection))), scopeByAxis);
+    const row = byName.get(themeTokenOf(path));
+    if (!row || Object.values(row.css).some((text) => prefOfCss(leaf, text) === undefined)) continue;
+    const held = foldAxes(axes, (selection) => prefOfCss(leaf, rowCssAt(row, axes, selection)), scopeByAxis);
     if (isPrefScope(held)) scopes.set(path, held);
     else scopes.delete(path);
-    const value = prefOfCss(leaf, getOwn(resolved, now));
+    const value = prefOfCss(leaf, rowCssAt(row, axes, now));
     const dot = path.indexOf('.');
     if (dot < 0) {
       setOwn(values, path, value);

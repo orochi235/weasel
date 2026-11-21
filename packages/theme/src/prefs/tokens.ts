@@ -77,7 +77,9 @@ export function tokenTable(theme: Theme): TokenTable {
     const css: Record<string, string> = {};
     for (const [key, tokens] of resolved) {
       const value = getOwn(tokens, PREFIX + name);
-      if (value !== undefined) setOwn(css, key, value);
+      // A hook a `by` leaves out at some selection draws its fallback there.
+      const drawn = value ?? (listed?.hook ? listed.defaultValue : undefined);
+      if (drawn !== undefined) setOwn(css, key, drawn);
     }
     rows.push({
       name,
@@ -94,6 +96,14 @@ export function tokenTable(theme: Theme): TokenTable {
     rows.push({ name, type: listed.type, group: listed.group, description: listed.description, css });
   }
   return { axes, rows };
+}
+
+/**
+ * `row`'s CSS at `selection`. Where the theme resolves it at only some
+ * selections, the rest read as the default selection's CSS, else the first.
+ */
+export function rowCssAt(row: Pick<TokenRow, 'css'>, axes: AxisDefs, selection: AxisChoice): string | undefined {
+  return getOwn(row.css, axisChoiceKey(axes, selection)) ?? getOwn(row.css, axisChoiceKey(axes, {})) ?? Object.values(row.css)[0];
 }
 
 /**

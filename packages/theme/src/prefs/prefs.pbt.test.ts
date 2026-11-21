@@ -19,8 +19,10 @@ import { themeAxisOf, themeAxisPath, themePrefsSchema, themeTokenOf } from './sc
 
 const RUNS = 120;
 
-/** `css` as hex when it is a color paint can read, else as written. paint reads no `color-mix()` of `oklch()`. */
+/** `css` as hex when it is a color paint can read, else as written, a bare `0` as the `0px` a length leaf writes it
+ *  back as. paint reads no `color-mix()` of `oklch()`. */
 function asColor(css: string | undefined): string | undefined {
+  if (css?.trim() === '0') return '0px';
   try {
     return css === undefined ? css : rgbaToHex(parseColor(css));
   } catch {
