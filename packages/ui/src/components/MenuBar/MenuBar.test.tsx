@@ -83,6 +83,14 @@ describe('MenuBar', () => {
     expect(rowNames()).toEqual(['Undo']);
   });
 
+  it('switches to another title’s menu on a touch tap, whose pointerenter comes just before its press', () => {
+    const { file, edit } = setup();
+    fireEvent.pointerDown(file);
+    fireEvent.pointerEnter(edit, { pointerType: 'touch' });
+    fireEvent.pointerDown(edit, { pointerType: 'touch' });
+    expect(screen.getByRole('menu').getAttribute('aria-labelledby')).toBe(edit.id);
+  });
+
   it('runs the row a press on a title is released over', () => {
     const { file } = setup();
     fireEvent.pointerDown(file);
