@@ -7,6 +7,7 @@ import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
 import { ZoomControl } from '@weasel-js/ui/components/ZoomControl';
 import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
+import { resolveAutoConfig } from '../config/autoConfig';
 import type { LeafRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
 import { icon } from '../icons.gen';
@@ -100,9 +101,9 @@ function shownKey(t: TrialTool, ctx: TrialChromeContext): TrialTool['shortcut'] 
 /** Built-in ids contributed only while runtime state says so — the loupe
  *  and eyedropper toggles and the picked color appear once a lens mounts, after
  *  the trial's first render, the snapshot loader once a snapshot is saved, the
- *  expand toggle only inside a lightbox, and the zoom controls, scale and FPS
- *  meter once the trial has a view, which an `initialView` sized to the
- *  viewport does not until the canvas is measured. Marks, export, and the undo
+ *  expand toggle only inside a lightbox, and the zoom controls and scale once
+ *  the trial has a 2D view, which an `initialView` sized to the viewport does
+ *  not until the canvas is measured. The FPS meter comes only with a canvas. Marks, export, and the undo
  *  pair marks alone bring come and go with the lab's Marks switch. The
  *  floating sidebar's toggle is there only while the sidebar floats and has a
  *  section to show. The color mode switch comes only with an instrument drawn in
@@ -148,6 +149,13 @@ const MODE_SWITCH: TrialContribution = {
 /** Whether a trial's content is the instrument's own DOM, which a theme reaches, rather than a canvas or stage. */
 export const drawsDom = (instrument: Instrument): boolean =>
   instrument.canvas == null && instrument.stage == null;
+
+const FPS: TrialContribution = {
+  id: 'fps',
+  region: 'status',
+  end: true,
+  render: () => <FpsMeter />,
+};
 
 // Zoom acts on the view of the trial, so it is a viewport control. A trial
 // holding a non-2D view reports zoom as null and gets none of this.
@@ -195,14 +203,6 @@ function zoomContributions(instrument: Instrument, ctx: TrialChromeContext): Tri
     group: 'view',
     render: (c) => <ScaleBar zoom={c.zoom ?? 1} className="lk-scale-bar" />,
   });
-  if (instrument.canvas != null) {
-    out.push({
-      id: 'fps',
-      region: 'status',
-      end: true,
-      render: () => <FpsMeter />,
-    });
-  }
   return out;
 }
 
@@ -271,6 +271,7 @@ export function builtinContributions(
   if (ctx.hasLoupe) out.push(...loupeContributions(ctx));
 
   out.push(...zoomContributions(instrument, ctx));
+  if (instrument.canvas != null) out.push(FPS);
 
   if (instrument.annotations != null) {
     // A panel rather than a menu, so it takes the `render` escape: it reads the
@@ -288,7 +289,12 @@ export function builtinContributions(
       region: 'sidebar',
       item: {
         title: 'Marks',
-        body: <MarkList meaning={instrument.annotations.meaning} config={ctx.config} />,
+        body: (
+          <MarkList
+            meaning={instrument.annotations.meaning}
+            config={resolveAutoConfig(ctx.configSchema, ctx.config, ctx.auto)}
+          />
+        ),
       },
     });
   }

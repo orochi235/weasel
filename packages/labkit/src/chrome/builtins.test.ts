@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
@@ -66,6 +67,7 @@ function ids(instrument: Instrument, c: TrialChromeContext = ctx): string[] {
 describe('builtinContributions', () => {
   it('always contributes the trial actions', () => {
     expect(ids({ ...withCanvas, undo: false }, ctxWithZoom(null))).toEqual([
+      'fps',
       'clone',
       'reset',
       'snapshot',
@@ -96,6 +98,7 @@ describe('builtinContributions', () => {
   it('contributes the expand toggle only inside a lightbox, ahead of the trial actions', () => {
     expect(ids(bare)).not.toContain('expand');
     expect(ids({ ...withCanvas, undo: false }, { ...ctx, zoom: null, canExpand: true })).toEqual([
+      'fps',
       'expand',
       'clone',
       'reset',
@@ -147,6 +150,10 @@ describe('builtinContributions', () => {
     expect(ids(withCanvas, ctxWithZoom(null))).not.toContain('zoom-in');
   });
 
+  it('meters a canvas’s frames whether or not its view reports a zoom', () => {
+    expect(ids(withCanvas, ctxWithZoom(null))).toContain('fps');
+  });
+
   it('copies the settings as JSON from the title bar, when there are settings', () => {
     expect(ids(bare)).not.toContain('copy-settings');
     const writeText = vi.fn(() => Promise.resolve());
@@ -194,6 +201,23 @@ describe('builtinContributions', () => {
       cap: null,
     });
     vi.unstubAllGlobals();
+  });
+
+  it('answers a mark’s staleness against the config the trial runs on, an auto path resolved', () => {
+    const withAuto = {
+      ...ctx,
+      configSchema: resolveConfigSchema(
+        f.schema({ width: f.number(240), gap: f.number(12).auto((c) => (c.width as number) / 24) }),
+        [],
+      ),
+      config: { width: 240, gap: 12 },
+      auto: new Set(['gap']),
+    };
+    const annotated = { ...bare, annotations: { targets: [] } } as unknown as Instrument;
+    const marks = builtinContributions(annotated, withAuto).find((c) => c.id === 'marks');
+    if (marks === undefined) throw new Error('no marks contribution');
+    const body = (marks.item as { body: ReactElement<{ config: unknown }> }).body;
+    expect(body.props.config).toEqual({ width: 240, gap: 10 });
   });
 
   it('contributes a settings section only when the schema has fields', () => {

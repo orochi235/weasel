@@ -18,7 +18,7 @@ const config = f.schema({
   filled: f.boolean(true),
 });
 
-/** Declares every capability that contributes chrome, so all five trial
+/** Declares every capability that contributes chrome, so all six trial
  *  regions render at once. */
 const FullInstrument: Instrument<DemoState, DemoConfig> = {
   name: 'Every Region',
@@ -79,7 +79,8 @@ export const EveryRegion: Story = {
   },
 };
 
-/** A consumer dropping a built-in and adding its own in its place. */
+/** A consumer dropping a built-in and adding its own in its place: the title bar's snapshot button, relabeled.
+ *  The replacement takes an id of its own, since an id a built-in holds is taken before `suppress` applies. */
 export const SuppressedAndReplaced: Story = {
   args: {
     instruments: [FullInstrument],
@@ -88,15 +89,14 @@ export const SuppressedAndReplaced: Story = {
     suppress: ['snapshot'],
     chrome: [
       {
-        id: 'export',
-        region: 'toolbar',
-        group: 'trial',
+        id: 'save-snapshot',
+        region: 'titlebar',
         end: true,
         item: {
-          icon: icon('ui:crosshair'),
-          label: 'Export',
+          icon: icon('ui:snapshot'),
+          label: 'Save state',
           showLabel: true,
-          onActivate: () => {},
+          onActivate: (ctx) => ctx.saveSnapshot(),
         },
       },
     ],

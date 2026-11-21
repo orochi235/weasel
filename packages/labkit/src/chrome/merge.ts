@@ -17,8 +17,8 @@ export function mergeContributions<T extends { id: string; start?: boolean }>(
       if (seen.has(entry.id)) {
         throw new Error(
           `[labkit] mergeContributions: duplicate contribution id "${entry.id}". ` +
-            'Two bundles registered the same id; rename one, or suppress the ' +
-            'built-in before adding yours.',
+            'Two bundles registered the same id; rename one. To replace a built-in, ' +
+            'suppress the built-in and add yours under another id.',
         );
       }
       seen.add(entry.id);
