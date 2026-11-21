@@ -42,8 +42,8 @@ export function BadgeTarget(props: BadgeTargetProps) {
   const { element, href, onClick, tooltip, onFocusChange, extra, children } = props;
   const shared = {
     ...extra,
-    className: s.target,
-    'aria-label': props['aria-label'],
+    className: [s.target, extra?.className].filter(Boolean).join(' '),
+    'aria-label': props['aria-label'] ?? extra?.['aria-label'],
     onFocus: (e: FocusEvent<HTMLElement>) => { extra?.onFocus?.(e); onFocusChange(true); },
     onBlur: (e: FocusEvent<HTMLElement>) => { extra?.onBlur?.(e); onFocusChange(false); },
     onClick: (e: MouseEvent<HTMLElement>) => {

@@ -250,6 +250,13 @@ describe('Badge removable with an action of its own', () => {
     expect(root.hasAttribute('data-focused')).toBe(false);
   });
 
+  it('keeps the class and name labelProps give the label', () => {
+    render(<Badge onClick={() => {}} onRemove={() => {}} labelProps={{ className: 'mine', 'aria-label': 'Open' }}>x</Badge>);
+    const target = screen.getByRole('button', { name: 'Open' });
+    expect(target.classList.contains('mine')).toBe(true);
+    expect(target.classList.length).toBeGreaterThan(1);
+  });
+
   it('describes the click target with the tooltip', () => {
     render(<Badge tooltip="Filter by tag" onClick={() => {}} onRemove={() => {}}>tag</Badge>);
     const target = screen.getByRole('button', { name: 'tag' });
