@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import { actionsNodeOf, useActionsRegistry } from './ActionsProvider';
 import type { ActionsRegistry } from './registry';
 import type { LastOperation, LastOperationStore } from './lastOperation';
@@ -21,5 +21,7 @@ export function useLastOperationStore(): LastOperationStore | null {
 export function useLastOperation(store?: LastOperationStore | null): LastOperation | null {
   const inScope = useLastOperationStore();
   const s = store === undefined ? inScope : store;
-  return useSyncExternalStore(s?.subscribe ?? NO_SUBSCRIBE, s?.get ?? NO_STORE, s?.get ?? NO_STORE);
+  const subscribe = useCallback((listener: () => void) => (s ? s.subscribe(listener) : NO_SUBSCRIBE()), [s]);
+  const get = useCallback(() => (s ? s.get() : NO_STORE()), [s]);
+  return useSyncExternalStore(subscribe, get, get);
 }

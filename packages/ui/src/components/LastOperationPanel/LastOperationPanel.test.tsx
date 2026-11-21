@@ -43,6 +43,20 @@ describe('LastOperationPanel', () => {
     expect(store.dismiss).toHaveBeenCalled();
   });
 
+  it('calls dismiss as a method of a store written as a class', () => {
+    class Store implements LastOperationStore {
+      op: LastOperation | null = { id: 'bridgePaths', label: 'Bridge', schema: SCHEMA, values: { tension: 0.4, closed: false } };
+      get() { return this.op; }
+      subscribe() { return () => {}; }
+      adjust() { return true; }
+      dismiss() { this.op = null; }
+    }
+    const store = new Store();
+    render(<LastOperationPanel store={store} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(store.op).toBeNull();
+  });
+
   it('follows the store of the actions tree in scope', () => {
     const doc = { width: 0 };
     const history = createHistory(doc);
