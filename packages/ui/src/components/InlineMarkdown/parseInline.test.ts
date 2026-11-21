@@ -15,4 +15,13 @@ describe('parseInline', () => {
       { type: 'text', text: ' now' },
     ]);
   });
+
+  it('keeps a code span whole inside a mark', () => {
+    expect(parseInline('*the `**` operator*')).toEqual([
+      { type: 'em', children: [{ type: 'text', text: 'the ' }, { type: 'code', text: '**' }, { type: 'text', text: ' operator' }] },
+    ]);
+    expect(parseInline('**see `a**b`**')).toEqual([
+      { type: 'strong', children: [{ type: 'text', text: 'see ' }, { type: 'code', text: 'a**b' }] },
+    ]);
+  });
 });

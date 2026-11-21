@@ -10,12 +10,13 @@ export type InlineToken =
 // Alternatives in precedence order: a code span, a shortcut, strong, emphasis, strikethrough, a link, an escaped mark.
 // A mark opens and closes against a non-space, and opens before punctuation only after a space or the line's start,
 // so `a * b` and globs such as `src/*.ts` and `"*.js"` stay as written. Underscores are never emphasis: prose here
-// names snake_case identifiers. Inside a mark or a label a backslash pair is one
-// character, so an escaped mark there cannot close it.
+// names snake_case identifiers. Inside a mark or a label a code span is whole, and a backslash pair is one
+// character, so neither can close it.
+const CODE_ATOM = '`[^`]+`|`(?![^`]*`)';
 // A code span, a shortcut and an escape open with punctuation but are not a glob's.
 const opens = (mark: string, next = '\\s') =>
   '(?:(?<!\\S)' + mark + '(?=[^' + next + '])|' + mark + '(?=[`<\\\\]|[^' + next + '\\p{P}\\p{S}]))';
-const inner = (stop: string) => '(?:\\\\[^]|[^' + stop + '\\\\])';
+const inner = (stop: string) => '(?:\\\\[^]|' + CODE_ATOM + '|[^' + stop + '\\\\`])';
 const INLINE = new RegExp(
   [
     '`([^`]+)`',
