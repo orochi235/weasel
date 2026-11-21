@@ -6,6 +6,7 @@
  */
 import {
   findNodeShape,
+  isPatternPaint,
   poseFrameOf,
   type DrawCommand,
   type GroupDrawCommand,
@@ -101,13 +102,13 @@ function lowerGroup(cmd: GroupDrawCommand, toDoc: Affine, pose: SvgKitPose, pain
 
 /**
  * A command's paint as an `SvgPaint` in the frame its path is written in. A
- * `'local'` gradient is in that frame already. A `'world'` one is in the
+ * `'local'` gradient or pattern is in that frame already. A `'world'` one is in the
  * document's, so it is taken back through `toDoc`; so is a `'screen'` one,
  * which a document has no screen for and reads as at an unmoved view.
  */
 function paintIn(paint: Paint | undefined, toDoc: Affine, pose: SvgKitPose, warn: PainterWarn): SvgPaint {
   const out = svgPaintFromKit(paint ?? null, pose);
-  if (out.kind !== 'gradient' || !GRADIENTS.has(out.paint.kind as string)) return out;
+  if (out.kind !== 'gradient' || !(GRADIENTS.has(out.paint.kind as string) || isPatternPaint(out.paint))) return out;
   const units = (out.paint as { units?: string }).units;
   if (units === 'local') return out;
   const back = invert(toDoc);

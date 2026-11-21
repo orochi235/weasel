@@ -93,6 +93,22 @@ describe('svgNodesFromKit over a painter of the app own', () => {
     }
   });
 
+  it('takes a world pattern back through the pose frame, so its tile lands where the canvas paints it', () => {
+    const pose = { ...BOX, rotation: Math.PI / 2 };
+    const hatch: CommandPaint = { kind: 'hatch', color: '#000000', units: 'world', origin: { x: 5, y: 0 } };
+    paintBlobs((p) => [{ kind: 'path', path: boxPath(p), fill: { paint: hatch } }]);
+    const [out] = svgNodesFromKit(treeOf({ a: blob(pose) })) as SvgGroupNode[];
+    const fill = (out!.children[0] as SvgPathNode).fill;
+    if (fill.kind !== 'gradient' || fill.paint.kind !== 'hatch') throw new Error('expected a hatch');
+    const o = fill.paint.origin ?? { x: 0, y: 0 };
+    const back = applyMatrix(out!.transform!, o.x, o.y);
+    expect(back.x).toBeCloseTo(5); expect(back.y).toBeCloseTo(0);
+    const [a, b] = fill.paint.transform ?? [1, 0, 0, 1];
+    const [ta, tb, tc, td] = out!.transform!;
+    expect(ta * a + tc * b).toBeCloseTo(1);
+    expect(tb * a + td * b).toBeCloseTo(0);
+  });
+
   it('writes a group command with its transform, alpha and clip', () => {
     paintBlobs((p) => [{
       kind: 'group', transform: mat3.fromAffine([2, 0, 0, 2, 5, 6]), alpha: 0.5, clip: boxPath(p),
