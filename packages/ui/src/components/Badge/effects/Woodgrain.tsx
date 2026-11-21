@@ -6,7 +6,7 @@ import type { EffectModule } from '../bases/types';
 export interface BadgeWoodgrainEffectParams {
   /** Number of grain curves. */
   lines?: number;
-  /** Number of knot circles. */
+  /** Number of knots. */
   knots?: number;
   /** Overall grain opacity (0..1). */
   intensity?: number;
@@ -14,13 +14,16 @@ export interface BadgeWoodgrainEffectParams {
 
 const DEFAULTS: Required<BadgeWoodgrainEffectParams> = { lines: 4, knots: 2, intensity: 0.55 };
 
+/** A knot's two rings, in CSS px, so they keep their shape however the badge stretches. */
+const KNOT_RINGS = [{ rx: 3.5, ry: 2.8 }, { rx: 1.4, ry: 1.15 }];
+
 // Deterministic per-line/knot wobble.
 function osc(seed: number) {
   return Math.sin(seed * 1.73 + 0.5);
 }
 
 const Woodgrain: EffectModule<BadgeWoodgrainEffectParams> = {
-  Component: ({ sampler, variant, params }) => {
+  Component: ({ sampler, boxW, boxH, variant, params }) => {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
     const cfg = { ...DEFAULTS, ...params };
@@ -51,8 +54,9 @@ const Woodgrain: EffectModule<BadgeWoodgrainEffectParams> = {
           ))}
           {knotPositions.map(([cx, cy], i) => (
             <g key={`k${i}`}>
-              <ellipse className="badge-stroke" cx={cx} cy={cy} rx={3} ry={2.4} fill="none" />
-              <ellipse className="badge-stroke" cx={cx} cy={cy} rx={1.2} ry={1} fill="none" />
+              {KNOT_RINGS.map((ring, j) => (
+                <ellipse key={j} className="badge-stroke" cx={cx} cy={cy} rx={ring.rx * (100 / boxW)} ry={ring.ry * (100 / boxH)} fill="none" />
+              ))}
             </g>
           ))}
         </g>

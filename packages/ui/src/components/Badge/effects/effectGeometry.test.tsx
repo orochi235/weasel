@@ -13,6 +13,7 @@ import Scallops from './Scallops';
 import Sheen from './Sheen';
 import Spikes from './Spikes';
 import Sunbeams from './Sunbeams';
+import Woodgrain from './Woodgrain';
 
 const square: [number, number][] = [[0, 0], [100, 0], [100, 100], [0, 100]];
 
@@ -160,5 +161,15 @@ describe('a decoration on an outline that reaches past the viewBox', () => {
       const rect = drawTall(effect, { glossExtent: 50, specularity: 1 }).querySelector('rect[clip-path]')!;
       expect(boxOf(rect)).toEqual([-10, -20, 120, 70]);
     }
+  });
+});
+
+describe('woodgrain', () => {
+  it('draws its knots the same shape on a wide badge as on a square one', () => {
+    const aspect = (boxW: number, boxH: number) => {
+      const ring = draw(Woodgrain, { knots: 1 }, boxW, boxH).querySelector('ellipse')!;
+      return (Number(ring.getAttribute('rx')) * boxW) / (Number(ring.getAttribute('ry')) * boxH);
+    };
+    expect(aspect(150, 24)).toBeCloseTo(aspect(40, 40));
   });
 });
