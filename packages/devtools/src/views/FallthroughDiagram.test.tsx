@@ -123,3 +123,17 @@ describe('FallthroughDiagram', () => {
     expect(container.querySelector('[data-key=" "]')?.textContent).toBe('Space');
   });
 });
+
+describe('FallthroughDiagram routes', () => {
+  it('says so in the Route cell of a binding whose spec has no route form, rather than leaving it blank', () => {
+    const record = fixtures.escapeInPathEdit;
+    const noRoute: DispatchRecord = {
+      ...record,
+      matched: record.matched.map((c) => ({ ...c, routes: [] })),
+      ranked: record.ranked.map((r) => ({ ...r, candidate: { ...r.candidate, routes: [] } })),
+    };
+    renderWithIcons(<FallthroughDiagram record={noRoute} />);
+    const matched = within(band('Matched'));
+    expect(matched.getAllByText('no route form')).toHaveLength(record.matched.length);
+  });
+});

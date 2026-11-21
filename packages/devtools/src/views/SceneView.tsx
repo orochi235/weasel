@@ -24,14 +24,21 @@ function RowFacts({ row }: { row: DevtoolsNodeSummary }): ReactElement {
   );
 }
 
-function toNodes(levels: ReadonlyMap<string, readonly DevtoolsNodeSummary[]>, parent: string): TreeNode[] {
-  return (levels.get(parent) ?? []).map((row) => ({
+/** `seen` keeps a node to its first place in the walk: levels reload one at a time, so for a moment two can name each other. */
+function toNodes(
+  levels: ReadonlyMap<string, readonly DevtoolsNodeSummary[]>,
+  parent: string,
+  seen: Set<string> = new Set(),
+): TreeNode[] {
+  const rows = (levels.get(parent) ?? []).filter((row) => !seen.has(row.id));
+  for (const row of rows) seen.add(row.id);
+  return rows.map((row) => ({
     id: row.id,
     textValue: row.id,
     label: <span data-node-id={row.id}>{row.id}</span>,
     trailing: <RowFacts row={row} />,
     muted: row.hidden,
-    ...(row.kind === 'group' && row.childCount > 0 ? { children: toNodes(levels, row.id) } : {}),
+    ...(row.kind === 'group' && row.childCount > 0 ? { children: toNodes(levels, row.id, seen) } : {}),
   }));
 }
 

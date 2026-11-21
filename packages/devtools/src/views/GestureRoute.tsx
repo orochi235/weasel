@@ -11,7 +11,8 @@ import { Badge, type BadgeVariant } from '@weasel-js/ui/components/Badge';
 import { Powerline, type EdgeCap, type PowerlineProps } from '@weasel-js/ui/components/Powerline';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import { KeyCap, type KeyLegend } from '@weasel-js/ui/components/Keycaps';
-import { foldKeyRoute, keyLegendFromKey, keyLegendsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
+import { foldKeyRoute, keyLegendsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
+import { keyName } from './keyName';
 import s from './GestureRoute.module.css';
 
 const MOD_DISPLAY_ORDER: readonly ModifierKey[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
@@ -62,7 +63,7 @@ export function gestureRouteSegments(route: string): RouteSegment[] {
       argIsKey ? (
         <>
           {parsed.gesture}{' '}
-          <KeyCap label={keyLegendFromKey(folded.arg!).label} className={s.keyCap} />
+          <KeyCap label={keyName(folded.arg!)} className={s.keyCap} />
         </>
       ) : (
         <>

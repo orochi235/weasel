@@ -1,12 +1,12 @@
 /** The History tab against a page it does not have: a client whose slices the test writes. */
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { DevtoolsArea, DevtoolsHistoryRecord, DevtoolsHistorySlice } from '../protocol';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import type { DevtoolsClient } from '../client';
 import { HistoryView } from './HistoryView';
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 /** A step at one shared millisecond, as steps an app takes in one handler are. */
 const step = (op: string): DevtoolsHistoryRecord => ({
@@ -69,5 +69,37 @@ describe('<HistoryView>', () => {
     hold = null;
     await act(async () => { release(); });
     expect(await screen.findByRole('cell', { name: 'push' })).toBeTruthy();
+  });
+
+  it("keeps counting a step's age between history notices", async () => {
+    let clock = 1000;
+    vi.spyOn(Date, 'now').mockImplementation(() => clock);
+    const page = fakePage();
+    renderWithIcons(<HistoryView client={page.client} rootId="r" />);
+    act(() => page.push(step('kit:aged')));
+    expect(await screen.findByRole('cell', { name: '0ms' })).toBeTruthy();
+    clock = 6000;
+    expect(await screen.findByRole('cell', { name: '5.0s' }, { timeout: 2000 })).toBeTruthy();
+  });
+
+  it('folds notices that arrive during a read into one read after it', async () => {
+    const page = fakePage();
+    let release!: () => void;
+    const held = new Promise<void>((r) => { release = r; });
+    let asked = 0;
+    const request = page.client.request.bind(page.client);
+    page.client.request = (async (...args: Parameters<typeof request>) => {
+      asked++;
+      await held;
+      return request(...args);
+    }) as typeof request;
+    renderWithIcons(<HistoryView client={page.client} rootId="r" />);
+    await waitFor(() => expect(asked).toBe(1));
+    for (let i = 0; i < 20; i++) act(() => page.push(step(`kit:${i}`)));
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(asked).toBe(1);
+    await act(async () => { release(); await new Promise((r) => setTimeout(r, 0)); });
+    expect(asked).toBe(2);
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Position' }).textContent).toBe('20 / 20'));
   });
 });

@@ -13,6 +13,7 @@ import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { usePoll } from '../hooks';
 import type { DevtoolsViewProps } from '../tabs';
 import { followTrace } from '../trace';
+import { coalesced } from './coalesced';
 import { CoordTable, type CoordEntry } from './CoordTable';
 import { sequenced, type Sequenced } from './sequenced';
 import { TraceTable } from './TraceTable';
@@ -39,22 +40,21 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
 
   useEffect(() => {
     let live = true;
-    const read = (): void => {
-      follower.read().then((slice) => {
-        if (!live) return;
-        if (slice.entries.length) {
-          const read = sequenced(slice.entries as unknown as TraceLogEntry[], slice.cursor);
-          setEntries((prev) => [...prev, ...read].slice(-KEEP));
-        }
-        if (slice.coords?.length) {
-          const read = sequenced(slice.coords as unknown as CoordEntry[], slice.coordCursor!);
-          setCoords((prev) => [...prev, ...read].slice(-KEEP));
-        }
-        setLive(slice.live as unknown as DispatchRecord | null);
-        setNow(Date.now());
-        setError(null);
-      }, (err: Error) => { if (live) setError(err.message); });
-    };
+    const once = (): Promise<void> => (!live ? Promise.resolve() : follower.read().then((slice) => {
+      if (!live) return;
+      if (slice.entries.length) {
+        const read = sequenced(slice.entries as unknown as TraceLogEntry[], slice.cursor);
+        setEntries((prev) => [...prev, ...read].slice(-KEEP));
+      }
+      if (slice.coords?.length) {
+        const read = sequenced(slice.coords as unknown as CoordEntry[], slice.coordCursor!);
+        setCoords((prev) => [...prev, ...read].slice(-KEEP));
+      }
+      setLive(slice.live as unknown as DispatchRecord | null);
+      setNow(Date.now());
+      setError(null);
+    }, (err: Error) => { if (live) setError(err.message); }));
+    const read = coalesced(once);
     readNow.current = read;
     const off = client.onChanged((id, areas) => { if (id === rootId && areas.includes('trace')) read(); });
     return () => { live = false; readNow.current = () => {}; off(); };
@@ -86,7 +86,12 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
           onChange={(next) => setShown(next)}
         />
         <Switch isSelected={showCoords} onChange={toggleCoords}>coords</Switch>
-        <Button size="sm" variant="ghost" disabled={entries.length === 0} onClick={() => setEntries([])}>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={entries.length === 0 && coords.length === 0}
+          onClick={() => { setEntries([]); setCoords([]); }}
+        >
           Clear
         </Button>
         <span className={s.count}>{entries.length} {entries.length === 1 ? 'record' : 'records'}</span>

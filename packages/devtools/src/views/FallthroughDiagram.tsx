@@ -12,7 +12,8 @@ import { Badge } from '@weasel-js/ui/components/Badge';
 import { Code } from '@weasel-js/ui/components/Code';
 import { GestureRoute } from './GestureRoute';
 import { KeyCap, KeySequence } from '@weasel-js/ui/components/Keycaps';
-import { keyLegendFromKey, keyLegendsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
+import { keyLegendsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
+import { keyName } from './keyName';
 import s from './FallthroughDiagram.module.css';
 
 function placedByLabel(p: PlacedBy): string {
@@ -49,7 +50,7 @@ function InputLine({ input, predicted }: { input: DispatchRecordInput; predicted
         <div className={s.field}>
           <dt>Key</dt>
           <dd data-key={input.key}>
-            <KeyCap label={keyLegendFromKey(input.key, { legend: 'text' }).label} />
+            <KeyCap label={keyName(input.key)} />
           </dd>
         </div>
       )}
@@ -80,6 +81,7 @@ function InputLine({ input, predicted }: { input: DispatchRecordInput; predicted
 }
 
 function Routes({ candidate }: { candidate: RecordCandidate }) {
+  if (candidate.routes.length === 0) return <span className={s.muted}>no route form</span>;
   return (
     <span className={s.routes}>
       {candidate.routes.map((r) => <GestureRoute key={r} route={r} size="sm" />)}

@@ -8,14 +8,18 @@ import type { DevtoolsHistoryRecord, DevtoolsHistorySlice } from '../protocol';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Switch } from '@weasel-js/ui/components/Switch';
+import { usePoll } from '../hooks';
 import type { DevtoolsViewProps } from '../tabs';
 import { followHistory } from '../history';
+import { coalesced } from './coalesced';
 import { HistoryTable } from './HistoryTable';
 import { sequenced, type Sequenced } from './sequenced';
 import s from './HistoryView.module.css';
 
 /** As many steps as a canvas's own buffer holds. */
 const KEEP = 200;
+/** How often the Age column moves on between reads, as often as the Dispatch tab's does. */
+const AGE_MS = 250;
 
 export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement {
   const follower = useMemo(() => followHistory(client, rootId), [client, rootId]);
@@ -31,21 +35,22 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
 
   useEffect(() => {
     let live = true;
-    const read = (): void => {
-      follower.read().then((slice) => {
-        if (!live) return;
-        if (slice.entries.length) setSteps((prev) => [...prev, ...sequenced(slice.entries, slice.cursor)].slice(-KEEP));
-        setPosition(slice.position);
-        setHistoryEntries(slice.historyEntries ?? null);
-        setNow(Date.now());
-        setError(null);
-      }, (err: Error) => { if (live) setError(err.message); });
-    };
+    const once = (): Promise<void> => (!live ? Promise.resolve() : follower.read().then((slice) => {
+      if (!live) return;
+      if (slice.entries.length) setSteps((prev) => [...prev, ...sequenced(slice.entries, slice.cursor)].slice(-KEEP));
+      setPosition(slice.position);
+      setHistoryEntries(slice.historyEntries ?? null);
+      setNow(Date.now());
+      setError(null);
+    }, (err: Error) => { if (live) setError(err.message); }));
+    const read = coalesced(once);
     readNow.current = read;
     read();
     const off = client.onChanged((id, areas) => { if (id === rootId && areas.includes('history')) read(); });
     return () => { live = false; off(); };
   }, [client, rootId, follower]);
+
+  usePoll(() => setNow(Date.now()), AGE_MS, true);
 
   const toggleStack = (on: boolean): void => {
     follower.setHistoryEntries(on);

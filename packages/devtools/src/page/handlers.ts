@@ -79,8 +79,11 @@ export function rootState(root: DevtoolsRoot): DevtoolsRootState {
   };
 }
 
-/** Trace records are plain data by contract, and nest deeper than a node's data is shown. */
-const RECORD = { depth: 12 };
+/**
+ * Trace records and frame stats are plain data by contract, and nest deeper than a node's data is shown. The views
+ * read them as their own types, so nothing in one is cut short.
+ */
+const RECORD = { depth: 12, items: Infinity };
 
 export function traceSlice(root: DevtoolsRoot, cursor: number, coordCursor: number | undefined): DevtoolsTraceSlice {
   const { trace, coords } = root.source;
@@ -108,7 +111,7 @@ export function answer(
     case 'get-node': return nodeDetail(root, req.nodeId);
     case 'get-state': return rootState(root);
     case 'get-trace': return traceSlice(root, req.cursor, req.coordCursor);
-    case 'get-frame': return serialize(root.source.frame());
+    case 'get-frame': return serialize(root.source.frame(), RECORD);
     case 'get-registry':
       if (!root.source.registry) throw new Error('this root serves no registry');
       return root.source.registry();
