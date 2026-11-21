@@ -67,7 +67,7 @@ for (const name of ['top', 'bottom'] as const) {
 test('align, offset and shift reach placeAlongRun', async () => {
   const options = { align: 'start', offset: -30, shift: 12 } as const;
   const label = await mount({ text: TEXT, arc: ARCS.top, ...options });
-  const { misses } = compare(label, arcShape(arcInBox(ARCS.top, { width: SIZE, height: SIZE })), options);
+  const { misses } = compare(label, arcShape(arcInBox(ARCS.top, { width: SIZE, height: SIZE })), { ...options, at: 0 });
   for (const miss of misses) expect(miss).toBeLessThanOrEqual(1);
 });
 

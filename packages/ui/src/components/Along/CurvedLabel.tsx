@@ -56,7 +56,9 @@ export function CurvedLabel({ text, offset = 0, shift = 0, className }: CurvedLa
   if (run === null) {
     return <div ref={root} className={cls} role="img" aria-label={text}>{text}</div>;
   }
-  const places = placeAlongRun(run, chars.map((_, i) => lengths[i] ?? 0), { align: align ?? 'center', offset, shift });
+  const from = align ?? 'center';
+  const at = from === 'start' ? 0 : from === 'end' ? run.length : run.length / 2;
+  const places = placeAlongRun(run, chars.map((_, i) => lengths[i] ?? 0), { align: from, at, offset, shift });
   return (
     <div ref={root} className={cls} role="img" aria-label={text} data-laid="">
       {chars.map((ch, i) => (
