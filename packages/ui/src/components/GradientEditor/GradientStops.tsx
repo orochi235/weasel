@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import { useMemo, useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import { sampleGradientStops, type GradStop, type GradientPaint, type Paint } from '@weasel-js/paint';
 import { Slider, type Thumb } from '../Slider';
 import { paintGradientTrack } from '../Slider/paintGradientTrack';
@@ -6,6 +6,8 @@ import { POSITION_FORMAT, StopEditor } from './StopEditor';
 import { stopOrder, useStopSelection } from './useStopSelection';
 import s from './GradientStops.module.css';
 import { useFieldLocale } from '../../useFieldLocale';
+import { useEditDraft } from '../../useEditDraft';
+import { useFocusAfterCommit } from './useFocusAfterCommit';
 
 /** Fewer than two stops is not a gradient any renderer can ramp between. */
 const MIN_STOPS = 2;
@@ -47,7 +49,8 @@ export interface GradientStopsProps {
  * selected by taking focus, which a press on it gives it.
  */
 export function GradientStops(props: GradientStopsProps): ReactElement {
-  const { value, spaceBar, onInput, onChange, onCancel } = props;
+  const { spaceBar } = props;
+  const { shown: value, onInput, onChange, onCancel } = useEditDraft<GradientPaint>(props.value, props);
   const stops = value.stops;
   const space = value.interpolate ?? 'rgb';
   const order = stopOrder(stops);
@@ -57,14 +60,15 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
 
   const trackRef = useRef<HTMLDivElement | null>(null);
   const handleEls = (): HTMLElement[] => Array.from(trackRef.current?.querySelectorAll<HTMLElement>(HANDLE) ?? []);
-  // A handle to focus once the list has the length the edit leaves it at: one just added, or the neighbor of one removed.
-  const focusNext = useRef<{ index: number; count: number } | null>(null);
-  useEffect(() => {
-    const want = focusNext.current;
-    if (!want || want.count !== stops.length) return;
-    focusNext.current = null;
-    handleEls()[want.index]?.focus();
+  const focusNext = useFocusAfterCommit(stops.length, (index) => {
+    select(index);
+    handleEls()[index]?.focus();
   });
+  const commit = (next: GradientPaint): void => {
+    focusNext.committing();
+    onChange(next);
+  };
+  const cancel = (): void => { focusNext.drop(); onCancel(); };
 
   const withStops = (next: GradStop[]): GradientPaint => ({ ...value, stops: next });
   const edited = (patch: Partial<GradStop>): GradientPaint =>
@@ -73,11 +77,15 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
     withStops(next.map((t) => ({ offset: t.value, color: t.color })));
 
   const removable = !props.disabled && stops.length > MIN_STOPS;
+  // Handles are keyed by index, so focus left on the track would stay on whatever stop shifts into its place.
+  const removed = (index: number, refocus: boolean): void => {
+    const next = removing(index);
+    if (refocus || trackRef.current?.contains(document.activeElement)) focusNext.request(next, stops.length - 1);
+  };
   const remove = (index: number, refocus: boolean): void => {
     if (!removable) return;
-    const next = removing(index);
-    if (refocus) focusNext.current = { index: next, count: stops.length - 1 };
-    onChange(withStops(stops.filter((_, i) => i !== index)));
+    removed(index, refocus);
+    commit(withStops(stops.filter((_, i) => i !== index)));
   };
 
   const thumbs: StopThumb[] = stops.map((stop, index) => ({
@@ -120,17 +128,16 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
           thumbs={thumbs}
           aria-label="Gradient stop"
           readoutPlacement="none"
-          onInput={onInput && ((next) => onInput(fromThumbs(next)))}
-          onChange={(next) => onChange(fromThumbs(next))}
-          onCancel={onCancel}
+          onInput={(next) => onInput(fromThumbs(next))}
+          onChange={(next) => commit(fromThumbs(next))}
+          onCancel={cancel}
           onAddThumb={(at) => {
-            select(stops.length);
-            focusNext.current = { index: stops.length, count: stops.length + 1 };
+            focusNext.request(stops.length, stops.length + 1);
             return { value: at, color: sampleGradientStops(stops, at, space) };
           }}
           onRemoveThumb={(index) => {
             if (!removable) return false;
-            removing(index);
+            removed(index, false);
             return true;
           }}
           renderTrack={(ctx) => (
@@ -147,7 +154,7 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
         place={order.indexOf(selected) + 1}
         count={stops.length}
         removable={removable}
-        onColorInput={(color) => onInput?.(edited({ color }))}
+        onColorInput={(color) => onInput(edited({ color }))}
         onColorChange={(color) => onChange(edited({ color }))}
         onColorCancel={onCancel}
         onOffsetChange={(offset) => onChange(edited({ offset }))}

@@ -91,6 +91,22 @@ describe('GradientEditor stops', () => {
     expect(stopsOf(onChange)[0]).toEqual({ offset: 0, color: '#ff000040' });
   });
 
+  it("draws a commit-only caller's opacity scrub on the stop's handle", () => {
+    renderWithIcons(<GradientEditor value={THREE} onChange={() => {}} />);
+    fireEvent.input(screen.getByLabelText('Stop 1 opacity'), { target: { value: '25' } });
+    expect(handle(1).querySelector<HTMLElement>('[data-stop]')!.style.getPropertyValue('--stop')).toBe('#ff000040');
+  });
+
+  it("draws a commit-only caller's stop drag in the stop editor", () => {
+    renderWithIcons(<GradientEditor value={THREE} onChange={() => {}} />);
+    const rail = document.querySelector<HTMLElement>('[data-slider-rail]')!;
+    stubRect(rail, { left: 0, width: 200 });
+    fireEvent.focus(handle(2));
+    fireEvent.pointerDown(handle(2), { clientX: 100, clientY: 12, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(handle(2), { clientX: 150, clientY: 12, pointerId: 1 });
+    expect(screen.getByLabelText('Stop 2 position')).toHaveValue('75%');
+  });
+
   it('moves the selected stop to a position typed as a percentage', () => {
     const onChange = vi.fn();
     renderWithIcons(<GradientEditor value={THREE} onChange={onChange} />);
@@ -170,6 +186,24 @@ describe('GradientEditor stops', () => {
       expect(onChange).not.toHaveBeenCalled();
     });
 
+    it('moves focus to the newly selected stop when a right-click removes the focused one', () => {
+      const FOUR: GradientPaint = { ...THREE, stops: [THREE.stops[0], { offset: 0.3, color: '#00ff00ff' }, { offset: 0.6, color: '#ffff00ff' }, THREE.stops[2]] };
+      renderWithIcons(<Live initial={FOUR} />);
+      handle(2).focus();
+      fireEvent.focus(handle(2));
+      fireEvent.contextMenu(handle(2));
+      expect(screen.getByRole('group', { name: 'Stop 1 of 3' })).toBeInTheDocument();
+      expect(document.activeElement).toBe(handle(1));
+    });
+
+    it('keeps focus on its stop when a right-click removes one before it', () => {
+      renderWithIcons(<Live initial={THREE} />);
+      handle(3).focus();
+      fireEvent.focus(handle(3));
+      fireEvent.contextMenu(handle(1));
+      expect(document.activeElement).toBe(handle(2));
+    });
+
     it('follows a stop the track removed', () => {
       renderWithIcons(<Live initial={THREE} />);
       fireEvent.focus(handle(3));
@@ -192,6 +226,30 @@ describe('GradientEditor stops', () => {
     expect(document.activeElement).toBe(handle(2));
   });
 
+  describe('an add the caller declines', () => {
+    const FOUR: GradientPaint = { ...THREE, stops: [...THREE.stops, { offset: 0.75, color: '#ffff00ff' }] };
+    const pressTrack = () => {
+      const rail = document.querySelector<HTMLElement>('[data-slider-rail]')!;
+      stubRect(rail, { left: 0, width: 200 });
+      fireEvent.pointerDown(rail.parentElement!, { clientX: 100, clientY: 12, pointerId: 1, button: 0 });
+    };
+
+    it('leaves focus and the selection alone when the list later grows by other means', () => {
+      const { rerender } = renderWithIcons(<GradientEditor value={THREE} onChange={() => {}} />);
+      pressTrack();
+      rerender(<GradientEditor value={FOUR} onChange={() => {}} />);
+      expect(screen.getByRole('group', { name: 'Stop 1 of 4' })).toBeInTheDocument();
+      expect(document.activeElement).toBe(document.body);
+    });
+
+    it('reports no selection of a stop that never arrived', () => {
+      const onSelectionChange = vi.fn();
+      renderWithIcons(<GradientEditor value={THREE} selectedStop={0} onSelectionChange={onSelectionChange} onChange={() => {}} />);
+      pressTrack();
+      expect(onSelectionChange).not.toHaveBeenCalled();
+    });
+  });
+
   describe('a selection the caller owns', () => {
     it('edits the stop it is given, by its index in `stops`', () => {
       renderWithIcons(<GradientEditor value={THREE} selectedStop={2} onChange={() => {}} />);
@@ -204,6 +262,13 @@ describe('GradientEditor stops', () => {
       fireEvent.focus(handle(2));
       expect(onSelectionChange).toHaveBeenCalledWith(1);
       expect(screen.getByLabelText('Stop 1')).toBeInTheDocument();
+    });
+
+    it('reports a pick of the stop an out-of-range selection reads as', () => {
+      const onSelectionChange = vi.fn();
+      renderWithIcons(<GradientEditor value={THREE} selectedStop={5} onSelectionChange={onSelectionChange} onChange={() => {}} />);
+      fireEvent.focus(handle(1));
+      expect(onSelectionChange).toHaveBeenCalledWith(0);
     });
   });
 

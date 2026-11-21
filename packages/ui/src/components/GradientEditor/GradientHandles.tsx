@@ -1,10 +1,9 @@
 import { type ReactElement, type ReactNode } from 'react';
-import { gradientGeometry, type GradientPaint } from '@weasel-js/paint';
-import { DragPoint, Guide, HandleOverlay, type EditPhase, type OverlayPoint as Point } from './handleOverlay';
+import { type GradientPaint } from '@weasel-js/paint';
+import { DragPoint, Guide, HandleOverlay, useOverlayEdit, type EditPhase, type OverlayPoint as Point } from './handleOverlay';
 import s from './handleOverlay.module.css';
 import { useTints } from '@weasel-js/theme/react';
 import { handleHalf } from '../../handles';
-import { useEditDraft } from '../../useEditDraft';
 
 /**
  * Props for {@link GradientHandles}. `onInput`, `onChange` and `onCancel` are the kit's edit protocol
@@ -42,7 +41,8 @@ export interface GradientHandlesProps {
 /**
  * Direct-manipulation handles for a gradient's geometry, drawn as an SVG
  * overlay above a canvas: endpoints for linear, center and radius for
- * radial, center and angle arm for conic.
+ * radial, center and angle arm for conic. The conic arm is a fixed length on
+ * screen, since a conic gradient has none of its own.
  *
  * Positioning is entirely the consumer's `toScreen` / `toLocal`, so the same
  * handles serve a node-local gradient, a world-space one, and a plain
@@ -53,12 +53,12 @@ export interface GradientHandlesProps {
  */
 export function GradientHandles(props: GradientHandlesProps): ReactElement {
   const { toScreen, toLocal, width, height, className } = props;
-  const { shown: value, onInput, onChange, onCancel } = useEditDraft(props.value, props);
+  const { shown: value, emit, session } = useOverlayEdit(props.value, props);
   const handleRadius = handleHalf('--wzl-handle-size-lg', useTints().resolved);
 
   return (
-    <HandleOverlay width={width} height={height} className={className} onCancel={onCancel}>
-      {renderForKind(value, toScreen, toLocal, onInput, onChange, handleRadius)}
+    <HandleOverlay width={width} height={height} className={className} session={session}>
+      {renderForKind(value, toScreen, toLocal, emit, handleRadius)}
     </HandleOverlay>
   );
 }
@@ -67,15 +67,9 @@ function renderForKind(
   value: GradientPaint,
   toScreen: (p: Point) => Point,
   toLocal: (p: Point) => Point,
-  onInput: ((next: GradientPaint) => void) | undefined,
-  onChange: (next: GradientPaint) => void,
+  emit: (next: GradientPaint, phase: EditPhase) => void,
   handleRadius: number,
 ): ReactNode {
-  const emit = (next: GradientPaint, phase: EditPhase): void => {
-    if (phase === 'input') onInput?.(next);
-    else onChange(next);
-  };
-
   if (value.kind === 'linear-gradient') {
     const from = toScreen(value.from);
     const to = toScreen(value.to);
@@ -100,13 +94,12 @@ function renderForKind(
 
   if (value.kind === 'radial-gradient') {
     const center = toScreen(value.center);
-    // The radius handle rides the +x axis of gradient space, so it stays on
-    // the drawn circle under a rotated or anisotropic transform.
     const edge = toScreen({ x: value.center.x + value.radius, y: value.center.y });
-    const screenRadius = Math.hypot(edge.x - center.x, edge.y - center.y);
+    // One overlay pixel, so the floor holds whatever the gradient's units are.
+    const floor = distance(toLocal({ x: center.x + 1, y: center.y }), toLocal(center));
     return (
       <>
-        <circle className={s.guide} cx={center.x} cy={center.y} r={screenRadius} />
+        <path className={s.guide} d={circlePath(value.center, value.radius, toScreen)} />
         <DragPoint
           radius={handleRadius}
           at={center}
@@ -117,10 +110,9 @@ function renderForKind(
           radius={handleRadius}
           at={edge}
           label="Gradient radius"
+          axis={unit(center, edge)}
           onDrag={(p, phase) => {
-            const local = toLocal(p);
-            const radius = Math.hypot(local.x - value.center.x, local.y - value.center.y);
-            emit({ ...value, radius: Math.max(MIN_RADIUS, radius) }, phase);
+            emit({ ...value, radius: Math.max(floor, distance(toLocal(p), value.center)) }, phase);
           }}
         />
       </>
@@ -128,11 +120,9 @@ function renderForKind(
   }
 
   const center = toScreen(value.center);
-  const { radius } = gradientGeometry(value);
-  const tip = toScreen({
-    x: value.center.x + Math.cos(value.angle) * radius,
-    y: value.center.y + Math.sin(value.angle) * radius,
-  });
+  const along = unit(center, toScreen({ x: value.center.x + Math.cos(value.angle), y: value.center.y + Math.sin(value.angle) }));
+  const tip = { x: center.x + along.x * CONIC_ARM, y: center.y + along.y * CONIC_ARM };
+  const turn = toScreen({ x: value.center.x - Math.sin(value.angle), y: value.center.y + Math.cos(value.angle) });
   return (
     <>
       <Guide x1={center.x} y1={center.y} x2={tip.x} y2={tip.y} />
@@ -146,6 +136,7 @@ function renderForKind(
         radius={handleRadius}
         at={tip}
         label="Gradient angle"
+        axis={unit(center, turn)}
         onDrag={(p, phase) => {
           const local = toLocal(p);
           const angle = Math.atan2(local.y - value.center.y, local.x - value.center.x);
@@ -156,5 +147,28 @@ function renderForKind(
   );
 }
 
-/** A radius of zero divides by zero in the shader's `t`; keep it off the floor. */
-const MIN_RADIUS = 1;
+/** The conic angle arm's length, in overlay pixels. */
+const CONIC_ARM = 60;
+
+/** Segments in the radius guide, which is the circle sampled through `toScreen`. */
+const GUIDE_SEGMENTS = 64;
+
+function distance(a: Point, b: Point): number {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+/** The unit direction from `a` to `b`, or +x where they meet. */
+function unit(a: Point, b: Point): Point {
+  const d = distance(a, b);
+  return d > 0 ? { x: (b.x - a.x) / d, y: (b.y - a.y) / d } : { x: 1, y: 0 };
+}
+
+function circlePath(center: Point, radius: number, toScreen: (p: Point) => Point): string {
+  let d = '';
+  for (let i = 0; i < GUIDE_SEGMENTS; i++) {
+    const a = (i / GUIDE_SEGMENTS) * 2 * Math.PI;
+    const p = toScreen({ x: center.x + Math.cos(a) * radius, y: center.y + Math.sin(a) * radius });
+    d += `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`;
+  }
+  return `${d}Z`;
+}

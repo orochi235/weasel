@@ -227,3 +227,91 @@ describe('GradientHandles', () => {
     expect(screen.getByLabelText('Gradient end')).toHaveAttribute('cx', '210');
   });
 });
+
+describe('GradientHandles edits', () => {
+  const conic: GradientPaint = { kind: 'conic-gradient', center: { x: 50, y: 50 }, angle: (3 * Math.PI) / 2, stops: STOPS };
+  const radial: GradientPaint = { kind: 'radial-gradient', center: { x: 50, y: 50 }, radius: 25, stops: STOPS };
+
+  function press(label: string): HTMLElement {
+    const handle = screen.getByLabelText(label);
+    fireEvent.pointerDown(handle, { clientX: Number(handle.getAttribute('cx')), clientY: Number(handle.getAttribute('cy')), pointerId: 1 });
+    return handle;
+  }
+
+  it('sends a canceled drag back to the exact value it began from', () => {
+    const onInput = vi.fn();
+    render(<GradientHandles value={conic} toScreen={toScreen} toLocal={toLocal} onInput={onInput} onChange={() => {}} width={400} height={300} />);
+    const handle = press('Gradient angle');
+    fireEvent.pointerMove(handle, { clientX: 300, clientY: 20, pointerId: 1 });
+    fireEvent.keyDown(handle, { key: 'Escape' });
+    expect(onInput.mock.calls.at(-1)![0]).toEqual(conic);
+  });
+
+  it('sends nothing to onInput for a press canceled before it moved', () => {
+    const onInput = vi.fn();
+    const onCancel = vi.fn();
+    render(<GradientHandles value={conic} toScreen={toScreen} toLocal={toLocal} onInput={onInput} onChange={() => {}} onCancel={onCancel} width={400} height={300} />);
+    fireEvent.keyDown(press('Gradient angle'), { key: 'Escape' });
+    expect(onInput).not.toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets a radius be dragged below one gradient unit', () => {
+    const onChange = vi.fn();
+    const small: GradientPaint = { ...radial, center: { x: 0, y: 0 }, radius: 0.4 };
+    render(<GradientHandles value={small} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
+    drag('Gradient radius', { x: 11.6, y: 20 });
+    expect(onChange.mock.calls[0][0].radius).toBeCloseTo(0.8);
+  });
+
+  it('grows the radius on Up and Right, and shrinks it on Down and Left', () => {
+    const radii: number[] = [];
+    render(<GradientHandles value={radial} toScreen={toScreen} toLocal={toLocal} onChange={(next) => radii.push((next as { radius: number }).radius)} width={400} height={300} />);
+    const handle = screen.getByLabelText('Gradient radius');
+    for (const key of ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft']) fireEvent.keyDown(handle, { key });
+    expect(radii.map((r) => Math.sign(r - 25))).toEqual([1, 1, -1, -1]);
+  });
+
+  it('commits nothing for an arrow key that leaves the radius where it was', () => {
+    const onChange = vi.fn();
+    const floor: GradientPaint = { ...radial, radius: 0.5 };
+    render(<GradientHandles value={floor} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
+    fireEvent.keyDown(screen.getByLabelText('Gradient radius'), { key: 'ArrowLeft' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('turns the conic angle on every arrow key', () => {
+    const onChange = vi.fn();
+    const flat: GradientPaint = { ...conic, angle: 0 };
+    render(<GradientHandles value={flat} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
+    const handle = screen.getByLabelText('Gradient angle');
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(onChange.mock.calls.map(([next]) => Math.sign(next.angle))).toEqual([1, -1]);
+  });
+
+  it('draws the conic arm the same length on screen at any zoom', () => {
+    const tipDistance = (zoom: number): number => {
+      const view = (p: { x: number; y: number }) => ({ x: p.x * zoom + 200, y: p.y * zoom + 150 });
+      const back = (p: { x: number; y: number }) => ({ x: (p.x - 200) / zoom, y: (p.y - 150) / zoom });
+      const { unmount } = render(<GradientHandles value={{ ...conic, center: { x: 0, y: 0 }, angle: 0 }} toScreen={view} toLocal={back} onChange={() => {}} width={400} height={300} />);
+      const tip = Number(screen.getByLabelText('Gradient angle').getAttribute('cx')) - 200;
+      unmount();
+      return tip;
+    };
+    expect(tipDistance(0.05)).toBeCloseTo(tipDistance(20));
+    expect(tipDistance(0.05)).toBeGreaterThan(20);
+  });
+
+  it('draws the radius guide through the transform, as an ellipse under an anisotropic one', () => {
+    const stretch = (p: { x: number; y: number }) => ({ x: p.x * 2, y: p.y });
+    const back = (p: { x: number; y: number }) => ({ x: p.x / 2, y: p.y });
+    const { container } = render(<GradientHandles value={{ ...radial, center: { x: 100, y: 100 }, radius: 20 }} toScreen={stretch} toLocal={back} onChange={() => {}} width={400} height={300} />);
+    const d = container.querySelector('path')!.getAttribute('d')!;
+    const nums = d.match(/-?\d+(\.\d+)?/g)!.map(Number);
+    const xs = nums.filter((_, i) => i % 2 === 0);
+    const ys = nums.filter((_, i) => i % 2 === 1);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(80, 0);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeCloseTo(40, 0);
+  });
+});
