@@ -48,8 +48,8 @@ const SEPARATORS = new Set(['Enter', ',']);
 
 /**
  * A list edited as a row of chips that wraps, with a text field after them. Typing and pressing Enter or a comma
- * adds a token, and so does leaving the field with text in it. A click on a chip, or Enter on a focused one, opens
- * a popover that edits it; its × removes it.
+ * adds a token, as does each comma in pasted text and leaving the field with text in it. A click on a chip, or Enter
+ * on a focused one, opens a popover that edits it; its × removes it.
  *
  * From the keyboard, Left and Right move between the chips and the field, Backspace or Delete removes a focused
  * chip, and Backspace in the empty field moves to the last chip. With `reorder`, chips are dragged into place or
@@ -83,15 +83,33 @@ export function TokenField<T>({
   const edit = (at: number): void => { if (!disabled && locked?.(at) !== true) setEditing(at); };
   const { drag, ref } = useTokenDrag(value, (next, at) => { onChange(next); focus.request(at); }, edit);
 
-  /** `focused` while the text field keeps focus: filling the list disables the field, so focus moves to the last chip. */
+  /** Adds a token for each text that makes one while there is room, and returns the rest. `focused` while the text
+   *  field keeps focus: filling the list disables the field, so focus moves to the last chip. */
+  const add = (texts: readonly string[], focused: boolean): string[] => {
+    const made: T[] = [];
+    const left: string[] = [];
+    for (const raw of texts) {
+      const text = raw.trim();
+      if (text === '') continue;
+      const token = value.length + made.length < maxItems ? create(text) : undefined;
+      if (token === undefined) left.push(text);
+      else made.push(token);
+    }
+    if (made.length === 0) return left;
+    onChange([...value, ...made]);
+    if (focused && value.length + made.length >= maxItems) focus.request(value.length + made.length - 1);
+    return left;
+  };
   const commit = (focused: boolean): void => {
-    const text = draft.trim();
-    if (text === '' || full) return;
-    const token = create(text);
-    if (token === undefined) return;
-    onChange([...value, token]);
-    setDraft('');
-    if (focused && value.length + 1 >= maxItems) focus.request(value.length);
+    if (draft.trim() !== '' && !full) setDraft(add(draft.split(','), focused).join(', '));
+  };
+  // Pasted or composed text can hold commas, which end tokens as a typed one does.
+  const type = (text: string): void => {
+    if (!text.includes(',')) { setDraft(text); return; }
+    const parts = text.split(',');
+    const tail = parts.pop()!;
+    const left = add(parts, true);
+    setDraft(left.length === 0 ? tail : [...left, tail.trimStart()].join(', '));
   };
   const remove = (at: number): void => {
     if (!removable) return;
@@ -158,7 +176,7 @@ export function TokenField<T>({
         value={draft}
         placeholder={placeholder}
         disabled={disabled || full}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={(e) => type(e.target.value)}
         onKeyDown={onInputKey}
         onBlur={() => commit(false)}
       />

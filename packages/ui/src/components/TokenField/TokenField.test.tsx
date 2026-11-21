@@ -200,4 +200,23 @@ describe('TokenField', () => {
     expect(document.activeElement).toBe(chip('c'));
   });
 
+  it('ends a token at each comma in pasted text', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Controlled initial={[]} onChange={onChange} />);
+    fireEvent.change(field(), { target: { value: 'red, green,, blue' } });
+    expect(onChange).toHaveBeenLastCalledWith(['red', 'green']);
+    expect((field() as HTMLInputElement).value).toBe(' blue');
+    fireEvent.keyDown(field(), { key: 'Enter' });
+    expect(onChange).toHaveBeenLastCalledWith(['red', 'green', 'blue']);
+  });
+
+  it('keeps the pasted text past maxItems in the field', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Controlled initial={[]} onChange={onChange} maxItems={2} />);
+    act(() => field().focus());
+    fireEvent.change(field(), { target: { value: 'a,b,c,d' } });
+    expect(onChange).toHaveBeenLastCalledWith(['a', 'b']);
+    expect((field() as HTMLInputElement).value).toBe('c, d');
+    expect(document.activeElement).toBe(chip('b'));
+  });
 });
