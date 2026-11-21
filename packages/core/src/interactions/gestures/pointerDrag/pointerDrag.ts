@@ -29,13 +29,16 @@ function registerDropZone(zone: DropZone): () => void {
   };
 }
 
+/** The innermost zone under the point that accepts `kind`. */
 function findZone(x: number, y: number, kind: string): DropZone | null {
   const el = document.elementFromPoint(x, y);
   if (!el) return null;
+  let best: DropZone | null = null;
   for (const z of dropZones) {
-    if (z.el.contains(el) && zoneAccepts(z, kind)) return z;
+    if (!z.el.contains(el) || (best && !best.el.contains(z.el))) continue;
+    if (zoneAccepts(z, kind)) best = z;
   }
-  return null;
+  return best;
 }
 
 function zoneAccepts(zone: DropZone, kind: string): boolean {

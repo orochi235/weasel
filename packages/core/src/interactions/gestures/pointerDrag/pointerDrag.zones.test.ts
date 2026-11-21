@@ -41,7 +41,25 @@ function dragOnto(source: HTMLElement, under: Element, payload: DragPayload = { 
 }
 
 describe('useDropZone resolution', () => {
+  it('drops into the innermost zone under the pointer, whichever registered first', () => {
+    document.body.innerHTML = '<div id="outer"><div id="inner"><span id="leaf"></span></div></div><div id="src"></div>';
+    const outerDrop = vi.fn();
+    const innerDrop = vi.fn();
+    zone(document.getElementById('outer')!, { accepts: () => true, onDrop: outerDrop });
+    zone(document.getElementById('inner')!, { accepts: () => true, onDrop: innerDrop });
+    dragOnto(document.getElementById('src')!, document.getElementById('leaf')!);
+    expect(innerDrop).toHaveBeenCalledTimes(1);
+    expect(outerDrop).not.toHaveBeenCalled();
+  });
 
+  it('falls back to the enclosing zone when the inner one refuses the kind', () => {
+    document.body.innerHTML = '<div id="outer"><div id="inner"></div></div><div id="src"></div>';
+    const outerDrop = vi.fn();
+    zone(document.getElementById('inner')!, { accepts: () => false, onDrop: vi.fn() });
+    zone(document.getElementById('outer')!, { accepts: () => true, onDrop: outerDrop });
+    dragOnto(document.getElementById('src')!, document.getElementById('inner')!);
+    expect(outerDrop).toHaveBeenCalledTimes(1);
+  });
 
   it('a zone whose accepts throws is passed over, and the next drag still starts', () => {
     document.body.innerHTML = '<div id="bad"></div><div id="good"></div><div id="src"></div>';
