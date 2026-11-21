@@ -1,6 +1,6 @@
 import { type ConfigSchema, type ConfigShape, isConfigBranch, configValueAt, hasConfigPath } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
-import { type PrefLeaf, type PrefObject, prefSectionLeaves } from '@weasel-js/prefs-schema';
+import { type PrefLeaf, type PrefNumber, type PrefObject, prefClampNumber, prefSectionLeaves } from '@weasel-js/prefs-schema';
 import type { StoryGlobals } from '../protocol/messages';
 import { setOwn, getOwn } from '@weasel-js/registry';
 import { GLOBALS_KEY } from '../shell/globals';
@@ -178,8 +178,47 @@ function fits(codec: Codec, value: unknown, leaf: KnobLeaf): boolean {
 /**
  * One param read as `leaf`'s type: `{ value }`, or undefined for a param that does not parse as one — a number that
  * is not a number, an option the enum does not list, malformed JSON. A bare boolean param (`?dark`) reads as true.
+ * A number is held to its leaf's range, nested ones included, as a stored trial's is.
  */
 export function decodeKnob(raw: string, leaf: KnobLeaf): { value: unknown } | undefined {
+  const decoded = parsedKnob(raw, leaf);
+  return decoded && { value: clamped(leaf.kind, leaf.annotations ?? {}, decoded.value) };
+}
+
+/** `value`, which `holds` for its leaf, with each number in it held to its own leaf's range. */
+function clamped(kind: unknown, parts: KnobParts, value: unknown): unknown {
+  const nested = (leaf: PrefLeaf, v: unknown) => ('encoding' in leaf ? v : clamped(leaf.kind, leaf as KnobParts, v));
+  const fields = (children: KnobParts['children'], v: Record<string, unknown>) => {
+    if (!children) return v;
+    const out = { ...v };
+    for (const [key, child] of prefSectionLeaves(children)) {
+      if (getOwn(v, key) !== undefined) setOwn(out, key, nested(child, getOwn(v, key)));
+    }
+    return out;
+  };
+  switch (kind) {
+    case 'number':
+      return typeof value === 'number' ? prefClampNumber(parts as PrefNumber, value) : value;
+    case 'list':
+      return Array.isArray(value) && parts.item ? value.map((entry) => nested(parts.item!, entry)) : value;
+    case 'map':
+      return isPlainObject(value) && parts.item
+        ? Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, nested(parts.item!, entry)]))
+        : value;
+    case 'object':
+      return isPlainObject(value) ? fields(parts.children, value) : value;
+    case 'union': {
+      if (!isPlainObject(value) || parts.tag === undefined || !parts.variants) return value;
+      const name = getOwn(value, parts.tag);
+      const variant = typeof name === 'string' ? getOwn(parts.variants, name) : undefined;
+      return variant ? fields(variant.children, value) : value;
+    }
+    default:
+      return value;
+  }
+}
+
+function parsedKnob(raw: string, leaf: KnobLeaf): { value: unknown } | undefined {
   const codec = codecOf(leaf);
   if (raw === '' && leaf.annotations?.clearable && (codec === 'number' || codec === 'enum')) return { value: undefined };
   switch (codec) {

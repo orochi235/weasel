@@ -256,6 +256,19 @@ describe('pins in the URL', () => {
   });
 });
 
+describe('a number param outside its range', () => {
+  const ranged = f.schema({
+    size: f.number(5).range(0, 10),
+    look: f.object({ px: f.number(4).range(0, 8) }),
+  });
+
+  it('is held to the range, as a stored trial is', () => {
+    expect(paramsToKnobs(ranged, { size: '99999' })).toEqual({ size: 10 });
+    expect(paramsToKnobs(ranged, { size: '-Infinity' })).toEqual({ size: 0 });
+    expect(paramsToKnobs(ranged, { look: '{"px":20}' })).toEqual({ look: { px: 8 } });
+  });
+});
+
 describe('sameKnob', () => {
   it('tells the infinities, NaN, and null apart', () => {
     expect(sameKnob(Infinity, -Infinity)).toBe(false);
