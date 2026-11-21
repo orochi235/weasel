@@ -44,8 +44,12 @@ describe('Menu.module.css lays a panel out as measureMenuPanel measures it', () 
     });
   });
 
-  it('pads a label --wzl-space-8 at its end, past the gap before the trailing part', () => {
-    expect(rule('.label')).toMatchObject({ 'padding-inline-end': 'var(--wzl-space-8)' });
+  it('pads a row\'s label --wzl-space-8 at its end, past the gap before the trailing part', () => {
+    expect(rule('.row .label')).toMatchObject({ 'padding-inline-end': 'var(--wzl-space-8)' });
+  });
+
+  it('leaves a label outside a row, such as a menu bar title, unpadded', () => {
+    expect(rule('.label')).not.toHaveProperty('padding-inline-end');
   });
 
   it('sets a separator as a 1px rule with --wzl-space-1 either side, and a caret MENU_CARET_SIZE wide', () => {

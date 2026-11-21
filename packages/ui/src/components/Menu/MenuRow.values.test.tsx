@@ -205,6 +205,15 @@ describe('a color row in a DOM menu', () => {
   });
 });
 
+it('commits a number typed into a row when the menu goes away without being dismissed', () => {
+  const { set } = open();
+  const field = screen.getByRole('spinbutton', { name: 'Magnification' });
+  act(() => { field.focus(); });
+  act(() => { fireEvent.change(field, { target: { value: '12' } }); });
+  cleanup();
+  expect(set).toHaveBeenCalledExactlyOnceWith(12);
+});
+
 describe('a text row in a DOM menu', () => {
   function openText(extra: Partial<MenuTextEntry> = {}) {
     const set = vi.fn();
@@ -268,6 +277,14 @@ describe('a text row in a DOM menu', () => {
       expect(set).toHaveBeenCalledExactlyOnceWith('Layer 2');
       cleanup();
     }
+  });
+
+  it('commits what is typed when the menu goes away without being dismissed, as when the app closes it', () => {
+    const { set } = openText();
+    act(() => { box().focus(); });
+    act(() => { fireEvent.change(box(), { target: { value: 'Layer 2' } }); });
+    cleanup();
+    expect(set).toHaveBeenCalledExactlyOnceWith('Layer 2');
   });
 
   it('puts the value back on Escape, writing nothing, and the menu stays open', () => {

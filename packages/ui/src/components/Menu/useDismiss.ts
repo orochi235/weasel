@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { attachMenuDismiss } from '@weasel-js/menu';
 
 /** Close on a press or wheel outside every panel, on window blur and on resize. A blur while a color input
- *  inside the menu has focus is kept open. A field inside the menu that has focus is blurred first, so it keeps
- *  what was typed into it. */
+ *  inside the menu has focus is kept open. A field inside the menu that keeps focus through `close` is blurred, so
+ *  it commits what was typed into it. */
 const FIELD = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
 
 export function useDismiss(isInside: (target: EventTarget | null) => boolean, close: () => void): void {
@@ -11,9 +11,10 @@ export function useDismiss(isInside: (target: EventTarget | null) => boolean, cl
     outside: (e) => !isInside(e.target),
     close: () => {
       const at = document.activeElement;
-      // Only a field: blurring a focused row leaves focus on the body, and the trigger then won't take it back.
-      if (at instanceof HTMLElement && isInside(at) && at.matches(FIELD)) at.blur();
+      // After close, which may give focus back only while it is inside the menu; only a field, since a blurred row
+      // would leave focus on the body.
       close();
+      if (at === document.activeElement && at instanceof HTMLElement && isInside(at) && at.matches(FIELD)) at.blur();
     },
     // A native color picker can take focus from the window while its input keeps it.
     keepOnBlur: () => {

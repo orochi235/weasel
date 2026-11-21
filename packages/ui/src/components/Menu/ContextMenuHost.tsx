@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { createMenuController, withLinks, type MenuController, type MenuRect } from '@weasel-js/menu';
+import { createEmitter } from '@weasel-js/registry';
 import { useWindowEvent } from '@weasel-js/react';
 import { useMenuHost } from '@weasel-js/routing/react';
 import type { MenuHost, OpenMenu } from '@weasel-js/routing';
 import { MenuPanel } from './MenuPanel';
 import { useDismiss } from './useDismiss';
 import { useMenuPortal } from './useMenuPortal';
-import { MenuPartsContext } from './menuParts';
+import { MenuDraftsContext, MenuPartsContext } from './menuParts';
 
 const noop = () => () => {};
 const nothing = () => null;
@@ -66,6 +67,7 @@ export function OpenPanels({ open, close, takeFocus = true, labelledBy, inside, 
   const disarm = () => { release.current = false; };
   useWindowEvent('pointerup', disarm);
   useWindowEvent('pointercancel', disarm);
+  const [drafts] = useState(() => createEmitter());
   // Built where it is disposed, so StrictMode's rerun of this effect gets a live one.
   useLayoutEffect(() => {
     const c = createMenuController({
@@ -75,10 +77,17 @@ export function OpenPanels({ open, close, takeFocus = true, labelledBy, inside, 
       onEdge: (dir) => edge.current?.(dir),
     });
     setController(c);
-    return () => c.dispose();
-  }, [open, close]);
+    return () => {
+      drafts.emit();
+      c.dispose();
+    };
+  }, [open, close, drafts]);
   return controller
-    ? <Panels controller={controller} open={open} close={close} takeFocus={takeFocus} labelledBy={labelledBy} inside={inside} release={release} />
+    ? (
+      <MenuDraftsContext.Provider value={drafts}>
+        <Panels controller={controller} open={open} close={close} takeFocus={takeFocus} labelledBy={labelledBy} inside={inside} release={release} />
+      </MenuDraftsContext.Provider>
+    )
     : null;
 }
 

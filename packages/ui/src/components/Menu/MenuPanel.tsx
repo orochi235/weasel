@@ -3,6 +3,7 @@ import type { MenuController, MenuEntry, MenuSide, MenuRect } from '@weasel-js/m
 import { placeMenu, placeMenuUnder, placeSubmenu } from '@weasel-js/menu';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { imeKey } from '@weasel-js/ui-input';
+import { useLatest, watchResize } from '@weasel-js/react';
 import { blockFrame, clientToBlock, containingBlock } from '../../overlays/blockFrame';
 import { MenuRow, rowTipText } from './MenuRow';
 import { RowTip } from '../Tree/RowTip';
@@ -119,27 +120,31 @@ export function MenuPanel(props: {
 
 type PanelAnchor = { client: { x: number; y: number }; under?: MenuRect; side?: MenuSide } | null;
 
-/** Place panel `ref` in the viewport: beside the row it hangs from, under `anchor.under`, or at `anchor.client`. */
+/** Place panel `ref` in the viewport: beside the row it hangs from, under `anchor.under`, or at `anchor.client`;
+ *  again whenever the panel resizes, as a row's value widens it. */
 function usePlacement(
   ref: RefObject<HTMLDivElement | null>, c: MenuController, level: number, anchor: PanelAnchor, parentRow: () => MenuRect | null,
 ): void {
+  const rowOf = useLatest(parentRow);
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    // Placed in client px, and written in the px of the box the panel is fixed in, which a magnifier may draw larger.
-    const frame = blockFrame(containingBlock(el));
-    const size = { width: el.offsetWidth * frame.scaleX, height: el.offsetHeight * frame.scaleY };
-    const bounds = { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
-    const row = parentRow();
-    const dir = inlineDirection(el);
-    const at = row ? placeSubmenu(size, row, bounds, dir)
-      : anchor?.under ? placeMenuUnder(size, anchor.under, bounds, anchor.side, dir)
-        : placeMenu(size, anchor?.client ?? { x: 0, y: 0 }, bounds, dir);
-    const own = clientToBlock(at, frame);
-    el.style.left = `${own.x}px`;
-    el.style.top = `${own.y}px`;
-    c.setPanel(level, { x: at.x, y: at.y, width: size.width, height: size.height });
-    // Placed once per mount: the host remounts a panel when the row it hangs from changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [c, level, anchor]);
+    const place = () => {
+      // Placed in client px, and written in the px of the box the panel is fixed in, which a magnifier may draw larger.
+      const frame = blockFrame(containingBlock(el));
+      const size = { width: el.offsetWidth * frame.scaleX, height: el.offsetHeight * frame.scaleY };
+      const bounds = { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
+      const row = rowOf.current();
+      const dir = inlineDirection(el);
+      const at = row ? placeSubmenu(size, row, bounds, dir)
+        : anchor?.under ? placeMenuUnder(size, anchor.under, bounds, anchor.side, dir)
+          : placeMenu(size, anchor?.client ?? { x: 0, y: 0 }, bounds, dir);
+      const own = clientToBlock(at, frame);
+      el.style.left = `${own.x}px`;
+      el.style.top = `${own.y}px`;
+      c.setPanel(level, { x: at.x, y: at.y, width: size.width, height: size.height });
+    };
+    place();
+    return watchResize(el, place);
+  }, [ref, rowOf, c, level, anchor]);
 }

@@ -1,13 +1,12 @@
 import { accessLetter } from '@weasel-js/menu';
-import { foldText } from '@weasel-js/registry';
 import { graphemeEnds } from '@weasel-js/text';
 import s from './Menu.module.css';
 
-/** The first cluster of `label` that reads as `letter` folded as `accessLetter` folds it, as [start, end), or null. */
+/** The first cluster of `label` whose access letter is `letter`, as [start, end), or null. */
 function accessSpan(label: string, letter: string): [number, number] | null {
   let start = 0;
   for (const end of graphemeEnds(label)) {
-    if (foldText(label.slice(start, end)) === letter) return [start, end];
+    if (accessLetter(label.slice(start, end)) === letter) return [start, end];
     start = end;
   }
   return null;

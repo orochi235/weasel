@@ -7,6 +7,7 @@ import { editEnd, imeKey, type EditEnd } from '@weasel-js/ui-input';
 import { Input } from '../Input';
 import { QuantityText } from '../QuantityText';
 import { UnitField } from '../NumberField/UnitField';
+import { useMenuDraft } from './menuParts';
 import s from './Menu.module.css';
 
 /** The id of the field inside number or text row `rowId`, which the panel focuses on Enter. */
@@ -19,13 +20,18 @@ export function MenuNumberValue({ entry: e, rowId, controller: c }: {
 }) {
   const value = useSyncExternalStore(c.subscribe, () => c.numberValue(e), () => c.numberValue(e));
   const unit = e.suffix === undefined ? undefined : unitSymbol(e.suffix);
+  // What is typed and not yet committed, which the menu commits if it closes first.
+  const typed = useRef<number | null>(null);
+  useMenuDraft(() => { if (typed.current !== null) c.setNumber(e, typed.current); });
   return (
     <span className={s.value}>
       <UnitField
         id={menuFieldId(rowId)}
         aria-label={e.label}
         value={value ?? Number.NaN}
-        onChange={(v) => c.setNumber(e, v)}
+        onChange={(v) => { typed.current = null; c.setNumber(e, v); }}
+        onInput={(v) => { typed.current = v; }}
+        onCancel={() => { typed.current = null; }}
         minValue={e.min}
         maxValue={e.max}
         endless={e.endless}
@@ -54,6 +60,7 @@ export function MenuTextValue({ entry: e, rowId, controller: c }: {
   // they just made, not this render's.
   const latest = useRef<string | null>(null);
   const setDraft = (next: string | null) => { latest.current = next; setDraftState(next); };
+  useMenuDraft(() => { if (latest.current !== null) c.setText(e, latest.current); });
   const end = (how: EditEnd | null) => {
     if (how === 'commit' && latest.current !== null) c.setText(e, latest.current);
     if (how) setDraft(null);
