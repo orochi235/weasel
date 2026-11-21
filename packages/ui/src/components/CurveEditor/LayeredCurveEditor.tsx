@@ -120,6 +120,8 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
   }, [busy, start, makeCtx, snapshot, settleEdit, layers]);
 
   const onSvgKeyDown = useCallback((e: ReactKeyboardEvent<SVGSVGElement>) => {
+    // A drag in flight owns the edit until it ends; Escape reaches its session, which cancels it.
+    if (busy()) return;
     const step = historyEnabled ? historyKey(e) : null;
     if (step) {
       if (step === 'redo') redo();
@@ -130,7 +132,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     // A layer prevents default on the native event, which the synthetic
     // event's `isDefaultPrevented` does not observe.
     dispatchKey(layers(), e.nativeEvent, makeCtx(readModifiers(e)), snapshot, settleEdit);
-  },[historyEnabled, undo, redo, makeCtx, snapshot, settleEdit, layers]);
+  }, [busy, historyEnabled, undo, redo, makeCtx, snapshot, settleEdit, layers]);
 
   const onSvgContextMenu = useCallback((
     e: ReactMouseEvent<SVGSVGElement>,
