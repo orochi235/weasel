@@ -64,7 +64,7 @@ function drawnChildren<Cell>(children: PrefObject['children'], parts: ObjectLeaf
     const path = prefSectionPath(within, key);
     const off = parts.off?.(path) === true;
     if (child.as === 'bar') {
-      const nodes = barNodes(child.members, parts);
+      const nodes = barNodes(child.members, parts, path);
       out.push(nodes.length > 0 ? { kind: 'bar', key, section: child, nodes, off } : undefined);
       continue;
     }
@@ -124,8 +124,9 @@ export function objectRows<Cell>(children: PrefObject['children'], parts: Object
   return out;
 }
 
-/** A section drawn as a bar: its fields on one line in their bar forms, a nested section as a run between dividers. */
-function barNodes<Cell>(members: PrefSection['members'], parts: ObjectLeafParts<Cell>): BarNode[] {
+/** A section drawn as a bar: its fields on one line in their bar forms, a nested section as a run between dividers.
+ *  `within` is the bar section's own path, which a nested section is named under. */
+function barNodes<Cell>(members: PrefSection['members'], parts: ObjectLeafParts<Cell>, within: string): BarNode[] {
   const out: BarNode[] = [];
   let pending: Cell[] = [];
   const flush = (): void => {
@@ -138,8 +139,9 @@ function barNodes<Cell>(members: PrefSection['members'], parts: ObjectLeafParts<
       continue;
     }
     flush();
-    const nodes = barNodes(child.members, parts);
-    if (nodes.length > 0) out.push({ kind: 'run', path: `${parts.path}.${key}`, nodes });
+    const path = prefSectionPath(within, key);
+    const nodes = barNodes(child.members, parts, path);
+    if (nodes.length > 0) out.push({ kind: 'run', path, nodes });
   }
   flush();
   return out;
