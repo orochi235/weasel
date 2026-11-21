@@ -3468,3 +3468,11 @@ Calls the lanes made without a ruling:
   still writes anchored at the user-space origin; the kit's export path resolves such a paint with
   `paintToLocalUnits` first and never warns. Writing a def per node, each placed against that node's box, was the
   alternative.
+
+## Audit round sixty-five (2026-11-21): forge
+
+- 2026-11-21 (the fixer's call): a CSF list arg's entries get back what they could not send (a callback, an element)
+  from the original entry their sent part still equals, so removing or moving an entry keeps each entry's own; an
+  edited entry, which equals none, takes the unclaimed original at its index. An entry that equals more than one
+  original once the list's length changed (two bare callbacks, both sent as `null`, one removed) gets nothing back
+  rather than a guess. Pairing by index alone, as before, was the alternative.

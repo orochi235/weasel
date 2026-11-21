@@ -1,5 +1,6 @@
 import { isPlainObject } from '@weasel-js/core';
 import { setOwn } from '@weasel-js/registry';
+import { sameKnob } from '../route/url';
 
 const g = globalThis as Record<string, unknown>;
 const CLONED_NAMES = [
@@ -111,8 +112,7 @@ export function portSafePart(value: unknown): { value: unknown } | null {
 export function withUnsent(sent: unknown, original: unknown): unknown {
   if (isPortSafe(original)) return sent;
   if (sent === null && portSafePart(original) === null) return original;
-  if (Array.isArray(original) && Array.isArray(sent))
-    return sent.map((member, i) => (i < original.length ? withUnsent(member, original[i]) : member));
+  if (Array.isArray(original) && Array.isArray(sent)) return listWithUnsent(sent, original);
   if (!splittable(original) || Array.isArray(original) || !isPlainObject(sent)) return sent;
   const out: Record<string, unknown> = {};
   for (const [key, member] of Object.entries(original)) {
@@ -122,4 +122,28 @@ export function withUnsent(sent: unknown, original: unknown): unknown {
   }
   for (const [key, member] of Object.entries(sent)) if (!Object.hasOwn(original, key)) setOwn(out, key, member);
   return out;
+}
+
+/**
+ * Each entry of `sent` with what its own original left behind: the original whose sent part it still equals, or, for
+ * an entry equal to none (an edit), the unclaimed one at its index. An entry equal to more than one original, once
+ * entries were added or removed, gets nothing back rather than another entry's.
+ */
+function listWithUnsent(sent: readonly unknown[], original: readonly unknown[]): unknown[] {
+  // A member with no part crossed as null.
+  const parts = original.map((member) => portSafePart(member)?.value ?? null);
+  const kept = sent.length === original.length;
+  const used = new Set<number>();
+  const pairs = sent.map((member, i) => {
+    const matches = parts.flatMap((part, j) => (!used.has(j) && sameKnob(part, member) ? [j] : []));
+    if (matches.length === 0) return 'edited' as const;
+    const j = kept && matches.includes(i) ? i : matches.length === 1 ? matches[0]! : undefined;
+    if (j !== undefined) used.add(j);
+    return j;
+  });
+  return sent.map((member, i) => {
+    const pair = pairs[i];
+    const j = pair === 'edited' ? (i < original.length && !used.has(i) ? i : undefined) : pair;
+    return j === undefined ? member : withUnsent(member, original[j]);
+  });
 }
