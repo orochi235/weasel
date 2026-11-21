@@ -24,3 +24,12 @@ describe('CurveEditor fill', () => {
     expect(themed).not.toBe('none');
   });
 });
+
+describe('CurveEditor colors', () => {
+  test('a --curve-line set on a layer recolors its anchors as well as its line', () => {
+    const { container } = render(<CurveEditor value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]} onInput={() => {}} width={200} height={100} />);
+    container.querySelector<SVGGElement>('[data-layer-id]')!.style.setProperty('--curve-line', 'rgb(255, 99, 71)');
+    expect(getComputedStyle(container.querySelector('path[class]')!).stroke).toBe('rgb(255, 99, 71)');
+    expect(getComputedStyle(container.querySelectorAll('[data-anchor-index]')[1]).stroke).toBe('rgb(255, 99, 71)');
+  });
+});

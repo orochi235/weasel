@@ -8,11 +8,10 @@
    * composes Plot2D, which paints the background and chrome). */
   --curve-line: var(--wzl-curve-color);
   --curve-line-width: var(--wzl-curve-width);
-  --curve-fill: color-mix(in srgb, var(--curve-line) 30%, transparent);
   --curve-anchor-fill: var(--wzl-surface);
-  --curve-anchor-stroke: var(--curve-line);
-  --curve-anchor-active-fill: var(--curve-line);
   --curve-pinned-fill: var(--wzl-fg-subtle);
+  /* --curve-fill, --curve-anchor-stroke and --curve-anchor-active-fill default to --curve-line through the
+   * fallbacks where they are read, so a --curve-line set on one layer's group recolors its anchors and fill too. */
 }
 
 /* A held plot moves nothing, so no mark in it invites a grab. */
@@ -32,7 +31,7 @@
 }
 
 .fill {
-  fill: var(--curve-fill);
+  fill: var(--curve-fill, color-mix(in srgb, var(--curve-line) 30%, transparent));
   stroke: none;
   pointer-events: none;
 }
@@ -46,17 +45,17 @@
 
 .anchor {
   fill: var(--curve-anchor-fill);
-  stroke: var(--curve-anchor-stroke);
+  stroke: var(--curve-anchor-stroke, var(--curve-line));
   stroke-width: 1.5;
   cursor: grab;
 }
 
 .anchor:hover {
-  fill: var(--curve-anchor-active-fill);
+  fill: var(--curve-anchor-active-fill, var(--curve-line));
 }
 
 .anchor.active {
-  fill: var(--curve-anchor-active-fill);
+  fill: var(--curve-anchor-active-fill, var(--curve-line));
   cursor: grabbing;
 }
 
