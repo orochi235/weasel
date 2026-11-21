@@ -51,8 +51,10 @@ export function useSceneTree(client: DevtoolsClient, rootId: string): SceneTree 
     load(TOP);
     return client.onChanged((id, areas) => {
       if (id !== rootId || !areas.includes('scene')) return;
+      const open = expandedRef.current;
+      setLevels((prev) => new Map([...prev].filter(([parent]) => parent === TOP || open.has(parent))));
       load(TOP);
-      for (const open of expandedRef.current) load(open);
+      for (const id of open) load(id);
     });
   }, [client, rootId, load, expandedRef]);
 
