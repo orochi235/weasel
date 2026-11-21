@@ -24,3 +24,23 @@ test('a scale keeps its name on the reset’s row once a step is overridden', ()
   const reset = scale.getByRole('button', { name: 'Reset s' }).getBoundingClientRect();
   expect(Math.abs(name.top + name.height / 2 - (reset.top + reset.height / 2))).toBeLessThan(2);
 });
+
+test('a long scale name ellipsizes before the reset rather than running under it', () => {
+  const group = 'a-scale-name-far-too-long-for-the-rail-to-hold';
+  renderWithIcons(
+    <TokenPanel
+      tokens={['sm', 'md', 'lg'].map((step, i) => ({
+        name: `--${group}-${step}`,
+        type: 'dimension',
+        group,
+        value: `${8 << i}px`,
+        overridden: step === 'md',
+      }))}
+      onChange={() => {}}
+    />,
+  );
+  const scale = within(screen.getByRole('group', { name: group }));
+  const nameEl = scale.getByTitle(group);
+  const textEnd = nameEl.getBoundingClientRect().right - parseFloat(getComputedStyle(nameEl).paddingInlineEnd);
+  expect(textEnd).toBeLessThanOrEqual(scale.getByRole('button', { name: `Reset ${group}` }).getBoundingClientRect().left + 0.5);
+});

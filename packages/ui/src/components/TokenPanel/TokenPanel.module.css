@@ -295,3 +295,7 @@
   grid-row: 1;
   justify-self: end;
 }
+
+.scale:has(> .reset) > .name {
+  padding-inline-end: calc(var(--wzl-space-8) + var(--wzl-space-xs));
+}
