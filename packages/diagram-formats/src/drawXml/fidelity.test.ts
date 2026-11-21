@@ -149,6 +149,16 @@ describe('draw-style XML fonts', () => {
     }));
     expect(warnings).toContain('Text rows styled apart within one shape were written in its first row\'s style.');
   });
+
+  it('warns of letter spacing and of weights the format has no bit for, and of rows apart in only those', () => {
+    const rows = (a: object, b: object) => DIAGRAM_DRAW_XML.write!(doc({
+      nodes: [{ id: 'n', at: { x: 0, y: 0 }, rows: [{ kind: 'label', text: 'T', style: a }, { kind: 'label', text: 'U', style: b }] }], edges: [],
+    })).warnings;
+    const apart = 'Text rows styled apart within one shape were written in its first row\'s style.';
+    expect(rows({ tracking: 0.1 }, {})).toEqual(expect.arrayContaining(['Letter spacing on text rows was left out.', apart]));
+    expect(rows({ weight: 300 }, {})).toEqual(expect.arrayContaining(['Font weights other than regular and bold were written as the nearer of the two.', apart]));
+    expect(rows({ weight: 700 }, { bold: true })).toEqual([]);
+  });
 });
 
 describe('draw-style XML placeholders', () => {

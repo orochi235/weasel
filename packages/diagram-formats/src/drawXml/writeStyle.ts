@@ -52,12 +52,21 @@ function fontBits(style: RowTextStyle): number | undefined {
 const fontOf = (style: RowTextStyle | undefined): StylePart[] =>
   (style === undefined ? [] : [['fontSize', style.fontSize], ['fontFamily', style.fontFamily], ['fontStyle', fontBits(style)]]);
 
-/** The font of a shape's first text row, which a cell's one style gives every line; rows styled apart warn. */
+/** The weights `fontStyle` holds exactly: regular, and bold. */
+const WRITTEN_WEIGHTS: ReadonlySet<number> = new Set([400, 700]);
+
+/** The font of a shape's first text row, which a cell's one style gives every line; rows styled apart warn, as do
+ *  tracking and weights other than regular and bold, which the format has no key for. */
 function fontParts(rows: readonly Row[] | undefined, warn: Warn): StylePart[] {
-  const fonts = (rows ?? []).flatMap((r) => (r.kind === 'label' || r.kind === 'header' || r.kind === 'field' ? [fontOf(r.style)] : []));
-  const first = fonts[0] ?? [];
-  if (fonts.some((f) => writeStyle(f) !== writeStyle(first))) warn('Text rows styled apart within one shape were written in its first row\'s style.');
-  return first;
+  const styles = (rows ?? []).flatMap((r) => (r.kind === 'label' || r.kind === 'header' || r.kind === 'field' ? [r.style] : []));
+  const keyOf = (s: RowTextStyle | undefined): string =>
+    `${writeStyle(fontOf(s))}|${s?.tracking ?? 0}|${s?.weight ?? (s?.bold === true ? 700 : 400)}`;
+  if (styles.some((s) => keyOf(s) !== keyOf(styles[0]))) warn('Text rows styled apart within one shape were written in its first row\'s style.');
+  if (styles.some((s) => (s?.tracking ?? 0) !== 0)) warn('Letter spacing on text rows was left out.');
+  if (styles.some((s) => s?.weight !== undefined && !WRITTEN_WEIGHTS.has(s.weight))) {
+    warn('Font weights other than regular and bold were written as the nearer of the two.');
+  }
+  return fontOf(styles[0]);
 }
 
 const VERTICAL: Readonly<Record<string, string>> = { top: 'top', center: 'middle', bottom: 'bottom' };
