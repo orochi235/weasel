@@ -55,6 +55,12 @@ describe('fontFamilyOptions', () => {
     expect(labels({ value: 'Inter' })).toEqual(['Inter']);
   });
 
+  it('labels a value the canvas policy paints in its own face by its name alone', () => {
+    listAtlasFonts.mockReturnValue([]);
+    resolveFontVariant.mockReturnValue({ entry: null, dynamicFace: {}, source: 'canvas' });
+    expect(labels({ value: 'Georgia' })).toEqual(['Georgia']);
+  });
+
   it('offers every registered family', () => {
     listAtlasFonts.mockReturnValue([
       { family: 'sans-serif', variants: [{ weight: 400, style: 'normal' }] },

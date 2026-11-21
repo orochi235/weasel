@@ -27,13 +27,13 @@ export interface FontWeightOptionsArgs {
   value?: number;
 }
 
-/** Label for a value that isn't in the registry: name the substitute when the
- *  fallback chain found one, otherwise say only what is known. */
+/** Label for a value no list offers: bare when it paints in its own face (the `'canvas'` policy serves it),
+ *  naming the substitute when the fallback chain found one, otherwise saying only what is known. */
 function unregisteredLabel(family: string, weight: number, style: 'normal' | 'italic'): string {
-  const { substituted } = resolveFontVariant(family, weight, style);
-  return substituted
-    ? `${family} — not loaded, showing ${substituted.resolved}`
-    : `${family} — not loaded`;
+  const result = resolveFontVariant(family, weight, style);
+  if (result.substituted) return `${family} — not loaded, showing ${result.substituted.resolved}`;
+  const paints = result.entry != null || result.dynamicFace !== undefined || result.outlineFace !== undefined;
+  return paints ? family : `${family} — not loaded`;
 }
 
 /**
