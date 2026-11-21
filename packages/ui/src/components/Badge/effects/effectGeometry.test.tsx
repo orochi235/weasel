@@ -105,7 +105,23 @@ describe('an irregular bump', () => {
   }
 });
 
+const circle = (r: number) => (s: number): PerimeterPoint => {
+  const a = s / r;
+  return { x: r * Math.cos(a), y: r * Math.sin(a), nx: Math.cos(a), ny: Math.sin(a) };
+};
+
 describe('spikes', () => {
+  it('draws no spike for a negative length, on a tight curve as on a straight edge', () => {
+    const r = 4;
+    const totalCss = 2 * Math.PI * r;
+    for (const params of [{ length: -8 }, { vertScale: -2, horzScale: -2, diagonalScale: -2 }]) {
+      for (let s = 0; s < totalCss; s += 0.05) {
+        const { dx, dy } = Spikes.offsetAt!(s, { params: { count: 3, baseWidth: 6, ...params }, phase: 0, totalCss, perimeterAt: circle(r) });
+        expect(Math.hypot(dx, dy)).toBe(0);
+      }
+    }
+  });
+
   it('holds irregularity to 0..1, so every spike points outward', () => {
     const totalCss = 400;
     for (let s = 0; s < totalCss; s += 0.5) {

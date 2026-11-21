@@ -71,9 +71,9 @@ const Spikes: EffectModule<BadgeSpikesEffectParams> = {
       kappa += Math.hypot(pB.nx - pA.nx, pB.ny - pA.ny) / (sB - sA);
     }
     kappa /= SAMPLES;
-    const baseLen = cfg.length * scale * irrMult * t;
+    const baseLen = Math.max(0, cfg.length * scale * irrMult * t);
     const comp = Math.max(0, Math.min(cfg.cornerCompensation, 1));
-    const lenCss = Math.max(0, baseLen / (1 + comp * kappa * baseLen)) * mask;
+    const lenCss = (baseLen / (1 + comp * kappa * baseLen)) * mask;
     return { dx: dirX * lenCss, dy: dirY * lenCss };
   },
   defaults: DEFAULTS,
