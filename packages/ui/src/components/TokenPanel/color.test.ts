@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toHex } from './color';
+import { keepAlpha, toHex } from './color';
 
 describe('toHex', () => {
   it('gives the six-digit hex a color input takes', () => {
@@ -19,5 +19,14 @@ describe('toHex', () => {
   it('gives null for what it cannot convert', () => {
     expect(toHex('4px')).toBeNull();
     expect(toHex('#abcde')).toBeNull();
+  });
+});
+
+describe('keepAlpha', () => {
+  it('carries a translucent color’s alpha onto a pick, and leaves an opaque one’s pick alone', () => {
+    expect(keepAlpha('#ff0000', 'rgba(230, 231, 233, 0.1)')).toBe('#ff00001a');
+    expect(keepAlpha('#ff0000', '#11223380')).toBe('#ff000080');
+    expect(keepAlpha('#ff0000', '#112233')).toBe('#ff0000');
+    expect(keepAlpha('#ff0000', 'not a color')).toBe('#ff0000');
   });
 });

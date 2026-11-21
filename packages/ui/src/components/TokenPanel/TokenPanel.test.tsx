@@ -210,6 +210,15 @@ describe('TokenPanel', () => {
     expect(onChange).toHaveBeenCalledWith('--wzl-focus-ring', 'red');
   });
 
+  it('keeps a translucent color’s alpha when its swatch picks a new color', () => {
+    const onChange = vi.fn();
+    renderWithIcons(
+      <TokenPanel tokens={[{ name: '--line', type: 'color', group: 'line', value: 'rgba(230, 231, 233, 0.1)' }]} onChange={onChange} />,
+    );
+    fireEvent.change(screen.getByLabelText('--line color'), { target: { value: '#ff0000' } });
+    expect(onChange).toHaveBeenCalledWith('--line', '#ff00001a');
+  });
+
   it('edits a dimension as a number, keeping its unit', () => {
     const onChange = vi.fn();
     renderWithIcons(<TokenPanel tokens={tokens} onChange={onChange} />);
