@@ -44,6 +44,13 @@ function layerXBounds(range: ModelRange, rules: AnchorRules): [number, number] {
   return [Math.min(a, b), Math.max(a, b)];
 }
 
+/** Where an anchor added at `model` goes: inside the plot, and inside the layer's x range. */
+function insertPoint(model: ModelPoint, range: ModelRange, rules: AnchorRules): ModelPoint {
+  const p = clampToModelRange(model, range);
+  const [xLo, xHi] = layerXBounds(range, rules);
+  return { x: Math.max(xLo, Math.min(xHi, p.x)), y: p.y };
+}
+
 /** The state with the anchor at `index` moved toward `model`, as far as the rules let it go, and made active. */
 export function withAnchorMoved(
   state: FunctionLayerState,
@@ -131,7 +138,7 @@ export function pressOnCurve(
   state: FunctionLayerState, segIdx: number, model: ModelPoint, range: ModelRange, rules: AnchorRules,
 ): { next: FunctionLayerState; index: number } {
   const insertIndex = segIdx + 1;
-  const p = clampToModelRange(model, range);
+  const p = insertPoint(model, range, rules);
   const neighbor = crowdedNeighbor(state.points, insertIndex, p.x, range, rules);
   if (neighbor !== null) return { next: { ...state, activeIndex: neighbor }, index: neighbor };
   return { next: { ...state, points: withPointAt(state.points, insertIndex, p), activeIndex: insertIndex }, index: insertIndex };
@@ -141,7 +148,7 @@ export function pressOnCurve(
 export function withEmptyInsert(
   state: FunctionLayerState, model: ModelPoint, range: ModelRange, rules: AnchorRules,
 ): FunctionLayerState | null {
-  const p = clampToModelRange(model, range);
+  const p = insertPoint(model, range, rules);
   const index = emptyInsertIndex(state.points, p.x, rules);
   if (index === null) return null;
   return { ...state, points: withPointAt(state.points, index, p), activeIndex: null };
