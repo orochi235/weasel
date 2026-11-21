@@ -6,12 +6,12 @@
  * highlight; `--no-picks` versions anyway.
  */
 import { execSync } from 'node:child_process';
+import { registerHooks } from 'node:module';
 import { getPackages } from '@manypkg/get-packages';
 import { readConfig } from '@changesets/config';
 import { readChangesets } from '@changesets/read';
 import { readPreState } from '@changesets/pre';
 import { assembleReleasePlan } from '@changesets/assemble-release-plan';
-import { applyReleasePlan } from '@changesets/apply-release-plan';
 import { readPending } from './pick.ts';
 import { releasedAt, LEVELS } from './bumps.mjs';
 
@@ -48,5 +48,13 @@ if (errors) {
 const [changesets, preState] = await Promise.all([readChangesets(cwd), readPreState(cwd)]);
 const plan = releasedAt(assembleReleasePlan(changesets, packages, config, preState), level);
 console.log(`[version] cutting a ${level} release from ${changesets.length} changeset(s): ${[...new Set(plan.releases.map((r) => r.newVersion))].join(', ')}.`);
+const COMMITS = new URL('./changeset-commits.mjs', import.meta.url).href;
+registerHooks({
+  resolve: (specifier, context, next) =>
+    specifier === '@changesets/git' && context.parentURL?.includes('/@changesets/apply-release-plan/')
+      ? { url: COMMITS, shortCircuit: true }
+      : next(specifier, context),
+});
+const { applyReleasePlan } = await import('@changesets/apply-release-plan');
 await applyReleasePlan(plan, packages, config);
 execSync('npm install --package-lock-only --ignore-scripts', { stdio: 'inherit' });
