@@ -4,7 +4,7 @@ import { qty, unitSymbol } from '@weasel-js/quantity';
 import { solidColorOf, INHERIT, withAlpha01 } from '@weasel-js/paint';
 import { fontWeightLabel } from '../FontOptions/fontOptions';
 import { useFieldLocale } from '../../useFieldLocale';
-import { stepDisplay } from './NumberControls';
+import { defaultDisplay } from './NumberControls';
 import type { PropertyControlProps, PropertyNumberFieldProps } from './fieldTypes';
 import family from './Properties.module.css';
 import s from './PropertyReadout.module.css';
@@ -73,7 +73,7 @@ function none(): ReactNode {
 function NumberText(p: PropertyNumberFieldProps): ReactNode {
   const locale = useFieldLocale();
   if (typeof p.value !== 'number' || Number.isNaN(p.value)) return none();
-  const text = p.format ? p.format(p.value) : qty(p.value, p.display ?? stepDisplay(p.step), { locale }).text;
+  const text = p.format ? p.format(p.value) : qty(p.value, p.display ?? defaultDisplay(p), { locale }).text;
   if (p.unit == null || !Number.isFinite(p.value)) return text;
   if (attachesUnit(p.unit)) return <span className={family.unitHost}>{text}<UnitSuffix unit={p.unit} /></span>;
   return <>{text}<span className={s.unit} data-wzl-subordinate="">{typeof p.unit === 'string' ? unitSymbol(p.unit).text : p.unit}</span></>;

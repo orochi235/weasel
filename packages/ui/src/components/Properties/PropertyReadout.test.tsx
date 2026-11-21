@@ -66,6 +66,19 @@ describe('a read-only field', () => {
     expect(shown('Title')).toBe('—');
   });
 
+  it('draws a typed number with every place its field shows, and a slider by its step', () => {
+    render(
+      <>
+        <PropertyControl kind="number" name="Ratio" value={0.5} readOnly onChange={noop} />
+        <PropertyControl kind="number" name="Half" value={0.25} step={0.5} readOnly onChange={noop} />
+        <PropertyControl kind="number" name="Blur" control="slider" value={0.5} readOnly onChange={noop} />
+      </>,
+    );
+    expect(shown('Ratio')).toBe('0.5');
+    expect(shown('Half')).toBe('0.25');
+    expect(shown('Blur')).toBe('1');
+  });
+
   it('names a font weight as its select does', () => {
     render(<PropertyControl kind="font-weight" name="Weight" value={700} readOnly onChange={noop} />);
     expect(shown('Weight')).toBe('700 Bold');
