@@ -14,7 +14,7 @@ const MODES: { value: Mode; label: string }[] = [
   { value: 'dark', label: 'dark' },
 ];
 
-const SHOWN: TokenName[] = ['--wzl-accent', '--wzl-surface', '--wzl-fg', '--wzl-border'];
+const SHOWN: TokenName[] = ['--wzl-accent', '--wzl-accent-hover', '--wzl-surface', '--wzl-fg', '--wzl-border'];
 
 /** What the themed subtree draws: kit controls, and the tokens they read as `useTheme()` resolves them. */
 function Specimen() {
@@ -23,6 +23,7 @@ function Specimen() {
   return (
     <>
       <div className={s.controls}>
+        <Button stance="confirm">Confirm</Button>
         <Button>Solid</Button>
         <Button variant="ghost">Ghost</Button>
         <Checkbox isSelected={checked} onChange={setChecked}>Checked</Checkbox>
@@ -44,8 +45,18 @@ function Specimen() {
 export function ThemeDemo() {
   const [accent, setAccent] = useState('#e0457b');
   const [mode, setMode] = useState<Mode>('light');
-  // Pinning the primitive rebases every alias that reads it, `--wzl-accent` among them.
-  const theme = useMemo(() => defineTheme({ name: 'demo', pins: { 'accent-base': accent } }), [accent]);
+  const theme = useMemo(
+    () =>
+      defineTheme({
+        name: 'demo',
+        pins: {
+          'accent-base': accent,
+          'accent-strong': `color-mix(in oklab, ${accent} 70%, white)`,
+          'accent-soft': `color-mix(in oklab, ${accent} 55%, black)`,
+        },
+      }),
+    [accent],
+  );
 
   return (
     <div className={s.demo}>
