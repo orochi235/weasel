@@ -1,5 +1,5 @@
 import {
-  useCallback, useMemo, useRef,
+  useCallback, useEffect, useMemo, useRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -92,12 +92,15 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     settleLayer(edit.entry, { commit: edit.next, prev: edit.prev });
   }, [historyEnabled, record]);
 
-  const { start, busy, activeEntry } = useLayerGesture({
+  const { start, busy, cancel, activeEntry } = useLayerGesture({
     toModel: (e) => plotRef.current?.clientToModel(e) ?? null,
     ctxFor: makeCtx,
     layers,
     onEdit: (before) => { if (historyEnabled) record(before); },
   });
+
+  // A hold that starts mid-drag ends the drag, as it would refuse the press that began it.
+  useEffect(() => { if (hold.refuses) cancel(); }, [hold.refuses, cancel]);
 
   const onSvgPointerDown = useCallback((
     e: ReactPointerEvent<SVGSVGElement>,

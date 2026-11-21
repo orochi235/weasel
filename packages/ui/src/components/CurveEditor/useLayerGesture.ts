@@ -106,6 +106,8 @@ export function useLayerGesture(host: LayerGestureHost) {
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
   const busy = useCallback(() => activeRef.current !== null, []);
+  /** Cancel the gesture in flight, if any, restoring its layer. */
+  const cancel = useCallback(() => { sessionRef.current?.cancel(); }, []);
 
-  return { start, busy, activeEntry };
+  return { start, busy, cancel, activeEntry };
 }
