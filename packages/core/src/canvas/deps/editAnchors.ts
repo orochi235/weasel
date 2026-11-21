@@ -163,7 +163,7 @@ function pathAccess(
   | 'store' | 'storedPose' | 'quantized'
 > {
   const editOps = (id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[] => {
-    const node = shownNodeOf(sc, id) as EditableNode | undefined;
+    const node = shownNodeOf(sc, id, 'document') as EditableNode | undefined;
     if (!node) return [];
     const done = finishEdit(extensions, node, worldPath as PolygonPath, origins, finishCtx(sc, id, extensions));
     if (!done) return [];
@@ -203,7 +203,7 @@ function pathAccess(
     },
     editOps,
     finishEdit(id: string, worldPath: unknown, origins?: readonly (PointOrigin | null)[]) {
-      const node = shownNodeOf(sc, id) as EditableNode | undefined;
+      const node = shownNodeOf(sc, id, 'document') as EditableNode | undefined;
       if (!node) return { path: worldPath, others: [] };
       const done = finishEdit(extensions, node, worldPath as PolygonPath, origins, finishCtx(sc, id, extensions));
       if (!done) return null;

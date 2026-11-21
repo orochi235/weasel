@@ -14,6 +14,7 @@ function setup(extraDeps: Record<string, unknown> = {}) {
     id: asNodeId(id), kind: 'mark', layer: 'main', pose: pathFromD(d), data: {}, parent: null,
   }]));
   const scene = {
+    overrides: { read: () => undefined },
     get: (id: string) => nodes.get(id),
     childrenOf: () => [],
     getVersion: () => 1,

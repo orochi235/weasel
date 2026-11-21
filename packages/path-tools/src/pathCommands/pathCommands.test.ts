@@ -20,6 +20,7 @@ function setup(paths: Record<string, PolygonPath | Stored>, selected: string[], 
   }
   let minted = 0;
   const scene = {
+    overrides: { read: () => undefined },
     get: (id: NodeId) => nodes.get(id),
     childrenOf: () => [],
     get roots() { return [...nodes.keys()].map(asNodeId); },

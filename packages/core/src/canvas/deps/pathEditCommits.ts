@@ -13,7 +13,7 @@ import type { TransformFollower, TransformPreviewNode } from 'interactions/actio
 import type { NodeId } from 'core/scene/types';
 import { sceneDependentsOf } from 'core/scene/dependents';
 import { pathEditPathOf, storeEditablePath } from 'domains/paths/editablePath';
-import { nodeFrameOf, shownIn, shownNodeOf } from 'domains/paths/nodeFrame';
+import { drawnNodeOf, nodeFrameOf, shownIn, shownNodeOf } from 'domains/paths/nodeFrame';
 import { withoutShapeGenerator } from 'domains/paths/shapeGenerator';
 import {
   withoutGeometryBoundData, type PathEditExtension, type PathEditFinishCtx, type PathEditOther, type PathTransformFinishCtx,
@@ -34,10 +34,10 @@ export function finishCtx(sc: AnyScene, id: string, extensions: readonly PathEdi
   return {
     id,
     node(nid) {
-      const node = shownNodeOf(sc, nid);
+      const node = shownNodeOf(sc, nid, 'document');
       return node ? { pose: node.pose, data: node.data, dependsOn: node.dependsOn } : null;
     },
-    path: (nid) => pathEditPathOf(shownNodeOf(sc, nid) as EditableNode | undefined, extensions),
+    path: (nid) => pathEditPathOf(shownNodeOf(sc, nid, 'document') as EditableNode | undefined, extensions),
     dependents: (nid) => sceneDependentsOf(sc, nid as NodeId),
   };
 }
@@ -106,7 +106,7 @@ export function reshapeOps(
   if (!node) return [];
   const frame = nodeFrameOf(sc, node);
   if (frame?.inverts === false) return [];
-  const next = storeEditablePath(shownIn(frame, node), worldPath, extensions);
+  const next = storeEditablePath(shownIn(frame, drawnNodeOf(sc, node, 'document')), worldPath, extensions);
   if (!next) return [];
   const reshape = createSetPoseOp({ id, from: node.pose, to: frame ? frame.local(next.pose) : next.pose, label });
   // A path edited by hand is no longer what its generator or warp makes: it becomes plain geometry.
@@ -139,7 +139,7 @@ function transformOthers(
     ids: [...after.keys()],
     node: nodeAfter,
     path: (id) => pathEditPathOf(nodeAfter(id) ?? undefined, extensions),
-    before: (id) => pathEditPathOf(shownNodeOf(sc, id) as EditableNode | undefined, extensions),
+    before: (id) => pathEditPathOf(shownNodeOf(sc, id, 'document') as EditableNode | undefined, extensions),
     dependents: (id) => sceneDependentsOf(sc, id as NodeId),
   };
   for (const ext of finishing) {

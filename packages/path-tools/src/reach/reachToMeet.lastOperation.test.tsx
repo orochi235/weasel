@@ -26,6 +26,7 @@ function setup() {
   }
   render(<DepRegistryProvider><ActionsProvider><Grab /></ActionsProvider></DepRegistryProvider>);
   const scene = {
+    overrides: { read: () => undefined },
     get: (id: string) => NODES.get(id),
     childrenOf: () => [],
     get roots() { return [...NODES.keys()].map(asNodeId); },

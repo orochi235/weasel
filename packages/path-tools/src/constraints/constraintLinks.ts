@@ -226,7 +226,7 @@ export interface BrokenConstraintLink {
 export function brokenConstraintLink(scene: AnyScene, id: string): BrokenConstraintLink | null {
   const link = linkAt({ node: (nid) => scene.get(nid as NodeId) ?? null, dependents: () => [] }, id);
   if (!link) return null;
-  const paths = link.nodes.map((n) => resolveEditablePathOf(shownNodeOf(scene, n)));
+  const paths = link.nodes.map((n) => resolveEditablePathOf(shownNodeOf(scene, n, 'document')));
   const points = paths.every((p) => p) ? paths.flatMap((p) => pathAnchorPoints(p!)) : null;
   if (points && unsatisfiedConstraints(points, [link.constraint]).length === 0) return null;
   return { ...link, points };

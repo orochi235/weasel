@@ -12,7 +12,7 @@ import type { Op } from 'core/ops/types';
 import { createSetPoseOp } from 'core/ops/setPose';
 import { createSetDataOp } from 'core/ops/setData';
 import { resolveEditablePathOf, storeEditablePath } from 'domains/paths/editablePath';
-import { nodeFrameOf, shownIn } from 'domains/paths/nodeFrame';
+import { drawnNodeOf, nodeFrameOf, shownIn } from 'domains/paths/nodeFrame';
 import { withoutShapeGenerator } from 'domains/paths/shapeGenerator';
 import { withoutGeometryBoundData } from 'domains/paths/pathEditExtension';
 import { anchorDataPatch, withAnchorDataFitting } from 'domains/paths/anchorData';
@@ -56,7 +56,7 @@ export function pathNodesOf(
     const node = shape ? ({ ...found, pose: shape.pose, data: shape.data } as Node<unknown, string, unknown>) : found;
     const frame = nodeFrameOf(scene, node);
     if (frame?.inverts === false) continue;
-    const shown = shownIn(frame, node);
+    const shown = shownIn(frame, shape ? node : drawnNodeOf(scene, node));
     const path = resolveEditablePathOf(shown);
     if (path) out.push({ id: id as NodeId, node, shown, path, local: frame ? frame.local : asStored });
   }

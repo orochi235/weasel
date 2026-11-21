@@ -15,6 +15,7 @@ function setup() {
   const node = { id: asNodeId('a'), kind: 'mark', layer: 'main', pose: square, data: {}, parent: null };
   let minted = 0;
   const scene = {
+    overrides: { read: () => undefined },
     get: (id: string) => (id === 'a' ? node : undefined),
     childrenOf: () => [],
     get roots() { return [node.id]; },
