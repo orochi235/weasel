@@ -94,4 +94,13 @@ describe('a node drawn away from its stored pose', () => {
     scene.overrides.commit();
     expect(box(resolveEditablePathOf(shownNodeOf(scene, id)))).toEqual([60, 0, 80, 100]);
   });
+
+  it('snaps to it where it draws, and again when the override moves', () => {
+    const { scene, id } = overridden();
+    const indexer = createSceneSnapIndexer(scene);
+    expect(box(indexer().index.paths[0])).toEqual([60, 0, 60, 100]);
+    scene.overrides.set(id, { pose: { x: 70, y: 0, width: 0, height: 100 } });
+    scene.overrides.commit();
+    expect(box(indexer().index.paths[0])).toEqual([70, 0, 70, 100]);
+  });
 });
