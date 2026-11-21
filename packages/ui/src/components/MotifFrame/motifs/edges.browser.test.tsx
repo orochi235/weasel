@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { cssColorLiteral } from '@weasel-js/paint';
 import type { CSSProperties } from 'react';
 import { afterEach, expect, it } from 'vitest';
-import { MotifFrame, sheet, well } from '@weasel-js/ui/components/MotifFrame';
+import { MotifFrame, sheet, stereo, well } from '@weasel-js/ui/components/MotifFrame';
 
 // Which side an edge lands on under a writing direction is a cascade question only a browser answers.
 
@@ -59,4 +59,22 @@ it('sets a well’s title as a label without setting the titles of wells inside 
   const heading = (name: string) => screen.getByRole('heading', { name });
   expect(getComputedStyle(heading('Outer')).textTransform).toBe('uppercase');
   expect(getComputedStyle(heading('Inner')).textTransform).toBe('none');
+});
+
+it.each(['left', 'right'] as const)('runs a %s stereo bar along that edge, with the body’s extra room beside it, under rtl', (side) => {
+  render(
+    <div dir="rtl" style={{ width: 240 }}>
+      <MotifFrame title="Jacks" motif={stereo({ side })}>
+        <div style={{ height: 40 }} />
+      </MotifFrame>
+    </div>,
+  );
+  const frame = group('Jacks');
+  const bar = document.getElementById(frame.getAttribute('aria-labelledby')!)!.parentElement!;
+  const body = frame.lastElementChild as HTMLElement;
+  const [barBox, bodyBox] = [bar.getBoundingClientRect(), body.getBoundingClientRect()];
+  if (side === 'left') expect(barBox.right).toBeLessThanOrEqual(bodyBox.left + 1);
+  else expect(barBox.left).toBeGreaterThanOrEqual(bodyBox.right - 1);
+  const inset = getComputedStyle(body)[side === 'left' ? 'borderLeftWidth' : 'borderRightWidth'];
+  expect(parseFloat(inset)).toBeGreaterThan(0);
 });
