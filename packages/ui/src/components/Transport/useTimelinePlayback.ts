@@ -15,9 +15,10 @@ function isAdvancing(handle: TimelineHandle): boolean {
 export function useTimelinePlayback(handle: TimelineHandle): Omit<TransportProps, 'onSeek'> & { onSeek: (t: number) => void } {
   const [, bump] = useReducer((n: number) => n + 1, 0);
 
-  // A resume, pause, or seek made on the handle from elsewhere: the render it
-  // asks for is what restarts the frame loop below.
+  // A resume, pause, seek, or edit made on the handle from elsewhere: the render
+  // it asks for is what restarts the frame loop below.
   useEffect(() => handle.subscribePlayback(bump), [handle]);
+  useEffect(() => handle.subscribe(bump), [handle]);
 
   // No `onResume`: this loop measures no elapsed time of its own, it only reads
   // the playhead the animator already advanced.
