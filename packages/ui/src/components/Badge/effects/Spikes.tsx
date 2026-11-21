@@ -10,6 +10,7 @@ export interface BadgeSpikesEffectParams extends BadgeRangeMaskParams {
   vertScale?: number;
   horzScale?: number;
   diagonalScale?: number;
+  /** 0..1 how far each spike's length wobbles, by up to half; held to that range. */
   irregularity?: number;
   /**
    * 0..1 strength of curvature-based shortening on corners. At 1 we fully cancel the tip-arc
@@ -54,7 +55,7 @@ const Spikes: EffectModule<BadgeSpikesEffectParams> = {
     const d = Math.min(1, 2 * nxAbs * nyAbs);
     const axisScale = nyAbs > nxAbs ? cfg.vertScale : cfg.horzScale;
     const scale = axisScale * (1 - d) + cfg.diagonalScale * d;
-    const irrMult = 1 + cfg.irregularity * 0.5 * bumpWobble(index);
+    const irrMult = 1 + Math.max(0, Math.min(cfg.irregularity, 1)) * 0.5 * bumpWobble(index);
     // Numerical curvature κ ≈ |dn/ds| in CSS units. We average over a window roughly the
     // size of a spike footprint so the corner's influence smoothly bleeds onto adjacent
     // flat-edge samples instead of switching off at the arc boundary.

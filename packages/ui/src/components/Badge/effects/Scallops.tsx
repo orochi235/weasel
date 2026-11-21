@@ -1,5 +1,5 @@
 import type { EffectModule } from '../bases/types';
-import { bumpWobble, nearestBump } from './bumps';
+import { bumpRadius, nearestBump } from './bumps';
 import { rangeMask, type BadgeRangeMaskParams } from './rangeMask';
 
 /** What an effect of type `scallops` takes as `params`. */
@@ -24,8 +24,7 @@ const Scallops: EffectModule<BadgeScallopsEffectParams> = {
     const ss = Math.max(2 * sr + 0.5, cfg.scallopSpacing);
     const N = Math.max(2, Math.floor(totalCss / ss));
     const { index, offset: ds } = nearestBump(s, totalCss, N, phase);
-    const irr = Math.max(0, Math.min(cfg.irregularity, 1));
-    const localR = sr * (1 + irr * 0.55 * bumpWobble(index));
+    const localR = bumpRadius(sr, cfg.irregularity, index, totalCss / N);
     if (Math.abs(ds) > localR) return { dx: 0, dy: 0 };
     // Half-circle outward: peak at ds=0 = localR; zero at ±localR.
     const t = (ds + localR) / (2 * localR);

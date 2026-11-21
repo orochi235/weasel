@@ -60,7 +60,7 @@ const DEFAULTS: Required<BadgeAquaEffectParams> = {
 };
 
 const Aqua: EffectModule<BadgeAquaEffectParams> = {
-  Component: ({ sampler, boxW, boxH, variant, params }) => {
+  Component: ({ sampler, variant, params }) => {
     const bodyGradId = useId();
     const glossGradId = useId();
     const glossClipId = useId();
@@ -84,7 +84,7 @@ const Aqua: EffectModule<BadgeAquaEffectParams> = {
             <stop offset={`${equatorHi}%`} style={{ stopColor: accent, stopOpacity: 1 }} />
             <stop offset="100%" style={{ stopColor: baseColor, stopOpacity: 1 }} />
           </linearGradient>
-          <linearGradient id={glossGradId} x1="0%" y1="0%" x2="0%" y2={`${cfg.glossExtent}%`}>
+          <linearGradient id={glossGradId} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" style={{ stopColor: 'white', stopOpacity: cfg.glossTopAlpha }} />
             <stop offset="60%" style={{ stopColor: 'white', stopOpacity: cfg.glossMidAlpha }} />
             <stop offset="100%" style={{ stopColor: 'white', stopOpacity: 0 }} />
@@ -110,7 +110,7 @@ const Aqua: EffectModule<BadgeAquaEffectParams> = {
 
         {/* 3. Bezel and 4. rim */}
         <GlassStrokes
-          sampler={sampler} boxW={boxW} boxH={boxH}
+          sampler={sampler}
           bezelAlpha={cfg.bezelAlpha} bezelWidth={cfg.bezelWidth} rimAlpha={cfg.rimAlpha} rimWidth={cfg.rimWidth}
         />
       </>

@@ -50,7 +50,7 @@ const DEFAULTS: Required<BadgeMetalEffectParams> = {
 };
 
 const Metal: EffectModule<BadgeMetalEffectParams> = {
-  Component: ({ sampler, boxW, boxH, variant, params }) => {
+  Component: ({ sampler, variant, params }) => {
     const bodyGradId = useId();
     const glossGradId = useId();
     const glossClipId = useId();
@@ -88,7 +88,7 @@ const Metal: EffectModule<BadgeMetalEffectParams> = {
             <stop offset={`${equatorHi}%`} style={{ stopColor: lowerBrightColor }} />
             <stop offset="100%" style={{ stopColor: baseDarkColor }} />
           </linearGradient>
-          <linearGradient id={glossGradId} x1="0%" y1="0%" x2="0%" y2={`${cfg.glossExtent}%`}>
+          <linearGradient id={glossGradId} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" style={{ stopColor: 'white', stopOpacity: glossAlpha }} />
             <stop offset="100%" style={{ stopColor: 'white', stopOpacity: 0 }} />
           </linearGradient>
@@ -112,7 +112,7 @@ const Metal: EffectModule<BadgeMetalEffectParams> = {
         )}
 
         <GlassStrokes
-          sampler={sampler} boxW={boxW} boxH={boxH}
+          sampler={sampler}
           bezelAlpha={bezelAlpha} bezelWidth={cfg.bezelWidth} rimAlpha={rimAlpha} rimWidth={cfg.rimWidth}
         />
       </>
