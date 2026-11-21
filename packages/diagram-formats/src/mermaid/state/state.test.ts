@@ -202,3 +202,15 @@ describe('writing a Mermaid state diagram\'s shapes and notes', () => {
     expect(writeStateDiagram(graph({ nodes: [{ id: 'x', outline: 'diamond', lines: [] }] })).warnings).toEqual([]);
   });
 });
+
+describe('writing a Mermaid state note', () => {
+  const graph = (data: object) => ({ pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: { edges: [], ...data } as never }] });
+  const noteOf = (text: string) => page(text).data.nodes.find((n) => n.outline === 'note');
+
+  it('drops a note\'s blank lines and the spaces around its lines, with a warning, so it reads back as written', () => {
+    const out = writeStateDiagram(graph({ nodes: [{ id: 'a' }, { id: 'n', outline: 'note', lines: ['a', '', '  b'] }], edges: [{ from: 'n', to: 'a' }] }));
+    expect(out.warnings).toContain('Mermaid notes hold no blank lines and no spaces around a line; they were dropped.');
+    expect(noteOf(out.text)!.lines).toEqual(['a', 'b']);
+    expect(writeStateDiagram({ pages: [page(out.text)] }).warnings).toEqual([]);
+  });
+});

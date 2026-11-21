@@ -149,7 +149,11 @@ class StateWriter {
         this.out.warnings.add('Mermaid notes sit beside a state; notes beside none were dropped.');
         continue;
       }
-      const text = nodeLines(this.out.byId.get(id)!, this.out.warnings, 'Mermaid').map((l) => mermaidEscaped([l]));
+      const rows = nodeLines(this.out.byId.get(id)!, this.out.warnings, 'Mermaid');
+      if (rows.some((l) => l.trim() !== l || (rows.length > 1 && l === ''))) {
+        this.out.warnings.add('Mermaid notes hold no blank lines and no spaces around a line; they were dropped.');
+      }
+      const text = (rows.length > 1 ? rows.filter((l) => l.trim() !== '') : rows).map((l) => mermaidEscaped([l.trim()]));
       if (text.length === 1) this.lines.push(`  note right of ${this.id(beside)} : ${text[0]}`);
       else this.lines.push(`  note right of ${this.id(beside)}`, ...text.map((t) => `    ${lineOpening(t, ['end note'])}`), '  end note');
     }
