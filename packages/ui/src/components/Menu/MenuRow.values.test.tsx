@@ -43,6 +43,15 @@ describe('a number row in a DOM menu', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
+  it('commits a typed value when a press outside dismisses the menu', () => {
+    const { set, close } = open();
+    act(() => { field().focus(); });
+    act(() => { fireEvent.change(field(), { target: { value: '12' } }); });
+    act(() => { fireEvent.pointerDown(document.body); });
+    expect(close).toHaveBeenCalled();
+    expect(set).toHaveBeenCalledWith(12);
+  });
+
   it('steps with the arrow keys while the field has focus, and the highlight stays put', () => {
     const { set, menu } = open();
     const before = menu.getAttribute('aria-activedescendant');
@@ -238,6 +247,18 @@ describe('a text row in a DOM menu', () => {
       fireEvent.blur(box());
     });
     expect(set).toHaveBeenCalledWith('Layer 3');
+  });
+
+  it('commits what is typed when a press outside or a window blur dismisses the menu', () => {
+    for (const dismiss of [() => fireEvent.pointerDown(document.body), () => fireEvent.blur(window)]) {
+      const { set, close } = openText();
+      act(() => { box().focus(); });
+      act(() => { fireEvent.change(box(), { target: { value: 'Layer 2' } }); });
+      act(() => { dismiss(); });
+      expect(close).toHaveBeenCalled();
+      expect(set).toHaveBeenCalledExactlyOnceWith('Layer 2');
+      cleanup();
+    }
   });
 
   it('puts the value back on Escape, writing nothing, and the menu stays open', () => {
