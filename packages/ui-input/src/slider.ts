@@ -80,7 +80,7 @@ export interface SliderAtShape extends TrackMap {
   stops?: readonly number[];
   /** How near a stop pulls, as a track fraction. Default 0: only a pointer exactly on a stop lands on it. */
   pull?: number;
-  /** Only a stop can be picked: the nearest, however far. */
+  /** Only a stop can be picked: the nearest, however far. With no stops, the step grid and `min` to `max` decide. */
   strict?: boolean;
   /** Pass the stops by. Not read under `strict`. */
   free?: boolean;
@@ -91,7 +91,7 @@ export interface SliderAtShape extends TrackMap {
 export function sliderAt(f: number, shape: SliderAtShape): number {
   const stops = shape.stops ?? [];
   const v = shape.toValue(f);
-  if (shape.strict) return attract(v, stops, Infinity, shape.toFraction);
+  if (shape.strict && stops.length > 0) return attract(v, stops, Infinity, shape.toFraction);
   const { min, max } = shape;
   const origin = shape.origin ?? (Number.isFinite(min) ? min : Number.isFinite(max) ? max : 0);
   const q = clamp(snapToStep(v, shape.step, origin), min, max);

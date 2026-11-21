@@ -136,6 +136,11 @@ describe('sliderAt', () => {
     expect(sliderAt(0.1, { ...track, stops: [40, 80], strict: true, free: true })).toBe(40);
   });
 
+  it('keeps a strict pick with no stops on the step grid and inside the range', () => {
+    expect(sliderAt(1.5, { ...track, step: 10, strict: true })).toBe(100);
+    expect(sliderAt(0.43, { ...track, step: 10, strict: true, stops: [] })).toBe(40);
+  });
+
   it('reads a window onto a longer range, past its edges', () => {
     const windowed = { min: 0, max: Infinity, ...spanMap({ from: 200, to: 300 }) };
     expect(sliderAt(0.5, windowed)).toBe(250);
