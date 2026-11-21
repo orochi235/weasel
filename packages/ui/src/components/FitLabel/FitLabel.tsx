@@ -12,7 +12,7 @@ import {
 import { flushSync } from 'react-dom';
 import { useScaleStage, type FitScale, type FitScaleOptions } from './fitScale';
 import { prepareRoom, settleSpent, type FitRoom } from './fitRoom';
-import { watchResize } from '@weasel-js/react';
+import { useLatest, watchResize } from '@weasel-js/react';
 
 /**
  * A label's forms, longest first: the canonical name, then each shorter form a
@@ -53,7 +53,7 @@ function useFontLoads(ref: RefObject<HTMLElement | null>, onLoad: (el: HTMLEleme
   }, [ref, onLoad]);
 }
 
-const overflows = (el: Element): boolean => el.scrollWidth > el.clientWidth;
+const overflowsBox = (el: Element): boolean => el.scrollWidth > el.clientWidth;
 
 /**
  * Steps a scope's labels again whenever its element is resized. Only the element is observed: its parent can be
@@ -68,6 +68,7 @@ function useRoomObserver(
   shouldStep: () => boolean,
   recheck: () => void,
   setOwn: (next: number | ((s: number) => number)) => void,
+  overflows: RefObject<(el: HTMLElement) => boolean>,
 ): void {
   useLayoutEffect(() => {
     const el = ref.current;
@@ -81,9 +82,9 @@ function useRoomObserver(
       } else if (depth >= 2 && shouldStep()) {
         flushSync(() => setOwn((s) => s + 1));
       }
-      if (room.spentAt !== null || overflows(el)) recheck();
+      if (room.spentAt !== null || overflows.current(el)) recheck();
     });
-  }, [ref, depth, roomRef, shouldStep, recheck, setOwn]);
+  }, [ref, depth, roomRef, shouldStep, recheck, setOwn, overflows]);
 }
 
 /**
@@ -115,11 +116,15 @@ function useRoomObserver(
  * measurement, and every one sharing the scope's scale prints at the smallest
  * any of them needs, floored at `scale.min`, published on the element as
  * `scale.property`. A nested scope without one passes its outer scope's on.
+ *
+ * `overflows` says whether the element's content overflows it, for content its box does not hold, such as items laid
+ * along a curve. Default: its scroll width past its client width.
  */
 export function useFitScope(
   ref: RefObject<HTMLElement | null>,
-  { scale: scaleOptions }: { scale?: FitScaleOptions } = {},
+  { scale: scaleOptions, overflows: overflowsOption }: { scale?: FitScaleOptions; overflows?: (el: HTMLElement) => boolean } = {},
 ): FitScopeValue {
+  const overflows = useLatest(overflowsOption ?? overflowsBox);
   const outer = useContext(FitContext);
   const scale = useScaleStage(ref, scaleOptions) ?? outer?.scale ?? null;
   const [own, setOwn] = useState(0);
@@ -153,10 +158,10 @@ export function useFitScope(
   /** Whether the element overflows and a label has a shorter form left; records the room if so. */
   const shouldStep = useCallback((): boolean => {
     const el = ref.current;
-    if (!el || ownRef.current >= depth - 1 || !overflows(el)) return false;
+    if (!el || ownRef.current >= depth - 1 || !overflows.current(el)) return false;
     roomRef.current.steppedAt = el.clientWidth;
     return true;
-  }, [ref, depth]);
+  }, [ref, depth, overflows]);
 
   // A label set that changed may fit at a longer form than the old one did.
   const fittedFor = useRef(labels);
@@ -176,8 +181,8 @@ export function useFitScope(
     if (!el) return;
     prepareRoom(el, room, depth, own === 0);
     if (shouldStep()) setOwn(own + 1);
-    else settleSpent(el, room, depth > 0 && own >= depth - 1);
-  }, [ref, depth, labels, own, check, shouldStep]);
+    else settleSpent(el, room, depth > 0 && own >= depth - 1, overflows.current);
+  }, [ref, depth, labels, own, check, shouldStep, overflows]);
 
   // Labels set in a fallback font may have stepped further than the face that loads needs, with no change in
   // the room to say so.
@@ -194,7 +199,7 @@ export function useFitScope(
   );
   useFontLoads(ref, refit);
 
-  useRoomObserver(ref, depth, roomRef, shouldStep, recheck, setOwn);
+  useRoomObserver(ref, depth, roomRef, shouldStep, recheck, setOwn, overflows);
 
   const step = Math.max(own, outer?.step ?? 0);
   return useMemo(() => ({ step, register, scale }), [step, register, scale]);
