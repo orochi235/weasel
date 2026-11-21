@@ -238,7 +238,7 @@ export const fractionKind: DisplayKind<FractionDisplay> = {
     const sign = /^[-−+]/.test(rest) ? rest[0]! : '';
     const body = rest.slice(sign.length).trimStart();
     const coefficient = body === '' || /^[/⁄]/.test(body) ? `${sign}1${body}` : rest;
-    return parseFraction(coefficient, ctx.locale) * constant.value;
+    return finiteOrNaN(parseFraction(coefficient, ctx.locale) * constant.value);
   },
   mathml: (value, d) => {
     if (!Number.isFinite(value)) return undefined;

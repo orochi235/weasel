@@ -86,4 +86,9 @@ describe('typed digits never read as an infinity', () => {
     expect(parseAs('∞', fraction())).toBe(Infinity);
     expect(parseAs('-∞', ratio())).toBe(-Infinity);
   });
+
+  it('reads digits counted in a constant past the range of a number as NaN, not infinity', () => {
+    expect(parseAs('1e308π', fraction({ of: 'π' }))).toBeNaN();
+    expect(parseAs('-1e308π', fraction({ of: 'π' }))).toBeNaN();
+  });
 });
