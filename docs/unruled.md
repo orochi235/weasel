@@ -3333,3 +3333,10 @@ Calls the lanes made without a ruling:
   `<ReadOnly>` scope: folding a section changes no value, so a read-only twisty still folds.
 - 2026-11-20 (the fixer's call): a read-only `FillStrokeSwatch`'s chips still pick the target slot, since that
   changes no paint, and do not open the paint editor; a disabled one's chips pick nothing.
+
+## Audit round sixty (2026-11-20): ui components, part four
+
+- 2026-11-20 (the fixer's call): An `InlineMarkdown` mark (`*`, `**`, `~~`) opens before punctuation only after a space
+  or at the start of the line, so `src/*.ts to lib/*.js` and `"*.ts" or "*.js"` stay literal; a code span, a
+  shortcut, or an escape right after the mark does not count as punctuation. `x*"quoted"*` is therefore literal too.
+  CommonMark's flanking rule, which reads `src/*.ts to lib/*.js` as emphasis, was the alternative.

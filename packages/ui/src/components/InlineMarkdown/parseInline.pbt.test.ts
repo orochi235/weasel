@@ -61,6 +61,20 @@ function run(leaves: InlineToken[], edged: boolean): InlineToken[] {
   return out;
 }
 
+/** A space before each mark that opens on punctuation after a non-space, where the syntax reads a glob's `*` instead. */
+function spaced(tokens: readonly InlineToken[]): InlineToken[] {
+  const out: InlineToken[] = [];
+  for (const t of tokens) {
+    const before = write(out).at(-1);
+    const opening = 'children' in t && t.type !== 'link' ? write(t.children)[0] : undefined;
+    if (before !== undefined && /\S/.test(before) && opening !== undefined && /[^`<\\\p{L}\p{N}\s]/u.test(opening)) {
+      out.push({ type: 'text', text: ' ' });
+    }
+    out.push(t);
+  }
+  return out;
+}
+
 const leaf: fc.Arbitrary<InlineToken> = fc.oneof(
   { arbitrary: word.map((text) => ({ type: 'text' as const, text })), weight: 3 },
   codeText.map((text) => ({ type: 'code' as const, text })),
@@ -69,7 +83,7 @@ const leaf: fc.Arbitrary<InlineToken> = fc.oneof(
 const mark: fc.Arbitrary<InlineToken> = fc.tuple(fc.constantFrom('strong', 'em', 'del' as const), fc.array(leaf, { minLength: 1, maxLength: 3 }))
   .map(([type, kids]) => ({ type, children: run(kids, true) }));
 const link: fc.Arbitrary<InlineToken> = fc.tuple(href, fc.array(fc.oneof(leaf, mark), { minLength: 1, maxLength: 3 }))
-  .map(([h, kids]) => ({ type: 'link' as const, href: h, children: run(kids, false) }));
+  .map(([h, kids]) => ({ type: 'link' as const, href: h, children: run(spaced(kids), false) }));
 
 /** A line's tokens, with no two marks of one kind side by side, which the syntax cannot tell from one. */
 const line = fc.array(fc.oneof({ arbitrary: leaf, weight: 2 }, mark, link), { maxLength: 6 }).map((ts) => {
@@ -79,7 +93,7 @@ const line = fc.array(fc.oneof({ arbitrary: leaf, weight: 2 }, mark, link), { ma
     if (last && last.type === t.type && 'children' in t) out.push({ type: 'text', text: ' ' });
     out.push(t);
   }
-  return run(out, false);
+  return run(spaced(out), false);
 });
 
 function write(tokens: readonly InlineToken[]): string {

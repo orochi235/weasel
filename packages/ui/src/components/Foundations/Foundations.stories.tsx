@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { toHex } from '../TokenPanel/color';
@@ -316,7 +316,21 @@ const COLOR_TOKEN_GROUPS: ColorGroup[] = [
   },
 ];
 
-function ThemedSwatch({ token, theme }: { token: string; theme: 'dark' | 'light' }): ReactElement {
+/** Counts theme changes: `applyTheme` restamps its element's `data-wzl-*` attributes on every application. */
+function useThemeEdits(): number {
+  const [edits, setEdits] = useState(0);
+  useEffect(() => {
+    const watch = new MutationObserver(() => setEdits((n) => n + 1));
+    watch.observe(document.documentElement, {
+      subtree: true,
+      attributeFilter: ['data-wzl-theme', 'data-wzl-variant', 'data-wzl-mode', 'data-wzl-density', 'style', 'class'],
+    });
+    return () => watch.disconnect();
+  }, []);
+  return edits;
+}
+
+function ThemedSwatch({ token, theme, edits }: { token: string; theme: 'dark' | 'light'; edits: number }): ReactElement {
   const ref = useRef<HTMLDivElement | null>(null);
   const [value, setValue] = useState('');
   useLayoutEffect(() => {
@@ -324,7 +338,7 @@ function ThemedSwatch({ token, theme }: { token: string; theme: 'dark' | 'light'
     if (!el) return;
     const cs = getComputedStyle(el);
     setValue(cs.getPropertyValue(token).trim() || cs.backgroundColor);
-  }, [token]);
+  }, [token, edits]);
   return (
     <div ref={ref} data-wzl-mode={theme} className={s.swatchPair}>
       <div className={s.swatchPairChip} style={{ background: `var(${token})` }} />
@@ -334,12 +348,13 @@ function ThemedSwatch({ token, theme }: { token: string; theme: 'dark' | 'light'
 }
 
 function ColorsView(): ReactElement {
+  const edits = useThemeEdits();
   return (
     <Section title="Color tokens">
       <p className={s.colorsIntro}>
-        Every semantic and primitive color token, rendered side-by-side in both themes. Hex values
-        are read from the live document — drag the theme toggle and watch only the "current" side
-        update (the opposite side reads its values from a forced data-wzl-mode override).
+        Every semantic and primitive color token, rendered side by side in night and day mode, each
+        column forced to its mode. Hex values are read from the live document and read again when
+        the theme, its variant, or its density changes, so a theme edit shows in both columns.
       </p>
       {COLOR_TOKEN_GROUPS.map((group) => (
         <div key={group.title} className={s.colorsGroup}>
@@ -353,8 +368,8 @@ function ColorsView(): ReactElement {
             {group.tokens.map((tk) => (
               <div key={tk} className={s.colorsRow}>
                 <code className={s.colorsToken}>{tk}</code>
-                <ThemedSwatch token={tk} theme="dark" />
-                <ThemedSwatch token={tk} theme="light" />
+                <ThemedSwatch token={tk} theme="dark" edits={edits} />
+                <ThemedSwatch token={tk} theme="light" edits={edits} />
               </div>
             ))}
           </div>

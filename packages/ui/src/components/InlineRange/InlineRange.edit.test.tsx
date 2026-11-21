@@ -68,6 +68,25 @@ describe('InlineRange edit protocol', () => {
     expect(onChange.mock.calls).toEqual([[12]]);
   });
 
+  it('a canceled pointer cancels the drag: back to where it began, and no commit', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    const onCancel = vi.fn();
+    render(<Previewing onInput={onInput} onChange={onChange} onCancel={onCancel} />);
+    press();
+    slide(9);
+    fireEvent.pointerCancel(range(), { pointerId: 1 });
+    fireEvent.change(range(), { target: { value: '9' } });
+    expect(onInput.mock.calls.map((c) => c[0])).toEqual([9, 5]);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
+    press();
+    slide(12);
+    release();
+    settle();
+    expect(onChange.mock.calls).toEqual([[12]]);
+  });
+
   it('commits nothing for a drag that ends where it began', () => {
     const onChange = vi.fn();
     render(<Previewing onChange={onChange} />);
