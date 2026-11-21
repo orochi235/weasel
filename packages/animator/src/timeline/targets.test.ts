@@ -182,6 +182,32 @@ describe('a sampled track on a target', () => {
     expect(b.shown.at(-1)).toBeCloseTo(60, 9);
   });
 
+  it('holds a track nested in two places on each placement in turn', () => {
+    const { animator, frame } = setup();
+    const b = box(0);
+    const sub = { tracks: [ramp(b.target)] };
+    act(() => {
+      animator.timeline({ duration: 1000, tracks: [
+        { kind: 'timeline', at: 0, timeline: sub },
+        { kind: 'timeline', at: 500, timeline: sub },
+      ] });
+    });
+    frame(0);
+    frame(50);
+    expect(b.shown.at(-1)).toBeCloseTo(50, 9);
+    expect(b.target.active).toBe(true);
+    frame(200);
+    expect(b.committed).toBeCloseTo(100, 9);
+    expect(b.target.active).toBe(false);
+    frame(550);
+    expect(b.shown.at(-1)).toBeCloseTo(50, 9);
+    const sets = b.committed;
+    frame(560);
+    frame(570);
+    expect(b.committed).toBe(sets);
+    expect(b.shown.at(-1)).toBeCloseTo(70, 9);
+  });
+
   it('holds across a loop seam, showing the new lap the frame it wraps', () => {
     const { animator, frame } = setup();
     const b = box(0);

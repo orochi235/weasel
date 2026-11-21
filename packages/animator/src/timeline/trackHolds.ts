@@ -61,7 +61,15 @@ export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = (
     if (!c) { c = new Map(); caches.set(track, c); }
     return c;
   };
-  const held = new Map<SampledTrack<unknown>, Held>();
+  // By track, then by the nested placements it is reached through: one track nested in two places is two runs.
+  const held = new Map<SampledTrack<unknown>, Map<string, Held>>();
+  const placements = new WeakMap<object, number>();
+  let placed = 0;
+  const placementId = (track: object): number => {
+    let id = placements.get(track);
+    if (id === undefined) placements.set(track, id = placed += 1);
+    return id;
+  };
   let edit = 0;
   let pass = 0;
 
@@ -77,9 +85,11 @@ export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = (
   const stale = (st: SampledTrack<unknown>, o: Opened): boolean =>
     o.target !== st.target || o.weight !== st.weight || !sameAxes(o.axes, st.axes);
 
-  const place = (st: SampledTrack<unknown>, value: unknown, t: number): void => {
-    let h = held.get(st);
-    if (!h) held.set(st, h = { hold: null, value, where: null, t, edit, pass });
+  const place = (st: SampledTrack<unknown>, path: string, value: unknown, t: number): void => {
+    let runs = held.get(st);
+    if (!runs) held.set(st, runs = new Map());
+    let h = runs.get(path);
+    if (!h) runs.set(path, h = { hold: null, value, where: null, t, edit, pass });
     if (h.hold && h.edit !== edit && stale(st, h.opened!)) {
       // A target the track no longer names keeps what it shows, as one whose track was removed does.
       h.hold.leave(h.opened!.target !== st.target);
@@ -106,17 +116,17 @@ export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = (
     h.where = where;
   };
 
-  const visit = (tracks: Track[], t: number): void => {
+  const visit = (tracks: Track[], t: number, path: string): void => {
     for (const track of tracks) {
       if (gone()) return;
       if (track.kind === 'sampled') {
         const st = track as SampledTrack<unknown>;
         const v = sampleTrack(st, t, cacheFor(st));
         if (v === undefined) continue;
-        if (st.target) place(st, v, t);
+        if (st.target) place(st, path, v, t);
         st.onTick?.(v);
       } else if (track.kind === 'timeline') {
-        visit(track.timeline.tracks, Math.min(t - track.at, nestedLength(track.timeline)));
+        visit(track.timeline.tracks, Math.min(t - track.at, nestedLength(track.timeline)), `${path}/${placementId(track)}`);
       }
     }
   };
@@ -124,12 +134,15 @@ export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = (
   return {
     apply(tracks, t) {
       pass += 1;
-      visit(tracks, t);
+      visit(tracks, t, '');
       // A track an edit took out of the timeline, or emptied, was not sampled this pass.
-      for (const [st, h] of held) {
-        if (h.pass === pass) continue;
-        h.hold?.leave(true);
-        held.delete(st);
+      for (const [st, runs] of held) {
+        for (const [path, h] of runs) {
+          if (h.pass === pass) continue;
+          h.hold?.leave(true);
+          runs.delete(path);
+        }
+        if (runs.size === 0) held.delete(st);
       }
     },
     edited() {
@@ -137,11 +150,13 @@ export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = (
       edit += 1;
     },
     release() {
-      for (const h of held.values()) {
-        if (!h.hold) continue;
-        h.hold.leave(true);
-        h.hold = null;
-        h.where = null;
+      for (const runs of held.values()) {
+        for (const h of runs.values()) {
+          if (!h.hold) continue;
+          h.hold.leave(true);
+          h.hold = null;
+          h.where = null;
+        }
       }
     },
   };
