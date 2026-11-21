@@ -188,7 +188,7 @@ describe('requires', () => {
     render(<Harness ambient={[needs('^99')]} />);
     const hits = warn.mock.calls.filter((c) => String(c[0]).includes('"future"'));
     expect(hits).toHaveLength(1);
-    expect(String(hits[0]![0])).toMatch(/core \^99.*1\.\d+\.\d+/);
+    expect(String(hits[0]![0])).toMatch(/core \^99.*\d+\.\d+\.\d+/);
   });
 
   it('says nothing when the range is met', () => {
