@@ -461,3 +461,17 @@ it("takes the parent's value where a child's by-axis pin leaves a selection out"
   expect(light.tokens.surface.value).toBe(parent.tokens.surface.value);
   expect(light.issues).toEqual([]);
 });
+
+describe('a group-qualified reference', () => {
+  it('names the token after its group, as resolving reads it', () => {
+    const { tokens, issues } = derive({
+      name: 'b',
+      ramps: { brand: { kind: 'lightness', steps: ['100', '500'], lightness: [0.9, 0.4] } },
+      components: { c: '{color.brand-500}' },
+      pins: { p: { value: '{color.brand-100}', type: 'color' } },
+    });
+    expect(issues).toEqual([]);
+    expect(tokens.c.type).toBe('color');
+    expect(tokens.p.value).toBe('{color.brand-100}');
+  });
+});
