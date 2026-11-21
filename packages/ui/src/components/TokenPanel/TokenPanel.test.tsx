@@ -167,6 +167,25 @@ describe('TokenPanel', () => {
       expect(onChange).not.toHaveBeenCalled();
     });
 
+    it('writes only the step that moved, though the others hold more places than it rounds to', () => {
+      const fine: TokenEntry[] = [
+        { name: '--g-sm', type: 'dimension', group: 'g', value: '0.03125rem' },
+        { name: '--g-md', type: 'dimension', group: 'g', value: '0.0625rem' },
+        { name: '--g-lg', type: 'dimension', group: 'g', value: '0.125rem' },
+      ];
+      const onChange = vi.fn();
+      const { unmount } = renderWithIcons(<TokenPanel tokens={fine} onChange={onChange} />);
+      fireEvent.keyDown(within(screen.getByRole('group', { name: 'g' })).getByRole('slider', { name: '--g-lg' }), { key: 'ArrowRight' });
+      expect(onChange.mock.calls).toEqual([['--g-lg', '0.1251rem']]);
+      unmount();
+
+      const onScaleChange = vi.fn();
+      const scale: TokenScale = { tokens: fine.map((t) => t.name), base: 1, rule: { kind: 'factors', factors: [0.03125, 0.0625, 0.125] } };
+      renderWithIcons(<TokenPanel tokens={fine} onChange={onChange} scales={{ g: scale }} onScaleChange={onScaleChange} />);
+      fireEvent.keyDown(within(screen.getByRole('group', { name: 'g' })).getByRole('slider', { name: '--g-lg' }), { key: 'ArrowRight' });
+      expect(onScaleChange.mock.calls).toEqual([['g', { ...scale, rule: { kind: 'factors', factors: [0.03125, 0.0625, 0.1251] } }]]);
+    });
+
     it('refits to the steps as they stand when its rule changes', () => {
       const onScaleChange = vi.fn();
       renderWithIcons(<TokenPanel tokens={fonts} onChange={() => {}} scales={{ f: byFactors }} onScaleChange={onScaleChange} />);

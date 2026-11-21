@@ -137,20 +137,21 @@ function ScaleSlider({
   }));
 
   const commit = (next: StepThumb[]) => {
+    let fitted = factors;
     next.forEach((thumb, i) => {
+      // An untouched thumb comes back too, and its amount may not survive `round`.
+      if (thumb.value === thumbs[i]?.value) return;
       const amount = round(2 ** thumb.value);
       if (amount === amounts[i] || amount <= 0) return;
       const at = generator ? generator.tokens.indexOf(thumb.token) : -1;
       // A factor reaches the dragged amount only from a positive base, and only for a step it has an entry for.
-      if (factors && generator && generator.base > 0 && at >= 0 && at < factors.length) {
-        onScaleChange?.(group, {
-          ...generator,
-          rule: { kind: 'factors', factors: factors.map((f, j) => (j === at ? roundFit(amount / generator.base) || f : f)) },
-        });
+      if (fitted && generator && generator.base > 0 && at >= 0 && at < fitted.length) {
+        fitted = fitted.map((f, j) => (j === at ? roundFit(amount / generator.base) || f : f));
       } else {
         onChange(thumb.token, `${amount}${unit}`);
       }
     });
+    if (fitted !== factors && fitted && generator) onScaleChange?.(group, { ...generator, rule: { kind: 'factors', factors: fitted } });
   };
 
   return (
