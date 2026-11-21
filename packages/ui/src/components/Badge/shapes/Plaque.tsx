@@ -1,4 +1,5 @@
 import type { BadgeCorner, ShapeModule, ShapeComposeSpec } from '../types';
+import { withDefaults } from './params';
 
 /** What `shapeParams` takes on a `plaque` badge. */
 export interface BadgePlaqueShapeParams {
@@ -19,7 +20,7 @@ const DEFAULTS: Required<BadgePlaqueShapeParams> = {
 
 const Plaque: ShapeModule<BadgePlaqueShapeParams> = {
   compose: (params): ShapeComposeSpec => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     return {
       base: 'rounded-rect',
       baseParams: { erosion: 0 },

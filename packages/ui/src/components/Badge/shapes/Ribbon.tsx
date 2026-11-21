@@ -1,4 +1,5 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
+import { withDefaults } from './params';
 import type { BadgeRibbonEnd } from '../bases/Ribbon';
 
 /** What `shapeParams` takes on a `ribbon` badge. */
@@ -15,7 +16,7 @@ const DEFAULTS: Required<BadgeRibbonShapeParams> = { left: 'inward', right: 'out
 
 const Ribbon: ShapeModule<BadgeRibbonShapeParams> = {
   compose: (params): ShapeComposeSpec => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     return { base: 'ribbon', baseParams: cfg };
   },
   // Unused at render time when `compose` is set — the base's insets win — but

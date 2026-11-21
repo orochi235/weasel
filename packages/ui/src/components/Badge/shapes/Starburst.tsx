@@ -1,4 +1,5 @@
 import type { ShapeModule } from '../types';
+import { withDefaults } from './params';
 import { DEG_TO_RAD, lerp, trimNumber } from '@weasel-js/geom';
 
 /** What `shapeParams` takes on a `starburst` badge. */
@@ -56,7 +57,7 @@ function starburstPath(points: number, outerR: number, innerR: number, rotationD
 
 const Starburst: ShapeModule<BadgeStarburstShapeParams> = {
   Component: ({ variant, focused, params }) => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     const d = starburstPath(cfg.points, cfg.outerR, cfg.innerR, cfg.rotation, cfg.erosion);
     const dFocus = starburstPath(cfg.points, cfg.outerR + 4, cfg.innerR + 3, cfg.rotation, cfg.erosion);
     return (

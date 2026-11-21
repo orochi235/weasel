@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { withDefaults } from './params';
 import type { ShapeModule } from '../types';
 import { useSvgBox } from '../useSvgBox';
 import { lerp, trimNumber } from '@weasel-js/geom';
@@ -24,7 +25,7 @@ function ShieldComponent({ variant, focused, params }: {
   focused: boolean;
   params: BadgeShieldShapeParams;
 }) {
-  const cfg = { ...DEFAULTS, ...params };
+  const cfg = withDefaults(DEFAULTS, params);
   const ref = useRef<SVGGElement>(null);
   const box = useSvgBox(ref);
 

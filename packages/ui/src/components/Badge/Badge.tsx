@@ -4,6 +4,7 @@ import {
 } from 'react';
 import s from './Badge.module.css';
 import { SHAPES, type BadgeShapeParams } from './shapes';
+import { withDefaults } from './shapes/params';
 import type { BadgeBase, BadgeBaseParams } from './bases';
 import type { BadgeEffectSpec } from './effects';
 import { BadgeDeco } from './BadgeDeco';
@@ -153,7 +154,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
   const [focused, setFocused] = useState(false);
   const shapeModule = SHAPES[shape] ?? SHAPES.pill;
   const resolvedShape = SHAPES[shape] ? shape : 'pill';
-  const params = { ...(shapeModule.defaults ?? {}), ...(shapeParams ?? {}) };
+  const params = withDefaults<Record<string, unknown>>(shapeModule.defaults ?? {}, shapeParams as Record<string, unknown> | undefined);
 
   const phase = useCrawlPhase(crawl);
   const cls = [s.badge, className].filter(Boolean).join(' ');

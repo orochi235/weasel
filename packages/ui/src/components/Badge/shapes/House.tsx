@@ -1,4 +1,5 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
+import { withDefaults } from './params';
 
 /** What `shapeParams` takes on a `house` badge. */
 export interface BadgeHouseShapeParams {
@@ -11,7 +12,7 @@ const DEFAULTS: Required<BadgeHouseShapeParams> = { eaveY: 32, peakHeight: 32, r
 
 const House: ShapeModule<BadgeHouseShapeParams> = {
   compose: (params): ShapeComposeSpec => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     const ey = Math.max(2, Math.min(cfg.eaveY, 95));
     const peakY = ey - Math.max(0, cfg.peakHeight);
     const ov = Math.max(0, Math.min(cfg.roofOverhang, 12));

@@ -1,4 +1,5 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
+import { withDefaults } from './params';
 
 /** What `shapeParams` takes on a `quatrefoil` badge. */
 export interface BadgeQuatrefoilShapeParams {
@@ -35,7 +36,7 @@ const DEFAULTS: Required<BadgeQuatrefoilShapeParams> = {
 
 const Quatrefoil: ShapeModule<BadgeQuatrefoilShapeParams> = {
   compose: (params): ShapeComposeSpec => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     return { base: 'quatrefoil', baseParams: cfg };
   },
   insets: { top: 10, right: 14, bottom: 10, left: 14 },

@@ -1,4 +1,5 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
+import { withDefaults } from './params';
 
 /** What `shapeParams` takes on a `coffin` badge. */
 export interface BadgeCoffinShapeParams {
@@ -21,7 +22,7 @@ const DEFAULTS: Required<BadgeCoffinShapeParams> = {
 
 const Coffin: ShapeModule<BadgeCoffinShapeParams> = {
   compose: (params): ShapeComposeSpec => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     const hX = Math.max(0, Math.min(cfg.headX, 40));
     const sX = Math.max(hX + 1, Math.min(cfg.shoulderX, 70));
     const fX = Math.max(sX + 1, Math.min(cfg.footX, 100));

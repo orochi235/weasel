@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
+import { withDefaults } from './params';
 import type { ShapeModule } from '../types';
 import { useSvgBox } from '../useSvgBox';
 
@@ -15,7 +16,7 @@ function PerforatedComponent({ variant, focused, params }: {
   focused: boolean;
   params: BadgePerforatedShapeParams;
 }) {
-  const cfg = { ...DEFAULTS, ...params };
+  const cfg = withDefaults(DEFAULTS, params);
   const maskId = useId();
   const ref = useRef<SVGGElement>(null);
   const box = useSvgBox(ref);

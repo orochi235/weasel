@@ -1,4 +1,5 @@
 import type { ShapeModule } from '../types';
+import { withDefaults } from './params';
 
 /** What `shapeParams` takes on a `notched` badge. */
 export interface BadgeNotchedShapeParams {
@@ -30,7 +31,7 @@ function notchedPath(r: number, ecc: number) {
 
 const Notched: ShapeModule<BadgeNotchedShapeParams> = {
   Component: ({ variant, focused, params }) => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     const e = Math.max(0, Math.min(cfg.erosion, 1));
     const r = e * 49;
     const ecc = Math.max(0.2, Math.min(cfg.eccentricity, 5));

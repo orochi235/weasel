@@ -1,4 +1,5 @@
 import { trimNumber } from '@weasel-js/geom';
+import { withDefaults } from './params';
 import type { ShapeModule } from '../types';
 
 /** What `shapeParams` takes on a `receipt` badge. */
@@ -33,7 +34,7 @@ const BASE_TOP = 2;
 
 const Receipt: ShapeModule<BadgeReceiptShapeParams> = {
   Component: ({ variant, focused, params }) => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     const d = receiptPath(cfg.teeth, cfg.tearDepth);
     return (
       <>
