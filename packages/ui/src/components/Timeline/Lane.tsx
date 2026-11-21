@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from 'react';
+import { useEffect, useId, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from 'react';
 import { type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack } from '@weasel-js/animator';
 import { DisclosureMark } from '../Disclosure';
 import type { FocusHoldAttrs } from '../Disabled/controlHold';
@@ -181,7 +181,7 @@ function LaneLabel({ row, mark, expanded, toggleExpanded }: {
 }) {
   const labelId = useId();
   return (
-    <div className={s.laneLabel}>
+    <div className={s.laneLabel} style={{ '--depth': row.depth } as CSSProperties}>
       {row.kind === 'timeline' ? (
         <span
           role="button"

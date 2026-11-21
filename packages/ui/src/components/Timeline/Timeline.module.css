@@ -36,10 +36,6 @@
   text-overflow: ellipsis;
 }
 
-.lane[data-depth='1'] .laneLabel { --depth: 1; }
-.lane[data-depth='2'] .laneLabel { --depth: 2; }
-.lane[data-depth='3'] .laneLabel { --depth: 3; }
-
 .disclosure { display: inline-flex; flex: none; cursor: pointer; }
 
 .laneTrack {

@@ -76,6 +76,15 @@ describe('Lane', () => {
     expect(screen.getByTestId('timeline-nested').style.width).toBe('90%');
   });
 
+  it('indents a row\'s label by its depth, however deep', () => {
+    let track: Track = sampled;
+    for (let i = 0; i < 5; i++) track = { kind: 'timeline', label: `n${i}`, at: 0, timeline: { tracks: [track] } } as Track;
+    const row = buildLanes([track], new Set(['0', '0.0', '0.0.0', '0.0.0.0', '0.0.0.0.0'])).at(-1)!;
+    const { container } = render(<Lane {...base} row={row} />);
+    expect(row.depth).toBe(5);
+    expect(container.querySelector<HTMLElement>('[data-depth] > div')!.style.getPropertyValue('--depth')).toBe('5');
+  });
+
   it('draws no past-end band on a row that plays to the end', () => {
     render(<Lane {...base} row={laneOf(sampled)} />);
     expect(screen.queryByTestId('timeline-after-end')).toBeNull();
