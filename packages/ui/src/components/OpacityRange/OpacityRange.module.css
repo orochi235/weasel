@@ -13,21 +13,21 @@
 }
 
 /* A dead alpha track keeps its groove but loses its thumb, so the affordance
-   reads inert rather than merely dimmed. Keyed off `:disabled`, which a color field
-   already sets on the input — not off a class on the row. One rule per engine:
+   reads inert rather than merely dimmed. Keyed off the input's own hold, native `:disabled` or
+   `[data-disabled]` for one held for a reason, not off a class on the row. One rule per engine:
    Blink and WebKit drop a whole selector list that names a -moz- pseudo-element. */
-.range:disabled::-webkit-slider-runnable-track {
+.range:is(:disabled, [data-disabled])::-webkit-slider-runnable-track {
   background: color-mix(in srgb, var(--wzl-fg) 5%, transparent);
 }
 
-.range:disabled::-moz-range-track {
+.range:is(:disabled, [data-disabled])::-moz-range-track {
   background: color-mix(in srgb, var(--wzl-fg) 5%, transparent);
 }
 
-.range:disabled::-webkit-slider-thumb {
+.range:is(:disabled, [data-disabled])::-webkit-slider-thumb {
   background: transparent;
 }
 
-.range:disabled::-moz-range-thumb {
+.range:is(:disabled, [data-disabled])::-moz-range-thumb {
   background: transparent;
 }

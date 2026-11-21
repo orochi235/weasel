@@ -1,6 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { OpacityRange } from './OpacityRange';
+import s from './OpacityRange.module.css';
+
+const css = readFileSync(resolve(__dirname, 'OpacityRange.module.css'), 'utf8');
 
 const range = () => screen.getByLabelText<HTMLInputElement>('Fill opacity');
 const slide = (pct: number) => fireEvent.input(range(), { target: { value: String(pct) } });
@@ -30,5 +35,14 @@ describe('OpacityRange', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
     fireEvent.pointerUp(range());
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('draws a range disabled for a reason as dead as one disabled outright', () => {
+    render(<OpacityRange aria-label="Fill" value={0.4} onChange={() => {}} disabled disabledReason="Locked layer" />);
+    expect(range()).toHaveClass(s.range!);
+    expect(range()).toHaveAttribute('data-disabled');
+    for (const part of ['-webkit-slider-runnable-track', '-moz-range-track', '-webkit-slider-thumb', '-moz-range-thumb']) {
+      expect(css).toContain(`.range:is(:disabled, [data-disabled])::${part}`);
+    }
   });
 });
