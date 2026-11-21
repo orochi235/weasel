@@ -221,6 +221,16 @@ describe('a presented lab’s messages', () => {
     expect(c().rate).toBe(1);
   });
 
+  it('tells its state only to the origins it is given', async ({ host }) => {
+    const origins = ['https://host.example', 'https://docs.example'];
+    await host.mount({ duration: SPAN }, { messages: { origins } });
+    const targets = posted.mock.calls
+      .filter(([data]) => (data as PresentationState)?.type === 'labkit:state')
+      .map(([, target]) => target);
+    expect(targets.length).toBeGreaterThan(0);
+    expect(new Set(targets)).toEqual(new Set(origins));
+  });
+
   it('takes a message addressed to another lab as not its own', async ({ host }) => {
     await host.mount({ duration: SPAN }, { messages: { name: 'hero' } });
     await host.send({ type: 'labkit:play', lab: 'other' });
