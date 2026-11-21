@@ -91,3 +91,33 @@
 .mixed {
   stroke: color-mix(in srgb, var(--wzl-accent) 22%, transparent);
 }
+
+/* Forced colors would repaint the lit stroke and its label, so an on or mixed segment would read as off. As the straight
+   row does, an on segment is Highlight under HighlightText, and a mixed one is outlined. */
+@media (forced-colors: active) {
+  .well {
+    forced-color-adjust: none;
+  }
+
+  .wellTrack {
+    stroke: Canvas;
+  }
+
+  .lit {
+    stroke: Highlight;
+  }
+
+  .mixed {
+    stroke: none;
+  }
+
+  .root[data-variant='default'] > [data-state='on'] {
+    forced-color-adjust: none;
+    color: HighlightText;
+  }
+
+  .root[data-variant='default'] > [data-state='mixed'] {
+    outline: 1px dashed CanvasText;
+    outline-offset: -1px;
+  }
+}

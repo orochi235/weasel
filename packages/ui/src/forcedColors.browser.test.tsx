@@ -6,6 +6,7 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Input } from '@weasel-js/ui/components/Input';
 import { ItemList } from '@weasel-js/ui/components/ItemList';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
+import { Along } from '@weasel-js/ui/components/Along';
 import { Radio, RadioGroup } from '@weasel-js/ui/components/RadioGroup';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
@@ -83,6 +84,27 @@ describe('a chosen control still reads as chosen', () => {
     const [on, off] = screen.getAllByRole('button');
     expect(bg(on!)).not.toBe(bg(off!));
     expect(bg(on!)).not.toBe(canvas());
+  });
+
+  test('a curved bar strokes its on segment in Highlight and outlines its mixed one', () => {
+    render(
+      <div style={{ position: 'relative', width: 320, height: 320 }}>
+        <Along arc={{ at: 0, span: '120deg', inset: 24 }}>
+          <SegmentedBar mode="multiple" aria-label="Curved" items={['a', 'b', 'c'].map((v) => ({ value: v, label: v }))}
+            value={['a']} mixedValues={['b']} onChange={() => {}} />
+        </Along>
+      </div>,
+    );
+    const group = screen.getByRole('group', { name: 'Curved' });
+    const lit = group.querySelector('[data-lit="on"]')!;
+    const probe = document.body.appendChild(document.createElement('div'));
+    probe.setAttribute('style', 'forced-color-adjust: none; color: Highlight');
+    expect(getComputedStyle(lit).stroke).toBe(getComputedStyle(probe).color);
+    probe.remove();
+    const [on, mixed, off] = screen.getAllByRole('button');
+    expect(getComputedStyle(on!).color).not.toBe(getComputedStyle(off!).color);
+    expect(ringed(mixed!)).toBe(true);
+    expect(ringed(off!)).toBe(false);
   });
 });
 
