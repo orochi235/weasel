@@ -248,14 +248,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     context: ctx,
     state: () => ctx.state,
     async unlock() {
-      if (disposed) return;
-      try {
-        if (ctx.state !== 'running') await ctx.resume();
-      } catch (error) {
-        // A dispose while the resume was in flight closed the context under it.
-        if (disposed) return;
-        throw error;
-      }
+      if (disposed || !(await resumeUnlessDisposed(ctx, () => disposed))) return;
       await synth.loaded;
     },
     now,
@@ -324,4 +317,15 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   };
 
   return engine;
+}
+
+/** Whether `ctx` is resumed, or false when a dispose closed it while the resume was in flight. */
+async function resumeUnlessDisposed(ctx: AudioContext, disposed: () => boolean): Promise<boolean> {
+  try {
+    if (ctx.state !== 'running') await ctx.resume();
+    return true;
+  } catch (error) {
+    if (disposed()) return false;
+    throw error;
+  }
 }
