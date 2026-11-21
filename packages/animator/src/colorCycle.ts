@@ -52,12 +52,9 @@ export function cycleVertexColors(
   const override = (base: readonly number[], tMs: number): number[] => {
     const n = base.length / 4;
     if (n === 0) return base.slice();
-    const raw = (tMs / opts.msPerCycle) * n * direction;
-    const cycles = raw / n;
-    const cycleFrac = cycles - Math.floor(cycles);
-    const easedFrac = easing(cycleFrac);
-    const easedRaw = (Math.floor(cycles) + easedFrac) * n;
-    const phase = wrapPositive(easedRaw, n);
+    const cycles = tMs / opts.msPerCycle;
+    const whole = Math.floor(cycles);
+    const phase = wrapPositive((whole + easing(cycles - whole)) * n * direction, n);
     const phaseInt = Math.floor(phase);
     const phaseFrac = phase - phaseInt;
 
