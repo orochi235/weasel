@@ -6,7 +6,8 @@
  */
 import type { NodeId, Scene } from 'core/scene/types';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
-import { scenePoseFrame } from 'interactions/actions/poseFrame';
+import { scenePoseFrame, type PoseReading } from 'interactions/actions/poseFrame';
+import { documentPose, effectivePose, type PosedNode, type PoseSource } from 'core/scene/effectivePose';
 
 /** The two directions between a node's stored pose and its world pose. */
 export interface NodeFrame {
@@ -68,11 +69,24 @@ export function shownIn<S extends { pose: unknown }>(frame: NodeFrame | null, sh
   return frame ? { ...shape, pose: frame.world(shape.pose) } : shape;
 }
 
-/** Node `id` of `scene` with its pose in world, or undefined when missing. */
+/** `node` at the pose `reading` sees, still in its parent's frame: drawn at, an
+ *  override's included (`effectivePose`), or as the document derives or stores it. */
+export function drawnNodeOf<S extends FramedNode>(
+  scene: Scene<unknown, string, unknown>,
+  node: S,
+  reading: PoseReading = 'shown',
+): S {
+  const read = reading === 'shown' ? effectivePose : documentPose;
+  const pose = read(scene as unknown as PoseSource<unknown>, node as unknown as PosedNode<unknown>);
+  return pose === node.pose ? node : { ...node, pose };
+}
+
+/** Node `id` of `scene` at the pose `reading` sees, in world, or undefined when missing. */
 export function shownNodeOf(
   scene: Scene<unknown, string, unknown>,
   id: string,
+  reading: PoseReading = 'shown',
 ): ReturnType<Scene<unknown, string, unknown>['get']> {
   const node = scene.get(id as NodeId);
-  return node && shownIn(nodeFrameOf(scene, node), node);
+  return node && shownIn(nodeFrameOf(scene, node), drawnNodeOf(scene, node, reading));
 }

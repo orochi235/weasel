@@ -35,6 +35,7 @@ describe('what a text node offers to snap to', () => {
       }]]),
       layers: [{ id: 'default' }],
       getVersion: () => 1,
+      overrides: { read: () => undefined, getGeneration: () => 0 },
     } as unknown as Scene<unknown, string, unknown>;
     const only = { kinds: { nearest: false, midpoint: false } };
     expect(run(text, only, { x: 51, y: 21 }).marks).toEqual([{ kind: 'point', at: { x: 50, y: 20 }, glyph: 'center', label: 'center' }]);

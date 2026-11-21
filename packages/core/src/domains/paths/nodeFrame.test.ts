@@ -5,7 +5,7 @@ import type { RectPose } from 'core/scene/types';
 import { reshapeOps } from 'canvas/deps/pathEditCommits';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { liveEditablePath, resolveEditablePathOf } from './editablePath';
-import { nodeFrameOf, shownNodeOf } from './nodeFrame';
+import { drawnNodeOf, nodeFrameOf, shownNodeOf } from './nodeFrame';
 import { createSceneSnapIndexer } from './pathSnap/sceneIndex';
 import type { AnyScene } from 'core/scene/anyScene';
 
@@ -57,5 +57,50 @@ describe('nodeFrameOf', () => {
     const { scene } = framed();
     const { index } = createSceneSnapIndexer(scene)();
     expect(box(index.paths[0])).toEqual([100, 0, 100, 100]);
+  });
+});
+
+/** A vertical line stored at world x=10, drawn at x=60 by an override. */
+function overridden() {
+  const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+  const id = scene.add({ kind: 'mark', layer: 'main', data: { path: line(0, 0, 0, 100) }, pose: { x: 10, y: 0, width: 0, height: 100 } });
+  scene.overrides.set(id, { pose: { x: 60, y: 0, width: 0, height: 100 } });
+  scene.overrides.commit();
+  return { scene: scene as unknown as AnyScene, id };
+}
+
+describe('a node drawn away from its stored pose', () => {
+  it('shows the path edit chrome on the drawn outline', () => {
+    const { scene, id } = overridden();
+    const node = drawnNodeOf(scene, scene.get(id)!);
+    expect(box(liveEditablePath(id, node, [], null, [], nodeFrameOf(scene, node)))).toEqual([60, 0, 60, 100]);
+    expect(box(resolveEditablePathOf(shownNodeOf(scene, id)))).toEqual([60, 0, 60, 100]);
+  });
+
+  it('follows a derived pose', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const anchor = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 30, y: 0, width: 5, height: 5 } });
+    const id = scene.add({
+      kind: 'mark', layer: 'main', data: { path: line(0, 0, 0, 100) }, pose: { x: 10, y: 0, width: 0, height: 100 },
+      dependsOn: [anchor], derivePose: (_n, [dep]) => ({ x: dep!.pose.x, y: 0, width: 0, height: 100 }),
+    });
+    expect(box(resolveEditablePathOf(shownNodeOf(scene as unknown as AnyScene, id)))).toEqual([30, 0, 30, 100]);
+  });
+
+  it('stores an edit where it was shown', () => {
+    const { scene, id } = overridden();
+    scene.applyBatch(reshapeOps(scene, id, line(60, 0, 80, 100), 'Edit', null, []), 'Edit', defaultCommitAdapter(scene));
+    scene.overrides.clear(id);
+    scene.overrides.commit();
+    expect(box(resolveEditablePathOf(shownNodeOf(scene, id)))).toEqual([60, 0, 80, 100]);
+  });
+
+  it('snaps to it where it draws, and again when the override moves', () => {
+    const { scene, id } = overridden();
+    const indexer = createSceneSnapIndexer(scene);
+    expect(box(indexer().index.paths[0])).toEqual([60, 0, 60, 100]);
+    scene.overrides.set(id, { pose: { x: 70, y: 0, width: 0, height: 100 } });
+    scene.overrides.commit();
+    expect(box(indexer().index.paths[0])).toEqual([70, 0, 70, 100]);
   });
 });

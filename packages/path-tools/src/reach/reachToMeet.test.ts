@@ -14,6 +14,7 @@ function setup(paths: Record<string, string>, selected: string[] = [], extra: Re
     nodes.set(id, { id: asNodeId(id), kind: 'mark', layer: 'main', pose: pathFromD(d), data: {}, parent: null });
   }
   const scene = {
+    overrides: { read: () => undefined },
     get: (id: NodeId) => nodes.get(id),
     childrenOf: () => [],
     get roots() { return [...nodes.keys()].map(asNodeId); },

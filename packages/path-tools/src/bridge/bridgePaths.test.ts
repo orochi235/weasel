@@ -11,6 +11,7 @@ function setup(nodes: Record<string, { pose: unknown; data: unknown }>, selected
   const byId = new Map<string, StubNode>();
   for (const [id, n] of Object.entries(nodes)) byId.set(id, { id: asNodeId(id), kind: 'mark', layer: 'main', parent: null, ...n });
   const scene = {
+    overrides: { read: () => undefined },
     get: (id: NodeId) => byId.get(id),
     childrenOf: () => [],
     get roots() { return [...byId.keys()].map(asNodeId); },

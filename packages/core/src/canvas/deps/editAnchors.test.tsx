@@ -26,6 +26,7 @@ describe('useEditAnchorsDepSource', () => {
     ]);
     const scene = {
       layers: [{ id: 'default' }],
+      overrides: { read: () => undefined },
       renderOrder: () => ['poly'] as NodeId[],
       get: (id: NodeId) => nodes.get(id as string),
       update: updateMock,
@@ -72,6 +73,7 @@ describe('useEditAnchorsDepSource', () => {
   it('holds the handle locks, starting from the default lock and telling the registry when they change', () => {
     const scene = {
       layers: [{ id: 'default' }],
+      overrides: { read: () => undefined },
       renderOrder: () => [] as NodeId[],
       get: () => undefined,
       update: () => {},
@@ -106,6 +108,7 @@ describe('useEditAnchorsDepSource', () => {
   it('reads the handle locks live on a dep taken before they changed, as a drag holds the press\'s', () => {
     const scene = {
       layers: [{ id: 'default' }],
+      overrides: { read: () => undefined },
       renderOrder: () => [] as NodeId[],
       get: () => undefined,
       update: () => {},
@@ -139,6 +142,7 @@ describe('useEditAnchorsDepSource', () => {
     ]);
     const scene = {
       layers: [{ id: 'default' }],
+      overrides: { read: () => undefined },
       renderOrder: () => ['poly'] as NodeId[],
       get: (id: NodeId) => nodes.get(id as string),
       update: () => {},
@@ -172,6 +176,7 @@ describe('useEditAnchorsDepSource', () => {
       };
       const scene = {
         layers: [{ id: 'default' }],
+        overrides: { read: () => undefined },
         renderOrder: () => ['tri'] as NodeId[],
         get: (id: NodeId) => (id === 'tri' ? { id: 'tri', kind: 'mark', pose: path, data: null } : undefined),
         update: () => {},
@@ -223,6 +228,7 @@ describe('useEditAnchorsDepSource', () => {
   it('reads the edit as it stands when a held dep sets anchors or switches the edited node', () => {
     const scene = {
       layers: [{ id: 'default' }],
+      overrides: { read: () => undefined },
       renderOrder: () => [] as NodeId[],
       get: () => undefined,
       update: () => {},

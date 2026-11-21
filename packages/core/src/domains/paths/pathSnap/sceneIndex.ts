@@ -6,7 +6,7 @@ import {
 import type { Scene } from 'core/scene/types';
 import { isAnnotationLayer } from 'core/scene/annotation';
 import { nodeGates } from 'core/scene/nodeGates';
-import { nodeFramesOf, shownIn } from '../nodeFrame';
+import { drawnNodeOf, nodeFramesOf, shownIn } from '../nodeFrame';
 import type { SnapGeometry } from 'interactions/actions/snapDep';
 import { nodeSnapGeometry } from './snapGeometry';
 import { geometryGenerationOf } from 'canvas/nodeOutline';
@@ -22,18 +22,19 @@ export interface SceneSnapIndex {
 }
 
 /** Indexes every leaf of `scene` with geometry (`nodeSnapGeometry`), but
- *  hidden ones (`nodeGates`) and those on an annotation layer, once per scene
- *  version, and again when a query brings geometry of its own. The scene
+ *  hidden ones (`nodeGates`) and those on an annotation layer, each at the
+ *  pose it is drawn at, once per scene version and override write, and again when a query brings geometry of its own. The scene
  *  alone and the scene with the last `also` are cached apart, so a query
  *  without geometry does not evict a gesture's. */
 export function createSceneSnapIndexer(scene: SnapScene): (also?: SnapGeometry) => SceneSnapIndex {
   type Slot = {
-    version: number; shapes: number; geometry: number; layers: unknown;
+    version: number; overrides: number; shapes: number; geometry: number; layers: unknown;
     also: SnapGeometry | undefined; built: SceneSnapIndex;
   };
   const slots: { bare: Slot | null; also: Slot | null } = { bare: null, also: null };
   return (also) => {
     const version = scene.getVersion();
+    const overrides = scene.overrides.getGeneration();
     // An outline is a painter's silhouette, which the painter set and each painter's geometry
     // generation decide with no change to the scene.
     const shapes = nodeMemoGeneration(), geometry = geometryGenerationOf(nodeShapesOf(scene));
@@ -41,7 +42,8 @@ export function createSceneSnapIndexer(scene: SnapScene): (also?: SnapGeometry) 
     const key = also ? 'also' : 'bare';
     const cached = slots[key];
     if (
-      cached?.version === version && cached.shapes === shapes && cached.geometry === geometry
+      cached?.version === version && cached.overrides === overrides && cached.shapes === shapes
+      && cached.geometry === geometry
       && cached.layers === layers && cached.also === also
     ) return cached.built;
     const notes = new Set(layers.filter(isAnnotationLayer).map((l) => l.id));
@@ -53,7 +55,7 @@ export function createSceneSnapIndexer(scene: SnapScene): (also?: SnapGeometry) 
     const painters = nodeShapesOf(scene);
     for (const node of scene.nodes.values()) {
       if (node.kind !== 'mark' || notes.has(node.layer) || gates.hidden(node.id)) continue;
-      const g = nodeSnapGeometry(node, shownIn(frameOf(node), node).pose, painters);
+      const g = nodeSnapGeometry(node, shownIn(frameOf(node), drawnNodeOf(scene, node)).pose, painters);
       if (!g) continue;
       for (const p of g.points) extra.push({ ...p, paths: [paths.length] });
       ids.push(node.id);
@@ -66,7 +68,7 @@ export function createSceneSnapIndexer(scene: SnapScene): (also?: SnapGeometry) 
       paths.push({ kind: 'polygon', commands: new Uint8Array(), coords: new Float32Array(), fillRule: 'nonzero' });
     }
     const built = { ids, index: createPathSnapIndex(paths, extra) };
-    slots[key] = { version, shapes, geometry, layers, also, built };
+    slots[key] = { version, overrides, shapes, geometry, layers, also, built };
     return built;
   };
 }

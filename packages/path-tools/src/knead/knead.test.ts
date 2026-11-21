@@ -8,7 +8,11 @@ import { DEFAULT_KNEAD_RADIUS_PX, kneadAction } from './knead';
 /** One node storing its polygon as the pose, selected, at a view scale of `zoom`. */
 function setup(d: string, zoom = 1) {
   const node = { id: asNodeId('a'), kind: 'mark', layer: 'main', pose: pathFromD(d), data: {}, parent: null };
-  const scene = { get: (id: NodeId) => (id === node.id ? node : undefined), childrenOf: () => [] };
+  const scene = {
+    overrides: { read: () => undefined },
+    get: (id: NodeId) => (id === node.id ? node : undefined),
+    childrenOf: () => [],
+  };
   const selection = { get: () => ['a'], set: vi.fn() };
   const view = { get: () => ({ scale: { x: zoom, y: zoom } }) };
   const batches: Array<{ ops: Op[]; label: string }> = [];
@@ -69,6 +73,7 @@ describe('kneadAction', () => {
     const mk = (id: string) => ({ id: asNodeId(id), kind: 'mark', layer: 'main', pose: pathFromD('M0 0 H100 V100 H0 Z'), data: {}, parent: null });
     const nodes = [mk('free'), mk('locked'), mk('hidden')];
     const scene = {
+      overrides: { read: () => undefined },
       get: (id: NodeId) => nodes.find((n) => n.id === id),
       childrenOf: () => [],
       renderOrderNodes: () => nodes,
