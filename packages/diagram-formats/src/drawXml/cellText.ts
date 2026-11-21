@@ -4,9 +4,11 @@ import { decodeEntities } from '../graphRead';
 const OPEN = '\u0001';
 const CLOSE = '\u0002';
 
-/** HTML as text, where a break is a line break and a block starts and ends a line, as a browser lays it out. */
+/** HTML as text, where a break is a line break, a block starts and ends a line, and a run of whitespace is one space,
+ *  dropped at either end of a line, as a browser lays it out. */
 function htmlText(html: string): string {
   const marked = html
+    .replace(/[ \t\n\r\f]+/g, ' ')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<(div|p|li|h[1-6])\b[^>]*>/gi, OPEN)
     .replace(/<\/(div|p|li|h[1-6])\s*>/gi, CLOSE)
@@ -20,10 +22,10 @@ function htmlText(html: string): string {
       out += ch;
     }
   }
-  return decodeEntities(out);
+  return decodeEntities(out.replace(/ *\n */g, '\n').replace(/^ +| +$/g, ''));
 }
 
-/** `value` as lines. With `html`, tags are stripped, `<br>` and block elements break lines, and entities are decoded. Empty lines at either end are dropped. */
+/** `value` as lines. With `html`, tags are stripped, whitespace folds, `<br>` and block elements break lines, and entities are decoded. Empty lines at either end are dropped. */
 export function cellLines(value: string, html: boolean): string[] {
   const lines = (html ? htmlText(value) : value).replace(/\r\n?/g, '\n').replace(/ /g, ' ').split('\n');
   while (lines.length > 0 && lines[0]!.trim() === '') lines.shift();
