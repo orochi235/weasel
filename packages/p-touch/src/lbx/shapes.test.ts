@@ -66,6 +66,14 @@ describe('text boxes', () => {
   const written = async (cmd: DrawCommand) =>
     (await lbxConfig({ length: 144, tape, commands: [cmd] })).config.objects[0] as TextObject | undefined;
 
+  it('aligns a justified box\'s unspread lines by its align, rasterizing it where P-touch would set them at the left', async () => {
+    expect((await written(box({ justify: true, align: 'left' })))?.horizontalAlignment).toBe('JUSTIFY');
+    expect((await written(box({ justify: true, align: 'justify' })))?.horizontalAlignment).toBe('JUSTIFY');
+    expect(await written(box({ justify: true, align: 'center' }))).toBeUndefined();
+    expect(await written(box({ justify: true, style: { align: 'right' } }))).toBeUndefined();
+    expect((await written(box({ justify: true, align: 'center', maxWidth: Infinity })))?.horizontalAlignment).toBe('CENTER');
+  });
+
   it('turns auto line feed on only for a box that wraps', async () => {
     expect((await written(box()))?.autoLF).toBe(true);
     expect((await written(box({ maxWidth: Infinity })))?.autoLF).toBe(false);

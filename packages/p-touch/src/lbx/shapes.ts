@@ -173,7 +173,10 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
   // Only text the canvas lays out left to right is an object: `start` and `end` map to LEFT and RIGHT.
   const direction = cmd.direction ?? cmd.style.direction ?? 'auto';
   if (data.split('\n').some((line) => paragraphDirection(line, direction) === 'rtl')) return undefined;
-  const align = cmd.justify ? 'justify' : (cmd.align ?? cmd.style.align ?? 'left');
+  const align = cmd.align ?? cmd.style.align ?? DEFAULT_TEXT_STYLE.align;
+  // The canvas sets a line it does not spread by `align`; P-touch sets a justified box's at the left.
+  const spreads = (cmd.justify || align === 'justify') && Number.isFinite(cmd.maxWidth);
+  if (spreads && H_ALIGN[align] !== 'LEFT' && align !== 'justify') return undefined;
   return {
     type: 'text',
     position: { x: cmd.x * map.sx + map.tx, y: cmd.y * map.sy + map.ty, width: boxWidth * scale, height: cmd.height * scale },
@@ -182,7 +185,7 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
     control: 'FIXEDFRAME',
     shrink: false,
     autoLF: Number.isFinite(cmd.maxWidth),
-    horizontalAlignment: H_ALIGN[align] ?? 'LEFT',
+    horizontalAlignment: spreads ? 'JUSTIFY' : (H_ALIGN[align === 'justify' ? 'left' : align] ?? 'LEFT'),
     verticalAlignment: V_ALIGN[cmd.verticalAlign ?? 'top'] ?? 'TOP',
     data,
   };
