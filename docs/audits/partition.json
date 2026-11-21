@@ -6289,7 +6289,9 @@
    "packages/ui/src/icons.gen.ts",
    "packages/ui/src/icons.table.ts",
    "packages/ui/src/index.ts",
+   "packages/ui/src/isRendered.ts",
    "packages/ui/src/kitSettings.ts",
+   "packages/ui/src/measureContext.ts",
    "packages/ui/src/nativeProps.ts",
    "packages/ui/src/nodeText.ts",
    "packages/ui/src/optionKey.ts",
@@ -6867,6 +6869,7 @@
    "packages/ui/src/components/PanelCells/panelSource.ts",
    "packages/ui/src/components/PanelCells/renderContext.ts",
    "packages/ui/src/components/PanelCells/renderLeaf.tsx",
+   "packages/ui/src/components/PanelCells/sameMeaning.ts",
    "packages/ui/src/components/PanelCells/selection.tsx"
   ]
  },
@@ -7275,6 +7278,7 @@
  {
   "id": "ui.components.part10",
   "files": [
+   "packages/ui/src/components/ToolPalette/ToolPalette.stories.tsx",
    "packages/ui/src/components/ToolPalette/ToolPalette.tsx",
    "packages/ui/src/components/ToolPalette/index.ts",
    "packages/ui/src/components/ToolPalette/order.ts",
@@ -7704,6 +7708,7 @@
    "packages/ui/src/components/TokenField/TokenField.stories.tsx",
    "packages/ui/src/components/TokenField/TokenField.tsx",
    "packages/ui/src/components/TokenField/index.ts",
+   "packages/ui/src/components/TokenField/tokenDraft.ts",
    "packages/ui/src/components/TokenField/tokenDrag.ts",
    "packages/ui/src/components/TokenField/tokenFocus.ts",
    "packages/ui/src/components/ToolGroup/ToolGroup.module.css",
@@ -7718,8 +7723,7 @@
    "packages/ui/src/components/ToolOptionsBar/ToolOptionsBar.tsx",
    "packages/ui/src/components/ToolOptionsBar/index.ts",
    "packages/ui/src/components/ToolPalette/ToolPalette.module.css",
-   "packages/ui/src/components/ToolPalette/ToolPalette.stories.module.css",
-   "packages/ui/src/components/ToolPalette/ToolPalette.stories.tsx"
+   "packages/ui/src/components/ToolPalette/ToolPalette.stories.module.css"
   ]
  },
  {

@@ -1,0 +1,81 @@
+{
+ "id": "quantity",
+ "commit": "49e5a07e6aecc7037a5e3692706cf28dd58211c4",
+ "date": "2026-11-21",
+ "files": [
+  "packages/quantity/src/catalog.ts",
+  "packages/quantity/src/composite.ts",
+  "packages/quantity/src/endless.ts",
+  "packages/quantity/src/fieldLocale.ts",
+  "packages/quantity/src/index.ts",
+  "packages/quantity/src/infinity.ts",
+  "packages/quantity/src/kind.ts",
+  "packages/quantity/src/kinds/measure.ts",
+  "packages/quantity/src/kinds/numeral.ts",
+  "packages/quantity/src/kinds/plain.ts",
+  "packages/quantity/src/kinds/proportion.ts",
+  "packages/quantity/src/kinds/scientific.ts",
+  "packages/quantity/src/localized.ts",
+  "packages/quantity/src/number.ts",
+  "packages/quantity/src/pbt.fixture.ts",
+  "packages/quantity/src/places.ts",
+  "packages/quantity/src/present.ts",
+  "packages/quantity/src/quantity.ts",
+  "packages/quantity/src/scaleBar.ts",
+  "packages/quantity/src/scope.ts",
+  "packages/quantity/src/spin.ts",
+  "packages/quantity/src/unitExpr.ts",
+  "packages/quantity/src/units.ts"
+ ],
+ "a": 8,
+ "b": 6,
+ "m": 5,
+ "distinct": 9,
+ "chapman": 9.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 23,
+  "B": 23
+ },
+ "newCode": {
+  "since": 54,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 54,
+  "chapman": 20,
+  "unfound": 8
+ },
+ "patches": 12,
+ "verify": {
+  "ok": true,
+  "files": 27,
+  "testFiles": {
+   "failed": 0,
+   "passed": 5915,
+   "total": 5915
+  },
+  "gui": true,
+  "repairs": 2
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 28.9,
+   "B": 12.6,
+   "match": 0.2,
+   "fix": 58.1,
+   "repair": 27.8
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2658504,
+  "costUsd": 8.22
+ },
+ "fixCommits": []
+}

@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   4,
+   0
+  ]
+ ],
+ "a": [
+  "The Scene tab recurses forever when a node is moved under one of its own children while that child's level is out of date",
+  "The trace views read serialized records as raw `DispatchRecord`s, so expanding a record over the serializer's 100-item cap crashes",
+  "The Frame tab throws on a canvas with more than 100 render layers",
+  "The History tab's Age column stops counting between history notices",
+  "The coord table's Scale column drops `scaleY` and the view's offset, though the file says it shows the camera",
+  "One expanded trace row names the same key three different ways"
+ ],
+ "b": [
+  "CoordTable shows only the view's horizontal scale, so a non-uniform view's conversion cannot be read",
+  "FrameView keeps the last frame across an fps off/on toggle and shows it as the current paint",
+  "FrameView drops a get-state error and shows the \"fps overlay is off\" note in its place",
+  "Dispatch tab's Clear leaves the coord table full, and is disabled when only coord rows exist",
+  "The ranked and matched tables show a blank Route for a binding with no route form, where Bindings shows its spec",
+  "Each trace notice queues one more serial read, so reads can back up behind a slow transport"
+ ]
+}

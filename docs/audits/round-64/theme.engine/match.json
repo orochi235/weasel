@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   4,
+   0
+  ]
+ ],
+ "a": [
+  "Generated `themes.ts` fails to typecheck whenever any theme or selection lacks a token another one has",
+  "A pin over a component drops the component's `scope` but keeps its type and description",
+  "Duplicate step names are accepted and produce a ramp that collides with itself",
+  "A `ref` semantic looks its target up for its type even when the target is pinned, so a cycle the pin breaks still throws",
+  "`axisDependencies` lists step tokens that `derive` rejects and never produces",
+  "A categorical ramp's anchor `name` is required and validated, then dropped; nothing ties an anchor to a step"
+ ],
+ "b": [
+  "Step names given as `{seeds.name}` are settled by derive but read raw everywhere else, so deps, merge and bake name tokens that do not exist",
+  "Semantic rules measure a pin or component that derive then rejects as malformed",
+  "An `away` offset rule gets no dependency on the step it lands on",
+  "A semantic's color follows a component, but its ramp position does not"
+ ]
+}

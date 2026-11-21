@@ -1,0 +1,16 @@
+{
+ "pairs": [],
+ "a": [
+  "InlineRange's Escape cancels a drag but lets the same Escape close the popover or dialog it sits in",
+  "A range held (disabled or read-only) mid-drag still commits the drag on release",
+  "iconFromData throws in development on a value JSON can't stringify, where it promises to read it as none",
+  "ItemList draws `—` for `empty={null}` while its measure reads an empty string",
+  "useFloatingPlacement shows a stale dropped position again when `placement` returns to the object a drag started from"
+ ],
+ "b": [
+  "InlineRange's accent fill runs over the padding box, so its edge does not meet the thumb",
+  "A held InlineRange is a controlled input with no change handler, so React warns on every mount",
+  "`***x***` parses as bold `*x` followed by a stray asterisk",
+  "The Lines foundation story lays its captions in a third cell of a two-column grid, so each one wraps under the token name"
+ ]
+}

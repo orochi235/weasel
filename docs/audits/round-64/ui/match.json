@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   4
+  ],
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "walkControls takes Left/Right away from a text input, select or range in a row's control cell",
+  "useScrollSpy drops a clicked section in a container that does not scroll, or one that cannot reach the top",
+  "The roving and row-focus hooks read the global `document`'s focus, not their container's document",
+  "useRovingTabIndex keeps the tab stop on an item hidden by a class or style change"
+ ],
+ "b": [
+  "walkControls takes over Left and Right inside a text input (or any control that uses arrows) in a row's control cell",
+  "useRovingTabIndex keeps the tab stop on an item that a class or style change has hidden",
+  "createDomFocusScope never lets Tab land on an `<area href>`, though its selector lists it",
+  "moveFocus from a focused element outside the tab order jumps to a positive-tabindex item instead of the next one in the document",
+  "useRemovedRowFocus reads focus from the element's own document in one place and the global `document` in another"
+ ]
+}

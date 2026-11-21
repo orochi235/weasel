@@ -1,0 +1,101 @@
+{
+ "id": "ui.components.Properties.part2",
+ "commit": "49e5a07e6aecc7037a5e3692706cf28dd58211c4",
+ "date": "2026-11-21",
+ "files": [
+  "packages/ui/src/components/Properties/PropertyPanel.tsx",
+  "packages/ui/src/components/Properties/PropertyReadout.module.css",
+  "packages/ui/src/components/Properties/PropertyReadout.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyReadout.tsx",
+  "packages/ui/src/components/Properties/PropertyRow.auto.css",
+  "packages/ui/src/components/Properties/PropertyRow.css",
+  "packages/ui/src/components/Properties/PropertyRow.fit.css",
+  "packages/ui/src/components/Properties/PropertyRow.inline.css",
+  "packages/ui/src/components/Properties/PropertyRow.message.css",
+  "packages/ui/src/components/Properties/PropertyRow.stories.module.css",
+  "packages/ui/src/components/Properties/PropertyRow.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyRow.tsx",
+  "packages/ui/src/components/Properties/PropertyRow.variants.css",
+  "packages/ui/src/components/Properties/ResetControl.css",
+  "packages/ui/src/components/Properties/ResetControl.tsx",
+  "packages/ui/src/components/Properties/RowScope.stories.tsx",
+  "packages/ui/src/components/Properties/Subpanel.css",
+  "packages/ui/src/components/Properties/Subpanel.stance.css",
+  "packages/ui/src/components/Properties/Subpanel.stories.module.css",
+  "packages/ui/src/components/Properties/Subpanel.stories.tsx",
+  "packages/ui/src/components/Properties/Subpanel.tsx",
+  "packages/ui/src/components/Properties/collapse.ts",
+  "packages/ui/src/components/Properties/family.css",
+  "packages/ui/src/components/Properties/fieldControls.tsx",
+  "packages/ui/src/components/Properties/fieldTypes.ts",
+  "packages/ui/src/components/Properties/index.ts",
+  "packages/ui/src/components/Properties/layouts.story.module.css",
+  "packages/ui/src/components/Properties/layouts.story.tsx",
+  "packages/ui/src/components/Properties/metrics.ts",
+  "packages/ui/src/components/Properties/nameOf.ts",
+  "packages/ui/src/components/Properties/rowHelp.ts",
+  "packages/ui/src/components/Properties/rowScope.tsx",
+  "packages/ui/src/components/Properties/sliderScale.ts",
+  "packages/ui/src/components/Properties/sliderStops.ts",
+  "packages/ui/src/components/Properties/unitAttach.css",
+  "packages/ui/src/components/Properties/unitSuffix.tsx"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 2,
+ "distinct": 6,
+ "chapman": 7.3,
+ "unfound": 1.3,
+ "read": {
+  "A": 36,
+  "B": 36
+ },
+ "newCode": {
+  "since": 59,
+  "changedFiles": 1,
+  "findings": 0
+ },
+ "previous": {
+  "round": 59,
+  "chapman": 17.7,
+  "unfound": 6.7
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 24,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1071,
+   "total": 1071
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.5,
+   "B": 9.5,
+   "match": 0.1,
+   "fix": 58.3
+  },
+  "nodes": {
+   "A": "orochi",
+   "B": "orochi",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2509688,
+  "costUsd": 7.2
+ },
+ "fixCommits": [
+  "9f8982edbfbbb49aa46d727103e6e1734b55aae7",
+  "f05f7d35380169f7e515c6bb5ad83a667019aaa4",
+  "fe8181eaf5750f23a26381d610369d4174e454f5",
+  "d74c8039a4cb5d427580a441635db3b8e882e0d0",
+  "e332e0984d637f0d127c3830edb316f1de87c091",
+  "f073254314055ac7af7b57401852cb71c1825e8e",
+  "3b2d8c8fb515f9f12a7fec1010af58ba1579d81f"
+ ]
+}

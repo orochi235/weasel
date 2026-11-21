@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "The 16px end padding added to a menu label also lands on every menu-bar title, pushing its text off center",
+  "AccessLabel underlines by grapheme cluster, but an access letter is one code point, so a letter that ends up inside a multi-code-point cluster is never underlined",
+  "A panel is placed once at mount and never again, so it overflows the viewport when its content later widens"
+ ],
+ "b": [
+  "A panel is placed and sized once, when it mounts, so a row that grows while the menu is open pushes it past the viewport and leaves the controller's panel rect stale",
+  "A text row's typed draft is lost when the menu closes any way other than through useDismiss",
+  "A trigger menu opened silently leaves focus on the body when it is dismissed while one of its fields has focus"
+ ]
+}

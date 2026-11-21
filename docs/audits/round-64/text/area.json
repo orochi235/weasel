@@ -1,0 +1,93 @@
+{
+ "id": "text",
+ "commit": "49e5a07e6aecc7037a5e3692706cf28dd58211c4",
+ "date": "2026-11-21",
+ "files": [
+  "packages/text/src/bakeTextFit.ts",
+  "packages/text/src/fitBoxToText.ts",
+  "packages/text/src/glyphOutlines.ts",
+  "packages/text/src/glyphTurn.ts",
+  "packages/text/src/hitTest.ts",
+  "packages/text/src/index.ts",
+  "packages/text/src/isTextData.ts",
+  "packages/text/src/joiningRuns.ts",
+  "packages/text/src/joiningTypes.gen.ts",
+  "packages/text/src/markdownRenderer.ts",
+  "packages/text/src/markdownText.ts",
+  "packages/text/src/measure/graphemes.ts",
+  "packages/text/src/measure/lineBoxes.ts",
+  "packages/text/src/measure/measureText.ts",
+  "packages/text/src/measure/measureTextBounds.ts",
+  "packages/text/src/measure/verticalAlign.ts",
+  "packages/text/src/pbt.fixture.ts",
+  "packages/text/src/pose.ts",
+  "packages/text/src/renderLabel.ts",
+  "packages/text/src/runs.ts",
+  "packages/text/src/runs/codePointCuts.ts",
+  "packages/text/src/runs/delimiterRuns.ts",
+  "packages/text/src/runs/effectiveRangeStyle.ts",
+  "packages/text/src/runs/flagRange.ts",
+  "packages/text/src/runs/rangeStyle.ts",
+  "packages/text/src/runs/resolveRuns.ts",
+  "packages/text/src/runs/smallCaps.ts",
+  "packages/text/src/runs/textTransform.ts",
+  "packages/text/src/syntheticBold.ts",
+  "packages/text/src/syntheticItalic.ts",
+  "packages/text/src/test-seams.ts",
+  "packages/text/src/textClusters.ts",
+  "packages/text/src/textStyle.ts",
+  "packages/text/src/textToPath.ts",
+  "packages/text/src/visualGraphemes.ts"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 9,
+ "unfound": 3,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "newCode": {
+  "since": 55,
+  "changedFiles": 3,
+  "findings": 0
+ },
+ "previous": {
+  "round": 55,
+  "chapman": 17.7,
+  "unfound": 6.7
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 25,
+  "testFiles": {
+   "failed": 0,
+   "passed": 5916,
+   "total": 5916
+  },
+  "gui": true,
+  "repairs": 2
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 30.6,
+   "B": 8.5,
+   "match": 0.1,
+   "fix": 44,
+   "repair": 18.5
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 2602556,
+  "costUsd": 10.37
+ },
+ "fixCommits": []
+}

@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   1,
+   3
+  ]
+ ],
+ "a": [
+  "Applying a theme with no `header` leaves the previous theme's header band color in place",
+  "setThemeValue writes values the theme checker rejects, and the document then silently draws in `night`",
+  "Applying a theme keeps the old theme's connector markers and trim, which building in the theme would set"
+ ],
+ "b": [
+  "Applying any theme removes the dash a diagram type gives its connectors, so a requirement diagram's dashed relationships turn solid",
+  "Applying a theme recolors a container or pool that names a theme role in the plain container colors",
+  "When a theme changes an off-page tag's font size or family, the tag's box keeps its old size",
+  "`setThemeValue` accepts values that `diagramThemeErrors` rejects, and the document then quietly redraws in `night`",
+  "Applying a theme adds a fill to lanes, which building never gives them"
+ ]
+}

@@ -1,0 +1,106 @@
+{
+ "id": "devtools.views",
+ "commit": "49e5a07e6aecc7037a5e3692706cf28dd58211c4",
+ "date": "2026-11-21",
+ "files": [
+  "packages/devtools/src/views/Bindings.tsx",
+  "packages/devtools/src/views/CoordTable.tsx",
+  "packages/devtools/src/views/DecisionPath.tsx",
+  "packages/devtools/src/views/DispatchView.module.css",
+  "packages/devtools/src/views/DispatchView.tsx",
+  "packages/devtools/src/views/FallthroughDiagram.fixtures.ts",
+  "packages/devtools/src/views/FallthroughDiagram.module.css",
+  "packages/devtools/src/views/FallthroughDiagram.stories.tsx",
+  "packages/devtools/src/views/FallthroughDiagram.tsx",
+  "packages/devtools/src/views/FrameView.module.css",
+  "packages/devtools/src/views/FrameView.tsx",
+  "packages/devtools/src/views/GestureRoute.module.css",
+  "packages/devtools/src/views/GestureRoute.stories.module.css",
+  "packages/devtools/src/views/GestureRoute.stories.tsx",
+  "packages/devtools/src/views/GestureRoute.tsx",
+  "packages/devtools/src/views/HistoryTable.tsx",
+  "packages/devtools/src/views/HistoryView.module.css",
+  "packages/devtools/src/views/HistoryView.tsx",
+  "packages/devtools/src/views/NodeDetail.tsx",
+  "packages/devtools/src/views/RegistryBrowser.module.css",
+  "packages/devtools/src/views/RegistryBrowser.tsx",
+  "packages/devtools/src/views/RegistryEntryDetail.tsx",
+  "packages/devtools/src/views/RegistryView.module.css",
+  "packages/devtools/src/views/RegistryView.tsx",
+  "packages/devtools/src/views/SceneView.module.css",
+  "packages/devtools/src/views/SceneView.tsx",
+  "packages/devtools/src/views/StateView.module.css",
+  "packages/devtools/src/views/StateView.tsx",
+  "packages/devtools/src/views/TraceTable.module.css",
+  "packages/devtools/src/views/TraceTable.tsx",
+  "packages/devtools/src/views/ValueView.module.css",
+  "packages/devtools/src/views/ValueView.tsx",
+  "packages/devtools/src/views/formatAge.ts",
+  "packages/devtools/src/views/keyName.ts",
+  "packages/devtools/src/views/note.module.css",
+  "packages/devtools/src/views/sequenced.ts",
+  "packages/devtools/src/views/useSceneTree.ts"
+ ],
+ "a": 6,
+ "b": 6,
+ "m": 1,
+ "distinct": 11,
+ "chapman": 23.5,
+ "unfound": 12.5,
+ "read": {
+  "A": 37,
+  "B": 37
+ },
+ "newCode": {
+  "since": 45,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 45,
+  "chapman": 17,
+  "unfound": 7
+ },
+ "patches": 11,
+ "verify": {
+  "ok": true,
+  "files": 30,
+  "testFiles": {
+   "failed": 0,
+   "passed": 578,
+   "total": 578
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 29.2,
+   "B": 5.3,
+   "match": 0.2,
+   "fix": 48.7
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "studio"
+  },
+  "weightedTokens": 2490883,
+  "costUsd": 7.18
+ },
+ "fixCommits": [
+  "b894afef104933c163422d0c36957f6b4de08df6",
+  "6abb71506b4494b2ce0e5ccadc7977861d11e18a",
+  "2ccc0cbec23c16268b6ef3753cbe3c184141ba7d",
+  "83e66da4e98618c93eebd9ac133a399c7e78f75b",
+  "aac74be3663771faff69fedbb9e1a69adea3dd6f",
+  "e5a44000434b49cf29601a535c52b8b6ac68e3c0",
+  "da249f58c9c96882a6bdeb2706767bb2b1632819",
+  "ef1da0dd90c6a665231925e8149e5f9e955945e0",
+  "4f18b1824e7b3b570a9f16616ffcc2d027531b10",
+  "efd57b0beb7f9ef6fe27f9a069fc5429dc34610e",
+  "6b0d6b444a9e15f26cd0d4d6e29a2975375ace85"
+ ]
+}

@@ -1,0 +1,103 @@
+{
+ "id": "svg.part1",
+ "commit": "49e5a07e6aecc7037a5e3692706cf28dd58211c4",
+ "date": "2026-11-21",
+ "files": [
+  "packages/svg/src/__fixtures__/fixtures.ts",
+  "packages/svg/src/absoluteUnits.ts",
+  "packages/svg/src/alignedTextStroke.ts",
+  "packages/svg/src/bakeTransforms.ts",
+  "packages/svg/src/bitmapHref.ts",
+  "packages/svg/src/booleanGroup.ts",
+  "packages/svg/src/cascade.ts",
+  "packages/svg/src/color.ts",
+  "packages/svg/src/condition.ts",
+  "packages/svg/src/conditional.ts",
+  "packages/svg/src/container.ts",
+  "packages/svg/src/cssScan.ts",
+  "packages/svg/src/draftPose.ts",
+  "packages/svg/src/draftSpecs.ts",
+  "packages/svg/src/draftTakes.ts",
+  "packages/svg/src/elements.ts",
+  "packages/svg/src/fadePaint.ts",
+  "packages/svg/src/fillPaint.ts",
+  "packages/svg/src/fontSize.ts",
+  "packages/svg/src/framedText.ts",
+  "packages/svg/src/fromKit.ts",
+  "packages/svg/src/glyphRises.ts",
+  "packages/svg/src/glyphShifts.ts",
+  "packages/svg/src/glyphTurns.ts",
+  "packages/svg/src/gradientStops.ts",
+  "packages/svg/src/gradients.ts",
+  "packages/svg/src/groupBox.ts",
+  "packages/svg/src/groupPaint.ts",
+  "packages/svg/src/groupPaintXml.ts",
+  "packages/svg/src/hugeStrokeBounds.bench.ts",
+  "packages/svg/src/index.ts",
+  "packages/svg/src/kitInherits.ts",
+  "packages/svg/src/kitPaint.ts",
+  "packages/svg/src/laidLines.ts",
+  "packages/svg/src/lengths.ts",
+  "packages/svg/src/lowerLeaf.ts",
+  "packages/svg/src/markerDefs.ts",
+  "packages/svg/src/media.ts",
+  "packages/svg/src/metaXml.ts",
+  "packages/svg/src/metricScale.ts",
+  "packages/svg/src/openSubpathFill.ts",
+  "packages/svg/src/paintServers.ts",
+  "packages/svg/src/paintThroughMatrix.ts",
+  "packages/svg/src/painterLeaf.ts",
+  "packages/svg/src/parse.ts"
+ ],
+ "a": 8,
+ "b": 7,
+ "m": 2,
+ "distinct": 13,
+ "chapman": 23,
+ "unfound": 10,
+ "read": {
+  "A": 45,
+  "B": 45
+ },
+ "newCode": {
+  "since": 55,
+  "changedFiles": 1,
+  "findings": 0
+ },
+ "previous": {
+  "round": 55,
+  "chapman": 22.3,
+  "unfound": 9.3
+ },
+ "patches": 20,
+ "verify": {
+  "ok": true,
+  "files": 50,
+  "testFiles": {
+   "failed": 0,
+   "passed": 5915,
+   "total": 5915
+  },
+  "gui": true,
+  "repairs": 2
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9,
+   "B": 6.3,
+   "match": 1.4,
+   "fix": 83.8,
+   "repair": 39.9
+  },
+  "nodes": {
+   "A": "orochi",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 6103187,
+  "costUsd": 16.81
+ },
+ "fixCommits": []
+}

@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "transformRunTexts goes quadratic in paragraph length whenever a contextual case mapping changes length",
+  "joiningRuns reads the Cf code points that ArabicShaping.txt lists as U (non-joining) as transparent, so it joins letters across them",
+  "layoutCanvasRuns synthesizes small caps for a face with its own smcp glyphs, unlike resolveRuns"
+ ],
+ "b": [
+  "The canvas markdown layout synthesizes small caps for a face that has its own, where the GL tier and the DOM overlay draw the face's `smcp` capitals",
+  "`markdownToRuns` reads an unpaired delimiter as a toggle, which deletes the character and styles the rest of the text",
+  "A run grammar whose delimiter is a backslash is accepted, but the reader's escape handling eats it",
+  "`registerPropertyFont` replaces `global.fetch` and `global.createImageBitmap` and never restores them"
+ ]
+}

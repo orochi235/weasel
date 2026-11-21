@@ -1,0 +1,98 @@
+{
+ "id": "theme.engine",
+ "commit": "49e5a07e6aecc7037a5e3692706cf28dd58211c4",
+ "date": "2026-11-21",
+ "files": [
+  "packages/theme/src/engine/axisIssues.ts",
+  "packages/theme/src/engine/bake.ts",
+  "packages/theme/src/engine/color/generate.ts",
+  "packages/theme/src/engine/color/hueNames.ts",
+  "packages/theme/src/engine/color/hueSearch.ts",
+  "packages/theme/src/engine/color/oklch.ts",
+  "packages/theme/src/engine/color/paletteStats.ts",
+  "packages/theme/src/engine/color/placement.ts",
+  "packages/theme/src/engine/definition.fixture.ts",
+  "packages/theme/src/engine/deps.ts",
+  "packages/theme/src/engine/derive.ts",
+  "packages/theme/src/engine/emit/css.ts",
+  "packages/theme/src/engine/emit/dtcg.ts",
+  "packages/theme/src/engine/emit/e.tokens.css",
+  "packages/theme/src/engine/emit/manifest.ts",
+  "packages/theme/src/engine/emit/themes.ts",
+  "packages/theme/src/engine/emit/tokens.ts",
+  "packages/theme/src/engine/entries.ts",
+  "packages/theme/src/engine/merge.ts",
+  "packages/theme/src/engine/pinValues.ts",
+  "packages/theme/src/engine/ramps.ts",
+  "packages/theme/src/engine/references.ts",
+  "packages/theme/src/engine/ruleShape.ts",
+  "packages/theme/src/engine/safeNames.ts",
+  "packages/theme/src/engine/scales.ts",
+  "packages/theme/src/engine/semantics.ts",
+  "packages/theme/src/engine/steps.ts",
+  "packages/theme/src/engine/tokenSink.ts",
+  "packages/theme/src/engine/types.ts"
+ ],
+ "a": 6,
+ "b": 4,
+ "m": 1,
+ "distinct": 9,
+ "chapman": 16.5,
+ "unfound": 7.5,
+ "read": {
+  "A": 29,
+  "B": 29
+ },
+ "newCode": {
+  "since": 60,
+  "changedFiles": 1,
+  "findings": 0
+ },
+ "previous": {
+  "round": 60,
+  "chapman": 17.7,
+  "unfound": 6.7
+ },
+ "patches": 10,
+ "carried": 6,
+ "verify": {
+  "ok": true,
+  "files": 38,
+  "testFiles": {
+   "failed": 0,
+   "passed": 84,
+   "total": 84
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.9,
+   "B": 9.9,
+   "match": 17.4,
+   "fix": 76.8
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "teitou"
+  },
+  "weightedTokens": 3429730,
+  "costUsd": 9.93
+ },
+ "fixCommits": [
+  "4f8619b9a57dd6fad28fa5dd33d28f104861c7ec",
+  "b48a61819b75ecd15b3493b2dc6e61e89aa83f29",
+  "206f77c054963df4eee953c74792871736bcd8b1",
+  "0315c534f1b8ad70609ae0edfb0a6917fefca9b9",
+  "e34dfcc4856c02aaf16886c3179259f531127152",
+  "75518d4c6600ca7ad72208682fddba9372668a8e",
+  "e246e434517f2f0530a96af836c004e127b8b76f",
+  "592ccf8f0ece730f59d3a2c853be59188aa117a4",
+  "189f069da8a15d44d1b55d64dba579c651da004e",
+  "2165b782fd0e97645a8bd66c7f992477a3683b70"
+ ]
+}

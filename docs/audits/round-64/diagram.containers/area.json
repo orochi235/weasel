@@ -1,0 +1,70 @@
+{
+ "id": "diagram.containers",
+ "commit": "49e5a07e6aecc7037a5e3692706cf28dd58211c4",
+ "date": "2026-11-21",
+ "files": [
+  "packages/diagram/src/containers/canDropInto.ts",
+  "packages/diagram/src/containers/containerActions.ts",
+  "packages/diagram/src/containers/containerLayout.ts",
+  "packages/diagram/src/containers/containerStencils.ts",
+  "packages/diagram/src/containers/containerTitle.ts",
+  "packages/diagram/src/containers/index.ts",
+  "packages/diagram/src/containers/laneBoundaryLayer.ts",
+  "packages/diagram/src/containers/laneStack.ts",
+  "packages/diagram/src/containers/layouts.ts",
+  "packages/diagram/src/containers/regionSpecs.ts",
+  "packages/diagram/src/containers/titlePose.ts",
+  "packages/diagram/src/containers/trait.ts"
+ ],
+ "a": 8,
+ "b": 6,
+ "m": 1,
+ "distinct": 13,
+ "chapman": 30.5,
+ "unfound": 17.5,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 46,
+  "changedFiles": 1,
+  "findings": 1
+ },
+ "previous": {
+  "round": 46,
+  "chapman": 19,
+  "unfound": 9
+ },
+ "patches": 14,
+ "verify": {
+  "ok": true,
+  "files": 31,
+  "testFiles": {
+   "failed": 0,
+   "passed": 5914,
+   "total": 5914
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.6,
+   "B": 3.9,
+   "match": 0.2,
+   "fix": 43.1,
+   "repair": 100.4
+  },
+  "nodes": {
+   "A": "orochi",
+   "B": "orochi",
+   "fix": "studio"
+  },
+  "weightedTokens": 2691998,
+  "costUsd": 11.22
+ },
+ "fixCommits": []
+}

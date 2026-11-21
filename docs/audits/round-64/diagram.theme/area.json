@@ -1,0 +1,71 @@
+{
+ "id": "diagram.theme",
+ "commit": "49e5a07e6aecc7037a5e3692706cf28dd58211c4",
+ "date": "2026-11-21",
+ "files": [
+  "packages/diagram/src/theme/applyTheme.ts",
+  "packages/diagram/src/theme/fromTokens.ts",
+  "packages/diagram/src/theme/resolve.ts",
+  "packages/diagram/src/theme/styleField.ts",
+  "packages/diagram/src/theme/themeEdit.ts",
+  "packages/diagram/src/theme/themeFile.ts",
+  "packages/diagram/src/theme/themeFixture.ts",
+  "packages/diagram/src/theme/themeWrites.ts",
+  "packages/diagram/src/theme/themes.ts",
+  "packages/diagram/src/theme/types.ts"
+ ],
+ "a": 3,
+ "b": 5,
+ "m": 1,
+ "distinct": 7,
+ "chapman": 11,
+ "unfound": 4,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "newCode": {
+  "since": 47,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 47,
+  "chapman": 19,
+  "unfound": 9
+ },
+ "patches": 9,
+ "verify": {
+  "ok": false,
+  "why": "1 of 5275 test files failed",
+  "files": 33,
+  "testFiles": {
+   "failed": 1,
+   "passed": 5274,
+   "total": 5275
+  },
+  "failedFiles": [
+   "packages/forge/src/frame/index/startIndex.test.tsx"
+  ],
+  "repairs": 2
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 24.3,
+   "B": 6.8,
+   "match": 0.2,
+   "fix": 65.5,
+   "repair": 57.6
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1851439,
+  "costUsd": 10.46
+ },
+ "fixCommits": []
+}

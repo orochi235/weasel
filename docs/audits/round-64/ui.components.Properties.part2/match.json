@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A read-only number field shows its value rounded to `step`, where the editable field shows every decimal",
+  "A read-only boolean with no value reads \"—\", where the field's own contract and control read it as off",
+  "Holding Space or Enter on a row's auto toggle flips the row between pinned and auto on every key repeat",
+  "A boolean `toggle` field in a row whose label is not a string draws an empty segment"
+ ],
+ "b": [
+  "A read-only typed number field rounds its value to whole numbers, while the editable field shows full precision",
+  "A read-only boolean with no value reads \"—\", while the field type and the editable control treat it as off",
+  "A validation message that wraps marks an inline row multiline, which changes how its label and control align",
+  "`readout={false}` or `hint={false}` draws an empty readout or hint box, and shifts an inline slider row's layout"
+ ]
+}

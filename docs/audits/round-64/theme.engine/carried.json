@@ -1,0 +1,64 @@
+{
+ "findings": [
+  {
+   "id": "r56-2",
+   "claim": "A child's by-axis pin brings back the parent's pin at the axis values it leaves out, even on a step the child generates itself",
+   "where": "packages/theme/src/engine/merge.ts:42-47 (mergeChain) with packages/theme/src/engine/merge.ts:21 (fillFromParent)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-5",
+   "claim": "`feasible` describes the palette before equalization, so the returned swatches can break the gates it vouches for",
+   "where": "packages/theme/src/engine/color/generate.ts:172-187 (generate)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-6",
+   "claim": "`order: 'hue'` sorts anchors by their raw hue, so an anchor given as -30° or 400° lands at the wrong place in the ring",
+   "where": "packages/theme/src/engine/color/generate.ts:181,192 (generate)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-7",
+   "claim": "A token that depends on two axes is declared only in blocks naming both, so setting one axis attribute leaves it at `:root`'s value",
+   "where": "packages/theme/src/engine/emit/css.ts:110-128 (blocks) and :201-213 (emitCss, default plan)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-8",
+   "claim": "A token only a non-default theme declares is never reset, so a nested theme subtree inherits it from the outer theme",
+   "where": "packages/theme/src/engine/emit/css.ts:161-172,196-199 (emitCss: `redeclared`, `reset`, each plan's `names`)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-11",
+   "claim": "`derive` reads a dotted reference whole while every other reader strips its group, so `{color.accent}` throws in derive and resolves everywhere else",
+   "where": "packages/theme/src/engine/references.ts:5-11 (refName, used by checkReferences and inferTypes)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  }
+ ]
+}

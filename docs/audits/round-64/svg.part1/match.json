@@ -1,0 +1,31 @@
+{
+ "pairs": [
+  [
+   3,
+   5
+  ],
+  [
+   5,
+   3
+  ]
+ ],
+ "a": [
+  "A comma-separated `@container` query list matches only through its first query",
+  "A leaf that inherits its group's stroke gets back the end markers and stroke that `pathAsSvgDraws` removed from it",
+  "A geometry length in `em` under a `<use>` is read against the target's DOM ancestors, not the `<use>` it inherits from",
+  "`visibility=\"hidden\"` on a `<use>` or a `<text>` drops descendants that turn themselves back on",
+  "A `<tspan x>` that stays on the current line is dropped silently, and splits the text's `x`-list measurement as if it opened a new line",
+  "`opacity` and `clip-path` on a `<use>` are dropped silently",
+  "`stop-color: currentColor` is read as black although the cascade can resolve it",
+  "A chain of `<use>` references never counts toward `NESTING_LIMIT`"
+ ],
+ "b": [
+  "A `<text>` run with no stroke of its own loses the node's inner or outer stroke when exported",
+  "`fill-opacity` on an element does not count as setting its fill, but `stroke-opacity` does count for the stroke",
+  "A `<use>` that sets its own paint is read as taking the paint of the group around it",
+  "`opacity` and `clip-path` on a `<use>` are dropped without a warning",
+  "A custom painter's `'world'` pattern paint is written in the pose's frame without being mapped back",
+  "`visibility=\"hidden\"` on a `<use>` or a `<text>` drops descendants that turn themselves back on",
+  "`scaleStroke` leaves a stroke with no `width` at 1 while scaling its dashes and heads"
+ ]
+}

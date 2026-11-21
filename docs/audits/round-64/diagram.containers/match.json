@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "Resizing a lane in a turned pool moves the whole pool",
+  "A lane resize moves locked nodes inside the later lanes",
+  "Releasing a lane moves locked members of the lanes after it",
+  "Shrinking a pool below its lanes leaves the lanes hanging out of it",
+  "`addLane` throws on a negative or fractional index",
+  "`addLane` with an explicit style leaves the later lanes striped for their old places",
+  "Hidden lanes still offer a resize boundary",
+  "The drop-parent search misses a container that overhangs its parent's body"
+ ],
+ "b": [
+  "addLane places the new lane in the pool's local frame whatever the scene's composition, so under IDENTITY_POSE_COMPOSITION it lands near the world origin and restacks into the wrong place",
+  "The default lane-resize commit leaves later lanes' members behind under a non-rigid composition, though the preview carried them",
+  "laneResizeFrame previews titles in the container's local frame regardless of the scene's composition",
+  "A pool shrunk below its lanes leaves the lanes spilling out of it",
+  "A point on a region's header/body edge is both the header (title edit) and the body (insert target)",
+  "A pool drawn narrower than its header gets lanes of negative width"
+ ]
+}

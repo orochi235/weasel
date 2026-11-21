@@ -1,0 +1,43 @@
+{
+ "pairs": [
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   3,
+   7
+  ],
+  [
+   5,
+   4
+  ]
+ ],
+ "a": [
+  "Several `start` (or `end`) shapes in one state-diagram scope merge into one, and a `start` with an incoming edge reads back as an `end`",
+  "Radar ids rewritten for Mermaid can collide with each other or with another id, and nothing renames them",
+  "A sequence box or rect fill that the reader doesn't see as a leading color is written anyway, and reads back as part of the box label or is lost",
+  "The kanban writer counts ids the board never writes when deciding which generated ids to leave out, so ids shift on read-back",
+  "The kanban writer renames ids that are flowchart keywords, though the kanban reader reads them as they are",
+  "A labeled diamond in a state diagram loses its outline without a warning",
+  "A multi-line state note loses its blank lines and each line's leading spaces",
+  "With no name row, the requirement writer takes a field row past the divider as the box's name",
+  "The quadrant writer writes a point's class name and classDef names without checking them, so a name the reader can't take corrupts the point or the whole file",
+  "The chart writers drop the page name without a warning when it differs from the chart title"
+ ],
+ "b": [
+  "A mind map's cloud outline is written as Mermaid's bang shape",
+  "A Mermaid sequence page is named by an empty title statement over its front matter title",
+  "Radar ids rewritten to Mermaid's id syntax can collide",
+  "A state's description read before its `state \"…\" as` line is thrown away",
+  "A labeled choice diamond is written as a plain state with no warning",
+  "Several start or end shapes in one scope collapse into one, and an unconnected one vanishes, silently",
+  "The xychart reader drops a front matter title for its title statement without the warning the other charts give",
+  "The kanban writer mints against ids the board never writes, so a generated card id reads back as another",
+  "A packet field with an empty label is written as a gap and lost on reading, with no warning"
+ ]
+}

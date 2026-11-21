@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "The Marks sidebar section checks staleness against the raw config, but the canvas checks against the resolved config",
+  "SidebarPanes gives the spare height to the last open section and ignores `SidebarSection.fill`",
+  "A sidebar section's props are mapped from `SidebarSection` in two places",
+  "The `SuppressedAndReplaced` story replaces nothing",
+  "`LabRegion`'s doc leaves out the `aside` region it declares"
+ ],
+ "b": [
+  "A canvas trial whose view is not 2D gets no FPS meter, because the meter is gated on zoom",
+  "The SuppressedAndReplaced story does not replace the built-in it suppresses"
+ ]
+}

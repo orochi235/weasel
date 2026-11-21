@@ -1,0 +1,42 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   2
+  ],
+  [
+   5,
+   4
+  ],
+  [
+   6,
+   3
+  ],
+  [
+   7,
+   5
+  ]
+ ],
+ "a": [
+  "parseAs throws a TypeError instead of answering NaN for typed text holding a line break",
+  "QuantityView.to rewrites a unit display's `unit` but keeps its `accepts`, so parsing after a conversion is off by the conversion factor",
+  "percent speaks a different number than it shows when value × 100 lands just under a half",
+  "spinKey with an endless max sends ArrowDown from a value above max to Infinity",
+  "parseAs under a fraction counted in a constant reads digits past the range as Infinity",
+  "scientific shows NaN as `NaN × 10⁰`, and MathML gets 10 to the 0",
+  "readInfinity misses `Inf`/`Infinity`/`INF` in Turkish and Azerbaijani locales",
+  "number shapes and field locales are cached without a bound"
+ ],
+ "b": [
+  "`QuantityView.to` retargets a unit display's `unit` but keeps its `accepts`, so the converted view reads typed text in the old unit",
+  "A multiplier display with `symbol: ''` reads every typed value as NaN",
+  "`percent`'s spoken form rounds `value * 100` in binary and can disagree with the shown text",
+  "`readInfinity` lowercases typed text in the field's locale before comparing it to English spellings, so `INF` / `Infinity` don't read in `tr-TR` or `az`",
+  "`scientific` formats NaN as `NaN × 10⁰` (and `NaNe0`)",
+  "Per-locale caches in `number.ts` and `fieldLocale.ts` grow without a bound"
+ ]
+}

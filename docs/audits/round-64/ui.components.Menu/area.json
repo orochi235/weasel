@@ -1,0 +1,79 @@
+{
+ "id": "ui.components.Menu",
+ "commit": "49e5a07e6aecc7037a5e3692706cf28dd58211c4",
+ "date": "2026-11-21",
+ "files": [
+  "packages/ui/src/components/Menu/AccessLabel.tsx",
+  "packages/ui/src/components/Menu/ContextMenuHost.stories.module.css",
+  "packages/ui/src/components/Menu/ContextMenuHost.stories.tsx",
+  "packages/ui/src/components/Menu/ContextMenuHost.tsx",
+  "packages/ui/src/components/Menu/Menu.module.css",
+  "packages/ui/src/components/Menu/MenuColorValue.tsx",
+  "packages/ui/src/components/Menu/MenuPanel.tsx",
+  "packages/ui/src/components/Menu/MenuRow.tsx",
+  "packages/ui/src/components/Menu/MenuValue.tsx",
+  "packages/ui/src/components/Menu/index.ts",
+  "packages/ui/src/components/Menu/menuParts.ts",
+  "packages/ui/src/components/Menu/menuUnder.ts",
+  "packages/ui/src/components/Menu/useContextMenu.ts",
+  "packages/ui/src/components/Menu/useDismiss.ts",
+  "packages/ui/src/components/Menu/useMenuPortal.tsx",
+  "packages/ui/src/components/Menu/useMenuTrigger.tsx"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 7,
+ "unfound": 2,
+ "read": {
+  "A": 16,
+  "B": 16
+ },
+ "newCode": {
+  "since": 58,
+  "changedFiles": 1,
+  "findings": 1
+ },
+ "previous": {
+  "round": 58,
+  "chapman": 17,
+  "unfound": 8
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1027,
+   "total": 1027
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 60.8,
+   "B": 3.6,
+   "match": 19.5,
+   "fix": 21.1
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1547939,
+  "costUsd": 4.6
+ },
+ "fixCommits": [
+  "7d7219ca6f49359427682d33f7c1c73398836876",
+  "edb78f4263a2cf24906251eb12c78304498f3ef0",
+  "4e1221832fb3d73fd73b9fc7a42768f44afdc371",
+  "13a22757b400a5d499ef3e7c4cdaff4ef73c7ef1",
+  "ce75dca3a6f18383d2660ea116676941a5769206"
+ ]
+}

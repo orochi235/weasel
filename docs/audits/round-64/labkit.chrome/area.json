@@ -1,0 +1,87 @@
+{
+ "id": "labkit.chrome",
+ "commit": "49e5a07e6aecc7037a5e3692706cf28dd58211c4",
+ "date": "2026-11-21",
+ "files": [
+  "packages/labkit/src/chrome/ChromeRegions.stories.tsx",
+  "packages/labkit/src/chrome/LabChrome.tsx",
+  "packages/labkit/src/chrome/builtins.tsx",
+  "packages/labkit/src/chrome/index.ts",
+  "packages/labkit/src/chrome/labTypes.ts",
+  "packages/labkit/src/chrome/merge.ts",
+  "packages/labkit/src/chrome/regions/OverlayRegion.tsx",
+  "packages/labkit/src/chrome/regions/PaletteRegion.less",
+  "packages/labkit/src/chrome/regions/PaletteRegion.tsx",
+  "packages/labkit/src/chrome/regions/SidebarPanes.stories.tsx",
+  "packages/labkit/src/chrome/regions/SidebarPanes.tsx",
+  "packages/labkit/src/chrome/regions/SidebarRegion.less",
+  "packages/labkit/src/chrome/regions/SidebarRegion.stories.tsx",
+  "packages/labkit/src/chrome/regions/SidebarRegion.tsx",
+  "packages/labkit/src/chrome/regions/StatusRegion.tsx",
+  "packages/labkit/src/chrome/regions/TitleBarRegion.tsx",
+  "packages/labkit/src/chrome/regions/ToolbarRegion.tsx",
+  "packages/labkit/src/chrome/regions/ViewportRegion.less",
+  "packages/labkit/src/chrome/regions/ViewportRegion.tsx",
+  "packages/labkit/src/chrome/regions/groupsOf.ts",
+  "packages/labkit/src/chrome/trialActions.tsx",
+  "packages/labkit/src/chrome/types.ts"
+ ],
+ "a": 5,
+ "b": 2,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 8,
+ "unfound": 2,
+ "read": {
+  "A": 22,
+  "B": 22
+ },
+ "newCode": {
+  "since": 50,
+  "changedFiles": 11,
+  "findings": 4
+ },
+ "previous": {
+  "round": 50,
+  "chapman": 16.5,
+  "unfound": 7.5
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 12,
+  "testFiles": {
+   "failed": 0,
+   "passed": 458,
+   "total": 458
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5,
+   "B": 7.8,
+   "match": 0.1,
+   "fix": 33.9
+  },
+  "nodes": {
+   "A": "orochi",
+   "B": "orochi",
+   "fix": "studio"
+  },
+  "weightedTokens": 2091331,
+  "costUsd": 5.95
+ },
+ "fixCommits": [
+  "900d95c88e57b20bbe56d3930fff64c5f0d71c38",
+  "c988c3fd720c6975c39321373f5d6f9632476f19",
+  "33ef1f832d280713184f24b149893168557bb531",
+  "35b68d855c6990d2726b34c9a52b140d0c69b693",
+  "ff4be964093d95885fdb061ca31c23a3eb3ca81c",
+  "2e9251dcbc270d0f945193efccfb8a95b96e9489",
+  "e67db7b4581bfe65b12ab04ebbb2d440a44d20d6"
+ ]
+}

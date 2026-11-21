@@ -1,0 +1,68 @@
+{
+ "id": "p-touch",
+ "commit": "49e5a07e6aecc7037a5e3692706cf28dd58211c4",
+ "date": "2026-11-21",
+ "files": [
+  "packages/p-touch/src/index.ts",
+  "packages/p-touch/src/lbx/carried.ts",
+  "packages/p-touch/src/lbx/sceneLbx.ts",
+  "packages/p-touch/src/lbx/shapes.ts",
+  "packages/p-touch/src/lbx/style.ts",
+  "packages/p-touch/src/lbx/writeLbx.ts",
+  "packages/p-touch/src/pbt.fixture.ts",
+  "packages/p-touch/src/print.ts",
+  "packages/p-touch/src/render.ts",
+  "packages/p-touch/src/tape.ts"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 1,
+ "distinct": 7,
+ "chapman": 11.5,
+ "unfound": 4.5,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "newCode": {
+  "since": 53,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 53,
+  "chapman": 17.7,
+  "unfound": 6.7
+ },
+ "patches": 9,
+ "verify": {
+  "ok": true,
+  "files": 26,
+  "testFiles": {
+   "failed": 0,
+   "passed": 5917,
+   "total": 5917
+  },
+  "gui": true,
+  "repairs": 2
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 31.4,
+   "B": 4.9,
+   "match": 53.6,
+   "fix": 70.7,
+   "repair": 20.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "orochi",
+   "fix": "studio"
+  },
+  "weightedTokens": 2599239,
+  "costUsd": 7.78
+ },
+ "fixCommits": []
+}

@@ -1,0 +1,24 @@
+{
+ "findings": [
+  {
+   "id": "r56-2",
+   "claim": "ui's `holdsPositioned` misses `container-type`, `content-visibility: auto` and `will-change: contain`, which gestures' `containsFixed` already answers",
+   "where": "packages/ui/src/overlays/blockFrame.ts:24 (holdsPositioned); used by containingBlock, and overlayFrame.ts blockForChildOf / fixedBlockFrom / visibleRegion",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  },
+  {
+   "id": "r56-3",
+   "claim": "Row and roving focus read the main window's `document.activeElement`, so in a popout window focus restore and the tab stop go wrong",
+   "where": "packages/ui/src/useRemovedRowFocus.ts:63 (useRemovedRowFocus layout effect); packages/ui/src/useRovingTabIndex.ts:214 (focusedItem); packages/ui/src/useRowNavigation.ts:93 (pending-focus layout effect)",
+   "from": "B",
+   "round": 56,
+   "rounds": [
+    56
+   ]
+  }
+ ]
+}
