@@ -61,4 +61,17 @@ describe('<use>', () => {
     expect(own.inherits).toBeUndefined();
     expect(taken.inherits).toEqual({ fill: true });
   });
+
+  it('draws its target under the <use>\'s own opacity and clip-path', () => {
+    const out = parse(
+      '<defs><rect id="r" width="10" height="10"/><clipPath id="c"><rect width="4" height="4"/></clipPath></defs>'
+      + '<use href="#r" x="2" opacity="0.5" clip-path="url(#c)"/>',
+    );
+    expect(out.warnings).toEqual([]);
+    const g = out.nodes[0] as SvgGroupNode;
+    expect(g.kind).toBe('group');
+    expect(g.opacity).toBe(0.5);
+    expect(g.clip).toBeDefined();
+    expect((g.children[0] as SvgPathNode).path).toMatchObject({ x: 2 });
+  });
 });

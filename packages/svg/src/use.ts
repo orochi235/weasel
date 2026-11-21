@@ -20,6 +20,12 @@ export const USE_ELEMENT_BUDGET = 100_000;
 /** What each document has left of {@link USE_ELEMENT_BUDGET}; negative once a reference has been refused for it. */
 const budgets = new WeakMap<Document, number>();
 
+/** The user space `el` draws its target in: its transform, then its `x` and `y`. */
+export function useSpace(el: Element, ctm: Matrix, onWarn: (m: string) => void): Matrix {
+  const at: Matrix = [1, 0, 0, 1, readLength(el, 'x', 'x', 0, onWarn), readLength(el, 'y', 'y', 0, onWarn)];
+  return multiply(multiply(ctm, parseTransform(el.getAttribute('transform'), onWarn)), at);
+}
+
 /**
  * What `el` draws: its target under `el`'s transform, moved by its `x` and `y`,
  * inheriting from `el` rather than from where the target sits. A `<symbol>`
@@ -38,8 +44,7 @@ export function parseUse(
     onWarn(`<use> referencing #${target.id} is part of a reference cycle; it is not drawn`);
     return null;
   }
-  const at: Matrix = [1, 0, 0, 1, readLength(el, 'x', 'x', 0, onWarn), readLength(el, 'y', 'y', 0, onWarn)];
-  const m = multiply(multiply(ctm, parseTransform(el.getAttribute('transform'), onWarn)), at);
+  const m = useSpace(el, ctm, onWarn);
   const inner = deriveStyle(style, el);
   if (ownValue(target, 'display') === 'none') return null;
   const doc = el.ownerDocument;

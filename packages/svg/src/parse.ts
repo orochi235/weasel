@@ -38,7 +38,7 @@ import { booleanAttrOf } from './booleanGroup';
 import { textFrameAttrOf } from './framedText';
 import { groupBoxAttrOf } from './groupBox';
 import { conditionsHold, drawnChildren } from './conditional';
-import { parseUse } from './use';
+import { parseUse, useSpace } from './use';
 import { collectDocumentMeta, collectElementMeta } from './readMeta';
 
 const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
@@ -230,7 +230,12 @@ function parseElement(
   if (tag === 'use') {
     // A paint the `<use>` sets belongs to no group, as a nested `<svg>`'s does.
     const inner = viewportPaintFrom(el, from);
-    return nested(onWarn, () => parseUse(el, ctm, style, (t, m, s) => readChild(t, m, s, inner, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn)) ?? null;
+    const drawn = nested(onWarn, () => parseUse(el, ctm, style, (t, m, s) => readChild(t, m, s, inner, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn));
+    if (!drawn) return null;
+    const opacity = ownValue(el, 'opacity');
+    const clip = ownProp(el, 'clip-path') == null ? undefined : clipFor(el, useSpace(el, ctm, onWarn), clips, onWarn);
+    if (opacity == null && !clip) return drawn;
+    return { kind: 'group', children: Array.isArray(drawn) ? drawn : [drawn], ...(clip ? { clip } : {}), ...(opacity != null ? { opacity } : {}) };
   }
   if (tag === 'g' || tag === 'a' || tag === 'switch') return parseGroup(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden);
   const clipRaw = ownProp(el, 'clip-path');
