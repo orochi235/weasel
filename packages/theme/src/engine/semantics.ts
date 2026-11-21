@@ -291,7 +291,7 @@ export function atStep(
   ctx: SemanticContext,
 ): DerivedSemantic | undefined {
   const steps = getOwn(ctx.ramps, ramp);
-  if (!steps || index < 0 || index >= steps.length) {
+  if (!steps || !Number.isInteger(index) || index < 0 || index >= steps.length) {
     ctx.issues.push({ kind: 'invalid', path: `semantics.${name}`, message: `no such step on ramp "${ramp}"` });
     return undefined;
   }

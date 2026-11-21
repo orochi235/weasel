@@ -276,3 +276,11 @@ describe('alpha pins', () => {
     expect(issues).toContainEqual({ kind: 'invalid', path: 'semantics.border-strong', message: 'contrast needs solid colors on both sides' });
   });
 });
+
+describe('a fractional offset', () => {
+  it('is reported as a malformed rule rather than minting a step that does not exist', () => {
+    const { tokens, issues } = derive({ ...W, semantics: { surface: W.semantics!.surface, m: { from: 'surface', offset: 1.5, dir: 'away' } } }, { mode: 'dark' });
+    expect(tokens.m).toBeUndefined();
+    expect(issues).toEqual([{ kind: 'invalid', path: 'semantics.m', message: 'an offset rule needs a name from, a whole-number offset, and a dir of lighter, darker, away' }]);
+  });
+});
