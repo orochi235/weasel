@@ -38,7 +38,8 @@ function pointToRectPerimeterDistance(
  *  combine with `pathContainsPoint` at the call site. */
 export function pathDistanceToPoint(path: Path, px: number, py: number): number {
   if (path.kind === 'rect') {
-    return pointToRectPerimeterDistance(px, py, path.x, path.y, path.width, path.height);
+    const { x, y, width: w, height: h } = path;
+    return pointToRectPerimeterDistance(px, py, Math.min(x, x + w), Math.min(y, y + h), Math.abs(w), Math.abs(h));
   }
   const drawn = resolveCorners(path);
   return nearestOnPath(drawn.commands, worldCoords(drawn), px, py)?.distance ?? Infinity;

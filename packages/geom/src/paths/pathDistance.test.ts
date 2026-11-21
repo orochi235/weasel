@@ -83,3 +83,11 @@ describe('pathDistanceToPoint — unknown command', () => {
     expect(() => pathDistanceToPoint(bogus, 0, 0)).toThrow(/unknown command code 99/);
   });
 });
+
+describe('pathDistanceToPoint — rect', () => {
+  it('measures a rect of negative width and height as the square it draws', () => {
+    const r: RectPath = { kind: 'rect', x: 10, y: 10, width: -10, height: -10 };
+    expect(pathDistanceToPoint(r, 2, 5)).toBeCloseTo(2, 5);
+    expect(pathDistanceToPoint(r, 15, 5)).toBeCloseTo(5, 5);
+  });
+});
