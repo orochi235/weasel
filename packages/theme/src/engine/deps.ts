@@ -184,8 +184,8 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
         n.edges.add(leaf.from);
         for (const r of rampsOf(leaf.from)) {
           n.edges.add(stepsKey(r));
-          // darker and lighter read which end of the ramp is darker.
-          if (leaf.dir !== 'away') for (const s of declaredSteps(getOwn(def.ramps ?? {}, r))) n.edges.add(`${r}-${s}`);
+          // darker and lighter read which end of the ramp is darker, and every direction can land on any step.
+          for (const s of declaredSteps(getOwn(def.ramps ?? {}, r))) n.edges.add(`${r}-${s}`);
         }
       }
       if ('step' in leaf) {
