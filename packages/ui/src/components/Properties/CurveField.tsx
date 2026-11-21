@@ -7,6 +7,8 @@ import { CurveMarks, type CurveMark } from './CurveMarks';
 import s from './CurveField.module.css';
 import { useControlAccess, type HoldProps } from '../Disabled';
 import { ownHold } from '../Disabled/controlHold';
+import { useFieldControl } from '../Field/fieldSemantics';
+import { useNameText } from './nameOf';
 
 export type { CurveMark } from './CurveMarks';
 
@@ -31,6 +33,9 @@ export interface CurveFieldProps extends HoldProps {
   onCancel?: () => void;
   /** Optional vertical marks overlaid on the plot (e.g. landmarks). */
   marks?: readonly CurveMark[];
+  /** The field's accessible name: its plot's, and the group's holding its buttons. Omitted, a field in a row is
+   *  named by the row's label. */
+  'aria-label'?: string;
 }
 
 function toPoints(flat: readonly number[]): ControlPoint[] {
@@ -57,8 +62,11 @@ export function CurveField({
   onInput,
   onCancel,
   marks,
+  'aria-label': ariaLabel,
   ...own
 }: CurveFieldProps) {
+  const text = useNameText(ariaLabel);
+  const { id: _id, ...named } = useFieldControl({ 'aria-label': ariaLabel });
   // Disabled or read-only, the plot holds itself and the buttons are disabled.
   const access = useControlAccess(own);
   const disabled = access.state !== 'enabled';
@@ -98,10 +106,11 @@ export function CurveField({
   }, [defaults, snapped, onChange]);
 
   return (
-    <div ref={host} className={s.field}>
+    <div ref={host} className={s.field} role="group" {...named}>
       <div className={s.plot}>
         <CurveEditor
           {...ownHold(own)}
+          aria-label={text}
           value={points}
           onInput={handleInput}
           onChange={handleSettled}
