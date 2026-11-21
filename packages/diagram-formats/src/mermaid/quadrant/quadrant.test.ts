@@ -149,3 +149,16 @@ describe('the Mermaid format', () => {
     expect(DIAGRAM_MERMAID.write!(document).text.startsWith('quadrantChart\n')).toBe(true);
   });
 });
+
+describe('writing quadrant class names Mermaid cannot read', () => {
+  it('rewrites them, with a warning, so the point keeps its name and the file reads back', () => {
+    const page: PlotPage = {
+      kind: 'plot', id: 'p', width: 10, height: 10,
+      data: { kind: 'quadrant', points: [{ name: 'A', x: 0.5, y: 0.5, className: 'hot spot' }], classes: { 'hot spot': { color: '#f00' } } },
+    } as PlotPage;
+    const out = writeMermaidQuadrant(page);
+    expect(out.warnings).toContain('Mermaid quadrant class names are letters, digits, "-" or "_"; others were rewritten.');
+    const back = plotOf(out.text).data as Extract<PlotPage['data'], { kind: 'quadrant' }>;
+    expect(back.points[0]).toMatchObject({ name: 'A', className: 'hot_spot' });
+  });
+});

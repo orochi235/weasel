@@ -3,7 +3,7 @@ import { rgbaToHex, tryParseColor } from '@weasel-js/paint';
 import { quadrantClassEntries, type QuadrantAxis, type QuadrantPointStyle } from '@weasel-js/plot';
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
-import { mermaidQuoted, oneLine } from '../common/text';
+import { mermaidIds, mermaidQuoted, oneLine } from '../common/text';
 
 /** A first word that would read as a statement of its own, or a comment, rather than a point. */
 const STATEMENT = /^(?:(?:title|x-axis|y-axis|quadrant-[1-4]|classDef)(?:\s|$)|%%|acc(?:Title|Descr))/;
@@ -68,13 +68,17 @@ export function writeMermaidQuadrant(page: PlotPage): ExportResult {
   data.quadrants?.forEach((label, i) => {
     if (label) lines.push(`  quadrant-${i + 1} ${text(label)}`);
   });
+  const entries = quadrantClassEntries(data);
+  const named = [...new Set([...data.points.flatMap((p) => (p.className !== undefined ? [p.className] : [])), ...entries.map(([name]) => name)])];
+  const classes = mermaidIds(named, { id: /^[\w-]+$/, keywords: [] });
+  if (named.some((n) => classes.get(n) !== n)) warnings.add('Mermaid quadrant class names are letters, digits, "-" or "_"; others were rewritten.');
   for (const p of data.points) {
     const outside = !(p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1);
     if (outside) warnings.add('Mermaid holds points from 0 to 1 only; others were moved to the nearest edge.');
     const unit = (v: number) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0);
     const style = styleText(p.style, warnings);
-    lines.push(`  ${text(p.name)}${p.className !== undefined ? `:::${p.className}` : ''}: [${unit(p.x)}, ${unit(p.y)}]${style ? ` ${style}` : ''}`);
+    lines.push(`  ${text(p.name)}${p.className !== undefined ? `:::${classes.get(p.className)}` : ''}: [${unit(p.x)}, ${unit(p.y)}]${style ? ` ${style}` : ''}`);
   }
-  for (const [name, style] of quadrantClassEntries(data)) lines.push(`  classDef ${name} ${styleText(style, warnings)}`);
+  for (const [name, style] of entries) lines.push(`  classDef ${classes.get(name)} ${styleText(style, warnings)}`);
   return { text: `${lines.join('\n')}\n`, warnings: warnings.all() };
 }
