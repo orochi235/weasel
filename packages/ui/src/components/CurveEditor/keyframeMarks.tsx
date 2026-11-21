@@ -114,18 +114,18 @@ function keyGhost(drag: { t: number; value: number }, ctx: LayerRenderCtx): Reac
  * segment's band and handles, a target per segment, a diamond per key, and the ghost of a key in flight.
  */
 export function keyframeMarks(state: KeyframeLayerState, ctx: LayerRenderCtx, names: KeyframeNames): ReactNode {
-  const preview = state.drag?.kind === 'key' ? applyKeyframeDrag(state) : state;
+  const preview = state.drag?.kind === 'key' ? { ...state, ...applyKeyframeDrag(state) } : state;
   const shown = preview.keys;
   const segments = keyframeSegments(state.drag, shown, ctx);
   const curve = segments.flatMap((pts, i) => (i === 0 ? pts : pts.slice(1)));
   const seg = preview.selectedSegment;
-  const bezier = activeBezier(state);
+  const bezier = activeBezier(preview);
   return (
     <>
       {seg !== null && seg >= 1 && seg < shown.length ? segmentBand(shown, seg, ctx) : null}
       {curve.length > 1 ? <path data-curve-element="curve" className={s.curve} d={pathThrough(curve)} /> : null}
       {segmentTargets(segments, shown, seg, names)}
-      {bezier ? bezierHandles(state, bezier, ctx, names) : null}
+      {bezier ? bezierHandles(preview, bezier, ctx, names) : null}
       {keyMarks(state, ctx, names)}
       {state.drag?.kind === 'key' ? keyGhost(state.drag, ctx) : null}
     </>

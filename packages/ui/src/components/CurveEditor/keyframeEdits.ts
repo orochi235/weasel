@@ -113,11 +113,14 @@ export function nudgedKey(
 
 const HANDLE_STEP = 0.01;
 
-/** `bezier` with handle `h` moved by `dx`, `dy` key steps; a handle's x stays within its segment. */
-export function nudgedBezier(bezier: Bezier, h: number, dx: number, dy: number): Bezier {
+/**
+ * `bezier` with handle `h` moved by `dx`, `dy` key steps in model terms; a handle's x stays within its segment.
+ * `descending` says the segment's value falls, so a handle's y fraction runs against its value.
+ */
+export function nudgedBezier(bezier: Bezier, h: number, dx: number, dy: number, descending = false): Bezier {
   const next = [...bezier] as [number, number, number, number];
   next[h * 2] = Math.min(1, Math.max(0, next[h * 2] + dx * HANDLE_STEP));
-  next[h * 2 + 1] += dy * HANDLE_STEP;
+  next[h * 2 + 1] += (descending ? -dy : dy) * HANDLE_STEP;
   return next;
 }
 
@@ -133,10 +136,10 @@ export function withHandleAt(
   const d = state.drag;
   if (!a || !b || d?.kind !== 'handle') return state;
   const xf = b.t === a.t ? 0 : Math.min(1, Math.max(0, (model.x - a.t) / (b.t - a.t)));
-  const yf = b.value === a.value ? 0 : (model.y - a.value) / (b.value - a.value);
   const bezier = [...d.bezier] as [number, number, number, number];
   bezier[handle * 2] = xf;
-  bezier[handle * 2 + 1] = yf;
+  // On a flat segment the pointer says nothing about a handle's y, so it keeps the one it has.
+  if (b.value !== a.value) bezier[handle * 2 + 1] = (model.y - a.value) / (b.value - a.value);
   return { ...state, drag: { kind: 'handle', segment, bezier } };
 }
 

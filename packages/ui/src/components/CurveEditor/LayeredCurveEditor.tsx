@@ -1,5 +1,5 @@
 import {
-  useCallback, useMemo, useRef,
+  useCallback, useEffect, useMemo, useRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { historyKey } from '@weasel-js/gestures';
+import { deepEqual } from '@weasel-js/registry';
 import {
   Plot2D,
   type Plot2DHandle,
@@ -86,18 +87,22 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
 
   const { snapshot, record, undo, redo } = useLayerHistory(layers);
 
-  /** Report a finished one-shot edit, as one undo step back to `before`. */
+  /** Report a finished one-shot edit, as one undo step back to `before`; one that changed nothing settles unchanged. */
   const settleEdit = useCallback((before: LayerSnapshot, edit: LayerEdit) => {
+    if (deepEqual(edit.next, edit.prev)) { settleLayer(edit.entry, 'unchanged'); return; }
     if (historyEnabled) record(before);
     settleLayer(edit.entry, { commit: edit.next, prev: edit.prev });
   }, [historyEnabled, record]);
 
-  const { start, busy, activeEntry } = useLayerGesture({
+  const { start, busy, cancel, activeEntry } = useLayerGesture({
     toModel: (e) => plotRef.current?.clientToModel(e) ?? null,
     ctxFor: makeCtx,
     layers,
     onEdit: (before) => { if (historyEnabled) record(before); },
   });
+
+  // A hold that starts mid-drag ends the drag, as it would refuse the press that began it.
+  useEffect(() => { if (hold.refuses) cancel(); }, [hold.refuses, cancel]);
 
   const onSvgPointerDown = useCallback((
     e: ReactPointerEvent<SVGSVGElement>,
@@ -120,6 +125,8 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
   }, [busy, start, makeCtx, snapshot, settleEdit, layers]);
 
   const onSvgKeyDown = useCallback((e: ReactKeyboardEvent<SVGSVGElement>) => {
+    // A drag in flight owns the edit until it ends; Escape reaches its session, which cancels it.
+    if (busy()) return;
     const step = historyEnabled ? historyKey(e) : null;
     if (step) {
       if (step === 'redo') redo();
@@ -129,8 +136,12 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     }
     // A layer prevents default on the native event, which the synthetic
     // event's `isDefaultPrevented` does not observe.
-    dispatchKey(layers(), e.nativeEvent, makeCtx(readModifiers(e)), snapshot, settleEdit);
-  },[historyEnabled, undo, redo, makeCtx, snapshot, settleEdit, layers]);
+    dispatchKey(layers(), e.nativeEvent, makeCtx(readModifiers(e)), (made) => {
+      const snap = snapshot();
+      for (const edit of made) snap.set(edit.entry, edit.next);
+      return snap;
+    }, settleEdit);
+  }, [busy, historyEnabled, undo, redo, makeCtx, snapshot, settleEdit, layers]);
 
   const onSvgContextMenu = useCallback((
     e: ReactMouseEvent<SVGSVGElement>,

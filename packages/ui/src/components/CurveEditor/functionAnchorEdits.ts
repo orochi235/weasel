@@ -1,5 +1,5 @@
 import type { ModelRange } from '../Plot2D/geometry';
-import { isPinnedEndpointAt } from './anchorRules';
+import { canAnchorMove, isPinnedEndpointAt } from './anchorRules';
 import type { ModelPoint } from './layerTypes';
 import type { ControlPoint, EndpointMode, FunctionLayerOptions, FunctionLayerState } from './functionLayerTypes';
 
@@ -38,6 +38,19 @@ export function clampToModelRange(p: ModelPoint, m: ModelRange): ModelPoint {
   };
 }
 
+/** The x range a layer's anchors stay in, low to high: its `xClamp`, else the plot's. */
+function layerXBounds(range: ModelRange, rules: AnchorRules): [number, number] {
+  const [a, b] = rules.xClamp ?? [range.xMin, range.xMax];
+  return [Math.min(a, b), Math.max(a, b)];
+}
+
+/** Where an anchor added at `model` goes: inside the plot, and inside the layer's x range. */
+function insertPoint(model: ModelPoint, range: ModelRange, rules: AnchorRules): ModelPoint {
+  const p = clampToModelRange(model, range);
+  const [xLo, xHi] = layerXBounds(range, rules);
+  return { x: Math.max(xLo, Math.min(xHi, p.x)), y: p.y };
+}
+
 /** The state with the anchor at `index` moved toward `model`, as far as the rules let it go, and made active. */
 export function withAnchorMoved(
   state: FunctionLayerState,
@@ -47,9 +60,9 @@ export function withAnchorMoved(
   rules: AnchorRules,
 ): FunctionLayerState {
   const points = state.points;
-  if (index < 0 || index >= points.length) return state;
-  const xMin = rules.xClamp ? rules.xClamp[0] : range.xMin;
-  const xMax = rules.xClamp ? rules.xClamp[1] : range.xMax;
+  if (index < 0 || index >= points.length || points[index].locked) return state;
+  // Anchors sit in ascending x whichever way the axis runs, so the bounds are taken low to high.
+  const [xLo, xHi] = layerXBounds(range, rules);
   let nx = model.x;
   let ny = model.y;
   const isEndpoint = index === 0 || index === points.length - 1;
@@ -58,22 +71,16 @@ export function withAnchorMoved(
     nx = points[index].x;
     ny = points[index].y;
   } else if (rules.endpoints === 'pinned-x' && isEndpoint) {
-    nx = index === 0 ? xMin : xMax;
+    nx = index === 0 ? xLo : xHi;
   } else if (rules.ordered) {
-    const epsilon = rules.strict ? (xMax - xMin) / 1000 : 0;
-    const left = index > 0 ? points[index - 1].x + epsilon : xMin;
-    const right = index < points.length - 1 ? points[index + 1].x - epsilon : xMax;
+    const epsilon = rules.strict ? (xHi - xLo) / 1000 : 0;
+    const left = index > 0 ? points[index - 1].x + epsilon : xLo;
+    const right = index < points.length - 1 ? points[index + 1].x - epsilon : xHi;
     nx = Math.max(left, Math.min(right, nx));
   }
 
-  // Always clamp x to the layer's own range (so free-mode
-  // interior anchors of a sub-range layer can't escape it).
-  // Normalize bounds for inverted ranges.
-  {
-    const lo = Math.min(xMin, xMax);
-    const hi = Math.max(xMin, xMax);
-    nx = Math.max(lo, Math.min(hi, nx));
-  }
+  // A sub-range layer's free interior anchors stay inside it too.
+  nx = Math.max(xLo, Math.min(xHi, nx));
   const clamped = clampToModelRange({ x: nx, y: ny }, range);
   const next = points.slice();
   next[index] = { ...points[index], x: clamped.x, y: clamped.y };
@@ -100,7 +107,7 @@ function crowdedNeighbor(
   rules: AnchorRules,
 ): number | null {
   if (!rules.ordered) return null;
-  const epsilon = rules.strict ? (range.xMax - range.xMin) / 1000 : 0;
+  const epsilon = rules.strict ? Math.abs(range.xMax - range.xMin) / 1000 : 0;
   const left = insertIndex > 0 ? points[insertIndex - 1] : null;
   const right = insertIndex < points.length ? points[insertIndex] : null;
   if (left && Math.abs(x - left.x) < epsilon * 2) return insertIndex - 1;
@@ -125,14 +132,16 @@ function withPointAt(points: readonly ControlPoint[], index: number, p: ControlP
 
 /**
  * A press on the curve between anchors `segIdx` and `segIdx + 1`: the state with a new anchor at `model` and that
- * anchor active, or with the neighbor it would crowd active instead, and which anchor the press then drags.
+ * anchor active, or with the neighbor it would crowd active instead, and which anchor the press then drags. Null
+ * where that neighbor may not move.
  */
 export function pressOnCurve(
   state: FunctionLayerState, segIdx: number, model: ModelPoint, range: ModelRange, rules: AnchorRules,
-): { next: FunctionLayerState; index: number } {
+): { next: FunctionLayerState; index: number } | null {
   const insertIndex = segIdx + 1;
-  const p = clampToModelRange(model, range);
+  const p = insertPoint(model, range, rules);
   const neighbor = crowdedNeighbor(state.points, insertIndex, p.x, range, rules);
+  if (neighbor !== null && !canAnchorMove(state.points, neighbor, rules.endpoints)) return null;
   if (neighbor !== null) return { next: { ...state, activeIndex: neighbor }, index: neighbor };
   return { next: { ...state, points: withPointAt(state.points, insertIndex, p), activeIndex: insertIndex }, index: insertIndex };
 }
@@ -141,7 +150,7 @@ export function pressOnCurve(
 export function withEmptyInsert(
   state: FunctionLayerState, model: ModelPoint, range: ModelRange, rules: AnchorRules,
 ): FunctionLayerState | null {
-  const p = clampToModelRange(model, range);
+  const p = insertPoint(model, range, rules);
   const index = emptyInsertIndex(state.points, p.x, rules);
   if (index === null) return null;
   return { ...state, points: withPointAt(state.points, index, p), activeIndex: null };
@@ -161,9 +170,9 @@ export function withAnchorNudged(
   if (!p || p.locked) return null;
   const xSpan = rules.xClamp ? rules.xClamp[1] - rules.xClamp[0] : range.xMax - range.xMin;
   const next = withAnchorMoved(state, index, {
-    x: p.x + move.dx * Math.abs(xSpan) * KEY_STEP_FRACTION,
-    // The model's y runs up, the screen's down.
-    y: p.y - move.dy * Math.abs(range.yMax - range.yMin) * KEY_STEP_FRACTION,
+    // A step follows the screen: an inverted axis runs its model value the other way.
+    x: p.x + move.dx * Math.sign(range.xMax - range.xMin) * Math.abs(xSpan) * KEY_STEP_FRACTION,
+    y: p.y - move.dy * (range.yMax - range.yMin) * KEY_STEP_FRACTION,
   }, range, rules);
   const moved = next.points[index];
   if (moved.x === p.x && moved.y === p.y) return null;

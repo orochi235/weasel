@@ -22,6 +22,21 @@ describe('CurveEditor — built-in undo', () => {
     expect(middle().getAttribute('cy')).toBe('50');
   });
 
+  it('ignores undo and the arrow keys while a drag is in flight', () => {
+    const { container } = render(<Controlled />);
+    const svg = container.querySelector('svg')!;
+    fireEvent.keyDown(middle(), { key: 'ArrowUp' });
+    fireEvent.pointerDown(middle(), { clientX: 100, clientY: Number(middle().getAttribute('cy')), pointerId: 1, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 100, clientY: 20, pointerId: 1, buttons: 1 });
+    fireEvent.keyDown(svg, { key: 'z', ctrlKey: true });
+    fireEvent.keyDown(middle(), { key: 'ArrowDown' });
+    expect(Number(middle().getAttribute('cy'))).toBeCloseTo(20);
+    fireEvent.pointerUp(document, { clientX: 100, clientY: 20, pointerId: 1 });
+    fireEvent.keyDown(svg, { key: 'z', ctrlKey: true });
+    expect(Number(middle().getAttribute('cy'))).toBeLessThan(50);
+    expect(Number(middle().getAttribute('cy'))).toBeGreaterThan(20);
+  });
+
   it('keeps the last 100 steps and drops older ones', () => {
     const { container } = render(<Controlled />);
     const cy = (): number => Number(middle().getAttribute('cy'));

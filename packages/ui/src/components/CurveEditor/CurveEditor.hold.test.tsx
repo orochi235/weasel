@@ -88,3 +88,21 @@ it('holds undo and redo', () => {
   fireEvent.keyDown(svg(), { key: 'z', ctrlKey: true });
   expect(onInput.mock.calls.length).toBe(steps + 1);
 });
+
+it('cancels a drag in flight when the editor is held', () => {
+  const onInput = vi.fn();
+  const onChange = vi.fn();
+  const onCancel = vi.fn();
+  const editor = (readOnly: boolean) => (
+    <CurveEditor value={POINTS} onInput={onInput} onChange={onChange} onCancel={onCancel} readOnly={readOnly} width={200} height={100} />
+  );
+  const { rerender } = render(editor(false));
+  fireEvent.pointerDown(document.querySelectorAll('[data-anchor-index]')[1]!, { clientX: 100, clientY: 50, pointerId: 1 });
+  rerender(editor(true));
+  expect(onCancel).toHaveBeenCalledTimes(1);
+  onInput.mockClear();
+  fireEvent.pointerMove(document, { clientX: 120, clientY: 30, pointerId: 1, buttons: 1 });
+  fireEvent.pointerUp(document, { clientX: 120, clientY: 30, pointerId: 1 });
+  expect(onInput).not.toHaveBeenCalled();
+  expect(onChange).not.toHaveBeenCalled();
+});

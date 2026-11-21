@@ -8,6 +8,7 @@ import {
   type KeyframeLayerState,
 } from './createKeyframeLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
+import { withHandleAt } from './keyframeEdits';
 import { KeyframeLayer } from './KeyframeLayer';
 import { handleSize } from '../../handles';
 
@@ -24,12 +25,14 @@ interface HarnessProps {
   initial?: Partial<KeyframeLayerState>;
   onChange?: (next: KeyframeLayerState) => void;
   onCommit?: (next: KeyframeLayerState, prev: KeyframeLayerState) => void;
+  xRange?: readonly [number, number];
+  yRange?: readonly [number, number];
 }
 
-function Harness({ config, initial, onChange, onCommit }: HarnessProps): ReactElement {
+function Harness({ config, initial, onChange, onCommit, xRange = [0, 1000], yRange = [0, 10] }: HarnessProps): ReactElement {
   const [state, setState] = useState<KeyframeLayerState>(() => ({ ...keyframeLayerState(KEYS), ...initial }));
   return (
-    <LayeredCurveEditor width={200} height={100} xRange={[0, 1000]} yRange={[0, 10]} history={false}>
+    <LayeredCurveEditor width={200} height={100} xRange={xRange} yRange={yRange} history={false}>
       <KeyframeLayer
         label="x"
         {...config}
@@ -259,6 +262,35 @@ describe('createKeyframeLayer — segments', () => {
     expect(onCommit).not.toHaveBeenCalled();
   });
 
+  it('keeps a handle\'s y when it is dragged on a flat segment', () => {
+    const state = {
+      ...keyframeLayerState([{ t: 0, value: 5 }, { t: 1000, value: 5, easing: { bezier: [0.2, 0.9, 0.3, 1] as const } }]),
+      selectedSegment: 1,
+      drag: { kind: 'handle' as const, segment: 1, bezier: [0.2, 0.9, 0.3, 1] as const },
+    };
+    const next = withHandleAt(state, 1, 0, { x: 500, y: 7 });
+    expect(next.drag).toEqual({ kind: 'handle', segment: 1, bezier: [0.5, 0.9, 0.3, 1] });
+  });
+
+  it('draws the selected segment\'s handles from a key in flight', () => {
+    render(<Harness initial={{ selectedSegment: 1 }} />);
+    const stem = () => document.querySelectorAll('line:not([data-plot-element])')[1];
+    // Drag the key at (500, 10), plot (100, 0), down to value 5.
+    down(100, 0);
+    move(100, 50);
+    expect(Number(stem().getAttribute('y1'))).toBe(50);
+    up(100, 50);
+  });
+
+  it('raises a handle on a falling segment with ArrowUp', () => {
+    const keys = [KEYS[0], KEYS[1], { ...KEYS[2], easing: { bezier: [0.4, 0.5, 0.6, 0.5] as const } }];
+    render(<Harness initial={{ keys, selectedSegment: 2 }} />);
+    const handle = () => document.querySelector('[data-handle-index="0"]')!;
+    const before = Number(handle().getAttribute('cy'));
+    fireEvent.keyDown(handle(), { key: 'ArrowUp' });
+    expect(Number(handle().getAttribute('cy'))).toBeLessThan(before);
+  });
+
   it('previews a handle drag without resolving a fresh spec on every move', async () => {
     const core = await import('@weasel-js/core');
     const spy = vi.spyOn(core, 'resolveEasing');
@@ -302,6 +334,23 @@ describe('createKeyframeLayer — keyboard', () => {
     const last = onCommit.mock.calls[1][0] as KeyframeLayerState;
     expect(last.keys.map((k) => [k.t, k.value])).toEqual([[450, 2], [600, 1], [1000, 3]]);
     expect(document.activeElement!.getAttribute('data-keyframe-index')).toBe('1');
+  });
+
+  it('moves a key the way the arrow points on inverted axes', () => {
+    const onCommit = vi.fn();
+    render(<Harness config={{ step: { x: 10, y: 0.5 } }} xRange={[1000, 0]} yRange={[10, 0]} onCommit={onCommit} />);
+    fireEvent.keyDown(document.querySelector('[data-keyframe-index="1"]')!, { key: 'ArrowRight' });
+    expect((onCommit.mock.calls[0][0] as KeyframeLayerState).keys[1].t).toBe(490);
+    fireEvent.keyDown(document.querySelector('[data-keyframe-index="1"]')!, { key: 'ArrowUp' });
+    expect((onCommit.mock.calls[1][0] as KeyframeLayerState).keys[1].value).toBe(9.5);
+  });
+
+  it('reports nothing for Enter on the key or segment already selected', () => {
+    const onCommit = vi.fn();
+    render(<Harness initial={{ selectedKey: 1, selectedSegment: 1 }} onCommit={onCommit} />);
+    fireEvent.keyDown(document.querySelector('[data-keyframe-index="1"]')!, { key: 'Enter' });
+    fireEvent.keyDown(document.querySelector('[data-segment-index="1"]')!, { key: 'Enter' });
+    expect(onCommit).not.toHaveBeenCalled();
   });
 
   it('selects a focused segment with Enter', () => {

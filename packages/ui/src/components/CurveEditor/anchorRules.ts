@@ -6,7 +6,13 @@ export function isPinnedEndpointAt(index: number, count: number, endpoints: Endp
   return index === 0 || index === count - 1;
 }
 
+/** Whether the user may drag anchor `index` at all: it is not locked, and not an endpoint held in both axes. */
+export function canAnchorMove(points: readonly ControlPoint[], index: number, endpoints: EndpointMode): boolean {
+  if (points[index]?.locked === true) return false;
+  return !(endpoints === 'pinned-both' && isPinnedEndpointAt(index, points.length, endpoints));
+}
+
 /** Whether anchor `index` goes undrawn: one that cannot move, under `hideNonInteractive`. Undrawn, it takes no press. */
 export function isHiddenAnchor(points: readonly ControlPoint[], index: number, endpoints: EndpointMode, hideNonInteractive: boolean | undefined): boolean {
-  return !!hideNonInteractive && (points[index]?.locked === true || isPinnedEndpointAt(index, points.length, endpoints));
+  return !!hideNonInteractive && !canAnchorMove(points, index, endpoints);
 }

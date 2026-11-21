@@ -69,6 +69,8 @@ export interface FunctionLayerOptions {
   maxPoints?: number;
   curve?: CurveSettings | false | null;
   fill?: FillSettings | false | null;
+  /** Leave undrawn, and out of reach of a press, each anchor the user cannot move: a locked one, and a
+   *  `'pinned-both'` endpoint. A `'pinned-x'` endpoint still moves in y, so it stays. */
   hideNonInteractive?: boolean;
   renderAnchor?: (info: AnchorRenderCtx) => ReactNode;
   /** When false, the layer renders the curve+fill but doesn't render

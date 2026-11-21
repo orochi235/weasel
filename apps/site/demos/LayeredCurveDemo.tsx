@@ -6,6 +6,7 @@ import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import s from './LayeredCurveDemo.module.css';
 import { lerp } from '@weasel-js/geom';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /**
  * The rim → contour curve of a beveled solid of revolution, as two function
@@ -54,8 +55,8 @@ export function createPartitionLayer(): CurveLayer<PartitionState> {
         && Math.abs(plot.y - ctx.plotSize.height / 2) <= HANDLE.h / 2 + HANDLE_SLOP;
       return onHandle ? { kind: 'handle' } : null;
     },
-    onPointerDown(_state, hit) {
-      if (hit.kind !== 'handle') return;
+    onPointerDown(_state, hit, e) {
+      if (hit.kind !== 'handle' || !isPrimaryPress(e)) return;
       return {
         onMove(_state, model, _e, ctx) {
           const span = ctx.modelRange.xMax - ctx.modelRange.xMin;

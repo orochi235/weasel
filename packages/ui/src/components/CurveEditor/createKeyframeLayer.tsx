@@ -155,8 +155,11 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
     const target = keyTargetIn(e, id);
     if (!target) return;
     const arrow = arrowMove(e.key, e.shiftKey);
-    // The model's y runs up, the screen's down.
-    const move = arrow && (arrow.dx !== 0 || arrow.dy !== 0) ? { dx: arrow.dx, dy: -arrow.dy } : null;
+    // The move in model terms: the screen's y runs down, and an inverted axis runs its model value the other way.
+    const { xMin, xMax, yMin, yMax } = ctx.modelRange;
+    const move = arrow && (arrow.dx !== 0 || arrow.dy !== 0)
+      ? { dx: arrow.dx * (xMax < xMin ? -1 : 1), dy: -arrow.dy * (yMax < yMin ? -1 : 1) }
+      : null;
 
     const keyEl = target.closest('[data-keyframe-index]');
     if (keyEl) { keyOnKey(state, e, keyEl, move, ctx, extra); return; }
@@ -170,10 +173,12 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
 
     const handleEl = target.closest('[data-handle-index]');
     const bezier = activeBezier(state);
-    if (handleEl && bezier && state.selectedSegment !== null && move) {
+    const seg = state.selectedSegment;
+    if (handleEl && bezier && seg !== null && move) {
       e.preventDefault();
-      const next = nudgedBezier(bezier, Number(handleEl.getAttribute('data-handle-index')), move.dx, move.dy);
-      const moved = applyKeyframeDrag({ ...state, drag: { kind: 'handle', segment: state.selectedSegment, bezier: next } });
+      const descending = state.keys[seg].value < state.keys[seg - 1].value;
+      const next = nudgedBezier(bezier, Number(handleEl.getAttribute('data-handle-index')), move.dx, move.dy, descending);
+      const moved = applyKeyframeDrag({ ...state, drag: { kind: 'handle', segment: seg, bezier: next } });
       if (moved.keys !== state.keys) extra.commit({ ...state, ...moved, drag: null });
     }
   }

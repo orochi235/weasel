@@ -91,23 +91,25 @@ export function dispatchPress(
 
 /**
  * Offer a key to each layer, top to bottom, until one prevents its default. Each edit a layer commits goes to
- * `onEdit` before the next layer is asked, with what `before` read just ahead of that layer's turn.
+ * `onEdit` before the next layer is asked, with what `before` read just ahead of that layer's turn. `before` is
+ * handed the edits already made by this key, which a consumer's state does not show until it renders again.
  */
 export function dispatchKey<B>(
   layers: readonly LayerEntry[],
   e: KeyboardEvent,
   ctx: LayerCtx,
-  before: () => B,
+  before: (made: readonly LayerEdit[]) => B,
   onEdit: (before: B, edit: LayerEdit) => void,
 ): void {
+  const made: LayerEdit[] = [];
   for (let i = layers.length - 1; i >= 0; i--) {
     const entry = layers[i];
     if (!entry.layer.onKeyDown) continue;
-    const prior = before();
+    const prior = before(made);
     const c = committer(entry, entry.state);
     entry.layer.onKeyDown(entry.state, e, ctx, { commit: c.commit });
     const edit = c.edit();
-    if (edit) onEdit(prior, edit);
+    if (edit) { onEdit(prior, edit); made.push(edit); }
     if (e.defaultPrevented) return;
   }
 }

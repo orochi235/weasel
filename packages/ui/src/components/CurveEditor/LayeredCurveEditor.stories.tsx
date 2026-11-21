@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useMemo, useState, type ReactNode } from 'react';
+import { isPrimaryPress } from '@weasel-js/gestures';
 import {
   CustomLayer, FunctionLayer, KeyframeLayer, LayeredCurveEditor, functionLayerState, keyframeLayerState,
   type ControlPoint, type CurveLayer, type FunctionLayerState, type KeyframeLayerState,
@@ -101,11 +102,13 @@ function createPartitionLayer(): CurveLayer<PartitionState> {
       );
     },
     hitTest(state, plot, ctx) {
+      // Only the drawn grip: the seam's own line carries both curves' end anchors, which must stay draggable.
       const x = ctx.toPlot({ x: state.x, y: 0 }).x;
-      return Math.abs(plot.x - x) < 10 ? { kind: 'handle' } : null;
+      const onGrip = Math.abs(plot.x - x) < 10 && Math.abs(plot.y - ctx.plotSize.height / 2) <= 14 + 4;
+      return onGrip ? { kind: 'handle' } : null;
     },
-    onPointerDown(_state, hit) {
-      if (hit.kind !== 'handle') return;
+    onPointerDown(_state, hit, e) {
+      if (hit.kind !== 'handle' || !isPrimaryPress(e)) return;
       return {
         onMove(_state, model, _e, ctx) {
           const span = ctx.modelRange.xMax - ctx.modelRange.xMin;

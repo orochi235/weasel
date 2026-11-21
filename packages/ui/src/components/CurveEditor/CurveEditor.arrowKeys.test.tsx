@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { useState, type ReactElement } from 'react';
-import { fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import { CurveEditor, type ControlPoint } from './CurveEditor';
 
-function Controlled({ points }: { points: ControlPoint[] }): ReactElement {
+function Controlled({ points, inverted }: { points: ControlPoint[]; inverted?: boolean }): ReactElement {
   const [value, setValue] = useState<ControlPoint[]>(points);
-  return <CurveEditor value={value} onInput={setValue} width={200} height={100} />;
+  const range = inverted ? ([1, 0] as const) : undefined;
+  return <CurveEditor value={value} onInput={setValue} xRange={range} yRange={range} width={200} height={100} />;
 }
 
 const POINTS: ControlPoint[] = [{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }];
@@ -24,14 +25,21 @@ describe('CurveEditor — a focused point and the arrow keys', () => {
     ['ArrowLeft', -1, 0],
     ['ArrowDown', 0, 1],
     ['ArrowUp', 0, -1],
-  ])('moves it with %s', (key, sx, sy) => {
+  ])('moves it with %s, on inverted axes too', (key, sx, sy) => {
     render(<Controlled points={POINTS} />);
+    expectMove(key, sx, sy);
+    cleanup();
+    render(<Controlled points={POINTS} inverted />);
+    expectMove(key, sx, sy);
+  });
+
+  function expectMove(key: string, sx: number, sy: number): void {
     const before = at(1);
     fireEvent.keyDown(anchor(1), { key });
     const after = at(1);
     expect(Math.sign(after.cx - before.cx)).toBe(sx);
     expect(Math.sign(after.cy - before.cy)).toBe(sy);
-  });
+  }
 
   it('moves it ten times as far with Shift', () => {
     render(<Controlled points={POINTS} />);
