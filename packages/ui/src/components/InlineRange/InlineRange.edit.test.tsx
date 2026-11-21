@@ -126,6 +126,27 @@ describe('InlineRange edit protocol', () => {
     expect(onInput.mock.calls.at(-1)).toEqual([5]);
   });
 
+  it('keeps the Escape that cancels a drag from the dialog or popover around it', () => {
+    const outer = vi.fn();
+    const onWindow = vi.fn();
+    const onCancel = vi.fn();
+    render(
+      <div onKeyDown={(e) => outer(e.key)}>
+        <InlineRange aria-label="Width" min={0} max={20} value={5} onValueChange={() => {}} onValueCancel={onCancel} />
+      </div>,
+    );
+    window.addEventListener('keydown', onWindow);
+    press();
+    slide(9);
+    fireEvent.keyDown(range(), { key: 'Escape' });
+    release();
+    fireEvent.keyDown(range(), { key: 'Escape' });
+    window.removeEventListener('keydown', onWindow);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(outer.mock.calls).toEqual([['Escape']]);
+    expect(onWindow).toHaveBeenCalledTimes(1);
+  });
+
   it('unmounting mid-drag cancels the edit', () => {
     const onCancel = vi.fn();
     const onChange = vi.fn();

@@ -71,6 +71,7 @@ export function useRangeEdit(value: number, cb: RangeEditProps, refuses: boolean
     const unlisten = () => {
       document.removeEventListener('pointerup', onRelease);
       document.removeEventListener('pointercancel', onLost);
+      window.removeEventListener('keydown', onKey, true);
     };
     const onRelease = () => {
       if (edit?.canceled) edit = null;
@@ -89,10 +90,13 @@ export function useRangeEdit(value: number, cb: RangeEditProps, refuses: boolean
     const onPress = () => {
       document.addEventListener('pointerup', onRelease);
       document.addEventListener('pointercancel', onLost);
+      window.addEventListener('keydown', onKey, true);
     };
+    // Heard on the window's capture through a press, so the Escape that ends a drag does not also close the dialog it is in.
     const onKey = (ev: KeyboardEvent) => {
-      if (ev.key !== 'Escape' || edit === null || edit.canceled) return;
+      if (ev.key !== 'Escape' || ev.isComposing || edit === null || edit.canceled) return;
       ev.preventDefault();
+      ev.stopPropagation();
       cancel(edit);
     };
     const onBlur = () => {
