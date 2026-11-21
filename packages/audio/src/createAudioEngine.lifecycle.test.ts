@@ -18,6 +18,17 @@ function engineHarness(over: Record<string, unknown> = {}) {
 const flush = (): Promise<void> => new Promise((resolve) => { setTimeout(resolve, 0); });
 
 describe('createAudioEngine disposal', () => {
+  it('resolves an unlock whose resume a dispose cut short', async () => {
+    const { ctx, engine } = engineHarness();
+    let refuse: () => void = () => {};
+    ctx._setState('suspended');
+    ctx.resume = () => new Promise<void>((_, reject) => { refuse = () => reject(new Error('AudioContext is closed.')); });
+    const unlocked = engine.unlock();
+    engine.dispose();
+    refuse();
+    await expect(unlocked).resolves.toBeUndefined();
+  });
+
   it('drops a play after dispose instead of building a silent zombie', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { ctx, engine, tick } = engineHarness();
