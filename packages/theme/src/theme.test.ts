@@ -50,4 +50,9 @@ describe('defineTheme', () => {
     );
     expect(() => defineTheme({ name: 'x', axes: { mode: { default: 'light', values: { dim: {} } } } })).not.toThrow();
   });
+
+  it('refuses an axis name an attribute or selector cannot carry', () => {
+    expect(() => defineTheme({ name: 'x', axes: { 'my axis': { default: 'a', values: { a: {} } } } })).toThrow(/"my axis" cannot name an axis/);
+    expect(() => defineTheme({ name: 'x', axes: { 'a.b': { default: 'a', values: { a: {} } } } })).toThrow(/"a\.b" cannot name an axis/);
+  });
 });

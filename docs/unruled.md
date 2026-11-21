@@ -3236,3 +3236,7 @@ Calls the lanes made without a ruling:
   its parent's included, as `derive` reports one. A DTCG document with no base and no `dark` mode defaults its mode to
   its first. `axisScheme` answers no scheme for such an axis rather than recursing. Loading it and letting the default
   fall back to the first value was the alternative.
+- 2026-11-20 (the fixer's call): an axis name takes only ASCII letters, digits, `-`, and `_`, the characters its
+  `data-wzl-*` attribute and that attribute's selector both carry unescaped; `defineTheme` and `fromDtcg` throw on
+  another, and `derive` reports it. `fromDtcg` refuses `theme`, `variant`, and `__proto__` as `defineTheme` does.
+  Escaping the name in the selector was the alternative, but `setAttribute` refuses a space whatever the selector does.

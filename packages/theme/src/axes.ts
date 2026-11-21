@@ -35,6 +35,7 @@ const RESERVED_AXES = ['theme', 'variant'];
 export function axisNameProblem(name: string): string | undefined {
   if (name === '__proto__') return '"__proto__" cannot name an axis';
   if (RESERVED_AXES.includes(name)) return `"${name}" is reserved and cannot name an axis: its data-wzl-${name} attribute is the theme's own`;
+  if (!/^[A-Za-z0-9_-]+$/.test(name)) return `"${name}" cannot name an axis: its data-wzl-* attribute takes only letters, digits, "-", and "_"`;
   return undefined;
 }
 
