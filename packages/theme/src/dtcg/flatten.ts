@@ -43,6 +43,9 @@ export function flattenTokens(doc: Record<string, unknown>): FlatTokens {
         throw new Error(`Duplicate token name "${leaf}" — leaf keys must be unique across type groups`);
       }
 
+      if (node.$description !== undefined && typeof node.$description !== 'string') {
+        throw new Error(`Token "${leaf}" has a $description that is not a string`);
+      }
       const alphaRaw = node.$extensions?.[ALPHA_EXT];
       const scopeRaw = node.$extensions?.[SCOPE_EXT];
       const scope = Array.isArray(scopeRaw) ? scopeRaw.filter((axis): axis is string => typeof axis === 'string') : undefined;
