@@ -58,12 +58,12 @@ export function forgetRoom(el: HTMLElement | null, room: FitRoom): void {
 }
 
 /** Clears a spent mark `el` has grown out of, then marks it spent where it overflows at its labels' last forms. */
-export function settleSpent(el: HTMLElement, room: FitRoom, atLastForms: boolean): void {
+export function settleSpent(el: HTMLElement, room: FitRoom, atLastForms: boolean, overflows: (el: HTMLElement) => boolean): void {
   if (room.spentAt !== null && el.clientWidth > room.spentAt + 0.5) {
     room.spentAt = null;
     el.removeAttribute(SPENT);
   }
-  if (room.spentAt !== null || !atLastForms || el.scrollWidth <= el.clientWidth) return;
+  if (room.spentAt !== null || !atLastForms || !overflows(el)) return;
   el.setAttribute(SPENT, '');
   room.spentAt = el.clientWidth;
 }

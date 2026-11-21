@@ -17,6 +17,7 @@ import { useBarReorder } from './useBarReorder';
 import { useBarReorderKeys } from './useBarReorderKeys';
 import { useBarLead } from './barLeadHandle';
 import { DockBarContext } from '../ToolbarDock/dockContext';
+import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import b from './Bar.module.css';
 import f from './barFrames.module.css';
 import s from './BarAlong.module.css';
@@ -64,12 +65,26 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const rove = useRovingTabIndex<HTMLDivElement>({ orientation: 'horizontal' });
   const roveRef = rove.rootRef;
   const { role } = barRoot(props);
+  // Its items lie along the run, not in its box, so the run is what they overflow.
+  const fit = useFitScope(rootRef, { overflows: (el) => drawnLength(el, gap) > run.length + RUN_SLACK });
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
     reorder.onPointerDownCapture(e);
     // A press on a dock's handle moves the bar, so it does not also scroll the run.
     if (leading?.handle && (e.target as Element).closest?.(`[${BAR_LEAD}]`)) return;
     along.rootProps.onPointerDownCapture(e);
   };
+
+  const runItems = (
+    <>
+      {leading != null && <span className={`${b.lead} ${s.item}`} {...leading.attrs} style={place(0).style} data-clipped={place(0).clipped}>{leading.content}</span>}
+      {line.map((item, i) => drawBarItem(item, false, place(first + i)))}
+      {rest.length > 0 && (
+        <span className={`${b.cell} ${s.item}`} {...{ [BAR_MORE]: '' }} style={place(order.length - 1).style}>
+          <BarOverflow label={overflowLabel} side={place(order.length - 1).side}>{rest.map((item) => drawBarItem(inBarMenu(item), true))}</BarOverflow>
+        </span>
+      )}
+    </>
+  );
 
   return (
     <div
@@ -91,15 +106,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
       <RunBand row={along} shape={shape} />
       {props.onReorder && <span aria-live="polite" aria-atomic="true" data-bar-announce="" className={b.status}>{keys.announcement}</span>}
       <DockBarContext.Provider value={null}>
-        <RunScope fresh>
-          {leading != null && <span className={`${b.lead} ${s.item}`} {...leading.attrs} style={place(0).style} data-clipped={place(0).clipped}>{leading.content}</span>}
-          {line.map((item, i) => drawBarItem(item, false, place(first + i)))}
-          {rest.length > 0 && (
-            <span className={`${b.cell} ${s.item}`} {...{ [BAR_MORE]: '' }} style={place(order.length - 1).style}>
-              <BarOverflow label={overflowLabel} side={place(order.length - 1).side}>{rest.map((item) => drawBarItem(inBarMenu(item), true))}</BarOverflow>
-            </span>
-          )}
-        </RunScope>
+        <RunScope fresh>{props.fit ? <FitScope value={fit}>{runItems}</FitScope> : runItems}</RunScope>
       </DockBarContext.Provider>
       <RunEnds row={along} run={run} />
     </div>
@@ -109,4 +116,11 @@ export function BarAlong(props: BarAlongProps): ReactElement {
 /** The keys of what the bar holds, so its lengths are watched again when that set changes: its More button among them. */
 function drawnKeys(items: readonly LineItem[], lead: boolean, menu: boolean): string[] {
   return [...(lead ? [BAR_LEAD] : []), ...items.map((item) => item.key), ...(menu ? [BAR_MORE] : [])];
+}
+
+/** The length a curved bar's items take laid end to end `gap` apart, read from what is drawn now. */
+function drawnLength(root: HTMLElement, gap: number): number {
+  const lengths = Array.from(root.children, (child) => (barKeyOf(child) !== null && child instanceof HTMLElement ? child.offsetWidth : null))
+    .filter((length) => length !== null);
+  return lengths.reduce((sum, length) => sum + length, 0) + gap * Math.max(0, lengths.length - 1);
 }
