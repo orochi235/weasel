@@ -1,4 +1,5 @@
 import { compact, decimal } from './kinds/plain';
+import { remembered } from './memo';
 import { parseAs, present } from './present';
 import type { Display } from './quantity';
 
@@ -20,11 +21,8 @@ const settled = new Map<string, string>();
  */
 export function fieldLocale(requested?: string): string {
   if (requested === undefined || requested === '') return 'en-US';
-  const known = settled.get(requested);
-  if (known !== undefined) return known;
-  const chosen = [requested, latinOf(requested)].find((tag) => tag !== undefined && roundTrips(tag)) ?? 'en-US';
-  settled.set(requested, chosen);
-  return chosen;
+  return remembered(settled, requested, () =>
+    [requested, latinOf(requested)].find((tag) => tag !== undefined && roundTrips(tag)) ?? 'en-US');
 }
 
 function latinOf(tag: string): string | undefined {

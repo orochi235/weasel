@@ -1,5 +1,6 @@
 import { entryScale, type UnitEntry } from './units';
 import { unitSpellings } from './catalog';
+import { remembered } from './memo';
 
 /**
  * The real MINUS SIGN (U+2212), which display formatting uses instead of the
@@ -137,8 +138,10 @@ const shapes = new Map<string, NumberShape>();
 
 /** How `locale` writes a number, read off `Intl`: its separators and group sizes (`12,34,567` in `en-IN`). */
 function shapeOf(locale: string): NumberShape {
-  const known = shapes.get(locale);
-  if (known) return known;
+  return remembered(shapes, locale, () => readShape(locale));
+}
+
+function readShape(locale: string): NumberShape {
   const parts = new Intl.NumberFormat(locale).formatToParts(123_456_789.5);
   const sizes = parts.filter((p) => p.type === 'integer').map((p) => p.value.length);
   const primary = sizes.at(-1)!;
@@ -153,15 +156,13 @@ function shapeOf(locale: string): NumberShape {
     : { pattern: new RegExp(`[${own.join('')}]`, 'gu'), latin: new Map(own.map((c, i) => [c, String(i)])) };
   const d = escapeClass(decimal);
   const integer = String.raw`\d{1,${secondary}}(?:[${g}]\d{${secondary}})*[${g}]\d{${primary}}|\d*`;
-  const shape: NumberShape = {
+  return {
     run: new RegExp(String.raw`(?:\d|[${d}]\d)(?:[\d${g}${d}]*\d)?[${d}]?`, 'g'),
     whole: new RegExp(String.raw`^(?:${integer})(?:[${d}]\d*)?$`),
     group: new RegExp(`[${g}]`, 'g'),
     decimal,
     digits,
   };
-  shapes.set(locale, shape);
-  return shape;
 }
 
 export const escapeClass = (c: string) => c.replace(/[\\\]^-]/g, '\\$&');
