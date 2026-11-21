@@ -18,7 +18,8 @@ export function notch(params: NotchParams = {}): Motif<NotchParams> {
       const { title, titleId, inline, note, twisty, twistyAt, leading, actions } = heading;
       const fold = twistySides({ twisty, twistyAt });
       return (
-        <fieldset {...withMotifClass(root, s.notch)}>
+        // A fieldset is a group named by its legend, so an untitled one would be named by its controls.
+        <fieldset {...withMotifClass(root, s.notch)} role={root.role ?? 'none'}>
           {headed(heading) && (
             <legend className={s.legend} data-align={align} data-actions={drawn(actions) ? '' : undefined}>
               {fold.start}
