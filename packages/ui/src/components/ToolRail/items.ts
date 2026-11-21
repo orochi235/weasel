@@ -33,7 +33,7 @@ export interface ToolRailButton extends ToolRailPlaced {
 }
 
 /** Buttons sharing one: it shows the active member, else the one last pressed, and a click opens a menu of all
- *  of them. Only the members' presses are used; their pointer, drag and class fields are not. */
+ *  of them. The button takes the shown member's pointer, drag and class fields. */
 export interface ToolRailStack extends ToolRailPlaced {
   members: readonly ToolRailButton[];
 }

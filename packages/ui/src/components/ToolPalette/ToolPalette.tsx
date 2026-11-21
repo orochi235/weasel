@@ -138,7 +138,7 @@ function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
       shortcut: getOwn(tools.shortcuts, tool.id)?.[0],
       active: tools.active === tool.id,
       ...(enabled ? {} : { disabled: true, disabledReason }),
-      onPress: () => { if (!carry.carried()) tools.setActive(tool.id); },
+      onPress: () => { tools.setActive(tool.id); },
       onPointerDown: carryTool && enabled ? (e) => carry.press(tool, e) : undefined,
       onDragStart: onToolDragStart && enabled ? (e) => onToolDragStart(tool, e) : undefined,
       className: carryTool?.(tool) != null ? s.carrySource : undefined,

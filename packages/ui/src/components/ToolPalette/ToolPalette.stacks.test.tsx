@@ -72,6 +72,28 @@ describe('ToolPalette stacks', () => {
     expect(stack()).toHaveTextContent('star');
   });
 
+  it('makes a stack a drag source for the tool it shows', () => {
+    const onToolDragStart = vi.fn();
+    renderWithIcons(<Palette onToolDragStart={onToolDragStart} />);
+    expect(stack()).toHaveAttribute('draggable', 'true');
+    fireEvent.dragStart(stack());
+    expect(onToolDragStart).toHaveBeenCalledWith(expect.objectContaining({ id: 'rect' }), expect.anything());
+  });
+
+  it('carries the tool a stack shows, opening no menu with the click that ends the carry', async () => {
+    const carryTool = vi.fn((t: Tool) => ({ type: 'test/tool', value: t.id }));
+    renderWithIcons(<Palette carryTool={carryTool} />);
+    fireEvent.pointerDown(stack(), { button: 0, pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(document, { button: 0, buttons: 1, pointerId: 1, clientX: 60, clientY: 40 });
+    fireEvent.pointerUp(document, { button: 0, pointerId: 1, clientX: 60, clientY: 40 });
+    press(stack());
+    expect(carryTool).toHaveBeenCalledWith(expect.objectContaining({ id: 'rect' }));
+    expect(screen.queryByRole('menu')).toBeNull();
+    await new Promise((r) => setTimeout(r, 0));
+    press(stack());
+    expect(screen.getByRole('menu')).toBeDefined();
+  });
+
   it('draws a stack left with one shown tool as a plain button', () => {
     renderWithIcons(<Palette include={(t) => t.id !== 'ellipse' && t.id !== 'star'} />);
     expect(screen.getByRole('button', { name: /rect/ })).not.toHaveAttribute('aria-haspopup');

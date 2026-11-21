@@ -17,7 +17,8 @@ const held = (e: MouseEvent, mod: StackCycleModifier): boolean =>
 
 /**
  * One rail button standing for several. It shows the active member when it holds one, and otherwise the one last
- * pressed from it. A click opens a menu of all of them; a click with `cycle` held presses the next enabled one.
+ * pressed from it, and takes that member's pointer, drag and class fields. A click opens a menu of all of them; a
+ * click with `cycle` held presses the next enabled one.
  */
 export function RailStack(props: {
   stack: ToolRailStack;
@@ -65,9 +66,11 @@ export function RailStack(props: {
         active={current !== undefined}
         disabled={!anyEnabled}
         disabledReason={anyEnabled ? undefined : face.disabledReason}
-        className={s.item}
+        className={[s.item, face.className].filter(Boolean).join(' ')}
         popup={{ type: 'menu', ref: trigger.button, id: trigger.id, expanded: trigger.open, onPointerDown: trigger.press }}
         onPress={onClick}
+        onPointerDown={face.onPointerDown}
+        onDragStart={face.onDragStart}
       />
       {trigger.portal}
     </>
