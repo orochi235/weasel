@@ -134,4 +134,24 @@ describe('titlebar', () => {
     expect(frame.borderTopWidth).toBe('0px');
     expect(frame.paddingTop).toBe('3px');
   });
+
+  it('clips a long title, and nothing round a control drawn beside it', () => {
+    render(
+      <Scope>
+        <MotifFrame
+          title={'A title far too long for the strip it sits in'.repeat(2)}
+          motif={titlebar()}
+          inline={<input type="checkbox" aria-label="On" />}
+        >
+          x
+        </MotifFrame>
+      </Scope>,
+    );
+    const label = document.getElementById(screen.getByRole('group').getAttribute('aria-labelledby')!)!;
+    expect(label.scrollWidth).toBeGreaterThan(label.clientWidth);
+    const strip = label.closest('[data-motif]')!.firstElementChild!;
+    for (let el = screen.getByRole('checkbox').parentElement; el && el !== strip; el = el.parentElement) {
+      expect(getComputedStyle(el).overflow).toBe('visible');
+    }
+  });
 });

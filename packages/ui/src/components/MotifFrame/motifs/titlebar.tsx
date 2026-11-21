@@ -28,7 +28,7 @@ export function titlebar(): Motif<Record<string, never>> {
                     {title}
                   </span>
                 )}
-                {inline}
+                {drawn(inline) && <span className={s.inline}>{inline}</span>}
               </span>
               {actions}
               {fold.end}
