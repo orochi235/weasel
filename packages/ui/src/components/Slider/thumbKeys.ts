@@ -40,6 +40,7 @@ export function onThumbKeyDown<T extends Thumb>(a: ThumbKeyArgs<T>) {
     });
     if (v === null) return;
     e.preventDefault();
+    if (v === next[index].value) return;
     next[index] = { ...next[index], value: v };
     a.onInput(next);
     a.onChange(next);

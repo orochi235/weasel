@@ -93,7 +93,7 @@ describe('Slider stops', () => {
   it('holds the last stop at the end of the list', () => {
     const { thumb, onInput } = renderWithStops({ thumbs: [{ value: 100 }] });
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
-    expect(lastValue(onInput)).toBe(100);
+    expect(onInput).not.toHaveBeenCalled();
   });
 
   it('jumps a coarse keystroke ten stops', () => {
