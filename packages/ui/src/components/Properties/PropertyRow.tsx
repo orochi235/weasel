@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useId, useLayoutEffect, useMemo, useState } from 'react';
 import { FieldScope } from '../Field/fieldSemantics';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 import { PropertyHelp } from './PropertyHelp';
@@ -116,9 +116,9 @@ export function PropertyRow(props: PropertyRowProps) {
   // belongs on the label line. An inline row would put a value of changing width
   // in front of the control, which then moves under the pointer as it changes.
   const trailing = resolved === 'inline' && readout != null;
-  const rowRef = useRef<HTMLElement | null>(null);
-  const labelRef = useRef<HTMLSpanElement | null>(null);
-  const multiline = useMultiline(rowRef, labelRef, resolved === 'inline');
+  const [rowEl, rowRef] = useState<HTMLElement | null>(null);
+  const [labelEl, labelRef] = useState<HTMLSpanElement | null>(null);
+  const multiline = useMultiline(rowEl, labelEl, resolved === 'inline');
   const labelId = useId();
   const errorId = useId();
   const named = <span id={labelId}>{label}</span>;
@@ -174,14 +174,14 @@ export function PropertyRow(props: PropertyRowProps) {
     </FieldScope>
   );
   return group ? (
-    <div className={cls} ref={rowRef as RefObject<HTMLDivElement>} {...multi}>
+    <div className={cls} ref={rowRef} {...multi}>
       {body}
     </div>
   ) : (
     <label
       className={cls}
       htmlFor={htmlFor}
-      ref={rowRef as RefObject<HTMLLabelElement>}
+      ref={rowRef}
       {...multi}
     >
       {body}
@@ -193,21 +193,17 @@ export function PropertyRow(props: PropertyRowProps) {
  * Whether an inline row runs past one line — its label wraps, or a child is
  * taller than a field. CSS can name the tall controls it knows (`:has()`), but
  * not a label that wrapped at this width, so the row measures. Never set
- * without layout, so jsdom always reads single-line.
+ * without layout, so jsdom always reads single-line. Takes elements, not refs:
+ * a `group` change swaps the root, and the watch has to move to the new one.
  */
 function useMultiline(
-  rowRef: RefObject<HTMLElement | null>,
-  labelRef: RefObject<HTMLElement | null>,
+  row: HTMLElement | null,
+  label: HTMLElement | null,
   enabled: boolean,
 ): boolean {
   const [multiline, setMultiline] = useState(false);
   useLayoutEffect(() => {
-    const row = rowRef.current;
-    const label = labelRef.current;
-    if (!enabled || !row || !label) {
-      setMultiline(false);
-      return;
-    }
+    if (!enabled || !row || !label) return;
     const measure = (): void => {
       const labelStyle = getComputedStyle(label);
       const lineHeight =
@@ -220,9 +216,19 @@ function useMultiline(
       );
       setMultiline(labelWraps || tallChild);
     };
-    return watchResize([row, label, ...row.children], measure);
-  }, [rowRef, labelRef, enabled]);
-  return multiline;
+    // A control replaced inside the row is a new child, which the resize watch has to pick up.
+    let unwatch = watchResize([row, label, ...row.children], measure);
+    const children = new MutationObserver(() => {
+      unwatch();
+      unwatch = watchResize([row, label, ...row.children], measure);
+    });
+    children.observe(row, { childList: true });
+    return () => {
+      children.disconnect();
+      unwatch();
+    };
+  }, [row, label, enabled]);
+  return enabled && multiline;
 }
 
 /**
