@@ -2,6 +2,6 @@
 '@weasel-js/ui': patch
 ---
 
-`InlineMarkdown` keeps a code span whole inside emphasis, strong, strikethrough, or a link label, so `` *the `**` operator* `` reads as emphasis around the code.
+`InlineMarkdown` keeps a code span whole inside a mark or a link label. So `` *the `**` operator* `` reads as emphasis around the code.
 
 <!-- entry: fix -->
