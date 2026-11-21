@@ -10,6 +10,7 @@ import Metal from './Metal';
 import Outline from './Outline';
 import Perforations from './Perforations';
 import Puffs from './Puffs';
+import Rivets from './Rivets';
 import Scallops from './Scallops';
 import Sheen from './Sheen';
 import Spikes from './Spikes';
@@ -229,4 +230,23 @@ describe('a bump effect param that is not a finite number', () => {
       }
     });
   }
+});
+
+describe('rivets', () => {
+  const centers = (c: Element) => [...c.querySelectorAll('ellipse.badge-bevel-dark')].map((e) => [Number(e.getAttribute('cx')), Number(e.getAttribute('cy'))]);
+
+  it('sit `inset` CSS px in from each corner of a rectangle', () => {
+    const [x, y] = centers(draw(Rivets, { inset: 7 }))[0];
+    expect(x).toBeCloseTo(7 * (100 / 200));
+    expect(y).toBeCloseTo(7 * (100 / 30));
+  });
+
+  it('sit inside an outline that does not fill its box, clipped to it', () => {
+    const diamond: [number, number][] = [[50, 0], [100, 50], [50, 100], [0, 50]];
+    const c = draw(Rivets, { inset: 7 }, 100, 100, polygonSampler(diamond, 100, 100));
+    const found = centers(c);
+    expect(found).toHaveLength(4);
+    for (const [x, y] of found) expect(Math.abs(x - 50) + Math.abs(y - 50)).toBeLessThan(50);
+    expect(c.querySelector('g[clip-path]')).not.toBeNull();
+  });
 });
