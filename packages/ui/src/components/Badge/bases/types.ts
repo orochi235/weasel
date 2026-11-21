@@ -6,7 +6,7 @@ export interface PerimeterPoint {
   x: number;
   /** viewBox coordinate (0..100). */
   y: number;
-  /** Outward-pointing normal, unit length in viewBox terms. */
+  /** Outward-pointing normal, unit length in CSS px: the effects scale it by `100 / boxW` and `100 / boxH` into the viewBox. */
   nx: number;
   ny: number;
 }
