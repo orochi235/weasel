@@ -70,11 +70,12 @@ export function nodeColorsOf(style: CellStyle, warn: Warn): Partial<NodeStyle> |
 }
 
 /** A container's, pool's, or lane's colors: a swimlane's body is its `swimlaneFillColor`, where it names one, and else its
- *  `fillColor`, which a draw app paints in the header. */
+ *  `fillColor`, which a draw app paints in the header. The diagram outlines a region undashed, so a dash warns. */
 export function regionColorsOf(style: CellStyle, warn: Warn): Partial<NodeStyle> | undefined {
-  const colors = nodeColorsOf(style, warn);
+  const { dash, ...colors } = nodeColorsOf(style, warn) ?? {};
+  if (dash !== undefined) warn('Dashed outlines on containers, pools, and lanes were drawn solid.');
   const body = colorOf(style, 'swimlaneFillColor', warn);
-  return body === undefined ? colors : { ...colors, fill: body };
+  return defined<NodeStyle>(body === undefined ? colors : { ...colors, fill: body });
 }
 
 /** A cell's value as text. */

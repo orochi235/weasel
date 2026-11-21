@@ -86,6 +86,20 @@ describe('draw-style XML pools and containers', () => {
     });
     expect(region(data, 'pool').role).toBe('pool');
   });
+
+  it('writes containers, pools, and lanes undashed, as the diagram draws them, and warns of a dashed one read', async () => {
+    const { text } = DIAGRAM_DRAW_XML.write!({ ...doc({
+      nodes: [], edges: [],
+      containers: [
+        { id: 'k', role: 'container', box: { x: 0, y: 0, width: 100, height: 80 }, colors: { dash: [5, 5] } },
+        { id: 'pool', role: 'pool', axis: 'y', box: { x: 200, y: 0, width: 400, height: 200 }, lanes: [{ id: 'l' }] },
+      ],
+    }), theme: 'paper' });
+    expect(text).not.toContain('dashed=1');
+    const { data, warnings } = await readCells(vertex('c', 'swimlane;dashed=1;weaselRole=container;', 'width="100" height="80"'));
+    expect(region(data, 'c').colors?.dash).toBeUndefined();
+    expect(warnings).toContain('Dashed outlines on containers, pools, and lanes were drawn solid.');
+  });
 });
 
 describe('draw-style XML clusters', () => {

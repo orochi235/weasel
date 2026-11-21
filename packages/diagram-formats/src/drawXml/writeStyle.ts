@@ -91,7 +91,8 @@ export function regionStyle(region: DataContainer | (DataLane & { role: 'lane' }
   return writeStyle([
     'swimlane', ['horizontal', header?.side === 'left' ? 0 : 1], ['startSize', header?.size ?? 0],
     ['container', 1], ['collapsible', 0], ['whiteSpace', 'wrap'],
-    ...(lane ? colorParts({ ...style, strokeWidth: LANE_STROKE_WIDTH }, false) : colorParts(style, true)),
+    // The diagram outlines every region undashed, whatever its style says.
+    ...colorParts({ ...style, dash: undefined, ...(lane ? { strokeWidth: LANE_STROKE_WIDTH } : {}) }, !lane),
     ['swimlaneFillColor', lane ? 'none' : colorValue(style.fill)], [ROLE_KEY, lane ? undefined : region.role],
   ]);
 }
