@@ -18,7 +18,7 @@ describe('a headless page serving scene options', () => {
     const here = renderSceneToPixels({ scene, ...REGISTERED_RENDER });
     const there = nodePixels(fromNode.images[0]!);
     expect([there.width, there.height]).toEqual([here.width, here.height]);
-    expect(difference(there.data, here)).toEqual({ pixels: 0, maxStep: 0 });
+    expect(difference(there, here)).toEqual({ pixels: 0, maxStep: 0 });
 
     const px = (x: number, y: number) => {
       const at = (y * 2 * here.width + x * 2) * 4;
