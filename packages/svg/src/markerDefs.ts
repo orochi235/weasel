@@ -75,11 +75,6 @@ function idOfKey(key: string): string {
   return `m--${key.replace(/[^\w.]/g, '_')}--${shortHash(key)}`;
 }
 
-/** Whether `def` is written with an attribute in the private namespace. */
-export function defUsesPrivateNamespace(def: MarkerDef): boolean {
-  return def.size !== undefined || writesInset(getMarker(def.key)) || idOfKey(def.key) !== def.key;
-}
-
 /** The `<marker>` def for an entry with no `toSvg` of its own. Unsized, one
  *  marker unit is one stroke width, as the kit draws it. A sized reference is
  *  drawn in user space at `resolveMarkerSize`'s reading of its size, and

@@ -168,7 +168,7 @@ export function resolveRunFace(
   return {
     fontFamily: run.fontFamily ?? style.fontFamily,
     fontWeight: run.fontWeight ?? (run.bold ? 700 : numericWeight(style.fontWeight)),
-    fontStyle: run.italic ? 'italic' : style.fontStyle,
+    fontStyle: run.italic == null ? style.fontStyle : run.italic ? 'italic' : 'normal',
   };
 }
 

@@ -1,6 +1,6 @@
 /** Stylesheet text read into cascade rules: conditional at-rules, layers and source order. */
 
-import { parseDeclarations, skipBlock, skipString, splitTopLevel, stripComments, type Declaration } from './cssScan';
+import { closeOfBlock, parseDeclarations, skipString, splitTopLevel, stripComments, type Declaration } from './cssScan';
 import { specificity, type Specificity } from './specificity';
 import { DEFAULT_MEDIA_ENVIRONMENT, evaluateMediaQuery, type SvgMediaEnvironment } from './media';
 import { evaluateSupports } from './supports';
@@ -139,7 +139,10 @@ function parseRuleList(
     }
     if (ch !== '{') { i++; continue; }
     const prelude = src.slice(preludeStart, i).trim();
-    const end = Math.min(skipBlock(src, i), to);
+    const close = closeOfBlock(src, i);
+    const end = Math.min(close ?? src.length, to);
+    // CSS closes a block left open at the end of the sheet, so its body runs to the end.
+    const bodyEnd = close != null && close <= to ? end - 1 : end;
     const at = AT_RULE.exec(prelude);
     state.importsAllowed = false;
     if (at) {
@@ -147,17 +150,17 @@ function parseRuleList(
       const names = name === 'layer' ? layerNames(at[2]) : null;
       if (names && names.length <= 1) {
         const inner = names.length ? state.layers.declare(layer, names[0]) : state.layers.declareAnonymous(layer);
-        parseRuleList(src, i + 1, end - 1, inner, ctx, rules, state);
+        parseRuleList(src, i + 1, bodyEnd, inner, ctx, rules, state);
       } else if (name === 'container') {
         const outer = state.containers;
         state.containers = [...(outer ?? []), at[2]];
-        parseRuleList(src, i + 1, end - 1, layer, ctx, rules, state);
+        parseRuleList(src, i + 1, bodyEnd, layer, ctx, rules, state);
         state.containers = outer;
       } else if (conditionHolds(name, at[2], ctx)) {
-        parseRuleList(src, i + 1, end - 1, layer, ctx, rules, state);
+        parseRuleList(src, i + 1, bodyEnd, layer, ctx, rules, state);
       }
     } else if (prelude) {
-      const declarations = parseDeclarations(src.slice(i + 1, end - 1));
+      const declarations = parseDeclarations(src.slice(i + 1, bodyEnd));
       for (const raw of splitTopLevel(prelude, ',')) {
         const selector = raw.trim();
         if (selector) {

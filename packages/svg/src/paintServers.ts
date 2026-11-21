@@ -4,7 +4,7 @@ import { getMarker, isPatternPaint } from '@weasel-js/core';
 import type { Paint, MarkerRef, Path } from '@weasel-js/core';
 import { gradientXml, usesInterpolateAttr } from './gradients';
 import { patternXml } from './patterns';
-import { defUsesPrivateNamespace, markerDefOf, markerDefXml, type MarkerDef } from './markerDefs';
+import { markerDefOf, markerDefXml, type MarkerDef } from './markerDefs';
 
 function hasNativeSvgForm(paint: Paint): boolean {
   return nativeSvgKind(paint.kind ?? 'solid');
@@ -64,7 +64,8 @@ export class PaintServerRegistry {
    *  the root has to declare {@link WEASEL_NS}. */
   usesPrivateNamespace(): boolean {
     return this.order.some((paint) => !hasNativeSvgForm(paint) || usesInterpolateAttr(paint))
-      || this.privateAttrs || [...this.markers.values()].some(defUsesPrivateNamespace);
+      // A marker def is read back as a kit marker only from a document declaring the namespace.
+      || this.privateAttrs || this.markers.size > 0;
   }
 
   /** Note that the body uses the private namespace for an attribute of its own. */

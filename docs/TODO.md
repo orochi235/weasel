@@ -238,6 +238,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Text
 
+- **(P3) [agent] SVG import reads a `<tspan>` nested in a `<tspan>` as its parent's text.** Inkscape and
+  Illustrator write them; `readRuns` (`packages/svg/src/readRuns.ts`) takes the outer tspan's `textContent` as one run
+  and warns, so the inner one's fill, weight, size, `x`/`dy` and `rotate` are lost. Its x/dx/y/dy lists, line breaks
+  and turns are all keyed to one tspan element per run, so an inner tspan needs them to walk the tree. Closes when
+  `<text><tspan font-weight="bold">a<tspan fill="red" dy="5">b</tspan></tspan></text>` reads "b" bold, red and
+  lowered, with no warning.
+
 ## Scene, adapters & layout
 
 - **(P2) [agent] A scene layout moves a fitted container as one rigid box, where `diagramScene` lays its members

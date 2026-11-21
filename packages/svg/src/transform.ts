@@ -41,8 +41,9 @@ const ARITY: Readonly<Record<string, readonly number[]>> = {
   matrix: [6], translate: [1, 2], scale: [1, 2], rotate: [1, 3], skewx: [1], skewy: [1],
 };
 
-/** A function's arguments, or `null` when one is not a finite number. */
-function readNumbers(args: string): number[] | null {
+/** An SVG number list (a function's arguments, a `viewBox`, a `rotate`), or `null` when it is not wholly
+ *  finite numbers separated by comma-wsp. */
+export function readNumbers(args: string): number[] | null {
   const s = args.trim();
   const nums: number[] = [];
   ARG.lastIndex = 0;

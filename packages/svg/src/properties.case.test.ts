@@ -35,3 +35,52 @@ describe('keywords read without regard to case', () => {
     expect(isDeclarationHonored('fill', 'Inherit')).toBe(true);
   });
 });
+
+describe('negative lengths CSS rejects', () => {
+  it('lets the inherited stroke-width stand under a negative one', () => {
+    const { nodes, warnings } = parse('<g stroke-width="4"><path d="M0 0L9 9" stroke="#000" style="stroke-width:-2"/></g>');
+    const leaf = (nodes[0].kind === 'group' ? nodes[0].children[0] : nodes[0]) as SvgPathNode;
+    expect(leaf.stroke).toMatchObject({ width: 4 });
+    expect(warnings.some((w) => w.includes('stroke-width'))).toBe(true);
+  });
+
+  it('drops a negative font-size, absolute or relative', () => {
+    expect(readProperty('font-size', '-12px')).toBeUndefined();
+    expect(readProperty('font-size', '-50%')).toBeUndefined();
+    expect(readProperty('stroke-width', '-2')).toBeUndefined();
+    expect(isDeclarationHonored('font-size', '-1em')).toBe(false);
+    const { nodes } = parse('<text font-size="20"><tspan font-size="-12px">a</tspan></text>');
+    const text = nodes[0].kind === 'group' ? nodes[0].children[0] : nodes[0];
+    expect(JSON.stringify(text)).not.toContain('-12');
+  });
+});
+
+describe('a style block left open', () => {
+  const fillOf = (css: string) => {
+    const leaf = parse(`<style>${css}</style><rect width="5" height="5"/>`).nodes[0];
+    return JSON.stringify(leaf);
+  };
+  it('reads its body to the end of the sheet', () => {
+    expect(fillOf('rect{fill:red')).toContain('#ff0000');
+    expect(fillOf('@media all{rect{fill:red')).toContain('#ff0000');
+    expect(fillOf('@media all{rect{fill:red}')).toContain('#ff0000');
+  });
+});
+
+describe('relative font weights', () => {
+  const textOf = (body: string) => {
+    let n = parse(body).nodes[0];
+    while (n?.kind === 'group') n = n.children[0];
+    return n as { style?: { fontWeight?: unknown }; runs?: { fontWeight?: number; bold?: boolean }[] };
+  };
+  it('computes lighter and bolder over the inherited weight', () => {
+    expect(textOf('<g font-weight="bold"><text font-weight="lighter">a</text></g>').style?.fontWeight).toBe(400);
+    expect(textOf('<g font-weight="300"><text font-weight="bolder">a</text></g>').style?.fontWeight).toBe(400);
+    expect(textOf('<text font-weight="bold">a<tspan font-weight="lighter">b</tspan></text>').runs?.[1]).toMatchObject({ fontWeight: 400 });
+    expect(isDeclarationHonored('font-weight', 'lighter')).toBe(true);
+  });
+
+  it('lets the inherited weight stand under one CSS rejects', () => {
+    expect(textOf('<g font-weight="bold"><text font-weight="heavy">a</text></g>').style?.fontWeight).toBe('bold');
+  });
+});

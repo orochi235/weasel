@@ -46,7 +46,8 @@ const sameLength = (a: ScreenLength | undefined, b: ScreenLength | undefined): b
 
 export interface StyleState {
   bold: boolean;
-  italic: boolean;
+  /** Absent inherits the node's style; `false` is upright under an italic node. */
+  italic?: boolean;
   underline: boolean;
   strikethrough: boolean;
   overline: boolean;
@@ -72,7 +73,7 @@ export const TRANSFORMS: ReadonlySet<string> = new Set(['none', 'uppercase', 'lo
 
 export const EMPTY_STYLE: StyleState = {
   bold: false,
-  italic: false,
+  italic: undefined,
   underline: false,
   strikethrough: false,
   overline: false,
@@ -251,7 +252,7 @@ export function styleEquals(a: StyleState, b: StyleState): boolean {
 export function toRun(text: string, style: StyleState): StyledRun {
   const run: StyledRun = { text };
   if (style.bold) run.bold = true;
-  if (style.italic) run.italic = true;
+  if (style.italic != null) run.italic = style.italic;
   if (style.fontWeight != null) run.fontWeight = style.fontWeight;
   if (style.fontSize != null) run.fontSize = style.fontSize;
   if (style.fontFamily != null) run.fontFamily = style.fontFamily;

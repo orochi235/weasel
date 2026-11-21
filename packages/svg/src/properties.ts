@@ -67,6 +67,13 @@ const length = (native: 'px' | 'em', coercedAs: string) =>
 
 const worldLength = length('px', 'world units');
 
+/** A dimension below zero, which CSS rejects for a property that takes none. */
+const isNegative = (v: string): boolean => (dimension(v)?.n ?? 0) < 0;
+
+function readStrokeWidth(v: string, warn: Warn, prop: string, fontSize: number): number | undefined {
+  return isNegative(v) ? undefined : worldLength(v, warn, prop, fontSize);
+}
+
 /** CSS keywords are ASCII case-insensitive, so every reader folds case before comparing one. */
 const keyword = <W extends string>(...words: W[]) => (v: string): W | undefined => {
   const k = v.toLowerCase();
@@ -157,6 +164,7 @@ function readFontSize(
 ): { fontSize?: number; fontScale?: number } | undefined {
   const word = fontSizeKeyword(v);
   if (word) return 'size' in word ? { fontSize: word.size } : { fontScale: word.scale };
+  if (isNegative(v)) return undefined;
   const d = dimension(v);
   if (d?.unit === '%') return { fontScale: d.n / 100 };
   const ems = d && emsPer(d.unit);
@@ -165,8 +173,8 @@ function readFontSize(
   return n == null ? undefined : { fontSize: n };
 }
 
-function readFontWeight(v: string): 'normal' | 'bold' | 'bolder' | number | undefined {
-  const word = keyword('normal', 'bold', 'bolder')(v);
+function readFontWeight(v: string): 'normal' | 'bold' | 'bolder' | 'lighter' | number | undefined {
+  const word = keyword('normal', 'bold', 'bolder', 'lighter')(v);
   if (word) return word;
   const d = dimension(v);
   return d && d.unit === '' && d.n >= 1 && d.n <= 1000 ? d.n : undefined;
@@ -180,6 +188,20 @@ function readFontStyle(v: string, warn: Warn): 'normal' | 'italic' | undefined {
     return 'italic';
   }
   return undefined;
+}
+
+/** The weight `bolder` or `lighter` computes to over an inherited `parent`, by CSS Fonts 4's table. */
+export function relativeWeight(word: 'bolder' | 'lighter', parent: number): number {
+  if (word === 'bolder') return parent < 350 ? 400 : parent < 550 ? 700 : parent < 900 ? 900 : parent;
+  return parent < 100 ? parent : parent < 550 ? 100 : parent < 750 ? 400 : 700;
+}
+
+/** A read `font-weight` as a number, `bolder` and `lighter` taken over `parent`. */
+export function numericFontWeight(w: ReturnType<typeof readFontWeight>, parent = 400): number | undefined {
+  if (w === 'normal') return 400;
+  if (w === 'bold') return 700;
+  if (w === 'bolder' || w === 'lighter') return relativeWeight(w, parent);
+  return w;
 }
 
 /** `null` is `normal`. */
@@ -268,7 +290,7 @@ export const PROPERTIES = {
   'fill-opacity': inherited(readRatio, 'unread'),
   'fill-rule': inherited(keyword('nonzero', 'evenodd'), 'unread'),
   'stroke': inherited(readPaint, unreadColor(readPaint)),
-  'stroke-width': inherited(worldLength),
+  'stroke-width': inherited(readStrokeWidth, isNegative),
   'stroke-opacity': inherited(readRatio, 'unread'),
   'stroke-linecap': inherited(readLinecap, 'unread'),
   'stroke-linejoin': inherited(readLinejoin, 'unread'),
@@ -279,9 +301,9 @@ export const PROPERTIES = {
   'marker-mid': inherited(readMarkerRef),
   'marker-end': inherited(readMarkerRef),
   'color': inherited(readColor, unreadColor(readColor)),
-  'font-size': inherited(readFontSize),
+  'font-size': inherited(readFontSize, isNegative),
   'font-family': inherited((v) => (v.length > 0 ? v : undefined)),
-  'font-weight': inherited(readFontWeight),
+  'font-weight': inherited(readFontWeight, 'unread'),
   'font-style': inherited(readFontStyle),
   'text-anchor': inherited(keyword('start', 'middle', 'end'), 'unread'),
   'dominant-baseline': inherited(keyword(

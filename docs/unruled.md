@@ -3461,3 +3461,10 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): a path's `vertexColors` beside a gradient or pattern `fill` draw the vertex colors at
   the paint's opacity, as `stroke.vertexColors` beside a non-solid stroke paint already did; the fill used to draw the
   paint and drop the colors. Having the stroke draw its paint and drop its colors was the alternative.
+
+## Audit round sixty-three (2026-11-21): svg, part two
+
+- 2026-11-21 (the fixer's call): `serializeSvg` warns when it writes a pattern paint with `units: 'bounds'`, which it
+  still writes anchored at the user-space origin; the kit's export path resolves such a paint with
+  `paintToLocalUnits` first and never warns. Writing a def per node, each placed against that node's box, was the
+  alternative.
