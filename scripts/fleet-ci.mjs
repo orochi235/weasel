@@ -10,9 +10,9 @@
  *   npm run test:fleet:postbuild -- <commit>     # any commit
  *   npm run test:fleet:postbuild -- HEAD --node studio   # the rest goes to `onto do`
  *
- * It builds in a tree of its own on the node (`weasel-postbuild`), never the one test runs share:
- * their vitest runs resolve source, but a `dist` they did not build would turn a skipped
- * built-output check into a run against stale output.
+ * It builds in one of onto's pooled trees, which no running test job holds: their vitest runs resolve
+ * source, but a `dist` they did not build would turn a skipped built-output check into a run against
+ * stale output.
  */
 import { fileURLToPath } from 'node:url';
 import { openCommitTree, ontoWhenFree } from './lib/commit-tree.mjs';
@@ -25,7 +25,7 @@ const NVM = 'export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"; . "$NVM_DIR/nvm.sh"';
 
 const MODES = {
   postbuild: () => [{
-    label: 'post-build steps', tree: 'weasel-postbuild', kind: 'build', icon: 'hammer', task: 'postbuild', expect: '5m',
+    label: 'post-build steps', kind: 'build', icon: 'hammer', task: 'postbuild', expect: '5m',
     about: "Builds every package as ci.yml does and runs its post-build checks: manifests, tree-shaking, React-free subpaths, both consumer smokes, the site builds.",
     shell: `${NVM} && nvm use >/dev/null && exec node scripts/ci-run.mjs built`,
   }],
@@ -52,7 +52,7 @@ try {
   for (const job of steps) {
     const started = Date.now();
     const result = await ontoWhenFree(
-      ['do', '--kind', job.kind, '--icon', job.icon, '--in', job.tree, '--ref', base, '--timeout', '90m',
+      ['do', '--kind', job.kind, '--icon', job.icon, '--ref', base, '--timeout', '90m',
         '--env', commitEnv,'--task', `${job.task}-${(branch || commit.slice(0, 9)).replace(/[^A-Za-z0-9.-]/g, '-')}`, '--about', job.about,
         '--expect', job.expect, ...ontoArgs, '--', 'bash', '-c', job.shell],
       { cwd: tree, say, onJob: (job) => {
