@@ -7,7 +7,7 @@ import { TAPE } from 'bil-lbx';
 export interface Tape {
   /** The cassette's name, as P-touch prints it: `'12mm'`. */
   name: string;
-  /** Width across the tape in millimeters, what a printer's status reply and media lookup use. */
+  /** Width across the tape in millimeters, as its name gives it: `3.5` for the 3.5mm cassette. */
   widthMm: number;
   /** Width across the tape in points, a label's height in the scene and in an `.lbx` file. */
   widthPt: number;
@@ -24,9 +24,12 @@ export const TAPES: readonly Tape[] = Object.entries(TAPE).map(([name, { width, 
   format,
 }));
 
-/** The tape `widthMm` wide, or undefined when no cassette is. */
+/**
+ * The tape `widthMm` wide, or undefined when no cassette is. A printer's status reply gives whole
+ * millimeters, and names the 3.5mm cassette 4, so `4` finds that one too.
+ */
 export function tapeForWidthMm(widthMm: number): Tape | undefined {
-  return TAPES.find((tape) => tape.widthMm === widthMm);
+  return TAPES.find((tape) => tape.widthMm === widthMm) ?? TAPES.find((tape) => Math.ceil(tape.widthMm) === widthMm);
 }
 
 /** The tape named `name` (`'12mm'`), or undefined when no cassette is. */
