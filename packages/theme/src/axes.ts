@@ -78,8 +78,11 @@ export function enumerateAxisChoices(axes: AxisDefs): AxisChoice[] {
 export function axisScheme(axes: AxisDefs, axis: string, value: string): string | undefined {
   const def = getOwn(axes, axis);
   if (!def) return undefined;
-  if (!Object.hasOwn(def.values, value)) return axisScheme(axes, axis, def.default);
-  return def.values[value].scheme ?? (Object.values(def.values).some((v) => v.scheme) ? 'normal' : undefined);
+  const values = def.values ?? {};
+  if (!Object.hasOwn(values, value)) {
+    return value !== def.default && typeof def.default === 'string' ? axisScheme(axes, axis, def.default) : undefined;
+  }
+  return values[value]!.scheme ?? (Object.values(values).some((v) => v.scheme) ? 'normal' : undefined);
 }
 
 /** A theme name or axis value as its `data-wzl-*` attribute holds it: NUL as U+FFFD, which is how CSS reads one, escaped or not. */
