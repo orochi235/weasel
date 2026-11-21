@@ -4,6 +4,7 @@ import { ActionsProvider } from '@weasel-js/routing/react';
 import type { Action, ActionItem } from '@weasel-js/routing';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { renderWithIcons } from '../../testing/withIcons';
+import { Disabled } from '../Disabled';
 import { ActionSettingsPopover } from './ActionSettingsPopover';
 import { useActionSettings } from './useActionSettings';
 
@@ -23,6 +24,17 @@ it('stays shut when an action disabled while its form is open comes back', () =>
   rerender(<ActionSettingsPopover settings={form} label="Snap" disabled />);
   expect(screen.queryByRole('dialog')).toBeNull();
   rerender(<ActionSettingsPopover settings={form} label="Snap" />);
+  expect(screen.queryByRole('dialog')).toBeNull();
+});
+
+it('closes when a Disabled scope around it turns on, and stays shut when it lifts', () => {
+  const at = (on: boolean) => <Disabled when={on}><ActionSettingsPopover settings={form} label="Snap" /></Disabled>;
+  const { rerender } = renderWithIcons(at(false));
+  fireEvent.click(screen.getByRole('button', { name: 'Snap' }));
+  expect(screen.getByRole('dialog', { name: 'Snap Settings' })).toBeInTheDocument();
+  rerender(at(true));
+  expect(screen.queryByRole('dialog')).toBeNull();
+  rerender(at(false));
   expect(screen.queryByRole('dialog')).toBeNull();
 });
 
