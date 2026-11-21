@@ -156,5 +156,5 @@ function seenUnder(el: HTMLElement | null, prev: Seen): Seen {
   const items = slotItems(el) as HTMLElement[];
   const keys = items.map((item) => keyOf(item)!);
   const thickness = Math.max(0, maxOf(items, (item) => item.offsetHeight));
-  return prev.thickness === thickness && prev.keys.join('\n') === keys.join('\n') ? prev : { keys, thickness };
+  return prev.thickness === thickness && prev.keys.length === keys.length && prev.keys.every((key, i) => key === keys[i]) ? prev : { keys, thickness };
 }
