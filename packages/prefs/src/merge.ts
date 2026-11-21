@@ -23,11 +23,13 @@ function mergeChildren(into: Record<string, Child>, from: Record<string, Child>,
 /**
  * One group named `name` holding every child of `groups`. Groups at the same
  * key merge, the first one's own fields kept; a leaf meeting anything at the
- * same key throws. Composes schemas that each add to the same areas, such as
- * the kit settings groups that `ui` and `core` both give a `targets` group.
+ * same key throws. The result admits every selector any of `groups` admits.
+ * Composes schemas that each add to the same areas, such as the kit settings
+ * groups that `ui` and `core` both give a `targets` group.
  */
 export function mergePrefGroups(name: string, ...groups: readonly PrefGroup[]): PrefGroup {
   const children: Record<string, Child> = {};
   for (const group of groups) mergeChildren(children, group.children, '');
-  return { name, children };
+  const admits = [...new Set(groups.flatMap((group) => group.admits ?? []))];
+  return admits.length > 0 ? { name, children, admits } : { name, children };
 }
