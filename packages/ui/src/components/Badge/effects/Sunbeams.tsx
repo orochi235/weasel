@@ -3,10 +3,12 @@ import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 import { DEG_TO_RAD, trimNumber } from '@weasel-js/geom';
+import { outlineRegion } from '../composeOutline';
+import { repeatCount } from '../shapes/params';
 
 /** What an effect of type `sunbeams` takes as `params`. */
 export interface BadgeSunbeamsEffectParams {
-  /** Number of beams (parallelograms) cast across the body. */
+  /** Number of beams (parallelograms) cast across the body, a whole number up to 256. */
   count?: number;
   /** Beam width in CSS px (measured horizontally before the skew). */
   width?: number;
@@ -23,7 +25,7 @@ export interface BadgeSunbeamsEffectParams {
   /** 0..1 perturbs each beam's width, opacity, and angle slightly with a deterministic
    *  per-beam noise; 0 = perfectly regular. */
   irregularity?: number;
-  /** Gradient mask angle in degrees. 0 = left→right, 90 = top→bottom. */
+  /** Gradient mask angle in degrees, on screen as `angle` is. 0 = left→right, 90 = top→bottom. */
   gradientAngle?: number;
   /** Position along the gradient axis (0..1) where the mask is fully opaque (beams visible). */
   gradientStart?: number;
@@ -55,6 +57,7 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
     const sx = 100 / boxW;
     const sy = 100 / boxH;
     const irr = Math.max(0, Math.min(cfg.irregularity, 1));
+    const count = repeatCount(cfg.count, 0);
 
     // Per-beam pseudo-random multipliers (deterministic by index).
     const widthMult = (i: number) => 1 + irr * 0.45 * Math.sin(i * 1.73 + 0.7);
@@ -66,13 +69,16 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
     const nominalWidthVb = cfg.width * sx;
     const gapVb = cfg.gap * sx;
     const offsetVb = cfg.offset * sx;
-    const totalWidth = cfg.count * nominalWidthVb + (cfg.count - 1) * gapVb;
+    const totalWidth = count * nominalWidthVb + (count - 1) * gapVb;
     let cursorX = 50 - totalWidth / 2 + offsetVb;
-    const yTop = -50;
-    const yBot = 150;
+    const region = outlineRegion(sampler, 0);
+    // Beams stay centered on y = 50 and run past the outline's farther edge from it.
+    const reach = Math.max(100, 50 - region.y, region.y + region.height - 50);
+    const yTop = 50 - reach;
+    const yBot = 50 + reach;
 
     const beams: { points: string; opacity: number }[] = [];
-    for (let i = 0; i < cfg.count; i++) {
+    for (let i = 0; i < count; i++) {
       const beamWidthVb = nominalWidthVb * widthMult(i);
       const x1 = cursorX;
       const x2 = cursorX + beamWidthVb;
@@ -92,16 +98,17 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
       cursorX += nominalWidthVb + gapVb;
     }
 
-    // Gradient mask geometry: define a linear gradient from one edge of the viewBox to the
-    // other along `gradientAngle`. Position the start/end stops along that 0..1 axis.
+    // The fade runs along `gradientAngle` on screen, with 0 and 1 on the outline region's farthest
+    // corners. The viewBox stretches to the box, so the screen direction (cos, sin) is laid in it as
+    // (cos * boxW, sin * boxH), which keeps the isolines square to it once stretched.
     const ga = cfg.gradientAngle * DEG_TO_RAD;
-    const cosA = Math.cos(ga), sinA = Math.sin(ga);
-    // The viewBox's extent along the axis, so 0 and 1 land on its farthest corners at any angle.
-    const span = 100 * (Math.abs(cosA) + Math.abs(sinA));
-    const x1g = 50 - cosA * span / 2;
-    const y1g = 50 - sinA * span / 2;
-    const x2g = 50 + cosA * span / 2;
-    const y2g = 50 + sinA * span / 2;
+    const wx = Math.cos(ga) * boxW, wy = Math.sin(ga) * boxH;
+    const wl = Math.hypot(wx, wy) || 1;
+    const ux = wx / wl, uy = wy / wl;
+    const along = [region.x, region.x + region.width].flatMap((x) => [region.y, region.y + region.height].map((y) => x * ux + y * uy));
+    const tMin = Math.min(...along), tMax = Math.max(...along);
+    const x1g = ux * tMin, y1g = uy * tMin;
+    const x2g = ux * tMax, y2g = uy * tMax;
 
     const gs = Math.max(0, Math.min(cfg.gradientStart, 1));
     const ge = Math.max(0, Math.min(cfg.gradientEnd, 1));
@@ -130,8 +137,8 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
           <linearGradient id={gradId} x1={x1g} y1={y1g} x2={x2g} y2={y2g} gradientUnits="userSpaceOnUse">
             {stops.map((s, i) => <stop key={i} offset={s.offset} stopColor={s.color} />)}
           </linearGradient>
-          <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
-            <rect x="0" y="0" width="100" height="100" fill={`url(#${gradId})`} />
+          <mask id={maskId} maskUnits="userSpaceOnUse" {...region}>
+            <rect {...region} fill={`url(#${gradId})`} />
           </mask>
         </defs>
         <g clipPath={`url(#${clipId})`} mask={`url(#${maskId})`}>

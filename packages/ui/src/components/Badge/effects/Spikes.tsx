@@ -1,4 +1,5 @@
 import type { EffectModule } from '../bases/types';
+import { clampParam, finiteOr, repeatCount } from '../shapes/params';
 import { bumpWobble, nearestBump } from './bumps';
 import { rangeMask, type BadgeRangeMaskParams } from './rangeMask';
 
@@ -33,10 +34,19 @@ const DEFAULTS: Required<Omit<BadgeSpikesEffectParams, 'range'>> = {
 
 const Spikes: EffectModule<BadgeSpikesEffectParams> = {
   offsetAt: (s, { params, phase, totalCss, perimeterAt }) => {
-    const cfg = { ...DEFAULTS, ...params };
-    const mask = rangeMask(s, totalCss, cfg.range);
+    const given = { ...DEFAULTS, ...params };
+    const cfg = {
+      length: finiteOr(given.length, DEFAULTS.length),
+      baseWidth: finiteOr(given.baseWidth, DEFAULTS.baseWidth),
+      vertScale: finiteOr(given.vertScale, DEFAULTS.vertScale),
+      horzScale: finiteOr(given.horzScale, DEFAULTS.horzScale),
+      diagonalScale: finiteOr(given.diagonalScale, DEFAULTS.diagonalScale),
+      irregularity: clampParam(given.irregularity, 0, 1, DEFAULTS.irregularity),
+      cornerCompensation: clampParam(given.cornerCompensation, 0, 1, DEFAULTS.cornerCompensation),
+    };
+    const mask = rangeMask(s, totalCss, given.range);
     if (mask === 0) return { dx: 0, dy: 0 };
-    const N = Math.max(3, Math.floor(cfg.count));
+    const N = repeatCount(given.count, 3);
     const step = totalCss / N;
     const halfBase = Math.max(0.1, Math.min(step / 2 - 0.05, cfg.baseWidth / 2));
     const { index, center: sc, offset: ds } = nearestBump(s, totalCss, N, phase);
@@ -55,7 +65,7 @@ const Spikes: EffectModule<BadgeSpikesEffectParams> = {
     const d = Math.min(1, 2 * nxAbs * nyAbs);
     const axisScale = nyAbs > nxAbs ? cfg.vertScale : cfg.horzScale;
     const scale = axisScale * (1 - d) + cfg.diagonalScale * d;
-    const irrMult = 1 + Math.max(0, Math.min(cfg.irregularity, 1)) * 0.5 * bumpWobble(index);
+    const irrMult = 1 + cfg.irregularity * 0.5 * bumpWobble(index);
     // Numerical curvature κ ≈ |dn/ds| in CSS units. We average over a window roughly the
     // size of a spike footprint so the corner's influence smoothly bleeds onto adjacent
     // flat-edge samples instead of switching off at the arc boundary.
@@ -71,9 +81,9 @@ const Spikes: EffectModule<BadgeSpikesEffectParams> = {
       kappa += Math.hypot(pB.nx - pA.nx, pB.ny - pA.ny) / (sB - sA);
     }
     kappa /= SAMPLES;
-    const baseLen = cfg.length * scale * irrMult * t;
-    const comp = Math.max(0, Math.min(cfg.cornerCompensation, 1));
-    const lenCss = Math.max(0, baseLen / (1 + comp * kappa * baseLen)) * mask;
+    const baseLen = Math.max(0, cfg.length * scale * irrMult * t);
+    const comp = cfg.cornerCompensation;
+    const lenCss = (baseLen / (1 + comp * kappa * baseLen)) * mask;
     return { dx: dirX * lenCss, dy: dirY * lenCss };
   },
   defaults: DEFAULTS,

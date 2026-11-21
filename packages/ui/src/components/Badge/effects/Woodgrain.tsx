@@ -1,12 +1,13 @@
 import { trimNumber } from '@weasel-js/geom';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
+import { repeatCount } from '../shapes/params';
 
 /** What an effect of type `woodgrain` takes as `params`. */
 export interface BadgeWoodgrainEffectParams {
-  /** Number of grain curves. */
+  /** Number of grain curves, a whole number up to 256. */
   lines?: number;
-  /** Number of knot circles. */
+  /** Number of knots, a whole number up to 256. */
   knots?: number;
   /** Overall grain opacity (0..1). */
   intensity?: number;
@@ -14,26 +15,31 @@ export interface BadgeWoodgrainEffectParams {
 
 const DEFAULTS: Required<BadgeWoodgrainEffectParams> = { lines: 4, knots: 2, intensity: 0.55 };
 
+/** A knot's two rings, in CSS px, so they keep their shape however the badge stretches. */
+const KNOT_RINGS = [{ rx: 3.5, ry: 2.8 }, { rx: 1.4, ry: 1.15 }];
+
 // Deterministic per-line/knot wobble.
 function osc(seed: number) {
   return Math.sin(seed * 1.73 + 0.5);
 }
 
 const Woodgrain: EffectModule<BadgeWoodgrainEffectParams> = {
-  Component: ({ sampler, variant, params }) => {
+  Component: ({ sampler, boxW, boxH, variant, params }) => {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
     const cfg = { ...DEFAULTS, ...params };
+    const lineCount = repeatCount(cfg.lines, 0);
+    const knotCount = repeatCount(cfg.knots, 0);
     const lines: string[] = [];
-    for (let i = 0; i < cfg.lines; i++) {
-      const y = ((i + 1) / (cfg.lines + 1)) * 100;
+    for (let i = 0; i < lineCount; i++) {
+      const y = ((i + 1) / (lineCount + 1)) * 100;
       // Two control points, slight vertical wobble.
       const dy1 = osc(i * 2 + 1) * 4;
       const dy2 = osc(i * 2 + 2) * 4;
       lines.push(`M -5 ${trimNumber(y, 2)} Q 35 ${trimNumber(y + dy1, 2)} 60 ${trimNumber(y, 2)} T 105 ${trimNumber(y + dy2, 2)}`);
     }
     const knotPositions: [number, number][] = [];
-    for (let i = 0; i < cfg.knots; i++) {
+    for (let i = 0; i < knotCount; i++) {
       const cx = 30 + osc(i * 3 + 0.7) * 30 + 20;
       const cy = 50 + osc(i * 3 + 1.3) * 30;
       knotPositions.push([cx, cy]);
@@ -51,8 +57,9 @@ const Woodgrain: EffectModule<BadgeWoodgrainEffectParams> = {
           ))}
           {knotPositions.map(([cx, cy], i) => (
             <g key={`k${i}`}>
-              <ellipse className="badge-stroke" cx={cx} cy={cy} rx={3} ry={2.4} fill="none" />
-              <ellipse className="badge-stroke" cx={cx} cy={cy} rx={1.2} ry={1} fill="none" />
+              {KNOT_RINGS.map((ring, j) => (
+                <ellipse key={j} className="badge-stroke" cx={cx} cy={cy} rx={ring.rx * (100 / boxW)} ry={ring.ry * (100 / boxH)} fill="none" />
+              ))}
             </g>
           ))}
         </g>

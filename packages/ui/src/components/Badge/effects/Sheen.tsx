@@ -1,6 +1,8 @@
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 import type { BadgeCorner } from '../types';
+import { outlineRegion } from '../composeOutline';
+import { lightCorner } from './lightCorner';
 
 /** What an effect of type `sheen` takes as `params`. */
 export interface BadgeSheenEffectParams {
@@ -26,20 +28,21 @@ const Sheen: EffectModule<BadgeSheenEffectParams> = {
     if (variant !== 'solid' && variant !== 'subtle') return null;
     const cfg = { ...DEFAULTS, ...params };
     const peak = Math.max(0, Math.min(cfg.intensity, 1));
+    const region = outlineRegion(sampler, 0);
     return (
       <>
         <defs>
           <clipPath id={clipId}>
             <path d={sampler.bodyPath} />
           </clipPath>
-          <linearGradient id={gradId} {...FACE_COORDS[cfg.lightFrom]}>
+          <linearGradient id={gradId} {...FACE_COORDS[lightCorner(cfg.lightFrom, 'sheen')]}>
             <stop offset="0%"   stopColor="black" stopOpacity={peak} />
             <stop offset="45%"  stopColor="black" stopOpacity="0.04" />
             <stop offset="58%"  stopColor="white" stopOpacity="0.04" />
             <stop offset="100%" stopColor="white" stopOpacity={peak} />
           </linearGradient>
         </defs>
-        <rect clipPath={`url(#${clipId})`} x="0" y="0" width="100" height="100" fill={`url(#${gradId})`} style={{ pointerEvents: 'none' }} />
+        <rect clipPath={`url(#${clipId})`} {...region} fill={`url(#${gradId})`} style={{ pointerEvents: 'none' }} />
       </>
     );
   },

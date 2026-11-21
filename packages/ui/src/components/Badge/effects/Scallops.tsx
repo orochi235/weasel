@@ -1,4 +1,5 @@
 import type { EffectModule } from '../bases/types';
+import { finiteOr } from '../shapes/params';
 import { bumpRadius, nearestBump } from './bumps';
 import { rangeMask, type BadgeRangeMaskParams } from './rangeMask';
 
@@ -20,8 +21,8 @@ const Scallops: EffectModule<BadgeScallopsEffectParams> = {
     const cfg = { ...DEFAULTS, ...params };
     const mask = rangeMask(s, totalCss, cfg.range);
     if (mask === 0) return { dx: 0, dy: 0 };
-    const sr = Math.max(0.5, cfg.scallopRadius);
-    const ss = Math.max(2 * sr + 0.5, cfg.scallopSpacing);
+    const sr = Math.max(0.5, finiteOr(cfg.scallopRadius, DEFAULTS.scallopRadius));
+    const ss = Math.max(2 * sr + 0.5, finiteOr(cfg.scallopSpacing, DEFAULTS.scallopSpacing));
     const N = Math.max(2, Math.floor(totalCss / ss));
     const { index, offset: ds } = nearestBump(s, totalCss, N, phase);
     const localR = bumpRadius(sr, cfg.irregularity, index, totalCss / N);

@@ -1,4 +1,5 @@
 import type { EffectModule } from '../bases/types';
+import { finiteOr } from '../shapes/params';
 import { bumpRadius, nearestBump } from './bumps';
 import { rangeMask, type BadgeRangeMaskParams } from './rangeMask';
 
@@ -20,8 +21,8 @@ const Bites: EffectModule<BadgeBitesEffectParams> = {
     const cfg = { ...DEFAULTS, ...params };
     const mask = rangeMask(s, totalCss, cfg.range);
     if (mask === 0) return { dx: 0, dy: 0 };
-    const br = Math.max(0.5, cfg.biteRadius);
-    const bs = Math.max(2 * br + 0.5, cfg.biteSpacing);
+    const br = Math.max(0.5, finiteOr(cfg.biteRadius, DEFAULTS.biteRadius));
+    const bs = Math.max(2 * br + 0.5, finiteOr(cfg.biteSpacing, DEFAULTS.biteSpacing));
     const N = Math.max(2, Math.floor(totalCss / bs));
     const { index, offset: ds } = nearestBump(s, totalCss, N, phase);
     const localR = bumpRadius(br, cfg.irregularity, index, totalCss / N);

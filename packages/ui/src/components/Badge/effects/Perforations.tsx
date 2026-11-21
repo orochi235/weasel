@@ -18,7 +18,7 @@ const DEFAULTS: Required<Omit<BadgePerforationsEffectParams, 'range'>> = {
 const MIN_HOLE_PITCH = 1;
 
 const Perforations: EffectModule<BadgePerforationsEffectParams> = {
-  Component: ({ sampler, boxW, boxH, params }) => {
+  Component: ({ sampler, boxW, boxH, params, phase }) => {
     const cfg = { ...DEFAULTS, ...params };
     const sx = 100 / boxW;
     const sy = 100 / boxH;
@@ -29,7 +29,7 @@ const Perforations: EffectModule<BadgePerforationsEffectParams> = {
     const step = total / N;
     const holes: { cx: number; cy: number }[] = [];
     for (let i = 0; i < N; i++) {
-      const sCss = (i + 0.5) * step;
+      const sCss = (i + 0.5 + phase) * step;
       if (rangeMask(sCss, total, params?.range) === 0) continue;
       const pt = sampler.perimeterAt(sCss);
       holes.push({ cx: pt.x, cy: pt.y });
