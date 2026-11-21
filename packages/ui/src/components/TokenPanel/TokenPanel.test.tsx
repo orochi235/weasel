@@ -318,6 +318,25 @@ describe('TokenPanel', () => {
     expect(rail('--wzl-shadow').textContent).toBe('shadow');
   });
 
+  it('names a run of rows once whether or not namePrefix carries the `--`', () => {
+    for (const namePrefix of [undefined, 'wzl-', '--wzl-']) {
+      const { unmount } = renderWithIcons(
+        <TokenPanel
+          tokens={[
+            { name: '--wzl-font-ui', type: 'fontFamily', group: 'wzl-font', value: 'Oswald' },
+            { name: '--wzl-font-mono', type: 'fontFamily', group: 'wzl-font', value: 'Menlo' },
+          ]}
+          onChange={() => {}}
+          namePrefix={namePrefix}
+        />,
+      );
+      const rail = screen.getByRole('group', { name: '--wzl-font-mono' }).querySelector('span') as HTMLElement;
+      expect(rail.querySelector('[data-hidden]')?.textContent).toBe(namePrefix ? 'font' : 'wzl-font');
+      expect(rail.textContent).toBe(namePrefix ? 'fontmono' : 'wzl-fontmono');
+      unmount();
+    }
+  });
+
   it('leaves a token alone when its number field is focused and blurred untouched', () => {
     const onChange = vi.fn();
     renderWithIcons(

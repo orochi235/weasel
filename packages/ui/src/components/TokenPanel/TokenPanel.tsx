@@ -85,7 +85,7 @@ function rowRuns(items: readonly Item[], prefix: string): Map<string, RunLabel> 
   let run: TokenEntry[] = [];
   const flush = () => {
     if (run.length >= 2) {
-      const group = shortName(run[0]?.group ?? '', prefix.replace(/^--/, ''));
+      const group = shortName(run[0]?.group ?? '', prefix);
       run.forEach((token, i) => {
         const short = shortName(token.name, prefix);
         out.set(token.name, { group, step: short === group ? '' : short.slice(group.length + 1), first: i === 0 });
@@ -95,7 +95,7 @@ function rowRuns(items: readonly Item[], prefix: string): Map<string, RunLabel> 
   };
   for (const item of items) {
     const token = item.kind === 'row' ? item.token : null;
-    const group = token && shortName(token.group, prefix.replace(/^--/, ''));
+    const group = token && shortName(token.group, prefix);
     const short = token && shortName(token.name, prefix);
     const fits = token && group && short && (short === group || short.startsWith(`${group}-`));
     if (!fits || (run[0] && run[0].group !== token.group)) flush();
@@ -176,7 +176,7 @@ function Family({
   return (
     <div className={s.family} role="group" aria-label={group}>
       <span className={s.name} title={group}>
-        {shortName(group, prefix.replace(/^--/, ''))}
+        {shortName(group, prefix)}
       </span>
       <div className={s.strip}>
         {tokens.map((t) => (

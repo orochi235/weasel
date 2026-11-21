@@ -196,7 +196,7 @@ export function Scale({
   return (
     <div className={s.scale} role="group" aria-label={group}>
       <span className={s.name} title={group}>
-        {shortName(group, prefix.replace(/^--/, ''))}
+        {shortName(group, prefix)}
         {unit ? <span className={s.unit}> {unit}</span> : null}
       </span>
       {overridden.length > 0 ? (
