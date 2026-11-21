@@ -73,6 +73,26 @@ function globbed(file: string, patterns: string[], repoRoot: string, aliases: Vi
   );
 }
 
+/**
+ * The workspace package whose own `node_modules` installs `pkg` for `file`, when that is nearer than the root's.
+ * Vite hands a bare import the dependency it pre-bundled under that bare name whoever imports it, so a package
+ * installing its own version (font's opentype.js 2 over the root's 1.3.4) must be listed as `owner > pkg`.
+ */
+function nestedOwner(file: string, pkg: string, repoRoot: string, owners: Map<string, string | undefined>): string | undefined {
+  const dir = dirname(file);
+  const key = `${dir}\0${pkg}`;
+  if (owners.has(key)) return owners.get(key);
+  let owner: string | undefined;
+  for (let at = dir; at.startsWith(`${repoRoot}/`); at = dirname(at)) {
+    if (!existsSync(join(at, 'node_modules', pkg, 'package.json'))) continue;
+    const manifest = join(at, 'package.json');
+    owner = existsSync(manifest) ? (JSON.parse(readFileSync(manifest, 'utf8')) as { name?: string }).name : undefined;
+    break;
+  }
+  owners.set(key, owner);
+  return owner;
+}
+
 export interface BrowserDepsOptions {
   /** Globs of the test files, relative to the root: the project's `include`. */
   entries: string[];
@@ -102,6 +122,7 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
     ...setupFiles.map((file) => resolve(repoRoot, file)),
   ];
   const resolved = new Map<string, string | undefined>();
+  const owners = new Map<string, string | undefined>();
   const visit = (path: string) => {
     if (!resolved.has(path)) resolved.set(path, sourceAt(path));
     const file = resolved.get(path);
@@ -129,7 +150,10 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) {
+        const owner = nestedOwner(file, packageOf(specifier), repoRoot, owners);
+        found.add(owner ? `${owner} > ${specifier}` : specifier);
+      }
     }
   }
   return [...found].sort();

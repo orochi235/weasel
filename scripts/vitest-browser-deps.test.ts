@@ -155,4 +155,11 @@ describe('browserDeps', () => {
     );
     expect(deps()).toEqual([]);
   });
+
+  it('names a dependency a package installs for itself through that package, so the root’s copy cannot stand in', () => {
+    put('node_modules/earcut/package.json', JSON.stringify({ name: 'earcut', version: '1.0.0' }));
+    put('packages/kit/node_modules/earcut/package.json', JSON.stringify({ name: 'earcut', version: '2.0.0' }));
+    put('packages/kit/src/store.ts', `import earcut from 'earcut';\nexport const store = { getState: () => earcut };\n`);
+    expect(deps()).toEqual(['@fixture/kit > earcut', '@testing-library/react']);
+  });
 });
