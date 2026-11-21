@@ -13,13 +13,14 @@ export function parseImageElement(
   el: Element,
   ctm: Matrix,
   onWarn: (m: string) => void,
+  fontSize?: number,
 ): SvgImageNode | null {
   const href = imageHref(el);
   if (!href) {
     onWarn('<image> without href; dropped');
     return null;
   }
-  const node = imageNodeAt(el, el, href, ctm, onWarn);
+  const node = imageNodeAt(el, el, href, ctm, onWarn, fontSize);
   if (el.hasAttribute('preserveAspectRatio')
     && el.getAttribute('preserveAspectRatio') !== 'none') {
     onWarn('<image> preserveAspectRatio is not modeled; the box is taken literally');
@@ -45,11 +46,12 @@ function imageNodeAt(
   href: string,
   ctm: Matrix,
   onWarn: (m: string) => void,
+  fontSize?: number,
 ): SvgImageNode {
-  const rawX = readLength(boxEl, 'x', 'x', 0, onWarn);
-  const rawY = readLength(boxEl, 'y', 'y', 0, onWarn);
-  const rawW = readLength(boxEl, 'width', 'x', 0, onWarn);
-  const rawH = readLength(boxEl, 'height', 'y', 0, onWarn);
+  const rawX = readLength(boxEl, 'x', 'x', 0, onWarn, fontSize);
+  const rawY = readLength(boxEl, 'y', 'y', 0, onWarn, fontSize);
+  const rawW = readLength(boxEl, 'width', 'x', 0, onWarn, fontSize);
+  const rawH = readLength(boxEl, 'height', 'y', 0, onWarn, fontSize);
   const node: SvgImageNode = { kind: 'image', href, x: rawX, y: rawY, width: rawW, height: rawH };
   const opacity = ownValue(ownerEl, 'opacity');
   if (opacity != null) node.opacity = opacity;

@@ -7,6 +7,7 @@ import { multiply, parseTransform, isIdentity } from './transform';
 import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
 import { readLength } from './lengths';
+import { fontSizeOf } from './fontSize';
 import { DEFAULT_LINE_HEIGHT, LINE_HEIGHT_ATTR, LineTracker, writtenByWeasel } from './tspanLines';
 import { LAID_ATTR } from './laidLines';
 import { readRuns } from './readRuns';
@@ -108,10 +109,10 @@ export function parseTextElement(
   const localTransform = parseTransform(el.getAttribute('transform'), onWarn);
   // The box is built in the element's own coordinates and then taken through
   // the whole transform at once, by `placeNode`.
-  const ax = readLength(el, 'x', 'x', 0, onWarn);
-  const ay = readLength(el, 'y', 'y', 0, onWarn);
-
   const leafStyle = deriveStyle(style, el);
+  const ax = readLength(el, 'x', 'x', 0, onWarn, fontSizeOf(leafStyle));
+  const ay = readLength(el, 'y', 'y', 0, onWarn, fontSizeOf(leafStyle));
+
   const textStyle = readTextStyle(leafStyle, onWarn);
   const lang = inheritedLang(el);
   if (lang) textStyle.lang = lang;

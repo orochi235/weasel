@@ -51,7 +51,21 @@ describe('an inner or outer text stroke in SVG', () => {
     })]);
     const copy = svg.slice(svg.lastIndexOf('<text '));
     expect(copy).toContain('stroke-width="6"');
-    expect(copy.match(/<tspan[^>]*>/g)![1]).toContain('stroke="none"');
+    // Neither the copy nor run `b` sets a stroke, so `b` draws none in it.
+    expect(copy).toMatch(/^<text (?:(?!stroke=)[^>])*>/);
+    expect(copy.match(/<tspan[^>]*>/g)![1]).not.toContain('stroke=');
+  });
+
+  it('strokes a run with no stroke of its own with the node\'s aligned stroke in its copy', () => {
+    const { svg } = write([text({ paint: { color: '#0000ff' }, width: 2, align: 'outer' }, {
+      text: 'ab',
+      runs: [{ text: 'a', stroke: { paint: { color: '#00ff00' }, width: 3, align: 'inner' } }, { text: 'b' }],
+    })]);
+    const outer = svg.slice(svg.indexOf('<text mask='));
+    expect(outer).toMatch(/^<text [^>]*stroke-width="4"/);
+    const [a, b] = outer.match(/<tspan[^>]*>/g)!;
+    expect(a).toContain('stroke="none"');
+    expect(b).not.toContain('stroke=');
   });
 
   it('reads back as one text node with its aligned strokes', () => {

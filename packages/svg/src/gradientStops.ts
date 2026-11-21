@@ -1,6 +1,7 @@
 /** A gradient element's own `<stop>`s, read as SVG resolves them, and written so they read back. */
 import { sampleGradientStops, type ColorSpace, type GradStop } from '@weasel-js/core';
-import { ownProp, ownValue } from './cascade';
+import { ownProp, ownValue, resolveCurrentColor } from './cascade';
+import { styleAt } from './styleAt';
 import { readProperty } from './properties';
 import { trimNumber } from './transform';
 import { escapeAttr } from '@weasel-js/registry';
@@ -24,7 +25,8 @@ export function readStops(el: Element, onWarn?: (m: string) => void): GradStop[]
     // it; the kit sorts its stops, which would put that one first instead.
     const offset = Math.max(floor, Math.min(1, Number.isFinite(offsetRaw) ? offsetRaw : 0));
     floor = offset;
-    const colorAttr = ownProp(c, 'stop-color') ?? '#000000';
+    const own = ownProp(c, 'stop-color') ?? '#000000';
+    const colorAttr = /currentcolor/i.test(own) ? resolveCurrentColor(own, styleAt(c)) ?? own : own;
     const parsed = readProperty('stop-color', colorAttr, onWarn);
     if (parsed) {
       const alpha = (ownValue(c, 'stop-opacity') ?? 1) * parsed.alpha;

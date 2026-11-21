@@ -21,7 +21,7 @@ export const NO_GROUP_PAINT: GroupPaintFrom = { fill: false, stroke: false };
 
 const STROKE_PROPS = INHERITED_PROPERTIES.filter((p) => p.startsWith('stroke') || p.startsWith('marker'));
 
-const setsFill = (el: Element): boolean => setsOwn(el, 'fill');
+const setsFill = (el: Element): boolean => setsOwn(el, 'fill') || setsOwn(el, 'fill-opacity');
 const setsStroke = (el: Element): boolean => STROKE_PROPS.some((p) => setsOwn(el, p));
 
 /** What a nested `<svg>`'s children take: a paint it sets is no group's. */

@@ -17,11 +17,12 @@ import {
 } from './transform';
 import { boundsOfPath, transformPath } from '@weasel-js/core';
 import { readLength, resolveLength } from './lengths';
+import { fontSizeOf } from './fontSize';
 import { isNonUniform, paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
 import { collectGradients, type GradientTable } from './readGradients';
 import { collectPatterns } from './patterns';
 import {
-  bindStylesheets, deriveStyle, EMPTY_STYLE, ownProp, ownValue, styleValue, type StyleContext,
+  bindStylesheets, deriveStyle, EMPTY_STYLE, ownProp, ownValue, styleValue, visibilityHides, type StyleContext,
 } from './cascade';
 import { mediaEnvironmentFor } from './media';
 import { readProperty } from './properties';
@@ -38,7 +39,7 @@ import { booleanAttrOf } from './booleanGroup';
 import { textFrameAttrOf } from './framedText';
 import { groupBoxAttrOf } from './groupBox';
 import { conditionsHold, drawnChildren } from './conditional';
-import { parseUse } from './use';
+import { parseUse, spaceOfUse } from './use';
 import { collectDocumentMeta, collectElementMeta } from './readMeta';
 
 const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
@@ -145,17 +146,22 @@ function parseChildren(
 ): SvgNode[] {
   const out: SvgNode[] = [];
   if (children.length === 0) return out;
+  nested(onWarn, () => readChildren(children, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden, out));
+  return out;
+}
+
+/** `read` one level deeper, or `undefined` when that passes {@link NESTING_LIMIT}. */
+function nested<T>(onWarn: (m: string) => void, read: () => T): T | undefined {
   if (nesting >= NESTING_LIMIT) {
     onWarn(`elements nest more than ${NESTING_LIMIT} deep; what is deeper is not drawn`);
-    return out;
+    return undefined;
   }
   nesting++;
   try {
-    readChildren(children, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden, out);
+    return read();
   } finally {
     nesting--;
   }
-  return out;
 }
 
 function readChildren(
@@ -222,7 +228,16 @@ function parseElement(
       return image;
     }
   }
-  if (tag === 'use') return parseUse(el, ctm, style, (t, m, s) => readChild(t, m, s, from, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn);
+  if (tag === 'use') {
+    // A paint the `<use>` sets belongs to no group, as a nested `<svg>`'s does.
+    const inner = viewportPaintFrom(el, from);
+    const drawn = nested(onWarn, () => parseUse(el, ctm, style, (t, m, s) => readChild(t, m, s, inner, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn));
+    if (!drawn) return null;
+    const opacity = ownValue(el, 'opacity');
+    const clip = ownProp(el, 'clip-path') == null ? undefined : clipFor(el, spaceOfUse(el, ctm, style, onWarn), clips, onWarn);
+    if (opacity == null && !clip) return drawn;
+    return { kind: 'group', children: Array.isArray(drawn) ? drawn : [drawn], ...(clip ? { clip } : {}), ...(opacity != null ? { opacity } : {}) };
+  }
   if (tag === 'g' || tag === 'a' || tag === 'switch') return parseGroup(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden);
   const clipRaw = ownProp(el, 'clip-path');
   if (clipRaw != null && readProperty('clip-path', clipRaw) !== 'none') {
@@ -240,7 +255,8 @@ function parseElement(
     // Nested <svg> — a transparent group that establishes a viewport at
     // (x, y). Inheritance flows through it; clipping does not exist here.
     const childStyle = deriveStyle(style, el);
-    const offset: Matrix = [1, 0, 0, 1, readLength(el, 'x', 'x', 0, onWarn), readLength(el, 'y', 'y', 0, onWarn)];
+    const em = fontSizeOf(childStyle);
+    const offset: Matrix = [1, 0, 0, 1, readLength(el, 'x', 'x', 0, onWarn, em), readLength(el, 'y', 'y', 0, onWarn, em)];
     if (el.hasAttribute('viewBox')) {
       onWarn('nested <svg> viewBox is not modeled; its children are not rescaled');
     }
@@ -266,7 +282,7 @@ function parseLeaf(
     return textNode;
   }
   if (tag === 'image') {
-    const imageNode = parseImageElement(el, ctm, onWarn);
+    const imageNode = parseImageElement(el, ctm, onWarn, fontSizeOf(deriveStyle(style, el)));
     if (imageNode) {
       const meta = collectElementMeta(el, uriToPrefix);
       if (meta) imageNode.meta = meta;
@@ -284,7 +300,8 @@ function parseLeaf(
   // node.rotation. When it fails AND the leaf transform is non-identity,
   // fall back to baking the full composed matrix into geometry (legacy
   // behavior) and warn if a rotation is present that we are about to lose.
-  let path = lowerLeaf(el, tag, ctm, onWarn);
+  const leafStyle = deriveStyle(style, el);
+  let path = lowerLeaf(el, tag, ctm, onWarn, fontSizeOf(leafStyle));
   if (!path) return null;
   let rotation: number | undefined;
   let baked = ctm;
@@ -312,7 +329,6 @@ function parseLeaf(
       }
     }
   }
-  const leafStyle = deriveStyle(style, el);
   const fill = paintThroughMatrix(readPaint(leafStyle, 'fill', '#000000', gradients, onWarn), baked, onWarn);
   const ownStroke = withOutlinedStroke(el, readStroke(leafStyle, gradients, onWarn, isNonScalingStroke(el)));
   const stroke = ownStroke && strokeThroughMatrix(ownStroke, baked, onWarn);
@@ -360,12 +376,14 @@ function parseGroup(
 
 /** Whether SVG leaves `el` undrawn: `display="none"` on it, or a leaf whose
  *  `visibility` resolves hidden. That one is inherited and a descendant may
- *  turn itself back on, so a `<g>` cannot answer it and is still walked. */
+ *  turn itself back on, so a `<g>` or a `<use>` cannot answer it and is still walked. */
 function isHiddenElement(el: Element, style: StyleContext): boolean {
   const tag = el.tagName.toLowerCase();
   if (IGNORED_TAGS.has(tag)) return false;
   if (ownValue(el, 'display') === 'none') return true;
-  if (SUPPORTED_GROUP_TAGS.has(tag) || tag === 'a' || tag === 'switch') return false;
-  const v = styleValue(deriveStyle(style, el), 'visibility');
-  return v === 'hidden' || v === 'collapse';
+  if (SUPPORTED_GROUP_TAGS.has(tag) || tag === 'a' || tag === 'switch' || tag === 'use') return false;
+  const own = deriveStyle(style, el);
+  if (!visibilityHides(own)) return false;
+  // A hidden text draws a tspan that turns itself back on; its other runs paint nothing.
+  return tag !== 'text' || !Array.from(el.children).some((c) => c.tagName.toLowerCase() === 'tspan' && !visibilityHides(deriveStyle(own, c)));
 }

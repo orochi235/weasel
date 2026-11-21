@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { boundsOfPath } from '@weasel-js/core';
 import { parseSvg } from './parse';
 import type { SvgGroupNode, SvgPathNode } from './types';
 
@@ -45,5 +46,52 @@ describe('<use>', () => {
     const out = parse('<g id="a"><use href="#b"/></g><g id="b"><use href="#a"/></g><use href="#self" id="self"/><use href="#none"/>');
     expect(out.warnings.some((w) => w.includes('reference cycle'))).toBe(true);
     expect(out.warnings).toContain('<use> references #none, which the document does not define');
+  });
+  it('counts a chain of references toward the nesting limit', () => {
+    const n = 2000;
+    const uses = Array.from({ length: n }, (_, i) => `<use id="u${i}" href="#u${i + 1}"/>`).join('');
+    const out = parse(`<defs>${uses}<rect id="u${n}" width="1" height="1"/></defs><use href="#u0"/><rect width="2" height="2"/>`);
+    expect(out.nodes.map((node) => (node as SvgPathNode).path)).toEqual([{ kind: 'rect', x: 0, y: 0, width: 2, height: 2 }]);
+    expect(out.warnings.some((w) => /nest more than \d+ deep/.test(w))).toBe(true);
+  });
+
+  it('keeps a paint the <use> sets as its target\'s own, not its group\'s', () => {
+    const out = parse('<defs><rect id="r" width="1" height="1"/></defs><g fill="red"><use href="#r" fill="blue"/><use href="#r"/></g>');
+    const [own, taken] = (out.nodes[0] as SvgGroupNode).children as SvgPathNode[];
+    expect(own.fill).toEqual({ kind: 'solid', color: '#0000ff' });
+    expect(own.inherits).toBeUndefined();
+    expect(taken.inherits).toEqual({ fill: true });
+  });
+
+  it('draws its target under the <use>\'s own opacity and clip-path', () => {
+    const out = parse(
+      '<defs><rect id="r" width="10" height="10"/><clipPath id="c"><rect width="4" height="4"/></clipPath></defs>'
+      + '<use href="#r" x="2" opacity="0.5" clip-path="url(#c)"/>',
+    );
+    expect(out.warnings).toEqual([]);
+    const g = out.nodes[0] as SvgGroupNode;
+    expect(g.kind).toBe('group');
+    expect(g.opacity).toBe(0.5);
+    expect(g.clip).toBeDefined();
+    expect((g.children[0] as SvgPathNode).path).toMatchObject({ x: 2 });
+  });
+
+  it('draws a descendant that turns visibility back on under a hidden <use>', () => {
+    const out = parse('<defs><g id="g"><rect visibility="visible" width="1" height="1"/><circle r="1"/></g></defs><use href="#g" visibility="hidden"/>');
+    const g = out.nodes[0] as SvgGroupNode;
+    expect(g.children.map((n) => (n as SvgPathNode).path.kind)).toEqual(['rect']);
+  });
+
+  it('reads an em length on its target against the font size the <use> gives it', () => {
+    const out = parse(
+      '<defs><rect id="r" width="2em" height="1em"/><g id="s"><circle r="1em"/></g></defs>'
+      + '<use href="#r" font-size="40"/><use href="#s" font-size="10" x="1em"/>',
+    );
+    expect(out.warnings).toEqual([]);
+    expect((out.nodes[0] as SvgPathNode).path).toEqual({ kind: 'rect', x: 0, y: 0, width: 80, height: 40 });
+    const circle = (out.nodes[1] as SvgGroupNode).children[0] as SvgPathNode;
+    const box = boundsOfPath(circle.path);
+    expect(box.width).toBeCloseTo(20);
+    expect(box.x).toBeCloseTo(0);
   });
 });

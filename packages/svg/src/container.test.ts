@@ -71,4 +71,12 @@ describe('@container against the root <svg>', () => {
     expect(fillOf('@container (min-width: 1000px) { rect { fill: red } }', 'container-type: size', { media: { width: 1200 } }))
       .toEqual(RED);
   });
+
+  it('holds a comma-separated query list when any of its queries does', () => {
+    const root = 'container: side / size';
+    expect(fillOf('@container card (width > 10px), side (width > 10px) { rect { fill: red } }', root)).toEqual(RED);
+    expect(fillOf('@container side (width > 10px), card (width > 10px) { rect { fill: red } }', root)).toEqual(RED);
+    expect(fillOf('@container (width > 900px), (height = 200px) { rect { fill: red } }')).toEqual(RED);
+    expect(fillOf('@container card (width > 10px), side (width > 900px) { rect { fill: red } }', root)).toEqual(BLACK);
+  });
 });

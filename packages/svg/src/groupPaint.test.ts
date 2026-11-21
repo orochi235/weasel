@@ -5,6 +5,7 @@ import { serializeSvg } from './serialize';
 import { svgNodesToKitDrafts } from './unpack';
 import { svgNodesFromKit, type SvgKitTree } from './fromKit';
 import { fitLeafXml } from './groupPaintXml';
+import type { SvgPathNode } from './types';
 
 const svg = (body: string): string => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`;
 
@@ -21,6 +22,16 @@ describe('importing a group’s paint', () => {
     expect(g.kind).toBe('group');
     expect(g.data.fill).toMatchObject({ paint: { color: '#ff0000' } });
     expect(leaf.data).toMatchObject({ fill: INHERIT });
+  });
+
+  it('keeps a child’s own fill opacity as its own fill', () => {
+    const [, leaf] = drafts(`<g fill="#ff0000"><rect width="10" height="10" fill-opacity="0.5"/></g>`);
+    expect(leaf.data.fill).not.toBe(INHERIT);
+    const parsed = parseSvg(svg(`<g fill="#ff0000"><g fill-opacity="0.5">${RECT}</g></g>`));
+    const inner = (parsed.nodes[0] as { children: { inherits?: unknown }[] }).children[0];
+    expect(inner.inherits).toBeUndefined();
+    expect(serializeSvg(parseSvg(svg(`<g fill="#ff0000"><rect width="10" height="10" fill-opacity="0.5"/></g>`)).nodes))
+      .toMatch(/<rect[^>]*fill-opacity="0.5"|<path[^>]*fill-opacity="0.5"/);
   });
 
   it('keeps a child’s own fill', () => {
@@ -107,5 +118,38 @@ describe('fitLeafXml', () => {
     expect(out).toBe('<path d="M0 0" inkscape:label="a > b" fill="#000000"/>');
     expect(new DOMParser().parseFromString(`<svg xmlns:inkscape="x">${out}</svg>`, 'image/svg+xml')
       .getElementsByTagName('parsererror')).toHaveLength(0);
+  });
+});
+
+describe('exporting a path drawn otherwise than its group’s stroke', () => {
+  const stroke = { paint: { kind: 'solid' as const, color: '#000000' }, width: 1, markerEnd: { key: 'arrow' } };
+  const red = { kind: 'solid' as const, color: '#ff0000' };
+  const closed = (...subs: number[][]): SvgPathNode['path'] => {
+    const commands: number[] = [];
+    const coords: number[] = [];
+    for (const sub of subs) {
+      for (let i = 0; i < sub.length; i += 2) commands.push(i === 0 ? 0 : 1);
+      commands.push(4);
+      coords.push(...sub);
+    }
+    return { kind: 'polygon', commands, coords, fillRule: 'nonzero' } as unknown as SvgPathNode['path'];
+  };
+  /** The markup after the marker definitions. */
+  const inGroup = (path: SvgPathNode['path']) => {
+    const out = serializeSvg([{
+      kind: 'group', fill: red, stroke, children: [{ kind: 'path', path, fill: red, stroke, inherits: { fill: true, stroke: true } }],
+    }]);
+    return out.slice(out.indexOf('</defs>'));
+  };
+
+  it('keeps a closed path from taking the end marker the group sets', () => {
+    const out = inGroup(closed([0, 0, 10, 0, 10, 10]));
+    expect(out).toMatch(/<path [^>]*marker-end="none"/);
+  });
+
+  it('keeps the fill piece of a marked path from taking the group’s stroke', () => {
+    const out = inGroup(closed([0, 0, 10, 0, 10, 10], [20, 0, 30, 0, 30, 10]));
+    const first = out.match(/<path [^>]*>/)![0];
+    expect(first).toContain('stroke="none"');
   });
 });

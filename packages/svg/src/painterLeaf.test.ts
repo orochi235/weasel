@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { solid } from '@weasel-js/paint';
-import { mat3, poseFrameOf, registerNodeShape, type DrawCommand } from '@weasel-js/core';
+import { mat3, poseFrameOf, registerNodeShape, type DrawCommand, type TextureHandle } from '@weasel-js/core';
 import { svgNodesFromKit, type SvgKitPose, type SvgKitTree, type SvgKitTreeNode } from './fromKit';
 import { serializeSvg } from './serialize';
 import { applyMatrix } from './transform';
@@ -8,6 +8,7 @@ import type { SvgGroupNode, SvgPathNode } from './types';
 
 type CommandPaint = NonNullable<NonNullable<Extract<DrawCommand, { kind: 'path' }>['fill']>['paint']>;
 
+const TILE: TextureHandle = { id: 'tile' };
 const BOX: SvgKitPose ={ x: 10, y: 20, width: 40, height: 20 };
 
 let release: (() => void)[] = [];
@@ -91,6 +92,22 @@ describe('svgNodesFromKit over a painter of the app own', () => {
       expect(from.x).toBeCloseTo(0); expect(from.y).toBeCloseTo(0);
       expect(to.x).toBeCloseTo(100); expect(to.y).toBeCloseTo(0);
     }
+  });
+
+  it('takes a world pattern back through the pose frame, so its tile lands where the canvas paints it', () => {
+    const pose = { ...BOX, rotation: Math.PI / 2 };
+    const tile: CommandPaint = { kind: 'texture', texture: TILE, units: 'world', origin: { x: 5, y: 0 } };
+    paintBlobs((p) => [{ kind: 'path', path: boxPath(p), fill: { paint: tile } }]);
+    const [out] = svgNodesFromKit(treeOf({ a: blob(pose) })) as SvgGroupNode[];
+    const fill = (out!.children[0] as SvgPathNode).fill;
+    if (fill.kind !== 'gradient' || fill.paint.kind !== 'texture') throw new Error('expected a texture');
+    const o = fill.paint.origin ?? { x: 0, y: 0 };
+    const back = applyMatrix(out!.transform!, o.x, o.y);
+    expect(back.x).toBeCloseTo(5); expect(back.y).toBeCloseTo(0);
+    const [a, b] = fill.paint.transform ?? [1, 0, 0, 1];
+    const [ta, tb, tc, td] = out!.transform!;
+    expect(ta * a + tc * b).toBeCloseTo(1);
+    expect(tb * a + td * b).toBeCloseTo(0);
   });
 
   it('writes a group command with its transform, alpha and clip', () => {

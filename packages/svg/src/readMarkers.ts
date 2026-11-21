@@ -101,7 +101,10 @@ export function ingestMarkers(
   };
 
   const visit = (n: SvgNode): void => {
-    if (n.kind === 'group') n.children.forEach(visit);
+    if (n.kind === 'group') {
+      if (n.stroke) resolve(n.stroke, n.stroke.width);
+      n.children.forEach(visit);
+    }
     else if (n.kind === 'path' && n.stroke) resolve(n.stroke, n.stroke.width);
     else if (n.kind === 'text') {
       if (n.stroke) resolve(n.stroke, n.stroke.width);

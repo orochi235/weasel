@@ -88,3 +88,34 @@ describe('keepHidden imports what SVG does not render, marked hidden', () => {
     ]);
   });
 });
+
+describe('visibility inside a text', () => {
+  type Text = { kind: string; hidden?: boolean; runs?: { text: string; fill?: unknown; stroke?: unknown }[] };
+
+  it('draws a tspan that turns visibility back on under a hidden text, and paints nothing for the rest', () => {
+    const out = parse('<text visibility="hidden" stroke="#000">a<tspan visibility="visible">b</tspan></text>');
+    expect(out.nodes).toHaveLength(1);
+    const node = out.nodes[0] as Text;
+    expect(node.hidden).toBeUndefined();
+    const [a, b] = node.runs!;
+    expect(a).toMatchObject({ text: 'a', fill: null, stroke: {} });
+    expect(b.text).toBe('b');
+    expect(b.fill).toBeUndefined();
+    expect(b.stroke).toBeUndefined();
+  });
+
+  it('writes a run that paints nothing as painting nothing, under a stroked text', () => {
+    const out = parse('<text visibility="hidden" stroke="#000">a<tspan visibility="visible">b</tspan></text>');
+    const svg = serializeSvg(out.nodes);
+    expect(svg).toMatch(/<tspan fill="none" stroke="none">a<\/tspan>/);
+  });
+
+  it('paints nothing for a hidden tspan in a visible text', () => {
+    const node = parse('<text>a<tspan visibility="hidden">b</tspan></text>').nodes[0] as Text;
+    expect(node.runs!.map((r) => r.fill)).toEqual([undefined, null]);
+  });
+
+  it('still leaves out a hidden text none of whose tspans turn back on', () => {
+    expect(parse('<text visibility="hidden">a<tspan>b</tspan></text>').nodes).toEqual([]);
+  });
+});

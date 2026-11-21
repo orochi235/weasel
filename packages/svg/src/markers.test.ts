@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseSvg } from './parse';
-import type { SvgPathNode, SvgTextNode } from './types';
+import type { SvgGroupNode, SvgPathNode, SvgTextNode } from './types';
 import { serializeSvg } from './serialize';
 import { pathFromD, registerMarker, type MarkerEntry, type PolygonPath } from '@weasel-js/core';
 
@@ -196,6 +196,21 @@ describe('ingesting a marker the kit has no key for', () => {
       expect(back.fill).toEqual(m.fill);
       expect(back.orient).toEqual(m.orient);
     }
+  });
+
+  it('reads a marker a group sets, so a child that takes the group\'s stroke keeps its head on export', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg">'
+      + '<defs><marker id="m" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L4 2L0 4Z"/></marker></defs>'
+      + '<g stroke="#000" fill="none" marker-end="url(#m)"><path d="M0 0H10V10"/></g></svg>';
+    const parsed = parseSvg(svg);
+    expect(parsed.warnings).toEqual([]);
+    const group = parsed.nodes[0] as SvgGroupNode;
+    const child = group.children[0] as SvgPathNode;
+    expect(group.stroke?.markerEnd).toBe(child.stroke?.markerEnd);
+    const disposers = parsed.markers!.map(registerMarker);
+    const out = serializeSvg(parsed.nodes);
+    disposers.forEach((d) => d());
+    expect(out.slice(out.indexOf('</defs>'))).toMatch(/marker-end="url\(#[^)]+\)"/);
   });
 });
 

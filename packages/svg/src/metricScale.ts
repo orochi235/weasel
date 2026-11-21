@@ -46,8 +46,8 @@ export function scaleStroke<T extends StrokeMetrics>(stroke: T, scale: number): 
     ...scaledHeads(stroke, scale),
   };
   if (typeof width === 'object') return carryUserScale(stroke, { ...stroke, ...scaledVertices }, scale);
-  const out = { ...stroke, ...scaledVertices };
-  if (width !== undefined) out.width = width * scale;
+  // An absent width is 1, which the scale moves like any other.
+  const out = { ...stroke, ...scaledVertices, width: (width ?? 1) * scale };
   return carryUserScale(stroke, scaledDash(out, scale), scale);
 }
 

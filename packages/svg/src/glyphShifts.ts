@@ -205,11 +205,17 @@ export interface Inherited { dx: readonly number[]; raw: string | null; merged?:
 /** One of a `<text>`'s runs, and the `<tspan>` it came from, or `null` for bare text. */
 export interface Piece { tspan: Element | null; run: StyledRun }
 
-/** Whether `tspan`, placing its first glyph with an `x` of its own, moves the
- *  pen off the line, and so may open a new one. */
-function mayOpenLine(tspan: Element | null, ownX: readonly number[], onWarn: (m: string) => void): boolean {
-  if (!tspan || ownX.length === 0) return false;
-  return tspan.hasAttribute('y') || (readList(tspan, 'dy', onWarn)[0] ?? 0) !== 0;
+/** The last of `pieces` whose `<tspan>` places a glyph with an `x` of its own
+ *  on the line a glyph before it is on, or -1 for none. `opens` says which
+ *  pieces open a line. */
+function lastPlacedOnLine(pieces: readonly Piece[], opens: readonly boolean[], onWarn: (m: string) => void): number {
+  let last = -1;
+  for (let k = 0, glyphs = 0; k < pieces.length; k++) {
+    const { tspan, run } = pieces[k]!;
+    if (tspan && glyphs > 0 && !opens[k] && readList(tspan, 'x', onWarn).length > 0) last = k;
+    glyphs += Array.from(run.text).length;
+  }
+  return last;
 }
 
 /** `runs`, `glyphs` glyphs, laid out on a line of their own in `style`, or
@@ -232,23 +238,25 @@ function measureLine(runs: readonly StyledRun[], glyphs: number, style: TextStyl
  * A `<text>`'s `x` list folded into its `dx` list, as `foldPositions` folds a
  * run's, or the reason it cannot be. The glyphs it places are measured
  * together, through every run they fall in, in `style`, the text's own, one
- * line at a time: a `<tspan>` that places its first glyph with an `x` of its
- * own and moves the pen off the line starts a new one. Each glyph takes its
+ * line at a time, a new one wherever `opens` says a piece starts one. The
+ * glyphs are read through piece `through` at least, past the end of `x`.
+ * Each glyph takes its
  * `x` and `dx` from its own `<tspan>` where that has a value for it, and
  * otherwise from the text, as SVG does; `reached` is how many glyphs the
  * lists were merged over.
  */
 function foldTextPositions(
-  x: readonly number[], dx: readonly number[], pieces: readonly Piece[], style: TextStyle, onWarn: (m: string) => void,
+  x: readonly number[], dx: readonly number[], pieces: readonly Piece[], opens: readonly boolean[], through: number,
+  style: TextStyle, onWarn: (m: string) => void,
 ): { dx: number[]; reached: number } | string {
   const segments: { runs: StyledRun[]; start: number }[] = [];
   const xs: (number | undefined)[] = [];
   const dxs: number[] = [];
-  for (let at = 0, k = 0; at < x.length && k < pieces.length; k++) {
+  for (let at = 0, k = 0; k < pieces.length && (at < x.length || k <= through); k++) {
     const { tspan, run } = pieces[k]!;
     const ownX = tspan ? readList(tspan, 'x', onWarn) : [];
     const ownDx = tspan ? readList(tspan, 'dx', onWarn) : [];
-    if (segments.length === 0 || mayOpenLine(tspan, ownX, onWarn)) segments.push({ runs: [], start: xs.length });
+    if (segments.length === 0 || opens[k]) segments.push({ runs: [], start: xs.length });
     const n = Array.from(run.text).length;
     for (let i = 0; i < n; i++) {
       xs.push(i < ownX.length ? ownX[i] : x[at + i]);
@@ -298,7 +306,7 @@ export class TextShifts {
 
   constructor(
     private readonly text: Element, private readonly onWarn: (m: string) => void,
-    pieces: readonly Piece[] = [], style: TextStyle = {},
+    pieces: readonly Piece[] = [], style: TextStyle = {}, opens: readonly boolean[] = [],
   ) {
     this.raw = text.getAttribute('dx');
     const dx = readList(text, 'dx', onWarn);
@@ -309,12 +317,14 @@ export class TextShifts {
       onWarn(`<text dx="${this.raw}"> is not read: its text has white space SVG collapses, which moves the glyphs the list names`);
     }
     this.dx = unread ? [] : dx;
-    if (x.length < 2) return;
+    const through = lastPlacedOnLine(pieces, opens, onWarn);
+    if (x.length < 2 && through < 0) return;
     const folded = collapsible
       ? 'its text has white space SVG collapses, which moves the glyphs the list names'
-      : foldTextPositions(x, this.dx, pieces, style, onWarn);
+      : foldTextPositions(x.length > 0 ? x : [0], this.dx, pieces, opens, through, style, onWarn);
     if (typeof folded === 'string') {
-      onWarn(`<text x="${text.getAttribute('x')?.trim()}"> positions each glyph; only the first value is read: ${folded}`);
+      if (x.length >= 2) onWarn(`<text x="${text.getAttribute('x')?.trim()}"> positions each glyph; only the first value is read: ${folded}`);
+      else onWarn(`<tspan x="${pieces[through]!.tspan!.getAttribute('x')?.trim()}"> places a glyph on the line before it; it is not read: ${folded}`);
     } else {
       this.dx = folded.dx;
       this.merged = folded.reached;

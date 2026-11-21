@@ -5,6 +5,7 @@ import { multiply, parseTransform } from './transform';
 import { readLength } from './lengths';
 import { imageHref } from './readImage';
 import { deriveStyle, ownValue, type StyleContext } from './cascade';
+import { fontSizeOf } from './fontSize';
 
 type Draw = (target: Element, ctm: Matrix, style: StyleContext) => SvgNode | SvgNode[] | null;
 
@@ -19,6 +20,13 @@ export const USE_ELEMENT_BUDGET = 100_000;
 
 /** What each document has left of {@link USE_ELEMENT_BUDGET}; negative once a reference has been refused for it. */
 const budgets = new WeakMap<Document, number>();
+
+/** The user space `el` draws its target in: its transform, then its `x` and `y`. */
+export function spaceOfUse(el: Element, ctm: Matrix, style: StyleContext, onWarn: (m: string) => void): Matrix {
+  const em = fontSizeOf(deriveStyle(style, el));
+  const at: Matrix = [1, 0, 0, 1, readLength(el, 'x', 'x', 0, onWarn, em), readLength(el, 'y', 'y', 0, onWarn, em)];
+  return multiply(multiply(ctm, parseTransform(el.getAttribute('transform'), onWarn)), at);
+}
 
 /**
  * What `el` draws: its target under `el`'s transform, moved by its `x` and `y`,
@@ -38,8 +46,7 @@ export function parseUse(
     onWarn(`<use> referencing #${target.id} is part of a reference cycle; it is not drawn`);
     return null;
   }
-  const at: Matrix = [1, 0, 0, 1, readLength(el, 'x', 'x', 0, onWarn), readLength(el, 'y', 'y', 0, onWarn)];
-  const m = multiply(multiply(ctm, parseTransform(el.getAttribute('transform'), onWarn)), at);
+  const m = spaceOfUse(el, ctm, style, onWarn);
   const inner = deriveStyle(style, el);
   if (ownValue(target, 'display') === 'none') return null;
   const doc = el.ownerDocument;

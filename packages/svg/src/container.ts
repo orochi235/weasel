@@ -5,6 +5,7 @@
  * `<svg>`'s: the viewport the media environment already carries.
  */
 
+import { splitTopLevel } from './cssScan';
 import { DEFAULT_MEDIA_ENVIRONMENT, evaluateMediaQuery, type SvgMediaEnvironment } from './media';
 
 /** An element that declared itself a size container, and its box. */
@@ -40,15 +41,20 @@ const BLOCK_AXIS = /\b(?:height|block-size|aspect-ratio|orientation)\b/;
 const NOT_A_SIZE_FEATURE = /\b(?:device-|resolution|color|monochrome|prefers-|update|hover|pointer)/;
 
 /**
- * Whether one `@container` prelude, `[<name>] <condition>`, holds for
- * `container`. A named query needs the container to declare that name. The
+ * Whether an `@container` prelude, a comma-separated list of
+ * `[<name>] <condition>` queries, holds for `container`: it holds when any
+ * query in the list does. A named query needs the container to declare that name. The
  * condition takes the size features (`width`, `height`, `inline-size`,
  * `block-size`, `aspect-ratio`, `orientation`) in either syntax; a style
  * query, or anything else it cannot answer, does not hold.
  */
 export function containerQueryHolds(prelude: string, container: QueryContainer | null): boolean {
   if (!container) return false;
-  let condition = prelude.trim();
+  return splitTopLevel(prelude, ',').some((query) => oneQueryHolds(query, container));
+}
+
+function oneQueryHolds(query: string, container: QueryContainer): boolean {
+  let condition = query.trim();
   const named = NAME.exec(condition);
   if (named && named[1].toLowerCase() !== 'not') {
     if (!container.names.includes(named[1])) return false;
