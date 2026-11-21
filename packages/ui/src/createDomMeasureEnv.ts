@@ -2,7 +2,13 @@ import { cssFamilyName } from '@weasel-js/font';
 import type { Ref } from 'react';
 import type { MeasureEnv } from '@weasel-js/ui-logic';
 
-let context: CanvasRenderingContext2D | null = null;
+/** One measuring canvas per document: a canvas resolves fonts against its own document's font set. */
+const contexts = new WeakMap<Document, CanvasRenderingContext2D | null>();
+
+function contextIn(doc: Document): CanvasRenderingContext2D | null {
+  if (!contexts.has(doc)) contexts.set(doc, doc.createElement('canvas').getContext('2d'));
+  return contexts.get(doc)!;
+}
 
 /**
  * A DOM {@link MeasureEnv}: tokens as `element` computes them, so a theme or a per-instance override in scope there
@@ -17,7 +23,7 @@ export function createDomMeasureEnv(element: Element): MeasureEnv {
       return v === '' ? undefined : v;
     },
     text(text, font) {
-      context ??= element.ownerDocument.createElement('canvas').getContext('2d');
+      const context = contextIn(element.ownerDocument);
       if (!context) return { width: 0, ascent: font.size * 0.8, descent: font.size * 0.2 };
       context.font = `${font.weight ?? 400} ${font.size}px ${cssFamilyName(font.family ?? 'sans-serif')}`;
       const m = context.measureText(text);

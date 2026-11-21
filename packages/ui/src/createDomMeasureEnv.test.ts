@@ -20,3 +20,28 @@ it('quotes a lone family name in the font it measures with, as every other font 
   env.text('x', { family: 'Inter, sans-serif', size: 12 });
   expect(fonts.slice(-2)).toEqual(['400 12px "Font 3D"', '400 12px Inter, sans-serif']);
 });
+
+it('measures in each document on a canvas of that document, whose fonts it has', () => {
+  const measured: string[] = [];
+  const fake = (doc: Document, name: string) => {
+    const real = doc.createElement.bind(doc);
+    vi.spyOn(doc, 'createElement').mockImplementation((tag: string) => {
+      const el = real(tag);
+      if (tag === 'canvas') {
+        (el as HTMLCanvasElement).getContext = (() => ({
+          font: '',
+          measureText: () => { measured.push(name); return { width: 1, fontBoundingBoxAscent: 1, fontBoundingBoxDescent: 0 }; },
+        })) as unknown as HTMLCanvasElement['getContext'];
+      }
+      return el;
+    });
+  };
+  const frames = [0, 1].map(() => document.body.appendChild(document.createElement('iframe')));
+  const [story, popout] = frames.map((f) => f.contentDocument!);
+  fake(story!, 'story');
+  fake(popout!, 'popout');
+  createDomMeasureEnv(story!.body).text('x', { size: 12 });
+  createDomMeasureEnv(popout!.body).text('x', { size: 12 });
+  for (const f of frames) f.remove();
+  expect([...new Set(measured)]).toEqual(['story', 'popout']);
+});
