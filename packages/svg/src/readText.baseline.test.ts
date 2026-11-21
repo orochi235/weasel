@@ -16,6 +16,12 @@ describe('dominant-baseline through the cascade', () => {
     expect(topOf('<text y="10" font-size="20" style="dominant-baseline:hanging">A</text>')).toBeCloseTo(10);
   });
 
+  it('puts the box top at y under text-top, and its middle under middle or central', () => {
+    expect(topOf('<text y="10" font-size="20" dominant-baseline="text-top">A</text>')).toBeCloseTo(10);
+    expect(topOf('<text y="10" font-size="20" dominant-baseline="middle">A</text>')).toBeCloseTo(0);
+    expect(topOf('<text y="10" font-size="20" dominant-baseline="central">A</text>')).toBeCloseTo(0);
+  });
+
   it('keeps y the baseline otherwise', () => {
     expect(topOf('<text y="30" font-size="20">A</text>')).toBeCloseTo(10);
   });

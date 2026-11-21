@@ -116,7 +116,8 @@ export function parseTextElement(
   // Laid-out lines sit on their own baselines, and `y` stays the box top.
   const laid = el.hasAttribute(LAID_ATTR);
   const explicitTopAnchor = laid || dominantBaseline === 'text-before-edge'
-    || dominantBaseline === 'hanging';
+    || dominantBaseline === 'text-top' || dominantBaseline === 'hanging';
+  const centered = !laid && (dominantBaseline === 'middle' || dominantBaseline === 'central');
   // `baseline-shift` is legal and inheritable on <text> itself, and unlike
   // every other run key it has no node-level home to be read into — so a bare
   // text child would drop it. Seed those children with it instead; a <tspan>
@@ -132,7 +133,7 @@ export function parseTextElement(
   // Laid-out lines are placed under `y`; otherwise the first glyph's move
   // places the first line.
   const firstY = laid ? ay : tracker.firstBaseline ?? ay;
-  const topY = explicitTopAnchor ? firstY : firstY - fontSize;
+  const topY = explicitTopAnchor ? firstY : centered ? firstY - fontSize / 2 : firstY - fontSize;
   const stated = numberAttr(el, LINE_HEIGHT_ATTR);
   const pitched = laid ? stated : tracker.lineHeight(fontSize, stated);
   if (pitched !== undefined) textStyle.lineHeight = pitched;
