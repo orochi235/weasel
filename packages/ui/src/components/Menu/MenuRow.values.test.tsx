@@ -149,6 +149,14 @@ describe('a color row in a DOM menu', () => {
     expect(picker()).not.toBeNull();
   });
 
+  it('opens when a menu bar drag is released over it', () => {
+    const set = vi.fn();
+    const entries: MenuEntry[] = [{ kind: 'color', key: 'fill', label: 'Fill', value: '#336699', set }];
+    render(<OpenPanels open={{ seq: 1, entries, client: { x: 0, y: 0 }, source: 'pointer' }} close={() => {}} releaseRuns />);
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: /^Fill/ }));
+    expect(picker()).not.toBeNull();
+  });
+
   it('offers opacity when the entry has alpha', () => {
     const { row } = openColor({ alpha: true });
     fireEvent.click(row);

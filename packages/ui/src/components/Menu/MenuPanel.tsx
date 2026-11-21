@@ -28,7 +28,7 @@ export function MenuPanel(props: {
   const ref = useRef<HTMLDivElement>(null);
   // The color row whose picker is open.
   const [picking, setPicking] = useState<number | null>(null);
-  // What Enter, Space or a click does to a value row: focus its field or open its picker. False for any other row.
+  // What Enter, Space, a click or a release does to a value row: focus its field or open its picker. False for any other row.
   const activate = (i: number): boolean => {
     const at = entries[i];
     if ((at?.kind === 'number' || at?.kind === 'text') && !at.disabled) {
@@ -112,7 +112,10 @@ export function MenuPanel(props: {
             if (modified && entry.kind === 'item' && entry.href !== undefined) {
               window.open(entry.href, '_blank', 'noopener');
               props.close();
-            } else c.press(level, i);
+            } else {
+              c.press(level, i);
+              activate(i);
+            }
           }}
         />
       ))}
