@@ -133,6 +133,7 @@
   background: var(--wzl-button-confirm-surface, var(--btn-glass));
   text-shadow: var(--wzl-button-text-shadow, var(--btn-engraving));
   box-shadow: var(--wzl-button-confirm-bevel, var(--wzl-bevel-raised, var(--btn-relief)));
+  --btn-hover-filter: brightness(1.08) saturate(1.06);
   --_flat-fill: color-mix(in srgb, var(--wzl-accent) var(--_flat), transparent);
   --btn-glass: linear-gradient(var(--_flat-fill), var(--_flat-fill)), linear-gradient(
     180deg,
@@ -163,10 +164,6 @@
     0 3px 6px rgba(0, 0, 0, calc(var(--btn-drop-far) * var(--wzl-gloss)));
 }
 
-.variant_solid[data-stance='confirm']:hover:not(:disabled, [data-disabled], [data-readonly]) {
-  filter: brightness(1.08) saturate(1.06);
-}
-
 .variant_solid[data-stance='confirm']:active:not(:disabled, [data-disabled], [data-readonly]) {
   background: var(--wzl-button-confirm-pressed-surface, var(--btn-glass-pressed));
   box-shadow: var(--wzl-bevel-pressed, var(--btn-relief-pressed));
@@ -192,6 +189,7 @@
   background: var(--wzl-button-surface, var(--btn-glass));
   text-shadow: var(--wzl-button-text-shadow, var(--btn-engraving));
   box-shadow: var(--wzl-bevel-raised, var(--btn-relief));
+  --btn-hover-filter: brightness(1.1);
   --_flat-fill: color-mix(in srgb, var(--wzl-surface-raised) var(--_flat), transparent);
   --btn-glass: linear-gradient(var(--_flat-fill), var(--_flat-fill)), linear-gradient(
     180deg,
@@ -219,7 +217,7 @@
     0 3px 6px rgba(0, 0, 0, calc(var(--btn-drop-far) * 0.89 * var(--wzl-gloss)));
 }
 
-.variant_solid:hover:not(:disabled, [data-disabled], [data-readonly]) { filter: brightness(1.1); }
+.variant_solid:hover:not(:disabled, [data-disabled], [data-readonly]) { filter: var(--btn-hover-filter); }
 
 .variant_solid:active:not(:disabled, [data-disabled], [data-readonly]) {
   background: var(--wzl-button-pressed-surface, var(--btn-glass-pressed));
@@ -237,6 +235,7 @@
 
 /* Ghost: silhouette only — no glass body, no gloss. Low emphasis mutes it until pointed at. */
 .variant_ghost {
+  --btn-hover-surface: var(--wzl-surface-hover);
   background: transparent;
   color: var(--wzl-emphasis-fg, var(--wzl-fg));
   box-shadow: none;
@@ -244,7 +243,7 @@
 .variant_ghost::before { display: none; }
 
 .variant_ghost:hover:not(:disabled, [data-disabled], [data-readonly]):not(.pressed) {
-  background: var(--wzl-surface-hover);
+  background: var(--btn-hover-surface);
 }
 
 .variant_ghost[data-emphasis='low']:hover:not(:disabled, [data-disabled], [data-readonly]) {

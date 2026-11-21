@@ -50,7 +50,7 @@ export function ButtonLabView({ config }: { config: ButtonLabConfig }): ReactEle
         <Target config={config} vars={vars} />
         {config.target === 'button' && (
           <>
-            <Target config={config} vars={vars} className={s.hovered} />
+            <Target config={config} vars={vars} className={config.variant === 'ghost' ? s.hoveredSurface : s.hovered} />
             <Button {...weight(config.variant)} disabled style={vars}>{config.label}</Button>
           </>
         )}
