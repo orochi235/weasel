@@ -76,6 +76,16 @@ export function useLayerGesture(host: LayerGestureHost) {
     if (next !== current) send(a, next);
   });
 
+  const onCancelRef = useLatest(() => {
+    const a = activeRef.current;
+    if (!a) return;
+    const current = working(a);
+    const restored = a.gesture.onCancel ? a.gesture.onCancel(current, hostRef.current.ctxFor(NO_MODIFIERS)) : a.startSelfState;
+    if (a.sent || restored !== current) send(a, restored);
+    settleLayer(a.entry, 'cancel');
+    finish();
+  });
+
   const onEndRef = useLatest((e: PointerEvent) => {
     const a = activeRef.current;
     if (!a) return;
@@ -87,16 +97,6 @@ export function useLayerGesture(host: LayerGestureHost) {
     const changed = !deepEqual(finalState, a.startSelfState);
     if (changed) hostRef.current.onEdit(a.startStates);
     settleLayer(a.entry, changed ? { commit: finalState, prev: a.startSelfState } : 'unchanged');
-    finish();
-  });
-
-  const onCancelRef = useLatest(() => {
-    const a = activeRef.current;
-    if (!a) return;
-    const current = working(a);
-    const restored = a.gesture.onCancel ? a.gesture.onCancel(current, hostRef.current.ctxFor(NO_MODIFIERS)) : a.startSelfState;
-    if (a.sent || restored !== current) send(a, restored);
-    settleLayer(a.entry, 'cancel');
     finish();
   });
 
