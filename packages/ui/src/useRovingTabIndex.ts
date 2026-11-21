@@ -8,6 +8,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type RefObject,
 } from 'react';
+import { isRendered } from './isRendered';
 
 /** Which arrow keys walk the items. `'both'` answers to all four, the way a
  *  radio group does; a one-axis toolbar leaves the cross-axis arrows to the
@@ -71,9 +72,10 @@ function isEnabled(el: HTMLElement): boolean {
   return !el.matches(':disabled') && el.getAttribute('aria-disabled') !== 'true';
 }
 
-/** Whether focus can land on `el` under `disabled`. */
+/** Whether focus can land on `el` under `disabled`: never on one hidden, inert, or not drawn. */
 function canStop(el: HTMLElement, disabled: RovingDisabled): boolean {
-  return disabled === 'stop' ? !el.matches(':disabled') : isEnabled(el);
+  const allowed = disabled === 'stop' ? !el.matches(':disabled') : isEnabled(el);
+  return allowed && el.closest('[hidden], [inert]') === null && isRendered(el);
 }
 
 /** The inline direction `el` lays its children out in, from its computed `direction`. */
@@ -127,7 +129,7 @@ function listen(
   mo.observe(root, {
     childList: true,
     subtree: true,
-    attributeFilter: ['disabled', 'aria-disabled'],
+    attributeFilter: ['disabled', 'aria-disabled', 'hidden', 'inert'],
   });
   const onFocusIn = (e: FocusEvent) => {
     const target = e.target as HTMLElement;
@@ -167,6 +169,8 @@ function listen(
  * the items themselves. Adding, removing, disabling or enabling an item moves
  * the stop without the container re-rendering.
  *
+ * An item that is `hidden`, inert, or not drawn is passed over as a disabled one is, under either `disabled`.
+ *
  * With every item disabled there is no tab stop and the container drops out of
  * the tab order entirely.
  *
@@ -199,14 +203,15 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
     (focused: HTMLElement | null) => {
       const found = items();
       const { tabStopIndex: controlled, disabled = 'skip' } = latest.current;
-      const enabled = found.map((el) => canStop(el, disabled));
+      // Asked lazily: whether an item is drawn reads its computed style, and the first candidate usually answers.
+      const can = (i: number) => i >= 0 && i < found.length && canStop(found[i]!, disabled);
       let stop = focused ? found.indexOf(focused) : -1;
-      if (stop < 0 && controlled !== undefined && enabled[controlled]) stop = controlled;
+      if (stop < 0 && controlled !== undefined && can(controlled)) stop = controlled;
       if (stop < 0 && controlled === undefined && last.current) {
         const i = found.indexOf(last.current);
-        if (enabled[i]) stop = i;
+        if (can(i)) stop = i;
       }
-      if (stop < 0) stop = enabled.indexOf(true);
+      if (stop < 0) stop = found.findIndex((_, i) => can(i));
       for (const [i, el] of found.entries()) el.tabIndex = i === stop ? 0 : -1;
     },
     [items],

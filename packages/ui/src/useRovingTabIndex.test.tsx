@@ -139,6 +139,20 @@ describe('useRovingTabIndex — arrow navigation', () => {
     expect(document.activeElement).toBe(segs[2]);
   });
 
+  it('passes over an item that is hidden or not drawn, and never gives it the tab stop', () => {
+    const segs = renderBar({ items: [{ label: 'a' }, { label: 'b' }, { label: 'c' }, { label: 'd' }], tabStopIndex: 1 });
+    segs[1]!.hidden = true;
+    segs[2]!.style.display = 'none';
+    act(() => segs[0]!.focus());
+    const onNavigate = vi.fn();
+    segs.view.rerender(<Bar items={[{ label: 'a' }, { label: 'b' }, { label: 'c' }, { label: 'd' }]} tabStopIndex={1} onNavigate={onNavigate} />);
+    fireEvent.keyDown(segs[0]!, { key: 'ArrowRight' });
+    expect(onNavigate).toHaveBeenCalledWith(3);
+    expect(document.activeElement).toBe(segs[3]);
+    act(() => segs[3]!.blur());
+    expect(tabIndexes(segs)).toEqual([0, -1, -1, -1]);
+  });
+
   it('skips aria-disabled items, which stay focusable', () => {
     const segs = renderBar({ items: [{ label: 'a' }, { label: 'b', ariaDisabled: true }, { label: 'c' }] });
     fireEvent.keyDown(segs[0], { key: 'ArrowRight' });
