@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { SvgNode } from '../types';
-import { normalizeAll } from './roundTrip';
+import { normalizeAll, round } from './roundTrip';
 
 const tri = (origin: { x: number; y: number } | undefined, coords: number[], extra: Partial<SvgNode> = {}): SvgNode => ({
   kind: 'path',
@@ -8,6 +8,13 @@ const tri = (origin: { x: number; y: number } | undefined, coords: number[], ext
   fill: { kind: 'solid', color: '#000' },
   ...extra,
 } as SvgNode);
+
+describe('round', () => {
+  it('rounds a tiny negative to 0, not -0', () => {
+    expect(Object.is(round(-1e-12), 0)).toBe(true);
+    expect(normalizeAll([tri(undefined, [0, -1e-12, 5, 0, 0, 5])])).toEqual(normalizeAll([tri(undefined, [0, 1e-12, 5, 0, 0, 5])]));
+  });
+});
 
 describe('normalizeAll', () => {
   it('compares a polygon in world coordinates, whatever its origin', () => {
