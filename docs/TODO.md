@@ -447,12 +447,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) An isolated story's `.auto()` leaf, `.dialog()` row and group `.motif()` do not reach the workshop's panel**
-  (2026-11-20, `packages/forge/src/protocol/schema.ts`). The frame's schema description carries `enableIf` and
-  `resettable` but not these: `AUTO` is a symbol, which a port cannot post, so a panel that wrote it would fail the
-  next `config` message, and a dialog body and a motif are renderers. Closes when the frame path is removed, or when
-  an isolated story's auto leaf toggles and pins across the port.
-
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
   `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the file
@@ -611,6 +605,15 @@ on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed a
 ---
 
 ## Release-gate & build hygiene
+
+- **(P3) A CSF argType's `if` reads the trial's config, not the frame-local args the story renders with**
+  (2026-11-21, `packages/forge/src/csf/argsToSchema.ts` `conditionOf`). An `updateArgs({ mode: undefined })`, or a
+  `mode` set to a function, stays in the story's `Scoped` state (`csf/shims/preview-api.ts`), so a control gated on
+  `mode` still answers by the config's or the story's own `mode`, where Storybook answers by the args the story
+  renders with. Two things are missing underneath: which render's local args count, since a trial and each of its
+  Live lens copies hold their own, and a way to have the in-page panel's predicates rerun on a change that is not
+  the config's (the frame path can resend its answers for the same config key). Closes when a control gated by `if`
+  shows and hides by a frame-local value, in page and isolated.
 
 - **(P3) forge's axe sweep skips `ClockFrames.stories.tsx`, and knows `Field`'s unnamed slider thumbs** (2026-11-20,
   `apps/forge/a11y.known.ts`). Both failed every full run from 2026-11-19 on. ClockFrames throws "usePlayhead: this

@@ -112,6 +112,14 @@ describe('runStory', () => {
     await expect(runStory(csf, 'Parametered', FILE, AUTO_TITLE, { setup: { parameters: { project: true } } })).resolves.toBeUndefined();
   });
 
+  it("themes the story's host by the story's own globals over the toolbar's, as a frame does", async () => {
+    const csf = { default: { title: 'Test/Csf' }, Dark: { globals: { mode: 'dark' }, render: () => null } };
+    const applyGlobals = vi.fn();
+    await runStory(csf, 'Dark', FILE, AUTO_TITLE, { setup: { applyGlobals }, globals: { mode: 'light', density: 'compact' } });
+    expect(applyGlobals).toHaveBeenCalled();
+    expect(applyGlobals.mock.calls.at(-1)![0]).toEqual({ mode: 'dark', density: 'compact' });
+  });
+
   it('names the load phase when the file has no such export', async () => {
     await expect(runStory(mod, 'Missing', FILE, AUTO_TITLE)).rejects.toThrow(
       `load fault: ${FILE} has no story export "Missing"`,

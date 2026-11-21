@@ -148,6 +148,16 @@ describe('withUnsent', () => {
     expect(withUnsent([1], { cancel })).toEqual([1]);
   });
 
+  it('gives a list entry the fields its own original left behind after an entry before it is removed or moved', () => {
+    const fnA = () => 'a';
+    const fnB = () => 'b';
+    const items = [{ label: 'A', onClick: fnA }, { label: 'B', onClick: fnB }];
+    expect(withUnsent([{ label: 'B' }], items)).toEqual([{ label: 'B', onClick: fnB }]);
+    expect(withUnsent([{ label: 'B' }, { label: 'A' }], items)).toEqual([items[1], items[0]]);
+    expect(withUnsent([null], [fnA, fnB])).toEqual([null]);
+    expect(withUnsent([null, null], [fnA, fnB])).toEqual([fnA, fnB]);
+  });
+
   it('round-trips a part back to the original', () => {
     const original = { status: 'running', done: 0, failures: [{ index: 3 }], start: cancel, cancel };
     const part = portSafePart(original);

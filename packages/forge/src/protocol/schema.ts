@@ -17,6 +17,7 @@ import {
 } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
 import { setOwn } from '@weasel-js/registry';
+import { isPortSafe } from '../csf/portSafe';
 
 /** The section a described entry sits in, as structured-clone data. */
 export interface SectionDescription {
@@ -51,6 +52,12 @@ export type DescribedEntry =
       customControl: boolean;
       /** An action whose `run` stays in the frame: the rebuilt leaf's button asks the frame to run it. */
       runsInFrame?: true;
+      /** The leaf may be auto (`.auto()`), as data. */
+      auto?: NodeOptions['auto'];
+      /** The auto row reads out its value (`.quote()`). */
+      autoQuote?: true;
+      /** The leaf computes its value while auto with an `autoResolve`, which the frame answers. */
+      resolves?: true;
     };
 
 /** A config shape as structured-clone data: each key's entry, described. */
@@ -67,6 +74,8 @@ export interface SchemaAnswers {
   errors(path: string, config: unknown): string[];
   /** Whether the frame answered that the node at `path`'s own `.enableIf` does not hold. Absent, none is disabled. */
   disabled?(path: string, config: unknown): boolean;
+  /** What the frame answered the auto leaf at `path` computes under `config`. Absent, an auto leaf computes nothing. */
+  resolved?(path: string, config: unknown): unknown;
   /** Asks the frame of the panel that pressed it, which `ctx` names, to run its action at `path`. Without it, the
    *  rebuilt action's button does nothing. */
   run?(path: string, ctx: ConfigActionContext): void;
@@ -95,6 +104,16 @@ function dataOf(value: unknown, keepsKeys = false): unknown {
   return out;
 }
 
+/** A leaf's auto options as data: `auto` and `autoQuote` as they are, and an `autoResolve` as a flag the frame answers. */
+function autoOf(options: NodeOptions): Pick<Extract<DescribedEntry, { branch: false }>, 'auto' | 'autoQuote' | 'resolves'> {
+  const auto = options.auto === undefined ? undefined : dataOf(options.auto, true);
+  return {
+    ...(auto === undefined || auto === DROPPED ? {} : { auto: auto as NodeOptions['auto'] }),
+    ...(options.autoQuote ? { autoQuote: true as const } : {}),
+    ...(options.autoResolve ? { resolves: true as const } : {}),
+  };
+}
+
 function describeShape(shape: ConfigShape): DescribedShape {
   const out: DescribedShape = {};
   for (const [key, entry] of Object.entries(shape)) {
@@ -121,6 +140,7 @@ function describeShape(shape: ConfigShape): DescribedShape {
           validated: entry.options.validate !== undefined,
           customControl: entry.options.render !== undefined,
           ...(typeof entry.annotations.run === 'function' ? { runsInFrame: true as const } : {}),
+          ...autoOf(entry.options),
         };
     setOwn(out, key, described);
   }
@@ -148,11 +168,18 @@ function rebuildShape(shape: DescribedShape, at: string, answers: SchemaAnswers)
       };
       setOwn(out, key, branch);
     } else {
+      const leafOptions: NodeOptions = {
+        ...options,
+        ...(entry.validated ? { validate: (_leaf, config) => answers.errors(path, config) } : {}),
+        ...(entry.auto === undefined ? {} : { auto: entry.auto }),
+        ...(entry.autoQuote ? { autoQuote: true } : {}),
+        ...(entry.resolves ? { autoResolve: (config) => answers.resolved?.(path, config) } : {}),
+      };
       const node: ConfigNode = {
         kind: entry.kind,
         default: entry.default,
         annotations: entry.runsInFrame ? { ...entry.annotations, run: (ctx: ConfigActionContext) => answers.run?.(path, ctx) } : entry.annotations,
-        options: entry.validated ? { ...options, validate: (_leaf, config) => answers.errors(path, config) } : options,
+        options: leafOptions,
       };
       setOwn(out, key, node);
     }
@@ -184,8 +211,9 @@ export function schemaActionAt(schema: ConfigSchema<unknown>, path: string): Con
 export function answerSchema(
   schema: ConfigSchema<unknown>,
   config: unknown,
-): { hidden: string[]; errors: Record<string, string[]>; disabled: string[] } {
+): { hidden: string[]; errors: Record<string, string[]>; disabled: string[]; resolved: Record<string, unknown> } {
   const hidden: string[] = [];
+  const resolved: Record<string, unknown> = {};
   const disabled: string[] = [];
   const errors: Record<string, string[]> = {};
   const record = config as Record<string, unknown>;
@@ -200,7 +228,11 @@ export function answerSchema(
         walk(entry.children, path);
         continue;
       }
-      const { validate } = entry.options;
+      const { validate, autoResolve } = entry.options;
+      if (autoResolve) {
+        const value = autoResolve(record);
+        if (isPortSafe(value)) setOwn(resolved, path, value);
+      }
       if (!validate) continue;
       const leaf = schemaNodeAt(group, path);
       if (!leaf || 'children' in leaf) continue;
@@ -209,5 +241,5 @@ export function answerSchema(
     }
   };
   walk(schema.nodes, '');
-  return { hidden, errors, disabled };
+  return { hidden, errors, disabled, resolved };
 }

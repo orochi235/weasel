@@ -1,6 +1,6 @@
 import { type Context, createContext, type Dispatch, type SetStateAction } from 'react';
 import { getOwn } from '@weasel-js/registry';
-import { stableStringify } from '../protocol/messages';
+import { configKey } from '../protocol/messages';
 
 type Args = Record<string, unknown>;
 
@@ -13,7 +13,7 @@ export interface LocalArg {
 export type LocalArgs = Record<string, LocalArg>;
 
 /** A config value in the form `LocalArg.over` records. */
-export const coverOf = (value: unknown): string => stableStringify(value);
+export const coverOf = (value: unknown): string => configKey(value);
 
 /** The frame-local values that still apply over `config`. */
 export const appliedLocal = (local: LocalArgs, config: Args): Args =>

@@ -403,5 +403,19 @@ describe('loadCsfModule', () => {
       expect(kinds(fixed)).toEqual({});
       expect(kinds(taking)).toEqual({ disabled: 'boolean', size: 'enum' });
     });
+
+    it('are kept for a render whose args are a default or a rest parameter', () => {
+      const stories = loadCsfModule(
+        {
+          default: {},
+          Defaulted: { render: (args: Record<string, unknown> = {}) => (args ? null : null) },
+          Rest: { render: (...a: unknown[]) => (a ? null : null) },
+          Method: { render(args: unknown = {}) { return args ? null : null; } },
+          __forgeArgTypes,
+        },
+        AUTO_TITLE,
+      );
+      for (const story of stories) expect(kinds(story)).toEqual({ disabled: 'boolean', size: 'enum' });
+    });
   });
 });

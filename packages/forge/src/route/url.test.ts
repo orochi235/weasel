@@ -12,6 +12,7 @@ import {
   parseRoute,
   pinParams,
   reservedParams,
+  sameKnob,
   storyHref,
   withoutPins,
 } from './url';
@@ -252,5 +253,45 @@ describe('pins in the URL', () => {
     expect(paramsToPins(pinned, { '$globals.mode': 'dark', '$globals.font': 'serif', label: 'Go' })).toEqual({ '$globals.mode': 'dark' });
     expect(paramsToPins(pinned, { '$globals.mode': 'sepia' })).toEqual({});
     expect(paramsToPins(schema, { '$globals.mode': 'dark' })).toEqual({});
+  });
+});
+
+describe('a number param outside its range', () => {
+  const ranged = f.schema({
+    size: f.number(5).range(0, 10),
+    look: f.object({ px: f.number(4).range(0, 8) }),
+  });
+
+  it('is held to the range, as a stored trial is', () => {
+    expect(paramsToKnobs(ranged, { size: '99999' })).toEqual({ size: 10 });
+    expect(paramsToKnobs(ranged, { size: '-Infinity' })).toEqual({ size: 0 });
+    expect(paramsToKnobs(ranged, { look: '{"px":20}' })).toEqual({ look: { px: 8 } });
+  });
+});
+
+describe('sameKnob', () => {
+  it('tells the infinities, NaN, and null apart', () => {
+    expect(sameKnob(Infinity, -Infinity)).toBe(false);
+    expect(sameKnob(NaN, null)).toBe(false);
+    expect(sameKnob([Infinity], [null])).toBe(false);
+    expect(sameKnob(NaN, NaN)).toBe(true);
+    expect(sameKnob({ a: [1, { b: 2 }] }, { a: [1, { b: 2 }] })).toBe(true);
+    expect(sameKnob(0, -0)).toBe(true);
+  });
+
+  it('writes a param for a value that differs from its default only as an infinity', () => {
+    const endless = f.schema({ reach: f.number(Infinity).endless('never', 'both') });
+    expect(knobsToParams(endless, { reach: -Infinity })).toEqual({ reach: '-Infinity' });
+  });
+});
+
+describe('a story key starting with $', () => {
+  const dollar = f.schema({ $tint: f.string('red'), look: f.group({ $px: f.number(1) }) });
+
+  it('is a knob, as only the keys forge owns are not', () => {
+    expect(knobPaths(dollar).map((k) => k.path)).toEqual(['$tint', 'look.$px']);
+    expect(knobsToParams(dollar, { $tint: 'blue', look: { $px: 2 } })).toEqual({ $tint: 'blue', 'look.$px': '2' });
+    expect(paramsToKnobs(dollar, { $tint: 'green' })).toEqual({ $tint: 'green' });
+    expect(knobParams({ $tint: 'x', '$globals.mode': 'dark', t: '1' })).toEqual({ $tint: 'x' });
   });
 });

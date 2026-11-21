@@ -1,9 +1,9 @@
 import { type ConfigSchema, type ConfigShape, isConfigBranch, configValueAt, hasConfigPath } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
-import { type PrefLeaf, type PrefObject, prefSectionLeaves } from '@weasel-js/prefs-schema';
-import { type StoryGlobals, stableStringify } from '../protocol/messages';
+import { type PrefLeaf, type PrefNumber, type PrefObject, prefClampNumber, prefSectionLeaves } from '@weasel-js/prefs-schema';
+import type { StoryGlobals } from '../protocol/messages';
 import { setOwn, getOwn } from '@weasel-js/registry';
-import { GLOBALS_KEY } from '../shell/globals';
+import { GLOBALS_KEY, isForgePath } from '../shell/globals';
 
 /**
  * Forge's URL, as pure functions: `#/<story id>?<params>`. The story and its params share the hash, so the page's
@@ -16,9 +16,6 @@ export const PLAYHEAD_PARAM = 't';
 
 /** Param names that are never knobs. */
 export const RESERVED_PARAMS: ReadonlySet<string> = new Set([PLAYHEAD_PARAM]);
-
-/** Config keys forge keeps for itself, such as the `$globals` pins, start with this and never reach the URL. */
-const INTERNAL_PREFIX = '$';
 
 /** What a forge hash holds: the story it names, and every param after it, knobs and reserved alike, in order. */
 export interface ForgeRoute {
@@ -49,9 +46,9 @@ export function formatRoute(route: ForgeRoute): string {
   return `#/${encodeURIComponent((route.story ?? '').replace(/\p{Cs}/gu, '\uFFFD'))}${query ? `?${query}` : ''}`;
 }
 
-/** Whether a param name can be a knob: not reserved and not one of forge's own config keys. */
+/** Whether a param name can be a knob: not reserved and not under one of forge's own config keys (`$globals`). */
 export function isKnobParam(name: string): boolean {
-  return name !== '' && !RESERVED_PARAMS.has(name) && !name.startsWith(INTERNAL_PREFIX);
+  return name !== '' && !RESERVED_PARAMS.has(name) && !isForgePath(name);
 }
 
 /** The params that are knobs, with the reserved ones left out. */
@@ -178,8 +175,47 @@ function fits(codec: Codec, value: unknown, leaf: KnobLeaf): boolean {
 /**
  * One param read as `leaf`'s type: `{ value }`, or undefined for a param that does not parse as one — a number that
  * is not a number, an option the enum does not list, malformed JSON. A bare boolean param (`?dark`) reads as true.
+ * A number is held to its leaf's range, nested ones included, as a stored trial's is.
  */
 export function decodeKnob(raw: string, leaf: KnobLeaf): { value: unknown } | undefined {
+  const decoded = parsedKnob(raw, leaf);
+  return decoded && { value: clamped(leaf.kind, leaf.annotations ?? {}, decoded.value) };
+}
+
+/** `value`, which `holds` for its leaf, with each number in it held to its own leaf's range. */
+function clamped(kind: unknown, parts: KnobParts, value: unknown): unknown {
+  const nested = (leaf: PrefLeaf, v: unknown) => ('encoding' in leaf ? v : clamped(leaf.kind, leaf as KnobParts, v));
+  const fields = (children: KnobParts['children'], v: Record<string, unknown>) => {
+    if (!children) return v;
+    const out = { ...v };
+    for (const [key, child] of prefSectionLeaves(children)) {
+      if (getOwn(v, key) !== undefined) setOwn(out, key, nested(child, getOwn(v, key)));
+    }
+    return out;
+  };
+  switch (kind) {
+    case 'number':
+      return typeof value === 'number' ? prefClampNumber(parts as PrefNumber, value) : value;
+    case 'list':
+      return Array.isArray(value) && parts.item ? value.map((entry) => nested(parts.item!, entry)) : value;
+    case 'map':
+      return isPlainObject(value) && parts.item
+        ? Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, nested(parts.item!, entry)]))
+        : value;
+    case 'object':
+      return isPlainObject(value) ? fields(parts.children, value) : value;
+    case 'union': {
+      if (!isPlainObject(value) || parts.tag === undefined || !parts.variants) return value;
+      const name = getOwn(value, parts.tag);
+      const variant = typeof name === 'string' ? getOwn(parts.variants, name) : undefined;
+      return variant ? fields(variant.children, value) : value;
+    }
+    default:
+      return value;
+  }
+}
+
+function parsedKnob(raw: string, leaf: KnobLeaf): { value: unknown } | undefined {
   const codec = codecOf(leaf);
   if (raw === '' && leaf.annotations?.clearable && (codec === 'number' || codec === 'enum')) return { value: undefined };
   switch (codec) {
@@ -223,19 +259,36 @@ export function knobPaths(schema: Pick<ConfigSchema<unknown>, 'nodes'>): KnobPat
   const walk = (shape: ConfigShape, at: string): void => {
     for (const [key, entry] of Object.entries(shape)) {
       // An empty key's path would read as its parent's, so like a dotted one it has no param.
-      if (key === '' || key.startsWith(INTERNAL_PREFIX) || key.includes('.')) continue;
+      if (key === '' || key.includes('.')) continue;
       const path = at === '' ? key : `${at}.${key}`;
       if (isConfigBranch(entry)) walk(entry.children, path);
       else if (codecOf(entry) !== null && isKnobParam(path)) out.push({ path, leaf: entry });
     }
   };
-  walk(schema.nodes, '');
+  const own = Object.fromEntries(Object.entries(schema.nodes as ConfigShape).filter(([key]) => !isForgePath(key)));
+  walk(own, '');
   return out;
 }
 
-/** Whether two knob values are the same value, compared as data. */
+/** Whether two knob values are the same value, compared as data: `NaN` is itself, and `0` is `-0`, which no param tells
+ *  apart. */
 export function sameKnob(a: unknown, b: unknown): boolean {
-  return Object.is(a, b) || stableStringify(a) === stableStringify(b);
+  // Pairs already being compared hold unless something else differs, so a cycle compares as the tree it unrolls to.
+  const open = new Map<object, Set<object>>();
+  const same = (x: unknown, y: unknown): boolean => {
+    if (x === y || (Number.isNaN(x) && Number.isNaN(y))) return true;
+    const array = Array.isArray(x);
+    if (array ? !Array.isArray(y) : !isPlainObject(x) || !isPlainObject(y) || Array.isArray(y)) return false;
+    const xo = x as Record<string, unknown>;
+    const yo = y as Record<string, unknown>;
+    const against = open.get(xo) ?? new Set<object>();
+    if (against.has(yo)) return true;
+    open.set(xo, against.add(yo));
+    const keys = Object.keys(xo).filter((key) => xo[key] !== undefined);
+    const others = Object.keys(yo).filter((key) => yo[key] !== undefined);
+    return keys.length === others.length && keys.every((key) => Object.hasOwn(yo, key) && same(xo[key], yo[key]));
+  };
+  return same(a, b);
 }
 
 /** Whether `config` holds `leaf` at `path` cleared: a clearable leaf set to `undefined`, which its default is not. */

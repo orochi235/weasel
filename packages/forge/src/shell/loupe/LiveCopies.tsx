@@ -29,6 +29,8 @@ export interface LiveCopiesProps {
   setup: FrameSetup;
   /** The trial's whole config, read for its `$globals` pins. */
   trialConfig: unknown;
+  /** Globals the story sets for itself, which every copy keeps. */
+  storyGlobals?: StoryGlobals;
   /** One copy's content, under the copy's globals and with the lens's args to write over the trial's config. */
   children: (globals: StoryGlobals, args: Readonly<Record<string, unknown>>) => ReactNode;
 }
@@ -128,7 +130,7 @@ function useRequests(lenses: LiveLenses, trialId: string): readonly LiveRequest[
   return useSyncExternalStore(lenses.subscribe, forTrial);
 }
 
-function LensCopy({ request, trialId, layout, setup, trialConfig, children }: LiveCopiesProps & { request: LiveRequest; trialId: string }) {
+function LensCopy({ request, trialId, layout, setup, trialConfig, storyGlobals, children }: LiveCopiesProps & { request: LiveRequest; trialId: string }) {
   const globals = useCopyGlobals(request, trialConfig);
   const id = copyId(trialId, request);
   const copy = useMemo(() => ({ id, globals }), [id, globals]);
@@ -154,7 +156,7 @@ function LensCopy({ request, trialId, layout, setup, trialConfig, children }: Li
     <LensPortal request={request}>
       {/* Remounted on a new factor: no observer sees a transform change, and a canvas inside sizes its backing
           store for the magnification it mounted under. */}
-      <TrialHost key={request.factor} layout={layout} setup={setup} config={trialConfig} copy={copy}>
+      <TrialHost key={request.factor} layout={layout} setup={setup} config={trialConfig} copy={copy} {...(storyGlobals ? { storyGlobals } : {})}>
         {(g) => (
           <>
             {children(g, request.args)}
