@@ -35,15 +35,16 @@ function paddingEdges(el: Element): Edges {
   return { left, top, right: left + el.clientWidth * sx, bottom: top + el.clientHeight * sy };
 }
 
-/** The viewport in viewport px, inside its scrollbars. */
-function viewportEdges(doc: Document): Edges {
+/** The viewport in viewport px, inside its scrollbars; null where the document lays nothing out (jsdom). */
+function viewportEdges(doc: Document): Edges | null {
   const root = doc.documentElement;
+  if (root.clientWidth === 0 && root.clientHeight === 0) return null;
   return { left: 0, top: 0, right: root.clientWidth, bottom: root.clientHeight };
 }
 
-/** Whether the `overflow` `a` computes to clips the viewport rather than `a`'s own box: the root's always does,
- *  and the body's does when the root's is `visible` on both axes, which hands the body's to the viewport. */
-function clipsViewport(a: Element): boolean {
+/** Whether the `overflow` `a` computes to goes to the viewport rather than `a`'s own box: the root's always does,
+ *  and the body's does when the root's is `visible` on both axes. */
+function overflowToViewport(a: Element): boolean {
   const doc = a.ownerDocument;
   if (a === doc.documentElement) return true;
   if (a !== doc.body) return false;
@@ -51,9 +52,16 @@ function clipsViewport(a: Element): boolean {
   return !clips(root.overflowX) && !clips(root.overflowY);
 }
 
-/** The edges `a`'s `overflow` cuts to. */
-const clipEdges = (a: Element): Edges =>
-  clipsViewport(a) ? viewportEdges(a.ownerDocument) : paddingEdges(a);
+const cut = (out: Edges, edges: Edges, x: boolean, y: boolean): void => {
+  if (x) {
+    out.left = Math.max(out.left, edges.left);
+    out.right = Math.min(out.right, edges.right);
+  }
+  if (y) {
+    out.top = Math.max(out.top, edges.top);
+    out.bottom = Math.min(out.bottom, edges.bottom);
+  }
+};
 
 /** Whether `el` is drawn in the top layer, where no ancestor's overflow reaches. */
 function inTopLayer(el: Element): boolean {
@@ -81,7 +89,7 @@ function boxParent(el: Element): Element | null {
  * width or height.
  *
  * Follows ancestors in the flattened tree, through slots and out of shadow roots, up to the first one in the top
- * layer. An ancestor an
+ * layer, then cuts to the viewport. An ancestor an
  * absolutely or fixed positioned element escapes is still counted.
  */
 export function clipToAncestors(el: Element, box: Box): Box {
@@ -95,19 +103,15 @@ export function clipToAncestors(el: Element, box: Box): Box {
     const style = getComputedStyle(a);
     const boxed = hasClipBox(style.display);
     const contained = boxed && containsPaint(style);
-    const x = contained || (boxed && clips(style.overflowX));
-    const y = contained || (boxed && clips(style.overflowY));
-    const edges = x || y ? clipEdges(a) : null;
-    if (edges && x) {
-      out.left = Math.max(out.left, edges.left);
-      out.right = Math.min(out.right, edges.right);
-    }
-    if (edges && y) {
-      out.top = Math.max(out.top, edges.top);
-      out.bottom = Math.min(out.bottom, edges.bottom);
-    }
+    const scrolls = boxed && !overflowToViewport(a);
+    const x = contained || (scrolls && clips(style.overflowX));
+    const y = contained || (scrolls && clips(style.overflowY));
+    if (x || y) cut(out, paddingEdges(a), x, y);
     if (inTopLayer(a)) break;
   }
+  // The viewport clips whatever the root's overflow computes to: `visible` there is read as `auto`.
+  const viewport = viewportEdges(el.ownerDocument);
+  if (viewport) cut(out, viewport, true, true);
   return {
     left: out.left,
     top: out.top,

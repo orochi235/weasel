@@ -144,6 +144,13 @@ describe('clipToAncestors', () => {
       expect(clipToAncestors(tile, onScreen)).toEqual(onScreen);
     });
 
+    it('cuts a tile scrolled below the fold of a page nothing clips', () => {
+      scrolled();
+      const { tile } = nest('', '');
+      expect(clipToAncestors(tile, { ...onScreen, top: 900 }).height).toBe(0);
+      expect(clipToAncestors(tile, { ...onScreen, top: 750 }).height).toBe(50);
+    });
+
     it("reads a body's overflow, handed to the viewport, as the viewport's", () => {
       scrolled();
       document.body.style.cssText = BOTH;
