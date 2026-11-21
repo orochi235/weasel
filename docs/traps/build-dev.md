@@ -28,7 +28,9 @@ manifest, counting a sibling's optional peer that the imported entry loads (geom
 install declares fails as it loads. `check:manifests` reads no imports, only that advertised paths, and
 each wildcard export's JS and declaration for every name, are in the tarball.
 
-**opentype.js runs 2.0.0 and is typed by `@types/opentype.js@1.3.10`.** 2.0.0 ships
+**opentype.js runs 2.0.0 and is typed by `@types/opentype.js@1.3.10`.** The root pins 2.0.0 so every
+importer resolves it; `msdf-bmfont-xml` keeps its own 1.3.4 nested, and a browser run that let a bare
+`opentype.js` reach that copy failed every outline font. 2.0.0 ships
 no typings, so TS resolves the module to the DefinitelyTyped package for the 1.x API.
 Harmless while `outline/opentypeParser.ts` keeps its narrow surface — every point it
 touches exists in both majors — but the failure would be silent: the 1.x typings
