@@ -37,7 +37,7 @@ export interface MenuSources {
   values?(path: string): unknown;
   onChange?(path: string, value: unknown): void;
   /** The schema an `alias` leaf's `of` is read in. Default: the menu's own. */
-  over?: PrefGroup;
+  over?: PrefGroup | PrefSection;
   /** The rows of an app-defined leaf, which a menu otherwise leaves out. `values` and `onChange` read and write
    *  where the leaf sits, inside an object or a list entry as at the top. */
   customRows?(leaf: PrefLeaf, at: MenuCustomAt): readonly MenuEntry[];
@@ -220,7 +220,7 @@ function compound(ctx: Ctx, rows: (draw: MenuDraw) => MenuEntry[]): MenuEntry[] 
 function drawIn(ctx: Ctx, values: (path: string) => unknown): MenuDraw {
   const { onChange } = ctx.src;
   return {
-    root: ctx.src.over ?? ctx.root,
+    root: ctx.src.over && !isPrefSection(ctx.src.over) ? ctx.src.over : ctx.root,
     access: { values, ...(onChange ? { onChange } : {}) },
     leaf: (leaf, key, access, off, entry) => leafRows(through(ctx, access, entry), leaf, key, key, off),
     fields: (fields, prefix, access, off) => {

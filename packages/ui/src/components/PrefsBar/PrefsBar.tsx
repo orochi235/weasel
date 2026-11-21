@@ -69,7 +69,7 @@ export function PrefsBar(props: PrefsBarProps) {
   const source = barSource(schema, overProp, read, onChange, mixed);
   const draw: Draw = { values, mixed, renderers, onChange, source, fields, disabled, active, entryAt, targets, settles, textWaitMs };
   const open = (group: PrefGroup, path: string) => <GroupBody draw={draw} group={group} path={path} />;
-  const menu = { values: read, onChange, over: overProp && 'children' in overProp ? overProp : schema };
+  const menu = { values: read, onChange, over };
   const nodes = shown === null ? [] : shownBarNodes(groupBarNodes(orderPrefGroup(shown, props.order), '', open, menu), (node) => shownNode(node, draw));
   return (
     <Bar
