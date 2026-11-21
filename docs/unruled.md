@@ -3238,3 +3238,8 @@ Calls the lanes made without a ruling:
   value the end can take; the alternative was leaving the inward bound open and Home and End unhandled there.
 - 2026-11-20: A `BandEditor` given an empty `value` draws an empty strip, read as a list not yet loaded, rather than
   throwing or warning that a band list has at least one band.
+## Audit round fifty-seven (2026-11-20): Bar
+
+- 2026-11-20 (my call): Two children of one `Bar` that share a key, as two arrays mapped from lists sharing an id can,
+  keep the first under that key; the later one is keyed by its place in the children, warns, and is not a unit a
+  reorder moves, since an `order` naming that key could mean either.

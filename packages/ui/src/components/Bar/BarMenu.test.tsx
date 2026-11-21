@@ -5,6 +5,7 @@ import { ActionsProvider, useCommand } from '@weasel-js/routing/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { BarMenu } from './BarMenu';
 import { RunScope } from '../Run';
+import { Disabled, ReadOnly } from '../Disabled';
 
 afterEach(cleanup);
 
@@ -85,6 +86,26 @@ describe('BarMenu', () => {
     act(() => sub.focus());
     act(() => { window.dispatchEvent(new Event('resize')); });
     expect(document.activeElement).toBe(screen.getByRole('button', { name: /File/ }));
+  });
+
+  it('stays shut in a disabled bar, defaultOpen or not', async () => {
+    await renderSettled(<ActionsProvider><Command /><Disabled when><BarMenu label="File" schema={FILE} values={() => undefined} defaultOpen /></Disabled></ActionsProvider>);
+    expect(screen.queryByRole('menuitem', { name: 'Open' })).toBeNull();
+    act(() => { fireEvent.click(screen.getByRole('button', { name: /File/ })); });
+    expect(screen.queryByRole('menuitem', { name: 'Open' })).toBeNull();
+  });
+
+  it('opens in a read-only bar onto rows that change nothing', async () => {
+    const VIEW: PrefGroup = {
+      name: 'View', description: '', as: 'menu',
+      children: { grid: { kind: 'boolean', name: 'Grid', description: '', default: false } },
+    };
+    const changes: string[] = [];
+    await renderSettled(
+      <ReadOnly when><BarMenu label="View" schema={VIEW} values={() => false} onChange={(path) => { changes.push(path); }} defaultOpen /></ReadOnly>,
+    );
+    act(() => { fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Grid' })); });
+    expect(changes).toEqual([]);
   });
 });
 

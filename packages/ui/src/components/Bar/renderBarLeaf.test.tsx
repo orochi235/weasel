@@ -43,6 +43,12 @@ describe('renderBarLeaf', () => {
     expect(screen.getByText('the row form')).toBeInTheDocument();
   });
 
+  it('opens nothing from a disabled leaf made of others', () => {
+    render(<>{renderBarLeaf({ leaf: margins, path: 'p', name: 'Margins', field: null, disabled: true, row: () => <i>the row form</i> })}</>);
+    fireEvent.click(screen.getByRole('button', { name: 'Margins' }));
+    expect(screen.queryByText('the row form')).toBeNull();
+  });
+
   it('draws a label leaf as its words', () => {
     const label = { kind: 'label', name: 'Stroke', description: '', default: undefined } as PrefLeaf;
     render(<>{renderBarLeaf({ leaf: label, path: 'p', name: 'Stroke', field: null, row: () => <i>the row form</i> })}</>);
