@@ -14,7 +14,8 @@ export const PATH_ATTR = 'data-pref-path';
 export const RAIL_ATTR = 'data-pref-rail';
 
 /** What `selection.css` draws the selection mark on. An open react-aria tab carries `data-selected` of its own, so a tab is marked by {@link tabAttrs}. */
-export const MARKED = "[data-pref-path][data-selected]:not([role='tab']), [data-pref-path][data-pref-picked]";
+export const MARKED =
+  "[data-pref-path][data-selected]:not([role='tab'], [data-pref-fragment]), [data-pref-fragment][data-selected] > [data-pref-path], [data-pref-path][data-pref-picked]";
 
 /** What a form marks while it draws: the selection, and the nodes a `showIf` hides where it draws those. */
 export interface PrefMarks {
@@ -126,11 +127,16 @@ export function useSelectedRow(
   const pending = useRef(false);
   const reported = useRef<string | null>(null);
   const lead = selected.at(-1);
+  const selectedKey = selected.join('\n');
+  // `null` until the first selection is seen, so one given at mount scrolls into view.
+  const shownLead = useRef<string | undefined | null>(null);
   useEffect(() => {
-    // A selection the reader made here is already under their pointer; scrolling it would move it mid-click.
-    pending.current = lead !== undefined && lead !== reported.current;
+    // A selection the reader made here, a toggle that leaves an earlier row last included, is under their pointer;
+    // scrolling would move it mid-click.
+    if (lead !== shownLead.current) pending.current = lead !== undefined && reported.current === null;
+    shownLead.current = lead;
     reported.current = null;
-  }, [lead]);
+  }, [selectedKey, lead]);
   // A press on one of several selected rows waits for the click: it may be the start of a drag of them all.
   const held = useRef<string | null>(null);
   // The focus that follows a press is the same pick, not a second one.

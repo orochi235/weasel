@@ -231,6 +231,12 @@ describe('PrefsForm union leaf', () => {
     expect(onChange).toHaveBeenCalledWith('shape', { type: 'box', square: true });
   });
 
+  it('offers only its variants, no entry that clears it', () => {
+    const { container } = renderWithIcons(<PrefsForm schema={schema} values={{ shape: { type: 'box', square: false } }} onChange={() => {}} />);
+    const options = [...container.querySelectorAll('select option')].map((o) => o.textContent);
+    expect(options.filter((o) => o?.trim())).toEqual(['Circle', 'Box']);
+  });
+
   it('draws no fields for a value whose tag names no variant', () => {
     renderWithIcons(<PrefsForm schema={schema} values={{ shape: { type: 'star' } }} onChange={() => {}} />);
     expect(screen.queryByRole('checkbox')).toBeNull();

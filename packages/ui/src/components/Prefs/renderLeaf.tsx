@@ -111,20 +111,23 @@ export function renderLeaf(ctx: LeafContext, parts: LeafParts, name = ctx.pref.n
     const union = pref as PrefUnion;
     // Targets of different variants share no fields to draw.
     const split = mixed && (ctx.each.length < 2 || new Set(ctx.each.map((v) => prefVariantOf(union, v)?.[0])).size > 1);
+    // A target holding no object yet is built from the variant's default, which carries no tag.
+    const tagged = (key: string, parent: LeafContext['update']): LeafContext['update'] => (fn) =>
+      parent((prev, siblings) => {
+        const next = fn(prev, siblings);
+        return next !== null && typeof next === 'object' ? { ...next, [union.tag]: key } : next;
+      });
     return (
       <UnionPicker pref={union} value={mixed ? ctx.each[0] : value} mixed={split} disabled={ctx.disabled} onChange={setValue}>
-        {(variant, key) =>
-          parts.object({
+        {(variant, key) => {
+          const draft = ctx.drafts && tagged(key, ctx.drafts.update);
+          return parts.object({
             ...ctx,
             pref: variant,
-            // A target holding no object yet is built from the variant's default, which carries no tag.
-            update: (fn) =>
-              ctx.update((prev, siblings) => {
-                const next = fn(prev, siblings);
-                return next !== null && typeof next === 'object' ? { ...next, [union.tag]: key } : next;
-              }),
-          })
-        }
+            update: tagged(key, ctx.update),
+            ...(draft ? { drafts: { update: draft, setValue: (v: unknown) => draft(() => v) } } : {}),
+          });
+        }}
       </UnionPicker>
     );
   }
