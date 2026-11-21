@@ -1,4 +1,4 @@
-import { type ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import type { Paint } from '@weasel-js/paint';
 import { meshGuides, meshHandles, moveMeshHandle, type MeshGradientPaint, type MeshHandle } from '@weasel-js/renderer/mesh';
 import { asPaint } from '@weasel-js/paint-kinds';
@@ -57,11 +57,16 @@ export function MeshHandles(props: MeshHandlesProps): ReactElement {
     onCancel: props.onCancel,
   });
   const { edges, arms } = meshGuides(value);
-  const handles = meshHandles(value);
+  // Which points are one handle is settled when a gesture starts, so a point carried onto another keeps its own
+  // handle, and its focus and pointer, until the gesture ends.
+  const [frozen, setFrozen] = useState<readonly MeshHandle[] | null>(null);
+  const groups = frozen ?? meshHandles(value);
+  const handles = frozen ? frozen.map((h) => ({ ...h, at: pointOf(value, h.refs[0]) ?? h.at })) : groups;
   const { resolved } = useTints();
 
   const emit = (handle: MeshHandle, p: Point, phase: EditPhase): void => {
     const next = moveMeshHandle(value, handle, toLocal(p));
+    setFrozen(phase === 'input' ? groups : null);
     if (phase === 'input') onInput(next);
     else onChange(next);
   };
@@ -74,7 +79,7 @@ export function MeshHandles(props: MeshHandlesProps): ReactElement {
   ];
 
   return (
-    <HandleOverlay width={width} height={height} className={className} onCancel={onCancel} hold={ownHold(props)}>
+    <HandleOverlay width={width} height={height} className={className} onCancel={() => { setFrozen(null); onCancel(); }} hold={ownHold(props)}>
       {edges.map((edge, i) => (
         // Guides have no identity beyond their place in the walk.
         <Edge key={`e${i}`} points={[toScreen(edge[0]), toScreen(edge[1]), toScreen(edge[2]), toScreen(edge[3])]} />
@@ -96,6 +101,10 @@ export function MeshHandles(props: MeshHandlesProps): ReactElement {
       ))}
     </HandleOverlay>
   );
+}
+
+function pointOf(mesh: MeshGradientPaint, ref: MeshHandle['refs'][number] | undefined): Point | undefined {
+  return ref && mesh.patches[ref.patch]?.points[ref.index];
 }
 
 /** Numbered in the patch's own walk, matching `MeshEditor`'s corner fields. */
