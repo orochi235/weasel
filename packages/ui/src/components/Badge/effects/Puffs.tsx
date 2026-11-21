@@ -1,4 +1,5 @@
 import type { EffectModule } from '../bases/types';
+import { clampParam, finiteOr } from '../shapes/params';
 import { bumpWobble, nearestBump } from './bumps';
 import { rangeMask, type BadgeRangeMaskParams } from './rangeMask';
 
@@ -20,11 +21,11 @@ const Puffs: EffectModule<BadgePuffsEffectParams> = {
     const cfg = { ...DEFAULTS, ...params };
     const mask = rangeMask(s, totalCss, cfg.range);
     if (mask === 0) return { dx: 0, dy: 0 };
-    const N = Math.max(2, Math.round(totalCss / Math.max(6, cfg.bumpWidth)));
+    const N = Math.max(2, Math.round(totalCss / Math.max(6, finiteOr(cfg.bumpWidth, DEFAULTS.bumpWidth))));
     const { index, offset } = nearestBump(s, totalCss, N, phase + 0.5);
     const t = offset / (totalCss / N) + 0.5;
-    const irr = Math.max(0, Math.min(cfg.irregularity, 1));
-    const localPy = Math.max(0.5, cfg.puffiness) * (1 + irr * 0.55 * bumpWobble(index));
+    const irr = clampParam(cfg.irregularity, 0, 1, DEFAULTS.irregularity);
+    const localPy = Math.max(0.5, finiteOr(cfg.puffiness, DEFAULTS.puffiness)) * (1 + irr * 0.55 * bumpWobble(index));
     const disp = localPy * Math.sin(Math.PI * t) * mask;
     const pt = perimeterAt(s);
     return { dx: pt.nx * disp, dy: pt.ny * disp };

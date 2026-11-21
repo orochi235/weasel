@@ -9,6 +9,7 @@ import Bites from './Bites';
 import Metal from './Metal';
 import Outline from './Outline';
 import Perforations from './Perforations';
+import Puffs from './Puffs';
 import Scallops from './Scallops';
 import Sheen from './Sheen';
 import Spikes from './Spikes';
@@ -198,4 +199,25 @@ describe('a repeat count', () => {
     expect(grain.querySelectorAll('path.badge-stroke').length).toBe(256);
     expect(grain.querySelectorAll('ellipse').length).toBe(512);
   });
+});
+
+describe('a bump effect param that is not a finite number', () => {
+  const totalCss = 200;
+  const cases: [string, EffectModule<object>, object][] = [
+    ['bites', Bites, { biteSpacing: NaN }],
+    ['bites', Bites, { biteRadius: NaN, irregularity: NaN }],
+    ['scallops', Scallops, { scallopSpacing: NaN }],
+    ['scallops', Scallops, { scallopRadius: NaN, irregularity: NaN }],
+    ['puffs', Puffs, { bumpWidth: NaN, puffiness: Infinity, irregularity: NaN }],
+    ['spikes', Spikes, { count: NaN, length: Infinity }],
+    ['spikes', Spikes, { count: Infinity, baseWidth: NaN, irregularity: NaN, cornerCompensation: NaN }],
+  ];
+  for (const [name, effect, params] of cases) {
+    it(`${name} given ${JSON.stringify(params, (_, v: unknown) => (typeof v === 'number' ? String(v) : v))} keeps the outline finite`, () => {
+      for (let s = 0; s < totalCss; s += 0.5) {
+        const { dx, dy } = effect.offsetAt!(s, { params, phase: 0, totalCss, perimeterAt: line });
+        expect(Number.isFinite(dx) && Number.isFinite(dy)).toBe(true);
+      }
+    });
+  }
 });
