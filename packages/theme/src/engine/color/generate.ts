@@ -120,7 +120,7 @@ function equalizeChroma(hexes: string[], k: number, anchored: boolean[]): string
 
   return lch.map((x, i) => {
     const wanted = lerp(x.C, target, k);
-    if (anchored[i]) return toHex(x.L, Math.min(wanted, chromaCap(x.L, x.H)), x.H);
+    if (anchored[i]) return toHex(x.L, Math.min(wanted, x.C), x.H);
     if (chromaCap(x.L, x.H) >= wanted) return toHex(x.L, wanted, x.H);
 
     let bestL = x.L;
