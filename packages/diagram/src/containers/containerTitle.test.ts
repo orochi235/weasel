@@ -15,6 +15,8 @@ describe('regionHeaderAt', () => {
     // The lane's header sits just past the pool's, at x 432..460 in world.
     expect(regionHeaderAt(deps(lane as string), { x: 445, y: 350 })).toBe(lane);
     expect(regionHeaderAt(deps(lane as string), { x: 410, y: 350 })).toBe(built.id);
+    // Its far edge is the body's, where an insert lands.
+    expect(regionHeaderAt(deps(lane as string), { x: 460, y: 350 })).toBeNull();
     // The lane's header box as stored, x 32..60, holds no part of it in world.
     expect(regionHeaderAt(deps(lane as string), { x: 45, y: 20 })).toBeNull();
   });
