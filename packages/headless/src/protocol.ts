@@ -47,14 +47,29 @@ export interface PageApi {
   render(req: PageRequest): Promise<PageResult>;
 }
 
-/** A live scene or its snapshot, as JSON carries it: encoded by core's snapshot codec. A snapshot already
- *  encoded passes through unchanged; a live scene's `toJSON()` is always decoded, so it is encoded as it is. */
+/** A live scene or its snapshot, as JSON carries it: encoded by core's snapshot codec. A live scene's `toJSON()`,
+ *  and a snapshot holding a typed array, are decoded, so they are encoded as they are. Any other snapshot is read as
+ *  encoded, as a file holds it, so plain numbers under `coords` or `commands` read as a path's typed arrays. */
 export function sceneToWire(scene: object): object {
   if (!isRecord(scene)) refuse('scene', 'an object', scene);
   const toJSON = (scene as { toJSON?: unknown }).toJSON;
   if (typeof toJSON === 'function') return encodeSnapshot(toJSON.call(scene)) as object;
+  if (holdsTypedArray(scene)) return encodeSnapshot(scene) as object;
   // Read back first, so arrays the snapshot holds already tagged are tagged once rather than escaped as data.
   return encodeSnapshot(decodeSnapshot(scene)) as object;
+}
+
+function holdsTypedArray(value: object): boolean {
+  const pending: unknown[] = [value];
+  const seen = new Set<object>();
+  while (pending.length) {
+    const v = pending.pop();
+    if (v === null || typeof v !== 'object' || seen.has(v)) continue;
+    if (ArrayBuffer.isView(v)) return true;
+    seen.add(v);
+    pending.push(...(Array.isArray(v) ? v : Object.values(v)));
+  }
+  return false;
 }
 
 /** The snapshot `sceneToWire` sent, its typed arrays restored. */

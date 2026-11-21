@@ -16,6 +16,15 @@ describe('sceneToWire', () => {
   });
 });
 
+describe('sceneToWire, a raw snapshot', () => {
+  it("sends a raw snapshot holding typed arrays with its own data as it holds it", () => {
+    const data = { coords: [12.345678, 40], commands: [300, 2], path: Float32Array.of(1, 2) };
+    const raw = { nodes: [{ id: 'a', data }] };
+    const back = sceneFromWire(JSON.parse(JSON.stringify(sceneToWire(raw))) as object);
+    expect(back).toEqual(raw);
+  });
+});
+
 describe('readPageRequest', () => {
   const req = (side: number, format: 'rgba' | 'png') =>
     ({ scene: {}, sourceRect: { x: 0, y: 0, width: side, height: side }, scale: { x: 1, y: 1 }, format });
