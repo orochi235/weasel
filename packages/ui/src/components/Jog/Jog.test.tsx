@@ -34,6 +34,11 @@ describe('Jog', () => {
     expect(screen.getByRole('button', { name: 'Play' })).toBeDisabled();
   });
 
+  it('draws a caption of 0', () => {
+    renderWithIcons(<Jog {...props} caption={0} />);
+    expect(screen.getByText('0')).toBeInTheDocument();
+  });
+
   it('steps back and forward by one', () => {
     const onStep = vi.fn();
     renderWithIcons(<Jog {...props} onStep={onStep} />);

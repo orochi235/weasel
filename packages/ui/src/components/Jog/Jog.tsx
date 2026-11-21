@@ -149,7 +149,7 @@ function jogParts(props: JogProps, access: ControlAccess): JogParts {
         {pad(ordinal, count)}/{count}
       </span>
     ),
-    caption: caption ? <span className={s.caption} dir="auto">{caption}</span> : null,
+    caption: caption != null && caption !== false && caption !== '' ? <span className={s.caption} dir="auto">{caption}</span> : null,
   };
 }
 
