@@ -1,9 +1,10 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
-import { repeatCount, withDefaults } from './params';
+import { clampParam, repeatCount, withDefaults } from './params';
 
 /** What `shapeParams` takes on a `beavis` badge. */
 export interface BadgeBeavisShapeParams {
   points?: number;
+  /** Corner radius in CSS px. */
   cornerRadius?: number;
   spikeLen?: number;
   spikeBaseWidth?: number;
@@ -21,12 +22,9 @@ const DEFAULTS: Required<BadgeBeavisShapeParams> = {
 const Beavis: ShapeModule<BadgeBeavisShapeParams> = {
   compose: (params): ShapeComposeSpec => {
     const cfg = withDefaults(DEFAULTS, params);
-    // Nominal badge half-height for cornerRadius → erosion: real badges are ~22px tall
-    // so half = 11. Clamp into [0,1].
-    const erosion = Math.max(0, Math.min(1, cfg.cornerRadius / 11));
     return {
       base: 'rounded-rect',
-      baseParams: { erosion },
+      baseParams: { radius: clampParam(cfg.cornerRadius, 0, Infinity, DEFAULTS.cornerRadius) },
       effects: [
         {
           type: 'spikes',

@@ -101,6 +101,9 @@ describe('a repeat count', () => {
     expect(count(NaN)).toBe(3);
     expect(count(5.9)).toBe(5);
   });
+  it('beavis hands its cornerRadius to the base as CSS px', () => {
+    expect(SHAPES.beavis.compose!({ cornerRadius: 9 }).baseParams).toEqual({ radius: 9 });
+  });
   it('receipt keeps its two tears from crossing', () => {
     const xs = (d: string) => [...d.matchAll(/L ([\d.]+) ([\d.]+)/g)].map((m) => Number(m[1]));
     const d = pathOf('receipt', { tearDepth: 1000 });
