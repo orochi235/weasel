@@ -562,4 +562,23 @@ describe('a host that commits the placement a tick later', () => {
     expect(panel.style.left).toBe('12px');
     fireEvent.pointerUp(panel, { pointerId: 1, clientX: 100, clientY: 100 });
   });
+
+  it('lets go of the dropped spot for good once the placement moves, so a reset to the starting object shows it', () => {
+    const home: FloatingPlacement = { x: 0, y: 0, anchor: 'top-left' };
+    let reset: () => void = () => {};
+    function Resetting() {
+      const ref = useRef<HTMLDivElement>(null);
+      const [placement, setPlacement] = useState(home);
+      reset = () => setPlacement(home);
+      const { style, startDrag } = useFloatingPlacement({ panelRef: ref, placement, onPlacementChange: setPlacement });
+      return <div data-panel="" onPointerDown={startDrag} ref={ref} style={style} />;
+    }
+    const { panel } = renderPanel(<Resetting />);
+    fireEvent.pointerDown(panel, { pointerId: 1, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(panel, { pointerId: 1, clientX: 200, clientY: 180 });
+    fireEvent.pointerUp(panel, { pointerId: 1, clientX: 200, clientY: 180 });
+    expect(panel.style.left).toBe('100px');
+    act(() => reset());
+    expect(panel.style.left).toBe('12px');
+  });
 });
