@@ -226,6 +226,30 @@ describe('GradientEditor stops', () => {
     expect(document.activeElement).toBe(handle(2));
   });
 
+  describe('an add the caller declines', () => {
+    const FOUR: GradientPaint = { ...THREE, stops: [...THREE.stops, { offset: 0.75, color: '#ffff00ff' }] };
+    const pressTrack = () => {
+      const rail = document.querySelector<HTMLElement>('[data-slider-rail]')!;
+      stubRect(rail, { left: 0, width: 200 });
+      fireEvent.pointerDown(rail.parentElement!, { clientX: 100, clientY: 12, pointerId: 1, button: 0 });
+    };
+
+    it('leaves focus and the selection alone when the list later grows by other means', () => {
+      const { rerender } = renderWithIcons(<GradientEditor value={THREE} onChange={() => {}} />);
+      pressTrack();
+      rerender(<GradientEditor value={FOUR} onChange={() => {}} />);
+      expect(screen.getByRole('group', { name: 'Stop 1 of 4' })).toBeInTheDocument();
+      expect(document.activeElement).toBe(document.body);
+    });
+
+    it('reports no selection of a stop that never arrived', () => {
+      const onSelectionChange = vi.fn();
+      renderWithIcons(<GradientEditor value={THREE} selectedStop={0} onSelectionChange={onSelectionChange} onChange={() => {}} />);
+      pressTrack();
+      expect(onSelectionChange).not.toHaveBeenCalled();
+    });
+  });
+
   describe('a selection the caller owns', () => {
     it('edits the stop it is given, by its index in `stops`', () => {
       renderWithIcons(<GradientEditor value={THREE} selectedStop={2} onChange={() => {}} />);
