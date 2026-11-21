@@ -3,6 +3,8 @@ import { wireSceneSlotToScene } from './sceneSlotWiring';
 import { defaultDrawOne } from './defaultDrawOne';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { scenePickSource } from './pickWalk';
+import { sceneDepLookup } from './derivedPath';
+import { nodeShapesOf } from './nodeShapeRegistry';
 import { createScene } from 'core/scene/scene';
 import type { DerivedDep, Node, RectPose } from 'core/scene/types';
 import { IDENTITY_POSE_COMPOSITION, RECT_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
@@ -83,5 +85,14 @@ describe('a derived path under a composing pose strategy', () => {
     const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene);
     const node = scene.get(edge)!;
     expect(slot.derivedPathOf!(node, node.pose)).toEqual(linePath({ x: 0, y: 0 }, { x: 100, y: 0 }));
+  });
+});
+
+describe('a dependency read under a composing pose strategy', () => {
+  it('carries its scene, so its outline is asked of the scene\'s own painters', () => {
+    const { scene, a } = makeFramedEdgeScene();
+    const dep = sceneDepLookup(scene)(a);
+    expect(dep?.scene).toBeDefined();
+    expect(nodeShapesOf(dep!.scene!)).toBe(nodeShapesOf(scene));
   });
 });
