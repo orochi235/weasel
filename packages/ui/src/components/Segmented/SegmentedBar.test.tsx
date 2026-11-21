@@ -331,4 +331,22 @@ describe('SegmentedBar segments from a Sweep', () => {
     fireEvent.click(screen.getByRole('button', { name: '200' }));
     expect(onAction).toHaveBeenCalledWith(200);
   });
+
+  it('warns when a sweep that does not end is cut at the default cap, and not when given a cap', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const long = rangeSweep({ from: 0, to: 1000, step: 1 });
+      const utils = render(<SegmentedBar mode="momentary" aria-label="Long" steps={long} />);
+      expect(screen.getAllByRole('button')).toHaveLength(256);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0]![0])).toMatch(/first 256 steps/);
+      utils.unmount();
+      warn.mockClear();
+      render(<SegmentedBar mode="momentary" aria-label="Cut" steps={long} cap={4} />);
+      expect(screen.getAllByRole('button')).toHaveLength(4);
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
 });

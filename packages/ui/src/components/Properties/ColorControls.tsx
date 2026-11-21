@@ -7,6 +7,7 @@ import type { PropertyColorFieldProps, PropertyPaintFieldProps } from './fieldTy
 import s from './Properties.module.css';
 import { useFieldControl } from '../Field/fieldSemantics';
 import { useNameText } from './nameOf';
+import { useHoldReason } from '../Disabled/HoldReason';
 
 /** A hex color as the `#rrggbb` it paints and the 0..1 alpha beside it.
  *  Anything unreadable is opaque black, which is what a swatch would show for
@@ -63,46 +64,51 @@ export function ColorControl(p: PropertyColorFieldProps) {
       disabledReason={p.disabledReason}
       onInput={live}
       onChange={settled}
-      onCancel={p.onCancel}
+      onCancel={() => {
+        moved.current = { rgb: false, alpha: false };
+        p.onCancel?.();
+      }}
       aria-label={text}
     />
   );
 }
 
-/** Takes a subtree out of focus order, hit testing, and the accessibility tree. Set on the node: React 18 does not know the attribute. */
-const makeInert = (el: HTMLElement | null): void => {
-  el?.toggleAttribute('inert', true);
-};
-
 export function PaintControl(p: PropertyPaintFieldProps) {
   const text = useNameText(p.name);
-  if (p.disabled && p.control !== 'inline') {
-    return <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} inherit={p.inherit} disabled disabledReason={p.disabledReason} onChange={p.onChange} aria-label={text} />;
+  const why = useHoldReason(p.disabled ? p.disabledReason : undefined);
+  if (p.control !== 'inline') {
+    return p.disabled
+      ? <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} inherit={p.inherit} disabled disabledReason={p.disabledReason} onChange={p.onChange} aria-label={text} />
+      : <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} kinds={p.kinds} allowNone={p.allowNone} inherit={p.inherit} onChange={p.onChange} onInput={p.onInput} onCancel={p.onCancel} aria-label={text} />;
   }
-  const Editor = p.control === 'inline' ? PaintInput : PaintField;
-  const editor = (
-    <Editor
-      className={p.disabled ? undefined : p.className}
-      value={p.value}
-      mixed={p.mixed}
-      unset={p.unset}
-      kinds={p.kinds}
-      allowNone={p.allowNone}
-      inherit={p.inherit}
-      onChange={p.onChange}
-      onInput={p.onInput}
-      onCancel={p.onCancel}
-      aria-label={text}
-    />
-  );
-  if (!p.disabled) return editor;
+  const disabled = p.disabled === true;
   // The inline editor is a stack of controls, and a kind's editor may be a consumer's: drawn inert, it keeps
-  // the height it has enabled, so the rows under it do not move when a condition flips.
-  return (
-    <div className={p.className ? `${s.paintDisabled} ${p.className}` : s.paintDisabled} role="group" aria-label={text} aria-disabled="true">
-      <div ref={makeInert} className={s.paintDisabledBody}>
-        {editor}
+  // the height it has enabled, so the rows under it do not move when a condition flips. Enabled or not, the tree
+  // is the same, so a flip does not remount the editor and lose its state.
+  return why.wrap(
+    <div
+      className={disabled ? (p.className ? `${s.paintDisabled} ${p.className}` : s.paintDisabled) : s.paintEnabled}
+      role={disabled ? 'group' : undefined}
+      aria-label={disabled ? text : undefined}
+      aria-disabled={disabled || undefined}
+      aria-describedby={why.describedBy}
+    >
+      {/* Set on the node: React 18 does not know the attribute. */}
+      <div ref={(el) => { el?.toggleAttribute('inert', disabled); }} className={s.paintDisabledBody}>
+        <PaintInput
+          className={disabled ? undefined : p.className}
+          value={p.value}
+          mixed={p.mixed}
+          unset={p.unset}
+          kinds={p.kinds}
+          allowNone={p.allowNone}
+          inherit={p.inherit}
+          onChange={p.onChange}
+          onInput={p.onInput}
+          onCancel={p.onCancel}
+          aria-label={text}
+        />
       </div>
-    </div>
+    </div>,
   );
 }

@@ -5,6 +5,8 @@ import { after } from '@weasel-js/registry';
 import type {} from '../../kitSettings';
 
 const CONTROLS = 'input, select, textarea, button, [tabindex]:not([tabindex="-1"])';
+/** On a part beside the label that is the row's control, not the row's own: a slider's editable readout. */
+export const ROW_READOUT_ATTR = 'data-row-readout';
 
 /** How long keyboard focus rests on a row's control before its help opens. */
 export const FOCUS_DELAY = 600;
@@ -22,7 +24,8 @@ export interface RowHelp {
 
 /**
  * A row's help with no tab stop of its own. The row is the ancestor of `cue` that `within` selects, and what
- * shares the cue's parent (the label, an auto toggle) is the row's own. The first control outside that is
+ * shares the cue's parent (the label, an auto toggle) is the row's own, but for a readout marked
+ * {@link ROW_READOUT_ATTR}. The first control outside that is
  * described by the help's text, so a screen reader reads it with the control, and the help opens when the
  * keyboard brings focus to a control in the row, so a reader with no pointer sees it. With no `within` it does
  * nothing.
@@ -45,9 +48,12 @@ export function useRowHelp(cue: RefObject<HTMLElement | null>, within: string | 
       else described.removeAttribute('aria-describedby');
       described = undefined;
     };
+    const own = (node: Node): boolean => {
+      const el = node instanceof Element ? node : node.parentElement;
+      return !!el && !!cue.current?.parentElement?.contains(el) && !el.closest(`[${ROW_READOUT_ATTR}]`);
+    };
     const describe = (): void => {
-      const own = cue.current?.parentElement;
-      const first = [...row.querySelectorAll(CONTROLS)].find((el) => !own?.contains(el));
+      const first = [...row.querySelectorAll(CONTROLS)].find((el) => !own(el));
       if (first !== described) release();
       described = first;
       if (first && !first.getAttribute('aria-describedby')?.split(/\s+/).includes(id)) {
@@ -64,7 +70,7 @@ export function useRowHelp(cue: RefObject<HTMLElement | null>, within: string | 
     // matches it however it was focused.
     const pressed = heldPointers(row);
     const onFocus = (e: Event): void => {
-      if (pressed.count() > 0 || cue.current?.parentElement?.contains(e.target as Node)) return;
+      if (pressed.count() > 0 || own(e.target as Node)) return;
       cancelOpen();
       cancelOpen = after(delay.current, () => setOpen(true));
     };

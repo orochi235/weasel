@@ -18,6 +18,8 @@ export interface PrefAliasTargets {
   disabledAt: (path: string) => boolean;
   /** Whether the field at a path of that schema is one a `showIf` hides, on a surface that draws those. */
   hiddenAt?: (path: string) => boolean;
+  /** Whether the action at a path of that schema is one whose `activeIf` holds. */
+  activeAt: (path: string) => boolean;
   /** An entry of a list or a map of that schema, as the conditions that read the entry leave it. */
   entryAt: (item: PrefLeaf, path: string, value: unknown) => PrefEntryApplied;
 }
@@ -68,6 +70,7 @@ export function createAliasTargets(
     },
     disabledAt: (path) => get().disabled.has(path),
     ...(markHidden ? { hiddenAt: (path: string) => get().hidden.has(path) } : {}),
+    activeAt: (path) => get().active.has(path),
     entryAt: (item, path, value) => applyPrefEntryConditions(item, path, judge({ item, value }), { keepHidden: markHidden }),
   };
 }

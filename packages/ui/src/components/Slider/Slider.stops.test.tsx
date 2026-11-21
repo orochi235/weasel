@@ -93,7 +93,7 @@ describe('Slider stops', () => {
   it('holds the last stop at the end of the list', () => {
     const { thumb, onInput } = renderWithStops({ thumbs: [{ value: 100 }] });
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
-    expect(lastValue(onInput)).toBe(100);
+    expect(onInput).not.toHaveBeenCalled();
   });
 
   it('jumps a coarse keystroke ten stops', () => {
@@ -337,5 +337,16 @@ describe('Slider strict snapping', () => {
     fireEvent.pointerDown(thumb, { clientX: 0, clientY: 12, button: 0 });
     fireEvent.pointerMove(document, { clientX: 70, clientY: 12 });
     expect(last(onInput)).toBe(35);
+  });
+
+  it('holds a stop label to the track edge only where its stop sits at that edge', () => {
+    const edges = (stops: { value: number; label: string }[]) => {
+      const { container, unmount } = render(<Slider min={0} max={100} stops={stops} thumbs={[{ value: 50 }]} onInput={() => {}} />);
+      const out = [...container.querySelectorAll('[data-slider-stop-label]')].map(el => el.getAttribute('data-edge'));
+      unmount();
+      return out;
+    };
+    expect(edges([{ value: 40, label: 'Forty' }, { value: 60, label: 'Sixty' }])).toEqual([null, null]);
+    expect(edges([{ value: 0, label: 'Low' }, { value: 50, label: 'Mid' }, { value: 100, label: 'High' }])).toEqual(['left', null, 'right']);
   });
 });

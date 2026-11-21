@@ -41,7 +41,9 @@ export interface TokenScale {
   rule: TokenScaleRule;
 }
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
+/** A fitted multiplier, ratio or step, kept to the places a number field shows, so a refit regenerates the steps it
+ *  was fitted to. */
+export const roundFit = (n: number) => Number(n.toFixed(NUMBER_FORMAT.maximumFractionDigits));
 
 /**
  * The same scale under another rule, fitted to the amounts its steps have now.
@@ -54,11 +56,11 @@ export function refitScale(scale: TokenScale, kind: TokenScaleRule['kind'], amou
   const spans = Math.max(1, amounts.length - 1);
   switch (kind) {
     case 'factors':
-      return { ...scale, rule: { kind, factors: amounts.map((a) => (scale.base ? round2(a / scale.base) : 1)) } };
+      return { ...scale, rule: { kind, factors: amounts.map((a) => (scale.base > 0 ? roundFit(a / scale.base) : 1)) } };
     case 'ratio':
-      return { ...scale, base: first, rule: { kind, ratio: first > 0 ? round2((last / first) ** (1 / spans)) : 1 } };
+      return { ...scale, base: first, rule: { kind, ratio: first > 0 && last > 0 ? roundFit((last / first) ** (1 / spans)) : 1 } };
     case 'step':
-      return { ...scale, base: first, rule: { kind, step: round2((last - first) / spans) } };
+      return { ...scale, base: first, rule: { kind, step: roundFit((last - first) / spans) } };
   }
 }
 
@@ -107,7 +109,7 @@ const DIMENSION = new RegExp(
   `^${AMOUNT}(?:px|rem|em|%|ch|ex|lh|rlh|vh|vw|vmin|vmax|svh|lvh|dvh|cqw|cqh|pt|pc|cm|mm|in|q)$`,
   'i',
 );
-const DURATION = new RegExp(`^${AMOUNT}m?s$`);
+const DURATION = new RegExp(`^${AMOUNT}m?s$`, 'i');
 const NUMBER = new RegExp(`^${AMOUNT}$`);
 const LENGTH = new RegExp(`^${AMOUNT}(?:px|rem|em)?$`);
 const BEZIER = new RegExp(`^cubic-bezier\\(\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*\\)$`, 'i');
@@ -135,9 +137,12 @@ function layersOf(value: string): string[] {
 
 function isShadow(value: string): boolean {
   return layersOf(value).every((layer) => {
-    const parts = layer.trim().replace(/^inset\s+/i, '').match(PARTS) ?? [];
-    const lengths = parts.filter((part) => LENGTH.test(part));
-    const rest = parts.filter((part) => !LENGTH.test(part));
+    const parts = layer.trim().match(PARTS) ?? [];
+    // `inset` may lead or trail the layer.
+    const inset = /^inset$/i;
+    const body = inset.test(parts[0] ?? '') ? parts.slice(1) : inset.test(parts.at(-1) ?? '') ? parts.slice(0, -1) : parts;
+    const lengths = body.filter((part) => LENGTH.test(part));
+    const rest = body.filter((part) => !LENGTH.test(part));
     return lengths.length >= 2 && lengths.length <= 4 && rest.length <= 1 && rest.every((part) => parsesAsColor(part));
   });
 }

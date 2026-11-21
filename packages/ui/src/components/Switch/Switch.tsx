@@ -1,4 +1,5 @@
-import { forwardRef, useRef, type ReactNode, type Ref } from 'react';
+import { forwardRef, useEffect, useRef, type ReactNode, type Ref } from 'react';
+import { useObjectRef } from 'react-aria';
 import {
   Switch as RACSwitch,
   type SwitchProps as RACSwitchProps,
@@ -18,6 +19,8 @@ export type SwitchProps = Omit<RACSwitchProps, 'children' | 'className' | 'isDis
   /** Called with the new state and the keys held as it changed, so a list of switches can solo on Alt. */
   onChange?: (isSelected: boolean, modifiers: ToggleModifiers) => void;
   className?: string;
+  /** Drawn and announced as neither on nor off, as a mixed selection is; a click turns it on. */
+  indeterminate?: boolean;
   /** Receives the `<label>` the switch is drawn in. `ref` reaches the `<input>`. */
   rootRef?: Ref<HTMLLabelElement>;
 };
@@ -36,7 +39,13 @@ export const Switch = forwardRef(function Switch(
   props: SwitchProps,
   ref: Ref<HTMLInputElement>,
 ) {
-  const { rest: { children, className, rootRef, onChange, onClickCapture, ...rest }, rac, wrap } = useRacHold(props);
+  const { rest: { children, className, rootRef, onChange, onClickCapture, indeterminate = false, ...rest }, rac, wrap } = useRacHold(props);
+  const input = useObjectRef(ref);
+  // React Aria writes no aria-checked, so the input's own checked state speaks unless this one says mixed.
+  useEffect(() => {
+    if (indeterminate) input.current?.setAttribute('aria-checked', 'mixed');
+    else input.current?.removeAttribute('aria-checked');
+  }, [indeterminate, input]);
   // React Aria reports the new state alone; the click that changes it passes the label first, carrying its keys.
   const mods = useRef<ToggleModifiers>(modifiersOf(undefined));
   // A switch has no invalid state to show, so the field's error only describes it.
@@ -47,7 +56,8 @@ export const Switch = forwardRef(function Switch(
       {...rac}
       {...field}
       ref={rootRef}
-      inputRef={ref}
+      inputRef={input}
+      {...(indeterminate ? { 'data-indeterminate': '' } : {})}
       onClickCapture={(e) => {
         mods.current = modifiersOf(e);
         onClickCapture?.(e);

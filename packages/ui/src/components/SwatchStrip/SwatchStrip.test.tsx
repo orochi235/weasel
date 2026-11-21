@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { act, render, screen, fireEvent, within } from '@testing-library/react';
+import { act, cleanup, render, screen, fireEvent, within } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { createRecentColorsStore, RecentColorsProvider } from '../RecentColors';
 import { SwatchStrip, describeColor } from './SwatchStrip';
 import type { SwatchPalette } from './palettes';
@@ -14,6 +15,11 @@ const COOL: SwatchPalette = {
   name: 'Cool',
   colors: [{ value: '#0000ffff', label: 'Blue' }, { value: '#00ffffff', label: 'Cyan' }],
 };
+
+function cleanupAndRender(ui: ReactElement) {
+  cleanup();
+  render(ui);
+}
 
 function recents() {
   return screen.getByRole('group', { name: 'Recent colors' });
@@ -119,5 +125,32 @@ describe('SwatchStrip', () => {
     a.focus();
     fireEvent.keyDown(a, { key: 'ArrowRight' });
     expect(document.activeElement).toBe(b);
+  });
+
+  it('marks the current color when it or the swatch is written as a name or a function', () => {
+    const store = createRecentColorsStore({ storage: null });
+    store.record(['rgb(255, 136, 0)']);
+    render(<SwatchStrip store={store} value="Red" palettes={[WARM]} onSelect={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Red' })).toHaveAttribute('aria-current', 'true');
+    cleanupAndRender(<SwatchStrip store={store} value="#ff8800" palettes={[WARM]} onSelect={() => {}} />);
+    expect(within(recents()).getByRole('button')).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: 'Orange' })).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('keeps its swatches mounted when its store becomes the provider\'s', () => {
+    const own = createRecentColorsStore({ storage: null });
+    own.record(['#111111ff']);
+    const other = createRecentColorsStore({ storage: null });
+    const view = (ctx: typeof own) => (
+      <RecentColorsProvider store={ctx}>
+        <SwatchStrip store={own} palettes={[WARM]} onSelect={() => {}} />
+      </RecentColorsProvider>
+    );
+    const { rerender } = render(view(other));
+    const red = screen.getByRole('button', { name: 'Red' });
+    red.focus();
+    rerender(view(own));
+    expect(screen.getByRole('button', { name: 'Red' })).toBe(red);
+    expect(document.activeElement).toBe(red);
   });
 });

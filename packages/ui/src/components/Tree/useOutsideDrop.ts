@@ -5,7 +5,7 @@ import type { ResolvedDrop, TreeDropTarget } from '../../dropTarget';
 export interface TreeDropHandle {
   /**
    * Where something let go at this client point would land, or `null` where the tree takes nothing: off its box,
-   * with no rows, or where `canDrop`, asked with no ids, refuses. It is the hit test behind the mark an
+   * disabled or read-only, with no rows, or where `canDrop`, asked with no ids, refuses. It is the hit test behind the mark an
    * `externalDrag` draws, read from the rows as they are laid out now, so it is right for a release the tree has
    * not rendered a move for. `canDrop` is asked in the same call, so what it answers from must be current then
    * too: a ref, and not state set by the event that is asking.
@@ -18,18 +18,21 @@ export interface UseOutsideDropOptions {
   at: { x: number; y: number } | null | undefined;
   /** The tree's latest callbacks, read when asked and never captured. */
   latest: { readonly current: { container(): HTMLElement | null } };
+  /** The tree is disabled or read-only, and takes nothing. */
+  held: boolean;
   /** Where a drop of nothing the tree holds would land at a client point its rows cover. */
   resolve(ids: readonly string[], x: number, y: number): ResolvedDrop | null;
   handle?: Ref<TreeDropHandle>;
 }
 
 /** A drag begun outside a `Tree`: the mark for where it would land, and the answer to where a drop does. */
-export function useOutsideDrop({ at, latest: latestRef, resolve, handle }: UseOutsideDropOptions): ResolvedDrop | null {
+export function useOutsideDrop({ at, latest: latestRef, resolve, handle, held }: UseOutsideDropOptions): ResolvedDrop | null {
   const hitAt = useCallback((x: number, y: number): ResolvedDrop | null => {
+    if (held) return null;
     const box = latestRef.current.container()?.getBoundingClientRect();
     if (!box || x < box.left || x > box.right || y < box.top || y > box.bottom) return null;
     return resolve([], x, y);
-  }, [latestRef, resolve]);
+  }, [latestRef, resolve, held]);
 
   const [marked, setMarked] = useState<ResolvedDrop | null>(null);
   const x = at?.x;

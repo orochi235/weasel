@@ -1,0 +1,59 @@
+{
+ "id": "ui.components.Segmented",
+ "commit": "6f634fabe1ba54c5d94054a307392fe6d65141ab",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Segmented/SegmentedBar.stories.tsx",
+  "packages/ui/src/components/Segmented/SegmentedBar.tsx",
+  "packages/ui/src/components/Segmented/index.ts",
+  "packages/ui/src/components/Segmented/lab/SegmentsArc.stories.module.css",
+  "packages/ui/src/components/Segmented/lab/SegmentsArc.stories.tsx",
+  "packages/ui/src/components/Segmented/lab/SegmentsArcView.tsx",
+  "packages/ui/src/components/Segmented/segmentSweep.tsx",
+  "packages/ui/src/components/Segmented/segmentedControl.module.css",
+  "packages/ui/src/components/Segmented/segmentedRow.tsx",
+  "packages/ui/src/components/Segmented/segmentedVariant.ts",
+  "packages/ui/src/components/Segmented/segmentsAlong.module.css",
+  "packages/ui/src/components/Segmented/segmentsAlong.tsx"
+ ],
+ "a": 6,
+ "b": 7,
+ "m": 3,
+ "distinct": 10,
+ "chapman": 13,
+ "unfound": 3,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 13.2,
+   "B": 5.9,
+   "match": 0.1,
+   "fix": 23.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 2620928,
+  "costUsd": 7.35
+ },
+ "fixCommits": [
+  "9061a88c1885ada28504becef6fa3d012288698f",
+  "fa259b197a70bd942966d149dabe45b6fffd4df1",
+  "9a64114e327c39898f0de36b7a3750bc5b0617f0",
+  "d6f351637d1d832e427bf45bd2606ec1ce5b2593",
+  "210f28fae2c80963e5e78c9416f95f926aed5df2",
+  "d744e8bc10648669c1f47209d5b6003816104f27",
+  "7d3bac3e351bd63345ff1d7e228a6d2037f7c420",
+  "82b59e456e4209800e917370aef8710aa32fd52c",
+  "83a3934230fb2efd022c14b6785406fddcc6e9d4",
+  "f265eee5103f78ed943f830a02e58bc89b2f1820"
+ ]
+}

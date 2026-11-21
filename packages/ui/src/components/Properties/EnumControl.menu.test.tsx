@@ -13,4 +13,9 @@ describe('enum field drawn as a menu', () => {
     fireEvent.click(screen.getByRole('button'), { detail: 1 });
     expect(screen.getAllByRole('menuitem').map((el) => el.textContent)).toEqual(['S', 'lg']);
   });
+
+  it('names its button by the field and the chosen option in words, for a label that is not text', () => {
+    render(<PropertyField kind="enum" control="menu" label="Size" value="sm" options={options} onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Size: S' })).toBeInTheDocument();
+  });
 });

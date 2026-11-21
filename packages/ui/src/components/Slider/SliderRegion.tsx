@@ -31,11 +31,12 @@ export interface SliderRegionsArgs<T extends Thumb> extends RegionDragArgs<T> {
   direction: 'ltr' | 'rtl';
 }
 
-/** The region before thumb `i`, or after the last for `i === thumbs.length`; null where the slider draws none. */
-export function useSliderRegions<T extends Thumb>(args: SliderRegionsArgs<T>): (i: number) => ReactNode {
+/** `at(i)`: the region before thumb `i`, or after the last for `i === thumbs.length`; null where the slider draws none.
+ *  `held`: whether a region drag is running. */
+export function useSliderRegions<T extends Thumb>(args: SliderRegionsArgs<T>): { at: (i: number) => ReactNode; held: () => boolean } {
   const { props, min, max, scale, geometry, direction } = args;
-  const regionDown = useRegionDrag<T>(args);
-  return (i) => {
+  const { down: regionDown, held } = useRegionDrag<T>(args);
+  const at = (i: number): ReactNode => {
     // Only a straight track draws regions: a stretch of a curve has no box to fill.
     if (!props.renderRegion || geometry.curved) return null;
     const { thumbs } = props;
@@ -47,4 +48,5 @@ export function useSliderRegions<T extends Thumb>(args: SliderRegionsArgs<T>): (
       </SliderRegion>
     );
   };
+  return { at, held };
 }

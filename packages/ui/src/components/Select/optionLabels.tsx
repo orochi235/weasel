@@ -1,4 +1,4 @@
-import { Children, isValidElement, type ReactNode } from 'react';
+import { Children, Fragment, isValidElement, type ReactNode } from 'react';
 import listbox from './listbox.module.css';
 import type { ListOption } from '../listOption';
 import type { OptionKey } from '../../optionKey';
@@ -12,7 +12,7 @@ type OptionGroup = { options: ReadonlyArray<LabeledOption> };
 /**
  * The labels a `width='fit'` control measures itself against, icons included.
  * In the children form the label sits one element deep, inside an item, or two
- * inside an element of type `section`.
+ * inside an element of type `section`; a fragment is read through.
  */
 export function optionLabels(
   options: ReadonlyArray<LabeledOption | OptionGroup> | undefined,
@@ -25,7 +25,7 @@ export function optionLabels(
     );
   return Children.toArray(children).flatMap((c) => {
     if (!isValidElement<{ children?: ReactNode; icon?: ReactNode }>(c)) return [c];
-    return section !== undefined && c.type === section
+    return c.type === Fragment || (section !== undefined && c.type === section)
       ? optionLabels(undefined, c.props.children, section)
       : [withIcon(c.props.icon, c.props.children)];
   });

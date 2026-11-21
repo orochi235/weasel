@@ -1,4 +1,4 @@
-import { useState, type InputHTMLAttributes, type ReactElement } from 'react';
+import { useRef, useState, type InputHTMLAttributes, type ReactElement } from 'react';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import { usePickerClose } from './usePickerClose';
 
@@ -9,6 +9,11 @@ export type AppliedColor = string | readonly string[] | void;
 export function useRecordApplied(): (applied: AppliedColor, picked: string) => void {
   const record = useRecordRecentColor();
   return (applied, picked) => record(applied ?? picked);
+}
+
+interface Draft {
+  rgb: string;
+  from: string;
 }
 
 /** Props for {@link ColorChip}. */
@@ -23,6 +28,9 @@ export interface ColorChipProps
   /** Once when the picker closes or the chip loses focus, if the pick moved or `value` is a placeholder. Return the color actually applied
    *  when it differs from the pick, and the recent colors record that instead. */
   onChange: (rgb: string) => AppliedColor;
+  /** Once when the picker closes or the chip loses focus on the color the pick began from, after `onInput` reported
+   *  its ticks: the pick ended with nothing to commit. */
+  onCancel?: () => void;
   /** Drop every pick: the chip is disabled or read-only. */
   refuses?: boolean;
 }
@@ -33,15 +41,23 @@ export interface ColorChipProps
  * does every paint editor built on it.
  */
 export function ColorChip(
-  { value, placeholder = false, onInput, onChange, refuses = false, onClick, ...input }: ColorChipProps,
+  { value, placeholder = false, onInput, onChange, onCancel, refuses = false, onClick, ...input }: ColorChipProps,
 ): ReactElement {
   // Tracks the picker through a pick, and the color it began from; the prop only catches up on commit.
-  const [draft, setDraft] = useState<{ rgb: string; from: string } | null>(null);
+  const [draft, setDraftState] = useState<Draft | null>(null);
+  // The picker's last input and its closing change can arrive in one task, before the draft renders.
+  const held = useRef<Draft | null>(null);
+  const setDraft = (next: Draft | null): void => {
+    held.current = next;
+    setDraftState(next);
+  };
   const recordApplied = useRecordApplied();
   const commit = (): void => {
+    const draft = held.current;
     if (draft === null) return;
     setDraft(null);
     if (placeholder || draft.rgb.toLowerCase() !== draft.from.toLowerCase()) recordApplied(onChange(draft.rgb), draft.rgb);
+    else onCancel?.();
   };
   const picker = usePickerClose(commit);
 
@@ -55,7 +71,7 @@ export function ColorChip(
       onInput={(e) => {
         if (refuses) return;
         const rgb = (e.target as HTMLInputElement).value;
-        setDraft((held) => ({ rgb, from: held?.from ?? value }));
+        setDraft({ rgb, from: held.current?.from ?? value });
         onInput?.(rgb);
       }}
       onBlur={commit}

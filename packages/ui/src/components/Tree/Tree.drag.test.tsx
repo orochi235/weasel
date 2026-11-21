@@ -307,6 +307,30 @@ describe('Tree — drag to reorder', () => {
     expect([...onExpandedChange.mock.calls.at(-1)![0]]).toEqual(['g']);
   });
 
+  it('tells an outside target it has left with the effect the drag was in', () => {
+    const onDragOutside = vi.fn(() => true);
+    const { tree, row } = setup({ onCopy: vi.fn(), onDragOutside });
+    Object.defineProperty(tree, 'getBoundingClientRect', {
+      configurable: true, value: () => ({ top: 0, left: 0, right: 200, bottom: 72, width: 200, height: 72 } as DOMRect),
+    });
+    press(row('Zed'), 60);
+    move(60, 400, true);
+    move(60, 100, true);
+    release(60, 100, true);
+    expect(onDragOutside).toHaveBeenLastCalledWith(['z'], null, 'copy');
+  });
+
+  it('leaves a disabled branch closed however long a drag rests over it', () => {
+    vi.useFakeTimers();
+    const onExpandedChange = vi.fn();
+    const nodes: TreeNode[] = [{ ...NODES[0]!, disabled: true }, NODES[1]!];
+    const { row } = setup({ nodes, defaultExpandedIds: [], onExpandedChange });
+    press(row('Zed'), 40);
+    move(12);
+    act(() => { vi.advanceTimersByTime(600); });
+    expect(onExpandedChange).not.toHaveBeenCalled();
+  });
+
   it('does not start a drag from a disabled node', () => {
     const nodes: TreeNode[] = [{ id: 'a', label: 'Aye', disabled: true }, { id: 'b', label: 'Bee' }];
     const canDrop = vi.fn(() => true);
@@ -369,6 +393,16 @@ describe('Tree — keyboard moves', () => {
     focusOn('Zed');
     key('ArrowRight');
     expect(onMove).toHaveBeenLastCalledWith(['z'], { parentId: 'g', index: 2 });
+  });
+
+  it('indents with Alt+Right under no closed disabled branch, which could not open to show it', () => {
+    const onExpandedChange = vi.fn();
+    const nodes: TreeNode[] = [{ ...NODES[0]!, disabled: true }, NODES[1]!];
+    const { onMove } = setup({ nodes, defaultExpandedIds: [], onExpandedChange });
+    focusOn('Zed');
+    key('ArrowRight');
+    expect(onMove).not.toHaveBeenCalled();
+    expect(onExpandedChange).not.toHaveBeenCalled();
   });
 
   it('outdents with Alt+Right and indents with Alt+Left in a right-to-left tree', async () => {

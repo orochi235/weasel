@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { Slider } from './Slider';
 import { withInfinity, unit } from '@weasel-js/quantity';
+import { stubRect } from './testing/stubRect';
+import { logScale } from '@weasel-js/scale';
 
 describe('Slider endless', () => {
   it('sits a thumb given Infinity at a stop one step past the range, and reads the display’s word', () => {
@@ -85,5 +87,45 @@ describe('Slider endless', () => {
     );
     fireEvent.keyDown(getByRole('slider'), { key: 'ArrowRight' });
     expect(onInput).toHaveBeenLastCalledWith([{ value: Infinity }]);
+  });
+
+  it('hands onAddThumb the value a press stands for, and sits a returned Infinity on the end stop', () => {
+    const onAddThumb = vi.fn((at: number) => ({ value: at }));
+    const onChange = vi.fn();
+    const { container } = render(
+      <Slider min={0} max={100} step={10} endless="max" thumbs={[{ value: 10 }]} onInput={() => {}} onChange={onChange} onAddThumb={onAddThumb} />,
+    );
+    stubRect(container.querySelector('[data-slider-rail]')!, { left: 0, width: 220 });
+    // 220px across 0..110: the press at 218 lands on the end stop at 110.
+    fireEvent.pointerDown(container.querySelector('[data-slider-track]')!, { clientX: 218, clientY: 12, button: 0 });
+    expect(onAddThumb).toHaveBeenCalledWith(Infinity);
+    expect(onChange).toHaveBeenLastCalledWith([{ value: 10 }, { value: Infinity }]);
+  });
+
+  it('reaches the finite end by pointer when the range is not a whole number of steps', () => {
+    const onInput = vi.fn();
+    const { container } = render(<Slider min={0} max={100} step={30} endless="max" thumbs={[{ value: 0 }]} onInput={onInput} />);
+    stubRect(container.querySelector('[data-slider-rail]')!, { left: 0, width: 260 });
+    const press = (x: number) => fireEvent.pointerDown(container.querySelector('[data-slider-track]')!, { clientX: x, clientY: 12, button: 0 });
+    // 260px across 0..130: 105 lies past max but nearer it than the end stop.
+    press(210);
+    expect(onInput).toHaveBeenLastCalledWith([{ value: 100 }]);
+    fireEvent.pointerUp(document, {});
+    press(256);
+    expect(onInput).toHaveBeenLastCalledWith([{ value: Infinity }]);
+  });
+
+  it('opens the low end of a log track, its stop a twentieth of the track before min', () => {
+    const onInput = vi.fn();
+    const { container, getByRole } = render(
+      <Slider min={1} max={1000} step={1} endless="min" scale={logScale} thumbs={[{ value: -Infinity }]} onInput={onInput} />,
+    );
+    expect(Number(getByRole('slider').getAttribute('aria-valuenow'))).toBeCloseTo(10 ** -0.15, 6);
+    stubRect(container.querySelector('[data-slider-rail]')!, { left: 0, width: 210 });
+    fireEvent.pointerDown(container.querySelector('[data-slider-track]')!, { clientX: 1, clientY: 12, button: 0 });
+    expect(onInput).toHaveBeenLastCalledWith([{ value: -Infinity }]);
+    fireEvent.pointerUp(document, {});
+    fireEvent.pointerDown(container.querySelector('[data-slider-track]')!, { clientX: 9, clientY: 12, button: 0 });
+    expect(onInput).toHaveBeenLastCalledWith([{ value: 1 }]);
   });
 });

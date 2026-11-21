@@ -162,7 +162,7 @@ describe('TokenPanel', () => {
       fireEvent.keyDown(family.getByRole('slider', { name: '--f-lg' }), { key: 'ArrowRight' });
       expect(onScaleChange).toHaveBeenLastCalledWith('f', {
         ...byFactors,
-        rule: { kind: 'factors', factors: [0.8, 1, 1.583] },
+        rule: { kind: 'factors', factors: [0.8, 1, 1.5833] },
       });
       expect(onChange).not.toHaveBeenCalled();
     });
@@ -174,7 +174,29 @@ describe('TokenPanel', () => {
       fireEvent.click(family.getByRole('radio', { name: 'step' }));
       expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byFactors, base: 10, rule: { kind: 'step', step: 4 } });
       fireEvent.click(family.getByRole('radio', { name: 'ratio' }));
-      expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byFactors, base: 10, rule: { kind: 'ratio', ratio: 1.34 } });
+      expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byFactors, base: 10, rule: { kind: 'ratio', ratio: 1.3416 } });
+    });
+
+    it('overrides a dragged step that no factor can reach', () => {
+      for (const generator of [{ ...byFactors, base: 0 }, { ...byFactors, base: -12 }, { ...byFactors, rule: { kind: 'factors' as const, factors: [0.8, 1] } }]) {
+        const onScaleChange = vi.fn();
+        const onChange = vi.fn();
+        const { unmount } = renderWithIcons(
+          <TokenPanel tokens={fonts} onChange={onChange} scales={{ f: generator }} onScaleChange={onScaleChange} />,
+        );
+        fireEvent.keyDown(within(screen.getByRole('group', { name: 'f' })).getByRole('slider', { name: '--f-lg' }), { key: 'ArrowRight' });
+        expect(onScaleChange).not.toHaveBeenCalled();
+        expect(onChange).toHaveBeenCalledWith('--f-lg', '19px');
+        unmount();
+      }
+    });
+
+    it('refits factors of 1 from a base that is not positive', () => {
+      const onScaleChange = vi.fn();
+      const byStep: TokenScale = { ...byFactors, base: -1, rule: { kind: 'step', step: 4 } };
+      renderWithIcons(<TokenPanel tokens={fonts} onChange={() => {}} scales={{ f: byStep }} onScaleChange={onScaleChange} />);
+      fireEvent.click(within(screen.getByRole('group', { name: 'f' })).getByRole('radio', { name: 'factors' }));
+      expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byStep, rule: { kind: 'factors', factors: [1, 1, 1] } });
     });
 
     it('draws no controls for a group it is not told how to generate', () => {
@@ -208,6 +230,15 @@ describe('TokenPanel', () => {
     expect(row.getByLabelText('--wzl-focus-ring color')).toHaveValue('#5841b8');
     fireEvent.change(row.getByRole('textbox'), { target: { value: 'red' } });
     expect(onChange).toHaveBeenCalledWith('--wzl-focus-ring', 'red');
+  });
+
+  it('keeps a translucent color’s alpha when its swatch picks a new color', () => {
+    const onChange = vi.fn();
+    renderWithIcons(
+      <TokenPanel tokens={[{ name: '--line', type: 'color', group: 'line', value: 'rgba(230, 231, 233, 0.1)' }]} onChange={onChange} />,
+    );
+    fireEvent.change(screen.getByLabelText('--line color'), { target: { value: '#ff0000' } });
+    expect(onChange).toHaveBeenCalledWith('--line', '#ff00001a');
   });
 
   it('edits a dimension as a number, keeping its unit', () => {
@@ -307,6 +338,54 @@ describe('TokenPanel', () => {
     expect(rail('--wzl-checker-b').querySelector('[data-hidden]')?.textContent).toBe('checker');
     expect(rail('--wzl-checker-a').querySelector('[data-hidden]')).toBeNull();
     expect(rail('--wzl-shadow').textContent).toBe('shadow');
+  });
+
+  it('names a run of rows once whether or not namePrefix carries the `--`', () => {
+    for (const namePrefix of [undefined, 'wzl-', '--wzl-']) {
+      const { unmount } = renderWithIcons(
+        <TokenPanel
+          tokens={[
+            { name: '--wzl-font-ui', type: 'fontFamily', group: 'wzl-font', value: 'Oswald' },
+            { name: '--wzl-font-mono', type: 'fontFamily', group: 'wzl-font', value: 'Menlo' },
+          ]}
+          onChange={() => {}}
+          namePrefix={namePrefix}
+        />,
+      );
+      const rail = screen.getByRole('group', { name: '--wzl-font-mono' }).querySelector('span') as HTMLElement;
+      expect(rail.querySelector('[data-hidden]')?.textContent).toBe(namePrefix ? 'font' : 'wzl-font');
+      expect(rail.textContent).toBe(namePrefix ? 'fontmono' : 'wzl-fontmono');
+      unmount();
+    }
+  });
+
+  it('labels a family’s picked step with the group as its rail draws it', () => {
+    renderWithIcons(
+      <TokenPanel
+        tokens={['50', '100', '200'].map((step) => ({ name: `--wzl-gray-${step}`, type: 'color', group: 'wzl-gray', value: '#808080' }))}
+        onChange={() => {}}
+        namePrefix="--wzl-"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '--wzl-gray-100' }));
+    const editor = screen.getByRole('group', { name: '--wzl-gray-100' });
+    expect(editor.querySelector('span')?.textContent).toBe('gray 100');
+  });
+
+  it('shows the group on a run’s row named as the group, wherever it stands', () => {
+    renderWithIcons(
+      <TokenPanel
+        tokens={[
+          { name: '--wzl-space-1', type: 'string', group: 'space', value: 'a' },
+          { name: '--wzl-space', type: 'string', group: 'space', value: 'b' },
+        ]}
+        onChange={() => {}}
+        namePrefix="--wzl-"
+      />,
+    );
+    const rail = screen.getByRole('group', { name: '--wzl-space' }).querySelector('span') as HTMLElement;
+    expect(rail.textContent).toBe('space');
+    expect(rail.querySelector('[data-hidden]')).toBeNull();
   });
 
   it('leaves a token alone when its number field is focused and blurred untouched', () => {

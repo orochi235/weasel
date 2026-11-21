@@ -62,15 +62,16 @@ export function useUnitTyping({ value, read, bounds, disabled, settleWhenIdle, c
   const spin = (key: string): boolean => {
     const next = disabled ? null : spinKey(key, from(), bounds);
     if (next === null) return false;
+    const began = typing.current?.from ?? value;
     idle.stop();
     setDraft(null);
     typing.current = null;
     onInput?.(next);
-    if (next !== value) onChange(next);
+    if (next !== began) onChange(next);
     return true;
   };
-  /** Whether `key` has nowhere left to step to. */
-  const spent = (key: string): boolean => !canSpin(key, from(), bounds);
+  /** Whether `key` has nowhere left to step to, as it has nowhere while the field refuses input: that ends a hold. */
+  const spent = (key: string): boolean => disabled || !canSpin(key, from(), bounds);
 
   const type = (typed: string) => {
     setDraft(typed);
@@ -89,9 +90,12 @@ export function useUnitTyping({ value, read, bounds, disabled, settleWhenIdle, c
     idle.stop();
     const typedText = canceled.current ? null : draft;
     const by = typedText === null ? null : offsetIn(typedText, read);
+    const began = typing.current?.from ?? value;
     if (typedText?.trim() === '' && !Number.isNaN(value) && onClear) onClear();
-    else if (by !== null && Number.isFinite(by) && onOffset) onOffset(by);
-    else commitTyped(typedText === null ? Number.NaN : by !== null ? value + by : read(typedText), { bounds, value, typing: typing.current, callbacks });
+    else if (by !== null && Number.isFinite(by) && onOffset) {
+      if (typing.current?.sent && !Number.isNaN(began)) onInput?.(began);
+      onOffset(by);
+    } else commitTyped(typedText === null ? Number.NaN : by !== null ? began + by : read(typedText), { bounds, value, typing: typing.current, callbacks });
     typing.current = null;
     setDraft(null);
   };
@@ -113,6 +117,7 @@ function commitTyped(
   if (!Number.isNaN(next)) {
     // Against where typing began: a caller previewing through `onInput` already holds `next` as its value.
     if (next !== (typing?.from ?? value)) onChange(next);
+    else if (typing?.sent) onInput?.(next);
   } else if (typing?.sent) {
     if (!Number.isNaN(typing.from)) onInput?.(typing.from);
     onCancel?.();

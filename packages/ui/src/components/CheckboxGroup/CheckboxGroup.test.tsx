@@ -60,6 +60,15 @@ describe('CheckboxGroup', () => {
     expect(seen).toEqual([['b']]);
   });
 
+  it('draws a mixed value as a mixed switch, which a click turns on', () => {
+    const seen: string[][] = [];
+    render(<Group initial={[]} seen={seen} control="switch" mixedValues={['b']} />);
+    expect(boxes('switch')[1]).toHaveAttribute('aria-checked', 'mixed');
+    expect(boxes('switch')[0]).not.toHaveAttribute('aria-checked');
+    fireEvent.click(boxes('switch')[1]!);
+    expect(seen).toEqual([['b']]);
+  });
+
   it('changes nothing while read-only', () => {
     const seen: string[][] = [];
     render(<Group initial={['a']} seen={seen} readOnly />);

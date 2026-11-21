@@ -32,7 +32,7 @@
 .value {
   flex: 1;
   min-width: 0;
-  text-align: var(--wzl-select-align, left);
+  text-align: var(--wzl-select-align, start);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

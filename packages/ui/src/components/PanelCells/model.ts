@@ -28,6 +28,7 @@ import {
 } from '@weasel-js/prefs';
 import type { Paint } from '@weasel-js/paint';
 import { setOwn, MIXED, type Mixed } from '@weasel-js/registry';
+import { sameMeaning } from './sameMeaning';
 
 // Re-exported under its existing public name here: the kit-wide "these
 // values disagree" sentinel (`@weasel-js/core`'s `MIXED`) also covers
@@ -209,7 +210,9 @@ export interface PanelShown {
 /**
  * The schema the panel shows for a set of kinds: one kind → its full
  * schema; several → the intersection by (path, leaf kind), shaped by the
- * first kind's section/row layout. Kinds without a registered schema
+ * first kind's section/row layout, of the leaves every kind gives the same
+ * meaning: they may differ in how they are drawn, never in a default, a
+ * bound, an option, or a field. Kinds without a registered schema
  * contribute nothing, so their presence collapses the intersection.
  * `rawAliases` leaves each alias leaf as it is written, for a caller that
  * draws the kind itself. `shownOf` narrows each kind's schema before it is
@@ -235,9 +238,13 @@ export function effectiveSections(
   // '\0' delimiter: path and kind strings are unconstrained, so a
   // printable separator could collide with real content.
   const leafKey = (l: PanelLeaf): string => `${panelLeafKey(l)}\0${l.leaf.kind}`;
-  const restKeys = rest.map((flat) => new Set(flat.flatMap(panelRowsOf).flatMap((r) => r.leaves).map(leafKey)));
+  const restLeaves = rest.map((flat) => new Map(flat.flatMap(panelRowsOf).flatMap((r) => r.leaves).map((l) => [leafKey(l), l.leaf] as const)));
+  // Every node is read, bounded, and reset under the first kind's leaf, so another kind's must mean the same.
   const keep = (l: PanelLeaf): boolean =>
-    restKeys.every((set) => set.has(leafKey(l)));
+    restLeaves.every((leaves) => {
+      const other = leaves.get(leafKey(l));
+      return other !== undefined && sameMeaning(l.leaf, other);
+    });
   // Paired again, since a pair may have lost a leaf to the other kinds.
   const narrow = (section: PanelSection): PanelSection | null => {
     const items = panelItems<PanelSection | PanelLeaf>(

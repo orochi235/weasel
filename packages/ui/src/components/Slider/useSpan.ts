@@ -20,8 +20,8 @@ export function useSpan(props: Pick<SliderProps, 'stops' | 'min' | 'max' | 'spac
 export interface ScaleOptions {
   scale?: ContinuousScaleFactory;
   stopSnapPx?: number;
-  /** Where the step grid starts. Default the span's `min`; an endless low end's stop sits off the grid, before it. */
-  stepOrigin?: number;
+  /** The finite range, where the span runs past it to an endless end's stop. The step grid starts at its start. */
+  range?: readonly [number, number];
 }
 
 /** The two-way map between a value and its 0..1 place along `span`, and the
@@ -29,7 +29,7 @@ export interface ScaleOptions {
 export function useScale(span: ReturnType<typeof useSpan>, strict: boolean, step: number | undefined, options: ScaleOptions = {}) {
   const { stops, even, min, max } = span;
   const { scale = linearScale } = options;
-  const origin = options.stepOrigin ?? min;
+  const [lo, hi] = options.range ?? [min, max];
   const kitSnapPx = useKitSetting('targets.sliderStopSnapPx');
   const stopSnapPx = options.stopSnapPx ?? kitSnapPx ?? STOP_SNAP_PX;
 
@@ -45,11 +45,20 @@ export function useScale(span: ReturnType<typeof useSpan>, strict: boolean, step
 
   /** The value a pointer at track fraction `f` chooses, before bounds. `free` passes magnetic stops by. */
   const valueAt = useCallback(
-    (f: number, length: number, free = false): number => sliderAt(f, {
-      min, max, step, origin, stops, strict, free, pull: stopSnapPx / length, toFraction: valueToFraction, toValue: fractionToValue,
-    }),
-    [fractionToValue, valueToFraction, strict, stops, step, origin, min, max, stopSnapPx],
+    (f: number, length: number, free = false): number => {
+      // Past an endless end, the pointer picks that end or its stop, whichever it is nearer along the track.
+      const at = clamp(f, 0, 1);
+      if (!strict && hi < max && at > valueToFraction(hi)) return at - valueToFraction(hi) >= (1 - valueToFraction(hi)) / 2 ? max : hi;
+      if (!strict && lo > min && at < valueToFraction(lo)) return valueToFraction(lo) - at >= valueToFraction(lo) / 2 ? min : lo;
+      return sliderAt(f, {
+        min: strict ? min : lo, max: strict ? max : hi, step, origin: lo, stops, strict, free, pull: stopSnapPx / length,
+        toFraction: valueToFraction, toValue: fractionToValue,
+      });
+    },
+    [fractionToValue, valueToFraction, strict, stops, step, lo, hi, min, max, stopSnapPx],
   );
 
-  return { valueToFraction, fractionToValue, valueAt };
+  const snap = useMemo(() => ({ strict, stops, step, origin: lo }), [strict, stops, step, lo]);
+
+  return { valueToFraction, fractionToValue, valueAt, snap };
 }

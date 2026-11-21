@@ -9,7 +9,8 @@ import { resolveDrop } from '../../dropTarget';
 import { runs, tally, timeoutFor, uniform } from '../../pbt.fixture';
 import { filterTree, treeBranchIds } from './treeFilter';
 import { draggedIdsFor, isNoopMove, keyboardTarget, landsInside, nodeById, parentsOf, siblingsOf } from './treeMoves';
-import { applyMove, branchIds, forest, idsOf, outline, rowsOf } from './tree.fixture';
+import { branchIds, forest, idsOf, outline, rowsOf } from './tree.fixture';
+import { applyMove } from './Tree.fixtures';
 import type { TreeNode } from './treeTypes';
 
 const RUNS = 300;

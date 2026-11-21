@@ -1,4 +1,4 @@
-import { forwardRef, type Ref } from 'react';
+import { forwardRef, useState, type Ref } from 'react';
 import {
   NumberField as RACNumberField,
   Label,
@@ -73,8 +73,14 @@ export const NumberField = forwardRef(function NumberField(
     size,
     invalid,
     required,
+    defaultValue,
+    onChange,
     ...rest
   } = hold.rest;
+  // Mixed shows NaN through `value`, which would make an uncontrolled field controlled until it clears, so an
+  // uncontrolled field holds its own value and React Aria always sees a controlled one.
+  const controlled = rest.value !== undefined;
+  const [own, setOwn] = useState(defaultValue ?? Number.NaN);
   const sized = useFieldSizeClass(size, className);
   const field = useRacField({ id: rest.id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], invalid, required, labeled: shows(label) });
   return hold.wrap(
@@ -82,7 +88,11 @@ export const NumberField = forwardRef(function NumberField(
       {...rest}
       {...hold.rac}
       {...field}
-      value={mixed ? NaN : rest.value}
+      value={mixed ? Number.NaN : controlled ? rest.value : own}
+      onChange={(v) => {
+        if (!controlled) setOwn(v);
+        onChange?.(v);
+      }}
       className={fieldRootClass({ orientation, width, fit: s.fit, className: sized })}
     >
       {shows(label) && <Label className={f.label}>{label}</Label>}

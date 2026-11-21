@@ -3,6 +3,8 @@ import { act, fireEvent, render } from '@testing-library/react';
 import { useState } from 'react';
 import { SegmentedBar } from './SegmentedBar';
 import type { SegmentSweep } from './segmentSweep';
+import { arcShape, lineShape, type TrackShape } from '@weasel-js/geom';
+import { Along } from '../Along';
 
 const ITEMS = [
   { value: 'a', label: 'A' },
@@ -89,6 +91,24 @@ describe('SegmentedBar sweep', () => {
     expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'true']);
   });
 
+  it('does not take the click a held release makes after the sweep is canceled for a toggle', async () => {
+    const { seen, fire, buttons, pressed } = setup({});
+    fire('pointerdown', 5);
+    fire('pointermove', 15);
+    fire('pointermove', 5);
+    act(() => { window.dispatchEvent(new Event('blur')); });
+    expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'false']);
+    await act(() => new Promise((r) => setTimeout(r, 10)));
+    fire('pointerup', 5, { buttons: 0 });
+    fireEvent.click(buttons[0]!, { detail: 1 });
+    expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'false']);
+    await act(() => new Promise((r) => setTimeout(r, 0)));
+    const before = seen.length;
+    fireEvent.click(buttons[0]!, { detail: 1 });
+    expect(seen.length).toBe(before + 1);
+    expect(pressed()[0]).toBe('true');
+  });
+
   it('sweeps across the rows of a wrapped bar, along the line the drag takes', () => {
     const seen: string[][] = [];
     const cells = Array.from({ length: 9 }, (_, i) => ({ value: String(i), label: String(i) }));
@@ -141,5 +161,36 @@ describe('SegmentedBar sweep', () => {
     expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'true']);
     fireEvent.click(buttons[4]!, { altKey: true });
     expect(pressed()).toEqual(['true', 'true', 'false', 'true', 'true']);
+  });
+
+  it('still sweeps after the row it lies in turns from straight to curved', () => {
+    const seen: string[][] = [];
+    const Swept = ({ shape }: { shape: TrackShape }) => <Along shape={shape}><Bar seen={seen} /></Along>;
+    const utils = render(<Swept shape={lineShape({ x: 0, y: 0 }, { x: 200, y: 0 })} />);
+    utils.rerender(<Swept shape={arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 })} />);
+    const buttons = utils.getAllByRole('button');
+    document.elementFromPoint = (x: number) => buttons[Math.floor(x / 10)] ?? null;
+    for (const [type, x] of [['pointerdown', 5], ['pointermove', 15], ['pointerup', 15]] as const) {
+      act(() => { buttons[0]!.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, button: 0, buttons: 1, clientX: x, clientY: 5 })); });
+    }
+    expect(seen.at(-1)).toEqual(['a', 'b']);
+  });
+
+  it('puts the value back on Escape, and takes no later move or release for a step', async () => {
+    const { seen, fire, buttons, pressed } = setup({ initial: ['e'] });
+    fire('pointerdown', 5);
+    fire('pointermove', 15);
+    fire('pointermove', 5);
+    act(() => { buttons[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+    expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'true']);
+    fire('pointermove', 35);
+    await act(() => new Promise((r) => setTimeout(r, 10)));
+    fire('pointerup', 5, { buttons: 0 });
+    fireEvent.click(buttons[0]!, { detail: 1 });
+    expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'true']);
+    await act(() => new Promise((r) => setTimeout(r, 0)));
+    const before = seen.length;
+    fireEvent.click(buttons[0]!, { detail: 1 });
+    expect(seen.length).toBe(before + 1);
   });
 });

@@ -227,4 +227,19 @@ describe('PropertyRow with the help icon', () => {
     expect(onChange).not.toHaveBeenCalled();
     expect(screen.getByRole('checkbox')).not.toBeChecked();
   });
+
+  it('describes a stacked slider\'s readout, its tab stop, and opens the help when focus rests on it', () => {
+    vi.useFakeTimers();
+    try {
+      render(<PropertyField kind="number" control="slider" label="Size" description="How big." value={4} min={0} max={10} onChange={() => {}} />);
+      const readout = screen.getByRole('spinbutton', { name: 'Size' });
+      const help = screen.getByText('How big.', { selector: '[id]' });
+      expect(readout.getAttribute('aria-describedby')?.split(' ')).toContain(help.id);
+      act(() => readout.focus());
+      act(() => { vi.advanceTimersByTime(600); });
+      expect(screen.getByRole('tooltip')).toHaveTextContent('How big.');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -57,6 +57,14 @@
   background: var(--wzl-fg-on-accent);
 }
 
+.switch[data-indeterminate] .track {
+  background: color-mix(in srgb, var(--wzl-accent-strong) 50%, transparent);
+}
+
+.switch[data-indeterminate] .thumb {
+  transform: translateX(6px);
+}
+
 .label {
   composes: toggleText from '../toggleLabel.module.css';
   line-height: 1.2;

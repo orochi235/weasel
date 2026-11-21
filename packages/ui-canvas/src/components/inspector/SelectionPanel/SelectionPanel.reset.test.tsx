@@ -43,4 +43,21 @@ describe('SelectionPanel resets', () => {
     expect([data('a').gap, data('b').gap]).toEqual([4, 4]);
     expect(screen.queryByRole('button', { name: 'Reset Gap' })).toBeNull();
   });
+
+  it("offers a leaf's reset by its own state where an alias of it is disabled", () => {
+    const scene = createScene<BoxData & { locked?: boolean }, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
+    scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'box', size: 7, locked: true } });
+    const schema: NodePropertiesEntry['schema'] = {
+      name: 'Properties',
+      members: {
+        main: { name: 'Main', members: { 'data.size': { kind: 'number', name: 'Size', description: '', default: 10 } } },
+        more: { name: 'More', members: { again: { kind: 'alias', name: 'Again', description: '', default: undefined, of: 'data.size', enableIf: { path: 'data.locked', is: false } } } },
+      },
+    };
+    render(<SelectionPanel scene={scene} selection={selectionOf(['a'])} properties={[{ name: 'box', schema }]} routing={routing} />);
+    expect(screen.getByRole('spinbutton', { name: 'Again' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Reset Again' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Size' }));
+    expect((scene.get(asNodeId('a')) as { data: BoxData }).data.size).toBe(10);
+  });
 });

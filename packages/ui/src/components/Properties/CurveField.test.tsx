@@ -24,6 +24,7 @@ const drag = (moves: Points[], settled: Points) => {
 };
 
 import { CurveField } from './CurveField';
+import { PropertyRow } from './PropertyRow';
 import s from './CurveField.module.css';
 
 describe('CurveField', () => {
@@ -167,6 +168,32 @@ describe('CurveField', () => {
     render(<CurveField values={[0, 0.05, 1, 1]} min={0.05} max={1} step={0.1} width={200} onChange={onChange} />);
     drag([], [{ x: 0, y: 0.31 }, { x: 1, y: 1 }]);
     expect(onChange).toHaveBeenLastCalledWith([0, 0.35, 1, 1]);
+  });
+
+  it('holds a flip and a reset to the step grid and the range, as a drag is', () => {
+    const onChange = vi.fn();
+    render(
+      <CurveField values={[0, 0.3, 1, 1.2]} min={0} max={1} step={0.3} width={200} defaults={[0, 0.25, 1, 0.5]} onChange={onChange} />,
+    );
+    screen.getByRole('button', { name: /flip vertically/i }).click();
+    screen.getByRole('button', { name: /flip horizontally/i }).click();
+    screen.getByRole('button', { name: /reset/i }).click();
+    expect(onChange.mock.calls).toEqual([[[0, 0.6, 1, 0]], [[0, 1, 1, 0.3]], [[0, 0.3, 1, 0.6]]]);
+  });
+
+  it('names its plot and the group holding its buttons by its row, or by its own aria-label', () => {
+    const { unmount } = render(
+      <PropertyRow label="Gamma" layout="block" group>
+        <CurveField values={[0, 0, 1, 1]} min={0} max={1} step={0.01} width={200} onChange={() => {}} />
+      </PropertyRow>,
+    );
+    expect(editor.props?.['aria-label']).toBe('Gamma');
+    const field = screen.getByRole('group', { name: 'Gamma' });
+    expect(field).toContainElement(screen.getByRole('button', { name: /flip vertically/i }));
+    unmount();
+    render(<CurveField aria-label="Falloff" values={[0, 0, 1, 1]} min={0} max={1} step={0.01} width={200} onChange={() => {}} />);
+    expect(editor.props?.['aria-label']).toBe('Falloff');
+    expect(screen.getByRole('group', { name: 'Falloff' })).toContainElement(screen.getByRole('button', { name: /flip vertically/i }));
   });
 
   it('disables its buttons while disabled', () => {

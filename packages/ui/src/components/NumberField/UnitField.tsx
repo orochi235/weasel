@@ -23,8 +23,9 @@ export interface UnitFieldProps extends HoldProps, ControlSizeProps, Omit<FieldS
    *  blur or Enter, and on every step. */
   onChange: (value: number) => void;
   /** The live value: every keystroke that reads as a number, and every step.
-   *  Typing that ends in Escape, or in text the field cannot read, sends the
-   *  value it began from, so a caller holding the live value gets it back. */
+   *  Typing that ends in Escape, in text the field cannot read, in the value it
+   *  began from, or in an offset for `onOffset`, sends the value it began from,
+   *  so a caller holding the live value gets it back. */
   onInput?: (value: number) => void;
   /**
    * An amount typed as `+=` or `-=` and a number — `+=5`, `-=2mm` — committed
@@ -193,7 +194,7 @@ function UnitFieldBody({
     latestSpent.current = typing.spent;
   });
 
-  useWheelSteps(input, latestSpin);
+  useWheelSteps(input, latestSpin, latestSpent);
 
   return (
     <div
@@ -242,20 +243,21 @@ function UnitFieldBody({
 }
 
 /** The wheel steps only a focused field, so scrolling past one changes nothing.
- *  Not passive, so it can keep the page from scrolling under it. */
+ *  Not passive, so a step can keep the page from scrolling under it; a wheel that steps nothing scrolls it. */
 function useWheelSteps(
   input: RefObject<HTMLInputElement | null>,
   spin: RefObject<(key: string) => boolean>,
+  spent: RefObject<(key: string) => boolean>,
 ): void {
   useEffect(() => {
     const el = input.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       if (document.activeElement !== el || e.deltaY === 0) return;
-      e.preventDefault();
-      spin.current(e.deltaY < 0 ? 'ArrowUp' : 'ArrowDown');
+      const key = e.deltaY < 0 ? 'ArrowUp' : 'ArrowDown';
+      if (!spent.current(key) && spin.current(key)) e.preventDefault();
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [input, spin]);
+  }, [input, spin, spent]);
 }

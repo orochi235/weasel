@@ -81,6 +81,30 @@ describe('a selected path', () => {
   });
 });
 
+it('scrolls nowhere when a Cmd press drops the last selected row and an earlier one becomes the last', () => {
+  const scrolled: Array<string | null> = [];
+  const original = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = function scrollIntoView(this: Element) { scrolled.push(this.getAttribute('data-pref-path')); };
+  try {
+    const onSelect = vi.fn();
+    const view = (selected: string[]) => <PrefsForm schema={SCHEMA} onChange={() => {}} selected={selected} onSelect={onSelect} />;
+    const { rerender } = render(view(['canvas.showGrid']));
+    fireEvent.pointerDown(screen.getByText('Author'), { ...MOD });
+    rerender(view(['canvas.showGrid', 'io.author']));
+    fireEvent.pointerDown(screen.getByText('Author'), { ...MOD });
+    expect(onSelect).toHaveBeenLastCalledWith('io.author', { toggle: true });
+    scrolled.length = 0;
+    rerender(view(['canvas.showGrid']));
+    expect(scrolled).toEqual([]);
+    fireEvent.pointerDown(screen.getByText('Author'), { ...MOD });
+    rerender(view(['canvas.showGrid', 'io.author']));
+    rerender(view(['canvas.showGrid', 'io.author', 'canvas.snapping']));
+    expect(scrolled).toEqual(['canvas.snapping']);
+  } finally {
+    Element.prototype.scrollIntoView = original;
+  }
+});
+
 describe('a run of tabs', () => {
   const TABS: PrefGroup = {
     name: 'Preferences',
@@ -162,4 +186,18 @@ describe('onSelect', () => {
     fireEvent.focus(screen.getByRole('checkbox', { name: 'Show grid' }));
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
+});
+
+it('marks the rows of a selected fragment, which has no box of its own, and not the fragment', () => {
+  const schema: PrefGroup = {
+    name: 'Preferences',
+    children: {
+      look: { name: 'Look', as: 'fragment', children: {
+        a: { kind: 'boolean', name: 'A', description: '', default: false },
+        b: { kind: 'boolean', name: 'B', description: '', default: false },
+      } },
+    },
+  };
+  const { container } = render(<PrefsForm schema={schema} onChange={() => {}} selected={['look']} />);
+  expect(marked(container)).toEqual(['look.a', 'look.b']);
 });

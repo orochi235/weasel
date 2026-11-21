@@ -54,6 +54,9 @@ export function TimeRuler(props: TimeRulerProps): ReactElement {
     return at ? sliderAt(at.f, { min: win.from, max: win.to, ...spanMap(win) }) : win.from;
   };
 
+  // Read as the pointer moves: the window may change under a scrub.
+  const scrubTo = useLatest((clientX: number): void => onSeek(msAt(clientX)));
+
   // `capture: false`: the session tracks the pointer off the ruler on its own,
   // and capture would retarget pointerup and kill the click on non-native
   // children of the scrubbed track.
@@ -63,7 +66,7 @@ export function TimeRuler(props: TimeRulerProps): ReactElement {
 
     const end = (): void => { sessionRef.current = null; };
     sessionRef.current = openPointerSession(e.currentTarget, e, {
-      onMove: (ev) => { onSeek(msAt(ev.clientX)); },
+      onMove: (ev) => { scrubTo.current(ev.clientX); },
       onEnd: end,
       onCancel: end,
     }, { capture: false });

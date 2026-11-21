@@ -19,7 +19,12 @@
   flex: 1 0 100%;
 }
 
+/* Below the last grid row the color variant fills: the opacity track's, or a stacked row's swatch and track. */
 .rowColor > .rowError {
   grid-column: 1 / -1;
-  grid-row: 2;
+  grid-row: 3;
+}
+
+.rowColor.rowBlock > .rowError {
+  grid-row: 4;
 }

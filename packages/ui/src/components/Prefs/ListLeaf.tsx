@@ -14,10 +14,15 @@ export function prefListIsText(pref: PrefList, drawn: boolean): boolean {
   return pref.item.kind === 'string' && !drawn && (pref.item as PrefString).control !== 'textarea';
 }
 
-/** The entries of a text list as `ListEditor` takes them: anything that is not a string reads as empty. */
-export function prefListTexts(value: unknown): string[] {
-  return (Array.isArray(value) ? value : []).map((e) => (typeof e === 'string' ? e : ''));
+/** The entries of a text list as `ListEditor` takes them: anything that is not a string reads as the default of
+ *  `pref`'s item, which is what a new entry starts as, or as empty with no `pref`. */
+export function prefListTexts(value: unknown, pref?: PrefList): string[] {
+  const empty = prefListTextDefault(pref);
+  return (Array.isArray(value) ? value : []).map((e) => (typeof e === 'string' ? e : empty));
 }
+
+const prefListTextDefault = (pref: PrefList | undefined): string =>
+  (typeof pref?.item.default === 'string' ? pref.item.default : '');
 
 /** Props for {@link PrefTextList}: a text list's entries and limits, as `ListEditor` takes them. */
 export type PrefTextListProps = Pick<
@@ -28,7 +33,7 @@ export type PrefTextListProps = Pick<
 /** A text list's control: a field per entry, or a chip per entry where the list's `control` is `tokens`. */
 export function PrefTextList({ pref, entryDisabled, ...props }: PrefTextListProps) {
   if (pref.control === 'tokens') return <TokenField {...props} reorder locked={entryDisabled} />;
-  return <ListEditor {...props} entryDisabled={entryDisabled} />;
+  return <ListEditor {...props} entryDisabled={entryDisabled} newEntry={() => prefListTextDefault(pref)} />;
 }
 
 /** What an entry of a list reads as: one holding nothing is the item's default, which is what a new entry starts as. */
@@ -60,7 +65,7 @@ export function ListLeaf({
     disabled: ctx.disabled,
   };
   if (prefListIsText(pref, drawsStrings)) {
-    const texts = prefListTexts(ctx.value);
+    const texts = prefListTexts(ctx.value, pref);
     return <PrefTextList {...shared} pref={pref} disabled={entriesDisabled(ctx)} entryDisabled={entryDisabledAt(ctx, item, texts)} value={texts} />;
   }
   return (

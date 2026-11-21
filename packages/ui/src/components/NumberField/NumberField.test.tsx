@@ -70,6 +70,19 @@ describe('NumberField', () => {
     expect(getInput(container)).toHaveAttribute('placeholder', 'Mixed');
   });
 
+  it('stays uncontrolled through mixed, keeping what was typed while mixed', () => {
+    const onChange = vi.fn();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { container, rerender } = render(<NumberField aria-label="X" defaultValue={5} mixed onChange={onChange} />);
+    fireEvent.change(getInput(container), { target: { value: '7' } });
+    fireEvent.blur(getInput(container));
+    expect(onChange).toHaveBeenCalledWith(7);
+    rerender(<NumberField aria-label="X" defaultValue={5} onChange={onChange} />);
+    expect(getInput(container).value).toBe('7');
+    expect(warn.mock.calls.filter(([m]) => String(m).includes('controlled'))).toEqual([]);
+    warn.mockRestore();
+  });
+
   // A proxy: jsdom does no layout, so this pins the attribute the stylesheet orders by.
   it('puts the steppers at the start unless told otherwise', () => {
     const side = (el: HTMLElement) => getInput(el).parentElement!.getAttribute('data-stepper-side');

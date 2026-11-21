@@ -1,4 +1,4 @@
-import type { SampledTrack, Track } from '@weasel-js/animator';
+import type { NestedTimeline, SampledTrack, Track } from '@weasel-js/animator';
 
 export interface LaneRow {
   /** Stable across re-renders and edits: the dotted index path. */
@@ -69,4 +69,18 @@ export function trackAtPath(tracks: readonly Track[], path: readonly number[]): 
     list = found.kind === 'timeline' ? found.timeline.tracks : [];
   }
   return found;
+}
+
+/** How long a nested timeline runs on the ruler: its `duration`, none below 0, or with none, to its last track's end. */
+export function timelineSpan(timeline: NestedTimeline): number {
+  if (timeline.duration != null) return Math.max(0, timeline.duration) || 0;
+  let end = 0;
+  for (const track of timeline.tracks) end = Math.max(end, trackEnd(track));
+  return end;
+}
+
+function trackEnd(track: Track): number {
+  if (track.kind === 'sampled') return track.keys.at(-1)?.t ?? 0;
+  if (track.kind === 'event') return track.events.at(-1)?.t ?? 0;
+  return track.at + timelineSpan(track.timeline);
 }

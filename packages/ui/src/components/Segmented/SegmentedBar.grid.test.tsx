@@ -3,6 +3,7 @@ import { fireEvent, render } from '@testing-library/react';
 import { useState } from 'react';
 import { SegmentedBar } from './SegmentedBar';
 import type { LastRow } from '@weasel-js/ui-input';
+import { RunScope } from '../Run';
 
 const cells = (n: number) => Array.from({ length: n }, (_, i) => ({ value: String(i), label: String(i) }));
 
@@ -33,5 +34,17 @@ describe('SegmentedBar columns', () => {
   it('stays one line without columns', () => {
     const { getByRole } = render(<SegmentedBar mode="multiple" items={cells(4)} value={[]} onChange={() => {}} aria-label="row" />);
     expect(getByRole('group').style.getPropertyValue('--tracks')).toBe('');
+  });
+
+  it('takes no orientation, its own or its run\'s, so only its tile corners round', () => {
+    const { getAllByRole } = render(
+      <>
+        <SegmentedBar mode="multiple" columns={2} orientation="vertical" items={cells(3)} value={[]} onChange={() => {}} aria-label="own" />
+        <RunScope orientation="vertical">
+          <SegmentedBar mode="multiple" columns={2} items={cells(3)} value={[]} onChange={() => {}} aria-label="run" />
+        </RunScope>
+      </>,
+    );
+    for (const group of getAllByRole('group')) expect(group).not.toHaveAttribute('data-orientation');
   });
 });

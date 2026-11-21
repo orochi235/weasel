@@ -89,6 +89,10 @@
   flex: 0 1 auto;
 }
 
+.rowControls > .namedField:has(> .flagToggle) {
+  flex: 0 0 auto;
+}
+
 .rowControls > * {
   flex: 1;
   min-inline-size: 0;

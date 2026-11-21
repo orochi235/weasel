@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   2,
+   1
+  ],
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "A held stepper keeps its repeat timer through a disable, and resumes stepping by itself when the field is re-enabled",
+  "NumberField `mixed` makes an uncontrolled field controlled, so a value typed while mixed is lost and the old default comes back",
+  "An offset committed after an `onInput` preview never sends the starting value back",
+  "The wheel on a focused read-only or held UnitField blocks page scroll without stepping"
+ ],
+ "b": [
+  "A step that lands on the previewed value never commits it: `spin` compares against the live `value`, not where typing began",
+  "An offset typed after a previewed number applies to the preview, not to the value typing began from",
+  "The wheel blocks page scrolling over a focused field that cannot step"
+ ]
+}

@@ -11,7 +11,7 @@ import { PlayheadReadout, Transport, type TransportProps } from '../Transport/Tr
 import { buildLanes, trackAtPath, type LaneRow } from './lanes';
 import { deleteKey, insertKey, keyTime, moveKey, samePath, setKeys, type KeyEdit, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
-import { useHeld, useKeyAndSegment, useTimeWindow } from './timelineState';
+import { useHeld, useKeyAndSegment, useKeyEditsHeldByPress, useTimeWindow } from './timelineState';
 import { TimelineInspector } from './TimelineInspector';
 
 export type { KeySelection } from './keys';
@@ -77,8 +77,9 @@ export function Timeline(props: TimelineProps): ReactElement {
   const hold = useControlHold(props, { readonlyRole: false });
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
   const { win, bounds, setWindow } = useTimeWindow(props.window, duration, props.onWindowChange);
-  const { selection, segmentSelection, selectKey, selectSegment, dropSegment } = useKeyAndSegment(props.selection, props.onSelectionChange);
+  const { selection, segmentSelection, selectKey, selectSegment, dropSegment } = useKeyAndSegment(props.selection, tracks, props.onSelectionChange);
   const [mode, setMode] = useHeld<'dope' | 'graph'>(props.mode, 'dope', props.onModeChange);
+  const pressHold = useKeyEditsHeldByPress();
 
   const rows = useMemo(() => buildLanes(tracks, expanded), [tracks, expanded]);
 
@@ -122,6 +123,7 @@ export function Timeline(props: TimelineProps): ReactElement {
       data-held={hold.held}
       tabIndex={-1}
       onKeyDown={onRootKeyDown}
+      onKeyDownCapture={pressHold.onKeyDownCapture}
     >
       {label ? <div className={s.label}>{label}</div> : null}
 
@@ -145,7 +147,7 @@ export function Timeline(props: TimelineProps): ReactElement {
         </div>
       </div>
 
-      <div className={s.lanes}>
+      <div className={s.lanes} onPointerDownCapture={pressHold.onPointerDownCapture}>
         {rows.map((row) => {
           const trackPath = row.path;
           return (
@@ -192,9 +194,10 @@ function bindLaneEdits(tracks: readonly Track[], trackPath: readonly number[], r
   onInput?: (next: Track[]) => void;
   onChange: (next: Track[]) => void;
   commit: (r: KeyEdit) => void;
-}): Pick<LaneProps, 'onKeyInput' | 'onKeyChange' | 'onKeysInput' | 'onKeysChange' | 'onInsert'> {
+}): Pick<LaneProps, 'onKeyInput' | 'onKeyRevert' | 'onKeyChange' | 'onKeysInput' | 'onKeysChange' | 'onInsert'> {
   return {
     onKeyInput: (keyIndex, toMs) => report.onInput?.(moveKey(tracks, { trackPath, keyIndex }, toMs).tracks),
+    onKeyRevert: () => report.onInput?.(tracks.slice()),
     onKeyChange: (keyIndex, toMs) => {
       const sel = { trackPath, keyIndex };
       if (keyTime(tracks, sel) === Math.max(0, toMs)) return;

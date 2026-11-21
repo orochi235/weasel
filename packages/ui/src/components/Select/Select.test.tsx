@@ -172,6 +172,19 @@ describe('Select', () => {
       expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Red', 'Vermilion']);
     });
 
+    it('measures rows inside a fragment one by one', () => {
+      const { container } = render(
+        <Select label="Color" width="fit">
+          <>
+            <SelectItem id="r">Red</SelectItem>
+            <SelectItem id="v">Vermilion</SelectItem>
+          </>
+        </Select>,
+      );
+      const sizer = container.querySelector('.' + s.sizer) as HTMLElement;
+      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Red', 'Vermilion']);
+    });
+
     it('keeps the hidden labels out of the trigger name', () => {
       render(<Select label="Color" options={OPTIONS} placeholder="Pick one" width="fit" />);
       expect(screen.getByRole('button', { name: 'Pick one Color' })).toBeTruthy();
@@ -472,5 +485,80 @@ describe('Select tooltip', () => {
       fireEvent.click(screen.getByRole('option', { name: 'Blue' }));
       expect(onChange).toHaveBeenCalledWith('b');
     });
+  });
+});
+
+describe('the release that opens or follows it', () => {
+  it('ends the trigger press it hides from the list', () => {
+    render(<Select label="Color" options={OPTIONS} defaultSelectedKey="g" />);
+    const trigger = screen.getByRole('button', { name: /Color/ });
+    act(() => { fireEvent.pointerDown(trigger, { pointerId: 1, button: 0, pointerType: 'mouse', clientX: 20, clientY: 10 }); });
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    expect(trigger).toHaveAttribute('data-pressed');
+    const row = screen.getByRole('option', { name: 'Green' });
+    const up = createEvent.pointerUp(row, { pointerId: 1, button: 0, pointerType: 'mouse', clientX: 20, clientY: 10 });
+    act(() => { fireEvent(row, up); });
+    expect(up.defaultPrevented).toBe(true);
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    // React Aria marks the trigger pressed while its list is open; shut, it should be pressed no longer.
+    act(() => { fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' }); });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(trigger).not.toHaveAttribute('data-pressed');
+  });
+
+  it('keeps a quick touch tap on a row after a tap opened the list', () => {
+    const onChange = vi.fn();
+    render(<Select label="Color" options={OPTIONS} defaultSelectedKey="g" onSelectionChange={onChange} />);
+    const trigger = screen.getByRole('button', { name: /Color/ });
+    const touch = { pointerId: 2, button: 0, pointerType: 'touch', clientX: 20, clientY: 10, width: 1, height: 1 };
+    act(() => {
+      fireEvent.pointerDown(trigger, touch);
+      fireEvent.pointerUp(trigger, touch);
+    });
+    // A tap opens the list on its release, which jsdom's press emulation does not carry through; the keys do.
+    act(() => { fireEvent.keyDown(trigger, { key: 'ArrowDown' }); });
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    const row = screen.getByRole('option', { name: 'Green' });
+    const up = createEvent.pointerUp(row, { ...touch, pointerId: 3 });
+    act(() => { fireEvent(row, up); });
+    expect(up.defaultPrevented).toBe(false);
+  });
+});
+
+describe("React Aria's value props", () => {
+  it('are not Select props, and do not outrank selectedKey when passed anyway', () => {
+    const onChange = vi.fn();
+    // @ts-expect-error -- `selectedKey` and `onSelectionChange` are a Select's selection.
+    render(<Select aria-label="Color" options={OPTIONS} value="g" onChange={onChange} mixed />);
+    const trigger = screen.getByRole('button', { name: /Color/ });
+    expect(trigger).toHaveTextContent('Mixed');
+    act(() => trigger.focus());
+    fireEvent.keyDown(trigger, { key: 'ArrowRight' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe('Select trigger identity', () => {
+  it('keeps its trigger and focus when a tooltip comes and goes', () => {
+    const { rerender } = render(<Select aria-label="Color" options={OPTIONS} defaultSelectedKey="r" />);
+    const trigger = screen.getByRole('button', { name: /Color/ });
+    act(() => trigger.focus());
+    rerender(<Select aria-label="Color" options={OPTIONS} defaultSelectedKey="r" tooltip="Hint" />);
+    expect(screen.getByRole('button', { name: /Color/ })).toBe(trigger);
+    rerender(<Select aria-label="Color" options={OPTIONS} defaultSelectedKey="r" />);
+    expect(screen.getByRole('button', { name: /Color/ })).toBe(trigger);
+    expect(document.activeElement).toBe(trigger);
+  });
+});
+
+describe('Select option values', () => {
+  it('refuses two that read the same as text, which React Aria cannot keep apart', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const both = [{ value: 1, label: 'One' }, { title: 'More', options: [{ value: '1', label: 'Uno' }] }];
+      expect(() => render(<Select<number | string> aria-label="Count" options={both} />)).toThrow(/two options whose values read "1"/);
+    } finally {
+      error.mockRestore();
+    }
   });
 });

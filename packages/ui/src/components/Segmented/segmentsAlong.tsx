@@ -38,7 +38,7 @@ export function SegmentsAlong(props: SegmentsAlongProps): ReactElement {
   const run = useRowRun(root, shape);
   const lengths = useItemLengths(root, segments.map((segment) => segment.key), segmentKeyOf);
   const gap = useRunGap(root);
-  const { pad, cap } = useWellEnds(root);
+  const { pad, cap } = useWellEnds(root, segments[0]?.key);
   const sizes = segments.map((segment) => lengths.get(segment.key) ?? 0);
   const row = useRunRow({ root, keyOf: segmentKeyOf, run, lengths: sizes, gap, align });
   const well = variant === 'default';
@@ -111,10 +111,10 @@ function Well({ run, pad, cap, states, stretches }: { run: TrackRun; pad: number
   );
 }
 
-/** The well's ends in px, read once `root` is laid out and again when it or its first segment resizes: `pad`, its
- *  inline-start padding, is how far the well runs past its end segments, and `cap`, a segment's thickness, covers the
- *  rim's round cap. */
-function useWellEnds(root: RefObject<HTMLElement | null>): { pad: number; cap: number } {
+/** The well's ends in px, read once `root` is laid out, again when it or its first segment resizes, and afresh when the
+ *  first segment, keyed `first`, changes: `pad`, its inline-start padding, is how far the well runs past its end
+ *  segments, and `cap`, a segment's thickness, covers the rim's round cap. */
+function useWellEnds(root: RefObject<HTMLElement | null>, first: string | undefined): { pad: number; cap: number } {
   const [pad, setPad] = useState(0);
   const [cap, setCap] = useState(0);
   useLayoutEffect(() => {
@@ -127,6 +127,6 @@ function useWellEnds(root: RefObject<HTMLElement | null>): { pad: number; cap: n
     };
     measure();
     return watchResize([el, segment], measure);
-  }, [root]);
+  }, [root, first]);
   return { pad, cap };
 }

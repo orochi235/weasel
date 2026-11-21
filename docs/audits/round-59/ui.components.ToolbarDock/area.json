@@ -1,0 +1,48 @@
+{
+ "id": "ui.components.ToolbarDock",
+ "commit": "6f634fabe1ba54c5d94054a307392fe6d65141ab",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/ToolbarDock/ToolbarDock.module.css",
+  "packages/ui/src/components/ToolbarDock/ToolbarDock.tsx",
+  "packages/ui/src/components/ToolbarDock/barHosts.ts",
+  "packages/ui/src/components/ToolbarDock/dockContext.ts",
+  "packages/ui/src/components/ToolbarDock/dockDrop.ts",
+  "packages/ui/src/components/ToolbarDock/dockTear.ts",
+  "packages/ui/src/components/ToolbarDock/floatingLayer.tsx",
+  "packages/ui/src/components/ToolbarDock/index.ts",
+  "packages/ui/src/components/ToolbarDock/lab/ToolbarDock.stories.module.css",
+  "packages/ui/src/components/ToolbarDock/lab/ToolbarDock.stories.tsx",
+  "packages/ui/src/components/ToolbarDock/layout.ts",
+  "packages/ui/src/components/ToolbarDock/useDockDrag.ts"
+ ],
+ "a": 4,
+ "b": 7,
+ "m": 2,
+ "distinct": 9,
+ "chapman": 12.3,
+ "unfound": 3.3,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 11,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.3,
+   "B": 4.3,
+   "match": 0.2,
+   "fix": 18.1
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1837013,
+  "costUsd": 5.51
+ },
+ "fixCommits": []
+}

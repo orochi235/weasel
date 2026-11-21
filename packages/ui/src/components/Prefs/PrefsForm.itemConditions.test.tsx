@@ -64,4 +64,10 @@ describe('PrefControl', () => {
     for (const hold of screen.getAllByRole('spinbutton', { name: 'Hold' })) expect(hold).toBeDisabled();
     expect(screen.getAllByRole('spinbutton', { name: 'Length' })[0]).toBeEnabled();
   });
+
+  it('disables every field when it is disabled, whatever its owner says of each', () => {
+    const stroke = { kind: 'object', name: 'Stroke', description: '', default: { width: 1 }, children: { width: { kind: 'number', name: 'Width', description: '', default: 1 } } } as PrefLeaf;
+    renderWithIcons(<PrefControl pref={stroke} path="stroke" value={{ width: 1 }} onChange={() => {}} disabled disabledAt={() => false} />);
+    expect(screen.getByRole('spinbutton', { name: 'Width' })).toBeDisabled();
+  });
 });

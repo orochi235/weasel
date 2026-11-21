@@ -1836,7 +1836,8 @@ Calls the lanes made without a ruling:
   read; `niceDomain` keeps an end that would overflow, and a span too fine to cut.
 - Open: a clearable number pref with a numeric default reads back as the default once cleared in a store.
 - Open: negative stroke widths pass through the draw.io, DOT, and Mermaid readers unchanged.
-- Open: `Slider` commits through `onChange` when a press or keystroke moves nothing.
+- A `Slider` key that cannot move its thumb sends neither `onInput` nor `onChange`, as `docs/conventions.md` ("Edit
+  callbacks") has `onChange` skip an edit that changed nothing; it still keeps the key from the page (2026-11-20).
 - Open: which edge an RTL menu favors when it fits on neither side, or is wider than the viewport. menu's placement
   property skips both cases (2026-11-10).
 
@@ -1845,9 +1846,9 @@ Calls the lanes made without a ruling:
 - Open: a mixed number slider in `PropertyField` disables its track and reads out a dash that takes no focus, so it
   cannot be edited, while `PrefsForm`'s `mixed` says editing one calls `onChange` as usual. A test pins the disabled
   track ("parks a mixed slider").
-- Open: `Slider`'s region drag moves the two thumbs beside it by one track distance with no `step` or stop snapping,
-  and a shift-all drag snaps to `step` even under `snap: 'strict'`, which says `step` no longer applies and every
-  stop is a detent. Under strict stops spaced unevenly, both thumbs cannot land on stops and keep their gap.
+- A `Slider` drag that moves several thumbs (shift-all, or a region) lands them where one dragged thumb could: under
+  `snap: 'strict'` each moves the same number of stops, as many as the pointer crossed, so they stay on stops and
+  may not keep their gap; otherwise each lands on the `step` grid (2026-11-20).
 - Open: a `ControlPanel` group drawn `as: 'bar'` hands its cells no `errors`, `changed` or `auto`, so an error, a
   changed mark or an auto readout on a bar leaf does not show. A paired row shows errors and `changed`, not `auto`.
 - Open: `selectTool.pickBest` steers only the internal select tool's own pick; the dispatcher, hover and `onClick`
@@ -3304,3 +3305,47 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+## Audit round fifty-nine (2026-11-20): panel cells
+
+- 2026-11-20 (the fixer's call, audit round 59): across several selected kinds, `SelectionPanel` draws a leaf only
+  where every kind's leaf at that path means the same: they may differ in how they are drawn (name, description,
+  icon, pair, control, conditions), never in a default, a bound, an option's value, a field, or a function such as an
+  action's `run`. Reading and writing each node under its own kind's leaf was the alternative, and would keep such a
+  leaf on the panel.
+## Audit round fifty-nine (2026-11-20): segmented bars
+
+- 2026-11-20 (my call, audit round 59): a `SegmentedBar` whose `steps` stop at the default `SWEEP_CAP` warns once,
+  naming the bar, and draws the first 256; a bar given `cap` takes the cut as meant and does not warn. Showing a
+  note in the bar, as `Sequence` does, was the alternative, and has no room in a row of segments.
+
+## Audit round fifty-nine (2026-11-20): Select
+
+- 2026-11-20: A `Select` whose `options` hold two values that read the same as text (`1` and `'1'`, or one value
+  twice) throws a `RangeError` naming it, with no override: React Aria keys its rows by that text, so the two
+  cannot be drawn apart.
+## Audit round fifty-nine (2026-11-20): ui's Timeline
+
+- 2026-11-20 (the fixer's call): while a press on a `Timeline`'s lanes is held, an arrow step or a Delete or Backspace
+  on a key or the root is refused, since the drag's release commits against the tracks it began from and would undo
+  it; Escape still cancels. Edits from elsewhere during a drag (the inspector, the consumer) are not guarded. Ending
+  the drag on any other edit, or committing against the tracks at release, was the alternative.
+
+## Audit round fifty-nine (2026-11-20): TokenPanel
+
+- 2026-11-20: Dragging a step of a `factors` scale that no factor can reach (the base is zero or negative, or the
+  rule has no factor for that step) overrides the step through `onChange`, rather than writing an infinite or
+  negative factor or doing nothing.
+
+## Audit round fifty-nine (2026-11-20): ui's Tree
+
+- 2026-11-20: Alt+Right refuses to indent a `Tree` row under a closed disabled branch, which cannot open to show it; a drag may
+  still drop into one.
+
+## Audit round fifty-nine (2026-11-20): ui components, part one
+
+- 2026-11-20 (my call, audit round 59): a `ColorField` pick that closes, or loses focus, on the color it began from
+  after `onInput` ticks calls `onCancel`, which until now meant only an abandoned opacity drag. A pick with no ticks
+  calls nothing.
+- 2026-11-20 (my call, audit round 59): a mixed `Switch` (`indeterminate`, and so a mixed item in a `CheckboxGroup`
+  with `control="switch"`) writes `aria-checked="mixed"` on its input, though ARIA gives `switch` no mixed state and
+  a reader may announce it as off; its thumb sits mid-track.

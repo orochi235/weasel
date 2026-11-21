@@ -1,5 +1,9 @@
 import { isDev } from '@weasel-js/registry';
 
+// A section's key is no segment of its leaves' paths, as `prefSectionLeaves` flattens it.
+const isSection = (node: unknown): boolean =>
+  node !== null && typeof node === 'object' && !('kind' in node) && 'members' in node;
+
 /** Every leaf path and leaf kind a schema holds, entries and union variants included. */
 function pathsAndKinds(schemas: readonly unknown[]): { paths: Set<string>; kinds: Set<string> } {
   const paths = new Set<string>();
@@ -13,7 +17,7 @@ function pathsAndKinds(schemas: readonly unknown[]): { paths: Set<string>; kinds
     }
     for (const nested of [n.children, n.members]) {
       if (nested === null || typeof nested !== 'object') continue;
-      for (const [key, child] of Object.entries(nested)) walk(child, path ? `${path}.${key}` : key);
+      for (const [key, child] of Object.entries(nested)) walk(child, isSection(child) ? path : path ? `${path}.${key}` : key);
     }
     walk(n.item, path);
     if (n.variants !== null && typeof n.variants === 'object') for (const v of Object.values(n.variants)) walk(v, path);

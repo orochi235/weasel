@@ -127,4 +127,11 @@ describe('ActionButton', () => {
     fireEvent.pointerLeave(flip);
     expect(down).toHaveBeenCalledOnce();
   });
+
+  test('keeps a caller\'s style beside its grade', () => {
+    render(<ActionButton label="Delete" grade="danger" style={{ marginInlineStart: 8 }} onPress={() => {}} />);
+    const del = screen.getByRole('button', { name: 'Delete' });
+    expect(del.style.marginInlineStart).toBe('8px');
+    expect(del.style.getPropertyValue('--wzl-grade')).not.toBe('');
+  });
 });

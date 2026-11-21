@@ -70,7 +70,9 @@ export function useSliderPointer<T extends Thumb>(a: SliderPointerArgs<T>) {
     if (props.onAddThumb) {
       const created = props.onAddThumb(v);
       if (!created) return;
-      const next = [...thumbs.map(t => ({ ...t })), created] as T[];
+      const next = thumbs.map(t => ({ ...t })) as T[];
+      const above = constraint === 'ordered' ? next.findIndex(t => t.value > created.value) : -1;
+      next.splice(above === -1 ? next.length : above, 0, created);
       onInput(next);
       onChange(next);
       return;

@@ -28,7 +28,7 @@ export interface TreeNode {
   children?: readonly TreeNode[];
   /** Present but not in effect. */
   muted?: boolean;
-  /** Focusable and announced, but cannot be activated, expanded or selected. */
+  /** Focusable and announced, but cannot be activated, expanded, selected or moved. */
   disabled?: boolean;
   /** Stays where it is: a drag cannot start on it, and a drag or a keyboard move of a selection holding it leaves
    *  it behind. It can still be selected, and still takes drops. */

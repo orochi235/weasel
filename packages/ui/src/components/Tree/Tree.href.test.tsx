@@ -78,6 +78,53 @@ describe('Tree rows with an href', () => {
   });
 });
 
+describe('Tree rows with an href, in a tree that drags', () => {
+  /** Presses and releases `el` without moving, as a click does, then clicks it with `init`. */
+  function pressClick(el: Element, init: MouseEventInit = {}): boolean {
+    const tree = screen.getByRole('tree');
+    tree.setPointerCapture = vi.fn();
+    tree.releasePointerCapture = vi.fn();
+    fireEvent.pointerDown(el, { pointerId: 1, button: 0, clientX: 10, clientY: 10, ...init });
+    fireEvent.pointerUp(document, { pointerId: 1, button: 0, clientX: 10, clientY: 10, ...init });
+    // Read after the dispatch: the drag stops the click in capture, before any listener of the test's could see it.
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, ...init });
+    el.dispatchEvent(click);
+    return !click.defaultPrevented;
+  }
+
+  it('activates on a plain click, keeping the browser from following the link', () => {
+    const onAction = vi.fn();
+    render(<Tree aria-label="Pages" nodes={NODES} defaultExpandedIds={['docs']} onAction={onAction} onMove={vi.fn()} />);
+    expect(pressClick(link('Intro'))).toBe(false);
+    expect(onAction).toHaveBeenCalledWith('intro', expect.objectContaining({ metaKey: false }));
+  });
+
+  it.each([{ metaKey: true }, { ctrlKey: true }, { altKey: true }])('leaves a click with %o to the browser', (mods) => {
+    const onAction = vi.fn();
+    render(<Tree aria-label="Pages" nodes={NODES} defaultExpandedIds={['docs']} onAction={onAction} onMove={vi.fn()} />);
+    expect(pressClick(link('Intro'), mods)).toBe(true);
+    expect(onAction).not.toHaveBeenCalled();
+  });
+});
+
+describe('Tree rows with an href and controls', () => {
+  it('leaves a click on a control in the row to the control', () => {
+    const onAction = vi.fn();
+    render(
+      <Tree
+        aria-label="Pages" onAction={onAction}
+        nodes={[{ id: 'a', label: 'A', href: '#/a', controls: <input type="checkbox" aria-label="Show A" /> }]}
+      />,
+    );
+    const box = screen.getByRole('checkbox', { name: 'Show A' });
+    box.focus();
+    fireEvent.click(box);
+    expect(box).toBeChecked();
+    expect(box).toHaveFocus();
+    expect(onAction).not.toHaveBeenCalled();
+  });
+});
+
 describe('Tree current rows', () => {
   it('marks a current row with aria-current, and no other', () => {
     render(<Tree aria-label="Pages" nodes={[{ id: 'a', label: 'A', current: true }, { id: 'b', label: 'B' }]} />);

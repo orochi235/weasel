@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { Checkbox } from './Checkbox';
 import { PropertyField } from '../Properties/PropertyField';
@@ -63,5 +65,15 @@ describe('shared checkbox skin', () => {
     expect(input).toHaveAttribute('aria-readonly', 'true');
     await user.click(input);
     expect(input.checked).toBe(false);
+  });
+
+  it('dims the box and drops its hover edge when it is held disabled for a reason', () => {
+    render(<Checkbox disabled disabledReason="Locked">Snap</Checkbox>);
+    const input = screen.getByRole('checkbox', { name: 'Snap' });
+    expect(input).toHaveAttribute('aria-disabled', 'true');
+    expect(input).not.toBeDisabled();
+    const css = readFileSync(resolve(__dirname, 'box.module.css'), 'utf8');
+    expect(css).toMatch(/\.checkbox:is\(:disabled, \[aria-disabled='true'\]\)\s*\{[^}]*opacity: 0\.5/);
+    expect(css).toMatch(/\.checkbox:hover:not\(:disabled, \[aria-disabled='true'\]\)/);
   });
 });

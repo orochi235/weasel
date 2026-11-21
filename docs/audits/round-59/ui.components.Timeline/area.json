@@ -1,0 +1,65 @@
+{
+ "id": "ui.components.Timeline",
+ "commit": "6f634fabe1ba54c5d94054a307392fe6d65141ab",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Timeline/AnimatedTimeline.tsx",
+  "packages/ui/src/components/Timeline/Lane.tsx",
+  "packages/ui/src/components/Timeline/LaneGraph.tsx",
+  "packages/ui/src/components/Timeline/LaneMarks.tsx",
+  "packages/ui/src/components/Timeline/TimeRuler.stories.module.css",
+  "packages/ui/src/components/Timeline/TimeRuler.stories.tsx",
+  "packages/ui/src/components/Timeline/TimeRuler.tsx",
+  "packages/ui/src/components/Timeline/Timeline.module.css",
+  "packages/ui/src/components/Timeline/Timeline.stories.module.css",
+  "packages/ui/src/components/Timeline/Timeline.stories.tsx",
+  "packages/ui/src/components/Timeline/Timeline.tsx",
+  "packages/ui/src/components/Timeline/TimelineInspector.tsx",
+  "packages/ui/src/components/Timeline/index.ts",
+  "packages/ui/src/components/Timeline/keys.ts",
+  "packages/ui/src/components/Timeline/lanes.ts",
+  "packages/ui/src/components/Timeline/timeScale.ts",
+  "packages/ui/src/components/Timeline/timelineState.ts",
+  "packages/ui/src/components/Timeline/useKeyDrag.ts"
+ ],
+ "a": 8,
+ "b": 7,
+ "m": 4,
+ "distinct": 11,
+ "chapman": 13.4,
+ "unfound": 2.4,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.4,
+   "B": 2.3,
+   "match": 0.1,
+   "fix": 18.1
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1847127,
+  "costUsd": 5.49
+ },
+ "fixCommits": [
+  "20abda48456608903720fa52800b1015e3fad9a3",
+  "2bc469bff46285b7128ef03fd28e1eb665a3cb0e",
+  "9b65bab1ed3414bab0c90eceb31152896088d728",
+  "06cc87b2d93b316abd5cd5834ed1e7319d4ba025",
+  "c6201204530b32b3d7de68204d46b5c527f33b88",
+  "dbe20c514fd9ea045f40dbfaefee76ae24e7da5f",
+  "bffa79cf8269ffeea61c6f7517813913a7efa3ad",
+  "28f3eda9fc12c1684a35972a7053dd2bbba8c669",
+  "072c8da1d820c8c9ed58432168eedf0eb823fc97",
+  "e20be35ddf2e4f7701549d40db68434d11ff5f99"
+ ]
+}

@@ -27,22 +27,22 @@
   align-items: stretch;
 }
 
-.group:not(.groupPairs) .groupBody > :not(.rowColor) {
+.groupBody:not(.groupPairs) > :not(.rowColor) {
   grid-column: 1 / -1;
 }
 
-.groupPairs .groupBody > * {
+.groupBody.groupPairs > * {
   grid-column: auto;
   /* As a paired list's rows: see `.listPairs`. */
   align-self: first baseline;
 }
 
-.groupPairs .groupBody > h3,
-.groupPairs .groupBody > .span,
-.groupPairs .groupBody > .subpanel {
+.groupBody.groupPairs > h3,
+.groupBody.groupPairs > .span,
+.groupBody.groupPairs > .subpanel {
   grid-column: 1 / -1;
 }
 
-.groupOneUp .groupBody > * {
+.groupBody.groupOneUp > * {
   grid-column: 1 / -1;
 }

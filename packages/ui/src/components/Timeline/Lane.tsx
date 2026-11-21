@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from 'react';
+import { useEffect, useId, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from 'react';
 import { type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack } from '@weasel-js/animator';
 import { DisclosureMark } from '../Disclosure';
 import type { FocusHoldAttrs } from '../Disabled/controlHold';
@@ -6,7 +6,7 @@ import s from './Timeline.module.css';
 import { spanPercent, toPercent, type TimeWindow } from './timeScale';
 import { arrowMove } from '@weasel-js/quantity';
 import { LaneGraph } from './LaneGraph';
-import type { LaneRow } from './lanes';
+import { timelineSpan, type LaneRow } from './lanes';
 import { useKeyDrag } from './useKeyDrag';
 import { KeyGhost, KeyMarks, SegmentMarks, type MarkHold } from './LaneMarks';
 
@@ -36,6 +36,8 @@ export interface LaneProps {
   onSelectionChange: (keyIndex: number) => void;
   /** Live during a dope-sheet drag. */
   onKeyInput: (keyIndex: number, toMs: number) => void;
+  /** A dope-sheet drag was canceled: hand back the tracks it began from. */
+  onKeyRevert?: () => void;
   /** Once, at the end of a dope-sheet gesture. */
   onKeyChange: (keyIndex: number, toMs: number) => void;
   /** Live during a graph-mode key drag: the row's whole key list. */
@@ -73,7 +75,7 @@ export function Lane(props: LaneProps): ReactElement {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const times = entryTimes(row);
   const { drag, msAt, onKeyPointerDown } = useKeyDrag({
-    trackRef, window: win, offset: row.offset, snapTimes, times, onSelect, onKeyInput, onKeyChange, onCancel: props.onCancel, drags: hold.edits,
+    trackRef, window: win, offset: row.offset, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert: props.onKeyRevert, onCancel: props.onCancel, drags: hold.edits,
   });
   const pct = (ms: number): string => toPercent(win, ms + row.offset);
 
@@ -120,13 +122,7 @@ export function Lane(props: LaneProps): ReactElement {
           />
         ) : (
           <>
-            {row.kind === 'timeline' ? (
-              <div
-                className={s.nestedBar}
-                data-testid="timeline-nested"
-                style={{ left: pct(0), width: spanPercent(win, (row.track as TimelineTrack).timeline.duration ?? 0) }}
-              />
-            ) : null}
+            {row.kind === 'timeline' ? <NestedBar track={row.track as TimelineTrack} offset={row.offset} win={win} /> : null}
             {row.kind === 'sampled' ? (
               <SegmentMarks
                 keys={sampledKeys} label={row.label} win={win} pct={pct} mark={mark}
@@ -187,7 +183,7 @@ function LaneLabel({ row, mark, expanded, toggleExpanded }: {
 }) {
   const labelId = useId();
   return (
-    <div className={s.laneLabel}>
+    <div className={s.laneLabel} style={{ '--depth': row.depth } as CSSProperties}>
       {row.kind === 'timeline' ? (
         <span
           role="button"
@@ -205,6 +201,13 @@ function LaneLabel({ row, mark, expanded, toggleExpanded }: {
       <span id={labelId} className={s.laneName}>{row.label}</span>
     </div>
   );
+}
+
+/** A collapsed nested timeline's run on the ruler; an endless one runs off the window's end. */
+function NestedBar({ track, offset, win }: { track: TimelineTrack; offset: number; win: TimeWindow }) {
+  const start = offset + track.at;
+  const span = Math.min(timelineSpan(track.timeline), Math.max(0, win.to - start));
+  return <div className={s.nestedBar} data-testid="timeline-nested" style={{ left: toPercent(win, start), width: spanPercent(win, span) }} />;
 }
 
 /** The stretch of a lane past where its timelines stop playing it. */

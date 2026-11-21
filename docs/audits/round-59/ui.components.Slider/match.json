@@ -1,0 +1,39 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   9
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   3,
+   6
+  ]
+ ],
+ "a": [
+  "An endless Slider hands `onAddThumb` the track position, not the value the thumb will report",
+  "A thumb added under `constraint: 'ordered'` is appended out of order, and its first drag jumps it past its neighbor",
+  "A region drag ignores a thumb drag already running, and a thumb press ignores a running region drag",
+  "`useBoxes` keeps measuring the old elements when one is replaced and the thumb count stays the same"
+ ],
+ "b": [
+  "An endless low end under a log `scale` throws on render",
+  "`onAddThumb` on an endless slider receives a raw track position, not a value",
+  "A shift-all drag pulls thumbs off `snap: 'strict'` detents and off the step grid under a scale or even spacing",
+  "A key that cannot move a thumb still commits an edit",
+  "On an endless slider whose range is not a whole number of steps, a drag can never reach the finite end",
+  "A region drag and a thumb drag can run at once, each writing its own snapshot",
+  "`useBoxes` never measures an element that appears without the thumb count changing",
+  "A thumb's `aria-valuemin`/`aria-valuemax` ignore its own `bounds`",
+  "Escape after a thumb drag has come back to its start sends no `onCancel`, while a region drag sends one",
+  "A thumb added by a track click is appended last, breaking `constraint: 'ordered'`",
+  "An end stop's label is pulled off center when that stop is not at the track's end"
+ ]
+}

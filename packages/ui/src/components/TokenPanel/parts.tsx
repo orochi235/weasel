@@ -10,8 +10,11 @@ export function stepLabels(names: readonly string[]): string[] {
   return split.map((segments) => segments.slice(shared).join('-') || (segments.at(-1) ?? ''));
 }
 
+/** `name` as the panel draws it: without its `--`, and without `prefix`, which may be written with or without one. */
 export function shortName(name: string, prefix: string): string {
-  return prefix && name.startsWith(prefix) && name.length > prefix.length ? name.slice(prefix.length) : name;
+  const bare = name.replace(/^--/, '');
+  const lead = prefix.replace(/^--/, '');
+  return lead && bare.startsWith(lead) && bare.length > lead.length ? bare.slice(lead.length) : bare;
 }
 
 export function tipOf(token: TokenEntry): string {

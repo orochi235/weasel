@@ -11,6 +11,7 @@ import {
   NUMBER_FORMAT,
   type OnTokenChange,
   refitScale,
+  roundFit,
   shownAlike,
   splitUnit,
   type TokenEntry,
@@ -140,10 +141,11 @@ function ScaleSlider({
       const amount = round(2 ** thumb.value);
       if (amount === amounts[i] || amount <= 0) return;
       const at = generator ? generator.tokens.indexOf(thumb.token) : -1;
-      if (factors && generator && at >= 0) {
+      // A factor reaches the dragged amount only from a positive base, and only for a step it has an entry for.
+      if (factors && generator && generator.base > 0 && at >= 0 && at < factors.length) {
         onScaleChange?.(group, {
           ...generator,
-          rule: { kind: 'factors', factors: factors.map((f, j) => (j === at ? Number((amount / generator.base).toFixed(3)) || f : f)) },
+          rule: { kind: 'factors', factors: factors.map((f, j) => (j === at ? roundFit(amount / generator.base) || f : f)) },
         });
       } else {
         onChange(thumb.token, `${amount}${unit}`);
@@ -196,7 +198,7 @@ export function Scale({
   return (
     <div className={s.scale} role="group" aria-label={group}>
       <span className={s.name} title={group}>
-        {shortName(group, prefix.replace(/^--/, ''))}
+        {shortName(group, prefix)}
         {unit ? <span className={s.unit}> {unit}</span> : null}
       </span>
       {overridden.length > 0 ? (

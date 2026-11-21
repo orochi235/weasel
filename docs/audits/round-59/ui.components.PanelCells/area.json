@@ -1,0 +1,59 @@
+{
+ "id": "ui.components.PanelCells",
+ "commit": "6f634fabe1ba54c5d94054a307392fe6d65141ab",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/PanelCells/LabeledRow.tsx",
+  "packages/ui/src/components/PanelCells/ObjectLeaf.tsx",
+  "packages/ui/src/components/PanelCells/PanelCells.module.css",
+  "packages/ui/src/components/PanelCells/cells.tsx",
+  "packages/ui/src/components/PanelCells/conditions.ts",
+  "packages/ui/src/components/PanelCells/index.ts",
+  "packages/ui/src/components/PanelCells/model.ts",
+  "packages/ui/src/components/PanelCells/nodeBounds.ts",
+  "packages/ui/src/components/PanelCells/objectField.tsx",
+  "packages/ui/src/components/PanelCells/objectFieldRows.tsx",
+  "packages/ui/src/components/PanelCells/panelCells.ts",
+  "packages/ui/src/components/PanelCells/panelSections.tsx",
+  "packages/ui/src/components/PanelCells/panelSource.ts",
+  "packages/ui/src/components/PanelCells/renderContext.ts",
+  "packages/ui/src/components/PanelCells/renderLeaf.tsx",
+  "packages/ui/src/components/PanelCells/selection.tsx"
+ ],
+ "a": 4,
+ "b": 6,
+ "m": 3,
+ "distinct": 7,
+ "chapman": 7.8,
+ "unfound": 0.8,
+ "read": {
+  "A": 16,
+  "B": 16
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.4,
+   "B": 11.2,
+   "match": 0.1,
+   "fix": 16.9
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2333585,
+  "costUsd": 6.68
+ },
+ "fixCommits": [
+  "8b96ffe6d75fb1ca13f6b5373815e20a95606e49",
+  "9ae8bc2eeb7bee807e51b9ed1e1470f069e5fcdc",
+  "86fce742f5e73d6f25769bf354a0029bbc657370",
+  "1cafdce65e8ce146d215269fb13d1456e47cef88",
+  "c08f87390bd44cb4d2025224701e1d319d118fc1",
+  "973e4ede308c43a6f16d8a09d876feea6645ea7b"
+ ]
+}

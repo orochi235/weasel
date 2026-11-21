@@ -30,6 +30,9 @@ const choose = (p: PropertyEnumFieldProps) => (value: string): void => {
   else p.onChange(value);
 };
 
+/** An option in words, for a place only text can go: its label, else its first short form, else its value. */
+const optionWords = (o: PropertyOption<string>): string => nameOf(o.label) ?? o.short?.[0] ?? o.value;
+
 export function EnumControl(p: PropertyEnumFieldProps) {
   const chosen = !p.mixed && p.options.some((opt) => opt.value === p.value);
   const current = chosen ? (p.value as string) : null;
@@ -50,7 +53,8 @@ export function EnumControl(p: PropertyEnumFieldProps) {
     const held = current === null ? undefined : p.options.find((o) => o.value === current);
     const reads = p.mixed ? MIXED_HINT : held ? held.label : (p.placeholder ?? (p.unset ? '—' : 'Choose option…'));
     // The button's text is its value, so its name has to carry both.
-    const named = text === undefined ? undefined : typeof reads === 'string' ? `${text}: ${reads}` : text;
+    const spoken = !p.mixed && held ? optionWords(held) : reads;
+    const named = text === undefined ? undefined : typeof spoken === 'string' ? `${text}: ${spoken}` : text;
     return (
       <MenuButton<string>
         className={p.className}
@@ -60,7 +64,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
         disabled={p.disabled}
         disabledReason={p.disabledReason}
         items={choices(p).map((o) => ({
-          value: o.value, label: nameOf(o.label) ?? o.short?.[0] ?? o.value, disabled: o.disabled,
+          value: o.value, label: optionWords(o), disabled: o.disabled,
           description: o.description, disabledReason: o.disabledReason,
         }))}
         onAction={choose(p)}

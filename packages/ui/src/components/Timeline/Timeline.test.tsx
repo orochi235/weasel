@@ -139,6 +139,32 @@ describe('Timeline', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('hands back the tracks as they were when a drag is canceled, keys sharing a time in their order', () => {
+    const input = [{ kind: 'sampled', label: 'hold', keys: [{ t: 500, value: 1 }, { t: 500, value: 2 }], onTick: () => {} }] as Track[];
+    const onInput = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={input} onInput={onInput} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect((onInput.mock.calls.at(-1)![0][0] as SampledTrack<number>).keys.map((k) => k.value)).toEqual([1, 2]);
+  });
+
+  it('refuses a key deleted or stepped from the keyboard while a key drag is held', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    const key = screen.getAllByTestId('timeline-key')[1];
+    fireEvent.pointerDown(key, { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.keyDown(key, { key: 'Backspace' });
+    fireEvent.keyDown(key, { key: 'ArrowRight' });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10, buttons: 1 });
+    fireEvent.keyDown(key, { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.pointerUp(document, { clientX: 350, clientY: 10 });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(screen.getAllByTestId('timeline-key')[1], { key: 'Backspace' });
+    expect(onChange).toHaveBeenCalledTimes(2);
+  });
+
   it('preserves a track’s callbacks across an edit', () => {
     const input = tracks();
     const onChange = vi.fn();
@@ -366,6 +392,28 @@ describe('Timeline', () => {
       renderWithIcons(<Timeline {...base} tracks={threeKeys()} selection={{ trackPath: [0], keyIndex: 2 }} onSelectionChange={onSelectionChange} />);
       fireEvent.click(screen.getAllByTestId('timeline-segment')[0]);
       expect(onSelectionChange).toHaveBeenLastCalledWith(null);
+    });
+
+    it('closes when a consumer holding the selection selects a key', () => {
+      const { rerender } = renderWithIcons(<Timeline {...base} tracks={threeKeys()} selection={null} renderKeyEditor={editor} />);
+      openPicker();
+      rerender(<Timeline {...base} tracks={threeKeys()} selection={{ trackPath: [0], keyIndex: 2 }} renderKeyEditor={editor} />);
+      expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
+      expect(screen.getByTestId('key-editor')).toBeInTheDocument();
+    });
+
+    it('closes when an edit from outside moves its track\'s keys, and stays open for one that leaves their times', () => {
+      const { rerender } = renderWithIcons(<Timeline {...base} tracks={threeKeys()} />);
+      openPicker();
+      const revalued = threeKeys();
+      (revalued[0] as SampledTrack<number>).keys[1].value = 7;
+      rerender(<Timeline {...base} tracks={revalued} />);
+      expect(screen.getByTestId('easing-preview')).toBeInTheDocument();
+      const moved = threeKeys();
+      (moved[0] as SampledTrack<number>).keys[0].t = 500;
+      (moved[0] as SampledTrack<number>).keys.sort((a, b) => a.t - b.t);
+      rerender(<Timeline {...base} tracks={moved} />);
+      expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
     });
 
     it('closes on a press on empty lane', () => {

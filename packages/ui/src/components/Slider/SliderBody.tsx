@@ -12,6 +12,7 @@ import { useSliderRegions } from './SliderRegion';
 import { SliderStopLabels, SliderTicks, labeledStopsOf } from './SliderMarks';
 import { SliderThumb } from './SliderThumb';
 import { READOUT } from './stops';
+import { reachOf } from './thumbDragValues';
 import { onThumbKeyDown } from './thumbKeys';
 import type { SliderProps, Thumb } from './types';
 import { useBoxes } from './useBoxes';
@@ -56,20 +57,21 @@ export function SliderBody<T extends Thumb = Thumb>(
   const bandRef = useRef<SVGPathElement | null>(null);
   const thumbEls = useRef<(HTMLDivElement | null)[]>([]);
   // The track, the rail and the painted layer, then each thumb, in their own px as the pointers are.
-  const boxes = useBoxes(() => [trackRef.current, railRef.current, paintRef.current, ...thumbs.map((_, i) => thumbEls.current[i] ?? null)], thumbs.length, { untransformed: true });
-  const thumbLength = useBoxes(() => [thumbEls.current[0] ?? null], thumbs.length, { untransformed: true })[0]?.width || 14;
+  const boxes = useBoxes(() => [trackRef.current, railRef.current, paintRef.current, ...thumbs.map((_, i) => thumbEls.current[i] ?? null)], { untransformed: true });
+  const thumbLength = useBoxes(() => [thumbEls.current[0] ?? null], { untransformed: true })[0]?.width || 14;
   const shape = useRun().shape;
   const direction = useInlineDirection(trackRef);
   const { geometry, run } = useSliderGeometry({
     shape, thumbFit: props.thumbFit ?? 'inside', thumbLength, direction,
     rail: () => railRef.current, railFrame: () => railFrameRef.current, band: () => bandRef.current,
   });
-  const scale = useScale(span, strict, step, { scale: props.scale, stopSnapPx: props.stopSnapPx, stepOrigin: props.range?.[0] });
+  const scale = useScale(span, strict, step, { scale: props.scale, stopSnapPx: props.stopSnapPx, range: props.range });
   const { valueToFraction, valueAt } = scale;
   const drags = useThumbDrags<T>({ props, span, scale, geometry });
   const hold = useSliderHold(props);
-  const regionAt = useSliderRegions<T>({ props: hold.refuses ? { ...props, regionDrag: false } : props, min, max, scale, geometry, direction });
-  const pointer = hold.pointer(useSliderPointer<T>({ thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput: drags.onInput, onChange: drags.onChange, drags }));
+  const regions = useSliderRegions<T>({ props: hold.refuses ? { ...props, regionDrag: false } : props, min, max, scale, geometry, direction, busy: drags.held });
+  // One press owns the slider: a second finger starts neither a thumb drag nor a region drag.
+  const pointer = hold.pointer(useSliderPointer<T>({ thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput: drags.onInput, onChange: drags.onChange, drags: { ...drags, held: () => drags.held() || regions.held() } }));
   const keyDown = hold.keys(onThumbKeyDown<T>({ thumbs, stops, min, max, step, constraint, keyStep: props.keyStep, range: props.range, onInput: drags.onInput, onChange: drags.onChange, direction: run ? screenDirection(run) : direction }));
 
   const placement = props.readoutPlacement ?? 'none';
@@ -86,19 +88,18 @@ export function SliderBody<T extends Thumb = Thumb>(
     <>
       {(props.showStops ?? true) && stops.length > 0 && <SliderTicks stops={stops} valueToFraction={valueToFraction} geometry={geometry} />}
       {labeled.length > 0 && (
-        <SliderStopLabels labeled={labeled} last={stopList.length - 1} selected={thumbs.map(t => t.value)} valueToFraction={valueToFraction} geometry={geometry} />
+        <SliderStopLabels labeled={labeled} selected={thumbs.map(t => t.value)} valueToFraction={valueToFraction} geometry={geometry} />
       )}
       {/* One keyed list, so a region keeps its element, and its focus, as thumbs come and go after it. */}
       {[...thumbs.flatMap((thumb, i) => [
-        regionAt(i),
+        regions.at(i),
         <SliderThumb<T>
           key={`thumb-${i}`}
           thumb={thumb}
           shape={thumb.shape ?? props.thumbShape}
           fraction={valueToFraction(thumb.value)}
           geometry={geometry}
-          min={min}
-          max={max}
+          limits={reachOf(thumbs, i, { min, max, step, ordered: constraint === 'ordered' })}
           own={props}
           hold={hold.thumb}
           display={display}
@@ -111,7 +112,7 @@ export function SliderBody<T extends Thumb = Thumb>(
           onKeyDown={keyDown(i)}
           onContextMenu={pointer.onThumbContextMenu(i)}
         />,
-      ]), regionAt(thumbs.length)]}
+      ]), regions.at(thumbs.length)]}
     </>
   );
 

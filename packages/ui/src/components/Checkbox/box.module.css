@@ -20,7 +20,7 @@
   transition: background-color var(--wzl-motion-fast), border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }
 
-.checkbox:hover:not(:disabled) {
+.checkbox:hover:not(:disabled, [aria-disabled='true']) {
   border-color: var(--wzl-fg-muted);
 }
 
@@ -59,7 +59,7 @@
   --_check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cline x1='3' y1='7' x2='11' y2='7' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
-.checkbox:disabled {
+.checkbox:is(:disabled, [aria-disabled='true']) {
   opacity: 0.5;
   filter: var(--wzl-disabled-filter);
   cursor: not-allowed;

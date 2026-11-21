@@ -260,4 +260,18 @@ describe('UnitField held stepper', () => {
     fireEvent.pointerUp(up);
     expect(onChange).toHaveBeenCalledWith(2);
   });
+
+  // A disabled button may never hear the release, so a hold the field stops taking has to end on its own.
+  it('ends a hold when the field turns disabled, so re-enabling it steps nothing', () => {
+    vi.useFakeTimers();
+    const onChange = vi.fn();
+    const { rerender } = render(<UnitField value={1} steppers onChange={onChange} aria-label="Width" />);
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Increment' }));
+    rerender(<UnitField value={1} steppers disabled onChange={onChange} aria-label="Width" />);
+    act(() => { vi.advanceTimersByTime(1000); });
+    rerender(<UnitField value={1} steppers onChange={onChange} aria-label="Width" />);
+    onChange.mockClear();
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

@@ -16,6 +16,16 @@ describe('Slider keyboard', () => {
     expect(onChange.mock.calls[0][0][0].value).toBe(6);
   });
 
+  it('sends nothing for a key that cannot move the thumb, and keeps the key from the page', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    const { container } = render(<Slider min={0} max={10} step={1} thumbs={[{ value: 10 }]} onInput={onInput} onChange={onChange} />);
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    for (const key of ['End', 'ArrowRight', 'PageUp']) expect(fireEvent.keyDown(thumb, { key })).toBe(false);
+    expect(onInput).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('shift+arrow moves by 10 steps; PageUp/Down do the same', () => {
     // Drive a controlled Slider so each keystroke sees the updated value.
     function Harness() {
