@@ -282,11 +282,13 @@ export function PerceptualColorSlidersDemo() {
           />
         </Field>
 
-        <Field label="Indices band (dynamic, allowShiftAll)" output={indices.join(', ')}>
+        <Field label="Indices band (dynamic, ordered, allowShiftAll)" output={indices.join(', ')}>
           <Slider
             min={0} max={1000} step={1}
+            constraint="ordered"
             thumbs={indices.map(value => ({ value }))}
-            onInput={ts => setIndices(ts.map(t => Math.round(t.value)).sort((a, b) => a - b))}
+            onInput={ts => setIndices(ts.map(t => Math.round(t.value)))}
+            onChange={ts => setIndices(ts.map(t => Math.round(t.value)).sort((a, b) => a - b))}
             onAddThumb={at => ({ value: Math.round(at) })}
             onRemoveThumb={() => true}
             allowShiftAll
