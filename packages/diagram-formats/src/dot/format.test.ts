@@ -20,4 +20,12 @@ describe('DIAGRAM_DOT', () => {
     expect(DIAGRAM_DOT.detect('graph TD\n  A{Choice} --> B')).toBe(false);
     expect(DIAGRAM_DOT.detect('{"format": "weasel-diagram"}')).toBe(false);
   });
+
+  it('refuses a keyword that runs into a name, which the reader would refuse', () => {
+    for (const text of ['digraphs {}', 'graphite { }', 'strict graphé { }']) {
+      expect(DIAGRAM_DOT.detect(text)).toBe(false);
+      expect(() => readDot(text)).toThrow();
+    }
+    expect(DIAGRAM_DOT.detect('digraph{ a }')).toBe(true);
+  });
 });

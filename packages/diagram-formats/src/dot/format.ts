@@ -5,7 +5,7 @@ import { writeDot } from './write';
 
 /** Comments, and the quoted strings a comment marker inside of opens none. */
 const COMMENTS = /("(?:[^"\\]|\\[\s\S])*")|\/\*[\s\S]*?\*\/|\/\/[^\n]*|^[^\S\n]*#[^\n]*/gm;
-const KEYWORD = /^\s*(?:strict\s+)?(?:di)?graph\s*/i;
+const KEYWORD = /^\s*(?:strict\s+)?(?:di)?graph(?![\w\u0080-￿])\s*/i;
 const ID = /^(?:[A-Za-z_\u0080-￿][\w\u0080-￿]*|-?(?:\.\d+|\d+(?:\.\d*)?)|"(?:[^"\\]|\\.)*")?\s*\{/;
 
 /** Whether `text`, its comments gone, opens with a graph header: the keywords, an id, then `{`. An HTML id is read

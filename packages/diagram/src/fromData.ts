@@ -111,6 +111,7 @@ function nodeSpecs(
     body: (trait) => ({
       diagram: {
         ...trait, ...bodyLayoutOf(body, trait, look.measure), ...(n.pinned === true ? { pinned: true } : {}), ...(n.style !== undefined ? { style: n.style } : {}),
+        ...(folded(n) ? { folded: n.rows!.slice(1) } : {}),
         ...ownNodeStyle(n.colors),
       },
       fill: { paint: { color: style.fill } },

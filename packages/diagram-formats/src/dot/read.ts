@@ -170,7 +170,7 @@ function positions(nodes: DataNode[], attrs: ReadonlyMap<string, Attrs>, bb: str
   const [llx, lly, right, top] = box?.length === 4 && box.every(Number.isFinite)
     ? box : [xs.reduce(least, Infinity), ys.reduce(least, Infinity), xs.reduce(most, -Infinity), ys.reduce(most, -Infinity)];
   const placed = nodes.map((n, i) => ({
-    ...n, at: { x: round(centers[i]![0]! - llx! - size(n).width / 2), y: round(top - centers[i]![1]! - size(n).height / 2) },
+    ...n, ...size(n), at: { x: round(centers[i]![0]! - llx! - size(n).width / 2), y: round(top - centers[i]![1]! - size(n).height / 2) },
   }));
   return { nodes: placed, size: { width: round(right - llx!), height: round(top - lly!) } };
 }

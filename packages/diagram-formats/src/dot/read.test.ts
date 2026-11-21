@@ -118,6 +118,7 @@ describe('reading DOT', () => {
     const p = page('digraph { a [pos="10,20!", width=1, height=1]; b [pos="100,-30"]; }');
     expect(node(p.data, 'a').at).toEqual({ x: 0, y: 0 });
     expect(node(p.data, 'b').at).toEqual({ x: 99, y: 68 });
+    expect(node(p.data, 'b')).toMatchObject({ width: 54, height: 36 });
     expect(p).toMatchObject({ width: 153, height: 104 });
     expect(page('digraph { a [pos="Infinity,1"]; }').data.nodes[0]!.at).toBeUndefined();
   });

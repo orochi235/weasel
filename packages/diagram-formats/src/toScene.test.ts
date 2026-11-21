@@ -117,12 +117,28 @@ describe('documentSpecs on a page with nodes that have no place', () => {
     expect(typeof label.label.at).toBe('object');
   });
 
-  it('leaves the nodes that have a place where they are', () => {
+  it('leaves the nodes that have a place where they are, when layout puts nothing off the page', () => {
     const page = asGraph(graph().pages[0]!);
     const pinned: DiagramDocument = {
-      pages: [{ ...page, data: { ...page.data, nodes: page.data.nodes.map((n) => (n.id === 'c' ? { ...n, at: { x: 500, y: 20 } } : n)) } }],
+      pages: [{ ...page, data: { ...page.data, nodes: page.data.nodes.map((n) => (n.id === 'a' ? { ...n, at: { x: 500, y: 20 } } : n)) } }],
     };
-    expect(at(documentSpecs(pinned, { measure: MEASURE }).specs, 'c')).toEqual({ x: 500, y: 20 });
+    expect(at(documentSpecs(pinned, { measure: MEASURE }).specs, 'a')).toEqual({ x: 500, y: 20 });
+  });
+
+  it('moves everything onto the page when layout puts a node above or left of the placed ones', () => {
+    const page = asGraph(graph().pages[0]!);
+    const pinned: DiagramDocument = {
+      pages: [{ ...page, data: { ...page.data, nodes: page.data.nodes.map((n) => (n.id === 'd' ? { ...n, at: { x: 10, y: 10 } } : n)) } }],
+    };
+    const { specs, pages } = documentSpecs(pinned, { measure: MEASURE });
+    const boxes = ['a', 'b', 'c', 'd'].map((id) => boxOf(specs, id));
+    for (const b of boxes) {
+      expect(b.x).toBeGreaterThanOrEqual(0);
+      expect(b.y).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width).toBeLessThanOrEqual(pages[0]!.width);
+      expect(b.y + b.height).toBeLessThanOrEqual(pages[0]!.height);
+    }
+    expect(boxes[0]!.y).toBeLessThan(boxes[3]!.y);
   });
 });
 

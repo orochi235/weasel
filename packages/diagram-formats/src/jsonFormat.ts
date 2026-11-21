@@ -28,6 +28,7 @@ const isDiagramJson = (value: unknown): value is Partial<DiagramJson> =>
 function pageProblem(page: Record<string, unknown>, kind: PageKind): string | null {
   const label = typeof page.id === 'string' ? `${JSON.stringify(page.id)} ` : '';
   if (typeof page.id !== 'string') return 'with no string id';
+  if (page.name !== undefined && typeof page.name !== 'string') return `${label}whose name is not a string`;
   for (const key of ['width', 'height'] as const) {
     const n = page[key];
     if (typeof n !== 'number' || !Number.isFinite(n) || n < 0) return `${label}whose ${key} is not a finite size`;
@@ -57,6 +58,10 @@ function read(text: string): ImportResult {
     const problem = pageProblem(p as Record<string, unknown>, (kind as PageKind | undefined) ?? 'graph');
     if (problem !== null) throw new Error(`A weasel diagram document with a page ${problem}`);
   }
+  const cross = (json as { crossPageEdges?: unknown }).crossPageEdges;
+  if (cross !== undefined && !(Array.isArray(cross) && cross.every(isEdge))) {
+    throw new Error('A weasel diagram document whose crossPageEdges is not a list of edges with string from and to');
+  }
   const theme = (json as { theme?: unknown }).theme;
   if (theme !== undefined && typeof theme !== 'string') {
     const errors = diagramThemeErrors(theme);
@@ -73,6 +78,8 @@ function read(text: string): ImportResult {
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const isEdge = (value: unknown): boolean => isRecord(value) && typeof value.from === 'string' && typeof value.to === 'string';
 
 /** `record` with `from` renamed to `to`, or `record` itself when it has no `from`. */
 function renamed(record: Record<string, unknown>, from: string, to: string): Record<string, unknown> {

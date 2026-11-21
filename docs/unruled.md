@@ -3530,3 +3530,10 @@ Calls the lanes made without a ruling:
   below it, and leaves out one whose column has no floor below it at all, since walkers have no gravity. The swarm
   button can therefore insert fewer than forty. Giving walkers gravity, so they fall into a pit and die, was the
   alternative.
+
+## Audit round sixty-five (2026-11-21): diagram-formats
+
+- 2026-11-21 (the fixer's call): laying out a graph page that has some nodes placed and some not moves everything
+  on it, placed nodes included, by one offset when layout puts a node above or left of the page, so every node
+  lands on the page and the arrangement holds. Keeping each placed node at its `at` and leaving the rest off the
+  page was the alternative.

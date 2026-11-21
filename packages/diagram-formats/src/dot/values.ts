@@ -3,6 +3,7 @@ import type { MarkerRef } from '@weasel-js/core';
 import type { Outline } from '@weasel-js/diagram';
 import { rgbaToHex } from '@weasel-js/paint';
 import { markupLines } from '../graphRead';
+import { x11NotCss } from './x11';
 import type { DotValue } from './parse';
 import { getOwn, sameList } from '@weasel-js/registry';
 
@@ -63,16 +64,11 @@ function hsvHex(h: number, s: number, v: number): string {
   return rgbaToHex([f(5), f(3), f(1)]);
 }
 
-/** The X11 names Graphviz reads as other colors than CSS gives them. */
-const X11_NOT_CSS: Readonly<Record<string, string>> = {
-  gray: '#bebebe', grey: '#bebebe', green: '#00ff00', maroon: '#b03060', purple: '#a020f0',
-};
-
-/** An X11 name as CSS reads it: one {@link X11_NOT_CSS} names as its hex, `grayN` and `greyN` (N of 100) as a gray, and
- *  any other as itself. */
+/** An X11 name as CSS reads it: one CSS lacks or draws differently as its hex, `grayN` and `greyN` (N of 100) as a
+ *  gray, and any other as itself. */
 function x11Color(name: string): string {
   const lower = name.toLowerCase();
-  const differs = getOwn(X11_NOT_CSS, lower);
+  const differs = x11NotCss(lower);
   if (differs !== undefined) return differs;
   const level = /^gr[ae]y(\d{1,3})$/.exec(lower);
   if (level !== null && Number(level[1]) <= 100) {

@@ -11,6 +11,7 @@ import {
   layoutOwnsRoute, poolAxisOf, sequencePartOf, sequenceRootOf, titleIdOf, type DataContainer, type DataEdge, type DataCluster, type DataLane, type DataNode, type DiagramLabel,
   type DiagramRouter, type DiagramTheme, type EdgeStyle, type NodeStyle, type BodyDivider, type BodyLayout, type HeaderBand, type Row,
 } from '@weasel-js/diagram';
+import { readMarks } from './markReaders';
 
 /** A scene node as the readers see it. The formats are 2D documents, so its pose is a rect. */
 export interface ReadNode {
@@ -162,6 +163,8 @@ export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: D
   const dividers = body?.dividers ?? [];
   const fields = rows.some((r) => typeof dataOf(r).bodyField === 'string');
   const slots = slotRows(scene, node, body, texts, band !== undefined && rows.some(isHeader));
+  const hidden = Array.isArray(trait.folded) ? (trait.folded as Row[]) : null;
+  const marks = readMarks(scene, node, { stroke: colorOf(data.stroke), text: colors?.text ?? themed.text }, theme);
   return {
     id: node.id,
     outline: trait.outline as DataNode['outline'],
@@ -169,8 +172,9 @@ export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: D
       ? { rows: withDividers([...rows.map((r) => ({
           index: dataOf(r).bodyRow as number,
           row: isHeader(r) ? headerRow(dataOf(r), band!, aside === undefined ? undefined : textOf(scene, aside.id), ownSize) : textRow(dataOf(r), ownSize),
-        })), ...slots], dividers) }
+        })), ...slots], dividers).concat(hidden ?? []) }
       : { lines: rows.map((r) => dataOf(r).text as string) }),
+    ...(hidden !== null ? { collapsed: true } : {}),
     at: moved(pose, page),
     width: pose.width,
     height: pose.height,
@@ -179,6 +183,7 @@ export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: D
     ...(trait.pinned === true ? { pinned: true } : {}),
     ...(body !== undefined ? { padding: body.padding, gap: body.gap, verticalAlign: body.verticalAlign } : {}),
     ...(trait.ports !== undefined && !same(trait.ports, DEFAULT_PORTS) ? { ports: trait.ports as DataNode['ports'] } : {}),
+    ...(marks.length > 0 ? { marks } : {}),
   };
 }
 
@@ -291,6 +296,7 @@ export function readRegion(scene: ReadScene, node: ReadNode, page: Vec2, theme: 
     role,
     ...optional('label', textOf(scene, titleIdOf(node.id))),
     ...(members.length > 0 ? { members } : {}),
+    ...(role === 'container' ? optional('reorder', container.reorder) : {}),
     ...(role === 'pool' ? { axis, lanes: lanesOf(scene, node.id, axis, theme) } : {}),
     ...(container.fitted === true ? {} : { box: { ...moved(pose, page), width: pose.width, height: pose.height } }),
     ...(trait.pinned === true ? { pinned: true } : {}),

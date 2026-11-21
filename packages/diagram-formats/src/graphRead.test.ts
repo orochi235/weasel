@@ -25,6 +25,8 @@ describe('text', () => {
 
   it('reads markup as lines, breaking at <br> and dropping tags', () => {
     expect(markupLines('<b>Bold</b> text<br/>next <i>line</i>')).toEqual(['Bold text', 'next line']);
+    expect(markupLines('one<BR ALIGN="LEFT"/>two<br class=x>three<bR\n/>four')).toEqual(['one', 'two', 'three', 'four']);
+    expect(markupLines('a<bra>b')).toEqual(['ab']);
   });
 });
 

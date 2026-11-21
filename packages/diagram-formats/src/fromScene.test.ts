@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { composeWorldPose, createScene, scenePoseAdapter, type InvocationCtx, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
-import { diagramScene, offPageOps, setDiagramColor, withDiagramRegistry, type DataEdge, type DataNode } from '@weasel-js/diagram';
+import { diagramScene, offPageOps, setDiagramColor, withDiagramRegistry, type DataEdge, type DataNode, type Row } from '@weasel-js/diagram';
 import { documentFromScene } from './fromScene';
 import { documentSpecs } from './toScene';
-import { DOC_DATA, MEASURE, docScene, drawnScene, type DocScene } from './testing/docScene';
+import { DOC_DATA, MEASURE, THEME, docScene, drawnScene, type DocScene } from './testing/docScene';
+import type { DiagramDocument } from './document';
 import { asGraph } from './testing/asGraph';
 import { moveAction } from '@weasel-js/editing';
 
@@ -68,6 +69,20 @@ describe('documentFromScene', () => {
     expect(nodeOf(scene, 'p1', 'a').style).toBe('accent');
   });
 
+  it("reads a shape's marks back, leaving out what they default to", () => {
+    const marks: DataNode['marks'] = [
+      { d: 'M0 0 L1 1' },
+      { d: 'M0 1 L1 0', fill: '#ff0000', opacity: 0.5 },
+      { d: 'M0 0 L1 0', stroke: '#00ff00', strokeWidth: 3, dash: [2, 2] },
+      { text: 'note', at: { u: 1, v: 0 }, self: { u: 0, v: 1 }, offset: { x: 2, y: -2 }, color: '#0000ff', style: { fontSize: 9, bold: true, italic: true } },
+      { text: 'plain', at: { u: 0.5, v: 1 } },
+    ];
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 300, height: 200,
+      data: { nodes: [{ id: 'a', lines: ['A'], at: { x: 10, y: 10 }, width: 80, height: 40, marks }], edges: [] } }] };
+    const back = documentFromScene(drawnScene(documentSpecs(doc, { measure: MEASURE, theme: THEME })));
+    expect(asGraph(back.pages[0]!).data.nodes[0]!.marks).toEqual(marks);
+  });
+
   it('keeps only the colors the theme does not give', () => {
     const scene = docScene();
     expect(nodeOf(scene, 'p1', 'b').colors).toEqual({ fill: '#123456' });
@@ -104,6 +119,25 @@ describe('documentFromScene', () => {
     expect(edgeOf(scene, 'ab')).toMatchObject({ routed: [{ x: 200, y: 160 }] });
     expect(edgeOf(scene, 'ab').waypoints).toBeUndefined();
     expect(edgeOf(scene, 'bm')).toMatchObject({ router: 'avoid', routed: [{ x: 300, y: 260 }] });
+  });
+
+  it('reads a collapsed node back collapsed, with the rows it hides', () => {
+    const rows: Row[] = [{ kind: 'header', text: 'User' }, { kind: 'field', label: 'id', value: 'int' }, { kind: 'divider' }, { kind: 'label', text: 'save()' }];
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 300, height: 200,
+      data: { nodes: [{ id: 'u', rows, collapsed: true, at: { x: 10, y: 10 } }], edges: [] } }] };
+    const back = asGraph(documentFromScene(drawnScene(documentSpecs(doc, { measure: MEASURE, theme: THEME }))).pages[0]!).data.nodes[0]!;
+    expect(back).toMatchObject({ collapsed: true });
+    expect(back.rows?.map((r) => r.kind)).toEqual(['header', 'field', 'divider', 'label']);
+    expect(back.rows?.slice(1)).toEqual(rows.slice(1));
+  });
+
+  it("reads a container's reorder axis, as it does a cluster's", () => {
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 300, height: 200, data: {
+      nodes: [{ id: 'a', lines: ['A'], at: { x: 20, y: 40 } }, { id: 'b', lines: ['B'], at: { x: 120, y: 40 } }], edges: [],
+      containers: [{ id: 'k', role: 'container', members: ['a', 'b'], reorder: 'y' }],
+    } }] };
+    const back = documentFromScene(drawnScene(documentSpecs(doc, { measure: MEASURE, theme: THEME })));
+    expect(asGraph(back.pages[0]!).data.containers?.[0]).toMatchObject({ id: 'k', reorder: 'y' });
   });
 
   it('reads containers, with their members and boxes on their page', () => {
