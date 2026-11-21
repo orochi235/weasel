@@ -92,6 +92,32 @@ describe('curve layers and the edit protocol', () => {
     expect((onPoints.mock.calls[0][0] as typeof points).points[1].y).toBeCloseTo(8);
   });
 
+  it('an unmount mid-drag puts the preview back and reports the cancel', () => {
+    const onInput = vi.fn();
+    const onCancel = vi.fn();
+    const onChange = vi.fn();
+    const layer = <KeyframeLayer label="x" state={STATE} onInput={onInput} onChange={onChange} onCancel={onCancel} />;
+    const { unmount } = render(editor(layer));
+    down(100, 0);
+    move(140, 20);
+    unmount();
+    expect((onInput.mock.calls.at(-1)![0] as KeyframeLayerState).keys).toEqual(KEYS);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
+    cleanup();
+
+    onInput.mockClear();
+    onCancel.mockClear();
+    const { rerender } = render(editor(layer));
+    down(100, 0);
+    move(140, 20);
+    rerender(editor(null));
+    up(140, 20);
+    expect((onInput.mock.calls.at(-1)![0] as KeyframeLayerState).keys).toEqual(KEYS);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('Escape cancels a drag: the preview goes back, onCancel fires, nothing commits', () => {
     const onInput = vi.fn();
     const onChange = vi.fn();

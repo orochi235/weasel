@@ -62,12 +62,13 @@ export function useLayerGesture(host: LayerGestureHost) {
     setActiveEntry(null);
   }, []);
 
+  // A layer leaving the editor mid-drag is an unmount mid-drag, and cancels the gesture.
   const live = (entry: LayerEntry) => hostRef.current.layers().includes(entry);
 
   const onMoveRef = useLatest((e: PointerEvent) => {
     const a = activeRef.current;
     if (!a) return;
-    if (!live(a.entry)) return;
+    if (!live(a.entry)) { sessionRef.current?.cancel(); return; }
     const model = hostRef.current.toModel(e);
     if (!model) return;
     const current = working(a);
@@ -78,7 +79,7 @@ export function useLayerGesture(host: LayerGestureHost) {
   const onEndRef = useLatest((e: PointerEvent) => {
     const a = activeRef.current;
     if (!a) return;
-    if (!live(a.entry)) { finish(); return; }
+    if (!live(a.entry)) { onCancelRef.current(); return; }
     const current = working(a);
     const ctx = hostRef.current.ctxFor(readModifiers(e));
     const finalState = a.gesture.onCommit ? a.gesture.onCommit(current, ctx) : current;
@@ -92,7 +93,6 @@ export function useLayerGesture(host: LayerGestureHost) {
   const onCancelRef = useLatest(() => {
     const a = activeRef.current;
     if (!a) return;
-    if (!live(a.entry)) { finish(); return; }
     const current = working(a);
     const restored = a.gesture.onCancel ? a.gesture.onCancel(current, hostRef.current.ctxFor(NO_MODIFIERS)) : a.startSelfState;
     if (a.sent || restored !== current) send(a, restored);
