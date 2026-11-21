@@ -12,7 +12,10 @@ import { useBarLead } from './barLeadHandle';
 import { useMenuLeast } from './useMenuLeast';
 import { useRun } from '../Run';
 import { PopFace, popIconAttr } from './popFace';
+import { useDisabled, useReadOnly } from '../Disabled';
 import s from './Bar.module.css';
+
+const ignore = (): void => {};
 
 /** Where a bar's menu reads and writes the values its rows show: the bar's own. */
 export interface BarMenuSources {
@@ -40,7 +43,8 @@ export interface BarMenuProps extends BarMenuSources {
  * A bar's cell for a group drawn `as: 'menu'`: a button that opens the group
  * as the DOM menu the context menu host draws — actions as items, flags as
  * checked items, choices as radio rows, nested groups as submenus. Drawn as a
- * bar of a movable `ToolbarDock`, a grip before the button is its handle.
+ * bar of a movable `ToolbarDock`, a grip before the button is its handle. Disabled, it opens nothing; read-only, it
+ * opens on rows that change nothing.
  */
 export function BarMenu({ label, icon, description, schema, values, onChange, over, defaultOpen }: BarMenuProps) {
   const registry = useActionsRegistry();
@@ -50,21 +54,25 @@ export function BarMenu({ label, icon, description, schema, values, onChange, ov
   const handle = useBarLead(null);
   const lead = useMenuLeast(trigger.button);
 
+  const off = useDisabled().disabled;
+  // Read-only rows still show their values, which leaving `onChange` out would drop from the menu.
+  const write = useReadOnly().readOnly && onChange ? ignore : onChange;
+
   // `defaultOpen` holds until the menu has opened once or the reader has touched it.
   const pending = useRef(defaultOpen === true);
 
-  const resolve = () => resolveMenu(schema, { values, onChange, over });
+  const resolve = () => resolveMenu(schema, { values, ...(write ? { onChange: write } : {}), ...(over ? { over } : {}) });
   const showQuiet = useLatest(() => trigger.show(resolve(), 'pointer', true, side));
 
   // An action registered after this mounts can be what makes the menu non-empty, so a shut default retries on each change.
   useEffect(() => {
-    if (!pending.current) return;
+    if (!pending.current || off) return;
     const attempt = () => {
       if (pending.current && showQuiet.current()) pending.current = false;
     };
     attempt();
     return registry?.subscribe(attempt);
-  }, [registry, showQuiet]);
+  }, [registry, showQuiet, off]);
 
   return (
     <DockBarContext.Provider value={null}>
