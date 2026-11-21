@@ -56,9 +56,10 @@ export function sceneFromWire(wire: object): object {
   return decodeSnapshot(wire) as object;
 }
 
-/** The most bytes a result can hold: their base64 crosses as one string, and V8 caps a string at 2^29 − 24
- *  characters. An RGBA render past it is about 10 000 × 10 000 pixels. */
-export const MAX_RESULT_BYTES = Math.floor((2 ** 29 - 24) / 4) * 3;
+/** The most bytes a result can hold: their base64 crosses inside one protocol message, which Node reads as one
+ *  string, and V8 caps a string at 2^29 − 24 characters. 1 MiB of it is left for the message around the base64.
+ *  An RGBA render past it is about 10 000 × 10 000 pixels. */
+export const MAX_RESULT_BYTES = Math.floor((2 ** 29 - 24 - 2 ** 20) / 4) * 3;
 
 /** Throw unless `bytes` of a `what` fit one result, naming the limit and the way past it. */
 export function checkResultBytes(bytes: number, what: string): void {

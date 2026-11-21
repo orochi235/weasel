@@ -663,9 +663,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-21 (my call, audit round 63): headless's host waits up to 30 seconds for a page script to call
   `serveHeadlessPage`, so one may call it once its fonts load, and fails the open at once with the error a page
   script threw first. The wait is fixed; whether `NodeRasterHostOptions` should take it is unsettled.
-- 2026-11-20 (my call, audit round 49): headless refuses a result past `MAX_RESULT_BYTES` (its base64 must fit one
-  V8 string), an RGBA render in Node before a browser starts and a PNG in the page once encoded, rather than send a
-  larger one in pieces. Whether the host should instead carry a large result across in chunks is unsettled.
+- 2026-11-20 (my call, audit round 49): headless refuses a result past `MAX_RESULT_BYTES` (its base64, and the
+  message around it, must fit one V8 string), an RGBA render in Node before a browser starts and a PNG in the page
+  once encoded, rather than send a larger one in pieces. Whether the host should instead carry a large result across in chunks is unsettled.
 - 2026-11-11 (my call, icons second property pass): headless also refuses in Node a `sourceRect` whose width or
   height is zero or less and a `scale` with a zero axis, which the page's `renderSceneToPixels` refuses, so such a
   request no longer starts Chromium to fail there.

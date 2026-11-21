@@ -21,15 +21,15 @@ describe('readPageRequest', () => {
     ({ scene: {}, sourceRect: { x: 0, y: 0, width: side, height: side }, scale: { x: 1, y: 1 }, format });
 
   it('refuses an RGBA render whose bytes one result cannot carry, before a browser starts', () => {
-    expect(() => readPageRequest(req(11_600, 'rgba'))).toThrow(/11600 × 11600 RGBA render is 538240000 bytes, past the 402653166.*tiles/);
+    expect(() => readPageRequest(req(11_600, 'rgba'))).toThrow(new RegExp(`11600 × 11600 RGBA render is 538240000 bytes, past the ${MAX_RESULT_BYTES}.*tiles`));
     expect(() => readPageRequest(req(10_000, 'rgba'))).not.toThrow();
     // A PNG's size is known only once the page has encoded it.
     expect(() => readPageRequest(req(11_600, 'png'))).not.toThrow();
   });
 
-  it('holds a result to what its base64 can be as one string', () => {
-    expect(Math.ceil(MAX_RESULT_BYTES / 3) * 4).toBeLessThanOrEqual(2 ** 29 - 24);
+  it('holds a result to what its base64 and the protocol message around it can be as one string', () => {
+    expect(Math.ceil(MAX_RESULT_BYTES / 3) * 4 + 64 * 1024).toBeLessThanOrEqual(2 ** 29 - 24);
     expect(() => checkResultBytes(MAX_RESULT_BYTES, 'a PNG')).not.toThrow();
-    expect(() => checkResultBytes(MAX_RESULT_BYTES + 1, 'a PNG')).toThrow(/a PNG is 402653167 bytes/);
+    expect(() => checkResultBytes(MAX_RESULT_BYTES + 1, 'a PNG')).toThrow(new RegExp(`a PNG is ${MAX_RESULT_BYTES + 1} bytes`));
   });
 });
