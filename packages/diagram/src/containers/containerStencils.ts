@@ -13,7 +13,7 @@ import { diagramThemeOf } from '../theme/resolve';
 import { themeWrites, type ThemedScene } from '../theme/themeWrites';
 import { DIAGRAM_THEME_KEY } from '../theme/types';
 import { firstLanes, regionSpecs, type ContainerBuildOptions } from './regionSpecs';
-import { diagramContainerOf, titleIdOf, type DiagramContainer } from './trait';
+import { bodyBox, diagramContainerOf, titleIdOf, type DiagramContainer } from './trait';
 import type { Rect } from '@weasel-js/geom';
 import * as ops from '@weasel-js/core/ops';
 
@@ -112,10 +112,10 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
   const boundary = at !== null ? (axis === 'y' ? at.y : at.x) : axis === 'y' ? b.y + b.height : b.x + b.width;
   // Centered on the boundary it goes in at: the stack orders lanes by where they sit.
   const start = boundary - NEW_LANE_SIZE / 2;
-  const offset = trait.header?.size ?? 0;
+  const body = bodyBox(b, trait.header);
   const pose: RectPose = axis === 'y'
-    ? { x: b.x + offset, y: start, width: b.width - offset, height: NEW_LANE_SIZE }
-    : { x: start, y: b.y + offset, width: NEW_LANE_SIZE, height: b.height - offset };
+    ? { x: body.x, y: start, width: body.width, height: NEW_LANE_SIZE }
+    : { x: start, y: body.y, width: NEW_LANE_SIZE, height: body.height };
   const id = scene.mintId() as string;
   const specs = localizeInScene(scene, regionSpecs('lane', axis, pose, `Lane ${lanes.length + 1}`, {
     id, layer: pool.layer, parent: poolId, ...(style ? { style } : {}),

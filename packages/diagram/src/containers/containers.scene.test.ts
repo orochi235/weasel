@@ -181,6 +181,19 @@ describe('pools in a scene', () => {
     expect(pose(scene, pool)).toMatchObject({ height: 160 });
   });
 
+  it('keep their lanes in the body of a pool drawn narrower than its header', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 20, height: 240 });
+    const lane = addLane(scene as never, pool)!;
+    for (const id of lanesOf(scene as never, pool)) expect(pose(scene, id)).toMatchObject({ x: 20, width: 0 });
+    expect(lanesOf(scene as never, pool)).toContain(lane);
+    let n = 0;
+    const built = containerBuild(stencil('pool-rows'), { x: 0, y: 0, width: 20, height: 240 }, { layer: 'main', newId: () => `q${n++}` });
+    const lanes = built.ops.map((op) => (op as unknown as { args: { node: { id: string; pose: RectPose } } }).args.node)
+      .filter((node) => node.id !== built.id && !node.id.endsWith('/title'));
+    expect(lanes.map((node) => node.pose)).toMatchObject([{ x: 20, width: 0 }, { x: 20, width: 0 }]);
+  });
+
   it('grow by a lane added at the end, in one entry', () => {
     const scene = makeScene();
     const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
