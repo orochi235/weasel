@@ -3550,3 +3550,9 @@ Calls the lanes made without a ruling:
   against a config with the other auto paths already resolved. A group's `motif` and a leaf's `.dialog` are not carried:
   each is a renderer that runs in the frame's document, as a custom `.render` is, and the workshop draws the plain card
   and row.
+
+## Audit round sixty-five (2026-11-21): geom paths, part two
+
+- 2026-11-21 (the fixer's call): `mergeRegion` throws a `RangeError` for a `tolerance` that is not a positive finite
+  number, as `pathFaceArrangement` does for its `flattenTolerance`; a zero one had dropped every piece and answered an
+  empty path. Clamping it to a floor, as `resamplePath` and `simplifyPath` do, was the alternative.

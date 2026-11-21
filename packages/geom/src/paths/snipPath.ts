@@ -81,7 +81,7 @@ export function snipPathAt(
     .filter((s) => closed || (s > EDGE && s < n - EDGE))
     .sort((p, q) => p - q);
 
-  const below = stops.filter((s) => s < found.at);
+  const below = stops.filter((s) => s <= found.at);
   const above = stops.filter((s) => s > found.at);
   const keep: SegmentRun[] = [];
   let removed: Seg[];
