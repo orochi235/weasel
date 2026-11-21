@@ -127,7 +127,10 @@ function StringControl(p: PropertyStringFieldProps) {
   const value = p.mixed ? '' : (p.value ?? '');
   const waits = p.onInput !== undefined && (p.inputWaitMs ?? 0) > 0;
   const input = useDebouncedText(value, p.onInput ?? noInput, p.inputWaitMs ?? 0);
-  const typed = useTextDraft({ ...p, value, onInput: waits ? input.type : p.onInput });
+  // Text still waiting goes out before what ends the edit, as the edit protocol orders them.
+  const flushed = <A extends unknown[]>(then: ((...args: A) => void) | undefined) =>
+    waits && then ? (...args: A) => { input.flush(); then(...args); } : then;
+  const typed = useTextDraft({ ...p, value, onInput: waits ? input.type : p.onInput, onCancel: flushed(p.onCancel) });
   const named = useFieldControl({ id: p.id, 'aria-label': p.name });
   const hold = useNativeHold({ ...p, 'aria-describedby': named['aria-describedby'] });
   const edit = waits
