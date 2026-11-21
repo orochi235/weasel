@@ -13,6 +13,20 @@ function gradientOf(svg: string, index = 0): Record<string, unknown> {
 const RECT = '<rect x="0" y="0" width="10" height="10" fill="url(#g)"/>';
 
 describe('gradient collection', () => {
+  it('resolves a stop-color of currentColor against the cascade', () => {
+    const r = parseSvg(
+      `<svg xmlns="http://www.w3.org/2000/svg" color="#00ff00">`
+      + `<linearGradient id="g" color="#ff0000"><stop offset="0" stop-color="currentColor"/>`
+      + `<stop offset="1" style="stop-color: currentcolor; color: #0000ff"/></linearGradient>`
+      + `<linearGradient id="h"><stop offset="0" stop-color="currentColor"/></linearGradient>`
+      + `${RECT}<rect width="1" height="1" fill="url(#h)"/></svg>`,
+    );
+    expect(r.warnings).toEqual([]);
+    const stops = (i: number) => (r.nodes[i] as { fill: { paint: { stops: unknown[] } } }).fill.paint.stops;
+    expect(stops(0)).toEqual([{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }]);
+    expect(stops(1)).toEqual([{ offset: 0, color: '#00ff00' }]);
+  });
+
   it('finds a gradient declared outside <defs>', () => {
     const r = parseSvg(
       `<svg xmlns="http://www.w3.org/2000/svg">`
