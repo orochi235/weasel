@@ -1,5 +1,5 @@
 import { createEmitter, getOwn } from '@weasel-js/registry';
-import { type ConfigAnswers, stableStringify } from '../protocol/messages';
+import { type ConfigAnswers, configKey } from '../protocol/messages';
 import type { SchemaAnswers } from '../protocol/schema';
 import { storyConfig } from './globals';
 
@@ -14,7 +14,7 @@ export interface AnswerBook extends SchemaAnswers {
 
 const KEPT_CONFIGS = 50;
 
-const UNANSWERED = stableStringify({ hidden: [], errors: {}, disabled: [], resolved: {} });
+const UNANSWERED = configKey({ hidden: [], errors: {}, disabled: [], resolved: {} });
 
 interface Answer {
   hidden: readonly string[];
@@ -30,14 +30,14 @@ export function createAnswerBook(): AnswerBook {
   const byConfig = new Map<string, Answer>();
   const answered = createEmitter();
   const held = new Map<string, number>();
-  const keyOf = (config: unknown) => stableStringify(storyConfig(config));
+  const keyOf = (config: unknown) => configKey(storyConfig(config));
   const answerFor = (config: unknown) => byConfig.get(keyOf(config));
 
   return {
     record(answers) {
       const disabled = answers.disabled ?? [];
       const resolved = answers.resolved ?? {};
-      const key = stableStringify({ hidden: answers.hidden, errors: answers.errors, disabled, resolved });
+      const key = configKey({ hidden: answers.hidden, errors: answers.errors, disabled, resolved });
       const changed = key !== (byConfig.get(answers.configKey)?.key ?? UNANSWERED);
       byConfig.delete(answers.configKey);
       byConfig.set(answers.configKey, { hidden: answers.hidden, errors: answers.errors, disabled, resolved, key });

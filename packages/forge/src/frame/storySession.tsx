@@ -1,6 +1,6 @@
 import { flushSync } from 'react-dom';
 import type { createKitRoot } from '../kitIcons';
-import { type FromFrame, type StoryGlobals, stableStringify, type ToFrame } from '../protocol/messages';
+import { type FromFrame, type StoryGlobals, configKey, type ToFrame } from '../protocol/messages';
 import { answerSchema, schemaActionAt } from '../protocol/schema';
 import type { Decorator, LoadedStory, StoryContext } from '../story/types';
 import { fault } from './fault';
@@ -84,7 +84,7 @@ export function createStorySession({
         onError={(error) => send(fault('render', error, at))}
       />,
     );
-    const key = stableStringify(config);
+    const key = configKey(config);
     if (key !== answeredKey) {
       answeredKey = key;
       send({ type: 'answers', answers: { configKey: key, ...answerSchema(story.config, config) } });

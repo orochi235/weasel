@@ -1,3 +1,5 @@
+import { isPlainObject, stableStringify as coreStableStringify } from '@weasel-js/core';
+import { setOwn } from '@weasel-js/registry';
 import type { SchemaDescription } from './schema.ts';
 
 export const PROTOCOL_VERSION = 1;
@@ -28,7 +30,7 @@ export interface CssVarReport {
 
 /** Visibility and validation answers, keyed by the config they were computed for. */
 export interface ConfigAnswers {
-  /** `stableStringify(config)` of the config the frame evaluated. */
+  /** `configKey(config)` of the config the frame evaluated. */
   configKey: string;
   hidden: string[];
   errors: Record<string, string[]>;
@@ -121,3 +123,25 @@ export interface PortHandoff {
 export const FRAME_HELLO = 'weaselforge:hello';
 
 export { stableStringify } from '@weasel-js/core';
+
+/** A number JSON cannot write, which it would write as `null`. */
+const unwritable = (v: unknown): v is number => typeof v === 'number' && !Number.isFinite(v);
+
+/**
+ * `stableStringify` of a config, with `Infinity`, `-Infinity`, and `NaN` written apart from each other and from
+ * `null`, so two configs that differ only there are two configs. Answers and frame-local args are keyed by it.
+ */
+export function configKey(config: unknown): string {
+  const seen = new Map<object, unknown>();
+  const tagged = (v: unknown): unknown => {
+    if (unwritable(v)) return { $type: 'number', value: String(v) };
+    if (!Array.isArray(v) && !isPlainObject(v)) return v;
+    if (seen.has(v)) return seen.get(v);
+    const out: unknown[] | Record<string, unknown> = Array.isArray(v) ? [] : {};
+    seen.set(v, out);
+    if (Array.isArray(out)) for (const member of v as unknown[]) out.push(tagged(member));
+    else for (const [key, member] of Object.entries(v)) setOwn(out, key, tagged(member));
+    return out;
+  };
+  return coreStableStringify(tagged(config));
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { stableStringify } from '../protocol/messages';
+import { configKey, stableStringify } from '../protocol/messages';
 import { createAnswerBook } from './answers';
 
 const config = { a: { b: { c: 1 } }, d: 2 };
@@ -105,5 +105,21 @@ describe('createAnswerBook', () => {
     first();
     book.record({ configKey: key, hidden: ['d'], errors: {} });
     expect(fn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('answers for configs that differ only in a number JSON cannot write', () => {
+  it('are kept apart', () => {
+    const book = createAnswerBook();
+    book.record({ configKey: configKey({ reach: Infinity }), hidden: ['detail'], errors: {} });
+    expect(book.hidden('detail', { reach: Infinity })).toBe(true);
+    expect(book.hidden('detail', { reach: -Infinity })).toBe(false);
+    expect(book.hidden('detail', { reach: NaN })).toBe(false);
+    expect(book.hidden('detail', { reach: null })).toBe(false);
+  });
+
+  it('come from keys that tell the infinities, NaN, and null apart, and nothing else', () => {
+    expect(new Set([Infinity, -Infinity, NaN, null].map((v) => configKey({ v: [v] }))).size).toBe(4);
+    expect(configKey({ b: 1, a: [2] })).toBe(stableStringify({ a: [2], b: 1 }));
   });
 });
