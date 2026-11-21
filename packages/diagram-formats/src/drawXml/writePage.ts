@@ -33,27 +33,34 @@ function parentsOf(data: DiagramData, known: ReadonlySet<string>, warn: Warn): M
     parent.set(member, holder);
     return true;
   };
+  // What the diagram lets each hold: a container or lane, nodes and containers; a cluster, nodes and clusters.
+  const nodeIds = new Set(data.nodes.map((n) => n.id));
+  const containerIds = new Set((data.containers ?? []).filter((c) => c.role === 'container').map((c) => c.id));
+  const clusterIds = new Set((data.clusters ?? []).map((g) => g.id));
+  const regionHolds = (m: string): boolean => nodeIds.has(m) || containerIds.has(m);
+  const clusterHolds = (m: string): boolean => nodeIds.has(m) || clusterIds.has(m);
   for (const c of data.containers ?? []) {
-    for (const m of c.members ?? []) claim(m, c.id);
-    // Only a pool's lanes are drawn, and written; a container's hold nothing, so their members stay where they are.
+    // Only a pool's lanes are drawn, and written; a container's hold nothing, and a pool's own members are not drawn in it.
+    if (c.role !== 'pool') for (const m of c.members ?? []) if (regionHolds(m)) claim(m, c.id);
     for (const lane of c.role === 'pool' ? c.lanes ?? [] : []) {
       claim(lane.id, c.id);
-      for (const m of lane.members ?? []) claim(m, lane.id);
+      for (const m of lane.members ?? []) if (regionHolds(m)) claim(m, lane.id);
     }
   }
   // A member an earlier cluster holds stays in it, so only a region's members can move into a cluster.
   const regions = new Set((data.containers ?? []).flatMap((c) => [c.id, ...(c.role === 'pool' ? c.lanes ?? [] : []).map((l) => l.id)]));
   const inRegion = (m: string): boolean => regions.has(parent.get(m) ?? '');
   for (const g of data.clusters ?? []) {
-    const held = new Set(g.members.map((m) => parent.get(m)));
+    const members = g.members.filter(clusterHolds);
+    const held = new Set(members.map((m) => parent.get(m)));
     const region = held.size === 1 ? [...held][0] : undefined;
     if (region !== undefined && regions.has(region) && !parent.has(g.id) && !within(g.id, region)) {
       parent.set(g.id, region);
-      for (const m of g.members) parent.delete(m);
-    } else if (g.members.some(inRegion)) {
+      for (const m of members) parent.delete(m);
+    } else if (members.some(inRegion)) {
       warn('Groups reaching into a container or lane kept only the members outside it.');
     }
-    for (const m of g.members) claim(m, g.id);
+    for (const m of members) claim(m, g.id);
   }
   return parent;
 }

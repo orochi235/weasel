@@ -7,7 +7,7 @@ import {
 import type { Vec2 } from '@weasel-js/core/math';
 import { offsetOf, type CellGeometry, type RawCell } from './cells';
 import { cellLines } from './cellText';
-import { BOX_NAMES, ORTHOGONAL_EDGE_STYLES, STADIUM_ARC, markerOf, shapeEntry, turnedAway } from './mapping';
+import { BOX_NAMES, ORTHOGONAL_EDGE_STYLES, STADIUM_ARC, flippedAway, markerOf, shapeEntry, turnedAway } from './mapping';
 import { checkedColor } from '../colorCheck';
 import { hasStyleName, shapeOf, styleFlag, styleNumber, type CellStyle } from './style';
 import { getOwn } from '@weasel-js/registry';
@@ -27,13 +27,15 @@ function roundEnded(style: CellStyle, box: { width: number; height: number } | u
   return (styleNumber(style, 'arcSize') ?? ABSOLUTE_ARC) >= Math.min(box.width, box.height);
 }
 
-/** The outline a vertex `box` big draws as. A shape it does not know is a rect, and one its `direction` turns from how
- *  the diagram draws it is drawn unturned, each with a warning. */
+/** The outline a vertex `box` big draws as. A shape it does not know is a rect, and one its `direction`, `rotation`, or a flip
+ *  turns from how the diagram draws it is drawn unturned, each with a warning. */
 export function outlineOf(style: CellStyle, warn: Warn, box?: { width: number; height: number }): Outline {
+  if ((styleNumber(style, 'rotation') ?? 0) % 360 !== 0) warn('Rotated shapes were drawn unrotated.');
   const shape = shapeOf(style);
   const known = shapeEntry(shape, (key) => style.values.get(key));
   if (known !== undefined) {
     if (turnedAway(known, style.values.get('direction'))) warn(`Shapes of kind "${shape}" turned another way were drawn as the diagram turns them.`);
+    if (flippedAway(known, (key) => style.values.get(key))) warn(`Shapes of kind "${shape}" flipped another way were drawn as the diagram draws them.`);
     return known.outline;
   }
   const rounded = styleFlag(style, 'rounded');
@@ -49,10 +51,13 @@ function colorOf(style: CellStyle, key: string, warn: Warn, otherwise?: string):
   return raw === 'none' ? 'transparent' : checkedColor(raw, 'Draw-style XML', warn);
 }
 
+/** A stroke's dash in world units. A draw app scales `dashPattern` by the stroke's width unless `fixDash` is set. */
 function dashOf(style: CellStyle): number[] | undefined {
   if (!styleFlag(style, 'dashed')) return undefined;
-  const pattern = (style.values.get('dashPattern') ?? '').split(/\s+/).map(Number).filter((n) => Number.isFinite(n) && n > 0);
-  return pattern.length > 0 ? pattern : [3, 3];
+  const parsed = (style.values.get('dashPattern') ?? '').split(/\s+/).map(Number).filter((n) => Number.isFinite(n) && n > 0);
+  const pattern = parsed.length > 0 ? parsed : [3, 3];
+  const scale = styleFlag(style, 'fixDash') ? 1 : styleNumber(style, 'strokeWidth') ?? 1;
+  return scale > 0 ? pattern.map((n) => n * scale) : pattern;
 }
 
 const defined = <T extends object>(o: { [K in keyof T]?: T[K] | undefined }): Partial<T> | undefined => {
@@ -70,11 +75,12 @@ export function nodeColorsOf(style: CellStyle, warn: Warn): Partial<NodeStyle> |
 }
 
 /** A container's, pool's, or lane's colors: a swimlane's body is its `swimlaneFillColor`, where it names one, and else its
- *  `fillColor`, which a draw app paints in the header. */
+ *  `fillColor`, which a draw app paints in the header. The diagram outlines a region undashed, so a dash warns. */
 export function regionColorsOf(style: CellStyle, warn: Warn): Partial<NodeStyle> | undefined {
-  const colors = nodeColorsOf(style, warn);
+  const { dash, ...colors } = nodeColorsOf(style, warn) ?? {};
+  if (dash !== undefined) warn('Dashed outlines on containers, pools, and lanes were drawn solid.');
   const body = colorOf(style, 'swimlaneFillColor', warn);
-  return body === undefined ? colors : { ...colors, fill: body };
+  return defined<NodeStyle>(body === undefined ? colors : { ...colors, fill: body });
 }
 
 /** A cell's value as text. */

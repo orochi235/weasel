@@ -84,9 +84,9 @@ export function pageCells(model: Element): PageCells {
     if (parent?.edge === true) return 'label';
     if (hasStyleName(cell.style, 'group')) return 'group';
     if (isSwimlane(cell)) {
-      if (parent !== undefined && kindOf(parent) === 'pool') return 'lane';
       const role = cell.style.values.get(ROLE_KEY);
       if (role === 'pool' || role === 'container') return role;
+      if (parent !== undefined && kindOf(parent) === 'pool') return 'lane';
       return holdsLanes(cell, childrenOf(cell.id)) ? 'pool' : 'container';
     }
     return styleFlag(cell.style, 'container') ? 'container' : 'shape';

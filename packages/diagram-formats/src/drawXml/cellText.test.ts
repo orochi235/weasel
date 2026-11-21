@@ -20,6 +20,13 @@ describe('cellLines', () => {
     expect(cellLines('Lead<div>Then</div>', true)).toEqual(['Lead', 'Then']);
   });
 
+  it('breaks lines at table rows, lists, and other blocks, and at a break with attributes', () => {
+    expect(cellLines('<table><tr><td>a</td></tr><tr><td>b</td></tr></table>', true)).toEqual(['a', 'b']);
+    expect(cellLines('x<ul><li>a</li></ul>y<pre>p</pre><blockquote>q</blockquote>r<hr>s', true)).toEqual(['x', 'a', 'y', 'p', 'q', 'r', 's']);
+    expect(cellLines('a<br style="">b<BR class="c"/>c', true)).toEqual(['a', 'b', 'c']);
+    expect(cellLines('<pref>a</pref><bring>b</bring>', true)).toEqual(['ab']);
+  });
+
   it('decodes entities', () => {
     expect(cellLines('a&nbsp;&amp;&nbsp;b &lt;c&gt; &#65;&#x42;', true)).toEqual(['a & b <c> AB']);
     expect(cellLines('&#99999999;', true)).toEqual(['&#99999999;']);

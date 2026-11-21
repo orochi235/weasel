@@ -48,6 +48,23 @@ describe('draw-style XML bar markers', () => {
   });
 });
 
+describe('draw-style XML rotated and flipped shapes', () => {
+  const warningsOf = async (style: string) => (await readCells(vertex('n', style, 'width="80" height="40"'))).warnings;
+
+  it('warns of a rotated shape, drawn unrotated', async () => {
+    expect(await warningsOf('rounded=0;rotation=45;')).toContain('Rotated shapes were drawn unrotated.');
+    expect(await warningsOf('rounded=0;rotation=360;')).toEqual([]);
+  });
+
+  it('warns of a flip that changes a shape, and not of one its written style holds or that draws the same', async () => {
+    expect(await warningsOf('triangle;direction=north;flipV=1;')).toContain('Shapes of kind "triangle" flipped another way were drawn as the diagram draws them.');
+    expect(await warningsOf('shape=cube;boundedLbl=1;')).toContain('Shapes of kind "cube" flipped another way were drawn as the diagram draws them.');
+    expect(await warningsOf('shape=cube;boundedLbl=1;flipH=1;')).toEqual([]);
+    expect(await warningsOf('ellipse;flipH=1;')).toEqual([]);
+    expect(await warningsOf('rounded=0;flipV=1;')).toEqual([]);
+  });
+});
+
 describe('draw-style XML rounded boxes', () => {
   it('reads an absoluteArcSize arc in pixels against the box', async () => {
     const { data } = await readCells(
@@ -86,6 +103,20 @@ describe('draw-style XML pools and containers', () => {
     });
     expect(region(data, 'pool').role).toBe('pool');
   });
+
+  it('writes containers, pools, and lanes undashed, as the diagram draws them, and warns of a dashed one read', async () => {
+    const { text } = DIAGRAM_DRAW_XML.write!({ ...doc({
+      nodes: [], edges: [],
+      containers: [
+        { id: 'k', role: 'container', box: { x: 0, y: 0, width: 100, height: 80 }, colors: { dash: [5, 5] } },
+        { id: 'pool', role: 'pool', axis: 'y', box: { x: 200, y: 0, width: 400, height: 200 }, lanes: [{ id: 'l' }] },
+      ],
+    }), theme: 'paper' });
+    expect(text).not.toContain('dashed=1');
+    const { data, warnings } = await readCells(vertex('c', 'swimlane;dashed=1;weaselRole=container;', 'width="100" height="80"'));
+    expect(region(data, 'c').colors?.dash).toBeUndefined();
+    expect(warnings).toContain('Dashed outlines on containers, pools, and lanes were drawn solid.');
+  });
 });
 
 describe('draw-style XML clusters', () => {
@@ -97,6 +128,20 @@ describe('draw-style XML clusters', () => {
     });
     expect(data.clusters?.find((g) => g.id === 'A')?.members).toEqual(['a', 'b', 'c']);
     expect(data.clusters?.some((g) => g.members.includes('B'))).toBe(false);
+  });
+});
+
+describe('draw-style XML dashes', () => {
+  it('reads a dash pattern scaled by the stroke width, as a draw app draws it, unless the style fixes it', async () => {
+    const at = (style: string) => vertex('n', style, 'width="80" height="40"');
+    expect(node((await readCells(at('strokeWidth=3;dashed=1;dashPattern=3 2;'))).data, 'n').colors?.dash).toEqual([9, 6]);
+    expect(node((await readCells(at('strokeWidth=3;dashed=1;dashPattern=3 2;fixDash=1;'))).data, 'n').colors?.dash).toEqual([3, 2]);
+  });
+
+  it('writes a dash fixed to its lengths and reads it back the same', async () => {
+    const { text, data } = await roundTrip({ nodes: [{ id: 'n', lines: ['N'], at: { x: 0, y: 0 }, colors: { dash: [6, 4] } }], edges: [] });
+    expect(text).toContain('fixDash=1;');
+    expect(node(data, 'n').colors?.dash).toEqual([6, 4]);
   });
 });
 
@@ -148,6 +193,16 @@ describe('draw-style XML fonts', () => {
       ] }], edges: [],
     }));
     expect(warnings).toContain('Text rows styled apart within one shape were written in its first row\'s style.');
+  });
+
+  it('warns of letter spacing and of weights the format has no bit for, and of rows apart in only those', () => {
+    const rows = (a: object, b: object) => DIAGRAM_DRAW_XML.write!(doc({
+      nodes: [{ id: 'n', at: { x: 0, y: 0 }, rows: [{ kind: 'label', text: 'T', style: a }, { kind: 'label', text: 'U', style: b }] }], edges: [],
+    })).warnings;
+    const apart = 'Text rows styled apart within one shape were written in its first row\'s style.';
+    expect(rows({ tracking: 0.1 }, {})).toEqual(expect.arrayContaining(['Letter spacing on text rows was left out.', apart]));
+    expect(rows({ weight: 300 }, {})).toEqual(expect.arrayContaining(['Font weights other than regular and bold were written as the nearer of the two.', apart]));
+    expect(rows({ weight: 700 }, { bold: true })).toEqual([]);
   });
 });
 
