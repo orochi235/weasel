@@ -33,9 +33,15 @@ function findZone(x: number, y: number, kind: string): DropZone | null {
   const el = document.elementFromPoint(x, y);
   if (!el) return null;
   for (const z of dropZones) {
-    if (z.el.contains(el) && z.accepts(kind)) return z;
+    if (z.el.contains(el) && zoneAccepts(z, kind)) return z;
   }
   return null;
+}
+
+function zoneAccepts(zone: DropZone, kind: string): boolean {
+  let ok = false;
+  zoneCall('accepts', () => { ok = zone.accepts(kind); });
+  return ok;
 }
 
 function defaultGhost(source: HTMLElement, payload: DragPayload): HTMLElement {
