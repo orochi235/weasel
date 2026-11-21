@@ -3235,3 +3235,10 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (my call, audit round 54): a group or layer `composite` string that is no `CompositeOp` (`'multiply'`,
   or an inherited name such as `'constructor'`) throws a `RangeError` naming it and listing the operators, rather
   than being drawn as `source-over`. It still ends the frame, as the bare `TypeError` it replaces did.
+## Audit round fifty-nine (2026-11-20): panel cells
+
+- 2026-11-20 (the fixer's call, audit round 59): across several selected kinds, `SelectionPanel` draws a leaf only
+  where every kind's leaf at that path means the same: they may differ in how they are drawn (name, description,
+  icon, pair, control, conditions), never in a default, a bound, an option's value, a field, or a function such as an
+  action's `run`. Reading and writing each node under its own kind's leaf was the alternative, and would keep such a
+  leaf on the panel.
