@@ -1,6 +1,6 @@
 import { setOwn } from '@weasel-js/registry';
 import type { RawToken } from '../dtcg/types.ts';
-import { declaredSteps } from './steps.ts';
+import { listedSteps } from './steps.ts';
 import type { Issue, Layer, Provenance } from './types.ts';
 
 /** The tokens one `derive` produces, where each came from, and the names whose production failed. */
@@ -35,7 +35,7 @@ export function createTokenSink(issues: Issue[]): TokenSink {
       setOwn(provenance, name, { layer, rule, pinned: false });
     },
     failEntry(name, entry, steps) {
-      for (const step of steps ?? declaredSteps(entry)) failed.add(`${name}-${step}`);
+      for (const step of steps ?? listedSteps(entry)) failed.add(`${name}-${step}`);
     },
   };
 }

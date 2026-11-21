@@ -5,7 +5,7 @@ import type { SemanticRule, ThemeDefinition } from '../definition.ts';
 import { mergeChain, type Lookup } from './merge.ts';
 import { ruleProblem } from './ruleShape.ts';
 import { withoutUnsafeNames } from './safeNames.ts';
-import { alwaysDeclaredSteps, declaredSteps } from './steps.ts';
+import { alwaysDeclaredSteps, declaredSteps as stepsOf, type StepScope } from './steps.ts';
 
 /** The axes one token's value can change with. */
 export interface AxisDependency {
@@ -128,6 +128,8 @@ function producer(nodes: Map<string, Node>): (name: string, n: Node, always: boo
 export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): Record<string, AxisDependency> {
   const def = withoutUnsafeNames(mergeChain(definition, lookup));
   const nodes = new Map<string, Node>();
+  const scope: StepScope = { axes: def.axes ?? {}, seeds: def.seeds };
+  const declaredSteps = (entry: unknown) => stepsOf(entry, scope);
   const produce = producer(nodes);
 
   /** Step token → the ramps that declare it. */
@@ -138,7 +140,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     nodes.set(stepsKey(name), shape);
     const n = node();
     scan(ramp, n);
-    const always = new Set(alwaysDeclaredSteps(ramp));
+    const always = new Set(alwaysDeclaredSteps(ramp, scope));
     for (const step of declaredSteps(ramp)) {
       produce(`${name}-${step}`, n, always.has(step));
       stepRamps.set(`${name}-${step}`, (stepRamps.get(`${name}-${step}`) ?? new Set()).add(name));
@@ -147,7 +149,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   for (const [name, s] of Object.entries(def.scales ?? {})) {
     const n = node();
     scan(s, n);
-    const always = new Set(alwaysDeclaredSteps(s));
+    const always = new Set(alwaysDeclaredSteps(s, scope));
     for (const step of declaredSteps(s)) produce(`${name}-${step}`, n, always.has(step));
   }
 

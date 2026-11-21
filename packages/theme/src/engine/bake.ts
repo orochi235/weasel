@@ -56,7 +56,7 @@ function table(def: ThemeDefinition, axes: AxisDefs, lookup: Lookup | undefined)
 function definitionOrder(def: ThemeDefinition): string[] {
   const names = new Set<string>();
   for (const layer of [def.ramps, def.scales]) {
-    for (const [name, entry] of Object.entries(layer ?? {})) for (const step of declaredSteps(entry)) names.add(`${name}-${step}`);
+    for (const [name, entry] of Object.entries(layer ?? {})) for (const step of declaredSteps(entry, def)) names.add(`${name}-${step}`);
   }
   for (const layer of [def.semantics, def.components, def.pins]) for (const name of Object.keys(layer ?? {})) names.add(name);
   return [...names];
@@ -118,7 +118,7 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
     if (value !== undefined) setOwn(tokens, name, value);
   }
 
-  const ramps = Object.fromEntries(Object.entries(definition.ramps ?? {}).map(([name, entry]) => [name, declaredSteps(entry)]));
+  const ramps = Object.fromEntries(Object.entries(definition.ramps ?? {}).map(([name, entry]) => [name, declaredSteps(entry, merged)]));
   return {
     name: definition.name,
     extends: definition.extends ?? null,

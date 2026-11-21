@@ -222,4 +222,20 @@ describe('axisDependencies', () => {
     expect(Object.keys(deps)).toEqual(['a']);
     expect(Object.hasOwn(deps, '__proto__')).toBe(false);
   });
+
+  it('lists only the steps derive gives, reading a seed that names one', () => {
+    const def: ThemeDefinition = {
+      name: 't',
+      axes: D.axes,
+      seeds: { s: { by: 'mode', dark: '500', light: '600' } },
+      ramps: {
+        gray: { kind: 'lightness', steps: ['{seeds.s}', '900'], lightness: [0.97, 0.16] },
+        bad: { kind: 'lightness', steps: ['50', 'by'], lightness: [0.97, 0.16] },
+      },
+      scales: { space: { steps: ['sm', 'a b'], base: 4, step: 4 } },
+    };
+    const deps = axisDependencies(def);
+    expect(Object.keys(deps).sort()).toEqual(['gray-500', 'gray-600', 'gray-900']);
+    expect(deps['gray-500'].all).toEqual(['mode']);
+  });
 });

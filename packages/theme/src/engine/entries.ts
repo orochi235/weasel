@@ -107,9 +107,6 @@ class Reader {
 
 export const isRecord = isPlainObject;
 
-export const stepNames = (x: unknown): string[] | undefined =>
-  Array.isArray(x) && x.every((s) => typeof s === 'string') ? x : undefined;
-
 export function rampColors(name: string, r: Record<string, unknown>, steps: readonly string[], ctx: SettleContext): Record<string, string> | undefined {
   const path = `ramps.${name}`;
   const read = new Reader(ctx.issues);

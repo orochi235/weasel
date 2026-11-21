@@ -1,7 +1,7 @@
 import { setOwn, getOwn } from '@weasel-js/registry';
 import { type AxisDefs, isByAxis, mergeAxes } from '../axes.ts';
 import type { ThemeDefinition } from '../definition.ts';
-import { alwaysDeclaredSteps } from './steps.ts';
+import { alwaysDeclaredSteps, type StepScope } from './steps.ts';
 
 /** Finds a definition by name, for resolving `extends`. */
 export type Lookup = (name: string) => ThemeDefinition | undefined;
@@ -9,10 +9,10 @@ export type Lookup = (name: string) => ThemeDefinition | undefined;
 const LAYERS = ['seeds', 'ramps', 'scales', 'semantics', 'components', 'pins'] as const;
 
 /** Tokens `def` produces itself at every selection (its ramp and scale steps, semantics, and components), which it derives rather than inherits pinned. */
-function ownTokens(def: ThemeDefinition): Set<string> {
+function ownTokens(def: ThemeDefinition, scope: StepScope): Set<string> {
   const names = new Set<string>([...Object.keys(def.semantics ?? {}), ...Object.keys(def.components ?? {})]);
   for (const layer of [def.ramps, def.scales]) {
-    for (const [name, entry] of Object.entries(layer ?? {})) for (const step of alwaysDeclaredSteps(entry)) names.add(`${name}-${step}`);
+    for (const [name, entry] of Object.entries(layer ?? {})) for (const step of alwaysDeclaredSteps(entry, scope)) names.add(`${name}-${step}`);
   }
   return names;
 }
@@ -39,9 +39,9 @@ export function mergeChain(def: ThemeDefinition, lookup?: Lookup, seen: Readonly
   const parent = mergeChain(parentDef, lookup, new Set([...seen, def.name]));
   const out: Record<string, unknown> = { ...def };
   for (const layer of LAYERS) out[layer] = { ...(parent[layer] ?? {}), ...(def[layer] ?? {}) };
-  const shadowed = ownTokens(def);
-  const inherited = Object.entries(parent.pins ?? {}).filter(([name]) => !shadowed.has(name));
   const axes = mergeAxes(parent.axes ?? {}, def.axes ?? {});
+  const shadowed = ownTokens(def, { axes, seeds: out.seeds as ThemeDefinition['seeds'] });
+  const inherited = Object.entries(parent.pins ?? {}).filter(([name]) => !shadowed.has(name));
   const parentPins: Record<string, unknown> = parent.pins ?? {};
   const parentPin = (name: string) => (shadowed.has(name) ? undefined : getOwn(parentPins, name));
   const own = Object.entries(def.pins ?? {}).map(([name, v]) => [name, fillFromParent(v, parentPin(name), axes)]);

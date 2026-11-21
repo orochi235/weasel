@@ -1,14 +1,14 @@
 import { getOwn, hasOwnKey, setOwn } from '@weasel-js/registry';
 import { fullAxisChoice, isByAxis, pick, type AxisChoice, type Varying } from '../axes.ts';
 import type { PinValue, ThemeDefinition } from '../definition.ts';
-import { isSafeTokenName, unsafeTokenName } from '../dtcg/types.ts';
 import { axisIssues } from './axisIssues.ts';
-import { isRecord, rampColors, scaleValues, settle, stepNames, type SettleContext } from './entries.ts';
+import { isRecord, rampColors, scaleValues, settle, type SettleContext } from './entries.ts';
 import { mergeChain, type Lookup } from './merge.ts';
 import { pinAt, pinToken } from './pinValues.ts';
 import { checkReferences, inferTypes } from './references.ts';
 import { withoutUnsafeNames } from './safeNames.ts';
 import { checkSemantics, deriveSemantics } from './semantics.ts';
+import { stepsProblem } from './steps.ts';
 import { createTokenSink, type TokenSink } from './tokenSink.ts';
 import type { DeriveResult, Issue } from './types.ts';
 
@@ -43,15 +43,10 @@ function settleEntry(entry: unknown, path: string, ctx: SettleContext): SettledE
     r[key] = s.value;
     settled = s.ok && settled;
   }
-  const steps = stepNames(r.steps);
-  if (!steps && settled) issues.push({ kind: 'invalid', path: `${path}.steps`, message: 'expected a list of step names' });
-  if (steps?.includes('by')) {
-    issues.push({ kind: 'invalid', path: `${path}.steps`, message: '"by" is reserved and cannot name a step' });
-    return { ok: false, steps };
-  }
-  const unsafe = steps?.find((s) => !isSafeTokenName(s));
-  if (unsafe !== undefined) {
-    issues.push({ kind: 'invalid', path: `${path}.steps`, message: unsafeTokenName(unsafe) });
+  const steps = Array.isArray(r.steps) && r.steps.every((x) => typeof x === 'string') ? (r.steps as string[]) : undefined;
+  const problem = steps || settled ? stepsProblem(r.steps) : undefined;
+  if (problem !== undefined) {
+    issues.push({ kind: 'invalid', path: `${path}.steps`, message: problem });
     return { ok: false, steps };
   }
   return settled && steps ? { ok: true, r, steps } : { ok: false, steps };

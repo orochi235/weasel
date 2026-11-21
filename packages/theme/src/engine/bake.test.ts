@@ -87,6 +87,11 @@ describe('bake', () => {
     expect(Object.keys(bake(varied).tokens)).toEqual(['gray-50', 'gray-800', 'gray-900']);
   });
 
+  it('records the step names a seed gives, not the seed', () => {
+    const seeded: ThemeDefinition = { name: 'v', axes: P.axes, seeds: { s: '500' }, ramps: { gray: { ...P.ramps!.gray, steps: ['{seeds.s}', '800'] } } };
+    expect(bake(seeded).ramps).toEqual({ gray: ['500', '800'] });
+  });
+
   it('serializes to JSON and back unchanged', () => {
     expect(JSON.parse(JSON.stringify(baked))).toEqual(baked);
   });
