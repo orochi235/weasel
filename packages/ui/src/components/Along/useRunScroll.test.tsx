@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { KitSettingsProvider } from '@weasel-js/react';
 import type { FocusEvent as ReactFocusEvent, PointerEvent as ReactPointerEvent } from 'react';
-import { arcShape, lineShape, runPlaces, trackRun, type RunSpot } from '@weasel-js/geom';
+import { arcShape, lineShape, runPlaces, trackRun, type RunSpot, type TrackRun } from '@weasel-js/geom';
 import { positionAt, useRunScroll } from './useRunScroll';
 
 // Five items 20 long with 15 between run to 160 along a run 100 long; jsdom puts every box at (0, 0).
@@ -12,7 +12,8 @@ const GAP = 15;
 const lengths = [20, 20, 20, 20, 20];
 const keyOf = (el: Element): string | null => el.getAttribute('data-run-item');
 
-function mount(total: number, opts: { modReorders?: boolean; dragPx?: number } = {}) {
+function mount(total: number, opts: { modReorders?: boolean; dragPx?: number; along?: TrackRun } = {}) {
+  const on = opts.along ?? run;
   const root = document.createElement('div');
   for (let i = 0; i < lengths.length; i++) {
     const item = document.createElement('button');
@@ -22,15 +23,20 @@ function mount(total: number, opts: { modReorders?: boolean; dragPx?: number } =
   document.body.append(root);
   const ref = { current: root };
   const drawn = { offset: 0 };
+  const size = { total };
   const hook = renderHook(() => {
-    const scroll = useRunScroll({ root: ref, keyOf, run, total, lengths, modReorders: opts.modReorders, spots: (): RunSpot[] => runPlaces(lengths, GAP, run.length, 'start', drawn.offset) });
+    const scroll = useRunScroll({ root: ref, keyOf, run: on, total: size.total, lengths, modReorders: opts.modReorders, spots: (): RunSpot[] => runPlaces(lengths, GAP, on.length, 'start', drawn.offset) });
     drawn.offset = scroll.offset;
     return scroll;
   }, opts.dragPx === undefined ? undefined : {
     wrapper: ({ children }: { children: ReactNode }) => createElement(KitSettingsProvider, { value: { gestures: { dragPx: opts.dragPx } } }, children),
   });
   const items = Array.from(root.children) as HTMLElement[];
-  return { root, items, hook };
+  const resize = (next: number) => {
+    size.total = next;
+    hook.rerender();
+  };
+  return { root, items, hook, resize };
 }
 
 const wheel = (root: HTMLElement, deltaY: number, deltaMode = 0): WheelEvent => {
@@ -82,6 +88,24 @@ describe('useRunScroll', () => {
     wheel(root, 100);
     settle();
     expect(hook.result.current.offset).toBe(60);
+  });
+
+  test('a sideways wheel moves the items the way it swipes, whichever way the run reads across the screen', () => {
+    const swipe = (root: HTMLElement, deltaX: number) => act(() => {
+      root.dispatchEvent(new WheelEvent('wheel', { deltaX, bubbles: true, cancelable: true }));
+    });
+    const forward = mount(160);
+    swipe(forward.root, 30);
+    settle();
+    expect(forward.hook.result.current.offset).toBe(30);
+    const back = mount(160, { along: trackRun(lineShape({ x: 0, y: 0 }, { x: 100, y: 0 }), 0, 1, { direction: 'rtl' }) });
+    act(() => {
+      back.hook.result.current.onFocusCapture({ target: back.items[4]! } as unknown as ReactFocusEvent);
+    });
+    settle();
+    swipe(back.root, 30);
+    settle();
+    expect(back.hook.result.current.offset).toBe(30);
   });
 
   test('a line-mode wheel moves 16 px a line, and a page-mode one a run length a page', () => {
@@ -208,6 +232,25 @@ describe('useRunScroll', () => {
       vi.advanceTimersByTime(20);
     });
     // Drawn part way to 60, the first item still shows its tail; going to 60, it is wholly off the start.
+    act(() => {
+      hook.result.current.onFocusCapture({ target: items[0]! } as unknown as ReactFocusEvent);
+    });
+    settle();
+    expect(hook.result.current.offset).toBe(0);
+  });
+
+  test('a run whose range shrinks under its offset scrolls from the end it is drawn at, and keeps it when the range grows back', () => {
+    const { items, hook, resize } = mount(160);
+    act(() => {
+      hook.result.current.onFocusCapture({ target: items[4]! } as unknown as ReactFocusEvent);
+    });
+    settle();
+    expect(hook.result.current.offset).toBe(60);
+    resize(130);
+    expect(hook.result.current.offset).toBe(30);
+    resize(160);
+    settle();
+    expect(hook.result.current.offset).toBe(30);
     act(() => {
       hook.result.current.onFocusCapture({ target: items[0]! } as unknown as ReactFocusEvent);
     });

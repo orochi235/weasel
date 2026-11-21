@@ -44,3 +44,7 @@ test('with no engine registered, graphemes keep their logical order and controls
   expect(String(warn.mock.calls[0]![0])).toMatch(/^weasel visualGraphemes: /);
   warn.mockRestore();
 });
+
+test('with no engine registered, a right-to-left run still shows the graphemes in logical order left to right', () => {
+  expect(withEngine(chars('abc'), 'rtl', null)).toEqual(['c', 'b', 'a']);
+});
