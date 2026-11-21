@@ -1,5 +1,5 @@
 import { lerp } from '@weasel-js/geom';
-import { getOwn, setOwn } from '@weasel-js/registry';
+import { getOwn, hasOwnKey, setOwn } from '@weasel-js/registry';
 import { lerpHueDeg } from '@weasel-js/paint';
 import { DEFAULT_CONSTRAINTS, generate, type Anchor, type Constraints } from './color/generate.ts';
 import { toHex, toLch } from './color/oklch.ts';
@@ -86,8 +86,9 @@ export function lightnessRamp(p: LightnessParams): Record<string, string> {
 }
 
 /**
- * Step name → hex from the palette generator, one swatch per step in step order. `feasible` is false when no palette
- * met the gates; the colors are then its best unconstrained attempt.
+ * Step name → hex from the palette generator: an anchor fills the step its name names, and the other swatches fill the
+ * remaining steps in palette order. `feasible` is false when no palette met the gates; the colors are then its best
+ * unconstrained attempt.
  */
 export function categoricalRamp(
   steps: readonly string[],
@@ -96,8 +97,14 @@ export function categoricalRamp(
 ): { colors: Record<string, string>; feasible: boolean } {
   const palette = generate({ ...DEFAULT_CONSTRAINTS, ...gates, count: steps.length, anchors });
   const colors: Record<string, string> = {};
-  steps.forEach((step, i) => {
-    setOwn(colors, step, palette.swatches[i].hex.toLowerCase());
+  const rest: string[] = [];
+  for (const swatch of palette.swatches) {
+    const hex = swatch.hex.toLowerCase();
+    if (swatch.anchored && steps.includes(swatch.name) && !hasOwnKey(colors, swatch.name)) setOwn(colors, swatch.name, hex);
+    else rest.push(hex);
+  }
+  steps.filter((step) => !hasOwnKey(colors, step)).forEach((step, i) => {
+    setOwn(colors, step, rest[i]);
   });
   return { colors, feasible: palette.feasible };
 }

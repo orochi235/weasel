@@ -18,7 +18,7 @@ export function scaleTable(def: ThemeDefinition, lookup: Lookup, scale: string):
   const merged = mergeChain(def, lookup);
   const entry = getOwn(merged.scales ?? {}, scale);
   if (!entry) return { steps: [], columns: [] };
-  const steps = declaredSteps(entry);
+  const steps = declaredSteps(entry, merged);
   const deps = axisDependencies(def, lookup);
   const varying = new Set(steps.flatMap((step) => deps[`${scale}-${step}`]?.all ?? []));
   const axes: AxisDefs = Object.fromEntries(Object.entries(merged.axes ?? {}).filter(([axis]) => varying.has(axis)));

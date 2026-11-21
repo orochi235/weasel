@@ -5,7 +5,7 @@ import type { SemanticRule, ThemeDefinition } from '../definition.ts';
 import { mergeChain, type Lookup } from './merge.ts';
 import { ruleProblem } from './ruleShape.ts';
 import { withoutUnsafeNames } from './safeNames.ts';
-import { alwaysDeclaredSteps, declaredSteps } from './steps.ts';
+import { alwaysDeclaredSteps, declaredSteps as stepsOf, type StepScope } from './steps.ts';
 
 /** The axes one token's value can change with. */
 export interface AxisDependency {
@@ -128,6 +128,8 @@ function producer(nodes: Map<string, Node>): (name: string, n: Node, always: boo
 export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): Record<string, AxisDependency> {
   const def = withoutUnsafeNames(mergeChain(definition, lookup));
   const nodes = new Map<string, Node>();
+  const scope: StepScope = { axes: def.axes ?? {}, seeds: def.seeds };
+  const declaredSteps = (entry: unknown) => stepsOf(entry, scope);
   const produce = producer(nodes);
 
   /** Step token → the ramps that declare it. */
@@ -138,7 +140,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     nodes.set(stepsKey(name), shape);
     const n = node();
     scan(ramp, n);
-    const always = new Set(alwaysDeclaredSteps(ramp));
+    const always = new Set(alwaysDeclaredSteps(ramp, scope));
     for (const step of declaredSteps(ramp)) {
       produce(`${name}-${step}`, n, always.has(step));
       stepRamps.set(`${name}-${step}`, (stepRamps.get(`${name}-${step}`) ?? new Set()).add(name));
@@ -147,11 +149,11 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   for (const [name, s] of Object.entries(def.scales ?? {})) {
     const n = node();
     scan(s, n);
-    const always = new Set(alwaysDeclaredSteps(s));
+    const always = new Set(alwaysDeclaredSteps(s, scope));
     for (const step of declaredSteps(s)) produce(`${name}-${step}`, n, always.has(step));
   }
 
-  /** Every ramp a token could sit on: its own, or the ones its semantic rule leaves or pins lead to. */
+  /** Every ramp a token could sit on: its own, or the ones its semantic rule leaves, pins, or components lead to. */
   const rampsOf = (name: string, seen = new Set<string>()): Set<string> => {
     const out = new Set<string>(stepRamps.get(name));
     if (seen.has(name)) return out;
@@ -165,10 +167,10 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
       else if ('from' in l) add(l.from);
       else if ('ref' in l) add(l.ref);
     }
-    const pin = getOwn(def.pins ?? {}, name);
-    if (pin !== undefined) {
+    for (const v of [getOwn(def.pins ?? {}, name), getOwn(def.components ?? {}, name)]) {
+      if (v === undefined) continue;
       const n = node();
-      scan(pin, n);
+      scan(v, n);
       for (const e of n.edges) add(e);
     }
     return out;
@@ -182,8 +184,8 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
         n.edges.add(leaf.from);
         for (const r of rampsOf(leaf.from)) {
           n.edges.add(stepsKey(r));
-          // darker and lighter read which end of the ramp is darker.
-          if (leaf.dir !== 'away') for (const s of declaredSteps(getOwn(def.ramps ?? {}, r))) n.edges.add(`${r}-${s}`);
+          // darker and lighter read which end of the ramp is darker, and every direction can land on any step.
+          for (const s of declaredSteps(getOwn(def.ramps ?? {}, r))) n.edges.add(`${r}-${s}`);
         }
       }
       if ('step' in leaf) {

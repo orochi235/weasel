@@ -117,6 +117,11 @@ describe('a theme whose ramp steps vary by axis', () => {
     expect(mergeChain(child, lookup).pins).toEqual({ 'gray-900': '#000000' });
   });
 
+  it('shadows the pin on a step a seed names', () => {
+    const child = { name: 'c', extends: 'p', seeds: { s: '900' }, ramps: { gray: { ...gray, steps: ['50', '{seeds.s}'] } } } as unknown as ThemeDefinition;
+    expect(mergeChain(child, lookup).pins).toEqual({});
+  });
+
   it('intersects a steps list that itself varies', () => {
     const child = {
       name: 'c',

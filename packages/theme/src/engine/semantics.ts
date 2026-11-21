@@ -99,12 +99,13 @@ export function deriveSemantics(
     if (depth > MAX_DEPTH) return undefined;
     const step = rampStep(name);
     if (step) return step;
-    const pin = ctx.pinned(name);
-    if (pin) {
-      const target = refTarget(pin.value);
+    const follow = (v: { readonly value: TokenValue } | undefined) => {
+      const target = v ? refTarget(v.value) : null;
       return target === null ? undefined : positionAt(target, depth + 1);
-    }
-    return Object.hasOwn(rules, name) ? get(name)?.position : undefined;
+    };
+    const pin = ctx.pinned(name);
+    if (pin) return follow(pin);
+    return Object.hasOwn(rules, name) ? get(name)?.position : follow(ctx.component(name));
   };
   const positionOf: Env['positionOf'] = (name) => (Object.hasOwn(rules, name) ? positionAt(name) : undefined);
 
@@ -134,7 +135,8 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
   }
 
   if ('ref' in r) {
-    const type = r.type ?? getOwn(ctx.tokens, r.ref)?.type ?? env.get(r.ref)?.token.type ?? 'unknown';
+    const pin = ctx.pinned(r.ref);
+    const type = r.type ?? (pin ? pin.type : (getOwn(ctx.tokens, r.ref)?.type ?? env.get(r.ref)?.token.type)) ?? 'unknown';
     return { rule: 'ref', position: env.positionAt(r.ref), token: { type, value: `{${r.ref}}`, alpha: r.alpha, description } };
   }
 

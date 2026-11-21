@@ -144,7 +144,7 @@ describe('axisDependencies', () => {
     expect(varied.surface).toEqual({ own: [], all: ['mode'] });
   });
 
-  it('makes a darker or lighter offset depend on the ends of the ramp its reference sits on', () => {
+  it('makes an offset depend on the steps of the ramp its reference sits on', () => {
     const swapped = axisDependencies({
       ...D,
       semantics: {
@@ -155,7 +155,7 @@ describe('axisDependencies', () => {
       pins: { 'gray-50': { by: 'mode', dark: '#f5f5f6', light: '#000000' } },
     });
     expect(swapped.deeper.all).toContain('mode');
-    expect(swapped.away.all).toEqual([]);
+    expect(swapped.away.all).toContain('mode');
   });
 
   it('follows a step rule whose `step` picks a ramp step through a nested by', () => {
@@ -221,5 +221,43 @@ describe('axisDependencies', () => {
     const deps = axisDependencies({ name: 't', pins });
     expect(Object.keys(deps)).toEqual(['a']);
     expect(Object.hasOwn(deps, '__proto__')).toBe(false);
+  });
+
+  it('lists only the steps derive gives, reading a seed that names one', () => {
+    const def: ThemeDefinition = {
+      name: 't',
+      axes: D.axes,
+      seeds: { s: { by: 'mode', dark: '500', light: '600' } },
+      ramps: {
+        gray: { kind: 'lightness', steps: ['{seeds.s}', '900'], lightness: [0.97, 0.16] },
+        bad: { kind: 'lightness', steps: ['50', 'by'], lightness: [0.97, 0.16] },
+      },
+      scales: { space: { steps: ['sm', 'a b'], base: 4, step: 4 } },
+    };
+    const deps = axisDependencies(def);
+    expect(Object.keys(deps).sort()).toEqual(['gray-500', 'gray-600', 'gray-900']);
+    expect(deps['gray-500'].all).toEqual(['mode']);
+  });
+
+  it('gives an offset rule from a component the ramp the component names', () => {
+    const def: ThemeDefinition = {
+      name: 't',
+      axes: D.axes,
+      ramps: { gray: { kind: 'lightness', steps: { by: 'density', comfortable: ['50', '900'], compact: ['50', '500', '900'] }, lightness: [0.97, 0.16] } },
+      components: { chip: '{gray-50}' },
+      semantics: { chipRef: { ref: 'chip' }, chipHover: { from: 'chipRef', offset: 1, dir: 'away' } },
+    };
+    expect(axisDependencies(def).chipHover.all).toEqual(['density']);
+  });
+
+  it('makes an away offset rule depend on the steps it can land on', () => {
+    const def: ThemeDefinition = {
+      name: 't',
+      axes: D.axes,
+      ramps: { gray: { kind: 'lightness', steps: ['500', '600'], lightness: [0.6, 0.4] } },
+      semantics: { accent: { ramp: 'gray', step: '500' }, hover: { from: 'accent', offset: 1, dir: 'away' } },
+      pins: { 'gray-600': { by: 'density', comfortable: '#101010', compact: '#202020' } },
+    };
+    expect(axisDependencies(def).hover.all).toEqual(['density']);
   });
 });

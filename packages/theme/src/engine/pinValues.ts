@@ -31,11 +31,12 @@ function seeded(obj: PinObject, ctx: SettleContext, path?: string): PinObject | 
   return value === obj.value ? obj : { ...obj, value: value as PinObject['value'] };
 }
 
-/** A pin or component value at this selection, seeds resolved, reporting nothing; undefined when it has none here. */
+/** A pin or component value at this selection, seeds resolved, reporting nothing; undefined when it has none here or `pinToken` refuses it. */
 export function pinAt(v: Varying<PinValue>, ctx: SettleContext): PinObject | undefined {
   const picked = pick(v, ctx.sel);
   if (!picked.ok) return undefined;
-  return seeded(isPinObject(picked.value) ? picked.value : { value: picked.value }, ctx);
+  const obj = seeded(isPinObject(picked.value) ? picked.value : { value: picked.value }, ctx);
+  return obj && pinProblem(obj as unknown as Record<string, unknown>) === undefined ? obj : undefined;
 }
 
 /** A pin or component value as a token at this selection, over what a rule produced (`prior`); reports why it has none. */
@@ -52,5 +53,5 @@ export function pinToken(v: Varying<PinValue>, path: string, prior: RawToken | u
     ctx.issues.push({ kind: 'invalid', path, message: problem });
     return undefined;
   }
-  return { type: obj.type ?? prior?.type ?? UNTYPED, value: obj.value, alpha: obj.alpha, description: obj.description ?? prior?.description, scope: obj.scope };
+  return { type: obj.type ?? prior?.type ?? UNTYPED, value: obj.value, alpha: obj.alpha, description: obj.description ?? prior?.description, scope: obj.scope ?? prior?.scope };
 }

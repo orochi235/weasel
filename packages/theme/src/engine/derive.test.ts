@@ -146,6 +146,28 @@ describe('derive', () => {
     expect(tokens['gray-50'].description).toBe('{seeds.nope}');
   });
 
+  it('measures a rule against the token a malformed pin leaves in place', () => {
+    const { tokens, issues } = derive({
+      name: 'x',
+      ramps: { gray: { kind: 'lightness', steps: ['1', '9'], lightness: [0.97, 0.16] } },
+      semantics: { text: { ramp: 'gray', contrast: { min: 4.5, against: ['gray-9'] } } },
+      pins: { 'gray-9': { value: '#ffffff', type: 5 } } as never,
+    });
+    expect(tokens.text.value).toBe('{gray-1}');
+    expect(issues).toEqual([{ kind: 'invalid', path: 'pins.gray-9', message: 'type must be a string' }]);
+  });
+
+  it('keeps the scope of a component it pins', () => {
+    const { tokens } = derive({ name: 'x', components: { tb: { value: '#111111', type: 'color', scope: ['density'] } }, pins: { tb: '#222222' } });
+    expect(tokens.tb).toMatchObject({ value: '#222222', type: 'color', scope: ['density'] });
+  });
+
+  it('refuses a step named twice', () => {
+    const { tokens, issues } = derive({ name: 'x', ramps: { gray: { ...GRAY, steps: ['50', '50', '900'] } } });
+    expect(issues).toEqual([{ kind: 'invalid', path: 'ramps.gray.steps', message: 'step "50" is named twice' }]);
+    expect(tokens).toEqual({});
+  });
+
   it('reserves "by" as a step name', () => {
     const { tokens, issues } = derive({
       name: 'x',
@@ -328,8 +350,15 @@ describe('derive', () => {
     expect(issues).toEqual([{ kind: 'invalid', path: 'pins.font-bad.0', message: 'unknown seed "nope"' }]);
   });
 
+  it('reports a categorical anchor whose name is no step, and still derives the ramp', () => {
+    const anchors = [{ name: 'brand', hue: 30, lightness: 0.7 }];
+    const { tokens, issues } = derive({ name: 'x', ramps: { sw: { kind: 'categorical', steps: ['a', 'b'], anchors } } });
+    expect(issues).toContainEqual({ kind: 'invalid', path: 'ramps.sw.anchors.0.name', message: 'no step "brand" on this ramp; it fills a step no anchor names' });
+    expect(Object.keys(tokens)).toEqual(['sw-a', 'sw-b']);
+  });
+
   it('reports a categorical ramp with more anchors than steps', () => {
-    const anchors = [10, 120, 240].map((hue, i) => ({ name: `a${i}`, hue, lightness: 0.7 }));
+    const anchors = [10, 120, 240].map((hue, i) => ({ name: 'abc'[i], hue, lightness: 0.7 }));
     const { tokens, issues } = derive({ name: 'x', ramps: { sw: { kind: 'categorical', steps: ['a', 'b'], anchors } } });
     expect(issues).toEqual([
       { kind: 'invalid', path: 'ramps.sw.anchors', message: '3 anchors for 2 steps; the ones past the last step are left out' },

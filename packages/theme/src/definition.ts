@@ -45,6 +45,7 @@ export interface CategoricalRampDef {
   readonly steps: Varying<readonly string[]>;
   /** Any of the palette generator's `Constraints` except `count` and `anchors`. */
   readonly gates?: Varying<Readonly<Record<string, Varying<number | string>>>>;
+  /** Colors held in the ramp, each filling the step its `name` names. */
   readonly anchors?: readonly { readonly name: string; readonly hue: number; readonly lightness: number; readonly chroma?: number }[];
   readonly description?: string;
   readonly describe?: Readonly<Record<string, string>>;

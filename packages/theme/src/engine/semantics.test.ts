@@ -284,3 +284,23 @@ describe('a fractional offset', () => {
     expect(issues).toEqual([{ kind: 'invalid', path: 'semantics.m', message: 'an offset rule needs a name from, a whole-number offset, and a dir of lighter, darker, away' }]);
   });
 });
+
+describe('a ref cycle a pin breaks', () => {
+  it('derives instead of throwing', () => {
+    const { tokens } = derive({ name: 'x', semantics: { a: { ref: 'b' }, b: { ref: 'a' } }, pins: { a: '#ffffff' } });
+    expect(tokens.a).toMatchObject({ value: '#ffffff' });
+    expect(tokens.b).toMatchObject({ value: '{a}' });
+  });
+});
+
+describe('a rule reading a component', () => {
+  it('follows the component to the ramp step it names', () => {
+    const { tokens, issues } = derive({
+      ...W,
+      components: { chip: '{gray-500}' },
+      semantics: { chipRef: { ref: 'chip' }, chipHover: { from: 'chipRef', offset: 1, dir: 'darker' } },
+    });
+    expect(issues).toEqual([]);
+    expect(tokens.chipHover.value).toBe('{gray-600}');
+  });
+});

@@ -18,6 +18,7 @@
 [data-wzl-mode='dark'] {
   color-scheme: dark;
   --wzl-surface: var(--wzl-ink);
+  --wzl-pad-edge: var(--wzl-pad);
   --wzl-line: color-mix(in srgb, var(--wzl-surface) 20%, transparent);
 }
 
@@ -25,18 +26,21 @@
 [data-wzl-mode='light'] {
   color-scheme: light;
   --wzl-surface: var(--wzl-paper);
+  --wzl-pad-edge: 0px;
   --wzl-line: color-mix(in srgb, var(--wzl-surface) 20%, transparent);
 }
 
 [data-wzl-theme='e'][data-wzl-density='comfortable'],
 [data-wzl-density='comfortable'] {
   --wzl-gap: 4px;
+  --wzl-pad-edge: var(--wzl-pad);
   --wzl-pad: var(--wzl-gap);
 }
 
 [data-wzl-theme='e'][data-wzl-density='compact'],
 [data-wzl-density='compact'] {
   --wzl-gap: 3px;
+  --wzl-pad-edge: var(--wzl-pad);
   --wzl-pad: var(--wzl-gap);
 }
 

@@ -25,18 +25,37 @@ function chainOf(baked: BakedTheme, byName: ReadonlyMap<string, BakedTheme>): Ba
   return [...(parent ? chainOf(parent, byName) : []), baked];
 }
 
+/** Each theme's resolved tokens at every selection, keyed as `themes.ts` keys a selection. */
+function resolveSelections(themes: readonly ThemesInput[]): { baked: BakedTheme; selections: [string, Record<string, string>][] }[] {
+  const byName = new Map(themes.map((t) => [t.baked.name, t.baked]));
+  return themes.map(({ baked }) => {
+    const chain = chainOf(baked, byName);
+    const selections = enumerateAxisChoices(baked.axes).map((sel): [string, Record<string, string>] => [axisChoiceKey(baked.axes, sel), resolveTokens(tokensAt(chain, sel))]);
+    return { baked, selections };
+  });
+}
+
+/** Each selection of each theme lacking a token another holds, which `themes.ts`'s `TokenName` record cannot type. */
+export function missingTokens(themes: readonly ThemesInput[]): string[] {
+  const resolved = resolveSelections(themes);
+  const all = new Set(resolved.flatMap((t) => t.selections.flatMap(([, tokens]) => Object.keys(tokens))));
+  return resolved.flatMap(({ baked, selections }) =>
+    selections.flatMap(([key, tokens]) => {
+      const missing = [...all].filter((n) => !Object.hasOwn(tokens, n));
+      return missing.length === 0 ? [] : [`${baked.name} ${key || '(no axes)'}: no ${missing.join(', ')}, which another theme or selection has`];
+    }),
+  );
+}
+
 /** The `themes.ts` source: every theme's resolved tokens at every selection, plus the definitions and baked themes. */
 export function emitThemes(themes: readonly ThemesInput[]): string {
-  const byName = new Map(themes.map((t) => [t.baked.name, t.baked]));
   const names = new Set<string>();
 
-  const entries = themes.map(({ baked }) => {
-    const chain = chainOf(baked, byName);
-    const selections = enumerateAxisChoices(baked.axes).map((sel) => {
-      const resolved = resolveTokens(tokensAt(chain, sel));
-      for (const n of Object.keys(resolved)) names.add(`--wzl-${n}`);
-      const body = Object.entries(resolved).map(([n, v]) => `        '--wzl-${n}': ${JSON.stringify(v)},`).join('\n');
-      return `      ${quoted(axisChoiceKey(baked.axes, sel))}: {\n${body}\n      },`;
+  const entries = resolveSelections(themes).map(({ baked, selections: resolved }) => {
+    const selections = resolved.map(([key, tokens]) => {
+      for (const n of Object.keys(tokens)) names.add(`--wzl-${n}`);
+      const body = Object.entries(tokens).map(([n, v]) => `        '--wzl-${n}': ${JSON.stringify(v)},`).join('\n');
+      return `      ${quoted(key)}: {\n${body}\n      },`;
     });
     return [
       `  ${baked.name === '__proto__' ? '["__proto__"]' : JSON.stringify(baked.name)}: {`,

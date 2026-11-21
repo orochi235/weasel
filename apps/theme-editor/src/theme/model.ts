@@ -136,9 +136,10 @@ export function removePin(def: ThemeDefinition, name: string): ThemeDefinition {
 
 /** Drops the definition's own pins on every step of `ramp`. A pin a parent holds stays. */
 export function adoptGenerated(def: ThemeDefinition, lookup: Lookup, ramp: string): ThemeDefinition {
-  const entry = getOwn(mergeChain(def, lookup).ramps ?? {}, ramp);
+  const merged = mergeChain(def, lookup);
+  const entry = getOwn(merged.ramps ?? {}, ramp);
   if (!entry) return def;
-  return declaredSteps(entry).reduce((d, step) => removePin(d, `${ramp}-${step}`), def);
+  return declaredSteps(entry, merged).reduce((d, step) => removePin(d, `${ramp}-${step}`), def);
 }
 
 /** Replaces a ramp's entry; a ramp the definition only inherits is copied in first. */

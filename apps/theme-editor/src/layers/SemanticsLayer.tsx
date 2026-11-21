@@ -26,7 +26,7 @@ function contrastText({ ratio, min, pass, unmeasured }: NonNullable<SemanticRowV
 export function SemanticsLayer({ draft, derived, lookup, highlight, onChange }: SemanticsLayerProps) {
   const rows = useMemo(() => semanticRows(draft, derived.merged, derived.views), [draft, derived]);
   const ramps = useMemo(
-    () => Object.fromEntries(Object.entries(derived.merged.ramps ?? {}).map(([name, entry]) => [name, declaredSteps(entry)])),
+    () => Object.fromEntries(Object.entries(derived.merged.ramps ?? {}).map(([name, entry]) => [name, declaredSteps(entry, derived.merged)])),
     [derived],
   );
   // The drawer edits the draft itself, which may not derive yet; `derived` can be an older version.
