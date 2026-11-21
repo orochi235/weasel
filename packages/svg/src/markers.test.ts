@@ -95,6 +95,15 @@ describe('ingesting a marker the kit has no key for', () => {
     expect(entry.inset ?? 0).toBe(0);
   });
 
+  it('leaves out a part that is display none or hidden', () => {
+    const def = '<marker id="h" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6">'
+      + '<path d="M0 0 L10 5 L0 10 Z" fill="#ff0000"/><path display="none" d="M0 0 H3 V3 Z" fill="#0000ff"/>'
+      + '<g><rect visibility="hidden" width="2" height="2" fill="#00ff00"/></g></marker>';
+    const { warnings, markers } = parseSvg(lineWith('marker-end="url(#h)"', def));
+    expect(warnings).toEqual([]);
+    expect(coordsOf(markers![0])).toEqual([-6, -3, 0, 0, -6, 3]);
+  });
+
   it('reads parts painted alike as alike, whichever element set each property', () => {
     const def = '<marker id="two" viewBox="0 0 10 10" refX="10" refY="5">'
       + '<path d="M0 0 L5 5 L0 10 Z" fill="#ff0000" stroke="#000"/>'

@@ -33,6 +33,7 @@ import { isStrokeOutline, unwrapStrokeGroup, withOutlinedStroke } from './stroke
 import { parseImageElement, parseCroppedImage } from './readImage';
 import { parseTextElement } from './readText';
 import { ingestMarkers } from './readMarkers';
+import { isHiddenElement, SUPPORTED_GROUP_TAGS } from './hiddenElement';
 import { groupPaint, inheritsFrom, NO_GROUP_PAINT, viewportPaintFrom, type GroupPaintFrom } from './groupPaint';
 import { booleanAttrOf } from './booleanGroup';
 import { textFrameAttrOf } from './framedText';
@@ -41,7 +42,6 @@ import { conditionsHold, drawnChildren } from './conditional';
 import { parseUse } from './use';
 import { collectDocumentMeta, collectElementMeta } from './readMeta';
 
-const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
 
 /** How deep elements may nest, `<use>` references included, before what is deeper is left undrawn. */
 export const NESTING_LIMIT = 512;
@@ -358,14 +358,3 @@ function parseGroup(
   return group;
 }
 
-/** Whether SVG leaves `el` undrawn: `display="none"` on it, or a leaf whose
- *  `visibility` resolves hidden. That one is inherited and a descendant may
- *  turn itself back on, so a `<g>` cannot answer it and is still walked. */
-function isHiddenElement(el: Element, style: StyleContext): boolean {
-  const tag = el.tagName.toLowerCase();
-  if (IGNORED_TAGS.has(tag)) return false;
-  if (ownValue(el, 'display') === 'none') return true;
-  if (SUPPORTED_GROUP_TAGS.has(tag) || tag === 'a' || tag === 'switch') return false;
-  const v = styleValue(deriveStyle(style, el), 'visibility');
-  return v === 'hidden' || v === 'collapse';
-}

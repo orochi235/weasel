@@ -25,6 +25,7 @@ import { SUPPORTED_LEAF_TAGS, IGNORED_TAGS, lowerLeaf } from './lowerLeaf';
 import { parseViewBoxAttr } from './viewBox';
 import { shortHash } from './markerDefs';
 import { readPaint } from './readPaint';
+import { isHiddenElement } from './hiddenElement';
 import { userScaleOf } from './userScale';
 
 type MarkerRole = 'start' | 'mid' | 'end';
@@ -261,6 +262,7 @@ function markerEntryFrom(
     for (let i = 0; i < parent.children.length; i++) {
       const child = parent.children[i];
       const tag = child.tagName.toLowerCase();
+      if (isHiddenElement(child, style)) continue;
       const cm = multiply(m, parseTransform(child.getAttribute('transform'), onWarn));
       const cs = deriveStyle(style, child);
       if (tag === 'g') collect(child, cm, cs);
