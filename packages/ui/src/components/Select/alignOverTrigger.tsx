@@ -7,8 +7,8 @@ import s from './Select.module.css';
 
 export type Nudge = { offset: number; crossOffset: number };
 
-/** Where and when the pointer went down on the trigger. */
-export type Press = { x: number; y: number; at: number };
+/** Where, when and with what pointer the trigger was pressed. */
+export type Press = { x: number; y: number; at: number; pointerType: string };
 
 export const NO_NUDGE: Nudge = { offset: 0, crossOffset: 0 };
 
@@ -120,7 +120,8 @@ export function AlignOverTrigger({
     const onUp = (e: PointerEvent) => {
       doc.removeEventListener('pointerup', onUp, true);
       const press = pressRef.current;
-      if (!press || performance.now() - press.at > holdMs) return;
+      // React Aria opens a select on a touch's release, so that release is spent before the list exists.
+      if (!press || press.pointerType === 'touch' || performance.now() - press.at > holdMs) return;
       if (pastDragThreshold({ clientX: press.x, clientY: press.y }, e, dragPx)) return;
       e.preventDefault();
       e.stopPropagation();

@@ -493,4 +493,21 @@ describe('the release that opens or follows it', () => {
     expect(trigger).not.toHaveAttribute('data-pressed');
   });
 
+  it('keeps a quick touch tap on a row after a tap opened the list', () => {
+    const onChange = vi.fn();
+    render(<Select label="Color" options={OPTIONS} defaultSelectedKey="g" onSelectionChange={onChange} />);
+    const trigger = screen.getByRole('button', { name: /Color/ });
+    const touch = { pointerId: 2, button: 0, pointerType: 'touch', clientX: 20, clientY: 10, width: 1, height: 1 };
+    act(() => {
+      fireEvent.pointerDown(trigger, touch);
+      fireEvent.pointerUp(trigger, touch);
+    });
+    // A tap opens the list on its release, which jsdom's press emulation does not carry through; the keys do.
+    act(() => { fireEvent.keyDown(trigger, { key: 'ArrowDown' }); });
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    const row = screen.getByRole('option', { name: 'Green' });
+    const up = createEvent.pointerUp(row, { ...touch, pointerId: 3 });
+    act(() => { fireEvent(row, up); });
+    expect(up.defaultPrevented).toBe(false);
+  });
 });

@@ -191,7 +191,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           ref={triggerRef}
           className={`${f.frame} ${s.trigger}`}
           onPointerDown={(e) => {
-            pressRef.current = { x: e.clientX, y: e.clientY, at: performance.now() };
+            pressRef.current = { x: e.clientX, y: e.clientY, at: performance.now(), pointerType: e.pointerType };
           }}
         >
           <SelectValue className={s.value}>
