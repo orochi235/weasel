@@ -23,8 +23,10 @@ export interface PixelsShared {
   take(payload: CapturePayload): Promise<ImageBitmap | null>;
   payloadFor: PayloadFor;
   revision(): number;
-  /** By `sideOf`. */
+  /** By `sideOf`. Read only: every write goes through `keep`, which closes what it lets go of. */
   shots: Map<string, Shot>;
+  /** Makes `shot` the side's last image, closing the one it replaces and any it evicts. */
+  keep(side: string, shot: Shot): void;
 }
 
 /** One lens side: its lens, its DPR, and whether it shows the comparison or the story as it is. */
@@ -116,7 +118,7 @@ export function attachPixelsLens(slot: HTMLElement, first: Request, shared: Pixe
       if (bitmap === null) return;
       // A capture nothing will show is let go of now rather than left to the collector.
       if (gone || pending !== token || shared.revision() !== at) return bitmap.close();
-      shared.shots.set(side, { key: target.key, revision: at, bitmap, payload: target.payload });
+      shared.keep(side, { key: target.key, revision: at, bitmap, payload: target.payload });
       measure();
     } catch (err) {
       if (!gone && pending === token) say(`Capture failed: ${messageOf(err)}`);
@@ -183,7 +185,6 @@ export function attachPixelsLens(slot: HTMLElement, first: Request, shared: Pixe
       unwatchDensity();
       watchSize(null);
       cancel();
-      shared.shots.delete(sideOf(request));
       canvas.remove();
       empty.remove();
       onDetach();

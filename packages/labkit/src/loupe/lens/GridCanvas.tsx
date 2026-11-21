@@ -12,8 +12,9 @@ const GRID_COLORS: ThemeColorSpec<'line' | 'tint'> = {
   tint: ['--wzl-accent', FALLBACK_ACCENT],
 };
 
+/** What the grid keeps of a capture: never its bitmap, which is the source's and good only until its next capture. */
 interface Read {
-  capture: LensCapture;
+  at: LensCapture['at'];
   mask: Uint8Array | null;
   columns: number;
 }
@@ -64,7 +65,7 @@ export function GridCanvas<C>({
             return;
           }
           const m = maskOf(got.bitmap);
-          setRead({ capture: got, mask: m?.mask ?? null, columns: m?.columns ?? 0 });
+          setRead({ at: got.at, mask: m?.mask ?? null, columns: m?.columns ?? 0 });
         },
         () => {
           if (live) setRead(null);
@@ -92,8 +93,8 @@ export function GridCanvas<C>({
     }
     // Where the lens puts the capture's first pixel, rounded to a device pixel as it is.
     const origin = {
-      x: Math.round(width / 2 - read.capture.at.x * factor * sd) / sd,
-      y: Math.round(height / 2 - read.capture.at.y * factor * sd) / sd,
+      x: Math.round(width / 2 - read.at.x * factor * sd) / sd,
+      y: Math.round(height / 2 - read.at.y * factor * sd) / sd,
     };
     drawPixelGrid(ctx, { ...view, origin }, read.mask, colors);
   }, [colors, read, factor, dpr, sd, w, h]);

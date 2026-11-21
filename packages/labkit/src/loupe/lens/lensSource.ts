@@ -17,7 +17,14 @@ export interface LensSourceRequest<C> {
   dpr: number;
 }
 
-/** A pixels source's capture of a lens's patch. */
+/**
+ * A pixels source's capture of a lens's patch. The source owns `bitmap`: it is
+ * good until the source's next capture for the same lens side (its lens, DPR,
+ * and whether it is compared) or until the source drops the shot, and the
+ * source closes it then. Read it when the capture resolves; a caller keeping it
+ * past that, across an `await` or for a later frame, copies it
+ * (`createImageBitmap(bitmap)`) and closes its copy.
+ */
 export interface LensCapture {
   bitmap: ImageBitmap;
   dpr: number;
@@ -41,7 +48,8 @@ export interface LensSource<C> {
   status(): LensSourceStatus;
   subscribe(listener: () => void): () => void;
   attach(slot: HTMLElement, request: LensSourceRequest<C>): LensSourceHandle<C>;
-  /** Required when `produces` is `'pixels'`. Answers why when it has no capture to give. */
+  /** Required when `produces` is `'pixels'`. Answers why when it has no capture to give. The bitmap
+   *  stays the source's; see `LensCapture`. */
   capture?(request: LensSourceRequest<C>): Promise<LensCapture | { reason: string }>;
 }
 

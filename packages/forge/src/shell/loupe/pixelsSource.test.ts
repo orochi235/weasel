@@ -215,4 +215,75 @@ describe('createPixelsSource', () => {
     source.subscribe(() => {});
     await vi.waitFor(() => expect(source.status()).toBe('this server takes no captures'));
   });
+
+  describe('closes each bitmap it lets go of, once, and none it still holds', () => {
+    const from = (got: LensCapture | { reason: string }) => ((got as LensCapture).bitmap as unknown as Bitmap).from;
+    const once = () => expect(new Set(closed).size).toBe(closed.length);
+
+    it('on a capture that replaces its side, past the loose bound, and when a loose shot goes stale', async () => {
+      hosts();
+      const { fetch, posts } = endpoint();
+      const rev = revisions();
+      const source = createPixelsSource({ base: '/', payloadFor, fetch, ...rev });
+      const take = async (r: ReturnType<typeof request>) => {
+        const got = source.capture!(r);
+        await settle();
+        posts.at(-1)!.answer();
+        return got;
+      };
+      const first = await take(request(50));
+      const second = await take(request(150));
+      expect(from(first)).toBe('png story-of-trial-a #1');
+      expect(closed).toEqual(['png story-of-trial-a #1']);
+      // Served from the map, the held shot is handed out again and left open.
+      expect(from(await source.capture!(request(150)))).toBe(from(second));
+      expect(closed).toEqual(['png story-of-trial-a #1']);
+
+      // A shot taken before an edit goes at the next write; with no lens attached, nothing else drops it.
+      rev.bump();
+      await take({ ...request(50), lensId: 'lens-1' });
+      expect(closed).toEqual(['png story-of-trial-a #1', 'png story-of-trial-b #2']);
+
+      for (let n = 2; n <= LOOSE_SHOTS + 1; n += 1) await take({ ...request(50), lensId: `lens-${n}` });
+      // Past the bound, the longest unwritten side (lens-1's, #3) is the one closed.
+      expect(closed).toEqual(['png story-of-trial-a #1', 'png story-of-trial-b #2', 'png story-of-trial-a #3']);
+      once();
+    });
+
+    it("on a lens's newer capture, a story edit, and a detach, but not while another lens shows the side", async () => {
+      vi.useFakeTimers();
+      hosts();
+      const { fetch, posts } = endpoint();
+      const rev = revisions();
+      const source = createPixelsSource({ base: '/', payloadFor, fetch, ...rev });
+      const handle = source.attach(document.createElement('div'), request(50));
+      await vi.advanceTimersByTimeAsync(0);
+      posts[0]!.answer();
+      await settle();
+      handle.update(request(150));
+      await vi.advanceTimersByTimeAsync(LENS_REST_MS);
+      posts[1]!.answer();
+      await settle();
+      expect(closed).toEqual(['png story-of-trial-a #1']);
+
+      // An edit closes the lens's shot and a loose one alike.
+      const loose = source.capture!({ ...request(50), lensId: 'lens-9' });
+      await settle();
+      posts[2]!.answer();
+      await loose;
+      rev.bump();
+      expect(closed).toEqual(['png story-of-trial-a #1', 'png story-of-trial-b #2', 'png story-of-trial-a #3']);
+
+      await vi.advanceTimersByTimeAsync(LENS_REST_MS);
+      posts[3]!.answer();
+      await settle();
+      // A second lens on the same side keeps the shot through the first one's detach; the last detach closes it.
+      const twin = source.attach(document.createElement('div'), request(150));
+      handle.detach();
+      expect(closed).toHaveLength(3);
+      twin.detach();
+      expect(closed.at(-1)).toBe('png story-of-trial-b #4');
+      once();
+    });
+  });
 });

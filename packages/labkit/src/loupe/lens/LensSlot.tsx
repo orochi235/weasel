@@ -103,6 +103,14 @@ function seamStyle(x: number): CSSProperties {
 
 const messageOf = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
+type OwnedCapture = LensCapture | { reason: string };
+
+/** `pending`, its bitmap copied the moment it lands: the source's own is good only until that side's next capture. */
+async function ownCapture(pending: Promise<OwnedCapture>): Promise<OwnedCapture> {
+  const got = await pending;
+  return 'reason' in got ? got : { ...got, bitmap: await createImageBitmap(got.bitmap) };
+}
+
 /**
  * The Difference view: a Pixels capture of the story as it is and one under
  * the comparison, whatever the lens's own source, with the pixels that differ
@@ -139,23 +147,42 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
     };
     const capture = pixels.capture.bind(pixels);
     let live = true;
-    const run = () =>
-      Promise.all([capture(base), capture({ ...base, conditions: compare })])
-        .then(([a, b]) => {
-          if (!live) return;
-          const missing = 'reason' in a ? a : 'reason' in b ? b : null;
-          if (missing) {
-            say(missing.reason);
-            return;
-          }
-          paintDifference(el, a as LensCapture, b as LensCapture, { size: box, factor, density });
-          say(null);
-        })
-        .catch((err: unknown) => {
-          if (live) say(messageOf(err));
-        });
+    const run = async () => {
+      const got = await Promise.allSettled([
+        ownCapture(capture(base)),
+        ownCapture(capture({ ...base, conditions: compare })),
+      ]);
+      try {
+        if (!live) return;
+        const failed = got.find((r) => r.status === 'rejected');
+        if (failed) {
+          say(messageOf(failed.reason));
+          return;
+        }
+        const [a, b] = got.map((r) => (r as PromiseFulfilledResult<OwnedCapture>).value) as [
+          OwnedCapture,
+          OwnedCapture,
+        ];
+        const missing = 'reason' in a ? a : 'reason' in b ? b : null;
+        if (missing) {
+          say(missing.reason);
+          return;
+        }
+        paintDifference(el, a as LensCapture, b as LensCapture, { size: box, factor, density });
+        say(null);
+      } finally {
+        for (const r of got)
+          if (r.status === 'fulfilled' && 'bitmap' in r.value) r.value.bitmap.close();
+      }
+    };
     // At once the first time; after that, once whatever moved has come to rest.
-    const timer = setTimeout(run, captureDelay());
+    const timer = setTimeout(
+      () =>
+        void run().catch((err: unknown) => {
+          if (live) say(messageOf(err));
+        }),
+      captureDelay(),
+    );
     return () => {
       live = false;
       clearTimeout(timer);
