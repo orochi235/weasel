@@ -25,7 +25,7 @@ export function useTokenDrag<T>(
     rowSelector: TOKEN_ROW,
     onReorder: ([id], target) => {
       const from = Number(id);
-      onMoved(moveItems(value, [from], target), movedIndex([from], target));
+      onMoved(moveItems(value, [from], target), movedIndex([from], target, value.length));
     },
     onPress: (id) => onPress(Number(id)),
   });

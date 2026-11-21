@@ -76,7 +76,7 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
     onReorder: (ids, target) => {
       const id = ids[0]!;
       const from = items.findIndex((it) => it.id === id);
-      onMove?.(id, movedIndex([from], target));
+      onMove?.(id, movedIndex([from], target, items.length));
     },
     onPress,
   });

@@ -149,7 +149,7 @@ export function containerUnits(root: HTMLElement, container: string, along: (p: 
 
 /** The sibling the unit at `from` lands beside in gap `to`, and on which side; undefined where it lands where it is. */
 function dropTarget(units: readonly Unit[], from: number, to: number): { unit: Unit; after: boolean } | undefined {
-  if (from < 0 || isNoopDrop([from], to)) return undefined;
+  if (from < 0 || isNoopDrop([from], to, units.length)) return undefined;
   const after = to > from;
   const unit = after ? units[to - 1] : units[to];
   return unit && { unit, after };

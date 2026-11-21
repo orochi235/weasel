@@ -47,7 +47,7 @@ export function useEntryMoves<T>(
     onReorder: ([id], target) => {
       const from = Number(id);
       onChange(moveItems(value, [from], target));
-      focus.request({ at: movedIndex([from], target), to: 'handle' });
+      focus.request({ at: movedIndex([from], target, value.length), to: 'handle' });
     },
   });
   const move = (e: KeyboardEvent, at: number): void => {

@@ -32,13 +32,10 @@ describe('moveItems', () => {
       const got = moveItems(items, at, to);
       expect(got).toEqual(model(items, at, to));
       const inside = [...new Set(at)].filter((i) => i >= 0 && i < items.length);
-      if (inside.length > 0) {
-        const gap = Math.min(items.length, Math.max(0, to));
-        expect(got.indexOf(items[Math.min(...inside)]!)).toBe(movedIndex(inside, gap));
-      }
+      if (inside.length > 0) expect(got.indexOf(items[Math.min(...inside)]!)).toBe(movedIndex(at, to, items.length));
       const same = got.every((it, i) => it === items[i]);
-      if (inside.length > 0 && to >= 0 && to <= items.length) {
-        expect(isNoopDrop(inside, to)).toBe(same);
+      if (inside.length > 0) {
+        expect(isNoopDrop(at, to, items.length)).toBe(same);
         t.count(same ? 'noop' : 'moved');
       }
     }), runs(RUNS));
