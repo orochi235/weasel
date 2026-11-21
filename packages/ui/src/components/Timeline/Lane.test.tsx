@@ -60,6 +60,22 @@ describe('Lane', () => {
     expect([bar.style.left, bar.style.width]).toEqual(['60%', '40%']);
   });
 
+  it('sizes a nested timeline with no duration to its last track\'s end, and a negative one to nothing', () => {
+    const open = { kind: 'timeline', label: 'n', at: 100, timeline: { tracks: [sampled] } } as Track;
+    const { unmount } = render(<Lane {...base} row={laneOf(open)} />);
+    expect(screen.getByTestId('timeline-nested').style.width).toBe('50%');
+    unmount();
+    const negative = { kind: 'timeline', label: 'n', at: 100, timeline: { duration: -50, tracks: [sampled] } } as Track;
+    render(<Lane {...base} row={laneOf(negative)} />);
+    expect(screen.getByTestId('timeline-nested').style.width).toBe('0%');
+  });
+
+  it('runs an endless nested timeline\'s bar to the window\'s end', () => {
+    const endless = { kind: 'timeline', label: 'n', at: 100, timeline: { duration: Infinity, tracks: [sampled] } } as Track;
+    render(<Lane {...base} row={laneOf(endless)} />);
+    expect(screen.getByTestId('timeline-nested').style.width).toBe('90%');
+  });
+
   it('draws no past-end band on a row that plays to the end', () => {
     render(<Lane {...base} row={laneOf(sampled)} />);
     expect(screen.queryByTestId('timeline-after-end')).toBeNull();

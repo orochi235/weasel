@@ -6,7 +6,7 @@ import s from './Timeline.module.css';
 import { spanPercent, toPercent, type TimeWindow } from './timeScale';
 import { arrowMove } from '@weasel-js/quantity';
 import { LaneGraph } from './LaneGraph';
-import type { LaneRow } from './lanes';
+import { timelineSpan, type LaneRow } from './lanes';
 import { useKeyDrag } from './useKeyDrag';
 import { KeyGhost, KeyMarks, SegmentMarks, type MarkHold } from './LaneMarks';
 
@@ -120,13 +120,7 @@ export function Lane(props: LaneProps): ReactElement {
           />
         ) : (
           <>
-            {row.kind === 'timeline' ? (
-              <div
-                className={s.nestedBar}
-                data-testid="timeline-nested"
-                style={{ left: pct((row.track as TimelineTrack).at), width: spanPercent(win, (row.track as TimelineTrack).timeline.duration ?? 0) }}
-              />
-            ) : null}
+            {row.kind === 'timeline' ? <NestedBar track={row.track as TimelineTrack} offset={row.offset} win={win} /> : null}
             {row.kind === 'sampled' ? (
               <SegmentMarks
                 keys={sampledKeys} label={row.label} win={win} pct={pct} mark={mark}
@@ -205,6 +199,13 @@ function LaneLabel({ row, mark, expanded, toggleExpanded }: {
       <span id={labelId} className={s.laneName}>{row.label}</span>
     </div>
   );
+}
+
+/** A collapsed nested timeline's run on the ruler; an endless one runs off the window's end. */
+function NestedBar({ track, offset, win }: { track: TimelineTrack; offset: number; win: TimeWindow }) {
+  const start = offset + track.at;
+  const span = Math.min(timelineSpan(track.timeline), Math.max(0, win.to - start));
+  return <div className={s.nestedBar} data-testid="timeline-nested" style={{ left: toPercent(win, start), width: spanPercent(win, span) }} />;
 }
 
 /** The stretch of a lane past where its timelines stop playing it. */
