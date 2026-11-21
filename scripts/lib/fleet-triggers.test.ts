@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, matchesGlob, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { runsEverything } from './fleet-tree.mjs';
@@ -63,7 +63,8 @@ describe('the fleet triggers', () => {
   });
 
   it('list every test that lists or globs a directory, and this one, which reads every test file', () => {
-    const tests = execFileSync('git', ['ls-files', '*.test.ts', '*.test.tsx', '*.test.mts', '*.test.mjs'], { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean);
+    // The tree itself, not git's index: a fleet node syncs files into a tree whose index can be another commit's.
+    const tests = globSync('**/*.test.{ts,tsx,mts,mjs}', { cwd: ROOT, exclude: (name) => name === 'node_modules' || name === 'dist' || name.startsWith('.') });
     const readers = tests.filter((file) => /\b(readdirSync|globSync)\(/.test(readFileSync(join(ROOT, file), 'utf8')));
     expect(TREE_READERS).toEqual([...new Set([...readers, 'scripts/lib/fleet-triggers.test.ts'])].sort());
   });
