@@ -231,6 +231,13 @@ describe('a presented lab’s messages', () => {
     expect(new Set(targets)).toEqual(new Set(origins));
   });
 
+  it('neither posts nor listens given no origins', async ({ host }) => {
+    await host.mount({ duration: SPAN }, { messages: { origins: [] } });
+    expect(states()).toEqual([]);
+    await host.send({ type: 'labkit:play' });
+    expect(c().rate).toBe(0);
+  });
+
   it('takes a message addressed to another lab as not its own', async ({ host }) => {
     await host.mount({ duration: SPAN }, { messages: { name: 'hero' } });
     await host.send({ type: 'labkit:play', lab: 'other' });

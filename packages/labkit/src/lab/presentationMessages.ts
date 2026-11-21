@@ -48,7 +48,7 @@ export interface PresentationMessageOptions {
   /** Names this lab, for a page that holds several: a message whose `lab` is
    *  another name is ignored, and every `labkit:state` carries this one. */
   name?: string;
-  /** The origins a message is taken from, and the only ones a `labkit:state` is posted to. Default: any. */
+  /** The origins a message is taken from, and the only ones a `labkit:state` is posted to. Default: any; empty, none. */
   origins?: readonly string[];
 }
 
@@ -128,18 +128,18 @@ export function usePresentationMessages(
   const handle = useSyncExternalStore(clocks.subscribe, () =>
     trialId === null ? null : clocks.get(trialId),
   );
-  const allowed = origins?.join(' ');
+  const allowed = JSON.stringify(origins ?? null);
   useEffect(() => {
-    if (!active || !view || (clocked && !handle)) return;
+    const targets = (JSON.parse(allowed) as string[] | null) ?? ['*'];
+    if (!active || !view || (clocked && !handle) || targets.length === 0) return;
     const host = view.parent;
-    const targets = allowed === undefined ? ['*'] : allowed.split(' ');
     const post = (): void => {
       const state = presentationState(handle, name);
       for (const target of targets) host.postMessage(state, target);
     };
     const onMessage = (event: MessageEvent): void => {
       if (event.source !== host && event.source !== view) return;
-      if (allowed !== undefined && !targets.includes(event.origin)) return;
+      if (allowed !== 'null' && !targets.includes(event.origin)) return;
       const command = presentationCommand(event.data, name);
       if (!command) return;
       if (command.type === 'labkit:query') post();
