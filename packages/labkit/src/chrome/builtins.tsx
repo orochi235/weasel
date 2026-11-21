@@ -7,6 +7,7 @@ import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
 import { ZoomControl } from '@weasel-js/ui/components/ZoomControl';
 import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
+import { resolveAutoConfig } from '../config/autoConfig';
 import type { LeafRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
 import { icon } from '../icons.gen';
@@ -288,7 +289,12 @@ export function builtinContributions(
       region: 'sidebar',
       item: {
         title: 'Marks',
-        body: <MarkList meaning={instrument.annotations.meaning} config={ctx.config} />,
+        body: (
+          <MarkList
+            meaning={instrument.annotations.meaning}
+            config={resolveAutoConfig(ctx.configSchema, ctx.config, ctx.auto)}
+          />
+        ),
       },
     });
   }

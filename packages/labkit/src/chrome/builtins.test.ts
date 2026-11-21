@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
@@ -194,6 +195,23 @@ describe('builtinContributions', () => {
       cap: null,
     });
     vi.unstubAllGlobals();
+  });
+
+  it('answers a mark’s staleness against the config the trial runs on, an auto path resolved', () => {
+    const withAuto = {
+      ...ctx,
+      configSchema: resolveConfigSchema(
+        f.schema({ width: f.number(240), gap: f.number(12).auto((c) => (c.width as number) / 24) }),
+        [],
+      ),
+      config: { width: 240, gap: 12 },
+      auto: new Set(['gap']),
+    };
+    const annotated = { ...bare, annotations: { targets: [] } } as unknown as Instrument;
+    const marks = builtinContributions(annotated, withAuto).find((c) => c.id === 'marks');
+    if (marks === undefined) throw new Error('no marks contribution');
+    const body = (marks.item as { body: ReactElement<{ config: unknown }> }).body;
+    expect(body.props.config).toEqual({ width: 240, gap: 10 });
   });
 
   it('contributes a settings section only when the schema has fields', () => {
