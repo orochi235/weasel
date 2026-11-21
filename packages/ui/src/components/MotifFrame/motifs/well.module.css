@@ -51,12 +51,12 @@
   opacity: var(--wzl-well-title-opacity, 1);
 }
 
-.well[data-label='wide'] .title {
+.well[data-label='wide'] > .head > .row > .title {
   letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
   text-transform: var(--wzl-params-label-case, uppercase);
 }
 
-.well[data-label='wider'] .title {
+.well[data-label='wider'] > .head > .row > .title {
   letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wider));
   text-transform: var(--wzl-params-label-case, uppercase);
 }

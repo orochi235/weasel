@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { cssColorLiteral } from '@weasel-js/paint';
 import type { CSSProperties } from 'react';
 import { afterEach, expect, it } from 'vitest';
-import { MotifFrame, sheet } from '@weasel-js/ui/components/MotifFrame';
+import { MotifFrame, sheet, well } from '@weasel-js/ui/components/MotifFrame';
 
 // Which side an edge lands on under a writing direction is a cascade question only a browser answers.
 
@@ -46,4 +46,17 @@ it('sets no backdrop filter on a sheet with no blur, and the blur on one given i
   );
   expect(getComputedStyle(group('Plain')).backdropFilter).toBe('none');
   expect(getComputedStyle(group('Blurred')).backdropFilter).toBe('blur(3px)');
+});
+
+it('sets a well’s title as a label without setting the titles of wells inside it', () => {
+  render(
+    <MotifFrame title="Outer" motif={well({ label: 'wider' })}>
+      <MotifFrame title="Inner" motif={well()}>
+        x
+      </MotifFrame>
+    </MotifFrame>,
+  );
+  const heading = (name: string) => screen.getByRole('heading', { name });
+  expect(getComputedStyle(heading('Outer')).textTransform).toBe('uppercase');
+  expect(getComputedStyle(heading('Inner')).textTransform).toBe('none');
 });
