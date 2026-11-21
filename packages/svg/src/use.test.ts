@@ -46,4 +46,11 @@ describe('<use>', () => {
     expect(out.warnings.some((w) => w.includes('reference cycle'))).toBe(true);
     expect(out.warnings).toContain('<use> references #none, which the document does not define');
   });
+  it('counts a chain of references toward the nesting limit', () => {
+    const n = 2000;
+    const uses = Array.from({ length: n }, (_, i) => `<use id="u${i}" href="#u${i + 1}"/>`).join('');
+    const out = parse(`<defs>${uses}<rect id="u${n}" width="1" height="1"/></defs><use href="#u0"/><rect width="2" height="2"/>`);
+    expect(out.nodes.map((node) => (node as SvgPathNode).path)).toEqual([{ kind: 'rect', x: 0, y: 0, width: 2, height: 2 }]);
+    expect(out.warnings.some((w) => /nest more than \d+ deep/.test(w))).toBe(true);
+  });
 });

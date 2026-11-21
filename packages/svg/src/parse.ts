@@ -145,17 +145,22 @@ function parseChildren(
 ): SvgNode[] {
   const out: SvgNode[] = [];
   if (children.length === 0) return out;
+  nested(onWarn, () => readChildren(children, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden, out));
+  return out;
+}
+
+/** `read` one level deeper, or `undefined` when that passes {@link NESTING_LIMIT}. */
+function nested<T>(onWarn: (m: string) => void, read: () => T): T | undefined {
   if (nesting >= NESTING_LIMIT) {
     onWarn(`elements nest more than ${NESTING_LIMIT} deep; what is deeper is not drawn`);
-    return out;
+    return undefined;
   }
   nesting++;
   try {
-    readChildren(children, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden, out);
+    return read();
   } finally {
     nesting--;
   }
-  return out;
 }
 
 function readChildren(
@@ -222,7 +227,7 @@ function parseElement(
       return image;
     }
   }
-  if (tag === 'use') return parseUse(el, ctm, style, (t, m, s) => readChild(t, m, s, from, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn);
+  if (tag === 'use') return nested(onWarn, () => parseUse(el, ctm, style, (t, m, s) => readChild(t, m, s, from, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn)) ?? null;
   if (tag === 'g' || tag === 'a' || tag === 'switch') return parseGroup(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden);
   const clipRaw = ownProp(el, 'clip-path');
   if (clipRaw != null && readProperty('clip-path', clipRaw) !== 'none') {
