@@ -31,6 +31,14 @@ it('draws nothing for a bare or malformed string', () => {
   expect(resolveIcon('ui:a:b')).toBeUndefined();
 });
 
+it('draws nothing, and warns, for a value JSON cannot write', () => {
+  const cyclic: Record<string, unknown> = { name: 3 };
+  cyclic.self = cyclic;
+  expect(resolveIcon(1n)).toBeUndefined();
+  expect(resolveIcon(cyclic)).toBeUndefined();
+  expect(warn).toHaveBeenCalledTimes(2);
+});
+
 // A prefs schema loaded as JSON reaches resolveIcon as plain strings.
 describe('a name read from data', () => {
   const namesIn = (json: string) => (JSON.parse(json) as { icons: string[] }).icons;
