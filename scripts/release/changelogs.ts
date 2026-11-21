@@ -60,18 +60,25 @@ export function releasesFromChangelogs(
   history: HistoryMeta = {},
 ): Release[] {
   const byVersion = new Map<string, Map<string, ChangelogEntry>>();
+  // One commit can add several changesets, so an entry is its hash and its text: the same pair in
+  // two packages' changelogs is one change to both. The first of a hash keeps the bare hash as id.
+  const perHash = new Map<string, number>();
 
   for (const source of sources) {
     for (const raw of parseChangelog(source.text, source.pkg)) {
       let entries = byVersion.get(raw.version);
       if (!entries) byVersion.set(raw.version, (entries = new Map()));
 
-      const existing = entries.get(raw.id);
+      const key = `${raw.id}\0${raw.body}`;
+      const existing = entries.get(key);
       if (existing) {
         if (!existing.packages.includes(raw.pkg)) existing.packages.push(raw.pkg);
         continue;
       }
-      entries.set(raw.id, makeEntry(raw.id, raw.pkg, raw.body, history[raw.id]));
+      const seen = perHash.get(`${raw.version}\0${raw.id}`) ?? 0;
+      perHash.set(`${raw.version}\0${raw.id}`, seen + 1);
+      const id = seen === 0 ? raw.id : `${raw.id}-${seen + 1}`;
+      entries.set(key, makeEntry(id, raw.pkg, raw.body, history[raw.id]));
     }
   }
 

@@ -60,6 +60,19 @@ describe('releasesFromChangelogs', () => {
     expect(shared[0].packages).toEqual(['core', 'geom']);
   });
 
+  it('keeps every changeset one commit added, while one listed in two packages stays one entry', () => {
+    const text = (pkg: string) =>
+      `# @weasel-js/${pkg}\n\n## 2.0.0\n\n### Major Changes\n\n- fd2cbc8: First change.\n- fd2cbc8: Second change.\n`;
+    const [release] = releasesFromChangelogs([
+      { pkg: 'core', text: text('core') },
+      { pkg: 'text-tools', text: text('text-tools') },
+    ]);
+    expect(release.entries.map((e) => [e.id, e.titleHtml, e.packages])).toEqual([
+      ['fd2cbc8', 'First change.', ['core', 'text-tools']],
+      ['fd2cbc8-2', 'Second change.', ['core', 'text-tools']],
+    ]);
+  });
+
   it('drops the fixed group’s "Updated dependencies" stanzas', () => {
     const all = releases.flatMap((r) => r.entries);
     expect(all.some((e) => /Updated dependencies/.test(e.titleHtml + e.bodyHtml))).toBe(false);
