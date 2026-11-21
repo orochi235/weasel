@@ -59,6 +59,9 @@ function HeldLayerList(props: LayerListProps) {
   };
   const access = useControlAccess();
   const held = access.state !== 'enabled';
+  // A field that unmounts because its row stopped being renamable never blurs, so its rename closes here.
+  const open = renaming === null ? undefined : findLayer(items, renaming);
+  if (renaming !== null && (held || !open || !canRename(props, open))) setRenaming(null);
   const onRowKeyDown = (id: string, e: KeyboardEvent<HTMLElement>) => {
     const item = findLayer(items, id);
     if (e.key !== 'F2' || held || !item || !canRename(props, item)) return;

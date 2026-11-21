@@ -1,6 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { LayerList } from './LayerList';
+import { LayerList, type LayerListItem, type LayerListProps } from './LayerList';
 import { BG, FLAT, list, row, TREE } from './layerList.fixture';
 import { isApplePlatform } from '@weasel-js/gestures';
 
@@ -197,6 +197,27 @@ describe('LayerList rename', () => {
       fireEvent.doubleClick(screen.getByText(label));
       fireEvent.keyDown(row(label), { key: 'F2' });
       expect(screen.queryByLabelText(`Rename ${label}`)).toBeNull();
+    }
+  });
+
+  it('closes a rename whose row stops being renamable, so it does not reopen later', () => {
+    const items = [{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }];
+    const variants: Array<[Partial<LayerListProps>, LayerListItem[]]> = [
+      [{ disabled: true }, items],
+      [{ readOnly: true }, items],
+      [{}, [{ id: 'a', label: 'Alpha', locked: true }, items[1]!]],
+      [{}, [items[1]!]],
+    ];
+    for (const [hold, during] of variants) {
+      const onRename = vi.fn();
+      const { rerender, unmount } = list({ items, onRename });
+      fireEvent.doubleClick(screen.getByText('Alpha'));
+      expect(screen.getByLabelText('Rename Alpha')).toBeInTheDocument();
+      rerender(<LayerList items={during} onRename={onRename} {...hold} />);
+      rerender(<LayerList items={items} onRename={onRename} />);
+      expect(screen.queryByLabelText('Rename Alpha')).toBeNull();
+      expect(onRename).not.toHaveBeenCalled();
+      unmount();
     }
   });
 });
