@@ -100,3 +100,10 @@ describe('draw-style XML clusters', () => {
     expect(data.clusters?.some((g) => g.members.includes('B'))).toBe(false);
   });
 });
+
+describe('draw-style XML routers', () => {
+  it('warns that an obstacle-avoiding connector is written orthogonal', () => {
+    const { warnings } = DIAGRAM_DRAW_XML.write!(doc({ nodes: TWO, edges: [{ id: 'e', from: 'a', to: 'b', router: 'avoid' }] }), { theme: THEME });
+    expect(warnings).toContain('Connectors routed around shapes were written as orthogonal connectors.');
+  });
+});
