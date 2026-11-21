@@ -17,7 +17,7 @@ const SLACK = 0.5;
  * How many of a bar's items, from the first, fit along its line beside the
  * button that opens the rest: all of them where the line holds every one.
  * Measured before the first paint, and again when the bar or an item on it
- * changes size. An item off the line keeps the size it last had on it.
+ * changes size. An item off the line keeps the size it last had on it, until it leaves the bar.
  *
  * `natural` is the length the bar takes with every item on its line, frame
  * included: what it asks its host for, so that a host sized to its content
@@ -57,6 +57,8 @@ export function useBarOverflow(
       return vertical ? box.height : box.width;
     };
     const measure = (): void => {
+      const held = new Set(keysRef.current);
+      for (const key of sizes.current.keys()) if (!held.has(key)) sizes.current.delete(key);
       for (const child of el.querySelectorAll(`:scope > [${BAR_ITEM}]`)) sizes.current.set(child.getAttribute(BAR_ITEM)!, along(child));
       const button = el.querySelector(`:scope > [${BAR_MORE}]`);
       if (button !== null) more.current = along(button);
