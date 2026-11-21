@@ -4,7 +4,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { buildSceneViewCommands } from '../sceneViewRender';
 import { defaultDrawOne, defaultPaintBounds } from '../defaultDrawOne';
-import { __withoutSubtreeCullForTest } from './sceneVisibility';
+import { __visibilityIndexCountForTest, __withoutSubtreeCullForTest, sceneSubtreeCull } from './sceneVisibility';
 import { buildSceneLayers } from '../buildSceneLayer';
 import { wireSceneSlotToScene } from '../sceneSlotWiring';
 import { sceneToAdapter } from '../sceneAdapter';
@@ -155,5 +155,29 @@ describe('render visibility: a pruned walk paints what the full walk paints', ()
     // 400×300 over a 100-pitch grid: 4 columns by 3 rows, and the edge ones.
     expect(pruned.ids.length).toBeLessThanOrEqual(5 * 4);
     expect(pruned.cmds).toBe(__withoutSubtreeCullForTest(() => frame(scene, view)).cmds);
+  });
+
+  it('paints a node moved, box unchanged, into a container already wide enough to index its children', () => {
+    const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'a' }, { id: 'b' }] });
+    for (let i = 0; i < 600; i++) {
+      scene.add({ kind: 'mark', layer: 'a', pose: { x: 5000 + i * 10, y: 5000, width: 5, height: 5 }, data: { shape: 'rect' } });
+    }
+    const g = scene.add({ kind: 'group', layer: 'a', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    for (let i = 0; i < 100; i++) {
+      scene.add({ kind: 'mark', layer: 'a', parent: g, pose: { x: 3000 + i * 10, y: 3000, width: 5, height: 5 }, data: { shape: 'rect' } });
+    }
+    const n = scene.add({ kind: 'mark', layer: 'a', pose: { x: 50, y: 50, width: 20, height: 20 }, data: { shape: 'rect' } });
+    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    expect(frame(scene, view).ids).toContain(n);
+    scene.move(n, g);
+    expect(frame(scene, view).ids).toContain(n);
+  });
+
+  it('keeps a bounded number of indexes when each render brings a new paintBounds', () => {
+    const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'a' }, { id: 'b' }] });
+    for (let i = 0; i < 600; i++) scene.add({ kind: 'mark', layer: 'a', pose: { x: i, y: 0, width: 5, height: 5 }, data: { shape: 'rect' } });
+    const rect = { x: 0, y: 0, width: 400, height: 300 };
+    for (let i = 0; i < 20; i++) sceneSubtreeCull(scene, (n, p, v) => defaultPaintBounds(n as never, p as never, v as never), rect);
+    expect(__visibilityIndexCountForTest(scene)).toBeLessThanOrEqual(4);
   });
 });

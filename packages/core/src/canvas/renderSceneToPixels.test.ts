@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { planPixelRender, renderSceneToPixels } from './renderSceneToPixels';
+import { createRasterSession, planPixelRender, renderSceneToPixels } from './renderSceneToPixels';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { rotateAboutAabbCenter } from './poseRotation';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -334,5 +335,21 @@ describe('renderSceneToPixels — GL execution (glRecorder)', () => {
         gl: rec.gl, createCanvas: recorderFactory(rec),
       }),
     ).toThrow(/mutually exclusive/);
+  });
+});
+
+describe('createRasterSession', () => {
+  it('renderIds measures screen units at the plan\'s pixel ratio, as render does', () => {
+    const rec = createGLRecorder();
+    const spy = vi.spyOn(WeaselRenderer.prototype, 'renderIds').mockReturnValue({} as never);
+    const session = createRasterSession({ gl: rec.gl });
+    try {
+      const args = { scene: fakeScene([]), sourceRect: RECT, scale: { x: 2, y: 2 }, pixelRatio: 2 };
+      session.renderIds(args);
+      expect(spy.mock.calls[0][2]?.screen).toEqual(planPixelRender(args).screen);
+    } finally {
+      session.dispose();
+      spy.mockRestore();
+    }
   });
 });

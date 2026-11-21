@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { pathFromD } from '@weasel-js/geom';
-import type { DrawCommand } from '@weasel-js/renderer';
+import { registerProgram, type DrawCommand } from '@weasel-js/renderer';
 import { reportCommandLosses, type RenderDiagnostic } from './renderDiagnostics';
 
 const INK = { kind: 'solid', color: '#000' } as const;
@@ -17,5 +17,13 @@ describe('reportCommandLosses', () => {
     expect(found.filter((d) => d.kind === 'marker')).toEqual([
       expect.objectContaining({ kind: 'marker', subject: 'arow' }),
     ]);
+  });
+
+  it('reports a group effect whose program has no GLSL source', () => {
+    const blur = registerProgram('diagnostics-wgsl-only-blur', { wgsl: { frag: 'fn fragment(in: Varyings) -> vec4f { return vec4f(0.0); }' } });
+    const commands = [{ kind: 'group', effects: [{ program: blur }], children: [] }] as unknown as DrawCommand[];
+    const found: RenderDiagnostic[] = [];
+    reportCommandLosses(commands, [], (d) => found.push(d));
+    expect(found).toEqual([expect.objectContaining({ kind: 'shader', subject: blur.id })]);
   });
 });

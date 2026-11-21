@@ -72,8 +72,10 @@ function markerKeys(commands: readonly DrawCommand[], out = new Set<string>()): 
 
 function shaderPrograms(commands: readonly DrawCommand[], out = new Set<string>()): Set<string> {
   for (const c of commands) {
-    if (c.kind === 'group') shaderPrograms(c.children, out);
-    else if (c.kind === 'shader') out.add(c.program.id);
+    if (c.kind === 'group') {
+      for (const effect of c.effects ?? []) out.add(effect.program.id);
+      shaderPrograms(c.children, out);
+    } else if (c.kind === 'shader') out.add(c.program.id);
   }
   return out;
 }

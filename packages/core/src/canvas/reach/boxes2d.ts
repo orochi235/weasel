@@ -40,7 +40,5 @@ function writeImage(m: Affine, x0: number, y0: number, x1: number, y1: number, o
 
 /** A copy's transform as a {@link BoxImage}. */
 export function affineImage(m: Affine): BoxImage {
-  return (src, at, out, outAt) => {
-    writeImage(m, src[at]!, src[at + 1]!, src[at + 2]!, src[at + 3]!, out, outAt);
-  };
+  return (src, at, out, outAt) => writeImage(m, src[at]!, src[at + 1]!, src[at + 2]!, src[at + 3]!, out, outAt);
 }

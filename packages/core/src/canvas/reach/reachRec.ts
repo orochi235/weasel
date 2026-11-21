@@ -14,6 +14,8 @@ export class ReachRec {
   /** A change to its children may have reordered them, so a wide one re-ranks. */
   orderMoved = false;
   queued = false;
+  /** It joined its parent since it last drained, so a wide parent's index lacks it whether or not its reach moved. */
+  joined = false;
   wide: WideChildren | null = null;
   /** Its place among its siblings, read when its parent is wide. */
   rank = 0;

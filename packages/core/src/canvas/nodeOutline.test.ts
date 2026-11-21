@@ -128,7 +128,7 @@ describe('NodeShapeEntry.geometryGeneration', () => {
     expect(built).toBe(2);
   });
 
-  it("is summed over a registry's painters, which the snap index keys on", () => {
+  it("moves with a registry's painters, which the snap index keys on", () => {
     const gem = gemKind();
     const { scene, add } = sceneWith(gem.entry);
     add('g', { gem: { facets: 8 } });
@@ -138,8 +138,23 @@ describe('NodeShapeEntry.geometryGeneration', () => {
     const first = index();
     expect(index()).toBe(first);
     gem.recut();
-    expect(geometryGenerationOf(shapes)).toBe(before + 1);
+    expect(geometryGenerationOf(shapes)).not.toBe(before);
     expect(index()).not.toBe(first);
+  });
+
+  it('never answers a value it answered before, when a painter leaves and another moves as far', () => {
+    const gem = gemKind();
+    const other = gemKind();
+    const { scene, release } = sceneWith(gem.entry);
+    nodeShapesOf(scene).register({ ...other.entry, id: 'test:other' });
+    gem.recut();
+    const shapes = nodeShapesOf(scene);
+    const seen = [geometryGenerationOf(shapes)];
+    release();
+    seen.push(geometryGenerationOf(shapes));
+    other.recut();
+    seen.push(geometryGenerationOf(shapes));
+    expect(new Set(seen).size).toBe(3);
   });
 
   it('counts among the outside sources a derivation checks while the kind is registered', () => {
