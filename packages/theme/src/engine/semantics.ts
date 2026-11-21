@@ -4,6 +4,7 @@ import type { PinObject, SemanticRule } from '../definition.ts';
 import { refTarget } from '../dtcg/resolve.ts';
 import type { RawToken, TokenValue } from '../dtcg/types.ts';
 import { contrast, toLch } from './color/oklch.ts';
+import { settle, type SettleContext } from './entries.ts';
 import { checkProblem, ruleProblem } from './ruleShape.ts';
 import type { Issue } from './types.ts';
 import { maxOf, minOf } from '@weasel-js/geom';
@@ -11,8 +12,7 @@ import { maxOf, minOf } from '@weasel-js/geom';
 const HEX = /^#[0-9a-f]{6}$/i;
 const MAX_DEPTH = 32;
 
-export interface SemanticContext {
-  readonly sel: AxisChoice;
+export interface SemanticContext extends SettleContext {
   /** Ramp and scale tokens derived so far. */
   readonly tokens: Readonly<Record<string, RawToken>>;
   /** Ramp name → its steps, in order. */
@@ -23,7 +23,6 @@ export interface SemanticContext {
   readonly component: (name: string) => PinObject | undefined;
   /** Whether a name is produced, or failed to be, at this selection. An `against` name that is neither is dangling. */
   readonly known: (name: string) => boolean;
-  readonly issues: Issue[];
 }
 
 export interface DerivedSemantic {
@@ -129,7 +128,9 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
   if (problem) return invalid(problem);
 
   if ('value' in r) {
-    return { rule: 'value', token: { type: r.type ?? 'unknown', value: r.value, alpha: undefined, description } };
+    const value = settle(r.value, `semantics.${name}.value`, ctx);
+    if (!value.ok) return undefined;
+    return { rule: 'value', token: { type: r.type ?? 'unknown', value: value.value as TokenValue, alpha: undefined, description } };
   }
 
   if ('ref' in r) {

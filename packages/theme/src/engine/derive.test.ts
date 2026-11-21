@@ -475,3 +475,20 @@ describe('a group-qualified reference', () => {
     expect(tokens.p.value).toBe('{color.brand-100}');
   });
 });
+
+describe('a seed in a semantic value rule', () => {
+  const S: ThemeDefinition = { name: 's', seeds: { brand: '#ff0000' } };
+
+  it('resolves to the seed, as it does in a component', () => {
+    const { tokens, issues } = derive({ ...S, semantics: { s: { value: '{seeds.brand}', type: 'color' } }, components: { c: { value: '{seeds.brand}', type: 'color' } } });
+    expect(issues).toEqual([]);
+    expect(tokens.s.value).toBe('#ff0000');
+    expect(tokens.c.value).toBe('#ff0000');
+  });
+
+  it('is reported when the seed is not declared', () => {
+    const { tokens, issues } = derive({ ...S, semantics: { s: { value: '{seeds.nope}', type: 'color' } } });
+    expect(tokens.s).toBeUndefined();
+    expect(issues).toEqual([{ kind: 'invalid', path: 'semantics.s.value', message: 'unknown seed "nope"' }]);
+  });
+});

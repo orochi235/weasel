@@ -147,7 +147,7 @@ export function derive(definition: ThemeDefinition, selection: AxisChoice = {}, 
   const component = (name: string) => (hasOwnKey(components, name) ? pinAt(components[name], ctx) : undefined);
   const known = (name: string) =>
     hasOwnKey(tokens, name) || failed.has(name) || hasOwnKey(semantics, name) || hasOwnKey(components, name) || hasOwnKey(pins, name);
-  const derived = deriveSemantics(semantics, { sel, tokens, ramps: rampSteps, pinned, component, known, issues });
+  const derived = deriveSemantics(semantics, { ...ctx, tokens, ramps: rampSteps, pinned, component, known });
   for (const name of Object.keys(semantics)) {
     const d = derived.get(name);
     if (d) sink.put(name, d.token, 'semantics', d.rule, `semantics.${name}`);
