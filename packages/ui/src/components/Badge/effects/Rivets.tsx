@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import type { BaseSampler, EffectModule } from '../bases/types';
 import type { BadgeCorner } from '../types';
+import { lightCorner } from './lightCorner';
 
 /** What an effect of type `rivets` takes as `params`. */
 export interface BadgeRivetsEffectParams {
@@ -48,8 +49,9 @@ const Rivets: EffectModule<BadgeRivetsEffectParams> = {
     const sx = 100 / boxW, sy = 100 / boxH;
     const rx = cfg.radius * sx;
     const ry = cfg.radius * sy;
-    const litDx = cfg.lightFrom[1] === 'l' ? -cfg.radius * 0.32 : cfg.radius * 0.32;
-    const litDy = cfg.lightFrom[0] === 't' ? -cfg.radius * 0.32 : cfg.radius * 0.32;
+    const lightFrom = lightCorner(cfg.lightFrom, 'rivets');
+    const litDx = lightFrom[1] === 'l' ? -cfg.radius * 0.32 : cfg.radius * 0.32;
+    const litDy = lightFrom[0] === 't' ? -cfg.radius * 0.32 : cfg.radius * 0.32;
     const positions: [number, number][] = [];
     for (const [cx, cy, ux, uy] of [[0, 0, 1, 1], [boxW, 0, -1, 1], [0, boxH, 1, -1], [boxW, boxH, -1, -1]]) {
       const entry = cornerEntry(sampler, boxW, boxH, cx, cy, ux, uy);

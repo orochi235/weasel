@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { polygonSampler } from '../bases/polygonSampler';
 import type { BaseSampler, EffectModule, PerimeterPoint } from '../bases/types';
 import Aqua from './Aqua';
@@ -249,4 +249,16 @@ describe('rivets', () => {
     for (const [x, y] of found) expect(Math.abs(x - 50) + Math.abs(y - 50)).toBeLessThan(50);
     expect(c.querySelector('g[clip-path]')).not.toBeNull();
   });
+});
+
+describe('a light corner', () => {
+  for (const [name, effect] of [['sheen', Sheen], ['bevel', Bevel], ['rivets', Rivets]] as const) {
+    it(`${name} throws on a lightFrom that is not a corner, an inherited name included`, () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      for (const lightFrom of ['constructor', 'toString', 'top']) {
+        expect(() => draw(effect as EffectModule<object>, { lightFrom })).toThrow(RangeError);
+      }
+      vi.restoreAllMocks();
+    });
+  }
 });

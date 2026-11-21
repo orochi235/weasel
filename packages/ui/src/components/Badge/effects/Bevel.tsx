@@ -2,6 +2,7 @@ import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 import type { BadgeCorner } from '../types';
 import { bevelBands } from './bevelBands';
+import { lightCorner } from './lightCorner';
 
 /** What an effect of type `bevel` takes as `params`. */
 export interface BadgeBevelEffectParams {
@@ -37,7 +38,7 @@ const Bevel: EffectModule<BadgeBevelEffectParams> = {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
     const cfg = { ...DEFAULTS, ...params };
-    const cls = bevelClasses(cfg.lightFrom);
+    const cls = bevelClasses(lightCorner(cfg.lightFrom, 'bevel'));
     const bands = bevelBands(sampler, boxW, boxH, cfg.bevelWidth, sideForNormal);
 
     return (

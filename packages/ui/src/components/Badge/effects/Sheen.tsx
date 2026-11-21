@@ -2,6 +2,7 @@ import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 import type { BadgeCorner } from '../types';
 import { outlineRegion } from '../composeOutline';
+import { lightCorner } from './lightCorner';
 
 /** What an effect of type `sheen` takes as `params`. */
 export interface BadgeSheenEffectParams {
@@ -34,7 +35,7 @@ const Sheen: EffectModule<BadgeSheenEffectParams> = {
           <clipPath id={clipId}>
             <path d={sampler.bodyPath} />
           </clipPath>
-          <linearGradient id={gradId} {...FACE_COORDS[cfg.lightFrom]}>
+          <linearGradient id={gradId} {...FACE_COORDS[lightCorner(cfg.lightFrom, 'sheen')]}>
             <stop offset="0%"   stopColor="black" stopOpacity={peak} />
             <stop offset="45%"  stopColor="black" stopOpacity="0.04" />
             <stop offset="58%"  stopColor="white" stopOpacity="0.04" />

@@ -3468,3 +3468,12 @@ Calls the lanes made without a ruling:
   still writes anchored at the user-space origin; the kit's export path resolves such a paint with
   `paintToLocalUnits` first and never warns. Writing a def per node, each placed against that node's box, was the
   alternative.
+
+## Audit round sixty-five (2026-11-21): Badge effects
+
+- 2026-11-21 (the fixer's call): a `sheen`, `bevel`, or `rivets` effect throws a `RangeError` naming it for a
+  `lightFrom` other than `tl`, `tr`, `bl`, or `br`, `constructor` and `toString` included, as a `ribbon` end or a
+  `puzzle` edge does. Reading it as the default `tl` was the alternative.
+- 2026-11-21 (the fixer's call): `NaN` or an infinite number in a `spikes`, `puffs`, `bites`, or `scallops` param reads
+  as that param's default, as round 60 ruled for badge base params; `spikes`' `count`, and the `sunbeams` `count` and
+  `woodgrain` `lines` and `knots`, are repeat counts, whole numbers up to 256 where `NaN` reads as the least.
