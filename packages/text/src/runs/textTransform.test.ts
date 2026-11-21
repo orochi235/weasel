@@ -95,3 +95,23 @@ describe('transformRunTexts', () => {
     expect(transformRunTexts(['i'], ['uppercase'], ['not a tag!'])[0].text).toBe('I');
   });
 });
+
+describe('transformRunTexts on a long paragraph whose mapping changes length', () => {
+  it('reads the pieces in time linear in the paragraph', () => {
+    const word = 'άβγ ';
+    const greek = word.repeat(8000);
+    const turkish = 'I\u0307x '.repeat(8000);
+    const t0 = performance.now();
+    const up = transformRunTexts([greek], ['uppercase'], ['el'])[0];
+    const low = transformRunTexts([turkish], ['lowercase'], ['tr'])[0];
+    expect(performance.now() - t0).toBeLessThan(1000);
+    expect(up.text).toBe(greek.toLocaleUpperCase('el'));
+    expect(low.text).toBe(turkish.toLocaleLowerCase('tr'));
+    expect(low.srcMap!.starts.length).toBe(low.text.length);
+  });
+
+  it('cuts the same pieces word by word as a short paragraph read whole', () => {
+    const out = transformRunTexts(['Ά́ ', 'ά'], ['uppercase', 'uppercase'], ['el', 'el']);
+    expect(out.map((o) => o.text).join('')).toBe('Ά́ ά'.toLocaleUpperCase('el'));
+  });
+});

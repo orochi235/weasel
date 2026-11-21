@@ -101,32 +101,72 @@ function wordStarts(text: string): Set<number> {
  * to join.
  */
 function piecesOf(texts: readonly string[], whole: string, map: (s: string) => string): string[] | null {
+  // Code points as each run reads them: a surrogate pair split by a run
+  // boundary is two.
+  const cps: string[] = [];
+  const opens = new Set<number>();
+  for (const t of texts) {
+    opens.add(cps.length);
+    for (const ch of t) cps.push(ch);
+  }
+  const pieces = mappedPieces(cps, whole, map);
+  if (!pieces) return null;
+  for (const k of opens) if (k < cps.length && pieces[k] === '') return null;
+  return pieces;
+}
+
+const SPACE = /\s/u;
+
+/**
+ * The context a case mapping reads never crosses white space, so a paragraph
+ * is read word by word and only a word whose length changed pays for prefix
+ * mapping; a mapping that does read across is caught and read whole.
+ */
+function mappedPieces(cps: readonly string[], whole: string, map: (s: string) => string): string[] | null {
+  const words: string[][] = [];
+  let word: string[] = [];
+  for (const ch of cps) {
+    word.push(ch);
+    if (SPACE.test(ch)) {
+      words.push(word);
+      word = [];
+    }
+  }
+  if (word.length > 0) words.push(word);
+  const mapped = words.map((w) => map(w.join('')));
+  if (mapped.join('') !== whole) return prefixPieces(cps, whole, map);
+  const out: string[] = [];
+  for (let i = 0; i < words.length; i++) {
+    const pieces = prefixPieces(words[i], mapped[i], map);
+    if (!pieces) return null;
+    for (const p of pieces) out.push(p);
+  }
+  return out;
+}
+
+/** `whole`, the code points `cps` mapped by `map` as one string, cut into
+ *  the piece each produced; null when a longer prefix maps shorter. */
+function prefixPieces(cps: readonly string[], whole: string, map: (s: string) => string): string[] | null {
   const out: string[] = [];
   let n = 0;
-  for (const t of texts) for (const ch of t) n += map(ch).length;
+  for (const ch of cps) n += map(ch).length;
   let at = 0;
   if (n === whole.length) {
-    for (const t of texts) {
-      for (const ch of t) {
-        const len = map(ch).length;
-        out.push(whole.slice(at, at + len));
-        at += len;
-      }
+    for (const ch of cps) {
+      const len = map(ch).length;
+      out.push(whole.slice(at, at + len));
+      at += len;
     }
     return out;
   }
-  const full = texts.join('');
+  const text = cps.join('');
   let prefix = 0;
-  for (const t of texts) {
-    let opening = true;
-    for (const ch of t) {
-      prefix += ch.length;
-      const upto = map(full.slice(0, prefix)).length;
-      if (upto < at || (upto === at && opening)) return null;
-      out.push(whole.slice(at, upto));
-      at = upto;
-      opening = false;
-    }
+  for (const ch of cps) {
+    prefix += ch.length;
+    const upto = map(text.slice(0, prefix)).length;
+    if (upto < at) return null;
+    out.push(whole.slice(at, upto));
+    at = upto;
   }
   return at === whole.length ? out : null;
 }
