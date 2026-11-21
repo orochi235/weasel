@@ -59,7 +59,7 @@ describe('describeElement', () => {
 interface Geometry {
   rect?: { top?: number; left?: number; bottom: number; right?: number };
   client?: { height: number; width: number; top?: number; left?: number };
-  scroll?: { height: number; width: number; top?: number };
+  scroll?: { height: number; width: number; top?: number; left?: number };
 }
 
 function place<E extends Element>(el: E, { rect, client, scroll }: Geometry): E {
@@ -80,6 +80,7 @@ function place<E extends Element>(el: E, { rect, client, scroll }: Geometry): E 
     set('scrollHeight', scroll.height);
     set('scrollWidth', scroll.width);
     set('scrollTop', scroll.top ?? 0);
+    set('scrollLeft', scroll.left ?? 0);
   }
   return el;
 }
@@ -127,6 +128,22 @@ describe('explainLabScroll', () => {
     child(document, shell, 'footer', { rect: { bottom: 608 } });
     expect(explainLabScroll(lab, shell)).toBe(
       '.lk-shell-body scrolls: div.footer reaches 6px past it (y)',
+    );
+    lab.remove();
+  });
+
+  it('names the culprit once the shell body has been scrolled', () => {
+    const { lab, shell } = shellOverflowingBy6(document);
+    place(shell, {
+      rect: { bottom: 600 },
+      client: { height: 600, width: 800 },
+      scroll: { height: 606, width: 810, top: 6, left: 10 },
+    });
+    // Scrolled to the end, so every descendant sits 6px higher and 10px further left.
+    child(document, shell, 'footer', { rect: { top: 500, bottom: 600, right: 790 } });
+    child(document, shell, 'wide', { rect: { left: -10, bottom: 10, right: 800 } });
+    expect(explainLabScroll(lab, shell)).toBe(
+      '.lk-shell-body scrolls: div.wide reaches 10px past it (x)',
     );
     lab.remove();
   });
