@@ -7,7 +7,7 @@ import {
 } from '../batchHull';
 import type { ClipEntry, DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
-import { fillMeshHandle } from './mesh';
+import { fillMesh, fillMeshHandle, meshHandle } from './mesh';
 import { projFor, setProjAndModel } from './uniforms';
 import { PARITY_WRITE, clipPop, clipPush } from './stencil';
 import type { GpuStencilState } from '../gpu/types';
@@ -228,8 +228,9 @@ export function flushForOwnDraw(ctx: DrawContext): void {
 
 /** Rasterize a path into the stencil buffer under `stencil`, writing no color. */
 function rasterizePathToStencil(ctx: DrawContext, path: Path, model: GlMat3, stencil: GpuStencilState): void {
-  const handle = fillMeshHandle(ctx, path);
-  const o = path.kind === 'polygon' ? path.origin : undefined;
+  const mesh = fillMesh(ctx, path);
+  const handle = meshHandle(ctx, mesh);
+  const o = mesh.origin;
   setProjAndModel(ctx, ctx.pathFill, o ? mat3.translated(model, o.x, o.y) : model);
   drawTriangles(ctx, ctx.pathFill, handle.geometry, handle.indexCount, { stencil, colorWrite: false });
 }
