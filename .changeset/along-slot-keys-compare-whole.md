@@ -2,6 +2,6 @@
 '@weasel-js/ui': patch
 ---
 
-Parts placed on a curved row by key take their places when their ids change to ones that join to the same text, such as `'a\nb'` becoming `'a'` and `'b'`.
+Parts on a curved row take their places when their ids change to ids that join to the same text, as `'a\nb'` to `'a'` and `'b'`.
 
 <!-- entry: fix -->
