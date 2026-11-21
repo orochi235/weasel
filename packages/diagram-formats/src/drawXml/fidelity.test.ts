@@ -88,3 +88,15 @@ describe('draw-style XML pools and containers', () => {
     expect(region(data, 'pool').role).toBe('pool');
   });
 });
+
+describe('draw-style XML clusters', () => {
+  it('leaves members a later cluster also names in the earlier one', async () => {
+    const { data } = await roundTrip({
+      nodes: [...TWO, { id: 'c', lines: ['C'], at: { x: 0, y: 200 }, width: 80, height: 40 }],
+      edges: [],
+      clusters: [{ id: 'A', members: ['a', 'b', 'c'] }, { id: 'B', members: ['a', 'b'] }],
+    });
+    expect(data.clusters?.find((g) => g.id === 'A')?.members).toEqual(['a', 'b', 'c']);
+    expect(data.clusters?.some((g) => g.members.includes('B'))).toBe(false);
+  });
+});
