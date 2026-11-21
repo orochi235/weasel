@@ -78,12 +78,19 @@ describe('framesSweep', () => {
 
   it('walks no frames past the end of an endless loop of no length', () => {
     expect(stepsOf(framesSweep({ duration: 0, loop: true }, { every: 10, passes: 'all' }))).toEqual({ steps: [], capped: false });
-    expect(stepsOf(framesSweep({ loop: 0 }, { every: 10, passes: 'all' }))).toEqual({ steps: [0], capped: false });
+    expect(stepsOf(framesSweep({ duration: 0, loop: 3 }, { every: 10, passes: 'all' }))).toEqual({ steps: [0], capped: false });
     expect(() => framesSweep({ duration: NaN }, { every: 10 })).toThrow(RangeError);
     expect(() => framesSweep({ duration: -100 }, { every: 10 })).toThrow(RangeError);
-    // A NaN count of passes walked forever; a negative one ended on a frame before the run began.
+    // A NaN count of passes walked forever.
     expect(() => framesSweep({ duration: 100, loop: NaN }, { every: 10 })).toThrow(RangeError);
-    expect(() => framesSweep({ duration: 100, loop: -3 }, { every: 7 })).toThrow(RangeError);
+  });
+
+  it('counts passes as a clock does: a loop below 1 is one whole pass', () => {
+    const one = [0, 25, 50, 75, 100];
+    for (const loop of [0, 0.5, -3]) {
+      expect(all(framesSweep({ duration: 100, loop }, { every: 25 }))).toEqual(one);
+      expect(all(framesSweep({ duration: 100, loop }, { every: 25, passes: 'all' }))).toEqual(one);
+    }
   });
 
   it('labels a frame with the time it shows, origin included', () => {

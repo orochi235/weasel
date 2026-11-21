@@ -106,7 +106,8 @@ export function valuesSweep<V>(list: readonly V[], label: (value: V) => string =
 export interface FrameSpan {
   /** ms per pass; omitted, the run never ends. */
   duration?: number;
-  /** Passes: `true` endless, `false` one, `n` that many. */
+  /** Passes: `true` endless, `false` one, `n` that many, read as a clock reads it: below 1 is one pass, and a
+   *  fraction above it ends partway through the last. */
   loop?: boolean | number;
   /** The time elapsed 0 is shown as, for the labels. */
   origin?: number;
@@ -135,11 +136,11 @@ export function framesSweep(span: FrameSpan, options: FrameOptions): Sweep<numbe
   const duration = span.duration ?? Infinity;
   if (!(duration >= 0)) throw new RangeError(`a run lasts 0 ms or more, not ${duration}`);
   const loop = span.loop ?? false;
-  if (typeof loop === 'number' && !(loop >= 0)) throw new RangeError(`a run loops 0 times or more, not ${loop}`);
-  const passes = loop === true ? Infinity : loop === false ? 1 : loop;
+  if (Number.isNaN(loop)) throw new RangeError('a run loops a number of times, not NaN');
+  const passes = loop === true ? Infinity : loop === false ? 1 : Math.max(1, loop);
   const walked = options.passes === 'all' ? passes : 1;
   // No length times no end is no length, where the product is NaN.
-  const end = duration === 0 || walked === 0 ? 0 : duration * walked;
+  const end = duration === 0 ? 0 : duration * walked;
   // The end is a frame only where nothing follows it: the run's end, not a pass's.
   const ends = walked === passes && Number.isFinite(passes) && Number.isFinite(end);
   const origin = span.origin ?? 0;
