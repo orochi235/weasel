@@ -6,7 +6,7 @@
  * Without it a warm cache skips the scan, the dependency is met mid-run, and vite reloads the
  * page under the suites.
  */
-import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, globSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import { dirname, join, matchesGlob, relative, resolve } from 'node:path';
 import { SOURCE, isBare, packageOf, scanImports } from './lib/imports.mjs';
@@ -73,6 +73,15 @@ function globbed(file: string, patterns: string[], repoRoot: string, aliases: Vi
   );
 }
 
+/** Where Node's walk up from `dir` finds `pkg`, symlinks resolved, or undefined when nothing does. */
+function installOf(dir: string, pkg: string): string | undefined {
+  for (let at = dir; ; at = dirname(at)) {
+    const candidate = join(at, 'node_modules', pkg);
+    if (existsSync(join(candidate, 'package.json'))) return realpathSync(candidate);
+    if (dirname(at) === at) return undefined;
+  }
+}
+
 export interface BrowserDepsOptions {
   /** Globs of the test files, relative to the root: the project's `include`. */
   entries: string[];
@@ -87,7 +96,16 @@ export interface BrowserDepsOptions {
  */
 export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: BrowserDepsOptions): string[] {
   const aliases = weaselAliases(repoRoot);
-  const workspace = new Set(workspaceEntries(repoRoot).map(({ name }) => name));
+  const packages = workspaceEntries(repoRoot);
+  const workspace = new Set(packages.map(({ name }) => name));
+  // vite matches a bare `include` entry by id before it looks at the importer, so a package's own copy of a
+  // dependency is listed as `owner > dep`, which vite resolves from the owner, or every importer gets the root's.
+  const listed = (file: string, specifier: string) => {
+    const owner = packages.find(({ dir }) => file.startsWith(`${dir}/`));
+    const pkg = packageOf(specifier);
+    if (!owner || installOf(dirname(file), pkg) === installOf(repoRoot, pkg)) return specifier;
+    return `${owner.name} > ${specifier}`;
+  };
   const ownedElsewhere = (pkg: string) =>
     workspace.has(pkg) || BUILTINS.has(pkg) || pkg === 'vitest' || pkg.startsWith('@vitest/');
 
@@ -129,7 +147,7 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(listed(file, specifier));
     }
   }
   return [...found].sort();

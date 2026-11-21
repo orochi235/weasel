@@ -73,6 +73,17 @@ describe('browserDeps', () => {
     expect(deps()).toEqual(before);
   });
 
+  it('names the owning package of a dependency it installs a copy of its own of', () => {
+    put('node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '4.0.0' }));
+    put('packages/kit/node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '5.0.0' }));
+    expect(deps()).toEqual(['@fixture/kit > zustand/vanilla', '@testing-library/react']);
+  });
+
+  it('lists a dependency bare when the package resolves the root’s copy', () => {
+    put('node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '4.0.0' }));
+    expect(deps()).toEqual(['@testing-library/react', 'zustand/vanilla']);
+  });
+
   it('passes over the directory a failed browser test leaves its screenshots in', () => {
     put('packages/app/src/__screenshots__/Panel.browser.test.tsx/fails-1.png', '');
     expect(deps()).toEqual(['@testing-library/react', 'zustand/vanilla']);
