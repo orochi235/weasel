@@ -157,7 +157,8 @@ function listen(
  * and last of the items they can land on. Space and Enter pass over an
  * `aria-disabled` item's `onAction`. Under a
  * right-to-left layout — the container's computed `direction`, or the `dir`
- * option — Left and Right swap. While focus is
+ * option — Left and Right swap. An arrow, Home, or End held with a modifier is left to
+ * the browser and the item. While focus is
  * inside, the focused item holds the tab stop, so Tab and Shift+Tab both leave
  * the container.
  *
@@ -252,6 +253,8 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
         if (isEnabled(found[current]!)) onAction(current, e);
         return;
       }
+      // A modified arrow, Home, or End is a chord for the browser or the item (Alt+Left is Back), not a step.
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
       const enabled = found.map((el) => canStop(el, disabled));
       const dir = across ?? latest.current.dir ?? inlineDirection(e.currentTarget);
       const rows = columns ? gridRows(found, columns, groupSelector) : [];

@@ -3266,3 +3266,8 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+## Audit round sixty (2026-11-20): ui
+
+- 2026-11-20 (the fixer's call): `useRovingTabIndex` leaves an arrow, Home, or End held with Alt, Ctrl, Meta, or Shift
+  to the browser and the item, with no option to walk on one. Alt+Left is Back and Ctrl+Home scrolls the page, and an
+  item binding Shift+Arrow for itself saw focus move on the same key. Walking on Shift was the alternative.

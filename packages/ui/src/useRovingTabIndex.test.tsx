@@ -183,6 +183,19 @@ describe('useRovingTabIndex — arrow navigation', () => {
     expect(e.defaultPrevented).toBe(false);
   });
 
+  it('leaves an arrow, Home, or End held with a modifier to the browser and the item', () => {
+    const segs = renderBar();
+    act(() => segs[1]!.focus());
+    for (const mod of ['altKey', 'ctrlKey', 'metaKey', 'shiftKey'] as const) {
+      for (const key of ['ArrowLeft', 'ArrowRight', 'Home', 'End']) {
+        const e = new KeyboardEvent('keydown', { key, [mod]: true, bubbles: true, cancelable: true });
+        segs[1]!.dispatchEvent(e);
+        expect(e.defaultPrevented).toBe(false);
+        expect(document.activeElement).toBe(segs[1]);
+      }
+    }
+  });
+
   it('leaves other keys to the browser', () => {
     expect(press(renderBar()[0], 'Tab').defaultPrevented).toBe(false);
   });
