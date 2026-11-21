@@ -13,6 +13,6 @@ export { toDtcg, type DtcgExport, type DtcgGroup } from './engine/emit/dtcg.ts';
 export type { DtcgAxesExtension, DtcgLayer } from './dtcg/axesExtension.ts';
 export { emitManifest } from './engine/emit/manifest.ts';
 export { emitThemes, type ThemesInput } from './engine/emit/themes.ts';
-export { declaredSteps } from './engine/steps.ts';
+export { declaredSteps, type StepScope } from './engine/steps.ts';
 export { generateTokens, type GeneratedTokens } from './engine/emit/tokens.ts';
 export { httpThemeApi, serializeDefinition, type IssueReport, type PutResult, type StoredTheme, type ThemeApi } from './store.ts';
