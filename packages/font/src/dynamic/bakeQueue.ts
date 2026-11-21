@@ -158,11 +158,11 @@ function noRoom(room: Room, job: PendingBake, empty: () => void): void {
   if (!room.packer.fits(raster.width, raster.height)) {
     warnOnce('weasel DynamicGlyphAtlas: a glyph is larger than a page and will not render.');
   } else if (!room.settled) {
+    starved.set(job.char, job);
+    if (starvedRetry === 'emptying') starvedRetry = 'blocked';
     // A sharp bake that finds no room leaves its glyph on a softer one, so it
     // goes unsaid.
     if (room === sharpRoom) return;
-    starved.set(job.char, job);
-    if (starvedRetry === 'emptying') starvedRetry = 'blocked';
     warnOnce(
       `weasel DynamicGlyphAtlas: more glyphs are in use at once than its pages hold ` +
       `(${MAX_PAGES} × ${PAGE_SIZE}²); the rest will not render.`);
@@ -202,6 +202,7 @@ function reclaim(): void {
 function reclaimSharp(): void {
   sharpRoom = emptiedRoom();
   pending = pending.filter((job) => !job.sharp);
+  for (const [char, job] of starved) if (job.sharp) starved.delete(char);
   clearSharpPages();
   forgetSharp();
   notifyGlyphReady();

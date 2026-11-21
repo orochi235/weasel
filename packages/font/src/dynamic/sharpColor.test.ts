@@ -132,6 +132,24 @@ describe('full sharp pages', () => {
     resetBakeBudget(Infinity);
   });
 
+  it('bakes a sharper level that found no room while the pages refilled, once text asks for it after they settle', () => {
+    const face = getDynamicFace('Arial', 400, 'normal');
+    const chars = ['a', 'b', 'c', 'd', 'e'].map((text) => face.requestCluster(text)!);
+    for (const char of chars) sharperColorGlyph(char, 2);
+    vi.runAllTimers();
+    resetBakeBudget(Infinity);
+    for (const char of chars) sharperColorGlyph(char, 2);
+    vi.runAllTimers();
+    expect(sharperColorGlyph(chars[4], 2)).toBeNull();
+
+    // The pages settle, and only the glyph that found no room stays on screen.
+    resetBakeBudget(Infinity);
+    resetBakeBudget(Infinity);
+    sharperColorGlyph(chars[4], 2);
+    vi.runAllTimers();
+    expect(sharperColorGlyph(chars[4], 2)).toMatchObject({ level: 1, glyph: { page: 0 } });
+  });
+
   it('is not emptied again by an emptying of its own that an emptying of every page overtook', () => {
     const notified = vi.fn();
     subscribeGlyphReady(notified);
