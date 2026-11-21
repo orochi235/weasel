@@ -377,6 +377,14 @@ describe('ToolPalette — mode eligibility', () => {
     expect(selectBtn.getAttribute('aria-description')).toMatch(/path-edit/);
   });
 
+  it('gives a stack menu row the mode reason its tool is disabled for', () => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    const tools = makeTools(anchorTool, selectTool, handTool);
+    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} stacks={[['anchor-edit', 'select']]} />);
+    fireEvent.click(screen.getByRole('button', { name: /anchor/i }), { detail: 1 });
+    expect(screen.getByRole('menuitem', { name: /select/i })).toHaveAttribute('aria-description', 'disabled in path-edit mode');
+  });
+
   it('ineligible button does not invoke setActive when clicked', () => {
     const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
     const tools = makeTools(selectTool, anchorTool, handTool);

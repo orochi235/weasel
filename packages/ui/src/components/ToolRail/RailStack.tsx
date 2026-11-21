@@ -41,7 +41,7 @@ export function RailStack(props: {
     icon: m.icon,
     ...(m.description ? { description: m.description } : {}),
     ...(m.shortcut ? { shortcut: m.shortcut } : {}),
-    ...(m.disabled ? { disabled: true } : {}),
+    ...(m.disabled ? { disabled: true, ...(m.disabledReason ? { disabledReason: m.disabledReason } : {}) } : {}),
     ...(m.active ? { current: true } : {}),
     run: () => choose(m),
   }));
