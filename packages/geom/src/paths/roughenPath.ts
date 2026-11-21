@@ -13,13 +13,23 @@ export interface RoughenPathOptions {
   size: number;
   /** Points added to each segment before roughening. Default 4. */
   detail?: number;
-  /** Picks the offsets. Default 0. */
+  /** Picks the offsets; every distinct number, fractions included, picks its own. Default 0. */
   seed?: number;
+}
+
+const seedBits = new DataView(new ArrayBuffer(8));
+
+/** `seed` as an int32: itself when it is one, else both halves of its double mixed, so fractional and large seeds
+ *  stay apart. */
+function seedWord(seed: number): number {
+  if ((seed | 0) === seed) return seed | 0;
+  seedBits.setFloat64(0, seed);
+  return seedBits.getInt32(4) ^ Math.imul(seedBits.getInt32(0), 0x27d4eb2f);
 }
 
 /** A number in `[0, 1)` from `seed` and two indices: the same three always give the same one. */
 function hash01(seed: number, i: number, k: number): number {
-  let h = Math.imul((seed | 0) ^ 0x2545f491, 0x9e3779b1) ^ Math.imul(i + 1, 0x85ebca77) ^ Math.imul(k + 1, 0xc2b2ae3d);
+  let h = Math.imul(seed ^ 0x2545f491, 0x9e3779b1) ^ Math.imul(i + 1, 0x85ebca77) ^ Math.imul(k + 1, 0xc2b2ae3d);
   h = Math.imul(h ^ (h >>> 16), 0x7feb352d);
   h = Math.imul(h ^ (h >>> 15), 0x846ca68b);
   h ^= h >>> 16;
@@ -35,10 +45,11 @@ export function roughenPath(path: Path, opts: RoughenPathOptions): Path {
   const { size, seed = 0 } = opts;
   if (!(size > 0 && Number.isFinite(size))) return path;
   const pieces = countParam(opts.detail, 4) + 1;
+  const word = seedWord(seed);
   const contours = pathToCubicContours(path).map((contour, r) => polylineContour(
     sampleContour(contour, pieces).map(({ at }, i) => ({
-      x: at.x + (hash01(seed, r * 65536 + i, 0) * 2 - 1) * size,
-      y: at.y + (hash01(seed, r * 65536 + i, 1) * 2 - 1) * size,
+      x: at.x + (hash01(word, r * 65536 + i, 0) * 2 - 1) * size,
+      y: at.y + (hash01(word, r * 65536 + i, 1) * 2 - 1) * size,
     })),
     contour.closed,
   ));
