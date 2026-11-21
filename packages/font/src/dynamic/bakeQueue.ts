@@ -163,7 +163,8 @@ function noRoom(room: Room, job: PendingBake, empty: () => void): void {
   } else if (!room.reclaimScheduled) {
     room.reclaimScheduled = true;
     if (job.retried) starvedRetry = 'emptying';
-    later(empty);
+    // An emptying that ran first has already replaced this room.
+    later(() => { if (roomOf(job) === room) empty(); });
   }
 }
 
