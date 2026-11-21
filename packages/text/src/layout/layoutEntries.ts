@@ -137,13 +137,16 @@ export function measureRuns(
     let clusterStart = 0;
     /** The color glyph of the cluster being walked, when it has one. */
     let color: ResolvedGlyph | null = null;
+    /** Where a shaped cluster ends that opened on a code point measured on its own; the
+     *  code points it covers are measured on their own too, or nothing would draw them. */
+    let unshapedEnd = 0;
     let at = 0;
     const text = run.text;
 
     while (at < text.length) {
       const cp = text.codePointAt(at)!;
       const len = cp > 0xffff ? 2 : 1;
-      const slot = shaped?.[at];
+      const slot = at < unshapedEnd ? undefined : shaped?.[at];
       const fontSize = run.sizeMap ? run.sizeMap[at] : run.fontSize;
       if (at === clusterStart) {
         color = resolveColorCluster(
@@ -163,6 +166,9 @@ export function measureRuns(
       at += len;
       srcIndex = map ? runBase + map.length : srcEnd;
 
+      if (slot !== undefined && slot.cluster.text.length > len && (color || isHardLineBreak(cp) || cp === SOFT_HYPHEN || cp === 9 || cp === 32)) {
+        unshapedEnd = at - len + slot.cluster.text.length;
+      }
       const mark = isNonspacingMark(cp);
       const kerningBefore = prev && !mark
         ? prev.metrics.kernOf(prev.cp, cp) * (prev.fontSize / prev.metrics.size)
