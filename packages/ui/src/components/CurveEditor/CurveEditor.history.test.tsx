@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { useState, type ReactElement } from 'react';
 import { fireEvent, render } from '@testing-library/react';
 import { CurveEditor, type ControlPoint } from './CurveEditor';
+import { LayeredCurveEditor } from './LayeredCurveEditor';
+import { FunctionLayer } from './FunctionLayer';
+import { functionLayerState } from './createFunctionLayer';
 
 function Controlled(): ReactElement {
   const [value, setValue] = useState<ControlPoint[]>([{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]);
@@ -157,5 +160,29 @@ describe('CurveEditor — built-in undo', () => {
       expect(rightClick(container.querySelector('svg')!, 100, 5)).toBe(true);
       expect(anchors()).toHaveLength(4);
     });
+  });
+});
+
+describe('LayeredCurveEditor — built-in undo', () => {
+  const POINTS: ControlPoint[] = [{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }];
+  const anchorOf = (id: string): Element => document.querySelector(`[data-layer-id="${id}"] [data-anchor-index="1"]`)!;
+  const undo = (): void => { fireEvent.keyDown(document.querySelector('svg')!, { key: 'z', ctrlKey: true }); };
+
+  it('reports no edit to a layer whose state an undo leaves equal, though rebuilt each render', () => {
+    const onOther = vi.fn();
+    function Host(): ReactElement {
+      const [s, setS] = useState(functionLayerState(POINTS));
+      return (
+        <LayeredCurveEditor width={200} height={100}>
+          <FunctionLayer id="other" state={functionLayerState([{ x: 0, y: 1 }, { x: 1, y: 0 }])} onInput={onOther} onChange={onOther} />
+          <FunctionLayer id="edited" state={s} onInput={setS} />
+        </LayeredCurveEditor>
+      );
+    }
+    render(<Host />);
+    fireEvent.keyDown(anchorOf('edited'), { key: 'ArrowUp' });
+    undo();
+    expect(anchorOf('edited').getAttribute('cy')).toBe('50');
+    expect(onOther).not.toHaveBeenCalled();
   });
 });

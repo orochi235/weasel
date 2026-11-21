@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { createHistory, type Op } from '@weasel-js/history';
+import { deepEqual } from '@weasel-js/registry';
 import type { LayerEntry } from './layerHost';
 
 /** Undo steps the built-in history keeps. */
@@ -44,7 +45,7 @@ export function useLayerHistory(layers: () => readonly LayerEntry[]) {
     for (const entry of layers()) {
       const prev = snap.get(entry);
       const current = entry.state;
-      if (prev !== undefined && prev !== current) {
+      if (prev !== undefined && !deepEqual(prev, current)) {
         entry.onInput?.(prev);
         entry.onChange?.(prev, current);
       }
