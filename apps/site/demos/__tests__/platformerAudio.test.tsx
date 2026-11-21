@@ -3,6 +3,7 @@ import { act, render } from '@testing-library/react';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Animator } from '@weasel-js/animator';
 
+let bedStarts = 0;
 const engines: { disposed: boolean; suspended: boolean; context: EventTarget; resolveUnlock: () => void; gains: number[]; allGains: number[]; mutes: boolean[] }[] = [];
 
 vi.mock('@weasel-js/audio', () => ({
@@ -26,7 +27,7 @@ vi.mock('@weasel-js/audio', () => ({
   },
   createPatternPlayer: (engine: { state: () => string }) => {
     if (engine.state() === 'closed') throw new Error('a pattern player was built on a disposed engine');
-    return { start: () => {}, stop: () => {} };
+    return { start: () => { bedStarts++; }, stop: () => {} };
   },
 }));
 
@@ -50,6 +51,7 @@ function mount(animator?: Animator) {
 describe('usePlatformerAudio', () => {
   beforeEach(() => {
     engines.length = 0;
+    bedStarts = 0;
     vi.stubGlobal('AudioContext', class {});
   });
   afterEach(() => {
@@ -92,6 +94,15 @@ describe('usePlatformerAudio', () => {
     await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
     expect(api().musicOn).toBe(false);
     expect(engines[0].mutes.at(-1)).toBe(true);
+  });
+
+  it('starts no music when audio is enabled after the flag impact cut it', async () => {
+    const { api } = mount();
+    api().hooks.current.flagImpact();
+    act(() => api().enableAudio());
+    engines[0].resolveUnlock();
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    expect(bedStarts).toBe(0);
   });
 
   it('keeps the music down under a second hit inside the first one\'s duck', () => {

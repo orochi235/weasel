@@ -66,6 +66,8 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
 
   /** Frames left before the music stops; -1 once it has. */
   const cutMusicIn = useRef(-1);
+  /** Set at the flag impact: the run's music is over, so an unlock after it builds no bed. */
+  const musicCut = useRef(false);
   const runCycle = useRef<TimelineHandle | null>(null);
   // What the loop writes and the footstep handler reads back to know the
   // interval a given tick implies.
@@ -93,7 +95,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
       const a = audio.current;
       if (a?.engine !== engine) return;
       setAudioState(contextState(engine));
-      if (!a.bed) {
+      if (!a.bed && !musicCut.current) {
         engine.bus(BED_BUS).mute(!musicOnNow.current);
         const bed = createPatternPlayer(engine, {
           tempo: BED_TEMPO, events: bedEvents(), length: BED_STEPS, detune: bedDetune,
@@ -204,6 +206,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
       onBonk();
       // Cut the bed a couple of frames later, so the thwack lands into silence.
       cutMusicIn.current = 2;
+      musicCut.current = true;
     },
   });
 
