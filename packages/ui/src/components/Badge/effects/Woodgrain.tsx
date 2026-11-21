@@ -1,12 +1,13 @@
 import { trimNumber } from '@weasel-js/geom';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
+import { repeatCount } from '../shapes/params';
 
 /** What an effect of type `woodgrain` takes as `params`. */
 export interface BadgeWoodgrainEffectParams {
-  /** Number of grain curves. */
+  /** Number of grain curves, a whole number up to 256. */
   lines?: number;
-  /** Number of knots. */
+  /** Number of knots, a whole number up to 256. */
   knots?: number;
   /** Overall grain opacity (0..1). */
   intensity?: number;
@@ -27,16 +28,18 @@ const Woodgrain: EffectModule<BadgeWoodgrainEffectParams> = {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
     const cfg = { ...DEFAULTS, ...params };
+    const lineCount = repeatCount(cfg.lines, 0);
+    const knotCount = repeatCount(cfg.knots, 0);
     const lines: string[] = [];
-    for (let i = 0; i < cfg.lines; i++) {
-      const y = ((i + 1) / (cfg.lines + 1)) * 100;
+    for (let i = 0; i < lineCount; i++) {
+      const y = ((i + 1) / (lineCount + 1)) * 100;
       // Two control points, slight vertical wobble.
       const dy1 = osc(i * 2 + 1) * 4;
       const dy2 = osc(i * 2 + 2) * 4;
       lines.push(`M -5 ${trimNumber(y, 2)} Q 35 ${trimNumber(y + dy1, 2)} 60 ${trimNumber(y, 2)} T 105 ${trimNumber(y + dy2, 2)}`);
     }
     const knotPositions: [number, number][] = [];
-    for (let i = 0; i < cfg.knots; i++) {
+    for (let i = 0; i < knotCount; i++) {
       const cx = 30 + osc(i * 3 + 0.7) * 30 + 20;
       const cy = 50 + osc(i * 3 + 1.3) * 30;
       knotPositions.push([cx, cy]);

@@ -4,10 +4,11 @@ import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 import { DEG_TO_RAD, trimNumber } from '@weasel-js/geom';
 import { outlineRegion } from '../composeOutline';
+import { repeatCount } from '../shapes/params';
 
 /** What an effect of type `sunbeams` takes as `params`. */
 export interface BadgeSunbeamsEffectParams {
-  /** Number of beams (parallelograms) cast across the body. */
+  /** Number of beams (parallelograms) cast across the body, a whole number up to 256. */
   count?: number;
   /** Beam width in CSS px (measured horizontally before the skew). */
   width?: number;
@@ -56,6 +57,7 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
     const sx = 100 / boxW;
     const sy = 100 / boxH;
     const irr = Math.max(0, Math.min(cfg.irregularity, 1));
+    const count = repeatCount(cfg.count, 0);
 
     // Per-beam pseudo-random multipliers (deterministic by index).
     const widthMult = (i: number) => 1 + irr * 0.45 * Math.sin(i * 1.73 + 0.7);
@@ -67,7 +69,7 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
     const nominalWidthVb = cfg.width * sx;
     const gapVb = cfg.gap * sx;
     const offsetVb = cfg.offset * sx;
-    const totalWidth = cfg.count * nominalWidthVb + (cfg.count - 1) * gapVb;
+    const totalWidth = count * nominalWidthVb + (count - 1) * gapVb;
     let cursorX = 50 - totalWidth / 2 + offsetVb;
     const region = outlineRegion(sampler, 0);
     // Beams stay centered on y = 50 and run past the outline's farther edge from it.
@@ -76,7 +78,7 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
     const yBot = 50 + reach;
 
     const beams: { points: string; opacity: number }[] = [];
-    for (let i = 0; i < cfg.count; i++) {
+    for (let i = 0; i < count; i++) {
       const beamWidthVb = nominalWidthVb * widthMult(i);
       const x1 = cursorX;
       const x2 = cursorX + beamWidthVb;

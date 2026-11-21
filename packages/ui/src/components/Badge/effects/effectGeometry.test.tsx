@@ -173,3 +173,13 @@ describe('woodgrain', () => {
     expect(aspect(150, 24)).toBeCloseTo(aspect(40, 40));
   });
 });
+
+describe('a repeat count', () => {
+  it('stops sunbeams and woodgrain at a finite whole count', () => {
+    expect(draw(Sunbeams, { count: Infinity }).querySelectorAll('polygon').length).toBe(256);
+    expect(draw(Sunbeams, { count: 2.5 }).querySelectorAll('polygon').length).toBe(2);
+    const grain = draw(Woodgrain, { lines: Infinity, knots: 1e9 });
+    expect(grain.querySelectorAll('path.badge-stroke').length).toBe(256);
+    expect(grain.querySelectorAll('ellipse').length).toBe(512);
+  });
+});
