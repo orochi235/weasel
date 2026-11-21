@@ -633,6 +633,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   grow the label for it. An `lbxObjectsCommand` past the end is still written whole, since it cannot be
   rasterized; whether it should be skipped instead is unasked. A carried object under a transform that scales an
   axis to zero is dropped with no report, as paint there draws nothing.
+- 2026-11-21 (my call, audit round 64): `writeLbx` throws a `RangeError` for an auto-length label longer than
+  `AUTO_LENGTH_MAX_PT` (1000mm), the paper height P-touch parks such a label at, rather than clamp it and crop
+  what lies past the ceiling. A label that long can still be written at a fixed length; whether P-touch prints
+  a fixed length past 1000mm was not checked.
 - Ruled 2026-11-10 (my call, overnight sweep): the `.lbx` writer writes each of UAX #14's hard breaks in a text
   box (`\r\n`, `\r`, VT, FF, NEL, U+2028, U+2029) as one `\n`, the break P-touch reads; a bare `\r` read back
   as a second line feed.

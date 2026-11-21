@@ -122,6 +122,12 @@ describe('lbxConfig', () => {
     expect((await lbxConfig(page([over]))).config.objects.map((o) => o.type)).toEqual(['rect']);
   });
 
+  it('refuses an auto-length label longer than the ceiling P-touch parks its paper at', async () => {
+    await expect(lbxConfig({ ...page([]), length: 3000, autoLength: true })).rejects.toThrow(RangeError);
+    await expect(lbxConfig({ ...page([]), length: 2834.4, autoLength: true })).resolves.toBeDefined();
+    await expect(lbxConfig({ ...page([]), length: 3000 })).resolves.toBeDefined();
+  });
+
   it('writes the tape, the length and the cuts', async () => {
     const fixed = await lbxConfig({ ...page([]), cuts: [72, 0, 200, 36] });
     expect(fixed.config.paper).toMatchObject({ width: 33.6, format: 259, height: 144, autoLength: false });

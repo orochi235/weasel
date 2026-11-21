@@ -26,7 +26,7 @@ export interface LbxPage {
   commands: readonly DrawCommand[];
   /** What a `world`-unit paint in `commands` resolves through, as `PdfPage.view`. */
   view?: GlMat3;
-  /** Let P-touch size the label to what is on it. `length` is still written as the fitted length. */
+  /** Let P-touch size the label to what is on it. `length` is still written as the fitted length, and is at most `AUTO_LENGTH_MAX_PT` (1000mm). */
   autoLength?: boolean;
   /** Where the printer cuts, in points along the label: a strip of labels in one file. */
   cuts?: readonly number[];
@@ -238,6 +238,11 @@ async function settle(items: Item[], page: LbxPage, opts: WriteLbxOptions, skipp
 export async function lbxConfig(page: LbxPage, opts: WriteLbxOptions = {}): Promise<{ config: LabelConfig; skipped: LbxSkip[] }> {
   if (!Number.isFinite(page.length) || page.length <= 0) {
     throw new RangeError(`writeLbx: a label's length must be a positive finite number of points, got ${page.length}`);
+  }
+  if (page.autoLength && page.length > AUTO_LENGTH_MAX_PT) {
+    throw new RangeError(
+      `writeLbx: an auto-length label can be at most ${AUTO_LENGTH_MAX_PT}pt (1000mm) long, got ${page.length}; write it at a fixed length instead`,
+    );
   }
   const items: Item[] = [];
   const skipped: LbxSkip[] = [];
