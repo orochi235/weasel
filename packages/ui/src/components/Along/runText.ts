@@ -4,6 +4,7 @@ import { runPlaceAt, type Point, type TrackRun } from '@weasel-js/geom';
 import row from './runRow.module.css';
 import s from './runText.module.css';
 import { pathThrough } from '../../pathThrough';
+import { boxPoint } from './boxPoint';
 
 /** Marks the copy of a text node drawn along the run, and the element whose own glyphs that copy stands in for. */
 const BEND = 'data-run-text-bend';
@@ -23,14 +24,15 @@ interface Bend {
  * Draws every line of text in a run row's items along the run itself rather than straight across each item: each text
  * node's glyphs are laid on the curve through the text's own baseline, parallel to the run. The text node stays where
  * it is, glyphs transparent, so it keeps the item's size, its accessible name and its selection; the copy is an
- * aria-hidden svg placed after it, so it inherits the color, font and state styles the text would have worn.
+ * aria-hidden svg placed after it, so it inherits the color, font and state styles the text would have worn. Client
+ * points are mapped into the run's px through `frame`, the box the run's coordinates are drawn across, else `root`.
  */
-export function useRunText(root: RefObject<HTMLElement | null>, run: TrackRun): void {
+export function useRunText(root: RefObject<HTMLElement | null>, run: TrackRun, frame?: RefObject<Element | null>): void {
   const bends = useRef(new Map<Text, Bend>());
   const runNow = useLatest(run);
   const draw = useRef(() => {
     const el = root.current;
-    if (el !== null) bendText(el, runNow.current, bends.current);
+    if (el !== null) bendText(el, frame?.current ?? el, runNow.current, bends.current);
   });
   useLayoutEffect(() => draw.current());
   useEffect(() => {
@@ -56,13 +58,12 @@ export function useRunText(root: RefObject<HTMLElement | null>, run: TrackRun): 
 const ours = (node: Node): boolean => (node instanceof Element ? node : node.parentElement)?.closest(`[${BEND}]`) != null;
 
 /** Lays a copy of every text node under `root`'s run items along `run`, and drops the copies of nodes gone since. */
-function bendText(root: HTMLElement, run: TrackRun, bends: Map<Text, Bend>): void {
+function bendText(root: HTMLElement, frame: Element, run: TrackRun, bends: Map<Text, Bend>): void {
   const seen = new Set<Text>();
   const box = root.getBoundingClientRect();
   // Without layout, as under jsdom, there is nothing to measure the text against.
   if (box.width > 0 && root.offsetWidth > 0 && run.length > 0 && typeof Range !== 'undefined' && 'getBoundingClientRect' in Range.prototype) {
-    const scale = box.width / root.offsetWidth;
-    const toRoot = (x: number, y: number): Point => ({ x: (x - box.left) / scale, y: (y - box.top) / scale });
+    const toRoot = (x: number, y: number): Point => boxPoint(frame, x, y);
     const range = document.createRange();
     for (const item of root.querySelectorAll<HTMLElement>(ITEM)) {
       const turn = turnOf(item);

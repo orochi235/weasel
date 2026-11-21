@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [],
+ "b": [
+  "A fixed overlay inside a size-container (or `content-visibility: auto`) is placed as though its containing block were the viewport",
+  "`wrapLine` gives the wrong drop index for chips that wrap right to left",
+  "Clicking the scroll-spy rail on a last section that cannot reach the top shows it for 700 ms, then snaps back to the section before it",
+  "`createDomFocusScope().tabOrder()` lists elements under `display: none` or `visibility: hidden`",
+  "`useIdleSettle` still commits after `enabled` (or `typing.settleWhenIdle`) turns off mid-wait",
+  "`useEditDraft` brings back a stale draft when the value returns to where the abandoned edit began"
+ ]
+}

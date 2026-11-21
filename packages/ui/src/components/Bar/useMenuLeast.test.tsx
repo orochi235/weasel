@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { useRef } from 'react';
 import { useMenuLeast } from './useMenuLeast';
+import { DockBarContext } from '../ToolbarDock/dockContext';
 
 const realRO = globalThis.ResizeObserver;
 let observed: Set<Element>;
@@ -44,5 +45,26 @@ describe('useMenuLeast', () => {
     expect(observed.has(getByTestId('lead'))).toBe(true);
     rerender(<Menu withLead={false} />);
     expect([...observed]).toEqual([getByRole('button')]);
+  });
+});
+
+describe('useMenuLeast in a right-to-left row', () => {
+  it('spans the lead drawn to the right of the button', () => {
+    const rect = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function (this: Element) {
+      const [left, right] = this.tagName === 'BUTTON' ? [100, 160] : [164, 180];
+      return { left, right, top: 0, bottom: 20, width: right - left, height: 20, x: left, y: 0, toJSON: () => {} } as DOMRect;
+    };
+    const reported: (number | undefined)[] = [];
+    try {
+      render(
+        <DockBarContext.Provider value={{ barId: 'b', label: 'B', movable: true, onLeast: (n) => { reported.push(n); } }}>
+          <Menu withLead />
+        </DockBarContext.Provider>,
+      );
+    } finally {
+      Element.prototype.getBoundingClientRect = rect;
+    }
+    expect(reported.at(-1)).toBe(80);
   });
 });

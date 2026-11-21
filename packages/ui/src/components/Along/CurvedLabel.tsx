@@ -58,7 +58,7 @@ export function CurvedLabel({ text, offset = 0, shift = 0, className }: CurvedLa
   }
   const places = placeAlongRun(run, chars.map((_, i) => lengths[i] ?? 0), { align: align ?? 'center', offset, shift });
   return (
-    <div ref={root} className={cls} role="img" aria-label={text}>
+    <div ref={root} className={cls} role="img" aria-label={text} data-laid="">
       {chars.map((ch, i) => (
         <span key={i} className={`${on.onRun} ${s.char}`} aria-hidden="true" style={placeStyle(places[i]!)}>
           {ch}

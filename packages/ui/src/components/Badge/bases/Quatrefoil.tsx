@@ -1,6 +1,7 @@
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
 import { DEG_TO_RAD, lerp } from '@weasel-js/geom';
+import { repeatCount } from '../shapes/params';
 
 /**
  * 8-fold-symmetric polar shape. The whole silhouette is defined by a single curve r(s)
@@ -41,9 +42,12 @@ export interface BadgeQuatrefoilBaseParams {
   valleySmooth?: number;
   /** Rotate the pattern in degrees. */
   rotation?: number;
-  /** Polygon sample count. */
+  /** Polygon sample count, 24 to 1024. */
   samples?: number;
 }
+
+/** The most vertices an outline samples, so a huge or infinite `samples` cannot hang a render. */
+export const MAX_SAMPLES = 1024;
 
 const DEFAULTS: Required<BadgeQuatrefoilBaseParams> = {
   spikeR: 50,
@@ -61,9 +65,11 @@ const DEFAULTS: Required<BadgeQuatrefoilBaseParams> = {
   samples: 192,
 };
 
-function smoothMax(a: number, b: number, g: number): number {
-  const d = a - b;
-  return (a + b + Math.hypot(d, g)) / 2;
+/** max(a, b), lifted by up to k/4 where the two are within k of each other and exact elsewhere. */
+function smoothMax(a: number, b: number, k: number): number {
+  if (!(k > 0)) return Math.max(a, b);
+  const h = Math.max(k - Math.abs(a - b), 0) / k;
+  return Math.max(a, b) + (h * h * k) / 4;
 }
 
 /** Generalised superellipse-style profile from (0, 0) to (1, 1) with asymmetric exponents
@@ -90,7 +96,10 @@ export function quatrefoilRadius(params: BadgeQuatrefoilBaseParams = {}): (s: nu
   const lCurv = Math.max(0.2, cfg.lobeCurvature);
   const lBend = Math.max(-0.95, Math.min(cfg.lobeBend, 0.95));
   const lErode = Math.max(0, Math.min(cfg.lobeTipErosion, 1));
-  const smooth = Math.max(0, cfg.valleySmooth);
+  // Narrow enough that each tip, which sits its own height above the valley, is left at its radius.
+  const band = Math.min(
+    2 * Math.max(0, cfg.valleySmooth), (spike - valley) * (1 - sErode), (lobe - valley) * (1 - lErode),
+  );
   return (s) => {
     // t1: spike-side parameter, 1 at cardinal (s=0), 0 at valley (s=vAt). Clamped to ≥ 0.
     const t1 = (vAt - s) / vAt;
@@ -98,10 +107,7 @@ export function quatrefoilRadius(params: BadgeQuatrefoilBaseParams = {}): (s: nu
     const t2 = (s - vAt) / (1 - vAt);
     const rSpike = lerp(valley, spike, curveSegment(Math.max(0, t1), sCurv, sBend, sErode));
     const rLobe  = lerp(valley, lobe, curveSegment(Math.max(0, t2), lCurv, lBend, lErode));
-    // Smooth corner at the valley: outside the smoothing band both rSpike and rLobe equal
-    // `valley` on the inactive side, so smoothMax just picks the active one. Near the join
-    // both are close to valley and smoothMax lifts the corner.
-    return smoothMax(rSpike, rLobe, smooth);
+    return smoothMax(rSpike, rLobe, band);
   };
 }
 
@@ -109,7 +115,7 @@ export function quatrefoilVertices(params: BadgeQuatrefoilBaseParams = {}): [num
   const cfg = { ...DEFAULTS, ...params };
   const radiusAt = quatrefoilRadius(cfg);
   const rot = cfg.rotation * DEG_TO_RAD;
-  const N = Math.max(24, Math.floor(cfg.samples));
+  const N = repeatCount(cfg.samples, 24, MAX_SAMPLES);
   const cx = 50, cy = 50;
   const verts: [number, number][] = [];
   for (let i = 0; i < N; i++) {

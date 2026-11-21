@@ -44,6 +44,10 @@
 .framed[data-orientation='vertical'] {
   padding: var(--wzl-space-3) 0;
   overflow-x: visible;
+  overflow-y: auto;
+  /* A bar is `flex: none` along its line; down a column it gives way to its room, or it never has anything to scroll. */
+  flex-shrink: 1;
+  max-block-size: 100%;
 }
 
 /* A run of actions read as one control: a compact strip, its cells almost touching. */

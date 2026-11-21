@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { openCommitTree } from './lib/commit-tree.mjs';
 import { killOnSignal, runSuite } from './lib/fleet-parts.mjs';
 import { armTree, changedFiles, lockScope, runsEverything } from './lib/fleet-tree.mjs';
+import { failedFileOf, firstFor, recordFailed } from './lib/fleet-first.mjs';
 import { SCOPED, TRIGGERS } from './lib/fleet-triggers.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -74,7 +75,9 @@ try {
     : undefined;
   const lockAt = (ref) => JSON.parse(git('show', `${ref}:package-lock.json`));
   const locked = select?.includes('package-lock.json') ? lockScope(lockAt(newer), lockAt(commit)) : undefined;
-  armTree(tree, { commit, branch: branch || undefined, files, select, reshaped, ...(locked !== undefined && { lockScope: locked }) }, { plan: true });
+  const first = firstFor(ROOT, branch);
+  armTree(tree, { commit, branch: branch || undefined, files, select, reshaped, ...(locked !== undefined && { lockScope: locked }), ...(first.length > 0 && { first }) }, { plan: true });
+  if (first.length > 0) console.log(`fleet-test: running first the ${first.length} file(s) this branch's last run failed in, stopping if one fails again`);
   console.log(`fleet-test: tree check armed for ${commit.slice(0, 9)}, ${Object.keys(files).length} changed path(s)`);
   if (select) console.log(`fleet-test: selecting from the ${select.length} path(s) the branch changes against ${newer.slice(0, 9)}`);
   if (locked !== undefined) console.log(`fleet-test: the lockfile change reaches ${locked ? locked.join(', ') || 'no workspace' : 'external packages, so everything runs'}`);
@@ -86,7 +89,13 @@ try {
   // onto remembers a suite's test count per scope to start the next run's bar from, and a branch's
   // few tests would otherwise seed a full run's.
   const scope = !select || runsEverything(select, { triggers: TRIGGERS, scoped: SCOPED, lockScope: locked }) ? 'full' : 'branch';
-  status = await runSuite({ tree, base, scope, ontoArgs, jobs, say: (line) => console.log(`fleet-test: ${line}`) });
+  const failed = [];
+  const onLine = (line) => {
+    const file = failedFileOf(line);
+    if (file) failed.push(file);
+  };
+  status = await runSuite({ tree, base, scope, ontoArgs, jobs, onLine, say: (line) => console.log(`fleet-test: ${line}`) });
+  recordFailed(ROOT, branch, status === 0 ? [] : failed);
 } finally {
   drop();
 }

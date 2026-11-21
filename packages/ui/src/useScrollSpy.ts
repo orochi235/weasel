@@ -17,6 +17,11 @@ export interface SectionOffset {
  * to the group itself, and marking a section the reader has not reached yet
  * points them at the wrong place.
  *
+ * Given `endHeight`, the container's visible height when it is scrolled as far
+ * as it goes, the last section whose top shows within it wins instead: a last
+ * section shorter than the container never reaches the top, and the reader
+ * at the end is looking at it.
+ *
  * Offsets arrive in document order and are not re-sorted — a caller reading
  * them off the DOM already has them that way, and sorting would hide a
  * measurement that came back wrong.
@@ -24,13 +29,20 @@ export interface SectionOffset {
 export function pickActiveSection(
   offsets: readonly SectionOffset[],
   slack = 8,
+  endHeight?: number,
 ): string | null {
   let active: string | null = null;
   for (const { id, top } of offsets) {
-    if (top - slack > 0) break;
+    if (top - slack > 0 && (endHeight === undefined || top >= endHeight)) break;
     active = id;
   }
   return active;
+}
+
+/** The container's visible height when it scrolls and is scrolled to its end, else undefined. */
+function heightAtEnd(root: HTMLElement): number | undefined {
+  const { scrollTop, scrollHeight, clientHeight } = root;
+  return scrollHeight > clientHeight && scrollTop + clientHeight >= scrollHeight - 1 ? clientHeight : undefined;
 }
 
 /** Options for {@link useScrollSpy}. */
@@ -91,7 +103,7 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
       const el = root.querySelector<HTMLElement>(`[data-spy-section="${CSS.escape(id)}"]`);
       if (el) offsets.push({ id, top: el.getBoundingClientRect().top - rootTop });
     }
-    setActive(pickActiveSection(offsets, slack));
+    setActive(pickActiveSection(offsets, slack, heightAtEnd(root)));
     // `ids` is compared by content through `key`: a caller deriving the array
     // each render would otherwise resubscribe on every one.
     // eslint-disable-next-line react-hooks/exhaustive-deps

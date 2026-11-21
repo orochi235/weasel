@@ -1,0 +1,60 @@
+{
+ "id": "ui.components.BandEditor",
+ "commit": "c068d53f7e7088a49f2e672ba0dc6f9aac523208",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/BandEditor/BandEditor.module.css",
+  "packages/ui/src/components/BandEditor/BandEditor.stories.tsx",
+  "packages/ui/src/components/BandEditor/BandEditor.tsx",
+  "packages/ui/src/components/BandEditor/BandRuler.tsx",
+  "packages/ui/src/components/BandEditor/BandStrip.tsx",
+  "packages/ui/src/components/BandEditor/DraftGhost.tsx",
+  "packages/ui/src/components/BandEditor/RangeEdgeHandle.tsx",
+  "packages/ui/src/components/BandEditor/bandCommands.ts",
+  "packages/ui/src/components/BandEditor/bands.ts",
+  "packages/ui/src/components/BandEditor/index.ts",
+  "packages/ui/src/components/BandEditor/retag.ts",
+  "packages/ui/src/components/BandEditor/scale.ts",
+  "packages/ui/src/components/BandEditor/seamGhost.ts",
+  "packages/ui/src/components/BandEditor/track.ts",
+  "packages/ui/src/components/BandEditor/useBandDraft.ts",
+  "packages/ui/src/components/BandEditor/useTrackPointer.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 16,
+  "B": 16
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.7,
+   "B": 4.7,
+   "match": 0.1,
+   "fix": 11.9
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1395513,
+  "costUsd": 4.34
+ },
+ "fixCommits": [
+  "02e57ce5b005826dbca830c2410e3682ea532143",
+  "ed011680f356d035ae1c64baa473c8f81360b08d",
+  "bb82f7b6bc640db7a550119c371f346cff604756",
+  "79eb445baaf86d2b6dfa87bf42d28601b6884ee9",
+  "f0fc3c341876e696c566c316cac3d032d51fed0d",
+  "3ce98411d0483b77adc116785ca7c745717bd733",
+  "f588072b6e4f1f5bedc1487a4ac2567e72cbac1b"
+ ]
+}

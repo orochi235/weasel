@@ -8,7 +8,7 @@ export const INPUTS = ['**/package.json', 'package-lock.json', '**/tsconfig*.jso
 
 /**
  * What `vitest.config.ts`, the run's launcher and the setup files load, and nothing else: a plugin
- * only a dev server or a build loads (draw's `vite-plugin-skulk-map.ts`) reaches only the tests that
+ * only a dev server or a build loads (`scripts/vite-site-proxy.ts`) reaches only the tests that
  * import it. `fleet-triggers.test.ts` fails on a loaded file none of these covers, and on one these
  * cover that nothing loads.
  */
@@ -18,9 +18,9 @@ export const LOADED = [
   'scripts/*.setup.ts',
   'scripts/vite-{aliases,build-info,demo-sources,demo-timestamps,get-started,package-docs,prebundle,prebundle-reach,prebundle-stars,watch}.ts',
   'scripts/vitest-{browser-commands,browser-deps,browser-overlay,browser-prebundle,css-cache-key,load-reruns,own-frame,resolve-cache-key,timeout-retries}.ts',
-  'scripts/vitest-{browser-spread,fleet-fail,overlap}.mjs',
+  'scripts/vitest-{browser-spread,fleet-fail,first-sequencer,overlap}.mjs',
   'scripts/{chromium-gpu-args,headless-source}.ts',
-  'scripts/lib/{browser-shape,fleet-tree,fleet-triggers,imports,load-reruns,merge-progress,module-cache,node-load,own-install,packageEntries,prune-older-than,workspaces}.mjs',
+  'scripts/lib/{browser-shape,fleet-first,fleet-tree,fleet-triggers,imports,load-reruns,merge-progress,module-cache,node-load,own-install,packageEntries,prune-older-than,workspaces}.mjs',
   'scripts/lib/{cssBlocks,markdownBlocks}.ts',
   'scripts/release/{changelogs,entry-marker,summary,vite-plugin}.ts',
   'scripts/release/bumps.mjs',

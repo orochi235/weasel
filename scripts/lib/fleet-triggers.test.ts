@@ -48,7 +48,7 @@ describe('the fleet triggers', () => {
 
   it('leave a dev-server-only plugin and a test file to the tests that import them', () => {
     const run = (path: string) => runsEverything([path], { triggers: TRIGGERS, scoped: SCOPED });
-    expect(run('apps/draw/vite-plugin-skulk-map.ts')).toBe(false);
+    expect(run('scripts/vite-site-proxy.ts')).toBe(false);
     expect(run('apps/draw/vite-plugin-trait-schemas/extract.test.ts')).toBe(false);
     expect(run('scripts/vite-css-modules.ts')).toBe(false);
     expect(run('apps/draw/vite-plugin-trait-schemas/extract.ts')).toBe(true);

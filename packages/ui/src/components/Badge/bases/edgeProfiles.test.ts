@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { EDGE_PROFILES, puzzleEdge, resolveEdge, type EdgePoint, type EdgeProfile } from './edgeProfiles';
+import { EDGE_PROFILES, puzzleEdge, resolveEdge, type BuiltInEdgeName, type EdgePoint, type EdgeProfile } from './edgeProfiles';
 
 describe('EDGE_PROFILES', () => {
   it('flat returns 0 for all t', () => {
@@ -131,5 +131,13 @@ describe('puzzle edge', () => {
   it('points the other way for a negative depth', () => {
     const inward = puzzleEdge(-D, H);
     inward.forEach((p, i) => expect(p.x).toBeCloseTo(-pts[i].x, 12));
+  });
+});
+
+describe('resolveEdge', () => {
+  it('draws a name the table lacks, an inherited one included, as flat', () => {
+    for (const name of ['zigzag', 'toString', 'constructor', '__proto__']) {
+      expect(resolveEdge(name as BuiltInEdgeName)(6, 20)).toEqual(resolveEdge('flat')(6, 20));
+    }
   });
 });

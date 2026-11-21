@@ -1,0 +1,65 @@
+{
+ "id": "theme.part1",
+ "commit": "c068d53f7e7088a49f2e672ba0dc6f9aac523208",
+ "date": "2026-11-20",
+ "files": [
+  "packages/theme/src/appearance.ts",
+  "packages/theme/src/applyTheme.ts",
+  "packages/theme/src/axes.ts",
+  "packages/theme/src/blendTheme.ts",
+  "packages/theme/src/boxShadow.ts",
+  "packages/theme/src/capText.module.css",
+  "packages/theme/src/chainTokens.ts",
+  "packages/theme/src/colorList.ts",
+  "packages/theme/src/colorListItems.ts",
+  "packages/theme/src/colorMode.ts",
+  "packages/theme/src/colorSource.ts",
+  "packages/theme/src/cssNumber.ts",
+  "packages/theme/src/currentColor.ts",
+  "packages/theme/src/definition.ts",
+  "packages/theme/src/dtcg/axesExtension.ts",
+  "packages/theme/src/dtcg/color.ts",
+  "packages/theme/src/dtcg/flatten.ts",
+  "packages/theme/src/dtcg/resolve.ts",
+  "packages/theme/src/dtcg/types.ts",
+  "packages/theme/src/dtcg/value.ts",
+  "packages/theme/src/engine.ts",
+  "packages/theme/src/faces.css",
+  "packages/theme/src/fonts.css",
+  "packages/theme/src/fromDtcg.ts",
+  "packages/theme/src/generated/manifest.ts",
+  "packages/theme/src/generated/themes.ts",
+  "packages/theme/src/generated/tokens.css",
+  "packages/theme/src/hooks.ts"
+ ],
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "incomplete": [
+  "A",
+  "B"
+ ],
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1,
+   "B": 2.4,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "studio"
+  },
+  "weightedTokens": 0,
+  "costUsd": 0
+ },
+ "fixCommits": []
+}

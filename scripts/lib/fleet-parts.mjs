@@ -21,7 +21,12 @@ const minutes = (ms) => `${(ms / 60000).toFixed(1)} min`;
  * Runs the suite and resolves to one exit status for every part. `jobs` collects each started job's
  * id, so a caller stopping the run can stop them too.
  */
-export const runSuite = async ({ tree, base, scope, ontoArgs, say, jobs = [] }) => {
+export const runSuite = async ({ tree, base, scope, ontoArgs, say, jobs = [], onLine: heard }) => {
+  // One half aborting on a repeated failure stops the other too: the run's answer is already in.
+  const onLine = (line) => {
+    heard?.(line);
+    if (line.startsWith('fleet-abort:')) jobs.forEach(killJob);
+  };
   const onJob = (part) => (job) => {
     jobs.push(job.id);
     say(`placed ${part} job ${job.id} on ${job.node}`);
@@ -29,7 +34,7 @@ export const runSuite = async ({ tree, base, scope, ontoArgs, say, jobs = [] }) 
   const testArgs = ['test', '--dir', tree, '--ref', base];
   if (!wantsSplit(runLine(tree), ontoArgs)) {
     say('launching 1 job');
-    return ontoWhenFree([...testArgs, '--scope', scope, ...ontoArgs], { say, onJob: onJob('suite') });
+    return ontoWhenFree([...testArgs, '--scope', scope, ...ontoArgs], { say, onJob: onJob('suite'), onLine });
   }
   say('launching 2 jobs');
   const parts = [
@@ -38,7 +43,7 @@ export const runSuite = async ({ tree, base, scope, ontoArgs, say, jobs = [] }) 
   ];
   const results = await Promise.all(parts.map(async ({ part, args, prefix }) => {
     const started = Date.now();
-    const status = await ontoWhenFree(args, { say, prefix, onJob: onJob(part) });
+    const status = await ontoWhenFree(args, { say, prefix, onJob: onJob(part), onLine });
     say(`${part} ${status === 0 ? 'passed' : `failed (${status})`} in ${minutes(Date.now() - started)} wall`);
     return status;
   }));

@@ -118,8 +118,10 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
     const s0 = positionAt(across, latest.current.run, e);
     const from = now();
     let scrolling = false;
+    let at = s0;
     const onMove = (ev: PointerEvent): void => {
-      const travel = positionAt(across, latest.current.run, ev) - s0;
+      at = positionAt(across, latest.current.run, ev, at);
+      const travel = at - s0;
       if (!scrolling && Math.abs(travel) >= (latest.current.dragPx ?? DRAG_THRESHOLD_PX)) {
         scrolling = true;
         // Once it is a drag the root takes the pointer, so the release lands off the item and its press cancels.
@@ -162,10 +164,15 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
 
 /**
  * How far along `run` the pointer is, in px, `run`'s coordinates being the box `frame` fills: past either end, carried
- * on along the end's tangent, so a drag that leaves the run keeps scrolling it.
+ * on along the end's tangent, so a drag that leaves the run keeps scrolling it. On a closed run it is unwrapped about
+ * `about`, the last position a drag read, so a drag across the seam carries on past it.
  */
-export function positionAt(frame: Element, run: TrackRun, e: { clientX: number; clientY: number }): number {
+export function positionAt(frame: Element, run: TrackRun, e: { clientX: number; clientY: number }, about?: number): number {
   const p = boxPoint(frame, e.clientX, e.clientY);
+  if (run.closed && run.length > 0) {
+    const anchor = about === undefined ? run.nearest(p).f : about / run.length;
+    return run.nearest(p, { open: true, about: anchor }).f * run.length;
+  }
   const { f } = run.nearest(p);
   const beyond = (g: 0 | 1): number => {
     const { point, tangent } = run.at(g);

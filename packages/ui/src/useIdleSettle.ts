@@ -12,7 +12,7 @@ export const SETTLE_WHEN_IDLE = true;
 /**
  * A timer that runs `settle` once typing has rested for the `typing.idleMs` kit setting, for a field holding a
  * draft that otherwise settles on blur or Enter. `typed` restarts it on each keystroke and `stop` drops it. It runs
- * unless `enabled`, else the `typing.settleWhenIdle` kit setting, turns it off.
+ * unless `enabled`, else the `typing.settleWhenIdle` kit setting, turns it off; turning it off drops a pending wait.
  */
 export function useIdleSettle(settle: () => void, enabled?: boolean): { typed(): void; stop(): void } {
   const kitOn = useKitSetting('typing.settleWhenIdle');
@@ -25,6 +25,11 @@ export function useIdleSettle(settle: () => void, enabled?: boolean): { typed():
     cancel.current = null;
   };
   useEffect(() => stop, []);
+  useEffect(() => {
+    if (on) return;
+    cancel.current?.();
+    cancel.current = null;
+  }, [on]);
   return {
     typed: () => {
       stop();

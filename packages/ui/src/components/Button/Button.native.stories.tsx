@@ -31,7 +31,7 @@ export const DisclosureTrigger: Story = {
 
 const ALIGN = ['Left', 'Center', 'Right'];
 
-/** Members of a toolbar with a roving tab stop: `tabIndex` and `onKeyDown` pass through. */
+/** Members of a toolbar with a roving tab stop, which follows focus: `tabIndex`, `onFocus`, and `onKeyDown` pass through. */
 export const RovingToolbar: Story = {
   render: () => {
     function Toolbar() {
@@ -40,13 +40,12 @@ export const RovingToolbar: Story = {
         const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
         if (step === 0) return;
         const next = (i + step + ALIGN.length) % ALIGN.length;
-        setStop(next);
         (e.currentTarget.parentElement?.children[next] as HTMLElement | undefined)?.focus();
       };
       return (
         <div role="toolbar" aria-label="Align" className={s.row}>
           {ALIGN.map((name, i) => (
-            <Button key={name} size="sm" tabIndex={i === stop ? 0 : -1} onKeyDown={rove(i)}>{name}</Button>
+            <Button key={name} size="sm" tabIndex={i === stop ? 0 : -1} onFocus={() => setStop(i)} onKeyDown={rove(i)}>{name}</Button>
           ))}
         </div>
       );

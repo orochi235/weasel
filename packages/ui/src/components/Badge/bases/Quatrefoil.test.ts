@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { quatrefoilRadius, quatrefoilVertices } from './Quatrefoil';
+import { MAX_SAMPLES, quatrefoilRadius, quatrefoilVertices } from './Quatrefoil';
 
 describe('quatrefoilRadius', () => {
   it('runs from the spike radius to the lobe radius through the valley when the join is sharp', () => {
@@ -11,12 +11,13 @@ describe('quatrefoilRadius', () => {
     expect(r(1)).toBeCloseTo(42, 10);
   });
 
-  it('lifts every radius by the smooth maximum of the two segments', () => {
+  it('lifts the valley by half its smoothing and leaves the tips at their radii', () => {
     const r = quatrefoilRadius();
-    expect(r(0)).toBeCloseTo((75 + Math.sqrt(634)) / 2, 10);
-    expect(r(0.25)).toBeCloseTo((62.5 + Math.sqrt(165.25)) / 2, 10);
+    expect(r(0)).toBeCloseTo(50, 10);
+    expect(r(0.25)).toBeCloseTo(37.5, 10);
     expect(r(0.5)).toBeCloseTo(26.5, 10);
-    expect(r(1)).toBeCloseTo((67 + Math.sqrt(298)) / 2, 10);
+    expect(r(1)).toBeCloseTo(42, 10);
+    expect(quatrefoilRadius({ valleySmooth: 20 })(0)).toBeCloseTo(50, 10);
   });
 
   it('truncates a tip by its erosion', () => {
@@ -45,5 +46,11 @@ describe('quatrefoilVertices', () => {
     expect(verts[6][1]).toBeCloseTo(50 + 42 * Math.SQRT1_2, 10);
     expect(verts[12][0]).toBeCloseTo(50, 10);
     expect(verts[12][1]).toBeCloseTo(100, 10);
+  });
+
+  it('caps an infinite sample count and reads NaN as the least', () => {
+    expect(quatrefoilVertices({ samples: Infinity })).toHaveLength(MAX_SAMPLES);
+    expect(quatrefoilVertices({ samples: 1e8 })).toHaveLength(MAX_SAMPLES);
+    expect(quatrefoilVertices({ samples: NaN })).toHaveLength(24);
   });
 });

@@ -1,5 +1,5 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
-import { withDefaults } from './params';
+import { clampParam, withDefaults } from './params';
 
 /** What `shapeParams` takes on a `coffin` badge. */
 export interface BadgeCoffinShapeParams {
@@ -23,12 +23,12 @@ const DEFAULTS: Required<BadgeCoffinShapeParams> = {
 const Coffin: ShapeModule<BadgeCoffinShapeParams> = {
   compose: (params): ShapeComposeSpec => {
     const cfg = withDefaults(DEFAULTS, params);
-    const hX = Math.max(0, Math.min(cfg.headX, 40));
-    const sX = Math.max(hX + 1, Math.min(cfg.shoulderX, 70));
-    const fX = Math.max(sX + 1, Math.min(cfg.footX, 100));
-    const hH = Math.max(2, Math.min(cfg.headHalfHeight, 50));
-    const sH = Math.max(2, Math.min(cfg.shoulderHalfHeight, 50));
-    const fH = Math.max(2, Math.min(cfg.footHalfHeight, 50));
+    const hX = clampParam(cfg.headX, 0, 40, DEFAULTS.headX);
+    const sX = clampParam(cfg.shoulderX, hX + 1, 70, DEFAULTS.shoulderX);
+    const fX = clampParam(cfg.footX, sX + 1, 100, DEFAULTS.footX);
+    const hH = clampParam(cfg.headHalfHeight, 2, 50, DEFAULTS.headHalfHeight);
+    const sH = clampParam(cfg.shoulderHalfHeight, 2, 50, DEFAULTS.shoulderHalfHeight);
+    const fH = clampParam(cfg.footHalfHeight, 2, 50, DEFAULTS.footHalfHeight);
     return {
       base: 'polygon',
       baseParams: {

@@ -646,9 +646,9 @@ describe('range edges', () => {
     const { container } = setup({ onRangeChange: () => {}, limits: [-20, 110] });
     const { min, max } = edges(container);
     expect([min.getAttribute('aria-valuemin'), min.getAttribute('aria-valuenow'), min.getAttribute('aria-valuemax')])
-      .toEqual(['-20', '0', '100']);
+      .toEqual(['-20', '0', '99']);
     expect([max.getAttribute('aria-valuemin'), max.getAttribute('aria-valuenow'), max.getAttribute('aria-valuemax')])
-      .toEqual(['0', '100', '110']);
+      .toEqual(['1', '100', '110']);
   });
 });
 

@@ -1,0 +1,62 @@
+{
+ "id": "ui.components.Button",
+ "commit": "c068d53f7e7088a49f2e672ba0dc6f9aac523208",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Button/Button.close.stories.module.css",
+  "packages/ui/src/components/Button/Button.close.stories.tsx",
+  "packages/ui/src/components/Button/Button.module.css",
+  "packages/ui/src/components/Button/Button.native.stories.module.css",
+  "packages/ui/src/components/Button/Button.native.stories.tsx",
+  "packages/ui/src/components/Button/Button.stories.module.css",
+  "packages/ui/src/components/Button/Button.stories.tsx",
+  "packages/ui/src/components/Button/Button.tsx",
+  "packages/ui/src/components/Button/closeButtonProps.tsx",
+  "packages/ui/src/components/Button/index.ts",
+  "packages/ui/src/components/Button/lab/ButtonLab.stories.module.css",
+  "packages/ui/src/components/Button/lab/ButtonLab.stories.tsx",
+  "packages/ui/src/components/Button/lab/ButtonLabView.tsx",
+  "packages/ui/src/components/Button/lab/buttonLabConfig.ts",
+  "packages/ui/src/components/Button/variantIcons.ts"
+ ],
+ "a": 9,
+ "b": 7,
+ "m": 4,
+ "distinct": 12,
+ "chapman": 15,
+ "unfound": 3,
+ "read": {
+  "A": 15,
+  "B": 15
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.7,
+   "B": 4.8,
+   "match": 0.1,
+   "fix": 15
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1846609,
+  "costUsd": 5.4
+ },
+ "fixCommits": [
+  "3f8af477f607e6957751265e27fed69dbae6aa1c",
+  "0150ec67ab7c1920dc3774c69df9daf9667cd6ff",
+  "fc287401df0a322969c792aee17d06426f495ea9",
+  "a2e83e7613f4d60e444a556bf4f52fbe8b240e30",
+  "2abe42c22e52f5346a00d1e203ef24b6400169ac",
+  "1830784592198c1232d4c53c3696ee558a02ec6a",
+  "03cc7cc3bff0d839e75a831c7d33ab8eca19f94f",
+  "dd8a8d3a0e2fb9daf76b14429f9cd235576e63fb",
+  "703d75f7c59f9266ca59ec497e2fba0c1c30eb91",
+  "822457c38a8deab542720f19d04f69cef46cff62"
+ ]
+}

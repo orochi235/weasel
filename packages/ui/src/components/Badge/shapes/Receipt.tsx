@@ -1,19 +1,23 @@
 import { trimNumber } from '@weasel-js/geom';
-import { repeatCount, withDefaults } from './params';
+import { clampParam, repeatCount, withDefaults } from './params';
 import type { ShapeModule } from '../types';
 
 /** What `shapeParams` takes on a `receipt` badge. */
 export interface BadgeReceiptShapeParams {
   teeth?: number;
+  /** How far each tear reaches in, 1 to 45 viewBox units. */
   tearDepth?: number;
   sideToTopRatio?: number;
 }
 
 const DEFAULTS: Required<BadgeReceiptShapeParams> = { teeth: 11, tearDepth: 4, sideToTopRatio: 3 };
 
+/** The deepest a tear's base reaches, so its deepest tooth (1.1 times it) stops short of the centerline. */
+const MAX_TEAR_DEPTH = 45;
+
 function receiptPath(teeth: number, depth: number) {
   const N = repeatCount(teeth, 3);
-  const baseDepth = Math.max(1, depth);
+  const baseDepth = clampParam(depth, 1, MAX_TEAR_DEPTH, DEFAULTS.tearDepth);
   const depthAt = (i: number) => baseDepth * (0.55 + 0.55 * Math.abs(Math.sin(i * 1.73 + 0.5)));
   let d = `M 0 0 L 100 0`;
   for (let i = 0; i < N; i++) {
@@ -47,7 +51,7 @@ const Receipt: ShapeModule<BadgeReceiptShapeParams> = {
     );
   },
   insets: (params) => {
-    const ratio = Math.max(0.2, Math.min(params.sideToTopRatio ?? DEFAULTS.sideToTopRatio, 10));
+    const ratio = clampParam(params.sideToTopRatio ?? DEFAULTS.sideToTopRatio, 0.2, 10, DEFAULTS.sideToTopRatio);
     const top = BASE_TOP;
     const side = Math.round(top * ratio);
     return { top, right: side, bottom: top, left: side };

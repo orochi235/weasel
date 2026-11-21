@@ -1,0 +1,40 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   6,
+   3
+  ],
+  [
+   7,
+   5
+  ]
+ ],
+ "a": [
+  "CLOSE_BUTTON_PROPS' 16px close glyph is drawn at 12px: the size-class svg rule overrides Icon's width/height attributes",
+  "domButton.measure sizes an unsized button as `md` while draw takes the ControlSizeScope's size",
+  "domButton.measure ignores `variant`, so a `link` button is measured as a padded control box",
+  "The lab's \"Export deltas\" diffs against BUTTON_LAB_DEFAULTS, not the stylesheet's defaults, so the exported rule doesn't reproduce the tuned look",
+  "A read-only toggle Button still shows hover, press-in and a pointer cursor while ignoring the press",
+  "A pressed confirm button loses its accent body",
+  "The lab's held \"hover\" sample always applies the confirm hover filter",
+  "A falsy non-undefined label (`null`, `false`, `''`) still makes a label part",
+  "The Button story's `size` control omits `xs`"
+ ],
+ "b": [
+  "`domButton.measure` ignores a `ControlSizeScope`, so it measures a different size than `draw` renders",
+  "The lab's \"Export deltas\" diffs against the lab's own defaults, not the values Button.module.css ships",
+  "Pasting exported shape deltas into `.button` does nothing, because the `.size_*` rules override them",
+  "The lab's \"hovered\" preview shows the confirm hover for every variant",
+  "A text-inset angle of 360° exports a spurious `--btn-text-inset-x: -0.00px` delta",
+  "A label that renders nothing (`false`, `null`, `''`) still gets a label slot and a gap, so an icon sits off-center",
+  "The RovingToolbar story's tab stop does not follow clicks or focus"
+ ]
+}

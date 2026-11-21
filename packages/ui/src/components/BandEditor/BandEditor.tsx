@@ -134,12 +134,12 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     onRangeChange: props.onRangeChange && ((lo, hi, next) => props.onRangeChange?.(lo, hi, retagged(next))),
   });
   // Drawn from the drag while one is under way, so the control moves with the pointer whether or not the consumer
-  // wires `onInput`. Every edit reads `committed`.
+  // wires `onInput` or previews the range. Every edit reads `committed`.
   const bands = draft?.bands ?? committed;
   const shown = retagged(bands);
   const sc = prefNumberScale(scale ?? 'log', 'BandEditor') ?? linearScale;
-  const { lo, hi, axisMin, axisMax, bandScale, unit: axis, toUnit, fromUnit } = drawnAxis(sc, min, max, draft?.range);
-  const { snapRadiusPx, unitAt, pointerUnit } = useTrackPointer(trackRef, snap, ticks, toUnit);
+  const { lo, hi, axisMin, axisMax, bandScale, unit: axis, toUnit, fromUnit } = drawnAxis(sc, draft?.axis?.[0] ?? min, draft?.axis?.[1] ?? max, draft?.range);
+  const { snapRadiusPx, unitAt, pointerUnit } = useTrackPointer(trackRef, snap, ticks, (v) => axis.position(v));
 
   const { onTrackPointerDown, onBandPointerDown, onBandFocus, onBandContextMenu, onRootKeyDown } = createBandCommands({
     committed, min, max, selectedIndex, onSelectionChange, onChange,

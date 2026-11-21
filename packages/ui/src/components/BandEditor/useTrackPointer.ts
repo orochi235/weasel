@@ -7,17 +7,18 @@ import type { BandTick } from './BandRuler';
 
 /**
  * Where a pointer sits along a band editor's track, in track units: clamped to the track for a split, or unclamped
- * and pulled onto a tick within the snap radius for an edge drag, `alt` defeating the pull.
+ * and pulled onto a tick within the snap radius for an edge drag, `alt` defeating the pull. `position` places a tick
+ * on the track unclamped, so one past either end is a target where it lies.
  */
 export function useTrackPointer(
-  trackRef: RefObject<HTMLDivElement | null>, snap: boolean, ticks: BandTick[] | undefined, toUnit: (value: number) => number,
+  trackRef: RefObject<HTMLDivElement | null>, snap: boolean, ticks: BandTick[] | undefined, position: (value: number) => number,
 ) {
   const snapRadiusPx = useSnapRadiusPx();
   const rawUnitAt = (clientX: number): number => alongTrack(trackRef.current, clientX)?.f ?? 0;
   const snapped = (unit: number, altKey: boolean): number => {
     if (!snap || altKey || !ticks || ticks.length === 0) return unit;
     const width = trackRef.current?.getBoundingClientRect().width ?? 0;
-    return width === 0 ? unit : attract(unit, ticks.map((tick) => toUnit(tick.at)), snapRadiusPx / width);
+    return width === 0 ? unit : attract(unit, ticks.map((tick) => position(tick.at)).filter(Number.isFinite), snapRadiusPx / width);
   };
   return {
     snapRadiusPx,

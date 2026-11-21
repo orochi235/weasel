@@ -20,6 +20,14 @@ describe('createDomFocusScope', () => {
     expect(scope.tabOrder().map((e) => e.id)).toEqual(['d', 'b', 'a', 'c', 'e']);
   });
 
+  it('skips what CSS leaves unrendered: display none on it or above it, and visibility hidden', () => {
+    const { scope } = mount(`
+      <button id="a">a</button><div style="display: none"><button id="x">x</button></div>
+      <button id="y" style="display: none">y</button><div style="visibility: hidden"><button id="z">z</button></div>
+      <div style="visibility: hidden"><button id="b" style="visibility: visible">b</button></div>`);
+    expect(scope.tabOrder().map((e) => e.id)).toEqual(['a', 'b']);
+  });
+
   it('skips a control a disabled fieldset disables', () => {
     const { scope } = mount('<button id="a">a</button><fieldset disabled><button id="x">x</button><input id="y"></fieldset>');
     expect(scope.tabOrder().map((e) => e.id)).toEqual(['a']);

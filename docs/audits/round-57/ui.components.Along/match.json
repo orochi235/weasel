@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "Dragging a scrolling run across the seam of a whole-circle arc throws the scroll to one end",
+  "Items in a scrolling curved Tabs, PageTabs or RadioGroup never get `touch-action: none`, so a touch drag pans the page",
+  "`useRunText` places its copies by bounding-box scale, which is wrong under a rotated ancestor, while `boxPoint` inverts the screen matrix",
+  "Outside an `Along`, `CurvedLabel` is absolutely positioned over its containing block instead of being \"a plain line of text\"",
+  "`useItemLengths` keeps the length of every key it has ever seen, with no bound",
+  "`seenUnder` compares key lists by joining them with `'\\n'`, so different lists can compare equal",
+  "The LensRim lab writes every mark to localStorage with no cap"
+ ],
+ "b": []
+}

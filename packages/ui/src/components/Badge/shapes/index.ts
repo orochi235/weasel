@@ -21,6 +21,7 @@ import Coffin, { type BadgeCoffinShapeParams } from './Coffin';
 import Receipt, { type BadgeReceiptShapeParams } from './Receipt';
 import Wood from './Wood';
 import Quatrefoil, { type BadgeQuatrefoilShapeParams } from './Quatrefoil';
+import { registryTable } from '../registryTable';
 
 /** What `shapeParams` takes, by the `shape` it goes with. */
 export interface BadgeShapeParams {
@@ -49,7 +50,7 @@ export interface BadgeShapeParams {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ShapeModule's P is contravariant (Component/compose/insets take it), and Badge.tsx indexes this registry by a runtime BadgeShape, so a per-key map type collapses to an unsatisfiable intersection.
-export const SHAPES: Record<BadgeShape, ShapeModule<any>> = {
+export const SHAPES: Record<BadgeShape, ShapeModule<any>> = registryTable({
   pill: Pill,
   plain: Plain,
   square: Square,
@@ -72,4 +73,4 @@ export const SHAPES: Record<BadgeShape, ShapeModule<any>> = {
   receipt: Receipt,
   wood: Wood,
   quatrefoil: Quatrefoil,
-};
+});

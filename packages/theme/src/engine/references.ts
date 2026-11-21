@@ -1,14 +1,12 @@
 import { getOwn, hasOwnKey, setOwn } from '@weasel-js/registry';
+import { refTarget } from '../dtcg/resolve.ts';
 import type { RawToken, TokenValue } from '../dtcg/types.ts';
 import type { Issue, Provenance } from './types.ts';
 
-const REF = /^\{([^}]+)\}$/;
 /** The type of a token nothing has typed yet. */
 export const UNTYPED = 'unknown';
 
-function refName(value: TokenValue): string | undefined {
-  return typeof value === 'string' ? REF.exec(value.trim())?.[1] : undefined;
-}
+const refName = (value: TokenValue): string | undefined => refTarget(value) ?? undefined;
 
 /** Throws on a cycle, and on a reference to a missing name unless producing that name failed at this selection, which was reported then. */
 export function checkReferences(tokens: Readonly<Record<string, RawToken>>, failed: ReadonlySet<string>): void {

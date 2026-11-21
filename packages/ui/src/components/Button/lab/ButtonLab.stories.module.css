@@ -33,9 +33,13 @@
   background: var(--wzl-surface-raised);
 }
 
-/* Hover held still, so it can be judged beside rest. */
-.hovered {
-  filter: brightness(1.08) saturate(1.06);
+/* Hover held still, so it can be judged beside rest: the values the button's own :hover rules read. */
+.states .hovered {
+  filter: var(--btn-hover-filter);
+}
+
+.states .hoveredSurface {
+  background: var(--btn-hover-surface);
 }
 
 .panel {

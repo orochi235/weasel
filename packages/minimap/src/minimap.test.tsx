@@ -42,7 +42,9 @@ beforeAll(() => {
 });
 afterAll(() => {
   if (widthDesc) Object.defineProperty(HTMLElement.prototype, 'clientWidth', widthDesc);
+  else Reflect.deleteProperty(HTMLElement.prototype, 'clientWidth');
   if (heightDesc) Object.defineProperty(HTMLElement.prototype, 'clientHeight', heightDesc);
+  else Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
 });
 
 function pointer(el: Element, type: string, x: number, y: number) {

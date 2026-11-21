@@ -1,10 +1,11 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/faces.css';
-import { cleanup, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
 import { icon } from '@weasel-js/ui/testing/icon';
 import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
+import { Bar } from '@weasel-js/ui/components/Bar';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(() => {
@@ -66,4 +67,18 @@ it.each([
   const turned = [...bar.querySelectorAll('[data-turned]')];
   expect(turned).toHaveLength(1);
   expect(turned[0]!.textContent).toContain('Left');
+});
+
+it('scrolls a framed vertical bar too long for its room', () => {
+  render(
+    <div style={{ display: 'flex', flexDirection: 'column', height: 80 }}>
+      <Bar framed orientation="vertical" label="Tall">
+        {['a', 'b', 'c', 'd', 'e', 'f'].map((key) => <button key={key} type="button">{key}</button>)}
+      </Bar>
+    </div>,
+  );
+  const bar = screen.getByRole('toolbar', { name: 'Tall' });
+  expect(bar.scrollHeight).toBeGreaterThan(bar.clientHeight);
+  bar.scrollTop = 10;
+  expect(bar.scrollTop).toBeGreaterThan(0);
 });

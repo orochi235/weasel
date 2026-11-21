@@ -44,7 +44,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const rootRef = useRef<HTMLDivElement>(null);
   const run = useRowRun(rootRef, shape);
   const leading = useBarLead(barLead(props));
-  const lengths = useItemLengths(rootRef, drawnKeys(items, leading != null), barKeyOf);
+  const lengths = useItemLengths(rootRef, drawnKeys(items, leading != null, menu), barKeyOf);
   const gap = useRunGap(rootRef);
 
   const leadLength = leading != null ? (lengths.get(BAR_LEAD) ?? 0) : 0;
@@ -106,7 +106,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   );
 }
 
-/** The keys of what the bar holds, so its lengths are watched again when that set changes. */
-function drawnKeys(items: readonly LineItem[], lead: boolean): string[] {
-  return [...(lead ? [BAR_LEAD] : []), ...items.map((item) => item.key)];
+/** The keys of what the bar holds, so its lengths are watched again when that set changes: its More button among them. */
+function drawnKeys(items: readonly LineItem[], lead: boolean, menu: boolean): string[] {
+  return [...(lead ? [BAR_LEAD] : []), ...items.map((item) => item.key), ...(menu ? [BAR_MORE] : [])];
 }

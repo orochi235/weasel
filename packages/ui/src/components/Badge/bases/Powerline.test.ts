@@ -127,3 +127,27 @@ describe('Powerline base registration', () => {
     expect(typeof BASES[key].build).toBe('function');
   });
 });
+
+describe('Powerline base normals', () => {
+  it.each(['flat', 'puzzle'] as const)('point straight out along the straight runs of a %s side edge', (cap) => {
+    const W = 80, H = 20;
+    const s = Powerline.build({ leftEdge: cap, rightEdge: cap, depth: 6 }, W, H);
+    let checked = 0;
+    for (let i = 0; i < 2000; i++) {
+      const p = s.perimeterAt((i / 2000) * s.totalCss);
+      if (p.y < 0.5 || p.y > 99.5) continue;
+      if (Math.abs(p.x - 100) < 1e-6) { expect(p.nx).toBeCloseTo(1, 6); expect(p.ny).toBeCloseTo(0, 6); checked++; }
+      if (Math.abs(p.x) < 1e-6) { expect(p.nx).toBeCloseTo(-1, 6); expect(p.ny).toBeCloseTo(0, 6); checked++; }
+    }
+    expect(checked).toBeGreaterThan(20);
+  });
+
+  it('follow a slanted edge rather than pointing sideways', () => {
+    const W = 80, H = 20;
+    const s = Powerline.build({ rightEdge: 'chevron', depth: 10 }, W, H);
+    const p = s.perimeterAt(W + 5);
+    const len = Math.hypot(10, 10);
+    expect(p.nx).toBeCloseTo(10 / len, 6);
+    expect(p.ny).toBeCloseTo(-10 / len, 6);
+  });
+});

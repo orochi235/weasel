@@ -28,3 +28,13 @@ it('asks for nothing when it scrolls instead', () => {
   render(<Bar label="Tools" lead="label">{cells}</Bar>);
   expect(screen.getByRole('toolbar', { name: 'Tools' }).style.getPropertyValue('--bar-natural')).toBe('');
 });
+
+it('asks again when its lead appears or leaves', () => {
+  const { rerender } = render(<Bar label="Tools" overflow="menu">{cells}</Bar>);
+  const bar = screen.getByRole('toolbar', { name: 'Tools' });
+  expect(bar.style.getPropertyValue('--bar-natural')).toBe('90px');
+  rerender(<Bar label="Tools" lead="label" overflow="menu">{cells}</Bar>);
+  expect(bar.style.getPropertyValue('--bar-natural')).toBe('110px');
+  rerender(<Bar label="Tools" overflow="menu">{cells}</Bar>);
+  expect(bar.style.getPropertyValue('--bar-natural')).toBe('90px');
+});

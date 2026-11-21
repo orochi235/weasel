@@ -43,6 +43,7 @@ export interface ShapeModule<P = Record<string, never>> {
   /** Provide a Component for legacy SVG rendering OR a compose() returning a base+effects spec. At least one is required. */
   Component?: (props: ShapeRenderProps<P>) => ReactNode;
   compose?: (params: P) => ShapeComposeSpec;
+  /** What the label is padded by, on a composed shape too, where the base's outline can grow it. */
   insets: ShapeInsets | ((params: P) => ShapeInsets);
   stretches: boolean;
   defaultAspect?: number;

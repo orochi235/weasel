@@ -5,6 +5,8 @@ import { lerp, trimNumber, wrapPositive } from '@weasel-js/geom';
 export interface BadgeRoundedRectBaseParams {
   /** 0..1 fraction of the maximum corner rounding (1 = full pill / ellipse). */
   erosion?: number;
+  /** Corner radius in CSS px, held to half the shorter side; when set, it replaces `erosion`. */
+  radius?: number;
   /** Stretch the corner arcs horizontally vs vertically. 1 = circular at the badge's
    *  native aspect; >1 wider corner arcs; <1 taller corner arcs. */
   eccentricity?: number;
@@ -13,7 +15,7 @@ export interface BadgeRoundedRectBaseParams {
   pinch?: number;
 }
 
-const DEFAULTS: Required<BadgeRoundedRectBaseParams> = { erosion: 0.16, eccentricity: 1, pinch: 0 };
+const DEFAULTS: Required<Omit<BadgeRoundedRectBaseParams, 'radius'>> = { erosion: 0.16, eccentricity: 1, pinch: 0 };
 
 const ARC_STEPS = 64;
 
@@ -177,7 +179,9 @@ function pinchedSampler({ perimeterAt, totalCss }: Outline, pinch: number, { sx,
     const bx = b.x, by = pinchY(b.x, b.y);
     const tx = (bx - ax) / sx;
     const ty = (by - ay) / sy;
-    const tl = Math.hypot(tx, ty) || 1;
+    const tl = Math.hypot(tx, ty);
+    // A full pinch collapses each end edge to a point, where the warped tangent vanishes.
+    if (tl < 1e-9) return { x, y, nx: pt.nx, ny: pt.ny };
     return { x, y, nx: ty / tl, ny: -tx / tl };
   };
   return { bodyPath, perimeterAt: pinchedAt, totalCss };
@@ -185,8 +189,10 @@ function pinchedSampler({ perimeterAt, totalCss }: Outline, pinch: number, { sx,
 
 const RoundedRect: BaseModule<BadgeRoundedRectBaseParams> = {
   build: (params, boxW, boxH) => {
-    const cfg = { ...DEFAULTS, ...params };
-    const erosion = Math.max(0, Math.min(cfg.erosion, 1));
+    const cfg: BadgeRoundedRectBaseParams & typeof DEFAULTS = { ...DEFAULTS, ...params };
+    const half = Math.min(boxW, boxH) / 2;
+    const byRadius = cfg.radius !== undefined && !Number.isNaN(cfg.radius) && half > 0;
+    const erosion = Math.max(0, Math.min(byRadius ? cfg.radius! / half : cfg.erosion, 1));
     const corners = cornersFor(erosion, cfg.eccentricity, boxW, boxH);
     const outline = roundedRectOutline(corners);
     // Erosion supersedes pinch: a fully rounded end already tapers to the centerline, so a full pill ignores it.

@@ -239,7 +239,7 @@ is: fix that branch or drop it, and rerun the batch. Hold a ready branch for the
 than running one for it alone, unless the fleet is idle as above; a batch touching a `triggers` path, dependencies or build tooling gets a
 full run, which is one more reason to fold such a change in rather than run it separately. The
 `gate` project runs typecheck, lint and every check at once, so it runs only inside a fleet run; on a
-fleet node, `npm run checks:gate` runs the same checks outside vitest (a skulk fixer's last step). Perf measurements
+fleet node, `npm run checks:gate` runs the same checks outside vitest (a skulkr fixer's last step). Perf measurements
 are not test runs and still go to the fleet, one job at a time. On 2026-10-30, seven agents each
 finishing with a branch run and then a run of `main` per merge put 2–3 suite-sized runs behind every
 change.

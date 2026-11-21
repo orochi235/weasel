@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [],
+ "b": [
+  "theme.engine audit findings (round 57)",
+  "derive's reference check reads `{group.name}` references differently from semantics, deps and the emitter",
+  "An offset rule with a fractional `offset` mints `{ramp-undefined}` and makes derive throw",
+  "A `{seeds.name}` value resolves in components and pins but throws in a semantic `value` rule",
+  "A white, black or gray anchor in a lightness ramp drags its arbitrary hue across the blended steps",
+  "bake drops every token when any axis has no values yet",
+  "Categorical anchors' chroma, lightness and hue are never range-checked",
+  "A lightness ramp anchor naming a step the ramp doesn't declare is dropped silently"
+ ]
+}

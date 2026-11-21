@@ -177,13 +177,17 @@ export const Button = forwardRef(function Button(
   );
 });
 
+/** Children React renders as nothing, so a button holding them has no label part. */
+const rendersNothing = (n: ReactNode) => n == null || typeof n === 'boolean' || n === '';
+
 /** What a {@link Button} with `props` shows, as the shared measure reads it: its children are the label, or the
- *  icon when `iconOnly`, and a label that is not text is measured by its text content. */
+ *  icon when `iconOnly`, and a label that is not text is measured by its text content. Children that render nothing
+ *  (`null`, a boolean, `''`) are no label. */
 export function buttonFaceOf(props: ButtonProps): ButtonFace<ReactNode> {
   const { children, size = 'md', iconOnly, loading, leadingIcon, trailingIcon } = props;
   return iconOnly
     ? { size, iconOnly: true, icon: children, loading }
-    : { size, label: children === undefined ? undefined : nodeText(children), leadingIcon, trailingIcon, loading };
+    : { size, label: rendersNothing(children) ? undefined : nodeText(children), leadingIcon, trailingIcon, loading };
 }
 
 /** The slot before a label: it hands the button the label's baseline, as `measureButton` gives it. */
@@ -206,8 +210,15 @@ function ButtonPartSlot(
 /**
  * {@link Button} on the measure/draw contract a HUD button implements too: `measure` is `@weasel-js/ui-logic`'s
  * `measureButton` (pass `createDomMeasureEnv(el)` for any element in the themed root), and `draw` renders the button.
+ * A `link` button is inline text with no box of its own, so `measure` throws on one. An unsized button is `md` on
+ * both sides: `measure` cannot read a `ControlSizeScope`, so `draw` does not either.
  */
 export const domButton: HeadlessComponent<ButtonProps, ButtonLayout, DomTarget<HTMLButtonElement>, ReactElement> = {
-  measure: (props, c, env) => measureButton(buttonFaceOf(props), c, env),
-  draw: (props, target) => <Button ref={target.ref} {...props} />,
+  measure: (props, c, env) => {
+    if (props.variant === 'link') {
+      throw new Error('domButton.measure: a `link` Button is sized by the text around it, not the button tokens');
+    }
+    return measureButton(buttonFaceOf(props), c, env);
+  },
+  draw: (props, target) => <Button ref={target.ref} {...props} size={props.size ?? 'md'} />,
 };

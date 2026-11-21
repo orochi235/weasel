@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { cssPx } from '../../cssPx';
 import { compositeKey } from '@weasel-js/registry';
-import { watchResize } from '@weasel-js/react';
+import { useLatest, watchResize } from '@weasel-js/react';
 
 const same = (a: ReadonlyMap<string, number>, b: ReadonlyMap<string, number>): boolean =>
   a.size === b.size && [...a].every(([key, length]) => b.get(key) === length);
@@ -14,22 +14,28 @@ export type RunItemsOf = (root: HTMLElement) => Iterable<Element>;
 
 const childrenOf: RunItemsOf = (root) => root.children;
 
-/** The lengths of `el`'s items read into `known`, which keeps those of items no longer drawn, each item then watched. */
-function read(el: HTMLElement | null, keyOf: RunKeyOf, itemsOf: RunItemsOf, known: Map<string, number>, observer: ResizeObserver | null): ReadonlyMap<string, number> {
+/**
+ * The lengths of `el`'s items read into `known`, which keeps those of items no longer drawn while `keys` still names
+ * them and lets go of the rest, each item then watched.
+ */
+function read(el: HTMLElement | null, keyOf: RunKeyOf, itemsOf: RunItemsOf, keys: readonly string[], known: Map<string, number>, observer: ResizeObserver | null): ReadonlyMap<string, number> {
+  const keep = new Set(keys);
   for (const child of el === null ? [] : itemsOf(el)) {
     const key = keyOf(child);
     if (key === null || !(child instanceof HTMLElement)) continue;
     known.set(key, child.offsetWidth);
+    keep.add(key);
     observer?.observe(child);
   }
+  for (const key of known.keys()) if (!keep.has(key)) known.delete(key);
   return new Map(known);
 }
 
 /**
  * Each item's untransformed width under `root`, by the key `keyOf` reads off it: an item tipped along a curve keeps
  * its layout width. Measured after every commit, before the
- * paint, and again when one resizes; an item off the line keeps the length it last had on it. A change to `keys`
- * starts watching afresh, letting go of items no longer drawn. `keyOf` and `itemsOf` must keep their identity across
+ * paint, and again when one resizes; an item off the line keeps the length it last had on it while `keys` names it.
+ * A change to `keys` starts watching afresh, letting go of items no longer drawn. `keyOf` and `itemsOf` must keep their identity across
  * renders.
  */
 export function useItemLengths(root: RefObject<HTMLElement | null>, keys: readonly string[], keyOf: RunKeyOf, itemsOf: RunItemsOf = childrenOf): ReadonlyMap<string, number> {
@@ -37,11 +43,12 @@ export function useItemLengths(root: RefObject<HTMLElement | null>, keys: readon
   const observer = useRef<ResizeObserver | null>(null);
   const [lengths, setLengths] = useState<ReadonlyMap<string, number>>(() => new Map());
   const signature = compositeKey(keys);
+  const named = useLatest(keys);
 
   // A part like a bar's More button comes and goes with what fits, which no key says, so every commit looks again.
   useLayoutEffect(() => {
     const measure = (): void => {
-      const next = read(root.current, keyOf, itemsOf, known.current, observer.current);
+      const next = read(root.current, keyOf, itemsOf, named.current, known.current, observer.current);
       setLengths((prev) => (same(prev, next) ? prev : next));
     };
     measure();
@@ -50,7 +57,7 @@ export function useItemLengths(root: RefObject<HTMLElement | null>, keys: readon
   useLayoutEffect(() => {
     if (typeof ResizeObserver === 'undefined') return;
     const measure = (): void => {
-      const next = read(root.current, keyOf, itemsOf, known.current, observer.current);
+      const next = read(root.current, keyOf, itemsOf, named.current, known.current, observer.current);
       setLengths((prev) => (same(prev, next) ? prev : next));
     };
     observer.current = new ResizeObserver(measure);
@@ -59,7 +66,7 @@ export function useItemLengths(root: RefObject<HTMLElement | null>, keys: readon
       observer.current?.disconnect();
       observer.current = null;
     };
-  }, [root, signature, keyOf, itemsOf]);
+  }, [root, signature, keyOf, itemsOf, named]);
   return lengths;
 }
 

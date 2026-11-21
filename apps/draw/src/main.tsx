@@ -33,8 +33,6 @@ const RegistryInspector = lazy(() =>
 
 const AssetsPage = lazy(() =>
   import('./dev/AssetsPage').then((m) => ({ default: m.AssetsPage })));
-const AuditsPage = lazy(() =>
-  import('./dev/audits/AuditsPage').then((m) => ({ default: m.AuditsPage })));
 
 // The scene is made from the session's records, which read synchronously only once open: the editor waits on them
 // behind the `<Suspense>` below rather than painting a starter drawing first.
@@ -63,7 +61,7 @@ importLegacyPrefs(drawPrefs());
 migrateLegacyPanelFlags();
 
 /** Hash-based router: `#/dev/toolkits` mounts ToolkitBuilder, `#/dev/registry`
- *  the bundle inspector, `#/dev/assets` the asset editor, `#/dev/audits` the audit chart, anything else
+ *  the bundle inspector, `#/dev/assets` the asset editor, anything else
  *  the main App, whose `<EditorShell>` mounts the kit's providers. The dev
  *  surfaces get theirs from a `<WeaselProvider>`. */
 function Root() {
@@ -77,8 +75,6 @@ function Root() {
     <RegistryInspector />
   ) : hash.startsWith('#/dev/assets') ? (
     <AssetsPage />
-  ) : hash.startsWith('#/dev/audits') ? (
-    <AuditsPage />
   ) : null;
   // The dev surfaces' canvases have no shell to give them devtools; the app's `<EditorShell>` does.
   const surface = dev ? (

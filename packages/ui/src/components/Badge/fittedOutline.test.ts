@@ -9,9 +9,9 @@ import type { ShapeInsets } from './types';
 const FITTED = (Object.keys(BASES) as BadgeBase[]).filter((key) => BASES[key].fitsContent);
 
 /** The insets `Badge` fits around `content`, and the box they make. */
-function settle(base: BadgeBase, content: { width: number; height: number }, effects: BadgeEffectSpec[], bloat: number) {
+function settle(base: BadgeBase, content: { width: number; height: number }, effects: BadgeEffectSpec[], bloat: number, overrides: object = {}) {
   const mod = BASES[base];
-  const params = mod.defaults;
+  const params = { ...mod.defaults, ...overrides };
   const declared = (typeof mod.insets === 'function' ? mod.insets(params) : mod.insets) as ShapeInsets;
   const build = (w: number, h: number) => mod.build(params, w, h);
   const insets = fitMoved(build, outlinePoints(build(100, 100)), content, declared, { effects, bloat });
@@ -65,6 +65,7 @@ describe('a fitted base under an outward bloat', () => {
   });
 
   it('pads further where it crosses one onto the content', () => {
-    expect(settle('octant-bspline', { width: 170, height: 16 }, [], 3).insets.top).toBeGreaterThan(settle('octant-bspline', { width: 170, height: 16 }, [], 0).insets.top);
+    const deep = { valleyR: 10 };
+    expect(settle('quatrefoil', { width: 170, height: 16 }, [], 3, deep).insets.top).toBeGreaterThan(settle('quatrefoil', { width: 170, height: 16 }, [], 0, deep).insets.top);
   });
 });

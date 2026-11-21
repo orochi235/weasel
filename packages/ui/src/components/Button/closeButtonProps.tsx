@@ -14,5 +14,5 @@ export const CLOSE_BUTTON_PROPS = {
   emphasis: 'low',
   size: 'sm',
   iconOnly: true,
-  children: <Icon name={icon('close')} size={16} />,
+  children: <Icon name={icon('close')} />,
 } as const;

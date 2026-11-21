@@ -8,6 +8,7 @@ import OctantSpline, { type BadgeOctantSplineBaseParams } from './OctantSpline';
 import OctantBSpline, { type BadgeOctantBSplineBaseParams } from './OctantBSpline';
 import Ribbon, { type BadgeRibbonBaseParams } from './Ribbon';
 import Powerline, { type BadgePowerlineBaseParams } from './Powerline';
+import { registryTable } from '../registryTable';
 
 /** The outlines a composed badge can be built on. */
 export type BadgeBase =
@@ -35,7 +36,7 @@ export interface BadgeBaseParams {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- BaseModule's P is contravariant (build/insets take it), and Badge.tsx indexes this registry by a runtime BadgeBase, so a per-key map type collapses to an unsatisfiable intersection.
-export const BASES: Record<BadgeBase, BaseModule<any>> = {
+export const BASES: Record<BadgeBase, BaseModule<any>> = registryTable({
   'chamfered-rect': ChamferedRect,
   'rounded-rect': RoundedRect,
   'polygon': Polygon,
@@ -45,4 +46,4 @@ export const BASES: Record<BadgeBase, BaseModule<any>> = {
   'octant-bspline': OctantBSpline,
   'ribbon': Ribbon,
   'powerline': Powerline,
-};
+});

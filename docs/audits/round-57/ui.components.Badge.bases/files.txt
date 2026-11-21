@@ -1,0 +1,14 @@
+packages/ui/src/components/Badge/bases/ChamferedRect.tsx
+packages/ui/src/components/Badge/bases/OctantBSpline.tsx
+packages/ui/src/components/Badge/bases/OctantSpline.tsx
+packages/ui/src/components/Badge/bases/Polygon.tsx
+packages/ui/src/components/Badge/bases/Powerline.tsx
+packages/ui/src/components/Badge/bases/Puzzle.tsx
+packages/ui/src/components/Badge/bases/Quatrefoil.tsx
+packages/ui/src/components/Badge/bases/Ribbon.tsx
+packages/ui/src/components/Badge/bases/RoundedRect.tsx
+packages/ui/src/components/Badge/bases/edgeProfiles.ts
+packages/ui/src/components/Badge/bases/index.ts
+packages/ui/src/components/Badge/bases/inscribedRect.ts
+packages/ui/src/components/Badge/bases/polygonSampler.ts
+packages/ui/src/components/Badge/bases/types.ts

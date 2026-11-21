@@ -3234,6 +3234,26 @@ Calls the lanes made without a ruling:
   a caller who passed it as an increment now gets that number as the half-height.
 - 2026-11-20: A badge shape's repeat counts (`sparkler` and `starburst` `points`, `receipt` `teeth`) stop at 256, and a
   `perforated` badge's `holePitch` at no less than 1px. Both bounds are picked to keep a render finite, not ruled.
+
+## Audit round fifty-seven (2026-11-20): band editor
+
+- 2026-11-20: A `BandEditor` range end stops one key step (1% of the track) short of the other end when no locked band
+  holds the range open, for a drag as for a key. That gives Home and End, and `aria-valuemin` / `aria-valuemax`, a
+  value the end can take; the alternative was leaving the inward bound open and Home and End unhandled there.
+- 2026-11-20: A `BandEditor` given an empty `value` draws an empty strip, read as a list not yet loaded, rather than
+  throwing or warning that a band list has at least one band.
+## Audit round fifty-seven (2026-11-20): Bar
+
+- 2026-11-20 (my call): Two children of one `Bar` that share a key, as two arrays mapped from lists sharing an id can,
+  keep the first under that key; the later one is keyed by its place in the children, warns, and is not a unit a
+  reorder moves, since an `order` naming that key could mean either.
+## Audit round fifty-seven (2026-11-20): Button
+
+- 2026-11-20 (the fixer's call): `domButton.draw` renders an unsized button at `md`, the size `measure` gives it,
+  rather than at the nearest `ControlSizeScope`'s. A scope is React context, which `measure` has no way to read, so
+  the two disagreed inside one; a scoped caller passes `size`.
+- 2026-11-20 (the fixer's call): `domButton.measure` throws on a `link` Button. A link draws as inline text in the
+  font around it, which no token in a `MeasureEnv` names, so a measured box would be the control box it never draws.
 ## Audit round fifty-four (2026-11-20): the renderer, part one
 
 - 2026-11-20 (my call, audit round 54): a group or layer `composite` string that is no `CompositeOp` (`'multiply'`,
@@ -3273,3 +3293,14 @@ Calls the lanes made without a ruling:
 
 - 2026-11-20 (the fixer's call): `plaque({ mix })` throws a `RangeError` for a `mix` outside 0..100 or not a number,
   since `color-mix()` rejects such a percentage and the plaque loses its fill and ink. Clamping it was the alternative.
+## Audit round fifty-seven (2026-11-20): badge shapes
+
+- 2026-11-20 (the fixer's call): A `quatrefoil` badge's `samples` runs 24..1024 and a `beavis` badge's `points` 3..256,
+  a `receipt` badge's `tearDepth` stops at 45 and a `house` badge's `peakHeight` at its `eaveY`. The bounds keep a
+  render finite and an outline simple; the numbers are picked, not ruled.
+- 2026-11-20 (the fixer's call): `NaN` in a bounded badge shape param reads as that param's default, where a repeat
+  count reads it as its least. Reading it as the lower bound was the alternative.
+- 2026-11-20 (the fixer's call): A shape that composes itself from a base pads by its own `insets`, fitted against the
+  base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
+  rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
+  pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.

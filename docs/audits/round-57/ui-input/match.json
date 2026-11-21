@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "framesSweep counts a numeric `loop` below 1 as that many passes, where the clock it reads makes at least one",
+  "sliderKey with stops and `ordered` lands a thumb between stops when the next stop is its neighbor's",
+  "sliderAt returns NaN on a track with an endless `min`, a step and no `origin`",
+  "A sweep's `at` answers NaN (or `undefined` from valuesSweep) for a NaN fraction, though documented as clamped"
+ ],
+ "b": []
+}

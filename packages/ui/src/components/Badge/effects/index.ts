@@ -14,6 +14,7 @@ import Outline, { type BadgeOutlineEffectParams } from './Outline';
 import Sunbeams, { type BadgeSunbeamsEffectParams } from './Sunbeams';
 import Aqua, { type BadgeAquaEffectParams } from './Aqua';
 import Metal, { type BadgeMetalEffectParams } from './Metal';
+import { registryTable } from '../registryTable';
 
 /** The treatments a composed badge can layer over its base. */
 export type BadgeEffect =
@@ -41,7 +42,7 @@ export interface BadgeEffectParams {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- EffectModule's P is contravariant (offsetAt/Component take it), and Badge.tsx indexes this registry by a runtime effect name, so a per-key map type collapses to an unsatisfiable intersection.
-export const EFFECTS: Record<BadgeEffect, EffectModule<any>> = {
+export const EFFECTS: Record<BadgeEffect, EffectModule<any>> = registryTable({
   spikes: Spikes,
   puffs: Puffs,
   bites: Bites,
@@ -57,7 +58,7 @@ export const EFFECTS: Record<BadgeEffect, EffectModule<any>> = {
   sunbeams: Sunbeams,
   aqua: Aqua,
   metal: Metal,
-};
+});
 
 /** One entry in a badge's `effects`: the effect, and its parameters. */
 export interface BadgeEffectSpec<E extends BadgeEffect = BadgeEffect> {

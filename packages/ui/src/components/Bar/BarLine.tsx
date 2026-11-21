@@ -36,7 +36,7 @@ export function BarLine(props: BarLineProps) {
   const leading = useBarLead(barLead(props));
 
   const menu = overflow === 'menu';
-  const { bar: barRef, kept, natural, least } = useBarOverflow(menu, items.map((item) => item.key), vertical);
+  const { bar: barRef, kept, natural, least } = useBarOverflow(menu, items.map((item) => item.key), vertical, leading != null, items.find((item) => !item.spacer)?.key);
   useReportDockLeast(least);
   const rove = useRovingTabIndex<HTMLDivElement>({ orientation });
   const roveRef = rove.rootRef;

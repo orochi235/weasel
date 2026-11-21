@@ -1,0 +1,62 @@
+{
+ "id": "ui.components.Badge.bases",
+ "commit": "c068d53f7e7088a49f2e672ba0dc6f9aac523208",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Badge/bases/ChamferedRect.tsx",
+  "packages/ui/src/components/Badge/bases/OctantBSpline.tsx",
+  "packages/ui/src/components/Badge/bases/OctantSpline.tsx",
+  "packages/ui/src/components/Badge/bases/Polygon.tsx",
+  "packages/ui/src/components/Badge/bases/Powerline.tsx",
+  "packages/ui/src/components/Badge/bases/Puzzle.tsx",
+  "packages/ui/src/components/Badge/bases/Quatrefoil.tsx",
+  "packages/ui/src/components/Badge/bases/Ribbon.tsx",
+  "packages/ui/src/components/Badge/bases/RoundedRect.tsx",
+  "packages/ui/src/components/Badge/bases/edgeProfiles.ts",
+  "packages/ui/src/components/Badge/bases/index.ts",
+  "packages/ui/src/components/Badge/bases/inscribedRect.ts",
+  "packages/ui/src/components/Badge/bases/polygonSampler.ts",
+  "packages/ui/src/components/Badge/bases/types.ts"
+ ],
+ "a": 8,
+ "b": 0,
+ "m": 0,
+ "distinct": 8,
+ "incomplete": [
+  "B"
+ ],
+ "read": {
+  "A": 14,
+  "B": 0
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.1,
+   "B": 1.2,
+   "match": 0,
+   "fix": 17.9
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1222064,
+  "costUsd": 3.73
+ },
+ "fixCommits": [
+  "4e2b4b77ae6d16e35aba64ccf15999f19e9a14c3",
+  "bce151124f723b6fb53b3e63b04c61120c78ccb6",
+  "5e372b0dfc2f264d44a73d63c85c215cf98096b5",
+  "44569264fb2e017c1d084b8cd960ba7dcd2b8d5f",
+  "fe0f60b793fcdcdbf576c78c98a1d7948bbbb312",
+  "2c26379eafc76acf22e58844277bae2839dc7d87",
+  "915e939a1c579f2ca36b992d82362787f8fd3260",
+  "72ae87cf6a480b4672e099dee8a0a3f3fc5acecc",
+  "9f518e3d823ee55aba96dac4488aac6cef152986",
+  "1bc9b9ba45a9de3a7fe77a3a8523c7df01a91f12"
+ ]
+}
