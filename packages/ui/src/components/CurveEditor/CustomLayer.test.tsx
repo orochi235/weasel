@@ -118,6 +118,36 @@ describe('the layer stack', () => {
     fireEvent.keyDown(document.querySelector('svg')!, { key: 'z', ctrlKey: true });
     expect(onCommit).toHaveBeenLastCalledWith(0, 1);
   });
+
+  it('records a key two layers commit as two steps, each undoing only its own layer', () => {
+    const counter = (id: string): CurveLayer<number> => ({
+      id,
+      render: () => null,
+      onKeyDown: (state, e, _c, extra) => { if (e.key === 'Enter') extra.commit(state + 1); },
+    });
+    const below = counter('below');
+    const above = counter('above');
+    function Pair() {
+      const [a, setA] = useState(0);
+      const [b, setB] = useState(0);
+      return (
+        <LayeredCurveEditor width={200} height={100}>
+          <CustomLayer layer={below} state={b} onInput={setB} />
+          <CustomLayer layer={above} state={a} onInput={setA} />
+          <text data-counts="">{`${a},${b}`}</text>
+        </LayeredCurveEditor>
+      );
+    }
+    const { container } = render(<Pair />);
+    const svg = container.querySelector('svg')!;
+    const counts = () => container.querySelector('[data-counts]')!.textContent;
+    fireEvent.keyDown(svg, { key: 'Enter' });
+    expect(counts()).toBe('1,1');
+    fireEvent.keyDown(svg, { key: 'z', ctrlKey: true });
+    expect(counts()).toBe('1,0');
+    fireEvent.keyDown(svg, { key: 'z', ctrlKey: true });
+    expect(counts()).toBe('0,0');
+  });
 });
 
 describe('the keyframe layer', () => {
