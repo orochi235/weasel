@@ -1,6 +1,6 @@
 import { ShellDevtools } from '@weasel-js/devtools/mount';
 import { isDev } from '@weasel-js/react';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useLabMarks } from '../annotations/labMarks';
@@ -129,7 +129,11 @@ function useHeldProps(
   useLayoutEffect(() => {
     store.getState().setInstruments(instruments);
   }, [instruments, store]);
+  // The store opened at the prop's mode, or at a stored lab's own; only a later change switches it.
+  const held = useRef(mode);
   useEffect(() => {
+    if (mode === held.current) return;
+    held.current = mode;
     if (mode && mode !== store.getState().mode) store.getState().setMode(mode);
   }, [mode, store]);
 }

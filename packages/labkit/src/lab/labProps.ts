@@ -34,7 +34,7 @@ export interface LabBaseProps {
    *  any trial. A stored lab keeps where it stands. Read once, at mount. */
   clock?: ClockCapability;
   /** The color mode the lab opens in: `'light'`, `'dark'`, or `'auto'` to follow the system. Default `'auto'`; a
-   *  stored lab keeps the mode it was last switched to over this. Read once, at mount. */
+   *  stored lab keeps the mode it was last switched to over this. A later change switches the lab. */
   mode?: LabMode;
   /** How much room the lab's chrome takes. Default `'comfortable'`; a lab whose
    *  window is the whole app, rather than a panel beside one, reads better at
