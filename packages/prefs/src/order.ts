@@ -59,5 +59,7 @@ function orderChild(child: PrefLeaf | PrefGroup, order: PrefOrder, path: string)
   if (!isPrefLeaf(child)) return orderPrefGroup(child, order, path);
   const stored = storedAt(order, path);
   if (child.kind !== 'actions' || !stored) return child;
+  const held = (child as PrefActions).order;
+  if (held?.length === stored.length && held.every((key, i) => key === stored[i])) return child;
   return { ...(child as PrefActions), order: stored };
 }
