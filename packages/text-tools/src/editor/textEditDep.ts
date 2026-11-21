@@ -7,7 +7,7 @@ import type { Point2 } from '@weasel-js/routing';
 /**
  * Dep for `enterTextEditAction`. `textTools.text` answers it with the canvas's own
  * editor (`createTextPreset`'s `editor`), or with the editor of a host's
- * `useSceneTextEdit` whose container holds the canvas. A host whose editor's
+ * `useSceneTextEdit` of its scene whose container holds the canvas. A host whose editor's
  * container does not hold the canvas publishes it from inside `<SceneCanvas>`:
  *
  * @example
@@ -21,8 +21,8 @@ import type { Point2 } from '@weasel-js/routing';
  * ```
  */
 export interface TextEditDep {
-  /** Begin editing the node with `id`. */
-  startEdit(id: string, opts?: { caret?: number | 'all' }): void;
+  /** Begin editing the node with `id`: the caret `caret` characters in, after the last (`'end'`), or the whole text selected (`'all'`, the default). */
+  startEdit(id: string, opts?: { caret?: number | 'all' | 'end' }): void;
   /**
    * The top-most text node this editor would open at world point `at`, and
    * the caret at the glyph there, or `null` where there is none. A
@@ -32,7 +32,7 @@ export interface TextEditDep {
   /**
    * Optional predicate: returns `true` when the node with `id` is a text node.
    * When absent the action fires on any selected node (binding spec is the gate).
-   * When present and returning `false`, the invocation is a no-op.
+   * When present and returning `false`, the action passes the gesture on.
    */
   isTextNode?(id: string): boolean;
 }

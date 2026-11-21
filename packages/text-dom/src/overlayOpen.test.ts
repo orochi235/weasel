@@ -37,4 +37,13 @@ describe('openingRange', () => {
     expect(range.startContainer).toBe(overlay.firstChild);
     expect(range.startOffset).toBe(0);
   });
+
+  it("puts an 'end' caret after the last character", () => {
+    const overlay = document.createElement('div');
+    overlay.textContent = 'abc';
+    const range = openingRange(overlay, 'end');
+    expect(range.collapsed).toBe(true);
+    expect(range.startContainer).toBe(overlay.firstChild);
+    expect(range.startOffset).toBe(3);
+  });
 });

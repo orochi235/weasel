@@ -220,8 +220,8 @@ export const TEXT_EDIT_FONT_HOLD = 100;
 /** Options for `useTextEdit().startEdit`. */
 export interface StartEditOptions {
   /** Where to place the caret on edit start. Number = caret offset (0..text.length);
-   *  `'all'` selects the whole text (default). */
-  caret?: number | 'all';
+   *  `'end'` places it after the last character; `'all'` selects the whole text (default). */
+  caret?: number | 'all' | 'end';
 }
 
 /** Return shape of `useTextEdit`. */

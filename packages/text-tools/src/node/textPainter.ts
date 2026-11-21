@@ -1,5 +1,4 @@
 import {
-  boundsOfPath,
   pathThroughPoseFrame,
   PATH_L,
   PATH_M,
@@ -16,7 +15,7 @@ import type { PathInWorldPose } from '@weasel-js/geom';
 import { textEffectItems } from './textItems';
 import { clippedOutline, textOutlineOf } from './textOutline';
 import { commandFill, textCommandFromPose, type DrawCommand } from '@weasel-js/renderer';
-import { INHERIT, resolveFill, resolveStroke } from '@weasel-js/paint';
+import { INHERIT, resolveFill, resolveStroke, type PaintedStroke } from '@weasel-js/paint';
 import { textFrameOf, textShadowBox, type TextEdge, type TextShadow } from './textFrame';
 import { inkReach, nodeMemo, PAINT_SLOT, paintsPose, strokeOutsetPerAxis, type InheritedPaint, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
 
@@ -100,18 +99,19 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   },
   // Memoized because the renderer's layout cache keys on the `ResolvedRun[]` array
   // identity: a fresh runs array per frame would leave that cache missing on every
-  // draw. Both resolvers are pure style merging — no font reads — so `(data, pose)` is
-  // the whole key, with the view scale beside it for `{ px }` text. See PAINT_SLOT.
+  // draw. `fit: 'shrink'` measures, so the faces and layout engines are in the key
+  // beside `(data, pose)` and the view scale for `{ px }` text. See PAINT_SLOT.
   paint: (node, pose, ctx) => {
     const d = node.data as TextNodeData;
     const inherited = ctx?.inherited;
     const scale = textLayoutScale(d, ctx?.scale);
-    if (scale === 1) return nodeMemo(node, PAINT_SLOT, pose, () => paintText(d, pose, inherited, 1), inherited);
-    const held = nodeMemo(node, SCREEN_PAINT_SLOT, pose,
-      (): ScreenPaint => ({ scale, inherited, cmds: paintText(d, pose, inherited, scale) }));
-    if (held.scale !== scale || held.inherited !== inherited) {
+    const layout = layoutGeneration();
+    const held = nodeMemo(node, scale === 1 ? PAINT_SLOT : SCREEN_PAINT_SLOT, pose,
+      (): HeldPaint => ({ scale, inherited, layout, cmds: paintText(d, pose, inherited, scale) }));
+    if (held.scale !== scale || held.inherited !== inherited || held.layout !== layout) {
       held.scale = scale;
       held.inherited = inherited;
+      held.layout = layout;
       held.cmds = paintText(d, pose, inherited, scale);
     }
     return held.cmds;
@@ -139,14 +139,28 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // boxes, not glyph ink, so reporting outline-only text as unfilled would leave it
   // grabbable within a stroke width of a box edge and nowhere near the letters.
   ink: (node, _pose, ctx) => {
-    const d = node.data as TextNodeData;
-    return { filled: true, ...inkReach(resolveStroke(d.stroke, ctx?.inherited?.stroke), ctx?.scale) };
+    const reach = { outset: 0, inset: 0, outsetPx: 0, insetPx: 0 };
+    for (const stroke of strokesOf(node.data as TextNodeData, ctx?.inherited)) {
+      const r = inkReach(stroke, ctx?.scale);
+      reach.outset = Math.max(reach.outset, r.outset);
+      reach.inset = Math.max(reach.inset, r.inset);
+      reach.outsetPx = Math.max(reach.outsetPx, r.outsetPx ?? 0);
+      reach.insetPx = Math.max(reach.insetPx, r.insetPx ?? 0);
+    }
+    const { outsetPx, insetPx, ...world } = reach;
+    return { filled: true, ...world, ...(outsetPx || insetPx ? { outsetPx, insetPx } : {}) };
   },
   drawnBounds: (node, pose, ctx) => {
     const d = node.data as TextNodeData;
-    const stroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
-    const lines = stroke
-      ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose, ctx?.inherited), { scale: textLayoutScale(d, ctx?.scale) }), strokeOutsetPerAxis(stroke, ctx))
+    const strokes = strokesOf(d, ctx?.inherited);
+    const reach = { x: 0, y: 0 };
+    for (const stroke of strokes) {
+      const r = strokeOutsetPerAxis(stroke, ctx);
+      reach.x = Math.max(reach.x, r.x);
+      reach.y = Math.max(reach.y, r.y);
+    }
+    const lines = strokes.length > 0
+      ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose, ctx?.inherited), { scale: textLayoutScale(d, ctx?.scale) }), reach)
       : null;
     const shadow = textShadowBox(d, pose);
     return shadow ? unionRects([lines ?? pose, shadow]) : lines;
@@ -156,10 +170,10 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const outline = textOutlineOf(d, { ...pose, ...textBoxOf(d, pose) }, ctx?.inherited);
     if (d.overflow !== 'clip') return outline;
     const clip = pathThroughPoseFrame({ kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height }, pose);
-    return clippedOutline(outline, clip, boundsOfPath(clip));
+    return clippedOutline(outline, clip);
   },
   // Line boxes and glyphs follow the faces and the registered layout engines.
-  geometryGeneration: () => faceGeneration() + textEngineGeneration(),
+  geometryGeneration: () => layoutGeneration(),
   silhouetteKey: (node, ctx) => textLayoutScale(node.data as TextNodeData, ctx?.scale),
   effectItems: (node, pose) => {
     const d = node.data as TextNodeData;
@@ -177,7 +191,9 @@ export function textLayoutScale(d: Pick<TextNodeData, 'style' | 'runs'>, scale: 
 }
 
 /** A `{ px }` text node's commands and the scale and inherited paint they were laid out under. */
-interface ScreenPaint { scale: number; inherited: InheritedPaint | undefined; cmds: DrawCommand[] }
+interface HeldPaint { scale: number; inherited: InheritedPaint | undefined; layout: number; cmds: DrawCommand[] }
+
+const layoutGeneration = (): number => faceGeneration() + textEngineGeneration();
 
 const SCREEN_PAINT_SLOT = 'shape:paint:text-screen';
 
@@ -221,6 +237,18 @@ function cutRects(rects: readonly Rect[], box: Rect): Rect[] {
  * the layout box, then outset by the stroke's reach. A line that overflows the
  * layout box is left to it — the layout box is what a text node claims.
  */
+/** Every stroke `d` draws: its own, and each run's, which overrides it over that run. */
+function strokesOf(d: TextNodeData, inherited: InheritedPaint | undefined): PaintedStroke[] {
+  const out: PaintedStroke[] = [];
+  const own = resolveStroke(d.stroke, inherited?.stroke);
+  if (own) out.push(own);
+  for (const r of d.runs ?? []) {
+    const s = r.stroke === undefined ? null : resolveStroke(r.stroke, inherited?.stroke);
+    if (s) out.push(s);
+  }
+  return out;
+}
+
 function strokedLinesBox(pose: RectPose, lines: readonly Rect[], reach: { x: number; y: number }): Rect | null {
   if (!(reach.x > 0 || reach.y > 0)) return null;
   let x0 = pose.x, y0 = pose.y, x1 = pose.x + pose.width, y1 = pose.y + pose.height;

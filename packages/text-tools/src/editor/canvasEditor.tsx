@@ -2,7 +2,7 @@
  * The canvas's own text editor: the one `enterTextEdit` reaches, from a text
  * or sticky tool or a double-click on a text node, when the host has wired
  * none of its own. `textTools.text` mounts it inside the canvas. It stands down for
- * a host editor: a `useSceneTextEdit` whose container holds the canvas, which
+ * a host editor: a `useSceneTextEdit` of its scene whose container holds the canvas, which
  * the `textEdit` dep then answers with, or a `textEdit` dep registered over it.
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type MutableRefObject } from 'react';
@@ -13,7 +13,7 @@ import type { TextEditDep } from './textEditDep';
 import {
   useSceneTextEditor, type DefaultTextData, type UseSceneTextEditOptions, type UseSceneTextEditReturn,
 } from './useSceneTextEdit';
-import { hostTextEditDep, hostTextEditorHolds } from './hostTextEditors';
+import { hostTextEditDep } from './hostTextEditors';
 import { withoutText } from './editingDrawOne';
 import { useTextEditDepSource } from './textEditStub';
 
@@ -27,8 +27,6 @@ interface DefaultTextEditor {
   /** The `textEdit` dep this editor answers with while it is the one standing. */
   dep: TextEditDep;
   element: HTMLElement | null;
-  /** Whether the host has an editor of its own over this canvas. */
-  yields: () => boolean;
   /** The dep of the host's editor over this canvas, or `null` for none. */
   host: () => TextEditDep | null;
 }
@@ -62,16 +60,12 @@ function useDefaultTextEditor<TData>(
     textAt: (at) => editRef.current.textAt(at),
     isTextNode: (id) => editRef.current.isTextNode(id),
   }), [editRef]);
-  const yields = useMemo(() => () => {
-    const el = elRef.current;
-    return el === null || hostTextEditorHolds(el);
-  }, [elRef]);
   const sceneRef = useLatest(scene);
   const host = useMemo(() => () => {
     const el = elRef.current;
     return el === null ? null : hostTextEditDep(el, sceneRef.current);
   }, [elRef, sceneRef]);
-  return { edit, container, dep, element: container ? element : null, yields, host };
+  return { edit, container, dep, element: container ? element : null, host };
 }
 
 /**
@@ -81,17 +75,14 @@ function useDefaultTextEditor<TData>(
  * under any `textEdit` a child of the canvas registers.
  */
 function DefaultTextEditDep({ editor }: { editor: DefaultTextEditor }): null {
-  const { dep, element, yields, host } = editor;
-  useDepSource('textEdit', (below) => {
-    if (element && !yields()) return dep;
-    return host() ?? (below() as TextEditDep);
-  });
+  const { dep, element, host } = editor;
+  useDepSource('textEdit', (below) => host() ?? (element ? dep : (below() as TextEditDep)));
   return null;
 }
 
 /** While the canvas's own editor has a node open, its overlay stands in for that node's glyphs. */
 function useEditingStandIn(scene: object, editor: DefaultTextEditor): void {
-  const within = editor.container;
+  const within = editor.element;
   const editing = editor.edit.editingId;
   const editingRef = useLatest(editing);
   const standIn = useRef<PaintStandIn | null>(null);

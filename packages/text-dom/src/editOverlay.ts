@@ -42,7 +42,7 @@ export function openEditOverlay(
   node: EditedNode,
   frame: EditedFrame,
   holdFor: number,
-  caret: number | 'all',
+  caret: number | 'all' | 'end',
 ): EditOverlay {
   const { style } = node;
   const overlay = document.createElement('div');

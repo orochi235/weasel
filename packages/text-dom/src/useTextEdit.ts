@@ -40,7 +40,7 @@ export function useTextEdit(
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const { nodeStyle, nodeStyleRef, baseRef, holdNodeStyle, styleOf, restyleNode, placeRef } = useHeldNodeStyle(optsRef);
   const follow = useOverlayFollow();
-  const initialCaretRef = useRef<number | 'all'>('all');
+  const initialCaretRef = useRef<number | 'all' | 'end'>('all');
   const draftRef = useRef<EditDraft | null>(null);
   const { pendingStyle, pendingRef, pendingAtRef, armPending, dropPending } = usePendingStyle();
   const historyRef = useRef<OverlayHistory | null>(null);

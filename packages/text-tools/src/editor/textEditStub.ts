@@ -18,7 +18,7 @@ export function useTextEditDepSource(
   useDepSource('textEdit', (): TextEditDep => {
     const sc = sceneRef.current;
     return {
-      startEdit(_id: string, _opts?: { caret?: number | 'all' }) {
+      startEdit(_id: string, _opts?: { caret?: number | 'all' | 'end' }) {
         if (isDev()) {
           console.warn(
             'weasel textEditDep: startEdit called but this canvas has no text editor: it was given ' +

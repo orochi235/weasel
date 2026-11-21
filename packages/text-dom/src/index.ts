@@ -19,4 +19,5 @@ export type {
   UseTextEditOptions,
   UseTextEditReturn,
 } from './textEditTypes';
+export { replaceRunRange, runStyleAt } from './runSplice';
 export { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset, type OverlayRunBase } from './domRuns';

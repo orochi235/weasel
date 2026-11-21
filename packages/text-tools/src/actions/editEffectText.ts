@@ -4,13 +4,12 @@
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction, isBody } from '@weasel-js/routing';
-import { isTextData } from '@weasel-js/text';
 import { effectSourceFor, type NodeId } from '@weasel-js/core';
 import type {} from '../actionParamSchema';
 import type {} from '../editor/textEditDep';
 
-/** The text source a click at `world` opens, with its length, or null. */
-function textUnder(deps: ActionDeps | undefined, world: { x: number; y: number } | undefined): { id: string; length: number } | null {
+/** The text source a click at `world` opens, or null. */
+function textUnder(deps: ActionDeps | undefined, world: { x: number; y: number } | undefined): string | null {
   const scene = deps?.scene;
   const open = deps?.editAnchors;
   if (!world || !scene || !deps?.textEdit || !open?.editingId) return null;
@@ -18,8 +17,7 @@ function textUnder(deps: ActionDeps | undefined, world: { x: number; y: number }
   if (!under) return null;
   const text = effectSourceFor(scene, under as NodeId, 'items');
   if (text === null || scene.isLocked(text) || open.anchorUnder(world) !== -1) return null;
-  const data = scene.get(text)?.data;
-  return { id: String(text), length: isTextData(data) ? data.text.length : 0 };
+  return String(text);
 }
 
 /** A click on a text-on-path effect's body opens its source text for editing, unless an anchor is under the pointer. */
@@ -34,8 +32,8 @@ export const editEffectTextAction = defineAction({
     timing: 'immediate',
     run(deps, params) {
       const hit = textUnder(deps, params?.world);
-      if (hit) deps.textEdit?.startEdit(hit.id, { caret: hit.length });
+      if (hit !== null) deps.textEdit?.startEdit(hit, { caret: 'end' });
     },
   },
-  enabled: (deps, at) => (textUnder(deps, at) ? true : ActionDisabledReason.NotApplicable),
+  enabled: (deps, at) => (textUnder(deps, at) !== null ? true : ActionDisabledReason.NotApplicable),
 });

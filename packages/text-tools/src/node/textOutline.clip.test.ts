@@ -3,7 +3,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { registerFontOutlines, loadFontOutlines, type OutlineFace } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import { boundsOfPath, type Rect } from '@weasel-js/geom';
+import { boundsOfPath, pathThroughPoseFrame, type Rect } from '@weasel-js/geom';
+import { pathIntersect } from '@weasel-js/geom/booleans';
 import { TEXT_PAINTER, type TextNodeData } from './textPainter';
 
 const BARS: OutlineFace = {
@@ -20,11 +21,11 @@ beforeEach(async () => {
   await loadFontOutlines('bars');
 });
 
-function outlineOf(overflow: TextNodeData['overflow']) {
+function outlineOf(overflow: TextNodeData['overflow'], pose: typeof POSE & { rotation?: number } = POSE, text = 'Hi Hi Hi Hi Hi Hi') {
   const data: TextNodeData = {
-    text: 'Hi Hi Hi Hi Hi Hi', style: { fontFamily: 'bars', fontSize: 40, wrap: true }, fill: INK, overflow,
+    text, style: { fontFamily: 'bars', fontSize: 40, wrap: text.includes(' ') }, fill: INK, overflow, verticalAlign: 'center',
   };
-  return TEXT_PAINTER.outline!({ id: 't', kind: 'text', layer: 'main', pose: POSE, data } as never, POSE)!;
+  return TEXT_PAINTER.outline!({ id: 't', kind: 'text', layer: 'main', pose, data } as never, pose)!;
 }
 
 const within = (b: Rect, box: Rect) =>
@@ -42,5 +43,14 @@ describe("a text node's outline", () => {
     const parts = outline.parts();
     expect(parts.length).toBeGreaterThan(0);
     for (const p of parts) expect(within(boundsOfPath(p.path), POSE)).toBe(true);
+  });
+
+  it('is cut to its rotated box, not to the bounds of it', () => {
+    const pose = { ...POSE, rotation: Math.PI / 4 };
+    const box = pathThroughPoseFrame({ kind: 'rect', ...POSE }, pose);
+    // One line whose last glyph straddles the right edge, all of it inside the rotated box's bounds.
+    const want = boundsOfPath(pathIntersect(outlineOf(undefined, pose, 'HHHHH').path(), box));
+    const got = boundsOfPath(outlineOf('clip', pose, 'HHHHH').path());
+    for (const k of ['x', 'y', 'width', 'height'] as const) expect(got[k]).toBeCloseTo(want[k], 3);
   });
 });

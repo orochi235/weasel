@@ -29,7 +29,7 @@ export const textNodeRouting: NodeRoutingEntry = {
 export interface TextPresetOptions<TData = DefaultTextData> {
   /** The canvas's own editor: `useSceneTextEdit`'s options, or `false` for none. Default `{}`. It mounts its
    *  overlay in the canvas's offset parent, so the canvas wants a positioned ancestor, and stands down for a
-   *  host's own editor: a `useSceneTextEdit` whose container holds the canvas, or a `textEdit` dep a child of
+   *  host's own editor: a `useSceneTextEdit` of its scene whose container holds the canvas, or a `textEdit` dep a child of
    *  the canvas registers. Wire one of those for character controls, which read the edit's state. */
   editor?: CanvasTextEditorOptions<TData>;
 }

@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefSection, type PrefObject } from '@weasel-js/prefs-schema';
 import { qty } from '@weasel-js/quantity';
-import { DEFAULT_TEXT_STYLE, type TextStyle } from '@weasel-js/text';
+import { DEFAULT_TEXT_STYLE, runsToPlainText, type TextStyle } from '@weasel-js/text';
 import { TEXT_PROPERTIES } from './properties';
 
 /** Colors the edit overlay reads, which are chrome rather than document. */
@@ -198,5 +198,30 @@ describe('the text style leaf', () => {
     expect(italic.encoding!.read(undefined, undefined)).toBe(false);
     expect(italic.encoding!.write(true, undefined)).toBe('italic');
     expect(italic.encoding!.write(false, undefined)).toBeUndefined();
+  });
+
+  it('respells the runs of a node whose Text is edited, keeping the styling of what was not retyped', () => {
+    const runs = [{ text: 'hello ' }, { text: 'bold', bold: true }, { text: ' world' }];
+    const prev = { pose: {}, data: { text: 'hello bold world', runs } };
+    const settle = TEXT_PROPERTIES.settle!;
+    const cases: [string, unknown][] = [
+      ['hello bolder world', [{ text: 'hello ' }, { text: 'bolder', bold: true }, { text: ' world' }]],
+      ['hi world', [{ text: 'hi world' }]],
+      ['hello bold', [{ text: 'hello ' }, { text: 'bold', bold: true }]],
+      ['', []],
+    ];
+    for (const [text, want] of cases) {
+      const out = settle({ pose: prev.pose, data: { ...prev.data, text } }, prev).data as { text: string; runs: never[] };
+      expect(runsToPlainText(out.runs)).toBe(text);
+      expect(out.runs).toEqual(want);
+    }
+  });
+
+  it('leaves a write that is not to the text, or a node with no runs, as written', () => {
+    const settle = TEXT_PROPERTIES.settle!;
+    const plain = { pose: {}, data: { text: 'new' } };
+    expect(settle(plain, { pose: {}, data: { text: 'old' } })).toBe(plain);
+    const styled = { pose: {}, data: { text: 'ab', runs: [{ text: 'a' }, { text: 'b', bold: true }], fill: null } };
+    expect(settle(styled, styled)).toBe(styled);
   });
 });

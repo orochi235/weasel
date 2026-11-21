@@ -2,6 +2,8 @@
 import type { PrefBooleanEncoding, PrefLeaf, PrefSection } from '@weasel-js/prefs-schema';
 import { decimal } from '@weasel-js/quantity';
 import { shapePropertiesSchema, type NodePropertiesEntry } from '@weasel-js/core';
+import { runsToPlainText, type StyledRun } from '@weasel-js/text';
+import { replaceRunRange, runStyleAt } from '@weasel-js/text-dom';
 import { icon } from '../icons.gen';
 
 const TWO_PLACES = decimal({ maxPlaces: 2, grouping: false });
@@ -111,9 +113,35 @@ const TYPOGRAPHY: PrefSection = {
   },
 };
 
+const isHighSurrogate = (s: string, i: number): boolean => i >= 0 && i < s.length && (s.charCodeAt(i) & 0xfc00) === 0xd800;
+
+/**
+ * `runs` respelled as `text`: the characters between the longest common head
+ * and tail are replaced, typed in the style of the run they start in.
+ */
+function respellRuns(runs: readonly StyledRun[], text: string): StyledRun[] {
+  const old = runsToPlainText(runs);
+  let head = 0;
+  while (head < old.length && head < text.length && old[head] === text[head]) head++;
+  if (isHighSurrogate(old, head - 1)) head--;
+  let tail = 0;
+  while (tail < old.length - head && tail < text.length - head && old[old.length - 1 - tail] === text[text.length - 1 - tail]) tail++;
+  if (tail > 0 && isHighSurrogate(old, old.length - tail - 1)) tail--;
+  const typed = text.slice(head, text.length - tail);
+  return replaceRunRange(runs, head, old.length - tail, typed ? [{ ...runStyleAt(runs, head), text: typed }] : []);
+}
+
+/** A write to `data.text` respells the node's `runs` to match, which the painter and the editor read before it. */
+function settleText(next: { pose: unknown; data: unknown }): { pose: unknown; data: unknown } {
+  const data = next.data as { text?: unknown; runs?: readonly StyledRun[] } | null;
+  if (!data || typeof data.text !== 'string' || !data.runs?.length || runsToPlainText(data.runs) === data.text) return next;
+  return { ...next, data: { ...data, runs: respellRuns(data.runs, data.text) } };
+}
+
 /** The `text` kind's properties, for a `SelectionPanel` given `textTools.text`. */
 export const TEXT_PROPERTIES: NodePropertiesEntry = {
   name: 'text',
+  settle: settleText,
   schema: shapePropertiesSchema({
     // What the node *is* outranks how it is painted: a text node's copy is the first thing an editor reaches for.
     lead: { content: CONTENT },

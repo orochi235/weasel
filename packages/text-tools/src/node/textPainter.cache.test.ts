@@ -53,6 +53,24 @@ describe('kit:text paint caching', () => {
   });
 });
 
+describe('kit:text paint and face loads', () => {
+  const WIDE: OutlineFace = {
+    unitsPerEm: 1000, ascender: 0.8, advanceOf: () => 2, kernOf: () => 0, glyphD: () => 'M0 -0.5L0.2 -0.5L0.2 0L0 0Z',
+  };
+  afterEach(() => _resetFontOutlinesForTests());
+
+  it('refits shrink-to-fit text once its face loads', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const node = makeNode({ text: 'Hello', style: { fontFamily: 'wide', fontSize: 20 }, fit: 'shrink' }, POSE);
+    const painter = findNodeShape(node)!;
+    const sizeOf = (): unknown => (painter.paint(node, node.pose)[0] as { runs: { fontSize: unknown }[] }).runs[0]!.fontSize;
+    const before = sizeOf();
+    registerFontOutlines('wide', {}, new ArrayBuffer(4), { parser: () => WIDE });
+    await loadFontOutlines('wide');
+    expect(sizeOf()).not.toEqual(before);
+  });
+});
+
 describe('kit:text silhouette and the layout engines', () => {
   const BARS: OutlineFace = {
     unitsPerEm: 1000, ascender: 0.8, advanceOf: () => 0.6, kernOf: () => 0,
