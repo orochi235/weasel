@@ -3279,3 +3279,6 @@ Calls the lanes made without a ruling:
   through the first of them at s = 0 and the last elsewhere, so the end anchor quadrant mode pins is the one kept.
   `octant-bspline` keeps them all, as coincident control points are well defined there. Averaging a run was the
   alternative.
+- 2026-11-20 (the fixer's call): A `puzzle` badge's `tabSize` stops where two sockets would touch, about 30.9 with
+  two opposite and 24.6 with two adjacent, rather than at 40. Shrinking only the sockets, so a tab keeps the size
+  asked for, was the alternative.

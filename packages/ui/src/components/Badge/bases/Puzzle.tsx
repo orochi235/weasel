@@ -12,7 +12,8 @@ export interface BadgePuzzleBaseParams {
   right?: BadgePuzzleEdge;
   bottom?: BadgePuzzleEdge;
   left?: BadgePuzzleEdge;
-  /** Tab radius in viewBox units, held to 2..40. */
+  /** Tab radius in viewBox units, held to 2..40, and below where two sockets would meet: about 30.9 for two
+   *  opposite sockets and 24.6 for two adjacent ones. */
   tabSize?: number;
   /** Samples per tab arc, 6 to 256. */
   arcSamples?: number;
@@ -31,6 +32,22 @@ const DEFAULTS: Required<BadgePuzzleBaseParams> = {
 // `OFFSET_RATIO * r` gives a tab whose chord (intersection with the edge) has half-length
 // √(1 − OFFSET_RATIO²) · r. Smaller offset → wider neck.
 const OFFSET_RATIO = 0.62;
+
+const MAX_TAB = 40;
+
+/**
+ * The largest tab radius at which no two sockets meet. A socket's circle sits `OFFSET_RATIO * r` inside its edge and
+ * reaches `(1 + OFFSET_RATIO) * r` in, so two opposite sockets meet past the center, and two adjacent ones where their
+ * centers come within `2r`.
+ */
+function maxTabSize({ top, right, bottom, left }: Required<BadgePuzzleBaseParams>): number {
+  const opposite = (top === 'in' && bottom === 'in') || (left === 'in' && right === 'in');
+  const adjacent = (top === 'in' || bottom === 'in') && (left === 'in' || right === 'in');
+  let max = MAX_TAB;
+  if (opposite) max = Math.min(max, 50 / (1 + OFFSET_RATIO));
+  if (adjacent) max = Math.min(max, (50 * Math.SQRT2) / (2 + OFFSET_RATIO * Math.SQRT2));
+  return max;
+}
 
 /** Sample a side's vertices walking clockwise from `start` to `end` along the edge, possibly
  *  detouring around a tab. The starting vertex `start` is NOT included; the ending vertex `end`
@@ -90,7 +107,7 @@ function edgeVertices(
 const Puzzle: BaseModule<BadgePuzzleBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = withDefaults(DEFAULTS, params);
-    const r = clampParam(cfg.tabSize, 2, 40, DEFAULTS.tabSize);
+    const r = clampParam(cfg.tabSize, 2, maxTabSize(cfg), DEFAULTS.tabSize);
     const N = repeatCount(cfg.arcSamples, 6, MAX_REPEATS);
     // Clockwise traversal of the unit rect: TL → TR → BR → BL → TL.
     const TL: [number, number] = [0, 0];
