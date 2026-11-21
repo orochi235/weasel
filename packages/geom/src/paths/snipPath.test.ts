@@ -52,4 +52,17 @@ describe('snipPathAt', () => {
     expect(cmds(r.path)).toEqual([PATH_M, PATH_C]);
     expect(r.path.coords[6]).toBeCloseTo(15, 5);
   });
+
+  it('removes one piece when the probe is nearest a crossing at an anchor', () => {
+    const cutters = [pathFromD('M5 -5 L15 5'), pathFromD('M5 -10 V20'), pathFromD('M-10 5 H20')];
+    const r = snipPathAt(pathFromD('M0 0 H10 V10'), cutters, { x: 12, y: -2 })!;
+    expect(coords(r.path)).toEqual([0, 0, 10, 0, 10, 5, 10, 10]);
+    expect(coords(r.removed)).toEqual([10, 0, 10, 5]);
+  });
+
+  it('removes a closed subpath crossed only at its nearest anchor once around', () => {
+    const r = snipPathAt(pathFromD('M0 0 H10 V10 H0 Z'), [pathFromD('M5 -5 L15 5')], { x: 12, y: -2 })!;
+    expect(r.path.commands).toHaveLength(0);
+    expect(coords(r.removed)).toEqual([10, 0, 10, 10, 0, 10, 0, 0, 10, 0]);
+  });
 });
