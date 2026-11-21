@@ -2,7 +2,7 @@ import { createEmitter, getOwn } from '@weasel-js/registry';
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import type { PrefBlend } from './blend';
 import { checkPrefConditions } from './conditionCheck';
-import { autoRecord, recordValue } from './stamp';
+import { autoRecord, isAutoRecord, recordValue } from './stamp';
 import { prefCanAuto, prefStartsAuto } from './autoReset';
 import { prefHoldsValue, prefLeaves, VERSION_RECORD, isPrefScope, type PrefScope, type PrefSelection, type PrefWeights, type PrefValidator, type PrefGroup } from '@weasel-js/prefs-schema';
 import { assignPrefValueAt, setOwnPrefValue, selectionWeights } from '@weasel-js/prefs-schema/internal';
@@ -63,7 +63,8 @@ export interface PrefsStore<S extends PrefGroup> {
   /** The leaves nothing is stored for, each as its schema starts it. The same set until something changes. */
   unset(): ReadonlySet<string>;
   /** Every stored record as a nested tree, unrepaired, including records no
-   *  leaf describes. The same object until something changes. */
+   *  leaf describes. A mark that a leaf is auto holds no value and is left
+   *  out; `auto` names those leaves. The same object until something changes. */
   stored(): Record<string, unknown>;
   /** `changes` is empty when only records no leaf describes changed. A
    *  selector changing is a change to every leaf split by it. */
@@ -94,7 +95,7 @@ function storedRecords(cache: OwnedRecordCache): Record<string, unknown> {
   const tree: Record<string, unknown> = {};
   const branches = new WeakSet<object>([tree]);
   for (const [name, record] of cache.entries()) {
-    if (name === VERSION_RECORD) continue;
+    if (name === VERSION_RECORD || isAutoRecord(record)) continue;
     const value = recordValue(record);
     const parts = name.split('.');
     let cursor = tree;
