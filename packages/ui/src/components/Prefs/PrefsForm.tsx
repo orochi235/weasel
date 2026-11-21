@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { isValidElement, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { applyPrefConditions, createAliasTargets, prefJudge, prefReader, visiblePrefSubtree, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { MotifFrame } from '../MotifFrame';
@@ -304,12 +304,16 @@ function FlatLayout(props: {
       ) : (
         // A column per top-level child; a run of tabs shares one.
         <div className={s.columns} data-pref-scroll="">
-          {children.map((child, i) => <div key={i} className={s.column}>{child}</div>)}
+          {children.map((child, i) => <div key={columnKey(child, i)} className={s.column}>{child}</div>)}
         </div>
       )}
     </div>
   );
 }
+
+/** A column's key: its child's, so a column appearing before another does not remount it. */
+const columnKey = (child: ReactNode, i: number): string | number =>
+  (isValidElement(child) && child.key !== null ? child.key : i);
 
 function GroupBody({ ctx, group, path, depth }: {
   ctx: WalkCtx;
