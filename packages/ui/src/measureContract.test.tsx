@@ -33,6 +33,10 @@ describe('domButton', () => {
     expect(screen.getByRole('button').className).toMatch(/size_md/);
   });
 
+  it('refuses to measure a link button, which the surrounding text sizes', () => {
+    expect(() => domButton.measure({ variant: 'link', children: 'More' }, UNBOUNDED, env)).toThrow(/link/);
+  });
+
   it('gives a label that renders nothing no label part', () => {
     for (const children of [null, false, true, '']) {
       expect(buttonFaceOf({ leadingIcon: '+', children }).label).toBeUndefined();

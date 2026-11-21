@@ -210,9 +210,15 @@ function ButtonPartSlot(
 /**
  * {@link Button} on the measure/draw contract a HUD button implements too: `measure` is `@weasel-js/ui-logic`'s
  * `measureButton` (pass `createDomMeasureEnv(el)` for any element in the themed root), and `draw` renders the button.
- * An unsized button is `md` on both sides: `measure` cannot read a `ControlSizeScope`, so `draw` does not either.
+ * A `link` button is inline text with no box of its own, so `measure` throws on one. An unsized button is `md` on
+ * both sides: `measure` cannot read a `ControlSizeScope`, so `draw` does not either.
  */
 export const domButton: HeadlessComponent<ButtonProps, ButtonLayout, DomTarget<HTMLButtonElement>, ReactElement> = {
-  measure: (props, c, env) => measureButton(buttonFaceOf(props), c, env),
+  measure: (props, c, env) => {
+    if (props.variant === 'link') {
+      throw new Error('domButton.measure: a `link` Button is sized by the text around it, not the button tokens');
+    }
+    return measureButton(buttonFaceOf(props), c, env);
+  },
   draw: (props, target) => <Button ref={target.ref} {...props} size={props.size ?? 'md'} />,
 };
