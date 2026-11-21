@@ -190,3 +190,13 @@ describe('a subpath a drawing command opens after Z', () => {
     expect(a[3]).toMatchObject({ implicit: true, coordIndex: 0 });
   });
 });
+
+describe('a one-segment quadratic loop', () => {
+  // M p0, Q c p0, Z: the one control is both the seam anchor's in and out handle.
+  const p = path([PATH_M, PATH_Q, PATH_Z], [0, 0, 10, 10, 0, 0]);
+
+  it('moves its control once with the anchor', () => {
+    const moved = translateAnchor(p, 0, 5, 0);
+    expect([...moved.coords]).toEqual([5, 0, 15, 10, 5, 0]);
+  });
+});

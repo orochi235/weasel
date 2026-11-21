@@ -142,8 +142,8 @@ export function translateAnchor(
     next[a.controlIn.coordIndex + 1] += dy;
   }
   // Out-handle: the leading pair of the OUTGOING C/Q. Owned by this
-  // anchor's segment.
-  if (a.controlOut) {
+  // anchor's segment. A one-segment quadratic loop's control is both handles.
+  if (a.controlOut && a.controlOut.coordIndex !== a.controlIn?.coordIndex) {
     next[a.controlOut.coordIndex] += dx;
     next[a.controlOut.coordIndex + 1] += dy;
   }
