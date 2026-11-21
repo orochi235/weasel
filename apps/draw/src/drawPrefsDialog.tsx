@@ -85,12 +85,13 @@ export function SurfacesEditor({ ctx }: { ctx: LeafContext }) {
     ctx.setValue({ ...surfaces, [id]: { ...getOwn(surfaces, id), ...patch } });
   };
   /** Alt-click on `id`'s box in column `field`: that row's flag on and every other row's off, or every row's back
-   *  on when that already held. */
+   *  off when that already held. `soloChanges` counts in shown rows, so the flags go through it inverted. */
   const solo = (field: 'hidden' | 'collapsed', id: string): void => {
     const rows = CHROME_ROWS.filter((row) => field === 'hidden' || row.asset);
-    const changes = soloChanges(new Map(rows.map((row) => [row.id, !!getOwn(surfaces, row.id)?.[field]])), new Set([id]));
+    const shown = new Map(rows.map((row) => [row.id, !getOwn(surfaces, row.id)?.[field]]));
+    const changes = soloChanges(shown, new Set(rows.filter((row) => row.id !== id).map((row) => row.id)));
     const next = { ...surfaces };
-    for (const [row, on] of Object.entries(changes)) setOwn(next, row, { ...getOwn(surfaces, row), [field]: on });
+    for (const [row, on] of Object.entries(changes)) setOwn(next, row, { ...getOwn(surfaces, row), [field]: !on });
     ctx.setValue(next);
   };
   const flag = (field: 'hidden' | 'collapsed', header: string, verb: string): DataGridColumn<ChromeRow> => ({
