@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { Slider } from './Slider';
 import { stubRect } from './testing/stubRect';
+import { logScale } from '@weasel-js/scale';
 
 describe('Slider single-thumb drag', () => {
   it('drags a thumb and emits onInput continuously and onChange on pointerup', () => {
@@ -163,6 +164,31 @@ describe('Slider allowShiftAll', () => {
     expect(after[1].value).toBeCloseTo(0.6, 2);
     expect(after[2].value).toBeCloseTo(1.0, 2);
     fireEvent.pointerUp(document, { pointerId: 1, shiftKey: true });
+  });
+});
+
+describe('Slider allowShiftAll snapping', () => {
+  const shiftDrag = (props: Partial<Parameters<typeof Slider>[0]>, toX: number) => {
+    const onChange = vi.fn();
+    const { container } = render(<Slider min={0} max={100} allowShiftAll thumbs={[{ value: 25 }, { value: 75 }]} onInput={() => {}} onChange={onChange} {...props} />);
+    const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
+    stubRect(thumbs[0].parentElement!, { left: 0, width: 200 });
+    fireEvent.pointerDown(thumbs[0], { clientX: 50, clientY: 12, pointerId: 1, button: 0, shiftKey: true });
+    fireEvent.pointerMove(document, { clientX: toX, clientY: 12, pointerId: 1, shiftKey: true });
+    fireEvent.pointerUp(document, { pointerId: 1, shiftKey: true });
+    return onChange.mock.calls.at(-1)?.[0].map((t: { value: number }) => t.value);
+  };
+
+  it('moves every thumb the same number of strict stops', () => {
+    const strict = { snap: 'strict' as const, stops: [0, 25, 50, 75, 100] };
+    expect(shiftDrag(strict, 56)).toBeUndefined();
+    expect(shiftDrag(strict, 92)).toEqual([50, 100]);
+  });
+
+  it('lands every thumb on the step grid under a scale', () => {
+    const values = shiftDrag({ min: 1, max: 1000, step: 1, scale: logScale, thumbs: [{ value: 10 }, { value: 100 }] }, 57);
+    expect(values).toHaveLength(2);
+    for (const v of values) expect(Number.isInteger(v)).toBe(true);
   });
 });
 

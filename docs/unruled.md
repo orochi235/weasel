@@ -1842,9 +1842,9 @@ Calls the lanes made without a ruling:
 - Open: a mixed number slider in `PropertyField` disables its track and reads out a dash that takes no focus, so it
   cannot be edited, while `PrefsForm`'s `mixed` says editing one calls `onChange` as usual. A test pins the disabled
   track ("parks a mixed slider").
-- Open: `Slider`'s region drag moves the two thumbs beside it by one track distance with no `step` or stop snapping,
-  and a shift-all drag snaps to `step` even under `snap: 'strict'`, which says `step` no longer applies and every
-  stop is a detent. Under strict stops spaced unevenly, both thumbs cannot land on stops and keep their gap.
+- A `Slider` drag that moves several thumbs (shift-all, or a region) lands them where one dragged thumb could: under
+  `snap: 'strict'` each moves the same number of stops, as many as the pointer crossed, so they stay on stops and
+  may not keep their gap; otherwise each lands on the `step` grid (2026-11-20).
 - Open: a `ControlPanel` group drawn `as: 'bar'` hands its cells no `errors`, `changed` or `auto`, so an error, a
   changed mark or an auto readout on a bar leaf does not show. A paired row shows errors and `changed`, not `auto`.
 - Open: `selectTool.pickBest` steers only the internal select tool's own pick; the dispatcher, hover and `onClick`

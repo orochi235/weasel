@@ -39,7 +39,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
   const { thumbs, step, constraint } = props;
   const handlers = useLatestHandlers(props), { onInput, onChange } = handlers;
   const { even, min, max } = span;
-  const { valueToFraction, fractionToValue, valueAt } = scale;
+  const { valueToFraction, fractionToValue, valueAt, snap } = scale;
   // In-flight thumb buffer during a drag; null when not dragging.
   const dragBufferRef = useRef<T[] | null>(null);
   const sessionRef = useRef<PointerSession | null>(null);
@@ -111,13 +111,13 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
       const startValues = start.map(t => t.value);
       dragBufferRef.current = copy(thumbs);
       let previewed = false;
-      const shift = { byTrack: even || !!props.scale, valueToFraction, fractionToValue, min, max, step };
+      const shift = { byTrack: even || !!props.scale, valueToFraction, fractionToValue, min, max, snap };
 
       const onMove = (ev: PointerEvent) => {
         const m = geometry.measure(ev.clientX, ev.clientY);
         const buffer = dragBufferRef.current;
         if (!m || !buffer) return;
-        const values = shiftedValues(startValues, m.gRaw - anchorG, shift);
+        const values = shiftedValues(startValues, anchorG, m.gRaw, shift);
         for (let i = 0; i < buffer.length; i++) buffer[i] = { ...buffer[i], value: values[i] };
         previewed = true;
         onInput(copy(buffer));
@@ -128,7 +128,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
 
       sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
     },
-    [thumbs, onInput, handlers, min, max, step, even, props.scale, valueToFraction, fractionToValue, geometry, release],
+    [thumbs, onInput, handlers, min, max, snap, even, props.scale, valueToFraction, fractionToValue, geometry, release],
   );
 
   // `held`: a drag belongs to the finger that started it, so a second finger's press is not a new drag.

@@ -140,6 +140,24 @@ describe('Slider regions', () => {
     expect(values(onChange)).toEqual([30, 70]);
   });
 
+  it('moves a region by whole stops under strict snapping', () => {
+    const { region, onInput, onChange } = setup({ snap: 'strict', stops: [0, 20, 40, 60, 80, 100], thumbs: [{ value: 20 }, { value: 60 }] });
+    fireEvent.pointerDown(region(1), { clientX: 160, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 190, clientY: 12 });
+    expect(values(onInput)).toEqual([20, 60]);
+    fireEvent.pointerMove(document, { clientX: 250, clientY: 12 });
+    expect(values(onInput)).toEqual([40, 80]);
+    fireEvent.pointerUp(document, { clientX: 250, clientY: 12 });
+    expect(values(onChange)).toEqual([40, 80]);
+  });
+
+  it('keeps a region drag on the step grid', () => {
+    const { region, onInput } = setup({ step: 5 });
+    fireEvent.pointerDown(region(1), { clientX: 160, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 171, clientY: 12 });
+    expect(values(onInput)).toEqual([25, 65]);
+  });
+
   it('reports a canceled region drag through onCancel, committing nothing', () => {
     const { region, onChange, onCancel } = setup();
     fireEvent.pointerDown(region(1), { clientX: 160, clientY: 12, button: 0 });

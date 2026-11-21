@@ -58,5 +58,7 @@ export function useScale(span: ReturnType<typeof useSpan>, strict: boolean, step
     [fractionToValue, valueToFraction, strict, stops, step, lo, hi, min, max, stopSnapPx],
   );
 
-  return { valueToFraction, fractionToValue, valueAt };
+  const snap = useMemo(() => ({ strict, stops, step, origin: lo }), [strict, stops, step, lo]);
+
+  return { valueToFraction, fractionToValue, valueAt, snap };
 }
