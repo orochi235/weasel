@@ -127,13 +127,20 @@ export function cutInto(text: string, cuts: readonly number[]): string[] {
   return out;
 }
 
-/** Register {@link propertyAtlas} as the `inter` family, with fetch and image decoding stubbed. */
+/** Register {@link propertyAtlas} as the `inter` family, with fetch and image decoding stubbed while it loads
+ *  and restored after. */
 export async function registerPropertyFont(): Promise<void> {
   _resetFontRegistryForTests();
   const font = propertyAtlas(FIXTURE_FONT);
-  global.fetch = vi.fn().mockImplementation((url: string) => (url.endsWith('.json')
+  const held = { fetch: globalThis.fetch, createImageBitmap: globalThis.createImageBitmap };
+  globalThis.fetch = vi.fn().mockImplementation((url: string) => (url.endsWith('.json')
     ? Promise.resolve({ ok: true, json: () => Promise.resolve(font) })
     : Promise.resolve({ ok: true, blob: () => Promise.resolve(new Blob(['PNG'])) }))) as typeof fetch;
-  global.createImageBitmap = vi.fn().mockResolvedValue({ width: 512, height: 512, close: vi.fn() } as unknown as ImageBitmap);
-  await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+  globalThis.createImageBitmap = vi.fn().mockResolvedValue({ width: 512, height: 512, close: vi.fn() } as unknown as ImageBitmap);
+  try {
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+  } finally {
+    globalThis.fetch = held.fetch;
+    globalThis.createImageBitmap = held.createImageBitmap;
+  }
 }
