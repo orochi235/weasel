@@ -4,7 +4,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { buildSceneViewCommands } from '../sceneViewRender';
 import { defaultDrawOne, defaultPaintBounds } from '../defaultDrawOne';
-import { __withoutSubtreeCullForTest } from './sceneVisibility';
+import { __visibilityIndexCountForTest, __withoutSubtreeCullForTest, sceneSubtreeCull } from './sceneVisibility';
 import { buildSceneLayers } from '../buildSceneLayer';
 import { wireSceneSlotToScene } from '../sceneSlotWiring';
 import { sceneToAdapter } from '../sceneAdapter';
@@ -171,5 +171,13 @@ describe('render visibility: a pruned walk paints what the full walk paints', ()
     expect(frame(scene, view).ids).toContain(n);
     scene.move(n, g);
     expect(frame(scene, view).ids).toContain(n);
+  });
+
+  it('keeps a bounded number of indexes when each render brings a new paintBounds', () => {
+    const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'a' }, { id: 'b' }] });
+    for (let i = 0; i < 600; i++) scene.add({ kind: 'mark', layer: 'a', pose: { x: i, y: 0, width: 5, height: 5 }, data: { shape: 'rect' } });
+    const rect = { x: 0, y: 0, width: 400, height: 300 };
+    for (let i = 0; i < 20; i++) sceneSubtreeCull(scene, (n, p, v) => defaultPaintBounds(n as never, p as never, v as never), rect);
+    expect(__visibilityIndexCountForTest(scene)).toBeLessThanOrEqual(4);
   });
 });
