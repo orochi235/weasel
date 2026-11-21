@@ -3468,3 +3468,10 @@ Calls the lanes made without a ruling:
   still writes anchored at the user-space origin; the kit's export path resolves such a paint with
   `paintToLocalUnits` first and never warns. Writing a def per node, each placed against that node's box, was the
   alternative.
+
+## Audit round sixty-five (2026-11-21): the platformer demo
+
+- 2026-11-21 (the fixer's call): the platformer's `createEnemies` stands a walker placed in the air on the first floor
+  below it, and leaves out one whose column has no floor below it at all, since walkers have no gravity. The swarm
+  button can therefore insert fewer than forty. Giving walkers gravity, so they fall into a pit and die, was the
+  alternative.

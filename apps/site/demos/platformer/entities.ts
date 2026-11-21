@@ -29,16 +29,30 @@ export type Contact =
   | { kind: 'hurt'; index: number }
   | { kind: 'coin'; index: number };
 
-/** Each enemy stands on the bottom of the tile it was placed in, which is the
- *  top of the floor under it; `at` is anywhere in that tile, usually its center. */
-export const createEnemies = (at: Vec2[]): Enemy[] =>
-  at.map((p, i) => ({
-    x: p.x,
-    y: (toRow(p.y) + 1) * TILE - ENEMY_H / 2,
-    vx: i % 2 === 0 ? ENEMY_SPEED : -ENEMY_SPEED,
-    alive: true,
-    phase: i * 0.37,
-  }));
+/** The row an enemy at `at` stands in: the first open one at or below it with a
+ *  floor under it, or null when its column has none (a pit). */
+function standingRow(level: Level, at: Vec2): number | null {
+  const cx = toCol(at.x);
+  for (let cy = Math.max(0, toRow(at.y)); cy < level.rows; cy++) {
+    if (!blocksMotion(tileAt(level, cx, cy)) && standable(tileAt(level, cx, cy + 1))) return cy;
+  }
+  return null;
+}
+
+/** Walkers have no gravity, so each one is placed on the first floor at or below
+ *  `at`; one over a pit, with no floor below it at all, is left out. */
+export const createEnemies = (level: Level, at: Vec2[]): Enemy[] =>
+  at.flatMap((p, i) => {
+    const row = standingRow(level, p);
+    if (row === null) return [];
+    return [{
+      x: p.x,
+      y: (row + 1) * TILE - ENEMY_H / 2,
+      vx: i % 2 === 0 ? ENEMY_SPEED : -ENEMY_SPEED,
+      alive: true,
+      phase: i * 0.37,
+    }];
+  });
 
 export const createCoins = (at: Vec2[]): Coin[] => at.map((p) => ({ x: p.x, y: p.y, taken: false }));
 

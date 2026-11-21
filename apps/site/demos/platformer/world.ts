@@ -91,7 +91,7 @@ export const freshGame = (): GameRefs => ({
   anim: createAnimState(),
   invuln: 0,
   accumulator: 0,
-  enemies: createEnemies(WORLD.enemies),
+  enemies: createEnemies(WORLD, WORLD.enemies),
   coins: createCoins(WORLD.coins),
   lives: 3,
   score: 0,

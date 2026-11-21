@@ -243,12 +243,13 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
     return { sky, far: band('far', 0.2), mid: band('mid', 0.45), near: band('near', 0.7), debug, hud, callouts, ending };
   }, []);
 
-  /** Insert forty enemies mid-run — the retained-tree counterpart to the load
+  /** Insert up to forty enemies mid-run (none over a pit) — the retained-tree counterpart to the load
    *  test's swarm, exercising node insertion rather than a longer array. */
   const swarm = () => {
     const g = game.current;
     const base = g.enemies.length;
     const extra = createEnemies(
+      WORLD,
       Array.from({ length: 40 }, (_, i) => ({
         x: g.player.body.x + (i % 20) * 18 - 180,
         y: g.player.body.y - 40,
