@@ -249,4 +249,9 @@ describe('a token a theme resolves at only some selections', () => {
     expect((values[path.slice(0, path.indexOf('.'))] as Record<string, unknown>).foo).toBe('#000000');
   });
 
+  it('reads as its fallback where it is a hook', () => {
+    const theme = defineTheme({ name: 'hook-gap', extends: weaselTheme, pins: { 'bevel-raised': { by: 'mode', light: 'inset 1px 1px #ffffff' } } });
+    const leaf = prefLeaves(themePrefsSchema(theme)).get('bevel.bevel-raised')!;
+    expect(leaf.auto?.value).toEqual({ $by: 'axis.mode', $in: { light: 'inset 1px 1px #ffffff', dark: 'none' } });
+  });
 });

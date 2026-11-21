@@ -77,7 +77,9 @@ export function tokenTable(theme: Theme): TokenTable {
     const css: Record<string, string> = {};
     for (const [key, tokens] of resolved) {
       const value = getOwn(tokens, PREFIX + name);
-      if (value !== undefined) setOwn(css, key, value);
+      // A hook a `by` leaves out at some selection draws its fallback there.
+      const drawn = value ?? (listed?.hook ? listed.defaultValue : undefined);
+      if (drawn !== undefined) setOwn(css, key, drawn);
     }
     rows.push({
       name,
