@@ -8,7 +8,13 @@ import {
   type DialogProps as RACDialogProps,
 } from 'react-aria-components';
 import { filterDOMProps } from 'react-aria/filterDOMProps';
-import { useContainedRoot, useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
+import {
+  CONTAINED_UNHELD,
+  useContainedRoot,
+  useOverlayPortal,
+  type OverlayPortalProps,
+  type WithoutPortalTarget,
+} from '../../overlays/portalHost';
 import { ContainedModal } from './ContainedModal';
 import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { type AppearanceProps, useAppearance } from '../appearance';
@@ -52,9 +58,6 @@ export type DialogProps = Omit<
      *  pane — this is where the body's padding and overflow come off. */
     bodyClassName?: string;
   };
-
-/** `ModalOverlay` props a contained dialog cannot honor, which it warns about rather than drops. */
-const CONTAINED_UNHELD = ['onEnter', 'onExit', 'UNSTABLE_deferUntilEntered', 'render'] as const;
 
 /**
  * Modal dialog wrapping React Aria. Supplies a default header (title +

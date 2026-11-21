@@ -63,6 +63,10 @@ export interface OverlayPortalProps {
   portalContainer?: Element | null;
 }
 
+/** `ModalOverlay` props a contained dialog cannot honor, which it warns about rather than drops. Kept
+ *  here, out of the package's exports, so the unstable name stays in the quarantined module. */
+export const CONTAINED_UNHELD = ['onEnter', 'onExit', 'UNSTABLE_deferUntilEntered', 'render'] as const;
+
 /** React Aria props minus the portal key a weasel overlay owns: set, it
  *  would override the container {@link useOverlayPortal} provides. */
 export type WithoutPortalTarget<T> = Omit<T, 'UNSTABLE_portalContainer'>;
