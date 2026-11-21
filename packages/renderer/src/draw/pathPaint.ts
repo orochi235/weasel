@@ -43,9 +43,7 @@ function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand, fill: CommandPaint
   // Batchable: see `batchPaint`. A rect skips tessellation entirely; anything
   // else stages its mesh. Both also keep animated demos that mint a fresh Path
   // every frame from allocating a GL buffer per frame.
-  const isSolid = fill.kind === undefined || fill.kind === 'solid';
   const hasVColors = !!(cmd.vertexColors && cmd.vertexColors.length > 0);
-  const solid = fill as { color: string; opacity?: number };
   const paint = batchPaint(ctx, fill, hasVColors);
   if (paint === null) return;
 
@@ -57,15 +55,16 @@ function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand, fill: CommandPaint
   }
 
   const mesh = fillMesh(ctx, cmd.path);
-  const staged = isSolid && hasVColors
-    ? tryStageVertexColors(ctx, mesh, cmd.vertexColors!, solid)
+  const base = hasVColors ? vertexColorBase(fill) : undefined;
+  const staged = base
+    ? tryStageVertexColors(ctx, mesh, cmd.vertexColors!, base)
     : tryStageFill(ctx, mesh, paint);
   if (staged) return;
 
   const handle = meshHandle(ctx, mesh);
   atMeshOrigin(ctx, mesh.origin, () => {
-    if (isSolid && hasVColors) {
-      drawPathFillVColor(ctx, cmd, solid, handle);
+    if (base) {
+      drawPathFillVColor(ctx, cmd, base, handle);
     } else if (handle.requiresStencil) {
       drawPathFillStencil(ctx, fill, handle);
     } else {

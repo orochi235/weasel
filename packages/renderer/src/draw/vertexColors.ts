@@ -112,7 +112,7 @@ function mapColors(ctx: DrawContext, colors: Float32Array, n: number, base: read
 }
 
 /**
- * The color a stroke's vertex colors multiply. Per-vertex colors are the paint
+ * The color a fill's or a stroke's vertex colors multiply. Per-vertex colors are the paint
  * there; a non-solid base has no single color to multiply by, so white leaves
  * them unmodified.
  */

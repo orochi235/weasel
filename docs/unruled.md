@@ -3304,3 +3304,8 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+## Audit round sixty-three (2026-11-21): renderer.draw
+
+- 2026-11-21 (the fixer's call): a path's `vertexColors` beside a gradient or pattern `fill` draw the vertex colors at
+  the paint's opacity, as `stroke.vertexColors` beside a non-solid stroke paint already did; the fill used to draw the
+  paint and drop the colors. Having the stroke draw its paint and drop its colors was the alternative.
