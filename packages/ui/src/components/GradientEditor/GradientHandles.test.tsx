@@ -264,11 +264,29 @@ describe('GradientHandles edits', () => {
     expect(onChange.mock.calls[0][0].radius).toBeCloseTo(0.8);
   });
 
+  it('grows the radius on Up and Right, and shrinks it on Down and Left', () => {
+    const radii: number[] = [];
+    render(<GradientHandles value={radial} toScreen={toScreen} toLocal={toLocal} onChange={(next) => radii.push((next as { radius: number }).radius)} width={400} height={300} />);
+    const handle = screen.getByLabelText('Gradient radius');
+    for (const key of ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft']) fireEvent.keyDown(handle, { key });
+    expect(radii.map((r) => Math.sign(r - 25))).toEqual([1, 1, -1, -1]);
+  });
+
   it('commits nothing for an arrow key that leaves the radius where it was', () => {
     const onChange = vi.fn();
     const floor: GradientPaint = { ...radial, radius: 0.5 };
     render(<GradientHandles value={floor} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
     fireEvent.keyDown(screen.getByLabelText('Gradient radius'), { key: 'ArrowLeft' });
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('turns the conic angle on every arrow key', () => {
+    const onChange = vi.fn();
+    const flat: GradientPaint = { ...conic, angle: 0 };
+    render(<GradientHandles value={flat} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
+    const handle = screen.getByLabelText('Gradient angle');
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(onChange.mock.calls.map(([next]) => Math.sign(next.angle))).toEqual([1, -1]);
   });
 });

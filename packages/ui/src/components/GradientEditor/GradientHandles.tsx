@@ -109,6 +109,7 @@ function renderForKind(
           radius={handleRadius}
           at={edge}
           label="Gradient radius"
+          axis={unit(center, edge)}
           onDrag={(p, phase) => {
             emit({ ...value, radius: Math.max(floor, distance(toLocal(p), value.center)) }, phase);
           }}
@@ -123,6 +124,7 @@ function renderForKind(
     x: value.center.x + Math.cos(value.angle) * radius,
     y: value.center.y + Math.sin(value.angle) * radius,
   });
+  const turn = toScreen({ x: value.center.x - Math.sin(value.angle), y: value.center.y + Math.cos(value.angle) });
   return (
     <>
       <Guide x1={center.x} y1={center.y} x2={tip.x} y2={tip.y} />
@@ -136,6 +138,7 @@ function renderForKind(
         radius={handleRadius}
         at={tip}
         label="Gradient angle"
+        axis={unit(center, turn)}
         onDrag={(p, phase) => {
           const local = toLocal(p);
           const angle = Math.atan2(local.y - value.center.y, local.x - value.center.x);
@@ -148,5 +151,11 @@ function renderForKind(
 
 function distance(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+/** The unit direction from `a` to `b`, or +x where they meet. */
+function unit(a: Point, b: Point): Point {
+  const d = distance(a, b);
+  return d > 0 ? { x: (b.x - a.x) / d, y: (b.y - a.y) / d } : { x: 1, y: 0 };
 }
 

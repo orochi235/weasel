@@ -98,13 +98,15 @@ export function Edge({ points }: { points: readonly [OverlayPoint, OverlayPoint,
  * One draggable point. `onDrag` receives overlay pixels: where the point
  * goes, which trails the pointer by wherever on the handle it was grabbed. A
  * press that never moved writes nothing, and a canceled gesture (Escape, a lost pointer) is reported to the
- * overlay's session.
+ * overlay's session. An arrow key moves the point one step, or with `axis` one step along it: Up and Right
+ * toward `axis`, Down and Left away.
  */
 export function DragPoint({
   at,
   label,
   radius,
   variant = 'handle',
+  axis,
   onDrag,
 }: {
   at: OverlayPoint;
@@ -112,6 +114,8 @@ export function DragPoint({
   radius: number;
   /** `control` draws the inverted style a secondary point wears. */
   variant?: 'handle' | 'control';
+  /** A unit direction in overlay pixels: the point carries one value, which the arrow keys step along it. */
+  axis?: OverlayPoint;
   onDrag: (p: OverlayPoint, phase: EditPhase) => void;
 }): ReactElement {
   const session = useContext(SessionContext);
@@ -139,7 +143,10 @@ export function DragPoint({
     const move = arrowMove(e.key, e.shiftKey);
     if (move === null) return;
     e.preventDefault();
-    const next = { x: at.x + move.dx * KEY_STEP, y: at.y + move.dy * KEY_STEP };
+    const along = (move.dx - move.dy) * KEY_STEP;
+    const next = axis
+      ? { x: at.x + axis.x * along, y: at.y + axis.y * along }
+      : { x: at.x + move.dx * KEY_STEP, y: at.y + move.dy * KEY_STEP };
     session.begin();
     onDrag(next, 'input');
     onDrag(next, 'commit');
