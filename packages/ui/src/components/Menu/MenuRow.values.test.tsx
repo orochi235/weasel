@@ -166,6 +166,15 @@ describe('a color row in a DOM menu', () => {
     expect(picker()).not.toBeNull();
   });
 
+  it('leaves focus on the picker\'s color input when Enter is pressed there', () => {
+    const { menu } = openColor();
+    key(menu, 'ArrowDown');
+    key(menu, 'Enter');
+    act(() => { swatchInput().focus(); });
+    key(swatchInput(), 'Enter');
+    expect(document.activeElement).toBe(swatchInput());
+  });
+
   it('offers opacity when the entry has alpha', () => {
     const { row } = openColor({ alpha: true });
     fireEvent.click(row);

@@ -72,9 +72,11 @@ export function MenuPanel(props: {
   // reaches the canvas; a key held with Ctrl, Meta or Alt is a command, not typeahead.
   const onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation();
-    // A key typed into a row's field is the field's; Enter and Escape, which end the edit, give focus back.
+    // A key typed into a row's field is the field's; Enter and Escape, which end the edit, give focus back. Enter in a
+    // picker a row portals out of the panel stays there: it may be opening the system's color dialog.
     if (e.target !== e.currentTarget) {
-      if ((e.key === 'Enter' || e.key === 'Escape') && !imeKey(e.nativeEvent)) ref.current?.focus();
+      const ends = e.key === 'Escape' || (e.key === 'Enter' && e.currentTarget.contains(e.target as Node));
+      if (ends && !imeKey(e.nativeEvent)) ref.current?.focus();
       return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
