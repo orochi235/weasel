@@ -26,6 +26,14 @@ function decode(src: string): Promise<HTMLImageElement> {
   return img.decode().then(() => img);
 }
 
+/** The size an SVG's `viewBox` gives it, for one declaring no width or height, which some engines decode at 0 by 0. */
+async function svgViewBoxSize(file: File): Promise<{ width: number; height: number } | null> {
+  if (file.type !== 'image/svg+xml') return null;
+  const root = new DOMParser().parseFromString(await file.text(), 'image/svg+xml').documentElement;
+  const [, , width = 0, height = 0] = (root.getAttribute('viewBox') ?? '').trim().split(/[\s,]+/).map(Number);
+  return width > 0 && height > 0 ? { width, height } : null;
+}
+
 /**
  * Read `file` into what an `image` paint stores. A raster larger than
  * {@link MAX_STORED_IMAGE_SIDE} on its longest side is re-encoded smaller,
@@ -35,8 +43,9 @@ function decode(src: string): Promise<HTMLImageElement> {
 export async function readImageFile(file: File): Promise<ReadImage> {
   const original = await readAsDataUri(file);
   const img = await decode(original);
-  const width = img.naturalWidth || 1;
-  const height = img.naturalHeight || 1;
+  const own = img.naturalWidth > 0 && img.naturalHeight > 0 ? null : await svgViewBoxSize(file);
+  const width = own?.width ?? (img.naturalWidth || 1);
+  const height = own?.height ?? (img.naturalHeight || 1);
   const scale = MAX_STORED_IMAGE_SIDE / Math.max(width, height);
   if (file.type === 'image/svg+xml' || scale >= 1) return { src: original, width, height };
 
