@@ -1,10 +1,8 @@
 import { useMemo } from 'react';
 import type { RenderLayer } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { viewToTransform } from 'core/viewport/view';
-import { worldToScreen } from 'core/viewport/viewTransform';
 import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
-import { transformPath, type Path } from '@weasel-js/geom';
+import { transformPath, translatePath, viewWorldToScreen, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { NodeId, Scene } from 'core/scene/types';
 import { enteredOperandOutlines } from './enteredOperands';
@@ -49,12 +47,13 @@ export function createEnteredGroupFrameLayer(opts: {
       const id = opts.entered.get();
       const b = id === null ? null : opts.boundsOf(id);
       if (b === null) return [];
-      const t = viewToTransform(view);
-      const [x, y] = worldToScreen(b.x, b.y, t);
+      const { x, y } = viewWorldToScreen(view, b);
       const paint = { kind: 'solid', color: opts.color?.() ?? ENTERED_FRAME_COLOR } as const;
-      const toScreen = [t.zoom.x, 0, 0, t.zoom.y, t.panX, t.panY] as const;
+      const scale = [view.scale.x, 0, 0, view.scale.y, 0, 0] as const;
       const outlines: DrawCommand[] = (opts.outlinesOf?.(id!) ?? []).map((p) => ({
-        kind: 'path', path: transformPath(p, toScreen), stroke: { paint, width: FRAME_WIDTH },
+        kind: 'path',
+        path: transformPath(translatePath(p, -view.x, -view.y), scale),
+        stroke: { paint, width: FRAME_WIDTH },
       }));
       return [...outlines, {
         kind: 'path',
