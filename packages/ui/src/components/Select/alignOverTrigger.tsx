@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 import { LONG_PRESS_MS, pastDragThreshold } from '@weasel-js/gestures';
+import { useLocale } from 'react-aria';
 import { useKitSetting } from '@weasel-js/react';
 import { blockFrame, realRect } from '../../overlays/blockFrame';
 import s from './Select.module.css';
@@ -48,6 +49,7 @@ export function AlignOverTrigger({
   // to confirm. A cap is what keeps a list whose own placement changes its
   // measurement from renegotiating forever.
   const passes = useRef(0);
+  const { direction } = useLocale();
   useLayoutEffect(() => {
     const trigger = triggerRef.current;
     const popover = markerRef.current?.closest<HTMLElement>('[data-weasel-overlay]');
@@ -67,16 +69,18 @@ export function AlignOverTrigger({
     // The trigger's own text alignment decides which edge the two labels are
     // matched on, and the list follows it so the selected row reads as the
     // trigger with the others unfolded around it.
-    const align = getComputedStyle(trigger).getPropertyValue('--wzl-select-align').trim();
-    const toEnd = align === 'right' || align === 'end';
-    popover.dataset.align = toEnd ? 'end' : 'start';
+    const style = getComputedStyle(trigger);
+    const align = style.getPropertyValue('--wzl-select-align').trim();
+    const rtlText = style.direction === 'rtl';
+    const toRight = align === 'right' || (align === 'end' && !rtlText) || ((align === 'start' || align === '') && rtlText);
+    popover.dataset.align = toRight !== rtlText ? 'end' : 'start';
 
     // Stated against each element's own box rather than measured as a gap to
     // close: React Aria repositions after this effect, so what is on screen
     // now is a frame behind, and a correction read off it would be applied to
     // a position that has already moved — the shift compounds every pass.
     // `bottom start` puts the list's top at the trigger's bottom and their
-    // left edges together, so the two insets below are the whole story.
+    // start edges together, the start read from the locale as React Aria reads it.
     const box = popover.getBoundingClientRect();
     const seat = trigger.getBoundingClientRect();
     const row = label.getBoundingClientRect();
@@ -95,9 +99,8 @@ export function AlignOverTrigger({
     const highest = view.top + EDGE * scaleY - seat.bottom;
     const next = {
       offset: Math.max(highest, Math.min(over, lowest)) / scaleY,
-      crossOffset: (toEnd
-        ? shown.right - seat.left - (row.right - box.left)
-        : shown.left - seat.left - (row.left - box.left)) / scaleX,
+      crossOffset: ((toRight ? shown.right - (row.right - box.left) : shown.left - (row.left - box.left))
+        - (direction === 'rtl' ? seat.right - box.width : seat.left)) / scaleX,
     };
     if (Math.abs(next.offset - applied.offset) < 0.5 && Math.abs(next.crossOffset - applied.crossOffset) < 0.5)
       return;
