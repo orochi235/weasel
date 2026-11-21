@@ -67,6 +67,13 @@ const length = (native: 'px' | 'em', coercedAs: string) =>
 
 const worldLength = length('px', 'world units');
 
+/** A dimension below zero, which CSS rejects for a property that takes none. */
+const isNegative = (v: string): boolean => (dimension(v)?.n ?? 0) < 0;
+
+function readStrokeWidth(v: string, warn: Warn, prop: string, fontSize: number): number | undefined {
+  return isNegative(v) ? undefined : worldLength(v, warn, prop, fontSize);
+}
+
 /** CSS keywords are ASCII case-insensitive, so every reader folds case before comparing one. */
 const keyword = <W extends string>(...words: W[]) => (v: string): W | undefined => {
   const k = v.toLowerCase();
@@ -157,6 +164,7 @@ function readFontSize(
 ): { fontSize?: number; fontScale?: number } | undefined {
   const word = fontSizeKeyword(v);
   if (word) return 'size' in word ? { fontSize: word.size } : { fontScale: word.scale };
+  if (isNegative(v)) return undefined;
   const d = dimension(v);
   if (d?.unit === '%') return { fontScale: d.n / 100 };
   const ems = d && emsPer(d.unit);
@@ -268,7 +276,7 @@ export const PROPERTIES = {
   'fill-opacity': inherited(readRatio, 'unread'),
   'fill-rule': inherited(keyword('nonzero', 'evenodd'), 'unread'),
   'stroke': inherited(readPaint, unreadColor(readPaint)),
-  'stroke-width': inherited(worldLength),
+  'stroke-width': inherited(readStrokeWidth, isNegative),
   'stroke-opacity': inherited(readRatio, 'unread'),
   'stroke-linecap': inherited(readLinecap, 'unread'),
   'stroke-linejoin': inherited(readLinejoin, 'unread'),
@@ -279,7 +287,7 @@ export const PROPERTIES = {
   'marker-mid': inherited(readMarkerRef),
   'marker-end': inherited(readMarkerRef),
   'color': inherited(readColor, unreadColor(readColor)),
-  'font-size': inherited(readFontSize),
+  'font-size': inherited(readFontSize, isNegative),
   'font-family': inherited((v) => (v.length > 0 ? v : undefined)),
   'font-weight': inherited(readFontWeight),
   'font-style': inherited(readFontStyle),

@@ -35,3 +35,22 @@ describe('keywords read without regard to case', () => {
     expect(isDeclarationHonored('fill', 'Inherit')).toBe(true);
   });
 });
+
+describe('negative lengths CSS rejects', () => {
+  it('lets the inherited stroke-width stand under a negative one', () => {
+    const { nodes, warnings } = parse('<g stroke-width="4"><path d="M0 0L9 9" stroke="#000" style="stroke-width:-2"/></g>');
+    const leaf = (nodes[0].kind === 'group' ? nodes[0].children[0] : nodes[0]) as SvgPathNode;
+    expect(leaf.stroke).toMatchObject({ width: 4 });
+    expect(warnings.some((w) => w.includes('stroke-width'))).toBe(true);
+  });
+
+  it('drops a negative font-size, absolute or relative', () => {
+    expect(readProperty('font-size', '-12px')).toBeUndefined();
+    expect(readProperty('font-size', '-50%')).toBeUndefined();
+    expect(readProperty('stroke-width', '-2')).toBeUndefined();
+    expect(isDeclarationHonored('font-size', '-1em')).toBe(false);
+    const { nodes } = parse('<text font-size="20"><tspan font-size="-12px">a</tspan></text>');
+    const text = nodes[0].kind === 'group' ? nodes[0].children[0] : nodes[0];
+    expect(JSON.stringify(text)).not.toContain('-12');
+  });
+});
