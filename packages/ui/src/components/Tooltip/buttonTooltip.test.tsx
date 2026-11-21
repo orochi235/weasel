@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { ButtonTooltip, tooltipContent } from './buttonTooltip';
 
 describe('tooltipContent', () => {
@@ -35,5 +35,18 @@ describe('ButtonTooltip', () => {
     rerender(at(true));
     expect(screen.getByRole('button', { name: 'Save' })).toBe(button);
     expect(document.activeElement).toBe(button);
+  });
+
+  it('leaves a button held for a reason undraggable, as a natively disabled one is', () => {
+    const onDragStart = vi.fn();
+    render(
+      <ButtonTooltip tip={{ label: 'Rect' }} disabled disabledReason="Locked">
+        <button type="button" draggable onDragStart={onDragStart}>Rect</button>
+      </ButtonTooltip>,
+    );
+    const button = screen.getByRole('button', { name: 'Rect' });
+    expect(button.getAttribute('draggable')).toBeNull();
+    fireEvent.dragStart(button);
+    expect(onDragStart).not.toHaveBeenCalled();
   });
 });
