@@ -208,3 +208,5 @@
 .ckd-release-meta .ckd-release-tag.is-breaking {
   color: var(--wzl-danger);
 }
+
+.ckd-releases-other { margin-top: var(--wzl-space-7); }

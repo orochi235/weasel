@@ -1,4 +1,5 @@
 import type { PluginOption, ViteDevServer } from 'vite';
+import { isOlderRelease } from '../../apps/shared/releaseMajor.ts';
 import { summarize, type Release } from '../../apps/shared/releases.ts';
 import { readReleases } from './changelogs.ts';
 
@@ -10,7 +11,9 @@ import { readReleases } from './changelogs.ts';
  *
  * The index holds each release's summary (counts, highlights) and a `load()` that imports
  * `virtual:changelogs/<version>`, a chunk of its own holding that release's entries, so the page
- * fetches only the releases a reader opens.
+ * fetches only the releases a reader opens. It lists releases from `CURRENT_MAJOR` on;
+ * `virtual:changelogs/older` is the same index for every release before, so the default page's
+ * bundle carries none of their summaries.
  *
  * All packages ship as one changesets `fixed` group, so the per-package CHANGELOG files are views
  * of the same release. Entries are keyed by their changeset hash and merged across packages — one
@@ -22,6 +25,7 @@ import { readReleases } from './changelogs.ts';
 export function changelogs(opts: { root?: string } = {}): PluginOption {
   const INDEX_ID = 'virtual:changelogs';
   const PREFIX = `${INDEX_ID}/`;
+  const OLDER_ID = `${PREFIX}older`;
   const root = opts.root ?? process.cwd();
   let cache: Release[] | null = null;
   const releases = () => (cache ??= readReleases(root));
@@ -33,14 +37,8 @@ export function changelogs(opts: { root?: string } = {}): PluginOption {
       return null;
     },
     load(id) {
-      if (id === `\0${INDEX_ID}`) {
-        const items = releases().map((release) => {
-          const summary = JSON.stringify(summarize(release));
-          const chunk = JSON.stringify(PREFIX + release.version);
-          return `  { ...${summary}, load: () => import(${chunk}).then((m) => m.default) }`;
-        });
-        return `export default [\n${items.join(',\n')}\n];\n`;
-      }
+      if (id === `\0${INDEX_ID}`) return indexModule(releases().filter((r) => !isOlderRelease(r.version)));
+      if (id === `\0${OLDER_ID}`) return indexModule(releases().filter((r) => isOlderRelease(r.version)));
       if (id.startsWith(`\0${PREFIX}`)) {
         const version = id.slice(PREFIX.length + 1);
         const release = releases().find((r) => r.version === version);
@@ -58,4 +56,13 @@ export function changelogs(opts: { root?: string } = {}): PluginOption {
       });
     },
   };
+}
+
+function indexModule(list: readonly Release[]): string {
+  const items = list.map((release) => {
+    const summary = JSON.stringify(summarize(release));
+    const chunk = JSON.stringify(`virtual:changelogs/${release.version}`);
+    return `  { ...${summary}, load: () => import(${chunk}).then((m) => m.default) }`;
+  });
+  return `export default [\n${items.join(',\n')}\n];\n`;
 }

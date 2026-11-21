@@ -84,7 +84,7 @@ export interface ReleaseSummary {
   curated: boolean;
 }
 
-/** One entry of `virtual:changelogs`: a summary, and its entries fetched on demand. */
+/** One entry of `virtual:changelogs` or `virtual:changelogs/older`: a summary, and its entries fetched on demand. */
 export interface ReleaseIndexEntry extends ReleaseSummary {
   load: () => Promise<ChangelogEntry[]>;
 }

@@ -7,6 +7,7 @@ import { WeaselDemos } from '../WeaselDemos';
 // The views `WeaselDemos` loads lazily, loaded here at collection so their transform is not
 // paid inside a test's timeout. `lazy()`'s own import then resolves from the module cache.
 import '../Releases';
+import '../OlderReleases';
 import '../WhatsNew';
 import '../FrontPage/GetStarted';
 import '../Shell';
@@ -17,9 +18,18 @@ import { renderWithIcons } from '../testIcons';
 vi.mock('virtual:changelogs', async () => ({
   default: (await import('@shared/releases')).indexReleases([
     {
+      version: '2.0.0',
+      date: '2026-11-21T00:00:00Z',
+      entries: [{ id: 'a', packages: ['core'], titleHtml: 'a change', bodyHtml: '', tags: ['fix'], rank: 0, pick: false }],
+    },
+  ]),
+}));
+vi.mock('virtual:changelogs/older', async () => ({
+  default: (await import('@shared/releases')).indexReleases([
+    {
       version: '1.0.0',
       date: '2026-08-12T00:00:00Z',
-      entries: [{ id: 'a', packages: ['core'], titleHtml: 'a change', bodyHtml: '', tags: ['fix'], rank: 0, pick: false }],
+      entries: [{ id: 'b', packages: ['core'], titleHtml: 'an old change', bodyHtml: '', tags: ['fix'], rank: 0, pick: false }],
     },
   ]),
 }));
@@ -110,6 +120,39 @@ describe('the hash router', () => {
     await heading('Releases');
   });
 
+  it('opens the older releases on their own id', async () => {
+    go('#__older_releases');
+    renderWithIcons(<WeaselDemos />);
+    await heading('Releases before 2.0');
+  });
+
+  it('sends a link to a version before 2.0 to the older releases, keeping the link', async () => {
+    go('?v=1.0.0#__releases');
+    renderWithIcons(<WeaselDemos />);
+    await heading('Releases before 2.0');
+    expect(window.location.hash).toBe('#__older_releases');
+    expect(new URLSearchParams(window.location.search).get('v')).toBe('1.0.0');
+  });
+
+  it('sends a link to a version from 2.0 on back to the releases', async () => {
+    go('?v=2.0.0#__older_releases');
+    renderWithIcons(<WeaselDemos />);
+    await heading('Releases');
+    expect(window.location.hash).toBe('#__releases');
+  });
+
+  it('opens the older releases from the link under the releases, keeping the filter', async () => {
+    go('?pkg=core#__releases');
+    renderWithIcons(<WeaselDemos />);
+    await heading('Releases');
+    const before = window.history.length;
+    fireEvent.click(within(screen.getByRole('main')).getByRole('link', { name: 'Releases before 2.0 →' }));
+    await heading('Releases before 2.0');
+    expect(window.location.hash).toBe('#__older_releases');
+    expect(window.location.search).toBe('?pkg=core');
+    expect(window.history.length).toBe(before + 1);
+  });
+
   it('opens demo updates on its own id', async () => {
     go('#__whats_new');
     renderWithIcons(<WeaselDemos />);
@@ -193,7 +236,7 @@ describe('leaving a page', () => {
   });
 
   it("drops the releases filter and version link, and keeps the site's own query", async () => {
-    window.history.replaceState(null, '', '/?backend=webgpu&pkg=core&v=1.0.0#__releases');
+    window.history.replaceState(null, '', '/?backend=webgpu&pkg=core&v=2.0.0#__releases');
     renderWithIcons(<WeaselDemos />);
     await heading('Releases');
     fireEvent.click(within(screen.getByRole('navigation')).getByRole('link', { name: DEMOS[0].title }));
