@@ -23,6 +23,11 @@ describe('token value readers on very long text, shrunk counterexamples', () => 
     quick(() => inferTokenType(`${'1'.repeat(LONG)}!`));
   });
 
+  it('types a long run of brackets or parentheses without overflowing the stack', () => {
+    expect(quick(() => inferTokenType('['.repeat(LONG)))).toBe('string');
+    expect(quick(() => inferTokenType(`rgb${'('.repeat(LONG)}`))).toBe('string');
+  });
+
   it('types a long run of commas in linear time', () => {
     expect(quick(() => inferTokenType(','.repeat(LONG)))).toBe('string');
   });

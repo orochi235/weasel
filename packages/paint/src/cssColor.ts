@@ -18,8 +18,25 @@ export function parsesAsColor(value: string, supports: ((value: string) => boole
   const v = value.trim();
   // `CSS.supports` accepts any `var()`, and any CSS-wide keyword, for any property.
   if (!v || v.includes('var(') || CSS_WIDE.has(v.toLowerCase())) return false;
+  // jsdom's CSS.supports recurses per nesting level and overflows the stack on long runs of brackets.
+  if (!couldBeColor(v)) return false;
   if (supports) return supports(v);
   return parseHexBytes(v) !== null || isColorFunction(v) || KEYWORDS.has(v.toLowerCase()) || isNamedColor(v);
+}
+
+/** The most parentheses any color value nests: relative color syntax around `color-mix` reaches four. */
+const MAX_COLOR_DEPTH = 16;
+
+/** Whether `v` is shaped like any color can be: no brackets, braces or semicolons, and parentheses nested no
+ *  deeper than {@link MAX_COLOR_DEPTH}. */
+function couldBeColor(v: string): boolean {
+  if (/[[\]{};]/.test(v)) return false;
+  let depth = 0;
+  for (const c of v) {
+    if (c === '(' && ++depth > MAX_COLOR_DEPTH) return false;
+    if (c === ')') depth--;
+  }
+  return true;
 }
 
 /** A color function whose own parenthesis closes at the end of `v`, so nothing follows it. */

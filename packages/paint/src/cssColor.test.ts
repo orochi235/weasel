@@ -43,4 +43,14 @@ describe('parsesAsColor', () => {
       expect(parsesAsColor(word, () => true)).toBe(false);
     }
   });
+
+  it('turns away brackets, braces, semicolons and deep nesting before asking the browser', () => {
+    const asked = () => {
+      throw new Error('asked the browser');
+    };
+    for (const v of ['['.repeat(20_000), 'rgb(0 0 0)]', 'red;', '{red}', `rgb${'('.repeat(17)}0${')'.repeat(17)}`]) {
+      expect(parsesAsColor(v, asked)).toBe(false);
+    }
+    expect(parsesAsColor('rgb(from color-mix(in srgb, red, blue) r g b)', () => true)).toBe(true);
+  });
 });
