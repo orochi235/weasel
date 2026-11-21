@@ -95,7 +95,7 @@ export function explainLabScroll(lab: Element, shellBody: Element): string | nul
       : '.lk-shell-body scrolls';
   }
 
-  const doc = document.scrollingElement ?? document.documentElement;
+  const doc = lab.ownerDocument.scrollingElement ?? lab.ownerDocument.documentElement;
   if (!overflows(doc)) return null;
   const r = lab.getBoundingClientRect();
   const bound = {
@@ -124,7 +124,7 @@ export function useLabFitWarning(labBody: Element | null): void {
     // A shrinking window overflows for a frame or two before the workspace
     // re-lays out, so only overflow that outlasts the resize is reported.
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const stop = watchResize([document.documentElement, lab, shellBody, labBody], () => {
+    const stop = watchResize([lab.ownerDocument.documentElement, lab, shellBody, labBody], () => {
       clearTimeout(timer);
       timer = setTimeout(() => {
         const why = explainLabScroll(lab, shellBody);

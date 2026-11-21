@@ -110,7 +110,9 @@ describe('explainLabScroll', () => {
     list.style.overflow = 'auto';
     child(document, list, 'row', { rect: { bottom: 1500 } });
     child(document, shell, 'footer', { rect: { bottom: 606 } });
-    expect(explainLabScroll(lab, shell)).toBe('.lk-shell-body scrolls: div.footer reaches 6px past it (y)');
+    expect(explainLabScroll(lab, shell)).toBe(
+      '.lk-shell-body scrolls: div.footer reaches 6px past it (y)',
+    );
     lab.remove();
   });
 
@@ -123,7 +125,29 @@ describe('explainLabScroll', () => {
       scroll: { height: 606, width: 800 },
     });
     child(document, shell, 'footer', { rect: { bottom: 608 } });
-    expect(explainLabScroll(lab, shell)).toBe('.lk-shell-body scrolls: div.footer reaches 6px past it (y)');
+    expect(explainLabScroll(lab, shell)).toBe(
+      '.lk-shell-body scrolls: div.footer reaches 6px past it (y)',
+    );
     lab.remove();
+  });
+
+  it('reads the page scroll of the lab’s own document', () => {
+    const other = document.implementation.createHTMLDocument('popout');
+    const lab = other.createElement('div');
+    lab.className = 'lk-lab';
+    other.body.appendChild(lab);
+    place(lab, { rect: { bottom: 900 } });
+    const shell = child(other, lab, 'lk-shell-body', {
+      rect: { bottom: 900 },
+      client: { height: 900, width: 800 },
+      scroll: { height: 900, width: 800 },
+    });
+    place(other.scrollingElement ?? other.documentElement, {
+      client: { height: 600, width: 800 },
+      scroll: { height: 900, width: 800 },
+    });
+    expect(explainLabScroll(lab, shell)).toBe(
+      "the page scrolls: div.lk-lab reaches 300px past the lab's box (y)",
+    );
   });
 });
