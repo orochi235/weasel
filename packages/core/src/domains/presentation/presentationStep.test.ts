@@ -82,57 +82,40 @@ describe('stepPresentation', () => {
 });
 
 describe('createCanvasCamera', () => {
-  it('drives a canvas handle, reading its glide target while it animates', () => {
+  it("drives a canvas handle, stepping on from the canvas's glide target while it animates", () => {
     let view = fitted(0);
-    let animating = false;
+    let target: View | null = null;
     const canvas = {
       getView: () => view,
       getSurfaceRect: () => DIMS,
       setView: vi.fn((v: View) => { view = v; }),
-      animateView: vi.fn(() => { animating = true; }),
-      isViewAnimating: () => animating,
+      animateView: vi.fn((to: View) => { target = to; }),
+      viewAnimationTarget: () => target,
     };
     const cam = createCanvasCamera(canvas);
     expect(stepPresentation(cam, PAGES, { by: 1 })?.id).toBe('b');
-    expect(canvas.animateView).toHaveBeenCalledWith(fitted(1), expect.objectContaining({ onDone: expect.any(Function) }));
+    expect(canvas.animateView).toHaveBeenCalledWith(fitted(1), {});
     // The view has not moved yet; the second press steps on from where the first is heading.
     expect(stepPresentation(cam, PAGES, { by: 1 })?.id).toBe('c');
-    animating = false;
+    target = null;
     expect(stepPresentation(cam, PAGES, { to: 0 }, { animate: false })?.id).toBe('a');
     expect(canvas.setView).toHaveBeenCalledWith(fitted(0));
   });
 
-  it('forgets its heading once its glide ends, so a later glide it did not start is not read as its own', () => {
-    let animating = false;
-    let done: (() => void) | undefined;
+  it('steps on from a glide it did not start, even one that cut its own short', () => {
+    let target: View | null = null;
     const canvas = {
       getView: () => fitted(0),
       getSurfaceRect: () => DIMS,
       setView: vi.fn(),
-      animateView: vi.fn((_to: View, opts?: { onDone?: () => void }) => { animating = true; done = opts?.onDone; }),
-      isViewAnimating: () => animating,
+      // A glide started over another cancels it without calling its onDone.
+      animateView: vi.fn((to: View) => { target = to; }),
+      viewAnimationTarget: () => target,
     };
     const cam = createCanvasCamera(canvas);
     stepPresentation(cam, PAGES, { to: 2 });
-    animating = false;
-    done?.();
-    // Someone else's glide, from a view still showing page a.
-    animating = true;
-    expect(cam.target?.()).toBeNull();
+    canvas.animateView(fitted(0));
+    expect(cam.target?.()).toEqual(fitted(0));
     expect(stepPresentation(cam, PAGES, { by: 1 })?.id).toBe('b');
-  });
-
-  it("reads the canvas's own glide target where the handle has one", () => {
-    const canvas = {
-      getView: () => fitted(0),
-      getSurfaceRect: () => DIMS,
-      setView: vi.fn(),
-      animateView: vi.fn(),
-      isViewAnimating: () => true,
-      viewAnimationTarget: () => fitted(1),
-    };
-    const cam = createCanvasCamera(canvas);
-    stepPresentation(cam, PAGES, { to: 2 });
-    expect(stepPresentation(cam, PAGES, { by: 1 })?.id).toBe('c');
   });
 });

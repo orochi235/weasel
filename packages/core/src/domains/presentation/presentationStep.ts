@@ -108,38 +108,20 @@ export interface PresentationCanvas {
   getSurfaceRect(): { width: number; height: number };
   setView(next: View): void;
   animateView(to: View, opts?: ViewAnimationOptions): void;
-  isViewAnimating(): boolean;
-  /** Where the canvas's glide in flight is heading, whoever started it; `null` when none is. Without it the
-   *  camera knows only the glides it started itself. */
-  viewAnimationTarget?(): View | null;
+  /** Where the canvas's glide in flight is heading, whoever started it; `null` when none is. */
+  viewAnimationTarget(): View | null;
 }
 
 /** A `<SceneCanvas>` handle as a {@link PresentationCamera}, for a host stepping pages from outside the canvas:
  *  a presentation runtime seeking to a step. */
 export function createCanvasCamera(canvas: PresentationCanvas): PresentationCamera {
-  let heading: View | null = null;
   return {
     get: () => canvas.getView(),
     dims: () => measured(canvas.getSurfaceRect()),
     show: (to, animate) => {
-      heading = null;
-      if (animate === null) {
-        canvas.setView(to);
-        return;
-      }
-      const glide = to;
-      heading = glide;
-      canvas.animateView(to, {
-        ...animate,
-        onDone: () => {
-          if (heading === glide) heading = null;
-          animate.onDone?.();
-        },
-      });
+      if (animate === null) canvas.setView(to);
+      else canvas.animateView(to, animate);
     },
-    target: () => {
-      if (canvas.viewAnimationTarget) return canvas.viewAnimationTarget();
-      return heading !== null && canvas.isViewAnimating() ? heading : null;
-    },
+    target: () => canvas.viewAnimationTarget(),
   };
 }
