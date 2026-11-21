@@ -38,6 +38,13 @@ describe('useRunRow', () => {
     expect(getByTestId('row')).not.toHaveAttribute('data-scrolls');
   });
 
+  test('a row that fits still draws the band its text is mapped through, with no path to take a press', () => {
+    const { getByTestId } = render(<Chips count={3} />);
+    const band = getByTestId('row').querySelector(':scope > svg');
+    expect(band).not.toBeNull();
+    expect(band!.querySelector('path')).toBeNull();
+  });
+
   test('a row too long for its run scrolls it on the wheel, and marks the end it runs past', () => {
     vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
     const { getByTestId } = render(<Chips count={5} />);
