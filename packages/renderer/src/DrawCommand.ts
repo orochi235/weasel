@@ -34,9 +34,9 @@ export interface PathDrawCommand {
    *
    * **`fill` must also be set when using `vertexColors`.** The renderer
    * only enters the per-vertex shader path when the command has a fill
-   * (the fill provides the opacity uniform). Pass any solid `fill` (e.g.
-   * `{ paint: { color: '#fff' } }`) as the placeholder; the per-vertex colors
-   * win in the shader.
+   * (the fill provides the opacity uniform). A solid fill's color multiplies
+   * the per-vertex colors, so `{ paint: { color: '#fff' } }` leaves them as
+   * given; a gradient or pattern fill gives only its opacity.
    */
   vertexColors?: number[];
 }

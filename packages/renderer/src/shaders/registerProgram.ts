@@ -26,6 +26,8 @@ export interface ShaderProgramHandle {
  * | Float32Array length 9   | uniformMatrix3fv (column-major)      |
  * | Float64Array            | as the Float32Array of its values    |
  * | Float32Array length 16  | uniformMatrix4fv (column-major)      |
+ * | Int32Array length 1–4   | uniform1iv … uniform4iv              |
+ * | Uint32Array length 1–4  | uniform1uiv … uniform4uiv            |
  * | TextureHandle           | bind to next tex unit + uniform1i    |
  *
  * **Array uniforms.** Keyed by an array's bare name (`u_ripples` for

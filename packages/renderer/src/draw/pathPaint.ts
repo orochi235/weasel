@@ -12,7 +12,7 @@ import { cachedMarkerHeads } from '../cache/markerCommandCache';
 import { withCornersResolved } from './cornersResolved';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
-import { fillMesh, meshHandle, fillMeshHandle, flattenToleranceOf } from './mesh';
+import { fillMesh, meshHandle, flattenToleranceOf } from './mesh';
 import { alignedRibbon } from './alignedRibbon';
 import { drawClippedTrim } from './clippedTrim';
 import {
@@ -43,9 +43,7 @@ function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand, fill: CommandPaint
   // Batchable: see `batchPaint`. A rect skips tessellation entirely; anything
   // else stages its mesh. Both also keep animated demos that mint a fresh Path
   // every frame from allocating a GL buffer per frame.
-  const isSolid = fill.kind === undefined || fill.kind === 'solid';
   const hasVColors = !!(cmd.vertexColors && cmd.vertexColors.length > 0);
-  const solid = fill as { color: string; opacity?: number };
   const paint = batchPaint(ctx, fill, hasVColors);
   if (paint === null) return;
 
@@ -57,15 +55,16 @@ function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand, fill: CommandPaint
   }
 
   const mesh = fillMesh(ctx, cmd.path);
-  const staged = isSolid && hasVColors
-    ? tryStageVertexColors(ctx, mesh, cmd.vertexColors!, solid)
+  const base = hasVColors ? vertexColorBase(fill) : undefined;
+  const staged = base
+    ? tryStageVertexColors(ctx, mesh, cmd.vertexColors!, base)
     : tryStageFill(ctx, mesh, paint);
   if (staged) return;
 
   const handle = meshHandle(ctx, mesh);
   atMeshOrigin(ctx, mesh.origin, () => {
-    if (isSolid && hasVColors) {
-      drawPathFillVColor(ctx, cmd, solid, handle);
+    if (base) {
+      drawPathFillVColor(ctx, cmd, base, handle);
     } else if (handle.requiresStencil) {
       drawPathFillStencil(ctx, fill, handle);
     } else {
@@ -130,8 +129,7 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
     drawRibbon(ctx, cmd, cut);
   } else if (sided) {
     flushForOwnDraw(ctx);
-    atMeshOrigin(ctx, cmd.path.kind === 'polygon' ? cmd.path.origin : undefined,
-      () => drawPathStrokeStenciled(ctx, cmd, sided, spaces));
+    drawPathStrokeStenciled(ctx, cmd, sided, spaces);
   } else {
     drawPathStrokeUnclipped(ctx, cmd, spaces);
   }
@@ -240,12 +238,12 @@ function drawPathStrokeStenciled(
   spaces: StrokeSpaces,
 ): void {
   const stroke = cmd.stroke;
-  const paint = stroke.paint;
   const widerStroke = doubledStroke(stroke);
 
   const useVColor = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
 
-  const fillHandle = fillMeshHandle(ctx, cmd.path);
+  const fill = fillMesh(ctx, cmd.path);
+  const fillHandle = meshHandle(ctx, fill);
   const ribbonMesh = strokeMesh(cmd.path, widerStroke, flattenToleranceOf(ctx), spaces);
   if (ribbonMesh.indices.length === 0) return;
   // The VAO records the per-draw color attribute, so a vertex-colored draw
@@ -255,11 +253,26 @@ function drawPathStrokeStenciled(
     : ctx.meshCache.uploadRecurring(ribbonMesh);
 
   const prog = useVColor ? ctx.pathFillVColor : ctx.pathFill;
-  setProjAndModel(ctx, prog);
-  // An even-odd fill is one fan per contour, and only parity cuts its holes.
-  drawTriangles(ctx, prog, fillHandle.geometry, fillHandle.indexCount, {
-    stencil: fillHandle.requiresStencil ? ALIGNED_FILL_PARITY : ALIGNED_FILL, colorWrite: false,
+  // A rect's fill mesh carries an origin its ribbon does not.
+  atMeshOrigin(ctx, fill.origin, () => {
+    setProjAndModel(ctx, prog);
+    // An even-odd fill is one fan per contour, and only parity cuts its holes.
+    drawTriangles(ctx, prog, fillHandle.geometry, fillHandle.indexCount, {
+      stencil: fillHandle.requiresStencil ? ALIGNED_FILL_PARITY : ALIGNED_FILL, colorWrite: false,
+    });
   });
+  atMeshOrigin(ctx, ribbonMesh.origin, () => drawStenciledRibbon(ctx, stroke, align, prog, ribbonHandle));
+  // Bit 0 only: the clips own bits 1-7.
+  endParityMask(ctx);
+}
+
+function drawStenciledRibbon(
+  ctx: DrawContext, stroke: StrokedPathCommand['stroke'], align: 'inner' | 'outer',
+  prog: ShaderProgram, ribbonHandle: GLMeshHandle,
+): void {
+  const paint = stroke.paint;
+  const useVColor = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
+  setProjAndModel(ctx, prog);
 
   const stencil = alignedRibbonStencil(ctx.clipDepth, align === 'inner');
   // Bind the paint here rather than through `drawPathFillByKind`, which draws
@@ -277,6 +290,4 @@ function drawPathStrokeStenciled(
     drawTriangles(ctx, ribbonProg, colored ? colored.geometry : ribbonHandle.geometry, ribbonHandle.indexCount, { stencil });
     if (colored) releaseVertexColors(ctx, colored);
   }
-  // Bit 0 only: the clips own bits 1-7.
-  endParityMask(ctx);
 }

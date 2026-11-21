@@ -3456,3 +3456,8 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): the canvas font tier draws a weight outside 1 to 1000 at the nearer end, and a weight
   that is not a number at 400 with a one-time warning, rather than throwing. A canvas ignores a `font` string with such
   a weight and measured the face in whatever font it last held.
+## Audit round sixty-three (2026-11-21): renderer.draw
+
+- 2026-11-21 (the fixer's call): a path's `vertexColors` beside a gradient or pattern `fill` draw the vertex colors at
+  the paint's opacity, as `stroke.vertexColors` beside a non-solid stroke paint already did; the fill used to draw the
+  paint and drop the colors. Having the stroke draw its paint and drop its colors was the alternative.

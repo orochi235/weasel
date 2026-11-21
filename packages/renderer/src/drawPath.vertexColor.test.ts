@@ -172,4 +172,16 @@ describe('vertex colors on a path with corner shapes', () => {
     expect(colors.filter((c) => c.every((v, i) => v === GREEN[i]))).toHaveLength(2);
     for (const c of colors) expect(c.some(Number.isNaN)).toBe(false);
   });
+
+  it('draws vertex colors over a gradient fill, as a stroke does', () => {
+    const colors = stagedColors({
+      kind: 'path',
+      path: { kind: 'polygon', commands: new Uint8Array([M, L, L, Z]), coords: new Float32Array([0, 0, 100, 0, 100, 100]), fillRule: 'nonzero' },
+      fill: { paint: { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 100, y: 0 }, stops: [
+        { offset: 0, color: '#000000' }, { offset: 1, color: '#000000' },
+      ] } },
+      vertexColors: [...RED, ...GREEN, ...BLUE],
+    } as unknown as DrawCommand);
+    expect(colors).toEqual([RED, GREEN, BLUE]);
+  });
 });

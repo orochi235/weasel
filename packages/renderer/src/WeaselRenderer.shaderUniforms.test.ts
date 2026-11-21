@@ -164,6 +164,33 @@ void main() { gl_Position = vec4(a_position + u_offsets[0], 0.0, 1.0); }
   });
 });
 
+describe('integer uniforms that are not arrays', () => {
+  it('writes an Int32Array or Uint32Array as the integer vector its length names', () => {
+    const h = registerProgram('int-scalars', { glsl: { frag: frag(`
+      uniform int u_n;
+      uniform ivec2 u_cell;
+      uniform uvec4 u_mask;
+    `) } });
+    r.registerProgram(h);
+    mark();
+    r.render([shader(h, {
+      u_n: new Int32Array([7]),
+      u_cell: new Int32Array([3, 4]),
+      u_mask: new Uint32Array([1, 2, 3, 4]),
+    })]);
+    const at = (fn: string, name: string) => uploads(rec, fn).find((c) => c.args[0] === locationOf(rec, name));
+    expect(Array.from(at('uniform1iv', 'u_n')!.args[1] as Int32Array)).toEqual([7]);
+    expect(Array.from(at('uniform2iv', 'u_cell')!.args[1] as Int32Array)).toEqual([3, 4]);
+    expect(Array.from(at('uniform4uiv', 'u_mask')!.args[1] as Uint32Array)).toEqual([1, 2, 3, 4]);
+  });
+
+  it('rejects an integer array no vector has the length of', () => {
+    const h = registerProgram('int-scalar-bad', { glsl: { frag: frag('uniform ivec2 u_cell;') } });
+    r.registerProgram(h);
+    expect(() => r.render([shader(h, { u_cell: new Int32Array(5) })])).toThrow(/integer array length 5/);
+  });
+});
+
 describe('re-registered program source', () => {
   const FRAG_A = frag('uniform float u_a;', 'outColor = vec4(u_a);');
   const FRAG_B = frag('uniform float u_b;', 'outColor = vec4(u_b);');

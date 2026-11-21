@@ -130,6 +130,13 @@ export class TextLayers {
     layer.spans = [];
   }
 
+  /** `layer` drawn text by text, with nothing it uploaded so far kept. */
+  private fallBack(layer: Layer): Layer {
+    this.free(layer);
+    layer.fallback = true;
+    return layer;
+  }
+
   private build(ctx: DrawContext, texts: readonly TextDrawCommand[], generation: string): Layer {
     const first = texts[0];
     const layer: Layer = {
@@ -144,15 +151,15 @@ export class TextLayers {
       atlases = [];
     };
     for (const text of texts) {
-      if (text.runs.some((r) => r.stroke !== undefined)) return withFallback(layer);
+      if (text.runs.some((r) => r.stroke !== undefined)) return this.fallBack(layer);
       const { laid, dx, dy } = laidOutText(text);
       const { groups, decorations } = cachedPaintRuns(laid, text.runs, NO_OUTLINES, 'read');
-      if (decorations.length > 0) return withFallback(layer);
+      if (decorations.length > 0) return this.fallBack(layer);
       for (const group of groups) {
-        if (group.source === 'outline' || group.source === 'color') return withFallback(layer);
+        if (group.source === 'outline' || group.source === 'color') return this.fallBack(layer);
         const fill = group.fill?.paint;
         if (fill === undefined) continue;
-        if (glyphPaintKindOf(fill) !== null) return withFallback(layer);
+        if (glyphPaintKindOf(fill) !== null) return this.fallBack(layer);
         if (hasFontOutlines(group.family, group.weight, group.style)) {
           for (const r of text.runs) layer.outlineSize = Math.max(layer.outlineSize, r.fontSize);
         }
@@ -205,11 +212,6 @@ export class TextLayers {
     });
     return { buffer, geometry, count: out.count, atlases };
   }
-}
-
-function withFallback(layer: Layer): Layer {
-  layer.fallback = true;
-  return layer;
 }
 
 function textureReady(ctx: DrawContext, group: AtlasUse['group']): boolean {
