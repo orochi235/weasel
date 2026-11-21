@@ -93,6 +93,12 @@ test run shares its `dist`. It took 3.4–5.0 min wall on 2026-10-21.
 postbuild alongside, with one exit status and a closing `test-batch:`
 line naming which failed. Either failing stops the other, onto jobs included.
 
+**A rerun starts with what failed last time, and stops if it fails again (2026-11-20).** `test:fleet` keeps each
+branch's failed test files in the repository's common git directory (`scripts/lib/fleet-first.mjs`) and lists them in
+the next run's tree marker. There the sequencer (`scripts/vitest-first-sequencer.mjs`) runs them first, and the
+`fleet-fail` reporter cancels the run the moment one fails again, printing one `fleet-abort:` line; the other half's job
+is stopped with it. A passing run clears the branch's list.
+
 **onto places every part, and picks its tree.** The browser project runs as its own job (suite scope `browser`)
 beside a job running the rest (scope `full-rest` or `branch-rest`), and the postbuild as a third; no part is pinned to a
 node or names a tree (2026-11-20). A job with no `--in` runs in one of onto's pooled trees, `weasel-wt1` to `weasel-wt6`
