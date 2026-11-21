@@ -225,6 +225,12 @@ describe('run grammar delimiters', () => {
       expect(() => markdownToRuns('a', g)).toThrow(/delimiter/);
     }
   });
+
+  it('refuses a backslash delimiter, which the reader takes for an escape', () => {
+    const g: RunGrammar = { markers: [{ delimiter: '\\', repeat: 1, flags: ['bold'] }] };
+    expect(() => runsToMarkdown([{ text: '\\x', bold: true }], g)).toThrow(/backslash/);
+    expect(() => markdownToRuns('\\x\\', g)).toThrow(/backslash/);
+  });
 });
 
 describe('markdownToRuns with a marker nothing closes', () => {

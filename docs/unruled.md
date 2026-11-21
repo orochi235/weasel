@@ -3406,3 +3406,6 @@ Calls the lanes made without a ruling:
   read again, until none is. `runsToMarkdown` now closes every flag it opens, fitting the spelling where the plain
   closing markers would misread, rather than leaving them off. Reading an unclosed marker as styling to the end, as
   the reader did, was the alternative; CommonMark's flanking rules were another, and need a design of their own.
+- 2026-11-21 (the fixer's call): a run grammar whose delimiter is a backslash throws in `runsToMarkdown` and
+  `markdownToRuns`, since the reader takes a backslash for an escape and loses the marker. Reading a backslash run as
+  a marker before trying it as an escape was the alternative, which leaves no way to write a literal backslash.
