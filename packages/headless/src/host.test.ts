@@ -114,6 +114,19 @@ describe('node raster host', () => {
     await host.dispose();
   });
 
+  it("sends renderSceneToPixels's camera, layers and pixelRatio to the page", async () => {
+    const { browser, page } = fakeBrowser({ width: 1, height: 1, base64: Buffer.from([1, 2, 3, 4]).toString('base64') });
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    const args: NodeRenderArgs = {
+      scene: fixtureScene(), ...FIXTURE_RENDER, camera: { x: 1, y: 2, scale: { x: 3, y: 3 } }, layers: ['scene'], pixelRatio: 2,
+    };
+    await host.render(args);
+    expect(page.evaluate.mock.calls.at(-1)).toMatchObject([
+      expect.any(Function), [expect.any(String), { camera: args.camera, layers: ['scene'], pixelRatio: 2 }],
+    ]);
+    await host.dispose();
+  });
+
   it('refuses a render the host was disposed under while its page opened', async () => {
     const { browser, page } = fakeBrowser({ width: 1, height: 1, base64: '' });
     const host = createNodeRasterHost({ browser, pageScript: 'x' });

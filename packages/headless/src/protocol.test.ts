@@ -27,6 +27,18 @@ describe('readPageRequest', () => {
     expect(() => readPageRequest(req(11_600, 'png'))).not.toThrow();
   });
 
+  it("takes renderSceneToPixels's camera, layers and pixelRatio, and refuses one JSON cannot carry before a browser starts", () => {
+    const camera = { x: 10, y: -4, scale: { x: 2, y: -2 } };
+    expect(() => readPageRequest({ ...req(10, 'rgba'), camera, layers: ['scene:main'], pixelRatio: 2 })).not.toThrow();
+    expect(() => readPageRequest({ ...req(10, 'rgba'), pixelRatio: Number.NaN })).toThrow(/pixelRatio must be a positive finite number/);
+    expect(() => readPageRequest({ ...req(10, 'rgba'), pixelRatio: 0 })).toThrow(/pixelRatio/);
+    expect(() => readPageRequest({ ...req(10, 'rgba'), layers: 'scene' })).toThrow(/layers must be an array of layer names/);
+    expect(() => readPageRequest({ ...req(10, 'rgba'), layers: [1] })).toThrow(/layers/);
+    expect(() => readPageRequest({ ...req(10, 'rgba'), camera: null })).toThrow(/camera must be a view/);
+    expect(() => readPageRequest({ ...req(10, 'rgba'), camera: { ...camera, x: null } })).toThrow(/camera\.x must be a finite number/);
+    expect(() => readPageRequest({ ...req(10, 'rgba'), camera: { ...camera, scale: { x: 0, y: 1 } } })).toThrow(/camera\.scale\.x/);
+  });
+
   it('holds a result to what its base64 and the protocol message around it can be as one string', () => {
     expect(Math.ceil(MAX_RESULT_BYTES / 3) * 4 + 64 * 1024).toBeLessThanOrEqual(2 ** 29 - 24);
     expect(() => checkResultBytes(MAX_RESULT_BYTES, 'a PNG')).not.toThrow();

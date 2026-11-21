@@ -2,7 +2,7 @@
 // than from core, whose types reach React and the DOM, neither of which a Node caller has.
 import { decodeSnapshot, encodeSnapshot } from '@weasel-js/core/json';
 import { checkPixelRenderRect, pixelRenderSize } from '@weasel-js/core/math';
-import type { Rect } from '@weasel-js/geom';
+import type { Rect, View } from '@weasel-js/geom';
 
 /** The page script's global, set once the script has run. */
 export const PAGE_GLOBAL = '__weaselHeadless';
@@ -22,6 +22,12 @@ export interface SerializableRenderArgs {
   overlay?: readonly object[];
   /** Draw the scene's annotation layers. Default `false`. */
   annotations?: boolean;
+  /** The camera a parallax layer is placed from, for a capture of what that camera shows. */
+  camera?: View;
+  /** Which scene layers to draw: `'scene:<layerId>'` for one, `'scene'` for all of them. */
+  layers?: readonly string[];
+  /** Output pixels per CSS pixel. Default 1. */
+  pixelRatio?: number;
 }
 
 export interface PageRequest extends SerializableRenderArgs {
@@ -105,6 +111,24 @@ export function readPageRequest(value: unknown): PageRequest {
   if (value.annotations !== undefined && typeof value.annotations !== 'boolean') refuse('annotations', 'a boolean', value.annotations);
   if (value.overlay !== undefined && !(Array.isArray(value.overlay) && value.overlay.every(isRecord))) {
     refuse('overlay', 'an array of draw commands', value.overlay);
+  }
+  if (value.camera !== undefined) {
+    const { camera } = value;
+    if (!isRecord(camera) || !isRecord(camera.scale)) refuse('camera', 'a view', camera);
+    const view = camera as Record<string, unknown> & { scale: Record<string, unknown> };
+    finite('camera.x', view.x);
+    finite('camera.y', view.y);
+    for (const axis of ['x', 'y'] as const) {
+      const v = view.scale[axis];
+      if (typeof v !== 'number' || !Number.isFinite(v) || v === 0) refuse(`camera.scale.${axis}`, 'a finite number other than 0', v);
+    }
+  }
+  if (value.layers !== undefined && !(Array.isArray(value.layers) && value.layers.every((l) => typeof l === 'string'))) {
+    refuse('layers', 'an array of layer names', value.layers);
+  }
+  if (value.pixelRatio !== undefined) {
+    const { pixelRatio } = value;
+    if (typeof pixelRatio !== 'number' || !Number.isFinite(pixelRatio) || pixelRatio <= 0) refuse('pixelRatio', 'a positive finite number', pixelRatio);
   }
   if (value.screen !== undefined) {
     const { screen } = value;
