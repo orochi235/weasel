@@ -102,7 +102,7 @@ describe('path edit on the path a text-along effect hides', () => {
   it('opens the text on a click on a glyph, caret at its end', async () => {
     const t = await setup();
     t.click(10, 30);
-    expect(t.startEdit).toHaveBeenCalledWith('t', { caret: 2 });
+    expect(t.startEdit).toHaveBeenCalledWith('t', { caret: 'end' });
   });
 
   it('opens nothing on a click between the glyphs', async () => {
