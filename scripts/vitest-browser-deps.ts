@@ -81,13 +81,41 @@ export interface BrowserDepsOptions {
 }
 
 /**
- * Every bare specifier reachable from the entries and setup files, sorted. A workspace package is
- * followed into its source and never listed; vitest's own modules are left to vitest. Throws on an
+ * How `optimizeDeps.include` names `specifier` imported from `file`: bare where it resolves to the root's install,
+ * and as `<package> > <specifier>` where the workspace package holding `file` has a copy of its own. vite looks a
+ * bare import up in its bundled deps by name before by path, so a bare entry would bundle the root's copy and serve
+ * it to that package too: `@weasel-js/font`'s `opentype.js` 2, under the root's 1.x that `msdf-bmfont-xml` brings.
+ */
+function includeEntry(
+  repoRoot: string, packageAt: ReadonlyMap<string, string>, file: string, specifier: string, memo: Map<string, string>,
+): string {
+  const pkg = packageOf(specifier);
+  const key = `${dirname(file)}\0${pkg}`;
+  let owner = memo.get(key);
+  if (owner === undefined) {
+    owner = '';
+    for (let dir = dirname(file); dir !== repoRoot && dir.startsWith(repoRoot); dir = dirname(dir)) {
+      if (existsSync(join(dir, 'node_modules', pkg))) {
+        owner = packageAt.get(dir) ?? '';
+        break;
+      }
+    }
+    memo.set(key, owner);
+  }
+  return owner === '' ? specifier : `${owner} > ${specifier}`;
+}
+
+/**
+ * Every bare specifier reachable from the entries and setup files, sorted, each named as {@link includeEntry} names
+ * it. A workspace package is followed into its source and never listed; vitest's own modules are left to vitest. Throws on an
  * `import()` or `import.meta.glob` it cannot read, which could reach a dependency it would not list.
  */
 export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: BrowserDepsOptions): string[] {
   const aliases = weaselAliases(repoRoot);
-  const workspace = new Set(workspaceEntries(repoRoot).map(({ name }) => name));
+  const packages = workspaceEntries(repoRoot);
+  const workspace = new Set(packages.map(({ name }) => name));
+  const packageAt = new Map(packages.map(({ dir, name }) => [dir, name]));
+  const owners = new Map<string, string>();
   const ownedElsewhere = (pkg: string) =>
     workspace.has(pkg) || BUILTINS.has(pkg) || pkg === 'vitest' || pkg.startsWith('@vitest/');
 
@@ -129,7 +157,7 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(includeEntry(repoRoot, packageAt, file, specifier, owners));
     }
   }
   return [...found].sort();
