@@ -1,32 +1,23 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
-import { afterEach, expect, it, vi } from 'vitest';
-import type { PrefGroup, PrefListControl } from '@weasel-js/prefs';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
-import { renderWithIcons } from '../../testing/withIcons';
+import { prefListTexts } from './ListLeaf';
 
 afterEach(cleanup);
 
-const schema = (control?: PrefListControl): PrefGroup => ({
-  name: 'Root',
-  children: {
-    tags: {
-      kind: 'list', name: 'Tags', description: '', default: [], ...(control ? { control } : {}),
-      item: { kind: 'string', name: 'Tag', description: '', default: '' },
-    },
-  },
-});
+const tags = { kind: 'list', name: 'Tags', description: '', default: [], item: { kind: 'string', name: 'Tag', description: '', default: 'untitled' } } as const;
+const SCHEMA: PrefGroup = { name: '', children: { tags } };
 
-it('draws a text list as a field per entry unless it asks for tokens', () => {
-  renderWithIcons(<PrefsForm schema={schema()} values={{ tags: ['a'] }} onChange={() => {}} />);
-  expect(screen.getByRole('textbox', { name: 'Tag 1' })).toBeInTheDocument();
-});
+describe('a text list', () => {
+  it('starts a new entry as the item default', () => {
+    const onChange = vi.fn();
+    render(<PrefsForm schema={SCHEMA} values={{ tags: ['a'] }} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(onChange).toHaveBeenLastCalledWith('tags', ['a', 'untitled']);
+  });
 
-it('draws a text list with control tokens as chips, adding what is typed', () => {
-  const onChange = vi.fn();
-  renderWithIcons(<PrefsForm schema={schema('tokens')} values={{ tags: ['a'] }} onChange={onChange} />);
-  expect(screen.getByRole('button', { name: 'a' })).toBeInTheDocument();
-  const add = screen.getByRole('textbox', { name: 'Add to Tag' });
-  fireEvent.change(add, { target: { value: 'b' } });
-  fireEvent.keyDown(add, { key: 'Enter' });
-  expect(onChange).toHaveBeenLastCalledWith('tags', ['a', 'b']);
+  it('reads an entry holding nothing as the item default', () => {
+    expect(prefListTexts(['a', undefined, null, 3], tags)).toEqual(['a', 'untitled', 'untitled', 'untitled']);
+  });
 });
