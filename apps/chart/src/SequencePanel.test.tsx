@@ -102,6 +102,24 @@ describe('SequencePanel', () => {
     expect(screen.getByRole('button', { name: 'Remove section' }).hasAttribute('disabled')).toBe(true);
   });
 
+  it('adds and removes sections on every selected fragment that takes them', () => {
+    const scene = createScene<ChartData, ChartLayer, ChartPose>({
+      systemLayers: CHART_LAYERS, registry: CHART_REGISTRY,
+      initial: sequenceSpecs({ ...DATA, steps: [
+        { kind: 'fragment', id: 'f0', type: 'opt', sections: [{ steps: [] }] },
+        ...DATA.steps,
+        { kind: 'fragment', id: 'f2', type: 'alt', sections: [{ steps: [] }] },
+      ] }, { id: 'seq', layer: 'shapes' }) as never,
+    });
+    panel(scene, ['seq/frag:f0', 'seq/frag:f1', 'seq/frag:f2']);
+    expect(screen.getByRole('button', { name: 'Remove section' }).hasAttribute('disabled')).toBe(true);
+    press('Add section');
+    const sections = () => ['f0', 'f1', 'f2'].map((id) => (findStep(dataOf(scene).steps, id) as { sections: unknown[] }).sections.length);
+    expect(sections()).toEqual([1, 2, 2]);
+    press('Remove section');
+    expect(sections()).toEqual([1, 1, 1]);
+  });
+
   it('boxes selected participants and removes the box, and retypes a selected head', () => {
     const scene = sceneOf();
     panel(scene, ['seq/head:a', 'seq/head:b']);
