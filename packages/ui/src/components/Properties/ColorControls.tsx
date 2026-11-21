@@ -7,6 +7,7 @@ import type { PropertyColorFieldProps, PropertyPaintFieldProps } from './fieldTy
 import s from './Properties.module.css';
 import { useFieldControl } from '../Field/fieldSemantics';
 import { useNameText } from './nameOf';
+import { useHoldReason } from '../Disabled/HoldReason';
 
 /** A hex color as the `#rrggbb` it paints and the 0..1 alpha beside it.
  *  Anything unreadable is opaque black, which is what a swatch would show for
@@ -74,6 +75,7 @@ export function ColorControl(p: PropertyColorFieldProps) {
 
 export function PaintControl(p: PropertyPaintFieldProps) {
   const text = useNameText(p.name);
+  const why = useHoldReason(p.disabled ? p.disabledReason : undefined);
   if (p.control !== 'inline') {
     return p.disabled
       ? <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} inherit={p.inherit} disabled disabledReason={p.disabledReason} onChange={p.onChange} aria-label={text} />
@@ -83,12 +85,13 @@ export function PaintControl(p: PropertyPaintFieldProps) {
   // The inline editor is a stack of controls, and a kind's editor may be a consumer's: drawn inert, it keeps
   // the height it has enabled, so the rows under it do not move when a condition flips. Enabled or not, the tree
   // is the same, so a flip does not remount the editor and lose its state.
-  return (
+  return why.wrap(
     <div
       className={disabled ? (p.className ? `${s.paintDisabled} ${p.className}` : s.paintDisabled) : s.paintEnabled}
       role={disabled ? 'group' : undefined}
       aria-label={disabled ? text : undefined}
       aria-disabled={disabled || undefined}
+      aria-describedby={why.describedBy}
     >
       {/* Set on the node: React 18 does not know the attribute. */}
       <div ref={(el) => { el?.toggleAttribute('inert', disabled); }} className={s.paintDisabledBody}>
@@ -106,6 +109,6 @@ export function PaintControl(p: PropertyPaintFieldProps) {
           aria-label={text}
         />
       </div>
-    </div>
+    </div>,
   );
 }

@@ -17,4 +17,11 @@ describe('an inline paint control', () => {
     rerender(at(false));
     expect(screen.getByRole('radiogroup')).toBe(editor);
   });
+
+  it('describes a disabled inline control by its reason', () => {
+    renderWithIcons(
+      <PropertyControl kind="paint" control="inline" name="Fill" value={paint} disabled disabledReason="Locked by the theme" onChange={() => {}} />,
+    );
+    expect(screen.getByRole('group', { name: 'Fill' })).toHaveAccessibleDescription('Locked by the theme');
+  });
 });
