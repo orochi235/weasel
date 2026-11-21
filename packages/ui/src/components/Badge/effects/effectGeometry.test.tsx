@@ -84,3 +84,20 @@ describe('a bevel', () => {
     });
   }
 });
+
+const line = (s: number): PerimeterPoint => ({ x: s, y: 0, nx: 0, ny: -1 });
+
+describe('an irregular bump', () => {
+  for (const [name, effect, params] of [
+    ['bites', Bites, { biteRadius: 4, biteSpacing: 8.5, irregularity: 1 }],
+    ['scallops', Scallops, { scallopRadius: 4, scallopSpacing: 8.5, irregularity: 1 }],
+  ] as const) {
+    it(`${name} meets its neighbor at the outline between them`, () => {
+      const totalCss = 200;
+      const at = (s: number) => (effect as EffectModule<object>).offsetAt!(s, { params, phase: 0, totalCss, perimeterAt: line }).dy;
+      let worst = 0;
+      for (let s = 0; s < totalCss; s += 0.01) worst = Math.max(worst, Math.abs(at(s + 0.01) - at(s)));
+      expect(worst).toBeLessThan(0.1);
+    });
+  }
+});

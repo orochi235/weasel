@@ -30,3 +30,12 @@ export function nearestBump(s: number, totalCss: number, count: number, phase: n
 export function bumpWobble(index: number): number {
   return Math.sin(index * 1.73 + 0.7);
 }
+
+/**
+ * The radius of bump `index`, `radius` widened or narrowed by up to 55% at full `irregularity`,
+ * and never past half of `step` so it ends before its neighbor's begins.
+ */
+export function bumpRadius(radius: number, irregularity: number, index: number, step: number): number {
+  const irr = Math.max(0, Math.min(irregularity, 1));
+  return Math.min(radius * (1 + irr * 0.55 * bumpWobble(index)), step / 2);
+}
