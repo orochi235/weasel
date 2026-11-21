@@ -5,12 +5,14 @@ import s from './handleOverlay.module.css';
 import { useTints } from '@weasel-js/theme/react';
 import { handleHalf } from '../../handles';
 import { useEditDraft } from '../../useEditDraft';
+import { ownHold } from '../Disabled/controlHold';
+import type { HoldProps } from '../Disabled';
 
 /**
  * Props for {@link GradientHandles}. `onInput`, `onChange` and `onCancel` are the kit's edit protocol
  * (`docs/conventions.md`, "Edit callbacks"): a drag or an arrow-key step is one edit, and Escape cancels a drag.
  */
-export interface GradientHandlesProps {
+export interface GradientHandlesProps extends HoldProps {
   /**
    * The gradient whose geometry these handles move, in a **resolved,
    * isotropic** frame — one where `radius` is a length in the same units as
@@ -57,7 +59,7 @@ export function GradientHandles(props: GradientHandlesProps): ReactElement {
   const handleRadius = handleHalf('--wzl-handle-size-lg', useTints().resolved);
 
   return (
-    <HandleOverlay width={width} height={height} className={className} onCancel={onCancel}>
+    <HandleOverlay width={width} height={height} className={className} onCancel={onCancel} hold={ownHold(props)}>
       {renderForKind(value, toScreen, toLocal, onInput, onChange, handleRadius)}
     </HandleOverlay>
   );

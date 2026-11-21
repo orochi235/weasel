@@ -5,6 +5,8 @@ import { asPaint } from '@weasel-js/paint-kinds';
 import { useTints } from '@weasel-js/theme/react';
 import { handleHalf } from '../../handles';
 import { useEditDraft } from '../../useEditDraft';
+import { ownHold } from '../Disabled/controlHold';
+import type { HoldProps } from '../Disabled';
 import {
   DragPoint,
   Edge,
@@ -17,7 +19,7 @@ import '@weasel-js/paint-kinds/mesh';
 
 /** Props for {@link MeshHandles}. `onInput`, `onChange` and `onCancel` are the kit's edit protocol
  *  (`docs/conventions.md`, "Edit callbacks"): a drag or an arrow-key step is one edit, and Escape cancels a drag. */
-export interface MeshHandlesProps {
+export interface MeshHandlesProps extends HoldProps {
   /** The mesh whose points these handles move, in the space `toScreen`
    *  maps from. A `units: 'bounds'` mesh is resolved first with
    *  `paintToLocalUnits(fill, box)`, and edits converted back with
@@ -72,7 +74,7 @@ export function MeshHandles(props: MeshHandlesProps): ReactElement {
   ];
 
   return (
-    <HandleOverlay width={width} height={height} className={className} onCancel={onCancel}>
+    <HandleOverlay width={width} height={height} className={className} onCancel={onCancel} hold={ownHold(props)}>
       {edges.map((edge, i) => (
         // Guides have no identity beyond their place in the walk.
         <Edge key={`e${i}`} points={[toScreen(edge[0]), toScreen(edge[1]), toScreen(edge[2]), toScreen(edge[3])]} />

@@ -2,6 +2,8 @@ import { createContext, useContext, useRef, type KeyboardEvent as ReactKeyboardE
 import { useHandleDrag } from '@weasel-js/routing/react';
 import { arrowMove } from '@weasel-js/quantity';
 import { ARROW_KEYSHORTCUTS } from '../../handles';
+import { useControlHold, type ControlHold } from '../Disabled/controlHold';
+import type { HoldProps } from '../Disabled';
 import s from './handleOverlay.module.css';
 
 /** The pieces every paint-geometry overlay draws with — `GradientHandles`
@@ -19,25 +21,32 @@ export type EditPhase = 'input' | 'commit';
 
 /** What an overlay's points call when a drag on one of them is canceled. */
 const CancelContext = createContext<(() => void) | undefined>(undefined);
+/** The overlay's hold, which every point it draws answers to. */
+const HoldContext = createContext<ControlHold | null>(null);
 
 /** The SVG overlay itself: covers its container, passes pointer input
- *  through everywhere but the handles. */
+ *  through everywhere but the handles. Held disabled or read-only, by `hold` or a scope, its points move nothing. */
 export function HandleOverlay(props: {
   width: number;
   height: number;
   className?: string;
   /** A drag on one of the overlay's points was canceled, after its preview was put back. */
   onCancel?: () => void;
+  hold?: HoldProps;
   children: ReactNode;
 }): ReactElement {
-  return (
+  const hold = useControlHold(props.hold ?? {});
+  return hold.wrap(
     <svg
       className={[s.overlay, props.className].filter(Boolean).join(' ')}
       width={props.width}
       height={props.height}
+      data-held={hold.held}
     >
-      <CancelContext.Provider value={props.onCancel}>{props.children}</CancelContext.Provider>
-    </svg>
+      <HoldContext.Provider value={hold}>
+        <CancelContext.Provider value={props.onCancel}>{props.children}</CancelContext.Provider>
+      </HoldContext.Provider>
+    </svg>,
   );
 }
 
@@ -62,7 +71,7 @@ export function DragPoint({
   label,
   radius,
   variant = 'handle',
-  onDrag,
+  onDrag: onPointDrag,
 }: {
   at: OverlayPoint;
   label: string;
@@ -72,6 +81,8 @@ export function DragPoint({
   onDrag: (p: OverlayPoint, phase: EditPhase) => void;
 }): ReactElement {
   const onCancel = useContext(CancelContext);
+  const hold = useContext(HoldContext);
+  const onDrag = hold ? hold.gate(onPointDrag) : onPointDrag;
   const start = useRef<OverlayPoint>(at);
   // Where on the handle the press landed, so the point keeps that offset from the pointer.
   const grab = useRef<OverlayPoint>({ x: 0, y: 0 });
@@ -110,7 +121,8 @@ export function DragPoint({
       role="button"
       aria-label={label}
       aria-keyshortcuts={ARROW_KEYSHORTCUTS}
-      tabIndex={0}
+      tabIndex={hold ? hold.tabIndex(0) : 0}
+      {...hold?.focus}
       onKeyDown={onKeyDown}
       {...drag}
     />
