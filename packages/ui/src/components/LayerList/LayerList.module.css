@@ -68,13 +68,13 @@
   font-size: var(--wzl-font-size-xs);
 }
 
-/* The lock column, at the row's end. */
-/* The width a row's remove button takes, kept by a row that has none. */
+/* The width a row's remove button takes, kept by a row that has none: a small icon-only Button's height. */
 .removeSlot {
   flex: 0 0 auto;
-  width: var(--wzl-control-h-sm);
+  width: var(--wzl-button-h, var(--wzl-control-h-sm));
 }
 
+/* The lock column, at the row's end. */
 .lockToggle {
   display: inline-flex;
   align-items: center;

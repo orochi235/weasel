@@ -40,3 +40,17 @@ test('a row with no remove button keeps its toggles in the column of a row that 
   expect(left('Show Beta')).toBe(left('Show Alpha'));
   expect(left('Show Gamma')).toBe(left('Show Alpha'));
 });
+
+test('a row with no remove button keeps the remove column a themed button height takes', () => {
+  renderWithIcons(
+    <div style={{ width: 240, ['--wzl-button-h' as string]: '40px' }}>
+      <LayerList
+        items={[{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta', removable: false }]}
+        onRemove={() => {}}
+        onVisibilityChange={() => {}}
+      />
+    </div>,
+  );
+  const left = (name: string) => screen.getByRole('checkbox', { name }).getBoundingClientRect().left;
+  expect(left('Show Beta')).toBe(left('Show Alpha'));
+});
