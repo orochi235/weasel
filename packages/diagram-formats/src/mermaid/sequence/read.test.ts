@@ -140,3 +140,13 @@ describe('readMermaidSequence', () => {
     expect(() => readMermaidSequence('sequenceDiagram\naccDescr {\nA->>B: hi')).toThrow('Mermaid, line 2: an accDescr block is never closed');
   });
 });
+
+describe('naming a Mermaid sequence page', () => {
+  it('skips an empty title statement for the front matter title, and warns of a front matter title or other key it drops', () => {
+    expect(readMermaidSequence('---\ntitle: Checkout\n---\nsequenceDiagram\n  title\n  A->>B: hi').document.pages[0]!.name).toBe('Checkout');
+    expect(readMermaidSequence('---\ntitle: Checkout\n---\nsequenceDiagram\n  title Pay\n  A->>B: hi').warnings)
+      .toEqual(['The front matter title was dropped; the title statement names the chart.']);
+    expect(readMermaidSequence('---\ntitle: Checkout\nfoo: 1\n---\nsequenceDiagram\n  A->>B: hi').warnings)
+      .toEqual(['Mermaid front matter other than the title was dropped.']);
+  });
+});

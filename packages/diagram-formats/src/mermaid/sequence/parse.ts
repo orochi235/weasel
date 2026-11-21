@@ -104,7 +104,7 @@ function body(text: string, dropped: string[]): { lines: string[]; first: number
   if (close < 0) throw lineError('Mermaid', 1, 'the front matter is never closed with ---');
   const front = lines.slice(1, close);
   const raw = front.map((l) => /^title:\s*(.*)$/s.exec(l)?.[1]).find((t) => t !== undefined);
-  if (front.some((l) => /^(config|displayMode):/.test(l))) dropped.push('Mermaid configuration in the front matter was dropped.');
+  if (front.some((l) => l.trim() !== '' && !/^title:/.test(l))) dropped.push('Mermaid front matter other than the title was dropped.');
   const title = raw === undefined ? undefined : frontTitle(raw);
   return { lines: lines.slice(close + 1), first: close + 2, ...(title !== undefined ? { title } : {}) };
 }
