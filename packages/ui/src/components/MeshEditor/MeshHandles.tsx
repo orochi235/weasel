@@ -4,12 +4,12 @@ import { meshGuides, meshHandles, moveMeshHandle, type MeshGradientPaint, type M
 import { asPaint } from '@weasel-js/paint-kinds';
 import { useTints } from '@weasel-js/theme/react';
 import { handleHalf } from '../../handles';
-import { useEditDraft } from '../../useEditDraft';
 import {
   DragPoint,
   Edge,
   Guide,
   HandleOverlay,
+  useOverlayEdit,
   type EditPhase,
   type OverlayPoint as Point,
 } from '../GradientEditor/handleOverlay';
@@ -49,7 +49,7 @@ export interface MeshHandlesProps {
  */
 export function MeshHandles(props: MeshHandlesProps): ReactElement {
   const { toScreen, toLocal, width, height, className } = props;
-  const { shown: value, onInput, onChange, onCancel } = useEditDraft<MeshGradientPaint>(props.value, {
+  const { shown: value, emit: emitMesh, session } = useOverlayEdit<MeshGradientPaint>(props.value, {
     onInput: props.onInput && ((next) => props.onInput!(asPaint(next))),
     onChange: (next) => props.onChange(asPaint(next)),
     onCancel: props.onCancel,
@@ -59,9 +59,7 @@ export function MeshHandles(props: MeshHandlesProps): ReactElement {
   const { resolved } = useTints();
 
   const emit = (handle: MeshHandle, p: Point, phase: EditPhase): void => {
-    const next = moveMeshHandle(value, handle, toLocal(p));
-    if (phase === 'input') onInput(next);
-    else onChange(next);
+    emitMesh(moveMeshHandle(value, handle, toLocal(p)), phase);
   };
 
   // Corners last, so where a control collapses onto its corner the corner
@@ -72,7 +70,7 @@ export function MeshHandles(props: MeshHandlesProps): ReactElement {
   ];
 
   return (
-    <HandleOverlay width={width} height={height} className={className} onCancel={onCancel}>
+    <HandleOverlay width={width} height={height} className={className} session={session}>
       {edges.map((edge, i) => (
         // Guides have no identity beyond their place in the walk.
         <Edge key={`e${i}`} points={[toScreen(edge[0]), toScreen(edge[1]), toScreen(edge[2]), toScreen(edge[3])]} />

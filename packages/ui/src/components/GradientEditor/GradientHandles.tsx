@@ -1,10 +1,9 @@
 import { type ReactElement, type ReactNode } from 'react';
 import { gradientGeometry, type GradientPaint } from '@weasel-js/paint';
-import { DragPoint, Guide, HandleOverlay, type EditPhase, type OverlayPoint as Point } from './handleOverlay';
+import { DragPoint, Guide, HandleOverlay, useOverlayEdit, type EditPhase, type OverlayPoint as Point } from './handleOverlay';
 import s from './handleOverlay.module.css';
 import { useTints } from '@weasel-js/theme/react';
 import { handleHalf } from '../../handles';
-import { useEditDraft } from '../../useEditDraft';
 
 /**
  * Props for {@link GradientHandles}. `onInput`, `onChange` and `onCancel` are the kit's edit protocol
@@ -53,12 +52,12 @@ export interface GradientHandlesProps {
  */
 export function GradientHandles(props: GradientHandlesProps): ReactElement {
   const { toScreen, toLocal, width, height, className } = props;
-  const { shown: value, onInput, onChange, onCancel } = useEditDraft(props.value, props);
+  const { shown: value, emit, session } = useOverlayEdit(props.value, props);
   const handleRadius = handleHalf('--wzl-handle-size-lg', useTints().resolved);
 
   return (
-    <HandleOverlay width={width} height={height} className={className} onCancel={onCancel}>
-      {renderForKind(value, toScreen, toLocal, onInput, onChange, handleRadius)}
+    <HandleOverlay width={width} height={height} className={className} session={session}>
+      {renderForKind(value, toScreen, toLocal, emit, handleRadius)}
     </HandleOverlay>
   );
 }
@@ -67,15 +66,9 @@ function renderForKind(
   value: GradientPaint,
   toScreen: (p: Point) => Point,
   toLocal: (p: Point) => Point,
-  onInput: ((next: GradientPaint) => void) | undefined,
-  onChange: (next: GradientPaint) => void,
+  emit: (next: GradientPaint, phase: EditPhase) => void,
   handleRadius: number,
 ): ReactNode {
-  const emit = (next: GradientPaint, phase: EditPhase): void => {
-    if (phase === 'input') onInput?.(next);
-    else onChange(next);
-  };
-
   if (value.kind === 'linear-gradient') {
     const from = toScreen(value.from);
     const to = toScreen(value.to);
@@ -100,13 +93,10 @@ function renderForKind(
 
   if (value.kind === 'radial-gradient') {
     const center = toScreen(value.center);
-    // The radius handle rides the +x axis of gradient space, so it stays on
-    // the drawn circle under a rotated or anisotropic transform.
     const edge = toScreen({ x: value.center.x + value.radius, y: value.center.y });
-    const screenRadius = Math.hypot(edge.x - center.x, edge.y - center.y);
     return (
       <>
-        <circle className={s.guide} cx={center.x} cy={center.y} r={screenRadius} />
+        <circle className={s.guide} cx={center.x} cy={center.y} r={distance(center, edge)} />
         <DragPoint
           radius={handleRadius}
           at={center}
@@ -118,9 +108,7 @@ function renderForKind(
           at={edge}
           label="Gradient radius"
           onDrag={(p, phase) => {
-            const local = toLocal(p);
-            const radius = Math.hypot(local.x - value.center.x, local.y - value.center.y);
-            emit({ ...value, radius: Math.max(MIN_RADIUS, radius) }, phase);
+            emit({ ...value, radius: Math.max(MIN_RADIUS, distance(toLocal(p), value.center)) }, phase);
           }}
         />
       </>
@@ -158,3 +146,8 @@ function renderForKind(
 
 /** A radius of zero divides by zero in the shader's `t`; keep it off the floor. */
 const MIN_RADIUS = 1;
+
+function distance(a: Point, b: Point): number {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+

@@ -1,6 +1,8 @@
 import { createContext, useContext, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
 import { useHandleDrag } from '@weasel-js/routing/react';
 import { arrowMove } from '@weasel-js/quantity';
+import { useLatest } from '@weasel-js/react';
+import { useEditDraft, type EditCallbacks } from '../../useEditDraft';
 import { ARROW_KEYSHORTCUTS } from '../../handles';
 import s from './handleOverlay.module.css';
 
@@ -17,8 +19,46 @@ export interface OverlayPoint {
  *  write that ends it. */
 export type EditPhase = 'input' | 'commit';
 
-/** What an overlay's points call when a drag on one of them is canceled. */
-const CancelContext = createContext<(() => void) | undefined>(undefined);
+/** What an overlay's points report about an edit's bounds: one starting, and one canceled. */
+export interface EditSession {
+  begin: () => void;
+  /** `sent` says whether the edit sent anything to `onInput`, which then hears the value it began from. */
+  cancel: (sent: boolean) => void;
+}
+
+const SessionContext = createContext<EditSession>({ begin: () => {}, cancel: () => {} });
+
+/**
+ * The edit protocol an overlay runs over its whole value: the draft a commit-only caller sees, and a canceled
+ * drag sent back to the value it began from rather than one rebuilt from the handle's pixels.
+ */
+export function useOverlayEdit<V>(value: V, cb: EditCallbacks<V>): {
+  shown: V;
+  emit: (next: V, phase: EditPhase) => void;
+  session: EditSession;
+} {
+  const { shown, onInput, onChange, onCancel } = useEditDraft(value, cb);
+  const valueRef = useLatest(value);
+  const from = useRef<{ value: V } | null>(null);
+  const emit = (next: V, phase: EditPhase): void => {
+    if (phase === 'input') {
+      onInput(next);
+      return;
+    }
+    from.current = null;
+    onChange(next);
+  };
+  const session: EditSession = {
+    begin: () => { from.current = { value: valueRef.current }; },
+    cancel: (sent) => {
+      const start = from.current;
+      from.current = null;
+      if (sent && start) onInput(start.value);
+      onCancel();
+    },
+  };
+  return { shown, emit, session };
+}
 
 /** The SVG overlay itself: covers its container, passes pointer input
  *  through everywhere but the handles. */
@@ -26,8 +66,8 @@ export function HandleOverlay(props: {
   width: number;
   height: number;
   className?: string;
-  /** A drag on one of the overlay's points was canceled, after its preview was put back. */
-  onCancel?: () => void;
+  /** From {@link useOverlayEdit}: where the overlay's points report a drag starting and one canceled. */
+  session: EditSession;
   children: ReactNode;
 }): ReactElement {
   return (
@@ -36,7 +76,7 @@ export function HandleOverlay(props: {
       width={props.width}
       height={props.height}
     >
-      <CancelContext.Provider value={props.onCancel}>{props.children}</CancelContext.Provider>
+      <SessionContext.Provider value={props.session}>{props.children}</SessionContext.Provider>
     </svg>
   );
 }
@@ -54,8 +94,8 @@ export function Edge({ points }: { points: readonly [OverlayPoint, OverlayPoint,
 /**
  * One draggable point. `onDrag` receives overlay pixels: where the point
  * goes, which trails the pointer by wherever on the handle it was grabbed. A
- * press that never moved writes nothing, and a canceled gesture (Escape, a lost pointer) puts the preview back,
- * then tells the overlay's `onCancel`.
+ * press that never moved writes nothing, and a canceled gesture (Escape, a lost pointer) is reported to the
+ * overlay's session.
  */
 export function DragPoint({
   at,
@@ -71,24 +111,25 @@ export function DragPoint({
   variant?: 'handle' | 'control';
   onDrag: (p: OverlayPoint, phase: EditPhase) => void;
 }): ReactElement {
-  const onCancel = useContext(CancelContext);
-  const start = useRef<OverlayPoint>(at);
+  const session = useContext(SessionContext);
+  const sent = useRef(false);
   // Where on the handle the press landed, so the point keeps that offset from the pointer.
   const grab = useRef<OverlayPoint>({ x: 0, y: 0 });
   const held = (p: OverlayPoint): OverlayPoint => ({ x: p.x - grab.current.x, y: p.y - grab.current.y });
   const drag = useHandleDrag<SVGCircleElement>({
     onStart: (p) => {
-      start.current = at;
+      session.begin();
+      sent.current = false;
       grab.current = { x: p.x - at.x, y: p.y - at.y };
     },
-    onMove: (p) => { onDrag(held(p), 'input'); },
+    onMove: (p) => {
+      sent.current = true;
+      onDrag(held(p), 'input');
+    },
     onEnd: ({ point, moved }) => {
       if (moved) onDrag(held(point), 'commit');
     },
-    onCancel: () => {
-      onDrag(start.current, 'input');
-      onCancel?.();
-    },
+    onCancel: () => { session.cancel(sent.current); },
     escape: true,
   });
   const onKeyDown = (e: ReactKeyboardEvent<SVGCircleElement>): void => {
@@ -96,6 +137,7 @@ export function DragPoint({
     if (move === null) return;
     e.preventDefault();
     const next = { x: at.x + move.dx * KEY_STEP, y: at.y + move.dy * KEY_STEP };
+    session.begin();
     onDrag(next, 'input');
     onDrag(next, 'commit');
   };

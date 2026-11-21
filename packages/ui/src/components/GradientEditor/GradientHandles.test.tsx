@@ -227,3 +227,32 @@ describe('GradientHandles', () => {
     expect(screen.getByLabelText('Gradient end')).toHaveAttribute('cx', '210');
   });
 });
+
+describe('GradientHandles edits', () => {
+  const conic: GradientPaint = { kind: 'conic-gradient', center: { x: 50, y: 50 }, angle: (3 * Math.PI) / 2, stops: STOPS };
+  const radial: GradientPaint = { kind: 'radial-gradient', center: { x: 50, y: 50 }, radius: 25, stops: STOPS };
+
+  function press(label: string): HTMLElement {
+    const handle = screen.getByLabelText(label);
+    fireEvent.pointerDown(handle, { clientX: Number(handle.getAttribute('cx')), clientY: Number(handle.getAttribute('cy')), pointerId: 1 });
+    return handle;
+  }
+
+  it('sends a canceled drag back to the exact value it began from', () => {
+    const onInput = vi.fn();
+    render(<GradientHandles value={conic} toScreen={toScreen} toLocal={toLocal} onInput={onInput} onChange={() => {}} width={400} height={300} />);
+    const handle = press('Gradient angle');
+    fireEvent.pointerMove(handle, { clientX: 300, clientY: 20, pointerId: 1 });
+    fireEvent.keyDown(handle, { key: 'Escape' });
+    expect(onInput.mock.calls.at(-1)![0]).toEqual(conic);
+  });
+
+  it('sends nothing to onInput for a press canceled before it moved', () => {
+    const onInput = vi.fn();
+    const onCancel = vi.fn();
+    render(<GradientHandles value={conic} toScreen={toScreen} toLocal={toLocal} onInput={onInput} onChange={() => {}} onCancel={onCancel} width={400} height={300} />);
+    fireEvent.keyDown(press('Gradient angle'), { key: 'Escape' });
+    expect(onInput).not.toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+});
