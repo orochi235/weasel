@@ -7,8 +7,8 @@ import {
 // Every expected value below was computed by the two bases as they stood at ebeb8f6ea (2026-11-13), before they
 // shared their anchor reading and outline sweep, by running that commit's compileSpline/evalCompiled,
 // compileNurbs/evalNurbsAtS and build() in a throwaway script; octant-spline's weighted values since, when its
-// weights stopped tilting its flat ends (2026-11-15); octant-bspline's at s = 0 and 1 since it stopped reading
-// them off the phantom control points (2026-11-20).
+// weights stopped tilting its flat ends (2026-11-15); octant-bspline's since it moved to a uniform knot vector, which
+// its mirrored phantoms make flat at both ends (2026-11-20).
 
 const SETS: Record<string, BadgeSplineAnchor[]> = {
   bent: [{ s: 0, r: 48, w: 1 }, { s: 0.5, r: 20, w: 1 }, { s: 1, r: 40, w: 1 }],
@@ -21,15 +21,15 @@ const AT = [0, 0.1, 0.33, 0.5, 0.77, 1];
 const BEFORE: Record<string, { spline: number[]; bspline: number[] }> = {
   bent: {
     spline: [48, 45.28, 28.398, 20, 30.511856, 40],
-    bspline: [36.6525417933802, 36.28812933761279, 31.318361301649567, 28.000061040744114, 30.17270585960903, 31.895377257768665],
+    bspline: [38.66666666666667, 37.685333333326646, 31.453130666668752, 28.00000000001456, 30.528927999974858, 33.333333333333336],
   },
   defaults: {
     spline: [48, 42.99085714285714, 27.93088, 32, 38.73305142857143, 46],
-    bspline: [40.7046844767504, 39.25322112934018, 31.70991582588241, 32.66657511498006, 38.89770671343216, 42.757283280355374],
+    bspline: [42.00000000000001, 39.717333333373034, 31.709952000005106, 32.66666666668849, 38.89819733330698, 43.33333333333333],
   },
   weighted: {
     spline: [40, 48.86548913043478, 78.00125679347826, 53.38994565217391, 30.991171875, 35],
-    bspline: [52.14766753730513, 52.42408901642843, 51.58636579043697, 47.302536617509524, 40.56050893457738, 34.956167813210335],
+    bspline: [51.36363636363636, 51.94477397533249, 51.586461024641345, 47.30211151232448, 40.56067428329481, 34.966777408637874],
   },
 };
 
@@ -41,8 +41,8 @@ const OUTLINES = {
     [43.14466970303012, 43.14466970303012], [95.63025114724059, 43.992663470925635],
   ],
   bspline: [
-    [72.83999884365414, 50], [72.3384478376906, 67.14089389542025], [32.85910610457975, 72.3384478376906],
-    [29.154485603319905, 29.154485603319912], [75.14676325338078, 46.68936581145347],
+    [72.83999046642992, 50], [72.33734731583485, 67.14004943529946], [32.85995056470053, 72.33734731583485],
+    [29.157670252423028, 29.157670252423035], [75.14662288633562, 46.68938429112554],
   ],
 };
 
@@ -73,7 +73,7 @@ describe('the spline outlines', () => {
     });
   });
 
-  it('sweep octant-bspline in octant mode as before', () => {
+  it('sweep octant-bspline in octant mode', () => {
     const verts = outline('octant', octantBSplineRadius, OCTANT_BSPLINE_MIN_WEIGHT);
     PICKED.forEach((at, i) => {
       expect(verts[at]![0]).toBeCloseTo(OUTLINES.bspline[i]![0]!, 10);
@@ -100,6 +100,61 @@ describe('the octant-bspline curve', () => {
       const radius = octantBSplineRadius(anchors);
       expect(radius(0)).toBeCloseTo(radius(1e-6), 3);
       expect(radius(1)).toBeCloseTo(radius(1 - 1e-6), 3);
+    }
+  });
+});
+
+describe('a spline base anchor count', () => {
+  it('reads NaN as its least', () => {
+    const least = extractAnchorPairs({ count: 3 });
+    expect(extractAnchorPairs({ count: NaN })).toEqual(least);
+    expect(extractAnchorPairs({ count: NaN }, OCTANT_BSPLINE_MIN_WEIGHT)).toEqual(extractAnchorPairs({ count: 3 }, OCTANT_BSPLINE_MIN_WEIGHT));
+  });
+});
+
+describe('octant-spline anchors that share an s', () => {
+  it('draw the curve through one of them, staying within the anchors radii', () => {
+    for (const count of [6, 7, 12]) {
+      const radius = octantSplineRadius(extractAnchorPairs({ count }));
+      for (let i = 0; i <= 200; i++) {
+        const r = radius(i / 200);
+        expect(r).toBeGreaterThan(20);
+        expect(r).toBeLessThan(60);
+      }
+      expect(radius(1 - 1e-9)).toBeCloseTo(radius(1), 3);
+    }
+  });
+
+  it('keep the last anchor at s = 1, so quadrant mode still closes', () => {
+    const radius = octantSplineRadius(extractAnchorPairs({ count: 7, mode: 'quadrant' }));
+    expect(radius(1)).toBe(radius(0));
+    expect(radius(1 - 1e-9)).toBeCloseTo(radius(0), 3);
+  });
+
+  it('keep the end anchor at s = 0', () => {
+    const radius = octantSplineRadius([{ s: 0, r: 40, w: 1 }, { s: 0, r: 20, w: 1 }, { s: 0.5, r: 30, w: 1 }, { s: 1, r: 35, w: 1 }]);
+    expect(radius(0)).toBe(40);
+    expect(radius(1e-9)).toBeCloseTo(40, 3);
+  });
+});
+
+describe('the octant-bspline curve, swept round the badge', () => {
+  it('mirrors itself at both ends in octant mode, so it has no corner at a cardinal or a diagonal', () => {
+    for (const anchors of Object.values(SETS)) {
+      const radius = octantBSplineRadius(anchors);
+      for (const e of [1e-3, 1e-2]) {
+        expect(radius(-e)).toBeCloseTo(radius(e), 6);
+        expect(radius(1 + e)).toBeCloseTo(radius(1 - e), 6);
+      }
+    }
+  });
+
+  it('meets itself at each cardinal in quadrant mode, with one radius and one slope', () => {
+    for (const params of [{}, PARAMS, { r1: 20, r2: 44, r3: 26, w1: 2 }]) {
+      const radius = octantBSplineRadius(extractAnchorPairs({ ...params, mode: 'quadrant' }, OCTANT_BSPLINE_MIN_WEIGHT), 'quadrant');
+      const e = 1e-5;
+      expect(radius(1)).toBeCloseTo(radius(0), 6);
+      expect((radius(1) - radius(1 - e)) / e).toBeCloseTo((radius(e) - radius(0)) / e, 1);
     }
   });
 });

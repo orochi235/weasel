@@ -107,7 +107,7 @@ export function withInsertedAnchor(params: SplineParams, s: number, r: number): 
   return next;
 }
 
-/** r(s) as the named base draws it through `anchors`. */
-export function splineEvaluator(base: BadgeBase, anchors: SplineAnchor[]): (s: number) => number {
-  return base === 'octant-bspline' ? octantBSplineRadius(anchors) : octantSplineRadius(anchors);
+/** r(s) as the named base draws it through `anchors` in `mode`. */
+export function splineEvaluator(base: BadgeBase, anchors: SplineAnchor[], mode: SplineMode = 'octant'): (s: number) => number {
+  return base === 'octant-bspline' ? octantBSplineRadius(anchors, mode) : octantSplineRadius(anchors);
 }

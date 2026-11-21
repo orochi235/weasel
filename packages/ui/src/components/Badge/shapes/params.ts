@@ -14,6 +14,11 @@ export function clampParam(n: number, lo: number, hi: number, fallback: number):
   return Math.max(lo, Math.min(Number.isNaN(n) ? fallback : n, hi));
 }
 
+/** `n`, where a value that is not finite reads as `fallback`: for a param with no bounds to hold it to. */
+export function finiteOr(n: number, fallback: number): number {
+  return Number.isFinite(n) ? n : fallback;
+}
+
 /** The most repeats (points, teeth) a shape draws, so a huge or infinite count cannot hang a render. */
 export const MAX_REPEATS = 256;
 

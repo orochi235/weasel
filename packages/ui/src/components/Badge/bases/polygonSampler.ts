@@ -1,6 +1,9 @@
 import type { BaseSampler, PerimeterPoint } from './types';
 import { lerp, wrapPositive } from '@weasel-js/geom';
 
+/** The most vertices a base samples its outline with, so a huge or infinite `samples` cannot hang a render. */
+export const MAX_SAMPLES = 1024;
+
 /** Build a BaseSampler from a clockwise polygon's vertex list (viewBox 0..100). */
 export function polygonSampler(verts: [number, number][], boxW: number, boxH: number): BaseSampler {
   const sx = 100 / boxW;

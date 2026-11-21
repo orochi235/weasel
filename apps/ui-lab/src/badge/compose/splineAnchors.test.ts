@@ -120,6 +120,12 @@ describe('splineEvaluator', () => {
     }
   });
 
+  it('draws the approximating spline in the mode the badge draws it', () => {
+    const params = { mode: 'quadrant', r1: 20, r2: 44, r3: 26 };
+    const r = splineEvaluator('octant-bspline', readAnchors(params), 'quadrant');
+    expect(r(1)).toBeCloseTo(r(0), 6);
+  });
+
   it('passes the interpolating spline through every anchor', () => {
     const r = splineEvaluator('octant-spline', bent);
     expect(r(0)).toBe(48);

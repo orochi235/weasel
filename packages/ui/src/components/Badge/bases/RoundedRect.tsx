@@ -1,4 +1,5 @@
 import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
+import { clampParam, withDefaults } from '../shapes/params';
 import { lerp, trimNumber, wrapPositive } from '@weasel-js/geom';
 
 /** What `baseParams` takes on a badge whose `base` is `rounded-rect`. */
@@ -55,7 +56,7 @@ interface Corners {
 function cornersFor(erosion: number, eccentricity: number, boxW: number, boxH: number): Corners {
   const sx = 100 / boxW;
   const sy = 100 / boxH;
-  const ecc = Math.max(0.1, Math.min(eccentricity, 10));
+  const ecc = clampParam(eccentricity, 0.1, 10, DEFAULTS.eccentricity);
   // Max corner radius in CSS = half of the shorter axis (so erosion=1 gives a full pill/ellipse).
   const cornerCss = erosion * (Math.min(boxW, boxH) / 2);
   const rx = Math.max(0, Math.min(cornerCss * sx * ecc, 50));
@@ -79,7 +80,10 @@ function roundedRectPath({ rx, ry }: Corners): string {
   ].join(' ');
 }
 
-type Outline = Pick<BaseSampler, 'perimeterAt' | 'totalCss'>;
+type Outline = Pick<BaseSampler, 'perimeterAt' | 'totalCss'> & {
+  /** The CSS lengths at which each edge and corner starts, so a polyline through them keeps every corner. */
+  breaks: number[];
+};
 
 /** The rounded rect's perimeter, walked by CSS length clockwise from the top edge's left end. */
 function roundedRectOutline({ rx, ry, sx, sy }: Corners): Outline {
@@ -144,59 +148,78 @@ function roundedRectOutline({ rx, ry, sx, sy }: Corners): Outline {
     }
     return { x: 0, y: 0, nx: 0, ny: -1 };
   };
-  return { perimeterAt, totalCss };
+  return { perimeterAt, totalCss, breaks: cum.slice(0, -1) };
 }
 
 /**
  * `outline` squeezed toward the centerline by `pinch` (0..1), more the farther a point sits from
- * x=50 and fully at the ends when 1: its path sampled densely, its normals from the warped tangent.
+ * x=50 and fully at the ends when 1: its path sampled densely, walked by the squeezed outline's
+ * own CSS length, with normals from the warped tangent.
  */
-function pinchedSampler({ perimeterAt, totalCss }: Outline, pinch: number, { sx, sy }: Corners): BaseSampler {
+function pinchedSampler({ perimeterAt, totalCss, breaks }: Outline, pinch: number, { sx, sy }: Corners): BaseSampler {
   const pinchY = (x: number, y: number): number => {
     const d = Math.abs(x - 50) / 50;
     return lerp(50, y, 1 - d * pinch);
   };
+  const warped = (s: number): { x: number; y: number } => {
+    const pt = perimeterAt(s);
+    return { x: pt.x, y: pinchY(pt.x, pt.y) };
+  };
   const N = 240;
-  const samplePts: { x: number; y: number }[] = [];
-  for (let i = 0; i < N; i++) {
-    const sCss = (i / N) * totalCss;
-    const pt = perimeterAt(sCss);
-    samplePts.push({ x: pt.x, y: pinchY(pt.x, pt.y) });
-  }
+  const at = [...new Set([...Array.from({ length: N }, (_, i) => (i / N) * totalCss), ...breaks])].sort((a, b) => a - b);
+  const samplePts = at.map(warped);
   const bodyPath = samplePts.reduce((acc, p, i) =>
     acc + (i === 0 ? `M ${trimNumber(p.x, 3)} ${trimNumber(p.y, 3)}` : ` L ${trimNumber(p.x, 3)} ${trimNumber(p.y, 3)}`),
     '') + ' Z';
 
-  const pinchedAt = (s: number): PerimeterPoint => {
-    const sm = wrapPositive(s, totalCss);
+  // Squeezed CSS length at each sample, closing back to the first at `totalCss`.
+  at.push(totalCss);
+  samplePts.push(samplePts[0]);
+  const cum = [0];
+  for (let i = 1; i < samplePts.length; i++) {
+    const a = samplePts[i - 1], b = samplePts[i];
+    cum.push(cum[i - 1] + Math.hypot((b.x - a.x) / sx, (b.y - a.y) / sy));
+  }
+  const pinchedTotal = cum[cum.length - 1];
+  /** The unsqueezed length that `len` along the squeezed outline reaches. */
+  const sourceAt = (len: number): number => {
+    let lo = 0, hi = cum.length - 1;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >>> 1;
+      if (cum[mid] <= len) lo = mid; else hi = mid;
+    }
+    const span = cum[hi] - cum[lo];
+    return lerp(at[lo], at[hi], span > 0 ? (len - cum[lo]) / span : 0);
+  };
+
+  const pinchedAt = (len: number): PerimeterPoint => {
+    const sm = sourceAt(wrapPositive(len, pinchedTotal));
     const pt = perimeterAt(sm);
     const x = pt.x;
     const y = pinchY(pt.x, pt.y);
     const eps = totalCss / 480;
-    const a = perimeterAt(sm - eps);
-    const b = perimeterAt(sm + eps);
-    const ax = a.x, ay = pinchY(a.x, a.y);
-    const bx = b.x, by = pinchY(b.x, b.y);
-    const tx = (bx - ax) / sx;
-    const ty = (by - ay) / sy;
+    const a = warped(sm - eps);
+    const b = warped(sm + eps);
+    const tx = (b.x - a.x) / sx;
+    const ty = (b.y - a.y) / sy;
     const tl = Math.hypot(tx, ty);
     // A full pinch collapses each end edge to a point, where the warped tangent vanishes.
     if (tl < 1e-9) return { x, y, nx: pt.nx, ny: pt.ny };
     return { x, y, nx: ty / tl, ny: -tx / tl };
   };
-  return { bodyPath, perimeterAt: pinchedAt, totalCss };
+  return { bodyPath, perimeterAt: pinchedAt, totalCss: pinchedTotal };
 }
 
 const RoundedRect: BaseModule<BadgeRoundedRectBaseParams> = {
   build: (params, boxW, boxH) => {
-    const cfg: BadgeRoundedRectBaseParams & typeof DEFAULTS = { ...DEFAULTS, ...params };
+    const cfg = withDefaults<BadgeRoundedRectBaseParams & typeof DEFAULTS>(DEFAULTS, params);
     const half = Math.min(boxW, boxH) / 2;
     const byRadius = cfg.radius !== undefined && !Number.isNaN(cfg.radius) && half > 0;
-    const erosion = Math.max(0, Math.min(byRadius ? cfg.radius! / half : cfg.erosion, 1));
+    const erosion = clampParam(byRadius ? cfg.radius! / half : cfg.erosion, 0, 1, DEFAULTS.erosion);
     const corners = cornersFor(erosion, cfg.eccentricity, boxW, boxH);
     const outline = roundedRectOutline(corners);
     // Erosion supersedes pinch: a fully rounded end already tapers to the centerline, so a full pill ignores it.
-    const pinch = Math.max(0, Math.min(cfg.pinch, 1)) * (1 - erosion);
+    const pinch = clampParam(cfg.pinch, 0, 1, DEFAULTS.pinch) * (1 - erosion);
     if (pinch !== 0) return pinchedSampler(outline, pinch, corners);
     const sampler: BaseSampler = { bodyPath: roundedRectPath(corners), ...outline };
     return sampler;

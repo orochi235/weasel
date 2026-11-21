@@ -1,7 +1,7 @@
 import type { BaseModule } from './types';
-import { polygonSampler } from './polygonSampler';
+import { MAX_SAMPLES, polygonSampler } from './polygonSampler';
 import { DEG_TO_RAD, lerp } from '@weasel-js/geom';
-import { repeatCount } from '../shapes/params';
+import { clampParam, finiteOr, repeatCount, withDefaults } from '../shapes/params';
 
 /**
  * 8-fold-symmetric polar shape. The whole silhouette is defined by a single curve r(s)
@@ -46,9 +46,6 @@ export interface BadgeQuatrefoilBaseParams {
   samples?: number;
 }
 
-/** The most vertices an outline samples, so a huge or infinite `samples` cannot hang a render. */
-export const MAX_SAMPLES = 1024;
-
 const DEFAULTS: Required<BadgeQuatrefoilBaseParams> = {
   spikeR: 50,
   lobeR: 42,
@@ -85,20 +82,21 @@ function curveSegment(t: number, curvature: number, bend: number, erosion: numbe
 
 /** The radius profile r(s) of one octant: s = 0 is the cardinal direction, s = 1 the diagonal. */
 export function quatrefoilRadius(params: BadgeQuatrefoilBaseParams = {}): (s: number) => number {
-  const cfg = { ...DEFAULTS, ...params };
-  const spike = Math.max(5, Math.min(cfg.spikeR, 50));
-  const lobe = Math.max(5, Math.min(cfg.lobeR, 50 * Math.SQRT2));
-  const valley = Math.max(0, Math.min(cfg.valleyR, Math.min(spike, lobe)));
-  const vAt = Math.max(0.05, Math.min(cfg.valleyAt, 0.95));
-  const sCurv = Math.max(0.2, cfg.spikeCurvature);
-  const sBend = Math.max(-0.95, Math.min(cfg.spikeBend, 0.95));
-  const sErode = Math.max(0, Math.min(cfg.spikeTipErosion, 1));
-  const lCurv = Math.max(0.2, cfg.lobeCurvature);
-  const lBend = Math.max(-0.95, Math.min(cfg.lobeBend, 0.95));
-  const lErode = Math.max(0, Math.min(cfg.lobeTipErosion, 1));
+  const cfg = withDefaults(DEFAULTS, params);
+  const d = DEFAULTS;
+  const spike = clampParam(cfg.spikeR, 5, 50, d.spikeR);
+  const lobe = clampParam(cfg.lobeR, 5, 50 * Math.SQRT2, d.lobeR);
+  const valley = clampParam(cfg.valleyR, 0, Math.min(spike, lobe), d.valleyR);
+  const vAt = clampParam(cfg.valleyAt, 0.05, 0.95, d.valleyAt);
+  const sCurv = clampParam(cfg.spikeCurvature, 0.2, Infinity, d.spikeCurvature);
+  const sBend = clampParam(cfg.spikeBend, -0.95, 0.95, d.spikeBend);
+  const sErode = clampParam(cfg.spikeTipErosion, 0, 1, d.spikeTipErosion);
+  const lCurv = clampParam(cfg.lobeCurvature, 0.2, Infinity, d.lobeCurvature);
+  const lBend = clampParam(cfg.lobeBend, -0.95, 0.95, d.lobeBend);
+  const lErode = clampParam(cfg.lobeTipErosion, 0, 1, d.lobeTipErosion);
   // Narrow enough that each tip, which sits its own height above the valley, is left at its radius.
   const band = Math.min(
-    2 * Math.max(0, cfg.valleySmooth), (spike - valley) * (1 - sErode), (lobe - valley) * (1 - lErode),
+    2 * clampParam(cfg.valleySmooth, 0, Infinity, d.valleySmooth), (spike - valley) * (1 - sErode), (lobe - valley) * (1 - lErode),
   );
   return (s) => {
     // t1: spike-side parameter, 1 at cardinal (s=0), 0 at valley (s=vAt). Clamped to ≥ 0.
@@ -112,9 +110,9 @@ export function quatrefoilRadius(params: BadgeQuatrefoilBaseParams = {}): (s: nu
 }
 
 export function quatrefoilVertices(params: BadgeQuatrefoilBaseParams = {}): [number, number][] {
-  const cfg = { ...DEFAULTS, ...params };
+  const cfg = withDefaults(DEFAULTS, params);
   const radiusAt = quatrefoilRadius(cfg);
-  const rot = cfg.rotation * DEG_TO_RAD;
+  const rot = finiteOr(cfg.rotation, DEFAULTS.rotation) * DEG_TO_RAD;
   const N = repeatCount(cfg.samples, 24, MAX_SAMPLES);
   const cx = 50, cy = 50;
   const verts: [number, number][] = [];

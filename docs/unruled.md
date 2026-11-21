@@ -3408,3 +3408,19 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): `rulerTicks`, and so a `SpanStrips` ruler, throws a `RangeError` on a tick step that is
   not a positive finite number, and when no step spaces ticks 64 px apart it takes the least whole multiple of the last
   step that does, rather than every tick of the last step. Skipping bad steps was the alternative.
+## Audit round sixty (2026-11-20): badge bases
+
+- 2026-11-20 (the fixer's call): A `ribbon` end other than `inward`, `outward`, or `flat`, or a `puzzle` edge other than
+  `flat`, `out`, or `in`, throws a `RangeError` naming it. A ribbon had thrown a bare `TypeError`, and a puzzle drew
+  it as a socket; reading it as the default was the alternative.
+- 2026-11-20 (the fixer's call): An `octant-spline` or `octant-bspline` badge's `samples` runs 48..1024, the bound
+  `quatrefoil` had, and a `puzzle` badge's `arcSamples` 6..256. The upper bounds are picked to keep a render finite.
+- 2026-11-20 (the fixer's call): `NaN` in a badge base param reads as that param's default, as round 57 ruled for shape
+  params, and an infinite `rotation` or powerline `depth`, which no bound holds, reads as its default too.
+- 2026-11-20 (the fixer's call): `octant-spline` anchors within 1e-6 of one `s` are one point to the curve, which runs
+  through the first of them at s = 0 and the last elsewhere, so the end anchor quadrant mode pins is the one kept.
+  `octant-bspline` keeps them all, as coincident control points are well defined there. Averaging a run was the
+  alternative.
+- 2026-11-20 (the fixer's call): A `puzzle` badge's `tabSize` stops where two sockets would touch, about 30.9 with
+  two opposite and 24.6 with two adjacent, rather than at 40. Shrinking only the sockets, so a tab keeps the size
+  asked for, was the alternative.

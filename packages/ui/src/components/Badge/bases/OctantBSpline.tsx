@@ -1,4 +1,5 @@
 import type { BaseModule } from './types';
+import { withDefaults } from '../shapes/params';
 import { polygonSampler } from './polygonSampler';
 import {
   type BadgeSplineAnchor as Anchor, extractAnchorPairs, OCTANT_SPLINE_DEFAULTS, splineVertices,
@@ -9,9 +10,10 @@ import {
  * **approximating** cubic NURBS — the control points pull the curve without sitting on it.
  * Each anchor's weight increases the local pull toward that control point.
  *
- * Endpoint behaviour: the curve uses mirror-phantom control points just outside [0, 1]
- * derived from the second-from-end anchors, which enforces zero slope at s=0 and s=1 so
- * the reflected/rotated full silhouette closes cleanly across the symmetry axes.
+ * Endpoint behavior: two phantom control points past each end, on a uniform knot vector, close
+ * the silhouette cleanly across the symmetry axes. In octant mode they mirror the anchors next to
+ * that end, so the curve is flat there; in quadrant mode they repeat the far end's, so the curve
+ * meets itself at each cardinal with one radius and one slope.
  */
 /** What `baseParams` takes on a badge whose `base` is `octant-bspline`. */
 export interface BadgeOctantBSplineBaseParams {
@@ -24,6 +26,7 @@ export interface BadgeOctantBSplineBaseParams {
   w0?: number; w1?: number; w2?: number; w3?: number; w4?: number; w5?: number;
   w6?: number; w7?: number; w8?: number; w9?: number; w10?: number; w11?: number;
   rotation?: number;
+  /** Polygon sample count, 48 to 1024. */
   samples?: number;
 }
 
@@ -32,13 +35,13 @@ const DEFAULTS: Required<BadgeOctantBSplineBaseParams> = OCTANT_SPLINE_DEFAULTS;
 /** The least weight an anchor draws with: at zero a rational curve divides by zero at its ends. */
 export const OCTANT_BSPLINE_MIN_WEIGHT = 0.01;
 
-/**
- * Two phantom control points are inserted at each end (mirror reflections of the second-
- * from-end anchors across the cardinal/diagonal axes), forcing zero slope at the endpoints
- * for clean symmetric closure.
- */
-function buildExtendedControls(anchors: readonly Anchor[]): Anchor[] {
+/** `anchors` with two phantom control points past each end: mirrored about that end, or in quadrant mode wrapped from the other. */
+function buildExtendedControls(anchors: readonly Anchor[], mode: 'octant' | 'quadrant'): Anchor[] {
   const N = anchors.length;
+  if (mode === 'quadrant') {
+    const shift = (a: Anchor, by: number): Anchor => ({ ...a, s: a.s + by });
+    return [shift(anchors[N - 3], -1), shift(anchors[N - 2], -1), ...anchors, shift(anchors[1], 1), shift(anchors[2], 1)];
+  }
   const phantomLeft1: Anchor = { s: -anchors[1].s, r: anchors[1].r, w: anchors[1].w };
   const phantomLeft2: Anchor = { s: -anchors[Math.min(2, N - 1)].s, r: anchors[Math.min(2, N - 1)].r, w: anchors[Math.min(2, N - 1)].w };
   const phantomRight1: Anchor = { s: 2 - anchors[N - 2].s, r: anchors[N - 2].r, w: anchors[N - 2].w };
@@ -46,15 +49,10 @@ function buildExtendedControls(anchors: readonly Anchor[]): Anchor[] {
   return [phantomLeft2, phantomLeft1, ...anchors, phantomRight1, phantomRight2];
 }
 
+/** A uniform knot vector over 0..1: unlike a clamped one, its basis is the same on every span, so phantoms placed symmetrically shape the curve symmetrically. */
 function buildKnots(numCtrl: number, degree: number): number[] {
-  // Clamped uniform knot vector of length numCtrl + degree + 1.
   const m = numCtrl + degree + 1;
-  const knots: number[] = new Array(m);
-  for (let i = 0; i <= degree; i++) knots[i] = 0;
-  const interior = numCtrl - degree - 1;
-  for (let i = 1; i <= interior; i++) knots[degree + i] = i / (interior + 1);
-  for (let i = m - degree - 1; i < m; i++) knots[i] = 1;
-  return knots;
+  return Array.from({ length: m }, (_, i) => i / (m - 1));
 }
 
 function findSpan(u: number, knots: number[], degree: number, numCtrl: number): number {
@@ -97,8 +95,8 @@ interface CompiledNurbs {
   degree: number;
 }
 
-function compileNurbs(anchors: readonly Anchor[]): CompiledNurbs {
-  const extended = buildExtendedControls(anchors);
+function compileNurbs(anchors: readonly Anchor[], mode: 'octant' | 'quadrant'): CompiledNurbs {
+  const extended = buildExtendedControls(anchors, mode);
   const degree = 3;
   const knots = buildKnots(extended.length, degree);
   return { extended, knots, degree };
@@ -107,7 +105,7 @@ function compileNurbs(anchors: readonly Anchor[]): CompiledNurbs {
 function evalNurbsAtU(u: number, nurbs: CompiledNurbs): { s: number; r: number } {
   const { extended, knots, degree } = nurbs;
   const numCtrl = extended.length;
-  const uClamped = Math.max(0, Math.min(1, u));
+  const uClamped = Math.max(knots[degree], Math.min(knots[numCtrl], u));
   const span = findSpan(uClamped, knots, degree, numCtrl);
   const N = basisFns(span, uClamped, knots, degree);
   let sNum = 0;
@@ -126,12 +124,12 @@ function evalNurbsAtU(u: number, nurbs: CompiledNurbs): { s: number; r: number }
 /** Invert S(u) = s by bisection. The NURBS is monotonic in s because the underlying knot
  *  vector and control sequence are monotonic, so bisection converges quickly. */
 function evalNurbsAtS(s: number, nurbs: CompiledNurbs): number {
-  let lo = 0, hi = 1;
-  for (let iter = 0; iter < 30; iter++) {
+  let lo = nurbs.knots[nurbs.degree], hi = nurbs.knots[nurbs.extended.length];
+  for (let iter = 0; iter < 60; iter++) {
     const mid = (lo + hi) * 0.5;
     const { s: sMid } = evalNurbsAtU(mid, nurbs);
     if (sMid < s) lo = mid; else hi = mid;
-    if (hi - lo < 1e-5) break;
+    if (hi - lo < 1e-12) break;
   }
   return evalNurbsAtU((lo + hi) * 0.5, nurbs).r;
 }
@@ -139,17 +137,18 @@ function evalNurbsAtS(s: number, nurbs: CompiledNurbs): number {
 /**
  * The radius r(s) of the approximating `octant-bspline` curve over `anchors`, which are in order along it from
  * s = 0 to s = 1: a cubic NURBS their weights pull toward each one, passing through none of them. A weight under
- * {@link OCTANT_BSPLINE_MIN_WEIGHT} draws as that.
+ * {@link OCTANT_BSPLINE_MIN_WEIGHT} draws as that. In `quadrant` mode, whose first and last anchors are one point,
+ * the curve repeats with period 1; otherwise it is flat at both ends.
  */
-export function octantBSplineRadius(anchors: readonly Anchor[]): (s: number) => number {
-  const nurbs = compileNurbs(anchors.map((a) => ({ ...a, w: Math.max(OCTANT_BSPLINE_MIN_WEIGHT, a.w) })));
+export function octantBSplineRadius(anchors: readonly Anchor[], mode: 'octant' | 'quadrant' = 'octant'): (s: number) => number {
+  const nurbs = compileNurbs(anchors.map((a) => ({ ...a, w: Math.max(OCTANT_BSPLINE_MIN_WEIGHT, a.w) })), mode);
   return (s) => evalNurbsAtS(s, nurbs);
 }
 
 const OctantBSpline: BaseModule<BadgeOctantBSplineBaseParams> = {
   build: (params, boxW, boxH) => {
-    const cfg = { ...DEFAULTS, ...params };
-    const radiusAt = octantBSplineRadius(extractAnchorPairs(cfg, OCTANT_BSPLINE_MIN_WEIGHT));
+    const cfg = withDefaults(DEFAULTS, params);
+    const radiusAt = octantBSplineRadius(extractAnchorPairs(cfg, OCTANT_BSPLINE_MIN_WEIGHT), cfg.mode);
     return polygonSampler(splineVertices(cfg, radiusAt), boxW, boxH);
   },
   defaults: DEFAULTS,
