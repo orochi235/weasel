@@ -26,6 +26,8 @@ export function SegmentsArcView({ config }: { config: SegmentsArcConfig }): Reac
   const { variant, size, sweep, direction, count, box } = config;
   const words = WORDS.slice(0, count);
   const [tool, setTool] = useState<string | null>(words[1] ?? null);
+  const shownTool = tool !== null && words.includes(tool) ? tool : (words[0] ?? null);
+  const [snap, setSnap] = useState({ grid: true, guides: false });
   const [styles, setStyles] = useState<string[]>(['Bold']);
   const [pressed, setPressed] = useState('—');
   const span = `${sweep}deg` as const;
@@ -35,7 +37,7 @@ export function SegmentsArcView({ config }: { config: SegmentsArcConfig }): Reac
     <div className={s.page}>
       <div className={s.box} style={{ '--box': `${box}px` } as CSSProperties}>
         <Along arc={{ at: 0, span, direction, inset: 24 }}>
-          <SegmentedBar aria-label="Tool" items={words.map((w) => ({ value: w, label: w }))} value={tool} onChange={setTool} {...common} />
+          <SegmentedBar aria-label="Tool" items={words.map((w) => ({ value: w, label: w }))} value={shownTool} onChange={setTool} {...common} />
         </Along>
         <Along arc={{ at: 180, span, direction, inset: 24 }}>
           <SegmentedBar
@@ -52,7 +54,17 @@ export function SegmentsArcView({ config }: { config: SegmentsArcConfig }): Reac
           <SegmentedBar mode="momentary" aria-label="Edit" items={['Cut', 'Copy', 'Paste'].map((w) => ({ value: w, label: w, onAction: () => setPressed(w) }))} {...common} />
         </Along>
         <Along arc={{ at: 270, span: `${Math.min(sweep, 100)}deg`, direction, inset: 24 }}>
-          <SegmentedBar mode="each" aria-label="Snap" items={[{ value: 'grid', label: 'Grid', selected: true, onChange: () => {} }, { value: 'guides', label: 'Guides', selected: false, onChange: () => {} }]} {...common} />
+          <SegmentedBar
+            mode="each"
+            aria-label="Snap"
+            items={(['grid', 'guides'] as const).map((key) => ({
+              value: key,
+              label: key === 'grid' ? 'Grid' : 'Guides',
+              selected: snap[key],
+              onChange: (on: boolean) => setSnap((was) => ({ ...was, [key]: on })),
+            }))}
+            {...common}
+          />
         </Along>
       </div>
       <p data-readout="pressed">Pressed: {pressed}</p>
