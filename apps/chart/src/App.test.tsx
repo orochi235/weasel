@@ -70,6 +70,18 @@ describe('App', () => {
     await waitFor(() => expect(stages()).toHaveLength(0));
   });
 
+  it('keeps the chart through a visit to pipeline mode, though its save failed', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('full', 'QuotaExceededError'); });
+    mount();
+    choose('Page', 'Add Page');
+    act(() => { fireEvent.click(within(screen.getByRole('dialog', { name: 'Add Page' })).getByRole('button', { name: 'Add' })); });
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
+    choose('Mode', 'Pipeline');
+    choose('Mode', 'Chart');
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
+    vi.mocked(Storage.prototype.setItem).mockRestore();
+  });
+
   it('gives pipeline mode a File menu of its own', () => {
     mount();
     choose('Mode', 'Pipeline');
