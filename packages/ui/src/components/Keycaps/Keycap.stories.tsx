@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { ReactElement } from 'react';
-import { KeyCap, type KeyCapVariant, type KeyCapProps, KEYCAP_VARIANT_ICONS } from '@weasel-js/ui/components/Keycaps';
+import { inferKeycapKind, KeyCap, type KeyCapVariant, type KeyCapProps, KEYCAP_VARIANT_ICONS } from '@weasel-js/ui/components/Keycaps';
 import type { LegendStyle, Platform } from '@weasel-js/gestures';
 import { FONT_OPTIONS, resolveFont } from './keycapFonts.story';
 import { relabel } from './keycapLegends.story';
@@ -134,17 +134,7 @@ export const Gallery: Story = {
 };
 
 function KeyCapGallery({ platform, legend, font }: { platform: Platform; legend: LegendStyle; font?: string }): ReactElement {
-  const rows: Array<{ label: string; kind: 'square' | 'modifier' | 'wide' }> = [
-    { label: 'A', kind: 'square' },
-    { label: '⌘', kind: 'modifier' },
-    { label: '⇧', kind: 'modifier' },
-    { label: '⌥', kind: 'modifier' },
-    { label: '⌃', kind: 'modifier' },
-    { label: '↵', kind: 'wide' },
-    { label: '⇥', kind: 'wide' },
-    { label: '␣', kind: 'wide' },
-    { label: '⎋', kind: 'wide' },
-  ];
+  const labels = ['A', '⌘', '⇧', '⌥', '⌃', '↵', '⇥', '␣', '⎋'];
   return (
     <table className={s.gallery}>
       <thead>
@@ -158,12 +148,12 @@ function KeyCapGallery({ platform, legend, font }: { platform: Platform; legend:
         </tr>
       </thead>
       <tbody>
-        {rows.map((r) => {
-          const rendered = relabel(r.label, platform, legend);
+        {labels.map((label) => {
+          const rendered = relabel(label, platform, legend);
           return (
-            <tr key={r.label}>
-              <td><code>{r.label}</code></td>
-              <td>{r.kind}</td>
+            <tr key={label}>
+              <td><code>{label}</code></td>
+              <td>{inferKeycapKind(rendered)}</td>
               <td><KeyCap label={rendered} font={font} /></td>
               <td><KeyCap label={rendered} inverted font={font} /></td>
               <td><KeyCap label={rendered} variant="inverse" font={font} /></td>
