@@ -67,6 +67,16 @@ describe('a theme that declares a ramp or scale', () => {
     expect(mergeChain(child, lookup).pins).toEqual({ radius: '4px', 'gray-b': '#111111' });
   });
 
+  it("drops the parent's pins on the semantics and components it defines itself", () => {
+    const child: ThemeDefinition = {
+      name: 'c',
+      extends: 'p',
+      semantics: { radius: { value: '6px' } },
+      components: { 'space-sm': '8px' },
+    };
+    expect(mergeChain(child, lookup).pins).toEqual({ 'gray-a': '#ffffff', 'gray-b': '#000000' });
+  });
+
   it('keeps every inherited pin when it only inherits the ramp', () => {
     expect(mergeChain({ name: 'c', extends: 'p' }, lookup).pins).toEqual(parent.pins);
   });
