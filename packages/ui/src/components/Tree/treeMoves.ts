@@ -52,13 +52,12 @@ function hasAncestorIn(parents: Map<string, string | null>, id: string, set: Rea
 }
 
 /** What a drag from `id` carries: the selection in tree order if `id` is in it, else `id` alone. A node travels
- *  with a selected ancestor rather than on its own, and an immovable one stays behind. */
+ *  with a selected ancestor that travels rather than on its own, and an immovable one stays behind. */
 export function draggedIdsFor(nodes: readonly TreeNode[], selected: ReadonlySet<string>, id: string): string[] {
   if (!selected.has(id)) return [id];
   const parents = parentsOf(nodes);
-  return treeOrder(nodes)
-    .filter((n) => selected.has(n.id) && !n.immovable && !hasAncestorIn(parents, n.id, selected))
-    .map((n) => n.id);
+  const travels = new Set(treeOrder(nodes).filter((n) => selected.has(n.id) && !n.immovable).map((n) => n.id));
+  return [...travels].filter((x) => !hasAncestorIn(parents, x, travels));
 }
 
 /** Whether `target` is one of `ids` or sits beneath one. */

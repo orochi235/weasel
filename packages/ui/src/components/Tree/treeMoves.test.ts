@@ -22,6 +22,13 @@ describe('treeMoves', () => {
     expect(draggedIdsFor(T, new Set(['z']), 'x')).toEqual(['x']);
   });
 
+  it('carries a node whose selected ancestor stays behind', () => {
+    const held: TreeNode[] = [{ ...T[0]!, immovable: true }, ...T.slice(1)];
+    expect(draggedIdsFor(held, new Set(['g', 'x', 'y']), 'x')).toEqual(['x', 'y']);
+    const heldH: TreeNode[] = [{ ...T[0]!, children: [T[0]!.children![0]!, { ...T[0]!.children![1]!, immovable: true }] }, ...T.slice(1)];
+    expect(draggedIdsFor(heldH, new Set(['g', 'h', 'y']), 'g')).toEqual(['g']);
+  });
+
   it('refuses a target inside a dragged node', () => {
     expect(landsInside(T, ['g'], { parentId: 'h', index: 0 })).toBe(true);
     expect(landsInside(T, ['g'], { parentId: 'g', index: 0 })).toBe(true);
