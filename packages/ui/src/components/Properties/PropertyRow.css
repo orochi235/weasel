@@ -83,7 +83,7 @@
 }
 
 /* A slider's readout sits in the label, which has dimmed it once already. */
-.row[data-disabled] > .rowLabel .readoutInput:disabled {
+.row[data-disabled] > .rowLabel .readoutInput:is(:disabled, [data-disabled]) {
   opacity: 1;
 }
 
@@ -200,7 +200,7 @@
   -moz-appearance: textfield;
 }
 
-.readoutInput:hover:not(:disabled) {
+.readoutInput:hover:not(:disabled, [data-disabled]) {
   background: color-mix(in srgb, currentColor 8%, transparent);
 }
 

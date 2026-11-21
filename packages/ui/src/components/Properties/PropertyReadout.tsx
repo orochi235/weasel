@@ -1,7 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { paintKindOf } from '@weasel-js/paint-kinds';
 import { qty, unitSymbol } from '@weasel-js/quantity';
-import { solidColorOf, INHERIT } from '@weasel-js/paint';
+import { solidColorOf, INHERIT, withAlpha01 } from '@weasel-js/paint';
+import { fontWeightLabel } from '../FontOptions/fontOptions';
 import { useFieldLocale } from '../../useFieldLocale';
 import { stepDisplay } from './NumberControls';
 import type { PropertyControlProps, PropertyNumberFieldProps } from './fieldTypes';
@@ -28,6 +29,7 @@ export function PropertyReadout(p: PropertyControlProps) {
 
 function readoutBody(p: PropertyControlProps): ReactNode {
   if (p.mixed) return <span className={s.none}>Mixed</span>;
+  if (p.unset) return none();
   switch (p.kind) {
     case 'boolean':
       return p.value === undefined ? none() : p.value ? 'On' : 'Off';
@@ -38,8 +40,11 @@ function readoutBody(p: PropertyControlProps): ReactNode {
       if (!option) return none();
       return <>{option.glyph}{option.label}</>;
     }
-    case 'color':
-      return p.value ? <><Swatch color={p.value} />{p.value}</> : none();
+    case 'color': {
+      if (!p.value) return none();
+      const color = typeof p.alpha === 'number' ? withAlpha01(p.value, p.alpha) : p.value;
+      return <><Swatch color={color} />{color}</>;
+    }
     case 'paint': {
       if (p.value === null) return 'None';
       if (p.value === undefined) return none();
@@ -52,7 +57,7 @@ function readoutBody(p: PropertyControlProps): ReactNode {
     case 'font-family':
       return p.value ? p.value : none();
     case 'font-weight':
-      return p.value === undefined ? none() : String(p.value);
+      return p.value === undefined ? none() : fontWeightLabel(p.value);
     default: {
       const _exhaustive: never = p;
       return String((_exhaustive as { value?: unknown }).value ?? '');

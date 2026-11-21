@@ -9,6 +9,7 @@
   font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
   color: var(--wzl-fg);
   white-space: nowrap;
+  -webkit-user-select: text;
   user-select: text;
 }
 
