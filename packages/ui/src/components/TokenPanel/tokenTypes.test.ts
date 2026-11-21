@@ -33,6 +33,8 @@ describe('inferTokenType', () => {
     expect(inferTokenType('-0.5rem')).toBe('dimension');
     expect(inferTokenType('150ms')).toBe('duration');
     expect(inferTokenType('0.2s')).toBe('duration');
+    expect(inferTokenType('200MS')).toBe('duration');
+    expect(inferTokenType('0.2S')).toBe('duration');
     expect(inferTokenType('cubic-bezier(0.33, 1, 0.68, 1)')).toBe('cubicBezier');
     expect(inferTokenType('1.4')).toBe('number');
     expect(inferTokenType('0 1px 3px rgba(0, 0, 0, 0.3)')).toBe('shadow');

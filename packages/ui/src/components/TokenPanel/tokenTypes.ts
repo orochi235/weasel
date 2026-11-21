@@ -109,7 +109,7 @@ const DIMENSION = new RegExp(
   `^${AMOUNT}(?:px|rem|em|%|ch|ex|lh|rlh|vh|vw|vmin|vmax|svh|lvh|dvh|cqw|cqh|pt|pc|cm|mm|in|q)$`,
   'i',
 );
-const DURATION = new RegExp(`^${AMOUNT}m?s$`);
+const DURATION = new RegExp(`^${AMOUNT}m?s$`, 'i');
 const NUMBER = new RegExp(`^${AMOUNT}$`);
 const LENGTH = new RegExp(`^${AMOUNT}(?:px|rem|em)?$`);
 const BEZIER = new RegExp(`^cubic-bezier\\(\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*\\)$`, 'i');
