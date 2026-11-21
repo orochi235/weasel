@@ -146,6 +146,11 @@ describe('derive', () => {
     expect(tokens['gray-50'].description).toBe('{seeds.nope}');
   });
 
+  it('keeps the scope of a component it pins', () => {
+    const { tokens } = derive({ name: 'x', components: { tb: { value: '#111111', type: 'color', scope: ['density'] } }, pins: { tb: '#222222' } });
+    expect(tokens.tb).toMatchObject({ value: '#222222', type: 'color', scope: ['density'] });
+  });
+
   it('refuses a step named twice', () => {
     const { tokens, issues } = derive({ name: 'x', ramps: { gray: { ...GRAY, steps: ['50', '50', '900'] } } });
     expect(issues).toEqual([{ kind: 'invalid', path: 'ramps.gray.steps', message: 'step "50" is named twice' }]);

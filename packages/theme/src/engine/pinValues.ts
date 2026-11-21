@@ -52,5 +52,5 @@ export function pinToken(v: Varying<PinValue>, path: string, prior: RawToken | u
     ctx.issues.push({ kind: 'invalid', path, message: problem });
     return undefined;
   }
-  return { type: obj.type ?? prior?.type ?? UNTYPED, value: obj.value, alpha: obj.alpha, description: obj.description ?? prior?.description, scope: obj.scope };
+  return { type: obj.type ?? prior?.type ?? UNTYPED, value: obj.value, alpha: obj.alpha, description: obj.description ?? prior?.description, scope: obj.scope ?? prior?.scope };
 }
