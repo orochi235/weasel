@@ -194,7 +194,10 @@ function runAttrs(
       attrs.push(...opacityAttr('fill-opacity', paint.opacity));
     }
   }
-  for (const a of coreStrokeAttrs(run.stroke, registry, warn)) attrs.push(a);
+  // A run's stroke replaces the node's, so one that paints nothing has to say so.
+  const strokes = coreStrokeAttrs(run.stroke, registry, warn);
+  if (run.stroke && strokes.length === 0 && nodeStroke) strokes.push('stroke="none"');
+  for (const a of strokes) attrs.push(a);
   if (run.stroke) attrs.push(...strokeResets(run.stroke, nodeStroke));
   // `none` included: on a run it overrides a transform the node would pass down.
   if (run.textTransform) attrs.push(`style="text-transform:${run.textTransform}"`);
