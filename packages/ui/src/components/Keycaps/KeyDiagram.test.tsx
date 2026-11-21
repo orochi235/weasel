@@ -46,6 +46,17 @@ describe('KeyDiagram', () => {
     expect(slot(container, 'KeyS')!.dataset.held).toBeUndefined();
   });
 
+  it('makes room for captions only when a key it draws has one', () => {
+    const root = (c: HTMLElement) => c.firstElementChild as HTMLElement;
+    const marks = { KeyQ: { caption: 'turn' } };
+    const { container, rerender } = render(<KeyDiagram layout={KEYBOARD_LAYOUTS.macos} keys={['KeyA', 'KeyB']} marks={marks} />);
+    expect(root(container).dataset.captioned).toBeUndefined();
+    rerender(<KeyDiagram keys={['KeyA', 'KeyB']} marks={marks} />);
+    expect(root(container).dataset.captioned).toBeUndefined();
+    rerender(<KeyDiagram keys={['KeyA', 'KeyQ']} marks={marks} />);
+    expect(root(container).dataset.captioned).toBe('true');
+  });
+
   it('with a linger, is up only while a key is held and that long after', () => {
     vi.useFakeTimers();
     const root = (c: HTMLElement) => c.firstElementChild as HTMLElement;

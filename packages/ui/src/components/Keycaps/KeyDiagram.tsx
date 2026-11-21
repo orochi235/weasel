@@ -52,6 +52,7 @@ export interface KeyDiagramProps {
 }
 
 const NO_KEYS: ReadonlySet<string> = new Set();
+const asKey = (key: KeyboardKey) => (typeof key === 'string' ? { code: key } : key);
 
 /**
  * A keyboard, or the part of one a set of keys needs. Given a layout, it draws each key where the
@@ -72,7 +73,11 @@ export function KeyDiagram({
   }, [layout, keys]);
   const css = useColorCss();
   const up = useLinger(held.size > 0, linger);
-  const captioned = marks !== undefined && Object.values(marks).some((m) => m.caption !== undefined || m.icon !== undefined);
+  const drawn = placement ? placement.banks.flatMap((bank) => bank.keys) : (keys ?? []).map(asKey);
+  const captioned = marks !== undefined && drawn.some((k) => {
+    const mark = getOwn(marks, k.code);
+    return mark?.caption !== undefined || mark?.icon !== undefined;
+  });
 
   const slot = (key: Pick<PlacedKey, 'code' | 'label'>, place?: PlacedKey) => {
     const mark = marks && getOwn(marks, key.code);
@@ -105,7 +110,7 @@ export function KeyDiagram({
   if (!placement) {
     return (
       <span className={[root, s.row].join(' ')} {...state}>
-        {(keys ?? []).map((k) => slot(typeof k === 'string' ? { code: k } : k))}
+        {drawn.map((k) => slot(k))}
       </span>
     );
   }
