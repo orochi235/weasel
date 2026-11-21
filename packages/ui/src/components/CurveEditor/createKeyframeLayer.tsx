@@ -155,8 +155,11 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
     const target = keyTargetIn(e, id);
     if (!target) return;
     const arrow = arrowMove(e.key, e.shiftKey);
-    // The model's y runs up, the screen's down.
-    const move = arrow && (arrow.dx !== 0 || arrow.dy !== 0) ? { dx: arrow.dx, dy: -arrow.dy } : null;
+    // The move in model terms: the screen's y runs down, and an inverted axis runs its model value the other way.
+    const { xMin, xMax, yMin, yMax } = ctx.modelRange;
+    const move = arrow && (arrow.dx !== 0 || arrow.dy !== 0)
+      ? { dx: arrow.dx * (xMax < xMin ? -1 : 1), dy: -arrow.dy * (yMax < yMin ? -1 : 1) }
+      : null;
 
     const keyEl = target.closest('[data-keyframe-index]');
     if (keyEl) { keyOnKey(state, e, keyEl, move, ctx, extra); return; }

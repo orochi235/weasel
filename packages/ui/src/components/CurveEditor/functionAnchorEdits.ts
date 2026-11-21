@@ -170,9 +170,9 @@ export function withAnchorNudged(
   if (!p || p.locked) return null;
   const xSpan = rules.xClamp ? rules.xClamp[1] - rules.xClamp[0] : range.xMax - range.xMin;
   const next = withAnchorMoved(state, index, {
-    x: p.x + move.dx * Math.abs(xSpan) * KEY_STEP_FRACTION,
-    // The model's y runs up, the screen's down.
-    y: p.y - move.dy * Math.abs(range.yMax - range.yMin) * KEY_STEP_FRACTION,
+    // A step follows the screen: an inverted axis runs its model value the other way.
+    x: p.x + move.dx * Math.sign(range.xMax - range.xMin) * Math.abs(xSpan) * KEY_STEP_FRACTION,
+    y: p.y - move.dy * (range.yMax - range.yMin) * KEY_STEP_FRACTION,
   }, range, rules);
   const moved = next.points[index];
   if (moved.x === p.x && moved.y === p.y) return null;

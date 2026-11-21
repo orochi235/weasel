@@ -24,12 +24,14 @@ interface HarnessProps {
   initial?: Partial<KeyframeLayerState>;
   onChange?: (next: KeyframeLayerState) => void;
   onCommit?: (next: KeyframeLayerState, prev: KeyframeLayerState) => void;
+  xRange?: readonly [number, number];
+  yRange?: readonly [number, number];
 }
 
-function Harness({ config, initial, onChange, onCommit }: HarnessProps): ReactElement {
+function Harness({ config, initial, onChange, onCommit, xRange = [0, 1000], yRange = [0, 10] }: HarnessProps): ReactElement {
   const [state, setState] = useState<KeyframeLayerState>(() => ({ ...keyframeLayerState(KEYS), ...initial }));
   return (
-    <LayeredCurveEditor width={200} height={100} xRange={[0, 1000]} yRange={[0, 10]} history={false}>
+    <LayeredCurveEditor width={200} height={100} xRange={xRange} yRange={yRange} history={false}>
       <KeyframeLayer
         label="x"
         {...config}
@@ -302,6 +304,15 @@ describe('createKeyframeLayer — keyboard', () => {
     const last = onCommit.mock.calls[1][0] as KeyframeLayerState;
     expect(last.keys.map((k) => [k.t, k.value])).toEqual([[450, 2], [600, 1], [1000, 3]]);
     expect(document.activeElement!.getAttribute('data-keyframe-index')).toBe('1');
+  });
+
+  it('moves a key the way the arrow points on inverted axes', () => {
+    const onCommit = vi.fn();
+    render(<Harness config={{ step: { x: 10, y: 0.5 } }} xRange={[1000, 0]} yRange={[10, 0]} onCommit={onCommit} />);
+    fireEvent.keyDown(document.querySelector('[data-keyframe-index="1"]')!, { key: 'ArrowRight' });
+    expect((onCommit.mock.calls[0][0] as KeyframeLayerState).keys[1].t).toBe(490);
+    fireEvent.keyDown(document.querySelector('[data-keyframe-index="1"]')!, { key: 'ArrowUp' });
+    expect((onCommit.mock.calls[1][0] as KeyframeLayerState).keys[1].value).toBe(9.5);
   });
 
   it('selects a focused segment with Enter', () => {
