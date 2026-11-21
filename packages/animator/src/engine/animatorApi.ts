@@ -100,7 +100,7 @@ function startTimeline(host: ApiHost, o: TimelineOptions): ReturnType<Animator['
       const animation = info();
       if (animation) hub.emit({ type: 'lap', animation, lap });
     },
-  }, hold);
+  }, hold, table.direction);
 }
 
 /** The animator's public surface over its table, clock, and primitives. */

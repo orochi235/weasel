@@ -52,3 +52,31 @@ describe('a timeline revived after it finished', () => {
     expect(committed).toBeLessThan(10);
   });
 });
+
+describe('a finished timeline under an animator played backward', () => {
+  const track = () => ({ kind: 'sampled' as const, keys: [{ t: 0, value: 0 }, { t: 100, value: 1 }], onTick: () => {} });
+
+  it('plays back from its end when seeked there', () => {
+    const { animator, frame } = setup();
+    let h!: ReturnType<typeof animator.timeline>;
+    act(() => { h = animator.timeline({ tracks: [track()] }); });
+    frame(0); frame(50); frame(200);
+    act(() => { animator.setTimeScale(-1); h.seek(100); });
+    frame(210); frame(240);
+    expect(h.time()).toBeLessThan(100);
+  });
+
+  it('stays at its start when seeked there, finishing once', () => {
+    const { animator, frame } = setup();
+    let done = 0;
+    let h!: ReturnType<typeof animator.timeline>;
+    act(() => { h = animator.timeline({ tracks: [track()], onDone: () => { done += 1; } }); });
+    frame(0); frame(50);
+    act(() => { animator.setTimeScale(-1); });
+    frame(60); frame(200);
+    expect(done).toBe(1);
+    act(() => { h.seek(0); });
+    frame(210); frame(240);
+    expect(done).toBe(1);
+  });
+});
