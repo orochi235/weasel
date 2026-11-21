@@ -1,19 +1,19 @@
 import type { KeyLegend } from './Keycaps';
-import { keyLegendsFromMods, keyLegendsFromShortcut, type KeyLegendOptions, type ModifierKey } from '@weasel-js/gestures';
-import { getOwn } from '@weasel-js/registry';
+import { keyLegendFromKey, keyLegendsFromMods, VALID_MOD_NAMES, type KeyLegendOptions, type ModifierKey } from '@weasel-js/gestures';
 
-const MODS: Readonly<Record<string, ModifierKey>> = { mod: 'mod', shift: 'shift', alt: 'alt' };
+const isModifier = (part: string): part is ModifierKey => (VALID_MOD_NAMES as readonly string[]).includes(part);
 
 /**
- * A shortcut written for any platform, as prose names one (`Mod+Shift+Z`, `Alt`, `Escape`), as `KeySequence`
- * keys in the reader's own legend: `Mod` is `⌘` on macOS and `Ctrl` elsewhere. `Mod`, `Shift`, and `Alt` are the
- * modifiers; any other part is the key, named as `KeyboardEvent.key` names it.
+ * A shortcut written for any platform, as prose names one (`Mod+Shift+Z`, `Ctrl+Z`, `Alt`, `Escape`), as
+ * `KeySequence` keys in the reader's own legend: `Mod` is `⌘` on macOS and `Ctrl` elsewhere. `Mod`, `Shift`, `Alt`,
+ * `Ctrl`, and `Meta` are the modifiers, drawn in that order; every other part is a key, named as
+ * `KeyboardEvent.key` names it, drawn after them as written.
  */
 export function keyLegendsFromChord(chord: string, opts: KeyLegendOptions = {}): readonly KeyLegend[] {
   // A trailing `+` is the plus key itself: `Mod++`.
   const parts = chord.trim().split(/\+(?=.)/).map((part) => part.trim());
-  const mods = parts.flatMap((part) => getOwn(MODS, part.toLowerCase()) ?? []);
-  const key = parts.find((part) => !Object.hasOwn(MODS, part.toLowerCase()));
-  if (key === undefined) return keyLegendsFromMods(mods.map((name) => ({ name })), opts);
-  return keyLegendsFromShortcut({ key, mod: mods.includes('mod'), shift: mods.includes('shift'), alt: mods.includes('alt') }, opts) ?? [];
+  const named = new Set(parts.map((part) => part.toLowerCase()));
+  const mods = VALID_MOD_NAMES.filter((name) => named.has(name)).map((name) => ({ name }));
+  const keys = parts.filter((part) => !isModifier(part.toLowerCase())).map((key) => keyLegendFromKey(key, opts));
+  return [...keyLegendsFromMods(mods, opts), ...keys];
 }

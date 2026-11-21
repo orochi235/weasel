@@ -7,8 +7,8 @@ import { MODIFIER_LABELS } from '@weasel-js/gestures';
  * own, then the key. For a shortcut held as data, use `keyLegendsFromShortcut`.
  */
 export function keyLegendsFromFormatted(legend: string): readonly KeyLegend[] {
-  // Joined by `+`, as the platforms that spell their modifiers out write one. A lone `+` is a key.
-  const spelled = legend.split('+').filter((part) => part !== '');
+  // Joined by `+`, as the platforms that spell their modifiers out write one. A trailing `+` is the plus key: `Ctrl++`.
+  const spelled = legend.split(/\+(?=.)/);
   if (spelled.length > 1) return spelled.map((label) => ({ label }));
   const keys: KeyLegend[] = [];
   const glyphs = [...legend];

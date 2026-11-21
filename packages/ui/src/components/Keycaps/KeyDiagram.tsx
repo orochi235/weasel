@@ -27,9 +27,9 @@ export interface KeyDiagramProps {
   /** Where the keys sit and how they group. Without one, the keys in `keys` are drawn in a row,
    *  ungrouped. */
   layout?: KeyboardLayout;
-  /** The keys to draw. With a layout, only the layout's keys these name are drawn, in their places,
-   *  and the diagram shrinks to fit them; without, each is drawn in turn. Defaults to every key the
-   *  layout has. */
+  /** The keys to draw. With a layout, only the layout's keys these name are drawn, in their places and at
+   *  the layout's widths, and the diagram shrinks to fit them; without, each is drawn in turn. A key's
+   *  `label` replaces its legend either way. Defaults to every key the layout has. */
   keys?: readonly KeyboardKey[];
   /** Whose legends the keys print. Defaults to the layout's, then to the reader's. */
   platform?: Platform;
@@ -52,6 +52,7 @@ export interface KeyDiagramProps {
 }
 
 const NO_KEYS: ReadonlySet<string> = new Set();
+const asKey = (key: KeyboardKey) => (typeof key === 'string' ? { code: key } : key);
 
 /**
  * A keyboard, or the part of one a set of keys needs. Given a layout, it draws each key where the
@@ -68,17 +69,30 @@ export function KeyDiagram({
   );
   const placement = useMemo(() => {
     if (!layout) return null;
-    return placeKeys(layout, keys ? new Set(keys.map((k) => (typeof k === 'string' ? k : k.code))) : undefined);
+    if (!keys) return placeKeys(layout);
+    const asked = new Map(keys.map((k) => [asKey(k).code, asKey(k).label]));
+    const placed = placeKeys(layout, new Set(asked.keys()));
+    const relabel = (k: PlacedKey) => {
+      const label = asked.get(k.code);
+      return label === undefined ? k : { ...k, label };
+    };
+    return { ...placed, banks: placed.banks.map((bank) => ({ ...bank, keys: bank.keys.map(relabel) })) };
   }, [layout, keys]);
   const css = useColorCss();
   const up = useLinger(held.size > 0, linger);
-  const captioned = marks !== undefined && Object.values(marks).some((m) => m.caption !== undefined || m.icon !== undefined);
+  const drawn = placement ? placement.banks.flatMap((bank) => bank.keys) : (keys ?? []).map(asKey);
+  const captioned = marks !== undefined && drawn.some((k) => {
+    const mark = getOwn(marks, k.code);
+    return mark?.caption !== undefined || mark?.icon !== undefined;
+  });
 
-  const slot = (key: Pick<PlacedKey, 'code' | 'label'>, place?: PlacedKey) => {
+  const slot = (key: Pick<PlacedKey, 'code' | 'label'> & { width?: number }, place?: PlacedKey) => {
+    const width = place?.width ?? key.width;
     const mark = marks && getOwn(marks, key.code);
     const tint = css(tintSource(mark?.tint));
     const vars = {
-      ...(place && { '--x': place.x, '--y': place.y, '--w': place.width }),
+      ...(place && { '--x': place.x, '--y': place.y }),
+      ...(width !== undefined && { '--w': width }),
       ...(tint && { '--tint': tint }),
     } as CSSProperties;
     const under = mark?.icon ?? mark?.caption;
@@ -89,11 +103,12 @@ export function KeyDiagram({
         // Places and tints are the caller's data, with no static home in the stylesheet.
         style={vars}
         data-code={key.code}
+        data-sized={width !== undefined || undefined}
         data-held={held.has(key.code) || undefined}
         data-tinted={tint ? true : undefined}
         data-dimmed={mark?.dimmed || undefined}
       >
-        <KeyCap className={s.cap} label={key.label ?? keyLegendFromCode(key.code, legendOpts).label} font={font} fixed={place !== undefined} />
+        <KeyCap className={s.cap} label={key.label ?? keyLegendFromCode(key.code, legendOpts).label} font={font} fixed={width !== undefined} />
         {under === undefined ? null : <span className={s.caption}>{under}</span>}
       </span>
     );
@@ -105,7 +120,7 @@ export function KeyDiagram({
   if (!placement) {
     return (
       <span className={[root, s.row].join(' ')} {...state}>
-        {(keys ?? []).map((k) => slot(typeof k === 'string' ? { code: k } : k))}
+        {drawn.map((k) => slot(k))}
       </span>
     );
   }
@@ -130,7 +145,9 @@ function useLinger(busy: boolean, linger: number | undefined): boolean {
   const [lingering, setLingering] = useState(false);
   if (busy !== wasBusy) {
     setWasBusy(busy);
-    setLingering(!busy);
+    setLingering(!busy && linger !== undefined);
+  } else if (lingering && linger === undefined) {
+    setLingering(false);
   }
   useEffect(() => {
     if (!lingering || linger === undefined) return;

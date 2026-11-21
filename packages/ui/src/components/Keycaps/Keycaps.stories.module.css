@@ -41,7 +41,8 @@
   gap: 3px;
 }
 
-.key {
+/* Outranks the keycap's own `[data-kind]` widths, (0,2,0), so the width control reaches every key. */
+.cluster > kbd.key {
   width: var(--key-w);
   min-width: 0;
   padding: 0 2px;

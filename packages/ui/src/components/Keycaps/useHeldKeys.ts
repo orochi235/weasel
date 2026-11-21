@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { isApplePlatform } from '@weasel-js/gestures';
 
 const MODIFIER_CODE = /^(Shift|Control|Alt|Meta)(Left|Right)$/;
 
@@ -16,6 +17,7 @@ export function useHeldKeys(target?: EventTarget | null): ReadonlySet<string> {
       if (repeat || !code) return;
       setHeld((prev) => (prev.has(code) ? prev : new Set(prev).add(code)));
     };
+    const apple = isApplePlatform();
     const up = (e: Event) => {
       const { code } = e as KeyboardEvent;
       setHeld((prev) => {
@@ -24,7 +26,7 @@ export function useHeldKeys(target?: EventTarget | null): ReadonlySet<string> {
         next.delete(code);
         // macOS sends no key-up for a key released while Command is down, so letting go of Command
         // lets go of everything but the other modifiers.
-        if (code.startsWith('Meta')) for (const c of prev) if (!MODIFIER_CODE.test(c)) next.delete(c);
+        if (apple && code.startsWith('Meta')) for (const c of prev) if (!MODIFIER_CODE.test(c)) next.delete(c);
         return next;
       });
     };

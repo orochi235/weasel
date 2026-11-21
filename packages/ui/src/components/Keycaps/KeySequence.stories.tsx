@@ -46,7 +46,7 @@ const meta: Meta<StoryArgs> = {
       control: 'inline-radio',
       options: ['all', 'key', 'none'],
       description:
-        '`all`: between every pair of chips. `key` (default): once, between the last modifier and the first non-modifier. `none`: never.',
+        '`all`: between every pair of chips. `key` (default): before every non-modifier that follows another chip. `none`: never.',
     },
     variant: {
       control: { type: 'inline-radio', icons: KEYCAP_VARIANT_ICONS },

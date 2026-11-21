@@ -9,6 +9,7 @@ import { useHeldKeys } from './useHeldKeys';
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 const slot = (root: HTMLElement, code: string) => root.querySelector<HTMLElement>(`[data-code="${code}"]`);
@@ -31,6 +32,18 @@ describe('KeyDiagram', () => {
     expect([...container.querySelectorAll('kbd')].map((k) => k.textContent)).toEqual(['⎋', 'Undo']);
   });
 
+  it('draws a key at the width it is given in a row', () => {
+    const { container } = render(<KeyDiagram keys={[{ code: 'Space', width: 6 }, 'KeyA']} />);
+    expect(slot(container, 'Space')!.style.getPropertyValue('--w')).toBe('6');
+    expect(slot(container, 'Space')!.dataset.sized).toBe('true');
+    expect(slot(container, 'KeyA')!.dataset.sized).toBeUndefined();
+  });
+
+  it('prints a key\'s own label in a layout\'s place for it', () => {
+    const { container } = render(<KeyDiagram layout={KEYBOARD_LAYOUTS.macos} keys={[{ code: 'KeyW', label: 'Fwd' }, 'KeyA']} />);
+    expect([...container.querySelectorAll('kbd')].map((k) => k.textContent)).toEqual(['Fwd', 'A']);
+  });
+
   it('lights the keys held, and marks the keys it is given', () => {
     const { container } = render(
       <KeyDiagram
@@ -45,6 +58,17 @@ describe('KeyDiagram', () => {
     expect(slot(container, 'KeyS')!.dataset.held).toBeUndefined();
   });
 
+  it('makes room for captions only when a key it draws has one', () => {
+    const root = (c: HTMLElement) => c.firstElementChild as HTMLElement;
+    const marks = { KeyQ: { caption: 'turn' } };
+    const { container, rerender } = render(<KeyDiagram layout={KEYBOARD_LAYOUTS.macos} keys={['KeyA', 'KeyB']} marks={marks} />);
+    expect(root(container).dataset.captioned).toBeUndefined();
+    rerender(<KeyDiagram keys={['KeyA', 'KeyB']} marks={marks} />);
+    expect(root(container).dataset.captioned).toBeUndefined();
+    rerender(<KeyDiagram keys={['KeyA', 'KeyQ']} marks={marks} />);
+    expect(root(container).dataset.captioned).toBe('true');
+  });
+
   it('with a linger, is up only while a key is held and that long after', () => {
     vi.useFakeTimers();
     const root = (c: HTMLElement) => c.firstElementChild as HTMLElement;
@@ -56,6 +80,15 @@ describe('KeyDiagram', () => {
     act(() => vi.advanceTimersByTime(1900));
     expect(root(container).dataset.up).toBe('true');
     act(() => vi.advanceTimersByTime(200));
+    expect(root(container).dataset.up).toBeUndefined();
+  });
+
+  it('stays hidden when a linger is turned on after keys were let go without one', () => {
+    vi.useFakeTimers();
+    const root = (c: HTMLElement) => c.firstElementChild as HTMLElement;
+    const { container, rerender } = render(<KeyDiagram layout={KEYBOARD_LAYOUTS.macos} held={new Set(['KeyA'])} />);
+    rerender(<KeyDiagram layout={KEYBOARD_LAYOUTS.macos} />);
+    rerender(<KeyDiagram layout={KEYBOARD_LAYOUTS.macos} linger={2} />);
     expect(root(container).dataset.up).toBeUndefined();
   });
 
@@ -79,7 +112,8 @@ describe('useHeldKeys', () => {
     expect(result.current.size).toBe(0);
   });
 
-  it('lets go of every key but the modifiers when Command is let go', () => {
+  it('lets go of every key but the modifiers when Command is let go on macOS', () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
     const { result } = renderHook(() => useHeldKeys());
     for (const code of ['MetaLeft', 'ShiftLeft', 'KeyK']) act(() => { fireEvent.keyDown(window, { code }); });
     act(() => { fireEvent.keyUp(window, { code: 'MetaLeft' }); });
