@@ -1,5 +1,5 @@
 import type { ShapeModule } from '../types';
-import { withDefaults } from './params';
+import { clampParam, withDefaults } from './params';
 
 /** What `shapeParams` takes on a `crest` badge. */
 export interface BadgeCrestShapeParams {
@@ -10,8 +10,8 @@ export interface BadgeCrestShapeParams {
 const DEFAULTS: Required<BadgeCrestShapeParams> = { topInset: 12, pointDepth: 100 };
 
 function crestPath(topInset: number, pointDepth: number) {
-  const ti = Math.max(0, Math.min(topInset, 35));
-  const pd = Math.max(60, Math.min(pointDepth, 110));
+  const ti = clampParam(topInset, 0, 35, DEFAULTS.topInset);
+  const pd = clampParam(pointDepth, 60, 110, DEFAULTS.pointDepth);
   // 5-sided shield silhouette with rounded shoulders and a bottom point.
   return [
     `M ${ti} 6`,

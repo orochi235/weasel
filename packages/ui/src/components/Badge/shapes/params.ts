@@ -9,6 +9,11 @@ export function withDefaults<P extends object>(defaults: P, params: Partial<P> |
   return out;
 }
 
+/** `n` held to `[lo, hi]`, where NaN reads as `fallback` (held there too). */
+export function clampParam(n: number, lo: number, hi: number, fallback: number): number {
+  return Math.max(lo, Math.min(Number.isNaN(n) ? fallback : n, hi));
+}
+
 /** The most repeats (points, teeth) a shape draws, so a huge or infinite count cannot hang a render. */
 export const MAX_REPEATS = 256;
 

@@ -31,6 +31,38 @@ describe('a shape param set to undefined', () => {
   }
 });
 
+describe('a clamped shape param set to NaN', () => {
+  const clamped: Record<string, string[]> = {
+    crest: ['topInset', 'pointDepth'],
+    coffin: ['headX', 'headHalfHeight', 'shoulderX', 'shoulderHalfHeight', 'footX', 'footHalfHeight'],
+    house: ['eaveY', 'peakHeight', 'roofOverhang'],
+    hexagon: ['tipHeight', 'tipTruncation'],
+    notched: ['erosion', 'eccentricity'],
+    shield: ['pointDepth', 'shoulderY', 'curveTightness', 'erosion'],
+    receipt: ['tearDepth', 'sideToTopRatio'],
+    starburst: ['erosion'],
+    perforated: ['holeRadius', 'holePitch'],
+  };
+  for (const [name, keys] of Object.entries(clamped)) {
+    const m = SHAPES[name as keyof typeof SHAPES];
+    const defaults = m.defaults as Record<string, unknown>;
+    for (const key of keys) {
+      it(`${name} draws its default ${key}`, () => {
+        const nan = { ...defaults, [key]: NaN };
+        if (m.compose) expect(m.compose(nan as never)).toEqual(m.compose(defaults as never));
+        if (m.Component) {
+          const C = m.Component;
+          const draw = (params: unknown) => render(
+            <svg viewBox="0 0 100 100"><C variant="solid" focused params={params as never} phase={0} /></svg>,
+          ).container.innerHTML.replace(/_r_[\w]+_|«r\w+»|:r\w+:/g, '');
+          expect(draw(nan)).toBe(draw(defaults));
+        }
+        if (typeof m.insets === 'function') expect(m.insets(nan as never)).toEqual(m.insets(defaults as never));
+      });
+    }
+  }
+});
+
 describe('a repeat count', () => {
   const pathOf = (name: 'sparkler' | 'starburst' | 'receipt', params: Record<string, number>) => {
     const C = SHAPES[name].Component!;

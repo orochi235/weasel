@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { withDefaults } from './params';
+import { clampParam, withDefaults } from './params';
 import type { ShapeModule } from '../types';
 import { useSvgBox } from '../useSvgBox';
 import { lerp, trimNumber } from '@weasel-js/geom';
@@ -29,11 +29,11 @@ function ShieldComponent({ variant, focused, params }: {
   const ref = useRef<SVGGElement>(null);
   const box = useSvgBox(ref);
 
-  const pd = Math.max(60, Math.min(cfg.pointDepth, 110));
-  const sh = Math.max(20, Math.min(cfg.shoulderY, pd - 5));
-  const cpY = lerp(sh, pd, Math.max(0.1, Math.min(cfg.curveTightness, 1)));
+  const pd = clampParam(cfg.pointDepth, 60, 110, DEFAULTS.pointDepth);
+  const sh = clampParam(cfg.shoulderY, 20, pd - 5, DEFAULTS.shoulderY);
+  const cpY = lerp(sh, pd, clampParam(cfg.curveTightness, 0.1, 1, DEFAULTS.curveTightness));
   // Aspect-aware top corner radii (so the rounded corners stay circular in CSS).
-  const cornerCss = Math.min(Math.max(0, Math.min(cfg.erosion, 1)) * 12, box.width / 2, (sh / 100) * box.height);
+  const cornerCss = Math.min(clampParam(cfg.erosion, 0, 1, DEFAULTS.erosion) * 12, box.width / 2, (sh / 100) * box.height);
   const rxC = (cornerCss / box.width) * 100;
   const ryC = (cornerCss / box.height) * 100;
   const d = [
