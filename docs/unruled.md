@@ -3235,3 +3235,9 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (my call, audit round 54): a group or layer `composite` string that is no `CompositeOp` (`'multiply'`,
   or an inherited name such as `'constructor'`) throws a `RangeError` naming it and listing the operators, rather
   than being drawn as `source-over`. It still ends the frame, as the bare `TypeError` it replaces did.
+## Audit round fifty-nine (2026-11-20): ui's Timeline
+
+- 2026-11-20 (the fixer's call): while a press on a `Timeline`'s lanes is held, an arrow step or a Delete or Backspace
+  on a key or the root is refused, since the drag's release commits against the tracks it began from and would undo
+  it; Escape still cancels. Edits from elsewhere during a drag (the inspector, the consumer) are not guarded. Ending
+  the drag on any other edit, or committing against the tracks at release, was the alternative.

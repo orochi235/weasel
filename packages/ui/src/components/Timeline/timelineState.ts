@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { arrowMove } from '@weasel-js/quantity';
 import type { Track } from '@weasel-js/animator';
 import type { KeySelection } from './keys';
 import { trackAtPath } from './lanes';
@@ -64,4 +65,29 @@ const selectionKey = (sel: KeySelection | null | undefined): string =>
 function keyTimesAt(tracks: readonly Track[], path: readonly number[]): string {
   const track = trackAtPath(tracks, path);
   return track?.kind === 'sampled' ? track.keys.map((k) => k.t).join(',') : '';
+}
+
+/**
+ * Refuses key edits from the keyboard while a press on the lanes is held: the drag's release commits against the tracks
+ * it began from, and would undo them. `onPointerDownCapture` goes on the lanes, `onKeyDownCapture` on the root.
+ */
+export function useKeyEditsHeldByPress() {
+  const pressed = useRef(false);
+  const onPointerDownCapture = (e: ReactPointerEvent): void => {
+    if (e.button !== 0) return;
+    pressed.current = true;
+    const release = (ev: PointerEvent): void => {
+      if (ev.type === 'pointermove' && ev.buttons !== 0) return;
+      pressed.current = false;
+      for (const type of ['pointerup', 'pointercancel', 'pointermove'] as const) window.removeEventListener(type, release, true);
+    };
+    // Capture, so the press lets go before the drag's own release commits.
+    for (const type of ['pointerup', 'pointercancel', 'pointermove'] as const) window.addEventListener(type, release, true);
+  };
+  const onKeyDownCapture = (e: ReactKeyboardEvent): void => {
+    if (!pressed.current) return;
+    if (e.target !== e.currentTarget && !(e.target as Element).closest?.('[data-lane-key]')) return;
+    if (arrowMove(e.key, e.shiftKey) || e.key === 'Delete' || e.key === 'Backspace') e.stopPropagation();
+  };
+  return { onPointerDownCapture, onKeyDownCapture };
 }

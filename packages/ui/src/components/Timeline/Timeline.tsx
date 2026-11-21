@@ -11,7 +11,7 @@ import { PlayheadReadout, Transport, type TransportProps } from '../Transport/Tr
 import { buildLanes, trackAtPath, type LaneRow } from './lanes';
 import { deleteKey, insertKey, keyTime, moveKey, samePath, setKeys, type KeyEdit, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
-import { useHeld, useKeyAndSegment, useTimeWindow } from './timelineState';
+import { useHeld, useKeyAndSegment, useKeyEditsHeldByPress, useTimeWindow } from './timelineState';
 import { TimelineInspector } from './TimelineInspector';
 
 export type { KeySelection } from './keys';
@@ -79,6 +79,7 @@ export function Timeline(props: TimelineProps): ReactElement {
   const { win, bounds, setWindow } = useTimeWindow(props.window, duration, props.onWindowChange);
   const { selection, segmentSelection, selectKey, selectSegment, dropSegment } = useKeyAndSegment(props.selection, tracks, props.onSelectionChange);
   const [mode, setMode] = useHeld<'dope' | 'graph'>(props.mode, 'dope', props.onModeChange);
+  const pressHold = useKeyEditsHeldByPress();
 
   const rows = useMemo(() => buildLanes(tracks, expanded), [tracks, expanded]);
 
@@ -122,6 +123,7 @@ export function Timeline(props: TimelineProps): ReactElement {
       data-held={hold.held}
       tabIndex={-1}
       onKeyDown={onRootKeyDown}
+      onKeyDownCapture={pressHold.onKeyDownCapture}
     >
       {label ? <div className={s.label}>{label}</div> : null}
 
@@ -145,7 +147,7 @@ export function Timeline(props: TimelineProps): ReactElement {
         </div>
       </div>
 
-      <div className={s.lanes}>
+      <div className={s.lanes} onPointerDownCapture={pressHold.onPointerDownCapture}>
         {rows.map((row) => {
           const trackPath = row.path;
           return (

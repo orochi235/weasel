@@ -149,6 +149,22 @@ describe('Timeline', () => {
     expect((onInput.mock.calls.at(-1)![0][0] as SampledTrack<number>).keys.map((k) => k.value)).toEqual([1, 2]);
   });
 
+  it('refuses a key deleted or stepped from the keyboard while a key drag is held', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    const key = screen.getAllByTestId('timeline-key')[1];
+    fireEvent.pointerDown(key, { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.keyDown(key, { key: 'Backspace' });
+    fireEvent.keyDown(key, { key: 'ArrowRight' });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10, buttons: 1 });
+    fireEvent.keyDown(key, { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.pointerUp(document, { clientX: 350, clientY: 10 });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(screen.getAllByTestId('timeline-key')[1], { key: 'Backspace' });
+    expect(onChange).toHaveBeenCalledTimes(2);
+  });
+
   it('preserves a track’s callbacks across an edit', () => {
     const input = tracks();
     const onChange = vi.fn();
