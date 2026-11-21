@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
-import { DEG_TO_RAD, trimNumber } from '@weasel-js/geom';
+import { DEG_TO_RAD } from '@weasel-js/geom';
+import { bevelBands } from './bevelBands';
 
 /** What an effect of type `bevel2` takes as `params`. */
 export interface BadgeBevel2EffectParams {
@@ -12,8 +13,6 @@ export interface BadgeBevel2EffectParams {
 }
 
 const DEFAULTS: Required<BadgeBevel2EffectParams> = { bevelWidth: 6, lightFrom: 315 };
-
-const SAMPLES = 240;
 
 // Six shade buckets from brightest to darkest. Each maps to a CSS class.
 const SHADE_CLASSES = [
@@ -37,62 +36,14 @@ const Bevel2: EffectModule<BadgeBevel2EffectParams> = {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
     const cfg = { ...DEFAULTS, ...params };
-    const sx = 100 / boxW;
-    const sy = 100 / boxH;
-    const total = sampler.totalCss;
     const { lx, ly } = lightDirFor(cfg.lightFrom);
-
-    const outer: { x: number; y: number; bucket: number }[] = [];
-    const inner: { x: number; y: number }[] = [];
-    for (let i = 0; i < SAMPLES; i++) {
-      const pt = sampler.perimeterAt((i / SAMPLES) * total);
-      // dot(n, lightDir) where light points FROM the corner OUTWARD: surfaces whose
-      // outward normal aligns with -light (facing the light source) are brightest.
-      const d = -(pt.nx * lx + pt.ny * ly);
-      // d ∈ [-1, 1]. Map to [0, SHADE_CLASSES.length).
-      const t = Math.max(0, Math.min((d + 1) / 2, 0.9999));
-      const bucket = Math.floor(t * SHADE_CLASSES.length);
-      outer.push({ x: pt.x, y: pt.y, bucket });
-      inner.push({
-        x: pt.x - pt.nx * cfg.bevelWidth * sx,
-        y: pt.y - pt.ny * cfg.bevelWidth * sy,
-      });
-    }
-
-    interface Run { bucket: number; idxs: number[] }
-    const runs: Run[] = [];
-    let cur: Run | null = null;
-    for (let i = 0; i < SAMPLES; i++) {
-      const bucket = outer[i].bucket;
-      if (!cur || cur.bucket !== bucket) {
-        cur = { bucket, idxs: [i] };
-        runs.push(cur);
-      } else {
-        cur.idxs.push(i);
-      }
-    }
-    if (runs.length > 1 && runs[0].bucket === runs[runs.length - 1].bucket) {
-      runs[runs.length - 1].idxs = runs[runs.length - 1].idxs.concat(runs[0].idxs);
-      runs.shift();
-    }
-
-    const pathFor = (run: Run): string => {
-      // Each band overlaps its neighbours by one sample on each side so the seams between
-      // shade buckets render without gaps.
-      const first = run.idxs[0];
-      const last = run.idxs[run.idxs.length - 1];
-      const prev = (first - 1 + SAMPLES) % SAMPLES;
-      const next = (last + 1) % SAMPLES;
-      const expandedIdxs = [prev, ...run.idxs, next];
-      const outerPts = expandedIdxs.map((i) => outer[i]);
-      const innerPts = expandedIdxs.map((i) => inner[i]).reverse();
-      const pts = [...outerPts, ...innerPts];
-      let d = `M ${trimNumber(pts[0].x, 3)} ${trimNumber(pts[0].y, 3)}`;
-      for (let i = 1; i < pts.length; i++) {
-        d += ` L ${trimNumber(pts[i].x, 3)} ${trimNumber(pts[i].y, 3)}`;
-      }
-      return d + ' Z';
+    // dot(n, lightDir) where light points FROM the corner OUTWARD: surfaces whose
+    // outward normal aligns with -light (facing the light source) are brightest.
+    const bucketFor = (nx: number, ny: number) => {
+      const t = Math.max(0, Math.min((1 - (nx * lx + ny * ly)) / 2, 0.9999));
+      return Math.floor(t * SHADE_CLASSES.length);
     };
+    const bands = bevelBands(sampler, boxW, boxH, cfg.bevelWidth, bucketFor);
 
     return (
       <>
@@ -102,8 +53,8 @@ const Bevel2: EffectModule<BadgeBevel2EffectParams> = {
           </clipPath>
         </defs>
         <g clipPath={`url(#${clipId})`}>
-          {runs.map((run, i) => (
-            <path key={i} className={SHADE_CLASSES[run.bucket]} d={pathFor(run)} />
+          {bands.map((band, i) => (
+            <path key={i} className={SHADE_CLASSES[band.key]} d={band.d} />
           ))}
         </g>
       </>

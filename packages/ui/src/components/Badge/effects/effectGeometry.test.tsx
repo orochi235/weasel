@@ -66,3 +66,21 @@ describe('perforations', () => {
     expect(Number(hole.getAttribute('rx'))).toBe(0);
   });
 });
+
+describe('a bevel', () => {
+  for (const [name, effect] of [['bevel', Bevel], ['bevel2', Bevel2]] as const) {
+    it(`${name} leaves no gap between neighboring bands`, () => {
+      const paths = [...draw(effect as EffectModule<object>, {}).querySelectorAll('g path')];
+      expect(paths.length).toBeGreaterThan(1);
+      const outerOf = (p: Element) => {
+        const pts = p.getAttribute('d')!.match(/-?[\d.]+ -?[\d.]+/g)!;
+        return new Set(pts.slice(0, pts.length / 2));
+      };
+      for (let i = 0; i < paths.length; i++) {
+        const a = outerOf(paths[i]);
+        const b = outerOf(paths[(i + 1) % paths.length]);
+        expect([...a].some((pt) => b.has(pt))).toBe(true);
+      }
+    });
+  }
+});
