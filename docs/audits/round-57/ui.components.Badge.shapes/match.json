@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   2,
+   4
+  ]
+ ],
+ "a": [
+  "A `quatrefoil` badge's `samples` has no upper bound, so `samples: Infinity` hangs the render",
+  "A `beavis` badge's `points` skips `repeatCount`, so an infinite or NaN count draws NaN spikes",
+  "A `receipt` badge's `tearDepth` has no upper bound, so deep tears cross the opposite edge",
+  "A `house` badge's `peakHeight` has no upper bound, so the roof rises past the box and its top inset"
+ ],
+ "b": [
+  "Composed shapes' declared `insets` are never read, so House, Coffin and Hexagon labels get the polygon base's 0/4/0/4 padding instead of their tuned values",
+  "NaN in a continuous shape param reaches the drawn path, while repeat counts map NaN to their minimum",
+  "`SHAPES` is a plain object, so a runtime shape name like `\"constructor\"` resolves through Object.prototype instead of falling back to pill",
+  "Beavis `cornerRadius` is in CSS px, but it reaches the base as a fraction of a fixed 22px height, so the drawn radius scales with badge height",
+  "Receipt `tearDepth` has no upper bound, so deep tears cross the badge and self-intersect the outline"
+ ]
+}

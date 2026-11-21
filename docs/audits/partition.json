@@ -6595,7 +6595,8 @@
    "packages/ui/src/components/Badge/shapes/Starburst.tsx",
    "packages/ui/src/components/Badge/shapes/Urn.tsx",
    "packages/ui/src/components/Badge/shapes/Wood.tsx",
-   "packages/ui/src/components/Badge/shapes/index.ts"
+   "packages/ui/src/components/Badge/shapes/index.ts",
+   "packages/ui/src/components/Badge/shapes/params.ts"
   ]
  },
  {

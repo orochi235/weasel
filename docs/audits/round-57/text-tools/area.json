@@ -1,0 +1,68 @@
+{
+ "id": "text-tools",
+ "commit": "c068d53f7e7088a49f2e672ba0dc6f9aac523208",
+ "date": "2026-11-20",
+ "files": [
+  "packages/text-tools/src/actionParamSchema.ts",
+  "packages/text-tools/src/actions/editEffectText.ts",
+  "packages/text-tools/src/actions/enterTextEdit.ts",
+  "packages/text-tools/src/actions/enterTextEditAt.ts",
+  "packages/text-tools/src/editor/canvasEditor.tsx",
+  "packages/text-tools/src/editor/editingDrawOne.ts",
+  "packages/text-tools/src/editor/hostTextEditors.ts",
+  "packages/text-tools/src/editor/sceneTextDrafts.ts",
+  "packages/text-tools/src/editor/textEditDep.ts",
+  "packages/text-tools/src/editor/textEditScreenPose.ts",
+  "packages/text-tools/src/editor/textEditStub.ts",
+  "packages/text-tools/src/editor/textHitAt.ts",
+  "packages/text-tools/src/editor/textLayer.ts",
+  "packages/text-tools/src/editor/useSceneTextEdit.ts",
+  "packages/text-tools/src/featurePresets.ts",
+  "packages/text-tools/src/icons.gen.ts",
+  "packages/text-tools/src/index.ts",
+  "packages/text-tools/src/ingest/textHandler.ts",
+  "packages/text-tools/src/node/insert.ts",
+  "packages/text-tools/src/node/properties.ts",
+  "packages/text-tools/src/node/textFrame.ts",
+  "packages/text-tools/src/node/textItems.ts",
+  "packages/text-tools/src/node/textOutline.ts",
+  "packages/text-tools/src/node/textPainter.ts",
+  "packages/text-tools/src/presets.ts",
+  "packages/text-tools/src/testing/openAt.ts",
+  "packages/text-tools/src/testing/textPainter.ts",
+  "packages/text-tools/src/toolSets.ts",
+  "packages/text-tools/src/tools/sticky/stickyNode.ts",
+  "packages/text-tools/src/tools/sticky/useStickyTool.ts",
+  "packages/text-tools/src/tools/text/useTextTool.ts"
+ ],
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "incomplete": [
+  "A",
+  "B"
+ ],
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0.8,
+   "B": 5.7,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "studio"
+  },
+  "weightedTokens": 0,
+  "costUsd": 0
+ },
+ "fixCommits": []
+}

@@ -1,0 +1,60 @@
+{
+ "id": "ui.components.Badge.shapes",
+ "commit": "c068d53f7e7088a49f2e672ba0dc6f9aac523208",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Badge/shapes/Beavis.tsx",
+  "packages/ui/src/components/Badge/shapes/Cloud.tsx",
+  "packages/ui/src/components/Badge/shapes/Coffin.tsx",
+  "packages/ui/src/components/Badge/shapes/Crest.tsx",
+  "packages/ui/src/components/Badge/shapes/Hexagon.tsx",
+  "packages/ui/src/components/Badge/shapes/House.tsx",
+  "packages/ui/src/components/Badge/shapes/Notched.tsx",
+  "packages/ui/src/components/Badge/shapes/Perforated.tsx",
+  "packages/ui/src/components/Badge/shapes/Pill.tsx",
+  "packages/ui/src/components/Badge/shapes/Plain.tsx",
+  "packages/ui/src/components/Badge/shapes/Plaque.tsx",
+  "packages/ui/src/components/Badge/shapes/Postage.tsx",
+  "packages/ui/src/components/Badge/shapes/Quatrefoil.tsx",
+  "packages/ui/src/components/Badge/shapes/Receipt.tsx",
+  "packages/ui/src/components/Badge/shapes/Ribbon.tsx",
+  "packages/ui/src/components/Badge/shapes/Scalloped.tsx",
+  "packages/ui/src/components/Badge/shapes/Shield.tsx",
+  "packages/ui/src/components/Badge/shapes/Sparkler.tsx",
+  "packages/ui/src/components/Badge/shapes/Square.tsx",
+  "packages/ui/src/components/Badge/shapes/Starburst.tsx",
+  "packages/ui/src/components/Badge/shapes/Urn.tsx",
+  "packages/ui/src/components/Badge/shapes/Wood.tsx",
+  "packages/ui/src/components/Badge/shapes/index.ts",
+  "packages/ui/src/components/Badge/shapes/params.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 1,
+ "distinct": 8,
+ "chapman": 14,
+ "unfound": 6,
+ "read": {
+  "A": 24,
+  "B": 24
+ },
+ "patches": 9,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.2,
+   "B": 3.1,
+   "match": 0.2,
+   "fix": 16.1
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1763656,
+  "costUsd": 5.14
+ },
+ "fixCommits": []
+}

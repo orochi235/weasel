@@ -1,0 +1,60 @@
+{
+ "id": "ui-input",
+ "commit": "c068d53f7e7088a49f2e672ba0dc6f9aac523208",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui-input/src/createLiveSelectionModel.ts",
+  "packages/ui-input/src/edgeScroll.ts",
+  "packages/ui-input/src/grid.ts",
+  "packages/ui-input/src/heldAt.ts",
+  "packages/ui-input/src/index.ts",
+  "packages/ui-input/src/keySteps.ts",
+  "packages/ui-input/src/list.ts",
+  "packages/ui-input/src/pbt.fixture.ts",
+  "packages/ui-input/src/press.ts",
+  "packages/ui-input/src/reorder.ts",
+  "packages/ui-input/src/scheduler.ts",
+  "packages/ui-input/src/selection.ts",
+  "packages/ui-input/src/slider.ts",
+  "packages/ui-input/src/solo.ts",
+  "packages/ui-input/src/span.ts",
+  "packages/ui-input/src/spatial.ts",
+  "packages/ui-input/src/stepRepeat.ts",
+  "packages/ui-input/src/sweep.ts",
+  "packages/ui-input/src/tabOrder.ts",
+  "packages/ui-input/src/textCommit.ts",
+  "packages/ui-input/src/tree.ts",
+  "packages/ui-input/src/typeahead.ts",
+  "packages/ui-input/src/wheel.ts"
+ ],
+ "a": 4,
+ "b": 0,
+ "m": 0,
+ "distinct": 4,
+ "incomplete": [
+  "B"
+ ],
+ "read": {
+  "A": 23,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.7,
+   "B": 5,
+   "match": 0,
+   "fix": 1
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 534895,
+  "costUsd": 1.71
+ },
+ "fixCommits": []
+}

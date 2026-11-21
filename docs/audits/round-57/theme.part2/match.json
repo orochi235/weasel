@@ -1,0 +1,9 @@
+{
+ "pairs": [],
+ "a": [
+  "`tree-indent` hook lists a fallback no Tree read carries",
+  "`themePrefsValues` reads a leaf as `undefined` at a selection its token does not resolve at, where the schema fills it from the fallback",
+  "`useColorModePreference` keeps the old storage's choice when `storage` changes under the same key"
+ ],
+ "b": []
+}

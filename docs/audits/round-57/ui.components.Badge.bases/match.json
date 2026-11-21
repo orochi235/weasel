@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "octant-bspline reads s = 0 and s = 1 from a phantom control point, so the outline dents at its cardinal and diagonal vertices",
+  "powerline gives two edge segments the bottom normal; with a puzzle cap they make up about a third of each side edge",
+  "rounded-rect at `erosion: 0, pinch: 1` returns a zero-length normal along both end edges",
+  "a ribbon with both ends `inward` crosses itself when the badge is narrower than twice `taperWidth`",
+  "the quatrefoil's smoothMax lifts the spike and lobe tips past `spikeR` / `lobeR`, so the spike leaves the viewBox",
+  "`resolveEdge` looks up a cap name on a plain object literal, so prototype names like `'toString'` resolve to Object.prototype functions",
+  "`PerimeterPoint`'s normal is documented as unit length in viewBox terms, but every base returns it unit length in CSS px, as the effects expect",
+  "the puzzle base's `tabSize` doc gives a range of 0..50, but the code clamps it to 2..40"
+ ],
+ "b": []
+}

@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   2,
+   3
+  ]
+ ],
+ "a": [
+  "An empty `value` throws on render",
+  "A previewing `onRangeInput` caller sees the axis shrink under an inward edge drag, so the end leaves the pointer",
+  "Home and End on a range end do nothing when no band is locked, yet the end advertises that limit as `aria-valuemin`/`aria-valuemax`",
+  "A range end ignores PageUp and PageDown, which every other `role=\"slider\"` in the strip answers"
+ ],
+ "b": [
+  "An edge drag cannot snap to a tick outside the current range, and ticks beyond it pull the edge back to where it started",
+  "A custom `splitBand` gives the new band the first tagged band's unit and display, not its parent's",
+  "An empty `value` throws during render",
+  "A range edge advertises an `aria-valuemin`/`aria-valuemax` it can never reach, and Home/End on it does nothing",
+  "Rescaling the range round-trips untouched seams through track units, so seams the rescale should hold drift"
+ ]
+}

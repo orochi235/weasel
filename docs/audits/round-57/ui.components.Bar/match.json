@@ -1,0 +1,33 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   2
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "A keyless cell's key is its index after `false`/`null` children are dropped, so toggling a conditional child remounts every keyless cell after it",
+  "A keyed child inside a fragment or array can share its key with a sibling elsewhere in the bar, which gives two cells one item key",
+  "A menu-mode bar does not re-measure when its lead appears or leaves with the same items, so `--bar-natural` and the kept count go stale",
+  "`useMenuLeast` measures from the lead's left edge to the button's right edge, which gives the wrong `least` in a right-to-left row",
+  "A keyed `Bar.Group` is never marked as a reorder unit, although `onReorder`'s doc says every keyed child is",
+  "A framed vertical bar doesn't scroll when too long for its room, although `overflow: 'scroll'` says a framed bar scrolls"
+ ],
+ "b": [
+  "An unkeyed cell's key is its index after `false`/`null` children are dropped, so a conditional child ahead of it remounts it",
+  "`BarMenu` ignores the bar's disabled/read-only hold, so a menu group in a disabled bar still opens and runs its actions",
+  "A `menu`-overflow `BarLine` doesn't re-fit when its lead appears, disappears or changes width",
+  "`useMenuLeast` measures from the lead's left edge, which in right-to-left layout is past the button, so the dock gets a negative least length",
+  "A disabled compound leaf's popover still opens, but a disabled text area's does not",
+  "`least` shrinks to the lead alone when the bar's first item is a spacer",
+  "The Bar stories use classes `Bar.stories.module.css` no longer defines"
+ ]
+}

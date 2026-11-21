@@ -1,0 +1,90 @@
+{
+ "id": "ui",
+ "commit": "c068d53f7e7088a49f2e672ba0dc6f9aac523208",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/alongTrack.ts",
+  "packages/ui/src/byRank.ts",
+  "packages/ui/src/color/ColorRamp.stories.module.css",
+  "packages/ui/src/color/ColorRamp.stories.tsx",
+  "packages/ui/src/createDomFocusScope.ts",
+  "packages/ui/src/createDomMeasureEnv.ts",
+  "packages/ui/src/cssPx.ts",
+  "packages/ui/src/cursors/cursors.stories.module.css",
+  "packages/ui/src/cursors/cursors.stories.tsx",
+  "packages/ui/src/dlog.ts",
+  "packages/ui/src/dropTarget.ts",
+  "packages/ui/src/handles.ts",
+  "packages/ui/src/icons.gen.ts",
+  "packages/ui/src/icons.table.ts",
+  "packages/ui/src/index.ts",
+  "packages/ui/src/kitSettings.ts",
+  "packages/ui/src/nativeProps.ts",
+  "packages/ui/src/nodeText.ts",
+  "packages/ui/src/optionKey.ts",
+  "packages/ui/src/overlays/blockFrame.ts",
+  "packages/ui/src/overlays/overlayAnimation.ts",
+  "packages/ui/src/overlays/overlayFrame.module.css",
+  "packages/ui/src/overlays/overlayFrame.ts",
+  "packages/ui/src/overlays/portalHost.tsx",
+  "packages/ui/src/pathThrough.ts",
+  "packages/ui/src/pbt.fixture.ts",
+  "packages/ui/src/rowControls.ts",
+  "packages/ui/src/selectionRoving.ts",
+  "packages/ui/src/snap.ts",
+  "packages/ui/src/themes/testing/mountThemed.tsx",
+  "packages/ui/src/tiling.module.css",
+  "packages/ui/src/tiling.ts",
+  "packages/ui/src/useAsyncOptions.ts",
+  "packages/ui/src/useAttachRef.ts",
+  "packages/ui/src/useDebouncedText.ts",
+  "packages/ui/src/useEditDraft.ts",
+  "packages/ui/src/useFieldLocale.ts",
+  "packages/ui/src/useIdleSettle.ts",
+  "packages/ui/src/useRemovedRowFocus.ts",
+  "packages/ui/src/useReorderDragList.ts",
+  "packages/ui/src/useRovingTabIndex.ts",
+  "packages/ui/src/useRowNavigation.ts",
+  "packages/ui/src/useScrollSpy.ts",
+  "packages/ui/src/useTextDraft.ts",
+  "packages/ui/src/useTypeahead.ts",
+  "packages/ui/src/wrapLine.ts"
+ ],
+ "a": 0,
+ "b": 6,
+ "m": 0,
+ "distinct": 6,
+ "incomplete": [
+  "A"
+ ],
+ "read": {
+  "A": 0,
+  "B": 46
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.4,
+   "B": 16.5,
+   "match": 0,
+   "fix": 21.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "weightedTokens": 1180677,
+  "costUsd": 3.61
+ },
+ "fixCommits": [
+  "d58792849b74bc2fbdee61dbab9432f108daa1e5",
+  "06da48441a9a17390c3237bdfe430fb1fb1d1821",
+  "2d3d80cc3a3bb3dbee356236109d878085758290",
+  "4acadb2ecb346c4e63626f59f2dfcdf7498378bc",
+  "5c5254401054f66ba52484b6489fb5942b145e40",
+  "d6b0814d470c70cf60c396677b4f713e64363cf3"
+ ]
+}

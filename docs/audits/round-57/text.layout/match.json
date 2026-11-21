@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "Code points handled before the shaped-slot check (space, tab, soft hyphen) throw away their shaped slot, so a mark clustered onto them is never drawn",
+  "A throw inside `layoutRuns` on a structural-list eviction leaves a listed entry pointing at recycled columns",
+  "A throw mid-painting leaves the group slots filled, and the next painting returns the previous one's groups, including one whose quadData is the shared scratch",
+  "`outlineMinSize: NaN` lands in the same paint-cache bucket as a threshold no run reaches, but paints every glyph as an outline"
+ ],
+ "b": []
+}

@@ -1,0 +1,67 @@
+{
+ "id": "text.layout",
+ "commit": "c068d53f7e7088a49f2e672ba0dc6f9aac523208",
+ "date": "2026-11-20",
+ "files": [
+  "packages/text/src/layout/arrayPool.ts",
+  "packages/text/src/layout/bidiLines.ts",
+  "packages/text/src/layout/bidiRegistry.ts",
+  "packages/text/src/layout/bidiSeam.ts",
+  "packages/text/src/layout/decorationMetrics.ts",
+  "packages/text/src/layout/engineGeneration.ts",
+  "packages/text/src/layout/engineSlot.ts",
+  "packages/text/src/layout/glyphQuads.ts",
+  "packages/text/src/layout/layoutCache.ts",
+  "packages/text/src/layout/layoutColumns.ts",
+  "packages/text/src/layout/layoutEntries.ts",
+  "packages/text/src/layout/layoutLines.ts",
+  "packages/text/src/layout/layoutOpts.ts",
+  "packages/text/src/layout/layoutRuns.ts",
+  "packages/text/src/layout/lineBreak/lineBreakTable.ts",
+  "packages/text/src/layout/lineBreak/lineBreaks.ts",
+  "packages/text/src/layout/lineBreak/wrapLines.ts",
+  "packages/text/src/layout/paintCache.ts",
+  "packages/text/src/layout/paintGroups.ts",
+  "packages/text/src/layout/paintRuns.ts",
+  "packages/text/src/layout/runsEntries.ts",
+  "packages/text/src/layout/runsKey.ts",
+  "packages/text/src/layout/shapedRuns.ts",
+  "packages/text/src/layout/shaperRegistry.ts",
+  "packages/text/src/layout/shaperSeam.ts",
+  "packages/text/src/layout/tabStops.ts",
+  "packages/text/src/layout/testing/fontFixtures.ts",
+  "packages/text/src/layout/testing/layoutAndPaint.ts",
+  "packages/text/src/layout/textFit.ts",
+  "packages/text/src/layout/textPoseLayout.ts"
+ ],
+ "a": 4,
+ "b": 0,
+ "m": 0,
+ "distinct": 4,
+ "incomplete": [
+  "B"
+ ],
+ "read": {
+  "A": 30,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.9,
+   "B": 2.4,
+   "match": 0,
+   "fix": 0.9
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 885191,
+  "costUsd": 2.8
+ },
+ "fixCommits": []
+}
