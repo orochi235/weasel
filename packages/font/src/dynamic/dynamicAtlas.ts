@@ -244,7 +244,12 @@ export function getDynamicFace(
 ): DynamicFace {
   const key = `${family}|${weight}|${style}`;
   const existing = faces.get(key);
-  if (existing) return existing;
+  if (existing) {
+    // Kept in order of use, so the cap drops the face used longest ago.
+    faces.delete(key);
+    faces.set(key, existing);
+    return existing;
+  }
 
   const r = getRasterizer();
   const font: BmFont = {

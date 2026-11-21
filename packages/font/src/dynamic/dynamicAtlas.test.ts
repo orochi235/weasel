@@ -356,6 +356,16 @@ describe('how many faces it keeps', () => {
     expect(getDynamicFace('Tween', 401, 'normal')).toBe(getDynamicFace('Tween', 401, 'normal'));
     expect(getDynamicFace('Tween', 400, 'normal')).not.toBe(first);
   });
+
+  it('drops the face used longest ago, not the one made first', () => {
+    const ui = getDynamicFace('UI', 400, 'normal');
+    const second = getDynamicFace('Tween', 400, 'normal');
+    for (let i = 1; i <= MAX_DYNAMIC_FACES - 2; i++) getDynamicFace('Tween', 400 + i / 100, 'normal');
+    expect(getDynamicFace('UI', 400, 'normal')).toBe(ui);
+    getDynamicFace('Tween', 500, 'normal');
+    expect(getDynamicFace('UI', 400, 'normal')).toBe(ui);
+    expect(getDynamicFace('Tween', 400, 'normal')).not.toBe(second);
+  });
 });
 
 describe('the test reset', () => {
