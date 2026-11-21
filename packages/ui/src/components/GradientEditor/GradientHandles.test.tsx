@@ -289,4 +289,17 @@ describe('GradientHandles edits', () => {
     fireEvent.keyDown(handle, { key: 'ArrowLeft' });
     expect(onChange.mock.calls.map(([next]) => Math.sign(next.angle))).toEqual([1, -1]);
   });
+
+  it('draws the conic arm the same length on screen at any zoom', () => {
+    const tipDistance = (zoom: number): number => {
+      const view = (p: { x: number; y: number }) => ({ x: p.x * zoom + 200, y: p.y * zoom + 150 });
+      const back = (p: { x: number; y: number }) => ({ x: (p.x - 200) / zoom, y: (p.y - 150) / zoom });
+      const { unmount } = render(<GradientHandles value={{ ...conic, center: { x: 0, y: 0 }, angle: 0 }} toScreen={view} toLocal={back} onChange={() => {}} width={400} height={300} />);
+      const tip = Number(screen.getByLabelText('Gradient angle').getAttribute('cx')) - 200;
+      unmount();
+      return tip;
+    };
+    expect(tipDistance(0.05)).toBeCloseTo(tipDistance(20));
+    expect(tipDistance(0.05)).toBeGreaterThan(20);
+  });
 });

@@ -1,5 +1,5 @@
 import { type ReactElement, type ReactNode } from 'react';
-import { gradientGeometry, type GradientPaint } from '@weasel-js/paint';
+import { type GradientPaint } from '@weasel-js/paint';
 import { DragPoint, Guide, HandleOverlay, useOverlayEdit, type EditPhase, type OverlayPoint as Point } from './handleOverlay';
 import s from './handleOverlay.module.css';
 import { useTints } from '@weasel-js/theme/react';
@@ -41,7 +41,8 @@ export interface GradientHandlesProps {
 /**
  * Direct-manipulation handles for a gradient's geometry, drawn as an SVG
  * overlay above a canvas: endpoints for linear, center and radius for
- * radial, center and angle arm for conic.
+ * radial, center and angle arm for conic. The conic arm is a fixed length on
+ * screen, since a conic gradient has none of its own.
  *
  * Positioning is entirely the consumer's `toScreen` / `toLocal`, so the same
  * handles serve a node-local gradient, a world-space one, and a plain
@@ -119,11 +120,8 @@ function renderForKind(
   }
 
   const center = toScreen(value.center);
-  const { radius } = gradientGeometry(value);
-  const tip = toScreen({
-    x: value.center.x + Math.cos(value.angle) * radius,
-    y: value.center.y + Math.sin(value.angle) * radius,
-  });
+  const along = unit(center, toScreen({ x: value.center.x + Math.cos(value.angle), y: value.center.y + Math.sin(value.angle) }));
+  const tip = { x: center.x + along.x * CONIC_ARM, y: center.y + along.y * CONIC_ARM };
   const turn = toScreen({ x: value.center.x - Math.sin(value.angle), y: value.center.y + Math.cos(value.angle) });
   return (
     <>
@@ -148,6 +146,9 @@ function renderForKind(
     </>
   );
 }
+
+/** The conic angle arm's length, in overlay pixels. */
+const CONIC_ARM = 60;
 
 function distance(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
