@@ -7,7 +7,8 @@ import {
 // Every expected value below was computed by the two bases as they stood at ebeb8f6ea (2026-11-13), before they
 // shared their anchor reading and outline sweep, by running that commit's compileSpline/evalCompiled,
 // compileNurbs/evalNurbsAtS and build() in a throwaway script; octant-spline's weighted values since, when its
-// weights stopped tilting its flat ends (2026-11-15).
+// weights stopped tilting its flat ends (2026-11-15); octant-bspline's at s = 0 and 1 since it stopped reading
+// them off the phantom control points (2026-11-20).
 
 const SETS: Record<string, BadgeSplineAnchor[]> = {
   bent: [{ s: 0, r: 48, w: 1 }, { s: 0.5, r: 20, w: 1 }, { s: 1, r: 40, w: 1 }],
@@ -20,15 +21,15 @@ const AT = [0, 0.1, 0.33, 0.5, 0.77, 1];
 const BEFORE: Record<string, { spline: number[]; bspline: number[] }> = {
   bent: {
     spline: [48, 45.28, 28.398, 20, 30.511856, 40],
-    bspline: [40, 36.28812933761279, 31.318361301649567, 28.000061040744114, 30.17270585960903, 48],
+    bspline: [36.6525417933802, 36.28812933761279, 31.318361301649567, 28.000061040744114, 30.17270585960903, 31.895377257768665],
   },
   defaults: {
     spline: [48, 42.99085714285714, 27.93088, 32, 38.73305142857143, 46],
-    bspline: [32, 39.25322112934018, 31.70991582588241, 32.66657511498006, 38.89770671343216, 32],
+    bspline: [40.7046844767504, 39.25322112934018, 31.70991582588241, 32.66657511498006, 38.89770671343216, 42.757283280355374],
   },
   weighted: {
     spline: [40, 48.86548913043478, 78.00125679347826, 53.38994565217391, 30.991171875, 35],
-    bspline: [25, 52.42408901642843, 51.58636579043697, 47.302536617509524, 40.56050893457738, 55],
+    bspline: [52.14766753730513, 52.42408901642843, 51.58636579043697, 47.302536617509524, 40.56050893457738, 34.956167813210335],
   },
 };
 
@@ -89,6 +90,16 @@ describe('the octant-spline curve', () => {
       const e = 1e-8;
       expect((radius(e) - radius(0)) / e).toBeCloseTo(0, 3);
       expect((radius(1) - radius(1 - e)) / e).toBeCloseTo(0, 3);
+    }
+  });
+});
+
+describe('the octant-bspline curve', () => {
+  it('meets its own radius at both ends rather than a phantom control point', () => {
+    for (const anchors of Object.values(SETS)) {
+      const radius = octantBSplineRadius(anchors);
+      expect(radius(0)).toBeCloseTo(radius(1e-6), 3);
+      expect(radius(1)).toBeCloseTo(radius(1 - 1e-6), 3);
     }
   });
 });
