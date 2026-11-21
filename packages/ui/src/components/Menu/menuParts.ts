@@ -1,4 +1,5 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useLayoutEffect, useRef } from 'react';
+import type { Emitter } from '@weasel-js/registry';
 
 /** Registers an element an open menu counts as its own, so a press inside it does not dismiss the menu: a popover
  *  a row opens, which portals outside every panel. Called with null when it goes. */
@@ -15,3 +16,16 @@ export function useMenuPart(): RegisterPart {
 }
 
 const noop: RegisterPart = () => {};
+
+/** The drafts of an open menu's fields, each committed when the menu goes: a removed field fires no blur React hears. */
+export const MenuDraftsContext = createContext<Emitter | null>(null);
+
+/** Have the open menu call `flush` as it closes, while its controller still takes a write. */
+export function useMenuDraft(flush: () => void): void {
+  const drafts = useContext(MenuDraftsContext);
+  const latest = useRef(flush);
+  useLayoutEffect(() => { latest.current = flush; });
+  useLayoutEffect(() => {
+    return drafts?.subscribe(() => latest.current());
+  }, [drafts]);
+}
