@@ -33,6 +33,16 @@ describe('parityDevice', () => {
     await Promise.resolve();
     expect(await parityDevice()).not.toBe(first);
   });
+
+  it('keeps the device a call opened while an earlier, released one was still opening', async () => {
+    const released = parityDevice();
+    releaseDevice();
+    const kept = await parityDevice();
+    await released;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(await parityDevice()).toBe(kept);
+    expect(requested).toHaveLength(2);
+  });
 });
 
 describe('renderEach', () => {

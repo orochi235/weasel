@@ -60,21 +60,25 @@ const errors: string[] = [];
 /** The shared device, every uncaptured error it raises collected for `takeErrors`,
  *  and requested again once it is lost. */
 export function parityDevice(): Promise<GPUDevice> {
-  device ??= openDevice().catch((err: unknown) => {
-    device = null;
+  if (device) return device;
+  const forget = (): void => { if (device === opening) device = null; };
+  const opening: Promise<GPUDevice> = openDevice(forget).catch((err: unknown) => {
+    forget();
     throw err;
   });
-  return device;
+  device = opening;
+  return opening;
 }
 
-async function openDevice(): Promise<GPUDevice> {
+/** `forget` drops this open's promise from the cache once its device is lost,
+ *  and only that promise: a later open may hold the cache by then. */
+async function openDevice(forget: () => void): Promise<GPUDevice> {
   const gpu = await requestRendererDevice();
   if (!gpu) throw new Error('no WebGPU device: the browser project launches Chromium with --enable-unsafe-webgpu');
-  const held = device;
   gpu.addEventListener('uncapturederror', (e) => errors.push(`uncaptured: ${(e as GPUUncapturedErrorEvent).error.message}`));
   void gpu.lost.then((info) => {
     if (info.reason !== 'destroyed') errors.push(`device lost: ${info.message}`);
-    if (device === held) device = null;
+    forget();
   });
   return gpu;
 }
