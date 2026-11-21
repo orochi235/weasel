@@ -6,7 +6,7 @@ import { autoRecord, recordValue } from './stamp';
 import { prefCanAuto, prefStartsAuto } from './autoReset';
 import { prefHoldsValue, prefLeaves, VERSION_RECORD, isPrefScope, type PrefScope, type PrefSelection, type PrefWeights, type PrefValidator, type PrefGroup } from '@weasel-js/prefs-schema';
 import { assignPrefValueAt, setOwnPrefValue, selectionWeights } from '@weasel-js/prefs-schema/internal';
-import { createSnapshots, resolveHeld, selectionAt, weightsUnder, type SnapshotSource } from './snapshot';
+import { createSnapshots, resolveHeld, selectionAt, weightsUnder, type Snapshot, type SnapshotSource } from './snapshot';
 import { checkPrefScopes, prefSelectors, admittedSelectors } from './splitCheck';
 import type { PrefPath, PrefValueAt } from '@weasel-js/prefs-schema';
 import { prefWrites } from './storeWrites';
@@ -139,7 +139,7 @@ export function createPrefsStore<S extends PrefGroup>(
   let storedTree: Record<string, unknown> | null = null;
 
   let changed = createEmitter<[PrefChange[]]>();
-  const stopCache = cache.subscribe((changes) => {
+  let stopCache = cache.subscribe((changes) => {
     const records = changes.filter((c) => c.name !== VERSION_RECORD);
     if (records.length === 0) return;
     storedTree = null;
@@ -205,18 +205,7 @@ export function createPrefsStore<S extends PrefGroup>(
       for (const p of under) cache.delete(p);
     },
     isSet: (path) => (leaves.has(path) ? !current().unset.has(path) : cache.has(path)),
-    values: (read) => {
-      const now = current();
-      if (!read?.at) return now.tree;
-      const selection = selectionAt(source.selectors, now.selection, read.at, source.admitted);
-      const weights = selectionWeights(selection);
-      const tree: Record<string, unknown> = {};
-      for (const [path, leaf] of leaves) {
-        const set = source.selectors.has(path) ? getOwn(selection, path) : resolveHeld(source, leaf, now.held.get(path), weights);
-        assignPrefValueAt(tree, path, set);
-      }
-      return tree;
-    },
+    values: (read) => (read?.at ? valuesAt(source, current(), read.at) : current().tree),
     unset: () => current().unset,
     stored: () => (storedTree ??= storedRecords(cache)),
     subscribe: (listener) => changed.subscribe(listener),
@@ -234,9 +223,27 @@ export function createPrefsStore<S extends PrefGroup>(
       onClose?.();
       stopCache();
       changed = createEmitter();
-      return cache.close();
+      const sent = cache.close();
+      // A closed store still reads its own writes, from the cache it holds once closed.
+      stopCache = cache.subscribe(() => {
+        storedTree = null;
+        drop();
+      });
+      return sent;
     },
   };
+}
+
+/** The tree as `now` reads with each selector `at` names set to the option it gives. */
+function valuesAt(source: SnapshotSource, now: Snapshot, at: PrefSelection): Record<string, unknown> {
+  const selection = selectionAt(source.selectors, now.selection, at, source.admitted);
+  const weights = selectionWeights(selection);
+  const tree: Record<string, unknown> = {};
+  for (const [path, leaf] of source.leaves) {
+    const set = source.selectors.has(path) ? getOwn(selection, path) : resolveHeld(source, leaf, now.held.get(path), weights);
+    assignPrefValueAt(tree, path, set);
+  }
+  return tree;
 }
 
 /** The leaf paths at or under `path`; every one with no path. */
