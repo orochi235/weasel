@@ -255,4 +255,12 @@ describe('GradientHandles edits', () => {
     expect(onInput).not.toHaveBeenCalled();
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it('commits nothing for an arrow key that leaves the radius where it was', () => {
+    const onChange = vi.fn();
+    const floor: GradientPaint = { ...radial, radius: 1 };
+    render(<GradientHandles value={floor} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
+    fireEvent.keyDown(screen.getByLabelText('Gradient radius'), { key: 'ArrowLeft' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

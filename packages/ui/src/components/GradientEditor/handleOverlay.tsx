@@ -2,6 +2,7 @@ import { createContext, useContext, useRef, type KeyboardEvent as ReactKeyboardE
 import { useHandleDrag } from '@weasel-js/routing/react';
 import { arrowMove } from '@weasel-js/quantity';
 import { useLatest } from '@weasel-js/react';
+import { deepEqual } from '@weasel-js/registry';
 import { useEditDraft, type EditCallbacks } from '../../useEditDraft';
 import { ARROW_KEYSHORTCUTS } from '../../handles';
 import s from './handleOverlay.module.css';
@@ -29,8 +30,9 @@ export interface EditSession {
 const SessionContext = createContext<EditSession>({ begin: () => {}, cancel: () => {} });
 
 /**
- * The edit protocol an overlay runs over its whole value: the draft a commit-only caller sees, and a canceled
- * drag sent back to the value it began from rather than one rebuilt from the handle's pixels.
+ * The edit protocol an overlay runs over its whole value: the draft a commit-only caller sees, a commit that
+ * changed nothing dropped, and a canceled drag sent back to the value it began from rather than one rebuilt
+ * from the handle's pixels.
  */
 export function useOverlayEdit<V>(value: V, cb: EditCallbacks<V>): {
   shown: V;
@@ -45,8 +47,9 @@ export function useOverlayEdit<V>(value: V, cb: EditCallbacks<V>): {
       onInput(next);
       return;
     }
+    const base = from.current ? from.current.value : valueRef.current;
     from.current = null;
-    onChange(next);
+    if (!deepEqual(next, base)) onChange(next);
   };
   const session: EditSession = {
     begin: () => { from.current = { value: valueRef.current }; },
