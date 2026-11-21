@@ -16,8 +16,8 @@ export interface SliderThumbProps<T extends Thumb> {
   shape: ThumbShape | undefined;
   fraction: number;
   geometry: SliderGeometry;
-  min: number;
-  max: number;
+  /** The lowest and highest values the thumb can reach. */
+  limits: readonly [number, number];
   /** The slider's own name and description; with none, its field's. */
   own: Pick<SliderProps<T>, 'aria-label' | 'aria-labelledby' | 'aria-describedby'>;
   hold: ThumbHoldAttrs;
@@ -46,8 +46,8 @@ export function SliderThumb<T extends Thumb>(p: SliderThumbProps<T>): ReactEleme
       role="slider"
       {...p.hold}
       aria-orientation={p.geometry.curved ? undefined : 'horizontal'}
-      aria-valuemin={p.min}
-      aria-valuemax={p.max}
+      aria-valuemin={p.limits[0]}
+      aria-valuemax={p.limits[1]}
       aria-valuenow={thumb.value}
       aria-valuetext={thumb.valueText ?? p.spoken ?? (p.display ? qty(thumb.value, p.display, { locale: p.locale }).spoken : undefined)}
       {...thumbName(naming, thumb.label, id)}

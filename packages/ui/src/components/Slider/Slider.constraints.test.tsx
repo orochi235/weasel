@@ -4,6 +4,22 @@ import { useState } from 'react';
 import { Slider } from './Slider';
 import { stubRect } from './testing/stubRect';
 
+describe('Slider thumb limits', () => {
+  const limits = (el: Element) => [el.getAttribute('aria-valuemin'), el.getAttribute('aria-valuemax')].map(Number);
+
+  it('publishes a thumb\'s own bounds as its aria-valuemin and aria-valuemax', () => {
+    const { getByRole } = render(<Slider min={0} max={100} thumbs={[{ value: 50, bounds: [20, 80] }]} onInput={() => {}} />);
+    expect(limits(getByRole('slider'))).toEqual([20, 80]);
+  });
+
+  it('publishes the limits ordered neighbors set', () => {
+    const { getAllByRole } = render(
+      <Slider min={0} max={100} step={1} constraint="ordered" thumbs={[{ value: 10 }, { value: 50 }, { value: 90 }]} onInput={() => {}} />,
+    );
+    expect(getAllByRole('slider').map(limits)).toEqual([[0, 49], [11, 89], [51, 100]]);
+  });
+});
+
 describe('Slider free constraint', () => {
   it('thumbs may pass each other; onInput preserves index order', () => {
     const onInput = vi.fn();

@@ -16,6 +16,11 @@ export function draggedValue<T extends Thumb>(
   return span.ordered ? clampOrdered(held, thumbs, index, lo, hi, span.step) : held;
 }
 
+/** How far thumb `index` can go, low and high: what its aria-valuemin and aria-valuemax say. */
+export function reachOf<T extends Thumb>(thumbs: readonly T[], index: number, span: Parameters<typeof draggedValue>[3]): [number, number] {
+  return [draggedValue(thumbs, index, -Infinity, span), draggedValue(thumbs, index, Infinity, span)];
+}
+
 /**
  * Every thumb's value after the pointer has moved `dxFraction` of the track since a shift-all drag began from
  * `startValues`. The thumbs keep their spacing, and the first to reach an end of the track stops them all.

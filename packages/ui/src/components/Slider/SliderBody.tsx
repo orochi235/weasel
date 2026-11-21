@@ -12,6 +12,7 @@ import { useSliderRegions } from './SliderRegion';
 import { SliderStopLabels, SliderTicks, labeledStopsOf } from './SliderMarks';
 import { SliderThumb } from './SliderThumb';
 import { READOUT } from './stops';
+import { reachOf } from './thumbDragValues';
 import { onThumbKeyDown } from './thumbKeys';
 import type { SliderProps, Thumb } from './types';
 import { useBoxes } from './useBoxes';
@@ -69,10 +70,8 @@ export function SliderBody<T extends Thumb = Thumb>(
   const drags = useThumbDrags<T>({ props, span, scale, geometry });
   const hold = useSliderHold(props);
   const regions = useSliderRegions<T>({ props: hold.refuses ? { ...props, regionDrag: false } : props, min, max, scale, geometry, direction, busy: drags.held });
-  const regionAt = regions.at;
   // One press owns the slider: a second finger starts neither a thumb drag nor a region drag.
-  const held = () => drags.held() || regions.held();
-  const pointer = hold.pointer(useSliderPointer<T>({ thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput: drags.onInput, onChange: drags.onChange, drags: { ...drags, held } }));
+  const pointer = hold.pointer(useSliderPointer<T>({ thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput: drags.onInput, onChange: drags.onChange, drags: { ...drags, held: () => drags.held() || regions.held() } }));
   const keyDown = hold.keys(onThumbKeyDown<T>({ thumbs, stops, min, max, step, constraint, keyStep: props.keyStep, range: props.range, onInput: drags.onInput, onChange: drags.onChange, direction: run ? screenDirection(run) : direction }));
 
   const placement = props.readoutPlacement ?? 'none';
@@ -93,15 +92,14 @@ export function SliderBody<T extends Thumb = Thumb>(
       )}
       {/* One keyed list, so a region keeps its element, and its focus, as thumbs come and go after it. */}
       {[...thumbs.flatMap((thumb, i) => [
-        regionAt(i),
+        regions.at(i),
         <SliderThumb<T>
           key={`thumb-${i}`}
           thumb={thumb}
           shape={thumb.shape ?? props.thumbShape}
           fraction={valueToFraction(thumb.value)}
           geometry={geometry}
-          min={min}
-          max={max}
+          limits={reachOf(thumbs, i, { min, max, step, ordered: constraint === 'ordered' })}
           own={props}
           hold={hold.thumb}
           display={display}
@@ -114,7 +112,7 @@ export function SliderBody<T extends Thumb = Thumb>(
           onKeyDown={keyDown(i)}
           onContextMenu={pointer.onThumbContextMenu(i)}
         />,
-      ]), regionAt(thumbs.length)]}
+      ]), regions.at(thumbs.length)]}
     </>
   );
 
