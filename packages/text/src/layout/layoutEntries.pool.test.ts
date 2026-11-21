@@ -2,7 +2,7 @@
  *  through it does not change when the next one reuses them. */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { measureRuns, type Entry } from './layoutEntries';
+import { _joinedEndsSizeForTests, measureRuns, type Entry } from './layoutEntries';
 import { layoutRuns } from './layoutRuns';
 import { stubFetch, registerFixture, RUN_PLAIN } from './testing/fontFixtures';
 
@@ -30,5 +30,11 @@ describe('measureRuns with a pool', () => {
     const before = a.lines[0].glyphs.map((g) => [g.cp, g.x, g.advance]);
     layoutRuns([RUN_PLAIN('BBBA')], OPTS);
     expect(a.lines[0].glyphs.map((g) => [g.cp, g.x, g.advance])).toEqual(before);
+  });
+
+  it('builds its own cluster ends for a long text whose runs meet inside a cluster', async () => {
+    await registerFixture('inter', [{}]);
+    measureRuns([RUN_PLAIN('א'), RUN_PLAIN('ב'.repeat(100_000))], 4);
+    expect(_joinedEndsSizeForTests()).toBeLessThanOrEqual(1 << 16);
   });
 });
