@@ -58,4 +58,16 @@ describe('a rect whose fill mesh carries an origin', () => {
     const [push] = placements(rec, r._pathFill());
     expect(push(fillLeft(), 0)).toBeCloseTo(100, 3);
   });
+
+  it('marks an aligned stroke\'s fill on the stencil where the rect is', () => {
+    const { rec, r } = frame({
+      kind: 'path',
+      path: FAR,
+      stroke: { paint: { kind: 'solid', color: '#00f' }, width: 30, align: 'inner' },
+    } as DrawCommand);
+    const [fill, ribbon] = placements(rec, r._pathFill());
+    expect(fill(fillLeft(), 0)).toBeCloseTo(100, 3);
+    // The ribbon's vertices are absolute: the outer edge of a 60-wide centered ribbon.
+    expect(ribbon(FAR.x - 30, 0)).toBeCloseTo(70, 3);
+  });
 });
