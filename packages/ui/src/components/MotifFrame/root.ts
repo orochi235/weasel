@@ -15,3 +15,13 @@ export function headingTag(level: HeadingLevel | undefined, fallback: HeadingLev
 export function twistySides({ twisty, twistyAt }: Pick<HeadingParts, 'twisty' | 'twistyAt'>): { start: ReactNode; end: ReactNode } {
   return twistyAt === 'end' ? { start: null, end: twisty } : { start: twisty, end: null };
 }
+
+/** Whether React draws anything for `node`: `null`, `undefined` and booleans draw nothing, as `cond && <X/>` gives. */
+export function drawn(node: ReactNode): boolean {
+  return node != null && typeof node !== 'boolean';
+}
+
+/** Whether a frame's heading row has anything to draw: an untitled frame with no controls draws none. */
+export function headed({ title, inline, twisty, leading, actions }: HeadingParts): boolean {
+  return [title, inline, twisty, leading, actions].some(drawn);
+}

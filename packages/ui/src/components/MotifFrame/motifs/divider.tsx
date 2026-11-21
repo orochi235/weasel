@@ -1,4 +1,4 @@
-import { headingTag, twistySides } from '../root';
+import { drawn, headingTag, twistySides } from '../root';
 import type { Motif } from '../types';
 import s from './divider.module.css';
 
@@ -19,12 +19,12 @@ export function divider(): Motif<Record<string, never>> {
           <div className={s.title}>
             {fold.start}
             {leading}
-            <Heading className={s.heading} aria-labelledby={inline === undefined ? undefined : titleId}>
+            <Heading className={s.heading} aria-labelledby={drawn(inline) ? titleId : undefined}>
               <span id={titleId}>{title}</span>
               {inline}
             </Heading>
             <hr />
-            {actions === undefined ? null : <span className={s.actions}>{actions}</span>}
+            {drawn(actions) && <span className={s.actions}>{actions}</span>}
             {fold.end}
           </div>
           {note}

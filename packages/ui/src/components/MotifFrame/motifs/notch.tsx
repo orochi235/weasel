@@ -1,4 +1,4 @@
-import { withMotifClass, twistySides } from '../root';
+import { drawn, withMotifClass, twistySides } from '../root';
 import type { Motif } from '../types';
 import s from './notch.module.css';
 
@@ -18,14 +18,14 @@ export function notch(params: NotchParams = {}): Motif<NotchParams> {
       const fold = twistySides({ twisty, twistyAt });
       return (
         <fieldset {...withMotifClass(root, s.notch)}>
-          <legend className={s.legend} data-align={align} data-actions={actions === undefined ? undefined : ''}>
+          <legend className={s.legend} data-align={align} data-actions={drawn(actions) ? '' : undefined}>
             {fold.start}
             {leading}
             <span id={titleId} className={s.label}>
               {title}
             </span>
             {inline}
-            {actions === undefined ? null : (
+            {!drawn(actions) ? null : (
               <>
                 <span className={s.run} aria-hidden="true" />
                 <span className={s.actions}>{actions}</span>
