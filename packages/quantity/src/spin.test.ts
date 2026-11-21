@@ -86,6 +86,17 @@ describe('canSpin', () => {
     expect(canSpin('ArrowUp', 3, b)).toBe(true);
     expect(canSpin('ArrowUp', Infinity, b)).toBe(false);
   });
+
+  it('brings a value already past an endless bound back to the bound, as without endless', () => {
+    const up = { step: 1, max: 100, endless: 'max' as const };
+    expect(spinKey('ArrowDown', 1000, up)).toBe(100);
+    expect(spinKey('ArrowDown', 1000, { ...up, endless: undefined })).toBe(100);
+    expect(spinKey('PageDown', 1000, up)).toBe(100);
+    expect(spinKey('End', 1000, up)).toBe(Infinity);
+    const down = { step: 1, min: -100, endless: 'min' as const };
+    expect(spinKey('ArrowUp', -1000, down)).toBe(-100);
+    expect(spinKey('Home', -1000, down)).toBe(-Infinity);
+  });
 });
 
 describe('arrowMove', () => {
