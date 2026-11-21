@@ -3266,3 +3266,10 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+## Audit round fifty-nine (2026-11-20): panel cells
+
+- 2026-11-20 (the fixer's call, audit round 59): across several selected kinds, `SelectionPanel` draws a leaf only
+  where every kind's leaf at that path means the same: they may differ in how they are drawn (name, description,
+  icon, pair, control, conditions), never in a default, a bound, an option's value, a field, or a function such as an
+  action's `run`. Reading and writing each node under its own kind's leaf was the alternative, and would keep such a
+  leaf on the panel.

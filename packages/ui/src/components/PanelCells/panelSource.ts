@@ -29,13 +29,16 @@ export interface PanelSourceInput {
  *  property, and reads as unset unless the leaf is `absentIsDefault`. */
 export function panelSource(input: PanelSourceInput): SelectionSource {
   const { records, selection, writes, disabled, hidden, active } = input;
-  const byPath = new Map(input.leaves.map((l) => [l.path, l] as const));
-  const keyOf = (path: string): string => {
-    const at = byPath.get(path);
-    return at ? panelLeafKey(at) : path;
-  };
+  const keysAt = new Map<string, string[]>();
+  const byPath = new Map<string, PanelLeaf>();
+  for (const l of input.leaves) {
+    keysAt.set(l.path, [...(keysAt.get(l.path) ?? []), panelLeafKey(l)]);
+    if (!byPath.has(l.path) || l.own === undefined) byPath.set(l.path, l);
+  }
+  // Leaves sharing a path (an alias and its target) each answer by their own key; the path is as free as the freest.
+  const keysOf = (path: string): readonly string[] => keysAt.get(path) ?? [path];
   return createSelectionSource({
-    leaves: Object.fromEntries(input.leaves.map((l) => [l.path, l.leaf])),
+    leaves: Object.fromEntries([...byPath].map(([path, l]) => [path, l.leaf])),
     read: (path) => records.map((r) => r.valueAt(path)),
     shown: nodeLeafValue,
     write: (path, next, options) => {
@@ -45,12 +48,16 @@ export function panelSource(input: PanelSourceInput): SelectionSource {
       else writes.commit(selection, at, next);
     },
     reset: (plan, label) => {
-      const due = plan.flatMap((w) => byPath.get(w.path) ?? []);
+      const due = [...new Set(plan.flatMap((w) => byPath.get(w.path) ?? []))];
       if (due.length > 0) writes.reset(selection, due, label);
     },
     stateAt: (path): PrefLeafStatus => {
-      const key = keyOf(path);
-      return { enabled: !disabled.has(key), shown: !hidden.has(key), active: active?.has(key) === true };
+      const keys = keysOf(path);
+      return {
+        enabled: keys.some((key) => !disabled.has(key)),
+        shown: keys.some((key) => !hidden.has(key)),
+        active: keys.some((key) => active?.has(key) === true),
+      };
     },
   });
 }

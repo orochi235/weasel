@@ -78,7 +78,8 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): LeafContext {
     disabledAt: inside?.disabledAt ?? ((at) => disabled.has(at)),
     hidden: hidden.has(panelLeafKey(panelLeaf)),
     hiddenAt: inside?.hiddenAt ?? ((at) => hidden.has(at)),
-    ...(scope.active?.has(panelLeafKey(panelLeaf)) ? { active: true } : {}),
+    active: scope.active?.has(panelLeafKey(panelLeaf)) === true,
+    activeAt: inside?.activeAt ?? ((at) => scope.active?.has(at) === true),
     ...(entryAt ? { entryAt } : {}),
     ...(scope.settles ? { settles: scope.settles } : {}),
     ...(scope.textWaitMs ? { textWaitMs: scope.textWaitMs } : {}),
@@ -122,7 +123,9 @@ export function rowCells(row: PanelRow, scope: PanelCellScope, surface: ControlF
   );
 }
 
-/** The paths of `leaves` a reset would change in some selected node, by the one reset policy (`resetPlan`). */
+/** The paths of `leaves` a reset would change in some selected node, by the one reset policy (`resetPlan`). A leaf
+ *  disabled by its own key resets nothing, though another leaf at its path is enabled. */
 export function panelResets(leaves: readonly PanelLeaf[], scope: PanelCellScope): string[] {
-  return sourceResetPlan(scope.source, leaves.map((l) => l.path)).map((w) => w.path);
+  const live = leaves.filter((l) => !scope.disabled.has(panelLeafKey(l)));
+  return sourceResetPlan(scope.source, [...new Set(live.map((l) => l.path))]).map((w) => w.path);
 }
