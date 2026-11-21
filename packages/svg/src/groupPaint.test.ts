@@ -23,6 +23,16 @@ describe('importing a group’s paint', () => {
     expect(leaf.data).toMatchObject({ fill: INHERIT });
   });
 
+  it('keeps a child’s own fill opacity as its own fill', () => {
+    const [, leaf] = drafts(`<g fill="#ff0000"><rect width="10" height="10" fill-opacity="0.5"/></g>`);
+    expect(leaf.data.fill).not.toBe(INHERIT);
+    const parsed = parseSvg(svg(`<g fill="#ff0000"><g fill-opacity="0.5">${RECT}</g></g>`));
+    const inner = (parsed.nodes[0] as { children: { inherits?: unknown }[] }).children[0];
+    expect(inner.inherits).toBeUndefined();
+    expect(serializeSvg(parseSvg(svg(`<g fill="#ff0000"><rect width="10" height="10" fill-opacity="0.5"/></g>`)).nodes))
+      .toMatch(/<rect[^>]*fill-opacity="0.5"|<path[^>]*fill-opacity="0.5"/);
+  });
+
   it('keeps a child’s own fill', () => {
     const [, leaf] = drafts(`<g fill="#ff0000"><rect width="10" height="10" fill="#0000ff"/></g>`);
     expect(leaf.data).toMatchObject({ fill: { paint: { color: '#0000ff' } } });
