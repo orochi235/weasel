@@ -93,6 +93,8 @@ async function open(options: NodeRasterHostOptions): Promise<Open> {
 export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeRasterHost {
   let opening: Promise<Open> | null = null;
   let disposed = false;
+  /** Closes `drop` started without waiting, which `dispose` waits out. */
+  const closing = new Set<Promise<void>>();
 
   async function call(args: NodeRenderArgs, format: PageRequest['format']): Promise<PageResult> {
     if (disposed) throw new Error('node raster host: render on a disposed host');
@@ -141,7 +143,8 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
   function drop(pending: Promise<Open>, opened: Open): void {
     if (opening !== pending) return;
     opening = null;
-    void close(opened).catch(() => undefined);
+    const closed = close(opened).catch(() => undefined).finally(() => closing.delete(closed));
+    closing.add(closed);
   }
 
   /** Close what `open` opened: the context in a caller's browser, or the browser the host launched. */
@@ -155,9 +158,8 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
     disposed = true;
     const pending = opening;
     opening = null;
-    if (!pending) return;
-    const opened = await pending.catch(() => null);
-    if (opened) await close(opened);
+    const opened = pending ? await pending.catch(() => null) : null;
+    await Promise.all([...closing, opened ? close(opened) : undefined]);
   }
 
   return {

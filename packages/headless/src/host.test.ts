@@ -192,4 +192,39 @@ describe('node raster host', () => {
     expect(closeContext).toHaveBeenCalledTimes(1);
     await host.dispose();
   });
+
+  it('waits on dispose for the browser of a page it dropped to finish closing', async () => {
+    let finish!: () => void;
+    const closeBrowser = vi.fn(() => new Promise<void>((resolve) => { finish = resolve; }));
+    let evaluated = 0;
+    const browser = {
+      close: closeBrowser,
+      isConnected: () => true,
+      newContext: async () => ({
+        close: vi.fn(async () => {}),
+        newPage: async () => ({
+          on: () => {}, addScriptTag: async () => {}, isClosed: () => evaluated > 1,
+          evaluate: async () => {
+            if (evaluated++ === 0) return true;
+            throw new Error('Target page, context or browser has been closed');
+          },
+        }),
+      }),
+    } as unknown as Browser;
+    vi.doMock('playwright-core', () => ({ chromium: { launch: async () => browser } }));
+    try {
+      const host = createNodeRasterHost({ pageScript: 'x' });
+      await expect(host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).rejects.toThrow(/closed/);
+      expect(closeBrowser).toHaveBeenCalledTimes(1);
+      let disposed = false;
+      const disposing = host.dispose().then(() => { disposed = true; });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(disposed).toBe(false);
+      finish();
+      await disposing;
+      expect(disposed).toBe(true);
+    } finally {
+      vi.doUnmock('playwright-core');
+    }
+  });
 });
