@@ -48,8 +48,8 @@ test('a rule from every imported sheet reaches the class the module exports', ()
 
 test('a subpanel spans both columns of a paired group, as it does a paired list', () => {
   const root = mount(`
-    <div class="${s.group} ${s.groupPairs}">
-      <div class="${s.groupBody}">
+    <div class="${s.group}">
+      <div class="${s.groupBody} ${s.groupPairs}">
         <section class="${s.subpanel}" data-part="subpanel"></section>
       </div>
     </div>`);

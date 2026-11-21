@@ -74,8 +74,9 @@ export function PropertyGroup(props: PropertyGroupProps) {
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
   if (hidden) return null;
 
-  const base = `${s.group}${pack === 'pairs' ? ` ${s.groupPairs}` : pack === 'one-up' ? ` ${s.groupOneUp}` : ''}`;
-  const cls = propertyMetricClass(span ? `${base} ${s.span}` : base, { spacing, align }, className);
+  // On the body rather than the frame, so the packing rules can name the body's own children and no nested group's.
+  const body = `${s.groupBody}${pack === 'pairs' ? ` ${s.groupPairs}` : pack === 'one-up' ? ` ${s.groupOneUp}` : ''}`;
+  const cls = propertyMetricClass(span ? `${s.group} ${s.span}` : s.group, { spacing, align }, className);
   return (
     <MotifFrame
       title={foldTitle(title, fold)}
@@ -92,7 +93,7 @@ export function PropertyGroup(props: PropertyGroupProps) {
       onContextMenu={onContextMenu}
     >
       {description !== undefined && description !== '' && <PropertyNote>{description}</PropertyNote>}
-      <div className={s.groupBody} {...fold.body}>
+      <div className={body} {...fold.body}>
         {holdScope(props, children)}
       </div>
     </MotifFrame>
