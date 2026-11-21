@@ -7,7 +7,7 @@ import { clamp01, lerp } from '@weasel-js/geom';
  */
 export interface Sweep<V> {
   /** The value `u` of the way along, 0 to 1, clamped: a scrubber's reading. A
-   *  domain of discrete steps answers its nearest step. */
+   *  domain of discrete steps answers its nearest step. Throws a `RangeError` for `NaN`. */
   at(u: number): V;
   /** Every step in order: a sequence's reading. May never end; `stepsOf` caps it. */
   walk(): Iterable<V>;
@@ -42,6 +42,11 @@ const tidy = (n: number, scale = 0): number => {
 
 const plain = (n: number): string => String(shown(n));
 
+const fraction = (u: number): number => {
+  if (Number.isNaN(u)) throw new RangeError('a sweep is read at a fraction of the way along, not NaN');
+  return clamp01(u);
+};
+
 /** What {@link rangeSweep} walks: its ends, and either a `step` or a `count`. */
 export type RangeSpec = {
   from: number;
@@ -75,7 +80,7 @@ export function rangeSweep(spec: RangeSpec): Sweep<number> {
     return {
       at: (u) => {
         if (!Number.isFinite(last)) throw new RangeError('an endless range has no point a fraction of the way along');
-        return nth(Math.round(clamp01(u) * last));
+        return nth(Math.round(fraction(u) * last));
       },
       *walk() {
         for (let i = 0; i <= last; i++) yield nth(i);
@@ -90,7 +95,7 @@ export function rangeSweep(spec: RangeSpec): Sweep<number> {
   const [lo, hi] = from <= to ? [from, to] : [to, from];
   const along = (u: number): number => (u <= 0 ? from : u >= 1 ? to : Math.min(hi, Math.max(lo, tidy(lerp(from, to, u), scale))));
   return {
-    at: (u) => along(clamp01(u)),
+    at: (u) => along(fraction(u)),
     *walk() {
       if (count === 1) yield from;
       else for (let i = 0; i < count; i++) yield i === 0 ? from : i === count - 1 ? to : Number.isFinite(span) ? tidy(from + (span * i) / (count - 1), scale) : along(i / (count - 1));
@@ -103,7 +108,7 @@ export function rangeSweep(spec: RangeSpec): Sweep<number> {
 export function valuesSweep<V>(list: readonly V[], label: (value: V) => string = String): Sweep<V> {
   if (list.length === 0) throw new RangeError('a sweep over values needs at least one');
   return {
-    at: (u) => list[Math.round(clamp01(u) * (list.length - 1))]!,
+    at: (u) => list[Math.round(fraction(u) * (list.length - 1))]!,
     walk: () => list,
     label,
   };
@@ -155,7 +160,7 @@ export function framesSweep(span: FrameSpan, options: FrameOptions): Sweep<numbe
   return {
     at: (u) => {
       if (!Number.isFinite(end)) throw new RangeError('an endless run has no point a fraction of the way along');
-      return end * clamp01(u);
+      return end * fraction(u);
     },
     *walk() {
       for (let i = 0; ; i++) {

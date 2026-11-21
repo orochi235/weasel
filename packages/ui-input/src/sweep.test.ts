@@ -132,3 +132,16 @@ describe('sweepUntil', () => {
     expect(seen).toEqual([0, 1, 2, 3, 4]);
   });
 });
+
+describe('a sweep read at NaN', () => {
+  it('throws, from every kind of sweep', () => {
+    const sweeps = [
+      rangeSweep({ from: 0, to: 9, step: 1 }),
+      rangeSweep({ from: 0, to: 9, count: 4 }),
+      valuesSweep(['a', 'b']),
+      framesSweep({ duration: 100 }, { every: 10 }),
+      sweepUntil(valuesSweep([1, 2]), () => false),
+    ];
+    for (const sweep of sweeps) expect(() => sweep.at(NaN)).toThrow(RangeError);
+  });
+});

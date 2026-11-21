@@ -3445,3 +3445,8 @@ Calls the lanes made without a ruling:
   `NaN`, which the paint cache read as a threshold no run reaches while every glyph drew as an outline. Omitting it is
   how to ask for no outlines; the renderer passes none when a degenerate transform makes its world threshold `NaN`.
   Reading `NaN` as omitted was the alternative.
+## Audit round sixty-two (2026-11-21): sweeps
+
+- 2026-11-21 (the fixer's call): a sweep's `at` throws a `RangeError` for a `NaN` fraction, from `rangeSweep`,
+  `valuesSweep` and `framesSweep` alike, where it had answered `NaN` or `undefined`. Reading `NaN` as 0, the start,
+  was the alternative.

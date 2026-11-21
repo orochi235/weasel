@@ -80,7 +80,7 @@ export interface SliderAtShape extends TrackMap {
   stops?: readonly number[];
   /** How near a stop pulls, as a track fraction. Default 0: only a pointer exactly on a stop lands on it. */
   pull?: number;
-  /** Only a stop can be picked: the nearest, however far. */
+  /** Only a stop can be picked: the nearest, however far. With no stops, the step grid and `min` to `max` decide. */
   strict?: boolean;
   /** Pass the stops by. Not read under `strict`. */
   free?: boolean;
@@ -91,7 +91,7 @@ export interface SliderAtShape extends TrackMap {
 export function sliderAt(f: number, shape: SliderAtShape): number {
   const stops = shape.stops ?? [];
   const v = shape.toValue(f);
-  if (shape.strict) return attract(v, stops, Infinity, shape.toFraction);
+  if (shape.strict && stops.length > 0) return attract(v, stops, Infinity, shape.toFraction);
   const { min, max } = shape;
   const origin = shape.origin ?? (Number.isFinite(min) ? min : Number.isFinite(max) ? max : 0);
   const q = clamp(snapToStep(v, shape.step, origin), min, max);
@@ -216,5 +216,9 @@ export function sliderKey(key: string, shift: boolean, shape: SliderKeyShape): n
     else v = crossed > range[0] && crossed < range[1] ? snapToStep(crossed, step, range[0]) : crossed;
   }
   v = clamp(v, lo, hi);
-  return shape.ordered ? clampOrdered(v, thumbs, index, lo, hi, step) : v;
+  if (!shape.ordered) return v;
+  const held = clampOrdered(v, thumbs, index, lo, hi, step);
+  if (typeof move !== 'number' || shape.keyStep || stops.length === 0 || held === v) return held;
+  const [inLo, inHi] = [clampOrdered(-Infinity, thumbs, index, lo, hi, step), clampOrdered(Infinity, thumbs, index, lo, hi, step)];
+  return attract(held, stops.filter(stop => stop >= inLo && stop <= inHi), Infinity);
 }

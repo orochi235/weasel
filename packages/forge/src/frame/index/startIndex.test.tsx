@@ -230,8 +230,10 @@ describe('startIndex', () => {
       shell.send({ type: 'vars.set', name: '--fg-t-index-ink', value: 'blue' });
       await flush();
       expect(document.head.querySelector('style[data-fg-overrides]')?.textContent).toContain('--fg-t-index-ink: blue;');
-      const last = received.filter((m) => m.type === 'vars').at(-1);
-      expect(last?.vars.find((v) => v.name === '--fg-t-index-ink')).toMatchObject({ value: 'blue', overridden: true });
+      await waitFor(() => {
+        const last = received.filter((m) => m.type === 'vars').at(-1);
+        expect(last?.vars.find((v) => v.name === '--fg-t-index-ink')).toMatchObject({ value: 'blue', overridden: true });
+      });
     } finally {
       sheet.remove();
     }

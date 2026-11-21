@@ -54,6 +54,13 @@ describe('sliderKey', () => {
     thumbs: [{ value: 50 }], index: 0, min: 0, max: 100, step: 1, ...over,
   });
 
+  it("keeps an ordered thumb on a stop when the next one is its neighbor's", () => {
+    const stops = [0, 10, 20];
+    expect(sliderKey('ArrowRight', false, shape({ thumbs: [{ value: 0 }, { value: 10 }], stops, ordered: true }))).toBe(0);
+    expect(sliderKey('PageUp', false, shape({ thumbs: [{ value: 0 }, { value: 20 }], stops, ordered: true }))).toBe(10);
+    expect(sliderKey('ArrowLeft', false, shape({ thumbs: [{ value: 10 }, { value: 20 }], index: 1, stops, ordered: true }))).toBe(20);
+  });
+
   it('steps by one, ten with Shift or a Page key, and goes to the ends with Home and End', () => {
     expect(sliderKey('ArrowRight', false, shape())).toBe(51);
     expect(sliderKey('ArrowDown', true, shape())).toBe(40);
@@ -134,6 +141,11 @@ describe('sliderAt', () => {
 
   it('picks only a stop under strict, however far, free or not', () => {
     expect(sliderAt(0.1, { ...track, stops: [40, 80], strict: true, free: true })).toBe(40);
+  });
+
+  it('keeps a strict pick with no stops on the step grid and inside the range', () => {
+    expect(sliderAt(1.5, { ...track, step: 10, strict: true })).toBe(100);
+    expect(sliderAt(0.43, { ...track, step: 10, strict: true, stops: [] })).toBe(40);
   });
 
   it('reads a window onto a longer range, past its edges', () => {
