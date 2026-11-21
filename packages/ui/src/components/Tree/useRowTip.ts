@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useKitSetting } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
 import type {} from '../../kitSettings';
@@ -27,8 +27,13 @@ export function useRowTip(): { tip: RowTip | null; rest(id: string, el: HTMLElem
   };
   const rest = (id: string, el: HTMLElement): void => {
     cancelRest.current?.();
-    cancelRest.current = after(restMs, () => setTip({ id, el }));
+    cancelRest.current = after(restMs, () => { if (el.isConnected) setTip({ id, el }); });
   };
+  // A row can leave with no pointerleave: folded away by key, filtered out, or redrawn as another element.
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- whether the row is still in the document shows only once React commits
+    if (tip && !tip.el.isConnected) clear();
+  });
   useEffect(() => () => {
     cancelRest.current?.();
   }, []);
