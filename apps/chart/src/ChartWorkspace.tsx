@@ -85,7 +85,9 @@ export function ChartWorkspace(): ReactElement {
   const dims = useCanvasSize(hostRef);
   const { view, setView, fitTo } = useFittedView(scene, dims);
   const pages = useChartPages(scene, view, dims, setView);
-  const showFirstPage = useCallback(() => fitTo(null), [fitTo]);
+  // Bumped when New, Open or Import replaces the chart, so the panels that open for what a chart holds read it afresh.
+  const [replaced, setReplaced] = useState(0);
+  const showFirstPage = useCallback(() => { setReplaced((n) => n + 1); fitTo(null); }, [fitTo]);
   useChartCommands(scene, showFirstPage);
   useExportCommands(scene, pages);
   const shownRef = useLatest(pages.shown);
@@ -112,7 +114,7 @@ export function ChartWorkspace(): ReactElement {
         <Sidebar side="left" className="wc-sidebar" aria-label="Shapes">
           {tools && <StencilPanel tools={tools} scene={scene} theme={theme} scale={Math.abs(view.scale.x)} />}
           {tools && (
-            <SequencePanel tools={tools} scene={scene} selected={selection.current} values={toolOptionValues} />
+            <SequencePanel key={replaced} tools={tools} scene={scene} selected={selection.current} values={toolOptionValues} />
           )}
         </Sidebar>
         <div className="wc-stage">
