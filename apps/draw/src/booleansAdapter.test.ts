@@ -130,6 +130,17 @@ describe('drawBooleansAdapter result data', () => {
     const [id] = result.kind === 'applied' ? result.resultIds : [];
     expect(Object.keys(scene.get(asNodeId(id!))!.data).sort()).toEqual(['label', 'path']);
   });
+
+  it('makes a plain path from a path effect or a boolean group, with no effect or operation left on it', () => {
+    const { scene, adapter } = setup();
+    scene.update(asNodeId('b'), {
+      data: { path: rectPath(0, 0, 10, 10), label: 'rough', pathEffect: { kind: 'roughen' }, boolean: 'union' } as WeaselDrawData,
+    });
+    scene.setSelection([asNodeId('a'), asNodeId('b')]);
+    const result = applyBooleanOp(adapter, 'union');
+    const [id] = result.kind === 'applied' ? result.resultIds : [];
+    expect(Object.keys(scene.get(asNodeId(id!))!.data).sort()).toEqual(['label', 'path']);
+  });
 });
 
 describe('drawBooleansAdapter with strokes counted', () => {
