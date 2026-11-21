@@ -16,8 +16,10 @@ beforeAll(() => {
     { x: 0, y: 0, left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600, toJSON: () => ({}) },
   );
 });
-afterEach(() => {
+afterEach(async () => {
   cleanup();
+  // The session's last save, run on unmount, lands a task later; clear storage after it.
+  await new Promise((resolve) => setTimeout(resolve, 0));
   // The store caches what it read, so clearing storage alone would leak prefs into the next test.
   chartPrefs().reset();
   localStorage.clear();
@@ -66,6 +68,18 @@ describe('App', () => {
     choose('Mode', 'Pipeline');
     choose('Edit', 'Undo');
     await waitFor(() => expect(stages()).toHaveLength(0));
+  });
+
+  it('keeps the chart through a visit to pipeline mode, though its save failed', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('full', 'QuotaExceededError'); });
+    mount();
+    choose('Page', 'Add Page');
+    act(() => { fireEvent.click(within(screen.getByRole('dialog', { name: 'Add Page' })).getByRole('button', { name: 'Add' })); });
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
+    choose('Mode', 'Pipeline');
+    choose('Mode', 'Chart');
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
+    vi.mocked(Storage.prototype.setItem).mockRestore();
   });
 
   it('gives pipeline mode a File menu of its own', () => {
@@ -291,6 +305,17 @@ describe('App', () => {
     act(() => { fireEvent.click(screen.getByRole('button', { name: 'Create' })); });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(panels()).toEqual(expect.arrayContaining(['Flowchart', 'Containers']));
+  });
+
+  it('opens the Sequence panel on a new sequence chart', () => {
+    mount();
+    const toolbars = () => [...document.querySelectorAll('[role="toolbar"]')].map((t) => t.getAttribute('aria-label'));
+    expect(toolbars()).not.toContain('Sequence tools');
+    choose('File', 'New…');
+    const dialog = screen.getByRole('dialog', { name: 'New Chart' });
+    act(() => { fireEvent.click(within(within(dialog).getByRole('listbox', { name: 'Sequence' })).getByRole('option', { name: 'Sequence' })); });
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Create' })); });
+    expect(toolbars()).toContain('Sequence tools');
   });
 
   it('starts a chart from a chart template, and adds a sequence page beside it from Page › Add Page…', () => {

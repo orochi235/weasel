@@ -45,8 +45,7 @@ const ENDS: readonly { value: End; label: string }[] = [
 export function SequenceEdits({ scene, sel }: { scene: ChartScene; sel: SequenceSelection }): ReactElement {
   const { data } = sel;
   const commit = (next: SequenceData, label: string) => commitSelected(scene, sel, next, label);
-  const message = sel.messages[0] === undefined ? null : findStep(data.steps, sel.messages[0]);
-  const fragment = sel.fragments[0] === undefined ? null : findStep(data.steps, sel.fragments[0]);
+  const fragments = sel.fragments.map((id) => findStep(data.steps, id)).filter((f) => f?.kind === 'fragment');
   const uncreated = foldEach(data, sel.participants, (d, id) => removeMarksOf(d, 'create', id));
   const boxed = (data.boxes ?? []).filter((b) => sel.boxes.includes(b.id) || b.members.some((m) => sel.participants.includes(m)));
   const messages = sel.messages.map((id) => findStep(data.steps, id)).filter((m) => m?.kind === 'message');
@@ -59,7 +58,7 @@ export function SequenceEdits({ scene, sel }: { scene: ChartScene; sel: Sequence
       <Checkbox isSelected={data.autonumber !== undefined} onChange={(on) => commit(setAutonumber(data, on ? 1 : undefined), 'Number messages')}>
         Number messages
       </Checkbox>
-      {message?.kind === 'message' && (
+      {messages.length > 0 && (
         <>
           <Select
             label="Activates" orientation="row" width="fit" options={ENDS}
@@ -71,14 +70,17 @@ export function SequenceEdits({ scene, sel }: { scene: ChartScene; sel: Sequence
           />
         </>
       )}
-      {fragment?.kind === 'fragment' && (
+      {fragments.length > 0 && (
         <>
-          <Button disabled={!SEQ_MULTI_SECTION.has(fragment.type)} onClick={() => commit(addSection(data, fragment.id), 'Add section')}>
+          <Button
+            disabled={!fragments.some((f) => SEQ_MULTI_SECTION.has(f.type))}
+            onClick={() => commit(foldEach(data, fragments.map((f) => f.id), (d, id) => addSection(d, id)), 'Add section')}
+          >
             Add section
           </Button>
           <Button
-            disabled={fragment.sections.length < 2}
-            onClick={() => commit(removeSection(data, fragment.id, fragment.sections.length - 1), 'Remove section')}
+            disabled={!fragments.some((f) => f.sections.length > 1)}
+            onClick={() => commit(fragments.reduce((d, f) => removeSection(d, f.id, f.sections.length - 1), data), 'Remove section')}
           >
             Remove section
           </Button>

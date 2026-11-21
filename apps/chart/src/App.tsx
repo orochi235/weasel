@@ -3,7 +3,7 @@ import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { useMemo, useState, type ReactElement } from 'react';
 import './app.css';
 import { CHART_MENUS } from './chartCommands';
-import { ChartWorkspace } from './ChartWorkspace';
+import { ChartWorkspace, useChartDoc } from './ChartWorkspace';
 import { CHART_MENU_TITLES } from './menuBar';
 import { MODE_MENU, useModeCommands, type ChartMode } from './modes';
 import { PIPELINE_MENUS } from './pipeline/pipelineCommands';
@@ -27,13 +27,15 @@ export function App(): ReactElement {
   );
 }
 
-/** The workspace of the mode that is on, and the commands that switch modes. */
+/** The workspace of the mode that is on, and the commands that switch modes. Each mode's document is held here, so it
+ *  outlives a visit to the other mode. */
 function Modes({ mode, setMode }: { mode: ChartMode; setMode: (mode: ChartMode) => void }): ReactElement {
+  const chart = useChartDoc();
   const pipeline = usePipelineDoc();
   // A view choice, not part of the pipeline doc.
   const [look, setLook] = useChartPref('pipeline.look');
   useModeCommands(mode, setMode);
-  return mode === 'chart' ? <ChartWorkspace /> : <PipelineWorkspace pipeline={pipeline} look={look} setLook={setLook} />;
+  return mode === 'chart' ? <ChartWorkspace chart={chart} /> : <PipelineWorkspace pipeline={pipeline} look={look} setLook={setLook} />;
 }
 
 export default App;

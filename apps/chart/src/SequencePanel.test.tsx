@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { createScene, createToolOptionValues, declaredToolShortcuts, type Tool, type ToolsApi } from '@weasel-js/core';
-import { findStep, sequenceRootOf, sequenceSpecs, sequenceTools, type SequenceData } from '@weasel-js/diagram';
+import { findStep, sequenceRootOf, sequenceSpecs, sequenceTools, type SeqFragment, type SequenceData } from '@weasel-js/diagram';
 import { CHART_LAYERS, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
 import { isSequenceTool, SequencePanel } from './SequencePanel';
 import { renderWithIcons } from './testIcons';
@@ -100,6 +100,24 @@ describe('SequencePanel', () => {
     press('Remove section');
     expect(findStep(dataOf(scene).steps, 'f1')).toMatchObject({ sections: [{ label: 'ok' }] });
     expect(screen.getByRole('button', { name: 'Remove section' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('adds and removes sections on every selected fragment that takes them', () => {
+    const scene = createScene<ChartData, ChartLayer, ChartPose>({
+      systemLayers: CHART_LAYERS, registry: CHART_REGISTRY,
+      initial: sequenceSpecs({ ...DATA, steps: [
+        { kind: 'fragment', id: 'f0', type: 'opt', sections: [{ steps: [] }] },
+        ...DATA.steps,
+        { kind: 'fragment', id: 'f2', type: 'alt', sections: [{ steps: [] }] },
+      ] }, { id: 'seq', layer: 'shapes' }) as never,
+    });
+    panel(scene, ['seq/frag:f0', 'seq/frag:f1', 'seq/frag:f2']);
+    expect(screen.getByRole('button', { name: 'Remove section' }).hasAttribute('disabled')).toBe(true);
+    press('Add section');
+    const sections = () => ['f0', 'f1', 'f2'].map((id) => (findStep(dataOf(scene).steps, id) as SeqFragment).sections.length);
+    expect(sections()).toEqual([1, 2, 2]);
+    press('Remove section');
+    expect(sections()).toEqual([1, 1, 1]);
   });
 
   it('boxes selected participants and removes the box, and retypes a selected head', () => {

@@ -37,13 +37,16 @@ function SetupDialog({ page, onApply, onClose }: { page: { name: string; size: P
         <PropertyField kind="enum" control="select" label="Orientation" value={setup.orientation} options={ORIENTATIONS}
           onChange={(orientation) => choose(setup.paper, orientation)} />
         <PropertyField kind="number" label="Width" value={setup.width} min={1} disabled={setup.paper !== 'custom'}
-          onChange={(width) => setSetup((s) => ({ ...s, width }))} />
+          onChange={(width) => setSetup((s) => resized(s, { width, height: s.height }))} />
         <PropertyField kind="number" label="Height" value={setup.height} min={1} disabled={setup.paper !== 'custom'}
-          onChange={(height) => setSetup((s) => ({ ...s, height }))} />
+          onChange={(height) => setSetup((s) => resized(s, { width: s.width, height }))} />
       </PropertyList>
     </Dialog>
   );
 }
+
+/** `s` at `size`, its orientation the one `size` has. */
+const resized = (s: PageSetup, size: PageSize): PageSetup => ({ ...s, ...size, orientation: setupOf(size).orientation });
 
 /** A custom size turned to `orientation`: its long side runs that way. */
 function turned(size: PageSize, orientation: Orientation): PageSize {

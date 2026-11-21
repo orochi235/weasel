@@ -1,4 +1,4 @@
-import { SceneCanvas, createToolOptionValues, isToolSet, useCanvasSize, useLatest, useScene, type Tool, type ToolsApi } from '@weasel-js/core';
+import { SceneCanvas, createToolOptionValues, isToolSet, useCanvasSize, useLatest, useScene, type Tool, type ToolOptionValues, type ToolsApi } from '@weasel-js/core';
 import { isTextData } from '@weasel-js/text';
 import { TEXT_TOOLS, useSceneTextEdit } from '@weasel-js/text-tools';
 import {
@@ -63,16 +63,29 @@ const isPaletteTool = (tool: Tool): boolean => !isStencilTool(tool) && !isSequen
 /** What the shortcut sheet groups the tools by: core's sets, the sequence tools, then each stencil group. */
 const SHEET_TOOL_SETS = [...KIT_TOOL_GROUPS, TEXT_TOOLS, SEQUENCE_TOOLS, ...STENCIL_TOOLS.members.filter(isToolSet)];
 
-/** Chart mode: the scene is the document — stencil bodies joined by edges, on a page. */
-export function ChartWorkspace(): ReactElement {
+/** What chart mode edits, held above the mode switch so a visit to another mode keeps it: the scene, which holds its
+ *  undo stack and selection, and the sequence tools' option values. */
+export interface ChartDoc {
+  scene: ChartScene;
+  toolOptionValues: ToolOptionValues;
+}
+
+/** The chart, loaded once from the last session and saved as it changes. */
+export function useChartDoc(): ChartDoc {
   const [initial] = useState(loadChartSession);
   const scene = useScene<ChartData, ChartLayer, ChartPose>({
     systemLayers: CHART_LAYERS, registry: CHART_REGISTRY, initial: initial.specs, doc: initial.doc,
   });
-  const selection = useSelection({ mode: 'multiple', scene });
   useSessionPersistence(scene, { ...CHART_SESSION, onSaved: reportChartSave });
-  const theme = chartThemeOf(scene);
   const [toolOptionValues] = useState(createToolOptionValues);
+  return useMemo(() => ({ scene, toolOptionValues }), [scene, toolOptionValues]);
+}
+
+/** Chart mode: the scene is the document — stencil bodies joined by edges, on a page. */
+export function ChartWorkspace({ chart }: { chart: ChartDoc }): ReactElement {
+  const { scene, toolOptionValues } = chart;
+  const selection = useSelection({ mode: 'multiple', scene });
+  const theme = chartThemeOf(scene);
   const diagram = useChartDiagram(scene, selection, theme, diagramTypeOf(scene));
   const plot = useMemo(() => createPlotEditingContribution({ scene: scene as never }), [scene]);
   // The plot's handles first, so a diagram handle beside one is hit over it.
@@ -85,7 +98,9 @@ export function ChartWorkspace(): ReactElement {
   const dims = useCanvasSize(hostRef);
   const { view, setView, fitTo } = useFittedView(scene, dims);
   const pages = useChartPages(scene, view, dims, setView);
-  const showFirstPage = useCallback(() => fitTo(null), [fitTo]);
+  // Bumped when New, Open or Import replaces the chart, so the panels that open for what a chart holds read it afresh.
+  const [replaced, setReplaced] = useState(0);
+  const showFirstPage = useCallback(() => { setReplaced((n) => n + 1); fitTo(null); }, [fitTo]);
   useChartCommands(scene, showFirstPage);
   useExportCommands(scene, pages);
   const shownRef = useLatest(pages.shown);
@@ -112,7 +127,7 @@ export function ChartWorkspace(): ReactElement {
         <Sidebar side="left" className="wc-sidebar" aria-label="Shapes">
           {tools && <StencilPanel tools={tools} scene={scene} theme={theme} scale={Math.abs(view.scale.x)} />}
           {tools && (
-            <SequencePanel tools={tools} scene={scene} selected={selection.current} values={toolOptionValues} />
+            <SequencePanel key={replaced} tools={tools} scene={scene} selected={selection.current} values={toolOptionValues} />
           )}
         </Sidebar>
         <div className="wc-stage">
