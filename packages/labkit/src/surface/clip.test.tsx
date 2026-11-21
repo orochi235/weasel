@@ -107,6 +107,26 @@ describe('clipToAncestors', () => {
     }
   });
 
+  it('grows an `overflow: clip` or a paint-contained cut by `overflow-clip-margin`, from the box it names', () => {
+    for (const rule of ['overflow-x: clip; overflow-y: clip', 'contain: paint']) {
+      const { outer, tile } = nest(`${rule}; overflow-clip-margin: 20px`, '');
+      stubBox(outer, 150, 120, 100, 40);
+      expect(clipToAncestors(tile, box)).toEqual({ left: 130, top: 100, width: 140, height: 80 });
+    }
+    const { outer, tile } = nest(
+      'overflow-x: clip; padding: 10px; overflow-clip-margin: content-box 5px',
+      '',
+    );
+    stubBox(outer, 150, 120, 100, 40);
+    expect(clipToAncestors(tile, box)).toEqual({ left: 155, top: 100, width: 90, height: 100 });
+  });
+
+  it('cuts a scroll container to its padding box, whatever its `overflow-clip-margin`', () => {
+    const { outer, tile } = nest(`${BOTH}; overflow-clip-margin: 20px`, '');
+    stubBox(outer, 150, 120, 100, 40);
+    expect(clipToAncestors(tile, box)).toEqual({ left: 150, top: 120, width: 100, height: 40 });
+  });
+
   it('skips an ancestor whose overflow applies to no box', () => {
     for (const display of ['contents', 'inline']) {
       const { inner, tile } = nest('', `display: ${display}; ${BOTH}`);

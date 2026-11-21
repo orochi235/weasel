@@ -20,25 +20,61 @@ function containsPaint(style: CSSStyleDeclaration): boolean {
  *  non-replaced inline one is never a scroll container. */
 const hasClipBox = (display: string): boolean => display !== 'contents' && display !== 'inline';
 
+const px = (v: string): number => Number.parseFloat(v) || 0;
+
+/** How many viewport px one of `el`'s layout px is on each axis: its rect has every ancestor's transform in it. */
+function scaleOf(el: Element, r: DOMRect): { sx: number; sy: number } | null {
+  if (!(el instanceof HTMLElement) || !(el.offsetWidth > 0 && el.offsetHeight > 0)) return null;
+  return { sx: r.width / el.offsetWidth, sy: r.height / el.offsetHeight };
+}
+
 /** An element's padding box in viewport px, which is what its `overflow` cuts
  *  to: inside the border, and inside a scrollbar. */
 function paddingEdges(el: Element): Edges {
   const r = el.getBoundingClientRect();
-  if (!(el instanceof HTMLElement) || !(el.offsetWidth > 0 && el.offsetHeight > 0)) {
+  const scale = scaleOf(el, r);
+  if (!scale || !(el instanceof HTMLElement)) {
     return { left: r.left, top: r.top, right: r.left + r.width, bottom: r.top + r.height };
   }
-  // Client metrics are layout px; the rect has every ancestor's transform in it.
-  const sx = r.width / el.offsetWidth;
-  const sy = r.height / el.offsetHeight;
+  const { sx, sy } = scale;
   const left = r.left + el.clientLeft * sx;
   const top = r.top + el.clientTop * sy;
   if (el === el.ownerDocument.documentElement) {
     // The root's client size is the viewport's, not its own.
     const style = getComputedStyle(el);
-    const right = r.right - (Number.parseFloat(style.borderRightWidth) || 0) * sx;
-    return { left, top, right, bottom: r.bottom - (Number.parseFloat(style.borderBottomWidth) || 0) * sy };
+    const right = r.right - px(style.borderRightWidth) * sx;
+    return { left, top, right, bottom: r.bottom - px(style.borderBottomWidth) * sy };
   }
   return { left, top, right: left + el.clientWidth * sx, bottom: top + el.clientHeight * sy };
+}
+
+/** The overflow clip edge `overflow: clip` and paint containment cut to: `overflow-clip-margin`'s box, padding by
+ *  default, grown by its length. */
+function clipMarginEdges(el: Element, style: CSSStyleDeclaration): Edges {
+  const tokens = style.overflowClipMargin.split(/\s+/).filter(Boolean);
+  const visualBox = tokens.find((t) => t.endsWith('-box')) ?? 'padding-box';
+  const margin = px(tokens.find((t) => !t.endsWith('-box')) ?? '0');
+  const r = el.getBoundingClientRect();
+  const { sx, sy } = scaleOf(el, r) ?? { sx: 1, sy: 1 };
+  let e: Edges;
+  if (visualBox === 'border-box') {
+    e = { left: r.left, top: r.top, right: r.left + r.width, bottom: r.top + r.height };
+  } else {
+    e = paddingEdges(el);
+    if (visualBox === 'content-box') {
+      e.left += px(style.paddingLeft) * sx;
+      e.top += px(style.paddingTop) * sy;
+      e.right -= px(style.paddingRight) * sx;
+      e.bottom -= px(style.paddingBottom) * sy;
+    }
+  }
+  if (margin === 0) return e;
+  return {
+    left: e.left - margin * sx,
+    top: e.top - margin * sy,
+    right: e.right + margin * sx,
+    bottom: e.bottom + margin * sy,
+  };
 }
 
 /** The viewport in viewport px, inside its scrollbars; null where the document lays nothing out (jsdom). */
@@ -109,10 +145,14 @@ export function clipToAncestors(el: Element, box: Box): Box {
     const style = getComputedStyle(a);
     const boxed = hasClipBox(style.display);
     const contained = boxed && containsPaint(style);
-    const scrolls = boxed && !overflowToViewport(a, style);
-    const x = contained || (scrolls && clips(style.overflowX));
-    const y = contained || (scrolls && clips(style.overflowY));
-    if (x || y) cut(out, paddingEdges(a), x, y);
+    const own = boxed && !overflowToViewport(a, style);
+    // A scroll container cuts to its padding box; `overflow: clip` and paint containment to the clip edge.
+    const scrollX = own && clips(style.overflowX) && style.overflowX !== 'clip';
+    const scrollY = own && clips(style.overflowY) && style.overflowY !== 'clip';
+    const clipX = !scrollX && (contained || (own && style.overflowX === 'clip'));
+    const clipY = !scrollY && (contained || (own && style.overflowY === 'clip'));
+    if (scrollX || scrollY) cut(out, paddingEdges(a), scrollX, scrollY);
+    if (clipX || clipY) cut(out, clipMarginEdges(a, style), clipX, clipY);
     if (inTopLayer(a)) break;
   }
   // The viewport clips whatever the root's overflow computes to: `visible` there is read as `auto`.
