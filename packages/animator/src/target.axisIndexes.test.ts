@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { axisIndexes } from './axisNames';
 import { jointAxes, skeletonAxes } from './rig/skeletonAxes';
 import { IDENTITY_JOINT, type SkeletonPose, type Skeleton } from './rig/types';
 import { createTarget } from './target';
@@ -54,6 +55,12 @@ describe('target.axisIndexes: names holding a dot', () => {
     const target = createTarget<SkeletonPose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(dotted) });
     expect(() => target.axisIndexes(['arm.x'])).toThrow(/both an axis/);
     expect(() => jointAxes(dotted, ['arm.x'])).toThrow(/both an axis/);
+  });
+
+  it('refuses a name that is both one axis and the start of others where the axes give no paths', () => {
+    const axes = { count: 2, names: ['arm', 'arm.rotation'] };
+    expect(() => axisIndexes(axes, ['arm'])).toThrow(/both an axis/);
+    expect(axisIndexes(axes, ['arm.rotation'])).toEqual([1]);
   });
 
   it("does not read a dot in a plain object's field as a path", () => {
