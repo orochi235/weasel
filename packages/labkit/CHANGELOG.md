@@ -1,5 +1,4082 @@
 # @weasel-js/labkit
 
+## 2.0.0
+
+### Major Changes
+
+- 19ed3de: Every `@weasel-js/ui` component names itself through `aria-label`, as `MenuButton` and the DOM do, in place of `ariaLabel`.
+  
+  The components that took `ariaLabel` are `Button`, `Slider`, `Sidebar`, `ToolPalette`, `ToolGroup`, `ColorModeControl`, `EffectList`, `ResizeHandle` and `PrefsRail`; `SegmentedBar` and `CycleButton`, which replace `ToggleBar`, `ButtonBar`, `OptionsBar` and `ThemeSwitcher`, take `aria-label` too. A row or segment in a data list (`SegmentedBarItem`, `DetentItem`) keeps its `ariaLabel` field.
+  
+  ```tsx
+  // before
+  <Button iconOnly ariaLabel="Add"><Icon name="core:plus" /></Button>
+  <Slider ariaLabel="Opacity" thumbs={thumbs} onInput={setThumbs} />
+  // after
+  <Button iconOnly aria-label="Add"><Icon name="core:plus" /></Button>
+  <Slider aria-label="Opacity" thumbs={thumbs} onInput={setThumbs} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 186c7a7: `ControlPanel` takes `spacing="tight" | "normal" | "loose"` in place of `density`, matching the property panel it draws.
+  
+  ```tsx
+  // before
+  <ControlPanel density="tight" … />
+  // after
+  <ControlPanel spacing="tight" … />
+  ```
+  
+  <!-- entry: breaking api -->
+- 1d7b94d: `Density` is now `ControlSizeScope`, so the `sm`/`md` control size no longer shares a word with the theme's `compact`/`comfortable`/`roomy` density.
+  
+  The rest of the family is renamed with it: `useDensity` is `useControlSize`, `withDensity` is `withControlSize`, `DensityProps` is `ControlSizeProps`, `DensityScopeProps` is `ControlSizeScopeProps`, and the subpath `@weasel-js/ui/components/Density` is `@weasel-js/ui/components/ControlSize`. `useControlSizeScope()` is new: the nearest scope's size, or `undefined` outside every scope. labkit re-exports the new names. The theme's density is unchanged.
+  
+  ```tsx
+  // before
+  import { Density, useDensity } from '@weasel-js/ui/components/Density';
+  <Density size="sm">{toolbar}</Density>
+  // after
+  import { ControlSizeScope, useControlSize } from '@weasel-js/ui/components/ControlSize';
+  <ControlSizeScope size="sm">{toolbar}</ControlSizeScope>
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- dc4ae6b: `Jog` reports its play button through `onPlayingChange(next)`, the name for a callback that hears pause as well as play.
+  
+  ```tsx
+  // before
+  <Jog index={i} count={n} playing={playing} onPlay={setPlaying} onStep={step} onScrub={seek} />
+  // after
+  <Jog index={i} count={n} playing={playing} onPlayingChange={setPlaying} onStep={step} onScrub={seek} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 7e5b389: The kit settings area types are read from their packages' schemas, so they are type aliases and can no longer be augmented.
+  
+  That covers `GestureKitSettings`, `CoreKitTargetSettings`, `ViewKitSettings`, `LoupeKitSettings`, `Orbit3dKitSettings`,
+  `RigKitTargetSettings` and `PathToolsKitTargetSettings`. Add a setting by augmenting `@weasel-js/react`'s `KitSettings` or `KitTargetSettings`, as before:
+  
+  ```ts
+  declare module '@weasel-js/react' {
+    interface KitTargetSettings { myHandlePx: number }
+  }
+  ```
+  
+  <!-- entry: breaking -->
+- 0d624ae: An annotation target's `content` and `shown`, and a mark's `frac`, name their size `width` and `height`, not `w` and `h`.
+  
+  `FracRect` and `ContentWindow` are geom's `Rect`, and `ContentSize` and `PaneSize` are core's `Dims`. Saved marks load unchanged: the scene stores their bounds as poses, which already said `width` and `height`.
+  
+  ```ts
+  // before
+  targets: () => [{ id: 'pane', ref, content: { w: 260, h: 180 } }]
+  // after
+  targets: () => [{ id: 'pane', ref, content: { width: 260, height: 180 } }]
+  ```
+  
+  <!-- entry: breaking api -->
+- 7a9be10: labkit's config sentinel is prefs' `AUTO`, re-exported under that name; labkit's own `auto` alias for it is gone. `type Auto` is now prefs' type, re-exported.
+  
+  ```ts
+  // before
+  import { auto } from '@weasel-js/labkit';
+  f.number(3).initial(auto);
+  // after
+  import { AUTO } from '@weasel-js/labkit';
+  f.number(3).initial(AUTO);
+  ```
+  
+  <!-- entry: breaking api -->
+- f2e6d58: A boolean config leaf asks for a switch with `.switch()`; `f.boolean(…).toggle()` now asks for a toggle button.
+  
+  A leaf that called `.toggle()` for its switch calls `.switch()`. `.toggle()` on `f.enum` still asks for segments.
+  
+  ```ts
+  // before: a switch
+  snap: f.boolean(true).toggle(),
+  // after
+  snap: f.boolean(true).switch(),
+  ```
+  
+  <!-- entry: breaking behavior -->
+- 51958fe: labkit's `worldToScreen`, `screenToWorld` and `zoomAt` are `labWorldToScreen`, `labScreenToWorld` and `labZoomAt`, apart from core's.
+  
+  This is a breaking rename, with no alias; `ZoomAtOptions` is `LabZoomAtOptions`. They take the same arguments as before and now compute through core's `View` maps and `zoomAt`, so a non-finite pan reads as 0, as every other labkit camera path already treats it.
+  
+  ```ts
+  // before
+  import { screenToWorld, zoomAt } from '@weasel-js/labkit';
+  // after
+  import { labScreenToWorld, labZoomAt } from '@weasel-js/labkit';
+  ```
+  
+  <!-- entry: breaking api -->
+- a85d5b7: labkit's config `GroupNode` class is `ConfigGroup`, so it no longer shares its name with core's scene `GroupNode`.
+  
+  ```ts
+  // before
+  if (node instanceof GroupNode) …
+  // after
+  if (node instanceof ConfigGroup) …
+  ```
+  
+  <!-- entry: breaking api -->
+- 47a2154: `createAnnotationScene` is renamed `createMarkScene`, after the `MarkScene` it returns.
+  
+  ```ts
+  // before
+  const scene = createAnnotationScene();
+  // after
+  const scene = createMarkScene();
+  ```
+  
+  <!-- entry: breaking api -->
+- eb4f496: An instrument with no settings no longer writes `defaultConfig: () => ({})`: `defaultConfig` is optional on every instrument.
+  
+  A trial starts from the instrument's `defaultConfig`, else its `config` schema's defaults, else `{}`. `defaultConfigOf(instrument)` reads it that way; call it where code called `instrument.defaultConfig()`, which may now be absent. `defineInstrument` returns its spec unchanged, and the `InstrumentSpec` type is gone: write `Instrument`.
+  
+  ```ts
+  // before
+  const counter = defineInstrument({ name: 'Counter', defaultConfig: () => ({}), initialState: () => 0, render });
+  const start = counter.defaultConfig();
+  // after
+  const counter = defineInstrument({ name: 'Counter', initialState: () => 0, render });
+  const start = defaultConfigOf(counter);
+  ```
+  
+  <!-- entry: breaking api -->
+- 937ee67: `@weasel-js/labkit` and `@weasel-js/labkit/primitives` no longer re-export `Toolbar`, `StatusBar`, `StatusBarItem`, `StatusBarSpacer` or `ScaleBar`.
+  
+  Import `ScaleBar` from `@weasel-js/ui/components/ScaleBar`. `Toolbar` and `StatusBar` are gone from `@weasel-js/ui` too: draw a `Bar`, `roving` for a toolbar and `framed="status"` for a status strip.
+  
+  ```tsx
+  // before
+  import { ScaleBar, StatusBar, Toolbar } from '@weasel-js/labkit';
+  // after
+  import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
+  import { Bar } from '@weasel-js/ui/components/Bar';
+  ```
+  
+  <!-- entry: breaking api -->
+- da26075: An instrument declares its settings with `config: f.schema({ … })` only: the `ConfigField[]` form is gone.
+  
+  `Instrument.configSchema`, `<ControlPanel fields>`, the chrome context's `configFields`, `fromConfigFields`, `validateConfigSchema`, `ValidationResult` and the `ConfigField` types (`SliderField`, `CheckboxField`, `SelectField`, `NumberField`, `TextField`, `ColorField`, `SelectOption`, `ConfigFieldType`) are removed. `<ControlPanel schema>` is now required. An instrument with no `config` has no settings panel.
+  
+  ```ts
+  // before
+  defineInstrument({
+    defaultConfig: () => ({ width: 18 }),
+    configSchema: () => [{ key: 'width', label: 'Width', type: 'slider', min: 1, max: 48, default: 18 }],
+    // …
+  });
+  // after
+  defineInstrument({
+    config: f.schema({ width: f.number(18).range(1, 48) }),
+    // …
+  });
+  ```
+  
+  <!-- entry: rank=10 breaking -->
+- 937ee67: The `@weasel-js/labkit/weasel-ui` subpath is gone; import those names from `@weasel-js/ui` instead.
+  
+  Each name it carried is published by `@weasel-js/ui`, mostly under a component subpath, unless another entry in this release renames, moves or removes it there: the color ramp helpers now come from `@weasel-js/paint`, and `sampleByInterpolation` from `@weasel-js/geom`. `formatNumber` and `MINUS_SIGN` come from `@weasel-js/quantity`.
+  
+  ```ts
+  // before
+  import { CurveEditor, formatShortcut, useRovingTabIndex } from '@weasel-js/labkit/weasel-ui';
+  // after
+  import { CurveEditor } from '@weasel-js/ui/components/CurveEditor';
+  import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
+  import { useRovingTabIndex } from '@weasel-js/ui/roving-tab-index';
+  ```
+  
+  <!-- entry: breaking api -->
+- c73e0a3: `isEntryShown` is renamed `isConfigNodeShown`: it judges a config schema node's `showIf`, and "entry" means a list item in prefs.
+  
+  ```ts
+  // before
+  if (!isEntryShown(entry, config, schema)) continue;
+  // after
+  if (!isConfigNodeShown(entry, config, schema)) continue;
+  ```
+  
+  <!-- entry: breaking api -->
+- 9d4769e: `isLeafVisible`, `isLeafEnabled` and `isLeafActive` are renamed `isRowVisible`, `isRowEnabled` and `isRowActive`. They judge any row at a path, groups included.
+  
+  ```ts
+  // before
+  isLeafVisible(resolved, 'grid', config);
+  // after
+  isRowVisible(resolved, 'grid', config);
+  ```
+  
+  <!-- entry: breaking api -->
+- cd41c17: labkit's `indexedDbAdapter` is `labIndexedDbAdapter`, apart from storage's `indexedDbAdapter`, which keeps another database.
+  
+  This is a breaking rename, with no alias. It is the same adapter over labkit's own `labkit` database, so saved labs read as before.
+  
+  ```ts
+  // before
+  import { indexedDbAdapter } from '@weasel-js/labkit';
+  // after
+  import { labIndexedDbAdapter } from '@weasel-js/labkit';
+  ```
+  
+  <!-- entry: breaking api -->
+- d1ea8a4: `<Lab>` names the instruments it opens with `opening` alone: `defaultInstrument` is gone.
+  
+  `opening` defaults to the first of `instruments`, so a lab opening its first instrument passes neither. A presented lab whose `seed` names no instrument opens the first of `opening`.
+  
+  ```tsx
+  // before
+  <Lab instruments={[grid, plot]} defaultInstrument="Plot" />
+  // after
+  <Lab instruments={[grid, plot]} opening={['Plot']} />
+  ```
+  
+  <!-- entry: rank=10 breaking -->
+- 082fc7b: `<Lab>` takes the rows its settings panels draw as `renderers`, the name `<ControlPanel>` and `<PrefsForm>` give them; `controls` is gone.
+  
+  The same rename reaches `useLabContext().renderers` and a forge shell config's `renderers`.
+  
+  ```tsx
+  // before
+  <Lab instruments={instruments} controls={{ vector2: Vector2Row }} />
+  // after
+  <Lab instruments={instruments} renderers={{ vector2: Vector2Row }} />
+  ```
+  
+  <!-- entry: breaking -->
+- a9e310e: labkit's `createAnnotationStore` is `createMarkStore`, and its saved document type `SerializedAnnotations` is `SerializedMarkStore`.
+  
+  The saved JSON is unchanged.
+  
+  ```ts
+  // before
+  const store = createAnnotationStore({ targets });
+  // after
+  const store = createMarkStore({ targets });
+  ```
+  
+  <!-- entry: breaking api -->
+- 2909824: A resolved leaf that is never auto has no `auto` field, where it said `auto: false`.
+  
+  ```ts
+  // Before
+  leaf.auto === false;
+  
+  // After
+  !prefCanAuto(leaf);
+  ```
+  
+  <!-- entry: breaking api -->
+- b6cf451: `AnnotationsApi.sceneFor` is renamed `openScene`: the first call for a target creates its scene, registers its history and subscribes to it.
+  
+  ```ts
+  // before
+  const scene = annotations.sceneFor('left');
+  // after
+  const scene = annotations.openScene('left');
+  ```
+  
+  <!-- entry: breaking api -->
+- 6b8ef6f: labkit's `Readout` is gone; a lab's measurements are a `DetailList` with `values="figures"`, which it always was.
+  
+  ```tsx
+  // before
+  <Readout title="Fit" rows={[{ label: 'Score', value: '0.145', grade: 'success' }]}>note</Readout>
+  // after
+  import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
+  <DetailList title="Fit" values="figures">
+    <DetailRow label="Score" grade="success">0.145</DetailRow>
+  </DetailList>
+  <p>note</p>
+  ```
+  
+  <!-- entry: breaking api -->
+- 33f8369: `.resettable()` marks the resolved group itself, `PrefGroup.resettable`, and `ResolvedConfig` no longer has a `resettable` set.
+  
+  ```ts
+  // Before
+  resolved.resettable?.has('grid');
+  
+  // After
+  (resolved.group.children.grid as PrefGroup).resettable === true;
+  ```
+  
+  <!-- entry: breaking api -->
+- 9138faa: `ScaleIndicator` is gone; draw ui's `ScaleBar`, from `@weasel-js/ui/components/ScaleBar`, which the trial status strip now shows.
+  
+  `ScaleBar` takes the zoom as screen pixels per world unit and measures in the frame's unit scopes, pixels by default. It does not read the zoom from a surrounding `CanvasStack`, so pass it. The status strip's bar has the class `lk-scale-bar` in place of `lk-scale-indicator`.
+  
+  ```tsx
+  // before: 50 px a foot at zoom 1
+  <ScaleIndicator zoom={zoom} unit="ft" pixelsPerUnit={50} />
+  // after
+  <ScaleBar zoom={(zoom * 50) / 12} scopes={[{ system: IMPERIAL_INCHES }]} />
+  ```
+  
+  <!-- entry: breaking api visual -->
+- c113459: `sectionTree`'s set of disabled paths is now `disabledPaths`, the name `PrefsForm` takes it under.
+  
+  ```tsx
+  // before
+  <PrefsForm schema={tree.group} values={tree.values} disabled={tree.disabled} onChange={write} />
+  // after
+  <PrefsForm schema={tree.group} values={tree.values} disabledPaths={tree.disabledPaths} onChange={write} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 63e470e: `seenFrom` is renamed `seenValues`: it snapshots the config values at the given keys.
+  
+  ```ts
+  // before
+  const seen = seenFrom(config, ['grid.size']);
+  // after
+  const seen = seenValues(config, ['grid.size']);
+  ```
+  
+  <!-- entry: breaking api -->
+- 2ea668e: labkit's chrome takes a shortcut as keys and writes it for the platform, so the snapshot button reads `⌘S` on a Mac rather than `Mod+S`.
+  
+  `shortcut` on a toolbar, rail, viewport or title bar item and on a `TrialTool` is a `MenuShortcut`, not a string.
+  
+  ```ts
+  // before
+  { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }
+  // after
+  { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: { key: 'V' } }
+  ```
+  
+  <!-- entry: breaking api fix -->
+- 8940e49: `autoPathsOf` is renamed `startAutoPathsOf`, since it lists the paths that start auto.
+  
+  ```ts
+  // before
+  const unpinned = autoPathsOf(resolved);
+  // after
+  const unpinned = startAutoPathsOf(resolved);
+  ```
+  
+  <!-- entry: breaking api -->
+- ce85fa5: A labkit number's `.suffix('px')` is the prefs leaf's `unit: { scale: 1, suffix: 'px' }`, so `PrefsForm` shows it as the lab's panel does.
+  
+  `Annotations` and `LeafPatch` lose `suffix`: a rule or a hand-built leaf sets the unit's instead. Between `.suffix` and `.unit`, the one called last names the suffix, and `.suffix` keeps a unit's scale. A field now also reads the suffix typed after a number, and a field sweep labels its values through the unit.
+  
+  ```ts
+  // before
+  const rule: ConfigRule = ({ key }) => (key.endsWith('Ms') ? { suffix: 'ms' } : null);
+  // after
+  const rule: ConfigRule = ({ key }) => (key.endsWith('Ms') ? { unit: { scale: 1, suffix: 'ms' } } : null);
+  ```
+  
+  <!-- entry: breaking api -->
+- 0d624ae: The rects a tiled surface hands its painters and frames name their size `width` and `height`, not `w` and `h`.
+  
+  labkit's surface `Rect` is geom's `Rect`.
+  
+  ```ts
+  // before
+  surface.registerPainter(id, (rect) => draw(rect.x, rect.y, rect.w, rect.h));
+  // after
+  surface.registerPainter(id, (rect) => draw(rect.x, rect.y, rect.width, rect.height));
+  ```
+  
+  <!-- entry: breaking api -->
+- f60ed33: labkit's 2D camera type is exported only as `ViewTransform2D`; the `ViewTransform` name, which core uses for a different shape, is gone.
+  
+  ```ts
+  // before
+  import type { ViewTransform } from '@weasel-js/labkit';
+  // after
+  import type { ViewTransform2D } from '@weasel-js/labkit';
+  ```
+  
+  <!-- entry: breaking api -->
+- 4cc61de: `sceneFromJSON` is renamed `loadScene`, and labkit's `annotationsFromJSON` `loadAnnotations`
+  
+  Both build a live store from saved data, so each is named for what it does. `SceneFromJSONOptions` is now `LoadSceneOptions`.
+  
+  ```ts
+  // before
+  const scene = sceneFromJSON(saved, { registry });
+  // after
+  const scene = loadScene(saved, { registry });
+  ```
+  
+  <!-- entry: breaking api -->
+- 6559075: `SourceBox` is gone from `@weasel-js/loupe` and `@weasel-js/labkit/loupe`; a canvas source's `box` is geom's `Rect`, the same `x`, `y`, `width`, `height`.
+  
+  ```ts
+  // before
+  import type { SourceBox } from '@weasel-js/loupe';
+  // after
+  import type { Rect } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking api -->
+- 1d48780: `MenuButton` takes `disabled`, and its rows take `disabled` and `current`, as `Button` and `@weasel-js/menu`'s entries do.
+  
+  ```tsx
+  // before
+  <MenuButton label="Add" isDisabled items={[{ value: 'a', label: 'A', isDisabled: true, isCurrent: true }]} />
+  // after
+  <MenuButton label="Add" disabled items={[{ value: 'a', label: 'A', disabled: true, current: true }]} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 928462b: Every params surface hands its renderers one `LeafContext`, and `PrefSchemaEditor` takes one `renderers` map.
+  
+  `PrefRenderContext` and `PropertyRenderContext` are now `LeafContext`; `PrefRenderer`, `PropertyRenderer`, and labkit's `ControlRenderer` are now `LeafRenderer`. Every context carries `mixed`, `each` (one value per target), `update`, `source` (the surface's `PrefsSource`), and `reset` while the leaf differs from its reset. A selection's `ctx.valueAt(path)` is now `ctx.source.valueAt(path)`, which also returns `each`. `PrefSchemaEditor`'s and `AssetEditor`'s `propertyRenderers` is gone: pass those renderers in `renderers`.
+  
+  ```tsx
+  // before
+  const swatch: PropertyRenderer = (ctx) => <Swatch weight={ctx.valueAt('data.fontWeight').value} />;
+  // after
+  const swatch: LeafRenderer = (ctx) => <Swatch weight={ctx.source.valueAt('data.fontWeight').value} />;
+  ```
+  
+  To draw one leaf outside a surface, as a renderer's test does, build its context with `loneLeafContext(path, leaf, value, setValue)` from `@weasel-js/ui/components/PrefsSource`.
+  
+  <!-- entry: breaking api -->
+- fd2cbc8: `@weasel-js/diagram`, `plot`, `labkit`, `svg` and `editor` need `@weasel-js/text-tools` installed beside them.
+  
+  This is breaking: add `@weasel-js/text-tools` to an app using any of them. Diagram and plot canvases turn on `textTools.text` themselves, so their labels paint and edit as before; labkit's annotation layer mounts text-tools' text tool.
+  
+  <!-- entry: breaking -->
+- 0362193: Bindings and triggers of the plugin packages' actions that read params are checked against their `ActionParamSchema` entries.
+  
+  Each package merges its entries into routing's schema from its own `actionParamSchema.ts`: the diagram's label, waypoint, lane, container-title, off-page, rename-group, and sequence actions; `hud.press`, `hud.release`, `hud.doubleClick`, `hud.contextMenu`, `hud.longPress`, and `hud.wheel`; `loupe.aim` and `loupe.magnify`; `minimap.center` and `minimap.zoom`; `bone.pick`, `weight.paint`, and `weight.click`; `lab.zoom`, `camera.tap`, and `loupe.follow`; `loupe.compare.with` and `loupe.compare.dpr`; and `camera.dolly`. New exported types: diagram's `DrawMessageParams` and `WrapFragmentParams`, `HudPointParams`, `HudWheelParams`, `LoupeAimParams`, `MinimapZoomParams`, `WeightBrushParams`, `LabZoomParams`, `DollyParams`, guides' `DistanceReadoutParams`, and forge's `ForgeCompareParams` and `ForgeComparison` from `@weasel-js/forge/shell`.
+  
+  This is breaking for code that passes one of these ids params its entry does not declare: that is now a type error. `useDocClipboard`'s `commands.paste.keys` takes `clipboard.paste`'s params. The diagram's `*ScratchOf` readers take the hit as `unknown`.
+  
+  <!-- entry: breaking api -->
+- 7513080: `ToggleBar`, `OptionsBar`, and `ButtonBar` are one `SegmentedBar`, whose `mode` says what a press does.
+  
+  `mode` is `'single'` (the default) or `'multiple'` for what `ToggleBar` did, `'each'` for `OptionsBar`'s items that own their own state, and `'momentary'` for `ButtonBar`'s buttons. Each mode keeps its old roles: a radio group (or a group of toggle buttons with `followsFocus: false`), a group of toggle buttons, and a toolbar of plain buttons. The bar lives at `@weasel-js/ui/components/Segmented`. `ToggleBarItem` is `SegmentedBarItem`, an `'each'` item is a `SegmentedEachItem`, and a `'momentary'` one a `SegmentedMomentaryItem`; `ToggleBarVariant`, `OptionsBarVariant`, and `ButtonBarVariant` are `SegmentedVariant`, and the three `*_BAR_VARIANT_ICONS` are `SEGMENTED_VARIANT_ICONS`. labkit re-exports `SegmentedBar`, `SegmentedBarItem`, `SegmentedBarProps`, and `SegmentedVariant` in place of the `ToggleBar` names.
+  
+  ```tsx
+  // before
+  import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+  <ToggleBar aria-label="Align" items={items} value={v} onChange={setV} />
+  <OptionsBar aria-label="View" items={[{ value: 'grid', label: 'Grid', selected, onChange }]} />
+  <ButtonBar aria-label="Edit" items={[{ value: 'undo', label: 'Undo', onAction: undo }]} />
+  // after
+  import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
+  <SegmentedBar aria-label="Align" items={items} value={v} onChange={setV} />
+  <SegmentedBar mode="each" aria-label="View" items={[{ value: 'grid', label: 'Grid', selected, onChange }]} />
+  <SegmentedBar mode="momentary" aria-label="Edit" items={[{ value: 'undo', label: 'Undo', onAction: undo }]} />
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- c017ed2: `Sequence`, labkit's `ClockFrames` and `LayerList` take their accessible name as `aria-label`, where they took `label`.
+  
+  ```tsx
+  // before
+  <Sequence label="Digits" sweep={digits}>{(n) => n}</Sequence>
+  // after
+  <Sequence aria-label="Digits" sweep={digits}>{(n) => n}</Sequence>
+  ```
+  
+  <!-- entry: breaking api -->
+- b1cfd4e: `SidebarPanel` folds through `collapsed`, `defaultCollapsed` and `onCollapsedChange(next)`, as `PropertyGroup` does, in place of `onToggleCollapse()`.
+  
+  `defaultCollapsed` lets the panel hold its own fold. `collapsible={false}` keeps a panel given `collapsed` from drawing the toggle.
+  
+  ```tsx
+  // before
+  <SidebarPanel title="Layers" collapsed={folded} onToggleCollapse={() => setFolded(!folded)} />
+  // after
+  <SidebarPanel title="Layers" collapsed={folded} onCollapsedChange={setFolded} />
+  ```
+  
+  <!-- entry: breaking api -->
+- e7383b3: `ControlSize` replaces `ButtonSize`, `SegmentedSize`, `ToggleBarSize`, `ButtonBarSize`, and `OptionsBarSize`.
+  
+  Each was `'sm' | 'md'`, so only the name changes. `ControlSize` is exported from `@weasel-js/ui`, `@weasel-js/ui/components/Density`, `@weasel-js/ui-logic`, and `@weasel-js/labkit`.
+  
+  ```ts
+  // before
+  import type { ToggleBarSize } from '@weasel-js/ui';
+  // after
+  import type { ControlSize } from '@weasel-js/ui';
+  ```
+  
+  <!-- entry: breaking api -->
+- 6b8ef6f: `FloatingPanel` moves to ui and takes its placement as `value` and `onChange`; labkit's remembering panel is `PersistedFloatingPanel`.
+  
+  It lives at `@weasel-js/ui/components/FloatingPanel`. Without `value` the panel holds its own placement, starting in `anchor`. `onChange` fires once per drag, on release. The `FloatingPlacement` and `Corner` types come from the same entry.
+  
+  ```tsx
+  // before
+  import { FloatingPanel } from '@weasel-js/labkit';
+  <FloatingPanel anchor="top-right">…</FloatingPanel>
+  <FloatingPanel anchor="bottom-right" persist="legend">…</FloatingPanel>
+  // after
+  import { FloatingPanel } from '@weasel-js/ui/components/FloatingPanel';
+  import { PersistedFloatingPanel } from '@weasel-js/labkit';
+  <FloatingPanel anchor="top-right">…</FloatingPanel>
+  <FloatingPanel value={place} onChange={setPlace}>…</FloatingPanel>
+  <PersistedFloatingPanel anchor="bottom-right" persist="legend">…</PersistedFloatingPanel>
+  ```
+  
+  The `lk-floating-panel` class is gone.
+  
+  <!-- entry: breaking api -->
+- 6b8ef6f: `FpsMeter`, the live frame-rate readout, moves from labkit to `@weasel-js/ui/components/FpsMeter`; labkit no longer exports it.
+  
+  ```tsx
+  // before
+  import { FpsMeter } from '@weasel-js/labkit';
+  // after
+  import { FpsMeter } from '@weasel-js/ui/components/FpsMeter';
+  ```
+  
+  It now takes a `className`, and its `lk-fps-meter*` classes are gone.
+  
+  <!-- entry: breaking api -->
+- 6b8ef6f: `Legend`, the color key, moves from labkit to `@weasel-js/ui/components/Legend`; labkit no longer exports it.
+  
+  ```tsx
+  // before
+  import { Legend } from '@weasel-js/labkit';
+  // after
+  import { Legend } from '@weasel-js/ui/components/Legend';
+  ```
+  
+  Its swatch color rides `--legend-ink` in place of `--lk-legend-ink`, and its `lk-legend*` classes are gone.
+  
+  <!-- entry: breaking api -->
+- 699c512: Playhead controls report a move with `onSeek` and play state with `playing` and `onPlayingChange`, one spelling across them.
+  
+  `Timeline`, `TimeRuler` and `Jog` take `onSeek` where they took `onScrub`. `Transport` takes `playing` where it took `paused`, and one `onPlayingChange(next)` where it took `onPlay` and `onPause`; `useTimelinePlayback` returns the same.
+  
+  ```tsx
+  // before
+  <Transport paused={!playing} onPlay={play} onPause={pause} … />
+  <TimeRuler … playhead={t} onScrub={setT} />
+  // after
+  <Transport playing={playing} onPlayingChange={(next) => (next ? play() : pause())} … />
+  <TimeRuler … playhead={t} onSeek={setT} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 6b8ef6f: `ZoomControl`, a log-scaled zoom slider with a percentage field, moves from labkit to `@weasel-js/ui/components/ZoomControl`.
+  
+  ```tsx
+  // before
+  import { ZoomControl } from '@weasel-js/labkit';
+  // after
+  import { ZoomControl } from '@weasel-js/ui/components/ZoomControl';
+  ```
+  
+  Its `lk-zoom*` classes are gone; pass `className` to style it.
+  
+  <!-- entry: breaking api -->
+- d268d21: The functions that read or write a value at a dotted path drop `Path` from their names, as the kit's `…At` functions do.
+  
+  prefs-schema's (and prefs') `prefValueAtPath` is `prefValueAt`, and `assignPrefValueAtPath` is `assignPrefValueAt`. labkit's `valueAtPath`, `withValueAtPath` and `schemaNodeAtPath` are `configValueAt`, `withConfigValueAt` and `schemaNodeAt`.
+  
+  ```ts
+  // before
+  const v = valueAtPath(config, 'grid.size');
+  const next = withValueAtPath(config, 'grid.size', 12);
+  // after
+  const v = configValueAt(config, 'grid.size');
+  const next = withConfigValueAt(config, 'grid.size', 12);
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- c428e60: Annotation marks have a width, a color and a text size of their own, which the lab's drawing tools set.
+  
+  `AnnotationData`, `AnnotationInit` and `AnnotationPatch` take `width` (in the target's units), `color` and `fontSize`; a mark without them draws as before. A status's color still wins over the mark's own. An arrow's head grows with its width. The drawing tools share one width and one color, kept in the lab's records so they survive a reload.
+  
+  <!-- entry: new api data -->
+- 8b8309a: A lab shows a floating options palette: a drawing tool's width and color, or the style of the marks Select has selected.
+  
+  With a drawing tool it sets the next mark's style. With Select it restyles the selection in whichever trial holds it, showing a field as mixed where the marks differ; a burst of edits to one field is one undo step. Interact, or Select with nothing selected, shows none. It can be dragged to any corner and remembers where it was left.
+  
+  <!-- entry: new -->
+- 8b8309a: `AnnotationsApi.update` takes a `coalesceKey`, so several updates in a row are one undo step.
+  
+  ```ts
+  marks.update(id, { width: 6 }, { coalesceKey: 'restyle:1' });
+  ```
+  
+  <!-- entry: api -->
+- dfe55ed: `CameraRegistry.reflection` lists each key's live camera and the cameras it covers.
+  
+  <!-- entry: api -->
+- b1e00b8: A `ControlPanel` given `draftConfig` hands each custom row `drafts`, so a custom row's drag is one undo step.
+  
+  `drafts.setValue` writes into `draftConfig` at the row's path; the row's `setValue` then settles the drag.
+  
+  <!-- entry: api -->
+- efe82c4: A disabled control turns gray as well as fading, so it no longer reads like subtle text beside it.
+  
+  The cue is the new `--wzl-disabled-filter` theme token, `grayscale(1)` by default; a theme can set it to another filter, or to `none` to keep the fade alone. A consumer stylesheet that fades its own control when disabled sets `filter: var(--wzl-disabled-filter)` beside the `opacity` to match.
+  
+  <!-- entry: api visual -->
+- 7e5b389: A settings page built from the kit settings schemas shows help text on the gesture, target, view, loupe and orbit rows.
+  
+  <!-- entry: new -->
+- fc01017: A trial's Undo, Redo and snapshot keys leave the key to an open menu, a modal dialog, or a focused widget that takes it.
+  
+  They are the lab's `lab.undo`, `lab.redo` and `lab.snapshot` actions.
+  
+  A `<TrialChrome>` answers them only under a `<Lab>`, whose key dispatcher hears them; a lab with no trials answers Mod+Z and Shift+Mod+Z the same way.
+  
+  <!-- entry: api behavior -->
+- 25d2f45: Every canvas in a `<Lab>` registers with the devtools hook in a development build, and `devtools={false}` turns that off.
+  
+  `devtools={true}` keeps it in a production build too. Left out, a `devtools` entry provided above the lab decides, so `devtoolsOff` from `@weasel-js/devtools/mount` turns it off for every lab under it. A production bundle never loads the hook unless asked.
+  
+  <!-- entry: rank=8 new api behavior -->
+- b11c276: Escape leaves a lab's presentation through the `lab.presentation.exit` action, so the palette lists it and an override can rebind it.
+  
+  An Escape typed in a text field, or in an open modal dialog, now stays with the field or the dialog and leaves the presentation running.
+  
+  <!-- entry: api behavior -->
+- d39bad6: Every lab opens a keyboard shortcut sheet on Shift+/ and from a row in its Lab menu, and `<Lab shortcuts={false}>` leaves it out.
+  
+  <!-- entry: new behavior -->
+- f1f06bc: A keyed `<TrialTransport>`'s keys are the lab's `lab.transport.*` actions, listed in the lab's shortcut sheet while a transport answers them.
+  
+  They answer only under a `<Lab>`, and leave a key to an open menu, a modal dialog, or a focused widget that takes it.
+  
+  <!-- entry: api behavior -->
+- 6d2bb1e: A lab's freehand annotation tool draws with `@weasel-js/path-tools`' pencil.
+  
+  `ANNOTATION_WEASEL_TOOLS` holds `AnnotationWeaselTool`s, a built-in tool id or `'pencil'`, and labkit mounts the pencil from path-tools beside the built-ins.
+  
+  <!-- entry: api -->
+- 99fa753: `f.boolean(…).toggle()` draws a boolean as a toggle button, and paired toggles on a bar fuse into one segmented control.
+  
+  <!-- entry: api new -->
+- 8d2b4b4: `@weasel-js/labkit/config` exports `applyConfigWrite`, for a panel that keeps its own config.
+  
+  It returns what writing a value at a path makes of a config and its unpinned paths.
+  
+  <!-- entry: api -->
+- 2a0ac6c: A trial with settings has a Copy settings as JSON button in its title bar, which copies the trial's current config to the clipboard.
+  
+  <!-- entry: behavior -->
+- bcfeaca: A config schema declares a curve with `f.curve`, and its settings row draws a `CurveField` the panel's width, where a drag is one undo step.
+  
+  The value is flat, `[x0, y0, x1, y1, …]` over x in [0, 1]; `.range(min, max)` bounds y (default 0 to 1) and `.step` sets what a point snaps to (default 0.01). A lab no longer needs `f.custom('curve', …)` and a renderer of its own.
+  
+  ```ts
+  f.schema({ falloff: f.curve([0, 0, 1, 1]).range(-1, 1).step(0.05) });
+  ```
+  
+  <!-- entry: rank=5 new api -->
+- 5c6650f: A slider dragged in a trial's settings is one undo step however long the drag pauses, and two quick drags are two.
+  
+  A chrome contribution's context carries the trial's `draftConfig`, which a `<ControlPanel>` of your own takes beside `setConfig` to record its edits the same way.
+  
+  <!-- entry: fix api -->
+- b4fec9b: A panel can show a lab's marks while it needs them, whatever View → Marks says, with `useHoldMarks(held)`.
+  
+  The hold is never stored: when it ends, the lab goes back to its Marks switch. `LabContextValue` gains `holdMarks()`, which returns the release; a test that builds its own `LabContext` value supplies one.
+  
+  <!-- entry: api -->
+- ed298e7: `labRoutes()` from `@weasel-js/labkit/vite` serves each page of a lab at its URL without `.html`, in `vite` and `vite preview`.
+  
+  A document request for `/snap` gets `snap.html`, query kept, even where a module named `snap.tsx` would otherwise answer it. Add it to the Vite config:
+  
+  ```ts
+  import { labRoutes } from '@weasel-js/labkit/vite';
+  
+  export default defineConfig({ plugins: [react(), labRoutes()] });
+  ```
+  
+  `vite` is an optional peer; only this subpath loads it.
+  
+  <!-- entry: rank=10 new api -->
+- 2dc3387: A `<Lab>` with no `instruments` runs with no trials, and its children are the page's body.
+  
+  A history the body hands over with `useTrialHistory` gets the lab's Undo and Redo and their keys. `instruments` is optional. With instruments, `children` still go to the header.
+  
+  ```tsx
+  <Lab title="Palette" pages={PAGES} path={PALETTE.href}>
+    <Editor />
+  </Lab>
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- e5cce82: A loupe lens's readout toggles sweep, and an Alt-click shows one readout alone, firing the toggle action of every readout it moves.
+  
+  <!-- entry: new behavior -->
+- 2ea668e: A trial's tool rail shows the key a `TrialSceneCanvas` binds each of its tools to, a rebound one included.
+  
+  That key replaces the `TrialTool.shortcut` the tool declares. An instrument with input of its own reports its keys through `RenderContext.trial.setToolShortcuts`; a tool it does not name keeps its declared `shortcut`.
+  
+  <!-- entry: api fix -->
+- df2ae04: Every type a `@weasel-js/labkit` signature names can now be imported, from the entry that uses it.
+  
+  The root adds `MarkOrder`, `MarkOrderStep`, `SavedTrialUndo`, `SerializedMarkHistory`, and `TrialWriters`; `@weasel-js/labkit/state` adds `SavedTrialUndo`, `SnapshotActions`, and `TrialWriters`; `@weasel-js/labkit/loupe` adds `LensActionId`.
+  
+  <!-- entry: rank=-1 api -->
+- 381af51: A list or map of objects names each entry on its row by its first string field, or a union by its tag, not as JSON.
+  
+  `.summary((value) => string)` on an `f.object` or `f.union` supplies the text instead: `f.object({ name: f.string(''), width: f.number(1) }).summary((v) => `${v.name} ${v.width}`)`.
+  
+  <!-- entry: api fix -->
+- 7e27df1: An annotated instrument mounts any number of targets at once; past about two dozen, the page died with "Maximum update depth exceeded".
+  
+  A `TilePainter` handed to `registerPainter` now runs inside one `flushSync` with every other painter of its frame, and may return a function to run once their state has committed, where it used to call `flushSync` itself.
+  
+  <!-- entry: fix api -->
+- 33f8369: Every `ControlPanel` row offers a reset, and a group reset puts the leaves that start auto back to auto.
+  
+  A write of a group's value pins every leaf under it except one it holds the `auto` sentinel at, so a group reset stays one write and one undo step. An auto row with an `auto.value` and no resolver draws that value.
+  
+  <!-- entry: new behavior visual -->
+- 918fbcd: `ctx.showConfig` lets a settings panel follow a canvas edit without an undo step of its own: a drag and the panel it moves undo together.
+  
+  Write a setting from a scene subscriber with `ctx.showConfig(path, value)` where the setting shows what the scene holds — the selected stroke's style, a group's center. It records no undo entry and runs no `onConfigChange` or `useTrialConfigChange` handler, so the canvas edit's own entry is the one step, and undoing it puts the scene back for the subscriber to show again. `setConfig` stays the write for a change the user makes in the panel.
+  
+  ```tsx
+  const { showConfig } = ctx;
+  useLayoutEffect(
+    () => scene.subscribe(() => showConfig('size', scene.get(id)?.data?.size)),
+    [scene, showConfig],
+  );
+  ```
+  
+  <!-- entry: rank=5 new api -->
+- ea1e4d6: `SurfaceHandle.registerTile` returns a release that drops the element it placed only while that element still holds the id.
+  
+  A release that runs late leaves the element that has taken the id since alone. `registerTile(id, null)` still drops whatever holds the id. Code implementing `SurfaceHandle` itself, such as a test double, returns a function from `registerTile`.
+  
+  <!-- entry: api fix -->
+- ed298e7: The page switcher in a lab's title links each page without `.html`: `snap.html` opens `/snap`, and `index.html` opens `./`.
+  
+  The `pages` a lab is given are unchanged, and the open page is still found under either spelling. Serve the shorter URLs with `labRoutes()` from `@weasel-js/labkit/vite`, or a host that maps `/snap` to `snap.html`.
+  
+  <!-- entry: rank=5 new behavior -->
+- 97be300: A config schema can ask for a text box and a menu button: `f.string(…).textarea()` and `f.enum(…).menu()`.
+  
+  Both controls were drawn by `ControlPanel` already, and reachable only through `f.prefs` or by setting `control` by hand.
+  
+  ```ts
+  f.schema({
+    notes: f.string('').textarea(),
+    blend: f.enum('normal', ['normal', 'multiply', 'screen']).menu(),
+  });
+  ```
+  
+  <!-- entry: new api -->
+- 2b4e646: `useTrialConfigChange` writes an instrument's data inside a setting's undo step: a style panel and the strokes it styles undo together.
+  
+  The handler runs during the write, after the value lands and before anything renders, with the config and the one before it. What it writes onto the history handed over with `useTrialHistory` joins the settings entry, and a run of writes to one setting, a slider's drag, stays one step. `<TrialSceneCanvas>`'s history does this through the new optional `TrialHistorySource.batch`; a history of your own without it records the handler's writes as a step of their own. Undo, redo, Reset and a loaded record do not run it.
+  
+  ```tsx
+  useTrialConfigChange<Config>((config, prev) => {
+    if (config.width === prev.width) return;
+    scene.batch('Stroke width', () => {
+      for (const id of scene.getSelection()) scene.update(id, { data: { ...scene.get(id)?.data, width: config.width } });
+    });
+  });
+  ```
+  
+  <!-- entry: rank=5 new api -->
+- 2dc3387: `trialHistoryOf(history)` makes a weasel `History` into the source `useTrialHistory` hands to a trial or a lab with no trials.
+  
+  <!-- entry: api -->
+- 9088542: `@weasel-js/labkit/state` exports `TrialRecordActions`, the trial writes a lab store offers, beside `SnapshotActions`.
+  
+  ```ts
+  import type { TrialRecordActions } from '@weasel-js/labkit/state';
+  ```
+  
+  <!-- entry: api -->
+- 4e7207e: A palette command or toolbar button can fire an action the trial's scene canvas registers, with `ctx.runAction(id, params)`.
+  
+  ```ts
+  const expand: TrialContribution = {
+    id: 'expand-warp',
+    region: 'palette',
+    item: { icon, label: 'Expand warp', onActivate: (ctx) => { ctx.runAction('expandWarp'); } },
+  };
+  ```
+  
+  It returns whether the action ran. A hand-built `TrialChromeContext` needs a `runAction` of its own.
+  
+  <!-- entry: api -->
+- 2bef790: `useCaptureDelay` is exported from `@weasel-js/labkit/loupe`, for a readout that captures from a lens's source to wait as the lens does.
+  
+  It returns a function giving 0 on its first call after a mount and `LENS_REST_MS` after that; a capture effect passes it to its `setTimeout`.
+  
+  <!-- entry: api -->
+- 3bcf947: `useLabBody()` in `@weasel-js/labkit/loupe` finds the lab body a loupe renders in and tracks the pointer over it.
+  
+  <!-- entry: api -->
+- 914beeb: Lenses in a lab embedded under a host's surface are placed, followed and read back where the lens canvas draws them.
+  
+  `createLensApi` takes a `frame` ref, the element whose px the lens scene holds, and `useLabBody` returns one as `frameRef`: the surface container the lens canvas covers. Pass it as `frame`, and to `lensClient` in place of the body.
+  
+  ```ts
+  const { bodyRef, frameRef, pointer } = useLabBody();
+  createLensApi(scene, { body: bodyRef, frame: frameRef, pointer, focus, sources });
+  ```
+  
+  <!-- entry: fix api -->
+- e956593: F2 opens a magnifying lens at the pointer in any lab with `labLoupe`. Tapped, the lens sits where it opened and drags by its body; held, it follows the pointer and stays where the key is let go. A tap on the open lens closes it.
+  
+  It is the `loupe.quick` action, a held-key binding outside the Loupe keymap, so it takes no Alt+L first; its binding id is `loupe.quick` for rebinding, `QUICK_KEY` names the default, and `QUICK_TAP_MS` is how short a press counts as a tap.
+  
+  A Glass lens no longer draws or picks its source patch, which lies under its own body. `LensActionApi.follow` takes an optional lens id, and moves a Glass lens by its body.
+  
+  <!-- entry: new api -->
+- a9b6290: `<TrialOverview>` repaints a canvas instrument's `timed` layers on each tick of the trial clock, as the stage does.
+  
+  `CanvasStackSurface` gains `ticks`, the frames the stack repaints its timed layers after, for any other overlay that re-draws the layers.
+  
+  <!-- entry: fix api -->
+- 4c8749c: A condition test can read its path from the group its node is declared in, so a settings group mounts anywhere.
+  
+  ```ts
+  axis: pref.enum('Axis', 'x', ['x', 'y'], { enableIf: { from: 'group', path: 'on' } }), // reads <group>.on
+  ```
+  
+  `applyPrefConditions`, `prefStatusAt`, `checkPrefConditions`, settings menus and labkit's `configFromPrefs` resolve these tests themselves. Code that evaluates a schema's conditions any other way resolves them first with `resolvePrefGroupConditions(schema)`, or `prefConditionInGroup(condition, group)` for one condition; one that reaches a reader unresolved warns. `checkPrefCondition` checks one against `site.group`, which the schema editor's marks and `PrefConditionEditor`'s new `group` prop supply (`conditionGroupAt` finds it).
+  
+  <!-- entry: api -->
+- 8ff14a0: New `resetPlan` and `readingIsAtReset`: the writes a reset of a leaf or a group makes, read from what a surface shows.
+  
+  `read(path)` returns a `LeafReading` (`{ value, mixed, each, auto }`, one entry of `each` per target), or `undefined` for a leaf the reset should not reach. A plan leaves out readouts and leaves already at their reset, and writes `AUTO` for a leaf that starts auto only where `auto` is defined. `prefNodeAt` finds the leaf, group, or section at a path. labkit's `auto` sentinel is now this same symbol.
+  
+  <!-- entry: api new -->
+- 8ff14a0: New `PrefsSource`: where a params surface reads, writes, and resets its leaves, over a values map, a selection, or a lab config.
+  
+  A `PrefsSource` (`@weasel-js/prefs`) answers `valueAt(path)`, `write(path, value, { draft })`, `update`, `autoAt`, `setAuto`, `stateAt(path)` (`enableIf`, `showIf`, `activeIf`), and `reset(paths)`. It needs no React, so a DOM host builds one with prefs' `createValuesSource(schema, get, set, options)`, which reads the values through `get` each time, or `createSelectionSource({ leaves, read, write, reset })` over any set of targets, or `createRecordSource` over values keyed by whole dotted paths. `sourceResetPlan`, `sourceIsAtReset`, and `sourceLeafIsAtReset` answer what a reset does over one.
+  
+  In React, `useValuesSource(schema, values, onChange, options)`, `useSelectionSource(input)`, and labkit's `useLabConfigSource(...)` build one (labkit's plain factory is `createLabConfigSource`), and ui's `<PrefsSource source>` and `usePrefsSource()` hand it down.
+  
+  <!-- entry: api new -->
+- fbc4348: A trial drawn in DOM gets its own color-mode switch beside Undo and Redo, so its content can sit in Light or Dark apart from the lab.
+  
+  The switch is the `mode` contribution, offered to an instrument that declares no `canvas` or `stage`; `hide={['mode']}` or `suppress={['mode']}` removes it. Auto follows the lab. The content is wrapped in a `ThemeProvider` set to the trial's mode, so `useThemeOptional()` inside an instrument reads it; the lab's header and the trial's chrome keep the lab's mode. The choice is saved on the trial record as `colorMode`, kept by Clone, Reset and swapping the instrument, and `TrialChromeContext` carries `colorMode` and `setColorMode`.
+  
+  <!-- entry: rank=5 new api data -->
+- c428e60: A lab's tool can declare options, as a canvas's tool does.
+  
+  `TrialTool.options` takes routing's `ToolOptionsSpec`, shared keys included. Their values live in the lab's records; `useLabToolOptionValues()` reads them.
+  
+  <!-- entry: api -->
+- e7383b3: New `<Density size>` sets the size of every `sm`/`md` control inside it, and `useDensity` reads it.
+  
+  The nearest scope wins, and a control's own `size` wins over any scope. With no scope, each control keeps its default: `md`, or `sm` for `CycleButton`. `Button`, `SegmentedBar`, `ColorModeControl`, `CycleButton`, and `Bar` read it. ui-logic's `resolveControlSize(own, scope, fallback)` is the same rule without React, for a host such as hud.
+  
+  ```tsx
+  <Density size="sm">
+    <Button>Apply</Button>              {/* sm */}
+    <Button size="md">Cancel</Button>   {/* md: its own size wins */}
+  </Density>
+  ```
+  
+  labkit re-exports `Density`, `useDensity`, `ControlSize`, `DensityProps`, and `DensityScopeProps`.
+  
+  <!-- entry: rank=5 new api -->
+- c113459: New `<Disabled when reason>` disables every kit control inside it; a container's `disabled` and `disabledReason` do the same.
+  
+  `Bar`, `Bar.Group`, `PrefsBar`, `ToolGroup`, `ToolRail`, `ToolPalette`, `SegmentedBar`, `PropertyPanel`, `PropertyGroup`, `Subpanel`, `PropertyRow`, `PrefsForm`, `SelectionPanel`, `SidebarPanel`, `ToolOptionsBar`, `ActionBar`, and labkit's `ControlPanel` take them, as a `<fieldset disabled>` would. An inner `disabled={false}` adds nothing. The nearest reason wins, and a control's own `disabledReason` beats a scope's. With no reason a control is natively disabled; with one it stays focusable, ignores presses, and its tooltip and description say why, React Aria fields included. `useDisabled(own)` reads the result for a control of your own.
+  
+  ```tsx
+  <Disabled when={locked} reason="The layer is locked">
+    <PropertyPanel title="Stroke">…</PropertyPanel>
+  </Disabled>
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- c113459: New `<ReadOnly when reason>` keeps every kit value control inside it to its value; a container's `readOnly` does the same.
+  
+  Text fields take native `readOnly`, so their text stays selectable and copyable. Checkboxes, switches, radio groups, segmented bars, selects, sliders, number boxes, color fields, and paint fields stay focusable, refuse changes, are marked `aria-readonly` where the role takes it, and say why in their tooltip and description when given `readOnlyReason`. Action buttons stay usable. Disabled beats read-only. `useReadOnly(own)` and `useControlAccess(own)` read the result for a control of your own.
+  
+  <!-- entry: new api -->
+
+### Patch Changes
+
+- 8ded4c6: The calibration instrument lets go of a closed trial's picture element instead of holding one per trial it ever showed.
+  
+  <!-- entry: fix perf -->
+- 81253e7: Dragging a canvas camera whose zoom sits outside a narrowed `minZoom`/`maxZoom` pans it, rather than jumping its zoom about the top-left corner.
+  
+  <!-- entry: fix -->
+- 8eea0cc: A two-finger drag on a canvas camera keeps panning when its zoom is at `minZoom` or `maxZoom`.
+  
+  <!-- entry: fix -->
+- dfe55ed: Releasing a camera registered twice under one key takes out that registration, leaving the later one live.
+  
+  <!-- entry: fix -->
+- 1ea407a: A `CanvasStack` rendered into another document, such as an iframe, sizes its canvases for that document's pixel density.
+  
+  <!-- entry: fix visual -->
+- a3f2f0a: A `CanvasStack` given an inline `worldSpec` no longer redraws every layer each time its parent renders.
+  
+  <!-- entry: fix perf -->
+- 4f264d0: Values held between two bounds go through geom's `clamp` and `clamp01` rather than local copies.
+  
+  A loupe whose `minFactor` is above its `maxFactor` now settles on the low bound, as `clamp` does, where it settled on the high one.
+  
+  <!-- entry: rank=-5 behavior -->
+- 87a7c35: Copy settings as JSON copies the values a trial runs with.
+  
+  An auto field is copied at its resolved value, an endless number as `"Infinity"`, and a cleared one as `null`.
+  
+  <!-- entry: fix -->
+- 471581b: Packages no longer install weasel siblings their code never uses.
+  
+  `@weasel-js/editor` stops asking for `@weasel-js/geom` as a peer and takes `@weasel-js/editing` only as one; `@weasel-js/prefs-editor` drops `@weasel-js/paint-kinds`, `@weasel-js/ui` drops `@weasel-js/storage`, `@weasel-js/icons-plugin` drops `@weasel-js/icons`, `@weasel-js/labkit` drops `@weasel-js/animator`, `@weasel-js/measure` drops `@weasel-js/theme`, `@weasel-js/rig` drops `@weasel-js/history` and `@weasel-js/renderer`, `@weasel-js/text-tools` drops `@weasel-js/icons` and `@weasel-js/prefs-schema`, and `@weasel-js/ui-canvas` drops `@weasel-js/history`.
+  
+  <!-- entry: internal -->
+- 7425ec7: Two trials' Export panels open at once each keep their own format and scale choice.
+  
+  <!-- entry: fix -->
+- fa4c9fb: Undocking a section from a floating trial sidebar keeps focus in the panel, so Escape still closes it.
+  
+  <!-- entry: fix -->
+- cdab48e: A Follow lens zoomed while the pointer rests resizes its reticle to the new patch at once, and pinning it keeps that size.
+  
+  <!-- entry: fix -->
+- a4f125a: A hollow lens on a tiled surface redraws the tiles it last covered where they are now, after its host scrolls or moves.
+  
+  <!-- entry: fix visual -->
+- aaf8253: Turning `hollow` off while a hollow lens is up redraws the tiles it was drawn into, so no hollow drawing stays behind.
+  
+  <!-- entry: fix visual -->
+- fa33dfc: A started job without `auto` runs again when its `key` changes, dropping the run in flight.
+  
+  One never started, or canceled since, stays idle.
+  
+  <!-- entry: fix -->
+- 7a5be37: `JobProgress` keeps a count past a revised total inside its progressbar range, and reserves room so the controls after it stay put.
+  
+  <!-- entry: fix -->
+- 19fb947: `JobProgress` counts failed items toward the total, so a finished job with failures shows a full bar and its whole count.
+  
+  <!-- entry: fix visual -->
+- 4bce49c: `JobProgress` stops sweeping when a job that never reported a total ends: its bar shows full once the job is done and empty if it failed.
+  
+  <!-- entry: fix visual -->
+- 763f79e: A camera with `depth: 'log'` writes logarithmic depth, so surfaces 1 m apart 1e6 m away stay in order with near 0.1 and far 2e6.
+  
+  `Camera3d.depth` is `'standard'` by default. The line pass tests against log depth when drawn with `{ logDepth: frame.logDepth }`. A host drawing meshes into the same buffer pastes `LOG_DEPTH_GLSL` into its fragment shader, uploads `logDepthUniform(frame.logDepth)` and writes `gl_FragDepth = weaselLogDepth(u_logDepth)`; `logDepthAt` is the same depth on the CPU. labkit's 3D view keeps a camera's `depth` when it fills in missing fields.
+  
+  <!-- entry: rank=10 new api -->
+- c02e7af: A trial's second camera or mark store no longer logs a registry clash warning in development.
+  
+  <!-- entry: fix -->
+- 9ad4972: A lab's Undo, Redo and Save snapshot shortcuts answer the letter a key types, not its position.
+  
+  On QWERTZ Ctrl+Y redoes, and on Dvorak Ctrl+O no longer saves a snapshot.
+  
+  <!-- entry: fix -->
+- a377461: A lab's development warning that its shell body scrolls names the element that overflows it even after the shell body has been scrolled.
+  
+  <!-- entry: fix -->
+- d34b8d6: A lab's header is one toolbar strip tall in every font face, so nothing under it moves when the face loads.
+  
+  Its height no longer depends on where a face puts the menus' baseline, or on whether the header's actions show or fold into the menus. A trial's view is no longer fitted a second time when the face arrives.
+  
+  <!-- entry: fix visual -->
+- fc01017: A lab's own keys, such as its zoom and loupe keys, wait for the focused element: a widget that handles one of them keeps it.
+  
+  <!-- entry: behavior -->
+- cad915d: A key pressed in a trial's undocked panel goes to that trial, not the one focused last.
+  
+  Pressing in the panel focuses its trial too.
+  
+  <!-- entry: fix -->
+- 1a5a546: The lab's registry of trials' mark stores is kept in a `createReflectable` store, which reflects each trial's store by trial id.
+  
+  <!-- entry: internal -->
+- c0bacc8: A presented `<Lab>` given `messages={{ origins: [] }}` posts no state and takes no command, rather than throwing.
+  
+  <!-- entry: fix -->
+- 9dc2288: A presented `<Lab>` takes commands from every origin `messages.origins` posts its state to, a URL with a path and `'*'` included.
+  
+  An entry that names no origin now throws.
+  
+  <!-- entry: fix -->
+- 632c214: A malformed lab record another tab writes is read as opening the lab would read it.
+  
+  A layout or undocked-panels record that is not a plain object starts empty, and such a trial or snapshot record is dropped.
+  
+  <!-- entry: fix -->
+- f4d8b83: Mod+S saves a trial's snapshot with focus in a text field too, instead of opening the browser's Save page dialog.
+  
+  <!-- entry: fix -->
+- a21a083: A stored `<Lab>` opens in the color mode it was last switched to, rather than the one its `mode` prop names.
+  
+  <!-- entry: fix -->
+- 37762ce: `<Lab suppress>` or `hide` can name `mode`, `settings` or `copy-settings`.
+  
+  A trial whose instrument lacks the contribution no longer throws.
+  
+  <!-- entry: fix -->
+- 2dfddfb: `as3DView` gives a stored camera whose `depth` it does not recognize the default depth, whether or not the rest of its lens is whole.
+  
+  <!-- entry: fix -->
+- 1068133: The lab header's Add trial is a weasel-ui `Button`, drawn like the header's other controls.
+  
+  <!-- entry: fix visual -->
+- ba83d06: A `ControlPanel` row drawn from an alias into its `over` schema resets the leaf it shows to that leaf's default.
+  
+  <!-- entry: fix -->
+- 73e6b2f: An `alwaysOn` layer is drawn, and listed in `trial.visibleLayers`, whatever the trial's layer visibility holds for it.
+  
+  <!-- entry: fix visual -->
+- c23b563: Two components passing the same array to `useLabAmbient` keep its bindings installed until both have unmounted.
+  
+  <!-- entry: fix -->
+- 7e84664: An annotation arrow's head is sized in screen pixels, so it reads the same on a small zoomed-in target as on a large one, and in an export.
+  
+  <!-- entry: fix visual -->
+- daf75de: An auto resolver that enumerates its config or tests a key with `in` sees every other auto value, whatever the declaration order.
+  
+  <!-- entry: fix -->
+- 1374b2c: `resolveAutoConfig` given a frozen config no longer throws when a resolver enumerates or spreads the config it reads.
+  
+  <!-- entry: fix -->
+- 0e6b03b: A `<LabShell bar={false}>` or `<Lab header={false}>` embedded in a page leaves that page's body margin alone.
+  
+  <!-- entry: fix visual -->
+- 239fb10: Content under `<LabBoundary>` no longer reaches the enclosing lab's keys, chords, marks, trial writers, or actions registry.
+  
+  <!-- entry: fix -->
+- a69eb95: The calibration panel's Copy report says the copy failed on a page with no clipboard, instead of throwing.
+  
+  <!-- entry: fix -->
+- 729e882: The calibration annotations score their marks with geom's `distance` and `pointSegmentDistance` rather than local copies.
+  
+  <!-- entry: internal -->
+- b29cf9e: A trial clock declared from config takes the new speed when a config edit changes only its `rate`.
+  
+  <!-- entry: fix -->
+- 99fa753: A `ControlPanel` group drawn `as: 'bar'` fuses paired toggle flags into one segmented control, as a `PrefsBar` does.
+  
+  <!-- entry: fix -->
+- b44515c: Copy settings as JSON writes an auto setting at the value its instrument reported, as the Settings panel shows it.
+  
+  <!-- entry: fix -->
+- eb76a15: `f.curve().range()` throws on a non-finite bound or a `min` above `max`, as `f.number().range()` does.
+  
+  <!-- entry: fix -->
+- 2511ed5: labkit declares `@weasel-js/prefs-schema`, whose types its public API names
+  
+  `PrefGroup` and `PrefNumber` in labkit's declarations now point at `@weasel-js/prefs-schema` rather than being copied into labkit's own types.
+  
+  <!-- entry: fix -->
+- 2c47eda: labkit's manifest names its in-repo stylesheet entry as a side effect, so the repo's production builds keep labkit's styles.
+  
+  <!-- entry: rank=-5 internal -->
+- 137ea3c: A palette drag's drop ring sits under the pointer on a trial canvas an ancestor transform shows larger or smaller than its CSS size.
+  
+  <!-- entry: fix visual -->
+- 5b9ee68: A palette drag's drop ring takes the theme's `--wzl-success` and `--wzl-danger` colors.
+  
+  <!-- entry: visual -->
+- 137d72d: An instrument declaring `dragDrop` without `canvas` throws when a trial opens it, since only a canvas takes a drop.
+  
+  <!-- entry: fix behavior -->
+- 70f05c6: A snapshot another tab stores in a form this tab cannot read is listed only as unreadable. It leaves this tab's snapshot list, so it is never loaded stale or written back over that tab's record.
+  
+  <!-- entry: fix data -->
+- e67db7b: A chrome contribution reusing a built-in's id is told to suppress the built-in and give its own another id. A trial's `suppress` applies after the merge, so the same id still collides.
+  
+  <!-- entry: fix -->
+- f676c39: A lab given two instruments with one name throws, naming it, instead of rendering with one and saving with the other.
+  
+  `createLabStore({ instruments })`, `setInstruments` and `<Lab instruments>` used to accept such a list silently; they now throw. Give each instrument its own `name`.
+  
+  <!-- entry: fix behavior -->
+- 26257a1: A lab that starts presenting shows its trial without the sidebar and aside panes, and raises no ResizeObserver loop error as it mounts.
+  
+  <!-- entry: fix -->
+- cf95da9: Two tabs of a lab opened outside a secure context no longer mint the same trial or snapshot id. The fallback used where `crypto.randomUUID` is missing, such as on a LAN address, now carries random bits.
+  
+  <!-- entry: fix data -->
+- e2b89a1: A stored lab's loading shell honors `header={false}` and `nebula`, so it no longer flashes a header or another backdrop.
+  
+  <!-- entry: fix visual -->
+- 0e74d7f: The dev warning for a `<Lab>` that scrolls watches the page the lab is rendered into, such as a popped-out window.
+  
+  <!-- entry: fix -->
+- 1701da6: The dev warning for a `<Lab>` that scrolls no longer blames the shell body for its own border or classic scrollbar.
+  
+  <!-- entry: fix -->
+- ca7d04a: The dev warning for a `<Lab>` that scrolls no longer blames a box clipped inside an inner scroller, such as the last row of a scrolling list.
+  
+  <!-- entry: fix -->
+- e4e2eaa: Several floating panels undocked at once stack down the workspace's top-right corner instead of being drawn over one another.
+  
+  <!-- entry: fix visual -->
+- f137781: A lab whose old storage could not be folded into records stops persisting for the session. The next open folds it again, rather than folding it over that session's edits.
+  
+  <!-- entry: fix data -->
+- 2acd7bc: labkit and forge depend on `@weasel-js/gestures` directly for the shortcut text they print, instead of reaching it through ui's tool palette.
+  
+  <!-- entry: internal -->
+- c988c3f: A trial drawn on a canvas shows its FPS meter even when its view is not 2D and reports no zoom.
+  
+  <!-- entry: fix -->
+- 8e37539: A presented `<Lab>` rendered into another window takes `lk-lab--framed` from whether that window is framed.
+  
+  <!-- entry: fix -->
+- ea74b40: A chrome group goes to the far end of its region when any of its contributions sets `end`, not only the first.
+  
+  <!-- entry: fix visual -->
+- 97e52fa: A section's switch inside a group stays enabled while off under `f.prefs`, so the section can be turned back on.
+  
+  <!-- entry: fix -->
+- 2ea668e: A lab header item that binds `keys` shows the key its command answers to now, and so do the lab's zoom buttons.
+  
+  <!-- entry: fix -->
+- 162ce01: A lab header item with `keys` shows its declared `shortcut` while no command is registered for it, instead of no key.
+  
+  <!-- entry: fix -->
+- 6e92d9c: A `HeldClock` or `ClockFrames` clock declared with a `rate` and no `speed` plays at that rate's speed from a transport inside it.
+  
+  <!-- entry: fix -->
+- d1c1293: An auto `inDialog` row whose leaf says `.quote()` reads out its value beside the word, as a built-in compound row does.
+  
+  <!-- entry: fix visual -->
+- 77b25a9: An `inDialog` row whose leaf is disabled, by its own `enableIf` or a group's, draws its button disabled and opens no dialog.
+  
+  <!-- entry: fix -->
+- eb14a02: An `inDialog` body's `update`, `drafts` and `each` read and write the dialog's draft, so Cancel drops every edit made through them.
+  
+  <!-- entry: fix -->
+- c747ac2: `.initial()`'s error and the `.auto()` docs name the `AUTO` export it takes, not the removed `auto`.
+  
+  <!-- entry: fix -->
+- 5bddb64: A field, item or variant inside another leaf throws on a row-only option such as `.showIf(fn)` or `.render()`, rather than dropping it.
+  
+  Write a condition inside a value as data (`.showIf({ path, is })`), and put the rest on the outer leaf.
+  
+  <!-- entry: fix behavior -->
+- 5bddb64: An `f.object` field, an `f.list` or `f.map` item and an `f.union` variant go through the lab's `configRules`, as a schema leaf does.
+  
+  <!-- entry: fix -->
+- 1c97266: A job's `run` is handed the state `begin` makes, the one its items fold into, rather than the state from before it.
+  
+  <!-- entry: fix -->
+- 06e3676: A `<Lab clock>` changed after mount, which the lab ignores, is no longer saved into the lab clock's record as an override of its run.
+  
+  <!-- entry: fix -->
+- 9ad694f: A label made from a key ends an acronym before the word after it: `maxURLLength` reads "Max url length", not "Max urllength".
+  
+  <!-- entry: fix -->
+- 4b68f56: A trial's saved undo history keeps the steps from before a layer toggle or reorder; it used to cut them off at the layer step.
+  
+  <!-- entry: fix -->
+- 947ae45: Undo after a layer is shown, hidden or reordered puts the layers back, when the instrument snapshots on `layers.toggle` or `layers.reorder`.
+  
+  A history the instrument mounted with `useTrialHistory` records the step too.
+  
+  <!-- entry: fix -->
+- 95bd84c: The lens's follow-the-pointer hover and the split seam's drag declare binding ids, `loupe.follow.hover` and `loupe.seam.drag`.
+  
+  A binding override can now name them.
+  
+  <!-- entry: fix -->
+- 8748d0b: A `LensCapture`'s bitmap belongs to the lens source that gave it, and is good only until that source's next capture for the same lens side.
+  
+  A caller that paints the capture as soon as it resolves needs no change. One that keeps it longer, across an `await`, in state, or for a later frame, must now copy it and close its copy:
+  
+  ```ts
+  const got = await source.capture(request);
+  if (!('reason' in got)) {
+    const mine = await createImageBitmap(got.bitmap);
+    // ...use `mine` later, then
+    mine.close();
+  }
+  ```
+  
+  The Difference view now copies its two captures as they land.
+  
+  <!-- entry: behavior -->
+- d5dea5a: A lens looks again at what lies under it when the system color scheme flips.
+  
+  An Opposite mode lens over an `auto` lab stays opposite to the story beneath it.
+  
+  <!-- entry: fix -->
+- bd82eb5: A lens's setting actions are disabled, and record no undo step, where they would change nothing.
+  
+  Zoom in at the greatest factor is one; choosing the source already shown is another.
+  
+  <!-- entry: fix -->
+- 42aab0c: Two loupes on one page each paint their lenses with their own painters.
+  
+  The lens painters are registered on the loupe's own lens scene rather than page-wide.
+  
+  <!-- entry: fix -->
+- 818e0a0: The loupe lens's zoom slider writes its factors with quantity's `multiplier` display, so a factor between stops reads to two places.
+  
+  <!-- entry: fix -->
+- dfdbf7d: With one `<Lightbox>` open inside another, Escape closes the inner one first, then the outer.
+  
+  <!-- entry: fix -->
+- bebda9c: An open `<Lightbox>` closes on a margin click only when the press was on the margin too, so a drag out of its content keeps it open.
+  
+  <!-- entry: fix -->
+- 297bdbf: A controlled `<Lightbox>` mounted `disabled` with `expanded` set calls `onExpandedChange(false)`, and enabling it later does not open it.
+  
+  <!-- entry: fix -->
+- 362dac8: A lab's loupe aims and picks under the pointer on a host an ancestor transform shows larger or smaller than its CSS size.
+  
+  <!-- entry: fix -->
+- 98cd2d2: A trial's marks stay reachable from the lab's options palette when a second mark store registers for the same trial and then goes away.
+  
+  <!-- entry: fix -->
+- 900d95c: The Marks section calls a mark stale exactly when the canvas draws it stale, on a trial whose config has unpinned (auto) values.
+  
+  <!-- entry: fix -->
+- 6976124: A `ControlMatrix` cell that is an alias of an enum lists the enum's options in its popover and closes on a choice, as a direct enum cell does.
+  
+  <!-- entry: fix -->
+- 26aad1d: The Close button on a trial whose instrument is gone is disabled when that trial is the lab's only one, as the trial chrome's own Close is.
+  
+  <!-- entry: fix -->
+- ae3dd28: A lab's `nebula` names a ramp that only the lab's own theme declares without throwing.
+  
+  <!-- entry: fix -->
+- 8753bc4: `f.number().range()`, `.min()` and `.max()` throw on a bound that is not a finite number, or on a `min` above `max`, naming the values.
+  
+  Such a declaration used to pin every value to one bound with no error; it now fails where it is written.
+  
+  <!-- entry: fix behavior -->
+- b43063a: `openLabStore` closes its records when building the store throws. A lab that fails to open, and every retry of it, stops listening to storage.
+  
+  <!-- entry: fix -->
+- 842850f: `<Orbit>` binds its camera gestures through kernel3d's `createCameraRigActions`, with no change to what it takes.
+  
+  <!-- entry: internal -->
+- 9616995: A mark begun in the frame a pane scrolls lands on the annotation target now under the pointer, not the one that was there before the scroll.
+  
+  <!-- entry: fix -->
+- 688d1b0: A trial's overview draws each target's marks where the target sits when an ancestor draws the stage scaled.
+  
+  <!-- entry: fix -->
+- d0642bd: A press in a trial's overview moves the stage camera to the point pressed when an ancestor draws the overview scaled.
+  
+  <!-- entry: fix -->
+- 489e0a6: A `ControlPanel` keeping its own auto set starts it from a new schema's `.initial(AUTO)` leaves when it is handed a schema of other leaves.
+  
+  <!-- entry: fix -->
+- de18a90: A `ControlPanel` keeping its own auto set unpins every leaf a reset of the whole panel returns to auto, not only the last one written.
+  
+  <!-- entry: fix -->
+- ad14e68: A control, group, section, layer or tool named `constructor`, `toString` or another `Object.prototype` key reads as one nothing has set.
+  
+  Its row shows no stray error, it starts unfolded, it keeps no shortcut or height it was never given, and its tool options are kept as data.
+  
+  <!-- entry: fix -->
+- 3ee0c19: A palette item drags only on a primary-button press, so a right- or middle-button drag no longer drops it onto the canvas.
+  
+  <!-- entry: fix -->
+- 8ae87e4: A palette item drops only onto the canvas of the trial whose palette it came from; released over another trial's canvas, it drops nothing.
+  
+  <!-- entry: fix -->
+- 8ce487b: An undocked panel's host no longer rerenders the lab's panels when its element is handed to it again.
+  
+  <!-- entry: fix -->
+- d994b53: A lab sidebar or aside contribution arriving or leaving keeps every trial mounted, with its canvas, camera and state.
+  
+  <!-- entry: fix -->
+- ae3b9a5: A trial closed while its instrument was unmounted no longer leaves that instrument's saved undo history held for the rest of the session.
+  
+  <!-- entry: fix perf -->
+- 535642c: A presented lab's `labkit:play` message starts an ended run over on a clock that cannot seek, as the play button does.
+  
+  <!-- entry: fix -->
+- fb4a96f: A config schema's admitted selectors survive `prefsFromConfig` and `f.prefs`, so its `.per()` scopes still name a selector the schema admits.
+  
+  <!-- entry: fix -->
+- 2e77098: An `f.custom` leaf keeps its `validate` through `prefsFromConfig` and `f.prefs`.
+  
+  <!-- entry: fix -->
+- bc86fe9: A presented `<Lab>` in dark mode no longer draws its starfield over the page it is embedded in, or into a still poster.
+  
+  <!-- entry: fix visual -->
+- 325c6f2: A lab presenting inline in a page leaves that page's root background and `color-scheme` alone. Only a lab inside a frame hands its document back to the embedder.
+  
+  <!-- entry: fix visual -->
+- 8278ab5: `usePresentation().enter()` does nothing while no trial is focused, rather than hiding the lab's header and footer over an empty body.
+  
+  <!-- entry: fix -->
+- 480800f: A rail form drawn from a config schema with `over` shows and enables rows by a condition on that schema's settings, as the panel does.
+  
+  <!-- entry: fix -->
+- 7507800: A palette item released where the instrument's `onDragOver` answers `ok: false` drops nothing and takes no undo step.
+  
+  <!-- entry: fix -->
+- 2e68af1: The title bar, viewport, sidebar, and palette keep a chrome group together and put groups marked `end` last, as the toolbar does.
+  
+  <!-- entry: fix visual -->
+- d772e12: A trial reloaded with marks and its own undo history keeps the redo both saved, rather than dropping it as if a new change had been made.
+  
+  <!-- entry: fix -->
+- b7c444e: An instrument history mounted again while its trial stays open carries on from the one it replaces, so its steps survive.
+  
+  <!-- entry: fix -->
+- ef90a4e: A trial or snapshot stored with a config value of the wrong kind or out of range loads with it repaired, as a prefs store repairs one.
+  
+  A number is clamped into its range, and a value of the wrong kind, a color no color reader reads, or an option an enum no longer offers reads as the leaf's default. A key no leaf describes is still kept.
+  
+  <!-- entry: fix data -->
+- cfe8932: Reset in a `TrialSceneCanvas` lab reopens the path its `defaultPathEdit` opens.
+  
+  A Reset used to leave whatever path was open in anchor edit, since the trial stays mounted and `defaultPathEdit` applied only on mount. A canvas with no `defaultPathEdit` leaves path edit as it is, since a `pathEdit` host such as `usePathEditMode` owns what it opened.
+  
+  <!-- entry: fix -->
+- 800d56f: The exported `resetTrial` starts the trial's undo afresh, dropping its `history` and saved `undo` as the lab's own Reset does.
+  
+  <!-- entry: fix -->
+- de80ef3: A trial's saved undo history is restored when its instrument is swapped for one that declares `undo`, rather than lost.
+  
+  <!-- entry: fix -->
+- fb4ec4c: The lab's zoom controls center a scene canvas trial's view right when an ancestor draws the trial scaled.
+  
+  <!-- entry: fix -->
+- 9c40367: A compare lens's seam preview notifies nobody when a drag writes the `NaN` seam it already holds.
+  
+  <!-- entry: fix -->
+- a0afe57: A `ControlPanel` group drawn `as('section')` shows its `resettable()` reset and its `.heading()` control on its heading, as a framed group does.
+  
+  <!-- entry: fix visual -->
+- a5ed760: A trial opened with a `config` seed value at a path its schema starts auto runs that value, pinned, and Reset returns it to it.
+  
+  <!-- entry: fix -->
+- 25b96b8: `setInstruments` with new instrument objects writes only the trials and snapshots whose config it changes. It no longer rewrites every one.
+  
+  <!-- entry: fix perf -->
+- 19451a8: The `@weasel-js/labkit` tarball ships its build alone, no longer its source, tests and stories.
+  
+  <!-- entry: fix -->
+- 33ef1f8: A lab sidebar or aside section declaring `fill` takes the height the other sections leave, as it does in a trial's docked sidebar.
+  
+  <!-- entry: fix -->
+- 5040c2d: `<SingletonExperimentProvider>` keeps the trial it mounted with when its `id` changes, and warns in development that the change is ignored.
+  
+  <!-- entry: fix -->
+- a5826da: A pixel lens over a captured canvas resized since its last capture shows the part under the aim.
+  
+  <!-- entry: fix visual -->
+- 9dfc0b9: The specimen page's `Plot2D` sample has an accessible name.
+  
+  <!-- entry: fix -->
+- b993014: A `Split` too narrow for its stored sidebar and the content floor lays the content inside the strip from the first frame, not after load.
+  
+  `Split` wraps its strip in a `lk-split__frame` element with `display: contents`, which it measures from.
+  
+  <!-- entry: fix visual -->
+- 7b1e2cb: A Split lens's Token and Contrast readouts read its compared side wherever the seam is dragged.
+  
+  <!-- entry: fix -->
+- 1ccc3ca: A presented lab given `messages.origins` posts its `labkit:state` only to those origins, not to whatever page frames it.
+  
+  <!-- entry: fix -->
+- 944c32f: A status or footer readout without `end` stays at the near end, beside its group, instead of following the FPS meter to the far end.
+  
+  <!-- entry: fix visual -->
+- 7a3f2d9: A surface tile inside a `display: contents` or inline element setting `overflow` is no longer reported as out of sight.
+  
+  That `overflow` clips nothing.
+  
+  <!-- entry: fix -->
+- 9d5af05: A surface tile is cut to an ancestor with paint containment, as the browser clips its DOM.
+  
+  That is `contain: paint`, `content` or `strict`, and `content-visibility: auto`.
+  
+  <!-- entry: fix -->
+- c8a1559: A surface tile inside a shadow root, or slotted into one, is cut by the clipping ancestors around its host and slot.
+  
+  <!-- entry: fix -->
+- abbbf56: A surface tile on a scrolled page whose root or body sets `overflow` is cut to the viewport, keeping its chrome on screen.
+  
+  <!-- entry: fix -->
+- dc1d8ac: A surface whose container is swapped for one at the same place retiles and repaints every tile.
+  
+  A `<Lab>` that moves out from under an outer surface and back sizes the buffers it mounts again.
+  
+  <!-- entry: fix visual -->
+- 5617c79: A lab under a host's surface keeps its trials' drawing visible while one is expanded, lifting the host's buffers with it.
+  
+  <!-- entry: fix -->
+- 2fddf63: A surface painter or clear that throws is logged with `console.error`, and every other tile of the frame still clears and paints.
+  
+  <!-- entry: fix -->
+- e9f7adf: A surface whose container sits in another window, such as a popout, reads and follows that window's device pixel ratio.
+  
+  <!-- entry: fix visual -->
+- 0c4308a: Scoping a surface to an element holding no tile retiles the frame, clearing the buffer of the tiles it dropped.
+  
+  <!-- entry: fix visual -->
+- e3bb24b: A surface scoped to an element keeps the tiles inside shadow roots below it, so they stay painted and `useTileInScope` reads true for them.
+  
+  <!-- entry: fix -->
+- 9947317: `useTileInScope` updates when a tile registers or unregisters under a scope, so an overlay box mounted in a lightbox shows.
+  
+  <!-- entry: fix -->
+- f67faea: Registering a surface tile, painter or clear under an id a live registrant still holds throws, naming the id.
+  
+  A tile counts as live while its element is in the document; a painter or clear until its release runs. Code that used to register two under one id, such as two `useSurfaceTile('plot')` calls in one trial, now throws; give each its own id.
+  
+  <!-- entry: fix behavior -->
+- aa1d78c: A tiled surface stops listening for scrolls and density changes when its owner unmounts, without `containerRef(null)`.
+  
+  <!-- entry: fix -->
+- 6465f9c: `LabSwitcher` marks the page the path names when another page's path or hash route is a prefix or suffix of it.
+  
+  <!-- entry: fix -->
+- b508e1a: A trial's title bar buttons are weasel-ui `Button`s, and a disabled one shows why in the kit tooltip rather than the browser's.
+  
+  <!-- entry: fix visual -->
+- 00cb0c6: A toolbar contribution without `end` stays at the near end when declared after a group that sets `end`, such as the built-in Export.
+  
+  <!-- entry: fix visual -->
+- 49b51e8: A screen reader no longer announces an ungrouped toolbar or header contribution as a group named by its contribution id.
+  
+  <!-- entry: fix -->
+- 351a62b: A trial transport takes up the speed a config edit redeclares for its clock, until someone picks a speed on a transport.
+  
+  <!-- entry: fix -->
+- 3237a3a: A clock's transports no longer rerender when a `NaN` speed they already hold is written again.
+  
+  <!-- entry: fix -->
+- 1d9401a: A trial transport's Play, and its `replay`, start a run played backward to its start over from its end, backward.
+  
+  <!-- entry: fix -->
+- 1d9401a: A trial transport's Play, and its `replay`, start a clock that is not seekable over from its start once it has run to its end.
+  
+  <!-- entry: fix -->
+- d5bf572: A trial's chrome keeps its context, and skips re-rendering, when its trial renders with nothing changed.
+  
+  <!-- entry: fix perf -->
+- 89c2d9e: A history handed over with `useTrialHistory(trialHistoryOf(history))` is saved and restored with the trial, so its undo survives a reload.
+  
+  Its steps also order against the trial's marks to the fraction of a millisecond, as a scene's do.
+  
+  <!-- entry: fix -->
+- 78f53b4: A trial-restart listener that throws no longer stops the others, and a stop called twice no longer drops a listener subscribed since.
+  
+  <!-- entry: fix -->
+- 382024d: `RenderContext.trial.setZoom` zooms about the view's middle and within the instrument's zoom range, as the trial's zoom controls do.
+  
+  <!-- entry: fix -->
+- 33f8369: A `ControlPanel` given no `auto` set opens with the leaves that say `.initial(auto)` auto.
+  
+  <!-- entry: fix -->
+- 2dc3387: A trial's Undo and Redo tooltips write their keys for the platform, `⌘Z` on a Mac and `Ctrl+Z` elsewhere, where they read `Mod+Z`.
+  
+  <!-- entry: fix -->
+- ba22149: A sidebar section with `fill` still fills its panel when torn out into the workspace, and scrolls inside it as it does docked.
+  
+  <!-- entry: fix -->
+- 31364b5: A canvas layer the layer list does not name keeps its place in the drawing order when the listed layers are reordered.
+  
+  <!-- entry: fix visual -->
+- 493d819: A trial's 3D-view watch that throws no longer keeps the trial's other watches from hearing.
+  
+  One added while they are told waits for the next report.
+  
+  <!-- entry: fix -->
+- e473c07: A line-mode wheel over annotation targets scrolls 16 px a line, as the rest of the kit does, not 40.
+  
+  The loupe lens scrolls a page-mode wheel sideways by a page's width, not its height.
+  
+  <!-- entry: fix -->
+- 1d73375: A control panel's custom, label, action, bar and tab rows span both columns inside an `f.group` card.
+  
+  <!-- entry: fix visual -->
+- 39c5db8: A sidebar section added under a mounted lab no longer warns "Cannot update a component while rendering a different component".
+  
+  labkit now takes windease `^2.4.0`, which registers a new pane from its layout effect instead of during render.
+  
+  <!-- entry: fix -->
+- 7501210: `Workspace` matches `ids` to children with an empty child (`null`, `false`) holding its place.
+  
+  A tile keeps its id, extent, and mount while a sibling before it comes and goes.
+  
+  <!-- entry: fix -->
+- 2a0b9d0: A `<Workspace>`'s `onReorder` lists only its children's ids, leaving tile panels out. A child whose id starts with `lk-panel-` draws as itself rather than as an empty panel.
+  
+  <!-- entry: fix -->
+- c788def: Turning a `<Workspace>`'s `reorderable` on or off keeps every tile and every `<TileGrip>`'s contents mounted, trial state and canvases included.
+  
+  <!-- entry: fix -->
+- 257a3a7: `<LabZoom>` mounted without a lab's store and commands throws one error saying so, and its docs no longer promise it works outside a `<Lab>`.
+  
+  <!-- entry: fix -->
+- 9604f28: `LabZoom` shows the zoom with `@weasel-js/quantity`'s `percent` display, written in `en-US` as quantity writes it, not the browser's locale.
+  
+  <!-- entry: rank=-5 behavior -->
+- 70c1cc4: Marks from an older save, restored before their target's content box is known, read, draw and move with their real vertices once it is.
+  
+  <!-- entry: fix data -->
+- fe71122: `createLensApi` listens to its scene only while a Follow lens is held, so an api a host drops no longer keeps a listener on the scene.
+  
+  <!-- entry: fix -->
+- 88c6993: `createLensApi` over a lens scene that already holds lenses adds new ones instead of reusing their ids.
+  
+  <!-- entry: fix -->
+- 134b04e: A lab's lenses land under the pointer and stay on the lab body when it is shown scaled, as a nested lab in a zoomed stage is.
+  
+  `createLensApi`, `lensClient`, the lens overlay's reticle, a hollow lens's redraw, and `sourceBoxIn` convert between client px and the element's own px at the scale it is shown.
+  
+  <!-- entry: fix -->
+- 57b9de5: A linked crosshair sits on the shared pointer under `yAxis: 'up'`, on a stage and in a `TrialOverview`, not mirrored about the origin.
+  
+  <!-- entry: fix visual -->
+- 56784d5: Comparisons of two lists entry by entry go through registry's `sameList` rather than hand-written loops.
+  
+  <!-- entry: internal -->
+- f509af1: A Live lens's copy of a trial no longer unchecks the trial's own checked radio, reloads its iframes or restarts its autoplaying media.
+  
+  <!-- entry: fix -->
+- 75981ac: A loupe follows its `mode`, `minFactor` and `maxFactor` when they change after mount, re-clamping its factor to new bounds.
+  
+  <!-- entry: fix -->
+- 528de95: forge's trial lookup and labkit's clone lens read a zoomed pane's scale through core's `layoutBoxOf`.
+  
+  <!-- entry: internal -->
+- 21f5f51: Choosing "—" in `<MarkList>`'s status picker clears the mark's status, so it reads and saves as a mark that never had one.
+  
+  <!-- entry: fix data -->
+- 0b12643: Typing a mark's title in `<MarkList>` is one undo step per burst, not one per keystroke.
+  
+  <!-- entry: fix -->
+- 6605ee2: A restyle made after the options palette remounts is its own undo step, rather than folding into the last restyle before it.
+  
+  <!-- entry: fix -->
+- 33985a4: A stale point's ring and an untitled text box export to SVG with the dashes they show on screen, at any export scale.
+  
+  <!-- entry: fix visual -->
+- 7f60c5e: `add` and `update` place a mark exactly where asked, not on a grid of 1/10,000 of its target.
+  
+  <!-- entry: fix -->
+- d9a8863: Marks on a target with no content box keep their place: reads use the last known box, and placing or moving one throws.
+  
+  A target the instrument stops declaring keeps reporting its marks where they are. `add`, and an `update` with `frac` or `points`, throw on a target whose content box was never known, rather than storing the mark at the origin.
+  
+  <!-- entry: fix behavior -->
+- 20501b9: Restyling a selection that spans a trial's targets is one undo step, rather than one per target.
+  
+  Updates sharing a `coalesceKey` now undo and redo together on every target they land on, and keep doing so after the marks are saved and loaded.
+  
+  <!-- entry: fix data -->
+- c5c0446: A new mark change drops every target's redo, so a pane's own Redo no longer brings back a change the lab's Redo had discarded.
+  
+  <!-- entry: fix -->
+- cad915d: A lab inside another lab's trial answers its own Undo, Redo, snapshot and transport keys.
+  
+  It no longer reads the outer trial as its own.
+  
+  <!-- entry: fix -->
+- 8ff14a0: A group's reset skips a leaf its `enableIf` disables, and a mixed leaf always offers a reset, in every params surface.
+  
+  On every surface a reset compares a leaf's value as it is shown, an encoded one's read through its encoding, and leaves readouts alone. A group's reset reaches a `PrefsForm`'s `onReset` once per leaf it changes. A labkit group's reset keeps a leaf that starts auto unpinned when it writes the group's value.
+  
+  <!-- entry: fix behavior -->
+- 6040fd5: A lab's tool rail draws a rule between its tool groups, as its toolbar does.
+  
+  <!-- entry: fix visual -->
+- a0a0921: Tabbing into a lab's tool rail lands on the tool in use, not the first one.
+  
+  <!-- entry: behavior -->
+- 3dbbcd1: The lab's undocked-panel hosts are kept in a `createReflectable` store, which reflects each key's host element.
+  
+  <!-- entry: internal -->
+- 4a102bd: A number pref takes a `placeholder` and a string pref a `maxLength`, and `PrefsForm` honors both as labkit's `ControlPanel` already did.
+  
+  A stored string longer than its leaf's `maxLength` reads cut to it. Labkit's `.placeholder()` and `.maxLength()` write these same fields.
+  
+  <!-- entry: api -->
+- a04eb3d: A text list adds a new entry as its item's default, as every other list does. An entry holding nothing shows that default too, in `PrefsForm` and in labkit's controls.
+  
+  <!-- entry: fix -->
+- 9584b9b: Reset and a snapshot loaded over a scene trial clear the trial's settings entries from the scene's undo history.
+  
+  <!-- entry: fix -->
+- 0dd7d92: A scene trial restores its saved undo history each time another tab writes it, not only the first.
+  
+  <!-- entry: fix -->
+- cfd330d: On the specimen page, Escape mid-drag puts the `InlineRange` sample back at the width it started from.
+  
+  <!-- entry: fix -->
+- 677ef28: The specimen page's momentary `SegmentedBar` (Undo, Redo) is a toolbar with an accessible name.
+  
+  <!-- entry: fix -->
+- 443ef44: The specimen page's "Rings" property slider keeps the value it is dragged or stepped to.
+  
+  <!-- entry: fix -->
+- b485994: The specimen page's right-docked `Sidebar` sample sits at the right edge of its box, beside a main area.
+  
+  <!-- entry: fix visual -->
+- 4917578: The specimen page's `SidebarPanel` hide button hides the panel, and a "Show panel" button brings it back.
+  
+  <!-- entry: fix -->
+- 7d0ea26: A mounted specimen page leaves "command refused" toasts to the host app's own `ToastRegion`.
+  
+  <!-- entry: fix -->
+- 1074b38: `Split` holds the sidebar to its `width`: a drag the parent doesn't adopt goes back, and one it clamps lands at the clamp.
+  
+  <!-- entry: fix behavior -->
+- e58fa05: A shared surface whose container resizes delivers a retiled frame at the new `size`, even when no tile moved.
+  
+  <!-- entry: fix -->
+- c464ad9: A surface scoped to an element in a shadow root keeps the slotted tiles laid out inside it in scope.
+  
+  <!-- entry: fix -->
+- 27b5e59: A shared surface re-measures a tile scrolled inside a shadow root in the frame the scroll draws, as it does for a scroll in the document.
+  
+  <!-- entry: fix -->
+- c9a9233: A surface tile under a `<body>` that contains its paint is cut to the body's box, not the viewport.
+  
+  <!-- entry: fix -->
+- ac22132: A surface tile's `visible` rect under `overflow: clip` or paint containment reaches as far as the ancestor's `overflow-clip-margin` lets it paint.
+  
+  <!-- entry: fix -->
+- 68394ba: A surface tile under a `content-visibility: hidden` ancestor reports a zero-sized `visible` rect.
+  
+  <!-- entry: fix -->
+- 621beb0: A surface tile scrolled out of the viewport reports a zero-sized `visible` rect, whatever the root's `overflow`.
+  
+  <!-- entry: fix -->
+- ea29790: `applyTheme` and `<ThemeProvider>` warn in development of a selection axis or axis value the theme does not declare.
+  
+  `{ mdoe: 'dark' }` now warns once per theme and axis. Where one selection is shared across themes on purpose, pass `ignoreUnknownAxes: true` to `applyTheme` (or `<ThemeProvider ignoreUnknownAxes>`), or narrow it first with the new `declaredAxisChoice(theme, selection)`, which `<Lab>` and forge's capture view now do.
+  
+  <!-- entry: fix api -->
+- 3eb86c1: A stored trial whose color mode is not `light`, `dark` or `auto` opens in `auto`.
+  
+  <!-- entry: fix -->
+- f897564: `useTrialScene` keeps the loaded nodes in the trial's state when Reset or another tab's write loads over a scene that has undo history.
+  
+  <!-- entry: fix data -->
+- 6235242: Reset opens a `useTrialScene` trial on the selection its `create`d scene holds, as a fresh trial does.
+  
+  A scene that selects nothing keeps the selection made outside it, such as `useSelection`'s `initial`, on the nodes that come back.
+  
+  <!-- entry: fix -->
+- d67d09c: `TrialTransport` holds an ended run for the whole of a `replay` past 2³¹ − 1 ms, and an infinite one never replays.
+  
+  <!-- entry: fix -->
+- d52edaa: One `ActionButton` replaces `ToolButton` and `BarActionButton`, and draws in the form of where it sits.
+  
+  In a `Bar` it is a cell: its icon alone, with its label and shortcut in its tooltip, or its words where it has no icon or is `labeled`. In a bar's overflow menu it is a row of icon, label, and shortcut; in a form's row or a popover's, icon and label across the row; and in a `ToolGroup` (so in a `ToolRail` or `ToolPalette`) a palette's tool, its label and shortcut under its icon. `form` names one outright. `label` is its name, `children` replace its words on the face, `tooltip` replaces its tooltip, `active` holds it down (in a palette, marks the current tool with `aria-current`), and `popup` says it opens a dialog or a menu. Every one takes `disabled` and `disabledReason`, and the `Disabled` scope. `ToolButton`'s `ariaDisabled` is gone: a `disabledReason` keeps a button reachable.
+  
+  ```tsx
+  // before
+  <ToolButton icon={selectIcon} label="Select" active onClick={pick} />
+  <BarActionButton label="Join" icon={joinIcon} menu onPress={join} />
+  // after
+  <ToolGroup><ActionButton icon={selectIcon} label="Select" active onPress={pick} /></ToolGroup>
+  <FormScope form="menu"><ActionButton label="Join" icon={joinIcon} onPress={join} /></FormScope>
+  ```
+  
+  <!-- entry: rank=10 breaking api visual -->
+- 41f0773: `useUndoKeys` leaves Mod+Z to an open menu or a modal dialog
+  
+  It now binds the undo and redo chords through `usePageActions` instead of a document listener, so the dispatcher's filters apply: a chord typed in an open menu, or in a modal dialog over the page, stays with it.
+  
+  <!-- entry: behavior -->
+- b18d803: A text mark with no words yet draws as a thin dashed box, so a label just placed with the Text tool can be seen and selected.
+  
+  <!-- entry: fix visual -->
+- 5b8e066: These packages watch for resizes through react's `watchResize` rather than a `ResizeObserver` of their own.
+  
+  <!-- entry: internal -->
+- Updated dependencies [c91a03c]
+- Updated dependencies [edb78f4]
+- Updated dependencies [b18bc9c]
+- Updated dependencies [a1eab73]
+- Updated dependencies [037e5da]
+- Updated dependencies [5099ca3]
+- Updated dependencies [e5f53c6]
+- Updated dependencies [74e52e2]
+- Updated dependencies [617fd6c]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [fe3c2df]
+- Updated dependencies [2748abb]
+- Updated dependencies [1ab8057]
+- Updated dependencies [cd84e27]
+- Updated dependencies [8d7296a]
+- Updated dependencies [33d9b95]
+- Updated dependencies [21eb68a]
+- Updated dependencies [5cd31ff]
+- Updated dependencies [2a3a075]
+- Updated dependencies [5ad99b6]
+- Updated dependencies [4204bdb]
+- Updated dependencies [8b96ffe]
+- Updated dependencies [66890e4]
+- Updated dependencies [e973dcd]
+- Updated dependencies [ea90cbf]
+- Updated dependencies [933408d]
+- Updated dependencies [060b8c7]
+- Updated dependencies [23ea9ba]
+- Updated dependencies [82b9b17]
+- Updated dependencies [5024537]
+- Updated dependencies [851a4d3]
+- Updated dependencies [9c88969]
+- Updated dependencies [d764d06]
+- Updated dependencies [9a03912]
+- Updated dependencies [2d649c0]
+- Updated dependencies [666ff95]
+- Updated dependencies [f1bc116]
+- Updated dependencies [d302e54]
+- Updated dependencies [099cdcb]
+- Updated dependencies [cc2929d]
+- Updated dependencies [66fcc99]
+- Updated dependencies [effe879]
+- Updated dependencies [db9988a]
+- Updated dependencies [a98ad34]
+- Updated dependencies [19ed3de]
+- Updated dependencies [5f856dc]
+- Updated dependencies [223c71b]
+- Updated dependencies [7f25db9]
+- Updated dependencies [c3a8dea]
+- Updated dependencies [c7e5656]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [e6b28fe]
+- Updated dependencies [5ea9c3c]
+- Updated dependencies [c21157b]
+- Updated dependencies [c21157b]
+- Updated dependencies [d8c99f9]
+- Updated dependencies [ae32194]
+- Updated dependencies [0f72977]
+- Updated dependencies [ca40330]
+- Updated dependencies [985c561]
+- Updated dependencies [e0d4dec]
+- Updated dependencies [98620a3]
+- Updated dependencies [816aa33]
+- Updated dependencies [74c6bc8]
+- Updated dependencies [198cf5b]
+- Updated dependencies [fd6c46d]
+- Updated dependencies [0cb1c7e]
+- Updated dependencies [aa431c4]
+- Updated dependencies [c2b9114]
+- Updated dependencies [69e5b0e]
+- Updated dependencies [13a7faa]
+- Updated dependencies [8cb429e]
+- Updated dependencies [f0f4cac]
+- Updated dependencies [5f58c1b]
+- Updated dependencies [e43b357]
+- Updated dependencies [b772a09]
+- Updated dependencies [ecdc839]
+- Updated dependencies [f73a532]
+- Updated dependencies [b0ab1de]
+- Updated dependencies [6c7e360]
+- Updated dependencies [4e2b4b7]
+- Updated dependencies [3abc3d2]
+- Updated dependencies [6304d44]
+- Updated dependencies [a6c93fc]
+- Updated dependencies [1799fd9]
+- Updated dependencies [cacb8d2]
+- Updated dependencies [1e4bd39]
+- Updated dependencies [593ba1c]
+- Updated dependencies [0df21c4]
+- Updated dependencies [8b65225]
+- Updated dependencies [bce1511]
+- Updated dependencies [915e939]
+- Updated dependencies [0c38680]
+- Updated dependencies [8dd81d1]
+- Updated dependencies [9f518e3]
+- Updated dependencies [efac2ff]
+- Updated dependencies [2c26379]
+- Updated dependencies [49b00d3]
+- Updated dependencies [7e5e131]
+- Updated dependencies [e332c18]
+- Updated dependencies [89a65b2]
+- Updated dependencies [4456926]
+- Updated dependencies [2f21db6]
+- Updated dependencies [4217daa]
+- Updated dependencies [5e372b0]
+- Updated dependencies [d8c99f9]
+- Updated dependencies [d4b500f]
+- Updated dependencies [25561f0]
+- Updated dependencies [7e52e88]
+- Updated dependencies [d5ea1cd]
+- Updated dependencies [c48cefb]
+- Updated dependencies [e70e43a]
+- Updated dependencies [a430d71]
+- Updated dependencies [0c38680]
+- Updated dependencies [b8efc4e]
+- Updated dependencies [2fa47df]
+- Updated dependencies [4de2fc3]
+- Updated dependencies [d864c82]
+- Updated dependencies [5fd0ac0]
+- Updated dependencies [aabd7d4]
+- Updated dependencies [2fa4792]
+- Updated dependencies [cc83c57]
+- Updated dependencies [b84b121]
+- Updated dependencies [130b86c]
+- Updated dependencies [f0fc3c3]
+- Updated dependencies [02e57ce]
+- Updated dependencies [e377035]
+- Updated dependencies [ed01168]
+- Updated dependencies [79eb445]
+- Updated dependencies [bb82f7b]
+- Updated dependencies [f588072]
+- Updated dependencies [3ce9841]
+- Updated dependencies [48e3802]
+- Updated dependencies [a9e84f6]
+- Updated dependencies [44bae89]
+- Updated dependencies [a2b7b33]
+- Updated dependencies [29a55fc]
+- Updated dependencies [4806d08]
+- Updated dependencies [6251e13]
+- Updated dependencies [f1ce360]
+- Updated dependencies [7dcd54e]
+- Updated dependencies [e72e26a]
+- Updated dependencies [97fecd3]
+- Updated dependencies [0cc6896]
+- Updated dependencies [3d38747]
+- Updated dependencies [1a791c7]
+- Updated dependencies [47fb0e0]
+- Updated dependencies [0090147]
+- Updated dependencies [643c699]
+- Updated dependencies [373becd]
+- Updated dependencies [ca5bcb0]
+- Updated dependencies [f4d8b83]
+- Updated dependencies [6da5a3b]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [e468edc]
+- Updated dependencies [a7dab9f]
+- Updated dependencies [63fbbdf]
+- Updated dependencies [6355d18]
+- Updated dependencies [3f23bc8]
+- Updated dependencies [691b592]
+- Updated dependencies [4a642f5]
+- Updated dependencies [c80f586]
+- Updated dependencies [ca40330]
+- Updated dependencies [3f8af47]
+- Updated dependencies [b508e1a]
+- Updated dependencies [458aa6a]
+- Updated dependencies [0ab1ba7]
+- Updated dependencies [1068133]
+- Updated dependencies [037e5da]
+- Updated dependencies [42f4282]
+- Updated dependencies [2abe42c]
+- Updated dependencies [a2e83e7]
+- Updated dependencies [36757b1]
+- Updated dependencies [9249b26]
+- Updated dependencies [f20931c]
+- Updated dependencies [44848fe]
+- Updated dependencies [9a3bf41]
+- Updated dependencies [3bf5d6c]
+- Updated dependencies [21d7e6b]
+- Updated dependencies [ff7314a]
+- Updated dependencies [315f5ee]
+- Updated dependencies [97f1f86]
+- Updated dependencies [1566d81]
+- Updated dependencies [6bbc0e5]
+- Updated dependencies [33c1e37]
+- Updated dependencies [62f5560]
+- Updated dependencies [7199e23]
+- Updated dependencies [88f90f5]
+- Updated dependencies [df7ba95]
+- Updated dependencies [da5f6da]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [bca1b16]
+- Updated dependencies [8305acd]
+- Updated dependencies [063b00c]
+- Updated dependencies [174d6ef]
+- Updated dependencies [bfc8672]
+- Updated dependencies [8dd351a]
+- Updated dependencies [8a1c306]
+- Updated dependencies [c4cb671]
+- Updated dependencies [840a01b]
+- Updated dependencies [f172abc]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [afdace8]
+- Updated dependencies [ac4d9b5]
+- Updated dependencies [e8df1fc]
+- Updated dependencies [39fd347]
+- Updated dependencies [f5058e3]
+- Updated dependencies [7f1cc2d]
+- Updated dependencies [af88833]
+- Updated dependencies [b29cf9e]
+- Updated dependencies [6821bac]
+- Updated dependencies [9707f7c]
+- Updated dependencies [f88b38b]
+- Updated dependencies [b68c9a2]
+- Updated dependencies [39f4ad4]
+- Updated dependencies [a66885d]
+- Updated dependencies [b90239c]
+- Updated dependencies [35a99f3]
+- Updated dependencies [687d98f]
+- Updated dependencies [105a6bf]
+- Updated dependencies [c71fb10]
+- Updated dependencies [cc3910a]
+- Updated dependencies [4f451f8]
+- Updated dependencies [cf2a57b]
+- Updated dependencies [7a5e072]
+- Updated dependencies [bb5880a]
+- Updated dependencies [f1e15f8]
+- Updated dependencies [29d293c]
+- Updated dependencies [a63b723]
+- Updated dependencies [5d04502]
+- Updated dependencies [0c07b8d]
+- Updated dependencies [2140bf1]
+- Updated dependencies [50cef3a]
+- Updated dependencies [f1aa255]
+- Updated dependencies [6cef61c]
+- Updated dependencies [76a1854]
+- Updated dependencies [fcc5602]
+- Updated dependencies [fbaeee8]
+- Updated dependencies [6dfe3db]
+- Updated dependencies [471aac9]
+- Updated dependencies [bd216e3]
+- Updated dependencies [9787af2]
+- Updated dependencies [775d05c]
+- Updated dependencies [55f12df]
+- Updated dependencies [dcdfa16]
+- Updated dependencies [434b840]
+- Updated dependencies [aaa6a30]
+- Updated dependencies [1857565]
+- Updated dependencies [41c0399]
+- Updated dependencies [269320b]
+- Updated dependencies [7bd4b01]
+- Updated dependencies [8a9e76d]
+- Updated dependencies [2945e8c]
+- Updated dependencies [b7d2f0a]
+- Updated dependencies [c3935f7]
+- Updated dependencies [fcc31eb]
+- Updated dependencies [8bc6d64]
+- Updated dependencies [c3da788]
+- Updated dependencies [9621063]
+- Updated dependencies [869d865]
+- Updated dependencies [42aab0c]
+- Updated dependencies [d3d65f1]
+- Updated dependencies [3a00602]
+- Updated dependencies [ab7f613]
+- Updated dependencies [95ddf7a]
+- Updated dependencies [1d7b94d]
+- Updated dependencies [b2facdc]
+- Updated dependencies [daa7a4d]
+- Updated dependencies [9f5155f]
+- Updated dependencies [86e1580]
+- Updated dependencies [06303a3]
+- Updated dependencies [8278212]
+- Updated dependencies [1b27b2f]
+- Updated dependencies [2a0b5f3]
+- Updated dependencies [a529c26]
+- Updated dependencies [f44131a]
+- Updated dependencies [394cc06]
+- Updated dependencies [a4e0df7]
+- Updated dependencies [bfef616]
+- Updated dependencies [d0ec6bd]
+- Updated dependencies [3742696]
+- Updated dependencies [fd63c16]
+- Updated dependencies [8c58288]
+- Updated dependencies [964a242]
+- Updated dependencies [7cfda30]
+- Updated dependencies [93b6009]
+- Updated dependencies [37baa8c]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [5a8ac8c]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [963f8fd]
+- Updated dependencies [5c345b8]
+- Updated dependencies [b0905a2]
+- Updated dependencies [1c9986a]
+- Updated dependencies [1c9986a]
+- Updated dependencies [83ad38f]
+- Updated dependencies [0200213]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [b05583a]
+- Updated dependencies [77bfacf]
+- Updated dependencies [f585154]
+- Updated dependencies [15a05d9]
+- Updated dependencies [74202d3]
+- Updated dependencies [c30911d]
+- Updated dependencies [c569caf]
+- Updated dependencies [280f9fc]
+- Updated dependencies [4844d4d]
+- Updated dependencies [43fb985]
+- Updated dependencies [59944c1]
+- Updated dependencies [6d2bb1e]
+- Updated dependencies [106749f]
+- Updated dependencies [e9897c7]
+- Updated dependencies [075971c]
+- Updated dependencies [04cd5f3]
+- Updated dependencies [2940a77]
+- Updated dependencies [2ab2678]
+- Updated dependencies [93a7c62]
+- Updated dependencies [b05583a]
+- Updated dependencies [6f94fe3]
+- Updated dependencies [0a2be4b]
+- Updated dependencies [5477214]
+- Updated dependencies [5f6ebf3]
+- Updated dependencies [b76c25e]
+- Updated dependencies [5614b4e]
+- Updated dependencies [e21ec2d]
+- Updated dependencies [386bbfc]
+- Updated dependencies [ac792e8]
+- Updated dependencies [3fdbc32]
+- Updated dependencies [9430cf9]
+- Updated dependencies [5f6ebf3]
+- Updated dependencies [95d06c3]
+- Updated dependencies [3e32141]
+- Updated dependencies [9231556]
+- Updated dependencies [63c1844]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [b0905a2]
+- Updated dependencies [a8d34ac]
+- Updated dependencies [66e447b]
+- Updated dependencies [e9f7adf]
+- Updated dependencies [bfb8442]
+- Updated dependencies [452ac07]
+- Updated dependencies [4a2b3cc]
+- Updated dependencies [1bd148d]
+- Updated dependencies [7064286]
+- Updated dependencies [e67d322]
+- Updated dependencies [6316070]
+- Updated dependencies [0d810a1]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9249b26]
+- Updated dependencies [d917fd4]
+- Updated dependencies [37c0385]
+- Updated dependencies [f2db162]
+- Updated dependencies [949c317]
+- Updated dependencies [797729a]
+- Updated dependencies [c967b30]
+- Updated dependencies [2600317]
+- Updated dependencies [e377035]
+- Updated dependencies [8de44b2]
+- Updated dependencies [0054705]
+- Updated dependencies [7b2bd39]
+- Updated dependencies [a70d69d]
+- Updated dependencies [678da69]
+- Updated dependencies [0ac2304]
+- Updated dependencies [e4fdb90]
+- Updated dependencies [0a29b0e]
+- Updated dependencies [72dc525]
+- Updated dependencies [23fc186]
+- Updated dependencies [fcc5602]
+- Updated dependencies [67cb291]
+- Updated dependencies [132d87e]
+- Updated dependencies [7edea08]
+- Updated dependencies [e073f0a]
+- Updated dependencies [dab2282]
+- Updated dependencies [2dfd1a2]
+- Updated dependencies [ad2ec48]
+- Updated dependencies [b7045cd]
+- Updated dependencies [dd418ef]
+- Updated dependencies [fa7009e]
+- Updated dependencies [5643a3b]
+- Updated dependencies [a2df698]
+- Updated dependencies [794862e]
+- Updated dependencies [08d04fb]
+- Updated dependencies [45dec84]
+- Updated dependencies [037e5da]
+- Updated dependencies [d7ac369]
+- Updated dependencies [0c979ed]
+- Updated dependencies [382bf20]
+- Updated dependencies [18dacec]
+- Updated dependencies [d315cbd]
+- Updated dependencies [4a84861]
+- Updated dependencies [5cf9f61]
+- Updated dependencies [5db5049]
+- Updated dependencies [656a653]
+- Updated dependencies [42d49af]
+- Updated dependencies [94c8e4c]
+- Updated dependencies [4a93e4b]
+- Updated dependencies [eca2b03]
+- Updated dependencies [fcfefd4]
+- Updated dependencies [7252e96]
+- Updated dependencies [f4ac9bc]
+- Updated dependencies [81b7535]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [deeab94]
+- Updated dependencies [2503372]
+- Updated dependencies [bde7b24]
+- Updated dependencies [0cfdb6c]
+- Updated dependencies [929a2d2]
+- Updated dependencies [53ba27c]
+- Updated dependencies [de462a6]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [8764186]
+- Updated dependencies [f3c2f12]
+- Updated dependencies [81f2080]
+- Updated dependencies [84a4212]
+- Updated dependencies [47fa777]
+- Updated dependencies [7542fc9]
+- Updated dependencies [319879e]
+- Updated dependencies [8d7296a]
+- Updated dependencies [398b575]
+- Updated dependencies [ad433e9]
+- Updated dependencies [0983672]
+- Updated dependencies [e6ec996]
+- Updated dependencies [c9d0943]
+- Updated dependencies [faa97fb]
+- Updated dependencies [0315cdb]
+- Updated dependencies [e226e23]
+- Updated dependencies [6b0d6b4]
+- Updated dependencies [1aa6f1e]
+- Updated dependencies [0e26f75]
+- Updated dependencies [aac74be]
+- Updated dependencies [4f18b18]
+- Updated dependencies [f1841ee]
+- Updated dependencies [2ccc0cb]
+- Updated dependencies [da249f5]
+- Updated dependencies [ef1da0d]
+- Updated dependencies [83e66da]
+- Updated dependencies [7158bf0]
+- Updated dependencies [3302c2a]
+- Updated dependencies [9a3bf41]
+- Updated dependencies [9a3bf41]
+- Updated dependencies [ecf174b]
+- Updated dependencies [9c190a5]
+- Updated dependencies [0315cdb]
+- Updated dependencies [757101c]
+- Updated dependencies [efd57b0]
+- Updated dependencies [e5a4400]
+- Updated dependencies [5dec30c]
+- Updated dependencies [a3a9fd1]
+- Updated dependencies [31d9b43]
+- Updated dependencies [1c5b804]
+- Updated dependencies [fee4957]
+- Updated dependencies [3822811]
+- Updated dependencies [09690d7]
+- Updated dependencies [5dba94f]
+- Updated dependencies [fd75c0d]
+- Updated dependencies [88d8de3]
+- Updated dependencies [8fd3d6d]
+- Updated dependencies [7ea1a9c]
+- Updated dependencies [b894afe]
+- Updated dependencies [0a80ef0]
+- Updated dependencies [0a80ef0]
+- Updated dependencies [0c2f119]
+- Updated dependencies [d3d3973]
+- Updated dependencies [1b0a5fc]
+- Updated dependencies [0fa35fd]
+- Updated dependencies [0e26f75]
+- Updated dependencies [1bc90d8]
+- Updated dependencies [6abb715]
+- Updated dependencies [6f282d5]
+- Updated dependencies [22c6086]
+- Updated dependencies [e4a72b6]
+- Updated dependencies [2cd52fc]
+- Updated dependencies [efe82c4]
+- Updated dependencies [7608cf2]
+- Updated dependencies [037e5da]
+- Updated dependencies [e0b7acb]
+- Updated dependencies [df9dba4]
+- Updated dependencies [3833307]
+- Updated dependencies [2729716]
+- Updated dependencies [966b087]
+- Updated dependencies [2f56e64]
+- Updated dependencies [85fd57d]
+- Updated dependencies [935346c]
+- Updated dependencies [fc28740]
+- Updated dependencies [0150ec6]
+- Updated dependencies [2f7e04a]
+- Updated dependencies [a5bed98]
+- Updated dependencies [9b8f83b]
+- Updated dependencies [143e763]
+- Updated dependencies [746912f]
+- Updated dependencies [3a0b3b7]
+- Updated dependencies [e000f0a]
+- Updated dependencies [b667930]
+- Updated dependencies [dc92ea4]
+- Updated dependencies [15328d8]
+- Updated dependencies [ebd0424]
+- Updated dependencies [7e90922]
+- Updated dependencies [0046729]
+- Updated dependencies [cfc0732]
+- Updated dependencies [711be7d]
+- Updated dependencies [3a8b706]
+- Updated dependencies [471581b]
+- Updated dependencies [15d434b]
+- Updated dependencies [60ca157]
+- Updated dependencies [15a08cc]
+- Updated dependencies [5a805e9]
+- Updated dependencies [81f2080]
+- Updated dependencies [593893d]
+- Updated dependencies [ef704a6]
+- Updated dependencies [fcc5602]
+- Updated dependencies [8063ea0]
+- Updated dependencies [b305781]
+- Updated dependencies [f6ee3ea]
+- Updated dependencies [8c58288]
+- Updated dependencies [084198c]
+- Updated dependencies [b0d7740]
+- Updated dependencies [df9a774]
+- Updated dependencies [afed7af]
+- Updated dependencies [a639e4d]
+- Updated dependencies [9e68f8b]
+- Updated dependencies [040af35]
+- Updated dependencies [51376ec]
+- Updated dependencies [e7c03a3]
+- Updated dependencies [62aede0]
+- Updated dependencies [64fed84]
+- Updated dependencies [bbbe801]
+- Updated dependencies [43fb985]
+- Updated dependencies [75f0443]
+- Updated dependencies [f1a886d]
+- Updated dependencies [c70da31]
+- Updated dependencies [33ddb2e]
+- Updated dependencies [964a242]
+- Updated dependencies [17e237b]
+- Updated dependencies [2b283ed]
+- Updated dependencies [d074d01]
+- Updated dependencies [1566d81]
+- Updated dependencies [f37a70e]
+- Updated dependencies [2755b11]
+- Updated dependencies [8e1481b]
+- Updated dependencies [20324de]
+- Updated dependencies [49aa4d8]
+- Updated dependencies [a6e8651]
+- Updated dependencies [67ee776]
+- Updated dependencies [dc881e4]
+- Updated dependencies [f9b150c]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [b6863aa]
+- Updated dependencies [95ca540]
+- Updated dependencies [180ec74]
+- Updated dependencies [36dac61]
+- Updated dependencies [9787bca]
+- Updated dependencies [16a2eed]
+- Updated dependencies [3eb3209]
+- Updated dependencies [2ac34a7]
+- Updated dependencies [b5c341d]
+- Updated dependencies [7e60049]
+- Updated dependencies [96839c7]
+- Updated dependencies [31c843e]
+- Updated dependencies [c7db707]
+- Updated dependencies [592a789]
+- Updated dependencies [d26152c]
+- Updated dependencies [d26152c]
+- Updated dependencies [a3136aa]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [1d7b94d]
+- Updated dependencies [8553648]
+- Updated dependencies [ebcef7d]
+- Updated dependencies [99b2391]
+- Updated dependencies [1d7b94d]
+- Updated dependencies [be2d6ee]
+- Updated dependencies [65c7201]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [28e4e71]
+- Updated dependencies [10f6906]
+- Updated dependencies [9b5de64]
+- Updated dependencies [32a624a]
+- Updated dependencies [c3da9af]
+- Updated dependencies [6bb95ac]
+- Updated dependencies [643b01f]
+- Updated dependencies [992b75b]
+- Updated dependencies [bc6e8ab]
+- Updated dependencies [e5e59a3]
+- Updated dependencies [cc21a03]
+- Updated dependencies [826b7f7]
+- Updated dependencies [6619ff1]
+- Updated dependencies [3c212ef]
+- Updated dependencies [23d94db]
+- Updated dependencies [ac8e807]
+- Updated dependencies [fb47e9b]
+- Updated dependencies [8c17e91]
+- Updated dependencies [50900c3]
+- Updated dependencies [7b7b3b2]
+- Updated dependencies [dee9060]
+- Updated dependencies [c0225d4]
+- Updated dependencies [e921294]
+- Updated dependencies [cc5b0c3]
+- Updated dependencies [52ba759]
+- Updated dependencies [08f80b9]
+- Updated dependencies [922195e]
+- Updated dependencies [2931163]
+- Updated dependencies [fab8e30]
+- Updated dependencies [b1cfa76]
+- Updated dependencies [4be1a3f]
+- Updated dependencies [c90d8d7]
+- Updated dependencies [8257aa7]
+- Updated dependencies [8c2d558]
+- Updated dependencies [20502eb]
+- Updated dependencies [2ddb6a5]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [65e8ece]
+- Updated dependencies [1bf22f4]
+- Updated dependencies [37ce380]
+- Updated dependencies [f6162e8]
+- Updated dependencies [cdadc6c]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [79d4797]
+- Updated dependencies [a947127]
+- Updated dependencies [7e5b389]
+- Updated dependencies [cf24657]
+- Updated dependencies [1d5a968]
+- Updated dependencies [5bd62a1]
+- Updated dependencies [95bd84c]
+- Updated dependencies [b7e560b]
+- Updated dependencies [174d6ef]
+- Updated dependencies [cfbecdb]
+- Updated dependencies [9c2b3d6]
+- Updated dependencies [03f84f2]
+- Updated dependencies [8457029]
+- Updated dependencies [22eec46]
+- Updated dependencies [8fd3d6d]
+- Updated dependencies [5b84825]
+- Updated dependencies [516bc59]
+- Updated dependencies [2338cee]
+- Updated dependencies [56ae12f]
+- Updated dependencies [034f292]
+- Updated dependencies [1d207f7]
+- Updated dependencies [1022f0f]
+- Updated dependencies [cb6aa03]
+- Updated dependencies [57ceaee]
+- Updated dependencies [0c68992]
+- Updated dependencies [614d268]
+- Updated dependencies [76b506f]
+- Updated dependencies [72497ce]
+- Updated dependencies [7221d69]
+- Updated dependencies [425b3bd]
+- Updated dependencies [f60eb1d]
+- Updated dependencies [93f0494]
+- Updated dependencies [d7d80af]
+- Updated dependencies [8a9d9b0]
+- Updated dependencies [f60f91a]
+- Updated dependencies [dee89e1]
+- Updated dependencies [ed0fff4]
+- Updated dependencies [4bb7f17]
+- Updated dependencies [8764186]
+- Updated dependencies [9606e24]
+- Updated dependencies [a7dab9f]
+- Updated dependencies [3a1bfaa]
+- Updated dependencies [fe8d797]
+- Updated dependencies [42f1123]
+- Updated dependencies [00250c6]
+- Updated dependencies [57a59be]
+- Updated dependencies [63e7eaa]
+- Updated dependencies [6416860]
+- Updated dependencies [26d113c]
+- Updated dependencies [6943c8d]
+- Updated dependencies [9b7e01c]
+- Updated dependencies [aedb49f]
+- Updated dependencies [0aa5132]
+- Updated dependencies [7ba3e69]
+- Updated dependencies [441a023]
+- Updated dependencies [e044df2]
+- Updated dependencies [4a18e17]
+- Updated dependencies [67968c3]
+- Updated dependencies [27649f2]
+- Updated dependencies [5117a3c]
+- Updated dependencies [a0f437e]
+- Updated dependencies [4b73492]
+- Updated dependencies [158f868]
+- Updated dependencies [ffcde61]
+- Updated dependencies [19f8e39]
+- Updated dependencies [c57e67c]
+- Updated dependencies [201d32f]
+- Updated dependencies [8e43f3f]
+- Updated dependencies [5ffc43b]
+- Updated dependencies [813a306]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [df2ae04]
+- Updated dependencies [8882b53]
+- Updated dependencies [bee2796]
+- Updated dependencies [0618a25]
+- Updated dependencies [e7561c7]
+- Updated dependencies [76c5562]
+- Updated dependencies [477eb15]
+- Updated dependencies [8649268]
+- Updated dependencies [b9b4c34]
+- Updated dependencies [bbfb6ab]
+- Updated dependencies [f89247b]
+- Updated dependencies [064f0a7]
+- Updated dependencies [8a24c29]
+- Updated dependencies [e4f2133]
+- Updated dependencies [e4f2133]
+- Updated dependencies [4e9c237]
+- Updated dependencies [081ca62]
+- Updated dependencies [2fcd3a3]
+- Updated dependencies [c4afe9e]
+- Updated dependencies [ae03d3c]
+- Updated dependencies [81699c7]
+- Updated dependencies [2337334]
+- Updated dependencies [71adee4]
+- Updated dependencies [8d622d3]
+- Updated dependencies [238ce99]
+- Updated dependencies [0ab78c7]
+- Updated dependencies [31125f5]
+- Updated dependencies [a911e74]
+- Updated dependencies [e85d314]
+- Updated dependencies [10fbaeb]
+- Updated dependencies [051b065]
+- Updated dependencies [7026fca]
+- Updated dependencies [f85a332]
+- Updated dependencies [7cace1d]
+- Updated dependencies [60b38f5]
+- Updated dependencies [74261df]
+- Updated dependencies [a86bd34]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [d059b75]
+- Updated dependencies [a86bd34]
+- Updated dependencies [7165e31]
+- Updated dependencies [e5e7aef]
+- Updated dependencies [9566a40]
+- Updated dependencies [3fe1323]
+- Updated dependencies [22a1496]
+- Updated dependencies [c3bcbf9]
+- Updated dependencies [ea0eef2]
+- Updated dependencies [d061e79]
+- Updated dependencies [b44408d]
+- Updated dependencies [51dc6ab]
+- Updated dependencies [f9ab55b]
+- Updated dependencies [e70f4da]
+- Updated dependencies [174d6ef]
+- Updated dependencies [ccfe107]
+- Updated dependencies [587332a]
+- Updated dependencies [4a2b2ab]
+- Updated dependencies [d315cbd]
+- Updated dependencies [35257db]
+- Updated dependencies [e377035]
+- Updated dependencies [dc4ae6b]
+- Updated dependencies [4afd436]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [1026606]
+- Updated dependencies [5ddbb1f]
+- Updated dependencies [7b82e53]
+- Updated dependencies [f6f041c]
+- Updated dependencies [e10d8c7]
+- Updated dependencies [14b7692]
+- Updated dependencies [e2d9087]
+- Updated dependencies [842850f]
+- Updated dependencies [c50ae1e]
+- Updated dependencies [c400ea8]
+- Updated dependencies [7ae5e06]
+- Updated dependencies [418cb5d]
+- Updated dependencies [ef9a95c]
+- Updated dependencies [e3a1721]
+- Updated dependencies [0c1f2c7]
+- Updated dependencies [fb69a95]
+- Updated dependencies [739d188]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [5433169]
+- Updated dependencies [7e3889d]
+- Updated dependencies [763f79e]
+- Updated dependencies [0db1f38]
+- Updated dependencies [763f79e]
+- Updated dependencies [11cd1b0]
+- Updated dependencies [60dc605]
+- Updated dependencies [763f79e]
+- Updated dependencies [7774794]
+- Updated dependencies [d4e4883]
+- Updated dependencies [f976095]
+- Updated dependencies [2776f59]
+- Updated dependencies [a55f07c]
+- Updated dependencies [a20768a]
+- Updated dependencies [fb5df9b]
+- Updated dependencies [60809b5]
+- Updated dependencies [8915bcc]
+- Updated dependencies [9121cde]
+- Updated dependencies [38e795b]
+- Updated dependencies [aa1dfd3]
+- Updated dependencies [5c1959f]
+- Updated dependencies [71d059c]
+- Updated dependencies [42715a5]
+- Updated dependencies [42715a5]
+- Updated dependencies [79086a5]
+- Updated dependencies [611540e]
+- Updated dependencies [2075cbd]
+- Updated dependencies [a902908]
+- Updated dependencies [ac5c1bd]
+- Updated dependencies [5e5d64e]
+- Updated dependencies [f0e000b]
+- Updated dependencies [a283eaa]
+- Updated dependencies [356ce61]
+- Updated dependencies [e6871f1]
+- Updated dependencies [80f6d7b]
+- Updated dependencies [6cc38f6]
+- Updated dependencies [3823959]
+- Updated dependencies [4f55a65]
+- Updated dependencies [d3a4aa0]
+- Updated dependencies [8e45841]
+- Updated dependencies [daf6f2e]
+- Updated dependencies [595b596]
+- Updated dependencies [10e17bb]
+- Updated dependencies [8e6f5d2]
+- Updated dependencies [800e293]
+- Updated dependencies [9236a1e]
+- Updated dependencies [7e5b389]
+- Updated dependencies [7e5b389]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [01b8a73]
+- Updated dependencies [6eefcb6]
+- Updated dependencies [37daa58]
+- Updated dependencies [7863d23]
+- Updated dependencies [6b7317b]
+- Updated dependencies [181fbb3]
+- Updated dependencies [24fe665]
+- Updated dependencies [082dd1d]
+- Updated dependencies [79bd6cc]
+- Updated dependencies [5886c61]
+- Updated dependencies [a34b3fc]
+- Updated dependencies [e7d5f5a]
+- Updated dependencies [a6e8651]
+- Updated dependencies [7ab6268]
+- Updated dependencies [554d169]
+- Updated dependencies [7ab6268]
+- Updated dependencies [f5cec0a]
+- Updated dependencies [7ab6268]
+- Updated dependencies [7ab6268]
+- Updated dependencies [b564ea5]
+- Updated dependencies [eff7f0f]
+- Updated dependencies [ae40d94]
+- Updated dependencies [fea58eb]
+- Updated dependencies [0b82615]
+- Updated dependencies [a0070e8]
+- Updated dependencies [b584cc5]
+- Updated dependencies [4d469aa]
+- Updated dependencies [5886c61]
+- Updated dependencies [797729a]
+- Updated dependencies [b03ab76]
+- Updated dependencies [1526249]
+- Updated dependencies [0b29cea]
+- Updated dependencies [3e89500]
+- Updated dependencies [c22c9a6]
+- Updated dependencies [0ac8104]
+- Updated dependencies [b1e9d32]
+- Updated dependencies [b96ce9a]
+- Updated dependencies [de8f61d]
+- Updated dependencies [a5166b0]
+- Updated dependencies [8b65c38]
+- Updated dependencies [9c0aeb4]
+- Updated dependencies [7ec134d]
+- Updated dependencies [34a7197]
+- Updated dependencies [56784d5]
+- Updated dependencies [5de44f2]
+- Updated dependencies [cc7fffb]
+- Updated dependencies [033c46f]
+- Updated dependencies [4cc61de]
+- Updated dependencies [f219a71]
+- Updated dependencies [7f35ade]
+- Updated dependencies [597f68d]
+- Updated dependencies [812c469]
+- Updated dependencies [b54ab5f]
+- Updated dependencies [3c8e227]
+- Updated dependencies [8c7d44b]
+- Updated dependencies [250660c]
+- Updated dependencies [ca88052]
+- Updated dependencies [f4c19d4]
+- Updated dependencies [2f920b2]
+- Updated dependencies [6205afe]
+- Updated dependencies [6559075]
+- Updated dependencies [5f5b06c]
+- Updated dependencies [547e39b]
+- Updated dependencies [6585e6c]
+- Updated dependencies [be6f965]
+- Updated dependencies [b2b79f1]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [d2002e0]
+- Updated dependencies [0ecff6a]
+- Updated dependencies [b0905a2]
+- Updated dependencies [bfc31d6]
+- Updated dependencies [de8f61d]
+- Updated dependencies [ce28f90]
+- Updated dependencies [a23ebea]
+- Updated dependencies [b10e05f]
+- Updated dependencies [cbf6ee4]
+- Updated dependencies [dfc1a37]
+- Updated dependencies [7983c4e]
+- Updated dependencies [f2c5695]
+- Updated dependencies [9b78b1a]
+- Updated dependencies [7d7219c]
+- Updated dependencies [30a4077]
+- Updated dependencies [8f3bce2]
+- Updated dependencies [a0a2461]
+- Updated dependencies [44148c3]
+- Updated dependencies [71eae88]
+- Updated dependencies [13a2275]
+- Updated dependencies [70b763e]
+- Updated dependencies [29ca8f1]
+- Updated dependencies [15e923d]
+- Updated dependencies [25511cc]
+- Updated dependencies [6a59fd6]
+- Updated dependencies [e72e26a]
+- Updated dependencies [4e12218]
+- Updated dependencies [bed1c77]
+- Updated dependencies [63bd5cd]
+- Updated dependencies [e90dcff]
+- Updated dependencies [3a3ea2d]
+- Updated dependencies [05411e8]
+- Updated dependencies [faf09b2]
+- Updated dependencies [7977b94]
+- Updated dependencies [b9f3a12]
+- Updated dependencies [174d6ef]
+- Updated dependencies [577b207]
+- Updated dependencies [ce75dca]
+- Updated dependencies [7c560a7]
+- Updated dependencies [ad0d249]
+- Updated dependencies [15fc34c]
+- Updated dependencies [1d48780]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [e377035]
+- Updated dependencies [74edafb]
+- Updated dependencies [5792fce]
+- Updated dependencies [415a881]
+- Updated dependencies [9dea40b]
+- Updated dependencies [879bde0]
+- Updated dependencies [20e6ab0]
+- Updated dependencies [ccc7513]
+- Updated dependencies [59944c1]
+- Updated dependencies [92d9025]
+- Updated dependencies [46fd1b3]
+- Updated dependencies [7645aaa]
+- Updated dependencies [99f3aa6]
+- Updated dependencies [3b21abc]
+- Updated dependencies [7645aaa]
+- Updated dependencies [3b21abc]
+- Updated dependencies [1ba9061]
+- Updated dependencies [dc710e2]
+- Updated dependencies [0c1b6a6]
+- Updated dependencies [b6ae714]
+- Updated dependencies [a64cc29]
+- Updated dependencies [e737c0f]
+- Updated dependencies [69399bc]
+- Updated dependencies [d59f87e]
+- Updated dependencies [66e1a53]
+- Updated dependencies [39c9f49]
+- Updated dependencies [de344db]
+- Updated dependencies [a94cb4b]
+- Updated dependencies [9df0888]
+- Updated dependencies [d14d16a]
+- Updated dependencies [f21c0ca]
+- Updated dependencies [d9c51c0]
+- Updated dependencies [d19f8cc]
+- Updated dependencies [717a531]
+- Updated dependencies [3a50e80]
+- Updated dependencies [921e20e]
+- Updated dependencies [2202a32]
+- Updated dependencies [f522122]
+- Updated dependencies [241ebbe]
+- Updated dependencies [36dc93a]
+- Updated dependencies [36b25c8]
+- Updated dependencies [87f3d38]
+- Updated dependencies [11b0336]
+- Updated dependencies [00a0e96]
+- Updated dependencies [fa288ff]
+- Updated dependencies [02087eb]
+- Updated dependencies [75ef9fb]
+- Updated dependencies [85f85ba]
+- Updated dependencies [028cc49]
+- Updated dependencies [e5d2389]
+- Updated dependencies [e549ad3]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [dc881e4]
+- Updated dependencies [fb4710c]
+- Updated dependencies [46440b6]
+- Updated dependencies [db54baf]
+- Updated dependencies [bbf58f0]
+- Updated dependencies [65703dc]
+- Updated dependencies [42aab0c]
+- Updated dependencies [ac18636]
+- Updated dependencies [5d3b9b7]
+- Updated dependencies [adb1290]
+- Updated dependencies [2fa2172]
+- Updated dependencies [42f88c1]
+- Updated dependencies [928462b]
+- Updated dependencies [928462b]
+- Updated dependencies [8ff14a0]
+- Updated dependencies [3f575e2]
+- Updated dependencies [a0bb229]
+- Updated dependencies [aedb49f]
+- Updated dependencies [df97f39]
+- Updated dependencies [71adee4]
+- Updated dependencies [e1b53a1]
+- Updated dependencies [9a3e262]
+- Updated dependencies [067cf55]
+- Updated dependencies [b750660]
+- Updated dependencies [5b5d307]
+- Updated dependencies [1b23afb]
+- Updated dependencies [6661cbf]
+- Updated dependencies [dc881e4]
+- Updated dependencies [0a05da3]
+- Updated dependencies [6623aa9]
+- Updated dependencies [d88f17e]
+- Updated dependencies [5da2046]
+- Updated dependencies [3e108b4]
+- Updated dependencies [5da2046]
+- Updated dependencies [f4e98a4]
+- Updated dependencies [b323f97]
+- Updated dependencies [0bb71da]
+- Updated dependencies [fa5c2d9]
+- Updated dependencies [4810ef4]
+- Updated dependencies [4bda721]
+- Updated dependencies [744fbce]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [b29a94e]
+- Updated dependencies [5531792]
+- Updated dependencies [c129ce1]
+- Updated dependencies [43bf365]
+- Updated dependencies [c8f84f3]
+- Updated dependencies [c0d43ee]
+- Updated dependencies [3c498b4]
+- Updated dependencies [09a0e40]
+- Updated dependencies [373ac99]
+- Updated dependencies [7e73f59]
+- Updated dependencies [e2b10c3]
+- Updated dependencies [7896da7]
+- Updated dependencies [56945c8]
+- Updated dependencies [a37a658]
+- Updated dependencies [9d4db71]
+- Updated dependencies [d73bd9f]
+- Updated dependencies [4ee45ab]
+- Updated dependencies [b98bad7]
+- Updated dependencies [0d377ec]
+- Updated dependencies [435c248]
+- Updated dependencies [f09bd05]
+- Updated dependencies [e1e7241]
+- Updated dependencies [161a248]
+- Updated dependencies [977164c]
+- Updated dependencies [9aed377]
+- Updated dependencies [c491f93]
+- Updated dependencies [e4777a9]
+- Updated dependencies [aadb086]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [a791e92]
+- Updated dependencies [09f0c86]
+- Updated dependencies [d11dc30]
+- Updated dependencies [5ad7bc0]
+- Updated dependencies [481218b]
+- Updated dependencies [f8172cf]
+- Updated dependencies [e5395a6]
+- Updated dependencies [cd7ffdb]
+- Updated dependencies [8ced7e2]
+- Updated dependencies [5ed6215]
+- Updated dependencies [9cacd4b]
+- Updated dependencies [f95e342]
+- Updated dependencies [d6ba47e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [fcc5602]
+- Updated dependencies [880cbbf]
+- Updated dependencies [2932eb2]
+- Updated dependencies [c1a3072]
+- Updated dependencies [968362b]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [f4bfab5]
+- Updated dependencies [e6c888e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [c5e5476]
+- Updated dependencies [39b6012]
+- Updated dependencies [56089ae]
+- Updated dependencies [d5d22cb]
+- Updated dependencies [1cafdce]
+- Updated dependencies [86fce74]
+- Updated dependencies [800e293]
+- Updated dependencies [973e4ed]
+- Updated dependencies [c08f873]
+- Updated dependencies [8b96ffe]
+- Updated dependencies [9ae8bc2]
+- Updated dependencies [c6300b8]
+- Updated dependencies [d7de41f]
+- Updated dependencies [f544aeb]
+- Updated dependencies [c8b8348]
+- Updated dependencies [1e1d4c6]
+- Updated dependencies [33b9074]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [845819b]
+- Updated dependencies [ccd6f25]
+- Updated dependencies [527f214]
+- Updated dependencies [4c95425]
+- Updated dependencies [527f214]
+- Updated dependencies [6366c9f]
+- Updated dependencies [42169f9]
+- Updated dependencies [6d2bb1e]
+- Updated dependencies [c4304d4]
+- Updated dependencies [4202a36]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [edfe71a]
+- Updated dependencies [1a03017]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [be3711c]
+- Updated dependencies [4f03b5d]
+- Updated dependencies [c0555fb]
+- Updated dependencies [094ba4d]
+- Updated dependencies [7d598c5]
+- Updated dependencies [70fdef4]
+- Updated dependencies [8fac6ca]
+- Updated dependencies [72c4da1]
+- Updated dependencies [4ba13d5]
+- Updated dependencies [3e75a05]
+- Updated dependencies [9cff861]
+- Updated dependencies [c75b38f]
+- Updated dependencies [76664c0]
+- Updated dependencies [62aede0]
+- Updated dependencies [e3a1721]
+- Updated dependencies [d8c2af0]
+- Updated dependencies [58a8915]
+- Updated dependencies [b67db58]
+- Updated dependencies [963f8fd]
+- Updated dependencies [6d2bb1e]
+- Updated dependencies [1d280b0]
+- Updated dependencies [1e51ab5]
+- Updated dependencies
+- Updated dependencies [bfc26b4]
+- Updated dependencies [fada84a]
+- Updated dependencies [81de83f]
+- Updated dependencies [659a2f6]
+- Updated dependencies [8fac6ca]
+- Updated dependencies [d82703e]
+- Updated dependencies [4104e09]
+- Updated dependencies [5cfe2fd]
+- Updated dependencies [cff801a]
+- Updated dependencies [ff4504e]
+- Updated dependencies [e377035]
+- Updated dependencies [8d43789]
+- Updated dependencies [d4c1562]
+- Updated dependencies [0bee7f4]
+- Updated dependencies [e89b2a4]
+- Updated dependencies [2429e15]
+- Updated dependencies [cbf665c]
+- Updated dependencies [cbb78ec]
+- Updated dependencies [0ae8b0c]
+- Updated dependencies [d897c83]
+- Updated dependencies [3d5d715]
+- Updated dependencies [8078d25]
+- Updated dependencies [c428e9e]
+- Updated dependencies [bf94421]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [7645aaa]
+- Updated dependencies [7dd8e23]
+- Updated dependencies [e265bdc]
+- Updated dependencies [1fbfa96]
+- Updated dependencies [9aa8036]
+- Updated dependencies [76c5562]
+- Updated dependencies [24bca7a]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [0c2a798]
+- Updated dependencies [e377035]
+- Updated dependencies [6ad7c56]
+- Updated dependencies [0362193]
+- Updated dependencies [1b128c4]
+- Updated dependencies [768acf7]
+- Updated dependencies [4bf376e]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [45e100f]
+- Updated dependencies [6ab962a]
+- Updated dependencies [6ab962a]
+- Updated dependencies [0e01d7f]
+- Updated dependencies [70076bc]
+- Updated dependencies [f8f4954]
+- Updated dependencies [b1c09d3]
+- Updated dependencies [fa9657c]
+- Updated dependencies [f5b75cb]
+- Updated dependencies [0522c76]
+- Updated dependencies [b3b7fe7]
+- Updated dependencies [e23047b]
+- Updated dependencies [f41f7ed]
+- Updated dependencies [ab8626c]
+- Updated dependencies [b1e00b8]
+- Updated dependencies [4b3a525]
+- Updated dependencies [f72c842]
+- Updated dependencies [6555ec8]
+- Updated dependencies [2909824]
+- Updated dependencies [33f8369]
+- Updated dependencies [27fdcb9]
+- Updated dependencies [8f165c0]
+- Updated dependencies [ea5f41b]
+- Updated dependencies [6227913]
+- Updated dependencies [53f5ea0]
+- Updated dependencies [1dfa234]
+- Updated dependencies [ae4a042]
+- Updated dependencies [ae411f0]
+- Updated dependencies [6e3d5ef]
+- Updated dependencies [0c073ec]
+- Updated dependencies [8a94042]
+- Updated dependencies [9e84dfc]
+- Updated dependencies [1e031a5]
+- Updated dependencies [67b97e4]
+- Updated dependencies [0b49560]
+- Updated dependencies [7d11dc3]
+- Updated dependencies [c43e329]
+- Updated dependencies [f85a11b]
+- Updated dependencies [ac347a7]
+- Updated dependencies [7534a19]
+- Updated dependencies [a3bb40a]
+- Updated dependencies [313dd71]
+- Updated dependencies [60ca6e8]
+- Updated dependencies [97d6826]
+- Updated dependencies [b7b87f4]
+- Updated dependencies [a5aa92f]
+- Updated dependencies [e37086f]
+- Updated dependencies [a25a444]
+- Updated dependencies [2d2a16e]
+- Updated dependencies [87bd085]
+- Updated dependencies [c4f9031]
+- Updated dependencies [2ab2678]
+- Updated dependencies [d09c453]
+- Updated dependencies [6597fc4]
+- Updated dependencies [dba7a95]
+- Updated dependencies [b3ea632]
+- Updated dependencies [bc04126]
+- Updated dependencies [587ca97]
+- Updated dependencies [15e923d]
+- Updated dependencies [4c8749c]
+- Updated dependencies [f05f7d3]
+- Updated dependencies [08d9309]
+- Updated dependencies [07c3852]
+- Updated dependencies [a04eb3d]
+- Updated dependencies [93d4fce]
+- Updated dependencies [52def45]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [7c44ba5]
+- Updated dependencies [1eb7bcb]
+- Updated dependencies [df2ae04]
+- Updated dependencies [14143c7]
+- Updated dependencies [a0ad214]
+- Updated dependencies [607ab80]
+- Updated dependencies [c240900]
+- Updated dependencies [0f8da6b]
+- Updated dependencies [d5bcd74]
+- Updated dependencies [4a102bd]
+- Updated dependencies [d4532e3]
+- Updated dependencies [c80f586]
+- Updated dependencies [ea67ced]
+- Updated dependencies [5477214]
+- Updated dependencies [cd473d6]
+- Updated dependencies [d60ab9f]
+- Updated dependencies [aadb086]
+- Updated dependencies [8ff14a0]
+- Updated dependencies [af6d87c]
+- Updated dependencies [4602a76]
+- Updated dependencies [f9cd1ea]
+- Updated dependencies [16ce408]
+- Updated dependencies [9057ecb]
+- Updated dependencies [2823dca]
+- Updated dependencies [1c43dbf]
+- Updated dependencies [a3b1735]
+- Updated dependencies [d01d5a2]
+- Updated dependencies [bcc5c05]
+- Updated dependencies [e11a52e]
+- Updated dependencies [3744131]
+- Updated dependencies [5477214]
+- Updated dependencies [594d4ce]
+- Updated dependencies [7e5b389]
+- Updated dependencies [2e7bd80]
+- Updated dependencies [6c3e486]
+- Updated dependencies [e7bee92]
+- Updated dependencies [7affd45]
+- Updated dependencies [bef9c67]
+- Updated dependencies [470d4be]
+- Updated dependencies [2668893]
+- Updated dependencies [5512513]
+- Updated dependencies [764f27d]
+- Updated dependencies [8ff14a0]
+- Updated dependencies [2dfa806]
+- Updated dependencies [33f8369]
+- Updated dependencies [4ef636a]
+- Updated dependencies [a04eb3d]
+- Updated dependencies [76e3b96]
+- Updated dependencies [b40160f]
+- Updated dependencies [be40d3a]
+- Updated dependencies [fb0e6cd]
+- Updated dependencies [00ad78a]
+- Updated dependencies [ca89da9]
+- Updated dependencies [23c35b1]
+- Updated dependencies [7e5b389]
+- Updated dependencies [2f8f458]
+- Updated dependencies [728e0da]
+- Updated dependencies [adb9d72]
+- Updated dependencies [1e9c740]
+- Updated dependencies [586b6c1]
+- Updated dependencies [53fb0eb]
+- Updated dependencies [47fa777]
+- Updated dependencies [47fa777]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [9566a40]
+- Updated dependencies [9566a40]
+- Updated dependencies [68d5da4]
+- Updated dependencies [7d67497]
+- Updated dependencies [5fa6d0a]
+- Updated dependencies [fc665a9]
+- Updated dependencies [bb8b8cb]
+- Updated dependencies [5fa6d0a]
+- Updated dependencies [9566a40]
+- Updated dependencies [68d5da4]
+- Updated dependencies [71adee4]
+- Updated dependencies [a911e74]
+- Updated dependencies [1d7b94d]
+- Updated dependencies [fe8181e]
+- Updated dependencies [13f9dd9]
+- Updated dependencies [f073254]
+- Updated dependencies [3b2d8c8]
+- Updated dependencies [d74c803]
+- Updated dependencies [9f8982e]
+- Updated dependencies [a7d5e71]
+- Updated dependencies [e332e09]
+- Updated dependencies [ac24d7b]
+- Updated dependencies [914ba92]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [e06225e]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [38095a2]
+- Updated dependencies [d30164d]
+- Updated dependencies [04d5af6]
+- Updated dependencies [04d5af6]
+- Updated dependencies [c98a300]
+- Updated dependencies [04d5af6]
+- Updated dependencies [e7d580b]
+- Updated dependencies [cdbafb8]
+- Updated dependencies [3005391]
+- Updated dependencies [3311dde]
+- Updated dependencies [5b11625]
+- Updated dependencies [afbe8c3]
+- Updated dependencies [8bf1866]
+- Updated dependencies [c4bcb94]
+- Updated dependencies [7785bd5]
+- Updated dependencies [e59f1ae]
+- Updated dependencies [a8ff1e9]
+- Updated dependencies [25e8f76]
+- Updated dependencies [3a07b60]
+- Updated dependencies [b73c8ef]
+- Updated dependencies [6274bad]
+- Updated dependencies [758459f]
+- Updated dependencies [70213a5]
+- Updated dependencies [b72cf48]
+- Updated dependencies [b34f11e]
+- Updated dependencies [04d5af6]
+- Updated dependencies [5603bef]
+- Updated dependencies [126d17f]
+- Updated dependencies [d17a134]
+- Updated dependencies [4e68cf0]
+- Updated dependencies [ff5f066]
+- Updated dependencies [f164d0e]
+- Updated dependencies [586ca31]
+- Updated dependencies [ba8d3a0]
+- Updated dependencies [7fbfb0b]
+- Updated dependencies [c522708]
+- Updated dependencies [5cdd105]
+- Updated dependencies [857e1fc]
+- Updated dependencies [d868c48]
+- Updated dependencies [4d469aa]
+- Updated dependencies [419b1f1]
+- Updated dependencies [a3136aa]
+- Updated dependencies [5b156c6]
+- Updated dependencies [5b827ec]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [f976095]
+- Updated dependencies [4d31cf0]
+- Updated dependencies [af132bc]
+- Updated dependencies [2d57c94]
+- Updated dependencies [f004638]
+- Updated dependencies [3c27e36]
+- Updated dependencies [3c27e36]
+- Updated dependencies [ce5d609]
+- Updated dependencies [86a95a6]
+- Updated dependencies [a778f14]
+- Updated dependencies [2146a6f]
+- Updated dependencies [7eb527b]
+- Updated dependencies [19d5d8a]
+- Updated dependencies [42e87c0]
+- Updated dependencies [9333b1a]
+- Updated dependencies [fc62432]
+- Updated dependencies [70e7b25]
+- Updated dependencies [b9006ad]
+- Updated dependencies [b9006ad]
+- Updated dependencies [dd5a540]
+- Updated dependencies [85d3d17]
+- Updated dependencies [921d4f8]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [305f0ce]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [79e22dc]
+- Updated dependencies [8602bbc]
+- Updated dependencies [a3958dc]
+- Updated dependencies [5c089e8]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [0e80f73]
+- Updated dependencies [c873b55]
+- Updated dependencies [aedb49f]
+- Updated dependencies [406d68f]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [74e37d7]
+- Updated dependencies [8f61f88]
+- Updated dependencies [231eec5]
+- Updated dependencies [0983672]
+- Updated dependencies [19948e0]
+- Updated dependencies [6355d18]
+- Updated dependencies [fcfefd4]
+- Updated dependencies [eeb7c5a]
+- Updated dependencies [44848fe]
+- Updated dependencies [c4d5642]
+- Updated dependencies [aba9531]
+- Updated dependencies [c25237f]
+- Updated dependencies [b934739]
+- Updated dependencies [f1e9773]
+- Updated dependencies [b822d40]
+- Updated dependencies [88a19c0]
+- Updated dependencies [44848fe]
+- Updated dependencies [f5e0446]
+- Updated dependencies [f6c305d]
+- Updated dependencies [00a1f20]
+- Updated dependencies [6451f0c]
+- Updated dependencies [f3a1232]
+- Updated dependencies [d55c488]
+- Updated dependencies [56fda8d]
+- Updated dependencies [e04e543]
+- Updated dependencies [32356ff]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [df73bc8]
+- Updated dependencies [5c778a0]
+- Updated dependencies [261488b]
+- Updated dependencies [55ab2c6]
+- Updated dependencies [7e1ab6c]
+- Updated dependencies [162f816]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [52e0851]
+- Updated dependencies [f88d616]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [834d2ca]
+- Updated dependencies [457fbc3]
+- Updated dependencies [1e80440]
+- Updated dependencies [d3b20b9]
+- Updated dependencies [86b5903]
+- Updated dependencies [647b21c]
+- Updated dependencies
+- Updated dependencies [1d8e163]
+- Updated dependencies [b0bc4cd]
+- Updated dependencies [c23c975]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e08d172]
+- Updated dependencies [fd6c009]
+- Updated dependencies [2076b1b]
+- Updated dependencies [429e80c]
+- Updated dependencies [49b3b13]
+- Updated dependencies [bd25e62]
+- Updated dependencies [b425d50]
+- Updated dependencies [d962a91]
+- Updated dependencies [46ec294]
+- Updated dependencies [17d184b]
+- Updated dependencies [19387a6]
+- Updated dependencies [cabffe5]
+- Updated dependencies [f92300d]
+- Updated dependencies [07f5db2]
+- Updated dependencies [16eca51]
+- Updated dependencies [08512ea]
+- Updated dependencies [e0bea5a]
+- Updated dependencies [82f3868]
+- Updated dependencies [6c1ea88]
+- Updated dependencies [83ad38f]
+- Updated dependencies [82e481d]
+- Updated dependencies [87a8b06]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [d569abf]
+- Updated dependencies [36a20d4]
+- Updated dependencies [410ba5e]
+- Updated dependencies [4e4ddb5]
+- Updated dependencies [9d459cd]
+- Updated dependencies [76ca845]
+- Updated dependencies [44ad7a3]
+- Updated dependencies [44ad7a3]
+- Updated dependencies [3e4c5cf]
+- Updated dependencies [80b3328]
+- Updated dependencies [4c90808]
+- Updated dependencies [4349686]
+- Updated dependencies [b14d355]
+- Updated dependencies [772f457]
+- Updated dependencies [82e20b7]
+- Updated dependencies [597cfd7]
+- Updated dependencies [b835405]
+- Updated dependencies [660014e]
+- Updated dependencies [b2e7850]
+- Updated dependencies [db62edc]
+- Updated dependencies [6643915]
+- Updated dependencies [790e88a]
+- Updated dependencies [bf1cf7b]
+- Updated dependencies [c3e773c]
+- Updated dependencies [8558f40]
+- Updated dependencies [fa8902c]
+- Updated dependencies [96de590]
+- Updated dependencies [0ac8104]
+- Updated dependencies [9bbe3e4]
+- Updated dependencies [0c77c8d]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [56f8264]
+- Updated dependencies [1c6f913]
+- Updated dependencies [f20931c]
+- Updated dependencies [2241860]
+- Updated dependencies [5d7b7b8]
+- Updated dependencies [447f742]
+- Updated dependencies [0fe19aa]
+- Updated dependencies [5339aec]
+- Updated dependencies [3a71a1a]
+- Updated dependencies [a979682]
+- Updated dependencies [7ab6268]
+- Updated dependencies [d5e58b9]
+- Updated dependencies [d8c22e6]
+- Updated dependencies [f11549d]
+- Updated dependencies [814994a]
+- Updated dependencies [ab56471]
+- Updated dependencies [86b43d1]
+- Updated dependencies [eaefc65]
+- Updated dependencies [8cce06e]
+- Updated dependencies [16d4fab]
+- Updated dependencies [edcc040]
+- Updated dependencies [1ceadbf]
+- Updated dependencies [a47e5ed]
+- Updated dependencies [800e293]
+- Updated dependencies [6829ab9]
+- Updated dependencies [865ccae]
+- Updated dependencies [a47e5ed]
+- Updated dependencies [eb82ac9]
+- Updated dependencies [795f517]
+- Updated dependencies [a26f70d]
+- Updated dependencies [aedb49f]
+- Updated dependencies [95da921]
+- Updated dependencies [6ac9c99]
+- Updated dependencies [f39b469]
+- Updated dependencies [e752074]
+- Updated dependencies [8b73d9a]
+- Updated dependencies [002ff57]
+- Updated dependencies [31dd479]
+- Updated dependencies [2557ab3]
+- Updated dependencies [210f28f]
+- Updated dependencies [10fbaeb]
+- Updated dependencies [7513080]
+- Updated dependencies [7513080]
+- Updated dependencies [7513080]
+- Updated dependencies [1b23afb]
+- Updated dependencies [d6f3516]
+- Updated dependencies [7513080]
+- Updated dependencies [83a3934]
+- Updated dependencies [82b59e4]
+- Updated dependencies [9a64114]
+- Updated dependencies [7d3bac3]
+- Updated dependencies [f265eee]
+- Updated dependencies [9061a88]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [62b3eee]
+- Updated dependencies [3653446]
+- Updated dependencies [015b597]
+- Updated dependencies [3741379]
+- Updated dependencies [b8e3eb3]
+- Updated dependencies [5fcfce9]
+- Updated dependencies [0389204]
+- Updated dependencies [915d349]
+- Updated dependencies [fa9c93c]
+- Updated dependencies [b316348]
+- Updated dependencies [25abf42]
+- Updated dependencies [1e9dc58]
+- Updated dependencies [a23923e]
+- Updated dependencies [116f5b5]
+- Updated dependencies [291e5c3]
+- Updated dependencies [9217b8a]
+- Updated dependencies [24a8129]
+- Updated dependencies [9246f97]
+- Updated dependencies [843859b]
+- Updated dependencies [4816dc3]
+- Updated dependencies [97cce9d]
+- Updated dependencies [deda510]
+- Updated dependencies [6bfce5e]
+- Updated dependencies [68d5da4]
+- Updated dependencies [7b82ac2]
+- Updated dependencies [526965d]
+- Updated dependencies [195c064]
+- Updated dependencies [c017ed2]
+- Updated dependencies [9f9a61a]
+- Updated dependencies [1ca4e09]
+- Updated dependencies [b646c27]
+- Updated dependencies [850db0a]
+- Updated dependencies [ef3ebdd]
+- Updated dependencies [0828a03]
+- Updated dependencies [b92bf56]
+- Updated dependencies [0828a03]
+- Updated dependencies [f23829c]
+- Updated dependencies [52e0851]
+- Updated dependencies [7a46f5c]
+- Updated dependencies [9521334]
+- Updated dependencies [0177219]
+- Updated dependencies [091bd67]
+- Updated dependencies [670aeb3]
+- Updated dependencies [6a9b37e]
+- Updated dependencies [4dcf2d3]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [66da6bf]
+- Updated dependencies [d20898e]
+- Updated dependencies [cdffdbb]
+- Updated dependencies [2fbd36b]
+- Updated dependencies [e018b7d]
+- Updated dependencies [a5c1865]
+- Updated dependencies [f86aaa2]
+- Updated dependencies [cfebac4]
+- Updated dependencies [b1cfd4e]
+- Updated dependencies [dd9f482]
+- Updated dependencies [415e5b8]
+- Updated dependencies [033c46f]
+- Updated dependencies [e68cb62]
+- Updated dependencies [29135cb]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [16e4b0b]
+- Updated dependencies [7bc2c18]
+- Updated dependencies [dc5efa8]
+- Updated dependencies [61a6d3e]
+- Updated dependencies [b6b6026]
+- Updated dependencies [5b5326b]
+- Updated dependencies [ba4124a]
+- Updated dependencies [5995fd1]
+- Updated dependencies [475ea0d]
+- Updated dependencies [49d8892]
+- Updated dependencies [5e65d16]
+- Updated dependencies [510347b]
+- Updated dependencies [43caa71]
+- Updated dependencies [3888b67]
+- Updated dependencies [e8fe4e3]
+- Updated dependencies [3c76fe8]
+- Updated dependencies [63e9df9]
+- Updated dependencies [f8969d7]
+- Updated dependencies [138e9e3]
+- Updated dependencies [bdcebe3]
+- Updated dependencies [359a362]
+- Updated dependencies [8f28726]
+- Updated dependencies [0983672]
+- Updated dependencies [112d38a]
+- Updated dependencies [e0fd385]
+- Updated dependencies [b88f9f5]
+- Updated dependencies [fb69a95]
+- Updated dependencies [a45338c]
+- Updated dependencies [fb69a95]
+- Updated dependencies [3f575e2]
+- Updated dependencies [c6b831f]
+- Updated dependencies [4f9848f]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [d22725a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [ff8c1f9]
+- Updated dependencies [a6e8651]
+- Updated dependencies [26cdc89]
+- Updated dependencies [7cace1d]
+- Updated dependencies [a86bd34]
+- Updated dependencies [925fb74]
+- Updated dependencies [32a45c4]
+- Updated dependencies [adaebf1]
+- Updated dependencies [c11f37e]
+- Updated dependencies [34e0794]
+- Updated dependencies [cbcc46b]
+- Updated dependencies [cb6e47b]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [1c0046a]
+- Updated dependencies [a34f319]
+- Updated dependencies [cbcd314]
+- Updated dependencies [9e23aea]
+- Updated dependencies [dee342f]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [ad94222]
+- Updated dependencies [ef93a6d]
+- Updated dependencies [4069e86]
+- Updated dependencies [201717b]
+- Updated dependencies [3381131]
+- Updated dependencies [4f23eaa]
+- Updated dependencies [817c4a0]
+- Updated dependencies [f822a1d]
+- Updated dependencies [99ca079]
+- Updated dependencies [55af93c]
+- Updated dependencies [c438a4b]
+- Updated dependencies [da233f8]
+- Updated dependencies [e45a847]
+- Updated dependencies [ea981c8]
+- Updated dependencies [3637a58]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [6bdf14d]
+- Updated dependencies [a8ae2f7]
+- Updated dependencies [6bea0c5]
+- Updated dependencies [8635c1a]
+- Updated dependencies [e58f9c3]
+- Updated dependencies [6b738ad]
+- Updated dependencies [cb268d7]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [86c3dda]
+- Updated dependencies [0dbf7f0]
+- Updated dependencies [406612a]
+- Updated dependencies [9e1a07c]
+- Updated dependencies [20053ab]
+- Updated dependencies [b261adb]
+- Updated dependencies [fc3aeaf]
+- Updated dependencies [a50e75e]
+- Updated dependencies [482acd3]
+- Updated dependencies [8f72646]
+- Updated dependencies [bc8577d]
+- Updated dependencies [ca0cf36]
+- Updated dependencies [23fe5e7]
+- Updated dependencies [6606d90]
+- Updated dependencies [3b772e0]
+- Updated dependencies [b9a8c22]
+- Updated dependencies [c201aeb]
+- Updated dependencies [d552c5c]
+- Updated dependencies [ce87000]
+- Updated dependencies [2e9f432]
+- Updated dependencies [62ce053]
+- Updated dependencies [c6d7970]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [9eddc4c]
+- Updated dependencies [2b30093]
+- Updated dependencies [91e0203]
+- Updated dependencies [ab421aa]
+- Updated dependencies [05571fd]
+- Updated dependencies [93da482]
+- Updated dependencies [3d4a54b]
+- Updated dependencies [0b0d423]
+- Updated dependencies [89b9241]
+- Updated dependencies [e4dc16a]
+- Updated dependencies [555bd8d]
+- Updated dependencies [f1caee8]
+- Updated dependencies [1aa0af1]
+- Updated dependencies [acff6d2]
+- Updated dependencies [7b062ca]
+- Updated dependencies [ae6b2a5]
+- Updated dependencies [eb89dc5]
+- Updated dependencies [265137c]
+- Updated dependencies [2c93ce3]
+- Updated dependencies [7124255]
+- Updated dependencies [0080be9]
+- Updated dependencies [8bd989e]
+- Updated dependencies [ba05af9]
+- Updated dependencies [5202a9f]
+- Updated dependencies [caecf8f]
+- Updated dependencies [d97fb3b]
+- Updated dependencies [3d6ca96]
+- Updated dependencies [bbbadfb]
+- Updated dependencies [bbbadfb]
+- Updated dependencies [9d24719]
+- Updated dependencies [42f9cce]
+- Updated dependencies [04d45ec]
+- Updated dependencies [b5046e5]
+- Updated dependencies [b4e4fa4]
+- Updated dependencies [8f2eb10]
+- Updated dependencies [1e4dc77]
+- Updated dependencies [c8d95f5]
+- Updated dependencies [f8b78a3]
+- Updated dependencies [5d3b9b7]
+- Updated dependencies [cc7b4de]
+- Updated dependencies [faa4c8d]
+- Updated dependencies [e331441]
+- Updated dependencies [f602e56]
+- Updated dependencies [6e1cc34]
+- Updated dependencies [5a4f81e]
+- Updated dependencies [e200728]
+- Updated dependencies [9b8fcab]
+- Updated dependencies [a82e65b]
+- Updated dependencies [1e4dc77]
+- Updated dependencies [66824dc]
+- Updated dependencies [1e4dc77]
+- Updated dependencies [90ba557]
+- Updated dependencies [7950ee6]
+- Updated dependencies [e6c3bdd]
+- Updated dependencies [25b8182]
+- Updated dependencies [bbb2875]
+- Updated dependencies [80940a2]
+- Updated dependencies [c859cb8]
+- Updated dependencies [64e4aaf]
+- Updated dependencies [3072890]
+- Updated dependencies [905e345]
+- Updated dependencies [152cc89]
+- Updated dependencies [7dd6c75]
+- Updated dependencies [7e90922]
+- Updated dependencies [5b0df8a]
+- Updated dependencies [78dd590]
+- Updated dependencies [d7a156b]
+- Updated dependencies [d3f717d]
+- Updated dependencies [037e5da]
+- Updated dependencies [45f3304]
+- Updated dependencies [e377035]
+- Updated dependencies [45f3304]
+- Updated dependencies [45f3304]
+- Updated dependencies [5de2a26]
+- Updated dependencies [fd766bf]
+- Updated dependencies [e377035]
+- Updated dependencies [25de7db]
+- Updated dependencies [2b0def2]
+- Updated dependencies [80b8f57]
+- Updated dependencies [fa259b1]
+- Updated dependencies [1a9548b]
+- Updated dependencies [27704ec]
+- Updated dependencies [1f8cd0c]
+- Updated dependencies [f9386da]
+- Updated dependencies [3b34a36]
+- Updated dependencies [60c082d]
+- Updated dependencies [46ec294]
+- Updated dependencies [ae15ab8]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [42af0bf]
+- Updated dependencies [4c592ae]
+- Updated dependencies [6fb8869]
+- Updated dependencies [a0d5f84]
+- Updated dependencies [6153ae7]
+- Updated dependencies [50db4f7]
+- Updated dependencies [6a06f54]
+- Updated dependencies [3551ece]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [959f804]
+- Updated dependencies [6b5336b]
+- Updated dependencies [e970fad]
+- Updated dependencies [dc881e4]
+- Updated dependencies [4aaefe7]
+- Updated dependencies [3871e2f]
+- Updated dependencies [4377fe2]
+- Updated dependencies [bce203a]
+- Updated dependencies [4b0b9df]
+- Updated dependencies [cea89d2]
+- Updated dependencies [a23ebea]
+- Updated dependencies [62aede0]
+- Updated dependencies [e3a1721]
+- Updated dependencies [72544b9]
+- Updated dependencies [0cc203a]
+- Updated dependencies
+- Updated dependencies [86019a4]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [4bee28f]
+- Updated dependencies [50cf32b]
+- Updated dependencies [a839c5a]
+- Updated dependencies [c4b28e0]
+- Updated dependencies [3f7a225]
+- Updated dependencies [d9eb095]
+- Updated dependencies [81da21a]
+- Updated dependencies [c9df176]
+- Updated dependencies [75518d4]
+- Updated dependencies [854cd17]
+- Updated dependencies [3aafef6]
+- Updated dependencies [e441f69]
+- Updated dependencies [85a0736]
+- Updated dependencies [47af125]
+- Updated dependencies [bd11878]
+- Updated dependencies [9331aee]
+- Updated dependencies [a722c3d]
+- Updated dependencies [9b9f025]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [e246e43]
+- Updated dependencies [13f859a]
+- Updated dependencies [378f057]
+- Updated dependencies [e8148f6]
+- Updated dependencies [2165b78]
+- Updated dependencies [2405236]
+- Updated dependencies [189f069]
+- Updated dependencies [5e35297]
+- Updated dependencies [dab3f16]
+- Updated dependencies [a236fa9]
+- Updated dependencies [f7d58d1]
+- Updated dependencies [148d382]
+- Updated dependencies [5e9987f]
+- Updated dependencies [ae102fe]
+- Updated dependencies [613fb76]
+- Updated dependencies [2509807]
+- Updated dependencies [0aa733f]
+- Updated dependencies [2dbf2ba]
+- Updated dependencies [592ccf8]
+- Updated dependencies [4bbf7c0]
+- Updated dependencies [73423ec]
+- Updated dependencies [bc84e18]
+- Updated dependencies [bcf156e]
+- Updated dependencies [13de9ee]
+- Updated dependencies [c0963ed]
+- Updated dependencies [ae7832a]
+- Updated dependencies [e34dfcc]
+- Updated dependencies [0315c53]
+- Updated dependencies [b48a618]
+- Updated dependencies [ce0c92a]
+- Updated dependencies [8ac733d]
+- Updated dependencies [dc784c7]
+- Updated dependencies [aa5bf43]
+- Updated dependencies [8f1cf20]
+- Updated dependencies [33f8369]
+- Updated dependencies [7fe0b62]
+- Updated dependencies [206f77c]
+- Updated dependencies [e57d7a9]
+- Updated dependencies [552d4fc]
+- Updated dependencies [241691a]
+- Updated dependencies [7ba9d98]
+- Updated dependencies [4f8619b]
+- Updated dependencies [4f8619b]
+- Updated dependencies [fb94e87]
+- Updated dependencies [2ab2678]
+- Updated dependencies [ea29790]
+- Updated dependencies [c62a3d3]
+- Updated dependencies [67cb364]
+- Updated dependencies [f9427e6]
+- Updated dependencies [02f9570]
+- Updated dependencies [06cc87b]
+- Updated dependencies [9b65bab]
+- Updated dependencies [4d991a3]
+- Updated dependencies [c620120]
+- Updated dependencies [e20be35]
+- Updated dependencies [20abda4]
+- Updated dependencies [2bc469b]
+- Updated dependencies [072c8da]
+- Updated dependencies [dbe20c5]
+- Updated dependencies [1420b6b]
+- Updated dependencies [28f3eda]
+- Updated dependencies [28f3eda]
+- Updated dependencies [8063ea0]
+- Updated dependencies [66ea1d8]
+- Updated dependencies [bffa79c]
+- Updated dependencies [7c8117d]
+- Updated dependencies [b25b14e]
+- Updated dependencies [d040a01]
+- Updated dependencies [0714c9d]
+- Updated dependencies [c10d7c5]
+- Updated dependencies [4c66407]
+- Updated dependencies [714e884]
+- Updated dependencies [65506e8]
+- Updated dependencies [18b99f1]
+- Updated dependencies [a6e3e29]
+- Updated dependencies [0311cf2]
+- Updated dependencies [973af32]
+- Updated dependencies [f85be0a]
+- Updated dependencies [fcf63e6]
+- Updated dependencies [d2589b8]
+- Updated dependencies [d145abc]
+- Updated dependencies [4cd2028]
+- Updated dependencies [3b9be50]
+- Updated dependencies [1e604d4]
+- Updated dependencies [896dbc0]
+- Updated dependencies [b8d9b57]
+- Updated dependencies [1e0f516]
+- Updated dependencies [2ee80d2]
+- Updated dependencies [14b6323]
+- Updated dependencies [19333d4]
+- Updated dependencies [37e841b]
+- Updated dependencies [34194c8]
+- Updated dependencies [5c05b86]
+- Updated dependencies [4fe1cad]
+- Updated dependencies [368fb5f]
+- Updated dependencies [dd7e196]
+- Updated dependencies [8ec6662]
+- Updated dependencies [963f8fd]
+- Updated dependencies [ba59515]
+- Updated dependencies [7a75fd1]
+- Updated dependencies [e063817]
+- Updated dependencies [de71f7d]
+- Updated dependencies [b2d7ddb]
+- Updated dependencies [87d7436]
+- Updated dependencies [c644d57]
+- Updated dependencies [6cb67d6]
+- Updated dependencies [c644d57]
+- Updated dependencies [ae7d97c]
+- Updated dependencies [a5c1865]
+- Updated dependencies [21eb68a]
+- Updated dependencies [b95a75c]
+- Updated dependencies [b10284a]
+- Updated dependencies [4727ffb]
+- Updated dependencies [0b8f43f]
+- Updated dependencies [95ca540]
+- Updated dependencies [8d7296a]
+- Updated dependencies [b91f068]
+- Updated dependencies [2a15266]
+- Updated dependencies [4950524]
+- Updated dependencies [9acb5e0]
+- Updated dependencies [dde4d90]
+- Updated dependencies [c969f88]
+- Updated dependencies [d6f8aac]
+- Updated dependencies [1f05956]
+- Updated dependencies [c4f5447]
+- Updated dependencies [c4f5447]
+- Updated dependencies [f57aa89]
+- Updated dependencies [a453821]
+- Updated dependencies [9566a40]
+- Updated dependencies [129da4b]
+- Updated dependencies [cd410a7]
+- Updated dependencies [29f3da2]
+- Updated dependencies [b70bc7f]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [beb4333]
+- Updated dependencies [07289d6]
+- Updated dependencies [800d177]
+- Updated dependencies [6de6fae]
+- Updated dependencies [c3482db]
+- Updated dependencies [8063ea0]
+- Updated dependencies [5af6391]
+- Updated dependencies [7c6a653]
+- Updated dependencies [7010acd]
+- Updated dependencies [a4de4bb]
+- Updated dependencies [6952fad]
+- Updated dependencies [41ee0c2]
+- Updated dependencies [65a8393]
+- Updated dependencies [654b038]
+- Updated dependencies [20b2a58]
+- Updated dependencies [4f092a6]
+- Updated dependencies [5b84825]
+- Updated dependencies [115a979]
+- Updated dependencies [4f092a6]
+- Updated dependencies [4f092a6]
+- Updated dependencies [4f092a6]
+- Updated dependencies [fea58eb]
+- Updated dependencies [ff1e7a3]
+- Updated dependencies [eac1637]
+- Updated dependencies [175c611]
+- Updated dependencies [774e9cc]
+- Updated dependencies [a06c164]
+- Updated dependencies [9e8b91e]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [4c6e74f]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [d52edaa]
+- Updated dependencies [d52edaa]
+- Updated dependencies [d52edaa]
+- Updated dependencies [1f815cd]
+- Updated dependencies [36358ef]
+- Updated dependencies [cde0495]
+- Updated dependencies [f76c9ce]
+- Updated dependencies [ddfe573]
+- Updated dependencies [06d8a05]
+- Updated dependencies [c38ba37]
+- Updated dependencies [abfbea0]
+- Updated dependencies [8d44534]
+- Updated dependencies [6b451e0]
+- Updated dependencies [99fa753]
+- Updated dependencies [3bf2ba1]
+- Updated dependencies [c59ac31]
+- Updated dependencies [bfbeb0e]
+- Updated dependencies [bfbeb0e]
+- Updated dependencies [77789e5]
+- Updated dependencies [0716fa3]
+- Updated dependencies [800e293]
+- Updated dependencies [d345d72]
+- Updated dependencies [68fa395]
+- Updated dependencies [889de90]
+- Updated dependencies [68fa395]
+- Updated dependencies [e7383b3]
+- Updated dependencies [85bd4fb]
+- Updated dependencies [d52edaa]
+- Updated dependencies [e7383b3]
+- Updated dependencies [68ad237]
+- Updated dependencies [bcfeaca]
+- Updated dependencies [e7383b3]
+- Updated dependencies [fc0c7e2]
+- Updated dependencies [c113459]
+- Updated dependencies [c113459]
+- Updated dependencies [91cdd80]
+- Updated dependencies [2940a77]
+- Updated dependencies [d6b0814]
+- Updated dependencies [83ad38f]
+- Updated dependencies [83ad38f]
+- Updated dependencies [83ad38f]
+- Updated dependencies [83ad38f]
+- Updated dependencies [83ad38f]
+- Updated dependencies [2ab2678]
+- Updated dependencies [1f71e57]
+- Updated dependencies [fbefe8d]
+- Updated dependencies [68fa395]
+- Updated dependencies [b8b6281]
+- Updated dependencies [87bbefb]
+- Updated dependencies [6b8ef6f]
+- Updated dependencies [26dac75]
+- Updated dependencies [7cd52a0]
+- Updated dependencies [4acadb2]
+- Updated dependencies [6b8ef6f]
+- Updated dependencies [d3025b9]
+- Updated dependencies [706f953]
+- Updated dependencies [b55b478]
+- Updated dependencies [8d28529]
+- Updated dependencies [5c52544]
+- Updated dependencies [1fe6cab]
+- Updated dependencies [0481f49]
+- Updated dependencies [b8bb2d4]
+- Updated dependencies [6276cc6]
+- Updated dependencies [6276cc6]
+- Updated dependencies [677a841]
+- Updated dependencies [b8bb2d4]
+- Updated dependencies [cafdd8c]
+- Updated dependencies [969aab0]
+- Updated dependencies [61c9926]
+- Updated dependencies [09dcf56]
+- Updated dependencies [5024537]
+- Updated dependencies [7489853]
+- Updated dependencies [062ab3a]
+- Updated dependencies [b4cc74e]
+- Updated dependencies [019b253]
+- Updated dependencies [6b8ef6f]
+- Updated dependencies [c113459]
+- Updated dependencies [ffff1b9]
+- Updated dependencies [e75c2fa]
+- Updated dependencies [68fa395]
+- Updated dependencies [4b30753]
+- Updated dependencies [8a5ed44]
+- Updated dependencies [df2ae04]
+- Updated dependencies [9299445]
+- Updated dependencies [a0d7dfc]
+- Updated dependencies [7d77794]
+- Updated dependencies [7ba9d98]
+- Updated dependencies [d587928]
+- Updated dependencies [29fbe1b]
+- Updated dependencies [ba6ddfa]
+- Updated dependencies [7e7f2d4]
+- Updated dependencies [699c512]
+- Updated dependencies [7ba9d98]
+- Updated dependencies [26d6c57]
+- Updated dependencies [2909824]
+- Updated dependencies [33f8369]
+- Updated dependencies [a4e0df7]
+- Updated dependencies [6bcac6c]
+- Updated dependencies [22da2d7]
+- Updated dependencies [7bb54fc]
+- Updated dependencies [95cb326]
+- Updated dependencies [ba39b46]
+- Updated dependencies [c113459]
+- Updated dependencies [8246dac]
+- Updated dependencies [e06225e]
+- Updated dependencies [d33e41e]
+- Updated dependencies [a71f4e8]
+- Updated dependencies [dfedaeb]
+- Updated dependencies [5309c93]
+- Updated dependencies [856c4c6]
+- Updated dependencies [ac6c1d5]
+- Updated dependencies [7489853]
+- Updated dependencies [0ee638a]
+- Updated dependencies [00d3186]
+- Updated dependencies [e60e5c1]
+- Updated dependencies [937ee67]
+- Updated dependencies [7b82ac2]
+- Updated dependencies [9138faa]
+- Updated dependencies [758459f]
+- Updated dependencies [f585154]
+- Updated dependencies [2909824]
+- Updated dependencies [2ab2678]
+- Updated dependencies [ef2d7b2]
+- Updated dependencies [2d3d80c]
+- Updated dependencies [a7310df]
+- Updated dependencies [7e132f6]
+- Updated dependencies [151f32a]
+- Updated dependencies [68fa395]
+- Updated dependencies [33f8369]
+- Updated dependencies [7d495c5]
+- Updated dependencies [9ee184f]
+- Updated dependencies [88c4858]
+- Updated dependencies [237bc66]
+- Updated dependencies [d1dd27c]
+- Updated dependencies [ecf76a1]
+- Updated dependencies [bfbeb0e]
+- Updated dependencies [3197c9f]
+- Updated dependencies [7666c34]
+- Updated dependencies [677a841]
+- Updated dependencies [b378f99]
+- Updated dependencies [278e19f]
+- Updated dependencies [0a8bcee]
+- Updated dependencies [7129668]
+- Updated dependencies [06da484]
+- Updated dependencies [c59ac31]
+- Updated dependencies [bfbeb0e]
+- Updated dependencies [c644d57]
+- Updated dependencies [bfbeb0e]
+- Updated dependencies [2acd7bc]
+- Updated dependencies [d52edaa]
+- Updated dependencies [a15119c]
+- Updated dependencies [b378f99]
+- Updated dependencies [f0f3399]
+- Updated dependencies [774063d]
+- Updated dependencies [68fa395]
+- Updated dependencies [c59ac31]
+- Updated dependencies [ce5d609]
+- Updated dependencies [6b8ef6f]
+- Updated dependencies [8fb09ad]
+- Updated dependencies [ba7e062]
+- Updated dependencies [c157710]
+- Updated dependencies [bc0d76c]
+- Updated dependencies [7c007dc]
+- Updated dependencies [c46c07b]
+- Updated dependencies [ac0379d]
+- Updated dependencies [340ab66]
+- Updated dependencies [a5c1865]
+- Updated dependencies [0d977b8]
+- Updated dependencies [71adee4]
+- Updated dependencies [7cc06b9]
+- Updated dependencies [39b41ec]
+- Updated dependencies [6494d25]
+- Updated dependencies [30bf620]
+- Updated dependencies [41f0773]
+- Updated dependencies [527f214]
+- Updated dependencies [371b695]
+- Updated dependencies [bdc9108]
+- Updated dependencies [0c18df0]
+- Updated dependencies [d268d21]
+- Updated dependencies [c4783b4]
+- Updated dependencies [de9d942]
+- Updated dependencies [cdede50]
+- Updated dependencies [edcb456]
+- Updated dependencies [f2b94bc]
+- Updated dependencies [4198fea]
+- Updated dependencies [0ac8104]
+- Updated dependencies [475c725]
+- Updated dependencies [adca5ed]
+- Updated dependencies [5dd240d]
+- Updated dependencies [8b01b26]
+- Updated dependencies [2c0f2fe]
+- Updated dependencies [c7db707]
+- Updated dependencies [ca65c7b]
+- Updated dependencies [987dd51]
+- Updated dependencies [812c469]
+- Updated dependencies [f71667e]
+- Updated dependencies [2075087]
+- Updated dependencies [12816b7]
+- Updated dependencies [9c6db6a]
+- Updated dependencies [15c0856]
+- Updated dependencies [ce89f4c]
+- Updated dependencies [361fce4]
+- Updated dependencies [9fa2d45]
+- Updated dependencies [6803209]
+- Updated dependencies [f857c86]
+- Updated dependencies [5b8e066]
+- Updated dependencies [fca9c3c]
+- Updated dependencies [087e02c]
+- Updated dependencies [abdc064]
+- Updated dependencies [b5df5b3]
+- Updated dependencies [413e38c]
+- Updated dependencies [55fd480]
+- Updated dependencies [aec0cec]
+- Updated dependencies [3e39fea]
+- Updated dependencies [eb070dc]
+- Updated dependencies [42ec713]
+- Updated dependencies [a9b8fbb]
+- Updated dependencies [73f1cf1]
+- Updated dependencies [cbc7e4b]
+- Updated dependencies [0d0c238]
+- Updated dependencies [5354da3]
+- Updated dependencies [787ca7b]
+- Updated dependencies [721585e]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/ui@2.0.0
+  - @weasel-js/routing@2.0.0
+  - @weasel-js/core@2.0.0
+  - @weasel-js/editing@2.0.0
+  - @weasel-js/path-tools@2.0.0
+  - @weasel-js/prefs@2.0.0
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/ui-input@2.0.0
+  - @weasel-js/quantity@2.0.0
+  - @weasel-js/kernel3d@2.0.0
+  - @weasel-js/gestures@2.0.0
+  - @weasel-js/theme@2.0.0
+  - @weasel-js/text-tools@2.0.0
+  - @weasel-js/loupe@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/clock@2.0.0
+  - @weasel-js/paint@2.0.0
+  - @weasel-js/devtools@2.0.0
+  - @weasel-js/svg@2.0.0
+  - @weasel-js/react@2.0.0
+  - @weasel-js/icons@2.0.0
+  - @weasel-js/menu@2.0.0
+  - @weasel-js/minimap@2.0.0
+  - @weasel-js/prefs-schema@2.0.0
+  - @weasel-js/storage@2.0.0
+
 ## 1.19.1
 
 ### Major Changes

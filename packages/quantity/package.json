@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/quantity",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "Numbers with units and a display: fractions, ratios, currency, durations and more, as text, spoken text, HTML and MathML. No React, no DOM.",
   "weasel": {
     "tier": "base"
@@ -29,8 +29,8 @@
     "url": "https://github.com/orochi235/weasel/issues"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.19.1",
-    "@weasel-js/registry": "1.19.1"
+    "@weasel-js/geom": "2.0.0",
+    "@weasel-js/registry": "2.0.0"
   },
   "engines": {
     "node": ">=24"

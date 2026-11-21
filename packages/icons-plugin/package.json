@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/icons-plugin",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "The build plugin that ships only the glyphs a build names, for vite, rollup, rolldown and esbuild.",
   "weasel": {
     "tier": "other"
@@ -24,7 +24,7 @@
   "files": ["dist", "virtual.d.ts", "README.md", "LICENSE"],
   "scripts": { "build": "tsup", "test": "node ../../scripts/package-test.mjs" },
   "dependencies": { "magic-string": "1.4.5", "oxc-parser": "0.159.0", "unplugin": "3.7.0" },
-  "devDependencies": { "@weasel-js/icons": "1.19.1" },
+  "devDependencies": { "@weasel-js/icons": "2.0.0" },
   "peerDependencies": { "vite": "^8.0.0" },
   "peerDependenciesMeta": { "vite": { "optional": true } },
   "publishConfig": { "access": "public", "provenance": true }

@@ -1,5 +1,625 @@
 # @weasel-js/theme
 
+## 2.0.0
+
+### Major Changes
+
+- 854cd17: The theme's `Selection` type is `AxisChoice`, since "selection" means the selected scene nodes everywhere else in weasel.
+  
+  `fullSelection`, `enumerateSelections` and `selectionKey` are `fullAxisChoice`, `enumerateAxisChoices` and `axisChoiceKey`.
+  
+  ```ts
+  // before
+  const choice: Selection = fullSelection(themeAxes(theme), { mode: 'dark' });
+  // after
+  const choice: AxisChoice = fullAxisChoice(themeAxes(theme), { mode: 'dark' });
+  ```
+  
+  <!-- entry: breaking api -->
+- a236fa9: Theme's DTCG reader and writer are `fromDtcg` and `toDtcg`.
+  
+  `loadDTCG` parsed a document already in memory and loaded nothing, and the repo spells the acronym `Dtcg`, like `DtcgDocument`. `toDtcg` is in `@weasel-js/theme/engine`.
+  
+  ```ts
+  // before
+  const theme = loadDTCG(json); const doc = toDTCG(theme);
+  // after
+  const theme = fromDtcg(json); const doc = toDtcg(theme);
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- b508e1a: `--wzl-button-h` sets the height of every `Button` below the element that sets it, at any size.
+  
+  An icon-only button stays square at that height, and `measureButton` reads it too. Unset, a button keeps its size's control height.
+  
+  ```css
+  .my-title-bar { --wzl-button-h: 18px; }
+  ```
+  
+  <!-- entry: new api -->
+- efe82c4: A disabled control turns gray as well as fading, so it no longer reads like subtle text beside it.
+  
+  The cue is the new `--wzl-disabled-filter` theme token, `grayscale(1)` by default; a theme can set it to another filter, or to `none` to keep the fade alone. A consumer stylesheet that fades its own control when disabled sets `filter: var(--wzl-disabled-filter)` beside the `opacity` to match.
+  
+  <!-- entry: api visual -->
+- 9b9f025: `@weasel-js/theme/capText.module.css` trims a label's box to run from its cap height down to its baseline.
+  
+  Compose `.capText` into a control's label (`composes: capText from '@weasel-js/theme/capText.module.css'`), and centering the label centers its capitals, whatever the face's ascent and descent.
+  
+  <!-- entry: api new -->
+- e246e43: A categorical ramp's anchor fills the step its `name` names.
+  
+  `derive` reports an anchor naming no step of the ramp, or a step an earlier anchor fills, as `invalid`; it then fills a step no anchor names.
+  
+  <!-- entry: fix behavior -->
+- 5e9987f: `@weasel-js/theme/engine` exports `StepScope`, the type `declaredSteps` takes its scope as, so a caller can name it.
+  
+  <!-- entry: api -->
+- 33f8369: `themePrefsSchema`'s tokens start auto at what the theme resolves them to, its axes are always pinned, and each token page is resettable.
+  
+  A token's `auto` is `{ on: true, value }`, its value split along the axes it differs by; its `default` is that value with no axis set. An axis declares no `auto`.
+  
+  <!-- entry: behavior -->
+- 7ba9d98: `@weasel-js/theme/sizer.module.css` holds a box at the width of the widest of several strings.
+  
+  It keeps a readout from reflowing as its value changes. Put each candidate in a `sizer` child, set in the same grid cell as the visible value.
+  
+  ```css
+  .readout { display: inline-grid; }
+  .readout > * { grid-area: 1 / 1; }
+  .sizer { composes: sizer from '@weasel-js/theme/sizer.module.css'; }
+  ```
+  
+  <!-- entry: api -->
+- 4f8619b: `axisDependencies`, `bake`, `mergeChain`, and `declaredSteps` read a ramp's or scale's steps as `derive` does.
+  
+  A `{seeds.name}` in `steps` names the step its seed gives, and a step list `derive` refuses gives no steps. `declaredSteps(entry, definition)` takes the definition the entry belongs to, for its axes and seeds; without it, the axes are the ones the entry's own `by`s name and no seed resolves.
+  
+  <!-- entry: fix api -->
+- 2ab2678: `--wzl-tree-leading-size` and `--wzl-tree-root-leaf-indent`, which `Tree` already read, are override hooks in the token manifest.
+  
+  <!-- entry: api -->
+- ea29790: `applyTheme` and `<ThemeProvider>` warn in development of a selection axis or axis value the theme does not declare.
+  
+  `{ mdoe: 'dark' }` now warns once per theme and axis. Where one selection is shared across themes on purpose, pass `ignoreUnknownAxes: true` to `applyTheme` (or `<ThemeProvider ignoreUnknownAxes>`), or narrow it first with the new `declaredAxisChoice(theme, selection)`, which `<Lab>` and forge's capture view now do.
+  
+  <!-- entry: fix api -->
+
+### Patch Changes
+
+- 37ce380: `fromDtcg` refuses a document that is not an object, such as JSON `null`, with the error it gives one with no name.
+  
+  <!-- entry: fix -->
+- 4bda721: Own-key lookups go through registry's `getOwn` and `hasOwnKey` rather than hand-written `Object.hasOwn` checks.
+  
+  <!-- entry: internal -->
+- d5d22cb: `generate` gives every swatch a distinct name, so a generated swatch no longer repeats an anchor's name.
+  
+  Two anchors that share a name come back as `name` and `name-2`.
+  
+  <!-- entry: fix -->
+- 0177219: Readers of saved shapes take only a plain object where they expect a record, as registry's `isPlainObject` says.
+  
+  That is scene snapshots and documents, DTCG color values, diagram theme files and compound menu values. A class instance, `Map` or `Date` in their place, which no JSON text can produce, is now refused as a wrong shape instead of read as a record.
+  
+  <!-- entry: rank=-5 behavior -->
+- 81da21a: A token alpha outside 0 to 1 no longer writes an invalid `color-mix()`.
+  
+  `fromDtcg` and `defineTheme` refuse one, `derive` reports one, and one in a hand-built theme is held to that range.
+  
+  <!-- entry: fix -->
+- c9df176: A lightness ramp anchor naming a step the ramp does not declare is reported as invalid, instead of being ignored.
+  
+  <!-- entry: fix -->
+- 75518d4: `axisDependencies` makes an `away` offset rule depend on the steps of its ramp, as `darker` and `lighter` already did.
+  
+  <!-- entry: fix -->
+- 3aafef6: `defineTheme` and `fromDtcg` throw on an axis whose default is not one of its values.
+  
+  A DTCG document with no base theme and no `dark` mode defaults to its first mode.
+  
+  <!-- entry: fix behavior -->
+- e441f69: `axisDependencies` lists only the tokens `derive` gives, leaving out ones named `__proto__` or with a character a token name cannot carry.
+  
+  <!-- entry: fix -->
+- 85a0736: `axisDependencies` reports the axes of the entry `derive` keeps for a name two entries produce.
+  
+  The theme editor then shows the axes such a token really varies on.
+  
+  <!-- entry: fix -->
+- 47af125: An axis name may hold only letters, digits, `-`, and `_`.
+  
+  `defineTheme` and `fromDtcg` refuse another, and `derive` reports it, since `applyTheme` could not stamp or match it.
+  
+  <!-- entry: fix behavior -->
+- bd11878: `applyTheme` no longer overflows the stack when an axis defaults to a value it does not declare.
+  
+  <!-- entry: fix -->
+- 9331aee: `blendTheme` mixes a bare `0` with a length, such as `0` and `8px`, rather than snapping to one end.
+  
+  `applyTheme` with `weights` blends the same way.
+  
+  <!-- entry: fix visual -->
+- a722c3d: `parseBoxShadow` throws on a `calc()` length rather than reading it as part of the color.
+  
+  It also reads `px` and `inset` in any case.
+  
+  <!-- entry: fix -->
+- 3cf6a17: A palette anchor's hue is read around the circle, so `390` or `-330` sorts with `30` under `order: 'hue'` instead of landing at an end.
+  
+  <!-- entry: fix -->
+- 3cf6a17: A categorical ramp anchor with a negative `chroma`, or a `lightness` outside 0 to 1, is reported as invalid.
+  
+  A negative chroma used to draw the opposite hue.
+  
+  <!-- entry: fix -->
+- 13f859a: A child theme's by-axis pin on a token the child derives no longer takes its other axis values from the parent's pin.
+  
+  At the values the pin leaves out, the child's own derivation shows.
+  
+  <!-- entry: fix -->
+- 378f057: A theme that defines a semantic or component its parent pins shows its own definition, rather than the parent's pin.
+  
+  <!-- entry: fix -->
+- e8148f6: `colorCount` of a generated list counts the colors `colorAt` wraps over.
+  
+  A fractional or negative `count` no longer reports colors the list does not have.
+  
+  <!-- entry: fix -->
+- 2165b78: A theme applied inside another clears any token the outer theme declares and it lacks, rather than inheriting it.
+  
+  <!-- entry: fix visual -->
+- 2405236: `emitCss` keeps a token description holding `*/` inside its comment, so the text after it is no longer read as CSS.
+  
+  <!-- entry: fix -->
+- 189f069: A token depending on two axes follows an element setting only one of their `data-wzl-*` attributes, the other at its default.
+  
+  <!-- entry: fix visual -->
+- 5e35297: `fromDtcg` refuses an axis named `theme`, `variant`, or `__proto__`, as `defineTheme` does, rather than loading a theme that never applies.
+  
+  <!-- entry: fix -->
+- dab3f16: `fromDtcg` refuses a token whose `$description` is not a string, naming the token, where emitting the theme's CSS later threw.
+  
+  <!-- entry: fix -->
+- f7d58d1: The generated `themes.ts` keeps a theme, axis value, or `by` branch named `__proto__` as a key.
+  
+  A selection the build accepted then resolves at runtime too.
+  
+  <!-- entry: fix -->
+- 148d382: A ramp's last step takes the ramp's end lightness exactly, and a full chroma pull lands on its target.
+  
+  <!-- entry: fix -->
+- ae102fe: Equalizing a categorical palette's chroma no longer raises a muted anchor's chroma, so a tan anchor stays tan rather than turning amber.
+  
+  <!-- entry: fix visual -->
+- 613fb76: `generate` reports `feasible: false` when equalizing chroma moves a palette out of its gates.
+  
+  `derive` reports such a categorical ramp as `infeasible-ramp`.
+  
+  <!-- entry: fix -->
+- 2509807: A font family holding a quote, such as `Joe's Hand`, is written as a quoted, escaped name.
+  
+  So is any family that is not a plain identifier, such as `3Dumb`, and each reads back as the same family.
+  
+  <!-- entry: fix -->
+- 0aa733f: A theme's offset rule with a fractional `offset` is reported as an invalid rule instead of making derive throw that a step is not defined.
+  
+  <!-- entry: fix -->
+- 2dbf2ba: `generate` returns `count` swatches when given more anchors than that, keeping the first ones.
+  
+  `derive` reports a categorical ramp with more anchors than steps as `invalid`, and still derives its steps.
+  
+  <!-- entry: fix -->
+- 592ccf8: `generateTokens` refuses themes where one theme or selection lacks a token another has, rather than writing a `themes.ts` that fails to compile.
+  
+  <!-- entry: fix -->
+- 4bbf7c0: `colorAt` keeps only the most recent generated palettes.
+  
+  A page whose `generate` count or gates keep changing no longer grows its memory without end.
+  
+  <!-- entry: fix perf -->
+- 73423ec: A theme pin or component referencing `{color.brand-500}`, with its type group, derives instead of throwing that the token is not defined.
+  
+  <!-- entry: fix -->
+- bc84e18: `TOKEN_MANIFEST` and the theme prefs schema list the fallback the kit really uses for four override hooks.
+  
+  They are `--wzl-disclosure-fill`, `--wzl-disclosure-target`, `--wzl-prefs-rail-width`, and `--wzl-prop-row-h`.
+  
+  <!-- entry: fix -->
+- bcf156e: A generated categorical palette never places a hue at 360°, so `order: 'hue'` keeps a red near 0° first rather than last.
+  
+  <!-- entry: fix -->
+- 13de9ee: `readCssNumber` and `resolveCurrentColor` read a value holding a very long run of digits in time linear in its length.
+  
+  <!-- entry: fix perf -->
+- c0963ed: A lightness ramp anchored on white, black, or a gray no longer passes through an unrelated hue on the steps toward its other anchor.
+  
+  A neutral anchor takes the hue of its nearest chromatic anchor, or the ramp's `hue` when every anchor is neutral.
+  
+  <!-- entry: fix visual -->
+- ae7832a: `derive` reports an axis loaded as `null` or another non-object as `invalid` and derives the rest.
+  
+  `bake` and `axisDependencies` no longer throw on one.
+  
+  <!-- entry: fix -->
+- e34dfcc: An offset rule `from` a semantic that refers to a component steps along the ramp the component names.
+  
+  `axisDependencies` lists that ramp's axes for the rule.
+  
+  <!-- entry: fix -->
+- 0315c53: `derive` accepts two `ref` semantics naming each other when a pin replaces one of them, since the final tokens hold no cycle.
+  
+  <!-- entry: fix -->
+- b48a618: A pin with no `scope` of its own keeps the `scope` of the component or rule it pins, as it already kept its `type` and `description`.
+  
+  <!-- entry: fix -->
+- ce0c92a: A `{seeds.name}` inside a pin's or component's list value resolves to the seed, as it does in a semantic's, and an unknown one is reported.
+  
+  <!-- entry: fix -->
+- 8ac733d: `derive` reports a pin or component whose fields have the wrong types, and makes no token of it.
+  
+  This covers `value`, `type`, `description`, `alpha`, and `scope`, so `emitCss` no longer throws on a bad description. An `alpha` outside 0 to 1, on a pin or a semantic `ref`, is reported too.
+  
+  <!-- entry: fix -->
+- dc784c7: A length token at a bare `0`, such as `--wzl-titlebar-inset`, edits in px in the theme prefs form, so a value set there takes effect.
+  
+  <!-- entry: fix -->
+- aa5bf43: The theme prefs form shows an override hook a theme sets at only some selections as its fallback, as drawn, at the rest.
+  
+  <!-- entry: fix -->
+- 8f1cf20: The theme prefs form shows a token a theme sets at only some selections as the one value the schema gives it, rather than blank at the rest.
+  
+  <!-- entry: fix -->
+- 7fe0b62: Theme token types, ramp steps, axes and modes named like `constructor` or `toString` now read as the theme's own data, never as built-ins.
+  
+  `derive` colors a lightness ramp step named `toString`; `toDtcg` writes a token type named `constructor` and a mode named `toString` as groups of their own, and its override keys skip an axis named `constructor` a selection leaves out; `fromDtcg` gives a mode named `toString` an empty value when the axes extension leaves it out; `emitCss` scopes another theme's tokens by a default theme's axis named `toString` as by any other axis; and `pick` reads a selection without an axis named `constructor` as holding no value.
+  
+  <!-- entry: fix -->
+- 206f77c: A semantic rule reading a pin or component that `derive` refuses as malformed reads the token left in its place, as the final tokens do.
+  
+  <!-- entry: fix -->
+- e57d7a9: Two different themes applied at once under one name no longer share tokens: each element takes only its own theme's values.
+  
+  <!-- entry: fix visual -->
+- 552d4fc: A theme's semantic `value` rule written as `{seeds.name}` takes the seed's value, as a component or a pin does.
+  
+  An undeclared seed there is reported as an invalid value.
+  
+  <!-- entry: fix -->
+- 241691a: `emitThemes` writes a valid module for a theme whose axis value holds a quote, a backslash, or a line break.
+  
+  <!-- entry: fix -->
+- 4f8619b: `derive` reports a ramp or scale whose `steps` name one step twice as `invalid`, and makes no tokens of it.
+  
+  <!-- entry: fix -->
+- fb94e87: `httpThemeApi` refuses a theme name the store cannot hold, such as `list`, without sending a request.
+  
+  `get` throws, and `put` answers `invalid`.
+  
+  <!-- entry: fix -->
+- a06c164: Prefs' CSS values, a blended theme's lengths and plot mark path data write their numbers with `@weasel-js/geom`'s `trimNumber`.
+  
+  <!-- entry: rank=-5 internal -->
+- Updated dependencies [8b96ffe]
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [d764d06]
+- Updated dependencies [a98ad34]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [9249b26]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [29d293c]
+- Updated dependencies [6cef61c]
+- Updated dependencies [fcc5602]
+- Updated dependencies [c3da788]
+- Updated dependencies [ece64a6]
+- Updated dependencies [fcc5602]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [0046729]
+- Updated dependencies [fcc5602]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [b6863aa]
+- Updated dependencies [36dac61]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [8c2d558]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [e6871f1]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [7863d23]
+- Updated dependencies [de8f61d]
+- Updated dependencies [56784d5]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [de8f61d]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [85f85ba]
+- Updated dependencies [adb1290]
+- Updated dependencies [4bda721]
+- Updated dependencies [b98bad7]
+- Updated dependencies [0d377ec]
+- Updated dependencies [435c248]
+- Updated dependencies [e1e7241]
+- Updated dependencies [977164c]
+- Updated dependencies [9aed377]
+- Updated dependencies [c491f93]
+- Updated dependencies [aadb086]
+- Updated dependencies [09f0c86]
+- Updated dependencies [d11dc30]
+- Updated dependencies [5ad7bc0]
+- Updated dependencies [481218b]
+- Updated dependencies [f8172cf]
+- Updated dependencies [e5395a6]
+- Updated dependencies [cd7ffdb]
+- Updated dependencies [8ced7e2]
+- Updated dependencies [5ed6215]
+- Updated dependencies [9cacd4b]
+- Updated dependencies [f95e342]
+- Updated dependencies [d6ba47e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [fcc5602]
+- Updated dependencies [880cbbf]
+- Updated dependencies [2932eb2]
+- Updated dependencies [c1a3072]
+- Updated dependencies [968362b]
+- Updated dependencies [f4bfab5]
+- Updated dependencies [e6c888e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [56089ae]
+- Updated dependencies [f544aeb]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [ff4504e]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [70076bc]
+- Updated dependencies [4b3a525]
+- Updated dependencies [6555ec8]
+- Updated dependencies [2909824]
+- Updated dependencies [33f8369]
+- Updated dependencies [ea5f41b]
+- Updated dependencies [6227913]
+- Updated dependencies [53f5ea0]
+- Updated dependencies [1dfa234]
+- Updated dependencies [ae4a042]
+- Updated dependencies [ae411f0]
+- Updated dependencies [6e3d5ef]
+- Updated dependencies [0c073ec]
+- Updated dependencies [9e84dfc]
+- Updated dependencies [1e031a5]
+- Updated dependencies [67b97e4]
+- Updated dependencies [0b49560]
+- Updated dependencies [7d11dc3]
+- Updated dependencies [c43e329]
+- Updated dependencies [ac347a7]
+- Updated dependencies [7534a19]
+- Updated dependencies [a3bb40a]
+- Updated dependencies [313dd71]
+- Updated dependencies [60ca6e8]
+- Updated dependencies [97d6826]
+- Updated dependencies [b7b87f4]
+- Updated dependencies [a5aa92f]
+- Updated dependencies [e37086f]
+- Updated dependencies [a25a444]
+- Updated dependencies [2d2a16e]
+- Updated dependencies [87bd085]
+- Updated dependencies [c4f9031]
+- Updated dependencies [2ab2678]
+- Updated dependencies [6597fc4]
+- Updated dependencies [dba7a95]
+- Updated dependencies [15e923d]
+- Updated dependencies [4c8749c]
+- Updated dependencies [08d9309]
+- Updated dependencies [07c3852]
+- Updated dependencies [93d4fce]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [7c44ba5]
+- Updated dependencies [1eb7bcb]
+- Updated dependencies [df2ae04]
+- Updated dependencies [14143c7]
+- Updated dependencies [a0ad214]
+- Updated dependencies [607ab80]
+- Updated dependencies [c240900]
+- Updated dependencies [0f8da6b]
+- Updated dependencies [d5bcd74]
+- Updated dependencies [4a102bd]
+- Updated dependencies [d4532e3]
+- Updated dependencies [c80f586]
+- Updated dependencies [ea67ced]
+- Updated dependencies [5477214]
+- Updated dependencies [cd473d6]
+- Updated dependencies [aadb086]
+- Updated dependencies [8ff14a0]
+- Updated dependencies [af6d87c]
+- Updated dependencies [4602a76]
+- Updated dependencies [f9cd1ea]
+- Updated dependencies [16ce408]
+- Updated dependencies [9057ecb]
+- Updated dependencies [1c43dbf]
+- Updated dependencies [d01d5a2]
+- Updated dependencies [594d4ce]
+- Updated dependencies [e7bee92]
+- Updated dependencies [bef9c67]
+- Updated dependencies [2668893]
+- Updated dependencies [5512513]
+- Updated dependencies [764f27d]
+- Updated dependencies [8ff14a0]
+- Updated dependencies [2dfa806]
+- Updated dependencies [33f8369]
+- Updated dependencies [4ef636a]
+- Updated dependencies [fb0e6cd]
+- Updated dependencies [00ad78a]
+- Updated dependencies [ca89da9]
+- Updated dependencies [23c35b1]
+- Updated dependencies [7e5b389]
+- Updated dependencies [2f8f458]
+- Updated dependencies [728e0da]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [4d31cf0]
+- Updated dependencies [af132bc]
+- Updated dependencies [2d57c94]
+- Updated dependencies [f004638]
+- Updated dependencies [3c27e36]
+- Updated dependencies [3c27e36]
+- Updated dependencies [ce5d609]
+- Updated dependencies [dd5a540]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [56fda8d]
+- Updated dependencies [f88d616]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [1d8e163]
+- Updated dependencies [e08d172]
+- Updated dependencies [429e80c]
+- Updated dependencies [002ff57]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [9521334]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [415e5b8]
+- Updated dependencies [e68cb62]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [c11f37e]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [60c082d]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [1f05956]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [774e9cc]
+- Updated dependencies [a06c164]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [0d977b8]
+- Updated dependencies [371b695]
+- Updated dependencies [d268d21]
+- Updated dependencies [5dd240d]
+- Updated dependencies [8b01b26]
+- Updated dependencies [2c0f2fe]
+- Updated dependencies [12816b7]
+- Updated dependencies [6803209]
+- Updated dependencies [f857c86]
+- Updated dependencies [aec0cec]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/prefs@2.0.0
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/paint@2.0.0
+  - @weasel-js/react@2.0.0
+
 ## 1.19.1
 
 ### Patch Changes

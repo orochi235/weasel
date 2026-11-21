@@ -1,5 +1,141 @@
 # @weasel-js/clock
 
+## 2.0.0
+
+### Major Changes
+
+- a66885d: `holdElapsed` is `holdPosition`, since it holds a clock at a recorded `HeldPosition` rather than at an elapsed time alone.
+  
+  ```ts
+  // before
+  const hold = holdElapsed(handle, position);
+  // after
+  const hold = holdPosition(handle, position);
+  ```
+  
+  <!-- entry: breaking api -->
+- 4f451f8: A clock's offered speeds are `speeds`, and their default is `CLOCK_SPEEDS`, since they are unsigned and `rate` is signed.
+  
+  The `ClockSpec` option and the `Clock` field `rates` are `speeds`; the constant `CLOCK_RATES` is `CLOCK_SPEEDS`.
+  
+  ```ts
+  // before
+  const { clock } = createClock({ rates: [0.5, 1, 2] });
+  clock.rates;
+  // after
+  const { clock } = createClock({ speeds: [0.5, 1, 2] });
+  clock.speeds;
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- b29cf9e: `declaredSpeed(spec)` gives the speed a clock declaration opens at: its `speed`, else its `rate` unsigned, else 1.
+  
+  <!-- entry: api -->
+- 687d98f: A `ramp` that starts a held clock releases its `holdAt` or `holdPosition` hold, as a rate write does.
+  
+  The new `Clock.ramping` reads whether a ramp is running; `rate` stays where it stood until the next sync.
+  
+  <!-- entry: fix api -->
+- 105a6bf: `ClockRegistry.reflection` lists each id's clock and the target it named.
+  
+  A second registration under an id still replaces the first, so the reflection reports no shadowing for it. `ClockEntry` is the listed value's type.
+  
+  <!-- entry: api -->
+- c71fb10: A second clock under the same id now shadows the first, and releasing it brings the first back.
+  
+  It used to replace the first and leave the id empty once released. Every other kit registry already works this way.
+  
+  <!-- entry: behavior -->
+
+### Patch Changes
+
+- af88833: `declare` with no `speed` defaults it from the declared `rate`, as `createClock` does, rather than from the rate the clock is playing at.
+  
+  <!-- entry: fix -->
+- 6821bac: A clock whose `duration` is written to or from `Infinity` no longer reads as standing at a pass's end that a seek left before.
+  
+  <!-- entry: fix -->
+- 9707f7c: `holdAt`'s `pending()` reads null once the clock stands where the hold put it, for every origin and shown time.
+  
+  <!-- entry: fix -->
+- f88b38b: `holdPosition` at a position recorded from an ended run lands on the shown time it recorded, at the end of the last pass, as `declare` does.
+  
+  That holds for a position recorded under another `duration` or `origin`.
+  
+  <!-- entry: fix -->
+- b68c9a2: `holdPosition` puts a position recorded under another `duration` or `origin` in the pass the clock reads it in. Rounding no longer lands it a pass later.
+  
+  <!-- entry: fix -->
+- 39f4ad4: `holdPosition`'s `pending()` reports a position past its pass's end as still waiting, as `holdAt`'s does.
+  
+  It reads null once the span grows to reach the position; one before the pass's start waits the same way.
+  
+  <!-- entry: fix -->
+- b90239c: A clock back in `useClockLoop` from under a registration that shadowed its id no longer jumps by the time it spent shadowed.
+  
+  Any clock the loop starts syncing counts no time from before it joined.
+  
+  <!-- entry: fix -->
+- 35a99f3: A clock neither wakes its frame loop nor notifies its subscribers for a `rate`, `loop` or `seek` that leaves it where it stands.
+  
+  A write of the rate it plays at still replaces a running ramp.
+  
+  <!-- entry: fix -->
+- cc3910a: Reset on a `start: 'end'` clock made endless goes to the end of its declared run instead of throwing.
+  
+  That covers a loop toggle, a `duration` write and an override that make the run endless.
+  
+  `declare` on such a clock now throws a `RangeError` on a declaration whose run never ends, as `createClock` does for the same spec, and keeps the last declaration.
+  
+  <!-- entry: fix behavior -->
+- Updated dependencies [84028cb]
+- Updated dependencies [b6863aa]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [e6871f1]
+- Updated dependencies [85f85ba]
+- Updated dependencies [4d31cf0]
+- Updated dependencies [af132bc]
+- Updated dependencies [2d57c94]
+- Updated dependencies [f004638]
+- Updated dependencies [3c27e36]
+- Updated dependencies [3c27e36]
+- Updated dependencies [ce5d609]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [5dd240d]
+- Updated dependencies [8b01b26]
+- Updated dependencies [2c0f2fe]
+- Updated dependencies [6803209]
+- Updated dependencies [f857c86]
+- Updated dependencies [5202a9f]
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/react@2.0.0
+
 ## 1.19.1
 
 ### Patch Changes

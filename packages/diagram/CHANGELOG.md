@@ -1,5 +1,2579 @@
 # @weasel-js/diagram
 
+## 2.0.0
+
+### Major Changes
+
+- 72b6d07: `grabPortAction` and `grabPortBindings` are `createClaimPressAction` and `claimPressBindings`, since they claim a press on any affordance.
+  
+  Their arguments are unchanged; `GRAB_PORT_ACTION_ID` is still the default id.
+  
+  ```ts
+  // before
+  actions: [grabPortAction(GRAB_LABEL_ACTION_ID)], bindings: grabPortBindings(GRAB_LABEL_ACTION_ID, kind)
+  // after
+  actions: [createClaimPressAction(GRAB_LABEL_ACTION_ID)], bindings: claimPressBindings(GRAB_LABEL_ACTION_ID, kind)
+  ```
+  
+  <!-- entry: breaking api -->
+- ab7f613: The contribution factories that were spelled bare are `create…Contribution`, as the kit's other factories are; their arguments are unchanged.
+  
+  diagram: `diagramPorts`, `diagramWaypoints`, `diagramEdgeEnds`, `diagramOffPage`, `diagramContainers` and `diagramSequence` are `createDiagramPortsContribution`, `createDiagramWaypointsContribution`, `createDiagramEdgeEndsContribution`, `createDiagramOffPageContribution`, `createDiagramContainersContribution` and `createDiagramSequenceContribution`; `reorderContribution` and `itemDropContribution` are `createReorderContribution` and `createItemDropContribution`. routing's `keymapContribution` (re-exported by core) is `createKeymapContribution`, and measure's `measurementsContribution` is `createMeasurementsContribution`.
+  
+  ```ts
+  // before
+  const ambient = [diagramPorts(), measurementsContribution(scene, measurements)];
+  // after
+  const ambient = [createDiagramPortsContribution(), createMeasurementsContribution(scene, measurements)];
+  ```
+  
+  <!-- entry: breaking api -->
+- 01be5ca: Three action-id constants are spelled in the same order as their ids, verb first.
+  
+  `ROUTE_EDIT_ACTION_ID` (`'diagram.editRoute'`), `LANE_RESIZE_ACTION_ID` (`'diagram.resizeLane'`) and `ITEM_DROP_ACTION_ID` (`'diagram.dropItem'`) are renamed `EDIT_ROUTE_ACTION_ID`, `RESIZE_LANE_ACTION_ID` and `DROP_ITEM_ACTION_ID`. The ids are unchanged.
+  
+  ```ts
+  // before
+  bindings: [{ spec: { kind: 'drag' }, actionId: ROUTE_EDIT_ACTION_ID }],
+  // after
+  bindings: [{ spec: { kind: 'drag' }, actionId: EDIT_ROUTE_ACTION_ID }],
+  ```
+  
+  <!-- entry: breaking api -->
+- 503ed8e: `DiagramGroup`, `DataGroup` and `GraphGroup` are `DiagramCluster`, `DataCluster` and `GraphCluster`.
+  
+  The box holds a `members` list, which in weasel is a cluster, never a group.
+  
+  The rest of the family follows: `GroupInset` → `ClusterInset`, `DEFAULT_GROUP_INSET` → `DEFAULT_CLUSTER_INSET`, `expandGroupEdges` → `expandClusterEdges`, `diagramGroupOf` → `diagramClusterOf`, `DIAGRAM_GROUP` → `DIAGRAM_CLUSTER`, `GROUP_DERIVE_POSE` → `CLUSTER_DERIVE_POSE`, `groupDerivePose` → `clusterDerivePose`, `GroupPoseOptions` → `ClusterPoseOptions`, `groupLabelIdOf` → `clusterLabelIdOf` and `DEFAULT_GROUP_STYLE` → `DEFAULT_CLUSTER_STYLE`.
+  
+  ```ts
+  // before
+  const box: DataGroup = { id: 'g', members: ['a', 'b'] };
+  const trait = diagramGroupOf(node);
+  // after
+  const box: DataCluster = { id: 'g', members: ['a', 'b'] };
+  const trait = diagramClusterOf(node);
+  ```
+  
+  <!-- entry: breaking api -->
+- 761c418: `diagramScene`'s `groupPadding` and `groupStyle` options are `clusterPadding` and `clusterStyle`.
+  
+  ```ts
+  // before
+  diagramScene(data, { groupPadding: 16, groupStyle: (g) => style });
+  // after
+  diagramScene(data, { clusterPadding: 16, clusterStyle: (c) => style });
+  ```
+  
+  <!-- entry: breaking api -->
+- 47991e7: diagram's reorder for a cluster's members is `createClusterReorderContribution` and `clusterReorderSlots`.
+  
+  They were `groupReorderContribution` and `groupReorderSlots`, and take the same arguments.
+  
+  ```ts
+  // before
+  import { groupReorderContribution } from '@weasel-js/diagram';
+  ambient={[groupReorderContribution(report)]}
+  // after
+  import { createClusterReorderContribution } from '@weasel-js/diagram';
+  ambient={[createClusterReorderContribution(report)]}
+  ```
+  
+  <!-- entry: breaking api -->
+- 1fc30a9: diagram's remaining action factories are named `create…Action`, like the rest.
+  
+  `editEdgeLabelAction`, `editContainerTitleAction` and `routerActions` are renamed `createEditEdgeLabelAction`, `createEditContainerTitleAction` and `createRouterActions`; their arguments are unchanged.
+  
+  ```ts
+  // before
+  actions: [editEdgeLabelAction({ fill: theme.label.fill })],
+  // after
+  actions: [createEditEdgeLabelAction({ fill: theme.label.fill })],
+  ```
+  
+  <!-- entry: breaking api -->
+- 5cf57a3: `forceRelaxation` is `createForceRelaxation`, spelled like the other factories: it builds a simulation you tick yourself.
+  
+  This is a breaking rename, with no alias, in both `@weasel-js/diagram` and `@weasel-js/diagram/layout`. Its arguments are unchanged.
+  
+  ```ts
+  // before
+  const relax = forceRelaxation(graph, { charge: -400 });
+  // after
+  const relax = createForceRelaxation(graph, { charge: -400 });
+  ```
+  
+  <!-- entry: breaking api -->
+- 166e04a: diagram's layer factories are named `create…Layer`, like core's.
+  
+  `portLayer`, `waypointLayer`, `edgeEndLayer`, `labelDragLayer` and `laneLayer` are renamed `createPortLayer`, `createWaypointLayer`, `createEdgeEndLayer`, `createLabelDragLayer` and `createLaneLayer`; their arguments are unchanged.
+  
+  ```ts
+  // before
+  api.registerLayer(portLayer(participants));
+  // after
+  api.registerLayer(createPortLayer(participants));
+  ```
+  
+  <!-- entry: breaking api -->
+- 16bcc1f: The factory for the `diagram.moveLabel` action is `createMoveLabelAction`, named for the action it registers.
+  
+  `createLabelDragAction` and `LabelDragOptions` are renamed `createMoveLabelAction` and `MoveLabelOptions`; the options are unchanged.
+  
+  ```ts
+  // before
+  actions: [createLabelDragAction({ commit })],
+  // after
+  actions: [createMoveLabelAction({ commit })],
+  ```
+  
+  <!-- entry: breaking api -->
+- a46566f: diagram's preset factories are `createReorderPreset` and `createClusterReorderPreset`, so they no longer clash with core's `reorderPreset`.
+  
+  ```ts
+  // Before
+  import { reorderPreset, groupReorderPreset } from '@weasel-js/diagram';
+  features={['move', reorderPreset(opts), groupReorderPreset(report)]}
+  
+  // After
+  import { createReorderPreset, createClusterReorderPreset } from '@weasel-js/diagram';
+  features={['move', createReorderPreset(opts), createClusterReorderPreset(report)]}
+  ```
+  
+  <!-- entry: breaking api -->
+- 761c418: `DiagramData.groups` is `DiagramData.clusters`.
+  
+  ```ts
+  // before
+  diagramScene({ nodes, edges, groups: [{ id: 'ingest', members: ['fetch', 'decode'] }] });
+  // after
+  diagramScene({ nodes, edges, clusters: [{ id: 'ingest', members: ['fetch', 'decode'] }] });
+  ```
+  
+  Data still holding `groups` draws no boxes. A Diagram JSON file written under the old name still loads: `@weasel-js/diagram-formats` reads it as `clusters`.
+  
+  <!-- entry: rank=5 breaking api data -->
+- 77329ef: `SEQUENCE_DRAG_ACTION_ID` is `DRAG_SEQUENCE_ACTION_ID`, spelled verb first like the kit's other action-id constants. Its id, `'diagram.sequence.drag'`, is unchanged.
+  
+  ```ts
+  // before
+  import { SEQUENCE_DRAG_ACTION_ID } from '@weasel-js/diagram';
+  // after
+  import { DRAG_SEQUENCE_ACTION_ID } from '@weasel-js/diagram';
+  ```
+  
+  <!-- entry: breaking api -->
+- 5066ab8: The connector tool's drag action is `diagram.drawConnector` (`DRAW_CONNECTOR_ACTION_ID`), verb first like the other action ids.
+  
+  `CONNECTOR_ACTION_ID` (`'diagram.connectorDraw'`) is renamed `DRAW_CONNECTOR_ACTION_ID` (`'diagram.drawConnector'`).
+  
+  ```ts
+  // before
+  bindings: [{ spec: { kind: 'drag' }, actionId: CONNECTOR_ACTION_ID }], // 'diagram.connectorDraw'
+  // after
+  bindings: [{ spec: { kind: 'drag' }, actionId: DRAW_CONNECTOR_ACTION_ID }], // 'diagram.drawConnector'
+  ```
+  
+  <!-- entry: breaking api -->
+- 44c2bd0: Each diagram editing helper returns one entry for `ambient`, with its layer inside, instead of a layer and a contribution.
+  
+  The helpers are `createDiagramPortsContribution`, `createDiagramWaypointsContribution`, `createDiagramEdgeEndsContribution`, `createDiagramLabelsContribution`, `createDiagramContainersContribution`, `createDiagramSequenceContribution` and `createDiagramOffPageContribution`. There is no layer to register by hand any more, and `createDiagramContribution` is gone: `createDiagramPortsContribution` is the connect gesture. Layers are hit in `ambient` order, the last first.
+  
+  ```tsx
+  // Before
+  const { layer, contribution } = useMemo(() => createDiagramPortsContribution({ participants }), [participants]);
+  useEffect(() => canvasRef.current?.registerLayer(layer), [layer]);
+  <SceneCanvas ref={canvasRef} ambient={[contribution]} />
+  
+  // After
+  const ports = useMemo(() => createDiagramPortsContribution({ participants }), [participants]);
+  <SceneCanvas ambient={[ports]} />
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 6200d28: `layoutPoses`, `bodyFollower`, `waypointFollower` and `documentBoundsOf` take a `LayoutFrame` where they took a `PoseDescriptor`.
+  
+  This is breaking for a caller that passed its own descriptor in that position. Wrap it with `layoutFrameOf`:
+  
+  ```ts
+  // before
+  waypointFollower(scene, descriptor);
+  // after
+  waypointFollower(scene, layoutFrameOf(descriptor));
+  ```
+  
+  <!-- entry: breaking api -->
+- 761c418: A layout's `Graph` holds its boxes in `clusters`, which was `groups`, and a `GraphNode` names the one it is in with `cluster`, which was `group`.
+  
+  ```ts
+  // before
+  const inside = graph.groups?.find((g) => g.id === node.group);
+  // after
+  const inside = graph.clusters?.find((c) => c.id === node.cluster);
+  ```
+  
+  <!-- entry: breaking api -->
+- 761c418: `grid`'s `groupColumns` option is `clusterColumns`.
+  
+  ```ts
+  // before
+  grid({ columns: 3, groupColumns: { services: 2 } });
+  // after
+  grid({ columns: 3, clusterColumns: { services: 2 } });
+  ```
+  
+  A Diagram JSON file written with `groupColumns` in a page's layout still loads: `@weasel-js/diagram-formats` reads it as `clusterColumns`.
+  
+  <!-- entry: breaking api data -->
+- 5a4c0ad: The helper that grows a pose to fit its body's floor is `growToBody`, since it never shrinks one.
+  
+  `sizeToBody` is renamed `growToBody`; its arguments are unchanged.
+  
+  ```ts
+  // before
+  const pose = sizeToBody(at, measureBody(spec, measure));
+  // after
+  const pose = growToBody(at, measureBody(spec, measure));
+  ```
+  
+  <!-- entry: breaking api -->
+- 3ebb282: The label entry for `ambient` is `createDiagramLabelsContribution`, since it carries the label's selection and text editing as well as its drag.
+  
+  `diagramLabelDrag` is renamed `createDiagramLabelsContribution`; its options are unchanged.
+  
+  ```ts
+  // before
+  const labels = diagramLabelDrag({ scene, selected });
+  // after
+  const labels = createDiagramLabelsContribution({ scene, selected });
+  ```
+  
+  <!-- entry: breaking api -->
+- cf82793: The layout helper that turns world placements into moves, dropping pinned and unmoved nodes, is `movesFrom`.
+  
+  `translated` is renamed `movesFrom`; its arguments are unchanged.
+  
+  ```ts
+  // before
+  return translated(graph, placed, pinnedSet(graph, opts), opts.tolerance);
+  // after
+  return movesFrom(graph, placed, pinnedSet(graph, opts), opts.tolerance);
+  ```
+  
+  <!-- entry: breaking api -->
+- c757e23: The layout helper that turns canonical slots into moves is `placeSlots`, which no longer reads as the iterating `untilSettled`.
+  
+  `settle` is renamed `placeSlots`; its arguments are unchanged.
+  
+  ```ts
+  // before
+  return settle(graph, slots, opts);
+  // after
+  return placeSlots(graph, slots, opts);
+  ```
+  
+  <!-- entry: breaking api -->
+- ac3e936: diagram's options take the pose descriptor as `poseDescriptor`, the name `<SceneCanvas>` gives the same thing; they took `geometry`.
+  
+  This covers every options bag that reads a pose's bounds through one: the shape, label, group, mark, port, edge, graph, layout, live-layout and connect options among them. A sequence root's saved `geometry` is a different thing and is unchanged.
+  
+  ```ts
+  // before
+  registerDiagramShape({ geometry: RECT_POSE_DESCRIPTOR });
+  // after
+  registerDiagramShape({ poseDescriptor: RECT_POSE_DESCRIPTOR });
+  ```
+  
+  <!-- entry: breaking api -->
+- 859b0c3: The two rankings `layered` and `chain` use are named for their algorithms: `simplexRanks` (network simplex) and `longestPathRanks`.
+  
+  `ranksByLength` is renamed `simplexRanks` and `ranksOf` is renamed `longestPathRanks`; their arguments are unchanged.
+  
+  ```ts
+  // before
+  const ranks = ranksByLength(graph, backEdges(graph));
+  const plain = ranksOf(graph, backEdges(graph));
+  // after
+  const ranks = simplexRanks(graph, backEdges(graph));
+  const plain = longestPathRanks(graph, backEdges(graph));
+  ```
+  
+  <!-- entry: breaking api -->
+- a1a4caf: `SeqRect` (`@weasel-js/diagram`) and `EffectBox` (`@weasel-js/diagram/effect`) are gone; both are geom's `Rect`, the same `x`, `y`, `width`, `height`.
+  
+  ```ts
+  // before
+  import type { SeqRect } from '@weasel-js/diagram';
+  // after
+  import type { Rect } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking api -->
+- f40681f: The effect editor's rename-cluster action is `diagram.renameCluster`, under the `diagram.` prefix every other diagram action id uses.
+  
+  A binding or keymap naming `'effect.renameGroup'` uses `'diagram.renameCluster'`; its params are unchanged.
+  
+  ```ts
+  // before
+  bindings: [{ spec: { kind: 'doubleClick' }, actionId: 'effect.renameGroup' }],
+  // after
+  bindings: [{ spec: { kind: 'doubleClick' }, actionId: 'diagram.renameCluster' }],
+  ```
+  
+  <!-- entry: breaking api -->
+- 2dac7b8: The reorder helper that lays out drop slots along an axis is `slotsAlong`, which no longer suggests sequence diagrams.
+  
+  `sequenceSlots` is renamed `slotsAlong`; its arguments are unchanged.
+  
+  ```ts
+  // before
+  const slots = sequenceSlots('x', items);
+  // after
+  const slots = slotsAlong('x', items);
+  ```
+  
+  <!-- entry: breaking api -->
+- e4dc727: The helper that returns the ops inserting a stencil is `stencilInsertOps`, named for what it returns.
+  
+  `stencilBuild` is renamed `stencilInsertOps`; its arguments and its `{ id, ops }` result are unchanged.
+  
+  ```ts
+  // before
+  const { id, ops } = stencilBuild(stencil, bounds, { layer: 'shapes', newId });
+  // after
+  const { id, ops } = stencilInsertOps(stencil, bounds, { layer: 'shapes', newId });
+  ```
+  
+  <!-- entry: breaking api -->
+- cbbafe8: The line jumps command is `createToggleHopsAction`, with the id `diagram.toggleHops`, since it turns jumps on or off.
+  
+  `createSetHopsAction`, `SET_HOPS_ACTION_ID` (`'diagram.hops'`) and `SetHopsOptions` are renamed `createToggleHopsAction`, `TOGGLE_HOPS_ACTION_ID` (`'diagram.toggleHops'`) and `ToggleHopsOptions`.
+  
+  ```ts
+  // before
+  menuRun({ hops: SET_HOPS_ACTION_ID }); // 'diagram.hops'
+  // after
+  menuRun({ hops: TOGGLE_HOPS_ACTION_ID }); // 'diagram.toggleHops'
+  ```
+  
+  <!-- entry: breaking api -->
+- 67f65a0: diagram's tool factories are `createConnectorTool` and `createStencilTool`, paired with `useConnectorTool` and `useStencilTool`.
+  
+  This is a breaking rename: `connectorTool` and `stencilTool` are gone, with no alias. Their arguments are unchanged.
+  
+  ```ts
+  // before
+  const tool = stencilTool(FLOWCHART_STENCILS[0]);
+  // after
+  const tool = createStencilTool(FLOWCHART_STENCILS[0]);
+  ```
+  
+  <!-- entry: breaking api -->
+- 761c418: The diagram trait's `group` field is `cluster`, and its box's derive key is `'diagram:cluster'`, which was `'diagram:group'`.
+  
+  A scene saved under the old names still loads: `withDiagramRegistry` carries `upgradeClusterNames`, a core `NodeUpgrade` under `DIAGRAM_CLUSTER_UPGRADE`, which rewrites each old node as `loadScene` or `loadState` reads it. A registry built without `withDiagramRegistry` adds it to its `upgrades` to do the same.
+  
+  ```ts
+  // before
+  scene.add({ kind: 'mark', layer: 'main', pose, data: { diagram: { group: { inset: 12 } } }, dependsOn: members });
+  // after
+  scene.add({ kind: 'mark', layer: 'main', pose, data: { diagram: { cluster: { inset: 12 } } }, dependsOn: members });
+  ```
+  
+  <!-- entry: rank=5 breaking api data -->
+- f5bd421: `DiagramView` takes its held pick as `selection` and reports changes through `onSelectionChange`, as other components do.
+  
+  `selected` is renamed `selection` and `onSelect` is renamed `onSelectionChange`; their values and the callback's arguments are unchanged. `EffectChart` and `EffectEditor` keep their `selected` and `onSelect`.
+  
+  ```tsx
+  // before
+  <DiagramView specs={specs} selected={id} onSelect={setId} />
+  // after
+  <DiagramView specs={specs} selection={id} onSelectionChange={setId} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 47991e7: `checkPipeline` reports a repeated cluster id as `duplicate-cluster`, and names the cluster a problem is about in `cluster`.
+  
+  They were `duplicate-group` and `group`. The messages are unchanged.
+  
+  ```ts
+  // before
+  problems.filter((p) => p.kind === 'duplicate-group').map((p) => p.group);
+  // after
+  problems.filter((p) => p.kind === 'duplicate-cluster').map((p) => p.cluster);
+  ```
+  
+  <!-- entry: breaking api -->
+- 47991e7: The effect pipeline's cluster edits are named for clusters, from `clusterStages` and `dissolveCluster` to `uniqueClusters`.
+  
+  `groupStages`, `ungroup`, `renameGroup`, `moveToGroup`, `setGroupBox`, `moveGroup`, `groupContents`, `nextGroupId` and `uniqueGroups` are `clusterStages`, `dissolveCluster`, `renameCluster`, `moveToCluster`, `setClusterBox`, `moveCluster`, `clusterContents`, `nextClusterId` and `uniqueClusters`. Their arguments are unchanged; a new cluster's id is `cluster`, `cluster-2`, and so on.
+  
+  ```ts
+  // before
+  import { groupStages, ungroup } from '@weasel-js/diagram/effect';
+  const next = ungroup(groupStages(doc, ['a', 'b']), 'outer');
+  // after
+  import { clusterStages, dissolveCluster } from '@weasel-js/diagram/effect';
+  const next = dissolveCluster(clusterStages(doc, ['a', 'b']), 'outer');
+  ```
+  
+  <!-- entry: breaking api -->
+- 47991e7: An effect pipeline names its boxes `clusters`, of type `EffectCluster`, and an effect doc keeps their sizes in `clusterBoxes`.
+  
+  They were `groups`, `EffectGroup` and `groupBoxes`. A doc saved under the old names still loads through `readEffectDoc`, which reads them as the new ones; code building a pipeline or a doc writes the new names.
+  
+  ```ts
+  // before
+  const pipeline: EffectPipeline = { stages, wires, groups: [{ id: 'g', members: ['a', 'b'] }] };
+  const doc: EffectDoc = { pipeline, places, groupBoxes: { g: box } };
+  // after
+  const pipeline: EffectPipeline = { stages, wires, clusters: [{ id: 'g', members: ['a', 'b'] }] };
+  const doc: EffectDoc = { pipeline, places, clusterBoxes: { g: box } };
+  ```
+  
+  <!-- entry: breaking api data -->
+- 47991e7: `EffectEditor`'s cluster pick and ref methods are named for clusters, with the same on-screen labels.
+  
+  `selectedCluster`, `onSelectCluster`, and the ref's `cluster`, `dissolveCluster` and `renameCluster` were `selectedGroup`, `onSelectGroup`, `group`, `ungroup` and `renameGroup`. The edits still report themselves as 'Group', 'Ungroup' and 'Rename group'.
+  
+  ```tsx
+  // before
+  <EffectEditor ref={editor} selectedGroup={picked} onSelectGroup={setPicked} … />
+  editor.current?.group(ids);
+  // after
+  <EffectEditor ref={editor} selectedCluster={picked} onSelectCluster={setPicked} … />
+  editor.current?.cluster(ids);
+  ```
+  
+  <!-- entry: breaking api -->
+- 08c1713: `runPipeline` hands an evaluator a `many` input as an array of every reached wire's value. A bypassed stage passes the first one on.
+  
+  An evaluator for a stage with a `many` input reads `inputs[port]` as `unknown[]` instead of one value.
+  
+  <!-- entry: breaking fix -->
+- 47991e7: The effect editor's action that drags a cluster by its title is `diagram.reorderClusters`.
+  
+  It was `diagram.reorderGroups`; a binding or keymap naming it uses the new id, with the same params.
+  
+  ```ts
+  // before
+  bindings: [{ spec: { kind: 'drag' }, actionId: 'diagram.reorderGroups' }],
+  // after
+  bindings: [{ spec: { kind: 'drag' }, actionId: 'diagram.reorderClusters' }],
+  ```
+  
+  <!-- entry: breaking api -->
+- 899a776: `ForceOptions.groupStrength`, how hard a cluster draws its members together, is `clusterStrength`.
+  
+  ```ts
+  // before
+  force(graph, { groupStrength: 0.4 });
+  // after
+  force(graph, { clusterStrength: 0.4 });
+  ```
+  
+  <!-- entry: breaking api -->
+- 744fbce: The path, text, rig, diagram and measure actions act on the `operands` dep, the selection by default.
+  
+  This is breaking for code that runs these actions with deps it builds by hand: each now declares `operands` in `requires` and reads it where it read `selection`, as core's editing actions do. On a `<SceneCanvas>` nothing changes, since `operands` answers with the selection unless a host sources its own. Selecting actions (diagram's edge pick and sequence-part pick, following an off-page tag) still read `selection`.
+  
+  ```ts
+  // before
+  snipAtCrossingsAction.invoker.run({ scene, selection, applyOps });
+  // after
+  snipAtCrossingsAction.invoker.run({ scene, operands: selection, applyOps });
+  ```
+  
+  <!-- entry: rank=0 breaking api -->
+- fd2cbc8: `@weasel-js/diagram`, `plot`, `labkit`, `svg` and `editor` need `@weasel-js/text-tools` installed beside them.
+  
+  This is breaking: add `@weasel-js/text-tools` to an app using any of them. Diagram and plot canvases turn on `textTools.text` themselves, so their labels paint and edit as before; labkit's annotation layer mounts text-tools' text tool.
+  
+  <!-- entry: breaking -->
+- 0362193: Bindings and triggers of the plugin packages' actions that read params are checked against their `ActionParamSchema` entries.
+  
+  Each package merges its entries into routing's schema from its own `actionParamSchema.ts`: the diagram's label, waypoint, lane, container-title, off-page, rename-group, and sequence actions; `hud.press`, `hud.release`, `hud.doubleClick`, `hud.contextMenu`, `hud.longPress`, and `hud.wheel`; `loupe.aim` and `loupe.magnify`; `minimap.center` and `minimap.zoom`; `bone.pick`, `weight.paint`, and `weight.click`; `lab.zoom`, `camera.tap`, and `loupe.follow`; `loupe.compare.with` and `loupe.compare.dpr`; and `camera.dolly`. New exported types: diagram's `DrawMessageParams` and `WrapFragmentParams`, `HudPointParams`, `HudWheelParams`, `LoupeAimParams`, `MinimapZoomParams`, `WeightBrushParams`, `LabZoomParams`, `DollyParams`, guides' `DistanceReadoutParams`, and forge's `ForgeCompareParams` and `ForgeComparison` from `@weasel-js/forge/shell`.
+  
+  This is breaking for code that passes one of these ids params its entry does not declare: that is now a type error. `useDocClipboard`'s `commands.paste.keys` takes `clipboard.paste`'s params. The diagram's `*ScratchOf` readers take the hit as `unknown`.
+  
+  <!-- entry: breaking api -->
+- 55d8e65: What each sequence tool adds is a tool option and its action's params, so the last-operation panel can change a drawn message's arrow.
+  
+  `SequenceToolsOptions` drops `participant`, `arrow`, `fragment` and `mark`. Each is an option of its tool (`SEQUENCE_PARTICIPANT_OPTIONS` `kind`, `SEQUENCE_MESSAGE_OPTIONS` `arrow`, `SEQUENCE_FRAGMENT_OPTIONS` `type`, `SEQUENCE_MARK_OPTIONS` `mark`), kept in the `toolOptionValues` dep. `<DiagramView toolOptionValues>` publishes one.
+  
+  ```tsx
+  // before
+  const tools = useSequenceTools({ commit, arrow: () => arrow });
+  // after
+  const values = createToolOptionValues();
+  setToolOption('diagram.sequence.message', SEQUENCE_MESSAGE_OPTIONS, values, 'arrow', 'reply');
+  <DiagramView tools={useSequenceTools({ commit })} toolOptionValues={values} … />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 4e54b4e: Group, ungroup, a reparenting drop, a clone or paste landing, and a follower move refuse whole rather than put a node in a singular frame.
+  
+  They promise every node stays where it is shown, and no pose stored in a frame scaled to nothing keeps that promise. Each leaves the scene and its history as they were, and `group` and `ungroup` report `NotApplicable`. A container whose frame is singular takes no children by drop, insert or paste, and an insert asked into one lands at the top of the tree. In diagram, releasing members into one does nothing; in symmetry, a center change for a group in one is ignored.
+  
+  <!-- entry: behavior -->
+- 4e54b4e: A move, nudge, rotate, resize, flip, align or distribute leaves a node stored in a singular frame where it is and transforms the rest.
+  
+  No stored pose in a frame scaled to nothing follows the edit, so such a node is not written. Path edits, slicing and boolean operations pass it over too, and a layout pass does not move it.
+  
+  <!-- entry: behavior -->
+
+### Minor Changes
+
+- 8bd0c2d: `AvoidRouter.beginPreview()` starts a drag's run of previews. A frame over its budget keeps a connector only at a route this drag previewed.
+  
+  <!-- entry: api -->
+- e448c6f: `AvoidRouter.forget(ids)` makes the router's next update reroute those connectors. For a host that did not store the routes it was given, such as a locked connector's.
+  
+  <!-- entry: api -->
+- 1b291e6: BPMN's end event is an outline of its own, `endEvent`, its heavy ring filled in the stroke's color, and the end-event stencil places it.
+  
+  <!-- entry: new api fix visual -->
+- 2aae9c7: The connect action and connector tool take `edgeDerivePath`, so an edge drawn with custom `routers` or a `frame` keeps its preview's shape.
+  
+  Without one, development warns when `routers` or `frame` is set and `commit` is not.
+  
+  ```ts
+  const derivePath = edgeDerivePath({ routers }); // registered in the scene's registry
+  createConnectorTool({ participants, routers, router: 'wavy', edgeDerivePath: derivePath });
+  ```
+  
+  <!-- entry: api fix -->
+- 043cdcc: `applyDiagramEdit` and `applyNodeResizes` store what a `DiagramView` reports back into its `DiagramData`.
+  
+  `applyDiagramEdit(data, edit)` writes an `onEdit` report the way `onMove` and `onEditContainer` say to store one: each moved node's `at`, pinned, its new region, each rerouted edge's `routed` and `routedPorts`, a region's `box`, a pool's lanes, a released container's members. `{ pin: false }` leaves what moved unpinned, for data built with `layout: 'none'`.
+  
+  <!-- entry: rank=5 api new -->
+- ab9b2a8: `containerBuild` and `stencilInsertOps` take a `composition` option, the scene's, to store lanes, titles and rows under.
+  
+  It defaults to `RIGID_POSE_COMPOSITION`.
+  
+  <!-- entry: api -->
+- 1daf5d8: `diagramColorOf` and `diagramFontSizeOf` read back the color and text size that `setDiagramColor` and `setDiagramFontSize` set.
+  
+  `diagramColorOf(scene, id, 'text')` skips a header row, which takes the box's fill, and finds a connector's labels by what they depend on rather than by id.
+  
+  <!-- entry: api -->
+- 7eba566: `ContainerLayoutKey` names the layout keys `containerShape` returns: the five `DIAGRAM_*_LAYOUT` constants.
+  
+  <!-- entry: api -->
+- 3f6ce6c: `diagramDropParentAt` takes an optional `canDropInto` asking which regions admit an insert.
+  
+  It defaults to `diagramCanDropInto` on the scene, and reads `isLocked` and `isHidden` off the scene when it has them.
+  
+  <!-- entry: api -->
+- a4bf5e1: Diagram bodies, labels and sequences committed while their face was still loading can be measured again once it lands.
+  
+  `useFaceRemeasure(scene, { measure })` does it for the life of a component, `installFaceRemeasure` returns the unsubscribe, and `remeasureText` runs it once. A body grows to what its rows need and never shrinks; the writes are untracked, so undo never brings back a size measured in the wrong face.
+  
+  <!-- entry: new api -->
+- e82b401: A collapsed node's body carries the rows it hides on its trait, as `DiagramNode.folded`, so a reader of the scene can recover the whole node.
+  
+  <!-- entry: api -->
+- 34e26b9: `setDiagramColor` with `'fill'` leaves header text in the role's `headerText` where the theme names one.
+  
+  That is how a shape built with that fill is drawn. `setDiagramColor` now takes a `theme` option, as `setDiagramStyle` does, defaulting to the scene's own.
+  
+  <!-- entry: fix api -->
+- 6200d28: A diagram can live on a plane of its own: every diagram reader takes a `frame`, a `LayoutFrame` saying how a pose's box is read and moved there.
+  
+  Layout, ports, edge routing, cluster and anchor boxes, label and off-page tag stations, the connect gesture and the painters all read geometry through it. Unset, the frame is the pose descriptor's own space (`layoutFrameOf(poseDescriptor)`), so a 2D canvas and its saved data are unchanged. A 3D host whose descriptor answers in screen pixels passes the projection onto the diagram's plane; stored waypoints, routes and port anchors are then coordinates on that plane.
+  
+  ```ts
+  const ground: LayoutFrame<Pose3> = {
+    box: ({ p, s }) => ({ x: p[0] - s[0] / 2, y: p[2] - s[2] / 2, width: s[0], height: s[2] }),
+    translate: (pose, dx, dy) => ({ ...pose, p: [pose.p[0] + dx, pose.p[1], pose.p[2] + dy] }),
+    fromBox: (b, pose) => ({ p: [b.x + b.width / 2, pose.p[1], b.y + b.height / 2], s: [b.width, pose.s[1], b.height] }),
+  };
+  layoutDiagram(scene, sceneParticipants(scene), 'layered', { poseDescriptor, frame: ground });
+  ```
+  
+  `frameFor`, `layoutFrameOf`, `AUTO_LAYOUT_FRAME` and the `FrameOptions` and `LayoutFrame` types are exported.
+  
+  <!-- entry: rank=10 new api -->
+- bfc26b4: The pieces of `SequenceLayout`, the edge-end options and the router's held ends are exported.
+  
+  `SeqHeadPlace`, `SeqLifelinePlace`, `SeqMessagePlace`, `SeqActivationPlace`, `SeqNotePlace`, `SeqFragmentPlace` and `SeqBoxPlace`; `EdgeEnds` and `EdgeEndOptions`; and `HeldEnd` and `ResolvedAvoidOptions`, from the root and `@weasel-js/diagram/layout`.
+  
+  <!-- entry: api -->
+- 8fbb4b2: `DiagramView` takes `onEdit`, which hears one gesture's moves, routes and container edits together as one `DiagramEdit`.
+  
+  A container dragged with its members reaches `onMove` and `onEditContainer` as separate reports; `onEdit` gets them as one, a microtask after the last, so a host can store the drag as one undo entry. Setting it turns on dragging and container editing as those two do.
+  
+  <!-- entry: rank=5 api new -->
+- 7ce0db4: `DiagramView`'s `onSelect` hears a pick a drag makes, so a property panel follows the node being moved.
+  
+  `useMirroredSelection` takes the selection store's `subscribe` as a fourth argument to report such changes.
+  
+  <!-- entry: fix api -->
+- c9c39dd: A `DiagramView` given `onConnect` draws its ports even when `portOptions` names no color.
+  
+  A port with neither `fill` nor `stroke` is drawn in `DEFAULT_PORT_FILL` outlined in `DEFAULT_PORT_STROKE`, both exported.
+  
+  <!-- entry: rank=5 fix visual api -->
+- 672e827: `readEffectDoc` checks an `EffectDoc` read from a file, refusing one with a wrong-typed field with an `EffectDocShapeError`.
+  
+  ```ts
+  import { readEffectDoc } from '@weasel-js/diagram/effect';
+  
+  const doc = readEffectDoc(JSON.parse(text)); // throws "Not an effect document: doc.pipeline.stages[0] is not an object"
+  ```
+  
+  <!-- entry: api -->
+- d689e44: Release members is disabled over a container whose release would move a locked node, or whose members could not keep their places.
+  
+  New `canReleaseMembers(scene, id)` answers whether `releaseMembers` would change anything for `id`.
+  
+  <!-- entry: fix api -->
+- 2b1c344: `Router`, `RouteRequest`, `ResolvedRoute` and `Port` take a point type, `Vec2` by default, and `bezierFor` builds the smooth router in any dimension.
+  
+  `straight` routes points of any type. `bezierFor(components)` takes how to read a point as numbers and back; `bezier` is `bezierFor(VEC2_COMPONENTS)`. `orthogonal` and `avoid` stay on the plane.
+  
+  ```ts
+  const bezier3 = bezierFor<[number, number, number]>({ of: (p) => p, point: ([x, y, z]) => [x!, y!, z!] });
+  ```
+  
+  <!-- entry: api -->
+- 6121e6b: `diagramThemeErrors(value)` lists what keeps a value from being a whole `DiagramTheme`, each error naming where.
+  
+  <!-- entry: api -->
+- dd7e196: `useDiagramTools` builds every tool diagram ships, and the `DIAGRAM_TOOLS` set names them.
+  
+  That is the connector, a tool per stencil and the sequence tools; `STENCIL_TOOLS` holds one set per stencil group.
+  
+  `createStencilTools(stencils)` keys a tool per stencil by its insert kind, and `stencilToolSet(group)` names a group's.
+  
+  ```tsx
+  const tools = useDiagramTools({ connector: { participants }, sequence: { commit } });
+  <SceneCanvas tools={tools} … />
+  ```
+  
+  <!-- entry: api new -->
+- 51978f9: `checkPipeline` reports a stage or cluster that two clusters name as `duplicate-member`, on the later cluster.
+  
+  <!-- entry: api fix -->
+- 6d731a9: `checkPipeline` reports a wire whose `id` an earlier wire already has as `duplicate-wire`.
+  
+  <!-- entry: api fix -->
+- bfd5db9: `checkPipeline` reports effect clusters that hold each other in a loop as a `cluster-loop` problem, naming every cluster in it.
+  
+  `EffectProblem` gains the `cluster-loop` kind and a `clusters` field listing the loop's clusters; `cluster` is the first of them.
+  
+  <!-- entry: new api -->
+- ef600c0: `checkPipeline` reports a stage or port id starting with `~` as a `reserved-id` problem, and the rack and lanes looks throw an error naming it.
+  
+  Those ids are kept for the lane nodes and skip and tap ports the looks make.
+  
+  <!-- entry: fix api -->
+- 2c2021d: `EffectRunner.idle()` settles once every run and step asked for so far has finished.
+  
+  A caller that owns the source images it hands the runner awaits it before closing a replaced one, since no run reads that image after.
+  
+  <!-- entry: api -->
+- b74a24f: An effect runner's `setOptions` starts a step run under way over, as `setPipeline` does.
+  
+  An option `setOptions` is handed as `undefined` goes back to its default, and `setSources(undefined)` hands the next run no sources.
+  
+  <!-- entry: fix api -->
+- 8bea5be: `@weasel-js/diagram/effect` exports `EffectRunnerSettings`, the type of what `EffectRunner.setOptions` takes.
+  
+  <!-- entry: api -->
+- 932b85d: `markShape` and `registerMarkShape` take an `id`, so a mark painter with its own `geometry` can register beside `DiagramView`'s.
+  
+  ```ts
+  registerMarkShape({ id: 'chart:mark', geometry: CHART_POSE });
+  ```
+  
+  <!-- entry: api -->
+- da0d0d0: `DiagramView`'s `onEditLabel` hears which end label a double-click landed on, as a second `end` argument.
+  
+  `createEditEdgeLabelAction`'s `commit` is handed the pressed label's id as a third argument, and the new `labelEndOf(edgeId, labelId)` reads it as `'from'`, `'to'` or `null`.
+  
+  ```tsx
+  <DiagramView onEditLabel={(edge, end) => (end ? editEndLabel(edge, end) : editLabel(edge))} />
+  ```
+  
+  <!-- entry: api fix -->
+- 46c6d05: `outlineRegistry` lists every outline name and the definition it resolves to, with the definitions a `registerOutline` call shadows.
+  
+  The built-ins report source `'kit'`.
+  
+  <!-- entry: api -->
+- 4d0042b: `outlineRings(outline, bounds)` answers an outline as one closed ring per subpath, and `rayHit` accepts those rings.
+  
+  `outlinePolyline` now closes each subpath on its own; cast a ray at `outlineRings` where the outline may have more than one.
+  
+  <!-- entry: api -->
+- 8d7296a: A tool set can carry a `label`, and every set the kit ships has one: `toolSet('make', ids, { label: 'Make' })`.
+  
+  A shortcut sheet heads a set's tools with it, and `withoutTools` keeps it.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 85e334d: `applyDiagramEdit` stores a released lane: the lane leaves its pool and its members go to the region holding the pool.
+  
+  <!-- entry: fix -->
+- 85e334d: `applyDiagramEdit` hands a released pool's lane members to the region that held the pool.
+  
+  <!-- entry: fix -->
+- 06d4d46: The avoid router prices crossing another connector where both run along the same grid line, so `crossPenalty` steers routes apart there too.
+  
+  <!-- entry: fix -->
+- 8bd0c2d: A drag under avoid routing no longer shows routes or connector data left from a drag before it, a cancelled one included.
+  
+  <!-- entry: fix -->
+- f4ad599: The avoid router reroutes a connector a moved label comes within `labelClearance` of, where it used to check only `clearance`.
+  
+  <!-- entry: fix -->
+- e448c6f: Avoid routing reroutes a locked connector on the first edit after it is unlocked when an edit while it was locked disturbed it.
+  
+  <!-- entry: fix -->
+- 08b07ae: The avoid router no longer hangs an edit when a shape's box is NaN or infinite.
+  
+  <!-- entry: fix -->
+- a4ef1f7: A connector the avoid router found no path for is read along the line through its waypoints. Its label obstacle stands on that line, and a shape moved onto it reroutes the connector.
+  
+  <!-- entry: fix -->
+- 7e971ee: Avoid routing takes what an undo, redo or history jump leaves as routed. The next drag and edit route against those shapes, labels and routes.
+  
+  <!-- entry: fix -->
+- 7dc55af: `buildGraph` leaves out an edge from a container or pool to something it holds, as `diagramScene` does.
+  
+  <!-- entry: fix -->
+- 4f264d0: Values held between two bounds go through geom's `clamp` and `clamp01` rather than local copies.
+  
+  A loupe whose `minFactor` is above its `maxFactor` now settles on the low bound, as `clamp` does, where it settled on the high one.
+  
+  <!-- entry: rank=-5 behavior -->
+- de28465: `useConnectorTool` rebuilds its tool when the `frame` option changes, so a 3D host's new projection reaches the connect action.
+  
+  <!-- entry: fix -->
+- bfc26b4: Every type a public signature names can now be written down by a consumer.
+  
+  Types the declarations named through private aliases are written out, or are geom's `Point` and `Rect`.
+  
+  <!-- entry: internal -->
+- 0698b8a: `addLane` places the new lane in its pool wherever the pool draws, in a scene whose poses do not compose too.
+  
+  <!-- entry: fix -->
+- 09b9ec7: `addLane` throws a `RangeError` for a negative or fractional index.
+  
+  <!-- entry: fix behavior -->
+- 7808c46: A pool whose title is locked shows no add-lane button, and `diagram.addLane` passes a press there on rather than throwing.
+  
+  <!-- entry: fix -->
+- 5f9bea2: `diagram.addLane` passes a click on a lane boundary on to the next binding that hears it; it adds a lane only from its button.
+  
+  <!-- entry: behavior -->
+- fa33365: In a themed scene, `addLane` given a style restripes the lanes it moves along, as it does without one.
+  
+  <!-- entry: fix visual -->
+- e0f4c91: Registering an outline under a built-in outline's name replaces it without a development warning.
+  
+  <!-- entry: behavior -->
+- 68ad237: `costText` writes a stage's cost with `@weasel-js/quantity`'s `formatNumber`, so a cost of a second or more groups its thousands (`1,235 ms`).
+  
+  <!-- entry: rank=-5 behavior -->
+- 42aab0c: Several `<DiagramView>`s on one page register the diagram painters without conflict.
+  
+  `registerDiagramShape()` and `registerMarkShape()` with no options share one painter.
+  
+  <!-- entry: fix -->
+- e3a1721: Installing @weasel-js/diagram no longer brings in the prefs store: it depends on @weasel-js/prefs-schema.
+  
+  <!-- entry: perf -->
+- c526e13: Dragging a shape over a text mark or a sequence no longer reparents the shape under it.
+  
+  `diagramCanDropInto` admits a drop only into a region or a group with no diagram trait.
+  
+  <!-- entry: fix -->
+- 831a2b2: A shape inserted on a container lands in it where the container overhangs the body of the one it is in.
+  
+  <!-- entry: fix -->
+- adb8862: Points placed along a diagram edge or outline land exactly on a segment's far end.
+  
+  <!-- entry: fix -->
+- 036700d: `DiagramView`'s `fit()`, and its refit after a layout run settles, frame a diagram with containers or pools around where its shapes are drawn.
+  
+  <!-- entry: fix -->
+- f9cb915: The grid layout places a node or group whose id names an `Object.prototype` member, such as `constructor`, like any other.
+  
+  <!-- entry: fix -->
+- 865f78e: A double-click on the edge between a region's header and its body no longer edits the title; that edge is the body's.
+  
+  <!-- entry: fix -->
+- 37f3652: A hidden lane offers no resize boundary.
+  
+  <!-- entry: fix -->
+- 8386869: diagram's body, header-band, and group-grip hit tests use geom's `rectContainsPoint`.
+  
+  <!-- entry: internal -->
+- 7821156: A connector label whose `at` names an `Object.prototype` member, such as `toString`, stands in the middle of its connector.
+  
+  <!-- entry: fix -->
+- 8f3e8e5: A rotated pool's lane boundaries and add-lane button sit where the pool draws them, and resize along the turned stack.
+  
+  <!-- entry: fix -->
+- 596acb7: A theme stripes a pool's lanes by where they sit in the stack, so a lane added between others leaves no two neighbors alike.
+  
+  <!-- entry: fix visual -->
+- d091135: A lane can be dragged only into a pool stacking the same way as its own.
+  
+  <!-- entry: fix behavior -->
+- c153b90: Growing a lane past the lanes after it keeps them below it once the drag ends, as the preview showed.
+  
+  <!-- entry: fix -->
+- 72e1c0e: Resizing a lane in a turned pool keeps the pool's start edge in place, so the boundary stays under the pointer.
+  
+  <!-- entry: fix -->
+- 6ac2b44: A lane's boundary is not offered, and its resize does not run, where a later lane holds a locked node the resize would move.
+  
+  <!-- entry: fix -->
+- 1804d61: A lane boundary is not offered, and a drag there goes to whatever else is under it, where the resize would move a locked lane or title.
+  
+  <!-- entry: fix -->
+- 72e1c0e: A lane resize previews the lane's and the pool's titles where they draw in a scene whose poses do not compose.
+  
+  <!-- entry: fix -->
+- d747443: The layered layout breaks cycles and ranks nodes along a chain of any length, where a long one used to overflow the stack.
+  
+  <!-- entry: fix -->
+- 5c81350: `diagram.layout` is disabled when the layout would move nothing: an empty diagram, one laid out already, or every participant locked.
+  
+  The layout runs once per change to the scene or its source, however often `enabled` is asked, and the run after it writes that same answer.
+  
+  <!-- entry: behavior -->
+- 31df350: `DiagramView`'s `layout()` and the layout action move a container with what it holds, leaving its members inside it.
+  
+  <!-- entry: fix -->
+- 7606b26: `layoutDiagram` runs the layered layout for an unlisted algorithm such as `constructor`, and an unknown image `blend` draws as normal.
+  
+  <!-- entry: fix -->
+- ba5c5d5: `diagram.layout` is disabled after a layout as it promised, rather than staying on for places it wrote a rounding error away from.
+  
+  <!-- entry: fix -->
+- 166946e: `useLiveLayout` runs an `algorithm` name it does not ship, `constructor` included, as `layered`.
+  
+  <!-- entry: fix -->
+- b4772dc: A pool drawn narrower than its header builds its lanes, and `addLane` adds one, inside its body rather than at a negative width.
+  
+  <!-- entry: fix -->
+- dcb2e4d: `createDiagramNodes` gives no kind's trait to a connector, label, anchor, mark, sequence part or lane.
+  
+  <!-- entry: fix -->
+- 934dc61: `outlineFromD` throws on path data that does not parse or draws nothing, as a mark's path data already does.
+  
+  The same goes for its `detail`, and a `content` box with no area throws a `RangeError`.
+  
+  <!-- entry: fix -->
+- eba59c7: The warning for an outline name nobody registered prints only in development, like the diagram's other warnings.
+  
+  <!-- entry: rank=-5 behavior -->
+- 028398e: A diagram's overlays, header clicks, item drop targets, and group reordering place a scrolled container's members where the view shows them.
+  
+  <!-- entry: fix -->
+- 786d7e4: Diagram sequences, avoid routing, and plot handles read world poses through core's `worldPoses`, reading what they read before.
+  
+  <!-- entry: internal -->
+- e458d95: A pool resized smaller than its lanes can shrink to grows back to hold them, rather than drawing lanes past its edge.
+  
+  <!-- entry: fix visual -->
+- 840a01b: `createDiagramPortsContribution` with a renamed connect action (`id`) keeps its ports grabbable: the port layer keeps the id `diagram-ports`.
+  
+  <!-- entry: fix -->
+- c119620: Effect charts treat stage ids, port ids and value types like `constructor`, `toString` and `__proto__` as ordinary names.
+  
+  A stage with the id `__proto__` now plans its audio node, keeps its place when moved, and records its values and previews. A stage named for an `Object.prototype` member counts as unreached when the run never reached it, and a value type so named gets a series color instead of a function. A document's places, routes, labels and group boxes no longer find built-ins for such ids.
+  
+  <!-- entry: fix -->
+- bc47b9e: `DiagramViewApi.rectOf` gives a node's client rect where it is drawn when an ancestor draws the diagram scaled.
+  
+  <!-- entry: fix -->
+- d3c9045: Releasing a lane's members leaves them drawn above the pool they sat in, rather than hidden under its fill.
+  
+  <!-- entry: fix visual -->
+- 5f2eac9: Release members is unavailable on a lane while a lane after it holds a locked node, which the restack would move.
+  
+  <!-- entry: fix -->
+- 3a650b6: Rename group is disabled where it would open no name field, such as from a palette with no point to find a group at.
+  
+  <!-- entry: fix -->
+- cf3e7dd: `DiagramView`'s `onResize` and a resized container's box edit report a box inside a container or lane in world, as `onMove` does.
+  
+  <!-- entry: fix -->
+- 9bd1284: A shape, connector or container whose style names an `Object.prototype` member, such as `constructor`, draws in the theme's default style.
+  
+  <!-- entry: fix -->
+- 7a21cbd: A node sized to its rows under a `roundRectOutline` gets the box its drawn corners need; `Infinity` no longer sizes an infinite one.
+  
+  A radius that is negative or `NaN` now throws a `RangeError`.
+  
+  <!-- entry: fix visual -->
+- 554a3c7: A router command is disabled when every selected connector already uses that router; its button still shows as pressed.
+  
+  <!-- entry: behavior -->
+- 187d21a: A router command is disabled as locked where it would change a locked connector, and running it changes nothing rather than throwing.
+  
+  <!-- entry: fix -->
+- 2aef76e: A connector whose `router` names an `Object.prototype` member, such as `toString`, is drawn straight.
+  
+  <!-- entry: fix -->
+- bc99ea3: `diagramScene` leaves no layout room for labels when its `labelPlacement` option stations them at an end or a fraction of the route.
+  
+  <!-- entry: fix visual -->
+- 9b59a03: `setDiagramStyle` and `setDiagramColor` leave a sequence and its parts alone.
+  
+  `diagramStyleOf` answers `null` for them: a sequence draws its parts from its data, so an edit there was lost at the next redraw.
+  
+  <!-- entry: fix -->
+- 963678e: `setThemeValue` throws a `RangeError` for a role, lane body or series color the theme does not have.
+  
+  It had returned a theme with a partial role or holes in an array. Appending one color at the end of `series` still works; make a role with `addThemeRole`.
+  
+  <!-- entry: fix -->
+- 932b85d: `registerDiagramShape` and `registerMarkShape` called twice with the same options register one painter instead of throwing.
+  
+  <!-- entry: fix -->
+- ab9b2a8: A stencil drawn into a scene whose `composition` is not the rigid default stores its rows, lanes and titles where they draw.
+  
+  <!-- entry: fix -->
+- 8daaf5a: A stencil drawn inside a container under a plain group or an envelope becomes that container's member.
+  
+  <!-- entry: fix -->
+- 3f6ce6c: A stencil drawn over a locked or hidden container, or one the scene's `canDropInto` refuses, lands in the region around it instead.
+  
+  <!-- entry: fix -->
+- 963f8fd: Alt and an arrow key no longer reorder a diagram member while a drag is in flight.
+  
+  <!-- entry: fix -->
+- 0a5cd7a: Move along (Alt and an arrow key) is disabled where the step moves nothing, so the key falls through.
+  
+  That is a step along the other axis, or past either end.
+  
+  <!-- entry: fix -->
+- e4e3b6a: The diagram style edits by hand leave a locked shape, connector or text row as it is, and edit the rest.
+  
+  `setDiagramStyle`, `setDiagramColor` and `setDiagramFontSize` had thrown partway through.
+  
+  <!-- entry: fix -->
+- c39e272: Applying a diagram theme sets outline widths and dashes as building in that theme does, not only colors.
+  
+  A width or dash an item's `colors` sets is recorded in its trait's new `ownLine` and kept.
+  
+  <!-- entry: fix visual -->
+- 119b6c5: A scene whose `diagram:theme` holds a theme that does not check draws in the fallback theme instead of crashing.
+  
+  `diagramThemeFrom` checks a whole theme with `diagramThemeErrors` and warns once per value in development.
+  
+  <!-- entry: fix -->
+- c95ff39: `parseDiagramTheme` checks a theme's optional fields, and refuses a non-finite font size or an empty `series`.
+  
+  The optional fields are the header colors, outline widths and dashes, and the connector's label color, width, dash, markers and trim.
+  
+  <!-- entry: fix data -->
+- 493f964: A text row a smaller theme font size takes below 1 returns to its own size when a theme steps it back up.
+  
+  <!-- entry: fix visual -->
+- eaa8ff5: `diagramThemeFromTokens` takes `paper`'s color for a token that does not parse as a color.
+  
+  The shipped `--wzl-fg-muted` is relative color syntax, so "Match chrome" had painted muted text and connectors with it and saved a theme that did not check.
+  
+  <!-- entry: fix visual -->
+- 9bd1284: A document whose theme is named `constructor`, `toString` or another `Object.prototype` member gets the fallback theme.
+  
+  <!-- entry: fix -->
+- 185a234: Diagram theme editing and theme files treat a role named `toString` or `constructor` as a role only when the theme holds it.
+  
+  <!-- entry: fix -->
+- 862459a: `applyDiagramTheme` and a late-loading font's remeasure leave locked shapes, labels and sequences as they stand, where they threw.
+  
+  <!-- entry: fix behavior -->
+- 67598c9: Double-clicking a lane's header, or the header of a container inside another, edits that region's title wherever its pool or parent sits.
+  
+  <!-- entry: fix -->
+- d747443: The tree and radial layouts lay out a chain of any depth without overflowing the stack, and a deep tree lays out in linear time.
+  
+  <!-- entry: fix perf -->
+- 9709a41: A rotated container or pool takes title double-clicks and stencil inserts where it is drawn.
+  
+  <!-- entry: fix -->
+- 90d75a5: A scene whose diagram type is named `constructor` or another `Object.prototype` member reads as a flowchart.
+  
+  <!-- entry: fix -->
+- 9acf4ce: `diagramScene` warns in development, once per id, when an edge end or a member names an id the data never declares.
+  
+  The edge or member is still left out.
+  
+  <!-- entry: fix -->
+- 50c0635: A diagram naming a theme this build does not ship warns in development, once per theme name, and still draws with the fallback theme.
+  
+  <!-- entry: fix -->
+- 5eac231: An outline name that is not registered paints as the registered `rect`, including one a `registerOutline('rect', …)` put there.
+  
+  <!-- entry: fix visual -->
+- ee18e9e: `DiagramView`'s connect previews with the router its reported edge draws with: `portOptions.router`, which the edge names, else `'bezier'`.
+  
+  <!-- entry: fix visual -->
+- eba59c7: The diagram's once-per-name warnings remember at most 256 names, so a long session no longer keeps every one.
+  
+  <!-- entry: rank=-5 perf -->
+- 4ad74a4: diagram's document bounds and diagram-formats' export read world poses through core's `worldPoses`.
+  
+  <!-- entry: internal -->
+- b7d8fb2: Edge-end handles, reconnects, waypoint handles and route commands resolve an edge's ends on the plane the `frame` option names.
+  
+  <!-- entry: fix -->
+- c64e46f: Double-clicking an edge's end label edits that label, rather than the edge's middle label.
+  
+  <!-- entry: fix -->
+- 23e50c1: `runPipeline` closes the previews it made when its signal aborts partway, so an effect runner reset mid-run no longer leaks them.
+  
+  <!-- entry: fix -->
+- 78aa95d: An audio stage missing a discrete setting, such as a noise stage saved without its color, plays with its stage type's default.
+  
+  An unknown wave, filter type or noise color is reported on its stage before any engine exists.
+  
+  <!-- entry: fix -->
+- 15bd121: A cluster that two clusters name is dragged by its title among the members of the first, the cluster it is drawn in.
+  
+  <!-- entry: fix -->
+- ec49e8c: Dragging or resizing an effect cluster whose clusters hold each other in a loop no longer hangs the editor.
+  
+  <!-- entry: fix -->
+- 6d731a9: An effect chart or editor whose pipeline has two wires sharing an id draws both, the second in the warning color, instead of throwing.
+  
+  <!-- entry: fix -->
+- 6cf8816: An effect stage whose `type` names an `Object.prototype` member, such as `toString`, fails with "no evaluator" instead of rejecting the run.
+  
+  <!-- entry: fix -->
+- 7cbda84: Clearing `sources` in `useFollowAudioRunner` takes the old buffer away from the live runner.
+  
+  A file stage stops playing it and reports that it has no source audio.
+  
+  <!-- entry: fix -->
+- c6aae22: Adding a stage in the effect editor no longer hangs the page when the view is panned far from the origin.
+  
+  <!-- entry: fix -->
+- 4b25e60: Pressing a group title in the effect editor no longer overflows the stack when the pipeline's groups hold each other in a loop.
+  
+  <!-- entry: fix -->
+- 708d9a3: Grouping or moving an effect group together with one of its own members keeps the group, the member still inside it.
+  
+  <!-- entry: fix -->
+- 44892a1: A live audio stage whose node fails to build, such as a 0-second reverb, shows the error on its stage.
+  
+  The stage is left out of the graph, and the rest of the pipeline keeps playing and following edits.
+  
+  <!-- entry: fix -->
+- 85c4174: A live audio runner keeps following edits after an edit whose new source failed to start.
+  
+  <!-- entry: fix -->
+- da46a5c: A live audio wire into a port its node lacks is left out of the graph and named on that stage.
+  
+  The rest of the pipeline keeps following edits.
+  
+  <!-- entry: fix -->
+- 6debed8: Pausing or resetting a live audio runner while `play()` waits for the engine to unlock keeps it stopped once the unlock finishes.
+  
+  <!-- entry: fix -->
+- 8da4737: When one stage's level change fails in a live audio runner, the other stages' level changes in the same edit still reach the graph.
+  
+  <!-- entry: fix -->
+- 360ef8d: The rack and lanes looks put a looped pipeline's longest path on their main line whatever order its stages are listed in.
+  
+  <!-- entry: fix visual -->
+- 6cf8816: An effect stage input named for an `Object.prototype` member, such as `constructor`, takes the value wired into it.
+  
+  <!-- entry: fix -->
+- e8957b6: A value kind whose `show` or `preview` throws fails only its stage, as a throwing evaluator does. The previews already made for that stage are closed.
+  
+  <!-- entry: fix -->
+- 23e50c1: An effect runner's `dispose` works when called on its own, as `subscribe` already did.
+  
+  <!-- entry: fix -->
+- 23e50c1: An effect runner step under way when the pipeline or sources change starts over on the new ones, and frees what the dropped step made.
+  
+  <!-- entry: fix -->
+- 3fc3c93: The ERD entity stencil's fields read type first, then name and keys (`int` / `id PK`), so a placed entity exports with its keys.
+  
+  <!-- entry: fix data -->
+- 2b51070: A hop right by a bend, or exactly two radii from the next, draws instead of vanishing when its stored position was rounded.
+  
+  <!-- entry: fix visual -->
+- 711846c: While dragging, a connector another follower reroutes, as avoid routing does, hides its line jumps, as do the connectors jumping over it.
+  
+  <!-- entry: fix visual -->
+- bf0869d: While dragging, a connector attached to a node whose pose derives from the dragged one hides its line jumps.
+  
+  This includes a container that fits its children, when a child is dragged.
+  
+  <!-- entry: fix visual -->
+- 012eac4: While dragging with line jumps on, a connector keeps the pose the drag or an earlier follower gives it instead of its stored one.
+  
+  <!-- entry: fix visual -->
+- 280f109: A connector rerouted while locked gets line jumps for its new route at the first edit after it is unlocked.
+  
+  <!-- entry: fix -->
+- 1bc1b5c: After an undo, redo, `loadState` or untracked write, the next edit computes line jumps against the routes the scene has then.
+  
+  <!-- entry: fix -->
+- fc2594c: A hidden connector, or one on a hidden layer, no longer makes the connectors crossing it jump.
+  
+  Hiding or showing one recomputes the jumps around it.
+  
+  <!-- entry: fix visual -->
+- 6a5449e: A connector hops a crossing near a vertex its route runs straight through: `edgeHops` and `withHops` treat only real bends as bends.
+  
+  <!-- entry: fix visual -->
+- cb89cf1: An item drag asks the host again for a drop whose target and container ids join like another's.
+  
+  <!-- entry: fix -->
+- 09d5ade: A layered layout keeps two hops apart when their end and edge ids run together.
+  
+  <!-- entry: fix -->
+- 601b526: A layered edge between two level pins goes around past a node between them that reaches further toward the next rank than either end.
+  
+  <!-- entry: fix visual -->
+- 08979e8: A layered edge between two level pins goes around a cluster box between them that neither end is in, rather than straight through it.
+  
+  <!-- entry: fix visual -->
+- 19f10ce: A layered layout places the long edge between two level pins by its ends on every pass, rather than at the last pass's detour.
+  
+  <!-- entry: fix -->
+- 2a875e8: A layered layout leaves a long edge's run in place when it lies inside the box a cluster's `minWidth` widens.
+  
+  <!-- entry: fix visual -->
+- 0325a0e: A layered layout keeps pins clear of a cluster's box as drawn, widened to its `minWidth`.
+  
+  A nested cluster pads its parent's column only on the side it reaches, so a pin just clear of the drawn box is no longer refused.
+  
+  <!-- entry: fix visual -->
+- 56784d5: Comparisons of two lists entry by entry go through registry's `sameList` rather than hand-written loops.
+  
+  <!-- entry: internal -->
+- 3a0ae45: A live layout that restarts or fails mid-run no longer leaves edges drawn along the abandoned run's routes.
+  
+  <!-- entry: fix visual -->
+- bdd33c6: The mind map's subtopic stencil is a plain box, a shape Mermaid mind maps hold, so a palette map exports without a warning.
+  
+  <!-- entry: fix visual -->
+- 060c64c: `useMirroredSelection` tells a one-id `selected` from a set, and two sets apart, whatever their ids hold.
+  
+  <!-- entry: fix -->
+- 4d0042b: A port on an outline drawn in separate pieces, such as `person`'s head and body, sits on a piece, not in the gap.
+  
+  <!-- entry: fix -->
+- 65dfc8b: Reconnecting an edge end under a `frame` places the edge's other end, and its handles, on that frame's plane, where the candidate ports are.
+  
+  <!-- entry: fix -->
+- 85fc2ee: Remove waypoint leaves a locked or hidden connector alone, as its handles are not drawn there, rather than throwing on a locked one.
+  
+  <!-- entry: fix -->
+- 7fdffc0: A press on a node whose cluster boxes hold each other through `dependsOn` no longer hangs the reorder action.
+  
+  <!-- entry: fix -->
+- 47f47ae: Reset route is disabled with `ActionDisabledReason.Locked` while a selected connector it would clear is locked.
+  
+  <!-- entry: fix -->
+- 897ac02: A sequence activation still open where its lifeline is destroyed ends at the destruction's cross, not the diagram's foot.
+  
+  <!-- entry: fix visual -->
+- 000d836: `setMessageArrow` leaves the data as it was for an arrow differing only by an explicit `both: false` or `async: false`.
+  
+  So it no longer commits an empty undo entry.
+  
+  <!-- entry: fix -->
+- f7968a0: `insertMessage` and `setMessageArrow` throw, naming it, on an arrow name not in `SEQ_ARROWS`, and the Message tool draws a call for one.
+  
+  <!-- entry: fix -->
+- e67a371: A sequence box never draws around a lifeline it does not hold when a participant is dragged or added.
+  
+  One landing between two members of a box joins it, and a member dragged away from the rest of its box leaves it.
+  
+  <!-- entry: fix -->
+- 44ea8a6: Dragging a sequence message or fragment previews all of it, a number's digit and a fragment's label and steps included.
+  
+  <!-- entry: fix visual -->
+- cd86873: A sequence diagram with any locked part takes no edit, and `commitSequence` leaves it as it stands rather than throwing.
+  
+  <!-- entry: fix -->
+- 894f261: A sequence message whose `head` names an `Object.prototype` member, such as `toString`, is drawn with no arrowhead.
+  
+  <!-- entry: fix -->
+- 894f261: `sequenceSpecs` throws, naming the id, when two parts would share a scene id, as a participant `A/text` beside `A` would.
+  
+  <!-- entry: fix -->
+- e408338: The Participant tool's click on empty canvas starts a sequence whose lifeline stands at the click, under any theme's font.
+  
+  <!-- entry: fix -->
+- 0177219: Readers of saved shapes take only a plain object where they expect a record, as registry's `isPlainObject` says.
+  
+  That is scene snapshots and documents, DTCG color values, diagram theme files and compound menu values. A class instance, `Map` or `Date` in their place, which no JSON text can produce, is now refused as a wrong shape instead of read as a record.
+  
+  <!-- entry: rank=-5 behavior -->
+- b915832: `createSpecHops`, and a `DiagramView` given `hops`, no longer make an edge hop over a hidden edge spec or one inside a hidden spec.
+  
+  <!-- entry: fix visual -->
+- 962563d: `createSpecLabelPlacer` places a label again when only its `inset` changes.
+  
+  <!-- entry: fix -->
+- db6b387: `createSpecLabelPlacer` places a split connector's label on the stubs it draws. Other labels no longer dodge the undrawn line between its pages.
+  
+  <!-- entry: fix visual -->
+- 41149dd: `createSpecRouter` routes an edge between two nodes outside a cluster around the cluster's box, as avoid routing on a live scene does.
+  
+  <!-- entry: fix -->
+- 73e93db: `createSpecRouter` routes a self-loop that names both its ports, as avoid routing on a live scene does.
+  
+  <!-- entry: fix -->
+- 3fbc4d6: `useStencilInsert` warns in development when a tool inserts a stencil it was not handed, such as a container with no `containers` option.
+  
+  <!-- entry: fix -->
+- 0f77df5: A stencil-inserted shape's rows keep their places through a theme change or a font remeasure.
+  
+  <!-- entry: fix visual -->
+- 2a7c91b: A stencil's body sizes its rows for the `font` they are drawn in, as `diagramScene` does, so a larger face no longer overflows its row.
+  
+  <!-- entry: fix visual -->
+- d97fb3b: Badge shapes and effects, `CurveEditor`'s curves and BPMN outlines write SVG numbers with `trimNumber`: `100.00` is now `100`.
+  
+  <!-- entry: rank=-5 internal -->
+- 017fa7a: The UML abstract-class stencil carries `<<abstract>>` and marks `draw()*`, so it exports to Mermaid as abstract.
+  
+  <!-- entry: fix data -->
+- 5f6c2d7: The UML interface stencil's stereotype reads `<<interface>>`, so a placed interface exports to Mermaid as an interface.
+  
+  <!-- entry: fix data -->
+- f652afe: `useEffectRunner` lets go of `sources`, `kinds`, `previews` or `previewSize` once the caller stops passing it, so the next run uses the default.
+  
+  <!-- entry: fix -->
+- 5b8e066: These packages watch for resizes through react's `watchResize` rather than a `ResizeObserver` of their own.
+  
+  <!-- entry: internal -->
+- 4254248: Moving both ends of a locked connector moves the ends and leaves its waypoints where they are, not refusing the move.
+  
+  <!-- entry: fix -->
+- Updated dependencies [5099ca3]
+- Updated dependencies [e5f53c6]
+- Updated dependencies [74e52e2]
+- Updated dependencies [617fd6c]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [fe3c2df]
+- Updated dependencies [cd84e27]
+- Updated dependencies [8d7296a]
+- Updated dependencies [33d9b95]
+- Updated dependencies [2a3a075]
+- Updated dependencies [5ad99b6]
+- Updated dependencies [4204bdb]
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [9c88969]
+- Updated dependencies [d764d06]
+- Updated dependencies [f1bc116]
+- Updated dependencies [76b3ad2]
+- Updated dependencies [8994b94]
+- Updated dependencies [3e90820]
+- Updated dependencies [cefbb9f]
+- Updated dependencies [a124808]
+- Updated dependencies [dec059b]
+- Updated dependencies [acb98a5]
+- Updated dependencies [f2eb510]
+- Updated dependencies [c8a41db]
+- Updated dependencies [5aaee6b]
+- Updated dependencies [de547d5]
+- Updated dependencies [420e20a]
+- Updated dependencies [b550d25]
+- Updated dependencies [139e26a]
+- Updated dependencies [b5b0782]
+- Updated dependencies [0bcb260]
+- Updated dependencies [670ec07]
+- Updated dependencies [99c457e]
+- Updated dependencies [3b7ffd3]
+- Updated dependencies [3b7ffd3]
+- Updated dependencies [7a9a5c7]
+- Updated dependencies [357c9f1]
+- Updated dependencies [e765b9c]
+- Updated dependencies [12ded8a]
+- Updated dependencies [e225656]
+- Updated dependencies [50e06ce]
+- Updated dependencies [df2ae04]
+- Updated dependencies [c8c9daa]
+- Updated dependencies [e0afaa7]
+- Updated dependencies [4b16186]
+- Updated dependencies [5aa7bc1]
+- Updated dependencies [6b9ca79]
+- Updated dependencies [2a07382]
+- Updated dependencies [e3b0356]
+- Updated dependencies [9bd892d]
+- Updated dependencies [feec844]
+- Updated dependencies [f834acb]
+- Updated dependencies [19d6faa]
+- Updated dependencies [9fa0d8d]
+- Updated dependencies [2c152a0]
+- Updated dependencies [2d723fd]
+- Updated dependencies [dce9e3e]
+- Updated dependencies [ca79b0e]
+- Updated dependencies [00ef3bb]
+- Updated dependencies [460b0ac]
+- Updated dependencies [effe879]
+- Updated dependencies [db9988a]
+- Updated dependencies [a98ad34]
+- Updated dependencies [5f856dc]
+- Updated dependencies [2395f92]
+- Updated dependencies [8ec33cf]
+- Updated dependencies [bf69022]
+- Updated dependencies [e3f3d97]
+- Updated dependencies [3edbcb1]
+- Updated dependencies [78aa95d]
+- Updated dependencies [92c64fe]
+- Updated dependencies [daccd3c]
+- Updated dependencies [9a73a90]
+- Updated dependencies [9a9fbab]
+- Updated dependencies [aca518c]
+- Updated dependencies [67c3b2c]
+- Updated dependencies [ecf98ab]
+- Updated dependencies [193c9dc]
+- Updated dependencies [ecf98ab]
+- Updated dependencies [4c1e42c]
+- Updated dependencies [ad37a86]
+- Updated dependencies [73ed793]
+- Updated dependencies [1ed1116]
+- Updated dependencies [6eb73fc]
+- Updated dependencies [78a0bd6]
+- Updated dependencies [f9a83f5]
+- Updated dependencies [1f5fce4]
+- Updated dependencies [8f614dd]
+- Updated dependencies [1187c1d]
+- Updated dependencies [1006f01]
+- Updated dependencies [d62b081]
+- Updated dependencies [577483a]
+- Updated dependencies [5d46bea]
+- Updated dependencies [dba05ed]
+- Updated dependencies [5fad4f9]
+- Updated dependencies [5161d64]
+- Updated dependencies [013e9cb]
+- Updated dependencies [df2ae04]
+- Updated dependencies [6b1a5a6]
+- Updated dependencies [9bc4172]
+- Updated dependencies [9629632]
+- Updated dependencies [426933f]
+- Updated dependencies [7f25db9]
+- Updated dependencies [c3a8dea]
+- Updated dependencies [c7e5656]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [f2ba5e1]
+- Updated dependencies [e72e26a]
+- Updated dependencies [0090147]
+- Updated dependencies [643c699]
+- Updated dependencies [0dc7968]
+- Updated dependencies [ca5bcb0]
+- Updated dependencies [f4d8b83]
+- Updated dependencies [6da5a3b]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [e468edc]
+- Updated dependencies [a7dab9f]
+- Updated dependencies [63fbbdf]
+- Updated dependencies [6355d18]
+- Updated dependencies [3f23bc8]
+- Updated dependencies [691b592]
+- Updated dependencies [4a642f5]
+- Updated dependencies [74f7bf4]
+- Updated dependencies [9249b26]
+- Updated dependencies [f20931c]
+- Updated dependencies [15072f4]
+- Updated dependencies [44848fe]
+- Updated dependencies [9a3bf41]
+- Updated dependencies [edcd3a6]
+- Updated dependencies [3bf5d6c]
+- Updated dependencies [b5d4882]
+- Updated dependencies [21d7e6b]
+- Updated dependencies [ff7314a]
+- Updated dependencies [315f5ee]
+- Updated dependencies [97f1f86]
+- Updated dependencies [1566d81]
+- Updated dependencies [6bbc0e5]
+- Updated dependencies [33c1e37]
+- Updated dependencies [62f5560]
+- Updated dependencies [7199e23]
+- Updated dependencies [88f90f5]
+- Updated dependencies [df7ba95]
+- Updated dependencies [da5f6da]
+- Updated dependencies [6fb8869]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [063b00c]
+- Updated dependencies [174d6ef]
+- Updated dependencies [bfc8672]
+- Updated dependencies [8dd351a]
+- Updated dependencies [8a1c306]
+- Updated dependencies [c4cb671]
+- Updated dependencies [840a01b]
+- Updated dependencies [f172abc]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [e8df1fc]
+- Updated dependencies [39fd347]
+- Updated dependencies [f5058e3]
+- Updated dependencies [7f1cc2d]
+- Updated dependencies [af88833]
+- Updated dependencies [b29cf9e]
+- Updated dependencies [6821bac]
+- Updated dependencies [9707f7c]
+- Updated dependencies [f88b38b]
+- Updated dependencies [b68c9a2]
+- Updated dependencies [39f4ad4]
+- Updated dependencies [a66885d]
+- Updated dependencies [b90239c]
+- Updated dependencies [35a99f3]
+- Updated dependencies [687d98f]
+- Updated dependencies [105a6bf]
+- Updated dependencies [c71fb10]
+- Updated dependencies [cc3910a]
+- Updated dependencies [4f451f8]
+- Updated dependencies [cf2a57b]
+- Updated dependencies [7a5e072]
+- Updated dependencies [bb5880a]
+- Updated dependencies [29d293c]
+- Updated dependencies [a63b723]
+- Updated dependencies [0c07b8d]
+- Updated dependencies [a83c9bd]
+- Updated dependencies [14a0949]
+- Updated dependencies [76a1854]
+- Updated dependencies [aaa6a30]
+- Updated dependencies [1857565]
+- Updated dependencies [41c0399]
+- Updated dependencies [c3935f7]
+- Updated dependencies [fcc31eb]
+- Updated dependencies [8bc6d64]
+- Updated dependencies [c3da788]
+- Updated dependencies [9621063]
+- Updated dependencies [869d865]
+- Updated dependencies [42aab0c]
+- Updated dependencies [d3d65f1]
+- Updated dependencies [3a00602]
+- Updated dependencies [ab7f613]
+- Updated dependencies [95ddf7a]
+- Updated dependencies [daa7a4d]
+- Updated dependencies [9f5155f]
+- Updated dependencies [86e1580]
+- Updated dependencies [06303a3]
+- Updated dependencies [8278212]
+- Updated dependencies [1b27b2f]
+- Updated dependencies [2a0b5f3]
+- Updated dependencies [a529c26]
+- Updated dependencies [f44131a]
+- Updated dependencies [394cc06]
+- Updated dependencies [a4e0df7]
+- Updated dependencies [bfef616]
+- Updated dependencies [d0ec6bd]
+- Updated dependencies [3742696]
+- Updated dependencies [fd63c16]
+- Updated dependencies [8c58288]
+- Updated dependencies [964a242]
+- Updated dependencies [7cfda30]
+- Updated dependencies [93b6009]
+- Updated dependencies [37baa8c]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [5a8ac8c]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [963f8fd]
+- Updated dependencies [5c345b8]
+- Updated dependencies [b0905a2]
+- Updated dependencies [1c9986a]
+- Updated dependencies [1c9986a]
+- Updated dependencies [83ad38f]
+- Updated dependencies [0200213]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [b05583a]
+- Updated dependencies [77bfacf]
+- Updated dependencies [f585154]
+- Updated dependencies [15a05d9]
+- Updated dependencies [74202d3]
+- Updated dependencies [c30911d]
+- Updated dependencies [c569caf]
+- Updated dependencies [280f9fc]
+- Updated dependencies [4844d4d]
+- Updated dependencies [43fb985]
+- Updated dependencies [59944c1]
+- Updated dependencies [6d2bb1e]
+- Updated dependencies [106749f]
+- Updated dependencies [e9897c7]
+- Updated dependencies [075971c]
+- Updated dependencies [04cd5f3]
+- Updated dependencies [2940a77]
+- Updated dependencies [2ab2678]
+- Updated dependencies [93a7c62]
+- Updated dependencies [b05583a]
+- Updated dependencies [6f94fe3]
+- Updated dependencies [0a2be4b]
+- Updated dependencies [5477214]
+- Updated dependencies [5f6ebf3]
+- Updated dependencies [b76c25e]
+- Updated dependencies [5614b4e]
+- Updated dependencies [e21ec2d]
+- Updated dependencies [386bbfc]
+- Updated dependencies [ac792e8]
+- Updated dependencies [3fdbc32]
+- Updated dependencies [9430cf9]
+- Updated dependencies [5f6ebf3]
+- Updated dependencies [95d06c3]
+- Updated dependencies [3e32141]
+- Updated dependencies [9231556]
+- Updated dependencies [63c1844]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [b0905a2]
+- Updated dependencies [a8d34ac]
+- Updated dependencies [66e447b]
+- Updated dependencies [e9f7adf]
+- Updated dependencies [bfb8442]
+- Updated dependencies [4a2b3cc]
+- Updated dependencies [1bd148d]
+- Updated dependencies [7064286]
+- Updated dependencies [e67d322]
+- Updated dependencies [6316070]
+- Updated dependencies [0d810a1]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9249b26]
+- Updated dependencies [d917fd4]
+- Updated dependencies [37c0385]
+- Updated dependencies [fcc5602]
+- Updated dependencies [a2df698]
+- Updated dependencies [794862e]
+- Updated dependencies [5cf9f61]
+- Updated dependencies [5db5049]
+- Updated dependencies [656a653]
+- Updated dependencies [42d49af]
+- Updated dependencies [94c8e4c]
+- Updated dependencies [4a93e4b]
+- Updated dependencies [eca2b03]
+- Updated dependencies [fcfefd4]
+- Updated dependencies [7252e96]
+- Updated dependencies [f4ac9bc]
+- Updated dependencies [81b7535]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [2503372]
+- Updated dependencies [bde7b24]
+- Updated dependencies [929a2d2]
+- Updated dependencies [53ba27c]
+- Updated dependencies [de462a6]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [8764186]
+- Updated dependencies [f3c2f12]
+- Updated dependencies [81f2080]
+- Updated dependencies [84a4212]
+- Updated dependencies [47fa777]
+- Updated dependencies [7542fc9]
+- Updated dependencies [319879e]
+- Updated dependencies [8d7296a]
+- Updated dependencies [398b575]
+- Updated dependencies [e6ec996]
+- Updated dependencies [9a3bf41]
+- Updated dependencies [d3d3973]
+- Updated dependencies [22c6086]
+- Updated dependencies [df9dba4]
+- Updated dependencies [3833307]
+- Updated dependencies [2729716]
+- Updated dependencies [966b087]
+- Updated dependencies [2f56e64]
+- Updated dependencies [85fd57d]
+- Updated dependencies [935346c]
+- Updated dependencies [2f7e04a]
+- Updated dependencies [a5bed98]
+- Updated dependencies [9b8f83b]
+- Updated dependencies [143e763]
+- Updated dependencies [746912f]
+- Updated dependencies [3a0b3b7]
+- Updated dependencies [e000f0a]
+- Updated dependencies [b667930]
+- Updated dependencies [dc92ea4]
+- Updated dependencies [15328d8]
+- Updated dependencies [ebd0424]
+- Updated dependencies [0046729]
+- Updated dependencies [cfc0732]
+- Updated dependencies [711be7d]
+- Updated dependencies [3a8b706]
+- Updated dependencies [471581b]
+- Updated dependencies [15d434b]
+- Updated dependencies [60ca157]
+- Updated dependencies [15a08cc]
+- Updated dependencies [5a805e9]
+- Updated dependencies [81f2080]
+- Updated dependencies [fcc5602]
+- Updated dependencies [f6ee3ea]
+- Updated dependencies [8c58288]
+- Updated dependencies [084198c]
+- Updated dependencies [b0d7740]
+- Updated dependencies [df9a774]
+- Updated dependencies [a639e4d]
+- Updated dependencies [040af35]
+- Updated dependencies [51376ec]
+- Updated dependencies [e7c03a3]
+- Updated dependencies [62aede0]
+- Updated dependencies [64fed84]
+- Updated dependencies [bbbe801]
+- Updated dependencies [43fb985]
+- Updated dependencies [75f0443]
+- Updated dependencies [f1a886d]
+- Updated dependencies [c70da31]
+- Updated dependencies [33ddb2e]
+- Updated dependencies [964a242]
+- Updated dependencies [17e237b]
+- Updated dependencies [2b283ed]
+- Updated dependencies [d074d01]
+- Updated dependencies [1566d81]
+- Updated dependencies [f37a70e]
+- Updated dependencies [2755b11]
+- Updated dependencies [49aa4d8]
+- Updated dependencies [dc881e4]
+- Updated dependencies [f9b150c]
+- Updated dependencies [583bd6d]
+- Updated dependencies [d353c85]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [b6863aa]
+- Updated dependencies [95ca540]
+- Updated dependencies [180ec74]
+- Updated dependencies [36dac61]
+- Updated dependencies [4674f07]
+- Updated dependencies [9787bca]
+- Updated dependencies [16a2eed]
+- Updated dependencies [3eb3209]
+- Updated dependencies [2ac34a7]
+- Updated dependencies [7e60049]
+- Updated dependencies [c7db707]
+- Updated dependencies [d26152c]
+- Updated dependencies [a3136aa]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [c3da9af]
+- Updated dependencies [824eca6]
+- Updated dependencies [6bb95ac]
+- Updated dependencies [6619ff1]
+- Updated dependencies [3c212ef]
+- Updated dependencies [23d94db]
+- Updated dependencies [8c17e91]
+- Updated dependencies [50900c3]
+- Updated dependencies [d916cae]
+- Updated dependencies [98df398]
+- Updated dependencies [77670c1]
+- Updated dependencies [c131bff]
+- Updated dependencies [c117e62]
+- Updated dependencies [89f4197]
+- Updated dependencies [95a1a63]
+- Updated dependencies [a343f1b]
+- Updated dependencies [221fe20]
+- Updated dependencies [cc5b0c3]
+- Updated dependencies [9455fc1]
+- Updated dependencies [6606d90]
+- Updated dependencies [5879169]
+- Updated dependencies [959af37]
+- Updated dependencies [890ce71]
+- Updated dependencies [5e44587]
+- Updated dependencies [da15963]
+- Updated dependencies [e95a396]
+- Updated dependencies [8e5f1cf]
+- Updated dependencies [57df97b]
+- Updated dependencies [4daf896]
+- Updated dependencies [dbf591e]
+- Updated dependencies [d4a593d]
+- Updated dependencies [662f94f]
+- Updated dependencies [956a71a]
+- Updated dependencies [7001f43]
+- Updated dependencies [558f742]
+- Updated dependencies [39422f9]
+- Updated dependencies [b1cfa76]
+- Updated dependencies [bb7be0b]
+- Updated dependencies [1cee200]
+- Updated dependencies [9339b45]
+- Updated dependencies [4be1a3f]
+- Updated dependencies [787c496]
+- Updated dependencies [37514fc]
+- Updated dependencies [bebd64f]
+- Updated dependencies [4baee32]
+- Updated dependencies [8745b50]
+- Updated dependencies [df2ae04]
+- Updated dependencies [7dbeddb]
+- Updated dependencies [dbf591e]
+- Updated dependencies [839a4b2]
+- Updated dependencies [1810479]
+- Updated dependencies [d598b83]
+- Updated dependencies [8257aa7]
+- Updated dependencies [8c2d558]
+- Updated dependencies [2ddb6a5]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [65e8ece]
+- Updated dependencies [1bf22f4]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [79d4797]
+- Updated dependencies [a947127]
+- Updated dependencies [7e5b389]
+- Updated dependencies [cf24657]
+- Updated dependencies [1d5a968]
+- Updated dependencies [95bd84c]
+- Updated dependencies [2338cee]
+- Updated dependencies [034f292]
+- Updated dependencies [1d207f7]
+- Updated dependencies [ed0fff4]
+- Updated dependencies [4bb7f17]
+- Updated dependencies [8764186]
+- Updated dependencies [9606e24]
+- Updated dependencies [a7dab9f]
+- Updated dependencies [3a1bfaa]
+- Updated dependencies [42f1123]
+- Updated dependencies [6416860]
+- Updated dependencies [6943c8d]
+- Updated dependencies [9b7e01c]
+- Updated dependencies [aedb49f]
+- Updated dependencies [0aa5132]
+- Updated dependencies [7ba3e69]
+- Updated dependencies [e044df2]
+- Updated dependencies [4a18e17]
+- Updated dependencies [27649f2]
+- Updated dependencies [5117a3c]
+- Updated dependencies [a0f437e]
+- Updated dependencies [158f868]
+- Updated dependencies [ffcde61]
+- Updated dependencies [19f8e39]
+- Updated dependencies [c57e67c]
+- Updated dependencies [201d32f]
+- Updated dependencies [8e43f3f]
+- Updated dependencies [5ffc43b]
+- Updated dependencies [813a306]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [df2ae04]
+- Updated dependencies [8882b53]
+- Updated dependencies [0618a25]
+- Updated dependencies [e7561c7]
+- Updated dependencies [76c5562]
+- Updated dependencies [477eb15]
+- Updated dependencies [8649268]
+- Updated dependencies [8a24c29]
+- Updated dependencies [e4f2133]
+- Updated dependencies [e4f2133]
+- Updated dependencies [4e9c237]
+- Updated dependencies [7cace1d]
+- Updated dependencies [60b38f5]
+- Updated dependencies [74261df]
+- Updated dependencies [a86bd34]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [d059b75]
+- Updated dependencies [a86bd34]
+- Updated dependencies [7165e31]
+- Updated dependencies [e5e7aef]
+- Updated dependencies [9566a40]
+- Updated dependencies [3fe1323]
+- Updated dependencies [22a1496]
+- Updated dependencies [c3bcbf9]
+- Updated dependencies [ea0eef2]
+- Updated dependencies [d061e79]
+- Updated dependencies [b44408d]
+- Updated dependencies [51dc6ab]
+- Updated dependencies [f9ab55b]
+- Updated dependencies [e70f4da]
+- Updated dependencies [174d6ef]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [8c63002]
+- Updated dependencies [ef687f1]
+- Updated dependencies [1026606]
+- Updated dependencies [5ddbb1f]
+- Updated dependencies [aa1dfd3]
+- Updated dependencies [e6871f1]
+- Updated dependencies [daf6f2e]
+- Updated dependencies [595b596]
+- Updated dependencies [10e17bb]
+- Updated dependencies [8e6f5d2]
+- Updated dependencies [9236a1e]
+- Updated dependencies [7e5b389]
+- Updated dependencies [7e5b389]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [01b8a73]
+- Updated dependencies [6eefcb6]
+- Updated dependencies [37daa58]
+- Updated dependencies [7863d23]
+- Updated dependencies [6b7317b]
+- Updated dependencies [181fbb3]
+- Updated dependencies [24fe665]
+- Updated dependencies [082dd1d]
+- Updated dependencies [79bd6cc]
+- Updated dependencies [5886c61]
+- Updated dependencies [a34b3fc]
+- Updated dependencies [e7d5f5a]
+- Updated dependencies [0b82615]
+- Updated dependencies [a0070e8]
+- Updated dependencies [b584cc5]
+- Updated dependencies [4d469aa]
+- Updated dependencies [5886c61]
+- Updated dependencies [1526249]
+- Updated dependencies [0b29cea]
+- Updated dependencies [3e89500]
+- Updated dependencies [c22c9a6]
+- Updated dependencies [0ac8104]
+- Updated dependencies [b1e9d32]
+- Updated dependencies [de8f61d]
+- Updated dependencies [a5166b0]
+- Updated dependencies [8b65c38]
+- Updated dependencies [56784d5]
+- Updated dependencies [033c46f]
+- Updated dependencies [4cc61de]
+- Updated dependencies [f219a71]
+- Updated dependencies [7f35ade]
+- Updated dependencies [597f68d]
+- Updated dependencies [812c469]
+- Updated dependencies [b54ab5f]
+- Updated dependencies [3c8e227]
+- Updated dependencies [8c7d44b]
+- Updated dependencies [b2b79f1]
+- Updated dependencies [ea36901]
+- Updated dependencies [65ac904]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [d2002e0]
+- Updated dependencies [b0905a2]
+- Updated dependencies [bfc31d6]
+- Updated dependencies [de8f61d]
+- Updated dependencies [a23ebea]
+- Updated dependencies [b10e05f]
+- Updated dependencies [44148c3]
+- Updated dependencies [e72e26a]
+- Updated dependencies [b9f3a12]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [1ba9061]
+- Updated dependencies [dc710e2]
+- Updated dependencies [0c1b6a6]
+- Updated dependencies [b6ae714]
+- Updated dependencies [a64cc29]
+- Updated dependencies [e737c0f]
+- Updated dependencies [69399bc]
+- Updated dependencies [d9c51c0]
+- Updated dependencies [d19f8cc]
+- Updated dependencies [717a531]
+- Updated dependencies [3a50e80]
+- Updated dependencies [921e20e]
+- Updated dependencies [2202a32]
+- Updated dependencies [f522122]
+- Updated dependencies [36dc93a]
+- Updated dependencies [36b25c8]
+- Updated dependencies [87f3d38]
+- Updated dependencies [11b0336]
+- Updated dependencies [00a0e96]
+- Updated dependencies [fa288ff]
+- Updated dependencies [02087eb]
+- Updated dependencies [75ef9fb]
+- Updated dependencies [85f85ba]
+- Updated dependencies [e549ad3]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [dc881e4]
+- Updated dependencies [fb4710c]
+- Updated dependencies [46440b6]
+- Updated dependencies [db54baf]
+- Updated dependencies [bbf58f0]
+- Updated dependencies [65703dc]
+- Updated dependencies [42aab0c]
+- Updated dependencies [ac18636]
+- Updated dependencies [5d3b9b7]
+- Updated dependencies [adb1290]
+- Updated dependencies [9204311]
+- Updated dependencies [3f575e2]
+- Updated dependencies [a0bb229]
+- Updated dependencies [aedb49f]
+- Updated dependencies [df97f39]
+- Updated dependencies [9a3e262]
+- Updated dependencies [0bb9ac6]
+- Updated dependencies [067cf55]
+- Updated dependencies [b750660]
+- Updated dependencies [5b5d307]
+- Updated dependencies [6661cbf]
+- Updated dependencies [dc881e4]
+- Updated dependencies [7b298cb]
+- Updated dependencies [0a05da3]
+- Updated dependencies [3e108b4]
+- Updated dependencies [f4e98a4]
+- Updated dependencies [b323f97]
+- Updated dependencies [0bb71da]
+- Updated dependencies [fa5c2d9]
+- Updated dependencies [4810ef4]
+- Updated dependencies [4bda721]
+- Updated dependencies [744fbce]
+- Updated dependencies [b29a94e]
+- Updated dependencies [5531792]
+- Updated dependencies [c129ce1]
+- Updated dependencies [43bf365]
+- Updated dependencies [c8f84f3]
+- Updated dependencies [c0d43ee]
+- Updated dependencies [a37a658]
+- Updated dependencies [9d4db71]
+- Updated dependencies [d73bd9f]
+- Updated dependencies [4ee45ab]
+- Updated dependencies [e1e7241]
+- Updated dependencies [977164c]
+- Updated dependencies [9aed377]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [a791e92]
+- Updated dependencies [8ced7e2]
+- Updated dependencies [5ed6215]
+- Updated dependencies [9cacd4b]
+- Updated dependencies [968362b]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [c5e5476]
+- Updated dependencies [d7de41f]
+- Updated dependencies [c8b8348]
+- Updated dependencies [1e1d4c6]
+- Updated dependencies [33b9074]
+- Updated dependencies [dd3fdb0]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ccd6f25]
+- Updated dependencies [527f214]
+- Updated dependencies [42169f9]
+- Updated dependencies [6d2bb1e]
+- Updated dependencies [c4304d4]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [edfe71a]
+- Updated dependencies [1a03017]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [be3711c]
+- Updated dependencies [4f03b5d]
+- Updated dependencies [c0555fb]
+- Updated dependencies [094ba4d]
+- Updated dependencies [7d598c5]
+- Updated dependencies [6d2bb1e]
+- Updated dependencies [cff801a]
+- Updated dependencies [ff4504e]
+- Updated dependencies [cbb78ec]
+- Updated dependencies [0ae8b0c]
+- Updated dependencies [d897c83]
+- Updated dependencies [3d5d715]
+- Updated dependencies [8078d25]
+- Updated dependencies [c428e9e]
+- Updated dependencies [bf94421]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [7645aaa]
+- Updated dependencies [7dd8e23]
+- Updated dependencies [e265bdc]
+- Updated dependencies [1fbfa96]
+- Updated dependencies [9aa8036]
+- Updated dependencies [76c5562]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [768acf7]
+- Updated dependencies [4bf376e]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [45e100f]
+- Updated dependencies [6ab962a]
+- Updated dependencies [6ab962a]
+- Updated dependencies [0e01d7f]
+- Updated dependencies [70076bc]
+- Updated dependencies [f8f4954]
+- Updated dependencies [b1c09d3]
+- Updated dependencies [fa9657c]
+- Updated dependencies [f5b75cb]
+- Updated dependencies [f41f7ed]
+- Updated dependencies [4b3a525]
+- Updated dependencies [15e923d]
+- Updated dependencies [4c8749c]
+- Updated dependencies [9057ecb]
+- Updated dependencies [2823dca]
+- Updated dependencies [1c43dbf]
+- Updated dependencies [a3b1735]
+- Updated dependencies [d01d5a2]
+- Updated dependencies [bcc5c05]
+- Updated dependencies [e11a52e]
+- Updated dependencies [3744131]
+- Updated dependencies [5477214]
+- Updated dependencies [594d4ce]
+- Updated dependencies [7e5b389]
+- Updated dependencies [2e7bd80]
+- Updated dependencies [6c3e486]
+- Updated dependencies [e7bee92]
+- Updated dependencies [7affd45]
+- Updated dependencies [bef9c67]
+- Updated dependencies [470d4be]
+- Updated dependencies [2668893]
+- Updated dependencies [7e5b389]
+- Updated dependencies [1e9c740]
+- Updated dependencies [586b6c1]
+- Updated dependencies [53fb0eb]
+- Updated dependencies [47fa777]
+- Updated dependencies [47fa777]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [9566a40]
+- Updated dependencies [9566a40]
+- Updated dependencies [68d5da4]
+- Updated dependencies [7d67497]
+- Updated dependencies [5fa6d0a]
+- Updated dependencies [fc665a9]
+- Updated dependencies [bb8b8cb]
+- Updated dependencies [5fa6d0a]
+- Updated dependencies [9566a40]
+- Updated dependencies [68d5da4]
+- Updated dependencies [914ba92]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [e06225e]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [38095a2]
+- Updated dependencies [d30164d]
+- Updated dependencies [04d5af6]
+- Updated dependencies [04d5af6]
+- Updated dependencies [c98a300]
+- Updated dependencies [04d5af6]
+- Updated dependencies [e7d580b]
+- Updated dependencies [cdbafb8]
+- Updated dependencies [3005391]
+- Updated dependencies [3311dde]
+- Updated dependencies [5b11625]
+- Updated dependencies [afbe8c3]
+- Updated dependencies [8bf1866]
+- Updated dependencies [c4bcb94]
+- Updated dependencies [7785bd5]
+- Updated dependencies [e59f1ae]
+- Updated dependencies [a8ff1e9]
+- Updated dependencies [25e8f76]
+- Updated dependencies [3a07b60]
+- Updated dependencies [b73c8ef]
+- Updated dependencies [6274bad]
+- Updated dependencies [758459f]
+- Updated dependencies [70213a5]
+- Updated dependencies [b72cf48]
+- Updated dependencies [b34f11e]
+- Updated dependencies [04d5af6]
+- Updated dependencies [5603bef]
+- Updated dependencies [126d17f]
+- Updated dependencies [d17a134]
+- Updated dependencies [4e68cf0]
+- Updated dependencies [ff5f066]
+- Updated dependencies [f164d0e]
+- Updated dependencies [586ca31]
+- Updated dependencies [ba8d3a0]
+- Updated dependencies [857e1fc]
+- Updated dependencies [d868c48]
+- Updated dependencies [4d469aa]
+- Updated dependencies [419b1f1]
+- Updated dependencies [a3136aa]
+- Updated dependencies [5b156c6]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [f976095]
+- Updated dependencies [4d31cf0]
+- Updated dependencies [af132bc]
+- Updated dependencies [2d57c94]
+- Updated dependencies [f004638]
+- Updated dependencies [3c27e36]
+- Updated dependencies [3c27e36]
+- Updated dependencies [ce5d609]
+- Updated dependencies [9333b1a]
+- Updated dependencies [fc62432]
+- Updated dependencies [dd5a540]
+- Updated dependencies [85d3d17]
+- Updated dependencies [921d4f8]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [305f0ce]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [8602bbc]
+- Updated dependencies [a3958dc]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [59e80c0]
+- Updated dependencies [0e80f73]
+- Updated dependencies [c873b55]
+- Updated dependencies [aedb49f]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [74e37d7]
+- Updated dependencies [8f61f88]
+- Updated dependencies [231eec5]
+- Updated dependencies [6355d18]
+- Updated dependencies [fcfefd4]
+- Updated dependencies [eeb7c5a]
+- Updated dependencies [44848fe]
+- Updated dependencies [c4d5642]
+- Updated dependencies [aba9531]
+- Updated dependencies [c25237f]
+- Updated dependencies [b934739]
+- Updated dependencies [f1e9773]
+- Updated dependencies [b822d40]
+- Updated dependencies [88a19c0]
+- Updated dependencies [44848fe]
+- Updated dependencies [f5e0446]
+- Updated dependencies [f6c305d]
+- Updated dependencies [00a1f20]
+- Updated dependencies [6451f0c]
+- Updated dependencies [f3a1232]
+- Updated dependencies [d55c488]
+- Updated dependencies [56fda8d]
+- Updated dependencies [e04e543]
+- Updated dependencies [32356ff]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [df73bc8]
+- Updated dependencies [5c778a0]
+- Updated dependencies [261488b]
+- Updated dependencies [55ab2c6]
+- Updated dependencies [7e1ab6c]
+- Updated dependencies [162f816]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [52e0851]
+- Updated dependencies [f88d616]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [834d2ca]
+- Updated dependencies [457fbc3]
+- Updated dependencies [1e80440]
+- Updated dependencies [d3b20b9]
+- Updated dependencies [86b5903]
+- Updated dependencies [647b21c]
+- Updated dependencies
+- Updated dependencies [1d8e163]
+- Updated dependencies [b0bc4cd]
+- Updated dependencies [c23c975]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e08d172]
+- Updated dependencies [fd6c009]
+- Updated dependencies [2076b1b]
+- Updated dependencies [429e80c]
+- Updated dependencies [49b3b13]
+- Updated dependencies [b425d50]
+- Updated dependencies [d962a91]
+- Updated dependencies [46ec294]
+- Updated dependencies [17d184b]
+- Updated dependencies [19387a6]
+- Updated dependencies [cabffe5]
+- Updated dependencies [f92300d]
+- Updated dependencies [07f5db2]
+- Updated dependencies [16eca51]
+- Updated dependencies [08512ea]
+- Updated dependencies [e0bea5a]
+- Updated dependencies [82f3868]
+- Updated dependencies [6c1ea88]
+- Updated dependencies [83ad38f]
+- Updated dependencies [82e481d]
+- Updated dependencies [87a8b06]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [d569abf]
+- Updated dependencies [36a20d4]
+- Updated dependencies [410ba5e]
+- Updated dependencies [4e4ddb5]
+- Updated dependencies [9d459cd]
+- Updated dependencies [76ca845]
+- Updated dependencies [431aa8e]
+- Updated dependencies [1ac16c5]
+- Updated dependencies [a82e65b]
+- Updated dependencies [b835405]
+- Updated dependencies [bf1cf7b]
+- Updated dependencies [c3e773c]
+- Updated dependencies [8558f40]
+- Updated dependencies [fa8902c]
+- Updated dependencies [96de590]
+- Updated dependencies [0ac8104]
+- Updated dependencies [9bbe3e4]
+- Updated dependencies [0c77c8d]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [56f8264]
+- Updated dependencies [1c6f913]
+- Updated dependencies [f20931c]
+- Updated dependencies [2241860]
+- Updated dependencies [5d7b7b8]
+- Updated dependencies [447f742]
+- Updated dependencies [0fe19aa]
+- Updated dependencies [5339aec]
+- Updated dependencies [3a71a1a]
+- Updated dependencies [a979682]
+- Updated dependencies [d8c22e6]
+- Updated dependencies [f11549d]
+- Updated dependencies [814994a]
+- Updated dependencies [ab56471]
+- Updated dependencies [86b43d1]
+- Updated dependencies [eaefc65]
+- Updated dependencies [8cce06e]
+- Updated dependencies [16d4fab]
+- Updated dependencies [edcc040]
+- Updated dependencies [1ceadbf]
+- Updated dependencies [a47e5ed]
+- Updated dependencies [6829ab9]
+- Updated dependencies [865ccae]
+- Updated dependencies [a47e5ed]
+- Updated dependencies [eb82ac9]
+- Updated dependencies [795f517]
+- Updated dependencies [a26f70d]
+- Updated dependencies [aedb49f]
+- Updated dependencies [95da921]
+- Updated dependencies [6ac9c99]
+- Updated dependencies [f39b469]
+- Updated dependencies [e752074]
+- Updated dependencies [8b73d9a]
+- Updated dependencies [002ff57]
+- Updated dependencies [31dd479]
+- Updated dependencies [2557ab3]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [a23923e]
+- Updated dependencies [9217b8a]
+- Updated dependencies [9246f97]
+- Updated dependencies [843859b]
+- Updated dependencies [4816dc3]
+- Updated dependencies [97cce9d]
+- Updated dependencies [deda510]
+- Updated dependencies [6bfce5e]
+- Updated dependencies [9f9a61a]
+- Updated dependencies [b646c27]
+- Updated dependencies [850db0a]
+- Updated dependencies [ef3ebdd]
+- Updated dependencies [0828a03]
+- Updated dependencies [b92bf56]
+- Updated dependencies [0828a03]
+- Updated dependencies [f23829c]
+- Updated dependencies [9521334]
+- Updated dependencies [0177219]
+- Updated dependencies [091bd67]
+- Updated dependencies [670aeb3]
+- Updated dependencies [6a9b37e]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [f86aaa2]
+- Updated dependencies [6222db5]
+- Updated dependencies [cfebac4]
+- Updated dependencies [415e5b8]
+- Updated dependencies [033c46f]
+- Updated dependencies [e68cb62]
+- Updated dependencies [bf09aae]
+- Updated dependencies [c6fbf4b]
+- Updated dependencies [88a5b5e]
+- Updated dependencies [29135cb]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [16e4b0b]
+- Updated dependencies [7bc2c18]
+- Updated dependencies [dc5efa8]
+- Updated dependencies [510347b]
+- Updated dependencies [8f28726]
+- Updated dependencies [fb69a95]
+- Updated dependencies [a45338c]
+- Updated dependencies [fb69a95]
+- Updated dependencies [3f575e2]
+- Updated dependencies [c6b831f]
+- Updated dependencies [4f9848f]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [ff8c1f9]
+- Updated dependencies [a6e8651]
+- Updated dependencies [26cdc89]
+- Updated dependencies [7cace1d]
+- Updated dependencies [a86bd34]
+- Updated dependencies [c11f37e]
+- Updated dependencies [cb6e47b]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [1c0046a]
+- Updated dependencies [a34f319]
+- Updated dependencies [cbcd314]
+- Updated dependencies [1347e05]
+- Updated dependencies [9e23aea]
+- Updated dependencies [dee342f]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [ad94222]
+- Updated dependencies [4069e86]
+- Updated dependencies [201717b]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [6bdf14d]
+- Updated dependencies [a8ae2f7]
+- Updated dependencies [6bea0c5]
+- Updated dependencies [8635c1a]
+- Updated dependencies [555bd8d]
+- Updated dependencies [ae6b2a5]
+- Updated dependencies [7e90922]
+- Updated dependencies [5b0df8a]
+- Updated dependencies [78dd590]
+- Updated dependencies [d7a156b]
+- Updated dependencies [d3f717d]
+- Updated dependencies [2b0def2]
+- Updated dependencies [80b8f57]
+- Updated dependencies [1a9548b]
+- Updated dependencies [27704ec]
+- Updated dependencies [60c082d]
+- Updated dependencies [46ec294]
+- Updated dependencies [ae15ab8]
+- Updated dependencies [012b439]
+- Updated dependencies [780c368]
+- Updated dependencies [b5e97b8]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [42af0bf]
+- Updated dependencies [de2d442]
+- Updated dependencies [4c592ae]
+- Updated dependencies [3a28bbb]
+- Updated dependencies [6fb8869]
+- Updated dependencies [a0d5f84]
+- Updated dependencies [6153ae7]
+- Updated dependencies [6a06f54]
+- Updated dependencies [3551ece]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [959f804]
+- Updated dependencies [6b5336b]
+- Updated dependencies [e970fad]
+- Updated dependencies [dc881e4]
+- Updated dependencies [30e2485]
+- Updated dependencies [95083bc]
+- Updated dependencies [cbaa22a]
+- Updated dependencies [bb03b55]
+- Updated dependencies [1377fab]
+- Updated dependencies [9199cb5]
+- Updated dependencies [8ac8a64]
+- Updated dependencies [de1e1c0]
+- Updated dependencies [4aaefe7]
+- Updated dependencies [c356829]
+- Updated dependencies [fcc5602]
+- Updated dependencies [cbf500e]
+- Updated dependencies [c5a7102]
+- Updated dependencies [3871e2f]
+- Updated dependencies [c3f3d9a]
+- Updated dependencies [5548d73]
+- Updated dependencies [e824816]
+- Updated dependencies [3871e2f]
+- Updated dependencies [4377fe2]
+- Updated dependencies [45559fc]
+- Updated dependencies [685bc3d]
+- Updated dependencies [6111c56]
+- Updated dependencies [bce203a]
+- Updated dependencies [accc590]
+- Updated dependencies [4b0b9df]
+- Updated dependencies [f9ed89f]
+- Updated dependencies [cea89d2]
+- Updated dependencies [a23ebea]
+- Updated dependencies [8d3c536]
+- Updated dependencies [62aede0]
+- Updated dependencies [e3a1721]
+- Updated dependencies [72544b9]
+- Updated dependencies [0cc203a]
+- Updated dependencies
+- Updated dependencies [86019a4]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [4bee28f]
+- Updated dependencies [50cf32b]
+- Updated dependencies [9d1f28d]
+- Updated dependencies [f4115e7]
+- Updated dependencies [c62a3d3]
+- Updated dependencies [67cb364]
+- Updated dependencies [f9427e6]
+- Updated dependencies [02f9570]
+- Updated dependencies [d497853]
+- Updated dependencies [d4888dd]
+- Updated dependencies [91bd051]
+- Updated dependencies [e2f8ef6]
+- Updated dependencies [f19cbf2]
+- Updated dependencies [9e1861a]
+- Updated dependencies [8992639]
+- Updated dependencies [eb5c5f9]
+- Updated dependencies [e0e02f9]
+- Updated dependencies [368fb5f]
+- Updated dependencies [dd7e196]
+- Updated dependencies [8ec6662]
+- Updated dependencies [963f8fd]
+- Updated dependencies [ba59515]
+- Updated dependencies [7a75fd1]
+- Updated dependencies [e063817]
+- Updated dependencies [de71f7d]
+- Updated dependencies [b2d7ddb]
+- Updated dependencies [87d7436]
+- Updated dependencies [ae7d97c]
+- Updated dependencies [95ca540]
+- Updated dependencies [8d7296a]
+- Updated dependencies [d6f8aac]
+- Updated dependencies [1f05956]
+- Updated dependencies [c4f5447]
+- Updated dependencies [c4f5447]
+- Updated dependencies [f57aa89]
+- Updated dependencies [a453821]
+- Updated dependencies [9566a40]
+- Updated dependencies [129da4b]
+- Updated dependencies [cd410a7]
+- Updated dependencies [29f3da2]
+- Updated dependencies [b70bc7f]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [774e9cc]
+- Updated dependencies [9e8b91e]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [4c6e74f]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [1fe6cab]
+- Updated dependencies [0481f49]
+- Updated dependencies [b8bb2d4]
+- Updated dependencies [6276cc6]
+- Updated dependencies [6276cc6]
+- Updated dependencies [677a841]
+- Updated dependencies [b8bb2d4]
+- Updated dependencies [cafdd8c]
+- Updated dependencies [969aab0]
+- Updated dependencies [61c9926]
+- Updated dependencies [09dcf56]
+- Updated dependencies [5024537]
+- Updated dependencies [7489853]
+- Updated dependencies [a0d7dfc]
+- Updated dependencies [7d77794]
+- Updated dependencies [8fb09ad]
+- Updated dependencies [ba7e062]
+- Updated dependencies [a5c1865]
+- Updated dependencies [0d977b8]
+- Updated dependencies [6494d25]
+- Updated dependencies [30bf620]
+- Updated dependencies [41f0773]
+- Updated dependencies [371b695]
+- Updated dependencies [bdc9108]
+- Updated dependencies [0c18df0]
+- Updated dependencies [d268d21]
+- Updated dependencies [c4783b4]
+- Updated dependencies [de9d942]
+- Updated dependencies [cdede50]
+- Updated dependencies [edcb456]
+- Updated dependencies [f2b94bc]
+- Updated dependencies [4198fea]
+- Updated dependencies [0ac8104]
+- Updated dependencies [475c725]
+- Updated dependencies [adca5ed]
+- Updated dependencies [5dd240d]
+- Updated dependencies [8b01b26]
+- Updated dependencies [2c0f2fe]
+- Updated dependencies [793ac72]
+- Updated dependencies [c7db707]
+- Updated dependencies [ca65c7b]
+- Updated dependencies [987dd51]
+- Updated dependencies [812c469]
+- Updated dependencies [f71667e]
+- Updated dependencies [12816b7]
+- Updated dependencies [6803209]
+- Updated dependencies [f857c86]
+- Updated dependencies [5b8e066]
+- Updated dependencies [fca9c3c]
+- Updated dependencies [087e02c]
+- Updated dependencies [abdc064]
+- Updated dependencies [413e38c]
+- Updated dependencies [55fd480]
+- Updated dependencies [aec0cec]
+- Updated dependencies [3e39fea]
+- Updated dependencies [eb070dc]
+- Updated dependencies [42ec713]
+- Updated dependencies [a9b8fbb]
+- Updated dependencies [73f1cf1]
+- Updated dependencies [cbc7e4b]
+- Updated dependencies [0d0c238]
+- Updated dependencies [5354da3]
+- Updated dependencies [787ca7b]
+- Updated dependencies [721585e]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/routing@2.0.0
+  - @weasel-js/core@2.0.0
+  - @weasel-js/editing@2.0.0
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/animator@2.0.0
+  - @weasel-js/ui-input@2.0.0
+  - @weasel-js/quantity@2.0.0
+  - @weasel-js/audio@2.0.0
+  - @weasel-js/text@2.0.0
+  - @weasel-js/font@2.0.0
+  - @weasel-js/text-tools@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/clock@2.0.0
+  - @weasel-js/react@2.0.0
+  - @weasel-js/icons@2.0.0
+  - @weasel-js/prefs-schema@2.0.0
+  - @weasel-js/simulation@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

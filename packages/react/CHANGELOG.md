@@ -1,5 +1,132 @@
 # @weasel-js/react
 
+## 2.0.0
+
+### Major Changes
+
+- 4d31cf0: `__resetAdoptedCss` moves off the `@weasel-js/react` barrel to `@weasel-js/react/test-seams`, beside the other packages' test-only resets.
+  
+  ```ts
+  // before
+  import { __resetAdoptedCss } from '@weasel-js/react';
+  // after
+  import { __resetAdoptedCss } from '@weasel-js/react/test-seams';
+  ```
+  
+  <!-- entry: breaking api -->
+- af132bc: `useCanvasFocus`'s return type is `UseCanvasFocusReturn`, as every other hook's `*Return` type is named; it was `CanvasFocusReturn`.
+  
+  ```ts
+  // before
+  import type { CanvasFocusReturn } from '@weasel-js/react';
+  // after
+  import type { UseCanvasFocusReturn } from '@weasel-js/react';
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- 2d57c94: `useElapsedRaf` and `useElapsed()` give a frame loop the milliseconds it has run, leaving out time spent hidden or out of view.
+  
+  ```ts
+  const loop = useElapsedRaf((elapsedMs, self) => { self.request(); draw(elapsedMs); }, { target: canvasRef });
+  const seconds = useElapsed() / 1000;
+  ```
+  
+  A loop no longer needs its own `onResume` rebase to keep a background tab's hour from arriving as one frame; one passed in still runs.
+  
+  <!-- entry: api -->
+- f004638: `useLatestOnly` gives a component a `createLatest` that is dropped when it unmounts.
+  
+  A late async answer then neither overwrites a newer one nor lands on a component that is gone.
+  
+  <!-- entry: api -->
+- 3c27e36: `useMediaQuery(query)` answers whether a CSS media query matches, and re-renders when that changes.
+  
+  `matchesMedia` and `watchMedia` do the same for code outside React.
+  
+  ```ts
+  const wide = useMediaQuery('(min-width: 600px)');
+  const coarse = useMediaQuery('(pointer: coarse)', { fallback: false, follow: true });
+  ```
+  
+  `fallback` is the answer with no `matchMedia` (a server render, jsdom); `follow: false` subscribes to nothing. `usePrefersReducedMotion` and `useSystemColorScheme` are built on it.
+  
+  <!-- entry: api -->
+- 3c27e36: `useWindowEvent(type, handler, options)` listens for an event on the window while a component is mounted.
+  
+  It always calls the handler from the last render.
+  
+  ```ts
+  useWindowEvent('hashchange', () => setRoute(readRoute()));
+  useWindowEvent('pointerdown', away, { capture: true, enabled: open });
+  ```
+  
+  A new handler each render does not re-subscribe; changing `type`, `capture`, `passive` or `enabled` does.
+  
+  <!-- entry: api -->
+- ce5d609: `watchResize(targets, onResize, options?)` calls `onResize` whenever one of the elements given resizes.
+  
+  It hands on the observer's entries and returns the function that stops watching.
+  
+  `targets` is one element or an iterable of them; a null among them is skipped. Where `ResizeObserver` is absent (jsdom, older embedders) it watches nothing and returns a no-op, so take a first reading yourself when you need one.
+  
+  <!-- entry: rank=0 api -->
+
+### Patch Changes
+
+- b6863aa: `watchElementMove` reports moves of an element in an iframe, framing it against the iframe's viewport, not the top-level page's.
+  
+  <!-- entry: fix -->
+- 85f85ba: `useNearViewport` observes an element that mounts after the hook, or replaces the one it watched, from the commit that puts it there.
+  
+  <!-- entry: fix -->
+- 5dd240d: A `useVisibleRaf` loop given its own `requestFrame` and no `cancelFrame` no longer cancels an unrelated window animation frame.
+  
+  <!-- entry: fix -->
+- 8b01b26: A `useVisibleRaf` loop whose `requestFrame` runs its callback before returning keeps running frames after the first.
+  
+  <!-- entry: fix -->
+- 2c0f2fe: A `useVisibleRaf` loop keeps running when its `target` leaves the document, and resumes once a commit points `target` on screen.
+  
+  <!-- entry: fix -->
+- 6803209: `watchElementMove` waits for a box with no area to gain one through `watchResize`.
+  
+  <!-- entry: internal -->
+- f857c86: `watchElementMove` reports a clipped element moving along with its clipping ancestor, or sliding under it. A labkit annotation box now follows its clipped target either way.
+  
+  <!-- entry: fix -->
+- Updated dependencies [84028cb]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [e6871f1]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [5202a9f]
+  - @weasel-js/registry@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

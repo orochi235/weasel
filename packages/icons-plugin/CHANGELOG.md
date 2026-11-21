@@ -1,5 +1,53 @@
 # @weasel-js/icons-plugin
 
+## 2.0.0
+
+### Major Changes
+
+- 8106c57: The icon plugin reads `icon()` calls in modules another plugin compiles to JS, such as a Vue or Svelte component's script.
+  
+  `weaselIcons.vite()`, `.rollup()` and `.rolldown()` now return an array of two plugins. A `plugins` list takes it as it is; code that read the result as one plugin reads its first entry:
+  
+  ```ts
+  const [icons] = weaselIcons.vite({ mode: 'app' });
+  ```
+  
+  <!-- entry: fix breaking -->
+
+### Patch Changes
+
+- 471581b: Packages no longer install weasel siblings their code never uses.
+  
+  `@weasel-js/editor` stops asking for `@weasel-js/geom` as a peer and takes `@weasel-js/editing` only as one; `@weasel-js/prefs-editor` drops `@weasel-js/paint-kinds`, `@weasel-js/ui` drops `@weasel-js/storage`, `@weasel-js/icons-plugin` drops `@weasel-js/icons`, `@weasel-js/labkit` drops `@weasel-js/animator`, `@weasel-js/measure` drops `@weasel-js/theme`, `@weasel-js/rig` drops `@weasel-js/history` and `@weasel-js/renderer`, `@weasel-js/text-tools` drops `@weasel-js/icons` and `@weasel-js/prefs-schema`, and `@weasel-js/ui-canvas` drops `@weasel-js/history`.
+  
+  <!-- entry: internal -->
+- 72edd84: The dev server's `virtual:weasel-icons` picks up a table found after it loaded, and glyphs added to a table while serving.
+  
+  <!-- entry: fix -->
+- 08d31b1: A module the icon plugin cannot parse still yields its annotated refs written as a template literal or with an escape, spelled as they read.
+  
+  <!-- entry: fix -->
+- 55763d5: `weaselIcons` given a `mode` such as `'toString'` throws its "mode must be 'library' or 'app'" error.
+  
+  <!-- entry: fix -->
+- ee7ac6c: The icon scan reads an AST node's child keys and fields, and a visitor's handlers, by own key.
+  
+  <!-- entry: internal -->
+- 678889a: `@weasel-js/icons-plugin` parses with `oxc-parser` 0.159.0.
+  
+  <!-- entry: internal -->
+- 8601d50: A local `icon` declared in a class `static {}` block or a TypeScript `namespace` body is left alone, rather than rewritten as the imported one.
+  
+  <!-- entry: fix -->
+- 17f2c61: A `vite build --mode test` ships only the glyphs it names and fails on a name no table holds, as every other build does.
+  
+  <!-- entry: fix -->
+- c6d9e8f: The icon plugin warns on an imported `icon` used other than as a direct call, as in `names.map(icon)`, whose glyphs a trimmed build can miss.
+  
+  `icon!('x')` and `(icon)('x')` are rewritten as direct calls.
+  
+  <!-- entry: fix -->
+
 ## 1.19.1
 
 ### Patch Changes

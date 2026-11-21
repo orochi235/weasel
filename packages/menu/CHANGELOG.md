@@ -1,5 +1,237 @@
 # @weasel-js/menu
 
+## 2.0.0
+
+### Major Changes
+
+- 15e923d: `MenuGrade` is removed: a row's `grade` is `Grade` from @weasel-js/registry, the same type theme and ui use.
+  
+  ```ts
+  import type { Grade } from '@weasel-js/registry'; // was: import type { MenuGrade } from '@weasel-js/menu'
+  ```
+  
+  <!-- entry: breaking -->
+- e90dcff: `@weasel-js/menu`'s `Rect` and `Size` are `MenuRect` and `MenuSize`.
+  
+  The `{ x, y, w, h }` box no longer shares a name with geom's `Rect`, which spells its size `width` and `height`.
+  
+  ```ts
+  // before
+  import type { Rect } from '@weasel-js/menu';
+  // after
+  import type { MenuRect } from '@weasel-js/menu';
+  ```
+  
+  <!-- entry: breaking api -->
+- 3a3ea2d: `MenuRect` and `MenuSize` name their size `width` and `height`, as the DOM's `DOMRect` and geom's `Rect` do.
+  
+  `placeMenu`, `placeMenuUnder`, `placeSubmenu`, a controller's `setPanel` and an open request's `under` take the new fields.
+  
+  ```ts
+  // before
+  const at = placeMenu({ w: 180, h: 240 }, anchor, { x: 0, y: 0, w: innerWidth, h: innerHeight });
+  // after
+  const at = placeMenu({ width: 180, height: 240 }, anchor, { x: 0, y: 0, width: innerWidth, height: innerHeight });
+  ```
+  
+  <!-- entry: breaking api -->
+- faf09b2: `MenuScheduler` is gone: `@weasel-js/menu` re-exports ui-input's `Scheduler`, which it was an alias of.
+  
+  `MenuControllerOptions.scheduler` takes one.
+  
+  ```ts
+  // before
+  import type { MenuScheduler } from '@weasel-js/menu';
+  // after
+  import type { Scheduler } from '@weasel-js/menu';
+  ```
+  
+  <!-- entry: breaking api -->
+- b9f3a12: A menu row built from an action shows the action's or variant's declared `shortcut` text, as the palette and bars already did.
+  
+  `MenuItemEntry.shortcut` is `MenuShortcut | string`: a string is printed as written. Code that formats it has to handle both.
+  
+  ```ts
+  // before
+  formatShortcut(entry.shortcut);
+  // after
+  typeof entry.shortcut === 'string' ? entry.shortcut : formatShortcut(entry.shortcut);
+  ```
+  
+  <!-- entry: breaking fix -->
+- 174d6ef: `@weasel-js/menu` no longer exports `MenuShortcut`; the shortcut shape is `ShortcutInput` from `@weasel-js/gestures`, which menu now depends on.
+  
+  `ShortcutInput` was already an alias of `MenuShortcut`, so the shape is unchanged; a menu row's `shortcut` takes a `ShortcutInput` or a string.
+  
+  ```ts
+  // before
+  import type { MenuShortcut } from '@weasel-js/menu';
+  // after
+  import type { ShortcutInput } from '@weasel-js/gestures';
+  ```
+  
+  <!-- entry: breaking api -->
+- 577b207: The submenu variant of `MenuEntry` is typed `MenuSubmenuEntry`, where it was `SubmenuEntry`, like `MenuSeparatorEntry` beside it.
+  
+  ```ts
+  // before
+  import type { SubmenuEntry } from '@weasel-js/menu';
+  // after
+  import type { MenuSubmenuEntry } from '@weasel-js/menu';
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- e06225e: A number shown with no locale given is written in the browser's language, and `en-US` where there is no browser.
+  
+  `present`, `qty`, `parseAs`, `formatNumber`, `formatCompact`, `parseNumber` and `menuNumberText` used to default to `en-US`; they now default to `defaultLocale()`, a new export: `navigator.language` narrowed by `fieldLocale` to one whose numbers read back as shown. Text written to be saved or read by a program passes `{ locale: 'en-US' }` itself.
+  
+  <!-- entry: rank=10 api behavior -->
+
+### Patch Changes
+
+- cbf6ee4: An access letter matches a typed key folded as search folds text, so typing `ς` finds an item whose letter is `Σ`.
+  
+  <!-- entry: fix -->
+- 6a59fd6: A character typed during a menu's typeahead search extends the search, rather than choosing an access letter or stepping a number row.
+  
+  <!-- entry: fix behavior -->
+- 7977b94: Moving the pointer from a submenu row onto a separator cancels the submenu's pending open, as moving into the panel's padding does.
+  
+  <!-- entry: fix -->
+- Updated dependencies [5f856dc]
+- Updated dependencies [e6b28fe]
+- Updated dependencies [97f1f86]
+- Updated dependencies [174d6ef]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [269320b]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [935346c]
+- Updated dependencies [f6ee3ea]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [ac8e807]
+- Updated dependencies [fb47e9b]
+- Updated dependencies [8257aa7]
+- Updated dependencies [65e8ece]
+- Updated dependencies [a947127]
+- Updated dependencies [95bd84c]
+- Updated dependencies [b7e560b]
+- Updated dependencies [174d6ef]
+- Updated dependencies [cfbecdb]
+- Updated dependencies [9c2b3d6]
+- Updated dependencies [03f84f2]
+- Updated dependencies [8457029]
+- Updated dependencies [22eec46]
+- Updated dependencies [8fd3d6d]
+- Updated dependencies [5b84825]
+- Updated dependencies [516bc59]
+- Updated dependencies [2338cee]
+- Updated dependencies [57a59be]
+- Updated dependencies [67968c3]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [38e795b]
+- Updated dependencies [e6871f1]
+- Updated dependencies [56784d5]
+- Updated dependencies [b54ab5f]
+- Updated dependencies [0ecff6a]
+- Updated dependencies [00a0e96]
+- Updated dependencies [4bda721]
+- Updated dependencies [7645aaa]
+- Updated dependencies [24bca7a]
+- Updated dependencies [e06225e]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [38095a2]
+- Updated dependencies [d30164d]
+- Updated dependencies [04d5af6]
+- Updated dependencies [04d5af6]
+- Updated dependencies [c98a300]
+- Updated dependencies [04d5af6]
+- Updated dependencies [e7d580b]
+- Updated dependencies [cdbafb8]
+- Updated dependencies [3005391]
+- Updated dependencies [3311dde]
+- Updated dependencies [5b11625]
+- Updated dependencies [afbe8c3]
+- Updated dependencies [8bf1866]
+- Updated dependencies [c4bcb94]
+- Updated dependencies [7785bd5]
+- Updated dependencies [e59f1ae]
+- Updated dependencies [a8ff1e9]
+- Updated dependencies [25e8f76]
+- Updated dependencies [3a07b60]
+- Updated dependencies [b73c8ef]
+- Updated dependencies [6274bad]
+- Updated dependencies [758459f]
+- Updated dependencies [70213a5]
+- Updated dependencies [b72cf48]
+- Updated dependencies [b34f11e]
+- Updated dependencies [04d5af6]
+- Updated dependencies [5603bef]
+- Updated dependencies [126d17f]
+- Updated dependencies [d17a134]
+- Updated dependencies [4e68cf0]
+- Updated dependencies [ff5f066]
+- Updated dependencies [f164d0e]
+- Updated dependencies [586ca31]
+- Updated dependencies [ba8d3a0]
+- Updated dependencies [857e1fc]
+- Updated dependencies [d868c48]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [bd25e62]
+- Updated dependencies [dc5efa8]
+- Updated dependencies [510347b]
+- Updated dependencies [8f28726]
+- Updated dependencies [ff8c1f9]
+- Updated dependencies [a6e8651]
+- Updated dependencies [26cdc89]
+- Updated dependencies [ad94222]
+- Updated dependencies [2b0def2]
+- Updated dependencies [80b8f57]
+- Updated dependencies [1fe6cab]
+- Updated dependencies [0481f49]
+- Updated dependencies [b8bb2d4]
+- Updated dependencies [6276cc6]
+- Updated dependencies [6276cc6]
+- Updated dependencies [677a841]
+- Updated dependencies [b8bb2d4]
+- Updated dependencies [cafdd8c]
+- Updated dependencies [969aab0]
+- Updated dependencies [61c9926]
+- Updated dependencies [09dcf56]
+- Updated dependencies [5024537]
+- Updated dependencies [7489853]
+- Updated dependencies [8fb09ad]
+- Updated dependencies [ba7e062]
+- Updated dependencies [5202a9f]
+  - @weasel-js/ui-input@2.0.0
+  - @weasel-js/quantity@2.0.0
+  - @weasel-js/gestures@2.0.0
+  - @weasel-js/registry@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

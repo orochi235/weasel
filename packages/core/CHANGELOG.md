@@ -1,5 +1,4782 @@
 # Changelog
 
+## 2.0.0
+
+### Major Changes
+
+- 5099ca3: `ActionDisabledReasonValue` is gone; the type of one reason is `ActionDisabledReason`, the same name as the constant that lists them.
+  
+  ```ts
+  // before
+  import type { ActionDisabledReasonValue } from '@weasel-js/core';
+  // after
+  import type { ActionDisabledReason } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+- e5f53c6: The action factories that were spelled `make…` are `create…`, like `createResizeAction` and `createDeleteAction`.
+  
+  `makeViewportZoomAction`, `makeViewportWheelPanAction`, `makePinchZoomAction` and `makeHandleCommand` (core) and `makeToolOffhandAction` (routing) are renamed; their arguments are unchanged.
+  
+  ```ts
+  // before
+  const zoom = makeViewportZoomAction({ min: 0.1, max: 8 });
+  // after
+  const zoom = createViewportZoomAction({ min: 0.1, max: 8 });
+  ```
+  
+  <!-- entry: breaking api -->
+- 03c5f2f: Bindings, `trigger`, `begin`, `preview` and `useOngoingAction` check params against the id's `ActionParamSchema` entry, as tunings do.
+  
+  This is breaking. An id the schema names takes its whole entry, required keys included, as a record or a thunk; passing no params at all is still allowed, as a palette runs an action. An id the schema does not name takes no params, so a binding or a trigger that hands params to one either adds a schema entry for it or passes the id as `dynamicActionId(id)`, the deliberate path for an id held only at runtime. A plain `string` id is one of those.
+  
+  ```ts
+  declare module '@weasel-js/routing' {
+    interface ActionParamSchema { 'review.stamp': { size: number } }
+  }
+  
+  registry.trigger('review.stamp', { size: 2 });          // checked
+  registry.trigger('review.stamp', { size: 'wrong' });    // now an error
+  registry.trigger(dynamicActionId(item.action.id), item.params); // an id read at runtime
+  ```
+  
+  The kit's own actions that read params have entries: `insert`, `place`, `move`, `rotate`, `viewport.dragPan`, `lassoSelect`, `slice`, `measure`, `ingest`, `setFill`, `setStroke`, `setStrokeWidth`, `setVertexColor`, `simplifyPath`, `offsetPath`, `present.step`, `present.go`, `spiro.finish`, `girth.drag` and others. `AlignParams`, `FlipParams` and `SetFilletsParams` make each field optional, since each action defaults it. `holdPreviewId` returns a `DynamicActionId`, and the `actionParams` dep is typed as `ActionsRegistry['paramsOf']`.
+  
+  <!-- entry: rank=10 breaking api -->
+- 3f23bc8: The Boolean path ops and the `booleansAdapter` dep move from `@weasel-js/core` to `@weasel-js/editing`, and `presets.booleans` publishes the dep.
+  
+  This is breaking. These are editing's now, under the same names: `useBooleans`, `useBooleansAdapter`, `applyBooleanOp`, `previewBooleanOp`, `resolveBooleanOperands`, `commitBooleanPieces`, `useBooleansAdapterDepSource`, and the types `BooleanOp`, `BooleansAdapter`, `BooleanOpPreview`, `BooleanOpResult`, `BooleanPreviewPiece`, `BooleanOpOptions`, `BooleanStrokes`, `BooleanSource`, `BooleanOperands`, `BooleanCommitPiece`, `UseBooleansOptions` and `UseBooleansReturn`. `usePathLeafDepSources` is gone; `useSliceDepSource` stays in core.
+  
+  `<SceneCanvas>` no longer publishes a `booleansAdapter` over its path leaves. `presets.booleans` does, and `presets.pathfinder` (so `presets.draw`) and path-tools' `pathTools.pathTools` include it. A canvas that runs the shape builder or reads the dep without either names it:
+  
+  ```tsx
+  // before
+  import { useBooleansAdapter } from '@weasel-js/core';
+  <SceneCanvas features={[presets.pick]} tools={{ shapeBuilder }} />
+  // after
+  import { useBooleansAdapter } from '@weasel-js/editing';
+  import * as presets from '@weasel-js/editing/presets';
+  <SceneCanvas features={[presets.pick, presets.booleans]} tools={{ shapeBuilder }} />
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 44848fe: `pickAt` and `readIds` on a canvas's ref answer `null` when there is no frame to read, instead of 0 or an empty buffer.
+  
+  That covers before the first paint, a lost context, and a render worker that gave no answer; `readIdsSync` answers `null` for these too. On `<SceneCanvas worker>`, a read answers `null` when any canvas of the stack has no ids.
+  
+  ```ts
+  // before
+  const id = await ref.current.pickAt(x, y); // 0 when nothing could be read
+  // after
+  const id = await ref.current.pickAt(x, y);
+  if (id === null) return; // nothing could be read: not the same as nothing hit
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 1566d81: `<CanvasView>` no longer takes `selection` or `selectionOptions`: a view acts on its canvas's editing session.
+  
+  A view that must select apart is a canvas of its own over an `EditingSession`.
+  
+  `CanvasView`'s `deps` no longer accepts a `selection` either.
+  
+  ```tsx
+  // before
+  <SceneCanvas scene={scene}>
+    <CanvasView id="panel" bounds={PANEL} selectionOptions={{ mode: 'multi' }} />
+  </SceneCanvas>
+  // after
+  const session = useEditingSession(scene);
+  <SceneCanvas scene={scene} />
+  <SceneCanvas scene={session} selectionOptions={{ mode: 'multiple' }} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 840a01b: A `claimed` entry hears only input that hit one of its own affordances; name the layers it hit-tests under other ids with `claimed: [ids]`.
+  
+  A hit is the entry's own when its `owner` is the entry's id or one of the listed ids. Input that hit another entry's layer, the kit's chrome, or nothing at all, a keystroke among it, no longer reaches a `claimed` entry's bindings. An entry relying on hearing that input declares `always` instead, or beside it. `claimed` no longer takes `false`.
+  
+  ```ts
+  // before: live for every input, like `always`
+  { id: 'my-handles', eligibility: { claimed: true }, layers: [handleLayer] }
+  // after: live for presses on the layer `handleLayer` registers
+  { id: 'my-handles', eligibility: { claimed: [handleLayer.id] }, layers: [handleLayer] }
+  ```
+  
+  <!-- entry: breaking behavior api -->
+- f5058e3: The clipboard ops and wire format move from `@weasel-js/core` to `@weasel-js/editing`, retiring `@weasel-js/core/clipboard`.
+  
+  This is breaking. These are editing's now, under the same names: `useClipboard`, `useClipboardOps`, `WEASEL_CLIPBOARD_MIME`, `WEASEL_CLIPBOARD_MIME_WEB`, `buildWeaselClipboardText`, `sniffWeaselClipboardText`, `parseWeaselClipboardText`, `embedWeaselMetadataInSvg`, `extractWeaselClipboardFromSvg`, and the types `ClipboardFlavors`, `PastedItems`, `UseClipboardOptions`, `UseClipboardOpsOptions` and `UseClipboardOpsReturn`. `materializePaste` is no longer exported. The clipboard contract types (`ClipboardSnapshot`, `PasteCtx`, `PasteOmission`, `ClipboardDep`) stay in core. `@weasel-js/editor` now depends on `@weasel-js/editing`, whose `useClipboard` its `useDocClipboard` runs on.
+  
+  ```ts
+  // before
+  import { useClipboardOps } from '@weasel-js/core';
+  import { buildWeaselClipboardText } from '@weasel-js/core/clipboard';
+  // after
+  import { buildWeaselClipboardText, useClipboardOps } from '@weasel-js/editing';
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 41c0399: `selectCommitted` is `commitSelectionFrom`, since it builds a `CommitSelection` and selects nothing.
+  
+  ```ts
+  // before
+  edit.applyEdit(id, path, label, origins, selectCommitted(deps.operands));
+  // after
+  edit.applyEdit(id, path, label, origins, commitSelectionFrom(deps.operands));
+  ```
+  
+  <!-- entry: breaking api -->
+- c3da788: Point-containment tests are named `xContainsPoint`, as `pathContainsPoint` is.
+  
+  geom's `pointInPolygon` is `polygonContainsPoint`, core's `pointInRotatedRect` is `rotatedRectContainsPoint`, and text's `pointInTextPose` is `textPoseContainsPoint`. Arguments are unchanged.
+  
+  ```ts
+  // before
+  if (pointInPolygon(coords, x, y)) …
+  // after
+  if (polygonContainsPoint(coords, x, y)) …
+  ```
+  
+  <!-- entry: breaking api -->
+- 42aab0c: `registerContentHandler` throws when a different handler is registered under an `id` already registered, unless it passes `{ replace: true }`.
+  
+  This is breaking: both handlers used to stay registered, and the older one kept winning. The same entry registered again is still a second registration. Code that swaps a handler on purpose says so:
+  
+  ```ts
+  registerContentHandler(handler, { replace: true });
+  ```
+  
+  <!-- entry: breaking api behavior -->
+- ab7f613: The contribution factories that were spelled bare are `create…Contribution`, as the kit's other factories are; their arguments are unchanged.
+  
+  diagram: `diagramPorts`, `diagramWaypoints`, `diagramEdgeEnds`, `diagramOffPage`, `diagramContainers` and `diagramSequence` are `createDiagramPortsContribution`, `createDiagramWaypointsContribution`, `createDiagramEdgeEndsContribution`, `createDiagramOffPageContribution`, `createDiagramContainersContribution` and `createDiagramSequenceContribution`; `reorderContribution` and `itemDropContribution` are `createReorderContribution` and `createItemDropContribution`. routing's `keymapContribution` (re-exported by core) is `createKeymapContribution`, and measure's `measurementsContribution` is `createMeasurementsContribution`.
+  
+  ```ts
+  // before
+  const ambient = [diagramPorts(), measurementsContribution(scene, measurements)];
+  // after
+  const ambient = [createDiagramPortsContribution(), createMeasurementsContribution(scene, measurements)];
+  ```
+  
+  <!-- entry: breaking api -->
+- 9f5155f: core's AABB helpers spell it `Aabb`, as the rest of the kit does: `unionAABB` and `drawnAABBOf` are `unionAabb` and `drawnAabbOf`.
+  
+  ```ts
+  // before
+  const box = unionAABB(boxes);
+  // after
+  const box = unionAabb(boxes);
+  ```
+  
+  <!-- entry: breaking api -->
+- 86e1580: Bindings, triggers and tunings of core's actions that read params are checked against their `ActionParamSchema` entries.
+  
+  New entries cover `place`, `insert.rotate`, `setFillOpacity`, `setStrokeOpacity`, `viewport.zoom`, `viewport.wheelPan`, `container.scroll`, `select.pick`, `select.deep`, `select.collapseDeferred`, `group.enter`, `group.leave`, `selectAnchor`, `cutPathAtAnchor`, `insertPathAnchor`, `enterPathEdit`, `enterTextEditAt`, `editEffectText`, `clipboard.paste`, `clipboard.pasteEvent`, `eyedropper.pick`, `pen.placeAnchor`, `slice.addPoint`, `measure.pick` and `measure.pickAt`; `polygon.adjustSides` and `star.adjustPoints` also take the wheel's `deltaY`. `DistributeParams.mode` and `ReorderParams.distance` are optional, since each action defaults them. New exported types: `PlaceParams`, `CountStepParams`, `OpacityParams`, `ViewportZoomParams`, `WheelScrollParams`, `PickParams` and `ModeTriggerParams`.
+  
+  This is breaking for code that leans on the old types. A binding or trigger passing params one of these ids does not declare is now an error. The descriptors are typed `Action` (or `Action & { id }`), so `requires` is optional on them where it was `string[]`: `setFillAction`, `viewportZoomAction`, `reorderForwardAction` and the rest. `createViewportZoomAction`, `createViewportWheelPanAction`, `createLivePathEditAction` and `createToolActivateAction` return `Action`. `LivePathEditSpec` takes the command's params as `P`, `param` is a key of it, and `edit` reads them typed.
+  
+  ```ts
+  const tidy = createLivePathEditAction<{ tolerance?: number }>({
+    id: 'tidyPath', label: 'Tidy', param: 'tolerance', params: TIDY_PARAMS,
+    edit: ({ path }, tolerance) => tidyPath(path, tolerance),
+    commit: (_deps, next) => [...next.values()].flatMap(({ node, path }) => reshapeOps(node, path, 'Tidy')),
+  });
+  ```
+  
+  <!-- entry: breaking api -->
+- bfef616: core's `AnyTool` type, kept as another name for `Tool`, is removed; import `Tool`.
+  
+  ```ts
+  // before
+  import type { AnyTool } from '@weasel-js/core';
+  // after
+  import type { Tool } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking -->
+- d0ec6bd: `ChromeCtx` and `buildChromeCtx` are removed; `resolveVisibility` takes a `RuleCtx`, which `buildRuleCtx` assembles.
+  
+  It no longer fills in normal mode for a context without one.
+  
+  ```ts
+  // before
+  resolveVisibility(rules, buildChromeCtx({ focused, selection, multiActive, modifiers, action, hover, view }));
+  // after
+  resolveVisibility(rules, buildRuleCtx({
+    focused, selection, multiActive, modifiers, action, hover,
+    zoom: viewZoom(view), mode: 'normal', allowedCapabilities: DEFAULT_ALLOWED_CAPABILITIES,
+  }));
+  ```
+  
+  <!-- entry: breaking -->
+- 3742696: core's deprecated `cornerPoint` is removed; use `handlePoint`, which takes the same arguments and also places edge handles.
+  
+  ```ts
+  // before
+  const p = cornerPoint(bounds, anchor);
+  // after
+  const p = handlePoint(bounds, anchor);
+  ```
+  
+  <!-- entry: breaking -->
+- fd63c16: `@weasel-js/core` and `@weasel-js/core/math` no longer re-export the simulation; import it from `@weasel-js/simulation`.
+  
+  `createSimulation`, `DEFAULT_ALPHA_DECAY`, `DEFAULT_ALPHA_MIN`, `DEFAULT_VELOCITY_DECAY` and the types `RunningSimulation`, `Simulation`, `SimulationForce`, `SimulationNode`, `SimulationOptions` and `UseSimulationOptions` come from `@weasel-js/simulation`; `useSimulation` comes from `@weasel-js/simulation/react`. Core no longer depends on the package, so add it to your own dependencies.
+  
+  ```ts
+  // before
+  import { createSimulation, useSimulation, type SimulationNode } from '@weasel-js/core';
+  // after
+  import { createSimulation, type SimulationNode } from '@weasel-js/simulation';
+  import { useSimulation } from '@weasel-js/simulation/react';
+  ```
+  
+  <!-- entry: breaking api -->
+- 280f9fc: core's `normalizeZoom` is now geom's own function, and `@weasel-js/core/engine` no longer exports it; import it from `@weasel-js/geom`.
+  
+  `@weasel-js/core` still re-exports it. Calling it clamps silently, as geom's always did; the dev warning for a zoom that was never valid (0, NaN, or infinite) now comes only from `normalizeView`, for a view the kit is handed.
+  
+  ```ts
+  // before
+  import { normalizeZoom } from '@weasel-js/core/engine';
+  // after
+  import { normalizeZoom } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking behavior -->
+- 4844d4d: Core's op factories move to `@weasel-js/core/ops` under short names, and leave the main and engine entries
+  
+  ```ts
+  // before
+  import { createInsertOp, createSetPoseOp } from '@weasel-js/core';
+  ctx.applyBatch([createInsertOp({ node }), createSetPoseOp({ id, from, to })]);
+  
+  // after
+  import * as ops from '@weasel-js/core/ops';
+  ctx.applyBatch([ops.insert({ node }), ops.setPose({ id, from, to })]);
+  ```
+  
+  Each short name drops `create` and `Op`: `insert`, `delete`, `setPose`, `reparent`, `swap`, `insertNode`, `deleteNode`, `geometryData`, `setData` and the rest. `@weasel-js/core` and `@weasel-js/core/engine` no longer export any `create…Op`; the ops entry loads no 2D code, so an engine host imports it too.
+  
+  <!-- entry: breaking api -->
+- 93a7c62: Core's view presets move to `@weasel-js/core/presets` as `view` and `viewTools`; the main entry no longer exports `viewPreset` or `viewToolsPreset`.
+  
+  `@weasel-js/editing/presets` carries the same two objects beside editing's presets, so a canvas importing those needs nothing from core's entry.
+  
+  ```tsx
+  // before
+  import { SceneCanvas, viewPreset } from '@weasel-js/core';
+  <SceneCanvas features={[viewPreset]} />;
+  
+  // after
+  import { SceneCanvas } from '@weasel-js/core';
+  import * as corePresets from '@weasel-js/core/presets';
+  <SceneCanvas features={[corePresets.view]} />;
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 6f94fe3: `rotateAroundAABBCenter` is `rotateAboutAabbCenter`, with the kit's pivot word and its spelling of AABB.
+  
+  ```ts
+  // before
+  const m = rotateAroundAABBCenter(x, y, width, height, rotation);
+  // after
+  const m = rotateAboutAabbCenter(x, y, width, height, rotation);
+  ```
+  
+  <!-- entry: breaking api -->
+- b76c25e: `sceneSession2d` is `createSceneSession2d`, spelled like `createSnapSession2d` and the other factories.
+  
+  This is a breaking rename, with no alias. It takes the same `SceneSessionInputs` and returns the same `SnapSession`.
+  
+  ```ts
+  // before
+  const session = sceneSession2d(inputs);
+  // after
+  const session = createSceneSession2d(inputs);
+  ```
+  
+  <!-- entry: breaking api -->
+- 63c1844: `useSceneTextEdit`'s deprecated `defaultFontSize` option is removed. It was already ignored: a node with no font size of its own is edited at `DEFAULT_TEXT_STYLE.fontSize`, the size the canvas draws it at.
+  
+  ```ts
+  // before
+  useSceneTextEdit({ container, defaultFontSize: 24 });
+  // after
+  useSceneTextEdit({ container });
+  ```
+  
+  <!-- entry: breaking -->
+- fd2cbc8: Core no longer re-exports the text engine: import it from `@weasel-js/text`, and DOM editing from `@weasel-js/text-dom`.
+  
+  This is breaking. Names such as `TextStyle`, `StyledRun`, `layoutRuns`, `measureText`, `bakeTextFit`, `renderLabel`, `isTextData`, `textToPath`, `loadTextOutlines` and `TextOutlinesError` come from `@weasel-js/text`; `useTextEdit`, `runsToDom`, `domToRuns` and `StyleToggle` from `@weasel-js/text-dom`. `textCommand` and its siblings stay on core, beside the renderer's other draw-command builders.
+  
+  ```ts
+  // before
+  import { type TextStyle, measureText } from '@weasel-js/core';
+  // after
+  import { type TextStyle, measureText } from '@weasel-js/text';
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- fd2cbc8: Core no longer paints, routes, inserts or edits text; a canvas turns text on with `@weasel-js/text-tools`' `textTools.text`.
+  
+  This is breaking. `kit:text` is no longer a built-in painter, `inferredNodeRouting` has no `'text'`, `defaultNodeProperties` and `inferredNodeProperties` carry no text kind, the `insert` dep builds no `text` or `sticky` node, and no canvas mounts a text editor of its own. `textTools.text` brings all of them back, with `enterTextEdit`, `enterTextEditAt` (a double-click opening text in place) and `editEffectText`. A scene drawn with no canvas paints text once its painter is registered.
+  
+  ```tsx
+  import { TEXT_PAINTER } from '@weasel-js/text-tools';
+  import * as textTools from '@weasel-js/text-tools/presets';
+  
+  <SceneCanvas features={[presets.draw, textTools.text]} scene={scene} />;
+  nodeShapesOf(scene).register(TEXT_PAINTER); // for renderSceneToPixels, an export
+  ```
+  
+  `textBoxOf`, `TextNodeData`, `TextOverflow`, `textFrameOf`, `edgeColor`, `TextEdge`, `TextFrame`, `TextShadow`, `useSceneTextEdit`, `UseSceneTextEditOptions`, `UseSceneTextEditReturn`, `DefaultTextData`, `textEditJoin`, `EditingDrawOne`, `createTextLayer`, `enterTextEditAction` and `enterTextEditAtAction` are imported from `@weasel-js/text-tools`.
+  
+  <!-- entry: rank=20 breaking api pick -->
+- 66e447b: `ViewRect` names its size `width` and `height`, not `w` and `h`, in a `<CanvasView>`'s `bounds` and a minimap's `rect`.
+  
+  It is now geom's `Rect`, as is a viewport layer's `bounds`.
+  
+  ```tsx
+  // before
+  <CanvasView id="pip" bounds={{ x: 8, y: 8, w: 240, h: 160 }} />
+  // after
+  <CanvasView id="pip" bounds={{ x: 8, y: 8, width: 240, height: 160 }} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 4a2b3cc: Three layer factories take the `create*Layer` name core's others have: `createPagesLayer`, `createWorkspaceTintLayer`, `createModeDecorationLayer`.
+  
+  They were `pagesLayer`, `workspaceTintLayer` and `modeDecorationLayer`.
+  
+  ```ts
+  // before
+  const paper = pagesLayer(pages, { fill: '#fff' });
+  // after
+  const paper = createPagesLayer(pages, { fill: '#fff' });
+  ```
+  
+  <!-- entry: breaking api -->
+- 1bd148d: `nestedHitTester` is `createNestedHitTester`, since it builds hit-testers.
+  
+  ```ts
+  // before
+  const { pickBest } = nestedHitTester(adapter, geometry);
+  // after
+  const { pickBest } = createNestedHitTester(adapter, geometry);
+  ```
+  
+  <!-- entry: breaking api -->
+- 6316070: `createTransformOp` and `TransformArgs` are `createSetPoseOp` and `SetPoseArgs`, like the other `createSet…Op` factories.
+  
+  The op's recorded name stays `'transform'`, so saved histories still replay.
+  
+  ```ts
+  // before
+  ctx.adapter.applyOps?.([createTransformOp({ id, from, to })]);
+  // after
+  ctx.adapter.applyOps?.([createSetPoseOp({ id, from, to })]);
+  ```
+  
+  <!-- entry: breaking api -->
+- 0d810a1: `unitFrameAt` is `createUnitFrameLookup`: it takes a scene, precomputes its boxes and returns the lookup.
+  
+  ```ts
+  // before
+  const frameAt = unitFrameAt(scene);
+  // after
+  const frameAt = createUnitFrameLookup(scene);
+  ```
+  
+  <!-- entry: breaking api -->
+- d917fd4: `resolveCursor` returns the `ResolvedCursor` tier, and `cursorCss` returns the CSS cursor value.
+  
+  `resolveCursor` was `resolveCursorTier`, and `cursorCss` was `resolveCursor`.
+  
+  ```ts
+  // before
+  const tier = resolveCursorTier(spec);
+  element.style.cursor = resolveCursor(spec) ?? '';
+  // after
+  const tier = resolveCursor(spec);
+  element.style.cursor = cursorCss(spec) ?? '';
+  ```
+  
+  <!-- entry: breaking api -->
+- 37c0385: `cursorWorldSize` is `worldCursorPx`, since it returns the CSS-pixel size a world-sized glyph draws at.
+  
+  ```ts
+  // before
+  const px = cursorWorldSize(glyph, worldRadius, scale);
+  // after
+  const px = worldCursorPx(glyph, worldRadius, scale);
+  ```
+  
+  <!-- entry: breaking api -->
+- 5cf9f61: `DebugConfig` is now `DebugFlags`, the type `parseDebugFlags` returns and `SceneCanvas`'s `debug` prop takes.
+  
+  ```ts
+  // before
+  const debug: DebugConfig = { hitboxes: true };
+  // after
+  const debug: DebugFlags = { hitboxes: true };
+  ```
+  
+  <!-- entry: breaking api -->
+- f4ac9bc: `DecayLoopConfig` is now `DecayLoopOptions`, the name of what `useDecayLoop`'s `start` and the view dep's `decay` take.
+  
+  ```ts
+  // before
+  import type { DecayLoopConfig } from '@weasel-js/core';
+  // after
+  import type { DecayLoopOptions } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+- 2503372: `<SceneCanvas initialActiveTool>` is renamed `defaultActiveTool`, as `defaultView` and `defaultPathEdit` are named.
+  
+  ```tsx
+  // before
+  <SceneCanvas scene={scene} defaultTools={['rect']} initialActiveTool="rect" />
+  // after
+  <SceneCanvas scene={scene} defaultTools={['rect']} defaultActiveTool="rect" />
+  ```
+  
+  <!-- entry: breaking api -->
+- 8764186: `deleteAction`, `createDeleteAction` and their helpers move from `@weasel-js/core` to `@weasel-js/editing`.
+  
+  This is breaking: import `deleteAction`, `createDeleteAction`, `DeleteActionOptions`, `commitDeleteToScene` and `hiddenSourceDeleteOps` from `@weasel-js/editing`. `presets.delete` and the standard edit presets carry the action as before.
+  
+  <!-- entry: rank=20 breaking api -->
+- 9a3bf41: The devtools hook moved out of core into `@weasel-js/devtools`, and a canvas joins it only when it takes the `devtools` contribution.
+  
+  This is breaking. `@weasel-js/core/devtools` and `@weasel-js/core/devtools-protocol` are gone, and a dev build no longer installs the hook by itself. The messages, transports and serializer are `@weasel-js/devtools/protocol`; the hook, roots and the `devtools` contribution are `@weasel-js/devtools/hook`. A canvas that does not take `devtools` keeps no devtools root, history record or coord trace.
+  
+  ```tsx
+  // before: every canvas registered in a dev build; production imported '@weasel-js/core/devtools'
+  import { createWindowPanelTransport } from '@weasel-js/core/devtools-protocol';
+  
+  // after
+  import { AmbientContributionsProvider } from '@weasel-js/core';
+  import { devtools } from '@weasel-js/devtools/hook';
+  import { createWindowPanelTransport } from '@weasel-js/devtools/protocol';
+  
+  <AmbientContributionsProvider contributions={import.meta.env.DEV ? [devtools] : []}>
+    <App />
+  </AmbientContributionsProvider>;
+  ```
+  
+  A root source built by hand (`createDevtoolsRoot`) reports its own changes through `subscribe(listener(area))`, which replaces `subscribeRegistry`, and hands its probes over as `probes`.
+  
+  <!-- entry: rank=10 breaking api -->
+- df9dba4: The Escape-mid-drag action `cancelGesture` is `dispatch.cancelAll`, exported as `cancelAllAction`.
+  
+  Its binding is `dispatch.cancelAll.key`. It cancels every in-flight action handle.
+  
+  ```ts
+  // before
+  <SceneCanvas actions={{ cancelGesture: null }} />
+  // after
+  <SceneCanvas actions={{ 'dispatch.cancelAll': null }} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 2729716: `DispatcherContext.isMac` is `DispatcherContext.apple`, the name every matcher and capture function gives the flag saying `mod` is Command.
+  
+  ```ts
+  // Before
+  dispatcher.resolveAll(event, { actions, depRegistry, activeToolId, hotkeyStack, entriesById, isMac: isApplePlatform() });
+  
+  // After
+  dispatcher.resolveAll(event, { actions, depRegistry, activeToolId, hotkeyStack, entriesById, apple: isApplePlatform() });
+  ```
+  
+  <!-- entry: breaking api -->
+- b667930: `dragPanContribution` and `middleDragPanContribution` are `createDragPanContribution` and `createMiddleDragPanContribution`.
+  
+  ```ts
+  // before
+  <SceneCanvas ambient={[dragPanContribution()]} />
+  // after
+  <SceneCanvas ambient={[createDragPanContribution()]} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 15d434b: `useSliceDep` is gone; a custom `slice` dep is published with `useDepSource`, as every other dep is overridden.
+  
+  ```tsx
+  // before
+  useSliceDep({ commit });
+  // after
+  useDepSource('slice', () => ({ commit }));
+  ```
+  
+  <!-- entry: breaking api -->
+- 8c58288: The edit, clipboard, Transform Again and Pathfinder actions move from `@weasel-js/core` to `@weasel-js/editing`.
+  
+  This is breaking. These exports are editing's now, under the same names: `deselectAction`, `selectAllAction`, `duplicateAction` (with `duplicateSelection`), `groupAction`, `ungroupAction`, the `nudge*Action`s, `setFillAction`, `setFillOpacityAction`, `setStrokeAction`, `setStrokeOpacityAction`, `setStrokeWidthAction`, `setVertexColorAction`, `ingestAction`, `transformAgainAction`, `transformSelection` and `SelectionTransform`, the `clipboard*Action`s, the `pathfinder*Action`s and `PATHFINDER_STROKES`, `makeBooleanGroupAction`, `booleanGroupOps` and `makeBooleanGroup`, `PATHFINDER_KEYMAP`, `PATHFINDER_KEYMAP_ID` and `PATHFINDER_LEADER`, and `ENGINE_STANDARD_ACTIONS`, which leaves `@weasel-js/core/engine`.
+  
+  ```ts
+  // before
+  import { ENGINE_STANDARD_ACTIONS, useActionSet } from '@weasel-js/core/engine';
+  // after
+  import { useActionSet } from '@weasel-js/core/engine';
+  import { ENGINE_STANDARD_ACTIONS } from '@weasel-js/editing';
+  ```
+  
+  Core keeps `deleteAction` and `DUPLICATE_OFFSET`, the offset a paste shares with a duplicate. Measure's Move by and Rotate by read `transformSelection` from editing.
+  
+  <!-- entry: rank=10 breaking api -->
+- 084198c: The `editAnchors` dep answers which anchor of the open path a click lands on: `anchorUnder(world)`.
+  
+  It returns the flat index of the edited path's anchor within the `targets.anchorClickPx` kit setting's reach of `world`, measured on screen, or -1 off every anchor and with no path open. The member is required, so an `editAnchors` dep built by hand has to provide it:
+  
+  ```ts
+  const editAnchors: EditAnchorsDep = {
+    // ...the other members
+    anchorUnder: (world) => myAnchorIndexAt(world), // -1 when no anchor is in reach
+  };
+  ```
+  
+  <!-- entry: breaking api -->
+- b0d7740: `makeEditAnchorsDepForTests` on `@weasel-js/core/test-seams` is now `createEditAnchorsDepForTests`, beside `createSnapSession2dForTests`.
+  
+  ```ts
+  // before
+  import { makeEditAnchorsDepForTests } from '@weasel-js/core/test-seams';
+  // after
+  import { createEditAnchorsDepForTests } from '@weasel-js/core/test-seams';
+  ```
+  
+  <!-- entry: breaking api -->
+- 64fed84: Editing's tools and commands draw their glyphs from editing's own `editing` icon namespace, so `core:rect` and the others are `editing:rect`.
+  
+  This is breaking for code that names one of these glyphs: write `icon('editing:rect')` where it wrote `icon('core:rect')`. They move: `alignBottom`, `alignCenterX`, `alignCenterY`, `alignLeft`, `alignRight`, `alignTop`, `booleanGroup`, `bringForward`, `bringToFront`, `crop`, `divide`, `duplicate`, `ellipse`, `eyedropper`, `flipX`, `flipY`, `group`, `lasso`, `line`, `merge`, `polygon`, `rect`, `select`, `sendBackward`, `sendToBack`, `star`, `transformAgain`, `trim`, `ungroup`. Core keeps the hand, history, cut, copy and paste, the booleans its own nodes name (union, intersect, subtract, exclude), and the path, text and paint glyphs. `@weasel-js/editing/icons` exports editing's table, and its `weaselIcons` field points the build plugin at it.
+  
+  <!-- entry: rank=5 breaking -->
+- 964a242: The editing presets, preset names, `useStandardActions`, and align, distribute, flip and reorder move to the new `@weasel-js/editing`.
+  
+  This is breaking. Core keeps its view presets, `view` and `viewTools` on `@weasel-js/core/presets`, so a canvas given only those draws, pans and zooms. Everything else a canvas got from core's presets now comes from editing's `@weasel-js/editing/presets` entry: `presets.draw`, `presets.pick`, `presets.transform`, `presets.select`, `presets.outline`, `presets.move`, `presets.resize`, `presets.rotate`, `presets.edit` and its parts (`presets.escape`, `presets.contextMenu`, `presets.selectAll`, `presets.duplicate`, `presets.delete`, `presets.group`, `presets.nudge`, `presets.style`, `presets.clipboard`), `presets.arrange` and its parts (`presets.flip`, `presets.reorder`, `presets.align`, `presets.distribute`), `presets.pathfinder`, `presets.ingest`, `presets.selectTools` and `presets.shapeTools`.
+  
+  ```tsx
+  // before
+  import { drawPreset, SceneCanvas } from '@weasel-js/core';
+  import { namedFeatures } from '@weasel-js/core/named-features';
+  
+  // after
+  import { SceneCanvas } from '@weasel-js/core';
+  import { namedFeatures } from '@weasel-js/editing';
+  import * as presets from '@weasel-js/editing/presets';
+  ```
+  
+  The `@weasel-js/core/named-features` entry is gone: `namedFeatures`, `FEATURE_NAMES`, `FEATURE_PRESETS`, `FEATURE_ACTION_IDS` and `FeatureName` are editing's, and name core's view presets as well as editing's. `useStandardActions`, `UseStandardActionsOptions` and `KIT_STANDARD_ACTION_IDS` move with them; core keeps `useActionSet` and `useStandardDeps`. `flipAction`, `useAlign`, `alignDeltaFor`, `alignTargetBounds`, `useDistribute`, their option and adapter types, `FlipAxis`, `FlipPivot`, and the `AlignParams`, `DistributeParams`, `FlipParams` and `ReorderParams` param types are editing's, which also exports the align, distribute and reorder actions by name.
+  
+  <!-- entry: rank=20 breaking api pick -->
+- 2755b11: Editing actions act on a new `operands` dep, the selection by default, so a host can point an edit at any list of ids.
+  
+  This is breaking for code that runs kit actions or builds their deps by hand. Delete, cut and copy, duplicate, group, nudge, reorder, align, distribute, flip, move, resize, rotate, clone, insert, place, ingest, the paint actions, Transform Again and the Pathfinder actions now declare `operands` in `requires` and read it where they read `selection`, and `commitOps` hands `select` to it and, with no `applyOps`, commits through it, so an action of your own that calls `commitOps` declares `operands` where it declared `selection`. `useStandardDeps` answers `operands` with the registry's `selection` unless given `operands`, so a `<SceneCanvas>` behaves as before. Selecting actions (select all, clear selection, Escape, select deep, the context menu, marquee and lasso) still read `selection`.
+  
+  ```tsx
+  import { createOperandList } from '@weasel-js/core';
+  // act on b and c, whatever is selected
+  useDepSource('operands', () => createOperandList([b, c]));
+  
+  // a test or a host calling an action directly
+  deleteAction.invoker.run({ scene, operands: createOperandList(ids) }, undefined);
+  ```
+  
+  `selectionMethods` is now `operandMethods`, taking an `OperandsDep`; `IngestCtx.selection` is `IngestCtx.operands`; `useBooleansAdapterDepSource`, `useSliceDepSource` and `usePathLeafDepSources` take an `OperandsDep` where they took a `SelectionApi`, and `<SceneCanvas>` hands them `useLiveOperands()`, which reads the registry's `operands` on each call.
+  
+  <!-- entry: rank=10 breaking api -->
+- dc881e4: `effectSourceFor` and `effectsShowing` name the source a path effect lays as items with the role `'items'`, in place of `'text'`.
+  
+  This is breaking: pass `'items'` where you passed `'text'`. The role now finds any source whose painter declares `effectItems`, text's among them.
+  
+  <!-- entry: breaking api -->
+- 95ca540: `useElementSize` and `ElementSizeOptions` move from `@weasel-js/core` to `@weasel-js/routing/react`.
+  
+  This is breaking: import them from `@weasel-js/routing/react`, which also names the size it returns, `ElementSize`. `useCanvasSize` stays in core.
+  
+  <!-- entry: breaking api -->
+- c7db707: Every export reports what it drew without, a PNG's included, to `onDiagnostic`, and `strict: true` writes nothing then.
+  
+  `onWarn(message)` is gone from `ExportOptions`, `exportRegionSvg` and the diagram page exports. `onDiagnostic` hears each loss once as an `ExportDiagnostic`, `{ kind, subject, message }`: a picture or face that failed to load, a paint kind nothing registered, a shader with no GLSL, or what the format cannot hold. With `strict: true` the export rejects with `ExportIncompleteError`, whose `diagnostics` lists them.
+  
+  ```ts
+  // before
+  await exportRegions(scene, regions, 'svg', { onWarn: (m) => said.push(m) });
+  // after
+  await exportRegions(scene, regions, 'svg', { onDiagnostic: (d) => said.push(d.message) });
+  ```
+  
+  <!-- entry: rank=5 breaking api fix -->
+- d26152c: Region exports moved out of core into `@weasel-js/export`: the format registry, `exportRegions`, `exportPages` and the rest.
+  
+  `exportFormatRegistry`, `exportFormats`, `exportRegions`, `registerExportFormat`, `exportPages`, `pageRegion`, `pageRegionSource`, `pageRegionsSource`, `exportRegionPng`, `selectionRegion`, `regionRenderArgs`, `captureExport`, `exportRegionsOf`, `regionsOfOne`, `EXPORT_CAPTURE_ATTEMPTS`, `ExportRevisionError`, `exportReporter`, `ExportIncompleteError` and their types (`ExportFormat`, `ExportOptions`, `ExportRegion`, `ExportRegionSource`, `ExportRegions`, `ExportScene`, `ExportDiagnostic`, `ExportReporter`, `ExportCaptureSteps`, `ExportRegionPngOptions`, `PngExportOptions`, `RegionRenderArgs`, `RegionRenderArgsOptions`) are no longer exported from core. Import them from `@weasel-js/export`, unchanged. `RenderDiagnostic`, `rasterToPng`, `warmRender` and `renderSceneToPixels` stay in core.
+  
+  ```ts
+  // before
+  import { exportPages, exportRegions, placedPagesOf, selectionRegion } from '@weasel-js/core';
+  // after
+  import { placedPagesOf } from '@weasel-js/core';
+  import { exportPages, exportRegions, selectionRegion } from '@weasel-js/export';
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- a3136aa: PNG, PDF and SVG exports draw one revision of the document, pages and bounds included, even when it is edited while fonts or pictures load.
+  
+  Each export now reads through `captureExport(scene, regions, { warm, read })`: an edit while it loads starts it again, and after `EXPORT_CAPTURE_ATTEMPTS` tries it rejects with `ExportRevisionError`. Regions may be a function of the document, read again each attempt; `exportPages` places its pages so, by id, and fails for a page the document no longer holds. `ExportFormat.export` is handed these `ExportRegions`, so a format of your own reads them through `captureExport` or `exportRegionsOf`:
+  
+  ```ts
+  // before
+  export: async (scene, regions, opts) => write(scene, regions[0]!)
+  // after
+  export: (scene, regions, opts) => captureExport(scene, regions, {
+    warm: (doc, [region]) => warmWhatItNeeds(doc, region!),
+    read: (doc, [region]) => write(doc, region!),
+  })
+  ```
+  
+  <!-- entry: rank=5 breaking api fix -->
+- 644baad: Harmonize curvature is now Fairing, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `harmonizePreset`, preset id `'harmonize'` | `pathTools.fairing`, `'fairing'` |
+  | action `harmonizeAnchors`, `harmonizeAnchorsAction` | `fairAnchors`, `fairAnchorsAction` |
+  | `harmonizeAnchors` (`@weasel-js/geom`) | `fairAnchors` |
+  | icon `core:harmonize` | `core:fairing` |
+  
+  ```ts
+  // before
+  <SceneCanvas features={['paths', harmonizePreset]} tune={{ harmonizeAnchors: { bindings: [{ kind: 'key', key: 'h' }] } }} />
+  // after
+  <SceneCanvas features={['paths', pathTools.fairing]} tune={{ fairAnchors: { bindings: [{ kind: 'key', key: 'h' }] } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 6619ff1: `computeFitViewport` is gone: `fitSize` takes a `fill`, the fraction of each axis the content may take, and does the same fit.
+  
+  ```ts
+  // before
+  const fit = computeFitViewport(width, height, contentW, contentH, 0.85);
+  // after
+  const fit = fitSize(width, height, contentW, contentH, 0, undefined, 0.85);
+  ```
+  
+  <!-- entry: breaking api -->
+- 23d94db: `fitToBounds` is `fitSize`, since it fits a content size and takes no bounds; `fitViewToBounds` is the one that takes bounds.
+  
+  ```ts
+  // before
+  const fit = fitToBounds(width, height, contentW, contentH, 16);
+  // after
+  const fit = fitSize(width, height, contentW, contentH, 16);
+  ```
+  
+  <!-- entry: breaking api -->
+- cc5b0c3: `cssFontFamily` and `cssFontFamilyLoading` take a weight and a style after the family, instead of an object.
+  
+  That is how `getAtlasFont`, `isFontPending` and the other face lookups take them.
+  
+  ```ts
+  // before
+  cssFontFamily('Inter', { weight: 700, style: 'italic' });
+  // after
+  cssFontFamily('Inter', 700, 'italic');
+  ```
+  
+  <!-- entry: breaking -->
+- b1cfa76: `OutlineVariant` is gone; `registerFontOutlines`, `unregisterFontOutlines` and `loadFontOutlines` take the same `FontVariant` that `registerFont` does.
+  
+  The two types were identical. Import `FontVariant` instead:
+  
+  ```ts
+  // before
+  import type { OutlineVariant } from '@weasel-js/font';
+  // after
+  import type { FontVariant } from '@weasel-js/font';
+  ```
+  
+  <!-- entry: breaking -->
+- f889447: `unionBoundsPath` is renamed `boundsOfPaths`, the plural of `boundsOfPath`.
+  
+  ```ts
+  // before
+  const box = unionBoundsPath([a, b]);
+  // after
+  const box = boundsOfPaths([a, b]);
+  ```
+  
+  <!-- entry: breaking api -->
+- 4949266: The `easeIn`, `easeOut` and `easeInOut` aliases are removed from geom and core; use `easeInQuad`, `easeOutQuad` and `easeInOutQuad`.
+  
+  ```ts
+  // before
+  import { easeOut } from '@weasel-js/geom';
+  // after
+  import { easeOutQuad } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking -->
+- f54c013: `scalePathToBounds` is renamed `fitPathToRect`: it scales and translates a path so its bounds land on the target rect.
+  
+  ```ts
+  // before
+  const fitted = scalePathToBounds(path, target);
+  // after
+  const fitted = fitPathToRect(path, target);
+  ```
+  
+  <!-- entry: breaking api -->
+- 27f0928: `mat3.apply` is renamed `mat3.transformPoint`, matching the affine `transformPoint` it mirrors.
+  
+  ```ts
+  // before
+  const [x, y] = mat3.apply(m, px, py);
+  // after
+  const [x, y] = mat3.transformPoint(m, px, py);
+  ```
+  
+  <!-- entry: breaking api -->
+- 11c9e5f: `PointInPathOptions` is renamed `PathHitTestOptions`: it is the options type of every path-versus-region test, not only the point test.
+  
+  ```ts
+  // before
+  const opts: PointInPathOptions = { flattenTolerance: 0.25 };
+  // after
+  const opts: PathHitTestOptions = { flattenTolerance: 0.25 };
+  ```
+  
+  <!-- entry: breaking api -->
+- 241446a: `pathInPoseFrame` is renamed `pathInPoseBox`: it rebases a path onto the pose box and applies no frame, which `pathThroughPoseFrame` does.
+  
+  ```ts
+  // before
+  const local = pathInPoseFrame(path, pose);
+  // after
+  const local = pathInPoseBox(path, pose);
+  ```
+  
+  <!-- entry: breaking api -->
+- e0a11e4: `pointInPath` is removed; `pathContainsPoint`, which it was a second name for, answers the same question.
+  
+  ```ts
+  // before
+  const inside = pointInPath(path, x, y);
+  // after
+  const inside = pathContainsPoint(path, x, y);
+  ```
+  
+  <!-- entry: breaking api -->
+- da7dd2e: `rotatePathAround` is renamed `rotatePathAbout`, the pivot word the rest of the kit uses (`rotateAboutPoint`).
+  
+  ```ts
+  // before
+  const turned = rotatePathAround(path, cx, cy, rad);
+  // after
+  const turned = rotatePathAbout(path, cx, cy, rad);
+  ```
+  
+  <!-- entry: breaking api -->
+- 02900a7: `intersectSegments` is renamed `segmentCrossings`: it returns the crossings of two segments, as its twin `pathCrossings` does for two paths.
+  
+  ```ts
+  // before
+  const hits = intersectSegments(a, b);
+  // after
+  const hits = segmentCrossings(a, b);
+  ```
+  
+  <!-- entry: breaking api -->
+- 8764186: The group enter and leave actions, `createEnterGroupAction` and `createLeaveGroupAction`, move to `@weasel-js/editing`.
+  
+  This is breaking: import them and their `EnterGroupOptions` and `LeaveGroupOptions` from `@weasel-js/editing`, beside the group-entry contribution that binds them. Core now exports `isEnterable`, which says whether a node is a group a press can enter, and the `AdapterPickGates` and `PickSource` types its pick helpers already took.
+  
+  <!-- entry: rank=20 breaking api -->
+- 3a1bfaa: `useHandleDrag` and its types move from `@weasel-js/core` to `@weasel-js/routing/react`.
+  
+  This is breaking: import `useHandleDrag`, `HandleDragPoint`, `HandleDragEnd`, `UseHandleDragOptions` and `UseHandleDragReturn` from `@weasel-js/routing/react`. The hook is unchanged.
+  
+  <!-- entry: breaking api -->
+- 6943c8d: `swapOp` is `createSwapOp` in `@weasel-js/history` and core's re-export, spelled like the other op factories.
+  
+  Prefs' own `swapOp` in `@weasel-js/prefs/edit` keeps its name.
+  
+  ```ts
+  // before
+  history.apply(swapOp({ name: 'rename', label: 'Rename', before, after, emit }));
+  // after
+  history.apply(createSwapOp({ name: 'rename', label: 'Rename', before, after, emit }));
+  ```
+  
+  <!-- entry: breaking api -->
+- aedb49f: `History.restore` refuses a snapshot naming an op it cannot rebuild, and returns a report of what it restored.
+  
+  This is a breaking change. A strict restore, the default, throws `HistoryRestoreError`, whose `report.unresolved` lists each op with its entry and reason, and leaves the history as it was. `{ recovery: 'best-effort' }` puts a placeholder that changes nothing in each such op's place, as every restore did before, lists them in the returned report, and calls `onSkip` each time an undo or redo steps past one. A `rebuildOp` hook is now passed a third argument naming the op's entry and the recovery, and may answer `{ unresolved: reason }`.
+  
+  ```ts
+  // before
+  history.restore(saved);
+  // after: strict, or keep what can be kept
+  try {
+    history.restore(saved);
+  } catch (err) {
+    if (!(err instanceof HistoryRestoreError)) throw err;
+    const { unresolved } = history.restore(saved, { recovery: 'best-effort', onSkip: log });
+  }
+  ```
+  
+  <!-- entry: rank=10 breaking api behavior -->
+- 19f8e39: `IconRegistryProvider`, `useIconGlyph` and the rest of the icon registry's React side move from `@weasel-js/core` to `@weasel-js/icons/react`.
+  
+  This is breaking: import `IconRegistryProvider`, `IconRegistryProviderIfRoot`, `IconRegistryScope`, `useIconRegistry`, `useIconGlyph`, `useIconVariant` and `IconRegistryProviderProps` from `@weasel-js/icons/react`. `@weasel-js/core/engine` no longer carries `IconRegistryProvider`. React is an optional peer of `@weasel-js/icons`; its main entry still loads none.
+  
+  ```tsx
+  import { IconRegistryProvider } from '@weasel-js/icons/react';
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 8649268: `InertiaConfig` is now `InertiaOptions`, and its duplicate name `HandToolInertiaConfig` is gone.
+  
+  The type of the `inertia` option on `useHandTool`, `viewport.dragPan` and `SceneCanvas`'s `viewport` prop is spelled as every other options bag is.
+  
+  ```ts
+  // before
+  import type { InertiaConfig, HandToolInertiaConfig } from '@weasel-js/core';
+  // after
+  import type { InertiaOptions } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+- ea0eef2: The insert gesture's wheel-rotate action has the id `insert.rotate`, matching `insertRotateAction` and its sibling `insert.reposition`.
+  
+  ```ts
+  // before
+  { spec: { kind: 'wheel', phase: 'engaged', mods: { shift: true } }, actionId: 'insert.adjustRotation' }
+  // after
+  { spec: { kind: 'wheel', phase: 'engaged', mods: { shift: true } }, actionId: 'insert.rotate' }
+  ```
+  
+  <!-- entry: breaking api -->
+- 8e6f5d2: The kit's paste and drop handlers for images, SVG and copied nodes move to `@weasel-js/editing`, and `presets.ingest` brings them.
+  
+  This is breaking. A canvas without `presets.ingest` (or `presets.draw`, which includes it) routes a paste or drop through only its own `ingestion.handlers` and its presets'. `ingestion.kitHandlers` now turns off the kit handlers a preset brings, by their `kit:` ids, as before. Core keeps the mechanism: `registerContentHandler`, `runIngest`, `handlersFor`, the `ingestion` prop and dep, and `SceneCanvasApi.ingest`. `KIT_CONTENT_HANDLERS` comes from editing, and `@weasel-js/editing/test-seams` holds the image and SVG measuring stubs a jsdom test needs.
+  
+  <!-- entry: rank=5 breaking api -->
+- 7e5b389: The kit settings area types are read from their packages' schemas, so they are type aliases and can no longer be augmented.
+  
+  That covers `GestureKitSettings`, `CoreKitTargetSettings`, `ViewKitSettings`, `LoupeKitSettings`, `Orbit3dKitSettings`,
+  `RigKitTargetSettings` and `PathToolsKitTargetSettings`. Add a setting by augmenting `@weasel-js/react`'s `KitSettings` or `KitTargetSettings`, as before:
+  
+  ```ts
+  declare module '@weasel-js/react' {
+    interface KitTargetSettings { myHandlePx: number }
+  }
+  ```
+  
+  <!-- entry: breaking -->
+- fd2cbc8: Plain-text paste is no longer a kit content handler: `textTools.text` brings it, as text-tools' `textContentHandler`.
+  
+  This is breaking. `kitTextHandler` is gone from core and from `KIT_CONTENT_HANDLERS`, and its id is `'text-tools:text'`, so `ingestion.kitHandlers: { omit: ['kit:text'] }` omits nothing now; leave `textTools.text` off, or name the handler in your own list, instead. A canvas without `textTools.text` pastes no plain text as a text node.
+  
+  <!-- entry: breaking behavior -->
+- 1ad4f25: The Smudge brush is now Knead, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useSmudgeBrushTool`, `UseSmudgeBrushToolOptions`, `SMUDGE_BRUSH_OPTIONS` | `useKneadTool`, `UseKneadToolOptions`, `KNEAD_TOOL_OPTIONS` |
+  | `smudgePreset`, preset id `'smudge'` | `pathTools.knead`, `'knead'` |
+  | tool id, action id, and `PathToolId` `'smudgeBrush'` | `'knead'` |
+  | `smudgeBrushAction`, `SMUDGE_BRUSH_PARAMS`, `SmudgeBrushParams` | `kneadAction`, `KNEAD_PARAMS`, `KneadParams` |
+  | `DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` | `DEFAULT_KNEAD_RADIUS_PX`, `DEFAULT_KNEAD_STRENGTH` |
+  | `smudgePath`, `SmudgePathOptions` (`@weasel-js/geom`, re-exported by core) | `kneadPath`, `KneadPathOptions` |
+  | icon `path-tools:smudgeBrush` | `path-tools:knead` |
+  
+  The tool keeps its U key. Tool options saved under the `smudgeBrush` id start from their defaults under `knead`.
+  
+  ```ts
+  // before
+  const smudgeBrush = useSmudgeBrushTool();
+  <SceneCanvas features={['draw', smudgePreset]} tools={{ smudgeBrush }} />
+  // after
+  const knead = useKneadTool();
+  <SceneCanvas features={['draw', pathTools.knead]} tools={{ knead }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 5886c61: A custom layer entry in `layers` that sets both `after` and `before` throws.
+  
+  This is breaking: such an entry used to be placed by `after`, with `before` ignored. Keep the anchor you meant and drop the other.
+  
+  ```ts
+  // before: placed after the grid
+  layers={{ hud: { layer, after: 'grid', before: 'scene' } }}
+  // now
+  layers={{ hud: { layer, after: 'grid' } }}
+  ```
+  
+  <!-- entry: breaking behavior -->
+- 0ac8104: `LeanSceneCanvas` is removed: `<SceneCanvas>` is now the canvas that takes preset objects and resolves no names.
+  
+  Breaking: replace `LeanSceneCanvas` with `SceneCanvas` and `LeanSceneCanvasProps` with `SceneCanvasProps`; the props are the same.
+  
+  <!-- entry: breaking api -->
+- 033c46f: `createLivePathEditAction` takes its params as a form, `params`, in place of `initial`, and a commit made with it is the last operation.
+  
+  The driving param's default is its leaf's default, and the last-operation panel shows the form after a commit, replaying it from the paths as the gesture found them.
+  
+  ```ts
+  // before
+  createLivePathEditAction({ id: 'inset', label: 'Inset', param: 'distance', initial: 2, edit, commit });
+  // after
+  createLivePathEditAction({
+    id: 'inset', label: 'Inset', param: 'distance',
+    params: pref.group('Inset', { distance: pref.number('Distance', 2, { min: 0, max: 50 }) }),
+    edit, commit,
+  });
+  ```
+  
+  <!-- entry: breaking api -->
+- 4cc61de: `sceneFromJSON` is renamed `loadScene`, and labkit's `annotationsFromJSON` `loadAnnotations`
+  
+  Both build a live store from saved data, so each is named for what it does. `SceneFromJSONOptions` is now `LoadSceneOptions`.
+  
+  ```ts
+  // before
+  const scene = sceneFromJSON(saved, { registry });
+  // after
+  const scene = loadScene(saved, { registry });
+  ```
+  
+  <!-- entry: breaking api -->
+- b0905a2: The measure tool and measurements moved out of `@weasel-js/core` into a new package, `@weasel-js/measure`.
+  
+  Everything measuring exported now comes from `@weasel-js/measure`, unchanged except where noted: `useMeasureTool`, `createMeasurementsContribution`, `createMeasurements`, `measureNode`, `measurementOf`, `measureEndsOf`, `measureBetween`, `measureMagnification`, `measurePose`, `measureIds`, `currentMeasureId`, `measureHitAt` (core's `measureAt`), `measureEndSource`, `MEASURE_ACTION_IDS`, `MEASURE_LAYER_ID`, `MEASURE_AFFORDANCE_KIND` and their types. The package adds `MEASURE_TOOLS`, a `ToolSet` naming the measure tool, and `useMeasureTools({ measurements })`, which builds it.
+  
+  Core no longer paints a measurement node by default. `createMeasurementsContribution` registers the painter, now `MEASURE_PAINTER` with the id `measure:measurement` (it was `kit:measure`), in its scene's own node shapes while it is installed; a render with no canvas registers it with `nodeShapesOf(scene).register(MEASURE_PAINTER)`.
+  
+  ```ts
+  // before
+  import { createMeasurements, createMeasurementsContribution, useMeasureTool } from '@weasel-js/core';
+  // after
+  import { createMeasurements, createMeasurementsContribution, useMeasureTool } from '@weasel-js/measure';
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 1ba9061: The mode contribution factories are `createModeTriggersContribution` and `createModeShortcutsContribution`.
+  
+  This is a breaking rename: `modeTriggers` (core) and `modeShortcuts` (routing, re-exported by core) are gone, with no alias. Their arguments are unchanged.
+  
+  ```tsx
+  // before
+  <SceneCanvas ambient={[modeShortcuts(modes, handlers), modeTriggers(modes, { enter })]} />
+  // after
+  <SceneCanvas ambient={[createModeShortcutsContribution(modes, handlers), createModeTriggersContribution(modes, { enter })]} />
+  ```
+  
+  <!-- entry: breaking api -->
+- b6ae714: Three modifier-key types that repeated the kit's two are gone: `PressModifiers`, `LayerModifiers` and `KeyModifiers`.
+  
+  ui's `PressModifiers` is gestures' `EventModifiers` (the DOM form), and ui's `LayerModifiers` and core's `KeyModifiers` are routing's `ModifierState` (the short form). The shapes are unchanged.
+  
+  ```ts
+  // before
+  import type { PressModifiers } from '@weasel-js/ui';
+  import type { KeyModifiers } from '@weasel-js/core';
+  // after
+  import type { EventModifiers } from '@weasel-js/gestures';
+  import type { ModifierState } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+- 717a531: `MoveAdapter` no longer declares `findSnapTarget`, which nothing in the kit called.
+  
+  An adapter that implements it can delete it; snapping into a container is `snapToContainer`'s `findTarget`.
+  
+  <!-- entry: breaking -->
+- 36dc93a: Which layout container takes a drop is `move`'s `layoutDropTarget` param, set through `tune`, not `<SceneCanvas layoutDropTarget>`.
+  
+  This is breaking. The `<SceneCanvas>` prop and `LayoutDep.dropTarget` are gone, and `useLayoutDepSource` takes `(scene, reflow?)`. The modes and the `'innermost'` default are unchanged, and the param decides both the drag-time reflow preview and the commit.
+  
+  ```tsx
+  // before
+  <SceneCanvas layoutDropTarget="topmost" />
+  // after
+  <SceneCanvas tune={{ move: { params: { layoutDropTarget: 'topmost' } } }} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 11b0336: `MoveOptions.moveLabel` is `label`, the name the run lifecycle gives the history label.
+  
+  ```ts
+  // before
+  <SceneCanvas selectTool={{ move: { moveLabel: 'Drag' } }} />
+  // after
+  <SceneCanvas selectTool={{ move: { label: 'Drag' } }} />
+  ```
+  
+  <!-- entry: breaking api -->
+- e549ad3: Functions that place a node in world take the whole scene, as a node under a container needs.
+  
+  They are `nodeFrameOf`, `shownNodeOf`, `storesEdits`, `ownGeometryAt`, and path-tools' `brokenConstraintLink`, `brokenConstraintLinks` and `constraintLinkConflictsOf`.
+  
+  This is breaking for a caller that passed an object with only a few of the scene's methods: one with a node under a container threw. Pass the scene itself.
+  
+  ```ts
+  // before
+  shownNodeOf({ get: (id) => scene.get(id) }, id);
+  // after
+  shownNodeOf(scene, id);
+  ```
+  
+  <!-- entry: breaking fix -->
+- 65703dc: `getNodeShapes` is `nodeShapeEntries`, since it lists a registry's entries.
+  
+  ```ts
+  // before
+  const ids = getNodeShapes().map((s) => s.id);
+  // after
+  const ids = nodeShapeEntries().map((s) => s.id);
+  ```
+  
+  <!-- entry: breaking api -->
+- 42aab0c: Registering a node-shape painter under an `id` a different painter already holds in that registry throws, unless it passes `{ replace: true }`.
+  
+  This is breaking: both painters used to stay live, and the older one kept painting. The same painter registered again is still a second registration. Code that swaps a painter on purpose, as hot reload does, says so:
+  
+  ```ts
+  registerNodeShape(painter, { replace: true });
+  ```
+  
+  <!-- entry: breaking api behavior -->
+- a0bb229: `commitSelectionOps`, `deleteNode` and `insertAt` are `createCommitSelectionOps`, `createDeleteNodeOp` and `createInsertNodeOp`.
+  
+  They return ops and commit nothing.
+  
+  Their arguments are unchanged.
+  
+  ```ts
+  // before
+  ops.push(deleteNode(scene, node, label), insertAt(copy, index, label));
+  // after
+  ops.push(createDeleteNodeOp(scene, node, label), createInsertNodeOp(copy, index, label));
+  ```
+  
+  <!-- entry: breaking api -->
+- aedb49f: Each scene or history can restore ops through an op registry of its own, so two hosts can give one op name different factories.
+  
+  This is a breaking change. `createOpRegistry()` makes a registry that falls back to the kit's built-in factories; `createScene({ opRegistry })` and `createHistory(adapter, { opRegistry })` restore through it, and through `defaultOpRegistry` when none is given. `registerOpFactory` writes to `defaultOpRegistry`, returns its release, and throws on a different factory under a taken name unless passed `{ replace: true }`. `opFactoryRegistry`, `rebuildOp` and `registeredOpNames` are gone.
+  
+  ```ts
+  // before
+  registerOpFactory('app:recolor', buildRecolor);
+  rebuildOp('app:recolor', args);
+  registeredOpNames();
+  // after
+  const ops = createOpRegistry();
+  ops.register('app:recolor', buildRecolor);
+  const scene = createScene({ systemLayers, opRegistry: ops });
+  ops.rebuild('app:recolor', args);
+  ops.entries().map((e) => e.key);
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 067cf55: `selectedPathNodes` is `operandPathNodes`, since it reads the `operands` dep, which a host can fill from something other than the selection.
+  
+  ```ts
+  // before
+  const paths = selectedPathNodes(deps);
+  // after
+  const paths = operandPathNodes(deps);
+  ```
+  
+  <!-- entry: breaking api -->
+- b750660: The remaining `*Opts` types are `*Options`: `BindingOptions`, `ZoomClampOptions`, `WheelPanOptions`, `TilePatternOptions`.
+  
+  `createViewportWheelPanAction`'s options (formerly `makeViewportWheelPanAction`), which were `WheelPanOptions`, are now `ViewportWheelPanOptions`; `WheelPanOptions` is `wheelPan()`'s, which were `WheelPanOpts`. Only type names change.
+  
+  ```ts
+  // before
+  import type { BindingOpts, WheelPanOptions, WheelPanOpts } from '@weasel-js/core';
+  // after
+  import type { BindingOptions, ViewportWheelPanOptions, WheelPanOptions } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+- 5b5d307: Nineteen options types are renamed from `*Opts` to `*Options`, the suffix the rest of the kit's options types use.
+  
+  Core: `CreateChildrenLayerOptions`, `CreateDebugOverlayLayerOptions`, `CreatePathLayerOptions`, `CreateTextLayerOptions`, `CreateViewportLayerOptions`, `CreateViewResolverOptions`, `ComposeSelectionPoseOptions`, `SelectionOutlineLayerOptions`, `SelectionHandlesLayerOptions`, `SelectionOverlayLayerOptions`, `NestedHitOptions`, `ParallaxOptions`, `SceneNodeClientRectOptions`, `UseViewHelpersOptions`. Guides: `GridLayerOptions`, `GuidesLayerOptions`, `CellHighlightLayerOptions`. Parallax: `CreateParallaxLayerOptions`, `CreateTiledLayerOptions`. Only the type names change.
+  
+  ```ts
+  // before
+  import type { ParallaxOpts, CreatePathLayerOpts } from '@weasel-js/core';
+  // after
+  import type { ParallaxOptions, CreatePathLayerOptions } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+- dc881e4: `BooleansAdapter` and `CreateOutlinesAdapter` take `getOutline` in place of `getTextSource`, reading any kind's outline.
+  
+  This is breaking. Answer `getOutline(id)` with `sceneNodeOutline(scene, id)`, which asks the node's painter and resolves its inherited paint and text box padding itself. A failed conversion reports `reason: 'outlines'` with a `NodeOutlineError` (`pending` while a face loads, `summary` for the user) in place of `'text-outlines'` and `TextOutlinesError`; Create Outlines with nothing to convert reports `reason: 'no-outlines'`; `warnTextOutlines` is now `warnOutlines`, and its notice id is `'outlines'`; `withTextOutlines` is now `withOutlines`, and `textIsStroked` gives way to `NodeOutline.stroked`.
+  
+  ```ts
+  // before
+  getTextSource: (id) => ({ data: textDataOf(id), pose: textBoxOf(...) }),
+  // after
+  getOutline: (id) => sceneNodeOutline(scene, id),
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- b29a94e: `removePage`, `movePage`, `resizePage` and `renamePage` throw on a page id the scene does not have.
+  
+  This is breaking: such a call used to return having done nothing, including on a scene with no pages. Check the id first where it may be stale, as `usePages().remove` already does through `pageRemoval`.
+  
+  <!-- entry: breaking behavior -->
+- 43bf365: `pageOfNode` is `pageIdOf`, since it returns a page id where its siblings return a `PlacedPage`.
+  
+  ```ts
+  // before
+  const page = pageOfNode(scene, id);
+  // after
+  const page = pageIdOf(scene, id);
+  ```
+  
+  <!-- entry: breaking api -->
+- e1e7241: `GHOST_STROKE` is renamed `GHOST_STROKE_COLOR`: it is a color string, named like `DEFAULT_STROKE_COLOR` beside it.
+  
+  ```ts
+  // before
+  const stroke = solidStroke(GHOST_STROKE);
+  // after
+  const stroke = solidStroke(GHOST_STROKE_COLOR);
+  ```
+  
+  <!-- entry: breaking api -->
+- 977164c: The hex-alpha helpers and the kit's default paints move from `@weasel-js/core` to `@weasel-js/paint`: `solid`, `solidStroke`, `toHex8` and the rest.
+  
+  This is breaking: import `toHex8`, `hexAlpha`, `withAlpha01`, `mergeAlphaFromPrev`, `solid`, `solidStroke`, `strokeWith`, `paintAlpha`, `paintWithAlpha`, `paintWithColor`, `paletteColorAt`, `DEFAULT_FILL_COLOR`, `DEFAULT_STROKE_COLOR`, `DEFAULT_PALETTE` and `GHOST_STROKE_COLOR` from `@weasel-js/paint`.
+  
+  ```ts
+  import { solid, solidStroke } from '@weasel-js/paint';
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 9aed377: `getAlpha01` is renamed `hexAlpha`, the alpha of a hex color, beside `paintAlpha` for a paint.
+  
+  ```ts
+  // before
+  const a = getAlpha01('#ff000080');
+  // after
+  const a = hexAlpha('#ff000080');
+  ```
+  
+  <!-- entry: breaking api -->
+- e4a8c4f: The paint-kind swatches and the none and inherit glyphs move from the `core` icon namespace to `paint-kinds`, renamed for it.
+  
+  This is breaking: `core:paintSolid`, `core:paintLinear`, `core:paintRadial`, `core:paintConic`, `core:paintMesh`, `core:paintPattern`, `core:paintNone` and `core:paintInherit` are now `paint-kinds:solid`, `paint-kinds:linear`, `paint-kinds:radial`, `paint-kinds:conic`, `paint-kinds:mesh`, `paint-kinds:pattern`, `paint-kinds:none` and `paint-kinds:inherit`. An app passing tables by hand adds `@weasel-js/paint-kinds/icons`; `kitIcons` and the build plugin include it. The glyphs are drawn as before.
+  
+  <!-- entry: breaking api -->
+- e4a8c4f: The paint-kind registry moves from `@weasel-js/core` to `@weasel-js/paint-kinds`.
+  
+  This is breaking: import `registerPaintKind`, `registerPaintKindLoader`, `getPaintKind`, `listPaintKinds`, `listGradientKinds`, `paintKindOf`, `paintKindRegistry`, `patternFamily`, `seedTile`, `withPaintKind`, `asPaint` and the `PaintKind`, `PaintKindEntry`, `PaintKindEditorProps`, `PaintKindFamily` and `PaintKindLoader` types from `@weasel-js/paint-kinds`; `usePaintKinds`, `usePaintKind` and `useGradientKinds` from `@weasel-js/paint-kinds/react`; and `_resetPaintKindsForTests` from `@weasel-js/paint-kinds/test-seams`. Importing `@weasel-js/core/mesh` still registers the mesh kind. `warmPaintKinds` and `isPaintKindKnown` stay in core.
+  
+  ```ts
+  import { registerPaintKind, asPaint } from '@weasel-js/paint-kinds';
+  import { usePaintKinds } from '@weasel-js/paint-kinds/react';
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- a791e92: `switchGradientKind` is renamed `withPaintKind`, and comes from `@weasel-js/paint-kinds`.
+  
+  It is `withGradientKind` one level up, retargeting a paint to any kind with a stop list.
+  
+  ```ts
+  // before
+  import { switchGradientKind } from '@weasel-js/core';
+  const next = switchGradientKind(paint, 'conic-gradient');
+  // after
+  import { withPaintKind } from '@weasel-js/paint-kinds';
+  const next = withPaintKind(paint, 'conic-gradient');
+  ```
+  
+  <!-- entry: breaking api -->
+- 8ced7e2: `cycleFill` is renamed `paletteColorAt`: it returns the palette's n-th color as a hex string, wrapping past the end.
+  
+  ```ts
+  // before
+  const color = cycleFill(seq);
+  // after
+  const color = paletteColorAt(seq);
+  ```
+  
+  <!-- entry: breaking api -->
+- 5ed6215: `parseColorToRgba255` is renamed `parseColorBytes`, matching `parseHexBytes` and `hexToRgbBytes`, the other readers that return 0..255 channels.
+  
+  ```ts
+  // before
+  const [r, g, b, a] = parseColorToRgba255(css);
+  // after
+  const [r, g, b, a] = parseColorBytes(css);
+  ```
+  
+  <!-- entry: breaking -->
+- 9cacd4b: `resolveColor` is gone; `parseColor` and `tryParseColor` now return the read-only tuple it did, since all three share one cache.
+  
+  ```ts
+  // before
+  const [r, g, b, a] = resolveColor(css);
+  // after
+  const [r, g, b, a] = parseColor(css);
+  ```
+  
+  A caller that wrote into `parseColor`'s result copies it first: `[...parseColor(css)]`.
+  
+  <!-- entry: breaking -->
+- 968362b: `strokeOf` is renamed `solidStroke`: it builds a solid stroke from a color, beside `strokeWith` for any paint.
+  
+  ```ts
+  // before
+  const stroke = strokeOf('#1c1c1c', 2);
+  // after
+  const stroke = solidStroke('#1c1c1c', 2);
+  ```
+  
+  <!-- entry: breaking api -->
+- 6d2bb1e: Path edit, the pen, the pencil, the knife, the path commands, and Create Outlines move from `@weasel-js/core` to `@weasel-js/path-tools`.
+  
+  This is breaking. `presets.draw` no longer opens a path for editing, and `<SceneCanvas>` no longer builds in the `pen`, `pencil`, `slice` or `anchors` tools. A canvas gets them back from path-tools: `pathTools.paths` (path edit, its anchor keys, the path commands, and outlines), which `pathTools.pathTools` includes, and `usePathToolsTools`, which now builds the pen, the pencil, the knife and the anchors tool beside the rest.
+  
+  ```tsx
+  // before
+  import { drawPreset, SceneCanvas } from '@weasel-js/core';
+  <SceneCanvas features={[drawPreset]} defaultTools={['select', 'pen', 'pencil', 'slice']} />;
+  
+  // after
+  import { SceneCanvas } from '@weasel-js/core';
+  import * as presets from '@weasel-js/editing/presets';
+  import { usePathToolsTools } from '@weasel-js/path-tools';
+  import * as pathTools from '@weasel-js/path-tools/presets';
+  const tools = usePathToolsTools();
+  <SceneCanvas features={[presets.draw, pathTools.pathTools]} defaultTools={['select']} tools={tools} />;
+  ```
+  
+  These exports leave core and are path-tools' now: the presets `pathTools.paths`, `pathTools.pathEdit`, `pathTools.anchorKeys`, `pathTools.outlines` and `pathTools.pathCommands`, on `@weasel-js/path-tools/presets`; `usePenTool`, `PEN_TOOL_OPTIONS`, `createPenPreviewLayer`, `PEN_CLOSE_HIT_PX`, `usePencilTool`, `PENCIL_TOOL_OPTIONS`, `useSliceTool`, `sliceAction`, `anchorsTool`, `ANCHORS_TOOL_ID`; `editAnchorsAction`, `selectAnchorAction`, `deleteAnchorsAction`, the `nudgeAnchors*Action`s, `hitAnchor`, `commitAnchorEdit`, `anchorEditWouldChange`, `openPathEditOf`, `requiresAnchorSelection`, `createHandleEditAction`, `joinSelectedAnchors`, `editTargetOf`, `markUnder`, `deleteSelectedMark`, `finishPathEditFrame`, `editedPathSymmetries`, `locksInForce`, `HANDLE_LOCK_ROLES`; `createLivePathEditAction`, `createJoinPathsAction`, `planJoin`, `SIMPLIFY_PATH_PARAMS`, `OFFSET_PATH_PARAMS`, `DEFAULT_SIMPLIFY_TOLERANCE`, `OffsetPathParams`; `applyCreateOutlines`, `applyOutlineStroke`, `useCreateOutlinesAdapter`, and their types.
+  
+  Core's tool sets lose `ANCHOR_TOOLS`, `DRAW_TOOLS` and `PAGE_TOOLS`, and its presets `drawToolsPreset` and `pageToolsPreset` with their `tools:draw` and `tools:page` names: path-tools' `PATH_EDIT_TOOLS` now leads with the anchors tool, and `DRAW_TOOLS` and `SLICE_TOOLS` hold the pen and pencil and the knife. `TOOL_GROUP_ORDER` names core's groups only, so a palette showing path-tools' tools passes its own `groupOrder`. The `pen` and `pencil` shape kinds stay core's, with `tool: false`.
+  
+  <!-- entry: rank=20 breaking api -->
+- 6d2bb1e: The pen's and the knife's kit settings move to `pathToolsKitSettingsSchema` in `@weasel-js/path-tools`.
+  
+  `targets.penAnchorRadiusPx`, `targets.penHandleDotRadiusPx`, `targets.penCloseHintRadiusPx`, `targets.penCloseHitPx`, `targets.sliceVertexRadiusPx` and `targets.sliceCloseHitPx` keep their paths and defaults; `coreKitSettingsSchema` and `CoreKitTargetSettings` no longer list them, and path-tools' `PathToolsKitTargetSettings` does. A settings page merges the new schema beside core's:
+  
+  ```ts
+  import { coreKitSettingsSchema } from '@weasel-js/core';
+  import { pathToolsKitSettingsSchema } from '@weasel-js/path-tools';
+  const kit = mergePrefGroups('Kit settings', coreKitSettingsSchema, pathToolsKitSettingsSchema);
+  ```
+  
+  <!-- entry: breaking api -->
+- 0ae8b0c: A scene that keeps adding and removing nodes keeps painting past 16.7 million node ids, where it used to throw.
+  
+  Once `scenePickIds` has handed out every number an id frame can hold, it gives a removed node's number to a new node. A number read from an id frame before its node was removed can then name a different node. Until that point nothing changes. `nodeOf` now answers `null` for a node that has left the scene:
+  
+  ```ts
+  const n = scenePickIds(scene).pickIdOf(id);
+  scene.remove(id);
+  scenePickIds(scene).idOfPickId(n); // before: id; now: null
+  ```
+  
+  A number you keep across removals should be checked with `nodeOf` before use, not trusted for the scene's life.
+  
+  <!-- entry: breaking behavior fix -->
+- 8078d25: `pickTopMostHit` is renamed `topmostOf`, and its `PickTopMostHitAdapter` type `TopmostTree`. It reduces an already-hit id list to the one a click acts on and does no hit test of its own.
+  
+  ```ts
+  // before
+  import { pickTopMostHit, type PickTopMostHitAdapter } from '@weasel-js/core';
+  // after
+  import { topmostOf, type TopmostTree } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking -->
+- c428e9e: `RegionPickView` and its alias `HitTestView` are one type, `PickingView`: the view any pick consults.
+  
+  ```ts
+  // before
+  import type { HitTestView, RegionPickView } from '@weasel-js/core';
+  // after
+  import type { PickingView } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+- 7dd8e23: `viewport.touchZoom`'s two-finger binding is named `viewport.touchZoom.multiTouch`, after the gesture it binds.
+  
+  ```ts
+  // Before
+  <SceneCanvas bindingOverrides={{ 'viewport.pinchZoom.pinch': unbound() }} />
+  // After
+  <SceneCanvas bindingOverrides={{ 'viewport.touchZoom.multiTouch': unbound() }} />
+  ```
+  
+  <!-- entry: breaking -->
+- 5fa6d0a: Two presets that give one layer slot or one tool id different values throw, unless one of them `refines` the other.
+  
+  This is breaking: the later preset in `features` used to win without a word. Two presets giving the same value still agree. Where one preset is meant to override another, say so on it:
+  
+  ```ts
+  const myGrid: FeaturePreset = { id: 'my-grid', refines: ['grid'], layers: { grid: { layer } } };
+  ```
+  
+  <!-- entry: breaking behavior -->
+- 68d5da4: A preset's tool whose `insert` bindings all name a kind nothing on the canvas builds is left out of its tools.
+  
+  The canvas warns in development when it leaves one out. This is a breaking change for a host that builds such a kind through its own `insert` dep source rather than a factory: give the factory through `insertNodeFactories` or a preset's `insertNodeFactories` instead, and the tool stays.
+  
+  ```tsx
+  // before: a preset's `gem` tool, built by an overridden insert dep
+  useDepSource('insert', () => myInsertDep);
+  // after
+  <SceneCanvas features={[gemTools]} insertNodeFactories={{ gem: gemFactory }} />
+  ```
+  
+  <!-- entry: breaking behavior -->
+- 3f553ff: The Extend to next path tool is now Reach, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useExtendTool`, `UseExtendToolOptions` | `useReachTool`, `UseReachToolOptions` |
+  | `extendPreset`, preset id `'extend'` | `pathTools.reach`, `'reach'` |
+  | tool id and `PathToolId` `'extend'` | `'reach'` |
+  | action `extendToMeet`, `extendToMeetAction`, `EXTEND_TO_MEET_PARAMS`, `ExtendToMeetParams` | `reachToMeet`, `reachToMeetAction`, `REACH_TO_MEET_PARAMS`, `ReachToMeetParams` |
+  | `extendToMeet`, `ExtendToMeetOptions` (`@weasel-js/geom`, re-exported by core) | `reachToMeet`, `ReachToMeetOptions` |
+  | icon `path-tools:extend` | `path-tools:reach` |
+  
+  The tool keeps its Shift+U key.
+  
+  ```ts
+  // before
+  const extend = useExtendTool();
+  <SceneCanvas features={['draw', extendPreset]} tools={{ extend }} tune={{ extendToMeet: { params: { shape: 'straight' } } }} />
+  // after
+  const reach = useReachTool();
+  <SceneCanvas features={['draw', pathTools.reach]} tools={{ reach }} tune={{ reachToMeet: { params: { shape: 'straight' } } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- af132bc: `useCanvasFocus`'s return type is `UseCanvasFocusReturn`, as every other hook's `*Return` type is named; it was `CanvasFocusReturn`.
+  
+  ```ts
+  // before
+  import type { CanvasFocusReturn } from '@weasel-js/react';
+  // after
+  import type { UseCanvasFocusReturn } from '@weasel-js/react';
+  ```
+  
+  <!-- entry: breaking api -->
+- 4a4d7c9: `FramedBox`, `WarpBox` and `MeshBox` are `FramedRect`, `WarpRect` and `MeshRect`, since each is an `{ x, y, width, height }`.
+  
+  geom names that shape `Rect` and keeps `Box` for a min/max pair. `FramedBox` and `WarpBox` are geom's; `MeshBox` is renderer's.
+  
+  ```ts
+  // before
+  import type { FramedBox, WarpBox } from '@weasel-js/geom';
+  // after
+  import type { FramedRect, WarpRect } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking api -->
+- a3958dc: PNG, PDF and SVG exports and `renderSceneToPixels` draw a parallax layer at its document pose, at any scale.
+  
+  Parallax is the camera's, and a render with no camera has none. To capture what a view shows, planes and all, pass that view as the new `camera`; `scale` then changes only the resolution. `renderDebugSnapshot` does this itself.
+  
+  ```ts
+  // before: planes followed the output's own view, moving with the region and the scale
+  renderSceneToPixels({ scene, sourceRect: viewportWorldRect(view, size), scale });
+  // after
+  renderSceneToPixels({ scene, sourceRect: viewportWorldRect(view, size), scale, camera: view });
+  ```
+  
+  <!-- entry: rank=5 breaking behavior api fix visual -->
+- c873b55: `scene.registerOp` throws when a different handler takes a kind already registered, unless it passes `{ replace: true }`.
+  
+  This is breaking: a second handler used to replace the first silently. Registering the same handler again is still no change. Code that swaps a handler on purpose, as hot reload does, says so:
+  
+  ```ts
+  scene.registerOp('app:bump', handler, { replace: true });
+  ```
+  
+  <!-- entry: breaking api behavior -->
+- aedb49f: `registerProgram` throws on a different source under a taken id, in development as in production, unless passed `{ replace: true }`.
+  
+  This is a breaking change. The same source again is no change. A module re-registering its program on hot reload passes `replace: true`, where development used to replace without it. `registerEffect` takes the same options, and `programSourceRegistry.register` returns a release for a program that should not last the page's lifetime.
+  
+  ```ts
+  // before
+  registerProgram('stripes', { glsl: { frag: STRIPES } });
+  // after, in a module that hot reload runs again with new source
+  registerProgram('stripes', { glsl: { frag: STRIPES } }, { replace: true });
+  ```
+  
+  <!-- entry: breaking api behavior -->
+- f5e0446: `CullRect` and `PixelRect` are removed; `cullDrawCommands` and `readPixels` take geom's `Rect`, which has the same fields.
+  
+  ```ts
+  // before
+  import type { CullRect } from '@weasel-js/renderer';
+  const view: CullRect = { x: 0, y: 0, width: 800, height: 600 };
+  // after
+  import type { Rect } from '@weasel-js/geom';
+  const view: Rect = { x: 0, y: 0, width: 800, height: 600 };
+  ```
+  
+  <!-- entry: breaking api -->
+- f6c305d: `FillPoseBox` is removed; the paint-unit functions and paint-kind hooks take geom's `Rect`, which has the same fields.
+  
+  ```ts
+  // before
+  import type { FillPoseBox } from '@weasel-js/renderer';
+  const box: FillPoseBox = { x: 0, y: 0, width: 10, height: 10 };
+  // after
+  import type { Rect } from '@weasel-js/geom';
+  const box: Rect = { x: 0, y: 0, width: 10, height: 10 };
+  ```
+  
+  <!-- entry: breaking api -->
+- 00a1f20: `fillInPoseFrame` and `fillToBoundsFrame` are renamed `paintToLocalUnits` and `paintToBoundsUnits`.
+  
+  A registered paint kind's `inPoseFrame` and `toBoundsFrame` hooks follow, as `toLocalUnits` and `toBoundsUnits`. They convert any paint's units, strokes included, and apply no pose frame.
+  
+  ```ts
+  // before
+  const local = fillInPoseFrame(paint, box);
+  registerPaintKind({ kind: 'wash', inPoseFrame, toBoundsFrame, /* … */ });
+  // after
+  const local = paintToLocalUnits(paint, box);
+  registerPaintKind({ kind: 'wash', toLocalUnits, toBoundsUnits, /* … */ });
+  ```
+  
+  <!-- entry: breaking api -->
+- 6451f0c: `resolveFillPattern` is renamed `resolvePaintPattern`: it resolves any paint's pattern, a stroke's included.
+  
+  ```ts
+  // before
+  const paint = resolveFillPattern(posed);
+  // after
+  const paint = resolvePaintPattern(posed);
+  ```
+  
+  <!-- entry: breaking api -->
+- 162f816: `ResizeAdapter` and `RotateAdapter` are gone; type a resize or rotate adapter as `MoveAdapter`, which carries every member they had.
+  
+  Nothing in the kit read either type, and `SceneCanvasAdapter` already satisfied both through `MoveAdapter`.
+  
+  ```ts
+  // before
+  import type { ResizeAdapter } from '@weasel-js/core';
+  const adapter: ResizeAdapter<Node, Pose> = …;
+  // after
+  import type { MoveAdapter } from '@weasel-js/core';
+  const adapter: MoveAdapter<Node, Pose> = …;
+  ```
+  
+  <!-- entry: breaking api -->
+- 17d184b: The helpers that run an action's `enabled` and `active` predicates safely are `checkEnabled` and `checkActive`.
+  
+  `evaluateEnabled` and `evaluateActive` (routing, re-exported by core) are renamed `checkEnabled` and `checkActive`; their arguments and results are unchanged.
+  
+  ```ts
+  // before
+  const enabled = evaluateEnabled(action, deps);
+  // after
+  const enabled = checkEnabled(action, deps);
+  ```
+  
+  <!-- entry: breaking api -->
+- cabffe5: The function that builds the deps bag an action declares is `createActionDeps`.
+  
+  `buildDepsFromRequires` (routing, re-exported by core) is renamed `createActionDeps`; its arguments are unchanged.
+  
+  ```ts
+  // before
+  const deps = buildDepsFromRequires(action, registry);
+  // after
+  const deps = createActionDeps(action, registry);
+  ```
+  
+  <!-- entry: breaking api -->
+- f92300d: The sweep action's factory is `createSweepAction`, like the repo's other action factories.
+  
+  `sweepAction` (routing, re-exported by core) is renamed `createSweepAction`; its options are unchanged.
+  
+  ```ts
+  // before
+  registry.register(sweepAction({ ...opts }));
+  // after
+  registry.register(createSweepAction({ ...opts }));
+  ```
+  
+  <!-- entry: breaking api -->
+- 76ca845: The type a tool declares its options with is `ToolOptionsSpec`, since it is a declaration of the options rather than a bag of their values.
+  
+  `ToolOptions` (routing, re-exported by core) is renamed `ToolOptionsSpec`; its fields are unchanged.
+  
+  ```ts
+  // before
+  export const LASSO_TOOL_OPTIONS: ToolOptions = { actionId: 'lasso', prefs };
+  // after
+  export const LASSO_TOOL_OPTIONS: ToolOptionsSpec = { actionId: 'lasso', prefs };
+  ```
+  
+  <!-- entry: breaking api -->
+- b835405: The move, resize and rotate options' `onGestureStart` and `onGestureEnd` are `onRunStart` and `onRunEnd`.
+  
+  `GestureLifecycleOptions` is `RunLifecycleOptions`: the lifecycle is the action run's, not a gesture's.
+  
+  The helpers follow: `readGestureLifecycle`, `gestureLifecycleParams`, `commitGestureOps` and `closeGesture` are `readRunLifecycle`, `runLifecycleParams`, `commitRunOps` and `closeRun`.
+  
+  ```ts
+  // before
+  <SceneCanvas selectTool={{ move: { onGestureStart: save, onGestureEnd: done } }} />
+  // after
+  <SceneCanvas selectTool={{ move: { onRunStart: save, onRunEnd: done } }} />
+  ```
+  
+  <!-- entry: breaking api -->
+- bf1cf7b: The Simplify brush is now Sand, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useSimplifyBrushTool`, `UseSimplifyBrushToolOptions`, `SIMPLIFY_BRUSH_OPTIONS` | `useSandTool`, `UseSandToolOptions`, `SAND_TOOL_OPTIONS` |
+  | `simplifyBrushPreset`, preset id `'simplifyBrush'` | `pathTools.sand`, `'sand'` |
+  | tool id, action id, and `PathEditToolId` `'simplifyBrush'`, binding `simplifyBrush.drag` | `'sand'`, `sand.drag` |
+  | `simplifyBrushAction`, `SIMPLIFY_BRUSH_PARAMS`, `SIMPLIFY_BRUSH_RADIUS_PX`, `SimplifyBrushParams` | `sandAction`, `SAND_PARAMS`, `SAND_RADIUS_PX`, `SandParams` |
+  | icon `core:simplifyBrush` | `core:sand` |
+  
+  Core's Simplify command is unchanged. Tool options saved under the `simplifyBrush` id start from their defaults under `sand`.
+  
+  ```ts
+  // before
+  const simplifyBrush = useSimplifyBrushTool();
+  <SceneCanvas features={['paths', simplifyBrushPreset]} tools={{ simplifyBrush }} />
+  // after
+  const sand = useSandTool();
+  <SceneCanvas features={['paths', pathTools.sand]} tools={{ sand }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- c3e773c: `nodeKindOf` is `savedNodeKind`: it answers the kind a saved node loads as, `'mark'` or `'group'`.
+  
+  ```ts
+  // before
+  const kind = nodeKindOf(2, saved);
+  // after
+  const kind = savedNodeKind(2, saved);
+  ```
+  
+  <!-- entry: breaking api -->
+- 0ac8104: `<SceneCanvas features>` takes preset objects only, and a bundle carries just the presets it imports.
+  
+  Breaking: a name in `features` throws. Pass the exported object for each name instead:
+  
+  ```tsx
+  // before
+  <SceneCanvas features={['pick', 'move', 'tools:shape']} />
+  // after
+  import * as presets from '@weasel-js/editing/presets';
+  <SceneCanvas features={[presets.pick, presets.move, presets.shapeTools]} />
+  ```
+  
+  Each name `n` is `presets.n`, and `tools:x` is `presets.xTools`. Code that picks presets by name (a URL, a settings file) imports `namedFeatures` from the new `@weasel-js/core/named-features` entry: `namedFeatures('pick', 'move')` returns `[presets.pick, presets.move]`, and loads every core preset. `SCENE_CANVAS_FEATURES` and the `Feature` type are now `FEATURE_NAMES` and `FeatureName` there; `FEATURE_PRESETS` and `FEATURE_ACTION_IDS` moved there too. `FeatureEntry` and `NamedPresets` are gone: `features` is `readonly FeaturePreset[]`.
+  
+  <!-- entry: rank=20 breaking api -->
+- fd2cbc8: `<SceneCanvas textEditor>` is gone: configure the canvas's own text editor with `createTextPreset({ editor })` from `@weasel-js/text-tools`.
+  
+  This is breaking. `editor` takes `useSceneTextEdit`'s options as the prop did, or `false` for none; `SceneCanvasTextEditor` is text-tools' `CanvasTextEditorOptions`.
+  
+  ```tsx
+  // before
+  <SceneCanvas textEditor={{ escape: 'commit' }} features={[presets.draw]} />
+  // after
+  const text = useMemo(() => createTextPreset({ editor: { escape: 'commit' } }), []);
+  <SceneCanvas features={[presets.draw, text]} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 2241860: `<SceneCanvas>` drops `gestureSource`, `previewPoseExtra` and `boundsOfPose`, which replaced the ones it wires itself.
+  
+  Code passing one of them stops typechecking; drop the prop. Passing one left the selection chrome and `viewBounds: 'content'` blind to in-flight gestures. To box nodes differently, give `geometry.boundsOf`, which the chrome and the pickers both read.
+  
+  <!-- entry: fix breaking -->
+- a979682: `sceneSelectionStore` is `sceneHistorySelection`: it adapts a scene to the `HistorySelection` `createHistory` takes.
+  
+  ```ts
+  // before
+  createHistory({ selection: sceneSelectionStore(scene) });
+  // after
+  createHistory({ selection: sceneHistorySelection(scene) });
+  ```
+  
+  <!-- entry: breaking api -->
+- eaefc65: `sceneNodeOutline` gives a paged or nested node's outline where it is drawn, and takes the scene itself.
+  
+  ```ts
+  // before: any `{ get(id) }` was accepted, and the outline sat at the stored pose
+  sceneNodeOutline({ get: (id) => scene.get(id) }, id);
+  // after: pass the scene; the outline is in world space
+  sceneNodeOutline(scene, id);
+  ```
+  
+  <!-- entry: breaking fix -->
+- a47e5ed: A pose or `data` value handed to the scene is the scene's from then on, and a development build freezes it, so writing into one throws.
+  
+  The scene and its undo history keep these values by reference, so a write into one changed the document behind history's back. Build a new value and pass it in instead of editing one you passed before or read back:
+  
+  ```ts
+  // before
+  const pose = { x: 0, y: 0, width: 10, height: 10 };
+  scene.setPose(id, pose);
+  pose.x = 5; // silently moved the node and rewrote its undo entry
+  // after
+  scene.setPose(id, { ...pose, x: 5 });
+  ```
+  
+  Only plain objects and arrays are frozen; typed arrays and class instances are left writable, and the same rule holds for them unguarded. A production build freezes nothing. `toJSON()` returns a copy of these values, typed arrays included, so a snapshot stays as it was through later edits and is yours to edit; `loadState` and `loadScene` copy a save in, so a save you load is never frozen.
+  
+  <!-- entry: rank=10 breaking behavior -->
+- 6829ab9: `ScenePickIds`' `idOf` and `nodeOf` are `pickIdOf` and `idOfPickId`: one gives the pick number for a node id, the other the node id for a pick number.
+  
+  ```ts
+  // before
+  const node = scenePickIds(scene).nodeOf(pixel);
+  // after
+  const node = scenePickIds(scene).idOfPickId(pixel);
+  ```
+  
+  <!-- entry: breaking api -->
+- a47e5ed: Scene nodes and layer records are typed readonly: what `scene.get(id)`, `scene.nodes` and `scene.layers` hand out is read, never written.
+  
+  They are live views of the scene's own records, not copies. Change a node through the scene's edits, which record history and notify:
+  
+  ```ts
+  // before: compiled, skipped history and notifications, and left the scene's version alone
+  scene.get(id)!.pose.x = 10;
+  // after
+  scene.setPose(id, { ...scene.get(id)!.pose, x: 10 });
+  ```
+  
+  `MutableNode` is kit-internal and not exported.
+  
+  <!-- entry: rank=10 breaking api -->
+- aedb49f: A restored op that fails on undo or redo throws `RestoredOpError` and leaves its entry, and the scene, where they were.
+  
+  This is a breaking change. Before, such an op was skipped and the entry moved on. `scene.restoreHistory` is strict too: it throws `HistoryRestoreError` for an op it cannot rebuild, for an `applyBatch` op while no history adapter is set, and for a snapshot in another recorded form, so call `setHistoryAdapter` before restoring. It returns the restore's report, and `{ recovery: 'best-effort' }` keeps what it can, as `History.restore` does. See "Restoring history" in `docs/scene-serialization.md`.
+  
+  ```ts
+  // before
+  scene.restoreHistory(saved);
+  scene.setHistoryAdapter(() => adapter);
+  // after
+  scene.setHistoryAdapter(() => adapter);
+  const report = scene.restoreHistory(saved, { recovery: 'best-effort', onSkip: log });
+  ```
+  
+  <!-- entry: rank=10 breaking behavior -->
+- a23923e: The select tool, group entry and the selection's move, resize and rotate contributions move to `@weasel-js/editing`, with an `./engine` entry.
+  
+  This is breaking. `<SceneCanvas>` no longer builds a select tool: editing's `presets.selectToolsOffered` offers one by id, built over the canvas's pickers and its `selectTool` options, and `presets.select` (in `presets.pick` and `presets.draw`) mounts it and installs the group entry (double-click to enter, Escape to leave). Under `actions={null}` that group entry stays, as the rest of the preset does. Core's `BuiltinToolId` is now `'hand'`.
+  
+  From editing: `useSelectTool`, `usePickerSelectTool` and their plain factories `createSelectTool` and `createPickerSelectTool`, `SelectAdapter`, `UseSelectToolOptions`, `createSelectionMoveContribution`, `createSelectionResizeContribution`, `createSelectionRotateContribution`, `createSelectionTransformContribution` and their `*Bindings`, `createAreaSelectContribution`, `isBodyOffChrome`, `isEmptyOffChrome`, the `SELECTION_*_ID`s and `AREA_SELECT_ID`, `createGroupEntryContribution`, `useGroupEntryContribution`, `GROUP_ENTRY_ID` and `GROUP_LEAVE_PRESS_BINDING`. A host of another dimension imports `usePickerSelectTool`, `createSelectionMoveContribution`, `useGroupEntryContribution` and `ENGINE_STANDARD_ACTIONS` from `@weasel-js/editing/engine`, which loads none of editing's presets.
+  
+  ```ts
+  // before
+  import { createSelectionMoveContribution, usePickerSelectTool } from '@weasel-js/core/engine';
+  // after
+  import { createSelectionMoveContribution, usePickerSelectTool } from '@weasel-js/editing/engine';
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 9246f97: The selection chrome moves to `@weasel-js/editing`: the outline, resize handles and rotate badge it paints, and the handles a press grabs.
+  
+  This is breaking. A canvas with no editing preset paints nothing in the `selectionOverlay` slot and grabs no resize or rotate handle; a layer of the consumer's own in that slot still paints. `presets.outline`, `presets.resize` and `presets.rotate` include the new `presets.selectionChrome`, which hands the canvas `SELECTION_CHROME` through the new `FeaturePreset.selectionChrome` role, so a canvas using them changes nothing.
+  
+  From editing, under the same names: `createSelectionOverlayLayer`, `createSelectionOutlineLayer`, `createSelectionHandlesLayer`, `composeSelectionPose`, `ComposeSelectionPoseOptions`, `createCornerResizeAffordance`, `CornerResizeAffordanceOptions`, `CornerResizeScratch`, `createRotationAffordance`, `RotationAffordanceOptions`, `RotationScratch`, `rotationHandle`, `hitRotationHandle`, `DEFAULT_ROTATION_HANDLE_DISTANCE` and `RotationHandle`. Core keeps the slot's option types (`SelectionOverlayLayerOptions` and the rest), the affordance mechanism, the path-anchor affordances and chrome-caps, and adds `SelectionChrome` and `SelectionChromeSizes` for a preset drawing chrome of its own.
+  
+  <!-- entry: rank=10 breaking api -->
+- 843859b: `useSelection` moves to `@weasel-js/editing`, and a canvas with no editing preset keeps a selection nothing it runs writes.
+  
+  This is breaking. Editing's presets include `presets.selection`, whose `createSelection` factory builds the selection a canvas writes through, answering clicks by `selectionOptions`. Without one, the canvas's selection is core's `viewerSelection`: it reads the scene's selection and ignores every write the canvas's tools, actions and adapter make, while the app, undo and redo still move it. `selectionOptions.initial` seeds an empty scene either way, and `<SceneCanvas selection>` still takes any `SelectionApi`.
+  
+  ```ts
+  // before
+  import { useSelection } from '@weasel-js/core';
+  // after
+  import { useSelection } from '@weasel-js/editing';
+  ```
+  
+  `useSelection`, `createSelection` and `UseSelectionOptions` are editing's, on its main entry and `./engine`. Core keeps the contract: `SelectionApi` (from `@weasel-js/routing`), `SelectionOptions`, `SelectionFactory`, `SelectionStore`, and `viewerSelection`.
+  
+  <!-- entry: rank=10 breaking api behavior -->
+- 97cce9d: The many-at-once selection mode is `'multiple'` everywhere, as React Aria spells it, and a mode prop is `selectionMode`.
+  
+  `SelectionMode` is `'single' | 'multiple'`, so `useSelection`'s `mode`, `selectionOptions` and `<SceneCanvas selectionMode>` take `'multiple'` in place of `'multi'`. `<ItemList>`'s `selection` prop, `ListModeInput.selection` and the HUD list's `selection` option are `selectionMode`.
+  
+  ```tsx
+  // before
+  useSelection({ scene, mode: 'multi' });
+  <ItemList rows={rows} selection="multi" />
+  // after
+  useSelection({ scene, mode: 'multiple' });
+  <ItemList rows={rows} selectionMode="multiple" />
+  ```
+  
+  <!-- entry: breaking api -->
+- 850db0a: `setPages` takes its undo label in its options, as `addPage`, `removePage` and the other page edits do.
+  
+  The label is optional and defaults to "Set pages".
+  
+  ```ts
+  // before
+  setPages(scene, doc, 'Pages', { descriptor });
+  // after
+  setPages(scene, doc, { label: 'Pages', descriptor });
+  ```
+  
+  <!-- entry: breaking api -->
+- 670aeb3: The shape, lasso, image and eyedropper tools and the kit's tool sets move to `@weasel-js/editing`, which offers them by id.
+  
+  This is breaking. `<SceneCanvas>` no longer builds rect, ellipse, line, polygon, star or lasso in: a preset offers them, and `defaultTools`, a preset's `tools` or a `tools` patch mounts one by id only when an enabled preset offers it. `presets.draw` offers every one; a canvas without it adds `presets.shapeToolsOffered` (or `presets.shapeTools`, which also mounts them) for the shapes and `presets.selectToolsOffered` for the lasso.
+  
+  ```tsx
+  // before
+  <SceneCanvas scene={scene} features={[presets.pick]} defaultTools={['rect']} />
+  
+  // after
+  import * as presets from '@weasel-js/editing/presets';
+  <SceneCanvas scene={scene} features={[presets.pick, presets.shapeToolsOffered]} defaultTools={['rect']} />
+  ```
+  
+  From editing, under the same names: `useRectTool`, `useEllipseTool`, `useLineTool`, `usePolygonTool`, `useStarTool`, `useLassoTool`, `useImageTool`, `useEyedropperTool`, their `*_TOOL_OPTIONS` and option types, `shapeToolOptions`, `styleOptionLeaves`, `toolOptionPaint`, `DEFAULT_SHAPE_PAINT`, `insertBindingBehaviors`, `InsertToolOptions`, `createPointerFollower`, `SELECT_TOOLS`, `SHAPE_TOOLS`, `KIT_TOOLS`, `KIT_TOOL_GROUPS`, `KIT_TOOL_IDS` and `TOOL_GROUP_ORDER`. Each hook has a plain factory beside it (`createRectTool`, …). Core keeps `VIEW_TOOLS`, the hand, and `BuiltinToolId`, now `'select' | 'hand'`; editing's `KitToolId` names every kit tool. `BuiltinToolOptions` is gone: `toolOptions` is `SceneCanvasToolOptions`, whose `lasso` and `insert` keys editing adds.
+  
+  <!-- entry: rank=10 breaking api -->
+- 29135cb: `Simulation` is now the type `createSimulation` returns, and the frame-loop handle `useSimulation` returns is `RunningSimulation`.
+  
+  The old `SimulationCore` is `Simulation`, and the old `Simulation` is `RunningSimulation`. `@weasel-js/core/math` re-exports both under the new names.
+  
+  ```ts
+  // before
+  const core: SimulationCore<N> = createSimulation({ nodes });
+  const sim: Simulation<N> = useSimulation({ nodes });
+  // after
+  const core: Simulation<N> = createSimulation({ nodes });
+  const sim: RunningSimulation<N> = useSimulation({ nodes });
+  ```
+  
+  <!-- entry: breaking api -->
+- 4e54b4e: `PoseComposition.decompose` answers `null` under a frame with no inverse, and every rebase built on it can answer `null` too.
+  
+  A frame is singular when a 2D container's `transform` has no inverse geom's `invert` will give (a zero or collapsed axis, parallel columns, or a condition number past `1e12`), or a `Pose3` container's scale has a zero axis or one that far below the others. Storing such a frame stays valid, and `compose` still folds its children flat. `decomposeRigidPose`, `POSE3_COMPOSITION.decompose`, `rebaseLocalPose`, `PoseFrame.local` and `localUnder`, `GestureFrames.toLocal` and `toLocalUnder` return `null` there; `MoveCtx.followerOps` and `CloneEnd.copyOps` return `null` when a node would land in one; `NodeFrame` gains a required `inverts`. A custom composition's `decompose` may return `null` the same way.
+  
+  ```ts
+  // before
+  const local = composition.decompose(frame, world);
+  // after
+  const local = composition.decompose(frame, world);
+  if (local === null) return null; // refuse the edit: nothing stored there draws at `world`
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 4e54b4e: Group, ungroup, a reparenting drop, a clone or paste landing, and a follower move refuse whole rather than put a node in a singular frame.
+  
+  They promise every node stays where it is shown, and no pose stored in a frame scaled to nothing keeps that promise. Each leaves the scene and its history as they were, and `group` and `ungroup` report `NotApplicable`. A container whose frame is singular takes no children by drop, insert or paste, and an insert asked into one lands at the top of the tree. In diagram, releasing members into one does nothing; in symmetry, a center change for a group in one is ignored.
+  
+  <!-- entry: behavior -->
+- 4e54b4e: A move, nudge, rotate, resize, flip, align or distribute leaves a node stored in a singular frame where it is and transforms the rest.
+  
+  No stored pose in a frame scaled to nothing follows the edit, so such a node is not written. Path edits, slicing and boolean operations pass it over too, and a layout pass does not move it.
+  
+  <!-- entry: behavior -->
+- 16e4b0b: A slice's commit is set on the tool or action, `useSliceTool({ commit })` or `createSliceAction({ commit })`, not through a `slice` dep.
+  
+  This is breaking. The `slice` dep, `SliceDep` and `useSliceDepSource` are gone, and `<SceneCanvas>` no longer publishes one. The default commit is path-tools' `slicePaths(cut, deps)`, which cuts every path the cut crosses as before; it reads the deps in `SLICE_PATHS_REQUIRES`. A custom commit names the deps it reads in `requires`, and gets them as its second argument. `OpsApplier` is still exported from core.
+  
+  ```tsx
+  // before
+  useDepSource('slice', () => ({ commit: (cut) => cutMine(cut) }));
+  const slice = useSliceTool();
+  // after
+  const slice = useSliceTool({ commit: (cut, deps) => cutMine(cut, deps.scene), requires: ['scene'] });
+  // or, for the action alone
+  <SceneCanvas actions={{ slice: createSliceAction({ commit, requires: ['scene'] }) }} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 4f9848f: A saved scene, history or document keeps `Infinity`, `-Infinity`, `NaN` and `-0` in its data, rather than reading back `null` and `0`.
+  
+  `stringifySnapshot`, `encodeSnapshot` and `snapshotReplacer` write each such number by name, as `{ "__num": "Infinity" }`, and `parseSnapshot` and `decodeSnapshot` read it back as the number. A value of yours shaped like that tag is wrapped in `{ "__raw": … }` and reads back as itself. Saves written before this read as they did: a `null` written for one of those numbers stays `null`.
+  
+  This changes the encoded form. A kit from before this change reads a saved number's tag as the object `{ "__num": "Infinity" }`, so a save written now cannot be opened by an older kit; upgrade every reader before its writers.
+  
+  <!-- entry: rank=10 breaking data -->
+- fb702eb: The Trim segment tool is now Snip, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useTrimTool`, `UseTrimToolOptions` | `useSnipTool`, `UseSnipToolOptions` |
+  | `trimPreset`, preset id `'trim'` | `pathTools.snip`, `'snip'` |
+  | tool id and `PathToolId` `'trim'`, bindings `trim.hover`, `trim.leave`, actions `trim.preview`, `trim.unpreview` | `'snip'`, `snip.hover`, `snip.leave`, `snip.preview`, `snip.unpreview` |
+  | action `trimPath`, `trimPathAction`, `TRIM_PATH_PARAMS`, `planTrim` | `snipPath`, `snipPathAction`, `SNIP_PATH_PARAMS`, `planSnip` |
+  | `trimPathAt`, `TrimPathOptions`, `TrimResult` (`@weasel-js/geom`, re-exported by core) | `snipPathAt`, `SnipPathOptions`, `SnipResult` |
+  | icon `path-tools:trim` | `path-tools:snip` |
+  
+  The tool keeps its Y key. A stroke's `trim`, core's boolean Trim, and `pathTrim` are unrelated and keep their names.
+  
+  ```ts
+  // before
+  const trim = useTrimTool();
+  <SceneCanvas features={['draw', trimPreset]} tools={{ trim }} />
+  // after
+  const snip = useSnipTool();
+  <SceneCanvas features={['draw', pathTools.snip]} tools={{ snip }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 6bdf14d: `resolveStrokeWidth` is removed; `resolveScreenLength` from `@weasel-js/paint`, which it only called, resolves a stroke width the same way.
+  
+  ```ts
+  // before
+  import { resolveStrokeWidth } from '@weasel-js/stroke';
+  const w = resolveStrokeWidth(stroke.width ?? 1, scale);
+  // after
+  import { resolveScreenLength } from '@weasel-js/paint';
+  const w = resolveScreenLength(stroke.width ?? 1, scale);
+  ```
+  
+  <!-- entry: breaking api -->
+- 27704ec: `SWEEP_BINDING` is `SWEEP_SPEC`, since it is a gesture spec with no action rather than a binding.
+  
+  ```ts
+  // before
+  sweepAction({ binding: { ...SWEEP_BINDING, mods: { shift: true } } });
+  // after
+  sweepAction({ binding: { ...SWEEP_SPEC, mods: { shift: true } } });
+  ```
+  
+  <!-- entry: breaking api -->
+- 6153ae7: `useTextEdit` and `useSceneTextEdit` return `commitEdit` where they returned `commit`.
+  
+  It sits beside `startEdit` and `cancelEdit`. The `commit` option, which receives the edit, keeps its name.
+  
+  ```ts
+  // before
+  edit.commit();
+  // after
+  edit.commitEdit();
+  ```
+  
+  <!-- entry: breaking -->
+- fd2cbc8: The `textEdit` dep and `TextEditDep` belong to `@weasel-js/text-tools`, which adds them to `DepSchema`.
+  
+  This is breaking: import `TextEditDep` from `@weasel-js/text-tools`, which also puts `'textEdit'` among the dep names an action's `requires` may list. Core's `insert` and `place` no longer open an inserted node for typing themselves; an insert factory says so through `InsertedNode.inserted`, as text's does.
+  
+  <!-- entry: breaking api -->
+- 959f804: A double-click on text opens it through the `enterTextEditAt` action, so a host's `useSceneTextEdit` needs no `onDoubleClick` handler.
+  
+  `useSceneTextEdit` no longer returns `onDoubleClick`, and `TextEditDoubleClick` is gone. The `textEdit` feature (part of `edit`) binds the double-click to `enterTextEditAt`, which opens what the editor's new `textAt(world)` names and declines where the double-click names a group, as path edit does. A canvas inside a `useSceneTextEdit` container answers the `textEdit` dep with that editor, so `TextEditDepPublisher` is only needed for a container that does not hold the canvas. A `TextEditDep` you write yourself now has `textAt`.
+  
+  ```tsx
+  // Before
+  const edit = useSceneTextEdit(scene, host);
+  <div ref={setHost} onDoubleClick={edit.onDoubleClick}>
+    <SceneCanvas scene={scene} features={['edit']}>
+      <TextEditDepPublisher edit={edit} />
+    </SceneCanvas>
+  </div>
+  
+  // After
+  const edit = useSceneTextEdit(scene, host);
+  <div ref={setHost}>
+    <SceneCanvas scene={scene} features={['edit']} />
+  </div>
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 4377fe2: `@weasel-js/text`'s option types all end in `Options`, as `FitBoxToTextOptions` already did.
+  
+  `LayoutRunsOpts`, `PaintRunsOpts`, `MeasureTextBoundsOpts`, `TextLineBoxesOpts` and `PointInTextPoseOpts` are renamed.
+  
+  ```ts
+  // before
+  import type { LayoutRunsOpts, PaintRunsOpts } from '@weasel-js/core';
+  // after
+  import type { LayoutRunsOptions, PaintRunsOptions } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking -->
+- fd2cbc8: The text and sticky-note tools are no longer core built-ins; mount them with text-tools' `textTools.textTools` or `useTextToolsTools()`.
+  
+  This is breaking. `BuiltinToolId` and `SHAPE_KINDS` lose `text` and `sticky` (and the `text` descriptor field and the `'type'` family), so `defaultTools` cannot name them. `TYPE_TOOLS` is text-tools' `TEXT_TOOLS`, `typeToolsPreset` its `textTools.textTools`, and `textTools.whiteboard`, `useTextTool`, `TEXT_TOOL_OPTIONS`, `useStickyTool`, `STICKY_TOOL_OPTIONS`, `stickyData`, `stickyNodeFactory` and `STICKY_DEFAULTS` moved there; `textEditPreset` is part of `textTools.text`. `BuiltinToolOptions.sticky` is `createTextToolsPreset({ sticky })`. Named presets `'tools:type'`, `'textEdit'` and `'whiteboard'` are gone from `namedFeatures`. `TOOL_GROUP_ORDER` no longer names the `type` group, so a palette showing text-tools' tools passes its own `groupOrder`.
+  
+  ```tsx
+  // before
+  <SceneCanvas features={[presets.draw, typeToolsPreset]} />
+  // after
+  <SceneCanvas features={[presets.draw, textTools.textTools]} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- f9427e6: `startThresholdDrag` and its `ThresholdDragOptions` and `ThresholdDragHandle` types move from `@weasel-js/core` to `@weasel-js/routing`.
+  
+  This is breaking: import them from `@weasel-js/routing`. The function itself is unchanged.
+  
+  ```ts
+  import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
+  ```
+  
+  <!-- entry: breaking api -->
+- 02f9570: `startThresholdDrag` names its callbacks for a drag's start and end, as a pointer session does: `onActivate` is `onStart` and `onCommit` is `onEnd`.
+  
+  ```ts
+  // before
+  startThresholdDrag(e, { onActivate: begin, onMove: follow, onCommit: finish });
+  // after
+  startThresholdDrag(e, { onStart: begin, onMove: follow, onEnd: finish });
+  ```
+  
+  <!-- entry: breaking api -->
+- ae7d97c: A tool palette shows the key that activates each tool now: a key rebound through `bindingOverrides` shows rebound.
+  
+  `ToolsApi.shortcuts` holds each tool's live keys, read from the `tool.activate` bindings in the canvas's actions scope, or with no scope the keys the tools declare. `ToolPalette` reads it; its `lookupShortcut` prop and `ToolPresentation.shortcut` are gone. A hand-built `ToolsApi` needs a `shortcuts` field, which `declaredToolShortcuts(registry)` makes, and `toolShortcutsOf(actions, ids)` reads the same keys from an action list.
+  
+  ```tsx
+  // before
+  <ToolPalette tools={tools} lookupShortcut={(id) => myLookup(id)} />
+  // after
+  <ToolPalette tools={tools} />
+  ```
+  
+  <!-- entry: rank=10 breaking api fix -->
+- 95ca540: `useScopedTools`, the tool-option hooks and `tuneToolOptions` move from `@weasel-js/core` to `@weasel-js/routing`.
+  
+  This is breaking: import `useScopedTools`, `useToolOptionParams`, `useToolOptionValues` and `useToolOptionTunings` from `@weasel-js/routing/react`, and `tuneToolOptions` from `@weasel-js/routing`. `ToolsScope`, `usePublishTools` and `useCanvasToolOptionValues`, which a canvas uses to publish its tools and options, are exported there too.
+  
+  <!-- entry: breaking api -->
+- d6f8aac: The two-finger touch zoom action is `viewport.touchZoom`, after what it does: `viewport.zoom` takes the `pinch` gesture.
+  
+  `viewport.pinchZoom` is `viewport.touchZoom` (binding `viewport.touchZoom.multiTouch`); `pinchZoomAction`, `createPinchZoomAction` and `PinchZoomOptions` are `touchZoomAction`, `createTouchZoomAction` and `TouchZoomOptions`; and the `viewport` prop's `pinchZoom` is `touchZoom`.
+  
+  ```tsx
+  // before
+  <SceneCanvas viewport={{ pinchZoom: { max: 16 } }} actions={{ 'viewport.pinchZoom': null }} />
+  // after
+  <SceneCanvas viewport={{ touchZoom: { max: 16 } }} actions={{ 'viewport.touchZoom': null }} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 9566a40: The move, resize, rotate, clone, insert, marquee, lasso and clear-selection actions move to `@weasel-js/editing`, with the deps they read.
+  
+  This is breaking. A bare `<SceneCanvas>` no longer publishes the `insert`, `insertLive`, `areaSelect`, `lassoSelect` or `resizePolicy` deps, and a tool binding `insert` or `areaSelect` no longer brings the action with it: an editing preset does. `presets.draw` has them all; a canvas mounting a tool that inserts (a shape tool, `@weasel-js/path-tools`' pen or pencil, a `@weasel-js/diagram` stencil) without it adds `presets.insert`. `textTools.textTools` includes it.
+  
+  ```tsx
+  // before
+  <SceneCanvas scene={scene} tools={useDiagramTools({ connector })} />
+  
+  // after
+  import * as presets from '@weasel-js/editing/presets';
+  <SceneCanvas scene={scene} features={[presets.insert]} tools={useDiagramTools({ connector })} />
+  ```
+  
+  From editing, under the same names: `moveAction`, `cloneAction`, `resizeAction`, `createResizeAction`, `ResizeActionOptions`, `rotateAction`, `areaSelectAction`, `clearSelectionAction`, `lassoSelectAction`, `UseLassoSelectOptions`, `selectFromLasso`, `SelectFromLassoOptions`, `insertAction`, `INSERT_DRAG_MODS`, `insertParams`, `POLYGON_INSERT_PARAMS`, `STAR_INSERT_PARAMS`, `placeAction`, `insertRepositionAction`, `INSERT_REPOSITION_BINDING`, `insertRotateAction`, `insertStyleOf`, `DEFAULT_STROKE_WIDTH`, `STYLE_OPTION_KEYS`, `InsertStyle`, `StyleOptionKey`, `useResizePolicyDepSource` and `UseResizePolicyDepSourceOptions`; `moveAction`, `insertAction` and `areaSelectAction` also from `@weasel-js/editing/engine`. The `@weasel-js/core/move`, `/resize` and `/clone` entries are gone: `snapToContainer`, `snapBackOrDelete`, `clampMove`, `ClampMoveOptions` and `clampMinSize` come from `@weasel-js/editing`, and the pose descriptors, handle geometry, `MoveOptions` and `CloneBehavior` from `@weasel-js/core`. `toolDrivenActions` and `TOOL_DRIVEN_ACTION_IDS` are gone; a preset's `toolActions` say the same. Core keeps the option types (`MoveOptions`, `ResizeOptions`, `RotateOptions`), the dep types and `DepSchema` entries, `InsertNodeFactories`, and the action params.
+  
+  <!-- entry: rank=10 breaking api -->
+- cd410a7: `UseMoveOptions`, `UseResizeOptions` and `UseRotateOptions` are `MoveOptions`, `ResizeOptions` and `RotateOptions`.
+  
+  They configure the move, resize and rotate actions; no `useMove` hook exists.
+  
+  ```ts
+  // before
+  import type { UseMoveOptions } from '@weasel-js/core';
+  // after
+  import type { MoveOptions } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+- e841e68: The Lengthen tool is now Tug, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `useLengthenTool` | `useTugTool` |
+  | `lengthenPreset`, preset id `'lengthen'` | `pathTools.tug`, `'tug'` |
+  | tool id and `PathEditToolId` `'lengthen'`, binding `lengthenPath.drag` | `'tug'`, `tug.drag` |
+  | action `lengthenPath`, `lengthenPathAction`, `LENGTHEN_PATH_PARAMS`, `LengthenPathParams` | `tugPath`, `tugPathAction`, `TUG_PATH_PARAMS`, `TugPathParams` |
+  | `lengthenPathEnd`, `lengthenOpenEnd`, `LengthenMode` (`@weasel-js/geom`; core re-exports `lengthenOpenEnd`) | `tugPathEnd`, `tugOpenEnd`, `TugMode` |
+  | icon `path-tools:lengthen` | `path-tools:tug` |
+  
+  A saved binding override keyed `lengthenPath.drag` moves to `tug.drag`. The tool still has no key of its own, and the undo label of a drag that shortens the path is still Shorten path.
+  
+  ```ts
+  // before
+  <SceneCanvas features={['paths', lengthenPreset]} tools={{ lengthen: useLengthenTool() }} tune={{ lengthenPath: { params: { mode: 'curvature' } } }} />
+  // after
+  <SceneCanvas features={['paths', pathTools.tug]} tools={{ tug: useTugTool() }} tune={{ tugPath: { params: { mode: 'curvature' } } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- a5caeed: The Blend path effect is now Tween, and every name it carried changes with it; this is breaking, with no aliases. Color blending, `blendMode`, and the renderer's blend state are unrelated and keep their names.
+  
+  | Before | After |
+  |---|---|
+  | path effect `kind: 'blend'`, `BlendEffect` (core) | `kind: 'tween'`, `TweenEffect` |
+  | action `blend`, `blendAction` | `tween`, `tweenAction` |
+  | actions `setBlendSpine`, `releaseBlendSpine`, `setBlendSpineAction`, `releaseBlendSpineAction` | `setTweenSpine`, `releaseTweenSpine`, `setTweenSpineAction`, `releaseTweenSpineAction` |
+  | the path-effect settings form's `blends` count | `tweens` |
+  | `blendPaths`, `prepareBlend`, `BlendPathsOptions`, `PathBlend` (`@weasel-js/geom`, re-exported by core) | `tweenPaths`, `prepareTween`, `TweenPathsOptions`, `PathTween` |
+  | icons `path-tools:blend`, `path-tools:setBlendSpine`, `path-tools:releaseBlendSpine` | `path-tools:tween`, `path-tools:setTweenSpine`, `path-tools:releaseTweenSpine` |
+  
+  The action keeps its key. A document saved with a live blend needs that node's `data.pathEffect.kind` rewritten to `'tween'`.
+  
+  ```ts
+  // before
+  pathEffectNode({ kind: 'blend', steps: 3 }, [a, b], 'main', PATH_EFFECT_DERIVATIONS);
+  // after
+  pathEffectNode({ kind: 'tween', steps: 3 }, [a, b], 'main', PATH_EFFECT_DERIVATIONS);
+  ```
+  
+  <!-- entry: rank=5 breaking api data -->
+- a5c1865: The question-mark glyph a tool with no icon shows is `ui:unknown`, drawn by `@weasel-js/ui`, and no longer `core:unknown`.
+  
+  This is breaking: a name written `core:unknown` is now `ui:unknown`.
+  
+  <!-- entry: breaking api -->
+- 6494d25: `useAutoCenter` is `useFitOnce`: it fits the zoom and centers, once.
+  
+  ```ts
+  // before
+  useAutoCenter(width, height, contentW, contentH, setZoom, setPan);
+  // after
+  useFitOnce(width, height, contentW, contentH, setZoom, setPan);
+  ```
+  
+  <!-- entry: breaking api -->
+- 30bf620: `useKeybindings` takes `enabled` in place of `disable`, as the dispatcher, snap and hover-tracking hooks do.
+  
+  ```ts
+  // before
+  useKeybindings(tools, { disable: true });
+  // after
+  useKeybindings(tools, { enabled: false });
+  ```
+  
+  <!-- entry: breaking api -->
+- edcb456: `computeWheelAction` is `viewAfterWheel`, since it returns the next view after one wheel sample.
+  
+  ```ts
+  // before
+  const next = computeWheelAction(view, input);
+  // after
+  const next = viewAfterWheel(view, input);
+  ```
+  
+  <!-- entry: breaking api -->
+- f2b94bc: `ViewLike` is gone; it was geom's `View` under a second name, and every barrel that exported it exports `View`.
+  
+  That is `@weasel-js/renderer`, `@weasel-js/core` and `@weasel-js/core/renderer`.
+  
+  ```ts
+  // before
+  import type { ViewLike } from '@weasel-js/renderer';
+  // after
+  import type { View } from '@weasel-js/renderer';
+  ```
+  
+  <!-- entry: breaking -->
+- 4198fea: `viewMarkerDragAction` is `createViewMarkerDragAction`, and its action id is `view-marker.drag`, its binding's stem.
+  
+  ```ts
+  // before
+  <SceneCanvas actions={{ 'view.marker.drag': null }} />
+  // after
+  <SceneCanvas actions={{ 'view-marker.drag': null }} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 0ac8104: `<SceneCanvas viewport>` no longer turns navigation on; only `presets.view` does.
+  
+  Breaking: a canvas that passed `viewport` without `view` (or `draw`, or `whiteboard`) stops wheel-panning, zooming, and pinching, and loses its hand tool. Add `presets.view`, which `viewport` then configures; a development build warns when `viewport` is passed without it:
+  
+  ```tsx
+  <SceneCanvas features={[presets.view, presets.pick]} viewport={{ animatedZoom: true }} />
+  ```
+  
+  A hand tool named in `defaultTools` still drags the view without `presets.view`.
+  
+  <!-- entry: rank=10 breaking behavior -->
+- 475c725: `ViewportGestureKind` is `ViewportMoveKind`, since its values `'pan'` and `'zoom'` are actions, not gestures.
+  
+  ```ts
+  // before
+  import type { ViewportGestureKind } from '@weasel-js/core';
+  // after
+  import type { ViewportMoveKind } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- 74e52e2: `@weasel-js/core/groups` and `@weasel-js/editing/groups` name the kit's action groups, for `<ActionBar group>`
+  
+  ```tsx
+  import * as groups from '@weasel-js/editing/groups';
+  <ActionBar group={groups.history} />
+  <ActionBar group={groups.align} />
+  ```
+  
+  Core's entry has `history`, `viewport`, `presentation`, `anchors`, `path` and `tool`. Editing's re-exports those beside its own `clipboard`, `edit`, `structure`, `nudge`, `insert`, `align`, `distribute`, `flip`, `reorder` and `pathfinder`; a package that does not use editing imports `@weasel-js/core/groups`. Each is the string its actions already carried, so `<ActionBar group="history" />` still works.
+  
+  <!-- entry: api -->
+- 617fd6c: New `actionItemShortcuts(item)`: an `ActionItem`'s declared `shortcut` text, else the bindings `actionShortcuts` finds for it.
+  
+  It looks bindings up with the item's params.
+  
+  The command palette, `Prefs` action rows, and the pref schema editor read their hints through it.
+  
+  <!-- entry: api -->
+- 8d7296a: `actionShortcuts(action, params, kind)` can list only an action's pressed keys (`'key'`) or only its held ones (`'keyHeld'`).
+  
+  <!-- entry: api -->
+- 5ad99b6: `adoptLegacyPages` refuses a `core:pages` value that is not a `PagesDoc`, naming what is wrong.
+  
+  The scene is left as it was. `pagesDocFault(value)` makes the same check, returning `null` for a readable value.
+  
+  <!-- entry: fix api data -->
+- 643c699: A move behavior can set the cursor a drag shows, by returning `cursor` from `onMove`.
+  
+  The latest behavior to name one wins, and the drag falls back to the move action's own cursor when none does. The cursor follows a change a behavior makes with the pointer held still, such as a dwell timer arming, as soon as the gesture's handle says it changed.
+  
+  <!-- entry: api new -->
+- 9a3bf41: `<SceneCanvas>` sources an `inspection` dep, `CanvasInspection`, for a plug-in that inspects the canvas rather than acting on it.
+  
+  It reads the canvas's tools, preset contributions, node kinds, actions and dep registries, its `<DevtoolsLabel>`, the debug flags in effect and a setter laying flags over them, its test probes, and its `clientToWorld` conversions as `CoordTraceEntry` records, kept only once asked for. `subscribe` reports a change to the scene, selection, active tool or registry. A contribution's `attach` reads it with `deps.get('inspection')`; `@weasel-js/devtools` is built on it.
+  
+  <!-- entry: api -->
+- 76a1854: Color and paint fields take `onCancel`, called when an opacity drag is abandoned with Escape.
+  
+  `ColorField`, `PaintInput`, `PaintField`, `MeshEditor` and `PropertyField`'s `color` and `paint` kinds all take it.
+  
+  The starting color reaches `onInput` first, as before, so a caller that opened something on `onInput` can now close it. `GradientEditor` reports a stop's canceled opacity drag through its existing `onCancel`, and `PaintKindEditorProps` gains an optional `onCancel` that registered paint editors are handed.
+  
+  <!-- entry: fix api -->
+- aaa6a30: `commandRasterizer` takes `screen` and `flattenTolerancePx` options. `screen` is where `'screen'`-unit paint is measured, and `flattenTolerancePx` is the curve tolerance in raster pixels.
+  
+  ```ts
+  commandRasterizer(session, { screen, flattenTolerancePx: 0.1 });
+  ```
+  
+  <!-- entry: api -->
+- d3d65f1: A content handler registered under an id another holds stands in for it until released, and only the live handler of each id runs.
+  
+  Two handlers sharing an id used to both run. Give each handler that should run its own id.
+  
+  <!-- entry: behavior -->
+- 3a00602: `contentHandlerRegistry` lists the content handlers registered for every canvas, by id, with the handlers each one shadows.
+  
+  <!-- entry: api -->
+- 2a0b5f3: `AnyNode`, a scene node of any payload, layer, and pose, is exported beside `AnyScene`.
+  
+  ui's `AnyNode` from the SelectionPanel is now the same type, re-exported from core.
+  
+  <!-- entry: api -->
+- f44131a: `DefaultLayer`, the layer type of a scene made from `useScene({ items })`, is now exported, so a consumer can name the scene it returns.
+  
+  <!-- entry: api -->
+- a4e0df7: `@weasel-js/core` exports `DrawnPose`, the type `drawnPose` returns and `storePiece` takes.
+  
+  <!-- entry: rank=-5 api -->
+- 8c58288: `@weasel-js/core` exports the helpers the edit actions in `@weasel-js/editing` read.
+  
+  `copyOps`, `deleteEnabled`, `requiresContent`, `operandContent`, `rootsAmong`, `storedDelta`, `nodeDescriptors`, `followerMoves`, `followerMoveOps`, `followerOpsFor`, `finishTransformOps`, `resizeSelectionOps`, `rotateSelectionOps`, `inPaintOrder`, `slotAbove`, `groupingSite`, `paintInheritors`, `reachableInGroup`, `hitTestRect`, `countOperands`, `runIngest`, `RunIngestOptions`, `couldClaim`, `handlersFor`, `previewIngest`, `kitWeaselJsonHandler`, `undoAction`, `redoAction`, `insertRotateAction`, `DUPLICATE_OFFSET`, and the types `CopyPose`, `FollowerMove` and `GroupingSite`. `@weasel-js/core/test-seams` adds `_resetContentHandlersForTests`, `circleForTests`, `CirclePoseForTests`, `CIRCLE_POSE_DESCRIPTORForTests` `FRAME_FIXTURE_WORLDForTests`, `FrameFixtureDataForTests` and `FrameFixtureLayerForTests`.
+  
+  <!-- entry: api -->
+- 964a242: `@weasel-js/core` exports the actions and helpers `@weasel-js/editing` builds on, for a package that edits on core's public surface.
+  
+  The edit actions its presets register: `cancelAllAction`, `deselectAction`, `selectAllAction`, `duplicateAction`, `transformAgainAction`, `groupAction`, `ungroupAction`, the `nudge*Action`s, the `setFill`, `setFillOpacity`, `setStroke`, `setStrokeOpacity`, `setStrokeWidth` and `setVertexColor` actions, `ingestAction`, the `pathfinder*Action`s and `makeBooleanGroupAction`; `toolDrivenActions`, `PRESET_CHROME` and `PRESET_OWNED_CHROME`. The helpers: `moveEachOps`, `uncarried`, `shapeSources`, `commitTransformOps`, `createTransformCommit`, `poseFrame`, `poseDescriptorOf`, `settleWithinRounding`, `actionReferenceSources`, `finiteThroughout`, `createGeometryDataOp`, `isNoInkExtents`, `sameValue`, and `bringForward`, `bringToFront`, `sendBackward` and `sendToBack`. `@weasel-js/core/test-seams` adds `makeFrameFixtureForTests`, `expectSamePoseForTests`, `FRAME_FIXTURE_IDSForTests`, `FRAME_FIXTURE_LOCALForTests`, `pbtRunsForTests`, `pbtTallyForTests` and `pbtTimeoutForTests`.
+  
+  <!-- entry: api -->
+- 7cfda30: Core exports the types its editing seams name, such as `SceneMutators`, `PickAdapter` and `TransformPreview`, so callers can name them.
+  
+  <!-- entry: api -->
+- e8e7f2f: The params of the kit's align, flip, distribute, reorder and nudge actions are exported.
+  
+  `AlignParams`, `FlipParams`, `DistributeParams`, `ReorderParams` and `NudgeParams` are the entries `ActionParamSchema` holds for those action ids, so a consumer can type the params it hands those actions.
+  
+  <!-- entry: api -->
+- e8e7f2f: The prop groups `SceneCanvasProps` and `SceneViewCanvasProps` are built from are exported, so a wrapper can name and forward them.
+  
+  `SceneCanvasActionProps`, `SceneCanvasPointerProps`, `SceneCanvasSampleProps` and `SceneCanvasPaintedBy` (with its arms `PagePaintedScene` and `WorkerPaintedScene`, and `WorkerSceneSlot`, the scene slot in worker mode) for `<SceneCanvas>`; `SceneViewCanvasCommon`, `PagePaintedView` and `WorkerPaintedView` for `<SceneViewCanvas>`; and `CanvasWorkerSurface`, the type of `CanvasProps.worker`.
+  
+  <!-- entry: api -->
+- e8e7f2f: Types core's public functions take or return are now exported, so a consumer can write them down.
+  
+  `PageTreeReader` (`pageIdOf`), `ScreenMap` (`strokedBounds`), `ScrollableContainer` (`scrollableAt`'s result), `SelectRangeDep` and `RangeBetween` (the `selectRange` dep), `SelectionLayerCommon` (`SelectionOverlayLayerOptions`), `SkinScene` (what `RigScene` extends), `PointRegionShape` (`pointRegionFrame`), `KitInsertKind` (the kit's keys of `InsertNodeFactories`) and `ResolvedPaintFields` (`withInheritedPaint`'s result). `CoordTraceEntry` is exported from `@weasel-js/core`, and `PathEditState` from `@weasel-js/core/test-seams` beside `EditAnchorsStateRef`.
+  
+  The pen tool's in-progress anchor, which `PenSubpath.anchors` holds, is exported as `PenDraftAnchor`. `PenAnchor` stays the path anchor from `@weasel-js/geom`.
+  
+  <!-- entry: api -->
+- 5a8ac8c: Core keeps a registry of export formats, and writes any world-space region of a scene through it: a page, the view, or a selection.
+  
+  `registerExportFormat(format)` adds a format and returns its disposer; `exportFormats()` lists them, and `exportFormatRegistry` is their reflection. `exportRegions(scene, regions, formatId, opts)` writes `ExportRegion`s (`{ x, y, width, height, name? }`) in one, and `exportPages(scene, pages, formatId, opts)` writes `PlacedPage`s, each named for its page. Core registers `png`, which is `exportRegionPng`; `selectionRegion(scene, ids)` is the region a selection draws, and `regionRenderArgs` the render a region draws with, which `@weasel-js/headless`'s raster host takes as it is. Every format takes `background`, default none, and `onWarn`.
+  
+  ```ts
+  const png = await exportPages(scene, [placedPagesOf(scene)[0]], 'png', { scale: 2, background: '#ffffff' });
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- e8e7f2f: The interfaces `Scene`, its nodes and its layers are built from are now exported, so a consumer can name, extend or pick from them.
+  
+  `SceneChanges`, `SceneEditPasses`, `SceneHistoryPersistence`, `SceneReplay`, `SceneLayerMembers` and `SceneSelectionMembers` are the parts `Scene` extends; `SceneNodeBase` is what `MarkNode` and `GroupNode` share, and `LayerRecordBase` what `SystemLayerRecord` and `UserLayerRecord` share. `ShownOverride`, the part of a pose override `PoseHold` reads, is exported beside them.
+  
+  New `AnyScene`, `Scene<unknown, string, unknown>`: the type a function takes when it reads a scene without inspecting its payload, layers or pose. Core's own such signatures (`moveNodesOps`, `booleanGroupOps`, `scrollableAt`, `insertSite`, `createEnteredGroup` and others) now name it.
+  
+  <!-- entry: api -->
+- 963f8fd: `BETWEEN_GESTURES` is exported from `@weasel-js/core`, so a package that binds through core can hold a key off while a gesture is in flight.
+  
+  <!-- entry: api -->
+- 5c345b8: Core exports `ScenePickSourceOptions`, `RegionQueryOptions` and `ViewPickGates`, the options its public pick functions take.
+  
+  <!-- entry: api -->
+- b0905a2: Core exports `shownLookup`, `nodesAsShown`, `requiresOperands`, `SNAP_ROLE_MODS` and `createSpanSnap`, for a package's own actions and tools.
+  
+  `shownLookup(scene)` and `nodesAsShown(overrides, nodes)` read nodes with the data a gesture's override shows them with, as `nodeAsShown` reads one. `requiresOperands` is the `enabled` check for an action that needs a selection. `SNAP_ROLE_MODS` are the snap modifiers a snapping drag binding lets be held from the press, and `createSpanSnap(snapDep)` snaps both ends of a two-point gesture.
+  
+  <!-- entry: api -->
+- 1c9986a: A group paints its own box from `data.background` and `data.border`, under its children, so a backing or outline needs no mark of its own.
+  
+  The box is the group's pose. The group's own `clip` does not cut it, and it stays put while a scrolled container's content moves. A group's `data.fill` and `data.stroke` keep their meaning, the paint its children's `'inherit'` takes, and still paint nothing. The selection box counts the border; picking is unchanged. `GroupBoxData` types the two fields:
+  
+  ```ts
+  scene.add({ kind: 'group', layer, pose, data: { background: { paint: solid('#fbf7ee') }, border: { paint: solid('#d4c4a8'), width: 1 } } });
+  ```
+  
+  <!-- entry: rank=10 new api visual -->
+- 83ad38f: `useHandleDrag` takes `escape: true` to cancel its drag on Escape.
+  
+  <!-- entry: api new -->
+- 0200213: A shape kind's descriptor in `SHAPE_KINDS` can name its core glyph as `icon`, and `image` names `'image'`.
+  
+  `useImageTool` draws its palette icon from it. A kind with an auto-mounted tool still takes its icon from that tool.
+  
+  <!-- entry: api -->
+- 77bfacf: A layer in the `layers` map that implements `hitTest` takes presses, as one registered with `registerLayer` does.
+  
+  Slot layers are asked after every registered layer, topmost painted first, and still ahead of the selection chrome; an overlay still only paints. A `composeAffordanceLayer` layer now works in either place.
+  
+  <!-- entry: new behavior -->
+- c569caf: Core exports the types its pick-index, memo, and slot helpers name, so code calling them can write those types down.
+  
+  `PickBroad`, `PickCandidate` and `ClipBearing` (what `indexedCandidates` takes and returns), `NodeMemoScope` and
+  `createNodeMemoScope` (a private `slot` for `nodeMemo`), `ParentedReader` (what `locateChild` reads),
+  `RegionQueryOptions`, `ScenePickSourceOptions`, and `ViewPickGates` come from `@weasel-js/core`.
+  
+  <!-- entry: rank=-5 api -->
+- 59944c1: `paintedSceneLayers` and its `ViewLayerPaint` type are exported: the scene layers a view paints, in order, under its layer visibility and order.
+  
+  <!-- entry: api -->
+- 6d2bb1e: `@weasel-js/core` exports the helpers path editing builds on, for a package that edits paths on core's public surface.
+  
+  `locateChild` and `ChildPosition` (where a node sits under its parent), `anchorDataPatch`, `representationOf`, `locksOf`, `anchorFieldsOf` and `SetAnchorFieldParams`, `createBareSnapSession`, `insertStyleOf`, `insertBindingBehaviors`, `nudgeSpec`, `nudgeDelta`, `NUDGE_LABEL` and `NudgeDirection`, and `PaintedPath`. `@weasel-js/core/test-seams` adds `stubDepsForTests`, `gridSnapSourceForTests`, `sceneOfPathsForTests`, and `snapSessionDepForTests`.
+  
+  <!-- entry: api -->
+- 106749f: `PATH_GEOMETRY_PROJECTION` is a ready-made `geometryProjection` for nodes that keep their geometry in `data.path`, so a flip mirrors their shape.
+  
+  ```tsx
+  <SceneCanvas scene={scene} geometryProjection={PATH_GEOMETRY_PROJECTION} />
+  ```
+  
+  <!-- entry: api -->
+- e9897c7: `pathNode(id, path, data, place)` builds a path mark the way the shape tools store one: `data.path` under a pose at the path's bounds.
+  
+  ```ts
+  createScene({
+    systemLayers: [{ id: 'default' }],
+    initial: [pathNode('leaf', 'M100 200 C140 110 260 90 340 120 Z', { fill: { paint: solid('#a8d5a2') } })],
+  });
+  ```
+  
+  `path` is a built path or SVG path data. `place` takes `layer` (default `'default'`), `parent`, `rotation`, a `pose` to draw the path through instead of its bounds, and the stated node fields such as `pickable`.
+  
+  <!-- entry: api -->
+- 075971c: `@weasel-js/core` exports the picking and selection helpers editing's tools build on, for a package building tools on its public surface.
+  
+  The pickers and their parts: `pickWalk`, `adapterPickSource`, `scenePickSource`, `createLayerPlaneLookup`, `PickQuery`, `centersBetween`, `rangeAmong`, `ownClipOf` and `isEnvelope`. For the select tool and group entry: `MULTI_RESIZE_TARGET_ID`, `THROUGH_CHROME`, `createEnterGroupAction`, `createLeaveGroupAction` and `runLifecycleParams`; and `snapToContainer`, `kitShapeKindsOf`, `viewerSelection`, and the insert style core owns (`insertStyleOf`, `DEFAULT_STROKE_WIDTH`, `STYLE_OPTION_KEYS`, `InsertStyle`, `StyleOptionKey`). `@weasel-js/core/test-seams` adds `assertFiniteForTests`, `driveForTests`, `PtForTests`, `depsOfForTests`, `makeSceneForTests`, and `TestSceneForTests`.
+  
+  <!-- entry: api -->
+- 04cd5f3: `pixelRenderSize(sourceRect, scale)` gives the output size `renderSceneToPixels` makes, from `@weasel-js/core` and `@weasel-js/core/math`.
+  
+  <!-- entry: api -->
+- 5f6ebf3: A scene document envelope saves a scene with its undo history, and the history restores only onto the scene it was saved beside.
+  
+  `encodeSceneDocument(scene)` writes `{ format: 'weasel/scene-document', version: 1, scene, history }`, the history paired with a fingerprint of the scene; `decodeSceneDocument` reads one back, refusing anything else with a `SnapshotShapeError`. `restorePairedHistory(scene, history, options?)` restores it only when the scene's state has that fingerprint, answering `{ status: 'restored', report }` with `restoreHistory`'s report; otherwise it answers `{ status }` of `'mismatched'`, `'unpaired'` or `'stale'` and leaves the history as it was. `options` are `restoreHistory`'s, strict by default. `pairHistory(scene)` pairs a history kept apart from its scene.
+  
+  ```ts
+  const file = JSON.stringify(encodeSceneDocument(scene));
+  const doc = decodeSceneDocument(JSON.parse(file));
+  const loaded = loadScene(doc.scene, { registry });
+  restorePairedHistory(loaded, doc.history);
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- 5614b4e: `useScopedTools()` returns the tools of the canvas it sits in, or of a canvas beside it under a shared `WeaselProvider`.
+  
+  It is the `ToolsApi` that `onToolsCreated` hands over, kept current, so a toolbar beside a canvas needs no state of its own to hold it. It is `null` until a canvas in scope mounts.
+  
+  <!-- entry: api new -->
+- e21ec2d: A `{ px }`-sized text node with `clip: 'outline'` clips its children to the lines it draws at the view's zoom.
+  
+  That holds on screen, in gesture previews, and for picking, marquee, and lasso. `clipOutline` takes the view scale as an optional fifth argument.
+  
+  <!-- entry: fix api -->
+- 3fdbc32: `ShownOverridesSource` is exported, the overrides table `nodesAsShown` reads
+  
+  It was named in `nodesAsShown`'s signature without being exported, so a consumer could pass one but not annotate it.
+  
+  <!-- entry: api -->
+- 5f6ebf3: Core encodes and decodes snapshots as JSON, typed-array path geometry included, with no other package.
+  
+  `stringifySnapshot` and `parseSnapshot` (or `encodeSnapshot` and `decodeSnapshot`, for a JSON value rather than text) round-trip any snapshot, a path's typed arrays and data shaped like the codec's own tags included, and read the untagged path arrays older saves wrote. An encoded snapshot is typed `Encoded<T>`, apart from the snapshot it encodes. `snapshotReplacer` is the replacer for a larger payload holding snapshots. The codec is also published as `@weasel-js/core/json`, which loads without React.
+  
+  ```ts
+  localStorage.setItem('myapp:scene', stringifySnapshot(scene.toJSON()));
+  const loaded = loadScene(parseSnapshot(localStorage.getItem('myapp:scene')!));
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- 9231556: `@weasel-js/core` exports `TextEditDraft`, the type `useTextEdit`'s `onInput` receives.
+  
+  <!-- entry: api -->
+- b0905a2: `transformSelection(deps, transform, label)` moves, rotates or resizes the selection as one undo step that Transform Again repeats.
+  
+  `transform` is a `SelectionTransform`: a `RepeatableTransform` other than a duplicate, such as `{ kind: 'translate', dx, dy }` or `{ kind: 'rotate', angle, pivot: 'union' }`. The batch is finished by the `transformFollowers` dep, as a drag's is. It returns whether anything changed.
+  
+  <!-- entry: api -->
+- a8d34ac: `useProvidedAmbient()` returns the entries the enclosing `AmbientContributionsProvider`s supply, so a host can defer to one an app provided.
+  
+  <!-- entry: rank=-2 api -->
+- e9f7adf: `watchDevicePixelRatio` takes an optional second argument, the window to watch, so a popout's density is followed rather than its opener's.
+  
+  <!-- entry: api -->
+- bfb8442: `worldPoseOf(scene, id)` answers where a node is in world, folded up through its containers under the scene's composition.
+  
+  It reads the pose as shown by default, an in-flight gesture's override and scrolled containers included; pass `'document'` for the stored pose. `worldPoses(scene, reading)` builds the lookup once for a pass over many nodes.
+  
+  ```ts
+  const shown = worldPoseOf(scene, id);
+  const stored = worldPoseOf(scene, id, 'document');
+  ```
+  
+  <!-- entry: new api -->
+- e67d322: `createScene` takes the flat `{ items }` form `useScene` takes, so a scene of plain items can be built outside React.
+  
+  ```ts
+  const scene = createScene({ items: [{ id: 'a', x: 0, y: 0, width: 10, height: 10 }] });
+  ```
+  
+  <!-- entry: api -->
+- 03c5f2f: `defineAction` and `useCommand` type an action's invoker, gates and variants by its id's `ActionParamSchema` entry, with no cast.
+  
+  ```ts
+  const stamp = defineAction({
+    id: 'review.stamp',
+    label: 'Stamp',
+    invoker: { timing: 'immediate', run: (deps, params) => stampAt(deps, params?.size ?? 1) },
+  });
+  ```
+  
+  Each param may be absent where the action reads it, since a palette passes none and a tuning lays only some. `ImmediateInvoker`, `OngoingInvoker`, `OngoingHandle`, `InvocationCtx`, `BindingOptions` and `UiOngoingControl` take the params type as a parameter, defaulting to an open record. `bindAction(spec, id, opts)` builds a checked binding for an id a literal cannot name alone, such as `` `${kind}.drag` ``, and `bindingOptionsOf(binding)` reads any binding's options as an open record.
+  
+  <!-- entry: rank=5 new api -->
+- 8d7296a: `describeShortcuts(registry.list(), { tools, toolSets })` gives every bound key as a shortcut sheet lists it.
+  
+  Tool keys come by tool set, command keys by action group, and held keys apart.
+  
+  <!-- entry: api -->
+- 5a805e9: Duplicate takes its offset as params, `dx` and `dy`, and shows them in the last-operation panel after a run.
+  
+  Both default to 12 world units, the offset a paste lands at, and Transform Again repeats whichever offset the duplicate used.
+  
+  <!-- entry: new api -->
+- 1566d81: Two canvases can edit one scene apart, each through its own editing session from `useEditingSession(scene)`.
+  
+  `createEditingSession(scene)` and `useEditingSession(scene)` open a session with its own selection, previews and scroll offsets over the same document and history.
+  
+  A session is a `Scene`, so `<SceneCanvas scene={session}>`, a kernel3d world, or an action's `scene` dep takes one. The scene itself is its default session. An edit made through a session records that session's selection, and an undo or redo restores the selection into the session that steps history. See `docs/editing-sessions.md`.
+  
+  ```tsx
+  const scene = useScene({ systemLayers: [{ id: 'main' }] });
+  const session = useEditingSession(scene);
+  <SceneCanvas scene={scene} />
+  <SceneCanvas scene={session} />
+  ```
+  
+  <!-- entry: rank=20 api new pick -->
+- 180ec74: A mode that bars an action bars its menu row, palette entry and bar button too, and `ActionsRegistry.trigger` refuses it.
+  
+  A dispatcher given `getRuleCtx` publishes it as the new `ruleCtx` dep, and `eligibleNow(action, ruleCtx)` asks an action's `eligible` rule against it outside dispatch.
+  
+  <!-- entry: fix api -->
+- 9787bca: `@weasel-js/core/engine` exports the shape-generator helpers, such as `shapeGeneratorOf` and `SHAPE_COUNT_RANGE`.
+  
+  <!-- entry: api -->
+- aedb49f: `createExtensionRegistry` makes a registry whose conflicts throw unless the call asks to replace, and which can fall back to a parent.
+  
+  The same value again is no change, a different one throws `ExtensionConflictError` unless the call passes `replace: true`, and each registration returns its release. Op factories and shader sources are built on it. Core re-exports it.
+  
+  ```ts
+  const shared = createExtensionRegistry<Widget>({ kind: 'widget' });
+  const mine = createExtensionRegistry<Widget>({ kind: 'widget', parent: shared });
+  const release = mine.register('dial', dial);
+  mine.register('dial', other);                    // throws ExtensionConflictError
+  mine.register('dial', other, { replace: true }); // replaces; `release` now does nothing
+  ```
+  
+  <!-- entry: rank=5 new api -->
+- 4be1a3f: `registerFontOutlines` and `registerCanvasFont` return a function that takes the registration out again.
+  
+  So do `registerBidi`, `registerShaper` and `registerDisplayKind`.
+  
+  A registration a later one replaced is left alone, so the function is safe to call from an effect's cleanup:
+  
+  ```ts
+  useEffect(() => registerFontOutlines('Inter', { weight: 700 }, '/fonts/inter-bold.ttf'), []);
+  ```
+  
+  <!-- entry: api -->
+- 4e54b4e: `frameInverts` and `storesEdits` say whether a pose or a path edit can be stored under a frame without moving it.
+  
+  `frameInverts(adapter, id, composition)` reads the frame at or above `id`, true for the root; `storesEdits(scene, node)` asks it of a node's own frame. Both are false for a singular frame.
+  
+  <!-- entry: api new -->
+- 95bd84c: `ANY_MODS`, a `ModSpec` with every modifier optional, is exported from gestures, routing and core.
+  
+  It is for a binding that answers whatever is held. Every bundled binding that took any modifier now uses it, in place of a copy of its own.
+  
+  <!-- entry: api -->
+- 5117a3c: A hud menu's text row puts the caret, the selection and a click where right-to-left text is drawn, once a bidi engine is registered.
+  
+  A selection that crosses a change of direction is drawn as one band per stretch. `@weasel-js/core` now exports `registeredBidi`, the engine `registerBidi` was last given.
+  
+  <!-- entry: fix api -->
+- e4f2133: `IngestCtx` and the `ingestion` dep carry an optional `worldPerPx()`: the world distance one CSS px spans along each screen axis.
+  
+  A content handler placing in screen terms multiplies by it; `<SceneCanvas>` and `<CanvasView>` supply it, and `arrivalBounds` reads it.
+  
+  <!-- entry: api -->
+- a86bd34: `InsertEnds.site` names the point an insert gesture picked its container at.
+  
+  A custom `insert` dep that picks a container should pick it at `ends.site`, falling back to `ends.start`.
+  
+  <!-- entry: api -->
+- fd2cbc8: An insert node factory can say how its commit batches and what runs once it lands.
+  
+  An `InsertNodeFactory` returns an `InsertedNode`: `data`, an optional `pose`, `batch(id)` for the options of the batch the commit applies (a node made to be typed into opens a run its first edit joins), and `inserted(id, deps)`, run with the canvas's deps once the commit has applied.
+  
+  <!-- entry: new api -->
+- e5e7aef: An `insertNodeFactories` entry for a kit kind receives that kind's own extras, so a `pencil` factory reads `extras.samples` with no cast.
+  
+  The map's type is the new `InsertNodeFactories`: `pencil`, `line`, `polygon`, `star`, `path` and the other kit kinds each get `Extract<InsertExtras, { kind }>`, and any other key still takes an `InsertNodeFactory` over the whole union. `InsertNodeFactory<E>` takes the extras type as an optional parameter.
+  
+  ```tsx
+  const factories: InsertNodeFactories = {
+    pencil: (_bounds, { samples }) => ({ data: { path: polygonFromPoints(samples) } }),
+  };
+  ```
+  
+  <!-- entry: api -->
+- 7e5b389: A settings page built from the kit settings schemas shows help text on the gesture, target, view, loupe and orbit rows.
+  
+  <!-- entry: new -->
+- 6eefcb6: The lasso's hit mode is a tool option, so its options row offers Touched, Enclosed and Centers.
+  
+  `LASSO_TOOL_OPTIONS` declares it, kept per tool. `useLassoTool({ mode })` and `<SceneCanvas toolOptions={{ lasso: { mode } }}>` now set the option's default, and the binding's params carry only `minVertexSpacing`.
+  
+  <!-- entry: new api -->
+- c22c9a6: A layout strategy can resize its container on any rearrangement through the new optional `LayoutStrategy.fit`.
+  
+  `fit` returns the resting arrangement with the bounds it needs, and the scene calls it in place of `childPoses`.
+  
+  <!-- entry: api -->
+- de8f61d: `pathMotion` moves a pose along a path measured from an `origin` where the path is, read from the new `LengthTable.origin`.
+  
+  `pathLengthTable(path)` carries the path's `origin`; a point read off the table plus it is in the path's own space.
+  
+  <!-- entry: api fix -->
+- b54ab5f: The long-press store and the press ring's model live in `@weasel-js/gestures`
+  
+  `createLongPressStore`, `LongPressState`, `LongPressStore` and `PendingLongPress` are now defined in gestures; routing and core still export them. New beside them: `pressRingAt(state, now, opts)` gives the ring a held press shows at a moment, as its center, radius, width and fill, or `null` before the delay or for a press that will fire nothing. `pressRingWaitAt` says how long until it shows, and `ringArcPoints` gives the filled arc as points. Core's `createLongPressFeedbackContribution` draws that ring and keeps only the canvas part: its layer, its color, and reading `prefers-reduced-motion`.
+  
+  <!-- entry: api -->
+- d2002e0: Headless renders and exports report a stroke's marker that nothing registered, as a `RenderDiagnostic` of the new kind `'marker'`.
+  
+  Code that switches over `RenderDiagnosticKind` exhaustively gains a case to handle.
+  
+  <!-- entry: api fix -->
+- a23ebea: `measureTextBounds` can measure text at the size it shrinks to in a box.
+  
+  `measureTextBounds(text, style, { fitBox: { width, height } })` measures the text at the size a node with `fit: 'shrink'` sets it at in a box that size, wrapping at `maxWidth`.
+  
+  <!-- entry: api -->
+- d19f8cc: `mountedCanvasRegistry` lists every mounted kit canvas by the element it measures, the registry `findMountedCanvas` searches.
+  
+  <!-- entry: api -->
+- fd2cbc8: Core exports what a package teaching the canvas a node kind or shipping its tools builds on.
+  
+  New exports: `shapePropertiesSchema` and `ShapePropertiesExtras` (the standard shape sections, with a kind's own ahead of, inside and after Appearance); `nodeMemo`, `PAINT_SLOT`, `inkReach`, `strokeOutsetPerAxis` and `paintsPose` for painters; `sceneDerivedPathOf`, `scenePaintedPoseOf`, `nodesAsShown`, `shownLookup`, `indexedCandidates`, `targetTransformOf`, `worldToLocal` and `TargetTransform` for reading a scene as shown; `findMountedCanvas` and `MountedCanvas`; `arrivalBounds` for content handlers; `insertBindingBehaviors`, `InsertToolOptions`, `shapeToolOptions`, `styleOptionLeaves`, `toolOptionPaint`, `InsertStyle`, `ShapeToolOptionsSpec` and `StyleOptionKey` for insert tools; and `hasStroke`, whether a stroke covers anything.
+  
+  <!-- entry: api -->
+- dc881e4: A node painter can declare its kind's geometry: its outline as paths, the generation it moves on, and the pieces a path effect lays.
+  
+  `NodeShapeEntry` takes four optional members. `outline(node, pose, ctx)` answers a `NodeOutline` (`path()`, `parts()` split by paint, `stroked`, `load()`) for a kind whose silhouette is not its geometry, as text's line boxes are not its glyphs; booleans, Create Outlines and Outline Stroke read it. `geometryGeneration()` is a counter the kind bumps when that geometry changes with no edit, as a face landing does: the silhouette memo, the snap index and every derivation reading the kind are checked against it. `silhouetteKey(node, ctx)` names anything else the silhouette depends on, such as the view scale. `effectItems(node, pose)` gives the pieces a path effect lays one by one.
+  
+  ```ts
+  nodeShapesOf(scene).register({
+    id: 'app:gem', matches: isGem, paint: paintGem, silhouette: gemBox,
+    outline: (node, pose) => gemFacets(node, pose),   // a NodeOutline
+    geometryGeneration: () => facetTableVersion,
+  });
+  const outline = sceneNodeOutline(scene, id);         // what an adapter's getOutline answers
+  ```
+  
+  `findNodeOutline`, `sceneNodeOutline`, `geometryGenerationOf`, `NodeOutlineError` and the `NodeOutline`, `NodeOutlineCtx` and `PaintedPath` types are exported.
+  
+  <!-- entry: rank=10 new api -->
+- db54baf: `NodeProperties.reflection` lists the registered property schemas by kind name, in registration order.
+  
+  <!-- entry: api -->
+- bbf58f0: `NodeRouting.reflection` lists the registered routing kinds by name, in registration order.
+  
+  <!-- entry: api -->
+- 5d3b9b7: Shape painters can be registered for one scene: `nodeShapesOf(scene).register(painter)` paints and picks with it there and nowhere else.
+  
+  Every scene has a registry of its own, resolved ahead of `defaultNodeShapes`, which holds the built-ins and what `registerNodeShape` adds for every scene. Drawing, picking, region selection, bounds, selection outlines, clips, snapping, and path effects made for a scene ask its registry. `findNodeShape(node, shapes)`, `nodeShapeEntries(shapes)`, and a `shapes` field on the paint, silhouette, ink, and `shapeCoversPoint` contexts take one explicitly; `createNodeShapes({ parent })` makes a free-standing one.
+  
+  ```ts
+  const release = nodeShapesOf(scene).register(gemPainter);
+  findNodeShape(node, nodeShapesOf(scene)); // gemPainter
+  findNodeShape(node);                      // the default registry's answer
+  ```
+  
+  <!-- entry: rank=5 new api -->
+- 5531792: The diagram page exports take pages read from the document, so a page moved during an export is written where it now is.
+  
+  Pass `pageRegionSource(page)` or `pageRegionsSource(pages)`, new in core, which find each page by its id in the revision the export draws and fail for one it removed. A fixed rect still works and is drawn where it was given.
+  
+  ```ts
+  await exportPagesPdf(scene, pageRegionsSource(placedPagesOf(scene)));
+  ```
+  
+  <!-- entry: api fix -->
+- c8f84f3: `layoutPages` throws on a `direction`, `gap`, `align` or `origin` it cannot read.
+  
+  Loading a scene refuses a page run whose layout holds one, and `pageLayoutFault(value)` says what is wrong with one, or returns `null`.
+  
+  <!-- entry: fix api data -->
+- d73bd9f: `setFill`, `setStroke`, and the other paint actions take an `ids` param naming the nodes to paint in place of the selection.
+  
+  ```ts
+  registry.begin('setFill', { paint, ids: ['node-1'] });
+  ```
+  
+  <!-- entry: new api -->
+- fd2cbc8: `registerPaintStandIn` lets an overlay stand in for part of a node's paint: the canvas leaves out what the overlay draws.
+  
+  `registerPaintStandIn(scene, within, keep)` returns a stand-in; while it `show(id)`s a node, every canvas of `scene` inside `within` paints that node through `keep(cmds)`. A text editor's overlay uses it to leave the edited glyphs out.
+  
+  <!-- entry: new api -->
+- c5e5476: A node-shape painter can draw a node's `data.label` itself: `drawsLabel: true` on its entry stops the kit drawing a second label over it.
+  
+  ```ts
+  registerNodeShape({ id: 'app:card', matches, paint, drawsLabel: true });
+  ```
+  
+  Such a node is culled by the painter's `bounds` again, where a `data.label` used to keep it always painted.
+  
+  <!-- entry: api fix visual -->
+- 527f214: A `<SceneCanvas pathEdit>` host with a `subscribe` repaints the canvas when it notifies, so it no longer needs to be passed in `redrawOn` too.
+  
+  `PathEditHost` gains an optional `subscribe(listener)`: notified when the open path or its selected anchors change.
+  
+  <!-- entry: api -->
+- 42169f9: In path edit on the path a text-along effect hides, a click on the effect's curved text opens that text for editing.
+  
+  The `pathEdit` preset registers the `editEffectText` action for it, bound to a click on a body; an anchor of the open path under the click keeps the click. `effectsShowing(scene, source, role)` answers the effects hiding a source, which a host's path-edit scope lights so the text stays drawn at full strength and takes the click.
+  
+  <!-- entry: new api -->
+- 6a9cd12: `pathMotion(path, options)` moves a node along a path: hand it to `tweenPose` as `geometry`, with `to: motion.at(pose, 1)`.
+  
+  ```ts
+  const motion = pathMotion(path, { orient: true });
+  tweenPose(animator, adapter, { id, to: motion.at(pose, 1), geometry: motion, ms: 2000 });
+  ```
+  
+  The move travels by length, so easing shapes the speed along the path. `anchor` names the point of the pose that rides it, as fractions of its bounds (default the center); `orient` turns the pose with the tangent, plus `rotationOffset` radians; `descriptor` reads and writes the pose (default `RECT_POSE_DESCRIPTOR`). `path` may also be a two-component length table. Its `lerp` works as a sampled track's `interpolate` too.
+  
+  <!-- entry: rank=10 api new -->
+- 094ba4d: A node whose pose is a `Path` draws in its `data.fill` and `data.stroke` with no `drawOne`, through the new built-in `kit:path-pose` painter.
+  
+  It runs behind every other painter, as `kit:rect-fallback` does for rect poses, so a painter you register for path-posed nodes still wins.
+  
+  <!-- entry: new visual -->
+- 1e9c740: `present.go` reaches a page whose id is `'first'` or `'last'`; a `PageRequest` names an end as `{ end: 'first' | 'last' }`.
+  
+  `{ to: 'first' }` still goes to the first page where no page has that id.
+  
+  <!-- entry: api fix -->
+- 586b6c1: A preset can build tools and contributions from the canvas it runs on, and build the canvas's selection.
+  
+  `FeaturePreset.build(ctx)` is handed `toolOptions` and, read live, the canvas's scene, adapter, pose descriptor,
+  pickers (`ctx.pick`), selection and `selectTool` options; it runs again only when `toolOptions` changes. It returns `tools` the preset offers by id, mounted when
+  a preset's `tools`, `defaultTools` or a `tools` patch names them, and `contributions`, installed after the presets'
+  own. `FeaturePreset.selection` is a `SelectionFactory`, `(store, options) => SelectionApi`, that builds the selection
+  the canvas writes through; one per canvas. Neither is a hook. `SceneCanvasToolOptions` takes a package's own
+  `toolOptions` keys by declaration merging.
+  
+  ```ts
+  const stampPreset: FeaturePreset = {
+    id: 'stamp',
+    tools: ['stamp'],
+    build: (ctx) => ({ tools: { stamp: createStampTool(ctx.pick) } }),
+  };
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- fd2cbc8: A preset can mount React components inside the canvas and add content handlers to its ingestion.
+  
+  `FeaturePreset.components` are rendered inside the canvas while the preset is on, after its own deps and before its children, each given `PresetComponentProps` (the scene, the canvas element's ref, and whether it paints into a host's element): for a part that needs React and the mounted canvas, such as an editing overlay. `FeaturePreset.contentHandlers` are tried after the canvas's own `ingestion.handlers` and the kit's.
+  
+  <!-- entry: rank=5 new api -->
+- 9566a40: A preset's components get `canvas`, the context its `build` gets, which also reads the insert factories now.
+  
+  `PresetBuildContext` adds `insertNodeFactories()`, and the pickers add `pick.reachable(id)`, `pick.targetOf(id)` and `pick.alphaOf()`, read live: what a component publishing a dep over the canvas's scene and pickers needs.
+  
+  <!-- entry: api -->
+- 9566a40: A preset's `insertKinds` names the insert kinds its `insert` dep builds with no factory, so the canvas keeps a tool that inserts one.
+  
+  <!-- entry: api -->
+- 68d5da4: A `FeaturePreset` can carry the routing, insert factories, painters, and properties of a node kind; `createNodeKindPreset` builds one.
+  
+  Each trait goes to its owner while the preset is on: `routing` classifies ahead of the canvas's `routing` (or `inferredNodeRouting`), `insertNodeFactories` builds the inserts its kinds name, `shapes` register in the canvas's scene's own painter registry for as long as the canvas runs the preset, so another scene does not paint with them, and `properties` is what a `SelectionPanel` given the same presets edits. A name the consumer's own prop gives keeps the consumer's; two presets giving one name different values throw. `nodeTraitsOf(features, base)` returns the merged traits.
+  
+  ```tsx
+  const gemFeature = createNodeKindPreset({
+    id: 'app:gem', kind: 'gem', matches: isGem,
+    shape: gemPainter, insert: gemFactory, properties: { schema: gemSchema }, tools: [gemTool],
+  });
+  <SceneCanvas scene={scene} features={[presets.draw, gemFeature]} />;
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- 9566a40: A preset's `toolActions` register only once a tool or binding on the canvas names one, whichever preset mounts the tool.
+  
+  <!-- entry: api -->
+- 4d469aa: `RasterSession.renderCommands` takes a `view` option, world to raster pixels, for `'world'`-unit paint.
+  
+  Without it that paint is measured in screen space, as before.
+  
+  <!-- entry: api -->
+- a3136aa: `RasterSession.renderPlan(plan)` draws a plan `planPixelRender` made earlier, for a caller that reads the scene at one moment and draws later.
+  
+  <!-- entry: api -->
+- 5b156c6: A group whose `copiesFromPose` carries its children past every finite box is never culled, where it was culled by a view away from the origin. A `BoxImage` may now answer `BOX_ALL` to say that no finite box holds its image.
+  
+  <!-- entry: fix api -->
+- f976095: `createReachTree` exports the index a culled scene walk and the pick index run on, in any dimension, for a host's own index.
+  
+  It keeps each node's own box and the reach of its subtree, from a `ReachSource` that boxes a node and reads `scene.changesSince`, and answers which children, or which nodes, meet a box, a set of half-spaces or a ray. Boxes are `[min…, max…]` in the source's dimension.
+  
+  <!-- entry: api -->
+- 6355d18: `renderOrderCompare(scene)` returns a `compareZ` over the scene's paint order that ranks the order once per structural edit.
+  
+  ```ts
+  const adapter = { ...rest, compareZ: renderOrderCompare(scene) };
+  ```
+  
+  <!-- entry: api perf -->
+- fcfefd4: `renderSceneToPixels` and `planPixelRender` take a `pixelRatio`, output pixels per CSS pixel.
+  
+  A `{ px }` length renders at that many output pixels, as on a canvas at that density, and `scale` stays output pixels per scene unit. A plan made at a ratio other than 1 carries the `screen` it was made for, which `renderPlan` uses when given none.
+  
+  <!-- entry: api -->
+- eeb7c5a: `renderTimelineFrames` renders a timeline span to a sequence of rasters at a frame rate, for saving an animation as images.
+  
+  ```ts
+  for await (const frame of renderTimelineFrames({ timeline, fps: 30, render: { scene, sourceRect, scale } })) {
+    pngs.push(await rasterToPng(frame.image));
+  }
+  ```
+  
+  It pauses the timeline, seeks each frame in order and renders it through one raster session (`session` to bring your own), and puts the timeline back where it was, playing or paused, when it ends. `from` and `to` choose the span in ms (default the whole timeline); frames cover `[from, to)` unless `includeEnd`. `signal` cancels before the next frame and `onProgress` reports each one. `timelineFrameTimes` answers the playheads alone.
+  
+  <!-- entry: rank=5 api new -->
+- aba9531: `hostSceneRender` and `serveSceneRender` return a function that stops the host. A worker hosting several ports asks each page in turn for an image only a page can load.
+  
+  <!-- entry: api fix -->
+- 44848fe: A worker-painted canvas reports whether its render worker failed, and can restart it on a new canvas.
+  
+  `workerRef` on `<SceneViewCanvas worker>`, and `ref.worker` on `<SceneCanvas worker>`, gain `status` (`starting`, `running`, `failed` with a `reason` of `startup`, `init` or `unresponsive`, or `disposed`), `subscribeStatus`, and `restart()`. `startSceneRenderWorker` returns the same `status` and `subscribeStatus`, and takes `{ timeout }` as a fourth argument; the components take it as `workerTimeout`. `RenderWorkerStatus`, `RenderWorkerFailure` and `RenderWorkerOptions` are exported.
+  
+  ```tsx
+  const worker = useRef<WorkerCanvasHandle>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => worker.current?.subscribeStatus(() => setFailed(worker.current?.status.state === 'failed')), []);
+  <SceneViewCanvas scene={scene} view={view} worker={start} workerRef={worker} workerTimeout={5000} />
+  {failed && <button onClick={() => worker.current?.restart()}>Retry</button>}
+  ```
+  
+  <!-- entry: rank=5 new api -->
+- f3a1232: A `text-layer` draw command keeps text on the GPU.
+  
+  `{ kind: 'text-layer', texts }` draws its `TextDrawCommand`s as drawing each in turn would, but uploads every glyph once, as one instance, and draws it with one call a frame however the view moves.
+  
+  At 114,400 glyphs, a frame of unchanged text drops from 8 ms of CPU to 0.1 ms, and from 11 ms to 3 ms end to end, still or moving; at 1.28M, from 103 ms to 26 ms (`tests/perf/text-wall.spec.ts`). The layer is kept by the identity of `texts` and freed at the end of a frame that does not draw it. A layer holding an underline, a stroke, a fill that is not a solid color, a color glyph, or a glyph big enough on screen for the outline tier is drawn text by text instead.
+  
+  ```ts
+  const wall: DrawCommand = { kind: 'text-layer', texts: lines.map((l, i) => textCommandFromRuns(0, i * 16, l, style)) };
+  renderer.render([wall], view);
+  ```
+  
+  `GpuDevice.draw` takes an instance count, and a vertex buffer layout's `step: 'instance'` advances once an instance. `@weasel-js/core` exports `TextLayerDrawCommand`, and `renderNeeds` reads a layer's fonts and paints. `@weasel-js/pdf` writes a layer's texts. `@weasel-js/font` exports `GLYPH_AREA_FROM`.
+  
+  <!-- entry: api perf -->
+- d569abf: `scrolledPlaceOf(el, scroller)` gives where an element sits in a scroller's content, in the scroller's own px.
+  
+  It divides out any scale an ancestor transform draws the two at, so the answer can be written to `scrollTop` or a style as it is.
+  
+  <!-- entry: api -->
+- fa8902c: `<SceneCanvas composition>` loads a saved scene whose nested poses are not rects, such as a kernel3d `Pose3` scene with groups.
+  
+  A serialized `scene` is baked under it. It is read once, with the JSON, as `loadScene(json, { composition })` takes it; a live `Scene` keeps the composition it was made with.
+  
+  ```tsx
+  <SceneCanvas scene={savedJson} composition={POSE3_COMPOSITION} />
+  ```
+  
+  <!-- entry: api -->
+- 9bbe3e4: `<SceneCanvas>`'s `selectTool` and `ingestion` props have named types: `SceneCanvasSelectTool`, `SceneCanvasIngestion`.
+  
+  <!-- entry: api -->
+- 0c77c8d: `SceneCanvasApi.setPathEdit` opens a path in anchor edit, or closes the open one, from outside a gesture.
+  
+  `api.setPathEdit({ id, anchors })` opens `id` as a double-click would and selects `anchors`; `api.setPathEdit(null)` closes it. It takes the same value as `defaultPathEdit`, which applies only on mount, so a host returning a document to how it opened passes that value again.
+  
+  <!-- entry: api new -->
+- 56f8264: `<SceneCanvas toolOptionValues>` takes the store where a host keeps its tools' option values, which an options row reads and writes.
+  
+  ```tsx
+  const [values] = useState(createToolOptionValues);
+  <ActiveToolOptionsBar tools={tools} values={values} />
+  <SceneCanvas tools={registry} toolOptionValues={values} />
+  ```
+  
+  Unset, the canvas uses a store published beneath it, else one it holds in memory, as before. A child still publishing with `useToolOptionValues` overrides the prop.
+  
+  <!-- entry: api -->
+- f20931c: `SceneCanvasApi.viewAnimationTarget()` answers where the camera glide in flight is heading, or `null` when none is.
+  
+  <!-- entry: api -->
+- 5d7b7b8: `scene.changesSince(token)` answers which nodes changed since an earlier call, so an index over a scene updates those nodes alone.
+  
+  The answer names every node an edit reached — the nodes it named, their descendants, the nodes deriving from them, and those a pose preview or a scroll set or cleared — with the containers whose children changed and whether the render order moved. It is `'unknown'` without a token, after a consumer's op, a layer change, or once its bounded journal no longer reaches back to the token: start over from the whole scene then.
+  
+  ```ts
+  let { token } = scene.changesSince();
+  // …later
+  const changed = scene.changesSince(token);
+  token = changed.token;
+  if (changed.ids === 'unknown') rebuildAll();
+  else for (const id of changed.ids) refresh(id);
+  ```
+  
+  <!-- entry: rank=5 new api -->
+- 5339aec: `loadScene`'s options have a name, `LoadSceneOptions`, so code that forwards them can type them.
+  
+  <!-- entry: api -->
+- ab56471: `SceneMembershipError`, thrown for an unknown or colliding node id, is exported, so a catch can test it with `instanceof`.
+  
+  Its `name` is now `'SceneMembershipError'`, as the other scene errors name themselves.
+  
+  <!-- entry: api behavior -->
+- eb82ac9: `scene.registeredOps` lists every op kind a scene knows, the kit's own `kit:` kinds and those `registerOp` taught it.
+  
+  A kind registered again replaces its handler, so nothing is shadowed.
+  
+  <!-- entry: api -->
+- 795f517: A `SceneRegistry` can carry `upgrades`, which rewrite old saved nodes as they load so a rename keeps old saves loading.
+  
+  `loadScene`, `Scene.loadState` and `specsFromSerialized` run every upgrade in the registry, in key order, on each node of the save before resolving its keys. An upgrade is a `NodeUpgrade`, `(node: SavedNode) => SavedNode`: it returns a new node and leaves one already in the current shape as it is.
+  
+  ```ts
+  const registry: SceneRegistry<RectPose> = {
+    derivePose: { 'mine:follow': follow },
+    upgrades: { 'mine:rename': (n) => (n.derivePoseKey === 'mine:old' ? { ...n, derivePoseKey: 'mine:follow' } : n) },
+  };
+  ```
+  
+  <!-- entry: api data -->
+- a26f70d: `scene.replay(ops)` applies the ops another scene's `history.observe` reported, undo and redo included, without recording them.
+  
+  Each op is a `{ name, args }` pair, as `step.entries[i].applied` gives them; they rebuild as `restoreHistory` rebuilds a snapshot's, so a kind taught with `registerOp` has to be registered on both scenes. The receiving history stays as it was and its `observe` hears nothing, so every step it reports is a local edit and a sync layer can forward all of them without echoing back what it received. An op that does not fit the receiving scene throws, after taking back the ops before it.
+  
+  ```ts
+  a.history.observe((step) => {
+    b.replay(step.entries.flatMap((e) => e.applied).map((op) => ({ name: op.name!, args: op.args })));
+  });
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- e752074: `<SceneViewCanvas>` takes `redrawOn`, as `<SceneCanvas>` does, so an `alphaFor` reading outside state repaints the view when that state changes.
+  
+  <!-- entry: api fix -->
+- b646c27: `createSetLayoutOp` takes a `coalesceKey`, as every other field-setting op does, so a run of layout swaps can merge into one undo entry.
+  
+  <!-- entry: api -->
+- b92bf56: `createSetSelectionOp` takes plain string ids, as every other op does, so its callers no longer cast to `NodeId`.
+  
+  <!-- entry: api -->
+- 033c46f: Simplify and Offset Path leave their params in the last-operation panel after a commit, and Offset Path takes `join` and `miterLimit`.
+  
+  `SIMPLIFY_PATH_PARAMS` and `OFFSET_PATH_PARAMS` are the two actions' `params` forms, so a slider driving one reads its range from the leaf. Offset Path's corners follow `join` (`'miter'`, `'round'` or `'bevel'`), which its documentation promised and it ignored.
+  
+  <!-- entry: new api fix -->
+- 7bc2c18: `createPresentationContribution()` steps a paged canvas through its pages one at a time, gliding the view to fit each.
+  
+  Pass it to `<SceneCanvas ambient>`. The arrow keys, Page Up and Page Down, Home and End run its `present.step` action, and `present.go` shows a page by id or index; both fit the view with `fitViewToPage` and glide through the `view` dep's animation. The pages default to the scene's page run, and a step starts from whichever page the view shows most.
+  
+  ```tsx
+  const ambient = useMemo(() => [createPresentationContribution({ wrap: true, onPage: (page) => setShown(page) })], []);
+  <SceneCanvas scene={scene} ambient={ambient} />
+  ```
+  
+  Options: `pages`, `wrap`, `animate` (default on), `fit` (as `fitViewToBounds` takes it), `keys` (default on), and `onPage`. A host stepping the canvas from outside it, such as a presentation runtime with keys of its own, passes `keys: false` and calls `stepPresentation(createCanvasCamera(api), pages, { by: 1 })` on the canvas handle.
+  
+  <!-- entry: rank=10 new api -->
+- fb69a95: `SnapBegin.along` holds a move's snap to one direction: the session keeps δ on the line through the press along it, whatever is held.
+  
+  Two numbers in 2D, three in a 3D host.
+  
+  <!-- entry: api -->
+- fb69a95: A snap session can report the subject's exact landing in its host's own terms, and the move and insert actions carry it to the commit.
+  
+  `SnapOutcome.landing` is opaque to core. A move hands it to `PoseDescriptor.translate` as a new fifth argument, `landing`, for the drag it was reported with; an insert puts it on `InsertEnds.landings.start` or `.end` for the end it placed. Either is dropped once a behavior moves the point. `SpanSnap.landingAt(p)` answers it for an end at `p`.
+  
+  <!-- entry: rank=3 api -->
+- 3f575e2: `snapToContainer` shows the dragged nodes in their slot as soon as the dwell elapses, even with the pointer held still.
+  
+  Move and clone set the new `GestureContext.refresh`, which runs the gesture's frame again at the pointer's last place for a behavior whose answer changed between moves.
+  
+  <!-- entry: fix api -->
+- 7cace1d: `SpanSnap.anchor` returns whether it moved the point the end turns about.
+  
+  <!-- entry: api -->
+- a86bd34: `createSpanSnap` takes its shared request as a function too, read each time one of its sessions opens.
+  
+  <!-- entry: api -->
+- cb6e47b: The Spiro tool closes a curve within the pen's close reach, the `targets.penCloseHitPx` kit setting, when no `closeHitRadius` is given.
+  
+  Core exports that setting's default as `PEN_CLOSE_HIT_PX`.
+  
+  <!-- entry: fix api -->
+- 8635c1a: A `SurfaceContribution` can carry hit-tested layers in `layers`, so one `ambient` entry installs a feature whose chrome takes presses.
+  
+  `layers` are registered on the canvas as `registerLayer` would register them, in entry order with the last hit first, and that order holds when an entry is rebuilt. An `overlay` is still painted only.
+  
+  ```tsx
+  const handles: SurfaceContribution = { id: 'handles', eligibility: { claimed: true }, layers: [handleLayer], bindings, actions };
+  <SceneCanvas ambient={[handles]} />
+  ```
+  
+  <!-- entry: rank=10 api new -->
+- 78dd590: Two same-size nodes can trade places: hold one still over the other while dragging it, or select both and run the `swap` command.
+  
+  Turn the drop on with the move's `swapOnDrop: 'dwell'` param (`<SceneCanvas tune={{ move: { params: { swapOnDrop: 'dwell' } } }}>`). Resting a single dragged node over another for a second arms the swap: the other slides into the dragged one's starting place, is outlined, and the cursor shows the swap glyph. Released there, the two trade places, parents and stacking order as one undo step, "Swap". A binding that wants another wait or its own target passes `swapOnDrop({ dwellMs, targetAt })` from `@weasel-js/editing` in its `behaviors`.
+  
+  The `swap` action (in the `arrange` preset, and `presets.swap`) does the same for exactly two selected nodes. Which nodes may swap is the new `canSwap` dep's to say; without one, two nodes of one `kind` and one size do. `swappable` asks that rule, and `swapOps` builds the commit both use.
+  
+  <!-- entry: rank=10 new api -->
+- 46ec294: Under a `tools` takeover, `<SceneCanvas>` still installs its `ambient` prop, `AmbientContributionsProvider` entries and preset `contributions`. A takeover replaces only the tools, and an entry whose id the takeover holds stays the takeover's.
+  
+  <!-- entry: rank=5 behavior -->
+- 4aaefe7: Holding Space while dragging out a text box or an image moves it instead of resizing it, as it does for the shape tools.
+  
+  <!-- entry: behavior -->
+- 3871e2f: A text node with a `{ px }` `fontSize` or `letterSpacing` keeps its screen size as the view zooms, and is picked and boxed where it draws.
+  
+  The node painters' paint and silhouette contexts carry the view scale as `scale`, which `SceneCanvas` and `renderSceneToCanvas` fill in.
+  
+  ```ts
+  scene.add({ id, kind: 'mark', layer, pose, data: { text: 'A', style: { fontSize: { px: 14 } } } });
+  ```
+  
+  <!-- entry: rank=5 api fix visual -->
+- 4b0b9df: `registeredShaper()` reads the shaper `registerShaper` was given, as `registeredBidi()` does for bidi.
+  
+  Core now also exports the `BidiEngine` and `BidiReordering` types beside `TextShaper`.
+  
+  <!-- entry: api -->
+- a23ebea: A text node with `fit: 'shrink'` sets its text at the largest size, never above its own, whose lines fit its box.
+  
+  `TextPose.fit` and `kit:text`'s `data.fit` take `'none'` (the default) or `'shrink'`. `layoutTextPose` resolves it, so the painter, picking, `caretIndexAt`, `textToPath` and the edit overlay all set the text at the fitted size; the overlay edits it at its own size under a zoom smaller by the fit, so the sizes written back are the authored ones. The property panel offers it as "Shrink to fit". `textFitScale(pose)` reads the factor, `bakeTextFit(pose)` writes the fitted sizes out, and SVG export writes the text at its fitted size in every `text` mode. The search is a binary search to `TEXT_FIT_TOLERANCE` of the scale, cached per layout input.
+  
+  <!-- entry: rank=10 api new -->
+- dd7e196: `toolGaps(tool)` lists what a tool's definition leaves out, for a test that every tool a package ships is complete.
+  
+  It names a missing label, icon, palette group, cursor, hook name, binding or binding id, and, given `registered`, an action a binding names that nothing registers.
+  
+  ```ts
+  expect(toolGaps(tool, (id) => registry.list().some((a) => a.id === id))).toEqual([]);
+  ```
+  
+  <!-- entry: api -->
+- ba59515: Built-in tools' color options default in one spelling, so the text fill and the sticky note's ink are the same black a stroke is.
+  
+  `toolOptionPaint(paint)` gives a solid paint that spelling: six hex digits with any alpha as `opacity` (`{ color: '#000000' }`). A tool declaring its own paint option can default it through the same function.
+  
+  <!-- entry: fix api -->
+- 87d7436: A tool's options show on the last-operation panel after it runs: a rectangle's fill, stroke and width, a sticky note's paper and ink.
+  
+  Changing one there redraws the shape and keeps the value as the tool's option, shared or its own as the tool declares it. Every tool with `ToolDef.options` gets this, in every package. The mechanism is a new `ActionTuning.form`: the params a tuning supplies, as a form the panel draws beside the action's own `params`. An action with no `params` of its own that a tuning gives a form is kept as the last operation too.
+  
+  ```ts
+  registry.tune('widen', { params: () => ({ tint }), form: TINT_FORM, keep: (p) => saveTint(p.tint) });
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- 8d7296a: A tool set can carry a `label`, and every set the kit ships has one: `toolSet('make', ids, { label: 'Make' })`.
+  
+  A shortcut sheet heads a set's tools with it, and `withoutTools` keeps it.
+  
+  <!-- entry: api -->
+- 129da4b: A `TransformFollower` may declare `begin()`, called once as a move, resize or rotate drag starts. It runs before the drag's first frame, so a follower can drop what it kept from the drag before.
+  
+  <!-- entry: api -->
+- 41f0773: `usePageActions(actions, enabled?)` binds actions' keys on the page with no provider above it
+  
+  It owns its own actions registry and a dispatcher with no element, hearing keys as `keyboard: 'page'` does: after a focused widget's own handlers, and ahead of every dispatcher on `window`. A disabled action leaves its key to the rest of the page. For a hook or a page that has no actions registry to put its keys on.
+  
+  <!-- entry: api -->
+- c7db707: `warmRender({ render, report })` reports what a headless render will draw without, rather than rejecting on a failed load.
+  
+  That covers a picture, face or paint kind that failed to load, a kind nothing registered, and a shader program with no GLSL.
+  
+  <!-- entry: api -->
+- 413e38c: `features={['whiteboard']}` turns a canvas into a whiteboard: the pencil, text and sticky-note tools on a canvas you pan and zoom.
+  
+  The preset is also exported as `textTools.whiteboard`; its tools are text-tools' `TEXT_TOOLS`. It includes the `view`, `pick`, `move`, `resize` and `edit` presets.
+  
+  <!-- entry: new api -->
+
+### Patch Changes
+
+- fe3c2df: `useActionSet` leaves out exactly the ids in `exclude`, whatever characters they hold.
+  
+  <!-- entry: fix -->
+- 33d9b95: `<SceneCanvas actions>` overrides reach a tool's or a preset's own actions. They also stay in force when an action re-registers, as `viewport.zoom` does when its `viewport` config changes.
+  
+  <!-- entry: fix -->
+- 2a3a075: A replayed `kit:addLayer` naming a layer id the scene already holds throws, as `scene.addLayer` does.
+  
+  <!-- entry: fix -->
+- 4204bdb: A `composeAffordanceLayer` layer goes to `registerLayer` or a `layers` slot without a cast.
+  
+  It is typed `RenderLayer<unknown>`, the data it already accepted.
+  
+  <!-- entry: fix -->
+- 9c88969: A click picks a path anchor only within `targets.anchorClickPx` screen pixels on both axes, also in a view that zooms its axes apart.
+  
+  <!-- entry: fix -->
+- f1bc116: Path edit draws square anchors on a node whose path form no longer describes its path, not the form's markers.
+  
+  <!-- entry: fix visual -->
+- effe879: An annulus affordance's stroke traces only the ring's outline, with no line drawn across its band.
+  
+  <!-- entry: fix visual -->
+- db9988a: An op handed to `scene.applyBatch` with `caused()` applies against the call's adapter, and its entry records what it caused.
+  
+  <!-- entry: fix -->
+- 7f25db9: An augmentation of `DepSchema` or `ActionParamSchema` against `'@weasel-js/routing'` merges in every program, kernel3d's own included.
+  
+  Augment `'@weasel-js/routing'`, which declares both, and list it among your dependencies. An augmentation of core's re-export merges into a separate copy, so lint now rejects one.
+  
+  ```ts
+  // before
+  declare module '@weasel-js/core' { interface DepSchema { color: ColorApi } }
+  // after
+  declare module '@weasel-js/routing' { interface DepSchema { color: ColorApi } }
+  ```
+  
+  <!-- entry: fix -->
+- c3a8dea: An animation on a `{ kind: 'rect' }` Path pose under the default pose descriptor no longer writes a `rotation` field onto the path.
+  
+  <!-- entry: fix -->
+- c7e5656: The default pose descriptor's `lerp` throws for a Path pose and a rect pose, rather than returning a pose with `NaN` bounds.
+  
+  <!-- entry: fix -->
+- 2c2ab71: Average anchors is disabled where the selected anchors already sit on their mean or name no anchor of the path.
+  
+  `averageAnchorsAt` returns false, changing nothing, when every anchor already sits on the mean.
+  
+  <!-- entry: fix -->
+- ca5bcb0: `bindRig` binds a node with the id `toString` or `constructor` when `skins` does not name it, instead of throwing.
+  
+  <!-- entry: fix -->
+- 6da5a3b: A path effect saved as a blend loads as the tween it was renamed to, live, rather than painting nothing.
+  
+  `pathEffectOf` reads `kind: 'blend'` as `'tween'`, so a scene saved before the rename keeps its steps, and the next edit writes the effect back as a tween.
+  
+  <!-- entry: fix data -->
+- a7dab9f: Make Boolean Group takes the outermost of the selected nodes as its operands, leaving a selected group's children inside it.
+  
+  <!-- entry: fix -->
+- 63fbbdf: A boolean group's children are outlined by the scene's own painters when the scene composes frames, as they are when it does not.
+  
+  <!-- entry: fix visual -->
+- f20931c: A `createCanvasCamera` step pressed during a glide steps on from where that glide is heading, whoever started it.
+  
+  <!-- entry: fix -->
+- 3bf5d6c: `createCanvasReader` answers null on a canvas with no renderer yet, rather than opening a WebGL 2 context there.
+  
+  That context would have kept a WebGPU renderer from painting on the canvas.
+  
+  <!-- entry: fix -->
+- 315f5ee: A `<CanvasView>` whose `id` another view on the same canvas already holds is skipped with a console error, as a duplicate `<ViewMarker>` is.
+  
+  <!-- entry: fix -->
+- 97f1f86: A two-finger pinch inside a `<CanvasView>` zooms about the point between the fingers, not one offset by the view's position on the canvas.
+  
+  `InvocationCtx.multiTouch.centroid` is in the CSS pixels of the view the gesture runs in, the space that view's camera anchors in.
+  
+  <!-- entry: fix -->
+- 6bbc0e5: A press inside a `<CanvasView>` reaches the view over a hit-testable `layers` entry, which paints under it.
+  
+  Only a registered layer, which paints over every view, still claims such a press.
+  
+  <!-- entry: fix -->
+- 33c1e37: A `subscribeView` listener that throws no longer stops the other listeners, `onViewChange` or the repaint.
+  
+  One subscribed while the others are told waits for the next change.
+  
+  <!-- entry: fix -->
+- 62f5560: A `<CanvasView>` skipped because another view held its id takes that id once the other view unmounts.
+  
+  <!-- entry: fix -->
+- 063b00c: A group on a page refuses a node following others on another page, as the page itself does.
+  
+  <!-- entry: fix -->
+- bfc8672: The `chromeRules` dep's `get` answers `undefined` for an id with no rule, even one named like an `Object.prototype` member.
+  
+  <!-- entry: fix -->
+- 8dd351a: A visibility rule for a chrome id spelled `__proto__`, as a table read with `JSON.parse` can hold, is kept rather than dropped.
+  
+  <!-- entry: fix -->
+- 8a1c306: A chrome id with no visibility rule shows even when it is named like an `Object.prototype` member, such as `constructor` or `hasOwnProperty`.
+  
+  <!-- entry: fix -->
+- c4cb671: A `chromeVisibility` key set to `undefined` keeps the kit's or the preset's rule for that chrome, as an absent key does.
+  
+  <!-- entry: fix -->
+- f172abc: `clampMove` keeps a node inside an offset or turned group within its world bounds, measuring each dragged node where the scene shows it.
+  
+  <!-- entry: fix -->
+- 39fd347: The kit's clipboard keeps typed arrays and non-finite numbers by default
+  
+  Its payload is written and read through the snapshot codec unless a consumer passes its own `jsonReplacer` or `reviver`, so a copy between two default canvases keeps a path's typed arrays and an `Infinity`.
+  
+  <!-- entry: fix -->
+- 0c07b8d: `<SceneCanvas>`'s `colorAt` dep samples the scene layers `layerOrder` draws, stacked in its order, and none it leaves out.
+  
+  <!-- entry: fix -->
+- 1857565: `commitOps` commits for an action that declares only the deps it uses, without reading `operands` or `applyOps` it never declared.
+  
+  <!-- entry: fix -->
+- c3935f7: The wheel no longer scrolls a nested container where the container holding it clips it out of view.
+  
+  <!-- entry: fix -->
+- fcc31eb: Wheel scrolling a container keeps the `z` of its scroll offset.
+  
+  <!-- entry: fix -->
+- 8bc6d64: Wheel scrolling a scaled container moves its content as far on screen as it would an unscaled one.
+  
+  <!-- entry: fix -->
+- 9621063: Zoom to fit and `viewBounds: 'content'` frame content moved by a pose override or a scroll. An animator's override and a container's scroll now move `<SceneCanvas>`'s content bounds, edge-pan's limits included.
+  
+  <!-- entry: fix -->
+- 869d865: Zoom-to-fit and the minimap frame what a group on a hidden layer holds on a shown layer, and the copies it draws of it.
+  
+  <!-- entry: fix -->
+- 95ddf7a: A contribution's `attach`, `deps`, `watch`, and overlay move to the new host when a surface's canvas API or dep registry is replaced.
+  
+  <!-- entry: fix -->
+- daa7a4d: Copying a page along with a derived node on it carries the node's hidden sources, so the paste no longer leaves the node out.
+  
+  <!-- entry: fix -->
+- 06303a3: An affordance region whose own `chromeId` is hidden is no longer painted, matching the hit-test that already skipped it.
+  
+  <!-- entry: fix visual -->
+- 8278212: Where several affordance handles take one press, the one nearest on screen wins, also under a zoom that scales x and y differently.
+  
+  <!-- entry: fix -->
+- 1b27b2f: An annulus affordance paints the same ring a press can reach, wherever its inner rect sits.
+  
+  Corners where the rect's corners fall inside the ellipse are filled, and `minBandPx` floors the band past the rect edge farthest from the ellipse's center.
+  
+  <!-- entry: fix visual -->
+- a529c26: `defaultDrawOne` draws `{ px }`-sized text at its screen size when the caller's paint context gives no density.
+  
+  <!-- entry: fix visual -->
+- 394cc06: The device profile reads pointer and hover through `@weasel-js/react`'s `useMediaQuery`, with no change to what it reports.
+  
+  <!-- entry: internal -->
+- 93b6009: Faded poses, view interpolation, pressure widths, tween effects, and per-anchor widths reach their end values exactly.
+  
+  <!-- entry: fix -->
+- 37baa8c: Escape no longer switches to a default tool the active mode bars, just as that tool's own key does not.
+  
+  <!-- entry: fix -->
+- 1c9986a: A group declaring `clip: 'outline'` with no `data.path` clips its children to its box.
+  
+  A version 1 save's container that no painter claims now clips to its box as well.
+  
+  <!-- entry: fix visual -->
+- e8e7f2f: Declarations that named a type core does not export now write out its shape or name a public type instead.
+  
+  Rectangles in `regionAround`, `readGl`, `CanvasReader`, `textFrameOf` and `LeaveGroupOptions.boxOf` are `@weasel-js/geom`'s `Rect`; `createNestedHitTester`, `SceneCanvasAdapter`, `paintAbove`, `withInheritedPaints`, `nodeFrameOf`, `SetDependsOnArgs`, `UseSceneOptions`, `useEditAnchorsDepSource` and the clipboard's JSON replacer and reviver options spell their shapes out in place. No shape changed.
+  
+  <!-- entry: fix -->
+- b05583a: `useKeyState` and `useKeyModifiers` hear keys from a `target` element that mounts after them or is swapped for another.
+  
+  <!-- entry: fix -->
+- f585154: The development warning for an undeclared magnification writes it with `@weasel-js/quantity`'s `multiplier`.
+  
+  <!-- entry: rank=-10 internal -->
+- 15a05d9: A marquee or lasso takes `{ px }`-sized text where its lines are drawn at the asking view's zoom.
+  
+  <!-- entry: fix -->
+- 74202d3: Delete Measurement and Clear Measurements are disabled with the `Locked` reason over measurements on a locked layer.
+  
+  <!-- entry: fix -->
+- c30911d: A middle-button drag pans the view with Shift, Alt, Ctrl or Cmd held, as the hand tool's drag does.
+  
+  <!-- entry: fix -->
+- 43fb985: Names like `toString` or `__proto__` in rigs, layers, tool ids, insert kinds and node-function keys no longer resolve to built-ins.
+  
+  A skin joint, layer slot or preset tool named `__proto__` is kept as an entry rather than replacing the object's prototype, a node-function key `toString` in a snapshot restores no function, `insertBuilds('constructor')` is false, `shapeKindInfo('toString')` is undefined, and a pose compares unequal to one lacking a field named for an `Object.prototype` member.
+  
+  <!-- entry: fix -->
+- 2940a77: `useDragHandle`'s ghost follows the pointer when its host sits under a scaled ancestor.
+  
+  <!-- entry: fix -->
+- 2ab2678: `PresetDescription`, what `describePresets` returns, is declared in `@weasel-js/prefs/edit` and re-exported by core unchanged.
+  
+  <!-- entry: internal -->
+- b05583a: `usePublishPointer` publishes from an element that mounts after it or is swapped for another.
+  
+  <!-- entry: fix -->
+- 0a2be4b: Rotate by Measurement is disabled over a measurement along the x axis, which turns nothing.
+  
+  <!-- entry: fix -->
+- 5477214: Core and routing depend on `@weasel-js/prefs-schema` instead of `@weasel-js/prefs`, so they no longer install the prefs store or storage
+  
+  Neither imported the store; they declare action params, tool options and node properties with the schema alone. An app that opens a prefs store still lists `@weasel-js/prefs` itself.
+  
+  <!-- entry: perf -->
+- 386bbfc: Writing a polygon's or star's generator back as it stands, with its keys in another order, no longer makes the shape again.
+  
+  <!-- entry: fix -->
+- ac792e8: The `@weasel-js/core` tarball no longer carries its 1.3 MB `CHANGELOG.md`, as no other weasel package does.
+  
+  <!-- entry: fix -->
+- 9430cf9: Flip, Duplicate, and the one-step reorder keys each bind a single key, so `keySpecRoute` writes them as a route string a host can store.
+  
+  <!-- entry: fix -->
+- 95d06c3: `parseSnapshot` and `decodeSnapshot` refuse a snapshot nested past 1000 levels with a `SnapshotShapeError` instead of overflowing the stack.
+  
+  <!-- entry: fix -->
+- 3e32141: Core's `test-seams` entry drops `hitTestRectForTests` and `iconsForTests`, second names for public `hitTestRect` and `icons`.
+  
+  <!-- entry: internal -->
+- 7064286: `createPageRun` throws on a scene that already has a page run; change that run's pages with `setPages`.
+  
+  <!-- entry: fix behavior -->
+- 9249b26: A culled scene view walks only the parts of the scene that can reach the view: a frame costs what is on screen, not the whole scene.
+  
+  With `cull` on and paint bounds known, a scene slot or scene view keeps, per node, the box its paint and its descendants' can reach, updated from `scene.changesSince` as nodes change; a container with many children indexes them, so a pan over a wide, flat scene skips the children off screen without visiting them. A subtree that cannot reach the view emits nothing, not even the empty per-node groups it used to.
+  
+  <!-- entry: rank=15 behavior perf pick -->
+- 794862e: Cut at Crossings is disabled while no selected path crosses another.
+  
+  <!-- entry: fix -->
+- 5db5049: The debug overlay's fps and frame readout shows the current rate as soon as repainting resumes after an idle spell. It averages over the last second of paints, so a hidden tab coming back reads right too.
+  
+  <!-- entry: fix -->
+- 656a653: The debug overlay's `fps` panel shows paint time, draw calls, and per-layer cost in worker mode. It covers the layers the page itself paints.
+  
+  <!-- entry: fix -->
+- 42d49af: Hovering a devtools tree row no longer resets the debug overlay's frame rate, paint stats, viewport record, and snap candidates. Changing `highlight` keeps them.
+  
+  <!-- entry: fix -->
+- 94c8e4c: The debug overlay's `ids` labels sit just inside the top-left of each node's bounds instead of a line below it.
+  
+  <!-- entry: fix visual -->
+- 4a93e4b: The debug overlay's `layers` panel lists the stack as painted. Hidden layers are left out, and the rest appear and are numbered in `layerOrder`'s order.
+  
+  <!-- entry: fix visual -->
+- eca2b03: A canvas's debug overlay stays off once devtools clears its highlight or turns a feature back off.
+  
+  <!-- entry: fix -->
+- fcfefd4: `renderDebugSnapshot` at a `pixelRatio` above 1 draws `{ px }` strokes, hairlines and font sizes at their on-screen size.
+  
+  <!-- entry: fix visual -->
+- 7252e96: A debug `theme` or `strokes` entry set to `undefined` keeps its default. `buildDebugOverlayCommands` and `renderDebugSnapshot` no longer drop the overlay over one.
+  
+  <!-- entry: fix -->
+- 81b7535: `useDecayLoop` and pan `inertia` throw a `RangeError` on a `friction` outside (0, 1) or a non-positive `minSpeed`, which coasted forever.
+  
+  The pan checks when the drag is pressed.
+  
+  <!-- entry: fix -->
+- bde7b24: A `data.label` on a node whose pose is a `Path` is drawn at its bounds' top-left corner, and a pose with no position draws no label.
+  
+  <!-- entry: fix visual -->
+- f3c2f12: Delete Anchors is disabled for a selected extension mark its owner cannot delete, so Delete falls through to the next binding.
+  
+  <!-- entry: fix -->
+- 81f2080: Delete and Cut are disabled while the selection holds only pages or the page run, which they never remove.
+  
+  <!-- entry: fix -->
+- 84a4212: Undoing an `ops.delete` built from a stale copy of a node puts it back in its sibling slot, not at the end.
+  
+  <!-- entry: fix -->
+- 7542fc9: A `derivePose` or `derivePath` that throws on a re-derive throws again on the next read, instead of answering its previous result from then on.
+  
+  <!-- entry: fix -->
+- 319879e: `findShapeDrawnBounds` for a derived or override path covers the whole outline it fills or strokes, not only its stroke.
+  
+  <!-- entry: fix -->
+- e6ec996: `cursorCoordsHud` and `pickHud` read a point over a declared view in that view's world, and pick there as a press would.
+  
+  <!-- entry: fix -->
+- d3d3973: The devtools inspector cuts a long string before an emoji or other astral character rather than through the middle of it.
+  
+  <!-- entry: rank=-5 fix -->
+- 22c6086: A headless render's diagnostics report a group effect whose shader program has no GLSL source, as they do a shader command's.
+  
+  <!-- entry: fix -->
+- 2f7e04a: A `useDragGesture` whose `onActivate` cancels or restarts the gesture no longer gets an `onMove` for the move that activated it.
+  
+  <!-- entry: fix -->
+- a5bed98: A `useDragGesture`, `useDragRect`, or `useDragRadial` that unmounts mid-gesture cancels it, calling `onCancel` and `onGestureEnd(false)`.
+  
+  <!-- entry: fix -->
+- 9b8f83b: `useDragHandle`'s default ghost no longer copies its source's `id` attributes, so a drag never puts a duplicate id in the document.
+  
+  <!-- entry: fix -->
+- 143e763: `useDragHandle`'s default ghost shows at its source's size when the theme host it is drawn in is scaled.
+  
+  <!-- entry: fix visual -->
+- 746912f: `useDragHandle` reads the `getPayload` of its latest render when a drag crosses the threshold, not the one from when the press began.
+  
+  <!-- entry: fix -->
+- 3a0b3b7: A press on an SVG icon inside a button, input, select, or textarea no longer starts a `useDragHandle` drag.
+  
+  <!-- entry: fix -->
+- dc92ea4: Pressing to start a new drag-pan stops the view's coast from the previous fling, so the coast no longer fights the new pan.
+  
+  <!-- entry: fix -->
+- 15328d8: A drag pan from an event source with no client coordinates carries on smoothly after a zoom made elsewhere mid-drag.
+  
+  <!-- entry: fix -->
+- ebd0424: `useDragRect` and `useDragRadial` report `isActive` the moment `start`, `end`, or `cancel` runs, not after the next render.
+  
+  <!-- entry: fix -->
+- cfc0732: A group's drawn box, which selection chrome and resize use, no longer reaches over hidden members or consumed children.
+  
+  <!-- entry: fix -->
+- 60ca157: A `useDropZone` whose `accepts` throws is reported and passed over, and later drags still start.
+  
+  <!-- entry: fix -->
+- 15a08cc: A drag over nested `useDropZone`s drops into the innermost one that accepts its kind, whichever registered first.
+  
+  <!-- entry: fix -->
+- 81f2080: Duplicate is disabled while the selection holds only pages or the page run, which it never copies.
+  
+  <!-- entry: fix -->
+- df9a774: A held `editAnchors` dep's setters act on the edit as it stands when called, not as it was when read.
+  
+  <!-- entry: fix -->
+- a639e4d: An edit whose edit passes answer only ops that change nothing still coalesces with the next edit, so a drag stays one undo step.
+  
+  <!-- entry: fix -->
+- 49aa4d8: Text along a path wears the fill and stroke its node inherits from its group, rather than drawing unfilled.
+  
+  <!-- entry: fix visual -->
+- 16a2eed: Edit path anchors leaves a double-click to the next binding, such as text editing, where no editable path is under the pointer or selected.
+  
+  <!-- entry: fix -->
+- 3eb3209: The dashed frame around an entered group, and its boolean children's outlines, stay on the group far from the world origin.
+  
+  <!-- entry: fix -->
+- 2ac34a7: `createEnteredGroupScope`'s `getVersion()` moves on for an entered-group change made while nothing was subscribed.
+  
+  <!-- entry: fix -->
+- 7e60049: `enumerateAnchors` numbers the start anchor of a subpath opened after `Z`, matching anchor markers and hit tests.
+  
+  <!-- entry: fix -->
+- 6bb95ac: Fit Content (Cmd-Alt-0) on a `viewport.zoom` held to one `axis` fits along that axis only, leaving the other as it was.
+  
+  <!-- entry: fix behavior -->
+- 3c212ef: `fitZoom`, `fitSize` and `useFitOnce` keep the fit inside the kit-wide zoom range (10% to 800%) unless given a `clamp`.
+  
+  Tiny or huge content fits at 8x or 0.1x, so the next wheel or pinch zoom no longer jumps. Pass `{ min: 0, max: Infinity }` for the unclamped ratio.
+  
+  <!-- entry: fix behavior -->
+- 50900c3: A polygon or star on a mirrored pose (negative width or height) fits inside its box, as it does unmirrored.
+  
+  <!-- entry: fix visual -->
+- 2ddb6a5: A contribution's `beforePaint` or `afterPaint` runs on the next frame even when another entry already had one.
+  
+  <!-- entry: fix -->
+- 1bf22f4: A scene mints no id that a history restored with `restoreHistory` adds or removes, so undoing a restored removal brings its node back.
+  
+  This holds under a `generateId` that restarts with the session.
+  
+  <!-- entry: fix -->
+- 79d4797: `geometryGenerationOf` never answers a number it answered before, so a cache keyed on it rebuilds when a painter is removed.
+  
+  <!-- entry: fix -->
+- cf24657: A gesture refused inside a `<CanvasView>` shows its reason beside the pointer, as one on the surface does.
+  
+  <!-- entry: fix visual -->
+- 1d5a968: A refused drag's reason tag sits beside the pointer on a canvas inside a scaled or transformed ancestor.
+  
+  <!-- entry: fix visual -->
+- 034f292: Under a quantize rule with a `drawn` half, drag and exit ghosts paint on the output grid. They sit where the scene draws the node.
+  
+  <!-- entry: fix visual -->
+- 1d207f7: A drag's preview ghost and a removed node's exit ghost no longer show hidden nodes, their contents, or nodes on hidden layers.
+  
+  <!-- entry: fix visual -->
+- ed0fff4: `groupAction`'s reference docs describe it again, rather than sitting on an internal helper.
+  
+  <!-- entry: internal -->
+- a7dab9f: Group takes the outermost of the selected nodes, so grouping after Select All leaves a selected group's children inside it.
+  
+  <!-- entry: fix -->
+- 42f1123: `hasStroke` counts a painted stroke with no `width` as the 1-unit stroke it draws, so Outline Stroke applies to it.
+  
+  <!-- entry: fix -->
+- 9b7e01c: Undo and Redo buttons outside a canvas enable and disable as the history moves, without the page re-rendering on each edit.
+  
+  `useStandardDeps`, and so `useStandardActions` and `<SceneCanvas>`, now tells the dep registry when the scene, its history, or the selection it publishes changes.
+  
+  <!-- entry: fix -->
+- e044df2: `useHostAnchor` places its panel when a host that was missing at mount appears, and follows a selector that comes to name a different element.
+  
+  <!-- entry: fix -->
+- 4a18e17: A `<SceneCanvas>` inside a `useSceneTextEdit` container leaves out the glyphs of the node being edited, as its own editor does.
+  
+  An `alphaFor` or `layers.scene.drawOne` written to hide the node during an edit is no longer needed.
+  
+  <!-- entry: fix visual -->
+- 27649f2: A HUD aligned to a host's right or bottom edge sits at that edge on a page with scrollbars, not a scrollbar's width short.
+  
+  <!-- entry: fix visual -->
+- a0f437e: `serializeSvg` boxes a stroked path with coordinates near float32's limit in about a millisecond, where it took up to half a second.
+  
+  `strokedBounds` flattens such a path no finer than its float32 coordinates hold, and grows the box by that much so it still holds all the ink.
+  
+  <!-- entry: perf -->
+- 477eb15: An `inPlane` action is asked whether it applies at the pointer's point on the edited layer's parallax plane.
+  
+  Bending a segment, converting one, or adding an anchor on a path on a parallax layer is offered where the segment is drawn.
+  
+  <!-- entry: fix -->
+- e4f2133: Several items dropped or pasted at once step 24 screen px down and right of each other at every zoom, the drop ghost too.
+  
+  <!-- entry: fix -->
+- 4e9c237: Flip, rotate and transform again measure a group where the document holds its members, not where an open gesture shows them.
+  
+  <!-- entry: fix -->
+- 7165e31: The warning for an insert of a kind with no node factory names the `insertNodeFactories` prop that would give it one.
+  
+  <!-- entry: rank=-5 fix -->
+- 3fe1323: Dragging out a node of a kind you defined shows the outline of the box it will fill while the drag is open.
+  
+  <!-- entry: fix visual -->
+- 22a1496: A polygon or star insert preview keeps its size and shape under a flipped or stretched view, matching the node the drag inserts.
+  
+  <!-- entry: fix visual -->
+- c3bcbf9: An `insertPreview` overlay published with no `extras` draws its outline from the drag rect instead of throwing each frame.
+  
+  <!-- entry: fix -->
+- d061e79: With the pasteboard off, a node drawn or pasted into a group on a page is kept partly on that page, as one inserted onto the page itself is.
+  
+  <!-- entry: fix -->
+- b44408d: An anchor inserted between two anchors with no width of their own has none either, so it follows the stroke's width when that changes.
+  
+  <!-- entry: fix -->
+- 51dc6ab: An animated zoom on a flipped (y-up) axis holds the point under its anchor still, as on an upright axis.
+  
+  `interpolateView` keeps its linear path only for endpoints of different signs or a zero scale.
+  
+  <!-- entry: fix -->
+- f9ab55b: An animated view whose start and end zoom differ by a hair pans smoothly instead of jumping between frames.
+  
+  <!-- entry: fix -->
+- e70f4da: `describePresets` marks a node-kind preset as an atom, so the prefs bundle editor no longer breaks one apart.
+  
+  The roles it now counts are `routing`, `shapes`, `properties`, `insertNodeFactories`, `insertKinds` and `toolActions`.
+  
+  <!-- entry: fix -->
+- 1026606: A journal opened on `scene.history` refuses `applyOps` inside `scene.untracked`, as `scene.history.applyOps` does.
+  
+  <!-- entry: fix -->
+- 5ddbb1f: Opening, suspending or resuming a journal on `scene.history` notifies the scene's subscribers.
+  
+  An Undo button reading `scene.canUndo()` now updates when it does.
+  
+  <!-- entry: fix -->
+- aa1dfd3: A `KeyState` attached to two targets still releases its keys on window blur after one of them detaches.
+  
+  <!-- entry: fix -->
+- 10e17bb: Under `<SceneCanvas routing={[]}>` the `kindOfNode` dep is absent, as documented, rather than a function answering `undefined` for every node.
+  
+  <!-- entry: fix -->
+- 9236a1e: A kit requirement of `~*` or `~x` is met by any version, as npm reads it.
+  
+  <!-- entry: fix -->
+- 01b8a73: Under `cull`, a labeled group stays drawn while its label is in view, even if a painter matching groups draws labels.
+  
+  <!-- entry: fix visual -->
+- a34b3fc: A layer group whose `effects` function throws no longer loses the whole frame.
+  
+  It is reported through `onLayerError` under the group's id, and its layers composite without effects.
+  
+  <!-- entry: fix -->
+- e7d5f5a: A misconfigured `layerGroups` warns once, in development only, instead of on every painted frame.
+  
+  <!-- entry: fix -->
+- 0b82615: Removing a layer, or undoing an added one, finds the layer by id, so a replay onto a reordered stack takes out the right one.
+  
+  <!-- entry: fix -->
+- a0070e8: A `layerOrder` that names a layer more than once draws it once, at its first place, and warns in development.
+  
+  <!-- entry: fix visual -->
+- b584cc5: A layer's `parallax` options are owned by the scene once handed to it, as poses are: in development, writing into them throws.
+  
+  Hand `setLayerParallax` a new object for each change rather than mutating the one it was given.
+  
+  <!-- entry: fix behavior -->
+- 4d469aa: A layer sample over a `units: 'world'` gradient reads the color the canvas shows, at any pan or zoom.
+  
+  This is the loupe's exact color and `createLayerSampler`.
+  
+  <!-- entry: fix -->
+- 5886c61: A value in `layers` under a key that is no slot, and that is not a `{ layer }` entry, `null` or `undefined`, throws instead of being dropped.
+  
+  A misspelled slot such as `selectionOverly: { handles: { size: 12 } }` used to configure nothing without a word; it now throws naming the key.
+  
+  <!-- entry: fix behavior -->
+- 0b29cea: A container its own layout resizes gets its laid-out parent re-arranged around the new size in the same edit.
+  
+  <!-- entry: fix -->
+- b1e9d32: A `<SceneCanvas selection>` whose api keeps a node the scene has since locked, hidden or removed no longer reads that node back as selected.
+  
+  <!-- entry: fix -->
+- a5166b0: A node `animateLifecycle` is animating out stays when it is inserted again before its exit ends.
+  
+  <!-- entry: fix -->
+- 8b65c38: An `animateLifecycle` insert or removal whose tween throws leaves the node at its own pose, and a removal can be asked for again.
+  
+  <!-- entry: fix -->
+- 56784d5: Comparisons of two lists entry by entry go through registry's `sameList` rather than hand-written loops.
+  
+  <!-- entry: internal -->
+- f219a71: `scene.loadState` throws while a journal is open, so the journal can no longer replay the old document's edits onto the loaded one.
+  
+  Commit or cancel an open journal, suspended ones included, before loading.
+  
+  <!-- entry: fix behavior -->
+- 812c469: A tool whose `cursor()` thunk throws logs the error once, and still shows no cursor of its own.
+  
+  <!-- entry: fix -->
+- 8c7d44b: The long-press ring keeps filling when its feedback is attached twice over one press store and the earlier attach detaches.
+  
+  <!-- entry: fix -->
+- b2b79f1: The undeclared-magnification warning checks once an edit settles, so a drag warns only about the size it ends at.
+  
+  <!-- entry: fix -->
+- bfc31d6: `measureNode` goes in a typed scene's `initial` list or `add` without a cast.
+  
+  It returns a node typed with the layer it was given and a `RectPose`.
+  
+  <!-- entry: fix -->
+- b10e05f: A measurement node's end ticks keep their screen size in a frame painted at another density than the window's, as `renderSceneToPixels` does.
+  
+  <!-- entry: fix visual -->
+- 0c1b6a6: A `<SceneCanvas modes>` switch tells the dep registry, so action bars and the palette reread which actions it allows.
+  
+  Before, an `ActionBar` showed the previous mode's state until some other change re-rendered it.
+  
+  <!-- entry: fix -->
+- a64cc29: A `momentum` flick over a scene that the animator cancels mid-coast is recorded where it stopped, so undo takes the node back.
+  
+  This covers `cancelAll` and the animator going away.
+  
+  <!-- entry: fix -->
+- e737c0f: `momentum()` throws a `RangeError` on a `friction` outside (0, 1), where a release used to throw or coast without end
+  
+  <!-- entry: fix -->
+- 69399bc: Under `momentum`'s `boundary: 'stop'`, each node stops at the edge it meets on every adapter, rather than sliding along it.
+  
+  <!-- entry: fix -->
+- d9c51c0: `findMountedCanvas` finds a `<SceneCanvas>` after its `worker` prop is set or cleared, which replaces its `<canvas>` element.
+  
+  <!-- entry: fix -->
+- 3a50e80: `moveEachOps` leaves a node where a zero-delta entry reaches it, even when a later entry reaches it too.
+  
+  <!-- entry: fix -->
+- f522122: `scene.moveLayer` and `scene.addLayer` truncate a fractional index, so a layer moved to its own slot records no undo entry.
+  
+  <!-- entry: fix -->
+- 75ef9fb: `scene.addLayer`, `scene.moveLayer`, `addPage` and `movePage` throw a `RangeError` on a NaN index.
+  
+  Calls that used to pass silently, moving the layer or page to the bottom and recording `NaN` in the undo entry, now throw and record nothing. An index past either end, `±Infinity` included, is still held to it.
+  
+  <!-- entry: fix behavior -->
+- fb4710c: An overlay pinned with `useNodeOverlayFrame` to a node far from the world origin stays on it instead of drifting.
+  
+  <!-- entry: fix -->
+- 46440b6: `useNodeOverlayFrame`'s `toScreen` keeps the last invertible mapping once the node is gone, as `toLocal` does.
+  
+  <!-- entry: fix -->
+- ac18636: A painter registered with `registerNodeShape` at the default priority paints the rect-posed nodes it matches, ahead of the kit's fallback.
+  
+  <!-- entry: rank=5 fix visual -->
+- 0a05da3: Outline Stroke is disabled while no selected path or text wears a stroke with a paint and a width above zero.
+  
+  <!-- entry: fix -->
+- 3e108b4: Create Outlines and Outline Stroke, waiting on a face to load, convert what was selected when they were asked, not what is selected by then.
+  
+  <!-- entry: fix -->
+- f4e98a4: `outsetBox` grows a box with a negative width or height outward, as it does any other.
+  
+  A stroked shape resized past its opposite edge is held to its constraints by the full width of its ink.
+  
+  <!-- entry: fix -->
+- b323f97: A path effect that read glyphs while they loaded re-derives once they land, even after another outside source was removed.
+  
+  <!-- entry: fix -->
+- 0bb71da: A culled scene view paints a path node shown by a pose override's `path` wherever that path is, not only where its stored pose is.
+  
+  `PaintBoundsFn`'s `ctx` can carry that path as `derivedPath`, and `defaultPaintBounds` measures it.
+  
+  <!-- entry: fix -->
+- 4bda721: Own-key lookups go through registry's `getOwn` and `hasOwnKey` rather than hand-written `Object.hasOwn` checks.
+  
+  <!-- entry: internal -->
+- c129ce1: `addPage` throws on a page id already in use, and `setPages` and `createPageRun` on a page id given twice.
+  
+  <!-- entry: fix behavior -->
+- c0d43ee: A straight horizontal or vertical line is on the page holding most of its length.
+  
+  Its bounds have no area, so every page it touched tied and the first one won.
+  
+  <!-- entry: fix -->
+- 4ee45ab: Setting a fill, stroke, opacity or stroke width a node already wears commits no undo entry.
+  
+  <!-- entry: fix -->
+- c8b8348: Pasting malformed weasel clipboard text pastes nothing, with a debug warning, rather than throwing or adding nodes the scene cannot save.
+  
+  That covers an item that is not a node, a duplicate id, a layer the scene lacks, a pose with no finite bounds, and parents that loop.
+  
+  <!-- entry: fix -->
+- 1e1d4c6: A paste at a drop point lands at that point when the copy holds an edge or another node that derives only its path.
+  
+  <!-- entry: fix -->
+- 33b9074: A paste that lands on a page puts each pasted node on the page's layer, as drawing it there would, rather than the layer it was copied from.
+  
+  <!-- entry: fix -->
+- ccd6f25: Path edit shows, picks, and edits a node's anchors on the outline it is drawn with, when its pose is derived or overridden.
+  
+  <!-- entry: fix visual -->
+- c4304d4: A path effect whose `kind` this build does not know, such as one a later build adds, paints nothing instead of throwing.
+  
+  <!-- entry: fix data -->
+- edfe71a: A path from `pathFromParts` keeps an `evenodd` part's holes empty for picking and every reader of the derived path, however many parts it has.
+  
+  <!-- entry: fix -->
+- 1a03017: `createPathLayer` stops remembering a mismatched vertex array's warning once the node is gone, so its memory stays bounded.
+  
+  <!-- entry: fix -->
+- be3711c: `pathNode` keeps the `transform` of the `pose` it is placed at, so a skewed or scaled placement draws that way.
+  
+  <!-- entry: fix -->
+- 4f03b5d: The `kit:path`, `kit:path-pose`, and `kit:derived` painters build their draw command in one place.
+  
+  <!-- entry: internal -->
+- c0555fb: `findShapeDrawnBounds` for a path-posed node covers its whole outline under a trimmed, dashed or inner stroke.
+  
+  <!-- entry: fix -->
+- 7d598c5: Path snapping finds a node where it is drawn, when its pose is derived or overridden, and follows the override as it moves.
+  
+  <!-- entry: fix -->
+- cff801a: The Pathfinder actions are disabled while fewer than two of the selected nodes are paths or text they can combine.
+  
+  <!-- entry: fix -->
+- cbb78ec: A pixel pick on a node a render worker numbered keeps naming that node after a scene's pick ids run out.
+  
+  <!-- entry: fix -->
+- d897c83: A scene's pick index follows an edit, a drag or a scroll by updating the nodes it touched, not rebuilding once the scene holds still.
+  
+  <!-- entry: perf -->
+- bf94421: Core's picking helpers move from the tools folder to `canvas/`; their exports are unchanged.
+  
+  <!-- entry: internal -->
+- e265bdc: A pixel pick whose later id frame cannot be read still returns its hits back-to-front, so the last one is the topmost.
+  
+  <!-- entry: fix -->
+- 768acf7: `usePointerStylus(ref)` listens to the element its ref holds once attached, and follows the ref to a new one.
+  
+  An empty ref no longer falls back to the whole page.
+  
+  <!-- entry: fix behavior -->
+- 4bf376e: `usePointerStylus()` with no target reports `hovering` while a pointer is over the page.
+  
+  <!-- entry: fix -->
+- 45e100f: A polygon animating while its point count changes no longer writes coordinates into the next animated pose's numbers.
+  
+  <!-- entry: fix -->
+- 6ab962a: An additive animation on a polygon keeps the polygon's own commands and fill rule.
+  
+  A polygon with another command stream is not animated by the axes of the first.
+  
+  <!-- entry: fix -->
+- 6ab962a: `pathPoseDescriptor.lerp` throws for two polygons whose commands differ.
+  
+  At the end of a tween it lands on the end polygon's fill rule and other fields.
+  
+  <!-- entry: fix -->
+- 0e01d7f: `createPoseFeed` reads only the nodes an edit touched, rather than walking the whole scene on every read after a change.
+  
+  <!-- entry: perf -->
+- f8f4954: A pose hold's frame notifies the overrides' subscribers once, after every id in it is installed, rather than once per id.
+  
+  <!-- entry: fix perf -->
+- b1c09d3: A `usePoseRun` whose `step` returns a generator that throws ends the run and drops its preview, so `start` works again.
+  
+  <!-- entry: fix -->
+- fa9657c: A `usePoseRun` whose `step` throws ends the run as `cancel()` would, so `isRunning()` reads `false` and `start()` begins a new run.
+  
+  <!-- entry: fix -->
+- f5b75cb: `animateOnSetPose` and `animateLifecycle` given no `ms` move nodes at once under `prefers-reduced-motion`, as a reflow does.
+  
+  <!-- entry: behavior -->
+- 53fb0eb: Preset `chromeRules` for one chrome id follow `refines`, as every other preset merge does.
+  
+  The refining preset's rule wins, and two unrelated presets giving different rules throw.
+  
+  <!-- entry: fix behavior -->
+- 47fa777: A dep a preset's component publishes stays under the ones `<SceneCanvas>`'s children publish, even when the preset is turned on after them.
+  
+  <!-- entry: fix -->
+- 47fa777: Turning a preset off no longer remounts the components of the presets after it, so their state survives.
+  
+  <!-- entry: fix -->
+- 7d67497: A preset's own tool and another preset's built tool of one id follow `refines`.
+  
+  The refining preset's tool is mounted, and two unrelated presets throw.
+  
+  <!-- entry: fix behavior -->
+- 5fa6d0a: A preset that `refines` another wins a layer slot or a tool id they both give, whichever order `features` lists them in.
+  
+  <!-- entry: fix -->
+- fc665a9: A preset that `refines` another may supply its own `selection` or `selectionChrome`, which wins over the refined preset's instead of throwing.
+  
+  <!-- entry: fix -->
+- bb8b8cb: Two presets installing one shape painter at different priorities throw, naming both, instead of the second's priority being dropped.
+  
+  <!-- entry: fix behavior -->
+- 914ba92: The pointer store clears when a drag that left a canvas is released off the browser window.
+  
+  <!-- entry: fix -->
+- 419b1f1: A raster session's `renderIds` honors `pixelRatio` for `'screen'`-unit paint, so its ids match what `render` draws.
+  
+  <!-- entry: fix -->
+- 9333b1a: A derivation reading a group's `children` gets them from a group in another frame or nested deeper, as a boolean group does.
+  
+  <!-- entry: fix visual -->
+- fc62432: `reconcileSpecs` keeps a node no spec names in its place when it reorders the named ones around it.
+  
+  <!-- entry: fix -->
+- 85d3d17: A rect-posed node with no `shape` draws its `data.stroke`, as a `shape: 'rect'` node does.
+  
+  <!-- entry: fix visual -->
+- 921d4f8: A rect pose's `lerp` moves its `transform` between the two ends and lands on the end's own.
+  
+  An animation that adds or removes a skew ends on the target's shape.
+  
+  <!-- entry: fix visual -->
+- 305f0ce: A preset that both `refines` another and `includes` presets registers what it includes ahead of itself, as `includes` promises, rather than last.
+  
+  <!-- entry: fix -->
+- 0e80f73: A layer registered twice through `registerLayer` stays until both registrations are released.
+  
+  Registering a layer again also moves it to the top of hit order.
+  
+  <!-- entry: fix -->
+- 74e37d7: `remapSkin` is exported from `@weasel-js/core`, so a skin can follow a path edit made outside the kit's anchor actions.
+  
+  <!-- entry: fix -->
+- 8f61f88: `onPoseWrite` leaves a node out of a removal's children when the same change added it.
+  
+  <!-- entry: fix -->
+- 231eec5: `onPoseWrite` reports a child removed with its parent and put back in the same change as moved, not added.
+  
+  A child left out when only its parent is put back is reported removed from that parent.
+  
+  <!-- entry: fix -->
+- 44848fe: A render worker's frames, snapshots and id reads settle within a timeout, and an error the worker survives no longer stops its frames.
+  
+  <!-- entry: fix -->
+- c4d5642: A long-running render worker client remembers at most 100 of the warnings it has given.
+  
+  <!-- entry: fix perf -->
+- c25237f: A render worker given a `timeout` past 2³¹ − 1 ms waits that long for an answer instead of failing every request at once.
+  
+  <!-- entry: fix -->
+- b934739: A render worker frame whose scene changes fail to apply still takes its view, size and animator calls. The page sends the whole scene next.
+  
+  <!-- entry: fix -->
+- f1e9773: A worker-painted canvas hidden by `<Activity>` or a suspending boundary paints again on a new canvas when shown, instead of throwing.
+  
+  <!-- entry: fix -->
+- b822d40: A render worker whose canvas cannot be handed over is terminated and stops watching the scene, and the original error is rethrown.
+  
+  The same holds when the first message to the worker cannot be posted.
+  
+  <!-- entry: fix -->
+- 88a19c0: `startSceneRenderWorker`'s source carries its doc comment once, not a second stray copy above an internal helper.
+  
+  <!-- entry: internal -->
+- d55c488: `scene.reorder` called without an index moves the node to the end of its siblings, as `scene.move` does, instead of to the start.
+  
+  <!-- entry: fix -->
+- 5c778a0: Resize constraints, and insert behaviors on a canvas with a scene, get a working `ctx.adapter`, as move and rotate behaviors do. It was `undefined` behind its type, so a behavior that called it threw.
+  
+  <!-- entry: fix -->
+- 834d2ca: `registerOp` throws on a kind starting `revert:`, the name a restored history gives another kind's inverse.
+  
+  <!-- entry: fix behavior -->
+- 457fbc3: A removal that is reverted leaves the nodes' pose previews and scroll offsets as they were, in every session.
+  
+  That covers a batch that throws and a refused arrival.
+  
+  <!-- entry: fix -->
+- 1e80440: A `rewind: true` tween under an overshooting easing travels the rest of the way when undone or redone mid-flight, not snapping to the end.
+  
+  The overshooting easings include `easeOutBack` and `easeInBack`.
+  
+  <!-- entry: fix -->
+- d3b20b9: `rig.bake()` bakes the bound and skinned nodes still in the scene when one of them has been deleted, and lets go of the rest.
+  
+  <!-- entry: fix -->
+- 86b5903: `useRigNode` warns about, and leaves out, a node naming a joint its skeleton no longer has, instead of throwing during render
+  
+  A node bound to a renamed or removed joint is not bound, and a skin weighing one bends by its other joints. `rigFromNode` leaves them out the same way.
+  
+  <!-- entry: fix -->
+- 647b21c: `useRigNode` and `rigFromNode` skin a node under the rig whose id is `__proto__`.
+  
+  <!-- entry: fix -->
+- A posed rig no longer puts a display override back on a bound or skinned node the scene has deleted.
+  
+  <!-- entry: fix -->
+- 2076b1b: `rotatedRectCorners` and `rotatedRectContainsPoint` follow a pose's `transform`.
+  
+  `rotatedRectContainsPoint` also hits inside a box with a negative width or height.
+  
+  <!-- entry: fix -->
+- 49b3b13: A child that leaves its container and returns within one edit is no longer reported to the container's layout as an arrival.
+  
+  <!-- entry: fix -->
+- 8558f40: A `hovering` chrome rule or binding matches on any `<SceneCanvas>`, not only one given `chromeVisibility` or `onHover`.
+  
+  <!-- entry: fix -->
+- 96de590: A `<SceneCanvas scene>` changed from a live `Scene` to JSON keeps the live scene and warns. Give the canvas a new `key` to load the JSON.
+  
+  <!-- entry: fix -->
+- 1c6f913: A `<SceneCanvas tools>` patch entry with the id `__proto__` mounts as a tool of that id instead of replacing the registry's prototype.
+  
+  <!-- entry: fix -->
+- 447f742: A scene's lock, unknown-layer and no-layer errors say how to fix them.
+  
+  A locked edit points at unlocking or `scene.unlocked()`, an unknown layer lists the scene's layers, and a scene with none points at `{ items }`.
+  
+  <!-- entry: fix -->
+- 0fe19aa: `loadScene` and `loadState` refuse a nested pose the default rect composition cannot fold, saying to pass the composition.
+  
+  A 3D scene loads with `loadScene(json, { composition: POSE3_COMPOSITION })`.
+  
+  <!-- entry: rank=5 fix data -->
+- 3a71a1a: `scene.history.goto` throws on a depth outside the history and while a journal is open, as `History.goto` does.
+  
+  <!-- entry: fix behavior -->
+- d8c22e6: With a `toPose`, `buildSceneLayer` draws a derived edge to where its dependencies are drawn inside their containers.
+  
+  <!-- entry: fix visual -->
+- f11549d: A `<SceneCanvas layers>` slot field set to `undefined` keeps the kit default.
+  
+  `scene.drawOne: undefined` still paints, and `selectionOverlay.handles: undefined` keeps the default handle size.
+  
+  <!-- entry: fix -->
+- 86b43d1: `sceneNodeClientRect` places a node far from the world origin exactly where the canvas draws it.
+  
+  <!-- entry: fix -->
+- 8cce06e: A scene with its own `opRegistry` restores a saved history only through that registry.
+  
+  An op name it lacks is refused rather than taken, unbound, from the kit's default registry.
+  
+  <!-- entry: fix -->
+- 16d4fab: An inverted scene op is named `revert:<kind>`, so its `name` and `args` describe the revert and rebuild it, not the edit it undoes.
+  
+  A sync layer that inverts the ops `history.observe` reports for an undo can now ship them as `{ name, args }` and a restored history rebuilds them as reverts.
+  
+  <!-- entry: fix -->
+- edcc040: `useScene({ ops })` and `createScene({ ops })` throw on a `kit:` kind, as `scene.registerOp` does, instead of replacing the kit's own op.
+  
+  <!-- entry: fix -->
+- 1ceadbf: A scene snapshot's document values and declared node fields are copies the caller may edit, as its poses are.
+  
+  That covers `page`, `pageRun`, `units`, `clip`, `dependsOn` and layer `parallax`, and a load copies them out of the snapshot it reads.
+  
+  In development, a document value or declared field handed to the scene is frozen, as a pose is, so a later write into it throws instead of changing the scene behind history's back.
+  
+  <!-- entry: fix -->
+- 865ccae: `scenePoseTarget` answers `undefined` for a node deleted while at rest, and stops holding the targets of deleted nodes for the scene's lifetime.
+  
+  <!-- entry: fix -->
+- 95da921: A failed scene edit is taken back in full even when one of its ops throws on the way back.
+  
+  The scene warns about that op, restores the selection, and rethrows the edit's original error.
+  
+  <!-- entry: fix -->
+- 6ac9c99: A culled `<SceneCanvas>` paints a path node wherever its pose override's `path` puts it on screen.
+  
+  <!-- entry: fix -->
+- f39b469: A new scene starts at version 1, so a canvas's `getPaintedVersion()` of `0` again means nothing has been painted yet.
+  
+  A canvas given no `contentVersion` reports `1` once it has painted. A `contentVersion` of your own should start at 1 or above.
+  
+  <!-- entry: behavior -->
+- 8b73d9a: A large scene drawn with an inline `paintBounds` or `toPose` no longer grows its memory on every render.
+  
+  <!-- entry: fix perf -->
+- 2557ab3: `screenTolerance` answers in the units of the gesture's parallax plane when it has one, so a pixel tolerance keeps its on-screen size there.
+  
+  <!-- entry: fix -->
+- 4816dc3: A canvas's published selection kinds follow an edit that changes a selected node's kind.
+  
+  <!-- entry: fix -->
+- 6bfce5e: `createSelectionOverlayLayer`'s `getSelection` docs say an omitted one draws the canvas's selection, which every view on it shares.
+  
+  <!-- entry: internal -->
+- 9f9a61a: Exports and editing sessions draw with the painters a preset installed for their scene, and give its nodes the scene's pick ids.
+  
+  <!-- entry: fix visual -->
+- ef3ebdd: An `ops.setPath` that changes only a polygon path's `fillRule`, `openFill` or `corners` is recorded in history and can be undone.
+  
+  <!-- entry: fix -->
+- 0828a03: An `ops.setPath` with a stale `from` that overwrites a different path is recorded in history.
+  
+  The node, read through the adapter's `getNode`, decides whether it changed anything.
+  
+  <!-- entry: fix -->
+- 0828a03: An `ops.setSelection` with a stale `from` that replaces a different selection is recorded in history.
+  
+  The adapter's `getSelection` decides whether it changed anything.
+  
+  <!-- entry: fix -->
+- f23829c: An `ops.setText` that writes the text a node already holds no longer adds an undo step that changes nothing.
+  
+  <!-- entry: fix -->
+- 0177219: Readers of saved shapes take only a plain object where they expect a record, as registry's `isPlainObject` says.
+  
+  That is scene snapshots and documents, DTCG color values, diagram theme files and compound menu values. A class instance, `Map` or `Date` in their place, which no JSON text can produce, is now refused as a wrong shape instead of read as a record.
+  
+  <!-- entry: rank=-5 behavior -->
+- f86aaa2: A node shown with a data override reports its current pose, `hidden` and `locked` after a move or a flag change while the override stays.
+  
+  <!-- entry: fix -->
+- a45338c: `snapToContainer` waits out a `dwellMs` longer than 2³¹ − 1 ms, and an infinite one never snaps by dwell; both used to snap at once.
+  
+  <!-- entry: fix -->
+- 1c0046a: `springPose`'s `geometry` documents that on a scene a `lerp` does not bend the spring, as it bends `tweenPose`'s move.
+  
+  <!-- entry: fix -->
+- a34f319: `stableStringify` no longer writes an object shaped like its bigint or cycle tag as that tag.
+  
+  An object with its own `$type` key is written as `{"$type":"object","value":…}`.
+  
+  <!-- entry: fix data -->
+- cbcd314: `stableStringify` always returns a string: a value JSON writes nothing for (`undefined`, a function, a symbol) gives the bare word `undefined`.
+  
+  <!-- entry: fix -->
+- 9e23aea: Undo and redo step past an entry naming a layer an untracked edit removed, as they do past one naming a removed node.
+  
+  <!-- entry: fix -->
+- dee342f: A `<SceneCanvas>` mounting under a paint stand-in already shown paints the node through it, not in full beneath it.
+  
+  This covers a second view opened during a text edit.
+  
+  <!-- entry: fix visual -->
+- 6bea0c5: `usePointerStylus` holds a throttled sample for the whole gap of a `maxFps` that spaces commits past 2³¹ − 1 ms apart.
+  
+  <!-- entry: fix -->
+- d3f717d: A swap between two parents is refused when either parent would refuse the other node as a drop.
+  
+  <!-- entry: fix -->
+- ae15ab8: Under a `tools` takeover, a canvas's always-on entry whose capabilities the active mode bars draws no overlay. Its overlay also takes its declared `overlayPosition` there, as without a takeover.
+  
+  <!-- entry: fix visual -->
+- 4c592ae: A text node's drawn bounds take in its shadow through geom's `unionRects` rather than a copy of it.
+  
+  <!-- entry: internal -->
+- 3551ece: `TextEditDep`'s docs show its `useDepSource` example only for the case that needs it: a host whose editor's container does not hold the canvas.
+  
+  <!-- entry: internal -->
+- 6b5336b: Editing a text node with a `{ px }` `fontSize` or `letterSpacing` opens the overlay at the size the canvas draws it, not scaled by the zoom.
+  
+  <!-- entry: fix visual -->
+- dc881e4: A path effect laying out text derives again when a bidi or shaping engine registers, as it already did when a face landed.
+  
+  <!-- entry: fix -->
+- c62a3d3: Chrome drawn in a theme color repaints when a token is overridden inline above the canvas or in a `<head>` stylesheet.
+  
+  <!-- entry: fix visual -->
+- 368fb5f: `buildToolActivateBindings` gives each binding its own id when one tool is bound to the same key under three or more modifier sets.
+  
+  <!-- entry: fix -->
+- 963f8fd: A tool's key no longer switches tools while a drag is in flight; it waits for the gesture to end, as a held offhand key does.
+  
+  <!-- entry: fix -->
+- de71f7d: An inline `toolOptions` with array or object fields no longer rebuilds the presets' tools each render.
+  
+  Fields such as `insert.behaviors` are compared by what they hold.
+  
+  <!-- entry: fix perf -->
+- c4f5447: Transform Again is disabled where its repeat would change nothing, such as a resize of a locked node.
+  
+  <!-- entry: fix -->
+- c4f5447: Transform Again makes no copies in a mode that bars Duplicate, such as Free Transform, when the repeat it would run is a duplicate.
+  
+  <!-- entry: fix -->
+- 29f3da2: A node a path-edit extension changes with a transform previews, during the drag, as the release commits it.
+  
+  <!-- entry: fix -->
+- b70bc7f: Dragging the anchor of a closed one-segment quadratic loop moves its control point with it once, not twice.
+  
+  <!-- entry: fix -->
+- 9e8b91e: A trimmed stroke is picked along the outline a node shows now, after a font face lands or the zoom changes a text node's outline.
+  
+  <!-- entry: fix -->
+- 4c6e74f: A tween draws at most 4096 steps, so a tiny `distance` or an infinite `steps` no longer hangs the page.
+  
+  It warns in development when it caps them.
+  
+  <!-- entry: fix behavior -->
+- 34b8a3f: A tween keeps turning between its sources' rotations when a source's pose carries a stretch or skew.
+  
+  <!-- entry: fix visual -->
+- c4783b4: A pan flung after the pointer paused briefly before release coasts slower, in proportion to the pause, instead of at the full throw speed.
+  
+  `getVelocity(now)` averages over the time up to `now`, not up to the last move.
+  
+  <!-- entry: fix -->
+- adca5ed: `<SceneCanvas>` no longer warns about a `viewport` whose only field is `recenter`, which the view dep carries without `presets.view`.
+  
+  <!-- entry: fix -->
+- ca65c7b: `<SceneCanvas>` warns in development when it is handed a prop another prop makes it ignore.
+  
+  That is `defaultTools`, `defaultActiveTool`, `ambient` or `selectTool.pickBest` beside a `ToolsApi` in `tools`, and `geometry.picking` beside `geometry.pickEvery`.
+  
+  <!-- entry: fix -->
+- 987dd51: `layerOrder` warns in development, once per id, about an id that names no layer being drawn, as `layerGroups` already does.
+  
+  <!-- entry: fix -->
+- 812c469: A painted cursor naming a glyph the cursor set lacks warns in development, once per name, and still draws nothing.
+  
+  <!-- entry: fix -->
+- f71667e: `ingestion.kitHandlers.omit` warns in development about an id that names no kit handler the canvas's presets brought, since it omits nothing.
+  
+  <!-- entry: fix -->
+- 5b8e066: These packages watch for resizes through react's `watchResize` rather than a `ResizeObserver` of their own.
+  
+  <!-- entry: internal -->
+- 087e02c: A tile of a canvas already painting with WebGPU paints nothing and warns once, rather than erasing the other tenants.
+  
+  <!-- entry: fix -->
+- 55fd480: A node moved into a container of 64 or more children, keeping its box, is drawn and can be picked.
+  
+  <!-- entry: fix visual -->
+- 3e39fea: A render worker's scene copy is kept up to date from the nodes each edit touched, not a fresh snapshot of the whole scene per frame.
+  
+  <!-- entry: perf -->
+- eb070dc: A render worker's SVG at a larger size waits for the page's sharper raster, rather than taking the small one when another image loads.
+  
+  <!-- entry: fix visual -->
+- 42ec713: A worker-painted layer shows as the page would show it: `alwaysOn` and `defaultVisible` hold, and hiding a whole `scene` layer hides it.
+  
+  <!-- entry: fix visual -->
+- a9b8fbb: A worker-rendered layer whose id is `constructor` or `__proto__` keeps the visibility its frame gives it.
+  
+  <!-- entry: fix -->
+- 73f1cf1: `<SceneCanvas worker>` leaves the scene to the page when a preset fills the `scene` slot. It reads `cull` from the slot in force too.
+  
+  <!-- entry: fix -->
+- cbc7e4b: A `<SceneCanvas worker>` snapshot releases the worker canvases' bitmaps once it has composed them.
+  
+  <!-- entry: fix perf -->
+- 0d0c238: A `<SceneCanvas worker>` whose second worker fails to start stops the first one too.
+  
+  <!-- entry: fix -->
+- 5354da3: A mode's workspace tint meets the page edge exactly when the page sits far from the world origin.
+  
+  <!-- entry: fix -->
+- 787ca7b: `worldPoseOf` names one function again: core's scene reader, which symmetry now calls instead of a private copy.
+  
+  <!-- entry: internal -->
+- 721585e: `writtenBy` rebuilds each op through the scene's own `opRegistry`, so it reads a host-registered op as the scene commits it.
+  
+  <!-- entry: fix -->
+- Updated dependencies [5099ca3]
+- Updated dependencies [e5f53c6]
+- Updated dependencies [617fd6c]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [cd84e27]
+- Updated dependencies [8d7296a]
+- Updated dependencies [e4b8859]
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [d764d06]
+- Updated dependencies [76b3ad2]
+- Updated dependencies [8994b94]
+- Updated dependencies [3e90820]
+- Updated dependencies [cefbb9f]
+- Updated dependencies [a124808]
+- Updated dependencies [dec059b]
+- Updated dependencies [acb98a5]
+- Updated dependencies [f2eb510]
+- Updated dependencies [c8a41db]
+- Updated dependencies [5aaee6b]
+- Updated dependencies [de547d5]
+- Updated dependencies [420e20a]
+- Updated dependencies [b550d25]
+- Updated dependencies [139e26a]
+- Updated dependencies [b5b0782]
+- Updated dependencies [0bcb260]
+- Updated dependencies [670ec07]
+- Updated dependencies [99c457e]
+- Updated dependencies [3b7ffd3]
+- Updated dependencies [3b7ffd3]
+- Updated dependencies [7a9a5c7]
+- Updated dependencies [357c9f1]
+- Updated dependencies [e765b9c]
+- Updated dependencies [12ded8a]
+- Updated dependencies [e225656]
+- Updated dependencies [50e06ce]
+- Updated dependencies [df2ae04]
+- Updated dependencies [c8c9daa]
+- Updated dependencies [e0afaa7]
+- Updated dependencies [4b16186]
+- Updated dependencies [5aa7bc1]
+- Updated dependencies [6b9ca79]
+- Updated dependencies [2a07382]
+- Updated dependencies [e3b0356]
+- Updated dependencies [9bd892d]
+- Updated dependencies [feec844]
+- Updated dependencies [f834acb]
+- Updated dependencies [19d6faa]
+- Updated dependencies [9fa0d8d]
+- Updated dependencies [2c152a0]
+- Updated dependencies [2d723fd]
+- Updated dependencies [dce9e3e]
+- Updated dependencies [ca79b0e]
+- Updated dependencies [00ef3bb]
+- Updated dependencies [460b0ac]
+- Updated dependencies [a98ad34]
+- Updated dependencies [5f856dc]
+- Updated dependencies [7f25db9]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [f2ba5e1]
+- Updated dependencies [e6b28fe]
+- Updated dependencies [e72e26a]
+- Updated dependencies [0090147]
+- Updated dependencies [643c699]
+- Updated dependencies [f4d8b83]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [4a642f5]
+- Updated dependencies [3b803d7]
+- Updated dependencies [74f7bf4]
+- Updated dependencies [9249b26]
+- Updated dependencies [15072f4]
+- Updated dependencies [97f1f86]
+- Updated dependencies [7199e23]
+- Updated dependencies [88f90f5]
+- Updated dependencies [df7ba95]
+- Updated dependencies [da5f6da]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [174d6ef]
+- Updated dependencies [defc1cd]
+- Updated dependencies [840a01b]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [7b0562e]
+- Updated dependencies [29d293c]
+- Updated dependencies [a83c9bd]
+- Updated dependencies [14a0949]
+- Updated dependencies [6cef61c]
+- Updated dependencies [fcc5602]
+- Updated dependencies [269320b]
+- Updated dependencies [d07c5f1]
+- Updated dependencies [26b779a]
+- Updated dependencies [c3da788]
+- Updated dependencies [ab7f613]
+- Updated dependencies [5477214]
+- Updated dependencies [ece64a6]
+- Updated dependencies [d8007e8]
+- Updated dependencies [d917fd4]
+- Updated dependencies [b4acc4d]
+- Updated dependencies [37c0385]
+- Updated dependencies [fcc5602]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [53ba27c]
+- Updated dependencies [de462a6]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [47fa777]
+- Updated dependencies [8d7296a]
+- Updated dependencies [3833307]
+- Updated dependencies [2729716]
+- Updated dependencies [966b087]
+- Updated dependencies [2f56e64]
+- Updated dependencies [85fd57d]
+- Updated dependencies [935346c]
+- Updated dependencies [0046729]
+- Updated dependencies [6babdc5]
+- Updated dependencies [2ee9af5]
+- Updated dependencies [711be7d]
+- Updated dependencies [3a8b706]
+- Updated dependencies [fcc5602]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [b6863aa]
+- Updated dependencies [95ca540]
+- Updated dependencies [180ec74]
+- Updated dependencies [36dac61]
+- Updated dependencies [b85869b]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [7f49a0e]
+- Updated dependencies [cde17d1]
+- Updated dependencies [3b37bd1]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [c3da9af]
+- Updated dependencies [ac8e807]
+- Updated dependencies [fb47e9b]
+- Updated dependencies [d916cae]
+- Updated dependencies [98df398]
+- Updated dependencies [77670c1]
+- Updated dependencies [c131bff]
+- Updated dependencies [c117e62]
+- Updated dependencies [89f4197]
+- Updated dependencies [95a1a63]
+- Updated dependencies [a343f1b]
+- Updated dependencies [221fe20]
+- Updated dependencies [cc5b0c3]
+- Updated dependencies [9455fc1]
+- Updated dependencies [6606d90]
+- Updated dependencies [5879169]
+- Updated dependencies [959af37]
+- Updated dependencies [890ce71]
+- Updated dependencies [5e44587]
+- Updated dependencies [da15963]
+- Updated dependencies [e95a396]
+- Updated dependencies [8e5f1cf]
+- Updated dependencies [57df97b]
+- Updated dependencies [4daf896]
+- Updated dependencies [dbf591e]
+- Updated dependencies [d4a593d]
+- Updated dependencies [662f94f]
+- Updated dependencies [956a71a]
+- Updated dependencies [7001f43]
+- Updated dependencies [558f742]
+- Updated dependencies [39422f9]
+- Updated dependencies [b1cfa76]
+- Updated dependencies [bb7be0b]
+- Updated dependencies [1cee200]
+- Updated dependencies [9339b45]
+- Updated dependencies [4be1a3f]
+- Updated dependencies [896cfc6]
+- Updated dependencies [787c496]
+- Updated dependencies [37514fc]
+- Updated dependencies [bebd64f]
+- Updated dependencies [4baee32]
+- Updated dependencies [8745b50]
+- Updated dependencies [df2ae04]
+- Updated dependencies [7dbeddb]
+- Updated dependencies [dbf591e]
+- Updated dependencies [839a4b2]
+- Updated dependencies [1810479]
+- Updated dependencies [d598b83]
+- Updated dependencies [8257aa7]
+- Updated dependencies [8c2d558]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [a947127]
+- Updated dependencies [7e5b389]
+- Updated dependencies [95bd84c]
+- Updated dependencies [b7e560b]
+- Updated dependencies [174d6ef]
+- Updated dependencies [cfbecdb]
+- Updated dependencies [9c2b3d6]
+- Updated dependencies [03f84f2]
+- Updated dependencies [8457029]
+- Updated dependencies [22eec46]
+- Updated dependencies [8fd3d6d]
+- Updated dependencies [5b84825]
+- Updated dependencies [516bc59]
+- Updated dependencies [2338cee]
+- Updated dependencies [eeef48a]
+- Updated dependencies [736df4e]
+- Updated dependencies [6aedb33]
+- Updated dependencies [3dc96c8]
+- Updated dependencies [972a96c]
+- Updated dependencies [94ea28e]
+- Updated dependencies [dcdff5d]
+- Updated dependencies [4f7976e]
+- Updated dependencies [f6d2a19]
+- Updated dependencies [3a1bfaa]
+- Updated dependencies [57a59be]
+- Updated dependencies [6416860]
+- Updated dependencies [8887919]
+- Updated dependencies [6943c8d]
+- Updated dependencies [0e9f123]
+- Updated dependencies [9078cfb]
+- Updated dependencies [ff75b6f]
+- Updated dependencies [19d0c9f]
+- Updated dependencies [a2f20ae]
+- Updated dependencies [fb96bd3]
+- Updated dependencies [17fa534]
+- Updated dependencies [53a1558]
+- Updated dependencies [f50c6d9]
+- Updated dependencies [4fb24ca]
+- Updated dependencies [aedb49f]
+- Updated dependencies [10dd276]
+- Updated dependencies [c6f965b]
+- Updated dependencies [3c7a87a]
+- Updated dependencies [1b00300]
+- Updated dependencies [22b57c5]
+- Updated dependencies [2e12700]
+- Updated dependencies [0aa5132]
+- Updated dependencies [7ba3e69]
+- Updated dependencies [67968c3]
+- Updated dependencies [158f868]
+- Updated dependencies [ffcde61]
+- Updated dependencies [19f8e39]
+- Updated dependencies [c57e67c]
+- Updated dependencies [201d32f]
+- Updated dependencies [8e43f3f]
+- Updated dependencies [5ffc43b]
+- Updated dependencies [813a306]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [df2ae04]
+- Updated dependencies [d22292c]
+- Updated dependencies [7d89cf6]
+- Updated dependencies [8882b53]
+- Updated dependencies [c7db707]
+- Updated dependencies [452e669]
+- Updated dependencies [e7561c7]
+- Updated dependencies [76c5562]
+- Updated dependencies [174d6ef]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [ef687f1]
+- Updated dependencies [67f9f88]
+- Updated dependencies [bc67ae1]
+- Updated dependencies [38e795b]
+- Updated dependencies [e6871f1]
+- Updated dependencies [daf6f2e]
+- Updated dependencies [595b596]
+- Updated dependencies [7e5b389]
+- Updated dependencies [7e5b389]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [7863d23]
+- Updated dependencies [6b7317b]
+- Updated dependencies [181fbb3]
+- Updated dependencies [24fe665]
+- Updated dependencies [082dd1d]
+- Updated dependencies [79bd6cc]
+- Updated dependencies [2dd5e34]
+- Updated dependencies [de8f61d]
+- Updated dependencies [56784d5]
+- Updated dependencies [b54ab5f]
+- Updated dependencies [3c8e227]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [34090f0]
+- Updated dependencies [0ecff6a]
+- Updated dependencies [de8f61d]
+- Updated dependencies [44148c3]
+- Updated dependencies [e72e26a]
+- Updated dependencies [b9f3a12]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [1aa0af1]
+- Updated dependencies [f88fa83]
+- Updated dependencies [9eb084a]
+- Updated dependencies [066e590]
+- Updated dependencies [7c01199]
+- Updated dependencies [5792fce]
+- Updated dependencies [b3b9f5e]
+- Updated dependencies [1ba9061]
+- Updated dependencies [10ba95e]
+- Updated dependencies [7618831]
+- Updated dependencies [dc710e2]
+- Updated dependencies [c3a9456]
+- Updated dependencies [cd290f3]
+- Updated dependencies [2907e97]
+- Updated dependencies [9b7a29c]
+- Updated dependencies [3cdeca9]
+- Updated dependencies [d9af6f2]
+- Updated dependencies [26aa3d2]
+- Updated dependencies [fa288ff]
+- Updated dependencies [02087eb]
+- Updated dependencies [85f85ba]
+- Updated dependencies [adb1290]
+- Updated dependencies [3f575e2]
+- Updated dependencies [9a3e262]
+- Updated dependencies [0bb9ac6]
+- Updated dependencies [b750660]
+- Updated dependencies [9c4c2ff]
+- Updated dependencies [7b298cb]
+- Updated dependencies [fa5c2d9]
+- Updated dependencies [4810ef4]
+- Updated dependencies [4bda721]
+- Updated dependencies [b98bad7]
+- Updated dependencies [0d377ec]
+- Updated dependencies [435c248]
+- Updated dependencies [e1e7241]
+- Updated dependencies [977164c]
+- Updated dependencies [9aed377]
+- Updated dependencies [c491f93]
+- Updated dependencies [aadb086]
+- Updated dependencies [b1bbd39]
+- Updated dependencies [8934e48]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [aeda396]
+- Updated dependencies [2ee9af5]
+- Updated dependencies [c1da54a]
+- Updated dependencies [aeda396]
+- Updated dependencies [e30b99b]
+- Updated dependencies [d8dc6bf]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [09f0c86]
+- Updated dependencies [d11dc30]
+- Updated dependencies [5ad7bc0]
+- Updated dependencies [481218b]
+- Updated dependencies [f8172cf]
+- Updated dependencies [e5395a6]
+- Updated dependencies [cd7ffdb]
+- Updated dependencies [8ced7e2]
+- Updated dependencies [5ed6215]
+- Updated dependencies [9cacd4b]
+- Updated dependencies [f95e342]
+- Updated dependencies [d6ba47e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [fcc5602]
+- Updated dependencies [880cbbf]
+- Updated dependencies [2932eb2]
+- Updated dependencies [c1a3072]
+- Updated dependencies [968362b]
+- Updated dependencies [f4bfab5]
+- Updated dependencies [e6c888e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [56089ae]
+- Updated dependencies [d7de41f]
+- Updated dependencies [f544aeb]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [ff4504e]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [7645aaa]
+- Updated dependencies [24bca7a]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [70076bc]
+- Updated dependencies [f41f7ed]
+- Updated dependencies [4b3a525]
+- Updated dependencies [15e923d]
+- Updated dependencies [4c8749c]
+- Updated dependencies [9057ecb]
+- Updated dependencies [2823dca]
+- Updated dependencies [1c43dbf]
+- Updated dependencies [a3b1735]
+- Updated dependencies [d01d5a2]
+- Updated dependencies [bcc5c05]
+- Updated dependencies [e11a52e]
+- Updated dependencies [3744131]
+- Updated dependencies [5477214]
+- Updated dependencies [594d4ce]
+- Updated dependencies [7e5b389]
+- Updated dependencies [2e7bd80]
+- Updated dependencies [6c3e486]
+- Updated dependencies [e7bee92]
+- Updated dependencies [7affd45]
+- Updated dependencies [bef9c67]
+- Updated dependencies [470d4be]
+- Updated dependencies [2668893]
+- Updated dependencies [7e5b389]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [e06225e]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [38095a2]
+- Updated dependencies [d30164d]
+- Updated dependencies [04d5af6]
+- Updated dependencies [04d5af6]
+- Updated dependencies [c98a300]
+- Updated dependencies [04d5af6]
+- Updated dependencies [e7d580b]
+- Updated dependencies [cdbafb8]
+- Updated dependencies [3005391]
+- Updated dependencies [3311dde]
+- Updated dependencies [5b11625]
+- Updated dependencies [afbe8c3]
+- Updated dependencies [8bf1866]
+- Updated dependencies [c4bcb94]
+- Updated dependencies [7785bd5]
+- Updated dependencies [e59f1ae]
+- Updated dependencies [a8ff1e9]
+- Updated dependencies [25e8f76]
+- Updated dependencies [3a07b60]
+- Updated dependencies [b73c8ef]
+- Updated dependencies [6274bad]
+- Updated dependencies [758459f]
+- Updated dependencies [70213a5]
+- Updated dependencies [b72cf48]
+- Updated dependencies [b34f11e]
+- Updated dependencies [04d5af6]
+- Updated dependencies [5603bef]
+- Updated dependencies [126d17f]
+- Updated dependencies [d17a134]
+- Updated dependencies [4e68cf0]
+- Updated dependencies [ff5f066]
+- Updated dependencies [f164d0e]
+- Updated dependencies [586ca31]
+- Updated dependencies [ba8d3a0]
+- Updated dependencies [857e1fc]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [4d31cf0]
+- Updated dependencies [af132bc]
+- Updated dependencies [2d57c94]
+- Updated dependencies [f004638]
+- Updated dependencies [3c27e36]
+- Updated dependencies [3c27e36]
+- Updated dependencies [ce5d609]
+- Updated dependencies [dd5a540]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [8602bbc]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [59e80c0]
+- Updated dependencies [aedb49f]
+- Updated dependencies [31cd706]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [d58694b]
+- Updated dependencies [48e0ecd]
+- Updated dependencies [c8ed2ce]
+- Updated dependencies [f5e0446]
+- Updated dependencies [62aede0]
+- Updated dependencies [dc3eb53]
+- Updated dependencies [f6c305d]
+- Updated dependencies [2a7e9e0]
+- Updated dependencies [139f3f0]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [00a1f20]
+- Updated dependencies [9c46d22]
+- Updated dependencies [6451f0c]
+- Updated dependencies [3dab4ca]
+- Updated dependencies [c8ed2ce]
+- Updated dependencies [f3a1232]
+- Updated dependencies [56fda8d]
+- Updated dependencies [e04e543]
+- Updated dependencies [f88d616]
+- Updated dependencies [3cb3a67]
+- Updated dependencies [a97fe65]
+- Updated dependencies [c60fc3d]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [1d8e163]
+- Updated dependencies [e08d172]
+- Updated dependencies [429e80c]
+- Updated dependencies [bd25e62]
+- Updated dependencies [b425d50]
+- Updated dependencies [d962a91]
+- Updated dependencies [46ec294]
+- Updated dependencies [17d184b]
+- Updated dependencies [19387a6]
+- Updated dependencies [cabffe5]
+- Updated dependencies [f92300d]
+- Updated dependencies [07f5db2]
+- Updated dependencies [16eca51]
+- Updated dependencies [08512ea]
+- Updated dependencies [e0bea5a]
+- Updated dependencies [82f3868]
+- Updated dependencies [6c1ea88]
+- Updated dependencies [83ad38f]
+- Updated dependencies [82e481d]
+- Updated dependencies [87a8b06]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [d569abf]
+- Updated dependencies [36a20d4]
+- Updated dependencies [410ba5e]
+- Updated dependencies [4e4ddb5]
+- Updated dependencies [9d459cd]
+- Updated dependencies [76ca845]
+- Updated dependencies [002ff57]
+- Updated dependencies [31dd479]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [df1d23c]
+- Updated dependencies [ca663c7]
+- Updated dependencies [e01f958]
+- Updated dependencies [97cce9d]
+- Updated dependencies [7dadcf2]
+- Updated dependencies [87e8475]
+- Updated dependencies [9521334]
+- Updated dependencies [0177219]
+- Updated dependencies [6a9b37e]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [415e5b8]
+- Updated dependencies [e68cb62]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [c11f37e]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [1347e05]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [d455bd2]
+- Updated dependencies [12df18a]
+- Updated dependencies [62aede0]
+- Updated dependencies [bda75b2]
+- Updated dependencies [5bf7f01]
+- Updated dependencies [7293e22]
+- Updated dependencies [6bdf14d]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [2f2e3ca]
+- Updated dependencies [a9a0abc]
+- Updated dependencies [880ed50]
+- Updated dependencies [6975d7b]
+- Updated dependencies [5202a9f]
+- Updated dependencies [7e90922]
+- Updated dependencies [1a9548b]
+- Updated dependencies [27704ec]
+- Updated dependencies [60c082d]
+- Updated dependencies [012b439]
+- Updated dependencies [780c368]
+- Updated dependencies [b5e97b8]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [f3130d5]
+- Updated dependencies [95b6eb4]
+- Updated dependencies [e824816]
+- Updated dependencies [5a94e2b]
+- Updated dependencies [685bc3d]
+- Updated dependencies [d9eb095]
+- Updated dependencies [67cb364]
+- Updated dependencies [f9427e6]
+- Updated dependencies [02f9570]
+- Updated dependencies [8fda190]
+- Updated dependencies [d497853]
+- Updated dependencies [d4888dd]
+- Updated dependencies [91bd051]
+- Updated dependencies [e2f8ef6]
+- Updated dependencies [f19cbf2]
+- Updated dependencies [9e1861a]
+- Updated dependencies [8992639]
+- Updated dependencies [eb5c5f9]
+- Updated dependencies [e0e02f9]
+- Updated dependencies [dd7e196]
+- Updated dependencies [8ec6662]
+- Updated dependencies [7a75fd1]
+- Updated dependencies [e063817]
+- Updated dependencies [b2d7ddb]
+- Updated dependencies [87d7436]
+- Updated dependencies [ae7d97c]
+- Updated dependencies [95ca540]
+- Updated dependencies [8d7296a]
+- Updated dependencies [1f05956]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [6a423ea]
+- Updated dependencies [774e9cc]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [a0d7dfc]
+- Updated dependencies [7d77794]
+- Updated dependencies [8fb09ad]
+- Updated dependencies [ba7e062]
+- Updated dependencies [0d977b8]
+- Updated dependencies [01d3e39]
+- Updated dependencies [41f0773]
+- Updated dependencies [371b695]
+- Updated dependencies [0c18df0]
+- Updated dependencies [d268d21]
+- Updated dependencies [95cd658]
+- Updated dependencies [ce8655e]
+- Updated dependencies [f2b94bc]
+- Updated dependencies [475c725]
+- Updated dependencies [5dd240d]
+- Updated dependencies [8b01b26]
+- Updated dependencies [2c0f2fe]
+- Updated dependencies [d2002e0]
+- Updated dependencies [904ff6b]
+- Updated dependencies [12816b7]
+- Updated dependencies [6803209]
+- Updated dependencies [f857c86]
+- Updated dependencies [f62be4d]
+- Updated dependencies [f776161]
+- Updated dependencies [f873d0e]
+- Updated dependencies [5046776]
+- Updated dependencies [232d77f]
+- Updated dependencies [0f2cc79]
+- Updated dependencies [542e4e2]
+- Updated dependencies [abdc064]
+- Updated dependencies [5b08bd0]
+- Updated dependencies [2eb84fc]
+- Updated dependencies [aec0cec]
+- Updated dependencies [f98f4f3]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/routing@2.0.0
+  - @weasel-js/stroke@2.0.0
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/animator@2.0.0
+  - @weasel-js/quantity@2.0.0
+  - @weasel-js/gestures@2.0.0
+  - @weasel-js/renderer@2.0.0
+  - @weasel-js/font@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/paint@2.0.0
+  - @weasel-js/cursor@2.0.0
+  - @weasel-js/react@2.0.0
+  - @weasel-js/paint-kinds@2.0.0
+  - @weasel-js/history@2.0.0
+  - @weasel-js/icons@2.0.0
+  - @weasel-js/modes@2.0.0
+  - @weasel-js/prefs-schema@2.0.0
+  - @weasel-js/select@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

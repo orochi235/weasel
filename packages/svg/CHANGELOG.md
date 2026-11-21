@@ -1,5 +1,1394 @@
 # @weasel-js/svg
 
+## 2.0.0
+
+### Major Changes
+
+- c7db707: Every export reports what it drew without, a PNG's included, to `onDiagnostic`, and `strict: true` writes nothing then.
+  
+  `onWarn(message)` is gone from `ExportOptions`, `exportRegionSvg` and the diagram page exports. `onDiagnostic` hears each loss once as an `ExportDiagnostic`, `{ kind, subject, message }`: a picture or face that failed to load, a paint kind nothing registered, a shader with no GLSL, or what the format cannot hold. With `strict: true` the export rejects with `ExportIncompleteError`, whose `diagnostics` lists them.
+  
+  ```ts
+  // before
+  await exportRegions(scene, regions, 'svg', { onWarn: (m) => said.push(m) });
+  // after
+  await exportRegions(scene, regions, 'svg', { onDiagnostic: (d) => said.push(d.message) });
+  ```
+  
+  <!-- entry: rank=5 breaking api fix -->
+- a3136aa: PNG, PDF and SVG exports draw one revision of the document, pages and bounds included, even when it is edited while fonts or pictures load.
+  
+  Each export now reads through `captureExport(scene, regions, { warm, read })`: an edit while it loads starts it again, and after `EXPORT_CAPTURE_ATTEMPTS` tries it rejects with `ExportRevisionError`. Regions may be a function of the document, read again each attempt; `exportPages` places its pages so, by id, and fails for a page the document no longer holds. `ExportFormat.export` is handed these `ExportRegions`, so a format of your own reads them through `captureExport` or `exportRegionsOf`:
+  
+  ```ts
+  // before
+  export: async (scene, regions, opts) => write(scene, regions[0]!)
+  // after
+  export: (scene, regions, opts) => captureExport(scene, regions, {
+    warm: (doc, [region]) => warmWhatItNeeds(doc, region!),
+    read: (doc, [region]) => write(doc, region!),
+  })
+  ```
+  
+  <!-- entry: rank=5 breaking api fix -->
+- fd2cbc8: `@weasel-js/diagram`, `plot`, `labkit`, `svg` and `editor` need `@weasel-js/text-tools` installed beside them.
+  
+  This is breaking: add `@weasel-js/text-tools` to an app using any of them. Diagram and plot canvases turn on `textTools.text` themselves, so their labels paint and edit as before; labkit's annotation layer mounts text-tools' text tool.
+  
+  <!-- entry: breaking -->
+- ca0cf36: `@weasel-js/svg` no longer re-exports `pathToD` under a second name, `serializePathD`; import `pathToD` from `@weasel-js/geom`.
+  
+  ```ts
+  // before
+  import { serializePathD } from '@weasel-js/svg';
+  // after
+  import { pathToD } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking -->
+- 5202a9f: `tilePreviewSvg`, `tilePreviewCssUrl`, `nativeSvgKind` and `nativeSvgSpace` move from `@weasel-js/svg` to `@weasel-js/paint-kinds`.
+  
+  This is breaking: import them from `@weasel-js/paint-kinds`, which also exports `tileShapeXml`, one tile shape as SVG markup, which svg's `<pattern>` export and a swatch preview share.
+  
+  <!-- entry: breaking api -->
+- 5202a9f: `escapeAttr` and `escapeText` move from `@weasel-js/svg` to `@weasel-js/registry`, with `holdsNonXmlChar` beside them.
+  
+  This is breaking: import them from `@weasel-js/registry`. They escape the same.
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- 31c843e: A region export's `background` may be a function of the document drawn, so a color read from it matches the revision of the shapes.
+  
+  ```ts
+  exportRegionSvg(scene, region, { background: (doc) => pageColorOf(doc) });
+  ```
+  
+  <!-- entry: api -->
+- 592a789: `exportRegions` warns in development about an option the chosen format does not read, such as `compres` for `'pdf'` or `lang` for `'svg'`.
+  
+  An `ExportFormat` lists the options it reads beyond the shared ones in `options`; png, svg and pdf do. A format that leaves it out is not checked. `pickExportOptions(format, opts)` picks what a format reads.
+  
+  <!-- entry: api new -->
+- d26152c: svg, pdf and diagram-formats take `@weasel-js/export` as a peer, and the svg and pdf formats register in its registry.
+  
+  `registerSvgExport()` and `registerPdfExport()` register with `@weasel-js/export`'s registry; the packages' own exports are unchanged. For `@weasel-js/pdf` the peer is optional, as core is: only the `./export` entry reads it.
+  
+  <!-- entry: api -->
+- 86c3dda: New `svgBoundsOf(nodes)`: the box an `SvgNode` tree's ink covers, strokes and marker heads included.
+  
+  It is the `viewBox` `serializeSvg` writes when given none.
+  
+  Pass it as `viewBox`, `width` and `height` to fit a document to what it draws.
+  
+  <!-- entry: api -->
+- 3b772e0: `svgNodesFromKit` writes a node a painter of your own draws (`registerNodeShape`) from the commands that painter returns, with no `leaf`.
+  
+  Its path commands keep their fill, stroke and gradients, and its group commands their transform, opacity and clip, inside a `<g>` carrying the pose's rotation and `transform`. Text, image and shader commands are left out, each kind said once to the new `onWarn` option, or with `console.warn` without one. `leaf` still wins where it returns a node.
+  
+  <!-- entry: rank=5 new api data -->
+- d552c5c: An SVG export writes a group's `background` and `border` as a box under its content, and an import reads that box back onto the group.
+  
+  `svgNodesFromKit` writes such a group as a `<g data-weasel-group-box="true">` holding the box as a path, then a `<g>` of the group's content carrying its clip, so the clip does not cut the border and any SVG reader draws what the canvas does. `svgNodesToKitDrafts` reads that shape back as one group with `data.background`, `data.border`, and the box as its pose; a marked `<g>` edited out of that shape reads as the group it now is. `SvgKitLeafData` gains `border`, and `SvgGroupNode` gains `groupBox`.
+  
+  <!-- entry: api new data -->
+- bfc26b4: `SvgInherits` and `SvgKitInherited` are exported, the types of a node's `inherits` and of the paint a `leaf` callback is handed.
+  
+  <!-- entry: api -->
+- 91e0203: `svgNodesFromKit`'s `leaf` option can return `undefined` to write a node the default way, so a custom leaf can handle one kind of node alone.
+  
+  <!-- entry: api -->
+- 42f9cce: A text node with a background, such as a sticky note, reads back from SVG as one text node instead of a rectangle and a separate text.
+  
+  `svgLeafFromKit` marks the group it writes for one (`data-weasel-text-frame`, the new `SvgGroupNode.textFrame`), and `svgNodesToKitDrafts` drafts that group as a single text leaf carrying `background`, `padding`, and `overflow: 'clip'` where it clips. The edge and shadow are drawn shapes SVG has no attribute for; a `leaf` callback gets the text with the group's `meta`, so a document that writes them into its own namespace can read them back.
+  
+  <!-- entry: api data -->
+- b5046e5: `exportRegionSvg` writes any region of a scene as an SVG document, and `registerSvgExport()` makes it core's `svg` export format.
+  
+  It draws a node a consumer painter claims (`painters`, else `registerNodeShape`) from that painter's paths, and a node that derives its path along it. `text` sets how text is written: `'live'` (the default), `'outline'` or `'embed'`. `title` defaults to the region's `name`, and no background is painted unless given. `regionSvgNodes` is the walk alone.
+  
+  ```ts
+  registerSvgExport();
+  const blob = await exportRegions(scene, [region], 'svg', { background: '#ffffff' });
+  ```
+  
+  <!-- entry: rank=5 new api -->
+- 5d3b9b7: `svgNodesFromKit` and region exports write a node with the painters of the scene it belongs to, including those a canvas's presets installed.
+  
+  `svgNodesFromKit` reads `nodeShapesOf(tree)` by default; its new `shapes` option names another registry.
+  
+  <!-- entry: new api -->
+- 6e1cc34: SVG export can write text as its glyph outlines, or embed the faces it is set in, so another renderer draws it in the face the canvas does.
+  
+  `serializeSvg(nodes, { text })` takes `'live'` (the default, a `<text>` as before), `'outline'` (each text node as one filled path per paint, placed as the canvas places it) or `'embed'` (live text, with an `@font-face` rule per face holding the font file as a data URL). Under `'embed'`, text set in a face whose license forbids embedding, or that has no font file behind it, is written as outlines and `onWarn` names the face. Load the outlines first with `await warmSvg(nodes, { text })`.
+  
+  `svgTextOutlines(node)` is the outline lowering on its own.
+  
+  <!-- entry: rank=10 api new data -->
+- a23ebea: A text node with `fit: 'shrink'` sets its text at the largest size, never above its own, whose lines fit its box.
+  
+  `TextPose.fit` and `kit:text`'s `data.fit` take `'none'` (the default) or `'shrink'`. `layoutTextPose` resolves it, so the painter, picking, `caretIndexAt`, `textToPath` and the edit overlay all set the text at the fitted size; the overlay edits it at its own size under a zoom smaller by the fit, so the sizes written back are the authored ones. The property panel offers it as "Shrink to fit". `textFitScale(pose)` reads the factor, `bakeTextFit(pose)` writes the fitted sizes out, and SVG export writes the text at its fitted size in every `text` mode. The search is a binary search to `TEXT_FIT_TOLERANCE` of the scale, cached per layout input.
+  
+  <!-- entry: rank=10 api new -->
+
+### Patch Changes
+
+- bfc26b4: Every type a public signature names can now be written down by a consumer.
+  
+  Types the declarations named through private aliases are written out, or are geom's `Point` and `Rect`.
+  
+  <!-- entry: internal -->
+- 3a8b706: A blurred drop shadow fills its interior with its full color, as an unblurred one does. This holds for HUD box shadows and text shadows too, on canvas and in SVG export.
+  
+  `dropShadowLayers` returns `alphas`, the opacity of each path, and `TextFrame.shadow` carries the same; the single `alpha` and `opacity` they replace are deprecated.
+  
+  <!-- entry: fix visual api deprecates -->
+- 5792fce: Mesh gradients with `rgb(…)`, `hsl(…)` or `oklch(…)` corner colors survive SVG export and import. A patch's colors are now written `;`-separated, and files with space-separated colors still read.
+  
+  <!-- entry: fix data -->
+- 4bda721: Own-key lookups go through registry's `getOwn` and `hasOwnKey` rather than hand-written `Object.hasOwn` checks.
+  
+  <!-- entry: internal -->
+- 5c089e8: `exportRegionSvg` places a turned or skewed node where the canvas draws it, painter paths and their gradients included.
+  
+  <!-- entry: fix data -->
+- e58f9c3: A `baseline-shift` given in an absolute unit, such as `4px` or `3pt`, shifts the text by that length.
+  
+  <!-- entry: fix visual -->
+- 6b738ad: A `<tspan>` that sets its own `font-size` beside a `baseline-shift` length, such as `5px` or `0.5em`, rises by that length on SVG import.
+  
+  <!-- entry: fix visual -->
+- cb268d7: `serializeSvg` warns when it writes a pattern fill in `'bounds'` units, which SVG places at the user-space origin, not on the shape's box.
+  
+  Resolve such a paint with `paintToLocalUnits` before serializing it; the kit's own SVG export already does.
+  
+  <!-- entry: fix -->
+- e0f4c91: Registering an `svg` export format of your own replaces the one `registerSvgExport` added without a development warning.
+  
+  <!-- entry: behavior -->
+- 0dbf7f0: SVG import reads a percentage center on a user-space conic gradient against the viewport, as for linear and radial ones.
+  
+  <!-- entry: fix data -->
+- 406612a: Importing SVG applies an `@container` rule whose prelude is a comma-separated list of queries when any one of them holds, not only the first.
+  
+  <!-- entry: fix visual -->
+- 9e1a07c: `parseSvg` paints a `currentColor` fallback after an unresolved `url()` paint in the `color` in effect, rather than black.
+  
+  <!-- entry: fix visual -->
+- 20053ab: `parseSvg` reads a `stroke-dashoffset` in `em` or `ex` against the element's font size, as it does the dash array and stroke width.
+  
+  <!-- entry: fix visual -->
+- b261adb: `serializeSvg` says each `<defs>` warning once per call, as it does the rest, rather than once per texture fill or marker.
+  
+  <!-- entry: fix -->
+- fc3aeaf: SVG import draws a document's own `<marker>` even when its id is a kit marker's key, such as `arrow`.
+  
+  A document this package wrote still reads its markers back as kit markers: SVG export now declares the `wzl` namespace whenever it writes a marker.
+  
+  <!-- entry: fix data -->
+- a50e75e: A `dominant-baseline` set on an ancestor, in a stylesheet, or in `style=""` places a `<text>` as it does on the element itself.
+  
+  <!-- entry: fix visual -->
+- 482acd3: SVG import places text set with `dominant-baseline="text-top"` with its top at `y`, and text set `middle` or `central` with its middle at `y`.
+  
+  <!-- entry: fix data -->
+- 8f72646: An SVG dropped at a reduced size scales a group's stroke and border with its contents, and its shapes keep inheriting that stroke.
+  
+  <!-- entry: fix visual -->
+- bc8577d: A text with a background in an SVG dropped at a reduced size keeps its inset from the box's edge in proportion.
+  
+  <!-- entry: fix visual -->
+- 23fe5e7: An SVG written with `text: 'embed'` declares a substituted face under the family its text names. A reader then sets the text in the face the canvas drew.
+  
+  <!-- entry: fix -->
+- 6606d90: An SVG exported with embedded faces reads back the family of a face whose name holds a line break or a control character.
+  
+  The `@font-face` rule writes each such character as a CSS escape, so the document still parses as XML and the rule keeps the name it was given.
+  
+  <!-- entry: fix data -->
+- b9a8c22: An SVG shape that sets only `fill-opacity` inside a filled `<g>` keeps its translucent fill.
+  
+  <!-- entry: fix visual data -->
+- c201aeb: SVG import reads `font-weight="lighter"`, and computes `bolder` and `lighter` over the inherited weight.
+  
+  A weight CSS rejects leaves the inherited one standing.
+  
+  <!-- entry: fix data -->
+- ce87000: Importing SVG reads the markers a `<g>` sets. A shape that takes the group's stroke keeps its marker when exported again.
+  
+  <!-- entry: fix visual data -->
+- 2e9f432: `serializeSvg` writes well-formed XML for a path or text inside a painted group when one of its attribute values holds a `>`.
+  
+  <!-- entry: fix data -->
+- 62ce053: SVG import warns about an image pattern's `patternTransform` it cannot read, as it already did for a tile pattern's.
+  
+  <!-- entry: fix -->
+- c6d7970: Exporting a path that takes its group's stroke draws no end marker on a closed path, and strokes a path drawn in pieces only once.
+  
+  <!-- entry: fix visual -->
+- 9eddc4c: SVG import ignores a `stroke-width`, `font-size`, dash, `letter-spacing`, marker, or `clip-path` value CSS rejects. The value beneath it stands, as in a browser, so `stroke-width: thick` over `stroke-width="5"` strokes 5 wide.
+  
+  <!-- entry: fix visual -->
+- 2b30093: SVG properties read keywords in any case, as CSS does. `stroke-linejoin: Round`, `fill-rule: EvenOdd`, and `display="None"` now take effect.
+  
+  <!-- entry: fix visual -->
+- ab421aa: The SVG importer reads a very long length attribute, such as a page of digits or of spaces, in time linear in its length.
+  
+  <!-- entry: fix perf -->
+- 05571fd: `serializeSvg` gives a sized or unseated marker def an id no marker key can spell, so each stroke keeps its own head.
+  
+  Derived ids are now written with `--` (`arrow--s2`, `arrow--tip`), and a key holding `--` is written under a hashed id; files written before still read back.
+  
+  <!-- entry: fix data -->
+- 93da482: SVG import leaves a `<marker>`'s `display="none"` or hidden parts out of the head it draws.
+  
+  <!-- entry: fix visual -->
+- 3d4a54b: A `<marker>` whose outline width has a unit, such as `stroke-width="0.5mm"`, draws its outline at that width.
+  
+  <!-- entry: fix visual -->
+- 0b0d423: Reading a marker whose parts take the same paint from different elements no longer warns that it paints its parts differently.
+  
+  <!-- entry: fix -->
+- 89b9241: SVG import anchors a `<marker>` with no `viewBox` at its `refX` and `refY` keywords. `center`, `right`, and `bottom` resolve against the marker's own width and height.
+  
+  <!-- entry: fix visual -->
+- e4dc16a: `parseSvg` keeps an element's markers when its stroke is `none` or unset, as SVG draws them. They sit on an `SvgStroke` with a `none` paint, the shape `serializeSvg` already wrote back.
+  
+  <!-- entry: fix data -->
+- f1caee8: A `media` override given as `undefined` keeps that feature's default rather than failing every query on it.
+  
+  <!-- entry: fix visual -->
+- 1aa0af1: Importing a mesh gradient drops a patch whose color does not parse, with a warning. A patch with the wrong number of points or colors was already dropped that way.
+  
+  <!-- entry: fix data -->
+- acff6d2: SVG import drops a mesh gradient patch with a point missing a coordinate, such as `10,`, with a warning. It had read the missing one as 0.
+  
+  <!-- entry: fix -->
+- 7b062ca: A namespaced metadata element's child in another declared namespace keeps it through SVG import and export. `NamespacedElement.children` keys such a child `prefix:local`.
+  
+  <!-- entry: fix data -->
+- eb89dc5: `parseSvg` keeps namespaced elements and attributes named `constructor` or `__proto__` as data, where one used to throw.
+  
+  `serializeSvg` likewise reads only the namespace meta a document holds.
+  
+  <!-- entry: fix data -->
+- 265137c: A namespaced element kept through SVG import keeps `id` and `foo:id` as two attributes, writing each back under its own name.
+  
+  An attribute of it in an undeclared namespace, such as `xlink:href`, is dropped, as an undeclared child element already was.
+  
+  <!-- entry: fix data -->
+- 2c93ce3: SVG import ignores a negative `stroke-width` or `font-size`, with a warning, so the value below it or the inherited one stands, as in a browser.
+  
+  <!-- entry: fix data -->
+- 7124255: `parseSvg` keeps a nested `<svg>`'s `opacity`, reading the element as a group that carries it, and moves its children by its `transform`.
+  
+  <!-- entry: fix visual -->
+- 0080be9: SVG import warns when it flattens a `<tspan>` nested in another into its parent's text, dropping the inner one's styling.
+  
+  <!-- entry: fix -->
+- 8bd989e: `parseSvg` resolves a percentage inside a nested `<svg>` sized in percent, or not sized at all, against the viewport around it.
+  
+  <!-- entry: fix visual -->
+- ba05af9: An SVG media query or `transform` naming a feature, unit or function `constructor` reads it as unknown instead of throwing.
+  
+  <!-- entry: fix -->
+- caecf8f: Exporting a custom painter's node places its `'world'` pattern where the canvas draws it. This holds when the node is turned or transformed.
+  
+  <!-- entry: fix visual -->
+- 3d6ca96: `parseSvg` keeps a rectangular `<path>` drawn from another corner or counterclockwise as a path, so its dashes start where written.
+  
+  <!-- entry: fix visual -->
+- bbbadfb: A `<pattern>` image with a `preserveAspectRatio` other than `none` warns that its tile is filled stretched, as a bare `<image>` does.
+  
+  <!-- entry: fix -->
+- bbbadfb: A `<pattern>` whose `<image>` is transformed is dropped as an unsupported pattern, with a warning, instead of read as an upright image fill.
+  
+  <!-- entry: fix -->
+- 9d24719: `parseSvg` moves and scales a pattern fill's tile with the transforms of the shape it fills, as a browser draws it.
+  
+  An imported pattern is now placed in the user space of the shape it fills, so it travels with the imported node.
+  
+  <!-- entry: fix data visual -->
+- 04d45ec: `exportRegionSvg` keeps a node whose drawn box meets the region, so a turned node or a stroke reaching in is written as PNG and PDF draw it.
+  
+  <!-- entry: fix -->
+- b4e4fa4: In exported SVG, a text run whose own fill or stroke is opaque stays opaque under text whose fill or stroke is translucent.
+  
+  <!-- entry: fix visual -->
+- 8f2eb10: `serializeSvg` writes `stroke="none"` on a text run whose stroke draws nothing, such as one of zero width. Its `<tspan>` no longer takes its text's stroke.
+  
+  <!-- entry: fix visual data -->
+- 1e4dc77: A text run's stroke is written so its `<tspan>` draws as the run does. A cap, join, dash, miter limit, or opacity the node's stroke sets and the run's leaves out is written at its initial value.
+  
+  <!-- entry: fix data -->
+- c8d95f5: Exporting a text run whose stroke paints nothing writes `stroke="none"` on its `<tspan>`, so it no longer takes the text node's stroke.
+  
+  <!-- entry: fix visual -->
+- f8b78a3: A stroke with no `width` scales from its default of 1 when an SVG import fits or bakes a scale. Its width keeps pace with its dashes and heads.
+  
+  <!-- entry: fix visual -->
+- cc7b4de: A gradient stop read with `stop-opacity` packs its alpha into the color with paint's `byteHex`.
+  
+  <!-- entry: internal -->
+- faa4c8d: Importing SVG resolves a gradient stop's `stop-color: currentColor` against the `color` in effect on the stop, instead of reading it as black.
+  
+  <!-- entry: fix visual -->
+- e331441: `parseSvg` draws a `<use>` that is the first child of a `<switch>` whose conditions hold, rather than the alternative after it.
+  
+  <!-- entry: fix visual -->
+- f602e56: `svgLeafFromKit` writes a framed text node's shadow and edge where the canvas draws them, not stretched onto its box.
+  
+  <!-- entry: fix visual -->
+- 5a4f81e: Exporting a text node with an inner or outer stroke draws that stroke on runs that set no stroke of their own, as the canvas does.
+  
+  <!-- entry: fix visual -->
+- e200728: A `baseline-shift` on a `<text>` reaches each `<tspan>` in it that names none of its own. Subscript or superscript text with styled runs keeps its shift through an SVG round trip.
+  
+  <!-- entry: fix visual -->
+- 9b8fcab: Importing SVG draws a `<tspan>` that turns `visibility` back on inside a hidden `<text>`. A hidden `<tspan>` keeps its place but paints nothing.
+  
+  <!-- entry: fix visual -->
+- a82e65b: A `<tspan font-style="normal">` inside italic SVG text imports upright, and exports that way again.
+  
+  <!-- entry: fix data -->
+- 1e4dc77: A `<tspan>` that sets only part of a stroke, such as its width or dash, keeps the rest of the stroke it inherits from its `<text>`.
+  
+  <!-- entry: fix visual -->
+- 66824dc: A `<tspan>`'s user-space stroke gradient follows a transform on its `<text>`, as its fill gradient already did.
+  
+  <!-- entry: fix visual -->
+- 1e4dc77: A `<tspan stroke="inherit">` or `stroke="unset"` draws with its text's stroke instead of a black one, and no longer warns.
+  
+  <!-- entry: fix visual -->
+- 90ba557: A `<tspan stroke="none">` inside stroked text draws unstroked on SVG import.
+  
+  <!-- entry: fix visual -->
+- 7950ee6: Importing SVG places a `<tspan>` with its own `x` on the current line where the `x` says. It warns where no loaded face can measure the gap.
+  
+  <!-- entry: fix visual -->
+- e6c3bdd: A `<style>` rule left unclosed at the end of the sheet, such as `rect{fill:red`, applies in full, as in a browser.
+  
+  <!-- entry: fix data -->
+- 25b8182: A shape whose stroke is drawn inside or outside its edge keeps that alignment when SVG is unpacked into a scene.
+  
+  <!-- entry: fix visual -->
+- bbb2875: SVG import paints a fill or stroke whose `url(#…)` it cannot resolve, with no fallback color, as `none`. Browsers do the same; the import still warns.
+  
+  <!-- entry: fix visual -->
+- 80940a2: Importing SVG reads an `em` or `ex` length on a shape, image, or text drawn by a `<use>` against the font size the `<use>` gives it, as browsers do.
+  
+  <!-- entry: fix visual -->
+- c859cb8: `parseSvg` leaves out a hidden or condition-failing `<symbol>` child, or hidden `<use>` target, as it does any other element.
+  
+  A foreign-namespace child of a `<symbol>` is skipped without a warning, and `keepHidden` keeps hidden ones marked hidden.
+  
+  <!-- entry: fix visual -->
+- 64e4aaf: Importing SVG draws a shape that sets `visibility="visible"` inside a `<use>` whose own visibility is hidden.
+  
+  <!-- entry: fix visual -->
+- 3072890: Importing SVG counts each `<use>` reference toward the nesting limit. A long chain of references leaves the rest of the document drawn.
+  
+  <!-- entry: fix data -->
+- 905e345: Importing SVG keeps the `opacity` and `clip-path` of a `<use>` on what it draws.
+  
+  <!-- entry: fix visual -->
+- 152cc89: Importing SVG keeps a fill or stroke a `<use>` sets as its shape's own.
+  
+  <!-- entry: fix data visual -->
+- 7dd6c75: SVG import reads a minified `viewBox` or `rotate` list whose numbers abut, such as `viewBox="0-10 100 100"`.
+  
+  A `viewBox` with a unit or other trailing text in it is dropped, as browsers drop it.
+  
+  <!-- entry: fix data -->
+- d9eb095: A texture fill exported to SVG carries a `none` fallback after its reference, which points at nothing.
+  
+  `nativeSvgKind('texture')` now answers `false`.
+  
+  <!-- entry: fix data -->
+- Updated dependencies [5099ca3]
+- Updated dependencies [e5f53c6]
+- Updated dependencies [74e52e2]
+- Updated dependencies [617fd6c]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [fe3c2df]
+- Updated dependencies [8d7296a]
+- Updated dependencies [33d9b95]
+- Updated dependencies [2a3a075]
+- Updated dependencies [5ad99b6]
+- Updated dependencies [4204bdb]
+- Updated dependencies [e4b8859]
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [9c88969]
+- Updated dependencies [d764d06]
+- Updated dependencies [f1bc116]
+- Updated dependencies [effe879]
+- Updated dependencies [db9988a]
+- Updated dependencies [a98ad34]
+- Updated dependencies [7f25db9]
+- Updated dependencies [c3a8dea]
+- Updated dependencies [c7e5656]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [643c699]
+- Updated dependencies [0dc7968]
+- Updated dependencies [ca5bcb0]
+- Updated dependencies [6da5a3b]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [a7dab9f]
+- Updated dependencies [63fbbdf]
+- Updated dependencies [3f23bc8]
+- Updated dependencies [9249b26]
+- Updated dependencies [f20931c]
+- Updated dependencies [15072f4]
+- Updated dependencies [44848fe]
+- Updated dependencies [9a3bf41]
+- Updated dependencies [edcd3a6]
+- Updated dependencies [3bf5d6c]
+- Updated dependencies [b5d4882]
+- Updated dependencies [21d7e6b]
+- Updated dependencies [ff7314a]
+- Updated dependencies [315f5ee]
+- Updated dependencies [97f1f86]
+- Updated dependencies [1566d81]
+- Updated dependencies [6bbc0e5]
+- Updated dependencies [33c1e37]
+- Updated dependencies [62f5560]
+- Updated dependencies [6fb8869]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [063b00c]
+- Updated dependencies [bfc8672]
+- Updated dependencies [8dd351a]
+- Updated dependencies [8a1c306]
+- Updated dependencies [c4cb671]
+- Updated dependencies [840a01b]
+- Updated dependencies [f172abc]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [7b0562e]
+- Updated dependencies [39fd347]
+- Updated dependencies [f5058e3]
+- Updated dependencies [7f1cc2d]
+- Updated dependencies [29d293c]
+- Updated dependencies [0c07b8d]
+- Updated dependencies [6cef61c]
+- Updated dependencies [76a1854]
+- Updated dependencies [fcc5602]
+- Updated dependencies [aaa6a30]
+- Updated dependencies [1857565]
+- Updated dependencies [41c0399]
+- Updated dependencies [c3935f7]
+- Updated dependencies [fcc31eb]
+- Updated dependencies [8bc6d64]
+- Updated dependencies [c3da788]
+- Updated dependencies [9621063]
+- Updated dependencies [869d865]
+- Updated dependencies [42aab0c]
+- Updated dependencies [d3d65f1]
+- Updated dependencies [3a00602]
+- Updated dependencies [ab7f613]
+- Updated dependencies [95ddf7a]
+- Updated dependencies [daa7a4d]
+- Updated dependencies [9f5155f]
+- Updated dependencies [86e1580]
+- Updated dependencies [06303a3]
+- Updated dependencies [8278212]
+- Updated dependencies [1b27b2f]
+- Updated dependencies [2a0b5f3]
+- Updated dependencies [a529c26]
+- Updated dependencies [f44131a]
+- Updated dependencies [394cc06]
+- Updated dependencies [a4e0df7]
+- Updated dependencies [bfef616]
+- Updated dependencies [d0ec6bd]
+- Updated dependencies [3742696]
+- Updated dependencies [fd63c16]
+- Updated dependencies [8c58288]
+- Updated dependencies [964a242]
+- Updated dependencies [7cfda30]
+- Updated dependencies [93b6009]
+- Updated dependencies [37baa8c]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [5a8ac8c]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [963f8fd]
+- Updated dependencies [5c345b8]
+- Updated dependencies [b0905a2]
+- Updated dependencies [1c9986a]
+- Updated dependencies [1c9986a]
+- Updated dependencies [83ad38f]
+- Updated dependencies [0200213]
+- Updated dependencies [e8e7f2f]
+- Updated dependencies [b05583a]
+- Updated dependencies [77bfacf]
+- Updated dependencies [f585154]
+- Updated dependencies [15a05d9]
+- Updated dependencies [74202d3]
+- Updated dependencies [c30911d]
+- Updated dependencies [c569caf]
+- Updated dependencies [280f9fc]
+- Updated dependencies [4844d4d]
+- Updated dependencies [43fb985]
+- Updated dependencies [59944c1]
+- Updated dependencies [6d2bb1e]
+- Updated dependencies [106749f]
+- Updated dependencies [e9897c7]
+- Updated dependencies [075971c]
+- Updated dependencies [04cd5f3]
+- Updated dependencies [2940a77]
+- Updated dependencies [2ab2678]
+- Updated dependencies [93a7c62]
+- Updated dependencies [b05583a]
+- Updated dependencies [6f94fe3]
+- Updated dependencies [0a2be4b]
+- Updated dependencies [5477214]
+- Updated dependencies [5f6ebf3]
+- Updated dependencies [b76c25e]
+- Updated dependencies [5614b4e]
+- Updated dependencies [e21ec2d]
+- Updated dependencies [386bbfc]
+- Updated dependencies [ac792e8]
+- Updated dependencies [3fdbc32]
+- Updated dependencies [9430cf9]
+- Updated dependencies [5f6ebf3]
+- Updated dependencies [95d06c3]
+- Updated dependencies [3e32141]
+- Updated dependencies [9231556]
+- Updated dependencies [63c1844]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [b0905a2]
+- Updated dependencies [a8d34ac]
+- Updated dependencies [66e447b]
+- Updated dependencies [e9f7adf]
+- Updated dependencies [bfb8442]
+- Updated dependencies [4a2b3cc]
+- Updated dependencies [1bd148d]
+- Updated dependencies [7064286]
+- Updated dependencies [e67d322]
+- Updated dependencies [6316070]
+- Updated dependencies [0d810a1]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9249b26]
+- Updated dependencies [d917fd4]
+- Updated dependencies [37c0385]
+- Updated dependencies [fcc5602]
+- Updated dependencies [a2df698]
+- Updated dependencies [794862e]
+- Updated dependencies [5cf9f61]
+- Updated dependencies [5db5049]
+- Updated dependencies [656a653]
+- Updated dependencies [42d49af]
+- Updated dependencies [94c8e4c]
+- Updated dependencies [4a93e4b]
+- Updated dependencies [eca2b03]
+- Updated dependencies [fcfefd4]
+- Updated dependencies [7252e96]
+- Updated dependencies [f4ac9bc]
+- Updated dependencies [81b7535]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [2503372]
+- Updated dependencies [bde7b24]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [8764186]
+- Updated dependencies [f3c2f12]
+- Updated dependencies [81f2080]
+- Updated dependencies [84a4212]
+- Updated dependencies [7542fc9]
+- Updated dependencies [319879e]
+- Updated dependencies [8d7296a]
+- Updated dependencies [e6ec996]
+- Updated dependencies [9a3bf41]
+- Updated dependencies [d3d3973]
+- Updated dependencies [22c6086]
+- Updated dependencies [df9dba4]
+- Updated dependencies [2729716]
+- Updated dependencies [2f7e04a]
+- Updated dependencies [a5bed98]
+- Updated dependencies [9b8f83b]
+- Updated dependencies [143e763]
+- Updated dependencies [746912f]
+- Updated dependencies [3a0b3b7]
+- Updated dependencies [b667930]
+- Updated dependencies [dc92ea4]
+- Updated dependencies [15328d8]
+- Updated dependencies [ebd0424]
+- Updated dependencies [0046729]
+- Updated dependencies [cfc0732]
+- Updated dependencies [3a8b706]
+- Updated dependencies [471581b]
+- Updated dependencies [15d434b]
+- Updated dependencies [60ca157]
+- Updated dependencies [15a08cc]
+- Updated dependencies [5a805e9]
+- Updated dependencies [81f2080]
+- Updated dependencies [fcc5602]
+- Updated dependencies [8c58288]
+- Updated dependencies [084198c]
+- Updated dependencies [b0d7740]
+- Updated dependencies [df9a774]
+- Updated dependencies [a639e4d]
+- Updated dependencies [64fed84]
+- Updated dependencies [964a242]
+- Updated dependencies [1566d81]
+- Updated dependencies [2755b11]
+- Updated dependencies [49aa4d8]
+- Updated dependencies [dc881e4]
+- Updated dependencies [f9b150c]
+- Updated dependencies [583bd6d]
+- Updated dependencies [d353c85]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [95ca540]
+- Updated dependencies [180ec74]
+- Updated dependencies [36dac61]
+- Updated dependencies [4674f07]
+- Updated dependencies [9787bca]
+- Updated dependencies [16a2eed]
+- Updated dependencies [3eb3209]
+- Updated dependencies [2ac34a7]
+- Updated dependencies [7e60049]
+- Updated dependencies [31c843e]
+- Updated dependencies [c7db707]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [592a789]
+- Updated dependencies [3130e99]
+- Updated dependencies [f7d0cda]
+- Updated dependencies [d26152c]
+- Updated dependencies [d26152c]
+- Updated dependencies [6ee98b4]
+- Updated dependencies [a3136aa]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [824eca6]
+- Updated dependencies [6bb95ac]
+- Updated dependencies [6619ff1]
+- Updated dependencies [3c212ef]
+- Updated dependencies [23d94db]
+- Updated dependencies [50900c3]
+- Updated dependencies [d916cae]
+- Updated dependencies [98df398]
+- Updated dependencies [77670c1]
+- Updated dependencies [c131bff]
+- Updated dependencies [c117e62]
+- Updated dependencies [89f4197]
+- Updated dependencies [95a1a63]
+- Updated dependencies [a343f1b]
+- Updated dependencies [221fe20]
+- Updated dependencies [cc5b0c3]
+- Updated dependencies [9455fc1]
+- Updated dependencies [6606d90]
+- Updated dependencies [5879169]
+- Updated dependencies [959af37]
+- Updated dependencies [890ce71]
+- Updated dependencies [5e44587]
+- Updated dependencies [da15963]
+- Updated dependencies [e95a396]
+- Updated dependencies [8e5f1cf]
+- Updated dependencies [57df97b]
+- Updated dependencies [4daf896]
+- Updated dependencies [dbf591e]
+- Updated dependencies [d4a593d]
+- Updated dependencies [662f94f]
+- Updated dependencies [956a71a]
+- Updated dependencies [7001f43]
+- Updated dependencies [558f742]
+- Updated dependencies [39422f9]
+- Updated dependencies [b1cfa76]
+- Updated dependencies [bb7be0b]
+- Updated dependencies [1cee200]
+- Updated dependencies [9339b45]
+- Updated dependencies [4be1a3f]
+- Updated dependencies [787c496]
+- Updated dependencies [37514fc]
+- Updated dependencies [bebd64f]
+- Updated dependencies [4baee32]
+- Updated dependencies [8745b50]
+- Updated dependencies [df2ae04]
+- Updated dependencies [7dbeddb]
+- Updated dependencies [dbf591e]
+- Updated dependencies [839a4b2]
+- Updated dependencies [1810479]
+- Updated dependencies [d598b83]
+- Updated dependencies [8c2d558]
+- Updated dependencies [2ddb6a5]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [1bf22f4]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [79d4797]
+- Updated dependencies [cf24657]
+- Updated dependencies [1d5a968]
+- Updated dependencies [95bd84c]
+- Updated dependencies [2338cee]
+- Updated dependencies [034f292]
+- Updated dependencies [1d207f7]
+- Updated dependencies [dcdff5d]
+- Updated dependencies [f6d2a19]
+- Updated dependencies [ed0fff4]
+- Updated dependencies [8764186]
+- Updated dependencies [a7dab9f]
+- Updated dependencies [3a1bfaa]
+- Updated dependencies [42f1123]
+- Updated dependencies [6943c8d]
+- Updated dependencies [9b7e01c]
+- Updated dependencies [aedb49f]
+- Updated dependencies [e044df2]
+- Updated dependencies [4a18e17]
+- Updated dependencies [27649f2]
+- Updated dependencies [5117a3c]
+- Updated dependencies [a0f437e]
+- Updated dependencies [19f8e39]
+- Updated dependencies [8882b53]
+- Updated dependencies [477eb15]
+- Updated dependencies [8649268]
+- Updated dependencies [e4f2133]
+- Updated dependencies [e4f2133]
+- Updated dependencies [4e9c237]
+- Updated dependencies [a86bd34]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [7165e31]
+- Updated dependencies [e5e7aef]
+- Updated dependencies [3fe1323]
+- Updated dependencies [22a1496]
+- Updated dependencies [c3bcbf9]
+- Updated dependencies [ea0eef2]
+- Updated dependencies [d061e79]
+- Updated dependencies [b44408d]
+- Updated dependencies [51dc6ab]
+- Updated dependencies [f9ab55b]
+- Updated dependencies [e70f4da]
+- Updated dependencies [174d6ef]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [8c63002]
+- Updated dependencies [1026606]
+- Updated dependencies [5ddbb1f]
+- Updated dependencies [aa1dfd3]
+- Updated dependencies [e6871f1]
+- Updated dependencies [10e17bb]
+- Updated dependencies [8e6f5d2]
+- Updated dependencies [9236a1e]
+- Updated dependencies [7e5b389]
+- Updated dependencies [7e5b389]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [01b8a73]
+- Updated dependencies [6eefcb6]
+- Updated dependencies [7863d23]
+- Updated dependencies [5886c61]
+- Updated dependencies [a34b3fc]
+- Updated dependencies [e7d5f5a]
+- Updated dependencies [0b82615]
+- Updated dependencies [a0070e8]
+- Updated dependencies [b584cc5]
+- Updated dependencies [4d469aa]
+- Updated dependencies [5886c61]
+- Updated dependencies [0b29cea]
+- Updated dependencies [c22c9a6]
+- Updated dependencies [2dd5e34]
+- Updated dependencies [0ac8104]
+- Updated dependencies [b1e9d32]
+- Updated dependencies [de8f61d]
+- Updated dependencies [a5166b0]
+- Updated dependencies [8b65c38]
+- Updated dependencies [56784d5]
+- Updated dependencies [033c46f]
+- Updated dependencies [4cc61de]
+- Updated dependencies [f219a71]
+- Updated dependencies [812c469]
+- Updated dependencies [b54ab5f]
+- Updated dependencies [8c7d44b]
+- Updated dependencies [b2b79f1]
+- Updated dependencies [ea36901]
+- Updated dependencies [65ac904]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [d2002e0]
+- Updated dependencies [34090f0]
+- Updated dependencies [b0905a2]
+- Updated dependencies [bfc31d6]
+- Updated dependencies [de8f61d]
+- Updated dependencies [a23ebea]
+- Updated dependencies [b10e05f]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [b3b9f5e]
+- Updated dependencies [1ba9061]
+- Updated dependencies [0c1b6a6]
+- Updated dependencies [b6ae714]
+- Updated dependencies [a64cc29]
+- Updated dependencies [e737c0f]
+- Updated dependencies [69399bc]
+- Updated dependencies [d9c51c0]
+- Updated dependencies [d19f8cc]
+- Updated dependencies [717a531]
+- Updated dependencies [3a50e80]
+- Updated dependencies [f522122]
+- Updated dependencies [36dc93a]
+- Updated dependencies [11b0336]
+- Updated dependencies [75ef9fb]
+- Updated dependencies [e549ad3]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [dc881e4]
+- Updated dependencies [fb4710c]
+- Updated dependencies [46440b6]
+- Updated dependencies [db54baf]
+- Updated dependencies [bbf58f0]
+- Updated dependencies [65703dc]
+- Updated dependencies [42aab0c]
+- Updated dependencies [ac18636]
+- Updated dependencies [5d3b9b7]
+- Updated dependencies [adb1290]
+- Updated dependencies [9204311]
+- Updated dependencies [a0bb229]
+- Updated dependencies [aedb49f]
+- Updated dependencies [0bb9ac6]
+- Updated dependencies [067cf55]
+- Updated dependencies [b750660]
+- Updated dependencies [5b5d307]
+- Updated dependencies [dc881e4]
+- Updated dependencies [7b298cb]
+- Updated dependencies [0a05da3]
+- Updated dependencies [3e108b4]
+- Updated dependencies [f4e98a4]
+- Updated dependencies [b323f97]
+- Updated dependencies [0bb71da]
+- Updated dependencies [4bda721]
+- Updated dependencies [744fbce]
+- Updated dependencies [b29a94e]
+- Updated dependencies [5531792]
+- Updated dependencies [c129ce1]
+- Updated dependencies [43bf365]
+- Updated dependencies [c8f84f3]
+- Updated dependencies [c0d43ee]
+- Updated dependencies [d73bd9f]
+- Updated dependencies [4ee45ab]
+- Updated dependencies [b98bad7]
+- Updated dependencies [0d377ec]
+- Updated dependencies [435c248]
+- Updated dependencies [e1e7241]
+- Updated dependencies [977164c]
+- Updated dependencies [9aed377]
+- Updated dependencies [c491f93]
+- Updated dependencies [aadb086]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [aeda396]
+- Updated dependencies [2ee9af5]
+- Updated dependencies [c1da54a]
+- Updated dependencies [aeda396]
+- Updated dependencies [e30b99b]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [a791e92]
+- Updated dependencies [09f0c86]
+- Updated dependencies [d11dc30]
+- Updated dependencies [5ad7bc0]
+- Updated dependencies [481218b]
+- Updated dependencies [f8172cf]
+- Updated dependencies [e5395a6]
+- Updated dependencies [cd7ffdb]
+- Updated dependencies [8ced7e2]
+- Updated dependencies [5ed6215]
+- Updated dependencies [9cacd4b]
+- Updated dependencies [f95e342]
+- Updated dependencies [d6ba47e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [fcc5602]
+- Updated dependencies [880cbbf]
+- Updated dependencies [2932eb2]
+- Updated dependencies [c1a3072]
+- Updated dependencies [968362b]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [f4bfab5]
+- Updated dependencies [e6c888e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [c5e5476]
+- Updated dependencies [56089ae]
+- Updated dependencies [f544aeb]
+- Updated dependencies [c8b8348]
+- Updated dependencies [1e1d4c6]
+- Updated dependencies [33b9074]
+- Updated dependencies [dd3fdb0]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ccd6f25]
+- Updated dependencies [527f214]
+- Updated dependencies [42169f9]
+- Updated dependencies [6d2bb1e]
+- Updated dependencies [c4304d4]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [edfe71a]
+- Updated dependencies [1a03017]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [be3711c]
+- Updated dependencies [4f03b5d]
+- Updated dependencies [c0555fb]
+- Updated dependencies [094ba4d]
+- Updated dependencies [7d598c5]
+- Updated dependencies [6d2bb1e]
+- Updated dependencies [cff801a]
+- Updated dependencies [ff4504e]
+- Updated dependencies [cbb78ec]
+- Updated dependencies [0ae8b0c]
+- Updated dependencies [d897c83]
+- Updated dependencies [8078d25]
+- Updated dependencies [c428e9e]
+- Updated dependencies [bf94421]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [7dd8e23]
+- Updated dependencies [e265bdc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [768acf7]
+- Updated dependencies [4bf376e]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [45e100f]
+- Updated dependencies [6ab962a]
+- Updated dependencies [6ab962a]
+- Updated dependencies [0e01d7f]
+- Updated dependencies [70076bc]
+- Updated dependencies [f8f4954]
+- Updated dependencies [b1c09d3]
+- Updated dependencies [fa9657c]
+- Updated dependencies [f5b75cb]
+- Updated dependencies [1e9c740]
+- Updated dependencies [586b6c1]
+- Updated dependencies [53fb0eb]
+- Updated dependencies [47fa777]
+- Updated dependencies [47fa777]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [9566a40]
+- Updated dependencies [9566a40]
+- Updated dependencies [68d5da4]
+- Updated dependencies [7d67497]
+- Updated dependencies [5fa6d0a]
+- Updated dependencies [fc665a9]
+- Updated dependencies [bb8b8cb]
+- Updated dependencies [5fa6d0a]
+- Updated dependencies [9566a40]
+- Updated dependencies [68d5da4]
+- Updated dependencies [914ba92]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [4d469aa]
+- Updated dependencies [419b1f1]
+- Updated dependencies [a3136aa]
+- Updated dependencies [5b156c6]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [f976095]
+- Updated dependencies [af132bc]
+- Updated dependencies [9333b1a]
+- Updated dependencies [fc62432]
+- Updated dependencies [dd5a540]
+- Updated dependencies [85d3d17]
+- Updated dependencies [921d4f8]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [305f0ce]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [a3958dc]
+- Updated dependencies [75634a6]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [59e80c0]
+- Updated dependencies [0e80f73]
+- Updated dependencies [c873b55]
+- Updated dependencies [aedb49f]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [74e37d7]
+- Updated dependencies [8f61f88]
+- Updated dependencies [231eec5]
+- Updated dependencies [6355d18]
+- Updated dependencies [fcfefd4]
+- Updated dependencies [eeb7c5a]
+- Updated dependencies [44848fe]
+- Updated dependencies [c4d5642]
+- Updated dependencies [aba9531]
+- Updated dependencies [c25237f]
+- Updated dependencies [b934739]
+- Updated dependencies [f1e9773]
+- Updated dependencies [b822d40]
+- Updated dependencies [88a19c0]
+- Updated dependencies [44848fe]
+- Updated dependencies [f5e0446]
+- Updated dependencies [f6c305d]
+- Updated dependencies [00a1f20]
+- Updated dependencies [6451f0c]
+- Updated dependencies [f3a1232]
+- Updated dependencies [d55c488]
+- Updated dependencies [56fda8d]
+- Updated dependencies [5c778a0]
+- Updated dependencies [162f816]
+- Updated dependencies [f88d616]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [834d2ca]
+- Updated dependencies [457fbc3]
+- Updated dependencies [1e80440]
+- Updated dependencies [d3b20b9]
+- Updated dependencies [86b5903]
+- Updated dependencies [647b21c]
+- Updated dependencies
+- Updated dependencies [1d8e163]
+- Updated dependencies [e08d172]
+- Updated dependencies [fd6c009]
+- Updated dependencies [2076b1b]
+- Updated dependencies [429e80c]
+- Updated dependencies [49b3b13]
+- Updated dependencies [17d184b]
+- Updated dependencies [cabffe5]
+- Updated dependencies [f92300d]
+- Updated dependencies [d569abf]
+- Updated dependencies [76ca845]
+- Updated dependencies [431aa8e]
+- Updated dependencies [1ac16c5]
+- Updated dependencies [a82e65b]
+- Updated dependencies [b835405]
+- Updated dependencies [bf1cf7b]
+- Updated dependencies [c3e773c]
+- Updated dependencies [8558f40]
+- Updated dependencies [fa8902c]
+- Updated dependencies [96de590]
+- Updated dependencies [0ac8104]
+- Updated dependencies [9bbe3e4]
+- Updated dependencies [0c77c8d]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [56f8264]
+- Updated dependencies [1c6f913]
+- Updated dependencies [f20931c]
+- Updated dependencies [2241860]
+- Updated dependencies [5d7b7b8]
+- Updated dependencies [447f742]
+- Updated dependencies [0fe19aa]
+- Updated dependencies [5339aec]
+- Updated dependencies [3a71a1a]
+- Updated dependencies [a979682]
+- Updated dependencies [d8c22e6]
+- Updated dependencies [f11549d]
+- Updated dependencies [ab56471]
+- Updated dependencies [86b43d1]
+- Updated dependencies [eaefc65]
+- Updated dependencies [8cce06e]
+- Updated dependencies [16d4fab]
+- Updated dependencies [edcc040]
+- Updated dependencies [1ceadbf]
+- Updated dependencies [a47e5ed]
+- Updated dependencies [6829ab9]
+- Updated dependencies [865ccae]
+- Updated dependencies [a47e5ed]
+- Updated dependencies [eb82ac9]
+- Updated dependencies [795f517]
+- Updated dependencies [a26f70d]
+- Updated dependencies [aedb49f]
+- Updated dependencies [95da921]
+- Updated dependencies [6ac9c99]
+- Updated dependencies [f39b469]
+- Updated dependencies [e752074]
+- Updated dependencies [8b73d9a]
+- Updated dependencies [002ff57]
+- Updated dependencies [2557ab3]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [a23923e]
+- Updated dependencies [9246f97]
+- Updated dependencies [843859b]
+- Updated dependencies [4816dc3]
+- Updated dependencies [97cce9d]
+- Updated dependencies [6bfce5e]
+- Updated dependencies [4ae3b06]
+- Updated dependencies [fbb5fcd]
+- Updated dependencies [24ac265]
+- Updated dependencies [9f9a61a]
+- Updated dependencies [b646c27]
+- Updated dependencies [850db0a]
+- Updated dependencies [ef3ebdd]
+- Updated dependencies [0828a03]
+- Updated dependencies [b92bf56]
+- Updated dependencies [0828a03]
+- Updated dependencies [f23829c]
+- Updated dependencies [9521334]
+- Updated dependencies [0177219]
+- Updated dependencies [670aeb3]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [f86aaa2]
+- Updated dependencies [6222db5]
+- Updated dependencies [cfebac4]
+- Updated dependencies [415e5b8]
+- Updated dependencies [033c46f]
+- Updated dependencies [e68cb62]
+- Updated dependencies [29135cb]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [16e4b0b]
+- Updated dependencies [7bc2c18]
+- Updated dependencies [fb69a95]
+- Updated dependencies [a45338c]
+- Updated dependencies [fb69a95]
+- Updated dependencies [3f575e2]
+- Updated dependencies [4f9848f]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [7cace1d]
+- Updated dependencies [a86bd34]
+- Updated dependencies [c11f37e]
+- Updated dependencies [cb6e47b]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [1c0046a]
+- Updated dependencies [a34f319]
+- Updated dependencies [cbcd314]
+- Updated dependencies [9e23aea]
+- Updated dependencies [dee342f]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [4069e86]
+- Updated dependencies [201717b]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [d455bd2]
+- Updated dependencies [12df18a]
+- Updated dependencies [62aede0]
+- Updated dependencies [bda75b2]
+- Updated dependencies [5bf7f01]
+- Updated dependencies [7293e22]
+- Updated dependencies [6bdf14d]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [2f2e3ca]
+- Updated dependencies [a9a0abc]
+- Updated dependencies [880ed50]
+- Updated dependencies [6975d7b]
+- Updated dependencies [6bea0c5]
+- Updated dependencies [8635c1a]
+- Updated dependencies [5202a9f]
+- Updated dependencies [78dd590]
+- Updated dependencies [d3f717d]
+- Updated dependencies [27704ec]
+- Updated dependencies [60c082d]
+- Updated dependencies [46ec294]
+- Updated dependencies [ae15ab8]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [42af0bf]
+- Updated dependencies [de2d442]
+- Updated dependencies [4c592ae]
+- Updated dependencies [3a28bbb]
+- Updated dependencies [6fb8869]
+- Updated dependencies [a0d5f84]
+- Updated dependencies [6153ae7]
+- Updated dependencies [6a06f54]
+- Updated dependencies [3551ece]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [959f804]
+- Updated dependencies [6b5336b]
+- Updated dependencies [e970fad]
+- Updated dependencies [dc881e4]
+- Updated dependencies [30e2485]
+- Updated dependencies [95083bc]
+- Updated dependencies [cbaa22a]
+- Updated dependencies [bb03b55]
+- Updated dependencies [1377fab]
+- Updated dependencies [9199cb5]
+- Updated dependencies [8ac8a64]
+- Updated dependencies [de1e1c0]
+- Updated dependencies [4aaefe7]
+- Updated dependencies [c356829]
+- Updated dependencies [fcc5602]
+- Updated dependencies [cbf500e]
+- Updated dependencies [c5a7102]
+- Updated dependencies [3871e2f]
+- Updated dependencies [c3f3d9a]
+- Updated dependencies [5548d73]
+- Updated dependencies [e824816]
+- Updated dependencies [3871e2f]
+- Updated dependencies [4377fe2]
+- Updated dependencies [45559fc]
+- Updated dependencies [685bc3d]
+- Updated dependencies [6111c56]
+- Updated dependencies [bce203a]
+- Updated dependencies [accc590]
+- Updated dependencies [4b0b9df]
+- Updated dependencies [f9ed89f]
+- Updated dependencies [cea89d2]
+- Updated dependencies [a23ebea]
+- Updated dependencies [8d3c536]
+- Updated dependencies [62aede0]
+- Updated dependencies [e3a1721]
+- Updated dependencies [72544b9]
+- Updated dependencies [0cc203a]
+- Updated dependencies
+- Updated dependencies [86019a4]
+- Updated dependencies [fd2cbc8]
+- Updated dependencies [4bee28f]
+- Updated dependencies [50cf32b]
+- Updated dependencies [9d1f28d]
+- Updated dependencies [f4115e7]
+- Updated dependencies [d9eb095]
+- Updated dependencies [c62a3d3]
+- Updated dependencies [f9427e6]
+- Updated dependencies [02f9570]
+- Updated dependencies [368fb5f]
+- Updated dependencies [dd7e196]
+- Updated dependencies [963f8fd]
+- Updated dependencies [ba59515]
+- Updated dependencies [de71f7d]
+- Updated dependencies [87d7436]
+- Updated dependencies [ae7d97c]
+- Updated dependencies [95ca540]
+- Updated dependencies [8d7296a]
+- Updated dependencies [d6f8aac]
+- Updated dependencies [1f05956]
+- Updated dependencies [c4f5447]
+- Updated dependencies [c4f5447]
+- Updated dependencies [9566a40]
+- Updated dependencies [129da4b]
+- Updated dependencies [cd410a7]
+- Updated dependencies [29f3da2]
+- Updated dependencies [b70bc7f]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [6a423ea]
+- Updated dependencies [774e9cc]
+- Updated dependencies [9e8b91e]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [4c6e74f]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [a5c1865]
+- Updated dependencies [0d977b8]
+- Updated dependencies [6494d25]
+- Updated dependencies [30bf620]
+- Updated dependencies [41f0773]
+- Updated dependencies [c4783b4]
+- Updated dependencies [edcb456]
+- Updated dependencies [f2b94bc]
+- Updated dependencies [4198fea]
+- Updated dependencies [0ac8104]
+- Updated dependencies [475c725]
+- Updated dependencies [adca5ed]
+- Updated dependencies [793ac72]
+- Updated dependencies [c7db707]
+- Updated dependencies [ca65c7b]
+- Updated dependencies [987dd51]
+- Updated dependencies [d2002e0]
+- Updated dependencies [812c469]
+- Updated dependencies [f71667e]
+- Updated dependencies [12816b7]
+- Updated dependencies [5b8e066]
+- Updated dependencies [087e02c]
+- Updated dependencies [413e38c]
+- Updated dependencies [55fd480]
+- Updated dependencies [aec0cec]
+- Updated dependencies [f98f4f3]
+- Updated dependencies [3e39fea]
+- Updated dependencies [eb070dc]
+- Updated dependencies [42ec713]
+- Updated dependencies [a9b8fbb]
+- Updated dependencies [73f1cf1]
+- Updated dependencies [cbc7e4b]
+- Updated dependencies [0d0c238]
+- Updated dependencies [5354da3]
+- Updated dependencies [787ca7b]
+- Updated dependencies [721585e]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/core@2.0.0
+  - @weasel-js/stroke@2.0.0
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/text@2.0.0
+  - @weasel-js/font@2.0.0
+  - @weasel-js/text-tools@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/paint@2.0.0
+  - @weasel-js/export@2.0.0
+  - @weasel-js/paint-kinds@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

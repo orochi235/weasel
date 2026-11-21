@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/p-touch",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "Brother P-touch labels from weasel scenes: .lbx files written from draw commands, and printing over WebUSB or Web Serial.",
   "weasel": {
     "tier": "other"
@@ -41,16 +41,16 @@
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
-    "@weasel-js/dither": "1.19.1",
-    "@weasel-js/geom": "1.19.1",
-    "@weasel-js/paint": "1.19.1",
-    "@weasel-js/renderer": "1.19.1",
-    "@weasel-js/text": "1.19.1",
+    "@weasel-js/dither": "2.0.0",
+    "@weasel-js/geom": "2.0.0",
+    "@weasel-js/paint": "2.0.0",
+    "@weasel-js/renderer": "2.0.0",
+    "@weasel-js/text": "2.0.0",
     "bil-lbx": "^0.3.1",
     "obwat": "^0.3.1"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.19.1"
+    "@weasel-js/core": "2.0.0"
   },
   "publishConfig": {
     "access": "public",

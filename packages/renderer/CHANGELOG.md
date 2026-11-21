@@ -1,5 +1,775 @@
 # @weasel-js/renderer
 
+## 2.0.0
+
+### Major Changes
+
+- cc5b0c3: `cssFontFamily` and `cssFontFamilyLoading` take a weight and a style after the family, instead of an object.
+  
+  That is how `getAtlasFont`, `isFontPending` and the other face lookups take them.
+  
+  ```ts
+  // before
+  cssFontFamily('Inter', { weight: 700, style: 'italic' });
+  // after
+  cssFontFamily('Inter', 700, 'italic');
+  ```
+  
+  <!-- entry: breaking -->
+- b750660: The remaining `*Opts` types are `*Options`: `BindingOptions`, `ZoomClampOptions`, `WheelPanOptions`, `TilePatternOptions`.
+  
+  `createViewportWheelPanAction`'s options (formerly `makeViewportWheelPanAction`), which were `WheelPanOptions`, are now `ViewportWheelPanOptions`; `WheelPanOptions` is `wheelPan()`'s, which were `WheelPanOpts`. Only type names change.
+  
+  ```ts
+  // before
+  import type { BindingOpts, WheelPanOptions, WheelPanOpts } from '@weasel-js/core';
+  // after
+  import type { BindingOptions, ViewportWheelPanOptions, WheelPanOptions } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+- 4a4d7c9: `FramedBox`, `WarpBox` and `MeshBox` are `FramedRect`, `WarpRect` and `MeshRect`, since each is an `{ x, y, width, height }`.
+  
+  geom names that shape `Rect` and keeps `Box` for a min/max pair. `FramedBox` and `WarpBox` are geom's; `MeshBox` is renderer's.
+  
+  ```ts
+  // before
+  import type { FramedBox, WarpBox } from '@weasel-js/geom';
+  // after
+  import type { FramedRect, WarpRect } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking api -->
+- aedb49f: `registerProgram` throws on a different source under a taken id, in development as in production, unless passed `{ replace: true }`.
+  
+  This is a breaking change. The same source again is no change. A module re-registering its program on hot reload passes `replace: true`, where development used to replace without it. `registerEffect` takes the same options, and `programSourceRegistry.register` returns a release for a program that should not last the page's lifetime.
+  
+  ```ts
+  // before
+  registerProgram('stripes', { glsl: { frag: STRIPES } });
+  // after, in a module that hot reload runs again with new source
+  registerProgram('stripes', { glsl: { frag: STRIPES } }, { replace: true });
+  ```
+  
+  <!-- entry: breaking api behavior -->
+- f5e0446: `CullRect` and `PixelRect` are removed; `cullDrawCommands` and `readPixels` take geom's `Rect`, which has the same fields.
+  
+  ```ts
+  // before
+  import type { CullRect } from '@weasel-js/renderer';
+  const view: CullRect = { x: 0, y: 0, width: 800, height: 600 };
+  // after
+  import type { Rect } from '@weasel-js/geom';
+  const view: Rect = { x: 0, y: 0, width: 800, height: 600 };
+  ```
+  
+  <!-- entry: breaking api -->
+- f6c305d: `FillPoseBox` is removed; the paint-unit functions and paint-kind hooks take geom's `Rect`, which has the same fields.
+  
+  ```ts
+  // before
+  import type { FillPoseBox } from '@weasel-js/renderer';
+  const box: FillPoseBox = { x: 0, y: 0, width: 10, height: 10 };
+  // after
+  import type { Rect } from '@weasel-js/geom';
+  const box: Rect = { x: 0, y: 0, width: 10, height: 10 };
+  ```
+  
+  <!-- entry: breaking api -->
+- 2a7e9e0: An image draw command, its `source` rect and a shader command's `bounds` name their size `width` and `height`, not `w` and `h`.
+  
+  `frameRect` returns the same shape. Each is now the `Rect` shape geom and the rest of the renderer use, so a box passes straight in.
+  
+  ```ts
+  // before
+  { kind: 'image', image, x: 0, y: 0, w: 64, h: 32, source: { x: 0, y: 0, w: 16, h: 16 } }
+  // after
+  { kind: 'image', image, x: 0, y: 0, width: 64, height: 32, source: { x: 0, y: 0, width: 16, height: 16 } }
+  ```
+  
+  <!-- entry: breaking api -->
+- 00a1f20: `fillInPoseFrame` and `fillToBoundsFrame` are renamed `paintToLocalUnits` and `paintToBoundsUnits`.
+  
+  A registered paint kind's `inPoseFrame` and `toBoundsFrame` hooks follow, as `toLocalUnits` and `toBoundsUnits`. They convert any paint's units, strokes included, and apply no pose frame.
+  
+  ```ts
+  // before
+  const local = fillInPoseFrame(paint, box);
+  registerPaintKind({ kind: 'wash', inPoseFrame, toBoundsFrame, /* … */ });
+  // after
+  const local = paintToLocalUnits(paint, box);
+  registerPaintKind({ kind: 'wash', toLocalUnits, toBoundsUnits, /* … */ });
+  ```
+  
+  <!-- entry: breaking api -->
+- 6451f0c: `resolveFillPattern` is renamed `resolvePaintPattern`: it resolves any paint's pattern, a stroke's included.
+  
+  ```ts
+  // before
+  const paint = resolveFillPattern(posed);
+  // after
+  const paint = resolvePaintPattern(posed);
+  ```
+  
+  <!-- entry: breaking api -->
+- 3dab4ca: renderer's testing helpers are `createGLRecorder` and `createUploadTracker`, spelled as the kit's other factories are.
+  
+  `makeGLRecorder` (`@weasel-js/renderer/testing/glRecorder`) and `makeUploadTracker` (`@weasel-js/renderer/testing/vertexUploads`) are renamed; their arguments are unchanged.
+  
+  ```ts
+  // before
+  import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+  // after
+  import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+  ```
+  
+  <!-- entry: breaking api -->
+- c8ed2ce: `@weasel-js/renderer/testing/glRecorder` exports `recordedPaintTextures(gl)` in place of `webglDevice`.
+  
+  It answers a `PaintBindContext`'s `createTexture` and `deleteTexture` over a recorded context, as the renderer binds them, for a test driving a paint kind's `bind` without a renderer. `_setBatchCutsForTests(renderer, on)` joins `test-seams`.
+  
+  ```ts
+  // before
+  const gpu = webglDevice(rec.gl);
+  const ctx = { ...rest, createTexture: (w, h, data) => gpu.createTexture('rgba8', sampling, { width: w, height: h, data }), deleteTexture: (t) => gpu.deleteTexture(t) };
+  // after
+  const ctx = { ...rest, ...recordedPaintTextures(rec.gl) };
+  ```
+  
+  <!-- entry: breaking api -->
+- f2b94bc: `ViewLike` is gone; it was geom's `View` under a second name, and every barrel that exported it exports `View`.
+  
+  That is `@weasel-js/renderer`, `@weasel-js/core` and `@weasel-js/core/renderer`.
+  
+  ```ts
+  // before
+  import type { ViewLike } from '@weasel-js/renderer';
+  // after
+  import type { View } from '@weasel-js/renderer';
+  ```
+  
+  <!-- entry: breaking -->
+
+### Minor Changes
+
+- 2ee9af5: `registerPaintDrawKindLoader` takes a `has` option saying whether the kind has landed.
+  
+  Pass it when `register` fills a registry of your own, so a draw half registered elsewhere does not stop the load. It defaults to whether the draw half is registered.
+  
+  <!-- entry: api -->
+- 3a8b706: A blurred drop shadow fills its interior with its full color, as an unblurred one does. This holds for HUD box shadows and text shadows too, on canvas and in SVG export.
+  
+  `dropShadowLayers` returns `alphas`, the opacity of each path, and `TextFrame.shadow` carries the same; the single `alpha` and `opacity` they replace are deprecated.
+  
+  <!-- entry: fix visual api deprecates -->
+- c7db707: `imageReadsDuring(fn)` answers what `fn` returned with every picture it asked `getImageBitmap` for.
+  
+  <!-- entry: api -->
+- b1bbd39: A registered paint kind takes its group's color matrix, on paths and on text, in `u_colorMatrix` and `u_colorBias`.
+  
+  A program declaring neither draws unmapped, with a one-time development warning.
+  
+  Apply them in the fragment shader to the straight color before premultiplying:
+  
+  ```glsl
+  uniform mat4 u_colorMatrix;
+  uniform vec4 u_colorBias;
+  // …
+  vec4 mapped = clamp(u_colorMatrix * color + u_colorBias, 0.0, 1.0);
+  ```
+  
+  <!-- entry: fix api visual -->
+- aeda396: Disposing a paint-kind loader also removes the kind it loaded.
+  
+  `registerPaintDrawKindLoader` takes an optional `{ register }`, which registers what the loader resolved to and returns the disposer that runs when the loader is disposed; it defaults to `registerPaintDrawKind`.
+  
+  <!-- entry: fix api -->
+- c1da54a: Declaring your own loader for the lazy `mesh-gradient` built-in no longer draws the development clash warning.
+  
+  `registerPaintDrawKindLoader` takes `fallback`, as `registerPaintDrawKind` does, and `registerPaintKindLoader` passes its own through to the loader.
+  
+  <!-- entry: fix api -->
+- c8ed2ce: `BatchCut` and `ClipBox` are exported, the type of `BatchStage.clip`.
+  
+  <!-- entry: api -->
+- e0f4c91: `registerPaintDrawKind` takes `{ fallback }`, marking a draw kind as a default that a later one replaces without a warning.
+  
+  <!-- entry: api -->
+- f3a1232: A `text-layer` draw command keeps text on the GPU.
+  
+  `{ kind: 'text-layer', texts }` draws its `TextDrawCommand`s as drawing each in turn would, but uploads every glyph once, as one instance, and draws it with one call a frame however the view moves.
+  
+  At 114,400 glyphs, a frame of unchanged text drops from 8 ms of CPU to 0.1 ms, and from 11 ms to 3 ms end to end, still or moving; at 1.28M, from 103 ms to 26 ms (`tests/perf/text-wall.spec.ts`). The layer is kept by the identity of `texts` and freed at the end of a frame that does not draw it. A layer holding an underline, a stroke, a fill that is not a solid color, a color glyph, or a glyph big enough on screen for the outline tier is drawn text by text instead.
+  
+  ```ts
+  const wall: DrawCommand = { kind: 'text-layer', texts: lines.map((l, i) => textCommandFromRuns(0, i * 16, l, style)) };
+  renderer.render([wall], view);
+  ```
+  
+  `GpuDevice.draw` takes an instance count, and a vertex buffer layout's `step: 'instance'` advances once an instance. `@weasel-js/core` exports `TextLayerDrawCommand`, and `renderNeeds` reads a layer's fonts and paints. `@weasel-js/pdf` writes a layer's texts. `@weasel-js/font` exports `GLYPH_AREA_FROM`.
+  
+  <!-- entry: api perf -->
+
+### Patch Changes
+
+- 3b803d7: A diagonal `units: 'bounds'` linear gradient on a non-square shape draws the same color bands as its SVG `objectBoundingBox` export.
+  
+  `paintToLocalUnits` and `paintToBoundsUnits` now move a diagonal gradient's `to` so the bands keep their place across the conversion; gradient handles show and commit that point.
+  
+  <!-- entry: fix visual -->
+- defc1cd: A `chunks` tile with a tiny `chunkSize` or huge `density` scatters at most one chunk per tile pixel, rather than freezing the page.
+  
+  <!-- entry: fix behavior -->
+- d07c5f1: A `composite` that names no operator, such as `'multiply'`, throws a `RangeError` naming it.
+  
+  <!-- entry: fix -->
+- 26b779a: A custom shader's uniform array sized by a constant from a list such as `const int A = 2, B = 3;` gets its locations.
+  
+  <!-- entry: fix -->
+- 6babdc5: A `DrawContext` with no `batchVariants` draws each item under its own group's color matrix.
+  
+  <!-- entry: fix visual -->
+- b85869b: An emoji in text filled with a gradient or a pattern fades with that fill's `opacity`, as the letters beside it do.
+  
+  <!-- entry: fix visual -->
+- 7f49a0e: An inner or outer stroke drawn through the stencil on a rect far from the origin keeps to its side of the edge.
+  
+  <!-- entry: fix visual -->
+- cde17d1: A rect clip far from the origin that goes through the stencil clips where the rect is, rather than hiding everything inside it.
+  
+  <!-- entry: fix visual -->
+- 3b37bd1: Text far from the world origin keeps its painted decorations and large outlined glyphs exactly under the rest of its text.
+  
+  That is underlines, strikethroughs, and overlines filled with a gradient or a pattern, and glyphs drawn as outlines.
+  
+  <!-- entry: fix visual -->
+- 896cfc6: A font variant registered again with `{ replace: true }` after it has drawn draws from its new atlas, not the old one's pixels.
+  
+  <!-- entry: fix visual -->
+- eeef48a: A `createGLRecorder` context has a `canvas`, so a renderer over it watches for context loss and a test can dispatch `webglcontextlost` there.
+  
+  `drawingBufferColorSpace`, `unpackColorSpace` and `drawingBufferFormat` read as values rather than recording functions.
+  
+  <!-- entry: fix -->
+- 736df4e: A `createGLRecorder` context gives every WebGL constant the renderer uses its real value, rather than 0.
+  
+  The constants added are `DRAW_FRAMEBUFFER`, `READ_FRAMEBUFFER`, `DYNAMIC_DRAW`, `R8`, `RED`, `UNSIGNED_SHORT`, `UNPACK_ALIGNMENT`, `SAMPLES`, and `RENDERER`.
+  
+  <!-- entry: fix -->
+- 6aedb33: A `createGLRecorder` context can be awaited or resolved from a promise: it no longer answers `then` or `toJSON`.
+  
+  It also records `valueOf` and the other names `Object.prototype` carries, like any other method.
+  
+  <!-- entry: fix -->
+- 3dc96c8: The GL recorder answers one location per program and name, as a real context does.
+  
+  An attribute's lookup returns the index `bindAttribLocation` gave it, or else the lowest free one.
+  
+  <!-- entry: fix -->
+- 972a96c: `createGLRecorder` keeps object handles and uniform and attribute locations distinct across `reset()`.
+  
+  A program built after a reset no longer shares a location with one built before it.
+  
+  <!-- entry: fix -->
+- 94ea28e: `GpuProgram.set` documents its `offset` and `count` as numbers of `data`, written from the uniform's start, which is how both backends read them.
+  
+  <!-- entry: fix -->
+- 4f7976e: Gradient stops land exactly at their offsets, no longer up to half a ramp texel toward the middle.
+  
+  <!-- entry: fix visual -->
+- d22292c: A group with effects whose color matrix lowers or hides its alpha no longer wins picks on pixels it no longer visibly paints.
+  
+  <!-- entry: fix -->
+- 7d89cf6: A custom shader whose comments mention `void main()` or an `out` declaration is pickable through `renderIds`.
+  
+  <!-- entry: fix -->
+- 452e669: `imageStatus` on a `bitmapSrc` name no longer counts as a read in `imageReadsDuring`, as it already did not for any other source.
+  
+  <!-- entry: fix -->
+- 2dd5e34: A paint kind loaded on demand whose entry fails registration logs the error, as a failed load does.
+  
+  <!-- entry: fix -->
+- 56784d5: Comparisons of two lists entry by entry go through registry's `sameList` rather than hand-written loops.
+  
+  <!-- entry: internal -->
+- 1aa0af1: A mesh patch whose color does not parse is left undrawn instead of throwing from every frame. A development warning names the color; a patch with fewer than four colors is skipped too.
+  
+  <!-- entry: fix -->
+- f88fa83: A mesh gradient no longer draws a dark rim along patch edges inside its box. `bakeMesh` now returns premultiplied RGBA texels.
+  
+  <!-- entry: fix visual -->
+- 9eb084a: `patchBounds` encloses the whole patch, so a mesh paint with a strongly bowed edge no longer has the bulge cut off its baked texture.
+  
+  <!-- entry: fix visual -->
+- 066e590: A gradient switched to a mesh keeps the padded ends outside its first and last stop. A hard break or a single stop at 1 no longer becomes an empty mesh, and switching back keeps the stops in place.
+  
+  <!-- entry: fix visual -->
+- 7c01199: `meshHandles` keeps two coincident points of one patch as two handles, so a control moved onto its neighbor can be dragged off again.
+  
+  <!-- entry: fix -->
+- 5792fce: Mesh gradients with `rgb(…)`, `hsl(…)` or `oklch(…)` corner colors survive SVG export and import. A patch's colors are now written `;`-separated, and files with space-separated colors still read.
+  
+  <!-- entry: fix data -->
+- 9c4c2ff: An inside or outside `{ px }` stroke on outline text keeps its pixel width in every direction under a stretched view or an oblique.
+  
+  <!-- entry: fix visual -->
+- 8934e48: Disposing a paint kind puts back the shader programs of the kind it uncovers, and releases the programs of a kind removed outright.
+  
+  <!-- entry: fix visual -->
+- aeda396: A paint-kind loader declared over one that already started or failed is the one the next lookup calls.
+  
+  A load the displaced loader finishes afterward registers nothing.
+  
+  <!-- entry: fix -->
+- e30b99b: Paint kind loaders stack like the kinds: disposing a newer loader for an id uncovers the older one again.
+  
+  Disposing a loader that was overridden removes only that one.
+  
+  <!-- entry: fix behavior -->
+- d8dc6bf: `registerPaintDrawKind` that throws on a program with no source registers none of the kind's programs, leaving every program id as it was.
+  
+  <!-- entry: fix -->
+- 31cd706: Registering a program a renderer already compiled from the same source no longer recompiles it.
+  
+  So adding a shader to `<Canvas shaders>` no longer repaints every retained layer.
+  
+  <!-- entry: fix perf -->
+- d58694b: A shader program whose `programSourceRegistry.register` release has run stops drawing, and its GPU program is freed.
+  
+  <!-- entry: fix -->
+- 48e0ecd: `renderIdsAsync` and `readPixels` reject their promise when the read fails. A rect outside the canvas and a failing frame both arrive as the rejection.
+  
+  <!-- entry: fix behavior -->
+- 62aede0: An install that nests `@weasel-js/geom` under renderer now resolves `earcut`, which renderer depends on.
+  
+  geom's `./tessellate` loads it, and geom lists it only as an optional peer.
+  
+  <!-- entry: fix -->
+- dc3eb53: Clipped batches and per-anchor vertex colors reach the far end's value exactly.
+  
+  <!-- entry: fix visual -->
+- 139f3f0: A shader whose uniform type or WGSL struct is named `toString` or `constructor` is laid out and written as what it declares.
+  
+  <!-- entry: fix -->
+- 9c46d22: A tile pattern spec from JSON with a `__proto__` key gets a texture of its own instead of sharing the tile of the spec without it.
+  
+  <!-- entry: fix -->
+- 3cb3a67: A re-registered shader that fails to compile keeps drawing its previous source after a WebGL context restore.
+  
+  <!-- entry: fix -->
+- a97fe65: The `retainBudget` docs count both scratch buffers: GPU memory can reach the budget plus 44 MiB at 4x, not 36.
+  
+  <!-- entry: fix -->
+- c60fc3d: A retained group redraws when an effect uniform array it was drawn with is rewritten in place.
+  
+  <!-- entry: fix visual -->
+- 7dadcf2: A shader command's array uniform takes a `Float64Array`, a kit matrix array included, and uploads it as float32 rather than rejecting it.
+  
+  <!-- entry: fix -->
+- 87e8475: A shader command's `Int32Array` or `Uint32Array` uniform value writes a scalar `int`, `ivecN`, `uint`, or `uvecN` uniform, by its length.
+  
+  Another length throws in development, as other unsupported values do.
+  
+  <!-- entry: fix -->
+- f3130d5: A text layer is culled and bounded by its new layout once its face loads or a text engine registers.
+  
+  A line that grew wider is no longer culled or clipped while on screen.
+  
+  <!-- entry: fix visual -->
+- 95b6eb4: A text layer that has to draw text by text frees the GPU buffers it had already uploaded for it.
+  
+  <!-- entry: fix perf -->
+- 5a94e2b: Text built by `textCommand`, `textCommandFromRuns`, or `textCommandFromRunsInto` paints a tile or image pattern fill or stroke.
+  
+  <!-- entry: fix visual -->
+- 685bc3d: `paintRuns` and `cachedPaintRuns` throw a `RangeError` when `outlineMinSize` is `NaN`; omit it to draw no outlines.
+  
+  <!-- entry: fix behavior -->
+- 8fda190: A tile pattern's fractional `size` rounds to whole pixels, so it repeats without seams and at the same period as its SVG export.
+  
+  <!-- entry: fix visual -->
+- 01d3e39: `createUploadTracker` reads a tightly packed vertex buffer at its attribute's size, so a color buffer is four floats per vertex.
+  
+  <!-- entry: fix -->
+- 95cd658: An SVG image with a huge declared size loads within the GPU's texture limits. Its first raster keeps the texture side and 4096 × 4096-pixel ceiling later rasters already keep.
+  
+  <!-- entry: fix -->
+- ce8655e: A path's `vertexColors` draw over a gradient or pattern `fill` at the paint's opacity, as a stroke's `vertexColors` already do over its paint.
+  
+  <!-- entry: fix visual -->
+- 904ff6b: A paint of an unregistered kind, or whose kind binds an unregistered program, warns once in development instead of silently drawing nothing.
+  
+  A kind declared with a loader that has not landed yet stays quiet.
+  
+  <!-- entry: fix -->
+- f62be4d: A WebGL renderer sharing its context uploads textures correctly whatever pixel-store or unpack-buffer state the other code left set.
+  
+  <!-- entry: fix visual -->
+- f776161: A premultiplied image upload that throws on WebGL, such as a cross-origin image, no longer leaves later uploads premultiplied.
+  
+  <!-- entry: fix visual -->
+- f873d0e: `requestRendererDevice` warns when asking for a WebGPU device fails, and asks again on the next call rather than for the rest of the page.
+  
+  It still resolves `null` on a failure.
+  
+  <!-- entry: fix -->
+- 5046776: `readPixels` on a WebGPU canvas resized since its last frame reads that frame's own rows, with zeros where the rect lies past it.
+  
+  <!-- entry: fix -->
+- 232d77f: A WebGPU render target reports the sample count it was made with, 4 or 0, and counts its `bytes` from that count.
+  
+  <!-- entry: fix -->
+- 0f2cc79: `writeBuffer` on a WebGPU device throws on a write it cannot make exactly, rather than zeroing the bytes after it or dropping it.
+  
+  That is a write starting off a multiple of 4 bytes, or ending off one short of the buffer's end.
+  
+  <!-- entry: fix behavior -->
+- 542e4e2: A WebGPU canvas with zero width or height keeps one set of buffers instead of making new ones for every pass.
+  
+  <!-- entry: fix perf -->
+- 5b08bd0: A WGSL program may declare its structs and consts after the uniforms and structs that use them, as WGSL allows.
+  
+  <!-- entry: fix -->
+- 2eb84fc: A WGSL program's own uniform member named like a kit member, such as `bounds` or `resolution`, keeps its own value.
+  
+  The kit's value reaches the kit's member, in effects, custom programs, and paint kinds alike.
+  
+  <!-- entry: fix visual -->
+- Updated dependencies [e4b8859]
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [d764d06]
+- Updated dependencies [a98ad34]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [0dc7968]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [9249b26]
+- Updated dependencies [15072f4]
+- Updated dependencies [edcd3a6]
+- Updated dependencies [b5d4882]
+- Updated dependencies [6fb8869]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [7b0562e]
+- Updated dependencies [29d293c]
+- Updated dependencies [6cef61c]
+- Updated dependencies [fcc5602]
+- Updated dependencies [c3da788]
+- Updated dependencies [ece64a6]
+- Updated dependencies [fcc5602]
+- Updated dependencies [a2df698]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [0046729]
+- Updated dependencies [fcc5602]
+- Updated dependencies [583bd6d]
+- Updated dependencies [d353c85]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [36dac61]
+- Updated dependencies [4674f07]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [824eca6]
+- Updated dependencies [d916cae]
+- Updated dependencies [98df398]
+- Updated dependencies [77670c1]
+- Updated dependencies [c131bff]
+- Updated dependencies [c117e62]
+- Updated dependencies [89f4197]
+- Updated dependencies [95a1a63]
+- Updated dependencies [a343f1b]
+- Updated dependencies [221fe20]
+- Updated dependencies [cc5b0c3]
+- Updated dependencies [9455fc1]
+- Updated dependencies [6606d90]
+- Updated dependencies [5879169]
+- Updated dependencies [959af37]
+- Updated dependencies [890ce71]
+- Updated dependencies [5e44587]
+- Updated dependencies [da15963]
+- Updated dependencies [e95a396]
+- Updated dependencies [8e5f1cf]
+- Updated dependencies [57df97b]
+- Updated dependencies [4daf896]
+- Updated dependencies [dbf591e]
+- Updated dependencies [d4a593d]
+- Updated dependencies [662f94f]
+- Updated dependencies [956a71a]
+- Updated dependencies [7001f43]
+- Updated dependencies [558f742]
+- Updated dependencies [39422f9]
+- Updated dependencies [b1cfa76]
+- Updated dependencies [bb7be0b]
+- Updated dependencies [1cee200]
+- Updated dependencies [9339b45]
+- Updated dependencies [4be1a3f]
+- Updated dependencies [787c496]
+- Updated dependencies [37514fc]
+- Updated dependencies [bebd64f]
+- Updated dependencies [4baee32]
+- Updated dependencies [8745b50]
+- Updated dependencies [df2ae04]
+- Updated dependencies [7dbeddb]
+- Updated dependencies [dbf591e]
+- Updated dependencies [839a4b2]
+- Updated dependencies [1810479]
+- Updated dependencies [d598b83]
+- Updated dependencies [8c2d558]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [8c63002]
+- Updated dependencies [e6871f1]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [7863d23]
+- Updated dependencies [de8f61d]
+- Updated dependencies [ea36901]
+- Updated dependencies [65ac904]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [34090f0]
+- Updated dependencies [de8f61d]
+- Updated dependencies [a23ebea]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [b3b9f5e]
+- Updated dependencies [adb1290]
+- Updated dependencies [9204311]
+- Updated dependencies [0bb9ac6]
+- Updated dependencies [7b298cb]
+- Updated dependencies [b98bad7]
+- Updated dependencies [0d377ec]
+- Updated dependencies [435c248]
+- Updated dependencies [e1e7241]
+- Updated dependencies [977164c]
+- Updated dependencies [9aed377]
+- Updated dependencies [c491f93]
+- Updated dependencies [aadb086]
+- Updated dependencies [09f0c86]
+- Updated dependencies [d11dc30]
+- Updated dependencies [5ad7bc0]
+- Updated dependencies [481218b]
+- Updated dependencies [f8172cf]
+- Updated dependencies [e5395a6]
+- Updated dependencies [cd7ffdb]
+- Updated dependencies [8ced7e2]
+- Updated dependencies [5ed6215]
+- Updated dependencies [9cacd4b]
+- Updated dependencies [f95e342]
+- Updated dependencies [d6ba47e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [fcc5602]
+- Updated dependencies [880cbbf]
+- Updated dependencies [2932eb2]
+- Updated dependencies [c1a3072]
+- Updated dependencies [968362b]
+- Updated dependencies [f4bfab5]
+- Updated dependencies [e6c888e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [56089ae]
+- Updated dependencies [f544aeb]
+- Updated dependencies [dd3fdb0]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [ff4504e]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [70076bc]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [dd5a540]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [59e80c0]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [f3a1232]
+- Updated dependencies [56fda8d]
+- Updated dependencies [f88d616]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [1d8e163]
+- Updated dependencies [e08d172]
+- Updated dependencies [429e80c]
+- Updated dependencies [431aa8e]
+- Updated dependencies [1ac16c5]
+- Updated dependencies [a82e65b]
+- Updated dependencies [002ff57]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [9521334]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [6222db5]
+- Updated dependencies [415e5b8]
+- Updated dependencies [e68cb62]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [c11f37e]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [d455bd2]
+- Updated dependencies [12df18a]
+- Updated dependencies [62aede0]
+- Updated dependencies [bda75b2]
+- Updated dependencies [5bf7f01]
+- Updated dependencies [7293e22]
+- Updated dependencies [6bdf14d]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [2f2e3ca]
+- Updated dependencies [a9a0abc]
+- Updated dependencies [880ed50]
+- Updated dependencies [6975d7b]
+- Updated dependencies [60c082d]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [de2d442]
+- Updated dependencies [3a28bbb]
+- Updated dependencies [a0d5f84]
+- Updated dependencies [30e2485]
+- Updated dependencies [95083bc]
+- Updated dependencies [cbaa22a]
+- Updated dependencies [bb03b55]
+- Updated dependencies [1377fab]
+- Updated dependencies [9199cb5]
+- Updated dependencies [8ac8a64]
+- Updated dependencies [de1e1c0]
+- Updated dependencies [c356829]
+- Updated dependencies [fcc5602]
+- Updated dependencies [cbf500e]
+- Updated dependencies [c5a7102]
+- Updated dependencies [3871e2f]
+- Updated dependencies [c3f3d9a]
+- Updated dependencies [5548d73]
+- Updated dependencies [e824816]
+- Updated dependencies [4377fe2]
+- Updated dependencies [45559fc]
+- Updated dependencies [685bc3d]
+- Updated dependencies [6111c56]
+- Updated dependencies [accc590]
+- Updated dependencies [4b0b9df]
+- Updated dependencies [f9ed89f]
+- Updated dependencies [a23ebea]
+- Updated dependencies [8d3c536]
+- Updated dependencies [9d1f28d]
+- Updated dependencies [f4115e7]
+- Updated dependencies [1f05956]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [6a423ea]
+- Updated dependencies [774e9cc]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [0d977b8]
+- Updated dependencies [793ac72]
+- Updated dependencies [d2002e0]
+- Updated dependencies [12816b7]
+- Updated dependencies [aec0cec]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/stroke@2.0.0
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/text@2.0.0
+  - @weasel-js/font@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/paint@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/prefs-editor",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "An editor for preferences schemas: build a schema's sections, fields, conditions, and kinds by hand, preview the form it draws, and export it.",
   "weasel": {
     "tier": "other"
@@ -44,21 +44,21 @@
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.19.1",
-    "@weasel-js/gestures": "1.19.1",
-    "@weasel-js/icons": "1.19.1",
-    "@weasel-js/prefs": "1.19.1",
-    "@weasel-js/quantity": "1.19.1",
-    "@weasel-js/react": "1.19.1",
-    "@weasel-js/registry": "1.19.1",
-    "@weasel-js/routing": "1.19.1",
-    "@weasel-js/ui": "1.19.1",
-    "@weasel-js/ui-canvas": "1.19.1",
-    "@weasel-js/ui-input": "1.19.1",
+    "@weasel-js/geom": "2.0.0",
+    "@weasel-js/gestures": "2.0.0",
+    "@weasel-js/icons": "2.0.0",
+    "@weasel-js/prefs": "2.0.0",
+    "@weasel-js/quantity": "2.0.0",
+    "@weasel-js/react": "2.0.0",
+    "@weasel-js/registry": "2.0.0",
+    "@weasel-js/routing": "2.0.0",
+    "@weasel-js/ui": "2.0.0",
+    "@weasel-js/ui-canvas": "2.0.0",
+    "@weasel-js/ui-input": "2.0.0",
     "react-aria-components": "1.22.1"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.19.1",
+    "@weasel-js/core": "2.0.0",
     "react": ">=18",
     "react-dom": ">=18"
   },
@@ -67,6 +67,6 @@
     "provenance": true
   },
   "devDependencies": {
-    "@weasel-js/editing": "1.19.1"
+    "@weasel-js/editing": "2.0.0"
   }
 }

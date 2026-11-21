@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/diagram-formats",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "Converts @weasel-js/diagram scenes to and from files: an interchange document every format reads and writes, and its pages as an SVG document, a PNG image or a PDF.",
   "weasel": {
     "tier": "other"
@@ -41,24 +41,24 @@
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.19.1",
-    "@weasel-js/paint": "1.19.1",
-    "@weasel-js/pdf": "1.19.1",
-    "@weasel-js/registry": "1.19.1"
+    "@weasel-js/geom": "2.0.0",
+    "@weasel-js/paint": "2.0.0",
+    "@weasel-js/pdf": "2.0.0",
+    "@weasel-js/registry": "2.0.0"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.19.1",
-    "@weasel-js/diagram": "1.19.1",
-    "@weasel-js/export": "1.19.1",
-    "@weasel-js/plot": "1.19.1",
-    "@weasel-js/svg": "1.19.1"
+    "@weasel-js/core": "2.0.0",
+    "@weasel-js/diagram": "2.0.0",
+    "@weasel-js/export": "2.0.0",
+    "@weasel-js/plot": "2.0.0",
+    "@weasel-js/svg": "2.0.0"
   },
   "publishConfig": {
     "access": "public",
     "provenance": true
   },
   "devDependencies": {
-    "@weasel-js/editing": "1.19.1",
-    "@weasel-js/text-tools": "1.19.1"
+    "@weasel-js/editing": "2.0.0",
+    "@weasel-js/text-tools": "2.0.0"
   }
 }

@@ -1,5 +1,242 @@
 # @weasel-js/gestures
 
+## 2.0.0
+
+### Major Changes
+
+- a947127: A held-key gesture spec's kind is `'keyHeld'`, camelCase like `'doubleClick'` and `'longPress'` and matching the route grammar's `keyHeld`.
+  
+  Specs built with `held('Space')` need no change. A spec written out by hand, or a binding override saved as a spec object, changes its `kind`:
+  
+  ```ts
+  // before
+  { kind: 'key-held', key: ' ' }
+  // after
+  { kind: 'keyHeld', key: ' ' }
+  ```
+  
+  <!-- entry: breaking api data -->
+- b7e560b: `BodyClassification`, what a `classifyTarget` thunk returns, names its fields `bodyTarget` and `bodyKind`, as the input events it fills already do.
+  
+  Its `doubleClick` entry takes the same two names.
+  
+  ```ts
+  // before
+  classifyTarget: (world) => ({ body: 'unselected-body', kind: 'text' })
+  // after
+  classifyTarget: (world) => ({ bodyTarget: 'unselected-body', bodyKind: 'text' })
+  ```
+  
+  <!-- entry: breaking api -->
+- cfbecdb: The route grammar's double-click gesture is `doubleClick`, matching its spec kind; `dblTap` no longer parses.
+  
+  ```ts
+  // before
+  routeToSpec('[*:*] dblTap');
+  // after
+  routeToSpec('[*:*] doubleClick');
+  ```
+  
+  <!-- entry: breaking api -->
+- 9c2b3d6: The `LogicalMod` type is gone; it repeated `ModifierKey`, which `LogicalModSpec.name` now takes.
+  
+  ```ts
+  // before
+  import type { LogicalMod } from '@weasel-js/gestures';
+  // after
+  import type { ModifierKey } from '@weasel-js/gestures';
+  ```
+  
+  <!-- entry: breaking api -->
+- 03f84f2: The `ModifiersEvent` type is gone; it repeated `EventModifiers` field for field, and `matchModifiers` and `historyKey` take that.
+  
+  ```ts
+  // before
+  import type { ModifiersEvent } from '@weasel-js/gestures';
+  // after
+  import type { EventModifiers } from '@weasel-js/gestures';
+  ```
+  
+  <!-- entry: breaking api -->
+- 8457029: `mods()`, `ModifierCombo` and `modifierComboToParsed` are gone from `@weasel-js/gestures`.
+  
+  They built keys for the route-table grammar tools used before bindings, and covered only `mod`, `shift` and `alt`. A binding's modifiers are its spec's `mods` field.
+  
+  ```ts
+  // before
+  const combo = mods('shift', 'alt');            // 'shift+alt'
+  // after
+  const spec = { kind: 'click', mods: { shift: true, alt: true } };
+  ```
+  
+  <!-- entry: breaking api -->
+- 38e795b: The helpers that turn a shortcut into the keys a keycap draws say `keyLegend`, not `keySpec`, which names a key binding's gesture.
+  
+  ui's `KeySpec` type is gone; it was another name for gestures' `KeyLegend`, which ui's Keycaps entry now exports. The functions and their options type are renamed; their arguments are unchanged.
+  
+  | Before | After |
+  |---|---|
+  | `KeySpec` (ui) | `KeyLegend` |
+  | `keySpecsFromMods` | `keyLegendsFromMods` |
+  | `keySpecFromKey` | `keyLegendFromKey` |
+  | `keySpecsFromShortcut` | `keyLegendsFromShortcut` |
+  | `keySpecFromCode` | `keyLegendFromCode` |
+  | `KeySpecsFromModsOptions` | `KeyLegendOptions` |
+  | `keySpecsFromChord` (ui) | `keyLegendsFromChord` |
+  | `keySpecsFromLegend` (ui) | `keyLegendsFromFormatted` |
+  
+  ```ts
+  // before
+  const keys: KeySpec[] = keySpecsFromLegend('⇧⌘Z');
+  // after
+  const keys: KeyLegend[] = keyLegendsFromFormatted('⇧⌘Z');
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- e6b28fe: A shortcut on a digit, such as Mod+1, fires on AZERTY and other layouts whose unshifted digit row types punctuation.
+  
+  `ChordSource` gains an optional `shiftKey`: a shifted digit-row chord (Ctrl+Shift+1 typing `!`) still reads as what it typed.
+  
+  <!-- entry: fix api -->
+- 174d6ef: `chordKey`, `codeLetter`, `CHORD_MODIFIERS` and `ChordSource` moved from `@weasel-js/ui-input` to `@weasel-js/gestures`; they are unchanged.
+  
+  `@weasel-js/gestures` already exported `CHORD_MODIFIERS`; it now also exports `chordKey`, `codeLetter` and the `ChordSource` type.
+  
+  ```ts
+  // before
+  import { chordKey, codeLetter, type ChordSource } from '@weasel-js/ui-input';
+  // after
+  import { chordKey, codeLetter, type ChordSource } from '@weasel-js/gestures';
+  ```
+  
+  <!-- entry: breaking api -->
+- 95bd84c: `ANY_MODS`, a `ModSpec` with every modifier optional, is exported from gestures, routing and core.
+  
+  It is for a binding that answers whatever is held. Every bundled binding that took any modifier now uses it, in place of a copy of its own.
+  
+  <!-- entry: api -->
+- 22eec46: `fixedSeat` also answers the `scale` its containing block draws fixed boxes at.
+  
+  `clientScaleOf` moves here from `@weasel-js/routing`, which still exports it.
+  
+  <!-- entry: api -->
+- 8fd3d6d: `foldKeyRoute(parsed)` reads a parsed route's arg and modifiers the way `describeRoute` does.
+  
+  The `*` wildcard reads as `undefined`, and a key gesture's arg as the key alone, its optional modifiers folded into the route's own.
+  
+  <!-- entry: api -->
+- 5b84825: `isContextPress(e)` says whether a press opens the context menu: the secondary button, or Ctrl with the primary one on an Apple platform.
+  
+  A drag that starts on a primary press can skip one, so the `contextmenu` that follows still reaches its element:
+  
+  ```ts
+  if (!isPrimaryPress(e) || isContextPress(e)) return;
+  ```
+  
+  <!-- entry: rank=0 api -->
+- 516bc59: New `modHeld(e)` and `modKey()`: whether an event holds `mod`, Command on an Apple platform and Ctrl elsewhere, and which of the two that is.
+  
+  `matchModifiers`, `keysHeld` and the binding capture already read `mod` this way; these let a component's own handler read it the same way rather than testing `metaKey` and `ctrlKey` itself.
+  
+  <!-- entry: api -->
+- 57a59be: `heldPointers(element)` readers can `subscribe` to changes in how many pointers are held on the element.
+  
+  ```ts
+  const held = heldPointers(document.documentElement);
+  const off = held.subscribe(() => setDown(held.count() > 0));
+  ```
+  
+  <!-- entry: api -->
+- b54ab5f: The long-press store and the press ring's model live in `@weasel-js/gestures`
+  
+  `createLongPressStore`, `LongPressState`, `LongPressStore` and `PendingLongPress` are now defined in gestures; routing and core still export them. New beside them: `pressRingAt(state, now, opts)` gives the ring a held press shows at a moment, as its center, radius, width and fill, or `null` before the delay or for a press that will fire nothing. `pressRingWaitAt` says how long until it shows, and `ringArcPoints` gives the filled arc as points. Core's `createLongPressFeedbackContribution` draws that ring and keeps only the canvas part: its layer, its color, and reading `prefers-reduced-motion`.
+  
+  <!-- entry: api -->
+- 0ecff6a: `matchModifiers` and `matchSpec` default `apple` to `isApplePlatform()`, as `specificity` does.
+  
+  <!-- entry: api -->
+- 7645aaa: A WebKit trackpad pinch carries the world point under its focal point, as a wheel does.
+  
+  It is `PinchEvent.x` / `y`, and `world` in an immediate action's params and in its `InvocationCtx`.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 97f1f86: A two-finger pinch inside a `<CanvasView>` zooms about the point between the fingers, not one offset by the view's position on the canvas.
+  
+  `InvocationCtx.multiTouch.centroid` is in the CSS pixels of the view the gesture runs in, the space that view's camera anchors in.
+  
+  <!-- entry: fix -->
+- 269320b: A press on a `<summary>`, a tab, an option or a radio inside a list row or over a canvas is left to it, as a press on a button is.
+  
+  The same holds for `menuitemcheckbox` and `menuitemradio`, and Space and Enter on a radio or either menu item also stay with it. A surface that drives such children itself passes `controls: 'take'`.
+  
+  <!-- entry: fix behavior -->
+- bfc26b4: Every type a public signature names can now be written down by a consumer.
+  
+  Types the declarations named through private aliases are written out, or are geom's `Point` and `Rect`.
+  
+  <!-- entry: internal -->
+- ac8e807: `fixedSeat` places a drag ghost correctly under an ancestor that contains fixed elements without a `transform`.
+  
+  That covers the individual `scale`, `translate` and `rotate` properties, `will-change: transform`, any `container-type`, and `content-visibility: auto`.
+  
+  <!-- entry: fix -->
+- fb47e9b: `fixedSeat` answers the containing block's padding corner, so a ghost under a bordered, transformed ancestor sits on the pointer.
+  
+  <!-- entry: fix -->
+- 174d6ef: `@weasel-js/gestures` depends only on `@weasel-js/registry`, no longer on `@weasel-js/menu` or `@weasel-js/ui-input`.
+  
+  <!-- entry: rank=-5 internal -->
+- 67968c3: `bindingSpec` and `routeToSpec` throw on `hover(*)`, which used to fire on moves only; bind `hover(move)` and `hover(leave)` separately.
+  
+  <!-- entry: fix behavior -->
+- 56784d5: Comparisons of two lists entry by entry go through registry's `sameList` rather than hand-written loops.
+  
+  <!-- entry: internal -->
+- 4bda721: Own-key lookups go through registry's `getOwn` and `hasOwnKey` rather than hand-written `Object.hasOwn` checks.
+  
+  <!-- entry: internal -->
+- 24bca7a: An element with `contenteditable="plaintext-only"` keeps its own presses and typed keys, like any other editable element.
+  
+  <!-- entry: fix -->
+- bd25e62: A route binding the `)` key with an optional modifier, `keyDown()?shift)`, parses, and `keySpecRoute` writes one for such a spec instead of `null`.
+  
+  <!-- entry: fix -->
+- Updated dependencies [84028cb]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [e6871f1]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [5202a9f]
+  - @weasel-js/registry@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

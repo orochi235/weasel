@@ -1,5 +1,1139 @@
 # @weasel-js/routing
 
+## 2.0.0
+
+### Major Changes
+
+- 5099ca3: `ActionDisabledReasonValue` is gone; the type of one reason is `ActionDisabledReason`, the same name as the constant that lists them.
+  
+  ```ts
+  // before
+  import type { ActionDisabledReasonValue } from '@weasel-js/core';
+  // after
+  import type { ActionDisabledReason } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+- e5f53c6: The action factories that were spelled `make…` are `create…`, like `createResizeAction` and `createDeleteAction`.
+  
+  `makeViewportZoomAction`, `makeViewportWheelPanAction`, `makePinchZoomAction` and `makeHandleCommand` (core) and `makeToolOffhandAction` (routing) are renamed; their arguments are unchanged.
+  
+  ```ts
+  // before
+  const zoom = makeViewportZoomAction({ min: 0.1, max: 8 });
+  // after
+  const zoom = createViewportZoomAction({ min: 0.1, max: 8 });
+  ```
+  
+  <!-- entry: breaking api -->
+- 03c5f2f: Bindings, `trigger`, `begin`, `preview` and `useOngoingAction` check params against the id's `ActionParamSchema` entry, as tunings do.
+  
+  This is breaking. An id the schema names takes its whole entry, required keys included, as a record or a thunk; passing no params at all is still allowed, as a palette runs an action. An id the schema does not name takes no params, so a binding or a trigger that hands params to one either adds a schema entry for it or passes the id as `dynamicActionId(id)`, the deliberate path for an id held only at runtime. A plain `string` id is one of those.
+  
+  ```ts
+  declare module '@weasel-js/routing' {
+    interface ActionParamSchema { 'review.stamp': { size: number } }
+  }
+  
+  registry.trigger('review.stamp', { size: 2 });          // checked
+  registry.trigger('review.stamp', { size: 'wrong' });    // now an error
+  registry.trigger(dynamicActionId(item.action.id), item.params); // an id read at runtime
+  ```
+  
+  The kit's own actions that read params have entries: `insert`, `place`, `move`, `rotate`, `viewport.dragPan`, `lassoSelect`, `slice`, `measure`, `ingest`, `setFill`, `setStroke`, `setStrokeWidth`, `setVertexColor`, `simplifyPath`, `offsetPath`, `present.step`, `present.go`, `spiro.finish`, `girth.drag` and others. `AlignParams`, `FlipParams` and `SetFilletsParams` make each field optional, since each action defaults it. `holdPreviewId` returns a `DynamicActionId`, and the `actionParams` dep is typed as `ActionsRegistry['paramsOf']`.
+  
+  <!-- entry: rank=10 breaking api -->
+- 840a01b: A `claimed` entry hears only input that hit one of its own affordances; name the layers it hit-tests under other ids with `claimed: [ids]`.
+  
+  A hit is the entry's own when its `owner` is the entry's id or one of the listed ids. Input that hit another entry's layer, the kit's chrome, or nothing at all, a keystroke among it, no longer reaches a `claimed` entry's bindings. An entry relying on hearing that input declares `always` instead, or beside it. `claimed` no longer takes `false`.
+  
+  ```ts
+  // before: live for every input, like `always`
+  { id: 'my-handles', eligibility: { claimed: true }, layers: [handleLayer] }
+  // after: live for presses on the layer `handleLayer` registers
+  { id: 'my-handles', eligibility: { claimed: [handleLayer.id] }, layers: [handleLayer] }
+  ```
+  
+  <!-- entry: breaking behavior api -->
+- ab7f613: The contribution factories that were spelled bare are `create…Contribution`, as the kit's other factories are; their arguments are unchanged.
+  
+  diagram: `diagramPorts`, `diagramWaypoints`, `diagramEdgeEnds`, `diagramOffPage`, `diagramContainers` and `diagramSequence` are `createDiagramPortsContribution`, `createDiagramWaypointsContribution`, `createDiagramEdgeEndsContribution`, `createDiagramOffPageContribution`, `createDiagramContainersContribution` and `createDiagramSequenceContribution`; `reorderContribution` and `itemDropContribution` are `createReorderContribution` and `createItemDropContribution`. routing's `keymapContribution` (re-exported by core) is `createKeymapContribution`, and measure's `measurementsContribution` is `createMeasurementsContribution`.
+  
+  ```ts
+  // before
+  const ambient = [diagramPorts(), measurementsContribution(scene, measurements)];
+  // after
+  const ambient = [createDiagramPortsContribution(), createMeasurementsContribution(scene, measurements)];
+  ```
+  
+  <!-- entry: breaking api -->
+- 2729716: `DispatcherContext.isMac` is `DispatcherContext.apple`, the name every matcher and capture function gives the flag saying `mod` is Command.
+  
+  ```ts
+  // Before
+  dispatcher.resolveAll(event, { actions, depRegistry, activeToolId, hotkeyStack, entriesById, isMac: isApplePlatform() });
+  
+  // After
+  dispatcher.resolveAll(event, { actions, depRegistry, activeToolId, hotkeyStack, entriesById, apple: isApplePlatform() });
+  ```
+  
+  <!-- entry: breaking api -->
+- 966b087: `Dispatcher.getInFlightHandles()` is gone; walk `dispatcher.inFlight().values()`, the map of handles by gesture id it read from.
+  
+  ```ts
+  // before
+  for (const handle of dispatcher.getInFlightHandles()) draw(handle);
+  // after
+  for (const handle of dispatcher.inFlight().values()) draw(handle);
+  ```
+  
+  <!-- entry: breaking api -->
+- c3da9af: The Corner shape tool is now Fillet, and every name it carried changes with it; this is breaking, with no aliases.
+  
+  | Before | After |
+  |---|---|
+  | `cornerShapePreset`, `createCornerShapePreset`, preset id `'cornerShape'` | `pathTools.fillet`, `createFilletPreset`, `'fillet'` |
+  | action `editCorner`, its binding `editCorner.drag`, `editCornerAction`, `EDIT_CORNER_PARAMS`, `EditCornerParams` | `editFillet`, `editFillet.drag`, `editFilletAction`, `EDIT_FILLET_PARAMS`, `EditFilletParams` |
+  | action `setCorners`, `setCornersAction` | `setFillets`, `setFilletsAction` |
+  | action `cycleCornerShape`, `cycleCornerShapeAction`, `CYCLE_CORNER_SHAPE_PARAMS`, `CycleCornerShapeParams` | `cycleFillet`, `cycleFilletAction`, `CYCLE_FILLET_PARAMS`, `CycleFilletParams` |
+  | `CORNER_SHAPE_OPTIONS`, `DEFAULT_CORNER_SHAPE`, `DEFAULT_CORNER_TRIM_SHARE` | `FILLET_SHAPE_OPTIONS`, `DEFAULT_FILLET_SHAPE`, `DEFAULT_FILLET_TRIM_SHARE` |
+  | `CORNER_CONTROLS`, `CORNER_CONTROLS_PROMPT`, `CORNER_K_SLIDER_RANGE`, `cornerControlsParams`, `cornerControlsState`, `CornerControlsState` | `FILLET_CONTROLS`, `FILLET_CONTROLS_PROMPT`, `FILLET_K_SLIDER_RANGE`, `filletControlsParams`, `filletControlsState`, `FilletControlsState` |
+  | `useCornerControls`, `CornerControlsScene`, `CornerControlsSelection`, `UseCornerControlsReturn` | `useFilletControls`, `FilletControlsScene`, `FilletControlsSelection`, `UseFilletControlsReturn` |
+  | `createCornerWidgetsExtension`, `cornerWidgetCommands`, `cornerWidgetFrames`, `CORNER_WIDGET_STANDOFF_PX`, `CornerWidgetStyle` | `createFilletWidgetsExtension`, `filletWidgetCommands`, `filletWidgetFrames`, `FILLET_WIDGET_STANDOFF_PX`, `FilletWidgetStyle` |
+  | chrome id `path-edit.corners`, `PATH_CORNERS_CHROME_ID` | `path-edit.fillets`, `PATH_FILLETS_CHROME_ID` |
+  | toggle `pathEdit.show.corners`, `showCornersAction` | `pathEdit.show.fillets`, `showFilletsAction` |
+  | widget hit kind `corner:N`, routing's `isCornerWidget` | `fillet:N`, `isFilletWidget` |
+  | icon `path-tools:cornerShape` | `path-tools:fillet` |
+  
+  Core's CSS `corner-shape` model keeps its names: `CornerSpec`, a polygon's `corners`, `resolveCorners`, `CornerShape`, and the keywords, so saved documents load as before.
+  
+  ```ts
+  // before
+  <SceneCanvas features={['paths', cornerShapePreset]} tune={{ cycleCornerShape: { bindings: [{ kind: 'key', key: 'k' }] } }} />
+  // after
+  <SceneCanvas features={['paths', pathTools.fillet]} tune={{ cycleFillet: { bindings: [{ kind: 'key', key: 'k' }] } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- a947127: A held-key gesture spec's kind is `'keyHeld'`, camelCase like `'doubleClick'` and `'longPress'` and matching the route grammar's `keyHeld`.
+  
+  Specs built with `held('Space')` need no change. A spec written out by hand, or a binding override saved as a spec object, changes its `kind`:
+  
+  ```ts
+  // before
+  { kind: 'key-held', key: ' ' }
+  // after
+  { kind: 'keyHeld', key: ' ' }
+  ```
+  
+  <!-- entry: breaking api data -->
+- 7e5b389: The kit settings area types are read from their packages' schemas, so they are type aliases and can no longer be augmented.
+  
+  That covers `GestureKitSettings`, `CoreKitTargetSettings`, `ViewKitSettings`, `LoupeKitSettings`, `Orbit3dKitSettings`,
+  `RigKitTargetSettings` and `PathToolsKitTargetSettings`. Add a setting by augmenting `@weasel-js/react`'s `KitSettings` or `KitTargetSettings`, as before:
+  
+  ```ts
+  declare module '@weasel-js/react' {
+    interface KitTargetSettings { myHandlePx: number }
+  }
+  ```
+  
+  <!-- entry: breaking -->
+- b9f3a12: A menu row built from an action shows the action's or variant's declared `shortcut` text, as the palette and bars already did.
+  
+  `MenuItemEntry.shortcut` is `MenuShortcut | string`: a string is printed as written. Code that formats it has to handle both.
+  
+  ```ts
+  // before
+  formatShortcut(entry.shortcut);
+  // after
+  typeof entry.shortcut === 'string' ? entry.shortcut : formatShortcut(entry.shortcut);
+  ```
+  
+  <!-- entry: breaking fix -->
+- 1ba9061: The mode contribution factories are `createModeTriggersContribution` and `createModeShortcutsContribution`.
+  
+  This is a breaking rename: `modeTriggers` (core) and `modeShortcuts` (routing, re-exported by core) are gone, with no alias. Their arguments are unchanged.
+  
+  ```tsx
+  // before
+  <SceneCanvas ambient={[modeShortcuts(modes, handlers), modeTriggers(modes, { enter })]} />
+  // after
+  <SceneCanvas ambient={[createModeShortcutsContribution(modes, handlers), createModeTriggersContribution(modes, { enter })]} />
+  ```
+  
+  <!-- entry: breaking api -->
+- b750660: The remaining `*Opts` types are `*Options`: `BindingOptions`, `ZoomClampOptions`, `WheelPanOptions`, `TilePatternOptions`.
+  
+  `createViewportWheelPanAction`'s options (formerly `makeViewportWheelPanAction`), which were `WheelPanOptions`, are now `ViewportWheelPanOptions`; `WheelPanOptions` is `wheelPan()`'s, which were `WheelPanOpts`. Only type names change.
+  
+  ```ts
+  // before
+  import type { BindingOpts, WheelPanOptions, WheelPanOpts } from '@weasel-js/core';
+  // after
+  import type { BindingOptions, ViewportWheelPanOptions, WheelPanOptions } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+- e49aa18: Balance handles is now Poise, and every name it carried changes with it; this is breaking, with no aliases. Equalize handles keeps its name.
+  
+  | Before | After |
+  |---|---|
+  | `balancePreset`, `createBalancePreset`, preset id `'balance'` | `pathTools.poise`, `createPoisePreset`, `'poise'` |
+  | action `balanceHandles`, its binding `balanceHandles.drag`, `balanceHandlesAction` | `poiseHandles`, `poiseHandles.drag`, `poiseHandlesAction` |
+  | chrome id `path-edit.balance`, `PATH_BALANCE_CHROME_ID` | `path-edit.poise`, `PATH_POISE_CHROME_ID` |
+  | toggle `pathEdit.show.balance`, `showBalanceAction` | `pathEdit.show.poise`, `showPoiseAction` |
+  | `createBalanceExtension`, `balanceCommands`, `PathEditBalanceStyle` | `createPoiseExtension`, `poiseCommands`, `PathEditPoiseStyle` |
+  | grip hit kind `balance:N`, routing's `isBalanceGrip` | `poise:N`, `isPoiseGrip` |
+  | `handleBalances`, `HandleBalance`, `balanceFactorToward` (`@weasel-js/geom`) | `poiseLines`, `PoiseLine`, `poiseFactorToward` |
+  | icon `path-tools:balanceHandles` | `path-tools:poise` |
+  
+  ```ts
+  // before
+  const balance = createBalancePreset({ color: '#a0f' });
+  <SceneCanvas features={['paths', balance]} tune={{ balanceHandles: { bindings: [{ kind: 'key', key: 'b' }] } }} />
+  // after
+  const poise = createPoisePreset({ color: '#a0f' });
+  <SceneCanvas features={['paths', poise]} tune={{ poiseHandles: { bindings: [{ kind: 'key', key: 'b' }] } }} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 17d184b: The helpers that run an action's `enabled` and `active` predicates safely are `checkEnabled` and `checkActive`.
+  
+  `evaluateEnabled` and `evaluateActive` (routing, re-exported by core) are renamed `checkEnabled` and `checkActive`; their arguments and results are unchanged.
+  
+  ```ts
+  // before
+  const enabled = evaluateEnabled(action, deps);
+  // after
+  const enabled = checkEnabled(action, deps);
+  ```
+  
+  <!-- entry: breaking api -->
+- cabffe5: The function that builds the deps bag an action declares is `createActionDeps`.
+  
+  `buildDepsFromRequires` (routing, re-exported by core) is renamed `createActionDeps`; its arguments are unchanged.
+  
+  ```ts
+  // before
+  const deps = buildDepsFromRequires(action, registry);
+  // after
+  const deps = createActionDeps(action, registry);
+  ```
+  
+  <!-- entry: breaking api -->
+- f92300d: The sweep action's factory is `createSweepAction`, like the repo's other action factories.
+  
+  `sweepAction` (routing, re-exported by core) is renamed `createSweepAction`; its options are unchanged.
+  
+  ```ts
+  // before
+  registry.register(sweepAction({ ...opts }));
+  // after
+  registry.register(createSweepAction({ ...opts }));
+  ```
+  
+  <!-- entry: breaking api -->
+- 76ca845: The type a tool declares its options with is `ToolOptionsSpec`, since it is a declaration of the options rather than a bag of their values.
+  
+  `ToolOptions` (routing, re-exported by core) is renamed `ToolOptionsSpec`; its fields are unchanged.
+  
+  ```ts
+  // before
+  export const LASSO_TOOL_OPTIONS: ToolOptions = { actionId: 'lasso', prefs };
+  // after
+  export const LASSO_TOOL_OPTIONS: ToolOptionsSpec = { actionId: 'lasso', prefs };
+  ```
+  
+  <!-- entry: breaking api -->
+- 97cce9d: The many-at-once selection mode is `'multiple'` everywhere, as React Aria spells it, and a mode prop is `selectionMode`.
+  
+  `SelectionMode` is `'single' | 'multiple'`, so `useSelection`'s `mode`, `selectionOptions` and `<SceneCanvas selectionMode>` take `'multiple'` in place of `'multi'`. `<ItemList>`'s `selection` prop, `ListModeInput.selection` and the HUD list's `selection` option are `selectionMode`.
+  
+  ```tsx
+  // before
+  useSelection({ scene, mode: 'multi' });
+  <ItemList rows={rows} selection="multi" />
+  // after
+  useSelection({ scene, mode: 'multiple' });
+  <ItemList rows={rows} selectionMode="multiple" />
+  ```
+  
+  <!-- entry: breaking api -->
+- 27704ec: `SWEEP_BINDING` is `SWEEP_SPEC`, since it is a gesture spec with no action rather than a binding.
+  
+  ```ts
+  // before
+  sweepAction({ binding: { ...SWEEP_BINDING, mods: { shift: true } } });
+  // after
+  sweepAction({ binding: { ...SWEEP_SPEC, mods: { shift: true } } });
+  ```
+  
+  <!-- entry: breaking api -->
+- 02f9570: `startThresholdDrag` names its callbacks for a drag's start and end, as a pointer session does: `onActivate` is `onStart` and `onCommit` is `onEnd`.
+  
+  ```ts
+  // before
+  startThresholdDrag(e, { onActivate: begin, onMove: follow, onCommit: finish });
+  // after
+  startThresholdDrag(e, { onStart: begin, onMove: follow, onEnd: finish });
+  ```
+  
+  <!-- entry: breaking api -->
+- ae7d97c: A tool palette shows the key that activates each tool now: a key rebound through `bindingOverrides` shows rebound.
+  
+  `ToolsApi.shortcuts` holds each tool's live keys, read from the `tool.activate` bindings in the canvas's actions scope, or with no scope the keys the tools declare. `ToolPalette` reads it; its `lookupShortcut` prop and `ToolPresentation.shortcut` are gone. A hand-built `ToolsApi` needs a `shortcuts` field, which `declaredToolShortcuts(registry)` makes, and `toolShortcutsOf(actions, ids)` reads the same keys from an action list.
+  
+  ```tsx
+  // before
+  <ToolPalette tools={tools} lookupShortcut={(id) => myLookup(id)} />
+  // after
+  <ToolPalette tools={tools} />
+  ```
+  
+  <!-- entry: rank=10 breaking api fix -->
+- 475c725: `ViewportGestureKind` is `ViewportMoveKind`, since its values `'pan'` and `'zoom'` are actions, not gestures.
+  
+  ```ts
+  // before
+  import type { ViewportGestureKind } from '@weasel-js/core';
+  // after
+  import type { ViewportMoveKind } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- 617fd6c: New `actionItemShortcuts(item)`: an `ActionItem`'s declared `shortcut` text, else the bindings `actionShortcuts` finds for it.
+  
+  It looks bindings up with the item's params.
+  
+  The command palette, `Prefs` action rows, and the pref schema editor read their hints through it.
+  
+  <!-- entry: api -->
+- 8d7296a: `actionShortcuts(action, params, kind)` can list only an action's pressed keys (`'key'`) or only its held ones (`'keyHeld'`).
+  
+  <!-- entry: api -->
+- 643c699: A move behavior can set the cursor a drag shows, by returning `cursor` from `onMove`.
+  
+  The latest behavior to name one wins, and the drag falls back to the move action's own cursor when none does. The cursor follows a change a behavior makes with the pointer held still, such as a dwell timer arming, as soon as the gesture's handle says it changed.
+  
+  <!-- entry: api new -->
+- f4d8b83: A key binding can declare `inFields: true` to hear a Ctrl or Cmd chord typed in a text field.
+  
+  Every other key binding still leaves a key typed in a field to the field.
+  
+  ```ts
+  defaultBinding: [{ spec: { kind: 'key', key: 's', mods: { mod: true } }, opts: { inFields: true } }],
+  ```
+  
+  <!-- entry: new api -->
+- 4a642f5: An action's `defaultBinding` entry and a tuning's binding may be written `{ spec }`, with no `opts`, as a `GestureBinding` may.
+  
+  <!-- entry: api -->
+- 03c5f2f: `defineAction` and `useCommand` type an action's invoker, gates and variants by its id's `ActionParamSchema` entry, with no cast.
+  
+  ```ts
+  const stamp = defineAction({
+    id: 'review.stamp',
+    label: 'Stamp',
+    invoker: { timing: 'immediate', run: (deps, params) => stampAt(deps, params?.size ?? 1) },
+  });
+  ```
+  
+  Each param may be absent where the action reads it, since a palette passes none and a tuning lays only some. `ImmediateInvoker`, `OngoingInvoker`, `OngoingHandle`, `InvocationCtx`, `BindingOptions` and `UiOngoingControl` take the params type as a parameter, defaulting to an open record. `bindAction(spec, id, opts)` builds a checked binding for an id a literal cannot name alone, such as `` `${kind}.drag` ``, and `bindingOptionsOf(binding)` reads any binding's options as an open record.
+  
+  <!-- entry: rank=5 new api -->
+- 47fa777: Dep sources can be ranked: `register` takes a `rank`, and `<DepRank>` ranks every source beneath it.
+  
+  A tier of sources stays over a lower one whatever order they mounted in.
+  
+  ```tsx
+  <DepRank rank={1}>
+    <PluginDeps />
+  </DepRank>
+  ```
+  
+  Sources under one name stack by rank, then by age; the default is 0. `rankedDepRegistry(registry, rank)` is the same without React.
+  
+  <!-- entry: api -->
+- 8d7296a: `describeShortcuts(registry.list(), { tools, toolSets })` gives every bound key as a shortcut sheet lists it.
+  
+  Tool keys come by tool set, command keys by action group, and held keys apart.
+  
+  <!-- entry: api -->
+- 2f56e64: `useGestureDispatcher` takes `keyboard: 'page'`: keys heard after the focused element's own handlers and before any dispatcher on `window`.
+  
+  <!-- entry: api -->
+- 95ca540: `useElementSize` and `ElementSizeOptions` move from `@weasel-js/core` to `@weasel-js/routing/react`.
+  
+  This is breaking: import them from `@weasel-js/routing/react`, which also names the size it returns, `ElementSize`. `useCanvasSize` stays in core.
+  
+  <!-- entry: breaking api -->
+- 180ec74: A mode that bars an action bars its menu row, palette entry and bar button too, and `ActionsRegistry.trigger` refuses it.
+  
+  A dispatcher given `getRuleCtx` publishes it as the new `ruleCtx` dep, and `eligibleNow(action, ruleCtx)` asks an action's `eligible` rule against it outside dispatch.
+  
+  <!-- entry: fix api -->
+- 7e5b389: `gestureKitSettingsSchema` is the `gestures` kit settings area as a prefs group.
+  
+  `coreKitSettingsSchema` nests it, as before.
+  
+  <!-- entry: api -->
+- 95bd84c: `ANY_MODS`, a `ModSpec` with every modifier optional, is exported from gestures, routing and core.
+  
+  It is for a binding that answers whatever is held. Every bundled binding that took any modifier now uses it, in place of a copy of its own.
+  
+  <!-- entry: api -->
+- 3a1bfaa: `useHandleDrag` and its types move from `@weasel-js/core` to `@weasel-js/routing/react`.
+  
+  This is breaking: import `useHandleDrag`, `HandleDragPoint`, `HandleDragEnd`, `UseHandleDragOptions` and `UseHandleDragReturn` from `@weasel-js/routing/react`. The hook is unchanged.
+  
+  <!-- entry: breaking api -->
+- 76c5562: An immediate action that declares modifier roles reads them from `params.roles`, as an ongoing action reads `ctx.roles`.
+  
+  Tunings and the binding's `opts.roles` apply, and `'mod'` is resolved for the platform.
+  
+  <!-- entry: api -->
+- 7e5b389: A settings page built from the kit settings schemas shows help text on the gesture, target, view, loupe and orbit rows.
+  
+  <!-- entry: new -->
+- e72e26a: A menu's `over` (`MenuSources` in routing, `BarMenuSources` in ui) takes a `PrefSection` as well as a `PrefGroup`.
+  
+  <!-- entry: api -->
+- 3f575e2: The new `OngoingHandle.subscribe` lets a handle say what it shows changed between inputs, and the dispatcher redraws.
+  
+  <!-- entry: api -->
+- 7645aaa: A WebKit trackpad pinch carries the world point under its focal point, as a wheel does.
+  
+  It is `PinchEvent.x` / `y`, and `world` in an immediate action's params and in its `InvocationCtx`.
+  
+  <!-- entry: api -->
+- 4c8749c: A condition test can read its path from the group its node is declared in, so a settings group mounts anywhere.
+  
+  ```ts
+  axis: pref.enum('Axis', 'x', ['x', 'y'], { enableIf: { from: 'group', path: 'on' } }), // reads <group>.on
+  ```
+  
+  `applyPrefConditions`, `prefStatusAt`, `checkPrefConditions`, settings menus and labkit's `configFromPrefs` resolve these tests themselves. Code that evaluates a schema's conditions any other way resolves them first with `resolvePrefGroupConditions(schema)`, or `prefConditionInGroup(condition, group)` for one condition; one that reaches a reader unresolved warns. `checkPrefCondition` checks one against `site.group`, which the schema editor's marks and `PrefConditionEditor`'s new `group` prop supply (`conditionGroupAt` finds it).
+  
+  <!-- entry: api -->
+- 8602bbc: `subscribeRefusals` hears a keystroke that reached a command only to have its `enabled` refuse it, with the action and its reason.
+  
+  It is heard a task after the keystroke, and not at all for an autorepeat or for a keystroke something on the page took with `preventDefault` in the meantime. A dispatcher reports one through the new `DispatcherContext.refused`.
+  
+  <!-- entry: rank=5 new api -->
+- 46ec294: `alwaysOn(entry)` marks an entry live under any tool, as `useTools` marks its `ambient` entries.
+  
+  <!-- entry: api -->
+- 19387a6: `clientToCanvasRect` divides out the `scale` of a box that carries one, as `layoutBoxOf` returns.
+  
+  A box measured once then maps a client point the way `clientToCanvas` does; a bare `DOMRect` maps unscaled, as before.
+  
+  <!-- entry: api -->
+- 07f5db2: `@weasel-js/routing` exports `DEFAULT_KEYMAP_UNBOUND`, the `gestures.keymapUnbound` kit setting's default.
+  
+  It is what an open keymap does with a key it does not bind when neither the keymap nor the setting says; core's kit settings schema reads its default from it.
+  
+  <!-- entry: api -->
+- 83ad38f: `openPointerSession` takes `escape: true` to end a drag as canceled on Escape, reported as `'escape'`.
+  
+  <!-- entry: api new -->
+- 82e481d: The actions registry and the dep registry each hand out a `reflection` of what is registered at their own scope.
+  
+  `useActionsRegistry()?.reflection` and `useDepRegistry().reflection` are `@weasel-js/registry` reflections: each id or dep name with its live registrant and the ones it displaced, for a debug overlay or a conflict check. They cover the scope itself, not the ones above or below it. Both members are optional on the interfaces, so a hand-built registry may leave them out.
+  
+  <!-- entry: api -->
+- bfc26b4: Five types routing's signatures already named are exported.
+  
+  `KeyBindingEvent` (`matchesKeyBinding`), `CaptureThresholds` (`CaptureGestureOptions`), `ActionsNode` (`Yoke`), `ScopeTree` (`ScopeNode`) and `LastOperationHost` (`LastOperationKeeper`).
+  
+  `ActionsNode`, `ScopeTree` and `LastOperationHost` come from `@weasel-js/routing/react`, beside `ScopeNode` and `DepNode`.
+  
+  <!-- entry: api -->
+- d569abf: `scrolledPlaceOf(el, scroller)` gives where an element sits in a scroller's content, in the scroller's own px.
+  
+  It divides out any scale an ancestor transform draws the two at, so the answer can be written to `scrollTop` or a style as it is.
+  
+  <!-- entry: api -->
+- 7e90922: `swallowNextClick` moves from `@weasel-js/ui` to `@weasel-js/routing`, beside `swallowClick`, which swallows the next click until disarmed.
+  
+  ```ts
+  // before
+  import { swallowNextClick } from '@weasel-js/ui';
+  // after
+  import { swallowNextClick } from '@weasel-js/routing';
+  ```
+  
+  It now cancels the click's default action as well; pass `{ keepDefault: true }` to only stop it reaching listeners, as before.
+  
+  <!-- entry: breaking api -->
+- f9427e6: `startThresholdDrag` and its `ThresholdDragOptions` and `ThresholdDragHandle` types move from `@weasel-js/core` to `@weasel-js/routing`.
+  
+  This is breaking: import them from `@weasel-js/routing`. The function itself is unchanged.
+  
+  ```ts
+  import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
+  ```
+  
+  <!-- entry: breaking api -->
+- dd7e196: `toolGaps(tool)` lists what a tool's definition leaves out, for a test that every tool a package ships is complete.
+  
+  It names a missing label, icon, palette group, cursor, hook name, binding or binding id, and, given `registered`, an action a binding names that nothing registers.
+  
+  ```ts
+  expect(toolGaps(tool, (id) => registry.list().some((a) => a.id === id))).toEqual([]);
+  ```
+  
+  <!-- entry: api -->
+- 87d7436: A tool's options show on the last-operation panel after it runs: a rectangle's fill, stroke and width, a sticky note's paper and ink.
+  
+  Changing one there redraws the shape and keeps the value as the tool's option, shared or its own as the tool declares it. Every tool with `ToolDef.options` gets this, in every package. The mechanism is a new `ActionTuning.form`: the params a tuning supplies, as a form the panel draws beside the action's own `params`. An action with no `params` of its own that a tuning gives a form is kept as the last operation too.
+  
+  ```ts
+  registry.tune('widen', { params: () => ({ tint }), form: TINT_FORM, keep: (p) => saveTint(p.tint) });
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- 95ca540: `useScopedTools`, the tool-option hooks and `tuneToolOptions` move from `@weasel-js/core` to `@weasel-js/routing`.
+  
+  This is breaking: import `useScopedTools`, `useToolOptionParams`, `useToolOptionValues` and `useToolOptionTunings` from `@weasel-js/routing/react`, and `tuneToolOptions` from `@weasel-js/routing`. `ToolsScope`, `usePublishTools` and `useCanvasToolOptionValues`, which a canvas uses to publish its tools and options, are exported there too.
+  
+  <!-- entry: breaking api -->
+- 8d7296a: A tool set can carry a `label`, and every set the kit ships has one: `toolSet('make', ids, { label: 'Make' })`.
+  
+  A shortcut sheet heads a set's tools with it, and `withoutTools` keeps it.
+  
+  <!-- entry: api -->
+- 41f0773: `usePageActions(actions, enabled?)` binds actions' keys on the page with no provider above it
+  
+  It owns its own actions registry and a dispatcher with no element, hearing keys as `keyboard: 'page'` does: after a focused widget's own handlers, and ahead of every dispatcher on `window`. A disabled action leaves its key to the rest of the page. For a hook or a page that has no actions registry to put its keys on.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- cd84e27: An action whose `settings.read` throws warns in development, once per action, as a throwing `enabled` or `active` does.
+  
+  Its settings still show no values.
+  
+  <!-- entry: fix -->
+- 7f25db9: An augmentation of `DepSchema` or `ActionParamSchema` against `'@weasel-js/routing'` merges in every program, kernel3d's own included.
+  
+  Augment `'@weasel-js/routing'`, which declares both, and list it among your dependencies. An augmentation of core's re-export merges into a separate copy, so lint now rejects one.
+  
+  ```ts
+  // before
+  declare module '@weasel-js/core' { interface DepSchema { color: ColorApi } }
+  // after
+  declare module '@weasel-js/routing' { interface DepSchema { color: ColorApi } }
+  ```
+  
+  <!-- entry: fix -->
+- e72e26a: An alias inside a `PrefsBar` menu group resolves against a `PrefSection` given as `over`, so it shows in the menu as it does on the line.
+  
+  <!-- entry: fix -->
+- 0090147: `ActionsRegistry.begin` no longer starts an action whose `eligible` rule or `enabled` refuses it. That reaches `useOngoingAction` too, and matches `trigger`.
+  
+  <!-- entry: fix -->
+- 97f1f86: A two-finger pinch inside a `<CanvasView>` zooms about the point between the fingers, not one offset by the view's position on the canvas.
+  
+  `InvocationCtx.multiTouch.centroid` is in the CSS pixels of the view the gesture runs in, the space that view's camera anchors in.
+  
+  <!-- entry: fix -->
+- 7199e23: `captureGesture` holds a click back for the whole of a `doubleClickMs` longer than 2³¹ − 1 ms, instead of taking it as a single click at once.
+  
+  <!-- entry: fix -->
+- 88f90f5: `captureGesture` captures a middle or secondary drag, giving the `drag` spec its `button`. It also reads a pen's eraser as the primary button, as the dispatcher does.
+  
+  <!-- entry: fix -->
+- df7ba95: `captureGesture` resolves to a pending click, not the key, when a key comes in its double-click window.
+  
+  <!-- entry: fix -->
+- da5f6da: `captureGesture` keeps a press still held when it settles from the page until the pointer comes up. That covers its moves, its release, and the click after it, whether Escape, an abort, a key, or a right press's menu settled it.
+  
+  <!-- entry: fix -->
+- 5477214: Core and routing depend on `@weasel-js/prefs-schema` instead of `@weasel-js/prefs`, so they no longer install the prefs store or storage
+  
+  Neither imported the store; they declare action params, tool options and node properties with the schema alone. An app that opens a prefs store still lists `@weasel-js/prefs` itself.
+  
+  <!-- entry: perf -->
+- bfc26b4: Every type a public signature names can now be written down by a consumer.
+  
+  Types the declarations named through private aliases are written out, or are geom's `Point` and `Rect`.
+  
+  <!-- entry: internal -->
+- 53ba27c: A drag-threshold action's handle is heard when what it shows changes, so the canvas repaints. A move's container-snap dwell elapsing with the pointer held still is one such change.
+  
+  <!-- entry: fix -->
+- de462a6: A drag-threshold action whose `start` ends every gesture has the handle it returns canceled. That covers a `cancelAll`, a tool switch, or an unmount inside `start`, as for an action with no threshold.
+  
+  <!-- entry: fix -->
+- 3833307: A dispatch record whose walk stopped on a misbound action records nothing as fired, as its `unhandled` outcome says.
+  
+  <!-- entry: fix -->
+- 85fd57d: A view dispatcher that unmounts stops being watched, even when another view target shares the root's dispatcher.
+  
+  <!-- entry: fix -->
+- 711be7d: An OS drag's drop preview and `weasel-dropover` class stay up while the drag moves onto a child of the dispatcher's element.
+  
+  <!-- entry: fix visual -->
+- 6416860: A tool held on its hotkey steps its own size and strength with `[`, `]`, and Shift+wheel.
+  
+  The active tool under it no longer does.
+  
+  <!-- entry: fix -->
+- 0aa5132: A `holdPreview` hold follows the live action for its id. Muting the action mutes its hold, and the hold previews and runs with the action's tunings and whatever replaced it.
+  
+  <!-- entry: fix -->
+- 7ba3e69: A `holdPreview` hold whose action's preview throws logs the error and still runs the action on release, as `ActionsRegistry.preview` does.
+  
+  <!-- entry: fix -->
+- e7561c7: An immediate action gets `params.mods`, `params.roles` and `params.viewId` on every kind of input, not only pointer input. Keys, held keys, wheels, pinches, multitouch taps, drops, and pastes now carry them as clicks do, and `params` is no longer `undefined` when the binding has none.
+  
+  <!-- entry: fix -->
+- daf6f2e: A keymap's hint lists a key bound with Ctrl or Meta, in words like `Control-1`, rather than leaving it out. This holds for `describeKeymap` and `useOpenKeymap`, pressed or held.
+  
+  <!-- entry: fix -->
+- 595b596: `createKeymapContribution` throws on a keymap binding a held Escape, as it does for a pressed one. Escape always closes the keymap first, so the binding could never run.
+  
+  <!-- entry: fix -->
+- 6b7317b: The last-operation panel closes when another tool is picked, if the operation was a tool's drag.
+  
+  A Cloth Warp, Plane Warp or Knead drag left its settings up after the user moved to another tool, where changing them still replayed that drag. An operation a command made still stays until something else reaches the history. Holding a tool on its hotkey does not count as picking another.
+  
+  <!-- entry: fix -->
+- 181fbb3: The last-operation panel keeps an action param whose path is `toString` or `__proto__`, filling it from its default when the run gave none.
+  
+  <!-- entry: fix -->
+- 24fe665: Adjusting the last operation reruns the action only where `trigger` would run it. An `eligible` rule that bars it now, or a run that returns `'pass'`, leaves the operation as it was.
+  
+  <!-- entry: fix -->
+- 082dd1d: Adjusting the last operation no longer undoes it when the action throws on the rerun. The operation stays as it was, and the panel lets it go.
+  
+  <!-- entry: fix -->
+- 79bd6cc: `LastOperationPanel` and `useLastOperation` work with a `LastOperationStore` written as a class.
+  
+  <!-- entry: fix -->
+- b54ab5f: The long-press store and the press ring's model live in `@weasel-js/gestures`
+  
+  `createLongPressStore`, `LongPressState`, `LongPressStore` and `PendingLongPress` are now defined in gestures; routing and core still export them. New beside them: `pressRingAt(state, now, opts)` gives the ring a held press shows at a moment, as its center, radius, width and fill, or `null` before the delay or for a press that will fire nothing. `pressRingWaitAt` says how long until it shows, and `ringArcPoints` gives the filled arc as points. Core's `createLongPressFeedbackContribution` draws that ring and keeps only the canvas part: its layer, its color, and reading `prefers-reduced-motion`.
+  
+  <!-- entry: api -->
+- 3c8e227: The gesture dispatcher waits out a long-press `duration` past 2³¹ − 1 ms, and never fires on an infinite one.
+  
+  <!-- entry: fix -->
+- 44148c3: A menu leaves out an object, list, map, union, field or paint leaf when nothing reads its value, as it does a color, instead of throwing.
+  
+  <!-- entry: fix -->
+- dc710e2: A mode whose `defaultTool` names an ambient tool leaves the active tool as it is.
+  
+  Mounting in or entering that mode no longer throws `setActive: "…" not in registry`.
+  
+  <!-- entry: fix -->
+- fa288ff: A modifier role moved to another key by a tuning or `opts.roles` can be held from the press on its new key.
+  
+  It applies wherever the binding let the role's declared key be held from the press.
+  
+  <!-- entry: fix -->
+- 02087eb: A multitouch gesture whose action has no `onMove` runs once from touch to lift, instead of committing and starting over on every move.
+  
+  <!-- entry: fix -->
+- 9a3e262: `useOpenKeymap` and `KeymapHint` update while a keymap stays open as its keys are rebound or its actions relabeled.
+  
+  <!-- entry: fix -->
+- fa5c2d9: A binding override named by position (`<action>@<n>`) reaches only the action's own bindings, never a key a tuning added.
+  
+  A key a tuning adds is overridden by its `opts.id`.
+  
+  <!-- entry: fix -->
+- 4810ef4: A binding override that is not a route warns with what to pass instead, such as `key('Mod+Z')` for a shortcut string.
+  
+  <!-- entry: fix -->
+- 4bda721: Own-key lookups go through registry's `getOwn` and `hasOwnKey` rather than hand-written `Object.hasOwn` checks.
+  
+  <!-- entry: internal -->
+- d7de41f: `ActionsRegistry.paramsOf` answers from the active scope, as `trigger` runs, so chrome above a canvas sees the tunings the canvas's scope set.
+  
+  <!-- entry: fix -->
+- f41f7ed: `resolveOnly`, `resolveAll`, and `explain` follow an open keymap's routing, as a dispatch does. A hover cursor or long-press ring no longer promises a drag or a key the keymap withholds.
+  
+  <!-- entry: fix -->
+- e04e543: `browserReservedChord` reports a key binding whose physical `code` lands on a reserved chord, such as `code: 'KeyR'` with `mod`, which is reload.
+  
+  <!-- entry: fix -->
+- b425d50: Route conflict reports keep two conflicts apart when their owners' ids join alike.
+  
+  <!-- entry: fix -->
+- d962a91: `reportRouteConflicts` no longer reports two `hover` bindings on one input, since every live hover binding runs on each move.
+  
+  <!-- entry: fix -->
+- 16eca51: A `weasel.debug` flag listing `*` among other namespaces, such as `tools,*`, turns on every namespace.
+  
+  <!-- entry: fix -->
+- 08512ea: `useElementSize` watches its element through react's `watchResize`.
+  
+  <!-- entry: internal -->
+- e0bea5a: `@weasel-js/routing`'s main entry loads without React installed, as its optional peer dependency promises.
+  
+  <!-- entry: fix -->
+- 82f3868: A menu row for an encoded boolean or enum kept in a map under a key holding a `.` shows and writes its value from the right entry.
+  
+  <!-- entry: fix -->
+- 6c1ea88: An offhand trigger naming a modifier in any case, such as `'control'`, leaves the tool's bindings working while it is held.
+  
+  <!-- entry: fix -->
+- 87a8b06: The dev-mode route-conflict warning covers actions registered later and bindings that change under the same entry id.
+  
+  <!-- entry: fix -->
+- 36a20d4: When one of two canvases holding the same selection unmounts, readers of the ambient selection keep showing it.
+  
+  <!-- entry: fix -->
+- 410ba5e: A context menu's settings submenu runs its action at the point the menu opened at, as the action's plain row does.
+  
+  <!-- entry: fix -->
+- 4e4ddb5: Tool ids, option keys and pref path segments named `__proto__` or `constructor` are read as their own entries, never as built-ins.
+  
+  `toolOptionsPrefs`, `toolShortcutsOf`, `declaredToolShortcuts` and `useTools` keep a tool named `__proto__` as an entry, and `heldModifierOf('constructor')` is `null`.
+  
+  <!-- entry: fix -->
+- 9d459cd: `createToolOptionValues` notifies nobody when an option is written the value it already holds.
+  
+  <!-- entry: fix -->
+- 31dd479: A tool palette shared by several canvases shows the newest canvas still mounted when the canvas it showed unmounts, rather than going blank.
+  
+  <!-- entry: fix -->
+- 0177219: Readers of saved shapes take only a plain object where they expect a record, as registry's `isPlainObject` says.
+  
+  That is scene snapshots and documents, DTCG color values, diagram theme files and compound menu values. A class instance, `Map` or `Date` in their place, which no JSON text can produce, is now refused as a wrong shape instead of read as a record.
+  
+  <!-- entry: rank=-5 behavior -->
+- 6a9b37e: A brush size shared through `toolOptionsPrefs` keeps any value a sharing tool allows, and each tool reads it held to its own bounds.
+  
+  The shared leaf takes the widest `min`, `max`, and `endless` of every tool naming the key, so a prefs store no longer clamps a large brush's size to a small brush's max.
+  
+  <!-- entry: fix -->
+- 1a9548b: A sweep enters each item once while the pointer stays on it, even when `keyOf` builds a new key object on every call.
+  
+  <!-- entry: fix -->
+- 67cb364: An Escape pressed to close an IME candidate window during a `startThresholdDrag` drag goes to the composition and leaves the drag running.
+  
+  <!-- entry: fix -->
+- 8ec6662: `defineTool` and `toolOptionsPrefs` throw for a tool with options whose id is `shared` or starts with `shared.`.
+  
+  Its options would mix into the ones every tool shares.
+  
+  <!-- entry: fix -->
+- 7a75fd1: `]` on a brush held at its own max leaves the size it shares with other brushes as it was.
+  
+  <!-- entry: fix -->
+- e063817: A tool option's step holds the value to its leaf's bounds with prefs-schema's `prefClampNumber`, as a prefs form does.
+  
+  <!-- entry: internal -->
+- b2d7ddb: Options of a tool whose id has a dot, such as `path.brush`, read back from a prefs store.
+  
+  `toolOptionsPrefs` nests the tool's group a level per dot, where `prefsToolOptionValues` reads it.
+  
+  `toolOptionsPrefs` throws, naming the option, for an option key or shared key with a dot, and for a tool whose options would land inside another tool's option.
+  
+  <!-- entry: fix -->
+- a0d7dfc: A `beginUiOngoing` that commits the action's prior handle tells subscribers it ended, even when the new handle never starts.
+  
+  <!-- entry: fix -->
+- 7d77794: `beginUiOngoing` cancels the handle and returns `null` when the action's `start` ends every gesture itself.
+  
+  <!-- entry: fix -->
+- 0c18df0: `useTools` throws when a `registry` key differs from its tool's `id`, or when two different tool objects share an id.
+  
+  Calls that used to pass silently now throw: a tool keyed under another name could never become active, and a second tool with a taken id quietly replaced the first. The same tool object in both `registry` and `ambient` still merges.
+  
+  <!-- entry: fix behavior -->
+- abdc064: A Safari trackpad pinch zooms only the nested surface that takes it, such as a minimap over a canvas, rather than both.
+  
+  <!-- entry: fix -->
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [d764d06]
+- Updated dependencies [a98ad34]
+- Updated dependencies [5f856dc]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [e6b28fe]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [9249b26]
+- Updated dependencies [97f1f86]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [174d6ef]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [29d293c]
+- Updated dependencies [269320b]
+- Updated dependencies [c3da788]
+- Updated dependencies [ece64a6]
+- Updated dependencies [d8007e8]
+- Updated dependencies [d917fd4]
+- Updated dependencies [b4acc4d]
+- Updated dependencies [37c0385]
+- Updated dependencies [fcc5602]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [935346c]
+- Updated dependencies [0046729]
+- Updated dependencies [fcc5602]
+- Updated dependencies [f6ee3ea]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [b6863aa]
+- Updated dependencies [36dac61]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [ac8e807]
+- Updated dependencies [fb47e9b]
+- Updated dependencies [8257aa7]
+- Updated dependencies [8c2d558]
+- Updated dependencies [65e8ece]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [a947127]
+- Updated dependencies [95bd84c]
+- Updated dependencies [b7e560b]
+- Updated dependencies [174d6ef]
+- Updated dependencies [cfbecdb]
+- Updated dependencies [9c2b3d6]
+- Updated dependencies [03f84f2]
+- Updated dependencies [8457029]
+- Updated dependencies [22eec46]
+- Updated dependencies [8fd3d6d]
+- Updated dependencies [5b84825]
+- Updated dependencies [516bc59]
+- Updated dependencies [2338cee]
+- Updated dependencies [57a59be]
+- Updated dependencies [8887919]
+- Updated dependencies [6943c8d]
+- Updated dependencies [0e9f123]
+- Updated dependencies [9078cfb]
+- Updated dependencies [ff75b6f]
+- Updated dependencies [19d0c9f]
+- Updated dependencies [a2f20ae]
+- Updated dependencies [fb96bd3]
+- Updated dependencies [17fa534]
+- Updated dependencies [53a1558]
+- Updated dependencies [f50c6d9]
+- Updated dependencies [4fb24ca]
+- Updated dependencies [aedb49f]
+- Updated dependencies [10dd276]
+- Updated dependencies [c6f965b]
+- Updated dependencies [3c7a87a]
+- Updated dependencies [1b00300]
+- Updated dependencies [22b57c5]
+- Updated dependencies [2e12700]
+- Updated dependencies [67968c3]
+- Updated dependencies [158f868]
+- Updated dependencies [ffcde61]
+- Updated dependencies [19f8e39]
+- Updated dependencies [c57e67c]
+- Updated dependencies [201d32f]
+- Updated dependencies [8e43f3f]
+- Updated dependencies [5ffc43b]
+- Updated dependencies [813a306]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [df2ae04]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [67f9f88]
+- Updated dependencies [bc67ae1]
+- Updated dependencies [38e795b]
+- Updated dependencies [e6871f1]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [7863d23]
+- Updated dependencies [de8f61d]
+- Updated dependencies [56784d5]
+- Updated dependencies [b54ab5f]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [0ecff6a]
+- Updated dependencies [de8f61d]
+- Updated dependencies [cbf6ee4]
+- Updated dependencies [15e923d]
+- Updated dependencies [6a59fd6]
+- Updated dependencies [e90dcff]
+- Updated dependencies [3a3ea2d]
+- Updated dependencies [faf09b2]
+- Updated dependencies [7977b94]
+- Updated dependencies [b9f3a12]
+- Updated dependencies [174d6ef]
+- Updated dependencies [577b207]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [10ba95e]
+- Updated dependencies [7618831]
+- Updated dependencies [c3a9456]
+- Updated dependencies [cd290f3]
+- Updated dependencies [2907e97]
+- Updated dependencies [9b7a29c]
+- Updated dependencies [3cdeca9]
+- Updated dependencies [d9af6f2]
+- Updated dependencies [26aa3d2]
+- Updated dependencies [00a0e96]
+- Updated dependencies [85f85ba]
+- Updated dependencies [adb1290]
+- Updated dependencies [4bda721]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [ff4504e]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [7645aaa]
+- Updated dependencies [24bca7a]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [70076bc]
+- Updated dependencies [4b3a525]
+- Updated dependencies [15e923d]
+- Updated dependencies [4c8749c]
+- Updated dependencies [9057ecb]
+- Updated dependencies [2823dca]
+- Updated dependencies [1c43dbf]
+- Updated dependencies [a3b1735]
+- Updated dependencies [d01d5a2]
+- Updated dependencies [bcc5c05]
+- Updated dependencies [e11a52e]
+- Updated dependencies [3744131]
+- Updated dependencies [5477214]
+- Updated dependencies [594d4ce]
+- Updated dependencies [7e5b389]
+- Updated dependencies [2e7bd80]
+- Updated dependencies [6c3e486]
+- Updated dependencies [e7bee92]
+- Updated dependencies [7affd45]
+- Updated dependencies [bef9c67]
+- Updated dependencies [470d4be]
+- Updated dependencies [2668893]
+- Updated dependencies [7e5b389]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [e06225e]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [38095a2]
+- Updated dependencies [d30164d]
+- Updated dependencies [04d5af6]
+- Updated dependencies [04d5af6]
+- Updated dependencies [c98a300]
+- Updated dependencies [04d5af6]
+- Updated dependencies [e7d580b]
+- Updated dependencies [cdbafb8]
+- Updated dependencies [3005391]
+- Updated dependencies [3311dde]
+- Updated dependencies [5b11625]
+- Updated dependencies [afbe8c3]
+- Updated dependencies [8bf1866]
+- Updated dependencies [c4bcb94]
+- Updated dependencies [7785bd5]
+- Updated dependencies [e59f1ae]
+- Updated dependencies [a8ff1e9]
+- Updated dependencies [25e8f76]
+- Updated dependencies [3a07b60]
+- Updated dependencies [b73c8ef]
+- Updated dependencies [6274bad]
+- Updated dependencies [758459f]
+- Updated dependencies [70213a5]
+- Updated dependencies [b72cf48]
+- Updated dependencies [b34f11e]
+- Updated dependencies [04d5af6]
+- Updated dependencies [5603bef]
+- Updated dependencies [126d17f]
+- Updated dependencies [d17a134]
+- Updated dependencies [4e68cf0]
+- Updated dependencies [ff5f066]
+- Updated dependencies [f164d0e]
+- Updated dependencies [586ca31]
+- Updated dependencies [ba8d3a0]
+- Updated dependencies [857e1fc]
+- Updated dependencies [d868c48]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [4d31cf0]
+- Updated dependencies [af132bc]
+- Updated dependencies [2d57c94]
+- Updated dependencies [f004638]
+- Updated dependencies [3c27e36]
+- Updated dependencies [3c27e36]
+- Updated dependencies [ce5d609]
+- Updated dependencies [dd5a540]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [56fda8d]
+- Updated dependencies [f88d616]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [1d8e163]
+- Updated dependencies [e08d172]
+- Updated dependencies [429e80c]
+- Updated dependencies [bd25e62]
+- Updated dependencies [002ff57]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [df1d23c]
+- Updated dependencies [ca663c7]
+- Updated dependencies [e01f958]
+- Updated dependencies [97cce9d]
+- Updated dependencies [9521334]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [415e5b8]
+- Updated dependencies [e68cb62]
+- Updated dependencies [dc5efa8]
+- Updated dependencies [510347b]
+- Updated dependencies [8f28726]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [ff8c1f9]
+- Updated dependencies [a6e8651]
+- Updated dependencies [26cdc89]
+- Updated dependencies [c11f37e]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [ad94222]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [2b0def2]
+- Updated dependencies [80b8f57]
+- Updated dependencies [60c082d]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [1f05956]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [774e9cc]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [1fe6cab]
+- Updated dependencies [0481f49]
+- Updated dependencies [b8bb2d4]
+- Updated dependencies [6276cc6]
+- Updated dependencies [6276cc6]
+- Updated dependencies [677a841]
+- Updated dependencies [b8bb2d4]
+- Updated dependencies [cafdd8c]
+- Updated dependencies [969aab0]
+- Updated dependencies [61c9926]
+- Updated dependencies [09dcf56]
+- Updated dependencies [5024537]
+- Updated dependencies [7489853]
+- Updated dependencies [8fb09ad]
+- Updated dependencies [ba7e062]
+- Updated dependencies [0d977b8]
+- Updated dependencies [371b695]
+- Updated dependencies [d268d21]
+- Updated dependencies [5dd240d]
+- Updated dependencies [8b01b26]
+- Updated dependencies [2c0f2fe]
+- Updated dependencies [12816b7]
+- Updated dependencies [6803209]
+- Updated dependencies [f857c86]
+- Updated dependencies [aec0cec]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/ui-input@2.0.0
+  - @weasel-js/quantity@2.0.0
+  - @weasel-js/gestures@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/cursor@2.0.0
+  - @weasel-js/react@2.0.0
+  - @weasel-js/history@2.0.0
+  - @weasel-js/icons@2.0.0
+  - @weasel-js/menu@2.0.0
+  - @weasel-js/modes@2.0.0
+  - @weasel-js/prefs-schema@2.0.0
+  - @weasel-js/select@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

@@ -1,5 +1,5011 @@
 # @weasel-js/ui
 
+## 2.0.0
+
+### Major Changes
+
+- 2748abb: `ActionSettingsDialog` is gone; spread `useActionSettings(item)` into a `PrefsDialog` for an action's settings in a dialog.
+  
+  `useActionSettings` returns `schema`, `values`, `mixed`, and `onChange` under the names `PrefsDialog` takes them, so nothing else changes for `CommandPalette`, which draws its settings this way.
+  
+  ```tsx
+  // before
+  <ActionSettingsDialog item={item} onClose={close} />
+  // after
+  const settings = useActionSettings(item ?? undefined);
+  {item && settings && (
+    <PrefsDialog {...settings} open onOpenChange={(open) => { if (!open) close(); }} layout="list" />
+  )}
+  ```
+  
+  <!-- entry: breaking api -->
+- 933408d: `Slider`, `Jog`, the schema bar (now `PrefsBar`), `SwatchGrid` and `SwatchStrip` no longer take a `shape` prop; an `<Along>` around one curves it.
+  
+  `Jog` and `PrefsBar` drop `align` too, which the `Along` now gives; `SwatchGrid` and `SwatchStrip` keep `align` for a grid's last row only. Each control's curved root fills the `Along`'s box, so a shape keeps its coordinates when it moves to the `Along`.
+  
+  ```tsx
+  // before
+  <Slider shape={arc} thumbs={thumbs} onInput={setThumbs} />
+  // after
+  <Along shape={arc}>
+    <Slider thumbs={thumbs} onInput={setThumbs} />
+  </Along>
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- cc2929d: `CurveEditor`'s `renderAnchor` argument is typed `AnchorRenderCtx`, where it was `AnchorRenderProps`.
+  
+  It is a render function's argument, not a component's props.
+  
+  ```ts
+  // before
+  import type { AnchorRenderProps } from '@weasel-js/ui/components/CurveEditor';
+  // after
+  import type { AnchorRenderCtx } from '@weasel-js/ui/components/CurveEditor';
+  ```
+  
+  <!-- entry: breaking api -->
+- 19ed3de: Every `@weasel-js/ui` component names itself through `aria-label`, as `MenuButton` and the DOM do, in place of `ariaLabel`.
+  
+  The components that took `ariaLabel` are `Button`, `Slider`, `Sidebar`, `ToolPalette`, `ToolGroup`, `ColorModeControl`, `EffectList`, `ResizeHandle` and `PrefsRail`; `SegmentedBar` and `CycleButton`, which replace `ToggleBar`, `ButtonBar`, `OptionsBar` and `ThemeSwitcher`, take `aria-label` too. A row or segment in a data list (`SegmentedBarItem`, `DetentItem`) keeps its `ariaLabel` field.
+  
+  ```tsx
+  // before
+  <Button iconOnly ariaLabel="Add"><Icon name="core:plus" /></Button>
+  <Slider ariaLabel="Opacity" thumbs={thumbs} onInput={setThumbs} />
+  // after
+  <Button iconOnly aria-label="Add"><Icon name="core:plus" /></Button>
+  <Slider aria-label="Opacity" thumbs={thumbs} onInput={setThumbs} />
+  ```
+  
+  <!-- entry: breaking api -->
+- f1e15f8: `CloseButton` is gone; spread `CLOSE_BUTTON_PROPS` into a `Button` for the kit's close, dismiss, or remove button.
+  
+  The preset is a small icon-only ghost button with `emphasis: 'low'`, showing the `close` glyph, exported from `@weasel-js/ui/components/Button`. It takes `aria-label`, `tooltip`, `disabled`, `disabledReason`, `className`, and a ref as `Button` does. It is the `sm` icon button (`--wzl-control-h-sm` square) where `CloseButton` was `--wzl-icon-button-size`.
+  
+  ```tsx
+  // before
+  <CloseButton aria-label="Close dialog" onClick={close} />
+  // after
+  <Button {...CLOSE_BUTTON_PROPS} aria-label="Close dialog" onClick={close} />
+  ```
+  
+  <!-- entry: breaking api visual -->
+- fcc5602: The color ramp helpers moved from `@weasel-js/ui` to `@weasel-js/paint`, and `oklchToHex` gives way to paint's `oklchDegToHex`.
+  
+  `rampColor`, `colorRamp`, `ColorRampOptions`, `chromaAt`, `ChromaCurve` and `ChromaCurvePoint` move. ui's `./color` subpath is gone.
+  
+  ```ts
+  // before
+  import { chromaAt, oklchToHex, type ChromaCurve } from '@weasel-js/ui/color';
+  // after
+  import { chromaAt, oklchDegToHex, type ChromaCurve } from '@weasel-js/paint';
+  ```
+  
+  <!-- entry: breaking api -->
+- dcdfa16: `CommandPalette` asks to close through `onOpenChange`, as `Dialog` and `PrefsDialog` do; `onClose` is gone.
+  
+  ```tsx
+  // before
+  <CommandPalette open={open} onClose={() => setOpen(false)} />
+  // after
+  <CommandPalette open={open} onOpenChange={setOpen} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 1d7b94d: `Density` is now `ControlSizeScope`, so the `sm`/`md` control size no longer shares a word with the theme's `compact`/`comfortable`/`roomy` density.
+  
+  The rest of the family is renamed with it: `useDensity` is `useControlSize`, `withDensity` is `withControlSize`, `DensityProps` is `ControlSizeProps`, `DensityScopeProps` is `ControlSizeScopeProps`, and the subpath `@weasel-js/ui/components/Density` is `@weasel-js/ui/components/ControlSize`. `useControlSizeScope()` is new: the nearest scope's size, or `undefined` outside every scope. labkit re-exports the new names. The theme's density is unchanged.
+  
+  ```tsx
+  // before
+  import { Density, useDensity } from '@weasel-js/ui/components/Density';
+  <Density size="sm">{toolbar}</Density>
+  // after
+  import { ControlSizeScope, useControlSize } from '@weasel-js/ui/components/ControlSize';
+  <ControlSizeScope size="sm">{toolbar}</ControlSizeScope>
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 452ac07: `domFocusScope` and `domMeasureEnv` are `createDomFocusScope` and `createDomMeasureEnv`.
+  
+  They are named as the factories they are; their arguments are unchanged.
+  
+  ```ts
+  // before
+  const scope = domFocusScope(root);
+  const env = domMeasureEnv(el);
+  // after
+  const scope = createDomFocusScope(root);
+  const env = createDomMeasureEnv(el);
+  ```
+  
+  <!-- entry: breaking api -->
+- 797729a: `CurveEditor` takes what it draws under the curve as children, and its `decorations` prop is gone.
+  
+  The children may be plain SVG or more curve layers, which a press reaches after the editor's own curve.
+  
+  ```tsx
+  // before
+  <CurveEditor value={points} onInput={setPoints} width={200} height={100} decorations={<line x1={0} x2={200} y1={50} y2={50} />} />
+  // after
+  <CurveEditor value={points} onInput={setPoints} width={200} height={100}>
+    <line x1={0} x2={200} y1={50} y2={50} />
+  </CurveEditor>
+  ```
+  
+  <!-- entry: breaking api -->
+- fcc5602: `sampleByInterpolation` and `InterpolationMode` moved from `@weasel-js/ui` to `@weasel-js/geom`, beside the samplers they pick from.
+  
+  `sampleCatmullRom` and `sampleMonotone` are new exports. ui's `CurveSamplePoint` is gone: the samplers take and return geom's `Point`.
+  
+  ```ts
+  // before
+  import { sampleByInterpolation, type CurveSamplePoint } from '@weasel-js/ui';
+  // after
+  import { sampleByInterpolation, type Point } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking api -->
+- 7edea08: `FunctionLayerConfig` and `KeyframeLayerConfig` are now `FunctionLayerOptions` and `KeyframeLayerOptions`.
+  
+  They are the options bags of `createFunctionLayer` and `createKeyframeLayer`.
+  
+  ```ts
+  // before
+  import type { FunctionLayerConfig, KeyframeLayerConfig } from '@weasel-js/ui';
+  // after
+  import type { FunctionLayerOptions, KeyframeLayerOptions } from '@weasel-js/ui';
+  ```
+  
+  <!-- entry: breaking api -->
+- 5643a3b: `CurvedLabel` lies along the `Along` it sits in and no longer takes `arc`, `shape` or `align`; outside an `Along` it is a plain line of text.
+  
+  ```tsx
+  // before
+  <CurvedLabel text="Zoom" arc={{ start: 270, end: 90 }} align="start" />
+  // after
+  <Along arc={{ start: 270, end: 90 }} align="start">
+    <CurvedLabel text="Zoom" />
+  </Along>
+  ```
+  
+  <!-- entry: breaking api -->
+- d7ac369: `ThemeSwitcher` is `CycleButton`, and it takes the list it cycles and its name from you.
+  
+  It is imported from `@weasel-js/ui/components/CycleButton`. `options` and `aria-label` are required, so nothing defaults to the color modes or to the name "Theme"; `COLOR_MODE_OPTIONS` is still the color-mode list. `ThemeSwitcherOption` and `ThemeSwitcherProps` are `CycleButtonOption` and `CycleButtonProps`.
+  
+  ```tsx
+  // before
+  <ThemeSwitcher value={preference} onChange={setPreference} />
+  // after
+  <CycleButton value={preference} onChange={setPreference} options={COLOR_MODE_OPTIONS} aria-label="Theme" />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 0983672: `DetentSlider` is replaced by `useDetents()`, a hook whose result you spread onto a `Slider`.
+  
+  It takes the same `items`, `value` and `formatLabel`. What `onChange` did, hearing every detent passed, is `onInput`, and what `onCommit` did, hearing the finished gesture, is `onChange`, as on `Slider`. `labels`, `trackHeight`, `ariaLabel`, `shape` and `className` become the `Slider`'s own `stopLabels`, `trackHeight`, `aria-label`, an `Along` around it, and `className`. `DetentItem` and `DetentValue` now come from `@weasel-js/ui/components/Slider`, and `DetentSliderProps` names the props the hook returns.
+  
+  ```tsx
+  // before
+  <DetentSlider items={rates} value={rate} onChange={setRate} onCommit={record} labels="ends" trackHeight={8} ariaLabel="Rate" />
+  
+  // after
+  <Slider {...useDetents({ items: rates, value: rate, onInput: setRate, onChange: record })} stopLabels="ends" trackHeight={8} aria-label="Rate" />
+  ```
+  
+  `trackHeight` no longer defaults to 8; a `Slider`'s default track is 24px.
+  
+  <!-- entry: rank=10 breaking api -->
+- e4a72b6: `Dialog` takes `dismissable` and `keyboardDismissDisabled`, where it passed React Aria's `isDismissable` and `isKeyboardDismissDisabled` through.
+  
+  ```tsx
+  // before
+  <Dialog open={open} onOpenChange={setOpen} isDismissable title="Commands" />
+  // after
+  <Dialog open={open} onOpenChange={setOpen} dismissable title="Commands" />
+  ```
+  
+  <!-- entry: breaking api -->
+- 037e5da: `Disclosure` takes native `<button>` attributes, so `controls` is gone in favor of `aria-controls`; it also forwards its `ref`.
+  
+  An `onClick` runs before `onOpenChange`, and one that calls `preventDefault()` skips it. `tabIndex`, `disabled`, and `className` are the native attributes they were.
+  
+  ```tsx
+  // before
+  <Disclosure open={open} onToggle={toggle} label="Shapes" controls="shapes-panel" />
+  // after
+  <Disclosure open={open} onOpenChange={setOpen} label="Shapes" aria-controls="shapes-panel" />
+  ```
+  
+  <!-- entry: breaking api -->
+- e0b7acb: `Disclosure` and `DisclosureRow` report a press through `onOpenChange(next)` in place of `onToggle()`, and leave the native `onToggle` to the button.
+  
+  ```tsx
+  // before
+  <Disclosure open={open} onToggle={() => setOpen((o) => !o)} label="Shapes" />
+  // after
+  <Disclosure open={open} onOpenChange={setOpen} label="Shapes" />
+  ```
+  
+  <!-- entry: breaking api -->
+- fcc5602: `easingLabel`, `easingBezier`, `sampleEasing` and `EASING_NAMES` moved from `@weasel-js/ui` to `@weasel-js/geom`, beside `EasingSpec`.
+  
+  ```ts
+  // before
+  import { easingLabel, sampleEasing } from '@weasel-js/ui';
+  // after
+  import { easingLabel, sampleEasing } from '@weasel-js/geom';
+  ```
+  
+  <!-- entry: breaking api -->
+- 10f6906: Each `FillStrokeSwatch` chip opens the whole paint editor, so a gradient or pattern slot is edited as itself, not flattened to a solid.
+  
+  `onInput` and `onChange` report a `Paint` (or `null` for none) in place of a `#rrggbb` color, and `onChange` returns the paint actually applied when it differs, whose color the recent colors record. The editor carries the paint's own alpha, so a consumer no longer merges it back in. Shift-click on a chip still toggles none, and `portalContainer` places the editor's popover.
+  
+  ```tsx
+  // before
+  onChange={(slot, color) => setPaint(slot, { kind: 'solid', color })}
+  // after
+  onChange={(slot, paint) => setPaint(slot, paint)}
+  ```
+  
+  <!-- entry: rank=10 breaking api new -->
+- 9b5de64: `FillStrokeSwatch` takes `target` and `onTargetChange`, where it took `focused` and `onFocusChange`.
+  
+  They pick the slot that edits land on. The chip that holds it carries `data-target` in place of `data-focused`.
+  
+  ```tsx
+  // before
+  <FillStrokeSwatch fill={fill} stroke={stroke} focused={slot} onFocusChange={setSlot} onChange={apply} />
+  // after
+  <FillStrokeSwatch fill={fill} stroke={stroke} target={slot} onTargetChange={setSlot} onChange={apply} />
+  ```
+  
+  <!-- entry: breaking api -->
+- e5e59a3: A fit scope measures only its own element, so a fitted `Bar` raises no ResizeObserver loop when another observer resizes its parent.
+  
+  `useFitScope` no longer watches the element's parent, so the element's box has to take the shape of its room: fill it, or be clamped to it. While it holds labels the element carries `data-fit-room` and `--fit-natural`, its width at the full forms, for its CSS to keep a box sized to its content that wide within its room as the labels shorten. `Bar` and `SegmentedBar` do this already; a stepped `SegmentedBar` keeps the width of its full labels, its segments sharing it. An element of your own needs the same rule:
+  
+  ```css
+  .myStrip:where([data-fit-room]) {
+    min-inline-size: min(var(--fit-natural, 0px), 100%);
+    max-inline-size: 100%;
+  }
+  ```
+  
+  `data-fit-spent` now clears once the element grows wider than it was with the room that mark gave it, not once its parent does. A `KeyBank` has no box by default, so its `FitLabel`s step only once a class gives it one.
+  
+  <!-- entry: rank=5 breaking fix visual -->
+- fab8e30: `FontFamilySelect` and `FontWeightSelect` are gone; a `Select` takes its options from `useFontFamilyOptions` and `useFontWeightOptions`.
+  
+  The hooks build the same lists the components did, including a value the registry can't offer kept as its own entry ("Inter — not loaded, showing sans-serif"), and rebuild when a face is registered or finishes loading. `fontFamilyOptions` and `fontWeightOptions` are the same builders without the subscription. All four, and `fontWeightLabel`, come from `@weasel-js/ui/components/FontOptions`. Weight options are keyed by the weight as a string.
+  
+  ```tsx
+  // before
+  <FontWeightSelect family={family} value={weight} onChange={setWeight} />
+  // after
+  const options = useFontWeightOptions({ family, value: weight });
+  <Select<string>
+    aria-label="Weight"
+    options={options}
+    selectedKey={String(weight)}
+    onSelectionChange={(key) => setWeight(Number(key))}
+  />
+  ```
+  
+  <!-- entry: breaking api -->
+- 5bd62a1: `GestureRoute`, `gestureRouteSegments`, and `FallthroughDiagram` move out of `@weasel-js/ui` into the devtools panel.
+  
+  They are no longer exported from `@weasel-js/ui`.
+  
+  The `@weasel-js/ui/components/GestureRoute` and `@weasel-js/ui/components/FallthroughDiagram` subpaths are gone too. The devtools panel's bindings list and dispatch trace still draw both; code that drew a route or a dispatch record itself can build the same strip from `Powerline`, which stays in `@weasel-js/ui`.
+  
+  ```tsx
+  // before
+  import { GestureRoute } from '@weasel-js/ui';
+  <GestureRoute route="[initial] drag => node +shift" />
+  // after: mount the devtools panel, or draw the segments with Powerline
+  import { Powerline } from '@weasel-js/ui';
+  ```
+  
+  <!-- entry: breaking api -->
+- 614d268: `GradientEditor` reports the stop selected through `onSelectionChange`, where it was `onSelectedStopChange`.
+  
+  ```tsx
+  // before
+  <GradientEditor value={g} onChange={setG} selectedStop={i} onSelectedStopChange={setI} />
+  // after
+  <GradientEditor value={g} onChange={setG} selectedStop={i} onSelectionChange={setI} />
+  ```
+  
+  <!-- entry: breaking api -->
+- dee89e1: `paintGradientTrack`'s options type is `GradientTrackOptions`, under the `Options` suffix every option type takes; `GradientTrackOpts` is gone.
+  
+  ```ts
+  // before
+  import type { GradientTrackOpts } from '@weasel-js/ui';
+  // after
+  import type { GradientTrackOptions } from '@weasel-js/ui';
+  ```
+  
+  <!-- entry: breaking -->
+- 4a2b2ab: `ItemList` reports a row's action through `onAction`, where it was `onActivate`, the name `Tree` gives the same event.
+  
+  ```tsx
+  // before
+  <ItemList rows={rows} selection="single" onActivate={setChosen} />
+  // after
+  <ItemList rows={rows} selection="single" onAction={setChosen} />
+  ```
+  
+  <!-- entry: breaking api -->
+- dc4ae6b: `Jog` reports its play button through `onPlayingChange(next)`, the name for a callback that hears pause as well as play.
+  
+  ```tsx
+  // before
+  <Jog index={i} count={n} playing={playing} onPlay={setPlaying} onStep={step} onScrub={seek} />
+  // after
+  <Jog index={i} count={n} playing={playing} onPlayingChange={setPlaying} onStep={step} onScrub={seek} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 14b7692: The orbit tool and the camera actions show their own glyphs, drawn by kernel3d in a `kernel3d` namespace that ui's camera glyphs moved to.
+  
+  `ui:orbit`, `ui:dollyIn`, `ui:dollyOut`, `ui:turnLeft`, `ui:turnRight`, `ui:pitchUp`, `ui:pitchDown`, `ui:rise`, `ui:sink` and `ui:home` are now `kernel3d:` names. An app showing them registers kernel3d's table beside the kit's.
+  
+  ```tsx
+  // before
+  <IconRegistryProvider icons={kitIcons}>
+  // after
+  import { icons as kernel3dIcons } from '@weasel-js/kernel3d/icons';
+  <IconRegistryProvider icons={[...kitIcons, kernel3dIcons]}>
+  ```
+  
+  <!-- entry: breaking new api -->
+- 38e795b: The helpers that turn a shortcut into the keys a keycap draws say `keyLegend`, not `keySpec`, which names a key binding's gesture.
+  
+  ui's `KeySpec` type is gone; it was another name for gestures' `KeyLegend`, which ui's Keycaps entry now exports. The functions and their options type are renamed; their arguments are unchanged.
+  
+  | Before | After |
+  |---|---|
+  | `KeySpec` (ui) | `KeyLegend` |
+  | `keySpecsFromMods` | `keyLegendsFromMods` |
+  | `keySpecFromKey` | `keyLegendFromKey` |
+  | `keySpecsFromShortcut` | `keyLegendsFromShortcut` |
+  | `keySpecFromCode` | `keyLegendFromCode` |
+  | `KeySpecsFromModsOptions` | `KeyLegendOptions` |
+  | `keySpecsFromChord` (ui) | `keyLegendsFromChord` |
+  | `keySpecsFromLegend` (ui) | `keyLegendsFromFormatted` |
+  
+  ```ts
+  // before
+  const keys: KeySpec[] = keySpecsFromLegend('⇧⌘Z');
+  // after
+  const keys: KeyLegend[] = keyLegendsFromFormatted('⇧⌘Z');
+  ```
+  
+  <!-- entry: breaking api -->
+- 800e293: `kitIcons` moves from `@weasel-js/ui/kit-icons` to `@weasel-js/ui-canvas/kit-icons`.
+  
+  This is breaking: import it from `@weasel-js/ui-canvas/kit-icons`. It lists core's, editing's, the shapes', the paint kinds' and ui's tables, which ui alone cannot name. `@weasel-js/ui/icons` still has ui's own.
+  
+  <!-- entry: breaking api -->
+- 7e5b389: The kit settings area types are read from their packages' schemas, so they are type aliases and can no longer be augmented.
+  
+  That covers `GestureKitSettings`, `CoreKitTargetSettings`, `ViewKitSettings`, `LoupeKitSettings`, `Orbit3dKitSettings`,
+  `RigKitTargetSettings` and `PathToolsKitTargetSettings`. Add a setting by augmenting `@weasel-js/react`'s `KitSettings` or `KitTargetSettings`, as before:
+  
+  ```ts
+  declare module '@weasel-js/react' {
+    interface KitTargetSettings { myHandlePx: number }
+  }
+  ```
+  
+  <!-- entry: breaking -->
+- a6e8651: Alt-clicking a `LayerList` row's visibility checkbox or lock shows or locks that layer alone.
+  
+  A second Alt-click turns every layer back on. A layer shown alone keeps its containers shown and the layers inside it as they were. So that an Alt-click is one undo step, `onVisibilityChange` and `onLockChange` now receive every row that changes, keyed by id; `useSceneLayerList` commits them as one history entry.
+  
+  ```ts
+  // before
+  onVisibilityChange={(id, visible) => setShown(id, visible)}
+  // after
+  onVisibilityChange={(changes) => { for (const [id, visible] of Object.entries(changes)) setShown(id, visible); }}
+  ```
+  
+  <!-- entry: rank=10 breaking new api -->
+- 7ab6268: `LayerList` draws only rows: `renderBody`, and a layer's `badge` and `tint`, are gone. A list of cards with settings is an `EffectList`.
+  
+  ```tsx
+  // before
+  <LayerList items={[{ id: '1', label: 'fill', tint: 0 }]} onReorder={reorder} renderBody={(item) => <Settings item={item} />} />
+  // after
+  <EffectList
+    items={[{ id: '1', kind: 'fill', name: 'fill', on: true }]}
+    kinds={{ fill: { label: 'Fill', color: 0 } }}
+    onChange={setItems}
+    selected={open}
+    onSelectionChange={setOpen}
+    renderBody={(item) => <Settings item={item} />}
+  />
+  ```
+  
+  A layer's `title` now only stands in for its label in the row.
+  
+  <!-- entry: rank=10 breaking api -->
+- 797729a: `LayeredCurveEditor` takes its layers as children: `<FunctionLayer>`, `<KeyframeLayer>`, and `<CustomLayer>` for any `CurveLayer`.
+  
+  The `layers` prop, `onLayerChange`, `onLayerCommit`, and the `LayerBinding` type are removed. Each layer takes its own `state`, `onChange(next)`, and `onCommit(next, prev)`, and `FunctionLayer` and `KeyframeLayer` take their factory's configuration as props. Children draw in order and plain SVG can sit among them; the topmost layer claiming a press still takes it. A `CurveLayer`'s `id` now only names its group (`data-layer-id`), so two layers may share one.
+  
+  ```tsx
+  // before
+  <LayeredCurveEditor layers={[{ layer: keysLayer, state }]} onLayerChange={(_id, next) => setState(next as KeyframeLayerState)} width={480} height={220} />
+  // after
+  <LayeredCurveEditor width={480} height={220}>
+    <KeyframeLayer label="Opacity" state={state} onChange={setState} />
+  </LayeredCurveEditor>
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- ce28f90: `MeasureReadout` moved from `@weasel-js/ui` into `@weasel-js/measure`, and ui no longer depends on measure.
+  
+  The component and its props are unchanged. Its styles now ship in `@weasel-js/measure/style.css`; it still draws with ui's buttons, so keep `@weasel-js/ui/style.css` loaded too.
+  
+  ```ts
+  // before
+  import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
+  // after
+  import { MeasureReadout } from '@weasel-js/measure';
+  import '@weasel-js/measure/style.css';
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- b9f3a12: A menu row built from an action shows the action's or variant's declared `shortcut` text, as the palette and bars already did.
+  
+  `MenuItemEntry.shortcut` is `MenuShortcut | string`: a string is printed as written. Code that formats it has to handle both.
+  
+  ```ts
+  // before
+  formatShortcut(entry.shortcut);
+  // after
+  typeof entry.shortcut === 'string' ? entry.shortcut : formatShortcut(entry.shortcut);
+  ```
+  
+  <!-- entry: breaking fix -->
+- 1d48780: `MenuButton` takes `disabled`, and its rows take `disabled` and `current`, as `Button` and `@weasel-js/menu`'s entries do.
+  
+  ```tsx
+  // before
+  <MenuButton label="Add" isDisabled items={[{ value: 'a', label: 'A', isDisabled: true, isCurrent: true }]} />
+  // after
+  <MenuButton label="Add" disabled items={[{ value: 'a', label: 'A', disabled: true, current: true }]} />
+  ```
+  
+  <!-- entry: breaking api -->
+- b6ae714: Three modifier-key types that repeated the kit's two are gone: `PressModifiers`, `LayerModifiers` and `KeyModifiers`.
+  
+  ui's `PressModifiers` is gestures' `EventModifiers` (the DOM form), and ui's `LayerModifiers` and core's `KeyModifiers` are routing's `ModifierState` (the short form). The shapes are unchanged.
+  
+  ```ts
+  // before
+  import type { PressModifiers } from '@weasel-js/ui';
+  import type { KeyModifiers } from '@weasel-js/core';
+  // after
+  import type { EventModifiers } from '@weasel-js/gestures';
+  import type { ModifierState } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking api -->
+- 928462b: Every params surface hands its renderers one `LeafContext`, and `PrefSchemaEditor` takes one `renderers` map.
+  
+  `PrefRenderContext` and `PropertyRenderContext` are now `LeafContext`; `PrefRenderer`, `PropertyRenderer`, and labkit's `ControlRenderer` are now `LeafRenderer`. Every context carries `mixed`, `each` (one value per target), `update`, `source` (the surface's `PrefsSource`), and `reset` while the leaf differs from its reset. A selection's `ctx.valueAt(path)` is now `ctx.source.valueAt(path)`, which also returns `each`. `PrefSchemaEditor`'s and `AssetEditor`'s `propertyRenderers` is gone: pass those renderers in `renderers`.
+  
+  ```tsx
+  // before
+  const swatch: PropertyRenderer = (ctx) => <Swatch weight={ctx.valueAt('data.fontWeight').value} />;
+  // after
+  const swatch: LeafRenderer = (ctx) => <Swatch weight={ctx.source.valueAt('data.fontWeight').value} />;
+  ```
+  
+  To draw one leaf outside a surface, as a renderer's test does, build its context with `loneLeafContext(path, leaf, value, setValue)` from `@weasel-js/ui/components/PrefsSource`.
+  
+  <!-- entry: breaking api -->
+- e2b10c3: `PageTabs` takes the text of each tab from its `labelOf` prop, which is now required.
+  
+  This is breaking: the default was core's `pageName`, which `@weasel-js/ui` no longer depends on. Pass it to keep the old labels: a page's name, else "Page" and its place.
+  
+  ```tsx
+  import { pageName } from '@weasel-js/core';
+  
+  <PageTabs pages={pages} current={current} labelOf={pageName} onSelect={select} />
+  ```
+  
+  <!-- entry: breaking api -->
+- fcc5602: `paintPreviewCss` is imported from `@weasel-js/paint`, beside a new `sampledCssStops`; `@weasel-js/ui` no longer exports it.
+  
+  `sampledCssStops(colorAt, samples, positionOf)` writes `samples + 1` evenly spaced CSS color stops, for a gradient CSS cannot blend in the right space by itself.
+  
+  ```ts
+  // before
+  import { paintPreviewCss } from '@weasel-js/ui';
+  // after
+  import { paintPreviewCss } from '@weasel-js/paint';
+  ```
+  
+  <!-- entry: breaking api -->
+- fcc5602: `solidColorOf`, `strokeColorOf` and `PaintSlot` moved from `@weasel-js/ui` to `@weasel-js/paint`, and ui's `./paint-value` subpath is gone.
+  
+  `@weasel-js/ui/components/GradientEditor` no longer exports `PaintSlot` either.
+  
+  ```ts
+  // before
+  import { solidColorOf, type PaintSlot } from '@weasel-js/ui/paint-value';
+  import type { PaintSlot } from '@weasel-js/ui/components/GradientEditor';
+  // after
+  import { solidColorOf, type PaintSlot } from '@weasel-js/paint';
+  ```
+  
+  <!-- entry: breaking api -->
+- 800e293: ui's panel engine reads records, not scene nodes: `selectionJudge` and `conditionedSections` take `PanelRecord`s that read a path.
+  
+  This is breaking: pass `{ valueAt: (path) => nodeValueAt(node, path) }` for each node where a node went, `nodeValueAt` coming from `@weasel-js/ui-canvas`. The engine is `@weasel-js/ui/components/PanelCells`, which also exports `panelSections`, `panelSource`, `PanelCellScope`, `LeafWrites`, `boundAt` and `leafAcross`, for drawing a panel of prefs sections over records of your own. Its other names, `effectiveSections`, `isPanelSection`, `panelRowsOf` and the `Panel*` types among them, come from there rather than from `SelectionPanel`'s entry.
+  
+  <!-- entry: breaking api -->
+- 1b128c4: `PointPlotter` is gone; spread `POINT_PLOTTER_PROPS` into a `CurveEditor` for the same plot.
+  
+  The preset sets `curve: false`, `fill: false`, `endpoints: 'free'` and `addPointMode: 'click-empty'`, and is exported from `@weasel-js/ui/components/CurveEditor`. Props written after the spread win, so `addPointMode="never"` still turns insertion off.
+  
+  ```tsx
+  // before
+  <PointPlotter value={points} onInput={setPoints} width={400} height={200} />
+  // after
+  <CurveEditor {...POINT_PLOTTER_PROPS} value={points} onInput={setPoints} width={400} height={200} />
+  ```
+  
+  <!-- entry: breaking api -->
+- b3b7fe7: `Powerline` takes its segments as child `Badge`s, and its `segments` prop is gone.
+  
+  Each badge's new `endCap` prop shapes its right edge, and the next badge in the row takes it as its left edge. The row's `variant`, `size`, `depth`, and `startCap` still apply to every segment, a badge's own `variant` or `size` winning. A badge given a `base` of its own keeps it. A custom segment calls `usePowerlineSegment(endCap)` for its edges and the row's defaults. `PowerlineSegment` is removed.
+  
+  ```tsx
+  // before
+  <Powerline variant="solid" segments={[{ text: 'main', emphasis: 'high', endCap: 'chevron' }, { text: '~/proj' }]} />
+  // after
+  <Powerline variant="solid">
+    <Badge emphasis="high" endCap="chevron">main</Badge>
+    <Badge>~/proj</Badge>
+  </Powerline>
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 1d7b94d: A property panel's room is `spacing="tight" | "normal" | "loose"`, not `density`, so `roomy` means only the theme's density.
+  
+  Every `Properties` container (`PropertyPanel`, `PropertyList`, `PropertyGroup`, `PropertyRow`, `PropertyField`, `Subpanel`, `DialogRow`) takes `spacing` in place of `density`, and the type `PropertyDensity` is `PropertySpacing`. What each value does is unchanged.
+  
+  ```tsx
+  // before
+  <PropertyPanel density="roomy">…</PropertyPanel>
+  // after
+  <PropertyPanel spacing="loose">…</PropertyPanel>
+  ```
+  
+  <!-- entry: breaking api -->
+- 0983672: `RangeSlider` is removed: put a `Slider` in a `<Field label output>` for its label-and-value header.
+  
+  `Slider` is fully controlled, so a value held by `defaultValue` moves into state, and each value is a thumb:
+  
+  ```tsx
+  // before
+  <RangeSlider label="Opacity" defaultValue={75} minValue={0} maxValue={100} formatOutput={(v) => `${v}%`} />
+  
+  // after
+  const [thumbs, setThumbs] = useState([{ value: 75 }]);
+  <Field label="Opacity" output={`${thumbs[0].value}%`}>
+    <Slider aria-label="Opacity" min={0} max={100} step={1} thumbs={thumbs} onInput={setThumbs} />
+  </Field>
+  ```
+  
+  `Slider` has no vertical orientation; a vertical `RangeSlider` has no replacement yet.
+  
+  <!-- entry: rank=10 breaking -->
+- 19948e0: Render-context flags drop their `is` prefix: `active`, `locked`, `pinned` and `endpoint`.
+  
+  This covers `CurveEditor`'s anchor and layer render contexts and `Slider`'s thumb render context.
+  
+  ```tsx
+  // before
+  renderAnchor={({ cx, cy, isActive, isPinnedEndpoint }) => …}
+  // after
+  renderAnchor={({ cx, cy, active, pinned }) => …}
+  ```
+  
+  <!-- entry: breaking api -->
+- 82e20b7: `Ruler` is a ruler along any continuous scale, with `RulerMark` for points on it; the time ruler it used to name is `TimeRuler`.
+  
+  `TimeRuler` takes the props `Ruler` took. The new `Ruler` takes a `scale` onto `[0, 1]` and either a list of ticks or the spacing to place them at, and hides the tick labels that would crowd, keeping each notch. A `RulerMark` child's label is always shown.
+  
+  ```tsx
+  // before
+  <Ruler window={win} bounds={bounds} playhead={t} onScrub={setT} onWindowChange={setWin} />
+  // after
+  <TimeRuler window={win} bounds={bounds} playhead={t} onSeek={setT} onWindowChange={setWin} />
+  
+  // a ruler of your own
+  <Ruler scale={linearScale({ domain: [0, 250], range: [0, 1] })} ticks={{ minSpacing: 48 }}>
+    <RulerMark at={120} label="here" />
+  </Ruler>
+  ```
+  
+  <!-- entry: rank=5 breaking new api -->
+- d5e58b9: The type of `useSceneLayerList`'s argument is `UseSceneLayerListOptions`, named as every other public hook's options are.
+  
+  ```ts
+  // before
+  import type { UseSceneLayerListArgs } from '@weasel-js/ui';
+  // after
+  import type { UseSceneLayerListOptions } from '@weasel-js/ui';
+  ```
+  
+  <!-- entry: breaking api -->
+- 800e293: Scene panel helpers move from `@weasel-js/ui` to `@weasel-js/ui-canvas`, and `classifyKind` is gone.
+  
+  The helpers are `useSceneLayerList`, `SceneGradientHandles`, `aggregateValue` (renamed `sharedNodeValue`) and `nodeValueAt`.
+  
+  This is breaking: import `useSceneLayerList`, `ANNOTATION_LAYER_ROW` and their types from `@weasel-js/ui-canvas/components/SceneLayerList`; `SceneGradientHandles`, `SceneGradientHandlesProps` and `PaintedNodeData` from `@weasel-js/ui-canvas/components/SceneGradientHandles`; and `sharedNodeValue`, `nodeValueAt` and `AnyNode` from `@weasel-js/ui-canvas`. In place of `classifyKind(node, routing)`, call core's `routeKind(routing, node.data, node)`, which it wrapped. ui's `LayerList` and `GradientHandles` stay in `@weasel-js/ui`.
+  
+  <!-- entry: breaking api -->
+- 7513080: `ToggleBar`, `OptionsBar`, and `ButtonBar` are one `SegmentedBar`, whose `mode` says what a press does.
+  
+  `mode` is `'single'` (the default) or `'multiple'` for what `ToggleBar` did, `'each'` for `OptionsBar`'s items that own their own state, and `'momentary'` for `ButtonBar`'s buttons. Each mode keeps its old roles: a radio group (or a group of toggle buttons with `followsFocus: false`), a group of toggle buttons, and a toolbar of plain buttons. The bar lives at `@weasel-js/ui/components/Segmented`. `ToggleBarItem` is `SegmentedBarItem`, an `'each'` item is a `SegmentedEachItem`, and a `'momentary'` one a `SegmentedMomentaryItem`; `ToggleBarVariant`, `OptionsBarVariant`, and `ButtonBarVariant` are `SegmentedVariant`, and the three `*_BAR_VARIANT_ICONS` are `SEGMENTED_VARIANT_ICONS`. labkit re-exports `SegmentedBar`, `SegmentedBarItem`, `SegmentedBarProps`, and `SegmentedVariant` in place of the `ToggleBar` names.
+  
+  ```tsx
+  // before
+  import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+  <ToggleBar aria-label="Align" items={items} value={v} onChange={setV} />
+  <OptionsBar aria-label="View" items={[{ value: 'grid', label: 'Grid', selected, onChange }]} />
+  <ButtonBar aria-label="Edit" items={[{ value: 'undo', label: 'Undo', onAction: undo }]} />
+  // after
+  import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
+  <SegmentedBar aria-label="Align" items={items} value={v} onChange={setV} />
+  <SegmentedBar mode="each" aria-label="View" items={[{ value: 'grid', label: 'Grid', selected, onChange }]} />
+  <SegmentedBar mode="momentary" aria-label="Edit" items={[{ value: 'undo', label: 'Undo', onAction: undo }]} />
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 3653446: `Select` no longer takes React Aria's `value`, `defaultValue`, `onChange` and `selectionMode`, which overrode its own selection. They skipped its read-only and disabled handling.
+  
+  Use the props `Select` documents instead:
+  
+  ```tsx
+  // before
+  <Select value={key} onChange={setKey} options={options} />
+  // after
+  <Select selectedKey={key} onSelectionChange={setKey} options={options} />
+  ```
+  
+  <!-- entry: breaking fix -->
+- 24a8129: `LayerList`, `Timeline`, `BandEditor` and `EffectList` report a selection through `onSelectionChange`, as `Tree`, `Select` and `ComboBox` do.
+  
+  ```tsx
+  // before
+  <LayerList items={items} selectedIds={ids} onSelect={setIds} />
+  // after
+  <LayerList items={items} selectedIds={ids} onSelectionChange={setIds} />
+  ```
+  
+  `useSceneLayerList()` returns `onSelectionChange` in place of `onSelect`.
+  
+  <!-- entry: breaking api -->
+- 97cce9d: The many-at-once selection mode is `'multiple'` everywhere, as React Aria spells it, and a mode prop is `selectionMode`.
+  
+  `SelectionMode` is `'single' | 'multiple'`, so `useSelection`'s `mode`, `selectionOptions` and `<SceneCanvas selectionMode>` take `'multiple'` in place of `'multi'`. `<ItemList>`'s `selection` prop, `ListModeInput.selection` and the HUD list's `selection` option are `selectionMode`.
+  
+  ```tsx
+  // before
+  useSelection({ scene, mode: 'multi' });
+  <ItemList rows={rows} selection="multi" />
+  // after
+  useSelection({ scene, mode: 'multiple' });
+  <ItemList rows={rows} selectionMode="multiple" />
+  ```
+  
+  <!-- entry: breaking api -->
+- c017ed2: `Sequence`, labkit's `ClockFrames` and `LayerList` take their accessible name as `aria-label`, where they took `label`.
+  
+  ```tsx
+  // before
+  <Sequence label="Digits" sweep={digits}>{(n) => n}</Sequence>
+  // after
+  <Sequence aria-label="Digits" sweep={digits}>{(n) => n}</Sequence>
+  ```
+  
+  <!-- entry: breaking api -->
+- a5c1865: `ShortcutSheet` groups tools by the `toolSets` it is given, and with none lists every tool under "Other tools".
+  
+  This is breaking: the default was editing's `KIT_TOOL_GROUPS`, which `@weasel-js/ui` no longer depends on. Pass it to keep the kit's groups: `<ShortcutSheet toolSets={KIT_TOOL_GROUPS} … />`. `EditorShell`'s sheet still groups by it when `usePublishEditorTools` names no sets.
+  
+  <!-- entry: breaking behavior -->
+- b1cfd4e: `SidebarPanel` folds through `collapsed`, `defaultCollapsed` and `onCollapsedChange(next)`, as `PropertyGroup` does, in place of `onToggleCollapse()`.
+  
+  `defaultCollapsed` lets the panel hold its own fold. `collapsible={false}` keeps a panel given `collapsed` from drawing the toggle.
+  
+  ```tsx
+  // before
+  <SidebarPanel title="Layers" collapsed={folded} onToggleCollapse={() => setFolded(!folded)} />
+  // after
+  <SidebarPanel title="Layers" collapsed={folded} onCollapsedChange={setFolded} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 7e90922: `swallowNextClick` moves from `@weasel-js/ui` to `@weasel-js/routing`, beside `swallowClick`, which swallows the next click until disarmed.
+  
+  ```ts
+  // before
+  import { swallowNextClick } from '@weasel-js/ui';
+  // after
+  import { swallowNextClick } from '@weasel-js/routing';
+  ```
+  
+  It now cancels the click's default action as well; pass `{ keepDefault: true }` to only stop it reaching listeners, as before.
+  
+  <!-- entry: breaking api -->
+- 037e5da: `SwatchButton` takes native `<button>` attributes, so its `data` and `held` props are gone: pass data attributes and a hold's attributes directly.
+  
+  A caller's `onClick` or `onContextMenu` runs before the swatch applies, and one that calls `preventDefault()` applies nothing.
+  
+  ```tsx
+  // before
+  <SwatchButton option={o} tabStop current={false} apply={apply} held={hold.focus} data={{ 'data-slot': '2' }} />
+  // after
+  <SwatchButton option={o} tabStop current={false} apply={apply} {...hold.focus} data-slot="2" />
+  ```
+  
+  <!-- entry: breaking api -->
+- 5de2a26: `SwatchGrid`, `SwatchStrip` and `SwatchRings` report the swatch clicked through `onSelect` and `onAltSelect`.
+  
+  They replace `onChange` and `onAltChange`; the callback types are `SwatchSelect` and `SwatchColorSelect`.
+  
+  ```tsx
+  // before
+  <SwatchStrip value={fill} onChange={setFill} onAltChange={setStroke} />
+  // after
+  <SwatchStrip value={fill} onSelect={setFill} onAltSelect={setStroke} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 80b8f57: The sweep builders are `rangeSweep`, `valuesSweep`, `framesSweep` and `sweepUntil`.
+  
+  They were `range`, `values`, `frames` and `until`, from `@weasel-js/ui-input` and from ui's `Sequence` entry.
+  
+  ```tsx
+  // before
+  <Sequence aria-label="Digits" sweep={range({ from: 0, to: 9, step: 1 })}>{(n) => n}</Sequence>
+  // after
+  <Sequence aria-label="Digits" sweep={rangeSweep({ from: 0, to: 9, step: 1 })}>{(n) => n}</Sequence>
+  ```
+  
+  <!-- entry: breaking api -->
+- ae7d97c: A tool palette shows the key that activates each tool now: a key rebound through `bindingOverrides` shows rebound.
+  
+  `ToolsApi.shortcuts` holds each tool's live keys, read from the `tool.activate` bindings in the canvas's actions scope, or with no scope the keys the tools declare. `ToolPalette` reads it; its `lookupShortcut` prop and `ToolPresentation.shortcut` are gone. A hand-built `ToolsApi` needs a `shortcuts` field, which `declaredToolShortcuts(registry)` makes, and `toolShortcutsOf(actions, ids)` reads the same keys from an action list.
+  
+  ```tsx
+  // before
+  <ToolPalette tools={tools} lookupShortcut={(id) => myLookup(id)} />
+  // after
+  <ToolPalette tools={tools} />
+  ```
+  
+  <!-- entry: rank=10 breaking api fix -->
+- a5c1865: `ToolPalette` with no `groupOrder` or `toolOrder` follows its `include` set's order, else the order its tools registered in.
+  
+  This is breaking: the defaults were editing's `TOOL_GROUP_ORDER` and `KIT_TOOL_IDS`, which `@weasel-js/ui` no longer depends on. A canvas's own registry already lists the kit's tools in that order; a palette over another registry that wants it passes them:
+  
+  ```tsx
+  import { KIT_TOOL_IDS, TOOL_GROUP_ORDER } from '@weasel-js/editing';
+  
+  <ToolPalette tools={tools} groupOrder={TOOL_GROUP_ORDER} toolOrder={KIT_TOOL_IDS} />
+  ```
+  
+  <!-- entry: breaking behavior -->
+- d52edaa: One `ActionButton` replaces `ToolButton` and `BarActionButton`, and draws in the form of where it sits.
+  
+  In a `Bar` it is a cell: its icon alone, with its label and shortcut in its tooltip, or its words where it has no icon or is `labeled`. In a bar's overflow menu it is a row of icon, label, and shortcut; in a form's row or a popover's, icon and label across the row; and in a `ToolGroup` (so in a `ToolRail` or `ToolPalette`) a palette's tool, its label and shortcut under its icon. `form` names one outright. `label` is its name, `children` replace its words on the face, `tooltip` replaces its tooltip, `active` holds it down (in a palette, marks the current tool with `aria-current`), and `popup` says it opens a dialog or a menu. Every one takes `disabled` and `disabledReason`, and the `Disabled` scope. `ToolButton`'s `ariaDisabled` is gone: a `disabledReason` keeps a button reachable.
+  
+  ```tsx
+  // before
+  <ToolButton icon={selectIcon} label="Select" active onClick={pick} />
+  <BarActionButton label="Join" icon={joinIcon} menu onPress={join} />
+  // after
+  <ToolGroup><ActionButton icon={selectIcon} label="Select" active onPress={pick} /></ToolGroup>
+  <FormScope form="menu"><ActionButton label="Join" icon={joinIcon} onPress={join} /></FormScope>
+  ```
+  
+  <!-- entry: rank=10 breaking api visual -->
+- d52edaa: `ActionLeaf` and `ActionsLeaf` draw an `action` or `actions` leaf in any form, replacing `BarAction`, `PrefActionButton`, and their plurals.
+  
+  Both come from `@weasel-js/ui/components/Prefs`, in place of `BarAction`, `BarActions`, `PrefActionButton`, and `PrefActionRows`. They take the leaf as `leaf` and draw in the nearest `FormScope`'s form, or the `form` they are given.
+  
+  ```tsx
+  // before
+  <PrefActionButton pref={leaf} path="file.save" />
+  // after
+  <ActionLeaf leaf={leaf} path="file.save" form="row" />
+  ```
+  
+  <!-- entry: breaking api -->
+- d52edaa: `ActionSettingsPopover` takes its settings form as `settings`, where it took `form`.
+  
+  `form` is now the `ControlForm` its button draws in.
+  
+  ```tsx
+  // before
+  <ActionSettingsPopover form={settings} label="Snap" />
+  // after
+  <ActionSettingsPopover settings={settings} label="Snap" />
+  ```
+  
+  <!-- entry: breaking api -->
+- 06d8a05: ui's `snapToNearest` is now `attract`, the name `@weasel-js/ui-input` gives the same function.
+  
+  ```ts
+  // before
+  import { snapToNearest } from '@weasel-js/ui';
+  // after
+  import { attract } from '@weasel-js/ui';
+  ```
+  
+  <!-- entry: breaking api -->
+- bfbeb0e: `Bar` is now a strip of children, and the bar drawn from a schema is `PrefsBar`, from `@weasel-js/ui/components/PrefsBar`.
+  
+  `PrefsBar` takes every prop the schema `Bar` did but `shape` and `align`, which an `Along` around it gives now, plus children drawn after the schema's cells. `Bar` takes any controls as children, with `Bar.Group`, `Bar.Spacer`, `Bar.Divider`, `Bar.Item`, and `Bar.Readout`, and adds `roving`, `wrap`, `fit`, `divided`, and the `framed` values `'band'` and `'status'`.
+  
+  ```tsx
+  // before
+  <Bar schema={TEXT} values={values} onChange={onChange} />
+  // after
+  <PrefsBar schema={TEXT} values={values} onChange={onChange} />
+  ```
+  
+  <!-- entry: rank=5 breaking api new -->
+- bfbeb0e: `BarLayout` is gone; a surface that walks its own nodes passes `barNodeChildren(nodes, { cells, attrs })` to a `Bar` as its children.
+  
+  `groupBarNodes` and the `BarNode`, `BarLeafNode`, and `BarCell` types move to `@weasel-js/ui/components/PrefsBar`.
+  
+  ```tsx
+  // before
+  <BarLayout framed label="Text" nodes={nodes} cells={cells} />
+  // after
+  <Bar framed label="Text">{barNodeChildren(nodes, { cells })}</Bar>
+  ```
+  
+  <!-- entry: breaking api -->
+- 800e293: `SelectionPanel`, `AnchorFields`, `CharacterOptions`, `Rulers` and `PlotDataPanel` move from `@weasel-js/ui` to `@weasel-js/ui-canvas`.
+  
+  This is breaking: import them, with their props types, `CHARACTER_OPTIONS`, `isCharacterChrome`, `HandleCoords` and `PlotTableView`, from `@weasel-js/ui-canvas`, or from `@weasel-js/ui-canvas/components/inspector/SelectionPanel` and the other subpaths `@weasel-js/ui` had for them. Load `@weasel-js/ui-canvas/style.css` beside ui's.
+  
+  ```ts
+  import { SelectionPanel } from '@weasel-js/ui-canvas/components/inspector/SelectionPanel';
+  ```
+  
+  <!-- entry: rank=20 breaking api -->
+- 68fa395: `Checkbox` and `Switch` forward `ref` to their `<input>`, the element focus goes to; the new `rootRef` reaches the `<label>` around it.
+  
+  ```tsx
+  // before: a ref to the label
+  <Checkbox ref={labelRef}>Snap</Checkbox>
+  // after
+  <Checkbox ref={inputRef} rootRef={labelRef}>Snap</Checkbox>
+  ```
+  
+  <!-- entry: breaking api -->
+- d52edaa: `ControlForm` names where a control is drawn, and `FormScope` sets it for what is inside: `'bar'`, `'menu'`, `'row'`, `'popover'`, or `'palette'`.
+  
+  `Bar` sets `'bar'`, its overflow `'menu'`, its popovers `'popover'`, and `ToolGroup` `'palette'`; `useControlForm()` reads it. `ControlPlace` is gone: `enumControlAt` and `PARAMS_ENUM_PLACES` take a `ControlForm`.
+  
+  ```ts
+  // before
+  enumControlAt(field.control, 'popover' as ControlPlace);
+  // after
+  enumControlAt(field.control, 'popover' as ControlForm);
+  ```
+  
+  <!-- entry: breaking api -->
+- e7383b3: `ControlSize` replaces `ButtonSize`, `SegmentedSize`, `ToggleBarSize`, `ButtonBarSize`, and `OptionsBarSize`.
+  
+  Each was `'sm' | 'md'`, so only the name changes. `ControlSize` is exported from `@weasel-js/ui`, `@weasel-js/ui/components/Density`, `@weasel-js/ui-logic`, and `@weasel-js/labkit`.
+  
+  ```ts
+  // before
+  import type { ToggleBarSize } from '@weasel-js/ui';
+  // after
+  import type { ControlSize } from '@weasel-js/ui';
+  ```
+  
+  <!-- entry: breaking api -->
+- c113459: Every kit component says `disabled` and `readOnly`, never React Aria's `isDisabled` and `isReadOnly`.
+  
+  `Checkbox`, `Switch`, `RadioGroup`, `Radio`, `Input`, `TextArea`, `NumberField`, `Select`, `SelectItem`, `ComboBox`, `ComboBoxItem`, `Tabs`, and `Tab` are renamed; each translates them for React Aria itself. `PrefsForm`'s set of paths to disable is now `disabledPaths`, since `disabled` disables the whole form.
+  
+  ```tsx
+  // before
+  <Switch isDisabled={!ready}>Snap</Switch>
+  <Checkbox isReadOnly>Locked</Checkbox>
+  <PrefsForm schema={schema} disabled={new Set(['view.lift'])} onChange={write} />
+  // after
+  <Switch disabled={!ready}>Snap</Switch>
+  <Checkbox readOnly>Locked</Checkbox>
+  <PrefsForm schema={schema} disabledPaths={new Set(['view.lift'])} onChange={write} />
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- 83ad38f: Curve layers report edits through `onInput`, `onChange` and `onCancel`, as every other continuous control does.
+  
+  `FunctionLayer`, `KeyframeLayer` and `CustomLayer` rename their live `onChange` to `onInput` and their `onCommit(next, prev)` to `onChange(next, prev)`, and add `onCancel`. A layer given no `onInput` is drawn from a draft the editor holds while the edit runs. Escape cancels a drag.
+  
+  ```tsx
+  // before
+  <KeyframeLayer label="Opacity" state={state} onChange={setState} onCommit={record} />
+  // after
+  <KeyframeLayer label="Opacity" state={state} onInput={setState} onChange={record} />
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 83ad38f: A property slider's and a color field's `onChange` always commits once per edit, so a commit-only caller no longer passes a no-op `onInput`.
+  
+  Before, either field's `onChange` fired on every move when no `onInput` was given. A caller that wants live values now passes `onInput` too. `withCommitPolicy` settles a field by dropping its `onInput`, and leaves a live one writing through both. A text field takes `onCancel`, fired after Escape drops its draft.
+  
+  ```tsx
+  // before: live
+  <PropertyField kind="number" control="slider" label="Size" value={size} onChange={setSize} />
+  // after
+  <PropertyField kind="number" control="slider" label="Size" value={size} onInput={setSize} onChange={setSize} />
+  ```
+  
+  <!-- entry: rank=5 breaking api behavior -->
+- 83ad38f: `Slider`, `CurveEditor` and `useDetents` take `onChange` alone for a commit-only caller, and draw the drag themselves while it runs.
+  
+  `onInput` is optional on all three. Every edit commits through `onChange` once, and a press released without changing anything commits nothing. Escape cancels a drag; a canceled drag sends `onInput` the value it began from, then the new `onCancel` (`CurveEditor`, `useDetents`) or `Slider`'s existing one. The protocol is "Edit callbacks" in `docs/conventions.md`.
+  
+  ```tsx
+  // before: a no-op onInput, and the thumb stood still until the consumer wrote it back
+  <Slider thumbs={thumbs} onInput={() => {}} onChange={commit} min={0} max={1} />
+  // after
+  <Slider thumbs={thumbs} onChange={commit} min={0} max={1} />
+  ```
+  
+  <!-- entry: rank=10 breaking api behavior -->
+- 83ad38f: `ZoomControl` takes `onZoomInput` for live zoom and `onZoomChange` for the committed one; `onZoomCommit` is gone.
+  
+  ```tsx
+  // before
+  <ZoomControl zoom={zoom} onZoomChange={preview} onZoomCommit={commit} />
+  // after
+  <ZoomControl zoom={zoom} onZoomInput={preview} onZoomChange={commit} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 68fa395: A `Field`'s label names the one control inside it, and its new `description` and `error` describe it; a field of several controls takes `group`.
+  
+  Without `group` the field is no longer a `role="group"`: the control takes the label as its accessible name, so it no longer repeats the label in an `aria-label`. With `group` the field is a group its label names, its `description` and `error` describe the group, and each control names itself.
+  
+  ```tsx
+  // before
+  <Field label="Opacity"><Slider aria-label="Opacity" … /></Field>
+  <Field label="Size"><UnitField aria-label="Width" … /><UnitField aria-label="Height" … /></Field>
+  // after
+  <Field label="Opacity" description="Of the whole layer."><Slider … /></Field>
+  <Field label="Size" group><UnitField aria-label="Width" … /><UnitField aria-label="Height" … /></Field>
+  ```
+  
+  <!-- entry: rank=10 breaking api new -->
+- 87bbefb: `useFloatingPlacement` moves from the `@weasel-js/ui/floating` subpath to `@weasel-js/ui/components/FloatingPanel`, beside the panel built on it.
+  
+  The `./floating` subpath is gone. The hook, its option and result types, and the root barrel export are unchanged.
+  
+  ```ts
+  // before
+  import { useFloatingPlacement } from '@weasel-js/ui/floating';
+  // after
+  import { useFloatingPlacement } from '@weasel-js/ui/components/FloatingPanel';
+  ```
+  
+  <!-- entry: breaking api -->
+- b55b478: `<Icon>` takes its accessible name as `aria-label`, as the kit's other components do; the prop was `label`.
+  
+  ```tsx
+  // before
+  <Icon name={icon('close')} label="Close" />
+  // after
+  <Icon name={icon('close')} aria-label="Close" />
+  ```
+  
+  <!-- entry: breaking api -->
+- 062ab3a: `SelectionPanel`, `AnchorFields`, and `CharacterOptions` move under `@weasel-js/ui/components/inspector/`.
+  
+  The three panels that read and edit the live scene (the selection, its anchors, and the text tool) now sit together. Their exports are unchanged, and the root barrel exports them as before.
+  
+  ```ts
+  // before
+  import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
+  import { AnchorFields } from '@weasel-js/ui/components/AnchorFields';
+  import { CharacterOptions } from '@weasel-js/ui/components/CharacterOptions';
+  // after
+  import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';
+  import { AnchorFields } from '@weasel-js/ui/components/inspector/AnchorFields';
+  import { CharacterOptions } from '@weasel-js/ui/components/inspector/CharacterOptions';
+  ```
+  
+  <!-- entry: breaking api -->
+- b4cc74e: `@weasel-js/ui` no longer re-exports gestures' key-spec helpers; import them from `@weasel-js/gestures`.
+  
+  That is `keySpecsFromMods`, `keySpecFromKey`, `keySpecFromCode`, `keySpecsFromShortcut`, and `detectPlatform`. The types that came with them (`ModifierKey`, `LogicalModSpec`, `Platform`, `LegendStyle`, `KeySpecsFromModsOptions`, `KeyLabels`) move the same way, from the root barrel and from `@weasel-js/ui/components/Keycaps`. `KeySpec`, `KeyCap`, `KeySequence`, and the rest of Keycaps stay.
+  
+  ```ts
+  // before
+  import { KeySequence, keySpecsFromShortcut } from '@weasel-js/ui/components/Keycaps';
+  // after
+  import { KeySequence } from '@weasel-js/ui/components/Keycaps';
+  import { keySpecsFromShortcut } from '@weasel-js/gestures';
+  ```
+  
+  <!-- entry: breaking api -->
+- c113459: `Select`, `ComboBox`, and `MenuButton` take one option type, `ListOption`, in place of `SelectOption` and `ComboBoxOption`.
+  
+  A `ComboBox` option now draws its `icon`, `description`, and `disabledReason` as a `Select` option does. `MenuButtonItem` is a `ListOption` whose label is text, and `AsyncOption` is a `ListOption`.
+  
+  ```ts
+  // before
+  import type { SelectOption } from '@weasel-js/ui';
+  const options: SelectOption[] = [{ value: 'r', label: 'Red', isDisabled: true }];
+  // after
+  import type { ListOption } from '@weasel-js/ui';
+  const options: ListOption[] = [{ value: 'r', label: 'Red', disabled: true }];
+  ```
+  
+  <!-- entry: breaking api -->
+- 68fa395: `MenuButton` takes `ref` for its trigger `<button>`; `buttonRef` is gone.
+  
+  ```tsx
+  // before
+  <MenuButton buttonRef={addRef} label="Add" … />
+  // after
+  <MenuButton ref={addRef} label="Add" … />
+  ```
+  
+  <!-- entry: breaking api -->
+- 4b30753: The `@weasel-js/ui/components/ContextMenu` subpath is now `@weasel-js/ui/components/Menu`.
+  
+  The folder holds the whole menu layer that `MenuButton`, `MenuBar`, and the bar menus build on, with `ContextMenuHost` and `useContextMenu` inside it. Their names are unchanged, and the root barrel exports them as before.
+  
+  ```ts
+  // before
+  import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/ContextMenu';
+  // after
+  import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/Menu';
+  ```
+  
+  <!-- entry: breaking api -->
+- 699c512: Playhead controls report a move with `onSeek` and play state with `playing` and `onPlayingChange`, one spelling across them.
+  
+  `Timeline`, `TimeRuler` and `Jog` take `onSeek` where they took `onScrub`. `Transport` takes `playing` where it took `paused`, and one `onPlayingChange(next)` where it took `onPlay` and `onPause`; `useTimelinePlayback` returns the same.
+  
+  ```tsx
+  // before
+  <Transport paused={!playing} onPlay={play} onPause={pause} … />
+  <TimeRuler … playhead={t} onScrub={setT} />
+  // after
+  <Transport playing={playing} onPlayingChange={(next) => (next ? play() : pause())} … />
+  <TimeRuler … playhead={t} onSeek={setT} />
+  ```
+  
+  <!-- entry: breaking api -->
+- 2909824: `PrefsForm` and `PrefsDialog` offer the Auto toggle only on a leaf whose schema declares `auto`, so an ordinary setting gets Reset alone.
+  
+  `canInherit` now narrows the leaves that declare `auto`; it can no longer give a leaf without one a toggle.
+  
+  ```ts
+  // Before: any leaf got the toggle once onAutoChange was given
+  { kind: 'number', name: 'Glow', description: '', default: 2 }
+  
+  // After: opt the leaf in
+  { kind: 'number', name: 'Glow', description: '', default: 2, auto: {} }
+  ```
+  
+  <!-- entry: rank=5 breaking behavior visual -->
+- e60e5c1: `useRovingTabIndex` and `useRowNavigation` report Enter and Space on a row with `onAction`, as `Tree` does; the option was `onActivate`.
+  
+  ```ts
+  // before
+  useRovingTabIndex({ orientation: 'horizontal', onActivate: (index) => open(index) });
+  // after
+  useRovingTabIndex({ orientation: 'horizontal', onAction: (index) => open(index) });
+  ```
+  
+  <!-- entry: breaking api -->
+- 7b82ac2: A settings row's auto, changed, reset, and error state is set by a `<RowScope>` around it, not by props on the row.
+  
+  The row is `PropertyRow`, `PropertyField`, or `DialogRow`. `auto`, `onAutoChange`, `autoValue`, `changed`, and `error` are gone from all three. `<RowScope>` takes them, and `onReset`, and the row inside it draws them; a scope inside another overrides only the fields it names, and a row nested in another's control starts with none. `usePropertyRow()` is exported, and returns the row a control sits in, its label and that state, or `null`. `mixed` stays a prop, and a row's `disabled` still goes through the `<Disabled>` scope.
+  
+  ```tsx
+  // before
+  <PropertyField kind="number" label="Gap" value={gap} onChange={setGap} auto={auto} onAutoChange={setAuto} error={err} />
+  // after
+  <RowScope auto={auto} onAutoChange={setAuto} error={err}>
+    <PropertyField kind="number" label="Gap" value={gap} onChange={setGap} />
+  </RowScope>
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 2ab2678: `PrefSchemaEditor`, `AssetEditor`, and `PrefConditionEditor` move from `@weasel-js/ui` to `@weasel-js/prefs-editor`.
+  
+  The model they edit through moves to `@weasel-js/prefs/edit`. The `@weasel-js/ui/components/PrefSchemaEditor` and `@weasel-js/ui/components/PrefConditionEditor` subpaths are gone, and so are those names from ui's root. The components and their props, `EditorAction`, `PREF_SCHEMA_EDITOR_PREFS`, `SubmitChanges`, `SentAsset`, and `SubmitAssets` are imported from `@weasel-js/prefs-editor`, whose stylesheet is `@weasel-js/prefs-editor/style.css`. Everything else those subpaths exported (`workspaceCodec`, `bundlesAsset`, `actionCatalog`, `printSchema`, `diffSchemas`, `prefConditionFlow`, and the `Workspace`, `Asset`, and `CustomKinds` types among them) is imported from `@weasel-js/prefs/edit`.
+  
+  ```ts
+  // before
+  import { AssetEditor, workspaceCodec, type Workspace } from '@weasel-js/ui/components/PrefSchemaEditor';
+  import { PrefConditionEditor, prefConditionFlow } from '@weasel-js/ui/components/PrefConditionEditor';
+  // after
+  import { AssetEditor, PrefConditionEditor } from '@weasel-js/prefs-editor';
+  import '@weasel-js/prefs-editor/style.css';
+  import { prefConditionFlow, assetSetCodec, type AssetSet } from '@weasel-js/prefs/edit';
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 68fa395: `Select`'s `id` and `ref` reach its trigger `<button>`, the element a `<label htmlFor>` names and focus goes to; `triggerId` is gone.
+  
+  ```tsx
+  // before
+  <Select triggerId="mode" … />
+  // after
+  <Select id="mode" ref={triggerRef} … />
+  ```
+  
+  <!-- entry: breaking api -->
+- 7d495c5: ui's `toFraction` and `spanFraction` are now `spanFraction` and `spanShare`, the names `@weasel-js/ui-input` gives the same two functions.
+  
+  The name `spanFraction` moves: it now places a value along the window, where it used to measure a length's share of it. A call written for the old `spanFraction` still compiles, so rename those calls to `spanShare` before renaming `toFraction`.
+  
+  ```ts
+  // before
+  import { toFraction, spanFraction } from '@weasel-js/ui';
+  // after
+  import { spanFraction, spanShare } from '@weasel-js/ui';
+  ```
+  
+  <!-- entry: breaking api -->
+- ecf76a1: Kit components say `open`, `invalid`, `required`, `loading`, and `indeterminate`, never React Aria's `is`-prefixed names.
+  
+  This is a breaking change. `Dialog`, `PrefsDialog`, `Popover`, `Callout`, `Tooltip`, `TooltipTrigger`, and `Select` rename `isOpen` to `open`; `isOpen` is no longer accepted. `Input`, `TextArea`, `NumberField`, `RadioGroup`, `Select`, `ComboBox`, and `Checkbox` rename `isInvalid` to `invalid` and `isRequired` to `required`. `Checkbox` renames `isIndeterminate` to `indeterminate`. `ComboBox` renames `isLoading` to `loading`, and `useAsyncOptions` returns `loading` in place of `isLoading`, so its result still spreads into one. `defaultOpen`, `onOpenChange`, and `isSelected` keep their names.
+  
+  ```tsx
+  // before
+  <Dialog isOpen={open} onOpenChange={setOpen} title="Export">…</Dialog>
+  <Input label="Name" isRequired isInvalid={problem !== null} errorMessage={problem} />
+  <Checkbox isIndeterminate>Mixed</Checkbox>
+  <ComboBox label="Part" {...async} isLoading={async.isLoading} />
+  // after
+  <Dialog open={open} onOpenChange={setOpen} title="Export">…</Dialog>
+  <Input label="Name" required invalid={problem !== null} errorMessage={problem} />
+  <Checkbox indeterminate>Mixed</Checkbox>
+  <ComboBox label="Part" {...async} loading={async.loading} />
+  ```
+  
+  <!-- entry: rank=10 breaking api -->
+- bfbeb0e: `StatusBar`, `StatusBarItem`, and `StatusBarSpacer` are gone; a `Bar` with `framed="status"` draws the strip, with `Bar.Readout` and `Bar.Spacer`.
+  
+  It is still a labeled `<footer>` and no live region; `divided` draws a divider between neighboring readouts, none beside a spacer.
+  
+  ```tsx
+  // before
+  <StatusBar aria-label="Editor status" divided>
+    <StatusBarItem>zoom: 100%</StatusBarItem>
+    <StatusBarSpacer />
+    <StatusBarItem muted>0.7.0</StatusBarItem>
+  </StatusBar>
+  // after
+  <Bar framed="status" label="Editor status" divided>
+    <Bar.Readout>zoom: 100%</Bar.Readout>
+    <Bar.Spacer />
+    <Bar.Readout muted>0.7.0</Bar.Readout>
+  </Bar>
+  ```
+  
+  <!-- entry: breaking api -->
+- c59ac31: `ToolGroup` lays its buttons along the run it sits in and no longer takes `orientation`.
+  
+  Inside a `ToolPalette` it follows the palette's `orientation`, as before. On its own it is a row, which was `orientation="horizontal"`; for a column, set the run around it.
+  
+  ```tsx
+  // before
+  <ToolGroup orientation="vertical">{buttons}</ToolGroup>
+  // after
+  <RunScope orientation="vertical"><ToolGroup>{buttons}</ToolGroup></RunScope>
+  ```
+  
+  <!-- entry: breaking api -->
+- bfbeb0e: `Toolbar` is gone; a `Bar` with `label` and `roving` takes its place, and `ToolbarButton` is `ActionButton`.
+  
+  `aria-label` becomes `label`, `framed` becomes `framed="band"`, and `Toolbar.Title` becomes `lead="label"`, which inside a movable `ToolbarDock` is also the bar's move handle. A `Bar` does not rove unless asked.
+  
+  ```tsx
+  // before
+  <Toolbar aria-label="Trial actions" size="sm" framed>
+    <Toolbar.Title>My Trial</Toolbar.Title>
+    <Toolbar.Group><Toolbar.Button onClick={undo}>Undo</Toolbar.Button></Toolbar.Group>
+  </Toolbar>
+  // after
+  <Bar label="My Trial" lead="label" roving size="sm" framed="band">
+    <Bar.Group><ActionButton label="Undo" onPress={undo} /></Bar.Group>
+  </Bar>
+  ```
+  
+  <!-- entry: breaking api -->
+- 2acd7bc: `@weasel-js/ui` and its `components/ToolPalette` subpath no longer re-export `formatShortcut` and its siblings, which live in gestures.
+  
+  This removes public exports: `formatShortcut`, `formatShortcutParts`, `SHORTCUT_LEADER_SEPARATOR`, and the types `ShortcutInput`, `FormatShortcutOptions`, `ShortcutLeaderStep`, and `ShortcutParts`. Code importing them from ui has to change:
+  
+  ```ts
+  // before
+  import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
+  // after
+  import { formatShortcut } from '@weasel-js/gestures';
+  ```
+  
+  <!-- entry: breaking api -->
+- d52edaa: `SegmentTooltipFields` is now `TooltipFields`, exported from `@weasel-js/ui/components/Tooltip`.
+  
+  Rename the type where you import it; its fields are the same.
+  
+  <!-- entry: breaking api -->
+- a15119c: `Transport` and `EasingPicker` move out of the `components/Timeline` subpath into subpaths of their own.
+  
+  The `Timeline` subpath now holds the timeline alone: `Timeline`, `AnimatedTimeline`, `TimeRuler`, and the time-scale helpers. `AnimatedTransport` is in the `Transport` subpath, and the root barrel still exports all of them.
+  
+  ```ts
+  // before
+  import { EasingPicker, Transport } from '@weasel-js/ui/components/Timeline';
+  // after
+  import { Transport } from '@weasel-js/ui/components/Transport';
+  import { EasingPicker } from '@weasel-js/ui/components/EasingPicker';
+  ```
+  
+  <!-- entry: breaking api -->
+- c59ac31: A control reads the row, column, or curve it sits in from one `useRun()`, which replaces `useTrackShape()`.
+  
+  `useRun()` returns `{ orientation, shape, align, side }`: which way a straight run goes, the nearest `Along`'s track shape (undefined on a straight run), its alignment, and the side a popover opens on at the control's point of a curved bar. `<RunScope>` sets any of those for what it holds, keeping the enclosing run's other fields, and `fresh` starts it over from `STRAIGHT_RUN`. `AlongCtx` is gone.
+  
+  ```tsx
+  // before
+  const along = useTrackShape();
+  const shape = along?.shape;
+  // after
+  const { shape, orientation } = useRun();
+  ```
+  
+  <!-- entry: rank=5 breaking api -->
+- 7cc06b9: `useAsyncOptions`'s options type is `UseAsyncOptionsOptions`, where it was `UseAsyncOptionsProps`, matching every other hook's `Use…Options`.
+  
+  ```ts
+  // before
+  import type { UseAsyncOptionsProps } from '@weasel-js/ui';
+  // after
+  import type { UseAsyncOptionsOptions } from '@weasel-js/ui';
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- 037e5da: `ActionButton` takes native `<button>` attributes and handlers, forwards its `ref`, and runs a caller's handler before its own.
+  
+  A caller's `onClick` runs before `onPress`, and its `onFocus`, `onBlur`, `onPointerEnter` and `onPointerLeave` before the preview's; one that calls `preventDefault()` skips the button's own. `onPointerDown` now runs beside a menu `popup`'s, first, instead of being replaced by it. `aria-label`, `aria-pressed`, `type`, and `disabled` stay the button's: `label`, `active`, and `disabled` set them, and `form` is still where it is drawn.
+  
+  <!-- entry: api behavior -->
+- 21eb68a: `ActiveToolOptionsBar` without `tools` or `tool` follows the active tool of the canvas it sits in, or beside under a shared `WeaselProvider`.
+  
+  <!-- entry: api new -->
+- 66fcc99: `<AnimatedTransport handle={timeline} />` puts play, pause, loop, rate and a scrub bar on a live timeline with no lanes beside it.
+  
+  It reads the playhead from the handle each frame it moves and writes every control back to it, as `<AnimatedTimeline>`'s transport does; `scrub={false}` leaves out the scrub bar.
+  
+  <!-- entry: api new -->
+- 98620a3: Badge's catalog gives the params each shape, base, and effect draws with when none are set.
+  
+  From `@weasel-js/ui/components/Badge`, `badgeShapeDefaults(shape)`, `badgeBaseDefaults(base)` and
+  `badgeEffectDefaults(effect)` each return a fresh copy of those defaults, empty for one that takes no params:
+  
+  ```ts
+  import { badgeShapeDefaults } from '@weasel-js/ui/components/Badge';
+  
+  badgeShapeDefaults('ribbon'); // { left: 'inward', right: 'outward', taperWidth: 8 }
+  ```
+  
+  <!-- entry: api -->
+- 816aa33: Badge exports its catalog of shapes, bases, effects, and looks, and `Badge/geometry` exports the curves its polar bases draw.
+  
+  From `@weasel-js/ui/components/Badge`:
+  
+  - `BADGE_SHAPES`, `BADGE_BASES`, and `BADGE_EFFECTS` name every built-in shape, base, and effect.
+  - `badgeShapeRendering(shape)` says whether a shape is drawn in CSS, as its own SVG outline, or composed from a base and effects.
+  - `badgeEffectZone(effect)` says whether an effect moves the outline (`offset`) or paints under it, over it, or through it (`background`, `foreground`, `mask`).
+  - `BadgeLook`, `BADGE_LOOKS`, `lookProps(look, tint?)`, `lookAttrs(look, tint?)`, and `lookOf(props)` name a grade or emphasis as one choice and turn it into appearance props, or into JSX attributes for a snippet.
+  
+  From `@weasel-js/ui/components/Badge/geometry`, each curve as r(s) over one octant, for drawing or editing one outside a badge:
+  
+  ```ts
+  import { octantBSplineRadius, octantSplineRadius, quatrefoilRadius } from '@weasel-js/ui/components/Badge/geometry';
+  
+  const r = octantSplineRadius([{ s: 0, r: 48, w: 1 }, { s: 0.5, r: 20, w: 1 }, { s: 1, r: 40, w: 1 }]);
+  r(0.5); // 20
+  ```
+  
+  It also exports `OCTANT_SPLINE_DEFAULTS`, `OCTANT_SPLINE_MIN_ANCHORS`, `OCTANT_SPLINE_MAX_ANCHORS`, `OCTANT_BSPLINE_MIN_WEIGHT`, and the `BadgeSplineAnchor` type.
+  
+  <!-- entry: api -->
+- d8c99f9: The `rounded-rect` badge base takes `radius`, a corner radius in CSS px that holds on any badge size and replaces `erosion` when set.
+  
+  ```tsx
+  <Badge base="rounded-rect" baseParams={{ radius: 6 }}>Draft</Badge>
+  ```
+  
+  <!-- entry: api new -->
+- 130b86c: `BandEditor` takes `bandLabel`, the name a band is announced and spoken by, ahead of its range.
+  
+  Start it with the text `renderBand` shows, so a voice user can say what they see: a band showing "Icon" is then named "Icon, 1 over 64 to 1 over 24". Without it a band is still named `Band N`.
+  
+  ```tsx
+  <BandEditor
+    value={bands}
+    renderBand={(band) => band.data.name}
+    bandLabel={(band) => band.data.name}
+    {...rest}
+  />
+  ```
+  
+  <!-- entry: api new -->
+- e377035: `BandEditor` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  A held editor moves no seam, band, or range end, and nothing splits, merges, or locks; read-only, a band can still be selected. Held for a reason, or read-only, its bands and ends stay focusable and describe why; disabled with no reason anywhere, they leave the tab order.
+  
+  <!-- entry: api new -->
+- ca40330: `octantBSplineRadius` takes an optional `mode`, `'octant'` by default, so a quadrant-mode curve drawn outside a badge matches the badge.
+  
+  <!-- entry: api -->
+- b508e1a: `--wzl-button-h` sets the height of every `Button` below the element that sets it, at any size.
+  
+  An icon-only button stays square at that height, and `measureButton` reads it too. Unset, a button keeps its size's control height.
+  
+  ```css
+  .my-title-bar { --wzl-button-h: 18px; }
+  ```
+  
+  <!-- entry: new api -->
+- 037e5da: `Button` takes every native `<button>` attribute and handler, so it works as a disclosure trigger, a roving-focus member, or a form submitter.
+  
+  `ButtonProps` now derive from `ButtonHTMLAttributes<HTMLButtonElement>` (exported as `ButtonDomProps`), omitting only what `Button` writes itself: `aria-pressed` (`pressed`), `aria-busy` (`loading`), `disabled`, and `aria-label`, which `iconOnly` still requires. A button held for a `disabledReason` ignores its press handlers and keeps its focus and key handlers.
+  
+  ```tsx
+  <Button aria-expanded={open} aria-controls="details" onClick={toggle}>Details</Button>
+  <Button tabIndex={active ? 0 : -1} onKeyDown={roveToolbar}>Left</Button>
+  <Button type="submit" form="order" name="intent" value="save">Save</Button>
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- 42f4282: `ButtonOwnedAttribute` and `ActionButtonOwnedAttribute` are exported.
+  
+  They name the native `<button>` attributes each component writes itself, which its props therefore leave out.
+  
+  <!-- entry: api new -->
+- 36757b1: `Button` takes `size="xs"`, a 22px button for dense chrome such as a title bar.
+  
+  It stands at `--wzl-control-h-xs` with the small type, a 12px glyph and tight padding, and is square when icon-only. `measureButton` and the HUD button take it too, through the new `ButtonSize` type. Only a button takes `xs`: `ControlSize` and `ControlSizeScope` stay `sm` / `md`, since no other control has a design at that height.
+  
+  <!-- entry: new api -->
+- fd2cbc8: `CHARACTER_OPTIONS` is the schema `CharacterOptions` draws, exported beside it.
+  
+  It was the text tool's `useTextTool.options`, which is gone: read the character controls' schema from `@weasel-js/ui` as `CHARACTER_OPTIONS`.
+  
+  <!-- entry: api -->
+- afdace8: `AnchorFields` and `DragGrip` take a `className`, put on the property list and the `<svg>`.
+  
+  <!-- entry: api -->
+- 2140bf1: `ColorField`'s `onChange` can return the color it actually applied, and the recent colors record that color in place of the pick.
+  
+  Return nothing and the pick is recorded, as before. Return a string, or several for a commit that applied more than one.
+  
+  <!-- entry: api -->
+- 76a1854: Color and paint fields take `onCancel`, called when an opacity drag is abandoned with Escape.
+  
+  `ColorField`, `PaintInput`, `PaintField`, `MeshEditor` and `PropertyField`'s `color` and `paint` kinds all take it.
+  
+  The starting color reaches `onInput` first, as before, so a caller that opened something on `onInput` can now close it. `GradientEditor` reports a stop's canceled opacity drag through its existing `onCancel`, and `PaintKindEditorProps` gains an optional `onCancel` that registered paint editors are handed.
+  
+  <!-- entry: fix api -->
+- e377035: `CurveEditor` and `LayeredCurveEditor` take `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around either holds it.
+  
+  A held plot passes no press, key, or context menu to its layers, so nothing drags, inserts, deletes, or steps, and undo and redo do nothing. Held for a reason, or read-only, it and its marks stay focusable and the plot describes why; disabled with no reason anywhere, the plot is `inert`. `CurveField` hands its own hold to its plot.
+  
+  <!-- entry: api new -->
+- e4fdb90: `CurveField` has an accessible name, from its row's label or a new `aria-label` prop. It names the plot, and a group around the plot and its flip and reset buttons.
+  
+  <!-- entry: api fix -->
+- 037e5da: `CycleButton` takes a `Button`'s native attributes and handlers, and forwards its `ref`.
+  
+  Its `onClick` runs before the cycle, and one that calls `preventDefault()` keeps the value where it is.
+  
+  <!-- entry: api -->
+- d315cbd: `DataGrid` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  Held either way, its drag handles move nothing. Disabled, rows do not sort, expand, or activate either, and with no reason anywhere they leave the tab order; read-only, they still do. Controls drawn in its cells are held with it.
+  
+  <!-- entry: api new -->
+- efe82c4: A disabled control turns gray as well as fading, so it no longer reads like subtle text beside it.
+  
+  The cue is the new `--wzl-disabled-filter` theme token, `grayscale(1)` by default; a theme can set it to another filter, or to `none` to keep the fade alone. A consumer stylesheet that fades its own control when disabled sets `filter: var(--wzl-disabled-filter)` beside the `opacity` to match.
+  
+  <!-- entry: api visual -->
+- 7608cf2: `Disclosure` and `DisclosureRow` are disabled inside a `<Disabled>` scope.
+  
+  They also take `disabledReason`, which keeps the twisty focusable and tells the reason in its tooltip and description. A `<ReadOnly>` scope leaves them folding.
+  
+  <!-- entry: fix api -->
+- 8063ea0: `EasingPicker` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  Held, neither its menu nor its Convert to bezier button changes the easing.
+  
+  <!-- entry: api new -->
+- a6e8651: An Alt-click on an `EffectList` card's switch runs that card alone; a second Alt-click switches every card back on.
+  
+  <!-- entry: new -->
+- 67ee776: `EffectList` takes `disabled` and `readOnly`, with their reasons, and holds its cards and the open card's settings with them.
+  
+  A held list takes no move, switch, rename, duplicate or removal, and the controls in the open card's body are held
+  the same way, as inside a `Disabled` or `ReadOnly` scope. A read-only list still opens and closes its cards.
+  
+  ```tsx
+  <EffectList items={items} kinds={kinds} onChange={setItems} readOnly readOnlyReason="Shared preset" />
+  ```
+  
+  <!-- entry: api -->
+- 180ec74: A mode that bars an action bars its menu row, palette entry and bar button too, and `ActionsRegistry.trigger` refuses it.
+  
+  A dispatcher given `getRuleCtx` publishes it as the new `ruleCtx` dep, and `eligibleNow(action, ruleCtx)` asks an action's `eligible` rule against it outside dispatch.
+  
+  <!-- entry: fix api -->
+- 1d7b94d: Text, select and numeric fields take `size` and follow `ControlSizeScope`, so buttons and fields of one size stand at one height.
+  
+  `Input`, `TextArea`, `Select`, `NumberField` and `UnitField` take `size="sm" | "md"`.
+  
+  A field's height comes from its own `size`, else the nearest `ControlSizeScope` (which a container's `size` sets, as on `Bar`), else the height its container gives fields, else `control-h`. An unsized field outside every scope looks as before. A field inside a container given a `size` now takes that size: a select inside `<Bar size="md">` stands at the bar's buttons' height rather than at `control-h-sm`. A `TextArea` keeps its `rows` height and takes only the type size.
+  
+  ```tsx
+  <Bar label="Tools" size="sm">
+    <Button>Apply</Button>
+    <Select aria-label="Curve" options={curves} />
+    <NumberField aria-label="Count" />
+  </Bar>
+  ```
+  
+  <!-- entry: new api behavior -->
+- be2d6ee: `Field` takes a `label` and an `output`, giving any control a label-and-value header.
+  
+  A `label` is drawn and names the field as a group; an `output` shows at the end of the label's line, or after the control in a `row`, in equal-width digits.
+  
+  ```tsx
+  <Field label="Opacity" output={`${v}%`}>
+    <Slider aria-label="Opacity" min={0} max={100} thumbs={[{ value: v }]} onInput={([t]) => setV(t.value)} />
+  </Field>
+  ```
+  
+  <!-- entry: api new -->
+- 28e4e71: `FillStrokeSwatch` takes `disabled`, `readOnly`, and their reasons, and follows `<Disabled>` and `<ReadOnly>` scopes.
+  
+  Disabled, its chips take no press. Read-only, they still pick the target, and no chip, None, Swap, or Default changes a paint.
+  
+  <!-- entry: fix api -->
+- cc21a03: `useFitScope` takes an `overflows` option, for a scope whose content does not overflow its box the usual way, such as items laid along a curve.
+  
+  ```ts
+  const fit = useFitScope(ref, { overflows: (el) => runLength(el) > room });
+  ```
+  
+  <!-- entry: api -->
+- 826b7f7: A fit scope can print its members at one scale, the smallest any of them needs, with `useFitScope(ref, { scale })`.
+  
+  `scale` takes `min`, the floor, and `property`, the custom property the shared scale is published on, on the scope's element. A member joins through `useFitScale()`, which returns the nearest scope's stage (a nested scope without one passes its outer scope's on), with `join(id, { el, measure, onFit })`; `measure` returns `{ scale, shared }`, and a member with `shared: false` sizes itself. `KeyBank` is now such a scope, so a `KeyCap` inside any scope with a scale stage fits its legend, and a `FitLabel` inside a `KeyBank` steps with the bank's other labels.
+  
+  ```tsx
+  const ref = useRef<HTMLDivElement>(null);
+  const fit = useFitScope(ref, { scale: { min: 0.6, property: '--legend-scale' } });
+  return <div ref={ref}><FitScope value={fit}>{children}</FitScope></div>;
+  ```
+  
+  <!-- entry: api new -->
+- 56ae12f: A ghost `Button` follows `emphasis`: `emphasis="low"` draws it muted until pointed at, and `"high"` in the accent.
+  
+  An icon-only `Button` also keeps its width in a flex row rather than shrinking.
+  
+  <!-- entry: new visual -->
+- 71adee4: `InlineRange` reports each drag or key step as one edit through `onValueInput`, `onValueChange`, and `onValueCancel`.
+  
+  `onValueInput` previews each move, `onValueChange` commits once at the release (never for a drag that ended where it began), and Escape mid-drag sends the starting value to `onValueInput` and then calls `onValueCancel`. Given only `onValueChange`, the range draws the drag itself. The native `onInput` and `onChange` still reach the element as before.
+  
+  <!-- entry: api new -->
+- 238ce99: `InlineRange` takes `fill={false}` for a plain track and `marks` for 1px marks along it.
+  
+  `marks` are fractions of the track, 0 to 1, each drawn under the thumb's center at that fraction. The property panel's slider rows now render an `InlineRange` with both.
+  
+  <!-- entry: api -->
+- 10fbaeb: `InlineRange` takes its name, description, and error from a `Field` around it, so `<Field label output>` can label one.
+  
+  <!-- entry: new -->
+- d315cbd: `ItemList` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  Held either way, Alt+arrow moves nothing and a row's `rowProps.onPointerDown`, where a `useReorderDragList` drag starts, is not called. Disabled, `onAction` and `onSelectRange` are refused too, and with no reason anywhere the rows leave the tab order; read-only, rows still activate and extend. The rows' `trailing` controls are held with it.
+  
+  <!-- entry: api new -->
+- e377035: `Jog` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  A held Jog neither plays, steps, nor scrubs; read-only holds its buttons too, since the step showing is its value. Its buttons are disabled for its reason and its scrubber is held as a `Slider` is.
+  
+  <!-- entry: api new -->
+- 7ab6268: `LayerList` is a `Tree`: a treegrid when its rows have toggles, which sit at each row's end and are reached with Right.
+  
+  A visibility checkbox now sits after the label, beside the lock and remove buttons, rather than before it. A press on a row selects it and never folds it; the twisty folds it. Type-ahead and Cmd/Ctrl+A come with the tree.
+  
+  <!-- entry: rank=5 behavior visual -->
+- 7ab6268: A locked layer in `LayerList` stays put but no longer stops other layers being dropped past it; only a fixed row does.
+  
+  <!-- entry: behavior -->
+- 7ab6268: `LayerList` drops a layer into another layer, and Alt+Left/Right move one out of its parent or in; `canMove` can refuse a move.
+  
+  A `LayerMove`'s `parentId` is where the layers land, which can be another parent than the one they left, and `moveLayers` applies such a move. A drop into a locked layer is refused, and so is one past a fixed row, which used to land on the row's near side. `useSceneLayerList` reparents the nodes such a move carries and returns a `canMove` that keeps a note within its own annotation layer's row.
+  
+  <!-- entry: rank=10 new api behavior -->
+- fea58eb: `LayerList` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  Held either way, nothing is reordered, renamed, shown or hidden, locked, removed, or added; read-only, layers still select and fold. Held for a reason, or read-only, its toggles and add buttons stay focusable and the list says why once.
+  
+  <!-- entry: api new -->
+- e72e26a: A menu's `over` (`MenuSources` in routing, `BarMenuSources` in ui) takes a `PrefSection` as well as a `PrefGroup`.
+  
+  <!-- entry: api -->
+- e377035: `MeshEditor` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  Its corner color fields and its blend-space switch are held as a `ColorField` and a `SegmentedBar` are, and its root carries `data-held`.
+  
+  <!-- entry: api new -->
+- 71adee4: `OpacityRange` takes `onCancel`: Escape mid-drag puts the alpha back through `onInput` and then calls it.
+  
+  `ColorField`'s opacity slider drops its drag on Escape too.
+  
+  <!-- entry: api new -->
+- 1b23afb: A `SegmentedBar` item in `'each'` mode, where `OptionsBar`'s went, takes `disabledReason` and `tooltip` as the other modes' items do.
+  
+  Its labels shorten together when the bar is squeezed. A disabled segment with a reason stays focusable and reads the reason in its tooltip and to assistive tech.
+  
+  <!-- entry: api -->
+- 56945c8: `PageTabs` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  Held either way, no tab is renamed or moved and the + button adds nothing. Going to a page is navigation and still works, as `Tabs` does under a scope.
+  
+  <!-- entry: api new -->
+- f09bd05: `PaintEditorPopover` puts the whole paint editor in a popover under any trigger, the one `PaintField` and `FillStrokeSwatch` open.
+  
+  Given `triggerRef`, `open`, and `onOpenChange` it opens under any element; inside a React Aria `DialogTrigger` it needs none of them. It takes `PaintInput`'s props. Render it through the `provide` of the opener's `useOverlayPortal`. Exported from `@weasel-js/ui/components/PaintField`.
+  
+  <!-- entry: new api -->
+- 161a248: `MeshHandles` and `GradientHandles` honor `<Disabled>` and `<ReadOnly>`, and take their own hold props.
+  
+  Held, a drag or an arrow key on a handle changes nothing, and each handle says the reason. They take `disabled`, `disabledReason`, `readOnly` and `readOnlyReason`, as other controls do.
+  
+  <!-- entry: fix api -->
+- e4777a9: `PaintInput`'s and `PaintField`'s `onChange` can return the paint actually applied, and a solid edit's recent color is that paint's color.
+  
+  <!-- entry: api -->
+- c6300b8: A params surface can put its drafts back when an edit is canceled.
+  
+  `LeafContext.drafts.cancel`, `withDrafts`' `cancel` argument, `PanelCellScope.cancel`, and `LeafWrites.cancel` carry it.
+  
+  <!-- entry: api -->
+- e377035: `PatternPicker` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  A held picker commits no tile, image upload, size, or rotation. Held for a reason, or read-only, its swatches stay focusable and describe why; disabled with no reason anywhere, they leave the tab order.
+  
+  <!-- entry: api new -->
+- e377035: `Plot2D` forwards `aria-disabled`, `aria-describedby`, `data-held`, and `inert` to its svg.
+  
+  For a plot whose marks are held: `aria-disabled` on the plot covers every mark inside it.
+  
+  <!-- entry: api new -->
+- b1e00b8: A custom leaf renderer can send the values a drag passes through to `ctx.drafts`, so the surface records the whole edit as one step.
+  
+  `LeafContext.drafts` holds a `setValue` and an `update` where the surface keeps drafts apart. Call one on every move, and the context's own `setValue` once as the edit ends. Where `drafts` is absent, send each value through `setValue`.
+  
+  <!-- entry: api -->
+- f85a11b: `PrefsDialog` takes `open` and `onOpenChange` as optional, as `Dialog` does, so an `inline` one needs neither.
+  
+  <!-- entry: api -->
+- b3ea632: `PrefsForm` and `PrefsDialog` take `errors`, a message per leaf path, shown under that leaf's row as an alert.
+  
+  ```tsx
+  <PrefsForm schema={schema} values={values} onChange={set}
+    errors={new Map([['account.name', 'Name is required']])} />
+  ```
+  
+  <!-- entry: api new -->
+- a04eb3d: `prefListTexts` takes the list as an optional second argument, and reads an entry that is not a string as the list's item default.
+  
+  <!-- entry: api -->
+- 8ff14a0: New `PrefsSource`: where a params surface reads, writes, and resets its leaves, over a values map, a selection, or a lab config.
+  
+  A `PrefsSource` (`@weasel-js/prefs`) answers `valueAt(path)`, `write(path, value, { draft })`, `update`, `autoAt`, `setAuto`, `stateAt(path)` (`enableIf`, `showIf`, `activeIf`), and `reset(paths)`. It needs no React, so a DOM host builds one with prefs' `createValuesSource(schema, get, set, options)`, which reads the values through `get` each time, or `createSelectionSource({ leaves, read, write, reset })` over any set of targets, or `createRecordSource` over values keyed by whole dotted paths. `sourceResetPlan`, `sourceIsAtReset`, and `sourceLeafIsAtReset` answer what a reset does over one.
+  
+  In React, `useValuesSource(schema, values, onChange, options)`, `useSelectionSource(input)`, and labkit's `useLabConfigSource(...)` build one (labkit's plain factory is `createLabConfigSource`), and ui's `<PrefsSource source>` and `usePrefsSource()` hand it down.
+  
+  <!-- entry: api new -->
+- 5cdd105: New rail parts draw a list of pages as the prefs dialog does (`RailList`, `RailItem`, `RailName`), or one to select from (`RailListBox`).
+  
+  `RailItem` is a button whose `current` makes it `aria-current` (`'page'` for `true`) and fills it with the accent. `RailListBox` is a react-aria `ListBox`, `RailOption` its `ListBoxItem` with the same `current`, and `RailSection` a `ListBoxSection` whose `guide` brackets its options as a `Tree` brackets an open branch, placed by `--guide-at` and `--guide-from`. `RailName` cuts a long name short with an ellipsis; give it `slot="label"` in an option.
+  
+  ```tsx
+  <RailList aria-label="Pages">
+    <RailItem current onClick={() => open('canvas')}><RailName>Canvas</RailName></RailItem>
+  </RailList>
+  ```
+  
+  <!-- entry: new api -->
+- 44ad7a3: `useRovingTabIndex` takes `disabled: 'stop'`, so its arrow keys land on an `aria-disabled` item and focus shows its reason.
+  
+  That suits a menu, a listbox or a tab list. The default, `'skip'`, passes over it as before, which suits a toolbar. A natively `disabled` item takes no focus either way.
+  
+  <!-- entry: api -->
+- 4c90808: A measured row list sizes its empty state in italic, as `ItemList` draws it, so the measured box matches the DOM one.
+  
+  `FontSpec` takes `style` (`'normal'` or `'italic'`), which `createDomMeasureEnv` measures in, and `RowListMetrics` gives the `emptyFont` the empty state is measured in.
+  
+  <!-- entry: fix api -->
+- 10fbaeb: `SegmentedBar` takes its name, description, and error from a `Field` around it, and takes `aria-labelledby` and `aria-describedby`.
+  
+  <!-- entry: new api -->
+- 7513080: A momentary `SegmentedBar` takes an `onAction(value)` of its own, called for any segment that has no `onAction`.
+  
+  ```tsx
+  <SegmentedBar mode="momentary" aria-label="Zoom" steps={valuesSweep([50, 100, 200])} onAction={setZoom} />
+  ```
+  
+  <!-- entry: api -->
+- 1b23afb: A `SegmentedBar` takes `orientation` in every mode, `'each'` and `'momentary'` included.
+  
+  So the bars that replace `OptionsBar` and `ButtonBar` can run their segments vertically outside a vertical bar.
+  
+  <!-- entry: api -->
+- d6f3516: A `SegmentedBar` drawn from `steps` takes a `cap`, and warns when a sweep that does not end is cut at the default 256 steps.
+  
+  `<SegmentedBar steps={sweep} cap={32} … />` takes the first 32 steps without a warning, as `Sequence`'s `cap` does.
+  
+  <!-- entry: api fix -->
+- 7513080: A `SegmentedBar` takes its segments from a `Sweep` through `steps`, one segment per step, labeled by the sweep.
+  
+  `steps` stands in for `items` in the `'single'`, `'multiple'`, and `'momentary'` modes, and is walked by `stepsOf`, as `Sequence` walks its `sweep`.
+  
+  ```tsx
+  <SegmentedBar aria-label="Gap" steps={rangeSweep({ from: 0, to: 16, step: 4 })} value={gap} onChange={setGap} />
+  ```
+  
+  <!-- entry: new api -->
+- 68d5da4: `SelectionPanel` takes the canvas's `features`, and reads the routing and properties their node kinds bring from them.
+  
+  `routing` and `properties` are now optional, defaulting to `inferredNodeRouting` and `inferredNodeProperties`, and a name either gives keeps the consumer's entry over a preset's.
+  
+  ```tsx
+  <SelectionPanel scene={scene} selection={selection} features={features} />
+  ```
+  
+  <!-- entry: new api -->
+- 66da6bf: `ShortcutKeys` takes a `format` beside a `shortcut`, naming the platform and legend style its keys are written in.
+  
+  ```tsx
+  <ShortcutKeys shortcut={{ key: 'z', mod: true }} format={{ platform: 'linux', legend: 'text' }} />
+  ```
+  
+  <!-- entry: api -->
+- 2fbd36b: `<ShortcutSheet>` lists every key bound around it: tool keys by tool set, command keys by action group, and held keys.
+  
+  It reads the live bindings, so a key rebound or unbound through `bindingOverrides` shows that way, and a search finds a row by its name or by a key (`⇧⌘Z` or `Cmd+Shift+Z`). `useShortcutSheetCommand(open)` registers `shortcuts.show` on Shift+/ (`SHORTCUT_SHEET_KEY`) to open it.
+  
+  ```tsx
+  const [open, setOpen] = useState(false);
+  useShortcutSheetCommand(() => setOpen(true));
+  <ShortcutSheet open={open} onOpenChange={setOpen} tools={tools} toolSets={[SELECT_TOOLS, SHAPE_TOOLS]} />
+  ```
+  
+  <!-- entry: rank=10 api new -->
+- 112d38a: `Slider` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  A held slider refuses every drag, key step, track press, region drag, and right-click removal. Held for a reason, or read-only, its thumbs stay focusable and describe why; disabled with no reason anywhere, they leave the tab order. A slider driven by `useDetents` is held the same way.
+  
+  <!-- entry: api new -->
+- 925fb74: `SpanStrip` shows spans of time on one track, each filled in its own color up to a playhead, and `SpanStrips` stacks them on one clock.
+  
+  ```tsx
+  <SpanStrips
+    aria-label="Round 42"
+    window={{ from: roundStart, to: now + 20 * 60_000 }}
+    at={now}
+    ruler={{ steps: [5, 10, 15, 30].map((m) => m * 60_000), format: (ms) => clock.format(ms) }}
+    rows={[{ id: 'core.ops', 'aria-label': 'core.ops', lead: 'core.ops', spans: [
+      { id: 'review', label: '5+2 found', start: reviewStart, ms: 300_000, state: 'done', color: 'var(--wzl-swatch-violet)' },
+      { id: 'fix', label: 'studio · 12m', ms: 720_000, state: 'active' },
+    ] }]}
+  />
+  ```
+  
+  A span sits at its `start`, or end to end after the one before it, inside the strip's `window` (by default, 0 to where the last ends); `fill` (0 to 1) shows progress inside one span apart from the playhead, and a span not begun is dimmed. Without `onSeek` a strip is a `meter`; with `onSeek(ms, held)` it is a slider that a press or drag seeks with `held` true and letting go seeks with it false, and the arrows, Home and End step it. `SpanStrips` lays its rows flush with one border between neighbors, a column of leads before them, one playhead down the stack (none when `at` is left out), and a ruler at round `steps` labeled by `format`. `--span-strip-height` and `--span-strip-text` on any ancestor size the strips; the text takes its container's font family.
+  
+  <!-- entry: rank=5 new api -->
+- 45f3304: A `SwatchGrid` swatch takes `disabled` and `disabledReason`: it applies nothing, stays reachable by the arrows, and says why.
+  
+  <!-- entry: api new -->
+- e377035: `SwatchGrid` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  A held palette applies nothing on a click, a shift-click, a right-click, Enter, or Shift+Enter, on a straight grid and on rings alike, and records no recent color. Held for a reason, or read-only, its arrows still move among the swatches, which describe why; disabled with no reason anywhere, it leaves the tab order. `SwatchButton` takes `held` for the `aria-disabled`/`aria-readonly` and description a palette of its own passes each swatch.
+  
+  <!-- entry: api new -->
+- 45f3304: `SwatchGrid` takes `onHoverChange`, told the swatch under the pointer or holding focus, and `null` as either leaves.
+  
+  <!-- entry: api -->
+- 45f3304: `SwatchGrid` takes a list of ids as `value`, making every swatch a toggle pressed while its id is listed.
+  
+  ```tsx
+  <SwatchGrid options={colors} value={pinnedIds} onSelect={(id) => togglePin(id)} />
+  ```
+  
+  A click still hands the swatch back, for the app to add or take out. A single id marks one swatch current as before.
+  
+  <!-- entry: api new -->
+- e377035: `SwatchStrip` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  Its recent row, its palette, and its palette picker are held as a `SwatchGrid` and a `Select` are, so a held strip applies and records nothing, and its root carries `data-held`.
+  
+  <!-- entry: api new -->
+- 1f8cd0c: `Switch` takes `indeterminate`: its thumb sits mid-track and it is announced as mixed, for a setting that differs across a selection.
+  
+  A click turns it on, as a mixed `Checkbox` does.
+  
+  <!-- entry: api new visual -->
+- 3b34a36: A disabled `Tab` takes the arrow keys and focus without being chosen, and shows its new `disabledReason` in a tooltip.
+  
+  The tooltip reads the tab's name and its reason, and opens once keyboard focus or the pointer rests on the tab, as a menu row's does. An uncontrolled tab set opens on its `defaultSelectedKey`, or on the first tab that can be chosen when that is unset or disabled, and moves to that tab when its chosen tab is removed; with every tab disabled it chooses none. A controlled `selectedKey` naming a disabled tab is still shown, with a warning, which the new `allowDisabledSelected` turns off.
+  
+  <!-- entry: api behavior -->
+- 3f7a225: `TextArea` takes `orientation` and `mixed`, as `Input` does.
+  
+  `orientation="row"` sets its label beside the box, and `mixed` reads `Mixed` in place of the placeholder.
+  
+  <!-- entry: api -->
+- 8063ea0: `Timeline` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  Held either way, no key is dragged, stepped, inserted, or deleted, the ruler does not scrub, and the key editor and easing picker change nothing. Read-only, keys and segments still select, rows fold, and the view zooms, pans, and switches to the graph; disabled, none of that responds, and with no reason anywhere the marks leave the tab order.
+  
+  <!-- entry: api new -->
+- 0714c9d: `ToastRegion` says why a command its key reached would not run, in a toast titled with the command's label and reading its reason.
+  
+  On by default; `refusals={false}` turns it off. A second refusal replaces the first, and with several regions mounted only the last one tells it.
+  
+  <!-- entry: rank=10 new api -->
+- b8d9b57: `TokenPanel` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  Held, every control in it is held and nothing reaches `onChange` or `onScaleChange`; sections still fold, and a swatch still picks the step it shows.
+  
+  <!-- entry: api new -->
+- 21eb68a: `ToolPalette` without a `tools` prop draws the tools of the canvas it sits in, or beside under a shared `WeaselProvider`.
+  
+  A palette beside a canvas no longer needs `onToolsCreated` and state to hold the canvas's tools:
+  
+  ```tsx
+  <WeaselProvider>
+    <ToolPalette orientation="horizontal" />
+    <SceneCanvas scene={scene} features={[presets.draw]} />
+  </WeaselProvider>
+  ```
+  
+  <!-- entry: api new -->
+- b91f068: `ToolbarDock` bars snap to either end of a dock row: dragged into the far half of a row's open length, a bar joins its far end.
+  
+  A layout lists the bars at a row's far end in a new optional `atEnd`, and a drop or move target takes `end: true` to put a bar there. A row lists its start bars first, then its end bars, and `resolveLayout` reorders a stored row to match. On a bar at the edge of its group, Alt+arrows cross to the row's other end, so Alt+Right on a row's last bar now sends it to the far end where before it did nothing.
+  
+  ```ts
+  const layout: ToolbarLayout = { docks: { top: [['file', 'edit', 'view']] }, floating: {}, atEnd: ['view'] };
+  moveBar(layout, 'edit', { dock: 'top', row: 0, index: 1, end: true }); // edit and view at the far end
+  ```
+  
+  <!-- entry: rank=5 new api behavior -->
+- 6de6fae: `AnimatedTransport` and `AnimatedTimeline` show a timeline playing backward with the reverse switch on, which flips its direction.
+  
+  The rate shows as a speed, rather than a negative rate.
+  
+  <!-- entry: fix new -->
+- 8063ea0: `Transport` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  Disabled, nothing in it responds. Read-only, play and pause still work, and the loop and reverse switches and the rate and scrub sliders change nothing.
+  
+  <!-- entry: api new -->
+- 5af6391: `Transport`'s time readout shows the playhead over the end time or the time elapsed over the duration, or whatever a `formatTime` returns.
+  
+  `timeReadout: 'absolute' | 'elapsed'`, default `'absolute'`: the playhead over `start + duration`, or the time since `start` over `duration`. The two read alike when `start` is 0. `formatTime({ playhead, start, duration })` returns the readout's whole text in place of either, handed the playhead held to the timeline; the readout holds the width of the wider of its readings at the start and the end. `AnimatedTransport` takes both.
+  
+  With a nonzero `start`, the default's second figure is now the end time where it was the duration: a timeline from −0.5 s to 2.5 s reads `-0.50s / 2.50s`.
+  
+  <!-- entry: api new behavior -->
+- 4f092a6: A `Tree` node marked `immovable` stays put: no drag starts on it, and moving a selection that holds it leaves it behind.
+  
+  <!-- entry: api -->
+- 4f092a6: A `Tree` node takes `controls`, toggles at the row's end, and a tree with any is a treegrid whose controls Right reaches from the row.
+  
+  Each row is then a `row` with its leading, label and trailing in one `gridcell` and its controls in a second. The controls leave the tab order: Right on a leaf or an open branch steps into them, Left and Right walk them, Left past the first or Escape returns to the row, and Up and Down from one move between rows. A click or a key on a control is the control's own and does not activate the row.
+  
+  ```tsx
+  <Tree aria-label="Layers" nodes={[{ id: 'a', label: 'Alpha', controls: <VisibilityToggle id="a" /> }]} />
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- 4f092a6: `Tree` takes `onRowKeyDown`, called with a key on a row before the tree's own keys, and `onRowContextMenu` for a right-click on one.
+  
+  `preventDefault()` in `onRowKeyDown` keeps the tree out of that key, which is how `LayerList` opens a rename on F2.
+  
+  <!-- entry: api -->
+- 4f092a6: A `Tree` node marked `selectsAlone` is only ever selected on its own, under any modifier, and a Shift range or Cmd/Ctrl+A passes over it.
+  
+  <!-- entry: api -->
+- fea58eb: `Tree` takes `disabled` and `readOnly`, and a `<Disabled>` or `<ReadOnly>` scope around it holds it.
+  
+  Disabled, nothing activates, folds, selects, or moves, by drag or by key; focus still moves between rows, and with no reason anywhere the tree leaves the tab order. Read-only, rows still fold, select, and activate, and nothing moves. Either way the controls in its rows are held with it, and a read-only treegrid is `aria-readonly`.
+  
+  <!-- entry: api new -->
+- 1f815cd: `useActionStates` and `reasonLabel` are public, for chrome built outside `ActionBar` that grays out an action and says why.
+  
+  `useActionStates(items)` returns each `ActionItem`'s live `ActionState`: whether it can run, whether it is on, and the reason it cannot run. `reasonLabel(reason, labels?)` turns that reason into the words a tooltip shows, from `DEFAULT_REASON_LABELS` unless `labels` says otherwise. All three, and the `ActionState` type, come from `@weasel-js/ui` and `@weasel-js/ui/components/ActionBar`.
+  
+  <!-- entry: api -->
+- 36358ef: `<ActiveToolOptionsBar tools={tools} values={values} />` draws the active tool's options, writing each edit back to the canvas's store.
+  
+  `tool` names one tool instead of following `tools.active`. A shared option moves for every tool sharing it, and a change made elsewhere, such as a key stepping a size, redraws the bar.
+  
+  <!-- entry: api -->
+- ddfe573: An Alt-click on a `ToggleChips` chip or a `'multiple'` or `'each'` `SegmentedBar` segment solos it, and an Alt-drag solos every one it reaches.
+  
+  Soloing turns that item on and every other one off, or, when that already holds, turns them all back on. Alt+Space and Alt+Enter solo the focused item. With `sweep`, a drag pressed with Alt turns on the items it has reached and every other one off; Escape puts them back. Disabled items are left as they are, and a mixed one counts as off. `useRovingTabIndex`'s `onActivate` now also receives the keypress.
+  
+  <!-- entry: rank=5 new behavior api -->
+- 99fa753: `barCells(leaves, cellFor)` draws a bar's leaves through your own cell factory, fusing paired toggle flags into one control.
+  
+  `cellFor` returns each leaf's `render` and the `LeafContext` a fused run reads and writes through. A leaf `renderers` claims never fuses.
+  
+  <!-- entry: api new -->
+- 3bf2ba1: New `off` on `Bar` dims a bar's lead without disabling its cells, so a section an `enableIf` turns off keeps its own switch live.
+  
+  `disabled` on a `Bar` holds every cell. PrefsForm, SelectionPanel, and labkit's ControlPanel pass `off` for a bar section or group their conditions turn off, and its cells say for themselves whether they are disabled.
+  
+  <!-- entry: api fix -->
+- c59ac31: A `Bar`, `PrefsBar`, or `ActionBar` given no `orientation` now runs the way the run it sits in goes.
+  
+  A `SegmentedBar` does the same. Outside any run it is still horizontal.
+  
+  <!-- entry: behavior -->
+- d345d72: `CheckboxGroup`: a list of checkboxes or switches over one selection, with Alt-click solo and an optional sweep.
+  
+  It takes `items` (`value`, `label`, `ariaLabel`, `disabled`), `value` and `onChange` as the list of values that are on, `mixedValues`, `control` (`'checkbox'`, the default, or `'switch'`), and `orientation` (`'vertical'`, the default, or `'horizontal'`, which wraps). Alt-clicking a box, or Alt+Space, turns it on and every other one off, and a second Alt-click turns them all back on. With `sweep`, a drag sets every box it reaches to what the press set the first, and an Alt-drag solos the boxes it reaches.
+  
+  ```tsx
+  <CheckboxGroup aria-label="Overlays" sweep items={items} value={on} onChange={setOn} />
+  ```
+  
+  <!-- entry: rank=5 new api -->
+- 68fa395: `ComboBox` takes a `ref`, which reaches its text `<input>`.
+  
+  <!-- entry: api -->
+- e7383b3: Bars, tool rails, and tool groups take a `size` that reaches the controls inside them.
+  
+  The containers are `Bar` (so `PrefsBar` and a `framed="status"` strip), `ActionBar`, `ToolOptionsBar`, `ToolGroup`, and `ToolRail`.
+  
+  It sets a `<Density>` scope over what the container holds, so `<ToolOptionsBar size="sm">` draws its buttons and segmented bars at `sm` without a `size` on each. A control that sets its own keeps it. Every container takes the prop through the one `DensityProps` type.
+  
+  <!-- entry: api new -->
+- bcfeaca: `<CurveField>` takes `onInput` for the moves of a drag, sizes itself to its box when given no `width`, and takes `disabled`.
+  
+  Given `onInput`, `onChange` hears only the curve a drag settles on, once, so a drag can be one undo step; without it `onChange` hears every move, as before.
+  
+  <!-- entry: api -->
+- e7383b3: New `<Density size>` sets the size of every `sm`/`md` control inside it, and `useDensity` reads it.
+  
+  The nearest scope wins, and a control's own `size` wins over any scope. With no scope, each control keeps its default: `md`, or `sm` for `CycleButton`. `Button`, `SegmentedBar`, `ColorModeControl`, `CycleButton`, and `Bar` read it. ui-logic's `resolveControlSize(own, scope, fallback)` is the same rule without React, for a host such as hud.
+  
+  ```tsx
+  <Density size="sm">
+    <Button>Apply</Button>              {/* sm */}
+    <Button size="md">Cancel</Button>   {/* md: its own size wins */}
+  </Density>
+  ```
+  
+  labkit re-exports `Density`, `useDensity`, `ControlSize`, `DensityProps`, and `DensityScopeProps`.
+  
+  <!-- entry: rank=5 new api -->
+- fc0c7e2: `DetailList` takes `columns="auto"`, setting its rows two to a line wherever the list is at least 20rem wide.
+  
+  Rows fill across, then down, as a property panel pairs its rows. Narrower, or under `layout="block"`, the list keeps one row to a line.
+  
+  <!-- entry: new api -->
+- c113459: New `<Disabled when reason>` disables every kit control inside it; a container's `disabled` and `disabledReason` do the same.
+  
+  `Bar`, `Bar.Group`, `PrefsBar`, `ToolGroup`, `ToolRail`, `ToolPalette`, `SegmentedBar`, `PropertyPanel`, `PropertyGroup`, `Subpanel`, `PropertyRow`, `PrefsForm`, `SelectionPanel`, `SidebarPanel`, `ToolOptionsBar`, `ActionBar`, and labkit's `ControlPanel` take them, as a `<fieldset disabled>` would. An inner `disabled={false}` adds nothing. The nearest reason wins, and a control's own `disabledReason` beats a scope's. With no reason a control is natively disabled; with one it stays focusable, ignores presses, and its tooltip and description say why, React Aria fields included. `useDisabled(own)` reads the result for a control of your own.
+  
+  ```tsx
+  <Disabled when={locked} reason="The layer is locked">
+    <PropertyPanel title="Stroke">…</PropertyPanel>
+  </Disabled>
+  ```
+  
+  <!-- entry: rank=10 new api -->
+- 83ad38f: `GradientEditor`, `BandEditor`, `Timeline` and `CurveField` take `onCancel`, and Escape cancels a drag in them and in `GradientHandles` and `MeshHandles`.
+  
+  A canceled drag first sends `onInput` the value it began from. `GradientHandles` and `MeshHandles` draw a commit-only caller's drag themselves.
+  
+  <!-- entry: api new -->
+- 2ab2678: ui exports the pieces its schema editor used from inside it, for an editor built outside ui.
+  
+  `renderPrefControl` draws a leaf's control through a renderer map, `actionShortcutText` and `useBarMenuResolver` give an action's shortcut text and a bar menu's entries, `pathWithin` says whether one dotted path lies under another, `heirOf` names the row that takes focus when one goes, `byRank` orders items by a list of keys, `swallowNextClick` drops the click a drag's release would send, and `MIXED_HINT` and `MARK_GROUP` name the mixed-value placeholder and the marks' icon group. `HISTORY_COALESCE_MS` is `history.coalesceMs`'s default, in `@weasel-js/ui/kit-settings` too.
+  
+  <!-- entry: api -->
+- b8b6281: A panel's run of paired toggles (U / S / O) sweeps: a drag across it sets each flag it reaches, and an Alt-drag solos them.
+  
+  <!-- entry: new behavior -->
+- 6b8ef6f: `FloatingPanel` moves to ui and takes its placement as `value` and `onChange`; labkit's remembering panel is `PersistedFloatingPanel`.
+  
+  It lives at `@weasel-js/ui/components/FloatingPanel`. Without `value` the panel holds its own placement, starting in `anchor`. `onChange` fires once per drag, on release. The `FloatingPlacement` and `Corner` types come from the same entry.
+  
+  ```tsx
+  // before
+  import { FloatingPanel } from '@weasel-js/labkit';
+  <FloatingPanel anchor="top-right">…</FloatingPanel>
+  <FloatingPanel anchor="bottom-right" persist="legend">…</FloatingPanel>
+  // after
+  import { FloatingPanel } from '@weasel-js/ui/components/FloatingPanel';
+  import { PersistedFloatingPanel } from '@weasel-js/labkit';
+  <FloatingPanel anchor="top-right">…</FloatingPanel>
+  <FloatingPanel value={place} onChange={setPlace}>…</FloatingPanel>
+  <PersistedFloatingPanel anchor="bottom-right" persist="legend">…</PersistedFloatingPanel>
+  ```
+  
+  The `lk-floating-panel` class is gone.
+  
+  <!-- entry: breaking api -->
+- 6b8ef6f: `FpsMeter`, the live frame-rate readout, moves from labkit to `@weasel-js/ui/components/FpsMeter`; labkit no longer exports it.
+  
+  ```tsx
+  // before
+  import { FpsMeter } from '@weasel-js/labkit';
+  // after
+  import { FpsMeter } from '@weasel-js/ui/components/FpsMeter';
+  ```
+  
+  It now takes a `className`, and its `lk-fps-meter*` classes are gone.
+  
+  <!-- entry: breaking api -->
+- d3025b9: `HistoryList` shows an undo history as a list, and a click or Enter on a row jumps to that state.
+  
+  Oldest is on top, the current state is selected, and the redoable states after it are dimmed.
+  
+  ```tsx
+  import { HistoryList } from '@weasel-js/ui/components/HistoryList';
+  <HistoryList
+    entries={[{ id: 'initial', label: 'Initial' }, ...steps]}
+    current={appliedCount}
+    onJump={(index) => jumpTo(index)}
+  />
+  ```
+  
+  <!-- entry: new api -->
+- 706f953: `@weasel-js/ui` exports `I18nProvider`, which sets the locale of every number field under it.
+  
+  It is React Aria's own, from the copy these components read. One imported from a `react-aria-components` of another version keeps a locale of its own, which the fields never see. The package README now says how number fields pick their locale.
+  
+  <!-- entry: api -->
+- 6b8ef6f: `Legend`, the color key, moves from labkit to `@weasel-js/ui/components/Legend`; labkit no longer exports it.
+  
+  ```tsx
+  // before
+  import { Legend } from '@weasel-js/labkit';
+  // after
+  import { Legend } from '@weasel-js/ui/components/Legend';
+  ```
+  
+  Its swatch color rides `--legend-ink` in place of `--lk-legend-ink`, and its `lk-legend*` classes are gone.
+  
+  <!-- entry: breaking api -->
+- df2ae04: Every type a `@weasel-js/ui` prop or hook names can now be imported.
+  
+  New exports: `AppliedColor`, `BoxSize`, `FocusHoldAttrs`, `PanelInherit`, `PropertyFieldBase`, `ReorderLine`, `SegmentedGridProps`, `SegmentedSweepProps`, and `ToolRailPlaced`.
+  
+  <!-- entry: rank=-1 api -->
+- 7ba9d98: `OpacityRange`, the opacity slider and percent readout `ColorField` and `PaintInput` draw, is exported.
+  
+  It comes from the root barrel and from `@weasel-js/ui/components/OpacityRange`.
+  
+  ```tsx
+  <OpacityRange aria-label="Fill" value={alpha} onInput={setAlpha} onChange={setAlpha} />
+  ```
+  
+  <!-- entry: api -->
+- ba6ddfa: `PaintInput` shows a registered gradient kind's own `Editor` with the blend-space switch under it, as `GradientEditor` does.
+  
+  A kind with both `stopsOf` and an `Editor` is edited through `GradientEditor` in either control, so the two show it the same way.
+  
+  <!-- entry: behavior -->
+- 7e7f2d4: `panelEntryOf(entries, kind)` returns the entry a panel draws and writes a kind under: the last one of that name.
+  
+  <!-- entry: api -->
+- 7ba9d98: `PopoverDialog` is React Aria's `Dialog` wearing ui's popover surface, the body for a `<Popover>` that holds a form or a panel.
+  
+  Every ui popover with a dialog inside now draws its border, background, and shadow through it.
+  
+  ```tsx
+  <Popover>
+    <PopoverDialog aria-label="Stroke" className={styles.body}>…</PopoverDialog>
+  </Popover>
+  ```
+  
+  <!-- entry: api -->
+- 33f8369: Every `PrefsForm` and `PrefsDialog` row offers a reset while its leaf differs from its reset, and a `resettable` group's heading resets it.
+  
+  A reset goes through the new `onReset(path)` prop where it is given (a store's `reset`); without it the form resets through `onAutoChange` and `onChange`. A `<RowScope onReset>` gives a `PropertyRow`, `PropertyField` or `DialogRow` the new `ResetControl` after its label.
+  
+  <!-- entry: rank=5 new api visual -->
+- a4e0df7: `@weasel-js/ui` exports `PrefMarks` and `SelectionRoot`, the types `PanelMarks` extends and the prefs layouts' `selection` prop takes.
+  
+  <!-- entry: rank=-5 api -->
+- 6bcac6c: ui exports `Pressable`, which makes the kit `Button` or any element that forwards its ref the trigger of a `CalloutTrigger`.
+  
+  A consumer no longer imports `Pressable` from `react-aria-components` to open a callout from a kit button.
+  
+  <!-- entry: api -->
+- 22da2d7: A property row's label names its control by reference, so a label that is not a string names it too, and the row's error describes it.
+  
+  A `PropertyField` no longer copies a string `label` into its control's `aria-label`; the control points at the row's label instead, and an explicit `name` still overrides it. A control of your own inside a `PropertyRow` takes the same name and error through `useFieldControl`. The font pickers now take the row's id, so a click on their label reaches them.
+  
+  <!-- entry: behavior new -->
+- c113459: New `<ReadOnly when reason>` keeps every kit value control inside it to its value; a container's `readOnly` does the same.
+  
+  Text fields take native `readOnly`, so their text stays selectable and copyable. Checkboxes, switches, radio groups, segmented bars, selects, sliders, number boxes, color fields, and paint fields stay focusable, refuse changes, are marked `aria-readonly` where the role takes it, and say why in their tooltip and description when given `readOnlyReason`. Action buttons stay usable. Disabled beats read-only. `useReadOnly(own)` and `useControlAccess(own)` read the result for a control of your own.
+  
+  <!-- entry: new api -->
+- 937ee67: New `@weasel-js/ui/roving-tab-index` subpath: `useRovingTabIndex`, `rovingTarget`, and `inlineDirection` without the root barrel.
+  
+  Their types are published there too.
+  
+  <!-- entry: api -->
+- 9138faa: `ScaleBar`'s `scopes` is optional, and measures a board in pixels when left out.
+  
+  <!-- entry: api -->
+- 2d3d80c: `useScrollSpy` marks the last section shown once its container is scrolled to the end, even one too short to reach the top.
+  
+  So a click on that section's rail item keeps it marked after the scroll settles. `pickActiveSection` takes the container's height at its end as an optional third argument for this.
+  
+  <!-- entry: fix api -->
+- 33f8369: `SelectionPanel` rows reset their properties across the selection, and a `resettable` section's heading resets it, in one undo step.
+  
+  <!-- entry: new visual -->
+- 9ee184f: A `SpanStrip` span takes `content`, shown in the segment in place of its `label`.
+  
+  That lets part of a segment's text be marked up, such as a name to style on its own. `label` is still what the tooltip and screen readers say.
+  
+  <!-- entry: new api -->
+- 237bc66: A `SpanStrip` span takes `ink`, its label's color filled or not, in place of the strip's own choice.
+  
+  <!-- entry: new api -->
+- d1dd27c: A `SpanStrip` span takes `track` and `trackSpan`, so spans running at once can share a strip as stacked stripes.
+  
+  A strip whose spans name more than one track splits its height into that many stripes, and each track chains its own spans. A span covering several tracks, as a table cell's `rowSpan` does, starts after the latest end on any of them. A stripe's label shrinks to fit when the stripe is shorter than the strip's text.
+  
+  <!-- entry: new api -->
+- 0a8bcee: `ToggleChips`: a wrapping set of toggle chips, each drawing any content (a `Badge`, say), with `SegmentedBar`'s multiple selection and sweep.
+  
+  It takes `items` (`value`, `label`, and the usual tooltip and disabled fields), `value` and `onChange` as a list of the values that are on, and `mixedValues`, `disabled` and `readOnly`. A chip that is off draws dimmed. The arrows move focus and Space or Enter flips the focused chip; with `sweep`, a drag sets every chip it reaches to what the press set the first one to, across lines.
+  
+  ```tsx
+  <ToggleChips aria-label="Packages" sweep items={items} value={on} onChange={setOn} />
+  ```
+  
+  <!-- entry: rank=5 new api -->
+- 7129668: `Checkbox` and `Switch` pass `onChange` a second argument, `{ alt }`, saying whether Alt was held as the box changed.
+  
+  A list of switches drawn in rows of its own, such as a table's column of checkboxes, uses it to solo on Alt-click through ui-input's `soloChanges`. A handler that takes one argument is unaffected.
+  
+  <!-- entry: api -->
+- c644d57: New `ToolRail`: a toolbar of icon buttons drawn from items, each with its own icon, label, shortcut, active state and press handler.
+  
+  Items gather into rule-divided runs by `group`. An item with `members` is a stack sharing one button that opens a menu of them; an item with `render` draws anything else in place.
+  
+  ```tsx
+  <ToolRail
+    items={[
+      { id: 'brush', group: 'paint', icon: icon('core:pen'), label: 'Brush', active: tool === 'brush', onPress: () => setTool('brush') },
+      { id: 'grid', icon: icon('ui:grid'), label: 'Grid', active: grid, onPress: toggleGrid },
+    ]}
+  />
+  ```
+  
+  Its frame sits at zero specificity, so a `className` replaces it outright.
+  
+  <!-- entry: rank=5 new api -->
+- 774063d: `UnitField` takes the label, description and error slots `NumberField` has, and submits with a form under a `name`.
+  
+  New props: `label`, `orientation`, `description`, `errorMessage` (shown while `invalid`), `invalid`, `required`, `name`, `onFocus`, `onBlur`, `autoFocus`, `aria-labelledby`, `aria-describedby`, and a `ref` to its `<input>`. `name` submits the value as a plain number in the unit the field shows; `onBlur` is called after the field has committed what was typed.
+  
+  <!-- entry: api new -->
+- 68fa395: A control of your own takes its name, description, error and id from the `Field` or `PropertyRow` around it through the new `useFieldControl`.
+  
+  Spread what it returns onto the control's focusable element. A control that names itself, by `aria-label`, `aria-labelledby` or a label of its own, takes nothing from the field. `FieldScope` sets the semantics for the controls inside it, and `value={null}` keeps a field further out from reaching them; `useFieldIds` makes the ids for a control that draws its own label, description and error.
+  
+  `Input`, `TextArea`, `NumberField`, `UnitField`, `ComboBox`, `Select`, `RadioGroup`, `Slider`, `Switch` and `Checkbox` read their field this way. `Slider` gains `aria-labelledby` and `aria-describedby`.
+  
+  ```tsx
+  function Knob(props: { 'aria-label'?: string }) {
+    return <div role="slider" tabIndex={0} {...useFieldControl(props)} />;
+  }
+  <Field label="Gain" description="In decibels."><Knob /></Field>
+  ```
+  
+  <!-- entry: rank=5 api new -->
+- 6b8ef6f: `ZoomControl`, a log-scaled zoom slider with a percentage field, moves from labkit to `@weasel-js/ui/components/ZoomControl`.
+  
+  ```tsx
+  // before
+  import { ZoomControl } from '@weasel-js/labkit';
+  // after
+  import { ZoomControl } from '@weasel-js/ui/components/ZoomControl';
+  ```
+  
+  Its `lk-zoom*` classes are gone; pass `className` to style it.
+  
+  <!-- entry: breaking api -->
+- a5c1865: The question-mark glyph a tool with no icon shows is `ui:unknown`, drawn by `@weasel-js/ui`, and no longer `core:unknown`.
+  
+  This is breaking: a name written `core:unknown` is now `ui:unknown`.
+  
+  <!-- entry: breaking api -->
+- 71adee4: `useActionEdit` gives a slider, a range, or any editing control the callbacks that run an ongoing action, so one drag is one undo step.
+  
+  ```tsx
+  const edit = useActionEdit('setStrokeWidth', ([t]: readonly Thumb[]) => ({ width: t.value }), [{ value: width }]);
+  <Slider min={1} max={20} thumbs={edit.shown} onInput={edit.onInput} onChange={edit.onChange} onCancel={edit.onCancel} />
+  ```
+  
+  `onInput` begins the action on a drag's first move and moves it after, `onChange` ends it, and `onCancel` ends it unkept, so no `coalesceWindowMs` is needed to merge the drag. `shown` is the value to draw: where the drag has reached while it runs, since the action previews on the canvas. A key step is a run, and an undo step, of its own. It is exported from `@weasel-js/ui/components/ActionEdit`.
+  
+  <!-- entry: rank=10 new api -->
+
+### Patch Changes
+
+- c91a03c: A menu label underlines its access letter where it is written decomposed, and no longer lands one letter late after an `İ`.
+  
+  <!-- entry: fix visual -->
+- edb78f4: A menu row underlines its access letter when that letter starts a longer cluster, such as क in कि or 👍 in 👍🏽.
+  
+  <!-- entry: fix visual -->
+- b18bc9c: A dead `ActionButton` (one given `missing`) ignores a caller's press handlers, as one disabled for a reason does.
+  
+  Its description now names the missing key.
+  
+  <!-- entry: fix -->
+- a1eab73: An `ActionButton` given a `grade` keeps the `style` it is passed, merged with the grade's color.
+  
+  <!-- entry: fix -->
+- 1ab8057: An `ActionSettingsPopover`'s form closes when a `Disabled` scope around it turns on, and stays shut when the scope lifts.
+  
+  <!-- entry: fix -->
+- 66890e4: A drag that scrolls a row laid around a whole circle carries on smoothly across the circle's start point.
+  
+  <!-- entry: fix -->
+- ea90cbf: A curved row forgets an item's measured length once the item leaves the row, so its work per render stays bounded.
+  
+  <!-- entry: fix perf -->
+- 060b8c7: Labels a curved row bends along its run are drawn in place when an ancestor rotates the row.
+  
+  <!-- entry: fix visual -->
+- 23ea9ba: A touch drag on a tab or radio in an overflowing curved `Tabs`, `PageTabs`, or `RadioGroup` scrolls the row instead of panning the page.
+  
+  <!-- entry: fix -->
+- 82b9b17: Parts on a curved row take their places when their ids change to ids that join to the same text, as `'a\nb'` to `'a'` and `'b'`.
+  
+  <!-- entry: fix -->
+- 5024537: A curved `Along` run scrolls about its own length for each page of a page-mode wheel, rather than 1 px.
+  
+  <!-- entry: fix -->
+- 223c71b: `useAsyncOptions` waits out a `debounceMs` longer than 2³¹ − 1 ms before it loads, instead of loading on each keystroke.
+  
+  <!-- entry: fix -->
+- 5ea9c3c: A `NaN` badge base param draws and pads with that param's default, as a shape param already did, instead of drawing no outline.
+  
+  <!-- entry: fix visual -->
+- c21157b: A badge base param set to `undefined` draws and pads with that param's default, as a shape param already did.
+  
+  <!-- entry: fix visual -->
+- c21157b: A `ribbon` badge given an end, or a `puzzle` badge given an edge, that the base does not name throws a `RangeError` naming the value.
+  
+  <!-- entry: fix -->
+- d8c99f9: A `beavis` badge's `cornerRadius` draws that many CSS px at every badge size, instead of growing and shrinking with the badge's height.
+  
+  <!-- entry: fix visual -->
+- ae32194: A `beavis` badge draws `points` as a whole count from 3 to 256, so an infinite or `NaN` count still draws its spikes.
+  
+  <!-- entry: fix visual -->
+- 0f72977: A Badge `bevel` effect's bands meet at each seam between sides, as `bevel2`'s do. A sliver of the body had shown through between them at every change of side.
+  
+  <!-- entry: fix visual -->
+- ca40330: An `octant-bspline` badge's outline is smooth at every cardinal and diagonal, with no corner in octant mode and no step in quadrant mode.
+  
+  The curve's shape changes slightly everywhere.
+  
+  <!-- entry: fix visual -->
+- 985c561: A bump effect (`spikes`, `puffs`, `bites`, or `scallops`) reads a `NaN` or infinite param as its default.
+  
+  <!-- entry: fix -->
+- e0d4dec: An irregular scallop, bite, spike or puff at the start of a badge's outline is one size on both sides, so the outline no longer steps there.
+  
+  <!-- entry: fix visual -->
+- 74c6bc8: A `chamfered-rect` badge holds its chamfer to half its shorter side, so a short badge keeps a convex outline.
+  
+  <!-- entry: fix visual -->
+- 198cf5b: A `coffin` badge reads `shoulderHalfHeight` as the shoulder's own half-height, not as an increment over `headHalfHeight`.
+  
+  Its default is now 50, which draws the same coffin as before. A caller who passed it as an increment over the head passes the sum instead.
+  
+  <!-- entry: fix visual behavior -->
+- fd6c46d: A `house`, `coffin`, `hexagon` or other composed badge shape pads its label by its own insets, clear of its slanted edges.
+  
+  A badge given a `base` prop still pads by that base's insets.
+  
+  <!-- entry: fix visual -->
+- 0cb1c7e: A badge's `sheen`, `sunbeams`, and `aqua` or `metal` gloss cover outline parts that `bloat` or an effect pushes past its box.
+  
+  <!-- entry: fix visual -->
+- aa431c4: A `sunbeams` `count` and a `woodgrain` `lines` or `knots` stop at a whole number up to 256, so a huge one no longer hangs the page.
+  
+  <!-- entry: fix -->
+- c2b9114: A Badge `outline` effect's `width`, and the `aqua` and `metal` effects' `bezelWidth` and `rimWidth`, draw that many CSS px. On a badge whose shorter side was under 100 px they had drawn thicker, by 100 over that side: a 30 px tall badge drew a 1 px outline 3.3 px wide.
+  
+  <!-- entry: fix visual -->
+- 69e5b0e: A `Badge` on a base that fits its content (`quatrefoil`, `puzzle`, and the octant splines) fits its outline again when only its padding changes.
+  
+  <!-- entry: fix visual -->
+- 13a7faa: The `aqua` and `metal` Badge effects fade their gloss out at `glossExtent`, as documented. The gloss had faded out at `glossExtent² / 100` and stopped short of it: at the default 50, a quarter of the way down instead of halfway.
+  
+  <!-- entry: fix visual -->
+- 8cb429e: A `house` badge's roof peaks no higher than the top of its box, however large `peakHeight` is.
+  
+  <!-- entry: fix visual -->
+- f0f4cac: An irregular Badge `bites` or `scallops` effect keeps each bite or scallop within its share of the outline, so neighbors meet cleanly. With `irregularity` widening one past half its spacing, the outline had jumped where it was cut off.
+  
+  <!-- entry: fix visual -->
+- 5f58c1b: Badge's lab leaves the package for the repo's ui lab app, rebuilt on labkit, and the Badge stories drop its three lab stories.
+  
+  <!-- entry: internal -->
+- e43b357: A removable badge's label keeps the `className` and `aria-label` given in `labelProps`, beside its own class and the badge's own `aria-label`.
+  
+  <!-- entry: fix -->
+- b772a09: A removable `Badge` runs the `onClick` and `onKeyUp` given in `labelProps` before its own action.
+  
+  <!-- entry: fix -->
+- ecdc839: A `sheen`, `bevel`, or `rivets` badge effect throws a `RangeError` for a `lightFrom` other than `tl`, `tr`, `bl`, or `br`.
+  
+  <!-- entry: fix behavior -->
+- f73a532: A composed `Badge` with a cut-out effect such as `perforations` draws the whole body however far `bloat` pushes it.
+  
+  <!-- entry: fix visual -->
+- b0ab1de: A `Badge` with a negative `crawl` runs its pattern backward with its phase kept in 0..1, as a forward crawl does.
+  
+  <!-- entry: fix visual -->
+- 6c7e360: A `notched` badge holds its corner arcs to half its width and height at any `eccentricity`, so its outline never crosses itself.
+  
+  <!-- entry: fix visual -->
+- 4e2b4b7: An `octant-bspline` badge draws a smooth outline at its cardinal and diagonal points, where it had dented inward.
+  
+  <!-- entry: fix visual -->
+- 3abc3d2: An `octant-spline` badge stays flat where its curve meets each symmetry axis whatever its weights, so its outline no longer kinks.
+  
+  The two end anchors' weights now do nothing in `octant-spline`.
+  
+  <!-- entry: fix visual -->
+- 6304d44: A `Badge`'s `padding`, as a prop or through `style`, adds to its shape's insets, so the label stays clear of the outline.
+  
+  A badge that set `padding` to make room for its shape's outline by hand now gets that room twice; drop the extra.
+  
+  <!-- entry: fix visual behavior -->
+- a6c93fc: A badge padding given as one `var()` that holds several values pads the badge instead of leaving it unpadded. This holds for the `padding` prop and for `padding`, `paddingBlock`, and `paddingInline` in its `style`.
+  
+  <!-- entry: fix visual -->
+- 1799fd9: A fitted badge given padding on some sides in its `style` no longer pads its other sides further than they need. A fitted badge is one on a base fitted to its content.
+  
+  <!-- entry: fix visual -->
+- cacb8d2: A `perforated` badge spaces its holes at least 1px apart, so a `holePitch` of 0 or less no longer hangs the page.
+  
+  <!-- entry: fix -->
+- 1e4bd39: A `perforations` effect's holes crawl along the outline with a `crawl` badge's scallops, bites, puffs, and spikes.
+  
+  <!-- entry: fix visual -->
+- 593ba1c: A badge's `perforations` holes show through `aqua`, `metal`, `bevel`, `sheen`, `sunbeams`, and its other foreground effects.
+  
+  <!-- entry: fix visual -->
+- 0df21c4: A Badge `perforations` effect with `holeRadius` and `holeSpacing` both 0 draws its holes 1 CSS px apart, where it had hung the page. A negative `holeRadius` draws no hole instead of an invalid one.
+  
+  <!-- entry: fix -->
+- 8b65225: A pinched `rounded-rect` badge spaces its effects along its squeezed outline, so they no longer pile up at its ends.
+  
+  <!-- entry: fix visual -->
+- bce1511: Effects such as bites, scallops, and bevels push a `powerline` badge's side edges outward along their own slope.
+  
+  <!-- entry: fix visual -->
+- 915e939: A `powerline` badge draws an edge cap named after a built-in object property, such as `'toString'`, as flat, where it had thrown.
+  
+  <!-- entry: fix -->
+- 0c38680: A `puzzle` badge draws each tab with 6 to 256 `arcSamples`, so an infinite count no longer hangs the page and `NaN` draws the least.
+  
+  <!-- entry: fix -->
+- 8dd81d1: A `puzzle` badge holds `tabSize` below where two of its sockets would meet, so its outline never crosses itself.
+  
+  <!-- entry: fix visual -->
+- 9f518e3: `BadgePuzzleBaseParams.tabSize` documents the 2..40 range a `puzzle` badge holds it to, where it said 0..50.
+  
+  <!-- entry: fix -->
+- efac2ff: A `quatrefoil` badge's `samples` runs from 24 to 1024, so an infinite or huge count no longer hangs the page.
+  
+  A `NaN` count draws 24 samples.
+  
+  <!-- entry: fix -->
+- 2c26379: A `quatrefoil` badge's tips sit at `spikeR` and `lobeR` whatever its `valleySmooth`, so its spikes stay inside the badge.
+  
+  <!-- entry: fix visual -->
+- 49b00d3: A `receipt` badge's `tearDepth` stops at 45, so its two torn edges never cross through the label.
+  
+  <!-- entry: fix visual -->
+- 7e5e131: A badge on a base fitted to its content refits its outline when only its padding changes. Those bases are `quatrefoil`, `puzzle`, `octant-spline`, and `octant-bspline`.
+  
+  <!-- entry: fix visual -->
+- e332c18: Focusing a removable `Badge`'s remove control no longer draws the focus ring around the whole badge.
+  
+  <!-- entry: fix visual -->
+- 89a65b2: A removable badge without an action no longer draws its focus ring when its remove control takes focus, matching a removable badge with one.
+  
+  <!-- entry: fix visual -->
+- 4456926: A `ribbon` badge holds its `taperWidth` to half its width, so a narrow ribbon with both ends cut no longer draws as a bowtie.
+  
+  <!-- entry: fix visual -->
+- 2f21db6: A `rivets` effect keeps its rivets on the badge when the outline does not fill its box, as on a `quatrefoil` or `polygon`.
+  
+  <!-- entry: fix visual -->
+- 4217daa: A `rounded-rect` badge with eccentricity lays its effects evenly round its corners, measured at their true length.
+  
+  <!-- entry: fix visual -->
+- 5e372b0: Effects on a fully pinched `rounded-rect` badge reach its pointed ends, which they had left untouched.
+  
+  <!-- entry: fix visual -->
+- d4b500f: A `NaN` in a bounded badge shape param, such as a `crest` badge's `topInset`, draws that param's default.
+  
+  <!-- entry: fix visual -->
+- 25561f0: A badge `shapeParams` key set to `undefined` keeps that shape's default instead of drawing broken geometry.
+  
+  <!-- entry: fix visual -->
+- 7e52e88: A `shield` badge holds its rounded top corners above its shoulder and within half its width, on a short or narrow badge too.
+  
+  <!-- entry: fix visual -->
+- d5ea1cd: A `Badge` with `as="span"` and `onClick` calls `onClick` when clicked, with or without `onRemove`.
+  
+  <!-- entry: fix -->
+- c48cefb: A Badge `spikes` effect holds `irregularity` to 0..1, as `bites`, `scallops`, and `puffs` do. Above 2, some spikes had turned inward or, round a corner, drawn far longer than `length`.
+  
+  <!-- entry: fix visual -->
+- e70e43a: A `spikes` effect given a negative `length` or scale draws no spikes anywhere, where it had thrown spikes outward on tight corners.
+  
+  <!-- entry: fix visual -->
+- a430d71: A spline badge base given a `NaN` anchor `count` draws its least, 3 anchors, instead of throwing.
+  
+  <!-- entry: fix -->
+- 0c38680: A spline badge base draws 48 to 1024 `samples`, so an infinite count no longer hangs the page and `NaN` draws the least.
+  
+  <!-- entry: fix -->
+- b8efc4e: An `octant-spline` badge whose anchors share an `s`, as a `count` over 5 does by default, draws through one of them.
+  
+  <!-- entry: fix visual -->
+- 2fa47df: A `sparkler` or `starburst` badge draws `points` as a whole count of at least 3, so any count draws a closed star.
+  
+  Those counts, and a `receipt` badge's `teeth`, stop at 256, so an infinite count no longer hangs the page.
+  
+  <!-- entry: fix visual -->
+- 4de2fc3: A Badge `sunbeams` effect's `gradientStart` and `gradientEnd` run 0 to 1 from corner to corner at any `gradientAngle`. At a diagonal angle the gradient had stopped short of the badge's corners, leaving them fully lit or fully faded.
+  
+  <!-- entry: fix visual -->
+- d864c82: A `sunbeams` effect's `gradientAngle` is measured on screen, as its `angle` is, so a diagonal fade keeps its angle on a wide or tall badge.
+  
+  <!-- entry: fix visual -->
+- 5fd0ac0: A badge's `baseParams` and effect `params` keep a default for a key set to `undefined`, as `shapeParams` already does, instead of drawing nothing.
+  
+  <!-- entry: fix visual -->
+- aabd7d4: A key set to `undefined` in a `Badge`'s `baseParams` or in an effect's `params` keeps its default, as it already did in `shapeParams`.
+  
+  <!-- entry: fix visual -->
+- 2fa4792: A `Badge` given an unknown `shape`, `base`, or effect `type` such as `"toString"` at runtime draws as if it were not given.
+  
+  <!-- entry: fix -->
+- cc83c57: A badge given a shape name it does not know, `constructor` and `toString` included, draws as a pill.
+  
+  <!-- entry: fix -->
+- b84b121: A `woodgrain` effect's knots keep their shape on a wide or tall badge, rather than flattening into dashes.
+  
+  <!-- entry: fix visual -->
+- f0fc3c3: A `BandEditor` range end dragged outward snaps to a tick past the current range, where it had stuck at the old end.
+  
+  <!-- entry: fix -->
+- 02e57ce: `BandEditor` given an empty `value` draws an empty strip instead of throwing.
+  
+  <!-- entry: fix -->
+- ed01168: A `BandEditor` end dragged inward stays under the pointer when `onRangeInput` writes the live range back as `min` and `max`.
+  
+  <!-- entry: fix -->
+- 79eb445: A `BandEditor` range end with no band locked goes to one step short of the other end on Home and End, where it did nothing.
+  
+  <!-- entry: fix -->
+- bb82f7b: A `BandEditor` range end steps ten on PageUp and PageDown, as its seams do.
+  
+  <!-- entry: fix -->
+- f588072: Rescaling a `BandEditor`'s range leaves a seam held by locked bands at exactly its value, rather than off by rounding.
+  
+  <!-- entry: fix -->
+- 3ce9841: A `BandEditor` band split off another takes its parent's display and unit, and the rest keep their own, even sharing a payload.
+  
+  <!-- entry: fix -->
+- 48e3802: A `fit` bar laid along a curve shortens its `FitLabel`s together once its items overrun the run, as a straight bar does.
+  
+  <!-- entry: fix -->
+- a9e84f6: A disabled leaf made of others, drawn in a bar as a button opening its rows, is dimmed and opens nothing, as a disabled text area is.
+  
+  <!-- entry: fix -->
+- 44bae89: A framed vertical `Bar` too long for its room scrolls down its length, as a framed horizontal one scrolls across.
+  
+  <!-- entry: fix -->
+- a2b7b33: A keyed `Bar.Group` in a bar given `onReorder` is a unit a Cmd-drag or Alt+arrow moves, like any other keyed child.
+  
+  <!-- entry: fix -->
+- 29a55fc: A `Bar`'s keyless cells stay mounted, keeping focus and an open popover, when a conditional child ahead of them appears or leaves.
+  
+  Two children sharing a key in one bar keep apart too: the later one is keyed by its place and warns.
+  
+  <!-- entry: fix -->
+- 4806d08: A toolbar's buttons label at the same font size as its fields.
+  
+  <!-- entry: fix visual -->
+- 6251e13: A `Bar` with `overflow="menu"` whose line opens with a spacer or an `end` group tells a squeezing `ToolbarDock` to leave it room for its first cell.
+  
+  <!-- entry: fix -->
+- f1ce360: A `BarMenu` in a disabled bar stays shut even with `defaultOpen`, and in a read-only bar its rows show their values without changing them.
+  
+  <!-- entry: fix -->
+- 7dcd54e: A bar's menu button in a movable `ToolbarDock` under right-to-left layout keeps its whole button and grip when a squeezed row narrows it.
+  
+  <!-- entry: fix -->
+- e72e26a: An alias inside a `PrefsBar` menu group resolves against a `PrefSection` given as `over`, so it shows in the menu as it does on the line.
+  
+  <!-- entry: fix -->
+- 97fecd3: A `Bar` with `overflow="menu"` fits its cells again when its lead appears or leaves, as when `lead` is set or a dock makes it movable.
+  
+  <!-- entry: fix -->
+- 0cc6896: A bar with an overflow menu measures an item afresh when it comes back after being removed. It no longer holds the size of every item it has drawn.
+  
+  <!-- entry: fix -->
+- 3d38747: A `Bar` measures and folds items whose keys hold a line break.
+  
+  <!-- entry: fix -->
+- 1a791c7: Alt+arrow on the first or last item of a reorderable bar now leaves focus where it is, including on a roving bar.
+  
+  <!-- entry: fix -->
+- 47fb0e0: A drag-reorder on a wrapped bar drops into the gap on the line the pointer is over, rather than the gap at that x on the first line.
+  
+  <!-- entry: fix -->
+- 3f8af47: A `Button` whose children render nothing (`null`, `false`, or `''`) draws as an icon button, with no empty label beside its icon.
+  
+  `domButton.measure` measures it the same way.
+  
+  <!-- entry: fix visual -->
+- 458aa6a: A focused button with no tooltip keeps its focus when it is disabled with a reason, rather than being remounted.
+  
+  <!-- entry: fix -->
+- 0ab1ba7: A `Button` held narrower than its label keeps the label on one line and ends it with an ellipsis, as the HUD button does.
+  
+  <!-- entry: fix visual -->
+- 1068133: A `Button` with a glyph before its label sits on its row's baseline by its label, so the label lines up with the text beside it.
+  
+  <!-- entry: fix visual -->
+- 2abe42c: A pressed `Button` with `stance="confirm"` keeps its accent body, dimmed, rather than turning into a neutral pressed button.
+  
+  <!-- entry: fix visual -->
+- a2e83e7: A `Button` inside a `ReadOnly` scope shows a plain cursor and no hover or press effect, since a press does nothing.
+  
+  <!-- entry: fix visual -->
+- bca1b16: A `Checkbox` or a boolean property row disabled for a reason draws its box dimmed, as one disabled outright does.
+  
+  It also shows the not-allowed cursor and no hover edge.
+  
+  <!-- entry: fix visual -->
+- 8305acd: A `CheckboxGroup` drawn with `control="switch"` shows an item in `mixedValues` as a mixed switch rather than an off one.
+  
+  <!-- entry: fix visual -->
+- 4f264d0: Values held between two bounds go through geom's `clamp` and `clamp01` rather than local copies.
+  
+  A loupe whose `minFactor` is above its `maxFactor` now settles on the low bound, as `clamp` does, where it settled on the high one.
+  
+  <!-- entry: rank=-5 behavior -->
+- ac4d9b5: A `'click-curve'` curve layer with fewer than two points adds one wherever the plot is clicked.
+  
+  It does so until it has two, and so a curve to press.
+  
+  <!-- entry: fix behavior -->
+- 5d04502: A color field with its alpha held apart no longer commits the alpha after a canceled opacity drag, when the next edit moves only the color.
+  
+  <!-- entry: fix -->
+- 50cef3a: A `ColorField` calls `onCancel` when a pick closes on the color it began from, so a preview opened from `onInput` ends.
+  
+  The opacity slider then composes against `value` again, not the abandoned pick.
+  
+  <!-- entry: fix behavior -->
+- f1aa255: A `ColorField` commits a pick whose last input and the picker closing arrive together, rather than dropping it.
+  
+  <!-- entry: fix -->
+- fbaeee8: A color row's error message sits below its opacity track, and below the swatch and track of a stacked row, instead of drawing over them.
+  
+  <!-- entry: fix visual -->
+- 6dfe3db: A mixed or unset `ColorField` commits a pick that ends on black, rather than leaving it previewed and uncommitted.
+  
+  <!-- entry: fix -->
+- 471aac9: `ColorField` commits an opacity change that arrives as one native `change`, such as one set by a script or an assistive tool.
+  
+  <!-- entry: fix -->
+- bd216e3: `ComboBox` calls `onCommit` when Enter chooses the option that is already selected, however its selection and text are controlled.
+  
+  <!-- entry: fix -->
+- 9787af2: A `ComboBox` with both `selectedKey` and `inputValue` controlled no longer calls `onCommit` when Escape puts the selection's text back.
+  
+  <!-- entry: fix -->
+- 775d05c: `ComboBox`'s arrow keys land on a disabled option, which reads its reason, and Enter there commits nothing and leaves the list open.
+  
+  <!-- entry: behavior -->
+- 55f12df: `CommandPalette` keeps showing its list while it fades out, instead of "No matching actions.".
+  
+  <!-- entry: fix visual -->
+- 434b840: `CommandPalette` steps its highlight with ui-input's `stepStop`.
+  
+  <!-- entry: internal -->
+- 8a9e76d: A contained `Dialog` also makes inert what mounts in its container while it is open, other than overlays.
+  
+  <!-- entry: fix -->
+- 2945e8c: A `Dialog` in a contained portal passes `ModalOverlay`'s `style`, `isEntering`, `isExiting` and DOM props to its overlay.
+  
+  It warns about `onEnter`, `onExit`, `UNSTABLE_deferUntilEntered` and `render`, which it cannot honor.
+  
+  <!-- entry: fix -->
+- b7d2f0a: A contained `Dialog` stacked on another keeps what lies behind it inert when the dialog under it closes first.
+  
+  <!-- entry: fix -->
+- 2a0b5f3: `AnyNode`, a scene node of any payload, layer, and pose, is exported beside `AnyScene`.
+  
+  ui's `AnyNode` from the SelectionPanel is now the same type, re-exported from core.
+  
+  <!-- entry: api -->
+- f2db162: A function layer's click-empty insert keeps the curve's x order under `constrain: 'function'`, and never adds a point past a pinned endpoint.
+  
+  In `'2d'` the new point goes in just before the last endpoint; in an x-ordered curve a press outside the endpoints adds nothing.
+  
+  <!-- entry: fix -->
+- 949c317: On a curve editor with an inverted axis, the arrow keys move a focused anchor or key the way the arrow points.
+  
+  <!-- entry: fix -->
+- c967b30: `hideNonInteractive` keeps a `pinned-x` endpoint drawn and pressable, since it still moves in y.
+  
+  <!-- entry: fix visual -->
+- 2600317: A curve editor made disabled or read-only mid-drag cancels the drag, reporting `onCancel` and no further `onInput` or `onChange`.
+  
+  <!-- entry: fix -->
+- 8de44b2: On an inverted x range, a curve editor keeps an ordered curve's dragged anchors in order and `pinned-x` endpoints at the ends.
+  
+  <!-- entry: fix -->
+- 0054705: A curve editor ignores undo, redo, and the arrow keys while a drag is in flight; Escape still cancels the drag.
+  
+  <!-- entry: fix -->
+- 7b2bd39: A `--curve-line` set on one curve layer recolors that layer's anchors and default fill along with its line.
+  
+  <!-- entry: fix visual -->
+- a70d69d: A curve editor edit that changes nothing, such as Enter on the key already selected, reports no `onChange` and records no undo step.
+  
+  <!-- entry: fix -->
+- 678da69: When two curve layers both edit on one key, each undo reverts one of them, the last to edit first.
+  
+  <!-- entry: fix -->
+- 0ac2304: A click in empty space on a `constrain: 'function'` curve never adds a point at an existing anchor's x.
+  
+  The point lands just right of that anchor, or is not added where no room is left.
+  
+  <!-- entry: fix -->
+- 0a29b0e: `CurveField`'s flip and reset buttons commit points on the field's step grid and within `min`–`max`, as a drag does.
+  
+  <!-- entry: fix -->
+- 72dc525: A press on a `constrain: 'function'` curve with an `xClamp` adds a point as near its neighbor as a drag may bring one.
+  
+  The gap is measured from the `xClamp` span rather than the plot's.
+  
+  <!-- entry: fix -->
+- 23fc186: A press on an ordered curve adds its point between the two anchors it lies between, even beside a steep segment.
+  
+  An ordered curve is one with `constrain: 'function'` or `domain: '1d'`.
+  
+  <!-- entry: fix -->
+- 67cb291: A keyframe layer's bezier handle calls no `onChange` for an arrow key that its clamp leaves in place.
+  
+  <!-- entry: fix -->
+- 132d87e: A curve layer whose consumer reads `onInput` without writing it back into `state` still commits its drags.
+  
+  `onChange` gets the dragged state, and a canceled drag sends `onInput` the state it began from.
+  
+  <!-- entry: fix -->
+- e073f0a: A curve-layer drag that leaves every point where it was, such as a drag of a pinned endpoint, calls no `onChange` and records no undo step.
+  
+  <!-- entry: fix -->
+- dab2282: A curve editor's movable points, keyframes and bezier handles say in `aria-keyshortcuts` that the arrow keys move them.
+  
+  <!-- entry: fix -->
+- 2dfd1a2: An undo in a `LayeredCurveEditor` reports no edit to a layer it leaves equal, though its state is rebuilt each render.
+  
+  <!-- entry: fix -->
+- ad2ec48: Undo and redo in a curve editor pass over a step that would change nothing, such as a declined edit's.
+  
+  Each press undoes an edit that landed.
+  
+  <!-- entry: fix -->
+- b7045cd: Unmounting a curve editor, or one of its layers, mid-drag cancels the drag.
+  
+  The layer's `onInput` gets the state the drag began from, then `onCancel` fires.
+  
+  <!-- entry: fix -->
+- dd418ef: `CurvedLabel`'s `offset` moves a label that fits its track, laid back from where the `Along`'s `align` puts it.
+  
+  A label longer than its track is laid from that same point.
+  
+  <!-- entry: fix visual -->
+- fa7009e: `CurvedLabel` outside an `Along` is a plain line of text in the flow, rather than covering its positioned ancestor.
+  
+  <!-- entry: fix visual -->
+- a2df698: A `CurvedLabel` under `dir="rtl"` with no bidi engine registered reads its text forward instead of mirrored.
+  
+  `visualGraphemes` with no engine returns graphemes in logical order left to right under `'rtl'` as well as `'ltr'`.
+  
+  <!-- entry: fix visual -->
+- 45dec84: A `CycleButton` with an empty `options` renders disabled, named by its `aria-label`, instead of throwing.
+  
+  <!-- entry: fix -->
+- 0c979ed: `DataGrid` centers its empty state with its own padding, and centers each row's disclosure control in a column with no inline padding.
+  
+  <!-- entry: fix visual -->
+- 382bf20: `DataGrid`'s handle and details columns are named in header text a screen reader reads, hidden on screen.
+  
+  They read "Reorder" and "Details", in place of the old `aria-label`s "drag" and "details".
+  
+  <!-- entry: fix -->
+- 18dacec: `DataGrid` sorts text as the reader's locale orders it, with `item2` before `item10`, and puts numbers before text in a column holding both.
+  
+  <!-- entry: fix -->
+- 4a84861: A field writing through `useDebouncedText` waits out a debounce longer than 2³¹ − 1 ms, instead of writing on each keystroke.
+  
+  <!-- entry: fix -->
+- deeab94: ui, hud, devtools, and prefs-editor's declarations resolve under `moduleResolution: NodeNext`, so their types no longer read as `any` there.
+  
+  <!-- entry: fix -->
+- 0cfdb6c: A `<DefaultMotif>` kind or `named` entry given as `undefined` keeps the motif from further up, as leaving it out does.
+  
+  <!-- entry: fix -->
+- ad433e9: A `DetailList` with `layout="block"` and `values="figures"` sets each label above its value, in one column.
+  
+  <!-- entry: fix visual -->
+- 2cd52fc: A screen reader announces a `DialogRow`'s summary along with its "Edit …" button: the summary is now the button's description.
+  
+  <!-- entry: fix -->
+- fc28740: `domButton.measure` throws on a `variant: 'link'` button, which draws as inline text, rather than returning a control box.
+  
+  <!-- entry: fix behavior -->
+- 0150ec6: `domButton.draw` renders a button with no `size` at `md`, the size `domButton.measure` lays it out at, even inside a `ControlSizeScope`.
+  
+  Inside a scope, pass the scope's size as `size` to both.
+  
+  <!-- entry: fix behavior -->
+- 7e90922: Dropping a reordered bar item, a toolbar dock, or a pref preview row cancels its release's click, so the label it began on does not act.
+  
+  <!-- entry: fix -->
+- 471581b: Packages no longer install weasel siblings their code never uses.
+  
+  `@weasel-js/editor` stops asking for `@weasel-js/geom` as a peer and takes `@weasel-js/editing` only as one; `@weasel-js/prefs-editor` drops `@weasel-js/paint-kinds`, `@weasel-js/ui` drops `@weasel-js/storage`, `@weasel-js/icons-plugin` drops `@weasel-js/icons`, `@weasel-js/labkit` drops `@weasel-js/animator`, `@weasel-js/measure` drops `@weasel-js/theme`, `@weasel-js/rig` drops `@weasel-js/history` and `@weasel-js/renderer`, `@weasel-js/text-tools` drops `@weasel-js/icons` and `@weasel-js/prefs-schema`, and `@weasel-js/ui-canvas` drops `@weasel-js/history`.
+  
+  <!-- entry: internal -->
+- 593893d: A read-only `EasingPicker` draws its "Convert to bezier" button as unavailable.
+  
+  It tells the read-only reason in the button's tooltip and description.
+  
+  <!-- entry: fix visual -->
+- ef704a6: `EasingPicker` converts quart, quint, expo, circ, and back curves to their own control points.
+  
+  It no longer offers "Convert to bezier" for an elastic or bounce curve, which no single cubic draws.
+  
+  <!-- entry: fix -->
+- b305781: `EasingPicker` shows a hand-written easing function as `custom` rather than `linear`, and offers no conversion of it to a bezier.
+  
+  <!-- entry: fix -->
+- afed7af: A commit-only `GradientHandles` or `MeshHandles` keeps drawing its drag when the consumer re-renders with a rebuilt paint.
+  
+  <!-- entry: fix -->
+- 8e1481b: A held `EffectList` card's name field and buttons tell the reason it is held.
+  
+  The Duplicate and Remove buttons also draw dimmed, with no hover, while held.
+  
+  <!-- entry: fix visual -->
+- 20324de: `EffectCard`'s duplicate and remove buttons draw ui's own `clone` and `close` glyphs, in place of editing's `duplicate` and core's `delete`.
+  
+  A registry holding only ui's table now draws them, where before it drew two question marks.
+  
+  <!-- entry: fix -->
+- b5c341d: A menu enum field's button name includes the chosen option when its label is not text. It falls back to the option's short form or value, as in "Size: S".
+  
+  <!-- entry: fix -->
+- 8553648: An empty `label` or `description` (`null`, `false` or `''`) on `Field` and the boxed form controls draws nothing, as an empty `error` does.
+  
+  The control is no longer named or described by an empty element.
+  
+  Inside a `Field`, a control given an empty `label` of its own takes the field's label.
+  
+  <!-- entry: fix -->
+- ebcef7d: A `Field` showing an error draws a red frame only on a control that reads as invalid, not on every framed control inside it.
+  
+  The members of a `group` field and a control that names itself keep their usual frame.
+  
+  <!-- entry: fix visual -->
+- 99b2391: A form control inside a `Field` showing an error reads as invalid even when given `invalid={false}`.
+  
+  This holds for `Input`, `TextArea`, `NumberField`, `ComboBox`, `Select`, and `RadioGroup`, as it already did for `UnitField`.
+  
+  <!-- entry: fix -->
+- 1d7b94d: A text or numeric field stands as tall as a button of its size: its border is drawn inside its height, not 2px beyond it.
+  
+  <!-- entry: fix visual -->
+- 65c7201: Clicking a `Field`'s label reaches its control: it focuses a text input and toggles a checkbox, as a native `<label>` does.
+  
+  <!-- entry: fix -->
+- 643b01f: A fit scope inside a scaled ancestor publishes `--fit-natural` at its full layout width.
+  
+  The box no longer shrinks below its labels' full forms.
+  
+  <!-- entry: fix visual -->
+- 992b75b: A fit scope drawn in another window's document, such as a popout, measures its scaled labels again when a web font finishes loading there.
+  
+  <!-- entry: fix -->
+- bc6e8ab: A fit scope whose labels change to ones that fit drops its `data-fit-spent` mark, and the extra room that mark gave it.
+  
+  <!-- entry: fix visual -->
+- 7b7b3b2: A press-drag on a contenteditable text box or a role control inside a `FloatingPanel` goes to that control. Controls by role include a switch, a tab, and a menu item.
+  
+  <!-- entry: fix -->
+- dee9060: An uncontrolled `FloatingPanel` moves to a changed `anchor` until it is first dragged.
+  
+  <!-- entry: fix -->
+- c0225d4: A `FloatingPanel` in a padded container sits one inset in from every corner. It is placed against the container's padding box, so it can also be dragged to every edge.
+  
+  <!-- entry: fix visual -->
+- e921294: A floating panel set back to the placement a drag started from goes there, rather than staying where that drag dropped it.
+  
+  <!-- entry: fix -->
+- 52ba759: `fontFamilyOptions` labels a family the `'canvas'` policy paints in its own face by its name.
+  
+  <!-- entry: fix -->
+- 08f80b9: `fontFamilyOptions` and `useFontFamilyOptions` offer a family registered only through its font outlines, which no longer shows as "not loaded".
+  
+  <!-- entry: fix -->
+- 922195e: A font-family or font-weight field puts its `id` on its trigger, so a `<label htmlFor>` outside the field names it.
+  
+  <!-- entry: fix -->
+- 2931163: An `unset` font-family or font-weight field shows a dash and no chosen value, as an unset enum select does.
+  
+  <!-- entry: fix -->
+- c90d8d7: A form draws a field its object value omits at the field's default, as it draws any leaf holding nothing, and writes nothing until an edit.
+  
+  <!-- entry: fix visual -->
+- 20502eb: `FpsMeter` reports the frames it saw over the time they took, so uneven frames no longer read as a higher rate than the screen reached.
+  
+  <!-- entry: fix -->
+- f6162e8: A function layer with an `xClamp` adds a clicked or pressed anchor inside that range, where a drag could then reach it.
+  
+  <!-- entry: fix -->
+- cdadc6c: A press on a function layer's curve right beside a locked anchor leaves that anchor where it is.
+  
+  <!-- entry: fix -->
+- 57ceaee: A `GradientEditor` given no `onInput` draws a stop drag or a color pick on its track, handles, and stop editor while the edit runs.
+  
+  <!-- entry: fix visual -->
+- 0c68992: A `GradientEditor` stop add or removal its caller declines leaves the selection and focus where they were, now and later.
+  
+  <!-- entry: fix -->
+- 76b506f: Removing a `GradientEditor` stop by right-click or by dragging it off the track moves focus to the stop the editor selects, as Delete does.
+  
+  <!-- entry: fix -->
+- 72497ce: Picking the stop a `GradientEditor` falls back to, when its selection names no stop, reports the pick and replaces the stale index.
+  
+  <!-- entry: fix -->
+- 7221d69: Up and Right grow a `GradientHandles` radius or turn its angle forward; Down and Left do the reverse.
+  
+  <!-- entry: fix -->
+- 425b3bd: A canceled `GradientHandles` or `MeshHandles` drag sends `onInput` the exact value it began from, and nothing at all when the press never moved.
+  
+  <!-- entry: fix -->
+- f60eb1d: The `GradientHandles` conic angle arm is 60 screen pixels long at any zoom, so its tip stays clear of the center and on screen.
+  
+  <!-- entry: fix visual -->
+- 93f0494: A gradient's drag handles say in `aria-keyshortcuts` that the arrow keys move them.
+  
+  <!-- entry: fix -->
+- d7d80af: The `GradientHandles` radius guide follows `toScreen`, so under a stretched transform it draws the ellipse the gradient paints.
+  
+  <!-- entry: fix visual -->
+- 8a9d9b0: The `GradientHandles` radius can be dragged down to one screen pixel in any units, not only to 1.
+  
+  <!-- entry: fix -->
+- f60f91a: `GradientHandles` and `MeshHandles` call `onChange` only for an arrow key or a drag that changed the value.
+  
+  <!-- entry: fix -->
+- 00250c6: A button disabled or read-only with a reason can no longer be dragged, as a button disabled without one cannot.
+  
+  <!-- entry: fix -->
+- 63e7eaa: Under React 18, a `Select`, `ComboBox` or `Tabs` row that stops being disabled no longer stays dimmed and announced as disabled.
+  
+  <!-- entry: fix -->
+- 441a023: A held control replaced by another element while its reason stays the same shows that reason's tooltip on the new element.
+  
+  <!-- entry: fix -->
+- 4b73492: `resolveIcon` and `iconFromData` no longer throw in development on a BigInt or a cyclic object, such as a React element; they draw nothing.
+  
+  <!-- entry: fix -->
+- bee2796: A field that settles when typing rests waits out a `typing.idleMs` longer than 2³¹ − 1 ms, instead of settling on each keystroke.
+  
+  <!-- entry: fix -->
+- b9b4c34: `inferTokenType` reads every CSS length unit as a `dimension`, so `TokenPanel` gives such a token a number field under Size. That includes `dvw`, `svw`, `lvw`, `vi`, `vb`, `cqi`, `cqb`, `cqmin`, `cqmax`, `cap`, and `ic`.
+  
+  <!-- entry: fix -->
+- bbfb6ab: `inferTokenType` reads a shadow whose color nests a function as a `shadow`, so `TokenPanel` files it under Depth. For example, `0 2px 4px color-mix(in srgb, rgb(0 0 0) 20%, transparent)`.
+  
+  <!-- entry: fix -->
+- f89247b: `inferTokenType` reads a shadow whose `inset` comes last, such as `0 1px 2px red inset`, as a `shadow`, so `TokenPanel` files it under Depth.
+  
+  <!-- entry: fix -->
+- 064f0a7: `inferTokenType` reads a duration written in upper case, such as `200MS`, as a `duration`, as it already read upper-case dimensions.
+  
+  <!-- entry: fix -->
+- 081ca62: `InlineMarkdown` keeps a code span whole inside a mark or a link label. So `` *the `**` operator* `` reads as emphasis around the code.
+  
+  <!-- entry: fix -->
+- 2fcd3a3: `InlineMarkdown` leaves a line holding two globs, such as `src/*.ts to lib/*.js`, as written. A mark opens before punctuation only after a space or at the start of the line.
+  
+  <!-- entry: fix -->
+- c4afe9e: An `InlineMarkdown` link whose address holds balanced parentheses, as many Wikipedia addresses do, links to the whole address.
+  
+  <!-- entry: fix -->
+- ae03d3c: `InlineMarkdown` reads `***text***` as bold italic text, with no stray asterisks around it.
+  
+  <!-- entry: fix visual -->
+- 81699c7: A disabled inline paint control outside a property row shows its `disabledReason`. The reason is a tooltip, and the control's description for screen readers.
+  
+  <!-- entry: fix -->
+- 2337334: An inline paint control keeps its editor's state, such as the selected gradient stop, when its `disabled` prop flips.
+  
+  <!-- entry: fix -->
+- 8d622d3: Escape that cancels an `InlineRange` drag no longer also closes the popover or dialog the range sits in.
+  
+  <!-- entry: fix -->
+- 0ab78c7: An `InlineRange`'s accent fill ends under the thumb's center at every value.
+  
+  <!-- entry: fix visual -->
+- 31125f5: An `InlineRange` made disabled or read-only mid-drag cancels the drag through `onValueCancel` instead of committing it.
+  
+  <!-- entry: fix -->
+- a911e74: A focusable held `InlineRange` keeps its thumb still under the arrow keys and a press.
+  
+  <!-- entry: fix -->
+- e85d314: A read-only `InlineRange`, or one disabled for a reason, no longer makes React warn of a controlled value with no `onChange`.
+  
+  <!-- entry: fix -->
+- 051b065: An `InlineRange` given `marks` keeps its filled track, with the marks drawn on top of it.
+  
+  <!-- entry: fix visual -->
+- 7026fca: An `InlineRange` drag cancels when the browser takes its pointer away for a scroll or a pinch. It sends `onValueInput` the value the drag began from, then `onValueCancel`, and no `onValueChange`.
+  
+  <!-- entry: fix -->
+- f85a332: A control placed in an `Input`'s `leadingAdornment` or `trailingAdornment`, such as a clear button or a color swatch, takes clicks.
+  
+  <!-- entry: fix -->
+- ccfe107: A curved run stops watching an item's size once the item leaves, so old More buttons are no longer kept in memory.
+  
+  <!-- entry: fix perf -->
+- 587332a: `domItemList` measures an `empty: null` list by the dash `ItemList` draws for it, not as an empty line.
+  
+  <!-- entry: fix -->
+- 35257db: `Jog` draws a `caption` of `0` instead of leaving it out.
+  
+  <!-- entry: fix -->
+- 4afd436: `Jog`'s Pause button stays pressable while playing, however few steps are left; only starting play needs two.
+  
+  <!-- entry: fix -->
+- 9121cde: `KeyDiagram` stays up for the whole of a `linger` longer than 2³¹ − 1 ms, instead of dropping the moment the last key lifts.
+  
+  <!-- entry: fix -->
+- 5c1959f: `KeyCap` writes a legend such as `constructor` as text instead of looking it up as an icon.
+  
+  <!-- entry: fix -->
+- 71d059c: A `KeyCap` whose legend is one emoji, astral letter, or accented letter written decomposed gets a square chip rather than a wide one.
+  
+  <!-- entry: fix visual -->
+- 42715a5: `keyLegendsFromChord`, and so a shortcut in `InlineMarkdown`, reads `Ctrl` and `Meta` as modifiers and draws every key a chord names.
+  
+  <!-- entry: fix -->
+- 42715a5: `keyLegendsFromChord` draws a chord's modifiers once each and in one order, `Mod`, `Shift`, `Alt`, `Ctrl`, `Meta`, whether or not the chord names a key.
+  
+  <!-- entry: fix -->
+- 79086a5: `keyLegendsFromChord` reads a part named `constructor` or `toString` as the key rather than as a modifier.
+  
+  <!-- entry: fix -->
+- 611540e: A `KeyDiagram` makes room for captions only when a key it draws has a caption or an icon.
+  
+  <!-- entry: fix visual -->
+- 2075cbd: A `KeyDiagram` with a `layout` prints the `label` a `keys` entry gives, as it already did without one.
+  
+  <!-- entry: fix -->
+- a902908: A `KeyDiagram` given a `linger` after keys were let go without one stays hidden until a key is held.
+  
+  <!-- entry: fix -->
+- ac5c1bd: A `KeyDiagram` without a `layout` draws a `keys` entry at the `width` it gives, in key units, as a layout's keys are.
+  
+  <!-- entry: fix visual -->
+- 5e5d64e: `keyLegendsFromFormatted` and `<ShortcutKeys legend>` read `Ctrl++` and `Ctrl+Shift++` as modifiers and then a `+` key.
+  
+  <!-- entry: fix -->
+- f0e000b: `useHeldKeys` keeps a key held through a tap of Win or Super off Apple platforms.
+  
+  Only on macOS, which sends no key-up for a key let go while Command is down, does letting go of Command let go of the rest.
+  
+  <!-- entry: fix -->
+- a283eaa: A key whose legend is drawn as an icon, such as `⊞`, an arrow, or `␣`, shrinks that icon to fit a fixed-width key or a `KeyBank`'s shared size.
+  
+  <!-- entry: fix visual -->
+- 356ce61: `keyGlyph` prints a named key as `keyLegendFromKey` does on macOS, `Home` and `PgUp` rather than `HOME` and `PAGEUP`.
+  
+  <!-- entry: fix -->
+- 80f6d7b: Canceling a key or handle drag in a `KeyframeLayer` restores the selection the press began from, along with the keys.
+  
+  <!-- entry: fix -->
+- 6cc38f6: A `KeyframeLayer`'s `xClamp` and `yClamp` hold keys between the pair given either end first, as a `FunctionLayer`'s `xClamp` does.
+  
+  <!-- entry: fix -->
+- 3823959: An up or down arrow on a handle of a flat `KeyframeLayer` segment commits nothing, as a drag there does.
+  
+  <!-- entry: fix -->
+- 4f55a65: Dragging a bezier handle on a flat keyframe segment keeps the handle's y, so the easing doesn't change shape once a key's value moves.
+  
+  <!-- entry: fix -->
+- d3a4aa0: On a keyframe segment whose value falls, the arrow keys move a focused bezier handle the way the arrow points.
+  
+  <!-- entry: fix -->
+- 8e45841: A selected keyframe segment's bezier handles follow a key while it is dragged, onto whichever segment the key lands in.
+  
+  <!-- entry: fix visual -->
+- 79bd6cc: `LastOperationPanel` and `useLastOperation` work with a `LastOperationStore` written as a class.
+  
+  <!-- entry: fix -->
+- 554d169: A `LayerList` layer given `children: []` stays a branch layers can be dropped into, so a group emptied by a move can be filled again.
+  
+  <!-- entry: fix -->
+- f5cec0a: A locked `LayerList` layer now locks the layers inside it too: they cannot be dragged out, renamed, removed, or dropped into, at any depth.
+  
+  <!-- entry: fix -->
+- b564ea5: `LayerList` rows without a remove button keep their toggles in line with rows that have one when a theme sets `--wzl-button-h`.
+  
+  <!-- entry: fix visual -->
+- eff7f0f: A `LayerList` rename field closed by its row being locked or removed, or by a hold, stays closed instead of reopening later.
+  
+  <!-- entry: fix -->
+- ae40d94: Opening a `LayerList` rename field and leaving it unchanged no longer reports a rename for a layer whose label starts or ends with spaces.
+  
+  <!-- entry: fix -->
+- b03ab76: A `LayerList` row that cannot be removed keeps the remove button's width, so its visibility and lock toggles line up with the rows around it.
+  
+  <!-- entry: fix visual -->
+- b96ce9a: A `Legend`'s dot swatches line up with its other marks in right-to-left text.
+  
+  <!-- entry: fix visual -->
+- 7ec134d: A `ListEditor` entry keeps its typed text when typing moves to another entry without a blur.
+  
+  The text is written to the entry it was typed in, and the next entry's draft compares against that entry's own text.
+  
+  <!-- entry: fix -->
+- 34a7197: Pressing Enter in a `ListEditor` text entry commits what was typed when the list is at `maxItems` or has no entry kind to add.
+  
+  <!-- entry: fix -->
+- 56784d5: Comparisons of two lists entry by entry go through registry's `sameList` rather than hand-written loops.
+  
+  <!-- entry: internal -->
+- 5de44f2: `Tree`, `LayerList` and `PrefsForm` toggle a row on Cmd-click on a Mac and Ctrl-click elsewhere, as a canvas does.
+  
+  A Ctrl-click on a Mac, its secondary click, no longer toggles a row. The same key with Alt makes a `Tree` or prefs-schema drag an alias.
+  
+  <!-- entry: fix behavior -->
+- cc7fffb: A read-only or disabled `ListEditor` no longer adds an entry on Enter or removes an empty one on Backspace.
+  
+  <!-- entry: fix -->
+- dfc1a37: A `MenuBar` schema whose titles declare one access letter twice throws, naming both titles and the letter.
+  
+  Such schemas used to mount, with the letter opening only the first title; they now throw. Letters compare case-insensitively.
+  
+  <!-- entry: fix -->
+- 7983c4e: Pressing a disabled `MenuBar` title while another title's menu is open closes that menu.
+  
+  <!-- entry: rank=0 fix -->
+- f2c5695: Moving the pointer from an open `MenuBar` menu onto a title with no rows closes the menu and leaves focus on that title, inside the bar.
+  
+  <!-- entry: rank=0 fix -->
+- 9b78b1a: A bar drawn as a menu keeps its whole button in a squeezed `ToolbarDock` row; the bars beside it give up their items first.
+  
+  <!-- entry: rank=0 fix visual -->
+- 7d7219c: A menu bar's titles sit centered in their buttons again, without the end padding meant for a menu row's label.
+  
+  <!-- entry: fix visual -->
+- 30a4077: Tapping another `MenuBar` title on a touchscreen while a menu is open opens that title's menu, instead of closing every menu.
+  
+  <!-- entry: rank=0 fix -->
+- 8f3bce2: A `bare` `MenuButton` disabled for a reason is dimmed with a not-allowed cursor and takes no hover color, as one disabled outright is.
+  
+  <!-- entry: fix visual -->
+- a0a2461: A `MenuButton` marked `current` is held by a `<ReadOnly>` scope: it stays focusable with its reason, and opens no menu.
+  
+  <!-- entry: fix -->
+- 71eae88: What is typed into a menu's text or number row is kept when a press outside, a window blur, a wheel or a resize closes the menu.
+  
+  <!-- entry: fix -->
+- 13a2275: A number or text typed into a menu row is kept when the app closes or replaces the menu before the field is left.
+  
+  <!-- entry: fix -->
+- 70b763e: A context menu's text and number fields stay inside their row whatever UI font is installed.
+  
+  <!-- entry: fix visual -->
+- 29ca8f1: A menu label underlines a final sigma `ς` when its access letter is `ς` or `σ`, as the keyboard already matches it.
+  
+  <!-- entry: fix visual -->
+- 25511cc: A bar's menu button drawn by a movable `ToolbarDock` counts a grip that appears after it mounted in the width the bar cannot shrink below.
+  
+  <!-- entry: fix -->
+- 4e12218: An open menu panel moves back inside the viewport when a row's value widens it, and its submenus aim at where it is drawn.
+  
+  <!-- entry: fix -->
+- bed1c77: A menu taller than the window is capped at the window's height and scrolls, keeping the highlighted row in view.
+  
+  <!-- entry: fix visual -->
+- 63bd5cd: Enter in a menu color row's picker keeps focus there, so opening the system color dialog by keyboard no longer closes the menu.
+  
+  <!-- entry: fix -->
+- 05411e8: A menu link opened in a new tab by a modified release no longer gives the opened page a `window.opener` back to the app.
+  
+  <!-- entry: fix -->
+- ce75dca: A menu a button opened without taking focus gives focus back to the button when it is dismissed while one of its fields has focus.
+  
+  <!-- entry: fix -->
+- 7c560a7: A menu bar's menu that closes while focus is in a color row's picker gives focus back to its button, rather than dropping it to the page.
+  
+  <!-- entry: fix -->
+- ad0d249: Releasing a menu bar drag over a color, number or text row opens its picker or focuses its field, as a click on the row does.
+  
+  <!-- entry: fix -->
+- 15fc34c: Space on a highlighted color, number or text row in a menu opens its picker or focuses its field, as Enter does.
+  
+  <!-- entry: fix -->
+- 74edafb: A `MeshHandles` point dragged onto another patch's point keeps its handle, focus, and pointer until the drag ends.
+  
+  <!-- entry: fix -->
+- d59f87e: Controls on an emphasized plaque or titlebar strip are drawn in that surface's black-or-white ink, not the theme's accent.
+  
+  <!-- entry: fix visual -->
+- 66e1a53: A `MotifFrame` whose title is an empty string draws as an untitled frame, with no empty heading and no unnamed group.
+  
+  <!-- entry: fix visual -->
+- 39c9f49: A `MotifFrame` given `actions`, `leading`, `inline`, `twisty` or `note` as `false` or `null` draws as though the part were left out, in every motif.
+  
+  <!-- entry: fix visual -->
+- de344db: A `sheet()` frame inside a `PropertyPanel` no longer takes on the panel's backdrop blur or title inset.
+  
+  Popovers and menus inside it are placed where they belong again.
+  
+  <!-- entry: fix visual -->
+- a94cb4b: A `tab()` frame's tab sits flush with the box's edge at the corner it squares, rather than a short way in from a square corner.
+  
+  <!-- entry: fix visual -->
+- 9df0888: An untitled `MotifFrame` in the `sheet` or `well` motif draws its `inline` control, as every other motif does.
+  
+  <!-- entry: fix -->
+- d14d16a: An untitled `MotifFrame` draws no heading element and no empty title bar, in every motif.
+  
+  A frame with no title but a control in its heading still draws that control, in the motif's heading row.
+  
+  <!-- entry: fix visual -->
+- f21c0ca: Every `MotifFrame` motif draws a twisty with `twistyAt="end"` at the end of its heading, as `sheet` already did.
+  
+  <!-- entry: fix visual -->
+- 241ebbe: `moveLayers` throws when a move's `parentId` names no layer in the tree, or a moved one, rather than losing the moved layers.
+  
+  <!-- entry: fix behavior -->
+- 028cc49: A `PropertyGroup` nested in another lays out its rows by its own `pack`, not its parent's. A `pack="pairs"` group inside a default group now pairs its rows.
+  
+  <!-- entry: fix visual -->
+- e5d2389: The tarball no longer publishes declarations for test fixtures, test helpers and lab views.
+  
+  <!-- entry: fix -->
+- 2fa2172: An untitled `MotifFrame` in the `notch` motif is not a group named by the controls in its heading.
+  
+  <!-- entry: fix -->
+- 42f88c1: An uncontrolled `NumberField` stays uncontrolled while `mixed`, keeping what was typed. It no longer warns that it changed control modes.
+  
+  <!-- entry: fix -->
+- 928462b: A form's font picker probes the weight and slant beside it, as a selection panel's does.
+  
+  Forms and selection panels now draw leaves through one renderer, so a form's number field also takes a `+=` / `-=` typed into it, and a mixed map in a panel offers "Replace all" as a mixed list does.
+  
+  <!-- entry: fix behavior -->
+- 8ff14a0: A group's reset skips a leaf its `enableIf` disables, and a mixed leaf always offers a reset, in every params surface.
+  
+  On every surface a reset compares a leaf's value as it is shown, an encoded one's read through its encoding, and leaves readouts alone. A group's reset reaches a `PrefsForm`'s `onReset` once per leaf it changes. A labkit group's reset keeps a leaf that starts auto unpinned when it writes the group's value.
+  
+  <!-- entry: fix behavior -->
+- e1b53a1: An `OpacityRange` disabled for a reason drops its thumb and flattens its track, as one disabled outright does.
+  
+  <!-- entry: fix visual -->
+- 4bda721: Own-key lookups go through registry's `getOwn` and `hasOwnKey` rather than hand-written `Object.hasOwn` checks.
+  
+  <!-- entry: internal -->
+- 3c498b4: A curved `PageTabs` draws no drop mark while a dragged tab is held over its own place, as a straight strip does.
+  
+  <!-- entry: fix visual -->
+- 09a0e40: `PageTabs` renames a tab on two presses within the `gestures.doubleClickMs` kit setting, not a fixed 500 ms.
+  
+  <!-- entry: behavior -->
+- 373ac99: In a right-to-left `PageTabs` strip, the drop line lights the edge of the tab the dragged page will land against.
+  
+  <!-- entry: fix visual -->
+- 7e73f59: A `PageTabs` rename cut off by turning the strip disabled or read-only stays closed when the hold lifts.
+  
+  <!-- entry: fix -->
+- 7896da7: Alt+Left and Alt+Right inside a `PageTabs` rename field move the caret by a word instead of moving the page.
+  
+  <!-- entry: fix -->
+- 39b6012: `CommandPalette`'s arrow keys land on a disabled row, whose reason it shows, rather than passing over it.
+  
+  <!-- entry: behavior -->
+- 1cafdce: `SelectionPanel` offers a row's reset by that row's own state where an alias of the same leaf is disabled or enabled apart from it.
+  
+  <!-- entry: fix -->
+- 86fce74: `SelectionPanel` marks and scrolls to a field of an aliased object leaf under either path, and opens the tab holding it.
+  
+  <!-- entry: fix visual -->
+- 973e4ed: Across several selected kinds, `SelectionPanel` leaves out a property whose kinds give it a different default, bound, option, or field.
+  
+  A leaf that differs only in how it is drawn, such as its name, icon, or control, is still shared.
+  
+  <!-- entry: fix behavior -->
+- c08f873: A clearable enum toggle that a glyph names in an object leaf's paired row is sized by its segments, not by an even share of the row.
+  
+  <!-- entry: fix visual -->
+- 8b96ffe: `SelectionPanel` draws an action field of an object leaf pressed while its `activeIf` holds, inside an alias of that leaf too.
+  
+  <!-- entry: fix visual -->
+- 9ae8bc2: `SelectionPanel` marks a field of an object leaf on its own row where a section parts it from its pair, or a bar draws it alone.
+  
+  <!-- entry: fix visual -->
+- 8d43789: `PatternPicker` lights no tile size for a `texture` paint and holds its size bar, since it has no size to set.
+  
+  <!-- entry: fix visual -->
+- d4c1562: An image read that finishes while a `PatternPicker` is disabled or read-only commits nothing.
+  
+  One that finishes after `onChange` changes goes to the new handler.
+  
+  <!-- entry: fix -->
+- 0c2a798: `plaque({ mix })` throws a `RangeError` for a `mix` outside 0 to 100 or one that is not a number.
+  
+  <!-- entry: fix behavior -->
+- 6ad7c56: A press on a `Plot2D` that CSS sizes to another shape than `width` by `height` reports the plot and model point under the pointer.
+  
+  <!-- entry: fix -->
+- 0522c76: `Powerline`'s stylesheet no longer carries a `.matrix` rule that nothing drew.
+  
+  <!-- entry: internal -->
+- e23047b: A `Powerline` segment draws a flat left edge once the segment before it is replaced by a child that reports no cap.
+  
+  <!-- entry: fix visual -->
+- ab8626c: A pref `action` leaf whose `run` returns a promise that rejects no longer raises an unhandled rejection of its own.
+  
+  <!-- entry: fix -->
+- f72c842: A disabled `PrefControl` disables every field of an object, list, map, or union it draws, even where its `disabledAt` says a field is enabled.
+  
+  <!-- entry: fix -->
+- 27fdcb9: A `PrefsBar` cell's `ctx.source` reads every leaf of the bar at its default when the values hold none, as `Prefs` does.
+  
+  <!-- entry: fix -->
+- 8f165c0: Sections nested under different sections of an object leaf's bar no longer share one run when their keys match.
+  
+  <!-- entry: fix -->
+- 8a94042: `PrefsForm`'s columns layout keeps a column mounted when a column before it appears, disappears, or moves. Its focus and half-typed edits survive.
+  
+  <!-- entry: fix -->
+- d09c453: A prefs group whose description is empty draws no empty note under its heading. This holds in the rail layout's pages, sections, tabs, and panels, and in an object leaf's panels.
+  
+  <!-- entry: fix visual -->
+- bc04126: `PrefsForm` draws a leaf with the `renderers` entry named for its path, as a panel and `PrefsBar` do. That holds in a row, an object's field, a bar's cell, and a group's heading.
+  
+  <!-- entry: fix -->
+- 587ca97: `PrefsForm` warns in development, once per key, about a `renderers` key that is neither a leaf path nor a leaf kind in its schema.
+  
+  <!-- entry: fix -->
+- f05f7d3: A typed number preference with a word for infinity shows every decimal place of its value, not one rounded to its step.
+  
+  <!-- entry: fix visual -->
+- 52def45: `MARKED` from `@weasel-js/ui/testing` finds the rows of a selected fragment group, which carry its mark, not the fragment itself.
+  
+  <!-- entry: fix -->
+- 4a102bd: A number pref takes a `placeholder` and a string pref a `maxLength`, and `PrefsForm` honors both as labkit's `ControlPanel` already did.
+  
+  A stored string longer than its leaf's `maxLength` reads cut to it. Labkit's `.placeholder()` and `.maxLength()` write these same fields.
+  
+  <!-- entry: api -->
+- d60ab9f: `PrefsForm` no longer warns of a `renderers` key naming a field inside a section by its real path, and warns of one using the section's key.
+  
+  <!-- entry: fix -->
+- a04eb3d: A text list adds a new entry as its item's default, as every other list does. An entry holding nothing shows that default too, in `PrefsForm` and in labkit's controls.
+  
+  <!-- entry: fix -->
+- 76e3b96: A Cmd or Ctrl click that drops the last selected row from a `PrefsForm` no longer scrolls the form to the row left last.
+  
+  <!-- entry: fix -->
+- b40160f: A union leaf's fields stay drawn while a slider in them is dragged on a live surface, such as a selection panel.
+  
+  <!-- entry: fix -->
+- be40d3a: A union leaf's select of variants no longer offers an "Unset" entry, which wrote nothing when picked.
+  
+  <!-- entry: fix -->
+- adb9d72: A `PrefsBar` leaf keyed like an `Object.prototype` member, such as `constructor`, shows its default when its values hold nothing for it.
+  
+  <!-- entry: fix -->
+- 71adee4: A property panel's slider track cancels its drag on Escape, putting the value back and calling the field's `onCancel`.
+  
+  <!-- entry: fix -->
+- a911e74: A held slider row in a property panel commits nothing when its track is dragged.
+  
+  <!-- entry: fix -->
+- fe8181e: An editable boolean property field with no value is dimmed as not set, matching the dash its read-only form shows.
+  
+  <!-- entry: fix visual -->
+- 13f9dd9: CurveField snaps a dragged point exactly onto its `step` grid, counted from `min`, so it writes 0.3 rather than 0.30000000000000004.
+  
+  <!-- entry: fix data -->
+- f073254: An inline property row keeps its label and control aligned as a one-line row when its validation message wraps onto several lines.
+  
+  <!-- entry: fix visual -->
+- 3b2d8c8: A property row given `false` for `readout`, `hint`, or its auto value draws nothing for it, not an empty box.
+  
+  <!-- entry: fix visual -->
+- d74c803: Holding Enter or Space on a property row's pin toggle or reset control acts once, as a button does, instead of repeating with the key.
+  
+  <!-- entry: fix -->
+- 9f8982e: A read-only typed number field shows every decimal place its editable field shows, not one rounded to its step.
+  
+  <!-- entry: fix visual -->
+- a7d5e71: Home and End on a property slider row's track or readout go to the range's ends, past any stop between.
+  
+  <!-- entry: fix -->
+- e332e09: A boolean `toggle` property field whose row label is not a plain string draws that label in its segment, instead of an empty segment.
+  
+  <!-- entry: fix visual -->
+- ac24d7b: A read-only boolean property field with no value shows the dash other unset readouts show, not Off.
+  
+  <!-- entry: fix visual -->
+- 7fbfb0b: A `Radio` inside a `Disabled` or `ReadOnly` scope of its own, within its group, cannot be chosen, and says the scope's reason.
+  
+  <!-- entry: fix -->
+- c522708: `RailList` is a `group`, so the `aria-label` that names it is announced.
+  
+  <!-- entry: rank=0 fix -->
+- 86a95a6: An SVG uploaded to `PatternPicker` that declares only a `viewBox` keeps its proportions instead of tiling square.
+  
+  <!-- entry: fix visual -->
+- a778f14: A read-only color field whose `alpha` is a number shows that alpha in its swatch and hex, as the editable field does.
+  
+  <!-- entry: fix visual -->
+- 2146a6f: A read-only font-weight field names its weight as the editable select does: `700 Bold`, not `700`.
+  
+  <!-- entry: fix -->
+- 7eb527b: A read-only property field's value can be selected and copied in Safari.
+  
+  <!-- entry: fix -->
+- 19d5d8a: A read-only field marked `unset` shows the dash, whatever value it is passed, as its editable control shows no chosen value.
+  
+  <!-- entry: fix -->
+- 42e87c0: A property textarea or slider readout disabled with a reason is dimmed, as other disabled kit controls are.
+  
+  <!-- entry: fix visual -->
+- 44ad7a3: Space or Enter on an `aria-disabled` item in a `useRovingTabIndex` container no longer calls its `onAction`.
+  
+  <!-- entry: fix -->
+- 3e4c5cf: A property row's help waits out a `help.focusDelayMs` longer than 2³¹ − 1 ms, instead of opening as focus arrives.
+  
+  <!-- entry: fix -->
+- 80b3328: A property row's help opens for keyboard focus after a press in the row that was released outside it.
+  
+  <!-- entry: fix -->
+- 4349686: An inline property row keeps telling whether it runs past one line after its `group` prop changes or its control is replaced.
+  
+  <!-- entry: fix -->
+- b14d355: A property row's auto toggle takes no press and leaves the tab order inside a read-only scope, as the row's reset already did.
+  
+  <!-- entry: fix -->
+- 772f457: A tinted `rule` frame draws its tint edge at the start of the line, so on the right under `dir="rtl"`.
+  
+  <!-- entry: fix visual -->
+- 597cfd7: A drag across a `Ruler` or the workspace `Rulers` no longer selects their tick labels as text.
+  
+  <!-- entry: fix -->
+- 660014e: A scrolling curved run whose range shrinks keeps its offset at the new end, so focusing an item scrolls it into view.
+  
+  <!-- entry: fix -->
+- b2e7850: A sideways swipe moves a scrolling curved run's items the way the fingers go, on a run that reads right to left too.
+  
+  <!-- entry: fix -->
+- db62edc: A `Tab` or `Radio` laid along a curved `Along` keeps a `style` given as a function of its render props.
+  
+  <!-- entry: fix -->
+- 6643915: Text bent along a curved row lands on its items under a rotated ancestor when the row fits its run, as it already did when the row scrolls.
+  
+  <!-- entry: fix visual -->
+- 7ab6268: Dragging a note within an annotation layer's row in a `useSceneLayerList` list reorders it.
+  
+  <!-- entry: fix -->
+- 210f28f: Escape during a sweep across a `SegmentedBar`, `ToggleChips`, or `CheckboxGroup` puts every segment it reached back, as the `sweep` docs say.
+  
+  <!-- entry: fix -->
+- 7513080: A momentary `SegmentedBar`'s `FitLabel` segments shorten together when the bar is squeezed, as the other modes' do.
+  
+  <!-- entry: behavior -->
+- 83a3934: A `flat` `SegmentedBar` with `columns` lines every row up with the first, and its rows share one rule between them instead of two.
+  
+  <!-- entry: fix visual -->
+- 82b59e4: A mixed segment of a `flat` `SegmentedBar` draws its accent wash at rest, and a `flat` or `minimal` one keeps it under the pointer.
+  
+  <!-- entry: fix visual -->
+- 9a64114: A swept `SegmentedBar` keeps sweeping after the `Along` it sits in turns from a straight line to a curve, or back.
+  
+  <!-- entry: fix -->
+- 7d3bac3: A `SegmentedBar` with `columns` rounds only its grid's outer corners when it is vertical or sits in a vertical run.
+  
+  <!-- entry: fix visual -->
+- f265eee: A curved segmented bar under forced colors draws its on segments in Highlight and outlines its mixed ones, as a straight bar does.
+  
+  <!-- entry: fix visual -->
+- 9061a88: A curved segmented bar lights an end segment all the way into the well's rounded end when its items arrive after it mounts.
+  
+  <!-- entry: fix visual -->
+- 62b3eee: A `Select` throws a `RangeError` when two `options` have values that read the same as text, such as `1` and `'1'`.
+  
+  <!-- entry: behavior -->
+- 015b597: A `width='fit'` `Select` or `ComboBox` whose rows sit inside a fragment sizes itself to the widest row rather than to all of them side by side.
+  
+  <!-- entry: fix -->
+- 3741379: A read-only or reason-disabled uncontrolled `Select` keeps its selection when arrow keys or typing reach its closed trigger.
+  
+  <!-- entry: fix -->
+- b8e3eb3: A `Select` trigger held past the `gestures.longPressMs` kit setting picks a row on release.
+  
+  <!-- entry: fix -->
+- 5fcfce9: A focused `Select` keeps its focus when it is given a `tooltip` or `shortcut` it had none of.
+  
+  <!-- entry: fix -->
+- 0389204: A `Select` opened by a mouse click no longer leaves its trigger pressed after the list shuts.
+  
+  <!-- entry: fix -->
+- 915d349: A `Select` list that loses its selected row while open goes back to hanging below its trigger at the trigger's width.
+  
+  <!-- entry: fix visual -->
+- fa9c93c: In a right-to-left layout, a `Select` sets its value at the trigger's right edge and opens its list with the selected row over it.
+  
+  <!-- entry: fix -->
+- b316348: A `Select` inside a box drawn at another size by `transform: scale()` or `zoom` opens its list with the selected row over the trigger.
+  
+  <!-- entry: fix -->
+- 25abf42: A `Select` showing its placeholder, or `mixed`, opens its list above the trigger when there is no room below it.
+  
+  <!-- entry: fix -->
+- 1e9dc58: `Select`'s open list lands its arrow keys on a disabled option, which reads its reason and chooses nothing, rather than passing over it.
+  
+  The closed trigger's arrow keys still pass over a disabled option, since they change the value as they go.
+  
+  <!-- entry: behavior -->
+- 116f5b5: A `Select` whose `tooltip` or `shortcut` comes or goes keeps its trigger, and the focus on it.
+  
+  <!-- entry: fix -->
+- 291e5c3: On a touch screen, a quick tap on a row of a `Select` list just opened by a tap chooses that row.
+  
+  <!-- entry: fix -->
+- 7b82ac2: A selection panel row whose controls are all disabled disables its reset glyph, as a property row does.
+  
+  A `<Disabled>` scope around the panel dims its row labels too.
+  
+  <!-- entry: fix -->
+- 526965d: A `SelectionPanel` reset or commit after a slider dragged back to where it began keeps every edit made to the node since.
+  
+  <!-- entry: fix -->
+- 195c064: A `Sequence` cell keeps its state with its step when the sweep changes around it, rather than with its position.
+  
+  <!-- entry: fix -->
+- 4dcf2d3: A `sheet` frame with no blur set has no backdrop filter, so a `position: fixed` element inside it is placed against the viewport again.
+  
+  <!-- entry: fix -->
+- d20898e: `ShortcutKeys` draws a spelled-out `Ctrl++` as a `Ctrl` key and a `+` key, and the shortcut sheet's search finds it typed that way.
+  
+  <!-- entry: fix visual -->
+- cdffdbb: `ShortcutSheet` draws an action's two bindings that read alike (`a` and `A`) as one chip, and shows a key held with an optional Shift as optional.
+  
+  <!-- entry: fix visual -->
+- e018b7d: `ShortcutSheet`'s list of shortcuts is a named region Tab reaches, so a keyboard can scroll it.
+  
+  <!-- entry: fix -->
+- dd9f482: A `SidebarPanel` with no `title` still draws its close button, its controls, and its fold control.
+  
+  Its header shows when it folds or is given `onHide`, `actions`, `trailing`, or `headerRef`; the fold control of an untitled panel is named "Contents".
+  
+  <!-- entry: fix -->
+- 61a6d3e: Canceling a `Slider` thumb drag that has come back to where it began still calls `onCancel`, as canceling a region drag does.
+  
+  <!-- entry: fix -->
+- b6b6026: A commit-only `Slider` over tagged thumbs keeps drawing its drag when the consumer re-renders with freshly built values.
+  
+  <!-- entry: fix -->
+- 5b5326b: An endless `Slider` hands `onAddThumb` the value a press stands for, `Infinity` on the end stop, and sits a returned infinite thumb there.
+  
+  <!-- entry: fix -->
+- ba4124a: An endless `Slider` under a `scale` places its end stop a twentieth of the track past the end, so `endless="min"` on a log track renders.
+  
+  <!-- entry: fix visual -->
+- 5995fd1: A pointer on an endless `Slider` reaches the finite end when the range is not a whole number of steps.
+  
+  <!-- entry: fix -->
+- 475ea0d: `Slider` shows and speaks its readout in the number fields' locale, so `2,5` beside a `UnitField` reading `2,5`.
+  
+  <!-- entry: fix -->
+- 49d8892: A `Slider` shift-all or region drag keeps its thumbs on the `step` grid, and under `snap: 'strict'` moves each the same number of stops.
+  
+  <!-- entry: fix -->
+- 5e65d16: A key that cannot move a `Slider` thumb, such as End on a thumb already at `max`, no longer sends `onInput` or `onChange`.
+  
+  <!-- entry: fix -->
+- 43caa71: Under `endless`, a Slider's `keyStep` is handed the thumb's own value, an infinity included, not its place on the drawn end stop.
+  
+  <!-- entry: fix -->
+- 3888b67: A `Slider` measures a track, rail or thumb element that replaces another, as when `renderTrack` arrives late or it moves into an `Along`.
+  
+  The painter's `shape` and a custom thumb's box then match what is drawn.
+  
+  <!-- entry: fix -->
+- e8fe4e3: A thumb a track click adds to a `Slider` with `constraint: 'ordered'` goes in among the others by value, rather than last.
+  
+  <!-- entry: fix -->
+- 3c76fe8: A slider property control disabled with a `disabledReason` outside a row keeps its readout in the tab order. The readout shows and announces the reason.
+  
+  <!-- entry: fix -->
+- 63e9df9: A described slider row gives its description to its readout, its tab stop, and opens its help when focus rests there.
+  
+  <!-- entry: fix -->
+- f8969d7: A Slider region drag released where it began no longer calls `onChange`.
+  
+  <!-- entry: fix -->
+- 138e9e3: A second finger on a `Slider` starts no drag while a thumb or region drag is running, so the two no longer overwrite each other.
+  
+  <!-- entry: fix -->
+- bdcebe3: A `Slider`'s first or last stop label stays centered on its stop unless that stop sits at an end of the track.
+  
+  <!-- entry: fix visual -->
+- 359a362: A property slider with stops lets go of them once its press ends, even when the release lands outside the page or never arrives.
+  
+  <!-- entry: fix -->
+- 0983672: A `Slider` with `snap="strict"` draws its stops as notches the full height of the track, with a pointer cursor over it.
+  
+  <!-- entry: visual behavior -->
+- e0fd385: A `Slider` thumb's `aria-valuemin` and `aria-valuemax` follow its own `bounds` and, under `constraint: 'ordered'`, its neighbors.
+  
+  <!-- entry: fix -->
+- ff8c1f9: An Alt-click solo in `LayerList` or `EffectList` switches a row whose id is `__proto__` like any other.
+  
+  <!-- entry: fix -->
+- 32a45c4: A `SpanStrips` stack with no playhead rounds the bottom corners of its last row, not the row above it.
+  
+  <!-- entry: fix visual -->
+- adaebf1: A `SpanStrips` ruler whose steps are all too fine draws its ticks at a whole multiple of the last step, never closer than 64 px.
+  
+  It keeps the tick at the window's end under a fractional step, and a step that is zero, negative, or not a number throws a `RangeError` instead of hanging the render.
+  
+  <!-- entry: fix behavior -->
+- ef93a6d: A `stereo({ side: 'left' })` or `'right'` bar runs along the edge it names under `dir="rtl"` too.
+  
+  <!-- entry: fix visual -->
+- d97fb3b: Badge shapes and effects, `CurveEditor`'s curves and BPMN outlines write SVG numbers with `trimNumber`: `100.00` is now `100`.
+  
+  <!-- entry: rank=-5 internal -->
+- fd766bf: `SwatchStrip` marks the current color's swatch when either is a CSS name or function, such as `red` for `#ff0000ff`.
+  
+  <!-- entry: rank=-5 fix -->
+- 25de7db: A `SwatchStrip` keeps its swatches, focus, and open palette menu when its `store` becomes, or stops being, its provider's store.
+  
+  <!-- entry: rank=-5 fix -->
+- fa259b1: A segment sweep canceled while the button is still held no longer lets the later release toggle the pressed segment.
+  
+  This holds in `SegmentedBar`, `ToggleChips`, and `CheckboxGroup`.
+  
+  <!-- entry: fix -->
+- f9386da: A `Switch` mirrors right to left: its thumb sits at the inline start when off and moves to the inline end when on.
+  
+  <!-- entry: fix visual -->
+- 50db4f7: A property panel's text field commits through `onChange` when its caller previews the typing through `onInput`.
+  
+  Escape gives that caller back the text the edit began from.
+  
+  <!-- entry: fix -->
+- a839c5a: A string property field with `inputWaitMs` sends Escape's restored text through `onInput` before `onCancel`, not after it.
+  
+  <!-- entry: fix -->
+- c4b28e0: A string property field whose `inputWaitMs` is longer than typing's idle rest sends its last `onInput` before the idle commit's `onChange`.
+  
+  <!-- entry: fix -->
+- 06cc87b: Canceling a `Timeline` key drag hands `onInput` the tracks as they were before it, so keys sharing a time keep their order.
+  
+  <!-- entry: fix -->
+- 9b65bab: A `Timeline` row nested four or more timelines deep indents its label by its depth, as shallower rows do.
+  
+  <!-- entry: fix visual -->
+- 4d991a3: A nested timeline's disclosure in `Timeline` is named by its row's label.
+  
+  <!-- entry: fix -->
+- c620120: A `Timeline` key dragged while the window changes, zoomed or following the playhead, lands where its ghost is drawn.
+  
+  <!-- entry: fix -->
+- e20be35: A `Timeline` ignores Delete, Backspace, and the arrow keys on its keys while a key drag is held.
+  
+  The drag's release no longer brings back a key deleted under it.
+  
+  <!-- entry: fix behavior -->
+- 20abda4: A `Timeline`'s collapsed nested timeline draws its bar from the track's own `at`, where its keys sit once it is expanded.
+  
+  <!-- entry: fix visual -->
+- 2bc469b: A `Timeline`'s collapsed nested timeline with no `duration` draws its bar to its last track's end.
+  
+  An endless one runs to the window's end, and a negative one draws nothing.
+  
+  <!-- entry: fix visual -->
+- 072c8da: An arrow key on a read-only `Timeline`'s graphed key leaves the selection and focus on that key, as it does in the dope sheet.
+  
+  <!-- entry: fix -->
+- dbe20c5: Scrubbing a `TimeRuler` while its window changes seeks to the time under the pointer in the window on screen.
+  
+  <!-- entry: fix -->
+- 1420b6b: `TimeRuler` (and `Timeline`'s ruler) pans and zooms as far for a wheel that reports lines or pages as for one that reports pixels.
+  
+  <!-- entry: fix -->
+- 28f3eda: A `Timeline` drops its selected segment when a key is selected through a controlled `selection`, so the key editor shows for that key.
+  
+  <!-- entry: fix -->
+- 28f3eda: A `Timeline` drops its selected segment when its track's key times change, so the easing picker never edits another segment.
+  
+  <!-- entry: fix -->
+- 66ea1d8: `Timeline` calls no `onChange` for an arrow step or a key drag that leaves the key where it was.
+  
+  <!-- entry: fix -->
+- bffa79c: An uncontrolled `Timeline` zoomed in keeps its window inside a `duration` that shrinks, rather than showing time past the end.
+  
+  <!-- entry: fix -->
+- 7c8117d: A control drawn beside a `titlebar` frame's title shows its whole focus ring; only the title itself is clipped and ellipsized.
+  
+  <!-- entry: fix visual -->
+- b25b14e: A toast whose `ttlMs` is `Infinity`, or longer than a browser timer can hold, stays until dismissed instead of closing at once.
+  
+  <!-- entry: fix -->
+- d040a01: A second `ToastRegion` on one toast queue warns in development.
+  
+  Unmounting one of two regions no longer drops the `toast.ttlMs` setting the other times its toasts by.
+  
+  <!-- entry: fix -->
+- c10d7c5: A toast's `ttlMs` of NaN, 0 or a negative number throws a `RangeError`.
+  
+  Calls that used to pass silently now throw; pass `null` or `Infinity` for a toast that stays.
+  
+  A `toast.ttlMs` kit setting that is not above 0 warns in development and times toasts by 8000 ms.
+  
+  <!-- entry: fix -->
+- 4c66407: A touch that starts on a `ToggleChips` without `sweep` scrolls the page or panel again; only a sweeping set holds it.
+  
+  <!-- entry: fix -->
+- 714e884: A `TokenPanel` token overridden to an empty value draws its name in the overridden accent, as its family and scale already did.
+  
+  <!-- entry: fix visual -->
+- 65506e8: Backspace at the start of a `TokenField`'s typed text leaves the text alone, rather than adding it as a token.
+  
+  <!-- entry: fix -->
+- 18b99f1: A `TokenField` filled to `maxItems` from its text field moves focus to the new last chip, rather than losing it to the page.
+  
+  <!-- entry: fix -->
+- a6e3e29: `TokenField` ends a token at each comma in pasted or composed text, as it does at a typed comma.
+  
+  <!-- entry: fix -->
+- 0311cf2: `TokenPanel` labels a color family's picked step with the group name as the family's rail draws it, `namePrefix` left off.
+  
+  <!-- entry: fix visual -->
+- 973af32: `TokenPanel` sorts its tokens into sections in time linear in their count, where a large theme used to cost a quadratic copy on every change.
+  
+  <!-- entry: perf -->
+- f85be0a: The token panel types a very long token value, such as a run of digits or of commas, in time linear in its length.
+  
+  <!-- entry: fix perf -->
+- fcf63e6: Switching a `TokenPanel` scale to `ratio` when its last step is zero or negative fits a ratio of 1 rather than `NaN` or 0.
+  
+  <!-- entry: fix -->
+- d2589b8: A `TokenPanel` scale keeps its steps where they were when it switches rule, fitting a ratio, step, or factor to four decimal places.
+  
+  `refitScale` fits to the same four places, as does a factor written by dragging its step.
+  
+  <!-- entry: fix -->
+- d145abc: A `TokenPanel` row named exactly as its group shows that name on the rail, rather than a blank, when it follows other rows of the group.
+  
+  <!-- entry: fix visual -->
+- 4cd2028: `TokenPanel` draws names without their `--`, so rows sharing a group name it once whether `namePrefix` is unset, `'wzl-'` or `'--wzl-'`.
+  
+  <!-- entry: fix visual -->
+- 3b9be50: A `TokenPanel` scale keeps its name and slider in place when an overridden step brings in its Reset.
+  
+  <!-- entry: fix visual -->
+- 1e604d4: `TokenPanel`'s color swatch draws a focus ring when Tab reaches it.
+  
+  <!-- entry: fix visual -->
+- 896dbc0: `TokenPanel`'s color swatch keeps a translucent token's alpha when it picks a new color, writing `#rrggbbaa`.
+  
+  <!-- entry: fix -->
+- 1e0f516: Dragging a `TokenPanel` `factors` scale's step that no factor can reach overrides the step rather than writing an infinite factor.
+  
+  That is a step of a scale whose base is zero or negative, or one past the end of its `factors`.
+  
+  <!-- entry: fix -->
+- 2ee80d2: Picking a color from the swatch of a fully transparent `TokenPanel` color token writes the pick opaque, so it shows.
+  
+  <!-- entry: fix -->
+- 14b6323: Escape on a `TokenPanel` scale drag puts back each step it moved and the scale's factors as they were before the press.
+  
+  <!-- entry: fix -->
+- 19333d4: Switching a `TokenPanel` scale with a base of zero or below to per-step factors keeps every step's amount. Its base moves to the first positive step.
+  
+  <!-- entry: fix -->
+- 37e841b: A `TokenPanel` scale whose steps are all whole numbers, such as `1rem 2rem 4rem`, drags and arrow-steps in tenths, so `1.5rem` can be set.
+  
+  <!-- entry: fix -->
+- 34194c8: A `TokenPanel` scale's long name ellipsizes before its reset button instead of running under it.
+  
+  <!-- entry: fix visual -->
+- 5c05b86: Dragging a step of a `TokenPanel` `factors` scale to an amount whose factor rounds to zero overrides that step, instead of snapping it back.
+  
+  <!-- entry: fix -->
+- 4fe1cad: Dragging one step of a `TokenPanel` scale writes only that step, even when the others hold more decimal places than the slider rounds to.
+  
+  <!-- entry: fix -->
+- c644d57: A `ToolPalette`'s arrow keys move along its orientation only, so a vertical palette leaves Left and Right to the page.
+  
+  <!-- entry: behavior -->
+- 6cb67d6: `ToolPalette` redraws when its `modeRegistry` changes mode, so the tools it dims or hides, and the reason it gives, are the current mode's.
+  
+  <!-- entry: fix -->
+- c644d57: A tool the current mode turns down now gives its reason as its button's accessible description, not only in its tooltip.
+  
+  An example reason is "disabled in path-edit mode".
+  
+  <!-- entry: behavior -->
+- b95a75c: A `ToolPalette` stack's button is a drag and carry source for the tool it shows, under `onToolDragStart` and `carryTool`.
+  
+  <!-- entry: fix -->
+- b10284a: A `ToolPalette` stack keeps showing the tool last used from it, and keeps focus and an open menu, when its first tool stops showing.
+  
+  <!-- entry: fix -->
+- 4727ffb: A `ToolPalette` whose `stacks` name one tool in two stacks throws.
+  
+  Palettes that used to mount, with the tool in the first stack, now throw. A stacked id no registered tool has warns in development.
+  
+  <!-- entry: fix -->
+- 0b8f43f: A disabled tool in a `ToolRail` or `ToolPalette` stack's menu says why, as its button would on its own.
+  
+  <!-- entry: fix -->
+- 2a15266: `ToolbarDock` warns in development about a bar that can enter none of its `docks` and may not float.
+  
+  The warning names the bar and its docks; such a bar is still left out.
+  
+  <!-- entry: fix -->
+- 4950524: A toolbar bar that a stored layout listed at a row's end, but that has to move to its home dock, joins that row among its start bars.
+  
+  <!-- entry: fix -->
+- 9acb5e0: An Escape pressed in an editor or on the canvas reaches it while a `TooltipTrigger` opened with `defaultOpen` is showing.
+  
+  <!-- entry: fix -->
+- dde4d90: An open tooltip lets an Escape pressed elsewhere through without undoing a `stopPropagation` the element it was pressed in calls.
+  
+  <!-- entry: fix -->
+- c969f88: A kit tooltip's trigger keeps its own `aria-describedby` beside the tooltip's while the tooltip is open.
+  
+  <!-- entry: fix -->
+- beb4333: `AnimatedTransport` shows Play, and stops redrawing every frame, once a timeline played backward reaches 0.
+  
+  <!-- entry: fix -->
+- 07289d6: `AnimatedTransport` redraws when its timeline is edited, so its readout and scrub bar follow a new duration.
+  
+  A finished timeline an edit lengthens shows as playing.
+  
+  <!-- entry: fix -->
+- 800d177: Play on an `AnimatedTransport` whose timeline played backward to 0 plays it again from its end.
+  
+  <!-- entry: fix -->
+- c3482db: The `Transport` scrub bar speaks the playhead the way the readout shows it, following `timeReadout` and `formatTime`.
+  
+  <!-- entry: fix -->
+- 7c6a653: A drag resting over a disabled `Tree` branch leaves it closed. Alt+Right no longer indents a row under a closed disabled branch, which could not open to show it.
+  
+  <!-- entry: fix -->
+- 7010acd: A disabled `Tree` row no longer moves by Alt+arrow. A drag of a selection holding one leaves it behind, as a drag already refused to start on it.
+  
+  <!-- entry: fix -->
+- a4de4bb: A `Tree` row with an `href` takes clicks the same way when the tree has `onMove`. A plain click activates it without following the link, and a Cmd, Ctrl or Alt click is left to the browser without activating it.
+  
+  <!-- entry: fix -->
+- 6952fad: `onDragOutside` hears a `Tree` drag leave with the drag's own effect, `'copy'` and `'link'` included.
+  
+  <!-- entry: fix -->
+- 41ee0c2: Dragging a `Tree` row whose selected ancestor is `immovable` carries the row. It does so by pointer and by Alt+arrow.
+  
+  <!-- entry: fix -->
+- 65a8393: A disabled or read-only `Tree` draws no mark for a drag from outside it, and its `dropRef` answers `null` for every point.
+  
+  <!-- entry: fix -->
+- 654b038: `Tree` waits out a `tree.hoverExpandMs` longer than 2³¹ − 1 ms before a drag opens the branch under it, instead of opening it at once.
+  
+  <!-- entry: fix -->
+- 20b2a58: A click on a control in a linked `Tree` row reaches the control. A checkbox toggles and keeps focus, and the row neither activates nor takes focus.
+  
+  <!-- entry: fix -->
+- 5b84825: On a Mac, Ctrl-clicking a `Tree` or `LayerList` row opens its context menu, as a right-click does.
+  
+  <!-- entry: rank=5 fix -->
+- 115a979: A `Tree`'s `ref` follows the tree when it redraws as a treegrid or a list. That happens when its nodes gain their first `controls` or lose their last.
+  
+  <!-- entry: fix -->
+- ff1e7a3: `Tree` waits out a `tree.tipRestMs` longer than 2³¹ − 1 ms before a row's tooltip opens, instead of opening it at once.
+  
+  <!-- entry: fix -->
+- eac1637: A `Tree` row's tooltip closes when the row leaves the tree under the pointer. A fold, a filter, or a redraw as a treegrid closes it, and it does not reopen on its own when the row comes back.
+  
+  <!-- entry: fix -->
+- 175c611: A `Tree` with row controls draws its treegrid, levels and rows in `div`s, since a list's `ul` and `li` can't take a treegrid's roles. Its ref is typed `HTMLElement`.
+  
+  <!-- entry: fix -->
+- cde0495: The `Along` labs keep their saved marks and handles through `@weasel-js/storage`, which `@weasel-js/ui` now depends on.
+  
+  <!-- entry: rank=-5 internal -->
+- f76c9ce: Text laid along a curved run measures with the fonts of its own document, so it fits in an iframe or a popout window.
+  
+  <!-- entry: fix visual -->
+- c38ba37: `@weasel-js/ui/components/Badge/bases`, `…/Badge/effects`, `…/Badge/shapes` and `…/MotifFrame/motifs` now load.
+  
+  The `./components/*` wildcard reached them, and their declarations shipped, but no JavaScript was built for them, so an import typechecked and then failed at runtime. Each is now built like a component. Everything in them is also exported from `@weasel-js/ui/components/Badge` and `@weasel-js/ui/components/MotifFrame`.
+  
+  <!-- entry: fix -->
+- abfbea0: A `Badge`'s shape fits its box when an ancestor draws the badge scaled.
+  
+  <!-- entry: fix visual -->
+- 8d44534: `BandEditor` calls `onChange` at the end of a seam or band drag for a caller that shows each `onInput` preview as its value.
+  
+  <!-- entry: fix -->
+- 6b451e0: BandEditor speaks each band's range in the `I18nProvider` locale, as it speaks its seams.
+  
+  <!-- entry: fix -->
+- 77789e5: A slider or run laid along an HTML frame reads the pointer at the right place when an ancestor draws it scaled.
+  
+  <!-- entry: fix -->
+- 0716fa3: `Button` and `MenuButton` labels center their capitals on the button's middle, level with its icons.
+  
+  A label was centered by its line box, so in a face with more ascent than descent, Oswald among them, its capitals sat about half a pixel below the icon beside them. Browsers without `text-box` (Firefox, for now) still lay it out the old way.
+  
+  <!-- entry: visual -->
+- 889de90: A color pick that ends on the color it began from calls no `onChange`, so it records no undo step.
+  
+  <!-- entry: fix -->
+- 85bd4fb: Context menu rows are exactly `--wzl-control-h-sm` tall, with a 16px icon column and a 180px minimum width that includes the border.
+  
+  <!-- entry: visual behavior -->
+- 68ad237: `CurveEditor` names a point's coordinates in its accessible label as `@weasel-js/quantity` speaks a number, so a negative one reads "minus".
+  
+  <!-- entry: rank=-5 behavior -->
+- 91cdd80: The debug-tracing example in ui's `dlog` docs turns on namespaces ui really logs under, `layer-list` and `property-panel`.
+  
+  <!-- entry: fix -->
+- 2940a77: `DragGhost` follows the pointer when its host sits under a scaled ancestor.
+  
+  <!-- entry: fix -->
+- d6b0814: A range whose edit ended uncommitted no longer shows that edit again when an undo returns its value to where the edit began.
+  
+  <!-- entry: fix -->
+- 1f71e57: `@weasel-js/ui`'s and `@weasel-js/editor`'s types resolve on a strict install.
+  
+  Their `.d.ts` name `PrefGroup` and `PrefBoolean` from `@weasel-js/prefs-schema`, which each now declares beside `@weasel-js/prefs`.
+  
+  <!-- entry: fix -->
+- fbefe8d: Badge shapes, the curve editor, Plot2D, and the run scroller reach their end points exactly where their parameter reaches 1.
+  
+  <!-- entry: fix -->
+- 26dac75: `createDomFocusScope` counts an `<audio>` or `<video>` showing its controls as a Tab stop, as the browser does.
+  
+  <!-- entry: fix -->
+- 7cd52a0: `createDomFocusScope`'s `moveFocus('prev')` enters a radio group with nothing checked at its last radio, as Shift+Tab does.
+  
+  <!-- entry: fix -->
+- 4acadb2: `createDomFocusScope().tabOrder()` leaves out elements CSS does not render, under `display: none` or `visibility: hidden`, as Tab does.
+  
+  <!-- entry: fix -->
+- 8d28529: The selection panel, `useScrollSpy`, and Along's item lengths notice a list of ids changing to one that joins to the same text. A leaf renderer's `ctx.selectionKey` is now `compositeKey` of the ids rather than the ids joined by commas; it is still only an identity to key on.
+  
+  <!-- entry: fix -->
+- 5c52544: A field whose settle-when-idle is turned off while typing rests no longer commits its draft when the wait it had started runs out.
+  
+  <!-- entry: fix -->
+- 019b253: A ui component imported through a subpath now typechecks the kit settings it reads, without the package root also being imported.
+  
+  <!-- entry: fix -->
+- ffff1b9: `createDomMeasureEnv` measures text with the fonts of the element's own document. A label in an iframe or a popout window is sized in the face it draws in.
+  
+  <!-- entry: fix visual -->
+- e75c2fa: `MenuBar` titles center their capitals on the title's middle, as `Button` labels do.
+  
+  They sat about 0.6 px low in Oswald. Browsers without `text-box` (Firefox, for now) still lay them out the old way.
+  
+  <!-- entry: visual -->
+- 8a5ed44: Menus listen on the window through `@weasel-js/react`'s `useWindowEvent`, with no change to how they behave.
+  
+  <!-- entry: internal -->
+- 9299445: A `Button` or item list label holding a bigint, or children passed as a non-array iterable, is measured with that text rather than as empty.
+  
+  <!-- entry: fix visual -->
+- d587928: A popover inside a size container or a `content-visibility` ancestor lands against its trigger, not offset by that ancestor.
+  
+  Either ancestor, under `container-type: size` or `inline-size`, or `content-visibility` other than `visible`, is now read as the overlay's containing block, and `content-visibility` as clipping it.
+  
+  <!-- entry: fix -->
+- 29fbe1b: Pref paths, leaf kinds, column ids, effect kinds, tool ids and toolbar ids named `constructor` or `toString` no longer resolve to built-ins.
+  
+  A `DataGrid` column with such an id shows an empty cell rather than a function's source, a params surface draws such a pref with its built-in control rather than calling `Object.prototype.constructor` as its renderer, and a `PrefsBar` value at a `__proto__` path is kept as data rather than replacing the object's prototype. `EffectList` kinds, `KeyDiagram` marks, `TokenPanel` scales, registered action icons and labels, and `ToolPalette` shortcuts read only their own entries.
+  
+  <!-- entry: fix -->
+- 26d6c57: A prefs form's rows slide by the distance they moved when an ancestor draws the form scaled.
+  
+  <!-- entry: fix visual -->
+- 7bb54fc: QuantityText writes its number in the `I18nProvider` locale when it is given none.
+  
+  Transport's rate readout and BandEditor's ruler and edge labels now match what they speak.
+  
+  <!-- entry: fix -->
+- 95cb326: A stacked `QuantityText` with no spoken copy reads its value to a screen reader once, as its MathML, not twice.
+  
+  <!-- entry: fix -->
+- ba39b46: A `Radio` with a `description` or a `disabledReason` keeps the `aria-describedby` passed to it, alongside its own note.
+  
+  <!-- entry: fix -->
+- 8246dac: The README says to mount an icon registry at the app's root, without which `Transport`'s play button draws empty.
+  
+  <!-- entry: fix -->
+- e06225e: Transport, ScaleBar, BandEditor, and GradientEditor write their readouts and spoken values in the `I18nProvider` locale.
+  
+  Transport's rate labels, ScaleBar's magnification, BandEditor's seam and edge values, and GradientEditor's stop positions follow the same locale number fields do.
+  
+  <!-- entry: fix -->
+- d33e41e: The recent-colors list empties when another tab clears `localStorage`, and the next pick no longer writes the old colors back.
+  
+  <!-- entry: fix -->
+- a71f4e8: A `RecentColorsProvider` whose `store` is removed after mount falls back to its default store, so the pickers beneath it keep recording.
+  
+  <!-- entry: fix -->
+- dfedaeb: A focused row that moves into another branch of a tree or row list keeps keyboard focus, on the element it is drawn as there.
+  
+  <!-- entry: fix -->
+- 5309c93: `ReorderHandle` takes focus back after an Alt+Arrow move of a memoized row, and no longer pulls focus to itself on a later render.
+  
+  <!-- entry: fix -->
+- 856c4c6: A drag-to-reorder list (ListEditor, DataGrid, EffectList, TokenField, PageTabs) starts a reorder or a press only from the primary button.
+  
+  <!-- entry: fix -->
+- ac6c1d5: `ResizeHandle` sends the size it commits on release through `onInput` first, so the pane always shows the size `onChange` persists.
+  
+  <!-- entry: fix -->
+- 7489853: Up and Down in a `useRovingTabIndex` grid with a fractional `columns` move to the item drawn above or below. The items are rowed by the whole columns the grid lays out.
+  
+  <!-- entry: fix -->
+- 0ee638a: `useRovingTabIndex` passes over an item that is `hidden`, inert, or not drawn, so arrow keys and the tab stop land only on items a user can see.
+  
+  <!-- entry: fix -->
+- 00d3186: A modified arrow key, Home, or End no longer moves focus in a `useRovingTabIndex` container. Alt, Ctrl, Cmd, and Shift chords reach the browser and the item.
+  
+  <!-- entry: fix behavior -->
+- 758459f: ScaleBar writes its length in the `I18nProvider` locale, as it already wrote its magnification.
+  
+  <!-- entry: fix -->
+- f585154: `ScaleBar` writes the magnification it is drawn at with `@weasel-js/quantity`'s `multiplier`, so a large one groups its thousands (`1,230×`).
+  
+  <!-- entry: rank=-5 behavior -->
+- 2909824: The schema editor's Auto panel has a "Can be auto" box where "Never auto" was, and setting a starting state or an auto value ticks it.
+  
+  <!-- entry: behavior visual -->
+- ef2d7b2: `HistoryList` and `useScrollSpy`'s `scrollTo` scroll to the right place when an ancestor draws them scaled.
+  
+  <!-- entry: fix -->
+- a7310df: `useScrollSpy` follows a scrolling container that mounts after the hook does, or replaces the one it had.
+  
+  <!-- entry: fix -->
+- 7e132f6: `useScrollSpy` marks the right section again when its container resizes or a section grows or shrinks, without waiting for the next scroll.
+  
+  <!-- entry: fix -->
+- 151f32a: `useScrollSpy`'s `ids` documentation names the `data-spy-section` attribute each section carries, which is how the hook finds it.
+  
+  <!-- entry: fix -->
+- 88c4858: A failed `SpanStrip` span is hatched wherever it is drawn, not only behind the playhead.
+  
+  <!-- entry: visual -->
+- 3197c9f: Installing @weasel-js/ui no longer brings in @weasel-js/storage, which only its stories and tests use.
+  
+  <!-- entry: perf -->
+- 7666c34: The published packages no longer ship declarations for the helpers their stories use, such as ui's keycap story fonts.
+  
+  A module only stories import is named `*.story.ts` or `*.story.tsx`, and the declaration build leaves it out with the stories.
+  
+  <!-- entry: fix -->
+- 677a841: A sweep or Alt-drag reports each step through the latest `onChange`, against the value the consumer now holds.
+  
+  This holds for `SegmentedBar`, `ToggleChips` and `CheckboxGroup`.
+  
+  A handler that compares the reported list with its own `value` now writes exactly what each step moved, even when one move crosses several segments.
+  
+  <!-- entry: fix -->
+- b378f99: Timeline's ruler labels its ticks in the `I18nProvider` locale, matching the transport readout above it.
+  
+  <!-- entry: fix -->
+- 278e19f: The toast queue caps a toast's timeout at `@weasel-js/registry`'s `LONGEST_TIMER_MS` in place of its own copy.
+  
+  <!-- entry: rank=-5 internal -->
+- 06da484: Dragging a chip in a right-to-left `TokenField` drops it in the gap under the pointer, not the mirrored one.
+  
+  <!-- entry: fix -->
+- bfbeb0e: `ToolOptionsBar` draws as one band strip, its label in the bar-label face, and is named "Tool options" when given no label.
+  
+  <!-- entry: visual -->
+- b378f99: Transport and PlayheadReadout write and speak the playhead's time in the `I18nProvider` locale.
+  
+  It matches the rate readout, and a time before zero takes a true minus sign.
+  
+  <!-- entry: fix -->
+- f0f3399: The `typeface` icon's apex is one flat cut: the hairline leg no longer pokes a round cap above the heavy leg's top.
+  
+  <!-- entry: fix visual -->
+- ce5d609: ui's components watch for resizes through react's `watchResize`.
+  
+  <!-- entry: internal -->
+- c157710: `UnitField` commits typed text through `onChange` when the caller previews it through `onInput` into its own value.
+  
+  <!-- entry: fix -->
+- bc0d76c: A held `UnitField` stepper stops repeating when the field turns disabled or read-only. It no longer steps on its own once the field is enabled again.
+  
+  <!-- entry: fix -->
+- 7c007dc: A `UnitField` offset typed after a previewed number applies to the value typing began from. That value goes back to `onInput` before `onOffset` hears the offset.
+  
+  <!-- entry: fix -->
+- c46c07b: A `UnitField` step that lands on the value typing previewed through `onInput` commits it through `onChange`.
+  
+  <!-- entry: fix -->
+- ac0379d: `UnitField` keeps the text being typed in a hook of its own, apart from the input it draws.
+  
+  <!-- entry: internal -->
+- 340ab66: The wheel scrolls the page over a focused `UnitField` that cannot step. That is a read-only or disabled field, or one at the bound the wheel heads for.
+  
+  <!-- entry: fix -->
+- 39b41ec: A menu `useContextMenu` opens from Shift+F10 or the ContextMenu key now highlights its first row, as the canvas's context menu does.
+  
+  <!-- entry: fix -->
+- b5df5b3: A `well({ label })` frame sets only its own title as a label, not the titles of the wells inside it.
+  
+  <!-- entry: fix visual -->
+- Updated dependencies [5099ca3]
+- Updated dependencies [e5f53c6]
+- Updated dependencies [617fd6c]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [cd84e27]
+- Updated dependencies [8d7296a]
+- Updated dependencies [8b96ffe]
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [d764d06]
+- Updated dependencies [76b3ad2]
+- Updated dependencies [8994b94]
+- Updated dependencies [3e90820]
+- Updated dependencies [cefbb9f]
+- Updated dependencies [a124808]
+- Updated dependencies [dec059b]
+- Updated dependencies [acb98a5]
+- Updated dependencies [f2eb510]
+- Updated dependencies [c8a41db]
+- Updated dependencies [5aaee6b]
+- Updated dependencies [de547d5]
+- Updated dependencies [420e20a]
+- Updated dependencies [b550d25]
+- Updated dependencies [139e26a]
+- Updated dependencies [b5b0782]
+- Updated dependencies [0bcb260]
+- Updated dependencies [670ec07]
+- Updated dependencies [99c457e]
+- Updated dependencies [3b7ffd3]
+- Updated dependencies [3b7ffd3]
+- Updated dependencies [7a9a5c7]
+- Updated dependencies [357c9f1]
+- Updated dependencies [e765b9c]
+- Updated dependencies [12ded8a]
+- Updated dependencies [e225656]
+- Updated dependencies [50e06ce]
+- Updated dependencies [df2ae04]
+- Updated dependencies [c8c9daa]
+- Updated dependencies [e0afaa7]
+- Updated dependencies [4b16186]
+- Updated dependencies [5aa7bc1]
+- Updated dependencies [6b9ca79]
+- Updated dependencies [2a07382]
+- Updated dependencies [e3b0356]
+- Updated dependencies [9bd892d]
+- Updated dependencies [feec844]
+- Updated dependencies [f834acb]
+- Updated dependencies [19d6faa]
+- Updated dependencies [9fa0d8d]
+- Updated dependencies [2c152a0]
+- Updated dependencies [2d723fd]
+- Updated dependencies [dce9e3e]
+- Updated dependencies [ca79b0e]
+- Updated dependencies [00ef3bb]
+- Updated dependencies [460b0ac]
+- Updated dependencies [a98ad34]
+- Updated dependencies [5f856dc]
+- Updated dependencies [7f25db9]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [f2ba5e1]
+- Updated dependencies [e6b28fe]
+- Updated dependencies [e72e26a]
+- Updated dependencies [0090147]
+- Updated dependencies [643c699]
+- Updated dependencies [0dc7968]
+- Updated dependencies [f4d8b83]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [4a642f5]
+- Updated dependencies [3b803d7]
+- Updated dependencies [74f7bf4]
+- Updated dependencies [b508e1a]
+- Updated dependencies [36757b1]
+- Updated dependencies [9249b26]
+- Updated dependencies [15072f4]
+- Updated dependencies [edcd3a6]
+- Updated dependencies [b5d4882]
+- Updated dependencies [97f1f86]
+- Updated dependencies [7199e23]
+- Updated dependencies [88f90f5]
+- Updated dependencies [df7ba95]
+- Updated dependencies [da5f6da]
+- Updated dependencies [6fb8869]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [174d6ef]
+- Updated dependencies [defc1cd]
+- Updated dependencies [840a01b]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [af88833]
+- Updated dependencies [b29cf9e]
+- Updated dependencies [6821bac]
+- Updated dependencies [9707f7c]
+- Updated dependencies [f88b38b]
+- Updated dependencies [b68c9a2]
+- Updated dependencies [39f4ad4]
+- Updated dependencies [a66885d]
+- Updated dependencies [b90239c]
+- Updated dependencies [35a99f3]
+- Updated dependencies [687d98f]
+- Updated dependencies [105a6bf]
+- Updated dependencies [c71fb10]
+- Updated dependencies [cc3910a]
+- Updated dependencies [4f451f8]
+- Updated dependencies [29d293c]
+- Updated dependencies [a83c9bd]
+- Updated dependencies [14a0949]
+- Updated dependencies [6cef61c]
+- Updated dependencies [fcc5602]
+- Updated dependencies [269320b]
+- Updated dependencies [d07c5f1]
+- Updated dependencies [26b779a]
+- Updated dependencies [c3da788]
+- Updated dependencies [ab7f613]
+- Updated dependencies [b1989a6]
+- Updated dependencies [5477214]
+- Updated dependencies [ece64a6]
+- Updated dependencies [fcc5602]
+- Updated dependencies [a2df698]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [53ba27c]
+- Updated dependencies [de462a6]
+- Updated dependencies [03c5f2f]
+- Updated dependencies [47fa777]
+- Updated dependencies [8d7296a]
+- Updated dependencies [efe82c4]
+- Updated dependencies [3833307]
+- Updated dependencies [2729716]
+- Updated dependencies [966b087]
+- Updated dependencies [2f56e64]
+- Updated dependencies [85fd57d]
+- Updated dependencies [935346c]
+- Updated dependencies [0046729]
+- Updated dependencies [6babdc5]
+- Updated dependencies [2ee9af5]
+- Updated dependencies [711be7d]
+- Updated dependencies [3a8b706]
+- Updated dependencies [fcc5602]
+- Updated dependencies [f6ee3ea]
+- Updated dependencies [583bd6d]
+- Updated dependencies [d353c85]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [b6863aa]
+- Updated dependencies [95ca540]
+- Updated dependencies [180ec74]
+- Updated dependencies [36dac61]
+- Updated dependencies [b85869b]
+- Updated dependencies [4674f07]
+- Updated dependencies [4434e35]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [7f49a0e]
+- Updated dependencies [cde17d1]
+- Updated dependencies [3b37bd1]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [c3da9af]
+- Updated dependencies [824eca6]
+- Updated dependencies [ac8e807]
+- Updated dependencies [fb47e9b]
+- Updated dependencies [d916cae]
+- Updated dependencies [98df398]
+- Updated dependencies [77670c1]
+- Updated dependencies [c131bff]
+- Updated dependencies [c117e62]
+- Updated dependencies [89f4197]
+- Updated dependencies [95a1a63]
+- Updated dependencies [a343f1b]
+- Updated dependencies [221fe20]
+- Updated dependencies [cc5b0c3]
+- Updated dependencies [9455fc1]
+- Updated dependencies [6606d90]
+- Updated dependencies [5879169]
+- Updated dependencies [959af37]
+- Updated dependencies [890ce71]
+- Updated dependencies [5e44587]
+- Updated dependencies [da15963]
+- Updated dependencies [e95a396]
+- Updated dependencies [8e5f1cf]
+- Updated dependencies [57df97b]
+- Updated dependencies [4daf896]
+- Updated dependencies [dbf591e]
+- Updated dependencies [d4a593d]
+- Updated dependencies [662f94f]
+- Updated dependencies [956a71a]
+- Updated dependencies [7001f43]
+- Updated dependencies [558f742]
+- Updated dependencies [39422f9]
+- Updated dependencies [b1cfa76]
+- Updated dependencies [bb7be0b]
+- Updated dependencies [1cee200]
+- Updated dependencies [9339b45]
+- Updated dependencies [4be1a3f]
+- Updated dependencies [896cfc6]
+- Updated dependencies [787c496]
+- Updated dependencies [37514fc]
+- Updated dependencies [bebd64f]
+- Updated dependencies [4baee32]
+- Updated dependencies [8745b50]
+- Updated dependencies [df2ae04]
+- Updated dependencies [7dbeddb]
+- Updated dependencies [dbf591e]
+- Updated dependencies [839a4b2]
+- Updated dependencies [1810479]
+- Updated dependencies [d598b83]
+- Updated dependencies [8257aa7]
+- Updated dependencies [8c2d558]
+- Updated dependencies [65e8ece]
+- Updated dependencies [37ce380]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [a947127]
+- Updated dependencies [7e5b389]
+- Updated dependencies [95bd84c]
+- Updated dependencies [b7e560b]
+- Updated dependencies [174d6ef]
+- Updated dependencies [cfbecdb]
+- Updated dependencies [9c2b3d6]
+- Updated dependencies [03f84f2]
+- Updated dependencies [8457029]
+- Updated dependencies [22eec46]
+- Updated dependencies [8fd3d6d]
+- Updated dependencies [5b84825]
+- Updated dependencies [516bc59]
+- Updated dependencies [2338cee]
+- Updated dependencies [eeef48a]
+- Updated dependencies [736df4e]
+- Updated dependencies [6aedb33]
+- Updated dependencies [3dc96c8]
+- Updated dependencies [972a96c]
+- Updated dependencies [94ea28e]
+- Updated dependencies [dcdff5d]
+- Updated dependencies [4f7976e]
+- Updated dependencies [f6d2a19]
+- Updated dependencies [3a1bfaa]
+- Updated dependencies [57a59be]
+- Updated dependencies [6416860]
+- Updated dependencies [8887919]
+- Updated dependencies [6943c8d]
+- Updated dependencies [0e9f123]
+- Updated dependencies [9078cfb]
+- Updated dependencies [ff75b6f]
+- Updated dependencies [19d0c9f]
+- Updated dependencies [a2f20ae]
+- Updated dependencies [fb96bd3]
+- Updated dependencies [17fa534]
+- Updated dependencies [53a1558]
+- Updated dependencies [f50c6d9]
+- Updated dependencies [4fb24ca]
+- Updated dependencies [aedb49f]
+- Updated dependencies [10dd276]
+- Updated dependencies [c6f965b]
+- Updated dependencies [3c7a87a]
+- Updated dependencies [1b00300]
+- Updated dependencies [22b57c5]
+- Updated dependencies [2e12700]
+- Updated dependencies [0aa5132]
+- Updated dependencies [7ba3e69]
+- Updated dependencies [67968c3]
+- Updated dependencies [158f868]
+- Updated dependencies [ffcde61]
+- Updated dependencies [19f8e39]
+- Updated dependencies [c57e67c]
+- Updated dependencies [201d32f]
+- Updated dependencies [8e43f3f]
+- Updated dependencies [5ffc43b]
+- Updated dependencies [813a306]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [df2ae04]
+- Updated dependencies [d22292c]
+- Updated dependencies [7d89cf6]
+- Updated dependencies [8882b53]
+- Updated dependencies [c7db707]
+- Updated dependencies [452e669]
+- Updated dependencies [e7561c7]
+- Updated dependencies [76c5562]
+- Updated dependencies [174d6ef]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [8c63002]
+- Updated dependencies [ef687f1]
+- Updated dependencies [67f9f88]
+- Updated dependencies [bc67ae1]
+- Updated dependencies [38e795b]
+- Updated dependencies [e6871f1]
+- Updated dependencies [daf6f2e]
+- Updated dependencies [595b596]
+- Updated dependencies [7e5b389]
+- Updated dependencies [7e5b389]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [7863d23]
+- Updated dependencies [6b7317b]
+- Updated dependencies [181fbb3]
+- Updated dependencies [24fe665]
+- Updated dependencies [082dd1d]
+- Updated dependencies [79bd6cc]
+- Updated dependencies [2dd5e34]
+- Updated dependencies [de8f61d]
+- Updated dependencies [56784d5]
+- Updated dependencies [b54ab5f]
+- Updated dependencies [3c8e227]
+- Updated dependencies [ea36901]
+- Updated dependencies [65ac904]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [0ecff6a]
+- Updated dependencies [de8f61d]
+- Updated dependencies [a23ebea]
+- Updated dependencies [cbf6ee4]
+- Updated dependencies [44148c3]
+- Updated dependencies [70756b3]
+- Updated dependencies [15e923d]
+- Updated dependencies [6a59fd6]
+- Updated dependencies [e72e26a]
+- Updated dependencies [e90dcff]
+- Updated dependencies [3a3ea2d]
+- Updated dependencies [faf09b2]
+- Updated dependencies [7977b94]
+- Updated dependencies [b9f3a12]
+- Updated dependencies [174d6ef]
+- Updated dependencies [577b207]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [1aa0af1]
+- Updated dependencies [f88fa83]
+- Updated dependencies [9eb084a]
+- Updated dependencies [066e590]
+- Updated dependencies [7c01199]
+- Updated dependencies [5792fce]
+- Updated dependencies [1ba9061]
+- Updated dependencies [10ba95e]
+- Updated dependencies [7618831]
+- Updated dependencies [dc710e2]
+- Updated dependencies [c3a9456]
+- Updated dependencies [cd290f3]
+- Updated dependencies [2907e97]
+- Updated dependencies [9b7a29c]
+- Updated dependencies [3cdeca9]
+- Updated dependencies [d9af6f2]
+- Updated dependencies [26aa3d2]
+- Updated dependencies [00a0e96]
+- Updated dependencies [fa288ff]
+- Updated dependencies [02087eb]
+- Updated dependencies [85f85ba]
+- Updated dependencies [8aeb224]
+- Updated dependencies [adb1290]
+- Updated dependencies [9204311]
+- Updated dependencies [3f575e2]
+- Updated dependencies [9a3e262]
+- Updated dependencies [0bb9ac6]
+- Updated dependencies [b750660]
+- Updated dependencies [9c4c2ff]
+- Updated dependencies [7b298cb]
+- Updated dependencies [fa5c2d9]
+- Updated dependencies [4810ef4]
+- Updated dependencies [4bda721]
+- Updated dependencies [b98bad7]
+- Updated dependencies [0d377ec]
+- Updated dependencies [435c248]
+- Updated dependencies [e1e7241]
+- Updated dependencies [977164c]
+- Updated dependencies [9aed377]
+- Updated dependencies [c491f93]
+- Updated dependencies [aadb086]
+- Updated dependencies [b1bbd39]
+- Updated dependencies [8934e48]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [aeda396]
+- Updated dependencies [2ee9af5]
+- Updated dependencies [c1da54a]
+- Updated dependencies [aeda396]
+- Updated dependencies [e30b99b]
+- Updated dependencies [d8dc6bf]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [e4a8c4f]
+- Updated dependencies [09f0c86]
+- Updated dependencies [d11dc30]
+- Updated dependencies [5ad7bc0]
+- Updated dependencies [481218b]
+- Updated dependencies [f8172cf]
+- Updated dependencies [e5395a6]
+- Updated dependencies [cd7ffdb]
+- Updated dependencies [8ced7e2]
+- Updated dependencies [5ed6215]
+- Updated dependencies [9cacd4b]
+- Updated dependencies [f95e342]
+- Updated dependencies [d6ba47e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [fcc5602]
+- Updated dependencies [880cbbf]
+- Updated dependencies [2932eb2]
+- Updated dependencies [c1a3072]
+- Updated dependencies [968362b]
+- Updated dependencies [f4bfab5]
+- Updated dependencies [e6c888e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [56089ae]
+- Updated dependencies [d5d22cb]
+- Updated dependencies [d7de41f]
+- Updated dependencies [f544aeb]
+- Updated dependencies [dd3fdb0]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [ff4504e]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [7645aaa]
+- Updated dependencies [24bca7a]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [70076bc]
+- Updated dependencies [f41f7ed]
+- Updated dependencies [4b3a525]
+- Updated dependencies [6555ec8]
+- Updated dependencies [2909824]
+- Updated dependencies [33f8369]
+- Updated dependencies [ea5f41b]
+- Updated dependencies [6227913]
+- Updated dependencies [53f5ea0]
+- Updated dependencies [1dfa234]
+- Updated dependencies [ae4a042]
+- Updated dependencies [ae411f0]
+- Updated dependencies [6e3d5ef]
+- Updated dependencies [0c073ec]
+- Updated dependencies [9e84dfc]
+- Updated dependencies [1e031a5]
+- Updated dependencies [67b97e4]
+- Updated dependencies [0b49560]
+- Updated dependencies [7d11dc3]
+- Updated dependencies [c43e329]
+- Updated dependencies [ac347a7]
+- Updated dependencies [7534a19]
+- Updated dependencies [a3bb40a]
+- Updated dependencies [313dd71]
+- Updated dependencies [60ca6e8]
+- Updated dependencies [97d6826]
+- Updated dependencies [b7b87f4]
+- Updated dependencies [a5aa92f]
+- Updated dependencies [e37086f]
+- Updated dependencies [a25a444]
+- Updated dependencies [2d2a16e]
+- Updated dependencies [87bd085]
+- Updated dependencies [c4f9031]
+- Updated dependencies [2ab2678]
+- Updated dependencies [6597fc4]
+- Updated dependencies [dba7a95]
+- Updated dependencies [15e923d]
+- Updated dependencies [4c8749c]
+- Updated dependencies [08d9309]
+- Updated dependencies [07c3852]
+- Updated dependencies [93d4fce]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [7c44ba5]
+- Updated dependencies [1eb7bcb]
+- Updated dependencies [df2ae04]
+- Updated dependencies [14143c7]
+- Updated dependencies [a0ad214]
+- Updated dependencies [607ab80]
+- Updated dependencies [c240900]
+- Updated dependencies [0f8da6b]
+- Updated dependencies [d5bcd74]
+- Updated dependencies [4a102bd]
+- Updated dependencies [d4532e3]
+- Updated dependencies [c80f586]
+- Updated dependencies [ea67ced]
+- Updated dependencies [5477214]
+- Updated dependencies [cd473d6]
+- Updated dependencies [aadb086]
+- Updated dependencies [8ff14a0]
+- Updated dependencies [af6d87c]
+- Updated dependencies [4602a76]
+- Updated dependencies [f9cd1ea]
+- Updated dependencies [16ce408]
+- Updated dependencies [9057ecb]
+- Updated dependencies [2823dca]
+- Updated dependencies [1c43dbf]
+- Updated dependencies [a3b1735]
+- Updated dependencies [d01d5a2]
+- Updated dependencies [bcc5c05]
+- Updated dependencies [e11a52e]
+- Updated dependencies [3744131]
+- Updated dependencies [5477214]
+- Updated dependencies [594d4ce]
+- Updated dependencies [7e5b389]
+- Updated dependencies [2e7bd80]
+- Updated dependencies [6c3e486]
+- Updated dependencies [e7bee92]
+- Updated dependencies [7affd45]
+- Updated dependencies [bef9c67]
+- Updated dependencies [470d4be]
+- Updated dependencies [2668893]
+- Updated dependencies [5512513]
+- Updated dependencies [764f27d]
+- Updated dependencies [8ff14a0]
+- Updated dependencies [2dfa806]
+- Updated dependencies [33f8369]
+- Updated dependencies [4ef636a]
+- Updated dependencies [fb0e6cd]
+- Updated dependencies [00ad78a]
+- Updated dependencies [ca89da9]
+- Updated dependencies [23c35b1]
+- Updated dependencies [7e5b389]
+- Updated dependencies [2f8f458]
+- Updated dependencies [728e0da]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [e06225e]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [38095a2]
+- Updated dependencies [d30164d]
+- Updated dependencies [04d5af6]
+- Updated dependencies [04d5af6]
+- Updated dependencies [c98a300]
+- Updated dependencies [04d5af6]
+- Updated dependencies [e7d580b]
+- Updated dependencies [cdbafb8]
+- Updated dependencies [3005391]
+- Updated dependencies [3311dde]
+- Updated dependencies [5b11625]
+- Updated dependencies [afbe8c3]
+- Updated dependencies [8bf1866]
+- Updated dependencies [c4bcb94]
+- Updated dependencies [7785bd5]
+- Updated dependencies [e59f1ae]
+- Updated dependencies [a8ff1e9]
+- Updated dependencies [25e8f76]
+- Updated dependencies [3a07b60]
+- Updated dependencies [b73c8ef]
+- Updated dependencies [6274bad]
+- Updated dependencies [758459f]
+- Updated dependencies [70213a5]
+- Updated dependencies [b72cf48]
+- Updated dependencies [b34f11e]
+- Updated dependencies [04d5af6]
+- Updated dependencies [5603bef]
+- Updated dependencies [126d17f]
+- Updated dependencies [d17a134]
+- Updated dependencies [4e68cf0]
+- Updated dependencies [ff5f066]
+- Updated dependencies [f164d0e]
+- Updated dependencies [586ca31]
+- Updated dependencies [ba8d3a0]
+- Updated dependencies [857e1fc]
+- Updated dependencies [d868c48]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [4d31cf0]
+- Updated dependencies [af132bc]
+- Updated dependencies [2d57c94]
+- Updated dependencies [f004638]
+- Updated dependencies [3c27e36]
+- Updated dependencies [3c27e36]
+- Updated dependencies [ce5d609]
+- Updated dependencies [dd5a540]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [8602bbc]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [59e80c0]
+- Updated dependencies [aedb49f]
+- Updated dependencies [31cd706]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [d58694b]
+- Updated dependencies [48e0ecd]
+- Updated dependencies [c8ed2ce]
+- Updated dependencies [f5e0446]
+- Updated dependencies [62aede0]
+- Updated dependencies [dc3eb53]
+- Updated dependencies [f6c305d]
+- Updated dependencies [2a7e9e0]
+- Updated dependencies [139f3f0]
+- Updated dependencies [e0f4c91]
+- Updated dependencies [00a1f20]
+- Updated dependencies [9c46d22]
+- Updated dependencies [6451f0c]
+- Updated dependencies [3dab4ca]
+- Updated dependencies [c8ed2ce]
+- Updated dependencies [f3a1232]
+- Updated dependencies [56fda8d]
+- Updated dependencies [e04e543]
+- Updated dependencies [f88d616]
+- Updated dependencies [3cb3a67]
+- Updated dependencies [a97fe65]
+- Updated dependencies [c60fc3d]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [1d8e163]
+- Updated dependencies [e08d172]
+- Updated dependencies [429e80c]
+- Updated dependencies [bd25e62]
+- Updated dependencies [b425d50]
+- Updated dependencies [d962a91]
+- Updated dependencies [46ec294]
+- Updated dependencies [17d184b]
+- Updated dependencies [19387a6]
+- Updated dependencies [cabffe5]
+- Updated dependencies [f92300d]
+- Updated dependencies [07f5db2]
+- Updated dependencies [16eca51]
+- Updated dependencies [08512ea]
+- Updated dependencies [e0bea5a]
+- Updated dependencies [82f3868]
+- Updated dependencies [6c1ea88]
+- Updated dependencies [83ad38f]
+- Updated dependencies [82e481d]
+- Updated dependencies [87a8b06]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [d569abf]
+- Updated dependencies [36a20d4]
+- Updated dependencies [410ba5e]
+- Updated dependencies [4e4ddb5]
+- Updated dependencies [9d459cd]
+- Updated dependencies [76ca845]
+- Updated dependencies [4c90808]
+- Updated dependencies [431aa8e]
+- Updated dependencies [1ac16c5]
+- Updated dependencies [a82e65b]
+- Updated dependencies [a68cc74]
+- Updated dependencies [aef6bf7]
+- Updated dependencies [dfcae5d]
+- Updated dependencies [1e1e868]
+- Updated dependencies [2f32eef]
+- Updated dependencies [7ab6c70]
+- Updated dependencies [cce50d5]
+- Updated dependencies [a8e0b9a]
+- Updated dependencies [d510bd3]
+- Updated dependencies [1608601]
+- Updated dependencies [f4a888f]
+- Updated dependencies [684a6cd]
+- Updated dependencies [638d22c]
+- Updated dependencies [29c0156]
+- Updated dependencies [20bb330]
+- Updated dependencies [002ff57]
+- Updated dependencies [31dd479]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [df1d23c]
+- Updated dependencies [ca663c7]
+- Updated dependencies [e01f958]
+- Updated dependencies [97cce9d]
+- Updated dependencies [7dadcf2]
+- Updated dependencies [87e8475]
+- Updated dependencies [9521334]
+- Updated dependencies [0177219]
+- Updated dependencies [6a9b37e]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [6222db5]
+- Updated dependencies [415e5b8]
+- Updated dependencies [e68cb62]
+- Updated dependencies [dc5efa8]
+- Updated dependencies [510347b]
+- Updated dependencies [8f28726]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [ff8c1f9]
+- Updated dependencies [a6e8651]
+- Updated dependencies [26cdc89]
+- Updated dependencies [c11f37e]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [1347e05]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [ad94222]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [5202a9f]
+- Updated dependencies [7e90922]
+- Updated dependencies [2b0def2]
+- Updated dependencies [80b8f57]
+- Updated dependencies [1a9548b]
+- Updated dependencies [27704ec]
+- Updated dependencies [60c082d]
+- Updated dependencies [012b439]
+- Updated dependencies [780c368]
+- Updated dependencies [b5e97b8]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [de2d442]
+- Updated dependencies [3a28bbb]
+- Updated dependencies [a0d5f84]
+- Updated dependencies [30e2485]
+- Updated dependencies [95083bc]
+- Updated dependencies [cbaa22a]
+- Updated dependencies [bb03b55]
+- Updated dependencies [1377fab]
+- Updated dependencies [9199cb5]
+- Updated dependencies [8ac8a64]
+- Updated dependencies [de1e1c0]
+- Updated dependencies [c356829]
+- Updated dependencies [fcc5602]
+- Updated dependencies [f3130d5]
+- Updated dependencies [95b6eb4]
+- Updated dependencies [cbf500e]
+- Updated dependencies [c5a7102]
+- Updated dependencies [3871e2f]
+- Updated dependencies [c3f3d9a]
+- Updated dependencies [5548d73]
+- Updated dependencies [e824816]
+- Updated dependencies [5a94e2b]
+- Updated dependencies [4377fe2]
+- Updated dependencies [45559fc]
+- Updated dependencies [685bc3d]
+- Updated dependencies [6111c56]
+- Updated dependencies [accc590]
+- Updated dependencies [4b0b9df]
+- Updated dependencies [f9ed89f]
+- Updated dependencies [a23ebea]
+- Updated dependencies [8d3c536]
+- Updated dependencies [9d1f28d]
+- Updated dependencies [f4115e7]
+- Updated dependencies [d9eb095]
+- Updated dependencies [81da21a]
+- Updated dependencies [c9df176]
+- Updated dependencies [75518d4]
+- Updated dependencies [854cd17]
+- Updated dependencies [3aafef6]
+- Updated dependencies [e441f69]
+- Updated dependencies [85a0736]
+- Updated dependencies [47af125]
+- Updated dependencies [bd11878]
+- Updated dependencies [9331aee]
+- Updated dependencies [a722c3d]
+- Updated dependencies [9b9f025]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [e246e43]
+- Updated dependencies [13f859a]
+- Updated dependencies [378f057]
+- Updated dependencies [e8148f6]
+- Updated dependencies [2165b78]
+- Updated dependencies [2405236]
+- Updated dependencies [189f069]
+- Updated dependencies [5e35297]
+- Updated dependencies [dab3f16]
+- Updated dependencies [a236fa9]
+- Updated dependencies [f7d58d1]
+- Updated dependencies [148d382]
+- Updated dependencies [5e9987f]
+- Updated dependencies [ae102fe]
+- Updated dependencies [613fb76]
+- Updated dependencies [2509807]
+- Updated dependencies [0aa733f]
+- Updated dependencies [2dbf2ba]
+- Updated dependencies [592ccf8]
+- Updated dependencies [4bbf7c0]
+- Updated dependencies [73423ec]
+- Updated dependencies [bc84e18]
+- Updated dependencies [bcf156e]
+- Updated dependencies [13de9ee]
+- Updated dependencies [c0963ed]
+- Updated dependencies [ae7832a]
+- Updated dependencies [e34dfcc]
+- Updated dependencies [0315c53]
+- Updated dependencies [b48a618]
+- Updated dependencies [ce0c92a]
+- Updated dependencies [8ac733d]
+- Updated dependencies [dc784c7]
+- Updated dependencies [aa5bf43]
+- Updated dependencies [8f1cf20]
+- Updated dependencies [33f8369]
+- Updated dependencies [7fe0b62]
+- Updated dependencies [206f77c]
+- Updated dependencies [e57d7a9]
+- Updated dependencies [552d4fc]
+- Updated dependencies [241691a]
+- Updated dependencies [7ba9d98]
+- Updated dependencies [4f8619b]
+- Updated dependencies [4f8619b]
+- Updated dependencies [fb94e87]
+- Updated dependencies [2ab2678]
+- Updated dependencies [ea29790]
+- Updated dependencies [67cb364]
+- Updated dependencies [f9427e6]
+- Updated dependencies [02f9570]
+- Updated dependencies [8fda190]
+- Updated dependencies [d497853]
+- Updated dependencies [d4888dd]
+- Updated dependencies [91bd051]
+- Updated dependencies [e2f8ef6]
+- Updated dependencies [f19cbf2]
+- Updated dependencies [9e1861a]
+- Updated dependencies [8992639]
+- Updated dependencies [eb5c5f9]
+- Updated dependencies [e0e02f9]
+- Updated dependencies [dd7e196]
+- Updated dependencies [8ec6662]
+- Updated dependencies [7a75fd1]
+- Updated dependencies [e063817]
+- Updated dependencies [b2d7ddb]
+- Updated dependencies [87d7436]
+- Updated dependencies [ae7d97c]
+- Updated dependencies [95ca540]
+- Updated dependencies [8d7296a]
+- Updated dependencies [1f05956]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [774e9cc]
+- Updated dependencies [a06c164]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [e7383b3]
+- Updated dependencies [e7383b3]
+- Updated dependencies [1fe6cab]
+- Updated dependencies [0481f49]
+- Updated dependencies [b8bb2d4]
+- Updated dependencies [6276cc6]
+- Updated dependencies [6276cc6]
+- Updated dependencies [677a841]
+- Updated dependencies [b8bb2d4]
+- Updated dependencies [cafdd8c]
+- Updated dependencies [969aab0]
+- Updated dependencies [61c9926]
+- Updated dependencies [09dcf56]
+- Updated dependencies [5024537]
+- Updated dependencies [7489853]
+- Updated dependencies [a24bc4e]
+- Updated dependencies [8d5e1f9]
+- Updated dependencies [a94c342]
+- Updated dependencies [85bd4fb]
+- Updated dependencies [7cd52a0]
+- Updated dependencies [2f7a43c]
+- Updated dependencies [a0d7dfc]
+- Updated dependencies [7d77794]
+- Updated dependencies [8fb09ad]
+- Updated dependencies [ba7e062]
+- Updated dependencies [0d977b8]
+- Updated dependencies [01d3e39]
+- Updated dependencies [41f0773]
+- Updated dependencies [371b695]
+- Updated dependencies [0c18df0]
+- Updated dependencies [d268d21]
+- Updated dependencies [95cd658]
+- Updated dependencies [ce8655e]
+- Updated dependencies [f2b94bc]
+- Updated dependencies [475c725]
+- Updated dependencies [5dd240d]
+- Updated dependencies [8b01b26]
+- Updated dependencies [2c0f2fe]
+- Updated dependencies [793ac72]
+- Updated dependencies [904ff6b]
+- Updated dependencies [12816b7]
+- Updated dependencies [6803209]
+- Updated dependencies [f857c86]
+- Updated dependencies [f62be4d]
+- Updated dependencies [f776161]
+- Updated dependencies [f873d0e]
+- Updated dependencies [5046776]
+- Updated dependencies [232d77f]
+- Updated dependencies [0f2cc79]
+- Updated dependencies [542e4e2]
+- Updated dependencies [abdc064]
+- Updated dependencies [5b08bd0]
+- Updated dependencies [2eb84fc]
+- Updated dependencies [aec0cec]
+- Updated dependencies [f98f4f3]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/routing@2.0.0
+  - @weasel-js/prefs@2.0.0
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/animator@2.0.0
+  - @weasel-js/ui-input@2.0.0
+  - @weasel-js/quantity@2.0.0
+  - @weasel-js/gestures@2.0.0
+  - @weasel-js/text@2.0.0
+  - @weasel-js/renderer@2.0.0
+  - @weasel-js/ui-logic@2.0.0
+  - @weasel-js/theme@2.0.0
+  - @weasel-js/font@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/clock@2.0.0
+  - @weasel-js/paint@2.0.0
+  - @weasel-js/react@2.0.0
+  - @weasel-js/paint-kinds@2.0.0
+  - @weasel-js/history@2.0.0
+  - @weasel-js/icons@2.0.0
+  - @weasel-js/menu@2.0.0
+  - @weasel-js/modes@2.0.0
+  - @weasel-js/prefs-schema@2.0.0
+  - @weasel-js/scale@2.0.0
+  - @weasel-js/select@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

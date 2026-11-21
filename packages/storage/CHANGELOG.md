@@ -1,5 +1,92 @@
 # @weasel-js/storage
 
+## 2.0.0
+
+### Minor Changes
+
+- 70e7b25: `RecordCache.pending(name)` says whether a record's write is still queued or on its way, so a caller can tell which writes failed.
+  
+  <!-- entry: api -->
+- 4f23eaa: `downloadBlob` and `pickFile` are exported from `@weasel-js/storage`, so code that does not take the editor can save and open files.
+  
+  `@weasel-js/editor` still exports both, as the same functions.
+  
+  <!-- entry: api -->
+- e45a847: `readLocal` and `writeLocal` read and write one `localStorage` value now, for a setting a first render needs.
+  
+  They encode a value as `localStorageAdapter` does, and never throw: where the browser refuses storage, `readLocal` answers `undefined` and `writeLocal` answers `false`. `writeLocal(key, undefined)` removes the key, and both take another store shaped like `localStorage` (`getItem`, `setItem`, `removeItem`) as a last argument.
+  
+  <!-- entry: api new -->
+- ea981c8: `sameStored(a, b)` says whether a store keeping what JSON keeps holds two values alike.
+  
+  Key order counts, a `bigint` reads as the digits it is stored as, and a value JSON cannot write is alike only to itself, never a throw.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- b9006ad: A record cache holds writes for the whole of a `debounceMs` and `maxWaitMs` past 2³¹ − 1 ms, and an infinite pair sends only on `flush`.
+  
+  <!-- entry: fix -->
+- b9006ad: A record cache's retry backoff waits out a `retryMs` or `retryMaxMs` past 2³¹ − 1 ms instead of retrying at once.
+  
+  <!-- entry: fix -->
+- 3381131: A record cache over `localStorageAdapter` opens empty and read-only where the browser blocks site data, and keeps retrying its read.
+  
+  `openRecords` resolves rather than rejecting, `createRecordCache` no longer throws, and `openRecordsSync` keeps trying on its backoff. The same holds for any adapter whose `subscribe` throws.
+  
+  <!-- entry: fix -->
+- 817c4a0: A record another writer deletes during a cache's read-back after a contested write stays deleted.
+  
+  <!-- entry: fix -->
+- f822a1d: An IndexedDB adapter call whose request fails rejects with that request's error, such as a `ConstraintError`, rather than `null`.
+  
+  <!-- entry: fix -->
+- 99ca079: The Web Storage and URL fragment adapters warn on a value with a symbol or non-enumerable key, which JSON drops.
+  
+  <!-- entry: fix -->
+- 55af93c: `pickFile` resolves `null` and removes its input when the user dismisses the dialog in a browser that fires no `cancel` event on file inputs.
+  
+  <!-- entry: fix -->
+- c438a4b: A record cache reads back an unchanged `Map`, `Set`, `Date`, or typed array after a contested write without reporting a remote change.
+  
+  <!-- entry: fix -->
+- da233f8: A record cache whose read-back of a contested record fails tries again on its retry backoff.
+  
+  <!-- entry: fix -->
+- 3637a58: `urlHashAdapter` and `decodeUrlHash` read a fragment that a link rewriter percent-encoded, rather than reading it as empty.
+  
+  <!-- entry: fix -->
+- Updated dependencies [84028cb]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [e6871f1]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [5202a9f]
+  - @weasel-js/registry@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

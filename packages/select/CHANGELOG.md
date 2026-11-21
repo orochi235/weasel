@@ -1,5 +1,74 @@
 # @weasel-js/select
 
+## 2.0.0
+
+### Major Changes
+
+- ca663c7: The `SelectIntent` that selects the pressed id by itself is `'alone'`, where it was `'single'`.
+  
+  It no longer shares a value with `SelectionMode`'s `'single'`.
+  
+  ```ts
+  // before
+  select(state, id, 'single');
+  // after
+  select(state, id, 'alone');
+  ```
+  
+  <!-- entry: breaking api -->
+- 97cce9d: The many-at-once selection mode is `'multiple'` everywhere, as React Aria spells it, and a mode prop is `selectionMode`.
+  
+  `SelectionMode` is `'single' | 'multiple'`, so `useSelection`'s `mode`, `selectionOptions` and `<SceneCanvas selectionMode>` take `'multiple'` in place of `'multi'`. `<ItemList>`'s `selection` prop, `ListModeInput.selection` and the HUD list's `selection` option are `selectionMode`.
+  
+  ```tsx
+  // before
+  useSelection({ scene, mode: 'multi' });
+  <ItemList rows={rows} selection="multi" />
+  // after
+  useSelection({ scene, mode: 'multiple' });
+  <ItemList rows={rows} selectionMode="multiple" />
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Patch Changes
+
+- df1d23c: A range drawn through `between` selects each id once, even when `between` lists one twice.
+  
+  <!-- entry: fix -->
+- e01f958: `createSelectionStore` keeps its own copy of the ids it is given, so mutating that array later leaves the selection as it was.
+  
+  <!-- entry: fix -->
+- Updated dependencies [84028cb]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [e6871f1]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [5202a9f]
+  - @weasel-js/registry@2.0.0
+
 ## 1.19.1
 
 ### Patch Changes

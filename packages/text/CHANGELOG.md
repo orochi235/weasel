@@ -1,5 +1,563 @@
 # @weasel-js/text
 
+## 2.0.0
+
+### Major Changes
+
+- 0dc7968: Bidi's `baseLevel` is `paragraphLevel`, the field it returns, and so is the `BidiEngine` method in `@weasel-js/bidi` and `@weasel-js/text`.
+  
+  A custom engine passed to `registerBidi` or `layoutRuns` renames its method.
+  
+  ```ts
+  // before
+  const engine: BidiEngine = { analyze, reorder, mirror, baseLevel: (a) => a.paragraphLevel };
+  // after
+  const engine: BidiEngine = { analyze, reorder, mirror, paragraphLevel: (a) => a.paragraphLevel };
+  ```
+  
+  <!-- entry: breaking api -->
+- c3da788: Point-containment tests are named `xContainsPoint`, as `pathContainsPoint` is.
+  
+  geom's `pointInPolygon` is `polygonContainsPoint`, core's `pointInRotatedRect` is `rotatedRectContainsPoint`, and text's `pointInTextPose` is `textPoseContainsPoint`. Arguments are unchanged.
+  
+  ```ts
+  // before
+  if (pointInPolygon(coords, x, y)) …
+  // after
+  if (polygonContainsPoint(coords, x, y)) …
+  ```
+  
+  <!-- entry: breaking api -->
+- 3a28bbb: The canvas run layout's types are `CanvasRunsLayout`, `CanvasRunsLine`, `CanvasPositionedRun` and `CanvasMeasureFn`, named for `layoutCanvasRuns`.
+  
+  They were `LayoutResult`, `LayoutLine`, `PositionedRun` and `MeasureFn`, generic names at the package root for one layout path.
+  
+  ```ts
+  // before
+  import type { LayoutResult, LayoutLine, PositionedRun, MeasureFn } from '@weasel-js/text';
+  // after
+  import type { CanvasRunsLayout, CanvasRunsLine, CanvasPositionedRun, CanvasMeasureFn } from '@weasel-js/text';
+  ```
+  
+  <!-- entry: breaking api -->
+- 30e2485: `registerShaper` and `registerBidi` throw when a different engine is already registered, unless the call passes `{ replace: true }`.
+  
+  Registering the same engine again, or `null`, is unchanged. Code that swapped one engine for another without releasing the first now says so:
+  
+  ```ts
+  registerShaper(other, { replace: true });
+  ```
+  
+  <!-- entry: breaking api -->
+- 95083bc: `BidiResolver` is renamed `BidiEngine`, and text-shaping's `Shaper` is renamed `TextShaper`.
+  
+  Each engine contract now has one name across packages: `@weasel-js/bidi` already called the first `BidiEngine`, and `@weasel-js/text` already called the second `TextShaper`.
+  
+  ```ts
+  // before
+  import type { BidiResolver } from '@weasel-js/text';
+  import type { Shaper } from '@weasel-js/text-shaping';
+  // after
+  import type { BidiEngine } from '@weasel-js/text';
+  import type { TextShaper } from '@weasel-js/text-shaping';
+  ```
+  
+  <!-- entry: breaking -->
+- cbaa22a: `clearRuns` is `evictRunsForRefill`: it evicts the caches' entries for a runs array its caller is about to refill, and does not clear the array.
+  
+  ```ts
+  // before
+  clearRuns(placed.runs);
+  // after
+  evictRunsForRefill(placed.runs);
+  ```
+  
+  <!-- entry: breaking api -->
+- bb03b55: `dropRuns` is `evictRuns`: it evicts the layout caches' entries for a runs array and leaves the runs alone.
+  
+  ```ts
+  // before
+  dropRuns(placed.runs);
+  // after
+  evictRuns(placed.runs);
+  ```
+  
+  <!-- entry: breaking api -->
+- 1377fab: `fitTextPose` is `fitBoxToText`, and its options `FitBoxToTextOptions`: it sizes a text pose's box to its text.
+  
+  ```ts
+  // before
+  const pose = fitTextPose(textPose, { axis: 'both' });
+  // after
+  const pose = fitBoxToText(textPose, { axis: 'both' });
+  ```
+  
+  <!-- entry: breaking api -->
+- 8ac8a64: `ownSmallCaps` is `hasOwnSmallCaps`, prefixed like the other predicates.
+  
+  ```ts
+  // before
+  if (ownSmallCaps(family, 400, 'normal')) return run;
+  // after
+  if (hasOwnSmallCaps(family, 400, 'normal')) return run;
+  ```
+  
+  <!-- entry: breaking api -->
+- de1e1c0: `runsCarryStyling` is `hasStyledRun`, named as the predicate it is.
+  
+  ```ts
+  // before
+  if (runsCarryStyling(runs)) …
+  // after
+  if (hasStyledRun(runs)) …
+  ```
+  
+  <!-- entry: breaking api -->
+- cbf500e: `layoutMarkdown` is `layoutCanvasRuns`, and its options type `LayoutCanvasRunsOptions`: it wraps runs already parsed, and parses no markdown.
+  
+  ```ts
+  // before
+  const layout = layoutMarkdown(runs, 240, 16, measure);
+  // after
+  const layout = layoutCanvasRuns(runs, 240, 16, measure);
+  ```
+  
+  <!-- entry: breaking api -->
+- 4377fe2: `@weasel-js/text`'s option types all end in `Options`, as `FitBoxToTextOptions` already did.
+  
+  `LayoutRunsOpts`, `PaintRunsOpts`, `MeasureTextBoundsOpts`, `TextLineBoxesOpts` and `PointInTextPoseOpts` are renamed.
+  
+  ```ts
+  // before
+  import type { LayoutRunsOpts, PaintRunsOpts } from '@weasel-js/core';
+  // after
+  import type { LayoutRunsOptions, PaintRunsOptions } from '@weasel-js/core';
+  ```
+  
+  <!-- entry: breaking -->
+- 8d3c536: `nodeHasFlag` is `styleHasFlag`: it reads a `TextStyle`, not a node.
+  
+  ```ts
+  // before
+  const bold = nodeHasFlag(style, 'bold');
+  // after
+  const bold = styleHasFlag(style, 'bold');
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- 6fb8869: `caretIndexAt` takes `{ scale }`, the view scale text sized in `{ px }` is laid out at, as `textLineBoxes` does.
+  
+  <!-- entry: api -->
+- 824eca6: `fitBoxToText` takes a `scale`, so a screen-pixel font size gets a box sized to the text as it draws at that zoom.
+  
+  <!-- entry: fix api -->
+- a23ebea: `measureTextBounds` can measure text at the size it shrinks to in a box.
+  
+  `measureTextBounds(text, style, { fitBox: { width, height } })` measures the text at the size a node with `fit: 'shrink'` sets it at in a box that size, wrapping at `maxWidth`.
+  
+  <!-- entry: api -->
+- a0d5f84: `textClusters` takes a `height`, so a shrink-fitted text node on a path effect lays its glyphs at the size it draws at.
+  
+  Without a `height`, a shrink-fitted node shrinks to its `width` alone.
+  
+  <!-- entry: fix api visual -->
+- fcc5602: `joiningRuns` groups graphemes that join, as Arabic letters do, and `visualGraphemes` puts graphemes in display order.
+  
+  Both are what `CurvedLabel` lays a label out with; `visualGraphemes` reorders through the registered bidi engine. With no bidi engine registered, the warning about right-to-left text now opens `weasel visualGraphemes:` rather than `weasel CurvedLabel:`.
+  
+  <!-- entry: new api behavior -->
+- 3871e2f: `textLineBoxes` takes a `scale` option, so a `{ px }` font size is boxed where it draws at that view scale.
+  
+  ```ts
+  textLineBoxes(pose, { scale: meanScale(view.scale) });
+  ```
+  
+  <!-- entry: api -->
+- 4b0b9df: `registeredShaper()` reads the shaper `registerShaper` was given, as `registeredBidi()` does for bidi.
+  
+  Core now also exports the `BidiEngine` and `BidiReordering` types beside `TextShaper`.
+  
+  <!-- entry: api -->
+- a23ebea: A text node with `fit: 'shrink'` sets its text at the largest size, never above its own, whose lines fit its box.
+  
+  `TextPose.fit` and `kit:text`'s `data.fit` take `'none'` (the default) or `'shrink'`. `layoutTextPose` resolves it, so the painter, picking, `caretIndexAt`, `textToPath` and the edit overlay all set the text at the fitted size; the overlay edits it at its own size under a zoom smaller by the fit, so the sizes written back are the authored ones. The property panel offers it as "Shrink to fit". `textFitScale(pose)` reads the factor, `bakeTextFit(pose)` writes the fitted sizes out, and SVG export writes the text at its fitted size in every `text` mode. The search is a binary search to `TEXT_FIT_TOLERANCE` of the scale, cached per layout input.
+  
+  <!-- entry: rank=10 api new -->
+- f4115e7: Arabic, Devanagari or another joining script laid out with no shaper registered warns once, naming the fix.
+  
+  The warning names `registerShaper(await loadShaper())`, as right-to-left text with no bidi engine already did.
+  
+  `warnShapingWithoutEngine(codePoints, who?)` gives the same warning from a caller that lays text out on its own.
+  
+  <!-- entry: api behavior -->
+
+### Patch Changes
+
+- edcd3a6: `createMarkdownRenderer` turns each glyph of a run with `rotate` about its own pen, as the GL renderer and `textToPath` do.
+  
+  <!-- entry: fix visual -->
+- b5d4882: The canvas markdown layout draws one character where two runs split its surrogate pair, as the GL renderer does.
+  
+  <!-- entry: fix visual -->
+- a2df698: A `CurvedLabel` under `dir="rtl"` with no bidi engine registered reads its text forward instead of mirrored.
+  
+  `visualGraphemes` with no engine returns graphemes in logical order left to right under `'rtl'` as well as `'ltr'`.
+  
+  <!-- entry: fix visual -->
+- 583bd6d: `effectiveRangeStyle` reports the node's own `script` across a range whose runs set none.
+  
+  <!-- entry: fix -->
+- d353c85: `effectiveRangeStyle` reports the stroke a range draws with: a run's own where it has one, else the node's.
+  
+  <!-- entry: fix -->
+- 4674f07: A shaper or bidi engine registered by two callers stays registered until both have called the function their registration returned.
+  
+  <!-- entry: fix -->
+- 8c63002: `joiningRuns` breaks at a format character Unicode lists as non-joining, such as U+0600 or a directional isolate. The letters on either side no longer join across it.
+  
+  <!-- entry: fix visual -->
+- ea36901: The canvas markdown renderer draws a face's own small caps where it has them. It matches the GL tier and the edit overlay rather than shrinking capitals.
+  
+  <!-- entry: fix visual -->
+- 65ac904: The markdown label renderer keeps a delimiter nothing closes as text. `5 * 3 = 15` draws its asterisk and no longer italicizes everything after it, in `markdownToRuns` too.
+  
+  <!-- entry: fix behavior -->
+- 9204311: A blank `fontWeight` string draws at weight 400, as any other unparseable weight does.
+  
+  <!-- entry: fix -->
+- dd3fdb0: `patchRangeStyle` takes off a key the patch names `undefined`, as writing that patch takes it off the runs.
+  
+  <!-- entry: fix -->
+- 431aa8e: A run grammar with a backslash delimiter throws in `runsToMarkdown` and `markdownToRuns`. A backslash escapes the delimiters, so its markers could not be read back.
+  
+  <!-- entry: fix behavior -->
+- 1ac16c5: `runsToMarkdown` and `markdownToRuns` throw for a grammar delimiter longer than one UTF-16 unit, such as `'~~'`, which neither could read back.
+  
+  Spell a doubled marker as one character with `repeat: 2`.
+  
+  <!-- entry: fix behavior -->
+- a82e65b: A run with `italic: false` is drawn upright inside italic text, and keeps that through the edit overlay.
+  
+  A run without `italic` still takes the node's style.
+  
+  <!-- entry: behavior fix -->
+- 6222db5: Text set with `fit: 'shrink'` fits its box again when a shaper or bidi engine is registered or released.
+  
+  <!-- entry: fix visual -->
+- de2d442: `textToPath` winds a synthetic-bold glyph like the rest of the text, so an underline across it never cuts a hole.
+  
+  <!-- entry: fix -->
+- 9199cb5: Text with `fit: 'shrink'` shrinks its outline stroke and dash with the glyphs, and `bakeTextFit` writes the shrunk stroke out.
+  
+  <!-- entry: fix visual -->
+- c356829: Measuring a very long multi-run text no longer leaves scratch memory the size of that text held for the rest of the session.
+  
+  <!-- entry: fix perf -->
+- c5a7102: A layout that throws no longer leaves the layout cache handing an earlier text's layout arrays to another text.
+  
+  <!-- entry: fix -->
+- c3f3d9a: Laying out a long text no longer keeps its glyph entries in memory after shorter texts have been laid out since.
+  
+  <!-- entry: fix perf -->
+- 5548d73: A combining mark a shaper clusters onto a space, a tab, or a soft hyphen is drawn rather than dropped.
+  
+  <!-- entry: fix visual -->
+- e824816: Errors about a face or engine that cannot serve text now say what to do about it.
+  
+  A fallback face with no outlines is named with the call that registers it, a failed outline load points at its logged reason, a bad shaping feature shows the forms it takes, and `enableLocalFontOutlines` names `canQueryLocalFonts()`.
+  
+  <!-- entry: fix -->
+- 45559fc: `TextOutlineSource.fill` documents what an absent fill does: no fill, as the node draws it.
+  
+  <!-- entry: rank=-5 fix -->
+- 685bc3d: `paintRuns` and `cachedPaintRuns` throw a `RangeError` when `outlineMinSize` is `NaN`; omit it to draw no outlines.
+  
+  <!-- entry: fix behavior -->
+- 6111c56: Text painted after a painting that threw draws in its own fill, with none of the earlier painting's glyph groups.
+  
+  <!-- entry: fix visual -->
+- accc590: The README's usage example passes a fill to `resolveTextStyle`, so the text it lays out paints.
+  
+  <!-- entry: fix -->
+- f9ed89f: A soft hyphen, ZWJ, or directional mark in right-to-left text reports the level of the character beside it.
+  
+  `LaidOutCell.level` no longer reads 0 there, so a click on a wrapped right-to-left line's hyphen lands on the side it was clicked.
+  
+  <!-- entry: fix -->
+- 9d1f28d: `textTransform` stays fast on a long paragraph whose case mapping changes length. Turkish lowercase or Greek uppercase no longer takes seconds per layout query.
+  
+  <!-- entry: fix perf -->
+- 793ac72: `visualGraphemes` drops direction marks and isolates with a bidi engine registered, as it already did without one.
+  
+  <!-- entry: fix -->
+- Updated dependencies [e973dcd]
+- Updated dependencies [851a4d3]
+- Updated dependencies [d764d06]
+- Updated dependencies [a98ad34]
+- Updated dependencies [2c2ab71]
+- Updated dependencies [4fb8cbf]
+- Updated dependencies [9249b26]
+- Updated dependencies [15072f4]
+- Updated dependencies [ec44e4c]
+- Updated dependencies [4f264d0]
+- Updated dependencies [84028cb]
+- Updated dependencies [29d293c]
+- Updated dependencies [6cef61c]
+- Updated dependencies [fcc5602]
+- Updated dependencies [c3da788]
+- Updated dependencies [ece64a6]
+- Updated dependencies [fcc5602]
+- Updated dependencies [bfc26b4]
+- Updated dependencies [0046729]
+- Updated dependencies [fcc5602]
+- Updated dependencies [ece64a6]
+- Updated dependencies [ece64a6]
+- Updated dependencies [36dac61]
+- Updated dependencies [27eb7f9]
+- Updated dependencies [754e0c6]
+- Updated dependencies [aedb49f]
+- Updated dependencies [daba59f]
+- Updated dependencies [7a053e0]
+- Updated dependencies [acb38fe]
+- Updated dependencies [644baad]
+- Updated dependencies [cbd9a26]
+- Updated dependencies [d916cae]
+- Updated dependencies [98df398]
+- Updated dependencies [77670c1]
+- Updated dependencies [c131bff]
+- Updated dependencies [c117e62]
+- Updated dependencies [89f4197]
+- Updated dependencies [95a1a63]
+- Updated dependencies [a343f1b]
+- Updated dependencies [221fe20]
+- Updated dependencies [cc5b0c3]
+- Updated dependencies [9455fc1]
+- Updated dependencies [6606d90]
+- Updated dependencies [5879169]
+- Updated dependencies [959af37]
+- Updated dependencies [890ce71]
+- Updated dependencies [5e44587]
+- Updated dependencies [da15963]
+- Updated dependencies [e95a396]
+- Updated dependencies [8e5f1cf]
+- Updated dependencies [57df97b]
+- Updated dependencies [4daf896]
+- Updated dependencies [dbf591e]
+- Updated dependencies [d4a593d]
+- Updated dependencies [662f94f]
+- Updated dependencies [956a71a]
+- Updated dependencies [7001f43]
+- Updated dependencies [558f742]
+- Updated dependencies [39422f9]
+- Updated dependencies [b1cfa76]
+- Updated dependencies [bb7be0b]
+- Updated dependencies [1cee200]
+- Updated dependencies [9339b45]
+- Updated dependencies [4be1a3f]
+- Updated dependencies [787c496]
+- Updated dependencies [37514fc]
+- Updated dependencies [bebd64f]
+- Updated dependencies [4baee32]
+- Updated dependencies [8745b50]
+- Updated dependencies [df2ae04]
+- Updated dependencies [7dbeddb]
+- Updated dependencies [dbf591e]
+- Updated dependencies [839a4b2]
+- Updated dependencies [1810479]
+- Updated dependencies [d598b83]
+- Updated dependencies [8c2d558]
+- Updated dependencies [af85c85]
+- Updated dependencies [6a9cd12]
+- Updated dependencies [af85c85]
+- Updated dependencies [5d79d0e]
+- Updated dependencies [43e65cf]
+- Updated dependencies [e280844]
+- Updated dependencies [f889447]
+- Updated dependencies [b9a8c62]
+- Updated dependencies [a3caa9d]
+- Updated dependencies [1dc92ce]
+- Updated dependencies [ced5841]
+- Updated dependencies [4949266]
+- Updated dependencies [9f6da2d]
+- Updated dependencies [15a78d8]
+- Updated dependencies [f54c013]
+- Updated dependencies [2acda2a]
+- Updated dependencies [1cc8fea]
+- Updated dependencies [3588b89]
+- Updated dependencies [9a45d4a]
+- Updated dependencies [4f2ce5c]
+- Updated dependencies [4e54b4e]
+- Updated dependencies [2b26641]
+- Updated dependencies [eec8a23]
+- Updated dependencies [353033f]
+- Updated dependencies [27f0928]
+- Updated dependencies [a3f0833]
+- Updated dependencies [0157b15]
+- Updated dependencies [4f35254]
+- Updated dependencies [0118cd0]
+- Updated dependencies [70213a5]
+- Updated dependencies [4f9848f]
+- Updated dependencies [4c0bb1b]
+- Updated dependencies [4dff167]
+- Updated dependencies [514f6ad]
+- Updated dependencies [d455bd2]
+- Updated dependencies [11c9e5f]
+- Updated dependencies [241446a]
+- Updated dependencies [81cc3f8]
+- Updated dependencies [e0a11e4]
+- Updated dependencies [e280844]
+- Updated dependencies [a7fd87a]
+- Updated dependencies [0f0c7e5]
+- Updated dependencies [ce89e1f]
+- Updated dependencies [c4d419b]
+- Updated dependencies [da7dd2e]
+- Updated dependencies [8cbcaf4]
+- Updated dependencies [2d649c0]
+- Updated dependencies [5b84935]
+- Updated dependencies [02900a7]
+- Updated dependencies [308226e]
+- Updated dependencies [b2ecf6d]
+- Updated dependencies [8af195e]
+- Updated dependencies [7459739]
+- Updated dependencies [5d43ec9]
+- Updated dependencies [57af464]
+- Updated dependencies [2338cee]
+- Updated dependencies [8882b53]
+- Updated dependencies [174d6ef]
+- Updated dependencies [a20fc8c]
+- Updated dependencies [a2fbf00]
+- Updated dependencies [e6871f1]
+- Updated dependencies [1ad4f25]
+- Updated dependencies [1eb7552]
+- Updated dependencies [7863d23]
+- Updated dependencies [de8f61d]
+- Updated dependencies [ec23b4e]
+- Updated dependencies [de8f61d]
+- Updated dependencies [28b5165]
+- Updated dependencies [ff70ebe]
+- Updated dependencies [0f43324]
+- Updated dependencies [f4b9a4a]
+- Updated dependencies [adb1290]
+- Updated dependencies [0bb9ac6]
+- Updated dependencies [7b298cb]
+- Updated dependencies [b98bad7]
+- Updated dependencies [0d377ec]
+- Updated dependencies [435c248]
+- Updated dependencies [e1e7241]
+- Updated dependencies [977164c]
+- Updated dependencies [9aed377]
+- Updated dependencies [c491f93]
+- Updated dependencies [aadb086]
+- Updated dependencies [09f0c86]
+- Updated dependencies [d11dc30]
+- Updated dependencies [5ad7bc0]
+- Updated dependencies [481218b]
+- Updated dependencies [f8172cf]
+- Updated dependencies [e5395a6]
+- Updated dependencies [cd7ffdb]
+- Updated dependencies [8ced7e2]
+- Updated dependencies [5ed6215]
+- Updated dependencies [9cacd4b]
+- Updated dependencies [f95e342]
+- Updated dependencies [d6ba47e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [fcc5602]
+- Updated dependencies [880cbbf]
+- Updated dependencies [2932eb2]
+- Updated dependencies [c1a3072]
+- Updated dependencies [968362b]
+- Updated dependencies [f4bfab5]
+- Updated dependencies [e6c888e]
+- Updated dependencies [fcc5602]
+- Updated dependencies [3cf6a17]
+- Updated dependencies [56089ae]
+- Updated dependencies [f544aeb]
+- Updated dependencies [4f2d1e0]
+- Updated dependencies [ece64a6]
+- Updated dependencies [9c507b5]
+- Updated dependencies [9c507b5]
+- Updated dependencies [ff4504e]
+- Updated dependencies [58f9d2e]
+- Updated dependencies [c67bcfa]
+- Updated dependencies [f04bbbc]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [5124d5a]
+- Updated dependencies [0f60e3d]
+- Updated dependencies [3207a40]
+- Updated dependencies [e49aa18]
+- Updated dependencies [70076bc]
+- Updated dependencies [6a9a3dc]
+- Updated dependencies [3f553ff]
+- Updated dependencies [5d75785]
+- Updated dependencies [dd5a540]
+- Updated dependencies [4a4d7c9]
+- Updated dependencies [73f549e]
+- Updated dependencies [73f549e]
+- Updated dependencies [a13982c]
+- Updated dependencies [52ee422]
+- Updated dependencies [73f549e]
+- Updated dependencies [4bcea5f]
+- Updated dependencies [6fcc7aa]
+- Updated dependencies [59e80c0]
+- Updated dependencies [eb8fe62]
+- Updated dependencies [e9613f8]
+- Updated dependencies [f004638]
+- Updated dependencies [52d9d64]
+- Updated dependencies [e3c67e9]
+- Updated dependencies [34090f0]
+- Updated dependencies [03b9392]
+- Updated dependencies [15e923d]
+- Updated dependencies [5962dc2]
+- Updated dependencies [5dae54d]
+- Updated dependencies [0208a3b]
+- Updated dependencies [bb7bb11]
+- Updated dependencies [ee1de44]
+- Updated dependencies [f3a1232]
+- Updated dependencies [56fda8d]
+- Updated dependencies [f88d616]
+- Updated dependencies [1c2c1ac]
+- Updated dependencies [1d8e163]
+- Updated dependencies [e08d172]
+- Updated dependencies [429e80c]
+- Updated dependencies [002ff57]
+- Updated dependencies [7a7ea82]
+- Updated dependencies [9521334]
+- Updated dependencies [12cfcfc]
+- Updated dependencies [415e5b8]
+- Updated dependencies [e68cb62]
+- Updated dependencies [0ee2887]
+- Updated dependencies [767af8a]
+- Updated dependencies [fb702eb]
+- Updated dependencies [c11f37e]
+- Updated dependencies [e39dbc5]
+- Updated dependencies [98d2f9a]
+- Updated dependencies [cf2ad81]
+- Updated dependencies [60c082d]
+- Updated dependencies [1e58c0d]
+- Updated dependencies [d3b462a]
+- Updated dependencies [49f1f5b]
+- Updated dependencies [e824816]
+- Updated dependencies [1f05956]
+- Updated dependencies [a8efdf5]
+- Updated dependencies [774e9cc]
+- Updated dependencies [e841e68]
+- Updated dependencies [18f7289]
+- Updated dependencies [a5caeed]
+- Updated dependencies [34b8a3f]
+- Updated dependencies [e3148d0]
+- Updated dependencies [0d977b8]
+- Updated dependencies [12816b7]
+- Updated dependencies [aec0cec]
+- Updated dependencies [5202a9f]
+- Updated dependencies [174070d]
+  - @weasel-js/geom@2.0.0
+  - @weasel-js/font@2.0.0
+  - @weasel-js/registry@2.0.0
+  - @weasel-js/paint@2.0.0
+
 ## 1.19.1
 
 ### Minor Changes

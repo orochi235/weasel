@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/editor",
-  "version": "1.19.1",
+  "version": "2.0.0",
   "description": "The frame and glue of a weasel editor app: a shell with the kit's providers, app-wide command keys, a menu bar, a topbar, and a preferences dialog; and autosave, session persistence, snapshot revival, file download and pick, pages, page fit, and the page's paper and grid.",
   "weasel": {
     "tier": "other"
@@ -19,19 +19,19 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/devtools": "1.19.1",
-    "@weasel-js/gestures": "1.19.1",
-    "@weasel-js/registry": "1.19.1",
-    "@weasel-js/storage": "1.19.1"
+    "@weasel-js/devtools": "2.0.0",
+    "@weasel-js/gestures": "2.0.0",
+    "@weasel-js/registry": "2.0.0",
+    "@weasel-js/storage": "2.0.0"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.19.1",
-    "@weasel-js/editing": "1.19.1",
-    "@weasel-js/guides": "1.19.1",
-    "@weasel-js/prefs": "1.19.1",
-    "@weasel-js/prefs-schema": "1.19.1",
-    "@weasel-js/text-tools": "1.19.1",
-    "@weasel-js/ui": "1.19.1",
+    "@weasel-js/core": "2.0.0",
+    "@weasel-js/editing": "2.0.0",
+    "@weasel-js/guides": "2.0.0",
+    "@weasel-js/prefs": "2.0.0",
+    "@weasel-js/prefs-schema": "2.0.0",
+    "@weasel-js/text-tools": "2.0.0",
+    "@weasel-js/ui": "2.0.0",
     "react": ">=18"
   },
   "author": "orochi235",
