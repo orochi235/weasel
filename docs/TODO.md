@@ -606,6 +606,15 @@ on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed a
 
 ## Release-gate & build hygiene
 
+- **(P3) A CSF argType's `if` reads the trial's config, not the frame-local args the story renders with**
+  (2026-11-21, `packages/forge/src/csf/argsToSchema.ts` `conditionOf`). An `updateArgs({ mode: undefined })`, or a
+  `mode` set to a function, stays in the story's `Scoped` state (`csf/shims/preview-api.ts`), so a control gated on
+  `mode` still answers by the config's or the story's own `mode`, where Storybook answers by the args the story
+  renders with. Two things are missing underneath: which render's local args count, since a trial and each of its
+  Live lens copies hold their own, and a way to have the in-page panel's predicates rerun on a change that is not
+  the config's (the frame path can resend its answers for the same config key). Closes when a control gated by `if`
+  shows and hides by a frame-local value, in page and isolated.
+
 - **(P3) forge's axe sweep skips `ClockFrames.stories.tsx`, and knows `Field`'s unnamed slider thumbs** (2026-11-20,
   `apps/forge/a11y.known.ts`). Both failed every full run from 2026-11-19 on. ClockFrames throws "usePlayhead: this
   story declares no timeline" in the browser sweep though it declares one, and renders under `runStory` in jsdom, so
