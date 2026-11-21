@@ -68,7 +68,7 @@ export function useRunRow({ root, keyOf, itemsOf, run, lengths, gap, align, over
   const total = scrolling ? full : 0;
   let spots: RunPlace[] = [];
   const scroll = useRunScroll({ root, keyOf, itemsOf, frame: band, run, total, spots: () => spots, lengths, modReorders });
-  useRunText(root, run);
+  useRunText(root, run, band);
   spots = placeAlongRun(run, lengths, { gap, align, offset: scrolling ? scroll.offset : Math.max(0, (full - run.length) / 2), past: 'hold' });
   // A zero-length run has no direction to carry items along: they all sit at its one point.
   const flat = run.length <= 0;
