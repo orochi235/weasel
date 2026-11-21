@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
-import { scrolledPlaceOf } from '@weasel-js/routing';
 import { ItemList, type ItemListRow } from '../ItemList';
+import { revealInBox } from '../../revealInBox';
 import s from './HistoryList.module.css';
 
 /** One state the list can jump to. */
@@ -45,15 +45,10 @@ export function HistoryList({
     rowProps: { 'data-row-index': i },
   }));
   const scroller = useRef<HTMLDivElement>(null);
-  // Scrolls only the list's own box: `scrollIntoView` would also scroll
-  // every scrollable ancestor, the window included.
   useLayoutEffect(() => {
     const box = scroller.current;
     const row = box?.querySelector<HTMLElement>(`[data-row-index="${current}"]`);
-    if (!box || !row) return;
-    const top = scrolledPlaceOf(row, box).y;
-    if (top < box.scrollTop) box.scrollTop = top;
-    else if (top + row.offsetHeight > box.scrollTop + box.clientHeight) box.scrollTop = top + row.offsetHeight - box.clientHeight;
+    if (box && row) revealInBox(row, box);
   }, [current, entries.length]);
   return (
     <div ref={scroller} className={className ? `${s.scroller} ${className}` : s.scroller}>

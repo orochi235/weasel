@@ -33,3 +33,17 @@ it('leaves the browser menu alone when no such menu exists', () => {
   expect(ev).toBe(true);
   expect(screen.queryByRole('menu')).toBeNull();
 });
+
+it('highlights the first row of a menu raised from the keyboard, and none of one raised by the pointer', () => {
+  mount('row');
+  const fire = (init: Record<string, unknown>) => {
+    const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    Object.assign(ev, init);
+    fireEvent(screen.getByText('row'), ev);
+    return screen.getByRole('menu').getAttribute('aria-activedescendant');
+  };
+  expect(fire({})).toBeNull();
+  expect(fire({ pointerType: 'mouse' })).toBeNull();
+  expect(fire({ pointerType: '' })).toBe(screen.getByRole('menuitem', { name: 'Delete' }).id);
+  expect(fire({ mozInputSource: 6 })).toBe(screen.getByRole('menuitem', { name: 'Delete' }).id);
+});

@@ -278,14 +278,14 @@ describe('menu rows that are links', () => {
     expect(ran).toEqual([]);
   });
 
-  it('a release with Meta, Ctrl or Shift held opens the link in a new tab and closes', () => {
+  it('a release with Meta, Ctrl or Shift held opens the link in a new tab with no opener and closes', () => {
     ran.length = 0;
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
     try {
       for (const mod of [{ metaKey: true }, { ctrlKey: true }, { shiftKey: true }]) {
         const close = panels([item('docs', { href: '/docs' })], { releaseRuns: true });
         fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'docs' }), mod);
-        expect(open).toHaveBeenLastCalledWith('/docs', '_blank');
+        expect(open).toHaveBeenLastCalledWith('/docs', '_blank', 'noopener');
         expect(close).toHaveBeenCalledTimes(1);
         cleanup();
       }

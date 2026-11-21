@@ -4,6 +4,9 @@ import { createContext, useContext } from 'react';
  *  a row opens, which portals outside every panel. Called with null when it goes. */
 type RegisterPart = (key: string, el: HTMLElement | null) => void;
 
+/** The attribute a part carries naming the row it hangs from, which the DOM cannot say for a part that portals. */
+export const MENU_PART_OF = 'data-weasel-menu-part-of';
+
 export const MenuPartsContext = createContext<RegisterPart | null>(null);
 
 /** The open menu's {@link RegisterPart}, or a no-op outside one. */

@@ -84,7 +84,7 @@ export function MenuRow(props: {
       )}
       {e.kind === 'number' && <MenuNumberValue entry={e} rowId={id} controller={props.controller} />}
       {e.kind === 'color' && (
-        <MenuColorValue entry={e} controller={props.controller} row={row} picking={props.picking} onPicked={props.onPicked} />
+        <MenuColorValue entry={e} controller={props.controller} row={row} rowId={id} picking={props.picking} onPicked={props.onPicked} />
       )}
       {e.kind === 'text' && <MenuTextValue entry={e} rowId={id} controller={props.controller} />}
       {e.kind === 'submenu' && <Caret className={s.caret} />}

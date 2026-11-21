@@ -4,6 +4,7 @@ import { useLatest, useWindowEvent } from '@weasel-js/react';
 import type { OpenMenu } from '@weasel-js/routing';
 import type { MenuEntry, MenuSide } from '@weasel-js/menu';
 import { OpenPanels } from './ContextMenuHost';
+import { MENU_PART_OF } from './menuParts';
 import { menuUnder } from './menuUnder';
 import { useMenuPortal } from './useMenuPortal';
 
@@ -80,10 +81,12 @@ export function useMenuTrigger(portalContainer?: Element | null): MenuTrigger {
   return { button, id, open: open !== null, show, close, press, click, anchor, portal };
 }
 
-/** Whether `el` is inside the menu `labelId` names, directly or through the rows its submenus hang from. */
+/** Whether `el` is inside the menu `labelId` names, directly, through the rows its submenus hang from, or through
+ *  a part a row opens, such as a color row's picker. */
 function inMenuOf(el: Element | null, labelId: string): boolean {
   const doc = el?.ownerDocument;
-  let menu = el?.closest('[role="menu"]') ?? null;
+  const row = el?.closest(`[${MENU_PART_OF}]`)?.getAttribute(MENU_PART_OF);
+  let menu = (row ? doc?.getElementById(row) : el)?.closest('[role="menu"]') ?? null;
   while (menu) {
     const by = menu.getAttribute('aria-labelledby');
     if (by === labelId) return true;

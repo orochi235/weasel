@@ -6,6 +6,8 @@
   z-index: var(--wzl-z-popover);
   box-sizing: border-box;
   min-width: 180px;
+  max-height: 100vh;
+  overflow-y: auto;
   padding: var(--wzl-space-2);
   color: var(--wzl-fg);
   line-height: var(--wzl-leading-snug);

@@ -43,6 +43,15 @@ describe('a number row in a DOM menu', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
+  it('commits a typed value when a press outside dismisses the menu', () => {
+    const { set, close } = open();
+    act(() => { field().focus(); });
+    act(() => { fireEvent.change(field(), { target: { value: '12' } }); });
+    act(() => { fireEvent.pointerDown(document.body); });
+    expect(close).toHaveBeenCalled();
+    expect(set).toHaveBeenCalledWith(12);
+  });
+
   it('steps with the arrow keys while the field has focus, and the highlight stays put', () => {
     const { set, menu } = open();
     const before = menu.getAttribute('aria-activedescendant');
@@ -142,6 +151,30 @@ describe('a color row in a DOM menu', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
+  it('opens on Space while highlighted, as on Enter', () => {
+    const { menu } = openColor();
+    key(menu, 'ArrowDown');
+    key(menu, ' ');
+    expect(picker()).not.toBeNull();
+  });
+
+  it('opens when a menu bar drag is released over it', () => {
+    const set = vi.fn();
+    const entries: MenuEntry[] = [{ kind: 'color', key: 'fill', label: 'Fill', value: '#336699', set }];
+    render(<OpenPanels open={{ seq: 1, entries, client: { x: 0, y: 0 }, source: 'pointer' }} close={() => {}} releaseRuns />);
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: /^Fill/ }));
+    expect(picker()).not.toBeNull();
+  });
+
+  it('leaves focus on the picker\'s color input when Enter is pressed there', () => {
+    const { menu } = openColor();
+    key(menu, 'ArrowDown');
+    key(menu, 'Enter');
+    act(() => { swatchInput().focus(); });
+    key(swatchInput(), 'Enter');
+    expect(document.activeElement).toBe(swatchInput());
+  });
+
   it('offers opacity when the entry has alpha', () => {
     const { row } = openColor({ alpha: true });
     fireEvent.click(row);
@@ -225,6 +258,18 @@ describe('a text row in a DOM menu', () => {
     expect(set).toHaveBeenCalledWith('Layer 3');
   });
 
+  it('commits what is typed when a press outside or a window blur dismisses the menu', () => {
+    for (const dismiss of [() => fireEvent.pointerDown(document.body), () => fireEvent.blur(window)]) {
+      const { set, close } = openText();
+      act(() => { box().focus(); });
+      act(() => { fireEvent.change(box(), { target: { value: 'Layer 2' } }); });
+      act(() => { dismiss(); });
+      expect(close).toHaveBeenCalled();
+      expect(set).toHaveBeenCalledExactlyOnceWith('Layer 2');
+      cleanup();
+    }
+  });
+
   it('puts the value back on Escape, writing nothing, and the menu stays open', () => {
     const { set, close, menu } = openText();
     act(() => { box().focus(); });
@@ -245,6 +290,13 @@ describe('a text row in a DOM menu', () => {
     expect(document.activeElement).toBe(box());
     key(box(), 'c');
     expect(menu.getAttribute('aria-activedescendant')).toBe(row.id);
+  });
+
+  it('takes focus on Space while highlighted, as on Enter', () => {
+    const { menu } = openText();
+    key(menu, 'ArrowDown');
+    key(menu, ' ');
+    expect(document.activeElement).toBe(box());
   });
 
   it('cannot be edited while disabled', () => {

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
 import type { MenuController, MenuEntry, MenuSide, MenuRect } from '@weasel-js/menu';
 import { placeMenu, placeMenuUnder, placeSubmenu } from '@weasel-js/menu';
 import { inlineDirection } from '../../useRovingTabIndex';
@@ -8,6 +8,7 @@ import { MenuRow, rowTipText } from './MenuRow';
 import { RowTip } from '../Tree/RowTip';
 import { menuFieldId } from './MenuValue';
 import { editsColor } from './MenuColorValue';
+import { revealInBox } from '../../revealInBox';
 import s from './Menu.module.css';
 
 /** One level of the open menu, positioned in the viewport. */
@@ -16,7 +17,7 @@ export function MenuPanel(props: {
   highlight: number | null; childOpen: boolean; idBase: string;
   /** The row a submenu hangs from. */
   labelledBy?: string;
-  anchor: { client: { x: number; y: number }; under?: MenuRect; side?: MenuSide } | null;
+  anchor: PanelAnchor;
   parentRow: () => MenuRect | null;
   focus: boolean;
   /** While true, a pointerup over a row presses it. Read at the event, never rendered from. */
@@ -28,49 +29,41 @@ export function MenuPanel(props: {
   const ref = useRef<HTMLDivElement>(null);
   // The color row whose picker is open.
   const [picking, setPicking] = useState<number | null>(null);
-  const pick = (i: number) => { const at = entries[i]; if (at?.kind === 'color' && editsColor(at)) setPicking(i); };
+  // What Enter, Space, a click or a release does to a value row: focus its field or open its picker. False for any other row.
+  const activate = (i: number): boolean => {
+    const at = entries[i];
+    if ((at?.kind === 'number' || at?.kind === 'text') && !at.disabled) {
+      document.getElementById(menuFieldId(`${idBase}-${level}-${i}`))?.focus();
+      return true;
+    }
+    if (at?.kind !== 'color') return false;
+    if (editsColor(at)) setPicking(i);
+    return true;
+  };
 
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    // Placed in client px, and written in the px of the box the panel is fixed in, which a magnifier may draw larger.
-    const frame = blockFrame(containingBlock(el));
-    const size = { width: el.offsetWidth * frame.scaleX, height: el.offsetHeight * frame.scaleY };
-    const bounds = { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
-    const row = parentRow();
-    const dir = inlineDirection(el);
-    const at = row ? placeSubmenu(size, row, bounds, dir)
-      : anchor?.under ? placeMenuUnder(size, anchor.under, bounds, anchor.side, dir)
-        : placeMenu(size, anchor?.client ?? { x: 0, y: 0 }, bounds, dir);
-    const own = clientToBlock(at, frame);
-    el.style.left = `${own.x}px`;
-    el.style.top = `${own.y}px`;
-    c.setPanel(level, { x: at.x, y: at.y, width: size.width, height: size.height });
-    // Placed once per mount: the host remounts a panel when the row it hangs from changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [c, level, anchor]);
+  usePlacement(ref, c, level, anchor, parentRow);
 
   useLayoutEffect(() => { if (focus) ref.current?.focus(); }, [focus]);
+
+  useLayoutEffect(() => {
+    const row = highlight == null ? null : document.getElementById(`${idBase}-${level}-${highlight}`);
+    if (row && ref.current) revealInBox(row, ref.current);
+  }, [highlight, idBase, level]);
 
   // Every key stops here, so Shift+F10 or the ContextMenu key inside a menu never
   // reaches the canvas; a key held with Ctrl, Meta or Alt is a command, not typeahead.
   const onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation();
-    // A key typed into a row's field is the field's; Enter and Escape, which end the edit, give focus back.
+    // A key typed into a row's field is the field's; Enter and Escape, which end the edit, give focus back. Enter in a
+    // picker a row portals out of the panel stays there: it may be opening the system's color dialog.
     if (e.target !== e.currentTarget) {
-      if ((e.key === 'Enter' || e.key === 'Escape') && !imeKey(e.nativeEvent)) ref.current?.focus();
+      const ends = e.key === 'Escape' || (e.key === 'Enter' && e.currentTarget.contains(e.target as Node));
+      if (ends && !imeKey(e.nativeEvent)) ref.current?.focus();
       return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    const at = highlight == null ? undefined : entries[highlight];
-    if (e.key === 'Enter' && (at?.kind === 'number' || at?.kind === 'text') && !at.disabled) {
+    if ((e.key === 'Enter' || e.key === ' ') && highlight != null && activate(highlight)) {
       e.preventDefault();
-      document.getElementById(menuFieldId(`${idBase}-${level}-${highlight}`))?.focus();
-      return;
-    }
-    if (e.key === 'Enter' && at?.kind === 'color' && highlight != null) {
-      e.preventDefault();
-      pick(highlight);
       return;
     }
     if (c.key(e.key, inlineDirection(e.currentTarget))) e.preventDefault();
@@ -100,16 +93,19 @@ export function MenuPanel(props: {
           expanded={highlight === i && props.childOpen}
           controls={`${idBase}-panel-${level + 1}`}
           onHover={(e) => c.hover(level, i, { x: e.clientX, y: e.clientY })}
-          onPress={() => { c.press(level, i); pick(i); }}
+          onPress={() => { c.press(level, i); activate(i); }}
           picking={picking === i}
           onPicked={() => setPicking(null)}
           onLeave={props.close}
           onRelease={(modified) => {
             if (!props.releaseRuns.current) return;
             if (modified && entry.kind === 'item' && entry.href !== undefined) {
-              window.open(entry.href, '_blank');
+              window.open(entry.href, '_blank', 'noopener');
               props.close();
-            } else c.press(level, i);
+            } else {
+              c.press(level, i);
+              activate(i);
+            }
           }}
         />
       ))}
@@ -119,4 +115,31 @@ export function MenuPanel(props: {
       />
     </div>
   );
+}
+
+type PanelAnchor = { client: { x: number; y: number }; under?: MenuRect; side?: MenuSide } | null;
+
+/** Place panel `ref` in the viewport: beside the row it hangs from, under `anchor.under`, or at `anchor.client`. */
+function usePlacement(
+  ref: RefObject<HTMLDivElement | null>, c: MenuController, level: number, anchor: PanelAnchor, parentRow: () => MenuRect | null,
+): void {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // Placed in client px, and written in the px of the box the panel is fixed in, which a magnifier may draw larger.
+    const frame = blockFrame(containingBlock(el));
+    const size = { width: el.offsetWidth * frame.scaleX, height: el.offsetHeight * frame.scaleY };
+    const bounds = { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
+    const row = parentRow();
+    const dir = inlineDirection(el);
+    const at = row ? placeSubmenu(size, row, bounds, dir)
+      : anchor?.under ? placeMenuUnder(size, anchor.under, bounds, anchor.side, dir)
+        : placeMenu(size, anchor?.client ?? { x: 0, y: 0 }, bounds, dir);
+    const own = clientToBlock(at, frame);
+    el.style.left = `${own.x}px`;
+    el.style.top = `${own.y}px`;
+    c.setPanel(level, { x: at.x, y: at.y, width: size.width, height: size.height });
+    // Placed once per mount: the host remounts a panel when the row it hangs from changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [c, level, anchor]);
 }
