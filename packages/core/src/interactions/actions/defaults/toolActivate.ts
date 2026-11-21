@@ -29,8 +29,10 @@ export function buildToolActivateBindings(
 ): BoundGesture<ToolActivateParams>[] {
   const seen = new Set<string>();
   return specs.map(({ toolId, keyOpts }) => {
-    const id = seen.has(toolId) ? `${TOOL_ACTIVATE_ID}.${toolId}.${keyOpts.key}` : `${TOOL_ACTIVATE_ID}.${toolId}`;
-    seen.add(toolId);
+    const base = `${TOOL_ACTIVATE_ID}.${toolId}`;
+    let id = seen.has(base) ? `${base}.${keyOpts.key}` : base;
+    for (let n = 2; seen.has(id); n++) id = `${base}.${keyOpts.key}.${n}`;
+    seen.add(id);
     // Modifiers belong under `mods` (a `ModSpec`), not at the top level of
     // the spec: the matcher treats an absent modifier as "must NOT be held".
     const mods: Record<string, boolean | 'optional'> = {};

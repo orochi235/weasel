@@ -125,3 +125,16 @@ describe('buildToolActivateBindings', () => {
     expect((binding as { spec: { phase?: unknown } }).spec.phase).toBe(BETWEEN_GESTURES);
   });
 });
+
+describe('buildToolActivateBindings ids', () => {
+  it('gives every binding a distinct id when one tool takes one key under several modifiers', () => {
+    const ids = buildToolActivateBindings([
+      { toolId: 'select', keyOpts: { key: 'v' } },
+      { toolId: 'select', keyOpts: { key: 'v', shift: true } },
+      { toolId: 'select', keyOpts: { key: 'v', alt: true } },
+      { toolId: 'select', keyOpts: { key: 'v', mod: true } },
+    ]).map((b) => ('opts' in b ? b.opts?.id : undefined));
+    expect(new Set(ids).size).toBe(4);
+    expect(ids.slice(0, 2)).toEqual(['tool.activate.select', 'tool.activate.select.v']);
+  });
+});

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { matchSpec, type InputEvent } from '@weasel-js/gestures';
-import { viewportZoomAction } from './viewportZoom';
+import { createViewportZoomAction, viewportZoomAction } from './viewportZoom';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -8,13 +8,16 @@ import { HOME_VIEW } from 'core/viewport/homeView';
 
 const HOST = { width: 400, height: 200 };
 
-function fitView(content: Bounds | null, from: View = { x: 0, y: 0, scale: { x: 1, y: 1 } }, recenter?: () => View | void): View {
+function fitView(
+  content: Bounds | null, from: View = { x: 0, y: 0, scale: { x: 1, y: 1 } }, recenter?: () => View | void,
+  action = viewportZoomAction,
+): View {
   let v = from;
   const view: ViewApi = {
     get: () => v, set: (next) => { v = next; }, hostSize: () => HOST, contentBounds: () => content,
     ...(recenter ? { recenter } : {}),
   };
-  const invoker = viewportZoomAction.invoker;
+  const invoker = action.invoker;
   if (invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
   invoker.run({ view }, { kind: 'fit' });
   return v;
@@ -35,6 +38,29 @@ describe("viewport.zoom's fit", () => {
     expect(s.x + s.width / 2).toBeCloseTo(200);
     expect(s.y + s.height / 2).toBeCloseTo(75);
     expect(v.scale.x).toBeGreaterThan(1);
+  });
+
+  it('holds the fit to the axis zoom is held to, the other keeping its scale and translation', () => {
+    const from = { x: 7, y: 8, scale: { x: 1, y: 3 } };
+    const content = { x: 100, y: 50, width: 200, height: 50 };
+    const vx = fitView(content, from, undefined, createViewportZoomAction({ axis: 'x' }));
+    expect(vx.y).toBe(8);
+    expect(vx.scale.y).toBe(3);
+    const sx = shown(vx);
+    expect(sx.x + sx.width / 2).toBeCloseTo(200);
+    expect(vx.scale.x).toBeCloseTo((HOST.width - 32) / 200);
+    const vy = fitView(content, from, undefined, createViewportZoomAction({ axis: 'y' }));
+    expect(vy.x).toBe(7);
+    expect(vy.scale.x).toBe(1);
+    expect(vy.scale.y).toBeCloseTo((HOST.height - 32) / 50);
+  });
+
+  it('centers content with no extent on the held axis at its current scale', () => {
+    const from = { x: 7, y: 8, scale: { x: 2, y: 3 } };
+    const v = fitView({ x: 40, y: 0, width: 0, height: 100 }, from, undefined, createViewportZoomAction({ axis: 'x' }));
+    expect(v.scale).toEqual({ x: 2, y: 3 });
+    expect(v.y).toBe(8);
+    expect(v.x + HOST.width / 2 / 2).toBeCloseTo(40);
   });
 
   it('fits a lone horizontal line along its length', () => {

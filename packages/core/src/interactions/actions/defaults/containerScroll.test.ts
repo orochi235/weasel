@@ -27,12 +27,13 @@ function overflowingStack(): LayoutStrategy<RectPose> {
 
 const C = asNodeId('C');
 
-function setup(rows = 5, rotation = 0) {
+function setup(rows = 5, rotation = 0, { transform, clip }: { transform?: readonly [number, number, number, number]; clip?: 'outline' } = {}) {
   const scene = createScene<null, 'l', RectPose>({
     systemLayers: [{ id: 'l' }],
     composition: RIGID_POSE_COMPOSITION,
     initial: [{
-      id: C, kind: 'group', layer: 'l', pose: { x: 100, y: 100, width: 50, height: 100, rotation }, data: null, layout: overflowingStack(),
+      id: C, kind: 'group', layer: 'l', pose: { x: 100, y: 100, width: 50, height: 100, rotation, ...(transform ? { transform } : {}) } as RectPose,
+      data: null, layout: overflowingStack(), ...(clip ? { clip } : {}),
     }],
   });
   for (let i = 0; i < rows; i++) {
@@ -129,5 +130,35 @@ describe('containerScrollAction', () => {
     });
     for (let i = 0; i < 5; i++) scene.add({ kind: 'mark', layer: 'l', pose: { x: 0, y: 0, width: 5, height: 5 }, data: null, parent: C });
     expect(scrollRange(scene as never, C, AUTO_POSE_DESCRIPTOR)).toBeNull();
+  });
+
+  it('keeps the z of a scroll offset it moves', () => {
+    const { scene, deps } = setup();
+    scene.scroll.set(C, { x: 0, y: 10, z: 5 });
+    wheel(deps, { x: 120, y: 150 }, 60);
+    expect(scene.scroll.get(C)).toEqual({ x: 0, y: 40, z: 5 });
+  });
+
+  it('scrolls a scaled container by the world distance the wheel moves, in its own units', () => {
+    const { scene, deps } = setup(5, 0, { transform: [2, 0, 0, 2] });
+    expect(scrollRange(scene as never, C, AUTO_POSE_DESCRIPTOR)).toEqual({ x: [0, 0], y: [0, 100] });
+    wheel(deps, { x: 120, y: 150 }, 60);
+    expect(scene.scroll.get(C)).toEqual({ x: 0, y: 15 });
+  });
+
+  it('passes over a nested container where its clipping parent hides it', () => {
+    const { scene, deps } = setup(4, 0, { clip: 'outline' });
+    const inner = scene.add({
+      kind: 'group', layer: 'l', pose: { x: 0, y: 0, width: 50, height: 40 }, data: null, parent: C, layout: overflowingStack(),
+    });
+    for (let i = 0; i < 5; i++) {
+      scene.add({ kind: 'mark', layer: 'l', pose: { x: 0, y: 0, width: 5, height: 5 }, data: null, parent: inner });
+    }
+    // The inner container is laid out fifth, 160 down: past C's bottom until C scrolls.
+    expect(containerScrollAction.enabled!(deps, { x: 120, y: 270 })).not.toBe(true);
+    scene.scroll.set(C, { x: 0, y: 100 });
+    expect(containerScrollAction.enabled!(deps, { x: 120, y: 170 })).toBe(true);
+    expect(wheel(deps, { x: 120, y: 170 }, 60)).toBeUndefined();
+    expect(scene.scroll.get(inner)).toEqual({ x: 0, y: 30 });
   });
 });

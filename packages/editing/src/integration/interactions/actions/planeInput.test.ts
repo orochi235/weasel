@@ -374,4 +374,20 @@ describe('inPlane', () => {
     handle.onMove!(at({ x: 130, y: 60 }));
     expect(seen[1].drag!.delta).toEqual({ x: 10, y: 0 });
   });
+
+  it('asks enabled about the point in the plane, under the plane\'s camera', () => {
+    const asked: { at?: { x: number; y: number }; view?: View }[] = [];
+    const probeAction: Action = {
+      id: 'probe',
+      label: 'Probe',
+      invoker: { timing: 'immediate', run: () => {} },
+      enabled: (deps, at) => { asked.push({ at, view: (deps?.view as ViewApi | undefined)?.get() }); return true; },
+    };
+    const action = inPlane(probeAction, selectionLayer);
+    const deps = ctxOf(makeScene(), { x: 0, y: 0 }, { x: 0, y: 0 }).deps;
+    action.enabled!(deps, { x: 110, y: 60 });
+    action.enabled!(deps);
+    expect(asked[0]).toEqual({ at: { x: 120, y: 120 }, view: { x: 100, y: 0, scale: { x: 1, y: 1 } } });
+    expect(asked[1].at).toBeUndefined();
+  });
 });

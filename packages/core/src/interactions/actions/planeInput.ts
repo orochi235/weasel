@@ -87,16 +87,23 @@ export function carryPose<P>(d: PoseDescriptor<P>, pose: P, m: PlaneMap | null):
  *  scene or view to read a plane from, runs exactly as it would unwrapped.
  *
  *  An immediate action's points are its params' `world` and `press`; each
- *  is carried when present. */
+ *  is carried when present. `enabled` is asked about its `at` in the plane. */
 export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A {
   const inner = action.invoker;
   if (!inner) return action;
   const declared = action.requires ?? [];
   const requires = [...new Set([...declared, 'scene', 'operands', 'view'])];
+  const gate = action.enabled;
+  const enabled: Action['enabled'] = gate && ((deps, at, ...rest) => {
+    const plane = deps ? livePlane(deps, layerOf(deps), declared, null) : null;
+    if (plane === null) return gate(deps, at, ...rest);
+    return gate(plane.deps, at && toPlane(plane.map(), at), ...rest);
+  });
   if (inner.timing === 'immediate') {
     return {
       ...action,
       requires,
+      ...(enabled ? { enabled } : {}),
       invoker: {
         timing: 'immediate',
         run(deps: ActionDeps, params?: Readonly<Pick<ImmediateParams, 'world' | 'press'>> & Record<string, unknown>): void | 'pass' {
@@ -117,6 +124,7 @@ export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A 
   return {
     ...action,
     requires,
+    ...(enabled ? { enabled } : {}),
     invoker: {
       ...inner,
       start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {

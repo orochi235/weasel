@@ -87,6 +87,8 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   between targets is a leave for a binding that targets the first, and a press is not a leave.
 - 2026-10-13 (pass 6): Wheel, pinch, and key zoom take `axis: 'both' | 'x' | 'y'`. A `view` prop
   that moves when the runner has written no frame since it last moved cancels a glide.
+- 2026-11-20 (the fixer's call): Fit Content (Cmd-Alt-0) holds to `viewport.zoom`'s `axis` as the other zooms do,
+  fitting along that axis alone; content with no extent there is centered at the current scale. Cmd+0 still resets both.
 - 2026-10-13 (pass 6): A marquee and an enclosing lasso take a node by its drawn outline.
 - 2026-10-13 (pass 6): `useTextEdit` and `useSceneTextEdit` take `onStart(id)` and `onEnd(id)`.
 - 2026-10-14: A held-key tool (Space for the hand, draw's `o` opacity scrub) engages only between

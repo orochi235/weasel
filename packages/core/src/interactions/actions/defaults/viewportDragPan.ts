@@ -78,6 +78,8 @@ export const viewportDragPanAction = defineAction({
     start(ctx, opts): OngoingHandle {
       const view = ctx.deps.view;
       if (!view) return {};
+      // A press catches the view: the last fling's coast would otherwise fight this pan.
+      view.stopDecay?.();
 
       const startView = view.get();
       // The dispatcher hands the binding's unresolved `opts` here and nowhere
