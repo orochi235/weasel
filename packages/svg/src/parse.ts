@@ -17,6 +17,7 @@ import {
 } from './transform';
 import { boundsOfPath, transformPath } from '@weasel-js/core';
 import { readLength, resolveLength } from './lengths';
+import { fontSizeOf } from './fontSize';
 import { isNonUniform, paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
 import { collectGradients, type GradientTable } from './readGradients';
 import { collectPatterns } from './patterns';
@@ -233,7 +234,7 @@ function parseElement(
     const drawn = nested(onWarn, () => parseUse(el, ctm, style, (t, m, s) => readChild(t, m, s, inner, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn));
     if (!drawn) return null;
     const opacity = ownValue(el, 'opacity');
-    const clip = ownProp(el, 'clip-path') == null ? undefined : clipFor(el, useSpace(el, ctm, onWarn), clips, onWarn);
+    const clip = ownProp(el, 'clip-path') == null ? undefined : clipFor(el, useSpace(el, ctm, style, onWarn), clips, onWarn);
     if (opacity == null && !clip) return drawn;
     return { kind: 'group', children: Array.isArray(drawn) ? drawn : [drawn], ...(clip ? { clip } : {}), ...(opacity != null ? { opacity } : {}) };
   }
@@ -254,7 +255,8 @@ function parseElement(
     // Nested <svg> — a transparent group that establishes a viewport at
     // (x, y). Inheritance flows through it; clipping does not exist here.
     const childStyle = deriveStyle(style, el);
-    const offset: Matrix = [1, 0, 0, 1, readLength(el, 'x', 'x', 0, onWarn), readLength(el, 'y', 'y', 0, onWarn)];
+    const em = fontSizeOf(childStyle);
+    const offset: Matrix = [1, 0, 0, 1, readLength(el, 'x', 'x', 0, onWarn, em), readLength(el, 'y', 'y', 0, onWarn, em)];
     if (el.hasAttribute('viewBox')) {
       onWarn('nested <svg> viewBox is not modeled; its children are not rescaled');
     }
@@ -280,7 +282,7 @@ function parseLeaf(
     return textNode;
   }
   if (tag === 'image') {
-    const imageNode = parseImageElement(el, ctm, onWarn);
+    const imageNode = parseImageElement(el, ctm, onWarn, fontSizeOf(deriveStyle(style, el)));
     if (imageNode) {
       const meta = collectElementMeta(el, uriToPrefix);
       if (meta) imageNode.meta = meta;
@@ -298,7 +300,8 @@ function parseLeaf(
   // node.rotation. When it fails AND the leaf transform is non-identity,
   // fall back to baking the full composed matrix into geometry (legacy
   // behavior) and warn if a rotation is present that we are about to lose.
-  let path = lowerLeaf(el, tag, ctm, onWarn);
+  const leafStyle = deriveStyle(style, el);
+  let path = lowerLeaf(el, tag, ctm, onWarn, fontSizeOf(leafStyle));
   if (!path) return null;
   let rotation: number | undefined;
   let baked = ctm;
@@ -326,7 +329,6 @@ function parseLeaf(
       }
     }
   }
-  const leafStyle = deriveStyle(style, el);
   const fill = paintThroughMatrix(readPaint(leafStyle, 'fill', '#000000', gradients, onWarn), baked, onWarn);
   const ownStroke = withOutlinedStroke(el, readStroke(leafStyle, gradients, onWarn, isNonScalingStroke(el)));
   const stroke = ownStroke && strokeThroughMatrix(ownStroke, baked, onWarn);

@@ -31,8 +31,9 @@ export function lowerLeaf(
   tag: string,
   m: Matrix,
   onWarn: (msg: string) => void,
+  fontSize?: number,
 ): Path | null {
-  return storable(lowerLeafPath(el, tag, m, onWarn), tag, onWarn);
+  return storable(lowerLeafPath(el, tag, m, onWarn, fontSize), tag, onWarn);
 }
 
 /** `path`, or null with a warning when a number it stores is not finite: a `<tag>` whose geometry reaches
@@ -56,11 +57,12 @@ function lowerLeafPath(
   tag: string,
   m: Matrix,
   onWarn: (msg: string) => void,
+  fontSize: number | undefined,
 ): Path | null {
-  const x = (name: string): number => readLength(el, name, 'x', 0, onWarn);
-  const y = (name: string): number => readLength(el, name, 'y', 0, onWarn);
-  const r = (name: string): number => readLength(el, name, 'other', 0, onWarn);
-  const radius = (name: string, axis: 'x' | 'y'): number => readLength(el, name, axis, NaN, onWarn);
+  const x = (name: string): number => readLength(el, name, 'x', 0, onWarn, fontSize);
+  const y = (name: string): number => readLength(el, name, 'y', 0, onWarn, fontSize);
+  const r = (name: string): number => readLength(el, name, 'other', 0, onWarn, fontSize);
+  const radius = (name: string, axis: 'x' | 'y'): number => readLength(el, name, axis, NaN, onWarn, fontSize);
   if (tag === 'rect') {
     return rectElementToPath(x('x'), y('y'), x('width'), y('height'), radius('rx', 'x'), radius('ry', 'y'), m);
   }

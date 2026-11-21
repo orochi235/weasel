@@ -43,14 +43,18 @@ function viewportSide(svg: Element, name: 'width' | 'height', around: () => View
   return outer ? (Number(m[1]) / 100) * outer[name] : NaN;
 }
 
+/** `fontSize` is `el`'s computed font size where the caller has the cascade it
+ *  draws under, which a `<use>`'s target takes from the `<use>`, not from its
+ *  own ancestors; without it the size is read from `el`'s place in the document. */
 export function readLength(
   el: Element,
   name: string,
   axis: LengthAxis,
   fallback: number,
   onWarn: (m: string) => void,
+  fontSize?: number,
 ): number {
-  return resolveLength(el.getAttribute(name), el, name, axis, fallback, onWarn);
+  return resolveLength(el.getAttribute(name), el, name, axis, fallback, onWarn, fontSize);
 }
 
 /** {@link readLength} for a value already in hand: one inherited from another
@@ -62,13 +66,16 @@ export function resolveLength(
   axis: LengthAxis,
   fallback: number,
   onWarn: (m: string) => void,
+  fontSize?: number,
 ): number {
   if (raw == null) return fallback;
-  const n = lengthOf(raw, el, name, axis, onWarn);
+  const n = lengthOf(raw, el, name, axis, onWarn, fontSize);
   return Number.isFinite(n) ? n : fallback;
 }
 
-function lengthOf(raw: string, el: Element, name: string, axis: LengthAxis, onWarn: (m: string) => void): number {
+function lengthOf(
+  raw: string, el: Element, name: string, axis: LengthAxis, onWarn: (m: string) => void, fontSize?: number,
+): number {
   const m = LENGTH.exec(raw);
   if (!m) return parseFloat(raw);
   const n = Number(m[1]);
@@ -77,7 +84,7 @@ function lengthOf(raw: string, el: Element, name: string, axis: LengthAxis, onWa
   const scale = absolutePx(unit);
   if (scale != null) return n * scale;
   const ems = emsPer(unit);
-  if (ems != null) return n * ems * fontSizeOf(styleAt(el));
+  if (ems != null) return n * ems * (fontSize ?? fontSizeOf(styleAt(el)));
   const tag = el.tagName.toLowerCase();
   if (unit !== '%') {
     onWarn(`<${tag} ${name}="${raw}"> unit "${unit}" is not converted; read as ${n}`);

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { boundsOfPath } from '@weasel-js/core';
 import { parseSvg } from './parse';
 import type { SvgGroupNode, SvgPathNode } from './types';
 
@@ -79,5 +80,18 @@ describe('<use>', () => {
     const out = parse('<defs><g id="g"><rect visibility="visible" width="1" height="1"/><circle r="1"/></g></defs><use href="#g" visibility="hidden"/>');
     const g = out.nodes[0] as SvgGroupNode;
     expect(g.children.map((n) => (n as SvgPathNode).path.kind)).toEqual(['rect']);
+  });
+
+  it('reads an em length on its target against the font size the <use> gives it', () => {
+    const out = parse(
+      '<defs><rect id="r" width="2em" height="1em"/><g id="s"><circle r="1em"/></g></defs>'
+      + '<use href="#r" font-size="40"/><use href="#s" font-size="10" x="1em"/>',
+    );
+    expect(out.warnings).toEqual([]);
+    expect((out.nodes[0] as SvgPathNode).path).toEqual({ kind: 'rect', x: 0, y: 0, width: 80, height: 40 });
+    const circle = (out.nodes[1] as SvgGroupNode).children[0] as SvgPathNode;
+    const box = boundsOfPath(circle.path);
+    expect(box.width).toBeCloseTo(20);
+    expect(box.x).toBeCloseTo(0);
   });
 });
