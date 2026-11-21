@@ -115,3 +115,14 @@ describe('spikes', () => {
     expect(tipAt(5)).toBe(tipAt(1));
   });
 });
+
+describe('sunbeams', () => {
+  it('reaches the badge corners at 0 and 1 along a diagonal gradient', () => {
+    const grad = draw(Sunbeams, { gradientAngle: 45 }).querySelector('linearGradient')!;
+    const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map((k) => Number(grad.getAttribute(k)));
+    expect(x1).toBeCloseTo(0);
+    expect(y1).toBeCloseTo(0);
+    expect(x2).toBeCloseTo(100);
+    expect(y2).toBeCloseTo(100);
+  });
+});

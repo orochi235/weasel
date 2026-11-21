@@ -96,9 +96,8 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
     // other along `gradientAngle`. Position the start/end stops along that 0..1 axis.
     const ga = cfg.gradientAngle * DEG_TO_RAD;
     const cosA = Math.cos(ga), sinA = Math.sin(ga);
-    // Vector from centre to edge along the axis. Pick a long-enough span so 0..1 covers
-    // the badge fully.
-    const span = 100; // viewBox units along the axis from (50-50cos, 50-50sin) to (50+50cos, 50+50sin)
+    // The viewBox's extent along the axis, so 0 and 1 land on its farthest corners at any angle.
+    const span = 100 * (Math.abs(cosA) + Math.abs(sinA));
     const x1g = 50 - cosA * span / 2;
     const y1g = 50 - sinA * span / 2;
     const x2g = 50 + cosA * span / 2;
