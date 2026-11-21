@@ -33,7 +33,10 @@ export function holdsPositioned(el: Element): boolean {
     set(style.filter) ||
     set(style.backdropFilter) ||
     /transform|perspective|scale|translate|rotate|filter/.test(style.willChange ?? '') ||
-    /paint|layout|strict|content/.test(style.contain ?? '')
+    /paint|layout|strict|content/.test(style.contain ?? '') ||
+    // Each applies layout containment: a size container, and content-visibility at any value but visible.
+    !['', 'normal'].includes(style.getPropertyValue('container-type')) ||
+    !['', 'visible'].includes(style.getPropertyValue('content-visibility'))
   );
 }
 

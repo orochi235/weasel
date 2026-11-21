@@ -17,10 +17,16 @@ function linesOf(rows: readonly Element[]): Line[] {
   return lines.sort((a, b) => a.mid - b.mid);
 }
 
+/** A client x as a distance along a line read in the rows' inline direction. */
+function alongLine(rows: readonly Element[]): (x: number) => number {
+  const first = rows[0];
+  return first && getComputedStyle(first).direction === 'rtl' ? (x) => STRIDE / 2 - x : (x) => x;
+}
+
 /**
  * The {@link ReorderLine} of rows that wrap, as chips in a flex row do: each line follows the one above it, read
- * left to right, and a pointer is on the lowest line whose top it is below. `rows` lists the rows as the list
- * measures them.
+ * in the rows' inline direction, and a pointer is on the lowest line whose top it is below. `rows` lists the rows
+ * as the list measures them.
  */
 export function wrapLine(rows: () => readonly Element[]): ReorderLine {
   const lineAt = (lines: readonly Line[], mid: number): number => {
@@ -31,11 +37,16 @@ export function wrapLine(rows: () => readonly Element[]): ReorderLine {
   return {
     row: (el) => {
       const r = el.getBoundingClientRect();
-      const lines = linesOf(rows());
+      const all = rows();
+      const lines = linesOf(all);
       const mid = r.top + r.height / 2;
       const at = lines.findIndex((l) => Math.abs(l.mid - mid) < r.height / 2);
-      return { start: Math.max(at, 0) * STRIDE + r.left, length: r.width };
+      const along = alongLine(all);
+      return { start: Math.max(at, 0) * STRIDE + Math.min(along(r.left), along(r.right)), length: r.width };
     },
-    pointer: ({ clientX, clientY }) => lineAt(linesOf(rows()), clientY) * STRIDE + clientX,
+    pointer: ({ clientX, clientY }) => {
+      const all = rows();
+      return lineAt(linesOf(all), clientY) * STRIDE + alongLine(all)(clientX);
+    },
   };
 }

@@ -20,4 +20,14 @@ describe('useIdleSettle', () => {
     act(() => { vi.advanceTimersByTime(2 ** 31); });
     expect(settle).toHaveBeenCalledTimes(1);
   });
+
+  it('drops a pending wait when it is turned off before typing rests', () => {
+    vi.useFakeTimers();
+    const settle = vi.fn();
+    const { result, rerender } = renderHook(({ on }) => useIdleSettle(settle, on), { initialProps: { on: true } });
+    act(() => result.current.typed());
+    rerender({ on: false });
+    act(() => { vi.advanceTimersByTime(10_000); });
+    expect(settle).not.toHaveBeenCalled();
+  });
 });

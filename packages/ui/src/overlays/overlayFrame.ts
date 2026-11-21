@@ -42,7 +42,7 @@ interface Region {
 /**
  * The client rect a box positioned in `block` can be seen in: the viewport, cut to the padding box of each element
  * that clips it — `block` and every ancestor up its chain of containing blocks with overflow other than visible on
- * an axis, or paint containment. A frame cut to this lies inside every scrollport above it, so it adds nothing to
+ * an axis, or paint containment (`contain` or `content-visibility`). A frame cut to this lies inside every scrollport above it, so it adds nothing to
  * their scroll range, and an overlay placed against it stays where it can be seen.
  */
 function visibleRegion(block: Element): Region {
@@ -51,7 +51,8 @@ function visibleRegion(block: Element): Region {
   const seen: Region = { left: 0, top: 0, right: root.clientWidth, bottom: root.clientHeight };
   for (let at: Element | null = block; at && at !== root && at !== doc.body; ) {
     const style = getComputedStyle(at);
-    const paint = /paint|strict|content/.test(style.contain ?? '');
+    const visibility = style.getPropertyValue('content-visibility');
+    const paint = /paint|strict|content/.test(style.contain ?? '') || (visibility !== '' && visibility !== 'visible');
     const clipX = paint || style.overflowX !== 'visible';
     const clipY = paint || style.overflowY !== 'visible';
     if ((clipX || clipY) && at instanceof HTMLElement && at.offsetWidth > 0 && at.offsetHeight > 0) {
