@@ -44,8 +44,8 @@ export function Powerline({
   className,
   ...rest
 }: PowerlineProps) {
-  const [caps, setCaps] = useState<readonly EdgeCap[]>([]);
-  const report = useCallback((index: number, cap: EdgeCap) => {
+  const [caps, setCaps] = useState<readonly (EdgeCap | undefined)[]>([]);
+  const report = useCallback((index: number, cap: EdgeCap | undefined) => {
     setCaps((prev) => {
       if (prev[index] === cap) return prev;
       const next = prev.slice();

@@ -5,13 +5,14 @@ import type { BadgeSize, BadgeVariant } from '../Badge/types';
 /** What a {@link Powerline} row tells every segment in it. */
 export interface PowerlineRow {
   /** The cap each segment reported for its right edge, by position. */
-  caps: readonly EdgeCap[];
+  caps: readonly (EdgeCap | undefined)[];
   startCap: EdgeCap;
   depth?: number;
   variant?: BadgeVariant;
   size?: BadgeSize;
   segmentClassName: string;
-  report: (index: number, cap: EdgeCap) => void;
+  /** Records a segment's right-edge cap at `index`, or withdraws it with `undefined`. */
+  report: (index: number, cap: EdgeCap | undefined) => void;
 }
 
 /** One child's place in a {@link Powerline}. */
@@ -39,11 +40,17 @@ export interface PowerlineSegmentShape {
  */
 export function usePowerlineSegment(endCap: EdgeCap = 'flat'): PowerlineSegmentShape | null {
   const slot = useContext(PowerlineSlotContext);
-  useLayoutEffect(() => { slot?.row.report(slot.index, endCap); }, [slot, endCap]);
+  const index = slot?.index;
+  const report = slot?.row.report;
+  useLayoutEffect(() => {
+    if (report === undefined || index === undefined) return;
+    report(index, endCap);
+    return () => report(index, undefined);
+  }, [report, index, endCap]);
   if (!slot) return null;
-  const { index, row } = slot;
+  const { row } = slot;
   return {
-    leftEdge: index === 0 ? row.startCap : (row.caps[index - 1] ?? 'flat'),
+    leftEdge: slot.index === 0 ? row.startCap : (row.caps[slot.index - 1] ?? 'flat'),
     rightEdge: endCap,
     depth: row.depth,
     variant: row.variant,

@@ -2,7 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { createActionDeps, dynamicActionId, resolveSchemaMenu } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
 import { useActionsRegistry, useOptionalDepRegistry } from '@weasel-js/routing/react';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { MenuEntry } from '@weasel-js/menu';
 import { useMenuTrigger } from '../Menu/useMenuTrigger';
 import { ButtonTooltip } from '../Tooltip/buttonTooltip';
@@ -22,7 +22,7 @@ export interface BarMenuSources {
   values: (path: string) => unknown;
   onChange?: (path: string, value: unknown) => void;
   /** The schema an alias in the menu points into. */
-  over?: PrefGroup;
+  over?: PrefGroup | PrefSection;
 }
 
 /** Props for {@link BarMenu}. */
