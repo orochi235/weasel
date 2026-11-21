@@ -96,9 +96,9 @@ export function createRecentColorsStore(options: RecentColorsStoreOptions = {}):
     changed.emit();
   };
 
-  // Another tab writing the same key. Only a real `localStorage` fires these.
+  // Another tab writing the same key, or clearing the whole storage (a `null` key). Only a real `localStorage` fires these.
   const onStorage = (e: StorageEvent): void => {
-    if (e.key === key) set(read(storage, key, limit), false);
+    if (e.key === key || e.key === null) set(read(storage, key, limit), false);
   };
   const watchesOtherTabs = options.storage === undefined && storage !== null && typeof window !== 'undefined';
 

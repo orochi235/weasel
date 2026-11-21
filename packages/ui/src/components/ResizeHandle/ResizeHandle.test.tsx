@@ -204,7 +204,33 @@ describe('ResizeHandle', () => {
     onInput.mockClear();
     fireEvent.pointerMove(document, { buttons: 0, pointerId: 3, clientX: 540 });
     expect(onChange).toHaveBeenCalledWith(300);
+    expect(onInput).toHaveBeenCalledTimes(1);
+    expect(onInput).toHaveBeenCalledWith(300);
+  });
+
+  it('moves the pane to a release that lands where no move reported before committing it', () => {
+    const { handle, onInput, onChange } = setup();
+    fireEvent.pointerDown(handle, { button: 0, clientX: 500 });
+    fireEvent.pointerMove(handle, { clientX: 520 });
+    fireEvent.pointerUp(handle, { clientX: 540 });
+    expect(onInput).toHaveBeenLastCalledWith(300);
+    expect(onChange).toHaveBeenCalledWith(300);
+  });
+
+  it('moves an off-grid pane onto the grid before a press with no move commits it', () => {
+    const { handle, onInput, onChange } = setup({ value: 260.4 });
+    fireEvent.pointerDown(handle, { button: 0, clientX: 500 });
+    fireEvent.pointerUp(handle, { clientX: 500 });
+    expect(onInput).toHaveBeenCalledWith(260);
+    expect(onChange).toHaveBeenCalledWith(260);
+  });
+
+  it('commits the size the pane was left at when a drag is canceled before it moves', () => {
+    const { handle, onInput, onChange } = setup({ value: 260.4 });
+    fireEvent.pointerDown(handle, { button: 0, pointerId: 3, clientX: 500 });
+    fireEvent.pointerCancel(handle, { pointerId: 3 });
     expect(onInput).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalledWith(260.4);
   });
 
   it('settles rather than stranding when the handle unmounts mid-drag', () => {

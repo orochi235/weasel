@@ -14,6 +14,7 @@ import { FieldFoot, type FieldSlotProps, type FieldStateProps } from '../Field/f
 import { RadioGroupAlong, RadioSlotsContext } from './RadioGroupAlong';
 import { useControlAccess, type HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
+import { describedBy } from '../Disabled/HoldReason';
 import { useRacField } from '../Field/racField';
 import { shows } from '../Field/fieldSemantics';
 import s from './RadioGroup.module.css';
@@ -81,7 +82,7 @@ export function Radio({ children, className, description, disabled: own, disable
     <RACRadio
       {...rest}
       isDisabled={disabled}
-      {...(note ? { 'aria-describedby': noteId } : {})}
+      aria-describedby={describedBy(rest['aria-describedby'], note ? noteId : undefined)}
       {...at}
       className={slotClass(slot, [s.radio, className].filter(Boolean).join(' '))}
       style={slot ? { ...(typeof rest.style === 'object' ? rest.style : null), ...style } : rest.style}

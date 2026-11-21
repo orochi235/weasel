@@ -93,4 +93,18 @@ describe('RadioGroup', () => {
     fireEvent.click(green);
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it("keeps a choice's own aria-describedby beside its description", () => {
+    render(
+      <>
+        <span id="hint">Costs more</span>
+        <RadioGroup label="Speed">
+          <Radio value="a" aria-describedby="hint" description="Fast">A</Radio>
+        </RadioGroup>
+      </>,
+    );
+    const ids = screen.getByRole('radio').getAttribute('aria-describedby')!.split(' ');
+    expect(ids).toContain('hint');
+    expect(ids).toHaveLength(2);
+  });
 });

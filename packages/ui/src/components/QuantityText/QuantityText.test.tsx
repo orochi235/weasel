@@ -90,6 +90,14 @@ it('draws a stacked fraction as its MathML form inside its <data value>, with th
   expect(spoken).toBe('1 over 2');
 });
 
+it('gives a screen reader a muted stacked fraction once, as its MathML, hiding the copy text', () => {
+  const { container } = render(<QuantityText value={tag(3 / 4, fraction({ form: 'stacked' }))} mute />);
+  const { form, spoken } = drawn(container);
+  expect(form.hasAttribute('aria-hidden')).toBe(false);
+  expect(form.querySelector('data')!.lastElementChild?.getAttribute('aria-hidden')).toBe('true');
+  expect(spoken).toBeUndefined();
+});
+
 it('keeps the HTML form for a fraction that is not stacked, and for a range of stacked ones', () => {
   expect(drawn(render(<QuantityText value={tag(1 / 2, fraction())} />).container).form.querySelector('math')).toBeNull();
   cleanup();

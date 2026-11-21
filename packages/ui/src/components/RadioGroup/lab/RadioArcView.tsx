@@ -38,8 +38,12 @@ function Group({ arc, name, value, onChange, choices, invalid }: { arc: AlongArc
 /** A radio group along the top of a circle and another along its bottom, so the inward side shows on both. */
 export function RadioArcView({ config }: { config: RadioArcConfig }): ReactElement {
   const { top, bottom } = radioArcs(config);
-  const [upper, setUpper] = useState(SIZES[0]!);
-  const [lower, setLower] = useState(SIZES[1]!);
+  const offered = SIZES.slice(0, Math.max(1, config.choices));
+  const inOffer = (v: string): string => (offered.includes(v) ? v : offered[offered.length - 1]!);
+  const [pickedUpper, setUpper] = useState(SIZES[0]!);
+  const [pickedLower, setLower] = useState(SIZES[1]!);
+  const upper = inOffer(pickedUpper);
+  const lower = inOffer(pickedLower);
   const box = { '--box': `${config.size}px` } as CSSProperties;
   return (
     <div className={lab.lab}>
