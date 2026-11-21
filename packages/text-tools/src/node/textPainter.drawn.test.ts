@@ -45,6 +45,11 @@ describe('kit:text drawn bounds', () => {
     expect(box).toEqual({ x: -5, y: -5, width: 405, height: 205 });
   });
 
+  it("reaches past the layout box by a run's stroke", () => {
+    const runs = [{ text: 'A', stroke: { paint: RED, width: 10 } }, { text: 'B' }];
+    expect(drawn({ text: 'AB', style: STYLE, runs }, pose)).toEqual({ x: -5, y: -5, width: 405, height: 205 });
+  });
+
   it('grows the right edge by the stroke when the line fills the width', () => {
     const data = { text: 'AB', style: STYLE, stroke: { paint: RED, width: 10 } };
     const [line] = textLineBoxes(textPoseOf(data, pose));

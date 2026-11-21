@@ -15,7 +15,7 @@ import type { PathInWorldPose } from '@weasel-js/geom';
 import { textEffectItems } from './textItems';
 import { clippedOutline, textOutlineOf } from './textOutline';
 import { commandFill, textCommandFromPose, type DrawCommand } from '@weasel-js/renderer';
-import { INHERIT, resolveFill, resolveStroke } from '@weasel-js/paint';
+import { INHERIT, resolveFill, resolveStroke, type PaintedStroke } from '@weasel-js/paint';
 import { textFrameOf, textShadowBox, type TextEdge, type TextShadow } from './textFrame';
 import { inkReach, nodeMemo, PAINT_SLOT, paintsPose, strokeOutsetPerAxis, type InheritedPaint, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
 
@@ -138,14 +138,28 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // boxes, not glyph ink, so reporting outline-only text as unfilled would leave it
   // grabbable within a stroke width of a box edge and nowhere near the letters.
   ink: (node, _pose, ctx) => {
-    const d = node.data as TextNodeData;
-    return { filled: true, ...inkReach(resolveStroke(d.stroke, ctx?.inherited?.stroke), ctx?.scale) };
+    const reach = { outset: 0, inset: 0, outsetPx: 0, insetPx: 0 };
+    for (const stroke of strokesOf(node.data as TextNodeData, ctx?.inherited)) {
+      const r = inkReach(stroke, ctx?.scale);
+      reach.outset = Math.max(reach.outset, r.outset);
+      reach.inset = Math.max(reach.inset, r.inset);
+      reach.outsetPx = Math.max(reach.outsetPx, r.outsetPx ?? 0);
+      reach.insetPx = Math.max(reach.insetPx, r.insetPx ?? 0);
+    }
+    const { outsetPx, insetPx, ...world } = reach;
+    return { filled: true, ...world, ...(outsetPx || insetPx ? { outsetPx, insetPx } : {}) };
   },
   drawnBounds: (node, pose, ctx) => {
     const d = node.data as TextNodeData;
-    const stroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
-    const lines = stroke
-      ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose, ctx?.inherited), { scale: textLayoutScale(d, ctx?.scale) }), strokeOutsetPerAxis(stroke, ctx))
+    const strokes = strokesOf(d, ctx?.inherited);
+    const reach = { x: 0, y: 0 };
+    for (const stroke of strokes) {
+      const r = strokeOutsetPerAxis(stroke, ctx);
+      reach.x = Math.max(reach.x, r.x);
+      reach.y = Math.max(reach.y, r.y);
+    }
+    const lines = strokes.length > 0
+      ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose, ctx?.inherited), { scale: textLayoutScale(d, ctx?.scale) }), reach)
       : null;
     const shadow = textShadowBox(d, pose);
     return shadow ? unionRects([lines ?? pose, shadow]) : lines;
@@ -217,6 +231,18 @@ function cutRects(rects: readonly Rect[], box: Rect): Rect[] {
  * the layout box, then outset by the stroke's reach. A line that overflows the
  * layout box is left to it — the layout box is what a text node claims.
  */
+/** Every stroke `d` draws: its own, and each run's, which overrides it over that run. */
+function strokesOf(d: TextNodeData, inherited: InheritedPaint | undefined): PaintedStroke[] {
+  const out: PaintedStroke[] = [];
+  const own = resolveStroke(d.stroke, inherited?.stroke);
+  if (own) out.push(own);
+  for (const r of d.runs ?? []) {
+    const s = r.stroke === undefined ? null : resolveStroke(r.stroke, inherited?.stroke);
+    if (s) out.push(s);
+  }
+  return out;
+}
+
 function strokedLinesBox(pose: RectPose, lines: readonly Rect[], reach: { x: number; y: number }): Rect | null {
   if (!(reach.x > 0 || reach.y > 0)) return null;
   let x0 = pose.x, y0 = pose.y, x1 = pose.x + pose.width, y1 = pose.y + pose.height;

@@ -54,6 +54,12 @@ describe('findShapeInk — text', () => {
       .toEqual({ filled: true, outset: 2, inset: 2 });
   });
 
+  it("reaches as far as the widest stroke a run sets", () => {
+    const runs = [{ text: 'Aw' }, { text: 'ay', stroke: solidStroke('#000', 8) }];
+    expect(reachOf(textNode({ runs, stroke: solidStroke('#000', 2) }), POSE))
+      .toEqual({ filled: true, outset: 4, inset: 4 });
+  });
+
   it('stays filled when no fill is declared — undeclared text is black text', () => {
     expect(reachOf(textNode({}), POSE))
       .toEqual({ filled: true, outset: 0, inset: 0 });
