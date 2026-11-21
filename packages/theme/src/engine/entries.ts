@@ -127,7 +127,8 @@ export function rampColors(name: string, r: Record<string, unknown>, steps: read
     const peak = r.chroma === undefined ? 0 : atLeastZero(read.num(chroma.peak, `${path}.chroma.peak`), `${path}.chroma.peak`);
     const anchor: Record<string, string> = {};
     for (const [step, v] of Object.entries(read.record(r.anchor, `${path}.anchor`))) {
-      if (typeof v === 'string' && HEX.test(v)) setOwn(anchor, step, v);
+      if (!steps.includes(step)) read.fail(`${path}.anchor.${step}`, `no step "${step}" on this ramp`);
+      else if (typeof v === 'string' && HEX.test(v)) setOwn(anchor, step, v);
       else read.fail(`${path}.anchor.${step}`, 'expected a hex color');
     }
     const params = {

@@ -492,3 +492,10 @@ describe('a seed in a semantic value rule', () => {
     expect(issues).toEqual([{ kind: 'invalid', path: 'semantics.s.value', message: 'unknown seed "nope"' }]);
   });
 });
+
+describe('a lightness ramp anchor', () => {
+  it('is reported when it names a step the ramp does not declare', () => {
+    const { issues } = derive({ name: 'a', ramps: { r: { kind: 'lightness', steps: ['100', '500', '900'], lightness: [0.9, 0.2], anchor: { '600': '#3366ff' } } } });
+    expect(issues).toEqual([{ kind: 'invalid', path: 'ramps.r.anchor.600', message: 'no step "600" on this ramp' }]);
+  });
+});
