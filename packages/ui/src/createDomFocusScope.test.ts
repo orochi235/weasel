@@ -33,6 +33,17 @@ describe('createDomFocusScope', () => {
     expect(scope.tabOrder().map((e) => e.id)).toEqual(['a']);
   });
 
+  it('enters a radio group with none checked at its last radio going back, as Shift+Tab does', () => {
+    const { scope, el } = mount(`
+      <button id="a">a</button><input type="radio" name="size" id="s"><input type="radio" name="size" id="m">
+      <input type="radio" name="size" id="l"><button id="b">b</button>`);
+    el('b').focus();
+    expect(scope.moveFocus('prev')?.id).toBe('l');
+    expect(scope.moveFocus('prev')?.id).toBe('a');
+    expect(scope.moveFocus('next')?.id).toBe('s');
+    expect(scope.moveFocus('next')?.id).toBe('b');
+  });
+
   it('takes a radio group at its checked radio, or its first with none checked, as Tab does', () => {
     const { scope } = mount(`
       <input type="radio" name="g" id="g1"><input type="radio" name="g" id="g2" checked><input type="radio" name="g" id="g3">

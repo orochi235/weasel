@@ -27,8 +27,9 @@ const isTabbable = (el: HTMLElement): boolean =>
   el.tabIndex >= 0 && !el.matches(':disabled') && el.closest('[hidden], [inert]') === null
   && (el as HTMLInputElement).type !== 'hidden' && !inClosedDetails(el) && isRendered(el);
 
-/** `els` with each named radio group down to the one radio Tab stops on: the checked one, else the first. */
-function oneRadioPerGroup(els: readonly HTMLElement[]): HTMLElement[] {
+/** `els` with each named radio group down to the one radio Tab stops on: the checked one, else the first going
+ *  forward and the last going back, as Shift+Tab enters it. */
+function oneRadioPerGroup(els: readonly HTMLElement[], direction: 'next' | 'prev'): HTMLElement[] {
   const groups = new Map<string, HTMLInputElement[]>();
   const keyOf = (el: HTMLElement): string | null => {
     if (!(el instanceof HTMLInputElement) || el.type !== 'radio' || el.name === '') return null;
@@ -43,7 +44,7 @@ function oneRadioPerGroup(els: readonly HTMLElement[]): HTMLElement[] {
     const key = keyOf(el);
     if (key === null) return true;
     const group = groups.get(key)!;
-    return el === (group.find((r) => r.checked) ?? group[0]);
+    return el === (group.find((r) => r.checked) ?? (direction === 'next' ? group[0] : group[group.length - 1]));
   });
 }
 
@@ -53,7 +54,7 @@ const follows = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUM
  * Keyboard focus inside `root` as a headless `FocusScope`, the contract a HUD's widget focus answers too. Its
  * targets are the elements under `root`; Tab order is the browser's — a positive `tabindex` first, ascending, then
  * document order — over those not disabled, hidden, inert, unrendered (`display: none`, `visibility: hidden`) or
- * in a closed `<details>`, and one radio per named group. Holds no state: it reads and moves the DOM's own focus.
+ * in a closed `<details>`, and one radio per named group: its checked one, else the first, or the last going back. Holds no state: it reads and moves the DOM's own focus.
  */
 export function createDomFocusScope(root: HTMLElement): FocusScope<HTMLElement> {
   const doc = root.ownerDocument;
@@ -65,8 +66,8 @@ export function createDomFocusScope(root: HTMLElement): FocusScope<HTMLElement> 
     el.focus({ focusVisible: visible });
     return doc.activeElement === el;
   };
-  const tabOrder = () => tabSort(
-    oneRadioPerGroup([...root.querySelectorAll<HTMLElement>(TABBABLE)].filter(isTabbable)),
+  const orderFor = (direction: 'next' | 'prev') => tabSort(
+    oneRadioPerGroup([...root.querySelectorAll<HTMLElement>(TABBABLE)].filter(isTabbable), direction),
     (el) => (el.tabIndex > 0 ? el.tabIndex : undefined),
   );
 
@@ -83,14 +84,14 @@ export function createDomFocusScope(root: HTMLElement): FocusScope<HTMLElement> 
     // A target that will not take focus is passed over, as Tab passes it, so what comes back is what `focused` reads.
     moveFocus(direction, options) {
       const from = focusedIn();
-      const order = tabOrder();
+      const order = orderFor(direction);
       for (let next = tabStep(order, from, direction, follows); next; next = tabStep(order, next, direction)) {
         if (focusEl(next, options?.visible ?? true)) return next;
       }
       focusedIn()?.blur();
       return null;
     },
-    tabOrder,
+    tabOrder: (direction = 'next') => orderFor(direction),
     subscribeFocus(fn) {
       const onIn = (e: FocusEvent) => { if (e.target instanceof HTMLElement) fn(e.target); };
       const onOut = (e: FocusEvent) => {

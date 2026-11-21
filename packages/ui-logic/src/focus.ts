@@ -17,12 +17,13 @@ export interface FocusScope<T> {
   /** Focus `target`, or blur with `null`. Returns whether `target` now holds focus: false when it is not in this
    *  scope or cannot take focus, and focus is then unchanged. */
   focus(target: T | null, options?: FocusScopeOptions): boolean;
-  /** Move focus one step through {@link tabOrder}, passing over a target that will not take focus, and return the
+  /** Move focus one step through {@link tabOrder} for `direction`, passing over a target that will not take focus, and return the
    *  one that did. From nothing, `'next'` lands on the first target and `'prev'` on the last; past either end the
    *  scope blurs and returns null, which is where focus leaves it. */
   moveFocus(direction: 'next' | 'prev', options?: FocusScopeOptions): T | null;
-  /** The targets Tab visits, in order. */
-  tabOrder(): T[];
+  /** The targets Tab visits, in order; with `'prev'`, the ones Shift+Tab visits, in the same order, which differ
+   *  where a stop depends on the way in (an unchecked radio group is entered at its last radio going back). */
+  tabOrder(direction?: 'next' | 'prev'): T[];
   /** Run `fn` whenever the focused target changes. Returns an unsubscribe. */
   subscribeFocus(fn: (focused: T | null) => void): () => void;
 }
