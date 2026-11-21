@@ -1,7 +1,7 @@
 /**
  * The containers of every text editor a host mounted with `useSceneTextEdit`,
  * and the `textEdit` dep each answers. The canvas's own editor (`textTools.text`)
- * stands down for a canvas inside one and answers with the host's dep instead,
+ * stands down for a canvas of the same scene inside one and answers with the host's dep instead,
  * so a double-click there opens the host's overlay and no second one. Each
  * host's editor stands in for the glyphs of the node it has open
  * (`registerPaintStandIn`), so the canvas leaves them out.

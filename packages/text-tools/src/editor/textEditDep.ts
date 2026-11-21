@@ -7,7 +7,7 @@ import type { Point2 } from '@weasel-js/routing';
 /**
  * Dep for `enterTextEditAction`. `textTools.text` answers it with the canvas's own
  * editor (`createTextPreset`'s `editor`), or with the editor of a host's
- * `useSceneTextEdit` whose container holds the canvas. A host whose editor's
+ * `useSceneTextEdit` of its scene whose container holds the canvas. A host whose editor's
  * container does not hold the canvas publishes it from inside `<SceneCanvas>`:
  *
  * @example
@@ -32,7 +32,7 @@ export interface TextEditDep {
   /**
    * Optional predicate: returns `true` when the node with `id` is a text node.
    * When absent the action fires on any selected node (binding spec is the gate).
-   * When present and returning `false`, the invocation is a no-op.
+   * When present and returning `false`, the action passes the gesture on.
    */
   isTextNode?(id: string): boolean;
 }
