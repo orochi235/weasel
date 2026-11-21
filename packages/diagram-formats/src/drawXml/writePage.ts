@@ -41,13 +41,16 @@ function parentsOf(data: DiagramData, known: ReadonlySet<string>, warn: Warn): M
       for (const m of lane.members ?? []) claim(m, lane.id);
     }
   }
+  // A member an earlier cluster holds stays in it, so only a region's members can move into a cluster.
+  const regions = new Set((data.containers ?? []).flatMap((c) => [c.id, ...(c.role === 'pool' ? c.lanes ?? [] : []).map((l) => l.id)]));
+  const inRegion = (m: string): boolean => regions.has(parent.get(m) ?? '');
   for (const g of data.clusters ?? []) {
     const held = new Set(g.members.map((m) => parent.get(m)));
     const region = held.size === 1 ? [...held][0] : undefined;
-    if (region !== undefined && !parent.has(g.id) && !within(g.id, region)) {
+    if (region !== undefined && regions.has(region) && !parent.has(g.id) && !within(g.id, region)) {
       parent.set(g.id, region);
       for (const m of g.members) parent.delete(m);
-    } else if (g.members.some((m) => parent.has(m))) {
+    } else if (g.members.some(inRegion)) {
       warn('Groups reaching into a container or lane kept only the members outside it.');
     }
     for (const m of g.members) claim(m, g.id);

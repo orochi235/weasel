@@ -4,6 +4,7 @@ import {
   type DataEdge, type DataLane, type DataNode, type DiagramTheme, type NodeStyle, type Row, type RowTextStyle,
 } from '@weasel-js/diagram';
 import { ownPorts } from '../graphWrite';
+import { ROLE_KEY } from './cells';
 import { rowLines } from '../rowLines';
 import { SHAPES, STADIUM_ARC, markerStyle } from './mapping';
 import type { Warn } from './readStyle';
@@ -38,16 +39,25 @@ export function nodeLines(node: DataNode, warn: Warn): string[] {
   return rowLines(node, () => warn('Port rows and slots inside shapes were left out.'));
 }
 
-/** draw-style XML's `fontStyle`: bit 1 bold, bit 2 italic. */
+/** The weight at and past which a numeric `weight` draws bold, as CSS's `bolder` steps past normal. */
+const BOLD_WEIGHT = 600;
+
+/** draw-style XML's `fontStyle`: bit 1 bold, bit 2 italic. A `weight` decides bold over `bold`, as the diagram draws it. */
 function fontBits(style: RowTextStyle): number | undefined {
-  const bits = (style.bold === true ? 1 : 0) | (style.italic === true ? 2 : 0);
+  const bold = style.weight !== undefined ? style.weight >= BOLD_WEIGHT : style.bold === true;
+  const bits = (bold ? 1 : 0) | (style.italic === true ? 2 : 0);
   return bits === 0 ? undefined : bits;
 }
 
-function fontParts(rows: readonly Row[] | undefined): StylePart[] {
-  const style = rows?.find((r) => r.kind === 'label' || r.kind === 'field')?.style;
-  if (style === undefined) return [];
-  return [['fontSize', style.fontSize], ['fontFamily', style.fontFamily], ['fontStyle', fontBits(style)]];
+const fontOf = (style: RowTextStyle | undefined): StylePart[] =>
+  (style === undefined ? [] : [['fontSize', style.fontSize], ['fontFamily', style.fontFamily], ['fontStyle', fontBits(style)]]);
+
+/** The font of a shape's first text row, which a cell's one style gives every line; rows styled apart warn. */
+function fontParts(rows: readonly Row[] | undefined, warn: Warn): StylePart[] {
+  const fonts = (rows ?? []).flatMap((r) => (r.kind === 'label' || r.kind === 'header' || r.kind === 'field' ? [fontOf(r.style)] : []));
+  const first = fonts[0] ?? [];
+  if (fonts.some((f) => writeStyle(f) !== writeStyle(first))) warn('Text rows styled apart within one shape were written in its first row\'s style.');
+  return first;
 }
 
 const VERTICAL: Readonly<Record<string, string>> = { top: 'top', center: 'middle', bottom: 'bottom' };
@@ -58,7 +68,7 @@ export function nodeStyle(node: DataNode, theme: DiagramTheme, warn: Warn): stri
   if (ownPorts(node)) warn('Ports of a shape\'s own, and port labels, were left out; connectors meeting them were written meeting the shape where the port sat.');
   return writeStyle([
     ...outlineParts(node, warn), ['whiteSpace', 'wrap'],
-    ...colorParts(dataNodeStyle(node, theme), true), ...fontParts(node.rows),
+    ...colorParts(dataNodeStyle(node, theme), true), ...fontParts(node.rows, warn),
     ['verticalAlign', node.verticalAlign === undefined ? undefined : VERTICAL[node.verticalAlign]],
   ]);
 }
@@ -73,7 +83,7 @@ export function regionStyle(region: DataContainer | (DataLane & { role: 'lane' }
     'swimlane', ['horizontal', header?.side === 'left' ? 0 : 1], ['startSize', header?.size ?? 0],
     ['container', 1], ['collapsible', 0], ['whiteSpace', 'wrap'],
     ...(lane ? colorParts({ ...style, strokeWidth: LANE_STROKE_WIDTH }, false) : colorParts(style, true)),
-    ['swimlaneFillColor', lane ? 'none' : colorValue(style.fill)],
+    ['swimlaneFillColor', lane ? 'none' : colorValue(style.fill)], [ROLE_KEY, lane ? undefined : region.role],
   ]);
 }
 
@@ -94,6 +104,7 @@ export function edgeStyle(edge: DataEdge, theme: DiagramTheme, warn: Warn): Styl
   const style = dataEdgeStyle(edge, theme);
   const router = edge.router ?? 'straight';
   if (style.trim !== undefined) warn('Trims on connectors were left out; they were written whole.');
+  if (router === 'avoid') warn('Connectors routed around shapes were written as orthogonal connectors.');
   return [
     ['edgeStyle', router === 'orthogonal' || router === 'avoid' ? 'orthogonalEdgeStyle' : 'none'],
     ['curved', router === 'bezier' ? 1 : undefined], ['rounded', 0], ['html', 0],

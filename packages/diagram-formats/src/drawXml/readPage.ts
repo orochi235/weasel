@@ -41,7 +41,7 @@ function readNode({ page, idOf, warn }: Reader, cell: RawCell): DataNode {
   const box = page.boxOf(cell);
   return {
     id: idOf.get(cell)!,
-    outline: outlineOf(cell.style, warn),
+    outline: outlineOf(cell.style, warn, box),
     ...textOf(cell),
     at: { x: box.x, y: box.y },
     width: box.width,

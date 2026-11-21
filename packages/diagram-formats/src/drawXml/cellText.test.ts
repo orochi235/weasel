@@ -28,4 +28,12 @@ describe('cellLines', () => {
   it('keeps an empty line between two, and none at either end', () => {
     expect(cellLines('<div>a</div><div><br></div><div>b</div>', true)).toEqual(['a', '', 'b']);
   });
+
+  it('folds HTML whitespace as a browser does, breaking only at a break or a block', () => {
+    expect(cellLines('First part\nsecond part', true)).toEqual(['First part second part']);
+    expect(cellLines('a    b\t c', true)).toEqual(['a b c']);
+    expect(cellLines('one <br>  two', true)).toEqual(['one', 'two']);
+    expect(cellLines('a&nbsp;&nbsp;b', true)).toEqual(['a  b']);
+    expect(cellLines('a  b\nc', false)).toEqual(['a  b', 'c']);
+  });
 });

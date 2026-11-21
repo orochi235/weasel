@@ -16,17 +16,29 @@ import { getOwn } from '@weasel-js/registry';
  *  starts `message` and names every item. */
 export type Warn = (message: string, item?: string) => void;
 
-/** The outline a vertex draws as. A shape it does not know is a rect, and one its `direction` turns from how the diagram
- *  draws it is drawn unturned, each with a warning. */
-export function outlineOf(style: CellStyle, warn: Warn): Outline {
+/** mxGraph's `LINE_ARCSIZE`, the arc an `absoluteArcSize` style naming none draws. */
+const ABSOLUTE_ARC = 20;
+
+/** Whether a rounded box's corners meet across its shorter side. `arcSize` is a percent of that side, or with
+ *  `absoluteArcSize` a corner's diameter in pixels, as a draw app reads it. */
+function roundEnded(style: CellStyle, box: { width: number; height: number } | undefined): boolean {
+  if (!styleFlag(style, 'absoluteArcSize')) return (styleNumber(style, 'arcSize') ?? 0) >= STADIUM_ARC;
+  if (box === undefined) return false;
+  return (styleNumber(style, 'arcSize') ?? ABSOLUTE_ARC) >= Math.min(box.width, box.height);
+}
+
+/** The outline a vertex `box` big draws as. A shape it does not know is a rect, and one its `direction` turns from how
+ *  the diagram draws it is drawn unturned, each with a warning. */
+export function outlineOf(style: CellStyle, warn: Warn, box?: { width: number; height: number }): Outline {
   const shape = shapeOf(style);
   const known = shapeEntry(shape, (key) => style.values.get(key));
   if (known !== undefined) {
     if (turnedAway(known, style.values.get('direction'))) warn(`Shapes of kind "${shape}" turned another way were drawn as the diagram turns them.`);
     return known.outline;
   }
-  if (styleFlag(style, 'rounded')) return (styleNumber(style, 'arcSize') ?? 0) >= STADIUM_ARC ? 'stadium' : 'roundRect';
-  if (shape !== undefined && !BOX_NAMES.has(shape)) warn(`Shapes of kind "${shape}" were drawn as rects.`);
+  const rounded = styleFlag(style, 'rounded');
+  if (shape !== undefined && !BOX_NAMES.has(shape)) warn(`Shapes of kind "${shape}" were drawn as ${rounded ? 'rounded ' : ''}rects.`);
+  if (rounded) return roundEnded(style, box) ? 'stadium' : 'roundRect';
   return 'rect';
 }
 
@@ -103,7 +115,7 @@ export function routerOf(style: CellStyle): DiagramRouter {
 function markerAt(style: CellStyle, end: 'start' | 'end', warn: Warn): MarkerRef | null {
   const name = style.values.get(`${end}Arrow`);
   if (name === undefined) return end === 'end' ? 'arrow' : null;
-  const marker = markerOf(name, style.values.get(`${end}Fill`));
+  const marker = markerOf(name, style.values.get(`${end}Fill`), (near) => warn(`Arrowheads of kind "${name}" were drawn as ${near}s.`));
   if (marker !== undefined) return marker;
   warn(`Arrowheads of kind "${name}" were drawn as arrows.`);
   return 'arrow';
@@ -173,6 +185,11 @@ export function labelPlacementOf(cell: RawCell, geo: CellGeometry, line: readonl
     const along = off.x * anchor.dir.x + off.y * anchor.dir.y;
     const offset = geo.y + across;
     return { at: { near: { x: anchor.at.x + anchor.dir.x * along, y: anchor.at.y + anchor.dir.y * along } }, ...(offset !== 0 ? { offset } : {}) };
+  }
+  if (moved && line.length > 0) {
+    // A line of no length, as a self-loop's with no bends is, has no direction to turn `offset` by.
+    const at = line[0]!;
+    return { at: { near: { x: at.x + off.x, y: at.y + off.y } }, ...(geo.y !== 0 ? { offset: geo.y } : {}) };
   }
   const at = fraction === 0.5 ? 'mid' : fraction === 0 ? 'start' : fraction === 1 ? 'end' : fraction;
   return { at, ...(geo.y !== 0 ? { offset: geo.y } : {}) };
