@@ -50,6 +50,13 @@ describe('parseLevel', () => {
     expect(tileAt(level, 0, 5)).toBe(EMPTY);
   });
 
+  it('walls the sides above and below the level too', () => {
+    const level = parseLevel(ROWS);
+    expect(tileAt(level, -1, -3)).toBe(SOLID);
+    expect(tileAt(level, 5, -3)).toBe(SOLID);
+    expect(tileAt(level, -1, 8)).toBe(SOLID);
+  });
+
   it('rejects ragged rows', () => {
     expect(() => fixture(['##', '#'])).toThrow(/ragged/i);
   });
