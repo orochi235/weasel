@@ -214,7 +214,7 @@ function LinesView(): ReactElement {
     <Section title="Lines">
       <div className={`${s.borderGrid} ${s.linesStage}`}>
         {lines.map((l) => (
-          <div key={l.token} className={s.borderRow}>
+          <div key={l.token} className={`${s.borderRow} ${s.lineRow}`}>
             <code className={s.borderToken}>{l.token}</code>
             <div className={s.borderSampleWrap}>
               <div className={s.lineSample} style={{ background: `var(${l.token})` }} />

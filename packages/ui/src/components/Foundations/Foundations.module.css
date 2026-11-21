@@ -388,6 +388,10 @@
   height: 1px;
 }
 
+.borderRow.lineRow {
+  grid-template-columns: 200px minmax(0, 360px) 1fr;
+}
+
 .lineCaption {
   font-size: var(--wzl-font-size-xs);
   color: var(--wzl-fg-muted);
