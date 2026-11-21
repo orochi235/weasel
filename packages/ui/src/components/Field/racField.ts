@@ -12,7 +12,7 @@ export interface RacFieldProps {
 
 /**
  * A React Aria field's id, name, description and state, from the kit field around it and its own props. React Aria
- * puts them on the field's input, and an error from the field shows as `isInvalid`. This is where the kit's
+ * puts them on the field's input, and an error from the field shows as `isInvalid`, even over the control's own `invalid={false}`. This is where the kit's
  * `invalid` and `required` become React Aria's `isInvalid` and `isRequired`.
  */
 export function useRacField(own: OwnFieldSemantics & FieldStateProps): RacFieldProps {
@@ -21,7 +21,7 @@ export function useRacField(own: OwnFieldSemantics & FieldStateProps): RacFieldP
   if (attrs.id !== undefined) props.id = attrs.id;
   if (attrs['aria-labelledby'] !== undefined) props['aria-labelledby'] = attrs['aria-labelledby'];
   if (attrs['aria-describedby'] !== undefined) props['aria-describedby'] = attrs['aria-describedby'];
-  const invalid = own.invalid ?? attrs['aria-invalid'];
+  const invalid = own.invalid || attrs['aria-invalid'];
   if (invalid !== undefined) props.isInvalid = invalid;
   if (own.required !== undefined) props.isRequired = own.required;
   return props;

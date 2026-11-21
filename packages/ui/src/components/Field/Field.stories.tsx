@@ -14,7 +14,7 @@ type Story = StoryObj<typeof Field>;
 
 /** A native input of a consumer's own, which takes the field's id, name and description through the hook. */
 function NativeInput(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} {...useFieldControl()} />;
+  return <input {...props} {...useFieldControl(props)} />;
 }
 
 export const Stacked: Story = {

@@ -22,6 +22,7 @@ import { useRacHold } from '../Disabled/racHold';
 import type { ListOption } from '../listOption';
 import type { OptionKey } from '../../optionKey';
 import { useRacField } from '../Field/racField';
+import { shows } from '../Field/fieldSemantics';
 import f from '../Field/Field.module.css';
 import listbox from '../Select/listbox.module.css';
 import { heldItemProps, isHeldKey, useHeldAriaRef } from '../heldItem';
@@ -125,7 +126,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
   } = hold.rest;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
-  const field = useRacField({ id: rest.id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], invalid, required, labeled: label !== undefined });
+  const field = useRacField({ id: rest.id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], invalid, required, labeled: shows(label) });
   const revertingRef = useRef(false);
 
   return hold.wrap(
@@ -146,7 +147,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
       className={fieldRootClass({ orientation, width, fit: s.fit, className })}
     >
       {anchor}
-      {label !== undefined && <Label className={f.label}>{label}</Label>}
+      {shows(label) && <Label className={f.label}>{label}</Label>}
       <ComboBoxFrame
         inputRef={ref}
         placeholder={placeholder}

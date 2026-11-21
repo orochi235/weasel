@@ -120,7 +120,7 @@ export function useFieldIds({
   };
 }
 
-/** Whether an error slot has anything to show. */
-export function shows(error: ReactNode): boolean {
-  return error != null && error !== false && error !== '';
+/** Whether a label, description or error slot has anything to show. */
+export function shows(slot: ReactNode): boolean {
+  return slot != null && slot !== false && slot !== '';
 }

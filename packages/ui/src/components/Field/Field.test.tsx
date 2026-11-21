@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Field, fieldClasses } from './Field';
 import { useFieldControl, type OwnFieldSemantics } from './fieldSemantics';
 
@@ -51,6 +52,23 @@ describe('Field', () => {
   it('shows no error for an empty one', () => {
     render(<Field label="Gain" error=""><Knob /></Field>);
     expect(screen.getByRole('slider')).not.toHaveAttribute('aria-invalid');
+  });
+
+  it.each([null, false, ''])('draws no label or description for an empty one (%j)', (empty) => {
+    const { container } = render(<Field orientation="row" label={empty} description={empty}><Knob /></Field>);
+    const knob = screen.getByRole('slider');
+    expect(knob).not.toHaveAttribute('aria-labelledby');
+    expect(knob).not.toHaveAttribute('aria-describedby');
+    expect(container.firstElementChild!.children).toHaveLength(1);
+  });
+
+  it("points its label at the control's id, so a click on it reaches the control", async () => {
+    function Box() {
+      return <input type="checkbox" {...useFieldControl()} />;
+    }
+    render(<Field orientation="row" label="Snap to grid"><Box /></Field>);
+    await userEvent.click(screen.getByText('Snap to grid'));
+    expect(screen.getByRole('checkbox')).toBeChecked();
   });
 
   describe('group', () => {

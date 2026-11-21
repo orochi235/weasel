@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { FieldError, Text, type ValidationResult } from 'react-aria-components';
 import type { FieldOrientation } from './Field';
-import type { FieldIds } from './fieldSemantics';
+import { shows, type FieldIds } from './fieldSemantics';
 import f from './Field.module.css';
 
 /** The label, layout, description, and error slots every boxed form control takes. */
@@ -58,7 +58,7 @@ export function FieldFoot({
 }: Pick<FieldSlotProps, 'description' | 'errorMessage'>) {
   return (
     <>
-      {description !== undefined && (
+      {shows(description) && (
         <Text slot="description" className={`${f.hint} ${f.below}`}>
           {description}
         </Text>

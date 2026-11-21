@@ -97,7 +97,7 @@
   outline: var(--_frame-focus-outline, 1px solid transparent);
 }
 
-.field[data-invalid] .frame {
+.control[data-invalid] .frame {
   border-color: var(--wzl-danger);
 }
 
