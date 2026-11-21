@@ -41,11 +41,15 @@ export function serveHeadlessPage(options: HeadlessPageOptions = {}): void {
   };
   const lost = (): boolean => (canvas?.getContext('webgl2') as WebGL2RenderingContext | null)?.isContextLost() === true;
   let session = openSession();
+  let replaced = false;
   const replaceIfLost = (): void => {
     if (!lost()) return;
     session.dispose();
     session = openSession();
+    replaced = true;
   };
+  // Chromium can refuse a page WebGL after its contexts are lost; only another page, or browser, renders again.
+  const usable = (): boolean => !(replaced && canvas !== null && canvas.getContext('webgl2') === null);
 
   async function render(sent: PageRequest): Promise<PageResult> {
     const { args, format } = pageRenderArgs(sent, sceneOptions);
@@ -66,6 +70,6 @@ export function serveHeadlessPage(options: HeadlessPageOptions = {}): void {
     return { width: image.width, height: image.height, base64: toBase64(bytes, `a ${image.width} × ${image.height} RGBA render`) };
   }
 
-  const api: PageApi = { render };
+  const api: PageApi = { render, usable };
   root[PAGE_GLOBAL] = api;
 }

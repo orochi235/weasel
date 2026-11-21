@@ -19,7 +19,8 @@ vi.mock('@weasel-js/core', async (importOriginal) => {
           if (state.loseNext) state.lost = true;
           if (!gl) {
             const canvas = options.createCanvas!(1, 1) as HTMLCanvasElement;
-            gl = canvas.getContext('webgl2') as unknown as { isContextLost(): boolean };
+            gl = canvas.getContext('webgl2') as unknown as { isContextLost(): boolean } | null;
+            if (!gl) throw new Error('raster session: WebGL2 is unavailable');
           }
           if (state.lost) throw new Error('raster session: the WebGL2 context is lost — dispose this session and open another');
           state.renders++;
@@ -69,5 +70,24 @@ describe('headless page, context loss', () => {
     expect(sessions).toHaveLength(2);
     await expect(root[PAGE_GLOBAL]!.render(request())).resolves.toMatchObject({ width: 1, height: 1 });
     expect(sessions[1]!.renders).toBe(1);
+  });
+
+  it('reports itself unusable once the session opened for a lost context gets no context', async () => {
+    serveHeadlessPage();
+    await root[PAGE_GLOBAL]!.render(request());
+    expect(root[PAGE_GLOBAL]!.usable()).toBe(true);
+    sessions[0]!.lost = true;
+    const lostContext = { isContextLost: () => true };
+    vi.mocked(HTMLCanvasElement.prototype.getContext).mockImplementation(() => (sessions.length > 1 ? null : lostContext) as never);
+    await expect(root[PAGE_GLOBAL]!.render(request())).rejects.toThrow(/unavailable/);
+    expect(sessions).toHaveLength(2);
+    expect(root[PAGE_GLOBAL]!.usable()).toBe(false);
+  });
+
+  it('stays usable when it never had a context to lose', async () => {
+    vi.mocked(HTMLCanvasElement.prototype.getContext).mockReturnValue(null);
+    serveHeadlessPage();
+    await expect(root[PAGE_GLOBAL]!.render(request())).rejects.toThrow(/unavailable/);
+    expect(root[PAGE_GLOBAL]!.usable()).toBe(true);
   });
 });

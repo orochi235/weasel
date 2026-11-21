@@ -3,7 +3,7 @@ import type { Browser } from 'playwright-core';
 import { planPixelRender, loadScene, type SavedScene } from '@weasel-js/core';
 import { regionRenderArgs } from '@weasel-js/export';
 import { createNodeRasterHost, type NodeRenderArgs } from './host';
-import { sceneFromWire, sceneToWire } from './protocol';
+import { PAGE_GLOBAL, sceneFromWire, sceneToWire } from './protocol';
 import { FIXTURE_RENDER, fixtureScene } from './testing/fixtureScene';
 
 describe('node raster host', () => {
@@ -114,6 +114,19 @@ describe('node raster host', () => {
     await host.dispose();
   });
 
+  it("sends renderSceneToPixels's camera, layers and pixelRatio to the page", async () => {
+    const { browser, page } = fakeBrowser({ width: 1, height: 1, base64: Buffer.from([1, 2, 3, 4]).toString('base64') });
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    const args: NodeRenderArgs = {
+      scene: fixtureScene(), ...FIXTURE_RENDER, camera: { x: 1, y: 2, scale: { x: 3, y: 3 } }, layers: ['scene'], pixelRatio: 2,
+    };
+    await host.render(args);
+    expect(page.evaluate.mock.calls.at(-1)).toMatchObject([
+      expect.any(Function), [expect.any(String), { camera: args.camera, layers: ['scene'], pixelRatio: 2 }],
+    ]);
+    await host.dispose();
+  });
+
   it('refuses a render the host was disposed under while its page opened', async () => {
     const { browser, page } = fakeBrowser({ width: 1, height: 1, base64: '' });
     const host = createNodeRasterHost({ browser, pageScript: 'x' });
@@ -188,6 +201,110 @@ describe('node raster host', () => {
     await expect(host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).rejects.toThrow(/crashed/);
     const image = await host.render({ scene: fixtureScene(), ...FIXTURE_RENDER });
     expect(Array.from(image.data)).toEqual([7, 7, 7, 7]);
+    expect(pages).toBe(2);
+    expect(closeContext).toHaveBeenCalledTimes(1);
+    await host.dispose();
+  });
+
+  it('waits on dispose for the browser of a page it dropped to finish closing', async () => {
+    let finish!: () => void;
+    const closeBrowser = vi.fn(() => new Promise<void>((resolve) => { finish = resolve; }));
+    let evaluated = 0;
+    const browser = {
+      close: closeBrowser,
+      isConnected: () => true,
+      newContext: async () => ({
+        close: vi.fn(async () => {}),
+        newPage: async () => ({
+          on: () => {}, addScriptTag: async () => {}, isClosed: () => evaluated > 1,
+          evaluate: async () => {
+            if (evaluated++ === 0) return true;
+            throw new Error('Target page, context or browser has been closed');
+          },
+        }),
+      }),
+    } as unknown as Browser;
+    vi.doMock('playwright-core', () => ({ chromium: { launch: async () => browser } }));
+    try {
+      const host = createNodeRasterHost({ pageScript: 'x' });
+      await expect(host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).rejects.toThrow(/closed/);
+      expect(closeBrowser).toHaveBeenCalledTimes(1);
+      let disposed = false;
+      const disposing = host.dispose().then(() => { disposed = true; });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(disposed).toBe(false);
+      finish();
+      await disposing;
+      expect(disposed).toBe(true);
+    } finally {
+      vi.doUnmock('playwright-core');
+    }
+  });
+
+  /** A browser whose page runs what the host evaluates here, and runs `script` when the host adds its page script. */
+  function scriptedBrowser(script: (raise: (err: Error) => void) => void) {
+    const listeners = new Map<string, (err: Error) => void>();
+    const close = vi.fn(async () => {});
+    const page = {
+      on: (event: string, fn: (err: Error) => void) => { listeners.set(event, fn); },
+      addScriptTag: async () => { script((err) => listeners.get('pageerror')?.(err)); },
+      isClosed: () => false,
+      evaluate: async <A, R>(fn: (arg: A) => R, arg: A) => fn(arg),
+    };
+    return { close, isConnected: () => true, newContext: async () => ({ close, newPage: async () => page }) } as unknown as Browser;
+  }
+
+  it('serves a page script that calls serveHeadlessPage once its fonts load', async () => {
+    const root = globalThis as Record<string, unknown>;
+    const browser = scriptedBrowser(() => {
+      setTimeout(() => {
+        root[PAGE_GLOBAL] = { render: async () => ({ width: 1, height: 1, base64: Buffer.from([5, 5, 5, 5]).toString('base64') }) };
+      }, 30);
+    });
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    try {
+      expect(Array.from((await host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).data)).toEqual([5, 5, 5, 5]);
+    } finally {
+      delete root[PAGE_GLOBAL];
+      await host.dispose();
+    }
+  });
+
+  it('rejects with the error a page script threw before serving', async () => {
+    const browser = scriptedBrowser((raise) => raise(new Error('registerFont: no such font')));
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    const rendering = host.render({ scene: fixtureScene(), ...FIXTURE_RENDER });
+    await expect(rendering).rejects.toThrow(/threw before calling `serveHeadlessPage`: registerFont: no such font/);
+    await expect(rendering).rejects.toMatchObject({ cause: { message: 'registerFont: no such font' } });
+  });
+
+  it('opens a new page for the next render once the one it had can no longer render', async () => {
+    let pages = 0;
+    const closeContext = vi.fn(async () => {});
+    const browser = {
+      close: vi.fn(async () => {}),
+      isConnected: () => true,
+      newContext: async () => {
+        const n = ++pages;
+        let evaluated = 0;
+        return {
+          close: closeContext,
+          newPage: async () => ({
+            on: () => {}, addScriptTag: async () => {}, isClosed: () => false,
+            evaluate: async () => {
+              evaluated++;
+              if (evaluated === 1) return true;
+              if (n === 1 && evaluated === 2) throw new Error('raster session: WebGL2 is unavailable');
+              if (n === 1) return false;
+              return { width: 1, height: 1, base64: Buffer.from([3, 3, 3, 3]).toString('base64') };
+            },
+          }),
+        };
+      },
+    } as unknown as Browser;
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    await expect(host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).rejects.toThrow(/unavailable/);
+    expect(Array.from((await host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).data)).toEqual([3, 3, 3, 3]);
     expect(pages).toBe(2);
     expect(closeContext).toHaveBeenCalledTimes(1);
     await host.dispose();
