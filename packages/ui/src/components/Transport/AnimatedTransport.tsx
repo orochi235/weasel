@@ -10,7 +10,7 @@ export interface AnimatedTransportProps extends Pick<TransportProps, 'rates' | '
   scrub?: false;
 }
 
-/** `<Transport>` bound to a live handle: play and pause, loop, rate, and a scrub bar that seeks it,
+/** `<Transport>` bound to a live handle: play and pause, reverse, loop, rate, and a scrub bar that seeks it,
  *  each written to the handle, and the playhead read from it every frame it moves. */
 export function AnimatedTransport({ handle, scrub, ...rest }: AnimatedTransportProps): ReactElement {
   const { onSeek, ...playback } = useTimelinePlayback(handle);

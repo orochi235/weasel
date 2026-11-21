@@ -29,4 +29,14 @@ describe('useTimelinePlayback', () => {
     act(() => { h.edit(() => { duration = 2000; }); });
     expect(screen.getByTestId('timeline-time').textContent).toBe('0.00s / 2.00s');
   });
+
+  it('shows a negative time scale as reversed, at its speed', () => {
+    const h = fakeHandle();
+    h.setTimeScale(-2);
+    renderWithIcons(<AnimatedTransport handle={h} />);
+    expect(screen.getByRole('switch', { name: 'Reverse' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('slider', { name: 'Rate' }).getAttribute('aria-valuetext')).not.toMatch(/-/);
+    fireEvent.click(screen.getByRole('switch', { name: 'Reverse' }));
+    expect(h.setTimeScale).toHaveBeenLastCalledWith(2);
+  });
 });

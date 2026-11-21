@@ -37,7 +37,8 @@ export function useTimelinePlayback(handle: TimelineHandle): Omit<TransportProps
   return {
     playing: isAdvancing(handle),
     loop: handle.loop(),
-    rate: handle.timeScale(),
+    rate: Math.abs(handle.timeScale()),
+    reverse: handle.timeScale() < 0,
     playhead: handle.time(),
     duration,
     onPlayingChange: (next) => {
@@ -54,7 +55,8 @@ export function useTimelinePlayback(handle: TimelineHandle): Omit<TransportProps
       raf.request();
     },
     onLoopChange: (next) => { handle.setLoop(next); },
-    onRateChange: (next) => { handle.setTimeScale(next); },
+    onRateChange: (next) => { handle.setTimeScale(handle.timeScale() < 0 ? -next : next); },
+    onReverseChange: (next) => { handle.setTimeScale((next ? -1 : 1) * Math.abs(handle.timeScale())); },
     onSeek: (t) => { handle.seek(t); },
   };
 }
