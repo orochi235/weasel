@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useState } from 'react';
 import { fireEvent, render } from '@testing-library/react';
+import { fraction, percent, tag, type Tagged } from '@weasel-js/quantity';
 import { BandEditor } from './BandEditor';
 import type { Band } from './bands';
 
@@ -91,5 +92,50 @@ describe('an edge drag near a tick', () => {
     fireEvent.pointerMove(document, { clientX: 478, clientY: 20 });
     fireEvent.pointerUp(document, { clientX: 478, clientY: 20 });
     expect(onRangeChange.mock.calls[0]!.slice(0, 2)).toEqual([0, 120]);
+  });
+});
+
+describe('tags through a split or a merge', () => {
+  const mixed = (data: [string, string]): Band<string, Tagged>[] => [
+    { from: tag(0, fraction()), data: data[0] },
+    { from: tag(1 / 2, percent()), data: data[1] },
+  ];
+  const kinds = (next: Band<string, Tagged>[]) => next.map((b) => b.from.display?.kind);
+  const splitAt = (container: HTMLElement, x: number) =>
+    fireEvent.pointerDown(container.querySelector('[data-band-ruler]')!, { clientX: x, clientY: 20, button: 0 });
+
+  it("gives a band split off with fresh data its parent's tag", () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <BandEditor<string, Tagged> value={mixed(['a', 'b'])} min={0} max={1} scale="linear"
+        splitBand={() => 'new'} onChange={onChange} />,
+    );
+    splitAt(container, 300);
+    expect(kinds(onChange.mock.calls[0]![0])).toEqual(['fraction', 'percent', 'percent']);
+  });
+
+  it('keeps each band its own tag when bands share a payload', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <BandEditor<string, Tagged> value={mixed(['p', 'p'])} min={0} max={1} scale="linear" onChange={onChange} />,
+    );
+    splitAt(container, 300);
+    expect(kinds(onChange.mock.calls[0]![0])).toEqual(['fraction', 'percent', 'percent']);
+  });
+
+  it('keeps the tags of the bands a merge leaves', () => {
+    const onChange = vi.fn();
+    const value: Band<string, Tagged>[] = [
+      { from: tag(0, fraction()), data: 'p' },
+      { from: tag(1 / 2, fraction()), data: 'p' },
+      { from: tag(3 / 4, percent()), data: 'p' },
+    ];
+    const { container } = render(
+      <BandEditor<string, Tagged> value={value} min={0} max={1} scale="linear" selectedIndex={1} onChange={onChange} />,
+    );
+    fireEvent.keyDown(container.querySelector('[data-band-index="1"]')!, { key: 'Delete' });
+    const next = onChange.mock.calls[0]![0] as Band<string, Tagged>[];
+    expect(kinds(next)).toEqual(['fraction', 'percent']);
+    expect(next[1]!.from.value).toBe(3 / 4);
   });
 });
