@@ -117,19 +117,17 @@ const NUMBER = new RegExp(`^${AMOUNT}$`);
 const LENGTH = new RegExp(`^${AMOUNT}(?:px|rem|em)?$`);
 const BEZIER = new RegExp(`^cubic-bezier\\(\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*\\)$`, 'i');
 const GRADIENT = /^(?:repeating-)?(?:linear|radial|conic)-gradient\(/i;
-const PARTS = /[a-z-]+\([^)]*\)|\S+/gi;
-
-/** `value` split at commas outside parentheses: a shadow's layers, not a color function's arguments. A scan, since a
- *  lookahead for the closing parenthesis reads to the end of the text from every comma. */
-function layersOf(value: string): string[] {
+/** `value` split at each character `isSeparator` accepts outside parentheses: a shadow's layers at commas, or a layer's
+ *  parts at spaces, not a color function's arguments. A scan, since a regular expression cannot count nesting. */
+function splitOutside(value: string, isSeparator: (ch: string) => boolean): string[] {
   const out: string[] = [];
   let depth = 0;
   let start = 0;
   for (let i = 0; i < value.length; i++) {
-    const ch = value[i];
+    const ch = value[i]!;
     if (ch === '(') depth++;
     else if (ch === ')') depth = Math.max(0, depth - 1);
-    else if (ch === ',' && depth === 0) {
+    else if (depth === 0 && isSeparator(ch)) {
       out.push(value.slice(start, i));
       start = i + 1;
     }
@@ -139,8 +137,8 @@ function layersOf(value: string): string[] {
 }
 
 function isShadow(value: string): boolean {
-  return layersOf(value).every((layer) => {
-    const parts = layer.trim().match(PARTS) ?? [];
+  return splitOutside(value, (ch) => ch === ',').every((layer) => {
+    const parts = splitOutside(layer, (ch) => /\s/.test(ch)).filter(Boolean);
     // `inset` may lead or trail the layer.
     const inset = /^inset$/i;
     const body = inset.test(parts[0] ?? '') ? parts.slice(1) : inset.test(parts.at(-1) ?? '') ? parts.slice(0, -1) : parts;

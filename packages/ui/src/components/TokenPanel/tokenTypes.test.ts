@@ -41,6 +41,8 @@ describe('inferTokenType', () => {
     expect(inferTokenType('inset 0 1px 2px red')).toBe('shadow');
     expect(inferTokenType('0 1px 2px red inset')).toBe('shadow');
     expect(inferTokenType('0 1px 2px red INSET, 0 0 1px blue')).toBe('shadow');
+    expect(inferTokenType('0 2px 4px color-mix(in srgb, rgb(0 0 0) 20%, transparent)')).toBe('shadow');
+    expect(inferTokenType('0 1px 2px rgb(from rgb(0 0 0) r g b / 50%), inset 0 0 1px red')).toBe('shadow');
     expect(inferTokenType('linear-gradient(red, blue)')).toBe('gradient');
   });
 
