@@ -34,3 +34,21 @@ describe('Badge focus', () => {
     expect(root.dataset.focused).toBe('true');
   });
 });
+
+describe('Badge labelProps', () => {
+  it("keeps the caller's className and aria-label on a removable badge's label", () => {
+    const { getByRole } = render(
+      <Badge onClick={() => {}} onRemove={() => {}} labelProps={{ className: 'mine', 'aria-label': 'Filter: tag' }}>tag</Badge>,
+    );
+    const label = getByRole('button', { name: 'Filter: tag' });
+    expect(label.classList.contains('mine')).toBe(true);
+    expect(label.classList.length).toBe(2);
+  });
+
+  it("names the label by the badge's aria-label over labelProps'", () => {
+    const { getByRole } = render(
+      <Badge onClick={() => {}} onRemove={() => {}} aria-label="own" labelProps={{ 'aria-label': 'extra' }}>tag</Badge>,
+    );
+    expect(getByRole('button', { name: 'own' })).toBeDefined();
+  });
+});
