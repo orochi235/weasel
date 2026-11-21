@@ -27,12 +27,13 @@ function overflowingStack(): LayoutStrategy<RectPose> {
 
 const C = asNodeId('C');
 
-function setup(rows = 5, rotation = 0) {
+function setup(rows = 5, rotation = 0, { transform, clip }: { transform?: readonly [number, number, number, number]; clip?: 'outline' } = {}) {
   const scene = createScene<null, 'l', RectPose>({
     systemLayers: [{ id: 'l' }],
     composition: RIGID_POSE_COMPOSITION,
     initial: [{
-      id: C, kind: 'group', layer: 'l', pose: { x: 100, y: 100, width: 50, height: 100, rotation }, data: null, layout: overflowingStack(),
+      id: C, kind: 'group', layer: 'l', pose: { x: 100, y: 100, width: 50, height: 100, rotation, ...(transform ? { transform } : {}) } as RectPose,
+      data: null, layout: overflowingStack(), ...(clip ? { clip } : {}),
     }],
   });
   for (let i = 0; i < rows; i++) {
@@ -136,5 +137,12 @@ describe('containerScrollAction', () => {
     scene.scroll.set(C, { x: 0, y: 10, z: 5 });
     wheel(deps, { x: 120, y: 150 }, 60);
     expect(scene.scroll.get(C)).toEqual({ x: 0, y: 40, z: 5 });
+  });
+
+  it('scrolls a scaled container by the world distance the wheel moves, in its own units', () => {
+    const { scene, deps } = setup(5, 0, { transform: [2, 0, 0, 2] });
+    expect(scrollRange(scene as never, C, AUTO_POSE_DESCRIPTOR)).toEqual({ x: [0, 0], y: [0, 100] });
+    wheel(deps, { x: 120, y: 150 }, 60);
+    expect(scene.scroll.get(C)).toEqual({ x: 0, y: 15 });
   });
 });

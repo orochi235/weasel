@@ -75,13 +75,15 @@ function shownAt(pose: unknown, at: { x: number; y: number }, bounds: () => Rect
 /** A container whose content can scroll, with how far. */
 export interface ScrollableContainer { id: NodeId; range: ScrollRange }
 
+interface ShownScrollable extends ScrollableContainer { pose: unknown }
+
 /** The shown containers under the world point `at` whose content can scroll,
  *  innermost first: the innermost one and each that holds it. */
-function scrollablesAt(scene: AnyScene, at: { x: number; y: number }, descriptor: PoseDescriptor<unknown>): ScrollableContainer[] {
+function scrollablesAt(scene: AnyScene, at: { x: number; y: number }, descriptor: PoseDescriptor<unknown>): ShownScrollable[] {
   const gates = nodeGates(scene);
   const view = sceneViewPoseAdapter(scene);
   const { compose } = scene.composition;
-  const hits = new Map<NodeId, ScrollRange>();
+  const hits = new Map<NodeId, ShownScrollable>();
   let innermost: NodeId | null = null;
   const visit = (ids: readonly NodeId[]): void => {
     for (const id of ids) {
@@ -91,7 +93,7 @@ function scrollablesAt(scene: AnyScene, at: { x: number; y: number }, descriptor
       if (range && canScroll(range)) {
         const pose = composeWorldPose(view, id, compose);
         if (shownAt(pose, at, () => poseDescriptorForNode(descriptor, node).getBounds(pose))) {
-          hits.set(id, range);
+          hits.set(id, { id, range, pose });
           innermost = id;
         }
       }
@@ -99,10 +101,10 @@ function scrollablesAt(scene: AnyScene, at: { x: number; y: number }, descriptor
     }
   };
   visit(scene.roots);
-  const out: ScrollableContainer[] = [];
+  const out: ShownScrollable[] = [];
   for (let id: NodeId | null = innermost; id !== null; id = scene.get(id)?.parent ?? null) {
-    const range = hits.get(id);
-    if (range) out.push({ id, range });
+    const hit = hits.get(id);
+    if (hit) out.push(hit);
   }
   return out;
 }
@@ -114,7 +116,21 @@ export function scrollableAt(
   at: { x: number; y: number },
   descriptor: PoseDescriptor<unknown>,
 ): ScrollableContainer | null {
-  return scrollablesAt(scene, at, descriptor)[0] ?? null;
+  const hit = scrollablesAt(scene, at, descriptor)[0];
+  return hit ? { id: hit.id, range: hit.range } : null;
+}
+
+/** How far one unit of scroll along each of a container's own axes moves its
+ *  content in the world, read from the composition's own `scroll`. */
+function worldPerScrollUnit(scene: AnyScene, pose: unknown): { x: number; y: number } {
+  const scroll = scene.composition.scroll;
+  const at = pose as Partial<Rect> | null;
+  const length = (offset: { x: number; y: number }): number => {
+    const moved = scroll?.(pose as never, offset) as Partial<Rect> | undefined;
+    const d = Math.hypot((moved?.x ?? NaN) - (at?.x ?? NaN), (moved?.y ?? NaN) - (at?.y ?? NaN));
+    return d > 0 && Number.isFinite(d) ? d : 1;
+  };
+  return { x: length({ x: 1, y: 0 }), y: length({ x: 0, y: 1 }) };
 }
 
 function sceneOf(deps: ActionDeps | undefined): AnyScene | undefined {
@@ -158,7 +174,12 @@ export const containerScrollAction = defineAction({
       const by = wheelPan({ x: 0, y: 0, scale: view.scale }, delta, { swapAxis: params?.swapAxis === true });
       for (const hit of scrollablesAt(scene, world, poseDescriptorOf(deps.poseDescriptor))) {
         const from = scene.scroll.get(hit.id) ?? { x: 0, y: 0 };
-        const to = { ...from, x: clamp(from.x + by.x, ...hit.range.x), y: clamp(from.y + by.y, ...hit.range.y) };
+        const unit = worldPerScrollUnit(scene, hit.pose);
+        const to = {
+          ...from,
+          x: clamp(from.x + by.x / unit.x, ...hit.range.x),
+          y: clamp(from.y + by.y / unit.y, ...hit.range.y),
+        };
         if (to.x === from.x && to.y === from.y) continue;
         scene.scroll.set(hit.id, to);
         return undefined;
