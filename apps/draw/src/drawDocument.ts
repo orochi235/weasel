@@ -74,10 +74,12 @@ export const DRAW_REGISTRY: SceneRegistry<WeaselDrawPose, WeaselDrawData, Weasel
 
 const CONTENT_KEYS: ReadonlySet<string> = new Set<keyof WeaselDrawData>([
   'path', 'generator', 'text', 'style', 'runs', 'verticalAlign', 'fit', 'fill', 'stroke', 'image',
+  'pathEffect', 'boolean', 'background', 'padding', 'overflow', 'edge', 'shadow', 'minSize',
 ]);
 
-/** What a node made from `data`'s node keeps of it: everything but the content
- *  and the paint, which the new node has its own of. */
+/** What a node made from `data`'s node keeps of it: everything but the content,
+ *  the paint, a live effect or operation, and a note's frame, which belong to
+ *  the node they were drawn on. */
 export function carriedData(data: WeaselDrawData | undefined): WeaselDrawData {
   if (!data) return {};
   return Object.fromEntries(Object.entries(data).filter(([key]) => !CONTENT_KEYS.has(key)));

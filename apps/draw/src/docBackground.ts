@@ -1,5 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
-import { DEFAULT_BG_COLOR } from './docPersistence';
+import { DEFAULT_BG_COLOR, isDefaultBackground } from './docPersistence';
 import type { DrawScene } from './drawDocument';
 
 /** The `scene.doc` key holding the document's background color. Absent means white. */
@@ -13,7 +13,7 @@ export function backgroundOf(scene: Pick<DrawScene, 'doc'>): string {
 /** Set the document's background: an undo entry of its own, or part of the batch it is called in. */
 export function setBackground(scene: DrawScene, color: string): void {
   scene.batch('Background color', () => {
-    scene.doc.set(BACKGROUND_KEY, color === DEFAULT_BG_COLOR ? undefined : color);
+    scene.doc.set(BACKGROUND_KEY, isDefaultBackground(color) ? undefined : color);
   });
 }
 

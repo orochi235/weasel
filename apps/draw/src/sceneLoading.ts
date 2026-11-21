@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/core';
 import { docFromSnapshot, readStored } from '@weasel-js/editor';
 import { BACKGROUND_KEY } from './docBackground';
-import { DEFAULT_BG_COLOR, loadDoc, PAPER_PRESETS } from './docPersistence';
+import { isDefaultBackground, loadDoc, PAPER_PRESETS } from './docPersistence';
 import { DRAW_LAYERS, DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { onePage } from './pages/drawPages';
 import { nodeSpecsFromSnapshot } from './persistence';
@@ -44,7 +44,7 @@ export function loadInitial(): DrawSpec[] {
 export function loadInitialDoc(): SerializedDoc | undefined {
   const saved = readStored(LS_KEY, (value) => docFromSnapshot(savedScene(value)), () => undefined, sessionRecords());
   const legacy = loadDoc().backgroundColor;
-  if (saved?.[BACKGROUND_KEY] !== undefined || legacy === DEFAULT_BG_COLOR) return saved;
+  if (saved?.[BACKGROUND_KEY] !== undefined || isDefaultBackground(legacy)) return saved;
   return { ...saved, [BACKGROUND_KEY]: legacy };
 }
 

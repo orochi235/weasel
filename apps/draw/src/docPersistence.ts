@@ -9,6 +9,11 @@ export const DOC_KEY = 'weaseldraw:doc-v1';
 export const DEFAULT_FILENAME = 'untitled.svg';
 export const DEFAULT_BG_COLOR = '#ffffff';
 
+/** Whether `color` is the default white background, in any hex form: short or long, with or without an opaque alpha. */
+export function isDefaultBackground(color: string): boolean {
+  return /^#?(f{3,4}|f{6}|f{8})$/i.test(color);
+}
+
 /** Document-level state kept beside the scene, under its own key, and out of its history. The pages
  *  and the background are the scene's. */
 export interface PersistedDoc {

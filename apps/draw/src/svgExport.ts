@@ -5,6 +5,7 @@
  * rides on the node so the serializer emits a `rotate` transform.
  */
 import { textFrameFields } from './svgNote';
+import { isDefaultBackground } from './docPersistence';
 import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, paintToLocalUnits, isAnnotationNode, pageIdOf, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseBox, shapeGeneratorOf, type ShapeGenerator, worldPoses } from '@weasel-js/core';
 import { layoutTextPose } from '@weasel-js/text';
 import {
@@ -30,7 +31,6 @@ import { embedWeaselMetadataInSvg } from '@weasel-js/editing';
 /** A node's data with its `'inherit'` paint resolved, as export writes it. */
 type ShownDrawData = ReturnType<typeof withInheritedPaint<WeaselDrawData>>;
 
-const WHITE = /^#?fff(fff)?(ff)?$/i;
 
 /** A polygon's or a star's generator as the `tool` and `params` the `wd:` namespace carries. */
 function toolOfGenerator(g: ShapeGenerator): { tool: 'polygon' | 'star'; params: PathParams } {
@@ -236,7 +236,7 @@ export function sceneToSvgString<TLayer extends string>(
 
   // Background — prepend so it paints first (SVG paint order is document
   // order). Omit when white-equivalent to keep the file small.
-  if (!WHITE.test(opts.backgroundColor)) {
+  if (!isDefaultBackground(opts.backgroundColor)) {
     for (const page of opts.pages) nodes.push(backgroundSvgNode(opts.backgroundColor, page));
   }
 

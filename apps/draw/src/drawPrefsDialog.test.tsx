@@ -44,7 +44,20 @@ describe('SurfacesEditor', () => {
     expect((value as Record<string, { collapsed?: boolean }>).layers?.collapsed).toBe(true);
     fireEvent.click(screen.getByLabelText('Hide Layers'), { altKey: true });
     rerender(<SurfacesEditor ctx={ctxFor(value, setValue)} />);
-    expect(hidden()).toHaveLength(screen.getAllByLabelText(/^Hide /).length);
+    expect(hidden()).toEqual([]);
+  });
+
+  it('collapses one panel alone on Alt-click, and expands every panel on a second', () => {
+    let value: unknown = {};
+    const setValue = vi.fn((next: unknown) => { value = next; });
+    const { rerender } = render(<SurfacesEditor ctx={ctxFor(value, setValue)} />);
+    const collapsed = () => screen.getAllByLabelText(/^Collapse /).filter((b) => (b as HTMLInputElement).checked).map((b) => b.getAttribute('aria-label'));
+    fireEvent.click(screen.getByLabelText('Collapse Layers'), { altKey: true });
+    rerender(<SurfacesEditor ctx={ctxFor(value, setValue)} />);
+    expect(collapsed()).toEqual(['Collapse Layers']);
+    fireEvent.click(screen.getByLabelText('Collapse Layers'), { altKey: true });
+    rerender(<SurfacesEditor ctx={ctxFor(value, setValue)} />);
+    expect(collapsed()).toEqual([]);
   });
 
   it('offers a surface choice only for an asset that allows more than one', () => {

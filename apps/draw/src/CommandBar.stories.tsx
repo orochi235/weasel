@@ -1,17 +1,10 @@
-import { useState, type ComponentType, type ReactNode } from 'react';
+import { useEffect, useState, type ComponentType, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { ActionsProvider, DepRegistryProvider, asNodeId, createScene, useAction, useCommand, useDepSource } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, asNodeId, createScene, useActionsRegistry, useCommand, useDepSource } from '@weasel-js/core';
 import { CommandBar, type CommandBarProps } from './CommandBar';
 import { StripDock } from './surfaces/StripSurfaces';
 import { EDITOR_ACTIONS, EDITOR_PREFS_KEY } from '@weasel-js/editor';
-import {
-  DRAW_PREFERENCES_COMMAND,
-  releaseCompoundAction,
-  toggleGridAction,
-  toggleSnapAction,
-  toggleSymmetryAction,
-  type AppCommands,
-} from './appCommands/actions';
+import { appActions, DRAW_PREFERENCES_COMMAND, type AppCommands } from './appCommands/actions';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { useDebugCommands } from './dev/devRoutes';
 import { useFileCommands } from './fileCommands';
@@ -52,10 +45,11 @@ function Actions({ selected, compound, children }: { selected: number; compound:
     toggleChrome: noop,
   };
   useDepSource('appCommands', () => commands);
-  useAction(toggleGridAction);
-  useAction(toggleSnapAction);
-  useAction(toggleSymmetryAction);
-  useAction(releaseCompoundAction);
+  const registry = useActionsRegistry();
+  useEffect(() => {
+    const releases = registry ? appActions.map((action) => registry.register(action)) : [];
+    return () => { for (const release of releases) release(); };
+  }, [registry]);
   const { label, ...preferences } = DRAW_PREFERENCES_COMMAND;
   useCommand(EDITOR_ACTIONS.preferences, label, noop, { ...preferences, keys: EDITOR_PREFS_KEY });
   useDebugCommands();
