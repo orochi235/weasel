@@ -103,14 +103,14 @@ export function parseLevel(lines: string[], options: ParseLevelOptions = {}): Le
 }
 
 /**
- * The left and right edges read SOLID so a body can never walk out of the level.
- * Above and below read EMPTY: a jump near the ceiling is free, and falling off
+ * The left and right edges read SOLID at every row, above and below the level
+ * too, so a body can never walk out of it. Above and below read EMPTY: a jump near the ceiling is free, and falling off
  * the bottom must actually fall — a solid lower edge would catch the player on
  * an invisible floor and the out-of-bounds death could never fire.
  */
 export function tileAt(level: Level, cx: number, cy: number): number {
-  if (cy < 0 || cy >= level.rows) return EMPTY;
   if (cx < 0 || cx >= level.cols) return SOLID;
+  if (cy < 0 || cy >= level.rows) return EMPTY;
   return level.tiles[cy * level.cols + cx];
 }
 

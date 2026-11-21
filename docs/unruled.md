@@ -3523,3 +3523,10 @@ Calls the lanes made without a ruling:
 
 - 2026-11-21 (the fixer's call): `createTargetTable` throws for a `capacity` that is not a whole number (2.5, NaN,
   Infinity), naming `capacity`, and still treats one below 1 as 1. Rounding a fraction up was the alternative.
+
+## Audit round sixty-five (2026-11-21): the platformer demo
+
+- 2026-11-21 (the fixer's call): the platformer's `createEnemies` stands a walker placed in the air on the first floor
+  below it, and leaves out one whose column has no floor below it at all, since walkers have no gravity. The swarm
+  button can therefore insert fewer than forty. Giving walkers gravity, so they fall into a pit and die, was the
+  alternative.

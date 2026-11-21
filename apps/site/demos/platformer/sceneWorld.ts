@@ -160,7 +160,7 @@ const OFFSCREEN: RectPose = { x: -1e5, y: -1e5, width: 0, height: 0 };
 export function syncScene(scene: Scene<WorldData, WorldLayer, RectPose>, g: GameRefs, pose: SkeletonPose): void {
   // Coins spin by narrowing: the ellipse collapses to a line at the quarter
   // points, which is the same read as the immediate-mode version.
-  const spin = Math.abs(Math.cos(((g.elapsed % 1.2) / 1.2) * Math.PI * 2));
+  const spin = Math.abs(Math.cos(((g.clock % 1.2) / 1.2) * Math.PI * 2));
   g.coins.forEach((c, i) => {
     const id = coinId(i);
     if (!scene.get(id)) return;

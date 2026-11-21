@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { SOLID, TILE, tileAt, toCol, toRow } from '../platformer/level';
 import { WORLD } from '../platformer/worldLevel';
-import { advanceWorld, freshGame, NO_HOOKS, stepEnding, stepWorld, type GameRefs } from '../platformer/world';
+import { advanceWorld, frameWorld, freshGame, NO_HOOKS, stepEnding, stepWorld, type GameRefs } from '../platformer/world';
 import { BODY_H, STEP } from '../platformer/physics';
 
 describe('WORLD', () => {
@@ -44,6 +44,24 @@ describe('stepWorld — damage', () => {
     stepWorld(g, idle, NO_HOOKS);
     expect(g.lives).toBe(lives - 1);
     expect(ows(g)).toHaveLength(1);
+  });
+
+  it('costs one life when two enemies touch the player in one step', () => {
+    const g = freshGame();
+    const { x, y } = g.player.body;
+    g.enemies = [{ x, y, vx: 0, alive: true, phase: 0 }, { x: x + 2, y, vx: 0, alive: true, phase: 0 }];
+    stepWorld(g, idle, NO_HOOKS);
+    expect(g.lives).toBe(2);
+    expect(ows(g)).toHaveLength(1);
+  });
+
+  it('ducks the music when the player falls out of the level', () => {
+    const g = freshGame();
+    g.player = { ...g.player, body: { ...g.player.body, y: WORLD.heightPx + 200 } };
+    let ducks = 0;
+    stepWorld(g, idle, { ...NO_HOOKS, duck: () => ducks++ });
+    expect(g.lives).toBe(2);
+    expect(ducks).toBe(1);
   });
 
   /** The player just under WORLD's first `?` block (column 3, row 12), rising into it. */
@@ -152,5 +170,22 @@ describe('stepEnding', () => {
     const clock = g.clock;
     stepEnding(g, 0.1, NO_HOOKS);
     expect(g.clock).toBeCloseTo(clock + 0.1, 9);
+  });
+});
+
+describe('frameWorld', () => {
+  it('spends a jump pressed while paused instead of firing it on the resume', () => {
+    const g = freshGame();
+    let pressed = true;
+    const input = () => {
+      const jumpPressed = pressed;
+      pressed = false;
+      return { left: false, right: false, jumpHeld: false, jumpPressed };
+    };
+    let jumps = 0;
+    const hooks = { ...NO_HOOKS, sound: (name: string) => { if (name === 'jump') jumps++; } };
+    expect(frameWorld(g, STEP, false, input, hooks)).toBe(false);
+    for (let i = 0; i < 30; i++) frameWorld(g, STEP, true, input, hooks);
+    expect(jumps).toBe(0);
   });
 });

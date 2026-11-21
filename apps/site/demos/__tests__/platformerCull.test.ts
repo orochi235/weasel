@@ -10,7 +10,7 @@ import { freshGame, POLE } from '../platformer/world';
 import { cameraView } from '../platformer/camera';
 import { TILE } from '../platformer/level';
 import {
-  boneNodes, entityNodes, flagpoleNodes, syncScene, tileNodes,
+  boneNodes, coinId, entityNodes, flagpoleNodes, syncScene, tileNodes,
   type WorldData, type WorldLayer,
 } from '../platformer/sceneWorld';
 
@@ -64,5 +64,19 @@ describe('the side-scroller with view culling', () => {
     const on = paintCalls(true, view);
     expect(on.calls).toBeGreaterThan(0);
     expect(on.calls).toBeLessThan(off.calls);
+  });
+});
+
+describe('syncScene', () => {
+  it('keeps the coins spinning after the run is decided', () => {
+    const { game, scene } = demoWorld();
+    const width = () => scene.get(coinId(0))?.pose.width;
+    game.outcome = 'won';
+    game.clock = 0.3;
+    syncScene(scene, game, {});
+    const before = width();
+    game.clock = 0.6;
+    syncScene(scene, game, {});
+    expect(width()).not.toBeCloseTo(before ?? 0, 3);
   });
 });

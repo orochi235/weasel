@@ -26,12 +26,11 @@ import {
   type WorldLayer,
 } from './platformer/sceneWorld';
 import {
-  advanceWorld,
+  frameWorld,
   freshGame,
   POLE,
   SHAKE_DURATION,
   SHAKE_MAGNITUDE,
-  stepEnding,
   type GameRefs,
 } from './platformer/world';
 import num from '@weasel-js/theme/numeric.module.css';
@@ -146,9 +145,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       blurRadius.target = impact.value;
       blurRadius.step(frame);
 
-      if (g.outcome !== 'playing') stepEnding(g, frame, hooks.current);
-      const simulating = running && g.outcome === 'playing';
-      if (simulating) advanceWorld(g, frame, input, hooks.current);
+      const simulating = frameWorld(g, frame, running, input, hooks.current);
       endFrame(g, simulating);
 
       // A simulation step is not an edit, so it records nothing: one notify
@@ -243,12 +240,13 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
     return { sky, far: band('far', 0.2), mid: band('mid', 0.45), near: band('near', 0.7), debug, hud, callouts, ending };
   }, []);
 
-  /** Insert forty enemies mid-run — the retained-tree counterpart to the load
+  /** Insert up to forty enemies mid-run (none over a pit) — the retained-tree counterpart to the load
    *  test's swarm, exercising node insertion rather than a longer array. */
   const swarm = () => {
     const g = game.current;
     const base = g.enemies.length;
     const extra = createEnemies(
+      WORLD,
       Array.from({ length: 40 }, (_, i) => ({
         x: g.player.body.x + (i % 20) * 18 - 180,
         y: g.player.body.y - 40,
