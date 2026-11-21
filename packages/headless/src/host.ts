@@ -136,10 +136,17 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
         [PAGE_GLOBAL, req] as const,
       );
     } catch (err) {
-      // Gone during the render: the next render opens another rather than failing on it too.
-      if (gone(opened)) drop(pending, opened);
+      // Gone during the render, or left unable to render: the next render opens another rather than failing on it too.
+      if (gone(opened) || !await usable(opened)) drop(pending, opened);
       throw err;
     }
+  }
+
+  async function usable(opened: Open): Promise<boolean> {
+    return opened.page.evaluate(
+      ([key]) => ((globalThis as unknown as Record<string, PageApi>)[key]!).usable(),
+      [PAGE_GLOBAL] as const,
+    ).catch(() => false);
   }
 
   /** The open page, opening one if there is none. */

@@ -277,4 +277,36 @@ describe('node raster host', () => {
     await expect(rendering).rejects.toThrow(/threw before calling `serveHeadlessPage`: registerFont: no such font/);
     await expect(rendering).rejects.toMatchObject({ cause: { message: 'registerFont: no such font' } });
   });
+
+  it('opens a new page for the next render once the one it had can no longer render', async () => {
+    let pages = 0;
+    const closeContext = vi.fn(async () => {});
+    const browser = {
+      close: vi.fn(async () => {}),
+      isConnected: () => true,
+      newContext: async () => {
+        const n = ++pages;
+        let evaluated = 0;
+        return {
+          close: closeContext,
+          newPage: async () => ({
+            on: () => {}, addScriptTag: async () => {}, isClosed: () => false,
+            evaluate: async () => {
+              evaluated++;
+              if (evaluated === 1) return true;
+              if (n === 1 && evaluated === 2) throw new Error('raster session: WebGL2 is unavailable');
+              if (n === 1) return false;
+              return { width: 1, height: 1, base64: Buffer.from([3, 3, 3, 3]).toString('base64') };
+            },
+          }),
+        };
+      },
+    } as unknown as Browser;
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    await expect(host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).rejects.toThrow(/unavailable/);
+    expect(Array.from((await host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).data)).toEqual([3, 3, 3, 3]);
+    expect(pages).toBe(2);
+    expect(closeContext).toHaveBeenCalledTimes(1);
+    await host.dispose();
+  });
 });

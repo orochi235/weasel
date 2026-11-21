@@ -45,6 +45,8 @@ export interface PageResult {
 
 export interface PageApi {
   render(req: PageRequest): Promise<PageResult>;
+  /** Whether the page can still render: `false` once a session opened for a lost context got no context. */
+  usable(): boolean;
 }
 
 /** A live scene or its snapshot, as JSON carries it: encoded by core's snapshot codec. A live scene's `toJSON()`,
