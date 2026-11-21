@@ -3,8 +3,8 @@ import { act, renderHook } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { KitSettingsProvider } from '@weasel-js/react';
 import type { FocusEvent as ReactFocusEvent, PointerEvent as ReactPointerEvent } from 'react';
-import { lineShape, runPlaces, trackRun, type RunSpot } from '@weasel-js/geom';
-import { useRunScroll } from './useRunScroll';
+import { arcShape, lineShape, runPlaces, trackRun, type RunSpot } from '@weasel-js/geom';
+import { positionAt, useRunScroll } from './useRunScroll';
 
 // Five items 20 long with 15 between run to 160 along a run 100 long; jsdom puts every box at (0, 0).
 const run = trackRun(lineShape({ x: 0, y: 0 }, { x: 100, y: 0 }));
@@ -227,5 +227,17 @@ describe('useRunScroll', () => {
     });
     expect(hook.result.current.offset).toBe(0);
     expect(clickReaches(items[1]!)).toBe(true);
+  });
+
+  test('a drag across the seam of a closed run reads on past it rather than jumping a whole length', () => {
+    const circle = trackRun(arcShape({ center: { x: 50, y: 50 }, radius: 50, start: 0, end: 0 }));
+    const frame = document.createElement('div');
+    const onCircle = (deg: number) => {
+      const a = (deg * Math.PI) / 180;
+      return { clientX: 50 + 50 * Math.sin(a), clientY: 50 - 50 * Math.cos(a) };
+    };
+    const before = positionAt(frame, circle, onCircle(-2));
+    const after = positionAt(frame, circle, onCircle(2), before);
+    expect(Math.abs(after - before)).toBeCloseTo(circle.length * 4 / 360, 6);
   });
 });
