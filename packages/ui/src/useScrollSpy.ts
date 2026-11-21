@@ -49,7 +49,8 @@ function heightAtEnd(root: HTMLElement): number | undefined {
 export interface UseScrollSpyOptions {
   /** The scrolling element holding the sections. */
   rootRef: RefObject<HTMLElement | null>;
-  /** Section element ids, in document order. */
+  /** The sections' ids, in document order. Each section is the element under the container whose
+   *  `data-spy-section` attribute holds its id: `<section data-spy-section="general">`. */
   ids: readonly string[];
   /** Pixels of tolerance at the container's top edge. */
   slack?: number;
