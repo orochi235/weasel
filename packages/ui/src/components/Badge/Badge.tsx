@@ -187,7 +187,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     'data-size': size,
     'data-break': breakStyle,
     'data-focused': focused ? 'true' : undefined,
-    onFocus: (e: FocusEvent<HTMLElement>) => { if (!split) setFocused(true); onFocus?.(e); },
+    onFocus: (e: FocusEvent<HTMLElement>) => { if (!split && e.target === e.currentTarget) setFocused(true); onFocus?.(e); },
     onBlur: (e: FocusEvent<HTMLElement>) => { if (!split) setFocused(false); onBlur?.(e); },
     'aria-label': split ? undefined : ariaLabel,
   };

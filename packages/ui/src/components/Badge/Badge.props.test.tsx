@@ -18,3 +18,19 @@ describe('Badge as="span"', () => {
     expect(removable).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('Badge focus', () => {
+  it('leaves a plain removable badge unmarked while its remove control holds focus', () => {
+    const { container, getByRole } = render(<Badge shape="notched" onRemove={() => {}}>tag</Badge>);
+    const remove = getByRole('button', { name: 'Remove' });
+    fireEvent.focus(remove);
+    expect((container.firstElementChild as HTMLElement).dataset.focused).toBeUndefined();
+  });
+
+  it('marks a focusable plain badge focused', () => {
+    const { container } = render(<Badge tooltip="t">tag</Badge>);
+    const root = container.querySelector('[data-shape]') as HTMLElement;
+    fireEvent.focus(root);
+    expect(root.dataset.focused).toBe('true');
+  });
+});
