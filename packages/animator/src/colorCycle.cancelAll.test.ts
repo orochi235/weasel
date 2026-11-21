@@ -34,3 +34,20 @@ describe('cycleVertexColors and cancelAll', () => {
     expect(b).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('cycleVertexColors replaced through the registry', () => {
+  it.each([
+    ['set over', (a: ReturnType<typeof setup>) => a.colorOverrides.set('n', 'fill', [1, 0, 0, 1])],
+    ['cleared', (a: ReturnType<typeof setup>) => a.colorOverrides.clear('n', 'fill')],
+    ['cleared with the rest', (a: ReturnType<typeof setup>) => a.colorOverrides.clearAll()],
+  ])('lets the frame loop stop once the cycle is %s', (_, replace) => {
+    const animator = setup();
+    const handle = cycleVertexColors(animator, { id: 'n', channel: 'fill', msPerCycle: 1000 });
+    expect(animator.isActive()).toBe(true);
+    act(() => { replace(animator); });
+    expect(animator.isActive()).toBe(false);
+    const after = animator.colorOverrides.get('n', 'fill');
+    handle.cancel();
+    expect(animator.colorOverrides.get('n', 'fill')).toEqual(after);
+  });
+});
