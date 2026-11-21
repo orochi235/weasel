@@ -51,3 +51,31 @@ describe('useHostAnchor with a host that mounts late', () => {
     }
   });
 });
+
+describe('useHostAnchor against a page with scrollbars', () => {
+  it('pins an end-aligned panel against the viewport inside the scrollbars', async () => {
+    const root = document.documentElement;
+    const restore = [
+      vi.spyOn(root, 'clientWidth', 'get').mockReturnValue(985),
+      vi.spyOn(root, 'clientHeight', 'get').mockReturnValue(753),
+      vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(1000),
+      vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(768),
+    ];
+    const el = document.createElement('div');
+    el.getBoundingClientRect = () => ({ x: 0, y: 0, left: 0, top: 0, width: 985, height: 753, right: 985, bottom: 753 }) as DOMRect;
+    document.body.appendChild(el);
+    let style: unknown = null;
+    function Probe() {
+      style = useHostAnchor(() => el, { align: { x: 'end', y: 'end' }, offset: { x: 0, y: 0 } }).style;
+      return null;
+    }
+    try {
+      render(<Probe />);
+      await act(async () => { await Promise.resolve(); await frame(); });
+      expect(style).toMatchObject({ right: 0, bottom: 0 });
+    } finally {
+      el.remove();
+      for (const r of restore) r.mockRestore();
+    }
+  });
+});
