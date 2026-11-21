@@ -84,6 +84,11 @@ describe('shared field frame', () => {
     expect(container.querySelectorAll(`.${f.frame}`)).toHaveLength(4);
   });
 
+  it('paints only an invalid control\'s own frame red, not every frame inside an erroring Field', () => {
+    expect(css).toMatch(/\.control\[data-invalid\] \.frame\s*\{[^}]*--wzl-danger/);
+    expect(css).not.toMatch(/(^|\s|,)\.field\[data-invalid\] \.frame/m);
+  });
+
   it('rings a text frame on any focus and a button frame only on keyboard focus', () => {
     expect(css).toMatch(/\.frame:focus-within:not\(button\),\s*\.frame\[data-focus-visible\],\s*\.frame:focus-visible\s*\{/);
   });
