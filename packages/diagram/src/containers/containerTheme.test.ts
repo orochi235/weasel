@@ -56,4 +56,18 @@ describe('containers in a theme', () => {
     const bodies = theme.lane.bodies;
     expect(fills).toEqual(fills.map((_, i) => bodies[i % bodies.length]!.fill));
   });
+
+  it('restripes the lanes after one added with a style of its own', () => {
+    const scene = makeScene();
+    let n = 0;
+    const built = containerBuild(POOL, AT, { layer: 'main', newId: () => `p${n++}` });
+    commitOps({ scene } as unknown as ActionDeps, built.ops, 'Insert');
+    const theme = DIAGRAM_THEMES.paper!;
+    applyDiagramTheme(scene as never, theme);
+    const added = addLane(scene as never, built.id, 0, { fill: '#ff0000', stroke: '#00ff00', text: '#0000ff' })!;
+    const later = lanesOf(scene as never, built.id).filter((id) => id !== added);
+    const bodies = theme.lane.bodies;
+    expect(later.map((id) => fillOf(scene, id))).toEqual(later.map((_, i) => bodies[(i + 1) % bodies.length]!.fill));
+    expect((scene.get(added as never)!.data as { stroke: { paint: { color: string } } }).stroke.paint.color).toBe('#00ff00');
+  });
 });
