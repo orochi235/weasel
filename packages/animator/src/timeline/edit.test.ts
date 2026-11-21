@@ -139,3 +139,39 @@ describe('timeline editing', () => {
     expect(late).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('an edit that shortens a timeline below its playhead', () => {
+  const setup = (loop: boolean) => {
+    let tick!: (virtualNow: number, scale?: number) => boolean;
+    const register: TimelineRegister = (seed) => {
+      tick = seed.tick;
+      return {
+        id: seed.id, cancel: () => {}, pause: () => {}, resume: () => {},
+        setTimeScale: () => {}, timeScale: () => -1, isPaused: () => false,
+      };
+    };
+    const done = vi.fn();
+    const fired = vi.fn();
+    const track: SampledTrack<number> = { kind: 'sampled', keys: [{ t: 0, value: 0 }, { t: 1000, value: 1 }, { t: 2000, value: 2 }], onTick: () => {} };
+    const tail: EventTrack = { kind: 'event', events: [{ t: 900, fire: fired }] };
+    const tl = createTimeline(register, 1, { tracks: [track, tail], loop, onDone: done });
+    tl.seek(1500);
+    tl.edit(() => { track.keys.pop(); });
+    return { tl, done, fired, tick };
+  };
+
+  it('stands at its new end, and a backward play goes on from there', () => {
+    const { tl, done, tick } = setup(false);
+    expect(tl.time()).toBe(1000);
+    tick(-10, -1);
+    expect(done).not.toHaveBeenCalled();
+    expect(tl.time()).toBe(990);
+  });
+
+  it('takes no lap forward and fires nothing while looping backward', () => {
+    const { tl, fired, tick } = setup(true);
+    tick(-10, -1);
+    expect(fired).not.toHaveBeenCalled();
+    expect(tl.time()).toBe(990);
+  });
+});

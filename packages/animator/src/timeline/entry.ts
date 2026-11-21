@@ -43,7 +43,9 @@ export function createEntry(
   let live = true;
   let wantPaused = paused;
   let wantScale = 1;
-  const base = register(seed);
+  // The table keeps the row it is handed and marks it (`ended` among others), so each
+  // registration gets a fresh copy: a revival is a new row, not the first one's leftovers.
+  const base = register({ ...seed });
   // A paused entry's scale is zero, so `virtualNow` never advances and the
   // playhead holds at 0 until the consumer resumes.
   if (paused) base.pause();

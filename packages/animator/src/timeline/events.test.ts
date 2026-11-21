@@ -296,6 +296,27 @@ describe('event crossing lateness', () => {
     h.advance(125);
     expect(fired).toEqual(['a', 'c', 'b', 'c']);
   });
+  it('fires an event exactly where a handler in the tail of a lap seeks on the next frame, not that one', () => {
+    const h = harness();
+    const fired: string[] = [];
+    let seeks = 1;
+    const tl = createTimeline(h.register, 1, {
+      duration: 100,
+      loop: true,
+      tracks: [{
+        kind: 'event',
+        events: [
+          { t: 30, fire: () => fired.push('c') },
+          { t: 90, fire: () => { fired.push('b'); if (seeks-- > 0) tl.seek(30); } },
+        ],
+      }],
+    });
+    h.advance(80);
+    h.advance(110);
+    expect(fired).toEqual(['c', 'b']);
+    h.advance(115);
+    expect(fired).toEqual(['c', 'b', 'c']);
+  });
   it('finishes once, at the end of the pass a handler on the last edge seeks back into', () => {
     const h = harness();
     const done: number[] = [];

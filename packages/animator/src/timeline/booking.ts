@@ -89,7 +89,10 @@ function pullBack(cursors: Cursors, at: Cursor): void {
 export function createBooker(opts: EventBooking, host: BookerHost): Booker {
   const lookahead = opts.lookahead ?? 100;
   const maxLate = opts.maxLate ?? Infinity;
-  const cursors: Cursors = new Map();
+  // Rebuilt each scan from the placements it meets, so a track an edit removed or moved leaves none behind.
+  let cursors: Cursors = new Map();
+  let scanned: Cursors = new Map();
+  // Where a track first met starts from: the playhead the last scan reached, as firing does.
   let start: Cursor = { lap: 0, r: -Infinity };
   let bookings: Booking[] = [];
   const clock = createClockEstimate();
@@ -122,7 +125,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
     const duration = host.duration();
     const playhead = host.playhead();
     const { events } = track;
-    let c = placesOf(cursors, track).get(at) ?? start;
+    let c = scanned.get(track)?.get(at) ?? cursors.get(track)?.get(at) ?? start;
     for (;;) {
       const lapStart = lapsOf(c.lap - lap, duration);
       if (lapStart > horizon) break;
@@ -152,7 +155,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
         bookings.push({ event: ev, lap: c.lap, r, when, handle });
       }
     }
-    placesOf(cursors, track).set(at, c);
+    placesOf(scanned, track).set(at, c);
   };
 
   const visit = (
@@ -183,7 +186,11 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
 
       const duration = host.duration();
       const lastLap = host.lap() + (duration > 0 ? host.lapsLeft() : 0);
+      scanned = new Map();
       visit(host.tracks, 0, Infinity, playhead + lookahead * scale, lastLap, now, scale);
+      cursors = scanned;
+      const reached = playheadCursor();
+      if (isAfter(reached, start)) start = reached;
     },
     retract() {
       stopWhere(opts.clock.now(), () => true);

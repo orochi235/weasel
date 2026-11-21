@@ -48,6 +48,8 @@ export interface Table {
   /** Runs `flip`, which turns the animator's direction, and gives every animation the rate that
    *  leaves it, its clock where it stands. */
   turn(flip: () => void): void;
+  /** -1 while the animator plays every animation backward, otherwise 1. */
+  direction(): number;
   /** `a`'s own clock now, in virtual ms. */
   clockOf(a: ActiveAnimation): number;
   /** The rate `a`'s clock runs at: 0 while paused, below 0 while it plays backward. */
@@ -208,6 +210,7 @@ export function createTable(host: TableHost): Table {
       schedule.turn(animations.values(), flip);
       for (const a of [...animations.values()]) if (animations.get(a.id) === a) rerate(a);
     },
+    direction: host.direction,
     clockOf: schedule.clockOf,
     rateOf: schedule.rateOf,
     defer: (id, ms) => schedule.defer(animations.get(id), ms),
