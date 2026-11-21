@@ -122,3 +122,32 @@ describe('draw-style XML file names', () => {
     expect(DIAGRAM_DRAW_XML.extensions).toEqual(['.drawio', '.xml']);
   });
 });
+
+describe('draw-style XML fonts', () => {
+  const style = (text: string) => text.match(/value="(?:T|H)"[^>]*style="([^"]*)"/)?.[1] ?? '';
+
+  it('writes a heavy weight as bold and a regular one as not', () => {
+    const write = (s: object) => DIAGRAM_DRAW_XML.write!(doc({
+      nodes: [{ id: 'n', at: { x: 0, y: 0 }, rows: [{ kind: 'label', text: 'T', style: s }] }], edges: [],
+    }), { theme: THEME }).text;
+    expect(style(write({ weight: 700 }))).toContain('fontStyle=1;');
+    expect(style(write({ bold: true, weight: 400 }))).not.toContain('fontStyle');
+  });
+
+  it('writes a header row\'s font', () => {
+    const { text } = DIAGRAM_DRAW_XML.write!(doc({
+      nodes: [{ id: 'n', at: { x: 0, y: 0 }, rows: [{ kind: 'header', text: 'H', style: { fontSize: 16, bold: true } }] }], edges: [],
+    }), { theme: THEME });
+    expect(style(text)).toContain('fontSize=16;');
+    expect(style(text)).toContain('fontStyle=1;');
+  });
+
+  it('warns when rows styled differently share the first one\'s font', () => {
+    const { warnings } = DIAGRAM_DRAW_XML.write!(doc({
+      nodes: [{ id: 'n', at: { x: 0, y: 0 }, rows: [
+        { kind: 'label', text: 'T', style: { fontSize: 16 } }, { kind: 'label', text: 'U', style: { fontSize: 10 } },
+      ] }], edges: [],
+    }), { theme: THEME });
+    expect(warnings).toContain('Text rows styled apart within one shape were written in its first row\'s style.');
+  });
+});
