@@ -172,6 +172,7 @@ export function rampColors(name: string, r: Record<string, unknown>, steps: read
         anchors.push({ name: String(o.name), hue: read.num(o.hue, `${at}.hue`), lightness, chroma });
       });
     }
+    if (anchors.length > steps.length) ctx.issues.push({ kind: 'invalid', path: `${path}.anchors`, message: `${anchors.length} anchors for ${steps.length} steps; the ones past the last step are left out` });
     if (!read.ok) return undefined;
     const { colors, feasible } = categoricalRamp(steps, gates as Partial<Constraints>, anchors);
     if (!feasible) ctx.issues.push({ kind: 'infeasible-ramp', ramp: name });

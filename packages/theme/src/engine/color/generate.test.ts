@@ -64,6 +64,26 @@ describe('generate', () => {
     expect(pinned.swatches.some((s) => hueGap(s.lch.H, 110) < 12 && s.lch.L > 0.86)).toBe(true);
   });
 
+  it('keeps the first count anchors, infeasibly, when given more', () => {
+    const anchors: Anchor[] = [10, 80, 150, 220, 290].map((hue, i) => ({ name: `a${i}`, hue, lightness: 0.7 }));
+    const { swatches, feasible } = generate(withC({ count: 3, anchors, order: 'hue' }));
+    expect(swatches.map((s) => s.name)).toEqual(['a0', 'a1', 'a2']);
+    expect(feasible).toBe(false);
+  });
+
+  it('never raises an anchor\'s chroma when equalizing', () => {
+    const tan: Anchor = { name: 'tan', hue: 70, lightness: 0.7, chroma: 0.05 };
+    const { swatches } = generate(withC({ count: 5, equalize: 1, anchors: [tan] }));
+    const anchored = swatches.find((s) => s.anchored);
+    expect(anchored?.lch.C).toBeLessThanOrEqual(0.05 + 1e-3);
+  });
+
+  it('reports a palette that equalizing pushed below the contrast floor as infeasible', () => {
+    const { feasible, stats } = generate(withC({ count: 7, minContrast: 4.5, lightnessPull: 0, equalize: 1 }));
+    expect(stats.minContrast).toBeLessThan(4.5);
+    expect(feasible).toBe(false);
+  });
+
   it('narrows the chroma spread as equalize rises', () => {
     const at = (equalize: number) => generate(withC({ equalize })).stats.chromaSpread;
     expect(at(0.5)).toBeLessThan(at(0));

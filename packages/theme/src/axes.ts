@@ -44,13 +44,17 @@ export function isByAxis(v: unknown): v is ByAxis<unknown> {
   return isPlainObject(v) && typeof v.by === 'string';
 }
 
+/** An axis's values, or none when it was loaded as something other than an axis. */
+const valuesOf = (def: AxisDef | null | undefined): Readonly<Record<string, unknown>> =>
+  isPlainObject(def) && isPlainObject(def.values) ? def.values : {};
+
 /** Every axis given a known value; anything missing or unknown takes its default. An axis loaded with a default that is not a string is left out. */
 export function fullAxisChoice(axes: AxisDefs, selection: AxisChoice = {}): AxisChoice {
   const out: Record<string, string> = {};
   for (const [name, def] of Object.entries(axes)) {
     const v = getOwn(selection, name);
-    if (v !== undefined && Object.hasOwn(def.values ?? {}, v)) setOwn(out, name, v);
-    else if (typeof def.default === 'string') setOwn(out, name, def.default);
+    if (v !== undefined && Object.hasOwn(valuesOf(def), v)) setOwn(out, name, v);
+    else if (isPlainObject(def) && typeof def.default === 'string') setOwn(out, name, def.default);
   }
   return out;
 }
@@ -59,7 +63,8 @@ export function fullAxisChoice(axes: AxisDefs, selection: AxisChoice = {}): Axis
 export function mergeAxes(parent: AxisDefs, child: AxisDefs): AxisDefs {
   const out: Record<string, AxisDef> = { ...parent };
   for (const [name, def] of Object.entries(child)) {
-    setOwn(out, name, { ...def, values: { ...getOwn(parent, name)?.values, ...def.values } });
+    if (!isPlainObject(def)) setOwn(out, name, def);
+    else setOwn(out, name, { ...def, values: { ...valuesOf(getOwn(parent, name)), ...valuesOf(def) } });
   }
   return out;
 }
@@ -68,7 +73,7 @@ export function mergeAxes(parent: AxisDefs, child: AxisDefs): AxisDefs {
 export function enumerateAxisChoices(axes: AxisDefs): AxisChoice[] {
   let out: Record<string, string>[] = [{}];
   for (const [name, def] of Object.entries(axes)) {
-    out = out.flatMap((s) => Object.keys(def.values ?? {}).map((v) => ({ ...s, [name]: v })));
+    out = out.flatMap((s) => Object.keys(valuesOf(def)).map((v) => ({ ...s, [name]: v })));
   }
   return out;
 }

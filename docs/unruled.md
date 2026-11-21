@@ -1191,6 +1191,14 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (theme second pass): `derive` reports a semantic rule whose fields have the wrong types as `invalid`
   (`engine/ruleShape.ts`), and `axisDependencies` leaves it out, where both threw. A categorical ramp's `surface`
   gate takes a 6-digit hex only, as its anchors do. Not ruled: chosen to match the shape checks derive already made.
+- 2026-11-20 (my call, audit round 60): `generate` given more anchors than `count` keeps the first `count` of
+  them and reports the palette infeasible, and `derive` reports a categorical ramp's extra anchors as `invalid` at
+  `ramps.<name>.anchors` while still deriving its steps. Throwing was the alternative; the theme editor's count
+  slider can pass below the anchors it holds mid-edit.
+- 2026-11-20 (my call, audit round 60): `derive` reports a pin or component whose `value`, `type`, `description`,
+  `alpha`, or `scope` has the wrong type as `invalid` and makes no token of it, keeping what a rule produced
+  beneath a pin. An `alpha` outside 0 to 1, on a pin or a semantic `ref`, is reported the same way, as its
+  documentation gives that range. Dropping only the bad field was the alternative.
 - Open (2026-11-11, theme second pass): a token a theme produces at only some selections still shows at the others
   in the stylesheet, which cannot unset it: a reference to it there reads the value from where it is declared, while
   `resolveTheme` has no token. Only a definition with issues does this. The same holds across `extends`: a child

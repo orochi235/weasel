@@ -5,7 +5,7 @@ import type { SemanticRule, ThemeDefinition } from '../definition.ts';
 import { mergeChain, type Lookup } from './merge.ts';
 import { ruleProblem } from './ruleShape.ts';
 import { withoutUnsafeNames } from './safeNames.ts';
-import { declaredSteps } from './steps.ts';
+import { alwaysDeclaredSteps, declaredSteps } from './steps.ts';
 
 /** The axes one token's value can change with. */
 export interface AxisDependency {
@@ -103,12 +103,32 @@ const readableRules = (rule: unknown): SemanticRule[] =>
   leaves(rule).filter((l): l is SemanticRule => isPlainObject(l) && ruleProblem(l) === undefined);
 
 /**
+ * Sets a name's node as derive's first producer wins: once an entry produces a name at every selection, later
+ * entries of that name produce it at none; until then, each one joins in.
+ */
+function producer(nodes: Map<string, Node>): (name: string, n: Node, always: boolean) => void {
+  const settled = new Set<string>();
+  return (name, n, always) => {
+    if (settled.has(name)) return;
+    const earlier = nodes.get(name);
+    if (earlier === undefined) nodes.set(name, n);
+    else {
+      const both = node();
+      for (const k of ['axes', 'seeds', 'edges'] as const) for (const x of [...earlier[k], ...n[k]]) both[k].add(x);
+      nodes.set(name, both);
+    }
+    if (always) settled.add(name);
+  };
+}
+
+/**
  * Every token of the definition that `derive` gives, `extends` chain included, mapped to the axes it depends on, in
  * axis declaration order.
  */
 export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): Record<string, AxisDependency> {
   const def = withoutUnsafeNames(mergeChain(definition, lookup));
   const nodes = new Map<string, Node>();
+  const produce = producer(nodes);
 
   /** Step token → the ramps that declare it. */
   const stepRamps = new Map<string, Set<string>>();
@@ -118,15 +138,17 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     nodes.set(stepsKey(name), shape);
     const n = node();
     scan(ramp, n);
+    const always = new Set(alwaysDeclaredSteps(ramp));
     for (const step of declaredSteps(ramp)) {
-      nodes.set(`${name}-${step}`, n);
+      produce(`${name}-${step}`, n, always.has(step));
       stepRamps.set(`${name}-${step}`, (stepRamps.get(`${name}-${step}`) ?? new Set()).add(name));
     }
   }
   for (const [name, s] of Object.entries(def.scales ?? {})) {
     const n = node();
     scan(s, n);
-    for (const step of declaredSteps(s)) nodes.set(`${name}-${step}`, n);
+    const always = new Set(alwaysDeclaredSteps(s));
+    for (const step of declaredSteps(s)) produce(`${name}-${step}`, n, always.has(step));
   }
 
   /** Every ramp a token could sit on: its own, or the ones its semantic rule leaves or pins lead to. */
@@ -174,12 +196,12 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
         for (const s of declaredSteps(getOwn(def.ramps ?? {}, leaf.ramp))) n.edges.add(`${leaf.ramp}-${s}`);
       }
     }
-    nodes.set(name, n);
+    produce(name, n, true);
   }
   for (const [name, v] of Object.entries(def.components ?? {})) {
     const n = node();
     scan(v, n);
-    nodes.set(name, n);
+    produce(name, n, true);
   }
   const selections = enumerateAxisChoices(def.axes ?? {});
   for (const [name, v] of Object.entries(def.pins ?? {})) {

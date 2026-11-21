@@ -25,6 +25,26 @@ const D: ThemeDefinition = {
 describe('axisDependencies', () => {
   const deps = axisDependencies(D);
 
+  it('keeps the first producer of a name two entries declare, as derive does', () => {
+    const def: ThemeDefinition = {
+      name: 't',
+      axes: D.axes,
+      ramps: { text: { kind: 'lightness', steps: ['muted'], lightness: { by: 'mode', dark: [0.7, 0.7], light: [0.3, 0.3] } } },
+      semantics: { 'text-muted': { value: '#000000', type: 'color' } },
+    };
+    expect(axisDependencies(def)['text-muted']).toEqual({ own: ['mode'], all: ['mode'] });
+  });
+
+  it('joins both producers of a name the first declares at only some selections', () => {
+    const def = {
+      name: 't',
+      axes: D.axes,
+      ramps: { text: { kind: 'lightness', steps: { by: 'mode', dark: ['muted'], light: [] }, lightness: [0.7, 0.7] } },
+      semantics: { 'text-muted': { value: { by: 'density', comfortable: '#000000', compact: '#111111' }, type: 'color' } },
+    } as unknown as ThemeDefinition;
+    expect(axisDependencies(def)['text-muted'].own).toEqual(['mode', 'density']);
+  });
+
   it('finds a by on the token itself, directly or through a seed', () => {
     expect(deps.surface).toEqual({ own: ['mode'], all: ['mode'] });
     expect(deps['space-md']).toEqual({ own: ['density'], all: ['density'] });

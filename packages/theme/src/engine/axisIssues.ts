@@ -1,3 +1,4 @@
+import { isPlainObject } from '@weasel-js/registry';
 import { axisNameProblem, type AxisDefs } from '../axes.ts';
 import type { Issue } from './types.ts';
 
@@ -5,11 +6,13 @@ import type { Issue } from './types.ts';
 export function axisIssues(axes: AxisDefs): Issue[] {
   const issues: Issue[] = [];
   for (const [name, def] of Object.entries(axes)) {
-    const values = Object.keys(def.values ?? {});
     const problem = axisNameProblem(name);
-    if (problem) {
-      issues.push({ kind: 'invalid', path: `axes.${name}`, message: problem });
-    } else if (values.length === 0) {
+    if (problem || !isPlainObject(def)) {
+      issues.push({ kind: 'invalid', path: `axes.${name}`, message: problem ?? `axis "${name}" must be an object with values and a default` });
+      continue;
+    }
+    const values = Object.keys(isPlainObject(def.values) ? def.values : {});
+    if (values.length === 0) {
       issues.push({ kind: 'invalid', path: `axes.${name}`, message: `axis "${name}" has no values` });
     } else if (typeof def.default !== 'string') {
       issues.push({ kind: 'invalid', path: `axes.${name}.default`, message: `axis "${name}" needs a default naming one of its values (${values.join(', ')})` });

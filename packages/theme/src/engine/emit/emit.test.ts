@@ -315,6 +315,20 @@ describe('emitThemes', () => {
     expect(new Function(`return ${line.trim().slice(0, -3)};`)()).toBe(`mode=${value}`);
   });
 
+  it('keeps a theme or axis value named __proto__ as a key in the generated module', () => {
+    const def: ThemeDefinition = {
+      name: '__proto__',
+      axes: { mode: { default: '__proto__', values: { ['__proto__']: {} } } },
+      pins: { ink: { by: 'mode', ['__proto__']: { value: '#111111', type: 'color' } } },
+    } as unknown as ThemeDefinition;
+    const text = emitThemes([{ definition: def, baked: bake(def) }]);
+    expect(text).not.toMatch(/(?<!\\)"__proto__":/);
+    const sources = text.slice(text.indexOf('= ', text.indexOf('THEME_SOURCES')) + 2, text.indexOf(';\n', text.indexOf('THEME_SOURCES')));
+    const back = new Function(`return ${sources};`)();
+    expect(Object.keys(back)).toEqual(['__proto__']);
+    expect(Object.keys(back.__proto__.axes.mode.values)).toEqual(['__proto__']);
+  });
+
   it('takes a selection a child’s by leaves out from the parent, as resolveTheme does', () => {
     const parent: ThemeDefinition = { name: 'p', axes: MODE, pins: { backdrop: { value: 'none', type: 'gradient' } } };
     const kid: ThemeDefinition = { name: 'k', extends: 'p', pins: { backdrop: { by: 'mode', dark: { value: 'url(a.png)', type: 'gradient' } } } };
