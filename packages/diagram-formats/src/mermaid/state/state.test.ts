@@ -214,3 +214,10 @@ describe('writing a Mermaid state note', () => {
     expect(writeStateDiagram({ pages: [page(out.text)] }).warnings).toEqual([]);
   });
 });
+
+describe('reading a Mermaid state\'s name and description in either order', () => {
+  it('keeps a description given before the state is named', () => {
+    expect(node('stateDiagram-v2\n  A : waits for input\n  state "Idle" as A', 'A').lines).toEqual(['Idle', 'waits for input']);
+    expect(node('stateDiagram-v2\n  state "Idle" as A\n  A : waits for input', 'A').lines).toEqual(['Idle', 'waits for input']);
+  });
+});

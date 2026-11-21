@@ -74,7 +74,11 @@ class StateReader {
         if (s.toClass !== undefined) this.styles.assign(to, s.toClass);
       } else if (s.kind === 'state') {
         const d = this.draft(s.id, scope);
-        if (s.label !== undefined) Object.assign(d, { lines: [decodeEntities(s.label, true)], named: true });
+        if (s.label !== undefined) {
+          const name = decodeEntities(s.label, true);
+          d.lines = d.named ? [name, ...d.lines.slice(1)] : d.described ? [name, ...d.lines] : [name];
+          d.named = true;
+        }
         if (s.type !== undefined) d.type = s.type;
       } else if (s.kind === 'describe') this.describe(s.id, s.text, scope);
       else if (s.kind === 'composite') this.composite(s, scope);
