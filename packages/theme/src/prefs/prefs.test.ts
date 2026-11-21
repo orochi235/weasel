@@ -233,3 +233,20 @@ describe('themePrefsReferences', () => {
     expect(refer(12)).toBeUndefined();
   });
 });
+
+describe('a token a theme resolves at only some selections', () => {
+  const pathOf = (schema: PrefGroup, name: string) => [...prefLeaves(schema).keys()].find((path) => path.endsWith(`.${name}`))!;
+
+  it('reads as the default selection where it is missing, in the form as in the schema', () => {
+    const theme = defineTheme({ name: 'gap', extends: weaselTheme, pins: { foo: { by: 'mode', dark: '#000000' } } });
+    const schema = themePrefsSchema(theme);
+    const path = pathOf(schema, 'foo');
+    expect(prefLeaves(schema).get(path)!.default).toBe('#000000');
+    const store = open(schema);
+    store.set('axis.mode', 'light');
+    const { values, scopes } = themePrefsValues(store, theme);
+    expect(scopes.has(path)).toBe(false);
+    expect((values[path.slice(0, path.indexOf('.'))] as Record<string, unknown>).foo).toBe('#000000');
+  });
+
+});

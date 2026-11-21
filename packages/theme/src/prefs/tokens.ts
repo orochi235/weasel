@@ -97,6 +97,14 @@ export function tokenTable(theme: Theme): TokenTable {
 }
 
 /**
+ * `row`'s CSS at `selection`. Where the theme resolves it at only some
+ * selections, the rest read as the default selection's CSS, else the first.
+ */
+export function rowCssAt(row: Pick<TokenRow, 'css'>, axes: AxisDefs, selection: AxisChoice): string | undefined {
+  return getOwn(row.css, axisChoiceKey(axes, selection)) ?? getOwn(row.css, axisChoiceKey(axes, {})) ?? Object.values(row.css)[0];
+}
+
+/**
  * `at(selection)` over every selection of `axes`, as a value split only by
  * the axes it differs along, the first axis outermost. `split` builds one
  * level from an axis and what each of its values holds.
