@@ -499,3 +499,20 @@ describe('a lightness ramp anchor', () => {
     expect(issues).toEqual([{ kind: 'invalid', path: 'ramps.r.anchor.600', message: 'no step "600" on this ramp' }]);
   });
 });
+
+describe('a categorical ramp anchor', () => {
+  it('is reported with a negative chroma or a lightness outside 0 to 1', () => {
+    const anchors = [{ name: 'a', hue: 30, lightness: 0.6, chroma: -0.1 }, { name: 'b', hue: 200, lightness: 1.4 }];
+    const { issues } = derive({ name: 'c', ramps: { r: { kind: 'categorical', steps: ['1', '2', '3'], anchors } } });
+    expect(issues).toEqual([
+      { kind: 'invalid', path: 'ramps.r.anchors.0.chroma', message: 'expected a number ≥ 0' },
+      { kind: 'invalid', path: 'ramps.r.anchors.1.lightness', message: 'expected a number from 0 to 1' },
+    ]);
+  });
+
+  it('sorts by its hue on the circle, however the hue is written', () => {
+    const ramp = (hue: number) => derive({ name: 'c', ramps: { r: { kind: 'categorical', steps: ['1', '2', '3', '4'], gates: { order: 'hue' }, anchors: [{ name: 'a', hue, lightness: 0.7 }] } } }).tokens;
+    expect(ramp(390)).toEqual(ramp(30));
+    expect(ramp(-330)).toEqual(ramp(30));
+  });
+});

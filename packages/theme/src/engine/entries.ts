@@ -165,12 +165,11 @@ export function rampColors(name: string, r: Record<string, unknown>, steps: read
         const at = `${path}.anchors.${i}`;
         const o = read.record(a, at);
         if (typeof o.name !== 'string') read.fail(`${at}.name`, 'expected a string');
-        anchors.push({
-          name: String(o.name),
-          hue: read.num(o.hue, `${at}.hue`),
-          lightness: read.num(o.lightness, `${at}.lightness`),
-          chroma: read.optNum(o.chroma, `${at}.chroma`),
-        });
+        const lightness = read.num(o.lightness, `${at}.lightness`);
+        if (lightness < 0 || lightness > 1) read.fail(`${at}.lightness`, 'expected a number from 0 to 1');
+        const chroma = read.optNum(o.chroma, `${at}.chroma`);
+        if (chroma !== undefined && chroma < 0) read.fail(`${at}.chroma`, 'expected a number ≥ 0');
+        anchors.push({ name: String(o.name), hue: read.num(o.hue, `${at}.hue`), lightness, chroma });
       });
     }
     if (!read.ok) return undefined;
