@@ -249,7 +249,13 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     state: () => ctx.state,
     async unlock() {
       if (disposed) return;
-      if (ctx.state !== 'running') await ctx.resume();
+      try {
+        if (ctx.state !== 'running') await ctx.resume();
+      } catch (error) {
+        // A dispose while the resume was in flight closed the context under it.
+        if (disposed) return;
+        throw error;
+      }
       await synth.loaded;
     },
     now,
