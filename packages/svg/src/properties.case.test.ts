@@ -54,3 +54,15 @@ describe('negative lengths CSS rejects', () => {
     expect(JSON.stringify(text)).not.toContain('-12');
   });
 });
+
+describe('a style block left open', () => {
+  const fillOf = (css: string) => {
+    const leaf = parse(`<style>${css}</style><rect width="5" height="5"/>`).nodes[0];
+    return JSON.stringify(leaf);
+  };
+  it('reads its body to the end of the sheet', () => {
+    expect(fillOf('rect{fill:red')).toContain('#ff0000');
+    expect(fillOf('@media all{rect{fill:red')).toContain('#ff0000');
+    expect(fillOf('@media all{rect{fill:red}')).toContain('#ff0000');
+  });
+});

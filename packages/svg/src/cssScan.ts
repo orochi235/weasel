@@ -76,8 +76,13 @@ export function splitTopLevel(s: string, sep: string, dropBlocks = false): strin
   return parts;
 }
 
-/** Given `s[i] === '{'`, return the index just after its matching `}`. */
+/** Given `s[i] === '{'`, return the index just after its matching `}`, or the end of `s` when none closes it. */
 export function skipBlock(s: string, i: number): number {
+  return closeOfBlock(s, i) ?? s.length;
+}
+
+/** Given `s[i] === '{'`, the index just after its matching `}`, or `null` when the block runs to the end of `s`. */
+export function closeOfBlock(s: string, i: number): number | null {
   let depth = 0;
   while (i < s.length) {
     const ch = s[i];
@@ -86,7 +91,7 @@ export function skipBlock(s: string, i: number): number {
     else if (ch === '}' && --depth === 0) return i + 1;
     i++;
   }
-  return s.length;
+  return null;
 }
 
 const PROP_NAME = /^-?[a-z_][a-z0-9_-]*$/;
