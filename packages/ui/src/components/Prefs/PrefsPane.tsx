@@ -62,7 +62,7 @@ export function PrefsPane(props: PrefsPaneProps) {
     <div className={[s.pane, className].filter(Boolean).join(' ')} ref={paneRef} data-pref-into={path} data-pref-scroll="" {...hiddenAttrs(marked)}>
       <div className={s.paneHead} {...selectionAttrs(path, { selected: ctx.selected })}>
         <h3 className={[s.paneTitle, head.className].filter(Boolean).join(' ')}>{head.name}{marked && <HiddenBadge />}{head.control}</h3>
-        {group.description !== undefined && (
+        {group.description && (
           <p className={s.paneDesc}>{group.description}</p>
         )}
       </div>
@@ -162,7 +162,7 @@ function PaneSection({ ctx, group, path, depth, box }: {
         {marksHidden(ctx.hidden, path) && <HiddenBadge />}
         {head.control}
       </Heading>
-      {group.description !== undefined && (
+      {group.description && (
         <p className={s.paneDesc}>{group.description}</p>
       )}
       <div className={s.rows}>{paneChildren(ctx, head.entries, path, depth + 1, box)}</div>
@@ -236,7 +236,7 @@ function PanePanel({ ctx, group, path, depth }: {
       title={named ? group.name : undefined}
       disabled={head.off}
       inline={named ? headingInline(marked, head.control) : undefined}
-      note={group.description}
+      note={group.description || undefined}
       level={5}
       className={s.panePanel}
       attrs={selectionAttrs(path, ctx)}
@@ -270,7 +270,7 @@ function PaneTabs({ ctx, tabs, depth, box }: {
         content: (
           <>
             {marksHidden(ctx.hidden, p) && <HiddenBadge lead />}
-            {g.description !== undefined && <p className={s.paneDesc}>{g.description}</p>}
+            {g.description && <p className={s.paneDesc}>{g.description}</p>}
             <div className={s.rows}>{paneChildren(ctx, Object.entries(g.children), p, depth + 1, box)}</div>
           </>
         ),

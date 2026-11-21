@@ -77,7 +77,7 @@ export function ObjectLeaf({
             motif={section.motif}
             fallback={FORM_FRAMES.labeled}
             title={labeled ? section.name : undefined}
-            note={section.description}
+            note={section.description || undefined}
             level={4}
             className={`${s.panePanel} ${s.objectPanel}`}
             disabled={off(path)}
