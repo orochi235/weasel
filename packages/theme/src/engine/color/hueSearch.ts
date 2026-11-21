@@ -214,6 +214,18 @@ function descend(
   return current;
 }
 
+const gatesOf = (c: Constraints): Gates => ({
+  minGapDeg: floorDegrees(c),
+  minContrast: c.minContrast,
+  minSurfaceDistance: c.minSurfaceDistance,
+  minDistance: c.minDistance,
+});
+
+/** Whether these final colors meet `c`'s gates. */
+export function meetsGates(hexes: readonly string[], c: Constraints): boolean {
+  return penalty(hexes.map((h) => measure(h, c.surface)), gatesOf(c)) === 0;
+}
+
 /**
  * Search hue positions that maximize mean chroma subject to the gates.
  *
@@ -222,12 +234,7 @@ function descend(
  * anchors leave free instead.
  */
 export function searchHues(c: Constraints): number[] | null {
-  const g: Gates = {
-    minGapDeg: floorDegrees(c),
-    minContrast: c.minContrast,
-    minSurfaceDistance: c.minSurfaceDistance,
-    minDistance: c.minDistance,
-  };
+  const g = gatesOf(c);
   const anchors = c.anchors.map((a) => measure(toHexPreview(a), c.surface));
   const freeCount = c.count - c.anchors.length;
   if (freeCount < 0) return null;

@@ -71,6 +71,12 @@ describe('generate', () => {
     expect(anchored?.lch.C).toBeLessThanOrEqual(0.05 + 1e-3);
   });
 
+  it('reports a palette that equalizing pushed below the contrast floor as infeasible', () => {
+    const { feasible, stats } = generate(withC({ count: 7, minContrast: 4.5, lightnessPull: 0, equalize: 1 }));
+    expect(stats.minContrast).toBeLessThan(4.5);
+    expect(feasible).toBe(false);
+  });
+
   it('narrows the chroma spread as equalize rises', () => {
     const at = (equalize: number) => generate(withC({ equalize })).stats.chromaSpread;
     expect(at(0.5)).toBeLessThan(at(0));

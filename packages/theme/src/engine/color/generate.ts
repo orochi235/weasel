@@ -1,7 +1,7 @@
 import { minOf, lerp } from '@weasel-js/geom';
 import { wrapDeg } from '@weasel-js/paint';
 import { hueName, uniqueNames } from './hueNames.ts';
-import { searchHues } from './hueSearch.ts';
+import { meetsGates, searchHues } from './hueSearch.ts';
 import { chromaCap, contrast, hueGap, toHex, toLch, type Lch } from './oklch.ts';
 import { summarize } from './paletteStats.ts';
 import { peakAt, place, toHexPreview } from './placement.ts';
@@ -99,8 +99,8 @@ export interface Stats {
 export interface Palette {
   readonly swatches: readonly Swatch[];
   readonly stats: Stats;
-  /** False when no hue arrangement satisfied the gates; `swatches` is then the
-   *  best unconstrained attempt, so the lab still has something to draw. */
+  /** False when the swatches miss a gate: no hue arrangement met them, or equalizing moved the colors out of
+   *  them. The lab still gets a palette to draw. */
   readonly feasible: boolean;
 }
 
@@ -172,7 +172,6 @@ function farthestFirst(hues: number[]): number[] {
 export function generate(constraints: Constraints): Palette {
   const c = { ...constraints, anchors: constraints.anchors.map((a) => ({ ...a, hue: wrapDeg(a.hue) })) };
   const found = searchHues(c);
-  const feasible = found !== null;
   // An infeasible gate still has to draw something, so fall back to an even ring.
   const free =
     found ??
@@ -187,6 +186,8 @@ export function generate(constraints: Constraints): Palette {
     ...free.map((h) => place(h, c)),
   ];
   const hexes = equalizeChroma(raw, c.equalize, anchoredFlags);
+  // Equalizing moves lightness, so the gates the search met are checked again on what it gives.
+  const feasible = found !== null && (c.equalize <= 0 || meetsGates(hexes, c));
 
   const order =
     c.order === 'farthest'
