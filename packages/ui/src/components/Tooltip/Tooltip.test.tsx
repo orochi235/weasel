@@ -109,6 +109,23 @@ describe('Tooltip', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it('lets an Escape pressed elsewhere through while a tooltip opened by default shows', () => {
+    const onEditorKey = vi.fn();
+    render(
+      <>
+        <TooltipTrigger defaultOpen>
+          <Focusable><button type="button">Save</button></Focusable>
+          <Tooltip>Save the document</Tooltip>
+        </TooltipTrigger>
+        <div contentEditable suppressContentEditableWarning data-testid="editor" onKeyDown={(e) => onEditorKey(e.key)} />
+      </>,
+    );
+    const editor = screen.getByTestId('editor');
+    act(() => editor.focus());
+    fireEvent.keyDown(editor, { key: 'Escape' });
+    expect(onEditorKey).toHaveBeenCalledWith('Escape');
+  });
+
   it('leaves a stop the Escape meets where it was pressed in force', () => {
     const onWindowKey = vi.fn();
     window.addEventListener('keydown', onWindowKey);

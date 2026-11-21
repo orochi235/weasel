@@ -47,7 +47,7 @@ export type TooltipTriggerProps = Omit<TooltipTriggerComponentProps, 'isOpen'> &
  */
 export function TooltipTrigger(props: TooltipTriggerProps) {
   const { delay = TOOLTIP_DELAY_MS, closeDelay = 0, onOpenChange, keepEscape = false, open: controlled, ...rest } = props;
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(rest.defaultOpen ?? false);
   useEscapePassesThrough(!keepEscape && (controlled ?? open));
   const changed = useCallback((next: boolean) => {
     setOpen(next);
