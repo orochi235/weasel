@@ -175,13 +175,31 @@ function evalCompiled(s: number, spline: CompiledSpline): number {
   return baseLine + curvatureTerm;
 }
 
+/** Anchors closer along the curve than this are one point to the interpolating spline. */
+const SAME_S = 1e-6;
+
+/**
+ * `anchors` with each run that shares an `s` cut to one anchor, so no interval of the spline is empty: the first of
+ * a run at the curve's start, which is its end anchor, and otherwise the last.
+ */
+function distinctAnchors(anchors: readonly Anchor[]): Anchor[] {
+  const out: Anchor[] = [];
+  for (const a of anchors) {
+    const prev = out[out.length - 1];
+    if (!prev || a.s - prev.s > SAME_S) out.push(a);
+    else if (out.length > 1) out[out.length - 1] = { ...a, s: prev.s };
+  }
+  if (out.length > 1 && anchors.length > 0) out[out.length - 1] = { ...out[out.length - 1], s: anchors[anchors.length - 1].s };
+  return out;
+}
+
 /**
  * The radius r(s) of the interpolating `octant-spline` curve through `anchors`, which are in order along it from
  * s = 0 to s = 1: a cubic through every anchor, flat at both ends, an anchor's weight sharpening (over 1) or easing
  * (under 1) the bend there.
  */
 export function octantSplineRadius(anchors: readonly BadgeSplineAnchor[]): (s: number) => number {
-  const spline = compileSpline(anchors);
+  const spline = compileSpline(distinctAnchors(anchors));
   return (s) => evalCompiled(s, spline);
 }
 

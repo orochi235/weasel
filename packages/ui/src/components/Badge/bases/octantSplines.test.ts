@@ -111,3 +111,29 @@ describe('a spline base anchor count', () => {
     expect(extractAnchorPairs({ count: NaN }, OCTANT_BSPLINE_MIN_WEIGHT)).toEqual(extractAnchorPairs({ count: 3 }, OCTANT_BSPLINE_MIN_WEIGHT));
   });
 });
+
+describe('octant-spline anchors that share an s', () => {
+  it('draw the curve through one of them, staying within the anchors radii', () => {
+    for (const count of [6, 7, 12]) {
+      const radius = octantSplineRadius(extractAnchorPairs({ count }));
+      for (let i = 0; i <= 200; i++) {
+        const r = radius(i / 200);
+        expect(r).toBeGreaterThan(20);
+        expect(r).toBeLessThan(60);
+      }
+      expect(radius(1 - 1e-9)).toBeCloseTo(radius(1), 3);
+    }
+  });
+
+  it('keep the last anchor at s = 1, so quadrant mode still closes', () => {
+    const radius = octantSplineRadius(extractAnchorPairs({ count: 7, mode: 'quadrant' }));
+    expect(radius(1)).toBe(radius(0));
+    expect(radius(1 - 1e-9)).toBeCloseTo(radius(0), 3);
+  });
+
+  it('keep the end anchor at s = 0', () => {
+    const radius = octantSplineRadius([{ s: 0, r: 40, w: 1 }, { s: 0, r: 20, w: 1 }, { s: 0.5, r: 30, w: 1 }, { s: 1, r: 35, w: 1 }]);
+    expect(radius(0)).toBe(40);
+    expect(radius(1e-9)).toBeCloseTo(40, 3);
+  });
+});

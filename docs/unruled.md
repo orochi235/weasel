@@ -3275,3 +3275,7 @@ Calls the lanes made without a ruling:
   `quatrefoil` had, and a `puzzle` badge's `arcSamples` 6..256. The upper bounds are picked to keep a render finite.
 - 2026-11-20 (the fixer's call): `NaN` in a badge base param reads as that param's default, as round 57 ruled for shape
   params, and an infinite `rotation` or powerline `depth`, which no bound holds, reads as its default too.
+- 2026-11-20 (the fixer's call): `octant-spline` anchors within 1e-6 of one `s` are one point to the curve, which runs
+  through the first of them at s = 0 and the last elsewhere, so the end anchor quadrant mode pins is the one kept.
+  `octant-bspline` keeps them all, as coincident control points are well defined there. Averaging a run was the
+  alternative.
