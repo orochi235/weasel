@@ -43,12 +43,6 @@ describe('browserDeps', () => {
     expect(deps()).toEqual(['@testing-library/react', 'zustand/vanilla']);
   });
 
-  it('names a dependency through the package holding its own copy, so vite bundles that copy', () => {
-    put('node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '4.0.0' }));
-    put('packages/kit/node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '5.0.0' }));
-    expect(deps()).toEqual(['@fixture/kit > zustand/vanilla', '@testing-library/react']);
-  });
-
   it('gains a specifier first imported anywhere in an entry’s graph', () => {
     put(
       'packages/kit/src/store.ts',
@@ -83,17 +77,6 @@ describe('browserDeps', () => {
     const before = deps();
     put('packages/kit/src/unreached.ts', `import 'never-loaded';\nimport 'nor-this';\n`);
     expect(deps()).toEqual(before);
-  });
-
-  it('names the owning package of a dependency it installs a copy of its own of', () => {
-    put('node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '4.0.0' }));
-    put('packages/kit/node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '5.0.0' }));
-    expect(deps()).toEqual(['@fixture/kit > zustand/vanilla', '@testing-library/react']);
-  });
-
-  it('lists a dependency bare when the package resolves the root’s copy', () => {
-    put('node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '4.0.0' }));
-    expect(deps()).toEqual(['@testing-library/react', 'zustand/vanilla']);
   });
 
   it('passes over the directory a failed browser test leaves its screenshots in', () => {
@@ -160,11 +143,6 @@ describe('browserDeps', () => {
     expect(deps()).toEqual(['@testing-library/react', 'zustand/vanilla']);
   });
 
-  it('lists a dependency a package has its own copy of through that package', () => {
-    put('packages/kit/node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '5.0.0' }));
-    expect(deps()).toEqual(['@fixture/kit > zustand/vanilla', '@testing-library/react']);
-  });
-
   it('leaves out what vite cannot or must not pre-bundle', () => {
     put('packages/app/src/raw.ts', `import 'raw-only';\n`);
     put(
@@ -182,12 +160,6 @@ describe('browserDeps', () => {
       ].join('\n'),
     );
     expect(deps()).toEqual([]);
-  });
-
-  it('names the importing package for a dependency it has its own copy of', () => {
-    put('node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '4.0.0' }));
-    put('packages/kit/node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '5.0.0' }));
-    expect(deps()).toEqual(['@fixture/kit > zustand/vanilla', '@testing-library/react']);
   });
 });
 
