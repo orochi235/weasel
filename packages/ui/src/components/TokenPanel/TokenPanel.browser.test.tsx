@@ -44,3 +44,17 @@ test('a long scale name ellipsizes before the reset rather than running under it
   const textEnd = nameEl.getBoundingClientRect().right - parseFloat(getComputedStyle(nameEl).paddingInlineEnd);
   expect(textEnd).toBeLessThanOrEqual(scale.getByRole('button', { name: `Reset ${group}` }).getBoundingClientRect().left + 0.5);
 });
+
+test('a token overridden to an empty value draws its name as overridden', () => {
+  renderWithIcons(
+    <TokenPanel
+      tokens={[
+        { name: '--gap', type: 'string', group: 'gap', value: '', overridden: true },
+        { name: '--pad', type: 'string', group: 'pad', value: 'auto', overridden: true },
+      ]}
+      onChange={() => {}}
+    />,
+  );
+  const color = (name: string) => getComputedStyle(within(screen.getByRole('group', { name })).getByTitle(name)).color;
+  expect(color('--gap')).toBe(color('--pad'));
+});

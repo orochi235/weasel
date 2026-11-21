@@ -73,7 +73,7 @@
   visibility: hidden;
 }
 
-.row[data-unset] > .name {
+.row[data-unset]:not([data-overridden]) > .name {
   color: var(--wzl-fg-subtle);
 }
 
