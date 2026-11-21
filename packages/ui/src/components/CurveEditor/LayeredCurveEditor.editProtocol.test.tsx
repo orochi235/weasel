@@ -118,6 +118,15 @@ describe('curve layers and the edit protocol', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('a click-curve layer left with no curve to press takes a click in empty space as its new point', () => {
+    const onChange = vi.fn();
+    render(editor(<FunctionLayer state={functionLayerState([{ x: 0, y: 0 }])} onChange={onChange} />));
+    down(100, 50);
+    up(100, 50);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect((onChange.mock.calls[0][0] as ReturnType<typeof functionLayerState>).points).toHaveLength(2);
+  });
+
   it('Escape cancels a drag: the preview goes back, onCancel fires, nothing commits', () => {
     const onInput = vi.fn();
     const onChange = vi.fn();

@@ -3468,3 +3468,9 @@ Calls the lanes made without a ruling:
   still writes anchored at the user-space origin; the kit's export path resolves such a paint with
   `paintToLocalUnits` first and never warns. Writing a def per node, each placed against that node's box, was the
   alternative.
+
+## Audit round sixty-five (2026-11-21): CurveEditor
+
+- 2026-11-21 (the fixer's call): a `'click-curve'` function layer with fewer than two anchors, which draws no curve to
+  press, adds a point from a click anywhere in the plot until it has two. Holding `minPoints` at 2 in that mode, so a
+  delete could never leave it there, was the alternative; it would not help a state the consumer passes in that short.
