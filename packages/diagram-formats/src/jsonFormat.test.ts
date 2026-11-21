@@ -71,9 +71,18 @@ describe('DIAGRAM_JSON', () => {
       [{ ...graph, height: 'tall' }, /"p" whose height/],
       [{ ...graph, id: 3 }, /no string id/],
       [{ ...graph, data: { nodes: [] } }, /"p" whose graph data has no nodes and edges lists/],
+      [{ ...graph, name: 7 }, /"p" whose name is not a string/],
       [{ kind: 'plot', id: 'c', width: 10, height: 10 }, /"c" with no data object/],
     ] as const) {
       expect(() => DIAGRAM_JSON.read!(file(page))).toThrow(says);
+    }
+  });
+
+  it('refuses crossPageEdges that are not a list of edges', () => {
+    const file = (crossPageEdges: unknown) => JSON.stringify({ format: 'weasel-diagram', version: 2, pages: [], crossPageEdges });
+    expect(() => DIAGRAM_JSON.read!(file([{ from: 'a', to: 'b' }]))).not.toThrow();
+    for (const bad of [{}, [null], [{ from: 'a' }], 'a->b']) {
+      expect(() => DIAGRAM_JSON.read!(file(bad))).toThrow(/crossPageEdges is not a list of edges/);
     }
   });
 });
