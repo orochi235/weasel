@@ -22,6 +22,21 @@ const ASSET = /\.(css|less|scss|sass|svg|png|jpe?g|gif|webp|woff2?|ttf|otf|json|
 
 const isFile = (path: string) => existsSync(path) && statSync(path).isFile();
 
+/**
+ * `owner > specifier` when `file` resolves `specifier` to a copy nested under a workspace package rather than
+ * the root's, else `specifier`. vite serves a bare `include` entry to every importer, whatever copy it resolves.
+ */
+function includeEntry(specifier: string, file: string, repoRoot: string): string {
+  const pkg = packageOf(specifier);
+  for (let dir = dirname(file); dir.startsWith(repoRoot) && dir !== repoRoot; dir = dirname(dir)) {
+    if (!existsSync(join(dir, 'node_modules', pkg, 'package.json'))) continue;
+    const manifest = join(dir, 'package.json');
+    const owner = isFile(manifest) ? (JSON.parse(readFileSync(manifest, 'utf8')) as { name?: string }).name : undefined;
+    return owner ? `${owner} > ${specifier}` : specifier;
+  }
+  return specifier;
+}
+
 /** The source module `path` names, or `undefined` for an asset or a path with nothing behind it. */
 function sourceAt(path: string): string | undefined {
   const written = path.replace(/\.js$/, '');
@@ -129,7 +144,9 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) {
+        found.add(includeEntry(specifier, file, repoRoot));
+      }
     }
   }
   return [...found].sort();

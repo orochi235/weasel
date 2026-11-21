@@ -57,6 +57,13 @@ describe('browserDeps', () => {
     expect(deps()).toEqual(['@testing-library/react', 'earcut', 'zustand/vanilla']);
   });
 
+  it('names the owner of a copy nested under a workspace package, which a bare entry would hide', () => {
+    put('node_modules/earcut/package.json', JSON.stringify({ name: 'earcut', version: '2.0.0' }));
+    put('packages/kit/node_modules/earcut/package.json', JSON.stringify({ name: 'earcut', version: '3.0.0' }));
+    put('packages/kit/src/store.ts', `import earcut from 'earcut';\nexport const store = earcut;\n`);
+    expect(deps()).toEqual(['@fixture/kit > earcut', '@testing-library/react']);
+  });
+
   it('is unchanged by an edit that imports nothing new', () => {
     const before = deps();
     put('packages/kit/src/more.ts', `import type { Draft } from 'immer';\nexport const more = 1;\n`);
