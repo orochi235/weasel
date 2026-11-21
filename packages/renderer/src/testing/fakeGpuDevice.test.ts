@@ -35,4 +35,12 @@ describe('fakeGpuDevice', () => {
     fake.device.createRenderPipeline({} as GPURenderPipelineDescriptor);
     expect(seen).toEqual(['invalid pipeline']);
   });
+
+  it('hands a dispatched uncapturederror to its listeners, as the renderer re-raises a scoped one', () => {
+    const { device } = fakeGpuDevice();
+    const seen: string[] = [];
+    device.addEventListener('uncapturederror', (e) => seen.push((e as GPUUncapturedErrorEvent).error.message));
+    device.dispatchEvent(Object.assign(new Event('uncapturederror'), { error: { message: 're-raised' } }));
+    expect(seen).toEqual(['re-raised']);
+  });
 });

@@ -96,6 +96,7 @@ export function fakeGpuDevice(width = 64, height = 64): FakeGpuDevice {
     destroy: () => { lose({ reason: 'destroyed', message: 'destroyed' } as GPUDeviceLostInfo); },
     addEventListener: events.addEventListener.bind(events),
     removeEventListener: events.removeEventListener.bind(events),
+    dispatchEvent: events.dispatchEvent.bind(events),
     createCommandEncoder: () => ({
       beginRenderPass: renderPass,
       copyTextureToBuffer() {}, copyTextureToTexture() {},
