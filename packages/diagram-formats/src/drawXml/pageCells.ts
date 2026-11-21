@@ -3,7 +3,7 @@
  * pools, lanes, groups, edges, and edge labels — with their boxes on the page.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { cellsOf, geometryOf, offsetOf, type RawCell } from './cells';
+import { ROLE_KEY, cellsOf, geometryOf, offsetOf, type RawCell } from './cells';
 import { hasStyleName, styleFlag, styleNumber } from './style';
 import type { Rect } from '@weasel-js/geom';
 
@@ -85,6 +85,8 @@ export function pageCells(model: Element): PageCells {
     if (hasStyleName(cell.style, 'group')) return 'group';
     if (isSwimlane(cell)) {
       if (parent !== undefined && kindOf(parent) === 'pool') return 'lane';
+      const role = cell.style.values.get(ROLE_KEY);
+      if (role === 'pool' || role === 'container') return role;
       return holdsLanes(cell, childrenOf(cell.id)) ? 'pool' : 'container';
     }
     return styleFlag(cell.style, 'container') ? 'container' : 'shape';

@@ -65,3 +65,26 @@ describe('draw-style XML rounded boxes', () => {
     expect(warnings).toContain('Shapes of kind "step" were drawn as rounded rects.');
   });
 });
+
+describe('draw-style XML pools and containers', () => {
+  it('keeps a container holding one tall container a container', async () => {
+    const { data } = await roundTrip({
+      nodes: [{ id: 'n', lines: ['N'], at: { x: 60, y: 100 }, width: 80, height: 40 }],
+      edges: [],
+      containers: [
+        { id: 'outer', role: 'container', label: 'Outer', members: ['inner'] },
+        { id: 'inner', role: 'container', label: 'Inner', members: ['n'], box: { x: 40, y: 60, width: 200, height: 800 } },
+      ],
+    });
+    expect(region(data, 'outer').role).toBe('container');
+    expect(region(data, 'inner').role).toBe('container');
+  });
+
+  it('keeps a pool with no lanes a pool', async () => {
+    const { data } = await roundTrip({
+      nodes: [], edges: [],
+      containers: [{ id: 'pool', role: 'pool', label: 'Pool', axis: 'y', box: { x: 20, y: 20, width: 400, height: 200 }, lanes: [] }],
+    });
+    expect(region(data, 'pool').role).toBe('pool');
+  });
+});

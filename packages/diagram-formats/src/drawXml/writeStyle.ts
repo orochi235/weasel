@@ -4,6 +4,7 @@ import {
   type DataEdge, type DataLane, type DataNode, type DiagramTheme, type NodeStyle, type Row, type RowTextStyle,
 } from '@weasel-js/diagram';
 import { ownPorts } from '../graphWrite';
+import { ROLE_KEY } from './cells';
 import { rowLines } from '../rowLines';
 import { SHAPES, STADIUM_ARC, markerStyle } from './mapping';
 import type { Warn } from './readStyle';
@@ -73,7 +74,7 @@ export function regionStyle(region: DataContainer | (DataLane & { role: 'lane' }
     'swimlane', ['horizontal', header?.side === 'left' ? 0 : 1], ['startSize', header?.size ?? 0],
     ['container', 1], ['collapsible', 0], ['whiteSpace', 'wrap'],
     ...(lane ? colorParts({ ...style, strokeWidth: LANE_STROKE_WIDTH }, false) : colorParts(style, true)),
-    ['swimlaneFillColor', lane ? 'none' : colorValue(style.fill)],
+    ['swimlaneFillColor', lane ? 'none' : colorValue(style.fill)], [ROLE_KEY, lane ? undefined : region.role],
   ]);
 }
 

@@ -110,3 +110,7 @@ export function pointsOf(cell: RawCell): Vec2[] {
 
 /** The graph model attribute holding the way the page runs. A draw app does not know it, so it ignores it. */
 export const DIRECTION_ATTR = 'weaselDirection';
+
+/** The style key holding whether a swimlane is a pool or a container, which its shape alone cannot say. A draw app does
+ *  not know it, so it ignores it. */
+export const ROLE_KEY = 'weaselRole';
