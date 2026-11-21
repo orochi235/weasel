@@ -79,6 +79,7 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): LeafContext {
     hidden: hidden.has(panelLeafKey(panelLeaf)),
     hiddenAt: inside?.hiddenAt ?? ((at) => hidden.has(at)),
     ...(scope.active?.has(panelLeafKey(panelLeaf)) ? { active: true } : {}),
+    activeAt: inside?.activeAt ?? ((at) => scope.active?.has(at) === true),
     ...(entryAt ? { entryAt } : {}),
     ...(scope.settles ? { settles: scope.settles } : {}),
     ...(scope.textWaitMs ? { textWaitMs: scope.textWaitMs } : {}),
