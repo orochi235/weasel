@@ -52,3 +52,18 @@ describe('Badge labelProps', () => {
     expect(getByRole('button', { name: 'own' })).toBeDefined();
   });
 });
+
+describe('Badge registry keys', () => {
+  it('draws a pill for a shape key that names an Object.prototype member', () => {
+    const { container } = render(<Badge shape={'toString' as never}>x</Badge>);
+    expect((container.firstElementChild as HTMLElement).dataset.shape).toBe('pill');
+  });
+
+  it('draws no composed outline for a base key that names an Object.prototype member', () => {
+    expect(() => render(<Badge base={'constructor' as never}>x</Badge>)).not.toThrow();
+  });
+
+  it('skips an effect whose type names an Object.prototype member', () => {
+    expect(() => render(<Badge base="rounded-rect" effects={[{ type: 'constructor' as never }]}>x</Badge>)).not.toThrow();
+  });
+});

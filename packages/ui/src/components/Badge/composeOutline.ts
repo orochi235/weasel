@@ -1,6 +1,7 @@
 import { trimNumber, wrapPositive } from '@weasel-js/geom';
 import type { BaseSampler } from './bases/types';
 import { EFFECTS, type BadgeEffectSpec } from './effects';
+import { registryEntry } from './registryEntry';
 
 const SAMPLES = 600;
 
@@ -25,7 +26,7 @@ function closedPath(at: (sCss: number) => { x: number; y: number }, totalCss: nu
  */
 function displacer(base: BaseSampler, effects: readonly BadgeEffectSpec[] | undefined, bloatCss: number, phase: number) {
   const offsetMods = (effects ?? []).flatMap((eff) => {
-    const mod = EFFECTS[eff.type];
+    const mod = registryEntry(EFFECTS, eff.type);
     if (!mod?.offsetAt) return [];
     return [{ offsetAt: mod.offsetAt, params: { ...(mod.defaults ?? {}), ...(eff.params ?? {}) } }];
   });

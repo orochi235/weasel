@@ -2,6 +2,7 @@ import type { ShapeModule } from './types';
 import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
 import type { BaseModule } from './bases/types';
 import type { BadgeEffectSpec } from './effects';
+import { registryEntry } from './registryEntry';
 
 /** What a badge is composed from, or a null `base` for one its shape draws itself. */
 export interface ComposeSpec {
@@ -23,7 +24,7 @@ export function resolveCompose(
 ): ComposeSpec {
   const spec = !own.base && shape.compose ? shape.compose(shapeParams) : null;
   const key = own.base ?? (spec?.base as BadgeBase | undefined);
-  const base = key ? BASES[key] : null;
+  const base = registryEntry(BASES, key) ?? null;
   const given = own.base ? own.baseParams : spec?.baseParams;
   return {
     base,
