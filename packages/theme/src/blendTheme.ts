@@ -17,14 +17,15 @@ interface Weighted {
 const heaviest = (members: readonly Weighted[]): string => members.reduce((most, m) => (m.weight > most.weight ? m : most)).css;
 
 function blendNumbers(members: readonly Weighted[]): string | undefined {
-  const reads: { value: number; weight: number }[] = [];
-  let unit: string | undefined;
+  const reads: { value: number; unit: string; weight: number }[] = [];
   for (const { css, weight } of members) {
     const read = readCssNumber(css);
-    if (!read || (unit !== undefined && read.unit !== unit)) return undefined;
-    unit = read.unit;
-    reads.push({ value: read.value, weight });
+    if (!read) return undefined;
+    reads.push({ ...read, weight });
   }
+  // A bare 0 is a length (or any dimension) as much as a number, so it takes the others' unit.
+  const unit = reads.find((r) => r.unit !== '')?.unit ?? '';
+  if (reads.some((r) => r.unit !== unit && !(r.unit === '' && r.value === 0))) return undefined;
   const total = reads.reduce((t, r) => t + r.weight, 0);
   // Shares, not raw weights: a weighted sum of two lengths near the double range's end overflows.
   const mean = reads.reduce((sum, r) => sum + r.value * (r.weight / total), 0);
@@ -48,7 +49,7 @@ function blend(members: readonly Weighted[]): string {
 /**
  * `theme` partway between values of its axes: resolved at every selection
  * `weights` gives a share to, and each token folded from what it resolved to
- * there. A color mixes in OKLCH, premultiplied by alpha as `color-mix()` mixes, and a number with one unit throughout mixes
+ * there. A color mixes in OKLCH, premultiplied by alpha as `color-mix()` mixes, and a number with one unit throughout (a bare 0 taking the others') mixes
  * linearly; any other value is the heaviest selection's, the first on a tie.
  * It is the resolved values that mix, never the rules behind them, so a token
  * that is an alias in one mode and a literal in the other blends like any
