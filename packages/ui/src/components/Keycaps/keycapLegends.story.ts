@@ -3,7 +3,7 @@ import { getOwn } from '@weasel-js/registry';
 import type { KeyLegend } from './Keycaps';
 
 const MOD_BY_GLYPH: Readonly<Record<string, ModifierKey | undefined>> = {
-  '⌘': 'mod', '⇧': 'shift', '⌥': 'alt', '⌃': 'ctrl', '⇪': 'meta',
+  '⌘': 'mod', '⇧': 'shift', '⌥': 'alt', '⌃': 'ctrl',
 };
 const NAMED_BY_GLYPH: Readonly<Record<string, string | undefined>> = {
   '⎋': 'Escape', '↵': 'Enter', '⇥': 'Tab', '␣': 'Space', '⌫': 'Backspace', '⌦': 'Delete',
