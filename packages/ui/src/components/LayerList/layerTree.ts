@@ -4,9 +4,18 @@ import type { LayerListItem, LayerMove } from './layerListProps';
 type Items = readonly LayerListItem[];
 
 /** Returns `items` with `move` applied, for a consumer that holds the tree as state. Layers the move leaves alone
- *  keep their identity. */
+ *  keep their identity. Throws when `move.parentId` is not in `items`, or is a moved layer or inside one. */
 export function moveLayers(items: LayerListItem[], move: LayerMove): LayerListItem[] {
   const moving = new Set(move.ids);
+  if (move.parentId !== null) {
+    const parent = move.parentId;
+    if (!findLayer(items, parent)) throw new Error(`moveLayers: no layer "${parent}" to move into`);
+    const inMove = move.ids.some((id) => {
+      const it = findLayer(items, id);
+      return id === parent || (it?.children !== undefined && findLayer(it.children, parent) !== undefined);
+    });
+    if (inMove) throw new Error(`moveLayers: cannot move layers into "${parent}", which is among them`);
+  }
   const taken = new Map<string, LayerListItem>();
   const lift = (list: LayerListItem[]): LayerListItem[] => {
     let changed = false;

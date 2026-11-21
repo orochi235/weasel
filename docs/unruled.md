@@ -3230,3 +3230,8 @@ Calls the lanes made without a ruling:
   a caller who passed it as an increment now gets that number as the half-height.
 - 2026-11-20: A badge shape's repeat counts (`sparkler` and `starburst` `points`, `receipt` `teeth`) stop at 256, and a
   `perforated` badge's `holePitch` at no less than 1px. Both bounds are picked to keep a render finite, not ruled.
+## Audit round fifty-eight (2026-11-20): LayerList
+
+- 2026-11-20 (the fixer's call): `moveLayers` throws when the move's `parentId` names no layer in the tree, or names a
+  moved layer or one inside it, where it had dropped the moved layers from the result. Returning the tree unchanged
+  was the alternative.

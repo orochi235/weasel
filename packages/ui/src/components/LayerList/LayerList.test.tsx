@@ -355,4 +355,10 @@ describe('moveLayers', () => {
     expect(next.map((l) => l.id)).toEqual(['g']);
     expect(next[0]?.children?.map((l) => l.id)).toEqual(['b', 'g2', 'g1']);
   });
+
+  it('throws rather than drop the layers when the parent is missing or among the moved', () => {
+    expect(() => moveLayers(TREE, { ids: ['b'], parentId: 'gone', index: 0 })).toThrow(/gone/);
+    expect(() => moveLayers(TREE, { ids: ['g'], parentId: 'g1', index: 0 })).toThrow(/g1/);
+    expect(() => moveLayers(TREE, { ids: ['g'], parentId: 'g', index: 0 })).toThrow(/"g"/);
+  });
 });
