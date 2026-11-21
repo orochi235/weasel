@@ -13,7 +13,7 @@ import type { CacheUse } from './layoutCache';
 import { LineBox } from './layoutColumns';
 import type { LaidOutRuns } from './layoutRuns';
 import { giveGroup, NO_QUADS } from './paintGroups';
-import { paintRunsInto, type PaintedRuns, type PaintRunsOptions } from './paintRuns';
+import { checkPaintOpts, paintRunsInto, type PaintedRuns, type PaintRunsOptions } from './paintRuns';
 import { entryFor, entryOf } from './runsEntries';
 
 /** Paintings held for one layout on behalf of runs arrays that have since
@@ -146,6 +146,7 @@ export function cachedPaintRuns(
   opts: PaintRunsOptions = {},
   use: CacheUse = 'keep',
 ): PaintedRuns {
+  checkPaintOpts(opts);
   const generation = glyphGeneration();
   const min = opts.outlineMinSize;
   const mine = entryOf(runs);

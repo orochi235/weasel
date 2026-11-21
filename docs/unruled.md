@@ -3304,3 +3304,10 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+
+## Audit round sixty-two (2026-11-21): text.layout
+
+- 2026-11-21 (the fixer's call): `paintRuns` and `cachedPaintRuns` throw a `RangeError` for an `outlineMinSize` of
+  `NaN`, which the paint cache read as a threshold no run reaches while every glyph drew as an outline. Omitting it is
+  how to ask for no outlines; the renderer passes none when a degenerate transform makes its world threshold `NaN`.
+  Reading `NaN` as omitted was the alternative.
