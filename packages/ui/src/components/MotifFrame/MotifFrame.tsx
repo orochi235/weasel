@@ -35,8 +35,9 @@ export type DefaultMotifProps = Partial<Record<FrameKind, Motif>> & {
  * A component with a look of its own passes it as the frame's `fallback`, so
  * only a motif an app names here replaces it.
  *
- * A kind decides a frame's colors and title type — a panel reads the
- * `--wzl-panel-*` slots in any motif — and the motif only its geometry.
+ * A `PropertyPanel` keeps its colors and title type, from the `--wzl-panel-*`
+ * slots, in whatever motif it draws in; the motif decides only its geometry.
+ * A `<MotifFrame kind="panel">` of its own takes a frame's slots, as any other does.
  */
 export function DefaultMotif({ children, named, ...kinds }: DefaultMotifProps) {
   const outer = useContext(MotifContext);
