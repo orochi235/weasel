@@ -1,12 +1,17 @@
-import { formatShortcutParts, SHORTCUT_LEADER_SEPARATOR, type ShortcutInput } from '@weasel-js/gestures';
+import { formatShortcutParts, SHORTCUT_LEADER_SEPARATOR, type FormatShortcutOptions, type ShortcutInput } from '@weasel-js/gestures';
 import { KeySequence } from './Keycaps';
 import s from './Keycaps.module.css';
 import { keyLegendsFromFormatted } from './keyLegendsFromFormatted';
 
 /** Props for {@link ShortcutKeys}: a shortcut written out, or one held as data. */
 export type ShortcutKeysProps = { className?: string } & (
-  | { legend: string; shortcut?: never }
-  | { shortcut: ShortcutInput; legend?: never }
+  | { legend: string; shortcut?: never; format?: never }
+  | {
+    shortcut: ShortcutInput;
+    legend?: never;
+    /** The platform and legend style its keys are written in. Default this platform's, in its usual legends. */
+    format?: FormatShortcutOptions;
+  }
 );
 
 function partsFromLegend(legend: string) {
@@ -19,7 +24,7 @@ function partsFromLegend(legend: string) {
  * UI font at its normal weight, after the keymaps that lead to it (`Loupe ▸ 2`). Takes the shortcut as data, or
  * already written out as `formatShortcut` writes one (`⇧⌘Z`, `Space`, `Loupe ▸ 2`).
  */
-export function ShortcutKeys({ legend, shortcut, className }: ShortcutKeysProps) {
-  const parts = legend !== undefined ? partsFromLegend(legend) : formatShortcutParts(shortcut);
+export function ShortcutKeys({ legend, shortcut, format, className }: ShortcutKeysProps) {
+  const parts = legend !== undefined ? partsFromLegend(legend) : formatShortcutParts(shortcut, format);
   return <KeySequence keys={parts?.keys} leader={parts?.leader} joins="none" className={[s.shortcut, className].filter(Boolean).join(' ')} />;
 }
