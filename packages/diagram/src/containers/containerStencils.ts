@@ -3,7 +3,10 @@
  * and the edits on one: adding a lane to a pool, and releasing a container's
  * members.
  */
-import { RIGID_POSE_COMPOSITION, localizeWorldPoses, reachesLocked, scenePoseFrame, type NodeId, type Op, type PoseComposition, type RectPose, type AnyScene } from '@weasel-js/core';
+import {
+  RIGID_POSE_COMPOSITION, composesFrames, localizeInScene, localizeWorldPoses, reachesLocked, scenePoseFrame, type NodeId, type Op, type RectPose,
+  type AnyScene,
+} from '@weasel-js/core';
 import type { IconSpec } from '@weasel-js/icons';
 import type { NodeStyle } from '../dataTypes';
 import { diagramThemeOf } from '../theme/resolve';
@@ -98,10 +101,14 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
   if (pool === undefined || trait?.role !== 'pool') return null;
   const axis = poolAxisOf(trait);
   const lanes = lanesOf(scene, poolId);
-  // In the pool's own frame, where its lanes are stored.
+  // Laid out in the pool's own box, where a layout sees it: upright where poses do not compose.
+  const frame = scenePoseFrame(scene);
+  const world = frame.world(pool.id) as RectPose;
+  const box = composesFrames(scene.composition) ? world : { x: world.x, y: world.y, width: world.width, height: world.height };
+  const inBox = (id: NodeId) => RIGID_POSE_COMPOSITION.decompose(box, frame.world(id) as RectPose);
   const { width, height } = pool.pose as RectPose;
   const b: RectPose = { x: 0, y: 0, width, height };
-  const at = index === undefined || index >= lanes.length ? null : scene.get(lanes[index]!)!.pose as RectPose;
+  const at = index === undefined || index >= lanes.length ? null : inBox(lanes[index]!);
   const boundary = at !== null ? (axis === 'y' ? at.y : at.x) : axis === 'y' ? b.y + b.height : b.x + b.width;
   // Centered on the boundary it goes in at: the stack orders lanes by where they sit.
   const start = boundary - NEW_LANE_SIZE / 2;
@@ -110,9 +117,9 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
     ? { x: b.x + offset, y: start, width: b.width - offset, height: NEW_LANE_SIZE }
     : { x: start, y: b.y + offset, width: NEW_LANE_SIZE, height: b.height - offset };
   const id = scene.mintId() as string;
-  const specs = localizeWorldPoses(regionSpecs('lane', axis, pose, `Lane ${lanes.length + 1}`, {
+  const specs = localizeInScene(scene, regionSpecs('lane', axis, pose, `Lane ${lanes.length + 1}`, {
     id, layer: pool.layer, parent: poolId, ...(style ? { style } : {}),
-  }), scene.composition as PoseComposition<RectPose>);
+  }).map((spec) => ({ ...spec, pose: RIGID_POSE_COMPOSITION.compose(box, spec.pose) })));
   scene.batch('Add lane', () => {
     for (const spec of specs) scene.add(spec as never);
     // A themed scene colors the lanes as a theme change would, by their places in the stack: the new one, and
