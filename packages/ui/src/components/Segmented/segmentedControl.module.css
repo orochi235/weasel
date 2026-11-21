@@ -277,7 +277,7 @@
 }
 
 /* Adjacent cells share one rule rather than stacking two. */
-.variant_flat .segment ~ .segment {
+.variant_flat:not(.tiled) .segment ~ .segment {
   margin-inline-start: -1px;
 }
 
@@ -342,6 +342,18 @@
 .root.tiled .segment {
   min-width: 0;
   border-radius: 0;
+}
+
+/* A flat grid's cells share their rules both ways: each overlaps its neighbors above and before, and the well makes
+   room for the first row and column to do the same. */
+.root.tiled.variant_flat {
+  padding-block-start: 1px;
+  padding-inline-start: 1px;
+}
+
+.root.tiled.variant_flat .segment {
+  margin-block-start: -1px;
+  margin-inline-start: -1px;
 }
 
 .root.tiled .segment[data-tile-corners~='ss'] { border-start-start-radius: var(--_tile-r); }
