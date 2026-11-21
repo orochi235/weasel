@@ -117,7 +117,7 @@ function inTopLayer(el: Element): boolean {
 
 /** The element `el`'s box is laid out inside: its slot when it is slotted, its shadow host when it heads a shadow
  *  tree, otherwise its parent element. */
-function boxParent(el: Element): Element | null {
+export function boxParent(el: Element): Element | null {
   if (el.assignedSlot) return el.assignedSlot;
   if (el.parentElement) return el.parentElement;
   const root = el.parentNode;

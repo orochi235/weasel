@@ -17,6 +17,18 @@ describe('scopeHolds', () => {
     expect(scopeHolds([document.createElement('div'), scope], tile)).toBe(true);
   });
 
+  it('holds a slotted tile inside the shadow-tree element its slot sits in', () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const pane = document.createElement('div');
+    pane.append(document.createElement('slot'));
+    host.attachShadow({ mode: 'open' }).append(pane);
+    const tile = document.createElement('div');
+    host.append(tile);
+    expect(scopeHolds(pane, tile)).toBe(true);
+    expect(scopeHolds(host, tile)).toBe(true);
+  });
+
   it('does not hold a tile outside it', () => {
     const scope = document.createElement('div');
     const tile = document.createElement('div');
