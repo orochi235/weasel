@@ -21,8 +21,8 @@ import type { Point2 } from '@weasel-js/routing';
  * ```
  */
 export interface TextEditDep {
-  /** Begin editing the node with `id`. */
-  startEdit(id: string, opts?: { caret?: number | 'all' }): void;
+  /** Begin editing the node with `id`: the caret `caret` characters in, after the last (`'end'`), or the whole text selected (`'all'`, the default). */
+  startEdit(id: string, opts?: { caret?: number | 'all' | 'end' }): void;
   /**
    * The top-most text node this editor would open at world point `at`, and
    * the caret at the glyph there, or `null` where there is none. A

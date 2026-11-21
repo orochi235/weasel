@@ -23,15 +23,15 @@ export function holdForFaces(style: ResolvedTextStyle, runs: readonly StyledRun[
   return pending.length === 0 ? null : Promise.all(pending);
 }
 
-/** The selection an edit opens with: the whole text, or a caret `caret`
- *  characters in, clamped to the text. */
-export function openingRange(overlay: HTMLElement, caret: number | 'all'): Range {
+/** The selection an edit opens with: the whole text, a caret at its end, or a
+ *  caret `caret` characters in, clamped to the text. */
+export function openingRange(overlay: HTMLElement, caret: number | 'all' | 'end'): Range {
   const range = document.createRange();
   if (caret === 'all') {
     range.selectNodeContents(overlay);
     return range;
   }
-  const at = charOffsetToDomPosition(overlay, caret);
+  const at = charOffsetToDomPosition(overlay, caret === 'end' ? Infinity : caret);
   if (at) range.setStart(at.node, at.offset);
   range.collapse(true);
   return range;
