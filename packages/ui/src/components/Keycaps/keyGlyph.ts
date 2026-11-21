@@ -1,22 +1,8 @@
-/** Apple-style glyph for a DOM `KeyboardEvent.key` value. Covers escape,
- *  delete/backspace, arrows, enter/return, tab, space. Unknown keys are
- *  upper-cased (so `'a'` reads as `A` on a keycap) and returned unchanged
- *  otherwise — making this safe to apply uniformly without a `has-glyph`
- *  check at the call site. */
+import { keyLegendFromKey } from '@weasel-js/gestures';
+
+/** Apple-style legend for a DOM `KeyboardEvent.key` value, as `keyLegendFromKey` gives it on macOS: a glyph for
+ *  escape, delete/backspace, arrows, enter/return, tab, and space, a single character upper-cased (`'a'` reads as
+ *  `A`), and any other key's short name (`Home`, `PgUp`). Safe to apply to any key without checking for a glyph. */
 export function keyGlyph(rawKey: string): string {
-  switch (rawKey) {
-    case 'Escape': return '⎋';
-    case 'Backspace': return '⌫';
-    case 'Delete': return '⌦';
-    case 'ArrowUp': return '↑';
-    case 'ArrowDown': return '↓';
-    case 'ArrowLeft': return '←';
-    case 'ArrowRight': return '→';
-    case 'Enter':
-    case 'Return': return '↵';
-    case 'Tab': return '⇥';
-    case ' ':
-    case 'Space': return '␣';
-    default: return rawKey.toUpperCase();
-  }
+  return keyLegendFromKey(rawKey, { platform: 'macos' }).label;
 }
