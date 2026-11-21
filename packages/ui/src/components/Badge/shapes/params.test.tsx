@@ -63,6 +63,15 @@ describe('a clamped shape param set to NaN', () => {
   }
 });
 
+describe('a house badge', () => {
+  it('keeps its peak inside the box', () => {
+    const peak = (params: Record<string, number>) =>
+      (SHAPES.house.compose!(params).baseParams as { vertices: [number, number][] }).vertices[0];
+    expect(peak({ peakHeight: 100 })).toEqual([50, 0]);
+    expect(peak({ eaveY: 60, peakHeight: 1000 })).toEqual([50, 0]);
+  });
+});
+
 describe('a repeat count', () => {
   const pathOf = (name: 'sparkler' | 'starburst' | 'receipt', params: Record<string, number>) => {
     const C = SHAPES[name].Component!;

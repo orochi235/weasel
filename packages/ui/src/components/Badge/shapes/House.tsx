@@ -4,6 +4,7 @@ import { clampParam, withDefaults } from './params';
 /** What `shapeParams` takes on a `house` badge. */
 export interface BadgeHouseShapeParams {
   eaveY?: number;
+  /** How far the peak rises above the eave, at most to the top of the box. */
   peakHeight?: number;
   roofOverhang?: number;
 }
@@ -14,7 +15,7 @@ const House: ShapeModule<BadgeHouseShapeParams> = {
   compose: (params): ShapeComposeSpec => {
     const cfg = withDefaults(DEFAULTS, params);
     const ey = clampParam(cfg.eaveY, 2, 95, DEFAULTS.eaveY);
-    const peakY = ey - clampParam(cfg.peakHeight, 0, Infinity, DEFAULTS.peakHeight);
+    const peakY = ey - clampParam(cfg.peakHeight, 0, ey, DEFAULTS.peakHeight);
     const ov = clampParam(cfg.roofOverhang, 0, 12, DEFAULTS.roofOverhang);
     return {
       base: 'polygon',
