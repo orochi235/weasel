@@ -146,6 +146,17 @@ describe('derive', () => {
     expect(tokens['gray-50'].description).toBe('{seeds.nope}');
   });
 
+  it('measures a rule against the token a malformed pin leaves in place', () => {
+    const { tokens, issues } = derive({
+      name: 'x',
+      ramps: { gray: { kind: 'lightness', steps: ['1', '9'], lightness: [0.97, 0.16] } },
+      semantics: { text: { ramp: 'gray', contrast: { min: 4.5, against: ['gray-9'] } } },
+      pins: { 'gray-9': { value: '#ffffff', type: 5 } } as never,
+    });
+    expect(tokens.text.value).toBe('{gray-1}');
+    expect(issues).toEqual([{ kind: 'invalid', path: 'pins.gray-9', message: 'type must be a string' }]);
+  });
+
   it('keeps the scope of a component it pins', () => {
     const { tokens } = derive({ name: 'x', components: { tb: { value: '#111111', type: 'color', scope: ['density'] } }, pins: { tb: '#222222' } });
     expect(tokens.tb).toMatchObject({ value: '#222222', type: 'color', scope: ['density'] });
