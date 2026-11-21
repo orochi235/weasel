@@ -3649,13 +3649,13 @@
    "packages/geom/src/paths/fitRun.ts",
    "packages/geom/src/paths/growRegion.ts",
    "packages/geom/src/paths/handleEdits.ts",
-   "packages/geom/src/paths/joinAnchors.ts"
+   "packages/geom/src/paths/joinAnchors.ts",
+   "packages/geom/src/paths/kneadPath.ts"
   ]
  },
  {
   "id": "geom.paths.part2",
   "files": [
-   "packages/geom/src/paths/kneadPath.ts",
    "packages/geom/src/paths/markers.ts",
    "packages/geom/src/paths/mergeRegion.ts",
    "packages/geom/src/paths/nearestAnchor.ts",
@@ -3675,6 +3675,7 @@
    "packages/geom/src/paths/repeatAlongPath.ts",
    "packages/geom/src/paths/resamplePath.ts",
    "packages/geom/src/paths/roughenPath.ts",
+   "packages/geom/src/paths/samePolygon.ts",
    "packages/geom/src/paths/schneiderFit.ts",
    "packages/geom/src/paths/segmentLength.ts",
    "packages/geom/src/paths/segmentType.ts",
@@ -4800,6 +4801,7 @@
    "packages/path-tools/src/extremes/addExtremes.ts",
    "packages/path-tools/src/fairing/fairing.tsx",
    "packages/path-tools/src/featurePresets.ts",
+   "packages/path-tools/src/fillet/cornerRadii.ts",
    "packages/path-tools/src/fillet/editFillet.ts",
    "packages/path-tools/src/fillet/filletCommands.ts",
    "packages/path-tools/src/fillet/filletControls.ts",
@@ -4820,13 +4822,13 @@
    "packages/path-tools/src/index.ts",
    "packages/path-tools/src/kitSettings.ts",
    "packages/path-tools/src/knead/knead.ts",
-   "packages/path-tools/src/knead/kneadTargets.ts",
-   "packages/path-tools/src/knead/useKneadTool.ts"
+   "packages/path-tools/src/knead/kneadTargets.ts"
   ]
  },
  {
   "id": "path-tools.part2",
   "files": [
+   "packages/path-tools/src/knead/useKneadTool.ts",
    "packages/path-tools/src/outlines/createOutlines.ts",
    "packages/path-tools/src/outlines/createOutlinesAction.tsx",
    "packages/path-tools/src/outlines/outlineStroke.ts",
@@ -4862,14 +4864,15 @@
    "packages/path-tools/src/segmentType/convertSegments.ts",
    "packages/path-tools/src/settingsFields.ts",
    "packages/path-tools/src/shapeBuilder/index.ts",
-   "packages/path-tools/src/shapeBuilder/shapeBuilder.ts",
-   "packages/path-tools/src/shapeBuilder/shapeBuilderActions.ts"
+   "packages/path-tools/src/shapeBuilder/shapeBuilder.ts"
   ]
  },
  {
   "id": "path-tools.part3",
   "files": [
+   "packages/path-tools/src/shapeBuilder/shapeBuilderActions.ts",
    "packages/path-tools/src/shapeBuilder/useShapeBuilderTool.ts",
+   "packages/path-tools/src/shared/handBackOperands.ts",
    "packages/path-tools/src/shared/outlineSession.ts",
    "packages/path-tools/src/shared/scenePaths.ts",
    "packages/path-tools/src/shared/strokeClickTool.ts",
@@ -5025,13 +5028,13 @@
    "packages/plot/src/measure.ts",
    "packages/plot/src/packet/compile.ts",
    "packages/plot/src/packet/edit.ts",
-   "packages/plot/src/packet/editor.ts"
+   "packages/plot/src/packet/editor.ts",
+   "packages/plot/src/packet/schema.ts"
   ]
  },
  {
   "id": "plot.part2",
   "files": [
-   "packages/plot/src/packet/schema.ts",
    "packages/plot/src/packet/structure.ts",
    "packages/plot/src/packet/types.ts",
    "packages/plot/src/pbt.fixture.ts",
@@ -5043,6 +5046,7 @@
    "packages/plot/src/pie/types.ts",
    "packages/plot/src/plotData.ts",
    "packages/plot/src/plotScene.ts",
+   "packages/plot/src/plotViewSync.ts",
    "packages/plot/src/quadrant/compile.ts",
    "packages/plot/src/quadrant/edit.ts",
    "packages/plot/src/quadrant/editor.ts",

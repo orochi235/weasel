@@ -1,0 +1,55 @@
+{
+ "id": "ui.components.Badge.effects",
+ "commit": "b8bed07d81b65bf8aef03565da2f604b0db44025",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Badge/effects/Aqua.tsx",
+  "packages/ui/src/components/Badge/effects/Bevel.tsx",
+  "packages/ui/src/components/Badge/effects/Bevel2.tsx",
+  "packages/ui/src/components/Badge/effects/Bites.tsx",
+  "packages/ui/src/components/Badge/effects/Metal.tsx",
+  "packages/ui/src/components/Badge/effects/Outline.tsx",
+  "packages/ui/src/components/Badge/effects/Perforations.tsx",
+  "packages/ui/src/components/Badge/effects/Puffs.tsx",
+  "packages/ui/src/components/Badge/effects/Rivets.tsx",
+  "packages/ui/src/components/Badge/effects/Scallops.tsx",
+  "packages/ui/src/components/Badge/effects/Shadow.tsx",
+  "packages/ui/src/components/Badge/effects/Sheen.tsx",
+  "packages/ui/src/components/Badge/effects/Spikes.tsx",
+  "packages/ui/src/components/Badge/effects/Sunbeams.tsx",
+  "packages/ui/src/components/Badge/effects/Woodgrain.tsx",
+  "packages/ui/src/components/Badge/effects/bumps.ts",
+  "packages/ui/src/components/Badge/effects/glassStrokes.tsx",
+  "packages/ui/src/components/Badge/effects/index.ts",
+  "packages/ui/src/components/Badge/effects/rangeMask.ts"
+ ],
+ "a": 8,
+ "b": 5,
+ "m": 0,
+ "distinct": 13,
+ "chapman": 53,
+ "unfound": 40,
+ "read": {
+  "A": 19,
+  "B": 19
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.4,
+   "B": 2.6,
+   "match": 1,
+   "fix": 4.2
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "weightedTokens": 593169,
+  "costUsd": 2.04
+ },
+ "fixCommits": []
+}

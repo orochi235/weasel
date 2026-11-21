@@ -1,4 +1,5 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
+import { withDefaults } from './params';
 
 /** What `shapeParams` takes on a `hexagon` badge. */
 export interface BadgeHexagonShapeParams {
@@ -29,7 +30,7 @@ function hexVerts(tip: number, truncation: number): [number, number][] {
 
 const Hexagon: ShapeModule<BadgeHexagonShapeParams> = {
   compose: (params): ShapeComposeSpec => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     return { base: 'polygon', baseParams: { vertices: hexVerts(cfg.tipHeight, cfg.tipTruncation) } };
   },
   insets: { top: 4, right: 6, bottom: 4, left: 6 },

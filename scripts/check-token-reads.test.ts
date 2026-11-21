@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findAccentFillAsText, findThemeTokenFallbacks, findUndeclaredReads } from './check-token-reads';
+import { findAccentFillAsText, findHookFallbackDrift, findThemeTokenFallbacks, findUndeclaredReads } from './check-token-reads';
 
 const THEME = new Set(['--wzl-fg', '--wzl-surface']);
 const HOOKS = new Set(['--wzl-swatch-size']);
@@ -105,5 +105,27 @@ describe('findAccentFillAsText', () => {
 
   it('ignores a commented-out declaration', () => {
     expect(run('/* color: var(--wzl-accent); */')).toEqual([]);
+  });
+});
+
+describe('findHookFallbackDrift', () => {
+  const hooks = [
+    { name: 'row-h', type: 'dimension', value: 'var(--wzl-field-h, var(--wzl-control-h))', description: '' },
+    { name: 'icon', type: 'dimension', value: '14px', description: '', varies: true as const },
+  ];
+  const css = (source: string) => [{ path: 'packages/ui/a.css', source }];
+
+  it('accepts a read falling back to the listed value, nested parentheses and all', () => {
+    expect(findHookFallbackDrift(css('.x { height: var(--wzl-row-h, var(--wzl-field-h,  var(--wzl-control-h))); }'), hooks)).toEqual([]);
+  });
+
+  it('flags a read whose fallback is not the listed value, with its line', () => {
+    expect(findHookFallbackDrift(css('.x {\n  height: var(--wzl-row-h, 20px);\n}'), hooks)).toEqual([
+      { file: 'packages/ui/a.css', line: 2, name: '--wzl-row-h', reason: 'falls back to `20px`, but its hook lists `var(--wzl-field-h, var(--wzl-control-h))`' },
+    ]);
+  });
+
+  it('leaves a hook marked varies alone', () => {
+    expect(findHookFallbackDrift(css('.x { width: var(--wzl-icon, 12px); }'), hooks)).toEqual([]);
   });
 });

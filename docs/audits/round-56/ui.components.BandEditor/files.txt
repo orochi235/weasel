@@ -1,0 +1,16 @@
+packages/ui/src/components/BandEditor/BandEditor.module.css
+packages/ui/src/components/BandEditor/BandEditor.stories.tsx
+packages/ui/src/components/BandEditor/BandEditor.tsx
+packages/ui/src/components/BandEditor/BandRuler.tsx
+packages/ui/src/components/BandEditor/BandStrip.tsx
+packages/ui/src/components/BandEditor/DraftGhost.tsx
+packages/ui/src/components/BandEditor/RangeEdgeHandle.tsx
+packages/ui/src/components/BandEditor/bandCommands.ts
+packages/ui/src/components/BandEditor/bands.ts
+packages/ui/src/components/BandEditor/index.ts
+packages/ui/src/components/BandEditor/retag.ts
+packages/ui/src/components/BandEditor/scale.ts
+packages/ui/src/components/BandEditor/seamGhost.ts
+packages/ui/src/components/BandEditor/track.ts
+packages/ui/src/components/BandEditor/useBandDraft.ts
+packages/ui/src/components/BandEditor/useTrackPointer.ts

@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "sliderAt returns NaN for a track whose `min` is -Infinity and that has a step but no `origin`",
+  "framesSweep counts a numeric `loop` differently from the clock it claims to mirror (loop 0, or a fraction below 1)",
+  "soloFrom and soloSweepFrom ignore `enabled` in a single selection",
+  "sliderAt under `strict` with no stops returns the raw track value, unclamped and unsnapped"
+ ],
+ "b": []
+}

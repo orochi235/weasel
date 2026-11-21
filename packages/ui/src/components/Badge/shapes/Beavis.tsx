@@ -1,4 +1,5 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
+import { withDefaults } from './params';
 
 /** What `shapeParams` takes on a `beavis` badge. */
 export interface BadgeBeavisShapeParams {
@@ -19,7 +20,7 @@ const DEFAULTS: Required<BadgeBeavisShapeParams> = {
 
 const Beavis: ShapeModule<BadgeBeavisShapeParams> = {
   compose: (params): ShapeComposeSpec => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     // Nominal badge half-height for cornerRadius → erosion: real badges are ~22px tall
     // so half = 11. Clamp into [0,1].
     const erosion = Math.max(0, Math.min(1, cfg.cornerRadius / 11));

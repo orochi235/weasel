@@ -1,0 +1,9 @@
+{
+ "pairs": [],
+ "a": [
+  "`tree-indent` hook records a fallback the Tree's CSS never takes",
+  "`httpThemeApi.get('list')` returns the list endpoint's body typed as a theme",
+  "A second same-named theme inherits every declaration of the first that it does not restate"
+ ],
+ "b": []
+}

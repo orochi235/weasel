@@ -1198,6 +1198,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   row that draws it; `PropertyField` and `DialogRow` stay as a row with its control already in it, and the selection
   panel's `LabeledRow` keeps its own grid layout and reads only `onReset`. labkit's `ControlRow` and the form's
   `LeafRow` set the scope; a labkit custom row renderer is not wrapped in one, and sets its own.
+- Open (2026-11-20, audit round 56): an override hook marked `varies` (`button-icon-size`, `params-label-tracking`,
+  `tree-indent`, and the rest in `packages/theme/src/hooks/`) falls back to different values at different reads, so
+  the theme prefs schema shows one of them, its listed `value`, as the unset value, and pinning what it shows
+  changes the reads that fall back to another. Whether the schema shows such a hook with no unset value, or shows
+  the per-read values from its description, is open. `check:token-reads` holds every other hook's reads to its value.
 
 ## Diagram, audio, and labkit
 
@@ -3218,3 +3223,10 @@ Calls the lanes made without a ruling:
   that says `.showIf`/`.enableIf` as a function, `.render`, `.dialog`, `.auto`, `.initial(AUTO)`, `.quote`,
   `.section`, or carries `f.custom`'s `validate` throws when the outer leaf is built, since none of those has a row
   to act on there. Dropping them silently, as before, or warning and dropping was the alternative.
+## Audit round fifty-six (2026-11-20): badge shapes
+
+- 2026-11-20: A `coffin` badge's `shoulderHalfHeight` is a half-height of its own, 2..50 like `headHalfHeight` and
+  `footHalfHeight`, where it had been added to the head's. Its default became 50, which draws what the old default did;
+  a caller who passed it as an increment now gets that number as the half-height.
+- 2026-11-20: A badge shape's repeat counts (`sparkler` and `starburst` `points`, `receipt` `teeth`) stop at 256, and a
+  `perforated` badge's `holePitch` at no less than 1px. Both bounds are picked to keep a render finite, not ruled.

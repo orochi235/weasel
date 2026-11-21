@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [],
+ "b": [
+  "Three stories use CSS classes that a 2026-11-14 commit deleted, so they render unstyled",
+  "A held bar's menu button still opens its menu, with live rows",
+  "On a wrapped bar, a drag-reorder drop on the second line picks its gap by x alone",
+  "A curved bar drops `fit`, so its FitLabels never shorten together",
+  "A vertical framed bar never scrolls, though its doc says it does",
+  "useMenuLeast reports a near-zero minimum width under right-to-left",
+  "Alt+arrow at the end of a container moves roving focus instead of doing nothing",
+  "useBarOverflow's size cache keeps every key it has ever seen"
+ ]
+}

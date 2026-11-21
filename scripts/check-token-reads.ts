@@ -16,7 +16,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { TOKEN_HOOKS } from '../packages/theme/src/hooks';
+import { TOKEN_HOOKS, type TokenHook } from '../packages/theme/src/hooks';
 import { stanceSlotNames } from '../packages/theme/src/panel';
 import { stripComments } from './lib/cssBlocks.ts';
 
@@ -108,6 +108,39 @@ export function findThemeTokenFallbacks(
   return out;
 }
 
+/** The fallback text of the `var()` whose name ends at `from`, whitespace collapsed. */
+function fallbackAt(code: string, from: number): string {
+  let depth = 1;
+  let i = from;
+  for (; i < code.length && depth > 0; i++) {
+    if (code[i] === '(') depth++;
+    else if (code[i] === ')') depth--;
+  }
+  return code.slice(from, i - 1).trim().replace(/\s+/g, ' ');
+}
+
+const HOOK_READ = /var\(\s*(--wzl-[\w-]+)\s*,/g;
+
+/** A hook's listed `value` is what the theme editor shows as unset, so every stylesheet read of it falls back to that,
+ *  unless the hook is marked `varies`. */
+export function findHookFallbackDrift(files: readonly SourceFile[], hooks: readonly TokenHook[] = TOKEN_HOOKS): Offender[] {
+  const fixed = new Map(hooks.filter((h) => !h.varies).map((h) => [`--wzl-${h.name}`, h.value.trim().replace(/\s+/g, ' ')]));
+  const out: Offender[] = [];
+  for (const { path, source } of files) {
+    if (!/\.(css|less)$/.test(path)) continue;
+    const code = stripComments(source);
+    for (const m of code.matchAll(HOOK_READ)) {
+      const listed = fixed.get(m[1]);
+      if (listed === undefined) continue;
+      const read = fallbackAt(code, m.index + m[0].length);
+      if (read === listed) continue;
+      const line = code.slice(0, m.index).split('\n').length;
+      out.push({ file: path, line, name: m[1], reason: `falls back to \`${read}\`, but its hook lists \`${listed}\`` });
+    }
+  }
+  return out;
+}
+
 /** The accent tokens are fills; `--wzl-accent-fg` is the accent for text. Kept
  *  apart so a toned surface can rebind fills translucent without fading its text. */
 const ACCENT_FILL_AS_TEXT = /(?<![\w-])color\s*:\s*var\(\s*(--wzl-accent(?:-base|-strong|-hover)?)\s*[,)]/g;
@@ -174,15 +207,21 @@ if (invokedDirectly) {
   const root = process.cwd();
   const dirs = ['packages', 'apps'].map((d) => join(root, d));
   const files = dirs.flatMap((d) => [...walk(d)]).map((f) => ({ path: relative(root, f), source: readFileSync(f, 'utf8') }));
-  const offenders = findUndeclaredReads(files, await themeTokens(root, files));
+  // A hook's listed value is its stylesheet fallback copied, read where the stylesheet's package declares it.
+  const reading = files.filter((f) => !f.path.startsWith('packages/theme/src/hooks/'));
+  const offenders = findUndeclaredReads(reading, await themeTokens(root, files));
   const misused = findAccentFillAsText(files);
   const deadFallbacks = findThemeTokenFallbacks(files, await bakedTokens(root));
-  for (const o of [...offenders, ...misused, ...deadFallbacks]) console.error(`${o.file}:${o.line}  ${o.name}  ${o.reason}`);
+  const drift = findHookFallbackDrift(files);
+  for (const o of [...offenders, ...misused, ...deadFallbacks, ...drift]) console.error(`${o.file}:${o.line}  ${o.name}  ${o.reason}`);
   if (offenders.length > 0) {
     console.error(`\n${offenders.length} --wzl-* read(s) nothing declares. Point them at a theme token, or add a real override hook to its family in packages/theme/src/hooks/.`);
   }
   if (misused.length > 0) console.error(`\n${misused.length} text color(s) read an accent fill token.`);
   if (deadFallbacks.length > 0) console.error(`\n${deadFallbacks.length} theme token read(s) carry a fallback. Every theme declares these; drop the fallback.`);
-  if (offenders.length + misused.length + deadFallbacks.length > 0) process.exit(1);
+  if (drift.length > 0) {
+    console.error(`\n${drift.length} override hook read(s) fall back to something other than the hook's listed value. Make them agree, or mark the hook \`varies\` and say why in its description.`);
+  }
+  if (offenders.length + misused.length + deadFallbacks.length + drift.length > 0) process.exit(1);
   console.log(`token reads: clean (${files.length} files)`);
 }

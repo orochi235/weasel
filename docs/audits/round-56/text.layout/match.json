@@ -1,0 +1,8 @@
+{
+ "pairs": [],
+ "a": [
+  "Shrink-to-fit scales a run's sizes but not its stroke width, so fitted stroked text gets heavier the more it shrinks",
+  "`JOINED_ENDS` grows to the longest text ever measured and never shrinks"
+ ],
+ "b": []
+}

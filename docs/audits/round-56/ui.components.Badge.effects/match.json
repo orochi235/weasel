@@ -1,0 +1,20 @@
+{
+ "pairs": [],
+ "a": [
+  "Stroke widths documented as CSS px are multiplied by the viewBox scale and then drawn with non-scaling-stroke, so they come out too thick",
+  "Aqua's and Metal's gloss gradient ends at glossExtent² / 100, not at glossExtent",
+  "Perforations hangs when holeRadius and holeSpacing are both 0",
+  "Bevel leaves an unpainted gap at every seam between its side bands; Bevel2 overlaps its bands to close the same gap",
+  "Bites and Scallops cut a bump off at the midpoint between bumps when irregularity widens it past half a step, leaving a jump in the outline",
+  "Spikes does not clamp irregularity, unlike its siblings; past 2 the spike length goes negative, and the corner compensation can flip it back outward or divide by zero",
+  "Sunbeams' gradient axis is 100 viewBox units long at every angle, so at diagonal angles 0..1 does not reach the badge's corners",
+  "Bevel and Bevel2 inset the inner ring along the viewBox normal instead of the CSS normal, so on a non-square badge the band is skewed and thinner than bevelWidth on slanted edges"
+ ],
+ "b": [
+  "Outline effect scales a non-scaling stroke a second time, so `width` is not CSS px",
+  "Aqua and Metal bezel and rim strokes are scaled twice in the same way",
+  "Aqua and Metal gloss fades out at a quarter of the body, not at `glossExtent`",
+  "Irregular scallops and bites break the outline with a step halfway between bumps",
+  "Spikes leaves `irregularity` unclamped, unlike its sibling bump effects; values above 2 draw inverted or unbounded spikes"
+ ]
+}

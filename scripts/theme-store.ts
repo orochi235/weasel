@@ -5,9 +5,7 @@ import { resolve } from 'node:path';
 import { enumerateAxisChoices } from '../packages/theme/src/axes.ts';
 import type { ThemeDefinition } from '../packages/theme/src/definition.ts';
 import { derive, generateTokens, mergeChain } from '../packages/theme/src/engine.ts';
-import { serializeDefinition, type IssueReport, type PutResult, type StoredTheme } from '../packages/theme/src/store.ts';
-
-const NAME = /^[a-z][a-z0-9-]*$/;
+import { isStorableThemeName, serializeDefinition, type IssueReport, type PutResult, type StoredTheme } from '../packages/theme/src/store.ts';
 
 export interface ThemeStoreOptions {
   /** Emitted into `generatedDir`. A new theme is created here. */
@@ -99,7 +97,7 @@ export function createThemeStore(options: ThemeStoreOptions): ThemeStore {
     read: (name) => entries().find((e) => e.theme.name === name)?.theme,
 
     write(name, definition, baseHash) {
-      if (!NAME.test(name)) return { status: 'invalid', message: `"${name}" is not a theme name` };
+      if (!isStorableThemeName(name)) return { status: 'invalid', message: `"${name}" is not a theme name` };
       if (definition?.name !== name) return { status: 'invalid', message: `the definition is named "${definition?.name}", not "${name}"` };
 
       const known = entries().find((e) => e.theme.name === name);

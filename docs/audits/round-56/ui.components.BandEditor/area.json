@@ -1,0 +1,53 @@
+{
+ "id": "ui.components.BandEditor",
+ "commit": "b8bed07d81b65bf8aef03565da2f604b0db44025",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/BandEditor/BandEditor.module.css",
+  "packages/ui/src/components/BandEditor/BandEditor.stories.tsx",
+  "packages/ui/src/components/BandEditor/BandEditor.tsx",
+  "packages/ui/src/components/BandEditor/BandRuler.tsx",
+  "packages/ui/src/components/BandEditor/BandStrip.tsx",
+  "packages/ui/src/components/BandEditor/DraftGhost.tsx",
+  "packages/ui/src/components/BandEditor/RangeEdgeHandle.tsx",
+  "packages/ui/src/components/BandEditor/bandCommands.ts",
+  "packages/ui/src/components/BandEditor/bands.ts",
+  "packages/ui/src/components/BandEditor/index.ts",
+  "packages/ui/src/components/BandEditor/retag.ts",
+  "packages/ui/src/components/BandEditor/scale.ts",
+  "packages/ui/src/components/BandEditor/seamGhost.ts",
+  "packages/ui/src/components/BandEditor/track.ts",
+  "packages/ui/src/components/BandEditor/useBandDraft.ts",
+  "packages/ui/src/components/BandEditor/useTrackPointer.ts"
+ ],
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "incomplete": [
+  "A",
+  "B"
+ ],
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1,
+   "B": 1.2,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio"
+  },
+  "weightedTokens": 0,
+  "costUsd": 0
+ },
+ "fixCommits": []
+}

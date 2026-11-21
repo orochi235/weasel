@@ -57,18 +57,21 @@ export const FRAME_HOOKS: readonly TokenHook[] = [
     value: 'none',
     description:
       'Box shadow of a raised face: a Button, a PropertyPanel, a menu, popover, tooltip, or Dialog, a thumb, the chosen segment of a segmented control, a toolbar’s strip, and every edge of a tab but the one its panel is on. A theme that draws its edges in relief declares it; unset, each keeps the shadow it draws for itself, which for most is none.',
+    varies: true,
   },
   {
     name: 'bevel-pressed',
     type: 'shadow',
     value: 'none',
     description: 'Box shadow of a Button held down, or of a Button or a toolbar’s button that stays down. Unset, a Button draws its own inset (--btn-relief-pressed) and a toolbar’s button none.',
+    varies: true,
   },
   {
     name: 'bevel-sunken',
     type: 'shadow',
     value: 'none',
     description: 'Box shadow of a well: the frame a field draws its value in, a checkbox, a radio, the track of a switch, a slider, or a segmented control, and a cell of a flat one.',
+    varies: true,
   },
   {
     name: 'entered-group',

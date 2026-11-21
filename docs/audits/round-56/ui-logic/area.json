@@ -1,0 +1,46 @@
+{
+ "id": "ui-logic",
+ "commit": "b8bed07d81b65bf8aef03565da2f604b0db44025",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui-logic/src/button.ts",
+  "packages/ui-logic/src/controlSize.ts",
+  "packages/ui-logic/src/focus.ts",
+  "packages/ui-logic/src/hold.ts",
+  "packages/ui-logic/src/index.ts",
+  "packages/ui-logic/src/measure.ts",
+  "packages/ui-logic/src/menuPanel.ts",
+  "packages/ui-logic/src/pbt.fixture.ts",
+  "packages/ui-logic/src/rowList.ts"
+ ],
+ "a": 0,
+ "b": 4,
+ "m": 0,
+ "distinct": 4,
+ "incomplete": [
+  "A"
+ ],
+ "read": {
+  "A": 0,
+  "B": 9
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.8,
+   "B": 16.8,
+   "match": 0,
+   "fix": 1
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 347803,
+  "costUsd": 1.16
+ },
+ "fixCommits": []
+}

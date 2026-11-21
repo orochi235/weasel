@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [],
+ "b": [
+  "measureMenuPanel sizes a `current` row in weight 400, but the DOM menu sets it bold, so the two panels' widths disagree",
+  "nestHold takes the reason of an outer hold that is off",
+  "controlAccess treats an empty reason as a reason, though nestHold treats it as none",
+  "envNumber reads a keyword font weight as the fallback, not the weight CSS draws"
+ ]
+}

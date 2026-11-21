@@ -1,4 +1,5 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
+import { withDefaults } from './params';
 
 /** What `shapeParams` takes on a `cloud` badge. */
 export interface BadgeCloudShapeParams {
@@ -18,7 +19,7 @@ const DEFAULTS: Required<BadgeCloudShapeParams> = {
 
 const Cloud: ShapeModule<BadgeCloudShapeParams> = {
   compose: (params): ShapeComposeSpec => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     return {
       base: 'rounded-rect',
       baseParams: { erosion: cfg.erosion },
