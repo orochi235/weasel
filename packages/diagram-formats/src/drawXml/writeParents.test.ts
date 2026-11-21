@@ -24,4 +24,14 @@ describe('which cell holds each item in written draw-style XML', () => {
     expect(pool).toMatchObject({ lanes: [{ id: 'L', members: ['n'] }] });
   });
 
+  it('leaves a container a group names outside the group, as the diagram draws it', () => {
+    const { text } = DIAGRAM_DRAW_XML.write!(docOf({
+      nodes: [{ id: 'n', lines: ['N'], at: { x: 400, y: 60 } }],
+      edges: [],
+      containers: [{ id: 'c', role: 'container', box: { x: 20, y: 20, width: 200, height: 120 } }],
+      clusters: [{ id: 'g', members: ['n', 'c'] }],
+    }));
+    expect(parentOf(text, 'c')).not.toBe('g');
+    expect(parentOf(text, 'n')).toBe('g');
+  });
 });
