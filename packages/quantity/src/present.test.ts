@@ -443,11 +443,13 @@ describe('infinity', () => {
 });
 
 describe('percentages round the number they show', () => {
-  it('speaks the number percent shows where the binary product falls under a half', () => {
+  it('speaks the number percent shows, and zoom shows the one percent would, where the binary product falls under a half', () => {
     for (const [value, shown] of [[0.145, '15'], [0.285, '29'], [0.565, '57']] as const) {
       expect(qty(value, percent()).text).toBe(`${shown}%`);
       expect(qty(value, percent()).spoken).toBe(`${shown} percent`);
     }
+    expect(qty(1.005, zoom()).text).toBe('101%');
+    expect(qty(1.005, zoom()).spoken).toBe('101 percent');
   });
 });
 

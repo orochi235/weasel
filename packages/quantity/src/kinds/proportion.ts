@@ -351,7 +351,7 @@ function zoomParts(z: number, locale: string): Part[] {
       type: 'number',
       value: signed(unsignedZero(v, (x) => x.toLocaleString(locale, { useGrouping: grouping, maximumFractionDigits: 1 }))),
     });
-  if (z <= 2) return [n(Math.round(z * 100)), { type: 'percentSign', value: '%' }];
+  if (z <= 2) return [n(Math.round(shiftedDecimal(z, 2))), { type: 'percentSign', value: '%' }];
   if (z >= 100) return [n(Math.round(z), true), { type: 'symbol', value: 'x' }];
   return [n(Math.round(z * 10) / 10), { type: 'symbol', value: 'x' }];
 }
