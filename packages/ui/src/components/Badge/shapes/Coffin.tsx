@@ -15,7 +15,7 @@ const DEFAULTS: Required<BadgeCoffinShapeParams> = {
   headX: 6,
   headHalfHeight: 23,
   shoulderX: 33,
-  shoulderHalfHeight: 36,
+  shoulderHalfHeight: 50,
   footX: 100,
   footHalfHeight: 29,
 };
@@ -27,8 +27,7 @@ const Coffin: ShapeModule<BadgeCoffinShapeParams> = {
     const sX = Math.max(hX + 1, Math.min(cfg.shoulderX, 70));
     const fX = Math.max(sX + 1, Math.min(cfg.footX, 100));
     const hH = Math.max(2, Math.min(cfg.headHalfHeight, 50));
-    const sDelta = Math.max(0, Math.min(cfg.shoulderHalfHeight, 50));
-    const sH = Math.min(50, hH + sDelta);
+    const sH = Math.max(2, Math.min(cfg.shoulderHalfHeight, 50));
     const fH = Math.max(2, Math.min(cfg.footHalfHeight, 50));
     return {
       base: 'polygon',

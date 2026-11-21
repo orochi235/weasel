@@ -88,7 +88,7 @@ export const SHAPE_PARAMS: Partial<Record<BadgeShape, ConfigShape>> = {
     headX: num(6, 0, 40, 1),
     headHalfHeight: num(23, 2, 50, 1),
     shoulderX: num(33, 5, 70, 1),
-    shoulderHalfHeight: num(36, 0, 45, 1),
+    shoulderHalfHeight: num(50, 2, 50, 1),
     footX: num(100, 50, 100, 1),
     footHalfHeight: num(29, 2, 50, 1),
   },
