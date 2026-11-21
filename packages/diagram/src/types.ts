@@ -3,6 +3,7 @@ import type { ClusterInset } from './cluster';
 import type { Outline } from './outline';
 import type { DiagramContainer } from './containers/trait';
 import type { FontField, LineField, StyleField } from './theme/styleField';
+import type { Row } from './body';
 
 /**
  * Where a port sits on its node, in **normalized bounds coordinates**:
@@ -89,6 +90,8 @@ export interface DiagramNode {
   /** On a built body whose first row is a `header`: the band across its top, flush with its
    *  bounds, which the outline painter fills. */
   header?: HeaderBand;
+  /** On a collapsed body (`DataNode.collapsed`): the rows below its header it leaves undrawn, so it can be read back whole. */
+  folded?: readonly Row[];
 }
 
 /** A header row's band: its height, and where its text's line box sits, from the band's top. */

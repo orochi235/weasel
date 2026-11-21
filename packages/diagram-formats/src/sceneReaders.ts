@@ -163,6 +163,7 @@ export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: D
   const dividers = body?.dividers ?? [];
   const fields = rows.some((r) => typeof dataOf(r).bodyField === 'string');
   const slots = slotRows(scene, node, body, texts, band !== undefined && rows.some(isHeader));
+  const hidden = Array.isArray(trait.folded) ? (trait.folded as Row[]) : null;
   const marks = readMarks(scene, node, { stroke: colorOf(data.stroke), text: colors?.text ?? themed.text }, theme);
   return {
     id: node.id,
@@ -171,8 +172,9 @@ export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: D
       ? { rows: withDividers([...rows.map((r) => ({
           index: dataOf(r).bodyRow as number,
           row: isHeader(r) ? headerRow(dataOf(r), band!, aside === undefined ? undefined : textOf(scene, aside.id), ownSize) : textRow(dataOf(r), ownSize),
-        })), ...slots], dividers) }
+        })), ...slots], dividers).concat(hidden ?? []) }
       : { lines: rows.map((r) => dataOf(r).text as string) }),
+    ...(hidden !== null ? { collapsed: true } : {}),
     at: moved(pose, page),
     width: pose.width,
     height: pose.height,

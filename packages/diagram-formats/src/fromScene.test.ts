@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { composeWorldPose, createScene, scenePoseAdapter, type InvocationCtx, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
-import { diagramScene, offPageOps, setDiagramColor, withDiagramRegistry, type DataEdge, type DataNode } from '@weasel-js/diagram';
+import { diagramScene, offPageOps, setDiagramColor, withDiagramRegistry, type DataEdge, type DataNode, type Row } from '@weasel-js/diagram';
 import { documentFromScene } from './fromScene';
 import { documentSpecs } from './toScene';
 import { DOC_DATA, MEASURE, THEME, docScene, drawnScene, type DocScene } from './testing/docScene';
@@ -119,6 +119,16 @@ describe('documentFromScene', () => {
     expect(edgeOf(scene, 'ab')).toMatchObject({ routed: [{ x: 200, y: 160 }] });
     expect(edgeOf(scene, 'ab').waypoints).toBeUndefined();
     expect(edgeOf(scene, 'bm')).toMatchObject({ router: 'avoid', routed: [{ x: 300, y: 260 }] });
+  });
+
+  it('reads a collapsed node back collapsed, with the rows it hides', () => {
+    const rows: Row[] = [{ kind: 'header', text: 'User' }, { kind: 'field', label: 'id', value: 'int' }, { kind: 'divider' }, { kind: 'label', text: 'save()' }];
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 300, height: 200,
+      data: { nodes: [{ id: 'u', rows, collapsed: true, at: { x: 10, y: 10 } }], edges: [] } }] };
+    const back = asGraph(documentFromScene(drawnScene(documentSpecs(doc, { measure: MEASURE, theme: THEME }))).pages[0]!).data.nodes[0]!;
+    expect(back).toMatchObject({ collapsed: true });
+    expect(back.rows?.map((r) => r.kind)).toEqual(['header', 'field', 'divider', 'label']);
+    expect(back.rows?.slice(1)).toEqual(rows.slice(1));
   });
 
   it("reads a container's reorder axis, as it does a cluster's", () => {
