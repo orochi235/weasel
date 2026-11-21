@@ -3,7 +3,7 @@ import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../icons.gen';
 import { STICKY_DEFAULTS, type StickyStyle } from './stickyNode';
 import { shareToolOptions, withToolOptionDefault, type ToolOptionsSpec } from '@weasel-js/routing';
-import type { Paint } from '@weasel-js/paint';
+import type { Fill } from '@weasel-js/paint';
 import { defineTool, type Tool } from '@weasel-js/core';
 import { insertBindingBehaviors, styleOptionLeaves, toolOptionPaint, type InsertToolOptions, INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING } from '@weasel-js/editing';
 
@@ -44,10 +44,11 @@ export function createStickyTool(options: UseStickyToolOptions = {}): Tool {
     background, fill, padding, style, verticalAlign, overflow, edge, shadow, share,
   } = options;
   {
-    const color = (paint: Paint | null | undefined) => (paint === undefined ? undefined : toolOptionPaint(paint));
+    // A `Fill` with no `paint` paints nothing, so it sets the option to none rather than leaving the default.
+    const color = (f: Fill | undefined) => (f === undefined ? undefined : toolOptionPaint(f.paint ?? null));
     const toolOptions = withToolOptionDefault(
-      withToolOptionDefault(shareToolOptions(STICKY_TOOL_OPTIONS, share), 'paper', color(background?.paint)),
-      'ink', color(fill?.paint),
+      withToolOptionDefault(shareToolOptions(STICKY_TOOL_OPTIONS, share), 'paper', color(background)),
+      'ink', color(fill),
     );
     // `minSize` rides on both inserts: the drag grows to it, and the note
     // keeps it as its own minimum.

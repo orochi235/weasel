@@ -54,6 +54,13 @@ describe('useStickyTool', () => {
     expect(toolOptionSlot('sticky', result.current.options!, 'paper').owner).toBe('sticky');
   });
 
+  it('makes notes with no paper, or no ink, for a background or fill with no paint', () => {
+    const { result } = renderHook(() => useStickyTool({ background: {}, fill: {} }));
+    const params = toolOptionParams('sticky', result.current.options!, undefined);
+    expect(params.paper).toBeNull();
+    expect(params.ink).toBeNull();
+  });
+
   it('passes insert behaviors to the drag', () => {
     const behaviors = [{ id: 'b' }] as never[];
     const { result } = renderHook(() => useStickyTool({ behaviors }));
