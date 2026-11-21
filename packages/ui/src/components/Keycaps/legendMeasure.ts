@@ -2,6 +2,8 @@ import { maxOf } from '@weasel-js/geom';
 import type { ScaleFit } from '../FitLabel/fitScale';
 import { pickSpelling, spellingsOf, type KeySpellings, type LegendFit } from './legendFit';
 import { cssPx } from '../../cssPx';
+import { getOwn } from '@weasel-js/registry';
+import { LEGEND_ICON_SCALE, LEGEND_ICONS } from './legendIcons';
 
 /** Vertical room kept clear inside the key, for the thicker bottom border. */
 const ROOM_H_SLACK = 4;
@@ -56,12 +58,19 @@ function readRoom(kbd: HTMLElement): Room | null {
 function fitForms(ctx: CanvasRenderingContext2D, room: Room, forms: readonly string[]): LegendFit[] {
   ctx.font = room.font;
   if ('letterSpacing' in ctx) ctx.letterSpacing = room.letterSpacing === 'normal' ? '0px' : room.letterSpacing;
-  return forms.map((label) => {
-    const lines = label.split('\n');
-    const wide = maxOf(lines, (l) => ctx.measureText(l).width);
-    const tall = lines.length * room.size * (lines.length > 1 ? room.lineHeight : 1);
-    return { label, lines: lines.length, scale: Math.min(room.width / wide, room.height / tall) };
-  });
+  return forms.map((label) => fitForm(label, room, (line) => ctx.measureText(line).width));
+}
+
+/** How a spelling fits `room`: a symbol the key draws as an icon is sized as that icon, not as its character. */
+export function fitForm(label: string, room: Pick<Room, 'size' | 'lineHeight' | 'width' | 'height'>, measure: (line: string) => number): LegendFit {
+  if (getOwn(LEGEND_ICONS, label)) {
+    const side = room.size * LEGEND_ICON_SCALE;
+    return { label, lines: 1, scale: Math.min(room.width / side, room.height / side) };
+  }
+  const lines = label.split('\n');
+  const wide = maxOf(lines, measure);
+  const tall = lines.length * room.size * (lines.length > 1 ? room.lineHeight : 1);
+  return { label, lines: lines.length, scale: Math.min(room.width / wide, room.height / tall) };
 }
 
 /** Fits a key's legend to its box: the spelling it prints, and the largest scale that spelling fits at. Null where

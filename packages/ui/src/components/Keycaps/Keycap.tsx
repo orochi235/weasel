@@ -1,27 +1,14 @@
 import { useRef, type CSSProperties } from 'react';
 import { Icon } from '../Icon/Icon';
-import type { IconRef } from '@weasel-js/icons';
-import { icon } from '../../icons.gen';
 import s from './Keycaps.module.css';
 import { MODIFIER_LABELS } from '@weasel-js/gestures';
 import { graphemeEnds } from '@weasel-js/text';
 import { useLegendFit } from './useLegendFit';
+import { LEGEND_ICONS } from './legendIcons';
 import { getOwn } from '@weasel-js/registry';
 
 const WIDE_GLYPHS = new Set(['⇥', '↵', '␣']);
 const FUNCTION_KEY = /^F([1-9]|1\d|2[0-4])$/;
-
-/** The icon a symbol legend is drawn as, so it matches its neighbors whatever
- *  font the chip is in. Every symbol the legend tables produce has one. */
-const LEGEND_ICONS: Readonly<Record<string, IconRef>> = {
-  '⌘': icon('keyCommand'), '⇧': icon('keyShift'), '⌥': icon('keyOption'), '⌃': icon('keyControl'), '⎈': icon('keyHelm'), '⎇': icon('keyAlt'),
-  '⎋': icon('keyEscape'), '↵': icon('keyReturn'), '⏎': icon('keyReturn'), '⇥': icon('keyTab'), '␣': icon('keySpace'),
-  '⌫': icon('keyBackspace'), '⌦': icon('keyDelete'), '⟵': icon('keyBackspaceArrow'),
-  '↑': icon('keyArrowUp'), '↓': icon('keyArrowDown'), '←': icon('keyArrowLeft'), '→': icon('keyArrowRight'),
-  '↖': icon('keyHome'), '↘': icon('keyEnd'), '⇞': icon('keyPageUp'), '⇟': icon('keyPageDown'),
-  '⎙': icon('keyPrintScreen'), '⎀': icon('keyInsert'), '⇳': icon('keyScrollLock'), '⎉': icon('keyPause'),
-  '⊞': icon('keyWindows'), '▤': icon('keyMenu'),
-};
 
 /**
  * Width class of a keycap: a modifier glyph, a multi-character legend that
