@@ -612,6 +612,14 @@ on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed a
 
 ## Release-gate & build hygiene
 
+- **(P2) [maintainer] Make the changelogs something a reader can use** (2026-11-21). The audit rounds write
+  a changeset per fix, so 3,827 were pending before 2.0.0 and `packages/core/CHANGELOG.md` was already
+  13,131 lines: a reader deciding whether to upgrade gets thousands of one-line fixes with a few real
+  changes buried in them, on the site's Releases page and in every package's `CHANGELOG.md` alike. Needs
+  a design for what a release's notes are (grouping, rollups of fixes by area, what gets its own entry,
+  what the per-package files hold) and the maintainer's ruling on it. Closes when the ruled design ships
+  in `scripts/release/` and the next release's notes are written that way.
+
 - **(P3) A CSF argType's `if` reads the trial's config, not the frame-local args the story renders with**
   (2026-11-21, `packages/forge/src/csf/argsToSchema.ts` `conditionOf`). An `updateArgs({ mode: undefined })`, or a
   `mode` set to a function, stays in the story's `Scoped` state (`csf/shims/preview-api.ts`), so a control gated on
