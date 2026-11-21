@@ -14,9 +14,11 @@ export function useMenuLeast(button: RefObject<HTMLButtonElement | null>): RefCa
     const el = button.current;
     if (el === null) return;
     const measure = (): void => {
-      const start = (lead ?? el).getBoundingClientRect().left;
+      const own = el.getBoundingClientRect();
+      const ahead = (lead ?? el).getBoundingClientRect();
       const squeezed = el.scrollWidth - el.clientWidth;
-      setLeast(Math.ceil(el.getBoundingClientRect().right - start + Math.max(0, squeezed)));
+      // The lead is drawn to the button's right in a right-to-left row.
+      setLeast(Math.ceil(Math.max(own.right, ahead.right) - Math.min(own.left, ahead.left) + Math.max(0, squeezed)));
     };
     measure();
     return watchResize([el, lead], measure);
