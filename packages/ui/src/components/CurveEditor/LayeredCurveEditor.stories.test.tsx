@@ -21,9 +21,9 @@ describe('RimContour story', () => {
     expect(seen.length).toBeGreaterThan(0);
     expect(seen.every(([bevel, spline]) => bevel === 'at 0.4, 0.78' && spline === 'at 0.4, 0.78')).toBe(true);
     seen.length = 0;
-    rerender(story(0.5));
+    rerender(story(0.45));
     expect(seen.length).toBeGreaterThan(0);
-    expect(seen.every(([bevel, spline]) => bevel === 'at 0.5, 0.78' && spline === 'at 0.5, 0.78')).toBe(true);
+    expect(seen.every(([bevel, spline]) => bevel === 'at 0.45, 0.78' && spline === 'at 0.45, 0.78')).toBe(true);
   });
 
   it('drags the seam anchors in y, and leaves the seam where it is', () => {
@@ -34,5 +34,18 @@ describe('RimContour story', () => {
     fireEvent.pointerMove(document, { clientX: 240, clientY: 180, pointerId: 1, buttons: 1 });
     fireEvent.pointerUp(document, { clientX: 240, clientY: 180, pointerId: 1 });
     expect(seam('bevel', 'last')).toBe('at 0.4, 0.5');
+  });
+
+  it('moves the seam no nearer an interior anchor than a sliver, and Escape puts every curve back', () => {
+    render(RimContour.render!({ initialB: 0.4, width: 600 }, {} as never));
+    const labels = (): string[] => [...document.querySelectorAll('[data-layer-id] [aria-label]')].map((el) => el.getAttribute('aria-label')!);
+    const before = labels();
+    const svg = document.querySelector('svg')!;
+    // The grip sits at the seam, half way down the 360-pixel plot; the bevel's interior anchor is at x 0.1.
+    fireEvent.pointerDown(svg, { clientX: 240, clientY: 180, button: 0, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 36, clientY: 180, pointerId: 1, buttons: 1 });
+    expect(seam('bevel', 'last')).toBe('at 0.11, 0.78');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(labels()).toEqual(before);
   });
 });
