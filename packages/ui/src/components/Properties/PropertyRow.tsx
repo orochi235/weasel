@@ -2,6 +2,7 @@ import { type ReactNode, useId, useLayoutEffect, useMemo, useState } from 'react
 import { FieldScope } from '../Field/fieldSemantics';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 import { PropertyHelp } from './PropertyHelp';
+import { drawn } from '../MotifFrame/root';
 import { buttonKeys, ResetControl } from './ResetControl';
 import { ROW_READOUT_ATTR } from './rowHelp';
 import { InsideRow, useRowState } from './rowScope';
@@ -115,7 +116,7 @@ export function PropertyRow(props: PropertyRowProps) {
   // A stacked row reads label, readout, control down the column, so its readout
   // belongs on the label line. An inline row would put a value of changing width
   // in front of the control, which then moves under the pointer as it changes.
-  const trailing = resolved === 'inline' && readout != null;
+  const trailing = resolved === 'inline' && drawn(readout);
   const [rowEl, rowRef] = useState<HTMLElement | null>(null);
   const [labelEl, labelRef] = useState<HTMLSpanElement | null>(null);
   const multiline = useMultiline(rowEl, labelEl, resolved === 'inline');
@@ -130,7 +131,7 @@ export function PropertyRow(props: PropertyRowProps) {
   // The hint flows on from the name's last word: as a flex item of its own, it went to the column's edge
   // whenever the name wrapped, since a wrapped name's box fills the line. The space lets it drop to a line of
   // its own where it does not fit beside that word.
-  const name = hint != null ? (
+  const name = drawn(hint) ? (
     <span className={s.rowName}>
       {own}{' '}
       <span className={s.rowHint} data-wzl-subordinate="">{hint}</span>
@@ -140,7 +141,7 @@ export function PropertyRow(props: PropertyRowProps) {
   );
   const head = (
     <span className={s.rowLabel} ref={labelRef}>
-      {description || why || autoValue != null ? (
+      {description || why || drawn(autoValue) ? (
         <PropertyHelp label={label} description={description} autoValue={autoValue} disabledReason={why} within={`[${ROW_ATTR}]`}>
           {name}
         </PropertyHelp>
@@ -148,7 +149,7 @@ export function PropertyRow(props: PropertyRowProps) {
         name
       )}
       {onReset && <ResetControl name={typeof label === 'string' ? label : 'this setting'} onReset={onReset} disabled={disabled} />}
-      {readout != null && !trailing && <em className={s.readout} {...{ [ROW_READOUT_ATTR]: '' }}>{readout}</em>}
+      {drawn(readout) && !trailing && <em className={s.readout} {...{ [ROW_READOUT_ATTR]: '' }}>{readout}</em>}
     </span>
   );
   const scope = useMemo(() => ({ ...state, label }), [state, label]);
