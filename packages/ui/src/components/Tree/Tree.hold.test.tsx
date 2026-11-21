@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { createRef, type ReactNode } from 'react';
 import { Checkbox } from '../Checkbox';
 import { Disabled, ReadOnly } from '../Disabled';
 import { Tree, type TreeNode, type TreeProps } from './Tree';
+import type { TreeDropHandle } from './useOutsideDrop';
 
 const NODES: readonly TreeNode[] = [
   { id: 'a', label: 'Alpha', children: [{ id: 'a1', label: 'Inner' }] },
@@ -40,6 +41,18 @@ function tryEverything() {
   fireEvent.keyDown(row('Alpha'), { key: 'ArrowRight' });
   fireEvent.keyDown(row('Beta'), { key: 'ArrowUp', altKey: true });
 }
+
+describe('Tree held, under a drop from outside it', () => {
+  it.each([
+    ['unheld', {}, true],
+    ['disabled', { disabled: true }, false],
+    ['read-only', { readOnly: true }, false],
+  ] as const)('%s, answers where a drop lands accordingly', (_, props, takes) => {
+    const drop = createRef<TreeDropHandle>();
+    renderTree((n) => n, { ...props, dropRef: drop });
+    expect(drop.current!.targetAt({ x: 0, y: 0 }) !== null).toBe(takes);
+  });
+});
 
 describe('Tree held', () => {
   it('unheld, takes every press, fold, and move', () => {

@@ -3297,3 +3297,8 @@ Calls the lanes made without a ruling:
 - 2026-11-20: Dragging a step of a `factors` scale that no factor can reach (the base is zero or negative, or the
   rule has no factor for that step) overrides the step through `onChange`, rather than writing an infinite or
   negative factor or doing nothing.
+
+## Audit round fifty-nine (2026-11-20): ui's Tree
+
+- 2026-11-20: Alt+Right refuses to indent a `Tree` row under a closed disabled branch, which cannot open to show it; a drag may
+  still drop into one.

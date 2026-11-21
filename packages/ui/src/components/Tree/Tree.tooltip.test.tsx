@@ -44,6 +44,24 @@ describe('Tree row tooltips', () => {
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
+  it('opens no tooltip on a row that left under the pointer and came back as a new element', () => {
+    const { rerender } = render(<Tree aria-label="Prefs" nodes={NODES} />);
+    fireEvent.pointerEnter(row('Show grid'));
+    rest();
+    rerender(<Tree aria-label="Prefs" nodes={NODES.slice(1)} />);
+    rerender(<Tree aria-label="Prefs" nodes={NODES} />);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('opens no tooltip when the row the pointer rested on leaves before the rest is up', () => {
+    const { rerender } = render(<Tree aria-label="Prefs" nodes={NODES} />);
+    fireEvent.pointerEnter(row('Show grid'));
+    rerender(<Tree aria-label="Prefs" nodes={NODES.slice(1)} />);
+    rest();
+    rerender(<Tree aria-label="Prefs" nodes={NODES} />);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
   it('gives the item a string tooltip as its description', () => {
     render(<Tree aria-label="Prefs" nodes={NODES} />);
     expect(screen.getByRole('treeitem', { name: 'Show grid' })).toHaveAttribute('aria-description', 'Draw the grid.');

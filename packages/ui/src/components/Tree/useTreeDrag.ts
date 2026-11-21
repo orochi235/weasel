@@ -5,7 +5,7 @@ import { after } from '@weasel-js/registry';
 import { startThresholdDrag, swallowNextClick, type ThresholdDragHandle } from '@weasel-js/routing';
 import type { DropMark, ResolvedDrop, TreeDropTarget } from '../../dropTarget';
 import type { ReorderGhost } from '../../useReorderDragList';
-import { draggedIdsFor, isNoopMove, landsInside } from './treeMoves';
+import { draggedIdsFor, isNoopMove, landsInside, staysPut } from './treeMoves';
 import type { TreeNode } from './Tree';
 import { modsOf } from '../../useReorderDragList';
 import { useOutsideDrop, type TreeDropHandle } from './useOutsideDrop';
@@ -46,6 +46,8 @@ export interface UseTreeDragOptions {
   onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null, effect: TreeDragEffect): boolean;
   onDropOutside?(ids: string[], point: { x: number; y: number }, effect: TreeDragEffect): void;
   externalDrag?: { x: number; y: number } | null;
+  /** The tree is disabled or read-only, and takes no drop from outside it either. */
+  held: boolean;
   dropRef?: Ref<TreeDropHandle>;
   /** A press released without dragging — the row's activation. */
   onPress(id: string, mods: EventModifiers): void;
@@ -61,9 +63,6 @@ export interface TreeDragState {
   /** The pointer, in client space, and whether it is off the tree's box. */
   pointer: { x: number; y: number; outside: boolean } | null;
 }
-
-/** A press on this node starts no drag. */
-const stays = (node: TreeNode | undefined) => !!node && (!!node.disabled || !!node.immovable);
 
 const IDLE: TreeDragState ={ dragging: null, effect: 'move', mark: null, ghost: null, pointer: null };
 
@@ -129,9 +128,9 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
   }, [o]);
 
   // Whether something outside the tree has said it would take the drag in flight.
-  const outside = useRef<readonly string[] | null>(null);
+  const outside = useRef<{ ids: readonly string[]; effect: TreeDragEffect } | null>(null);
   const leaveOutside = useCallback(() => {
-    if (outside.current) o.current.onDragOutside?.(outside.current, null, 'move');
+    if (outside.current) o.current.onDragOutside?.(outside.current.ids, null, outside.current.effect);
     outside.current = null;
   }, [o]);
 
@@ -147,13 +146,13 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     setState(IDLE);
   }, [leaveOutside, hover]);
 
-  const external = useOutsideDrop({ at: opts.externalDrag, latest: o, resolve, handle: opts.dropRef });
+  const external = useOutsideDrop({ at: opts.externalDrag, latest: o, resolve, handle: opts.dropRef, held: opts.held });
 
   const onPointerDown = useCallback((id: string, e: ReactPointerEvent<HTMLElement>) => {
     const { enabled, container } = o.current;
     const box = container();
     if (!enabled || !box || drag.current || !isPrimaryPress(e) || isContextPress(e)) return;
-    if (stays(o.current.visible.find((v) => v.node.id === id)?.node)) return;
+    if (staysPut(o.current.visible.find((v) => v.node.id === id)?.node)) return;
     if ((e.target as Element).closest('[data-tree-twisty]')) return;
     if (isInControlWithin(e.target, e.currentTarget)) return;
     const mods = modsOf(e);
@@ -166,7 +165,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       const how = effectFor(ev, o.current);
       const out = outsideOf(box, ev.clientX, ev.clientY);
       const taken = out && o.current.onDragOutside?.(ids, { x: ev.clientX, y: ev.clientY }, how) === true;
-      if (taken) outside.current = ids;
+      if (taken) outside.current = { ids, effect: how };
       else leaveOutside();
       const hit = taken ? null : resolve(ids, ev.clientX, ev.clientY, how);
       const into = hit?.mark?.where === 'into' ? hit.mark.id : null;
@@ -201,9 +200,12 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
         reset();
       },
       onClick: () => {
-        o.current.onPress(id, mods);
-        swallowNextClick(box, { keepDefault: true });
         reset();
+        // A linked row's click is the browser's under Cmd, Ctrl or Alt, and the row's alone otherwise, as TreeRowBox has it.
+        const linked = o.current.visible.find((v) => v.node.id === id)?.node.href != null;
+        if (linked && (mods.metaKey || mods.ctrlKey || mods.altKey)) return;
+        o.current.onPress(id, mods);
+        swallowNextClick(box, { keepDefault: !linked });
       },
       onCancel: reset,
     });

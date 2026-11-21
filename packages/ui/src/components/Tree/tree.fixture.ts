@@ -1,8 +1,8 @@
 /**
- * Random trees for the tree's property tests, and a plain model of a move to check its helpers against.
+ * Random trees for the tree's property tests; the plain model of a move they check its helpers against is
+ * `Tree.fixtures`' `applyMove`, the one the stories land rows with.
  */
 import fc from 'fast-check';
-import type { TreeDropTarget } from '../../dropTarget';
 import type { DropRow } from '../../dropTarget';
 import type { TreeNode } from './treeTypes';
 
@@ -38,35 +38,6 @@ export function branchIds(nodes: readonly TreeNode[]): string[] {
 /** The tree's shape alone, for comparing two trees. */
 export function outline(nodes: readonly TreeNode[]): unknown {
   return nodes.map((n) => (n.children ? [n.id, outline(n.children)] : n.id));
-}
-
-/** `nodes` with `ids` taken out and put back, in tree order, at `target`, whose index counts before they leave. */
-export function applyMove(nodes: readonly TreeNode[], ids: readonly string[], target: TreeDropTarget): TreeNode[] {
-  const set = new Set(ids);
-  const taken: TreeNode[] = [];
-  const lift = (list: readonly TreeNode[]): TreeNode[] => list.flatMap((n) => {
-    if (set.has(n.id)) { taken.push(n); return []; }
-    return [n.children ? { ...n, children: lift(n.children) } : n];
-  });
-  const siblingsBefore = (list: readonly TreeNode[]): number =>
-    list.slice(0, target.index).filter((n) => set.has(n.id)).length;
-  const place = (list: readonly TreeNode[], original: readonly TreeNode[]): TreeNode[] => {
-    const out = [...list];
-    out.splice(target.index - siblingsBefore(original), 0, ...taken);
-    return out;
-  };
-  const findIn = (list: readonly TreeNode[], id: string): TreeNode | undefined => {
-    for (const n of list) { if (n.id === id) return n; const hit = n.children && findIn(n.children, id); if (hit) return hit; }
-    return undefined;
-  };
-  const lifted = lift(nodes);
-  if (target.parentId === null) return place(lifted, nodes);
-  const original = findIn(nodes, target.parentId)?.children ?? [];
-  const into = (list: readonly TreeNode[]): TreeNode[] => list.map((n) => {
-    if (n.id === target.parentId) return { ...n, children: place(n.children ?? [], original) };
-    return n.children ? { ...n, children: into(n.children) } : n;
-  });
-  return into(lifted);
 }
 
 /** The rows a tree shows with `expanded` open, `height` px each, as `useTreeDrag` measures them. */

@@ -63,7 +63,7 @@ export type { TreeNode, TreeProps, TreeSelectionMode } from './treeTypes';
  * **Held.** Disabled, by `disabled` or a `Disabled` scope, nothing activates, folds, selects or moves: focus alone
  * moves between rows, and with no reason anywhere the tree leaves the tab order. Read-only, rows still fold, select
  * and activate, since choosing a row only looks at it; nothing moves, by drag or by key. Either way the rows'
- * `controls` are held with it.
+ * `controls` are held with it, and a drop from outside the tree lands nowhere: `dropRef` answers `null`.
  *
  * **Filtering** is the consumer's: narrow `nodes` with `filterTree`, and pass
  * `treeBranchIds` of the result as `expandedIds` so every match shows.
@@ -81,7 +81,7 @@ export const Tree = forwardRef(function Tree(
   ref: Ref<HTMLElement>,
 ) {
   const hold = useControlHold({ disabled: off, disabledReason, readOnly, readOnlyReason }, { readonlyRole: false });
-  const { expanded, setExpanded, toggle, expand } = useTreeFold(expandedIds, defaultExpandedIds, onExpandedChange, hold.disabled);
+  const { expanded, toggle, expand } = useTreeFold(expandedIds, defaultExpandedIds, onExpandedChange, hold.disabled);
   const rowTip = useRowTip();
   const baseId = useId();
   const grid = useMemo(() => hasControls(nodes), [nodes]);
@@ -101,19 +101,19 @@ export const Tree = forwardRef(function Tree(
 
   const treeEl = useRef<HTMLElement | null>(null);
   const isEmpty = nodes.length === 0;
-  // The element behind the ref changes when the tree swaps with the empty state.
+  // The element behind the ref changes when the tree swaps with the empty state, or between a list and a treegrid.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useImperativeHandle(ref, () => treeEl.current as HTMLElement, [isEmpty]);
+  useImperativeHandle(ref, () => treeEl.current as HTMLElement, [isEmpty, grid]);
   useUntabbedControls(grid, treeEl);
   const drag = useTreeDrag({
     enabled: !!onMove,
-    onDragOutside, onDropOutside, externalDrag, dropRef,
+    onDragOutside, onDropOutside, externalDrag, dropRef, held: hold.refuses,
     nodes, visible, expanded, selected,
     container: () => treeEl.current,
     rowEl: rowBox,
     canDrop, onMove, onCopy, onLink,
     onPress: (id, mods) => { const node = nodeAt(id); if (node) activate(node, mods); },
-    expand,
+    expand: (id) => { const node = nodeAt(id); if (node) expand(node); },
   });
 
   if (nodes.length === 0) {
@@ -122,7 +122,7 @@ export const Tree = forwardRef(function Tree(
 
   const keysHost: TreeRowKeysHost = {
     grid, expanded, onRowKeyDown,
-    moves: onMove && { nodes, selected, expanded, setExpanded, canDrop, onMove, focusAfterMove: nav.focusLater },
+    moves: onMove && { nodes, selected, expanded, expand, canDrop, onMove, focusAfterMove: nav.focusLater },
     step: (id, delta, extend) => nav.go(id, (indexOf.get(id) ?? 0) + delta, extend),
     navKey: nav.onKeyDown,
   };
