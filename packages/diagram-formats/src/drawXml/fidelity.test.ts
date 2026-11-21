@@ -116,3 +116,9 @@ describe('draw-style XML self-loop labels', () => {
     expect(edge(data, 'e').labelPlacement).toEqual({ at: { near: { x: 180, y: 90 } } });
   });
 });
+
+describe('draw-style XML file names', () => {
+  it('claims the draw app\'s .drawio files, and writes one', () => {
+    expect(DIAGRAM_DRAW_XML.extensions).toEqual(['.drawio', '.xml']);
+  });
+});

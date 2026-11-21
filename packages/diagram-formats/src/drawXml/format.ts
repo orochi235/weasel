@@ -14,7 +14,7 @@ const ROOT = /^\s*(?:<\?[^]*?\?>\s*|<!--[^]*?-->\s*|<!DOCTYPE[^>]*>\s*)*<(mxfile
 export const DIAGRAM_DRAW_XML: DiagramFormat = {
   id: 'draw-xml',
   name: 'Draw-style XML',
-  extensions: ['.xml'],
+  extensions: ['.drawio', '.xml'],
   detect: (text) => ROOT.test(text),
   read: readDrawXml,
   write: writeDrawXml,
