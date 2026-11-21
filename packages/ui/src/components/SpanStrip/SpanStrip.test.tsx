@@ -166,8 +166,26 @@ describe('rulerTicks', () => {
   it('takes the first step that keeps ticks far enough apart, on whole steps from the origin', () => {
     const ruler = { steps: [5, 10, 30], origin: 2, format: (ms: number) => `t${ms}` };
     expect(rulerTicks({ from: 0, to: 100 }, 640, ruler).map((t) => t.at)).toEqual([2, 12, 22, 32, 42, 52, 62, 72, 82, 92]);
-    expect(rulerTicks({ from: 0, to: 100 }, 200, ruler).map((t) => t.at)).toEqual([2, 32, 62, 92]);
+    expect(rulerTicks({ from: 0, to: 100 }, 200, ruler).map((t) => t.at)).toEqual([2, 62]);
+    expect(rulerTicks({ from: 0, to: 100 }, 400, ruler).map((t) => t.at)).toEqual([2, 32, 62, 92]);
     expect(rulerTicks({ from: 0, to: 100 }, 200, ruler)[0]!.label).toBe('t2');
     expect(rulerTicks({ from: 0, to: 100 }, 0, ruler)).toEqual([]);
+  });
+
+  it('thins the last step to a whole multiple when no step spaces the ticks far enough apart', () => {
+    const ticks = rulerTicks({ from: 0, to: 86_400_000 }, 800, { steps: [1000], format: String });
+    expect(ticks).toHaveLength(13);
+    expect(ticks[1]!.at - ticks[0]!.at).toBe(6_912_000);
+  });
+
+  it('lands on the window\'s end under a fractional step', () => {
+    expect(rulerTicks({ from: 0, to: 0.7 }, 640, { steps: [0.1], format: String }).at(-1)!.at).toBeCloseTo(0.7, 12);
+    expect(rulerTicks({ from: 0, to: 0.7 }, 640, { steps: [0.1], format: String })).toHaveLength(8);
+  });
+
+  it('throws on a step that is not positive', () => {
+    for (const st of [0, -5, Number.NaN]) {
+      expect(() => rulerTicks({ from: 0, to: 100 }, 640, { steps: [st], format: String })).toThrow(RangeError);
+    }
   });
 });

@@ -23,6 +23,18 @@ export interface SequenceProps<A, B = undefined> {
   className?: string;
 }
 
+/** A key per step, by its label, so a step's cell keeps its state as the sweep around it changes; a repeated label
+ *  is told apart by how many times it came before. */
+function stepKeys<T>(steps: readonly T[], label: (value: T) => string): string[] {
+  const seen = new Map<string, number>();
+  return steps.map((value) => {
+    const name = label(value);
+    const n = seen.get(name) ?? 0;
+    seen.set(name, n + 1);
+    return `${n}:${name}`;
+  });
+}
+
 function Capped({ cap }: { cap: number }): ReactElement {
   return <p className={s.capped}>Showing the first {cap} steps.</p>;
 }
@@ -37,6 +49,8 @@ export function Sequence<A, B = undefined>(props: SequenceProps<A, B>): ReactEle
   const rows = stepsOf(sweep, cap);
   if (across) {
     const cols = stepsOf(across, cap);
+    const rowKeys = stepKeys(rows.steps, (v) => sweep.label(v));
+    const colKeys = stepKeys(cols.steps, (v) => across.label(v));
     return (
       <div className={[s.sequence, className].filter(Boolean).join(' ')}>
         <table className={s.grid} aria-label={label}>
@@ -44,16 +58,16 @@ export function Sequence<A, B = undefined>(props: SequenceProps<A, B>): ReactEle
             <tr>
               <td />
               {cols.steps.map((col, j) => (
-                <th key={j} scope="col" className={s.caption}>{across.label(col)}</th>
+                <th key={colKeys[j]} scope="col" className={s.caption}>{across.label(col)}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.steps.map((row, i) => (
-              <tr key={i}>
+              <tr key={rowKeys[i]}>
                 <th scope="row" className={s.caption}>{sweep.label(row)}</th>
                 {cols.steps.map((col, j) => (
-                  <td key={j} className={s.gridCell}>{children(row, col)}</td>
+                  <td key={colKeys[j]} className={s.gridCell}>{children(row, col)}</td>
                 ))}
               </tr>
             ))}
@@ -64,11 +78,12 @@ export function Sequence<A, B = undefined>(props: SequenceProps<A, B>): ReactEle
     );
   }
   const caption = props.caption ?? ((value: A) => sweep.label(value));
+  const keys = stepKeys(rows.steps, (v) => sweep.label(v));
   return (
     <div className={[s.sequence, className].filter(Boolean).join(' ')}>
       <ol className={s.cells} data-layout={layout} aria-label={label}>
         {rows.steps.map((value, i) => (
-          <li key={i} className={s.item}>
+          <li key={keys[i]} className={s.item}>
             <figure className={s.cell}>
               {children(value, undefined as B)}
               {caption !== false && <figcaption className={s.caption}>{caption(value)}</figcaption>}

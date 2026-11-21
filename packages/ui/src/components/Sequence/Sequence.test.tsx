@@ -1,4 +1,5 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { rangeSweep, sweepUntil, valuesSweep } from '@weasel-js/ui-input';
 import { Sequence } from './Sequence';
@@ -62,5 +63,33 @@ describe('Sequence', () => {
     expect(within(grid).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['1', '2', '3']);
     expect(within(grid).getAllByRole('rowheader').map((h) => h.textContent)).toEqual(['a', 'b']);
     expect(within(grid).getAllByRole('cell').map((c) => c.textContent)).toContain('b3');
+  });
+
+  it('keeps a step\'s state with that step when the sweep around it changes', () => {
+    function Cell({ d }: { d: number }) {
+      const [on, setOn] = useState(false);
+      return <button type="button" aria-pressed={on} onClick={() => setOn(true)}>{d}</button>;
+    }
+    const digits = (from: number) => rangeSweep({ from, to: 9, step: 1 });
+    const { rerender } = render(<Sequence aria-label="Digits" sweep={digits(0)} caption={false}>{(d) => <Cell d={d} />}</Sequence>);
+    fireEvent.click(screen.getByRole('button', { name: '5' }));
+    rerender(<Sequence aria-label="Digits" sweep={digits(3)} caption={false}>{(d) => <Cell d={d} />}</Sequence>);
+    expect(screen.getAllByRole('button', { pressed: true }).map((b) => b.textContent)).toEqual(['5']);
+  });
+
+  it('keeps a grid cell\'s state with its pair of steps', () => {
+    function Cell({ id }: { id: string }) {
+      const [on, setOn] = useState(false);
+      return <button type="button" aria-pressed={on} onClick={() => setOn(true)}>{id}</button>;
+    }
+    const grid = (from: number) => (
+      <Sequence aria-label="Pairs" sweep={rangeSweep({ from, to: 3, step: 1 })} across={valuesSweep(['a', 'b'])}>
+        {(n, c) => <Cell id={`${n}${c}`} />}
+      </Sequence>
+    );
+    const { rerender } = render(grid(0));
+    fireEvent.click(screen.getByRole('button', { name: '2b' }));
+    rerender(grid(1));
+    expect(screen.getAllByRole('button', { pressed: true }).map((b) => b.textContent)).toEqual(['2b']);
   });
 });

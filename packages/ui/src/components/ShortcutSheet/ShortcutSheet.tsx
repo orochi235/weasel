@@ -1,7 +1,7 @@
 import { useId, useMemo, useState, useSyncExternalStore } from 'react';
 import { describeShortcuts, type Action, type ShortcutGroup, type ShortcutRow, type ShortcutTool, type ToolSet } from '@weasel-js/routing';
 import { useActionsRegistry } from '@weasel-js/routing/react';
-import { formatShortcut, isApplePlatform, type Platform } from '@weasel-js/gestures';
+import { formatShortcutParts, isApplePlatform, type FormatShortcutOptions, type Platform, type ShortcutInput } from '@weasel-js/gestures';
 import { Dialog } from '../Dialog';
 import { Icon } from '../Icon/Icon';
 import { ShortcutKeys } from '../Keycaps';
@@ -27,7 +27,19 @@ const NO_ACTIONS: readonly Action[] = [];
 const NO_SETS: readonly ToolSet[] = [];
 const noSubscribe = () => () => {};
 
+/** `shortcuts` as the sheet writes them, once each: two bindings drawn alike (`a` and `A`) are one chip. */
+function distinctChips(shortcuts: readonly ShortcutInput[], format: FormatShortcutOptions): { id: string; shortcut: ShortcutInput }[] {
+  const seen = new Set<string>();
+  return shortcuts.flatMap((shortcut) => {
+    const id = JSON.stringify(formatShortcutParts(shortcut, format));
+    if (seen.has(id)) return [];
+    seen.add(id);
+    return [{ id, shortcut }];
+  });
+}
+
 function Row({ row, platform }: { row: ShortcutRow; platform: Platform }) {
+  const format: FormatShortcutOptions = { platform, legend: platform === 'macos' ? 'auto' : 'text' };
   return (
     <li className={styles.row}>
       <span className={styles.glyph}>{row.icon && <Icon name={row.icon} />}</span>
@@ -35,10 +47,7 @@ function Row({ row, platform }: { row: ShortcutRow; platform: Platform }) {
       <span className={styles.keys}>
         {row.shortcuts.length === 0
           ? <span className={styles.none}>No key</span>
-          : row.shortcuts.map((s) => {
-            const legend = formatShortcut(s, { platform })!;
-            return <ShortcutKeys key={legend} legend={legend} />;
-          })}
+          : distinctChips(row.shortcuts, format).map((c) => <ShortcutKeys key={c.id} shortcut={c.shortcut} format={format} />)}
       </span>
     </li>
   );

@@ -118,7 +118,7 @@
 .row > .strip { grid-column: 2; grid-row: var(--row, auto); border-radius: 0; }
 .row + .row > .strip { margin-top: -1px; }
 .row:first-child > .strip { border-start-start-radius: var(--wzl-radius-sm); border-start-end-radius: var(--wzl-radius-sm); }
-.row:nth-last-child(2) > .strip { border-end-start-radius: var(--wzl-radius-sm); border-end-end-radius: var(--wzl-radius-sm); }
+.row:not(:has(~ .row)) > .strip { border-end-start-radius: var(--wzl-radius-sm); border-end-end-radius: var(--wzl-radius-sm); }
 .row > .strip > .playhead { display: none; }
 
 .stackHead {

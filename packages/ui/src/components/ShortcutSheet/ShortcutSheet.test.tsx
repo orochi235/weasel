@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { useState } from 'react';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
-import { key } from '@weasel-js/gestures';
+import { key, type GestureSpec } from '@weasel-js/gestures';
 import { toolIdsOf, type BindingOverrides } from '@weasel-js/routing';
 import { useCommand } from '@weasel-js/routing/react';
 import { SceneCanvas, WeaselProvider, createScene, type ToolsApi } from '@weasel-js/core';
@@ -22,13 +22,14 @@ afterEach(cleanup);
 
 const noop = () => {};
 
-function Commands({ open }: { open: () => void }) {
+function Commands({ open, twice }: { open: () => void; twice: readonly GestureSpec[] }) {
   useShortcutSheetCommand(open);
+  useCommand('doc.twice', 'Twice', noop, { group: 'file', keys: twice });
   useCommand('doc.export', 'Export', noop, { group: 'file', keys: { spec: { kind: 'key', key: 'e', mods: { mod: true } }, opts: { id: 'doc.export.key' } } });
   return null;
 }
 
-function setup(initial: BindingOverrides = {}, initiallyOpen = true) {
+function setup(initial: BindingOverrides = {}, initiallyOpen = true, twice: readonly GestureSpec[] = []) {
   const scene = createScene({ systemLayers: [{ id: 'main' }] });
   let rebind!: (next: BindingOverrides) => void;
   function App() {
@@ -38,7 +39,7 @@ function setup(initial: BindingOverrides = {}, initiallyOpen = true) {
     rebind = setOverrides;
     return (
       <WeaselProvider>
-        <Commands open={() => setOpen(true)} />
+        <Commands open={() => setOpen(true)} twice={twice} />
         <ShortcutSheet open={open} onOpenChange={setOpen} tools={tools} toolSets={[SELECT_TOOLS, SHAPE_TOOLS]} apple={false} />
         <SceneCanvas features={[presets.draw]} scene={scene} width={64} height={64} defaultTools={[SELECT_TOOLS, SHAPE_TOOLS]}
           bindingOverrides={overrides} onToolsCreated={setTools} />
@@ -80,6 +81,24 @@ describe('ShortcutSheet', () => {
     t.rebind({ 'tool.activate.rect': null, 'doc.export.key': null });
     expect(row(/^Rectangle/).textContent).toBe('RectangleNo key');
     expect(screen.queryByText('Export')).toBeNull();
+  });
+
+  it('draws a plus key as a key of its own beside its modifiers', () => {
+    setup({ 'doc.export.key': key('Mod++') });
+    expect([...row(/^Export/).querySelectorAll('kbd')].map((k) => k.textContent)).toEqual(['Ctrl', '+']);
+    search('Ctrl++');
+    expect(screen.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['ExportCtrl+']);
+  });
+
+  it('draws two bindings written alike as one chip', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      setup({}, true, [{ kind: 'key', key: 'a' }, { kind: 'key', key: 'A' }]);
+      expect(row(/^Twice/).textContent).toBe('TwiceA');
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      error.mockRestore();
+    }
   });
 
   it('opens on its key, through the dispatcher', () => {

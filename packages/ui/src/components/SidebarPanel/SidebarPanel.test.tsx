@@ -13,6 +13,19 @@ describe('SidebarPanel', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
+  it('draws its header with no title when it folds or holds a control', () => {
+    const onHide = vi.fn();
+    renderWithIcons(
+      <SidebarPanel defaultCollapsed onHide={onHide} actions={<button type="button">Switch</button>}>body</SidebarPanel>,
+    );
+    expect(screen.queryByText('body')).toBeNull();
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['Contents', 'Switch', 'Hide panel']);
+    fireEvent.click(screen.getByRole('button', { name: 'Contents' }));
+    expect(screen.getByText('body')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide panel' }));
+    expect(onHide).toHaveBeenCalledOnce();
+  });
+
   it('draws its actions in the header, before the close button, and keeps them while collapsed', () => {
     const { rerender } = renderWithIcons(
       <SidebarPanel title="Path" onCollapsedChange={() => {}} onHide={() => {}} actions={<button type="button">Switch</button>}>

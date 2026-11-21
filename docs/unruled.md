@@ -3399,3 +3399,12 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): A badge's `padding` prop, and padding in its `style`, replaces the shape's insets on
   each side it sets, as it always has and as the story describes it, so a fitted base refits around the other sides
   alone. Adding the insets to the given padding, as the size's own padding does, was the alternative.
+
+## Audit round sixty (2026-11-20): the component kit, part eight
+
+- 2026-11-20 (the fixer's call): A `SidebarPanel` with no `title` still draws its header row when it folds or is given
+  `onHide`, `actions`, `trailing` or `headerRef`; its fold control is then named "Contents". Making `title` required was
+  the alternative.
+- 2026-11-20 (the fixer's call): `rulerTicks`, and so a `SpanStrips` ruler, throws a `RangeError` on a tick step that is
+  not a positive finite number, and when no step spaces ticks 64 px apart it takes the least whole multiple of the last
+  step that does, rather than every tick of the last step. Skipping bad steps was the alternative.

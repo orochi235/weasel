@@ -23,4 +23,9 @@ describe('keyLegendsFromFormatted', () => {
     expect(labels('Ctrl++')).toEqual(['Ctrl', '+']);
     expect(labels('Ctrl+Shift++')).toEqual(['Ctrl', 'Shift', '+']);
   });
+
+  it('reads a plus after a joining plus as the key', () => {
+    expect(labels('Ctrl++')).toEqual(['Ctrl', '+']);
+    expect(labels('Ctrl+Shift++')).toEqual(['Ctrl', 'Shift', '+']);
+  });
 });
