@@ -3230,3 +3230,7 @@ Calls the lanes made without a ruling:
   a caller who passed it as an increment now gets that number as the half-height.
 - 2026-11-20: A badge shape's repeat counts (`sparkler` and `starburst` `points`, `receipt` `teeth`) stop at 256, and a
   `perforated` badge's `holePitch` at no less than 1px. Both bounds are picked to keep a render finite, not ruled.
+## Audit round fifty-eight (2026-11-20): motif frames
+
+- 2026-11-20 (the fixer's call): `plaque({ mix })` throws a `RangeError` for a `mix` outside 0..100 or not a number,
+  since `color-mix()` rejects such a percentage and the plaque loses its fill and ink. Clamping it was the alternative.

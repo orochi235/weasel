@@ -5,7 +5,7 @@ import s from './plaque.module.css';
 
 /** Params for {@link plaque}. */
 export interface PlaqueParams {
-  /** How much of the tint fills the frame, in percent. Defaults to 100. */
+  /** How much of the tint fills the frame, in percent from 0 to 100. Defaults to 100. */
   mix?: number;
 }
 
@@ -15,6 +15,7 @@ export interface PlaqueParams {
  */
 export function plaque(params: PlaqueParams = {}): Motif<PlaqueParams> {
   const { mix } = params;
+  if (mix !== undefined && !(mix >= 0 && mix <= 100)) throw new RangeError(`plaque: mix must be from 0 to 100, got ${mix}`);
   return {
     id: 'plaque',
     params,

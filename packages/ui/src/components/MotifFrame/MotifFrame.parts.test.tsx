@@ -86,3 +86,14 @@ describe('DefaultMotif', () => {
     expect(screen.getByRole('group', { name: 'Named' })).toHaveAttribute('data-motif', 'stereo');
   });
 });
+
+describe('plaque', () => {
+  it.each([-10, 120, Number.NaN, Number.POSITIVE_INFINITY])('throws for a mix of %s', (mix) => {
+    expect(() => plaque({ mix })).toThrow(RangeError);
+  });
+
+  it('takes a mix from 0 to 100', () => {
+    expect(() => plaque({ mix: 0 })).not.toThrow();
+    expect(() => plaque({ mix: 100 })).not.toThrow();
+  });
+});
