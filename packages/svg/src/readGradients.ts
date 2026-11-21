@@ -5,7 +5,7 @@
  * `fill` / `stroke` attribute references one as `url(#id)`.
  */
 
-import type { GradStop, Paint } from '@weasel-js/core';
+import { tryParseColor, type GradStop, type Paint } from '@weasel-js/core';
 import { parseRatio, readStops } from './gradientStops';
 import { resolveLength, type LengthAxis } from './lengths';
 import { collectElementsByTag, type ElementTable } from './elements';
@@ -241,12 +241,19 @@ function readMeshGradient(el: Element, onWarn?: (m: string) => void): Paint | nu
         const [x, y] = pair.split(',').map(Number);
         return { x, y };
       });
-    const colors = (child.getAttribute('colors') ?? '').trim().split(/\s+/).filter(Boolean);
+    const colorList = (child.getAttribute('colors') ?? '').trim();
+    // Written `;`-separated; a file from before that is space-separated hex.
+    const colors = colorList.split(colorList.includes(';') ? ';' : /\s+/).map((c) => c.trim()).filter(Boolean);
     const sane = (points.length === 12 || points.length === 16)
       && points.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y))
       && colors.length === 4;
     if (!sane) {
       onWarn?.(`<${WEASEL_NS_PREFIX}:patch> with ${points.length} points and ${colors.length} colors — dropped`);
+      continue;
+    }
+    const unread = colors.find((c) => tryParseColor(c) === null);
+    if (unread !== undefined) {
+      onWarn?.(`<${WEASEL_NS_PREFIX}:patch> with the unreadable color '${unread}' — dropped`);
       continue;
     }
     patches.push({ points, colors });

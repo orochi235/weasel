@@ -10,7 +10,7 @@ import { WeaselRenderer } from '../WeaselRenderer';
 import { _resetProgramRegistryForTests } from '../shaders/registerProgram';
 import type { DrawCommand } from '../DrawCommand';
 import { cullDrawCommands } from '../cullDrawCommands';
-import { leavesUncovered, readsBackdrop } from './compositeOp';
+import { blendFactorsOf, isOwnComposite, leavesUncovered, readsBackdrop, type CompositeOp } from './compositeOp';
 
 const RECT: DrawCommand = {
   kind: 'path',
@@ -86,5 +86,14 @@ describe('readsBackdrop', () => {
     const deep: DrawCommand[] = [RECT, { kind: 'group', children: [{ kind: 'group', composite: 'xor', children: [RECT] }] }];
     expect(readsBackdrop(deep)).toBe(true);
     expect(readsBackdrop([RECT, { kind: 'group', composite: 'source-over', children: [RECT] }])).toBe(false);
+  });
+});
+
+describe('composite operator names', () => {
+  it('rejects a name that is no operator, inherited ones included, with a RangeError naming it', () => {
+    for (const name of ['multiply', 'constructor', 'toString']) {
+      expect(() => blendFactorsOf(name as CompositeOp)).toThrow(new RegExp(`unknown composite operator '${name}'`));
+      expect(() => isOwnComposite(name as CompositeOp)).toThrow(RangeError);
+    }
   });
 });

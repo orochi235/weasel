@@ -42,10 +42,10 @@ export function isTensorPatch(patch: MeshPatch<unknown>): boolean {
   return patch.points.length >= 16;
 }
 
-/** A patch is twelve boundary points, or sixteen with the interior. Anything
- *  else cannot be evaluated, and saying so here beats painting nonsense. */
+/** A patch is twelve boundary points, or sixteen with the interior, and four
+ *  corner colors. Anything else cannot be evaluated, and saying so here beats painting nonsense. */
 export function isValidPatch(patch: MeshPatch<unknown>): boolean {
-  return patch.points.length === 12 || patch.points.length === 16;
+  return (patch.points.length === 12 || patch.points.length === 16) && patch.colors.length === 4;
 }
 
 function bezier(p0: MeshPoint, p1: MeshPoint, p2: MeshPoint, p3: MeshPoint, t: number): MeshPoint {

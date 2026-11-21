@@ -14,8 +14,7 @@ ${PAINT_VERTEX_WGSL}${textureWgsl('u_sampler', 0)}
   // Sampled before the box test: WGSL takes no implicit derivative past a branch on a varying.
   let texel = textureSample(u_sampler, u_sampler_sampler, uv);
   let outside = any(t < vec2f(0.0)) || any(t > vec2f(1.0));
-  let a = texel.a * u.u_opacity * u.u_alpha;
-  return weasel_out(select(vec4f(texel.rgb * a, a), vec4f(0.0), outside), u.u_weaselId);
+  return weasel_out(select(texel * (u.u_opacity * u.u_alpha), vec4f(0.0), outside), u.u_weaselId);
 }
 `;
 

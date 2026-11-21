@@ -15,6 +15,16 @@ export interface DropShadow {
 const BLUR_LAYERS = 7;
 const BLUR_LAYER_ALPHA = 0.16;
 
+/** The layers of a shadow, outermost first, and the opacity each is filled at. */
+export interface DropShadowLayers {
+  paths: Path[];
+  /** One per path. Stacked, they cover the shadow's interior fully and fall off linearly to its edge. */
+  alphas: number[];
+  /** @deprecated One opacity for every path, which leaves a blurred shadow's interior at about 70% of its
+   *  color; fill each path at its own entry in `alphas` instead. */
+  alpha: number;
+}
+
 /**
  * The corner radius of a box whose corners are `radius`, grown by `by` on every side (shrunk, for a negative `by`), as
  * CSS spreads a shadow: a corner sharper than the growth stays sharper, so a square box casts a square shadow.
@@ -33,7 +43,7 @@ export function dropShadowLayers(
   box: Rect,
   radius: number,
   s: DropShadow,
-): { paths: Path[]; alpha: number } {
+): DropShadowLayers {
   const spread = s.spread ?? 0;
   const spreadR = spreadRadius(radius, spread);
   const rect = (e: number): Path | null => {
@@ -43,15 +53,19 @@ export function dropShadowLayers(
   };
   if (s.blur <= 0) {
     const p = rect(spread);
-    return { paths: p ? [p] : [], alpha: 1 };
+    return p ? { paths: [p], alphas: [1], alpha: 1 } : { paths: [], alphas: [], alpha: 1 };
   }
   const paths: Path[] = [];
+  const alphas: number[] = [];
   const step = s.blur / (BLUR_LAYERS - 1);
   for (let i = 0; i < BLUR_LAYERS; i++) {
     const p = rect(spread + s.blur / 2 - i * step);
-    if (p) paths.push(p);
+    if (!p) continue;
+    paths.push(p);
+    // Over the i layers outside it, coverage is i / N; this layer takes it to (i + 1) / N.
+    alphas.push(1 / (BLUR_LAYERS - i));
   }
-  return { paths, alpha: BLUR_LAYER_ALPHA };
+  return { paths, alphas, alpha: BLUR_LAYER_ALPHA };
 }
 
 /** {@link dropShadowLayers} as a draw command, filled in `color`. */
@@ -61,11 +75,13 @@ export function dropShadowCommand(
   s: DropShadow,
   color: string,
 ): DrawCommand {
-  const { paths, alpha } = dropShadowLayers(box, radius, s);
+  const { paths, alphas } = dropShadowLayers(box, radius, s);
   const fill = { paint: { kind: 'solid' as const, color } };
   return {
     kind: 'group',
-    ...(alpha < 1 ? { alpha } : {}),
-    children: paths.map((path) => ({ kind: 'path' as const, path, fill })),
+    children: paths.map((path, i): DrawCommand => {
+      const cmd = { kind: 'path' as const, path, fill };
+      return alphas[i] < 1 ? { kind: 'group', alpha: alphas[i], children: [cmd] } : cmd;
+    }),
   };
 }

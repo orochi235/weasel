@@ -3230,3 +3230,8 @@ Calls the lanes made without a ruling:
   a caller who passed it as an increment now gets that number as the half-height.
 - 2026-11-20: A badge shape's repeat counts (`sparkler` and `starburst` `points`, `receipt` `teeth`) stop at 256, and a
   `perforated` badge's `holePitch` at no less than 1px. Both bounds are picked to keep a render finite, not ruled.
+## Audit round fifty-four (2026-11-20): the renderer, part one
+
+- 2026-11-20 (my call, audit round 54): a group or layer `composite` string that is no `CompositeOp` (`'multiply'`,
+  or an inherited name such as `'constructor'`) throws a `RangeError` naming it and listing the operators, rather
+  than being drawn as `source-over`. It still ends the frame, as the bare `TypeError` it replaces did.

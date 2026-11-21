@@ -72,3 +72,13 @@ describe('idMask', () => {
     expect([...idMask(buffer, (id) => id > 4)]).toEqual([0, 0, 1, 0]);
   });
 });
+
+describe('WeaselRenderer.renderIdsAsync', () => {
+  it('rejects, rather than throwing, when the id frame fails', async () => {
+    const { r } = setup();
+    const bad = [{ kind: 'group', composite: 'multiply', children: [] }] as unknown as DrawCommand[];
+    let result: Promise<unknown> | undefined;
+    expect(() => { result = r.renderIdsAsync(bad); }).not.toThrow();
+    await expect(result).rejects.toThrow(RangeError);
+  });
+});

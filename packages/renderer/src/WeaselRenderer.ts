@@ -253,7 +253,11 @@ export class WeaselRenderer {
   /** `renderIds`, its buffer read back asynchronously: on WebGL as well as
    *  WebGPU, where it is the only form. */
   renderIdsAsync(commands: DrawCommand[], viewMatrix?: GlMat3, opts: RenderIdsOptions = {}): Promise<IdBuffer> {
-    return Promise.resolve(this.idFrame(commands, viewMatrix, opts, false));
+    try {
+      return Promise.resolve(this.idFrame(commands, viewMatrix, opts, false));
+    } catch (err) {
+      return Promise.reject(err);
+    }
   }
 
   /** The canvas's pixels in `rect`, device px from its top-left, as the last
