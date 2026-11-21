@@ -137,6 +137,18 @@ describe('useFloatingPlacement placement', () => {
     const { panel } = renderPanel(<Harness anchor="top-right" />);
     expect(panel.style.left).toBe('270px'); // 400 - (100 + 18) - 12
   });
+
+  it('places against the container\'s padding box, where an absolute box is positioned', () => {
+    const { container } = render(
+      <div style={{ padding: '12px' }}>
+        <Harness anchor="bottom-right" />
+      </div>,
+    );
+    const panel = container.querySelector('[data-panel]') as HTMLElement;
+    // The observer reports the 400x300 content box; the padding box is 424x324.
+    expect(panel.style.left).toBe('312px');
+    expect(panel.style.top).toBe('272px');
+  });
 });
 
 describe('useFloatingPlacement dragging', () => {
