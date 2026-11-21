@@ -79,6 +79,15 @@ export function findLayer(items: Items, id: string): LayerListItem | undefined {
   return undefined;
 }
 
+/** Whether `id`'s layer is locked or sits inside one that is. */
+export function underLock(items: Items, id: string): boolean {
+  for (const it of items) {
+    if (it.id === id) return it.locked === true;
+    if (it.children && findLayer(it.children, id)) return it.locked === true || underLock(it.children, id);
+  }
+  return false;
+}
+
 function siblingsAt(items: Items, parentId: string | null): Items {
   return parentId === null ? items : (findLayer(items, parentId)?.children ?? []);
 }

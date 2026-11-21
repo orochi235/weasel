@@ -18,24 +18,27 @@ export interface Renaming {
 /** The tree `LayerList` draws for `items`: a node per layer, its toggles as the row's controls. */
 export function layerNodes(items: readonly LayerListItem[], props: LayerListProps, renaming: Renaming): TreeNode[] {
   const withControls = !!(props.onVisibilityChange || props.onLockChange || props.onRemove);
-  const node = (item: LayerListItem): TreeNode => ({
-    id: item.id,
-    label: (
-      <RowLabel
-        item={item} props={props} renaming={renaming.id === item.id}
-        setRenaming={(on) => renaming.set(on ? item.id : null)}
-      />
-    ),
-    textValue: item.label,
-    leading: item.leading,
-    trailing: item.nonPrinting || item.fixed ? <Marks item={item} /> : undefined,
-    controls: withControls ? <Controls item={item} props={props} /> : undefined,
-    muted: item.nonPrinting,
-    immovable: item.fixed || item.locked,
-    selectsAlone: item.fixed,
-    ...(item.children?.length ? { children: item.children.map(node) } : {}),
-  });
-  return items.map(node);
+  const node = (item: LayerListItem, inLocked: boolean): TreeNode => {
+    const locked = inLocked || item.locked === true;
+    return {
+      id: item.id,
+      label: (
+        <RowLabel
+          item={item} props={props} locked={locked} renaming={renaming.id === item.id}
+          setRenaming={(on) => renaming.set(on ? item.id : null)}
+        />
+      ),
+      textValue: item.label,
+      leading: item.leading,
+      trailing: item.nonPrinting || item.fixed ? <Marks item={item} /> : undefined,
+      controls: withControls ? <Controls item={item} props={props} locked={locked} /> : undefined,
+      muted: item.nonPrinting,
+      immovable: item.fixed || locked,
+      selectsAlone: item.fixed,
+      ...(item.children?.length ? { children: item.children.map((kid) => node(kid, locked)) } : {}),
+    };
+  };
+  return items.map((item) => node(item, false));
 }
 
 /** What the row says of itself after its label: left out of export, or fixed in place. */
@@ -53,7 +56,7 @@ function Marks({ item }: { item: LayerListItem }) {
 }
 
 /** A row's toggles. A column the list has but this row lacks holds its width, so the columns line up. */
-function Controls({ item, props }: { item: LayerListItem; props: LayerListProps }) {
+function Controls({ item, props, locked }: { item: LayerListItem; props: LayerListProps; locked: boolean }) {
   const { onVisibilityChange, onRemove } = props;
   // A read-only scope holds no action button of its own accord, and removing a layer changes the list.
   const access = useControlAccess();
@@ -67,7 +70,7 @@ function Controls({ item, props }: { item: LayerListItem; props: LayerListProps 
         ))}
       <LockToggle item={item} props={props} />
       {onRemove &&
-        (item.fixed || item.locked || item.removable === false ? (
+        (item.fixed || locked || item.removable === false ? (
           <span className={s.removeSlot} />
         ) : (
           <Button {...CLOSE_BUTTON_PROPS}

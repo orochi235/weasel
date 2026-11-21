@@ -202,6 +202,19 @@ describe('LayerList reordering', () => {
     expect(onReorder).toHaveBeenCalledWith({ ids: ['b'], parentId: 'g', index: 2 });
   });
 
+  it('keeps a locked layer\'s children in it: none drags out, renames, or offers removal', () => {
+    const onReorder = vi.fn();
+    const onRename = vi.fn();
+    list({ items: [{ ...TREE[0]!, locked: true }, TREE[1]!], onReorder, onRename, onRemove: vi.fn() });
+    drag('One', 4 * ROW_H - 2, ROW_H + 4);
+    expect(onReorder).not.toHaveBeenCalled();
+    fireEvent.doubleClick(screen.getByText('One'));
+    fireEvent.keyDown(row('Two'), { key: 'F2' });
+    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove One' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Remove Beta' })).toBeInTheDocument();
+  });
+
   it('drops nothing into a locked layer, or where canMove refuses', () => {
     const onReorder = vi.fn();
     const { rerender } = list({ items: [{ ...TREE[0]!, locked: true }, TREE[1]!], onReorder });

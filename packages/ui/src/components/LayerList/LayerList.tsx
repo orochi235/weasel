@@ -7,7 +7,7 @@ import { Tree } from '../Tree';
 import s from './LayerList.module.css';
 import type { LayerListItem, LayerListProps, LayerMove } from './layerListProps';
 import { layerNodes } from './layerNodes';
-import { branchIds, collectCollapsed, crossesWall, findLayer, moveOf } from './layerTree';
+import { branchIds, collectCollapsed, crossesWall, findLayer, moveOf, underLock } from './layerTree';
 import { canRename } from './RowParts';
 export type { LayerListItem, LayerListProps, LayerMove };
 export { moveLayers } from './layerTree';
@@ -48,7 +48,7 @@ function HeldLayerList(props: LayerListProps) {
   };
 
   const canDrop = (ids: readonly string[], target: TreeDropTarget) => {
-    if (target.parentId !== null && findLayer(items, target.parentId)?.locked) return false;
+    if (target.parentId !== null && underLock(items, target.parentId)) return false;
     if (crossesWall(items, ids, target)) return false;
     return props.canMove?.(moveOf(items, ids, target)) ?? true;
   };
@@ -61,10 +61,10 @@ function HeldLayerList(props: LayerListProps) {
   const held = access.state !== 'enabled';
   // A field that unmounts because its row stopped being renamable never blurs, so its rename closes here.
   const open = renaming === null ? undefined : findLayer(items, renaming);
-  if (renaming !== null && (held || !open || !canRename(props, open))) setRenaming(null);
+  if (renaming !== null && (held || !open || !canRename(props, open, underLock(items, open.id)))) setRenaming(null);
   const onRowKeyDown = (id: string, e: KeyboardEvent<HTMLElement>) => {
     const item = findLayer(items, id);
-    if (e.key !== 'F2' || held || !item || !canRename(props, item)) return;
+    if (e.key !== 'F2' || held || !item || !canRename(props, item, underLock(items, id))) return;
     e.preventDefault();
     setRenaming(id);
   };
