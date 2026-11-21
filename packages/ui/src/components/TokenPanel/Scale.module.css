@@ -25,3 +25,7 @@
 .amount {
   font-size: var(--wzl-font-size-2xs);
 }
+
+.gesture {
+  display: contents;
+}

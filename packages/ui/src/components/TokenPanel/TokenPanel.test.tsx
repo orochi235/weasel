@@ -135,6 +135,35 @@ describe('TokenPanel', () => {
     fireEvent.pointerUp(document, at(16));
   });
 
+  it('puts back each step and the rule a drag wrote when Escape cancels it', () => {
+    const steps: TokenEntry[] = [
+      { name: '--s-sm', type: 'dimension', group: 's', value: '8px' },
+      { name: '--s-md', type: 'dimension', group: 's', value: '16px' },
+      { name: '--s-lg', type: 'dimension', group: 's', value: '32px', overridden: true },
+    ];
+    const byFactors: TokenScale = { tokens: ['--s-sm', '--s-md'], base: 16, rule: { kind: 'factors', factors: [0.5, 1] } };
+    const onChange = vi.fn();
+    const onScaleChange = vi.fn();
+    renderWithIcons(<TokenPanel tokens={steps} onChange={onChange} scales={{ s: byFactors }} onScaleChange={onScaleChange} />);
+    const slider = (name: string) => within(screen.getByRole('group', { name: 's' })).getByRole('slider', { name });
+    const rail = slider('--s-md').parentElement!;
+    rail.getBoundingClientRect = () =>
+      ({ x: 0, y: 0, left: 0, top: 0, width: 1000, height: 24, right: 1000, bottom: 24, toJSON: () => ({}) }) as DOMRect;
+    const [lo, hi] = [Math.log2(8 / 1.5), Math.log2(32 * 1.5)];
+    const at = (amount: number) => ({ clientX: ((Math.log2(amount) - lo) / (hi - lo)) * 1000, clientY: 12, pointerId: 1 });
+    const cancelDrag = (name: string, from: number, to: number) => {
+      fireEvent.pointerDown(slider(name), { ...at(from), button: 0 });
+      fireEvent.pointerMove(document, at(to));
+      fireEvent.keyDown(slider(name), { key: 'Escape' });
+      fireEvent.pointerUp(document, at(to));
+    };
+
+    cancelDrag('--s-md', 16, 20);
+    expect(onScaleChange.mock.calls.at(-1)).toEqual(['s', byFactors]);
+    cancelDrag('--s-lg', 32, 40);
+    expect(onChange.mock.calls.at(-1)).toEqual(['--s-lg', '32px']);
+  });
+
   describe('a generated scale', () => {
     const fonts: TokenEntry[] = [
       { name: '--f-sm', type: 'dimension', group: 'f', value: '10px' },
