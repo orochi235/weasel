@@ -8,6 +8,7 @@ import { MenuRow, rowTipText } from './MenuRow';
 import { RowTip } from '../Tree/RowTip';
 import { menuFieldId } from './MenuValue';
 import { editsColor } from './MenuColorValue';
+import { revealInBox } from '../../revealInBox';
 import s from './Menu.module.css';
 
 /** One level of the open menu, positioned in the viewport. */
@@ -61,6 +62,11 @@ export function MenuPanel(props: {
   }, [c, level, anchor]);
 
   useLayoutEffect(() => { if (focus) ref.current?.focus(); }, [focus]);
+
+  useLayoutEffect(() => {
+    const row = highlight == null ? null : document.getElementById(`${idBase}-${level}-${highlight}`);
+    if (row && ref.current) revealInBox(row, ref.current);
+  }, [highlight, idBase, level]);
 
   // Every key stops here, so Shift+F10 or the ContextMenu key inside a menu never
   // reaches the canvas; a key held with Ctrl, Meta or Alt is a command, not typeahead.

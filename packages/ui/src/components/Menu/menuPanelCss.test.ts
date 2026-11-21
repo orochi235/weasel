@@ -30,6 +30,10 @@ describe('Menu.module.css lays a panel out as measureMenuPanel measures it', () 
     });
   });
 
+  it('caps a panel at the viewport\'s height and scrolls what is past it', () => {
+    expect(rule('.panel')).toMatchObject({ 'max-height': '100vh', 'overflow-y': 'auto' });
+  });
+
   it('sets a row a small control tall, its columns the icon, the label, and the trailing part, a --wzl-space-2 apart', () => {
     expect(rule('.row')).toMatchObject({
       'grid-template-columns': `${MENU_ICON_SIZE}px 1fr auto`,
