@@ -8,6 +8,8 @@ export interface LeafWrites {
   commit(selection: Pick<SelectionApi, 'current'>, leaf: PanelLeaf, next: (prev: unknown) => unknown): void;
   /** A value on the way there, as a slider's drag passes through: written, and kept out of undo. */
   draft(selection: Pick<SelectionApi, 'current'>, leaf: PanelLeaf, next: (prev: unknown) => unknown): void;
+  /** What the drafts of `leaf`'s edit in flight wrote over, put back and kept out of undo: the edit was canceled. */
+  cancel?(leaf: PanelLeaf): void;
   /** Each of `leaves` back as its schema says (`prefStoredReset`), in every selected record, as one undo step. */
   reset(selection: Pick<SelectionApi, 'current'>, leaves: readonly PanelLeaf[], label: string): void;
 }

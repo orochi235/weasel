@@ -138,6 +138,7 @@ export function leafWrites<TData, TLayer extends string, TPose>(
         for (const leaf of due) writeLeaf(scene, ids, leaf, () => prefStoredReset(leaf.leaf), settleOf);
       });
     },
+    cancel: restore,
     commit: (selection, leaf, next) => {
       // A batch records a write from what the document holds, so the drafts come out first.
       restore(leaf);
