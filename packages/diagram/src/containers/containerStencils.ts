@@ -142,9 +142,12 @@ function releasePlan(scene: AnyScene, id: string) {
   const membersOf = (c: NodeId) => scene.childrenOf(c).filter((m) => m !== titleIdOf(c as string));
   const members = trait.role === 'pool' ? membersOf(node.id).flatMap(membersOf) : membersOf(node.id);
   const beside = releasedFrom(scene, node.id);
-  // A lane's pool restacks the lanes left: it, its title and they are written too.
+  // A lane's pool restacks the lanes left: it, its title and they are written too, and the lanes after it move
+  // with what they hold.
   const restacked = beside === node.id ? [] : [beside, titleIdOf(beside), ...membersOf(beside)];
   if (restacked.some((id) => scene.isLocked(id as NodeId))) return null;
+  const lanes = beside === node.id ? [] : lanesOf(scene, beside);
+  if (reachesLocked(scene as never, lanes.slice(lanes.indexOf(node.id) + 1))) return null;
   const parent = scene.get(beside)!.parent;
   // A lane's members go just past the pool, which stays and would draw over them; a container's take its place.
   const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(beside) + (beside === node.id ? 0 : 1);

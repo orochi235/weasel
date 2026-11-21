@@ -5,7 +5,7 @@ import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import type { DiagramEdge } from '../edgeTrait';
 import { waypointFollower } from '../waypointFollower';
 import { diagramCanDropInto } from './canDropInto';
-import { CONTAINER_STENCILS, addLane, containerBuild, lanesOf, releaseMembers } from './containerStencils';
+import { CONTAINER_STENCILS, addLane, canReleaseMembers, containerBuild, lanesOf, releaseMembers } from './containerStencils';
 import { titleIdOf } from './trait';
 import { moveAction, resizeAction } from '@weasel-js/editing';
 import * as presets from '@weasel-js/editing/presets';
@@ -233,6 +233,20 @@ describe('pools in a scene', () => {
     releaseMembers(scene as never, first!);
     expect(scene.get(pool as NodeId)).toBeDefined();
     expect(scene.roots).toEqual([pool, 's']);
+  });
+
+  it('keep a lane whose release would move a locked member of a lane after it', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    const [first, second] = lanesOf(scene as never, pool);
+    shape(scene, 's', { x: 100, y: 150, width: 40, height: 20 }, second);
+    shape(scene, 't', { x: 100, y: 30, width: 40, height: 20 }, first);
+    scene.setLocked('s' as NodeId, true);
+    expect(canReleaseMembers(scene as never, first!)).toBe(false);
+    // Nothing after the last lane moves when it goes.
+    scene.setLocked('s' as NodeId, false);
+    scene.setLocked('t' as NodeId, true);
+    expect(canReleaseMembers(scene as never, second!)).toBe(true);
   });
 
   it('round-trip through toJSON with their layouts', () => {
