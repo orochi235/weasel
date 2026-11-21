@@ -55,6 +55,15 @@ describe('stepWorld — damage', () => {
     expect(ows(g)).toHaveLength(1);
   });
 
+  it('ducks the music when the player falls out of the level', () => {
+    const g = freshGame();
+    g.player = { ...g.player, body: { ...g.player.body, y: WORLD.heightPx + 200 } };
+    let ducks = 0;
+    stepWorld(g, idle, { ...NO_HOOKS, duck: () => ducks++ });
+    expect(g.lives).toBe(2);
+    expect(ducks).toBe(1);
+  });
+
   /** The player just under WORLD's first `?` block (column 3, row 12), rising into it. */
   const underBlock = (g: GameRefs) => {
     g.player = { ...g.player, body: { ...g.player.body, x: 3.5 * TILE, y: 13 * TILE + BODY_H / 2 + 1, vy: -400 } };

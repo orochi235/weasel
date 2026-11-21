@@ -190,6 +190,7 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
     g.camera = createCamera(WORLD.spawn);
     g.invuln = INVULN;
     hooks.sound('hurt');
+    hooks.duck();
     sayOw(g);
   }
 
