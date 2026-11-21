@@ -176,7 +176,6 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
     onPick: (hex) => onPickRef.current?.(hex),
   });
   const model = modelRef.current;
-  useFollowOptions(model, options);
 
   const goneRef = useRef(false);
 
@@ -190,6 +189,8 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
       goneRef.current = true;
     };
   }, []);
+  // After the effect above, so a remount marks the lens alive before the model is told to follow the props.
+  useFollowOptions(model, options);
 
   // Aim at the pointer's last spot over the host, for a lens that has just
   // come up under a pointer that has not moved since. Stable, because `input`
