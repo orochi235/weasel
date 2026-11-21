@@ -3266,3 +3266,10 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+
+## Audit round sixty (2026-11-20): ui components, part four
+
+- 2026-11-20 (the fixer's call): An `InlineMarkdown` mark (`*`, `**`, `~~`) opens before punctuation only after a space
+  or at the start of the line, so `src/*.ts to lib/*.js` and `"*.ts" or "*.js"` stay literal; a code span, a
+  shortcut, or an escape right after the mark does not count as punctuation. `x*"quoted"*` is therefore literal too.
+  CommonMark's flanking rule, which reads `src/*.ts to lib/*.js` as emphasis, was the alternative.
