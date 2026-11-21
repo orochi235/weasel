@@ -36,11 +36,12 @@ function StartEdit(): null {
   return null;
 }
 
-function mount(opts: { features?: FeaturePreset[]; editor?: CanvasTextEditorOptions; host?: boolean } = {}) {
+function mount(opts: { features?: FeaturePreset[]; editor?: CanvasTextEditorOptions; host?: boolean; hostScene?: object } = {}) {
   const scene = sceneWithText();
+  const hostScene = (opts.hostScene ?? scene) as typeof scene;
   function Host() {
     const [frame, setFrame] = useState<HTMLDivElement | null>(null);
-    const edit = useSceneTextEdit(scene, opts.host ? frame : null);
+    const edit = useSceneTextEdit(hostScene, opts.host ? frame : null);
     hostEditing = () => edit.editingId;
     return (
       <div ref={setFrame} data-testid="frame">
@@ -97,6 +98,13 @@ describe("the canvas's own text editor", () => {
     act(() => startEdit!('t'));
     expect(hostEditing()).toBe('t');
     expect(t.overlays()).toHaveLength(1);
+  });
+
+  it("keeps its own editor under a host's useSceneTextEdit of another scene", () => {
+    const t = mount({ host: true, hostScene: sceneWithText() });
+    t.doubleClick();
+    expect(t.overlays()).toHaveLength(1);
+    expect(hostEditing()).toBeNull();
   });
 
   it("stands in for the glyphs of the node a host's editor has open", () => {

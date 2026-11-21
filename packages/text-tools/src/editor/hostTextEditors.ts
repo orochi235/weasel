@@ -41,12 +41,6 @@ export function registerHostTextEditor(container: HTMLElement, scene: object, de
   };
 }
 
-/** Whether a host's editor holds `el`. */
-export function hostTextEditorHolds(el: Element): boolean {
-  for (const e of editors.values()) if (e.container.contains(el)) return true;
-  return false;
-}
-
 /** The dep of a host's editor of `scene` holding `el`, or `null` for none. */
 export function hostTextEditDep(el: Element, scene: object): TextEditDep | null {
   for (const e of editors.values()) if (e.scene === scene && e.container.contains(el)) return e.dep;
