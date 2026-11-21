@@ -291,6 +291,16 @@ describe('derive', () => {
     expect(tokens).toEqual({});
   });
 
+  it('reports a categorical ramp with more anchors than steps', () => {
+    const anchors = [10, 120, 240].map((hue, i) => ({ name: `a${i}`, hue, lightness: 0.7 }));
+    const { tokens, issues } = derive({ name: 'x', ramps: { sw: { kind: 'categorical', steps: ['a', 'b'], anchors } } });
+    expect(issues).toEqual([
+      { kind: 'invalid', path: 'ramps.sw.anchors', message: '3 anchors for 2 steps; the ones past the last step are left out' },
+      { kind: 'infeasible-ramp', ramp: 'sw' },
+    ]);
+    expect(Object.keys(tokens)).toEqual(['sw-a', 'sw-b']);
+  });
+
   it('reports a lightness ramp loaded without lightness instead of crashing', () => {
     const loaded: ThemeDefinition = JSON.parse('{ "name": "x", "ramps": { "accent": { "kind": "lightness", "steps": ["base"] } } }');
     expect(derive(loaded).issues).toEqual([{ kind: 'invalid', path: 'ramps.accent.lightness', message: 'expected two numbers' }]);

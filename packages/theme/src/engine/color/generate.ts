@@ -167,11 +167,13 @@ function farthestFirst(hues: number[]): number[] {
 
 /**
  * A categorical palette of `count` swatches, anchors included, satisfying the gates. When no hue arrangement
- * satisfies them the result is still a full palette, with `feasible` false.
+ * satisfies them the result is still a full palette, with `feasible` false. Anchors past `count` are left out, and
+ * the palette is then infeasible too.
  */
 export function generate(constraints: Constraints): Palette {
-  const c = { ...constraints, anchors: constraints.anchors.map((a) => ({ ...a, hue: wrapDeg(a.hue) })) };
-  const found = searchHues(c);
+  const kept = constraints.anchors.slice(0, Math.max(0, constraints.count));
+  const c = { ...constraints, anchors: kept.map((a) => ({ ...a, hue: wrapDeg(a.hue) })) };
+  const found = kept.length < constraints.anchors.length ? null : searchHues(c);
   // An infeasible gate still has to draw something, so fall back to an even ring.
   const free =
     found ??
