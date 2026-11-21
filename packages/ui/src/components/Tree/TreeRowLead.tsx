@@ -1,3 +1,4 @@
+import { isInControlWithin } from '@weasel-js/gestures';
 import { forwardRef, type HTMLAttributes, type MouseEvent, type ReactNode, type Ref } from 'react';
 import { DisclosureMark } from '../Disclosure';
 import s from './Tree.module.css';
@@ -52,7 +53,7 @@ export const TreeRowBox = forwardRef(function TreeRowBox(
 ) {
   if (href == null) return <div ref={ref as Ref<HTMLDivElement>} {...props} onClick={onPress} />;
   const onClick = (e: MouseEvent<HTMLElement>) => {
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.altKey || isInControlWithin(e.target, e.currentTarget)) return;
     e.preventDefault();
     (props.role === 'row' ? e.currentTarget : e.currentTarget.parentElement)?.focus();
     onPress(e);

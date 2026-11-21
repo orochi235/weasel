@@ -78,6 +78,24 @@ describe('Tree rows with an href', () => {
   });
 });
 
+describe('Tree rows with an href and controls', () => {
+  it('leaves a click on a control in the row to the control', () => {
+    const onAction = vi.fn();
+    render(
+      <Tree
+        aria-label="Pages" onAction={onAction}
+        nodes={[{ id: 'a', label: 'A', href: '#/a', controls: <input type="checkbox" aria-label="Show A" /> }]}
+      />,
+    );
+    const box = screen.getByRole('checkbox', { name: 'Show A' });
+    box.focus();
+    fireEvent.click(box);
+    expect(box).toBeChecked();
+    expect(box).toHaveFocus();
+    expect(onAction).not.toHaveBeenCalled();
+  });
+});
+
 describe('Tree current rows', () => {
   it('marks a current row with aria-current, and no other', () => {
     render(<Tree aria-label="Pages" nodes={[{ id: 'a', label: 'A', current: true }, { id: 'b', label: 'B' }]} />);
