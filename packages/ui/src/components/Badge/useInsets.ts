@@ -47,11 +47,14 @@ function useMeasured(ref: RefObject<HTMLElement | null>, enabled: boolean): Meas
       setMeasured((was) => (was && same(was, next) ? was : next));
     };
     const r = el.getBoundingClientRect();
-    set(r.width, r.height);
+    let size = { width: r.width, height: r.height };
+    set(size.width, size.height);
+    // The badge is watched for its own padding, which changes its size and not the content's.
     // The observer's size is the layout's own, where a bounding rect is scaled by any transform.
-    return watchResize(el, ([entry]) => {
-      const box = entry?.borderBoxSize?.[0];
-      if (box) set(box.inlineSize, box.blockSize);
+    return watchResize([el, badge], (entries) => {
+      const box = entries.find((entry) => entry.target === el)?.borderBoxSize?.[0];
+      if (box) size = { width: box.inlineSize, height: box.blockSize };
+      set(size.width, size.height);
     });
   }, [ref, enabled]);
   return enabled ? measured : null;

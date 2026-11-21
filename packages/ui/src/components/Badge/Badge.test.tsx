@@ -83,6 +83,34 @@ describe('Badge content slots', () => {
       expect(inset({ effects: [{ type: 'bevel' }] })).toBe(inset({}));
       expect(inset({ bloat: 3 })).toBe(inset({}));
     });
+
+    it('refits when only the badge padding changes', () => {
+      const watched: { targets: Element[]; fire: () => void }[] = [];
+      vi.stubGlobal('ResizeObserver', class {
+        targets: Element[] = [];
+        constructor(cb: (entries: ResizeObserverEntry[]) => void) {
+          watched.push({ targets: this.targets, fire: () => cb([]) });
+        }
+        observe(el: Element) { this.targets.push(el); }
+        disconnect() {}
+      });
+      const sheet = document.head.appendChild(document.createElement('style'));
+      sheet.textContent = '.wide { padding: 0 200px; }';
+      const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+        .mockReturnValue({ width: 200, height: 14, left: 0, top: 0, right: 200, bottom: 14, x: 0, y: 0, toJSON: () => ({}) });
+      try {
+        const { container, rerender } = render(<Badge base="quatrefoil">a long enough label</Badge>);
+        const el = container.firstElementChild as HTMLElement;
+        const before = el.style.getPropertyValue('--badge-inset-left');
+        rerender(<Badge base="quatrefoil" className="wide">a long enough label</Badge>);
+        act(() => { for (const w of watched) if (w.targets.includes(el)) w.fire(); });
+        expect(el.style.getPropertyValue('--badge-inset-left')).not.toBe(before);
+      } finally {
+        rect.mockRestore();
+        sheet.remove();
+        vi.unstubAllGlobals();
+      }
+    });
   });
 });
 
