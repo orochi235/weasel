@@ -1,5 +1,5 @@
 import type { BaseModule } from './types';
-import { polygonSampler } from './polygonSampler';
+import { MAX_SAMPLES, polygonSampler } from './polygonSampler';
 import { DEG_TO_RAD, lerp } from '@weasel-js/geom';
 import { repeatCount, withDefaults } from '../shapes/params';
 
@@ -45,9 +45,6 @@ export interface BadgeQuatrefoilBaseParams {
   /** Polygon sample count, 24 to 1024. */
   samples?: number;
 }
-
-/** The most vertices an outline samples, so a huge or infinite `samples` cannot hang a render. */
-export const MAX_SAMPLES = 1024;
 
 const DEFAULTS: Required<BadgeQuatrefoilBaseParams> = {
   spikeR: 50,

@@ -1,5 +1,5 @@
 import { wrapPositive } from '@weasel-js/geom';
-import { withDefaults } from '../shapes/params';
+import { MAX_REPEATS, repeatCount, withDefaults } from '../shapes/params';
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
 
@@ -14,7 +14,7 @@ export interface BadgePuzzleBaseParams {
   left?: BadgePuzzleEdge;
   /** Tab radius in viewBox units, held to 2..40. */
   tabSize?: number;
-  /** Sample density per tab arc. */
+  /** Samples per tab arc, 6 to 256. */
   arcSamples?: number;
 }
 
@@ -91,7 +91,7 @@ const Puzzle: BaseModule<BadgePuzzleBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = withDefaults(DEFAULTS, params);
     const r = Math.max(2, Math.min(cfg.tabSize, 40));
-    const N = Math.max(6, Math.floor(cfg.arcSamples));
+    const N = repeatCount(cfg.arcSamples, 6, MAX_REPEATS);
     // Clockwise traversal of the unit rect: TL → TR → BR → BL → TL.
     const TL: [number, number] = [0, 0];
     const TR: [number, number] = [100, 0];

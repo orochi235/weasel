@@ -1,6 +1,6 @@
 import type { BaseModule } from './types';
-import { withDefaults } from '../shapes/params';
-import { polygonSampler } from './polygonSampler';
+import { repeatCount, withDefaults } from '../shapes/params';
+import { MAX_SAMPLES, polygonSampler } from './polygonSampler';
 import { DEG_TO_RAD, wrapPositive } from '@weasel-js/geom';
 
 /**
@@ -33,6 +33,7 @@ export interface BadgeOctantSplineBaseParams {
   w0?: number; w1?: number; w2?: number; w3?: number; w4?: number; w5?: number;
   w6?: number; w7?: number; w8?: number; w9?: number; w10?: number; w11?: number;
   rotation?: number;
+  /** Polygon sample count, 48 to 1024. */
   samples?: number;
 }
 
@@ -190,7 +191,7 @@ export function splineVertices(
   radiusAt: (s: number) => number,
 ): [number, number][] {
   const rot = cfg.rotation * DEG_TO_RAD;
-  const N = Math.max(48, Math.floor(cfg.samples));
+  const N = repeatCount(cfg.samples, 48, MAX_SAMPLES);
   const cx = 50, cy = 50;
   const verts: [number, number][] = [];
   const HALF_PI = Math.PI / 2;

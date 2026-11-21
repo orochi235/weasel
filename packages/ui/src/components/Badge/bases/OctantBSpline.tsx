@@ -25,6 +25,7 @@ export interface BadgeOctantBSplineBaseParams {
   w0?: number; w1?: number; w2?: number; w3?: number; w4?: number; w5?: number;
   w6?: number; w7?: number; w8?: number; w9?: number; w10?: number; w11?: number;
   rotation?: number;
+  /** Polygon sample count, 48 to 1024. */
   samples?: number;
 }
 

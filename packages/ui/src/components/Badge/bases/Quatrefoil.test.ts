@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_SAMPLES, quatrefoilRadius, quatrefoilVertices } from './Quatrefoil';
+import { quatrefoilRadius, quatrefoilVertices } from './Quatrefoil';
+import { MAX_SAMPLES } from './polygonSampler';
 
 describe('quatrefoilRadius', () => {
   it('runs from the spike radius to the lobe radius through the valley when the join is sharp', () => {

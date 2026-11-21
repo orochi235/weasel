@@ -3271,3 +3271,5 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): A `ribbon` end other than `inward`, `outward`, or `flat`, or a `puzzle` edge other than
   `flat`, `out`, or `in`, throws a `RangeError` naming it. A ribbon had thrown a bare `TypeError`, and a puzzle drew
   it as a socket; reading it as the default was the alternative.
+- 2026-11-20 (the fixer's call): An `octant-spline` or `octant-bspline` badge's `samples` runs 48..1024, the bound
+  `quatrefoil` had, and a `puzzle` badge's `arcSamples` 6..256. The upper bounds are picked to keep a render finite.
