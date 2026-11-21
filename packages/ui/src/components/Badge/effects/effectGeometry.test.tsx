@@ -53,3 +53,16 @@ describe('a glassy effect gloss', () => {
     }
   });
 });
+
+describe('perforations', () => {
+  it('draws a bounded row of holes when the radius and the spacing are both 0', () => {
+    const holes = draw(Perforations, { holeRadius: 0, holeSpacing: 0 }).querySelectorAll('ellipse');
+    expect(holes.length).toBeGreaterThan(0);
+    expect(holes.length).toBeLessThanOrEqual(Math.ceil(polygonSampler(square, 200, 30).totalCss));
+  });
+
+  it('draws no hole with a negative radius', () => {
+    const hole = draw(Perforations, { holeRadius: -2 }).querySelector('ellipse')!;
+    expect(Number(hole.getAttribute('rx'))).toBe(0);
+  });
+});
