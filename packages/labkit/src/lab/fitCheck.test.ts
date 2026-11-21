@@ -65,9 +65,11 @@ interface Geometry {
 function place<E extends Element>(el: E, { rect, client, scroll }: Geometry): E {
   const r = { top: 0, left: 0, bottom: 0, right: 800, ...rect };
   Object.defineProperty(el, 'getBoundingClientRect', {
+    configurable: true,
     value: () => ({ ...r, width: r.right - r.left, height: r.bottom - r.top }),
   });
-  const set = (key: string, value: number) => Object.defineProperty(el, key, { value });
+  const set = (key: string, value: number) =>
+    Object.defineProperty(el, key, { configurable: true, value });
   if (client) {
     set('clientHeight', client.height);
     set('clientWidth', client.width);
@@ -108,6 +110,19 @@ describe('explainLabScroll', () => {
     list.style.overflow = 'auto';
     child(document, list, 'row', { rect: { bottom: 1500 } });
     child(document, shell, 'footer', { rect: { bottom: 606 } });
+    expect(explainLabScroll(lab, shell)).toBe('.lk-shell-body scrolls: div.footer reaches 6px past it (y)');
+    lab.remove();
+  });
+
+  it('measures past the shell body’s padding box, and never names the shell body itself', () => {
+    const { lab, shell } = shellOverflowingBy6(document);
+    // A classic 15px scrollbar and a 2px border sit outside the client box.
+    place(shell, {
+      rect: { bottom: 619, right: 819 },
+      client: { height: 600, width: 800, top: 2, left: 2 },
+      scroll: { height: 606, width: 800 },
+    });
+    child(document, shell, 'footer', { rect: { bottom: 608 } });
     expect(explainLabScroll(lab, shell)).toBe('.lk-shell-body scrolls: div.footer reaches 6px past it (y)');
     lab.remove();
   });

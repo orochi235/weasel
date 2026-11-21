@@ -81,13 +81,15 @@ function overflows(el: Element): boolean {
 export function explainLabScroll(lab: Element, shellBody: Element): string | null {
   if (overflows(shellBody)) {
     const r = shellBody.getBoundingClientRect();
+    const top = r.top + shellBody.clientTop;
+    const left = r.left + shellBody.clientLeft;
     const bound = {
-      top: r.top,
-      left: r.left,
-      bottom: r.top + shellBody.clientHeight,
-      right: r.left + shellBody.clientWidth,
+      top,
+      left,
+      bottom: top + shellBody.clientHeight,
+      right: left + shellBody.clientWidth,
     };
-    const hit = findOvershoot(bound, candidates(shellBody));
+    const hit = findOvershoot(bound, descendants(shellBody));
     return hit
       ? `.lk-shell-body scrolls: ${describeElement(hit.item)} reaches ${Math.round(hit.by)}px past it (${hit.axis})`
       : '.lk-shell-body scrolls';
