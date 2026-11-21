@@ -1,4 +1,4 @@
-import { headingTag, withMotifClass, twistySides } from '../root';
+import { drawn, headed, headingTag, withMotifClass, twistySides } from '../root';
 import type { Motif } from '../types';
 import s from './well.module.css';
 
@@ -25,26 +25,28 @@ export function well(params: WellParams = {}): Motif<WellParams> {
     render({ heading: { title, titleId, inline, note, level, twisty, twistyAt, leading, actions }, body, root }) {
       const fold = twistySides({ twisty, twistyAt });
       const Heading = headingTag(level, 3);
-      const row = title != null || twisty != null || leading != null || actions != null;
+      const row = headed({ title, titleId, inline, twisty, leading, actions });
       return (
         <div {...withMotifClass(root, s.well)} data-edge={edge} data-label={label}>
-          {(row || note != null) && (
+          {(row || drawn(note)) && (
             <div className={s.head} data-ruled={ruled ? '' : undefined}>
               {row && (
                 <div className={s.row}>
                   {fold.start}
                   {leading}
-                  {title != null && (
-                    <Heading className={s.title} aria-labelledby={inline === undefined ? undefined : titleId}>
+                  {drawn(title) ? (
+                    <Heading className={s.title} aria-labelledby={drawn(inline) ? titleId : undefined}>
                       <span id={titleId}>{title}</span>
                       {inline}
                     </Heading>
+                  ) : (
+                    inline
                   )}
-                  {actions != null && <span className={s.actions}>{actions}</span>}
+                  {drawn(actions) && <span className={s.actions}>{actions}</span>}
                   {fold.end}
                 </div>
               )}
-              {note != null && <div className={s.note}>{note}</div>}
+              {drawn(note) && <div className={s.note}>{note}</div>}
             </div>
           )}
           {body}

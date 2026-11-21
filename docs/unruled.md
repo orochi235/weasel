@@ -3269,3 +3269,7 @@ Calls the lanes made without a ruling:
 
 - 2026-11-20: A press on a disabled `MenuBar` title while another title's menu is open closes that menu, as a press
   anywhere off it does. The pointer moving onto a disabled title leaves the open menu as it is.
+## Audit round fifty-eight (2026-11-20): motif frames
+
+- 2026-11-20 (the fixer's call): `plaque({ mix })` throws a `RangeError` for a `mix` outside 0..100 or not a number,
+  since `color-mix()` rejects such a percentage and the plaque loses its fill and ink. Clamping it was the alternative.

@@ -4,6 +4,7 @@ import s from './MotifFrame.module.css';
 import { divider } from './motifs/divider';
 import { rule } from './motifs/rule';
 import { sheet } from './motifs/sheet';
+import { drawn } from './root';
 import type { FrameKind, Motif, MotifFrameProps, RootProps } from './types';
 import { getOwn } from '@weasel-js/registry';
 
@@ -40,8 +41,14 @@ export type DefaultMotifProps = Partial<Record<FrameKind, Motif>> & {
 export function DefaultMotif({ children, named, ...kinds }: DefaultMotifProps) {
   const outer = useContext(MotifContext);
   const outerNamed = useContext(NamedMotifContext);
-  const frames = <MotifContext.Provider value={{ ...outer, ...kinds }}>{children}</MotifContext.Provider>;
-  return named ? <NamedMotifContext.Provider value={{ ...outerNamed, ...named }}>{frames}</NamedMotifContext.Provider> : frames;
+  const frames = <MotifContext.Provider value={over(outer, kinds)}>{children}</MotifContext.Provider>;
+  return named ? <NamedMotifContext.Provider value={over(outerNamed, named)}>{frames}</NamedMotifContext.Provider> : frames;
+}
+
+/** `outer` with each motif `inner` gives laid over it; a key given as `undefined` keeps the outer motif. */
+function over<T extends Readonly<Record<string, Motif | undefined>>>(outer: T, inner: { readonly [K in keyof T]?: Motif }): T {
+  const given = Object.entries(inner).filter(([, motif]) => motif !== undefined);
+  return Object.fromEntries([...Object.entries(outer), ...given]) as T;
 }
 
 /**
@@ -89,11 +96,11 @@ export function MotifFrame({
     ...attrs,
     ...appearance,
     className: [s.frame, className].filter(Boolean).join(' '),
-    ...(title == null ? {} : { role, 'aria-labelledby': titleId }),
+    ...(drawn(title) ? { role, 'aria-labelledby': titleId } : {}),
     ...(disabled ? { 'data-disabled': '' } : {}),
     'data-motif': chosen.id,
     ...(onContextMenu ? { onContextMenu } : {}),
   };
-  const shownTitle = disabled && title != null ? <span className={s.titleDisabled}>{title}</span> : title;
+  const shownTitle = disabled && drawn(title) ? <span className={s.titleDisabled}>{title}</span> : title;
   return chosen.render({ heading: { title: shownTitle, titleId, inline, note, level, twisty, twistyAt, leading, actions }, body: children, root });
 }

@@ -1,11 +1,11 @@
 import type { CSSProperties } from 'react';
-import { withMotifClass, twistySides } from '../root';
+import { drawn, headed, withMotifClass, twistySides } from '../root';
 import type { Motif } from '../types';
 import s from './plaque.module.css';
 
 /** Params for {@link plaque}. */
 export interface PlaqueParams {
-  /** How much of the tint fills the frame, in percent. Defaults to 100. */
+  /** How much of the tint fills the frame, in percent from 0 to 100. Defaults to 100. */
   mix?: number;
 }
 
@@ -15,27 +15,38 @@ export interface PlaqueParams {
  */
 export function plaque(params: PlaqueParams = {}): Motif<PlaqueParams> {
   const { mix } = params;
+  if (mix !== undefined && !(mix >= 0 && mix <= 100)) throw new RangeError(`plaque: mix must be from 0 to 100, got ${mix}`);
   return {
     id: 'plaque',
     params,
-    render({ heading: { title, titleId, inline, note, twisty, twistyAt, leading, actions }, body, root }) {
+    render({ heading, body, root }) {
+      const { title, titleId, inline, note, twisty, twistyAt, leading, actions } = heading;
       const fold = twistySides({ twisty, twistyAt });
       const rooted = withMotifClass(root, s.plaque);
       const style =
-        mix === undefined ? rooted.style : ({ ...rooted.style, '--wzl-plaque-mix': `${mix}%` } as CSSProperties);
+        mix === undefined
+          ? rooted.style
+          : ({
+              ...rooted.style,
+              '--wzl-plaque-mix': `${mix}%`,
+            } as CSSProperties);
       return (
         <div {...rooted} style={style}>
           <div className={s.content}>
-            <div className={s.head}>
-              {fold.start}
-              {leading}
-              <span id={titleId} className={s.label}>
-                {title}
-              </span>
-              {inline}
-              {actions}
-              {fold.end}
-            </div>
+            {headed(heading) && (
+              <div className={s.head}>
+                {fold.start}
+                {leading}
+                {drawn(title) && (
+                  <span id={titleId} className={s.label}>
+                    {title}
+                  </span>
+                )}
+                {inline}
+                {actions}
+                {fold.end}
+              </div>
+            )}
             {note}
             {body}
           </div>

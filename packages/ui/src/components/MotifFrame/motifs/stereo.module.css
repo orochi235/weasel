@@ -15,6 +15,15 @@
   flex-direction: row-reverse;
 }
 
+/* `side` names a physical edge, and a flex row runs in the line's direction. */
+.stereo[data-side='left']:dir(rtl) {
+  flex-direction: row-reverse;
+}
+
+.stereo[data-side='right']:dir(rtl) {
+  flex-direction: row;
+}
+
 .stereo[data-side='top'] {
   flex-direction: column;
 }
