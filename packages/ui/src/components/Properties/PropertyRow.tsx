@@ -212,7 +212,8 @@ function useMultiline(
       const floor = Number.parseFloat(getComputedStyle(row).minHeight) || lineHeight;
       const labelWraps = label.getBoundingClientRect().height > lineHeight * 1.5;
       const tallChild = Array.from(row.children).some(
-        (child) => child !== label && child.getBoundingClientRect().height > floor * 1.5,
+        // The error message takes a line of its own below, so its height says nothing about the label's line.
+        (child) => child !== label && !child.classList.contains(s.rowError) && child.getBoundingClientRect().height > floor * 1.5,
       );
       setMultiline(labelWraps || tallChild);
     };
