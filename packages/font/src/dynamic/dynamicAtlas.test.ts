@@ -157,6 +157,21 @@ describe('getDynamicFace', () => {
     expect(face.font.charMap.size).toBe(0);
   });
 
+  it('draws a weight outside 1 to 1000 at the nearest end, and one that is not a number at 400', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const weights: number[] = [];
+    const fake = fakeRasterizer();
+    __setGlyphRasterizerForTests({
+      ...fake,
+      faceMetrics: (family, weight, style) => { weights.push(weight); return fake.faceMetrics(family, weight, style); },
+    });
+    expect(getDynamicFace('X', 1100, 'normal')).toBe(getDynamicFace('X', 1000, 'normal'));
+    expect(getDynamicFace('X', 0, 'normal').weight).toBe(1);
+    expect(getDynamicFace('X', NaN, 'normal')).toBe(getDynamicFace('X', 400, 'normal'));
+    expect(weights).toEqual([1000, 1, 400]);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
   it('caches faces per (family, weight, style)', () => {
     const a = getDynamicFace('Futura', 400, 'normal');
     expect(getDynamicFace('Futura', 400, 'normal')).toBe(a);

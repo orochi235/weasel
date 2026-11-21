@@ -28,7 +28,7 @@ import { notifyGlyphReady, _clearGlyphReadySubscribers } from '../glyphReady';
 import { PAGE_SIZE, MAX_PAGES, _resetPagesForTests } from './dynamicPages';
 import { dropBakes, onPagesEmptied, requestBake, retryStarved, _resetBakeQueueForTests } from './bakeQueue';
 import { familyKey, watchFontLoads } from './fontLoads';
-import { createCanvasRasterizer, BAKE_SIZE, type GlyphRasterizer } from './glyphRasterizer';
+import { canvasWeight, createCanvasRasterizer, BAKE_SIZE, type GlyphRasterizer } from './glyphRasterizer';
 import { addSharpSource, sharpBakesOf } from './sharpColor';
 
 export { PAGE_SIZE, MAX_PAGES };
@@ -240,8 +240,9 @@ export function tryDynamicFace(family: string, weight: number, style: FontStyle)
  * through registerCanvasFont + resolveFontVariant.
  */
 export function getDynamicFace(
-  family: string, weight: number, style: FontStyle,
+  family: string, requested: number, style: FontStyle,
 ): DynamicFace {
+  const weight = canvasWeight(family, requested);
   const key = `${family}|${weight}|${style}`;
   const existing = faces.get(key);
   if (existing) {

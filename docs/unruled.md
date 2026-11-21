@@ -3304,3 +3304,9 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+
+## Audit round sixty-three (2026-11-21): font
+
+- 2026-11-21 (the fixer's call): the canvas font tier draws a weight outside 1 to 1000 at the nearer end, and a weight
+  that is not a number at 400 with a one-time warning, rather than throwing. A canvas ignores a `font` string with such
+  a weight and measured the face in whatever font it last held.
