@@ -56,6 +56,24 @@ describe('EasingPicker', () => {
     expect(onChange).toHaveBeenCalledWith({ bezier: [0.65, 0, 0.35, 1] });
   });
 
+  it('converts every named curve that has a cubic to its own control points, never the CSS default', () => {
+    for (const name of ['easeOutExpo', 'easeInQuart', 'easeOutBack', 'easeInOutCirc'] as const) {
+      const onChange = vi.fn();
+      const { unmount } = render(<EasingPicker value={name} onChange={onChange} />);
+      fireEvent.click(screen.getByRole('button', { name: /convert to bezier/i }));
+      expect(onChange.mock.calls[0]![0].bezier).not.toEqual([0.25, 0.1, 0.25, 1]);
+      unmount();
+    }
+  });
+
+  it('offers no conversion of a curve no single cubic draws', () => {
+    for (const name of ['easeOutElastic', 'easeInOutBounce'] as const) {
+      const { unmount } = render(<EasingPicker value={name} onChange={() => {}} />);
+      expect(screen.queryByRole('button', { name: /convert to bezier/i })).toBeNull();
+      unmount();
+    }
+  });
+
   it('draws the curve it is showing', () => {
     render(<EasingPicker value="easeInQuad" onChange={() => {}} />);
     const pts = screen.getByTestId('easing-preview').querySelector('polyline')!.getAttribute('points')!
