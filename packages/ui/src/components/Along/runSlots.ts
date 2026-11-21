@@ -81,7 +81,7 @@ export function slotClass(slot: RunSlotProps | undefined, className: string | un
 export function slotStyle<R>(
   slot: RunSlotProps | undefined,
   own: CSSProperties | ((values: R) => CSSProperties | undefined) | undefined,
-): CSSProperties | ((values: R) => CSSProperties) | undefined {
+): CSSProperties | ((values: R) => CSSProperties | undefined) | undefined {
   const place = slot?.style;
   if (place === undefined) return own;
   return typeof own === 'function' ? (values) => ({ ...own(values), ...place }) : { ...own, ...place };
