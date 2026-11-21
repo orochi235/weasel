@@ -48,15 +48,18 @@ export const roundFit = (n: number) => Number(n.toFixed(NUMBER_FORMAT.maximumFra
 /**
  * The same scale under another rule, fitted to the amounts its steps have now.
  * A ratio or step counts from the first step, so switching to one moves the
- * base there.
+ * base there. Factors need a positive base, so from one that is not they move it to the first positive step.
  */
 export function refitScale(scale: TokenScale, kind: TokenScaleRule['kind'], amounts: readonly number[]): TokenScale {
   const first = amounts[0] ?? scale.base;
   const last = amounts.at(-1) ?? first;
   const spans = Math.max(1, amounts.length - 1);
   switch (kind) {
-    case 'factors':
-      return { ...scale, rule: { kind, factors: amounts.map((a) => (scale.base > 0 ? roundFit(a / scale.base) : 1)) } };
+    case 'factors': {
+      const base = scale.base > 0 ? scale.base : amounts.find((a) => a > 0);
+      if (base === undefined) return { ...scale, rule: { kind, factors: amounts.map(() => 1) } };
+      return { ...scale, base, rule: { kind, factors: amounts.map((a) => roundFit(a / base)) } };
+    }
     case 'ratio':
       return { ...scale, base: first, rule: { kind, ratio: first > 0 && last > 0 ? roundFit((last / first) ** (1 / spans)) : 1 } };
     case 'step':

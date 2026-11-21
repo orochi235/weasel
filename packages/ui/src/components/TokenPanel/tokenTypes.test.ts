@@ -69,4 +69,10 @@ describe('refitScale', () => {
     expect(regenerated).toHaveLength(5);
     regenerated.forEach((amount, i) => expect(Math.abs(amount - amounts[i]!)).toBeLessThan(0.005));
   });
+
+  it('fits factors from the first positive step when the base is not positive', () => {
+    const fours = { ...scale, tokens: ['--a', '--b', '--c', '--d'], base: 0, rule: { kind: 'step' as const, step: 4 } };
+    expect(refitScale(fours, 'factors', [0, 4, 8, 12])).toEqual({ ...fours, base: 4, rule: { kind: 'factors', factors: [0, 1, 2, 3] } });
+    expect(refitScale({ ...fours, base: -2 }, 'factors', [-1, 0, 0, 0])).toEqual({ ...fours, base: -2, rule: { kind: 'factors', factors: [1, 1, 1, 1] } });
+  });
 });

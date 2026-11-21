@@ -264,12 +264,12 @@ describe('TokenPanel', () => {
       expect(onChange).toHaveBeenCalledWith('--t-sm', '0.011px');
     });
 
-    it('refits factors of 1 from a base that is not positive', () => {
+    it('refits factors from the first step when the base is not positive', () => {
       const onScaleChange = vi.fn();
       const byStep: TokenScale = { ...byFactors, base: -1, rule: { kind: 'step', step: 4 } };
       renderWithIcons(<TokenPanel tokens={fonts} onChange={() => {}} scales={{ f: byStep }} onScaleChange={onScaleChange} />);
       fireEvent.click(within(screen.getByRole('group', { name: 'f' })).getByRole('radio', { name: 'factors' }));
-      expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byStep, rule: { kind: 'factors', factors: [1, 1, 1] } });
+      expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byStep, base: 10, rule: { kind: 'factors', factors: [1, 1.2, 1.8] } });
     });
 
     it('draws no controls for a group it is not told how to generate', () => {
