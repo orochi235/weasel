@@ -26,12 +26,11 @@ import {
   type WorldLayer,
 } from './platformer/sceneWorld';
 import {
-  advanceWorld,
+  frameWorld,
   freshGame,
   POLE,
   SHAKE_DURATION,
   SHAKE_MAGNITUDE,
-  stepEnding,
   type GameRefs,
 } from './platformer/world';
 import num from '@weasel-js/theme/numeric.module.css';
@@ -146,9 +145,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       blurRadius.target = impact.value;
       blurRadius.step(frame);
 
-      if (g.outcome !== 'playing') stepEnding(g, frame, hooks.current);
-      const simulating = running && g.outcome === 'playing';
-      if (simulating) advanceWorld(g, frame, input, hooks.current);
+      const simulating = frameWorld(g, frame, running, input, hooks.current);
       endFrame(g, simulating);
 
       // A simulation step is not an edit, so it records nothing: one notify

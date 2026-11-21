@@ -269,3 +269,23 @@ export function advanceWorld(
   }
   if (g.outcome !== 'playing') g.accumulator = 0;
 }
+
+/**
+ * One frame of the run: the ending once it is decided, the simulation while it
+ * plays and is `running`. Returns whether the simulation stepped. A frame that
+ * does not step still reads the input, so a jump pressed while paused is spent
+ * there rather than fired on the resume.
+ */
+export function frameWorld(
+  g: GameRefs,
+  frame: number,
+  running: boolean,
+  nextInput: () => Input,
+  hooks: WorldHooks,
+): boolean {
+  if (g.outcome !== 'playing') stepEnding(g, frame, hooks);
+  const simulating = running && g.outcome === 'playing';
+  if (simulating) advanceWorld(g, frame, nextInput, hooks);
+  else nextInput();
+  return simulating;
+}

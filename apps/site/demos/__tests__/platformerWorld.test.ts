@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { SOLID, TILE, tileAt, toCol, toRow } from '../platformer/level';
 import { WORLD } from '../platformer/worldLevel';
-import { advanceWorld, freshGame, NO_HOOKS, stepEnding, stepWorld, type GameRefs } from '../platformer/world';
+import { advanceWorld, frameWorld, freshGame, NO_HOOKS, stepEnding, stepWorld, type GameRefs } from '../platformer/world';
 import { BODY_H, STEP } from '../platformer/physics';
 
 describe('WORLD', () => {
@@ -170,5 +170,22 @@ describe('stepEnding', () => {
     const clock = g.clock;
     stepEnding(g, 0.1, NO_HOOKS);
     expect(g.clock).toBeCloseTo(clock + 0.1, 9);
+  });
+});
+
+describe('frameWorld', () => {
+  it('spends a jump pressed while paused instead of firing it on the resume', () => {
+    const g = freshGame();
+    let pressed = true;
+    const input = () => {
+      const jumpPressed = pressed;
+      pressed = false;
+      return { left: false, right: false, jumpHeld: false, jumpPressed };
+    };
+    let jumps = 0;
+    const hooks = { ...NO_HOOKS, sound: (name: string) => { if (name === 'jump') jumps++; } };
+    expect(frameWorld(g, STEP, false, input, hooks)).toBe(false);
+    for (let i = 0; i < 30; i++) frameWorld(g, STEP, true, input, hooks);
+    expect(jumps).toBe(0);
   });
 });
