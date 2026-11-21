@@ -1,7 +1,8 @@
 /**
  * The active fill and stroke, on the kit's `FillStrokeSwatch`. An edit in a
- * chip's paint editor paints the active paint and, through `setFill`/`setStroke`,
- * the selection — live while it runs, one undo entry when it ends.
+ * chip's paint editor, its None toggle, or Swap paints the active paint and,
+ * through `setFill`/`setStroke`, the selection — live while it runs, one undo
+ * entry when it ends.
  *
  * Keybindings (`colorContribution` in `tools/colorContext`):
  *   D        reset to default — black stroke, white fill
@@ -11,10 +12,11 @@
  */
 import type { ReactElement } from 'react';
 import { useOngoingAction, type Paint } from '@weasel-js/core';
+import type { DrawScene } from './drawDocument';
 import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
 import { useColorContext } from './tools/colorContext';
 
-export function ActiveSwatches(): ReactElement {
+export function ActiveSwatches({ scene }: { scene: Pick<DrawScene, 'batch'> }): ReactElement {
   const colors = useColorContext();
   const edits = { fill: useOngoingAction('setFill'), stroke: useOngoingAction('setStroke') };
 
@@ -40,9 +42,15 @@ export function ActiveSwatches(): ReactElement {
       }}
       onToggleNone={(slot) => {
         colors.setFocus(slot);
-        colors.toggleNone(slot);
+        edits[slot].commit({ paint: colors.toggleNone(slot) });
       }}
-      onSwap={colors.swap}
+      onSwap={() => {
+        const next = colors.swap();
+        scene.batch('Swap fill and stroke', () => {
+          edits.fill.commit({ paint: next.fill });
+          edits.stroke.commit({ paint: next.stroke });
+        });
+      }}
       shortcuts={{ none: '/', swap: 'X' }}
     />
   );

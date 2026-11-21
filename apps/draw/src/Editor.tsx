@@ -157,7 +157,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
                       <Sidebar side="left" className="wd-sidebar left" aria-label={FIXED_CHROME.tools.label}>
                         {tools && <DrawToolPalette tools={tools} modeRegistry={modality.machine.registry} />}
                         {inPathEdit && <ActionBar group={pathToolsGroups.pathOverlays} orientation="vertical" className="wd-path-overlays" />}
-                        <ActiveSwatches />
+                        <ActiveSwatches scene={scene} />
                       </Sidebar>
                     </ShowChrome>
                     <Workspace

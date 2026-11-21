@@ -36,10 +36,11 @@ export interface ColorContextValue {
   setFocusedColor: (color: string) => ActivePaint;
   focusedAlpha: number;
   setFocusedAlpha: (alpha01: number) => void;
-  swap: () => void;
+  /** Exchanges the fill and stroke, and returns the paints it set. */
+  swap: () => { fill: ActivePaint; stroke: ActivePaint };
   swapFocus: () => void;
-  /** Sets `slot` to none, or back to its default paint when it already is none. */
-  toggleNone: (slot: 'fill' | 'stroke') => void;
+  /** Sets `slot` to none, or back to its default paint when it already is none, and returns the paint it set. */
+  toggleNone: (slot: 'fill' | 'stroke') => ActivePaint;
   toggleFocusedNone: () => void;
   reset: () => void;
 }
@@ -151,20 +152,24 @@ export function ColorContextProvider({
     });
   }, [focusedRef, setPaints]);
 
-  const swap = useCallback(() => {
-    setPaints((cur) => ({ fill: cur.stroke, stroke: cur.fill }));
+  const swap = useCallback((): Paints => {
+    let next: Paints = { fill: null, stroke: null };
+    setPaints((cur) => (next = { fill: cur.stroke, stroke: cur.fill }));
+    return next;
   }, [setPaints]);
   const swapFocus = useCallback(() => {
     setFocus((cur) => (cur === 'fill' ? 'stroke' : 'fill'));
   }, [setFocus]);
-  const toggleNone = useCallback((which: 'fill' | 'stroke') => {
+  const toggleNone = useCallback((which: 'fill' | 'stroke'): ActivePaint => {
+    let next: ActivePaint = null;
     setPaints((cur) => {
       const paint = which === 'fill' ? cur.fill : cur.stroke;
-      const next: ActivePaint = paint === null ? (which === 'fill' ? DEFAULT_FILL : DEFAULT_STROKE) : null;
+      next = paint === null ? (which === 'fill' ? DEFAULT_FILL : DEFAULT_STROKE) : null;
       return which === 'fill' ? { ...cur, fill: next } : { ...cur, stroke: next };
     });
+    return next;
   }, [setPaints]);
-  const toggleFocusedNone = useCallback(() => toggleNone(focusedRef.current), [toggleNone, focusedRef]);
+  const toggleFocusedNone = useCallback(() => { toggleNone(focusedRef.current); }, [toggleNone, focusedRef]);
   const reset = useCallback(() => {
     setPaints({ fill: DEFAULT_FILL, stroke: DEFAULT_STROKE });
   }, [setPaints]);
