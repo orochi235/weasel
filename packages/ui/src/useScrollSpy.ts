@@ -124,11 +124,25 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
     if (rootRef.current !== root) setRoot(rootRef.current);
   });
 
+  // A resize of the container or of a section moves the tops with no `scroll` event.
   useEffect(() => {
     if (!root) return;
     measure();
     root.addEventListener('scroll', measure, { passive: true });
-    return () => root.removeEventListener('scroll', measure);
+    const resized = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => measure());
+    if (resized) {
+      resized.observe(root);
+      for (const id of ids) {
+        const el = sectionIn(root, id);
+        if (el) resized.observe(el);
+      }
+    }
+    return () => {
+      root.removeEventListener('scroll', measure);
+      resized?.disconnect();
+    };
+    // `measure` changes with `ids`' content, which is all this reads of them.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [root, measure]);
 
   const scrollTo = useCallback((id: string): void => {
