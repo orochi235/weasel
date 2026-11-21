@@ -146,7 +146,11 @@ export function pressOnCurve(
   state: FunctionLayerState, segIdx: number, model: ModelPoint, range: ModelRange, rules: AnchorRules,
 ): { next: FunctionLayerState; index: number } | null {
   const insertIndex = segIdx + 1;
-  const p = insertPoint(model, range, rules);
+  const at = insertPoint(model, range, rules);
+  // A press beside a steep segment, or on a spline overshooting its anchors, lies outside the segment's x span.
+  const p = rules.ordered
+    ? { ...at, x: Math.max(state.points[segIdx].x, Math.min(state.points[insertIndex].x, at.x)) }
+    : at;
   const neighbor = crowdedNeighbor(state.points, insertIndex, p.x, range, rules);
   if (neighbor !== null && !canAnchorMove(state.points, neighbor, rules.endpoints)) return null;
   if (neighbor !== null) return { next: { ...state, activeIndex: neighbor }, index: neighbor };
