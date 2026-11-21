@@ -192,4 +192,12 @@ describe('TokenField', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('moves focus to the new last chip when an add fills the field', () => {
+    renderWithIcons(<Controlled initial={['a', 'b']} maxItems={3} />);
+    act(() => field().focus());
+    fireEvent.change(field(), { target: { value: 'c' } });
+    fireEvent.keyDown(field(), { key: 'Enter' });
+    expect(document.activeElement).toBe(chip('c'));
+  });
+
 });

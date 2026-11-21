@@ -83,13 +83,15 @@ export function TokenField<T>({
   const edit = (at: number): void => { if (!disabled && locked?.(at) !== true) setEditing(at); };
   const { drag, ref } = useTokenDrag(value, (next, at) => { onChange(next); focus.request(at); }, edit);
 
-  const commit = (): void => {
+  /** `focused` while the text field keeps focus: filling the list disables the field, so focus moves to the last chip. */
+  const commit = (focused: boolean): void => {
     const text = draft.trim();
     if (text === '' || full) return;
     const token = create(text);
     if (token === undefined) return;
     onChange([...value, token]);
     setDraft('');
+    if (focused && value.length + 1 >= maxItems) focus.request(value.length);
   };
   const remove = (at: number): void => {
     if (!removable) return;
@@ -104,7 +106,7 @@ export function TokenField<T>({
     // A comma is never text: typed into an empty field it would become the next token. Enter there is left alone.
     if (SEPARATORS.has(e.key) && (e.key !== 'Enter' || draft.trim() !== '')) {
       e.preventDefault();
-      if (draft.trim() !== '') commit();
+      if (draft.trim() !== '') commit(true);
     } else if (value.length > 0 && caretAtStart && ((e.key === 'Backspace' && draft === '') || arrowDir(e.key, { orientation: 'horizontal', dir: inlineDirection(e.currentTarget) }) === -1)) {
       e.preventDefault();
       focus.request(value.length - 1);
@@ -158,7 +160,7 @@ export function TokenField<T>({
         disabled={disabled || full}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={onInputKey}
-        onBlur={commit}
+        onBlur={() => commit(false)}
       />
       {open !== null && (
         <TokenEditor
