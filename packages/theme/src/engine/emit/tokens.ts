@@ -6,14 +6,14 @@ import { derive } from '../derive.ts';
 import { mergeChain } from '../merge.ts';
 import { emitCss } from './css.ts';
 import { emitManifest } from './manifest.ts';
-import { emitThemes } from './themes.ts';
+import { emitThemes, missingTokens } from './themes.ts';
 
-/** The files {@link generateTokens} produces, or every derive issue that stopped it. */
+/** The files {@link generateTokens} produces, or every problem that stopped it. */
 export type GeneratedTokens =
   | { readonly ok: true; readonly files: { readonly 'tokens.css': string; readonly 'themes.ts': string; readonly 'manifest.ts': string } }
   | { readonly ok: false; readonly problems: readonly string[] };
 
-/** Every generated token file for a set of definitions, the one that extends nothing being the default. Any derive issue refuses the whole set. */
+/** Every generated token file for a set of definitions, the one that extends nothing being the default. Any derive issue refuses the whole set, as does a token one theme or selection has and another lacks. */
 export function generateTokens(definitions: readonly ThemeDefinition[]): GeneratedTokens {
   const byName = new Map(definitions.map((d) => [d.name, d]));
   const lookup = (name: string) => byName.get(name);
@@ -37,6 +37,8 @@ export function generateTokens(definitions: readonly ThemeDefinition[]): Generat
     deps: axisDependencies(definition, lookup),
     isDefault: definition === roots[0],
   }));
+  const gaps = missingTokens(themes);
+  if (gaps.length > 0) return { ok: false, problems: gaps };
   return {
     ok: true,
     files: { 'tokens.css': emitCss(themes), 'themes.ts': emitThemes(themes), 'manifest.ts': emitManifest(themes[0]) },

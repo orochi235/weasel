@@ -1204,6 +1204,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   anchor fills, is reported `invalid` at `ramps.<name>.anchors.<i>.name` and fills a step no anchor names, so the ramp
   still derives. Failing the ramp was the alternative; the theme editor's anchor list names new anchors by hue, not by
   step, and holds them mid-edit.
+- 2026-11-21 (my call, audit round 64): `generateTokens` refuses a set of themes in which one theme or selection
+  lacks a token another holds, naming each gap, because `themes.ts` types every selection as a record of every
+  `TokenName`. Typing a selection as a partial record was the alternative; it would make every reader of `THEMES`
+  handle a token that is missing.
 - Open (2026-11-11, theme second pass): a token a theme produces at only some selections still shows at the others
   in the stylesheet, which cannot unset it: a reference to it there reads the value from where it is declared, while
   `resolveTheme` has no token. Only a definition with issues does this. The same holds across `extends`: a child

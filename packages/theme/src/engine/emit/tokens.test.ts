@@ -45,6 +45,15 @@ describe('generateTokens', () => {
     expect(result.problems.join('\n')).toMatch(/axes\.mode.*dusk/);
   });
 
+  it('refuses a theme adding a token the others lack, which themes.ts could not type', () => {
+    const child: ThemeDefinition = { name: 'brand', extends: weasel.name, pins: { 'brand-x': { value: '#ff0000', type: 'color' } } };
+    const result = generateTokens([weasel, child]);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.problems.length).toBeGreaterThan(0);
+    expect(result.problems.every((p) => p.startsWith(`${weasel.name} `) && p.includes('brand-x'))).toBe(true);
+  });
+
   it('throws unless exactly one definition extends nothing', () => {
     expect(() => generateTokens([weasel, { ...weasel, name: 'twin' }])).toThrow(/exactly one/);
   });
