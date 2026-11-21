@@ -107,7 +107,8 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
     const at = tab ? Array.from(tab.parentElement?.children ?? []).indexOf(tab) : -1;
     // React Aria selects nothing for the lit tab, so choosing it from the keyboard is reported here.
     if (e.target === tab && current !== null && pages[at]?.id === current && isActivation(e)) return onSelect(current);
-    if (by === null || at < 0 || pages[at] === undefined) return;
+    // Keys inside the rename field are the field's: Alt+arrow moves its caret by a word.
+    if (by === null || e.target !== tab || pages[at] === undefined) return;
     e.preventDefault();
     e.stopPropagation();
     drag.nudge(pages[at].id, at, by);
