@@ -35,4 +35,21 @@ describe('storiesOf', () => {
     const [[, story]] = storiesOf({ default: {}, Primary });
     expect(text(story)).toBe('[label=Go]');
   });
+
+  it('passes a story its parameters, globals, and display name', () => {
+    const seen: Ctx[] = [];
+    const mod = {
+      default: { title: 'Kit/Tag', parameters: { a: { x: 1 } }, globals: { theme: 'light' } },
+      Dark: {
+        name: 'Dark tag',
+        parameters: { a: { y: 2 } },
+        globals: { theme: 'dark' },
+        render: (_: Ctx, ctx: Ctx) => (seen.push(ctx), null),
+      },
+      noName_tag: { render: (_: Ctx, ctx: Ctx) => (seen.push(ctx), null) },
+    };
+    for (const [, story] of storiesOf(mod)) render(createElement(story));
+    expect(seen[0]).toMatchObject({ parameters: { a: { x: 1, y: 2 } }, globals: { theme: 'dark' }, name: 'Dark tag', title: 'Kit/Tag' });
+    expect(seen[1]).toMatchObject({ globals: { theme: 'light' }, name: 'No Name Tag' });
+  });
 });
