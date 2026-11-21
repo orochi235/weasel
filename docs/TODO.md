@@ -275,6 +275,14 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P3) [agent] An object leaf's own `enableIf` disables its switch field in `PrefsForm`.** For an object leaf
+  `stroke` with `enableIf: { path: 'stroke.on' }`, `applyPrefConditions` spares `stroke.on`, and
+  `objectFieldContext` hands that field `disabled: false`, but the leaf's row is a `PropertyRow` with `disabled`,
+  whose `holdScope` disables every control inside it, so the checkbox can never turn the leaf back on (measured in
+  jsdom, 2026-11-20). Sections and groups are spared because their frames dim a title without holding the controls.
+  Closes when the object leaf's row dims its label without holding its fields, and a test turns such a leaf back on
+  from its own switch, in `PrefsForm` and `SelectionPanel`.
+
 - **(P3) [agent] `SpanStrips` draws a span's `content` twice, so interactive content in a span breaks.** `SpanPlayed`
   (`packages/ui/src/components/SpanStrip/SpanSegments.tsx`) renders every segment again in an `aria-hidden` layer over
   the first, for the part left of the playhead. A button in a span's `content` exists twice, clicks land on the hidden
