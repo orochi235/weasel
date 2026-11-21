@@ -1,5 +1,5 @@
-import type { ControlAccess } from '@weasel-js/ui-logic';
 import { type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type Ref, useRef } from 'react';
+import { useNativeHold } from '../Disabled/nativeHold';
 import { Icon } from '../Icon/Icon';
 import { icon } from '../../icons.gen';
 import f from '../Field/Field.module.css';
@@ -10,8 +10,6 @@ import s from './EffectList.module.css';
 
 interface EffectCardProps {
   cardRef: Ref<HTMLDivElement>;
-  /** The list's hold: held, the card's own name and buttons refuse edits, as its switch and number do by scope. */
-  access: ControlAccess;
   item: EffectListItem;
   index: number;
   kind: EffectKind | undefined;
@@ -35,13 +33,14 @@ interface EffectCardProps {
 
 /** One card of a `EffectList`: its header row, and its body when it is open. */
 export function EffectCard({
-  cardRef, access, item, index, kind, kinds, open, color, dragging, drop, onGripDown, onToggleOpen, onKeyDown, onPatch, onSolo, onDuplicate, onRemove, children,
+  cardRef, item, index, kind, kinds, open, color, dragging, drop, onGripDown, onToggleOpen, onKeyDown, onPatch, onSolo, onDuplicate, onRemove, children,
 }: EffectCardProps) {
   // React Aria's switch reports only its new value; the click that changed it still carries the modifiers.
   const alt = useRef(false);
-  const held = access.state !== 'enabled';
-  // A hold with a reason keeps these focusable to tell it; without one they leave the tab order.
-  const hold = { disabled: held && !access.reachable, 'aria-disabled': (held && access.reachable) || undefined };
+  // The list's scope holds these, as it does the card's switch and number.
+  const nameHold = useNativeHold({});
+  const duplicateHold = useNativeHold({}, { readonlyRole: false, changes: true });
+  const removeHold = useNativeHold({}, { readonlyRole: false, changes: true });
   return (
     <div
       ref={cardRef}
@@ -70,25 +69,26 @@ export function EffectCard({
             <KindLabel key={i} kind={k} sizer />
           ))}
         </span>
-        <input
-          type="text"
-          className={`${f.frame} ${s.name}`}
-          aria-label={`Name of card ${index + 1}`}
-          readOnly={held}
-          disabled={hold.disabled}
-          aria-disabled={access.state === 'disabled' || undefined}
-          value={item.name}
-          onChange={(e) => onPatch({ name: e.target.value })}
-        />
-        {onDuplicate && (
-          <button type="button" className={s.action} aria-label={`Duplicate ${item.name}`} {...hold} onClick={onDuplicate}>
-            <Icon name={icon('clone')} size={16} />
-          </button>
+        {nameHold.wrap(
+          <input
+            type="text"
+            className={`${f.frame} ${s.name}`}
+            aria-label={`Name of card ${index + 1}`}
+            {...nameHold.attrs}
+            readOnly={nameHold.refuses}
+            value={item.name}
+            onChange={(e) => onPatch({ name: e.target.value })}
+          />,
         )}
-        {onRemove && (
-          <button type="button" className={s.action} aria-label={`Remove ${item.name}`} data-effect-remove="" {...hold} onClick={onRemove}>
+        {onDuplicate && duplicateHold.wrap(
+          <button type="button" className={s.action} aria-label={`Duplicate ${item.name}`} {...duplicateHold.attrs} onClick={onDuplicate}>
+            <Icon name={icon('clone')} size={16} />
+          </button>,
+        )}
+        {onRemove && removeHold.wrap(
+          <button type="button" className={s.action} aria-label={`Remove ${item.name}`} data-effect-remove="" {...removeHold.attrs} onClick={onRemove}>
             <Icon name={icon('close')} size={16} />
-          </button>
+          </button>,
         )}
       </div>
       {children !== undefined && children !== null && <div className={s.body}>{children}</div>}

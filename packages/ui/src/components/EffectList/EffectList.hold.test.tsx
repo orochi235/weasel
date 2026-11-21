@@ -11,7 +11,7 @@ const ITEMS: EffectListItem[] = [
   { id: 'b', kind: 'match', name: 'B', on: true },
 ];
 
-function mount(hold: Pick<EffectListProps<EffectListItem>, 'disabled' | 'disabledReason' | 'readOnly'>, selected: string | null = null) {
+function mount(hold: Pick<EffectListProps<EffectListItem>, 'disabled' | 'disabledReason' | 'readOnly' | 'readOnlyReason'>, selected: string | null = null) {
   const onChange = vi.fn();
   const onSelectionChange = vi.fn();
   renderWithIcons(
@@ -54,7 +54,22 @@ describe('<EffectList> held', () => {
     const { onChange } = mount({ disabled: true, disabledReason: 'Locked' });
     tryEveryEdit();
     expect(onChange).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Remove A' })).toHaveAttribute('aria-disabled', 'true');
+    for (const el of [
+      screen.getByRole('button', { name: 'Remove A' }),
+      screen.getByRole('button', { name: 'Duplicate A' }),
+      screen.getByRole('textbox', { name: 'Name of card 1' }),
+    ]) {
+      expect(el).toHaveAttribute('aria-disabled', 'true');
+      expect(el).toHaveAccessibleDescription('Locked');
+    }
+  });
+
+  it('tells a read-only reason on its name field and marks its buttons held', () => {
+    mount({ readOnly: true, readOnlyReason: 'Shared' });
+    expect(screen.getByRole('textbox', { name: 'Name of card 1' })).toHaveAccessibleDescription('Shared');
+    const remove = screen.getByRole('button', { name: 'Remove A' });
+    expect(remove).toHaveAttribute('aria-disabled', 'true');
+    expect(remove).toHaveAccessibleDescription('Shared');
   });
 
   it('takes no edit while read-only, and still opens a card', () => {
