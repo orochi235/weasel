@@ -136,7 +136,8 @@ function readTspanRun(
   // Only where it overrides one — see `setsOwnStroke`.
   if (setsOwnStroke(el)) {
     const stroke = coreStroke(withOutlinedStroke(el, readStroke(tspanStyle, gradients, onWarn, isNonScalingStroke(el))));
-    if (stroke) run.stroke = stroke;
+    // A stroke with no paint draws nothing, so it still replaces the node's.
+    run.stroke = stroke ?? {};
   }
   return run;
 }
