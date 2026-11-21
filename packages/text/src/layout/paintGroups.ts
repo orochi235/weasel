@@ -130,13 +130,17 @@ const last: LastGroup = {
   group: null, run: -1, family: '', weight: 0, style: 'normal', bold: false, italic: false, source: 'atlas', page: 0,
 };
 
+/** Start a painting with no group: one that threw left its groups in the slots, one of them
+ *  holding the shared scratch as its quads. */
+export function openGroups(): void {
+  for (let i = 0; i < slots.length; i++) slots[i].group = null as unknown as LaidOutGroup;
+  truncate(slots, 0);
+  last.group = null;
+}
+
 /** Move the painting under way's groups into `out`, in the order they opened,
  *  and start the next painting with none. */
 export function takeGroups(out: LaidOutGroup[]): void {
-  for (let i = 0; i < slots.length; i++) {
-    out.push(slots[i].group);
-    slots[i].group = null as unknown as LaidOutGroup;
-  }
-  truncate(slots, 0);
-  last.group = null;
+  for (let i = 0; i < slots.length; i++) out.push(slots[i].group);
+  openGroups();
 }

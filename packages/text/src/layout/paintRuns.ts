@@ -21,7 +21,7 @@ import { doubles, takeDoubles, truncate } from './arrayPool';
 import { blankGlyph, LineBox } from './layoutColumns';
 import type { LaidOutRuns, PlacedGlyph } from './layoutRuns';
 import { hasGlyphQuad, QUAD_STRIDE, writeGlyphQuad, type LaidOutQuad } from './glyphQuads';
-import { groupFor, NO_QUADS, takeGroups } from './paintGroups';
+import { groupFor, NO_QUADS, openGroups, takeGroups } from './paintGroups';
 
 
 /**
@@ -229,6 +229,7 @@ export function paintRunsInto(
   const { groups, decorations } = out;
   truncate(groups, 0);
   truncate(decorations, 0);
+  openGroups();
   const faceOf = runs.some(isDecorated) ? runFaces(runs) : null;
   const rulePaint = faceOf && rulePaintOf(runs);
   // Most text is one group. The first to take a quad fills a scratch array

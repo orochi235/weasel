@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutAndPaint } from './testing/layoutAndPaint';
+import { layoutRuns } from './layoutRuns';
+import { paintRuns } from './paintRuns';
 import type { LayoutRunsOptions } from './layoutOpts';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { stubFetch, registerFixture, RUN_PLAIN, RUN_BOLD, RUN_ITALIC } from './testing/fontFixtures';
@@ -115,5 +117,19 @@ describe('layoutRuns — substituted families', () => {
       { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
     );
     expect(out.groups.map((g) => g.family).sort()).toEqual(['inter', 'slab']);
+  });
+
+  it('starts a painting with no group a painting that threw left behind', async () => {
+    await registerFixture('inter', [{}]);
+    const opts: LayoutRunsOptions = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' };
+    const runs = [RUN_PLAIN('AB'), RUN_PLAIN('A')];
+    const laid = layoutRuns(runs, opts);
+    const throwing = [runs[0], Object.defineProperty({ ...runs[1] }, 'fill', { get: () => { throw new Error('fill'); } })];
+    expect(() => paintRuns(laid, throwing)).toThrow('fill');
+    const red: ResolvedRun = { ...RUN_PLAIN('B'), fill: { paint: { kind: 'solid', color: '#f00' } } };
+    const next = paintRuns(layoutRuns([red], opts), [red]);
+    expect(next.groups).toHaveLength(1);
+    expect(next.groups[0].fill).toBe(red.fill);
+    expect(next.groups[0].quads).toHaveLength(1);
   });
 });
