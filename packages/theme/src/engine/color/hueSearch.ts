@@ -147,11 +147,11 @@ function penaltyAt(m: readonly Placed[], i: number, g: Gates): number {
  * rotations. A uniform ring can never open a 2 * minHueGap hole around a
  * pinned hue, so with anchors it also seeds across the arc the anchors leave free.
  */
-function seedRings(freeCount: number, anchorHues: readonly number[], minGapDeg: number): number[][] {
+export function seedRings(freeCount: number, anchorHues: readonly number[], minGapDeg: number): number[][] {
   const seeds: number[][] = [];
   const seedStep = Math.max(6, Math.round(freeCount * 1.6));
   for (let start = 0; start < 360; start += seedStep) {
-    seeds.push(Array.from({ length: freeCount }, (_, i) => Math.round((start + (i * 360) / freeCount) % 360)));
+    seeds.push(Array.from({ length: freeCount }, (_, i) => wrapPositive(Math.round(start + (i * 360) / freeCount), 360)));
   }
   if (anchorHues.length > 0) {
     const base = anchorHues[0];
@@ -160,7 +160,7 @@ function seedRings(freeCount: number, anchorHues: readonly number[], minGapDeg: 
       for (const divisor of [Math.max(1, freeCount - 1), freeCount]) {
         seeds.push(
           Array.from({ length: freeCount }, (_, i) =>
-            Math.round(wrapPositive(base + minGapDeg + jitter + (i * span) / divisor, 360)),
+            wrapPositive(Math.round(base + minGapDeg + jitter + (i * span) / divisor), 360),
           ),
         );
       }
