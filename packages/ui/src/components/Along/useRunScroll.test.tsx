@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { KitSettingsProvider } from '@weasel-js/react';
 import type { FocusEvent as ReactFocusEvent, PointerEvent as ReactPointerEvent } from 'react';
-import { arcShape, lineShape, runPlaces, trackRun, type RunSpot } from '@weasel-js/geom';
+import { arcShape, lineShape, runPlaces, trackRun, type RunSpot, type TrackRun } from '@weasel-js/geom';
 import { positionAt, useRunScroll } from './useRunScroll';
 
 // Five items 20 long with 15 between run to 160 along a run 100 long; jsdom puts every box at (0, 0).
@@ -12,7 +12,8 @@ const GAP = 15;
 const lengths = [20, 20, 20, 20, 20];
 const keyOf = (el: Element): string | null => el.getAttribute('data-run-item');
 
-function mount(total: number, opts: { modReorders?: boolean; dragPx?: number } = {}) {
+function mount(total: number, opts: { modReorders?: boolean; dragPx?: number; along?: TrackRun } = {}) {
+  const on = opts.along ?? run;
   const root = document.createElement('div');
   for (let i = 0; i < lengths.length; i++) {
     const item = document.createElement('button');
@@ -24,7 +25,7 @@ function mount(total: number, opts: { modReorders?: boolean; dragPx?: number } =
   const drawn = { offset: 0 };
   const size = { total };
   const hook = renderHook(() => {
-    const scroll = useRunScroll({ root: ref, keyOf, run, total: size.total, lengths, modReorders: opts.modReorders, spots: (): RunSpot[] => runPlaces(lengths, GAP, run.length, 'start', drawn.offset) });
+    const scroll = useRunScroll({ root: ref, keyOf, run: on, total: size.total, lengths, modReorders: opts.modReorders, spots: (): RunSpot[] => runPlaces(lengths, GAP, on.length, 'start', drawn.offset) });
     drawn.offset = scroll.offset;
     return scroll;
   }, opts.dragPx === undefined ? undefined : {
@@ -87,6 +88,24 @@ describe('useRunScroll', () => {
     wheel(root, 100);
     settle();
     expect(hook.result.current.offset).toBe(60);
+  });
+
+  test('a sideways wheel moves the items the way it swipes, whichever way the run reads across the screen', () => {
+    const swipe = (root: HTMLElement, deltaX: number) => act(() => {
+      root.dispatchEvent(new WheelEvent('wheel', { deltaX, bubbles: true, cancelable: true }));
+    });
+    const forward = mount(160);
+    swipe(forward.root, 30);
+    settle();
+    expect(forward.hook.result.current.offset).toBe(30);
+    const back = mount(160, { along: trackRun(lineShape({ x: 0, y: 0 }, { x: 100, y: 0 }), 0, 1, { direction: 'rtl' }) });
+    act(() => {
+      back.hook.result.current.onFocusCapture({ target: back.items[4]! } as unknown as ReactFocusEvent);
+    });
+    settle();
+    swipe(back.root, 30);
+    settle();
+    expect(back.hook.result.current.offset).toBe(30);
   });
 
   test('a line-mode wheel moves 16 px a line, and a page-mode one a run length a page', () => {
