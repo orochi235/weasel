@@ -57,3 +57,10 @@ describe('a number leaf whose unit sets its places', () => {
     expect(field(length({ display: decimal({ places: 3 }) }), 1.5).input).toHaveValue('1.500');
   });
 });
+
+describe('a typed number leaf with a word for infinity', () => {
+  it('shows every place of its value, as one without the word does', () => {
+    const plain = { kind: 'number', name: 'Length', description: '', default: 0 } as PrefNumber;
+    expect(field({ ...plain, infinity: 'none' } as PrefNumber, 0.5).input).toHaveValue('0.5');
+  });
+});

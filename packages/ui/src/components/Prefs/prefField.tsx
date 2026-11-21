@@ -2,7 +2,7 @@ import { numericWeight } from '@weasel-js/text';
 import { isPaint, type Paint } from '@weasel-js/paint';
 import { clampToBounds, endlessAllows, withInfinity } from '@weasel-js/quantity';
 import { isBuiltinPref, prefDisplayBounds, prefUnitAccepts, resolvePrefUnit, type PrefBoolean, type PrefEnum, type PrefEnumOption, type PrefField, type PrefLeaf, type PrefNumber, type PrefPaint, type PrefValueBase } from '@weasel-js/prefs';
-import { stepDisplay } from '../Properties/NumberControls';
+import { defaultDisplay } from '../Properties/NumberControls';
 import { resolveIcon } from '../Icon/resolveIcon';
 import type { PropertyControlProps } from '../Properties/PropertyField';
 import type { PropertyOption } from '../Properties/fieldTypes';
@@ -120,7 +120,7 @@ function numberFieldProps(leaf: PrefNumber, state: PrefFieldState): PropertyCont
     step: bounds.step,
     unit: unit?.suffix,
     accepts: unit ? prefUnitAccepts(unit) : undefined,
-    display: leaf.infinity === undefined ? shown : withInfinity(shown ?? stepDisplay(bounds.step), leaf.infinity),
+    display: leaf.infinity === undefined ? shown : withInfinity(shown ?? defaultDisplay({ control: leaf.control, step: bounds.step }), leaf.infinity),
     endless: bounds.endless,
     stops: bounds.stops,
     placeholder: leaf.placeholder,
