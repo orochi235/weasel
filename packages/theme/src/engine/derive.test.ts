@@ -350,8 +350,15 @@ describe('derive', () => {
     expect(issues).toEqual([{ kind: 'invalid', path: 'pins.font-bad.0', message: 'unknown seed "nope"' }]);
   });
 
+  it('reports a categorical anchor whose name is no step, and still derives the ramp', () => {
+    const anchors = [{ name: 'brand', hue: 30, lightness: 0.7 }];
+    const { tokens, issues } = derive({ name: 'x', ramps: { sw: { kind: 'categorical', steps: ['a', 'b'], anchors } } });
+    expect(issues).toContainEqual({ kind: 'invalid', path: 'ramps.sw.anchors.0.name', message: 'no step "brand" on this ramp; it fills a step no anchor names' });
+    expect(Object.keys(tokens)).toEqual(['sw-a', 'sw-b']);
+  });
+
   it('reports a categorical ramp with more anchors than steps', () => {
-    const anchors = [10, 120, 240].map((hue, i) => ({ name: `a${i}`, hue, lightness: 0.7 }));
+    const anchors = [10, 120, 240].map((hue, i) => ({ name: 'abc'[i], hue, lightness: 0.7 }));
     const { tokens, issues } = derive({ name: 'x', ramps: { sw: { kind: 'categorical', steps: ['a', 'b'], anchors } } });
     expect(issues).toEqual([
       { kind: 'invalid', path: 'ramps.sw.anchors', message: '3 anchors for 2 steps; the ones past the last step are left out' },

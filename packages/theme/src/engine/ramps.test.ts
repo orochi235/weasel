@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONSTRAINTS } from './color/generate';
+import { DEFAULT_CONSTRAINTS, generate } from './color/generate';
 import { chromaCap, hueGap, toLch } from './color/oklch';
 import { categoricalRamp, lightnessRamp } from './ramps';
 
@@ -50,6 +50,16 @@ describe('categoricalRamp', () => {
     expect(feasible).toBe(true);
     expect(Object.keys(colors)).toEqual(steps);
     expect(new Set(Object.values(colors)).size).toBe(10);
+  });
+});
+
+describe('a categorical ramp with anchors', () => {
+  it('puts each anchor on the step its name names, whatever the palette order', () => {
+    const steps = ['a', 'b', 'brand'];
+    const anchors = [{ name: 'brand', hue: 30, lightness: 0.7 }];
+    const gates = { order: 'hue' as const };
+    const anchored = generate({ ...DEFAULT_CONSTRAINTS, ...gates, count: 3, anchors }).swatches.find((s) => s.anchored)!;
+    expect(categoricalRamp(steps, gates, anchors).colors.brand).toBe(anchored.hex.toLowerCase());
   });
 });
 

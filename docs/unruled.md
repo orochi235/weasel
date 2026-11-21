@@ -1199,6 +1199,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `alpha`, or `scope` has the wrong type as `invalid` and makes no token of it, keeping what a rule produced
   beneath a pin. An `alpha` outside 0 to 1, on a pin or a semantic `ref`, is reported the same way, as its
   documentation gives that range. Dropping only the bad field was the alternative.
+- 2026-11-21 (my call, audit round 64): a categorical ramp's anchor fills the step its `name` names, and the other
+  swatches fill the remaining steps in palette order. An anchor naming no step of the ramp, or a step an earlier
+  anchor fills, is reported `invalid` at `ramps.<name>.anchors.<i>.name` and fills a step no anchor names, so the ramp
+  still derives. Failing the ramp was the alternative; the theme editor's anchor list names new anchors by hue, not by
+  step, and holds them mid-edit.
 - Open (2026-11-11, theme second pass): a token a theme produces at only some selections still shows at the others
   in the stylesheet, which cannot unset it: a reference to it there reads the value from where it is declared, while
   `resolveTheme` has no token. Only a definition with issues does this. The same holds across `extends`: a child
