@@ -92,12 +92,12 @@ export function diagramDropParentAt(
       const pose = node.pose as Rect;
       const world = frame === null || compose === undefined ? pose : compose(frame as never, pose as never) as Rect;
       const trait = diagramContainerOf(node);
-      // Only a region's box bounds what it holds; a plain group's or an envelope's need not.
+      // A region's members may be drawn past its body, so a point outside it is still looked for in them.
       if (trait !== null) {
         const p = worldToLocal(targetTransformOf(world), point.x, point.y);
-        if (p === null || !rectContainsPointHalfOpen(bodyBox(world, trait.header), p.x, p.y)) continue;
+        const holds = p !== null && rectContainsPointHalfOpen(bodyBox(world, trait.header), p.x, p.y);
         const takes = trait.role === 'container' || trait.role === 'lane';
-        if (takes && childVerdict(scene as unknown as ChildReader, id as never, [], verdict) === true) best = id;
+        if (holds && takes && childVerdict(scene as unknown as ChildReader, id as never, [], verdict) === true) best = id;
       }
       // An envelope is no frame: its children are stored in the one above it.
       walk(scene.childrenOf(id as never), definesFrame(node) ? world : frame);

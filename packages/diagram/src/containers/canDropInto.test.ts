@@ -83,6 +83,21 @@ describe('diagramCanDropInto', () => {
 });
 
 describe('diagramDropParentAt', () => {
+  it('finds a container where it overhangs the body of the one it is in', () => {
+    const specs = diagramScene({
+      nodes: [],
+      edges: [],
+      containers: [
+        { id: 'outer', role: 'container', members: ['inner'], box: { x: 100, y: 100, width: 400, height: 300 }, pinned: true },
+        { id: 'inner', role: 'container', box: { x: 420, y: 200, width: 150, height: 150 }, pinned: true },
+      ],
+    }, { layout: 'none' });
+    const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+    for (const spec of specs) scene.add(spec as never);
+    expect(diagramDropParentAt(scene as never, { x: 540, y: 300 }, null)).toBe('inner');
+    expect(diagramDropParentAt(scene as never, { x: 50, y: 50 }, null)).toBe(null);
+  });
+
   it('finds a container nested in another where it is drawn, its pose being in its parent\'s frame', () => {
     const specs = diagramScene({
       nodes: [],
