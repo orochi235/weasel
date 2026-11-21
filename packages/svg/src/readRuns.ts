@@ -11,6 +11,7 @@ import { fontSizeOf } from './fontSize';
 import { ownLang } from './textLang';
 import type { GradientTable } from './readGradients';
 import { deriveStyle, ownProp, ownValue, setsOwn, styleValue, type StyleContext } from './cascade';
+import { shiftInEms } from './properties';
 import { readStroke, isNonScalingStroke, setsOwnStroke, coreStroke, coreTextFill } from './readPaint';
 import { withOutlinedStroke } from './strokeOutlineSvg';
 
@@ -114,7 +115,8 @@ function readTspanRun(
   if (size?.fontScale != null) run.fontScale = size.fontScale;
   const ls = ownValue(el, 'letter-spacing', onWarn, fontSizeOf(tspanStyle));
   if (ls != null) run.letterSpacing = ls;
-  const shift = ownValue(el, 'baseline-shift', onWarn, fontSizeOf(tspanStyle));
+  const read = ownValue(el, 'baseline-shift', onWarn, fontSizeOf(tspanStyle));
+  const shift = read && shiftInEms(read, fontSizeOf(style));
   if (shift?.script != null) run.script = shift.script;
   if (shift?.baselineShift != null) run.baselineShift = shift.baselineShift;
   const decoration = ownValue(el, 'text-decoration', onWarn);

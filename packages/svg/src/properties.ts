@@ -239,26 +239,33 @@ function readTextTransform(v: string): TextTransform | undefined {
   return TEXT_TRANSFORMS.has(t) ? (t as TextTransform) : undefined;
 }
 
-const emLength = length('em', 'em');
-
 /**
  * `super` and `sub` are the presets `script` names; a percentage resolves
  * against the parent's font size, the unit `baselineShift` is already in; a
- * bare number is ems; an absolute length is taken in ems of the element's
- * `fontSize`; `baseline` or zero is no shift.
+ * bare number is ems; a length with a unit is `px`, an `em` or `ex` taken of
+ * the element's own `fontSize`, for the caller to put in ems of the parent's;
+ * `baseline` or zero is no shift.
  */
 function readBaselineShift(
   v: string, warn: Warn, prop: string, fontSize: number,
-): { script?: 'super' | 'sub'; baselineShift?: number } | undefined {
+): { script?: 'super' | 'sub'; baselineShift?: number; px?: number } | undefined {
   const k = v.toLowerCase();
   if (k === 'super' || k === 'sub') return { script: k };
   if (k === 'baseline') return {};
   const d = dimension(v);
   if (d?.unit === '%') return d.n === 0 ? {} : { baselineShift: d.n / 100 };
-  const px = d && d.unit !== '' ? absolutePx(d.unit) : undefined;
-  const n = px != null ? (d!.n * px) / fontSize : emLength(v, warn, prop, fontSize);
-  if (n == null || !Number.isFinite(n)) return undefined;
-  return n === 0 ? {} : { baselineShift: n };
+  if (d?.unit === '') return d.n === 0 ? {} : { baselineShift: d.n };
+  const px = worldLength(v, warn, prop, fontSize);
+  if (px == null || !Number.isFinite(px)) return undefined;
+  return px === 0 ? {} : { px };
+}
+
+/** A read `baseline-shift` as the run keys it sets, a length put in ems of `inheritedSize`. */
+export function shiftInEms(
+  shift: PropertyValue<'baseline-shift'>, inheritedSize: number,
+): { script?: 'super' | 'sub'; baselineShift?: number } {
+  const { px, ...rest } = shift;
+  return px == null ? rest : { ...rest, baselineShift: px / inheritedSize };
 }
 
 /** `none`, or the id a `url(#id)` names. Any other clip (a basic shape, a

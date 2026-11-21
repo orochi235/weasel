@@ -84,16 +84,17 @@ describe('baseline-shift / relative font-size', () => {
     expect(t.runs?.[3]?.baselineShift).toBe(0.25);
   });
 
-  it('reads an absolute baseline-shift in ems of the element\'s font size', () => {
+  it('reads a baseline-shift length in ems of the inherited font size, an em of the element\'s own', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
-      <text x="0" y="0" font-size="16">a<tspan baseline-shift="4px">b</tspan><tspan font-size="8" baseline-shift="6pt">c</tspan></text>
+      <text x="0" y="0" font-size="16">a<tspan baseline-shift="4px">b</tspan><tspan font-size="8" baseline-shift="6pt">c</tspan><tspan font-size="8" baseline-shift="0.5em">d</tspan></text>
     </svg>`;
     const { nodes, warnings } = parseSvg(svg);
     expect(warnings).toEqual([]);
     const t = nodes[0];
     if (t.kind !== 'text') throw new Error('expected text');
     expect(t.runs?.[1]?.baselineShift).toBeCloseTo(0.25, 6);
-    expect(t.runs?.[2]?.baselineShift).toBeCloseTo(1, 6);
+    expect(t.runs?.[2]?.baselineShift).toBeCloseTo(0.5, 6);
+    expect(t.runs?.[3]?.baselineShift).toBeCloseTo(0.25, 6);
   });
 
   it('keeps a run-level property named on <text> itself, with no tspan to carry it', () => {
@@ -149,7 +150,8 @@ describe('baseline-shift / relative font-size', () => {
     const { nodes, warnings } = parseSvg(svg);
     const t = nodes[0];
     if (t.kind !== 'text') throw new Error('expected text');
-    expect(t.runs?.[0]?.baselineShift).toBe(4);
+    // Read as 4 world units, a quarter of the default 16px em.
+    expect(t.runs?.[0]?.baselineShift).toBe(0.25);
     expect(warnings.some((w) => /baseline-shift/.test(w) && /vw/.test(w))).toBe(true);
   });
 
