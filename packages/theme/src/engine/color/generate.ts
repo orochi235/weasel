@@ -1,4 +1,5 @@
 import { minOf, lerp } from '@weasel-js/geom';
+import { wrapDeg } from '@weasel-js/paint';
 import { hueName, uniqueNames } from './hueNames.ts';
 import { searchHues } from './hueSearch.ts';
 import { chromaCap, contrast, hueGap, toHex, toLch, type Lch } from './oklch.ts';
@@ -168,7 +169,8 @@ function farthestFirst(hues: number[]): number[] {
  * A categorical palette of `count` swatches, anchors included, satisfying the gates. When no hue arrangement
  * satisfies them the result is still a full palette, with `feasible` false.
  */
-export function generate(c: Constraints): Palette {
+export function generate(constraints: Constraints): Palette {
+  const c = { ...constraints, anchors: constraints.anchors.map((a) => ({ ...a, hue: wrapDeg(a.hue) })) };
   const found = searchHues(c);
   const feasible = found !== null;
   // An infeasible gate still has to draw something, so fall back to an even ring.

@@ -90,7 +90,7 @@ export {
   type OklchDeg,
 } from './colorSpaces';
 export { hslToSrgb, srgbToHsl } from './hsl';
-export { lerpHueDeg, type HueInterpolation } from './hue';
+export { lerpHueDeg, wrapDeg, type HueInterpolation } from './hue';
 export { mixOklab, mixRgba, mixRgbaWeighted } from './mix';
 export { contrastLineColor, contrastRatio, luminanceContrast, relativeLuminance, wcagLevels } from './contrast';
 export { lerpFill, lerpPaint, lerpStroke } from './lerpPaint';

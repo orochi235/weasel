@@ -34,5 +34,5 @@ export function place(
 /** The color an anchor will actually contribute, for a swatch beside its controls. */
 export function toHexPreview(a: Pick<Anchor, 'hue' | 'lightness' | 'chroma'>): string {
   const cap = chromaCap(a.lightness, a.hue);
-  return toHex(a.lightness, a.chroma === undefined ? cap : Math.min(a.chroma, cap), a.hue);
+  return toHex(a.lightness, a.chroma === undefined ? cap : Math.max(0, Math.min(a.chroma, cap)), a.hue);
 }

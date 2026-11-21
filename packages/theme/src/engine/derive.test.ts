@@ -461,3 +461,58 @@ it("takes the parent's value where a child's by-axis pin leaves a selection out"
   expect(light.tokens.surface.value).toBe(parent.tokens.surface.value);
   expect(light.issues).toEqual([]);
 });
+
+describe('a group-qualified reference', () => {
+  it('names the token after its group, as resolving reads it', () => {
+    const { tokens, issues } = derive({
+      name: 'b',
+      ramps: { brand: { kind: 'lightness', steps: ['100', '500'], lightness: [0.9, 0.4] } },
+      components: { c: '{color.brand-500}' },
+      pins: { p: { value: '{color.brand-100}', type: 'color' } },
+    });
+    expect(issues).toEqual([]);
+    expect(tokens.c.type).toBe('color');
+    expect(tokens.p.value).toBe('{color.brand-100}');
+  });
+});
+
+describe('a seed in a semantic value rule', () => {
+  const S: ThemeDefinition = { name: 's', seeds: { brand: '#ff0000' } };
+
+  it('resolves to the seed, as it does in a component', () => {
+    const { tokens, issues } = derive({ ...S, semantics: { s: { value: '{seeds.brand}', type: 'color' } }, components: { c: { value: '{seeds.brand}', type: 'color' } } });
+    expect(issues).toEqual([]);
+    expect(tokens.s.value).toBe('#ff0000');
+    expect(tokens.c.value).toBe('#ff0000');
+  });
+
+  it('is reported when the seed is not declared', () => {
+    const { tokens, issues } = derive({ ...S, semantics: { s: { value: '{seeds.nope}', type: 'color' } } });
+    expect(tokens.s).toBeUndefined();
+    expect(issues).toEqual([{ kind: 'invalid', path: 'semantics.s.value', message: 'unknown seed "nope"' }]);
+  });
+});
+
+describe('a lightness ramp anchor', () => {
+  it('is reported when it names a step the ramp does not declare', () => {
+    const { issues } = derive({ name: 'a', ramps: { r: { kind: 'lightness', steps: ['100', '500', '900'], lightness: [0.9, 0.2], anchor: { '600': '#3366ff' } } } });
+    expect(issues).toEqual([{ kind: 'invalid', path: 'ramps.r.anchor.600', message: 'no step "600" on this ramp' }]);
+  });
+});
+
+describe('a categorical ramp anchor', () => {
+  it('is reported with a negative chroma or a lightness outside 0 to 1', () => {
+    const anchors = [{ name: 'a', hue: 30, lightness: 0.6, chroma: -0.1 }, { name: 'b', hue: 200, lightness: 1.4 }];
+    const { issues } = derive({ name: 'c', ramps: { r: { kind: 'categorical', steps: ['1', '2', '3'], anchors } } });
+    expect(issues).toEqual([
+      { kind: 'invalid', path: 'ramps.r.anchors.0.chroma', message: 'expected a number ≥ 0' },
+      { kind: 'invalid', path: 'ramps.r.anchors.1.lightness', message: 'expected a number from 0 to 1' },
+    ]);
+  });
+
+  it('sorts by its hue on the circle, however the hue is written', () => {
+    const ramp = (hue: number) => derive({ name: 'c', ramps: { r: { kind: 'categorical', steps: ['1', '2', '3', '4'], gates: { order: 'hue' }, anchors: [{ name: 'a', hue, lightness: 0.7 }] } } }).tokens;
+    expect(ramp(390)).toEqual(ramp(30));
+    expect(ramp(-330)).toEqual(ramp(30));
+  });
+});

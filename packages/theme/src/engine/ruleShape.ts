@@ -32,7 +32,7 @@ export function ruleProblem(r: Readonly<Record<string, unknown>>): string | unde
   }
   if ('step' in r) return isString(r.ramp) && everyLeaf(r.step, isString) ? undefined : 'a step rule needs a ramp name and a step name';
   if ('from' in r) {
-    if (!isString(r.from) || !isFiniteNumber(r.offset) || !DIRS.includes(r.dir as string)) return `an offset rule needs a name from, a number offset, and a dir of ${DIRS.join(', ')}`;
+    if (!isString(r.from) || !Number.isInteger(r.offset) || !DIRS.includes(r.dir as string)) return `an offset rule needs a name from, a whole-number offset, and a dir of ${DIRS.join(', ')}`;
     return undefined;
   }
   if ('contrast' in r) {
