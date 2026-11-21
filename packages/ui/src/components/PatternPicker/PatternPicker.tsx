@@ -216,7 +216,8 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
         <>
           <SegmentedBar<number>
             items={image ? IMAGE_TILE_SIZES : TILE_SIZES}
-            value={image ? longestSide(image) : size}
+            value={image ? longestSide(image) : tile ? size : null}
+            disabled={!tile && !image}
             size="sm"
             aria-label="Tile size"
             onChange={(v) => v != null && resize(v)}

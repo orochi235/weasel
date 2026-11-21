@@ -230,3 +230,16 @@ describe('PatternPicker images', () => {
     });
   });
 });
+
+describe('PatternPicker on a texture paint', () => {
+  it('lights no size and holds the size bar, since it has no size to set', () => {
+    const onChange = vi.fn();
+    const value = { kind: 'texture', texture: 'tex' } as unknown as PatternFill;
+    render(<PatternPicker value={value} color="#123456" onChange={onChange} />);
+    const sizes = screen.getAllByRole('radio');
+    expect(sizes.map((r) => r.getAttribute('aria-checked'))).toEqual(['false', 'false', 'false', 'false']);
+    fireEvent.click(screen.getByRole('radio', { name: 'L' }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole('radio', { name: 'L' })).toBeDisabled();
+  });
+});
