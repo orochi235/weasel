@@ -192,9 +192,10 @@ function bindLaneEdits(tracks: readonly Track[], trackPath: readonly number[], r
   onInput?: (next: Track[]) => void;
   onChange: (next: Track[]) => void;
   commit: (r: KeyEdit) => void;
-}): Pick<LaneProps, 'onKeyInput' | 'onKeyChange' | 'onKeysInput' | 'onKeysChange' | 'onInsert'> {
+}): Pick<LaneProps, 'onKeyInput' | 'onKeyRevert' | 'onKeyChange' | 'onKeysInput' | 'onKeysChange' | 'onInsert'> {
   return {
     onKeyInput: (keyIndex, toMs) => report.onInput?.(moveKey(tracks, { trackPath, keyIndex }, toMs).tracks),
+    onKeyRevert: () => report.onInput?.(tracks.slice()),
     onKeyChange: (keyIndex, toMs) => {
       const sel = { trackPath, keyIndex };
       if (keyTime(tracks, sel) === Math.max(0, toMs)) return;

@@ -36,6 +36,8 @@ export interface LaneProps {
   onSelectionChange: (keyIndex: number) => void;
   /** Live during a dope-sheet drag. */
   onKeyInput: (keyIndex: number, toMs: number) => void;
+  /** A dope-sheet drag was canceled: hand back the tracks it began from. */
+  onKeyRevert?: () => void;
   /** Once, at the end of a dope-sheet gesture. */
   onKeyChange: (keyIndex: number, toMs: number) => void;
   /** Live during a graph-mode key drag: the row's whole key list. */
@@ -73,7 +75,7 @@ export function Lane(props: LaneProps): ReactElement {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const times = entryTimes(row);
   const { drag, msAt, onKeyPointerDown } = useKeyDrag({
-    trackRef, window: win, offset: row.offset, snapTimes, times, onSelect, onKeyInput, onKeyChange, onCancel: props.onCancel, drags: hold.edits,
+    trackRef, window: win, offset: row.offset, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert: props.onKeyRevert, onCancel: props.onCancel, drags: hold.edits,
   });
   const pct = (ms: number): string => toPercent(win, ms + row.offset);
 

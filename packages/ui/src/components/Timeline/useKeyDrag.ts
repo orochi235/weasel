@@ -20,6 +20,8 @@ export interface KeyDragArgs {
   onSelect: (keyIndex: number) => void;
   onKeyInput: (keyIndex: number, toMs: number) => void;
   onKeyChange: (keyIndex: number, toMs: number) => void;
+  /** A drag was canceled: put its preview back. */
+  onRevert?: () => void;
   /** A drag was canceled, after its preview was put back. */
   onCancel?: () => void;
   /** False: a press selects the key and moves nothing. Default true. */
@@ -32,7 +34,7 @@ export interface KeyDragArgs {
  * key would land, held here so a drag previews whether or not the consumer wires `onKeyInput`.
  */
 export function useKeyDrag(a: KeyDragArgs) {
-  const { trackRef, window: win, offset, snapTimes, times, onSelect, onKeyInput, onKeyChange, onCancel, drags = true } = a;
+  const { trackRef, window: win, offset, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert, onCancel, drags = true } = a;
   const sessionRef = useRef<PointerSession | null>(null);
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
   const [drag, setDrag] = useState<{ keyIndex: number; t: number } | null>(null);
@@ -86,7 +88,7 @@ export function useKeyDrag(a: KeyDragArgs) {
       onCancel: () => {
         end();
         if (!dragging) return;
-        onKeyInput(i, times[i]);
+        onRevert?.();
         onCancel?.();
       },
     }, { capture: false, escape: true });

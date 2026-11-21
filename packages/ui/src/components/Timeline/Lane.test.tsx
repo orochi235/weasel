@@ -133,14 +133,14 @@ describe('Lane', () => {
   });
 
   it('puts a key back where it was when the browser cancels its drag', () => {
-    const onKeyInput = vi.fn();
+    const onKeyRevert = vi.fn();
     const onKeyChange = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onKeyInput={onKeyInput} onKeyChange={onKeyChange} />);
+    render(<Lane {...base} row={laneOf(sampled)} onKeyRevert={onKeyRevert} onKeyChange={onKeyChange} />);
     const key = screen.getAllByTestId('timeline-key')[1];
     fireEvent.pointerDown(key, { clientX: 250, clientY: 10, button: 0, pointerId: 1, pointerType: 'touch' });
     fireEvent.pointerMove(document, { clientX: 350, clientY: 10, pointerId: 1, pointerType: 'touch' });
     fireEvent.pointerCancel(document, { pointerId: 1, pointerType: 'touch' });
-    expect(onKeyInput.mock.calls.at(-1)).toEqual([1, 500]);
+    expect(onKeyRevert).toHaveBeenCalledTimes(1);
     expect(onKeyChange).not.toHaveBeenCalled();
   });
 

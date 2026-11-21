@@ -139,6 +139,16 @@ describe('Timeline', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('hands back the tracks as they were when a drag is canceled, keys sharing a time in their order', () => {
+    const input = [{ kind: 'sampled', label: 'hold', keys: [{ t: 500, value: 1 }, { t: 500, value: 2 }], onTick: () => {} }] as Track[];
+    const onInput = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={input} onInput={onInput} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect((onInput.mock.calls.at(-1)![0][0] as SampledTrack<number>).keys.map((k) => k.value)).toEqual([1, 2]);
+  });
+
   it('preserves a track’s callbacks across an edit', () => {
     const input = tracks();
     const onChange = vi.fn();
