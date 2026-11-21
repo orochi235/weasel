@@ -4,7 +4,7 @@ import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import { createActionDeps } from '@weasel-js/routing';
 import { createScene, asNodeId, type RectPose } from '@weasel-js/core/engine';
-import { gridSourceForTests as gridSource, sessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
+import { gridSnapSourceForTests as gridSource, snapSessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
 import type { SnapBegin, SnapDep } from '@weasel-js/core/engine';
 import { insertAction } from './action';
 import { placeAction } from './placeAction';

@@ -9,7 +9,7 @@ import { ON_PAGEForTests as ON_PAGE, PAGE_AForTests as PAGE_A, PAGE_BForTests as
 import type { NodeId, RectPose } from '@weasel-js/core';
 import { insertAction } from './action';
 import { insertRepositionAction } from './repositionAction';
-import { sessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
+import { snapSessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
 import type { InsertLive } from '@weasel-js/core/engine';
 
 const MODS = { alt: false, ctrl: false, meta: false, shift: false };

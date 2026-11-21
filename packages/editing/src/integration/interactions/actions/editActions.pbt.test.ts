@@ -12,7 +12,7 @@ import type { NodeId, Bounds } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core/engine';
 import { defaultCommitAdapter, scenePoseFrame, drawnBoxes, withoutPageStructure } from '@weasel-js/core/engine';
 import { uncarried } from '@weasel-js/core';
-import { depsOfForTests as depsOf, makeSceneForTests as makeScene, runsForTests as runs, tallyForTests as tally, timeoutForForTests as timeoutFor, type TestSceneForTests as TestScene } from '@weasel-js/core/test-seams';
+import { depsOfForTests as depsOf, makeSceneForTests as makeScene, pbtRunsForTests as runs, pbtTallyForTests as tally, pbtTimeoutForTests as timeoutFor, type TestSceneForTests as TestScene } from '@weasel-js/core/test-seams';
 import { rectPose } from './pbt.fixture';
 import { alignLeftAction, alignRightAction, alignTopAction, alignBottomAction, alignCenterXAction, alignCenterYAction, distributeHorizontalAction, distributeVerticalAction, reorderForwardAction, reorderBackwardAction, flipAction, nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction, duplicateAction, groupAction, ungroupAction, deleteAction } from '@weasel-js/editing';
 import * as ops from '@weasel-js/core/ops';

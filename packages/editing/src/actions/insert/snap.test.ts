@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
-import { gridSourceForTests as gridSource, lineSourceForTests as lineSource, sessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
+import { gridSnapSourceForTests as gridSource, lineSourceForTests as lineSource, snapSessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
 import type { SnapSource, InsertDep, InsertExtras, SnapDep, InsertBehavior, AnyScene } from '@weasel-js/core/engine';
 import { insertAction } from './action';
 import { insertRepositionAction } from './repositionAction';
