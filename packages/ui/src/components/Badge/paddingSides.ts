@@ -20,12 +20,13 @@ function tokens(value: string): string[] {
 /**
  * A badge's `padding` prop as the per-side custom properties its stylesheet pads from. The
  * sides have to be apart: a removable badge's label reaches into each one by its own amount.
- * A value that is not a one-to-four part shorthand is set as plain `padding`.
+ * A value that is not a one-to-four part shorthand, or is one `var()` that may hold several parts,
+ * is set as plain `padding`.
  */
 export function paddingStyle(padding: number | string | undefined): CSSProperties {
   if (padding === undefined) return {};
   const parts = parse(padding);
-  if (parts.length < 1 || parts.length > 4) return { padding };
+  if (parts.length < 1 || parts.length > 4 || loneVar(parts)) return { padding };
   const [top, right = top, bottom = top, left = right] = parts;
   return {
     ['--badge-pad-top' as never]: top,
@@ -38,6 +39,9 @@ export function paddingStyle(padding: number | string | undefined): CSSPropertie
 type Length = number | string;
 
 const parse = (value: Length): string[] => (typeof value === 'number' ? [`${value}px`] : tokens(value));
+
+/** Whether `parts` is one `var()`, whose value may be any number of parts. */
+const loneVar = (parts: string[]) => parts.length === 1 && /^var\(/i.test(parts[0]);
 
 const SIDES = { paddingTop: 'top', paddingRight: 'right', paddingBottom: 'bottom', paddingLeft: 'left' } as const;
 
@@ -52,13 +56,14 @@ export function liftPadding(style: CSSProperties | undefined): CSSProperties {
   const out: Record<string, Length> = { ...(rest as Record<string, Length>), ...(paddingStyle(padding as Length | undefined) as Record<string, Length>) };
   const set = (side: string, value: string) => { out[`--badge-pad-${side}`] = value; };
   if (paddingBlock !== undefined) {
-    const [top, bottom = top] = parse(paddingBlock as Length);
-    if (top === undefined) out.paddingBlock = paddingBlock as Length;
+    const parts = parse(paddingBlock as Length);
+    const [top, bottom = top] = parts;
+    if (top === undefined || loneVar(parts)) out.paddingBlock = paddingBlock as Length;
     else { set('top', top); set('bottom', bottom); }
   }
   if (paddingInline !== undefined) {
     const parts = parse(paddingInline as Length);
-    if (parts.length !== 1) out.paddingInline = paddingInline as Length;
+    if (parts.length !== 1 || loneVar(parts)) out.paddingInline = paddingInline as Length;
     else { set('left', parts[0]); set('right', parts[0]); }
   }
   const sides = { paddingTop, paddingRight, paddingBottom, paddingLeft };
