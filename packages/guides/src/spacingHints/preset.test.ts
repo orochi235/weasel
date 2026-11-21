@@ -72,6 +72,17 @@ describe('createSpacingHintsPreset', () => {
     expect(store.get().every((m) => m.color === '#e0397f')).toBe(true);
   });
 
+  it('gives its filter to the Alt-hover readout, which measures nothing to a node it refuses', () => {
+    const { contributions, scene, a, b } = fixture({ filter: (node) => node.id !== b });
+    const readout = contributions.find((c) => c.id === 'distanceReadout')!;
+    const store = createSnapOutcomeStore();
+    const run = (readout.actions![0].invoker as { run: (d: ActionDeps, p: unknown) => void }).run;
+    run({
+      scene, snapReadout: { store }, selection: { get: () => [a] }, nodeAtPoint: () => b,
+    } as unknown as ActionDeps, { show: true, world: { x: 35, y: 5 } });
+    expect(store.get()).toEqual([]);
+  });
+
   it('gives its filter to both sources', () => {
     const { scene, moving, preset } = fixture({ align: true, filter: () => false });
     const out = moveBy({

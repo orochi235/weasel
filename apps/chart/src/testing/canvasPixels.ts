@@ -1,12 +1,13 @@
 import { HOME_VIEW, fitViewToBounds, viewWorldToScreen } from '@weasel-js/core';
 import { CHART_PAGE } from '../chartDocument';
+import { PAGE_FIT_PADDING } from '../pages/useChartPages';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
-/** Client point of a world point: the page is fitted to the workspace with 24px of padding, at a zoom the fit
+/** Client point of a world point: the page is fitted to the workspace as the app fits it, at a zoom the fit
  *  rounds to a step. */
 export function at(host: HTMLElement, x: number, y: number): { x: number; y: number } {
   const box = host.getBoundingClientRect();
-  const view = fitViewToBounds({ x: 0, y: 0, ...CHART_PAGE }, box, HOME_VIEW, { padding: 24 }) ?? HOME_VIEW;
+  const view = fitViewToBounds({ x: 0, y: 0, ...CHART_PAGE }, box, HOME_VIEW, { padding: PAGE_FIT_PADDING }) ?? HOME_VIEW;
   const p = viewWorldToScreen(view, { x, y });
   return { x: box.left + p.x, y: box.top + p.y };
 }

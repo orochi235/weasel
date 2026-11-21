@@ -17,7 +17,7 @@ export interface SpacingHintsOptions {
   align?: boolean;
   /** Snap distance in screen px. Default the canvas's reach. */
   reachPx?: number;
-  /** Which nodes the snap sources take as siblings to line up or space against. */
+  /** Which nodes the snap sources take as siblings to line up or space against, and the readout measures to. */
   filter?: TargetFilter;
   /** The Alt-hover distance readout, configured, or `false` for none. Default
    *  on, with the preset's `color`; given an `id`, the preset names it
@@ -50,7 +50,9 @@ export function createSpacingHintsPreset(opts: SpacingHintsOptions = {}): Featur
   ];
   const contributions: SurfaceContribution[] = [];
   if (opts.readout !== false) {
-    contributions.push(createDistanceReadoutContribution({ ...sourceId(opts.id, 'readout'), ...opts.readout, ...color }));
+    contributions.push(createDistanceReadoutContribution({
+      ...sourceId(opts.id, 'readout'), ...(opts.filter === undefined ? {} : { filter: opts.filter }), ...opts.readout, ...color,
+    }));
   }
   return { id, snapSources, contributions };
 }
