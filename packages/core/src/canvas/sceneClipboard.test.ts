@@ -5,6 +5,7 @@ import { createScene } from 'core/scene/scene';
 import type { DerivedDep, Node, RectPose, Scene } from 'core/scene/types';
 import type { PasteOmission } from 'core/adapters/types';
 import { sceneToAdapter } from './sceneAdapter';
+import { createPageRun } from 'core/pages/pageNodes';
 
 type D = { label: string };
 type S = Scene<D, 'main', RectPose>;
@@ -51,5 +52,17 @@ describe('pasting at a drop point', () => {
     const { byLabel } = paste(scene, [a, b, edge], { dropPoint: { x: 100, y: 100 } });
     expect(byLabel.get('a')!.pose).toMatchObject({ x: 100, y: 100 });
     expect(byLabel.get('b')!.pose).toMatchObject({ x: 300, y: 100 });
+  });
+});
+
+describe('pasting onto a page', () => {
+  it('puts each root on its page\'s layer, as an insert there would', () => {
+    type L = 'back' | 'main';
+    const scene = createScene<D, L, RectPose>({ systemLayers: [{ id: 'back' }, { id: 'main' }] });
+    createPageRun(scene, [{ id: 'p1', width: 500, height: 500 }], { layer: 'main' });
+    const a = scene.add({ kind: 'mark', layer: 'back', pose: rect(10, 10), data: { label: 'a' } });
+    const adapter = sceneToAdapter(scene);
+    const created = adapter.commitPaste(adapter.snapshotSelection([a]), { dx: 0, dy: 0 });
+    expect(created.map((n) => n.layer)).toEqual(['main']);
   });
 });
