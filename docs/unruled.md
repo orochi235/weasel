@@ -3340,3 +3340,9 @@ Calls the lanes made without a ruling:
   or at the start of the line, so `src/*.ts to lib/*.js` and `"*.ts" or "*.js"` stay literal; a code span, a
   shortcut, or an escape right after the mark does not count as punctuation. `x*"quoted"*` is therefore literal too.
   CommonMark's flanking rule, which reads `src/*.ts to lib/*.js` as emphasis, was the alternative.
+
+## Audit round sixty (2026-11-20): ui's test helpers
+
+- 2026-11-20 (the fixer's call): `painted` and `lineContrast` in `packages/ui/src/testing/paintedContrast.ts` throw
+  when the ground is translucent, unless passed the `backdrop` it is drawn over. Measuring against the ground as if
+  it were opaque was the alternative.
