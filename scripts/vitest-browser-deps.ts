@@ -8,7 +8,7 @@
  */
 import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
-import { dirname, join, matchesGlob, relative, resolve } from 'node:path';
+import { dirname, join, matchesGlob, relative, resolve, sep } from 'node:path';
 import { SOURCE, isBare, packageOf, scanImports } from './lib/imports.mjs';
 import { workspaceEntries } from './lib/packageEntries.mjs';
 import { type ViteAlias, weaselAliases } from './vite-aliases.ts';
@@ -82,12 +82,21 @@ export interface BrowserDepsOptions {
 
 /**
  * Every bare specifier reachable from the entries and setup files, sorted. A workspace package is
- * followed into its source and never listed; vitest's own modules are left to vitest. Throws on an
+ * followed into its source and never listed; vitest's own modules are left to vitest. A specifier
+ * a workspace package imports from a copy installed under its own `node_modules` is written
+ * `<package> > <specifier>`, vite's form for resolving from that package: listed bare, vite
+ * bundles the root's copy, which can be another major version. Throws on an
  * `import()` or `import.meta.glob` it cannot read, which could reach a dependency it would not list.
  */
 export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: BrowserDepsOptions): string[] {
   const aliases = weaselAliases(repoRoot);
-  const workspace = new Set(workspaceEntries(repoRoot).map(({ name }) => name));
+  const packages = workspaceEntries(repoRoot);
+  const workspace = new Set(packages.map(({ name }) => name));
+  const owner = (file: string) => packages.find(({ dir }) => file.startsWith(dir + sep));
+  const listed = (file: string, specifier: string) => {
+    const pkg = owner(file);
+    return pkg && existsSync(join(pkg.dir, 'node_modules', packageOf(specifier))) ? `${pkg.name} > ${specifier}` : specifier;
+  };
   const ownedElsewhere = (pkg: string) =>
     workspace.has(pkg) || BUILTINS.has(pkg) || pkg === 'vitest' || pkg.startsWith('@vitest/');
 
@@ -129,7 +138,7 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(listed(file, specifier));
     }
   }
   return [...found].sort();
