@@ -164,3 +164,27 @@ describe('drawnBoundsOf a node showing a derived path', () => {
     expect(drawnBoundsOf(scene, edge, scene.get(edge)!.pose)).toEqual({ x: 0, y: 0, width: 0, height: 0 });
   });
 });
+
+describe('drawnBoundsOf over members nothing paints', () => {
+  function boxWith(groupExtra: Record<string, unknown>, memberExtra: Record<string, unknown>) {
+    const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    scene.add({ id: asNodeId('g'), kind: 'group', layer: 'main', data: {}, pose: BOX, ...groupExtra } as never);
+    scene.add({
+      id: asNodeId('m'), kind: 'mark', layer: 'main', data: { shape: 'rect' },
+      pose: { x: 300, y: 0, width: 10, height: 10 }, parent: asNodeId('g'), ...memberExtra,
+    } as never);
+    return drawnBoundsOf(scene, asNodeId('g'), BOX);
+  }
+
+  it('leaves out a hidden member', () => {
+    expect(boxWith({}, { hidden: true })).toEqual(BOX);
+  });
+
+  it('leaves out the members of a node that consumes its children', () => {
+    expect(boxWith({ consumesChildren: true }, {})).toEqual(BOX);
+  });
+
+  it('still reaches over a shown member', () => {
+    expect(boxWith({}, {}).width).toBe(310);
+  });
+});
