@@ -30,7 +30,7 @@ export function BadgeRoot({ element, split, rootProps, rootRef, href, onClick, t
       </a>
     );
   } else {
-    badge = <span {...rootProps} ref={rootRef}>{children}</span>;
+    badge = <span {...rootProps} ref={rootRef} onClick={onClick}>{children}</span>;
   }
   if (tooltip == null) return badge;
   return (
