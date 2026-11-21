@@ -3399,3 +3399,14 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): A badge's `padding` prop, and padding in its `style`, replaces the shape's insets on
   each side it sets, as it always has and as the story describes it, so a fitted base refits around the other sides
   alone. Adding the insets to the given padding, as the size's own padding does, was the alternative.
+
+## Audit round sixty-four (2026-11-21): Mermaid diagrams, part two
+
+- 2026-11-21 (the fixer's call): The Mermaid state writer writes start and end shapes its `[*]` cannot keep apart (a
+  second in one composite, a start a transition arrives at, an end one leaves, one with no transition) as before,
+  with a warning; refusing the page was the alternative. A diamond with text is written as a plain state keeping its
+  text, with a warning; writing it as a `<<choice>>` and dropping the text was the alternative.
+- 2026-11-21 (the fixer's call): A chart writer (pie, packet, quadrant, radar, xychart, timeline) warns of a page name
+  that is not its chart's title and writes none; writing it as front matter, which every chart reader takes as the
+  chart's title where it has none, was the alternative. A Mermaid sequence page named `''` reads back unnamed, as an
+  empty title statement names no page of any other kind.
