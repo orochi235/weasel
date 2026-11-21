@@ -1,0 +1,77 @@
+{
+ "id": "ui.components.Badge.effects",
+ "commit": "70a055a4a838241c80da57b5aa579326d8d95bed",
+ "date": "2026-11-21",
+ "files": [
+  "packages/ui/src/components/Badge/effects/Aqua.tsx",
+  "packages/ui/src/components/Badge/effects/Bevel.tsx",
+  "packages/ui/src/components/Badge/effects/Bevel2.tsx",
+  "packages/ui/src/components/Badge/effects/Bites.tsx",
+  "packages/ui/src/components/Badge/effects/Metal.tsx",
+  "packages/ui/src/components/Badge/effects/Outline.tsx",
+  "packages/ui/src/components/Badge/effects/Perforations.tsx",
+  "packages/ui/src/components/Badge/effects/Puffs.tsx",
+  "packages/ui/src/components/Badge/effects/Rivets.tsx",
+  "packages/ui/src/components/Badge/effects/Scallops.tsx",
+  "packages/ui/src/components/Badge/effects/Shadow.tsx",
+  "packages/ui/src/components/Badge/effects/Sheen.tsx",
+  "packages/ui/src/components/Badge/effects/Spikes.tsx",
+  "packages/ui/src/components/Badge/effects/Sunbeams.tsx",
+  "packages/ui/src/components/Badge/effects/Woodgrain.tsx",
+  "packages/ui/src/components/Badge/effects/bevelBands.ts",
+  "packages/ui/src/components/Badge/effects/bumps.ts",
+  "packages/ui/src/components/Badge/effects/glassStrokes.tsx",
+  "packages/ui/src/components/Badge/effects/index.ts",
+  "packages/ui/src/components/Badge/effects/rangeMask.ts"
+ ],
+ "a": 7,
+ "b": 6,
+ "m": 2,
+ "distinct": 11,
+ "chapman": 17.7,
+ "unfound": 6.7,
+ "read": {
+  "A": 20,
+  "B": 20
+ },
+ "newCode": {
+  "since": 56,
+  "changedFiles": 14,
+  "findings": 9
+ },
+ "previous": {
+  "round": 56,
+  "chapman": 53,
+  "unfound": 40
+ },
+ "patches": 10,
+ "verify": {
+  "ok": true,
+  "files": 28,
+  "testFiles": {
+   "failed": 0,
+   "passed": 965,
+   "total": 965
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.2,
+   "B": 3.9,
+   "match": 4.7,
+   "fix": 68.4
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1751607,
+  "costUsd": 5.21
+ },
+ "fixCommits": []
+}

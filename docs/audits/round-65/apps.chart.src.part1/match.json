@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "Switching to pipeline mode and back rebuilds the chart from localStorage, so a chart whose session save failed is lost",
+  "Add section / Remove section act on the first selected fragment only, while every other sequence edit applies to all selected"
+ ],
+ "b": [
+  "Page Setup's Orientation field does not follow a custom width/height edit, so the dialog can apply a size its fields contradict",
+  "Add section / Remove section act only on the first selected fragment, though the Fragment picker beside them applies to every selected fragment",
+  "The Sequence panel's \"open when the chart holds a sequence\" is decided once at mount, so New, Open or Import of a sequence chart leaves it collapsed"
+ ]
+}

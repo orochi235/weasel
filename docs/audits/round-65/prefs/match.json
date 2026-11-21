@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "mergePrefGroups drops every input root's `admits`, so a merged schema admits no selector",
+  "A write to a closed store does not change what it reads, contrary to `PrefsStore.closed`'s contract",
+  "prefsCss's root block uses each selector's `default`, while a store or defaults source at defaults reads a selector that starts auto at its `auto.value`",
+  "A migration that renames a leaf strands the leaf's auto mark at the old key",
+  "`stored()` shows an auto mark's internal record as if it were the leaf's stored value",
+  "A color blend's weights overflow where the number blend guards against it",
+  "orderPrefGroup rebuilds every actions leaf an order names, even when nothing moves"
+ ],
+ "b": [
+  "prefsCss writes its root block at each selector's `default`, while a store at defaults (and `createDefaultsSource`) reads a selector that starts auto at its `auto.value`",
+  "A stored split value whose scope names a selector the schema no longer has reads as the plain `default`, not the leaf's `defaultScope`, and an `auto.value` scope does the same"
+ ]
+}

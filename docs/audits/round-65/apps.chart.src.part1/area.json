@@ -1,0 +1,90 @@
+{
+ "id": "apps.chart.src.part1",
+ "commit": "70a055a4a838241c80da57b5aa579326d8d95bed",
+ "date": "2026-11-21",
+ "files": [
+  "apps/chart/src/App.tsx",
+  "apps/chart/src/ChartWorkspace.tsx",
+  "apps/chart/src/NewChartDialog.tsx",
+  "apps/chart/src/PlotDataSection.tsx",
+  "apps/chart/src/SequenceEdits.tsx",
+  "apps/chart/src/SequencePanel.tsx",
+  "apps/chart/src/StencilPanel.tsx",
+  "apps/chart/src/app.css",
+  "apps/chart/src/autoLayout.ts",
+  "apps/chart/src/chartCommands.ts",
+  "apps/chart/src/chartDocument.ts",
+  "apps/chart/src/chartPersistence.ts",
+  "apps/chart/src/exportCommands.ts",
+  "apps/chart/src/icons.gen.ts",
+  "apps/chart/src/icons.table.ts",
+  "apps/chart/src/importExport.tsx",
+  "apps/chart/src/main.tsx",
+  "apps/chart/src/menuBar.ts",
+  "apps/chart/src/modes.ts",
+  "apps/chart/src/page.css",
+  "apps/chart/src/pages/AddPageDialog.tsx",
+  "apps/chart/src/pages/ChartPageStrip.tsx",
+  "apps/chart/src/pages/PageSetupDialog.tsx",
+  "apps/chart/src/pages/pageCommands.ts",
+  "apps/chart/src/pages/pageSizes.ts",
+  "apps/chart/src/pages/useChartPages.ts",
+  "apps/chart/src/pages/useFittedView.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 5,
+ "unfound": 1,
+ "read": {
+  "A": 27,
+  "B": 27
+ },
+ "newCode": {
+  "since": 33,
+  "changedFiles": 9,
+  "findings": 5
+ },
+ "previous": {
+  "round": 33,
+  "chapman": 19,
+  "unfound": 12
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 7,
+  "testFiles": {
+   "failed": 0,
+   "passed": 24,
+   "total": 24
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 10.7,
+   "B": 4,
+   "match": 3,
+   "fix": 19.8
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 1866525,
+  "costUsd": 5.44
+ },
+ "fixCommits": [
+  "75b20166e064dfe818ef27406abc69f59870e205",
+  "f72285059facbd5886b2c5fefa48f0f03054d308",
+  "8cec8d68bba609421e8a74f1666bcfec77d0b309",
+  "c16536df164f9e8bfc92e41b9a9a7f7bd1ca7c0f",
+  "da23d2f949559b23898ea46a3df12001ea421a74"
+ ]
+}

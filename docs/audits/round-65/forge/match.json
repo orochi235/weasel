@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "A CSF argType `if` condition ignores frame-local args, so a control stays shown (or hidden) by a value the story no longer renders with",
+  "A render with a default or rest parameter loses its component's prop-derived controls"
+ ],
+ "b": [
+  "A URL number knob outside its leaf's range is written into the config unclamped",
+  "runStory themes the story host from the toolbar globals and ignores the story's own `globals`",
+  "sameKnob treats Infinity, -Infinity, NaN and null as the same value",
+  "withUnsent restores a list's left-behind fields by index, so deleting an entry moves another entry's callbacks onto it",
+  "The URL drops every `$`-prefixed config key, but forge only owns `$globals` and the playhead key"
+ ]
+}

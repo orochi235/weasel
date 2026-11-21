@@ -1,0 +1,100 @@
+{
+ "id": "animator",
+ "commit": "70a055a4a838241c80da57b5aa579326d8d95bed",
+ "date": "2026-11-21",
+ "files": [
+  "packages/animator/src/axisNames.ts",
+  "packages/animator/src/colorArrays.ts",
+  "packages/animator/src/colorCycle.ts",
+  "packages/animator/src/colorHelpers.ts",
+  "packages/animator/src/colorInterpolate.ts",
+  "packages/animator/src/colorRegistry.ts",
+  "packages/animator/src/createHostedAnimator.ts",
+  "packages/animator/src/elementTarget.ts",
+  "packages/animator/src/index.ts",
+  "packages/animator/src/loop.ts",
+  "packages/animator/src/observe.ts",
+  "packages/animator/src/pbt.fixture.ts",
+  "packages/animator/src/react.ts",
+  "packages/animator/src/rig/autoSkin.ts",
+  "packages/animator/src/rig/mirrorPose.ts",
+  "packages/animator/src/rig/resolveSkeleton.ts",
+  "packages/animator/src/rig/skeletonAxes.ts",
+  "packages/animator/src/rig/skeletonEdits.ts",
+  "packages/animator/src/rig/skin.ts",
+  "packages/animator/src/rig/solveIk.ts",
+  "packages/animator/src/rig/types.ts",
+  "packages/animator/src/rig/weightEdits.ts",
+  "packages/animator/src/slew.ts",
+  "packages/animator/src/stagger.ts",
+  "packages/animator/src/staggerTypes.ts",
+  "packages/animator/src/supervisor.ts",
+  "packages/animator/src/tableMoves.ts",
+  "packages/animator/src/target.ts",
+  "packages/animator/src/targetTable.ts",
+  "packages/animator/src/targetTypes.ts",
+  "packages/animator/src/trimRegistry.ts",
+  "packages/animator/src/types.ts",
+  "packages/animator/src/useAnimator.ts",
+  "packages/animator/src/useAnimatorOptions.ts"
+ ],
+ "a": 6,
+ "b": 4,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 10.7,
+ "unfound": 2.7,
+ "read": {
+  "A": 34,
+  "B": 34
+ },
+ "newCode": {
+  "since": 32,
+  "changedFiles": 17,
+  "findings": 4
+ },
+ "previous": {
+  "round": 32,
+  "chapman": 20,
+  "unfound": 4
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 22,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2655,
+   "total": 2655
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.2,
+   "B": 9.4,
+   "match": 0.1,
+   "fix": 63.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "studio"
+  },
+  "weightedTokens": 2469352,
+  "costUsd": 7.29
+ },
+ "fixCommits": [
+  "14a0949291d344580859ec8ed41f592c2d6dc079",
+  "a83c9bdf27d9b3921f759815e2bbe4cfe527f050",
+  "ef687f1d76b0d9879f562c9d86dab666183d05db",
+  "b5e97b846aadfcf3a7a4f9afacf4cb8da53cc838",
+  "780c3687fd2e67b66207356badd9b1480c54583a",
+  "012b43912858e980fad5fa27d86e992a0110ef97",
+  "1347e055a3314b9ae871a65d85131d51926ec411",
+  "f2ba5e105450f194336a439f9c7f1a3f3427f1d8"
+ ]
+}

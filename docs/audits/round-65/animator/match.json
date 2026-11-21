@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "A color cycle replaced or cleared through the registry keeps the frame loop running for good",
+  "setJointWeights rescales by a sum that counts negative and NaN weights, which skinPath and jointShares ignore",
+  "TargetTable.refill writes to the caller's options object, and throws when it is frozen",
+  "readTarget hands a custom `axes.add` a shared module-level scratch longer than the target's axis count",
+  "A stagger's handle reports its last time scale and pause after it ends, where a loop's reports 1 and unpaused",
+  "axisIndexes only refuses a name that is both an axis and a path prefix when `paths` is given, though its doc says it always does"
+ ],
+ "b": [
+  "cycleVertexColors with `direction: -1` plays its easing curve backward, so ease-in turns into ease-out",
+  "setJointWeights counts negative and NaN weights when it rescales the other joints, which skinPath and jointShares ignore",
+  "A target table's `refill` writes `undefined` into the caller's options object, and throws when that object is frozen",
+  "createTargetTable throws an unexplained RangeError for a capacity that is not a whole number"
+ ]
+}

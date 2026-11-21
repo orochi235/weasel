@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A plaque (and a titlebar strip) with `emphasis` set doesn't redraw its controls in the plaque's ink",
+  "An empty-string title counts as a title: an empty heading, and a group named by nothing",
+  "The tab motif squares the box's corner where the tab doesn't meet it"
+ ],
+ "b": [
+  "A `sheet()` frame inside a PropertyPanel inherits the panel's backdrop blur and title inset",
+  "`drawn('')` is true, so an empty-string title makes a named group with an empty heading",
+  "DefaultMotif's doc says a `panel` kind reads `--wzl-panel-*` slots in any motif; `MotifFrame kind=\"panel\"` does not"
+ ]
+}

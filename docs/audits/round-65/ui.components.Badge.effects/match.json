@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   2,
+   3
+  ],
+  [
+   1,
+   4
+  ]
+ ],
+ "a": [
+  "Sunbeams' fade mask stops at the 0..100 viewBox, so beams vanish from any part of the outline that bloat or an outward effect pushes past the box",
+  "Sheen, and the Aqua and Metal gloss, paint a fixed 0..100 rect, so a body that reaches past the box gets none on those parts",
+  "Sunbeams' `gradientAngle` is in stretched viewBox space while its `angle` is corrected to CSS space",
+  "Woodgrain's knot \"circles\" are sized in viewBox units, so they squash to slivers on a wide badge",
+  "A negative spike `length` throws spikes outward on tight corners and nowhere else",
+  "The perforations effect ignores `phase`, so its holes don't crawl when the badge's other perimeter patterns do",
+  "Rivets sit at the box's corners whatever the base, so on a non-rectangular outline they float outside the badge"
+ ],
+ "b": [
+  "A sunbeams `count` or woodgrain `lines`/`knots` of Infinity hangs the render; a huge one stalls it",
+  "`NaN` in a bump effect's params turns the whole composed outline into `NaN` path data",
+  "A perforations hole is painted over by every foreground effect, so it vanishes under aqua, metal, bevel, sheen or sunbeams",
+  "The sunbeams fade's `gradientAngle` is in viewBox units while the beams' `angle` is in CSS degrees, so a diagonal fade comes out at the wrong angle",
+  "Sheen, sunbeams and the aqua/metal gloss stop at the 0..100 viewBox, leaving spike and puff tips that cross it undecorated",
+  "Sheen looks `lightFrom` up on a plain object, so `'constructor'`/`'toString'` reach the prototype"
+ ]
+}

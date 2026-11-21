@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "`LabBaseProps.mode` says a stored lab keeps its last-switched mode over the prop, but the prop overwrites it at mount",
+  "`labChrome` doc still says gaining a first sidebar contribution remounts the workspace and every trial",
+  "Lab chords read the global `document.activeElement`, not the lab's own document",
+  "Incoming `messages.origins` check compares raw strings while outgoing posts normalize them"
+ ],
+ "b": [
+  "`messages.origins: []` makes every state post throw",
+  "`origins` is used as given when posting but compared as a literal string when receiving",
+  "The fit warning loses its culprit once `.lk-shell-body` has been scrolled"
+ ]
+}

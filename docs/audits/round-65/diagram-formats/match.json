@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   3,
+   0
+  ],
+  [
+   5,
+   4
+  ]
+ ],
+ "a": [
+  "`documentFromScene` drops a shape's marks, silently",
+  "Opening and saving a document deletes the hidden rows of a collapsed node",
+  "`documentFromScene` drops a container's `reorder` axis, but keeps a cluster's",
+  "A DOT HTML label's `<BR ALIGN=\"LEFT\"/>` is dropped instead of breaking the line",
+  "A DOT `pos` on a node with no `width`/`height` is placed using Graphviz's 54×36 default size, then drawn at the diagram's own size, so its center moves",
+  "`scenePageKinds` with `opts.page` on a scene with no page list neither narrows to one page nor throws"
+ ],
+ "b": [
+  "A Graphviz HTML label's `<BR ALIGN=\"…\"/>` breaks no line, so its lines run together",
+  "dotColor drops X11 colors Graphviz draws, such as `red3`, `steelblue1` and `navyblue`, while its doc says it reads X11 as Graphviz draws it",
+  "laidOutPage grows a partly placed page only right and down, so nodes layout places above or left of the pinned ones fall off the page",
+  "The Diagram JSON reader checks pages and theme but not `crossPageEdges`, so a malformed one throws a TypeError later, far from the read",
+  "scenePageKinds with no page list ignores `opts.page`, where the one-page write of the same scene throws",
+  "DOT detect claims text whose keyword runs into a name, which the reader then refuses"
+ ]
+}

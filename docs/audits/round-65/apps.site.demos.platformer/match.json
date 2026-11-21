@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "Two enemies touching the player in one step cost two lives",
+  "A walker placed with no floor under it hangs in mid-air and reverses every step",
+  "The left and right walls stop above row 0, so a body above the level can leave it sideways",
+  "Falling out of the level is the one hit that doesn't duck the music"
+ ],
+ "b": [
+  "Two enemies touched in the same step cost two lives; the first hit's invulnerability doesn't guard the second",
+  "A jump pressed while the demo is paused (or before Start) fires on resume, however long ago it was",
+  "Falling out of the level is the one hit that doesn't duck the music",
+  "Coins stop spinning when the run is decided, while the rest of the presentation keeps moving",
+  "Enabling audio after the flag impact starts the music bed that the impact was meant to cut"
+ ]
+}

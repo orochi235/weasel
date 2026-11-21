@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ]
+ ],
+ "a": [
+  "parityDevice's loss handler can drop a newer device's cache, leaking that device, when releaseDevice runs while one is still opening",
+  "trimClip's `paint` makes a fresh WebGL context on every call and never releases it",
+  "The GL recorder returns a fresh number for every getAttribLocation call, ignoring bindAttribLocation"
+ ],
+ "b": [
+  "createRecorderCtx builds a WeaselRenderer it never disposes, so its image cache stays in the module-wide `live` set for the rest of the file",
+  "The recorder context draws through a second `webglDevice` on the same context, so its GL state cache disagrees with the one the caches upload through",
+  "parityDevice: calling releaseDevice() while a device is still opening lets the old device's loss evict the next device from the cache, and that device is never destroyed",
+  "The fake GPU device has no `dispatchEvent`, which the renderer calls whenever `GPUUncapturedErrorEvent` exists"
+ ]
+}

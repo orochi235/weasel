@@ -1,0 +1,83 @@
+{
+ "id": "ui.components.MotifFrame",
+ "commit": "70a055a4a838241c80da57b5aa579326d8d95bed",
+ "date": "2026-11-21",
+ "files": [
+  "packages/ui/src/components/MotifFrame/MotifFrame.module.css",
+  "packages/ui/src/components/MotifFrame/MotifFrame.stories.module.css",
+  "packages/ui/src/components/MotifFrame/MotifFrame.stories.tsx",
+  "packages/ui/src/components/MotifFrame/MotifFrame.tsx",
+  "packages/ui/src/components/MotifFrame/index.ts",
+  "packages/ui/src/components/MotifFrame/motifs/divider.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/divider.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/index.ts",
+  "packages/ui/src/components/MotifFrame/motifs/notch.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/notch.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/plaque.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/plaque.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/rule.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/rule.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/sheet.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/sheet.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/stereo.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/stereo.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/tab.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/tab.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/titlebar.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/titlebar.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/well.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/well.tsx",
+  "packages/ui/src/components/MotifFrame/root.ts",
+  "packages/ui/src/components/MotifFrame/types.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 7,
+ "unfound": 2,
+ "read": {
+  "A": 26,
+  "B": 26
+ },
+ "newCode": {
+  "since": 58,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 58,
+  "chapman": 14.8,
+  "unfound": 3.8
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 14,
+  "testFiles": {
+   "failed": 0,
+   "passed": 970,
+   "total": 970
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 19.1,
+   "B": 2.7,
+   "match": 0.1,
+   "fix": 11.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1224144,
+  "costUsd": 3.72
+ },
+ "fixCommits": []
+}

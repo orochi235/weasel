@@ -1,0 +1,85 @@
+{
+ "id": "apps.site.demos.platformer",
+ "commit": "70a055a4a838241c80da57b5aa579326d8d95bed",
+ "date": "2026-11-21",
+ "files": [
+  "apps/site/demos/platformer/animState.ts",
+  "apps/site/demos/platformer/bed.ts",
+  "apps/site/demos/platformer/boneRig.ts",
+  "apps/site/demos/platformer/callouts.ts",
+  "apps/site/demos/platformer/camera.ts",
+  "apps/site/demos/platformer/clips.ts",
+  "apps/site/demos/platformer/entities.ts",
+  "apps/site/demos/platformer/flagpole.ts",
+  "apps/site/demos/platformer/footsteps.ts",
+  "apps/site/demos/platformer/level.ts",
+  "apps/site/demos/platformer/physics.ts",
+  "apps/site/demos/platformer/playerPose.ts",
+  "apps/site/demos/platformer/sceneWorld.ts",
+  "apps/site/demos/platformer/sfx.ts",
+  "apps/site/demos/platformer/skeleton.ts",
+  "apps/site/demos/platformer/skin.ts",
+  "apps/site/demos/platformer/useInput.ts",
+  "apps/site/demos/platformer/usePlatformerAudio.ts",
+  "apps/site/demos/platformer/world.ts",
+  "apps/site/demos/platformer/worldLevel.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 20,
+  "B": 20
+ },
+ "newCode": {
+  "since": 36,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 36,
+  "chapman": 19,
+  "unfound": 4
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 12,
+  "testFiles": {
+   "failed": 0,
+   "passed": 25,
+   "total": 25
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 11.9,
+   "B": 7.7,
+   "match": 3.4,
+   "fix": 15.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 838340,
+  "costUsd": 4.44
+ },
+ "fixCommits": [
+  "98dcc7ba137ab4685d77bb7938214c1f76d81ba6",
+  "72f8174bb708a5b2de47ded79f8df96cc96cacf9",
+  "1ae7cd0775051bc2441e23c2d863b5b801a80a8d",
+  "a114e02c8e4ee0f400404ca3d865b369c78d2c02",
+  "3f1a06dfc1acc9d5cd859c6d066b34678c335e02",
+  "df1582ce1e6df0058b6d64ec8de7a52c06bbe34d",
+  "c6ec3a938233b3c3f0e1e4b5d4cc5a7e376df866"
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "pathDistanceToPoint measures a negative-size RectPath as if the point were outside it",
+  "mergeRegion with `tolerance: 0` drops every piece and returns an empty path"
+ ],
+ "b": [
+  "mergeRegion leaves a gap mid-contour where two or more consecutive sub-`snap` straight edges are dropped, and the merged output gains chords across the shape",
+  "snipPathAt removes two pieces when the probe's nearest point is exactly a crossing, and a closed subpath crossed once comes back in `removed` drawn twice",
+  "roughenPath's seed is truncated to an int32, so fractional seeds all roughen the same way"
+ ]
+}

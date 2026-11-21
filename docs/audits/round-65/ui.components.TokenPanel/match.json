@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "Dragging one step of a scale rewrites every other step whose amount has more than four decimals",
+  "Switching a scale with base 0 to the `factors` rule flattens every step to the base",
+  "A dragged factors step whose factor rounds to zero does nothing, though the round-59 ruling says an unreachable step is overridden",
+  "inferTokenType reads a shadow whose color nests a function as a string",
+  "inferTokenType treats `dvh`/`svh`/`lvh` as dimensions but not `dvw`/`svw`/`lvw`, nor `vi`/`vb`/`cqi`/`cqb`/`cqmin`/`cqmax`"
+ ],
+ "b": [
+  "Dragging one step of a scale rewrites every untouched step whose amount has more decimal places than the slider rounds to",
+  "Escape on a scale-step drag leaves the step overridden at its old value, and can refit its factor",
+  "Picking a color for a transparent token writes a fully transparent color, so the pick has no visible effect",
+  "A scale whose steps are all whole numbers can only be dragged or stepped to whole numbers",
+  "A scale's long name runs under its reset button",
+  "A token overridden to an empty value shows the unset color, not the overridden accent"
+ ]
+}

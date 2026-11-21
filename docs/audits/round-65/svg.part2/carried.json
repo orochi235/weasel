@@ -1,0 +1,144 @@
+{
+ "findings": [
+  {
+   "id": "r63-1",
+   "claim": "Negative stroke-width and font-size are kept instead of dropped",
+   "where": "packages/svg/src/properties.ts:271 (`'stroke-width': inherited(worldLength)`), :155 (readFontSize), :282",
+   "from": "A+B",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  },
+  {
+   "id": "r63-2",
+   "claim": "A tspan's `font-style=\"normal\"` silently fails to undo an italic `<text>`",
+   "where": "packages/svg/src/readRuns.ts:102 (readTspanRun)",
+   "from": "A+B",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  },
+  {
+   "id": "r63-3",
+   "claim": "The viewBox parser rejects abutting numbers that the transform parser accepts",
+   "where": "packages/svg/src/viewBox.ts:12 (parseViewBoxAttr)",
+   "from": "A",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  },
+  {
+   "id": "r63-4",
+   "claim": "An unclosed style block loses the last character of its body",
+   "where": "packages/svg/src/stylesheet.ts:142,160 (parseRuleList)",
+   "from": "A",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  },
+  {
+   "id": "r63-5",
+   "claim": "font-weight `lighter` is not read",
+   "where": "packages/svg/src/properties.ts:168-173 (readFontWeight)",
+   "from": "A",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  },
+  {
+   "id": "r63-6",
+   "claim": "`dominant-baseline=\"text-top\"` is read as a baseline anchor",
+   "where": "packages/svg/src/readText.ts:118-119 (parseTextElement)",
+   "from": "A",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  },
+  {
+   "id": "r63-7",
+   "claim": "Pattern export ignores the paint's `units`",
+   "where": "packages/svg/src/patterns.ts:59-77 (patternBoxAttrs)",
+   "from": "A",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  },
+  {
+   "id": "r63-8",
+   "claim": "A document's own `<marker>` is ignored whenever its id matches a kit marker key",
+   "where": "packages/svg/src/readMarkers.ts:71 (ingestMarkers → resolve)",
+   "from": "B",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  },
+  {
+   "id": "r63-9",
+   "claim": "An image pattern's `patternTransform` parse warnings are dropped",
+   "where": "packages/svg/src/patterns.ts:142 (readImagePattern)",
+   "from": "B",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  },
+  {
+   "id": "r63-10",
+   "claim": "A conic gradient's center ignores `gradientUnits=\"userSpaceOnUse\"` length semantics",
+   "where": "packages/svg/src/readGradients.ts:214 (readConicGradient)",
+   "from": "B",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  },
+  {
+   "id": "r63-11",
+   "claim": "A tspan's user-space stroke gradient is not carried through the text's transform",
+   "where": "packages/svg/src/readText.ts:75 (placeTextNode)",
+   "from": "B",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  },
+  {
+   "id": "r63-12",
+   "claim": "A run's fill takes on the node's `fill-opacity` when written, and an opacity-1 run stroke takes the node's `stroke-opacity`",
+   "where": "packages/svg/src/serializeText.ts:189 (runAttrs), :212 (strokeResets)",
+   "from": "B",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  },
+  {
+   "id": "r63-13",
+   "claim": "A `<tspan>` nested inside a `<tspan>` loses its styling silently",
+   "where": "packages/svg/src/readRuns.ts:95 (readTspanRun), :54 (readRuns)",
+   "from": "B",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  },
+  {
+   "id": "r63-14",
+   "claim": "Two attributes of a namespaced element with the same local name overwrite each other",
+   "where": "packages/svg/src/readMeta.ts:61 (collectNamespacedElement)",
+   "from": "B",
+   "round": 63,
+   "rounds": [
+    63
+   ]
+  }
+ ]
+}

@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "A paint reference that resolves to nothing paints solid black instead of none",
+  "readStroke drops marker-start/mid/end on any element whose stroke is `none` or unset, though SVG draws them",
+  "A tspan's absolute or em `baseline-shift` is divided by the tspan's own font size, but `baselineShift` is in ems of the inherited size",
+  "A declaration CSS rejects overrides a valid one for stroke-width, font-size, dasharray, dashoffset, letter-spacing, markers and clip-path",
+  "`<marker refX=\"center\">` (or right/bottom) without a viewBox resolves to 0",
+  "Marker children that are `display=\"none\"` are drawn into the head",
+  "A mesh patch point written `x,` parses as `(x, 0)` instead of being rejected"
+ ],
+ "b": [
+  "A fill or stroke that references a missing or dropped paint server paints solid black, where SVG paints nothing",
+  "A run whose stroke has zero width writes no stroke attributes, so its `<tspan>` takes the text's stroke",
+  "A namespaced meta element's child in another declared namespace is stored under its local name only, then written back in its parent's namespace",
+  "Every marker an import creates is registered globally and never released",
+  "The golden round-trip helper rounds tiny negatives to -0, which `toEqual` treats as different from 0"
+ ]
+}

@@ -1,0 +1,15 @@
+{
+ "pairs": [],
+ "a": [
+  "A pool's `members` are written inside the pool cell, though the diagram ignores them, and they take a node away from its lane",
+  "A cluster naming a container is written with the container nested in its group, which the diagram ignores and the reader then drops",
+  "A row's `tracking`, and a numeric `weight` that is not bold, are dropped on write with no warning, and rows that differ only in them do not warn"
+ ],
+ "b": [
+  "Every container and pool is written dashed, though the diagram draws regions solid",
+  "Dash lengths are read and written as absolute, but a draw app scales `dashPattern` by the stroke width",
+  "An HTML label's table rows, list containers, `<pre>` and other block elements run together on one line",
+  "A vertex's `rotation`, `flipH` and `flipV` are dropped without a warning",
+  "A swimlane holding the `container` role mark reads back as a lane when its parent is a pool"
+ ]
+}

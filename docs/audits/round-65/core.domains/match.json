@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "The entered-group frame projects through the pan/zoom form, so far from the origin it drifts off the group the canvas draws",
+  "The workspace tint's page cut-out projects through the pan/zoom form, so far from the origin the strips miss the page edge"
+ ],
+ "b": [
+  "A pose run whose `step` returns a lazy iterable that throws is left running forever with no frame coming",
+  "A view-marker drag projects the live world point through the target camera captured at press",
+  "`mergeVisibilityRules` writes user keys into a plain object, so a `__proto__` chrome id reassigns the prototype and its rule is lost"
+ ]
+}

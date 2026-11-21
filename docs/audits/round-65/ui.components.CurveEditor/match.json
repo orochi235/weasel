@@ -1,0 +1,40 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   4,
+   2
+  ],
+  [
+   7,
+   7
+  ]
+ ],
+ "a": [
+  "A press on the curve of an ordered layer inserts an anchor outside its segment's x span, breaking x order",
+  "Unmounting the editor mid-drag never reports `onCancel` (nor restores `onInput`) to the dragged layer",
+  "A layer whose consumer previews but does not write `onInput` back never commits a drag",
+  "A click-empty insert on a `constrain: 'function'` layer can land on an existing anchor's x",
+  "The crowding threshold and the drag's spacing read different x spans when `xClamp` is set",
+  "Undo/redo compares layer states by identity, so an unchanged layer is reported an edit",
+  "Canceling a keyframe key drag leaves the press's selection change in the consumer's state, uncommitted",
+  "The rim-contour story's seam drag destroys the other layers' anchors on Escape"
+ ],
+ "b": [
+  "A press on the curve of an ordered layer can insert an anchor out of x order, and a click commits it that way",
+  "A click-empty insert ignores the 'function' constraint's x gap and can put two anchors at one x",
+  "The crowding threshold for a press on the curve uses the plot's x span, not the layer's xClamp span that drags use",
+  "A click-curve layer with minPoints unset can be deleted below two anchors, after which no press can add one",
+  "The keyframe layer's xClamp/yClamp take a reversed pair as a degenerate range; the function layer normalizes it",
+  "An arrow key on a bezier handle of a flat keyframe segment rewrites the handle's y, which a drag refuses to do",
+  "An edit the consumer declines still records an undo step, so the next Cmd+Z silently does nothing",
+  "The rim-contour story's seam move crushes interior anchors onto the seam, breaking its own 'function' constraint"
+ ]
+}

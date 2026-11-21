@@ -1,0 +1,103 @@
+{
+ "id": "prefs",
+ "commit": "70a055a4a838241c80da57b5aa579326d8d95bed",
+ "date": "2026-11-21",
+ "files": [
+  "packages/prefs/src/KitSettingsFromPrefs.tsx",
+  "packages/prefs/src/aliasTargets.ts",
+  "packages/prefs/src/autoReset.ts",
+  "packages/prefs/src/blend.ts",
+  "packages/prefs/src/conditionCheck.ts",
+  "packages/prefs/src/css.ts",
+  "packages/prefs/src/defaultsSource.ts",
+  "packages/prefs/src/edit.entry.ts",
+  "packages/prefs/src/heading.ts",
+  "packages/prefs/src/hooks.ts",
+  "packages/prefs/src/hostAttributes.ts",
+  "packages/prefs/src/index.ts",
+  "packages/prefs/src/kinds.ts",
+  "packages/prefs/src/kitCss.ts",
+  "packages/prefs/src/merge.ts",
+  "packages/prefs/src/migrate.ts",
+  "packages/prefs/src/open.ts",
+  "packages/prefs/src/order.ts",
+  "packages/prefs/src/pair.ts",
+  "packages/prefs/src/react.ts",
+  "packages/prefs/src/scopedUnit.ts",
+  "packages/prefs/src/snapshot.ts",
+  "packages/prefs/src/sources/policy.ts",
+  "packages/prefs/src/sources/prefsSource.ts",
+  "packages/prefs/src/sources/selectionSource.ts",
+  "packages/prefs/src/sources/valuesSource.ts",
+  "packages/prefs/src/splitCheck.ts",
+  "packages/prefs/src/stamp.ts",
+  "packages/prefs/src/store.ts",
+  "packages/prefs/src/storeWrites.ts",
+  "packages/prefs/src/tabRuns.ts",
+  "packages/prefs/src/tags.ts",
+  "packages/prefs/src/testing/editAssetSet.ts",
+  "packages/prefs/src/type.ts",
+  "packages/prefs/src/usePrefsStore.ts",
+  "packages/prefs/src/vite.ts",
+  "packages/prefs/src/weightAxes.ts"
+ ],
+ "a": 7,
+ "b": 2,
+ "m": 1,
+ "distinct": 8,
+ "chapman": 11,
+ "unfound": 3,
+ "read": {
+  "A": 37,
+  "B": 37
+ },
+ "newCode": {
+  "since": 53,
+  "changedFiles": 1,
+  "findings": 0
+ },
+ "previous": {
+  "round": 53,
+  "chapman": 14.8,
+  "unfound": 3.8
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 24,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1136,
+   "total": 1136
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 22.3,
+   "B": 5.8,
+   "match": 30,
+   "fix": 28.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 2284430,
+  "costUsd": 6.85
+ },
+ "fixCommits": [
+  "0b495609285ca904e6d431c3fff6c05aaeccb003",
+  "7c44ba599b0c8a9f6822f6b9e347356a0d6f2d53",
+  "0c073ecae38bd8b36a0200f124537b675da6bc57",
+  "1eb7bcb5c481383b982f50847432baca997631dd",
+  "4ef636a693bec8d64b04d9aa5d954c470f47e8f1",
+  "6227913d231748a67445f277ea8259230b04dc43",
+  "c240900ea2f6b99d151a1125510a42953dcbb147",
+  "00ad78acafa496fb63dcd63f3c72bdeed69b6749"
+ ]
+}

@@ -1,0 +1,93 @@
+{
+ "id": "labkit.lab.part2",
+ "commit": "70a055a4a838241c80da57b5aa579326d8d95bed",
+ "date": "2026-11-21",
+ "files": [
+  "packages/labkit/src/lab/TriallessPage.tsx",
+  "packages/labkit/src/lab/UnreadableRecords.tsx",
+  "packages/labkit/src/lab/Workspace.less",
+  "packages/labkit/src/lab/Workspace.stories.less",
+  "packages/labkit/src/lab/Workspace.stories.tsx",
+  "packages/labkit/src/lab/Workspace.tsx",
+  "packages/labkit/src/lab/fitCheck.ts",
+  "packages/labkit/src/lab/index.ts",
+  "packages/labkit/src/lab/keyClaims.ts",
+  "packages/labkit/src/lab/labAmbient.ts",
+  "packages/labkit/src/lab/labChords.ts",
+  "packages/labkit/src/lab/labChromeAll.ts",
+  "packages/labkit/src/lab/labContextMenus.ts",
+  "packages/labkit/src/lab/labMenus.ts",
+  "packages/labkit/src/lab/labModes.ts",
+  "packages/labkit/src/lab/labProps.ts",
+  "packages/labkit/src/lab/nebula.ts",
+  "packages/labkit/src/lab/openLab.ts",
+  "packages/labkit/src/lab/owningTrial.ts",
+  "packages/labkit/src/lab/panelHost.ts",
+  "packages/labkit/src/lab/presentation.less",
+  "packages/labkit/src/lab/presentation.tsx",
+  "packages/labkit/src/lab/presentationMessages.ts",
+  "packages/labkit/src/lab/snapshotCommands.ts",
+  "packages/labkit/src/lab/still.ts",
+  "packages/labkit/src/lab/storeCommands.ts",
+  "packages/labkit/src/lab/tileChrome.tsx",
+  "packages/labkit/src/lab/trialless.ts",
+  "packages/labkit/src/lab/useFocusPick.ts",
+  "packages/labkit/src/lab/workspaceStore.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 9,
+ "unfound": 3,
+ "read": {
+  "A": 30,
+  "B": 30
+ },
+ "newCode": {
+  "since": 63,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 63,
+  "chapman": 23,
+  "unfound": 15
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 11,
+  "testFiles": {
+   "failed": 0,
+   "passed": 450,
+   "total": 450
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.4,
+   "B": 5.8,
+   "match": 0.2,
+   "fix": 13.4
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2752267,
+  "costUsd": 7.67
+ },
+ "fixCommits": [
+  "a21a08314594f305f0c5618e031bc6cb862a70cd",
+  "11422482cbfbf767dc052835cd55f3f1cf744c6b",
+  "c0bacc8e045f612d6bace65b05400a35aef2abc7",
+  "9dc22885c28ef8bace65262e758c7ca38904e0ea",
+  "a37746177249f1ee9f44dcdf90afd5c1fd63fcfc"
+ ]
+}
