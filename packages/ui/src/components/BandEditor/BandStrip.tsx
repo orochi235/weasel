@@ -6,11 +6,8 @@ import type { ContinuousScaleFactory } from '@weasel-js/scale';
 import s from './BandEditor.module.css';
 import { bandBounds, type Band } from './bands';
 import { bandName } from './retag';
-import { pct } from './track';
+import { KEY_STEP, pct } from './track';
 import type { ControlHold } from '../Disabled/controlHold';
-
-/** One arrow-key step, as a fraction of the track; `shift` takes ten. */
-const KEY_STEP = 0.01;
 
 /** A seam draws nothing of its own: its line is the stylesheet's. */
 const SEAM_SHAPE = { render: () => null };
@@ -68,6 +65,8 @@ export function BandStrip<T, F extends Quantity>(props: BandStripProps<T, F>): R
   const { toUnit, fromUnit } = props;
 
   const renderRegion = ({ index: i }: { index: number }): ReactNode => {
+    // With no bands the slider still asks for the region after its last thumb.
+    if (bands[i] === undefined) return null;
     const [from, to] = bandBounds(bands, i, lo, hi);
     const isSelected = selectedIndex === i;
     const pinned = i === 0 || i === bands.length - 1;
