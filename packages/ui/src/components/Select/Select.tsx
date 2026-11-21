@@ -16,7 +16,7 @@ import {
 } from 'react-aria-components';
 import { Popover } from '../Popover';
 import { heldItemProps, useHeldAriaRef, useHeldPick } from '../heldItem';
-import { AlignOverTrigger, NO_NUDGE, type Press } from './alignOverTrigger';
+import { AlignOverTrigger, BELOW, NO_NUDGE, type Press } from './alignOverTrigger';
 import { FieldFoot, fieldRootClass, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { useRacField } from '../Field/racField';
@@ -217,7 +217,8 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           placement="bottom start"
           offset={popup === 'over' ? nudge.offset : undefined}
           crossOffset={popup === 'over' ? nudge.crossOffset : undefined}
-          shouldFlip={popup !== 'over'}
+          // With no selected row to land on the trigger, an 'over' list hangs below it and flips like one.
+          shouldFlip={popup !== 'over' || nudge === BELOW}
         >
           {popup === 'over' && (
             <AlignOverTrigger

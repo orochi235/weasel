@@ -15,7 +15,7 @@ export const NO_NUDGE: Nudge = { offset: 0, crossOffset: 0 };
 const EDGE = 12;
 
 /** React Aria's own resting place for a popover: hanging under its trigger. */
-const BELOW: Nudge = { offset: 8, crossOffset: 0 };
+export const BELOW: Nudge = { offset: 8, crossOffset: 0 };
 
 /**
  * Lands the list so its selected row covers the trigger: same text column,
