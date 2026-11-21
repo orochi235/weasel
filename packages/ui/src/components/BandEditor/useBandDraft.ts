@@ -6,10 +6,11 @@ import type { DraftGhostAt } from './DraftGhost';
 import type { RangeEdit } from './RangeEdgeHandle';
 
 /** A drag under way: the bands and range as the pointer has them, which edges it took from where, and the bands
- *  it began from, which a commit is measured against however the caller previewed it. */
+ *  and range it began from, which a commit and the drawn axis are measured against however the caller previewed it. */
 export type Draft<T> = {
   bands: Band<T>[];
   range?: [number, number];
+  axis?: [number, number];
   ghost: DraftGhostAt;
   from?: Band<T>[];
 };
@@ -79,7 +80,8 @@ export function useBandDraft<T>(inputs: BandDraftInputs<T>) {
   const seamCancel = (): void => { setDraft(null); inputs.onCancel?.(); };
 
   const rangeInput = (edge: RangeEdge, edit: RangeEdit<T>): void => {
-    setDraft({ bands: edit.bands, range: edit.range, ghost: { at: edge === 'min' ? min : max } });
+    const axis = draftRef.current?.axis ?? [min, max];
+    setDraft({ bands: edit.bands, range: edit.range, axis, ghost: { at: edge === 'min' ? axis[0] : axis[1] } });
     inputs.onRangeInput?.(edit.range[0], edit.range[1], edit.bands);
   };
   const rangeCommit = (edit: RangeEdit<T>): void => {
