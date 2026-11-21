@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { ToggleChips } from './ToggleChips';
+import s from './ToggleChips.module.css';
 
 const ITEMS = [
   { value: 'a', label: 'A' },
@@ -21,6 +22,13 @@ function Chips({ initial = [], sweep, seen = [] }: { initial?: string[]; sweep?:
 const pressed = () => screen.getAllByRole('button').map((b) => b.getAttribute('aria-pressed'));
 
 describe('ToggleChips', () => {
+  it('holds touches from scrolling only while it sweeps', () => {
+    const { rerender } = render(<Chips />);
+    expect(screen.getByRole('group').classList.contains(s.sweep!)).toBe(false);
+    rerender(<Chips sweep />);
+    expect(screen.getByRole('group').classList.contains(s.sweep!)).toBe(true);
+  });
+
   it('is a named group of toggle buttons, each marking its state', () => {
     render(<ToggleChips aria-label="letters" items={ITEMS} value={['b']} mixedValues={['d']} onChange={() => {}} />);
     expect(screen.getByRole('group', { name: 'letters' })).toBeTruthy();

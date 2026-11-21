@@ -19,7 +19,7 @@ import { freeKeyFrom, isHeldKey, StateProbe, useHeldAriaRef } from '../heldItem'
 import { RowTip } from '../Tree/RowTip';
 import { tooltipContent } from '../Tooltip/buttonTooltip';
 import { useRun } from '../Run';
-import { createRunSlots, slotClass, useRunSlot, type RunSlots } from '../Along/runSlots';
+import { createRunSlots, slotClass, slotStyle, useRunSlot, type RunSlots } from '../Along/runSlots';
 import { TabListAlong } from './TabListAlong';
 import s from './Tabs.module.css';
 
@@ -166,9 +166,9 @@ export function Tab({ children, className, disabled, disabledReason, ...rest }: 
       </RACTab>
     );
   }
-  const { className: _, style, ...at } = slot;
+  const { className: _, style: __, ...at } = slot;
   return (
-    <RACTab {...rest} {...held} {...at} className={slotClass(slot, [s.tab, className].filter(Boolean).join(' '))} style={{ ...(typeof rest.style === 'object' ? rest.style : null), ...style }}>
+    <RACTab {...rest} {...held} {...at} className={slotClass(slot, [s.tab, className].filter(Boolean).join(' '))} style={slotStyle(slot, rest.style)}>
       {body}
     </RACTab>
   );

@@ -1,0 +1,40 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   1,
+   4
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   2
+  ]
+ ],
+ "a": [
+  "ResizeHandle commits through `onChange` a size it never sent through `onInput`",
+  "A muted or plain stacked QuantityText gives a screen reader its value twice",
+  "Another tab's `localStorage.clear()` never reaches the recent-colors list",
+  "Radio drops a consumer's `aria-describedby` whenever it has a description or a disabled reason",
+  "RecentColorsProvider stops recording when its `store` prop goes away after mount",
+  "ReorderHandle's refocus flag can outlive the move and steal focus on a later render"
+ ],
+ "b": [
+  "RecentColorsProvider stops recording when its `store` prop is removed after mount",
+  "Recent-colors store ignores a `storage` event with `key === null`, so another tab clearing localStorage leaves this tab's list stale",
+  "ReorderHandle's pending refocus outlives a nudge whose handle does not re-render, then steals focus later",
+  "ResizeHandle commits a final size on pointer-up that `onInput` never received",
+  "A stacked QuantityText that is muted exposes the value twice to a screen reader",
+  "RadioArc lab keeps a selected value the radios no longer offer when `choices` is lowered"
+ ]
+}

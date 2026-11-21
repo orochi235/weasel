@@ -17,6 +17,13 @@ export interface HandleNode {
 
 export type HandlePoints = Record<HandleId, Point>;
 
+/** `raw` as handle points when it holds a finite point for every handle, else null. */
+export function savedHandles(raw: unknown): HandlePoints | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const points = raw as Partial<Record<HandleId, Partial<Point> | null>>;
+  return HANDLE_IDS.every((id) => Number.isFinite(points[id]?.x) && Number.isFinite(points[id]?.y)) ? (raw as HandlePoints) : null;
+}
+
 /** Degrees clockwise from 12 o'clock of `p` about `c`, in [0, 360): the arc's own terms. */
 export function bearing(p: Point, c: Point): number {
   const deg = Math.atan2(p.x - c.x, c.y - p.y) * RAD_TO_DEG;

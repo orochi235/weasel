@@ -54,14 +54,19 @@ export function plotToModel(p: Point, m: ModelRange, plot: PlotSize): Point {
   };
 }
 
-/** A client point in plot space, given the plot's drawn `rect`: scaled by how its drawn size differs from `plot`'s,
- *  which CSS can make it. A rect with no size, or none, maps unscaled from its origin. */
+/** A client point in plot space, given the plot's drawn `rect`. CSS can size the svg unlike `plot`; its viewBox then
+ *  scales uniformly to fit and centers, as `preserveAspectRatio`'s default does. A rect with no size, or none, maps
+ *  unscaled from its origin. */
 export function clientToPlotPoint(
   e: { clientX: number; clientY: number },
   rect: { left: number; top: number; width: number; height: number } | undefined,
   plot: PlotSize,
 ): Point {
-  const sx = rect && rect.width > 0 ? plot.width / rect.width : 1;
-  const sy = rect && rect.height > 0 ? plot.height / rect.height : 1;
-  return { x: (e.clientX - (rect?.left ?? 0)) * sx, y: (e.clientY - (rect?.top ?? 0)) * sy };
+  const left = rect?.left ?? 0;
+  const top = rect?.top ?? 0;
+  if (!rect || !(rect.width > 0) || !(rect.height > 0)) return { x: e.clientX - left, y: e.clientY - top };
+  const k = Math.min(rect.width / plot.width, rect.height / plot.height);
+  const ox = (rect.width - plot.width * k) / 2;
+  const oy = (rect.height - plot.height * k) / 2;
+  return { x: (e.clientX - left - ox) / k, y: (e.clientY - top - oy) / k };
 }

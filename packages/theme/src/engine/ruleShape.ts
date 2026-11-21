@@ -20,6 +20,18 @@ export function checkProblem(check: unknown): string | undefined {
   return undefined;
 }
 
+const isAlpha = (x: unknown) => isFiniteNumber(x) && x >= 0 && x <= 1;
+
+/** Why a pin or component value (already picked for a selection, seeds resolved) cannot be read, or undefined when its fields have the types they need. */
+export function pinProblem(p: Readonly<Record<string, unknown>>): string | undefined {
+  if (!isTokenValue(p.value)) return 'value must be a string, a number, or a list of those';
+  if (p.type !== undefined && !isString(p.type)) return 'type must be a string';
+  if (p.description !== undefined && !isString(p.description)) return 'description must be a string';
+  if (p.alpha !== undefined && !isAlpha(p.alpha)) return 'alpha must be a number from 0 to 1';
+  if (p.scope !== undefined && !isNames(p.scope)) return 'scope must be a list of axis names';
+  return undefined;
+}
+
 /** Why a semantic rule (already picked for a selection) cannot be read, or undefined when its fields have the types its kind needs. */
 export function ruleProblem(r: Readonly<Record<string, unknown>>): string | undefined {
   if (r.type !== undefined && !isString(r.type)) return 'type must be a string';

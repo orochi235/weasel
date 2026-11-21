@@ -1,6 +1,6 @@
 import { useVisibleRaf } from '@weasel-js/react';
 import { useEffect, useRef, useState } from 'react';
-import { rollingAverage } from './fpsAverage';
+import { frameRate } from './fpsAverage';
 import s from './FpsMeter.module.css';
 
 const SAMPLE_WINDOW = 30;
@@ -24,9 +24,9 @@ export function FpsMeter({ className }: FpsMeterProps) {
         const delta = time - last;
         if (delta > 0) {
           const samples = samplesRef.current;
-          samples.push(1000 / delta);
+          samples.push(delta);
           if (samples.length > SAMPLE_WINDOW) samples.shift();
-          setFps(rollingAverage(samples));
+          setFps(frameRate(samples));
         }
       }
       lastTimeRef.current = time;

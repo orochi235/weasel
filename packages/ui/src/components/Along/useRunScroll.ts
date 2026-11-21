@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { openPointerSession, type PointerSession, swallowNextClick } from '@weasel-js/routing';
 import { isPrimaryPress, modHeld, DRAG_THRESHOLD_PX } from '@weasel-js/gestures';
 import { clamp, lerp, type RunSpot, type TrackRun } from '@weasel-js/geom';
 import { wheelPixels } from '@weasel-js/ui-input';
 import { useKitSetting, useLatest, usePrefersReducedMotion, useVisibleRaf } from '@weasel-js/react';
 import { boxPoint } from './boxPoint';
+import { screenDirection } from './rowRun';
 import type { RunItemsOf, RunKeyOf } from './useItemLengths';
 
 /** Ms over which a glide closes all but 1/e of the way to its target. */
@@ -41,7 +42,8 @@ export interface RunScroll {
 }
 
 /**
- * The offset a curved run's items are laid back by along its run when they run past its end: moved by the wheel,
+ * The offset a curved run's items are laid back by along its run when they run past its end: moved by the wheel
+ * (a sideways one the way it swipes across the screen),
  * by a drag along the run once it travels the `gestures.dragPx` kit setting (unless `modReorders` leaves a press with Cmd, or Ctrl off
  * Apple platforms, to a reorder), and by focus reaching an item past either end.
  * A run whose items fit keeps offset 0 and ignores all three. The wheel and focus glide to where they send the run
@@ -80,6 +82,12 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
     loop.request();
   }, { target: root, onResume: () => { last.current = null; } });
 
+  // A range that shrinks under the offset takes the offset with it, so a later move starts from where the run is drawn.
+  useLayoutEffect(() => {
+    moved.current = Math.min(moved.current, max);
+    if (drawn.current > max) show(max);
+  }, [max]);
+
   const now = (): number => clamp(moved.current, 0, latest.current.max);
   const scrollTo = (next: number, how: 'glide' | 'jump' = 'glide'): boolean => {
     const to = clamp(next, 0, latest.current.max);
@@ -95,7 +103,8 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
   const wheel = useLatest((e: WheelEvent): void => {
     const page = latest.current.run.length;
     const px = wheelPixels(e, { x: page, y: page });
-    const delta = px.y || px.x;
+    // A sideways swipe follows the screen, as the arrow keys do, so it runs a run that reads right to left backward.
+    const delta = px.y || (screenDirection(latest.current.run) === 'rtl' ? -px.x : px.x);
     if (scrollTo(now() + delta)) e.preventDefault();
   });
 

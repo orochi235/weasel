@@ -10,6 +10,7 @@ import {
   Text,
   type ComboBoxProps as RACComboBoxProps,
   type ListBoxItemProps as RACListBoxItemProps,
+  type Key,
 } from 'react-aria-components';
 import { imeKey } from '@weasel-js/ui-input';
 import { Popover } from '../Popover';
@@ -128,6 +129,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   const field = useRacField({ id: rest.id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], invalid, required, labeled: shows(label) });
   const revertingRef = useRef(false);
+  const repickRef = useRef<Key | null>(null);
 
   return hold.wrap(
     <RACComboBox
@@ -141,6 +143,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
       selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={(k) => {
+        repickRef.current = null;
         onSelectionChange?.(k as T | null);
         if (k !== null && !revertingRef.current) onCommit?.({ source: 'option', key: k as T });
       }}
@@ -153,6 +156,8 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
         placeholder={placeholder}
         loading={loading}
         revertingRef={revertingRef}
+        repickRef={repickRef}
+        onCommitOption={onCommit ? (key) => onCommit({ source: 'option', key: key as T }) : undefined}
         onCommitText={onCommit && rest.allowsCustomValue ? (text) => onCommit({ source: 'text', text }) : undefined}
       >
         {width === 'fit' && <FitSizer className={s.sizer} placeholder={placeholder} options={options}>{children}</FitSizer>}
@@ -196,15 +201,21 @@ function ComboBoxFrame({
   placeholder,
   loading,
   revertingRef,
+  repickRef,
+  onCommitOption,
   onCommitText,
   children,
 }: {
   inputRef?: Ref<HTMLInputElement>;
   placeholder?: string;
   loading?: boolean;
-  /** Set while React Aria puts the selection back on a blur, or on an Enter with no option highlighted: with both
-   *  `selectedKey` and `inputValue` controlled it reports that as a selection, which nobody picked. */
+  /** Set while React Aria puts the selection back on a blur, an Escape, or an Enter with no option highlighted: with
+   *  both `selectedKey` and `inputValue` controlled it reports that as a selection, which nobody picked. */
   revertingRef: RefObject<boolean>;
+  /** The selected option an Enter chose again. React Aria reports that only when both `selectedKey` and `inputValue`
+   *  are controlled, and clears this when it does; still set after its handler, the commit is ours to make. */
+  repickRef: RefObject<Key | null>;
+  onCommitOption?: (key: Key) => void;
   onCommitText?: (text: string) => void;
   children?: ReactNode;
 }) {
@@ -214,7 +225,12 @@ function ComboBoxFrame({
   // clears the focused key, so by then there is no way to tell an option
   // commit from a text one.
   const onKeyDownCapture = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter' || imeKey(e.nativeEvent)) return;
+    if (imeKey(e.nativeEvent)) return;
+    if (e.key === 'Escape') {
+      revertingRef.current = true;
+      return;
+    }
+    if (e.key !== 'Enter') return;
     const focused = state?.isOpen ? state.selectionManager.focusedKey : null;
     // React Aria's commit would clear the selection and close the list on a held option.
     if (focused != null && isHeldKey(state!.collection, focused)) {
@@ -222,13 +238,19 @@ function ComboBoxFrame({
       e.stopPropagation();
       return;
     }
-    if (focused != null) return;
+    if (focused != null) {
+      if (state!.selectionManager.isSelected(focused)) repickRef.current = focused;
+      return;
+    }
     revertingRef.current = true;
     const text = e.currentTarget.value;
     if (text !== '') onCommitText?.(text);
   };
   const reverted = () => {
     revertingRef.current = false;
+    const repick = repickRef.current;
+    repickRef.current = null;
+    if (repick != null) onCommitOption?.(repick);
   };
 
   return (

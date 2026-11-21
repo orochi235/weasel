@@ -7,6 +7,10 @@
   gap: var(--wzl-space-1);
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* A sweep is a touch drag across the set, so only a sweeping set keeps the touch from scrolling. */
+.sweep {
   touch-action: none;
 }
 

@@ -10,6 +10,7 @@ import { act, render, screen, fireEvent } from '@testing-library/react';
 
 const listAtlasFonts = vi.fn();
 const listCanvasFonts = vi.fn();
+const listFontOutlines = vi.fn();
 const resolveFontVariant = vi.fn();
 const faces = { generation: 0, listeners: new Set<() => void>() };
 
@@ -17,6 +18,7 @@ vi.mock('@weasel-js/font', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@weasel-js/font')>()),
   listAtlasFonts: () => listAtlasFonts(),
   listCanvasFonts: () => listCanvasFonts(),
+  listFontOutlines: () => listFontOutlines(),
   resolveFontVariant: (...args: unknown[]) => resolveFontVariant(...args),
   faceGeneration: () => faces.generation,
   subscribeGlyphReady: (cb: () => void) => {
@@ -36,11 +38,29 @@ beforeEach(() => {
   listAtlasFonts.mockReset();
   listCanvasFonts.mockReset();
   listCanvasFonts.mockReturnValue([]);
+  listFontOutlines.mockReset();
+  listFontOutlines.mockReturnValue([]);
   resolveFontVariant.mockReset();
   resolveFontVariant.mockReturnValue({ substituted: undefined });
 });
 
 describe('fontFamilyOptions', () => {
+  it('offers a family registered only as outlines, once, and not one whose bytes failed', () => {
+    listAtlasFonts.mockReturnValue([]);
+    listFontOutlines.mockReturnValue([
+      { family: 'Inter', weight: 400, style: 'normal', status: 'ready' },
+      { family: 'Inter', weight: 700, style: 'normal', status: 'ready' },
+      { family: 'Broken', weight: 400, style: 'normal', status: 'failed' },
+    ]);
+    expect(labels({ value: 'Inter' })).toEqual(['Inter']);
+  });
+
+  it('labels a value the canvas policy paints in its own face by its name alone', () => {
+    listAtlasFonts.mockReturnValue([]);
+    resolveFontVariant.mockReturnValue({ entry: null, dynamicFace: {}, source: 'canvas' });
+    expect(labels({ value: 'Georgia' })).toEqual(['Georgia']);
+  });
+
   it('offers every registered family', () => {
     listAtlasFonts.mockReturnValue([
       { family: 'sans-serif', variants: [{ weight: 400, style: 'normal' }] },

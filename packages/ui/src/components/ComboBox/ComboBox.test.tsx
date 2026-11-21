@@ -122,6 +122,51 @@ describe('ComboBox keyboard navigation', () => {
     expect((screen.getByRole('combobox') as HTMLInputElement).value).toBe('Red');
   });
 
+  it('commits nothing on an Escape that puts a controlled selection\'s text back', async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn();
+    function Controlled() {
+      const [text, setText] = useState('Red');
+      const [key, setKey] = useState<'r' | 'g' | 'b' | null>('r');
+      return (
+        <ComboBox label="Color" options={OPTIONS} selectedKey={key} inputValue={text} onInputChange={setText}
+          onSelectionChange={(k) => { setKey(k); setText(OPTIONS.find((o) => o.value === k)?.label ?? ''); }}
+          onCommit={onCommit} />
+      );
+    }
+    render(<Controlled />);
+    await user.click(screen.getByRole('combobox'));
+    await user.keyboard('xy{Escape}');
+    expect(onCommit).not.toHaveBeenCalled();
+    expect((screen.getByRole('combobox') as HTMLInputElement).value).toBe('Red');
+  });
+
+  it('commits the already-selected option again on Enter', async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn();
+    render(<ComboBox label="Color" options={OPTIONS} defaultSelectedKey="g" onCommit={onCommit} />);
+
+    await user.click(screen.getByRole('button', { name: /Show options/ }));
+    await screen.findByRole('option', { name: 'Green' });
+    const input = screen.getByRole('combobox');
+    const focused = input.getAttribute('aria-activedescendant');
+    expect(document.getElementById(focused!)?.textContent).toBe('Green');
+    await user.keyboard('{Enter}');
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith({ source: 'option', key: 'g' });
+  });
+
+  it('commits the already-selected option again on a click', async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn();
+    render(<ComboBox label="Color" options={OPTIONS} defaultSelectedKey="g" onCommit={onCommit} />);
+
+    await user.click(screen.getByRole('button', { name: /Show options/ }));
+    await user.click(await screen.findByRole('option', { name: 'Green' }));
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith({ source: 'option', key: 'g' });
+  });
+
   it('commits a picked option on click', async () => {
     const user = userEvent.setup();
     const onCommit = vi.fn();

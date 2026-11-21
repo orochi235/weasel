@@ -1,0 +1,98 @@
+{
+ "id": "apps.site.demos.part4",
+ "commit": "deaf03bd8ed407174fa289a1262d2699ffbe97db",
+ "date": "2026-11-20",
+ "files": [
+  "apps/site/demos/PdfDemo.module.css",
+  "apps/site/demos/PdfDemo.tsx",
+  "apps/site/demos/PerAxisZoomDemo.module.css",
+  "apps/site/demos/PerAxisZoomDemo.tsx",
+  "apps/site/demos/PerceptualColorSlidersDemo.module.css",
+  "apps/site/demos/PerceptualColorSlidersDemo.tsx",
+  "apps/site/demos/PinWarpLabDemo.tsx",
+  "apps/site/demos/PinWarpSolverLabDemo.tsx",
+  "apps/site/demos/PlaneWarpLabDemo.tsx",
+  "apps/site/demos/PlotKindsDemo.tsx",
+  "apps/site/demos/PlotXyChartDemo.tsx",
+  "apps/site/demos/PoiseLabDemo.tsx",
+  "apps/site/demos/PoseBlendDemo.tsx",
+  "apps/site/demos/PrefConditionDiagramDemo.module.css",
+  "apps/site/demos/PrefConditionDiagramDemo.tsx",
+  "apps/site/demos/PrefsDemo.module.css",
+  "apps/site/demos/PrefsDemo.tsx",
+  "apps/site/demos/PrefsEditorDemo.module.css",
+  "apps/site/demos/PrefsEditorDemo.tsx",
+  "apps/site/demos/PrefsSchemaDemo.module.css",
+  "apps/site/demos/PrefsSchemaDemo.tsx",
+  "apps/site/demos/PresentationDemo.css",
+  "apps/site/demos/PresentationDemo.tsx",
+  "apps/site/demos/QuadtreeDemo.tsx",
+  "apps/site/demos/QuantityDemo.module.css",
+  "apps/site/demos/QuantityDemo.tsx",
+  "apps/site/demos/ReachLabDemo.tsx",
+  "apps/site/demos/ReactDemo.module.css",
+  "apps/site/demos/ReactDemo.tsx",
+  "apps/site/demos/RectPathEditLabDemo.module.css",
+  "apps/site/demos/RectPathEditLabDemo.tsx",
+  "apps/site/demos/RegistryDemo.module.css",
+  "apps/site/demos/RegistryDemo.tsx",
+  "apps/site/demos/RenderToPixelsDemo.tsx",
+  "apps/site/demos/RepeatAlongLabDemo.tsx",
+  "apps/site/demos/ResampleLabDemo.tsx",
+  "apps/site/demos/ResizeSnapDemo.tsx",
+  "apps/site/demos/RigDemo.tsx",
+  "apps/site/demos/RigToolsDemo.tsx",
+  "apps/site/demos/RotatedResizeMathDemo.css",
+  "apps/site/demos/RotatedResizeMathDemo.tsx",
+  "apps/site/demos/RoutingDemo.module.css",
+  "apps/site/demos/RoutingDemo.tsx",
+  "apps/site/demos/RulersDemo.tsx",
+  "apps/site/demos/SandLabDemo.tsx",
+  "apps/site/demos/ScaleDemo.module.css",
+  "apps/site/demos/ScaleDemo.tsx",
+  "apps/site/demos/SceneDemo.tsx"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 1,
+ "distinct": 3,
+ "chapman": 3.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 48,
+  "B": 48
+ },
+ "newCode": {
+  "since": 36,
+  "changedFiles": 27,
+  "findings": 2
+ },
+ "previous": {
+  "round": 36,
+  "chapman": 5.428571428571429,
+  "unfound": 2.326530612244898
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.8,
+   "B": 6.1,
+   "match": 4.7,
+   "fix": 5.7
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2362212,
+  "costUsd": 6.77
+ },
+ "fixCommits": [
+  "68c56b5a55d84c9b8517f8ea8070830388445662",
+  "e5322b3e75b7e2c1ba8e45e83e71ca30b866050f",
+  "478fa71d382a7fd47e06977948f1e1bd1d555fd4"
+ ]
+}

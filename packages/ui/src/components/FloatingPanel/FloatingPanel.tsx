@@ -1,4 +1,4 @@
-import { type ReactNode, useRef, useState } from 'react';
+import { type ReactNode, useMemo, useRef, useState } from 'react';
 import { type Corner, DEFAULT_ANCHOR, DEFAULT_INSET, type FloatingPlacement } from 'windease';
 import { useFloatingPlacement } from './useFloatingPlacement';
 import s from './FloatingPanel.module.css';
@@ -35,8 +35,10 @@ export function FloatingPanel({
   className,
 }: FloatingPanelProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [own, setOwn] = useState<FloatingPlacement>(() => ({ x: 0, y: 0, anchor }));
-  const placement = value ?? own;
+  // Null until the first drag, so the resting corner follows `anchor` until then.
+  const [own, setOwn] = useState<FloatingPlacement | null>(null);
+  const resting = useMemo<FloatingPlacement>(() => ({ x: 0, y: 0, anchor }), [anchor]);
+  const placement = value ?? own ?? resting;
   const { style, startDrag, dragging, placed } = useFloatingPlacement({
     panelRef: ref,
     placement,

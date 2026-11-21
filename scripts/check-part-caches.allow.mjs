@@ -3,6 +3,7 @@ export const PART_CACHE_ALLOWED = new Map([
   // core
   ['packages/core/src/canvas/canvasBackend.ts', 'set to the backend a caller chose, and read without being made'],
   ['packages/core/src/canvas/canvasRenderer.ts', ['the tenants of a canvas and its lease, each deleted when the last one goes', 2]],
+  ['packages/core/src/canvas/nodeOutline.ts', 'replaced when the painters or their geometry generations change'],
   ['packages/core/src/canvas/nodeShapeRegistry.ts', ["`orders` is replaced when the memo generation moves; `tiersOf` is read without being made", 2]],
   ['packages/core/src/canvas/nodeShapes/derivedPainter.ts', 'the entry turns on the pose and is replaced when it changes'],
   ['packages/core/src/canvas/renderWorker/liveClients.ts', 'entries are deleted on release'],
@@ -74,6 +75,7 @@ export const PART_CACHE_ALLOWED = new Map([
   ['packages/routing/src/interactions/dispatcher/channels/keyPeers.ts', 'deleted when empty, and read when iterated'],
   ['packages/routing/src/interactions/dispatcher/useKeyLease.ts', 'a count that is replaced and deleted'],
   ['packages/ui-input/src/selection.ts', 'set from the caller\'s mode and value, and copied between edits'],
+  ['packages/ui/src/components/Dialog/ContainedModal.tsx', 'a count of holds, lowered on release and deleted with the last'],
   ['packages/ui/src/components/Prefs/dropTarget.ts', 'replaced with a fresh measurement'],
   ['packages/ui/src/components/Toast/queue.ts', ['set in a constructor and read as a lookup; or read without being made', 2]],
   ['packages/ui/src/overlays/overlayFrame.ts', ['a frame test overwritten with measured sizes; or holds the boundary made beside the frame', 2]],

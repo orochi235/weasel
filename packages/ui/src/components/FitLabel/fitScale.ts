@@ -72,6 +72,7 @@ export class ScaleStage implements FitScale {
   private readonly dirty = new Set<string>();
   private queued = false;
   private resize: ResizeObserver | null = null;
+  private fonts: FontFaceSet | undefined;
   private scale: number | null = null;
   min: number;
 
@@ -101,13 +102,15 @@ export class ScaleStage implements FitScale {
       this.resize = new ResizeObserver(this.resized);
       for (const m of this.members.values()) this.resize.observe(m.el);
     }
-    document.fonts?.addEventListener?.('loadingdone', this.markAll);
+    this.fonts = (this.scope.current?.ownerDocument ?? document).fonts;
+    this.fonts?.addEventListener?.('loadingdone', this.markAll);
   }
 
   detach(): void {
     this.resize?.disconnect();
     this.resize = null;
-    document.fonts?.removeEventListener?.('loadingdone', this.markAll);
+    this.fonts?.removeEventListener?.('loadingdone', this.markAll);
+    this.fonts = undefined;
   }
 
   join<T extends ScaleFit>(id: string, { el, measure, onFit, same = sameFit }: ScaleMember<T>): void {

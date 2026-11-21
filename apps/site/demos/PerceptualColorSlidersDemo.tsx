@@ -213,10 +213,11 @@ export function PerceptualColorSlidersDemo() {
     const l = L_BOUNDS[mode];
     const c = CHROMA_BOUNDS[mode];
     setBoundsMode(mode);
-    setLRange(prev => [
-      Math.max(prev[0], l.dark[0]),
-      Math.min(prev[1], l.light[1]),
-    ]);
+    setLRange(prev => {
+      const dark = Math.max(prev[0], l.dark[0]);
+      const light = Math.min(Math.max(prev[1], dark), l.light[1]);
+      return [Math.min(dark, light), light];
+    });
     setChroma(prev => ({
       cTop:  Math.min(prev.cTop,  c.cTop[1]),
       cPeak: Math.min(prev.cPeak, c.cPeak[1]),
@@ -281,11 +282,13 @@ export function PerceptualColorSlidersDemo() {
           />
         </Field>
 
-        <Field label="Indices band (dynamic, allowShiftAll)" output={indices.join(', ')}>
+        <Field label="Indices band (dynamic, ordered, allowShiftAll)" output={indices.join(', ')}>
           <Slider
             min={0} max={1000} step={1}
+            constraint="ordered"
             thumbs={indices.map(value => ({ value }))}
-            onInput={ts => setIndices(ts.map(t => Math.round(t.value)).sort((a, b) => a - b))}
+            onInput={ts => setIndices(ts.map(t => Math.round(t.value)))}
+            onChange={ts => setIndices(ts.map(t => Math.round(t.value)).sort((a, b) => a - b))}
             onAddThumb={at => ({ value: Math.round(at) })}
             onRemoveThumb={() => true}
             allowShiftAll

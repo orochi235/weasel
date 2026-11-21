@@ -67,6 +67,32 @@ describe('a theme that declares a ramp or scale', () => {
     expect(mergeChain(child, lookup).pins).toEqual({ radius: '4px', 'gray-b': '#111111' });
   });
 
+  it("drops the parent's pins on the semantics and components it defines itself", () => {
+    const child: ThemeDefinition = {
+      name: 'c',
+      extends: 'p',
+      semantics: { radius: { value: '6px' } },
+      components: { 'space-sm': '8px' },
+    };
+    expect(mergeChain(child, lookup).pins).toEqual({ 'gray-a': '#ffffff', 'gray-b': '#000000' });
+  });
+
+  it("fills its own by-axis pin from the parent's only where it does not produce the token itself", () => {
+    const axes = { mode: { default: 'dark', values: { dark: {}, light: {} } } };
+    const child: ThemeDefinition = {
+      name: 'c',
+      extends: 'p',
+      axes,
+      ramps: { gray: { kind: 'lightness', steps: ['a', 'b'], lightness: [0.8, 0.3] } },
+      pins: { 'gray-a': { by: 'mode', dark: '#111111' }, radius: { by: 'mode', dark: '2px' } },
+    };
+    expect(mergeChain(child, lookup).pins).toMatchObject({
+      'gray-a': { by: 'mode', dark: '#111111' },
+      radius: { by: 'mode', dark: '2px', light: '4px' },
+    });
+    expect(mergeChain(child, lookup).pins?.['gray-a']).not.toHaveProperty('light');
+  });
+
   it('keeps every inherited pin when it only inherits the ramp', () => {
     expect(mergeChain({ name: 'c', extends: 'p' }, lookup).pins).toEqual(parent.pins);
   });

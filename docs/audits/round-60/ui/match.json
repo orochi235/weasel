@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   7,
+   0
+  ]
+ ],
+ "a": [
+  "useRovingTabIndex splits a grid into rows of a fractional `columns`, where `tiling` lays it out floored",
+  "nodeText reads a bigint or a non-array iterable child as no text",
+  "useScrollSpy's `ids` are documented as element ids, but sections are found by `data-spy-section`",
+  "useRemovedRowFocus loses focus to the page when the focused row is remounted under the same id",
+  "createDomFocusScope enters an unchecked radio group at its first radio going backward too",
+  "ui's dlog example enables two namespaces that nothing logs under",
+  "createDomFocusScope's tab order leaves out media elements with controls",
+  "useScrollSpy never listens to a container that mounts after the hook does",
+  "useRovingTabIndex moves focus on modified arrows and Home/End, and swallows browser chords"
+ ],
+ "b": [
+  "useScrollSpy never subscribes when its container mounts after the hook's first effect",
+  "useScrollSpy's active section goes stale when the container resizes or its sections reflow without a scroll",
+  "useRovingTabIndex counts hidden items as stops, so an arrow key can move the tab stop onto an item that can't take focus",
+  "createDomMeasureEnv measures every document's text on a canvas owned by the first document it saw"
+ ]
+}

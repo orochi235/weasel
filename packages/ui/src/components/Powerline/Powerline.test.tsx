@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Powerline } from './Powerline';
 import { Badge } from '../Badge';
 import type { EdgeCap } from '../Badge/bases/edgeProfiles';
@@ -62,6 +62,13 @@ describe('Powerline', () => {
     fireEvent.click(getByText('go'));
     expect(second()).not.toBe(before);
     expect(second()).toBe(fills(['chevron', undefined])[1]);
+  });
+
+  it('gives the left edge a flat cap again when its neighbor is replaced by a child that reports none', () => {
+    const row = (first: ReactNode) => <Powerline variant="solid">{first}<Badge>b</Badge></Powerline>;
+    const { container, rerender } = render(row(<Badge key="a" endCap="chevron">a</Badge>));
+    rerender(row(<span key="plain">plain</span>));
+    expect(container.querySelector('.badge-fill')?.getAttribute('d')).toBe(fills([undefined])[0]);
   });
 
   it('applies row-level variant and size defaults, and lets a badge’s own win', () => {

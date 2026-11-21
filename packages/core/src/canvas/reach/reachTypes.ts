@@ -35,8 +35,9 @@ export interface ReachQuery {
   readonly regions: readonly (ReachRegion | undefined)[];
 }
 
-/** Where a container paints its children again: the image of a box under one copy. */
-export type BoxImage = (src: Float64Array, at: number, out: Float64Array, outAt: number) => void;
+/** Where a container paints its children again: the image of a box under one copy, written at `out[outAt…]`.
+ *  Answering `BOX_ALL` says no finite box holds it; no answer, or `BOX_SOME`, that `out` does. */
+export type BoxImage = (src: Float64Array, at: number, out: Float64Array, outAt: number) => BoxKind | void;
 
 /** The tree a reach tree indexes, and the box each of its nodes owns. */
 export interface ReachSource {

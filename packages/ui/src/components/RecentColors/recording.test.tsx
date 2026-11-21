@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { ReactNode } from 'react';
-import { screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import type { GradientPaint } from '@weasel-js/paint';
 import { ColorField } from '../ColorField';
 import { FillStrokeSwatch } from '../FillStrokeSwatch';
@@ -8,7 +8,7 @@ import { GradientEditor } from '../GradientEditor';
 import { PaintInput } from '../PaintInput';
 import { SwatchGrid } from '../SwatchGrid';
 import { createRecentColorsStore } from './recentColors';
-import { RecentColorsProvider } from './RecentColorsProvider';
+import { RecentColorsProvider, useRecentColorsStore } from './RecentColorsProvider';
 import { renderWithIcons } from '../../testing/withIcons';
 
 function setup(ui: ReactNode) {
@@ -104,5 +104,15 @@ describe('recent-color recording', () => {
     );
     pickInSwatch('Stroke', '#123456');
     expect(store.get()).toEqual(['#12345680']);
+  });
+
+  it('falls back to a default store when its store is taken away after mount', () => {
+    function Shown() {
+      return <span data-testid="has-store">{String(useRecentColorsStore() !== null)}</span>;
+    }
+    const store = createRecentColorsStore({ storage: null });
+    const { rerender } = render(<RecentColorsProvider store={store}><Shown /></RecentColorsProvider>);
+    rerender(<RecentColorsProvider><Shown /></RecentColorsProvider>);
+    expect(screen.getByTestId('has-store').textContent).toBe('true');
   });
 });

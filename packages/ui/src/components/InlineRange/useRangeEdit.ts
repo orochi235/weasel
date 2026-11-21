@@ -6,7 +6,7 @@ import { useAttachRef } from '../../useAttachRef';
 /**
  * A range's edit callbacks, `docs/conventions.md` ("Edit callbacks") under value names, since `onInput`,
  * `onChange` and `onCancel` are the native element's own events: `onValueInput` previews each move,
- * `onValueChange` commits once per drag or key step, and `onValueCancel` follows Escape mid-drag or an unmount.
+ * `onValueChange` commits once per drag or key step, and `onValueCancel` follows Escape mid-drag, a canceled pointer, or an unmount.
  */
 export interface RangeEditProps {
   onValueInput?: (next: number) => void;
@@ -68,15 +68,27 @@ export function useRangeEdit(value: number, cb: RangeEditProps, refuses: boolean
       commit();
     };
     // Whether a browser fires `change` before the release or after it, or not at all for a drag back to where it began.
+    const unlisten = () => {
+      document.removeEventListener('pointerup', onRelease);
+      document.removeEventListener('pointercancel', onLost);
+    };
     const onRelease = () => {
       if (edit?.canceled) edit = null;
       else released = commit()?.last ?? released;
-      document.removeEventListener('pointerup', onRelease);
-      document.removeEventListener('pointercancel', onRelease);
+      unlisten();
+    };
+    // A pointer the browser took (a scroll, a pinch) cancels; the `change` that may trail it is an echo of the drag.
+    const onLost = () => {
+      if (edit && !edit.canceled) {
+        cancel(edit);
+        released = edit.last;
+      }
+      edit = null;
+      unlisten();
     };
     const onPress = () => {
       document.addEventListener('pointerup', onRelease);
-      document.addEventListener('pointercancel', onRelease);
+      document.addEventListener('pointercancel', onLost);
     };
     const onKey = (ev: KeyboardEvent) => {
       if (ev.key !== 'Escape' || edit === null || edit.canceled) return;
@@ -88,7 +100,7 @@ export function useRangeEdit(value: number, cb: RangeEditProps, refuses: boolean
       else commit();
     };
     const listeners = {
-      input: onInput, change: onChange, pointerdown: onPress, pointerup: onRelease, pointercancel: onRelease, keydown: onKey, blur: onBlur,
+      input: onInput, change: onChange, pointerdown: onPress, pointerup: onRelease, pointercancel: onLost, keydown: onKey, blur: onBlur,
     } as const;
     for (const [type, fn] of Object.entries(listeners)) el.addEventListener(type, fn as EventListener);
     return () => {

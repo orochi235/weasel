@@ -23,37 +23,21 @@ export function useHoldReason(held: string | undefined): HoldReasonParts {
   const note = useRef<HTMLSpanElement>(null);
   const target = useRef<Element | null>(null);
   const [open, setOpen] = useState(false);
+  const opener = useRef(setOpen);
+  const bound = useRef<{ el: Element | null; reason: string | undefined; stop: () => void } | null>(null);
 
+  // The control can be replaced while the reason stays, so which element it is gets checked on every commit.
   useEffect(() => {
-    const el = note.current?.previousElementSibling;
-    if (!reason || !el) return;
+    const el = (reason && note.current?.previousElementSibling) || null;
+    if (bound.current?.el === el && bound.current.reason === reason) return;
+    bound.current?.stop();
     target.current = el;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const show = (now: boolean) => () => {
-      clearTimeout(timer);
-      if (now) setOpen(true);
-      else timer = setTimeout(() => setOpen(true), TOOLTIP_DELAY_MS);
-    };
-    const leave = (e: Event) => {
-      if (el.contains((e as PointerEvent | FocusEvent).relatedTarget as Node | null)) return;
-      clearTimeout(timer);
-      setOpen(false);
-    };
-    const over = show(false);
-    const focus = show(true);
-    el.addEventListener('pointerover', over);
-    el.addEventListener('pointerout', leave);
-    el.addEventListener('focusin', focus);
-    el.addEventListener('focusout', leave);
-    return () => {
-      clearTimeout(timer);
-      el.removeEventListener('pointerover', over);
-      el.removeEventListener('pointerout', leave);
-      el.removeEventListener('focusin', focus);
-      el.removeEventListener('focusout', leave);
-      setOpen(false);
-    };
-  }, [reason]);
+    bound.current = { el, reason, stop: el ? follow(el, opener.current) : () => {} };
+  });
+  useEffect(() => () => {
+    bound.current?.stop();
+    bound.current = null;
+  }, []);
 
   return {
     describedBy: reason ? id : undefined,
@@ -71,4 +55,33 @@ export function useHoldReason(held: string | undefined): HoldReasonParts {
 export function describedBy(...ids: (string | undefined)[]): string | undefined {
   const joined = [...new Set(ids.flatMap((list) => list?.split(/\s+/) ?? []).filter(Boolean))].join(' ');
   return joined || undefined;
+}
+
+/** Opens the tooltip while `el` is pointed at (after the tooltip delay) or focused; returns the release. */
+function follow(el: Element, setOpen: (open: boolean) => void): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const show = (now: boolean) => () => {
+    clearTimeout(timer);
+    if (now) setOpen(true);
+    else timer = setTimeout(() => setOpen(true), TOOLTIP_DELAY_MS);
+  };
+  const leave = (e: Event) => {
+    if (el.contains((e as PointerEvent | FocusEvent).relatedTarget as Node | null)) return;
+    clearTimeout(timer);
+    setOpen(false);
+  };
+  const over = show(false);
+  const focus = show(true);
+  el.addEventListener('pointerover', over);
+  el.addEventListener('pointerout', leave);
+  el.addEventListener('focusin', focus);
+  el.addEventListener('focusout', leave);
+  return () => {
+    clearTimeout(timer);
+    el.removeEventListener('pointerover', over);
+    el.removeEventListener('pointerout', leave);
+    el.removeEventListener('focusin', focus);
+    el.removeEventListener('focusout', leave);
+    setOpen(false);
+  };
 }

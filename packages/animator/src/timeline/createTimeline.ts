@@ -49,6 +49,8 @@ export function createTimeline(
   opts: TimelineOptions,
   report?: TimelineReport,
   hold?: OpenTrackHold,
+  /** -1 while the animator plays every animation backward. */
+  direction: () => number = () => 1,
 ): TimelineHandle {
   const pos = createPlayhead(tracksEnd(opts.tracks, opts.duration), opts.loop ?? false);
   let lastVirtual = 0;
@@ -107,7 +109,7 @@ export function createTimeline(
   /** Put a finished timeline back on the animator's table. A re-registered
    *  entry's `virtualNow` restarts at 0, so `offset` carries the playhead. */
   const rearm = (): void => {
-    if (canceled || pos.atEnd(entry.wantScale() < 0)) return;
+    if (canceled || pos.atEnd(entry.wantScale() * direction() < 0)) return;
     done = false;
     if (entry.live()) return;
     crossings.rearm();

@@ -8,9 +8,9 @@ export type Lookup = (name: string) => ThemeDefinition | undefined;
 
 const LAYERS = ['seeds', 'ramps', 'scales', 'semantics', 'components', 'pins'] as const;
 
-/** Steps of the ramps and scales `def` declares itself at every selection, which it generates rather than inherits pinned. */
-function ownSteps(def: ThemeDefinition): Set<string> {
-  const names = new Set<string>();
+/** Tokens `def` produces itself at every selection (its ramp and scale steps, semantics, and components), which it derives rather than inherits pinned. */
+function ownTokens(def: ThemeDefinition): Set<string> {
+  const names = new Set<string>([...Object.keys(def.semantics ?? {}), ...Object.keys(def.components ?? {})]);
   for (const layer of [def.ramps, def.scales]) {
     for (const [name, entry] of Object.entries(layer ?? {})) for (const step of alwaysDeclaredSteps(entry)) names.add(`${name}-${step}`);
   }
@@ -39,11 +39,12 @@ export function mergeChain(def: ThemeDefinition, lookup?: Lookup, seen: Readonly
   const parent = mergeChain(parentDef, lookup, new Set([...seen, def.name]));
   const out: Record<string, unknown> = { ...def };
   for (const layer of LAYERS) out[layer] = { ...(parent[layer] ?? {}), ...(def[layer] ?? {}) };
-  const shadowed = ownSteps(def);
+  const shadowed = ownTokens(def);
   const inherited = Object.entries(parent.pins ?? {}).filter(([name]) => !shadowed.has(name));
   const axes = mergeAxes(parent.axes ?? {}, def.axes ?? {});
   const parentPins: Record<string, unknown> = parent.pins ?? {};
-  const own = Object.entries(def.pins ?? {}).map(([name, v]) => [name, fillFromParent(v, getOwn(parentPins, name), axes)]);
+  const parentPin = (name: string) => (shadowed.has(name) ? undefined : getOwn(parentPins, name));
+  const own = Object.entries(def.pins ?? {}).map(([name, v]) => [name, fillFromParent(v, parentPin(name), axes)]);
   out.pins = { ...Object.fromEntries(inherited), ...Object.fromEntries(own) };
   out.axes = axes;
   out.tints = def.tints ?? parent.tints;

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import {
   Modal as RACModal,
   ModalOverlay,
@@ -7,6 +7,7 @@ import {
   type ModalOverlayProps,
   type DialogProps as RACDialogProps,
 } from 'react-aria-components';
+import { filterDOMProps } from 'react-aria/filterDOMProps';
 import { useContainedRoot, useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
 import { ContainedModal } from './ContainedModal';
 import { Button, CLOSE_BUTTON_PROPS } from '../Button';
@@ -52,6 +53,9 @@ export type DialogProps = Omit<
     bodyClassName?: string;
   };
 
+/** `ModalOverlay` props a contained dialog cannot honor, which it warns about rather than drops. */
+const CONTAINED_UNHELD = ['onEnter', 'onExit', 'UNSTABLE_deferUntilEntered', 'render'] as const;
+
 /**
  * Modal dialog wrapping React Aria. Supplies a default header (title +
  * close), scrollable body, and footer slot. Pass `open` + `onOpenChange`
@@ -89,6 +93,10 @@ export function Dialog(props: DialogProps) {
   const showClose = showCloseButton ?? Boolean(onOpenChange);
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   const containedRoot = useContainedRoot(portalContainer);
+  const unheld = containedRoot ? CONTAINED_UNHELD.filter((k) => rest[k] !== undefined).join(', ') : '';
+  useEffect(() => {
+    if (unheld) console.warn(`weasel: a Dialog in a contained portal has no exit animation or custom render, so it ignores ${unheld}.`);
+  }, [unheld]);
   const box = (close: () => void) => (
     <>
       {(title !== undefined || showClose) && (
@@ -128,6 +136,10 @@ export function Dialog(props: DialogProps) {
         overlayClassName={s.overlay}
         modalClassName={[s.modal, className].filter(Boolean).join(' ')}
         modalProps={appearance}
+        overlayProps={filterDOMProps(rest, { global: true })}
+        overlayStyle={rest.style}
+        isEntering={rest.isEntering}
+        isExiting={rest.isExiting}
       >
         <RACDialog role={role} className={s.dialog} aria-label={ariaLabel}>
           {({ close }) => box(close)}

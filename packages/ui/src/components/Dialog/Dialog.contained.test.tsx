@@ -1,11 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import userEvent from '@testing-library/user-event';
 import { Button, DialogTrigger } from 'react-aria-components';
 import { renderWithIcons } from '../../testing/withIcons';
 import { OverlayPortalProvider } from '../../overlays/portalHost';
 import { Dialog } from './Dialog';
+import { inertOutside } from './ContainedModal';
 
 /** A page with chrome outside a box that stands in for the viewport, the way a workshop holds one story. */
 function Page({ open, onOpenChange, keep }: { open: boolean; onOpenChange?: (open: boolean) => void; keep?: (el: Element) => boolean }) {
@@ -94,5 +95,102 @@ describe('Dialog in a contained portal', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'open' }));
     expect(screen.getByRole('dialog', { name: 'Prefs' })).toBeTruthy();
+  });
+
+  it('keeps the box inert while a dialog stacked on it stays open after the one under it closes', () => {
+    function Stacked({ first, second }: { first: boolean; second: boolean }) {
+      const [box, setBox] = useState<HTMLDivElement | null>(null);
+      return (
+        <div ref={setBox}>
+          <div data-testid="story"><button type="button">trigger</button></div>
+          {box ? (
+            <OverlayPortalProvider container={box} contained>
+              <Dialog open={first} title="First"><button type="button">one</button></Dialog>
+              <Dialog open={second} title="Second"><button type="button">two</button></Dialog>
+            </OverlayPortalProvider>
+          ) : null}
+        </div>
+      );
+    }
+    const { rerender } = renderWithIcons(<Stacked first second={false} />);
+    act(() => rerender(<Stacked first second />));
+    act(() => rerender(<Stacked first={false} second />));
+    expect(screen.getByTestId('story').hasAttribute('inert')).toBe(true);
+    expect(screen.getByRole('dialog', { name: 'Second' }).closest('[inert]')).toBeNull();
+    act(() => rerender(<Stacked first={false} second={false} />));
+    expect(screen.getByTestId('story').hasAttribute('inert')).toBe(false);
+  });
+});
+
+describe('Dialog in a contained portal, given ModalOverlay props', () => {
+  it('puts them on its overlay as the portal path does', () => {
+    function Styled() {
+      const [box, setBox] = useState<HTMLDivElement | null>(null);
+      return (
+        <div ref={setBox}>
+          {box ? (
+            <OverlayPortalProvider container={box} contained>
+              <Dialog open isExiting data-testid="overlay" title="Prefs"
+                style={({ isExiting }) => ({ opacity: isExiting ? 0.5 : 1 })}>
+                <button type="button">inside</button>
+              </Dialog>
+            </OverlayPortalProvider>
+          ) : null}
+        </div>
+      );
+    }
+    renderWithIcons(<Styled />);
+    const overlay = screen.getByTestId('overlay');
+    expect(overlay.hasAttribute('data-contained')).toBe(true);
+    expect(overlay.hasAttribute('data-exiting')).toBe(true);
+    expect(overlay.style.opacity).toBe('0.5');
+  });
+
+  it('warns about the ones it cannot honor', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    function Animated() {
+      const [box, setBox] = useState<HTMLDivElement | null>(null);
+      return (
+        <div ref={setBox}>
+          {box ? (
+            <OverlayPortalProvider container={box} contained>
+              <Dialog open onExit={() => {}} title="Prefs"><button type="button">inside</button></Dialog>
+            </OverlayPortalProvider>
+          ) : null}
+        </div>
+      );
+    }
+    renderWithIcons(<Animated />);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('ignores onExit'));
+    warn.mockRestore();
+  });
+});
+
+describe('inertOutside', () => {
+  it('makes inert what joins the root while it holds, but not an overlay', async () => {
+    const root = document.createElement('div');
+    const keep = document.createElement('div');
+    root.append(keep);
+    document.body.append(root);
+    const release = inertOutside(root, keep);
+    const late = document.createElement('div');
+    const overlay = document.createElement('div');
+    overlay.setAttribute('data-weasel-overlay', '');
+    root.append(late, overlay);
+    await waitFor(() => expect(late.hasAttribute('inert')).toBe(true));
+    expect(overlay.hasAttribute('inert')).toBe(false);
+    release();
+    expect(late.hasAttribute('inert')).toBe(false);
+    root.remove();
+  });
+
+  it('leaves alone what was inert before it', () => {
+    const root = document.createElement('div');
+    const keep = document.createElement('div');
+    const before = document.createElement('div');
+    before.setAttribute('inert', '');
+    root.append(keep, before);
+    inertOutside(root, keep)();
+    expect(before.hasAttribute('inert')).toBe(true);
   });
 });

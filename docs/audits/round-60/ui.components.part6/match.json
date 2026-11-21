@@ -1,0 +1,33 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   4,
+   2
+  ]
+ ],
+ "a": [
+  "Alt+Left/Right inside a tab's rename field moves the page instead of the caret",
+  "A rename cut off by a hold reopens when the hold lifts",
+  "A bar cell's source answers a sibling leaf without its default, unlike every other params surface",
+  "An image read that finishes after the picker is held still commits",
+  "The size bar lights \"M\" for a texture paint, and pressing any size does nothing",
+  "A Powerline segment takes a stale left cap from a child that no longer reports one",
+  "With `over` a `PrefSection`, aliases inside a bar's menu group resolve against the wrong schema and vanish",
+  "An SVG with no width/height is stored square, losing its viewBox aspect"
+ ],
+ "b": [
+  "Alt+Left/Right while renaming a page tab moves the tab instead of the caret",
+  "An image upload in PatternPicker commits through the hold and `onChange` of the render that started it",
+  "PatternPicker's size bar lights \"M\" for a `texture` paint and its presses do nothing",
+  "Plot2D maps client points with independent x/y scales, but the SVG draws with uniform `meet` scaling",
+  "A curved PageTabs draws a drop marker at the dragged tab's own slot, where the straight strip draws none"
+ ]
+}

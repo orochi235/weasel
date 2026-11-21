@@ -72,6 +72,13 @@ describe('FloatingPanel', () => {
     expect(panel.style.top).toBe('12px');
   });
 
+  it('moves to a changed anchor before it has ever been dragged', () => {
+    const { panel, rerender } = renderPanel(<FloatingPanel anchor="bottom-left">x</FloatingPanel>);
+    rerender(<div><FloatingPanel anchor="top-right">x</FloatingPanel></div>);
+    expect(panel.style.left).toBe('288px');
+    expect(panel.style.top).toBe('12px');
+  });
+
   it('passes its inset through', () => {
     const { panel } = renderPanel(<FloatingPanel anchor="top-left" inset={30}>x</FloatingPanel>);
     expect(panel.style.left).toBe('30px');

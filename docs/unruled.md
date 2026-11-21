@@ -1191,6 +1191,14 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (theme second pass): `derive` reports a semantic rule whose fields have the wrong types as `invalid`
   (`engine/ruleShape.ts`), and `axisDependencies` leaves it out, where both threw. A categorical ramp's `surface`
   gate takes a 6-digit hex only, as its anchors do. Not ruled: chosen to match the shape checks derive already made.
+- 2026-11-20 (my call, audit round 60): `generate` given more anchors than `count` keeps the first `count` of
+  them and reports the palette infeasible, and `derive` reports a categorical ramp's extra anchors as `invalid` at
+  `ramps.<name>.anchors` while still deriving its steps. Throwing was the alternative; the theme editor's count
+  slider can pass below the anchors it holds mid-edit.
+- 2026-11-20 (my call, audit round 60): `derive` reports a pin or component whose `value`, `type`, `description`,
+  `alpha`, or `scope` has the wrong type as `invalid` and makes no token of it, keeping what a rule produced
+  beneath a pin. An `alpha` outside 0 to 1, on a pin or a semantic `ref`, is reported the same way, as its
+  documentation gives that range. Dropping only the bad field was the alternative.
 - Open (2026-11-11, theme second pass): a token a theme produces at only some selections still shows at the others
   in the stylesheet, which cannot unset it: a reference to it there reads the value from where it is declared, while
   `resolveTheme` has no token. Only a definition with issues does this. The same holds across `extends`: a child
@@ -3349,3 +3357,37 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (my call, audit round 59): a mixed `Switch` (`indeterminate`, and so a mixed item in a `CheckboxGroup`
   with `control="switch"`) writes `aria-checked="mixed"` on its input, though ARIA gives `switch` no mixed state and
   a reader may announce it as off; its thumb sits mid-track.
+## Audit round sixty (2026-11-20): ui
+
+- 2026-11-20 (the fixer's call): `useRovingTabIndex` leaves an arrow, Home, or End held with Alt, Ctrl, Meta, or Shift
+  to the browser and the item, with no option to walk on one. Alt+Left is Back and Ctrl+Home scrolls the page, and an
+  item binding Shift+Arrow for itself saw focus move on the same key. Walking on Shift was the alternative.
+
+## Audit round sixty (2026-11-20): ui components, part two
+
+- 2026-11-20 (the fixer's call): A `Dialog` in a contained portal puts `ModalOverlay`'s DOM attributes, handlers,
+  `style`, `isEntering` and `isExiting` on its overlay, and warns that it ignores `onEnter`, `onExit`,
+  `UNSTABLE_deferUntilEntered` and `render`, since it unmounts at once and draws its own overlay. Giving the
+  contained modal an exit animation, so those work, was the alternative.
+- 2026-11-20 (the fixer's call): A `CycleButton` given no `options` renders disabled, named and tooltipped by its
+  `aria-label` alone, rather than throwing; a filtered rotation can come out empty. Throwing on an empty list was
+  the alternative.
+## Audit round sixty (2026-11-20): ui components, part three
+
+- 2026-11-20 (the fixer's call): `Disclosure` follows a `<Disabled>` scope and takes `disabledReason`, but not a
+  `<ReadOnly>` scope: folding a section changes no value, so a read-only twisty still folds.
+- 2026-11-20 (the fixer's call): a read-only `FillStrokeSwatch`'s chips still pick the target slot, since that
+  changes no paint, and do not open the paint editor; a disabled one's chips pick nothing.
+
+## Audit round sixty (2026-11-20): ui components, part four
+
+- 2026-11-20 (the fixer's call): An `InlineMarkdown` mark (`*`, `**`, `~~`) opens before punctuation only after a space
+  or at the start of the line, so `src/*.ts to lib/*.js` and `"*.ts" or "*.js"` stay literal; a code span, a
+  shortcut, or an escape right after the mark does not count as punctuation. `x*"quoted"*` is therefore literal too.
+  CommonMark's flanking rule, which reads `src/*.ts to lib/*.js` as emphasis, was the alternative.
+
+## Audit round sixty (2026-11-20): ui's test helpers
+
+- 2026-11-20 (the fixer's call): `painted` and `lineContrast` in `packages/ui/src/testing/paintedContrast.ts` throw
+  when the ground is translucent, unless passed the `backdrop` it is drawn over. Measuring against the ground as if
+  it were opaque was the alternative.

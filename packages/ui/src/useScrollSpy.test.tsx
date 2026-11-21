@@ -213,4 +213,60 @@ describe('a container scrolled to its end', () => {
       vi.useRealTimers();
     }
   });
+
+  it('marks the section in view in a container that mounts after the hook', () => {
+    function Late({ loaded }: { loaded: boolean }) {
+      const ref = useRef<HTMLDivElement | null>(null);
+      const spy = useScrollSpy({ rootRef: ref, ids: ['one', 'two'] });
+      return (
+        <>
+          {loaded && (
+            <div ref={ref}>
+              <section data-spy-section="one" />
+              <section data-spy-section="two" />
+            </div>
+          )}
+          <output>{spy.active ?? 'none'}</output>
+        </>
+      );
+    }
+    const view = render(<Late loaded={false} />);
+    expect(screen.getByRole('status').textContent).toBe('none');
+    view.rerender(<Late loaded />);
+    expect(screen.getByRole('status').textContent).toBe('two');
+  });
+
+  it('measures again when the container or a section resizes, with no scroll', () => {
+    const observers: { fire: () => void; watched: Element[] }[] = [];
+    vi.stubGlobal('ResizeObserver', class {
+      watched: Element[] = [];
+      constructor(fn: () => void) { observers.push({ fire: fn, watched: this.watched }); }
+      observe(el: Element) { this.watched.push(el); }
+      disconnect() { this.watched.length = 0; }
+    });
+    try {
+      let root: HTMLDivElement | null = null;
+      function Spy() {
+        const ref = useRef<HTMLDivElement | null>(null);
+        const spy = useScrollSpy({ rootRef: ref, ids: ['one', 'two'] });
+        return (
+          <div ref={(el) => { ref.current = el; root = el; }}>
+            <section data-spy-section="one" />
+            <section data-spy-section="two" />
+            <output>{spy.active ?? 'none'}</output>
+          </div>
+        );
+      }
+      render(<Spy />);
+      expect(screen.getByRole('status').textContent).toBe('two');
+      const two = root!.querySelector('[data-spy-section="two"]')!;
+      two.getBoundingClientRect = () => new DOMRect(0, 300, 100, 200);
+      const live = observers.find((o) => o.watched.includes(root!))!;
+      expect(live.watched).toContain(two);
+      act(() => live.fire());
+      expect(screen.getByRole('status').textContent).toBe('one');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

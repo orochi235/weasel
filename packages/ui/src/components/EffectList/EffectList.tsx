@@ -140,7 +140,6 @@ export function EffectList<T extends EffectListItem>({
           <EffectCard
             key={item.id}
             cardRef={kept.rowRef(item.id)}
-            access={access}
             item={item}
             index={i}
             kind={kind}

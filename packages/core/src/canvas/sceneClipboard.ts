@@ -267,6 +267,11 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
     if (!isRoot(item)) return null;
     return paged ? paged.get(item.id)!.site : into;
   };
+  // A root placed under a container takes its layer, as an insert there does: the scene refuses one below it.
+  const layerOf = (item: Item<TData, TLayer, TPose>): TLayer => {
+    const site = landing(item);
+    return site?.parent != null ? site.layer as TLayer : item.layer;
+  };
   const placed = (item: Item<TData, TLayer, TPose>): TPose => {
     if (ridesPastedFrame(item)) return copyField(item.pose);
     // Captured in world, so it is made local to the frame its root lands under.
@@ -280,7 +285,7 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
   return src.map((item) => ({
     id: idMap.get(item.id)!,
     kind: item.kind,
-    layer: into && isRoot(item) ? into.layer as TLayer : item.layer,
+    layer: layerOf(item),
     parent: isRoot(item) ? landing(item)?.parent ?? null : idMap.get(item.parent as string)!,
     pose: placed(item),
     data: copyField(item.data),

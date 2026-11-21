@@ -1,10 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import type { Paint } from '@weasel-js/paint';
 import { FillStrokeSwatch, type FillStrokeSwatchProps } from './FillStrokeSwatch';
 import { createRecentColorsStore } from '../RecentColors/recentColors';
 import { RecentColorsProvider } from '../RecentColors/RecentColorsProvider';
 import { renderWithIcons } from '../../testing/withIcons';
+import { Disabled, ReadOnly } from '../Disabled';
 
 const RED: Paint = { kind: 'solid', color: '#ff0000ff' };
 const BLUE: Paint = { kind: 'solid', color: '#0000ffff' };
@@ -170,5 +172,48 @@ describe('FillStrokeSwatch', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Default' }));
     expect(onSwap).toHaveBeenCalledTimes(1);
     expect(onReset).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('<FillStrokeSwatch> held', () => {
+  function held(wrap: (node: ReactNode) => ReactNode) {
+    const props: FillStrokeSwatchProps = {
+      fill: RED, stroke: BLUE, target: 'fill',
+      onTargetChange: vi.fn(), onChange: vi.fn(), onToggleNone: vi.fn(), onSwap: vi.fn(), onReset: vi.fn(),
+    };
+    renderWithIcons(<>{wrap(<FillStrokeSwatch {...props} />)}</>);
+    return props;
+  }
+
+  it('takes no press inside a disabled scope, and tells its reason on each chip', () => {
+    const props = held((n) => <Disabled reason="Nothing selected">{n}</Disabled>);
+    fireEvent.click(chip('Stroke'), { shiftKey: true });
+    fireEvent.click(chip('Stroke'));
+    fireEvent.click(screen.getByRole('button', { name: /Swap/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Default/ }));
+    expect(props.onToggleNone).not.toHaveBeenCalled();
+    expect(props.onTargetChange).not.toHaveBeenCalled();
+    expect(props.onSwap).not.toHaveBeenCalled();
+    expect(props.onReset).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(chip('Fill')).toHaveAttribute('aria-disabled', 'true');
+    expect(chip('Fill')).toHaveAccessibleDescription('Nothing selected');
+  });
+
+  it('picks the target but refuses every paint change while read-only', () => {
+    const props = held((n) => <ReadOnly reason="Shared">{n}</ReadOnly>);
+    fireEvent.click(chip('Stroke'), { shiftKey: true });
+    fireEvent.click(chip('Stroke'));
+    fireEvent.click(screen.getByRole('button', { name: /None/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Swap/ }));
+    expect(props.onTargetChange).toHaveBeenCalledWith('stroke');
+    expect(props.onToggleNone).not.toHaveBeenCalled();
+    expect(props.onSwap).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('is natively disabled by its own prop with no reason', () => {
+    renderWithIcons(<FillStrokeSwatch fill={RED} stroke={BLUE} target="fill" onTargetChange={vi.fn()} onChange={vi.fn()} disabled />);
+    expect(chip('Fill')).toBeDisabled();
   });
 });

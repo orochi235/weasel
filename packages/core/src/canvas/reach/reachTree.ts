@@ -108,6 +108,7 @@ class Tree implements ReachTree {
           boxes.enqueue(rec.parent);
         }
         rec.parent = parent;
+        rec.joined = true;
       }
       // One that joined, or was touched in place under a container whose children changed: it may have moved among them.
       if (joinedNow || parents.has(parent.id)) {

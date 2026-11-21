@@ -137,6 +137,18 @@ describe('useFloatingPlacement placement', () => {
     const { panel } = renderPanel(<Harness anchor="top-right" />);
     expect(panel.style.left).toBe('270px'); // 400 - (100 + 18) - 12
   });
+
+  it('places against the container\'s padding box, where an absolute box is positioned', () => {
+    const { container } = render(
+      <div style={{ padding: '12px' }}>
+        <Harness anchor="bottom-right" />
+      </div>,
+    );
+    const panel = container.querySelector('[data-panel]') as HTMLElement;
+    // The observer reports the 400x300 content box; the padding box is 424x324.
+    expect(panel.style.left).toBe('312px');
+    expect(panel.style.top).toBe('272px');
+  });
 });
 
 describe('useFloatingPlacement dragging', () => {
@@ -304,6 +316,24 @@ describe('useFloatingPlacement dragging', () => {
     );
     fireEvent.pointerDown(screen.getByRole('button'), { clientX: 5, clientY: 5 });
     expect(onDown).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves a press in a text box or a control by role to that control', () => {
+    for (const child of [
+      <div contentEditable="true" suppressContentEditableWarning key="e">edit me</div>,
+      <span role="switch" aria-checked="false" key="s">edit me</span>,
+      <span role="tab" key="t">edit me</span>,
+    ]) {
+      const onDown = vi.fn();
+      const { unmount } = render(
+        <div onPointerDown={onDown}>
+          <Harness>{child}</Harness>
+        </div>,
+      );
+      fireEvent.pointerDown(screen.getByText('edit me'), { clientX: 5, clientY: 5 });
+      expect(onDown).toHaveBeenCalledTimes(1);
+      unmount();
+    }
   });
 });
 

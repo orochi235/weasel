@@ -1,0 +1,36 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   6
+  ],
+  [
+   4,
+   5
+  ]
+ ],
+ "a": [
+  "A targeted sampled track nested in two places fights itself: one placement's `before`/`after` undoes the other's hold every frame",
+  "An event track the booker first meets after the start books every event behind the playhead at once, late, which crossings never fire",
+  "The booker's cursors are keyed by every root offset a track was ever nested at, and only `seek` clears them",
+  "An `edit` to a held track's `weight`, `axes` or `target` is ignored while the playhead stays within its keys",
+  "A seek from an event on the outgoing lap's tail fires the landing's events on the same frame; a seek from any other event waits for the next frame"
+ ],
+ "b": [
+  "An event track added by `edit` (or a nested track moved to a new `at`) on a booked timeline books every past event of it, from lap 0 on, at once",
+  "A revived timeline re-registers a copy of the first registration's mutated seed, `ended: true` included, so its later end, cancel and throw are handled as for an ended animation",
+  "The same sampled track nested at two places shares one hold record, so the placements undo each other on the target",
+  "`rearm` decides which end a timeline plays toward from its own time scale, while `tick` uses the effective rate including the animator's direction",
+  "An `edit` that cuts `duration` below the playhead leaves it there: a backward-playing timeline then ends with `onDone`, or takes forward laps and fires their tails while playing backward",
+  "A handler on the outgoing lap's tail that seeks is not reported as a seek, so the same frame goes on firing from where it landed",
+  "The booker's cursor table keeps an entry for every event track and every nested `at` it has ever seen, pruned only by a seek"
+ ]
+}

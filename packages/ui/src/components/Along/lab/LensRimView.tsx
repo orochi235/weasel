@@ -23,13 +23,22 @@ export interface LensRimConfig {
 }
 
 const ZOOM_STOPS = [1, 2, 4, 8].map((v) => ({ value: v, label: `${v}×` }));
-const SAVED = 'weasel-lens-rim-lab-v1';
+// Marks are shares of the picture across, so one marks the same spot at any lens size.
+const SAVED = 'weasel-lens-rim-lab-v2';
 /** The most marks the lens keeps, and saves: a new one past it drops the oldest. */
 export const MARK_LIMIT = 100;
 
 /** `marks` with `p` added, the oldest let go past {@link MARK_LIMIT}. */
 export function withMark(marks: readonly Point[], p: Point): Point[] {
   return [...marks, p].slice(-MARK_LIMIT);
+}
+
+/** The marks saved under {@link SAVED}, or none: a list of anything else, and any entry not a point, is let go. */
+export function savedMarks(raw: unknown): Point[] {
+  if (!Array.isArray(raw)) return [];
+  const isPoint = (m: unknown): m is Point =>
+    typeof m === 'object' && m !== null && Number.isFinite((m as Point).x) && Number.isFinite((m as Point).y);
+  return raw.filter(isPoint).slice(-MARK_LIMIT);
 }
 
 /** The rim arcs, turned with the lens: the bar across the top, the zoom across the bottom. */
@@ -58,7 +67,7 @@ export function pictureAt(client: Point, lens: DOMRect, size: number, turn: numb
 export function LensRimView({ config }: { config: LensRimConfig }): ReactElement {
   const { size, turn } = config;
   const [zoom, setZoom] = useState<Thumb[]>([{ value: 1 }]);
-  const [marks, setMarks] = useState<Point[]>(() => ((readLocal(SAVED) as Point[] | undefined) ?? []).slice(-MARK_LIMIT));
+  const [marks, setMarks] = useState<Point[]>(() => savedMarks(readLocal(SAVED)));
   const [pressed, setPressed] = useState('—');
   useEffect(() => void writeLocal(SAVED, marks), [marks]);
   const onPress = useCallback((key: string) => setPressed(key), []);
@@ -67,7 +76,8 @@ export function LensRimView({ config }: { config: LensRimConfig }): ReactElement
 
   const mark = (e: ReactPointerEvent<HTMLDivElement>) => {
     const lens = e.currentTarget.getBoundingClientRect();
-    setMarks((prev) => withMark(prev, pictureAt({ x: e.clientX, y: e.clientY }, lens, size, turn, z)));
+    const at = pictureAt({ x: e.clientX, y: e.clientY }, lens, size, turn, z);
+    setMarks((prev) => withMark(prev, { x: at.x / size, y: at.y / size }));
     setPressed('picture');
   };
   const vars = { '--lens': `${size}px`, '--turn': `${turn}deg`, '--zoom': String(z) } as CSSProperties;
@@ -82,7 +92,7 @@ export function LensRimView({ config }: { config: LensRimConfig }): ReactElement
               <div className={s.picture}>
                 <img className={s.image} src={LENS_IMAGE} alt="" draggable={false} />
                 {marks.map((m, i) => (
-                  <span key={i} className={s.mark} data-mark style={{ '--x': `${m.x}px`, '--y': `${m.y}px` } as CSSProperties} />
+                  <span key={i} className={s.mark} data-mark style={{ '--x': `${m.x * size}px`, '--y': `${m.y * size}px` } as CSSProperties} />
                 ))}
               </div>
               <div className={s.rim} />
@@ -104,7 +114,7 @@ export function LensRimView({ config }: { config: LensRimConfig }): ReactElement
               { id: 'turn', label: 'turned', value: `${num(turn, 5, 0)}°` },
               { id: 'pressed', label: 'last press', value: pressed },
               { id: 'marks', label: 'marks', value: String(marks.length) },
-              { id: 'last-mark', label: 'last mark', value: last ? `${num(last.x, 6, 1)}, ${num(last.y, 6, 1)}` : '—' },
+              { id: 'last-mark', label: 'last mark', value: last ? `${num(last.x * size, 6, 1)}, ${num(last.y * size, 6, 1)}` : '—' },
             ]}
           />
           <p className={lab.note}>

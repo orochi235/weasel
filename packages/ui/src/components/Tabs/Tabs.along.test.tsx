@@ -81,6 +81,23 @@ describe('TabList along a curve', () => {
     expect(rule()).not.toBeNull();
   });
 
+  test('a tab\'s function style is kept beside its place on the run', () => {
+    render(
+      <Along arc={TOP}>
+        <Tabs defaultSelectedKey="a">
+          <TabList aria-label="Sections">
+            <Tab id="a" style={({ isSelected }) => ({ color: isSelected ? 'red' : 'blue' })}>A</Tab>
+            <Tab id="b">B</Tab>
+          </TabList>
+          <TabPanel id="a">panel-a</TabPanel>
+          <TabPanel id="b">panel-b</TabPanel>
+        </Tabs>
+      </Along>,
+    );
+    expect(tabs()[0]!.style.color).toBe('red');
+    expect(tabs()[0]!.style.getPropertyValue('--at-x')).not.toBe('');
+  });
+
   test('outside an Along it renders as a straight list', () => {
     render(<Sample />);
     expect(tabs()[0]!.style.getPropertyValue('--at-x')).toBe('');

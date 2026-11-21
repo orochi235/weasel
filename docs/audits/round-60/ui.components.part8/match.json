@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "ShortcutSheet draws a Ctrl+\"+\" shortcut as one \"Ctrl++\" chip and its search cannot find it",
+  "SidebarPanel with no `title` silently drops `onHide`, `actions`, `trailing`, `headerRef` and its fold control",
+  "SpanStrips rounds the wrong row's bottom corners when it has no playhead",
+  "rulerTicks has no bound on how many ticks it makes, and loops forever on a non-positive step",
+  "Switch reports a stale modifier set to `onChange` after a click that changed nothing",
+  "Switch does not mirror under right-to-left: its thumb sits and moves on physical sides",
+  "Sequence keys its cells by position, so a cell's live state moves to another step when the sweep changes"
+ ],
+ "b": [
+  "ShortcutSheet keys a row's chips by formatted legend, which two distinct bindings can share",
+  "SpanStrips without `at` rounds the second-to-last row's bottom corners, not the last row's"
+ ]
+}

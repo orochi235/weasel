@@ -317,7 +317,7 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
     },
     renderIds(args, options) {
       const { plan, ctx, renderer: r } = prepare('renderIds', args);
-      const ids = r.renderIds(plan.commands, viewToMat3(plan.view), { screen: args.screen, minAlpha: options?.minAlpha });
+      const ids = r.renderIds(plan.commands, viewToMat3(plan.view), { screen: args.screen ?? plan.screen, minAlpha: options?.minAlpha });
       if (isLost(ctx)) {
         throw new Error('raster session: the WebGL2 context was lost during renderIds');
       }

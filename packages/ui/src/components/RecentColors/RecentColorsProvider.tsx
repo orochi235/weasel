@@ -6,7 +6,7 @@ const RecentColorsContext = createContext<RecentColorsStore | null>(null);
 /** Props for {@link RecentColorsProvider}. */
 export interface RecentColorsProviderProps {
   /** The store to record into. Default: one {@link createRecentColorsStore}
-   *  makes on mount, backed by `localStorage`. */
+   *  makes the first time this is unset, backed by `localStorage`. */
   store?: RecentColorsStore;
   children?: ReactNode;
 }
@@ -17,7 +17,8 @@ export interface RecentColorsProviderProps {
  * stops included. Outside a provider nothing is recorded.
  */
 export function RecentColorsProvider({ store, children }: RecentColorsProviderProps): ReactElement {
-  const [fallback] = useState(() => (store ? null : createRecentColorsStore()));
+  const [fallback, setFallback] = useState(() => (store ? null : createRecentColorsStore()));
+  if (!store && !fallback) setFallback(createRecentColorsStore());
   return (
     <RecentColorsContext.Provider value={store ?? fallback}>{children}</RecentColorsContext.Provider>
   );

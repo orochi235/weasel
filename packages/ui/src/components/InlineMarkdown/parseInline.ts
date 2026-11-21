@@ -8,11 +8,28 @@ export type InlineToken =
   | { type: 'link'; href: string; children: InlineToken[] };
 
 // Alternatives in precedence order: a code span, a shortcut, strong, emphasis, strikethrough, a link, an escaped mark.
-// A mark opens and closes against a non-space, so `a * b` and a glob's `*.ts` stay as written. Underscores
-// are never emphasis: prose here names snake_case identifiers. Inside a mark or a label a backslash pair is one
-// character, so an escaped mark there cannot close it.
-const INLINE =
-  /`([^`]+)`|<kbd>([^<]+)<\/kbd>|\*\*(?=\S)((?:\\[^]|[^\\])+?)(?<=\S)\*\*|\*(?=[^\s*])((?:\\[^]|[^*\\])+?)(?<=\S)\*|~~(?=\S)((?:\\[^]|[^\\])+?)(?<=\S)~~|\[((?:\\[^]|[^\]\\])+)\]\(([^)\s]+)\)|\\([`*~[\]\\])/g;
+// A mark opens and closes against a non-space, and opens before punctuation only after a space or the line's start,
+// so `a * b` and globs such as `src/*.ts` and `"*.js"` stay as written. Underscores are never emphasis: prose here
+// names snake_case identifiers. Inside a mark or a label a code span is whole, and a backslash pair is one
+// character, so neither can close it.
+const CODE_ATOM = '`[^`]+`|`(?![^`]*`)';
+// A code span, a shortcut and an escape open with punctuation but are not a glob's.
+const opens = (mark: string, next = '\\s') =>
+  '(?:(?<!\\S)' + mark + '(?=[^' + next + '])|' + mark + '(?=[`<\\\\]|[^' + next + '\\p{P}\\p{S}]))';
+const inner = (stop: string) => '(?:\\\\[^]|' + CODE_ATOM + '|[^' + stop + '\\\\`])';
+const INLINE = new RegExp(
+  [
+    '`([^`]+)`',
+    '<kbd>([^<]+)<\\/kbd>',
+    opens('\\*\\*') + '(' + inner('') + '+?)(?<=\\S)\\*\\*',
+    opens('\\*', '\\s*') + '(' + inner('*') + '+?)(?<=\\S)\\*',
+    opens('~~') + '(' + inner('') + '+?)(?<=\\S)~~',
+    // A link's address may hold one level of balanced parentheses, as a Wikipedia page's often does.
+    '\\[(' + inner('\\]') + '+)\\]\\(((?:[^()\\s]|\\([^()\\s]*\\))+)\\)',
+    '\\\\([`*~[\\]\\\\])',
+  ].join('|'),
+  'gu',
+);
 
 const SAFE_HREF = /^(https?:|mailto:|[/#.])/i;
 

@@ -44,6 +44,8 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
   const onMove = hold.refuses ? undefined : props.onMove;
   const { labelOf } = props;
   const [editing, setEditing] = useState<string | null>(null);
+  // A hold ends a rename under way; lifting it must not reopen the field.
+  if (editing !== null && !onRename) setEditing(null);
   const lastPress = useRef<{ id: string; at: number } | null>(null);
   const doubleMs = useKitSetting('gestures.doubleClickMs') ?? DOUBLE_CLICK_MAX_MS;
   /** The tab React Aria selected during the press under way, which the press must not report again. */
@@ -107,7 +109,8 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
     const at = tab ? Array.from(tab.parentElement?.children ?? []).indexOf(tab) : -1;
     // React Aria selects nothing for the lit tab, so choosing it from the keyboard is reported here.
     if (e.target === tab && current !== null && pages[at]?.id === current && isActivation(e)) return onSelect(current);
-    if (by === null || at < 0 || pages[at] === undefined) return;
+    // Keys inside the rename field are the field's: Alt+arrow moves its caret by a word.
+    if (by === null || e.target !== tab || pages[at] === undefined) return;
     e.preventDefault();
     e.stopPropagation();
     drag.nudge(pages[at].id, at, by);

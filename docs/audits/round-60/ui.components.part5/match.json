@@ -1,0 +1,35 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   2
+  ],
+  [
+   5,
+   3
+  ]
+ ],
+ "a": [
+  "ListEditor's Enter does not commit a typed entry once the list is at maxItems (or has no entry kinds)",
+  "MeshHandles ignores Disabled and ReadOnly scopes: a held mesh's points still drag and arrow-step",
+  "PageTabs draws its drop line on the wrong edge in a right-to-left strip",
+  "OpacityRange's dead-track style misses a range disabled for a reason",
+  "MeshHandles remounts, and permanently welds, a point dragged or stepped onto another of its kind",
+  "Jog's Pause button is disabled while playing once count drops below 2",
+  "Jog drops a falsy but renderable caption such as `0`, which JogAlong would draw",
+  "LastOperationPanel calls `store.dismiss` unbound",
+  "A `current` MenuButton is not held by a ReadOnly scope, though it changes a held value",
+  "Legend's dot swatch is offset on the wrong side in right-to-left text",
+  "KeymapHint story ignores its `label` control after the first render"
+ ],
+ "b": [
+  "ListEditor: Enter in a text entry neither adds nor commits the draft when the list is full or has no kind to add",
+  "MenuButton: a `bare` trigger disabled for a reason is drawn enabled, with hover accent and a pointer cursor",
+  "OpacityRange: a range disabled for a reason keeps its thumb and live track; the \"dead alpha\" rules key only on `:disabled`",
+  "Jog: while playing, the Pause button is disabled once `count` drops below 2, so playback can't be stopped from the Jog"
+ ]
+}

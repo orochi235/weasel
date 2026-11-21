@@ -52,7 +52,7 @@ export interface RunRow {
   scrolls: boolean;
   /** Whether items lie past the run's start and its end, so {@link RunEnds} marks them. */
   past: { start: boolean; end: boolean };
-  /** The {@link RunBand} drawn while the row scrolls, which pointers are measured through. */
+  /** The {@link RunBand}, which pointers and text are mapped through. */
   band: RefObject<SVGSVGElement | null>;
 }
 
@@ -96,12 +96,14 @@ export function shownOf(center: number, length: number, room: number): number {
   return Math.max(0, Math.min(1, on / length));
 }
 
-/** The run itself, as wide as the row, drawn while it scrolls so a press between items still drags it along. */
-export function RunBand({ row, shape }: { row: RunRow; shape: TrackShape }): ReactElement | null {
-  if (!row.scrolls) return null;
+/**
+ * The box the row's run is drawn across, which client points are mapped into the run's px through, so a rotated
+ * ancestor maps back; while the row scrolls it draws the run itself, so a press between items still drags it along.
+ */
+export function RunBand({ row, shape }: { row: RunRow; shape: TrackShape }): ReactElement {
   return (
     <svg className={s.band} aria-hidden="true" ref={row.band}>
-      <path className={s.bandPath} d={trackShapeD(shape)} />
+      {row.scrolls && <path className={s.bandPath} d={trackShapeD(shape)} />}
     </svg>
   );
 }

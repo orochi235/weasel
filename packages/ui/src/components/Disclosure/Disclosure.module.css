@@ -24,7 +24,7 @@
   outline-offset: -2px;
 }
 
-.twisty:disabled {
+.twisty:is(:disabled, [data-disabled]) {
   cursor: not-allowed;
 }
 
@@ -38,11 +38,11 @@
   transition: fill var(--wzl-motion-fast) var(--wzl-ease-out-cubic);
 }
 
-.twisty:hover:not(:disabled) .lozenge {
+.twisty:hover:not(:disabled, [data-disabled]) .lozenge {
   fill: color-mix(in oklab, var(--wzl-disclosure-fill, var(--wzl-accent)), white 15%);
 }
 
-.twisty:disabled .lozenge {
+.twisty:is(:disabled, [data-disabled]) .lozenge {
   fill: var(--wzl-fg-subtle);
 }
 

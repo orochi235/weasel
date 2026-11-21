@@ -13,7 +13,7 @@ import {
 import { type Corner, DEFAULT_INSET, type FloatingPlacement } from 'windease';
 import { dragPlacement, floatingItem, ITEM_ID, STRATEGY } from './dragPlacement';
 import { cssPx } from '../../cssPx';
-import { isPrimaryPress } from '@weasel-js/gestures';
+import { isInControlWithin, isPrimaryPress } from '@weasel-js/gestures';
 
 /** What {@link useFloatingPlacement} reads. */
 export interface FloatingPlacementOptions {
@@ -54,19 +54,19 @@ function borderBoxOf(entry: ResizeObserverEntry): { w: number; h: number } {
   return { w: entry.contentRect.width, h: entry.contentRect.height };
 }
 
-/** The box a container lays its children out in, as an observer's `contentRect` gives it. */
-function contentBoxOf(el: Element): { w: number; h: number } {
+/** The container's padding box, which an absolutely positioned child's `left` and `top` are measured in. */
+function paddingBoxOf(el: Element, content: { width: number; height: number }): { w: number; h: number } {
   const css = getComputedStyle(el);
   return {
-    w: el.clientWidth - cssPx(css.paddingLeft) - cssPx(css.paddingRight),
-    h: el.clientHeight - cssPx(css.paddingTop) - cssPx(css.paddingBottom),
+    w: content.width + cssPx(css.paddingLeft) + cssPx(css.paddingRight),
+    h: content.height + cssPx(css.paddingTop) + cssPx(css.paddingBottom),
   };
 }
 
-/** A pointerdown on one of these is the child's, not a drag. */
-function isInteractive(target: EventTarget | null): boolean {
+/** A pointerdown on a control, or on a child opting out, is the child's, not a drag. */
+function isInteractive(target: EventTarget | null, panel: Element): boolean {
   if (!(target instanceof Element)) return false;
-  return target.closest('input, button, a, select, textarea, [data-no-drag]') !== null;
+  return isInControlWithin(target, panel) || target.closest('[data-no-drag]') !== null;
 }
 
 /**
@@ -108,7 +108,7 @@ export function useFloatingPlacement({
     // Measured before the first paint, since the observer's first report lands a frame later and the box has no place
     // until then. jsdom reports 0 for every DOM size, so there only the observer's entries count.
     const panel = { w: el.offsetWidth, h: el.offsetHeight };
-    const room = contentBoxOf(parent);
+    const room = { w: parent.clientWidth, h: parent.clientHeight };
     if (panel.w > 0 && room.w > 0) {
       setSize(panel);
       setContainer(room);
@@ -116,7 +116,7 @@ export function useFloatingPlacement({
     return watchResize([parent, el], (entries) => {
       for (const entry of entries) {
         if (entry.target === parent) {
-          setContainer({ w: entry.contentRect.width, h: entry.contentRect.height });
+          setContainer(paddingBoxOf(parent, entry.contentRect));
         } else {
           setSize(borderBoxOf(entry));
         }
@@ -142,7 +142,7 @@ export function useFloatingPlacement({
   useEffect(() => () => drag.current?.cancel(), []);
 
   const startDrag = (e: ReactPointerEvent): void => {
-    if (!isPrimaryPress(e) || isInteractive(e.target)) return;
+    if (!isPrimaryPress(e) || isInteractive(e.target, e.currentTarget as Element)) return;
     // The canvas stack underneath owns pan/zoom on the same pointer events.
     e.stopPropagation();
     drag.current?.cancel();

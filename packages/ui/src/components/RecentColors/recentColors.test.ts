@@ -150,4 +150,18 @@ describe('createRecentColorsStore', () => {
     expect(logged).toHaveBeenCalledTimes(1);
     logged.mockRestore();
   });
+
+  it('empties the list when another tab clears localStorage', () => {
+    const key = 'test:recent-colors-cleared';
+    const store = createRecentColorsStore({ key });
+    const off = store.subscribe(() => {});
+    store.record('#ff0000ff');
+    localStorage.clear();
+    window.dispatchEvent(new StorageEvent('storage', { key: null }));
+    expect(store.get()).toEqual([]);
+    store.record('#00ff00ff');
+    expect(JSON.parse(localStorage.getItem(key)!)).toEqual(['#00ff00ff']);
+    off();
+    localStorage.removeItem(key);
+  });
 });

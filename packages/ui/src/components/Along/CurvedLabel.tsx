@@ -28,7 +28,7 @@ const graphemes = (text: string): string[] => {
  * tipped to the track; letters of a joining script that join share one span, so Arabic is shaped joined.
  * The text reads upright whichever way the shape runs, its spans in the order the bidi algorithm shows them under its
  * computed `direction`, which also says which end the `Along`'s `align` starts from. Reordering takes the engine given to
- * `registerBidi` (`@weasel-js/text`); with none, mixed-direction text keeps its logical order. The center of each glyph box sits
+ * `registerBidi` (`@weasel-js/text`); with none, the text shows in logical order left to right. The center of each glyph box sits
  * on the track, so `shift` lifts the text clear of a line drawn along it. It takes its font and color from its
  * parent, takes no pointer input, and is named by `text` as one image. Outside an `Along` it is a plain line of text.
  */
@@ -56,7 +56,9 @@ export function CurvedLabel({ text, offset = 0, shift = 0, className }: CurvedLa
   if (run === null) {
     return <div ref={root} className={cls} role="img" aria-label={text}>{text}</div>;
   }
-  const places = placeAlongRun(run, chars.map((_, i) => lengths[i] ?? 0), { align: align ?? 'center', offset, shift });
+  const from = align ?? 'center';
+  const at = from === 'start' ? 0 : from === 'end' ? run.length : run.length / 2;
+  const places = placeAlongRun(run, chars.map((_, i) => lengths[i] ?? 0), { align: from, at, offset, shift });
   return (
     <div ref={root} className={cls} role="img" aria-label={text} data-laid="">
       {chars.map((ch, i) => (

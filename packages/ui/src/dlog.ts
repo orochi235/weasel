@@ -4,7 +4,7 @@
  * Enable in the browser:
  *
  *   localStorage.setItem('weasel.debug', '*')               // all namespaces
- *   localStorage.setItem('weasel.debug', 'curve-editor,layer-stack')
+ *   localStorage.setItem('weasel.debug', 'layer-list,property-panel')
  *
  * The flag is read once and cached for the page session — reload to
  * pick up changes.

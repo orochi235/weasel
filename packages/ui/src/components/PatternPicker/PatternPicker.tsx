@@ -132,8 +132,9 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
   const fileInput = useRef<HTMLInputElement>(null);
   // Which file read may still commit: a later pick, of a file or a tile, or unmounting retires it.
   const reading = useLatestOnly();
-  const latest = useRef(value);
-  useEffect(() => { latest.current = value; });
+  // A read finishes renders later: it commits the value and the gated onChange it finds then.
+  const latest = useRef({ value, onChange });
+  useEffect(() => { latest.current = { value, onChange }; });
 
   const withTransform = (next: PatternPaint, of: PatternPaint = value): PatternPaint =>
     (of.transform ? { ...next, transform: of.transform } : next);
@@ -150,7 +151,10 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
     if (!file) return;
     const mine = reading.take();
     readImage(file).then(
-      (read) => { if (mine()) onChange(withTransform(seedImagePattern(read), latest.current)); },
+      (read) => {
+        const now = latest.current;
+        if (mine()) now.onChange(withTransform(seedImagePattern(read), now.value));
+      },
       (err: unknown) => console.warn(`weasel PatternPicker: "${file.name}" could not be read as an image`, err),
     );
   };
@@ -212,7 +216,8 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
         <>
           <SegmentedBar<number>
             items={image ? IMAGE_TILE_SIZES : TILE_SIZES}
-            value={image ? longestSide(image) : size}
+            value={image ? longestSide(image) : tile ? size : null}
+            disabled={!tile && !image}
             size="sm"
             aria-label="Tile size"
             onChange={(v) => v != null && resize(v)}

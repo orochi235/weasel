@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { scrolledPlaceOf } from '@weasel-js/routing';
 import { prefersReducedMotion } from '@weasel-js/react';
 import { compositeKey } from '@weasel-js/registry';
@@ -45,11 +45,17 @@ function heightAtEnd(root: HTMLElement): number | undefined {
   return scrollHeight > clientHeight && scrollTop + clientHeight >= scrollHeight - 1 ? clientHeight : undefined;
 }
 
+/** The section under `root` named `id`. */
+function sectionIn(root: HTMLElement, id: string): HTMLElement | null {
+  return root.querySelector<HTMLElement>(`[data-spy-section="${CSS.escape(id)}"]`);
+}
+
 /** Options for {@link useScrollSpy}. */
 export interface UseScrollSpyOptions {
   /** The scrolling element holding the sections. */
   rootRef: RefObject<HTMLElement | null>;
-  /** Section element ids, in document order. */
+  /** The sections' ids, in document order. Each section is the element under the container whose
+   *  `data-spy-section` attribute holds its id: `<section data-spy-section="general">`. */
   ids: readonly string[];
   /** Pixels of tolerance at the container's top edge. */
   slack?: number;
@@ -90,6 +96,9 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
   const releaseRef = useRef<(() => void) | null>(null);
   const key = compositeKey(ids);
 
+  // The container the listeners are on, so one mounted after the hook, or replaced, gets them too.
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+
   const measure = useCallback((): void => {
     const root = rootRef.current;
     if (!root) return;
@@ -100,7 +109,7 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
     const rootTop = root.getBoundingClientRect().top;
     const offsets: SectionOffset[] = [];
     for (const id of ids) {
-      const el = root.querySelector<HTMLElement>(`[data-spy-section="${CSS.escape(id)}"]`);
+      const el = sectionIn(root, id);
       if (el) offsets.push({ id, top: el.getBoundingClientRect().top - rootTop });
     }
     setActive(pickActiveSection(offsets, slack, heightAtEnd(root)));
@@ -109,18 +118,37 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rootRef, key, slack]);
 
+  // Every render, since a ref fills without one; it sets state only when the container changed.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    if (rootRef.current !== root) setRoot(rootRef.current);
+  });
+
+  // A resize of the container or of a section moves the tops with no `scroll` event.
   useEffect(() => {
-    const root = rootRef.current;
     if (!root) return;
     measure();
     root.addEventListener('scroll', measure, { passive: true });
-    return () => root.removeEventListener('scroll', measure);
-  }, [rootRef, measure]);
+    const resized = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => measure());
+    if (resized) {
+      resized.observe(root);
+      for (const id of ids) {
+        const el = sectionIn(root, id);
+        if (el) resized.observe(el);
+      }
+    }
+    return () => {
+      root.removeEventListener('scroll', measure);
+      resized?.disconnect();
+    };
+    // `measure` changes with `ids`' content, which is all this reads of them.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [root, measure]);
 
   const scrollTo = useCallback((id: string): void => {
     const root = rootRef.current;
     if (!root) return;
-    const el = root.querySelector<HTMLElement>(`[data-spy-section="${CSS.escape(id)}"]`);
+    const el = sectionIn(root, id);
     if (!el) return;
     // A scroll interrupted by the next one would otherwise leave its
     // listeners behind to fire against a later scroll.

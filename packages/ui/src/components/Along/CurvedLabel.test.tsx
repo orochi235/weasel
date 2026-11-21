@@ -53,6 +53,11 @@ test('right to left, an Arabic word keeps each joined stretch in one span, laid 
   expect(document.querySelector('[role="img"]')).toHaveAttribute('aria-label', 'سلام');
 });
 
+test('offset lays a label that fits back along the track from where align puts it', () => {
+  render(<Along shape={shape}><CurvedLabel text="abc" offset={40} /></Along>);
+  spans().map(x).forEach((at, i) => expect(at).toBeCloseTo([50, 60, 70][i]!));
+});
+
 test('outside an Along it is its text on one line, still named by it', () => {
   render(<CurvedLabel text="abc" />);
   expect(spans()).toHaveLength(0);

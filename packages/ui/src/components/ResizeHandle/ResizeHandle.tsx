@@ -110,7 +110,7 @@ export function ResizeHandle(props: ResizeHandleProps) {
     drag.current = {
       origin: axisOf(e),
       startValue: p.value,
-      last: settle(p.value, p.min, p.max, p.step ?? 1),
+      last: p.value,
     };
     session.current = openPointerSession(e.currentTarget, e, {
       onMove: (ev) => {
@@ -118,7 +118,12 @@ export function ResizeHandle(props: ResizeHandleProps) {
         drag.current!.last = next;
         latest.current.onInput(next);
       },
-      onEnd: (ev) => { finish(valueAt(axisOf(ev))); },
+      // The release can land somewhere no move reported, so the pane is moved there before it is committed.
+      onEnd: (ev) => {
+        const next = valueAt(axisOf(ev));
+        if (next !== drag.current!.last) latest.current.onInput(next);
+        finish(next);
+      },
       // A cancelled resize settles where it was left: `onInput` has already
       // moved the pane there and the consumer owns the value, so abandoning
       // the commit would persist a size the user is no longer looking at.

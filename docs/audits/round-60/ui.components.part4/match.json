@@ -1,0 +1,35 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   7,
+   6
+  ]
+ ],
+ "a": [
+  "fontFamilyOptions leaves out outline-tier families and labels a painting one \"not loaded\"",
+  "FpsMeter averages per-frame rates, which overstates the frame rate when frame times vary",
+  "InlineRange with `marks` and the default `fill` loses its whole track, and the fill with it",
+  "useFloatingPlacement keeps its own list of controls, narrower than gestures' CONTROL_SELECTOR, so dragging in a contenteditable moves the panel",
+  "parseInline makes emphasis out of two globs on one line when the second `*` follows a non-space",
+  "Under the `'canvas'` fallback policy, fontFamilyOptions labels a family that paints in its own face \"not loaded\", and enrolls it as a side effect of building the list",
+  "useFloatingPlacement lays the box out in the container's content box but positions it against the padding box, so in a padded container the corners are asymmetric",
+  "The Foundations Colors story says the current theme's column updates on a theme toggle, but neither column ever re-reads"
+ ],
+ "b": [
+  "A canceled pointer commits the range drag instead of canceling it",
+  "`marks` with the default `fill` wipes out the track",
+  "FpsMeter averages instantaneous rates, overstating frame rate on uneven frames",
+  "Input's adornments take no pointer events, so a control placed in one cannot be clicked",
+  "A mark that opens before a code span closes inside it, splitting the code span",
+  "A link whose URL contains parentheses is cut at the first `)`",
+  "Foundations' color table never re-reads its values, though its intro says the current side updates"
+ ]
+}

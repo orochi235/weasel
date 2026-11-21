@@ -1,5 +1,5 @@
 /**
- * Property tests of the palette generator: a palette holds one swatch per color asked for, anchors first by name and
+ * Property tests of the palette generator: a palette holds one swatch per color asked for, its first anchors by name and
  * exactly as previewed, and a palette it calls feasible meets every gate it was given, measured as its stats measure.
  */
 import fc from 'fast-check';
@@ -33,13 +33,14 @@ describe('generate', () => {
   it('holds a swatch per color asked for, each anchor as previewed under its own name, every name distinct', () => {
     fc.assert(fc.property(constraints, (c) => {
       const { swatches } = generate(c);
-      expect(swatches).toHaveLength(Math.max(c.count, c.anchors.length));
+      expect(swatches).toHaveLength(c.count);
+      const kept = c.anchors.slice(0, c.count);
       for (const s of swatches) expect(s.hex).toMatch(/^#[0-9a-f]{6}$/i);
       const anchored = swatches.filter((s) => s.anchored);
       expect(new Set(swatches.map((s) => s.name)).size).toBe(swatches.length);
-      const own = c.anchors.map((a) => a.name);
+      const own = kept.map((a) => a.name);
       if (new Set(own).size === own.length) expect(anchored.map((s) => s.name).sort()).toEqual(own.sort());
-      expect(anchored.map((s) => s.hex).sort()).toEqual(c.anchors.map(toHexPreview).sort());
+      expect(anchored.map((s) => s.hex).sort()).toEqual(kept.map(toHexPreview).sort());
     }), runs(RUNS));
   }, timeoutFor(RUNS, 400));
 

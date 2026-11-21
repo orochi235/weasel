@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   3
+  ]
+ ],
+ "a": [
+  "CurvedLabel shows Latin text backwards under `dir=\"rtl\"` when no bidi engine is registered",
+  "useRunScroll keeps an offset past the new end after its row shrinks, so a focus scroll lands off by the difference and the old offset comes back later",
+  "useItemLengths' ResizeObserver keeps every item element it has seen until the key list changes",
+  "LensRim lab crashes on mount when its saved marks are not an array",
+  "TrackGeometry lab accepts saved handles whose y is not a number"
+ ],
+ "b": [
+  "Focus scroll-into-view goes the wrong way after the run's scroll range shrinks",
+  "CurvedLabel's `offset` does nothing for any label that fits its track",
+  "Bent run text is misplaced under a rotated ancestor whenever the row does not scroll",
+  "useItemLengths keeps every removed item observed until the key list changes",
+  "LensRim lab's saved marks drift off the picture when the Size knob changes",
+  "InputTrace's \"claimed\" flag is never set on a coalesced pointermove line",
+  "A sideways wheel or trackpad swipe scrolls a right-to-left-reading run backwards"
+ ]
+}

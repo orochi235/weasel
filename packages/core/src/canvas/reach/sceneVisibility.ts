@@ -140,17 +140,27 @@ class SceneVisibility {
   }
 }
 
-const INDEXES = createPart((_scene: object) => new Map<unknown, Map<unknown, SceneVisibility>>());
-const NO_POSE = {};
+/** How many `paintBounds` / `toPose` pairs a scene keeps an index for, the least recently used dropped past it.
+ *  An inline function is a new pair on every render. */
+const INDEXES_KEPT = 4;
+
+interface Kept { paintBounds: PaintBoundsFn<AnyNode, unknown>; toPose: ToPose | undefined; index: SceneVisibility }
+
+const INDEXES = createPart((_scene: object): Kept[] => []);
 
 /** The visibility index of `scene` boxed by `paintBounds`, one per pair. */
 function visibilityOf(scene: AnyScene, paintBounds: PaintBoundsFn<AnyNode, unknown>, toPose?: ToPose): SceneVisibility {
-  const byBounds = INDEXES(scene);
-  let byPose = byBounds.get(paintBounds);
-  if (byPose === undefined) byBounds.set(paintBounds, (byPose = new Map()));
-  let index = byPose.get(toPose ?? NO_POSE);
-  if (index === undefined) byPose.set(toPose ?? NO_POSE, (index = new SceneVisibility(scene, paintBounds, toPose)));
-  return index;
+  const kept = INDEXES(scene);
+  const at = kept.findIndex((k) => k.paintBounds === paintBounds && k.toPose === toPose);
+  const entry = at >= 0 ? kept.splice(at, 1)[0]! : { paintBounds, toPose, index: new SceneVisibility(scene, paintBounds, toPose) };
+  kept.unshift(entry);
+  if (kept.length > INDEXES_KEPT) kept.length = INDEXES_KEPT;
+  return entry.index;
+}
+
+/** Test seam: how many visibility indexes `scene` holds. Not re-exported. */
+export function __visibilityIndexCountForTest(scene: object): number {
+  return INDEXES(scene).length;
 }
 
 let enabled = true;

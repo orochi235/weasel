@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { createRef } from 'react';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { Disabled, ReadOnly } from '../Disabled';
 import { Disclosure, DisclosureMark, DisclosureRow, type DisclosureProps } from './Disclosure';
 
 describe('Disclosure', () => {
@@ -49,6 +50,32 @@ describe('Disclosure', () => {
     render(<Disclosure open={false} onOpenChange={onOpenChange} label="Shapes" disabled />);
     fireEvent.click(screen.getByRole('button', { name: 'Shapes' }));
     expect(onOpenChange).not.toHaveBeenCalled();
+  });
+
+  it('does not toggle inside a disabled scope, and tells the scope\'s reason', () => {
+    const onOpenChange = vi.fn();
+    render(
+      <Disabled reason="Locked">
+        <DisclosureRow open onOpenChange={onOpenChange} label="Shapes">Shapes</DisclosureRow>
+      </Disabled>,
+    );
+    const button = screen.getByRole('button', { name: 'Shapes' });
+    fireEvent.click(button);
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toHaveAccessibleDescription('Locked');
+  });
+
+  it('is natively disabled inside a disabled scope with no reason', () => {
+    render(<Disabled><Disclosure open onOpenChange={() => {}} label="Shapes" /></Disabled>);
+    expect(screen.getByRole('button', { name: 'Shapes' })).toBeDisabled();
+  });
+
+  it('still folds when read-only, since folding changes no value', () => {
+    const onOpenChange = vi.fn();
+    render(<ReadOnly><Disclosure open onOpenChange={onOpenChange} label="Shapes" /></ReadOnly>);
+    fireEvent.click(screen.getByRole('button', { name: 'Shapes' }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it('draws the mark rather than typing it', () => {

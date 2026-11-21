@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { ToolOptionsBar } from '../ToolOptionsBar/ToolOptionsBar';
 import { PrefsBar } from '../PrefsBar/PrefsBar';
 
@@ -78,5 +78,18 @@ describe('a condition of a Bar\'s own node that reads a pref of `over`', () => {
   it('compares the stored value with no `over` to say how it is shown', () => {
     render(<PrefsBar schema={gated} values={{ slant: 'normal' }} />);
     expect(screen.getByRole('button', { name: 'Tight' })).toBeEnabled();
+  });
+
+  it('draws an alias inside a menu group from a section it is over, as it does on the line', () => {
+    const section: PrefSection = { name: 'Dialog', members: { 'view.grid': flag('Show grid') } };
+    const withMenu: PrefGroup = {
+      name: 'Tools',
+      as: 'bar',
+      children: { grid: pointer('view.grid'), view: { name: 'View', as: 'menu', children: { again: pointer('view.grid', 'Grid again') } } },
+    };
+    render(<PrefsBar schema={withMenu} over={section} values={{ 'view.grid': true }} onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Show grid' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'View' }));
+    expect(screen.getByRole('menuitemcheckbox', { name: /Grid again/ })).toHaveAttribute('aria-checked', 'true');
   });
 });

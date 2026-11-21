@@ -152,6 +152,62 @@ describe('a sampled track on a target', () => {
     expect(b.committed).toBeCloseTo(50, 9);
   });
 
+  it('holds at the weight an edit sets while the playhead stays within the keys', () => {
+    const { animator, frame } = setup();
+    const b = box(10);
+    const track = ramp(b.target);
+    let tl!: TimelineHandle;
+    act(() => { tl = animator.timeline({ tracks: [track], duration: 200 }); });
+    frame(0);
+    frame(50);
+    act(() => { tl.edit(() => { track.weight = 0.5; }); });
+    expect(b.target.read()).toBeCloseTo(30, 9);
+    frame(60);
+    expect(b.shown.at(-1)).toBeCloseTo(35, 9);
+  });
+
+  it('moves the target an edit names, letting go of the one it held where it was', () => {
+    const { animator, frame } = setup();
+    const a = box(0);
+    const b = box(0);
+    const track = ramp(a.target);
+    let tl!: TimelineHandle;
+    act(() => { tl = animator.timeline({ tracks: [track], duration: 200 }); });
+    frame(0);
+    frame(50);
+    act(() => { tl.edit(() => { track.target = b.target; }); });
+    frame(60);
+    expect(a.target.active).toBe(false);
+    expect(a.committed).toBeCloseTo(50, 9);
+    expect(b.shown.at(-1)).toBeCloseTo(60, 9);
+  });
+
+  it('holds a track nested in two places on each placement in turn', () => {
+    const { animator, frame } = setup();
+    const b = box(0);
+    const sub = { tracks: [ramp(b.target)] };
+    act(() => {
+      animator.timeline({ duration: 1000, tracks: [
+        { kind: 'timeline', at: 0, timeline: sub },
+        { kind: 'timeline', at: 500, timeline: sub },
+      ] });
+    });
+    frame(0);
+    frame(50);
+    expect(b.shown.at(-1)).toBeCloseTo(50, 9);
+    expect(b.target.active).toBe(true);
+    frame(200);
+    expect(b.committed).toBeCloseTo(100, 9);
+    expect(b.target.active).toBe(false);
+    frame(550);
+    expect(b.shown.at(-1)).toBeCloseTo(50, 9);
+    const sets = b.committed;
+    frame(560);
+    frame(570);
+    expect(b.committed).toBe(sets);
+    expect(b.shown.at(-1)).toBeCloseTo(70, 9);
+  });
+
   it('holds across a loop seam, showing the new lap the frame it wraps', () => {
     const { animator, frame } = setup();
     const b = box(0);

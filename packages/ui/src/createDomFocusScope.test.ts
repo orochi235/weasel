@@ -28,9 +28,25 @@ describe('createDomFocusScope', () => {
     expect(scope.tabOrder().map((e) => e.id)).toEqual(['a', 'b']);
   });
 
+  it('stops on an audio or video player that shows its controls, as Tab does', () => {
+    const { scope } = mount('<button id="a">a</button><video id="v" controls></video><audio id="s"></audio><audio id="m" controls></audio>');
+    expect(scope.tabOrder().map((e) => e.id)).toEqual(['a', 'v', 'm']);
+  });
+
   it('skips a control a disabled fieldset disables', () => {
     const { scope } = mount('<button id="a">a</button><fieldset disabled><button id="x">x</button><input id="y"></fieldset>');
     expect(scope.tabOrder().map((e) => e.id)).toEqual(['a']);
+  });
+
+  it('enters a radio group with none checked at its last radio going back, as Shift+Tab does', () => {
+    const { scope, el } = mount(`
+      <button id="a">a</button><input type="radio" name="size" id="s"><input type="radio" name="size" id="m">
+      <input type="radio" name="size" id="l"><button id="b">b</button>`);
+    el('b').focus();
+    expect(scope.moveFocus('prev')?.id).toBe('l');
+    expect(scope.moveFocus('prev')?.id).toBe('a');
+    expect(scope.moveFocus('next')?.id).toBe('s');
+    expect(scope.moveFocus('next')?.id).toBe('b');
   });
 
   it('takes a radio group at its checked radio, or its first with none checked, as Tab does', () => {

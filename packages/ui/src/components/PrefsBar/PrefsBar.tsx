@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { applyPrefConditions, orderPrefGroup, createAliasTargets, prefJudge, prefValueOrDefault, prefReader, prefValueAt, createRecordSource, createValuesSource, type PrefAlias, type PrefAliasTargets, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, orderPrefGroup, createAliasTargets, prefJudge, prefValueOrDefault, prefReader, prefValueAt, createValuesSource, FREE_LEAF_STATUS, sourceResetPlan, writeResetPlan, type PrefsSource, type PrefAlias, type PrefAliasTargets, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { useParamsPolicy } from '../Prefs/useParamsPolicy';
@@ -66,9 +66,10 @@ export function PrefsBar(props: PrefsBarProps) {
   const { shown, disabled, active } = applyPrefConditions(schema, judge(), { aliasOver: over, aliasHolds: targets.holds });
   const entryAt = entryApplier(judge);
   const { settles, textWaitMs } = useParamsPolicy('panel');
-  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, active, entryAt, targets, settles, textWaitMs };
+  const source = barSource(schema, overProp, read, onChange, mixed);
+  const draw: Draw = { values, mixed, renderers, onChange, source, fields, disabled, active, entryAt, targets, settles, textWaitMs };
   const open = (group: PrefGroup, path: string) => <GroupBody draw={draw} group={group} path={path} />;
-  const menu = { values: read, onChange, over: overProp && 'children' in overProp ? overProp : schema };
+  const menu = { values: read, onChange, over };
   const nodes = shown === null ? [] : shownBarNodes(groupBarNodes(orderPrefGroup(shown, props.order), '', open, menu), (node) => shownNode(node, draw));
   return (
     <Bar
@@ -89,6 +90,8 @@ interface Draw {
   mixed: ReadonlySet<string> | undefined;
   renderers: Record<string, LeafRenderer> | undefined;
   onChange: ((path: string, value: unknown) => void) | undefined;
+  /** Every cell's source: the bar's values over its schema, a leaf holding nothing read at its default. */
+  source: PrefsSource;
   fields: readonly PrefFieldChoice[];
   /** Paths of the leaves and fields a failed `enableIf` disables. */
   disabled: ReadonlySet<string>;
@@ -132,6 +135,32 @@ export function barReader(
   };
 }
 
+/** A source over a bar's values, keyed by whole dotted paths, that reads each one as `read` does. */
+function barSource(
+  schema: PrefGroup,
+  over: PrefGroup | PrefSection | undefined,
+  read: (path: string) => unknown,
+  onChange: ((path: string, value: unknown) => void) | undefined,
+  mixed: ReadonlySet<string> | undefined,
+): PrefsSource {
+  const write = (path: string, value: unknown): void => onChange?.(path, value);
+  const source: PrefsSource = {
+    schema,
+    ...(over ? { over } : {}),
+    valueAt: (path) => {
+      if (mixed?.has(path)) return { value: undefined, mixed: true, each: [] };
+      const value = read(path);
+      return { value, mixed: false, each: [value] };
+    },
+    write,
+    update: (path, fn) => write(path, fn(read(path))),
+    autoAt: () => undefined,
+    stateAt: () => FREE_LEAF_STATUS,
+    reset: (paths) => writeResetPlan(sourceResetPlan(source, paths), write),
+  };
+  return source;
+}
+
 /** Neighboring leaves as cells, a run of paired flags fused into one. */
 function barCells(leaves: readonly BarLeafNode[], draw: Draw): BarCell[] {
   return cellsOf(leaves, (node) => leafCell(node, 'bar', draw), draw.renderers);
@@ -152,7 +181,7 @@ function leafCell({ path: own, leaf, at }: BarLeafNode, surface: ControlForm, dr
     setValue: (v) => onChange?.(path, v),
     // One set of values, so there is one prior value to derive from.
     update: (fn) => onChange?.(path, fn(shown)),
-    source: createRecordSource({ [path]: leaf }, values, onChange, { mixed }),
+    source: draw.source,
     setAuto: () => {},
     fields,
     disabled: draw.disabled.has(own),

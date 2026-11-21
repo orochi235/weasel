@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { flushSync } from 'react-dom';
 import { useScaleStage, type FitScale, type FitScaleOptions } from './fitScale';
-import { prepareRoom, settleSpent, type FitRoom } from './fitRoom';
+import { forgetRoom, prepareRoom, settleSpent, type FitRoom } from './fitRoom';
 import { watchResize } from '@weasel-js/react';
 
 /**
@@ -164,8 +164,7 @@ export function useFitScope(
     const room = roomRef.current;
     if (fittedFor.current !== labels) {
       fittedFor.current = labels;
-      room.steppedAt = null;
-      room.measured = false;
+      forgetRoom(ref.current, room);
       if (own !== 0) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- measures layout
         setOwn(0);
@@ -183,10 +182,7 @@ export function useFitScope(
   // the room to say so.
   const refit = useCallback(
     (el: HTMLElement): void => {
-      roomRef.current.steppedAt = null;
-      roomRef.current.spentAt = null;
-      roomRef.current.measured = false;
-      el.removeAttribute('data-fit-spent');
+      forgetRoom(el, roomRef.current);
       setOwn(0);
       setCheck((c) => c + 1);
     },

@@ -1,0 +1,35 @@
+{
+ "pairs": [
+  [
+   0,
+   4
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "A node moved into a wide container with its box unchanged never gets into that container's BVH",
+  "`RasterSession.renderIds` drops the plan's `screen` matrix that `render` uses",
+  "The visibility-index cache grows by one entry per new `paintBounds` / `toPose` function, without bound",
+  "Pasting onto a page keeps each root's copied layer, so it throws when that layer is below the page's"
+ ],
+ "b": [
+  "geometryGenerationOf can return a value it returned before, so a cache keyed on it alone serves stale outlines",
+  "reportCommandLosses never reports a group effect whose shader program has no GLSL source",
+  "RasterSession.renderIds drops the plan's `screen` at a pixelRatio other than 1, so its ids disagree with `render`'s pixels",
+  "A paste landing on a page keeps the copied node's layer, where an insert onto the same page takes the page's layer",
+  "A node moved into an already-wide container without its box changing is never added to that container's child BVH, so it is culled from the render and dropped from the pick index",
+  "The render visibility index keeps one set of reach trees per `paintBounds` / `toPose` function identity, with no bound",
+  "A copy whose transform carries a child reach to a non-finite box is unioned in as the box at the origin instead of as unbounded"
+ ]
+}

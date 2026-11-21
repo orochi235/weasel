@@ -33,6 +33,18 @@ describe('Bar defaults', () => {
     expect(spin('Ctor').value).toBe('7');
   });
 
+  it('hands a cell a source reading every leaf of the bar at its default, the cell\'s own and its siblings\'', () => {
+    const seen: unknown[] = [];
+    renderWithIcons(
+      <PrefsBar
+        schema={schema}
+        values={{ size: 20 }}
+        renderers={{ kern: (ctx) => { seen.push(ctx.source.valueAt('kern').value, ctx.source.valueAt('size').value, ctx.source.valueAt('bold').value); return null; } }}
+      />,
+    );
+    expect(seen.slice(0, 3)).toEqual([0, 20, true]);
+  });
+
   it('shows a held value over the default', () => {
     renderWithIcons(<PrefsBar schema={schema} values={{ size: 20, bold: false }} />);
     expect(spin('Size').value).toBe('20');

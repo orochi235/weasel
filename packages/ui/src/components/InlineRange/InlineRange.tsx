@@ -29,6 +29,9 @@ function marksStyle(marks: readonly number[]): Record<string, string> {
   return {
     '--wzl-range-stop-marks': marks.map(() => MARK).join(', '),
     '--wzl-range-stop-at': marks.map(place).join(', '),
+    // Per layer, since a shorter list repeats over the fill layer `.filled.marks` adds after them.
+    '--wzl-range-stop-size': marks.map(() => '1px 75%').join(', '),
+    '--wzl-range-stop-origin': marks.map(() => 'content-box').join(', '),
   };
 }
 

@@ -24,6 +24,13 @@ describe('shared range skin', () => {
     expect(cls).toContain('mine');
   });
 
+  it('marks give each of their layers its own size, so the fill layer after them keeps its own', () => {
+    const { container } = render(<InlineRange value={40} marks={[0.25, 0.5]} onChange={() => {}} />);
+    const input = container.querySelector('input[type="range"]') as HTMLInputElement;
+    expect(input.className.split(' ')).toEqual(expect.arrayContaining([shared.filled, shared.marks]));
+    expect(input.style.getPropertyValue('--wzl-range-stop-size')).toBe('1px 75%, 1px 75%');
+  });
+
   it('fill={false} keeps the skin and drops the filled paint', () => {
     const { container } = render(<InlineRange value={50} fill={false} onChange={() => {}} />);
     const input = container.querySelector('input[type="range"]') as HTMLInputElement;

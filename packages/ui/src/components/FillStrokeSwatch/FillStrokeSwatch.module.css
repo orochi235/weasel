@@ -109,6 +109,14 @@
   cursor: pointer;
 }
 
+.trigger:is(:disabled, [data-disabled]) {
+  cursor: not-allowed;
+}
+
+.chip:has(.trigger:is(:disabled, [data-disabled])) {
+  filter: var(--wzl-disabled-filter);
+}
+
 .buttons {
   display: flex;
   flex-wrap: wrap;

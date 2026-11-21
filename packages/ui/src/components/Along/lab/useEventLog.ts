@@ -57,6 +57,8 @@ export function useEventLog(root: RefObject<HTMLElement | null>, groups: readonl
   const [log, setLog] = useState<LoggedEvent[]>([]);
   const next = useRef(1);
   const start = useRef(0);
+  // The newest line, read as the event arrives: a move folds into it, and is claimed on it, before the log renders.
+  const newest = useRef<LoggedEvent | null>(null);
   const key = groups.join(',');
 
   useEffect(() => {
@@ -65,15 +67,20 @@ export function useEventLog(root: RefObject<HTMLElement | null>, groups: readonl
     start.current = start.current || performance.now();
     const types = key.split(',').flatMap((g) => LOGGED[g as LogGroup] ?? []);
     const onEvent = (e: Event): void => {
-      const line: LoggedEvent = { id: next.current++, at: Math.round(e.timeStamp - start.current), type: e.type, target: describe(e.target), detail: detailOf(e), claimed: false, count: 1 };
-      setLog((prev) => {
-        const top = prev[0];
-        if (top && e.type === 'pointermove' && top.type === 'pointermove' && top.target === line.target) return [{ ...top, count: top.count + 1, at: line.at }, ...prev.slice(1)];
-        return [line, ...prev].slice(0, LOG_LIMIT);
-      });
+      const at = Math.round(e.timeStamp - start.current);
+      const target = describe(e.target);
+      const top = newest.current;
+      const folds = top !== null && e.type === 'pointermove' && top.type === 'pointermove' && top.target === target;
+      const id = folds ? top.id : next.current++;
+      if (folds) setLog((prev) => (prev[0]?.id === id ? [{ ...prev[0], count: prev[0].count + 1, at }, ...prev.slice(1)] : prev));
+      else {
+        const line: LoggedEvent = { id, at, type: e.type, target, detail: detailOf(e), claimed: false, count: 1 };
+        newest.current = line;
+        setLog((prev) => [line, ...prev].slice(0, LOG_LIMIT));
+      }
       // Read once every handler has run: this one sees the event on its way down, before anything has claimed it.
       setTimeout(() => {
-        if (e.defaultPrevented) setLog((prev) => prev.map((l) => (l.id === line.id ? { ...l, claimed: true } : l)));
+        if (e.defaultPrevented) setLog((prev) => prev.map((l) => (l.id === id ? { ...l, claimed: true } : l)));
       }, 0);
     };
     for (const t of types) el.addEventListener(t, onEvent, { capture: true, passive: true });
@@ -82,7 +89,10 @@ export function useEventLog(root: RefObject<HTMLElement | null>, groups: readonl
     };
   }, [root, key]);
 
-  const clear = useCallback(() => setLog([]), []);
+  const clear = useCallback(() => {
+    newest.current = null;
+    setLog([]);
+  }, []);
   return { log, clear };
 }
 

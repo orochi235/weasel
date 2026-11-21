@@ -273,7 +273,7 @@ describe('Bar along a curve: scroll mode', () => {
   test('menu mode draws no band and no chevrons', () => {
     render(<Along shape={shape}><PrefsBar schema={schema} overflow="menu" label="Tools" /></Along>);
     expect(marks()).toEqual([]);
-    expect(screen.getByRole('toolbar').querySelector(':scope > svg')).toBeNull();
+    expect(screen.getByRole('toolbar').querySelector(':scope > svg path')).toBeNull();
   });
 });
 

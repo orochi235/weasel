@@ -153,7 +153,7 @@ describe('createDomFocusScope', () => {
       document.body.replaceChildren();
       const { root, outside } = mount(nodes);
       const scope = createDomFocusScope(root);
-      const order = scope.tabOrder();
+      const order = scope.tabOrder(dir);
       const walk = dir === 'next' ? order : [...order].reverse();
       for (const want of walk) {
         expect(scope.moveFocus(dir)).toBe(want);
@@ -186,7 +186,7 @@ describe('createDomFocusScope', () => {
       const gone = before[pick % before.length]!;
       scope.focus(gone);
       gone.setAttribute('tabindex', '-1');
-      const after = scope.tabOrder();
+      const after = scope.tabOrder(dir);
       const follows = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
       const want = dir === 'next' ? after.find((el) => follows(gone, el)) ?? null : [...after].reverse().find((el) => follows(el, gone)) ?? null;
       expect(scope.moveFocus(dir)).toBe(want);

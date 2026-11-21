@@ -107,4 +107,17 @@ describe('PageTabs along a curve', () => {
     fireEvent.click(add());
     expect(onAdd).toHaveBeenCalled();
   });
+
+  test('a drag held over the tab\'s own place marks no landing, as a straight strip does', () => {
+    setup();
+    const from = along(tab('Page 2'));
+    fireEvent.pointerDown(tab('Page 2'), { pointerId: 1, button: 0, ...client(from) });
+    act(() => {
+      fireEvent.pointerMove(document, { pointerId: 1, ...client(from - 10) });
+      fireEvent.pointerMove(document, { pointerId: 1, ...client(from - 8) });
+    });
+    expect(tab('Page 2').className).toMatch(/dragging/);
+    expect(document.querySelector('[data-tab-drop]')).toBeNull();
+    fireEvent.pointerUp(document, { pointerId: 1, ...client(from - 8) });
+  });
 });

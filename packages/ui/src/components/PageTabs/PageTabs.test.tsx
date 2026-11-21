@@ -168,4 +168,16 @@ describe('PageTabs', () => {
     fireEvent.keyDown(tab('Page 2'), { key: 'ArrowRight', altKey: true });
     expect(onMove).toHaveBeenLastCalledWith('b', 0);
   });
+
+  it('leaves Alt+Left and Alt+Right to the rename field, moving no page', () => {
+    const { onMove } = setup();
+    press(tab('Page 2'));
+    press(tab('Page 2'));
+    const field = screen.getByLabelText('Page name');
+    const ev = new KeyboardEvent('keydown', { key: 'ArrowLeft', altKey: true, bubbles: true, cancelable: true });
+    field.dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(false);
+    expect(onMove).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Page name')).toBe(field);
+  });
 });

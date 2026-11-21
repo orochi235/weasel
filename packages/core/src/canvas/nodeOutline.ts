@@ -78,10 +78,28 @@ export function sceneNodeOutline<TData, TLayer extends string, TPose>(
   return findNodeOutline(node, world, { shapes: nodeShapesOf(scene), ...(inherited ? { inherited } : {}) });
 }
 
-/** The sum of every painter's `geometryGeneration` in `shapes`: a cache of outlines read through
- *  them keys on it, since it moves when any kind's outlines change with no edit to the scene. */
+interface GenerationSeen { entries: unknown[]; generations: number[]; value: number }
+
+const generationsSeen = new WeakMap<NodeShapes, GenerationSeen>();
+let lastGeneration = 0;
+
+/** A number that moves whenever the painters in `shapes`, or any one's `geometryGeneration`, change, and never
+ *  comes back to one it answered before: a cache of outlines read through them keys on it, since it moves
+ *  when any kind's outlines change with no edit to the scene. */
 export function geometryGenerationOf(shapes: NodeShapes): number {
-  let sum = 0;
-  for (const { entry } of evaluationOrder(shapes)) sum += entry.geometryGeneration?.() ?? 0;
-  return sum;
+  const entries: unknown[] = [];
+  const generations: number[] = [];
+  for (const { entry } of evaluationOrder(shapes)) {
+    entries.push(entry);
+    generations.push(entry.geometryGeneration?.() ?? 0);
+  }
+  const seen = generationsSeen.get(shapes);
+  if (seen && sameList(seen.entries, entries) && sameList(seen.generations, generations)) return seen.value;
+  const value = ++lastGeneration;
+  generationsSeen.set(shapes, { entries, generations, value });
+  return value;
+}
+
+function sameList(a: readonly unknown[], b: readonly unknown[]): boolean {
+  return a.length === b.length && a.every((x, i) => x === b[i]);
 }

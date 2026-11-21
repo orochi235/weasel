@@ -35,7 +35,8 @@ export function TabsArcView({ config }: { config: TabsArcConfig }): ReactElement
   const { tabs, size, turn } = config;
   const { top, bottom } = tabArcs(config);
   const sections = SECTIONS.slice(0, tabs);
-  const [section, setSection] = useState<string>(SECTIONS[0]!);
+  const [picked, setSection] = useState<string>(SECTIONS[0]!);
+  const section = sections.includes(picked) ? picked : sections.at(-1) ?? SECTIONS[0]!;
   const [pages, setPages] = useState([{ id: 'p1', name: 'Cover' }, { id: 'p2', name: 'Body' }, { id: 'p3', name: 'Back' }]);
   const [current, setCurrent] = useState('p1');
   const box = { '--box': `${size}px`, transform: turn ? `rotate(${turn}deg)` : undefined } as CSSProperties;

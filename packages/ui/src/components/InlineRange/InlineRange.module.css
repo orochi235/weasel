@@ -84,13 +84,21 @@
 }
 
 /* `marks` draws in the box's background, behind the track and the thumb; the
-   component sets one layer per mark and where each sits. */
+   component sets one layer per mark, where each sits, and its size and origin. */
 .range.marks {
   background-image: var(--wzl-range-stop-marks);
   background-position: var(--wzl-range-stop-at);
-  background-size: 1px 75%;
+  background-size: var(--wzl-range-stop-size);
   background-repeat: no-repeat;
-  background-origin: content-box;
+  background-origin: var(--wzl-range-stop-origin);
+}
+
+/* With `fill` the box's background is the track, so the marks go on top of it as further layers. */
+.range.filled.marks {
+  background-image: var(--wzl-range-stop-marks), var(--wzl-range-bg);
+  background-position: var(--wzl-range-stop-at), 0 0;
+  background-size: var(--wzl-range-stop-size), auto;
+  background-origin: var(--wzl-range-stop-origin), padding-box;
 }
 
 /* `fill`: the filled-to-N% paint. `--slider-fill` carries the value, since no

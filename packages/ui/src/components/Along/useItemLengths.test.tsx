@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useItemLengths } from './useItemLengths';
 
@@ -30,4 +30,31 @@ test('keeps the length of an item off the line while a key still names it', () =
   root.replaceChildren();
   hook.rerender({ keys: ['a'] });
   expect(hook.result.current.get('a')).toBe(12);
+});
+
+test('stops watching an item that leaves while the keys stay the same', () => {
+  const watched = new Set<Element>();
+  vi.stubGlobal('ResizeObserver', class {
+    observe(el: Element) { watched.add(el); }
+    unobserve(el: Element) { watched.delete(el); }
+    disconnect() { watched.clear(); }
+  });
+  try {
+    const root = document.createElement('div');
+    const more = (): HTMLElement => {
+      const el = document.createElement('span');
+      el.setAttribute('data-key', 'more');
+      return el;
+    };
+    const first = more();
+    root.append(first);
+    const ref = { current: root };
+    const hook = renderHook(() => useItemLengths(ref, ['a'], keyOf));
+    const second = more();
+    root.replaceChildren(second);
+    hook.rerender();
+    expect([...watched]).toEqual([second]);
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });
