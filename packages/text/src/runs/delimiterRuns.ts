@@ -120,12 +120,14 @@ export { key as flagsKey };
  * Escaped run texts with the flags each should wear, written in a grammar whose
  * markers fuse into misreadings: each change is spelled with delimiters that
  * read back as it, choosing the flags each run wears so that no run gains a
- * flag it lacks and as few as possible are dropped.
+ * flag it lacks and as few as possible are dropped, and closing every flag
+ * after the last run.
  */
 export function fittedMarkdown(
   texts: readonly string[], wants: readonly ReadonlySet<RunFlag>[], byDelimiter: ReadonlyMap<string, readonly RunMarker[]>,
 ): string {
-  const spellings = [...toggleSpellings(byDelimiter).values()];
+  const spelled = toggleSpellings(byDelimiter);
+  const spellings = [...spelled.values()];
   /** Per run, per flags worn, the least cost so far and how it got there. */
   type Step = { cost: number; flags: Set<RunFlag>; from: string; text: string };
   let layer = new Map<string, Step>([['', { cost: 0, flags: new Set(), from: '', text: '' }]]);
@@ -139,6 +141,8 @@ export function fittedMarkdown(
         const missing = [...want].filter((f) => !flags.has(f)).length;
         const cost = at.cost + (extra * 64 + missing) * texts[i]!.length;
         const k = key(flags);
+        // Only flags some spelling toggles at once can be closed after the last run.
+        if (!spelled.has(k)) continue;
         const had = next.get(k);
         if (!had || cost < had.cost || (cost === had.cost && s.text.length < had.text.length)) {
           next.set(k, { cost, flags, from, text: s.text });
@@ -151,8 +155,7 @@ export function fittedMarkdown(
   let k = '';
   let least = Infinity;
   for (const [at, step] of layer) if (step.cost < least) { least = step.cost; k = at; }
-  const closing = toggleSpellings(byDelimiter).get(k);
-  let out = closing?.text ?? '';
+  let out = spelled.get(k)!.text;
   for (let i = steps.length - 1; i >= 0; i--) {
     const step = steps[i]!.get(k)!;
     out = step.text + texts[i] + out;

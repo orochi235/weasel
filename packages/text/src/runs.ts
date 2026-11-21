@@ -200,6 +200,8 @@ function sameFlags(a: ReadonlySet<RunFlag>, b: readonly RunFlag[]): boolean {
  * Markers written in a row on one delimiter fuse the same way, so a change
  * whose markers would read back as another is spelled some other way; where
  * the grammar has no spelling for it, the flags it cannot say there are dropped.
+ * Every flag opened is closed again, since the reader reads a marker nothing
+ * closes as text.
  */
 export function runsToMarkdown(
   runs: readonly StyledRun[],
@@ -242,8 +244,8 @@ export function runsToMarkdown(
     if (!moveTo(wants[i]!)) return fittedMarkdown(shown.map((r) => escapeFor(r.text, chars)), wants, byDelimiter);
     out += escapeFor(shown[i]!.text, chars);
   }
-  // Nothing follows the closing markers, so ones that would misread are left off.
-  moveTo(new Set());
+  // The reader takes a marker nothing closes as text, so closing markers that would misread are fitted too.
+  if (!moveTo(new Set())) return fittedMarkdown(shown.map((r) => escapeFor(r.text, chars)), wants, byDelimiter);
   return out;
 }
 
@@ -257,7 +259,8 @@ function spelled(flags: Set<RunFlag>, grammar: RunGrammar): Set<RunFlag> {
 /**
  * Parse `input` in `grammar`, defaulting to the markdown subset, into styled
  * runs. Newlines are preserved as literal characters inside a run — they are
- * not run-boundary markers in this format.
+ * not run-boundary markers in this format. A marker that turns a flag on which
+ * nothing turns off again is read as literal text, as `5 * 3` or `2**10` is.
  */
 export function markdownToRuns(
   input: string,
@@ -266,9 +269,24 @@ export function markdownToRuns(
   const chars = escapees(grammar);
   // Longest-first per delimiter, so `***` is tried before `**` before `*`.
   const byDelimiter = markersByDelimiter(grammar);
+  const literal = new Set<number>();
+  for (;;) {
+    const read = readRuns(input, chars, byDelimiter, literal);
+    if (read.open === null) return read.runs;
+    literal.add(read.open);
+  }
+}
 
+/** `input` read as runs, with the markers at offsets in `literal` read as text. `open` is the offset of the last
+ *  marker that turned on a flag still on at the end, or null when every flag was turned off again. */
+function readRuns(
+  input: string, chars: ReadonlySet<string>, byDelimiter: ReadonlyMap<string, readonly RunMarker[]>,
+  literal: ReadonlySet<number>,
+): { runs: StyledRun[]; open: number | null } {
   const runs: StyledRun[] = [];
   const active = new Set<RunFlag>();
+  /** Per flag, the offset of the marker that last toggled it. */
+  const lastToggle = new Map<RunFlag, number>();
   let buf = '';
   let i = 0;
 
@@ -301,8 +319,13 @@ export function markdownToRuns(
         i += count;
         continue;
       }
-      flush();
-      toggle(active, marker.flags);
+      if (literal.has(i)) {
+        buf += ch.repeat(marker.repeat);
+      } else {
+        flush();
+        toggle(active, marker.flags);
+        for (const f of marker.flags) lastToggle.set(f, i);
+      }
       i += marker.repeat;
       continue;
     }
@@ -312,5 +335,7 @@ export function markdownToRuns(
   }
 
   flush();
-  return runs;
+  let open: number | null = null;
+  for (const f of active) open = Math.max(open ?? -1, lastToggle.get(f)!);
+  return { runs, open };
 }

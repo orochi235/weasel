@@ -3399,3 +3399,10 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): A badge's `padding` prop, and padding in its `style`, replaces the shape's insets on
   each side it sets, as it always has and as the story describes it, so a fitted base refits around the other sides
   alone. Adding the insets to the given padding, as the size's own padding does, was the alternative.
+## Audit round sixty-four (2026-11-21): text
+
+- 2026-11-21 (the fixer's call): `markdownToRuns` reads a marker that turns on a flag nothing turns off again as
+  literal text (`5 * 3`, `2**10`); where several are open at the end, the last one to open is made text and the input
+  read again, until none is. `runsToMarkdown` now closes every flag it opens, fitting the spelling where the plain
+  closing markers would misread, rather than leaving them off. Reading an unclosed marker as styling to the end, as
+  the reader did, was the alternative; CommonMark's flanking rules were another, and need a design of their own.

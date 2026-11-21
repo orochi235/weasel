@@ -226,3 +226,17 @@ describe('run grammar delimiters', () => {
     }
   });
 });
+
+describe('markdownToRuns with a marker nothing closes', () => {
+  it('reads the marker as literal text', () => {
+    expect(markdownToRuns('5 * 3 = 15')).toEqual([{ text: '5 * 3 = 15' }]);
+    expect(markdownToRuns('2**10')).toEqual([{ text: '2**10' }]);
+    expect(markdownToRuns('ends with *')).toEqual([{ text: 'ends with *' }]);
+  });
+
+  it('keeps the pairs that do close', () => {
+    expect(markdownToRuns('*a* 5 * 3')).toEqual([{ text: 'a', italic: true }, { text: ' 5 * 3' }]);
+    expect(markdownToRuns('**b** 2**10')).toEqual([{ text: 'b', bold: true }, { text: ' 2**10' }]);
+    expect(markdownToRuns('***x*** y *')).toEqual([{ text: 'x', bold: true, italic: true }, { text: ' y *' }]);
+  });
+});
