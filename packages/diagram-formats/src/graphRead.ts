@@ -49,7 +49,7 @@ export function decodeEntities(text: string, hash = false): string {
 
 /** Markup's text, one entry per line: `<br>` breaks a line, other tags are dropped. */
 export function markupLines(markup: string, hash = false): string[] {
-  const text = markup.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '');
+  const text = markup.replace(/<br(?:\s[^>]*)?\/?>/gi, '\n').replace(/<[^>]*>/g, '');
   return decodeEntities(text, hash).split('\n').map((l) => l.trim());
 }
 
