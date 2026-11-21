@@ -14,7 +14,8 @@ export const PATH_ATTR = 'data-pref-path';
 export const RAIL_ATTR = 'data-pref-rail';
 
 /** What `selection.css` draws the selection mark on. An open react-aria tab carries `data-selected` of its own, so a tab is marked by {@link tabAttrs}. */
-export const MARKED = "[data-pref-path][data-selected]:not([role='tab']), [data-pref-path][data-pref-picked]";
+export const MARKED =
+  "[data-pref-path][data-selected]:not([role='tab'], [data-pref-fragment]), [data-pref-fragment][data-selected] > [data-pref-path], [data-pref-path][data-pref-picked]";
 
 /** What a form marks while it draws: the selection, and the nodes a `showIf` hides where it draws those. */
 export interface PrefMarks {

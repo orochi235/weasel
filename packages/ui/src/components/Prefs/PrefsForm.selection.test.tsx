@@ -163,3 +163,17 @@ describe('onSelect', () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 });
+
+it('marks the rows of a selected fragment, which has no box of its own, and not the fragment', () => {
+  const schema: PrefGroup = {
+    name: 'Preferences',
+    children: {
+      look: { name: 'Look', as: 'fragment', children: {
+        a: { kind: 'boolean', name: 'A', description: '', default: false },
+        b: { kind: 'boolean', name: 'B', description: '', default: false },
+      } },
+    },
+  };
+  const { container } = render(<PrefsForm schema={schema} onChange={() => {}} selected={['look']} />);
+  expect(marked(container)).toEqual(['look.a', 'look.b']);
+});
