@@ -1,0 +1,67 @@
+{
+ "id": "ui.components.Badge",
+ "commit": "deaf03bd8ed407174fa289a1262d2699ffbe97db",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Badge/Badge.module.css",
+  "packages/ui/src/components/Badge/Badge.stories.module.css",
+  "packages/ui/src/components/Badge/Badge.stories.tsx",
+  "packages/ui/src/components/Badge/Badge.tsx",
+  "packages/ui/src/components/Badge/BadgeDeco.tsx",
+  "packages/ui/src/components/Badge/BadgeLabel.tsx",
+  "packages/ui/src/components/Badge/BadgeRoot.tsx",
+  "packages/ui/src/components/Badge/badgeRoles.ts",
+  "packages/ui/src/components/Badge/catalog.ts",
+  "packages/ui/src/components/Badge/composeOutline.ts",
+  "packages/ui/src/components/Badge/composeSpec.ts",
+  "packages/ui/src/components/Badge/geometry.ts",
+  "packages/ui/src/components/Badge/index.ts",
+  "packages/ui/src/components/Badge/looks.ts",
+  "packages/ui/src/components/Badge/paddingSides.ts",
+  "packages/ui/src/components/Badge/powerlineProps.ts",
+  "packages/ui/src/components/Badge/registryTable.ts",
+  "packages/ui/src/components/Badge/types.ts",
+  "packages/ui/src/components/Badge/useCrawlPhase.ts",
+  "packages/ui/src/components/Badge/useInsets.ts",
+  "packages/ui/src/components/Badge/useSvgBox.ts",
+  "packages/ui/src/components/Badge/variantIcons.ts"
+ ],
+ "a": 6,
+ "b": 4,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 10.7,
+ "unfound": 2.7,
+ "read": {
+  "A": 22,
+  "B": 22
+ },
+ "patches": 8,
+ "questions": 2,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.3,
+   "B": 3.2,
+   "match": 0.5,
+   "fix": 11.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1811619,
+  "costUsd": 5.37
+ },
+ "fixCommits": [
+  "5fd0ac08232b0ea1fcfdb19745c6ee161e5a5ed0",
+  "e43b357a1e96deffaa7e34a7bf8b0ea22b7b6484",
+  "89a65b2a12a1baa6ff948a9d147cb9c9c8e2f6bd",
+  "1e44ea7be32255864609871d5213ede4ba81c9bf",
+  "a6c93fc2645355bcbde008d78d14d9f5eae6803c",
+  "7e5e13104ef7a8360aca1bea97d837eb3f15c568",
+  "1799fd980dc31ef56845fe0c66060eb8642d1f3f",
+  "433c78d00b1101aba5455e27b930f5fd98d8250b"
+ ]
+}

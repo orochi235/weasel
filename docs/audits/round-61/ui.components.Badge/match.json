@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   1,
+   3
+  ],
+  [
+   3,
+   0
+  ]
+ ],
+ "a": [
+  "A `padding` prop drops the shape's insets, while useInsets fits as if insets were added on top of it",
+  "A badge's measured own padding goes stale when only its padding changes",
+  "Focusing the remove control rings a removable plain badge, but not a removable badge with an action",
+  "An effect or base param set to `undefined` replaces its default, the bug shapes were just fixed for",
+  "types.ts says `square` is drawn in CSS; it is composed from the rounded-rect base",
+  "A `padding` given as one `var()` holding a shorthand is copied onto every side and breaks"
+ ],
+ "b": [
+  "A base or effect param explicitly set to `undefined` replaces its default and draws NaN geometry",
+  "`labelProps.className` and `labelProps['aria-label']` are silently overwritten on a removable badge's label",
+  "`onClick` on a `<span>` badge fires only when the badge happens to be split, so adding a tooltip changes whether a click acts",
+  "A fitted badge's own padding is measured only when the content resizes, so a padding change keeps the old clearance"
+ ]
+}
