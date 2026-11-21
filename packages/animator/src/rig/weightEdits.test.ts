@@ -5,6 +5,12 @@ const round = (skin: Record<string, readonly number[]>) =>
   Object.fromEntries(Object.entries(skin).map(([k, v]) => [k, v.map((n) => Math.round(n * 1000) / 1000)]));
 
 describe('setJointWeights', () => {
+  it.each([[-0.2], [Number.NaN]])('gives the joint the share asked for beside another joint weighing %s', (bad) => {
+    const next = setJointWeights({ a: [0.5], b: [bad] }, 1, 'c', new Map([[0, 0.5]]));
+    expect(jointShares(next, 'c', 1)[0]).toBeCloseTo(0.5);
+    expect(round(next)).toEqual({ a: [0.5], c: [0.5] });
+  });
+
   it('sets a joint\'s weight on a point and scales the point\'s other joints to share the rest', () => {
     const skin = { a: [0.5, 1], b: [0.25, 0], c: [0.25, 0] };
     const next = setJointWeights(skin, 2, 'a', new Map([[0, 0.8]]));
