@@ -141,6 +141,21 @@ describe('ComboBox keyboard navigation', () => {
     expect((screen.getByRole('combobox') as HTMLInputElement).value).toBe('Red');
   });
 
+  it('commits the already-selected option again on Enter', async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn();
+    render(<ComboBox label="Color" options={OPTIONS} defaultSelectedKey="g" onCommit={onCommit} />);
+
+    await user.click(screen.getByRole('button', { name: /Show options/ }));
+    await screen.findByRole('option', { name: 'Green' });
+    const input = screen.getByRole('combobox');
+    const focused = input.getAttribute('aria-activedescendant');
+    expect(document.getElementById(focused!)?.textContent).toBe('Green');
+    await user.keyboard('{Enter}');
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith({ source: 'option', key: 'g' });
+  });
+
   it('commits the already-selected option again on a click', async () => {
     const user = userEvent.setup();
     const onCommit = vi.fn();
