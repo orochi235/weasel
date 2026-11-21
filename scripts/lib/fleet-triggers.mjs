@@ -46,5 +46,39 @@ export const SCOPED = [
   'apps/*/tsconfig*.json',
 ];
 
+/**
+ * Tests that read the source tree rather than import it, such as a check that no module outside a quarantine names
+ * an unstable API: `related` cannot reach them from a change, so every branch run includes them. The last test in
+ * `fleet-triggers.test.ts` fails when a test file listing or globbing a directory is missing here.
+ */
+export const TREE_READERS = [
+  'apps/draw/icons/actions.test.ts',
+  'apps/forge/a11y.shards.test.ts',
+  'apps/site/__tests__/palette.test.ts',
+  'apps/site/__tests__/releaseIcons.test.ts',
+  'apps/site/__tests__/stylesheets.test.ts',
+  'apps/site/demos/__tests__/cssModuleClasses.test.ts',
+  'packages/core/src/__tests__/import-shims.parity.test.ts',
+  'packages/core/src/index.barrel.test.ts',
+  'packages/diagram-formats/src/diagramTypeNotation.test.ts',
+  'packages/editing/src/integration/core/canvas/SceneCanvas/kitActionParams.test.tsx',
+  'packages/icons/scripts/gen-icons.test.ts',
+  'packages/labkit/src/lab/LabBoundary.test.tsx',
+  'packages/paint-kinds/src/icons.refs.test.ts',
+  'packages/renderer/src/testing/glRecorder.test.ts',
+  'packages/theme/src/engine/emit/tokens.test.ts',
+  'packages/ui/src/components/Bar/stories.classes.test.ts',
+  'packages/ui/src/components/Properties/Properties.styles.test.ts',
+  'packages/ui/src/components/Toast/containment.test.ts',
+  'packages/ui/src/dlog.test.ts',
+  'scripts/control-sweep/judge.test.ts',
+  'scripts/lib/fleet-triggers.test.ts',
+  'scripts/theme-store.atomic.test.ts',
+  'scripts/vite-aliases.test.ts',
+  'scripts/vite-demo-timestamps.test.ts',
+  'typedoc/categoryOf.test.mjs',
+  'typedoc/headerComments.test.mjs',
+];
+
 /** A test file, which `related` reaches on its own and so never runs everything. */
 export const isTestFile = (path) => /\.(test|spec)\.[cm]?[jt]sx?$/.test(path);

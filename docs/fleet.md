@@ -9,7 +9,9 @@ a changed path run, and the gate runs all but the slow checks whose inputs the b
 tsconfig, a setup file, or anything `vitest.config.ts` loads runs everything too — `TRIGGERS` in
 `scripts/lib/fleet-triggers.mjs`, whose test fails on a file the config loads that no glob there covers
 and no test imports, and on a file a glob there covers that nothing loads. A plugin only a dev server
-or a build loads, and any test file, select only the tests that import them. A trigger one package owns — its `package.json`, a `tsconfig`, its vite or vitest
+or a build loads, and any test file, select only the tests that import them. A test that lists or globs
+the tree instead of importing it, such as ui's check that only quarantined modules name an `UNSTABLE_`
+API, runs on every branch (`TREE_READERS` beside the triggers, held to the tree by the same test). A trigger one package owns — its `package.json`, a `tsconfig`, its vite or vitest
 config — runs that package's tests and its dependents' instead (`SCOPED` beside it), and so does a lockfile
 change that touches only workspace entries, such as a version bump; one that changes an external
 package runs everything. A file read at build time rather than imported,

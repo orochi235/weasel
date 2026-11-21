@@ -22,7 +22,7 @@ import { browserDeps } from './scripts/vitest-browser-deps.ts';
 import { browserPrebundle } from './scripts/vitest-browser-prebundle.ts';
 import { keepErrorsHome } from './scripts/vitest-browser-overlay.ts';
 import { branchChanges, selection } from './scripts/lib/fleet-tree.mjs';
-import { SCOPED, TRIGGERS } from './scripts/lib/fleet-triggers.mjs';
+import { SCOPED, TREE_READERS, TRIGGERS } from './scripts/lib/fleet-triggers.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
 import { loadReruns } from './scripts/vitest-load-reruns.ts';
 import { devWatch } from './scripts/vite-watch.ts';
@@ -97,7 +97,10 @@ const VITE_SERVER_TESTS = [
 // importing it run. Every path seeded counts as affected, which is how the gate project always runs;
 // the gate itself skips the slow checks whose inputs the branch leaves alone (`scripts/lib/gate-inputs.mjs`).
 const related = selection(import.meta.dirname, process.env, {
-  always: readdirSync(join(import.meta.dirname, 'scripts')).filter((f) => f.endsWith('.gate.ts')).map((f) => `scripts/${f}`),
+  always: [
+    ...readdirSync(join(import.meta.dirname, 'scripts')).filter((f) => f.endsWith('.gate.ts')).map((f) => `scripts/${f}`),
+    ...TREE_READERS,
+  ],
   triggers: TRIGGERS,
   scoped: SCOPED,
 });
