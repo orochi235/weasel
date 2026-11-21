@@ -8,7 +8,8 @@ import { useBarLead } from './barLeadHandle';
 import { DockBarContext, useReportDockLeast } from '../ToolbarDock/dockContext';
 import { RunScope } from '../Run';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
-import { useRovingTabIndex } from '../../useRovingTabIndex';
+import { inlineDirection, useRovingTabIndex } from '../../useRovingTabIndex';
+import { wrappedPosition } from './barLines';
 import type { BarProps } from './Bar';
 import s from './Bar.module.css';
 import f from './barFrames.module.css';
@@ -42,7 +43,7 @@ export function BarLine(props: BarLineProps) {
   const roveRef = rove.rootRef;
   const fit = useFitScope(barRef);
   const { line, rest } = splitBarItems(items, kept);
-  const reorder = useBarReorder({ root: barRef, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, measure: (_, p) => (vertical ? p.clientY : p.clientX) });
+  const reorder = useBarReorder({ root: barRef, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, measure: (el, p) => (props.wrap ? wrappedPosition(el, p, vertical, inlineDirection(el) === 'rtl') : vertical ? p.clientY : p.clientX) });
   const keys = useBarReorderKeys({ root: barRef, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, vertical });
   const root = barRoot({ framed, label });
   const Root = root.status ? 'footer' : 'div';
