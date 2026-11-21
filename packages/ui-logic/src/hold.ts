@@ -19,7 +19,7 @@ export const NO_HOLD: Hold = Object.freeze({ on: false });
  */
 export function nestHold(outer: Hold, on: boolean | undefined, reason?: string): Hold {
   if (!on) return outer;
-  const nearest = reason || outer.reason;
+  const nearest = reason || (outer.on ? outer.reason : undefined);
   if (outer.on && outer.reason === nearest) return outer;
   return nearest ? { on: true, reason: nearest } : { on: true };
 }

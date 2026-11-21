@@ -21,6 +21,11 @@ describe('nestHold', () => {
   it('ignores the reason of a level that is off', () => {
     expect(nestHold(NO_HOLD, false, 'Locked')).toBe(NO_HOLD);
   });
+
+  it('ignores the reason of an outer level that is off', () => {
+    expect(nestHold({ on: false, reason: 'Locked' }, true)).toEqual({ on: true });
+    expect(nestHold({ on: false, reason: 'Locked' }, true, 'Busy')).toEqual({ on: true, reason: 'Busy' });
+  });
 });
 
 describe('controlAccess', () => {
