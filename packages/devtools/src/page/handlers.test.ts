@@ -17,3 +17,8 @@ it('hands back every candidate of a trace record, past the serializer default ca
   expect(slice.entries[0]!.matched.at(-1)).toMatchObject({ actionId: 'a149' });
 });
 
+it('hands back every render layer of a frame', () => {
+  const layers = Array.from({ length: 120 }, (_, i) => ({ id: `l${i}`, drawCalls: 1, ms: 0.1 }));
+  const frame = answer(rootWith(null, { paintMs: 1, drawCalls: 120, layers }), { type: 'get-frame' } as never, () => {});
+  expect((frame as { layers: unknown[] }).layers).toHaveLength(120);
+});
