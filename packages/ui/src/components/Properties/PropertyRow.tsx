@@ -5,7 +5,7 @@ import { PropertyHelp } from './PropertyHelp';
 import { ResetControl } from './ResetControl';
 import { InsideRow, useRowState } from './rowScope';
 import s from './Properties.module.css';
-import { holdScope, useDisabled, type DisableableProps } from '../Disabled';
+import { holdScope, useControlAccess, useDisabled, type DisableableProps } from '../Disabled';
 import { ReasonTold } from '../Disabled/Disabled';
 import { watchResize } from '@weasel-js/react';
 
@@ -245,21 +245,23 @@ function AutoToggle({
   children: ReactNode;
 }) {
   const name = typeof label === 'string' ? label : 'this setting';
+  // Pinning or unpinning changes the value, so a read-only scope stops it as it stops a reset.
+  const held = useControlAccess().state !== 'enabled' || disabled;
   const toggle = (e: { preventDefault: () => void; stopPropagation: () => void }) => {
     // The wrapping <label> would otherwise actuate the row's control.
     e.preventDefault();
     e.stopPropagation();
-    if (!disabled) onChange(!auto);
+    if (!held) onChange(!auto);
   };
   return (
     // A span, not a button: a <button> is a labelable element, so inside the
     // row's <label> it would take the row's name off the actual control.
     <span
       role="button"
-      tabIndex={disabled ? undefined : 0}
+      tabIndex={held ? undefined : 0}
       className={s.autoToggle}
       aria-pressed={!auto}
-      aria-disabled={disabled || undefined}
+      aria-disabled={held || undefined}
       aria-label={`Pin ${name}`}
       onClick={toggle}
       onKeyDown={(e) => {
