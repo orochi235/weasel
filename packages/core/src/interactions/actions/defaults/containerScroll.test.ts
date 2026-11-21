@@ -145,4 +145,20 @@ describe('containerScrollAction', () => {
     wheel(deps, { x: 120, y: 150 }, 60);
     expect(scene.scroll.get(C)).toEqual({ x: 0, y: 15 });
   });
+
+  it('passes over a nested container where its clipping parent hides it', () => {
+    const { scene, deps } = setup(4, 0, { clip: 'outline' });
+    const inner = scene.add({
+      kind: 'group', layer: 'l', pose: { x: 0, y: 0, width: 50, height: 40 }, data: null, parent: C, layout: overflowingStack(),
+    });
+    for (let i = 0; i < 5; i++) {
+      scene.add({ kind: 'mark', layer: 'l', pose: { x: 0, y: 0, width: 5, height: 5 }, data: null, parent: inner });
+    }
+    // The inner container is laid out fifth, 160 down: past C's bottom until C scrolls.
+    expect(containerScrollAction.enabled!(deps, { x: 120, y: 270 })).not.toBe(true);
+    scene.scroll.set(C, { x: 0, y: 100 });
+    expect(containerScrollAction.enabled!(deps, { x: 120, y: 170 })).toBe(true);
+    expect(wheel(deps, { x: 120, y: 170 }, 60)).toBeUndefined();
+    expect(scene.scroll.get(inner)).toEqual({ x: 0, y: 30 });
+  });
 });

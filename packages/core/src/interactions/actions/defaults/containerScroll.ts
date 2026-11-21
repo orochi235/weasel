@@ -4,7 +4,8 @@
  * says how far; the offset goes to `scene.scroll`, which moves what the view
  * shows and leaves the document where it is.
  */
-import { clamp, type Rect, rectContainsPoint } from '@weasel-js/geom';
+import { clamp, pathContainsPoint, type Rect, rectContainsPoint } from '@weasel-js/geom';
+import { ownClipOf } from 'canvas/ownClip';
 import { defineAction, type ActionDeps } from '@weasel-js/routing';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
@@ -78,7 +79,8 @@ export interface ScrollableContainer { id: NodeId; range: ScrollRange }
 interface ShownScrollable extends ScrollableContainer { pose: unknown }
 
 /** The shown containers under the world point `at` whose content can scroll,
- *  innermost first: the innermost one and each that holds it. */
+ *  innermost first: the innermost one and each that holds it. A container's
+ *  clip hides what it holds from the point wherever it leaves the point out. */
 function scrollablesAt(scene: AnyScene, at: { x: number; y: number }, descriptor: PoseDescriptor<unknown>): ShownScrollable[] {
   const gates = nodeGates(scene);
   const view = sceneViewPoseAdapter(scene);
@@ -89,15 +91,14 @@ function scrollablesAt(scene: AnyScene, at: { x: number; y: number }, descriptor
     for (const id of ids) {
       const node = scene.get(id);
       if (!node || gates.hidden(id)) continue;
+      const pose = composeWorldPose(view, id, compose);
       const range = scrollRange(scene, id, descriptor);
-      if (range && canScroll(range)) {
-        const pose = composeWorldPose(view, id, compose);
-        if (shownAt(pose, at, () => poseDescriptorForNode(descriptor, node).getBounds(pose))) {
-          hits.set(id, { id, range, pose });
-          innermost = id;
-        }
+      if (range && canScroll(range) && shownAt(pose, at, () => poseDescriptorForNode(descriptor, node).getBounds(pose))) {
+        hits.set(id, { id, range, pose });
+        innermost = id;
       }
-      visit(scene.childrenOf(id));
+      const clip = ownClipOf(node, pose);
+      if (clip === null || pathContainsPoint(clip, at.x, at.y)) visit(scene.childrenOf(id));
     }
   };
   visit(scene.roots);
