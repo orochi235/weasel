@@ -3496,3 +3496,8 @@ Calls the lanes made without a ruling:
   that is not its chart's title and writes none; writing it as front matter, which every chart reader takes as the
   chart's title where it has none, was the alternative. A Mermaid sequence page named `''` reads back unnamed, as an
   empty title statement names no page of any other kind.
+## Audit round sixty-four (2026-11-21): diagram containers
+
+- 2026-11-21 (the fixer's call): `addLane` throws a `RangeError` for a negative or fractional `index`, and still
+  adds at the end for one past the last lane. Clamping a negative index to 0 and rounding a fractional one was the
+  alternative.

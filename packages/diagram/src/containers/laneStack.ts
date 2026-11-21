@@ -89,6 +89,19 @@ export function laneStackLayout(opts: LaneStackOptions): LayoutStrategy<RectPose
     return poses;
   };
 
+  /** The lanes as they rest: the last takes up any change in the pool's size along the stack, down to its least,
+   *  and a pool too small for that grows back to hold them. */
+  const rest = (container: LayoutContainer, children: readonly Lane[]): LayoutArrival<RectPose> => {
+    const sizes = sized(lanesOf(container, children));
+    const last = sizes[sizes.length - 1];
+    if (last === undefined) return { poses: withTitle(container, children, new Map()) };
+    last.size = Math.max(MIN_LANE_SIZE, last.size + along(container.bounds) - sizes.reduce((s, l) => s + l.size, 0));
+    const total = sizes.reduce((s, l) => s + l.size, 0);
+    if (total <= along(container.bounds)) return { poses: withTitle(container, children, stackedLanes(axis, container.bounds, header, sizes)) };
+    const bounds = axis === 'y' ? { ...container.bounds, height: total } : { ...container.bounds, width: total };
+    return { poses: withTitle(container, children, stackedLanes(axis, bounds, header, sizes), bounds), bounds };
+  };
+
   return {
     snap: {
       pickTarget(targets, pointer) {
@@ -101,15 +114,8 @@ export function laneStackLayout(opts: LaneStackOptions): LayoutStrategy<RectPose
       },
     },
 
-    childPoses(container, children) {
-      const sizes = sized(lanesOf(container, children));
-      const last = sizes[sizes.length - 1];
-      if (last !== undefined) {
-        const slack = along(container.bounds) - sizes.reduce((s, l) => s + l.size, 0);
-        last.size = Math.max(MIN_LANE_SIZE, last.size + slack);
-      }
-      return withTitle(container, children, stackedLanes(axis, container.bounds, header, sizes));
-    },
+    childPoses: (container, children) => rest(container, children).poses,
+    fit: rest,
 
     getDropTargets(container, children, dragged) {
       const count = lanesOf(container, children, dragged.id).length;

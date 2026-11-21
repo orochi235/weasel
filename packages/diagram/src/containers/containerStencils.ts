@@ -3,14 +3,17 @@
  * and the edits on one: adding a lane to a pool, and releasing a container's
  * members.
  */
-import { RIGID_POSE_COMPOSITION, localizeWorldPoses, reachesLocked, scenePoseFrame, type NodeId, type Op, type PoseComposition, type RectPose, type AnyScene } from '@weasel-js/core';
+import {
+  RIGID_POSE_COMPOSITION, composesFrames, localizeInScene, localizeWorldPoses, reachesLocked, scenePoseFrame, type NodeId, type Op, type RectPose,
+  type AnyScene,
+} from '@weasel-js/core';
 import type { IconSpec } from '@weasel-js/icons';
 import type { NodeStyle } from '../dataTypes';
 import { diagramThemeOf } from '../theme/resolve';
 import { themeWrites, type ThemedScene } from '../theme/themeWrites';
 import { DIAGRAM_THEME_KEY } from '../theme/types';
 import { firstLanes, regionSpecs, type ContainerBuildOptions } from './regionSpecs';
-import { diagramContainerOf, titleIdOf, type DiagramContainer } from './trait';
+import { bodyBox, diagramContainerOf, titleIdOf, type DiagramContainer } from './trait';
 import type { Rect } from '@weasel-js/geom';
 import * as ops from '@weasel-js/core/ops';
 
@@ -89,36 +92,44 @@ export function lanesOf(scene: AnyScene, poolId: string): NodeId[] {
 
 /**
  * Add a lane to `poolId` before the lane at `index`, or at the end of the
- * stack, as one history entry. The pool grows to hold it. Returns the new
- * lane's id, or null when `poolId` is not a pool.
+ * stack when `index` is absent or past the last lane, as one history entry.
+ * The pool grows to hold it. Returns the new lane's id, or null when `poolId`
+ * is not a pool. Throws a `RangeError` for a negative or fractional `index`.
  */
 export function addLane(scene: AnyScene, poolId: string, index?: number, style?: NodeStyle): string | null {
   const pool = scene.get(poolId as NodeId);
   const trait = pool === undefined ? null : diagramContainerOf(pool);
   if (pool === undefined || trait?.role !== 'pool') return null;
+  if (index !== undefined && !(Number.isInteger(index) && index >= 0)) {
+    throw new RangeError(`addLane: index ${index} is not a lane's place; pass a whole number from 0, or none for the end`);
+  }
   const axis = poolAxisOf(trait);
   const lanes = lanesOf(scene, poolId);
-  // In the pool's own frame, where its lanes are stored.
+  // Laid out in the pool's own box, where a layout sees it: upright where poses do not compose.
+  const frame = scenePoseFrame(scene);
+  const world = frame.world(pool.id) as RectPose;
+  const box = composesFrames(scene.composition) ? world : { x: world.x, y: world.y, width: world.width, height: world.height };
+  const inBox = (id: NodeId) => RIGID_POSE_COMPOSITION.decompose(box, frame.world(id) as RectPose);
   const { width, height } = pool.pose as RectPose;
   const b: RectPose = { x: 0, y: 0, width, height };
-  const at = index === undefined || index >= lanes.length ? null : scene.get(lanes[index]!)!.pose as RectPose;
+  const at = index === undefined || index >= lanes.length ? null : inBox(lanes[index]!);
   const boundary = at !== null ? (axis === 'y' ? at.y : at.x) : axis === 'y' ? b.y + b.height : b.x + b.width;
   // Centered on the boundary it goes in at: the stack orders lanes by where they sit.
   const start = boundary - NEW_LANE_SIZE / 2;
-  const offset = trait.header?.size ?? 0;
+  const body = bodyBox(b, trait.header);
   const pose: RectPose = axis === 'y'
-    ? { x: b.x + offset, y: start, width: b.width - offset, height: NEW_LANE_SIZE }
-    : { x: start, y: b.y + offset, width: NEW_LANE_SIZE, height: b.height - offset };
+    ? { x: body.x, y: start, width: body.width, height: NEW_LANE_SIZE }
+    : { x: start, y: body.y, width: NEW_LANE_SIZE, height: body.height };
   const id = scene.mintId() as string;
-  const specs = localizeWorldPoses(regionSpecs('lane', axis, pose, `Lane ${lanes.length + 1}`, {
+  const specs = localizeInScene(scene, regionSpecs('lane', axis, pose, `Lane ${lanes.length + 1}`, {
     id, layer: pool.layer, parent: poolId, ...(style ? { style } : {}),
-  }), scene.composition as PoseComposition<RectPose>);
+  }).map((spec) => ({ ...spec, pose: RIGID_POSE_COMPOSITION.compose(box, spec.pose) })));
   scene.batch('Add lane', () => {
     for (const spec of specs) scene.add(spec as never);
-    // A themed scene colors the lanes as a theme change would, by their places in the stack: the new one, and
-    // those after it, which it moved along one.
-    if (style === undefined && scene.doc.get(DIAGRAM_THEME_KEY) !== undefined) {
-      const writes = themeWrites(scene as unknown as ThemedScene, diagramThemeOf(scene), new Set([id, ...lanes]));
+    // A themed scene colors the lanes as a theme change would, by their places in the stack: those after the new
+    // one, which it moved along one, and the new one unless it was given a style.
+    if (scene.doc.get(DIAGRAM_THEME_KEY) !== undefined) {
+      const writes = themeWrites(scene as unknown as ThemedScene, diagramThemeOf(scene), new Set(style === undefined ? [id, ...lanes] : lanes));
       for (const [at, data] of writes) scene.update(at as never, { data } as never);
     }
   });
@@ -142,9 +153,12 @@ function releasePlan(scene: AnyScene, id: string) {
   const membersOf = (c: NodeId) => scene.childrenOf(c).filter((m) => m !== titleIdOf(c as string));
   const members = trait.role === 'pool' ? membersOf(node.id).flatMap(membersOf) : membersOf(node.id);
   const beside = releasedFrom(scene, node.id);
-  // A lane's pool restacks the lanes left: it, its title and they are written too.
+  // A lane's pool restacks the lanes left: it, its title and they are written too, and the lanes after it move
+  // with what they hold.
   const restacked = beside === node.id ? [] : [beside, titleIdOf(beside), ...membersOf(beside)];
   if (restacked.some((id) => scene.isLocked(id as NodeId))) return null;
+  const lanes = beside === node.id ? [] : lanesOf(scene, beside);
+  if (reachesLocked(scene as never, lanes.slice(lanes.indexOf(node.id) + 1))) return null;
   const parent = scene.get(beside)!.parent;
   // A lane's members go just past the pool, which stays and would draw over them; a container's take its place.
   const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(beside) + (beside === node.id ? 0 : 1);

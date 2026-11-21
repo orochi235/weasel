@@ -9,7 +9,7 @@ import { DEFAULT_FONT } from '../edgeLabel';
 import { CONTAINER_LAYOUTS, containerShape } from './layouts';
 import { MIN_LANE_SIZE } from './laneStack';
 import { titlePose } from './titlePose';
-import { titleIdOf, type ContainerRole, type DiagramContainer } from './trait';
+import { bodyBox, titleIdOf, type ContainerRole, type DiagramContainer } from './trait';
 
 /** How many lanes a new pool starts with. */
 const NEW_POOL_LANES = 2;
@@ -90,11 +90,12 @@ export function firstLanes<TLayer extends string>(
 ): RegionSpec<TLayer>[] {
   const { header } = containerShape('pool', axis);
   const size = Math.max(MIN_LANE_SIZE, (axis === 'y' ? at.height : at.width) / Math.max(1, titles.length));
+  const body = bodyBox(at, header);
   const out: RegionSpec<TLayer>[] = [];
   for (let i = 0; i < titles.length; i++) {
     const pose: RectPose = axis === 'y'
-      ? { x: at.x + header.size, y: at.y + i * size, width: at.width - header.size, height: size }
-      : { x: at.x + i * size, y: at.y + header.size, width: size, height: at.height - header.size };
+      ? { x: body.x, y: at.y + i * size, width: body.width, height: size }
+      : { x: at.x + i * size, y: body.y, width: size, height: body.height };
     const bodies = opts.laneStyles?.bodies ?? [];
     const style = bodies.length > 0 ? bodies[i % bodies.length] : opts.style;
     out.push(...regionSpecs('lane', axis, pose, titles[i]!, {

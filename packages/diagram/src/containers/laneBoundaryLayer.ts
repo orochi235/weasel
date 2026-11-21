@@ -11,6 +11,7 @@ import {
   paintsLayer,
   PathBuilder,
   polylineFromPoints,
+  reachesLocked,
   rotatedRectCorners,
   viewToTransform,
   type Affordance,
@@ -56,29 +57,45 @@ export interface PoolLanes {
   lanes: { id: string; pose: RectPose; at: RectPose }[];
 }
 
+/** Pool `id` as the affordances see it, whether or not it is drawn or locked; null for no pool. */
+export function poolLanesOf(scene: AnyScene, id: string, world = worldWith(scene)): PoolLanes | null {
+  const node = scene.get(id as NodeId);
+  const trait = node === undefined ? null : diagramContainerOf(node);
+  if (node === undefined || trait?.role !== 'pool') return null;
+  return {
+    id: node.id,
+    axis: poolAxisOf(trait),
+    pose: node.pose as RectPose,
+    at: world(node.id) as RectPose,
+    lanes: lanesOf(scene, node.id).map((l) => ({ id: l, pose: scene.get(l)!.pose as RectPose, at: world(l) as RectPose })),
+  };
+}
+
 /** Every pool in `scene` that is drawn and not locked. */
 export function poolsOf(scene: AnyScene): PoolLanes[] {
   const out: PoolLanes[] = [];
   const world = worldWith(scene);
   for (const node of scene.renderOrderNodes()) {
-    const trait = diagramContainerOf(node);
-    if (trait?.role !== 'pool' || scene.isHidden(node.id) || scene.isLocked(node.id)) continue;
-    out.push({
-      id: node.id,
-      axis: poolAxisOf(trait),
-      pose: node.pose as RectPose,
-      at: world(node.id) as RectPose,
-      lanes: lanesOf(scene, node.id).map((id) => ({ id, pose: scene.get(id)!.pose as RectPose, at: world(id) as RectPose })),
-    });
+    if (scene.isHidden(node.id) || scene.isLocked(node.id)) continue;
+    const pool = poolLanesOf(scene, node.id, world);
+    if (pool !== null) out.push(pool);
   }
   return out;
 }
 
-/** Whether resizing the lane at `index` of `pool` would write a locked node: the lane, the lanes after it, or the
- *  lane's or the pool's title. The boundary is offered, and the resize runs, only where this is false. */
+/** Whether resizing the lane at `index` of `pool` would write a locked node: the lane, the lane's or the pool's
+ *  title, or a lane after it or anything it holds, which moves with it. The boundary is offered, and the resize
+ *  runs, only where this is false. */
 export function laneResizeLocked(scene: AnyScene, pool: PoolLanes, index: number): boolean {
-  const writes = [titleIdOf(pool.id), titleIdOf(pool.lanes[index]!.id), ...pool.lanes.slice(index).map((l) => l.id)];
-  return writes.some((id) => scene.isLocked(id as NodeId));
+  const writes = [titleIdOf(pool.id), titleIdOf(pool.lanes[index]!.id), pool.lanes[index]!.id];
+  return writes.some((id) => scene.isLocked(id as NodeId))
+    || reachesLocked(scene as never, pool.lanes.slice(index + 1).map((l) => l.id as NodeId));
+}
+
+/** Whether the boundary after the lane at `index` of `pool` is offered, and its resize runs: the lane is drawn, and
+ *  the resize would write no locked node. */
+export function laneResizable(scene: AnyScene, pool: PoolLanes, index: number): boolean {
+  return !scene.isHidden(pool.lanes[index]!.id as NodeId) && !laneResizeLocked(scene, pool, index);
 }
 
 /** Whether adding a lane at the end of `pool` would write a locked node: the pool's title, which grows with it. The
@@ -159,7 +176,7 @@ export function createLaneAffordance(scene: AnyScene, opts: LaneLayerOptions = {
         if (!paintsLayer(state, scene.get(pool.id as NodeId)!.layer)) continue;
         const cursor = pool.axis === 'y' ? 'row-resize' : 'col-resize';
         for (const [index, lane] of pool.lanes.entries()) {
-          if (laneResizeLocked(scene, pool, index)) continue;
+          if (!laneResizable(scene, pool, index)) continue;
           out.push({
             id: `${lane.id}:boundary`,
             targetId: null,

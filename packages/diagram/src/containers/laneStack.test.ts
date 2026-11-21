@@ -23,6 +23,13 @@ describe('laneStackLayout', () => {
     expect(poses.get('b')).toEqual({ x: 30, y: 80, width: 300, height: 180 });
   });
 
+  it('grows a pool shrunk past its least last lane back to hold its lanes', () => {
+    const fit = rows.fit!({ ...POOL, bounds: { ...POOL.bounds, height: 100 } }, [A, B]);
+    expect(fit.poses.get('b')).toEqual({ x: 30, y: 80, width: 300, height: 40 });
+    expect(fit.bounds).toEqual({ ...POOL.bounds, height: 120 });
+    expect(rows.fit!(POOL, [A, B]).bounds).toBeUndefined();
+  });
+
   it('puts the title up the left header', () => {
     const poses = rows.childPoses(POOL, [A, B, { id: 'p/title', pose: A.pose }]);
     expect(poses.get('p/title')!.rotation).toBeCloseTo(-Math.PI / 2);

@@ -66,6 +66,9 @@ export interface OverlayPortalProps {
   portalContainer?: Element | null;
 }
 
+/** `ModalOverlay` props a modal in a contained portal cannot honor, which a dialog warns about rather than drops. */
+export const CONTAINED_MODAL_UNHELD = ['onEnter', 'onExit', 'UNSTABLE_deferUntilEntered', 'render'] as const;
+
 /** React Aria props minus the portal key a weasel overlay owns: set, it
  *  would override the container {@link useOverlayPortal} provides. */
 export type WithoutPortalTarget<T> = Omit<T, 'UNSTABLE_portalContainer'>;

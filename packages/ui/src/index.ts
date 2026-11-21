@@ -143,7 +143,11 @@ export { HISTORY_COALESCE_MS, uiKitSettingsSchema } from './kitSettings';
 export type { DataAttributes } from './nativeProps';
 export { nodeText } from './nodeText';
 export type { OptionKey } from './optionKey';
-export * from './overlays/portalHost';
+export {
+  nearestPortalHost, OverlayPortalProvider, useAssignedPortalContainer, useContainedRoot, useOverlayPortal, useOverlayTarget,
+  useReactAriaPortalTarget, withPortalTarget,
+} from './overlays/portalHost';
+export type { OverlayPortalProps, OverlayPortalProviderProps, WithoutPortalTarget } from './overlays/portalHost';
 export { selectionRoving } from './selectionRoving';
 export { tiling, tilingRoving } from './tiling';
 export type { TileAttrs, TilingProps } from './tiling';

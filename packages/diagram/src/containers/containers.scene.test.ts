@@ -1,26 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import { commitOps, createScene, scenePoseFrame, loadScene, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
+import { commitOps, createScene, scenePoseFrame, loadScene, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose, IDENTITY_POSE_COMPOSITION, type PoseComposition } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import type { DiagramEdge } from '../edgeTrait';
 import { waypointFollower } from '../waypointFollower';
 import { diagramCanDropInto } from './canDropInto';
-import { CONTAINER_STENCILS, addLane, containerBuild, lanesOf, releaseMembers } from './containerStencils';
+import { CONTAINER_STENCILS, addLane, canReleaseMembers, containerBuild, lanesOf, releaseMembers } from './containerStencils';
 import { titleIdOf } from './trait';
 import { moveAction, resizeAction } from '@weasel-js/editing';
 import * as presets from '@weasel-js/editing/presets';
 
 type Scene = ReturnType<typeof makeScene>;
 
-function makeScene() {
-  return createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+function makeScene(composition?: PoseComposition<RectPose>) {
+  return createScene<Record<string, unknown>, 'main', RectPose>({
+    systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(), ...(composition ? { composition } : {}),
+  });
 }
 
 const stencil = (id: string) => CONTAINER_STENCILS.find((s) => s.id === id)!;
 
 function build(scene: Scene, id: string, at: RectPose): string {
   let n = 0;
-  const built = containerBuild(stencil(id), at, { layer: 'main', newId: () => `${id}${n++ === 0 ? '' : `-${n - 1}`}` });
+  const built = containerBuild(stencil(id), at, {
+    layer: 'main', newId: () => `${id}${n++ === 0 ? '' : `-${n - 1}`}`, composition: scene.composition as PoseComposition<RectPose>,
+  });
   commitOps({ scene } as unknown as ActionDeps, built.ops, 'Insert');
   return built.id;
 }
@@ -168,6 +172,38 @@ describe('pools in a scene', () => {
     expect(parentOf(scene, 't')).toBe(null);
   });
 
+  it('hold their lanes when resized smaller than the lanes can shrink to', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    const [, second] = lanesOf(scene as never, pool);
+    scene.setPose(pool as NodeId, { ...(scene.get(pool as NodeId)!.pose as RectPose), height: 100 });
+    expect(pose(scene, second!)).toMatchObject({ y: 120, height: 40 });
+    expect(pose(scene, pool)).toMatchObject({ height: 160 });
+  });
+
+  it('keep their lanes in the body of a pool drawn narrower than its header', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 20, height: 240 });
+    const lane = addLane(scene as never, pool)!;
+    for (const id of lanesOf(scene as never, pool)) expect(pose(scene, id)).toMatchObject({ x: 20, width: 0 });
+    expect(lanesOf(scene as never, pool)).toContain(lane);
+    let n = 0;
+    const built = containerBuild(stencil('pool-rows'), { x: 0, y: 0, width: 20, height: 240 }, { layer: 'main', newId: () => `q${n++}` });
+    const lanes = built.ops.map((op) => (op as unknown as { args: { node: { id: string; pose: RectPose } } }).args.node)
+      .filter((node) => node.id !== built.id && !node.id.endsWith('/title'));
+    expect(lanes.map((node) => node.pose)).toMatchObject([{ x: 20, width: 0 }, { x: 20, width: 0 }]);
+  });
+
+  it('refuse a lane added at a negative or fractional index, and add one past the end at the end', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    expect(() => addLane(scene as never, pool, -1)).toThrow(RangeError);
+    expect(() => addLane(scene as never, pool, 1.5)).toThrow(RangeError);
+    expect(lanesOf(scene as never, pool)).toHaveLength(2);
+    const lane = addLane(scene as never, pool, 9);
+    expect(lanesOf(scene as never, pool).at(-1)).toBe(lane);
+  });
+
   it('grow by a lane added at the end, in one entry', () => {
     const scene = makeScene();
     const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
@@ -177,6 +213,28 @@ describe('pools in a scene', () => {
     expect(pose(scene, lane)).toEqual({ x: 32, y: 240, width: 448, height: 120 });
     expect(pose(scene, pool)).toMatchObject({ height: 360 });
     expect(scene.historyIndex()).toBe(entries + 1);
+  });
+
+  it('add a lane where the pool draws, where poses do not compose', () => {
+    const scene = makeScene(IDENTITY_POSE_COMPOSITION as never);
+    const pool = build(scene, 'pool-rows', { x: 300, y: 500, width: 480, height: 240 });
+    const [first, second] = lanesOf(scene as never, pool);
+    const lane = addLane(scene as never, pool)!;
+    expect(lanesOf(scene as never, pool)).toEqual([first, second, lane]);
+    expect(pose(scene, lane)).toEqual({ x: 332, y: 740, width: 448, height: 120 });
+    expect(pose(scene, pool)).toMatchObject({ y: 500, height: 360 });
+    const between = addLane(scene as never, pool, 1)!;
+    expect(lanesOf(scene as never, pool)).toEqual([first, between, second, lane]);
+    expect(pose(scene, between)).toMatchObject({ x: 332, y: 620 });
+  });
+
+  it('add a lane at the end of a turned pool\'s stack', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    scene.setPose(pool as NodeId, { ...(scene.get(pool as NodeId)!.pose as RectPose), rotation: Math.PI / 2 });
+    const lane = addLane(scene as never, pool)!;
+    expect(lanesOf(scene as never, pool).at(-1)).toBe(lane);
+    expect(scene.get(lane as NodeId)!.pose).toMatchObject({ x: 32, y: 240, width: 448, height: 120 });
   });
 
   it('move a later lane\'s members when a lane goes in before it', () => {
@@ -233,6 +291,20 @@ describe('pools in a scene', () => {
     releaseMembers(scene as never, first!);
     expect(scene.get(pool as NodeId)).toBeDefined();
     expect(scene.roots).toEqual([pool, 's']);
+  });
+
+  it('keep a lane whose release would move a locked member of a lane after it', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    const [first, second] = lanesOf(scene as never, pool);
+    shape(scene, 's', { x: 100, y: 150, width: 40, height: 20 }, second);
+    shape(scene, 't', { x: 100, y: 30, width: 40, height: 20 }, first);
+    scene.setLocked('s' as NodeId, true);
+    expect(canReleaseMembers(scene as never, first!)).toBe(false);
+    // Nothing after the last lane moves when it goes.
+    scene.setLocked('s' as NodeId, false);
+    scene.setLocked('t' as NodeId, true);
+    expect(canReleaseMembers(scene as never, second!)).toBe(true);
   });
 
   it('round-trip through toJSON with their layouts', () => {
