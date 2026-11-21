@@ -84,6 +84,15 @@ describe('quantity shape', () => {
     expect(qty(tag(12, unit('mm', { places: 3 }), 'mm')).to('cm', METRIC_MM).raw)
       .toEqual({ value: 1.2, unit: 'cm', display: unit('cm', { places: 3 }) });
   });
+
+  it('reads typed text in the target unit once converted', () => {
+    const accepts = { mm: 1, cm: 10 };
+    const named = qty(tag(12, unit('mm', { accepts }), 'mm')).to('cm', METRIC_MM);
+    expect(named.parse('1.2cm')).toBe(1.2);
+    expect(named.parse('20mm')).toBe(2);
+    const tagged = qty(tag(12, unit(undefined, { accepts }), 'mm')).to('cm', METRIC_MM);
+    expect(tagged.parse('3cm')).toBe(3);
+  });
 });
 
 /** [display, value, text, spoken] */
