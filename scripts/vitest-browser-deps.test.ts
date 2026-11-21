@@ -155,4 +155,10 @@ describe('browserDeps', () => {
     );
     expect(deps()).toEqual([]);
   });
+
+  it('names the importing package for a dependency it has its own copy of', () => {
+    put('node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '4.0.0' }));
+    put('packages/kit/node_modules/zustand/package.json', JSON.stringify({ name: 'zustand', version: '5.0.0' }));
+    expect(deps()).toEqual(['@fixture/kit > zustand/vanilla', '@testing-library/react']);
+  });
 });

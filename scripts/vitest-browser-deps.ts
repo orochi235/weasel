@@ -22,6 +22,14 @@ const ASSET = /\.(css|less|scss|sass|svg|png|jpe?g|gif|webp|woff2?|ttf|otf|json|
 
 const isFile = (path: string) => existsSync(path) && statSync(path).isFile();
 
+/** The nearest directory at or above `dir`, up to `repoRoot`, for which `test` holds. */
+function upFrom(dir: string, repoRoot: string, test: (dir: string) => boolean): string | undefined {
+  for (let at = dir; ; at = dirname(at)) {
+    if (test(at)) return at;
+    if (at === repoRoot || dirname(at) === at) return undefined;
+  }
+}
+
 /** The source module `path` names, or `undefined` for an asset or a path with nothing behind it. */
 function sourceAt(path: string): string | undefined {
   const written = path.replace(/\.js$/, '');
@@ -102,6 +110,26 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
     ...setupFiles.map((file) => resolve(repoRoot, file)),
   ];
   const resolved = new Map<string, string | undefined>();
+  /**
+   * `specifier` as the optimizer must be told it: `<owner> > <specifier>` when the importing package has a
+   * copy of its own installed. vite answers a bare id from the copy the root resolves before it looks for a
+   * nested entry, so listing it bare hands `@weasel-js/font` the root's opentype.js 1.x in place of its 2.0.
+   */
+  const homes = new Map<string, string>();
+  const asListed = (file: string, specifier: string) => {
+    const pkg = packageOf(specifier);
+    const dir = dirname(file);
+    const key = `${dir}\0${pkg}`;
+    if (!homes.has(key)) {
+      const installed = upFrom(dir, repoRoot, (at) => existsSync(join(at, 'node_modules', pkg, 'package.json')));
+      const owner = installed && installed !== repoRoot
+        ? upFrom(dir, repoRoot, (at) => isFile(join(at, 'package.json')))
+        : undefined;
+      const name = owner && (JSON.parse(readFileSync(join(owner, 'package.json'), 'utf8')) as { name?: string }).name;
+      homes.set(key, name && workspace.has(name) ? `${name} > ` : '');
+    }
+    return homes.get(key)! + specifier;
+  };
   const visit = (path: string) => {
     if (!resolved.has(path)) resolved.set(path, sourceAt(path));
     const file = resolved.get(path);
@@ -129,7 +157,7 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(asListed(file, specifier));
     }
   }
   return [...found].sort();
