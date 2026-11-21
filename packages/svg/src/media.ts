@@ -9,6 +9,7 @@
 import { absolutePx } from './absoluteUnits';
 import { ConditionSyntaxError, evaluateCondition, triAnd, triNot, type Tri } from './condition';
 import { splitTopLevel } from './cssScan';
+import { parseViewBoxAttr } from './viewBox';
 import { getOwn } from '@weasel-js/registry';
 
 /** The media a parse is taken to be rendered on. */
@@ -71,9 +72,9 @@ export function mediaEnvironmentFor(
 ): SvgMediaEnvironment {
   let width = absoluteLength(root.getAttribute('width'));
   let height = absoluteLength(root.getAttribute('height'));
-  const vb = (root.getAttribute('viewBox') ?? '').trim().split(/[\s,]+/).map(Number);
-  if (vb.length === 4 && vb.every(Number.isFinite) && vb[2] > 0 && vb[3] > 0) {
-    const [, , w, h] = vb;
+  const vb = parseViewBoxAttr(root.getAttribute('viewBox'));
+  if (vb && vb.width > 0 && vb.height > 0) {
+    const { width: w, height: h } = vb;
     if (width == null && height == null) { width = w; height = h; }
     else if (width == null) width = (height as number) * (w / h);
     else if (height == null) height = width * (h / w);

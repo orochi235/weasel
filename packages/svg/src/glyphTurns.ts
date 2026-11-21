@@ -7,14 +7,15 @@
  */
 import type { StyledRun } from '@weasel-js/text';
 import { collapses } from './glyphShifts';
+import { readNumbers } from './transform';
 
 /** `el`'s own `rotate` list, empty where it has none or white space SVG
  *  collapses would move the glyphs its values name, which is reported. */
 export function turnsOf(el: Element, onWarn: (m: string) => void): number[] {
   const raw = el.getAttribute('rotate')?.trim();
   if (!raw) return [];
-  const list = raw.split(/[\s,]+/).map(Number);
-  if (list.some((v) => !Number.isFinite(v))) {
+  const list = readNumbers(raw);
+  if (!list) {
     onWarn(`<${el.tagName.toLowerCase()} rotate="${raw}"> is not read: it is not a list of numbers`);
     return [];
   }

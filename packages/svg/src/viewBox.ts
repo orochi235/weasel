@@ -1,17 +1,16 @@
 import type { Rect } from '@weasel-js/geom';
+import { readNumbers } from './transform';
 
 /**
  * Parse an SVG `viewBox="x y width height"` attribute. Returns undefined
  * on null/empty/malformed input. Numbers may be separated by whitespace
- * and/or commas (SVG spec).
+ * and/or commas, or abut where the second cannot continue the first (SVG spec).
  */
 export function parseViewBoxAttr(
   raw: string | null,
 ): Rect | undefined {
   if (raw == null) return undefined;
-  const parts = raw.trim().split(/[\s,]+/).filter(Boolean);
-  if (parts.length !== 4) return undefined;
-  const nums = parts.map(parseFloat);
-  if (nums.some((n) => !Number.isFinite(n))) return undefined;
+  const nums = readNumbers(raw);
+  if (nums?.length !== 4) return undefined;
   return { x: nums[0], y: nums[1], width: nums[2], height: nums[3] };
 }
