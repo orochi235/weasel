@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { act } from 'react';
 import { useBoxes, type BoxSize } from './useBoxes';
 
 // A box tipped by a transform: its laid-out size is 10 by 20, its bounding rect 18 by 18.
@@ -15,7 +16,7 @@ function measured(untransformed: boolean): readonly BoxSize[] {
   let seen: readonly BoxSize[] = [];
   function Probe() {
     const ref = useRef<HTMLDivElement | null>(null);
-    seen = useBoxes(() => [ref.current], 1, { untransformed });
+    seen = useBoxes(() => [ref.current], { untransformed });
     return <div ref={(el) => { tipped(el); ref.current = el; }} />;
   }
   render(<Probe />);
@@ -29,5 +30,25 @@ describe('useBoxes', () => {
 
   it('reads the laid-out size, which a transform leaves alone, when asked for it untransformed', () => {
     expect(measured(true)).toEqual([{ width: 10, height: 20 }]);
+  });
+
+  it('measures an element that replaces another, the count unchanged', () => {
+    let seen: readonly BoxSize[] = [];
+    let swap = () => {};
+    function Probe() {
+      const ref = useRef<HTMLElement | null>(null);
+      const [second, setSecond] = useState(false);
+      swap = () => setSecond(true);
+      seen = useBoxes(() => [ref.current], { untransformed: true });
+      const sized = (w: number) => (el: HTMLElement | null) => {
+        if (el) Object.defineProperty(el, 'offsetWidth', { configurable: true, value: w });
+        ref.current = el;
+      };
+      return second ? <span key="b" ref={sized(30)} /> : <div key="a" ref={sized(10)} />;
+    }
+    render(<Probe />);
+    expect(seen[0]!.width).toBe(10);
+    act(() => swap());
+    expect(seen[0]!.width).toBe(30);
   });
 });

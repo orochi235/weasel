@@ -12,7 +12,7 @@ const NONE: BoxSize = { width: 0, height: 0 };
 /** The track shape for `ref`'s laid-out box: `shape` when given, else `arc` laid in the box. Rebuilt when the box resizes
  *  or a field of `arc` changes, not when `arc` is a fresh object with the same fields. */
 export function useBoxShape(ref: RefObject<HTMLElement | null>, arc: AlongArc, shape?: BoxShape): TrackShape {
-  const { width, height } = useBoxes(() => [ref.current], 1, { untransformed: true })[0] ?? NONE;
+  const { width, height } = useBoxes(() => [ref.current], { untransformed: true })[0] ?? NONE;
   const { start, end, at, span, direction, radius, center, inset } = arc;
   const cx = center?.x;
   const cy = center?.y;

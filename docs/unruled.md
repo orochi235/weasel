@@ -1832,7 +1832,8 @@ Calls the lanes made without a ruling:
   read; `niceDomain` keeps an end that would overflow, and a span too fine to cut.
 - Open: a clearable number pref with a numeric default reads back as the default once cleared in a store.
 - Open: negative stroke widths pass through the draw.io, DOT, and Mermaid readers unchanged.
-- Open: `Slider` commits through `onChange` when a press or keystroke moves nothing.
+- A `Slider` key that cannot move its thumb sends neither `onInput` nor `onChange`, as `docs/conventions.md` ("Edit
+  callbacks") has `onChange` skip an edit that changed nothing; it still keeps the key from the page (2026-11-20).
 - Open: which edge an RTL menu favors when it fits on neither side, or is wider than the viewport. menu's placement
   property skips both cases (2026-11-10).
 
@@ -1841,9 +1842,9 @@ Calls the lanes made without a ruling:
 - Open: a mixed number slider in `PropertyField` disables its track and reads out a dash that takes no focus, so it
   cannot be edited, while `PrefsForm`'s `mixed` says editing one calls `onChange` as usual. A test pins the disabled
   track ("parks a mixed slider").
-- Open: `Slider`'s region drag moves the two thumbs beside it by one track distance with no `step` or stop snapping,
-  and a shift-all drag snaps to `step` even under `snap: 'strict'`, which says `step` no longer applies and every
-  stop is a detent. Under strict stops spaced unevenly, both thumbs cannot land on stops and keep their gap.
+- A `Slider` drag that moves several thumbs (shift-all, or a region) lands them where one dragged thumb could: under
+  `snap: 'strict'` each moves the same number of stops, as many as the pointer crossed, so they stay on stops and
+  may not keep their gap; otherwise each lands on the `step` grid (2026-11-20).
 - Open: a `ControlPanel` group drawn `as: 'bar'` hands its cells no `errors`, `changed` or `auto`, so an error, a
   changed mark or an auto readout on a bar leaf does not show. A paired row shows errors and `changed`, not `auto`.
 - Open: `selectTool.pickBest` steers only the internal select tool's own pick; the dispatcher, hover and `onClick`

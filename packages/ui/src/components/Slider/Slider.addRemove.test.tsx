@@ -27,6 +27,16 @@ describe('Slider click-on-track to add', () => {
     expect(onChange.mock.calls[0][0]).toEqual([{ value: 0.5 }, { value: 0.25 }]);
   });
 
+  it('inserts an added thumb in value order under constraint ordered', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <Slider min={0} max={100} constraint="ordered" thumbs={[{ value: 10 }, { value: 50 }]} onInput={() => {}} onChange={onChange} onAddThumb={at => ({ value: Math.round(at) })} />,
+    );
+    stubRect(container.querySelector('[data-slider-rail]')!, { left: 0, width: 200 });
+    fireEvent.pointerDown(container.querySelector('[data-slider-track]')!, { clientX: 60, clientY: 12, button: 0 });
+    expect(onChange.mock.calls[0][0]).toEqual([{ value: 10 }, { value: 30 }, { value: 50 }]);
+  });
+
   it('null return is a no-op', () => {
     const onInput = vi.fn();
     const { container } = render(
