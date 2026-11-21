@@ -127,6 +127,20 @@ function useFollowOptions(
   }, [model, minFactor, maxFactor]);
 }
 
+/** Whether the hook's host has unmounted. The model holds no resources, and `dispose` is one-way, so unmounting only
+ *  reports the lens gone: disposing instead leaves StrictMode's mount / unmount / remount with a dead model that
+ *  ignores every aim. */
+function useGoneRef(): { readonly current: boolean } {
+  const goneRef = useRef(false);
+  useEffect(() => {
+    goneRef.current = false;
+    return () => {
+      goneRef.current = true;
+    };
+  }, []);
+  return goneRef;
+}
+
 /**
  * Binds `@weasel-js/loupe`'s model to a host element.
  *
@@ -177,19 +191,8 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
   });
   const model = modelRef.current;
 
-  const goneRef = useRef(false);
-
-  // The model holds no resources, and `dispose` is one-way — so unmounting only
-  // reports the lens gone. Disposing here instead leaves React's mount / unmount
-  // / remount in StrictMode with a permanently dead model that silently ignores
-  // every aim.
-  useEffect(() => {
-    goneRef.current = false;
-    return () => {
-      goneRef.current = true;
-    };
-  }, []);
-  // After the effect above, so a remount marks the lens alive before the model is told to follow the props.
+  const goneRef = useGoneRef();
+  // After `useGoneRef`'s effect, so a remount marks the lens alive before the model is told to follow the props.
   useFollowOptions(model, options);
 
   // Aim at the pointer's last spot over the host, for a lens that has just
