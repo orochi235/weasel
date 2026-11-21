@@ -69,6 +69,16 @@ describe('applyTheme: what it publishes, and for how long', () => {
     expect(textOf(document)).not.toContain('#bbbbbb');
   });
 
+  it('keeps the first same-named definition\'s declarations off the second\'s elements', () => {
+    const a = div();
+    const b = div();
+    applyTheme(a, defineTheme({ name: 'app', pins: { 'button-h': '40px' } }), { mode: 'light' });
+    applyTheme(b, defineTheme({ name: 'app', pins: { 'color-accent': '#bbbbbb' } }), { mode: 'light' });
+    expect(getComputedStyle(a).getPropertyValue('--wzl-button-h').trim()).toBe('40px');
+    expect(getComputedStyle(b).getPropertyValue('--wzl-button-h').trim()).not.toBe('40px');
+    expect(getComputedStyle(b).getPropertyValue('--wzl-color-accent').trim()).toBe('#bbbbbb');
+  });
+
   it('publishes into the shadow root an element lives in, not the document around it', () => {
     const host = div();
     const shadow = host.attachShadow({ mode: 'open' });
