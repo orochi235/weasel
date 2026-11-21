@@ -3468,3 +3468,9 @@ Calls the lanes made without a ruling:
   still writes anchored at the user-space origin; the kit's export path resolves such a paint with
   `paintToLocalUnits` first and never warns. Writing a def per node, each placed against that node's box, was the
   alternative.
+
+## Audit round sixty-five (2026-11-21): geom paths, part two
+
+- 2026-11-21 (the fixer's call): `mergeRegion` throws a `RangeError` for a `tolerance` that is not a positive finite
+  number, as `pathFaceArrangement` does for its `flattenTolerance`; a zero one had dropped every piece and answered an
+  empty path. Clamping it to a floor, as `resamplePath` and `simplifyPath` do, was the alternative.

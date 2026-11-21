@@ -16,7 +16,8 @@ import { lerp } from '../scalar';
 export interface MergeRegionOptions {
   /** The path's precision, in its units: ends a thousandth of this apart
    *  are joined, and which side of each piece is filled is read from curves
-   *  flattened to a sixty-fourth of it. Default 0.01. */
+   *  flattened to a sixty-fourth of it. Default 0.01. Anything but a
+   *  positive finite number throws a `RangeError`. */
   tolerance?: number;
 }
 
@@ -42,6 +43,7 @@ interface Cut {
  */
 export function mergeRegion(path: Path, opts: MergeRegionOptions = {}): PolygonPath {
   const tol = opts.tolerance ?? 0.01;
+  if (!(tol > 0 && Number.isFinite(tol))) throw new RangeError(`tolerance must be a positive number, not ${tol}`);
   const contours = pathToCubicContours(path).filter((c) => c.segs.length > 0);
   const snap = tol * 1e-3;
   const all = weld(contours.flatMap((c) => closeContour(c.segs, snap)), snap);

@@ -143,4 +143,9 @@ describe('mergeRegion where three edges cross at one point', () => {
       expectSameRegion(src, m, 0.37);
     }
   });
+
+  it('throws for a tolerance that is not a positive finite number', () => {
+    const two = pathFromD('M0 0H10V10H0Z M5 5H15V15H5Z');
+    for (const tolerance of [0, -0.01, NaN, Infinity]) expect(() => mergeRegion(two, { tolerance })).toThrow(RangeError);
+  });
 });
