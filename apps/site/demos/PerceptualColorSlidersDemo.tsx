@@ -213,10 +213,11 @@ export function PerceptualColorSlidersDemo() {
     const l = L_BOUNDS[mode];
     const c = CHROMA_BOUNDS[mode];
     setBoundsMode(mode);
-    setLRange(prev => [
-      Math.max(prev[0], l.dark[0]),
-      Math.min(prev[1], l.light[1]),
-    ]);
+    setLRange(prev => {
+      const dark = Math.max(prev[0], l.dark[0]);
+      const light = Math.min(Math.max(prev[1], dark), l.light[1]);
+      return [Math.min(dark, light), light];
+    });
     setChroma(prev => ({
       cTop:  Math.min(prev.cTop,  c.cTop[1]),
       cPeak: Math.min(prev.cPeak, c.cPeak[1]),
