@@ -64,14 +64,21 @@ export interface PoseRun {
   isRunning(): boolean;
 }
 
-/** `step(ctx)`, running `onThrow` before a throw from it goes on. */
+/** `step(ctx)`'s poses, read into `into`; `onThrow` runs before a throw from either goes on. */
 function stepOrElse<TPose>(
   step: UsePoseRunOptions<TPose>['step'],
   ctx: PoseRunCtx<TPose>,
+  into: Map<NodeId, TPose>,
   onThrow: () => void,
-): PoseRunStep<TPose> {
+): boolean {
   try {
-    return step(ctx);
+    const { poses, done } = step(ctx);
+    into.clear();
+    // `poses` may be lazy, so a generator's own throw arrives here rather than from `step`.
+    for (const [id, pose] of poses) {
+      if (!ctx.pinned.has(id)) into.set(id, pose);
+    }
+    return done;
   } catch (err) {
     onThrow();
     throw err;
@@ -143,13 +150,8 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     const hold = holdNow();
     const pinned = hold.others();
     // A producer that throws ends the run as a cancel would, not left running with no frame coming.
-    const { poses, done } = stepOrElse(optsRef.current.step, { pinned, frame: frame.current }, () => { halt(loop); release(); });
+    const done = stepOrElse(optsRef.current.step, { pinned, frame: frame.current }, previews.current, () => { halt(loop); release(); });
     frame.current++;
-    previews.current.clear();
-    for (const [id, pose] of poses) {
-      if (pinned.has(id)) continue;
-      previews.current.set(id, pose);
-    }
     hold.set(previews.current);
     if (done) {
       halt(loop);
