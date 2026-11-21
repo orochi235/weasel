@@ -170,6 +170,7 @@
   cursor: not-allowed;
 }
 
+.paintEnabled,
 .paintDisabledBody {
   display: contents;
 }

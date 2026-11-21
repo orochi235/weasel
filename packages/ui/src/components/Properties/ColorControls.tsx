@@ -72,42 +72,39 @@ export function ColorControl(p: PropertyColorFieldProps) {
   );
 }
 
-/** Takes a subtree out of focus order, hit testing, and the accessibility tree. Set on the node: React 18 does not know the attribute. */
-const makeInert = (el: HTMLElement | null): void => {
-  el?.toggleAttribute('inert', true);
-};
-
 export function PaintControl(p: PropertyPaintFieldProps) {
   const text = useNameText(p.name);
-  if (p.disabled && p.control !== 'inline') {
-    return <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} inherit={p.inherit} disabled disabledReason={p.disabledReason} onChange={p.onChange} aria-label={text} />;
+  if (p.control !== 'inline') {
+    return p.disabled
+      ? <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} inherit={p.inherit} disabled disabledReason={p.disabledReason} onChange={p.onChange} aria-label={text} />
+      : <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} kinds={p.kinds} allowNone={p.allowNone} inherit={p.inherit} onChange={p.onChange} onInput={p.onInput} onCancel={p.onCancel} aria-label={text} />;
   }
-  const Editor = p.control === 'inline' ? PaintInput : PaintField;
-  const editor = (
-    <Editor
-      className={p.disabled ? undefined : p.className}
-      value={p.value}
-      mixed={p.mixed}
-      unset={p.unset}
-      kinds={p.kinds}
-      allowNone={p.allowNone}
-      inherit={p.inherit}
-      onChange={p.onChange}
-      onInput={p.onInput}
-      onCancel={() => {
-        moved.current = { rgb: false, alpha: false };
-        p.onCancel?.();
-      }}
-      aria-label={text}
-    />
-  );
-  if (!p.disabled) return editor;
+  const disabled = p.disabled === true;
   // The inline editor is a stack of controls, and a kind's editor may be a consumer's: drawn inert, it keeps
-  // the height it has enabled, so the rows under it do not move when a condition flips.
+  // the height it has enabled, so the rows under it do not move when a condition flips. Enabled or not, the tree
+  // is the same, so a flip does not remount the editor and lose its state.
   return (
-    <div className={p.className ? `${s.paintDisabled} ${p.className}` : s.paintDisabled} role="group" aria-label={text} aria-disabled="true">
-      <div ref={makeInert} className={s.paintDisabledBody}>
-        {editor}
+    <div
+      className={disabled ? (p.className ? `${s.paintDisabled} ${p.className}` : s.paintDisabled) : s.paintEnabled}
+      role={disabled ? 'group' : undefined}
+      aria-label={disabled ? text : undefined}
+      aria-disabled={disabled || undefined}
+    >
+      {/* Set on the node: React 18 does not know the attribute. */}
+      <div ref={(el) => { el?.toggleAttribute('inert', disabled); }} className={s.paintDisabledBody}>
+        <PaintInput
+          className={disabled ? undefined : p.className}
+          value={p.value}
+          mixed={p.mixed}
+          unset={p.unset}
+          kinds={p.kinds}
+          allowNone={p.allowNone}
+          inherit={p.inherit}
+          onChange={p.onChange}
+          onInput={p.onInput}
+          onCancel={p.onCancel}
+          aria-label={text}
+        />
       </div>
     </div>
   );
