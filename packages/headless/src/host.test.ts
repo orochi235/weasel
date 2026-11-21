@@ -3,7 +3,7 @@ import type { Browser } from 'playwright-core';
 import { planPixelRender, loadScene, type SavedScene } from '@weasel-js/core';
 import { regionRenderArgs } from '@weasel-js/export';
 import { createNodeRasterHost, type NodeRenderArgs } from './host';
-import { sceneFromWire, sceneToWire } from './protocol';
+import { PAGE_GLOBAL, sceneFromWire, sceneToWire } from './protocol';
 import { FIXTURE_RENDER, fixtureScene } from './testing/fixtureScene';
 
 describe('node raster host', () => {
@@ -226,5 +226,42 @@ describe('node raster host', () => {
     } finally {
       vi.doUnmock('playwright-core');
     }
+  });
+
+  /** A browser whose page runs what the host evaluates here, and runs `script` when the host adds its page script. */
+  function scriptedBrowser(script: (raise: (err: Error) => void) => void) {
+    const listeners = new Map<string, (err: Error) => void>();
+    const close = vi.fn(async () => {});
+    const page = {
+      on: (event: string, fn: (err: Error) => void) => { listeners.set(event, fn); },
+      addScriptTag: async () => { script((err) => listeners.get('pageerror')?.(err)); },
+      isClosed: () => false,
+      evaluate: async <A, R>(fn: (arg: A) => R, arg: A) => fn(arg),
+    };
+    return { close, isConnected: () => true, newContext: async () => ({ close, newPage: async () => page }) } as unknown as Browser;
+  }
+
+  it('serves a page script that calls serveHeadlessPage once its fonts load', async () => {
+    const root = globalThis as Record<string, unknown>;
+    const browser = scriptedBrowser(() => {
+      setTimeout(() => {
+        root[PAGE_GLOBAL] = { render: async () => ({ width: 1, height: 1, base64: Buffer.from([5, 5, 5, 5]).toString('base64') }) };
+      }, 30);
+    });
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    try {
+      expect(Array.from((await host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).data)).toEqual([5, 5, 5, 5]);
+    } finally {
+      delete root[PAGE_GLOBAL];
+      await host.dispose();
+    }
+  });
+
+  it('rejects with the error a page script threw before serving', async () => {
+    const browser = scriptedBrowser((raise) => raise(new Error('registerFont: no such font')));
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    const rendering = host.render({ scene: fixtureScene(), ...FIXTURE_RENDER });
+    await expect(rendering).rejects.toThrow(/threw before calling `serveHeadlessPage`: registerFont: no such font/);
+    await expect(rendering).rejects.toMatchObject({ cause: { message: 'registerFont: no such font' } });
   });
 });

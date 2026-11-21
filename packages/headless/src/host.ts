@@ -10,8 +10,8 @@ export interface NodeRasterHostOptions {
   /** Launch options for the Chromium the host starts. Ignored with `browser`. */
   launch?: LaunchOptions;
   /** The page script's source: one classic script that calls `serveHeadlessPage` from
-   *  `@weasel-js/headless/page`. Default: `dist/page.global.js`, which calls it with no options.
-   *  Bundle your own to register fonts, paint kinds or node shapes, and to give the page your
+   *  `@weasel-js/headless/page`, at once or within 30 seconds, as after its fonts load. Default:
+   *  `dist/page.global.js`, which calls it with no options. Bundle your own to register fonts, paint kinds or node shapes, and to give the page your
    *  scenes' registry, composition, layout frame and quantize rule. */
   pageScript?: string;
 }
@@ -64,6 +64,9 @@ function defaultPageScript(): string {
   }
 }
 
+/** How long a page script may take to call `serveHeadlessPage`, as one that waits for its fonts to load. */
+const READY_MS = 30_000;
+
 async function open(options: NodeRasterHostOptions): Promise<Open> {
   const script = options.pageScript ?? defaultPageScript();
   const browser = options.browser
@@ -74,9 +77,25 @@ async function open(options: NodeRasterHostOptions): Promise<Open> {
     const page = await context.newPage();
     const opened: Open = { browser, context, page, crashed: false };
     page.on('crash', () => { opened.crashed = true; });
+    let threw: (err: Error) => void = () => {};
+    const thrown = new Promise<Error>((resolve) => { threw = resolve; });
+    page.on('pageerror', (err) => threw(err));
     await page.addScriptTag({ content: script });
-    const ready = await page.evaluate((key) => Object.hasOwn(globalThis, key), PAGE_GLOBAL);
-    if (!ready) throw new Error('node raster host: the page script ran but never called `serveHeadlessPage`');
+    const ready = page.evaluate(([key, ms]) => new Promise<boolean>((resolve) => {
+      const until = Date.now() + ms;
+      const poll = (): void => {
+        if (Object.hasOwn(globalThis, key)) resolve(true);
+        else if (Date.now() >= until) resolve(false);
+        else setTimeout(poll, 10);
+      };
+      poll();
+    }), [PAGE_GLOBAL, READY_MS] as const);
+    ready.catch(() => undefined);
+    const outcome = await Promise.race([ready, thrown]);
+    if (outcome instanceof Error) {
+      throw new Error(`node raster host: the page script threw before calling \`serveHeadlessPage\`: ${outcome.message}`, { cause: outcome });
+    }
+    if (!outcome) throw new Error(`node raster host: the page script never called \`serveHeadlessPage\` within ${READY_MS} ms`);
     return opened;
   } catch (err) {
     // A cleanup that fails too, as on a browser already gone, must not replace the error that caused it.

@@ -660,6 +660,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   through any of them, so it draws what nothing can pick. Whether projection should refuse those cameras too, or
   `rayAt` cast from the eye for a near plane at 0, is unsettled. A near plane past the far one draws depth mirrored,
   and its rays run back toward the eye.
+- 2026-11-21 (my call, audit round 63): headless's host waits up to 30 seconds for a page script to call
+  `serveHeadlessPage`, so one may call it once its fonts load, and fails the open at once with the error a page
+  script threw first. The wait is fixed; whether `NodeRasterHostOptions` should take it is unsettled.
 - 2026-11-20 (my call, audit round 49): headless refuses a result past `MAX_RESULT_BYTES` (its base64 must fit one
   V8 string), an RGBA render in Node before a browser starts and a PNG in the page once encoded, rather than send a
   larger one in pieces. Whether the host should instead carry a large result across in chunks is unsettled.
