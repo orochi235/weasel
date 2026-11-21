@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import { AnimatedTransport } from './AnimatedTransport';
 import { fakeHandle } from './timelineHandle.fixtures';
@@ -11,5 +11,14 @@ describe('useTimelinePlayback', () => {
     h.resume();
     renderWithIcons(<AnimatedTransport handle={h} />);
     expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy();
+  });
+
+  it('rewinds a timeline played backward to 0 to its end on play', () => {
+    const h = fakeHandle();
+    h.setTimeScale(-1);
+    renderWithIcons(<AnimatedTransport handle={h} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+    expect(h.seek).toHaveBeenLastCalledWith(1000);
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
   });
 });

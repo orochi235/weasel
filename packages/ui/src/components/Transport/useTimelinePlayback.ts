@@ -44,9 +44,11 @@ export function useTimelinePlayback(handle: TimelineHandle): Omit<TransportProps
         handle.pause();
         return;
       }
-      // `rearm` declines to revive a timeline at its duration, so resume
-      // alone would do nothing. Play-at-end rewinds first.
-      if (handle.time() >= handle.duration()) handle.seek(0);
+      // `rearm` declines to revive a timeline at the end it plays toward, so
+      // resume alone would do nothing. Play-at-end rewinds first.
+      if (handle.timeScale() < 0) {
+        if (handle.time() <= 0) handle.seek(handle.duration());
+      } else if (handle.time() >= handle.duration()) handle.seek(0);
       handle.resume();
       raf.request();
     },
