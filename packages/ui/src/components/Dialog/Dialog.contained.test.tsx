@@ -122,6 +122,50 @@ describe('Dialog in a contained portal', () => {
   });
 });
 
+describe('Dialog in a contained portal, given ModalOverlay props', () => {
+  it('puts them on its overlay as the portal path does', () => {
+    function Styled() {
+      const [box, setBox] = useState<HTMLDivElement | null>(null);
+      return (
+        <div ref={setBox}>
+          {box ? (
+            <OverlayPortalProvider container={box} contained>
+              <Dialog open isExiting data-testid="overlay" title="Prefs"
+                style={({ isExiting }) => ({ opacity: isExiting ? 0.5 : 1 })}>
+                <button type="button">inside</button>
+              </Dialog>
+            </OverlayPortalProvider>
+          ) : null}
+        </div>
+      );
+    }
+    renderWithIcons(<Styled />);
+    const overlay = screen.getByTestId('overlay');
+    expect(overlay.hasAttribute('data-contained')).toBe(true);
+    expect(overlay.hasAttribute('data-exiting')).toBe(true);
+    expect(overlay.style.opacity).toBe('0.5');
+  });
+
+  it('warns about the ones it cannot honor', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    function Animated() {
+      const [box, setBox] = useState<HTMLDivElement | null>(null);
+      return (
+        <div ref={setBox}>
+          {box ? (
+            <OverlayPortalProvider container={box} contained>
+              <Dialog open onExit={() => {}} title="Prefs"><button type="button">inside</button></Dialog>
+            </OverlayPortalProvider>
+          ) : null}
+        </div>
+      );
+    }
+    renderWithIcons(<Animated />);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('ignores onExit'));
+    warn.mockRestore();
+  });
+});
+
 describe('inertOutside', () => {
   it('makes inert what joins the root while it holds, but not an overlay', async () => {
     const root = document.createElement('div');

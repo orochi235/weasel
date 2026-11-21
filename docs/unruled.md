@@ -3266,3 +3266,10 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+
+## Audit round sixty (2026-11-20): ui components, part two
+
+- 2026-11-20 (the fixer's call): A `Dialog` in a contained portal puts `ModalOverlay`'s DOM attributes, handlers,
+  `style`, `isEntering` and `isExiting` on its overlay, and warns that it ignores `onEnter`, `onExit`,
+  `UNSTABLE_deferUntilEntered` and `render`, since it unmounts at once and draws its own overlay. Giving the
+  contained modal an exit animation, so those work, was the alternative.

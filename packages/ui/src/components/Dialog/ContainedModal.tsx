@@ -1,7 +1,7 @@
-import { useContext, useEffect, useMemo, useRef, useState, type HTMLAttributes, type ReactNode } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { FocusScope, useOverlay } from 'react-aria';
-import { OverlayTriggerStateContext } from 'react-aria-components';
+import { FocusScope, mergeProps, useOverlay } from 'react-aria';
+import { OverlayTriggerStateContext, type ModalRenderProps } from 'react-aria-components';
 
 /** Props for {@link ContainedModal}. */
 export interface ContainedModalProps {
@@ -17,6 +17,12 @@ export interface ContainedModalProps {
   overlayClassName: string;
   modalClassName: string;
   modalProps?: HTMLAttributes<HTMLDivElement>;
+  /** DOM attributes and handlers for the overlay, as `ModalOverlay` takes them. */
+  overlayProps?: HTMLAttributes<HTMLDivElement>;
+  /** The overlay's style, or a function of its state, as `ModalOverlay` takes it. */
+  overlayStyle?: CSSProperties | ((values: ModalRenderProps & { defaultStyle: CSSProperties }) => CSSProperties | undefined);
+  isEntering?: boolean;
+  isExiting?: boolean;
   children: ReactNode;
 }
 
@@ -116,8 +122,19 @@ export function ContainedModal(props: ContainedModalProps) {
   }, [state.isOpen, root]);
 
   if (!state.isOpen) return null;
+  const { isEntering = false, isExiting = false, overlayStyle } = props;
+  const style = typeof overlayStyle === 'function' ? overlayStyle({ isEntering, isExiting, state, defaultStyle: {} }) : overlayStyle;
   return createPortal(
-    <div ref={overlay} className={overlayClassName} data-weasel-overlay="" data-contained="" {...underlayProps}>
+    <div
+      {...mergeProps(props.overlayProps, underlayProps)}
+      ref={overlay}
+      className={overlayClassName}
+      style={style}
+      data-weasel-overlay=""
+      data-contained=""
+      data-entering={isEntering || undefined}
+      data-exiting={isExiting || undefined}
+    >
       <FocusScope contain restoreFocus autoFocus>
         <div ref={modal} className={modalClassName} {...props.modalProps} {...overlayProps}>
           <OverlayTriggerStateContext.Provider value={state}>{props.children}</OverlayTriggerStateContext.Provider>
