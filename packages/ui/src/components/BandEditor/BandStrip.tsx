@@ -68,6 +68,8 @@ export function BandStrip<T, F extends Quantity>(props: BandStripProps<T, F>): R
   const { toUnit, fromUnit } = props;
 
   const renderRegion = ({ index: i }: { index: number }): ReactNode => {
+    // With no bands the slider still asks for the region after its last thumb.
+    if (bands[i] === undefined) return null;
     const [from, to] = bandBounds(bands, i, lo, hi);
     const isSelected = selectedIndex === i;
     const pinned = i === 0 || i === bands.length - 1;
