@@ -33,6 +33,7 @@ import { spreadPlaywright } from './scripts/vitest-browser-spread.mjs';
 import { browserShape } from './scripts/lib/browser-shape.mjs';
 import { assertOwnInstall } from './scripts/lib/own-install.mjs';
 import { moduleCacheDir } from './scripts/lib/module-cache.mjs';
+import FirstFailedSequencer from './scripts/vitest-first-sequencer.mjs';
 
 assertOwnInstall(import.meta.dirname);
 
@@ -111,6 +112,7 @@ export default defineConfig({
     // vitest's default (RAM / workers) never recycles a vm worker, and one that lives the whole run
     // segfaults V8 on Node 24.22; at 1 GB each is replaced about once (2026-10-22, see docs/traps/testing.md).
     vmMemoryLimit: '1gb',
+    sequence: { sequencer: FirstFailedSequencer },
     ...(related && { related }),
     projects: [
       {

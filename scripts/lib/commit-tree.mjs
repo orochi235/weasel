@@ -108,7 +108,7 @@ export const jobStarted = (line) => {
  * `onto` with its output passed through, each line with `prefix`, and what it wrote to stderr kept to
  * read after. `onJob` hears the job's id and node once it starts.
  */
-const ontoOnce = (args, { cwd, prefix = '', onJob }) =>
+const ontoOnce = (args, { cwd, prefix = '', onJob, onLine }) =>
   new Promise((done) => {
     const child = spawn('onto', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
     let stderr = '';
@@ -122,6 +122,7 @@ const ontoOnce = (args, { cwd, prefix = '', onJob }) =>
         for (const line of lines) {
           const job = jobStarted(line);
           if (job) onJob?.(job);
+          onLine?.(line);
           to.write(`${line.startsWith('fleet-fail:') ? '' : prefix}${line}\n`);
         }
       });
@@ -137,9 +138,9 @@ const ontoOnce = (args, { cwd, prefix = '', onJob }) =>
  * A node runs one job per tree, so a launch while another session's job holds it is refused before
  * anything has run. Wait for it rather than fail. Resolves to onto's exit status.
  */
-export const ontoWhenFree = async (args, { cwd, say, prefix, onJob }) => {
+export const ontoWhenFree = async (args, { cwd, say, prefix, onJob, onLine }) => {
   for (let attempt = 1; ; attempt++) {
-    const run = await ontoOnce(args, { cwd, prefix, onJob });
+    const run = await ontoOnce(args, { cwd, prefix, onJob, onLine });
     if (!/working tree .* is busy/.test(run.stderr) || attempt === BUSY_TRIES) return run.status;
     say(`the node's tree is busy, retrying in ${BUSY_WAIT_S}s (${attempt}/${BUSY_TRIES})`);
     spawnSync('sleep', [String(BUSY_WAIT_S)]);
