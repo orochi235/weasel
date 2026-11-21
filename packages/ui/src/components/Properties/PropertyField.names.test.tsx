@@ -49,6 +49,11 @@ describe('row names', () => {
     expect(screen.getByRole('radiogroup', { name: 'Align' })).toBeInTheDocument();
   });
 
+  it("draws a boolean toggle's segment with its row's label when that label is not a string", () => {
+    render(<PropertyField kind="boolean" control="toggle" label={<>Bold <kbd>⌘B</kbd></>} value onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: /Bold/ }).querySelector('kbd')).not.toBeNull();
+  });
+
   // The help button is labelable and comes first, so the row's <label> labels it instead.
   describe('with a description', () => {
     it('slider field', () => {

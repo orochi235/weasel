@@ -22,6 +22,7 @@ import s from './Properties.module.css';
 import { useNativeHold } from '../Disabled/nativeHold';
 import { useFieldControl } from '../Field/fieldSemantics';
 import { useNameText } from './nameOf';
+import { usePropertyRow } from './rowScope';
 
 /** The control a field's `kind` and `control` choose, for every kind but a slider. */
 export function ControlBody(props: PropertyControlProps) {
@@ -72,6 +73,7 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
   const named = useFieldControl({ id: p.id, 'aria-label': p.name });
   const hold = useNativeHold({ ...p, 'aria-describedby': named['aria-describedby'] });
   const text = useNameText(p.name);
+  const row = usePropertyRow();
   useEffect(() => {
     if (box.current) box.current.indeterminate = p.mixed === true;
   });
@@ -86,7 +88,7 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
         variant="flat"
         className={p.className}
         aria-label={text}
-        items={[{ value: key, label: p.glyph ?? <FitLabel forms={labelForms(text, p.short)} />, ariaLabel: text, disabled: p.disabled, disabledReason: p.disabledReason }]}
+        items={[{ value: key, label: p.glyph ?? (text === undefined ? row?.label : <FitLabel forms={labelForms(text, p.short)} />), ariaLabel: text, disabled: p.disabled, disabledReason: p.disabledReason }]}
         value={on ? [key] : []}
         mixedValues={p.mixed ? [key] : []}
         onChange={(next) => p.onChange(next.includes(key))}
