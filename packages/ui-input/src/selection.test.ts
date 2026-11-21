@@ -122,6 +122,12 @@ describe('soloFrom', () => {
     expect(seen).toEqual(['d']);
   });
 
+  it('leaves an item `enabled` refuses alone in a single selection', () => {
+    const seen: (string | null)[] = [];
+    soloFrom(createSelectionModel<string>({ value: 'a', onChange: (v) => seen.push(v) }, FIVE), 2, 5, (i) => i !== 2);
+    expect(seen).toEqual([]);
+  });
+
   it('is what Space or Enter does with Alt held', () => {
     const seen: string[][] = [];
     const keys = selectionKeys(multiple(['a', 'b'], seen), 5);
@@ -161,5 +167,17 @@ describe('soloSweepFrom', () => {
     run.reach(3);
     run.revert();
     expect(seen.at(-1)).toEqual(['c', 'd']);
+  });
+
+  it('neither reaches nor changes an item `enabled` refuses in a single selection', () => {
+    const seen: (string | null)[] = [];
+    const single = () => createSelectionModel<string>({ value: 'a', onChange: (v) => seen.push(v) }, FIVE);
+    const run = soloSweepFrom(single(), 1, 5, (i) => i !== 2);
+    run.reach(2);
+    expect(seen).toEqual([]);
+    run.reach(3);
+    expect(seen).toEqual(['d']);
+    soloSweepFrom(single(), 2, 5, (i) => i !== 2).reach(2);
+    expect(seen).toEqual(['d']);
   });
 });
