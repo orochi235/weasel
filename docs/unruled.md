@@ -1191,6 +1191,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   row that draws it; `PropertyField` and `DialogRow` stay as a row with its control already in it, and the selection
   panel's `LabeledRow` keeps its own grid layout and reads only `onReset`. labkit's `ControlRow` and the form's
   `LeafRow` set the scope; a labkit custom row renderer is not wrapped in one, and sets its own.
+- Open (2026-11-20, audit round 56): an override hook marked `varies` (`button-icon-size`, `params-label-tracking`,
+  `tree-indent`, and the rest in `packages/theme/src/hooks/`) falls back to different values at different reads, so
+  the theme prefs schema shows one of them, its listed `value`, as the unset value, and pinning what it shows
+  changes the reads that fall back to another. Whether the schema shows such a hook with no unset value, or shows
+  the per-read values from its description, is open. `check:token-reads` holds every other hook's reads to its value.
 
 ## Diagram, audio, and labkit
 

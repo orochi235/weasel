@@ -22,9 +22,11 @@ export interface TokenHook {
   /** DTCG type. */
   readonly type: string;
   /** The fallback every read of it carries — the value in force when nothing
-   *  sets it. */
+   *  sets it. Where `varies` is set, the commonest one. */
   readonly value: string;
   readonly description: string;
+  /** Its reads carry different fallbacks (by size, by row or title), which the description names. */
+  readonly varies?: true;
 }
 
 export const TOKEN_HOOKS: readonly TokenHook[] = [...FRAME_HOOKS, ...CONTROL_HOOKS, ...PANEL_HOOKS];
