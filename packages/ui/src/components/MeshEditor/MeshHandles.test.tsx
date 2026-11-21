@@ -101,7 +101,7 @@ describe('MeshHandles', () => {
     const two = { ...one, patches: [...one.patches, ...one.patches.map((p) => ({ ...p, points: p.points.map((q) => ({ x: q.x + 100, y: q.y })) }))] };
     function Live() {
       const [value, setValue] = useState<MeshGradientPaint>(two);
-      const take = (next: Paint) => setValue(next as MeshGradientPaint);
+      const take = (next: Paint) => setValue(next as unknown as MeshGradientPaint);
       return <MeshHandles value={value} toScreen={toScreen} toLocal={toLocal} onInput={take} onChange={take} width={400} height={300} />;
     }
     render(<Live />);
