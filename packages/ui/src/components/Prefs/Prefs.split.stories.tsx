@@ -66,7 +66,7 @@ export default meta;
 
 type Story = StoryObj<typeof SplitForm>;
 
-/** A scoped pref with nothing stored: the row marks the option each selector is set to, and opens to a control per option. */
+/** A scoped pref with nothing stored: a plain row, with no marks and nothing to open, until a value is split. */
 export const NotSplit: Story = {};
 
 /** Split by one selector: the row marks the option the selector is set to, and its control edits that member. */
