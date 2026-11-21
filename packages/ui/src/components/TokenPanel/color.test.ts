@@ -28,5 +28,6 @@ describe('keepAlpha', () => {
     expect(keepAlpha('#ff0000', '#11223380')).toBe('#ff000080');
     expect(keepAlpha('#ff0000', '#112233')).toBe('#ff0000');
     expect(keepAlpha('#ff0000', 'not a color')).toBe('#ff0000');
+    for (const clear of ['transparent', '#0000', 'rgb(0 0 0 / 0)']) expect(keepAlpha('#ff0000', clear)).toBe('#ff0000');
   });
 });
