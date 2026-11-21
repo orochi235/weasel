@@ -3,7 +3,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, matchesGlob, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { runsEverything } from './fleet-tree.mjs';
-import { isTestFile, LOADED, SCOPED, TRIGGERS } from './fleet-triggers.mjs';
+import { isTestFile, LOADED, SCOPED, TREE_READERS, TRIGGERS } from './fleet-triggers.mjs';
 
 const ROOT = join(import.meta.dirname, '../..');
 const EXTENSIONS = ['', '.ts', '.tsx', '.mts', '.mjs', '.js', '/index.ts'];
@@ -60,5 +60,11 @@ describe('the fleet triggers', () => {
 
   it('keep each scoped trigger inside one workspace or app', () => {
     for (const glob of SCOPED) expect(glob).toMatch(/^(\{packages,apps\}|packages|apps)\/\*\//);
+  });
+
+  it('list every test that lists or globs a directory, and this one, which reads every test file', () => {
+    const tests = execFileSync('git', ['ls-files', '*.test.ts', '*.test.tsx', '*.test.mts', '*.test.mjs'], { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean);
+    const readers = tests.filter((file) => /\b(readdirSync|globSync)\(/.test(readFileSync(join(ROOT, file), 'utf8')));
+    expect(TREE_READERS).toEqual([...new Set([...readers, 'scripts/lib/fleet-triggers.test.ts'])].sort());
   });
 });
