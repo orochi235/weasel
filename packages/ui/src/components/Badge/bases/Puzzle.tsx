@@ -1,4 +1,5 @@
 import { wrapPositive } from '@weasel-js/geom';
+import { withDefaults } from '../shapes/params';
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
 
@@ -44,6 +45,9 @@ function edgeVertices(
   arcSamples: number,
 ): [number, number][] {
   if (type === 'flat') return [end];
+  if (type !== 'out' && type !== 'in') {
+    throw new RangeError(`A puzzle edge is 'flat', 'out', or 'in', not ${JSON.stringify(type)}.`);
+  }
   const sign = type === 'out' ? 1 : -1;
   const dx = end[0] - start[0];
   const dy = end[1] - start[1];
@@ -85,7 +89,7 @@ function edgeVertices(
 
 const Puzzle: BaseModule<BadgePuzzleBaseParams> = {
   build: (params, boxW, boxH) => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     const r = Math.max(2, Math.min(cfg.tabSize, 40));
     const N = Math.max(6, Math.floor(cfg.arcSamples));
     // Clockwise traversal of the unit rect: TL → TR → BR → BL → TL.

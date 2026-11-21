@@ -1,4 +1,5 @@
 import { polygonSampler } from './polygonSampler';
+import { withDefaults } from '../shapes/params';
 import type { BaseModule } from './types';
 
 /** What `baseParams` takes on a badge whose `base` is `chamfered-rect`. */
@@ -11,7 +12,7 @@ const DEFAULTS: Required<BadgeChamferedRectBaseParams> = { chamfer: 6 };
 
 const ChamferedRect: BaseModule<BadgeChamferedRectBaseParams> = {
   build: (params, boxW, boxH) => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     const sx = 100 / boxW;
     const sy = 100 / boxH;
     const chamfer = Math.max(0, Math.min(cfg.chamfer, boxW / 2, boxH / 2));

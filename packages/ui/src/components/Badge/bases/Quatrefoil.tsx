@@ -1,7 +1,7 @@
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
 import { DEG_TO_RAD, lerp } from '@weasel-js/geom';
-import { repeatCount } from '../shapes/params';
+import { repeatCount, withDefaults } from '../shapes/params';
 
 /**
  * 8-fold-symmetric polar shape. The whole silhouette is defined by a single curve r(s)
@@ -85,7 +85,7 @@ function curveSegment(t: number, curvature: number, bend: number, erosion: numbe
 
 /** The radius profile r(s) of one octant: s = 0 is the cardinal direction, s = 1 the diagonal. */
 export function quatrefoilRadius(params: BadgeQuatrefoilBaseParams = {}): (s: number) => number {
-  const cfg = { ...DEFAULTS, ...params };
+  const cfg = withDefaults(DEFAULTS, params);
   const spike = Math.max(5, Math.min(cfg.spikeR, 50));
   const lobe = Math.max(5, Math.min(cfg.lobeR, 50 * Math.SQRT2));
   const valley = Math.max(0, Math.min(cfg.valleyR, Math.min(spike, lobe)));
@@ -112,7 +112,7 @@ export function quatrefoilRadius(params: BadgeQuatrefoilBaseParams = {}): (s: nu
 }
 
 export function quatrefoilVertices(params: BadgeQuatrefoilBaseParams = {}): [number, number][] {
-  const cfg = { ...DEFAULTS, ...params };
+  const cfg = withDefaults(DEFAULTS, params);
   const radiusAt = quatrefoilRadius(cfg);
   const rot = cfg.rotation * DEG_TO_RAD;
   const N = repeatCount(cfg.samples, 24, MAX_SAMPLES);

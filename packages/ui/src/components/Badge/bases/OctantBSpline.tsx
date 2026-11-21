@@ -1,4 +1,5 @@
 import type { BaseModule } from './types';
+import { withDefaults } from '../shapes/params';
 import { polygonSampler } from './polygonSampler';
 import {
   type BadgeSplineAnchor as Anchor, extractAnchorPairs, OCTANT_SPLINE_DEFAULTS, splineVertices,
@@ -148,7 +149,7 @@ export function octantBSplineRadius(anchors: readonly Anchor[]): (s: number) => 
 
 const OctantBSpline: BaseModule<BadgeOctantBSplineBaseParams> = {
   build: (params, boxW, boxH) => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     const radiusAt = octantBSplineRadius(extractAnchorPairs(cfg, OCTANT_BSPLINE_MIN_WEIGHT));
     return polygonSampler(splineVertices(cfg, radiusAt), boxW, boxH);
   },

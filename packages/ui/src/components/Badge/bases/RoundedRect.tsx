@@ -1,4 +1,5 @@
 import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
+import { withDefaults } from '../shapes/params';
 import { lerp, trimNumber, wrapPositive } from '@weasel-js/geom';
 
 /** What `baseParams` takes on a badge whose `base` is `rounded-rect`. */
@@ -189,7 +190,7 @@ function pinchedSampler({ perimeterAt, totalCss }: Outline, pinch: number, { sx,
 
 const RoundedRect: BaseModule<BadgeRoundedRectBaseParams> = {
   build: (params, boxW, boxH) => {
-    const cfg: BadgeRoundedRectBaseParams & typeof DEFAULTS = { ...DEFAULTS, ...params };
+    const cfg = withDefaults<BadgeRoundedRectBaseParams & typeof DEFAULTS>(DEFAULTS, params);
     const half = Math.min(boxW, boxH) / 2;
     const byRadius = cfg.radius !== undefined && !Number.isNaN(cfg.radius) && half > 0;
     const erosion = Math.max(0, Math.min(byRadius ? cfg.radius! / half : cfg.erosion, 1));

@@ -1,4 +1,5 @@
 import type { BaseModule } from './types';
+import { withDefaults } from '../shapes/params';
 import { polygonSampler } from './polygonSampler';
 
 /** How one end of a ribbon is cut: a notch in, a point out, or square. */
@@ -37,7 +38,13 @@ function sidePoints(mode: BadgeRibbonEnd, xBaseVb: number, signVb: number, taper
         mid: [xBaseVb + signVb * taperVb, 50],
         bottom: [xBaseVb, 100],
       };
+    default:
+      throw unknownEnd(mode);
   }
+}
+
+function unknownEnd(mode: unknown): RangeError {
+  return new RangeError(`A ribbon end is 'inward', 'outward', or 'flat', not ${JSON.stringify(mode)}.`);
 }
 
 function sideInsetCss(mode: BadgeRibbonEnd, taperCss: number): number {
@@ -46,12 +53,13 @@ function sideInsetCss(mode: BadgeRibbonEnd, taperCss: number): number {
     case 'flat':    return 4;
     case 'outward': return Math.round(t * 0.7);
     case 'inward':  return Math.round(t * 0.8);
+    default:        throw unknownEnd(mode);
   }
 }
 
 const Ribbon: BaseModule<BadgeRibbonBaseParams> = {
   build: (params, boxW, boxH) => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     const taperCss = Math.max(0, Math.min(cfg.taperWidth, boxW / 2));
     // Convert CSS px taper into viewBox-x units so the rendered pointer
     // is the same CSS-px depth regardless of badge width.
@@ -67,7 +75,7 @@ const Ribbon: BaseModule<BadgeRibbonBaseParams> = {
     return polygonSampler(verts, boxW, boxH);
   },
   insets: (params) => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = withDefaults(DEFAULTS, params);
     return {
       top: 0,
       right: sideInsetCss(cfg.right, cfg.taperWidth),
