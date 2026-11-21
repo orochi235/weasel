@@ -82,7 +82,7 @@ function DefaultTextEditDep({ editor }: { editor: DefaultTextEditor }): null {
 
 /** While the canvas's own editor has a node open, its overlay stands in for that node's glyphs. */
 function useEditingStandIn(scene: object, editor: DefaultTextEditor): void {
-  const within = editor.container;
+  const within = editor.element;
   const editing = editor.edit.editingId;
   const editingRef = useLatest(editing);
   const standIn = useRef<PaintStandIn | null>(null);

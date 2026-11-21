@@ -107,6 +107,16 @@ describe("the canvas's own text editor", () => {
     expect(hostEditing()).toBeNull();
   });
 
+  it('stands in for the edited glyphs on its own canvas only, not on another canvas of the scene beside it', () => {
+    const t = mount();
+    const frame = document.querySelector('[data-testid="frame"]')!;
+    const other = frame.appendChild(document.createElement('canvas'));
+    const own = frame.querySelector('canvas')!;
+    act(() => startEdit!('t'));
+    expect(paintStandInsOver(own, t.scene).has('t')).toBe(true);
+    expect(paintStandInsOver(other, t.scene).has('t')).toBe(false);
+  });
+
   it("stands in for the glyphs of the node a host's editor has open", () => {
     const scene = sceneWithText();
     const container = document.createElement('div');
