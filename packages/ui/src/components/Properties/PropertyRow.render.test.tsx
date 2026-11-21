@@ -37,4 +37,14 @@ describe('PropertyRow', () => {
     );
     expect(container.querySelector(`.${s.row}`)).not.toHaveClass(s.span);
   });
+  it('draws no readout or hint for one given as false, as `cond && x` gives', () => {
+    const { container } = render(
+      <>
+        <PropertyRow label="Gap" readout={false} hint={false}><input aria-label="Gap" /></PropertyRow>
+        <PropertyRow label="Blur" layout="inline" readout={false}><input aria-label="Blur" /></PropertyRow>
+      </>,
+    );
+    expect(container.querySelector('[data-row-readout]')).toBeNull();
+    expect(container.querySelector(`.${s.rowHint}`)).toBeNull();
+  });
 });

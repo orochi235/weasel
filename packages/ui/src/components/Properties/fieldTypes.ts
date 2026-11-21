@@ -54,7 +54,7 @@ export interface PropertyBooleanFieldProps extends PropertyFieldBase {
   kind: 'boolean';
   /** `checkbox` (default), `switch`, or `toggle` — a one-segment pressable bar. */
   control?: 'checkbox' | 'switch' | 'toggle';
-  /** Absent reads as off. */
+  /** Absent reads as not set, as `unset` does: off and dimmed in a checkbox or switch, the dash in a readout. */
   value: boolean | undefined;
   onChange: (next: boolean) => void;
   /** Shorter forms of `name`, longest first, for a `toggle` segment too

@@ -22,6 +22,7 @@ import s from './Properties.module.css';
 import { useNativeHold } from '../Disabled/nativeHold';
 import { useFieldControl } from '../Field/fieldSemantics';
 import { useNameText } from './nameOf';
+import { usePropertyRow } from './rowScope';
 
 /** The control a field's `kind` and `control` choose, for every kind but a slider. */
 export function ControlBody(props: PropertyControlProps) {
@@ -67,10 +68,12 @@ function Dimmed({ mixed, unset, children }: { mixed?: boolean; unset?: boolean; 
 
 function BooleanControl(p: PropertyBooleanFieldProps) {
   const on = !p.mixed && p.value === true;
+  const unset = !p.mixed && (p.unset === true || p.value === undefined);
   const box = useRef<HTMLInputElement>(null);
   const named = useFieldControl({ id: p.id, 'aria-label': p.name });
   const hold = useNativeHold({ ...p, 'aria-describedby': named['aria-describedby'] });
   const text = useNameText(p.name);
+  const row = usePropertyRow();
   useEffect(() => {
     if (box.current) box.current.indeterminate = p.mixed === true;
   });
@@ -85,7 +88,7 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
         variant="flat"
         className={p.className}
         aria-label={text}
-        items={[{ value: key, label: p.glyph ?? <FitLabel forms={labelForms(text, p.short)} />, ariaLabel: text, disabled: p.disabled, disabledReason: p.disabledReason }]}
+        items={[{ value: key, label: p.glyph ?? (text === undefined ? row?.label : <FitLabel forms={labelForms(text, p.short)} />), ariaLabel: text, disabled: p.disabled, disabledReason: p.disabledReason }]}
         value={on ? [key] : []}
         mixedValues={p.mixed ? [key] : []}
         onChange={(next) => p.onChange(next.includes(key))}
@@ -94,7 +97,7 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
   }
   if (p.control === 'switch') {
     return (
-      <Dimmed mixed={p.mixed} unset={p.unset}>
+      <Dimmed mixed={p.mixed} unset={unset}>
         <Switch className={p.className} isSelected={on} disabled={p.disabled} disabledReason={p.disabledReason} onChange={(next) => p.onChange(next)} aria-label={p.name} />
       </Dimmed>
     );
@@ -103,7 +106,7 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
   // of its own, which may not sit inside the row's, and without the row's the
   // label text would no longer toggle it.
   return (
-    <Dimmed unset={p.unset}>
+    <Dimmed unset={unset}>
       {hold.wrap(<input
         ref={box}
         {...named}

@@ -3481,3 +3481,8 @@ Calls the lanes made without a ruling:
   still writes anchored at the user-space origin; the kit's export path resolves such a paint with
   `paintToLocalUnits` first and never warns. Writing a def per node, each placed against that node's box, was the
   alternative.
+## Audit round sixty-four (2026-11-21): Properties, part two
+
+- 2026-11-21 (the fixer's call): a boolean property field whose `value` is absent reads as not set, as `unset` does:
+  an editable checkbox or switch draws off and dimmed with the "Not set" cue, and a read-only one the dash. Drawing
+  it as plain Off in both, as the prop's doc used to promise, was the alternative.

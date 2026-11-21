@@ -12,6 +12,7 @@ import { useFieldLocale } from '../../useFieldLocale';
 import { useEditDraft } from '../../useEditDraft';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { UnitField } from '../NumberField';
+import { FULL_PRECISION } from '../NumberField/UnitField';
 import { InlineRange } from '../InlineRange';
 import type { PropertyNumberFieldProps } from './fieldTypes';
 import { PropertyRow } from './PropertyRow';
@@ -105,6 +106,11 @@ function isKnown(p: PropertyNumberFieldProps): p is PropertyNumberFieldProps & {
  *  `step` is written with, so integer steps show none, 0.1 one, 0.25 two. */
 export function stepDisplay(step = 1): Display {
   return decimal({ places: step > 0 ? decimalPlaces(step) : 0, grouping: false });
+}
+
+/** What a number field shows given no display: a slider's readout by its step, a typed field every place. */
+export function defaultDisplay(p: Pick<PropertyNumberFieldProps, 'control' | 'step'>): Display {
+  return p.control === 'slider' ? stepDisplay(p.step) : FULL_PRECISION;
 }
 
 /** How far a slider's track runs from the one end it has, or from 0 with neither. */

@@ -100,7 +100,8 @@ export interface UnitFieldProps extends HoldProps, ControlSizeProps, Omit<FieldS
 /** Which end of a `UnitField` its steppers sit at. */
 export type StepperSide = 'start' | 'end';
 
-const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
+/** What a typed number shows given no display: every place it has. */
+export const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
 
 /** How typed text reads in `locale`: `accepts` reads units, and the display still reads its own words, like infinity's. */
 function reader(accepts: Readonly<UnitTable> | undefined, display: Display, locale: string): (typed: string) => number {
