@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState, type ReactElement } from 'react';
+import { useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from 'react';
+import { arrowMove } from '@weasel-js/quantity';
 import { useElementSize } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import { type Keyframe } from '@weasel-js/animator';
@@ -49,6 +50,12 @@ function valueRange(keys: readonly Keyframe<number>[]): [number, number] {
   const span = hi - lo || 1;
   const pad = (span * V_INSET_PCT) / (100 - 2 * V_INSET_PCT);
   return [lo - pad, lo + span + pad];
+}
+
+/** A refused arrow step never reaches the layer, which would move the selection and focus to the key's new index. */
+function refuseSteps(e: ReactKeyboardEvent<HTMLDivElement>): void {
+  if (!arrowMove(e.key, e.shiftKey)) return;
+  if ((e.target as Element).closest?.('[data-keyframe-index], [data-handle-index]')) e.stopPropagation();
 }
 
 /** A numeric lane's graph: one keyframe layer on a curve editor, sized to the
@@ -111,7 +118,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   const ticks = windowScale(win, size.width).spacedTicks({ minSpacing: TICK_SPACING_PX }).values;
 
   return (
-    <div ref={hostRef} className={s.graphHost}>
+    <div ref={hostRef} className={s.graphHost} onKeyDownCapture={edits ? undefined : refuseSteps}>
       {size.width > 0 && size.height > 0 ? (
         <LayeredCurveEditor
           className={s.graph}

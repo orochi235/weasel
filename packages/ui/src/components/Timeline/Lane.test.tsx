@@ -53,6 +53,38 @@ describe('Lane', () => {
     expect(screen.getByTestId('timeline-after-end')).toBeTruthy();
   });
 
+  it('draws a nested timeline\'s bar from its own `at` for its duration', () => {
+    const nested = { kind: 'timeline', label: 'n', at: 600, timeline: { duration: 400, tracks: [sampled] } } as Track;
+    render(<Lane {...base} row={laneOf(nested)} />);
+    const bar = screen.getByTestId('timeline-nested');
+    expect([bar.style.left, bar.style.width]).toEqual(['60%', '40%']);
+  });
+
+  it('sizes a nested timeline with no duration to its last track\'s end, and a negative one to nothing', () => {
+    const open = { kind: 'timeline', label: 'n', at: 100, timeline: { tracks: [sampled] } } as Track;
+    const { unmount } = render(<Lane {...base} row={laneOf(open)} />);
+    expect(screen.getByTestId('timeline-nested').style.width).toBe('50%');
+    unmount();
+    const negative = { kind: 'timeline', label: 'n', at: 100, timeline: { duration: -50, tracks: [sampled] } } as Track;
+    render(<Lane {...base} row={laneOf(negative)} />);
+    expect(screen.getByTestId('timeline-nested').style.width).toBe('0%');
+  });
+
+  it('runs an endless nested timeline\'s bar to the window\'s end', () => {
+    const endless = { kind: 'timeline', label: 'n', at: 100, timeline: { duration: Infinity, tracks: [sampled] } } as Track;
+    render(<Lane {...base} row={laneOf(endless)} />);
+    expect(screen.getByTestId('timeline-nested').style.width).toBe('90%');
+  });
+
+  it('indents a row\'s label by its depth, however deep', () => {
+    let track: Track = sampled;
+    for (let i = 0; i < 5; i++) track = { kind: 'timeline', label: `n${i}`, at: 0, timeline: { tracks: [track] } } as Track;
+    const row = buildLanes([track], new Set(['0', '0.0', '0.0.0', '0.0.0.0', '0.0.0.0.0'])).at(-1)!;
+    const { container } = render(<Lane {...base} row={row} />);
+    expect(row.depth).toBe(5);
+    expect(container.querySelector<HTMLElement>('[data-depth] > div')!.style.getPropertyValue('--depth')).toBe('5');
+  });
+
   it('draws no past-end band on a row that plays to the end', () => {
     render(<Lane {...base} row={laneOf(sampled)} />);
     expect(screen.queryByTestId('timeline-after-end')).toBeNull();
@@ -101,14 +133,14 @@ describe('Lane', () => {
   });
 
   it('puts a key back where it was when the browser cancels its drag', () => {
-    const onKeyInput = vi.fn();
+    const onKeyRevert = vi.fn();
     const onKeyChange = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onKeyInput={onKeyInput} onKeyChange={onKeyChange} />);
+    render(<Lane {...base} row={laneOf(sampled)} onKeyRevert={onKeyRevert} onKeyChange={onKeyChange} />);
     const key = screen.getAllByTestId('timeline-key')[1];
     fireEvent.pointerDown(key, { clientX: 250, clientY: 10, button: 0, pointerId: 1, pointerType: 'touch' });
     fireEvent.pointerMove(document, { clientX: 350, clientY: 10, pointerId: 1, pointerType: 'touch' });
     fireEvent.pointerCancel(document, { pointerId: 1, pointerType: 'touch' });
-    expect(onKeyInput.mock.calls.at(-1)).toEqual([1, 500]);
+    expect(onKeyRevert).toHaveBeenCalledTimes(1);
     expect(onKeyChange).not.toHaveBeenCalled();
   });
 
@@ -124,6 +156,16 @@ describe('Lane', () => {
     expect(onKeyInput).toHaveBeenCalledTimes(2);
     expect(onKeyChange).toHaveBeenCalledTimes(1);
     expect(onKeyChange).toHaveBeenCalledWith(1, 700);
+  });
+
+  it('places a dragged key through the window on screen when it changes mid-drag', () => {
+    const onKeyChange = vi.fn();
+    const { rerender } = render(<Lane {...base} row={laneOf(sampled)} onKeyChange={onKeyChange} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    rerender(<Lane {...base} window={{ from: 0, to: 2000 }} row={laneOf(sampled)} onKeyChange={onKeyChange} />);
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 350, clientY: 10 });
+    expect(onKeyChange.mock.calls).toEqual([[1, 1400]]);
   });
 
   it('snaps a dragged key to a nearby snap time', () => {
@@ -308,6 +350,20 @@ describe('Lane in graph mode', () => {
     render(<Lane {...base} mode="graph" row={laneOf(sampled)} onKeysChange={onKeysChange} />);
     fireEvent.keyDown(graphKeys()[1], { key: 'ArrowRight', shiftKey: true });
     expect(onKeysChange.mock.calls[0][0][1].t).toBe(600);
+  });
+
+  it('leaves the selection and focus on a key whose arrow step a read-only lane refuses', () => {
+    const close = { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 50, value: 5 }, { t: 400, value: 10 }], onTick: () => {} } as Track;
+    const onSelectionChange = vi.fn();
+    const onKeysChange = vi.fn();
+    const hold = { edits: false, looks: true, tabIndex: 0 as const, focus: {} };
+    render(<Lane {...base} mode="graph" row={laneOf(close)} hold={hold} onSelectionChange={onSelectionChange} onKeysChange={onKeysChange} />);
+    const first = graphKeys()[0] as SVGElement;
+    first.focus();
+    fireEvent.keyDown(first, { key: 'ArrowRight', shiftKey: true });
+    expect(onSelectionChange).not.toHaveBeenCalled();
+    expect(onKeysChange).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(first);
   });
 
   it('selects the segment under a click on the curve', () => {

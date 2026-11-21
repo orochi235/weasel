@@ -3285,3 +3285,9 @@ Calls the lanes made without a ruling:
 - 2026-11-20: A `Select` whose `options` hold two values that read the same as text (`1` and `'1'`, or one value
   twice) throws a `RangeError` naming it, with no override: React Aria keys its rows by that text, so the two
   cannot be drawn apart.
+## Audit round fifty-nine (2026-11-20): ui's Timeline
+
+- 2026-11-20 (the fixer's call): while a press on a `Timeline`'s lanes is held, an arrow step or a Delete or Backspace
+  on a key or the root is refused, since the drag's release commits against the tracks it began from and would undo
+  it; Escape still cancels. Edits from elsewhere during a drag (the inspector, the consumer) are not guarded. Ending
+  the drag on any other edit, or committing against the tracks at release, was the alternative.
