@@ -3136,3 +3136,11 @@ Calls the lanes made without a ruling:
   a caller who passed it as an increment now gets that number as the half-height.
 - 2026-11-20: A badge shape's repeat counts (`sparkler` and `starburst` `points`, `receipt` `teeth`) stop at 256, and a
   `perforated` badge's `holePitch` at no less than 1px. Both bounds are picked to keep a render finite, not ruled.
+
+## Audit round fifty-seven (2026-11-20): band editor
+
+- 2026-11-20: A `BandEditor` range end stops one key step (1% of the track) short of the other end when no locked band
+  holds the range open, for a drag as for a key. That gives Home and End, and `aria-valuemin` / `aria-valuemax`, a
+  value the end can take; the alternative was leaving the inward bound open and Home and End unhandled there.
+- 2026-11-20: A `BandEditor` given an empty `value` draws an empty strip, read as a list not yet loaded, rather than
+  throwing or warning that a band list has at least one band.

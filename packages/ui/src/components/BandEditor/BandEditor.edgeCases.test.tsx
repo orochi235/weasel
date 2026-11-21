@@ -62,4 +62,17 @@ describe('a range end on the keyboard', () => {
     const ends = onRangeChange.mock.calls.map(([lo, hi]) => [lo, hi].map((v: number) => Math.round(v * 1e9) / 1e9));
     expect(ends).toEqual([[0, 110], [-10, 100]]);
   });
+
+  it('sends an end with nothing locked to one step short of the other end on Home and End, the bound it announces', () => {
+    const onRangeChange = vi.fn();
+    const { container } = render(
+      <BandEditor value={BANDS} min={0} max={100} scale="linear" onChange={vi.fn()} onRangeChange={onRangeChange} />,
+    );
+    const max = container.querySelector<HTMLElement>('[data-range-edge="max"]')!;
+    const min = container.querySelector<HTMLElement>('[data-range-edge="min"]')!;
+    expect([max.getAttribute('aria-valuemin'), min.getAttribute('aria-valuemax')]).toEqual(['1', '99']);
+    fireEvent.keyDown(max, { key: 'Home' });
+    fireEvent.keyDown(min, { key: 'End' });
+    expect(onRangeChange.mock.calls.map(([lo, hi]) => [lo, hi])).toEqual([[0, 1], [99, 100]]);
+  });
 });

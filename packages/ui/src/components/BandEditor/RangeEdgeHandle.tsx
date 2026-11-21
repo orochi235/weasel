@@ -65,10 +65,11 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
     limits && unitLimits && u === unitLimits[0] ? limits[0]
       : limits && unitLimits && u === unitLimits[1] ? limits[1]
         : unit.invert(u);
-  const [reachLo, reachHi] = edgeReach(edges, locked, edge, unitLimits);
+  // One key step short of the other end, so Home and End have somewhere to go short of collapsing the range.
+  const [reachLo, reachHi] = edgeReach(edges, locked, edge, unitLimits, KEY_STEP);
 
   const fit = (to: number): RangeEdit<T> | null => {
-    const next = scaleEdges(edges, locked, edge, to, unitLimits);
+    const next = scaleEdges(edges, locked, edge, to, unitLimits, KEY_STEP);
     if (!next) return null;
     if (next === edges) return { range: [min, max], bands: committed };
     const range: [number, number] = edge === 'min' ? [fromBase(next[0]), max] : [min, fromBase(next[next.length - 1])];
