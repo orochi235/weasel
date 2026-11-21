@@ -176,7 +176,9 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
     if (handleEl && bezier && seg !== null && move) {
       e.preventDefault();
       const descending = state.keys[seg].value < state.keys[seg - 1].value;
-      const next = nudgedBezier(bezier, Number(handleEl.getAttribute('data-handle-index')), move.dx, move.dy, descending);
+      // On a flat segment a handle's y draws nowhere, so a vertical step leaves it, as a drag does.
+      const dy = state.keys[seg].value === state.keys[seg - 1].value ? 0 : move.dy;
+      const next = nudgedBezier(bezier, Number(handleEl.getAttribute('data-handle-index')), move.dx, dy, descending);
       const moved = applyKeyframeDrag({ ...state, drag: { kind: 'handle', segment: seg, bezier: next } });
       if (moved.keys !== state.keys) extra.commit({ ...state, ...moved, drag: null });
     }

@@ -293,6 +293,22 @@ describe('createKeyframeLayer — segments', () => {
     up(100, 50);
   });
 
+  it('commits nothing for a vertical arrow on a flat segment\'s handle, and keeps its y on a sideways one', () => {
+    const onCommit = vi.fn();
+    const keys = [{ t: 0, value: 5 }, { t: 1000, value: 5, easing: { bezier: [0.2, 0.9, 0.3, 1] as const } }];
+    render(<Harness initial={{ keys, selectedSegment: 1 }} onCommit={onCommit} />);
+    const handle = () => document.querySelector('[data-handle-index="0"]')!;
+    fireEvent.keyDown(handle(), { key: 'ArrowUp' });
+    expect(onCommit).not.toHaveBeenCalled();
+    fireEvent.keyDown(handle(), { key: 'ArrowUp', shiftKey: true });
+    fireEvent.keyDown(handle(), { key: 'ArrowRight' });
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    const next = onCommit.mock.calls[0][0] as KeyframeLayerState;
+    const [x1, y1] = (next.keys[1].easing as { bezier: readonly number[] }).bezier;
+    expect(x1).toBeCloseTo(0.21);
+    expect(y1).toBe(0.9);
+  });
+
   it('raises a handle on a falling segment with ArrowUp', () => {
     const keys = [KEYS[0], KEYS[1], { ...KEYS[2], easing: { bezier: [0.4, 0.5, 0.6, 0.5] as const } }];
     render(<Harness initial={{ keys, selectedSegment: 2 }} />);
