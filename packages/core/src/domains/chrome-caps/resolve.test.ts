@@ -37,4 +37,9 @@ describe('resolveVisibility', () => {
     expect(f('selection.resize-handles')).toBe(kit('selection.resize-handles'));
     expect(resolveVisibility({ grid: never }, CTX)('grid')).toBe(false);
   });
+
+  it('keeps a rule for a chrome id spelled __proto__', () => {
+    const rules = JSON.parse('{"__proto__": {"any": []}}') as VisibilityRules;
+    expect(resolveVisibility(rules, CTX)('__proto__')).toBe(false);
+  });
 });
