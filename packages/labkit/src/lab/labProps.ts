@@ -71,8 +71,7 @@ export interface LabBaseProps {
   /** Contributions to the lab's own chrome — its header bar, its sidebar, its
    *  tool rail and its footer — rather than to every trial's. Rendered after
    *  `children` and `footer`, which stay the way a lab drops arbitrary content
-   *  into those same two boxes. Going from no sidebar contributions to some
-   *  remounts the workspace and every trial, dropping unpersisted trial state. */
+   *  into those same two boxes. */
   labChrome?: readonly LabContribution[];
   /** Built-in contribution ids to drop. Throws on an id that is not there. */
   suppress?: readonly string[];
