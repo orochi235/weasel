@@ -550,3 +550,15 @@ describe('Select trigger identity', () => {
     expect(document.activeElement).toBe(trigger);
   });
 });
+
+describe('Select option values', () => {
+  it('refuses two that read the same as text, which React Aria cannot keep apart', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const both = [{ value: 1, label: 'One' }, { title: 'More', options: [{ value: '1', label: 'Uno' }] }];
+      expect(() => render(<Select<number | string> aria-label="Count" options={both} />)).toThrow(/two options whose values read "1"/);
+    } finally {
+      error.mockRestore();
+    }
+  });
+});

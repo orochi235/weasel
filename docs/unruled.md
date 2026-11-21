@@ -3235,3 +3235,9 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (my call, audit round 54): a group or layer `composite` string that is no `CompositeOp` (`'multiply'`,
   or an inherited name such as `'constructor'`) throws a `RangeError` naming it and listing the operators, rather
   than being drawn as `source-over`. It still ends the frame, as the bare `TypeError` it replaces did.
+
+## Audit round fifty-nine (2026-11-20): Select
+
+- 2026-11-20: A `Select` whose `options` hold two values that read the same as text (`1` and `'1'`, or one value
+  twice) throws a `RangeError` naming it, with no override: React Aria keys its rows by that text, so the two
+  cannot be drawn apart.

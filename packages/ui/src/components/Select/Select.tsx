@@ -262,6 +262,7 @@ function selectClass({ orientation, width, variant, indicator, className }: Pick
 
 /** A select's list: its `options`, or else its `children`. */
 function SelectList<T extends OptionKey>({ options, children }: Pick<SelectProps<T>, 'options' | 'children'>) {
+  if (options !== undefined) assertDistinct(options);
   return (
     <RACListBox className={listbox.list}>
       {options !== undefined
@@ -277,6 +278,16 @@ function SelectList<T extends OptionKey>({ options, children }: Pick<SelectProps
         : children}
     </RACListBox>
   );
+}
+
+/** Throws on two option values that read the same as text, as `1` and `'1'` do: React Aria keys rows by that text. */
+function assertDistinct<T extends OptionKey>(options: ReadonlyArray<ListOption<T> | SelectOptionGroup<T>>): void {
+  const seen = new Set<string>();
+  for (const o of options.flatMap((e) => (isGroup(e) ? e.options : [e]))) {
+    const text = String(o.value);
+    if (seen.has(text)) throw new RangeError(`weasel: Select has two options whose values read "${text}"; each option's value must differ from every other's as text.`);
+    seen.add(text);
+  }
 }
 
 /** True inside `SelectValue`'s copy of the selected row, which shows its label and not its note. */
