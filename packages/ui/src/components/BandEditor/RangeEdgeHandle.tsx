@@ -73,7 +73,10 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
     if (!next) return null;
     if (next === edges) return { range: [min, max], bands: committed };
     const range: [number, number] = edge === 'min' ? [fromBase(next[0]), max] : [min, fromBase(next[next.length - 1])];
-    const bands = committed.map((b, i) => ({ ...b, from: i === 0 ? range[0] : fromBase(next[i]) }));
+    // A seam the rescale left in place keeps its committed value, not its round trip through track units.
+    const bands = committed.map((b, i) => ({
+      ...b, from: i === 0 ? range[0] : next[i] === edges[i] ? b.from : fromBase(next[i]),
+    }));
     return { range, bands };
   };
 

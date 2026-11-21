@@ -165,13 +165,20 @@ export function scaleEdges(
     else { freeSpan += len; freeCount++; }
   }
   const free = total - lockedSpan;
-  const next = [edge === 'min' ? at : edges[0]];
-  for (let i = 0; i < n; i++) {
+  const scaled = (i: number): number => {
     const len = edges[i + 1] - edges[i];
-    const scaled = locked[i] ? len : freeSpan > 0 ? (len * free) / freeSpan : free / freeCount;
-    next.push(next[i] + scaled);
+    return locked[i] ? len : freeSpan > 0 ? (len * free) / freeSpan : free / freeCount;
+  };
+  // Built out from the held end, where a run of locked bands keeps its edges exactly rather than summed back up.
+  const next = new Array<number>(n + 1);
+  if (edge === 'max') {
+    next[0] = edges[0];
+    for (let i = 0; i < n; i++) next[i + 1] = locked[i] && next[i] === edges[i] ? edges[i + 1] : next[i] + scaled(i);
+    next[n] = at;
+  } else {
+    next[n] = edges[n];
+    for (let i = n - 1; i >= 0; i--) next[i] = locked[i] && next[i + 1] === edges[i + 1] ? edges[i] : next[i + 1] - scaled(i);
+    next[0] = at;
   }
-  if (edge === 'min') next[n] = edges[n];
-  else next[n] = at;
   return next;
 }

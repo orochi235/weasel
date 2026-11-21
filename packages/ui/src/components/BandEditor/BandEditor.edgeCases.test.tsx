@@ -139,3 +139,24 @@ describe('tags through a split or a merge', () => {
     expect(next[1]!.from.value).toBe(3 / 4);
   });
 });
+
+describe('a rescale', () => {
+  const rescaled = (value: Band<string>[], edge: 'min' | 'max', from: number, to: number): Band<string>[] => {
+    const onRangeChange = vi.fn();
+    const { container } = render(
+      <BandEditor value={value} min={1 / 64} max={1 / 2} scale="log" onChange={vi.fn()} onRangeChange={onRangeChange} />,
+    );
+    const end = container.querySelector(`[data-range-edge="${edge}"]`)!;
+    fireEvent.pointerDown(end, { clientX: from, clientY: 20, button: 0 });
+    fireEvent.pointerMove(document, { clientX: to, clientY: 20 });
+    fireEvent.pointerUp(document, { clientX: to, clientY: 20 });
+    return onRangeChange.mock.calls[0]![2];
+  };
+
+  it('leaves a seam held by the locked bands beside the held end at the value it had', () => {
+    const value = [{ from: 1 / 64, data: 'a', locked: true }, { from: 1 / 6, data: 'b', locked: true }, { from: 1 / 3, data: 'c' }];
+    expect(rescaled(value, 'max', 400, 380).slice(1, 3).map((b) => b.from)).toEqual([1 / 6, 1 / 3]);
+    const flipped = [{ from: 1 / 64, data: 'a' }, { from: 1 / 6, data: 'b', locked: true }, { from: 1 / 3, data: 'c', locked: true }];
+    expect(rescaled(flipped, 'min', 0, 20).slice(1, 3).map((b) => b.from)).toEqual([1 / 6, 1 / 3]);
+  });
+});
