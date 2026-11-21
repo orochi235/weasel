@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { useState } from 'react';
+import { act, useState } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Disabled } from '../Disabled';
 import { InlineRange } from './InlineRange';
@@ -185,5 +185,25 @@ describe('InlineRange edit protocol', () => {
     settle();
     expect(onInput).not.toHaveBeenCalled();
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a release', () => { press(); slide(9); }, release],
+    ['a blur', () => slide(9), () => fireEvent.blur(range())],
+  ])('cancels, not commits, an edit the range is held during, ended by %s', (_, begin, end) => {
+    const onChange = vi.fn();
+    const onCancel = vi.fn();
+    let hold: () => void = () => {};
+    function Host() {
+      const [held, setHeld] = useState(false);
+      hold = () => setHeld(true);
+      return <InlineRange aria-label="Width" min={0} max={20} value={5} readOnly={held} onValueChange={onChange} onValueCancel={onCancel} />;
+    }
+    render(<Host />);
+    begin();
+    act(() => hold());
+    end();
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });

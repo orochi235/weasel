@@ -37,16 +37,18 @@ export function useRangeEdit(value: number, cb: RangeEditProps, refuses: boolean
     let released: number | null = null;
     const read = () => Number(el.value);
     const open = (): OpenEdit => (edit ??= { from: live.current.draft.shown, last: live.current.draft.shown, canceled: false });
-    const commit = () => {
-      const done = edit;
-      edit = null;
-      if (done && !done.canceled && done.last !== done.from) live.current.draft.onChange(done.last);
-      return done;
-    };
     const cancel = (e: OpenEdit) => {
       e.canceled = true;
       live.current.draft.onInput(e.from);
       live.current.draft.onCancel();
+    };
+    // A range held while an edit is open cancels it rather than committing from a control that now refuses.
+    const commit = () => {
+      const done = edit;
+      edit = null;
+      if (done && !done.canceled && live.current.refuses) cancel(done);
+      else if (done && !done.canceled && done.last !== done.from) live.current.draft.onChange(done.last);
+      return done;
     };
     const onInput = () => {
       if (live.current.refuses) return;
