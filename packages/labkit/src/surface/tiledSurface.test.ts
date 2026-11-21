@@ -71,6 +71,18 @@ describe('TiledSurface', () => {
     expect([...(frames[0]?.dirty ?? [])].sort()).toEqual(['a', 'b']);
   });
 
+  it('retiles at the new size when the container resizes and no tile moves', () => {
+    const { surface, container, frames } = settled();
+    frames.length = 0;
+    stubBox(container, 0, 0, 1000, 700);
+    surface.invalidateRects();
+    surface.step((f) => frames.push(f));
+    expect(frames).toHaveLength(1);
+    expect(frames[0]?.size).toEqual({ width: 1000, height: 700 });
+    expect(frames[0]?.retiled).toBe(true);
+    expect([...(frames[0]?.dirty ?? [])].sort()).toEqual(['a', 'b']);
+  });
+
   it('tells scope listeners when a tile is placed or dropped under a scope', () => {
     const surface = new TiledSurface();
     const scope = div();
