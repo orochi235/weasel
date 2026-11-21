@@ -29,6 +29,24 @@ function sourceAt(path: string): string | undefined {
   return found && SOURCE.test(found) ? found : undefined;
 }
 
+/**
+ * How `optimizeDeps.include` names `specifier` imported from `file`: bare when the copy it resolves to
+ * is the root's, `<owner> > <specifier>` when a nested copy under the package `owner` shadows it. Vite
+ * serves a bare include to every importer, so a package pinning its own version of a dependency the
+ * root also installs (`@weasel-js/font`'s opentype.js 2 beside a dev tool's 1.3) would get the root's.
+ */
+function includeName(specifier: string, file: string, repoRoot: string): string {
+  const pkg = packageOf(specifier);
+  for (let dir = dirname(file); dir !== repoRoot && dir !== dirname(dir); dir = dirname(dir)) {
+    if (!existsSync(join(dir, 'node_modules', pkg, 'package.json'))) continue;
+    const owner = join(dir, 'package.json');
+    const name = isFile(owner) ? (JSON.parse(readFileSync(owner, 'utf8')) as { name?: string }).name : undefined;
+    if (!name) throw new Error(`browserDeps: ${relative(repoRoot, dir)} holds its own ${pkg} but names no package for vite to find it by`);
+    return `${name} > ${specifier}`;
+  }
+  return specifier;
+}
+
 type Scan = ReturnType<typeof scanImports>;
 type Parsed = Map<string, { stamp: string; scan: Scan }>;
 const PARSED = Symbol.for('weasel.browserDeps.parsed');
@@ -81,7 +99,8 @@ export interface BrowserDepsOptions {
 }
 
 /**
- * Every bare specifier reachable from the entries and setup files, sorted. A workspace package is
+ * Every bare specifier reachable from the entries and setup files, sorted, one resolving to a nested copy
+ * written the way vite names that copy (`@scope/pkg > dep`). A workspace package is
  * followed into its source and never listed; vitest's own modules are left to vitest. Throws on an
  * `import()` or `import.meta.glob` it cannot read, which could reach a dependency it would not list.
  */
@@ -129,7 +148,9 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) {
+        found.add(includeName(specifier, file, repoRoot));
+      }
     }
   }
   return [...found].sort();

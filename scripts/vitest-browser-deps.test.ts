@@ -137,6 +137,14 @@ describe('browserDeps', () => {
     expect(deps()).toEqual(['@testing-library/react', 'zustand/vanilla']);
   });
 
+  it('names a dependency a package installs its own copy of through that package', () => {
+    put('node_modules/dep-a/package.json', '{"name":"dep-a"}');
+    put('packages/kit/node_modules/dep-a/package.json', '{"name":"dep-a"}');
+    put('packages/kit/src/store.ts', `import { create } from 'zustand/vanilla';\nimport a from 'dep-a/sub';\nexport const store = create(() => a);\n`);
+    put('packages/app/src/Panel.tsx', `import { store } from '@fixture/kit';\nimport 'dep-a';\nexport const Panel = () => <i>{store.getState()}</i>;\n`);
+    expect(deps()).toEqual(['@fixture/kit > dep-a/sub', '@testing-library/react', 'dep-a', 'zustand/vanilla']);
+  });
+
   it('leaves out what vite cannot or must not pre-bundle', () => {
     put('packages/app/src/raw.ts', `import 'raw-only';\n`);
     put(
