@@ -25,6 +25,12 @@ describe('mergeContributions', () => {
     );
   });
 
+  it('tells a consumer replacing a built-in to give theirs another id, which suppress cannot free', () => {
+    expect(() => mergeContributions([toolbarItem('undo')], [toolbarItem('undo')])).toThrow(
+      /suppress the built-in and add yours under another id/,
+    );
+  });
+
   it('puts a contribution marked start ahead of the rest, built-ins included', () => {
     const out = mergeContributions(
       [toolbarItem('a'), toolbarItem('b')],
