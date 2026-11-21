@@ -194,6 +194,16 @@ describe('pools in a scene', () => {
     expect(lanes.map((node) => node.pose)).toMatchObject([{ x: 20, width: 0 }, { x: 20, width: 0 }]);
   });
 
+  it('refuse a lane added at a negative or fractional index, and add one past the end at the end', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    expect(() => addLane(scene as never, pool, -1)).toThrow(RangeError);
+    expect(() => addLane(scene as never, pool, 1.5)).toThrow(RangeError);
+    expect(lanesOf(scene as never, pool)).toHaveLength(2);
+    const lane = addLane(scene as never, pool, 9);
+    expect(lanesOf(scene as never, pool).at(-1)).toBe(lane);
+  });
+
   it('grow by a lane added at the end, in one entry', () => {
     const scene = makeScene();
     const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });

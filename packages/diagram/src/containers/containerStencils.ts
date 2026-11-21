@@ -92,13 +92,17 @@ export function lanesOf(scene: AnyScene, poolId: string): NodeId[] {
 
 /**
  * Add a lane to `poolId` before the lane at `index`, or at the end of the
- * stack, as one history entry. The pool grows to hold it. Returns the new
- * lane's id, or null when `poolId` is not a pool.
+ * stack when `index` is absent or past the last lane, as one history entry.
+ * The pool grows to hold it. Returns the new lane's id, or null when `poolId`
+ * is not a pool. Throws a `RangeError` for a negative or fractional `index`.
  */
 export function addLane(scene: AnyScene, poolId: string, index?: number, style?: NodeStyle): string | null {
   const pool = scene.get(poolId as NodeId);
   const trait = pool === undefined ? null : diagramContainerOf(pool);
   if (pool === undefined || trait?.role !== 'pool') return null;
+  if (index !== undefined && !(Number.isInteger(index) && index >= 0)) {
+    throw new RangeError(`addLane: index ${index} is not a lane's place; pass a whole number from 0, or none for the end`);
+  }
   const axis = poolAxisOf(trait);
   const lanes = lanesOf(scene, poolId);
   // Laid out in the pool's own box, where a layout sees it: upright where poses do not compose.

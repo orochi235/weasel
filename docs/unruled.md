@@ -3399,3 +3399,8 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): A badge's `padding` prop, and padding in its `style`, replaces the shape's insets on
   each side it sets, as it always has and as the story describes it, so a fitted base refits around the other sides
   alone. Adding the insets to the given padding, as the size's own padding does, was the alternative.
+## Audit round sixty-four (2026-11-21): diagram containers
+
+- 2026-11-21 (the fixer's call): `addLane` throws a `RangeError` for a negative or fractional `index`, and still
+  adds at the end for one past the last lane. Clamping a negative index to 0 and rounding a fractional one was the
+  alternative.
