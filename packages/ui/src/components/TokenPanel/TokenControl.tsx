@@ -3,7 +3,7 @@ import { useNativeHold } from '../Disabled/nativeHold';
 import { Input } from '../Input';
 import { NumberField } from '../NumberField';
 import { Select } from '../Select';
-import { toHex } from './color';
+import { keepAlpha, toHex } from './color';
 import s from './TokenPanel.module.css';
 import { bezierPoints, NUMBER_FORMAT, shownAlike, splitUnit, type TokenEntry } from './tokenTypes';
 
@@ -68,7 +68,7 @@ export function TokenControl({ token, set }: { token: TokenEntry; set: (value: s
         onChange={set}
         leadingAdornment={
           type !== 'color' ? undefined : hex ? (
-            <ColorInput name={name} hex={hex} set={set} />
+            <ColorInput name={name} hex={hex} set={(picked) => set(keepAlpha(picked, value))} />
           ) : (
             <span className={s.chip} style={{ '--token-color': value } as CSSProperties} aria-hidden="true" />
           )

@@ -3291,3 +3291,9 @@ Calls the lanes made without a ruling:
   on a key or the root is refused, since the drag's release commits against the tracks it began from and would undo
   it; Escape still cancels. Edits from elsewhere during a drag (the inspector, the consumer) are not guarded. Ending
   the drag on any other edit, or committing against the tracks at release, was the alternative.
+
+## Audit round fifty-nine (2026-11-20): TokenPanel
+
+- 2026-11-20: Dragging a step of a `factors` scale that no factor can reach (the base is zero or negative, or the
+  rule has no factor for that step) overrides the step through `onChange`, rather than writing an infinite or
+  negative factor or doing nothing.

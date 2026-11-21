@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { inferTokenType, tokenCategory } from './tokenTypes';
+import { inferTokenType, refitScale, tokenCategory, type TokenScale } from './tokenTypes';
 
 describe('tokenCategory', () => {
   it('files each DTCG type under its section', () => {
@@ -33,9 +33,14 @@ describe('inferTokenType', () => {
     expect(inferTokenType('-0.5rem')).toBe('dimension');
     expect(inferTokenType('150ms')).toBe('duration');
     expect(inferTokenType('0.2s')).toBe('duration');
+    expect(inferTokenType('200MS')).toBe('duration');
+    expect(inferTokenType('0.2S')).toBe('duration');
     expect(inferTokenType('cubic-bezier(0.33, 1, 0.68, 1)')).toBe('cubicBezier');
     expect(inferTokenType('1.4')).toBe('number');
     expect(inferTokenType('0 1px 3px rgba(0, 0, 0, 0.3)')).toBe('shadow');
+    expect(inferTokenType('inset 0 1px 2px red')).toBe('shadow');
+    expect(inferTokenType('0 1px 2px red inset')).toBe('shadow');
+    expect(inferTokenType('0 1px 2px red INSET, 0 0 1px blue')).toBe('shadow');
     expect(inferTokenType('linear-gradient(red, blue)')).toBe('gradient');
   });
 
@@ -43,5 +48,25 @@ describe('inferTokenType', () => {
     expect(inferTokenType('auto')).toBe('string');
     expect(inferTokenType('calc(100% - 4px)')).toBe('string');
     expect(inferTokenType('')).toBe('string');
+  });
+});
+
+describe('refitScale', () => {
+  const scale: TokenScale = { tokens: ['--a', '--b', '--c'], base: 2, rule: { kind: 'step', step: 1 } };
+
+  it('fits a ratio of 1 when the steps do not grow by any positive ratio', () => {
+    expect(refitScale(scale, 'ratio', [2, 3, -4]).rule).toEqual({ kind: 'ratio', ratio: 1 });
+    expect(refitScale(scale, 'ratio', [2, 3, 0]).rule).toEqual({ kind: 'ratio', ratio: 1 });
+  });
+
+  it('fits a ratio and factors that regenerate the steps they were fitted to', () => {
+    const amounts = [16, 21.33, 28.43, 37.9, 50.52];
+    const steps = { ...scale, tokens: ['--a', '--b', '--c', '--d', '--e'], base: 16 };
+    const ratio = refitScale(steps, 'ratio', amounts).rule;
+    expect(ratio.kind === 'ratio' && Math.abs(16 * ratio.ratio ** 4 - 50.52)).toBeLessThan(0.05);
+    const factors = refitScale(steps, 'factors', amounts).rule;
+    const regenerated = factors.kind === 'factors' ? factors.factors.map((f) => 16 * f) : [];
+    expect(regenerated).toHaveLength(5);
+    regenerated.forEach((amount, i) => expect(Math.abs(amount - amounts[i]!)).toBeLessThan(0.005));
   });
 });

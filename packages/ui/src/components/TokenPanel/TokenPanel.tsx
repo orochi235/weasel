@@ -76,7 +76,7 @@ function itemsOf(tokens: readonly TokenEntry[], familySize: number): Item[] {
   return items;
 }
 
-type RunLabel = { group: string; step: string; first: boolean };
+type RunLabel = { group: string; step: string; leadShown: boolean };
 
 /** Rows standing together that share a group, each named by what it adds to the group's name, so the name is read
  *  once down the rail. A row whose name does not start with its group stands alone. */
@@ -85,17 +85,19 @@ function rowRuns(items: readonly Item[], prefix: string): Map<string, RunLabel> 
   let run: TokenEntry[] = [];
   const flush = () => {
     if (run.length >= 2) {
-      const group = shortName(run[0]?.group ?? '', prefix.replace(/^--/, ''));
+      const group = shortName(run[0]?.group ?? '', prefix);
       run.forEach((token, i) => {
         const short = shortName(token.name, prefix);
-        out.set(token.name, { group, step: short === group ? '' : short.slice(group.length + 1), first: i === 0 });
+        const step = short === group ? '' : short.slice(group.length + 1);
+        // A row named as its group has no step to draw, so it shows the group however far down the run it is.
+        out.set(token.name, { group, step, leadShown: i === 0 || !step });
       });
     }
     run = [];
   };
   for (const item of items) {
     const token = item.kind === 'row' ? item.token : null;
-    const group = token && shortName(token.group, prefix.replace(/^--/, ''));
+    const group = token && shortName(token.group, prefix);
     const short = token && shortName(token.name, prefix);
     const fits = token && group && short && (short === group || short.startsWith(`${group}-`));
     if (!fits || (run[0] && run[0].group !== token.group)) flush();
@@ -176,7 +178,7 @@ function Family({
   return (
     <div className={s.family} role="group" aria-label={group}>
       <span className={s.name} title={group}>
-        {shortName(group, prefix.replace(/^--/, ''))}
+        {shortName(group, prefix)}
       </span>
       <div className={s.strip}>
         {tokens.map((t) => (
@@ -209,7 +211,7 @@ function Family({
           }}
         />
       ) : null}
-      {token ? <TokenRow token={token} label={`${group} ${labels[at] ?? ''}`.trim()} onChange={onChange} /> : null}
+      {token ? <TokenRow token={token} label={`${shortName(group, prefix)} ${labels[at] ?? ''}`.trim()} onChange={onChange} /> : null}
     </div>
   );
 }
@@ -253,7 +255,7 @@ function Section({
                 token={item.token}
                 label={runs.get(item.token.name)?.step ?? shortName(item.token.name, prefix)}
                 lead={runs.get(item.token.name)?.group}
-                leadHidden={runs.get(item.token.name)?.first === false}
+                leadHidden={runs.get(item.token.name)?.leadShown === false}
                 onChange={onChange}
               />
             ) : item.kind === 'scale' ? (
@@ -314,7 +316,9 @@ function HeldTokenPanel({
     const sections = new Map<TokenCategory, TokenEntry[]>();
     for (const token of tokens) {
       const category = categorize(token);
-      sections.set(category, [...(sections.get(category) ?? []), token]);
+      const section = sections.get(category);
+      if (section) section.push(token);
+      else sections.set(category, [token]);
     }
     return sections;
   }, [tokens, categorize]);
