@@ -108,8 +108,9 @@ export function tokenCategory(token: TokenEntry): TokenCategory {
 
 // CSS's <number>: a sign, and an exponent as `${n}` writes one past 1e21 or below 1e-6.
 const AMOUNT = String.raw`[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?`;
+// CSS's lengths: font-relative ones and their root forms, viewport ones in every size, container ones, and absolute ones.
 const DIMENSION = new RegExp(
-  `^${AMOUNT}(?:px|rem|em|%|ch|ex|lh|rlh|vh|vw|vmin|vmax|svh|lvh|dvh|cqw|cqh|pt|pc|cm|mm|in|q)$`,
+  `^${AMOUNT}(?:%|r?(?:em|ex|cap|ch|ic|lh)|[sld]?v(?:w|h|i|b|min|max)|cq(?:w|h|i|b|min|max)|px|pt|pc|cm|mm|in|q)$`,
   'i',
 );
 const DURATION = new RegExp(`^${AMOUNT}m?s$`, 'i');

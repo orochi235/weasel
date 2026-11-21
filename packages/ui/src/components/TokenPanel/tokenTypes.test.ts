@@ -31,6 +31,9 @@ describe('inferTokenType', () => {
     expect(inferTokenType('oklch(0.7 0.1 250)')).toBe('color');
     expect(inferTokenType('12px')).toBe('dimension');
     expect(inferTokenType('-0.5rem')).toBe('dimension');
+    for (const unit of ['dvw', 'svw', 'lvw', 'dvh', 'vi', 'vb', 'dvmin', 'cqi', 'cqb', 'cqmin', 'cqmax', 'cap', 'rch']) {
+      expect(inferTokenType(`50${unit}`)).toBe('dimension');
+    }
     expect(inferTokenType('150ms')).toBe('duration');
     expect(inferTokenType('0.2s')).toBe('duration');
     expect(inferTokenType('200MS')).toBe('duration');
