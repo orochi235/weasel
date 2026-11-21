@@ -102,6 +102,7 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
     ...setupFiles.map((file) => resolve(repoRoot, file)),
   ];
   const resolved = new Map<string, string | undefined>();
+  const nested = new Map<string, string>();
   const visit = (path: string) => {
     if (!resolved.has(path)) resolved.set(path, sourceAt(path));
     const file = resolved.get(path);
@@ -129,8 +130,34 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) {
+        found.add(nestedSpecifier(repoRoot, file, specifier, nested));
+      }
     }
   }
   return [...found].sort();
+}
+
+/**
+ * `specifier` as `optimizeDeps.include` must name it for `file`: `<package> > <specifier>` when the
+ * package `file` sits in installs its own copy. vite matches a bare entry by id whatever the importer,
+ * so a bare `opentype.js` handed font the root's 1.3.4 (msdf-bmfont-xml's) in place of its own 2.0.0.
+ */
+function nestedSpecifier(repoRoot: string, file: string, specifier: string, memo: Map<string, string>): string {
+  const pkg = packageOf(specifier);
+  const top = resolve(repoRoot);
+  for (let dir = dirname(resolve(file)); dir.startsWith(top) && dir !== top; dir = dirname(dir)) {
+    const manifest = join(dir, 'package.json');
+    if (!isFile(manifest)) continue;
+    const key = `${dir}\0${pkg}`;
+    let owner = memo.get(key);
+    if (owner === undefined) {
+      owner = existsSync(join(dir, 'node_modules', pkg, 'package.json'))
+        ? (JSON.parse(readFileSync(manifest, 'utf8')) as { name?: string }).name ?? ''
+        : '';
+      memo.set(key, owner);
+    }
+    return owner ? `${owner} > ${specifier}` : specifier;
+  }
+  return specifier;
 }
