@@ -1,0 +1,76 @@
+{
+ "id": "labkit.surface",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-21",
+ "files": [
+  "packages/labkit/src/surface/SurfaceContext.ts",
+  "packages/labkit/src/surface/clip.ts",
+  "packages/labkit/src/surface/composeRects.ts",
+  "packages/labkit/src/surface/deviceRect.ts",
+  "packages/labkit/src/surface/index.ts",
+  "packages/labkit/src/surface/measureTiles.ts",
+  "packages/labkit/src/surface/rect.ts",
+  "packages/labkit/src/surface/tiledSurface.ts",
+  "packages/labkit/src/surface/useElementWatch.ts",
+  "packages/labkit/src/surface/useSurfaceTile.ts",
+  "packages/labkit/src/surface/useTiledSurface.ts"
+ ],
+ "a": 3,
+ "b": 6,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 8.3,
+ "unfound": 1.3,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "newCode": {
+  "since": 51,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 51,
+  "chapman": 26,
+  "unfound": 14
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 0,
+   "passed": 456,
+   "total": 456
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 27.8,
+   "B": 6.8,
+   "match": 10.2,
+   "fix": 27.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1362282,
+  "costUsd": 4.21
+ },
+ "fixCommits": [
+  "621beb04fc13dc7fec0d5ad04cb6095f678fcff2",
+  "c9a92339d122d467dc2aebcfa37c235fbcf915f5",
+  "ac22132416242756491017fb48925caaa7c3636f",
+  "68394ba73ccd55f1af3137e307e37506e80eaaad",
+  "c464ad9cec4425e4ef38cc13997328240afc9cec",
+  "e58fa05003489648607ad6baa5a18b489b808748",
+  "27b5e595d3c01c236a0c289ae9915abd00a0ac56"
+ ]
+}

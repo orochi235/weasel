@@ -1,0 +1,96 @@
+{
+ "id": "labkit.lab.part2",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-21",
+ "files": [
+  "packages/labkit/src/lab/TriallessPage.tsx",
+  "packages/labkit/src/lab/UnreadableRecords.tsx",
+  "packages/labkit/src/lab/Workspace.less",
+  "packages/labkit/src/lab/Workspace.stories.less",
+  "packages/labkit/src/lab/Workspace.stories.tsx",
+  "packages/labkit/src/lab/Workspace.tsx",
+  "packages/labkit/src/lab/fitCheck.ts",
+  "packages/labkit/src/lab/index.ts",
+  "packages/labkit/src/lab/keyClaims.ts",
+  "packages/labkit/src/lab/labAmbient.ts",
+  "packages/labkit/src/lab/labChords.ts",
+  "packages/labkit/src/lab/labChromeAll.ts",
+  "packages/labkit/src/lab/labContextMenus.ts",
+  "packages/labkit/src/lab/labMenus.ts",
+  "packages/labkit/src/lab/labModes.ts",
+  "packages/labkit/src/lab/labProps.ts",
+  "packages/labkit/src/lab/nebula.ts",
+  "packages/labkit/src/lab/openLab.ts",
+  "packages/labkit/src/lab/owningTrial.ts",
+  "packages/labkit/src/lab/panelHost.ts",
+  "packages/labkit/src/lab/presentation.less",
+  "packages/labkit/src/lab/presentation.tsx",
+  "packages/labkit/src/lab/presentationMessages.ts",
+  "packages/labkit/src/lab/snapshotCommands.ts",
+  "packages/labkit/src/lab/still.ts",
+  "packages/labkit/src/lab/storeCommands.ts",
+  "packages/labkit/src/lab/tileChrome.tsx",
+  "packages/labkit/src/lab/trialless.ts",
+  "packages/labkit/src/lab/useFocusPick.ts",
+  "packages/labkit/src/lab/workspaceStore.ts"
+ ],
+ "a": 5,
+ "b": 3,
+ "m": 0,
+ "distinct": 8,
+ "chapman": 23,
+ "unfound": 15,
+ "read": {
+  "A": 30,
+  "B": 30
+ },
+ "newCode": {
+  "since": 50,
+  "changedFiles": 10,
+  "findings": 3
+ },
+ "previous": {
+  "round": 50,
+  "chapman": 19,
+  "unfound": 12
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 20,
+  "testFiles": {
+   "failed": 0,
+   "passed": 453,
+   "total": 453
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.4,
+   "B": 44.6,
+   "match": 44.7,
+   "fix": 46.8
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "studio"
+  },
+  "weightedTokens": 3316012,
+  "costUsd": 9.15
+ },
+ "fixCommits": [
+  "535642c38a3009c206cee854807d076aa67d526f",
+  "1ccc3ca59a9918ba6e37adb7deab8e2994844a57",
+  "ca7d04a8a1c26d86df32b6a5d41d39b9949c578d",
+  "1701da6e174fea0658c738d3a7b655cd4d5510ba",
+  "0e74d7f76dd45799d5af1786b25d1d9c44cb1608",
+  "8e37539d068bd89cd7f2658d8368662d0d090224",
+  "7501210684beb7103f8b18d399d5aacef265ba12",
+  "bc86fe96a2da1a9f1c9efdfc53fa53cb076509c1"
+ ]
+}

@@ -1,0 +1,11 @@
+packages/headless/src/defaultPage.ts
+packages/headless/src/host.ts
+packages/headless/src/index.ts
+packages/headless/src/page.ts
+packages/headless/src/pageLoad.ts
+packages/headless/src/protocol.ts
+packages/headless/src/testing/compareRaster.ts
+packages/headless/src/testing/fixtureScene.ts
+packages/headless/src/testing/protocol.ts
+packages/headless/src/testing/registeredPage.ts
+packages/headless/src/testing/registeredScene.ts

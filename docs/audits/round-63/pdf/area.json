@@ -1,0 +1,97 @@
+{
+ "id": "pdf",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-21",
+ "files": [
+  "packages/pdf/src/color.ts",
+  "packages/pdf/src/content.ts",
+  "packages/pdf/src/deflate.ts",
+  "packages/pdf/src/drawCommands.ts",
+  "packages/pdf/src/export.ts",
+  "packages/pdf/src/fonts/embedFont.ts",
+  "packages/pdf/src/fonts/fontSource.ts",
+  "packages/pdf/src/fonts/subset.ts",
+  "packages/pdf/src/fonts/toUnicode.ts",
+  "packages/pdf/src/groupOps.ts",
+  "packages/pdf/src/images.ts",
+  "packages/pdf/src/index.ts",
+  "packages/pdf/src/latin1.ts",
+  "packages/pdf/src/num.ts",
+  "packages/pdf/src/objects.ts",
+  "packages/pdf/src/pathOps.ts",
+  "packages/pdf/src/pbt.fixture.ts",
+  "packages/pdf/src/pdfCheck.fixture.ts",
+  "packages/pdf/src/pdfReader.fixture.ts",
+  "packages/pdf/src/regionsPdf.ts",
+  "packages/pdf/src/resources.ts",
+  "packages/pdf/src/shading.ts",
+  "packages/pdf/src/strokeOps.ts",
+  "packages/pdf/src/testing/noFonts.ts",
+  "packages/pdf/src/textOps.ts",
+  "packages/pdf/src/textOutlines.ts",
+  "packages/pdf/src/textSegment.ts",
+  "packages/pdf/src/writePdf.ts"
+ ],
+ "a": 7,
+ "b": 2,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 7,
+ "unfound": 0,
+ "read": {
+  "A": 28,
+  "B": 28
+ },
+ "newCode": {
+  "since": 53,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 53,
+  "chapman": 15,
+  "unfound": 9
+ },
+ "patches": 8,
+ "verify": {
+  "ok": false,
+  "why": "8 of 525 test files failed",
+  "files": 26,
+  "testFiles": {
+   "failed": 8,
+   "passed": 2972,
+   "total": 2980
+  },
+  "failedFiles": [
+   "packages/core/src/canvas/anisotropicStroke.browser.test.ts",
+   "packages/core/src/canvas/syntheticBoldStroke.browser.test.ts",
+   "packages/text-tools/src/node/syntheticBoldOutline.browser.test.ts",
+   "packages/text-tools/src/node/textOverflow.browser.test.ts",
+   "packages/text-tools/src/node/textPaint.browser.test.ts",
+   "packages/diagram-formats/src/pagesPdf.browser.test.ts",
+   "packages/pdf/src/fonts/subset.browser.test.ts",
+   "packages/text-tools/src/editor/overlayAlignment.browser.test.tsx"
+  ],
+  "gui": true,
+  "repairs": 2
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 42.9,
+   "B": 13.6,
+   "match": 46.2,
+   "fix": 90.9,
+   "repair": 34.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 4154164,
+  "costUsd": 12.14
+ },
+ "fixCommits": []
+}

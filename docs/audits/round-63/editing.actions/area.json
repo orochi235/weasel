@@ -1,0 +1,97 @@
+{
+ "id": "editing.actions",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-21",
+ "files": [
+  "packages/editing/src/actions/align/action.tsx",
+  "packages/editing/src/actions/align/align.ts",
+  "packages/editing/src/actions/align/index.ts",
+  "packages/editing/src/actions/clipboard/action.ts",
+  "packages/editing/src/actions/clone/action.ts",
+  "packages/editing/src/actions/clone/behaviors.ts",
+  "packages/editing/src/actions/delete/delete.ts",
+  "packages/editing/src/actions/derivedBox.ts",
+  "packages/editing/src/actions/distribute/action.tsx",
+  "packages/editing/src/actions/distribute/distribute.ts",
+  "packages/editing/src/actions/distribute/index.ts",
+  "packages/editing/src/actions/distribute/plan.ts",
+  "packages/editing/src/actions/flip/action.ts",
+  "packages/editing/src/actions/flip/helpers.ts",
+  "packages/editing/src/actions/group/enterGroup.ts",
+  "packages/editing/src/actions/lassoSelect/action.ts",
+  "packages/editing/src/actions/lassoSelect/behaviors/selectFromLasso.ts",
+  "packages/editing/src/actions/lassoSelect/index.ts",
+  "packages/editing/src/actions/lassoSelect/options.ts",
+  "packages/editing/src/actions/lockedWrites.ts",
+  "packages/editing/src/actions/pathfinder/action.tsx",
+  "packages/editing/src/actions/pathfinder/booleanGroupAction.ts",
+  "packages/editing/src/actions/pathfinder/keymap.ts",
+  "packages/editing/src/actions/reorder/reorder.ts",
+  "packages/editing/src/actions/rotate/action.ts",
+  "packages/editing/src/actions/rotate/commit.ts",
+  "packages/editing/src/actions/rotate/frame.ts",
+  "packages/editing/src/actions/rotate/replay.ts",
+  "packages/editing/src/actions/rotate/session.ts",
+  "packages/editing/src/actions/select/areaSelect.ts",
+  "packages/editing/src/actions/select/clearSelection.ts",
+  "packages/editing/src/actions/swap/action.ts",
+  "packages/editing/src/actions/swap/swapOps.ts",
+  "packages/editing/src/actions/transformAgain/action.ts",
+  "packages/editing/src/actions/transformAgain/transformSelection.ts"
+ ],
+ "a": 6,
+ "b": 4,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 10.7,
+ "unfound": 2.7,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "newCode": {
+  "since": 47,
+  "changedFiles": 3,
+  "findings": 1
+ },
+ "previous": {
+  "round": 47,
+  "chapman": 23,
+  "unfound": 12
+ },
+ "patches": 11,
+ "verify": {
+  "ok": false,
+  "why": "1 of 357 test files failed",
+  "files": 43,
+  "testFiles": {
+   "failed": 1,
+   "passed": 1477,
+   "total": 1478
+  },
+  "failedFiles": [
+   "packages/diagram-formats/src/pagesPdf.browser.test.ts"
+  ],
+  "gui": true,
+  "repairs": 2
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 32.2,
+   "B": 10.3,
+   "match": 0.1,
+   "fix": 36.5,
+   "repair": 60.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 4310213,
+  "costUsd": 11.87
+ },
+ "fixCommits": []
+}

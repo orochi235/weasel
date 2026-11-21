@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "A Boolean result made from a sticky note keeps the note's frame data, including its 48×48 `minSize`",
+  "`setBackground` treats only `#ffffff` as the default white, but the Background field always writes `#rrggbbaa`",
+  "The CommandBar story registers a hand-picked subset of draw's app actions, so its bar differs from the app's",
+  "The swatch's None toggle and Swap change only the next shape's paint, while its paint editor also paints the selection"
+ ],
+ "b": [
+  "A second Alt-click on a \"Hidden\"/\"Collapsed\" box in the surfaces editor hides (or collapses) every row instead of undoing the solo",
+  "`carriedData` copies `pathEffect` onto the plain path a Pathfinder or outline result is minted as",
+  "Setting a swatch to None paints the selection from the paint editor but not from the None button or Shift-click"
+ ]
+}

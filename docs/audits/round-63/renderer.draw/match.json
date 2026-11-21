@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "A far-off rect's aligned stroke drawn through the stencil marks its fill at the wrong place",
+  "A typed-array value for a uniform that isn't an array is silently dropped",
+  "A text layer that falls back after uploading a span keeps that span's GPU buffers"
+ ],
+ "b": [
+  "A far-off rect clip is written to the stencil away from where it is",
+  "A far-off rect's aligned stroke, drawn through the stencil, marks its fill in the wrong place",
+  "Vertex colors with a non-solid paint: a fill drops the colors, a stroke drops the paint"
+ ]
+}

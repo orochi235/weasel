@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "A `{ px }` stroke under a transform that stretches one axis more than another is written with one local width, so its thickness varies with direction",
+  "Opacity outside 0..1 is written to an ExtGState's /ca and /CA as given",
+  "A text command dropped for a non-finite number still decides the document's /Lang",
+  "An isolated group's color matrix is applied to each child, not to the finished surface, so one that scales alpha fades overlaps unevenly",
+  "Whether runs share a language is decided case-sensitively in one place and case-insensitively in another",
+  "An image or sprite `source` rect reaching past the bitmap leaves that part blank where the renderer smears the edge",
+  "Paint opacity is applied after the group color matrix, where the renderer folds it into alpha before the matrix"
+ ],
+ "b": [
+  "A dropped text command's language still decides the catalog's `/Lang`",
+  "Alpha outside 0..1 reaches an ExtGState's `/ca` and `/CA` unclamped on some paths but not others"
+ ]
+}

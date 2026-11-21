@@ -1,0 +1,90 @@
+{
+ "id": "apps.chart.src.part2",
+ "commit": "1b4edb3a93db1759496d564da57eb13020b3d7d2",
+ "date": "2026-11-21",
+ "files": [
+  "apps/chart/src/prefs.ts",
+  "apps/chart/src/reportFailure.ts",
+  "apps/chart/src/stencilDrop.ts",
+  "apps/chart/src/templates/TemplateDialog.tsx",
+  "apps/chart/src/templates/templateDialog.css",
+  "apps/chart/src/testIcons.ts",
+  "apps/chart/src/testing/canvasPixels.ts",
+  "apps/chart/src/testing/chartSession.ts",
+  "apps/chart/src/testing/choose.ts",
+  "apps/chart/src/testing/mountChartApp.tsx",
+  "apps/chart/src/testing/pointer.ts",
+  "apps/chart/src/testing/savedChart.ts",
+  "apps/chart/src/theme/StylePanel.tsx",
+  "apps/chart/src/theme/ThemePanel.tsx",
+  "apps/chart/src/theme/ThemeRoles.tsx",
+  "apps/chart/src/theme/applyChartTheme.ts",
+  "apps/chart/src/theme/stylePanel.css",
+  "apps/chart/src/theme/themeCommands.tsx",
+  "apps/chart/src/theme/themeFields.tsx",
+  "apps/chart/src/theme/themePanel.css",
+  "apps/chart/src/theme/useThemeEdit.ts",
+  "apps/chart/src/toolbar/ChartToolbar.tsx",
+  "apps/chart/src/toolbar/toolbar.css",
+  "apps/chart/src/toolbar/toolbarAssets.ts",
+  "apps/chart/src/useChartDiagram.tsx",
+  "apps/chart/src/useChartSnap.ts",
+  "apps/chart/src/workspace.css"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 0,
+ "distinct": 5,
+ "chapman": 11,
+ "unfound": 6,
+ "read": {
+  "A": 27,
+  "B": 27
+ },
+ "newCode": {
+  "since": 33,
+  "changedFiles": 5,
+  "findings": 1
+ },
+ "previous": {
+  "round": 33,
+  "chapman": 15,
+  "unfound": 9
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 10,
+  "testFiles": {
+   "failed": 0,
+   "passed": 149,
+   "total": 149
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.9,
+   "B": 35.1,
+   "match": 5.3,
+   "fix": 11.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "studio"
+  },
+  "weightedTokens": 1575534,
+  "costUsd": 4.63
+ },
+ "fixCommits": [
+  "a24da48c1be130133bb6e6d97d229652fed1f0e4",
+  "b9d1d0de4a7254e851c9796b5e42764ab0c23144",
+  "9837f9d93bc478f5e02166c19ae28d0841f7a3fd",
+  "8b2225d390b2aff572e8a43e25b29a096ca76e4b",
+  "4a123d64d33de812688d109378fca4d32584d7a6"
+ ]
+}

@@ -1,0 +1,15 @@
+{
+ "pairs": [],
+ "a": [
+  "The fit warning names a box clipped inside an inner scroller as what makes the lab scroll",
+  "The fit warning names `.lk-shell-body` itself whenever it shows a classic scrollbar or a border",
+  "`Workspace` matches `ids` against children with falsy entries dropped, so tiles take the wrong ids",
+  "A presented lab with `messages.origins` still posts its state to any origin",
+  "The chord owner and the framed check read the global `document`/`window`, not the lab's own"
+ ],
+ "b": [
+  "`labkit:play` does not start an ended non-seekable run over, unlike the play button it claims to match",
+  "A presented lab in dark mode still paints the starfield over the page it hands its ground back to",
+  "The lab fit warning measures the global `document`, not the lab's own"
+ ]
+}

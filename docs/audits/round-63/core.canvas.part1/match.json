@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "A dependency read through a slot lookup carries no `scene`, so a boolean group's operands are outlined by the default painters instead of the scene's own",
+  "A trimmed stroke's pick outline is memoized without the silhouette's generation or key, so it goes stale when a varying silhouette changes",
+  "`buildSceneLayer` derives paths from local poses when given a `toPose`, but from world poses without one"
+ ],
+ "b": [
+  "A group's drawn box reaches over members that are hidden or consumed, which nothing paints",
+  "defaultPaintBounds bounds a labeled group without its label when a consumer painter claiming groups sets drawsLabel",
+  "End-anchored HUDs are pinned against the window's width including its scrollbar"
+ ]
+}
