@@ -352,6 +352,20 @@ describe('Lane in graph mode', () => {
     expect(onKeysChange.mock.calls[0][0][1].t).toBe(600);
   });
 
+  it('leaves the selection and focus on a key whose arrow step a read-only lane refuses', () => {
+    const close = { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 50, value: 5 }, { t: 400, value: 10 }], onTick: () => {} } as Track;
+    const onSelectionChange = vi.fn();
+    const onKeysChange = vi.fn();
+    const hold = { edits: false, looks: true, tabIndex: 0 as const, focus: {} };
+    render(<Lane {...base} mode="graph" row={laneOf(close)} hold={hold} onSelectionChange={onSelectionChange} onKeysChange={onKeysChange} />);
+    const first = graphKeys()[0] as SVGElement;
+    first.focus();
+    fireEvent.keyDown(first, { key: 'ArrowRight', shiftKey: true });
+    expect(onSelectionChange).not.toHaveBeenCalled();
+    expect(onKeysChange).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(first);
+  });
+
   it('selects the segment under a click on the curve', () => {
     const onSelectSegment = vi.fn();
     render(<Lane {...base} mode="graph" row={laneOf(sampled)} onSelectSegment={onSelectSegment} />);
