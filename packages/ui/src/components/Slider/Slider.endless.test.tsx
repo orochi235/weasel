@@ -3,6 +3,7 @@ import { render, fireEvent } from '@testing-library/react';
 import { Slider } from './Slider';
 import { withInfinity, unit } from '@weasel-js/quantity';
 import { stubRect } from './testing/stubRect';
+import { logScale } from '@weasel-js/scale';
 
 describe('Slider endless', () => {
   it('sits a thumb given Infinity at a stop one step past the range, and reads the display’s word', () => {
@@ -112,5 +113,19 @@ describe('Slider endless', () => {
     fireEvent.pointerUp(document, {});
     press(256);
     expect(onInput).toHaveBeenLastCalledWith([{ value: Infinity }]);
+  });
+
+  it('opens the low end of a log track, its stop a twentieth of the track before min', () => {
+    const onInput = vi.fn();
+    const { container, getByRole } = render(
+      <Slider min={1} max={1000} step={1} endless="min" scale={logScale} thumbs={[{ value: -Infinity }]} onInput={onInput} />,
+    );
+    expect(Number(getByRole('slider').getAttribute('aria-valuenow'))).toBeCloseTo(10 ** -0.15, 6);
+    stubRect(container.querySelector('[data-slider-rail]')!, { left: 0, width: 210 });
+    fireEvent.pointerDown(container.querySelector('[data-slider-track]')!, { clientX: 1, clientY: 12, button: 0 });
+    expect(onInput).toHaveBeenLastCalledWith([{ value: -Infinity }]);
+    fireEvent.pointerUp(document, {});
+    fireEvent.pointerDown(container.querySelector('[data-slider-track]')!, { clientX: 9, clientY: 12, button: 0 });
+    expect(onInput).toHaveBeenLastCalledWith([{ value: 1 }]);
   });
 });
