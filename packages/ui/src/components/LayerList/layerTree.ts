@@ -59,10 +59,10 @@ export function collectCollapsed(
   return into;
 }
 
-/** Every layer with children, shown or folded away, in list order. */
+/** Every layer that holds children, even none yet, shown or folded away, in list order. */
 export function branchIds(items: Items, into: string[] = []): string[] {
   for (const item of items) {
-    if (item.children?.length) {
+    if (item.children) {
       into.push(item.id);
       branchIds(item.children, into);
     }

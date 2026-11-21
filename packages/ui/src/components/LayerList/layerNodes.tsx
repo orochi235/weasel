@@ -35,7 +35,7 @@ export function layerNodes(items: readonly LayerListItem[], props: LayerListProp
       muted: item.nonPrinting,
       immovable: item.fixed || locked,
       selectsAlone: item.fixed,
-      ...(item.children?.length ? { children: item.children.map((kid) => node(kid, locked)) } : {}),
+        ...(item.children ? { children: item.children.map((kid) => node(kid, locked)) } : {}),
     };
   };
   return items.map((item) => node(item, false));

@@ -215,6 +215,13 @@ describe('LayerList reordering', () => {
     expect(screen.getByRole('button', { name: 'Remove Beta' })).toBeInTheDocument();
   });
 
+  it('drops a row into a layer whose children are empty', () => {
+    const onReorder = vi.fn();
+    list({ items: [{ id: 'g', label: 'Group', children: [] }, { id: 'b', label: 'Beta' }], onReorder });
+    drag('Beta', ROW_H / 2, ROW_H + 4);
+    expect(onReorder).toHaveBeenCalledWith({ ids: ['b'], parentId: 'g', index: 0 });
+  });
+
   it('drops nothing into a locked layer, or where canMove refuses', () => {
     const onReorder = vi.fn();
     const { rerender } = list({ items: [{ ...TREE[0]!, locked: true }, TREE[1]!], onReorder });
