@@ -37,7 +37,7 @@ type ButtonElement = ReactElement<DOMAttributes<HTMLButtonElement> & { disabled?
 const refuse = (e: SyntheticEvent) => e.preventDefault();
 
 /** `button` held by `aria-disabled` or `data-readonly`, since native `disabled` takes it out of hover and focus and
- *  so out of its tooltip's reach. It drops every press handler and keeps its focus, hover and key handlers. A toolbar's
+ *  so out of its tooltip's reach. It drops every press and drag handler and keeps its focus, hover and key handlers. A toolbar's
  *  arrow keys pass over it, and a menu's, listbox's or tab list's land on it (`useRovingTabIndex`'s `disabled`).
  *  Stylesheets dim `data-disabled`. */
 function stillReachable(button: ButtonElement, access: ControlAccess): ButtonElement {
@@ -52,6 +52,8 @@ function stillReachable(button: ButtonElement, access: ControlAccess): ButtonEle
     onMouseUp: undefined,
     onDoubleClick: undefined,
     onAuxClick: undefined,
+    draggable: undefined,
+    onDragStart: undefined,
   }) as ButtonElement;
 }
 
@@ -85,12 +87,13 @@ export function ButtonTooltip({ tip, children, ...own }: ButtonTooltipProps): Re
   const off = !access.reachable;
   const button = off ? (cloneElement(children, { disabled: true }) as ButtonElement)
     : access.state === 'enabled' ? children : stillReachable(children, access);
-  if (content === undefined || content === null || content === false) return button;
-  // The same wrappers whatever the state, so a button that becomes disabled is not remounted.
+  const none = content === undefined || content === null || content === false;
+  // The same wrappers whatever the state and whether there is content, so a button that becomes disabled, or that
+  // gains a tooltip, is not remounted and keeps its focus.
   return (
-    <TooltipTrigger isDisabled={off}>
+    <TooltipTrigger isDisabled={off || none}>
       <Focusable isDisabled={off}>{button}</Focusable>
-      <Tooltip>{content}</Tooltip>
+      {none ? null : <Tooltip>{content}</Tooltip>}
     </TooltipTrigger>
   );
 }

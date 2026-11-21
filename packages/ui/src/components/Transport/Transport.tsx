@@ -69,6 +69,12 @@ const readouts: Record<TimeReadout, (time: PlayheadTime, seconds: (ms: number) =
   elapsed: ({ playhead, start, duration }, seconds) => `${seconds(playhead - start)} / ${seconds(duration)}`,
 };
 
+/** What the scrub bar speaks for the playhead: the time the readout shows it at, or `formatTime`'s text. */
+function spokenPosition(time: PlayheadTime, timeReadout: TimeReadout, formatTime: ((time: PlayheadTime) => string) | undefined, locale: string): string {
+  if (formatTime) return formatTime(time);
+  return secondsText(timeReadout === 'elapsed' ? time.playhead - time.start : time.playhead, 2, locale).spoken;
+}
+
 /** The playhead, as `timeReadout` or `formatTime` reads it, in a cell as wide as the widest of its
  *  readings at `start` and at the end. */
 export function PlayheadReadout({
@@ -182,7 +188,7 @@ export function Transport(props: TransportProps): ReactElement {
       {onSeek ? (
         <Slider
           aria-label="Position"
-          thumbs={[{ value: shown, valueText: secondsText(shown, 2, locale).spoken }]}
+          thumbs={[{ value: shown, valueText: spokenPosition({ playhead: shown, start, duration }, props.timeReadout ?? 'absolute', props.formatTime, locale) }]}
           min={start}
           max={start + duration}
           onInput={([thumb]) => onSeek(Math.min(Math.max(thumb.value, start), start + duration))}

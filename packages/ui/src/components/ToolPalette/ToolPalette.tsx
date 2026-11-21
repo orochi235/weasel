@@ -1,4 +1,4 @@
-import { useEffect, type DragEvent, type ReactNode } from 'react';
+import { useEffect, useSyncExternalStore, type DragEvent, type ReactNode } from 'react';
 import { useScopedTools, type ToolsApi } from '@weasel-js/routing/react';
 import { toolIdsOf, toolSetHas, toolStacksOf, type CarryPayload, type ToolSet, type Tool } from '@weasel-js/routing';
 import { isContributionEligible, type ModeRegistry } from '@weasel-js/modes';
@@ -76,6 +76,8 @@ export interface ToolPaletteProps extends DisableableProps {
 }
 
 const NO_ORDER: readonly string[] = [];
+const noSubscribe = (): (() => void) => () => {};
+const noVersion = (): number => 0;
 
 /** An `include` set's own order: the ids of the sets it holds, or of every tool in it. */
 function setOrder(include: ToolPaletteProps['include'], of: 'groups' | 'tools'): readonly string[] {
@@ -112,6 +114,7 @@ function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
     columns, onToolDragStart, carryTool, carryGhost, disabled, disabledReason: ownReason,
   } = props;
   const carry = useToolCarry(carryTool, carryGhost);
+  useSyncExternalStore(modeRegistry?.subscribe ?? noSubscribe, modeRegistry?.getVersion ?? noVersion, modeRegistry?.getVersion ?? noVersion);
   const shows = include === undefined ? () => true
     : typeof include === 'function' ? include : (t: Tool) => toolSetHas(include, t.id);
   const allowed = (t: Tool): boolean => !modeRegistry || isContributionEligible(modeRegistry, t);
@@ -135,7 +138,7 @@ function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
       shortcut: getOwn(tools.shortcuts, tool.id)?.[0],
       active: tools.active === tool.id,
       ...(enabled ? {} : { disabled: true, disabledReason }),
-      onPress: () => { if (!carry.carried()) tools.setActive(tool.id); },
+      onPress: () => { tools.setActive(tool.id); },
       onPointerDown: carryTool && enabled ? (e) => carry.press(tool, e) : undefined,
       onDragStart: onToolDragStart && enabled ? (e) => onToolDragStart(tool, e) : undefined,
       className: carryTool?.(tool) != null ? s.carrySource : undefined,
@@ -144,7 +147,7 @@ function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
   const items = groupTools(list, groupOrder, toolOrder).flatMap(({ key, tools: group }) =>
     placeSlots(group, shown, stackOf, placed).map((slot): ToolRailItem => (slot.kind === 'tool'
       ? button(slot.tool, key)
-      : { id: slot.members[0].id, group: key, members: slot.members.map((t) => button(t, key)) })));
+      : { id: slot.key, group: key, members: slot.members.map((t) => button(t, key)) })));
 
   return (
     <>

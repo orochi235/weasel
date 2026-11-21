@@ -54,6 +54,13 @@ describe('Transport', () => {
     expect(bar).toHaveAttribute('aria-valuemax', '2500');
   });
 
+  it('speaks the scrub bar position as the readout reads it', () => {
+    const { rerender } = renderWithIcons(<Transport {...props} start={5000} duration={10000} playhead={5000} timeReadout="elapsed" onSeek={() => {}} />);
+    expect(screen.getByRole('slider', { name: 'Position' })).toHaveAttribute('aria-valuetext', '0.00 seconds');
+    rerender(<Transport {...props} start={5000} duration={10000} playhead={5000} formatTime={() => 'frame 0'} onSeek={() => {}} />);
+    expect(screen.getByRole('slider', { name: 'Position' })).toHaveAttribute('aria-valuetext', 'frame 0');
+  });
+
   it('reads the playhead over the end time by default', () => {
     renderWithIcons(<Transport {...props} start={1000} duration={2000} playhead={3000} />);
     expect(screen.getByTestId('timeline-time')).toHaveTextContent('3.00s / 3.00s');
