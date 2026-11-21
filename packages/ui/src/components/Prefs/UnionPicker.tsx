@@ -26,7 +26,6 @@ export function UnionPicker({ pref, value, mixed = false, disabled, onChange, ch
     name: pref.name,
     description: '',
     default: undefined,
-    clearable: true,
     control: 'select',
     options: Object.entries(pref.variants).map(([key, variant]) => ({ value: key, label: variant.name || key })),
   };
