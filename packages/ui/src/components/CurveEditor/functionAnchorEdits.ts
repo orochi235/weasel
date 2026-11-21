@@ -1,5 +1,5 @@
 import type { ModelRange } from '../Plot2D/geometry';
-import { isPinnedEndpointAt } from './anchorRules';
+import { canAnchorMove, isPinnedEndpointAt } from './anchorRules';
 import type { ModelPoint } from './layerTypes';
 import type { ControlPoint, EndpointMode, FunctionLayerOptions, FunctionLayerState } from './functionLayerTypes';
 
@@ -60,7 +60,7 @@ export function withAnchorMoved(
   rules: AnchorRules,
 ): FunctionLayerState {
   const points = state.points;
-  if (index < 0 || index >= points.length) return state;
+  if (index < 0 || index >= points.length || points[index].locked) return state;
   // Anchors sit in ascending x whichever way the axis runs, so the bounds are taken low to high.
   const [xLo, xHi] = layerXBounds(range, rules);
   let nx = model.x;
@@ -132,14 +132,16 @@ function withPointAt(points: readonly ControlPoint[], index: number, p: ControlP
 
 /**
  * A press on the curve between anchors `segIdx` and `segIdx + 1`: the state with a new anchor at `model` and that
- * anchor active, or with the neighbor it would crowd active instead, and which anchor the press then drags.
+ * anchor active, or with the neighbor it would crowd active instead, and which anchor the press then drags. Null
+ * where that neighbor may not move.
  */
 export function pressOnCurve(
   state: FunctionLayerState, segIdx: number, model: ModelPoint, range: ModelRange, rules: AnchorRules,
-): { next: FunctionLayerState; index: number } {
+): { next: FunctionLayerState; index: number } | null {
   const insertIndex = segIdx + 1;
   const p = insertPoint(model, range, rules);
   const neighbor = crowdedNeighbor(state.points, insertIndex, p.x, range, rules);
+  if (neighbor !== null && !canAnchorMove(state.points, neighbor, rules.endpoints)) return null;
   if (neighbor !== null) return { next: { ...state, activeIndex: neighbor }, index: neighbor };
   return { next: { ...state, points: withPointAt(state.points, insertIndex, p), activeIndex: insertIndex }, index: insertIndex };
 }

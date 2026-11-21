@@ -25,7 +25,7 @@ describe('ordered anchors on an inverted x range', () => {
   });
 
   it('drags the neighbor a press right beside it would crowd', () => {
-    const { index, next } = pressOnCurve(state([0.2, 0.5, 0.8]), 0, { x: 0.5001, y: 0.5 }, inverted, rules);
+    const { index, next } = pressOnCurve(state([0.2, 0.5, 0.8]), 0, { x: 0.5001, y: 0.5 }, inverted, rules)!;
     expect(index).toBe(1);
     expect(next.points).toHaveLength(3);
   });
@@ -41,7 +41,21 @@ describe('an anchor added to a layer with an xClamp', () => {
   });
 
   it('lands inside the clamp when added by a press on the curve', () => {
-    const { next } = pressOnCurve(state([0, 1]), 0, { x: 0.8, y: 0.5 }, range, rules);
+    const { next } = pressOnCurve(state([0, 1]), 0, { x: 0.8, y: 0.5 }, range, rules)!;
     expect(next.points[1].x).toBe(0.3);
+  });
+});
+
+describe('a locked anchor', () => {
+  const range = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+  const rules = anchorRulesFor({ constrain: 'function' });
+  const locked: FunctionLayerState = { points: [{ x: 0, y: 0 }, { x: 0.5, y: 0.5, locked: true }, { x: 1, y: 1 }], activeIndex: null };
+
+  it('is not taken by a press on the curve right beside it', () => {
+    expect(pressOnCurve(locked, 0, { x: 0.4999, y: 0.5 }, range, rules)).toBeNull();
+  });
+
+  it('holds still when dragged', () => {
+    expect(withAnchorMoved(locked, 1, { x: 0.7, y: 0.9 }, range, rules)).toBe(locked);
   });
 });

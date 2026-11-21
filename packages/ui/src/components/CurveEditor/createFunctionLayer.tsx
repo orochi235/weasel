@@ -104,9 +104,10 @@ export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<
     }
     if (hit.kind === 'curve') {
       if (full(state)) return;
-      const { next, index } = pressOnCurve(state, (hit.payload as { segIdx: number }).segIdx, extra.model, ctx.modelRange, rules);
-      extra.commit(next);
-      return dragAnchor(index);
+      const pressed = pressOnCurve(state, (hit.payload as { segIdx: number }).segIdx, extra.model, ctx.modelRange, rules);
+      if (!pressed) return;
+      extra.commit(pressed.next);
+      return dragAnchor(pressed.index);
     }
   }
 
