@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { useId, useRef } from 'react';
 import { withDefaults } from './params';
 import type { ShapeModule } from '../types';
 import { useSvgBox } from '../useSvgBox';
@@ -64,9 +64,6 @@ function PerforatedComponent({ variant, focused, params }: {
     </g>
   );
 }
-
-// Avoid unused warning while keeping useEffect imported elsewhere if needed in future.
-void useEffect;
 
 const Perforated: ShapeModule<BadgePerforatedShapeParams> = {
   Component: PerforatedComponent,
