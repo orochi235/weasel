@@ -18,6 +18,41 @@ const MOTIFS: readonly [string, () => Motif][] = [
 
 const frameOf = (body: HTMLElement) => body.closest('[data-motif]') as HTMLElement;
 
+describe('an untitled frame', () => {
+  it.each(MOTIFS)('%s: draws no heading and no empty bar', (_, make) => {
+    render(
+      <MotifFrame motif={make()} level={5}>
+        <p>body</p>
+      </MotifFrame>,
+    );
+    expect(screen.queryByRole('heading')).toBeNull();
+    expect(frameOf(screen.getByText('body')).querySelector('legend')).toBeNull();
+    const body = screen.getByText('body');
+    const strays = [...frameOf(body).querySelectorAll('*')].filter((el) => !el.contains(body));
+    expect(strays).toEqual([]);
+  });
+
+  it.each(MOTIFS)('%s: draws its inline control with no heading round it', (_, make) => {
+    render(
+      <MotifFrame motif={make()} inline={<input type="checkbox" aria-label="On" />}>
+        <p>body</p>
+      </MotifFrame>,
+    );
+    expect(screen.getByRole('checkbox', { name: 'On' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading')).toBeNull();
+  });
+
+  it.each(MOTIFS)('%s: is not a group named by its controls', (_, make) => {
+    render(
+      <MotifFrame motif={make()} actions={<button type="button">Remove</button>}>
+        <p>body</p>
+      </MotifFrame>,
+    );
+    expect(screen.getByRole('button', { name: 'Remove' })).toBeInTheDocument();
+    expect(screen.queryByRole('group')).toBeNull();
+  });
+});
+
 describe('heading parts given as false or null', () => {
   it.each(MOTIFS)('%s: draws the same as when they are left out', (_, make) => {
     const { container: given } = render(

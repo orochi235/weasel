@@ -1,4 +1,4 @@
-import { withMotifClass, twistySides } from '../root';
+import { drawn, headed, withMotifClass, twistySides } from '../root';
 import type { Motif } from '../types';
 import s from './stereo.module.css';
 
@@ -26,20 +26,25 @@ export function stereo(params: StereoParams = {}): Motif<StereoParams> {
   return {
     id: 'stereo',
     params,
-    render({ heading: { title, titleId, inline, note, twisty, twistyAt, leading, actions }, body, root }) {
+    render({ heading, body, root }) {
+      const { title, titleId, inline, note, twisty, twistyAt, leading, actions } = heading;
       const fold = twistySides({ twisty, twistyAt });
       return (
         <div {...withMotifClass(root, s.stereo)} data-side={side} data-invert={invert || undefined}>
-          <div className={s.bar} data-align={labelAlign}>
-            {fold.start}
-            {leading}
-            <span id={titleId} className={s.label}>
-              {title}
-            </span>
-            {inline}
-            {actions}
-            {fold.end}
-          </div>
+          {headed(heading) && (
+            <div className={s.bar} data-align={labelAlign}>
+              {fold.start}
+              {leading}
+              {drawn(title) && (
+                <span id={titleId} className={s.label}>
+                  {title}
+                </span>
+              )}
+              {inline}
+              {actions}
+              {fold.end}
+            </div>
+          )}
           <div className={s.body}>
             {note}
             {body}

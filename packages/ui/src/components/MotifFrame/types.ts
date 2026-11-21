@@ -3,7 +3,7 @@ import type { AppearanceProps } from '../appearance';
 
 /** The parts of a frame's heading, which a motif places as it sees fit. */
 export interface HeadingParts {
-  /** Absent for an untitled frame: an untitled panel draws no heading. */
+  /** Absent for an untitled frame, which draws no heading element in any motif. */
   title?: ReactNode;
   /** The id the title's own element carries; the frame is named by it. */
   titleId: string;

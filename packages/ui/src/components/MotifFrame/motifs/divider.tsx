@@ -1,4 +1,4 @@
-import { drawn, headingTag, twistySides } from '../root';
+import { drawn, headed, headingTag, twistySides } from '../root';
 import type { Motif } from '../types';
 import s from './divider.module.css';
 
@@ -10,23 +10,30 @@ export function divider(): Motif<Record<string, never>> {
   return {
     id: 'divider',
     params: {},
-    render({ heading: { title, titleId, inline, note, level, twisty, twistyAt, leading, actions }, body, root }) {
+    render({ heading, body, root }) {
+      const { title, titleId, inline, note, level, twisty, twistyAt, leading, actions } = heading;
       const fold = twistySides({ twisty, twistyAt });
       const Heading = headingTag(level, 4);
       return (
         <div {...root}>
           {/* The twisty is a sibling of the heading, so it stays out of its accessible name. */}
-          <div className={s.title}>
-            {fold.start}
-            {leading}
-            <Heading className={s.heading} aria-labelledby={drawn(inline) ? titleId : undefined}>
-              <span id={titleId}>{title}</span>
-              {inline}
-            </Heading>
-            <hr />
-            {drawn(actions) && <span className={s.actions}>{actions}</span>}
-            {fold.end}
-          </div>
+          {headed(heading) && (
+            <div className={s.title}>
+              {fold.start}
+              {leading}
+              {drawn(title) ? (
+                <Heading className={s.heading} aria-labelledby={drawn(inline) ? titleId : undefined}>
+                  <span id={titleId}>{title}</span>
+                  {inline}
+                </Heading>
+              ) : (
+                inline
+              )}
+              <hr />
+              {drawn(actions) && <span className={s.actions}>{actions}</span>}
+              {fold.end}
+            </div>
+          )}
           {note}
           {body}
         </div>

@@ -4,6 +4,7 @@ import s from './MotifFrame.module.css';
 import { divider } from './motifs/divider';
 import { rule } from './motifs/rule';
 import { sheet } from './motifs/sheet';
+import { drawn } from './root';
 import type { FrameKind, Motif, MotifFrameProps, RootProps } from './types';
 import { getOwn } from '@weasel-js/registry';
 
@@ -89,11 +90,11 @@ export function MotifFrame({
     ...attrs,
     ...appearance,
     className: [s.frame, className].filter(Boolean).join(' '),
-    ...(title == null ? {} : { role, 'aria-labelledby': titleId }),
+    ...(drawn(title) ? { role, 'aria-labelledby': titleId } : {}),
     ...(disabled ? { 'data-disabled': '' } : {}),
     'data-motif': chosen.id,
     ...(onContextMenu ? { onContextMenu } : {}),
   };
-  const shownTitle = disabled && title != null ? <span className={s.titleDisabled}>{title}</span> : title;
+  const shownTitle = disabled && drawn(title) ? <span className={s.titleDisabled}>{title}</span> : title;
   return chosen.render({ heading: { title: shownTitle, titleId, inline, note, level, twisty, twistyAt, leading, actions }, body: children, root });
 }
