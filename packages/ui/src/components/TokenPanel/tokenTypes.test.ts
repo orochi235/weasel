@@ -31,6 +31,9 @@ describe('inferTokenType', () => {
     expect(inferTokenType('oklch(0.7 0.1 250)')).toBe('color');
     expect(inferTokenType('12px')).toBe('dimension');
     expect(inferTokenType('-0.5rem')).toBe('dimension');
+    for (const unit of ['dvw', 'svw', 'lvw', 'dvh', 'vi', 'vb', 'dvmin', 'cqi', 'cqb', 'cqmin', 'cqmax', 'cap', 'rch']) {
+      expect(inferTokenType(`50${unit}`)).toBe('dimension');
+    }
     expect(inferTokenType('150ms')).toBe('duration');
     expect(inferTokenType('0.2s')).toBe('duration');
     expect(inferTokenType('200MS')).toBe('duration');
@@ -41,6 +44,8 @@ describe('inferTokenType', () => {
     expect(inferTokenType('inset 0 1px 2px red')).toBe('shadow');
     expect(inferTokenType('0 1px 2px red inset')).toBe('shadow');
     expect(inferTokenType('0 1px 2px red INSET, 0 0 1px blue')).toBe('shadow');
+    expect(inferTokenType('0 2px 4px color-mix(in srgb, rgb(0 0 0) 20%, transparent)')).toBe('shadow');
+    expect(inferTokenType('0 1px 2px rgb(from rgb(0 0 0) r g b / 50%), inset 0 0 1px red')).toBe('shadow');
     expect(inferTokenType('linear-gradient(red, blue)')).toBe('gradient');
   });
 
@@ -68,5 +73,11 @@ describe('refitScale', () => {
     const regenerated = factors.kind === 'factors' ? factors.factors.map((f) => 16 * f) : [];
     expect(regenerated).toHaveLength(5);
     regenerated.forEach((amount, i) => expect(Math.abs(amount - amounts[i]!)).toBeLessThan(0.005));
+  });
+
+  it('fits factors from the first positive step when the base is not positive', () => {
+    const fours = { ...scale, tokens: ['--a', '--b', '--c', '--d'], base: 0, rule: { kind: 'step' as const, step: 4 } };
+    expect(refitScale(fours, 'factors', [0, 4, 8, 12])).toEqual({ ...fours, base: 4, rule: { kind: 'factors', factors: [0, 1, 2, 3] } });
+    expect(refitScale({ ...fours, base: -2 }, 'factors', [-1, 0, 0, 0])).toEqual({ ...fours, base: -2, rule: { kind: 'factors', factors: [1, 1, 1, 1] } });
   });
 });

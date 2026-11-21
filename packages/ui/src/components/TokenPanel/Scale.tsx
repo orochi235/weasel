@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { decimalPlaces } from '@weasel-js/quantity';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { NumberField } from '../NumberField';
@@ -118,7 +118,8 @@ function ScaleSlider({
   onScaleChange?: (group: string, scale: TokenScale) => void;
 }) {
   const amounts = tokens.map((t) => splitUnit(t.value)?.amount ?? 0);
-  const places = Math.min(4, Math.max(0, maxOf(amounts, decimalPlaces)));
+  // Fine enough to move the smallest step by a third of itself or less, however round the amounts are now.
+  const places = Math.min(4, Math.max(0, maxOf(amounts, decimalPlaces), Math.ceil(Math.log10(3 / minOf(amounts)))));
   const round = (n: number) => Number(n.toFixed(places));
   // A key press moves a step by this much: a log track's own step is smaller than the scale can write.
   const finest = 10 ** -places;
@@ -136,41 +137,63 @@ function ScaleSlider({
     valueText: `${amounts[i]}${unit}`,
   }));
 
+  // What the gesture began from, so Escape can put back each step it wrote and the rule it refit.
+  const pressed = useRef<{ tokens: readonly TokenEntry[]; generator?: TokenScale; touched: Set<string>; refit: boolean } | null>(null);
   const commit = (next: StepThumb[]) => {
+    const was = (pressed.current ??= { tokens, generator, touched: new Set(), refit: false });
+    let fitted = factors;
     next.forEach((thumb, i) => {
+      // An untouched thumb comes back too, and its amount may not survive `round`.
+      if (thumb.value === thumbs[i]?.value) return;
       const amount = round(2 ** thumb.value);
       if (amount === amounts[i] || amount <= 0) return;
       const at = generator ? generator.tokens.indexOf(thumb.token) : -1;
-      // A factor reaches the dragged amount only from a positive base, and only for a step it has an entry for.
-      if (factors && generator && generator.base > 0 && at >= 0 && at < factors.length) {
-        onScaleChange?.(group, {
-          ...generator,
-          rule: { kind: 'factors', factors: factors.map((f, j) => (j === at ? roundFit(amount / generator.base) || f : f)) },
-        });
+      const factor = generator && generator.base > 0 ? roundFit(amount / generator.base) : 0;
+      // A factor reaches the dragged amount only from a positive base, only for a step it has an entry for, and only
+      // when it does not round away to nothing.
+      if (fitted && factor > 0 && at >= 0 && at < fitted.length) {
+        fitted = fitted.map((f, j) => (j === at ? factor : f));
       } else {
+        was.touched.add(thumb.token);
         onChange(thumb.token, `${amount}${unit}`);
       }
     });
+    if (fitted !== factors && fitted && generator) {
+      was.refit = true;
+      onScaleChange?.(group, { ...generator, rule: { kind: 'factors', factors: fitted } });
+    }
+  };
+  const cancel = () => {
+    const was = pressed.current;
+    pressed.current = null;
+    if (!was) return;
+    for (const t of was.tokens) if (was.touched.has(t.name)) onChange(t.name, t.overridden ? t.value : null);
+    if (was.refit && was.generator) onScaleChange?.(group, was.generator);
   };
 
   return (
-    <Slider<StepThumb>
-      className={own.slider}
-      thumbs={thumbs}
-      min={min}
-      max={max}
-      step={0.001}
-      keyStep={(thumb, steps) => Math.log2(Math.max(finest, round(2 ** thumb.value + steps * finest)))}
-      thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"
-      readoutPlacement="below-thumb"
-      renderReadout={(_, i) => (
-        <span className={own.readout} data-overridden={tokens[i]?.overridden ? '' : undefined}>
-          <span className={own.label}>{labels[i]}</span>
-          <span className={own.amount}>{amounts[i]}</span>
-        </span>
-      )}
-      onInput={commit}
-    />
+    // A drag that ends where it began commits nothing, so a press, not a commit, is what starts a gesture afresh.
+    <div className={own.gesture} onPointerDownCapture={() => (pressed.current = null)}>
+      <Slider<StepThumb>
+        className={own.slider}
+        thumbs={thumbs}
+        min={min}
+        max={max}
+        step={0.001}
+        keyStep={(thumb, steps) => Math.log2(Math.max(finest, round(2 ** thumb.value + steps * finest)))}
+        thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"
+        readoutPlacement="below-thumb"
+        renderReadout={(_, i) => (
+          <span className={own.readout} data-overridden={tokens[i]?.overridden ? '' : undefined}>
+            <span className={own.label}>{labels[i]}</span>
+            <span className={own.amount}>{amounts[i]}</span>
+          </span>
+        )}
+        onInput={commit}
+        onChange={() => (pressed.current = null)}
+        onCancel={cancel}
+      />
+    </div>
   );
 }
 

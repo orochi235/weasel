@@ -48,15 +48,18 @@ export const roundFit = (n: number) => Number(n.toFixed(NUMBER_FORMAT.maximumFra
 /**
  * The same scale under another rule, fitted to the amounts its steps have now.
  * A ratio or step counts from the first step, so switching to one moves the
- * base there.
+ * base there. Factors need a positive base, so from one that is not they move it to the first positive step.
  */
 export function refitScale(scale: TokenScale, kind: TokenScaleRule['kind'], amounts: readonly number[]): TokenScale {
   const first = amounts[0] ?? scale.base;
   const last = amounts.at(-1) ?? first;
   const spans = Math.max(1, amounts.length - 1);
   switch (kind) {
-    case 'factors':
-      return { ...scale, rule: { kind, factors: amounts.map((a) => (scale.base > 0 ? roundFit(a / scale.base) : 1)) } };
+    case 'factors': {
+      const base = scale.base > 0 ? scale.base : amounts.find((a) => a > 0);
+      if (base === undefined) return { ...scale, rule: { kind, factors: amounts.map(() => 1) } };
+      return { ...scale, base, rule: { kind, factors: amounts.map((a) => roundFit(a / base)) } };
+    }
     case 'ratio':
       return { ...scale, base: first, rule: { kind, ratio: first > 0 && last > 0 ? roundFit((last / first) ** (1 / spans)) : 1 } };
     case 'step':
@@ -105,8 +108,9 @@ export function tokenCategory(token: TokenEntry): TokenCategory {
 
 // CSS's <number>: a sign, and an exponent as `${n}` writes one past 1e21 or below 1e-6.
 const AMOUNT = String.raw`[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?`;
+// CSS's lengths: font-relative ones and their root forms, viewport ones in every size, container ones, and absolute ones.
 const DIMENSION = new RegExp(
-  `^${AMOUNT}(?:px|rem|em|%|ch|ex|lh|rlh|vh|vw|vmin|vmax|svh|lvh|dvh|cqw|cqh|pt|pc|cm|mm|in|q)$`,
+  `^${AMOUNT}(?:%|r?(?:em|ex|cap|ch|ic|lh)|[sld]?v(?:w|h|i|b|min|max)|cq(?:w|h|i|b|min|max)|px|pt|pc|cm|mm|in|q)$`,
   'i',
 );
 const DURATION = new RegExp(`^${AMOUNT}m?s$`, 'i');
@@ -114,19 +118,17 @@ const NUMBER = new RegExp(`^${AMOUNT}$`);
 const LENGTH = new RegExp(`^${AMOUNT}(?:px|rem|em)?$`);
 const BEZIER = new RegExp(`^cubic-bezier\\(\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*\\)$`, 'i');
 const GRADIENT = /^(?:repeating-)?(?:linear|radial|conic)-gradient\(/i;
-const PARTS = /[a-z-]+\([^)]*\)|\S+/gi;
-
-/** `value` split at commas outside parentheses: a shadow's layers, not a color function's arguments. A scan, since a
- *  lookahead for the closing parenthesis reads to the end of the text from every comma. */
-function layersOf(value: string): string[] {
+/** `value` split at each character `isSeparator` accepts outside parentheses: a shadow's layers at commas, or a layer's
+ *  parts at spaces, not a color function's arguments. A scan, since a regular expression cannot count nesting. */
+function splitOutside(value: string, isSeparator: (ch: string) => boolean): string[] {
   const out: string[] = [];
   let depth = 0;
   let start = 0;
   for (let i = 0; i < value.length; i++) {
-    const ch = value[i];
+    const ch = value[i]!;
     if (ch === '(') depth++;
     else if (ch === ')') depth = Math.max(0, depth - 1);
-    else if (ch === ',' && depth === 0) {
+    else if (depth === 0 && isSeparator(ch)) {
       out.push(value.slice(start, i));
       start = i + 1;
     }
@@ -136,8 +138,8 @@ function layersOf(value: string): string[] {
 }
 
 function isShadow(value: string): boolean {
-  return layersOf(value).every((layer) => {
-    const parts = layer.trim().match(PARTS) ?? [];
+  return splitOutside(value, (ch) => ch === ',').every((layer) => {
+    const parts = splitOutside(layer, (ch) => /\s/.test(ch)).filter(Boolean);
     // `inset` may lead or trail the layer.
     const inset = /^inset$/i;
     const body = inset.test(parts[0] ?? '') ? parts.slice(1) : inset.test(parts.at(-1) ?? '') ? parts.slice(0, -1) : parts;

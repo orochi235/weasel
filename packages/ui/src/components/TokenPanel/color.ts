@@ -36,9 +36,10 @@ export function toHex(value: string): string | null {
   return rgba && rgbaToHex([rgba[0], rgba[1], rgba[2]]);
 }
 
-/** `hex`, a color input's pick, carrying the alpha of `value`, the color it replaces: `#rrggbbaa` when that is translucent. */
+/** `hex`, a color input's pick, carrying the alpha of `value`, the color it replaces: `#rrggbbaa` when that is translucent.
+ *  A pick over a fully transparent color comes out opaque, since keeping its alpha would leave the pick unseen. */
 export function keepAlpha(hex: string, value: string): string {
   const alpha = rgbaOf(value)?.[3] ?? 1;
   const picked = tryParseColor(hex);
-  return alpha >= 1 || !picked ? hex : rgbaToHex([picked[0], picked[1], picked[2], alpha]);
+  return alpha >= 1 || alpha <= 0 || !picked ? hex : rgbaToHex([picked[0], picked[1], picked[2], alpha]);
 }

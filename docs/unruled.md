@@ -3556,3 +3556,10 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): `mergeRegion` throws a `RangeError` for a `tolerance` that is not a positive finite
   number, as `pathFaceArrangement` does for its `flattenTolerance`; a zero one had dropped every piece and answered an
   empty path. Clamping it to a floor, as `resamplePath` and `simplifyPath` do, was the alternative.
+
+## Audit round sixty-five (2026-11-21): TokenPanel
+
+- 2026-11-21 (the fixer's call): a `TokenPanel` scale's slider writes amounts to the most decimal places any step
+  has, or to as many as move its smallest step by a third of itself, whichever is finer, capped at four; so
+  `1rem 2rem 4rem` steps by 0.1rem and `3px 5px 14px` by 1px. Taking the resolution from the unit was the
+  alternative.

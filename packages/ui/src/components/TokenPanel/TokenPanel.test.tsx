@@ -135,6 +135,45 @@ describe('TokenPanel', () => {
     fireEvent.pointerUp(document, at(16));
   });
 
+  it('steps a scale of whole amounts finer than a whole unit', () => {
+    const rems: TokenEntry[] = ['1', '2', '4'].map((n) => ({ name: `--r-${n}`, type: 'dimension', group: 'r', value: `${n}rem` }));
+    const onChange = vi.fn();
+    renderWithIcons(<TokenPanel tokens={rems} onChange={onChange} />);
+    const first = within(screen.getByRole('group', { name: 'r' })).getByRole('slider', { name: '--r-1' });
+    fireEvent.keyDown(first, { key: 'ArrowRight' });
+    fireEvent.keyDown(first, { key: 'ArrowLeft' });
+    expect(onChange.mock.calls).toEqual([['--r-1', '1.1rem'], ['--r-1', '0.9rem']]);
+  });
+
+  it('puts back each step and the rule a drag wrote when Escape cancels it', () => {
+    const steps: TokenEntry[] = [
+      { name: '--s-sm', type: 'dimension', group: 's', value: '8px' },
+      { name: '--s-md', type: 'dimension', group: 's', value: '16px' },
+      { name: '--s-lg', type: 'dimension', group: 's', value: '32px', overridden: true },
+    ];
+    const byFactors: TokenScale = { tokens: ['--s-sm', '--s-md'], base: 16, rule: { kind: 'factors', factors: [0.5, 1] } };
+    const onChange = vi.fn();
+    const onScaleChange = vi.fn();
+    renderWithIcons(<TokenPanel tokens={steps} onChange={onChange} scales={{ s: byFactors }} onScaleChange={onScaleChange} />);
+    const slider = (name: string) => within(screen.getByRole('group', { name: 's' })).getByRole('slider', { name });
+    const rail = slider('--s-md').parentElement!;
+    rail.getBoundingClientRect = () =>
+      ({ x: 0, y: 0, left: 0, top: 0, width: 1000, height: 24, right: 1000, bottom: 24, toJSON: () => ({}) }) as DOMRect;
+    const [lo, hi] = [Math.log2(8 / 1.5), Math.log2(32 * 1.5)];
+    const at = (amount: number) => ({ clientX: ((Math.log2(amount) - lo) / (hi - lo)) * 1000, clientY: 12, pointerId: 1 });
+    const cancelDrag = (name: string, from: number, to: number) => {
+      fireEvent.pointerDown(slider(name), { ...at(from), button: 0 });
+      fireEvent.pointerMove(document, at(to));
+      fireEvent.keyDown(slider(name), { key: 'Escape' });
+      fireEvent.pointerUp(document, at(to));
+    };
+
+    cancelDrag('--s-md', 16, 20);
+    expect(onScaleChange.mock.calls.at(-1)).toEqual(['s', byFactors]);
+    cancelDrag('--s-lg', 32, 40);
+    expect(onChange.mock.calls.at(-1)).toEqual(['--s-lg', '32px']);
+  });
+
   describe('a generated scale', () => {
     const fonts: TokenEntry[] = [
       { name: '--f-sm', type: 'dimension', group: 'f', value: '10px' },
@@ -167,6 +206,25 @@ describe('TokenPanel', () => {
       expect(onChange).not.toHaveBeenCalled();
     });
 
+    it('writes only the step that moved, though the others hold more places than it rounds to', () => {
+      const fine: TokenEntry[] = [
+        { name: '--g-sm', type: 'dimension', group: 'g', value: '0.03125rem' },
+        { name: '--g-md', type: 'dimension', group: 'g', value: '0.0625rem' },
+        { name: '--g-lg', type: 'dimension', group: 'g', value: '0.125rem' },
+      ];
+      const onChange = vi.fn();
+      const { unmount } = renderWithIcons(<TokenPanel tokens={fine} onChange={onChange} />);
+      fireEvent.keyDown(within(screen.getByRole('group', { name: 'g' })).getByRole('slider', { name: '--g-lg' }), { key: 'ArrowRight' });
+      expect(onChange.mock.calls).toEqual([['--g-lg', '0.1251rem']]);
+      unmount();
+
+      const onScaleChange = vi.fn();
+      const scale: TokenScale = { tokens: fine.map((t) => t.name), base: 1, rule: { kind: 'factors', factors: [0.03125, 0.0625, 0.125] } };
+      renderWithIcons(<TokenPanel tokens={fine} onChange={onChange} scales={{ g: scale }} onScaleChange={onScaleChange} />);
+      fireEvent.keyDown(within(screen.getByRole('group', { name: 'g' })).getByRole('slider', { name: '--g-lg' }), { key: 'ArrowRight' });
+      expect(onScaleChange.mock.calls).toEqual([['g', { ...scale, rule: { kind: 'factors', factors: [0.03125, 0.0625, 0.1251] } }]]);
+    });
+
     it('refits to the steps as they stand when its rule changes', () => {
       const onScaleChange = vi.fn();
       renderWithIcons(<TokenPanel tokens={fonts} onChange={() => {}} scales={{ f: byFactors }} onScaleChange={onScaleChange} />);
@@ -191,12 +249,27 @@ describe('TokenPanel', () => {
       }
     });
 
-    it('refits factors of 1 from a base that is not positive', () => {
+    it('overrides a dragged step whose factor rounds to nothing', () => {
+      const tiny: TokenEntry[] = [
+        { name: '--t-sm', type: 'dimension', group: 't', value: '0.01px' },
+        { name: '--t-md', type: 'dimension', group: 't', value: '0.02px' },
+        { name: '--t-lg', type: 'dimension', group: 't', value: '0.04px' },
+      ];
+      const scale: TokenScale = { tokens: tiny.map((t) => t.name), base: 1000, rule: { kind: 'factors', factors: [0.0001, 0.0001, 0.0001] } };
+      const onScaleChange = vi.fn();
+      const onChange = vi.fn();
+      renderWithIcons(<TokenPanel tokens={tiny} onChange={onChange} scales={{ t: scale }} onScaleChange={onScaleChange} />);
+      fireEvent.keyDown(within(screen.getByRole('group', { name: 't' })).getByRole('slider', { name: '--t-sm' }), { key: 'ArrowRight' });
+      expect(onScaleChange).not.toHaveBeenCalled();
+      expect(onChange).toHaveBeenCalledWith('--t-sm', '0.011px');
+    });
+
+    it('refits factors from the first step when the base is not positive', () => {
       const onScaleChange = vi.fn();
       const byStep: TokenScale = { ...byFactors, base: -1, rule: { kind: 'step', step: 4 } };
       renderWithIcons(<TokenPanel tokens={fonts} onChange={() => {}} scales={{ f: byStep }} onScaleChange={onScaleChange} />);
       fireEvent.click(within(screen.getByRole('group', { name: 'f' })).getByRole('radio', { name: 'factors' }));
-      expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byStep, rule: { kind: 'factors', factors: [1, 1, 1] } });
+      expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byStep, base: 10, rule: { kind: 'factors', factors: [1, 1.2, 1.8] } });
     });
 
     it('draws no controls for a group it is not told how to generate', () => {
