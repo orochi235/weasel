@@ -46,6 +46,15 @@ describe('stepWorld — damage', () => {
     expect(ows(g)).toHaveLength(1);
   });
 
+  it('costs one life when two enemies touch the player in one step', () => {
+    const g = freshGame();
+    const { x, y } = g.player.body;
+    g.enemies = [{ x, y, vx: 0, alive: true, phase: 0 }, { x: x + 2, y, vx: 0, alive: true, phase: 0 }];
+    stepWorld(g, idle, NO_HOOKS);
+    expect(g.lives).toBe(2);
+    expect(ows(g)).toHaveLength(1);
+  });
+
   /** The player just under WORLD's first `?` block (column 3, row 12), rising into it. */
   const underBlock = (g: GameRefs) => {
     g.player = { ...g.player, body: { ...g.player.body, x: 3.5 * TILE, y: 13 * TILE + BODY_H / 2 + 1, vy: -400 } };

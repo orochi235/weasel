@@ -62,15 +62,20 @@ export function stepEnemy(e: Enemy, level: Level, dt: number): Enemy {
 const overlaps = (ax: number, ay: number, aw: number, ah: number, bx: number, by: number, bw: number, bh: number) =>
   Math.abs(ax - bx) < (aw + bw) / 2 && Math.abs(ay - by) < (ah + bh) / 2;
 
-/** Invulnerability suppresses a hurt contact but never blocks a coin. */
+/** Invulnerability suppresses a hurt contact but never blocks a coin. The first
+ *  hurt grants invulnerability, so a step yields at most one. */
 export function resolveContacts(body: Body, enemies: Enemy[], coins: Coin[], invuln: number): Contact[] {
   const out: Contact[] = [];
+  let hurt = invuln > 0;
   enemies.forEach((e, index) => {
     if (!e.alive) return;
     if (!overlaps(body.x, body.y, body.width, body.height, e.x, e.y, ENEMY_W, ENEMY_H)) return;
     const feet = body.y + body.height / 2;
     if (body.vy > 0 && feet < e.y) out.push({ kind: 'stomp', index });
-    else if (invuln <= 0) out.push({ kind: 'hurt', index });
+    else if (!hurt) {
+      hurt = true;
+      out.push({ kind: 'hurt', index });
+    }
   });
   coins.forEach((c, index) => {
     if (c.taken) return;
