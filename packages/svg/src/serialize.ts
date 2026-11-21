@@ -142,19 +142,23 @@ function nodeXml(
   node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn, layoutOf: LayoutOf,
   painted: ReadonlySet<string> = NOTHING_PAINTED,
 ): string {
-  const kind = kindXml(node, registry, namespaces, warn, layoutOf, painted);
-  const xml = node.kind === 'path' || node.kind === 'text' ? fitLeafXml(kind, leafInherits(node), painted) : kind;
+  const drawn = node.kind === 'path' ? pathDrawn(node) : null;
+  const kind = drawn ? drawnXml(drawn, registry, namespaces, warn, layoutOf, painted) : kindXml(node, registry, namespaces, warn, layoutOf, painted);
+  const xml = node.kind === 'path' || node.kind === 'text' ? fitLeafXml(kind, leafInherits(node, drawn), painted) : kind;
   if (!node.hidden) return xml;
   // An outlined stroke's outline follows its path, and hides with it.
   return xml.replace(/^<[\w:]+/, (open) => `${open} display="none"`)
     .replace(/<path (?=[^>]*:role="stroke-outline")/, '<path display="none" ');
 }
 
-/** What a leaf takes from its group. An outlined stroke never does: its element
- *  states a zero width that the group's stroke would otherwise replace. */
-function leafInherits(node: SvgPathNode | SvgTextNode): SvgInherits | undefined {
-  const outlined = node.kind === 'path' ? writesOutline(node.stroke) : hasAlignedTextStroke(node);
-  if (!node.inherits?.stroke || !outlined) return node.inherits;
+/** What a leaf takes from its group. A stroke drawn otherwise than the group's
+ *  never is: an outlined one states a zero width, and a path drawn in pieces or
+ *  without its end markers would pick up what it left out. */
+function leafInherits(node: SvgPathNode | SvgTextNode, drawn: SvgPathNode | SvgGroupNode | null): SvgInherits | undefined {
+  const redrawn = node.kind === 'path'
+    ? writesOutline(node.stroke) || drawn?.kind === 'group' || drawn?.stroke !== node.stroke
+    : hasAlignedTextStroke(node);
+  if (!node.inherits?.stroke || !redrawn) return node.inherits;
   const { stroke: _, ...rest } = node.inherits;
   return rest;
 }
@@ -169,8 +173,19 @@ function kindXml(
     return alignedTextXml(node, registry, namespaces, warn, layout) ?? textXml(node, registry, namespaces, warn, layout);
   }
   if (node.kind === 'image') return imageXml(node, namespaces, warn);
+  return drawnXml(pathDrawn(node), registry, namespaces, warn, layoutOf, painted);
+}
+
+/** A path as SVG has to be told to draw it: see `pathAsSvgDraws` and `withSeatedHeads`. */
+function pathDrawn(node: SvgPathNode): SvgPathNode | SvgGroupNode {
   const asDrawn = pathAsSvgDraws(node);
-  const drawn = asDrawn.kind === 'path' ? withSeatedHeads(asDrawn) : asDrawn;
+  return asDrawn.kind === 'path' ? withSeatedHeads(asDrawn) : asDrawn;
+}
+
+function drawnXml(
+  drawn: SvgPathNode | SvgGroupNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
+  layoutOf: LayoutOf, painted: ReadonlySet<string>,
+): string {
   return drawn.kind === 'group'
     ? groupXml(drawn, registry, namespaces, warn, layoutOf, painted)
     : pathXml(drawn, registry, namespaces, warn);
