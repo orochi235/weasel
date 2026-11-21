@@ -7,7 +7,7 @@ export type InlineToken =
   | { type: 'strong' | 'em' | 'del'; children: InlineToken[] }
   | { type: 'link'; href: string; children: InlineToken[] };
 
-// Alternatives in precedence order: a code span, a shortcut, strong, emphasis, strikethrough, a link, an escaped mark.
+// Alternatives in precedence order: a code span, a shortcut, emphasis around strong (`***x***`), strong, emphasis, strikethrough, a link, an escaped mark.
 // A mark opens and closes against a non-space, and opens before punctuation only after a space or the line's start,
 // so `a * b` and globs such as `src/*.ts` and `"*.js"` stay as written. Underscores are never emphasis: prose here
 // names snake_case identifiers. Inside a mark or a label a code span is whole, and a backslash pair is one
@@ -21,6 +21,7 @@ const INLINE = new RegExp(
   [
     '`([^`]+)`',
     '<kbd>([^<]+)<\\/kbd>',
+    opens('\\*\\*\\*') + '(' + inner('') + '+?)(?<=\\S)\\*\\*\\*',
     opens('\\*\\*') + '(' + inner('') + '+?)(?<=\\S)\\*\\*',
     opens('\\*', '\\s*') + '(' + inner('*') + '+?)(?<=\\S)\\*',
     opens('~~') + '(' + inner('') + '+?)(?<=\\S)~~',
@@ -49,9 +50,10 @@ export function parseInline(source: string): InlineToken[] {
   for (const m of source.matchAll(INLINE)) {
     text(source.slice(at, m.index));
     at = m.index + m[0].length;
-    const [, code, chord, strong, em, del, label, href, escaped] = m;
+    const [, code, chord, both, strong, em, del, label, href, escaped] = m;
     if (code !== undefined) out.push({ type: 'code', text: code });
     else if (chord !== undefined) out.push({ type: 'keys', chord });
+    else if (both !== undefined) out.push({ type: 'em', children: [{ type: 'strong', children: parseInline(both) }] });
     else if (strong !== undefined) out.push({ type: 'strong', children: parseInline(strong) });
     else if (em !== undefined) out.push({ type: 'em', children: parseInline(em) });
     else if (del !== undefined) out.push({ type: 'del', children: parseInline(del) });
