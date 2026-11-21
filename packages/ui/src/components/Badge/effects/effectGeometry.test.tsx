@@ -40,3 +40,16 @@ describe('a Badge effect stroke', () => {
     }
   });
 });
+
+describe('a glassy effect gloss', () => {
+  it('fades out at the bottom of the rect it fills, `glossExtent` units down', () => {
+    for (const effect of [Aqua, Metal] as EffectModule<{ glossExtent: number; specularity?: number }>[]) {
+      const c = draw(effect, { glossExtent: 40, specularity: 1 });
+      const rect = c.querySelector('rect[clip-path]')!;
+      expect(rect.getAttribute('height')).toBe('40');
+      const id = rect.getAttribute('fill')!.match(/url\(#(.+)\)/)![1];
+      const grad = [...c.querySelectorAll('linearGradient')].find((g) => g.id === id)!;
+      expect(grad.getAttribute('y2')).toBe('100%');
+    }
+  });
+});

@@ -84,7 +84,7 @@ const Aqua: EffectModule<BadgeAquaEffectParams> = {
             <stop offset={`${equatorHi}%`} style={{ stopColor: accent, stopOpacity: 1 }} />
             <stop offset="100%" style={{ stopColor: baseColor, stopOpacity: 1 }} />
           </linearGradient>
-          <linearGradient id={glossGradId} x1="0%" y1="0%" x2="0%" y2={`${cfg.glossExtent}%`}>
+          <linearGradient id={glossGradId} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" style={{ stopColor: 'white', stopOpacity: cfg.glossTopAlpha }} />
             <stop offset="60%" style={{ stopColor: 'white', stopOpacity: cfg.glossMidAlpha }} />
             <stop offset="100%" style={{ stopColor: 'white', stopOpacity: 0 }} />

@@ -88,7 +88,7 @@ const Metal: EffectModule<BadgeMetalEffectParams> = {
             <stop offset={`${equatorHi}%`} style={{ stopColor: lowerBrightColor }} />
             <stop offset="100%" style={{ stopColor: baseDarkColor }} />
           </linearGradient>
-          <linearGradient id={glossGradId} x1="0%" y1="0%" x2="0%" y2={`${cfg.glossExtent}%`}>
+          <linearGradient id={glossGradId} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" style={{ stopColor: 'white', stopOpacity: glossAlpha }} />
             <stop offset="100%" style={{ stopColor: 'white', stopOpacity: 0 }} />
           </linearGradient>
