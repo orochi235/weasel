@@ -12,6 +12,16 @@ export const valueOf = <Row,>(col: DataGridColumn<Row>): ((row: Row) => CellValu
 /** Nullish or NaN: a value sorting cannot place, which goes last either way. */
 const unplaced = (v: CellValue): v is null | undefined => v == null || Number.isNaN(v);
 
+const text = new Intl.Collator(undefined, { numeric: true });
+
+/** Numbers by value before text, and text as the reader's locale orders it, reading a digit run as its number. */
+function compareCells(a: string | number, b: string | number): number {
+  if (typeof a === 'number' && typeof b === 'number') return a < b ? -1 : a > b ? 1 : 0;
+  if (typeof a === 'number') return -1;
+  if (typeof b === 'number') return 1;
+  return text.compare(a, b);
+}
+
 /** `rows` in `sort`'s order, a copy either way; input order with no sort or no such column. */
 export function sortedRows<Row>(rows: readonly Row[], columns: readonly DataGridColumn<Row>[], sort: SortState): Row[] {
   if (!sort) return [...rows];
@@ -25,9 +35,7 @@ export function sortedRows<Row>(rows: readonly Row[], columns: readonly DataGrid
     if (unplaced(av) && unplaced(bv)) return 0;
     if (unplaced(av)) return 1;
     if (unplaced(bv)) return -1;
-    if (av < bv) return -1 * dir;
-    if (av > bv) return 1 * dir;
-    return 0;
+    return compareCells(av, bv) * dir;
   });
 }
 
