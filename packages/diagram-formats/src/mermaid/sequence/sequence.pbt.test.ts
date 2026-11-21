@@ -78,7 +78,7 @@ describe('Mermaid sequence, property', () => {
       const first = back(pageOf(data, name));
       const shown = (p: SeqParticipant) => [p.label, p.id].find((t) => t !== undefined && t.trim() !== '')?.trim();
       expect(first.data.participants.map((p) => p.label ?? p.id)).toEqual(data.participants.map((p, i) => shown(p) ?? first.data.participants[i]!.id));
-      expect(first.name).toBe(name.trim());
+      expect(first.name ?? '').toBe(name.trim());
       const once = writeMermaidSequence(first).text;
       expect(writeMermaidSequence(readMermaidSequence(once).document.pages[0] as SequencePage).text).toBe(once);
     }), RUNS);

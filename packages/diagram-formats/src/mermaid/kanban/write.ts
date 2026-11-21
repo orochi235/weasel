@@ -31,7 +31,7 @@ class KanbanWriter {
 
   constructor(readonly out: GraphOut, pool: DataContainer | undefined) {
     const lanes = (out.page.data.containers ?? []).flatMap((c) => (c.lanes ?? []).map((l) => l.id));
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...lanes], { unicode: true, id: ITEM_ID });
+    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...lanes], { unicode: true, id: ITEM_ID, keywords: [] });
     if (pool !== undefined) this.leaveUnwritten(pool);
   }
 
@@ -44,7 +44,7 @@ class KanbanWriter {
     ]);
     for (const { id } of items) if (GENERATED.test(id) && this.ids.get(id) === id) this.unwritten.add(id);
     for (let wrong: string | undefined = ''; wrong !== undefined;) {
-      const mint = new IdMint([...this.ids].filter(([id]) => !this.unwritten.has(id)).map(([, spelled]) => spelled));
+      const mint = new IdMint(items.filter(({ id }) => !this.unwritten.has(id)).map(({ id }) => this.ids.get(id) ?? id));
       wrong = items.find(({ id, base, from }) => this.unwritten.has(id) && mint.next(base, from) !== id)?.id;
       if (wrong !== undefined) this.unwritten.delete(wrong);
     }

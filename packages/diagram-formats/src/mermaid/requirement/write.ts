@@ -43,9 +43,10 @@ function writeBlock(node: DataNode, warnings: Warnings): { type: string; fields:
   return { type: known ?? 'requirement', fields };
 }
 
-/** The row naming a box: its first text row past the `<<kind>>` one. */
+/** The row naming a box: its first text row past the `<<kind>>` one, before any divider. */
 function nameRow(rows: readonly Row[]): Row | undefined {
-  const labels = rows.filter((r) => r.kind === 'label');
+  const divider = rows.findIndex((r) => r.kind === 'divider');
+  const labels = rows.slice(0, divider < 0 ? rows.length : divider).filter((r) => r.kind === 'label');
   return labels[0] !== undefined && /^<<\w+>>$/.test(labels[0].text) ? labels[1] : labels[0];
 }
 

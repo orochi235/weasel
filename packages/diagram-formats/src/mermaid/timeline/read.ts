@@ -42,9 +42,6 @@ export function readMermaidTimeline(text: string): ImportResult {
     sections[sections.length - 1]!.periods.push(last);
   }
   const name = readPageName(src, warnings, title);
-  if (title !== undefined && src.title !== undefined && title !== src.title) {
-    warnings.add('The front matter title was dropped; the chart is named by its title statement.');
-  }
   const chartTitle = title || src.title;
   const kept: TimelineSection[] = sections.filter((sec, i) => i > 0 || sec.periods.length > 0);
   const data: TimelineData = { kind: 'timeline', ...(chartTitle ? { title: chartTitle } : {}), sections: kept };

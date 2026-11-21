@@ -162,7 +162,62 @@ describe('writing a Mermaid state diagram', () => {
 
   it('colors a [*] given a class in a transition', () => {
     expect(node('stateDiagram-v2\n  classDef go fill:#f00\n  [*]:::go --> A', '[start]').colors).toMatchObject({ fill: '#f00' });
-    expect(writeStateDiagram(graph({ nodes: [{ id: 's', outline: 'start', colors: { fill: '#f00' } }] })).warnings)
+    expect(writeStateDiagram(graph({ nodes: [{ id: 's', outline: 'start', colors: { fill: '#f00' } }, { id: 'a' }], edges: [{ from: 's', to: 'a' }] })).warnings)
       .toEqual(['Mermaid start and end states hold no colors here; they were dropped.']);
+  });
+});
+
+describe('writing start and end shapes a Mermaid state diagram cannot keep apart', () => {
+  const graph = (data: object) => ({ pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: { edges: [], ...data } as never }] });
+  const WARNING = 'Mermaid holds one start and one end per composite, a start only leaving it and an end only arriving; other start and end shapes were merged or dropped.';
+  const warnings = (data: object) => writeStateDiagram(graph(data)).warnings;
+
+  it('warns of a second start in one scope, which reads back merged with the first', () => {
+    const data = { nodes: [{ id: 's1', outline: 'start' }, { id: 's2', outline: 'start' }, { id: 'a' }, { id: 'b' }], edges: [{ from: 's1', to: 'a' }, { from: 's2', to: 'b' }] };
+    expect(warnings(data)).toContain(WARNING);
+    expect(page(writeStateDiagram(graph(data)).text).data.nodes.filter((n) => n.outline === 'start')).toHaveLength(1);
+  });
+
+  it('warns of a start a transition arrives at, an end one leaves, and one no transition names', () => {
+    expect(warnings({ nodes: [{ id: 's', outline: 'start' }, { id: 'x' }], edges: [{ from: 'x', to: 's' }] })).toContain(WARNING);
+    expect(warnings({ nodes: [{ id: 'e', outline: 'end' }, { id: 'x' }], edges: [{ from: 'e', to: 'x' }] })).toContain(WARNING);
+    expect(warnings({ nodes: [{ id: 's', outline: 'start' }, { id: 'x' }] })).toContain(WARNING);
+  });
+
+  it('stays quiet for one start and one end in each scope', () => {
+    expect(warnings({
+      nodes: [{ id: 's', outline: 'start' }, { id: 'e', outline: 'end' }, { id: 'x' }, { id: 's2', outline: 'start' }, { id: 'y' }],
+      edges: [{ from: 's', to: 'x' }, { from: 'x', to: 'e' }, { from: 's2', to: 'y' }],
+      containers: [{ id: 'C', role: 'container', members: ['s2', 'y'] }],
+    })).not.toContain(WARNING);
+  });
+});
+
+describe('writing a Mermaid state diagram\'s shapes and notes', () => {
+  const graph = (data: object) => ({ pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: { edges: [], ...data } as never }] });
+
+  it('warns that a diamond with text is written as a plain state', () => {
+    const out = writeStateDiagram(graph({ nodes: [{ id: 'x', outline: 'diamond', lines: ['Valid?'] }] }));
+    expect(out.warnings).toContain('Mermaid choices hold no text; diamonds with text were written as plain states.');
+    expect(writeStateDiagram(graph({ nodes: [{ id: 'x', outline: 'diamond', lines: [] }] })).warnings).toEqual([]);
+  });
+});
+
+describe('writing a Mermaid state note', () => {
+  const graph = (data: object) => ({ pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: { edges: [], ...data } as never }] });
+  const noteOf = (text: string) => page(text).data.nodes.find((n) => n.outline === 'note');
+
+  it('drops a note\'s blank lines and the spaces around its lines, with a warning, so it reads back as written', () => {
+    const out = writeStateDiagram(graph({ nodes: [{ id: 'a' }, { id: 'n', outline: 'note', lines: ['a', '', '  b'] }], edges: [{ from: 'n', to: 'a' }] }));
+    expect(out.warnings).toContain('Mermaid notes hold no blank lines and no spaces around a line; they were dropped.');
+    expect(noteOf(out.text)!.lines).toEqual(['a', 'b']);
+    expect(writeStateDiagram({ pages: [page(out.text)] }).warnings).toEqual([]);
+  });
+});
+
+describe('reading a Mermaid state\'s name and description in either order', () => {
+  it('keeps a description given before the state is named', () => {
+    expect(node('stateDiagram-v2\n  A : waits for input\n  state "Idle" as A', 'A').lines).toEqual(['Idle', 'waits for input']);
+    expect(node('stateDiagram-v2\n  state "Idle" as A\n  A : waits for input', 'A').lines).toEqual(['Idle', 'waits for input']);
   });
 });

@@ -1,20 +1,21 @@
 /** A plot page holding a radar as Mermaid `radar-beta` text. */
 import type { ExportResult, PlotPage } from '../../document';
-import { oneLine } from '../common/text';
+import { mermaidIds, oneLine } from '../common/text';
+import { warnDroppedPageName } from '../common/lines';
 
 const ID = /^[A-Za-z_][\w-]*$/;
 
-/** An axis or curve as Mermaid names it: its id, and its label in brackets where it has one. */
-function item(x: { id: string; label?: string }, warn: (m: string) => void): string {
-  let id = x.id;
-  if (!ID.test(id)) {
-    warn('Mermaid ids are a letter or underscore, then letters, digits, "-" or "_"; others were rewritten.');
-    id = /^[A-Za-z_]/.test(id) ? id.replace(/[^\w-]/g, '_') : `_${id.replace(/[^\w-]/g, '_')}`;
-  }
-  if (x.label === undefined) return id;
-  const label = oneLine(x.label, 'radar', warn);
-  if (label.includes('"')) warn('Mermaid labels hold no double quotes; they were written as single quotes.');
-  return `${id}["${label.replace(/"/g, "'")}"]`;
+/** Each axis or curve as Mermaid names it: its id, distinct from the others, and its label in brackets where it has one. */
+function items(xs: readonly { id: string; label?: string }[], warn: (m: string) => void): string[] {
+  const ids = mermaidIds(xs.map((x) => x.id), { id: ID, keywords: [] });
+  return xs.map((x) => {
+    const id = ids.get(x.id)!;
+    if (id !== x.id) warn('Mermaid ids are a letter or underscore, then letters, digits, "-" or "_"; others were rewritten.');
+    if (x.label === undefined) return id;
+    const label = oneLine(x.label, 'radar', warn);
+    if (label.includes('"')) warn('Mermaid labels hold no double quotes; they were written as single quotes.');
+    return `${id}["${label.replace(/"/g, "'")}"]`;
+  });
 }
 
 const option = (key: string, value: string | boolean | undefined): string[] => (value === undefined ? [] : [`  ${key} ${value}`]);
@@ -35,14 +36,16 @@ export function writeMermaidRadar(page: PlotPage): ExportResult {
   const warn = (m: string) => {
     if (!warnings.includes(m)) warnings.push(m);
   };
+  warnDroppedPageName(page, warn);
   const lines = ['radar-beta'];
   if (data.title !== undefined) lines.push(`  title ${oneLine(data.title, 'radar', warn)}`);
-  if (data.axes.length > 0) lines.push(`  axis ${data.axes.map((a) => item(a, warn)).join(', ')}`);
-  for (const c of data.curves) {
+  if (data.axes.length > 0) lines.push(`  axis ${items(data.axes, warn).join(', ')}`);
+  const curves = items(data.curves, warn);
+  for (const [i, c] of data.curves.entries()) {
     const values = data.axes.map((_, i) => c.values[i]);
     if (values.some((v) => v === undefined || !Number.isFinite(v))) warn('Mermaid holds a value on every axis; missing ones were written as 0.');
     if (c.values.length > data.axes.length) warn('Values past the last axis were dropped.');
-    lines.push(`  curve ${item(c, warn)}{${values.map((v) => (v !== undefined && Number.isFinite(v) ? v : 0)).join(', ')}}`);
+    lines.push(`  curve ${curves[i]}{${values.map((v) => (v !== undefined && Number.isFinite(v) ? v : 0)).join(', ')}}`);
   }
   lines.push(
     ...numberOption('max', data.max, warn), ...numberOption('min', data.min, warn), ...option('graticule', data.graticule),

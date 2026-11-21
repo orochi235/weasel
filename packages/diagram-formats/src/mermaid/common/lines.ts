@@ -98,7 +98,7 @@ export function readsAsStatement(text: string): boolean {
 }
 
 /** The page name `src` gives: the first that is not empty of `own` (a title statement's text), its front matter title,
- *  and its accessible title. Warns of what a page does not hold. */
+ *  and its accessible title. Warns of what a page does not hold, a front matter title `own` replaces among it. */
 export function readPageName(
   src: Pick<MermaidSource, 'title' | 'frontConfig' | 'accTitle' | 'accDescr' | 'directives'>,
   warnings: Warnings,
@@ -108,8 +108,16 @@ export function readPageName(
   if (src.directives > 0) warnings.add('Mermaid configuration directives were dropped.');
   if (src.accDescr !== undefined) warnings.add('Mermaid accessible descriptions were dropped.');
   const title = [own, src.title].find((t) => t !== undefined && t !== '');
+  if (own !== undefined && own !== '' && src.title !== undefined && src.title !== '' && own !== src.title) {
+    warnings.add('The front matter title was dropped; the title statement names the chart.');
+  }
   if (title !== undefined && src.accTitle !== undefined) warnings.add('Mermaid accessible titles were dropped; the page is named by the title.');
   return title ?? src.accTitle;
+}
+
+/** Warns where a chart page's name is not its chart's title, which is all a Mermaid chart names it by. */
+export function warnDroppedPageName(page: { name?: string; data: { title?: string } }, warn: (message: string) => void): void {
+  if (page.name !== undefined && page.name !== '' && page.name !== page.data.title) warn('Mermaid names a chart by its title; a page name the title does not match was dropped.');
 }
 
 /** The front matter naming a page, as lines to start a diagram with. */

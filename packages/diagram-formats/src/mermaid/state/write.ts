@@ -58,7 +58,9 @@ class StateWriter {
       if (described.length < lines.length - 1) this.out.warnings.add('Mermaid states describe themselves in lines of text; blank lines past a name were dropped.');
       this.lines.push(`${indent}state "${mermaidEscaped([lines[0]!])}" as ${id}`, ...described.map((l) => `${indent}${id} : ${mermaidEscaped([l])}`));
     }
-    if (node.outline !== undefined && !['roundRect', 'bar', 'diamond'].includes(node.outline as string)) {
+    if (node.outline === 'diamond' && lines.length > 0) {
+      this.out.warnings.add('Mermaid choices hold no text; diamonds with text were written as plain states.');
+    } else if (node.outline !== undefined && !['roundRect', 'bar', 'diamond'].includes(node.outline as string)) {
       this.out.warnings.add('Mermaid draws every state alike; their outlines were dropped.');
     }
   }
@@ -122,6 +124,22 @@ class StateWriter {
     return `${indent}${this.id(e.from)} --> ${this.id(e.to)}${label}`;
   }
 
+  /** Warns of start and end shapes `[*]` cannot keep apart: a scope reads one start and one end, a start only before
+   *  an arrow and an end only after one, and none that no transition names. */
+  pseudoWarnings(): void {
+    const seen = new Set<string>();
+    for (const n of this.out.page.data.nodes) {
+      if (!isPseudo(n)) continue;
+      const key = `${n.outline}:${this.scopeOf.get(n.id) ?? ''}`;
+      const written = this.out.edges.filter((e) => (e.from === n.id || e.to === n.id) && this.edgeScope(e) !== undefined);
+      const wrongWay = written.some((e) => (n.outline === 'start' ? e.to : e.from) === n.id);
+      if (seen.has(key) || wrongWay || written.length === 0) {
+        this.out.warnings.add('Mermaid holds one start and one end per composite, a start only leaving it and an end only arriving; other start and end shapes were merged or dropped.');
+      }
+      seen.add(key);
+    }
+  }
+
   noteLines(): void {
     for (const id of this.notes) {
       const joined = this.out.edges.filter((e) => e.from === id || e.to === id);
@@ -131,7 +149,11 @@ class StateWriter {
         this.out.warnings.add('Mermaid notes sit beside a state; notes beside none were dropped.');
         continue;
       }
-      const text = nodeLines(this.out.byId.get(id)!, this.out.warnings, 'Mermaid').map((l) => mermaidEscaped([l]));
+      const rows = nodeLines(this.out.byId.get(id)!, this.out.warnings, 'Mermaid');
+      if (rows.some((l) => l.trim() !== l || (rows.length > 1 && l === ''))) {
+        this.out.warnings.add('Mermaid notes hold no blank lines and no spaces around a line; they were dropped.');
+      }
+      const text = (rows.length > 1 ? rows.filter((l) => l.trim() !== '') : rows).map((l) => mermaidEscaped([l.trim()]));
       if (text.length === 1) this.lines.push(`  note right of ${this.id(beside)} : ${text[0]}`);
       else this.lines.push(`  note right of ${this.id(beside)}`, ...text.map((t) => `    ${lineOpening(t, ['end note'])}`), '  end note');
     }
@@ -163,6 +185,7 @@ export function writeStateDiagram(doc: DiagramDocument, opts?: WriteOptions): Ex
   if (out.edges.some((e) => w.crossesScope(e))) {
     out.warnings.add('Mermaid joins a composite\'s [*] only to states inside it; transitions joining one to a state outside were dropped.');
   }
+  w.pseudoWarnings();
   w.noteLines();
   w.styles();
   return { text: `${w.lines.join('\n')}\n`, warnings: out.warnings.all() };

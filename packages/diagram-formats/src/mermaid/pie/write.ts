@@ -2,6 +2,7 @@
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { mermaidQuoted, oneLine } from '../common/text';
+import { warnDroppedPageName } from '../common/lines';
 
 
 /** Writes `page`'s pie as Mermaid. Throws on a page holding another kind of chart. */
@@ -9,6 +10,7 @@ export function writeMermaidPie(page: PlotPage): ExportResult {
   const data = page.data;
   if (data.kind !== 'pie') throw new Error(`Mermaid writes this chart as a pie only; the page holds a ${(data as { kind: string }).kind}`);
   const warnings = new Warnings();
+  warnDroppedPageName(page, (m) => warnings.add(m));
   const title = data.title === undefined ? undefined : oneLine(data.title, 'pie', (m) => warnings.add(m)).trim();
   const lines = [`pie${data.showData ? ' showData' : ''}${title ? ` title ${title}` : ''}`];
   const labels = new Set<string>();

@@ -44,7 +44,7 @@ describe('reading a Mermaid pie', () => {
     expect(warnings).toEqual([
       'Mermaid keeps the first of slices sharing a label; the others were dropped: a.',
       'Mermaid configuration directives were dropped.',
-      'The front matter title was dropped; the chart is titled by its own.',
+      'The front matter title was dropped; the title statement names the chart.',
     ]);
   });
 
@@ -107,5 +107,16 @@ describe('the Mermaid format', () => {
     expect((document.pages[0] as PlotPage).data.kind).toBe('pie');
     expect(DIAGRAM_MERMAID.detect(fixture('pets.mmd'))).toBe(true);
     expect(DIAGRAM_MERMAID.write!(document).text.startsWith('pie showData title')).toBe(true);
+  });
+});
+
+describe('warning of a chart page name its title drops', () => {
+  it('warns where the name is set and is not the title', () => {
+    const page = (name: string | undefined, title: string | undefined) => ({ kind: 'plot' as const, id: 'p', width: 10, height: 10, ...(name !== undefined ? { name } : {}), data: { kind: 'pie' as const, slices: [], ...(title !== undefined ? { title } : {}) } });
+    const WARNING = 'Mermaid names a chart by its title; a page name the title does not match was dropped.';
+    expect(writeMermaidPie(page('Q3 budget', undefined)).warnings).toContain(WARNING);
+    expect(writeMermaidPie(page('Q3 budget', 'Spend')).warnings).toContain(WARNING);
+    expect(writeMermaidPie(page('Spend', 'Spend')).warnings).not.toContain(WARNING);
+    expect(writeMermaidPie(page(undefined, 'Spend')).warnings).not.toContain(WARNING);
   });
 });

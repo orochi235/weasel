@@ -2,6 +2,7 @@
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { mermaidQuoted, oneLine } from '../common/text';
+import { warnDroppedPageName } from '../common/lines';
 
 
 const range = (start: number, end: number): string => (start === end ? `${start}` : `${start}-${end}`);
@@ -14,6 +15,7 @@ export function writeMermaidPacket(page: PlotPage): ExportResult {
   const warnings = new Warnings();
   if (data.bitsPerRow !== undefined && data.bitsPerRow !== 32) warnings.add('Mermaid reads bits per row from its configuration only; it was dropped.');
   const lines = ['packet-beta'];
+  warnDroppedPageName(page, (m) => warnings.add(m));
   const title = data.title === undefined ? '' : oneLine(data.title, 'packet', (m) => warnings.add(m)).trim();
   if (title) lines.push(`  title ${title}`);
   let after = -1;

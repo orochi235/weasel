@@ -24,7 +24,7 @@ describe('reading a Mermaid xychart', () => {
         { kind: 'line', name: 'Trend', values: [5000, 6000, 7500, 8200] },
       ],
     });
-    expect(warnings).toEqual(['Mermaid front matter other than the title was dropped.']);
+    expect(warnings).toEqual(['Mermaid front matter other than the title was dropped.', 'The front matter title was dropped; the title statement names the chart.']);
   });
 
   it('reads a horizontal chart over a range, and the front matter title where there is no other', () => {
@@ -143,5 +143,13 @@ describe('the Mermaid format', () => {
     expect(DIAGRAM_MERMAID.detect(fixture('range.mmd'))).toBe(true);
     expect(DIAGRAM_MERMAID.write!(document).text.startsWith('xychart-beta\n')).toBe(true);
     expect(DIAGRAM_MERMAID.kinds).toContain('plot');
+  });
+});
+
+describe('naming an xychart by its title statement', () => {
+  it('warns that the front matter title it replaces was dropped', () => {
+    const { document, warnings } = readMermaidXychart('---\ntitle: Revenue\n---\nxychart-beta\n  title "Sales"\n  bar [1, 2]\n');
+    expect(document.pages[0]!.name).toBe('Sales');
+    expect(warnings).toEqual(['The front matter title was dropped; the title statement names the chart.']);
   });
 });

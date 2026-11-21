@@ -116,3 +116,21 @@ describe('writing a Mermaid kanban board', () => {
     expect(page(writeKanban(card('note', 'a\nb')).text).data.nodes[0]!.rows).toContainEqual({ kind: 'field', label: 'note', value: 'a b' });
   });
 });
+
+describe('writing a Mermaid kanban board\'s ids', () => {
+  const doc = (nodes: object[], lanes: object[]) => ({ pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: {
+    nodes, edges: [], containers: [{ id: 'board', role: 'pool', axis: 'x', lanes }],
+  } as never }] });
+  const ids = (text: string) => page(text).data.nodes.map((n) => n.id);
+
+  it('keeps a card\'s id when a node the board drops holds an id the reader would mint', () => {
+    const out = writeKanban(doc([{ id: 'card-1', lines: ['a'] }, { id: 'card-2', lines: ['b'] }, { id: 'card-3', lines: ['c'] }], [{ id: 'todo', members: ['card-1', 'card-3'] }]));
+    expect(ids(out.text)).toEqual(['card-1', 'card-3']);
+  });
+
+  it('writes an id a flowchart reads as a keyword as it is, since a kanban reads it as an id', () => {
+    const out = writeKanban(doc([{ id: 'end', lines: ['a'] }, { id: 'default', lines: ['b'] }], [{ id: 'class', members: ['end', 'default'] }]));
+    expect(ids(out.text)).toEqual(['end', 'default']);
+    expect(page(out.text).data.containers![0]!.lanes![0]!.id).toBe('class');
+  });
+});

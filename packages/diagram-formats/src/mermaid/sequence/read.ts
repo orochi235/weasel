@@ -6,6 +6,7 @@ import { sequenceLayout, type NodeStyle, type SeqBox, type SeqFragment, type Seq
 import type { ImportResult, SequencePage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
+import { readPageName } from '../common/lines';
 import { mermaidColor } from '../common/styles';
 import { PAGE_MARGIN } from '../../pageLayout';
 import { FRAGMENTS, parseSequence, type SeqStmt } from './parse';
@@ -154,8 +155,7 @@ export function readMermaidSequence(text: string): ImportResult {
     participants: [...r.participants.values()], steps: r.root,
     ...(r.boxes.length > 0 ? { boxes: r.boxes } : {}), ...(r.autonumber !== undefined ? { autonumber: r.autonumber } : {}),
   };
-  const title = r.title ?? parsed.title ?? r.accTitle;
-  if (title !== r.accTitle && r.accTitle !== undefined) r.warnings.add('Mermaid accessible titles were dropped; the page is named by the title.');
+  const title = readPageName({ ...(parsed.title !== undefined ? { title: parsed.title } : {}), ...(r.accTitle !== undefined ? { accTitle: r.accTitle } : {}), directives: 0 }, r.warnings, r.title);
   const size = sequenceLayout(data);
   const page: SequencePage = {
     kind: 'sequence', id: 'page-1', ...(title !== undefined ? { name: title } : {}),

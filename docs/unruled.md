@@ -3486,3 +3486,13 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): a boolean property field whose `value` is absent reads as not set, as `unset` does:
   an editable checkbox or switch draws off and dimmed with the "Not set" cue, and a read-only one the dash. Drawing
   it as plain Off in both, as the prop's doc used to promise, was the alternative.
+## Audit round sixty-four (2026-11-21): Mermaid diagrams, part two
+
+- 2026-11-21 (the fixer's call): The Mermaid state writer writes start and end shapes its `[*]` cannot keep apart (a
+  second in one composite, a start a transition arrives at, an end one leaves, one with no transition) as before,
+  with a warning; refusing the page was the alternative. A diamond with text is written as a plain state keeping its
+  text, with a warning; writing it as a `<<choice>>` and dropping the text was the alternative.
+- 2026-11-21 (the fixer's call): A chart writer (pie, packet, quadrant, radar, xychart, timeline) warns of a page name
+  that is not its chart's title and writes none; writing it as front matter, which every chart reader takes as the
+  chart's title where it has none, was the alternative. A Mermaid sequence page named `''` reads back unnamed, as an
+  empty title statement names no page of any other kind.

@@ -38,7 +38,7 @@ describe('reading a Mermaid timeline', () => {
     if (data.kind !== 'timeline') throw new Error('not a timeline');
     expect(data.sections.map((s) => s.name)).toEqual(['17th-20th century', '21st century']);
     expect(data.sections[0]!.periods[0]).toEqual({ label: 'Industry 1.0', events: ['Machinery, Water power, Steam <br>power'] });
-    expect(warnings).toEqual(['The front matter title was dropped; the chart is named by its title statement.']);
+    expect(warnings).toEqual(['The front matter title was dropped; the title statement names the chart.']);
   });
 
   it('takes the front matter title where there is no title statement, and warns of what it drops', () => {

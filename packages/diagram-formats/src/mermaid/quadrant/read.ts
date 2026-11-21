@@ -38,7 +38,6 @@ export function readMermaidQuadrant(text: string): ImportResult {
     }
   }
   const named = readPageName(src, warnings, title);
-  if (title !== undefined && src.title !== undefined && src.title !== title) warnings.add('The front matter title was dropped; the chart is titled by its own.');
   title ??= src.title;
   while (quadrants.length > 0 && quadrants[quadrants.length - 1] === undefined) quadrants.pop();
   const axis = (a: QuadrantAxis | undefined) => (a !== undefined && Object.keys(a).length > 0 ? a : undefined);
