@@ -284,7 +284,12 @@
   text-align: end;
 }
 
-/* The rule controls take the reset's column, so a scale's reset sits at the end of its name. */
+/* The rule controls take the reset's column, so a scale's reset sits at the end of its name, both held to the
+   first row: auto-placed, the name would step below the reset's cell. */
+.scale > .name {
+  grid-row: 1;
+}
+
 .scale > .reset {
   grid-column: 1;
   grid-row: 1;
