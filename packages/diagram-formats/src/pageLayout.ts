@@ -84,7 +84,9 @@ export function laidOutPage(page: GraphPage, opts: { theme: DiagramTheme; measur
   const boxes = ids.map((id) => boxOf(byId.get(id))).filter((b): b is Rect => b !== undefined);
   if (boxes.length === 0) return { ...page, data: laid };
   const min: Vec2 = { x: boxes.reduce((m, b) => Math.min(m, b.x), Infinity), y: boxes.reduce((m, b) => Math.min(m, b.y), Infinity) };
-  const by: Vec2 = placedAny ? { x: 0, y: 0 } : { x: PAGE_MARGIN - min.x, y: PAGE_MARGIN - min.y };
+  // Placed content stays put unless layout put something off the page's top or left, which moves it all.
+  const shift = (low: number) => (!placedAny || low < 0 ? PAGE_MARGIN - low : 0);
+  const by: Vec2 = { x: shift(min.x), y: shift(min.y) };
   const right = boxes.reduce((m, b) => Math.max(m, b.x + b.width), -Infinity) + by.x + PAGE_MARGIN;
   const bottom = boxes.reduce((m, b) => Math.max(m, b.y + b.height), -Infinity) + by.y + PAGE_MARGIN;
   return {

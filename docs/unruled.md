@@ -3468,3 +3468,10 @@ Calls the lanes made without a ruling:
   still writes anchored at the user-space origin; the kit's export path resolves such a paint with
   `paintToLocalUnits` first and never warns. Writing a def per node, each placed against that node's box, was the
   alternative.
+
+## Audit round sixty-five (2026-11-21): diagram-formats
+
+- 2026-11-21 (the fixer's call): laying out a graph page that has some nodes placed and some not moves everything
+  on it, placed nodes included, by one offset when layout puts a node above or left of the page, so every node
+  lands on the page and the arrangement holds. Keeping each placed node at its `at` and leaving the rest off the
+  page was the alternative.
