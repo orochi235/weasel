@@ -1,5 +1,5 @@
 import type { ShapeModule } from '../types';
-import { repeatCount, withDefaults } from './params';
+import { clampParam, repeatCount, withDefaults } from './params';
 import { DEG_TO_RAD, lerp, trimNumber } from '@weasel-js/geom';
 
 /** What `shapeParams` takes on a `starburst` badge. */
@@ -24,7 +24,7 @@ function starburstPath(points: number, outerR: number, innerR: number, rotationD
   const total = repeatCount(points, 3) * 2;
   const step = (Math.PI * 2) / total;
   const start = rotationDeg * DEG_TO_RAD;
-  const rnd = Math.max(0, Math.min(erosion, 1));
+  const rnd = clampParam(erosion, 0, 1, DEFAULTS.erosion);
   const pts: [number, number][] = [];
   for (let i = 0; i < total; i++) {
     const r = i % 2 === 0 ? outerR : innerR;

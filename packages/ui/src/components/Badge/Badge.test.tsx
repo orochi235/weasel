@@ -372,3 +372,24 @@ describe('Badge as a tooltip trigger', () => {
     expect(screen.getByRole('tooltip').textContent).toContain('Filter by tag');
   });
 });
+
+describe('a shape that composes itself from a base', () => {
+  const insetsOf = (shape: BadgeProps['shape']) => {
+    const el = render(<Badge shape={shape}>x</Badge>).container.firstElementChild as HTMLElement;
+    return ['top', 'right', 'bottom', 'left'].map((side) => el.style.getPropertyValue(`--badge-inset-${side}`));
+  };
+  it('pads by its own declared insets, not its base\'s', () => {
+    expect(insetsOf('house')).toEqual(['10px', '4px', '0px', '4px']);
+    expect(insetsOf('coffin')).toEqual(['4px', '6px', '4px', '11px']);
+    expect(insetsOf('hexagon')).toEqual(['4px', '6px', '4px', '6px']);
+  });
+  it('pads a ribbon by its taper', () => {
+    const el = render(<Badge shape="ribbon" shapeParams={{ taperWidth: 20 }}>x</Badge>).container.firstElementChild as HTMLElement;
+    const bare = render(<Badge shape="ribbon">x</Badge>).container.firstElementChild as HTMLElement;
+    expect(parseFloat(el.style.getPropertyValue('--badge-inset-right'))).toBeGreaterThan(parseFloat(bare.style.getPropertyValue('--badge-inset-right')));
+  });
+  it('pads by the base\'s insets when a base prop is given', () => {
+    const el = render(<Badge shape="house" base="polygon">x</Badge>).container.firstElementChild as HTMLElement;
+    expect(el.style.getPropertyValue('--badge-inset-top')).toBe('0px');
+  });
+});

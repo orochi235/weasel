@@ -23,6 +23,18 @@ describe('the rounded-rect base', () => {
     }
   });
 
+  it('draws a radius in CSS px on any box height', () => {
+    const arc = (boxH: number, radius: number) => {
+      const m = RoundedRect.build({ radius }, 100, boxH).bodyPath.match(/A ([\d.]+) ([\d.]+)/)!;
+      return [Number(m[1]), (Number(m[2]) * boxH) / 100];
+    };
+    for (const boxH of [16, 22, 30, 40]) {
+      expect(arc(boxH, 6)[0]).toBeCloseTo(6, 6);
+      expect(arc(boxH, 6)[1]).toBeCloseTo(6, 6);
+    }
+    expect(arc(16, 100)[1]).toBeCloseTo(8, 6);
+  });
+
   it('measures elliptical corners by their arc length', () => {
     const sampler = RoundedRect.build({ eccentricity: 3, erosion: 0.5 }, 120, 24);
     expect(sampler.totalCss).toBeCloseTo(281.38, 1);

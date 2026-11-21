@@ -1,5 +1,5 @@
 import { useId, useRef } from 'react';
-import { withDefaults } from './params';
+import { clampParam, withDefaults } from './params';
 import type { ShapeModule } from '../types';
 import { useSvgBox } from '../useSvgBox';
 
@@ -24,9 +24,10 @@ function PerforatedComponent({ variant, focused, params }: {
   const box = useSvgBox(ref);
 
   // Convert CSS-px hole sizing into viewBox units so holes look circular on either axis.
-  const rx = (cfg.holeRadius / box.width) * 100;
-  const ry = (cfg.holeRadius / box.height) * 100;
-  const pitch = Math.max(MIN_HOLE_PITCH, cfg.holePitch);
+  const holeRadius = clampParam(cfg.holeRadius, 0, Infinity, DEFAULTS.holeRadius);
+  const rx = (holeRadius / box.width) * 100;
+  const ry = (holeRadius / box.height) * 100;
+  const pitch = clampParam(cfg.holePitch, MIN_HOLE_PITCH, Infinity, DEFAULTS.holePitch);
   const nH = Math.max(2, Math.round(box.width / pitch));
   const nV = Math.max(2, Math.round(box.height / pitch));
 

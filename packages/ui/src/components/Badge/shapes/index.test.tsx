@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { BADGE_SHAPES } from '../catalog';
 import { SHAPES } from './index';
+import { BASES } from '../bases';
+import { EFFECTS } from '../effects';
+import { Badge } from '../Badge';
 
 describe('shape registry', () => {
   it('each shape entry has Component or compose, plus insets + stretches', () => {
@@ -34,4 +37,17 @@ describe('every shape renders at least one geometry element', () => {
       expect(geom.length).toBeGreaterThan(0);
     });
   }
+});
+
+describe('a shape name the registry does not hold', () => {
+  for (const name of ['constructor', 'toString', 'hasOwnProperty', 'nope']) {
+    it(`${name} draws a pill`, () => {
+      const { container } = render(<Badge shape={name as never}>x</Badge>);
+      expect(container.querySelector('[data-shape]')?.getAttribute('data-shape')).toBe('pill');
+    });
+  }
+  it('reads as no entry in the base and effect registries', () => {
+    expect(BASES['constructor' as never]).toBeUndefined();
+    expect(EFFECTS['toString' as never]).toBeUndefined();
+  });
 });

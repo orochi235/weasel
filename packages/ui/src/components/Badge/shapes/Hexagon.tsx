@@ -1,5 +1,5 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
-import { withDefaults } from './params';
+import { clampParam, withDefaults } from './params';
 
 /** What `shapeParams` takes on a `hexagon` badge. */
 export interface BadgeHexagonShapeParams {
@@ -12,8 +12,8 @@ export interface BadgeHexagonShapeParams {
 const DEFAULTS: Required<BadgeHexagonShapeParams> = { tipHeight: 25, tipTruncation: 0 };
 
 function hexVerts(tip: number, truncation: number): [number, number][] {
-  const t = Math.max(0, Math.min(tip, 49));
-  const trunc = Math.max(0, Math.min(truncation, t));
+  const t = clampParam(tip, 0, 49, DEFAULTS.tipHeight);
+  const trunc = clampParam(truncation, 0, t, DEFAULTS.tipTruncation);
   if (trunc <= 0) {
     return [[50, 0], [100, t], [100, 100 - t], [50, 100], [0, 100 - t], [0, t]];
   }

@@ -10,7 +10,7 @@ import { watchResize } from '@weasel-js/react';
 const NONE: ShapeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const SIDES = ['top', 'right', 'bottom', 'left'] as const;
 
-interface InsetSource<P> {
+export interface InsetSource<P> {
   insets?: ShapeInsets | ((params: P) => ShapeInsets);
   fitsContent?: boolean;
   build?: BaseModule<P>['build'];
@@ -103,7 +103,7 @@ export function useInsets<P>(source: InsetSource<P>, params: P, contentRef: RefO
   const points = useMemo(
     () => (fits ? outlinePoints(source.build!(params, 100, 100)) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `params` is a fresh object every render; `key` is its value.
-    [fits, source, key],
+    [fits, source.build, key],
   );
   const declared = (typeof source.insets === 'function' ? source.insets(params) : source.insets) ?? NONE;
   const { top, right, bottom, left } = declared;
@@ -117,6 +117,6 @@ export function useInsets<P>(source: InsetSource<P>, params: P, contentRef: RefO
     const less = (a: number, b: number) => Math.round((a - b) * 100) / 100;
     return { top: less(all.top, pad.top), right: less(all.right, pad.right), bottom: less(all.bottom, pad.bottom), left: less(all.left, pad.left) };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `params` and `moved` are fresh objects every render; the keys are their values.
-  }, [points, measured, top, right, bottom, left, source, key, movedKey]);
+  }, [points, measured, top, right, bottom, left, source.build, key, movedKey]);
   return fitted ?? declared;
 }

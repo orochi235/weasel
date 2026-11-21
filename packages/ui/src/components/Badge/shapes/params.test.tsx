@@ -31,6 +31,47 @@ describe('a shape param set to undefined', () => {
   }
 });
 
+describe('a clamped shape param set to NaN', () => {
+  const clamped: Record<string, string[]> = {
+    crest: ['topInset', 'pointDepth'],
+    coffin: ['headX', 'headHalfHeight', 'shoulderX', 'shoulderHalfHeight', 'footX', 'footHalfHeight'],
+    house: ['eaveY', 'peakHeight', 'roofOverhang'],
+    hexagon: ['tipHeight', 'tipTruncation'],
+    notched: ['erosion', 'eccentricity'],
+    shield: ['pointDepth', 'shoulderY', 'curveTightness', 'erosion'],
+    receipt: ['tearDepth', 'sideToTopRatio'],
+    starburst: ['erosion'],
+    perforated: ['holeRadius', 'holePitch'],
+  };
+  for (const [name, keys] of Object.entries(clamped)) {
+    const m = SHAPES[name as keyof typeof SHAPES];
+    const defaults = m.defaults as Record<string, unknown>;
+    for (const key of keys) {
+      it(`${name} draws its default ${key}`, () => {
+        const nan = { ...defaults, [key]: NaN };
+        if (m.compose) expect(m.compose(nan as never)).toEqual(m.compose(defaults as never));
+        if (m.Component) {
+          const C = m.Component;
+          const draw = (params: unknown) => render(
+            <svg viewBox="0 0 100 100"><C variant="solid" focused params={params as never} phase={0} /></svg>,
+          ).container.innerHTML.replace(/_r_[\w]+_|«r\w+»|:r\w+:/g, '');
+          expect(draw(nan)).toBe(draw(defaults));
+        }
+        if (typeof m.insets === 'function') expect(m.insets(nan as never)).toEqual(m.insets(defaults as never));
+      });
+    }
+  }
+});
+
+describe('a house badge', () => {
+  it('keeps its peak inside the box', () => {
+    const peak = (params: Record<string, number>) =>
+      (SHAPES.house.compose!(params).baseParams as { vertices: [number, number][] }).vertices[0];
+    expect(peak({ peakHeight: 100 })).toEqual([50, 0]);
+    expect(peak({ eaveY: 60, peakHeight: 1000 })).toEqual([50, 0]);
+  });
+});
+
 describe('a repeat count', () => {
   const pathOf = (name: 'sparkler' | 'starburst' | 'receipt', params: Record<string, number>) => {
     const C = SHAPES[name].Component!;
@@ -54,6 +95,22 @@ describe('a repeat count', () => {
       expect(vertices(pathOf(name, { points: Infinity }))).toBe(MAX_REPEATS * 2);
     });
   }
+  it('beavis takes its spike count through the same bounds', () => {
+    const count = (points: number) => (SHAPES.beavis.compose!({ points }).effects![0].params as { count: number }).count;
+    expect(count(Infinity)).toBe(MAX_REPEATS);
+    expect(count(NaN)).toBe(3);
+    expect(count(5.9)).toBe(5);
+  });
+  it('beavis hands its cornerRadius to the base as CSS px', () => {
+    expect(SHAPES.beavis.compose!({ cornerRadius: 9 }).baseParams).toEqual({ radius: 9 });
+  });
+  it('receipt keeps its two tears from crossing', () => {
+    const xs = (d: string) => [...d.matchAll(/L ([\d.]+) ([\d.]+)/g)].map((m) => Number(m[1]));
+    const d = pathOf('receipt', { tearDepth: 1000 });
+    const half = d.indexOf('L 0 100');
+    expect(Math.min(...xs(d.slice(0, half)))).toBeGreaterThan(50);
+    expect(Math.max(...xs(d.slice(half)))).toBeLessThan(50);
+  });
   it('receipt caps an infinite tooth count', () => {
     expect(pathOf('receipt', { teeth: Infinity }).length).toBeGreaterThan(0);
   });

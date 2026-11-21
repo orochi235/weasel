@@ -3255,3 +3255,14 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (my call, audit round 54): a group or layer `composite` string that is no `CompositeOp` (`'multiply'`,
   or an inherited name such as `'constructor'`) throws a `RangeError` naming it and listing the operators, rather
   than being drawn as `source-over`. It still ends the frame, as the bare `TypeError` it replaces did.
+## Audit round fifty-seven (2026-11-20): badge shapes
+
+- 2026-11-20 (the fixer's call): A `quatrefoil` badge's `samples` runs 24..1024 and a `beavis` badge's `points` 3..256,
+  a `receipt` badge's `tearDepth` stops at 45 and a `house` badge's `peakHeight` at its `eaveY`. The bounds keep a
+  render finite and an outline simple; the numbers are picked, not ruled.
+- 2026-11-20 (the fixer's call): `NaN` in a bounded badge shape param reads as that param's default, where a repeat
+  count reads it as its least. Reading it as the lower bound was the alternative.
+- 2026-11-20 (the fixer's call): A shape that composes itself from a base pads by its own `insets`, fitted against the
+  base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
+  rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
+  pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.

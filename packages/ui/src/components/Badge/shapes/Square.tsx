@@ -14,7 +14,7 @@ const Square: ShapeModule<BadgeSquareShapeParams> = {
     const cfg = withDefaults(DEFAULTS, params);
     return { base: 'rounded-rect', baseParams: { erosion: cfg.erosion } };
   },
-  insets: { top: 0, right: 0, bottom: 0, left: 0 },
+  insets: { top: 0, right: 4, bottom: 0, left: 4 },
   stretches: true,
   defaults: DEFAULTS,
 };
