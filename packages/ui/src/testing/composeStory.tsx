@@ -8,6 +8,8 @@ type CsfRender = (args: Ctx, ctx: Ctx) => ReactNode;
 type CsfDecorator = (Story: ComponentType, ctx: Ctx) => ReactNode;
 interface Csf {
   args?: Ctx;
+  includeStories?: string[] | RegExp;
+  excludeStories?: string[] | RegExp;
   render?: CsfRender;
   decorators?: CsfDecorator | CsfDecorator[];
   component?: ComponentType<Ctx>;
@@ -21,6 +23,10 @@ interface Native {
 }
 
 const NATIVE = Symbol.for('weaselforge.native');
+const isNative = (value: unknown, kind: 'meta' | 'story'): boolean =>
+  !!value && typeof value === 'object' && (value as Record<symbol, unknown>)[NATIVE] === kind;
+const matches = (key: string, filter: string[] | RegExp) =>
+  Array.isArray(filter) ? filter.includes(key) : key.match(filter) !== null;
 const asArray = <T,>(v: T | T[] | undefined): T[] => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
 
 /** A CSF story as forge draws it: its render (or the meta's component) inside its decorators, then the meta's. */
@@ -53,19 +59,24 @@ function native(meta: { decorators?: NativeDecorator[] }, spec: Native, name: st
   };
 }
 
-/** Each story `mod` exports, by export name. */
+/** Each story `mod` exports, by export name, chosen as forge's loader chooses them. */
 export function storiesOf(mod: Record<string, unknown>): [string, ComponentType][] {
-  const meta = (mod.default ?? {}) as Csf & { decorators?: never };
   const out: [string, ComponentType][] = [];
+  if (isNative(mod.default, 'meta')) {
+    const meta = mod.default as { decorators?: NativeDecorator[] };
+    for (const [name, value] of Object.entries(mod)) {
+      if (name !== 'default' && isNative(value, 'story')) out.push([name, native(meta, value as Native, name)]);
+    }
+    return out;
+  }
+  const meta = (mod.default ?? {}) as Csf;
   for (const [name, value] of Object.entries(mod)) {
     if (name === 'default' || name.startsWith('__') || !value) continue;
-    if (typeof value === 'function') {
-      const story = csf(meta, { render: value as CsfRender }, name);
-      if (story) out.push([name, story]);
-    } else if (typeof value === 'object') {
-      const story = (value as Record<symbol, unknown>)[NATIVE] === 'story' ? native(meta, value as Native, name) : csf(meta, value as Csf, name);
-      if (story) out.push([name, story]);
-    }
+    if (meta.includeStories && !matches(name, meta.includeStories)) continue;
+    if (meta.excludeStories && matches(name, meta.excludeStories)) continue;
+    if (typeof value !== 'function' && typeof value !== 'object') continue;
+    const story = csf(meta, typeof value === 'function' ? { render: value as CsfRender } : (value as Csf), name);
+    if (story) out.push([name, story]);
   }
   return out;
 }
