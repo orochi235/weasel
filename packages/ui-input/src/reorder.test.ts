@@ -35,29 +35,45 @@ describe('moveItems', () => {
 
 describe('movedIndex', () => {
   it('counts out the moved items before the gap', () => {
-    expect(movedIndex([1], 4)).toBe(3);
-    expect(movedIndex([3], 0)).toBe(0);
-    expect(movedIndex([1, 2], 5)).toBe(3);
-    expect(movedIndex([0, 4], 3)).toBe(2);
+    expect(movedIndex([1], 4, 5)).toBe(3);
+    expect(movedIndex([3], 0, 5)).toBe(0);
+    expect(movedIndex([1, 2], 5, 5)).toBe(3);
+    expect(movedIndex([0, 4], 3, 5)).toBe(2);
+  });
+  it('reads a gap past either end and an index outside the list as moveItems does', () => {
+    expect(movedIndex([0], 10, 3)).toBe(moveItems(['a', 'b', 'c'], [0], 10).indexOf('a'));
+    expect(movedIndex([0], 10, 3)).toBe(2);
+    expect(movedIndex([-1, 0], 2, 3)).toBe(1);
+    expect(movedIndex([2], -4, 3)).toBe(0);
+  });
+  it('throws for a length that is not a whole number', () => {
+    expect(() => movedIndex([0], 1, -1)).toThrow(RangeError);
+    expect(() => movedIndex([0], 1, NaN)).toThrow(RangeError);
   });
 });
 
 describe('isNoopDrop', () => {
   it('is true for the gaps either side of one item', () => {
-    expect(isNoopDrop([2], 2)).toBe(true);
-    expect(isNoopDrop([2], 3)).toBe(true);
-    expect(isNoopDrop([2], 1)).toBe(false);
-    expect(isNoopDrop([2], 4)).toBe(false);
+    expect(isNoopDrop([2], 2, 5)).toBe(true);
+    expect(isNoopDrop([2], 3, 5)).toBe(true);
+    expect(isNoopDrop([2], 1, 5)).toBe(false);
+    expect(isNoopDrop([2], 4, 5)).toBe(false);
+  });
+  it('reads a gap past either end and an index outside the list as moveItems does', () => {
+    expect(isNoopDrop([4], 7, 5)).toBe(true);
+    expect(isNoopDrop([0], -2, 5)).toBe(true);
+    expect(isNoopDrop([-1, 0], 1, 5)).toBe(true);
+    expect(isNoopDrop([5], 5, 5)).toBe(false);
   });
   it('is true at and inside a contiguous run', () => {
-    expect(isNoopDrop([1, 2, 3], 1)).toBe(true);
-    expect(isNoopDrop([3, 1, 2], 3)).toBe(true);
-    expect(isNoopDrop([1, 2, 3], 4)).toBe(true);
-    expect(isNoopDrop([1, 2, 3], 5)).toBe(false);
+    expect(isNoopDrop([1, 2, 3], 1, 5)).toBe(true);
+    expect(isNoopDrop([3, 1, 2], 3, 5)).toBe(true);
+    expect(isNoopDrop([1, 2, 3], 4, 5)).toBe(true);
+    expect(isNoopDrop([1, 2, 3], 5, 6)).toBe(false);
   });
   it('is false for scattered items and for none', () => {
-    expect(isNoopDrop([1, 3], 2)).toBe(false);
-    expect(isNoopDrop([], 0)).toBe(false);
+    expect(isNoopDrop([1, 3], 2, 5)).toBe(false);
+    expect(isNoopDrop([], 0, 5)).toBe(false);
   });
 });
 

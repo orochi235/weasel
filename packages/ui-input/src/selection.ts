@@ -221,15 +221,15 @@ function soloTargets(states: ReadonlyMap<string, boolean>, keep: ReadonlySet<str
 
 /** What an Alt-press on item `index` does, by ui-input's `soloChanges`: in a multiple selection, that item on and
  *  every other one off, or, when that already holds, every one on; a mixed item counts as off, and an item
- *  `enabled` refuses is left alone. In a single selection it is a press. */
+ *  `enabled` refuses is left alone. In a single selection it is a press, of an item `enabled` lets through. */
 export function soloFrom(
   model: SelectionModel,
   index: number,
   count: number,
   enabled: (index: number) => boolean = () => true,
 ): void {
-  if (model.mode !== 'multiple') return model.press(index);
   if (!enabled(index)) return;
+  if (model.mode !== 'multiple') return model.press(index);
   model.edit().apply(soloTargets(soloStates(model, count, enabled), new Set([String(index)])));
 }
 
@@ -238,7 +238,7 @@ export function soloFrom(
  * worked out each time from the states at the press, never from the last step. Until a second item is reached it
  * is {@link soloFrom}'s solo of `from`, so a sweep that never leaves it can turn every item back on. An item
  * `enabled` refuses is neither reached nor changed; `revert` puts back the press-time states. A single selection
- * sweeps as {@link sweepFrom} does.
+ * sweeps as {@link sweepFrom} does, over the items `enabled` lets through.
  */
 export function soloSweepFrom(
   model: SelectionModel,
@@ -246,7 +246,11 @@ export function soloSweepFrom(
   count: number,
   enabled: (index: number) => boolean = () => true,
 ): { reach(index: number): void; revert(): void } {
-  if (model.mode !== 'multiple') return sweepFrom(model, from);
+  if (model.mode !== 'multiple') {
+    if (!enabled(from)) return { reach: () => {}, revert: () => {} };
+    const run = sweepFrom(model, from);
+    return { reach: (i) => { if (enabled(i)) run.reach(i); }, revert: run.revert };
+  }
   const states = soloStates(model, count, enabled);
   const keep = new Set<string>();
   const edit = model.edit();

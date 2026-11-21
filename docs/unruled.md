@@ -20,6 +20,8 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - Ruled 2026-11-10: `keySpecRoute` writes a spec's phase in the route's phase slot, and gives `null` for a
   spec with a physical key `code` or more than one key, which the route grammar has no form for.
 
+- 2026-11-20: `movedIndex` and `isNoopDrop` take a required `length` and clamp the gap and drop indices outside the
+  list as `moveItems` does, rather than staying length-free and documenting that they expect an in-range drop.
 - 2026-11-20: `captureGesture` settles on a click it holds back for a double click when a key other than
   Escape comes in the window, and leaves that key to the page; Escape still resolves `null`.
 - 2026-11-20: A tool with options may not be named `shared` or `shared.<anything>`: `defineTool` and

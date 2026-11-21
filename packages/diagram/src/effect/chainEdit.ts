@@ -64,7 +64,7 @@ export function moveRunInChain(doc: EffectDoc, first: string, last: string, to: 
   const i = chain.indexOf(first);
   const j = chain.indexOf(last);
   const run = Array.from({ length: j - i + 1 }, (_, k) => i + k);
-  if (i < 0 || j < i || !Number.isInteger(to) || to < 0 || to > chain.length || isNoopDrop(run, to)) return null;
+  if (i < 0 || j < i || !Number.isInteger(to) || to < 0 || to > chain.length || isNoopDrop(run, to, chain.length)) return null;
   const { mainIn, mainOut, between } = chainLinks(p, chain);
   const wIn = i > 0 ? between[i - 1] : undefined;
   const wOut = j < chain.length - 1 ? between[j] : undefined;

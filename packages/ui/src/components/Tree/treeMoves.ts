@@ -73,7 +73,7 @@ export function isNoopMove(nodes: readonly TreeNode[], ids: readonly string[], t
   const parents = parentsOf(nodes);
   if (!ids.every((id) => (parents.get(id) ?? null) === target.parentId)) return false;
   const sibs = siblingsOf(nodes, target.parentId).map((n) => n.id);
-  return isNoopDrop(ids.map((id) => sibs.indexOf(id)), target.index);
+  return isNoopDrop(ids.map((id) => sibs.indexOf(id)), target.index, sibs.length);
 }
 
 export type KeyboardMove = 'up' | 'down' | 'out' | 'in';

@@ -7,30 +7,38 @@
 /** The whole numbers in `at`, once each, ascending: an index that is not one names no item. */
 const sortedSet = (at: readonly number[]): number[] => [...new Set(at.filter(Number.isInteger))].sort((a, b) => a - b);
 
+/** The items `at` names in a list `length` long, once each, ascending, and gap `to` held to that list's ends. */
+function dropIn(at: readonly number[], to: number, length: number): { inside: number[]; gap: number } {
+  if (!(Number.isInteger(length) && length >= 0)) throw new RangeError(`a list is a whole number of items long, not ${length}`);
+  return { inside: sortedSet(at).filter((i) => i >= 0 && i < length), gap: Math.min(length, Math.max(0, to)) };
+}
+
 /** `items` with the items at indices `at` taken out and put back, in their order, in gap `to`. An index outside
  *  `items`, or not a whole number, names nothing and is ignored; a gap past either end is that end. */
 export function moveItems<T>(items: readonly T[], at: readonly number[], to: number): T[] {
-  const inside = sortedSet(at).filter((i) => i >= 0 && i < items.length);
-  const gap = Math.min(items.length, Math.max(0, to));
+  const { inside, gap } = dropIn(at, to, items.length);
   const taken = new Set(inside);
   const out = items.filter((_, i) => !taken.has(i));
-  out.splice(movedIndex(inside, gap), 0, ...inside.map((i) => items[i]!));
+  out.splice(gap - inside.filter((i) => i < gap).length, 0, ...inside.map((i) => items[i]!));
   return out;
 }
 
-/** The index the first of the items at `at` holds once {@link moveItems} has put them in gap `to`. */
-export function movedIndex(at: readonly number[], to: number): number {
-  return to - sortedSet(at).filter((i) => i < to).length;
+/** The index the first of the items at `at` holds once {@link moveItems} has put them in gap `to` of a list
+ *  `length` long, reading `at` and `to` as it does. */
+export function movedIndex(at: readonly number[], to: number, length: number): number {
+  const { inside, gap } = dropIn(at, to, length);
+  return gap - inside.filter((i) => i < gap).length;
 }
 
-/** Whether putting the items at `at` in gap `to` leaves them where they are: a contiguous run dropped in a gap at
- *  either of its ends or inside it. False for no items. */
-export function isNoopDrop(at: readonly number[], to: number): boolean {
-  const s = sortedSet(at);
+/** Whether putting the items at `at` in gap `to` of a list `length` long leaves them where they are, reading `at`
+ *  and `to` as {@link moveItems} does: a contiguous run dropped in a gap at either of its ends or inside it. False
+ *  for no items. */
+export function isNoopDrop(at: readonly number[], to: number, length: number): boolean {
+  const { inside: s, gap } = dropIn(at, to, length);
   if (s.length === 0) return false;
   const first = s[0]!;
   const last = s[s.length - 1]!;
-  return last - first + 1 === s.length && to >= first && to <= last + 1;
+  return last - first + 1 === s.length && gap >= first && gap <= last + 1;
 }
 
 /** The gap a one-place move sends the items at `at` to: before the item ahead of the first (`by` -1), or after the

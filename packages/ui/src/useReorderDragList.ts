@@ -262,7 +262,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       },
       onEnd: (ev) => {
         const drop = computeTargetIndex(ev, index);
-        if (!isNoopDrop(indicesOf(optsRef.current.items, draggedIds), drop)) {
+        if (!isNoopDrop(indicesOf(optsRef.current.items, draggedIds), drop, optsRef.current.items.length)) {
           optsRef.current.onReorder(draggedIds, drop);
         }
         reset();
@@ -291,7 +291,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     const at = indicesOf(items, ids);
     const target = nudgeGap(at, delta, items.length);
     const [lo, hi] = unlockedSegment(items, index);
-    if (target === null || target < lo || target > hi || isNoopDrop(at, target)) return false;
+    if (target === null || target < lo || target > hi || isNoopDrop(at, target, items.length)) return false;
     onReorder(ids, target);
     return true;
   }, [optsRef]);

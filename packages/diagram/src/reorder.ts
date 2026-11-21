@@ -135,7 +135,7 @@ function gapAt(held: Held, by: number): ReorderGap | null {
   const size = axis === 'x' ? 'width' : 'height';
   const mid = held.item.bounds[axis] + held.item.bounds[size] / 2 + by;
   const best = gaps[nearestGap(gaps.map((g) => g.a[axis]), mid)];
-  return best === undefined || isNoopDrop([held.from], best.index) ? null : best;
+  return best === undefined || isNoopDrop([held.from], best.index, held.slots.items.length) ? null : best;
 }
 
 function moveOf(held: Held, gap: ReorderGap): ReorderMove {

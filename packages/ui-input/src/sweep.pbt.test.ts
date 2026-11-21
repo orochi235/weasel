@@ -90,16 +90,16 @@ describe('framesSweep', () => {
     fc.assert(fc.property(
       fc.oneof(fc.integer({ min: 0, max: 2000 }), fc.double({ min: 0, max: 2000, noNaN: true }), fc.constantFrom(1000, 400, 250)),
       fc.oneof(fc.constantFrom(1000 / 60, 100, 16, 33.3, 0.1), fc.double({ min: 1, max: 500, noNaN: true })),
-      fc.constantFrom<boolean | number>(false, true, 1, 2, 2.5, 0),
+      fc.constantFrom<boolean | number>(false, true, 1, 2, 2.5, 0.5, 0, -1),
       fc.constantFrom('first', 'all' as const),
       (duration, every, loop, passes) => {
         fc.pre(!(passes === 'all' && loop === true));
         const s = framesSweep({ duration, loop }, { every, passes });
         const { steps, capped } = stepsOf(s, 5000);
         fc.pre(!capped);
-        const count = loop === true ? Infinity : loop === false ? 1 : Math.max(0, loop);
+        const count = loop === true ? Infinity : loop === false ? 1 : Math.max(1, loop);
         const walked = passes === 'all' ? count : 1;
-        const span = duration === 0 || walked === 0 ? 0 : duration * walked;
+        const span = duration === 0 ? 0 : duration * walked;
         const ends = walked === count;
         // A looping pass of no length has no frame short of its end.
         if (span === 0 && !ends) { expect(steps).toEqual([]); return; }

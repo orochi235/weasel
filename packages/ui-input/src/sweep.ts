@@ -1,4 +1,4 @@
-import { clamp01 } from '@weasel-js/geom';
+import { clamp01, lerp } from '@weasel-js/geom';
 
 /**
  * A parameter's domain, apart from how it is walked. A scrubber reads it
@@ -62,9 +62,16 @@ export function rangeSweep(spec: RangeSpec): Sweep<number> {
   if (spec.step !== undefined) {
     const step = spec.step;
     if (!(step > 0)) throw new RangeError(`a range's step is above 0, not ${step}`);
-    const last = Number.isFinite(span) ? Math.floor(tidy(Math.abs(span) / step)) : Infinity;
+    // Finite ends far enough apart overflow `span`; halving both sides keeps the sums finite.
+    const last = !Number.isFinite(to) ? Infinity
+      : Number.isFinite(span) ? Math.floor(tidy(Math.abs(span) / step))
+      : Math.floor(Math.abs(to / 2 - from / 2) / (step / 2));
     const dir = span < 0 ? -1 : 1;
-    const nth = (i: number): number => (i === 0 ? from : tidy(from + dir * step * i, Math.max(Math.abs(from), step * i)));
+    const nth = (i: number): number => {
+      if (i === 0) return from;
+      const v = from + dir * step * i;
+      return Number.isFinite(v) ? tidy(v, Math.max(Math.abs(from), step * i)) : 2 * (from / 2 + dir * (step / 2) * i);
+    };
     return {
       at: (u) => {
         if (!Number.isFinite(last)) throw new RangeError('an endless range has no point a fraction of the way along');
@@ -78,15 +85,15 @@ export function rangeSweep(spec: RangeSpec): Sweep<number> {
   }
   const count = spec.count;
   if (!(Number.isInteger(count) && count > 0)) throw new RangeError(`a range's count is a whole number above 0, not ${count}`);
-  if (!Number.isFinite(span)) throw new RangeError('a range given a count needs a finite end');
+  if (!Number.isFinite(to)) throw new RangeError('a range given a count needs a finite end');
   const scale = Math.max(Math.abs(from), Math.abs(to));
   const [lo, hi] = from <= to ? [from, to] : [to, from];
-  const along = (u: number): number => (u <= 0 ? from : u >= 1 ? to : Math.min(hi, Math.max(lo, tidy(from + span * u, scale))));
+  const along = (u: number): number => (u <= 0 ? from : u >= 1 ? to : Math.min(hi, Math.max(lo, tidy(lerp(from, to, u), scale))));
   return {
     at: (u) => along(clamp01(u)),
     *walk() {
       if (count === 1) yield from;
-      else for (let i = 0; i < count; i++) yield i === 0 ? from : i === count - 1 ? to : tidy(from + (span * i) / (count - 1), scale);
+      else for (let i = 0; i < count; i++) yield i === 0 ? from : i === count - 1 ? to : Number.isFinite(span) ? tidy(from + (span * i) / (count - 1), scale) : along(i / (count - 1));
     },
     label: spec.label ?? plain,
   };
@@ -106,7 +113,8 @@ export function valuesSweep<V>(list: readonly V[], label: (value: V) => string =
 export interface FrameSpan {
   /** ms per pass; omitted, the run never ends. */
   duration?: number;
-  /** Passes: `true` endless, `false` one, `n` that many. */
+  /** Passes: `true` endless, `false` one, `n` that many, read as a clock reads it: below 1 is one pass, and a
+   *  fraction above it ends partway through the last. */
   loop?: boolean | number;
   /** The time elapsed 0 is shown as, for the labels. */
   origin?: number;
@@ -135,11 +143,11 @@ export function framesSweep(span: FrameSpan, options: FrameOptions): Sweep<numbe
   const duration = span.duration ?? Infinity;
   if (!(duration >= 0)) throw new RangeError(`a run lasts 0 ms or more, not ${duration}`);
   const loop = span.loop ?? false;
-  if (typeof loop === 'number' && !(loop >= 0)) throw new RangeError(`a run loops 0 times or more, not ${loop}`);
-  const passes = loop === true ? Infinity : loop === false ? 1 : loop;
+  if (Number.isNaN(loop)) throw new RangeError('a run loops a number of times, not NaN');
+  const passes = loop === true ? Infinity : loop === false ? 1 : Math.max(1, loop);
   const walked = options.passes === 'all' ? passes : 1;
   // No length times no end is no length, where the product is NaN.
-  const end = duration === 0 || walked === 0 ? 0 : duration * walked;
+  const end = duration === 0 ? 0 : duration * walked;
   // The end is a frame only where nothing follows it: the run's end, not a pass's.
   const ends = walked === passes && Number.isFinite(passes) && Number.isFinite(end);
   const origin = span.origin ?? 0;

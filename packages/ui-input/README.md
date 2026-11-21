@@ -122,8 +122,8 @@ line break. Caret movement stays with each field: a DOM field gets it from the b
 
 Moving items within a list, whether it is drawn in the DOM or on a canvas. A destination is a gap counted before
 anything is taken out: 0 before the first item, `length` after the last. `moveItems(items, at, to)` moves the items at
-indices `at` into gap `to`; `isNoopDrop` says whether that leaves them where they are; `nudgeGap` is the gap a
-one-place move takes them to, and `nudgeOf` reads the Alt+arrow chord that asks for one. A pointer finds its gap by
+indices `at` into gap `to`; for a list `length` long, `movedIndex(at, to, length)` is where the first of them lands and
+`isNoopDrop(at, to, length)` says whether they stay where they are; `nudgeGap` is the gap a one-place move takes them to, and `nudgeOf` reads the Alt+arrow chord that asks for one. A pointer finds its gap by
 `gapByMidpoint`, for items side by side, each split at its middle, or by `nearestGap`, for gaps drawn at places of
 their own. `dropBand(f, band)` says which part of one item the pointer is over: before it, after it, or, with a
 `band` under a half, into it. `dropSide(gap, i, count)` says which edge of row `i` draws the seam for a drop in

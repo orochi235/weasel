@@ -4,6 +4,19 @@ import { framesSweep, rangeSweep, stepsOf, sweepUntil, valuesSweep } from './swe
 const all = <V>(s: { walk(): Iterable<V> }): V[] => [...s.walk()];
 
 describe('rangeSweep', () => {
+  it('ends a range whose finite ends lie too far apart to subtract', () => {
+    const stepped = rangeSweep({ from: -1e308, to: 1e308, step: 1e307 });
+    const steps = stepsOf(stepped, 100);
+    expect(steps.capped).toBe(false);
+    expect(steps.steps).toHaveLength(21);
+    expect(steps.steps.every(Number.isFinite)).toBe(true);
+    expect(steps.steps.at(-1)).toBeCloseTo(1e308, -295);
+    expect(stepped.at(0.5)).toBeCloseTo(0, -295);
+    const counted = rangeSweep({ from: -1e308, to: 1e308, count: 3 });
+    expect(all(counted)).toEqual([-1e308, 0, 1e308]);
+    expect(counted.at(0.75)).toBe(5e307);
+  });
+
   it('walks the digits, both ends included', () => {
     expect(all(rangeSweep({ from: 0, to: 9, step: 1 }))).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
   });
@@ -78,12 +91,19 @@ describe('framesSweep', () => {
 
   it('walks no frames past the end of an endless loop of no length', () => {
     expect(stepsOf(framesSweep({ duration: 0, loop: true }, { every: 10, passes: 'all' }))).toEqual({ steps: [], capped: false });
-    expect(stepsOf(framesSweep({ loop: 0 }, { every: 10, passes: 'all' }))).toEqual({ steps: [0], capped: false });
+    expect(stepsOf(framesSweep({ duration: 0, loop: 3 }, { every: 10, passes: 'all' }))).toEqual({ steps: [0], capped: false });
     expect(() => framesSweep({ duration: NaN }, { every: 10 })).toThrow(RangeError);
     expect(() => framesSweep({ duration: -100 }, { every: 10 })).toThrow(RangeError);
-    // A NaN count of passes walked forever; a negative one ended on a frame before the run began.
+    // A NaN count of passes walked forever.
     expect(() => framesSweep({ duration: 100, loop: NaN }, { every: 10 })).toThrow(RangeError);
-    expect(() => framesSweep({ duration: 100, loop: -3 }, { every: 7 })).toThrow(RangeError);
+  });
+
+  it('counts passes as a clock does: a loop below 1 is one whole pass', () => {
+    const one = [0, 25, 50, 75, 100];
+    for (const loop of [0, 0.5, -3]) {
+      expect(all(framesSweep({ duration: 100, loop }, { every: 25 }))).toEqual(one);
+      expect(all(framesSweep({ duration: 100, loop }, { every: 25, passes: 'all' }))).toEqual(one);
+    }
   });
 
   it('labels a frame with the time it shows, origin included', () => {
