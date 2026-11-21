@@ -57,8 +57,8 @@ export function BadgeDeco({ svgRef, compose, shapeModule, params, box, bloat, va
         <g {...(mask.length > 0 ? { mask: `url(#${bodyMaskId})` } : {})}>
           {(variant === 'solid' || variant === 'subtle') && <path className="badge-fill" d={outline.bodyPath} />}
           {(variant === 'outline' || variant === 'solid') && <path className="badge-stroke" d={outline.bodyPath} />}
+          {foreground.map(render)}
         </g>
-        {foreground.map(render)}
         {focused && <path className="badge-focus" d={offsetOutline(outline, FOCUS_RING_OFFSET, box)} />}
       </svg>
     );

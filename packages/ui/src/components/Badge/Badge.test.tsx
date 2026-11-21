@@ -65,6 +65,15 @@ describe('Badge content slots', () => {
 
   // jsdom lays nothing out, so the content's size is stubbed: this pins that the insets take
   // the composed outline into account, not that the content clears it on screen.
+  it('punches perforations through the foreground effects as well as the fill', () => {
+    const { container } = render(<Badge base="rounded-rect" variant="solid" effects={[{ type: 'perforations' }, { type: 'aqua' }, { type: 'sheen' }]}>x</Badge>);
+    const masked = container.querySelector('svg > g[mask]')!;
+    expect(masked.querySelector('.badge-fill')).not.toBeNull();
+    const gradientFills = [...container.querySelectorAll('svg path[fill^="url("], svg rect[fill^="url("]')];
+    expect(gradientFills.length).toBeGreaterThan(1);
+    for (const el of gradientFills) expect(masked.contains(el)).toBe(true);
+  });
+
   describe('on a base fitted to its content', () => {
     const inset = (props: Partial<BadgeProps>) => {
       const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect')
