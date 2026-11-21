@@ -3,6 +3,7 @@ import { FieldScope } from '../Field/fieldSemantics';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 import { PropertyHelp } from './PropertyHelp';
 import { ResetControl } from './ResetControl';
+import { ROW_READOUT_ATTR } from './rowHelp';
 import { InsideRow, useRowState } from './rowScope';
 import s from './Properties.module.css';
 import { holdScope, useControlAccess, useDisabled, type DisableableProps } from '../Disabled';
@@ -147,11 +148,11 @@ export function PropertyRow(props: PropertyRowProps) {
         name
       )}
       {onReset && <ResetControl name={typeof label === 'string' ? label : 'this setting'} onReset={onReset} disabled={disabled} />}
-      {readout != null && !trailing && <em className={s.readout}>{readout}</em>}
+      {readout != null && !trailing && <em className={s.readout} {...{ [ROW_READOUT_ATTR]: '' }}>{readout}</em>}
     </span>
   );
   const scope = useMemo(() => ({ ...state, label }), [state, label]);
-  const tail = trailing ? <em className={`${s.readout} ${s.readoutAfter}`}>{readout}</em> : null;
+  const tail = trailing ? <em className={`${s.readout} ${s.readoutAfter}`} {...{ [ROW_READOUT_ATTR]: '' }}>{readout}</em> : null;
   const invalid = error != null && error !== false && error !== '';
   const message = invalid ? (
     <span id={errorId} className={s.rowError} role="alert">
