@@ -3317,3 +3317,13 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): `useRovingTabIndex` leaves an arrow, Home, or End held with Alt, Ctrl, Meta, or Shift
   to the browser and the item, with no option to walk on one. Alt+Left is Back and Ctrl+Home scrolls the page, and an
   item binding Shift+Arrow for itself saw focus move on the same key. Walking on Shift was the alternative.
+
+## Audit round sixty (2026-11-20): ui components, part two
+
+- 2026-11-20 (the fixer's call): A `Dialog` in a contained portal puts `ModalOverlay`'s DOM attributes, handlers,
+  `style`, `isEntering` and `isExiting` on its overlay, and warns that it ignores `onEnter`, `onExit`,
+  `UNSTABLE_deferUntilEntered` and `render`, since it unmounts at once and draws its own overlay. Giving the
+  contained modal an exit animation, so those work, was the alternative.
+- 2026-11-20 (the fixer's call): A `CycleButton` given no `options` renders disabled, named and tooltipped by its
+  `aria-label` alone, rather than throwing; a filtered rotation can come out empty. Throwing on an empty list was
+  the alternative.

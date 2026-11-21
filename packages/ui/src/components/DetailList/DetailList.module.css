@@ -64,7 +64,7 @@
   color: var(--wzl-fg-muted);
 }
 
-.list[data-values='figures'] {
+.list[data-values='figures']:not([data-layout='block']) {
   grid-template-columns: var(--wzl-params-label-width, auto) minmax(min-content, 1fr);
 }
 

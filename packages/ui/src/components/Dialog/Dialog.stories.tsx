@@ -29,7 +29,7 @@ export const Basic: Story = {
             </>
           }
         >
-          <p>Dialog body. Try Escape, the close button, or clicking outside.</p>
+          <p>Dialog body. Try Escape or the close button.</p>
         </Dialog>
       </>
     );

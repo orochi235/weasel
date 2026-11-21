@@ -1,7 +1,7 @@
-import { useContext, useEffect, useMemo, useRef, useState, type HTMLAttributes, type ReactNode } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { FocusScope, useOverlay } from 'react-aria';
-import { OverlayTriggerStateContext } from 'react-aria-components';
+import { FocusScope, mergeProps, useOverlay } from 'react-aria';
+import { OverlayTriggerStateContext, type ModalRenderProps } from 'react-aria-components';
 
 /** Props for {@link ContainedModal}. */
 export interface ContainedModalProps {
@@ -17,6 +17,12 @@ export interface ContainedModalProps {
   overlayClassName: string;
   modalClassName: string;
   modalProps?: HTMLAttributes<HTMLDivElement>;
+  /** DOM attributes and handlers for the overlay, as `ModalOverlay` takes them. */
+  overlayProps?: HTMLAttributes<HTMLDivElement>;
+  /** The overlay's style, or a function of its state, as `ModalOverlay` takes it. */
+  overlayStyle?: CSSProperties | ((values: ModalRenderProps & { defaultStyle: CSSProperties }) => CSSProperties | undefined);
+  isEntering?: boolean;
+  isExiting?: boolean;
   children: ReactNode;
 }
 
@@ -44,23 +50,52 @@ function useOpenState({ open: controlled, defaultOpen, onOpenChange }: Contained
   return controlled === undefined && defaultOpen === undefined && trigger ? trigger : local;
 }
 
+/** How many holds made each element inert. One modal stacked on another inerts what the first already did, and
+ *  the element comes free only when the last of them lets go. */
+const holds = new WeakMap<Element, number>();
+
 /**
- * Makes inert every element under `root` that does not hold `keep`, and returns the undo. Elements that were
- * inert already are left as they were.
+ * Makes inert every element under `root` that does not hold `keep`, including one that joins later, until the
+ * returned undo. Elements that were inert by some other hand are left as they were, and so are overlays
+ * (`data-weasel-overlay`), which sit above the modal: a popover it opens, or a modal stacked on it.
  */
 export function inertOutside(root: Element, keep: Element): () => void {
   const made: Element[] = [];
+  const hold = (el: Element) => {
+    const n = holds.get(el);
+    if (n === undefined && el.hasAttribute('inert')) return;
+    holds.set(el, (n ?? 0) + 1);
+    if (n === undefined) el.setAttribute('inert', '');
+    made.push(el);
+  };
+  const parents: Element[] = [];
   for (let node: Element | null = keep; node && node !== root; node = node.parentElement) {
     const parent: Element | null = node.parentElement;
     if (!parent) break;
+    parents.push(parent);
     for (const sibling of Array.from<Element>(parent.children)) {
-      if (sibling === node || sibling.hasAttribute('inert')) continue;
-      sibling.setAttribute('inert', '');
-      made.push(sibling);
+      if (sibling !== node) hold(sibling);
     }
   }
+  const observer = new MutationObserver((records) => {
+    for (const r of records) {
+      for (const added of Array.from(r.addedNodes)) {
+        if (added instanceof Element && !added.contains(keep) && !added.hasAttribute('data-weasel-overlay')) hold(added);
+      }
+    }
+  });
+  for (const parent of parents) observer.observe(parent, { childList: true });
   return () => {
-    for (const el of made) el.removeAttribute('inert');
+    observer.disconnect();
+    for (const el of made) {
+      const n = holds.get(el) ?? 1;
+      if (n > 1) {
+        holds.set(el, n - 1);
+      } else {
+        holds.delete(el);
+        el.removeAttribute('inert');
+      }
+    }
   };
 }
 
@@ -87,8 +122,19 @@ export function ContainedModal(props: ContainedModalProps) {
   }, [state.isOpen, root]);
 
   if (!state.isOpen) return null;
+  const { isEntering = false, isExiting = false, overlayStyle } = props;
+  const style = typeof overlayStyle === 'function' ? overlayStyle({ isEntering, isExiting, state, defaultStyle: {} }) : overlayStyle;
   return createPortal(
-    <div ref={overlay} className={overlayClassName} data-weasel-overlay="" data-contained="" {...underlayProps}>
+    <div
+      {...mergeProps(props.overlayProps, underlayProps)}
+      ref={overlay}
+      className={overlayClassName}
+      style={style}
+      data-weasel-overlay=""
+      data-contained=""
+      data-entering={isEntering || undefined}
+      data-exiting={isExiting || undefined}
+    >
       <FocusScope contain restoreFocus autoFocus>
         <div ref={modal} className={modalClassName} {...props.modalProps} {...overlayProps}>
           <OverlayTriggerStateContext.Provider value={state}>{props.children}</OverlayTriggerStateContext.Provider>

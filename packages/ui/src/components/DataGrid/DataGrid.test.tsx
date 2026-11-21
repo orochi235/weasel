@@ -46,6 +46,12 @@ describe('DataGrid numeric columns', () => {
     expect(css).toMatch(/\.numeric \{\s*composes: numeric from '@weasel-js\/theme\/numeric\.module\.css';/);
     expect(css).toMatch(/\.table \.numeric \{\s*text-align: end;/);
   });
+
+  it('ranks the empty cell and the disclosure column with the table cells they override', () => {
+    const css = readFileSync(resolve(__dirname, 'DataGrid.module.css'), 'utf8');
+    expect(css).toMatch(/\.table \.empty \{[^}]*text-align: center;/);
+    expect(css).toMatch(/\.table \.detailCol,\s*\.table \.detailCell \{[^}]*padding-inline: 0;[^}]*text-align: center;/);
+  });
 });
 
 describe('DataGrid sorting', () => {

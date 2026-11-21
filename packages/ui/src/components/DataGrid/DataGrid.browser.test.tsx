@@ -57,3 +57,23 @@ test('Alt+Arrow on a focused handle moves the row and keeps focus on it', async 
   expect(order()).toEqual(['Drag to reorder Alpha', 'Drag to reorder Beta', 'Drag to reorder Gamma']);
   expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Drag to reorder Alpha' }));
 });
+
+test('the empty state is centered, and the disclosure column centers its control with no inline padding', () => {
+  const { unmount } = render(<DataGrid<Row> rows={[]} columns={[{ id: 'name', header: 'Name' }]} rowLabel={(r) => r.name} />);
+  const empty = screen.getByText('—');
+  expect(getComputedStyle(empty).textAlign).toBe('center');
+  unmount();
+  render(
+    <DataGrid<Row>
+      rows={ROWS}
+      columns={[{ id: 'name', header: 'Name' }]}
+      rowLabel={(r) => r.name}
+      renderDetail={(r) => r.name}
+    />,
+  );
+  const head = screen.getByText('Details').closest('th')!;
+  for (const cell of [head, ...document.querySelectorAll('tbody tr:first-child td:first-child')]) {
+    expect(getComputedStyle(cell).textAlign).toBe('center');
+    expect(getComputedStyle(cell).paddingLeft).toBe('0px');
+  }
+});

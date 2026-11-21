@@ -165,3 +165,16 @@ test('columns="auto" sets rows two to a line once the list is wide enough, and o
   const [x, y] = [...list(280).querySelectorAll('[data-v]')];
   expect(box(y!).top).toBeGreaterThan(box(x!).bottom - 0.5);
 });
+
+test('a block figures list sets each label above its value', () => {
+  const { container } = render(
+    <div style={{ width: 320 }}>
+      <DetailList layout="block" values="figures">
+        <DetailRow label="Score"><span data-v>0.145</span></DetailRow>
+      </DetailList>
+    </div>,
+  );
+  const label = must(container.querySelector('dt'));
+  const value = must(container.querySelector('[data-v]'));
+  expect(box(value).top).toBeGreaterThanOrEqual(box(label).bottom - 0.5);
+});

@@ -168,7 +168,7 @@ describe('DetailRow values', () => {
 describe('DetailList styles', () => {
   it('sets figures right-aligned in a minimum-width column, in equal-width digits, spaces kept', () => {
     expect(css).toMatch(
-      /\.list\[data-values='figures'\]\s*\{\s*grid-template-columns:\s*var\(--wzl-params-label-width,\s*auto\)\s+minmax\(min-content,\s*1fr\)/,
+      /\.list\[data-values='figures'\]:not\(\[data-layout='block'\]\)\s*\{\s*grid-template-columns:\s*var\(--wzl-params-label-width,\s*auto\)\s+minmax\(min-content,\s*1fr\)/,
     );
     const body = rule('.figures');
     expect(body).toMatch(/composes:\s*numeric from '@weasel-js\/theme\/numeric\.module\.css'/);
@@ -176,6 +176,10 @@ describe('DetailList styles', () => {
     expect(body).toMatch(/text-align:\s*end/);
     expect(body).toMatch(/min-width:\s*var\(--wzl-detail-figure-min-width,\s*8ch\)/);
     expect(body).toMatch(/white-space:\s*pre/);
+  });
+
+  it('leaves a block list one column when it holds figures', () => {
+    expect(css).not.toMatch(/(^|\n)\.list\[data-values='figures'\]\s*\{/);
   });
 
   it('paints a grade dot from the row\'s --wzl-grade', () => {
