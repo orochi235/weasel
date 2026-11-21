@@ -37,9 +37,17 @@ const childElements = (el: Element): Element[] => Array.from(el.childNodes).filt
 
 const idAttr = (outer: Element, cell: Element): string | null => outer.getAttribute('id') ?? cell.getAttribute('id');
 
+/** A wrapper's label with each `%name%` its `placeholders="1"` asks for filled from the wrapper's own attribute of that
+ *  name, as a draw app shows it; a name it has no attribute for, `label`, and `tooltip` stay as written. */
+function filled(outer: Element, label: string): string {
+  if (outer.getAttribute('placeholders') !== '1') return label;
+  return label.replace(/%([^%]+)%/g, (whole, name: string) =>
+    (name === 'label' || name === 'tooltip' ? whole : outer.getAttribute(name) ?? whole));
+}
+
 function rawCell(outer: Element, cell: Element, id: string): RawCell {
   const wrapped = outer !== cell;
-  const value = wrapped ? outer.getAttribute('label') ?? '' : cell.getAttribute('value') ?? '';
+  const value = wrapped ? filled(outer, outer.getAttribute('label') ?? '') : cell.getAttribute('value') ?? '';
   return {
     id,
     parent: cell.getAttribute('parent'),

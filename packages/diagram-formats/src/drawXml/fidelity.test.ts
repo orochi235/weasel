@@ -151,3 +151,17 @@ describe('draw-style XML fonts', () => {
     expect(warnings).toContain('Text rows styled apart within one shape were written in its first row\'s style.');
   });
 });
+
+describe('draw-style XML placeholders', () => {
+  it('fills a UserObject label\'s placeholders from its own attributes', async () => {
+    const { data } = await readCells('<UserObject id="u" label="%owner%\'s %task% %missing% 100%" owner="Ana" task="job" placeholders="1">'
+      + '<mxCell style="rounded=0;" vertex="1" parent="1"><mxGeometry width="80" height="40" as="geometry"/></mxCell></UserObject>');
+    expect(node(data, 'u').lines).toEqual(['Ana\'s job %missing% 100%']);
+  });
+
+  it('leaves placeholders alone without the flag', async () => {
+    const { data } = await readCells('<UserObject id="u" label="%owner%" owner="Ana">'
+      + '<mxCell style="rounded=0;" vertex="1" parent="1"><mxGeometry width="80" height="40" as="geometry"/></mxCell></UserObject>');
+    expect(node(data, 'u').lines).toEqual(['%owner%']);
+  });
+});
