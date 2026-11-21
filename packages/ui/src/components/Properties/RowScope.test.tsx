@@ -92,4 +92,18 @@ describe('RowScope', () => {
     expect(onReset).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Fill').closest('[data-disabled]')).not.toBeNull();
   });
+  it('resets once for a held key, not on every repeat', () => {
+    const onReset = vi.fn();
+    render(
+      <RowScope onReset={onReset}>
+        <PropertyRow label="Gap">
+          <input />
+        </PropertyRow>
+      </RowScope>,
+    );
+    const reset = screen.getByRole('button', { name: 'Reset Gap' });
+    fireEvent.keyDown(reset, { key: 'Enter' });
+    fireEvent.keyDown(reset, { key: 'Enter', repeat: true });
+    expect(onReset).toHaveBeenCalledTimes(1);
+  });
 });

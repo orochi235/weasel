@@ -2,7 +2,7 @@ import { type ReactNode, useId, useLayoutEffect, useMemo, useState } from 'react
 import { FieldScope } from '../Field/fieldSemantics';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 import { PropertyHelp } from './PropertyHelp';
-import { ResetControl } from './ResetControl';
+import { buttonKeys, ResetControl } from './ResetControl';
 import { ROW_READOUT_ATTR } from './rowHelp';
 import { InsideRow, useRowState } from './rowScope';
 import s from './Properties.module.css';
@@ -271,11 +271,7 @@ function AutoToggle({
       aria-disabled={held || undefined}
       aria-label={`Pin ${name}`}
       onClick={toggle}
-      onKeyDown={(e) => {
-        // A native button gives Enter and Space for free; a span gives neither,
-        // and Space would scroll the panel.
-        if (e.key === 'Enter' || e.key === ' ') toggle(e);
-      }}
+      onKeyDown={buttonKeys(toggle)}
       onMouseDown={(e) => e.stopPropagation()}
     >
       {children}

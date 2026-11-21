@@ -275,4 +275,21 @@ describe('auto readouts', () => {
     render(<RowScope auto><PropertyField kind="string" label="Name" value="foo" onChange={() => {}} readout={READOUT} /></RowScope>);
     expect(screen.getByText(READOUT)).toBeInTheDocument();
   });
+  it('pins once for a held key, not on every repeat', () => {
+    const onAutoChange = vi.fn();
+    render(
+      <RowScope auto onAutoChange={onAutoChange}>
+        <PropertyRow label="Gap">
+          <input />
+        </PropertyRow>
+      </RowScope>,
+    );
+    const pin = screen.getByRole('button', { name: 'Pin Gap' });
+    fireEvent.keyDown(pin, { key: ' ' });
+    const repeat = createEvent.keyDown(pin, { key: ' ', repeat: true });
+    fireEvent(pin, repeat);
+    fireEvent.keyDown(pin, { key: 'Enter', repeat: true });
+    expect(onAutoChange).toHaveBeenCalledTimes(1);
+    expect(repeat.defaultPrevented).toBe(true);
+  });
 });

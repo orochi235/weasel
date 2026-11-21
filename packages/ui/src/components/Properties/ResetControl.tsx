@@ -16,6 +16,15 @@ export interface ResetControlProps {
   className?: string;
 }
 
+/** A span button's Enter and Space: one press per keystroke, as a native button gives, with a held key's repeats only kept from scrolling. */
+export function buttonKeys(press: (e: KeyboardEvent) => void) {
+  return (e: KeyboardEvent): void => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (e.repeat) e.preventDefault();
+    else press(e);
+  };
+}
+
 /**
  * The one control that resets a setting, a row's or a group's: a small reset glyph, named `Reset <name>`.
  * A span with a button's role and keys, not a `<button>`: inside a row's `<label>` a button would take the
@@ -40,9 +49,7 @@ export function ResetControl({ name, onReset, disabled: nothing = false, classNa
           aria-disabled={disabled || undefined}
           className={[s.reset, className].filter(Boolean).join(' ')}
           onClick={press}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') press(e);
-          }}
+          onKeyDown={buttonKeys(press)}
           onMouseDown={(e) => e.stopPropagation()}
         >
           <Icon name={icon('reset')} size={12} />
