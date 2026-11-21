@@ -3235,3 +3235,12 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (my call, audit round 54): a group or layer `composite` string that is no `CompositeOp` (`'multiply'`,
   or an inherited name such as `'constructor'`) throws a `RangeError` naming it and listing the operators, rather
   than being drawn as `source-over`. It still ends the frame, as the bare `TypeError` it replaces did.
+
+## Audit round fifty-nine (2026-11-20): ui components, part one
+
+- 2026-11-20 (my call, audit round 59): a `ColorField` pick that closes, or loses focus, on the color it began from
+  after `onInput` ticks calls `onCancel`, which until now meant only an abandoned opacity drag. A pick with no ticks
+  calls nothing.
+- 2026-11-20 (my call, audit round 59): a mixed `Switch` (`indeterminate`, and so a mixed item in a `CheckboxGroup`
+  with `control="switch"`) writes `aria-checked="mixed"` on its input, though ARIA gives `switch` no mixed state and
+  a reader may announce it as off; its thumb sits mid-track.

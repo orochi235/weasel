@@ -28,6 +28,9 @@ export interface ColorChipProps
   /** Once when the picker closes or the chip loses focus, if the pick moved or `value` is a placeholder. Return the color actually applied
    *  when it differs from the pick, and the recent colors record that instead. */
   onChange: (rgb: string) => AppliedColor;
+  /** Once when the picker closes or the chip loses focus on the color the pick began from, after `onInput` reported
+   *  its ticks: the pick ended with nothing to commit. */
+  onCancel?: () => void;
   /** Drop every pick: the chip is disabled or read-only. */
   refuses?: boolean;
 }
@@ -38,7 +41,7 @@ export interface ColorChipProps
  * does every paint editor built on it.
  */
 export function ColorChip(
-  { value, placeholder = false, onInput, onChange, refuses = false, onClick, ...input }: ColorChipProps,
+  { value, placeholder = false, onInput, onChange, onCancel, refuses = false, onClick, ...input }: ColorChipProps,
 ): ReactElement {
   // Tracks the picker through a pick, and the color it began from; the prop only catches up on commit.
   const [draft, setDraftState] = useState<Draft | null>(null);
@@ -54,6 +57,7 @@ export function ColorChip(
     if (draft === null) return;
     setDraft(null);
     if (placeholder || draft.rgb.toLowerCase() !== draft.from.toLowerCase()) recordApplied(onChange(draft.rgb), draft.rgb);
+    else onCancel?.();
   };
   const picker = usePickerClose(commit);
 
