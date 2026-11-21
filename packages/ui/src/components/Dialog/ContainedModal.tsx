@@ -44,23 +44,40 @@ function useOpenState({ open: controlled, defaultOpen, onOpenChange }: Contained
   return controlled === undefined && defaultOpen === undefined && trigger ? trigger : local;
 }
 
+/** How many holds made each element inert. One modal stacked on another inerts what the first already did, and
+ *  the element comes free only when the last of them lets go. */
+const holds = new WeakMap<Element, number>();
+
 /**
  * Makes inert every element under `root` that does not hold `keep`, and returns the undo. Elements that were
- * inert already are left as they were.
+ * inert by some other hand are left as they were.
  */
 export function inertOutside(root: Element, keep: Element): () => void {
   const made: Element[] = [];
+  const hold = (el: Element) => {
+    const n = holds.get(el);
+    if (n === undefined && el.hasAttribute('inert')) return;
+    holds.set(el, (n ?? 0) + 1);
+    if (n === undefined) el.setAttribute('inert', '');
+    made.push(el);
+  };
   for (let node: Element | null = keep; node && node !== root; node = node.parentElement) {
     const parent: Element | null = node.parentElement;
     if (!parent) break;
     for (const sibling of Array.from<Element>(parent.children)) {
-      if (sibling === node || sibling.hasAttribute('inert')) continue;
-      sibling.setAttribute('inert', '');
-      made.push(sibling);
+      if (sibling !== node) hold(sibling);
     }
   }
   return () => {
-    for (const el of made) el.removeAttribute('inert');
+    for (const el of made) {
+      const n = holds.get(el) ?? 1;
+      if (n > 1) {
+        holds.set(el, n - 1);
+      } else {
+        holds.delete(el);
+        el.removeAttribute('inert');
+      }
+    }
   };
 }
 
