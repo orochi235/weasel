@@ -14,20 +14,32 @@ export type RunItemsOf = (root: HTMLElement) => Iterable<Element>;
 
 const childrenOf: RunItemsOf = (root) => root.children;
 
+/** A resize observer and the items it watches. */
+interface Watch {
+  observer: ResizeObserver;
+  watched: Set<Element>;
+}
+
 /**
  * The lengths of `el`'s items read into `known`, which keeps those of items no longer drawn while `keys` still names
- * them and lets go of the rest, each item then watched.
+ * them and lets go of the rest, each item then watched and any that left unwatched.
  */
-function read(el: HTMLElement | null, keyOf: RunKeyOf, itemsOf: RunItemsOf, keys: readonly string[], known: Map<string, number>, observer: ResizeObserver | null): ReadonlyMap<string, number> {
+function read(el: HTMLElement | null, keyOf: RunKeyOf, itemsOf: RunItemsOf, keys: readonly string[], known: Map<string, number>, watch: Watch | null): ReadonlyMap<string, number> {
   const keep = new Set(keys);
+  const seen = new Set<Element>();
   for (const child of el === null ? [] : itemsOf(el)) {
     const key = keyOf(child);
     if (key === null || !(child instanceof HTMLElement)) continue;
     known.set(key, child.offsetWidth);
     keep.add(key);
-    observer?.observe(child);
+    seen.add(child);
   }
   for (const key of known.keys()) if (!keep.has(key)) known.delete(key);
+  if (watch !== null) {
+    for (const child of watch.watched) if (!seen.has(child)) watch.observer.unobserve(child);
+    for (const child of seen) if (!watch.watched.has(child)) watch.observer.observe(child);
+    watch.watched = seen;
+  }
   return new Map(known);
 }
 
@@ -40,7 +52,7 @@ function read(el: HTMLElement | null, keyOf: RunKeyOf, itemsOf: RunItemsOf, keys
  */
 export function useItemLengths(root: RefObject<HTMLElement | null>, keys: readonly string[], keyOf: RunKeyOf, itemsOf: RunItemsOf = childrenOf): ReadonlyMap<string, number> {
   const known = useRef(new Map<string, number>());
-  const observer = useRef<ResizeObserver | null>(null);
+  const watch = useRef<Watch | null>(null);
   const [lengths, setLengths] = useState<ReadonlyMap<string, number>>(() => new Map());
   const signature = compositeKey(keys);
   const named = useLatest(keys);
@@ -48,7 +60,7 @@ export function useItemLengths(root: RefObject<HTMLElement | null>, keys: readon
   // A part like a bar's More button comes and goes with what fits, which no key says, so every commit looks again.
   useLayoutEffect(() => {
     const measure = (): void => {
-      const next = read(root.current, keyOf, itemsOf, named.current, known.current, observer.current);
+      const next = read(root.current, keyOf, itemsOf, named.current, known.current, watch.current);
       setLengths((prev) => (same(prev, next) ? prev : next));
     };
     measure();
@@ -57,14 +69,14 @@ export function useItemLengths(root: RefObject<HTMLElement | null>, keys: readon
   useLayoutEffect(() => {
     if (typeof ResizeObserver === 'undefined') return;
     const measure = (): void => {
-      const next = read(root.current, keyOf, itemsOf, named.current, known.current, observer.current);
+      const next = read(root.current, keyOf, itemsOf, named.current, known.current, watch.current);
       setLengths((prev) => (same(prev, next) ? prev : next));
     };
-    observer.current = new ResizeObserver(measure);
+    watch.current = { observer: new ResizeObserver(measure), watched: new Set() };
     measure();
     return () => {
-      observer.current?.disconnect();
-      observer.current = null;
+      watch.current?.observer.disconnect();
+      watch.current = null;
     };
   }, [root, signature, keyOf, itemsOf, named]);
   return lengths;
