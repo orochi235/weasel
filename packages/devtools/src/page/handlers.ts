@@ -79,8 +79,11 @@ export function rootState(root: DevtoolsRoot): DevtoolsRootState {
   };
 }
 
-/** Trace records are plain data by contract, and nest deeper than a node's data is shown. */
-const RECORD = { depth: 12 };
+/**
+ * Trace records are plain data by contract, and nest deeper than a node's data is shown. The views read them as
+ * their own types, so nothing in one is cut short.
+ */
+const RECORD = { depth: 12, items: Infinity };
 
 export function traceSlice(root: DevtoolsRoot, cursor: number, coordCursor: number | undefined): DevtoolsTraceSlice {
   const { trace, coords } = root.source;
