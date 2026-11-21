@@ -44,6 +44,13 @@ function layerXBounds(range: ModelRange, rules: AnchorRules): [number, number] {
   return [Math.min(a, b), Math.max(a, b)];
 }
 
+/** The sliver of x a strict layer keeps between neighboring anchors, a thousandth of its x range; none otherwise. */
+function anchorGap(range: ModelRange, rules: AnchorRules): number {
+  if (!rules.strict) return 0;
+  const [xLo, xHi] = layerXBounds(range, rules);
+  return (xHi - xLo) / 1000;
+}
+
 /** Where an anchor added at `model` goes: inside the plot, and inside the layer's x range. */
 function insertPoint(model: ModelPoint, range: ModelRange, rules: AnchorRules): ModelPoint {
   const p = clampToModelRange(model, range);
@@ -73,7 +80,7 @@ export function withAnchorMoved(
   } else if (rules.endpoints === 'pinned-x' && isEndpoint) {
     nx = index === 0 ? xLo : xHi;
   } else if (rules.ordered) {
-    const epsilon = rules.strict ? (xHi - xLo) / 1000 : 0;
+    const epsilon = anchorGap(range, rules);
     const left = index > 0 ? points[index - 1].x + epsilon : xLo;
     const right = index < points.length - 1 ? points[index + 1].x - epsilon : xHi;
     nx = Math.max(left, Math.min(right, nx));
@@ -107,7 +114,7 @@ function crowdedNeighbor(
   rules: AnchorRules,
 ): number | null {
   if (!rules.ordered) return null;
-  const epsilon = rules.strict ? Math.abs(range.xMax - range.xMin) / 1000 : 0;
+  const epsilon = anchorGap(range, rules);
   const left = insertIndex > 0 ? points[insertIndex - 1] : null;
   const right = insertIndex < points.length ? points[insertIndex] : null;
   if (left && Math.abs(x - left.x) < epsilon * 2) return insertIndex - 1;

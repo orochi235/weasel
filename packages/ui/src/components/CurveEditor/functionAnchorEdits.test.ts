@@ -59,3 +59,14 @@ describe('a locked anchor', () => {
     expect(withAnchorMoved(locked, 1, { x: 0.7, y: 0.9 }, range, rules)).toBe(locked);
   });
 });
+
+describe('the gap a strict layer with an xClamp keeps', () => {
+  const range = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+  const rules = anchorRulesFor({ constrain: 'function', xClamp: [0, 0.1] });
+
+  it('lets a press on the curve insert as close to a neighbor as a drag may bring an anchor', () => {
+    const { index, next } = pressOnCurve(state([0, 0.05, 0.1]), 1, { x: 0.0515, y: 0.5 }, range, rules)!;
+    expect(index).toBe(2);
+    expect(next.points).toHaveLength(4);
+  });
+});
