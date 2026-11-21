@@ -59,4 +59,10 @@ describe('liftPadding', () => {
   it('passes on a padding that is not a shorthand of one to four parts', () => {
     expect(liftPadding({ padding: '' })).toEqual({ padding: '' });
   });
+
+  it('passes on a shorthand that is one var(), which may hold several parts', () => {
+    expect(paddingStyle('var(--chip-pad)')).toEqual({ padding: 'var(--chip-pad)' });
+    expect(liftPadding({ padding: 'var(--chip-pad, 2px 8px)' })).toEqual({ padding: 'var(--chip-pad, 2px 8px)' });
+    expect(liftPadding({ paddingBlock: 'var(--b)', paddingInline: 'var(--i)' })).toEqual({ paddingBlock: 'var(--b)', paddingInline: 'var(--i)' });
+  });
 });

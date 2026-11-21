@@ -31,6 +31,8 @@ export interface BadgeOwnProps extends AppearanceProps {
   /** "Edge bloat": offset every base perimeter sample outward by N CSS px along the normal
    *  before any compose effects run. Negative values shrink the silhouette. */
   bloat?: number;
+  /** Padding in place of the badge's own, a number of px or a CSS padding: each side it sets replaces both the size's
+   *  padding and the shape's insets there, so a shaped badge's label can reach its outline. */
   padding?: number | string;
   /**
    * For CSS-rendered shapes (pill, plain) that fragment across line wraps, controls how the
@@ -190,7 +192,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     'data-break': breakStyle,
     'data-focused': focused ? 'true' : undefined,
     onFocus: (e: FocusEvent<HTMLElement>) => { if (!split && e.target === e.currentTarget) setFocused(true); onFocus?.(e); },
-    onBlur: (e: FocusEvent<HTMLElement>) => { if (!split) setFocused(false); onBlur?.(e); },
+    onBlur: (e: FocusEvent<HTMLElement>) => { if (!split && e.target === e.currentTarget) setFocused(false); onBlur?.(e); },
     'aria-label': split ? undefined : ariaLabel,
   };
 

@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 
 /**
- * Built-in badge silhouettes. `pill` and `plain` are drawn in CSS;
- * the rest are SVG outlines, several of which route through the compose
- * pipeline (a base shape plus perimeter effects).
+ * Built-in badge silhouettes. `pill` and `plain` are drawn in CSS; the rest
+ * are SVG outlines, several of which, `square` among them, route through the
+ * compose pipeline (a base shape plus perimeter effects).
  */
 export type BadgeShape =
   | 'pill' | 'plain' | 'square' | 'notched' | 'perforated'

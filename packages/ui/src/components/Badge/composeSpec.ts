@@ -30,7 +30,7 @@ export function resolveCompose(
   const given = own.base ? own.baseParams : spec?.baseParams;
   return {
     base,
-    baseParams: base ? withDefaults<Record<string, unknown>>({ ...base.defaults }, given as Record<string, unknown> | undefined) : null,
+    baseParams: base ? withDefaults<Record<string, unknown>>(base.defaults ?? {}, given as Record<string, unknown> | undefined) : null,
     effects: own.base ? own.effects : (spec?.effects as BadgeEffectSpec[] | undefined) ?? own.effects,
   };
 }

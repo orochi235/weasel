@@ -62,3 +62,13 @@ describe('outlineRegion', () => {
     expect(r.y + r.height).toBeGreaterThanOrEqual(140 + 10 - 0.5);
   });
 });
+
+describe('composeOutline', () => {
+  it('keeps an effect default for a param given as undefined', () => {
+    const box = { width: 80, height: 24 };
+    const square = polygonSampler([[0, 0], [100, 0], [100, 100], [0, 100]], 80, 24);
+    const outline = composeOutline(square, [{ type: 'spikes', params: { count: undefined } }], 0, box, 0);
+    const p = outline.perimeterAt(5);
+    expect(Number.isFinite(p.x) && Number.isFinite(p.y)).toBe(true);
+  });
+});

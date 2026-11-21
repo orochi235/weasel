@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { resolveCompose } from './composeSpec';
-import { effectParams } from './composeOutline';
+import { effectParams } from './effects';
 import { SHAPES } from './shapes';
 import { BASES } from './bases';
-import { EFFECTS } from './effects';
 
 describe('composed params', () => {
   it('keeps a base default where baseParams sets a key to undefined', () => {
@@ -12,7 +11,14 @@ describe('composed params', () => {
   });
 
   it('keeps an effect default where its params set a key to undefined', () => {
-    expect(effectParams(EFFECTS.spikes, { type: 'spikes', params: { count: undefined } })).toMatchObject({ count: 44 });
+    expect(effectParams({ type: 'spikes', params: { count: undefined } })).toMatchObject({ count: 44 });
   });
 
+});
+
+describe('resolveCompose', () => {
+  it('keeps a base default for a param given as undefined', () => {
+    const spec = resolveCompose(SHAPES.pill, {}, { base: 'chamfered-rect', baseParams: { chamfer: undefined } });
+    expect(spec.baseParams).toEqual(BASES['chamfered-rect'].defaults);
+  });
 });

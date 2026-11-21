@@ -3391,3 +3391,11 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): `painted` and `lineContrast` in `packages/ui/src/testing/paintedContrast.ts` throw
   when the ground is translucent, unless passed the `backdrop` it is drawn over. Measuring against the ground as if
   it were opaque was the alternative.
+## Audit round sixty-one (2026-11-20): Badge
+
+- 2026-11-20 (the fixer's call): A badge rendered `as="span"` never runs `onClick`, including on a removable one whose
+  tooltip splits the label off, where the label had run it. A span badge has no role or key handling to make a click
+  reachable; running `onClick` on every span badge was the alternative.
+- 2026-11-20 (the fixer's call): A badge's `padding` prop, and padding in its `style`, replaces the shape's insets on
+  each side it sets, as it always has and as the story describes it, so a fitted base refits around the other sides
+  alone. Adding the insets to the given padding, as the size's own padding does, was the alternative.

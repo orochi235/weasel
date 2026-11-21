@@ -83,6 +83,34 @@ describe('Badge content slots', () => {
       expect(inset({ effects: [{ type: 'bevel' }] })).toBe(inset({}));
       expect(inset({ bloat: 3 })).toBe(inset({}));
     });
+
+    it('refits when only the badge padding changes', () => {
+      const watched: { targets: Element[]; fire: () => void }[] = [];
+      vi.stubGlobal('ResizeObserver', class {
+        targets: Element[] = [];
+        constructor(cb: (entries: ResizeObserverEntry[]) => void) {
+          watched.push({ targets: this.targets, fire: () => cb([]) });
+        }
+        observe(el: Element) { this.targets.push(el); }
+        disconnect() {}
+      });
+      const sheet = document.head.appendChild(document.createElement('style'));
+      sheet.textContent = '.wide { padding: 0 200px; }';
+      const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+        .mockReturnValue({ width: 200, height: 14, left: 0, top: 0, right: 200, bottom: 14, x: 0, y: 0, toJSON: () => ({}) });
+      try {
+        const { container, rerender } = render(<Badge base="quatrefoil">a long enough label</Badge>);
+        const el = container.firstElementChild as HTMLElement;
+        const before = el.style.getPropertyValue('--badge-inset-left');
+        rerender(<Badge base="quatrefoil" className="wide">a long enough label</Badge>);
+        act(() => { for (const w of watched) if (w.targets.includes(el)) w.fire(); });
+        expect(el.style.getPropertyValue('--badge-inset-left')).not.toBe(before);
+      } finally {
+        rect.mockRestore();
+        sheet.remove();
+        vi.unstubAllGlobals();
+      }
+    });
   });
 });
 
@@ -248,6 +276,30 @@ describe('Badge removable with an action of its own', () => {
     fireEvent.blur(target);
     fireEvent.focus(screen.getByRole('button', { name: 'Remove' }));
     expect(root.hasAttribute('data-focused')).toBe(false);
+  });
+
+  it('keeps the class and name labelProps give the label', () => {
+    render(<Badge onClick={() => {}} onRemove={() => {}} labelProps={{ className: 'mine', 'aria-label': 'Open' }}>x</Badge>);
+    const target = screen.getByRole('button', { name: 'Open' });
+    expect(target.classList.contains('mine')).toBe(true);
+    expect(target.classList.length).toBeGreaterThan(1);
+  });
+
+  it('leaves a plain removable badge unmarked while its remove control holds focus', () => {
+    const { container } = render(<Badge shape="notched" onRemove={() => {}}>tag</Badge>);
+    const root = container.firstElementChild as HTMLElement;
+    fireEvent.focus(screen.getByRole('button', { name: 'Remove' }));
+    expect(root.hasAttribute('data-focused')).toBe(false);
+  });
+
+  it('runs no onClick on a span badge, whether or not a tooltip splits its label off', () => {
+    const onClick = vi.fn();
+    const { container, rerender } = render(<Badge as="span" onClick={onClick} onRemove={() => {}}>tag</Badge>);
+    fireEvent.click(screen.getByText('tag'));
+    rerender(<Badge as="span" tooltip="t" onClick={onClick} onRemove={() => {}}>tag</Badge>);
+    fireEvent.click(screen.getByText('tag'));
+    fireEvent.click(container.firstElementChild as HTMLElement);
+    expect(onClick).not.toHaveBeenCalled();
   });
 
   it('describes the click target with the tooltip', () => {

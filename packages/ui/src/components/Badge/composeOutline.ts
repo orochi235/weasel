@@ -1,8 +1,7 @@
 import { trimNumber, wrapPositive } from '@weasel-js/geom';
 import type { BaseSampler } from './bases/types';
-import { EFFECTS, type BadgeEffectSpec } from './effects';
+import { EFFECTS, effectParams, type BadgeEffectSpec } from './effects';
 import { registryEntry } from './registryEntry';
-import { withDefaults } from './shapes/params';
 
 const SAMPLES = 600;
 
@@ -20,10 +19,6 @@ function closedPath(at: (sCss: number) => { x: number; y: number }, totalCss: nu
   return `${d} Z`;
 }
 
-/** The params `eff` draws with: its own over `mod`'s defaults, where a key set to `undefined` keeps its default. */
-export function effectParams(mod: { defaults?: object }, eff: BadgeEffectSpec): Record<string, unknown> {
-  return withDefaults<Record<string, unknown>>({ ...mod.defaults }, eff.params as Record<string, unknown> | undefined);
-}
 
 /**
  * Where `bloat` and every perimeter-warping effect move the point of `base` at arc length
@@ -34,7 +29,7 @@ function displacer(base: BaseSampler, effects: readonly BadgeEffectSpec[] | unde
   const offsetMods = (effects ?? []).flatMap((eff) => {
     const mod = registryEntry(EFFECTS, eff.type);
     if (!mod?.offsetAt) return [];
-    return [{ offsetAt: mod.offsetAt, params: effectParams(mod, eff) }];
+    return [{ offsetAt: mod.offsetAt, params: effectParams(eff) }];
   });
   if (offsetMods.length === 0 && bloatCss === 0) return null;
   const totalCss = base.totalCss;
