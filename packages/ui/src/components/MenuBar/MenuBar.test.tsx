@@ -356,6 +356,14 @@ describe('MenuBar conditions', () => {
     expect(file.getAttribute('aria-expanded')).not.toBe('true');
   });
 
+  it('keeps focus in the bar when the pointer moves from an open menu onto a title with no rows', () => {
+    openFile();
+    const view = screen.getByRole('menuitem', { name: 'View' });
+    fireEvent.pointerEnter(view);
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(view);
+  });
+
   it('closes an open menu whose title becomes disabled', () => {
     openThenFlip('Edit');
     expect(screen.queryByRole('menu')).toBeNull();

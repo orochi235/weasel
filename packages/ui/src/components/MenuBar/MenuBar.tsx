@@ -71,7 +71,8 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
     const entries = resolve(barMenuRoot(title.group, key), { values: read, onChange, over: over ?? schema });
     if (entries.length === 0) {
       setOpened(null);
-      if (source === 'keyboard') el.focus();
+      // A menu unmounting with focus in it would drop focus out of the bar.
+      if (source === 'keyboard' || opened !== null) el.focus();
       return;
     }
     focus.opening();
