@@ -81,6 +81,7 @@ function InputLine({ input, predicted }: { input: DispatchRecordInput; predicted
 }
 
 function Routes({ candidate }: { candidate: RecordCandidate }) {
+  if (candidate.routes.length === 0) return <span className={s.muted}>no route form</span>;
   return (
     <span className={s.routes}>
       {candidate.routes.map((r) => <GestureRoute key={r} route={r} size="sm" />)}
