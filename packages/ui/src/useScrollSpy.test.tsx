@@ -172,3 +172,45 @@ describe('useScrollSpy scrollTo', () => {
     view.unmount();
   });
 });
+
+describe('a container scrolled to its end', () => {
+  it('marks the last section shown when it cannot reach the top', () => {
+    expect(pickActiveSection([{ id: 'a', top: -300 }, { id: 'b', top: 120 }], 8, 400)).toBe('b');
+    expect(pickActiveSection([{ id: 'a', top: -300 }, { id: 'b', top: 120 }], 8)).toBe('a');
+    expect(pickActiveSection([{ id: 'a', top: -300 }, { id: 'b', top: 420 }], 8, 400)).toBe('a');
+  });
+
+  it('keeps the clicked last section once a scroll to it settles at the end', () => {
+    vi.useFakeTimers();
+    try {
+      let root: HTMLDivElement | null = null;
+      function Spy() {
+        const ref = useRef<HTMLDivElement | null>(null);
+        const spy = useScrollSpy({ rootRef: ref, ids: ['one', 'two'] });
+        return (
+          <div ref={(el) => { ref.current = el; root = el; }}>
+            <section data-spy-section="one" />
+            <section data-spy-section="two" />
+            <button onClick={() => spy.scrollTo('two')}>go</button>
+            <output>{spy.active ?? 'none'}</output>
+          </div>
+        );
+      }
+      render(<Spy />);
+      const el = root!;
+      const [one, two] = [...el.querySelectorAll('section')];
+      Object.defineProperties(el, {
+        clientHeight: { value: 400 },
+        scrollHeight: { value: 1000 },
+        scrollTop: { value: 600, writable: true },
+      });
+      one!.getBoundingClientRect = () => new DOMRect(0, -500, 100, 700);
+      two!.getBoundingClientRect = () => new DOMRect(0, 200, 100, 200);
+      act(() => screen.getByText('go').click());
+      act(() => { vi.advanceTimersByTime(1000); });
+      expect(screen.getByRole('status').textContent).toBe('two');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
