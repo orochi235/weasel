@@ -33,8 +33,8 @@ const Notched: ShapeModule<BadgeNotchedShapeParams> = {
   Component: ({ variant, focused, params }) => {
     const cfg = withDefaults(DEFAULTS, params);
     const e = Math.max(0, Math.min(cfg.erosion, 1));
-    const r = e * 49;
     const ecc = Math.max(0.2, Math.min(cfg.eccentricity, 5));
+    const r = Math.min(e, 1 / Math.max(ecc, 1 / ecc)) * 49;
     const d = notchedPath(r, ecc);
     return (
       <>
