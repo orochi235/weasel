@@ -45,8 +45,8 @@ export interface ViewportZoomOptions {
   min?: number;
   /** Upper clamp on the resulting view scale, forwarded to `zoomAt`. Default 8. */
   max?: number;
-  /** Hold wheel, trackpad-pinch, and key zoom to one axis; the other keeps its
-   *  scale and its translation. Default `'both'`. Cmd+0 still resets both. */
+  /** Hold wheel, trackpad-pinch, key zoom, and Fit Content to one axis; the other
+   *  keeps its scale and its translation. Default `'both'`. Cmd+0 still resets both. */
   axis?: ZoomAxis;
   /**
    * Glide the discrete steps (Cmd+=, Cmd+-, Cmd+0) instead of jumping.
@@ -200,7 +200,10 @@ export function createViewportZoomAction(
             const host = view.hostSize?.();
             if (!view.contentBounds || !host) break;
             const content = view.contentBounds();
-            const target = content && fitViewToBounds(content, host, current, { minScale: clamp.min, maxScale: clamp.max });
+            const fit = content && fitViewToBounds(content, host, current, {
+              minScale: clamp.min, maxScale: clamp.max, ...(axis === 'both' ? {} : { mode: 'stretch' as const }),
+            });
+            const target = fit && content && holdFitToAxis(fit, current, content, host, axis);
             // Nothing to fit lands where Cmd-0 does.
             if (!target) { reset(); break; }
             stepTo(target, resetMs);
@@ -219,6 +222,21 @@ export function createViewportZoomAction(
     },
     enabled: () => true,
   });
+}
+
+/** A fit kept to `axis`: the other axis keeps its scale and translation. An
+ *  axis the content has no extent on keeps its scale and centers the content. */
+function holdFitToAxis(
+  fit: View, current: View, content: { x: number; y: number; width: number; height: number },
+  host: { width: number; height: number }, axis: ZoomAxis,
+): View {
+  if (axis === 'both') return fit;
+  if (axis === 'x') {
+    if (content.width > 0) return { x: fit.x, y: current.y, scale: { x: fit.scale.x, y: current.scale.y } };
+    return { ...current, x: content.x - host.width / (2 * current.scale.x) };
+  }
+  if (content.height > 0) return { x: current.x, y: fit.y, scale: { x: current.scale.x, y: fit.scale.y } };
+  return { ...current, y: content.y - host.height / (2 * current.scale.y) };
 }
 
 /**
