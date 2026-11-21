@@ -24,7 +24,8 @@ export interface SpanStripsRow extends Omit<SpanStripProps, 'className' | 'windo
 
 /** The ruler under a stack: ticks at a round step of the clock, each labeled by `format`. */
 export interface SpanStripsRuler {
-  /** Tick steps to choose from, in ms, smallest first: the stack takes the first that leaves ticks far enough apart. */
+  /** Tick steps to choose from, in ms, smallest first: the stack takes the first that leaves ticks far enough apart, or
+   *  a whole multiple of the last when none does. Each must be positive. */
   steps: readonly number[];
   /** Ticks fall on `origin` plus whole steps. Default: 0, so every step counts from the epoch. */
   origin?: number;
@@ -32,14 +33,22 @@ export interface SpanStripsRuler {
   format: (ms: number) => ReactNode;
 }
 
-/** The ruler's ticks across `win` at the first of `steps` that keeps them `TICK_SPACING_PX` apart at `widthPx`. */
+/** The ruler's ticks across `win` at the first of `steps` that keeps them `TICK_SPACING_PX` apart at `widthPx`, or at
+ *  the least whole multiple of the last that does. Throws on a step that is not a positive finite number. */
 export function rulerTicks(win: Span, widthPx: number, { steps, origin = 0, format }: SpanStripsRuler): RulerTick[] {
+  const bad = steps.find((st) => !(st > 0 && Number.isFinite(st)));
+  if (bad !== undefined) throw new RangeError(`SpanStrips ruler: a tick step must be a positive number of ms, not ${bad}`);
   const length = win.to - win.from;
-  if (length <= 0 || widthPx <= 0 || steps.length === 0) return [];
-  const step = steps.find((st) => (st / length) * widthPx >= TICK_SPACING_PX) ?? steps.at(-1)!;
-  const first = origin + Math.ceil((win.from - origin) / step) * step;
+  if (!(length > 0) || !(widthPx > 0) || steps.length === 0) return [];
+  const least = (TICK_SPACING_PX / widthPx) * length;
+  const largest = steps.at(-1)!;
+  const step = steps.find((st) => st >= least) ?? largest * Math.ceil(least / largest);
+  // A step's float error must not drop the tick on either end of the window.
+  const slack = step * 1e-9;
   const out: RulerTick[] = [];
-  for (let t = first; t <= win.to; t += step) out.push({ at: t, label: format(t) });
+  for (let i = Math.ceil((win.from - origin - slack) / step); origin + i * step <= win.to + slack; i++) {
+    out.push({ at: origin + i * step, label: format(origin + i * step) });
+  }
   return out;
 }
 
