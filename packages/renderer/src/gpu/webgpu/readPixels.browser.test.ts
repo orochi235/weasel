@@ -47,6 +47,6 @@ describe('WeaselRenderer.readPixels', () => {
 
   it('refuses a rect outside the canvas', async () => {
     const b = await openBackends({ width: W, height: H, dpr: 1 });
-    expect(() => b.gl.readPixels({ x: 39, y: 0, width: 2, height: 1 })).toThrow(RangeError);
+    await expect(b.gl.readPixels({ x: 39, y: 0, width: 2, height: 1 })).rejects.toThrow(RangeError);
   });
 });
