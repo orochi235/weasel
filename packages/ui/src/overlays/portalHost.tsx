@@ -67,6 +67,9 @@ export interface OverlayPortalProps {
  *  would override the container {@link useOverlayPortal} provides. */
 export type WithoutPortalTarget<T> = Omit<T, 'UNSTABLE_portalContainer'>;
 
+/** `ModalOverlay` props a modal in a contained root cannot honor, which it warns about rather than drops. */
+export const CONTAINED_MODAL_UNHELD = ['onEnter', 'onExit', 'UNSTABLE_deferUntilEntered', 'render'] as const;
+
 /** Where React Aria will portal an overlay with these props: their own target, else its portal provider's. */
 export function useReactAriaPortalTarget(props?: { UNSTABLE_portalContainer?: Element }): Element | null {
   const { getContainer } = useUNSAFE_PortalContext();
