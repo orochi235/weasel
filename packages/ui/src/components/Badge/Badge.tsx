@@ -9,7 +9,7 @@ import type { BadgeBase, BadgeBaseParams } from './bases';
 import type { BadgeEffectSpec } from './effects';
 import { BadgeDeco } from './BadgeDeco';
 import { useCrawlPhase } from './useCrawlPhase';
-import { resolveCompose } from './composeSpec';
+import { insetSource, resolveCompose } from './composeSpec';
 import { liftPadding, paddingStyle } from './paddingSides';
 import { useInsets } from './useInsets';
 import type { BadgeShape, BadgeVariant, BadgeSize } from './types';
@@ -169,7 +169,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
 
   const contentRef = useRef<HTMLSpanElement>(null);
   const insets = useInsets<unknown>(
-    composeBase ?? shapeModule,
+    insetSource(shapeModule, params, composeBase, base !== undefined),
     composeBase ? composeBaseParams : params,
     contentRef,
     composeBase ? { effects: resolvedEffects, bloat: bloat ?? 0 } : undefined,
