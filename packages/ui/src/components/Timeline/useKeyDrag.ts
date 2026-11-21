@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/routing';
-import { useKitSetting } from '@weasel-js/react';
+import { useKitSetting, useLatest } from '@weasel-js/react';
 import { sliderAt, spanMap } from '@weasel-js/ui-input';
 import { useSnapRadiusPx } from '../../snap';
 import type { TimeWindow } from './timeScale';
@@ -45,6 +45,14 @@ export function useKeyDrag(a: KeyDragArgs) {
   // The track reads ruler times, which `snapTimes` are; the row's keys are measured from its own start.
   const track = { min: offset, max: Infinity, ...spanMap(win) };
   const msAt = (clientX: number): number => sliderAt(place(clientX).f, track) - offset;
+  // Read as the pointer moves, so a window or snap times changed mid-drag place the key where its ghost is drawn.
+  const at = useLatest((ev: { clientX: number; altKey: boolean }): number => {
+    const { f, width } = place(ev.clientX);
+    // An empty window puts every time at one place, where every stop would be in reach.
+    const free = ev.altKey || !(win.to > win.from);
+    const pull = width === 0 ? 0 : snapRadiusPx / width;
+    return sliderAt(f, { ...track, stops: snapTimes, pull, free }) - offset;
+  });
 
   const onKeyPointerDown = (i: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (!isPrimaryPress(e)) return;
@@ -53,14 +61,6 @@ export function useKeyDrag(a: KeyDragArgs) {
     if (sessionRef.current?.active) return;
     onSelect(i);
     if (!drags) return;
-
-    const at = (ev: { clientX: number; altKey: boolean }): number => {
-      const { f, width } = place(ev.clientX);
-      // An empty window puts every time at one place, where every stop would be in reach.
-      const free = ev.altKey || !(win.to > win.from);
-      const pull = width === 0 ? 0 : snapRadiusPx / width;
-      return sliderAt(f, { ...track, stops: snapTimes, pull, free }) - offset;
-    };
 
     setDrag({ keyIndex: i, t: times[i] });
 
@@ -77,11 +77,12 @@ export function useKeyDrag(a: KeyDragArgs) {
     sessionRef.current = openPointerSession(e.currentTarget, e, {
       onMove: (ev) => {
         if (!traveled(ev)) return;
-        setDrag({ keyIndex: i, t: at(ev) });
-        onKeyInput(i, at(ev));
+        const t = at.current(ev);
+        setDrag({ keyIndex: i, t });
+        onKeyInput(i, t);
       },
       onEnd: (ev) => {
-        if (traveled(ev)) onKeyChange(i, at(ev));
+        if (traveled(ev)) onKeyChange(i, at.current(ev));
         end();
       },
       // The consumer previewed the move through `onKeyInput`; a drag that ends without a release puts it back.

@@ -158,6 +158,16 @@ describe('Lane', () => {
     expect(onKeyChange).toHaveBeenCalledWith(1, 700);
   });
 
+  it('places a dragged key through the window on screen when it changes mid-drag', () => {
+    const onKeyChange = vi.fn();
+    const { rerender } = render(<Lane {...base} row={laneOf(sampled)} onKeyChange={onKeyChange} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    rerender(<Lane {...base} window={{ from: 0, to: 2000 }} row={laneOf(sampled)} onKeyChange={onKeyChange} />);
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 350, clientY: 10 });
+    expect(onKeyChange.mock.calls).toEqual([[1, 1400]]);
+  });
+
   it('snaps a dragged key to a nearby snap time', () => {
     const onKeyChange = vi.fn();
     render(<Lane {...base} row={laneOf(sampled)} snapTimes={[600]} onKeyChange={onKeyChange} />);
