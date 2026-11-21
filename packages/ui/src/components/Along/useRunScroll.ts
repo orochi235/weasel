@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { openPointerSession, type PointerSession, swallowNextClick } from '@weasel-js/routing';
 import { isPrimaryPress, modHeld, DRAG_THRESHOLD_PX } from '@weasel-js/gestures';
 import { clamp, lerp, type RunSpot, type TrackRun } from '@weasel-js/geom';
@@ -79,6 +79,12 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
     show(next);
     loop.request();
   }, { target: root, onResume: () => { last.current = null; } });
+
+  // A range that shrinks under the offset takes the offset with it, so a later move starts from where the run is drawn.
+  useLayoutEffect(() => {
+    moved.current = Math.min(moved.current, max);
+    if (drawn.current > max) show(max);
+  }, [max]);
 
   const now = (): number => clamp(moved.current, 0, latest.current.max);
   const scrollTo = (next: number, how: 'glide' | 'jump' = 'glide'): boolean => {

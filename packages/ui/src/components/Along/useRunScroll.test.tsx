@@ -22,15 +22,20 @@ function mount(total: number, opts: { modReorders?: boolean; dragPx?: number } =
   document.body.append(root);
   const ref = { current: root };
   const drawn = { offset: 0 };
+  const size = { total };
   const hook = renderHook(() => {
-    const scroll = useRunScroll({ root: ref, keyOf, run, total, lengths, modReorders: opts.modReorders, spots: (): RunSpot[] => runPlaces(lengths, GAP, run.length, 'start', drawn.offset) });
+    const scroll = useRunScroll({ root: ref, keyOf, run, total: size.total, lengths, modReorders: opts.modReorders, spots: (): RunSpot[] => runPlaces(lengths, GAP, run.length, 'start', drawn.offset) });
     drawn.offset = scroll.offset;
     return scroll;
   }, opts.dragPx === undefined ? undefined : {
     wrapper: ({ children }: { children: ReactNode }) => createElement(KitSettingsProvider, { value: { gestures: { dragPx: opts.dragPx } } }, children),
   });
   const items = Array.from(root.children) as HTMLElement[];
-  return { root, items, hook };
+  const resize = (next: number) => {
+    size.total = next;
+    hook.rerender();
+  };
+  return { root, items, hook, resize };
 }
 
 const wheel = (root: HTMLElement, deltaY: number, deltaMode = 0): WheelEvent => {
@@ -208,6 +213,25 @@ describe('useRunScroll', () => {
       vi.advanceTimersByTime(20);
     });
     // Drawn part way to 60, the first item still shows its tail; going to 60, it is wholly off the start.
+    act(() => {
+      hook.result.current.onFocusCapture({ target: items[0]! } as unknown as ReactFocusEvent);
+    });
+    settle();
+    expect(hook.result.current.offset).toBe(0);
+  });
+
+  test('a run whose range shrinks under its offset scrolls from the end it is drawn at, and keeps it when the range grows back', () => {
+    const { items, hook, resize } = mount(160);
+    act(() => {
+      hook.result.current.onFocusCapture({ target: items[4]! } as unknown as ReactFocusEvent);
+    });
+    settle();
+    expect(hook.result.current.offset).toBe(60);
+    resize(130);
+    expect(hook.result.current.offset).toBe(30);
+    resize(160);
+    settle();
+    expect(hook.result.current.offset).toBe(30);
     act(() => {
       hook.result.current.onFocusCapture({ target: items[0]! } as unknown as ReactFocusEvent);
     });
