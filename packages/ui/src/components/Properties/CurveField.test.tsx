@@ -169,6 +169,17 @@ describe('CurveField', () => {
     expect(onChange).toHaveBeenLastCalledWith([0, 0.35, 1, 1]);
   });
 
+  it('holds a flip and a reset to the step grid and the range, as a drag is', () => {
+    const onChange = vi.fn();
+    render(
+      <CurveField values={[0, 0.3, 1, 1.2]} min={0} max={1} step={0.3} width={200} defaults={[0, 0.25, 1, 0.5]} onChange={onChange} />,
+    );
+    screen.getByRole('button', { name: /flip vertically/i }).click();
+    screen.getByRole('button', { name: /flip horizontally/i }).click();
+    screen.getByRole('button', { name: /reset/i }).click();
+    expect(onChange.mock.calls).toEqual([[[0, 0.6, 1, 0]], [[0, 1, 1, 0.3]], [[0, 0.3, 1, 0.6]]]);
+  });
+
   it('disables its buttons while disabled', () => {
     render(
       <CurveField values={[0, 0, 1, 1]} min={0} max={1} step={0.01} width={200} defaults={[0, 0, 1, 1]} onChange={() => {}} disabled />,

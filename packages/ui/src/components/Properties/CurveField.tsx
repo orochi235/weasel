@@ -33,6 +33,12 @@ export interface CurveFieldProps extends HoldProps {
   marks?: readonly CurveMark[];
 }
 
+function toPoints(flat: readonly number[]): ControlPoint[] {
+  const out: ControlPoint[] = [];
+  for (let i = 0; i + 1 < flat.length; i += 2) out.push({ x: flat[i], y: flat[i + 1] });
+  return out;
+}
+
 /**
  * A function-domain (y = f(x), x ∈ [0,1]) curve editor with per-stop
  * numeric readouts and flip buttons. Wraps weasel-ui's
@@ -59,11 +65,7 @@ export function CurveField({
   const host = useRef<HTMLDivElement>(null);
   const measured = useElementSize(host);
   const plotWidth = width ?? measured.width;
-  const points: ControlPoint[] = useMemo(() => {
-    const out: ControlPoint[] = [];
-    for (let i = 0; i + 1 < values.length; i += 2) out.push({ x: values[i], y: values[i + 1] });
-    return out;
-  }, [values]);
+  const points = useMemo(() => toPoints(values), [values]);
 
   const snapped = useCallback(
     (next: readonly ControlPoint[]): number[] => {
@@ -81,26 +83,19 @@ export function CurveField({
   const handleInput = useCallback((next: ControlPoint[]) => onInput?.(snapped(next)), [onInput, snapped]);
   const handleSettled = useCallback((next: ControlPoint[]) => onChange(snapped(next)), [onChange, snapped]);
 
+  // A flip and a reset are edits like a drag, and land on the same grid.
   const handleFlip = useCallback(() => {
-    const flipped: Array<{ x: number; y: number }> = [];
-    for (let i = 0; i + 1 < values.length; i += 2) {
-      flipped.push({ x: 1 - values[i], y: values[i + 1] });
-    }
-    flipped.sort((a, b) => a.x - b.x);
-    const out: number[] = [];
-    for (const p of flipped) out.push(p.x, p.y);
-    onChange(out);
-  }, [values, onChange]);
+    const flipped = points.map((p) => ({ x: 1 - p.x, y: p.y })).sort((a, b) => a.x - b.x);
+    onChange(snapped(flipped));
+  }, [points, snapped, onChange]);
 
   const handleFlipVertical = useCallback(() => {
-    const mid = (min + max) / 2;
-    const flipped: number[] = new Array(values.length);
-    for (let i = 0; i + 1 < values.length; i += 2) {
-      flipped[i] = values[i];
-      flipped[i + 1] = 2 * mid - values[i + 1];
-    }
-    onChange(flipped);
-  }, [values, min, max, onChange]);
+    onChange(snapped(points.map((p) => ({ x: p.x, y: min + max - p.y }))));
+  }, [points, min, max, snapped, onChange]);
+
+  const handleReset = useCallback(() => {
+    if (defaults) onChange(snapped(toPoints(defaults)));
+  }, [defaults, snapped, onChange]);
 
   return (
     <div ref={host} className={s.field}>
@@ -136,7 +131,7 @@ export function CurveField({
           <button
             type="button"
             className={s.action}
-            onClick={() => onChange([...defaults])}
+            onClick={handleReset}
             disabled={disabled}
           >
             Reset
