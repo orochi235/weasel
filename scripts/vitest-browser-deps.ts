@@ -8,7 +8,7 @@
  */
 import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
-import { dirname, join, matchesGlob, relative, resolve } from 'node:path';
+import { dirname, join, matchesGlob, relative, resolve, sep } from 'node:path';
 import { SOURCE, isBare, packageOf, scanImports } from './lib/imports.mjs';
 import { workspaceEntries } from './lib/packageEntries.mjs';
 import { type ViteAlias, weaselAliases } from './vite-aliases.ts';
@@ -88,8 +88,21 @@ export interface BrowserDepsOptions {
 export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: BrowserDepsOptions): string[] {
   const aliases = weaselAliases(repoRoot);
   const workspace = new Set(workspaceEntries(repoRoot).map(({ name }) => name));
+  const workspaceDirs = workspaceEntries(repoRoot).map(({ dir, name }) => ({ dir: dir + sep, name }));
   const ownedElsewhere = (pkg: string) =>
     workspace.has(pkg) || BUILTINS.has(pkg) || pkg === 'vitest' || pkg.startsWith('@vitest/');
+
+  // Vite matches a bare id to the copy the root resolves, so a workspace package's own nested copy
+  // (font's opentype.js 2 beside a hoisted 1.x) is listed as `owner > dep`, which vite resolves from the owner.
+  const nestedUnder = (file: string, specifier: string): string | undefined => {
+    const owner = workspaceDirs.find(({ dir }) => file.startsWith(dir));
+    if (!owner) return undefined;
+    const manifest = join('node_modules', packageOf(specifier), 'package.json');
+    for (let dir = dirname(file); dir.length >= owner.dir.length - 1; dir = dirname(dir)) {
+      if (existsSync(join(dir, manifest))) return `${owner.name} > ${specifier}`;
+    }
+    return undefined;
+  };
 
   const found = new Set<string>();
   const seen = new Set<string>();
@@ -129,7 +142,9 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) {
+        found.add(nestedUnder(file, specifier) ?? specifier);
+      }
     }
   }
   return [...found].sort();
