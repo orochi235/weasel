@@ -3304,3 +3304,8 @@ Calls the lanes made without a ruling:
   base's outline where the base fits its content; a `base` prop pads by that base's. `square` now declares the
   rounded-rect base's 0/4/0/4 it had been drawing with, and `beavis`, `cloud`, `plaque`, `postage` and `scalloped`
   pad by the wider insets they declared. Deleting the shapes' insets and padding by the base was the alternative.
+## Audit round sixty-two (2026-11-21): sweeps
+
+- 2026-11-21 (the fixer's call): a sweep's `at` throws a `RangeError` for a `NaN` fraction, from `rangeSweep`,
+  `valuesSweep` and `framesSweep` alike, where it had answered `NaN` or `undefined`. Reading `NaN` as 0, the start,
+  was the alternative.
