@@ -62,11 +62,12 @@ export function useUnitTyping({ value, read, bounds, disabled, settleWhenIdle, c
   const spin = (key: string): boolean => {
     const next = disabled ? null : spinKey(key, from(), bounds);
     if (next === null) return false;
+    const began = typing.current?.from ?? value;
     idle.stop();
     setDraft(null);
     typing.current = null;
     onInput?.(next);
-    if (next !== value) onChange(next);
+    if (next !== began) onChange(next);
     return true;
   };
   /** Whether `key` has nowhere left to step to, as it has nowhere while the field refuses input: that ends a hold. */
