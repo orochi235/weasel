@@ -20,5 +20,7 @@ describe('keyLegendsFromFormatted', () => {
     expect(labels('Ctrl+Shift+Z')).toEqual(['Ctrl', 'Shift', 'Z']);
     expect(labels('+')).toEqual(['+']);
     expect(labels('⌘+')).toEqual(['⌘', '+']);
+    expect(labels('Ctrl++')).toEqual(['Ctrl', '+']);
+    expect(labels('Ctrl+Shift++')).toEqual(['Ctrl', 'Shift', '+']);
   });
 });
