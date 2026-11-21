@@ -74,7 +74,10 @@ export class ReachBoxes {
         const rec = level[i]!;
         rec.queued = false;
         if (rec.id !== null && !this.recs.has(rec.id)) continue;
-        if (!this.recompute(rec) || rec.parent === null) continue;
+        const moved = this.recompute(rec);
+        const joined = rec.joined;
+        rec.joined = false;
+        if ((!moved && !joined) || rec.parent === null) continue;
         rec.parent.wide?.put(rec);
         this.enqueue(rec.parent);
       }
