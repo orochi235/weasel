@@ -104,7 +104,7 @@ function jogParts(props: JogProps, access: ControlAccess): JogParts {
         size="sm"
         variant="ghost"
         aria-label={playing ? 'Pause' : 'Play'}
-        disabled={held || count < 2}
+        disabled={held || (!playing && count < 2)}
         disabledReason={held ? reason : undefined}
         onClick={() => onPlayingChange(!playing)}
       >

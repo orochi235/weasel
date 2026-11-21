@@ -22,6 +22,18 @@ describe('Jog', () => {
     expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument();
   });
 
+  it('keeps Pause pressable while playing over fewer than two steps', () => {
+    const onPlayingChange = vi.fn();
+    renderWithIcons(<Jog {...props} index={0} count={1} playing onPlayingChange={onPlayingChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
+    expect(onPlayingChange).toHaveBeenCalledWith(false);
+  });
+
+  it('will not start playing over fewer than two steps', () => {
+    renderWithIcons(<Jog {...props} index={0} count={1} />);
+    expect(screen.getByRole('button', { name: 'Play' })).toBeDisabled();
+  });
+
   it('steps back and forward by one', () => {
     const onStep = vi.fn();
     renderWithIcons(<Jog {...props} onStep={onStep} />);
