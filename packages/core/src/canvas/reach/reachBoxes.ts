@@ -155,7 +155,10 @@ export class ReachBoxes {
         break;
       }
       const out = new Float64Array(2 * dim);
-      map(image, 0, out, 0);
+      if (map(image, 0, out, 0) === BOX_ALL) {
+        reach = BOX_ALL;
+        break;
+      }
       reach = unionInto(slab.data, at, reach, out, 0, BOX_SOME, dim);
     }
     rec.reach = reach;
