@@ -3235,3 +3235,9 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (my call, audit round 54): a group or layer `composite` string that is no `CompositeOp` (`'multiply'`,
   or an inherited name such as `'constructor'`) throws a `RangeError` naming it and listing the operators, rather
   than being drawn as `source-over`. It still ends the frame, as the bare `TypeError` it replaces did.
+
+## Audit round fifty-nine (2026-11-20): TokenPanel
+
+- 2026-11-20: Dragging a step of a `factors` scale that no factor can reach (the base is zero or negative, or the
+  rule has no factor for that step) overrides the step through `onChange`, rather than writing an infinite or
+  negative factor or doing nothing.

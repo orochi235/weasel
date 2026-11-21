@@ -54,7 +54,7 @@ export function refitScale(scale: TokenScale, kind: TokenScaleRule['kind'], amou
   const spans = Math.max(1, amounts.length - 1);
   switch (kind) {
     case 'factors':
-      return { ...scale, rule: { kind, factors: amounts.map((a) => (scale.base ? round2(a / scale.base) : 1)) } };
+      return { ...scale, rule: { kind, factors: amounts.map((a) => (scale.base > 0 ? round2(a / scale.base) : 1)) } };
     case 'ratio':
       return { ...scale, base: first, rule: { kind, ratio: first > 0 && last > 0 ? round2((last / first) ** (1 / spans)) : 1 } };
     case 'step':

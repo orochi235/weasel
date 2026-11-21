@@ -177,6 +177,28 @@ describe('TokenPanel', () => {
       expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byFactors, base: 10, rule: { kind: 'ratio', ratio: 1.34 } });
     });
 
+    it('overrides a dragged step that no factor can reach', () => {
+      for (const generator of [{ ...byFactors, base: 0 }, { ...byFactors, base: -12 }, { ...byFactors, rule: { kind: 'factors' as const, factors: [0.8, 1] } }]) {
+        const onScaleChange = vi.fn();
+        const onChange = vi.fn();
+        const { unmount } = renderWithIcons(
+          <TokenPanel tokens={fonts} onChange={onChange} scales={{ f: generator }} onScaleChange={onScaleChange} />,
+        );
+        fireEvent.keyDown(within(screen.getByRole('group', { name: 'f' })).getByRole('slider', { name: '--f-lg' }), { key: 'ArrowRight' });
+        expect(onScaleChange).not.toHaveBeenCalled();
+        expect(onChange).toHaveBeenCalledWith('--f-lg', '19px');
+        unmount();
+      }
+    });
+
+    it('refits factors of 1 from a base that is not positive', () => {
+      const onScaleChange = vi.fn();
+      const byStep: TokenScale = { ...byFactors, base: -1, rule: { kind: 'step', step: 4 } };
+      renderWithIcons(<TokenPanel tokens={fonts} onChange={() => {}} scales={{ f: byStep }} onScaleChange={onScaleChange} />);
+      fireEvent.click(within(screen.getByRole('group', { name: 'f' })).getByRole('radio', { name: 'factors' }));
+      expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byStep, rule: { kind: 'factors', factors: [1, 1, 1] } });
+    });
+
     it('draws no controls for a group it is not told how to generate', () => {
       renderWithIcons(<TokenPanel tokens={fonts} onChange={() => {}} />);
       expect(screen.queryByRole('textbox', { name: 'f base' })).toBeNull();
