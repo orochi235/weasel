@@ -1,0 +1,59 @@
+{
+ "id": "ui.components.TokenPanel",
+ "commit": "6f634fabe1ba54c5d94054a307392fe6d65141ab",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/TokenPanel/Scale.module.css",
+  "packages/ui/src/components/TokenPanel/Scale.tsx",
+  "packages/ui/src/components/TokenPanel/TokenControl.tsx",
+  "packages/ui/src/components/TokenPanel/TokenPanel.module.css",
+  "packages/ui/src/components/TokenPanel/TokenPanel.stories.module.css",
+  "packages/ui/src/components/TokenPanel/TokenPanel.stories.tsx",
+  "packages/ui/src/components/TokenPanel/TokenPanel.tsx",
+  "packages/ui/src/components/TokenPanel/color.ts",
+  "packages/ui/src/components/TokenPanel/index.ts",
+  "packages/ui/src/components/TokenPanel/parts.tsx",
+  "packages/ui/src/components/TokenPanel/tokenTypes.ts"
+ ],
+ "a": 6,
+ "b": 8,
+ "m": 3,
+ "distinct": 11,
+ "chapman": 14.8,
+ "unfound": 3.8,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "patches": 11,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7,
+   "B": 10,
+   "match": 3.9,
+   "fix": 15.1
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 1192417,
+  "costUsd": 3.71
+ },
+ "fixCommits": [
+  "896dbc01d6d06dc37e25aa8ffdd9660406c8f4f6",
+  "4cd20281200adddc9e4beae4cdfa96f313026452",
+  "0311cf20806b504429b82af1b4b679b9eab925dd",
+  "d145abcf1f9d5c29d0945475d257778871f52d7d",
+  "973af32d5dfb32f32d3fc52d852280efc627a6d7",
+  "fcf63e6ef69a15a2ae654ee0557b5e9b7f697aef",
+  "1e0f516e8856ca17d89f794ed20d932b0158b6ed",
+  "d2589b8bc146f805058c109ec5a2ecbaaf20b1be",
+  "064f0a717a4a870295ca83402d846b993c72e1b8",
+  "f89247b9519cdcba0db8eac359437baa7204ed3b",
+  "3b9be50d0923e7cf03b770fa27abf585fe717e45"
+ ]
+}

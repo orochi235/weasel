@@ -1,0 +1,73 @@
+{
+ "id": "ui.components.Tree",
+ "commit": "6f634fabe1ba54c5d94054a307392fe6d65141ab",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Tree/RowTip.tsx",
+  "packages/ui/src/components/Tree/Tree.fixtures.ts",
+  "packages/ui/src/components/Tree/Tree.module.css",
+  "packages/ui/src/components/Tree/Tree.stories.module.css",
+  "packages/ui/src/components/Tree/Tree.stories.tsx",
+  "packages/ui/src/components/Tree/Tree.tsx",
+  "packages/ui/src/components/Tree/TreeGhost.tsx",
+  "packages/ui/src/components/Tree/TreeRow.tsx",
+  "packages/ui/src/components/Tree/TreeRowLead.tsx",
+  "packages/ui/src/components/Tree/index.ts",
+  "packages/ui/src/components/Tree/tree.fixture.ts",
+  "packages/ui/src/components/Tree/treeDropAt.ts",
+  "packages/ui/src/components/Tree/treeFilter.ts",
+  "packages/ui/src/components/Tree/treeGridKeys.ts",
+  "packages/ui/src/components/Tree/treeGuide.module.css",
+  "packages/ui/src/components/Tree/treeKeyboardMove.ts",
+  "packages/ui/src/components/Tree/treeMoves.ts",
+  "packages/ui/src/components/Tree/treeRowKeys.ts",
+  "packages/ui/src/components/Tree/treeRowPointer.ts",
+  "packages/ui/src/components/Tree/treeTypes.ts",
+  "packages/ui/src/components/Tree/treeUtils.ts",
+  "packages/ui/src/components/Tree/useOutsideDrop.ts",
+  "packages/ui/src/components/Tree/useRowTip.ts",
+  "packages/ui/src/components/Tree/useTreeDrag.ts",
+  "packages/ui/src/components/Tree/useTreeNav.ts",
+  "packages/ui/src/components/Tree/useTreeSelection.ts"
+ ],
+ "a": 10,
+ "b": 6,
+ "m": 6,
+ "distinct": 10,
+ "chapman": 10,
+ "unfound": 0,
+ "read": {
+  "A": 26,
+  "B": 26
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.1,
+   "B": 3,
+   "match": 0.8,
+   "fix": 16.7
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "weightedTokens": 1803423,
+  "costUsd": 5.37
+ },
+ "fixCommits": [
+  "20b2a58bb3e5b9e6c530b5deef9aeab9ba160708",
+  "41ee0c2a1f78fbf4ca9fd86dc20d8933228d39be",
+  "7010acd19b03afced51010928770cbb7711f7b13",
+  "7c6a6531fb2b4780eb5601995ca5c6e54b3fd712",
+  "6952fad14d11b1eb826c4236718b24c15794e398",
+  "115a979013046fb0643b5ed0c97fe4d467afa7de",
+  "a4de4bbf11f22281c076fd422443552d3ae2f426",
+  "eac163770084b956f3363dce4d80b2970f0381eb",
+  "65a8393f12282b701c55e26a5327fdba1f4f3436",
+  "81e33ebc5b29932da16a78a419a483b7ce007ff0"
+ ]
+}

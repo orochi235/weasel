@@ -1,0 +1,35 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ],
+  [
+   2,
+   3
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   4,
+   5
+  ]
+ ],
+ "a": [
+  "PrefsForm ignores a `renderers` key naming a leaf's path for every row, object field and bar cell it draws",
+  "A group whose `description` is `''` draws an empty description paragraph in a rail pane, a section and a tab, but none in the columns layout",
+  "The NotSplit story says a scoped pref with nothing stored marks its selectors and opens to a control per option; it draws a plain row",
+  "The PrefsRail stories' schema has no nested page, so Foldable folds nothing and Default shows no nested entries",
+  "PrefKindBadge's AllKinds story claims every built-in kind but leaves out list, map, union, action and actions"
+ ],
+ "b": [
+  "The columns layout keys each column by its index, so a column appearing or disappearing remounts every column after it",
+  "A text list adds new entries as '' and reads non-string entries as '', where every other list uses the item's default",
+  "A group whose description is '' draws an empty description paragraph in the rail layout, but not in the columns layout",
+  "The NotSplit story says its row shows marks and opens to a control per option, but with nothing stored it shows neither",
+  "The PrefsRail stories have no nested pages, so Foldable has nothing to fold",
+  "The AllKinds badge story claims every built-in kind but leaves six out"
+ ]
+}

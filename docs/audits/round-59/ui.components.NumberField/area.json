@@ -1,0 +1,52 @@
+{
+ "id": "ui.components.NumberField",
+ "commit": "6f634fabe1ba54c5d94054a307392fe6d65141ab",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/NumberField/NumberField.module.css",
+  "packages/ui/src/components/NumberField/NumberField.stories.module.css",
+  "packages/ui/src/components/NumberField/NumberField.stories.tsx",
+  "packages/ui/src/components/NumberField/NumberField.tsx",
+  "packages/ui/src/components/NumberField/Steppers.tsx",
+  "packages/ui/src/components/NumberField/UnitField.stories.tsx",
+  "packages/ui/src/components/NumberField/UnitField.tsx",
+  "packages/ui/src/components/NumberField/index.ts",
+  "packages/ui/src/components/NumberField/useStepRepeat.ts",
+  "packages/ui/src/components/NumberField/useUnitTyping.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 2,
+ "distinct": 5,
+ "chapman": 5.7,
+ "unfound": 0.7,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9.8,
+   "B": 1.7,
+   "match": 0.1,
+   "fix": 37.2
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 546111,
+  "costUsd": 2.99
+ },
+ "fixCommits": [
+  "42f88c131d673506674aeeb35c28a07c4e24080d",
+  "bc0d76c5fdbc8ac331a5bcad2931bab7ba8187f5",
+  "340ab6610d59a7b0f0c206d14357345cce192b58",
+  "c46c07bdd0b88348c62bfaeb7050ab59bff75e33",
+  "7c007dc11ae0a8f5dcabf8c377ef08343895bea2"
+ ]
+}

@@ -1,0 +1,33 @@
+{
+ "pairs": [
+  [
+   0,
+   4
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   5,
+   5
+  ]
+ ],
+ "a": [
+  "A curved well's end cap is measured from the first segment found at mount, never re-queried, so a bar whose segments arrive later keeps `cap = 0`",
+  "In a tiled bar, the vertical-orientation corner rules override the tile corners, and a bar inherits `vertical` from its enclosing run",
+  "A `steps` bar silently drops every step past `stepsOf`'s 256-step cap, where `Sequence` says it has capped",
+  "A sweep canceled with Escape mid-drag still lets the release's click toggle the pressed segment",
+  "The curved well draws no forced-colors state, though the straight row adds one so that a segment still reads as on",
+  "The lab's each-mode bar has no-op `onChange`s, so it never responds to a press"
+ ],
+ "b": [
+  "A mixed segment draws as off in the `flat` variant",
+  "Escape mid-sweep, then a release on the pressed segment, toggles it after the revert",
+  "Turning `sweep` on or off remounts the whole bar",
+  "A sweep stops working when the row's root element is replaced",
+  "The curved well's end cap stays unlit when the bar mounts with no segments",
+  "The arc lab's each-mode bar ignores every press, and its top bar keeps a value that is not among its items",
+  "A wrapped `flat` bar pulls every row after the first 1px left of the grid"
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "The SwatchStrip story feeds the field a placeholder black after \"None\" without marking it `unset`, so black can't be picked and an opacity edit writes the placeholder back as a color",
+  "Whether the strip wraps its grids in a RecentColorsProvider depends on whether `store` equals the context's store, so a change in that equality remounts every swatch"
+ ],
+ "b": [
+  "Matching the current swatch compares any color not written as hex by its exact spelling"
+ ]
+}

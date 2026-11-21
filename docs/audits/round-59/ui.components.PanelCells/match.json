@@ -1,0 +1,30 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "Fields of an aliased object leaf are tagged by the target's path, but `panelMarkedPaths` answers with the alias's key, so marks and tab leads never reach them",
+  "`panelSource` keeps one PanelLeaf per path, so `stateAt` and reset gating answer for whichever leaf sharing a path came last",
+  "`sharedRows` pairs an object's fields across a section, but `fieldPairs` (which draws them) ends a run at a section",
+  "Top-level leaves are paired across the sections between them; nested leaves are not"
+ ],
+ "b": [
+  "An action field of an object leaf never draws pressed in a selection panel: `leafContext` hands no `activeAt`",
+  "`panelSource` indexes leaves by `path`, so two leaves sharing a path (an alias and its target, or two aliases) answer each other's state and reset",
+  "`panelMarkedPaths` pairs an object leaf's fields across section boundaries and inside bars, where `ObjectLeaf` draws them apart",
+  "An alias of an object leaf is marked under its own key but its fields are drawn under the target's path",
+  "Across several kinds, every node is read, bounded, written and reset under the first kind's leaf",
+  "A glyph-named flag toggle in an object leaf's paired row takes an even share of the row"
+ ]
+}

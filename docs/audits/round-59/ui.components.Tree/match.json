@@ -1,0 +1,48 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   5,
+   1
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   7,
+   3
+  ],
+  [
+   9,
+   5
+  ]
+ ],
+ "a": [
+  "A click on a native control in a treegrid row with `href` gets its default prevented and its focus taken",
+  "Disabled rows move by Alt+arrow though a drag refuses to start on them",
+  "The row tooltip keeps a detached element after its row unmounts under the pointer, and reopens on it",
+  "`onDragOutside(…, null, effect)` always reports `'move'`, even for a copy or link drag",
+  "The forwarded ref keeps a detached element after the tree switches between `ul` and treegrid `div`",
+  "A drag from a selected movable row under a selected immovable ancestor carries nothing and calls `onMove([], …)`",
+  "A Cmd/Ctrl/Alt-click on an `href` row activates it when the tree takes `onMove`",
+  "A drag hover opens a disabled branch that every other path refuses to open",
+  "A disabled or read-only tree still marks and answers external drops",
+  "Two copies of `applyMove` for test/story trees, answering the move differently"
+ ],
+ "b": [
+  "A drag with onMove follows an href row's link on a plain click, and activates the row on a Cmd/Ctrl/Alt click",
+  "Dragging a row whose selected ancestor is immovable carries nothing",
+  "Alt+arrow moves a disabled row, which a drag refuses to start on",
+  "A drag resting over a disabled closed branch opens it",
+  "Leaving an outside target reports effect 'move' even during a copy or link drag",
+  "Two copies of the move model in the Tree's fixtures"
+ ]
+}

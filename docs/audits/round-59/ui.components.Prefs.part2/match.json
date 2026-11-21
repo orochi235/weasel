@@ -1,0 +1,35 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   3
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   4,
+   4
+  ]
+ ],
+ "a": [
+  "A bar section's nested run is keyed `<object>.<key>`, not by its section path, so two nested sections sharing a key collide",
+  "UnionPicker's variant select offers an \"Unset\" entry that does nothing",
+  "`warnUnmatchedRenderers` puts section keys into object-leaf field paths, so a correct path-keyed renderer for a field in a section is warned about as a typo",
+  "A union's variant fields wrap `update` to restore the tag but not `drafts`",
+  "`MARKED` is documented as `selection.css`'s selector but disagrees with it on fragments",
+  "Cmd-toggling the lead row off scrolls the form mid-click"
+ ],
+ "b": [
+  "An object leaf's fields ignore the leaf's own `disabled` whenever `disabledAt` is given, so a disabled alias of an object edits freely",
+  "`warnUnmatchedRenderers` treats a section's key as a path segment and warns about a renderer keyed by the field's real path",
+  "A nested section inside an object's `bar` section is keyed `${objectPath}.${key}`, which ignores its depth and the `#` section-path form",
+  "The union variant select offers an \"Unset\" choice that does nothing",
+  "`MARKED` and `selection.css` disagree about selected fragments, though the comment says they are the same selector"
+ ]
+}

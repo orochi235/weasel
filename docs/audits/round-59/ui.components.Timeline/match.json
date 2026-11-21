@@ -1,0 +1,39 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   6
+  ],
+  [
+   3,
+   3
+  ],
+  [
+   6,
+   5
+  ]
+ ],
+ "a": [
+  "A collapsed nested timeline's bar is drawn at its parent's start, ignoring the track's own `at`",
+  "A read-only graph lane's arrow key moves the selection to another key while the key itself stays put",
+  "Rows nested four or more deep lose their indentation and draw at depth 0",
+  "A canceled dope-sheet drag \"puts back\" a key by moving it, which reorders keys that share a time",
+  "A key drag maps the pointer through the window it was pressed in, not the one on screen",
+  "Scrubbing the ruler seeks through the window it was pressed in",
+  "An uncontrolled zoomed window is not re-clamped when `duration` shrinks",
+  "A controlled `selection` set by the consumer leaves a selected segment selected beside it"
+ ],
+ "b": [
+  "A nested timeline's bar is drawn from the row's own start, ignoring the track's `at`",
+  "A nested timeline with no declared `duration` draws a zero-width bar",
+  "Releasing a key drag commits against the tracks from press time, undoing an edit made mid-drag",
+  "Canceling a dope-sheet drag can reorder keys that share a time instead of putting them back",
+  "The selected segment survives a graph-mode edit that renumbers keys, so the easing picker edits a different segment",
+  "An uncontrolled zoomed window is never re-clamped when `duration` shrinks",
+  "Lane labels indent only to depth 3"
+ ]
+}

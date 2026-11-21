@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   2,
+   2
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "The over-trigger nudge is measured in client px but applied in the overlay frame's px, so a Select under a scale or zoom lands its selected row off the trigger",
+  "A placeholder select opened near the bottom edge cannot flip above its trigger",
+  "In a right-to-left document the over-trigger crossOffset is computed against the wrong edge",
+  "The capture-phase pointerup swallow also hides the opening release from the trigger's own press handling",
+  "FitSizer reads a fragment or wrapper child of a children-form Select as one label, so a width='fit' trigger sizes to the sum of the labels"
+ ],
+ "b": [
+  "`value` / `defaultValue` / `onChange` / `selectionMode` reach React Aria and override the kit's key handling",
+  "Adding or removing `tooltip`/`shortcut` remounts the trigger button, which drops focus and orphans the held-pick key listener",
+  "In an RTL document, the \"over\" list is shifted sideways by the difference between list and trigger width",
+  "On touch, a quick tap on the selected row right after opening is swallowed",
+  "`data-align` is never cleared when the over-trigger list loses its selected row while open",
+  "Option values `1` and `'1'` get the same React key"
+ ]
+}

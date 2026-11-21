@@ -1,0 +1,36 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ],
+  [
+   2,
+   3
+  ],
+  [
+   4,
+   5
+  ],
+  [
+   5,
+   4
+  ]
+ ],
+ "a": [
+  "ColorChip drops a pick whose input and change arrive in one task",
+  "A Checkbox disabled for a reason draws its box as enabled",
+  "CheckboxGroup drawn as switches shows a mixed value as off",
+  "Turning CheckboxGroup's `sweep` on or off remounts every box",
+  "ActionSettingsPopover stays open and editable when a Disabled scope disables its action",
+  "useActionStates' post-commit recheck ignores a changed disabledReason"
+ ],
+ "b": [
+  "ActionButton drops a caller's `style` whenever `grade` is set",
+  "ColorChip sends no end signal for a pick that ends where it started, after sending `onInput` ticks",
+  "A Checkbox disabled for a reason is not dimmed and still looks clickable",
+  "CheckboxGroup with `control=\"switch\"` draws a mixed item as plain off",
+  "useActionStates' post-commit recheck misses a change to `disabledReason` alone",
+  "ActionSettingsPopover ignores a Disabled scope when deciding whether the form may stay open"
+ ]
+}

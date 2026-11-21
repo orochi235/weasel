@@ -1,0 +1,57 @@
+{
+ "id": "ui.components.Select",
+ "commit": "6f634fabe1ba54c5d94054a307392fe6d65141ab",
+ "date": "2026-11-20",
+ "files": [
+  "packages/ui/src/components/Select/Select.fontOptions.stories.module.css",
+  "packages/ui/src/components/Select/Select.fontOptions.stories.tsx",
+  "packages/ui/src/components/Select/Select.module.css",
+  "packages/ui/src/components/Select/Select.stories.module.css",
+  "packages/ui/src/components/Select/Select.stories.tsx",
+  "packages/ui/src/components/Select/Select.tsx",
+  "packages/ui/src/components/Select/alignOverTrigger.tsx",
+  "packages/ui/src/components/Select/index.ts",
+  "packages/ui/src/components/Select/listbox.module.css",
+  "packages/ui/src/components/Select/optionLabels.tsx"
+ ],
+ "a": 5,
+ "b": 6,
+ "m": 2,
+ "distinct": 9,
+ "chapman": 13,
+ "unfound": 4,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.4,
+   "B": 11,
+   "match": 0.1,
+   "fix": 15.7
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2011461,
+  "costUsd": 5.74
+ },
+ "fixCommits": [
+  "915d3499192209553fb47e8494cc1f9cf07fe9ef",
+  "25abf4292eb79270eb6353903164cd5e63cbe974",
+  "b316348baa0a331d6c0153c596cf2cc1b32b915e",
+  "fa9c93c171c90b2d68755a00ae6e2b0ef4fa28fb",
+  "03892046fe03844a2ef0578a26ae019628d67c98",
+  "291e5c320d1460edfdfb0d35e628fe0d08a381ef",
+  "015b5973001ca52d5619345f8b56df16e34ea80f",
+  "3653446fa3b64f07679ab93e78645a3be874fb10",
+  "116f5b5beae95b94c6964b5c9b060b60f61cd4bf",
+  "62b3eee90f7f872d6362767b3f0b59c38a6843cb"
+ ]
+}

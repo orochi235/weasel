@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ],
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "In a right-to-left row holding one other drawn bar, a drop lands on the wrong side of it",
+  "Left and right docks are drawn on the logical side in RTL, but measured, marked and stripped physically",
+  "A move the host has not yet taken is dropped at the next drag's start, after that drag measured it",
+  "resolveLayout throws on a stored layout with a malformed entry, though it is the reconciler for stored prefs"
+ ],
+ "b": [
+  "A pointer drag measures the held (unaccepted) layout, then drops the hold and computes the move against the host's layout",
+  "A dock whose rows hold only hidden bars can never take a dragged bar",
+  "Drag hit-testing for a left or right dock with two or more columns fails in right-to-left",
+  "In right-to-left, an empty left or right dock's drop strip is drawn on the opposite side from where the dock appears",
+  "Alt+ArrowLeft/Right move a bar the wrong way on screen in right-to-left",
+  "The drag and refocus queries are not scoped to this dock, so a ToolbarDock nested in the workspace gets mixed in",
+  "A bar that stops reporting its least length keeps the old one, and the per-bar caches never drop removed bars"
+ ]
+}

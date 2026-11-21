@@ -1,0 +1,44 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   3,
+   7
+  ],
+  [
+   4,
+   8
+  ]
+ ],
+ "a": [
+  "ColorControl's per-gesture \"moved\" memory survives a canceled gesture, so the next settle commits a half that did not move",
+  "A `pack=\"pairs\"` group nested in a default-packed group lays every row full width",
+  "A disabled inline paint control drops its `disabledReason`",
+  "DialogRow's button name drops the value it shows, where the menu control deliberately keeps it",
+  "CurveField's flips and reset bypass the snap and clamp its drags go through",
+  "CurveField gives its plot no accessible name and offers no way to give it one",
+  "Font family and weight controls ignore `unset`, unlike the enum select"
+ ],
+ "b": [
+  "A PropertyGroup's packing rules reach into a group nested inside it, so a nested `pack=\"pairs\"` group stacks every row",
+  "A standalone slider disabled for a reason has no keyboard stop: the readout drops the reason and goes natively disabled",
+  "A font-family or font-weight field drops its `id`, so a `<label htmlFor>` outside it names nothing",
+  "A ColorControl with a separate alpha keeps a canceled gesture's \"moved\" flags, so the next commit also writes the alpha",
+  "A disabled inline paint field remounts its editor, so the editor loses its local state whenever `disabled` flips",
+  "A disabled inline paint field outside a row drops its `disabledReason`",
+  "A menu enum whose chosen option has a non-text label loses the value from the button's accessible name",
+  "DialogRow's `aria-label` replaces its summary, so a screen reader never hears the value the row shows",
+  "CurveField's vertical flip commits values off the step grid, where every drag commit is snapped"
+ ]
+}

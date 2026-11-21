@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "An auto row's label toggle still pins or unpins inside a read-only scope",
+  "A textarea or slider readout disabled with a reason is not dimmed",
+  "A described slider row never opens its help from the keyboard, and puts the description on a track no one can Tab to",
+  "A color row's error message draws on top of its opacity track, or its swatch when stacked",
+  "A read-only color field whose alpha is held separately shows no alpha",
+  "A read-only field's value can't be selected in Safari"
+ ],
+ "b": [
+  "A debounced string field sends Escape's put-back `onInput` after `onCancel`",
+  "An invalid color row puts its error message on the grid row its opacity track already holds",
+  "The auto toggle in a row's label still fires under a `<ReadOnly>` scope, but the row's reset does not",
+  "A debounced string field's idle commit can reach `onChange` before its last `onInput`",
+  "A read-only font-weight field reads `700` where its editable select reads `700 Bold`",
+  "A read-only color field that is `unset` still shows a swatch and hex; the editable one shows none",
+  "A row whose `group` prop changes keeps measuring its old, detached root"
+ ]
+}
