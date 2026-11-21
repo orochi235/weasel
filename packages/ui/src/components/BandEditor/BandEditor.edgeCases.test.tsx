@@ -76,3 +76,20 @@ describe('a range end on the keyboard', () => {
     expect(onRangeChange.mock.calls.map(([lo, hi]) => [lo, hi])).toEqual([[0, 1], [99, 100]]);
   });
 });
+
+describe('an edge drag near a tick', () => {
+  it('snaps to a tick past the current range, at its own place on the track', () => {
+    const onRangeChange = vi.fn();
+    const { container } = render(
+      <BandEditor
+        value={BANDS} min={0} max={100} scale="linear" ticks={[{ at: 50 }, { at: 120 }]}
+        onChange={vi.fn()} onRangeChange={onRangeChange}
+      />,
+    );
+    const max = container.querySelector('[data-range-edge="max"]')!;
+    fireEvent.pointerDown(max, { clientX: 400, clientY: 20, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 478, clientY: 20 });
+    fireEvent.pointerUp(document, { clientX: 478, clientY: 20 });
+    expect(onRangeChange.mock.calls[0]!.slice(0, 2)).toEqual([0, 120]);
+  });
+});

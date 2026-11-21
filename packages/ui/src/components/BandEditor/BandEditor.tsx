@@ -139,7 +139,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   const shown = retagged(bands);
   const sc = prefNumberScale(scale ?? 'log', 'BandEditor') ?? linearScale;
   const { lo, hi, axisMin, axisMax, bandScale, unit: axis, toUnit, fromUnit } = drawnAxis(sc, draft?.axis?.[0] ?? min, draft?.axis?.[1] ?? max, draft?.range);
-  const { snapRadiusPx, unitAt, pointerUnit } = useTrackPointer(trackRef, snap, ticks, toUnit);
+  const { snapRadiusPx, unitAt, pointerUnit } = useTrackPointer(trackRef, snap, ticks, (v) => axis.position(v));
 
   const { onTrackPointerDown, onBandPointerDown, onBandFocus, onBandContextMenu, onRootKeyDown } = createBandCommands({
     committed, min, max, selectedIndex, onSelectionChange, onChange,
