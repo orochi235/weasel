@@ -31,7 +31,7 @@ export interface SceneGradientHandlesProps<
   /** The element the overlay is positioned in. Must be the canvas's own box,
    *  or the handles land somewhere other than the paint. */
   containerRef: RefObject<HTMLElement | null>;
-  /** The node whose paint is being edited — usually the lone selected id. */
+  /** The node whose paint is being edited, and the one a drag writes to, whatever the selection holds. */
   nodeId: string | null | undefined;
   /** Which of the node's two paints these handles move. */
   slot: PaintSlot;
@@ -45,7 +45,7 @@ export interface SceneGradientHandlesProps<
  * Scene-aware paint handles: on-canvas geometry handles for the gradient in
  * one node's `fill` or `stroke` — `GradientHandles` for the three ramps,
  * `MeshHandles` for a mesh — committed through the `setFill` / `setStroke`
- * actions as a single undo entry per drag. A canceled drag cancels the action,
+ * actions, on `nodeId` alone, as a single undo entry per drag. A canceled drag cancels the action,
  * and so does unmounting the overlay while a handle is held.
  *
  * Renders nothing unless the targeted slot holds a gradient or a mesh. The
@@ -78,9 +78,9 @@ export function SceneGradientHandles<
 
   const dispatch = (next: Paint, phase: 'input' | 'commit'): void => {
     if (gone.current) return;
-    const normalized = paintToBoundsUnits(next, frame.box);
-    if (phase === 'commit') edit.commit({ paint: normalized });
-    else edit.input({ paint: normalized });
+    const params = { paint: paintToBoundsUnits(next, frame.box), ids: [nodeId!] };
+    if (phase === 'commit') edit.commit(params);
+    else edit.input(params);
   };
   const common = {
     toScreen: frame.toScreen,

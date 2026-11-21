@@ -168,6 +168,7 @@ describe('SceneGradientHandles', () => {
     expect(seen.at(-1)).toMatchObject({
       action: 'setFill',
       paint: { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0.5, y: 0 }, units: 'bounds' },
+      ids: ['a'],
     });
   });
 
