@@ -22,7 +22,7 @@ import { isNonUniform, paintThroughMatrix, strokeThroughMatrix } from './paintTh
 import { collectGradients, type GradientTable } from './readGradients';
 import { collectPatterns } from './patterns';
 import {
-  bindStylesheets, deriveStyle, EMPTY_STYLE, ownProp, ownValue, styleValue, visibilityHides, type StyleContext,
+  bindStylesheets, deriveStyle, EMPTY_STYLE, ownProp, ownValue, styleValue, type StyleContext,
 } from './cascade';
 import { mediaEnvironmentFor } from './media';
 import { readProperty } from './properties';
@@ -34,6 +34,7 @@ import { isStrokeOutline, unwrapStrokeGroup, withOutlinedStroke } from './stroke
 import { parseImageElement, parseCroppedImage } from './readImage';
 import { parseTextElement } from './readText';
 import { ingestMarkers } from './readMarkers';
+import { isHiddenElement, SUPPORTED_GROUP_TAGS } from './hiddenElement';
 import { groupPaint, inheritsFrom, NO_GROUP_PAINT, viewportPaintFrom, type GroupPaintFrom } from './groupPaint';
 import { booleanAttrOf } from './booleanGroup';
 import { textFrameAttrOf } from './framedText';
@@ -42,7 +43,6 @@ import { conditionsHold, drawnChildren } from './conditional';
 import { parseUse, spaceOfUse } from './use';
 import { collectDocumentMeta, collectElementMeta } from './readMeta';
 
-const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
 
 /** How deep elements may nest, `<use>` references included, before what is deeper is left undrawn. */
 export const NESTING_LIMIT = 512;
@@ -374,16 +374,3 @@ function parseGroup(
   return group;
 }
 
-/** Whether SVG leaves `el` undrawn: `display="none"` on it, or a leaf whose
- *  `visibility` resolves hidden. That one is inherited and a descendant may
- *  turn itself back on, so a `<g>` or a `<use>` cannot answer it and is still walked. */
-function isHiddenElement(el: Element, style: StyleContext): boolean {
-  const tag = el.tagName.toLowerCase();
-  if (IGNORED_TAGS.has(tag)) return false;
-  if (ownValue(el, 'display') === 'none') return true;
-  if (SUPPORTED_GROUP_TAGS.has(tag) || tag === 'a' || tag === 'switch' || tag === 'use') return false;
-  const own = deriveStyle(style, el);
-  if (!visibilityHides(own)) return false;
-  // A hidden text draws a tspan that turns itself back on; its other runs paint nothing.
-  return tag !== 'text' || !Array.from(el.children).some((c) => c.tagName.toLowerCase() === 'tspan' && !visibilityHides(deriveStyle(own, c)));
-}

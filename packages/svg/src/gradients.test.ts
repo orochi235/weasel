@@ -58,6 +58,14 @@ describe('gradient collection', () => {
     expect((r.nodes[0] as { fill: unknown }).fill).toEqual({ kind: 'none' });
   });
 
+  it('paints none, with a warning, for an unresolved reference with no fallback', () => {
+    const r = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1" fill="url(#missing)" stroke="url(#missing)"/></svg>');
+    const rect = r.nodes[0] as { fill: unknown; stroke?: unknown };
+    expect(rect.fill).toEqual({ kind: 'none' });
+    expect(rect.stroke).toBeUndefined();
+    expect(r.warnings.filter((w) => /#missing/.test(w))).toHaveLength(2);
+  });
+
   it('reads the none keyword in any case', () => {
     const r = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1" fill="None"/></svg>');
     expect((r.nodes[0] as { fill: unknown }).fill).toEqual({ kind: 'none' });

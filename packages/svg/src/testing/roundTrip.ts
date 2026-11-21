@@ -68,7 +68,8 @@ export interface NormalizedImage {
 export type NormalizedNode = NormalizedPath | NormalizedGroup | NormalizedText | NormalizedImage;
 
 export function round(n: number): number {
-  return Math.round(n * 1000) / 1000;
+  // `+ 0` turns -0 into 0, which `toEqual` would otherwise tell apart.
+  return Math.round(n * 1000) / 1000 + 0;
 }
 
 /** `v` with every number rounded and every typed array made a plain one, so floats compare loosely. */

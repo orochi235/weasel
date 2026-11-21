@@ -70,6 +70,14 @@ describe('mesh gradients in SVG', () => {
     expect(parseSvg(svg).warnings.join(' ')).toContain('wzl:patch');
   });
 
+  it('drops a patch with a point missing a coordinate, and says so', () => {
+    const svg = serializeSvg(meshSquare()).replace(/points="(\S+) /, 'points="10, ');
+    expect(svg).toContain('points="10, ');
+    const parsed = parseSvg(svg);
+    expect(parsed.warnings.join(' ')).toContain('wzl:patch');
+    expect((parsed.nodes[0] as { fill: unknown }).fill).toEqual({ kind: 'solid', color: '#e2574c' });
+  });
+
   it('drops a patch with a color that does not parse, and says so', () => {
     const svg = serializeSvg(meshSquare()).replace(/colors="([^"]+)"/, 'colors="red;red;red;bogus"');
     const parsed = parseSvg(svg);

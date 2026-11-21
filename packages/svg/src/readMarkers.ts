@@ -25,6 +25,7 @@ import { SUPPORTED_LEAF_TAGS, IGNORED_TAGS, lowerLeaf } from './lowerLeaf';
 import { parseViewBoxAttr } from './viewBox';
 import { shortHash } from './markerDefs';
 import { readPaint } from './readPaint';
+import { isHiddenElement } from './hiddenElement';
 import { userScaleOf } from './userScale';
 
 type MarkerRole = 'start' | 'mid' | 'end';
@@ -245,7 +246,8 @@ function markerEntryFrom(
     }
   }
 
-  const refY = markerRef(el.getAttribute('refY'), vb?.y ?? 0, vb?.height ?? 0);
+  // With no viewBox the marker's viewport is its own coordinate system, so the keywords resolve against it.
+  const refY = markerRef(el.getAttribute('refY'), vb?.y ?? 0, vb?.height ?? num('markerHeight', 3));
   // Marker units are stroke widths already, unless the marker is sized in
   // user space; then this reference's width converts it, its user unit `userScale` long.
   const k = el.getAttribute('markerUnits') === 'userSpaceOnUse' && strokeWidth > 0
@@ -254,7 +256,7 @@ function markerEntryFrom(
   // A seated def's reference point sits on the head's back, `inset` behind the
   // tip the kit anchors at.
   const seatedBy = weaselAttr(el, 'seated') === 'true' ? markerInsetAttr(el) / (sx * k) : 0;
-  const refX = markerRef(el.getAttribute('refX'), vb?.x ?? 0, vb?.width ?? 0) + seatedBy;
+  const refX = markerRef(el.getAttribute('refX'), vb?.x ?? 0, vb?.width ?? num('markerWidth', 3)) + seatedBy;
   const { orient, reverseAtStart } = markerOrient(el.getAttribute('orient'));
   const turn = role === 'start' && reverseAtStart ? -1 : 1;
   const base: Matrix = [turn * sx * k, 0, 0, turn * sy * k, -turn * sx * k * refX, -turn * sy * k * refY];
@@ -264,6 +266,7 @@ function markerEntryFrom(
     for (let i = 0; i < parent.children.length; i++) {
       const child = parent.children[i];
       const tag = child.tagName.toLowerCase();
+      if (isHiddenElement(child, style)) continue;
       const cm = multiply(m, parseTransform(child.getAttribute('transform'), onWarn));
       const cs = deriveStyle(style, child);
       if (tag === 'g') collect(child, cm, cs);

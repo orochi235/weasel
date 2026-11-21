@@ -138,4 +138,16 @@ describe('a namespaced element whose attributes share a local name', () => {
     const out = serializeSvg(first.nodes, { namespaces, documentMeta: first.documentMeta });
     expect(parseSvg(out, { namespaces }).documentMeta).toEqual(first.documentMeta);
   });
+
+  it('keeps a child in another declared namespace in its own through parse and serialize', () => {
+    const namespaces = { a: 'https://example.com/a', b: 'https://example.com/b' };
+    const src = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:a="https://example.com/a" xmlns:b="https://example.com/b">'
+      + '<a:meta><b:item x="1"/><a:item/></a:meta><rect width="1" height="1"/></svg>';
+    const first = parseSvg(src, { namespaces });
+    const meta = first.documentMeta?.a?.elements?.meta[0];
+    expect(Object.keys(meta?.children ?? {})).toEqual(['b:item', 'item']);
+    const out = serializeSvg(first.nodes, { namespaces, documentMeta: first.documentMeta });
+    expect(out).toContain('<b:item x="1"></b:item><a:item></a:item>');
+    expect(parseSvg(out, { namespaces }).documentMeta).toEqual(first.documentMeta);
+  });
 });

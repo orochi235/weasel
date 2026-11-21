@@ -20,6 +20,11 @@ describe('a <tspan> stroke override', () => {
     expect(runs[1]?.stroke).toMatchObject({ width: 2, dash: [3, 1] });
   });
 
+  it('takes a stroke that paints nothing from stroke="none"', () => {
+    const { runs } = runsOf('<text stroke="red" stroke-width="2">a<tspan stroke="none">x</tspan></text>');
+    expect(runs[1]?.stroke).toEqual({});
+  });
+
   it('takes no stroke of its own from stroke="inherit" or "unset"', () => {
     for (const word of ['inherit', 'unset']) {
       const { runs, warnings } = runsOf(`<text stroke="red">a<tspan stroke="${word}">x</tspan></text>`);
@@ -41,6 +46,21 @@ describe('a run stroke that replaces a fuller node stroke', () => {
     expect(back.runs?.[1]?.stroke).toEqual({
       paint: { kind: 'solid', color: '#0000ff', opacity: 1 }, width: 1, cap: 'butt', join: 'miter', miterLimit: 4,
     });
+  });
+});
+
+describe('a run stroke that draws nothing under a node stroke', () => {
+  it('writes stroke none, so the tspan does not take the node\'s', async () => {
+    const { serializeSvg } = await import('./serialize');
+    const node: SvgTextNode = {
+      kind: 'text', x: 0, y: 20, width: 40, height: 14, text: 'ab',
+      stroke: { paint: { kind: 'solid', color: '#ff0000' }, width: 2 },
+      runs: [{ text: 'a' }, { text: 'b', stroke: { paint: { kind: 'solid', color: '#ff0000' }, width: 0 } }],
+    };
+    const svg = serializeSvg([node]);
+    expect(svg).toMatch(/<tspan[^>]*stroke="none"[^>]*>b</);
+    const back = parseSvg(svg).nodes[0] as SvgTextNode;
+    expect(back.runs?.[1]?.stroke).toEqual({});
   });
 });
 

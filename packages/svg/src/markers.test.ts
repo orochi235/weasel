@@ -35,6 +35,15 @@ describe('marker parsing', () => {
     expect(path.stroke?.markerEnd).toBe('arrow');
   });
 
+  it('keeps a marker on a path whose stroke is none or unset, as SVG draws it', () => {
+    const { nodes } = parseSvg(wrap(
+      '<path d="M0 0L50 0" marker-end="url(#arrow)"/><path d="M0 0L50 0" stroke="none" marker-start="url(#circle)"/>',
+    ));
+    expect((nodes[0] as SvgPathNode).stroke).toMatchObject({ paint: { kind: 'none' }, markerEnd: 'arrow' });
+    expect((nodes[1] as SvgPathNode).stroke).toMatchObject({ paint: { kind: 'none' }, markerStart: 'circle' });
+    expect(serializeSvg([nodes[1]])).toMatch(/<path [^>]*stroke="none"[^>]*marker-start="url\(#circle\)"/);
+  });
+
   it('inherits markers from a parent group', () => {
     const { nodes } = parseSvg(wrap(
       '<g stroke="#000" marker-end="url(#arrow)"><line x1="0" y1="0" x2="50" y2="0"/></g>',
@@ -93,6 +102,22 @@ describe('ingesting a marker the kit has no key for', () => {
     expect(entry.outline).toBeFalsy();
     expect(entry.orient).toBe('auto');
     expect(entry.inset ?? 0).toBe(0);
+  });
+
+  it('resolves refX and refY keywords against the marker\'s size when it has no viewBox', () => {
+    const def = '<marker id="k" markerWidth="10" markerHeight="6" refX="center" refY="center">'
+      + '<path d="M0 0 L10 3 L0 6 Z" fill="#ff0000"/></marker>';
+    const { markers } = parseSvg(lineWith('marker-end="url(#k)"', def));
+    expect(coordsOf(markers![0])).toEqual([-5, -3, 5, 0, -5, 3]);
+  });
+
+  it('leaves out a part that is display none or hidden', () => {
+    const def = '<marker id="h" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6">'
+      + '<path d="M0 0 L10 5 L0 10 Z" fill="#ff0000"/><path display="none" d="M0 0 H3 V3 Z" fill="#0000ff"/>'
+      + '<g><rect visibility="hidden" width="2" height="2" fill="#00ff00"/></g></marker>';
+    const { warnings, markers } = parseSvg(lineWith('marker-end="url(#h)"', def));
+    expect(warnings).toEqual([]);
+    expect(coordsOf(markers![0])).toEqual([-6, -3, 0, 0, -6, 3]);
   });
 
   it('reads parts painted alike as alike, whichever element set each property', () => {

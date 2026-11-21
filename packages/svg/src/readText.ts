@@ -12,6 +12,7 @@ import { DEFAULT_LINE_HEIGHT, LINE_HEIGHT_ATTR, LineTracker, writtenByWeasel } f
 import { LAID_ATTR } from './laidLines';
 import { readRuns } from './readRuns';
 import { inheritedLang } from './textLang';
+import { shiftInEms } from './properties';
 import { mapFillPaint } from './fillPaint';
 import { fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
@@ -129,7 +130,8 @@ export function parseTextElement(
   // every other run key it has no node-level home to be read into — so a bare
   // text child would drop it. Seed those children with it instead; a <tspan>
   // naming its own still wins, as the SVG cascade says.
-  const inheritedShift = ownValue(el, 'baseline-shift', onWarn, fontSize) ?? {};
+  const textShift = ownValue(el, 'baseline-shift', onWarn, fontSize);
+  const inheritedShift = textShift ? shiftInEms(textShift, fontSize) : {};
 
   const tracker = new LineTracker(el, onWarn);
   const { runs, lead } = readRuns(el, tracker, inheritedShift, textStyle, gradients, leafStyle, onWarn);

@@ -13,7 +13,9 @@ function namespacedElementXml(prefix: string, localName: string, el: NamespacedE
   let body = '';
   if (el.children) {
     for (const [childName, list] of Object.entries(el.children)) {
-      for (const child of list) body += namespacedElementXml(prefix, childName, child);
+      const colon = childName.indexOf(':');
+      const [childPrefix, childLocal] = colon < 0 ? [prefix, childName] : [childName.slice(0, colon), childName.slice(colon + 1)];
+      for (const child of list) body += namespacedElementXml(childPrefix, childLocal, child);
     }
   } else if (el.text != null) {
     body = escapeText(el.text);

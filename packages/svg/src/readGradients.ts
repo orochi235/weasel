@@ -239,8 +239,9 @@ function readMeshGradient(el: Element, onWarn?: (m: string) => void): Paint | nu
     const points = (child.getAttribute('points') ?? '').trim().split(/\s+/)
       .filter(Boolean)
       .map((pair) => {
-        const [x, y] = pair.split(',').map(Number);
-        return { x, y };
+        // `Number('')` is 0, so an empty half (`10,`) would read as a coordinate.
+        const parts = pair.split(',').map((t) => (t === '' ? NaN : Number(t)));
+        return parts.length === 2 ? { x: parts[0], y: parts[1] } : { x: NaN, y: NaN };
       });
     const colorList = (child.getAttribute('colors') ?? '').trim();
     // Written `;`-separated; a file from before that is space-separated hex.
