@@ -2,6 +2,8 @@
 '@weasel-js/ui': patch
 ---
 
-A curve layer in `addPointMode: 'click-curve'` with fewer than two points, and so no curve to press, adds a point where the plot is clicked until it has two.
+A `'click-curve'` curve layer with fewer than two points adds one wherever the plot is clicked.
+
+It does so until it has two, and so a curve to press.
 
 <!-- entry: fix behavior -->

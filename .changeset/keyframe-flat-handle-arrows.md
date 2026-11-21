@@ -2,6 +2,6 @@
 '@weasel-js/ui': patch
 ---
 
-An up or down arrow on a bezier handle of a flat `KeyframeLayer` segment leaves the handle's hidden height alone and commits nothing, as a drag on that segment does.
+An up or down arrow on a handle of a flat `KeyframeLayer` segment commits nothing, as a drag there does.
 
 <!-- entry: fix -->
