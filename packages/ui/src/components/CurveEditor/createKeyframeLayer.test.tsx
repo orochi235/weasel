@@ -345,6 +345,14 @@ describe('createKeyframeLayer — keyboard', () => {
     expect((onCommit.mock.calls[1][0] as KeyframeLayerState).keys[1].value).toBe(9.5);
   });
 
+  it('reports nothing for Enter on the key or segment already selected', () => {
+    const onCommit = vi.fn();
+    render(<Harness initial={{ selectedKey: 1, selectedSegment: 1 }} onCommit={onCommit} />);
+    fireEvent.keyDown(document.querySelector('[data-keyframe-index="1"]')!, { key: 'Enter' });
+    fireEvent.keyDown(document.querySelector('[data-segment-index="1"]')!, { key: 'Enter' });
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
   it('selects a focused segment with Enter', () => {
     const onCommit = vi.fn();
     render(<Harness onCommit={onCommit} />);

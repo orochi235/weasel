@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { historyKey } from '@weasel-js/gestures';
+import { deepEqual } from '@weasel-js/registry';
 import {
   Plot2D,
   type Plot2DHandle,
@@ -86,8 +87,9 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
 
   const { snapshot, record, undo, redo } = useLayerHistory(layers);
 
-  /** Report a finished one-shot edit, as one undo step back to `before`. */
+  /** Report a finished one-shot edit, as one undo step back to `before`; one that changed nothing settles unchanged. */
   const settleEdit = useCallback((before: LayerSnapshot, edit: LayerEdit) => {
+    if (deepEqual(edit.next, edit.prev)) { settleLayer(edit.entry, 'unchanged'); return; }
     if (historyEnabled) record(before);
     settleLayer(edit.entry, { commit: edit.next, prev: edit.prev });
   }, [historyEnabled, record]);
