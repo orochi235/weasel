@@ -11,6 +11,7 @@ import { Switch } from '@weasel-js/ui/components/Switch';
 import { usePoll } from '../hooks';
 import type { DevtoolsViewProps } from '../tabs';
 import { followHistory } from '../history';
+import { coalesced } from './coalesced';
 import { HistoryTable } from './HistoryTable';
 import { sequenced, type Sequenced } from './sequenced';
 import s from './HistoryView.module.css';
@@ -34,16 +35,15 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
 
   useEffect(() => {
     let live = true;
-    const read = (): void => {
-      follower.read().then((slice) => {
-        if (!live) return;
-        if (slice.entries.length) setSteps((prev) => [...prev, ...sequenced(slice.entries, slice.cursor)].slice(-KEEP));
-        setPosition(slice.position);
-        setHistoryEntries(slice.historyEntries ?? null);
-        setNow(Date.now());
-        setError(null);
-      }, (err: Error) => { if (live) setError(err.message); });
-    };
+    const once = (): Promise<void> => (!live ? Promise.resolve() : follower.read().then((slice) => {
+      if (!live) return;
+      if (slice.entries.length) setSteps((prev) => [...prev, ...sequenced(slice.entries, slice.cursor)].slice(-KEEP));
+      setPosition(slice.position);
+      setHistoryEntries(slice.historyEntries ?? null);
+      setNow(Date.now());
+      setError(null);
+    }, (err: Error) => { if (live) setError(err.message); }));
+    const read = coalesced(once);
     readNow.current = read;
     read();
     const off = client.onChanged((id, areas) => { if (id === rootId && areas.includes('history')) read(); });

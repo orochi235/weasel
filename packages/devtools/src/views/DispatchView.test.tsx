@@ -1,6 +1,6 @@
 /** The Dispatch tab against a page it does not have: a client whose answers the test writes. */
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { DevtoolsArea } from '../protocol';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import type { DevtoolsClient } from '../client';
@@ -65,5 +65,19 @@ describe('<DispatchView>', () => {
     expect(clear.hasAttribute('disabled') || clear.getAttribute('aria-disabled') === 'true').toBe(false);
     fireEvent.click(clear);
     expect(await screen.findByText('No conversions recorded yet.')).toBeTruthy();
+  });
+
+  it('folds notices that arrive during a read into one read after it', async () => {
+    let release!: () => void;
+    const held = new Promise<void>((r) => { release = r; });
+    let asked = 0;
+    const page = fakePage(async () => { asked++; await held; return { entries: [], cursor: 0, live: null }; });
+    renderWithIcons(<DispatchView client={page.client} rootId="r" />);
+    await waitFor(() => expect(asked).toBe(1));
+    for (let i = 0; i < 20; i++) for (const l of page.listeners) l('r', ['trace']);
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+    expect(asked).toBe(1);
+    await act(async () => { release(); await new Promise((r) => setTimeout(r, 0)); });
+    expect(asked).toBe(2);
   });
 });
