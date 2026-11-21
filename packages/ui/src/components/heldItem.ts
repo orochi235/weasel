@@ -18,20 +18,26 @@ export function heldItemProps(disabled: boolean | undefined): { isDisabled?: boo
 export function useHeldAriaRef(
   held: boolean | undefined, reason?: string, intoRef?: RefObject<HTMLElement | null>,
 ): RefCallback<HTMLElement> {
+  const unmark = useRef<(() => void) | null>(null);
   return useCallback((el: HTMLElement | null) => {
+    // React 18 ignores the returned cleanup and calls the old ref with null instead; React 19 does the reverse.
+    unmark.current?.();
+    unmark.current = null;
     if (intoRef) intoRef.current = el;
     if (!el || !held) return;
     el.setAttribute('aria-disabled', 'true');
     const ownMark = !el.hasAttribute('data-disabled');
     el.setAttribute('data-disabled', '');
     if (reason) el.setAttribute('aria-description', reason);
-    // A ref returning a cleanup is never called with null, so the cleanup lets go of `el` itself.
-    return () => {
+    const undo = (): void => {
+      if (unmark.current === undo) unmark.current = null;
       if (intoRef?.current === el) intoRef.current = null;
       el.removeAttribute('aria-disabled');
       if (ownMark) el.removeAttribute('data-disabled');
       el.removeAttribute('aria-description');
     };
+    unmark.current = undo;
+    return undo;
   }, [held, reason, intoRef]);
 }
 
