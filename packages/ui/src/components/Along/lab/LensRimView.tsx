@@ -32,6 +32,14 @@ export function withMark(marks: readonly Point[], p: Point): Point[] {
   return [...marks, p].slice(-MARK_LIMIT);
 }
 
+/** The marks saved under {@link SAVED}, or none: a list of anything else, and any entry not a point, is let go. */
+export function savedMarks(raw: unknown): Point[] {
+  if (!Array.isArray(raw)) return [];
+  const isPoint = (m: unknown): m is Point =>
+    typeof m === 'object' && m !== null && Number.isFinite((m as Point).x) && Number.isFinite((m as Point).y);
+  return raw.filter(isPoint).slice(-MARK_LIMIT);
+}
+
 /** The rim arcs, turned with the lens: the bar across the top, the zoom across the bottom. */
 export function rimArcs(turn: number): { top: AlongArc; bottom: AlongArc } {
   return {
@@ -58,7 +66,7 @@ export function pictureAt(client: Point, lens: DOMRect, size: number, turn: numb
 export function LensRimView({ config }: { config: LensRimConfig }): ReactElement {
   const { size, turn } = config;
   const [zoom, setZoom] = useState<Thumb[]>([{ value: 1 }]);
-  const [marks, setMarks] = useState<Point[]>(() => ((readLocal(SAVED) as Point[] | undefined) ?? []).slice(-MARK_LIMIT));
+  const [marks, setMarks] = useState<Point[]>(() => savedMarks(readLocal(SAVED)));
   const [pressed, setPressed] = useState('—');
   useEffect(() => void writeLocal(SAVED, marks), [marks]);
   const onPress = useCallback((key: string) => setPressed(key), []);
