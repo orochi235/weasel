@@ -9,7 +9,7 @@ import { defaultVisibilityRules } from './defaults';
  * than replacing its rule with "always visible".
  */
 export function mergeVisibilityRules(...layers: readonly (VisibilityRules | undefined)[]): VisibilityRules {
-  const merged: VisibilityRules = {};
+  const merged: VisibilityRules = Object.create(null) as VisibilityRules;
   for (const layer of layers) {
     if (!layer) continue;
     for (const [id, rule] of Object.entries(layer)) if (rule !== undefined) merged[id] = rule;

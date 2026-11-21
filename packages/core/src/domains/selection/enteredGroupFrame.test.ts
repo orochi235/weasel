@@ -65,4 +65,18 @@ describe('createEnteredGroupFrameLayer', () => {
     off();
     expect(offColor).toHaveBeenCalled();
   });
+
+  it('stays on a group far from the origin, subtracting the view before scaling', () => {
+    const far = 1e12;
+    const view = { x: far, y: far, scale: { x: 1e3, y: 1e3 } };
+    const box = { x: far + 0.3, y: far + 0.7, width: 1, height: 1 };
+    const layer = createEnteredGroupFrameLayer({
+      entered: entered('g'), boundsOf: () => box,
+      outlinesOf: () => [{ kind: 'rect', ...box }],
+    });
+    const cmds = layer.draw({}, view, DIMS) as PathDrawCommand[];
+    const at = { x: (box.x - far) * 1e3, y: (box.y - far) * 1e3 };
+    expect(cmds[0]!.path).toMatchObject(at);
+    expect(cmds[1]!.path).toMatchObject(at);
+  });
 });

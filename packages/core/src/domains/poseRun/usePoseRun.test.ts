@@ -300,4 +300,23 @@ describe('usePoseRun — abandoned renders', () => {
     act(() => { s.run().start(); });
     expect(s.run().isRunning()).toBe(true);
   });
+
+  it('ends the run the same way when the poses step returns throw as they are read', () => {
+    let fail = false;
+    const s = setup(() => {
+      function* poses() {
+        if (fail) throw new Error('node gone');
+        yield [s.a, box(10, 0)] as const;
+      }
+      return { poses: poses(), done: false };
+    });
+    act(() => { s.run().start(); });
+    act(() => { s.clock.frame(); });
+    expect(s.drawnAt(s.a)).toEqual(box(10, 0));
+    fail = true;
+    expect(() => act(() => { s.clock.frame(); })).toThrow('node gone');
+    expect(s.run().isRunning()).toBe(false);
+    expect(s.drawnAt(s.a)).toEqual(box(0, 0));
+    expect(s.onCommit).not.toHaveBeenCalled();
+  });
 });

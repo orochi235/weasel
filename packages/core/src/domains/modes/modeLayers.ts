@@ -1,9 +1,7 @@
-import type { Rect } from '@weasel-js/geom';
+import { viewWorldToScreen, type Rect } from '@weasel-js/geom';
 import type { ModeDecorations, ModeRegistry, WorkspaceVisual } from '@weasel-js/modes';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { viewToTransform } from 'core/viewport/view';
-import { worldToScreen } from 'core/viewport/viewTransform';
 
 /** Options for {@link createWorkspaceTintLayer}. */
 export interface WorkspaceTintLayerOptions {
@@ -66,9 +64,8 @@ export function createWorkspaceTintLayer(opts: WorkspaceTintLayerOptions): Rende
       const page = opts.page?.();
       if (!page) return whole();
 
-      const t = viewToTransform(view);
-      const [sx0, sy0] = worldToScreen(page.x, page.y, t);
-      const [sx1, sy1] = worldToScreen(page.x + page.width, page.y + page.height, t);
+      const { x: sx0, y: sy0 } = viewWorldToScreen(view, page);
+      const { x: sx1, y: sy1 } = viewWorldToScreen(view, { x: page.x + page.width, y: page.y + page.height });
       const pl = Math.max(0, Math.min(sx0, sx1));
       const pt = Math.max(0, Math.min(sy0, sy1));
       const pr = Math.min(W, Math.max(sx0, sx1));
