@@ -198,9 +198,12 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
         reset();
       },
       onClick: () => {
-        o.current.onPress(id, mods);
-        swallowNextClick(box, { keepDefault: true });
         reset();
+        // A linked row's click is the browser's under Cmd, Ctrl or Alt, and the row's alone otherwise, as TreeRowBox has it.
+        const linked = o.current.visible.find((v) => v.node.id === id)?.node.href != null;
+        if (linked && (mods.metaKey || mods.ctrlKey || mods.altKey)) return;
+        o.current.onPress(id, mods);
+        swallowNextClick(box, { keepDefault: !linked });
       },
       onCancel: reset,
     });
