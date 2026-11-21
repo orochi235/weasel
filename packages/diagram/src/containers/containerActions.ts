@@ -8,7 +8,11 @@ import {
   ActionDisabledReason,
   defineAction,
   carriedDescendants,
+  composesFrames,
+  RIGID_POSE_COMPOSITION,
   sceneCarrySource,
+  scenePoseFrame,
+  type PoseComposition,
   type Action,
   type SurfaceContribution,
   type InvocationCtx,
@@ -17,10 +21,11 @@ import {
   type RectPose,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
+import { boxFrameOf, transformPoint } from '@weasel-js/geom';
 import { createClaimPressAction, claimPressBindings } from '../connect';
-import { addLane, canReleaseMembers, lanesOf, releaseMembers } from './containerStencils';
+import { addLane, canReleaseMembers, releaseMembers } from './containerStencils';
 import {
-  addLaneLocked, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneLayer, laneResizeLocked, laneScratchOf, poolsOf, stackDirection, type LaneLayerOptions,
+  addLaneLocked, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneLayer, laneResizeLocked, laneScratchOf, poolLanesOf, poolsOf, stackDirection, type LaneLayerOptions,
   type PoolLanes,
 } from './laneBoundaryLayer';
 import { MIN_LANE_SIZE } from './laneStack';
@@ -44,55 +49,80 @@ export interface LaneResize {
   size: number;
 }
 
-/** The default commit: the lane's and the pool's new size, and the lanes after it moved along by the change, as
- *  one history entry labeled "Resize lane". The pool's layout stacks lanes by where they sit, so the later ones are
- *  written where they go rather than left for it to find. */
+/** The default commit: every pose {@link laneResizeFrame} previews, as one history entry labeled "Resize lane". The
+ *  pool's layout stacks lanes by where they sit, so the later ones are written where they go rather than left for
+ *  it to find. */
 export function commitLaneResizeToScene(resize: LaneResize, ctx: InvocationCtx): void {
   const scene = ctx.deps.scene as AnyScene | undefined;
-  const pool = scene?.get(resize.poolId as NodeId);
-  const lane = scene?.get(resize.laneId as NodeId);
-  if (scene === undefined || pool === undefined || lane === undefined) return;
-  const axis = diagramContainerOf(pool)?.header?.side === 'top' ? 'x' : 'y';
-  const l = lane.pose as RectPose;
-  const p = pool.pose as RectPose;
-  const d = resize.size - (axis === 'y' ? l.height : l.width);
-  const lanes = lanesOf(scene, pool.id);
-  const later = lanes.slice(lanes.indexOf(lane.id) + 1);
+  const pool = scene === undefined ? null : poolLanesOf(scene, resize.poolId);
+  const index = pool?.lanes.findIndex((l) => l.id === resize.laneId) ?? -1;
+  if (scene === undefined || pool === null || index < 0) return;
+  const frame = laneResizeFrame(scene, pool, index, resize.size);
   scene.batch('Resize lane', () => {
-    scene.setPose(lane.id, axis === 'y' ? { ...l, height: resize.size } : { ...l, width: resize.size });
-    for (const id of later) {
-      const at = scene.get(id)!.pose as RectPose;
-      scene.setPose(id, axis === 'y' ? { ...at, y: at.y + d } : { ...at, x: at.x + d });
-    }
-    scene.setPose(pool.id, axis === 'y' ? { ...p, height: p.height + d } : { ...p, width: p.width + d });
+    for (const [id, pose] of frame) scene.setPose(id as NodeId, pose);
   });
 }
 
-/** Where everything stands with the lane at `index` of `pool` resized to `size`: the
- *  lane, its title, the pool and its title, and every later lane with what it holds. */
+/** `r` grown along `axis` by `by`, its start corner kept where it draws in the frame it is stored in. */
+function grownFrom(r: RectPose, axis: 'x' | 'y', by: number): RectPose {
+  const grown = axis === 'y' ? { ...r, height: r.height + by } : { ...r, width: r.width + by };
+  const [ax, ay] = transformPoint(boxFrameOf(r)!, 0, 0);
+  const [bx, by2] = transformPoint(boxFrameOf(grown)!, 0, 0);
+  return { ...grown, x: grown.x + ax - bx, y: grown.y + ay - by2 };
+}
+
+/** Where everything stands with the lane at `index` of `pool` resized to `size`, as stored: the lane, its title,
+ *  the pool and its title, and every later lane with what it holds. The pool's start edge stays where it draws. */
 export function laneResizeFrame(scene: AnyScene, pool: PoolLanes, index: number, size: number): Map<string, RectPose> {
   const { axis } = pool;
+  const pc = scene.composition as PoseComposition<RectPose>;
+  const frame = scenePoseFrame(scene);
   const along = (r: RectPose) => (axis === 'y' ? r.height : r.width);
-  const grow = (r: RectPose, by: number): RectPose => (axis === 'y' ? { ...r, height: r.height + by } : { ...r, width: r.width + by });
   const shift = (r: RectPose, by: number): RectPose => (axis === 'y' ? { ...r, y: r.y + by } : { ...r, x: r.x + by });
+  // The box a region lays its children out in. A layout sees a region upright where poses do not compose.
+  const boxOf = (w: RectPose): RectPose => (composesFrames(pc) ? w : { x: w.x, y: w.y, width: w.width, height: w.height });
+  const worldOf = (id: string, stored: RectPose): RectPose => {
+    const parent = frame.parentWorld(id as NodeId) as RectPose | null;
+    return parent === null ? stored : pc.compose(parent, stored);
+  };
+  const storedUnder = (id: string, w: RectPose, world: RectPose): RectPose | null =>
+    pc.decompose(frame.childFrame(id as NodeId, w) as RectPose, world);
   const lane = pool.lanes[index]!;
   const d = size - along(lane.pose);
   const out = new Map<string, RectPose>();
-  const placeTitle = (id: string, at: RectPose) => {
+  const placeTitle = (id: string, stored: RectPose, w: RectPose) => {
     const node = scene.get(id as NodeId);
-    if (node !== undefined && scene.get(titleIdOf(id) as NodeId) !== undefined) {
-      out.set(titleIdOf(id), titleInFrame(at, diagramContainerOf(node)?.header));
-    }
+    if (node === undefined || scene.get(titleIdOf(id) as NodeId) === undefined) return;
+    const title = storedUnder(id, w, RIGID_POSE_COMPOSITION.compose(boxOf(w), titleInFrame(stored, diagramContainerOf(node)?.header)));
+    if (title !== null) out.set(titleIdOf(id), title);
   };
-  const laneAt = grow(lane.pose, d);
-  out.set(lane.id, laneAt);
-  placeTitle(lane.id, laneAt);
-  const poolAt = grow(pool.pose, d);
-  out.set(pool.id, poolAt);
-  placeTitle(pool.id, poolAt);
+  const poolStored = grownFrom(pool.pose, axis, d);
+  const poolWorld = worldOf(pool.id, poolStored);
+  const box = boxOf(frame.world(pool.id as NodeId) as RectPose);
+  const nextBox = boxOf(poolWorld);
+  // A lane moved in its pool's own axes, and stored back in the frame it is stored in.
+  const moveLane = (id: string, edit: (inPool: RectPose) => RectPose): RectPose | null => {
+    const inPool = RIGID_POSE_COMPOSITION.decompose(box, frame.world(id as NodeId) as RectPose);
+    if (inPool === null) return null;
+    const world = RIGID_POSE_COMPOSITION.compose(nextBox, edit(inPool));
+    return storedUnder(pool.id, poolWorld, world);
+  };
+  const laneStored = moveLane(lane.id, (r) => grownFrom(r, axis, d));
+  if (laneStored === null) return out;
+  out.set(lane.id, laneStored);
+  placeTitle(lane.id, laneStored, worldOf(lane.id, laneStored));
+  out.set(pool.id, poolStored);
+  placeTitle(pool.id, poolStored, poolWorld);
+  const [ox, oy] = transformPoint(boxFrameOf(box)!, 0, 0);
+  const [sx, sy] = transformPoint(boxFrameOf(box)!, axis === 'x' ? d : 0, axis === 'y' ? d : 0);
   for (const later of pool.lanes.slice(index + 1)) {
-    out.set(later.id, shift(later.pose, d));
-    const carried = carriedDescendants(sceneCarrySource(scene), later.id as NodeId, (p) => shift(p as RectPose, d));
+    const at = moveLane(later.id, (r) => shift(r, d));
+    if (at === null) continue;
+    out.set(later.id, at);
+    const carried = carriedDescendants(sceneCarrySource(scene), later.id as NodeId, (p) => {
+      const r = p as RectPose;
+      return { ...r, x: r.x + sx - ox, y: r.y + sy - oy };
+    });
     for (const [id, p] of carried) out.set(id, p as RectPose);
   }
   return out;

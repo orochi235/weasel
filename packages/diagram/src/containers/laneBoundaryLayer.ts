@@ -56,20 +56,28 @@ export interface PoolLanes {
   lanes: { id: string; pose: RectPose; at: RectPose }[];
 }
 
+/** Pool `id` as the affordances see it, whether or not it is drawn or locked; null for no pool. */
+export function poolLanesOf(scene: AnyScene, id: string, world = worldWith(scene)): PoolLanes | null {
+  const node = scene.get(id as NodeId);
+  const trait = node === undefined ? null : diagramContainerOf(node);
+  if (node === undefined || trait?.role !== 'pool') return null;
+  return {
+    id: node.id,
+    axis: poolAxisOf(trait),
+    pose: node.pose as RectPose,
+    at: world(node.id) as RectPose,
+    lanes: lanesOf(scene, node.id).map((l) => ({ id: l, pose: scene.get(l)!.pose as RectPose, at: world(l) as RectPose })),
+  };
+}
+
 /** Every pool in `scene` that is drawn and not locked. */
 export function poolsOf(scene: AnyScene): PoolLanes[] {
   const out: PoolLanes[] = [];
   const world = worldWith(scene);
   for (const node of scene.renderOrderNodes()) {
-    const trait = diagramContainerOf(node);
-    if (trait?.role !== 'pool' || scene.isHidden(node.id) || scene.isLocked(node.id)) continue;
-    out.push({
-      id: node.id,
-      axis: poolAxisOf(trait),
-      pose: node.pose as RectPose,
-      at: world(node.id) as RectPose,
-      lanes: lanesOf(scene, node.id).map((id) => ({ id, pose: scene.get(id)!.pose as RectPose, at: world(id) as RectPose })),
-    });
+    if (scene.isHidden(node.id) || scene.isLocked(node.id)) continue;
+    const pool = poolLanesOf(scene, node.id, world);
+    if (pool !== null) out.push(pool);
   }
   return out;
 }

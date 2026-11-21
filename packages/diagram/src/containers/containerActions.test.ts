@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   commitOps, createDispatcher, createScene, type Action, type ActionsRegistry, type DispatcherContext, type InputEvent, scenePoseFrame, type ActionDeps, type ImmediateInvoker, type InvocationCtx, type NodeId, type OngoingHandle,
-  type OngoingInvoker, type RectPose, boundsOfPath,
+  type OngoingInvoker, type RectPose, boundsOfPath, IDENTITY_POSE_COMPOSITION, rotatedRectCorners, type PoseComposition,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { withDiagramRegistry } from '../edge';
@@ -9,14 +9,19 @@ import { CONTAINER_STENCILS, containerBuild, lanesOf } from './containerStencils
 import { createAddLaneAction, createLaneResizeAction, createReleaseMembersAction, createDiagramContainersContribution } from './containerActions';
 import { createLaneAffordance, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, type LaneScratch } from './laneBoundaryLayer';
 
-function pool() {
-  const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+function pool(opts: { composition?: PoseComposition<RectPose>; at?: Vec2 } = {}) {
+  const scene = createScene<Record<string, unknown>, 'main', RectPose>({
+    systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(), ...(opts.composition ? { composition: opts.composition } : {}),
+  });
   let n = 0;
-  const built = containerBuild(CONTAINER_STENCILS[1]!, { x: 0, y: 0, width: 480, height: 240 }, { layer: 'main', newId: () => `n${n++}` });
+  const { x, y } = opts.at ?? { x: 0, y: 0 };
+  const built = containerBuild(CONTAINER_STENCILS[1]!, { x, y, width: 480, height: 240 }, {
+    layer: 'main', newId: () => `n${n++}`, ...(opts.composition ? { composition: opts.composition } : {}),
+  });
   commitOps({ scene } as unknown as ActionDeps, built.ops, 'Insert');
   const [first, second] = lanesOf(scene as never, built.id) as unknown as [string, string];
-  // At (100, 150) in world, stored in the lane's frame.
-  const at = scenePoseFrame(scene as never).localUnder(second as NodeId, { x: 100, y: 150, width: 40, height: 20 }) as RectPose;
+  // At (100, 150) from the pool's corner in world, stored in the lane's frame.
+  const at = scenePoseFrame(scene as never).localUnder(second as NodeId, { x: x + 100, y: y + 150, width: 40, height: 20 }) as RectPose;
   scene.add({ id: 'm' as NodeId, kind: 'mark', layer: 'main', parent: second as NodeId, pose: at, data: {} });
   return { scene, poolId: built.id, first, second };
 }
@@ -112,6 +117,34 @@ describe('the lane resize action', () => {
     // A quarter turn sends the stack's +y to world -x.
     resize(h, { x: 170, y: 140 });
     expect(pose(h.scene, h.first)).toMatchObject({ height: 150 });
+  });
+
+  it('keeps a turned pool\'s start edge in place, and the boundary under the pointer', () => {
+    const h = pool();
+    h.scene.setPose(h.poolId as NodeId, { ...(pose(h.scene, h.poolId) as RectPose), rotation: Math.PI / 2 });
+    const start = rotatedRectCorners(worldOf(h.scene, h.first) as never)[0]!;
+    const second = rotatedRectCorners(worldOf(h.scene, h.second) as never)[0]!;
+    resize(h, { x: 170, y: 140 });
+    const after = rotatedRectCorners(worldOf(h.scene, h.first) as never)[0]!;
+    expect(after.x).toBeCloseTo(start.x);
+    expect(after.y).toBeCloseTo(start.y);
+    // The second lane's start, the dragged boundary, moved 30 along the stack: world -x.
+    const moved = rotatedRectCorners(worldOf(h.scene, h.second) as never)[0]!;
+    expect(moved.x).toBeCloseTo(second.x - 30);
+    expect(moved.y).toBeCloseTo(second.y);
+  });
+
+  it('previews the titles where they draw, where poses do not compose', () => {
+    const h = pool({ composition: IDENTITY_POSE_COMPOSITION as never, at: { x: 300, y: 500 } });
+    resize(h, { x: 200, y: 150 }, (handle) => {
+      const title = handle.previewPose!(`${h.poolId}/title`) as RectPose;
+      const corners = rotatedRectCorners(title as never);
+      expect(Math.min(...corners.map((c) => c.x))).toBeCloseTo(300);
+      expect(Math.min(...corners.map((c) => c.y))).toBeCloseTo(500);
+      expect(Math.max(...corners.map((c) => c.y))).toBeCloseTo(770);
+      const lane = handle.previewPose!(`${h.first}/title`) as RectPose;
+      expect(Math.min(...rotatedRectCorners(lane as never).map((c) => c.x))).toBeCloseTo(332);
+    });
   });
 
   it('stops a lane at its least size', () => {
