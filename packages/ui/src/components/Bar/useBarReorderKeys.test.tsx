@@ -77,6 +77,16 @@ describe('Alt+arrow reordering', () => {
     expect(document.querySelector('[data-bar-announce]')).toHaveTextContent('');
   });
 
+  it('keeps focus where it is at either end of a roving bar', () => {
+    render(host(<PrefsBar schema={nested} roving onReorder={() => {}} label="Tools" />));
+    button('c').focus();
+    alt(button('c'), 'ArrowRight');
+    expect(button('c')).toHaveFocus();
+    button('q').focus();
+    alt(button('q'), 'ArrowRight');
+    expect(button('q')).toHaveFocus();
+  });
+
   it('leaves Alt+Arrow alone inside a number input', () => {
     const onReorder = vi.fn();
     render(host(<PrefsBar schema={withNumber} onReorder={onReorder} />));

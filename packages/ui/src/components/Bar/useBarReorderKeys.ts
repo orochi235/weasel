@@ -92,9 +92,11 @@ export function useBarReorderKeys({ root, order, onReorder, vertical, dir, keysO
     const from = units.findIndex((unit) => unit.key === key);
     const to = from + (back ? -1 : 1);
     const neighbor = units[to];
-    if (from < 0 || neighbor === undefined) return;
+    if (from < 0) return;
+    // Claimed even at an end, so a roving bar does not take the chord as a plain arrow.
     e.preventDefault();
     e.stopPropagation();
+    if (neighbor === undefined) return;
     const next = movedInto(was, container, listOf?.(container), units, from, { unit: neighbor, after: !back });
     if (next === was) return;
     refocus.current = { container: grabbed.getAttribute(BAR_IN) ?? '', key: grabbed.getAttribute(BAR_UNIT)! };
