@@ -67,7 +67,8 @@ function repainted(node: SvgTextNode, fill: SvgTextNode['fill'], stroke: (s: Str
   const { meta: _meta, ...rest } = node;
   const style = node.style ? { ...node.style, ...PLAIN_RUN } : undefined;
   const runs = node.runs?.map((r): StyledRun => {
-    const own = stroke(r.stroke);
+    // A run with no stroke of its own takes the copy's, the node's.
+    const own = r.stroke === undefined ? undefined : stroke(r.stroke);
     const { stroke: _st, ...plain } = r;
     return { ...plain, ...PLAIN_RUN, fill, ...(own !== undefined ? { stroke: own as Stroke } : {}) };
   });
