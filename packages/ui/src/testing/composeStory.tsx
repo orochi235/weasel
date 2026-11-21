@@ -75,7 +75,9 @@ export function storiesOf(mod: Record<string, unknown>): [string, ComponentType]
     if (meta.includeStories && !matches(name, meta.includeStories)) continue;
     if (meta.excludeStories && matches(name, meta.excludeStories)) continue;
     if (typeof value !== 'function' && typeof value !== 'object') continue;
-    const story = csf(meta, typeof value === 'function' ? { render: value as CsfRender } : (value as Csf), name);
+    // A CSF 2 function export hoists its annotations onto itself.
+    const spec: Csf = typeof value === 'function' ? { ...value, render: value as CsfRender } : (value as Csf);
+    const story = csf(meta, spec, name);
     if (story) out.push([name, story]);
   }
   return out;

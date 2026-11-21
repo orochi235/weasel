@@ -26,4 +26,13 @@ describe('storiesOf', () => {
     expect(names({ default: { component, includeStories: ['Basic'] }, Basic: {}, Other: {} })).toEqual(['Basic']);
     expect(names({ default: { component }, Basic: {}, __namedExportsOrder: ['Basic'] })).toEqual(['Basic']);
   });
+
+  it("keeps a CSF 2 function story's hoisted args and decorators", () => {
+    const Primary = Object.assign((args: Ctx) => `label=${String(args.label)}`, {
+      args: { label: 'Go' },
+      decorators: [(Story: ComponentType): ReactNode => createElement('b', null, '[', createElement(Story), ']')],
+    });
+    const [[, story]] = storiesOf({ default: {}, Primary });
+    expect(text(story)).toBe('[label=Go]');
+  });
 });
