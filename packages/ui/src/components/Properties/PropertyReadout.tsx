@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { paintKindOf } from '@weasel-js/paint-kinds';
 import { qty, unitSymbol } from '@weasel-js/quantity';
-import { solidColorOf, INHERIT } from '@weasel-js/paint';
+import { solidColorOf, INHERIT, withAlpha01 } from '@weasel-js/paint';
 import { useFieldLocale } from '../../useFieldLocale';
 import { stepDisplay } from './NumberControls';
 import type { PropertyControlProps, PropertyNumberFieldProps } from './fieldTypes';
@@ -38,8 +38,11 @@ function readoutBody(p: PropertyControlProps): ReactNode {
       if (!option) return none();
       return <>{option.glyph}{option.label}</>;
     }
-    case 'color':
-      return p.value ? <><Swatch color={p.value} />{p.value}</> : none();
+    case 'color': {
+      if (!p.value) return none();
+      const color = typeof p.alpha === 'number' ? withAlpha01(p.value, p.alpha) : p.value;
+      return <><Swatch color={color} />{color}</>;
+    }
     case 'paint': {
       if (p.value === null) return 'None';
       if (p.value === undefined) return none();

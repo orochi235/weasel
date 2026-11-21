@@ -45,4 +45,11 @@ describe('a read-only field', () => {
     expect(screen.queryByRole('slider')).toBeNull();
     expect(screen.getByLabelText('Blur').tagName).toBe('OUTPUT');
   });
+
+  it('draws a color whose alpha is held apart with that alpha', () => {
+    render(<PropertyControl kind="color" name="Tint" value="#ff0000" alpha={0.5} readOnly onChange={noop} />);
+    expect(shown('Tint')).toBe('#ff000080');
+    const swatch = screen.getByRole('status', { name: 'Tint' }).querySelector('[aria-hidden]') as HTMLElement;
+    expect(swatch.style.getPropertyValue('--readout-swatch')).toBe('#ff000080');
+  });
 });
