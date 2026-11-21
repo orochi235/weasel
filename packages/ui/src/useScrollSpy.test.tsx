@@ -213,4 +213,27 @@ describe('a container scrolled to its end', () => {
       vi.useRealTimers();
     }
   });
+
+  it('marks the section in view in a container that mounts after the hook', () => {
+    function Late({ loaded }: { loaded: boolean }) {
+      const ref = useRef<HTMLDivElement | null>(null);
+      const spy = useScrollSpy({ rootRef: ref, ids: ['one', 'two'] });
+      return (
+        <>
+          {loaded && (
+            <div ref={ref}>
+              <section data-spy-section="one" />
+              <section data-spy-section="two" />
+            </div>
+          )}
+          <output>{spy.active ?? 'none'}</output>
+        </>
+      );
+    }
+    const view = render(<Late loaded={false} />);
+    expect(screen.getByRole('status').textContent).toBe('none');
+    view.rerender(<Late loaded />);
+    expect(screen.getByRole('status').textContent).toBe('two');
+  });
+
 });
