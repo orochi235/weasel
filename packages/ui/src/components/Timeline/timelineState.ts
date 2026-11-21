@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import type { Track } from '@weasel-js/animator';
 import type { KeySelection } from './keys';
+import { trackAtPath } from './lanes';
 import { spanClamp } from '@weasel-js/ui-input';
 import type { TimeWindow } from './timeScale';
 
@@ -28,20 +30,38 @@ export function useTimeWindow(given: TimeWindow | undefined, duration: number, o
 
 /**
  * A timeline's selected key, held unless `given`, and its selected segment, always held here. A key and a segment are
- * one selection: taking either gives up the other.
+ * one selection: taking either gives up the other, and a key selection arriving through `given` drops the segment.
  */
-export function useKeyAndSegment(given: KeySelection | null | undefined, onSelectionChange?: (sel: KeySelection | null) => void) {
+export function useKeyAndSegment(
+  given: KeySelection | null | undefined, tracks: readonly Track[], onSelectionChange?: (sel: KeySelection | null) => void,
+) {
   const [selection, setSelection] = useHeld<KeySelection | null>(given, null, onSelectionChange);
-  // By key index, so an edit that renumbers a track's keys drops it.
-  const [segmentSelection, setSegmentSelection] = useState<KeySelection | null>(null);
+  // By key index, so it is dropped once its track's key times change and the index may name another segment.
+  const [segment, setSegment] = useState<{ sel: KeySelection; times: string } | null>(null);
+  const [givenKey, setGivenKey] = useState(selectionKey(given));
+  const nextGivenKey = selectionKey(given);
+  if (nextGivenKey !== givenKey) {
+    setGivenKey(nextGivenKey);
+    if (given) setSegment(null);
+  }
+  if (segment && keyTimesAt(tracks, segment.sel.trackPath) !== segment.times) setSegment(null);
+
   const selectKey = (sel: KeySelection | null): void => {
     setSelection(sel);
-    setSegmentSelection(null);
+    setSegment(null);
   };
   const selectSegment = (sel: KeySelection): void => {
-    setSegmentSelection(sel);
+    setSegment({ sel, times: keyTimesAt(tracks, sel.trackPath) });
     if (selection) setSelection(null);
   };
-  const dropSegment = (): void => setSegmentSelection(null);
-  return { selection, segmentSelection, selectKey, selectSegment, dropSegment };
+  const dropSegment = (): void => setSegment(null);
+  return { selection, segmentSelection: segment?.sel ?? null, selectKey, selectSegment, dropSegment };
+}
+
+const selectionKey = (sel: KeySelection | null | undefined): string =>
+  (sel ? `${sel.trackPath.join('.')}:${sel.keyIndex}` : String(sel));
+
+function keyTimesAt(tracks: readonly Track[], path: readonly number[]): string {
+  const track = trackAtPath(tracks, path);
+  return track?.kind === 'sampled' ? track.keys.map((k) => k.t).join(',') : '';
 }

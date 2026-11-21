@@ -378,6 +378,28 @@ describe('Timeline', () => {
       expect(onSelectionChange).toHaveBeenLastCalledWith(null);
     });
 
+    it('closes when a consumer holding the selection selects a key', () => {
+      const { rerender } = renderWithIcons(<Timeline {...base} tracks={threeKeys()} selection={null} renderKeyEditor={editor} />);
+      openPicker();
+      rerender(<Timeline {...base} tracks={threeKeys()} selection={{ trackPath: [0], keyIndex: 2 }} renderKeyEditor={editor} />);
+      expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
+      expect(screen.getByTestId('key-editor')).toBeInTheDocument();
+    });
+
+    it('closes when an edit from outside moves its track\'s keys, and stays open for one that leaves their times', () => {
+      const { rerender } = renderWithIcons(<Timeline {...base} tracks={threeKeys()} />);
+      openPicker();
+      const revalued = threeKeys();
+      (revalued[0] as SampledTrack<number>).keys[1].value = 7;
+      rerender(<Timeline {...base} tracks={revalued} />);
+      expect(screen.getByTestId('easing-preview')).toBeInTheDocument();
+      const moved = threeKeys();
+      (moved[0] as SampledTrack<number>).keys[0].t = 500;
+      (moved[0] as SampledTrack<number>).keys.sort((a, b) => a.t - b.t);
+      rerender(<Timeline {...base} tracks={moved} />);
+      expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
+    });
+
     it('closes on a press on empty lane', () => {
       renderWithIcons(<Timeline {...base} tracks={threeKeys()} />);
       openPicker();

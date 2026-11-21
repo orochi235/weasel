@@ -77,7 +77,7 @@ export function Timeline(props: TimelineProps): ReactElement {
   const hold = useControlHold(props, { readonlyRole: false });
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
   const { win, bounds, setWindow } = useTimeWindow(props.window, duration, props.onWindowChange);
-  const { selection, segmentSelection, selectKey, selectSegment, dropSegment } = useKeyAndSegment(props.selection, props.onSelectionChange);
+  const { selection, segmentSelection, selectKey, selectSegment, dropSegment } = useKeyAndSegment(props.selection, tracks, props.onSelectionChange);
   const [mode, setMode] = useHeld<'dope' | 'graph'>(props.mode, 'dope', props.onModeChange);
 
   const rows = useMemo(() => buildLanes(tracks, expanded), [tracks, expanded]);
