@@ -91,6 +91,22 @@ describe('GradientEditor stops', () => {
     expect(stopsOf(onChange)[0]).toEqual({ offset: 0, color: '#ff000040' });
   });
 
+  it("draws a commit-only caller's opacity scrub on the stop's handle", () => {
+    renderWithIcons(<GradientEditor value={THREE} onChange={() => {}} />);
+    fireEvent.input(screen.getByLabelText('Stop 1 opacity'), { target: { value: '25' } });
+    expect(handle(1).querySelector<HTMLElement>('[data-stop]')!.style.getPropertyValue('--stop')).toBe('#ff000040');
+  });
+
+  it("draws a commit-only caller's stop drag in the stop editor", () => {
+    renderWithIcons(<GradientEditor value={THREE} onChange={() => {}} />);
+    const rail = document.querySelector<HTMLElement>('[data-slider-rail]')!;
+    stubRect(rail, { left: 0, width: 200 });
+    fireEvent.focus(handle(2));
+    fireEvent.pointerDown(handle(2), { clientX: 100, clientY: 12, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(handle(2), { clientX: 150, clientY: 12, pointerId: 1 });
+    expect(screen.getByLabelText('Stop 2 position')).toHaveValue('75%');
+  });
+
   it('moves the selected stop to a position typed as a percentage', () => {
     const onChange = vi.fn();
     renderWithIcons(<GradientEditor value={THREE} onChange={onChange} />);

@@ -6,6 +6,7 @@ import { POSITION_FORMAT, StopEditor } from './StopEditor';
 import { stopOrder, useStopSelection } from './useStopSelection';
 import s from './GradientStops.module.css';
 import { useFieldLocale } from '../../useFieldLocale';
+import { useEditDraft } from '../../useEditDraft';
 
 /** Fewer than two stops is not a gradient any renderer can ramp between. */
 const MIN_STOPS = 2;
@@ -47,7 +48,8 @@ export interface GradientStopsProps {
  * selected by taking focus, which a press on it gives it.
  */
 export function GradientStops(props: GradientStopsProps): ReactElement {
-  const { value, spaceBar, onInput, onChange, onCancel } = props;
+  const { spaceBar } = props;
+  const { shown: value, onInput, onChange, onCancel } = useEditDraft<GradientPaint>(props.value, props);
   const stops = value.stops;
   const space = value.interpolate ?? 'rgb';
   const order = stopOrder(stops);
@@ -120,7 +122,7 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
           thumbs={thumbs}
           aria-label="Gradient stop"
           readoutPlacement="none"
-          onInput={onInput && ((next) => onInput(fromThumbs(next)))}
+          onInput={(next) => onInput(fromThumbs(next))}
           onChange={(next) => onChange(fromThumbs(next))}
           onCancel={onCancel}
           onAddThumb={(at) => {
@@ -147,7 +149,7 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
         place={order.indexOf(selected) + 1}
         count={stops.length}
         removable={removable}
-        onColorInput={(color) => onInput?.(edited({ color }))}
+        onColorInput={(color) => onInput(edited({ color }))}
         onColorChange={(color) => onChange(edited({ color }))}
         onColorCancel={onCancel}
         onOffsetChange={(offset) => onChange(edited({ offset }))}
