@@ -2,6 +2,6 @@
 '@weasel-js/svg': patch
 ---
 
-Importing SVG keeps a fill or stroke a `<use>` sets as its drawn shape's own, instead of marking the shape as taking the paint of the group around the `<use>`.
+Importing SVG keeps a fill or stroke a `<use>` sets as its shape's own.
 
 <!-- entry: fix data visual -->

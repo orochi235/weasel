@@ -2,6 +2,6 @@
 '@weasel-js/svg': patch
 ---
 
-Importing SVG places a `<tspan>` with its own `x` that stays on the current line where the `x` says, by reading the gap as letter spacing, and warns where no loaded face can measure it.
+Importing SVG places a `<tspan>` with its own `x` on the current line where the `x` says. It warns where no loaded face can measure the gap.
 
 <!-- entry: fix visual -->
