@@ -172,6 +172,19 @@ describe('Select', () => {
       expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Red', 'Vermilion']);
     });
 
+    it('measures rows inside a fragment one by one', () => {
+      const { container } = render(
+        <Select label="Color" width="fit">
+          <>
+            <SelectItem id="r">Red</SelectItem>
+            <SelectItem id="v">Vermilion</SelectItem>
+          </>
+        </Select>,
+      );
+      const sizer = container.querySelector('.' + s.sizer) as HTMLElement;
+      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Red', 'Vermilion']);
+    });
+
     it('keeps the hidden labels out of the trigger name', () => {
       render(<Select label="Color" options={OPTIONS} placeholder="Pick one" width="fit" />);
       expect(screen.getByRole('button', { name: 'Pick one Color' })).toBeTruthy();
