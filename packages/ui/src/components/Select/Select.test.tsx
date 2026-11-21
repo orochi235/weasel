@@ -524,3 +524,16 @@ describe('the release that opens or follows it', () => {
     expect(up.defaultPrevented).toBe(false);
   });
 });
+
+describe("React Aria's value props", () => {
+  it('are not Select props, and do not outrank selectedKey when passed anyway', () => {
+    const onChange = vi.fn();
+    // @ts-expect-error -- `selectedKey` and `onSelectionChange` are a Select's selection.
+    render(<Select aria-label="Color" options={OPTIONS} value="g" onChange={onChange} mixed />);
+    const trigger = screen.getByRole('button', { name: /Color/ });
+    expect(trigger).toHaveTextContent('Mixed');
+    act(() => trigger.focus());
+    fireEvent.keyDown(trigger, { key: 'ArrowRight' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});
