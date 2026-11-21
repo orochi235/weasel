@@ -3468,3 +3468,8 @@ Calls the lanes made without a ruling:
   still writes anchored at the user-space origin; the kit's export path resolves such a paint with
   `paintToLocalUnits` first and never warns. Writing a def per node, each placed against that node's box, was the
   alternative.
+
+## Audit round sixty-five (2026-11-21): animator
+
+- 2026-11-21 (the fixer's call): `createTargetTable` throws for a `capacity` that is not a whole number (2.5, NaN,
+  Infinity), naming `capacity`, and still treats one below 1 as 1. Rounding a fraction up was the alternative.

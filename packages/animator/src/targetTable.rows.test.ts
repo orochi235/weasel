@@ -54,3 +54,9 @@ describe('a target table made from frozen options', () => {
     expect(show).not.toHaveBeenCalled();
   });
 });
+
+describe('a target table capacity', () => {
+  it.each([2.5, Number.NaN, Infinity])('refuses %s rows, naming capacity', (capacity) => {
+    expect(() => createTargetTable({ axes: 2, capacity })).toThrow(/`capacity` is a whole number/);
+  });
+});
