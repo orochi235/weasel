@@ -177,13 +177,17 @@ export const Button = forwardRef(function Button(
   );
 });
 
+/** Children React renders as nothing, so a button holding them has no label part. */
+const rendersNothing = (n: ReactNode) => n == null || typeof n === 'boolean' || n === '';
+
 /** What a {@link Button} with `props` shows, as the shared measure reads it: its children are the label, or the
- *  icon when `iconOnly`, and a label that is not text is measured by its text content. */
+ *  icon when `iconOnly`, and a label that is not text is measured by its text content. Children that render nothing
+ *  (`null`, a boolean, `''`) are no label. */
 export function buttonFaceOf(props: ButtonProps): ButtonFace<ReactNode> {
   const { children, size = 'md', iconOnly, loading, leadingIcon, trailingIcon } = props;
   return iconOnly
     ? { size, iconOnly: true, icon: children, loading }
-    : { size, label: children === undefined ? undefined : nodeText(children), leadingIcon, trailingIcon, loading };
+    : { size, label: rendersNothing(children) ? undefined : nodeText(children), leadingIcon, trailingIcon, loading };
 }
 
 /** The slot before a label: it hands the button the label's baseline, as `measureButton` gives it. */

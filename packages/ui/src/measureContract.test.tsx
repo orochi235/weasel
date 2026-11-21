@@ -26,6 +26,15 @@ describe('domButton', () => {
     expect(buttonFaceOf({}).label).toBeUndefined();
   });
 
+  it('gives a label that renders nothing no label part', () => {
+    for (const children of [null, false, true, '']) {
+      expect(buttonFaceOf({ leadingIcon: '+', children }).label).toBeUndefined();
+      render(domButton.draw({ leadingIcon: '+', children }, {}));
+      expect(screen.getByRole('button').children).toHaveLength(1);
+      cleanup();
+    }
+  });
+
   it('measures through the shared measure and draws the button', () => {
     expect(domButton.measure({ children: 'Save' }, UNBOUNDED, env)).toMatchObject({ width: 48, height: 28 });
     render(domButton.draw({ children: 'Save' }, {}));
