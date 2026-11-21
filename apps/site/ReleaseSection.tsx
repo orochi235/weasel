@@ -10,11 +10,15 @@ import {
   type Tag,
 } from '@shared/releases';
 import num from '@weasel-js/theme/numeric.module.css';
+import { Button } from '@weasel-js/ui/components/Button';
 import { isoDay } from './isoDay';
 import { ReleaseEntry } from './ReleaseEntry';
 
 /** Matches the `UNRELEASED` label the changelogs plugin stamps on pending changesets. */
 const UNRELEASED = 'Unreleased';
+
+/** How many entries a release that opens itself may hold before it waits to be asked for them. */
+const DEFER_OVER = 100;
 
 /** Entries already fetched, so a release opened twice renders at once the second time. */
 const loaded = new WeakMap<ReleaseIndexEntry, ChangelogEntry[]>();
@@ -69,8 +73,13 @@ export function ReleaseSection({
   onToggleTag: (tag: Tag) => void;
 }) {
   const [open, setOpen] = useState(lead || target);
+  // The lead opens itself, so it shows its highlights and counts and fetches its entries only when
+  // asked: a major release's are megabytes. A deep link, a filter or a reader's own click wants them.
+  const [asked, setAsked] = useState(!lead || target || release.shape.length <= DEFER_OVER);
+  const filtered = filter.packages.length > 0 || filter.tags.length > 0;
+  const full = asked || filtered || loaded.has(release);
   const ref = useRef<HTMLDetailsElement>(null);
-  const entries = useEntries(release, open);
+  const entries = useEntries(release, open && full);
 
   const [wasLead, setWasLead] = useState(lead);
   if (lead !== wasLead) {
@@ -120,7 +129,11 @@ export function ReleaseSection({
               </ul>
             </div>
           ) : null}
-          {entries ? (
+          {!full ? (
+            <Button className="ckd-release-show-all" onClick={() => setAsked(true)}>
+              Show all {countOf(counts)} {countOf(counts) === 1 ? 'change' : 'changes'}
+            </Button>
+          ) : entries ? (
             <Groups entries={entries} filter={filter} onTogglePackage={onTogglePackage} onToggleTag={onToggleTag} />
           ) : (
             <p className="ckd-release-matched">Loading…</p>
@@ -132,8 +145,10 @@ export function ReleaseSection({
 }
 
 /** The release's total, with its per-group breakdown on a smaller line below. */
+const countOf = (counts: readonly { count: number }[]): number => counts.reduce((sum, g) => sum + g.count, 0);
+
 function ReleaseCount({ counts }: { counts: readonly { id: string; label: string; count: number }[] }) {
-  const total = counts.reduce((sum, g) => sum + g.count, 0);
+  const total = countOf(counts);
   if (total === 0) return null;
   return (
     <span className={`ckd-release-count ${num.numeric}`}>
