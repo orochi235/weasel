@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
-import { defaultCommitAdapter } from './defaultCommitAdapter';
+import type { ActionDeps } from '@weasel-js/routing';
+import { createSetPoseOp } from 'core/ops/setPose';
+import { commitOps, defaultCommitAdapter } from './defaultCommitAdapter';
 
 interface D { color: string }
 type L = 'main' | 'overlay';
@@ -100,5 +102,27 @@ describe('defaultCommitAdapter', () => {
     a.removeNode(label as string);
     a.insertNode(node);
     expect(scene.get(asNodeId(label as string))?.pickable).toBe(false);
+  });
+});
+
+/** Deps as a dispatcher builds them: reading one the action did not declare throws. */
+function declaredDeps(deps: Record<string, unknown>): ActionDeps {
+  return new Proxy(deps, {
+    get(target, prop, receiver) {
+      if (typeof prop === 'string' && !(prop in target)) throw new Error(`undeclared deps.${prop}`);
+      return Reflect.get(target, prop, receiver);
+    },
+  }) as ActionDeps;
+}
+
+describe('commitOps', () => {
+  it.each([['scene'], ['scene and applyOps']])('commits with only %s declared, reading no other dep', (which) => {
+    const { scene, leaf } = fixture();
+    const from = scene.get(leaf)!.pose;
+    const to = { ...from, x: 50 };
+    const deps = which === 'scene' ? { scene } : { scene, applyOps: undefined };
+    const committed = commitOps(declaredDeps(deps), [createSetPoseOp({ id: leaf, from, to })], 'Move');
+    expect(committed).toBe(true);
+    expect(scene.get(leaf)?.pose).toEqual(to);
   });
 });
