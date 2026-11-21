@@ -4,7 +4,7 @@
   composes: toggleLabel from '../toggleLabel.module.css';
 }
 
-/* The box dims itself on :disabled, so only the text is dimmed here. */
+/* The box dims itself, so only the text is dimmed here. */
 .checkbox[data-disabled] {
   cursor: not-allowed;
 }
