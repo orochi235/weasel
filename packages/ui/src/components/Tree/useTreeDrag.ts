@@ -5,7 +5,7 @@ import { after } from '@weasel-js/registry';
 import { startThresholdDrag, swallowNextClick, type ThresholdDragHandle } from '@weasel-js/routing';
 import type { DropMark, ResolvedDrop, TreeDropTarget } from '../../dropTarget';
 import type { ReorderGhost } from '../../useReorderDragList';
-import { draggedIdsFor, isNoopMove, landsInside } from './treeMoves';
+import { draggedIdsFor, isNoopMove, landsInside, staysPut } from './treeMoves';
 import type { TreeNode } from './Tree';
 import { modsOf } from '../../useReorderDragList';
 import { useOutsideDrop, type TreeDropHandle } from './useOutsideDrop';
@@ -61,9 +61,6 @@ export interface TreeDragState {
   /** The pointer, in client space, and whether it is off the tree's box. */
   pointer: { x: number; y: number; outside: boolean } | null;
 }
-
-/** A press on this node starts no drag. */
-const stays = (node: TreeNode | undefined) => !!node && (!!node.disabled || !!node.immovable);
 
 const IDLE: TreeDragState ={ dragging: null, effect: 'move', mark: null, ghost: null, pointer: null };
 
@@ -153,7 +150,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     const { enabled, container } = o.current;
     const box = container();
     if (!enabled || !box || drag.current || !isPrimaryPress(e) || isContextPress(e)) return;
-    if (stays(o.current.visible.find((v) => v.node.id === id)?.node)) return;
+    if (staysPut(o.current.visible.find((v) => v.node.id === id)?.node)) return;
     if ((e.target as Element).closest('[data-tree-twisty]')) return;
     if (isInControlWithin(e.target, e.currentTarget)) return;
     const mods = modsOf(e);

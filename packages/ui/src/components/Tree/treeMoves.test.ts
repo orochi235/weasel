@@ -29,6 +29,11 @@ describe('treeMoves', () => {
     expect(draggedIdsFor(heldH, new Set(['g', 'h', 'y']), 'g')).toEqual(['g']);
   });
 
+  it('leaves a selected disabled node behind', () => {
+    const off: TreeNode[] = [...T.slice(0, 2), { ...T[2]!, disabled: true }];
+    expect(draggedIdsFor(off, new Set(['z', 'w']), 'z')).toEqual(['z']);
+  });
+
   it('refuses a target inside a dragged node', () => {
     expect(landsInside(T, ['g'], { parentId: 'h', index: 0 })).toBe(true);
     expect(landsInside(T, ['g'], { parentId: 'g', index: 0 })).toBe(true);

@@ -4,7 +4,7 @@ import { arrowDir, isNudgeChord } from '@weasel-js/ui-input';
 import { getOwn } from '@weasel-js/registry';
 import { inlineDirection } from '../../useRovingTabIndex';
 import type { TreeNode } from './Tree';
-import { draggedIdsFor, isNoopMove, keyboardTarget, landsInside, nodeById, parentsOf, type KeyboardMove } from './treeMoves';
+import { draggedIdsFor, isNoopMove, keyboardTarget, landsInside, nodeById, parentsOf, staysPut, type KeyboardMove } from './treeMoves';
 import type { TreeDragEffect } from './useTreeDrag';
 
 const MOVE_KEYS: Record<string, KeyboardMove | undefined> = { ArrowUp: 'up', ArrowDown: 'down' };
@@ -28,7 +28,7 @@ export function handleMoveKey(e: KeyboardEvent<HTMLElement>, nodeId: string, ctx
   if (!dir) return false;
   e.preventDefault();
   const { nodes, canDrop } = ctx;
-  if (nodeById(nodes, nodeId)?.immovable) return true;
+  if (staysPut(nodeById(nodes, nodeId))) return true;
   const parents = parentsOf(nodes);
   const carried = draggedIdsFor(nodes, ctx.selected, nodeId);
   const ids = carried.every((x) => parents.get(x) === parents.get(nodeId)) ? carried : [nodeId];

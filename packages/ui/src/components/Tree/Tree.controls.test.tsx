@@ -50,9 +50,9 @@ describe('Tree with row controls', () => {
 });
 
 describe('Tree node flags', () => {
-  it('moves no immovable node, by keyboard or by drag', () => {
+  it.each(['immovable', 'disabled'] as const)('moves no %s node, by keyboard or by drag', (flag) => {
     const onMove = vi.fn();
-    const nodes: TreeNode[] = [{ id: 'a', label: 'A', immovable: true }, { id: 'b', label: 'B' }];
+    const nodes: TreeNode[] = [{ id: 'a', label: 'A', [flag]: true }, { id: 'b', label: 'B' }];
     render(<Tree aria-label="T" nodes={nodes} onMove={onMove} />);
     const a = screen.getByRole('treeitem', { name: 'A' });
     fireEvent.keyDown(a, { key: 'ArrowDown', altKey: true });

@@ -46,17 +46,20 @@ function treeOrder(nodes: readonly TreeNode[]): TreeNode[] {
   return out;
 }
 
+/** Whether `node` stays where it is, by drag and by key: a disabled node moves no more than an immovable one. */
+export const staysPut = (node: TreeNode | undefined): boolean => !!node && (!!node.disabled || !!node.immovable);
+
 function hasAncestorIn(parents: Map<string, string | null>, id: string, set: ReadonlySet<string>): boolean {
   for (let p = parents.get(id) ?? null; p !== null; p = parents.get(p) ?? null) if (set.has(p)) return true;
   return false;
 }
 
 /** What a drag from `id` carries: the selection in tree order if `id` is in it, else `id` alone. A node travels
- *  with a selected ancestor that travels rather than on its own, and an immovable one stays behind. */
+ *  with a selected ancestor that travels rather than on its own, and a disabled or immovable one stays behind. */
 export function draggedIdsFor(nodes: readonly TreeNode[], selected: ReadonlySet<string>, id: string): string[] {
   if (!selected.has(id)) return [id];
   const parents = parentsOf(nodes);
-  const travels = new Set(treeOrder(nodes).filter((n) => selected.has(n.id) && !n.immovable).map((n) => n.id));
+  const travels = new Set(treeOrder(nodes).filter((n) => selected.has(n.id) && !staysPut(n)).map((n) => n.id));
   return [...travels].filter((x) => !hasAncestorIn(parents, x, travels));
 }
 
