@@ -2,6 +2,6 @@
 '@weasel-js/ui': patch
 ---
 
-`TokenField`'s Backspace moves to the last chip only from an empty field; with text typed, it leaves the text alone instead of turning it into a token.
+Backspace at the start of a `TokenField`'s typed text leaves the text alone, rather than adding it as a token.
 
 <!-- entry: fix -->
