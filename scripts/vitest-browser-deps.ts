@@ -6,7 +6,7 @@
  * Without it a warm cache skips the scan, the dependency is met mid-run, and vite reloads the
  * page under the suites.
  */
-import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, globSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import { dirname, join, matchesGlob, relative, resolve } from 'node:path';
 import { SOURCE, isBare, packageOf, scanImports } from './lib/imports.mjs';
@@ -44,6 +44,24 @@ function importsOf(file: string): Scan {
   const scan = scanImports(readFileSync(file, 'utf8'), file);
   parsed.set(file, { stamp, scan });
   return scan;
+}
+
+/** The directory `pkg` is installed in as node resolves it from `dir`, or `undefined` when nothing provides it. */
+function installedFrom(dir: string, pkg: string): string | undefined {
+  for (let at = dir; ; at = dirname(at)) {
+    const candidate = join(at, 'node_modules', pkg);
+    if (existsSync(join(candidate, 'package.json'))) return realpathSync(candidate);
+    if (dirname(at) === at) return undefined;
+  }
+}
+
+/** The name in the nearest `package.json` above `file`. */
+function ownerOf(file: string): string | undefined {
+  for (let at = dirname(file); ; at = dirname(at)) {
+    const manifest = join(at, 'package.json');
+    if (isFile(manifest)) return (JSON.parse(readFileSync(manifest, 'utf8')) as { name?: string }).name;
+    if (dirname(at) === at) return undefined;
+  }
 }
 
 function aliased(specifier: string, aliases: ViteAlias[]): string | undefined {
@@ -111,6 +129,16 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
     }
   };
 
+  // A bare id in `include` resolves from the root, so a workspace package whose own node_modules holds another
+  // version (font's opentype.js 2 beside a dev tool's hoisted 1.3) is named in vite's nested form, `owner > dep`.
+  const pinned = (file: string, specifier: string): string | undefined => {
+    const pkg = packageOf(specifier);
+    const own = installedFrom(dirname(file), pkg);
+    if (!own || own === installedFrom(repoRoot, pkg)) return undefined;
+    const owner = ownerOf(file);
+    return owner && workspace.has(owner) ? `${owner} > ${specifier}` : undefined;
+  };
+
   for (let file = queue.pop(); file; file = queue.pop()) {
     seen.add(file);
     const { specifiers, globs, unreadable } = importsOf(file);
@@ -129,7 +157,9 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
       const target = aliased(specifier, aliases);
       if (target) visit(target);
       else if (specifier.startsWith('.')) visit(join(dirname(file), specifier));
-      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) found.add(specifier);
+      else if (isBare(specifier) && !ASSET.test(specifier) && !ownedElsewhere(packageOf(specifier))) {
+        found.add(pinned(file, specifier) ?? specifier);
+      }
     }
   }
   return [...found].sort();
