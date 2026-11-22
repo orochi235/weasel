@@ -78,6 +78,18 @@ export class GlProgram implements GpuProgram {
     else gl.flush();
   }
 
+  /** Free the program, and its stages where it was deleted before its link was waited on. */
+  delete(): void {
+    const gl = this.host.gl;
+    if (this.stages) {
+      gl.deleteShader(this.stages[0]);
+      gl.deleteShader(this.stages[1]);
+      this.stages = null;
+      this.pending = null;
+    }
+    gl.deleteProgram(this.handle);
+  }
+
   private compile(type: number, source: string): WebGLShader {
     const gl = this.host.gl;
     const shader = gl.createShader(type);

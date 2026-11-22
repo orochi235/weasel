@@ -95,9 +95,9 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
   }
 
   deleteProgram(program: GpuProgram): void {
-    const { handle } = program as GlProgram;
-    this.cache.forgetProgram(handle);
-    this.gl.deleteProgram(handle);
+    const gl = program as GlProgram;
+    this.cache.forgetProgram(gl.handle);
+    gl.delete();
   }
 
   createBuffer(kind: GpuBuffer['kind'], init: number | ArrayBufferView, usage: GpuBufferUsage): GpuBuffer {
