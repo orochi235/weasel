@@ -118,8 +118,9 @@ const testsDepth = (ds: DepthStencil | undefined): boolean =>
   (ds.depthWriteEnabled === true || (ds.depthCompare ?? 'always') !== 'always');
 
 let gpuInstalled = false;
-/** Canvases configured with each device, and the devices that have built a depth-tested pipeline. */
-const gpuCanvases = new WeakMap<object, Set<Element>>();
+/** Canvases configured with each device before it built a depth-tested pipeline, held weakly so a
+ *  long-lived device keeps no closed trial's canvas; and the devices that have built one. */
+const gpuCanvases = new WeakMap<object, Set<WeakRef<Element>>>();
 const gpuDepth = new WeakSet<object>();
 
 const gpuFound = (canvas: Element): void => depthFound(canvas, 'WebGPU with depth testing');
@@ -142,10 +143,18 @@ function installGpuDepthWatch(): void {
       const { canvas } = this;
       const device = config?.device;
       if (device && isElement(canvas)) {
-        const set = gpuCanvases.get(device) ?? new Set();
-        gpuCanvases.set(device, set);
-        set.add(canvas);
         if (gpuDepth.has(device)) gpuFound(canvas);
+        else {
+          const set = gpuCanvases.get(device) ?? new Set();
+          gpuCanvases.set(device, set);
+          let held = false;
+          for (const ref of set) {
+            const el = ref.deref();
+            if (!el) set.delete(ref);
+            else if (el === canvas) held = true;
+          }
+          if (!held) set.add(new WeakRef(canvas));
+        }
       }
       return configure.call(this, config);
     };
@@ -158,7 +167,11 @@ function installGpuDepthWatch(): void {
     const wrapped: Pipeline = function (this, descriptor) {
       if (testsDepth(descriptor?.depthStencil) && !gpuDepth.has(this)) {
         gpuDepth.add(this);
-        for (const canvas of gpuCanvases.get(this) ?? []) gpuFound(canvas);
+        for (const ref of gpuCanvases.get(this) ?? []) {
+          const canvas = ref.deref();
+          if (canvas) gpuFound(canvas);
+        }
+        gpuCanvases.delete(this);
       }
       return (create as Pipeline).call(this, descriptor);
     };
