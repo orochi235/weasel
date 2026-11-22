@@ -11,9 +11,9 @@ import { checkedColor } from '../colorCheck';
 import type { ImportResult } from '../document';
 import { Membership, Warnings, graphPage } from '../graphRead';
 import { parseDot, type DotGraph, type DotNodeRef, type DotStmt, type DotSubgraph, type DotValue } from './parse';
+import { POINTS_PER_INCH, positions, round, str, type Attrs } from './positions';
 import { dashOf, dotColor, labelLines, markerOf, OUTLINE_ATTR, outlineOf, stylesOf } from './values';
 
-type Attrs = Map<string, DotValue>;
 /** What a named subgraph's statements set itself, which Graphviz keeps on the subgraph for when it is opened again. */
 interface Own { graph: Attrs; node: Attrs; edge: Attrs }
 interface Scope { kind: 'root' | 'cluster' | 'plain'; graph: Attrs; node: Attrs; edge: Attrs; cluster: string | null; own?: Own }
@@ -30,7 +30,6 @@ const READ: Readonly<Record<'root' | 'cluster' | 'plain' | 'node' | 'edge', Read
 
 const DIRECTIONS: Readonly<Record<string, LayoutDirection>> = { TB: 'down', BT: 'up', LR: 'right', RL: 'left' };
 const COMPASS_PORTS = new Set(['n', 'e', 's', 'w']);
-const POINTS_PER_INCH = 72;
 /** A cluster's key starts with this when it has no name, followed by a count, and twice over when its name does. */
 const ANONYMOUS = '\u0000';
 const clusterKey = (id: string) => (id.startsWith(ANONYMOUS) ? `${ANONYMOUS}${id}` : id);
@@ -51,8 +50,6 @@ function clusterFlag(stmts: readonly DotStmt[], inherited: Attrs): boolean {
   return truthy(flag);
 }
 
-const round = (n: number) => Math.round(n * 100) / 100;
-const str = (attrs: Attrs, key: string) => attrs.get(key)?.value;
 /** A keyword attribute, `undefined` when unset or set to `""`, which Graphviz reads as its default. */
 const keyword = (attrs: Attrs, key: string) => str(attrs, key) || undefined;
 
@@ -231,27 +228,6 @@ function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
     ...(height !== undefined ? { height: round(height * POINTS_PER_INCH) } : {}),
     ...(colors !== undefined ? { colors } : {}),
   };
-}
-
-const least = (m: number, v: number) => Math.min(m, v);
-const most = (m: number, v: number) => Math.max(m, v);
-
-/** Each node's place from its `pos`, and the page's size, when every node has one; else `null`. A graph with a `bb` is
- *  layout output, its `pos` in points; one without is input to neato, its `pos` in inches. */
-function positions(nodes: DataNode[], attrs: ReadonlyMap<string, Attrs>, bb: string | undefined) {
-  const unit = bb === undefined ? POINTS_PER_INCH : 1;
-  const centers = nodes.map((n) => str(attrs.get(n.id)!, 'pos')?.replace(/!$/, '').split(',').map((v) => Number(v) * unit));
-  if (nodes.length === 0 || centers.some((c) => c === undefined || c.length < 2 || !c.every(Number.isFinite))) return null;
-  const size = (n: DataNode) => ({ width: n.width ?? 0.75 * POINTS_PER_INCH, height: n.height ?? 0.5 * POINTS_PER_INCH });
-  const box = bb?.split(',').map(Number);
-  const xs = nodes.flatMap((n, i) => [centers[i]![0]! - size(n).width / 2, centers[i]![0]! + size(n).width / 2]);
-  const ys = nodes.flatMap((n, i) => [centers[i]![1]! - size(n).height / 2, centers[i]![1]! + size(n).height / 2]);
-  const [llx, lly, right, top] = box?.length === 4 && box.every(Number.isFinite)
-    ? box : [xs.reduce(least, Infinity), ys.reduce(least, Infinity), xs.reduce(most, -Infinity), ys.reduce(most, -Infinity)];
-  const placed = nodes.map((n, i) => ({
-    ...n, ...size(n), at: { x: round(centers[i]![0]! - llx! - size(n).width / 2), y: round(top - centers[i]![1]! - size(n).height / 2) },
-  }));
-  return { nodes: placed, size: { width: round(right - llx!), height: round(top - lly!) } };
 }
 
 function portOf(r: DotReader, ref: DotNodeRef, attr: string | undefined): string | undefined {
