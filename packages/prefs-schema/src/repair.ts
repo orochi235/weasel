@@ -56,7 +56,7 @@ export function repairPrefValue(
     }
     case 'object':
       if (isPlainObject(stored)) return repairFields(leaf as PrefObject, stored as Record<string, unknown>, validators);
-      return (leaf as PrefObject).fromScalar ? stored : leaf.default;
+      return repairScalar(leaf as PrefObject, stored, validators);
     case 'map':
       return repairMap(leaf as PrefMap, stored, validators);
     case 'union': {
@@ -86,6 +86,23 @@ function repairFields(leaf: PrefObject, stored: Record<string, unknown>, validat
     if (read !== held) out = prefObjectWithField(leaf, out, key, read);
   }
   return out;
+}
+
+/**
+ * A scalar an object leaf lifts with `fromScalar` stays as it was stored while the object it lifts to reads as it is,
+ * and reads as that object repaired where it does not. One that lifts to no object reads as the default.
+ */
+function repairScalar(leaf: PrefObject, stored: unknown, validators: Validators): unknown {
+  if (!leaf.fromScalar) return leaf.default;
+  let lifted: unknown;
+  try {
+    lifted = leaf.fromScalar(stored);
+  } catch {
+    return leaf.default;
+  }
+  if (!isPlainObject(lifted)) return leaf.default;
+  const read = repairFields(leaf, lifted as Record<string, unknown>, validators);
+  return read === lifted ? stored : read;
 }
 
 /** Each value reads as `item` would on its own, under the key it was stored at. */

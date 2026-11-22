@@ -101,6 +101,21 @@ describe('repairPrefValue', () => {
     expect(repairPrefValue(lifting, 5)).toBe(5);
   });
 
+  it('repairs a scalar an object leaf lifts as the object it lifts to, and defaults one that does not lift', () => {
+    const stroke = {
+      kind: 'object', name: 'Stroke', description: '', default: { width: 1 },
+      children: { width: { kind: 'number', name: 'W', description: '', default: 1, min: 0 } },
+      fromScalar: (v: unknown) => ({ width: v }),
+    } as PrefLeaf;
+    expect(repairPrefValue(stroke, 4)).toBe(4);
+    expect(repairPrefValue(stroke, 'garbage')).toEqual({ width: 1 });
+    expect(repairPrefValue(stroke, -3)).toEqual({ width: 0 });
+    const notLifting = { ...stroke, fromScalar: () => 7 } as unknown as PrefLeaf;
+    expect(repairPrefValue(notLifting, 4)).toEqual({ width: 1 });
+    const throwing = { ...stroke, fromScalar: () => { throw new Error('no'); } } as PrefLeaf;
+    expect(repairPrefValue(throwing, 4)).toEqual({ width: 1 });
+  });
+
   it('passes kinds it has no rule for through unchanged', () => {
     const custom = { kind: 'registry-enum', name: 'R', description: '', default: 'select' } as PrefLeaf;
     const stored = { anything: true };
