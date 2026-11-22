@@ -131,5 +131,8 @@ export function planeFloor(scheme: TileScheme<PlaneTileKey, PlaneTileView>, tile
   if (!(span > 0) || !Number.isFinite(span)) return [];
   // One less than the level the span fills: a box straddling tile edges takes one more a side.
   const z = Math.floor(Math.log2((floorTiles * tilePx) / span)) - 1;
-  return [...scheme.keysMeeting(bounds, z)];
+  // A side of no length meets no tile, so a line has it reach a hair past its edge.
+  const box = Float64Array.from(bounds);
+  for (let i = 0; i < 2; i++) if (!(box[2 + i]! > box[i]!)) box[2 + i] = box[i]! + Math.max(Math.abs(box[i]!), span) * 2 ** -40;
+  return [...scheme.keysMeeting(box, z)];
 }
