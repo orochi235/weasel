@@ -12,17 +12,23 @@ export type PrefBoundAt = (read: PrefBoundReader) => number | undefined;
 
 /**
  * `leaf` with its `minAt` and `maxAt` read against `read` and folded into
- * `min` and `max`, whichever is tighter. The leaf itself when it has neither.
+ * `min` and `max`, whichever is tighter. A bound read is held inside the declared
+ * ones, and a `maxAt` below the `min` gives way to it, so `min` never passes `max`.
+ * The leaf itself when it has neither.
  */
 export function prefBoundedNumber(leaf: PrefNumber, read: PrefBoundReader): PrefNumber {
   const { minAt, maxAt, ...rest } = leaf;
   if (minAt === undefined && maxAt === undefined) return leaf;
-  const lo = minAt?.(read);
-  const hi = maxAt?.(read);
+  const within = (n: number | undefined): number | undefined =>
+    n === undefined ? undefined : Math.min(Math.max(n, leaf.min ?? -Infinity), leaf.max ?? Infinity);
+  const lo = within(minAt?.(read));
+  const hi = within(maxAt?.(read));
+  const min = lo === undefined ? leaf.min : leaf.min === undefined ? lo : Math.max(leaf.min, lo);
+  const max = hi === undefined ? leaf.max : Math.max(min ?? -Infinity, leaf.max === undefined ? hi : Math.min(leaf.max, hi));
   return {
     ...rest,
-    ...(lo === undefined ? {} : { min: leaf.min === undefined ? lo : Math.max(leaf.min, lo) }),
-    ...(hi === undefined ? {} : { max: leaf.max === undefined ? hi : Math.min(leaf.max, hi) }),
+    ...(min === undefined ? {} : { min }),
+    ...(max === undefined ? {} : { max }),
   };
 }
 

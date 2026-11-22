@@ -21,6 +21,16 @@ describe('prefBoundedNumber', () => {
     expect(prefBoundedNumber(leaf, read({ cap: 400 })).max).toBe(100);
   });
 
+  it('keeps the bounds it reads inside the declared ones, so min never passes max', () => {
+    const floored = prefBoundedNumber(num({ max: 10, minAt: () => 20 }), read({}));
+    expect([floored.min, floored.max]).toEqual([10, 10]);
+    expect(prefClampNumber(floored, 15)).toBe(10);
+    const capped = prefBoundedNumber(num({ min: 5, maxAt: () => 2 }), read({}));
+    expect([capped.min, capped.max]).toEqual([5, 5]);
+    const crossed = prefBoundedNumber(num({ minAt: () => 8, maxAt: () => 3 }), read({}));
+    expect([crossed.min, crossed.max]).toEqual([8, 8]);
+  });
+
   it('sets a bound the leaf had none of', () => {
     expect(prefBoundedNumber(num({ minAt: () => 3 }), read({})).min).toBe(3);
   });
