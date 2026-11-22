@@ -173,6 +173,13 @@ describe('Alt+arrow reordering', () => {
     expect(button('outside')).toHaveFocus();
   });
 
+  it('takes its shortcuts back off the units when onReorder goes', () => {
+    const { rerender } = render(host(<PrefsBar schema={flat} onReorder={() => {}} />));
+    expect(button('a')).toHaveAttribute('aria-keyshortcuts');
+    rerender(host(<PrefsBar schema={flat} />));
+    expect(button('a')).not.toHaveAttribute('aria-keyshortcuts');
+  });
+
   it('keeps the place of a child nothing draws', () => {
     const schema: PrefGroup = { name: 'Tools', children: { a: act('a'), b: { ...act('b'), hidden: true } as PrefLeaf, c: act('c') } };
     const onReorder = vi.fn();

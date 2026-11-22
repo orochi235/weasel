@@ -56,6 +56,8 @@ export function useBarReorderKeys({ root, order, onReorder, vertical, dir, keysO
   // Each move renders, so a refocus a host's refusal leaves unanswered is dropped then, not on some later render.
   const [, setMoves] = useState(0);
   const refocus = useRef<{ container: string; key: string } | null>(null);
+  // Units stop being marked when `onReorder` goes, so the controls named last time are cleared by reference.
+  const named = useRef(new Set<HTMLElement>());
   const enabled = onReorder !== undefined;
 
   // The moved control may have been re-created under its new place, so it is found again by its marks.
@@ -69,11 +71,17 @@ export function useBarReorderKeys({ root, order, onReorder, vertical, dir, keysO
       if (found && !found.contains(document.activeElement)) focusableOf(found).focus();
     }
     const keys = enabled ? (vertical ? 'Alt+ArrowUp Alt+ArrowDown' : 'Alt+ArrowLeft Alt+ArrowRight') : null;
-    for (const unit of el.querySelectorAll<HTMLElement>(`[${BAR_UNIT}]`)) {
-      const control = focusableOf(unit);
-      if (keys === null || isEditableTarget(control)) control.removeAttribute('aria-keyshortcuts');
-      else control.setAttribute('aria-keyshortcuts', keys);
+    const now = new Set<HTMLElement>();
+    if (keys !== null) {
+      for (const unit of el.querySelectorAll<HTMLElement>(`[${BAR_UNIT}]`)) {
+        const control = focusableOf(unit);
+        if (isEditableTarget(control)) continue;
+        control.setAttribute('aria-keyshortcuts', keys);
+        now.add(control);
+      }
     }
+    for (const control of named.current) if (!now.has(control)) control.removeAttribute('aria-keyshortcuts');
+    named.current = now;
   });
 
   const onKeyDownCapture = (e: ReactKeyboardEvent): void => {
