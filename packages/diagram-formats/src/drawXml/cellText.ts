@@ -9,7 +9,7 @@ const BLOCKS = 'address|article|aside|blockquote|caption|center|dd|details|dialo
 const BLOCK_OPEN = new RegExp(`<(?:${BLOCKS})\\b[^>]*>`, 'gi');
 const BLOCK_CLOSE = new RegExp(`<\\/(?:${BLOCKS})\\s*>`, 'gi');
 
-/** HTML as text, where a break is a line break, a block starts and ends a line, and a run of whitespace is one space,
+/** HTML as text, where a break is a line break, a block starts and ends a line, table cells sit a space apart, and a run of whitespace is one space,
  *  dropped at either end of a line, as a browser lays it out. */
 function htmlText(html: string): string {
   const marked = html
@@ -17,7 +17,9 @@ function htmlText(html: string): string {
     .replace(/<br\b[^>]*>/gi, '\n')
     .replace(BLOCK_OPEN, OPEN)
     .replace(BLOCK_CLOSE, CLOSE)
-    .replace(/<[^>]*>/g, '');
+    .replace(/<t[dh]\b[^>]*>/gi, ' ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/ {2,}/g, ' ');
   let out = '';
   for (const ch of marked) {
     const atLineStart = out === '' || out.endsWith('\n');

@@ -27,6 +27,10 @@ describe('cellLines', () => {
     expect(cellLines('<pref>a</pref><bring>b</bring>', true)).toEqual(['ab']);
   });
 
+  it('keeps a table row\'s cells apart', () => {
+    expect(cellLines('<table><tr><td>id</td><td>int</td></tr><tr><th>a</th> <th>b</th></tr></table>', true)).toEqual(['id int', 'a b']);
+  });
+
   it('decodes entities', () => {
     expect(cellLines('a&nbsp;&amp;&nbsp;b &lt;c&gt; &#65;&#x42;', true)).toEqual(['a & b <c> AB']);
     expect(cellLines('&#99999999;', true)).toEqual(['&#99999999;']);
