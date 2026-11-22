@@ -91,4 +91,27 @@ describe('a frame whose targets throw as they are shown', () => {
     expect(r.seen.at(-1)).toBeCloseTo(50);
     errors.mockRestore();
   });
+
+  it('keeps the loop running and stops what moves the targets whose publish threw', () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const r = rig();
+    r.tick(0);
+    let value = 0;
+    let published = 0;
+    const bad = createTarget({
+      get: () => value,
+      set: (v: number) => { value = v; },
+      show: () => {},
+      publish: () => { published += 1; throw new Error('bad publish'); },
+    });
+    r.animator.tween({ target: bad, to: 10, ms: 100, easing: 'linear' });
+    expect(r.tick(20)).toBe(true);
+    expect(bad.active).toBe(false);
+    const after = published;
+    r.tick(50);
+    expect(published).toBe(after);
+    expect(r.seen.at(-1)).toBeCloseTo(50);
+    expect(errors).toHaveBeenCalled();
+    errors.mockRestore();
+  });
 });

@@ -198,8 +198,8 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
   const tables = new Map<RowTable, number>();
   /** Each store holds are folded in, and how many. */
   const stores = new Map<HoldStore, number>();
-  /** Stops what moves `s`, whose `show` threw. Thrown out of a frame, it would stop the frame
-   *  loop, and every animation with it. */
+  /** Stops what moves `s`, whose `show` or `publish` threw. Thrown out of a frame, either would
+   *  stop the frame loop, and every animation with it. */
   const stop = (s: TargetState, what: string, error: unknown): void => {
     console.error(`useAnimator: a target's ${what} threw; stopping what moves it`, error);
     try { owner.stop(s); } catch (again) { console.error('useAnimator: stopping what moves it threw', again); }
@@ -215,8 +215,13 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
     if (s.publish) publishes.add(s.publish);
   };
   const publish = (): void => {
-    for (const p of publishes) p();
+    const due = [...publishes];
     publishes.clear();
+    for (const p of due) {
+      try { p(); } catch (error) {
+        for (const s of [...showing, ...rested]) if (s.publish === p) stop(s, 'publish', error);
+      }
+    }
   };
   const check = (s: TargetState): void => {
     if (s.owner && s.owner !== token) throw new Error('animator: this target is being moved by another animator');
