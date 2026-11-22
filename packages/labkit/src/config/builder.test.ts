@@ -227,6 +227,12 @@ describe('auto on a node', () => {
   it('.auto() with no resolver lets the node be auto, and nothing else does', () => {
     expect(f.number(1).auto().options.auto).toEqual({});
     expect(f.number(1).auto().options.autoResolve).toBeUndefined();
+    expect(
+      f
+        .number(1)
+        .auto(() => 2)
+        .auto().options.autoResolve,
+    ).toBeUndefined();
     expect(f.number(1).options.auto).toBeUndefined();
   });
 

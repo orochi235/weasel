@@ -169,11 +169,13 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
    * Leave it pinned-only when `undefined` must never reach the instrument.
    */
   auto(resolve?: (config: Record<string, unknown>) => T): this {
-    const said = { auto: { ...this.options.auto } };
-    return this.opt(
+    const { autoResolve: _replaced, ...options } = this.options;
+    const auto = { ...this.options.auto };
+    return this.with(
+      this.annotations,
       resolve === undefined
-        ? said
-        : { ...said, autoResolve: resolve as (c: Record<string, unknown>) => unknown },
+        ? { ...options, auto }
+        : { ...options, auto, autoResolve: resolve as (c: Record<string, unknown>) => unknown },
     );
   }
 
