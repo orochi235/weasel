@@ -12,6 +12,7 @@ import type { NodeStyle } from '../dataTypes';
 import { diagramThemeOf } from '../theme/resolve';
 import { themeWrites, type ThemedScene } from '../theme/themeWrites';
 import { DIAGRAM_THEME_KEY } from '../theme/types';
+import { laneMiddle } from './laneStack';
 import { firstLanes, regionSpecs, type ContainerBuildOptions } from './regionSpecs';
 import { bodyBox, diagramContainerOf, titleIdOf, type DiagramContainer } from './trait';
 import type { Rect } from '@weasel-js/geom';
@@ -81,13 +82,10 @@ export function lanesOf(scene: AnyScene, poolId: string): NodeId[] {
   const trait = pool === undefined ? null : diagramContainerOf(pool);
   if (pool === undefined || trait?.role !== 'pool') return [];
   const axis = poolAxisOf(trait);
-  const start = (id: NodeId) => {
-    const p = scene.get(id)!.pose as RectPose;
-    return axis === 'y' ? p.y : p.x;
-  };
+  const mid = (id: NodeId) => laneMiddle(axis, scene.get(id)!.pose as RectPose);
   return scene.childrenOf(pool.id)
     .filter((id) => diagramContainerOf(scene.get(id)!)?.role === 'lane')
-    .sort((a, b) => start(a) - start(b));
+    .sort((a, b) => mid(a) - mid(b));
 }
 
 /**

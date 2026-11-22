@@ -314,3 +314,24 @@ describe('pools in a scene', () => {
     expect(back.layoutOf(pool as NodeId)).toBe(scene.layoutOf(pool as NodeId));
   });
 });
+
+describe('lanesOf', () => {
+  /** A pool of rows with no layout, so its lanes sit where they are put. */
+  function unstacked(lanes: Record<string, RectPose>): Scene {
+    const scene = makeScene();
+    const region = (role: string) => ({ diagram: { outline: 'rect', container: { role, header: { side: 'left', size: 32 } } } });
+    scene.add({ id: 'pool' as NodeId, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 480, height: 400 }, data: region('pool') });
+    for (const [id, at] of Object.entries(lanes)) {
+      scene.add({ id: id as NodeId, kind: 'mark', layer: 'main', parent: 'pool' as NodeId, pose: at, data: region('lane') });
+    }
+    return scene;
+  }
+
+  it('orders lanes by their middles along the stack, as the pool lays them out', () => {
+    const scene = unstacked({
+      wide: { x: 32, y: 180, width: 448, height: 120 },
+      thin: { x: 32, y: 200, width: 448, height: 40 },
+    });
+    expect(lanesOf(scene as never, 'pool')).toEqual(['thin', 'wide']);
+  });
+});
