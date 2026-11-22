@@ -1,9 +1,10 @@
+import { createElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { worldPoseOf, type Scene } from '@weasel-js/core';
+import { worldPoseOf, type Scene, type View } from '@weasel-js/core';
 import { ParallaxDemo } from '../ParallaxDemo';
 
-const held = vi.hoisted(() => ({ scene: null as Scene<unknown, string, unknown> | null }));
+const held = vi.hoisted(() => ({ scene: null as Scene<unknown, string, unknown> | null, view: null as View | null }));
 vi.mock('@weasel-js/core', async (importOriginal) => {
   const core = await importOriginal<typeof import('@weasel-js/core')>();
   return {
@@ -12,6 +13,10 @@ vi.mock('@weasel-js/core', async (importOriginal) => {
       const scene = core.useScene(opts);
       held.scene = scene as never;
       return scene;
+    },
+    SceneCanvas: (props: { view: View }) => {
+      held.view = props.view;
+      return createElement(core.SceneCanvas, props as never);
     },
   };
 });
@@ -66,5 +71,17 @@ describe('ParallaxDemo', () => {
       expect(at.y + at.height, part.id).toBeLessThanOrEqual(tree.y + tree.height);
     }
   });
-});
 
+  it('keeps the ground on the stage when the zoom control zooms in', () => {
+    render(<ParallaxDemo />);
+    const field = screen.getByRole('textbox', { name: 'Zoom' });
+    fireEvent.change(field, { target: { value: '300%' } });
+    fireEvent.blur(field);
+    const view = held.view!;
+    expect(view.scale).toEqual({ x: 3, y: 3 });
+    // The ground band spans world y 320–400 on a 400px stage, and panning is horizontal only.
+    const screenY = (y: number) => (y - view.y) * view.scale.y;
+    expect(screenY(320)).toBeLessThan(400);
+    expect(screenY(400)).toBeCloseTo(400);
+  });
+});
