@@ -68,7 +68,7 @@ export class TileCache<K, P> {
   put(key: K, payload: P, frame: number, now: number): HeldTile<K, P> {
     const id = this.scheme.idOf(key);
     const was = this.held.get(id);
-    if (was) this.drop(was);
+    if (was) this.drop(was, was.payload !== payload);
     const tile: HeldTile<K, P> = {
       key, id, payload, bytes: this.opts.bytesOf(payload), stale: false, drawnAt: frame, bornAt: was ? -Infinity : now, dirtiedAt: -1,
     };
@@ -139,9 +139,9 @@ export class TileCache<K, P> {
     this.floor.clear();
   }
 
-  private drop(tile: HeldTile<K, P>): void {
+  private drop(tile: HeldTile<K, P>, release = true): void {
     this.held.delete(tile.id);
     this.total -= tile.bytes;
-    this.opts.release(tile.payload);
+    if (release) this.opts.release(tile.payload);
   }
 }
