@@ -149,4 +149,9 @@ describe('writing sequence boxes and regions', () => {
     expect(out.warnings).toEqual([]);
     expect(pageOf(out.text).data.boxes).toEqual([expect.objectContaining({ label: 'Team', members: ['A', 'B'] })]);
   });
+
+  it('writes a region with no fill so it reads back with none', () => {
+    const out = writeMermaidSequence(page({ participants: [{ id: 'A' }], steps: [{ kind: 'fragment', id: 'f', type: 'region', sections: [{ steps: [] }] }] }));
+    expect(pageOf(out.text).data.steps[0]).not.toHaveProperty('colors');
+  });
 });

@@ -127,7 +127,7 @@ class SequenceWriter {
         const label = (k: number) => (s.sections[k]?.label === undefined ? '' : ` ${mermaidSeqText(s.sections[k]!.label!)}`);
         if (s.type === 'region') {
           if (s.sections.some((sec) => sec.label !== undefined)) this.warnings.add('Labels on colored regions were dropped.');
-          this.out(depth, `rect ${this.fill(s.colors?.fill) ?? 'rgba(128, 128, 128, 0.1)'}`);
+          this.out(depth, `rect ${this.fill(s.colors?.fill) ?? 'transparent'}`);
         } else {
           if (s.colors !== undefined) this.warnings.add('Colors on loops, alts, and other fragments were dropped.');
           this.out(depth, `${s.type}${label(0)}`);
