@@ -3,6 +3,20 @@ import { lerpFill, lerpPaint, lerpStroke } from './lerpPaint';
 import type { Stroke } from './paint';
 
 describe('lerpPaint', () => {
+  it('holds a color it cannot read until halfway, rather than throwing', () => {
+    const a = { color: 'var(--accent)' }, b = { color: 'red' };
+    expect(lerpPaint(a, b, 0.3)).toBe(a);
+    expect(lerpPaint(a, b, 0.7)).toBe(b);
+    expect(lerpPaint(a, undefined, 0.3)).toBe(a);
+    const ramp = (color: string) => ({
+      kind: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      stops: [{ offset: 0, color: '#000' }, { offset: 1, color }],
+    });
+    const p = ramp('lab(50% 40 20)'), q = ramp('#fff');
+    expect(lerpPaint(p, q, 0.3)).toBe(p);
+    expect(lerpPaint(p, q, 0.7)).toBe(q);
+  });
+
   it('is each end at 0 and 1', () => {
     expect(lerpPaint({ color: '#ff0000' }, { color: '#0000ff' }, 0)).toEqual({ color: '#ff0000' });
     expect(lerpPaint({ color: '#ff0000' }, { color: '#0000ff' }, 1)).toEqual({ color: '#0000ff' });
@@ -99,6 +113,15 @@ describe('lerpStroke per-anchor arrays', () => {
     const mid = lerpStroke(s([2, 8, { left: 1, right: 3 }], [0, 0, 0, 1]), s([4, undefined as unknown as number, 2], [1, 1, 1, 1]), 0.5)!;
     expect(mid.vertexWidths).toEqual([3, 5, { left: 1, right: 2 }]);
     expect(mid.vertexColors).toEqual([0.5, 0.5, 0.5, 1]);
+  });
+
+  it('keeps a missing entry on a screen-pixel stroke missing, so it follows the zoom', () => {
+    const px = (vertexWidths: Stroke['vertexWidths']): Stroke => ({ paint: { color: '#000' }, width: { px: 4 }, vertexWidths });
+    const gap = undefined as unknown as number;
+    expect(lerpStroke(px([2, gap]), px([6, gap]), 0)!.vertexWidths).toEqual([2, gap]);
+    expect(lerpStroke(px([2, gap]), px([6, gap]), 0.5)!.vertexWidths).toEqual([4, gap]);
+    expect(lerpStroke(px([2, gap]), px([6, 8]), 0.25)!.vertexWidths).toEqual([3, gap]);
+    expect(lerpStroke(px([2, gap]), px([6, 8]), 0.75)!.vertexWidths).toEqual([5, 8]);
   });
 
   it("takes the nearer side's array when the lengths differ", () => {

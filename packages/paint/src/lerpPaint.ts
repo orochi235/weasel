@@ -4,7 +4,7 @@
  * OKLab, so the middle of a red-to-green run is a clear yellow rather than a
  * muddy brown.
  */
-import { parseColor, rgbaToHex } from './color';
+import { rgbaToHex, tryParseColor } from './color';
 import { isSolidPaint } from './commandPaint';
 import { mixOklab } from './mix';
 import { isGradientPaint } from './gradient';
@@ -15,10 +15,11 @@ import type { Fill, GradStop, GradientPaint, Paint, ScreenLength, Stroke } from 
 
 type Rgba = [number, number, number, number];
 
-/** A solid color's channels, its own alpha and `opacity` folded together. */
-function rgbaOf(color: string, opacity: number | undefined): Rgba {
-  const [r, g, b, a] = parseColor(color);
-  return [r, g, b, a * (opacity ?? 1)];
+/** A solid color's channels, its own alpha and `opacity` folded together, or `null` for a color `parseColor`
+ *  cannot read (`var()`, `currentColor`, `lab()`), which has no channels to mix. */
+function rgbaOf(color: string, opacity: number | undefined): Rgba | null {
+  const rgba = tryParseColor(color);
+  return rgba === null ? null : [rgba[0], rgba[1], rgba[2], rgba[3] * (opacity ?? 1)];
 }
 
 /** `t` of the way from `a` to `b`, through OKLab. Where both are clear the
@@ -35,7 +36,7 @@ function solidOf(rgba: Rgba): Paint {
   return rgba[3] >= 1 ? { color } : { color, opacity: rgba[3] };
 }
 
-/** A solid paint's color, or `null` for any other kind. */
+/** A solid paint's color, or `null` for any other kind or a color it cannot read. */
 function solidRgba(paint: Paint): Rgba | null {
   return isSolidPaint(paint) ? rgbaOf(paint.color, paint.opacity) : null;
 }
@@ -46,7 +47,8 @@ function solidRgba(paint: Paint): Rgba | null {
  * Two solids mix through OKLab; a missing side is the other's color fully
  * transparent, so a paint fades in or out. Two gradients of one kind with as
  * many stops interpolate their geometry and every stop. Anything else — a
- * pattern, two unlike gradients — holds `a` until halfway and `b` after.
+ * pattern, two unlike gradients, a color `parseColor` cannot read — holds `a`
+ * until halfway and `b` after.
  */
 export function lerpPaint(a: Paint | undefined, b: Paint | undefined, t: number): Paint | undefined {
   if (a === undefined && b === undefined) return undefined;
@@ -69,18 +71,25 @@ export function lerpPaint(a: Paint | undefined, b: Paint | undefined, t: number)
 
 const byOffset = (stops: readonly GradStop[]): GradStop[] => [...stops].sort((p, q) => p.offset - q.offset);
 
-/** Stops paired in offset order, as a ramp reads them, not in the order each list holds them. */
-function lerpStops(a: readonly GradStop[], b: readonly GradStop[], t: number): GradStop[] {
+/** Stops paired in offset order, as a ramp reads them, not in the order each list holds them; `null` where a pair
+ *  of colors cannot be mixed. */
+function lerpStops(a: readonly GradStop[], b: readonly GradStop[], t: number): GradStop[] | null {
   const to = byOffset(b);
-  return byOffset(a).map((stop, i) => {
+  const out: GradStop[] = [];
+  for (const [i, stop] of byOffset(a).entries()) {
     const other = to[i]!;
-    return { offset: lerp(stop.offset, other.offset, t), color: mixStopColor(stop.color, other.color, t) };
-  });
+    const color = mixStopColor(stop.color, other.color, t);
+    if (color === null) return null;
+    out.push({ offset: lerp(stop.offset, other.offset, t), color });
+  }
+  return out;
 }
 
-/** A stop's color `t` of the way from `a` to `b`, alpha included. */
-function mixStopColor(a: string, b: string, t: number): string {
-  return a === b ? a : rgbaToHex(mixColor(rgbaOf(a, 1), rgbaOf(b, 1), t));
+/** A stop's color `t` of the way from `a` to `b`, alpha included, or `null` where either cannot be read. */
+function mixStopColor(a: string, b: string, t: number): string | null {
+  if (a === b) return a;
+  const p = rgbaOf(a, 1), q = rgbaOf(b, 1);
+  return p === null || q === null ? null : rgbaToHex(mixColor(p, q, t));
 }
 
 /** `t` of the way from angle `a` to `b` in radians, the short way round; exactly `b` at `t = 1`. */
@@ -93,6 +102,7 @@ function lerpGradient(a: GradientPaint, b: GradientPaint, t: number): Paint | nu
   if ((a.units ?? 'screen') !== (b.units ?? 'screen')) return null;
   const pt = (p: { x: number; y: number }, q: { x: number; y: number }) => ({ x: lerp(p.x, q.x, t), y: lerp(p.y, q.y, t) });
   const stops = lerpStops(a.stops, b.stops, t);
+  if (stops === null) return null;
   const opacity = a.opacity === undefined && b.opacity === undefined
     ? undefined
     : lerp(a.opacity ?? 1, b.opacity ?? 1, t);
@@ -133,14 +143,21 @@ function lerpWidth(a: ScreenLength | undefined, b: ScreenLength | undefined, t: 
   return t < 0.5 ? a : b;
 }
 
-const widthNumber = (s: Stroke): number => (typeof s.width === 'object' ? s.width.px : s.width ?? 1);
+/** What a missing `vertexWidths` entry reads as: the stroke's width, or `NaN` on a `{ px }` stroke, whose width in
+ *  world units only the view knows. */
+const entryFallback = (s: Stroke): number => (typeof s.width === 'object' ? NaN : s.width ?? 1);
 
-/** Per-anchor widths `t` of the way from `a`'s to `b`'s, each side's missing entries read as its own width. */
+/** Per-anchor widths `t` of the way from `a`'s to `b`'s, each side's missing entries read as its own width. A
+ *  missing entry on a `{ px }` stroke has no world width to blend, so the nearer side's is kept as it stands. */
 function lerpVertexWidths(a: Stroke, b: Stroke, t: number): VertexWidth[] {
-  const wa = widthNumber(a), wb = widthNumber(b);
+  const wa = entryFallback(a), wb = entryFallback(b);
+  const side = (x: number, y: number): number => (Number.isNaN(x) || Number.isNaN(y) ? (t < 0.5 ? x : y) : lerp(x, y, t));
   return a.vertexWidths!.map((entry, i) => {
-    const p = vertexHalfWidths(entry, wa), q = vertexHalfWidths(b.vertexWidths![i], wb);
-    return vertexWidthFromSides(lerp(p.left, q.left, t), lerp(p.right, q.right, t));
+    const other = b.vertexWidths![i]!;
+    const p = vertexHalfWidths(entry, wa), q = vertexHalfWidths(other, wb);
+    const left = side(p.left, q.left), right = side(p.right, q.right);
+    if (Number.isNaN(left) && Number.isNaN(right)) return t < 0.5 ? entry : other;
+    return vertexWidthFromSides(left, right);
   });
 }
 

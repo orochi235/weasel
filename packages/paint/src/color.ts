@@ -1,5 +1,5 @@
 import { getOwn } from '@weasel-js/registry';
-import { linearToSrgb, oklabToLinearSrgb, oklchToOklab } from './colorSpaces';
+import { linearToSrgb, oklabToSrgbClipped, oklchToOklab } from './colorSpaces';
 import { hslToSrgb } from './hsl';
 import { byteHex, parseHexBytes } from './hex';
 import { wrapDeg } from './hue';
@@ -17,7 +17,8 @@ import { clamp01 } from './scalar';
  *     unitless 0..100, as CSS Color 4 reads it); same alpha rules and separator rules
  *     as `rgb()`
  *   - The 148 CSS named colors plus `transparent`
- *   - `color(srgb …)` and `color(srgb-linear …)`; `oklab()` and `oklch()`, clamped into sRGB
+ *   - `color(srgb …)` and `color(srgb-linear …)`; `oklab()` and `oklch()`, chroma-clipped into sRGB
+ *   - `none`, CSS's missing component, in any component of the space-separated syntax, read as 0
  *
  * Not supported: `lab()`, `lch()`, other `color()` spaces, `currentColor`, system
  * colors. Throws on anything unrecognized.
@@ -164,7 +165,8 @@ function unwrapFn(s: string, name: string): string | null {
 function splitChannels(body: string): { rgb: [string, string, string]; alpha: string | null } | null {
   if (body.includes(',')) {
     const parts = body.split(',').map((p) => p.trim());
-    if (parts.length !== 3 && parts.length !== 4) return null;
+    // CSS's missing component, `none`, has no legacy comma form.
+    if ((parts.length !== 3 && parts.length !== 4) || parts.includes('none')) return null;
     return {
       rgb: [parts[0], parts[1], parts[2]],
       alpha: parts.length === 4 ? parts[3] : null,
@@ -189,8 +191,14 @@ function cssNumber(tok: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Parse a channel value: integer, float, or percent. Returns 0..1 (with `max` as the integer scale). */
+/** A component as a CSS `<number>`, with CSS's missing component `none` read as 0, as CSS converts it. */
+function componentNumber(tok: string): number | null {
+  return tok === 'none' ? 0 : cssNumber(tok);
+}
+
+/** Parse a channel value: integer, float, percent, or `none`. Returns 0..1 (with `max` as the integer scale). */
 function parseChannel(tok: string, max: number): number | null {
+  if (tok === 'none') return 0;
   const percent = tok.endsWith('%');
   const n = cssNumber(percent ? tok.slice(0, -1) : tok);
   return n === null ? null : clamp01(n / (percent ? 100 : max));
@@ -243,7 +251,7 @@ function parseColorFunction(s: string): [number, number, number, number] | null 
   return [clamp01(r as number), clamp01(g as number), clamp01(b as number), a];
 }
 
-/** `oklab(L a b)` or `oklch(L C h)`, clamped into sRGB. L is 0..1 or a percent; a, b and C are numbers. */
+/** `oklab(L a b)` or `oklch(L C h)`, chroma-clipped into sRGB as `oklchDegToHex` clips it. L is 0..1 or a percent; a, b and C are numbers. */
 function parseOkFunction(s: string): [number, number, number, number] | null {
   const lch = unwrapFn(s, 'oklch');
   const body = lch ?? unwrapFn(s, 'oklab');
@@ -251,18 +259,19 @@ function parseOkFunction(s: string): [number, number, number, number] | null {
   const channels = splitChannels(body);
   if (!channels) return null;
   const L = parsePercentOrNumber(channels.rgb[0]);
-  const second = cssNumber(channels.rgb[1]);
-  const third = lch !== null ? parseHue(channels.rgb[2]) : cssNumber(channels.rgb[2]);
+  const second = componentNumber(channels.rgb[1]);
+  const third = lch !== null ? parseHue(channels.rgb[2]) : componentNumber(channels.rgb[2]);
   const alpha = parseAlpha(channels.alpha);
   if (L === null || second === null || third === null || alpha === null) return null;
   // CSS clamps a negative chroma to 0 rather than turning the hue half a turn.
   const [, A, B] = lch !== null ? oklchToOklab(L, Math.max(0, second), third * (Math.PI / 180)) : [L, second, third];
-  const [r, g, b] = oklabToLinearSrgb(L, A, B).map((c) => clamp01(linearToSrgb(c)));
-  return [r as number, g as number, b as number, alpha];
+  const [r, g, b] = oklabToSrgbClipped(L, A, B);
+  return [r, g, b, alpha];
 }
 
 /** Parse a hue token:`<number>`, `<number>deg`, `<number>rad`, `<number>grad`, `<number>turn`. Returns degrees 0..360 (modulo). */
 function parseHue(tok: string): number | null {
+  if (tok === 'none') return 0;
   const unit = /(deg|grad|rad|turn)$/.exec(tok)?.[1];
   const n = cssNumber(unit === undefined ? tok : tok.slice(0, -unit.length));
   if (n === null) return null;

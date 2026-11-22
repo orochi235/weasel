@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { paintWithColor, solid, solidFill } from './paintDefaults';
+import { paintWithAlpha, paintWithColor, solid, solidFill } from './paintDefaults';
 
 describe('solid', () => {
   it('moves a short hex alpha channel to opacity', () => {
@@ -36,5 +36,13 @@ describe('solidFill', () => {
   it('wraps the color in a tagged solid paint, moving a hex alpha channel to opacity', () => {
     expect(solidFill('#f00')).toEqual({ paint: { kind: 'solid', color: '#f00' } });
     expect(solidFill('#ff000080')).toEqual({ paint: { kind: 'solid', color: '#ff0000', opacity: 0x80 / 255 } });
+  });
+});
+
+describe('paintWithAlpha', () => {
+  it('clamps the alpha to 0..1 and reads NaN as 0', () => {
+    expect(paintWithAlpha({ color: '#fff' }, 2)).toEqual({ color: '#fff', opacity: 1 });
+    expect(paintWithAlpha({ color: '#fff' }, -1)).toEqual({ color: '#fff', opacity: 0 });
+    expect(paintWithAlpha({ color: '#fff' }, NaN)).toEqual({ color: '#fff', opacity: 0 });
   });
 });

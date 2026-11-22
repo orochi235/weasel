@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { hslToSrgb } from './hsl';
 import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, tryParseColor, parseColorBytes, rgbaToHex, __resetParseColorCache } from './color';
+import { oklchDegToHex } from './colorSpaces';
+import { colorLiteralToHex } from './palette';
 
 // Reference chroma-form HSL→RGB — the previous duplicate implementation that
 // lived in `animation/colorHelpers.ts`. Kept here only to prove the shared
@@ -54,6 +56,19 @@ describe('parseColorBytes', () => {
 });
 
 describe('parseColor', () => {
+  it('reads CSS\'s missing component, none, as 0', () => {
+    expect(parseColor('hsl(none 0% 50%)')).toEqual(parseColor('hsl(0 0% 50%)'));
+    expect(parseColor('rgb(255 none 0 / none)')).toEqual([1, 0, 0, 0]);
+    expect(parseColor('oklch(0.5 none none)')).toEqual(parseColor('oklch(0.5 0 0)'));
+    expect(parseColor('oklab(0.5 none 0)')).toEqual(parseColor('oklab(0.5 0 0)'));
+  });
+
+  it('refuses none in the legacy comma syntax, or with a unit', () => {
+    expect(() => parseColor('rgb(255, none, 0)')).toThrow();
+    expect(() => parseColor('hsl(nonedeg 0% 50%)')).toThrow();
+    expect(() => parseColor('rgb(none% 0 0)')).toThrow();
+  });
+
   it('parses #rrggbb', () => {
     expect(parseColor('#ff0000')).toEqual([1, 0, 0, 1]);
     expect(parseColor('#00ff00')).toEqual([0, 1, 0, 1]);
@@ -207,6 +222,19 @@ describe('parseColor: color() and the OK spaces', () => {
     close(parseColor('oklab(1 0 0)'), [1, 1, 1, 1]);
     close(parseColor('oklch(0 0 0 / 50%)'), [0, 0, 0, 0.5]);
     close(parseColor('oklch(62.796% 0.25768 29.2339deg)'), [1, 0, 0, 1]);
+  });
+
+  it('maps an out-of-gamut oklch() into sRGB as oklchDegToHex and colorLiteralToHex do', () => {
+    for (const [L, C, h] of [[0.7, 0.4, 30], [0.5, 0.3, 250], [0.9, 0.3, 140]] as const) {
+      const hex = oklchDegToHex(L, C, h);
+      expect(rgbaToHex(parseColor(`oklch(${L} ${C} ${h})`))).toBe(hex);
+      expect(colorLiteralToHex({ space: 'oklch', coords: [L, C, h] })).toBe(hex);
+    }
+  });
+
+  it('keeps a color a hair past the gamut edge, as CSS rounds pure red', () => {
+    expect(rgbaToHex(parseColor('oklch(62.796% 0.25768 29.2339deg)'))).toBe('#ff0000');
+    expect(oklchDegToHex(0.62796, 0.25768, 29.2339)).toBe('#ff0000');
   });
 
   it('reads a negative oklch() chroma as no chroma, as CSS clamps it', () => {

@@ -30,6 +30,15 @@ describe('paintPreviewCss', () => {
     } as unknown as Paint)).toBeUndefined();
   });
 
+  it('has nothing to show for a gradient with a stop color it cannot read', () => {
+    for (const color of ['lab(50% 20 30)', 'currentColor']) {
+      expect(paintPreviewCss({
+        kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+        stops: [STOPS[0], { offset: 1, color }], units: 'bounds',
+      })).toBeUndefined();
+    }
+  });
+
   it('shows an image pattern\'s picture whole', () => {
     expect(paintPreviewCss({ kind: 'image', src: 'data:image/png;base64,AAAA' }))
       .toBe('url("data:image/png;base64,AAAA") center / cover no-repeat');
@@ -57,6 +66,15 @@ describe('paintPreviewCss', () => {
       stops: STOPS, units: 'bounds',
     });
     expect(css).toMatch(/^radial-gradient\(circle at 25\.0% 75\.0%, /);
+  });
+
+  it('centers a radial or conic gradient measured outside the chip', () => {
+    for (const units of [undefined, 'screen', 'world', 'local'] as const) {
+      expect(paintPreviewCss({ kind: 'radial-gradient', center: { x: 200, y: 150 }, radius: 100, stops: STOPS, units }))
+        .toMatch(/^radial-gradient\(circle at 50% 50%, /);
+      expect(paintPreviewCss({ kind: 'conic-gradient', center: { x: 200, y: 150 }, angle: 0, stops: STOPS, units }))
+        .toMatch(/^conic-gradient\(from 90\.0deg at 50% 50%, /);
+    }
   });
 
   it('turns a conic gradient a quarter, since CSS starts at the top', () => {

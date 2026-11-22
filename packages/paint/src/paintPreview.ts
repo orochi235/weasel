@@ -7,7 +7,8 @@
 // `sampleGradientStops` in the paint's own space puts the curve into the
 // stops themselves, and the browser only interpolates the short hops between.
 
-import { sampleGradientStops } from './gradient';
+import { rgbaToHex, tryParseColor } from './color';
+import { sampleResolvedStops, type ResolvedGradientStop } from './gradient';
 import type { Paint } from './paint';
 import { solidColorOf } from './paintValue';
 
@@ -60,29 +61,38 @@ export function sampledCssStops(colorAt: (t: number) => string, samples: number,
   return out.join(', ');
 }
 
-/** CSS color stops across the whole ramp, in the gradient's own blend space. */
-function sampledStops(paint: Extract<Paint, { stops: unknown }>): string {
+/** CSS color stops across the whole ramp, in the gradient's own blend space, or `undefined` when a stop's color
+ *  is one `parseColor` cannot read and so cannot be blended here. */
+function sampledStops(paint: Extract<Paint, { stops: unknown }>): string | undefined {
   const space = paint.interpolate ?? 'rgb';
   const alpha = paintAlpha(paint);
-  return sampledCssStops((t) => faded(sampleGradientStops(paint.stops, t, space), alpha), SAMPLES, (t) => `${(t * 100).toFixed(1)}%`);
+  const stops: ResolvedGradientStop[] = [];
+  for (const s of [...paint.stops].sort((a, b) => a.offset - b.offset)) {
+    const rgba = tryParseColor(s.color);
+    if (rgba === null) return undefined;
+    stops.push({ offset: s.offset, rgba });
+  }
+  return sampledCssStops((t) => faded(rgbaToHex(sampleResolvedStops(stops, t, space)), alpha), SAMPLES, (t) => `${(t * 100).toFixed(1)}%`);
 }
 
-/** A fraction of the box as a CSS percentage. A gradient in absolute units has
- *  no box to be a fraction of, so its geometry only ever approximates here. */
-function pct(v: number): string {
-  return `${(v * 100).toFixed(1)}%`;
+/** Where a radial or conic gradient centers in the chip: a `'bounds'` center is a fraction of the box, and a
+ *  center in any other units has no box to be a fraction of, so it sits in the middle. */
+function centerAt(paint: { center: { x: number; y: number }; units?: string }): string {
+  if (paint.units !== 'bounds') return 'at 50% 50%';
+  return `at ${(paint.center.x * 100).toFixed(1)}% ${(paint.center.y * 100).toFixed(1)}%`;
 }
 
 /**
  * `paint` as a CSS `background` value, or `undefined` for a paint with no CSS
- * form — a tile pattern, a registered kind — which a caller shows as a checker or
+ * form — a tile pattern, a registered kind, a gradient with a stop color
+ * `parseColor` cannot read — which a caller shows as a checker or
  * a placeholder rather than as an invented color.
  *
  * Gradient geometry is honored as far as CSS can carry it: the angle of a
  * linear gradient, the center of a radial or conic one. A paint's `opacity` fades its colors, though not an
- * image's, which a `background` value cannot fade. A paint in `'world'`
- * or `'local'` units is measured in the scene rather than in the chip, so its
- * preview shows the ramp and not the placement.
+ * image's, which a `background` value cannot fade. A paint in any units but
+ * `'bounds'` is measured outside the chip, so its preview shows the ramp and
+ * not the placement.
  */
 export function paintPreviewCss(paint: Paint | null | undefined): string | undefined {
   if (paint == null) return undefined;
@@ -95,11 +105,12 @@ export function paintPreviewCss(paint: Paint | null | undefined): string | undef
     // CSS measures from "to top", clockwise; the paint measures in a
     // y-down plane from +x.
     const angle = dx === 0 && dy === 0 ? 90 : Math.atan2(dx, -dy) * RAD_TO_DEG;
-    return `linear-gradient(${angle.toFixed(1)}deg, ${sampledStops(paint)})`;
+    const stops = sampledStops(paint);
+    return stops && `linear-gradient(${angle.toFixed(1)}deg, ${stops})`;
   }
   if (paint.kind === 'radial-gradient') {
-    const at = `at ${pct(paint.center.x)} ${pct(paint.center.y)}`;
-    return `radial-gradient(circle ${at}, ${sampledStops(paint)})`;
+    const stops = sampledStops(paint);
+    return stops && `radial-gradient(circle ${centerAt(paint)}, ${stops})`;
   }
   if ((paint.kind as string) === 'mesh-gradient') {
     return meshPreview(paint as unknown as { patches?: { colors: string[] }[] }, paintAlpha(paint));
@@ -109,7 +120,8 @@ export function paintPreviewCss(paint: Paint | null | undefined): string | undef
   if (paint.kind === 'conic-gradient') {
     // CSS starts a conic gradient at "to top"; the paint starts at +x.
     const from = (paint.angle * RAD_TO_DEG + 90).toFixed(1);
-    return `conic-gradient(from ${from}deg at ${pct(paint.center.x)} ${pct(paint.center.y)}, ${sampledStops(paint)})`;
+    const stops = sampledStops(paint);
+    return stops && `conic-gradient(from ${from}deg ${centerAt(paint)}, ${stops})`;
   }
   return undefined;
 }

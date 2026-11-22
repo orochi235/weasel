@@ -21,6 +21,15 @@ describe('parsesAsColor', () => {
     }
   });
 
+  it('without CSS.supports, takes a function parseColor reads only where it parses', () => {
+    for (const value of ['rgb(nonsense)', 'hsl(1 2)', 'rgb( )', 'oklch(0.5 0.1)', 'rgba(1, 2, 3, 4, 5)']) {
+      expect(parsesAsColor(value, null), value).toBe(false);
+    }
+    for (const value of ['rgb(from red r g b)', 'rgb(calc(1) 2 3)', 'lab(50% 20 30)', 'color(display-p3 1 0 0)']) {
+      expect(parsesAsColor(value, null), value).toBe(true);
+    }
+  });
+
   it('defaults to CSS.supports for color where the DOM has it', () => {
     const supports = vi.fn((property: string, value: string) => property === 'color' && value === 'papayawhip');
     vi.stubGlobal('CSS', { supports });

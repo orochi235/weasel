@@ -30,7 +30,8 @@ export function mixOklab(a: readonly [number, number, number, number], b: readon
 /**
  * The weighted mix of any number of 0..1 sRGBA colors, premultiplied as
  * {@link mixRgba} mixes two. Weights need not sum to 1; a color weighing
- * nothing contributes nothing. Throws on an empty list.
+ * nothing contributes nothing, so a list weighing nothing in all mixes to
+ * transparent. Throws on an empty list.
  */
 export function mixRgbaWeighted(
   members: readonly { readonly color: readonly [number, number, number, number]; readonly weight: number }[],
@@ -44,5 +45,5 @@ export function mixRgbaWeighted(
     total += weight;
     if (total > 0) mixed = mixRgba(color, mixed, weight / total, space, hue);
   }
-  return mixed;
+  return total > 0 ? mixed : [0, 0, 0, 0];
 }
