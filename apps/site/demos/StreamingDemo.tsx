@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { after } from '@weasel-js/registry';
 import { solid } from '@weasel-js/paint';
 import {
@@ -43,7 +43,9 @@ export function StreamingDemo() {
   // A cell landing or leaving notifies the scene's subscribers, which redraws the readout.
   const [, setSeen] = useState(0);
   useEffect(() => scene.subscribe(() => setSeen((n) => n + 1)), [scene]);
-  useEffect(() => { stream.update(START, DIMS); }, [stream]);
+  const view = useRef(START);
+  const dims = useRef(DIMS);
+  useEffect(() => { stream.update(view.current, dims.current); }, [stream]);
   const stats = stream.stats();
   return (
     <div className="ckd-demo">
@@ -56,7 +58,9 @@ export function StreamingDemo() {
       <DemoStage width={W} height={H}>
         <SceneCanvas
           className="ckd-canvas" scene={scene} selectable={false}
-          features={[presets.view]} defaultView={START} onViewChange={(view) => stream.update(view, DIMS)}
+          features={[presets.view]} defaultView={START}
+          onViewChange={(v) => { view.current = v; stream.update(v, dims.current); }}
+          onResize={(size) => { dims.current = size; stream.update(view.current, size); }}
         />
       </DemoStage>
       <p className="ckd-hint">
