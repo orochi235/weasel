@@ -40,9 +40,9 @@
 
 import type { Action } from '@weasel-js/routing';
 import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingOverlay, WorldPoint } from '@weasel-js/routing';
-import type { EditAnchorsDep, PathEditDrag, SnapBegin, SnapDep, SnapMods, SnapSession } from '@weasel-js/core';
+import type { EditAnchorsDep, PathEditDrag } from '@weasel-js/core';
 import {
-  type EditAnchorsParams, editingLayer, inPlane, createBareSnapSession, locksOf, pathOperationTags, SNAP_ROLES, snapMods,
+  type EditAnchorsParams, editingLayer, inPlane, locksOf, pathOperationTags, SNAP_ROLES, snapMods,
 } from '@weasel-js/core';
 import { isAnchorOrControl, resolveParams, roleMods, roleReader, type ModifierRoles } from '@weasel-js/routing';
 import {
@@ -50,7 +50,6 @@ import {
   editAnchorSetTracked,
   moveHandleSymmetric,
   moveHandleTo,
-  pathAwayFromAnchors,
   translateAnchorsSymmetric,
   type AnchorSet,
   type AnchorSymmetry,
@@ -64,6 +63,7 @@ import {
   claimWheel, dragWeights, endExtensionDrags, extensionOverlays, placeHandle, startExtensionDrags, translateWeighted,
 } from './extensionDrags';
 import { editedPathSymmetries } from './symmetry';
+import { anchorDragSnap } from './dragSnap';
 import type {} from '../../actionParamSchema';
 
 /**
@@ -141,36 +141,6 @@ interface EditAnchorsScratch {
   others: readonly { id: string; path: PolygonPath }[];
 }
 
-/**
- * An anchor drag's snap: a `point` session, begun on the first move, for
- * where the pressed anchor goes. The edited path offers no targets but what
- * the drag leaves still of it (`movedAnchors`), and Shift holds the anchor to the axes and
- * diagonals through its press.
- */
-function anchorDragSnap(
-  snap: SnapDep | undefined,
-  press: { id: string; origin: WorldPoint; originPose: PolygonPath; moving: () => Iterable<number> },
-): { at(world: WorldPoint, mods: SnapMods): WorldPoint; end(): void } {
-  let session: SnapSession | null = null;
-  return {
-    at(world, mods) {
-      if (!session) {
-        const { path, anchors } = pathAwayFromAnchors(press.originPose, press.moving());
-        const req: SnapBegin = {
-          gesture: 'point', press: press.origin, ids: [press.id],
-          also: { paths: [path], anchors }, constrain: 'axis',
-        };
-        session = snap?.begin(req) ?? createBareSnapSession(req);
-      }
-      return session.at(world, mods).point;
-    },
-    end() {
-      session?.end();
-      session = null;
-    },
-  };
-}
-
 const paramsOf = (opts: BindingOptions | undefined): EditAnchorsParams =>
   (resolveParams(opts?.params) ?? {}) as EditAnchorsParams;
 
@@ -215,6 +185,16 @@ function movedAnchors(scratch: EditAnchorsScratch): Set<number> {
   const out = new Set(scratch.dragging);
   for (const s of scratch.symmetries) for (const flat of scratch.dragging) out.add(s.partners[flat]);
   return out;
+}
+
+/** Put back the selection an anchor press replaced, as a canceled marquee does. */
+function restoreSelection(
+  scratch: EditAnchorsScratch,
+  base: { anchors: ReadonlySet<number>; mark: EditAnchorsDep['selectedMark'] },
+): void {
+  if (scratch.part !== 'anchor') return;
+  scratch.dep.setSelectedAnchors(base.anchors);
+  if (base.mark) scratch.dep.setSelectedMark?.(base.mark);
 }
 
 /** The modifiers `editAnchors` reads while it runs: Shift on the press adds
@@ -390,13 +370,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           active = false;
           try {
-            if (reason === 'cancel') {
-              // A cancel undoes the press's selection change too, as a canceled marquee does.
-              if (scratch.part !== 'anchor') return;
-              dep.setSelectedAnchors(baseSelection.anchors);
-              if (baseSelection.mark) dep.setSelectedMark?.(baseSelection.mark);
-              return;
-            }
+            if (reason === 'cancel') return restoreSelection(scratch, baseSelection);
             if (samePolygon(scratch.frame, scratch.originPose)) return;
             scratch.dep.applyEdit(scratch.id, scratch.frame, 'Edit anchors', scratch.origins);
           } finally {
