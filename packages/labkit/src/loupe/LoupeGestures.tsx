@@ -20,8 +20,8 @@ import {
 import { createLoupeActions, type LoupeInputApi } from '@weasel-js/loupe';
 import { isDev } from '@weasel-js/react';
 import { createPart } from '@weasel-js/registry';
-import { type RefObject, useContext, useEffect, useMemo } from 'react';
-import { CameraContext } from '../canvas/CameraInput';
+import { type RefObject, useContext, useEffect, useMemo, useState } from 'react';
+import { CameraContext, type CameraContextValue } from '../canvas/CameraInput';
 
 /** Props for `<LoupeGestures>`. */
 export interface LoupeGesturesProps {
@@ -96,19 +96,31 @@ function OwnLoupeDispatch(props: LoupeGesturesProps) {
   return <LoupeDispatch {...props} registry={registry} ownDispatcher />;
 }
 
+/** Whether `hostRef` is the camera's own element, read after commit, when both refs are attached. */
+function useOnCameraElement(
+  hostRef: RefObject<HTMLElement | null>,
+  camera: CameraContextValue | null,
+): boolean {
+  const [on, setOn] = useState(camera !== null);
+  useEffect(() => {
+    setOn(camera !== null && hostRef.current === camera.element());
+  }, [camera, hostRef]);
+  return on;
+}
+
 /**
- * The loupe's input, routed. Inside a camera (`<CanvasStack>`, `<Stage>`) its
- * actions join the camera's dispatcher, which already listens on the host;
- * elsewhere it mounts a dispatcher of its own, in an input scope of its own.
+ * The loupe's input, routed. When its host is a camera's element (`<CanvasStack>`, `<Stage>`) its actions join the
+ * camera's dispatcher, which already listens there; on any other host, inside a camera or not, it mounts a dispatcher
+ * of its own, in an input scope of its own.
  * With no registry in scope it renders nothing rather than registering actions
  * that could never fire.
  */
 export function LoupeGestures(props: LoupeGesturesProps) {
   const registry = useActionsRegistry();
   const camera = useContext(CameraContext);
+  const onCamera = useOnCameraElement(props.hostRef, camera);
   if (!registry) return null;
-  if (camera !== null)
-    return <LoupeDispatch {...props} registry={registry} ownDispatcher={false} />;
+  if (onCamera) return <LoupeDispatch {...props} registry={registry} ownDispatcher={false} />;
   return (
     <InputScope>
       <OwnLoupeDispatch {...props} />
