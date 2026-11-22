@@ -84,8 +84,8 @@ export const addExtremeAnchorsAction = defineAction({
       if (!dep) return;
       const axes = axesOf(params);
       let next: number[] | null = null;
-      commitAnchorEdit(dep, LABEL, (set) => (next = addExtremesTo(set, dep.selectedAnchors, axes)) !== null);
-      if (next) dep.setSelectedAnchors(next);
+      const committed = commitAnchorEdit(dep, LABEL, (set) => (next = addExtremesTo(set, dep.selectedAnchors, axes)) !== null);
+      if (committed && next) dep.setSelectedAnchors(next);
     },
   },
   enabled: (deps, _at, _carried, params) => {

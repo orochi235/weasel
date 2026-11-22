@@ -8,7 +8,7 @@ import { addExtremeAnchorsAction } from './addExtremes';
  *  anchors (0,0), (100,0), (200,0), (260,0). */
 const ARCHES = 'M 0 0 C 0 -80 100 -80 100 0 C 100 -80 200 -80 200 0 L 260 0';
 
-function setup(selected: number[]) {
+function setup(selected: number[], refuse = false) {
   let current = pathFromD(ARCHES) as PolygonPath;
   const labels: string[] = [];
   const dep = makeEditAnchorsDep({
@@ -18,6 +18,7 @@ function setup(selected: number[]) {
       current = path as PolygonPath;
       labels.push(label);
     },
+    ...(refuse ? { finishEdit: () => null } : {}),
   });
   dep.setSelectedAnchors(selected);
   return { dep, deps: { editAnchors: dep } as unknown as ActionDeps, labels, anchors: () => pathToAnchors(current).anchors[0] };
@@ -40,6 +41,14 @@ describe('addExtremeAnchorsAction', () => {
     expect([anchors()[2].x, anchors()[2].y]).toEqual([150, -60]);
     // (100,0) and (200,0) are now flat 1 and 3, the new extreme 2.
     expect([...dep.selectedAnchors].sort()).toEqual([1, 2, 3]);
+  });
+
+  it('leaves the selection alone when an extension refuses the split', () => {
+    const { dep, deps, labels, anchors } = setup([1, 2], true);
+    run(deps);
+    expect(labels).toEqual([]);
+    expect(anchors()).toHaveLength(4);
+    expect([...dep.selectedAnchors].sort()).toEqual([1, 2]);
   });
 
   it('is disabled where it would add nothing: a selection spanning no curve, or every extreme placed', () => {
