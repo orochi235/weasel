@@ -8,6 +8,7 @@ import { createPageRun, placedPagesOf } from 'core/pages/pageNodes';
 import { fitViewToPage } from 'core/pages/fitViewToPage';
 import type { RectPose } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
+import type { Contribution } from 'tools/overlayBinding';
 import { createPresentationContribution, type PresentationOptions } from './presentationContribution';
 
 beforeAll(() => {
@@ -28,7 +29,7 @@ afterAll(() => {
 const START: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 400, height: 300 };
 
-function mount(opts: PresentationOptions = {}, paged = true) {
+function mount(opts: PresentationOptions = {}, paged = true, fallback?: () => void) {
   const scene = createScene<object, 'paper', RectPose>({ systemLayers: [{ id: 'paper' }] });
   if (paged) {
     createPageRun(scene, [
@@ -38,7 +39,14 @@ function mount(opts: PresentationOptions = {}, paged = true) {
   const pages = placedPagesOf(scene);
   let view = START;
   const arrived: string[] = [];
-  const ambient = [createPresentationContribution({ animate: false, onPage: (p) => arrived.push(p.id), ...opts })];
+  const ambient: Contribution[] = [createPresentationContribution({ animate: false, onPage: (p) => arrived.push(p.id), ...opts })];
+  if (fallback) {
+    ambient.push({
+      id: 'fallback', eligibility: { always: true },
+      actions: [{ id: 'fallback', label: 'Fallback', invoker: { timing: 'immediate', run: fallback } }],
+      bindings: [{ spec: { kind: 'key', key: ['ArrowLeft', 'ArrowRight', 'ArrowUp'] }, actionId: 'fallback' }],
+    });
+  }
   render(
     <SceneCanvas scene={scene} layers={{}} width={DIMS.width} height={DIMS.height}
       defaultView={START} onViewChange={(v) => { view = v; }} ambient={ambient} />,
@@ -87,6 +95,18 @@ describe('createPresentationContribution', () => {
     bare.press('ArrowRight');
     expect(bare.view()).toEqual(START);
     expect(bare.arrived).toEqual([]);
+  });
+
+  it('leaves a step past either end to the next binding on the key', () => {
+    const fallback = vi.fn();
+    const s = mount({}, true, fallback);
+    s.press('ArrowLeft');
+    expect(fallback).toHaveBeenCalledTimes(1);
+    s.press('End');
+    s.press('ArrowRight');
+    expect(fallback).toHaveBeenCalledTimes(2);
+    s.press('ArrowUp');
+    expect(fallback).toHaveBeenCalledTimes(2);
   });
 
   it("goes to either end with Home and End on a deck whose page ids are 'first' and 'last'", () => {
