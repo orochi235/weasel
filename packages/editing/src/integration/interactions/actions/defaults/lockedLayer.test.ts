@@ -34,39 +34,22 @@ const snapshot = (scene: ReturnType<typeof fixture>['scene']) => JSON.stringify(
 
 type Case = [string, Action, (f: ReturnType<typeof fixture>) => NodeId[], unknown?];
 
-/** Actions the scene refuses mid-batch, by throwing. */
-const refused: Case[] = [
-  ['group', groupAction, (f) => [f.art, f.top]],
-];
-
 /** Actions disabled while a node they would move or remove is locked (ruled 2026-11-09; reorder 2026-11-10; nudge
- *  2026-11-20, with the transforms that would rewrite a locked envelope source). */
+ *  2026-11-20, with the transforms that would rewrite a locked envelope source; group 2026-11-22). */
 const disabled: Case[] = [
   ['nudge', nudgeRightAction, (f) => [f.free, f.art]],
   ['delete', deleteAction, (f) => [f.free, f.art]],
   ['reorder', reorderForwardAction, (f) => [f.art]],
   ['ungroup', ungroupAction, (f) => [f.box]],
+  ['group', groupAction, (f) => [f.art, f.top]],
 ];
 
-const cases = [...refused, ...disabled];
-
 describe('kit actions on a locked layer', () => {
-  it.each(cases)('%s edits the scene while the layer is unlocked', (_name, action, pick, params) => {
+  it.each(disabled)('%s edits the scene while the layer is unlocked', (_name, action, pick, params) => {
     const f = fixture();
     const before = snapshot(f.scene);
     run(action, { scene: f.scene, operands: heldSelection(pick(f)) }, params);
     expect(snapshot(f.scene)).not.toEqual(before);
-  });
-
-  it.each(refused)('%s refuses once the layer is locked and leaves nothing half-done', (_name, action, pick, params) => {
-    const f = fixture();
-    const ids = pick(f);
-    f.scene.setLayerLocked('art', true);
-    const before = snapshot(f.scene);
-    const depth = f.scene.historyIndex();
-    expect(() => run(action, { scene: f.scene, operands: heldSelection(ids) }, params)).toThrow(/locked/);
-    expect(snapshot(f.scene)).toEqual(before);
-    expect(f.scene.historyIndex()).toBe(depth);
   });
 
   it.each(disabled)('%s reports the lock as its disabled reason and runs as a no-op', (_name, action, pick, params) => {
