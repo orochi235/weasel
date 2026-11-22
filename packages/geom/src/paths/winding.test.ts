@@ -87,4 +87,12 @@ describe('reversePath', () => {
     expect(pathSignedArea(rr)).toBeCloseTo(pathSignedArea(p), 6);
     expect(rr.fillRule).toBe(p.fillRule);
   });
+
+  it('signs a rect as the contour it is walked as, negative extents included', () => {
+    for (const [width, height] of [[10, 5], [-10, 5], [10, -5], [-10, -5]]) {
+      const rect = { kind: 'rect', x: 10, y: 0, width, height } as const;
+      const walked = pathFromD(`M10 0 h${width} v${height} h${-width} Z`);
+      expect(pathSignedArea(rect)).toBe(pathSignedArea(walked));
+    }
+  });
 });
