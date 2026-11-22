@@ -92,6 +92,11 @@ describe('tickDecimals', () => {
     expect(tickDecimals([0, 0.25, 1])).toBe(2);
     expect(tickDecimals([0.1 + 0.2])).toBe(1);
   });
+
+  it('counts small ticks to their own size', () => {
+    expect(tickDecimals([1e-10, 2e-10, 3e-10])).toBe(10);
+    expect(tickDecimals([0.0000000001, 0.0000000005])).toBe(10);
+  });
 });
 
 describe('formatTick', () => {

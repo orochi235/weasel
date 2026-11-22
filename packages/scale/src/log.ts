@@ -65,7 +65,7 @@ export function logScale(opts: LogScaleOptions): LogScale {
   // Each label is as precise as its own decade, whatever the count, and another base's powers as their digits need.
   const decadeFormat = (v: number): string => {
     const decade = v >= 1 ? 0 : decimalsOf(10 ** Math.floor(Math.log10(v)));
-    // Digits counted on the value moved up past its decade, as `tickDecimals` counts places to an absolute tolerance.
+    // Digits counted on the value moved up past its decade, as `tickDecimals` counts no further than 20 places.
     return formatNumber(v, 10 ** -(base === 10 ? decade : decade + tickDecimals([v * 10 ** decade])));
   };
   const format = linear ? linearFormat(5) : decadeFormat;
