@@ -1,0 +1,96 @@
+
+> weasel@0.4.0 test:perf
+> playwright test --config=tests/perf/playwright.config.ts perf/first-frame.spec.ts
+
+
+Running 1 test using 1 worker
+
+  1/5  frame/cold    create   182.3 ms  first   116.0 ms  ready   298.3 ms  block   302 ms  second    1.7 ms  frames   4  links 2 [3844,6199]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":9.2,"linkProgram":0.3,"getProgramParameter":244.2,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0.4,"texImage2D":0.3,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0.2,"readPixels":25.8}
+  1/5  frame/reload  create     3.0 ms  first    13.6 ms  ready    16.5 ms  block     0 ms  second    1.3 ms  frames   4  links 2 [3844,6199]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":4.6,"linkProgram":0,"getProgramParameter":0.3,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0,"texImage2D":0.3,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":1.7}
+  1/5  frame/held    create    96.4 ms  first   105.2 ms  ready   201.5 ms  block   204 ms  second    1.6 ms  frames   4  links 2 [3846,6201]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":4.8,"linkProgram":0,"getProgramParameter":162.7,"getUniformLocation":0.1,"getAttribLocation":0,"bufferData":0,"texImage2D":0.2,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":19}
+  1/5  program/batch               compile     1.3 ms  link    95.8 ms  total    97.4 ms  frag 3797
+  1/5  program/batch-matrices      compile     1.2 ms  link    57.7 ms  total    59.0 ms  frag 3818
+  1/5  program/batch-area          compile     1.7 ms  link    68.2 ms  total    70.0 ms  frag 6152
+  1/5  program/batch-area-hull     compile     2.1 ms  link    70.9 ms  total    73.3 ms  frag 6846
+  1/5  program/path-fill           compile     0.4 ms  link    22.7 ms  total    23.2 ms  frag 563
+  1/5  program/path-fill-vcolor    compile     0.4 ms  link    21.8 ms  total    22.4 ms  frag 620
+  1/5  program/grad-fill           compile     0.6 ms  link    49.5 ms  total    50.2 ms  frag 1318
+  1/5  program/pattern-fill        compile     0.5 ms  link    47.3 ms  total    47.9 ms  frag 934
+  1/5  program/glyph-layer         compile     1.1 ms  link    19.0 ms  total    20.2 ms  frag 3797
+  1/5  program/glyph-layer-area    compile     1.7 ms  link    32.3 ms  total    34.1 ms  frag 6152
+  1/5  program/glyph-texture       compile     0.9 ms  link    46.8 ms  total    47.8 ms  frag 2232
+  2/5  frame/cold    create    90.9 ms  first   100.6 ms  ready   191.5 ms  block   193 ms  second    1.5 ms  frames   4  links 2 [3846,6201]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":4.6,"linkProgram":0,"getProgramParameter":153.5,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0,"texImage2D":0.2,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":18.6}
+  2/5  frame/reload  create     2.3 ms  first    12.0 ms  ready    14.3 ms  block     0 ms  second    1.5 ms  frames   4  links 2 [3846,6201]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":4.2,"linkProgram":0,"getProgramParameter":0.3,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0,"texImage2D":0.1,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":1.8}
+  2/5  frame/held    create    98.5 ms  first   101.6 ms  ready   200.1 ms  block   202 ms  second    1.5 ms  frames   4  links 2 [3846,6201]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":4.6,"linkProgram":0,"getProgramParameter":161.5,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0,"texImage2D":0.2,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":18.7}
+  2/5  program/batch               compile     1.4 ms  link    95.5 ms  total    97.1 ms  frag 3797
+  2/5  program/batch-matrices      compile     1.2 ms  link    64.7 ms  total    65.9 ms  frag 3818
+  2/5  program/batch-area          compile     1.9 ms  link    66.8 ms  total    68.8 ms  frag 6152
+  2/5  program/batch-area-hull     compile     2.3 ms  link    68.6 ms  total    71.1 ms  frag 6846
+  2/5  program/path-fill           compile     0.4 ms  link    19.4 ms  total    19.9 ms  frag 563
+  2/5  program/path-fill-vcolor    compile     0.5 ms  link    19.1 ms  total    19.7 ms  frag 620
+  2/5  program/grad-fill           compile     0.5 ms  link    47.7 ms  total    48.3 ms  frag 1318
+  2/5  program/pattern-fill        compile     0.4 ms  link    45.5 ms  total    46.1 ms  frag 934
+  2/5  program/glyph-layer         compile     1.1 ms  link    19.0 ms  total    20.3 ms  frag 3797
+  2/5  program/glyph-layer-area    compile     1.7 ms  link    31.2 ms  total    33.0 ms  frag 6152
+  2/5  program/glyph-texture       compile     0.9 ms  link    44.7 ms  total    45.7 ms  frag 2232
+  3/5  frame/cold    create    90.9 ms  first   101.0 ms  ready   191.9 ms  block   194 ms  second    1.5 ms  frames   4  links 2 [3846,6201]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":4.6,"linkProgram":0,"getProgramParameter":154.2,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0,"texImage2D":0.2,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":18.3}
+  3/5  frame/reload  create     2.3 ms  first    11.6 ms  ready    14.0 ms  block     0 ms  second    1.5 ms  frames   4  links 2 [3846,6201]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":4.2,"linkProgram":0,"getProgramParameter":0.3,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0,"texImage2D":0.1,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":1.7}
+  3/5  frame/held    create    93.8 ms  first   106.5 ms  ready   200.3 ms  block   202 ms  second    1.6 ms  frames   4  links 2 [3842,6197]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":4.8,"linkProgram":0,"getProgramParameter":158.4,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0.1,"texImage2D":0.2,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":19.6}
+  3/5  program/batch               compile     1.3 ms  link    86.5 ms  total    88.1 ms  frag 3797
+  3/5  program/batch-matrices      compile     1.2 ms  link    55.8 ms  total    57.1 ms  frag 3818
+  3/5  program/batch-area          compile     1.6 ms  link    72.9 ms  total    74.6 ms  frag 6152
+  3/5  program/batch-area-hull     compile     2.2 ms  link    71.0 ms  total    73.4 ms  frag 6846
+  3/5  program/path-fill           compile     0.4 ms  link    20.2 ms  total    20.7 ms  frag 563
+  3/5  program/path-fill-vcolor    compile     0.4 ms  link    19.4 ms  total    20.0 ms  frag 620
+  3/5  program/grad-fill           compile     0.5 ms  link    48.3 ms  total    48.9 ms  frag 1318
+  3/5  program/pattern-fill        compile     0.4 ms  link    45.0 ms  total    45.5 ms  frag 934
+  3/5  program/glyph-layer         compile     1.1 ms  link    18.9 ms  total    20.1 ms  frag 3797
+  3/5  program/glyph-layer-area    compile     1.6 ms  link    31.8 ms  total    33.4 ms  frag 6152
+  3/5  program/glyph-texture       compile     0.9 ms  link    43.5 ms  total    44.5 ms  frag 2232
+  4/5  frame/cold    create    91.0 ms  first    99.9 ms  ready   190.9 ms  block   193 ms  second    1.5 ms  frames   4  links 2 [3846,6201]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":4.7,"linkProgram":0,"getProgramParameter":153,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0,"texImage2D":0.1,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":18.2}
+  4/5  frame/reload  create     2.4 ms  first    12.0 ms  ready    14.4 ms  block     0 ms  second    1.5 ms  frames   4  links 2 [3846,6201]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":4.4,"linkProgram":0,"getProgramParameter":0.3,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0,"texImage2D":0.1,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":1.7}
+  4/5  frame/held    create   103.6 ms  first   104.4 ms  ready   208.0 ms  block   210 ms  second    1.4 ms  frames   4  links 2 [3844,6199]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":5,"linkProgram":0,"getProgramParameter":167,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0,"texImage2D":0.2,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":19}
+  4/5  program/batch               compile     1.3 ms  link    91.8 ms  total    93.3 ms  frag 3797
+  4/5  program/batch-matrices      compile     1.2 ms  link    59.2 ms  total    60.5 ms  frag 3818
+  4/5  program/batch-area          compile     1.6 ms  link    64.8 ms  total    66.5 ms  frag 6152
+  4/5  program/batch-area-hull     compile     2.3 ms  link    68.6 ms  total    71.1 ms  frag 6846
+  4/5  program/path-fill           compile     0.4 ms  link    18.9 ms  total    19.4 ms  frag 563
+  4/5  program/path-fill-vcolor    compile     0.4 ms  link    18.9 ms  total    19.3 ms  frag 620
+  4/5  program/grad-fill           compile     0.5 ms  link    47.3 ms  total    47.9 ms  frag 1318
+  4/5  program/pattern-fill        compile     0.4 ms  link    44.9 ms  total    45.4 ms  frag 934
+  4/5  program/glyph-layer         compile     1.1 ms  link    19.1 ms  total    20.3 ms  frag 3797
+  4/5  program/glyph-layer-area    compile     1.7 ms  link    32.2 ms  total    34.1 ms  frag 6152
+  4/5  program/glyph-texture       compile     0.9 ms  link    43.6 ms  total    44.6 ms  frag 2232
+  5/5  frame/cold    create    89.9 ms  first    98.7 ms  ready   188.7 ms  block   191 ms  second    1.4 ms  frames   4  links 2 [3844,6199]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":4.6,"linkProgram":0,"getProgramParameter":150.7,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0,"texImage2D":0.2,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":18.4}
+  5/5  frame/reload  create     2.4 ms  first    12.0 ms  ready    14.4 ms  block     0 ms  second    1.4 ms  frames   4  links 2 [3844,6199]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":4.3,"linkProgram":0,"getProgramParameter":0.3,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0,"texImage2D":0.1,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":1.6}
+  5/5  frame/held    create    94.5 ms  first   105.8 ms  ready   200.3 ms  block   202 ms  second    1.6 ms  frames   4  links 2 [3846,6201]  parallel true  held false
+    gl {"compileShader":0,"getShaderParameter":4.7,"linkProgram":0,"getProgramParameter":160.7,"getUniformLocation":0,"getAttribLocation":0,"bufferData":0,"texImage2D":0.1,"texSubImage2D":0,"bufferSubData":0,"useProgram":0,"drawElements":0,"readPixels":18.9}
+  5/5  program/batch               compile     1.3 ms  link    86.3 ms  total    87.9 ms  frag 3797
+  5/5  program/batch-matrices      compile     1.2 ms  link    55.6 ms  total    56.9 ms  frag 3818
+  5/5  program/batch-area          compile     1.6 ms  link    64.1 ms  total    65.9 ms  frag 6152
+  5/5  program/batch-area-hull     compile     2.3 ms  link    65.5 ms  total    68.0 ms  frag 6846
+  5/5  program/path-fill           compile     0.4 ms  link    19.6 ms  total    20.1 ms  frag 563
+  5/5  program/path-fill-vcolor    compile     0.4 ms  link    19.1 ms  total    19.6 ms  frag 620
+  5/5  program/grad-fill           compile     0.5 ms  link    47.6 ms  total    48.3 ms  frag 1318
+  5/5  program/pattern-fill        compile     0.4 ms  link    44.8 ms  total    45.3 ms  frag 934
+  5/5  program/glyph-layer         compile     1.1 ms  link    20.6 ms  total    21.8 ms  frag 3797
+  5/5  program/glyph-layer-area    compile     1.7 ms  link    31.6 ms  total    33.4 ms  frag 6152
+  5/5  program/glyph-texture       compile     0.9 ms  link    43.6 ms  total    44.5 ms  frag 2232
+perf result: tests/perf/recorded/first-frame-2026-11-21/teitou/before/first-frame-2026-11-22T02-32-51Z.json
+  ✓  1 tests/perf/first-frame.spec.ts:90:1 › first frame: shader compiles on a cold GPU process (11.7s)
+
+  1 passed (14.0s)

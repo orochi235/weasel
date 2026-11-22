@@ -27,6 +27,8 @@ function compileCustomProgram(gpu: GpuDevice, id: string, src: ProgramSource): S
   program.lookupUniforms(customUniformNames(vertSrc, frag));
   program.lookupUniformArrays(new Map([...extractUniformArrays(vertSrc), ...extractUniformArrays(frag)]));
   program.lookupAttributes(CUSTOM_ATTRIBUTES);
+  // Waited for here, so a source that fails is declined at registration and not at its first draw.
+  program.settle();
   return program;
 }
 

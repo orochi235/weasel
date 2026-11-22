@@ -10,15 +10,18 @@ When work merges, retire its entry here in the same change.
 
 ## Renderer and the batch
 
-- **(P2) The first frame waits on shader compiles, about 1.9 s on Apple Metal.** x-skulk's audits page, built
-  and served with its data already in hand, showed one 1,917 ms main-thread task before its map's canvas drew,
-  in Chrome 156 on an M2 Max (ANGLE Metal), on every reload (2026-11-20, measured with a `longtask` observer).
-  Headless Chromium on the software GPU runs the same load in a few hundred milliseconds of script, and the only
-  GPU call its profile names is `getShaderParameter`. So the likely cause, inferred and not yet profiled on the GPU,
-  is the renderer compiling and linking its programs synchronously before the first draw. Candidates:
-  `KHR_parallel_shader_compile` with a poll before the first use of each program, compiling only the programs a
-  scene's first frame needs, or drawing that frame with canvas2d while the rest compile. Closes when a weasel
-  canvas's first frame on that machine comes within 300 ms of its data arriving, measured the same way.
+- **(P2) [waiting] The first frame waited 1.9 s on shader compiles on the maintainer's M2 Max; not remeasured
+  there since programs compile in the background.** x-skulk's audits page showed one 1,917 ms main-thread task
+  before its map drew, in Chrome 156 on an M2 Max (ANGLE Metal), on every reload (2026-11-20, `longtask`
+  observer). On teitou (M5 Max) the cost appears only on a cold Metal cache, which macOS keeps per user across
+  browser launches and profiles: skulkr's demo build of that page in headed Chrome 157 showed a 588 ms task on its
+  first load there and 65 to 142 ms on every load after (2026-11-21, `tests/perf/recorded/first-frame-2026-11-21/`).
+  Since 2026-11-21 a renderer starts its batch program and the batch's text build at construction under
+  `KHR_parallel_shader_compile`, so the two compile at once; `first-frame.spec.ts` with cold shaders reads the
+  first frame at 192 ms before and 130 ms after on teitou, and 0 ms of main-thread block for a host that holds
+  its frame until `programsReady()`. Left: measure the page on orochi as on 2026-11-20, and if its reloads still
+  pay the compile, find why they miss the Metal cache that teitou's hit. Closes when a weasel canvas's first
+  frame on that machine comes within 300 ms of its data arriving, measured the same way.
 
 - **(P3) [waiting] Whether the batched path costs a co-tenant on the same page.** Reported, not measured
   here. A consumer benchmarking its wall against a canvas2d control found that at one rung the

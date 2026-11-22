@@ -204,6 +204,8 @@ export class WgpuProgram implements GpuProgram {
   lookupUniforms(): void {}
   lookupUniformArrays(): void {}
   lookupAttributes(): void {}
+  ready(): boolean { return true; }
+  settle(): void {}
 
   has(name: string): boolean {
     return this.resolve(name) !== undefined || this.textureName(name, 0) !== undefined;

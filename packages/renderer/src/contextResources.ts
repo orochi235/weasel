@@ -71,6 +71,20 @@ export class ContextResources {
     this.uploadQuadGeometry();
     this.drawBatch = new DrawBatch(gpu, this.batchFill);
     this.whiteTexture = createWhiteTexture(gpu);
+    this.startFirstFrame();
+  }
+
+  /**
+   * Where programs compile in the background, start the ones a first frame of shapes and text draws with
+   * beside the batch's own, so the two compile at once and before that frame asks for them.
+   */
+  private startFirstFrame(): void {
+    if (this.gpu.compilesInBackground) this.batchVariants.startText();
+  }
+
+  /** Whether every program started so far has finished compiling, asked without waiting. */
+  programsReady(): boolean {
+    return this.batchFill.ready() && this.lazyPrograms().every((lazy) => lazy.ready());
   }
 
   private lazyPrograms(): LazyProgram[] {
@@ -107,6 +121,7 @@ export class ContextResources {
     this.uploadQuadGeometry();
     this.drawBatch = new DrawBatch(gpu, this.batchFill);
     this.whiteTexture = createWhiteTexture(gpu);
+    this.startFirstFrame();
   }
 
   /** Free every image texture and sample images under `mode` from here on. */

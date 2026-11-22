@@ -1,0 +1,10 @@
+before: start 2026-11-22T02:32:48Z first-frame WEASEL_PERF_ROUNDS=5 WEASEL_PERF_COLD_METAL=1 NO_CI=1
+before: tree 958425a8dc39bcccd691d0ca5600ae07e3083dd2 dirty-paths 1
+before: Apple M5 Max (18 threads), node v26.13.1
+before: load before { 5.22 4.49 4.83 } "Device Utilization %"=38
+before: load after { 7.50 5.04 5.02 } "Device Utilization %"=0; end 2026-11-22T02:33:03Z
+after: start 2026-11-22T02:35:22Z first-frame WEASEL_PERF_ROUNDS=5 WEASEL_PERF_COLD_METAL=1 NO_CI=1
+after: tree 958425a8dc39bcccd691d0ca5600ae07e3083dd2 dirty-paths 13
+after: Apple M5 Max (18 threads), node v26.13.1
+after: load before { 9.02 5.94 5.33 } "Device Utilization %"=2
+after: load after { 9.24 6.09 5.39 } "Device Utilization %"=4; end 2026-11-22T02:35:34Z

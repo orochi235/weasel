@@ -69,7 +69,7 @@ const BATCH_ARRAYS: ReadonlyMap<string, { type: string; size: number }> = new Ma
 /** `spec` compiled on `gpu`, every name it is written through looked up. */
 function buildProgram(gpu: GpuDevice, spec: ProgramSpec): ShaderProgram {
   const { vert, frag, wgsl, uniforms, attributes, arrays } = spec;
-  const program = gpu.createProgram({ glsl: { vert, frag }, wgsl });
+  const program = gpu.createProgram({ glsl: { vert, frag }, wgsl }, { attributes });
   program.lookupUniforms(uniforms);
   if (arrays) program.lookupUniformArrays(arrays);
   program.lookupAttributes(attributes);
@@ -89,6 +89,11 @@ export class LazyProgram {
   get(): ShaderProgram {
     this.program ??= buildProgram(this.gpu, this.spec);
     return this.program;
+  }
+
+  /** Whether the program has finished compiling, if it was started; one never built has nothing to wait for. */
+  ready(): boolean {
+    return this.program?.ready() ?? true;
   }
 
   /** Delete the program if it was built. It builds again on the next `get`. */
@@ -225,6 +230,11 @@ export class BatchVariantPrograms implements BatchVariants {
 
   trimmedRibbon(): ShaderProgram {
     return this.trimmed.get();
+  }
+
+  /** Start the build a run of text draws with, with no hull or color matrices, without waiting for it. */
+  startText(): void {
+    this.area[0].get();
   }
 
   lazy(): LazyProgram[] {

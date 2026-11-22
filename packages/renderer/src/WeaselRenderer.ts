@@ -358,6 +358,9 @@ export class WeaselRenderer {
     return this.stats;
   }
 
+  /** Whether every program started compiling has finished, asked without waiting; a frame drawn sooner waits. */
+  programsReady(): boolean { return this.res.programsReady(); }
+
   /** Change `flattenTolerance` after construction; `undefined` restores the default. */
   setFlattenTolerance(tolerance: FlattenTolerance | undefined): void {
     this.flattenTolerance = tolerance;
