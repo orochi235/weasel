@@ -1,7 +1,7 @@
 import { stateOf, type Behind, type TargetState } from '../target';
 import type { AnimationKind, PhysicsHandle, TargetPhysicsOptions } from '../types';
 import type { AnimationContext, AnimationSeed } from './context';
-import { absorb, axesFor, comeOut, commitOffset, commitOver, leaveTarget, goBehind, minus, norm, plus, takeUp, times, travel } from './offsets';
+import { absorb, axesFor, comeOut, commitOffset, commitOver, leaveTarget, goBehind, minus, norm, plus, setBeside, takeUp, times, travel } from './offsets';
 import { resolveSpringConstants } from './physicsAnimation';
 import { earliestRest } from './springRest';
 import { createSpringVoices, type SpringVoices, type SpringVoicesOptions } from './springVoices';
@@ -170,9 +170,10 @@ export function startOffsetPhysics<T>(
       }
       const to = axesFor(ax, next, 'setTarget');
       if (!(constants.stiffness > 0)) throw new Error(`${kind}: setTarget needs a positive stiffness`);
-      // The committed value moves under the voices, which shift by as much the other way.
-      const shift = travel(ax, ax.to(s.get()), to);
+      // The committed value, with what waited beside it, moves under the voices, which shift back.
+      const shift = travel(ax, takeUp(s), to);
       s.set(next);
+      if (s.beside) setBeside(s as never, null);
       if (dest == null) voices.rest(own.value, own.velocity, false);
       dest = to;
       voices.move(shift);
