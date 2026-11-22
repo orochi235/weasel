@@ -34,8 +34,8 @@ export interface TrialLoupeProps<TData = unknown, TLayer extends string = string
 }
 
 /** What a lens reads its color from — the source it was handed, or the stack it sits over — and how it hears that a
- *  captured source has a new frame. */
-function useLoupeSampling(
+ *  captured source has a new frame, or that the stack repaints its timed layers. */
+export function useLoupeSampling(
   surface: CanvasStackSurface | undefined,
   input: ReturnType<typeof resolveLoupe>['source'],
   host: RefObject<HTMLElement | null>,
@@ -57,9 +57,11 @@ function useLoupeSampling(
   // Keyed on the resolved source, not the prop: an inline getter is re-made
   // every render, and every aim renders.
   const resolved = resolveLoupeSource(input);
+  const animates = !input && !!surface?.layers.some((l) => l.timed);
+  const ticks = animates ? surface?.ticks : undefined;
   const subscribeResample = useMemo(
-    () => (resolved ? (fn: () => void) => resolved.subscribeFrame(fn) : undefined),
-    [resolved],
+    () => (resolved ? (fn: () => void) => resolved.subscribeFrame(fn) : ticks),
+    [resolved, ticks],
   );
   return { sample, resolved, subscribeResample };
 }
