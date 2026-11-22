@@ -1,5 +1,5 @@
-import { useEffect, useId, useReducer, useRef, useState } from 'react';
-import { createMenuController, type MenuController, type MenuEntry } from '@weasel-js/menu';
+import { useCallback, useEffect, useId, useReducer, useRef, useState } from 'react';
+import { attachMenuDismiss, createMenuController, type MenuController, type MenuEntry } from '@weasel-js/menu';
 import { Button } from '@weasel-js/ui/components/Button';
 import s from './MenuDemo.module.css';
 
@@ -17,11 +17,15 @@ function entriesFor(grid: boolean, chose: (what: string) => void, setGrid: (on: 
 }
 
 /** Every open level of `controller`, drawn by hand: the model owns the highlight, the keys and the submenus. */
-function Panels({ controller }: { controller: MenuController }) {
+function Panels({ controller, dismiss }: { controller: MenuController; dismiss: () => void }) {
   const [, redraw] = useReducer((n: number) => n + 1, 0);
   useEffect(() => controller.subscribe(redraw), [controller]);
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => root.current?.focus(), []);
+  useEffect(() => attachMenuDismiss<Event>(window, {
+    outside: (e) => !(e.target instanceof Node && root.current?.contains(e.target)),
+    close: dismiss,
+  }), [dismiss]);
   const stack = controller.stack();
   const id = useId();
   const levelId = (level: number) => `${id}-level-${level}`;
@@ -89,7 +93,17 @@ export function MenuDemo() {
   const [controller, setController] = useState<MenuController | null>(null);
   const [grid, setGrid] = useState(false);
   const [last, setLast] = useState('—');
+  const opener = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
   useEffect(() => () => controller?.dispose(), [controller]);
+  useEffect(() => {
+    // A close that took focus with the menu hands it back; one that sent it elsewhere leaves it there.
+    if (wasOpen.current && controller === null && (document.activeElement === document.body || document.activeElement === null)) {
+      opener.current?.focus();
+    }
+    wasOpen.current = controller !== null;
+  }, [controller]);
+  const dismiss = useCallback(() => setController(null), []);
 
   const open = () =>
     setController(
@@ -99,17 +113,17 @@ export function MenuDemo() {
           setLast(`Show grid ${on ? 'on' : 'off'}`);
         }),
         highlightFirst: true,
-        onClose: () => setController(null),
+        onClose: dismiss,
       }),
     );
 
   return (
     <div className={s.demo}>
       <div className={s.controls}>
-        <Button onClick={open} disabled={controller !== null}>Open menu</Button>
+        <Button ref={opener} onClick={open} disabled={controller !== null}>Open menu</Button>
         <span className={s.last} aria-live="polite">{last}</span>
       </div>
-      {controller && <Panels controller={controller} />}
+      {controller && <Panels controller={controller} dismiss={dismiss} />}
     </div>
   );
 }
