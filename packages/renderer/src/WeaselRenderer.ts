@@ -22,7 +22,7 @@ import { CustomPrograms } from './shaders/CustomPrograms';
 import { EffectTargets } from './effects/EffectTargets';
 import { RetainedSurfaces } from './retain/RetainedSurfaces';
 import { TileTextures } from './retain/TileTextures';
-import { RendererTiles } from './retain/bakeTile';
+import { BakedTiles, type RendererTiles } from './retain/bakeTile';
 import { ContextResources, startFrame } from './contextResources';
 import { watchContextLoss, type ContextLossWatch } from './contextLoss';
 import { canvasPassFor, deviceRectFor, sizeCanvas } from './targetRect';
@@ -77,7 +77,7 @@ export class WeaselRenderer {
     this.programs = new CustomPrograms(this.gpu);
     this.retained = new RetainedSurfaces(this.gpu, opts.retainBudget ?? DEFAULT_RETAIN_BUDGET);
     this.tileTextures = new TileTextures(this.gpu);
-    this.tiles = new RendererTiles(this.tileTextures, this.gpu, () => !this.disposed && !this.isContextLost(), () => this.beginFrame(),
+    this.tiles = new BakedTiles(this.tileTextures, this.gpu, () => !this.disposed && !this.isContextLost(), () => this.beginFrame(),
       (renderTarget) => ({ ...this.frameContext(undefined, undefined, undefined, { renderTarget, fragOrigin: [0, 0] }),
         flattenTolerance: inCssPixels(this.flattenTolerance, 1) }), () => this.res.meshCache.freeTransient());
     this.paintScratch = new PaintScratch(this.gpu);
@@ -342,7 +342,7 @@ export class WeaselRenderer {
       deviceWidth: device.width,
       deviceHeight: device.height,
       paintResources: res.paintResources,
-      tiles: this.tiles,
+      tiles: this.tileTextures,
       stats,
       ...target,
     };

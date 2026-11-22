@@ -32,7 +32,8 @@ interface Resolved {
   h: LodHysteresis;
 }
 
-type LadderNode = { id: string; kind?: string; lod?: NodeLod; pose?: unknown };
+/** What a level-of-detail walk reads off a node. */
+export type LadderNode = { id: string; kind?: string; lod?: NodeLod; pose?: unknown };
 
 const BUILT_IN: Record<string, Rung> = {
   full: { id: 'full', fromPx: 0 },

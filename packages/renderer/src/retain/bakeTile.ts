@@ -55,7 +55,27 @@ export interface TileBake {
 }
 
 /** A renderer's baked tiles: what a tiled layer bakes into and draws from. */
-export class RendererTiles {
+export interface RendererTiles {
+  /**
+   * Draw `commands`, in a tile's own texel space (a texel to the unit, y down), into a new texture
+   * `size` texels a side. Call between frames, never inside `render`. Null where the context is
+   * lost. Kept until `release`, or until the context is lost, which bumps `generation`.
+   */
+  bake(commands: readonly DrawCommand[], size: number): TileTexture | null;
+  /** Start a tile `size` texels a side baked over several calls, cleared to transparent; null where
+   *  the context is lost. Call between frames, as `bake`. */
+  begin(size: number): TileBake | null;
+  release(tile: TileTexture): void;
+  /** Free the scratch buffer bakes draw in, once a frame baked nothing. */
+  idle(): void;
+  /** GPU memory the tiles hold, the pool and the scratch buffer included. */
+  readonly bytes: number;
+  readonly count: number;
+  /** Moves when every tile was lost at once: a holder starts over. */
+  readonly generation: number;
+}
+
+export class BakedTiles implements RendererTiles {
   constructor(
     private readonly textures: TileTextures,
     private readonly gpu: GpuDevice,
@@ -65,11 +85,6 @@ export class RendererTiles {
     private readonly endFrame: () => void,
   ) {}
 
-  /**
-   * Draw `commands`, in a tile's own texel space (a texel to the unit, y down), into a new texture
-   * `size` texels a side. Call between frames, never inside `render`. Null where the context is
-   * lost. Kept until `release`, or until the context is lost, which bumps `generation`.
-   */
   bake(commands: readonly DrawCommand[], size: number): TileTexture | null {
     if (!this.usable()) return null;
     this.beginFrame();
@@ -80,8 +95,6 @@ export class RendererTiles {
     }
   }
 
-  /** Start a tile `size` texels a side baked over several calls, cleared to transparent; null where
-   *  the context is lost. Call between frames, as `bake`. */
   begin(size: number): TileBake | null {
     if (!this.usable()) return null;
     const scratch = this.textures.ownScratch(size);
@@ -121,19 +134,11 @@ export class RendererTiles {
     this.textures.release(tile);
   }
 
-  /** @internal The texture a tile command samples. */
-  textureOf(tile: TileTexture): ReturnType<TileTextures['textureOf']> {
-    return this.textures.textureOf(tile);
-  }
-
-  /** Free the scratch buffer bakes draw in, once a frame baked nothing. */
   idle(): void {
     this.textures.dropScratch();
   }
 
-  /** GPU memory the tiles hold, the pool and the scratch buffer included. */
   get bytes(): number { return this.textures.bytes; }
   get count(): number { return this.textures.count; }
-  /** Moves when every tile was lost at once: a holder starts over. */
   get generation(): number { return this.textures.generation; }
 }

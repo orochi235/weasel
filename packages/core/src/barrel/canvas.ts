@@ -72,7 +72,7 @@ export type { Ladder, Rung, RungId, NodeLod, LodHysteresis } from '../canvas/lod
 export { createLodState } from '../canvas/lod/lodState';
 export type { LodState, LodPick, LodWalkRecord } from '../canvas/lod/lodState';
 export { createLodWalk, poseSizeOf } from '../canvas/lod/lodWalk';
-export type { LodWalk, LodOptions } from '../canvas/lod/lodWalk';
+export type { LodWalk, LodOptions, LadderNode } from '../canvas/lod/lodWalk';
 export { paintLodBox, LOD_BOX_FILL } from '../canvas/lod/lodBox';
 // A node kind's outline as paths, and the generation its geometry moves on.
 export { NodeOutlineError, findNodeOutline, sceneNodeOutline, geometryGenerationOf } from '../canvas/nodeOutline';
@@ -223,7 +223,7 @@ export { nodesAsShown, shownLookup } from '../core/scene/nodeAsShown';
 export { targetTransformOf, worldToLocal, type TargetTransform } from '../core/geometry/targetFrame';
 export { indexedCandidates } from '../canvas/pickIndex/scenePickIndex';
 // The reach tree every scene index is built on, in any dimension: kernel3d's pick index is one.
-export { createReachTree, type ReachTree } from '../canvas/reach/reachTree';
+export { createReachTree, type ReachTree, type ReachDamage } from '../canvas/reach/reachTree';
 export {
   BOX_ALL, BOX_NONE, BOX_SOME,
   type BoxImage, type BoxKind, type ReachQuery, type ReachRay, type ReachRegion, type ReachSource,
