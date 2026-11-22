@@ -157,6 +157,15 @@ describe('EffectEditor', () => {
     expect(view().canConnect!(out, fedInput, { edge, end: 'from' })).toBe(true);
   });
 
+  it('takes a rack tap port as the output it stands for, to connect and to reconnect', () => {
+    const { onChange, view } = mount();
+    expect(view().canConnect!(port('blur', '~tap:out', 'image'), port('mix', 'base', 'image'))).toBe(true);
+    view().onConnect!({ from: 'blur', fromPort: '~tap:out', to: 'mix', toPort: 'base' });
+    expect(onChange.mock.calls[0]![0].pipeline.wires[1]).toMatchObject({ from: { stage: 'blur', port: 'out' } });
+    view().onReconnect!({ edge: 'w1', end: 'from', node: 'mix', port: '~tap:out' });
+    expect(onChange.mock.calls[1]![0].pipeline.wires[0]).toMatchObject({ from: { stage: 'mix', port: 'out' } });
+  });
+
   it('moves a wire end onto another input', () => {
     const { onChange, view } = mount();
     view().onReconnect!({ edge: 'w1', end: 'to', node: 'mix', port: 'base' });

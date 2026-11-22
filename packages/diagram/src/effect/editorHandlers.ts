@@ -10,6 +10,7 @@ import {
   addWire, canWire, ensureWireIds, inputFed, reconnectWire, removeStages, removeWires, setWireLabel, setWireRoute,
 } from './edit';
 import type { EditorLook, EditorScene } from './editorMapping';
+import { untapped } from './rack';
 import { dragEdit, type DragReports } from './clusterHandlers';
 import { setLookRoute, wireEnds } from './lookRoutes';
 import type { EffectDoc, EffectPipeline, EffectWire } from './types';
@@ -76,20 +77,20 @@ export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (
     if (isBodyEnd(from) || isBodyEnd(to)) return false;
     const { doc, built } = now();
     const except = moving === undefined ? undefined : built.wireOf(moving.edge);
-    return wireFor(doc.pipeline, { stage: from.nodeId, port: from.id }, { stage: to.nodeId, port: to.id }, except) !== null;
+    return wireFor(doc.pipeline, { stage: from.nodeId, port: untapped(from.id) }, { stage: to.nodeId, port: untapped(to.id) }, except) !== null;
   };
   return {
     canConnect,
     onConnect: (e: DataEdge) => commit('Connect', (d) => {
       if (e.fromPort === undefined || e.toPort === undefined) return null;
-      const wire = wireFor(d.pipeline, { stage: e.from, port: e.fromPort }, { stage: e.to, port: e.toPort });
+      const wire = wireFor(d.pipeline, { stage: e.from, port: untapped(e.fromPort) }, { stage: e.to, port: untapped(e.toPort) });
       return wire === null ? null : addWire(d, wire);
     }),
     onReconnect: (c: ReconnectChange) => commit('Reconnect', (d, b) => {
       const id = b.wireOf(c.edge);
       const wire = d.pipeline.wires.find((w) => w.id === id);
       if (id === undefined || wire === undefined || c.port === undefined) return null;
-      const moved = { stage: c.node, port: c.port };
+      const moved = { stage: c.node, port: untapped(c.port) };
       const [from, to] = c.end === 'from' ? [moved, wire.to] : [wire.from, moved];
       return canWire(d.pipeline, from, to) && !fed(d.pipeline, from, to, id) ? reconnectWire(d, id, c.end, moved) : null;
     }),
