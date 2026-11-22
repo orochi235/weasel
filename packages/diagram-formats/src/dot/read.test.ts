@@ -27,6 +27,11 @@ describe('reading DOT', () => {
     ]);
   });
 
+  it('fills a filled cluster that names no color lightgrey, as Graphviz does', () => {
+    expect(page('digraph { subgraph cluster_a { style=filled; a } }').data.containers![0]!.colors).toEqual({ fill: 'lightgrey' });
+    expect(page('digraph { subgraph cluster_a { a } }').data.containers![0]).not.toHaveProperty('colors');
+  });
+
   it('reads an invisible cluster as a container that draws nothing, around members it still draws', () => {
     const p = page('digraph { subgraph cluster_a { style=invis; label=A; color=red; x; y } }');
     expect(p.data.containers).toEqual([

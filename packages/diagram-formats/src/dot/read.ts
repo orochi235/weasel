@@ -284,13 +284,13 @@ function readCluster(
   }
   const color = colorAttr(r, attrs, 'color');
   const bg = colorAttr(r, attrs, 'bgcolor');
-  const fill = colorAttr(r, attrs, 'fillcolor') ?? color ?? bg;
+  const fill = styles.includes('filled') ? colorAttr(r, attrs, 'fillcolor') ?? color ?? bg ?? 'lightgrey' : bg;
   const stroke = colorAttr(r, attrs, 'pencolor') ?? color;
   const text = colorAttr(r, attrs, 'fontcolor');
   const width = numberAttr(r, attrs, 'penwidth');
   const dash = dashOf(styles);
   const colors: Partial<NodeStyle> = {
-    ...(styles.includes('filled') && fill !== undefined ? { fill } : bg !== undefined ? { fill: bg } : {}),
+    ...(fill !== undefined ? { fill } : {}),
     ...(stroke !== undefined ? { stroke } : {}),
     ...(text !== undefined ? { text } : {}),
     ...(width !== undefined ? { strokeWidth: width } : {}),
