@@ -185,7 +185,8 @@ function releasePlan(scene: AnyScene, id: string) {
   const trait = node === undefined ? null : diagramContainerOf(node);
   if (node === undefined || trait === null || reachesLocked(scene as never, [node.id])) return null;
   const membersOf = (c: NodeId) => scene.childrenOf(c).filter((m) => m !== titleIdOf(c as string));
-  const members = trait.role === 'pool' ? membersOf(node.id).flatMap(membersOf) : membersOf(node.id);
+  const isLane = (m: NodeId) => diagramContainerOf(scene.get(m)!)?.role === 'lane';
+  const members = trait.role === 'pool' ? membersOf(node.id).flatMap((m) => (isLane(m) ? membersOf(m) : [m])) : membersOf(node.id);
   const beside = releasedFrom(scene, node.id);
   // A lane's pool restacks the lanes left: it, its title, and each lane it moves are written too.
   if (beside !== node.id) {
@@ -210,8 +211,8 @@ export function canReleaseMembers(scene: AnyScene, id: string): boolean {
 
 /**
  * Remove container `id` and keep its members, which take its place in its
- * parent, as one history entry. A pool's members are its lanes' members, and
- * a lane's go past its pool. Connectors on what is removed go with it.
+ * parent, as one history entry. A pool's members are its lanes' members and
+ * anything else it holds, and a lane's go past its pool. Connectors on what is removed go with it.
  * Nothing changes when that parent's frame is singular, where the members
  * could not keep their places, or when the release would write a locked node.
  */

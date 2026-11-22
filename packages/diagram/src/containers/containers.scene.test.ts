@@ -309,6 +309,17 @@ describe('pools in a scene', () => {
     expect(parentOf(scene, 's')).toBe(null);
   });
 
+  it('keep what a pool holds outside its lanes when released', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    shape(scene, 'loose', { x: 100, y: 30, width: 40, height: 20 }, pool);
+    const at = pose(scene, 'loose');
+    releaseMembers(scene as never, pool);
+    expect(scene.get(pool as NodeId)).toBeUndefined();
+    expect(parentOf(scene, 'loose')).toBe(null);
+    expect(pose(scene, 'loose')).toEqual(at);
+  });
+
   it('release a lane\'s members above the pool it stays in, so they are not drawn under its fill', () => {
     const scene = makeScene();
     const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
