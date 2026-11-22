@@ -1,0 +1,47 @@
+{
+  "name": "@weasel-js/tiles",
+  "version": "2.0.0",
+  "description": "Tile pyramids over any space: the scheme a tile key lives in, a cache bounded by count and bytes with a pinned floor, a budgeted bake order, the coarser stand-in for a tile not yet baked, fade timing, and damage by box. No GPU, no DOM.",
+  "weasel": {
+    "tier": "base"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/tiles"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "node ../../scripts/package-test.mjs"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

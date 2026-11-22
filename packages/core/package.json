@@ -127,6 +127,7 @@
     "@weasel-js/routing": "2.0.0",
     "@weasel-js/select": "2.0.0",
     "@weasel-js/stroke": "2.0.0",
+    "@weasel-js/tiles": "2.0.0",
     "earcut": "3.2.4",
     "polygon-clipping": "^0.15.7"
   },
