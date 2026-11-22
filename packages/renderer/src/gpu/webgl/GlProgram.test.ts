@@ -129,4 +129,19 @@ describe('GlProgram compiling in the background', () => {
     expect(() => prog.has('u_color')).toThrow(expect.objectContaining({ stage: 'link' }));
     expect(() => prog.settle()).toThrow(ShaderCompileError);
   });
+
+  it('frees both stages of a program deleted before its link was waited on', () => {
+    const parallel = new Proxy(gl, {
+      get(target, prop) {
+        if (prop === 'getExtension') return (name: string) => (name === 'KHR_parallel_shader_compile' ? { COMPLETION_STATUS_KHR } : null);
+        return Reflect.get(target, prop) as unknown;
+      },
+    });
+    const gpu = new WebGLDevice(parallel);
+    const prog = gpu.createProgram({ glsl: { vert: VERT_SRC, frag: FRAG_SRC } }) as GlProgram;
+    const shaders = named('createShader').map((c) => c.result);
+    gpu.deleteProgram(prog);
+    expect(named('deleteShader').map((c) => c.args[0])).toEqual(shaders);
+    expect(named('deleteProgram').map((c) => c.args[0])).toEqual([prog.handle]);
+  });
 });

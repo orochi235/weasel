@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { reflectWgsl } from './wgslReflect';
+import { declaresEntryPoints } from './wgsl/customPrelude';
 import { createUniformBlock } from './wgslUniforms';
 
 const STANDARD = { standardLayout: true };
@@ -100,6 +101,32 @@ struct U { a: f32 }
   it('reads an i-suffixed literal as an array size and a const', () => {
     const src = 'const N = 3i; struct U { a: array<vec4f, 2i>, b: array<vec4f, N> } @group(1) @binding(0) var<uniform> u: U;';
     expect(reflectWgsl(src, STANDARD).structs.get('U')!.members.map((m) => m.offset)).toEqual([0, 32]);
+  });
+});
+
+describe('reflectWgsl on comments and literals WGSL allows', () => {
+  it('skips a nested block comment whole, and a line comment holding a block opener', () => {
+    const src = `
+/* old: /* note */ @group(1) @binding(0) var<uniform> p: Old; */
+// a stray /* here
+struct U { a: vec4f }
+@group(0) @binding(0) var<uniform> u: U;
+`;
+    expect(reflectWgsl(src, STANDARD).bindings.map((b) => b.name)).toEqual(['u']);
+  });
+
+  it('takes an entry point inside a nested comment for no entry point', () => {
+    expect(declaresEntryPoints('/* old /* note */ @vertex fn vertex() {} */ fn fragment() {}')).toBe(false);
+  });
+
+  it('reads a hex literal as an array size and a const', () => {
+    const src = `
+const N = 0x2u;
+struct U { a: array<vec4f, N>, b: array<vec4f, 0x10> }
+@group(0) @binding(0) var<uniform> u: U;
+`;
+    const s = reflectWgsl(src, STANDARD).structs.get('U')!;
+    expect(s.size).toBe(16 * 18);
   });
 });
 

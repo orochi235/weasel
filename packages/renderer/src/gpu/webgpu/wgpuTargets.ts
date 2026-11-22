@@ -52,6 +52,7 @@ export function createTarget(host: ResourceHost, desc: GpuTargetDesc): WgpuTarge
   const { width, height } = desc;
   // WebGPU multisamples only 4×: any count past 1 gets that, and is reported as it was made.
   const samples: 1 | 4 = (desc.samples ?? 0) > 1 ? 4 : 1;
+  if (samples > 1 && desc.ids) throw new Error('weasel: a multisampled target cannot have ids: its two color attachments would differ in sample count');
   const device = host.device;
   const color = samples === 1 ? emptyTexture(host, width, height, desc.filter ?? 'nearest') : null;
   const msaa = samples === 1 ? null

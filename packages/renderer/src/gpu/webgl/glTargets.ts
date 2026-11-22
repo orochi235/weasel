@@ -39,7 +39,8 @@ function renderbuffer(gl: WebGL2RenderingContext, format: number, samples: numbe
  */
 export function createTarget(gl: WebGL2RenderingContext, cache: GlCache, desc: GpuTargetDesc): GlTarget {
   const { width, height } = desc;
-  const samples = desc.samples ?? 0;
+  const samples = (desc.samples ?? 0) > 1 ? desc.samples! : 0;
+  if (samples > 0 && desc.ids) throw new Error('weasel: a multisampled target cannot have ids: its two color attachments would differ in sample count');
   const color = samples > 0 ? null : emptyTexture(gl, cache, width, height, desc.filter ?? 'nearest');
   // Ids are not samples to blend between.
   const ids = desc.ids ? emptyTexture(gl, cache, width, height, 'nearest') : null;
@@ -116,9 +117,21 @@ export function resolve(
 
 export function readIds(gl: WebGL2RenderingContext, cache: GlCache, target: GlTarget, rect: GpuRect): Uint8Array {
   const bytes = new Uint8Array(rect.width * rect.height * 4);
+  if (!target.ids) return bytes;
   cache.bindFramebuffer(target.fbo);
   gl.readBuffer(gl.COLOR_ATTACHMENT1);
-  gl.readPixels(rect.x, rect.y, rect.width, rect.height, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+  readRgba(gl, rect, bytes);
   gl.readBuffer(gl.COLOR_ATTACHMENT0);
   return bytes;
+}
+
+/** Read `rect` of the bound read buffer into `bytes`, under pack state another
+ *  user of the context may have left set. */
+export function readRgba(gl: WebGL2RenderingContext, rect: GpuRect, bytes: Uint8Array): void {
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+  gl.pixelStorei(gl.PACK_ALIGNMENT, 4);
+  gl.pixelStorei(gl.PACK_ROW_LENGTH, 0);
+  gl.pixelStorei(gl.PACK_SKIP_ROWS, 0);
+  gl.pixelStorei(gl.PACK_SKIP_PIXELS, 0);
+  gl.readPixels(rect.x, rect.y, rect.width, rect.height, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
 }

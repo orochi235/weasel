@@ -9,7 +9,7 @@ import type {
 import { GlCache } from './glCache';
 import { GlProgram, type GlProgramHost } from './GlProgram';
 import * as res from './glResources';
-import { createTarget, deleteTarget, readIds, resolve, type GlTarget } from './glTargets';
+import { createTarget, deleteTarget, readIds, readRgba, resolve, type GlTarget } from './glTargets';
 
 export class WebGLDevice implements GpuDevice, GlProgramHost {
   readonly language = 'glsl' as const;
@@ -34,9 +34,12 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
         const reported: unknown = gl.getParameter(gl.MAX_TEXTURE_SIZE);
         return typeof reported === 'number' && reported > 0 ? reported : undefined;
       },
-      // The default framebuffer's, read while it is bound.
+      // SAMPLES answers for the bound draw framebuffer: read the default one's, and put back whatever was bound.
       get samples(): number | undefined {
+        const bound = gl.getParameter(gl.DRAW_FRAMEBUFFER_BINDING) as WebGLFramebuffer | null | undefined;
+        if (bound) gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
         const reported: unknown = gl.getParameter(gl.SAMPLES);
+        if (bound) gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, bound);
         return typeof reported === 'number' ? reported : undefined;
       },
       get stencil(): boolean | undefined {
@@ -60,8 +63,13 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     this.cache.reset();
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendEquation(gl.FUNC_ADD);
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.CULL_FACE);
+    gl.disable(gl.RASTERIZER_DISCARD);
+    gl.disable(gl.SAMPLE_ALPHA_TO_COVERAGE);
+    gl.disable(gl.SAMPLE_COVERAGE);
+    gl.disable(gl.POLYGON_OFFSET_FILL);
     gl.clearColor(0, 0, 0, 0);
     gl.colorMask(true, true, true, true);
     gl.bindVertexArray(null);
@@ -87,9 +95,9 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
   }
 
   deleteProgram(program: GpuProgram): void {
-    const { handle } = program as GlProgram;
-    this.cache.forgetProgram(handle);
-    this.gl.deleteProgram(handle);
+    const gl = program as GlProgram;
+    this.cache.forgetProgram(gl.handle);
+    gl.delete();
   }
 
   createBuffer(kind: GpuBuffer['kind'], init: number | ArrayBufferView, usage: GpuBufferUsage): GpuBuffer {
@@ -232,7 +240,7 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     const gl = this.gl;
     const bytes = new Uint8Array(rect.width * rect.height * 4);
     this.cache.bindFramebuffer(null);
-    gl.readPixels(rect.x, rect.y, rect.width, rect.height, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+    readRgba(gl, rect, bytes);
     return bytes;
   };
 }

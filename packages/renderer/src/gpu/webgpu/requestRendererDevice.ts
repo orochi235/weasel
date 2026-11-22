@@ -19,7 +19,11 @@ async function open(): Promise<GPUDevice | null> {
   const gpu = typeof navigator !== 'undefined' ? navigator.gpu : undefined;
   if (!gpu) return null;
   const adapter = await gpu.requestAdapter();
-  if (!adapter) return null;
+  // No adapter is also the answer while a lost GPU restarts: ask again next time.
+  if (!adapter) {
+    shared = null;
+    return null;
+  }
   // WebGPU's default is 8192 whatever the GPU takes, where a WebGL context offers the GPU's own.
   const device = await adapter.requestDevice({ requiredLimits: { maxTextureDimension2D: adapter.limits.maxTextureDimension2D } });
   void device.lost.then(() => {

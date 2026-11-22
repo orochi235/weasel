@@ -33,6 +33,11 @@ export function setUniformData(
   const fn = gl[upload.fn] as (...args: unknown[]) => void;
   const ranged = offset !== undefined || count !== undefined;
   const args: unknown[] = upload.matrix ? [loc, false, data] : [loc, data];
-  if (ranged) args.push(offset ?? 0, count ?? data.length - (offset ?? 0));
+  if (ranged) {
+    const length = count ?? data.length - (offset ?? 0);
+    // GL reads a zero length as the rest of the array.
+    if (length <= 0) return;
+    args.push(offset ?? 0, length);
+  }
   fn.apply(gl, args);
 }

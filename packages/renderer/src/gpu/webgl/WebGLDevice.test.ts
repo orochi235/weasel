@@ -64,6 +64,16 @@ describe('WebGLDevice draw state', () => {
     expect(argsOf(rec, 'blendFunc')).toContainEqual([gl.ZERO, gl.SRC_ALPHA]);
   });
 
+  it('puts back at frame start the blend equation and rasterizer state another user of the context may have left set', () => {
+    const { rec } = setup();
+    const { gl } = rec;
+    expect(argsOf(rec, 'blendEquation')).toEqual([[gl.FUNC_ADD]]);
+    expect(argsOf(rec, 'disable')).toEqual(expect.arrayContaining([
+      [gl.RASTERIZER_DISCARD], [gl.SAMPLE_ALPHA_TO_COVERAGE], [gl.SAMPLE_COVERAGE], [gl.POLYGON_OFFSET_FILL],
+    ]));
+    expect(gl.RASTERIZER_DISCARD).toBe(0x8C89);
+  });
+
   it('zeroes only the stencil bits asked for', () => {
     const { rec, gpu } = setup();
     rec.reset();
@@ -92,6 +102,18 @@ describe('WebGLDevice textures', () => {
     const handle = (a as unknown as { handle: unknown }).handle;
     expect(rec.calls.filter((c) => c.name === 'activeTexture' || c.name === 'bindTexture').map((c) => [c.name, ...c.args]))
       .toEqual([['bindTexture', rec.gl.TEXTURE_2D, handle], ['activeTexture', rec.gl.TEXTURE0 + 1], ['bindTexture', rec.gl.TEXTURE_2D, handle]]);
+  });
+
+  it('uploads a decoded image into an r8 texture as its red channel, as later writes to it expect', () => {
+    const { rec, gpu } = setup();
+    const source = { width: 1, height: 1, data: new Uint8ClampedArray(4) } as ImageData;
+    const sampling = { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp' } as const;
+    const { gl } = rec;
+    for (const premultiply of [false, true]) {
+      rec.reset();
+      gpu.createTexture('r8', sampling, { source, premultiply });
+      expect(argsOf(rec, 'texImage2D')).toEqual([[gl.TEXTURE_2D, 0, gl.R8, gl.RED, gl.UNSIGNED_BYTE, source]]);
+    }
   });
 
   it('premultiplies an image upload when asked, and puts the flag back', () => {
@@ -181,6 +203,76 @@ describe('WebGLDevice id targets', () => {
   });
 });
 
+describe('WebGLDevice read-backs', () => {
+  it('reads the canvas and ids into client memory under default pack state', () => {
+    const { rec, gpu } = setup();
+    const { gl } = rec;
+    const rect = { x: 0, y: 0, width: 3, height: 1 };
+    const target = gpu.createTarget({ width: 4, height: 4, ids: true });
+    for (const read of [() => gpu.readCanvasSync(rect), () => gpu.readIdsSync(target, rect)]) {
+      rec.reset();
+      read();
+      expect(argsOf(rec, 'bindBuffer')).toEqual([[gl.PIXEL_PACK_BUFFER, null]]);
+      expect(argsOf(rec, 'pixelStorei')).toEqual([
+        [gl.PACK_ALIGNMENT, 4], [gl.PACK_ROW_LENGTH, 0], [gl.PACK_SKIP_ROWS, 0], [gl.PACK_SKIP_PIXELS, 0],
+      ]);
+      expect(names(rec).indexOf('pixelStorei')).toBeLessThan(names(rec).indexOf('readPixels'));
+    }
+    expect(gl.PIXEL_PACK_BUFFER).toBe(0x88EB);
+  });
+});
+
+describe('WebGLDevice ids of a target without them', () => {
+  it('answers no id without reading the color', () => {
+    const { rec, gpu } = setup();
+    const target = gpu.createTarget({ width: 4, height: 4 });
+    rec.reset();
+    expect(gpu.readIdsSync(target, { x: 0, y: 0, width: 2, height: 1 })).toEqual(new Uint8Array(8));
+    expect(names(rec)).not.toContain('readPixels');
+  });
+});
+
+describe('WebGLDevice targets', () => {
+  it('makes a single-sampled target with a color texture for one sample a pixel', () => {
+    const { rec, gpu } = setup();
+    rec.reset();
+    const target = gpu.createTarget({ width: 4, height: 4, samples: 1 });
+    expect(target.samples).toBe(0);
+    expect(target.color).not.toBeNull();
+    expect(names(rec)).not.toContain('renderbufferStorageMultisample');
+  });
+
+  it('refuses a multisampled target with ids, which would be an incomplete framebuffer', () => {
+    const { gpu } = setup();
+    expect(() => gpu.createTarget({ width: 4, height: 4, samples: 4, ids: true })).toThrow('multisampled target cannot have ids');
+  });
+});
+
+describe('WebGLDevice geometry', () => {
+  it('reads a stride-0 buffer of several attributes as interleaved vertices, as WebGPU does', () => {
+    const { rec, gpu } = setup();
+    const buffer = gpu.createBuffer('vertex', new Float32Array(12), 'static');
+    rec.reset();
+    gpu.createGeometry({
+      vertexBuffers: [{ buffer, stride: 0, attributes: [{ location: 0, components: 2, offset: 0 }, { location: 1, components: 4, offset: 8 }] }],
+      indexBuffer: gpu.createBuffer('index', new Uint32Array([0, 1, 2]), 'static'), indexFormat: 'uint32',
+    });
+    expect(argsOf(rec, 'vertexAttribPointer')).toEqual([[0, 2, rec.gl.FLOAT, false, 24, 0], [1, 4, rec.gl.FLOAT, false, 24, 8]]);
+  });
+});
+
+describe('WebGLDevice uniforms', () => {
+  it('writes nothing for a ranged write of no numbers', () => {
+    const { rec, gpu } = setup();
+    const { program } = drawable(gpu);
+    program.lookupUniforms(['u_n']);
+    rec.reset();
+    program.set('u_n', 'vec4', new Float32Array(8), 4, 0);
+    program.set('u_n', 'vec4', new Float32Array(8), 8);
+    expect(argsOf(rec, 'uniform4fv')).toEqual([]);
+  });
+});
+
 describe('WebGLDevice resolve', () => {
   it('blits a whole multisampled buffer straight into its destination', () => {
     const { rec, gpu } = setup();
@@ -218,5 +310,36 @@ describe('WebGLDevice resolve', () => {
     rec.reset();
     gpu.beginPass({ target: scratch, viewport: rect, scissor: rect });
     expect(argsOf(rec, 'bindFramebuffer')).toHaveLength(1);
+  });
+});
+
+describe('WebGLDevice limits', () => {
+  it('reads the canvas sample count with the default framebuffer bound, and puts back the one that was', () => {
+    const rec = createGLRecorder();
+    const { gl } = rec;
+    const fbo = { __id: 'offscreen' };
+    let drawBound: unknown = fbo;
+    const answering = new Proxy(gl, {
+      get(target, prop) {
+        if (prop === 'getParameter') {
+          return (name: number) => {
+            target.getParameter(name);
+            if (name === gl.DRAW_FRAMEBUFFER_BINDING) return drawBound;
+            if (name === gl.SAMPLES) return drawBound === null ? 4 : 0;
+            return null;
+          };
+        }
+        if (prop === 'bindFramebuffer') {
+          return (kind: number, bound: unknown) => {
+            target.bindFramebuffer(kind, bound as WebGLFramebuffer | null);
+            drawBound = bound;
+          };
+        }
+        return Reflect.get(target, prop) as unknown;
+      },
+    });
+    const gpu = new WebGLDevice(answering);
+    expect(gpu.limits.samples).toBe(4);
+    expect(drawBound).toBe(fbo);
   });
 });

@@ -5,6 +5,7 @@ import type {
 } from '../types';
 import type { GlCache } from './glCache';
 import { withPremultipliedSource } from './premultipliedBitmap';
+import { packedStride } from '../vertexLayout';
 
 export interface GlBuffer extends GpuBuffer {
   readonly handle: WebGLBuffer;
@@ -75,9 +76,10 @@ export function createGeometry(gl: WebGL2RenderingContext, cache: GlCache, desc:
   cache.bindVertexArray(vao);
   for (const { buffer, stride, attributes, step } of desc.vertexBuffers) {
     gl.bindBuffer(gl.ARRAY_BUFFER, (buffer as GlBuffer).handle);
+    const bytes = stride || packedStride(attributes);
     for (const a of attributes) {
       gl.enableVertexAttribArray(a.location);
-      gl.vertexAttribPointer(a.location, a.components, gl.FLOAT, false, stride, a.offset);
+      gl.vertexAttribPointer(a.location, a.components, gl.FLOAT, false, bytes, a.offset);
       if (step === 'instance') gl.vertexAttribDivisor(a.location, 1);
     }
   }
@@ -110,14 +112,16 @@ function wrapOf(gl: WebGL2RenderingContext, wrap: GpuSampling['wrapS']): number 
 
 function upload(gl: WebGL2RenderingContext, format: GpuTextureFormat, data: GpuTextureData): void {
   if ('source' in data) {
+    const internal = format === 'r8' ? gl.R8 : gl.RGBA;
+    const texels = format === 'r8' ? gl.RED : gl.RGBA;
     if (!data.premultiply) {
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data.source);
+      gl.texImage2D(gl.TEXTURE_2D, 0, internal, texels, gl.UNSIGNED_BYTE, data.source);
       return;
     }
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
     try {
       withPremultipliedSource(data.source, (source) =>
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source));
+        gl.texImage2D(gl.TEXTURE_2D, 0, internal, texels, gl.UNSIGNED_BYTE, source));
     } finally {
       // Put back even on a throw: it would premultiply every later upload too.
       gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);

@@ -55,7 +55,8 @@ export interface GpuVertexAttribute {
 /** One vertex buffer of a geometry, and the attributes read from each vertex in it. */
 export interface GpuVertexBufferLayout {
   readonly buffer: GpuBuffer;
-  /** Bytes per vertex; 0 for tightly packed. */
+  /** Bytes per vertex; 0 for its attributes packed end to end, up to the
+   *  furthest byte any of them reads. */
   readonly stride: number;
   readonly attributes: readonly GpuVertexAttribute[];
   /** Whether the buffer advances per vertex or per instance. Default `'vertex'`. */
@@ -83,12 +84,13 @@ export interface GpuGeometry {
 export interface GpuTargetDesc {
   readonly width: number;
   readonly height: number;
-  /** Samples a pixel; 0 single-sampled. A multisampled target's color cannot
-   *  be sampled, only resolved. */
+  /** Samples a pixel; 0 or 1 single-sampled. A multisampled target's color
+   *  cannot be sampled, only resolved. */
   readonly samples?: number;
   /** A stencil attachment: clips and even-odd fills need one. */
   readonly stencil?: boolean;
-  /** A second color attachment the pick ids are drawn to. */
+  /** A second color attachment the pick ids are drawn to; single-sampled
+   *  targets only, and `createTarget` throws for a multisampled one. */
   readonly ids?: boolean;
   /** How the color texture samples, for a single-sampled target. */
   readonly filter?: GpuFilter;
@@ -295,7 +297,7 @@ export interface GpuDevice {
   /** Copy the bottom-left `width × height` of multisampled `source` into
    *  `dest` at `x, y`. Not inside a pass. */
   resolve(source: GpuTarget, dest: GpuTarget, width: number, height: number, x: number, y: number): void;
-  /** The id attachment's RGBA8 texels inside `rect`, rows bottom-up. */
+  /** The id attachment's RGBA8 texels inside `rect`, rows bottom-up; zeros, no id, for a target without one. */
   readIds(target: GpuTarget, rect: GpuRect): Promise<Uint8Array>;
   /** `readIds` answered at once, where the backend can. */
   readonly readIdsSync?: (target: GpuTarget, rect: GpuRect) => Uint8Array;

@@ -2,6 +2,7 @@
  *  structs, laid out under WGSL's uniform address-space rules, and its group bindings. */
 
 import { getOwn } from '@weasel-js/registry';
+import { stripWgslComments, WGSL_INT, wgslInt } from './wgslLexical';
 
 export type WgslScalar = 'f32' | 'i32' | 'u32';
 
@@ -45,10 +46,6 @@ export interface WgslReflection {
 
 const SCALARS: Record<string, WgslScalar> = { f32: 'f32', i32: 'i32', u32: 'u32' };
 const SUFFIX: Readonly<Record<'f' | 'i' | 'u', WgslScalar>> = { f: 'f32', i: 'i32', u: 'u32' };
-
-function stripComments(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
-}
 
 /** Split `a, b<c, d>, e` at depth-0 commas. */
 function splitTop(s: string): string[] {
@@ -97,11 +94,6 @@ function layoutOf(t: WgslType, structs: Map<string, WgslStruct>): Layout {
   }
 }
 
-/** A WGSL integer literal, `4`, `4u` or `4i`, as a number; `undefined` for anything else. */
-function intLiteral(s: string): number | undefined {
-  return /^\d+[iu]?$/.test(s) ? parseInt(s, 10) : undefined;
-}
-
 /** Structs the module declares that no uniform can hold — a `bool` member, a runtime-sized array — by the
  *  error laying one out raised. A helper or IO struct may be one; only a uniform naming it is refused. */
 type Unlaid = ReadonlyMap<string, Error>;
@@ -123,7 +115,7 @@ function parseType(
     const parts = splitTop(m[1]);
     if (parts.length !== 2) throw new Error(`WGSL: a uniform array needs a fixed size: ${src}`);
     const element = parseType(parts[0], structs, consts, unlaid);
-    const count = intLiteral(parts[1]) ?? consts.get(parts[1]);
+    const count = wgslInt(parts[1]) ?? consts.get(parts[1]);
     if (count === undefined) throw new Error(`WGSL: unknown array size ${parts[1]}`);
     const el = layoutOf(element, structs);
     return { kind: 'array', element, count, stride: roundUp(el.align, el.size) };
@@ -201,16 +193,16 @@ function checkUniformLayout(struct: WgslStruct, structs: Map<string, WgslStruct>
 /** Reflect the structs and `@group`/`@binding` variables a WGSL module declares. Every struct is laid out by
  *  WGSL's one set of rules; `target` says whether a uniform struct must also keep the stricter uniform ones. */
 export function reflectWgsl(source: string, target: WgslTarget): WgslReflection {
-  const src = stripComments(source);
+  const src = stripWgslComments(source);
   const structs = new Map<string, WgslStruct>();
   const consts = new Map<string, number>();
   const unlaid = new Map<string, Error>();
   const bindings: WgslBinding[] = [];
-  const token = /\bconst\s+(\w+)\s*(?::\s*\w+\s*)?=\s*(\d+)[iu]?\s*;|\bstruct\s+(\w+)\s*\{([^}]*)\}|((?:@\w+(?:\([^)]*\))?\s*)+)var(?:<([^>]*)>)?\s+(\w+)\s*:\s*([^;]+);/g;
+  const token = new RegExp(String.raw`\bconst\s+(\w+)\s*(?::\s*\w+\s*)?=\s*(${WGSL_INT})\s*;|\bstruct\s+(\w+)\s*\{([^}]*)\}|((?:@\w+(?:\([^)]*\))?\s*)+)var(?:<([^>]*)>)?\s+(\w+)\s*:\s*([^;]+);`, 'g');
   // Module-scope declarations may come in any order: consts first, then structs until none is left that the
   // ones laid out so far can lay out, then the variables.
   const matches = [...src.matchAll(token)];
-  for (const m of matches) if (m[1]) consts.set(m[1], parseInt(m[2], 10));
+  for (const m of matches) if (m[1]) consts.set(m[1], wgslInt(m[2])!);
   let pending = matches.filter((m) => m[3]);
   for (let laid = true; laid && pending.length > 0;) {
     laid = false;

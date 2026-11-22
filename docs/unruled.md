@@ -3628,3 +3628,8 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `prefDisplayBounds` measures a nonlinear (function) unit's `step` as the display
   distance one step makes at the leaf's `default`, else at `min` or `max`, and leaves it as declared where none of
   those gives a finite one. Leaving a function unit's step unconverted everywhere was the alternative.
+## Audit round sixty-eight (2026-11-22): renderer.gpu
+
+- 2026-11-22 (the fixer's call): `createTarget` throws, on both backends, for a target with `ids` and more than one
+  sample a pixel; neither can draw into one, since its two color attachments would differ in sample count. There is
+  no override. Multisampling the ids attachment too was the alternative, which would blend ids at shape edges.
