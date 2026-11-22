@@ -36,3 +36,10 @@ it("shows where the canvas sat on the page, so a client point can be reconciled 
   expect(screen.getByRole('columnheader', { name: 'Canvas' })).toBeTruthy();
   expect(screen.getByText(/^\s*250\.0\s+180\.0$/)).toBeTruthy();
 });
+
+it('pads a column to its widest value, so far-from-origin rows keep their decimal points lined up', () => {
+  const far = (x: number, seq: number) => ({ seq, record: { ...entry(1000), world: { x, y: 0 } } });
+  render(<CoordTable entries={[far(5, 0), far(-1234567.8, 1)]} now={2000} />);
+  const cells = [screen.getByText(/^\s*5\.0 /), screen.getByText(/^-1234567\.8 /)];
+  expect(cells[0].textContent!.length).toBe(cells[1].textContent!.length);
+});
