@@ -1,4 +1,4 @@
-/** `clientToWorld` conversions, newest first: where the pointer was, the camera it was read under, and the world point it became. */
+/** `clientToWorld` conversions, newest first: where the pointer was, where the canvas sat, the camera it was read under, and the world point it became. */
 import type { ReactElement } from 'react';
 import { serializedNumber, type SerializedValue } from '../protocol';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
@@ -14,6 +14,8 @@ export interface CoordEntry {
   ts: number;
   clientX: Coord;
   clientY: Coord;
+  /** The canvas's box in client space when the conversion ran; null on the fallback. */
+  rect: { left: Coord; top: Coord; width: Coord; height: Coord } | null;
   view: { x: Coord; y: Coord; scaleX: Coord; scaleY: Coord } | null;
   world: { x: Coord; y: Coord };
   fallback: boolean;
@@ -29,13 +31,20 @@ export function CoordTable({ entries, now }: { entries: readonly Sequenced<Coord
   const columns: readonly DataGridColumn<(typeof rows)[number]>[] = [
     { id: 'age', header: 'Age', sortable: false, className: s.age, render: ({ entry }) => formatAge(Math.max(0, now - entry.ts)) },
     { id: 'client', header: 'Client', sortable: false, className: s.count, render: ({ entry }) => pair(entry.clientX, entry.clientY) },
+    {
+      id: 'canvas',
+      header: 'Canvas',
+      sortable: false,
+      className: s.count,
+      render: ({ entry }) => (entry.rect ? pair(entry.rect.left, entry.rect.top) : ''),
+    },
     { id: 'world', header: 'World', sortable: false, className: s.count, render: ({ entry }) => pair(entry.world.x, entry.world.y) },
     {
       id: 'scale',
       header: 'Scale',
       sortable: false,
       className: s.count,
-      render: ({ entry }) => (entry.view ? pair(entry.view.scaleX, entry.view.scaleY, 3) : 'fallback'),
+      render: ({ entry }) => (entry.fallback || !entry.view ? 'fallback' : pair(entry.view.scaleX, entry.view.scaleY, 3)),
     },
     {
       id: 'offset',
