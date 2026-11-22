@@ -1,0 +1,81 @@
+{
+ "id": "core.interactions.gestures",
+ "commit": "f6ce272099f3a03ade5d48ba8b6efd3dada64e06",
+ "date": "2026-11-22",
+ "files": [
+  "packages/core/src/interactions/gestures/dragGesture/dragGesture.ts",
+  "packages/core/src/interactions/gestures/dragGesture/dragPointOf.ts",
+  "packages/core/src/interactions/gestures/dragGesture/index.ts",
+  "packages/core/src/interactions/gestures/dragRadial/dragRadial.ts",
+  "packages/core/src/interactions/gestures/dragRadial/index.ts",
+  "packages/core/src/interactions/gestures/dragRect/dragRect.ts",
+  "packages/core/src/interactions/gestures/dragRect/index.ts",
+  "packages/core/src/interactions/gestures/frames.ts",
+  "packages/core/src/interactions/gestures/pointerDrag/index.ts",
+  "packages/core/src/interactions/gestures/pointerDrag/pointerDrag.ts",
+  "packages/core/src/interactions/gestures/resizeHandles.ts",
+  "packages/core/src/interactions/gestures/shared/index.ts",
+  "packages/core/src/interactions/gestures/shared/originProjection.ts",
+  "packages/core/src/interactions/gestures/shared/screenTolerance.ts",
+  "packages/core/src/interactions/gestures/spec.ts",
+  "packages/core/src/interactions/gestures/types.ts"
+ ],
+ "a": 6,
+ "b": 6,
+ "m": 4,
+ "distinct": 8,
+ "chapman": 8.8,
+ "unfound": 0.8,
+ "read": {
+  "A": 16,
+  "B": 16
+ },
+ "newCode": {
+  "since": 42,
+  "changedFiles": 5,
+  "findings": 9
+ },
+ "previous": {
+  "round": 42,
+  "chapman": 14,
+  "unfound": 4
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 15,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2528,
+   "total": 2528
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 22.9
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "studio"
+  },
+  "weightedTokens": 933187,
+  "costUsd": 2.8
+ },
+ "fixCommits": [
+  "d16ef7f7eac6f18f2e1a815a4c25056323be8062",
+  "dba851b0d9febbf605037315a6fb42006d6be2a1",
+  "cf09749df82486a8727172932239507f17abf64e",
+  "430ffc61a92de993cb1ce760448fc2c19230c7e0",
+  "f3b2880ed091676342b895cc3c78a7771ef9a58f",
+  "ba05ebca83ead24e6905846a0837e864f8650d73",
+  "39726e38442c647a74a9313ee1c4e645fc2a4623"
+ ]
+}

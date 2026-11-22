@@ -1,0 +1,78 @@
+{
+ "id": "diagram.outlines",
+ "commit": "f6ce272099f3a03ade5d48ba8b6efd3dada64e06",
+ "date": "2026-11-22",
+ "files": [
+  "packages/diagram/src/outlines/bpmn.ts",
+  "packages/diagram/src/outlines/figures.ts",
+  "packages/diagram/src/outlines/flowchart.ts",
+  "packages/diagram/src/outlines/fromD.ts",
+  "packages/diagram/src/outlines/modeling.ts",
+  "packages/diagram/src/outlines/network.ts",
+  "packages/diagram/src/outlines/participants.ts",
+  "packages/diagram/src/outlines/states.ts",
+  "packages/diagram/src/outlines/storage.ts",
+  "packages/diagram/src/outlines/table.ts",
+  "packages/diagram/src/outlines/types.ts"
+ ],
+ "a": 5,
+ "b": 5,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 11,
+ "unfound": 3,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "newCode": {
+  "since": 46,
+  "changedFiles": 2,
+  "findings": 4
+ },
+ "previous": {
+  "round": 46,
+  "chapman": 8,
+  "unfound": 4
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 23,
+  "testFiles": {
+   "failed": 0,
+   "passed": 419,
+   "total": 419
+  },
+  "gui": true,
+  "repairs": 1,
+  "capstone": true
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 12.1
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1073616,
+  "costUsd": 3.09
+ },
+ "fixCommits": [
+  "57952695f607d4415abff07ebd9a2c2d65680ba5",
+  "8311308e65882aae3056ede22f3de210c4964264",
+  "6ce9b346bbec482a978eae220826948e783ee25f",
+  "1e50b4f4a3d65f7bc06de9ed9f5e1b962b4f01aa",
+  "1b036072344a42e67896124b922d3b50b6a238e6",
+  "3874d576aaedf8a7de9bc0f152707dbf4084f327",
+  "06a1220dec08faa839cbf4d1e3901d4b06f3efea",
+  "1690a31e854ef60a84abbf36caa1c13c5a2946c7"
+ ]
+}

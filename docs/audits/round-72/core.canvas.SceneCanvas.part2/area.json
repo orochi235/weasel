@@ -1,0 +1,106 @@
+{
+ "id": "core.canvas.SceneCanvas.part2",
+ "commit": "f6ce272099f3a03ade5d48ba8b6efd3dada64e06",
+ "date": "2026-11-22",
+ "files": [
+  "packages/core/src/canvas/SceneCanvas/toolProps.ts",
+  "packages/core/src/canvas/SceneCanvas/toolRegistry.ts",
+  "packages/core/src/canvas/SceneCanvas/useActionTunings.ts",
+  "packages/core/src/canvas/SceneCanvas/useActionsPropResolver.ts",
+  "packages/core/src/canvas/SceneCanvas/useBakedScene.ts",
+  "packages/core/src/canvas/SceneCanvas/useBestHit.ts",
+  "packages/core/src/canvas/SceneCanvas/useBuiltinTools.ts",
+  "packages/core/src/canvas/SceneCanvas/useCanvasCamera.ts",
+  "packages/core/src/canvas/SceneCanvas/useCanvasDispatcher.ts",
+  "packages/core/src/canvas/SceneCanvas/useCanvasSelection.ts",
+  "packages/core/src/canvas/SceneCanvas/useCanvasTools.ts",
+  "packages/core/src/canvas/SceneCanvas/useChromeAffordances.ts",
+  "packages/core/src/canvas/SceneCanvas/useContentBounds.ts",
+  "packages/core/src/canvas/SceneCanvas/useContributionRoles.ts",
+  "packages/core/src/canvas/SceneCanvas/useDepartureGhostLayer.ts",
+  "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts",
+  "packages/core/src/canvas/SceneCanvas/useEdgePan.ts",
+  "packages/core/src/canvas/SceneCanvas/useHeldModifiers.ts",
+  "packages/core/src/canvas/SceneCanvas/useIgnoredProps.ts",
+  "packages/core/src/canvas/SceneCanvas/useMagnificationCheck.ts",
+  "packages/core/src/canvas/SceneCanvas/useNodeKinds.ts",
+  "packages/core/src/canvas/SceneCanvas/usePresetTraits.ts",
+  "packages/core/src/canvas/SceneCanvas/usePreviewGhostLayer.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneCanvasHandle.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneCanvasLayers.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneCanvasPathEdit.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneCanvasTools.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneChrome.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneColorAt.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneGestureDispatcher.ts",
+  "packages/core/src/canvas/SceneCanvas/useScenePickers.ts",
+  "packages/core/src/canvas/SceneCanvas/useScenePicking.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneRedrawSources.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneSlotLayers.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneStandardActions.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneWorkerSurface.ts",
+  "packages/core/src/canvas/SceneCanvas/useSelectionOverlayLayer.ts",
+  "packages/core/src/canvas/SceneCanvas/useSurfaceRouting.ts",
+  "packages/core/src/canvas/SceneCanvas/useSurfaceViewInputs.ts",
+  "packages/core/src/canvas/SceneCanvas/useToolKeybindings.ts",
+  "packages/core/src/canvas/SceneCanvas/useViewportActions.ts",
+  "packages/core/src/canvas/SceneCanvas/useViewportWithoutView.ts",
+  "packages/core/src/canvas/SceneCanvas/viewportProp.ts",
+  "packages/core/src/canvas/SceneCanvas/workerProps.ts",
+  "packages/core/src/canvas/SceneCanvas/worldPointAt.ts"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 1,
+ "distinct": 3,
+ "chapman": 3.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 45,
+  "B": 45
+ },
+ "newCode": {
+  "since": 71,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 71,
+  "chapman": 14,
+  "unfound": 6
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 10,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2438,
+   "total": 2438
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.7,
+   "B": 0,
+   "match": 0,
+   "fix": 15.1
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "earlier",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1541212,
+  "costUsd": 4.45
+ },
+ "fixCommits": [
+  "e2d3cda0212ba4abbbf6a222735d2f833f6117b6",
+  "d41d15d38aa43119338c2ac2e9b04df675e8384e",
+  "5de4459355138198950be46f4a38bd5a80185990"
+ ]
+}

@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "A log scale's small-count ticks fall back to linear ticks when `every` thins the powers, giving no ticks or ticks crammed at one end",
+  "`ContinuousScaleFactory`'s doc names `powScale`, which is not one",
+  "A linear scale over a single non-integer value has no ticks (and so does a degenerate log domain off the 1/2/5 values)",
+  "A band scale with one category, paddingInner 1 and paddingOuter 0 reports a step 1e9 times its range"
+ ],
+ "b": [
+  "warpTicks returns no ticks, or one, for a narrow domain away from zero: the offset decade has no 7s or 9s",
+  "tickDecimals counts places to an absolute 1e-9, so a given column of small ticks all label \"0\"",
+  "Weekly time ticks fall on Thursdays"
+ ]
+}

@@ -1,0 +1,96 @@
+{
+ "id": "animator.engine",
+ "commit": "f6ce272099f3a03ade5d48ba8b6efd3dada64e06",
+ "date": "2026-11-22",
+ "files": [
+  "packages/animator/src/engine/animatorApi.ts",
+  "packages/animator/src/engine/axes.ts",
+  "packages/animator/src/engine/codec.ts",
+  "packages/animator/src/engine/codecVoice.ts",
+  "packages/animator/src/engine/completions.ts",
+  "packages/animator/src/engine/context.ts",
+  "packages/animator/src/engine/core.ts",
+  "packages/animator/src/engine/decay.ts",
+  "packages/animator/src/engine/frame.ts",
+  "packages/animator/src/engine/handoff/eligible.ts",
+  "packages/animator/src/engine/handoff/handoffs.ts",
+  "packages/animator/src/engine/handoff/motion.ts",
+  "packages/animator/src/engine/handoff/run.ts",
+  "packages/animator/src/engine/handoff/start.ts",
+  "packages/animator/src/engine/handoff/takeBack.ts",
+  "packages/animator/src/engine/handoff/testing/fakeAnimate.ts",
+  "packages/animator/src/engine/holdAnimation.ts",
+  "packages/animator/src/engine/holdRows.ts",
+  "packages/animator/src/engine/holdStore.ts",
+  "packages/animator/src/engine/holds.ts",
+  "packages/animator/src/engine/integrator.ts",
+  "packages/animator/src/engine/lanes.ts",
+  "packages/animator/src/engine/offsetPhysics.ts",
+  "packages/animator/src/engine/offsetTween.ts",
+  "packages/animator/src/engine/offsets.ts",
+  "packages/animator/src/engine/physicsAnimation.ts",
+  "packages/animator/src/engine/rewinds.ts",
+  "packages/animator/src/engine/roster.ts",
+  "packages/animator/src/engine/schedule.ts",
+  "packages/animator/src/engine/springRest.ts",
+  "packages/animator/src/engine/springVoices.ts",
+  "packages/animator/src/engine/table.ts",
+  "packages/animator/src/engine/tweenAnimation.ts",
+  "packages/animator/src/engine/wakes.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 5,
+ "unfound": 1,
+ "read": {
+  "A": 34,
+  "B": 34
+ },
+ "newCode": {
+  "since": 68,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 68,
+  "chapman": 11,
+  "unfound": 2
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 12,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2693,
+   "total": 2693
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0.1,
+   "fix": 21.8
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1673881,
+  "costUsd": 5.09
+ },
+ "fixCommits": [
+  "71a3462edf8234634cadabc478faccae19908c84",
+  "fdad37dcc79903fbe8e9b3302fe4b6a9845769e6",
+  "593853ef8feeec4cab1183164635bd5731713d14",
+  "f82e5e4ea1f4010271a54dd9dec1bb4487892e65"
+ ]
+}

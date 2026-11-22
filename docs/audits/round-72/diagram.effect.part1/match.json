@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   4,
+   1
+  ]
+ ],
+ "a": [
+  "A missing numeric param plays at the factory's default, not the stage type's, while discrete settings use the stage type's",
+  "applyStructure reports \"nothing changed\" after a runtime throw in a batch with no adds, though every patch landed",
+  "ClusterTitleField can report its rename twice: Enter, then the blur from its own removal",
+  "Reconnecting a wire under nodeGraph keeps its hand-set route, which a reorder's rewiring drops",
+  "Moving a cluster translates the routes of wires inside it but not their labels' `near` points",
+  "A wire repeating an earlier wire's id is edited through that id: deleting or reconnecting it changes both wires"
+ ],
+ "b": [
+  "Editor connect/reconnect refuses rack's tap ports: port ids are not untapped as the edge mapping does",
+  "Moving a cluster moves its inside wires' routes but leaves their `{ near }` label placements behind",
+  "A wire minted into a freed id by a chain move inherits the removed wire's label placement",
+  "The live audio graph keeps a level the plan stopped giving, where a fresh build uses the node's default",
+  "Reorder moves index the unfiltered `order.items` while the slots were built from the boxed subset",
+  "A chain reorder refuses to wire into a `many` input that already has a side wire",
+  "The live audio plan plays wires the looks do not draw: a wire from a missing or input port, or into a missing port of the output",
+  "A cluster id with the reserved `~` prefix is neither reported nor refused, and collides with look-made ids"
+ ]
+}

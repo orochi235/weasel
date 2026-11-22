@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   3,
+   0
+  ]
+ ],
+ "a": [
+  "A filled DOT cluster with no fillcolor, color or bgcolor reads with no fill, where Graphviz fills it lightgrey",
+  "A reopened subgraph or cluster forgets the node and edge defaults its earlier opening set",
+  "Graph attributes a nested cluster inherits are warned as dropped where they are set",
+  "DOT writer never resets an inherited `penwidth`, so a nested box with no stroke width of its own reads back with its parent's",
+  "DOT `width`/`height` of zero or below are read as the node's size, where Graphviz holds them to its 0.01in minimum"
+ ],
+ "b": [
+  "DOT writer does not reset an outer cluster's `penwidth` in a nested cluster, so the inner one reads back with the outer's stroke width",
+  "DOT reader warns that root and plain-subgraph graph attributes were \"dropped\" while it still applies them to every cluster below",
+  "DOT reader gives a filled cluster with no color no fill, while a filled node with no color gets Graphviz's lightgrey",
+  "Diagram JSON reader validates a v1 page's `groups` list not at all, then renames it to `clusters` unchecked"
+ ]
+}

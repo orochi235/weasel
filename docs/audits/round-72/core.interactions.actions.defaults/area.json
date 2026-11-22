@@ -1,0 +1,79 @@
+{
+ "id": "core.interactions.actions.defaults",
+ "commit": "f6ce272099f3a03ade5d48ba8b6efd3dada64e06",
+ "date": "2026-11-22",
+ "files": [
+  "packages/core/src/interactions/actions/defaults/cancelAll.ts",
+  "packages/core/src/interactions/actions/defaults/containerScroll.ts",
+  "packages/core/src/interactions/actions/defaults/contextMenu.ts",
+  "packages/core/src/interactions/actions/defaults/copySubtree.ts",
+  "packages/core/src/interactions/actions/defaults/index.ts",
+  "packages/core/src/interactions/actions/defaults/lockedReach.ts",
+  "packages/core/src/interactions/actions/defaults/nudgeSteps.ts",
+  "packages/core/src/interactions/actions/defaults/requiresOperands.ts",
+  "packages/core/src/interactions/actions/defaults/segmentUnder.ts",
+  "packages/core/src/interactions/actions/defaults/sliceOps.ts",
+  "packages/core/src/interactions/actions/defaults/toolActivate.ts",
+  "packages/core/src/interactions/actions/defaults/toolResetToDefault.ts",
+  "packages/core/src/interactions/actions/defaults/touchZoom.ts",
+  "packages/core/src/interactions/actions/defaults/undoRedo.ts",
+  "packages/core/src/interactions/actions/defaults/viewportDragPan.ts",
+  "packages/core/src/interactions/actions/defaults/viewportWheelPan.ts",
+  "packages/core/src/interactions/actions/defaults/viewportZoom.ts"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 9,
+ "unfound": 3,
+ "read": {
+  "A": 17,
+  "B": 17
+ },
+ "newCode": {
+  "since": 71,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 71,
+  "chapman": 19,
+  "unfound": 9
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 15,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2448,
+   "total": 2448
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 27.9
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1591669,
+  "costUsd": 4.39
+ },
+ "fixCommits": [
+  "1a0fcb966193e25adb0046cfa7e5106ae5330d3f",
+  "d79ba2f6eece918b51d24e43529324f17056a871",
+  "ad4d6b784b0f0de81e345675a234912eed3d7d03",
+  "132594947d5db84e90d18384c9c1be31e0a7f514"
+ ]
+}

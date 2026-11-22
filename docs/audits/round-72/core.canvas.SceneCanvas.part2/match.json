@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "Content-bounds cache ignores the camera, though the bounds it caches depend on it",
+  "Departure ghosts lose the paint a removed child inherits from its removed container"
+ ],
+ "b": [
+  "Departure ghost drops the inherited paint of a removed container's children",
+  "useViewportActions registers on a registry its effect never re-reads"
+ ]
+}

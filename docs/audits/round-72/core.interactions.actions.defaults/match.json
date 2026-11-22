@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ]
+ ],
+ "a": [
+  "`viewport.zoom` run with no params zooms in about the canvas origin, unanimated and unrecorded, unlike the `in` variant",
+  "Container wheel-scroll ignores the wheel-pan axis lock",
+  "Context-menu `bodyKind` is answered two ways for an already-selected shape"
+ ],
+ "b": [
+  "copyOps puts a copied root under its source's parent even when that parent is locked, so the batch's insert is refused",
+  "tool.resetToDefault reports enabled with no `activeTool` dep, so Escape is swallowed by a no-op",
+  "viewport.zoom's param-less fallback zooms about the canvas origin while Cmd+= zooms about the host center",
+  "context-menu `enabled` checks the menu at the probe point while a keyboard `run` opens it for the selection anchor"
+ ]
+}

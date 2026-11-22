@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "A pipeline (or module) the GPU refuses is still drawn with until the async error scope resolves, voiding whole submits",
+  "Every texture binding gets sampleType 'float' and every sampler gets 'filtering', whatever the WGSL declares",
+  "The WGSL id composite does not clamp the color-matrix alpha, while the color composite now does, so ids are claimed by a different alpha than the one drawn"
+ ],
+ "b": [
+  "A pipeline the GPU will refuse is set on the pass before the refusal arrives, voiding the whole submit",
+  "Reflection binds every non-sampler handle type as a filtering float `texture_2d`, and every sampler as `filtering`",
+  "`set('u_arr[i]', …)` with more than one element's numbers writes only element i, where GL writes from i onward"
+ ]
+}

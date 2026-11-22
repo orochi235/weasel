@@ -1,0 +1,11 @@
+packages/diagram/src/outlines/bpmn.ts
+packages/diagram/src/outlines/figures.ts
+packages/diagram/src/outlines/flowchart.ts
+packages/diagram/src/outlines/fromD.ts
+packages/diagram/src/outlines/modeling.ts
+packages/diagram/src/outlines/network.ts
+packages/diagram/src/outlines/participants.ts
+packages/diagram/src/outlines/states.ts
+packages/diagram/src/outlines/storage.ts
+packages/diagram/src/outlines/table.ts
+packages/diagram/src/outlines/types.ts

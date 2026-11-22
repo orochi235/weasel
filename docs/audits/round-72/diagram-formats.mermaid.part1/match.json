@@ -1,0 +1,44 @@
+{
+ "pairs": [
+  [
+   1,
+   3
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   7,
+   9
+  ]
+ ],
+ "a": [
+  "Architecture writer joins a service's text lines with spaces and never warns",
+  "Architecture writer drops an empty service title, and the reader then labels the service with its id",
+  "Block writer drops connector colors and never warns",
+  "C4 writer turns a container description shaped like `[x]` into its technology",
+  "Class diagram reader throws on nested generics",
+  "A gantt task named `accTitle` or `accDescr` is written as a line that reads back as accessibility text",
+  "A journey step named `accTitle` or `accDescr` reads back as accessibility text",
+  "The gantt, gitGraph and journey writers drop a page name that differs from the chart title, without the warning the other chart kinds give",
+  "The gantt and journey readers drop the accessible title silently when a title statement names the chart",
+  "The gantt writer writes task ids raw, so an id holding a comma or starting with a tag word's syntax breaks the line",
+  "The flowchart and block readers read lean-left and inverted-trapezoid shapes as their mirror images, without a warning",
+  "The flowchart lexer skips the newlines inside `@{ … }` metadata without counting them, so every later line number is wrong"
+ ],
+ "b": [
+  "Block reader: a `space` before a links line lands on a later block, not the link line's first new block",
+  "Block writer drops connector colors without a warning",
+  "Architecture writer drops container colors without a warning",
+  "Architecture writer turns an empty service label into the service's id",
+  "C4 writer reads edge colors from `e.colors`, not the resolved style it uses for markers",
+  "Class and ER writers rename ids their own readers accept (hyphens, namespace dots)",
+  "Class writer loses the solid/dashed distinction of open vs filled arrows without a warning",
+  "ER writer drops connectors to containers silently",
+  "Flowchart reader loses the `v` direction: it upper-cases the header's direction, then looks up the lowercase key",
+  "Gantt, journey and gitGraph writers drop a page name without a warning",
+  "`accTitle { … }` is read as an accessible description",
+  "`headerWord` treats an unclosed `---` as front matter running to the end, so detect says no"
+ ]
+}

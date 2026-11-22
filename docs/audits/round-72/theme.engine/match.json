@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "bake drops every token that does not vary on an axis whose default is missing, not a string, or not one of its values",
+  "toDtcg's \"same leaf in every mode\" test compares tokens by reference, so a baked theme never qualifies"
+ ],
+ "b": [
+  "axisIssues accepts an axis value named \"by\", which no `by` can ever select",
+  "Axis value entries are never checked to be objects, so a `null` value passes derive and crashes emitCss; a `scheme` string is written into CSS verbatim",
+  "A child that changes a seed its inherited ramp's `steps` name gets new step tokens, but its baked `ramps` keeps the parent's step list",
+  "Across `extends`, a child's ramp (or scale) step loses to an inherited entry of the same layer that produces the same token name, though a child wins in every other layer"
+ ]
+}

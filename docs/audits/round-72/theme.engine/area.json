@@ -1,0 +1,94 @@
+{
+ "id": "theme.engine",
+ "commit": "f6ce272099f3a03ade5d48ba8b6efd3dada64e06",
+ "date": "2026-11-22",
+ "files": [
+  "packages/theme/src/engine/axisIssues.ts",
+  "packages/theme/src/engine/bake.ts",
+  "packages/theme/src/engine/color/generate.ts",
+  "packages/theme/src/engine/color/hueNames.ts",
+  "packages/theme/src/engine/color/hueSearch.ts",
+  "packages/theme/src/engine/color/oklch.ts",
+  "packages/theme/src/engine/color/paletteStats.ts",
+  "packages/theme/src/engine/color/placement.ts",
+  "packages/theme/src/engine/definition.fixture.ts",
+  "packages/theme/src/engine/deps.ts",
+  "packages/theme/src/engine/derive.ts",
+  "packages/theme/src/engine/emit/css.ts",
+  "packages/theme/src/engine/emit/dtcg.ts",
+  "packages/theme/src/engine/emit/e.tokens.css",
+  "packages/theme/src/engine/emit/manifest.ts",
+  "packages/theme/src/engine/emit/themes.ts",
+  "packages/theme/src/engine/emit/tokens.ts",
+  "packages/theme/src/engine/entries.ts",
+  "packages/theme/src/engine/merge.ts",
+  "packages/theme/src/engine/pinValues.ts",
+  "packages/theme/src/engine/ramps.ts",
+  "packages/theme/src/engine/references.ts",
+  "packages/theme/src/engine/ruleShape.ts",
+  "packages/theme/src/engine/safeNames.ts",
+  "packages/theme/src/engine/scales.ts",
+  "packages/theme/src/engine/semantics.ts",
+  "packages/theme/src/engine/steps.ts",
+  "packages/theme/src/engine/tokenSink.ts",
+  "packages/theme/src/engine/types.ts"
+ ],
+ "a": 2,
+ "b": 4,
+ "m": 0,
+ "distinct": 6,
+ "chapman": 14,
+ "unfound": 8,
+ "read": {
+  "A": 29,
+  "B": 29
+ },
+ "newCode": {
+  "since": 71,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 71,
+  "chapman": 13,
+  "unfound": 5
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 24,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1755,
+   "total": 1755
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 19.8,
+   "repair": 5.4
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1909807,
+  "costUsd": 5.69
+ },
+ "fixCommits": [
+  "843bb4b394c1532d65030d6219639fd1dfb4d67a",
+  "e940c02fc39d06e0675b4f65256318660d6ffbea",
+  "9a45efd310091b9899068845841fb938756892aa",
+  "ff7b223fa7ffb0b39f5d3c2f6a60485cd61372a6",
+  "d42e9f0d9291f8995f28aa9a67dd92b378df08a2",
+  "c65fda2ea85a7a804eecc4e509cd1388b858bde2"
+ ]
+}

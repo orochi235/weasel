@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "Own-loop `tick` after a backward `follow` leaves `clock.drive` at -1, freezing every animation",
+  "A target spring's `setTarget` keeps what waits beside the committed value, which a fresh spring replaces"
+ ],
+ "b": [
+  "`tick` after `follow` keeps the outside clock's backward drive, so the animator's clock stops for good",
+  "A primitive started at its end to play backward ends forward, at `to`, on any tick whose clock has not yet moved off the end",
+  "fakeAnimate's `setup` defines `document.timeline` and never takes it down"
+ ]
+}

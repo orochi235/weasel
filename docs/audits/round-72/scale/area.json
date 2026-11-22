@@ -1,0 +1,77 @@
+{
+ "id": "scale",
+ "commit": "f6ce272099f3a03ade5d48ba8b6efd3dada64e06",
+ "date": "2026-11-22",
+ "files": [
+  "packages/scale/src/band.ts",
+  "packages/scale/src/index.ts",
+  "packages/scale/src/linear.ts",
+  "packages/scale/src/log.ts",
+  "packages/scale/src/ordinal.ts",
+  "packages/scale/src/pbt.fixture.ts",
+  "packages/scale/src/polar.ts",
+  "packages/scale/src/replacedFormat.ts",
+  "packages/scale/src/tickFormat.ts",
+  "packages/scale/src/time.ts",
+  "packages/scale/src/types.ts",
+  "packages/scale/src/warp.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 9,
+ "unfound": 3,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 55,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 55,
+  "chapman": 13,
+  "unfound": 2
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1219,
+   "total": 1219
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 2.4,
+   "match": 0,
+   "fix": 24
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1109686,
+  "costUsd": 3.33
+ },
+ "fixCommits": [
+  "47e584bd78f6893cabe493b11a020e73c8bc39ec",
+  "56c1662641e70c25f505c3a68db4ed85fb9f7a06",
+  "d72878f4a2b484a010eb68acec9ce566c9070f6a",
+  "716b40b07fbe068a44da443f7e881f675d9e6adc",
+  "fc60ac4d64b241587a9dd8b88464e8777f8f7fab",
+  "aa53a5337d2def497c74cd458a205716cb7736c5",
+  "7665b64bdff0f4c77078a5422ac352c0419541a2"
+ ]
+}

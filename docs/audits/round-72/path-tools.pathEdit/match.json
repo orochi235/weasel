@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   3
+  ]
+ ],
+ "a": [
+  "A canceled anchor drag leaves the press's selection change in place, where a canceled marquee puts the selection back",
+  "A segment bend dragged back to its press point still commits, unlike an anchor drag that ends where it started",
+  "Typing an anchor's X or Y ignores the path's symmetry, while nudging and dragging the same anchor keep it",
+  "Double-clicking an unselected, non-editable body opens path edit on a different, selected path",
+  "leavePathEdit is always enabled, so without a mode registry it can take Escape even when no path is open"
+ ],
+ "b": [
+  "Bending a segment ignores the `pathSymmetry` dep, so it breaks a symmetric path that every other path-edit drag keeps symmetric",
+  "An anchor drag's snap offers targets that move with the drag: symmetric images and extension-weighted followers",
+  "Canceling an anchor drag keeps the selection its press made",
+  "A segment bend commits a history entry even when the frame is unchanged"
+ ]
+}

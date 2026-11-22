@@ -1,0 +1,36 @@
+{
+ "pairs": [
+  [
+   0,
+   4
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   3,
+   5
+  ],
+  [
+   4,
+   3
+  ]
+ ],
+ "a": [
+  "The default drag ghost clones a checked radio into the document, unchecking the real one",
+  "An `onEnd` that cancels or restarts the gesture fires `onGestureEnd` twice / kills the new gesture",
+  "`edgeHandlesFit` answers true for any body when the frame is singular",
+  "`EDGE_HANDLE_MIN_RADII` doc contradicts the check it names",
+  "`useDragRect`'s end `isSubThreshold` goes stale when `onEnd` moves a corner",
+  "Drop zones are resolved in the global `document`, not the drag source's"
+ ],
+ "b": [
+  "`end()` wipes a gesture that `onEnd` started, and leaves it without an `onGestureEnd`",
+  "`cancel()` from inside `onEnd` fires `onGestureEnd` twice",
+  "A restarting `start()` drops the live gesture with no `onCancel` or `onEnd`",
+  "`useDragRect`'s `isSubThreshold` goes stale when `onEnd` re-anchors a corner",
+  "The ghost clone of a checked radio input unchecks the source row's radio",
+  "`EDGE_HANDLE_MIN_RADII`'s doc contradicts itself and the code"
+ ]
+}

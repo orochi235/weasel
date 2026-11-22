@@ -1,0 +1,75 @@
+{
+ "id": "core.barrel",
+ "commit": "f6ce272099f3a03ade5d48ba8b6efd3dada64e06",
+ "date": "2026-11-22",
+ "files": [
+  "packages/core/src/barrel/canvas.ts",
+  "packages/core/src/barrel/chrome.ts",
+  "packages/core/src/barrel/editingSeams.ts",
+  "packages/core/src/barrel/icons.ts",
+  "packages/core/src/barrel/input.ts",
+  "packages/core/src/barrel/interactions.ts",
+  "packages/core/src/barrel/outlines.ts",
+  "packages/core/src/barrel/paint.ts",
+  "packages/core/src/barrel/paths.ts",
+  "packages/core/src/barrel/persistence.ts",
+  "packages/core/src/barrel/renderer.ts",
+  "packages/core/src/barrel/routing.ts",
+  "packages/core/src/barrel/scene.ts",
+  "packages/core/src/barrel/snap.ts",
+  "packages/core/src/barrel/viewport.ts"
+ ],
+ "a": 0,
+ "b": 2,
+ "m": 0,
+ "distinct": 2,
+ "chapman": 2,
+ "unfound": 0,
+ "read": {
+  "A": 15,
+  "B": 15
+ },
+ "newCode": {
+  "since": 39,
+  "changedFiles": 10,
+  "findings": 1
+ },
+ "previous": {
+  "round": 39,
+  "chapman": 11,
+  "unfound": 4
+ },
+ "patches": 2,
+ "verify": {
+  "ok": true,
+  "files": 2,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2390,
+   "total": 2390
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.2,
+   "B": 0,
+   "match": 0,
+   "fix": 8.9
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "earlier",
+   "fix": "studio"
+  },
+  "weightedTokens": 848132,
+  "costUsd": 2.54
+ },
+ "fixCommits": [
+  "165003ca33909d18573f668ec52c36a680eb9b9e",
+  "b2ae9170600369e536bcd2d9b7240458cfeb39d3"
+ ]
+}

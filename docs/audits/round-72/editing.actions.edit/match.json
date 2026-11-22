@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "setFill/setStroke start state takes `paint` from the binding over an invocation's explicit `color`"
+ ],
+ "b": [
+  "A selected `'inherit'` child of a selected container is written an explicit paint, so it stops inheriting",
+  "`setFill`/`setStroke` accept any non-`undefined` `color`, unlike every numeric paint param"
+ ]
+}

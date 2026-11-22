@@ -1,0 +1,8 @@
+{
+ "pairs": [],
+ "a": [],
+ "b": [
+  "The interactions barrel's file comment promises keyboard action hooks and snapping it no longer exports",
+  "The chrome barrel's selection-chrome heading promises \"what draws and hit-tests it\", but only option types are exported"
+ ]
+}

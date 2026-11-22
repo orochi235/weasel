@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   2,
+   2
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "Outlines built with a bare `new PathBuilder()` keep world coordinates in Float32 with no origin, unlike their siblings",
+  "`subprocess.boxForContent` is narrower than the content it was asked for",
+  "bpmn.ts redefines KAPPA at a different precision instead of importing flowchart's",
+  "The component glyph is drawn at a fixed size, outside the box, for a narrow component",
+  "The globe's silhouette ring is left unclosed, unlike participants' ring helper"
+ ],
+ "b": [
+  "A folder narrower than its tab depth folds its outline through itself",
+  "`parseUnitD` lets path data that only moves through as \"drawing something\"",
+  "BPMN redefines the ellipse cubic constant and the ellipse construction instead of using the shared ones",
+  "The component glyph keeps its fixed size and leaves a narrow box",
+  "`outlineFromD` checks `content`'s size but not its position"
+ ]
+}

@@ -1,0 +1,86 @@
+{
+ "id": "path-tools.pathEdit",
+ "commit": "f6ce272099f3a03ade5d48ba8b6efd3dada64e06",
+ "date": "2026-11-22",
+ "files": [
+  "packages/path-tools/src/pathEdit/aidSettings.ts",
+  "packages/path-tools/src/pathEdit/anchorEditing.ts",
+  "packages/path-tools/src/pathEdit/anchorFields.ts",
+  "packages/path-tools/src/pathEdit/anchorHandles.tsx",
+  "packages/path-tools/src/pathEdit/anchorJoin.ts",
+  "packages/path-tools/src/pathEdit/anchorNudge.ts",
+  "packages/path-tools/src/pathEdit/anchorsTool.ts",
+  "packages/path-tools/src/pathEdit/bendSegment.ts",
+  "packages/path-tools/src/pathEdit/editAnchors/editAnchors.ts",
+  "packages/path-tools/src/pathEdit/editAnchors/extensionDrags.ts",
+  "packages/path-tools/src/pathEdit/editAnchors/handleDrag.ts",
+  "packages/path-tools/src/pathEdit/editAnchors/handles.ts",
+  "packages/path-tools/src/pathEdit/editAnchors/preview.ts",
+  "packages/path-tools/src/pathEdit/editAnchors/symmetry.ts",
+  "packages/path-tools/src/pathEdit/enterPathEdit.ts",
+  "packages/path-tools/src/pathEdit/insertPathAnchor.ts",
+  "packages/path-tools/src/pathEdit/leavePathEdit.ts",
+  "packages/path-tools/src/pathEdit/pathEditMarks.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 3,
+ "distinct": 6,
+ "chapman": 6.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "newCode": {
+  "since": 53,
+  "changedFiles": 1,
+  "findings": 0
+ },
+ "previous": {
+  "round": 53,
+  "chapman": 11,
+  "unfound": 2
+ },
+ "patches": 10,
+ "verify": {
+  "ok": true,
+  "files": 29,
+  "testFiles": {
+   "failed": 0,
+   "passed": 4744,
+   "total": 4744
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.6,
+   "B": 0,
+   "match": 0,
+   "fix": 32
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "earlier",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1749202,
+  "costUsd": 4.87
+ },
+ "fixCommits": [
+  "b11c174ef98b46400832ccf0de759d8e68704746",
+  "733fee36ebf55610c98d1ce7dd83aae697029554",
+  "796cb564bb5028fdf4278b17b71ddbb356c56273",
+  "6dcdc065cefeb444d4b0c908c5f5115d6a1eeffe",
+  "33849c5048f861766991393b6fb57301e8746c43",
+  "3e18794caebfbffa4bb7092602592e64ba5ca860",
+  "cec6fa5c6e870f713877c5cd2774260f19b87e5f",
+  "58d9d299c81bb55d7cb905f12ea3d57bf10f95a5",
+  "d7d777f554b706d1f8a057cf927934d3ffdded82",
+  "9b769ae5727a69b43b7934e22c0ecf84a0dcccff"
+ ]
+}

@@ -1,0 +1,38 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   3,
+   7
+  ],
+  [
+   5,
+   3
+  ]
+ ],
+ "a": [
+  "paintPreviewCss places a radial or conic gradient's center as a fraction of the chip whatever its units, so a default-units gradient previews far off the chip",
+  "parsesAsColor's fallback parser accepts any body inside a color function, so outside a browser it calls things colors that parseColor rejects",
+  "mixRgbaWeighted returns the first color unchanged when every weight is zero",
+  "paintWithAlpha passes NaN through as the opacity, though its doc says the alpha is clamped",
+  "Gradient stop sampling blends straight (non-premultiplied) alpha, so a ramp to `transparent` darkens in the middle",
+  "paintPreviewCss throws on a gradient whose stop color parseColor cannot read"
+ ],
+ "b": [
+  "paintPreviewCss places radial and conic gradients by treating pixel centers as box fractions",
+  "lerpPaint throws on a solid or gradient-stop color that parseColor cannot read",
+  "OKLCH/OKLab to sRGB is gamut-mapped two different ways",
+  "paintPreviewCss throws for a gradient with a stop parseColor rejects, instead of returning undefined",
+  "lerpStroke turns missing vertexWidths entries on a `{ px }` stroke into fixed world widths",
+  "mixRgbaWeighted returns the first color when every weight is zero",
+  "cssColorNotation writes `none` components that the package's own parseColor rejects",
+  "paintWithAlpha lets NaN through despite \"clamped to 0..1\""
+ ]
+}

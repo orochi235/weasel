@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   2,
+   4
+  ]
+ ],
+ "a": [
+  "The byte-bound downshift ignores the ring and the level above, so a tight `maxBytes` evicts and rebakes them every frame and `pending` never reaches 0",
+  "A throwing `release` or `onError` callback skips `done()`, so the load's entry stays in `loading` and holds a concurrency slot forever",
+  "`planeFloor` can return two tiles a side when `floorTiles` is 1, although its doc promises at most `floorTiles`"
+ ],
+ "b": [
+  "A bake answering null counts as baked, so `pending` can read 0 while that tile is still wanted",
+  "A floor that alone breaks the byte bound drives the level down to -64",
+  "A tile that arrives fading in drops the finer stand-ins it was drawn with a frame earlier",
+  "Rebaking a tile mid-fade cuts its fade short",
+  "`planeFloor` with `floorTiles = 1` returns up to two tiles a side"
+ ]
+}

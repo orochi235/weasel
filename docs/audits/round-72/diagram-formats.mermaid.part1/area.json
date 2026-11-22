@@ -1,0 +1,117 @@
+{
+ "id": "diagram-formats.mermaid.part1",
+ "commit": "f6ce272099f3a03ade5d48ba8b6efd3dada64e06",
+ "date": "2026-11-22",
+ "files": [
+  "packages/diagram-formats/src/mermaid/architecture/parse.ts",
+  "packages/diagram-formats/src/mermaid/architecture/read.ts",
+  "packages/diagram-formats/src/mermaid/architecture/write.ts",
+  "packages/diagram-formats/src/mermaid/block/parse.ts",
+  "packages/diagram-formats/src/mermaid/block/read.ts",
+  "packages/diagram-formats/src/mermaid/block/write.ts",
+  "packages/diagram-formats/src/mermaid/c4/kinds.ts",
+  "packages/diagram-formats/src/mermaid/c4/parse.ts",
+  "packages/diagram-formats/src/mermaid/c4/read.ts",
+  "packages/diagram-formats/src/mermaid/c4/write.ts",
+  "packages/diagram-formats/src/mermaid/class/parse.ts",
+  "packages/diagram-formats/src/mermaid/class/read.ts",
+  "packages/diagram-formats/src/mermaid/class/write.ts",
+  "packages/diagram-formats/src/mermaid/common/header.ts",
+  "packages/diagram-formats/src/mermaid/common/lines.ts",
+  "packages/diagram-formats/src/mermaid/common/meta.ts",
+  "packages/diagram-formats/src/mermaid/common/number.ts",
+  "packages/diagram-formats/src/mermaid/common/styles.ts",
+  "packages/diagram-formats/src/mermaid/common/text.ts",
+  "packages/diagram-formats/src/mermaid/er/parse.ts",
+  "packages/diagram-formats/src/mermaid/er/read.ts",
+  "packages/diagram-formats/src/mermaid/er/write.ts",
+  "packages/diagram-formats/src/mermaid/flowchart/lex.ts",
+  "packages/diagram-formats/src/mermaid/flowchart/parse.ts",
+  "packages/diagram-formats/src/mermaid/flowchart/read.ts",
+  "packages/diagram-formats/src/mermaid/flowchart/write.ts",
+  "packages/diagram-formats/src/mermaid/format.ts",
+  "packages/diagram-formats/src/mermaid/gantt/parse.ts",
+  "packages/diagram-formats/src/mermaid/gantt/read.ts",
+  "packages/diagram-formats/src/mermaid/gantt/write.ts",
+  "packages/diagram-formats/src/mermaid/gitgraph/parse.ts",
+  "packages/diagram-formats/src/mermaid/gitgraph/read.ts",
+  "packages/diagram-formats/src/mermaid/gitgraph/write.ts",
+  "packages/diagram-formats/src/mermaid/journey/read.ts",
+  "packages/diagram-formats/src/mermaid/journey/write.ts"
+ ],
+ "a": 12,
+ "b": 12,
+ "m": 3,
+ "distinct": 21,
+ "chapman": 41.3,
+ "unfound": 20.3,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "newCode": {
+  "since": 46,
+  "changedFiles": 3,
+  "findings": 2
+ },
+ "previous": {
+  "round": 46,
+  "chapman": 12.8,
+  "unfound": 1.8
+ },
+ "patches": 24,
+ "verify": {
+  "ok": true,
+  "files": 59,
+  "testFiles": {
+   "failed": 0,
+   "passed": 101,
+   "total": 101
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 42.3
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 3373970,
+  "costUsd": 9.69
+ },
+ "fixCommits": [
+  "68f982c6470d7e5b898ad68caddb4c2af8238fc7",
+  "d1b5baec24fdec0dfd889727ffa94791fa524f3a",
+  "11848f907cd31e1952f598898ed820b8b66f8df7",
+  "4e07ab1225c196f189a7b04ddf5625e7eafd8262",
+  "1d8c3db0077482c7953685cc50f1e93c045725e7",
+  "ca4fc882280b03fbeccc586fecc0a175e378c4ac",
+  "74b650dd6906420d84904366f8ac9220402231ec",
+  "df928a17ad078ab3e635c99d159f09f8bd6137e3",
+  "fbd6ec9fad6dd8b21fac78e25f5de80be447c84f",
+  "df49806c12975730e23750542dec115bcc25884b",
+  "3cadda94737fc857053f95290f1763336b0bcbf6",
+  "0837f9bae8bb53ad992b36588cc5fdab4674754f",
+  "a3f9dbb47edb81c9e8632f0791bbfbfdc20b244d",
+  "9262961de86d39e516e6f9c5b68544bafcc8a783",
+  "a3ffd56ec539de0bf414f27190e4b60306472921",
+  "698ed234fd6ba9820e1e0725df434c27dcbc5972",
+  "80461a34847d648377a0653bb94ac47357315ba2",
+  "28bcad8e21b4b2eb28085d37ce8605633201b6be",
+  "3b7626325c6aaf552d252233af50da29362cd576",
+  "f2a4def118d64a0ca7f2dfbba6bb67a5d8a190fd",
+  "21e600cf9396ef44b6ada2714a1da6773003c584",
+  "55b56d8cbca1c4cfe0f7d0bfe2bb041469bcb0fb",
+  "778027e613a110a1f547a92cfeabd1387e594fa5",
+  "6ae41331fbca96b46b3c9a827ec7340e874951b0"
+ ]
+}

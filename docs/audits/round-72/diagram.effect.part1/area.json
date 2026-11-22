@@ -1,0 +1,102 @@
+{
+ "id": "diagram.effect.part1",
+ "commit": "f6ce272099f3a03ade5d48ba8b6efd3dada64e06",
+ "date": "2026-11-22",
+ "files": [
+  "packages/diagram/src/effect/EffectChart.tsx",
+  "packages/diagram/src/effect/EffectEditor.tsx",
+  "packages/diagram/src/effect/audio/livePreviews.ts",
+  "packages/diagram/src/effect/audio/liveRunner.ts",
+  "packages/diagram/src/effect/audio/nodes.ts",
+  "packages/diagram/src/effect/audio/patches.ts",
+  "packages/diagram/src/effect/audio/plan.ts",
+  "packages/diagram/src/effect/audio/scope.ts",
+  "packages/diagram/src/effect/audio/stageTypes.ts",
+  "packages/diagram/src/effect/audio/useFollowAudioRunner.ts",
+  "packages/diagram/src/effect/audio/useLiveAudioRunner.ts",
+  "packages/diagram/src/effect/chainEdit.ts",
+  "packages/diagram/src/effect/check.ts",
+  "packages/diagram/src/effect/clusterEdit.ts",
+  "packages/diagram/src/effect/clusterHandlers.ts",
+  "packages/diagram/src/effect/clusterOrder.ts",
+  "packages/diagram/src/effect/clusterTitle.tsx",
+  "packages/diagram/src/effect/compact.ts",
+  "packages/diagram/src/effect/docShape.ts",
+  "packages/diagram/src/effect/draw.ts",
+  "packages/diagram/src/effect/edit.ts",
+  "packages/diagram/src/effect/editorHandlers.ts",
+  "packages/diagram/src/effect/editorMapping.ts",
+  "packages/diagram/src/effect/editorPicks.ts",
+  "packages/diagram/src/effect/editorReorder.ts",
+  "packages/diagram/src/effect/glyphs.ts",
+  "packages/diagram/src/effect/image/evaluators.ts",
+  "packages/diagram/src/effect/image/stageTypes.ts",
+  "packages/diagram/src/effect/image/testCard.ts",
+  "packages/diagram/src/effect/image/valueKinds.ts",
+  "packages/diagram/src/effect/lab/EffectLab.stories.module.css"
+ ],
+ "a": 6,
+ "b": 8,
+ "m": 1,
+ "distinct": 13,
+ "chapman": 30.5,
+ "unfound": 17.5,
+ "read": {
+  "A": 31,
+  "B": 31
+ },
+ "newCode": {
+  "since": 46,
+  "changedFiles": 2,
+  "findings": 3
+ },
+ "previous": {
+  "round": 46,
+  "chapman": 11.8,
+  "unfound": 1.8
+ },
+ "patches": 12,
+ "verify": {
+  "ok": true,
+  "files": 40,
+  "testFiles": {
+   "failed": 0,
+   "passed": 160,
+   "total": 160
+  },
+  "gui": true,
+  "repairs": 1,
+  "capstone": true
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 31.1
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "studio"
+  },
+  "weightedTokens": 1891452,
+  "costUsd": 5.04
+ },
+ "fixCommits": [
+  "408f74c675e3307361b5e23a5bae6b3c9837cae8",
+  "38a962ffe4be4f614849ba331016329a0211eaf4",
+  "c8e034872a8a632964f6b5eac87fe6010504e59e",
+  "fcf88474468eb24dd68364efa1e96f3cd71ab63f",
+  "78c3cca1bac8a6627cc22d859c38b9deca512c28",
+  "f9562eb19c68361ab92f810f3b589af3284e2011",
+  "f0213817d264f17925437810da6a0018fb067709",
+  "4414fd7d3aafe0b2642215689f523da0de321160",
+  "3fb4e8d75fcbd96f0ee0fc4d713ba2a793c597b9",
+  "8c7245a1f172f79b570a011edc85224f753eb823",
+  "ac1961c04f9edaab54985efdd6b07804916960b2",
+  "637f974c064ddc59c8453245288b9b6c0d4dcbc8"
+ ]
+}

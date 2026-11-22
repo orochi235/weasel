@@ -1,0 +1,100 @@
+{
+ "id": "paint",
+ "commit": "f6ce272099f3a03ade5d48ba8b6efd3dada64e06",
+ "date": "2026-11-22",
+ "files": [
+  "packages/paint/src/alignedStrokeRect.ts",
+  "packages/paint/src/chromaCurve.ts",
+  "packages/paint/src/color.ts",
+  "packages/paint/src/colorSpaces.ts",
+  "packages/paint/src/commandPaint.ts",
+  "packages/paint/src/contrast.ts",
+  "packages/paint/src/cssColor.ts",
+  "packages/paint/src/gradient.ts",
+  "packages/paint/src/hex.ts",
+  "packages/paint/src/hexAlpha.ts",
+  "packages/paint/src/hsl.ts",
+  "packages/paint/src/hue.ts",
+  "packages/paint/src/index.ts",
+  "packages/paint/src/isPaint.ts",
+  "packages/paint/src/lerpPaint.ts",
+  "packages/paint/src/mix.ts",
+  "packages/paint/src/paint.ts",
+  "packages/paint/src/paintDefaults.ts",
+  "packages/paint/src/paintKey.ts",
+  "packages/paint/src/paintPreview.ts",
+  "packages/paint/src/paintValue.ts",
+  "packages/paint/src/palette.ts",
+  "packages/paint/src/patternPaint.ts",
+  "packages/paint/src/patternTransform.ts",
+  "packages/paint/src/pbt.fixture.ts",
+  "packages/paint/src/ramp.ts",
+  "packages/paint/src/resolvePaint.ts",
+  "packages/paint/src/scalar.ts",
+  "packages/paint/src/shortArc.ts",
+  "packages/paint/src/strokeTrim.ts",
+  "packages/paint/src/texture.ts",
+  "packages/paint/src/vertexWidth.ts"
+ ],
+ "a": 6,
+ "b": 8,
+ "m": 4,
+ "distinct": 10,
+ "chapman": 11.6,
+ "unfound": 1.6,
+ "read": {
+  "A": 32,
+  "B": 32
+ },
+ "newCode": {
+  "since": 53,
+  "changedFiles": 4,
+  "findings": 1
+ },
+ "previous": {
+  "round": 53,
+  "chapman": 13,
+  "unfound": 4
+ },
+ "patches": 10,
+ "verify": {
+  "ok": true,
+  "files": 24,
+  "testFiles": {
+   "failed": 0,
+   "passed": 4338,
+   "total": 4338
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 1,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 23.6
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1762204,
+  "costUsd": 5.15
+ },
+ "fixCommits": [
+  "d1dc4fb98819d816253092561916a97ab2e26794",
+  "3cc8485f156b084545c0678a651e13b79808d22b",
+  "fe38ed1ce71f60afc4fa98d1b5114cb200a674a0",
+  "25cf048076e36643c8d0b315f6c2630a3c8f3296",
+  "5cbbf01c384d73b2fe01b1f82d69c111d2267ecb",
+  "968e03094e47bc1cb0372d4f7db23f70455a986c",
+  "d813eee62e1f9328a5a7981c011c3554c162791a",
+  "b3b10f04a1eb4ec6f68137b76437ff956f7b9e63",
+  "c15e413c098678b2abc08a5036db6685efd8c84c",
+  "46a1b4880e877ea4a4a06b0f3bd040b3441bbea8"
+ ]
+}
