@@ -85,7 +85,7 @@ export function Lane(props: LaneProps): ReactElement {
 
   const { keyEls, refocus } = useFocusFollowsKey(selection);
 
-  const onKeyDown = markKeys({ edits: hold.edits, onKeyChange, onSelect, refocus });
+  const onKeyDown = markKeys({ edits: hold.edits, deletes: hold.edits && row.kind === 'sampled', onKeyChange, onSelect, refocus });
 
   return (
     <div className={s.lane} data-lane-key={row.key} data-depth={row.depth} data-mode={mode} data-graph={graph ? 'true' : undefined}>
@@ -154,9 +154,12 @@ function gated(props: LaneProps, hold: LaneHold) {
   };
 }
 
-/** A key mark's keys: the arrows step it, unless the lane refuses edits, and Enter or Space selects it. */
-function markKeys({ edits, onKeyChange, onSelect, refocus }: {
+/** A key mark's keys: the arrows step it, unless the lane refuses edits, and Enter or Space selects it. `refocus` is
+ *  set only for a key that will change, or a render for another reason would pull focus to the selected key. */
+function markKeys({ edits, deletes, onKeyChange, onSelect, refocus }: {
   edits: boolean;
+  /** Delete and Backspace remove the key: an editable sampled row. */
+  deletes: boolean;
   onKeyChange: LaneProps['onKeyChange'];
   onSelect: (keyIndex: number) => void;
   refocus: { current: boolean };
@@ -165,12 +168,15 @@ function markKeys({ edits, onKeyChange, onSelect, refocus }: {
     const dx = arrowMove(e.key, e.shiftKey)?.dx ?? 0;
     if (dx !== 0 && edits) {
       e.preventDefault();
-      refocus.current = true;
-      onKeyChange(i, Math.max(0, t + dx * KEY_STEP_MS));
+      const to = Math.max(0, t + dx * KEY_STEP_MS);
+      if (to !== t) {
+        refocus.current = true;
+        onKeyChange(i, to);
+      }
     }
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(i); }
-    // The timeline deletes the selected key as this bubbles up; focus goes to the key selected after it.
-    if (e.key === 'Delete' || e.key === 'Backspace') refocus.current = true;
+    // The timeline deletes the key as this bubbles up; focus goes to the key selected after it.
+    if ((e.key === 'Delete' || e.key === 'Backspace') && deletes) refocus.current = true;
   };
 }
 

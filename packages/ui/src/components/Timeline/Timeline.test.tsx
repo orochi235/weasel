@@ -545,4 +545,22 @@ describe('Timeline', () => {
     fireEvent.keyDown(screen.getByTestId('timeline-root'), { key: 'Delete' });
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('leaves focus where it is after a key press that changed nothing, when the timeline next renders', () => {
+    const onChange = vi.fn();
+    const props = { ...base, tracks: tracks(), onChange };
+    const { rerender } = renderWithIcons(<Timeline {...props} />);
+    const keys = () => screen.getAllByTestId('timeline-key');
+    const event = () => screen.getByTestId('timeline-event');
+    fireEvent.pointerDown(keys()[1], { clientX: 250, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 250 });
+    const tries: [() => HTMLElement, string][] = [[() => keys()[0], 'ArrowLeft'], [event, 'Delete']];
+    for (const [at, key] of tries) {
+      at().focus();
+      fireEvent.keyDown(at(), { key });
+      rerender(<Timeline {...props} playhead={props.playhead + 1} />);
+      expect(document.activeElement, key).toBe(at());
+    }
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });
