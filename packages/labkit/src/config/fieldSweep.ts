@@ -1,5 +1,5 @@
 import { resolvePrefUnit } from '@weasel-js/prefs';
-import { withUnit } from '@weasel-js/quantity';
+import { present, withUnit } from '@weasel-js/quantity';
 import { rangeSweep, type Sweep, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import type { ConfigNode } from './types';
 
@@ -12,14 +12,14 @@ export interface FieldSweepOptions {
 /**
  * The values a config field's own control offers, as a sweep: a number's
  * `stops`, else its `range` by its `step` (or the `step` or `count` given
- * here); an enum's options; a boolean's off and on.
+ * here); an enum's options but its disabled ones; a boolean's off and on.
  */
 export function fieldSweep<T>(node: ConfigNode<T>, options: FieldSweepOptions = {}): Sweep<T> {
   const ann = node.annotations;
   if (node.kind === 'boolean')
     return valuesSweep([false, true], (v) => (v ? 'on' : 'off')) as Sweep<unknown> as Sweep<T>;
   if (node.kind === 'enum') {
-    const opts = ann.options ?? [];
+    const opts = (ann.options ?? []).filter((o) => !o.disabled);
     const labels = new Map(opts.map((o) => [o.value, o.label]));
     return valuesSweep(
       opts.map((o) => o.value),
@@ -31,8 +31,12 @@ export function fieldSweep<T>(node: ConfigNode<T>, options: FieldSweepOptions = 
       `a field sweeps when it is a number, an enum or a boolean, not ${node.kind ?? 'a value'}`,
     );
   const unit = ann.unit && resolvePrefUnit(ann.unit);
-  const label = (v: number): string =>
-    unit ? withUnit(String(unit.toDisplay(v)), unit.suffix, { space: true }) : String(v);
+  const shown = ann.display ?? unit?.display;
+  const label = (v: number): string => {
+    const at = unit ? unit.toDisplay(v) : v;
+    const text = shown ? present(at, shown).text : String(at);
+    return unit ? withUnit(text, unit.suffix, { space: true }) : text;
+  };
   if (ann.stops && options.step === undefined && options.count === undefined)
     return valuesSweep(ann.stops, label) as Sweep<unknown> as Sweep<T>;
   const { min, max } = ann;

@@ -3670,3 +3670,12 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `resamplePath` places at most 10,000 anchors before tolerance halving. A larger
   `count` is read as 10,000, and a `spacing` that would place more spreads 10,000 by length; a spacing near 0 had
   hung the call. Throwing on either was the alternative; a slider dragged toward 0 should not throw. The number is mine.
+## Audit round sixty-nine (2026-11-22): labkit.config
+
+- 2026-11-22 (the fixer's call): `configFromPrefs` (`f.prefs`) merges a group's `object` leaf with the dotted keys
+  under it in either member order, and throws where a plain leaf and a branch, or two leaves, claim one path, rather
+  than letting the later member replace the earlier.
+- 2026-11-22 (the fixer's call): a bare `AUTO` written at a group path (`setConfig('grid', AUTO)`) leaves the auto
+  set as it was when any leaf under the group is auto, rather than pinning those leaves; `applyConfigWrite` has no
+  schema to tell which of the group's leaves may be auto, so unpinning all of them was not an option, and throwing
+  was the alternative. A reset writes a record holding `AUTO` at each leaf.

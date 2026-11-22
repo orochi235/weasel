@@ -1,3 +1,4 @@
+import { compact } from '@weasel-js/quantity';
 import { describe, expect, it } from 'vitest';
 import { f } from './builder';
 import { fieldSweep } from './fieldSweep';
@@ -9,6 +10,17 @@ describe('fieldSweep', () => {
     const s = fieldSweep(f.number(4).range(0, 8).step(2).suffix('px'));
     expect(walk(s)).toEqual([0, 2, 4, 6, 8]);
     expect(s.label(6)).toBe('6 px');
+  });
+
+  it('labels a number through its display, as its control reads it', () => {
+    const s = fieldSweep(
+      f
+        .number(0)
+        .range(0, 4e6)
+        .step(2e6)
+        .display(compact({ places: 2 })),
+    );
+    expect(s.label(2e6)).toBe('2.00M');
   });
 
   it('walks a number’s stops where it has them', () => {
@@ -32,6 +44,17 @@ describe('fieldSweep', () => {
     expect(walk(e)).toEqual(['a', 'b']);
     expect(e.label('b')).toBe('Beta');
     expect(walk(fieldSweep(f.boolean(true)))).toEqual([false, true]);
+  });
+
+  it('skips an enum’s disabled options, which its control never offers', () => {
+    const e = fieldSweep(
+      f.enum('a', [
+        { value: 'a', label: 'A' },
+        { value: 'x', label: 'X', disabled: true },
+        { value: 'b', label: 'B' },
+      ]),
+    );
+    expect(walk(e)).toEqual(['a', 'b']);
   });
 
   it('refuses a kind with no values to walk', () => {

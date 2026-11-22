@@ -158,8 +158,9 @@ function dropAtPath(config: Record<string, unknown>, path: string): Record<strin
  * unpinned paths. A write pins every leaf at or under `path`, except where it
  * holds the `AUTO` sentinel: that leaf joins the set and keeps what it last
  * held, so a group's value can unpin some leaves and pin the rest in one write
- * (a reset). Both the store and the chrome go through this, so they cannot
- * disagree about what a write meant.
+ * (a reset). A bare `AUTO` at a group path changes nothing: write it at each
+ * leaf, or a record of them. Both the store and the chrome go through this, so
+ * they cannot disagree about what a write meant.
  */
 export function applyConfigWrite<TC>(
   config: TC,
@@ -171,7 +172,10 @@ export function applyConfigWrite<TC>(
   const held = configValueAt(config as Record<string, unknown>, path);
   const stored = withoutAuto(value, path, held, unpin);
   const under = (p: string): boolean => p === path || p.startsWith(`${path}.`);
-  const next = [...autoPaths.filter((p) => !under(p)), ...unpin];
+  // A bare `AUTO` pins nothing. Over a group (a leaf has no auto paths below it) it unpins nothing either: with
+  // no schema here, which leaves under it may be auto is unknown.
+  const group = isAuto(value) && autoPaths.some((p) => p.startsWith(`${path}.`));
+  const next = group ? autoPaths : [...autoPaths.filter((p) => !under(p)), ...unpin];
   const same = next.length === autoPaths.length && next.every((p) => autoPaths.includes(p));
   return {
     config: isAuto(value) ? config : withConfigValueAt(config, path, stored),
