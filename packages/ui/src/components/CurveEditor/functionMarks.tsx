@@ -64,7 +64,8 @@ function anchorMarks(state: FunctionLayerState, ctx: LayerRenderCtx, look: Ancho
     if (isHiddenAnchor(points, i, endpoints, look.hideNonInteractive)) return null;
     const active = activeIndex === i;
     const isEndpoint = curveVisible && (i === 0 || i === points.length - 1);
-    const focus = canAnchorMove(points, i, endpoints)
+    const movable = canAnchorMove(points, i, endpoints);
+    const focus = movable
       ? { tabIndex: 0, 'aria-keyshortcuts': ARROW_KEYSHORTCUTS }
       : {};
     const a11y = {
@@ -86,7 +87,7 @@ function anchorMarks(state: FunctionLayerState, ctx: LayerRenderCtx, look: Ancho
     const anchorCls = [
       s.anchor,
       isEndpoint && s.endpoint,
-      (pinned || locked) && s.pinned,
+      !movable && s.pinned,
       locked && s.locked,
       active && s.active,
     ].filter(Boolean).join(' ');
