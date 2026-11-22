@@ -288,3 +288,13 @@ describe('a band scale of one band that is all padding', () => {
     expect(s.invert(10)).toBe('a');
   });
 });
+
+describe('a time scale ticking by weeks', () => {
+  it('ticks on Mondays', () => {
+    const s = timeScale({ domain: [Date.UTC(2026, 10, 1), Date.UTC(2026, 11, 6)], range: [0, 100] });
+    const ticks = s.ticks();
+    expect(ticks[1]! - ticks[0]!).toBe(7 * 24 * 3600 * 1000);
+    expect(ticks.map((t) => new Date(t).getUTCDay())).toEqual(ticks.map(() => 1));
+    expect(s.tickFormat()(ticks[0]!)).toBe('2026-11-02');
+  });
+});

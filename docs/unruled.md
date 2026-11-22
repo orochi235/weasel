@@ -3815,3 +3815,9 @@ Calls the lanes made without a ruling:
   `irregularity` adds to it alike, so a beam jittered past 90° no longer leans the other way and `angle: 90` draws
   thin near-horizontal beams rather than an infinite shear. Reading an angle past 90° as its equivalent mod 180° was
   the alternative.
+
+## Audit round seventy-two (2026-11-22): scale
+
+- 2026-11-22 (the fixer's call): a time scale's weekly ticks fall on Mondays (UTC), starting ISO 8601 weeks, rather
+  than on the Thursdays multiples of seven days from the epoch land on. Sunday, or a `weekStart` option, was the
+  alternative.
