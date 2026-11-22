@@ -75,6 +75,12 @@ describe('menuHitFor', () => {
       hit: { bodyTarget: 'selected-body', bodyKind: 'rect' }, select: 'b',
     });
   });
+  it('keeps an unselected hit unselected when the classifier names no node to select', () => {
+    const hitAt = () => ({ bodyTarget: 'unselected-body', bodyKind: 'rect' });
+    expect(menuHitFor({ hitAt } as never, { x: 1, y: 2 })).toEqual({
+      hit: { bodyTarget: 'unselected-body', bodyKind: 'rect' },
+    });
+  });
 });
 
 describe('openContextMenu on a group', () => {

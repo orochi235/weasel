@@ -31,14 +31,18 @@ export function keyboardAnchor(deps: ActionDeps): Point | null {
  * The hit a menu is picked for, from the dispatcher's own classifier (the
  * `hitAt` and `kindOfNode` deps). A shape under `at` counts as selected, since
  * opening selects it first, and `select` names it when it is not yet; with no
- * `at`, the current selection. Without a classifier wired, a pointer hit names
- * no body at all, and without a selection neither does a keyboard one.
+ * `at`, the current selection. A shape the classifier names no node for stays
+ * unselected. Without a classifier wired, a pointer hit names no body at all,
+ * and without a selection neither does a keyboard one.
  */
 export function menuHitFor(deps: ActionDeps, at?: Point): { hit: MenuHit; select?: string } {
   if (at) {
     const hit = deps.hitAt?.(at);
     if (!hit) return { hit: {} };
     if (hit.bodyTarget === 'empty') return { hit: { bodyTarget: 'empty' } };
+    if (hit.bodyTarget === 'unselected-body' && hit.id === undefined) {
+      return { hit: { bodyTarget: 'unselected-body', bodyKind: hit.bodyKind } };
+    }
     const target = hit.bodyTarget === 'unselected-body' && hit.id !== undefined ? groupFor(deps, hit.id) : undefined;
     const bodyKind = (target !== undefined ? deps.kindOfNode?.(target) : undefined) ?? hit.bodyKind;
     return { hit: { bodyTarget: 'selected-body', bodyKind }, ...(target !== undefined ? { select: target } : {}) };
