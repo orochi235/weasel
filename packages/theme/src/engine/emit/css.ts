@@ -1,5 +1,5 @@
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { axisScheme, enumerateAxisChoices, fullAxisChoice, pickAll, wzlAttr, type AxisDefs, type AxisChoice } from '../../axes.ts';
+import { axisScheme, axisValueProblem, enumerateAxisChoices, fullAxisChoice, pickAll, wzlAttr, type AxisDefs, type AxisChoice } from '../../axes.ts';
 import { tokenAt } from '../../chainTokens.ts';
 import { mixAlpha } from '../../dtcg/color.ts';
 import { refTarget, resolveTokens } from '../../dtcg/resolve.ts';
@@ -38,6 +38,12 @@ function combinations(axes: AxisDefs, set: readonly string[]): AxisChoice[] {
 }
 
 function checkSchemes({ name, axes }: BakedTheme): void {
+  for (const [axis, def] of Object.entries(axes)) {
+    for (const [value, entry] of Object.entries(def.values)) {
+      const problem = axisValueProblem(value, entry);
+      if (problem) throw new Error(`Theme "${name}": axis "${axis}": ${problem}`);
+    }
+  }
   const carrying = Object.keys(axes).filter((a) => Object.values(axes[a].values).some((v) => v.scheme));
   if (carrying.length > 1) throw new Error(`Theme "${name}": only one axis may carry a color scheme, but ${carrying.join(' and ')} do`);
 }

@@ -1,5 +1,5 @@
 import { isPlainObject, setOwn, getOwn } from '@weasel-js/registry';
-import { axisNameProblem, mergeAxes, type AxisDef, type AxisDefs, type AxisChoice, type Varying } from './axes';
+import { axisNameProblem, axisValueProblem, mergeAxes, type AxisDef, type AxisDefs, type AxisChoice, type Varying } from './axes';
 import type { SerializableColorList } from './colorListItems';
 import { AXES_EXT, overrideKey, RAMPS_EXT, TINTS_EXT, type DtcgAxesExtension } from './dtcg/axesExtension';
 import { flattenTokens } from './dtcg/flatten';
@@ -40,6 +40,10 @@ function readAxesExtension(raw: unknown): DtcgAxesExtension | undefined {
     if (!ok) throw new Error(`DTCG "$extensions.${AXES_EXT}" axis "${name}" needs a string "default" and an object of "values"`);
     const problem = axisNameProblem(name);
     if (problem) throw new Error(`DTCG "$extensions.${AXES_EXT}": ${problem}`);
+    for (const [value, entry] of Object.entries(def.values as Record<string, unknown>)) {
+      const bad = axisValueProblem(value, entry);
+      if (bad) throw new Error(`DTCG "$extensions.${AXES_EXT}" axis "${name}": ${bad}`);
+    }
   }
   const varies = isRecord(raw.varies) ? raw.varies : {};
   for (const [name, axes] of Object.entries(varies)) {

@@ -1229,6 +1229,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   named `__proto__` (a selection cannot hold it, as a record cannot hold a token of that name), and one whose
   default is not a string, which gets no value in a full selection, so a `by` on it reports a missing axis value.
   An axis with no values enumerates no selections, so it bakes nothing.
+- 2026-11-22 (my call, audit round 72): an axis value named `by`, one whose entry is not an object, and one whose
+  `scheme` is neither `dark` nor `light` are refused: `derive` reports each as `invalid` at `axes.<axis>.values.<value>`,
+  and `defineTheme`, `fromDtcg`, and `emitCss` throw. A `by` value can hold no branch, and a scheme is written into
+  CSS as it stands. Skipping the bad value and emitting the rest was the alternative.
 - 2026-11-11 (theme second pass): `derive` reports a semantic rule whose fields have the wrong types as `invalid`
   (`engine/ruleShape.ts`), and `axisDependencies` leaves it out, where both threw. A categorical ramp's `surface`
   gate takes a 6-digit hex only, as its anchors do. Not ruled: chosen to match the shape checks derive already made.

@@ -156,4 +156,15 @@ describe('toDtcg', () => {
     const t = defineTheme({ name: 'm', extends: null, axes: { mode: axes.mode }, pins: { surface: pins.surface } });
     expect(toDtcg(t).$extensions?.[AXES_EXT]).toEqual({ axes: { mode: axes.mode }, varies: {}, overrides: {} });
   });
+
+  it('writes a leaf equal in every mode once, though each mode holds its own copy', () => {
+    const axes2 = { mode: { default: 'dark', values: { dark: {}, light: {} } }, density: { default: 'compact', values: { compact: {}, roomy: {} } } };
+    const roomy = () => ({ value: '4px', type: 'dimension' });
+    const gap = { by: 'mode', dark: { by: 'density', compact: '1px', roomy: roomy() }, light: { by: 'density', compact: '2px', roomy: roomy() } };
+    const t = defineTheme({ name: 'copies', extends: null, axes: axes2, pins: { gap } });
+    const layer = toDtcg(t).$extensions![AXES_EXT]!.overrides['density=roomy'];
+    expect(layer.modes).toEqual({});
+    expect(layer.primitives).toEqual({ dimension: { $type: 'dimension', gap: { $value: '4px' } } });
+  });
 });
+

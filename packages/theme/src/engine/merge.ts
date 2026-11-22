@@ -45,7 +45,7 @@ function fillFromParent(child: unknown, parent: unknown, axes: AxisDefs): unknow
 /** A definition with its `extends` chain folded in. */
 export interface MergedChain {
   readonly def: ThemeDefinition;
-  /** Per layer, the inherited ramp or scale steps a descendant's entry in another layer replaces, which derive leaves unproduced. */
+  /** Per layer, the {@link stepKey}s of inherited ramp or scale steps a descendant's differently named entry replaces, which derive leaves unproduced. */
   readonly replaced: { readonly ramps: ReadonlySet<string>; readonly scales: ReadonlySet<string> };
   /** Inherited names a descendant's step produces at some selections but not all; with no selection, their inherited entries are kept. */
   readonly partly: ReadonlySet<string>;
@@ -53,11 +53,12 @@ export interface MergedChain {
 
 const STEP_LAYERS = ['ramps', 'scales'] as const;
 
-/** Names each step layer of `def` produces, as `read` gives each entry's steps. */
-function stepTokens(def: ThemeDefinition, read: (entry: unknown) => string[], layer: (typeof STEP_LAYERS)[number]): Set<string> {
-  const names = new Set<string>();
-  for (const [name, entry] of Object.entries(def[layer] ?? {})) for (const step of read(entry)) names.add(`${name}-${step}`);
-  return names;
+/** How {@link MergedChain.replaced} names one entry's step: two entries can give the same token name. */
+export const stepKey = (entry: string, step: string): string => JSON.stringify([entry, step]);
+
+/** Each step an entry of `layer` gives, as `read` gives them: its token name and its {@link stepKey}. */
+function layerSteps(entries: Readonly<Record<string, unknown>> | undefined, read: (entry: unknown) => string[]): [string, string][] {
+  return Object.entries(entries ?? {}).flatMap(([name, entry]) => read(entry).map((step): [string, string] => [`${name}-${step}`, stepKey(name, step)]));
 }
 
 /** The definition with its whole `extends` chain folded in, child entries winning. */
@@ -92,18 +93,12 @@ function fold(def: ThemeDefinition, lookup: Lookup | undefined, seen: ReadonlySe
     const mine = def[layer] ?? {};
     out[layer] = Object.fromEntries(Object.entries(out[layer] as object).filter(([n]) => Object.hasOwn(mine, n) || !shadowed.has(n)));
   }
-  const childNames = (layer: (typeof STEP_LAYERS)[number]) => {
-    const names = new Set([...Object.keys(def.semantics ?? {}), ...Object.keys(def.components ?? {})]);
-    for (const other of STEP_LAYERS) if (other !== layer) for (const n of stepTokens(def, read.always, other)) names.add(n);
-    return names;
-  };
   const replaced = { ramps: new Set<string>(), scales: new Set<string>() };
   for (const layer of STEP_LAYERS) {
-    const own = stepTokens(def, read.any, layer);
-    for (const n of above[layer]) if (!own.has(n)) replaced[layer].add(n);
-    const inherited = Object.fromEntries(Object.entries(parent[layer] ?? {}).filter(([n]) => !Object.hasOwn(def[layer] ?? {}, n)));
-    const theirs = stepTokens({ name: parent.name, [layer]: inherited }, read.any, layer);
-    for (const n of childNames(layer)) if (theirs.has(n) && !own.has(n)) replaced[layer].add(n);
+    const mine = def[layer] ?? {};
+    for (const k of above[layer]) if (!Object.hasOwn(mine, (JSON.parse(k) as [string, string])[0])) replaced[layer].add(k);
+    const inherited = Object.fromEntries(Object.entries(parent[layer] ?? {}).filter(([n]) => !Object.hasOwn(mine, n)));
+    for (const [n, k] of layerSteps(inherited, read.any)) if (shadowed.has(n)) replaced[layer].add(k);
   }
   const inherited = Object.entries(parent.pins ?? {}).filter(([name]) => !shadowed.has(name));
   const parentPins: Record<string, unknown> = parent.pins ?? {};

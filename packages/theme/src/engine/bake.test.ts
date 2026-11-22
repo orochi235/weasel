@@ -132,6 +132,19 @@ describe('bake', () => {
     });
   });
 
+  it("lists an inherited ramp whose steps the child's seeds change, and no inherited ramp they leave alone", () => {
+    const parent: ThemeDefinition = {
+      name: 'sp',
+      seeds: { a: '100', b: '900' },
+      ramps: {
+        gray: { kind: 'lightness', steps: ['{seeds.a}', '{seeds.b}'], lightness: [0.9, 0.2] },
+        blue: { kind: 'lightness', steps: ['1', '2'], lightness: [0.9, 0.2] },
+      },
+    };
+    const child = bake({ name: 'sc', extends: 'sp', seeds: { a: '050', b: '950' } }, (n) => ({ sp: parent })[n]);
+    expect(child.ramps).toEqual({ gray: ['050', '950'] });
+  });
+
   it('lists no ramp whose name derive drops as unsafe', () => {
     const def: ThemeDefinition = { name: 'u', ramps: { 'a.b': { kind: 'lightness', steps: ['500'], lightness: [0.9, 0.2] }, ok: { kind: 'lightness', steps: ['500'], lightness: [0.9, 0.2] } } };
     expect(bake(def).ramps).toEqual({ ok: ['500'] });

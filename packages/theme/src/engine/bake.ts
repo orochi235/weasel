@@ -20,7 +20,7 @@ export interface BakedTheme {
   readonly axes: AxisDefs;
   /** In layer order, then definition order. */
   readonly tokens: Readonly<Record<string, Varying<RawToken>>>;
-  /** Each ramp this definition declares → its step names in order, which the tokens alone do not keep. */
+  /** Each ramp this definition declares, or whose inherited steps it changes → its step names in order, which the tokens alone do not keep. */
   readonly ramps?: Readonly<Record<string, readonly string[]>>;
   readonly tints?: SerializableColorList;
 }
@@ -101,7 +101,8 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
     );
 
     const build = (i: number, sel: Record<string, string>): Varying<RawToken> | undefined => {
-      if (i === varying.length) return at(fullAxisChoice(axes, sel), name);
+      // Not `fullAxisChoice`: a default the editor holds mid-edit may name no value, which no selection was derived at.
+      if (i === varying.length) return at(selections.find((s) => Object.entries(sel).every(([a, v]) => getOwn(s, a) === v)) ?? sel, name);
       const [axis, d] = varying[i];
       const branch: Record<string, unknown> = { by: axis };
       let any = false;
@@ -118,7 +119,13 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
     if (value !== undefined) setOwn(tokens, name, value);
   }
 
-  const ramps = Object.fromEntries(Object.entries(definition.ramps ?? {}).filter(([name]) => isSafeTokenName(name)).map(([name, entry]) => [name, declaredSteps(entry, merged)]));
+  const inheritedSteps = (ramp: string) => getOwn([...above].reverse().find((t) => t.ramps && Object.hasOwn(t.ramps, ramp))?.ramps, ramp);
+  const ramps = Object.fromEntries(
+    Object.entries(merged.ramps ?? {})
+      .filter(([name]) => isSafeTokenName(name))
+      .map(([name, entry]) => [name, declaredSteps(entry, merged)] as const)
+      .filter(([name, steps]) => Object.hasOwn(definition.ramps ?? {}, name) || !deepEqual(steps, inheritedSteps(name))),
+  );
   return {
     name: definition.name,
     extends: definition.extends ?? null,

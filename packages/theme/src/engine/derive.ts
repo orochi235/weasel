@@ -3,7 +3,7 @@ import { fullAxisChoice, isByAxis, pick, type AxisChoice, type Varying } from '.
 import type { PinValue, ThemeDefinition } from '../definition.ts';
 import { axisIssues } from './axisIssues.ts';
 import { isRecord, rampColors, scaleValues, settle, type SettleContext } from './entries.ts';
-import { foldChain, type Lookup } from './merge.ts';
+import { foldChain, stepKey, type Lookup } from './merge.ts';
 import { pinAt, pinToken } from './pinValues.ts';
 import { checkReferences, inferTypes } from './references.ts';
 import { withoutUnsafeNames } from './safeNames.ts';
@@ -81,7 +81,7 @@ function putRamps(ramps: ThemeDefinition['ramps'], ctx: SettleContext, sink: Tok
       continue;
     }
     for (const step of e.steps) {
-      if (!replaced.has(`${name}-${step}`)) sink.put(`${name}-${step}`, { type: 'color', value: getOwn(colors, step)!, alpha: undefined, description: describe(e.r, step) }, 'ramps', String(e.r.kind), path);
+      if (!replaced.has(stepKey(name, step))) sink.put(`${name}-${step}`, { type: 'color', value: getOwn(colors, step)!, alpha: undefined, description: describe(e.r, step) }, 'ramps', String(e.r.kind), path);
     }
   }
   return rampSteps;
@@ -97,7 +97,7 @@ function putScales(scales: ThemeDefinition['scales'], ctx: SettleContext, sink: 
       continue;
     }
     for (const st of e.steps) {
-      if (!replaced.has(`${name}-${st}`)) sink.put(`${name}-${st}`, { type: 'dimension', value: getOwn(out.values, st)!, alpha: undefined, description: describe(e.r, st) }, 'scales', out.rule, path);
+      if (!replaced.has(stepKey(name, st))) sink.put(`${name}-${st}`, { type: 'dimension', value: getOwn(out.values, st)!, alpha: undefined, description: describe(e.r, st) }, 'scales', out.rule, path);
     }
   }
 }
