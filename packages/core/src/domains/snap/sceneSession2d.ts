@@ -8,7 +8,7 @@ import type { DrawnBoxes, DrawnBoxesSource } from 'interactions/actions/drawnBox
 import { inkBoxes } from 'canvas/inkBoxes';
 import type { SnapBegin, SnapConstrain, SnapGeometry, SnapResizeBox, SnapSession } from 'interactions/actions/snapDep';
 import { ownGeometryAt } from 'domains/paths/pathSnap/pathSnapSource';
-import { assertSnapSourceIds, snapSourcesFor } from './gather';
+import { snapSourcesFor, sourcesForRequest } from './gather';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { buildProbes, subjectOf } from './probes2d';
 import { sceneProbeReads, sceneRotations, sceneSnapFrames, withSubtrees } from './sceneReads';
@@ -95,6 +95,10 @@ export interface SnapSession2dOptions {
   /** Point gestures: the previous anchor, a line's start. */
   origin?: WorldPoint;
   constrain?: SnapConstrain;
+  /** Move: the one direction the subject moves in, as `SnapBegin.along`. */
+  along?: readonly number[];
+  /** Ids of `sources` this gesture does not ask. */
+  omit?: readonly string[];
   /** Resize: the sides the drag pins. */
   handle?: ResizeAnchor;
   /** Rotate: the point the angle turns about. */
@@ -135,7 +139,6 @@ export interface SnapSession2dOptions {
  * `end` when it lets go. Throws if two of `sources` share an id, as a canvas does.
  */
 export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
-  assertSnapSourceIds(opts.sources);
   const view = opts.view;
   const req: SnapBegin = {
     gesture: opts.gesture,
@@ -145,6 +148,7 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
     ...(opts.parent !== undefined ? { parent: opts.parent } : {}),
     ...(opts.origin ? { origin: opts.origin } : {}),
     ...(opts.constrain ? { constrain: opts.constrain } : {}),
+    ...(opts.along ? { along: opts.along } : {}),
     ...(opts.handle ? { handle: opts.handle } : {}),
     ...(opts.pivot ? { pivot: opts.pivot } : {}),
     ...(opts.theta0 !== undefined ? { theta0: opts.theta0 } : {}),
@@ -162,7 +166,7 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
       ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
       ...(opts.boundsIncludeStroke !== undefined ? { boundsIncludeStroke: opts.boundsIncludeStroke } : {}),
     }),
-    sources: opts.sources,
+    sources: sourcesForRequest(opts.sources, opts.omit ? { omit: opts.omit } : {}),
     view: () => view,
     reachPx: opts.reachPx ?? DEFAULT_SNAP_PX,
     store: opts.store ?? createSnapOutcomeStore(),

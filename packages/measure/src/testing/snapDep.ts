@@ -31,6 +31,6 @@ export function lineSource(at: Point, dir: Point): SnapSource {
 /** A `snap` dep whose sessions run `sources` over `scene` at zoom 1, with an 8px reach. */
 export function sessionDep(scene: AnyScene, sources: readonly SnapSource[]): SnapDep {
   return {
-    begin: ({ plane: _plane, along: _along, ...req }) => createSnapSession2dForTests({ ...req, scene, sources, view: VIEW, reachPx: 8 }),
+    begin: ({ plane: _plane, ...req }) => createSnapSession2dForTests({ ...req, scene, sources, view: VIEW, reachPx: 8 }),
   };
 }

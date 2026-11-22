@@ -136,4 +136,16 @@ describe('createSnapSession2d', () => {
     }).at({ x: 205, y: 50 }, { suspend: false, constrain: false });
     expect(seen[0].probes[0].at.x).toBeCloseTo(200, 9);
   });
+
+  it('holds a move to `along`, and leaves out the sources `omit` names', () => {
+    const { scene, b } = fixture();
+    const seen: SnapCollect[] = [];
+    const s = createSnapSession2d({
+      scene, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, gesture: 'move', press: { x: 0, y: 0 }, ids: [b],
+      along: [1, 0], omit: ['gone'],
+      sources: [spy(seen), { id: 'gone', roles: ['box'], collect() { throw new Error('asked'); } }],
+    });
+    expect(s.at({ x: 10, y: 20 }, { suspend: false, constrain: false }).point).toEqual({ x: 10, y: 0 });
+    expect(seen).toHaveLength(1);
+  });
 });
