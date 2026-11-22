@@ -26,3 +26,16 @@ export const MAX_REPEATS = 256;
 export function repeatCount(n: number, min: number, max: number = MAX_REPEATS): number {
   return Math.min(max, Math.max(min, Math.floor(n) || min));
 }
+
+/**
+ * `cfg` with each number that is not finite read as its value in `defaults`, so a NaN from a parse or a slider
+ * draws the default; `keep` names params read another way, such as a repeat count.
+ */
+export function finiteParams<P extends object>(cfg: P, defaults: P, keep: readonly (keyof P)[] = []): P {
+  const out = { ...cfg };
+  for (const key of Object.keys(out) as (keyof P)[]) {
+    const value = out[key];
+    if (typeof value === 'number' && !Number.isFinite(value) && !keep.includes(key)) out[key] = defaults[key];
+  }
+  return out;
+}

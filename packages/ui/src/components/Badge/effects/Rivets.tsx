@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import type { BaseSampler, EffectModule } from '../bases/types';
+import { finiteParams } from '../shapes/params';
 import type { BadgeCorner } from '../types';
 import { lightCorner } from './lightCorner';
 
@@ -19,7 +20,7 @@ const SAMPLES = 240;
 
 /**
  * Where the line in from box corner `(cx, cy)` along `(ux, uy)` (each ±1) first meets the outline, as
- * the distance along each axis, all in CSS px; `null` if it never does.
+ * the distance along each axis, all in CSS px: 0 when the corner is inside the body, `null` if it never does.
  */
 function cornerEntry(sampler: BaseSampler, boxW: number, boxH: number, cx: number, cy: number, ux: number, uy: number): number | null {
   const pts = Array.from({ length: SAMPLES }, (_, i) => {
@@ -27,6 +28,7 @@ function cornerEntry(sampler: BaseSampler, boxW: number, boxH: number, cx: numbe
     return { x: (p.x * boxW) / 100, y: (p.y * boxH) / 100 };
   });
   let best: number | null = null;
+  let behind = 0;
   for (let i = 0; i < SAMPLES; i++) {
     const a = pts[i], b = pts[(i + 1) % SAMPLES];
     const ex = b.x - a.x, ey = b.y - a.y;
@@ -34,18 +36,20 @@ function cornerEntry(sampler: BaseSampler, boxW: number, boxH: number, cx: numbe
     if (den === 0) continue;
     const ax = a.x - cx, ay = a.y - cy;
     const mu = (ax * uy - ay * ux) / den;
-    if (mu < 0 || mu > 1) continue;
+    if (mu < 0 || mu >= 1) continue;
     const lambda = (ax * ey - ay * ex) / den;
-    if (best === null || lambda < best) best = lambda;
+    if (lambda < 0) behind++;
+    else if (best === null || lambda < best) best = lambda;
   }
-  return best;
+  // An odd count of crossings behind the corner puts the corner inside the body, where the line enters at once.
+  return behind % 2 === 1 ? 0 : best;
 }
 
 const Rivets: EffectModule<BadgeRivetsEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = finiteParams({ ...DEFAULTS, ...params }, DEFAULTS);
     const sx = 100 / boxW, sy = 100 / boxH;
     const rx = cfg.radius * sx;
     const ry = cfg.radius * sy;

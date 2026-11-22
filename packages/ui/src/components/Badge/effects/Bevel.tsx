@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
+import { finiteParams } from '../shapes/params';
 import type { BadgeCorner } from '../types';
 import { bevelBands } from './bevelBands';
 import { lightCorner } from './lightCorner';
@@ -37,7 +38,7 @@ const Bevel: EffectModule<BadgeBevelEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = finiteParams({ ...DEFAULTS, ...params }, DEFAULTS);
     const cls = bevelClasses(lightCorner(cfg.lightFrom, 'bevel'));
     const bands = bevelBands(sampler, boxW, boxH, cfg.bevelWidth, sideForNormal);
 
