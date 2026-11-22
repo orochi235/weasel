@@ -23,7 +23,8 @@ export interface ContinuousScale extends Scale<number> {
   invert(at: number): number;
 }
 
-/** What builds a continuous scale from its two ends: `linearScale`, `logScale`, `powScale`, `timeScale`, or one of your own.
+/** What builds a continuous scale from its two ends: `linearScale`, `logScale`, `timeScale`, a `powScale` with its
+ *  exponent bound (`(o) => powScale({ ...o, exponent: 0.5 })`), or one of your own.
  *  A control that places values along its track takes one and calls it with a range of `[0, 1]`. */
 export type ContinuousScaleFactory = (opts: {
   domain: readonly [number, number];
