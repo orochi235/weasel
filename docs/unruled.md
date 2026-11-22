@@ -3623,3 +3623,8 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): `facesAlong` throws a `RangeError` for a `step` that is not a positive finite
   number, as `mergeRegion` does for its `tolerance`; a zero one had looped forever, and a negative one sampled only
   each segment's ends. Falling back to one sample per segment was the alternative.
+## Audit round sixty-eight (2026-11-22): ui-canvas
+
+- 2026-11-22 (the fixer's call): `CharacterOptions` draws No fill as indeterminate whenever the range's fill is
+  `MIXED`, though a `RangeStyle` cannot tell runs of two colors from a range that is partly unfilled. Leaving it off
+  for a mixed fill, which claims every character is filled, was the alternative.
