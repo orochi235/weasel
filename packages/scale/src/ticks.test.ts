@@ -92,6 +92,11 @@ describe('tickDecimals', () => {
     expect(tickDecimals([0, 0.25, 1])).toBe(2);
     expect(tickDecimals([0.1 + 0.2])).toBe(1);
   });
+
+  it('counts small ticks to their own size', () => {
+    expect(tickDecimals([1e-10, 2e-10, 3e-10])).toBe(10);
+    expect(tickDecimals([0.0000000001, 0.0000000005])).toBe(10);
+  });
 });
 
 describe('formatTick', () => {
@@ -148,5 +153,28 @@ describe('a tick count that is not a number', () => {
     expect(pow.ticks(NaN)).toEqual(pow.ticks());
     const log = logScale({ domain: [1, 1000], range: [0, 100] });
     expect(log.ticks(Infinity)).toEqual(log.ticks());
+  });
+});
+
+describe('a log scale asked for few ticks', () => {
+  it('keeps to powers when thinning leaves one, however many the domain holds', () => {
+    const s = logScale({ domain: [2, 9e9], range: [0, 100] });
+    expect(s.ticks(1)).toEqual([1e5]);
+    expect(s.tickFormat(1)(1e5)).toBe('100000');
+    expect(logScale({ domain: [2, 9e299], range: [0, 100] }).ticks(1).every((v) => Number.isInteger(Math.log10(v)))).toBe(true);
+  });
+});
+
+describe('a domain of one value', () => {
+  it('ticks on that value and labels it as it is', () => {
+    const lin = linearScale({ domain: [0.3, 0.3], range: [0, 100] });
+    expect(lin.ticks()).toEqual([0.3]);
+    expect(lin.tickFormat()(0.3)).toBe('0.3');
+    expect(linearScale({ domain: [1e300, 1e300], range: [0, 100] }).ticks()).toEqual([1e300]);
+    const log = logScale({ domain: [150, 150], range: [0, 100] });
+    expect(log.ticks()).toEqual([150]);
+    expect(log.tickFormat()(150)).toBe('150');
+    expect(logScale({ domain: [0.15, 0.15], range: [0, 100] }).tickFormat()(0.15)).toBe('0.15');
+    expect(powScale({ domain: [0.3, 0.3], range: [0, 100], exponent: 2 }).ticks()).toEqual([0.3]);
   });
 });

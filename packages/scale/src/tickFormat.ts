@@ -11,13 +11,14 @@ export type TickFormatter = (value: number, ctx: TickFormatCtx) => string;
 
 const MAX_DECIMALS = 20;
 
-/** The most places after the point any of `values` needs, for a column of ticks given rather than generated. */
+/** The most places after the point any of `values` needs, for a column of ticks given rather than generated: each to
+ *  a billionth of itself, so small ticks keep their digits. */
 export function tickDecimals(values: readonly number[]): number {
   let most = 0;
   for (const v of values) {
     if (!Number.isFinite(v)) continue;
     let d = 0;
-    while (d < MAX_DECIMALS && Math.abs(Number(v.toFixed(d)) - v) > 1e-9 * Math.max(1, Math.abs(v))) d++;
+    while (d < MAX_DECIMALS && Math.abs(Number(v.toFixed(d)) - v) > 1e-9 * Math.abs(v)) d++;
     most = Math.max(most, d);
   }
   return most;

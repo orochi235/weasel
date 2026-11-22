@@ -278,3 +278,23 @@ describe('ordinalScale', () => {
     expect(() => ordinalScale({ domain: [], range: [] })).toThrow(/empty range/);
   });
 });
+
+describe('a band scale of one band that is all padding', () => {
+  it('steps the whole range and sits at its middle', () => {
+    const s = bandScale({ domain: ['a'], range: [0, 100], paddingInner: 1, paddingOuter: 0 });
+    expect(s.step).toBe(100);
+    expect(s.bandwidth).toBe(0);
+    expect(s.position('a')).toBe(50);
+    expect(s.invert(10)).toBe('a');
+  });
+});
+
+describe('a time scale ticking by weeks', () => {
+  it('ticks on Mondays', () => {
+    const s = timeScale({ domain: [Date.UTC(2026, 10, 1), Date.UTC(2026, 11, 6)], range: [0, 100] });
+    const ticks = s.ticks();
+    expect(ticks[1]! - ticks[0]!).toBe(7 * 24 * 3600 * 1000);
+    expect(ticks.map((t) => new Date(t).getUTCDay())).toEqual(ticks.map(() => 1));
+    expect(s.tickFormat()(ticks[0]!)).toBe('2026-11-02');
+  });
+});

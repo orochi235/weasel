@@ -10,7 +10,7 @@ export interface TimeScaleOptions {
   range: readonly [number, number];
 }
 
-/** A scale over instants, whose ticks fall on whole seconds, minutes, hours, days, months or years, in UTC. */
+/** A scale over instants, whose ticks fall on whole seconds, minutes, hours, days, Mondays, months, or years, in UTC. */
 export interface TimeScale extends ContinuousScale {
   readonly kind: 'time';
   tickFormat(count?: number): (value: number) => string;
@@ -20,9 +20,11 @@ const SECOND = 1000;
 const MINUTE = 60 * SECOND;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
+/** 1970-01-05, the first Monday after the epoch, so weekly ticks start ISO 8601 weeks. */
+const MONDAY = 4 * DAY;
 
-/** A tick interval: a fixed span, or a count of calendar months. */
-type Interval = { ms: number; months?: never; unit: TimeUnit } | { months: number; ms?: never; unit: TimeUnit };
+/** A tick interval: a fixed span laid from the instant `from` (default the epoch), or a count of calendar months. */
+type Interval = { ms: number; from?: number; months?: never; unit: TimeUnit } | { months: number; ms?: never; unit: TimeUnit };
 /** A calendar step a time scale ticks by, and the precision {@link formatInstant} writes to. */
 export type TimeUnit = 'second' | 'minute' | 'hour' | 'day' | 'month' | 'year';
 
@@ -30,7 +32,7 @@ const INTERVALS: readonly Interval[] = [
   { ms: SECOND, unit: 'second' }, { ms: 5 * SECOND, unit: 'second' }, { ms: 15 * SECOND, unit: 'second' }, { ms: 30 * SECOND, unit: 'second' },
   { ms: MINUTE, unit: 'minute' }, { ms: 5 * MINUTE, unit: 'minute' }, { ms: 15 * MINUTE, unit: 'minute' }, { ms: 30 * MINUTE, unit: 'minute' },
   { ms: HOUR, unit: 'hour' }, { ms: 3 * HOUR, unit: 'hour' }, { ms: 6 * HOUR, unit: 'hour' }, { ms: 12 * HOUR, unit: 'hour' },
-  { ms: DAY, unit: 'day' }, { ms: 2 * DAY, unit: 'day' }, { ms: 7 * DAY, unit: 'day' },
+  { ms: DAY, unit: 'day' }, { ms: 2 * DAY, unit: 'day' }, { ms: 7 * DAY, from: MONDAY, unit: 'day' },
   { months: 1, unit: 'month' }, { months: 3, unit: 'month' }, { months: 12, unit: 'year' },
 ];
 
@@ -67,7 +69,8 @@ function gridTicks(lo: number, hi: number, interval: Interval): number[] {
   hi = Math.min(hi, MAX_INSTANT);
   if (lo > hi) return out;
   if (interval.ms !== undefined) {
-    for (let t = Math.ceil(lo / interval.ms) * interval.ms; t <= hi; t += interval.ms) out.push(t);
+    const from = interval.from ?? 0;
+    for (let t = Math.ceil((lo - from) / interval.ms) * interval.ms + from; t <= hi; t += interval.ms) out.push(t);
     return out;
   }
   const at = new Date(lo);

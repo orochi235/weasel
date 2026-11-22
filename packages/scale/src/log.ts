@@ -1,4 +1,4 @@
-import { decimalsOf, formatNumber, stepTicks, tickCount, tickStep } from './linear';
+import { decimalsOf, domainTicks, formatNumber, tickCount, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import { tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
@@ -33,14 +33,14 @@ export function logScale(opts: LogScaleOptions): LogScale {
   // Ends too near for their logarithms to differ are told apart by their distance, which a ratio rounds away.
   const along = l1 !== l0 ? (v: number) => (log(v) - l0) / (l1 - l0) : (v: number) => Math.log1p((v - d0) / d0) / Math.log1p((d1 - d0) / d0);
   const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : lerp(r0, r1, along(v)));
-  const powerTicks = (count: number): number[] => {
+  const powerTicks = (count: number, thin = true): number[] => {
     const [lo, hi] = l0 <= l1 ? [l0, l1] : [l1, l0];
     if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [];
     const first = Math.floor(lo + 1e-9);
     const last = Math.ceil(hi - 1e-9);
     // Few decades get their 2s and 5s too, so a short axis still reads; many keep every `every`th, about twice the count.
-    const steps = last - first < count / 2 && base === 10 ? [1, 2, 5] : [1];
-    const every = Math.max(1, Math.ceil((last - first) / (2 * Math.max(1, count))));
+    const steps = thin && last - first < count / 2 && base === 10 ? [1, 2, 5] : [1];
+    const every = thin ? Math.max(1, Math.ceil((last - first) / (2 * Math.max(1, count)))) : 1;
     // Compared as values, with room for a tick's rounding but never more than a sliver of the domain: ends too near
     // for their logarithms to differ still keep a tick between them out.
     const [vlo, vhi] = d0 <= d1 ? [d0, d1] : [d1, d0];
@@ -55,20 +55,20 @@ export function logScale(opts: LogScaleOptions): LogScale {
     }
     return l0 <= l1 ? out : out.reverse();
   };
-  // A domain holding fewer than two of those is nearly linear across it, and ticks and reads as a linear one would.
-  const linear = (count: number) => d0 !== d1 && powerTicks(count).length < 2;
+  // A domain holding fewer than two powers is nearly linear across it, and ticks and reads as a linear one would.
+  const linear = d0 === d1 || powerTicks(0, false).length < 2;
   const ticks = (count = 5): number[] => {
     const n = tickCount(count);
-    return linear(n) ? stepTicks(d0, d1, tickStep(d0, d1, n)) : powerTicks(n);
+    return linear ? domainTicks(d0, d1, tickStep(d0, d1, n)) : powerTicks(n);
   };
   const linearFormat = (count: number) => (v: number) => formatNumber(v, tickStep(d0, d1, count));
   // Each label is as precise as its own decade, whatever the count, and another base's powers as their digits need.
   const decadeFormat = (v: number): string => {
     const decade = v >= 1 ? 0 : decimalsOf(10 ** Math.floor(Math.log10(v)));
-    // Digits counted on the value moved up past its decade, as `tickDecimals` counts places to an absolute tolerance.
+    // Digits counted on the value moved up past its decade, as `tickDecimals` counts no further than 20 places.
     return formatNumber(v, 10 ** -(base === 10 ? decade : decade + tickDecimals([v * 10 ** decade])));
   };
-  const format = linear(5) ? linearFormat(5) : decadeFormat;
+  const format = linear ? linearFormat(5) : decadeFormat;
   return {
     kind: 'log',
     base,
@@ -86,7 +86,7 @@ export function logScale(opts: LogScaleOptions): LogScale {
     format,
     tickFormat(count) {
       const n = tickCount(count);
-      return replacedFormat(this, format) ?? (linear(n) ? linearFormat(n) : decadeFormat);
+      return replacedFormat(this, format) ?? (linear ? linearFormat(n) : decadeFormat);
     },
   };
 }

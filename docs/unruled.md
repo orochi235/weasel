@@ -3837,3 +3837,8 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a segment bend on a symmetric path whose segment a transform maps onto itself
   gives each handle the mean of where the bend and the transform put it, so the held point follows the pointer
   only as far as the symmetry allows, as an anchor on a mirror axis slides along it.
+## Audit round seventy-two (2026-11-22): scale
+
+- 2026-11-22 (the fixer's call): a time scale's weekly ticks fall on Mondays (UTC), starting ISO 8601 weeks, rather
+  than on the Thursdays multiples of seven days from the epoch land on. Sunday, or a `weekStart` option, was the
+  alternative.
