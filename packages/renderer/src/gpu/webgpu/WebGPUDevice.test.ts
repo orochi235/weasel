@@ -115,6 +115,21 @@ describe('a WGSL program written by array slot', () => {
     program.upload(mirror, 0, 0, 256);
     expect(Array.from(new Float32Array(mirror.buffer, 32, 4))).toEqual([1, 2, 3, 4]);
   });
+
+  it('writes from that slot to the array\'s end, as GL writes from an element\'s location', () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const program = gpu.createProgram({ wgsl: [
+      'struct U { u_ripples: array<vec4f, 4>, after: vec4f }',
+      '@group(1) @binding(0) var<uniform> u: U;',
+      '@vertex fn vs(@location(0) a_position: vec2f) -> @builtin(position) vec4f { return vec4f(a_position, 0.0, 1.0); }',
+      '@fragment fn fs() -> @location(0) vec4f { return u.u_ripples[2] + u.after; }',
+    ].join('\n') }) as WgpuProgram;
+    program.set('u_ripples[2]', 'vec4', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    const mirror = new Uint8Array(program.uploadBytes(0, 256));
+    program.upload(mirror, 0, 0, 256);
+    expect(Array.from(new Float32Array(mirror.buffer, 32, 12))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0]);
+  });
 });
 
 describe('a WGSL program whose own struct shares a member name with the kit block', () => {

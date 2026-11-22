@@ -75,12 +75,15 @@ function write(view: DataView, offset: number, t: WgslType, src: ArrayLike<numbe
   }
 }
 
-/** Every name a member answers to: itself, and each slot of an array. */
+/** Every name a member answers to: itself, and each slot of an array, which
+ *  writes from that slot to the array's end as a GL element location does. */
 function slotsOf(member: WgslMember): Array<[string, Slot]> {
   const out: Array<[string, Slot]> = [[member.name, { offset: member.offset, type: member.type }]];
   const t = member.type;
   if (t.kind === 'array') {
-    for (let i = 0; i < t.count; i++) out.push([`${member.name}[${i}]`, { offset: member.offset + i * t.stride, type: t.element }]);
+    for (let i = 0; i < t.count; i++) {
+      out.push([`${member.name}[${i}]`, { offset: member.offset + i * t.stride, type: { ...t, count: t.count - i } }]);
+    }
   }
   return out;
 }
