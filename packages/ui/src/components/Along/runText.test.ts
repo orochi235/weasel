@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { lineShape, trackRun } from '@weasel-js/geom';
 import row from './runRow.module.css';
 import { useRunText } from './runText';
@@ -57,4 +57,57 @@ test('a label under a rotated ancestor is drawn where it would be drawn unrotate
   // Turned a quarter clockwise on screen: client = (50 - y, x).
   const turned = bentPath({ a: 0, b: 1, c: -1, d: 0, e: 50, f: 0 }, { a: 0, b: -1, c: 1, d: 0, e: 0, f: 50 });
   expect(turned).toBe(flat);
+});
+
+test('a text node removed from an element that stays takes the element’s hidden glyphs with it', () => {
+  const root = document.createElement('div');
+  const item = document.createElement('button');
+  item.className = row.item!;
+  const label = document.createTextNode('On');
+  const inner = document.createElement('b');
+  inner.textContent = 'x';
+  item.append(label, inner);
+  root.append(item);
+  document.body.append(root);
+  Object.defineProperty(root, 'offsetWidth', { value: 100 });
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(DOMRect.fromRect({ x: 0, y: 0, width: 100, height: 50 }));
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+  Range.prototype.getBoundingClientRect = () => DOMRect.fromRect({ x: 20, y: 20, width: 20, height: 10 });
+  const ref = { current: root };
+  const run = trackRun(lineShape({ x: 0, y: 25 }, { x: 100, y: 25 }));
+  const hook = renderHook(() => useRunText(ref, run));
+  expect(item.hasAttribute('data-run-text-hides')).toBe(true);
+  label.remove();
+  hook.rerender();
+  expect(item.hasAttribute('data-run-text-hides')).toBe(false);
+  expect(inner.hasAttribute('data-run-text-hides')).toBe(true);
+});
+
+test('a row in another document draws its copies with that document’s stylesheet and redraws on its fonts', () => {
+  const frame = document.createElement('iframe');
+  document.body.append(frame);
+  const win = frame.contentWindow! as Window & typeof globalThis;
+  const doc = win.document;
+  const loaded = new EventTarget();
+  Object.defineProperty(doc, 'fonts', { value: loaded });
+  const root = doc.createElement('div');
+  const item = doc.createElement('span');
+  item.className = row.item!;
+  item.textContent = 'Label';
+  root.append(item);
+  doc.body.append(root);
+  Object.defineProperty(root, 'offsetWidth', { value: 100 });
+  vi.spyOn(win.HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(DOMRect.fromRect({ x: 0, y: 0, width: 100, height: 50 }));
+  vi.spyOn(win.HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+  win.Range.prototype.getBoundingClientRect = () => DOMRect.fromRect({ x: 20, y: 20, width: 20, height: 10 });
+  const ref = { current: root };
+  const run = trackRun(lineShape({ x: 0, y: 25 }, { x: 100, y: 25 }));
+  renderHook(() => useRunText(ref, run));
+  const copy = root.querySelector('[data-run-text-bend]');
+  expect(copy?.shadowRoot?.adoptedStyleSheets[0]).toBeInstanceOf(win.CSSStyleSheet);
+  item.textContent = 'Longer';
+  act(() => {
+    loaded.dispatchEvent(new Event('loadingdone'));
+  });
+  expect(root.querySelector('[data-run-text-bend]')?.shadowRoot?.querySelector('textPath')?.textContent).toBe('Longer');
 });

@@ -1,4 +1,5 @@
-import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { act } from 'react';
+import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { createContext, useMemo, useRef, type ReactNode } from 'react';
 import { arcShape, lineShape, trackRun } from '@weasel-js/geom';
@@ -64,6 +65,44 @@ describe('run slots', () => {
     expect(screen.getByTestId('z')).not.toHaveAttribute('data-run-slot');
     expect(screen.getByTestId('out')).not.toHaveAttribute('data-run-slot');
     expect(x('a')).toBe('10px');
+  });
+});
+
+describe('slot host thickness', () => {
+  function Thick({ children }: { children: ReactNode }) {
+    const root = useRef<HTMLDivElement>(null);
+    const slots = useMemo(() => createRunSlots(), []);
+    const host = useRunSlotHost({ slots, root, run, gap: 10, align: 'start' });
+    return (
+      <div ref={root} data-testid="host" data-thickness={host.thickness} {...{ [RUN_HOST]: '' }}>
+        <ChipSlots.Provider value={slots}>{children}</ChipSlots.Provider>
+      </div>
+    );
+  }
+
+  test('follows a slot that grows taller with no commit of the host', () => {
+    const fire: (() => void)[] = [];
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(cb: () => void) { fire.push(cb); }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    });
+    let height = 12;
+    const realHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')!;
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, get: () => height });
+    try {
+      render(<Thick><Chip id="a" /></Thick>);
+      expect(screen.getByTestId('host')).toHaveAttribute('data-thickness', '12');
+      height = 18;
+      act(() => {
+        for (const cb of fire) cb();
+      });
+      expect(screen.getByTestId('host')).toHaveAttribute('data-thickness', '18');
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, 'offsetHeight', realHeight);
+      vi.unstubAllGlobals();
+    }
   });
 });
 

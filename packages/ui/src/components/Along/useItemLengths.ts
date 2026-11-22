@@ -15,9 +15,17 @@ export type RunItemsOf = (root: HTMLElement) => Iterable<Element>;
 const childrenOf: RunItemsOf = (root) => root.children;
 
 /** A resize observer and the items it watches. */
-interface Watch {
+export interface Watch {
   observer: ResizeObserver;
   watched: Set<Element>;
+}
+
+/** Points `watch` at `items`: each one newly there observed, each one gone since unobserved. */
+export function rewatch(watch: Watch, items: Iterable<Element>): void {
+  const seen = new Set(items);
+  for (const child of watch.watched) if (!seen.has(child)) watch.observer.unobserve(child);
+  for (const child of seen) if (!watch.watched.has(child)) watch.observer.observe(child);
+  watch.watched = seen;
 }
 
 /**
@@ -29,17 +37,13 @@ function read(el: HTMLElement | null, keyOf: RunKeyOf, itemsOf: RunItemsOf, keys
   const seen = new Set<Element>();
   for (const child of el === null ? [] : itemsOf(el)) {
     const key = keyOf(child);
-    if (key === null || !(child instanceof HTMLElement)) continue;
-    known.set(key, child.offsetWidth);
+    if (key === null || !('offsetWidth' in child)) continue;
+    known.set(key, (child as HTMLElement).offsetWidth);
     keep.add(key);
     seen.add(child);
   }
   for (const key of known.keys()) if (!keep.has(key)) known.delete(key);
-  if (watch !== null) {
-    for (const child of watch.watched) if (!seen.has(child)) watch.observer.unobserve(child);
-    for (const child of seen) if (!watch.watched.has(child)) watch.observer.observe(child);
-    watch.watched = seen;
-  }
+  if (watch !== null) rewatch(watch, seen);
   return new Map(known);
 }
 
@@ -82,15 +86,30 @@ export function useItemLengths(root: RefObject<HTMLElement | null>, keys: readon
   return lengths;
 }
 
-/** The gap `root`'s stylesheet sets between two items along its line, read once it is laid out and again when it resizes. */
+/**
+ * The gap `root`'s stylesheet sets between two items along its line, read after every commit, when it resizes, and when
+ * an attribute changes on it or an ancestor, as a theme or density switch does.
+ */
 export function useRunGap(root: RefObject<HTMLElement | null>): number {
   const [gap, setGap] = useState(0);
+  const measure = (): void => {
+    const el = root.current;
+    if (el !== null) setGap(cssPx(getComputedStyle(el).columnGap));
+  };
+  const latest = useLatest(measure);
+  useLayoutEffect(() => latest.current());
   useLayoutEffect(() => {
     const el = root.current;
     if (el === null) return;
-    const measure = (): void => setGap(cssPx(getComputedStyle(el).columnGap));
-    measure();
-    return watchResize(el, measure);
-  }, [root]);
+    const read = (): void => latest.current();
+    const stop = watchResize(el, read);
+    if (typeof MutationObserver === 'undefined') return stop;
+    const styled = new MutationObserver(read);
+    for (let at: Element | null = el; at !== null; at = at.parentElement) styled.observe(at, { attributes: true });
+    return () => {
+      stop();
+      styled.disconnect();
+    };
+  }, [root, latest]);
   return gap;
 }
