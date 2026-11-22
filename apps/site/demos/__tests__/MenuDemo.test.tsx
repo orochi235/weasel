@@ -41,5 +41,33 @@ describe('MenuDemo', () => {
     expect(sub?.getAttribute('aria-label')).toBe('Export');
     expect(active()).toBe('PNG');
   });
-});
 
+  it('closes on a press outside, a window blur or a resize, and enables its opener again', () => {
+    render(<MenuDemo />);
+    const opener = screen.getByRole('button', { name: 'Open menu' });
+    for (const dismiss of [
+      () => fireEvent.pointerDown(document.body),
+      () => fireEvent.blur(window),
+      () => fireEvent(window, new Event('resize')),
+    ]) {
+      fireEvent.click(opener);
+      expect(screen.getByRole('menu', { name: 'File' })).toBeTruthy();
+      dismiss();
+      expect(screen.queryByRole('menu')).toBeNull();
+      expect((opener as HTMLButtonElement).disabled).toBe(false);
+    }
+  });
+
+  it('stays open on a press inside, and gives focus back to its opener when it closes', () => {
+    render(<MenuDemo />);
+    const opener = screen.getByRole('button', { name: 'Open menu' });
+    fireEvent.click(opener);
+    const menu = screen.getByRole('menu', { name: 'File' });
+    fireEvent.pointerDown(screen.getByRole('menuitem', { name: /Export/ }));
+    expect(screen.getByRole('menu', { name: 'File' })).toBe(menu);
+    fireEvent.keyDown(menu, { key: 'Escape' });
+    fireEvent.keyDown(screen.queryByRole('menu') ?? menu, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(opener);
+  });
+});

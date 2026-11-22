@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { solid } from '@weasel-js/paint';
-import { SceneCanvas, WeaselProvider, asNodeId, useScene, ellipsePath, polygonFromPoints, rectPath } from '@weasel-js/core';
+import { SceneCanvas, WeaselProvider, asNodeId, useScene, ellipsePath, polygonFromPoints, rectPath, zoomAt } from '@weasel-js/core';
 import * as pathTools from '@weasel-js/path-tools/presets';
 import { useAnimator } from '@weasel-js/animator/react';
 import { createParallaxLayer, createParallaxPlane, createTiledLayer } from '@weasel-js/parallax';
@@ -16,6 +16,7 @@ type NodeData = { path: Path; fill: Fill } | { fill: null };
 interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 600, H = 400;
+const ZOOM_MIN = 0.5, ZOOM_MAX = 3;
 
 interface Shape { x: number; y: number; width: number; height: number; color: string }
 
@@ -148,7 +149,9 @@ function ParallaxDemoInner() {
       scene.setLayerParallax('trees', opts('trees', zoom, anchorX));
     });
   };
-  const zoomTo = (z: number) => setView({ ...view, scale: { x: z, y: z } });
+  // About the stage's bottom center: panning is horizontal only, so a zoom about any higher point sinks the ground
+  // off the stage with no way to bring it back.
+  const zoomTo = (z: number) => setView(zoomAt(view, { x: W / 2, y: H }, z / view.scale.x, { min: ZOOM_MIN, max: ZOOM_MAX }));
   const playIntro = () => animator.tween({
     from: INTRO_FROM, to: 0, ms: 1400, easing: 'easeOutCubic',
     onTick: (x) => apply(written.current.zoom, x), cancelKey: 'intro',
@@ -179,7 +182,7 @@ function ParallaxDemoInner() {
         <Button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>
           reset view
         </Button>
-        <ZoomControl zoom={view.scale.x} min={0.5} max={3} onZoomInput={zoomTo} onZoomChange={zoomTo} />
+        <ZoomControl zoom={view.scale.x} min={ZOOM_MIN} max={ZOOM_MAX} onZoomInput={zoomTo} onZoomChange={zoomTo} />
         <Checkbox isSelected={zoomParallax} onChange={(on) => { setZoomParallax(on); apply(on, written.current.anchorX); }}>
           per-plane zoom
         </Checkbox>

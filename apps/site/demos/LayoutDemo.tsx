@@ -52,7 +52,7 @@ export function LayoutDemo() {
       layer: 'default',
       parent: G,
       // In G's frame: G's bottom-right corner.
-      pose: { x: 75, y: 185, width: 30, height: 30 },
+      pose: { x: 150, y: 150, width: 30, height: 30 },
       data: { fill: { paint: { color: TILE_COLORS[tiles % TILE_COLORS.length] } }, isContainer: false },
     });
   };

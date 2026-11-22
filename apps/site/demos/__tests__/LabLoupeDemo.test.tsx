@@ -17,13 +17,16 @@ beforeAll(() => {
   } as unknown as typeof ResizeObserver;
 });
 
-/** A WebGL context whose every call succeeds, counting what is made and what is deleted. */
-function countingGl() {
+/** A WebGL context whose every call succeeds, counting what is made and what is deleted. `fails` names the calls
+ *  that answer 0 instead. */
+function countingGl(fails: readonly string[] = []) {
   const live = new Set<object>();
   const gl = new Proxy({} as Record<string, unknown>, {
     get(_, key: string) {
       if (key === 'canvas') return document.createElement('canvas');
       if (/^[A-Z_]+$/.test(key)) return 1;
+      if (fails.includes(key)) return () => 0;
+      if (key.endsWith('InfoLog')) return () => `${key} says no`;
       return (...args: unknown[]) => {
         if (/^create(Program|Shader|Buffer)$/.test(key)) { const made = { key }; live.add(made); return made; }
         if (/^delete(Program|Shader|Buffer)$/.test(key)) { live.delete(args[0] as object); return undefined; }
@@ -35,7 +38,7 @@ function countingGl() {
 }
 
 describe('the loupe lab\'s foreign WebGL view', () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
   it("deletes the foreign GL view's program, shaders and buffer when it unmounts", async () => {
     const { gl, live } = countingGl();
@@ -47,6 +50,49 @@ describe('the loupe lab\'s foreign WebGL view', () => {
     await act(async () => {});
     expect(live.size).toBeGreaterThan(0);
     view.unmount();
+    expect([...live]).toEqual([]);
+  });
+
+  it('stops asking for frames when no WebGL context can be made, and keeps drawing when one can', async () => {
+    const queued = new Map<number, FrameRequestCallback>();
+    let nextId = 1;
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { queued.set(nextId, cb); return nextId++; });
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => { queued.delete(id); });
+    const frames = () => {
+      for (let i = 0; i < 5; i++) {
+        const due = [...queued.values()];
+        queued.clear();
+        act(() => { for (const cb of due) cb(16 * (i + 1)); });
+      }
+    };
+    const { gl } = countingGl();
+    let context: unknown = null;
+    const real = HTMLCanvasElement.prototype.getContext;
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (this: HTMLCanvasElement, kind: string, ...rest: unknown[]) {
+      return kind === 'webgl' ? context : (real as (...a: unknown[]) => unknown).call(this, kind, ...rest);
+    } as never);
+
+    const none = renderWithIcons(<ForeignGl />);
+    await act(async () => {});
+    frames();
+    expect(queued.size).toBe(0);
+    none.unmount();
+
+    context = gl;
+    renderWithIcons(<ForeignGl />);
+    await act(async () => {});
+    frames();
+    expect(queued.size).toBeGreaterThan(0);
+  });
+
+  it.each([
+    ['getShaderParameter', /compile.*getShaderInfoLog says no/],
+    ['getProgramParameter', /link.*getProgramInfoLog says no/],
+  ])('throws with the log when %s reports a failure, deleting what it made', (call, message) => {
+    const { gl, live } = countingGl([call]);
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(((kind: string) => (kind === 'webgl' ? gl : null)) as never);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() => renderWithIcons(<ForeignGl />)).toThrow(message);
     expect([...live]).toEqual([]);
   });
 });

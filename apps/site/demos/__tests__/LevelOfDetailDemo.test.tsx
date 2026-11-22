@@ -1,9 +1,10 @@
-import { cleanup, render } from '@testing-library/react';
+import { createElement } from 'react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { worldPoseOf, type Scene } from '@weasel-js/core';
+import { worldPoseOf, type Scene, type View } from '@weasel-js/core';
 import { LevelOfDetailDemo } from '../LevelOfDetailDemo';
 
-const held = vi.hoisted(() => ({ scene: null as Scene<unknown, string, unknown> | null }));
+const held = vi.hoisted(() => ({ scene: null as Scene<unknown, string, unknown> | null, views: [] as View[] }));
 vi.mock('@weasel-js/core', async (importOriginal) => {
   const core = await importOriginal<typeof import('@weasel-js/core')>();
   return {
@@ -13,6 +14,8 @@ vi.mock('@weasel-js/core', async (importOriginal) => {
       held.scene = scene as never;
       return scene;
     },
+    SceneCanvas: (props: object) =>
+      createElement(core.SceneCanvas, { ...props, onViewChange: (v: View) => held.views.push(v) } as never),
   };
 });
 
@@ -39,5 +42,13 @@ describe('LevelOfDetailDemo', () => {
       expect(at.x + at.width, child.id).toBeLessThanOrEqual(box.x + box.width);
       expect(at.y + at.height, child.id).toBeLessThanOrEqual(box.y + box.height);
     }
+  });
+
+  it('zooms out on a plain scroll, as its hint says', () => {
+    held.views = [];
+    const { container } = render(<LevelOfDetailDemo />);
+    fireEvent.wheel(container.querySelector('canvas')!, { deltaY: 100, clientX: 100, clientY: 100 });
+    const last = held.views.at(-1);
+    expect(last?.scale.x).toBeLessThan(0.9);
   });
 });

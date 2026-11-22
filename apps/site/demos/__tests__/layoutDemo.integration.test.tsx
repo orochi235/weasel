@@ -92,8 +92,8 @@ describe('LayoutDemo', () => {
     const { container, getByText } = render(<LayoutDemo />);
     act(() => { fireEvent.click(getByText('add tile')); });
     const tile = container.querySelector('[data-parent="G"]:not([data-testid="ld-pose-g1"])')!;
-    // It starts just below the grid, level with the column split; of the two
-    // bottom cells at equal distance, the first in fill order wins.
-    expect(tile.textContent).toMatch(/:210,130$/);
+    // It starts in G's bottom-right corner, so it lands in the bottom-right
+    // cell: G's origin (210,40) plus one 90px cell each way.
+    expect(tile.textContent).toMatch(/:300,130$/);
   });
 });
