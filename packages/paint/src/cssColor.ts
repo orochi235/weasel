@@ -1,4 +1,4 @@
-import { isNamedColor } from './color';
+import { isNamedColor, tryParseColor } from './color';
 import { parseHexBytes } from './hex';
 
 const COLOR_FUNCTION = /^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\(/i;
@@ -24,6 +24,9 @@ export function parsesAsColor(value: string, supports: ((value: string) => boole
   return parseHexBytes(v) !== null || isColorFunction(v) || KEYWORDS.has(v.toLowerCase()) || isNamedColor(v);
 }
 
+/** The functions `parseColor` reads in full, unless they nest one (`calc()`) or take relative syntax (`from`). */
+const PARSED_FUNCTION = /^(?:rgba?|hsla?|oklab|oklch)\((?!\s*from\s)[^(]*\)$/i;
+
 /** The most parentheses any color value nests: relative color syntax around `color-mix` reaches four. */
 const MAX_COLOR_DEPTH = 16;
 
@@ -39,8 +42,10 @@ function couldBeColor(v: string): boolean {
   return true;
 }
 
-/** A color function whose own parenthesis closes at the end of `v`, so nothing follows it. */
+/** A color function whose own parenthesis closes at the end of `v`, so nothing follows it. One `parseColor` reads
+ *  in full is a color only where it parses, so the two never disagree. */
 function isColorFunction(v: string): boolean {
+  if (PARSED_FUNCTION.test(v)) return tryParseColor(v) !== null;
   const open = COLOR_FUNCTION.exec(v);
   if (!open || /[{};]/.test(v)) return false;
   let depth = 0;
