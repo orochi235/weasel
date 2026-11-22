@@ -71,8 +71,10 @@ export async function unringed(host: HTMLElement, browser: Browser, max = 40): P
     for (let i = 0; i < max; i++) {
       await browser.userEvent.keyboard('{Tab}');
       const el = document.activeElement as HTMLElement | null;
-      if (!el || !host.contains(el) || reached.has(el)) break;
+      if (!el || el === document.body || el === start || reached.has(el)) break;
       reached.add(el);
+      // A stop in a portal sits between the host's own; the host's stops after it are still judged.
+      if (!host.contains(el)) continue;
       // A ring that fades in is read once it has.
       await finishing([el, el.parentElement, el.firstElementChild].flatMap((part) => part?.getAnimations() ?? []));
       const was = before.get(el);

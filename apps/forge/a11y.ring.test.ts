@@ -18,9 +18,11 @@ const keyboard = (order: () => HTMLElement[]): Browser => ({
 const button = (name: string, ringed: boolean) => {
   const el = document.createElement('button');
   el.textContent = name;
+  // An unringed one takes away the outline jsdom's own sheet draws on focus, as a story's styles would.
+  el.style.outlineStyle = 'none';
   if (ringed) {
     el.addEventListener('focus', () => { el.style.outlineStyle = 'solid'; });
-    el.addEventListener('blur', () => { el.style.outlineStyle = ''; });
+    el.addEventListener('blur', () => { el.style.outlineStyle = 'none'; });
   }
   return el;
 };
@@ -51,4 +53,12 @@ describe('unringed', () => {
     expect(await unringed(host, keyboard(() => [...start(), ...(late ? [late] : [])]))).toEqual(['<button> "late"']);
   });
 
+  it('carries on past a stop outside the host to the host stops after it', async () => {
+    const first = button('first', true);
+    const last = button('last', false);
+    host.append(first, last);
+    const portal = document.body.appendChild(button('portal', true));
+    const start = () => document.querySelector<HTMLElement>('button')!;
+    expect(await unringed(host, keyboard(() => [start(), first, portal, last]))).toEqual(['<button> "last"']);
+  });
 });
