@@ -12,6 +12,8 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 const step = (op: string): DevtoolsHistoryRecord => ({
   ts: 1000,
   step: 'push',
+  entryCount: 1,
+  opCount: 1,
   entries: [{ id: 1, label: '', opCount: 1, ops: [{ kind: op, targets: [], summary: null }] }],
   position: { index: 1, total: 1 },
 });
@@ -166,5 +168,19 @@ describe('<HistoryView>', () => {
     await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
     expect(screen.getAllByText('push')).toHaveLength(1);
     expect((screen.getByRole('switch', { name: 'entries' }) as HTMLInputElement).checked).toBe(false);
+  });
+  it('marks the entries and ops a step had past the ones its record kept', async () => {
+    const page = fakePage();
+    page.push({
+      ts: 1000, step: 'goto', entryCount: 3, opCount: 9,
+      entries: [{ id: 1, label: 'a', opCount: 7, ops: [{ kind: 'kit:set', targets: [], summary: null }] }],
+      position: { index: 0, total: 3 },
+    });
+    renderWithIcons(<HistoryView client={page.client} rootId="r" />);
+    expect(await screen.findByRole('cell', { name: 'a, … 2 more' })).toBeTruthy();
+    expect(screen.getByRole('cell', { name: '9' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('cell', { name: 'goto' }));
+    expect(await screen.findByText('… 6 more ops')).toBeTruthy();
+    expect(screen.getByText('… 2 more entries')).toBeTruthy();
   });
 });
