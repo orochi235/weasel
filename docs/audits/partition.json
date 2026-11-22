@@ -894,6 +894,7 @@
    "apps/site/demos/rotatedResize/math.ts",
    "apps/site/demos/rotatedResize/panels.tsx",
    "apps/site/demos/score/scoreRoll.ts",
+   "apps/site/demos/shapedVisualOrder.ts",
    "apps/site/demos/warpLab.tsx"
   ]
  },

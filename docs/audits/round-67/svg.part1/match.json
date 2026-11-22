@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "A walk started below the top marks an `'inherit'` paint as carried by a group that is never written, so the serializer drops it",
+  "A built-in leaf's `'world'` (and `'screen'`) gradient or pattern turns and skews with the node's pose, though the canvas holds it still in scene space",
+  "The root `<svg>`'s size is read two ways: as the viewport for percentages and as the media environment for `@media` / `@container`"
+ ],
+ "b": [
+  "A `'world'`-units gradient or pattern on a leaf whose pose has a `transform` is moved by that transform on export",
+  "A one-value `dx` is thrown away whenever the text has collapsible white space, though `dy` and `rotate` keep theirs",
+  "A percentage length under a root `<svg>` with no `viewBox` and no absolute size has \"no viewport\", while media and container queries size that same root 300 × 150",
+  "`raiseRuns` misplaces rises when the first run it reaches holds earlier glyphs; `turnRuns` handles the same case"
+ ]
+}

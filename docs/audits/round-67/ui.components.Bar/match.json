@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "A disabled BarMenu still opens its menu on click",
+  "A duplicate `Bar.Item` id still gets marked as a reorder unit, under a bogus key",
+  "A curved bar drops `framed`, `wrap`, and the status strip's footer",
+  "In menu mode a spacer's measured length is whatever slack it absorbed, so `--bar-natural` can lock in extra room",
+  "A refused keyboard reorder leaves a pending refocus that steals focus on a later render"
+ ],
+ "b": [
+  "A disabled BarMenu still opens its menu on click or Enter",
+  "`aria-keyshortcuts` is left on controls after a bar's `onReorder` is removed",
+  "A Bar.Item whose id repeats is still made a reorder unit, keyed by its slot path",
+  "The arc lab computes a popover's side with its own copy of `sideOf`"
+ ]
+}

@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "A pressed confirm button is never dimmed: its rule's selector contradicts itself",
+  "Pressing an aria-disabled solid button still dims its gloss",
+  "Button Lab's radius, pad-x and weight knobs do nothing on the segmented target",
+  "Exported shape deltas pasted into `.button` force every size to the tuned md metrics"
+ ],
+ "b": [
+  "A pressed confirm button gets no pressed treatment: the dimming rule's selector is a descendant selector that never matches",
+  "The lab's exported deltas give every button size the same height and padding once pasted into `.button`",
+  "Pressing a soft-disabled (`data-disabled`) solid or confirm button still dims its gloss"
+ ]
+}

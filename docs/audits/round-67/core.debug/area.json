@@ -1,0 +1,73 @@
+{
+ "id": "core.debug",
+ "commit": "a2dfd0456e1787d352e92d6a6a6ad07fce7f5229",
+ "date": "2026-11-22",
+ "files": [
+  "packages/core/src/debug/createDebugOverlayLayer.ts",
+  "packages/core/src/debug/createDebugSink.ts",
+  "packages/core/src/debug/defaultTheme.ts",
+  "packages/core/src/debug/features.ts",
+  "packages/core/src/debug/flag.ts",
+  "packages/core/src/debug/frameStats.ts",
+  "packages/core/src/debug/index.ts",
+  "packages/core/src/debug/overlayPanels.ts",
+  "packages/core/src/debug/override.ts",
+  "packages/core/src/debug/parseDebugFlags.ts",
+  "packages/core/src/debug/types.ts",
+  "packages/core/src/debug/useDebugSink.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 2,
+ "distinct": 3,
+ "chapman": 3,
+ "unfound": 0,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 41,
+  "changedFiles": 1,
+  "findings": 1
+ },
+ "previous": {
+  "round": 41,
+  "chapman": 14,
+  "unfound": 8
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 7,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2432,
+   "total": 2432
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.3,
+   "B": 5.5,
+   "match": 1.9,
+   "fix": 13
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 758282,
+  "costUsd": 2.24
+ },
+ "fixCommits": [
+  "f3f5de770370dd283bedeb9d74d3bd8e0c03fdb2",
+  "ed1c6abdb9535bed8537f0f7202af97d23c9609c",
+  "7e351d6d6901582460952dcaff6be8623b00ec50"
+ ]
+}

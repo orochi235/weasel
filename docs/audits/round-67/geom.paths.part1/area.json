@@ -1,0 +1,103 @@
+{
+ "id": "geom.paths.part1",
+ "commit": "a2dfd0456e1787d352e92d6a6a6ad07fce7f5229",
+ "date": "2026-11-22",
+ "files": [
+  "packages/geom/src/paths/anchorBrush.ts",
+  "packages/geom/src/paths/anchorEdits.ts",
+  "packages/geom/src/paths/anchorFields.ts",
+  "packages/geom/src/paths/anchorOrigins.ts",
+  "packages/geom/src/paths/anchorSelection.ts",
+  "packages/geom/src/paths/anchorSymmetry.ts",
+  "packages/geom/src/paths/anchorValues.ts",
+  "packages/geom/src/paths/anchors.ts",
+  "packages/geom/src/paths/arcRun.ts",
+  "packages/geom/src/paths/bendAlongPath.ts",
+  "packages/geom/src/paths/bendSegment.ts",
+  "packages/geom/src/paths/bounds.ts",
+  "packages/geom/src/paths/boundsOfPaths.ts",
+  "packages/geom/src/paths/builder.ts",
+  "packages/geom/src/paths/compose.ts",
+  "packages/geom/src/paths/contourSamples.ts",
+  "packages/geom/src/paths/contourSides.ts",
+  "packages/geom/src/paths/cornerCarry.ts",
+  "packages/geom/src/paths/cornerOffset.ts",
+  "packages/geom/src/paths/cornerRestore.ts",
+  "packages/geom/src/paths/cornerSegments.ts",
+  "packages/geom/src/paths/cornerShape.ts",
+  "packages/geom/src/paths/cornerSpec.ts",
+  "packages/geom/src/paths/corners.ts",
+  "packages/geom/src/paths/crossingsAmong.ts",
+  "packages/geom/src/paths/cubicContours.ts",
+  "packages/geom/src/paths/cubicMath.ts",
+  "packages/geom/src/paths/curvature.ts",
+  "packages/geom/src/paths/drape.ts",
+  "packages/geom/src/paths/eulerSpiral.ts",
+  "packages/geom/src/paths/extremaAnchors.ts",
+  "packages/geom/src/paths/fairing.ts",
+  "packages/geom/src/paths/fitHandles.ts",
+  "packages/geom/src/paths/fitRun.ts",
+  "packages/geom/src/paths/growRegion.ts",
+  "packages/geom/src/paths/handleEdits.ts",
+  "packages/geom/src/paths/joinAnchors.ts",
+  "packages/geom/src/paths/kneadPath.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 38,
+  "B": 38
+ },
+ "newCode": {
+  "since": 49,
+  "changedFiles": 3,
+  "findings": 2
+ },
+ "previous": {
+  "round": 49,
+  "chapman": 14,
+  "unfound": 8
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 22,
+  "testFiles": {
+   "failed": 0,
+   "passed": 4781,
+   "total": 4781
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 10.8,
+   "B": 4,
+   "match": 0.9,
+   "fix": 34.7
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 1636553,
+  "costUsd": 5.08
+ },
+ "fixCommits": [
+  "08971c32b1ebacd8a4c75fd717a625085fd41b46",
+  "ea9cd5c201136ace5f3973f416253be44d4b9934",
+  "d74238086d3afd3cb2d3cb881f9a4956ed2dcd38",
+  "d75322ba8e3a7839a9718041f516575a1fe652d7",
+  "6e587903b6d6faa0420bf60d69c11ab9f5e0bab9",
+  "91f9faf80a18b217776c22b121bb49ce5c34512b",
+  "fb2ce02b22bc7e67e84528b3b7f7c19b097eea31"
+ ]
+}

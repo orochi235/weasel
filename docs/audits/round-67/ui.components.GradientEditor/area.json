@@ -1,0 +1,77 @@
+{
+ "id": "ui.components.GradientEditor",
+ "commit": "a2dfd0456e1787d352e92d6a6a6ad07fce7f5229",
+ "date": "2026-11-22",
+ "files": [
+  "packages/ui/src/components/GradientEditor/GradientEditor.module.css",
+  "packages/ui/src/components/GradientEditor/GradientEditor.stories.tsx",
+  "packages/ui/src/components/GradientEditor/GradientEditor.tsx",
+  "packages/ui/src/components/GradientEditor/GradientHandles.stories.module.css",
+  "packages/ui/src/components/GradientEditor/GradientHandles.stories.tsx",
+  "packages/ui/src/components/GradientEditor/GradientHandles.tsx",
+  "packages/ui/src/components/GradientEditor/GradientStops.module.css",
+  "packages/ui/src/components/GradientEditor/GradientStops.tsx",
+  "packages/ui/src/components/GradientEditor/StopEditor.tsx",
+  "packages/ui/src/components/GradientEditor/handleOverlay.module.css",
+  "packages/ui/src/components/GradientEditor/handleOverlay.tsx",
+  "packages/ui/src/components/GradientEditor/index.ts",
+  "packages/ui/src/components/GradientEditor/useFocusAfterCommit.ts",
+  "packages/ui/src/components/GradientEditor/useStopSelection.ts"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 2,
+ "distinct": 5,
+ "chapman": 5.7,
+ "unfound": 0.7,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "newCode": {
+  "since": 58,
+  "changedFiles": 2,
+  "findings": 3
+ },
+ "previous": {
+  "round": 58,
+  "chapman": 13,
+  "unfound": 3
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 12,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1005,
+   "total": 1005
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.9,
+   "B": 7.2,
+   "match": 0.1,
+   "fix": 21.5
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 944017,
+  "costUsd": 2.84
+ },
+ "fixCommits": [
+  "0a408272d3c3f794be12ac5ce3dea6678b03404d",
+  "f41ec501c7d10abac2a598b1a51e913a8cda0dd5",
+  "f74810ab8ea0a9e76a2b31416cbedfa9df17afac",
+  "bf67f0c1a82552841245ff13ea823adb8e98be44",
+  "88d14436c98abfe3338349c2737b8b2a11e16744"
+ ]
+}

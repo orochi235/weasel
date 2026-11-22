@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   2,
+   3
+  ]
+ ],
+ "a": [
+  "useTimelinePlayback reads any numeric loop (0 or a finite pass count) as looping forever, so a finished timeline reports playing and its frame loop never stops",
+  "isAdvancing ignores the loop policy when playing in reverse",
+  "ToolPalette marks a dimmed (mode-ineligible) tool as a carry source though it cannot carry",
+  "Tooltip parses each string child as separate markdown, so markup spanning an interpolation is not rendered"
+ ],
+ "b": [
+  "A canceled tool carry leaves its ghost stuck on the page",
+  "A stack's cycle click does nothing when its face is the only enabled member and is not active",
+  "A stack with a duplicated id makes a stack button holding the same tool twice",
+  "A tool disabled by the mode still gets the carry-source class",
+  "RailStack throws on a stack with no members"
+ ]
+}

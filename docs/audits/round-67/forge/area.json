@@ -1,0 +1,91 @@
+{
+ "id": "forge",
+ "commit": "a2dfd0456e1787d352e92d6a6a6ad07fce7f5229",
+ "date": "2026-11-22",
+ "files": [
+  "packages/forge/src/actionParamSchema.ts",
+  "packages/forge/src/cli/cli.ts",
+  "packages/forge/src/cli/parse.ts",
+  "packages/forge/src/cli/policy.ts",
+  "packages/forge/src/config.ts",
+  "packages/forge/src/csf/argsContext.ts",
+  "packages/forge/src/csf/argsToSchema.ts",
+  "packages/forge/src/csf/loadCsfModule.tsx",
+  "packages/forge/src/csf/portSafe.ts",
+  "packages/forge/src/csf/propArgTypes.ts",
+  "packages/forge/src/csf/shims/preview-api.ts",
+  "packages/forge/src/csf/types.ts",
+  "packages/forge/src/icons.gen.ts",
+  "packages/forge/src/index.ts",
+  "packages/forge/src/kitIcons.tsx",
+  "packages/forge/src/messageOf.ts",
+  "packages/forge/src/pbt.fixture.ts",
+  "packages/forge/src/play.ts",
+  "packages/forge/src/protocol/channel.ts",
+  "packages/forge/src/protocol/messages.ts",
+  "packages/forge/src/protocol/schema.ts",
+  "packages/forge/src/route/url.ts",
+  "packages/forge/src/test/index.ts",
+  "packages/forge/src/test/play.ts",
+  "packages/forge/src/test/runStory.tsx",
+  "packages/forge/src/testing/frame.ts",
+  "packages/forge/src/testing/loupe.ts",
+  "packages/forge/src/testing/shell.ts",
+  "packages/forge/src/title.ts"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 0,
+ "distinct": 7,
+ "chapman": 19,
+ "unfound": 12,
+ "read": {
+  "A": 29,
+  "B": 29
+ },
+ "newCode": {
+  "since": 66,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 66,
+  "chapman": 19,
+  "unfound": 12
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 12,
+  "testFiles": {
+   "failed": 0,
+   "passed": 276,
+   "total": 276
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.7,
+   "B": 5.9,
+   "match": 2.3,
+   "fix": 16.4
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1241436,
+  "costUsd": 3.89
+ },
+ "fixCommits": [
+  "b40d92dc34cbc2922ab7607d4b8c877ba933e02c",
+  "217af2a0a906e40f3471ff43905d11f2b9f02b30",
+  "3dd42a9692dc65bce6ced6f233e378b50bdf43fe",
+  "1645cb8e8fadb93c4d72536edc042d4e4a5414a2"
+ ]
+}

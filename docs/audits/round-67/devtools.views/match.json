@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "A category's count badge keeps the unfiltered count while the filter hides most of its entries",
+  "The History tab is stuck on an error until a history notice arrives, unlike Dispatch, which retries on its poll",
+  "A failed read unmounts the trace and history tables, throwing away which row was open",
+  "An unlabeled history entry is named three different ways in one tab",
+  "A predicted miss in the live row reads \"unhandled\", as if an input had gone unhandled",
+  "Coord columns lose their alignment once a value needs more than 8 characters (≥ 1 000 000, or ≤ −100 000)"
+ ],
+ "b": [
+  "Route strips are keyed by route text, so a binding whose spec lists one key twice collides"
+ ]
+}

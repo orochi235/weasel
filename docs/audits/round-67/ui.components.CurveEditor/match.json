@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   4,
+   0
+  ]
+ ],
+ "a": [
+  "CurveEditor's own layer takes the id `'function'`, the default id of a child `FunctionLayer`, so arrow keys on a child's anchor move CurveEditor's anchor instead",
+  "On a strict (`constrain: 'function'`) layer, dragging an anchor whose neighbors are closer than two gaps pushes it past a neighbor",
+  "The keyframe layer's default `formatX` rounds to an integer, so on the default [0, 1] range every key and segment gets the same accessible name",
+  "With `history={false}` the plot leaves the tab order, so keys a layer handles at the editor's own focus never arrive",
+  "A `'pinned-x'` endpoint is styled as immovable (gray fill, `cursor: default`), though it drags in y",
+  "A long press, one of the documented context-menu gestures, cannot delete a function-layer anchor: its pointerdown already started a drag, so the editor drops the contextmenu event"
+ ],
+ "b": [
+  "A `'pinned-x'` endpoint, which still drags in y, is styled as immovable: gray fill, `cursor: default`, and no active look while dragged",
+  "Dragging an ordered anchor whose neighbors sit closer than two gaps puts it past its right neighbor",
+  "Two layers editing on one key press record two undo steps, so one undo reverts only half of the key's edit"
+ ]
+}

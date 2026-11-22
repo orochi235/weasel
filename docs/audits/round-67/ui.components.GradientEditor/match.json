@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "Under a `ReadOnly` scope, Delete/Backspace on a stop handle and the Remove button still remove a stop",
+  "Held (disabled/read-only) GradientHandles overlay still reports `onInput(start)` and `onCancel` on an Escaped drag",
+  "Removing a stop moves the selection before the commit, so a caller that declines the removal is left on a different stop"
+ ],
+ "b": [
+  "A held (disabled/read-only) overlay still sends onInput and onCancel when a drag on it is canceled",
+  "An arrow key pressed during a pointer drag overwrites the drag's start, so canceling the drag afterwards doesn't restore the value",
+  "Removing a stop moves the selection before the commit, so a declined removal leaves the selection on a different stop",
+  "Removing the selected stop when it is first along the gradient at stored index 0 does not fire onSelectionChange"
+ ]
+}
