@@ -34,6 +34,17 @@ describe('LastOperationPanel', () => {
     expect(screen.getByRole('checkbox', { name: 'Closed' })).toBeChecked();
   });
 
+  it('shows a leaf under a subgroup at the value it ran with', () => {
+    const schema = pref.group('Offset', { outline: pref.group('Outline', { width: pref.number('Width', 1) }) });
+    const store = storeOf({ id: 'offset', label: 'Offset', schema, values: { 'outline.width': 4 } });
+    render(<LastOperationPanel store={store} />);
+    const width = screen.getByRole('spinbutton', { name: 'Width' });
+    expect(width).toHaveValue('4');
+    fireEvent.change(width, { target: { value: '6' } });
+    fireEvent.blur(width);
+    expect(store.adjust).toHaveBeenCalledWith({ 'outline.width': 6 });
+  });
+
   it('adjusts the operation by the field changed, and dismisses it from its close button', () => {
     const store = storeOf({ id: 'bridgePaths', label: 'Bridge', schema: SCHEMA, values: { tension: 0.4, closed: false } });
     render(<LastOperationPanel store={store} closeLabel="Close Bridge" />);

@@ -19,7 +19,10 @@ export function useListFocus() {
     const input = inputs.current[at];
     if (to === 'handle') handles.current[at]?.focus();
     else if (input) input.focus();
-    else if (to === 'removed') {
+    else if (to === 'input') {
+      // An entry drawn by `renderEntry` has no field; focus stays on the add control unless adding just disabled it.
+      if (add.current?.disabled) (handles.current[at] ?? removes.current[at])?.focus();
+    } else if (to === 'removed') {
       const beside = removes.current[at];
       (beside && !beside.disabled ? beside : add.current)?.focus();
     }

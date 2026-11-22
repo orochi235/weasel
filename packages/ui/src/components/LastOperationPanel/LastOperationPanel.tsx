@@ -1,5 +1,6 @@
 import { useLastOperation, useLastOperationStore } from '@weasel-js/routing/react';
 import type { LastOperationStore } from '@weasel-js/routing';
+import { nestPrefValues } from '@weasel-js/prefs';
 import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { PrefsForm } from '../Prefs/PrefsForm';
 import s from './LastOperationPanel.module.css';
@@ -32,7 +33,7 @@ export function LastOperationPanel({ store, closeLabel = 'Close', className }: L
         <h2 className={s.title}>{op.label}</h2>
         <Button {...CLOSE_BUTTON_PROPS} aria-label={closeLabel} onClick={() => source.dismiss()} />
       </header>
-      <PrefsForm schema={op.schema} layout="list" values={op.values} onChange={(path, value) => source.adjust({ [path]: value })} />
+      <PrefsForm schema={op.schema} layout="list" values={nestPrefValues(op.values)} onChange={(path, value) => source.adjust({ [path]: value })} />
     </section>
   );
 }

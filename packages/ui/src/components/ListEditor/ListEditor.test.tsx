@@ -98,13 +98,14 @@ describe('ListEditor', () => {
     expect(screen.getByRole('button', { name: 'Remove Glob 1' })).toBeDisabled();
   });
 
-  function Numbers({ initial }: { initial: number[] }) {
+  function Numbers({ initial, maxItems }: { initial: number[]; maxItems?: number }) {
     const [value, setValue] = useState(initial);
     return (
       <ListEditor<number>
         aria-label="Phase"
         value={value}
         onChange={setValue}
+        maxItems={maxItems}
         newEntry={() => 0}
         renderEntry={(entry, _set, name) => <output aria-label={name}>{entry}</output>}
       />
@@ -150,5 +151,32 @@ describe('ListEditor', () => {
     renderWithIcons(<Numbers initial={[1]} />);
     press('Add');
     expect(screen.getByRole('button', { name: 'Add' })).toHaveFocus();
+  });
+
+  it('moves focus onto the new entry when adding to a list that draws its own entries fills it', () => {
+    renderWithIcons(<Numbers initial={[1, 2]} maxItems={3} />);
+    press('Add');
+    expect(screen.getByRole('button', { name: 'Add' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Remove Phase 3' })).toHaveFocus();
+  });
+
+  it('moves focus onto the new entry when choosing from the add menu fills the list', () => {
+    function Kinds() {
+      const [value, setValue] = useState<number[]>([1]);
+      return (
+        <ListEditor<number>
+          aria-label="Phase"
+          value={value}
+          onChange={setValue}
+          maxItems={2}
+          newEntry={[{ label: 'Zero', make: () => 0 }, { label: 'One', make: () => 1 }]}
+          renderEntry={(entry, _set, name) => <output aria-label={name}>{entry}</output>}
+        />
+      );
+    }
+    renderWithIcons(<Kinds />);
+    press('Add');
+    fireEvent.click(screen.getByRole('menuitem', { name: 'One' }));
+    expect(screen.getByRole('button', { name: 'Remove Phase 2' })).toHaveFocus();
   });
 });
