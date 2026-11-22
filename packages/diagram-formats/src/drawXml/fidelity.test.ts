@@ -161,6 +161,18 @@ describe('draw-style XML self-loop labels', () => {
   });
 });
 
+describe('draw-style XML dragged edge labels', () => {
+  it('keeps a dragged label at the end of a line whose last stretch has no length near that end', async () => {
+    const { data } = await readCells(vertex('a', 'rounded=0;', 'width="40" height="20"') + vertex('b', 'rounded=0;', 'x="4" y="2" width="40" height="20"')
+      + '<mxCell id="e" value="go" edge="1" parent="1" source="a" target="b" style=""><mxGeometry x="1" relative="1" as="geometry">'
+      + '<Array as="points"><mxPoint x="21" y="11"/><mxPoint x="24" y="12"/></Array><mxPoint x="0" y="5" as="offset"/></mxGeometry></mxCell>');
+    const placement = edge(data, 'e').labelPlacement as { at: { near: { x: number; y: number } }; offset: number };
+    expect(placement.at.near.x).toBeCloseTo(25.5);
+    expect(placement.at.near.y).toBeCloseTo(12.5);
+    expect(placement.offset).toBeCloseTo(-15 / Math.sqrt(10));
+  });
+});
+
 describe('draw-style XML file names', () => {
   it('claims the draw app\'s .drawio files, and writes one', () => {
     expect(DIAGRAM_DRAW_XML.extensions).toEqual(['.drawio', '.xml']);

@@ -157,9 +157,11 @@ function pointAlong(line: readonly Vec2[], fraction: number): { at: Vec2; dir: V
   const total = lengths.reduce((t, l) => t + l, 0);
   if (total === 0) return undefined;
   let left = fraction * total;
+  let last = lengths.length - 1;
+  while (last > 0 && lengths[last] === 0) last--;
   for (let i = 0; i < lengths.length; i++) {
     const l = lengths[i]!;
-    if (l === 0 || (left > l && i < lengths.length - 1)) {
+    if (l === 0 || (left > l && i < last)) {
       left -= l;
       continue;
     }
