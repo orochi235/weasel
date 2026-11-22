@@ -1,4 +1,4 @@
-import { domainTicks, formatNumber, proportion, tickCount, tickStep } from './linear';
+import { domainTicks, formatNumber, proportion, stepTicks, tickCount, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import { tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
@@ -60,6 +60,10 @@ export function warpTicks(domain: readonly [number, number], to: (value: number)
   const lo = Math.min(d0, d1);
   const hi = Math.max(d0, d1);
   const n = Math.max(1, Math.round(tickCount(count)));
+  // A domain narrower than the distance of its end nearest zero is nearly linear across it, and ticks as a linear one
+  // would: round values on a tick's own decade can all fall outside it, as 1260 and 1280 do around 1265..1279.
+  const near0 = lo > 0 ? lo : hi < 0 ? -hi : 0;
+  if (hi - lo < near0) return stepTicks(d0, d1, tickStep(d0, d1, n));
   const out: number[] = [];
   // A domain holding a whole number for every tick ticks on whole numbers only.
   const whole = Math.floor(hi) - Math.ceil(lo) + 1 >= n + 1;
