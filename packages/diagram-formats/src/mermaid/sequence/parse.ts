@@ -78,11 +78,11 @@ function readStatement(text: string, line: number, dropped: string[]): SeqStmt |
   if (word === 'box') return { kind: 'box', rest, line };
   if (word === 'activate' || word === 'deactivate' || word === 'destroy') return { kind: word, participant: idAt(rest, line), line };
   if (word === 'autonumber') return { kind: 'autonumber', args: rest === '' ? [] : rest.split(/\s+/), line };
-  if (/^title\b/i.test(t)) return { kind: 'title', text: t.replace(/^title\s*:?\s*/i, ''), line };
+  if (/^title(?![\p{L}\p{N}_])/iu.test(t)) return { kind: 'title', text: t.replace(/^title\s*:?\s*/i, ''), line };
   const acc = /^accTitle\s*:\s*(.*)$/s.exec(t);
   if (acc !== null) return { kind: 'accTitle', text: acc[1]!.trim(), line };
-  if (/^acc(Title|Descr)\b/.test(t)) return { kind: 'dropped', what: 'Accessibility titles and descriptions were dropped.', line };
-  if (/^(links?|properties|details)\b/i.test(t)) return { kind: 'dropped', what: 'Participant menus (links, properties, details) were dropped.', line };
+  if (/^acc(Title|Descr)(?![\p{L}\p{N}_])/u.test(t)) return { kind: 'dropped', what: 'Accessibility titles and descriptions were dropped.', line };
+  if (/^(links?|properties|details)(?![\p{L}\p{N}_])/iu.test(t)) return { kind: 'dropped', what: 'Participant menus (links, properties, details) were dropped.', line };
   const note = NOTE.exec(t);
   if (note) {
     const over = note[2]!.split(',').map((s) => s.trim()).filter((s) => s !== '').map((s) => idAt(s, line));

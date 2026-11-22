@@ -129,4 +129,12 @@ describe('writing sequence text that a reader would split or misread', () => {
     expect(note).toMatchObject({ kind: 'note', text: 'a b c' });
   });
 
+  it('keeps a participant whose id opens with a statement word and goes on with a letter outside ASCII', () => {
+    for (const id of ['titleé', 'linksé', 'linké', 'propertiesé', 'detailsé', 'accTitleé', 'accDescré']) {
+      const out = writeMermaidSequence(page({ participants: [{ id }, { id: 'B' }], steps: [msg('hi', id)] }));
+      const back = pageOf(out.text);
+      expect(back.name, id).toBeUndefined();
+      expect(back.data.steps[0], id).toMatchObject({ kind: 'message', from: id, to: 'B', text: 'hi' });
+    }
+  });
 });
