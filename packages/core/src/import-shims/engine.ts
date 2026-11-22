@@ -86,6 +86,7 @@ export type { NodeFnFieldName } from '../core/scene/nodeFnFields';
 export type { Bivariant, ClipFromPoseFn, CopiesFromPoseFn, DerivePathFn, DerivePoseFn, DerivedDep } from '../core/scene/nodeFnTypes';
 export { contentRoots, hidesSubtree, isNodeHidden, isNodeLocked, isPageStructure, nodeGates, withoutPageStructure } from '../core/scene/nodeGates';
 export type { GateSource, GatedLayer, GatedNode, NodeGates } from '../core/scene/nodeGates';
+export type { NodeLod, RungId } from '../core/scene/nodeLod';
 export { createNodeMemoScope, nodeMemo } from '../core/scene/nodeMemo';
 export type { NodeMemoScope } from '../core/scene/nodeMemo';
 export type { AddNodeSpec, GroupNode, MarkNode, Node as SceneNode, NodeBase as SceneNodeBase, NodeClip } from '../core/scene/nodeTypes';
