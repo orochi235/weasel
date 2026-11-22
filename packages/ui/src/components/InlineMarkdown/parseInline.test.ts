@@ -38,4 +38,24 @@ describe('parseInline', () => {
       { type: 'text', text: ' now' },
     ]);
   });
+
+  it('reads a run of marks that never close in time linear in its length', () => {
+    const fastest = (src: string): number => {
+      let best = Infinity;
+      for (let i = 0; i < 5; i++) {
+        const t = performance.now();
+        parseInline(src);
+        best = Math.min(best, performance.now() - t);
+      }
+      return best;
+    };
+    for (const mark of ['[', '[a', '**a ', '~~a ']) {
+      const short = mark.repeat(Math.ceil(5_000 / mark.length));
+      const long = mark.repeat(Math.ceil(40_000 / mark.length));
+      expect(parseInline(long)).toEqual([{ type: 'text', text: long }]);
+      fastest(short);
+      // Eight times the text: linear reads take about 8 times as long, quadratic ones 64.
+      expect(fastest(long) / Math.max(fastest(short), 0.05)).toBeLessThan(24);
+    }
+  });
 });
