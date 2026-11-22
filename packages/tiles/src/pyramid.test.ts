@@ -142,3 +142,53 @@ describe('TilePyramid', () => {
     expect(pyramid.run(view(0, 0, 16), 0, () => ({}), budget).live).toBe(true);
   });
 });
+
+describe('TilePyramid frames', () => {
+  it('lists a stale stand-in once, however many spots it covers', () => {
+    const { pyramid, bake } = setup();
+    for (let f = 0; f < 20; f++) pyramid.run(view(0, 0, 0.5, 400, 300), f, bake, { ...budget, tiles: 100 });
+    pyramid.dirtyAll();
+    const frame = pyramid.run(view(0, 0, 1, 400, 300), 20, () => null, { ...budget, tiles: 0 });
+    const ids = frame.stale.map((k) => scheme.idOf(k));
+    expect(ids.length).toBeGreaterThan(0);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe('TilePyramid pending', () => {
+  it('counts stale tiles waiting out their hold, so the caller asks for the frame that rebakes them', () => {
+    const { pyramid, made, bake } = setup();
+    let f = 0;
+    for (; f < 20; f++) pyramid.run(view(0, 0, 1), f, bake, { ...budget, tiles: 100 });
+    pyramid.dirtyAll();
+    const held = pyramid.run(view(0, 0, 1), f++, bake, { ...budget, tiles: 100 });
+    expect(held.pending).toBeGreaterThan(0);
+    const before = made.length;
+    const rebaked = pyramid.run(view(0, 0, 1), f++, bake, { ...budget, tiles: 100 });
+    expect(made.length).toBeGreaterThan(before);
+    expect(rebaked.pending).toBe(0);
+  });
+});
+
+describe('TilePyramid floor', () => {
+  it('stands the floor in for a spot more levels below it than standInLevels searches', () => {
+    const { pyramid, bake } = setup();
+    pyramid.run(view(0, 0, 0.1), 0, bake, { ...budget, tiles: 100 });
+    const floor = planeFloor(scheme, TILE, BOUNDS);
+    const frame = pyramid.run(view(100, 100, 4096, 400, 300), 1, () => null, { ...budget, tiles: 0 });
+    expect(frame.level - floor[0]!.z).toBeGreaterThan(8);
+    expect(frame.draws.length).toBeGreaterThan(0);
+    expect(frame.draws.every((d) => d.tile.key.z === floor[0]!.z)).toBe(true);
+  });
+});
+
+describe('TilePyramid draws', () => {
+  it('gives each draw a source of its own', () => {
+    const { pyramid, bake } = setup();
+    for (let f = 0; f < 20; f++) pyramid.run(view(0, 0, 1), f, bake, { ...budget, tiles: 100 });
+    const { draws } = pyramid.run(view(0, 0, 1), 20, bake, budget);
+    expect(draws.length).toBeGreaterThan(1);
+    draws[0]!.source[0] = 0.5;
+    expect(draws[1]!.source[0]).toBe(0);
+  });
+});

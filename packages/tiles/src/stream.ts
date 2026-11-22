@@ -29,8 +29,9 @@ export class TileStream<K, V, P> {
   private readonly held = new Map<string, Held<K, P>>();
   private readonly loading = new Map<string, Loading<K>>();
   private queue: K[] = [];
+  private wanted: readonly K[] = [];
+  private wantedIds = new Set<string>();
   private update_ = 0;
-  private wantedCount = 0;
   private disposed = false;
 
   constructor(private readonly opts: TileStreamOptions<K, V, P>) {}
@@ -81,11 +82,12 @@ export class TileStream<K, V, P> {
     }
     // An aborted load still counts against the cap until it settles: the source is still busy with it.
     for (const [id, l] of this.loading) if (!seen.has(id)) l.abort.abort();
+    this.wanted = wanted;
+    this.wantedIds = seen;
     this.queue = wanted.filter((k) => {
       const id = scheme.idOf(k);
       return !this.held.has(id) && !this.loading.has(id);
     });
-    this.wantedCount = wanted.length;
     this.pump();
     this.trim();
   }
@@ -109,10 +111,18 @@ export class TileStream<K, V, P> {
       this.loading.set(id, { key, abort });
       const done = () => {
         if (this.loading.get(id)?.abort === abort) this.loading.delete(id);
+        // Wanted again while its aborted load was settling: the update that wanted it skipped it.
+        if (abort.signal.aborted && !this.disposed && this.wantedIds.has(id) && !this.held.has(id)) this.queue.unshift(key);
         this.pump();
       };
-      this.opts.load(key, abort.signal).then((payload) => {
-        if (abort.signal.aborted || this.disposed) {
+      let loaded: Promise<P>;
+      try {
+        loaded = this.opts.load(key, abort.signal);
+      } catch (error) {
+        loaded = Promise.reject(error);
+      }
+      loaded.then((payload) => {
+        if (this.disposed || (abort.signal.aborted && !this.wantedIds.has(id))) {
           this.opts.release(key, payload);
         } else {
           this.held.set(id, { key, payload, wantedAt: this.update_ });
@@ -127,7 +137,7 @@ export class TileStream<K, V, P> {
   }
 
   private trim(): void {
-    const max = Math.max(this.opts.maxHeld ?? 256, this.wantedCount);
+    const max = Math.max(this.opts.maxHeld ?? 256, this.wanted.length);
     if (this.held.size <= max) return;
     const order = [...this.held.entries()].sort((a, b) => a[1].wantedAt - b[1].wantedAt);
     for (const [id, h] of order) {

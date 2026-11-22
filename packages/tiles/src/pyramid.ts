@@ -107,7 +107,7 @@ export class TilePyramid<K, V, P> {
     const ring = wanted.filter((w) => w.ring).map((w) => w.key);
     this.cache.pinFloor(floor.map((k) => scheme.idOf(k)));
 
-    const order = this.bakeOrder(floor, onScreen, ring, level, view, frame);
+    const { order, waiting } = this.bakeOrder(floor, onScreen, ring, level, view, frame);
     let baked = 0;
     const start = budget.clock();
     for (const key of order) {
@@ -116,9 +116,10 @@ export class TilePyramid<K, V, P> {
       baked++;
       if (payload !== null) this.cache.put(key, payload, frame, now);
     }
-    const pending = order.length - baked;
+    const pending = order.length - baked + waiting;
 
-    const { draws, fading, stale } = this.drawsFor(onScreen, frame, now);
+    const floorLevel = Math.min(...floor.map((k) => scheme.levelOf(k)));
+    const { draws, fading, stale } = this.drawsFor(onScreen, frame, now, floorLevel);
     this.cache.trim(frame, onScreen.length + ring.length + floor.length);
     return { level, draws, live: false, baked, pending, fading, stale };
   }
@@ -129,35 +130,39 @@ export class TilePyramid<K, V, P> {
     this.level = undefined;
   }
 
-  private needs(key: K, frame: number): 'missing' | 'stale' | null {
+  private needs(key: K, frame: number): 'missing' | 'stale' | 'waiting' | null {
     const t = this.cache.get(this.opts.scheme.idOf(key));
     if (t === undefined) return 'missing';
+    if (!t.stale) return null;
     // A stale tile rebakes once its damage has held still for a frame.
-    return t.stale && t.dirtiedAt < frame - 1 ? 'stale' : null;
+    return t.dirtiedAt < frame - 1 ? 'stale' : 'waiting';
   }
 
-  /** Floor, then what is missing on screen, then what is stale there, then the level above and the ring. */
-  private bakeOrder(floor: readonly K[], onScreen: readonly K[], ring: readonly K[], level: number, view: V, frame: number): K[] {
+  /** Floor, then what is missing on screen, then what is stale there, then the level above and the ring;
+   *  and how many stale tiles wait out their hold before they can join it. */
+  private bakeOrder(floor: readonly K[], onScreen: readonly K[], ring: readonly K[], level: number, view: V, frame: number): { order: K[]; waiting: number } {
     const { scheme } = this.opts;
     const seen = new Set<string>();
     const out: K[] = [];
+    let waiting = 0;
     const take = (k: K, want: 'missing' | 'stale' | 'either') => {
       const id = scheme.idOf(k);
       if (seen.has(id)) return;
       const need = this.needs(k, frame);
-      if (need === null || (want !== 'either' && need !== want)) return;
+      if (need === null || (want !== 'either' && (need === 'missing') !== (want === 'missing'))) return;
       seen.add(id);
-      out.push(k);
+      if (need === 'waiting') waiting++;
+      else out.push(k);
     };
     for (const k of floor) take(k, 'either');
     for (const k of onScreen) take(k, 'missing');
     for (const k of onScreen) take(k, 'stale');
     for (const w of scheme.wanted(view, level - 1)) if (!w.ring) take(w.key, 'either');
     for (const k of ring) take(k, 'either');
-    return out;
+    return { order: out, waiting };
   }
 
-  private drawsFor(onScreen: readonly K[], frame: number, now: number) {
+  private drawsFor(onScreen: readonly K[], frame: number, now: number, floorLevel: number) {
     const { scheme } = this.opts;
     const fadeMs = this.opts.fadeMs ?? 160;
     const up = this.opts.standInLevels ?? 8;
@@ -167,49 +172,48 @@ export class TilePyramid<K, V, P> {
     const own: TileDraw<K, P>[] = [];
     const stale: K[] = [];
     let fading = false;
-    const unit = new Float64Array(2 * scheme.dim).fill(1, scheme.dim);
-    const whole = (_k: K): Float64Array => unit;
+    const whole = (): Float64Array => new Float64Array(2 * scheme.dim).fill(1, scheme.dim);
     const mark = (t: HeldTile<K, P>) => {
+      if (t.stale && t.drawnAt !== frame) stale.push(t.key);
       t.drawnAt = frame;
-      if (t.stale) stale.push(t.key);
     };
     for (const at of onScreen) {
       const t = this.cache.get(scheme.idOf(at));
       const alpha = t === undefined ? 0 : fadeMs > 0 ? Math.min(1, Math.max(0, (now - t.bornAt) / fadeMs)) : 1;
       if (t !== undefined && alpha >= 1) {
         mark(t);
-        own.push({ at, tile: t, source: whole(at), alpha: 1 });
+        own.push({ at, tile: t, source: whole(), alpha: 1 });
         continue;
       }
       // Missing, or fading in: something coarser underneath, and what is finer over that.
-      const anc = this.ancestorHeld(at, up);
+      const anc = this.ancestorHeld(at, up, floorLevel);
       if (anc !== null) {
         mark(anc);
         coarse.push({ at, tile: anc, source: subRect(scheme, anc.key, at), alpha: 1 });
       }
       if (t === undefined) this.finerHeld(at, down, 1, (child, depth) => {
         mark(child);
-        (fine[depth] ??= []).push({ at: child.key, tile: child, source: whole(child.key), alpha: 1 });
+        (fine[depth] ??= []).push({ at: child.key, tile: child, source: whole(), alpha: 1 });
       });
       if (t !== undefined) {
         mark(t);
         fading = true;
-        own.push({ at, tile: t, source: whole(at), alpha });
+        own.push({ at, tile: t, source: whole(), alpha });
       }
     }
     return { draws: [...coarse, ...fine.flat(), ...own], fading, stale };
   }
 
-  private ancestorHeld(key: K, levels: number): HeldTile<K, P> | null {
+  /** The nearest held tile within `levels` above `key`, or past them the floor tile holding it. */
+  private ancestorHeld(key: K, levels: number, floorLevel: number): HeldTile<K, P> | null {
     const { scheme } = this.opts;
     let k: K | null = key;
-    for (let i = 0; i < levels; i++) {
-      k = k === null ? null : scheme.parentOf(k);
-      if (k === null) return null;
+    for (let i = 0; ; i++) {
+      k = scheme.parentOf(k);
+      if (k === null || (i >= levels && !(scheme.levelOf(k) >= floorLevel))) return null;
       const t = this.cache.get(scheme.idOf(k));
-      if (t !== undefined) return t;
+      if (t !== undefined && (i < levels || this.cache.isFloor(t.id))) return t;
     }
-    return null;
   }
 
   private finerHeld(key: K, levels: number, depth: number, visit: (t: HeldTile<K, P>, depth: number) => void): void {

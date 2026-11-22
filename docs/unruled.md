@@ -3633,3 +3633,9 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `createTarget` throws, on both backends, for a target with `ids` and more than one
   sample a pixel; neither can draw into one, since its two color attachments would differ in sample count. There is
   no override. Multisampling the ids attachment too was the alternative, which would blend ids at shape edges.
+
+## Audit round sixty-eight (2026-11-22): tiles
+
+- 2026-11-22 (the fixer's call): `planeFloor` throws a `RangeError` when its `tilePx` is not the tile size of the
+  scheme it is given; mismatched, it had chosen a level for one size and keys from the other. Dropping the `tilePx`
+  parameter and reading the size from the scheme was the alternative, but that breaks every caller.
