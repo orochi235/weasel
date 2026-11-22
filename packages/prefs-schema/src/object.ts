@@ -1,7 +1,7 @@
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, isPlainObject } from '@weasel-js/registry';
 import type { PrefObject } from './schema';
 
-const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+const isObject = isPlainObject;
 
 /**
  * The object a write to one field of an `object` leaf starts from: `held` itself where it is one. Where it is
