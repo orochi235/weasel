@@ -101,12 +101,15 @@ function matchContours(a: CubicContour, b: CubicContour, opts: TweenPathsOptions
   const offset = Math.round(opts.startOffset ?? 0);
   const directions = opts.reverse !== undefined ? [opts.reverse] : auto ? [false, true] : [false];
 
+  const n = Math.max(a.segs.length, b.segs.length);
+  const ma = { closed: a.closed, segs: subdivideTo(a.segs, n) };
   let best: { score: number; a: CubicContour; b: CubicContour; reversed: boolean; turn: number } | null = null;
   for (const reversed of directions) {
     const run = reversed ? reverseContour(b) : b;
     const turns = closed && auto ? run.segs.length : 1;
     for (let k = 0; k < turns; k++) {
-      const [ma, mb] = equalize(a, rotate(run, k));
+      const turned = rotate(run, k);
+      const mb = { closed: turned.closed, segs: subdivideTo(turned.segs, n) };
       const score = auto ? correspondence(ma, mb) : 0;
       if (best === null || score < best.score * (1 - TIE) - 1e-9) best = { score, a: ma, b: mb, reversed, turn: k };
     }
@@ -114,7 +117,8 @@ function matchContours(a: CubicContour, b: CubicContour, opts: TweenPathsOptions
   const chosen = best!;
   if (!closed || offset === 0) return [chosen.a, chosen.b];
   const run = chosen.reversed ? reverseContour(b) : b;
-  return equalize(a, rotate(run, chosen.turn + offset));
+  const turned = rotate(run, chosen.turn + offset);
+  return [ma, { closed: turned.closed, segs: subdivideTo(turned.segs, n) }];
 }
 
 /** `contour` started `k` segments later; a no-op on an open one. */
@@ -126,26 +130,53 @@ function rotate(contour: CubicContour, k: number): CubicContour {
   return { closed: true, segs: [...contour.segs.slice(s), ...contour.segs.slice(0, s)] };
 }
 
-/** Both contours split until they have as many segments as each other. */
-function equalize(a: CubicContour, b: CubicContour): [CubicContour, CubicContour] {
-  const n = Math.max(a.segs.length, b.segs.length);
-  return [
-    { closed: a.closed, segs: subdivideTo(a.segs, n) },
-    { closed: b.closed, segs: subdivideTo(b.segs, n) },
-  ];
+/** `segs` with its longest segments halved until there are `n` of them; of
+ *  two as long, the one earlier in the contour. */
+function subdivideTo(segs: readonly CubicSegment[], n: number): CubicSegment[] {
+  if (segs.length === 0 || segs.length >= n) return segs.slice();
+  const heap = segs.map((seg, i): Piece => ({ seg, len: hullLength(seg), at: i, from: 0, width: 1 }));
+  for (let i = (heap.length >> 1) - 1; i >= 0; i--) siftDown(heap, i);
+  for (let count = segs.length; count < n; count++) {
+    const top = heap[0]!;
+    const [first, second] = splitSegment(top.seg, 0.5);
+    const width = top.width / 2;
+    heap[0] = { seg: first, len: hullLength(first), at: top.at, from: top.from, width };
+    siftDown(heap, 0);
+    heap.push({ seg: second, len: hullLength(second), at: top.at, from: top.from + width, width });
+    siftUp(heap, heap.length - 1);
+  }
+  return heap.sort((p, q) => p.at - q.at || p.from - q.from).map((p) => p.seg);
 }
 
-/** `segs` with its longest segments halved until there are `n` of them. */
-function subdivideTo(segs: readonly CubicSegment[], n: number): CubicSegment[] {
-  const out = segs.slice();
-  if (out.length === 0) return out;
-  while (out.length < n) {
-    const lengths = out.map(hullLength);
-    const most = Math.max(...lengths);
-    const longest = lengths.findIndex((len) => len >= most * (1 - TIE));
-    out.splice(longest, 1, ...splitSegment(out[longest]!, 0.5));
+/** A piece of segment `at` of the contour, from parameter `from` over `width` of it. */
+interface Piece { seg: CubicSegment; len: number; at: number; from: number; width: number }
+
+/** Whether `p` is split before `q`: the longer, or of two as long, the earlier. */
+function splitsFirst(p: Piece, q: Piece): boolean {
+  if (Math.abs(p.len - q.len) > TIE * Math.max(p.len, q.len)) return p.len > q.len;
+  return p.at < q.at || (p.at === q.at && p.from < q.from);
+}
+
+function siftUp(heap: Piece[], i: number): void {
+  while (i > 0) {
+    const parent = (i - 1) >> 1;
+    if (!splitsFirst(heap[i]!, heap[parent]!)) return;
+    [heap[i], heap[parent]] = [heap[parent]!, heap[i]!];
+    i = parent;
   }
-  return out;
+}
+
+function siftDown(heap: Piece[], i: number): void {
+  for (;;) {
+    const l = 2 * i + 1;
+    const r = l + 1;
+    let top = i;
+    if (l < heap.length && splitsFirst(heap[l]!, heap[top]!)) top = l;
+    if (r < heap.length && splitsFirst(heap[r]!, heap[top]!)) top = r;
+    if (top === i) return;
+    [heap[i], heap[top]] = [heap[top]!, heap[i]!];
+    i = top;
+  }
 }
 
 /** How near, as a fraction, two measures are taken as equal when choosing between them. Paths store float32,
