@@ -30,9 +30,16 @@ const ESCAPABLE = '`*~[]\\<';
 
 const codePointLength = (src: string, i: number): number => ((src.codePointAt(i) ?? 0) > 0xffff ? 2 : 1);
 
+/** Where a `<kbd>` span opening at `p` ends, past its `</kbd>`, or -1 where none opens there. */
+function kbdEnd(src: string, p: number): number {
+  if (!src.startsWith('<kbd>', p)) return -1;
+  const j = src.indexOf('</kbd>', p + 5);
+  return j > p + 5 ? j + 6 : -1;
+}
+
 /**
  * Where the unit of a mark's text at `i` ends, or -1 where text cannot go on: a backslash pair is one unit and a
- * code span another, so neither can hold the close; a backtick that a later one would pair with but cannot, as in
+ * code span another and a `<kbd>` span a third, so none can hold the close; a backtick that a later one would pair with but cannot, as in
  * two side by side, ends the text.
  */
 function unitEnd(src: string, i: number, stop: string): number {
@@ -42,6 +49,10 @@ function unitEnd(src: string, i: number, stop: string): number {
   if (c === '`') {
     const j = src.indexOf('`', i + 1);
     return j < 0 ? i + 1 : j > i + 1 ? j + 1 : -1;
+  }
+  if (c === '<') {
+    const k = kbdEnd(src, i);
+    if (k >= 0) return k;
   }
   if (stop.includes(c)) return -1;
   return i + codePointLength(src, i);
@@ -81,9 +92,8 @@ export class InlineScan {
         return j > p + 1 ? { kind: 'code', start: p, end: j + 1, body: src.slice(p + 1, j) } : null;
       }
       case '<': {
-        if (!src.startsWith('<kbd>', p)) return null;
-        const j = src.indexOf('<', p + 5);
-        return j > p + 5 && src.startsWith('</kbd>', j) ? { kind: 'keys', start: p, end: j + 6, body: src.slice(p + 5, j) } : null;
+        const end = kbdEnd(src, p);
+        return end < 0 ? null : { kind: 'keys', start: p, end, body: src.slice(p + 5, end - 6) };
       }
       case '*':
         return this.mark('both', BOTH, p, spaceRefused) ?? this.mark('strong', STRONG, p, spaceRefused)

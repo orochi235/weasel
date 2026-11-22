@@ -23,6 +23,21 @@ describe('InlineRange', () => {
     expect(fillOf(screen.getByLabelText('Over'))).toBe('100%');
   });
 
+  it('fills to the step the thumb snaps to, not the raw value', () => {
+    render(<InlineRange aria-label="Stepped" min={0} max={100} step={10} value={37} onChange={() => {}} />);
+    expect(fillOf(screen.getByLabelText('Stepped'))).toBe('40%');
+  });
+
+  it('fills to the last step under max when the nearest one is past it', () => {
+    render(<InlineRange aria-label="Short" min={0} max={95} step={10} value={94} onChange={() => {}} />);
+    expect(fillOf(screen.getByLabelText('Short'))).toBe(`${(90 / 95) * 100}%`);
+  });
+
+  it('fills to the raw value with no step grid', () => {
+    render(<InlineRange aria-label="Any" min={0} max={100} step="any" value={37.5} onChange={() => {}} />);
+    expect(fillOf(screen.getByLabelText('Any'))).toBe('37.5%');
+  });
+
   // A degenerate range divides by zero, which would render `NaN%` and drop the
   // background entirely rather than failing loudly.
   it('survives a zero-width range', () => {

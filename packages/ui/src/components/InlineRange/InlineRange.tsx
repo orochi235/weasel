@@ -1,5 +1,6 @@
 import { type CSSProperties, forwardRef, type InputHTMLAttributes, type KeyboardEvent, type MouseEvent, type Ref, useMemo } from 'react';
 import { mergeRefs } from 'react-aria';
+import { snapToStep } from '@weasel-js/quantity';
 import s from './InlineRange.module.css';
 import { useRangeEdit, type RangeEditProps } from './useRangeEdit';
 import type { HoldProps } from '../Disabled';
@@ -37,6 +38,15 @@ function marksStyle(marks: readonly number[]): Record<string, string> {
 
 /** The fill's edge, under the thumb's center as {@link marksStyle} places a mark: `t/2 + f·(W − t)` of the content box. */
 const fillAt = (f: number) => `calc(${f * 100}% + ${0.5 - f} * var(--wzl-slider-thumb-size))`;
+
+/** Where the native thumb draws `value`: clamped, then on the step grid counted from `min`, as a range input
+ *  sanitizes it. A `step` that is not a positive number means 1, and `any` means no grid. */
+function thumbValue(value: number, min: number, max: number, stepAttr: number | string | undefined): number {
+  const hi = Math.max(min, max);
+  const step = stepAttr === 'any' ? undefined : Number(stepAttr) > 0 ? Number(stepAttr) : 1;
+  const q = snapToStep(Math.min(Math.max(value, min), hi), step, min);
+  return step !== undefined && q > hi ? snapToStep(q - step, step, min) : q;
+}
 
 const VALUE_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']);
 
@@ -83,7 +93,7 @@ export const InlineRange = forwardRef(function InlineRange(
   const named = { ...own, onChange: own.onChange ?? NOOP, ...field };
   const rest = hold.refuses ? { ...named, ...REFUSED } : named;
   const span = max - min;
-  const filled = span > 0 ? ((Math.min(Math.max(value, min), max) - min) / span) * 100 : 0;
+  const filled = span > 0 ? ((thumbValue(value, min, max, own.step) - min) / span) * 100 : 0;
   const marked = marks !== undefined && marks.length > 0;
   const vars = {
     ...(fill ? { '--slider-fill': `${filled}%`, '--slider-fill-at': fillAt(filled / 100) } : {}),
