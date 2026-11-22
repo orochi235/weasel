@@ -56,6 +56,11 @@
     }
   }
 
+  // The browser gives a control a face of its own; a lab's bare ones take the lab's.
+  :where(select, input, textarea) {
+    font: inherit;
+  }
+
   // The browser sets these in its own `monospace`, which no font token reaches.
   :where(code, kbd, samp, pre) {
     font-family: var(--wzl-font-mono);

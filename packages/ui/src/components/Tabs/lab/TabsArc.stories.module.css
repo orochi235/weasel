@@ -8,7 +8,6 @@
   outline-offset: -1px;
   border-radius: 50%;
   margin: var(--wzl-space-6);
-  font-family: var(--wzl-font-ui);
 }
 
 /* A tab's panel, in the middle of the circle its tabs run round. */

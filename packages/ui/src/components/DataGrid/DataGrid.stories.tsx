@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
+import { Code } from '@weasel-js/ui/components/Code';
 import s from './DataGrid.stories.module.css';
 
 const meta: Meta<typeof DataGrid> = {
@@ -58,7 +59,7 @@ export const ExpandableDetail: Story = {
       rowExpandable={(r) => r.candidates.length > 0}
       renderDetail={(r) => (
         <ol className={s.detail}>
-          {r.candidates.map((c) => <li key={c}><code>{c}</code></li>)}
+          {r.candidates.map((c) => <li key={c}><Code>{c}</Code></li>)}
         </ol>
       )}
     />

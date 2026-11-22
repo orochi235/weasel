@@ -309,16 +309,11 @@ Owner tags, after the priority (2026-10-26):
   cell). Closes when the played layer is `inert` with its content non-interactive, or a span takes an action of its
   own, and a test clicks a control in a span's content.
 
-- **(P2) [agent] Nothing checks that fonts cascade the way a component expects.** A component that sets or resets
-  `font-family` (or the `font` shorthand) on its root replaces what its consumer's container chose, and nothing
-  catches it: on 2026-11-19 the audit page's lanes, rebuilt on ui's new `SpanStrip`, silently changed from the
-  page's narrow font to another. Wants a rule for which elements may set a family (the theme's roots, text inputs,
-  mono readouts by token) and a check that holds components to it: a static check over `*.module.css` in the
-  style of `check:numeric` / `check:spacing` for families set outside the allowed places, plus a browser test
-  rendering each ui and labkit component inside a container with a distinctive family and asserting every text
-  node's computed `font-family` is the container's unless the component documents an exception. Then audit
-  ui, labkit, forge and the apps, fixing what it finds. Closes when the check runs in the gate, the browser test
-  covers every exported ui and labkit component, and both pass on main.
+- **(P3) [agent] The font-cascade browser test mounts no lab sidebar, aside, footer or trial scene.**
+  `packages/labkit/src/fontCascade.browser.test.tsx` lists `LabSidebarRegion`, `LabAsideRegion`, `LabFooterRegion`
+  and `TrialSceneCanvas` as unmounted: rendered outside forge, `LabFullChrome`'s stories lay out their panes with no
+  sidebar even when their `chrome` arg contributes one (2026-11-21, read from the DOM on the fleet), so nothing there
+  checks those pieces' fonts. Closes when a story or fixture mounts all four and the list is empty.
 
 - **(P3) [maintainer] Trials in one labkit workspace have no way to share params.** Each trial owns its own
   settings, so two trials meant to show one setting from different angles each get their own copy, and editing it
