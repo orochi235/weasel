@@ -2,6 +2,8 @@
 '@weasel-js/path-tools': patch
 ---
 
-With no path open and no tool to return to, `leavePathEdit` reports itself disabled, so Escape reaches the next binding, such as resetting the tool, on a canvas with no mode registry.
+Escape reaches the next binding when no path is open and no tool would change.
+
+`leavePathEdit` now reports itself disabled then, so on a canvas with no mode registry Escape can reset the tool.
 
 <!-- entry: fix -->
