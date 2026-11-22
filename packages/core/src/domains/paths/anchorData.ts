@@ -113,3 +113,8 @@ export function withAnchorDataFitting<T>(data: T, anchors: number): T {
   }
   return out as T;
 }
+
+/** `data` less every per-anchor array: for a path whose anchors do not come from the one `data` held. */
+export function withoutAnchorData<T>(data: T): T {
+  return withAnchorDataFitting(data, Number.NaN);
+}

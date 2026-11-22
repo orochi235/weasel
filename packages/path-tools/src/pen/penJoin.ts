@@ -55,6 +55,7 @@ export function commitJoin(
   const label = 'Join paths';
   const ops: Op[] = [];
   let keptId: string;
+  let made: ReturnType<NonNullable<NonNullable<ActionDeps['insert']>['build']>> = null;
   if (cont) {
     if (cont.reversed) added[0] = reverseAnchors(added[0]);
     const next = editAnchorSetTracked(cont.original, (set) => {
@@ -74,9 +75,13 @@ export function commitJoin(
     if (built === null) return;
     ops.push(...built.ops);
     keptId = built.id;
+    made = built;
   }
   if (!sameNode) ops.push(coreOps.delete({ node: scene!.get(hit.id as never) as { id: string } }));
 
-  commitOps(deps, ops, label, settings.autoSelect ? { select: [keptId] } : {});
+  const commit = () => commitOps(deps, ops, label, settings.autoSelect ? { select: [keptId] } : {});
+  if (made?.batch && scene) scene.batch(label, commit, made.batch);
+  else commit();
+  made?.inserted?.();
   resetScratch(s);
 }

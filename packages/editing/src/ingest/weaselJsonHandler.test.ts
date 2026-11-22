@@ -287,6 +287,22 @@ describe('kitWeaselJsonHandler — SVG with embedded weasel metadata', () => {
   });
 });
 
+describe('kitWeaselJsonHandler — a weasel copy that pastes nothing', () => {
+  it.each([
+    ['commitPaste makes nothing', buildWeaselClipboardText(NODES), true],
+    ['the payload is unusable', '{"weaselClipboard":1}', false],
+  ])('keeps kit:svg from pasting the same copy as an image when %s', async (_why, text, makesNothing) => {
+    registerContentHandler(kitWeaselJsonHandler);
+    registerContentHandler(kitSvgHandler);
+    const adapter = stubAdapter();
+    if (makesNothing) adapter.commitPaste.mockReturnValue([]);
+    const c = ctx({ clipboard: { adapter }, point: { x: 0, y: 0 } });
+    await runIngest([stringItem(text, WEASEL_CLIPBOARD_MIME), stringItem(PLAIN_SVG, 'text/plain')], c);
+    expect(c.applyOps).not.toHaveBeenCalled();
+    expect((c.insert.commit as Mock)).not.toHaveBeenCalled();
+  });
+});
+
 describe('kitWeaselJsonHandler — runIngest consumption semantics', () => {
   it('non-weasel text/plain stays available to a lower-priority handler', async () => {
     const spy = vi.fn();

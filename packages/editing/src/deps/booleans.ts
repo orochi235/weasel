@@ -7,7 +7,7 @@
  * which this one does not read; the newest registration wins, and a canvas
  * child registers after the presets' components.
  */
-import { renderOrderCompare as compareZ, sceneInheritedPaintOf, storesEdits, pathPaintOf, type PathPaint, drawnPose, leafPath, storePiece } from '@weasel-js/core';
+import { renderOrderCompare as compareZ, sceneInheritedPaintOf, storesEdits, pathPaintOf, type PathPaint, drawnPose, leafPath, pieceData, storePiece } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
@@ -20,8 +20,9 @@ import type { OpsApplier } from '@weasel-js/core';
 /**
  * Publish a `booleansAdapter` over `scene`'s path leaves (`data.path` drawn
  * through the pose's box), acting on `operands`. A result is minted from the source it stands in
- * for: its layer, parent, frame, and data, with the result's path, and the
- * result's paint in place of the source's when the operation gives one.
+ * for: its layer, parent, frame, and data, with the result's path, the
+ * result's paint in place of the source's when the operation gives one, and
+ * none of the data that described the source's geometry (`pieceData`).
  */
 export function useBooleansAdapterDepSource(
   scene: Scene<unknown, string, unknown>,
@@ -73,7 +74,7 @@ export function useBooleansAdapterDepSource(
         if (!leaf) throw new Error(`[booleansAdapter] no path leaf behind source ${sourceId}`);
         const stored = storePiece(leaf.drawn, path);
         const { fill: _fill, stroke: _stroke, ...rest } = (leaf.node.data ?? {}) as Record<string, unknown>;
-        const data = paint ? { ...rest, ...paint, path: stored.path } : { ...(leaf.node.data as object), path: stored.path };
+        const data = pieceData(paint ? { ...rest, ...paint, path: stored.path } : { ...(leaf.node.data as object), path: stored.path });
         return {
           id: sceneRef.current.mintId(),
           kind: 'mark',

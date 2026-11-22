@@ -75,11 +75,14 @@ export function resolveOperand(
   if (!outline) return undefined;
   if (strokes === 'ignore') {
     const whole = outline.path();
-    return whole.kind === 'rect' || whole.commands.length > 0 ? { path: whole } : undefined;
+    return inksAnything(whole) ? { path: whole } : undefined;
   }
   const inks = outline.parts().map((p) => inkOf(p, strokes, adapter.getStrokeFrame?.(id), scale));
   if (inks.length === 0) return undefined;
   const paint = inks.find((ink) => ink.paint)?.paint;
   const whole = inks.length === 1 ? inks[0]!.path : pathUnion(...inks.map((ink) => ink.path));
+  if (!inksAnything(whole)) return undefined;
   return paint ? { path: whole, paint } : { path: whole };
 }
+
+const inksAnything = (path: Path): boolean => path.kind === 'rect' || path.commands.length > 0;

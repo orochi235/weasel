@@ -399,6 +399,14 @@ describe('applyBooleanOp with an outline operand', () => {
     expect(b.height).toBeCloseTo(10, 3);
   });
 
+  it('drops an outline that inks nothing as an operand whether or not strokes are counted', () => {
+    const blank = { kind: 'polygon', commands: [] } as unknown as Path;
+    const ignored = applyBooleanOp(withOutline(outline(() => blank)).adapter, 'intersect');
+    for (const strokes of ['unfilled', 'include'] as const) {
+      expect(applyBooleanOp(withOutline(outline(() => blank)).adapter, 'intersect', { strokes })).toEqual(ignored);
+    }
+  });
+
   it('fails without mutating anything when an outline cannot be built', () => {
     const h = withOutline(outline(() => {
       throw new NodeOutlineError('no face', { summary: 'cannot', pending: false });
