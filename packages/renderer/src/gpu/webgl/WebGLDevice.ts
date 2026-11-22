@@ -71,6 +71,7 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     gl.disable(gl.SAMPLE_COVERAGE);
     gl.disable(gl.POLYGON_OFFSET_FILL);
     gl.clearColor(0, 0, 0, 0);
+    gl.clearStencil(0);
     gl.colorMask(true, true, true, true);
     gl.bindVertexArray(null);
     // Every upload reads its texels under the unpack state, which another user of the context may leave set.
@@ -193,6 +194,7 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
   }
 
   clearStencilBits(mask: number): void {
+    this.cache.bindFramebuffer(this.target ? this.target.fbo : null);
     this.cache.setStencilMask(mask);
     this.gl.clear(this.gl.STENCIL_BUFFER_BIT);
   }
@@ -205,6 +207,8 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     cache.useProgram(program.handle);
     cache.setBlend(state.blend);
     const target = this.target;
+    // A read-back or a new target inside the pass binds another framebuffer.
+    cache.bindFramebuffer(target ? target.fbo : null);
     if (target?.ids && (state.colorWrite || state.ids)) {
       cache.setColorMask(true);
       cache.setDrawBuffers(target.fbo, !state.ids ? 'color' : state.colorWrite ? 'both' : 'ids');

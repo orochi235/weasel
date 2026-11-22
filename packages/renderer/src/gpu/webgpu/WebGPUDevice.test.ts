@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { GpuGeometry, GpuProgram } from '../types';
 import { WebGPUDevice } from './WebGPUDevice';
 import type { WgpuProgram } from './wgpuProgram';
+import type { WgpuTarget } from './wgpuTargets';
 import { KIT_WGSL } from './wgsl/kitPrograms';
 import { WeaselRenderer } from '../../WeaselRenderer';
 import { fakeGpuDevice } from '../../testing/fakeGpuDevice';
@@ -138,6 +139,17 @@ describe('a WebGPU target asked for a sample count the device does not make', ()
     const fake = fakeGpuDevice();
     const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
     expect(() => gpu.createTarget({ width: 4, height: 4, samples: 4, ids: true })).toThrow('multisampled target cannot have ids');
+  });
+});
+
+describe('a WebGPU target whose color texture is replaced', () => {
+  it('draws into the texture its color now holds', () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const target = gpu.createTarget({ width: 4, height: 4 }) as WgpuTarget;
+    gpu.writeTexture(target.color!, { width: 4, height: 4, data: null });
+    gpu.generateMipmaps(target.color!);
+    expect(target.colorView()).toBe(target.color!.view);
   });
 });
 

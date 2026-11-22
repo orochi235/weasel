@@ -34,8 +34,8 @@ export interface WgslBinding {
   binding: number;
   name: string;
   kind: WgslBindingKind;
-  /** The struct a uniform binding holds; unset for a texture, a sampler, or
-   *  a uniform of a plain type. */
+  /** The struct a uniform binding holds, a uniform of plain type as a one-member struct named for it in
+   *  `structs`; unset for a texture, a sampler, or a storage binding. */
   struct?: string;
 }
 
@@ -124,6 +124,13 @@ function parseType(
   throw unlaid.get(s) ?? new Error(`WGSL: unsupported type ${src.trim()}`);
 }
 
+function attributeInt(attr: string, arg: string | undefined, consts: Map<string, number>): number {
+  const s = (arg ?? '').trim();
+  const n = wgslInt(s) ?? consts.get(s);
+  if (n === undefined) throw new Error(`WGSL: cannot read ${attr.trim()}; give it a literal or a module-scope const`);
+  return n;
+}
+
 function parseStruct(
   name: string, body: string, structs: Map<string, WgslStruct>, consts: Map<string, number>, unlaid: Unlaid,
 ): WgslStruct {
@@ -137,8 +144,8 @@ function parseStruct(
     for (;;) {
       const a = /^@(\w+)(?:\(([^)]*)\))?\s*/.exec(decl);
       if (!a) break;
-      if (a[1] === 'align') alignAttr = Number(a[2]);
-      if (a[1] === 'size') sizeAttr = Number(a[2]);
+      if (a[1] === 'align') alignAttr = attributeInt(a[0], a[2], consts);
+      if (a[1] === 'size') sizeAttr = attributeInt(a[0], a[2], consts);
       decl = decl.slice(a[0].length);
     }
     const colon = decl.indexOf(':');
@@ -190,6 +197,37 @@ function checkUniformLayout(struct: WgslStruct, structs: Map<string, WgslStruct>
   });
 }
 
+/** The struct key of a uniform of plain type: no WGSL identifier, so no declared struct shares it. */
+function plainUniform(name: string): string {
+  return `var<uniform> ${name}`;
+}
+
+/** A uniform of plain type as the one-member struct it lays out as, its member named for the variable. */
+function plainStruct(
+  name: string, type: string, structs: Map<string, WgslStruct>, consts: Map<string, number>, unlaid: Unlaid,
+): WgslStruct {
+  try {
+    return parseStruct(plainUniform(name), `${name}: ${type}`, structs, consts, unlaid);
+  } catch (e) {
+    throw new Error(`WGSL: uniform ${name}: ${(e as Error).message.replace(/^WGSL: /, '')}`);
+  }
+}
+
+/** The `{`…`}` depth of `src` at each of `at`, given in ascending order. */
+function braceDepths(src: string, at: readonly number[]): number[] {
+  const out: number[] = [];
+  let depth = 0;
+  let i = 0;
+  for (const pos of at) {
+    for (; i < pos; i++) {
+      if (src[i] === '{') depth++;
+      else if (src[i] === '}') depth--;
+    }
+    out.push(depth);
+  }
+  return out;
+}
+
 /** Reflect the structs and `@group`/`@binding` variables a WGSL module declares. Every struct is laid out by
  *  WGSL's one set of rules; `target` says whether a uniform struct must also keep the stricter uniform ones. */
 export function reflectWgsl(source: string, target: WgslTarget): WgslReflection {
@@ -202,7 +240,10 @@ export function reflectWgsl(source: string, target: WgslTarget): WgslReflection 
   // Module-scope declarations may come in any order: consts first, then structs until none is left that the
   // ones laid out so far can lay out, then the variables.
   const matches = [...src.matchAll(token)];
-  for (const m of matches) if (m[1]) consts.set(m[1], wgslInt(m[2])!);
+  const depth = braceDepths(src, matches.map((m) => m.index));
+  matches.forEach((m, i) => {
+    if (m[1] && depth[i] === 0) consts.set(m[1], wgslInt(m[2])!);
+  });
   let pending = matches.filter((m) => m[3]);
   for (let laid = true; laid && pending.length > 0;) {
     laid = false;
@@ -237,13 +278,14 @@ export function reflectWgsl(source: string, target: WgslTarget): WgslReflection 
     const space = (m[6] ?? '').split(',')[0].trim();
     const type = m[8].trim();
     if (space === 'uniform' && unlaid.has(type)) throw unlaid.get(type)!;
+    if (space === 'uniform' && !structs.has(type)) structs.set(plainUniform(m[7]), plainStruct(m[7], type, structs, consts, unlaid));
     const kind: WgslBindingKind = space === 'uniform' ? 'uniform'
       : space === 'storage' ? 'storage'
       : /^sampler/.test(type) ? 'sampler'
       : 'texture';
     bindings.push({
       group: Number(group[1]), binding: Number(binding[1]), name: m[7], kind,
-      ...(kind === 'uniform' && structs.has(type) ? { struct: type } : {}),
+      ...(kind === 'uniform' ? { struct: structs.has(type) ? type : plainUniform(m[7]) } : {}),
     });
   }
   if (!target.standardLayout) {

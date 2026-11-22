@@ -1,4 +1,5 @@
 import type { WeaselRendererOptions } from '../../rendererTypes';
+import { RENDERER_CONTEXT_ATTRIBUTES } from './contextAttributes';
 import { webglDevice, type WebGLDevice } from './WebGLDevice';
 
 /** The device over the context `opts` names or opens, and what its loss and
@@ -9,7 +10,7 @@ export function openWebGL(opts: Pick<WeaselRendererOptions, 'gl' | 'canvas'>): {
   if (!opts.gl && !opts.canvas) {
     throw new Error('WeaselRenderer requires either gl or canvas');
   }
-  const gl = opts.gl ?? opts.canvas!.getContext('webgl2', { stencil: true });
+  const gl = opts.gl ?? opts.canvas!.getContext('webgl2', RENDERER_CONTEXT_ATTRIBUTES);
   if (!gl) throw new Error('WeaselRenderer: WebGL2 not available');
   return { device: webglDevice(gl), lossTarget: (gl.canvas as Partial<EventTarget> | undefined) ?? null };
 }

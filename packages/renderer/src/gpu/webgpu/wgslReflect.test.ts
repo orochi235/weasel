@@ -197,3 +197,53 @@ struct Inner { flag: bool }
 `, STANDARD)).toThrow(/bool/);
   });
 });
+
+describe('reflectWgsl on @align and @size arguments', () => {
+  it('reads a suffixed literal, a hex literal, and a const', () => {
+    const s = reflectWgsl(`
+const A = 32;
+struct P { @size(16u) a: f32, @align(0x10) b: f32, @align(A) c: f32 }
+@group(1) @binding(0) var<uniform> p: P;
+`, STANDARD).structs.get('P')!;
+    expect(s.members.map((m) => m.offset)).toEqual([0, 16, 32]);
+    expect(s.size).toBe(64);
+  });
+
+  it('refuses an argument it cannot read, naming it', () => {
+    expect(() => reflectWgsl(`
+struct P { @size(2 * 8) a: f32 }
+@group(1) @binding(0) var<uniform> p: P;
+`, STANDARD)).toThrow(/@size\(2 \* 8\)/);
+  });
+});
+
+describe('reflectWgsl on a const declared inside a function', () => {
+  it('sizes a uniform array by the module-scope const of that name', () => {
+    const r = reflectWgsl(`
+const N = 8;
+struct P { w: array<vec4f, N> }
+@group(1) @binding(0) var<uniform> p: P;
+fn f() -> f32 { const N = 2; return f32(N); }
+`, STANDARD);
+    expect(r.structs.get('P')!.size).toBe(128);
+  });
+});
+
+describe('reflectWgsl on a uniform of a plain type', () => {
+  it('lays it out as one member named for the variable', () => {
+    const r = reflectWgsl(`
+@group(1) @binding(1) var<uniform> tint: vec4f;
+@group(1) @binding(2) var<uniform> weights: array<vec4f, 2>;
+`, STANDARD);
+    const [tint, weights] = r.bindings;
+    expect(tint).toMatchObject({ name: 'tint', kind: 'uniform' });
+    const block = createUniformBlock(r, tint.struct!);
+    expect(block.size).toBe(16);
+    expect(block.has('tint')).toBe(true);
+    expect(createUniformBlock(r, weights.struct!).size).toBe(32);
+  });
+
+  it('refuses one it cannot lay out, naming the binding', () => {
+    expect(() => reflectWgsl('@group(1) @binding(1) var<uniform> on: bool;', STANDARD)).toThrow(/uniform on: .*bool/);
+  });
+});
