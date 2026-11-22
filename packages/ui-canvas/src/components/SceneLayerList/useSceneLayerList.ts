@@ -146,10 +146,11 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
     });
 
   // The list's top level holds the run's children and the scene's own roots alike. A drag that stays there
-  // keeps its parent; one brought up from inside a container goes to the run, or with the pasteboard on, the root.
+  // keeps its parent; any other goes to the run, or with the pasteboard on, the root.
   const topParent = (ids: readonly string[]): NodeId | null => {
-    const from = scene.get(asNodeId(ids[0]!))?.parent ?? null;
-    if (from === null || from === run) return from;
+    const froms = new Set(ids.map((id) => scene.get(asNodeId(id))?.parent ?? null));
+    const [from] = froms;
+    if (froms.size === 1 && (from === null || from === run)) return from ?? null;
     if (run === null) return null;
     return scene.get(run)!.pageRun!.pasteboard === true ? null : run;
   };

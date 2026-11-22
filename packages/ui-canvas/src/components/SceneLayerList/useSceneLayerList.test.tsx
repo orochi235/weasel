@@ -274,6 +274,18 @@ describe('useSceneLayerList in a paged scene', () => {
     expect(scene.roots).toEqual([run, 'y', 'x']);
   });
 
+  it('sends a top-level drop of a root and a grouped node to one parent, whichever row leads', () => {
+    for (const order of [['x', 'gk'], ['gk', 'x']]) {
+      const { hook, scene, run } = paged();
+      scene.add({ id: asNodeId('x'), kind: 'mark', layer: 'main', pose: box, data: { name: 'x' } });
+      scene.add({ id: asNodeId('g'), kind: 'group', layer: 'main', parent: asNodeId('p1'), pose: box, data: { name: 'g' } });
+      scene.add({ id: asNodeId('gk'), kind: 'mark', layer: 'main', parent: asNodeId('g'), pose: box, data: { name: 'gk' } });
+      hook.rerender();
+      hook.result.current.onReorder({ ids: order, parentId: null, index: 0 });
+      expect([scene.get(asNodeId('x'))!.parent, scene.get(asNodeId('gk'))!.parent]).toEqual([run, run]);
+    }
+  });
+
   it('places a top-level drop where it lands when the run shares the top level with a pasteboard root', () => {
     const { hook, scene, run } = paged(true);
     scene.add({ id: asNodeId('k'), kind: 'mark', layer: 'main', parent: run, pose: box, data: { name: 'k' } });
