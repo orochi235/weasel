@@ -81,9 +81,9 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
   const removable = !props.disabled && !props.readOnly && stops.length > MIN_STOPS;
   // Handles are keyed by index, so focus left on the track would stay on whatever stop shifts into its place.
   const removed = (index: number, refocus: boolean): void => {
-    const { next } = afterRemoval(index);
+    const { next, lost } = afterRemoval(index);
     const focus = refocus || (trackRef.current?.contains(document.activeElement) ?? false);
-    focusNext.request(next, stops.length - 1, { focus, report: false });
+    focusNext.request(next, stops.length - 1, { focus, report: lost });
   };
   const remove = (index: number, refocus: boolean): void => {
     if (!removable) return;

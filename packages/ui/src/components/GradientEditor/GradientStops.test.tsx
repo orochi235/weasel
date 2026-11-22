@@ -320,6 +320,13 @@ describe('GradientEditor stops', () => {
     });
   });
 
+  it('reports the selection moving when the selected stop at index 0 is removed', () => {
+    const onSelectionChange = vi.fn();
+    renderWithIcons(<Live initial={THREE} onSelectionChange={onSelectionChange} />);
+    fireEvent.keyDown(handle(1), { key: 'Delete' });
+    expect(onSelectionChange).toHaveBeenCalledWith(0);
+  });
+
   it('reports no selection change when a stop after the selected one is removed', () => {
     const onSelectionChange = vi.fn();
     renderWithIcons(<Live initial={THREE} onSelectionChange={onSelectionChange} />);
