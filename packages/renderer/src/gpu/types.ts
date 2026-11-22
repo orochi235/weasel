@@ -88,7 +88,8 @@ export interface GpuTargetDesc {
   readonly samples?: number;
   /** A stencil attachment: clips and even-odd fills need one. */
   readonly stencil?: boolean;
-  /** A second color attachment the pick ids are drawn to. */
+  /** A second color attachment the pick ids are drawn to; single-sampled
+   *  targets only, and `createTarget` throws for a multisampled one. */
   readonly ids?: boolean;
   /** How the color texture samples, for a single-sampled target. */
   readonly filter?: GpuFilter;

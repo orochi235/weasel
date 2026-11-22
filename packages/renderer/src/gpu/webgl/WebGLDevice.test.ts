@@ -229,6 +229,11 @@ describe('WebGLDevice targets', () => {
     expect(target.color).not.toBeNull();
     expect(names(rec)).not.toContain('renderbufferStorageMultisample');
   });
+
+  it('refuses a multisampled target with ids, which would be an incomplete framebuffer', () => {
+    const { gpu } = setup();
+    expect(() => gpu.createTarget({ width: 4, height: 4, samples: 4, ids: true })).toThrow('multisampled target cannot have ids');
+  });
 });
 
 describe('WebGLDevice resolve', () => {

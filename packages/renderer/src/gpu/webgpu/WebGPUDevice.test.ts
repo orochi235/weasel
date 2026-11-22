@@ -133,6 +133,12 @@ describe('a WebGPU target asked for a sample count the device does not make', ()
     const one = gpu.createTarget({ width: 4, height: 4, samples: 1 });
     expect([one.samples, one.bytes, one.color !== null]).toEqual([0, 16 * 4, true]);
   });
+
+  it('refuses a multisampled target with ids, whose attachments could not share a pass', () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    expect(() => gpu.createTarget({ width: 4, height: 4, samples: 4, ids: true })).toThrow('multisampled target cannot have ids');
+  });
 });
 
 describe('WebGPU renderers built and freed on one shared device', () => {
