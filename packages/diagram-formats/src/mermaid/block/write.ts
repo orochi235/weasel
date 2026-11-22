@@ -86,6 +86,7 @@ class BlockWriter {
     const body = dash !== undefined ? '-.-' : (width ?? 0) >= 3 ? '==' : '--';
     const warn = (m: string) => this.out.warnings.add(m);
     dropPorts(e, warn);
+    if (e.colors?.stroke !== undefined || e.colors?.label !== undefined) warn('Mermaid block diagram links have no styles; their colors were dropped.');
     const end = arrowHead(markerEnd, 'block diagram', warn);
     const start = arrowHead(markerStart, 'block diagram', warn);
     const tail = end ? '>' : body === '--' ? '-' : body === '==' ? '=' : '';

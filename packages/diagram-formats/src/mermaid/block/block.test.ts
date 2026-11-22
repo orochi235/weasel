@@ -161,4 +161,11 @@ describe('writing a Mermaid block diagram', () => {
     const { warnings } = writeBlockDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { markerEnd: 'diamond' } }] } }] });
     expect(warnings).toContain('Mermaid block diagram links end in arrows; other ends were written as arrows.');
   });
+
+  it('warns that a link\'s colors were dropped', () => {
+    const { warnings } = writeBlockDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { stroke: '#f00' } }],
+    } }] });
+    expect(warnings).toContain('Mermaid block diagram links have no styles; their colors were dropped.');
+  });
 });
