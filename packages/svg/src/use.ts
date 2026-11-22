@@ -48,7 +48,9 @@ export function parseUse(
   }
   const m = spaceOfUse(el, ctm, style, onWarn);
   const inner = deriveStyle(style, el);
-  if (ownValue(target, 'display') === 'none') return null;
+  // `draw` drops or keeps a hidden target as it would any element; a symbol's children are drawn without it.
+  const symbol = target.tagName.toLowerCase() === 'symbol';
+  if (symbol && ownValue(target, 'display') === 'none') return null;
   const doc = el.ownerDocument;
   const left = budgets.get(doc) ?? USE_ELEMENT_BUDGET;
   const cost = 1 + target.getElementsByTagName('*').length;
@@ -62,7 +64,7 @@ export function parseUse(
   budgets.set(doc, left - cost);
   drawing.push(el);
   try {
-    if (target.tagName.toLowerCase() !== 'symbol') return draw(target, m, inner);
+    if (!symbol) return draw(target, m, inner);
     if (target.hasAttribute('viewBox')) onWarn('<symbol> viewBox is not modeled; its children are not rescaled');
     const symbolStyle = deriveStyle(inner, target);
     return Array.from(target.children).flatMap((c) => draw(c, m, symbolStyle) ?? []);

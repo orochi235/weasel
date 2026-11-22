@@ -9,6 +9,12 @@ describe('parseViewBoxAttr', () => {
     expect(parseViewBoxAttr('.5.5 10,10')).toEqual({ x: 0.5, y: 0.5, width: 10, height: 10 });
   });
 
+  it('rejects a negative width or height', () => {
+    expect(parseViewBoxAttr('0 0 100-50')).toBeUndefined();
+    expect(parseViewBoxAttr('0 0 -1 5')).toBeUndefined();
+    expect(parseViewBoxAttr('0 0 0 5')).toEqual({ x: 0, y: 0, width: 0, height: 5 });
+  });
+
   it('rejects a number with trailing junk', () => {
     expect(parseViewBoxAttr('10px 0 5 5')).toBeUndefined();
   });

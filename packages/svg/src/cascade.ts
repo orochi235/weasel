@@ -16,7 +16,7 @@ import {
   DEFAULT_MEDIA_ENVIRONMENT, evaluateMediaQuery, mediaEnvironmentFor, type SvgMediaEnvironment,
 } from './media';
 import {
-  INHERITED_PROPERTIES, isDeclarationInvalid, numericFontWeight, PROPERTIES, readProperty, type InheritedPropertyName, type PropertyName, type PropertyValue, type Warn,
+  CSS_WIDE_KEYWORDS, INHERITED_PROPERTIES, isDeclarationInvalid, numericFontWeight, PROPERTIES, readProperty, type InheritedPropertyName, type PropertyName, type PropertyValue, type Warn,
 } from './properties';
 import {
   CascadeLayers, parseStylesheet, type StyleRule, type StylesheetContext,
@@ -191,8 +191,17 @@ const cascaded = createPart((el: Element): ReadonlyMap<string, string> => {
     enterLayer();
     inline.forEach(declare);
   }
+  for (const prop of UNREAD_PAINT_UNSETS) {
+    const value = out.get(prop);
+    if (value == null || CSS_WIDE_KEYWORDS.has(value.trim().toLowerCase()) || readProperty(prop, value) !== undefined) continue;
+    out.set(prop, 'unset');
+    sheet?.onWarn?.(`${prop}: ${value} is not a color this reader can read; it is read as unset`);
+  }
   return out;
 });
+
+/** Inherited paints kept by the cascade as a function it might not know, read as `unset` when unreadable. */
+const UNREAD_PAINT_UNSETS = ['fill', 'stroke', 'color'] as const;
 
 /**
  * Resolve an element's own (cascaded, pre-inheritance) value for a property:

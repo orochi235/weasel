@@ -80,8 +80,9 @@ export function specificity(selector: string): Specificity {
         }
       }
     } else if (/[a-zA-Z_\\-]/.test(ch) || ch.charCodeAt(0) > 0x7f) {
-      c++;
       i = identEnd(s, i);
+      // A namespace prefix (`svg|rect`) carries no specificity of its own.
+      if (s[i] !== '|' || s[i + 1] === '=') c++;
     } else {
       i++;
     }

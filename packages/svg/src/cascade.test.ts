@@ -105,6 +105,10 @@ describe('specificity', () => {
     expect(specificity('rect')).toEqual([0, 0, 1]);
     expect(specificity('.a')).toEqual([0, 1, 0]);
     expect(specificity('#x')).toEqual([1, 0, 0]);
+    expect(specificity('svg|rect')).toEqual([0, 0, 1]);
+    expect(specificity('*|rect')).toEqual([0, 0, 1]);
+    expect(specificity('|rect.a')).toEqual([0, 1, 1]);
+    expect(specificity('rect[xlink|href]')).toEqual([0, 1, 1]);
     expect(specificity('g > rect.a[fill="#f00"]:first-child')).toEqual([0, 3, 2]);
     expect(specificity('*')).toEqual([0, 0, 0]);
     expect(specificity('g#x .a .b rect')).toEqual([1, 2, 2]);
@@ -415,5 +419,22 @@ describe('declarations CSS rejects', () => {
     const initial = fillOf(`<svg ${NS} fill="red"><rect width="1" height="1" style="fill: initial"/></svg>`);
     expect(initial.fill).toEqual({ kind: 'solid', color: '#000000' });
     expect(initial.warnings).toEqual([]);
+  });
+});
+
+describe('a paint function the reader cannot read', () => {
+  it('reads as unset, so the element takes its parent paint rather than black', () => {
+    const { nodes, warnings } = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><g fill="red" stroke="blue">'
+      + '<rect width="1" height="1" fill="rgb(255,0" stroke="color(foo 1 2)"/></g>'
+      + '<rect width="1" height="1" style="stroke: var(--accent)"/></svg>');
+    const inGroup = (nodes[0] as SvgGroupNode).children[0] as SvgPathNode;
+    expect(inGroup.fill).toEqual({ kind: 'solid', color: '#ff0000' });
+    expect(inGroup.stroke?.paint).toEqual({ kind: 'solid', color: '#0000ff' });
+    expect((nodes[1] as SvgPathNode).stroke).toBeUndefined();
+    expect(warnings).toEqual([
+      'fill: rgb(255,0 is not a color this reader can read; it is read as unset',
+      'stroke: color(foo 1 2) is not a color this reader can read; it is read as unset',
+      'stroke: var(--accent) is not a color this reader can read; it is read as unset',
+    ]);
   });
 });

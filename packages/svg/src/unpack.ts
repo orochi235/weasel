@@ -104,17 +104,19 @@ export function fillDataFromSvg(
 }
 
 /** Lower an `SvgStroke` onto the leaf's `data.stroke`, or `undefined` for an
- *  unpainted one. The paint is rebased onto the leaf's own box the same way
+ *  unpainted one without markers; an unpainted one with markers keeps them and
+ *  has no `paint`. The paint is rebased onto the leaf's own box the same way
  *  a fill is. */
 export function strokeDataFromSvg(
   stroke: SvgStroke | undefined,
   box: SvgDraftBounds,
 ): Stroke | undefined {
-  if (!stroke || stroke.paint.kind === 'none') return undefined;
-  const paint = fillDataFromSvg(stroke.paint, box);
-  if (paint === undefined || paint === null) return undefined;
+  if (!stroke) return undefined;
+  const paint = stroke.paint.kind === 'none' ? null : fillDataFromSvg(stroke.paint, box);
+  const marked = stroke.markerStart !== undefined || stroke.markerMid !== undefined || stroke.markerEnd !== undefined;
+  if ((paint === undefined || paint === null) && !marked) return undefined;
   return {
-    paint: stroke.opacity !== undefined ? { ...paint, opacity: stroke.opacity } : paint,
+    ...(paint ? { paint: stroke.opacity !== undefined ? { ...paint, opacity: stroke.opacity } : paint } : {}),
     width: stroke.width,
     ...(stroke.cap !== undefined ? { cap: stroke.cap } : {}),
     ...(stroke.join !== undefined ? { join: stroke.join } : {}),

@@ -156,6 +156,13 @@ describe('gradient collection', () => {
     );
     expect(r.warnings).toContain('unsupported <defs> child: <filter>');
   });
+
+  it('says nothing of a <title>, <desc>, or <metadata> in <defs>, which nothing draws', () => {
+    const r = parseSvg(
+      `<svg xmlns="http://www.w3.org/2000/svg"><defs><title>Icons</title><desc>d</desc><metadata/></defs></svg>`,
+    );
+    expect(r.warnings).toEqual([]);
+  });
 });
 
 describe('gradient serialization', () => {
