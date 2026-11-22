@@ -183,3 +183,12 @@ describe('reading invisible DOT items', () => {
     expect(warnings).toContain('DOT invisible nodes and edges were left out: c, a->b.');
   });
 });
+
+describe('reading DOT points', () => {
+  it('reads a point as a small filled circle with no label, the smaller of its sizes across', () => {
+    const data = page('digraph { node [shape=point]; a -> b; c [width=0.2, height=0.1]; d [color=red] }').data;
+    expect(node(data, 'a')).toMatchObject({ lines: [], outline: 'ellipse', width: 3.6, height: 3.6, colors: { fill: 'black' } });
+    expect(node(data, 'c')).toMatchObject({ width: 7.2, height: 7.2 });
+    expect(node(data, 'd').colors).toMatchObject({ fill: 'red', stroke: 'red' });
+  });
+});

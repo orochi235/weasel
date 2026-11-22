@@ -3702,3 +3702,6 @@ Calls the lanes made without a ruling:
   to an invisible node, with one warning naming them, as draw-style XML leaves out hidden shapes. Invisible nodes still
   count toward the page's size when every node has a `pos`. Keeping them drawn, or drawn with no stroke and no fill, was
   the alternative.
+- 2026-11-22 (the fixer's call): the DOT reader reads a `shape=point` node as Graphviz draws one: no label, whatever
+  `label` says, a circle the smaller of its `width` and `height` across (0.05in when neither is set), filled with its
+  `fillcolor`, else its `color`, else black.

@@ -119,9 +119,9 @@ class DotReader {
   }
 }
 
-function nodeColors(r: DotReader, attrs: Attrs, styles: readonly string[]): Partial<NodeStyle> | undefined {
+function nodeColors(r: DotReader, attrs: Attrs, styles: readonly string[], unsetFill: string): Partial<NodeStyle> | undefined {
   const stroke = colorAttr(r, attrs, 'color');
-  const fill = styles.includes('filled') ? colorAttr(r, attrs, 'fillcolor') ?? stroke ?? 'lightgrey' : undefined;
+  const fill = styles.includes('filled') ? colorAttr(r, attrs, 'fillcolor') ?? stroke ?? unsetFill : undefined;
   const text = colorAttr(r, attrs, 'fontcolor');
   const width = numberAttr(r, attrs, 'penwidth');
   const dash = dashOf(styles);
@@ -143,12 +143,15 @@ function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
     r.warnings.list('DOT shapes read as rectangles', shape);
     outline = 'rect';
   }
-  const colors = nodeColors(r, attrs, styles);
-  const width = numberAttr(r, attrs, 'width');
-  const height = numberAttr(r, attrs, 'height');
+  const point = shape.toLowerCase() === 'point';
+  const colors = nodeColors(r, attrs, point ? [...styles, 'filled'] : styles, point ? 'black' : 'lightgrey');
+  let width = numberAttr(r, attrs, 'width');
+  let height = numberAttr(r, attrs, 'height');
+  // Graphviz draws a point with no label, as a circle the smaller of its sizes across, 0.05in when neither is set.
+  if (point) width = height = Math.min(width ?? height ?? 0.05, height ?? width ?? 0.05);
   return {
     id,
-    lines: labelLines(attrs.get('label') ?? { value: '\\N' }, id, r.graph.id ?? ''),
+    lines: point ? [] : labelLines(attrs.get('label') ?? { value: '\\N' }, id, r.graph.id ?? ''),
     outline,
     ...(width !== undefined ? { width: round(width * POINTS_PER_INCH) } : {}),
     ...(height !== undefined ? { height: round(height * POINTS_PER_INCH) } : {}),
