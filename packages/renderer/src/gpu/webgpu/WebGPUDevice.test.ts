@@ -256,3 +256,27 @@ describe('a WebGPU target with no area', () => {
     expect(sizes.filter((s) => s[0] < 1 || s[1] < 1)).toEqual([]);
   });
 });
+
+describe('a WGSL program holding a texture since freed', () => {
+  const wgsl = [
+    '@group(1) @binding(0) var u_tex: texture_2d<f32>;',
+    '@group(1) @binding(1) var u_tex_sampler: sampler;',
+    '@vertex fn vs(@location(0) a_position: vec2f) -> @builtin(position) vec4f { return vec4f(a_position, 0.0, 1.0); }',
+    '@fragment fn fs() -> @location(0) vec4f { return textureSample(u_tex, u_tex_sampler, vec2f(0.0)); }',
+  ].join('\n');
+
+  it('samples nothing in its place, as with none set, rather than a destroyed texture that voids the submit', () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const program = gpu.createProgram({ wgsl }) as WgpuProgram;
+    const texture = gpu.createTexture('rgba8', { min: 'nearest', mag: 'nearest', wrapS: 'clamp', wrapT: 'clamp' }, { width: 2, height: 2, data: null });
+    const target = gpu.createTarget({ width: 2, height: 2 }) as WgpuTarget;
+    program.setTexture('u_tex', texture);
+    expect(program.boundTextures(1, new Set())).toContain(texture);
+    gpu.deleteTexture(texture);
+    expect(program.boundTextures(1, new Set())).not.toContain(texture);
+    program.setTexture('u_tex', target.color);
+    gpu.deleteTarget(target);
+    expect(program.boundTextures(1, new Set())).not.toContain(target.color);
+  });
+});

@@ -286,13 +286,13 @@ export class WgpuProgram implements GpuProgram {
   }
 
   /** Every texture group `g` samples, the dummy where none is set or the one
-   *  set is `attached` to the pass drawing. */
+   *  set is freed or `attached` to the pass drawing. */
   boundTextures(g: number, attached: ReadonlySet<WgpuTexture>): WgpuTexture[] {
     const out: WgpuTexture[] = [];
     for (const b of this.groups[g]) {
       if (b.kind === 'uniform') continue;
       const t = this.textures.get(b.texture!) ?? null;
-      out.push(t && !attached.has(t) ? t : this.host.dummyTexture);
+      out.push(t && !t.deleted && !attached.has(t) ? t : this.host.dummyTexture);
     }
     return out;
   }

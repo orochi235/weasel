@@ -136,7 +136,9 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
   }
 
   deleteTexture(texture: GpuTexture): void {
-    this.frame.retire((texture as res.WgpuTexture).gpu);
+    const t = texture as res.WgpuTexture;
+    t.deleted = true;
+    this.frame.retire(t.gpu);
   }
 
   createTarget(desc: GpuTargetDesc): GpuTarget {

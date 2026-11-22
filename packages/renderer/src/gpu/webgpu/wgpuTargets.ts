@@ -86,6 +86,7 @@ export function createTarget(host: ResourceHost, desc: GpuTargetDesc): WgpuTarge
 }
 
 export function deleteTarget(host: ResourceHost, target: WgpuTarget): void {
+  for (const t of [target.color, target.ids]) if (t) t.deleted = true;
   for (const t of [target.color?.gpu, target.ids?.gpu, target.msaa, target.depth, target.resolved]) if (t) host.retire(t);
 }
 
