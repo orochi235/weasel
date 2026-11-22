@@ -81,6 +81,7 @@ describe('WebGLDevice draw state', () => {
 
   it('zeroes only the stencil bits asked for', () => {
     const { rec, gpu } = setup();
+    gpu.beginPass({ target: null, viewport: { x: 0, y: 0, width: 4, height: 4 } });
     rec.reset();
     gpu.clearStencilBits(0x01);
     expect(rec.calls.map((c) => [c.name, ...c.args])).toEqual([
@@ -224,6 +225,26 @@ describe('WebGLDevice read-backs', () => {
       expect(names(rec).indexOf('pixelStorei')).toBeLessThan(names(rec).indexOf('readPixels'));
     }
     expect(gl.PIXEL_PACK_BUFFER).toBe(0x88EB);
+  });
+});
+
+describe('WebGLDevice calls that rebind the framebuffer inside a pass', () => {
+  it('draws into and clears the stencil of the pass target after a read-back or a new target', () => {
+    const { rec, gpu } = setup();
+    const { geometry, state } = drawable(gpu);
+    const target = gpu.createTarget({ width: 4, height: 4, stencil: true, ids: true });
+    const rect = { x: 0, y: 0, width: 1, height: 1 };
+    gpu.beginPass({ target, viewport: { x: 0, y: 0, width: 4, height: 4 } });
+    const bound = () => argsOf(rec, 'bindFramebuffer').at(-1);
+    const passFbo = bound();
+    for (const rebind of [() => gpu.readCanvasSync(rect), () => gpu.createTarget({ width: 2, height: 2 })]) {
+      rebind();
+      gpu.clearStencilBits(0x01);
+      expect(bound()).toEqual(passFbo);
+      rebind();
+      gpu.draw(state({ ids: true }), geometry, 3);
+      expect(bound()).toEqual(passFbo);
+    }
   });
 });
 
