@@ -2,7 +2,7 @@ import {
   AUTO_POSE_DESCRIPTOR, composesFrames, heldInFrame, poseDescriptorForNode, rebaseLocalPose, scenePoseAdapter,
   visualBoundsViaDescriptor, worldPoseOf, type AnyScene, type NodeId,
 } from '@weasel-js/core';
-import type { Point } from '@weasel-js/geom';
+import { multiply, transformPoint, type Affine, type Point } from '@weasel-js/geom';
 
 /** `world` as a pose stored under `parent`, so the node draws there, or `null`
  *  when `parent`'s frame is singular and no stored pose does. */
@@ -44,25 +44,33 @@ export function restorer(scene: AnyScene, id: NodeId): () => void {
   });
 }
 
+const IDENTITY: Affine = [1, 0, 0, 1, 0, 0];
+
 /**
  * How far from `center`, a shown world point, anything inside `id` draws: the farthest corner of
- * any descendant's drawn box, rotation included. A symmetry's copies turn and
- * reflect about `center`, so they reach no further.
+ * any descendant's drawn box, rotation included, and of every copy a group nested inside draws.
+ * The copies `id` itself draws turn and reflect about `center`, so they reach no further.
  */
 export function reachFrom(scene: AnyScene, id: NodeId, center: Point): number {
   let reach = 0;
-  const walk = (at: NodeId): void => {
+  const walk = (at: NodeId, copies: readonly Affine[]): void => {
     for (const c of scene.childrenOf(at)) {
       const node = scene.get(c);
       if (!node) continue;
-      const b = visualBoundsViaDescriptor(worldPoseOf(scene, c, 'shown'), poseDescriptorForNode(AUTO_POSE_DESCRIPTOR, node));
-      const dx = Math.max(Math.abs(b.x - center.x), Math.abs(b.x + b.width - center.x));
-      const dy = Math.max(Math.abs(b.y - center.y), Math.abs(b.y + b.height - center.y));
-      const r = Math.hypot(dx, dy);
-      if (Number.isFinite(r)) reach = Math.max(reach, r);
-      walk(c);
+      const shown = worldPoseOf(scene, c, 'shown');
+      const b = visualBoundsViaDescriptor(shown, poseDescriptorForNode(AUTO_POSE_DESCRIPTOR, node));
+      const corners = [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]] as const;
+      for (const m of copies) {
+        for (const [x, y] of corners) {
+          const [px, py] = transformPoint(m, x, y);
+          const r = Math.hypot(px - center.x, py - center.y);
+          if (Number.isFinite(r)) reach = Math.max(reach, r);
+        }
+      }
+      const own = node.kind === 'group' && node.copiesFromPose ? node.copiesFromPose(shown, node) ?? [] : [];
+      walk(c, own.length === 0 ? copies : copies.flatMap((m) => [m, ...own.map((k) => multiply(m, k))]));
     }
   };
-  walk(id);
+  walk(id, [IDENTITY]);
   return reach;
 }

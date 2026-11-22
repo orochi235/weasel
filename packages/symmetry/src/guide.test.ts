@@ -52,12 +52,18 @@ describe('createSymmetryGuideLayer', () => {
     expect(layer.hitTest!(120, 50, undefined, VIEW, DIMS)).toBeNull();
   });
 
-  it('draws the handle a press takes on top where two overlap', () => {
-    // A step shorter than the hit radius puts the step handle over the center, and a press takes the step.
+  it('gives a press the nearest handle in reach, so a short step leaves the center grabbable', () => {
+    // A step shorter than the hit radius puts the step handle 2 px from the center.
     const s = spec({ kind: 'repeat', angle: 0, spacing: 1 });
     const layer = createSymmetryGuideLayer(source(s));
-    const hit = layer.hitTest!(C.x, C.y, undefined, VIEW, DIMS);
-    expect((hit?.initialScratch as SymmetryHandlePress).handle).toBe('step');
+    expect((layer.hitTest!(C.x, C.y, undefined, VIEW, DIMS)?.initialScratch as SymmetryHandlePress).handle).toBe('center');
+    expect((layer.hitTest!(C.x + 1, C.y, undefined, VIEW, DIMS)?.initialScratch as SymmetryHandlePress).handle).toBe('step');
+    expect((layer.hitTest!(C.x + 0.5, C.y, undefined, VIEW, DIMS)?.initialScratch as SymmetryHandlePress).handle).toBe('step');
+  });
+
+  it('draws the step on top of the center, as a press on a point between them takes it', () => {
+    const s = spec({ kind: 'repeat', angle: 0, spacing: 1 });
+    const layer = createSymmetryGuideLayer(source(s));
     const dots = layer.draw(undefined, VIEW, DIMS).filter((c) => c.kind === 'path' && 'fill' in c && c.fill && c.stroke);
     const top = dots.at(-1)!;
     const b = boundsOfPath((top as { path: Parameters<typeof boundsOfPath>[0] }).path);
@@ -132,5 +138,15 @@ describe('the guide\'s lines', () => {
       return b.x <= 0 && b.x + b.width >= 400 && b.y === 200;
     });
     expect(onCanvas).toHaveLength(1);
+  });
+});
+
+describe('createSymmetryGuideLayer, repeat line', () => {
+  it('draws a repeat\'s half-line toward its copies when its spacing is negative', () => {
+    const draws = createSymmetryGuideLayer(source(spec({ kind: 'repeat', angle: 0, spacing: -30, count: 3 }))).draw(undefined, VIEW, DIMS);
+    const lines = draws.filter((d) => d.kind === 'path' && !('fill' in d && d.fill) && !d.stroke?.dash);
+    const half = lines.map((d) => boundsOfPath((d as { path: Parameters<typeof boundsOfPath>[0] }).path)).find((b) => b.height === 0 && b.width > 60)!;
+    expect(half.x).toBeCloseTo(0);
+    expect(half.x + half.width).toBeCloseTo(100);
   });
 });

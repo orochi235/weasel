@@ -161,7 +161,7 @@ export function createSymmetryGuideLayer(source: SymmetryGuideSource, style: Sym
         for (let k = 0; k < n; k++) across(spec.angle + (2 * Math.PI * k) / n, faint, true);
       }
       if (spec.kind === 'repeat') {
-        across(spec.angle, faint, true);
+        across(spec.spacing < 0 ? spec.angle + Math.PI : spec.angle, faint, true);
         for (const m of SYMMETRY_KINDS.repeat.transforms(spec, center)) {
           const [wx, wy] = transformPoint(m, center.x, center.y);
           const [x, y] = worldToScreen(wx, wy, t);
@@ -174,7 +174,7 @@ export function createSymmetryGuideLayer(source: SymmetryGuideSource, style: Sym
         if (h.handle === 'angle') out.push(line({ x: cx, y: cy }, h.at, color));
         if (h.handle === 'step' || h.handle === 'row') out.push(line({ x: cx, y: cy }, h.at, faint));
       }
-      // Bottommost first, so the handle a press takes is the one drawn on top.
+      // Bottommost first, so where two handles sit on one point the one a press takes is drawn on top.
       for (const h of [...handles].reverse()) {
         out.push({
           kind: 'path',
@@ -189,12 +189,19 @@ export function createSymmetryGuideLayer(source: SymmetryGuideSource, style: Sym
       const g = source.current();
       if (!g) return null;
       const [px, py] = worldToScreen(worldX, worldY, viewToTransform(view));
+      // The nearest handle in reach, and on a tie the one drawn on top.
+      let best: SymmetryHandle | null = null;
+      let bestD = hitR;
       for (const h of guideHandles(g.spec, g.center, view, knob, g.reach ?? 0, hitR)) {
-        if (Math.hypot(px - h.at.x, py - h.at.y) > hitR) continue;
-        const press: SymmetryHandlePress = { handle: h.handle, group: g.group };
-        return { strength: 'exclusive', cursor: CURSORS[h.handle], initialScratch: press };
+        const d = Math.hypot(px - h.at.x, py - h.at.y);
+        if (d < bestD || (best === null && d <= bestD)) {
+          best = h.handle;
+          bestD = d;
+        }
       }
-      return null;
+      if (best === null) return null;
+      const press: SymmetryHandlePress = { handle: best, group: g.group };
+      return { strength: 'exclusive', cursor: CURSORS[best], initialScratch: press };
     },
   };
 }
