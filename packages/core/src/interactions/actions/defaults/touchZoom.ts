@@ -50,6 +50,8 @@ export function createTouchZoomAction(
 
         const multiTouch = ctx.multiTouch;
         if (!multiTouch) return {};
+        // Two fingers catch the view, as a drag-pan press does.
+        view.stopDecay?.();
 
         const startSpread = multiTouch.spread > 0 ? multiTouch.spread : 1;
 

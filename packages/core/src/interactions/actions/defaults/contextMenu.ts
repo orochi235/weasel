@@ -31,14 +31,18 @@ export function keyboardAnchor(deps: ActionDeps): Point | null {
  * The hit a menu is picked for, from the dispatcher's own classifier (the
  * `hitAt` and `kindOfNode` deps). A shape under `at` counts as selected, since
  * opening selects it first, and `select` names it when it is not yet; with no
- * `at`, the current selection. Without a classifier wired, a pointer hit names
- * no body at all, and without a selection neither does a keyboard one.
+ * `at`, the current selection. A shape the classifier names no node for stays
+ * unselected. Without a classifier wired, a pointer hit names no body at all,
+ * and without a selection neither does a keyboard one.
  */
 export function menuHitFor(deps: ActionDeps, at?: Point): { hit: MenuHit; select?: string } {
   if (at) {
     const hit = deps.hitAt?.(at);
     if (!hit) return { hit: {} };
     if (hit.bodyTarget === 'empty') return { hit: { bodyTarget: 'empty' } };
+    if (hit.bodyTarget === 'unselected-body' && hit.id === undefined) {
+      return { hit: { bodyTarget: 'unselected-body', bodyKind: hit.bodyKind } };
+    }
     const target = hit.bodyTarget === 'unselected-body' && hit.id !== undefined ? groupFor(deps, hit.id) : undefined;
     const bodyKind = (target !== undefined ? deps.kindOfNode?.(target) : undefined) ?? hit.bodyKind;
     return { hit: { bodyTarget: 'selected-body', bodyKind }, ...(target !== undefined ? { select: target } : {}) };
@@ -76,11 +80,14 @@ export function openContextMenu(
   if (typeof p.clientX === 'number' && p.world) {
     const world = p.world;
     const { hit, select } = menuHitFor(deps, world);
+    const before = select && deps.selection ? [...deps.selection.get()] : undefined;
     if (select) deps.selection?.set([asNodeId(select)]);
-    return host.open({
+    const opened = host.open({
       hit,
       client: { x: p.clientX, y: p.clientY as number }, world, source: 'pointer',
     });
+    if (!opened && before) deps.selection?.set(before.map(asNodeId));
+    return opened;
   }
   const world = anchorOf(deps);
   const client = world && deps.worldToClient?.(world.x, world.y);
@@ -107,5 +114,5 @@ export const contextMenuAction: Action & { requires: string[] } = {
   enabled: (deps, at) => (deps?.menuHost?.has({ hit: menuHitFor(deps, at).hit, client: { x: 0, y: 0 }, world: at })
     ? true
     : ActionDisabledReason.NotApplicable),
-  invoker: { timing: 'immediate', run: (deps, params) => { openContextMenu(deps, params); } },
+  invoker: { timing: 'immediate', run: (deps, params) => (openContextMenu(deps, params) ? undefined : 'pass') },
 };

@@ -30,7 +30,7 @@ const ZOOM_ID = 'lab.zoom';
 type ZoomKind = 'in' | 'out' | 'reset';
 
 interface KeyBinding {
-  spec: { kind: string; key?: string; mods?: { mod?: boolean; shift?: boolean | 'optional' } };
+  spec: { kind: string; key?: string | readonly string[]; mods?: { mod?: boolean; shift?: boolean | 'optional' } };
   opts?: { id?: string; params?: { kind?: string } };
 }
 

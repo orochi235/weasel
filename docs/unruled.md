@@ -3756,3 +3756,9 @@ Calls the lanes made without a ruling:
   move, sends `onInput` the tracks it began from and then calls `onCancel`, as a canceled drag does and as `ColorField`
   does for a pick closed on its starting color. A drag that previewed nothing calls nothing. Calling nothing at all
   was the alternative.
+## Audit round seventy-one (2026-11-22): core's default actions
+
+- 2026-11-22 (the fixer's call): `container.scroll` leaves a wheel to the node the `hitAt` classifier finds at the
+  point when that node is painted over a scroll container rather than inside it or holding it: only the containers
+  holding that node scroll, and with none the wheel pans the view. Without `hitAt` wired, every container under the
+  point is reached, painted over or not. Testing occlusion by bounds inside the action was the alternative.

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { actionItems, actionShortcuts } from '@weasel-js/routing';
+import { matchSpec, type GestureSpec, type InputEvent } from '@weasel-js/gestures';
 import { viewportZoomAction, createViewportZoomAction } from './viewportZoom';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
@@ -51,7 +52,7 @@ describe('viewportZoomAction descriptor', () => {
     expect(specs).toContainEqual({ kind: 'pinch' });
     expect(specs).toContainEqual({ kind: 'wheel', mods: { mod: true } });
     expect(specs).toContainEqual({ kind: 'wheel', mods: { ctrl: true } });
-    expect(specs).toContainEqual({ kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } });
+    expect(specs).toContainEqual({ kind: 'key', key: ['=', '+'], mods: { mod: true, shift: 'optional' } });
     expect(specs).toContainEqual({ kind: 'key', key: '-', mods: { mod: true } });
     expect(specs).toContainEqual({ kind: 'key', key: '0', mods: { mod: true } });
   });
@@ -68,6 +69,21 @@ describe('viewportZoomAction descriptor', () => {
 // ---------------------------------------------------------------------------
 
 describe('viewportZoomAction invoker', () => {
+  it.each([
+    [{ kind: 'wheel', deltaY: -100, deltaX: 0, clientX: 0, clientY: 0 }],
+    [{ kind: 'pinch', scale: 1.1, clientX: 0, clientY: 0 }],
+    [{ kind: 'in' }],
+    [{ kind: 'out' }],
+    [{ kind: 'reset' }],
+    [{ kind: 'fit' }],
+  ])('stops a running pan coast on %o', (params) => {
+    const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    let stopped = 0;
+    view.stopDecay = () => { stopped++; };
+    getImmediateInvoker(viewportZoomAction).run({ view }, params as never);
+    expect(stopped).toBe(1);
+  });
+
   describe("kind: 'wheel'", () => {
     it('zooms in when deltaY is negative (scroll up)', () => {
       const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
@@ -397,6 +413,18 @@ describe('viewport.zoom variants', () => {
       ['viewport.zoom:reset', 'Reset Zoom', { kind: 'reset' }],
       ['viewport.zoom:fit', 'Fit Content', { kind: 'fit' }],
     ]);
+  });
+
+  it.each([
+    ['Cmd+=', { key: '=', code: 'Equal', shiftKey: false }],
+    ['Cmd+Shift+= (Cmd++)', { key: '+', code: 'Equal', shiftKey: true }],
+    ['Cmd++ on a layout with its own + key', { key: '+', code: 'BracketRight', shiftKey: false }],
+    ['Cmd+numpad +', { key: '+', code: 'NumpadAdd', shiftKey: false }],
+  ])('zooms in on %s', (_name, keys) => {
+    const bindings = createViewportZoomAction().defaultBinding as Array<{ spec: GestureSpec; opts: { id: string } }>;
+    const binding = bindings.find((b) => b.opts.id === 'viewport.zoom.in')!;
+    const e = { kind: 'key', metaKey: true, ctrlKey: false, altKey: false, ...keys } as unknown as InputEvent;
+    expect(matchSpec(e, binding.spec, true)).toBe(true);
   });
 
   it('finds each variant its key binding as a shortcut', () => {

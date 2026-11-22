@@ -178,4 +178,12 @@ describe('touchZoomAction descriptor', () => {
     // No change
     expect(viewApi.current.scale).toEqual({ x: 1, y: 1 });
   });
+
+  it('stops a running pan coast when the pinch starts', () => {
+    const view = makeViewApi({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    let stopped = 0;
+    view.stopDecay = () => { stopped++; };
+    getOngoingInvoker(touchZoomAction).start(makeCtx(view), undefined);
+    expect(stopped).toBe(1);
+  });
 });

@@ -94,7 +94,7 @@ export function computeSliceOps<TNode extends SliceableNode>(
     const sourceId = leaf.node.id;
     cutIds.add(sourceId);
     ops.push(createDeleteOp({ node: leaf.node, index: leaf.index, label: 'Slice' }));
-    for (const piece of pieces) {
+    for (const [k, piece] of pieces.entries()) {
       const stored = placePiece(leaf, piece);
       const node = {
         ...leaf.node,
@@ -102,7 +102,7 @@ export function computeSliceOps<TNode extends SliceableNode>(
         pose: stored.pose,
         data: { ...(leaf.node.data as object), path: stored.path },
       };
-      ops.push(createInsertOp({ node, index: leaf.index, label: 'Slice' }));
+      ops.push(createInsertOp({ node, index: leaf.index + k, label: 'Slice' }));
       if (selected.has(sourceId)) inherited.push(node.id);
     }
   }

@@ -105,6 +105,18 @@ describe('computeSliceOps', () => {
     expect(order[3]).toBe('delete:a');
   });
 
+  it('stacks a leaf\'s pieces in the order the cut returns them, the first lowest', () => {
+    const leaf = leafOf({ id: 'a' }, 1);
+    const { ops } = computeSliceOps({ leaves: [leaf], cut: across, nextId });
+    const siblings = ['under', 'a', 'over'];
+    for (const o of ops) {
+      const a = (o as unknown as { args: { node: TestNode; slot?: { index?: number } } }).args;
+      if (o.name === 'delete') siblings.splice(siblings.indexOf(a.node.id), 1);
+      else siblings.splice(a.slot!.index!, 0, a.node.id);
+    }
+    expect(siblings).toEqual(['under', ...inserted(ops).map((p) => p.id), 'over']);
+  });
+
   describe('selection', () => {
     it('is null when no selection is given', () => {
       expect(computeSliceOps({ leaves: [leafOf()], cut: across, nextId }).nextSelection).toBeNull();

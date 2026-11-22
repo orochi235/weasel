@@ -163,3 +163,13 @@ describe('createViewportWheelPanAction', () => {
     ]);
   });
 });
+
+describe('viewportWheelPanAction and a pan coast', () => {
+  it('stops a running coast before it pans', () => {
+    const view = makeView();
+    let stopped = 0;
+    view.stopDecay = () => { stopped++; };
+    getImmediateInvoker(viewportWheelPanAction).run({ view }, { deltaX: 0, deltaY: 10 });
+    expect(stopped).toBe(1);
+  });
+});

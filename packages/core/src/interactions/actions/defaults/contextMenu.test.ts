@@ -41,6 +41,12 @@ describe('openContextMenu', () => {
       client: { x: 1010, y: 1020 }, world: { x: 10, y: 20 }, source: 'keyboard',
     }));
   });
+  it('puts the selection back when no menu opens for the right-click', () => {
+    const d = deps() as { menuHost: { open: ReturnType<typeof vi.fn> }; selection: { get: () => string[] } };
+    d.menuHost.open.mockReturnValue(false);
+    expect(openContextMenu(d as never, { world: { x: 5, y: 6 }, clientX: 50, clientY: 60 })).toBe(false);
+    expect(d.selection.get()).toEqual(['a']);
+  });
   it('does nothing without a menu host', () => {
     expect(openContextMenu(deps({ menuHost: undefined }) as never, { world: { x: 0, y: 0 }, clientX: 0, clientY: 0 })).toBe(false);
   });
@@ -67,6 +73,12 @@ describe('menuHitFor', () => {
     const hitAt = () => ({ bodyTarget: 'unselected-body', bodyKind: 'rect', id: 'b' });
     expect(menuHitFor({ hitAt } as never, { x: 1, y: 2 })).toEqual({
       hit: { bodyTarget: 'selected-body', bodyKind: 'rect' }, select: 'b',
+    });
+  });
+  it('keeps an unselected hit unselected when the classifier names no node to select', () => {
+    const hitAt = () => ({ bodyTarget: 'unselected-body', bodyKind: 'rect' });
+    expect(menuHitFor({ hitAt } as never, { x: 1, y: 2 })).toEqual({
+      hit: { bodyTarget: 'unselected-body', bodyKind: 'rect' },
     });
   });
 });
