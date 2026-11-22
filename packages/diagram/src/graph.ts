@@ -7,8 +7,8 @@
  * hot path.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { expandClusterEdges, insetOf, type ClusterInset } from './cluster';
-import { diagramContainerOf } from './containers/trait';
+import { DEFAULT_CLUSTER_INSET, expandClusterEdges, insetOf, type ClusterInset } from './cluster';
+import { diagramContainerOf, isFittedContainer, type DiagramContainer } from './containers/trait';
 import { diagramEdgeOf, layoutOwnsRoute } from './edgeTrait';
 import { nestClusters } from './clusterTree';
 import { diagramLabelOf, type DiagramLabel } from './labelTrait';
@@ -135,7 +135,10 @@ export interface BuildGraphOptions<TPose> extends FrameOptions<TPose> {
  * A node is an edge if it carries the edge trait and names exactly two
  * dependencies; a cluster if its trait carries `cluster`, with its dependencies as
  * its members, which may be clusters themselves (see `nestClusters`); a participant if the reader hands back any other
- * `DiagramNode`; and otherwise not in the diagram at all. An edge whose
+ * `DiagramNode`; and otherwise not in the diagram at all. A fitted container
+ * (`DiagramContainer.fitted`) is a cluster around the nodes and regions it
+ * holds, as `diagramScene` lays one out; any other container or pool is one
+ * participant at its box, holding what it holds. An edge whose
  * endpoints are not both participants or clusters is dropped, and an edge to a
  * cluster ranks against its members (see `expandClusterEdges`).
  */
@@ -152,6 +155,10 @@ export function buildGraph<TPose>(
   const rooms = new Map<string, EdgeLabelRoom>();
   const items = [...source()];
   const outer = outermostRegions(items);
+  const childrenOf = new Map<string, string[]>();
+  for (const { node } of items) {
+    if (typeof node.parent === 'string') childrenOf.set(node.parent, [...(childrenOf.get(node.parent) ?? []), node.id]);
+  }
 
   for (const { node, pose } of items) {
     const edge = diagramEdgeOf(node);
@@ -186,6 +193,11 @@ export function buildGraph<TPose>(
     }
     const trait = diagramNodeOf(node, opts.read);
     if (trait === null || outer.has(node.id)) continue;
+    const region = diagramContainerOf(node);
+    if (region !== null && isFittedContainer(region)) {
+      clusterNodes.push({ id: node.id, members: childrenOf.get(node.id) ?? [], inset: fittedInsetOf(region) });
+      continue;
+    }
     if (trait.cluster !== undefined) {
       const deps = node.dependsOn;
       clusterNodes.push({
@@ -234,16 +246,17 @@ export function buildGraph<TPose>(
   return graphOf(nodes, expandClusterEdges(roomed.filter((e) => known(e.from) && known(e.to)), live), live);
 }
 
-/** For each node inside a container or a pool, the outermost one holding it.
- *  A region is laid out as one node of its box, and what it holds rides
- *  along with it, as `diagramScene` lays out a boxed region. */
+/** For each node inside a boxed container or a pool, the outermost one holding
+ *  it. A boxed region is laid out as one node of its box, and what it holds
+ *  rides along with it, as `diagramScene` lays one out. A fitted container is
+ *  no region here: it is a cluster. */
 function outermostRegions(items: readonly { node: GraphNodeLike }[]): Map<string, string> {
   const parentOf = new Map<string, string>();
   const regions = new Set<string>();
   for (const { node } of items) {
     if (typeof node.parent === 'string') parentOf.set(node.id, node.parent);
     const c = diagramContainerOf(node);
-    if (c !== null && c.role !== 'lane') regions.add(node.id);
+    if (c !== null && c.role !== 'lane' && !isFittedContainer(c)) regions.add(node.id);
   }
   const out = new Map<string, string>();
   for (const { node } of items) {
@@ -252,6 +265,16 @@ function outermostRegions(items: readonly { node: GraphNodeLike }[]): Map<string
     if (found !== undefined) out.set(node.id, found);
   }
   return out;
+}
+
+/** The room a fitted container keeps around what it holds: its own `inset`,
+ *  else its header and the default cluster inset all round. */
+export function fittedInsetOf(region: DiagramContainer): ClusterInset {
+  if (region.inset !== undefined) return region.inset;
+  const pad = DEFAULT_CLUSTER_INSET;
+  const header = region.header?.size ?? 0;
+  const side = region.header?.side;
+  return { top: pad + (side === 'top' ? header : 0), right: pad, bottom: pad, left: pad + (side === 'left' ? header : 0) };
 }
 
 const NONE: readonly GraphEdge[] = Object.freeze([]);

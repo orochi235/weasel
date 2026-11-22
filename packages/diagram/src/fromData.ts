@@ -228,7 +228,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   const clusterLook = (g: DataCluster) => ({ style: opts.clusterStyle?.(g) ?? theme?.container ?? DEFAULT_CLUSTER_STYLE, text: styleOf(titleStyle) });
   const footprints = new Map([...placedAt, ...seeds.map((s) => [s.id, grownBy(placedAt.get(s.id)!, s.margin)] as const)]);
   // Regions and cluster boxes first, so a box never paints over what it holds.
-  specs.push(...containerSpecs(regions, placedAt, theme, font.fontFamily));
+  specs.push(...containerSpecs(regions, placedAt, theme, { fontFamily: font.fontFamily, pad }));
   specs.push(...clusterSpecs(clusters, footprints, clusterLook, wireLabels(edges, edgeCtx)));
   for (const [i, n] of data.nodes.entries()) {
     const seed = seeds[i]!.bounds;

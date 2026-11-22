@@ -3,6 +3,7 @@
  * which a stencil drawn on the canvas and a `DiagramData` container both build
  * from.
  */
+import type { ClusterInset } from '../cluster';
 import type { AddNodeSpec, NodeId, PoseComposition, RectPose } from '@weasel-js/core';
 import { DEFAULT_NODE_STYLE, outlineOf, type DiagramSceneData, type NodeStyle } from '../dataTypes';
 import { DEFAULT_FONT } from '../edgeLabel';
@@ -42,15 +43,19 @@ export interface RegionOptions<TLayer extends string> {
   style?: NodeStyle;
   /** Marks a region whose box is fitted to its members each time it is built from data. */
   fitted?: boolean;
+  /** The room a fitted region keeps around its members (`DiagramContainer.inset`). */
+  inset?: ClusterInset;
   /** A container's reorder axis. */
   reorder?: 'x' | 'y';
   /** The title's family. Default sans-serif. */
   fontFamily?: string;
 }
 
-function regionData(role: ContainerRole, axis: 'x' | 'y', style: NodeStyle, fitted: boolean, reorder?: 'x' | 'y'): DiagramSceneData {
+function regionData(role: ContainerRole, axis: 'x' | 'y', style: NodeStyle, opts: Pick<RegionOptions<string>, 'fitted' | 'inset' | 'reorder'>): DiagramSceneData {
+  const { fitted, inset, reorder } = opts;
   const container: DiagramContainer = {
-    role, header: containerShape(role, axis).header, ...(fitted ? { fitted: true } : {}), ...(reorder !== undefined ? { reorder } : {}),
+    role, header: containerShape(role, axis).header, ...(fitted === true ? { fitted: true, ...(inset !== undefined ? { inset } : {}) } : {}),
+    ...(reorder !== undefined ? { reorder } : {}),
   };
   return {
     diagram: { outline: 'rect', container },
@@ -74,7 +79,7 @@ export function regionSpecs<TLayer extends string>(
   const { layout, header } = containerShape(role, axis);
   const region: RegionSpec<TLayer> = {
     id: opts.id as NodeId, kind: 'mark', layer: opts.layer, pose, parent: (opts.parent ?? null) as NodeId | null,
-    data: regionData(role, axis, style, opts.fitted === true, opts.reorder), layout: CONTAINER_LAYOUTS[layout],
+    data: regionData(role, axis, style, opts), layout: CONTAINER_LAYOUTS[layout],
   };
   if (title === null) return [region];
   return [region, {

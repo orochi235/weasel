@@ -171,7 +171,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     if (ctx.pinned.size > 0) held.current = true;
     const frame = producerFrame.current++;
     const { result, done } = producer.current({ pinned: ctx.pinned, frame });
-    const poses = layoutPoses(o.scene, withoutPinned(result, ctx.pinned), frameFor(o));
+    const poses = layoutPoses(o.scene, withoutPinned(result, ctx.pinned), frameFor(o), (id) => ctx.pinned.has(id as NodeId));
     // Routes ease only toward where they will be written, which a held run never writes.
     const { u } = progress(frame, o.frames ?? EASE_FRAMES, o.easing ?? easeInOutQuad);
     eased.show(o.scene, held.current ? null : u, (id) => poses.get(id) ?? ctx.pinned.get(id as NodeId), frameFor(o));

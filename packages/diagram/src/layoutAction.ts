@@ -17,6 +17,7 @@ import {
   type Scene,
   type AnyScene,
 } from '@weasel-js/core';
+import { refitContainers } from './fitContainers';
 import { force } from './force';
 import { buildGraph, type GraphNodeLike, type GraphSource } from './graph';
 import { AUTO_LAYOUT_FRAME, frameFor, type FrameOptions, type LayoutFrame } from './layoutFrame';
@@ -114,7 +115,11 @@ function writeLayout<TPose>(
  * The poses a layout result implies, without writing any of them: each moved
  * node translated so its box starts where the layout put it, in world, and
  * stored in its container's frame. What a moved container's frame holds rides
- * it; a node under an envelope moved with it is written too.
+ * it; a node under an envelope moved with it is written too. A fitted container
+ * holding a moved node is then fitted around what it holds again, as
+ * `diagramScene` fits one, innermost first, and what its frame holds is stored
+ * again so it stays where the layout put it; one holding a node `fixed` names,
+ * which another gesture owns, keeps its frame.
  *
  * The translation is measured from the node's document pose, which a live run
  * in flight never changes, so a frame's answer does not depend on the frame
@@ -124,6 +129,7 @@ export function layoutPoses<TPose>(
   scene: Scene<unknown, string, TPose>,
   result: LayoutResult,
   layout: LayoutFrame<TPose> = AUTO_LAYOUT_FRAME as LayoutFrame<TPose>,
+  fixed: (id: string) => boolean = () => false,
 ): Map<string, TPose> {
   const sc = scene as unknown as AnyScene;
   const { compose, decompose } = sc.composition;
@@ -153,6 +159,7 @@ export function layoutPoses<TPose>(
     const carried = carriedDescendants(sceneCarrySource(sc), id as NodeId, (w) => layout.translate(w as TPose, dx, dy));
     for (const [d, pose] of carried) out.set(d, pose as TPose);
   }
+  refitContainers({ scene, decided: decided as never, composition: { compose, decompose } as never, frame: layout, fixed }, out);
   return out;
 }
 

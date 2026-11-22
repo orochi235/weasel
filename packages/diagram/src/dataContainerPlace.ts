@@ -125,18 +125,20 @@ export function placeContainers(
 }
 
 /** Each region's specs and its title's, outer regions first, as `createScene` needs parents before what they hold.
- *  Titles are set in `fontFamily`, the diagram's face. */
+ *  Titles are set in `fontFamily`, the diagram's face, and a fitted container keeps `pad` round its members. */
 export function containerSpecs(
   { regions }: DataRegions,
   boxes: ReadonlyMap<string, Rect>,
   theme: DiagramTheme | undefined,
-  fontFamily: string,
+  look: { fontFamily: string; pad: number },
 ): DiagramSpec[] {
+  const { fontFamily, pad } = look;
   return regions.flatMap((r) => {
     const box = boxes.get(r.id);
     if (box === undefined) return [];
     const specs = regionSpecs(r.role, r.axis, { ...box }, r.label ?? null, {
       id: r.id, layer: 'main', parent: r.parent ?? null, style: dataRegionStyle(r, theme, r.index), fitted: r.fitted, fontFamily,
+      ...(r.fitted ? { inset: fittedInset(pad) } : {}),
       ...(r.reorder !== undefined ? { reorder: r.reorder } : {}),
     });
     const marks = { ...(r.pinned ? { pinned: true } : {}), ...ownNodeStyle(r.colors) };
