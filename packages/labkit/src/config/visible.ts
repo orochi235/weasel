@@ -46,11 +46,17 @@ export function conditionReader(
   config: Record<string, unknown>,
   over: PrefGroup | PrefSection | undefined,
 ): (at: string) => unknown {
+  return readerOver(resolved.group, config, over);
+}
+
+function readerOver(
+  group: PrefGroup | PrefSection,
+  config: Record<string, unknown>,
+  over: PrefGroup | PrefSection | undefined,
+): (at: string) => unknown {
   const beyond = over && prefReader(over, config);
   return (at) =>
-    beyond && prefSchemaHolding(resolved.group, at, over) === over
-      ? beyond(at)
-      : configValueAt(config, at);
+    beyond && prefSchemaHolding(group, at, over) === over ? beyond(at) : configValueAt(config, at);
 }
 
 /**
@@ -185,13 +191,16 @@ export function conditionedLeaf(
  * `showIf`, as a condition or a function. It answers for the node alone: a
  * walk that skips what is under a node not shown counts the nesting. `schema`
  * is that schema resolved, which a condition reads each leaf's `encoding` from.
+ * `over` is the schema it was drawn over, whose defaults a condition reads where
+ * `config` holds nothing.
  */
 export function isConfigNodeShown(
   entry: ConfigEntry,
   config: Record<string, unknown>,
   schema: PrefGroup | PrefSection,
+  over?: PrefGroup | PrefSection,
 ): boolean {
-  const judge = prefJudge(schema, (at) => configValueAt(config, at));
+  const judge = prefJudge(schema, readerOver(schema, config, over), undefined, over);
   if (!prefStatusUnder(ROOT_PREF_STATUS, entry.annotations, judge).shown) return false;
   return entry.options.showIf?.(config) ?? true;
 }

@@ -219,12 +219,12 @@ export function answerSchema(
   const disabled: string[] = [];
   const errors: Record<string, string[]> = {};
   const record = config as Record<string, unknown>;
-  const { group } = resolveConfigSchema(schema);
+  const { group, over } = resolveConfigSchema(schema);
 
   const walk = (shape: ConfigShape, at: string): void => {
     for (const [key, entry] of Object.entries(shape)) {
       const path = joinPath(at, key);
-      if (!isConfigNodeShown(entry, record, group)) hidden.push(path);
+      if (!isConfigNodeShown(entry, record, group, over)) hidden.push(path);
       if (entry.options.enableIf && !entry.options.enableIf(record)) disabled.push(path);
       if (isConfigBranch(entry)) {
         walk(entry.children, path);

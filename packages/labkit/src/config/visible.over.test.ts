@@ -2,7 +2,7 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
-import { isRowEnabled, isRowVisible } from './visible';
+import { isConfigNodeShown, isRowEnabled, isRowVisible } from './visible';
 
 const flag = (name: string, def: boolean): PrefLeaf =>
   ({ kind: 'boolean', name, description: '', default: def }) as PrefLeaf;
@@ -26,5 +26,17 @@ describe('visibility over another schema', () => {
     const config = { view: { size: 1 } };
     expect(isRowVisible(resolved, 'grid', config, false, over)).toBe(true);
     expect(isRowEnabled(resolved, 'grid', config, over)).toBe(true);
+  });
+
+  it('judges a condition naming a path only `over` holds by that leaf, as isRowVisible does', () => {
+    const schema = f.schema(
+      { angle: f.number(0).showIf({ path: 'view.grid', is: true }) },
+      { over },
+    );
+    const resolved = resolveConfigSchema(schema);
+    const config = { angle: 0 };
+    expect(isRowVisible(resolved, 'angle', config, false, over)).toBe(true);
+    const entry = schema.nodes.angle!;
+    expect(isConfigNodeShown(entry, config, resolved.group, over)).toBe(true);
   });
 });
