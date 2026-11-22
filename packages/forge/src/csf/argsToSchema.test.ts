@@ -279,6 +279,10 @@ describe('argsToSchema', () => {
       ['bounded number', { control: { type: 'number', min: 1, max: 50, step: 1 } }, 'number'],
       ['text', { control: 'text' }, 'string'],
       ['textarea', { control: 'textarea' }, 'string'],
+      ['type boolean', { type: { name: 'boolean' } }, 'boolean'],
+      ['type string', { type: { name: 'string' } }, 'string'],
+      ['type enum', { type: { name: 'enum', value: ['a', 'b'] } }, 'enum'],
+      ['type number', { type: { name: 'number' } }, 'number'],
     ] as const)('%s gets a leaf defaulting to undefined', (_, argType, kind) => {
       const schema = only(argType);
       expect((schema.nodes.k as ConfigNode<unknown> | undefined)?.kind).toBe(kind);
@@ -290,6 +294,7 @@ describe('argsToSchema', () => {
       ['range', { control: { type: 'range', min: 0, max: 20, step: 0.5 } }],
       ['slider', { control: 'slider' }],
       ['object', { control: 'object' }],
+      ['type object', { type: { name: 'object', value: { a: { name: 'number' } } } }],
     ] as const)('%s is omitted', (_, argType) => {
       expect(Object.keys(only(argType).nodes)).toEqual([]);
     });

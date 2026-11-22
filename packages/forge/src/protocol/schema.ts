@@ -106,8 +106,9 @@ const DROPPED = Symbol('dropped');
 /**
  * `value` as structured-clone data: a function is left out, and so is any other object holding one, which is code (a
  * scale's pair, a function unit, a motif) rather than data. An object carrying a `kind` or `members` is a nested leaf
- * or section, and like the bag at the top (`keepsKeys`) loses only its function-valued keys. Any other object a port
- * would not deliver as itself, a class instance or a Map holding a function, is left out too.
+ * or section, and like the bag at the top (`keepsKeys`) loses only its function-valued keys; a nested leaf's
+ * `encoding` stays as `null`, so a URL reader still knows the leaf stores something other than its kind. Any other
+ * object a port would not deliver as itself, a class instance or a Map holding a function, is left out too.
  */
 function dataOf(value: unknown, keepsKeys = false): unknown {
   if (typeof value === 'function' || typeof value === 'symbol') return DROPPED;
@@ -119,6 +120,7 @@ function dataOf(value: unknown, keepsKeys = false): unknown {
   for (const [key, member] of Object.entries(value)) {
     const data = dataOf(member);
     if (data !== DROPPED) setOwn(out, key, data);
+    else if (key === 'encoding' && typeof value.kind === 'string') setOwn(out, key, null);
   }
   return out;
 }

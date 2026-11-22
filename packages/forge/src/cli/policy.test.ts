@@ -33,19 +33,18 @@ describe('outDirPolicy', () => {
     expect(outDirPolicy('/work/app..x', cwd, cwd)).toEqual({ ok: true, outDir: '/work/app..x', emptyOutDir: false });
   });
 
-  it("follows the config's own emptyOutDir, short of emptying the root or a directory holding it", () => {
+  it("follows the config's own emptyOutDir", () => {
     expect(outDirPolicy('../other', cwd, cwd, true)).toEqual({ ok: true, outDir: '/work/other', emptyOutDir: true });
     expect(outDirPolicy('dist', cwd, cwd, false)).toEqual({ ok: true, outDir: '/work/app/dist', emptyOutDir: false });
-    expect(outDirPolicy('site', cwd, '/work/app/site', true)).toEqual({ ok: true, outDir: '/work/app/site', emptyOutDir: false });
-    expect(outDirPolicy('site', cwd, '/work/app/site/src', true)).toEqual({ ok: true, outDir: '/work/app/site', emptyOutDir: false });
   });
 
-  it('does not empty the root itself', () => {
+  it('refuses the root itself, or a directory holding it, whatever the config says', () => {
     expect(outDirPolicy('site', cwd, '/work/app/site')).toEqual({
-      ok: true,
-      outDir: '/work/app/site',
-      emptyOutDir: false,
+      ok: false,
+      reason: 'refusing to build into /work/app/site: it contains the vite root /work/app/site',
     });
+    expect(outDirPolicy('site', cwd, '/work/app/site', true)).toMatchObject({ ok: false });
+    expect(outDirPolicy('site', cwd, '/work/app/site/src', false)).toMatchObject({ ok: false });
   });
 });
 

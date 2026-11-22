@@ -1,5 +1,6 @@
 import { f, resolveAutoConfig, resolveConfigSchema } from '@weasel-js/labkit/config';
 import { createAnswerBook } from '../shell/answers';
+import { paramsToKnobs } from '../route/url';
 import { stableStringify } from './messages';
 import { describe, expect, it, vi } from 'vitest';
 import { answerSchema, describeSchema, schemaActionAt, schemaFromDescription } from './schema';
@@ -112,6 +113,16 @@ describe('schema descriptions', () => {
     const described = describeSchema(schema);
     expect(described.nodes.spacing).toMatchObject({ conditional: false, annotations: { showIf: { path: 'on' } } });
     expect(structuredClone(described)).toEqual(described);
+  });
+
+  it("keeps a nested leaf's encoding as a marker, so a link's encoded entries still read", () => {
+    const schema = f.schema({ styles: f.list([true], f.boolean(false)) });
+    const item = (schema.nodes.styles as unknown as { annotations: { item: Record<string, unknown> } }).annotations.item;
+    item.encoding = { read: (stored: unknown) => stored === 'italic', write: (on: boolean) => (on ? 'italic' : 'normal') };
+    const description = describeSchema(schema);
+    expect(structuredClone(description)).toEqual(description);
+    const rebuilt = schemaFromDescription(description, { hidden: () => false, errors: () => [] });
+    expect(paramsToKnobs(rebuilt, { styles: '["normal","italic"]' })).toEqual({ styles: ['normal', 'italic'] });
   });
 
   it('ships only the part of a default or an annotation a port delivers', () => {

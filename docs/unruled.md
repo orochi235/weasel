@@ -3786,3 +3786,9 @@ Calls the lanes made without a ruling:
   (the pool, the lane, either title, or a later lane or what it holds), raises a size below `MIN_LANE_SIZE` to it, as
   the drag does, and throws a `RangeError` for a size that is not a finite number. Throwing for a locked node, as the
   scene's own lock guard does, was the alternative.
+
+## Audit round seventy-one (2026-11-22): forge
+
+- 2026-11-22 (the fixer's call): `weaselforge build` refuses an `--out` that is the vite root or holds it, as it
+  refuses one holding the current directory, since the build writes its `index.html` and assets over the root's
+  sources. Building there without emptying it, as vite itself does after a warning, was the alternative.
