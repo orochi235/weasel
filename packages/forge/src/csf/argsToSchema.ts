@@ -324,15 +324,21 @@ function matched(key: string, value: unknown, argType: ArgType | undefined, matc
   return matchers.color?.test(key) ? f.color(value) : null;
 }
 
-/** A labkit schema for a CSF story's args, refined by its `argTypes`. */
+/**
+ * A labkit schema for a CSF story's args, refined by its `argTypes`. `local` gives the args the story holds in its frame
+ * over `config`, which an `if` reads first, as the render does.
+ */
 export function argsToSchema(
   args: Readonly<Record<string, unknown>>,
   argTypes: Readonly<Record<string, ArgType | undefined>>,
   matchers: ControlMatchers = {},
+  local?: (config: Record<string, unknown>) => Readonly<Record<string, unknown>>,
 ): ConfigSchema<unknown> {
   const nodes: Record<string, Leaf> = {};
   const choices = argChoices(argTypes);
   const read: ArgReader = (config, arg) => {
+    const own = local?.(config);
+    if (own && Object.hasOwn(own, arg)) return own[arg];
     const held = getOwn(config, arg);
     return held === undefined ? getOwn(args, arg) : choiceValue(getOwn(choices, arg), held);
   };

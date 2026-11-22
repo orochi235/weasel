@@ -213,7 +213,9 @@ export function loadCsfModule(
     const fromProps = render === undefined || takesArgs(render) ? propArgTypes : undefined;
     const argTypes = combineParameters(fromProps, meta.argTypes, spec.argTypes) as Record<string, ArgType>;
     const holder = localHolder();
-    const config = argsToSchema(args, argTypes, isPlainObject(matchers) ? matchers : {});
+    const config = argsToSchema(args, argTypes, isPlainObject(matchers) ? matchers : {}, (config) =>
+      appliedLocal(holder.current, config),
+    );
     const choices = argChoices(argTypes);
     const defaults = config.defaults() as Args;
     const storyGlobals = { ...meta.globals, ...spec.globals };
@@ -291,6 +293,7 @@ export function loadCsfModule(
             play({ ...csfContext(config, globals, holder.current), canvasElement, step: async (_label, fn) => fn() })
         : null,
       timeline: timelineOf(forgeParams?.timeline, (config) => csfContext(config, {}, holder.current).args),
+      onAnswersStale: holder.changed.subscribe,
     });
   }
   return stories;

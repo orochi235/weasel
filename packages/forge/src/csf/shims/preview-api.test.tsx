@@ -108,6 +108,27 @@ describe('useArgs with values that cannot cross the port', () => {
     expect(played && Object.hasOwn(played, 'label')).toBe(false);
   });
 
+  it("answers an argTypes if from the args the render sees, and says when that answer moves", () => {
+    let captured: ReturnType<typeof useArgs> | undefined;
+    const story = load({
+      args: { icon: 'star' },
+      argTypes: { label: { control: 'text', if: { arg: 'icon', exists: true } } },
+      render: function Read() {
+        captured = useArgs();
+        return null;
+      },
+    });
+    const stale = vi.fn();
+    const off = story.onAnswersStale?.(stale);
+    const { port } = mount(story);
+    const shown = () => (story.config.nodes.label as { options: { showIf: (c: Args) => boolean } }).options.showIf(port.config);
+    expect(shown()).toBe(true);
+    act(() => captured?.[1]({ icon: undefined }));
+    expect(stale).toHaveBeenCalledTimes(1);
+    expect(shown()).toBe(false);
+    off?.();
+  });
+
   it('renders a choice of non-string options with the option itself, and sends an update as its string form', () => {
     let captured: ReturnType<typeof useArgs> | undefined;
     const story = loadCsfModule(

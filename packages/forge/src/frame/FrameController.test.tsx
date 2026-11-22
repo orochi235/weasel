@@ -151,6 +151,27 @@ describe('startFrame', () => {
     expect(of('answers').at(-1)?.answers.configKey).toBe(stableStringify(config));
   });
 
+  it("answers again under the same config when the story says its answers moved", async () => {
+    const listeners = new Set<() => void>();
+    let hidden = false;
+    const moving: LoadedStory = {
+      ...counter,
+      config: f.schema({ label: f.string('clicks').showIf(() => !hidden) }),
+      onAnswersStale: (listener) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+    };
+    const { shell, of } = start(moving);
+    shell.send(init);
+    await flush();
+    expect(of('answers').at(-1)?.answers.hidden).toEqual([]);
+    hidden = true;
+    for (const listener of listeners) listener();
+    await flush();
+    expect(of('answers').at(-1)?.answers.hidden).toEqual(['label']);
+  });
+
   it('answers hidden paths from the story schema', async () => {
     const { shell, of } = start(counter);
     shell.send(init);
