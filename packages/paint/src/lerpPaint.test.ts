@@ -3,6 +3,20 @@ import { lerpFill, lerpPaint, lerpStroke } from './lerpPaint';
 import type { Stroke } from './paint';
 
 describe('lerpPaint', () => {
+  it('holds a color it cannot read until halfway, rather than throwing', () => {
+    const a = { color: 'var(--accent)' }, b = { color: 'red' };
+    expect(lerpPaint(a, b, 0.3)).toBe(a);
+    expect(lerpPaint(a, b, 0.7)).toBe(b);
+    expect(lerpPaint(a, undefined, 0.3)).toBe(a);
+    const ramp = (color: string) => ({
+      kind: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      stops: [{ offset: 0, color: '#000' }, { offset: 1, color }],
+    });
+    const p = ramp('lab(50% 40 20)'), q = ramp('#fff');
+    expect(lerpPaint(p, q, 0.3)).toBe(p);
+    expect(lerpPaint(p, q, 0.7)).toBe(q);
+  });
+
   it('is each end at 0 and 1', () => {
     expect(lerpPaint({ color: '#ff0000' }, { color: '#0000ff' }, 0)).toEqual({ color: '#ff0000' });
     expect(lerpPaint({ color: '#ff0000' }, { color: '#0000ff' }, 1)).toEqual({ color: '#0000ff' });
