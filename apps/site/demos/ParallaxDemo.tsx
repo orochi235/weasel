@@ -91,9 +91,9 @@ const tree = (id: string, x: number, y: number, w: number, h: number) => {
   const fh = h * 0.75, tw = w * 0.25;
   return [
     { id: asNodeId(id), kind: 'group' as const, layer: 'trees' as const, pose: { x, y, width: w, height: h }, parent: null, data: { fill: null } },
-    leaf(`${id}-foliage`, 'trees', { x, y, width: w, height: fh },
+    leaf(`${id}-foliage`, 'trees', { x: 0, y: 0, width: w, height: fh },
       polygonFromPoints([{ x: w / 2, y: 0 }, { x: w, y: fh }, { x: 0, y: fh }]), '#3d5a3d', id),
-    leaf(`${id}-trunk`, 'trees', { x: x + (w - tw) / 2, y: y + fh, width: tw, height: h - fh },
+    leaf(`${id}-trunk`, 'trees', { x: (w - tw) / 2, y: fh, width: tw, height: h - fh },
       rectPath(0, 0, tw, h - fh), TRUNK_COLOR, id),
   ];
 };
