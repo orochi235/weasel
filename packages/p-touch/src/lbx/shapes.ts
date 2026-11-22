@@ -163,6 +163,8 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
     if (run.underline !== first!.underline || run.strikethrough !== first!.strikethrough) return undefined;
     if (run.stroke?.paint !== undefined || run.overline || run.sizeMap || run.rotate) return undefined;
     if (run.letterSpacing !== 0 || run.baselineShift !== 0 || run.fontFeatures?.length) return undefined;
+    // A `text:text` names no language, so P-touch would draw the face's default forms.
+    if (run.lang) return undefined;
     if (run.strutSize !== undefined && run.strutSize !== run.fontSize) return undefined;
     const hex = fillColor(run.fill, state.alpha);
     if (!hex || (color !== undefined && hex !== color)) return undefined;

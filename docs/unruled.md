@@ -637,6 +637,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   grow the label for it. An `lbxObjectsCommand` past the end is still written whole, since it cannot be
   rasterized; whether it should be skipped instead is unasked. A carried object under a transform that scales an
   axis to zero is dropped with no report, as paint there draws nothing.
+- 2026-11-22 (my call, audit round 69): the `.lbx` writer rasterizes a text box any of whose runs names a `lang`,
+  even one whose forms match the face's defaults, since a `text:text` names no language and the writer cannot tell
+  which tags change the glyphs. Whether a tag such as `en` should still be written as an object is unasked.
 - 2026-11-21 (my call, audit round 64): `writeLbx` throws a `RangeError` for an auto-length label longer than
   `AUTO_LENGTH_MAX_PT` (1000mm), the paper height P-touch parks such a label at, rather than clamp it and crop
   what lies past the ceiling. A label that long can still be written at a fixed length; whether P-touch prints

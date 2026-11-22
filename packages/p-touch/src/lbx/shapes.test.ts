@@ -108,6 +108,12 @@ describe('text boxes', () => {
     expect(await written(box({}, [run('Label', { fontFeatures: [], strutSize: 12 })]))).toBeDefined();
   });
 
+  it('rasterizes a box whose runs name a language, which a text object cannot', async () => {
+    expect(await written(box({}, [run('Label', { lang: 'sr' })]))).toBeUndefined();
+    expect(await written(box({}, [run('a'), run('b', { lang: 'ja' })]))).toBeUndefined();
+    expect(await written(box({}, [run('Label', { lang: '' })]))).toBeDefined();
+  });
+
   it('rasterizes a box of more than one line at a line height of its own, or a tab at a tab size of its own', async () => {
     expect(await written(box({ style: { lineHeight: 2 } }, [run('one\ntwo')]))).toBeUndefined();
     expect(await written(box({ style: { lineHeight: 2 } }))).toBeUndefined();
