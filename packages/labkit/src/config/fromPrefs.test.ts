@@ -235,12 +235,20 @@ describe('f.prefs', () => {
     });
 
     it('throws where a leaf and a branch both claim the path', () => {
-      expect(() => f.prefs({ name: '', members: { grid: num('G'), 'grid.size': num('S') } })).toThrow(
-        /grid/,
-      );
-      expect(() => f.prefs({ name: '', members: { 'grid.size': num('S'), grid: num('G') } })).toThrow(
-        /grid/,
-      );
+      expect(() =>
+        f.prefs({ name: '', members: { grid: num('G'), 'grid.size': num('S') } }),
+      ).toThrow(/grid/);
+      expect(() =>
+        f.prefs({ name: '', members: { 'grid.size': num('S'), grid: num('G') } }),
+      ).toThrow(/grid/);
     });
+  });
+  it('gives each call of defaults() its own copy of a list default', () => {
+    const tags = { kind: 'list', name: 'Tags', description: '', default: ['a'], item: num('Tag') };
+    const schema = f.prefs({ name: '', members: { tags: tags as unknown as PrefLeaf } });
+    const first = schema.defaults() as { tags: string[] };
+    first.tags.push('b');
+    expect((schema.defaults() as { tags: string[] }).tags).toEqual(['a']);
+    expect(tags.default).toEqual(['a']);
   });
 });

@@ -7,7 +7,7 @@ import {
   prefConditionPaths,
   resolvePrefGroupConditions,
 } from '@weasel-js/prefs';
-import { ownAt, setOwn, withConfigValueAt } from './path';
+import { copyTree, ownAt, setOwn, withConfigValueAt } from './path';
 import { isEncodedLeaf, storedDefault } from './storedDefault';
 import type {
   Annotations,
@@ -237,7 +237,9 @@ export function configFromPrefs(given: PrefSection): ConfigSchema<Record<string,
     defaults: () =>
       leaves.reduce<Record<string, unknown>>(
         (config, [path, leaf]) =>
-          isEncodedLeaf(leaf) ? config : withConfigValueAt(config, path, storedDefault(leaf)),
+          isEncodedLeaf(leaf)
+            ? config
+            : withConfigValueAt(config, path, copyTree(storedDefault(leaf))),
         {},
       ),
   };
