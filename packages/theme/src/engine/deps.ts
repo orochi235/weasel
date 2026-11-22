@@ -2,7 +2,7 @@ import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 import { enumerateAxisChoices, isByAxis, pick, type AxisChoice } from '../axes.ts';
 import { refTarget } from '../dtcg/resolve.ts';
 import type { SemanticRule, ThemeDefinition } from '../definition.ts';
-import { mergeChain, type Lookup } from './merge.ts';
+import { foldChain, type Lookup } from './merge.ts';
 import { ruleProblem } from './ruleShape.ts';
 import { withoutUnsafeNames } from './safeNames.ts';
 import { alwaysDeclaredSteps, declaredSteps as stepsOf, type StepScope } from './steps.ts';
@@ -98,6 +98,12 @@ function closure(nodes: ReadonlyMap<string, Node>, ownSets: ReadonlyMap<string, 
   return all;
 }
 
+/** The value a `by` gives at `sel`, or nothing where it has none. */
+const pickedOr = (v: unknown, sel: AxisChoice): unknown => {
+  const p = pick(v, sel);
+  return p.ok ? p.value : undefined;
+};
+
 /** The rules under a possibly `by`-varying semantic that `derive` can read; it reports the rest. */
 const readableRules = (rule: unknown): SemanticRule[] =>
   leaves(rule).filter((l): l is SemanticRule => isPlainObject(l) && ruleProblem(l) === undefined);
@@ -126,7 +132,8 @@ function producer(nodes: Map<string, Node>): (name: string, n: Node, always: boo
  * axis declaration order.
  */
 export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): Record<string, AxisDependency> {
-  const def = withoutUnsafeNames(mergeChain(definition, lookup));
+  const { def: merged, replaced } = foldChain(definition, lookup);
+  const def = withoutUnsafeNames(merged);
   const nodes = new Map<string, Node>();
   const scope: StepScope = { axes: def.axes ?? {}, seeds: def.seeds };
   const declaredSteps = (entry: unknown) => stepsOf(entry, scope);
@@ -142,7 +149,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     scan(ramp, n);
     const always = new Set(alwaysDeclaredSteps(ramp, scope));
     for (const step of declaredSteps(ramp)) {
-      produce(`${name}-${step}`, n, always.has(step));
+      if (!replaced.ramps.has(`${name}-${step}`)) produce(`${name}-${step}`, n, always.has(step));
       stepRamps.set(`${name}-${step}`, (stepRamps.get(`${name}-${step}`) ?? new Set()).add(name));
     }
   }
@@ -150,7 +157,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     const n = node();
     scan(s, n);
     const always = new Set(alwaysDeclaredSteps(s, scope));
-    for (const step of declaredSteps(s)) produce(`${name}-${step}`, n, always.has(step));
+    for (const step of declaredSteps(s)) if (!replaced.scales.has(`${name}-${step}`)) produce(`${name}-${step}`, n, always.has(step));
   }
 
   /** Every ramp a token could sit on: its own, or the ones its semantic rule leaves, pins, or components lead to. */
@@ -175,6 +182,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     }
     return out;
   };
+  const selections = enumerateAxisChoices(def.axes ?? {});
   for (const [name, rule] of Object.entries(def.semantics ?? {})) {
     const n = node();
     scan(rule, n);
@@ -198,14 +206,13 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
         for (const s of declaredSteps(getOwn(def.ramps ?? {}, leaf.ramp))) n.edges.add(`${leaf.ramp}-${s}`);
       }
     }
-    produce(name, n, true);
+    produce(name, n, selections.every((sel) => readableRules(pickedOr(rule, sel)).length > 0));
   }
   for (const [name, v] of Object.entries(def.components ?? {})) {
     const n = node();
     scan(v, n);
     produce(name, n, true);
   }
-  const selections = enumerateAxisChoices(def.axes ?? {});
   for (const [name, v] of Object.entries(def.pins ?? {})) {
     const n = node();
     scan(v, n);

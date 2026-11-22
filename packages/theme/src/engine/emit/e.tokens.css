@@ -14,6 +14,15 @@
   --wzl-pad-edge: var(--wzl-pad);
 }
 
+:where([data-wzl-theme='e']) {
+  color-scheme: dark;
+  --wzl-surface: var(--wzl-ink);
+  --wzl-gap: 4px;
+  --wzl-line: color-mix(in srgb, var(--wzl-surface) 20%, transparent);
+  --wzl-pad: var(--wzl-gap);
+  --wzl-pad-edge: var(--wzl-pad);
+}
+
 [data-wzl-theme='e'][data-wzl-mode='dark'],
 [data-wzl-mode='dark'] {
   color-scheme: dark;

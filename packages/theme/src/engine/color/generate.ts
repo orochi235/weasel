@@ -196,9 +196,11 @@ export function generate(constraints: Constraints): Palette {
       ? farthestFirst(hues)
       : [...hues.keys()].sort((a, b) => hues[a] - hues[b]);
 
+  // Anchors claim their names in definition order, so of two sharing one, the first keeps it whatever the palette order.
+  const anchorNames = uniqueNames(c.anchors.map((a) => a.hue), c.anchors.map((a) => a.name));
   const names = uniqueNames(
     order.map((i) => toLch(hexes[i]).H),
-    order.map((i) => c.anchors[i]?.name),
+    order.map((i) => anchorNames[i]),
   );
   const swatches: Swatch[] = order.map((i, position) => ({
     name: names[position],
