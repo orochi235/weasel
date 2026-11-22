@@ -221,3 +221,13 @@ describe('reading a Mermaid state\'s name and description in either order', () =
     expect(node('stateDiagram-v2\n  state "Idle" as A\n  A : waits for input', 'A').lines).toEqual(['Idle', 'waits for input']);
   });
 });
+
+describe('writing a Mermaid state whose id is a statement word', () => {
+  it('renames a state whose id is accTitle or accDescr, so its description reads back as its own', () => {
+    for (const id of ['accTitle', 'accDescr']) {
+      const doc = { pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: { nodes: [{ id, lines: ['Name', 'desc'] }, { id: 'b' }], edges: [{ id: 'e', from: id, to: 'b' }] } as never }] };
+      const back = page(writeStateDiagram(doc).text);
+      expect(back.data.nodes.find((n) => n.id !== 'b')?.lines, id).toEqual(['Name', 'desc']);
+    }
+  });
+});

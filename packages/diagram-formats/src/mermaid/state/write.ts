@@ -7,7 +7,7 @@
 import type { DataEdge, DataNode, LayoutDirection } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
-import { titleLines } from '../common/lines';
+import { ACC_WORDS, titleLines } from '../common/lines';
 import { styleProps } from '../common/styles';
 import { lineOpening, mermaidEscaped, mermaidIds } from '../common/text';
 
@@ -26,7 +26,7 @@ class StateWriter {
   readonly notes: ReadonlySet<string>;
 
   constructor(readonly out: GraphOut) {
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds]);
+    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { reserved: ACC_WORDS });
     const visit = (c: Cluster) => {
       for (const id of c.nodes) this.scopeOf.set(id, c.id);
       for (const child of c.clusters) this.clusterParent.set(child.id, c.id);
