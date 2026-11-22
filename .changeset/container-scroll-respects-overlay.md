@@ -1,9 +1,9 @@
 ---
-'@weasel-js/core': patch
+'@weasel-js/core': minor
 ---
 
-A wheel over a node painted on top of a scroll container goes to that node's own scroll containers, or pans the view, instead of scrolling the container beneath.
+A wheel over a node painted on top of a scroll container no longer scrolls the container beneath it.
 
-`scrollableAt` takes an optional fourth argument, the id of the node topmost at the point, to answer the same way.
+Only the scroll containers holding that node take the wheel, and with none it pans the view. `scrollableAt` takes an optional fourth argument, the id of the node topmost at the point, to answer the same way.
 
 <!-- entry: fix api -->
