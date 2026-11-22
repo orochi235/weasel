@@ -182,11 +182,16 @@ export class GlCache {
     this.scissorOn = undefined;
   }
 
-  /** Bind `textures` to units 0.., each only where the unit holds another. */
-  bindTextures(textures: readonly ({ readonly handle: WebGLTexture } | null)[]): void {
+  /** Bind `textures` to units 0.., each only where the unit holds another,
+   *  leaving empty a unit whose texture is one of `drawnInto`. */
+  bindTextures(
+    textures: readonly ({ readonly handle: WebGLTexture } | null)[],
+    drawnInto: readonly ({ readonly handle: WebGLTexture } | null)[] = [],
+  ): void {
     const gl = this.gl;
     for (let unit = 0; unit < textures.length; unit++) {
-      const tex = textures[unit]?.handle ?? null;
+      const t = textures[unit];
+      const tex = t && !drawnInto.includes(t) ? t.handle : null;
       if (this.units[unit] === tex) continue;
       this.activate(unit);
       gl.bindTexture(gl.TEXTURE_2D, tex);
