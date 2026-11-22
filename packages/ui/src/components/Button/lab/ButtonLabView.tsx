@@ -3,7 +3,7 @@ import { copyText } from '@weasel-js/react';
 import { Button } from '@weasel-js/ui/components/Button';
 import { CodeBlock } from '@weasel-js/ui/components/CodeBlock';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
-import { asStyle, buttonVarsOf, exportDeltas, type ButtonLabConfig } from './buttonLabConfig';
+import { asStyle, BUTTON_ONLY_KNOBS, buttonVarsOf, exportDeltas, type ButtonLabConfig } from './buttonLabConfig';
 import s from './ButtonLab.stories.module.css';
 
 const SEGMENTS = [
@@ -28,8 +28,8 @@ function Target({ config, vars, className }: { config: ButtonLabConfig; vars: CS
   return <Button {...weight(config.variant)} className={className} style={vars}>{config.label}</Button>;
 }
 
-/** The tuned control magnified on its backdrop, its rest, hover, and disabled states at size, and the rule to paste
- *  into `Button.module.css` for the look as it stands. */
+/** The tuned control magnified on its backdrop, its rest, hover, and disabled states at size, and the declarations to change
+ *  in `Button.module.css` for the look as it stands. */
 export function ButtonLabView({ config }: { config: ButtonLabConfig }): ReactElement {
   const [deltas, setDeltas] = useState<string | null>(null);
   const vars = asStyle(buttonVarsOf(config));
@@ -55,6 +55,7 @@ export function ButtonLabView({ config }: { config: ButtonLabConfig }): ReactEle
           </>
         )}
       </div>
+      {config.target === 'segmented' && <p>{new Intl.ListFormat('en').format(Object.values(BUTTON_ONLY_KNOBS))} tune a button only.</p>}
       <div>
         <Button variant="ghost" size="sm" onClick={exportNow}>Export deltas</Button>
       </div>

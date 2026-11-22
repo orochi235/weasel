@@ -287,3 +287,40 @@ describe('the Button stories', () => {
     expect(meta.argTypes?.size?.options).toEqual(['xs', 'sm', 'md']);
   });
 });
+
+describe('Button stylesheet selectors', () => {
+  const css = readFileSync(resolve(__dirname, 'Button.module.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  /** The selector of the rule whose body holds `decl`. */
+  const selectorOf = (decl: string) => {
+    const at = css.indexOf(decl);
+    const open = css.lastIndexOf('{', at);
+    return css.slice(css.lastIndexOf('}', open) + 1, open).trim();
+  };
+  const el = (classes: string, attrs: Record<string, string> = {}) => {
+    const b = document.createElement('button');
+    b.className = classes;
+    for (const [k, v] of Object.entries(attrs)) b.setAttribute(k, v);
+    return b;
+  };
+
+  it('leaves every part of a disabled or readonly button alone when pressed', () => {
+    const active = [...css.matchAll(/(^|\})([^{}]*:active[^{}]*)\{/g)].flatMap((m) => m[2]!.split(/,(?![^(]*\))/)).map((s) => s.trim());
+    expect(active.length).toBeGreaterThan(4);
+    for (const sel of active) {
+      const at = sel.replace(/:active/g, '').replace(/::before|::after/g, '');
+      const attrs: Record<string, string> = /data-stance='confirm'/.test(sel) ? { 'data-stance': 'confirm' } : {};
+      const variant = sel.match(/\.(variant_\w+)/)?.[1] ?? '';
+      expect([sel, el(`button ${variant}`, attrs).matches(at)]).toEqual([sel, true]);
+      for (const off of ['data-disabled', 'data-readonly', 'disabled']) {
+        expect([sel, off, el(`button ${variant}`, { ...attrs, [off]: '' }).matches(at)]).toEqual([sel, off, false]);
+      }
+    }
+  });
+
+  it('dims a pressed confirm button, and only a pressed one', () => {
+    const sel = selectorOf('filter: brightness(0.92)');
+    expect(el('button variant_solid pressed', { 'data-stance': 'confirm' }).matches(sel)).toBe(true);
+    expect(el('button variant_solid', { 'data-stance': 'confirm' }).matches(sel)).toBe(false);
+    expect(el('button variant_solid pressed', { 'data-stance': 'confirm', 'data-disabled': '' }).matches(sel)).toBe(false);
+  });
+});

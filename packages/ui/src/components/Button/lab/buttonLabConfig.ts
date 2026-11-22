@@ -43,6 +43,9 @@ export const BUTTON_LAB_DEFAULTS: ButtonLabConfig = {
 /** Set for the preview only: the theme owns them, so pasting one into the stylesheet would override it. */
 const PREVIEW_ONLY = new Set(['--wzl-accent', '--wzl-gloss']);
 
+/** The shape knobs only a button reads: a segmented bar keeps its own radius, padding, and weight. */
+export const BUTTON_ONLY_KNOBS = { '--wzl-button-radius': 'Radius', '--wzl-button-pad-x': 'Pad x', '--wzl-button-font-weight': 'Weight' };
+
 // `+ 0` turns a rounded -0 into 0, which `toFixed` would write as `-0.00`.
 const px2 = (n: number) => `${(Math.round(n * 100) / 100 + 0).toFixed(2)}px`;
 
@@ -84,15 +87,33 @@ export function buttonVarsOf(c: ButtonLabConfig): Record<string, string> {
   };
 }
 
-/** The declarations to add to `Button.module.css`'s `.button` rule to ship the tuned look: each property that differs
- *  from what ships. The accent is the theme's, previewed but not exported. */
+/** Where a shape hook's tuned value ships. Set on `.button`, the hook would size every button at the md size the lab
+ *  tunes and override the theme's own hook, so it ships as md's `--btn-*` value with the hook still read first. */
+const SHIPS_AS: Record<string, { rule: '.button' | '.size_md'; prop: string; hooked: boolean }> = {
+  '--wzl-button-radius': { rule: '.button', prop: '--btn-radius', hooked: true },
+  '--wzl-button-font-weight': { rule: '.button', prop: '--btn-fontweight', hooked: true },
+  '--wzl-button-h': { rule: '.size_md', prop: '--btn-height', hooked: true },
+  '--wzl-button-pad-x': { rule: '.size_md', prop: '--btn-padx', hooked: true },
+  '--wzl-field-font-size': { rule: '.size_md', prop: '--btn-fontsize', hooked: false },
+};
+
+/** The declarations to change in `Button.module.css` to ship the tuned look: each property that differs from what
+ *  ships and the target reads, under the rule it goes in, replacing the declaration of that name there. The accent
+ *  is the theme's, previewed but not exported. */
 export function exportDeltas(c: ButtonLabConfig): string {
   const now = buttonVarsOf(c);
   const was = buttonVarsOf(BUTTON_LAB_DEFAULTS);
-  const lines = Object.keys(now).sort()
-    .filter((k) => !PREVIEW_ONLY.has(k) && now[k] !== getOwn(was, k))
-    .map((k) => `  ${k}: ${now[k]};`);
-  return lines.length === 0 ? '/* No deltas: every knob is at what ships. */' : `.button {\n${lines.join('\n')}\n}`;
+  const rules: Record<'.button' | '.size_md', string[]> = { '.button': [], '.size_md': [] };
+  for (const k of Object.keys(now)) {
+    if (PREVIEW_ONLY.has(k) || now[k] === getOwn(was, k)) continue;
+    if (c.target === 'segmented' && getOwn(BUTTON_ONLY_KNOBS, k) !== undefined) continue;
+    const to = getOwn(SHIPS_AS, k);
+    const value = to?.hooked ? `var(${k}, ${now[k]})` : now[k];
+    rules[to?.rule ?? '.button'].push(`  ${to?.prop ?? k}: ${value};`);
+  }
+  const blocks = Object.entries(rules).filter(([, lines]) => lines.length > 0)
+    .map(([rule, lines]) => `${rule} {\n${lines.sort().join('\n')}\n}`);
+  return blocks.length === 0 ? '/* No deltas: every knob is at what ships. */' : blocks.join('\n');
 }
 
 /** The vars as a style: they are knob values, which no class can hold. */
