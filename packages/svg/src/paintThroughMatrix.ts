@@ -73,6 +73,27 @@ function linearEnd(from: { x: number; y: number }, to: { x: number; y: number },
   return { x: start.x + wx / w2, y: start.y + wy / w2 };
 }
 
+const GRADIENTS = new Set(['linear-gradient', 'radial-gradient', 'conic-gradient']);
+
+/** Whether `paint` is a gradient or pattern placed in the document's space: `'world'`, or `'screen'` or
+ *  unstated, which a document has no screen for and reads as at an unmoved view. A `'local'` one is in its node's. */
+export function inDocumentSpace(paint: Paint): boolean {
+  if (!(GRADIENTS.has(paint.kind as string) || isPatternPaint(paint))) return false;
+  const units = (paint as { units?: string }).units;
+  return units !== 'local' && units !== 'bounds';
+}
+
+/** A paint {@link inDocumentSpace} taken into the frame `back` maps the document into, keeping its
+ *  `units`; any other paint as it is. */
+export function documentPaintThrough(paint: Paint, back: Matrix, onWarn?: (message: string) => void): Paint {
+  if (!inDocumentSpace(paint)) return paint;
+  const units = (paint as { units?: string }).units;
+  const mapped = fillThroughMatrix({ ...paint, units: 'world' } as Paint, back, onWarn) as { units?: string };
+  if (units === undefined) delete mapped.units;
+  else mapped.units = units;
+  return mapped as Paint;
+}
+
 export function paintThroughMatrix(paint: SvgPaint, m: Matrix, onWarn?: (message: string) => void): SvgPaint {
   return paint.kind === 'gradient' ? { ...paint, paint: fillThroughMatrix(paint.paint, m, onWarn) } : paint;
 }

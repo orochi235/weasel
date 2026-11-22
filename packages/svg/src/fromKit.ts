@@ -6,7 +6,7 @@
  * the canvas shows.
  */
 import {
-  asPolygonPath, paintToLocalUnits, clipOutline, definesFrame, pathInPoseBox, pathThroughPoseFrame, poseFrameOf, poseLinearOf, resolveFill, resolveStroke, shapePathOf, type ImageNodeData, type NodeClip, type Path, type Stroke, type Fill, type Inherit, nodeShapesOf, type NodeShapes,
+  asPolygonPath, paintToLocalUnits, clipOutline, definesFrame, pathInPoseBox, pathThroughPoseFrame, poseFrameOf, poseLinearOf, resolveFill, resolveStroke, shapePathOf, type ImageNodeData, type NodeClip, type Path, type Stroke, type Fill, type Inherit, type Paint, nodeShapesOf, type NodeShapes,
 } from '@weasel-js/core';
 import { solidFill } from '@weasel-js/paint';
 import { type StyledRun, type TextStyle, type TextVerticalAlign, type TextFit } from '@weasel-js/text';
@@ -17,9 +17,11 @@ import { mapFillPaint } from './fillPaint';
 import { svgPaintFromKit, svgStrokeFromKit, type SvgKitPose } from './kitPaint';
 import { strokeTrimOnPath } from './trimmedStroke';
 import type {
-  Matrix, SvgGroupNode, SvgImageNode, SvgNode, SvgPathNode, SvgTextNode,
+  Matrix, SvgGroupNode, SvgImageNode, SvgNode, SvgPaint, SvgPathNode, SvgTextNode,
 } from './types';
-import { paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
+import { documentPaintThrough, inDocumentSpace, paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
+import { carryUserScale } from './userScale';
+import { poseFrameInverseOf } from '@weasel-js/geom';
 import { asBooleanLeaf, booleanGroupSvg, derivedPathIn } from './booleanGroup';
 
 /** The leaf data the kit's path, text and image painters read — what
@@ -77,16 +79,16 @@ export function svgImageFromKit(image: ImageNodeData['image'], pose: SvgKitPose)
 
 /** A kit `Stroke` kept as one, with its paint resolved into `box` — text
  *  carries the kit's own stroke shape rather than an `SvgStroke`. */
-function strokeInPoseFrame(stroke: Stroke, box: SvgKitPose): Stroke {
-  return stroke.paint ? { ...stroke, paint: paintToLocalUnits(stroke.paint, box) } : stroke;
+function strokeInPoseFrame(stroke: Stroke, toFrame: (p: Paint) => Paint): Stroke {
+  return stroke.paint ? { ...stroke, paint: toFrame(stroke.paint) } : stroke;
 }
 
-function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
+function runInPoseFrame(run: StyledRun, toFrame: (p: Paint) => Paint): StyledRun {
   if (!run.fill && !run.stroke) return run;
   return {
     ...run,
-    ...(run.fill ? { fill: mapFillPaint(run.fill, (p) => paintToLocalUnits(p, box)) } : {}),
-    ...(run.stroke ? { stroke: strokeInPoseFrame(run.stroke, box) } : {}),
+    ...(run.fill ? { fill: mapFillPaint(run.fill, toFrame) } : {}),
+    ...(run.stroke ? { stroke: strokeInPoseFrame(run.stroke, toFrame) } : {}),
   };
 }
 
@@ -149,16 +151,27 @@ function leafOnOutline(outline: Path, data: Pick<SvgKitLeafData, 'fill' | 'strok
     fill: svgPaintFromKit(resolveFill(data.fill)?.paint ?? null, pose),
   };
   if (stroke) node.stroke = stroke;
-  const frame = poseLinearOf(pose) && poseFrameOf(pose);
+  // A rotation written on the element would turn a document-space paint with it, so that pose is baked too.
+  const held = heldStill(node.fill) || (stroke !== undefined && heldStill(stroke.paint));
+  const frame = (poseLinearOf(pose) || (pose.rotation && held)) && poseFrameOf(pose);
   if (frame) {
     const local = node.path;
     // A rect goes through as a polygon, so a mirror cannot restart where a trim measures from.
     node.path = pathThroughPoseFrame(stroke?.trim ? asPolygonPath(local) : local, pose);
-    node.fill = paintThroughMatrix(node.fill, frame);
-    if (stroke) node.stroke = strokeTrimOnPath(strokeThroughMatrix(stroke, frame), local, node.path);
+    node.fill = localPaintThrough(node.fill, frame);
+    if (stroke) {
+      const framed = strokeThroughMatrix(stroke, frame);
+      const kept = heldStill(stroke.paint) ? carryUserScale(framed, { ...framed, paint: stroke.paint }) : framed;
+      node.stroke = strokeTrimOnPath(kept, local, node.path);
+    }
   } else if (pose.rotation) node.rotation = pose.rotation;
   return node;
 }
+
+const heldStill = (paint: SvgPaint): boolean => paint.kind === 'gradient' && inDocumentSpace(paint.paint);
+
+/** `paint` through the pose frame `m` its geometry was baked with, unless it is placed in the document's space. */
+const localPaintThrough = (paint: SvgPaint, m: Matrix): SvgPaint => (heldStill(paint) ? paint : paintThroughMatrix(paint, m));
 
 /** A text leaf's text, in its box inset by `padding` about the same center,
  *  which a rotation turns about. */
@@ -178,13 +191,19 @@ function svgTextFromKit(data: SvgKitLeafData & { text: string }, pose: SvgKitPos
     text: data.text,
   };
   if (data.style) node.style = data.style;
-  if (data.runs) node.runs = data.runs.map((r) => runInPoseFrame(r, pose));
   if (data.verticalAlign) node.verticalAlign = data.verticalAlign;
   if (data.fit === 'shrink') node.fit = 'shrink';
+  // The element is written under the pose's frame, which a document-space paint is taken back through.
+  const back = poseFrameInverseOf(pose);
+  const toFrame = (p: Paint): Paint => {
+    const local = paintToLocalUnits(p, pose) as Paint;
+    return back ? documentPaintThrough(local, back) : local;
+  };
+  if (data.runs) node.runs = data.runs.map((r) => runInPoseFrame(r, toFrame));
   const fill = resolveFill(data.fill);
-  node.fill = fill && mapFillPaint(fill, (p) => paintToLocalUnits(p, pose));
+  node.fill = fill && mapFillPaint(fill, toFrame);
   const stroke = resolveStroke(data.stroke);
-  if (stroke) node.stroke = strokeInPoseFrame(stroke, pose);
+  if (stroke) node.stroke = strokeInPoseFrame(stroke, toFrame);
   if (pose.rotation) node.rotation = pose.rotation;
   if (pose.transform) node.transform = pose.transform;
   return node;
