@@ -53,6 +53,25 @@ describe('openContextMenu', () => {
 
 });
 
+describe('menuHitFor on a selection', () => {
+  const kinds: Record<string, string> = { a: 'text', b: 'rect', c: 'text' };
+  const on = (selected: string[], clicked: string) => ({
+    selection: { get: () => selected },
+    hitAt: () => ({ bodyTarget: 'selected-body', bodyKind: kinds[clicked], id: clicked }),
+    kindOfNode: (id: string) => kinds[id],
+  }) as never;
+  it('gives a right-click on a selected shape the kind the keyboard gives the selection', () => {
+    for (const [selected, clicked] of [[['a', 'b'], 'a'], [['a', 'c'], 'c'], [['b'], 'b']] as const) {
+      const d = on([...selected], clicked);
+      expect(menuHitFor(d, { x: 0, y: 0 }).hit).toEqual(menuHitFor(d).hit);
+    }
+  });
+  it('names the kind every selected shape shares, and none for a mixed selection', () => {
+    expect(menuHitFor(on(['a', 'c'], 'a')).hit.bodyKind).toBe('text');
+    expect(menuHitFor(on(['a', 'b'], 'a'), { x: 0, y: 0 }).hit.bodyKind).toBeUndefined();
+  });
+});
+
 describe('keyboardAnchor', () => {
   it('is the center of the selection bounds', () => {
     const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });

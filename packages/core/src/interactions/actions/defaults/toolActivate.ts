@@ -68,12 +68,11 @@ export function createToolActivateAction(
     scope: 'hotkey',
     // Grayed out in the palette ⇒ not reachable by shortcut either, and the
     // key goes on to whatever else binds it.
-    ...(isEligible ? {
-      enabled: (_deps?: unknown, _at?: unknown, _carried?: unknown, params?: Readonly<Partial<ToolActivateParams>>) => {
-        const toolId = params?.toolId;
-        return typeof toolId !== 'string' || isEligible(toolId) ? true : ActionDisabledReason.NotApplicable;
-      },
-    } : {}),
+    enabled: (deps, _at, _carried, params) => {
+      if (!deps?.activeTool) return ActionDisabledReason.NotApplicable;
+      const toolId = params?.toolId;
+      return typeof toolId !== 'string' || !isEligible || isEligible(toolId) ? true : ActionDisabledReason.NotApplicable;
+    },
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {

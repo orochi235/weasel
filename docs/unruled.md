@@ -3815,3 +3815,10 @@ Calls the lanes made without a ruling:
   `irregularity` adds to it alike, so a beam jittered past 90° no longer leans the other way and `angle: 90` draws
   thin near-horizontal beams rather than an infinite shear. Reading an angle past 90° as its equivalent mod 180° was
   the alternative.
+
+## Audit round seventy-two (2026-11-22): default actions
+
+- 2026-11-22 (the fixer's call): a context menu opened on the selection, by a right-click on a selected shape or by
+  Shift+F10, names the kind every selected shape shares, and no kind when they differ. A right-click had named the
+  clicked shape's kind and the keyboard only a lone selected shape's. Naming the clicked shape's kind on a
+  right-click, which the keyboard cannot match, was the alternative.

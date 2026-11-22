@@ -32,8 +32,9 @@ export function keyboardAnchor(deps: ActionDeps): Point | null {
  * `hitAt` and `kindOfNode` deps). A shape under `at` counts as selected, since
  * opening selects it first, and `select` names it when it is not yet; with no
  * `at`, the current selection. A shape the classifier names no node for stays
- * unselected. Without a classifier wired, a pointer hit names no body at all,
- * and without a selection neither does a keyboard one.
+ * unselected. The kind is the one every selected shape shares, the same by
+ * pointer or keyboard. Without a classifier wired, a pointer hit names no body
+ * at all, and without a selection neither does a keyboard one.
  */
 export function menuHitFor(deps: ActionDeps, at?: Point): { hit: MenuHit; select?: string } {
   if (at) {
@@ -44,12 +45,19 @@ export function menuHitFor(deps: ActionDeps, at?: Point): { hit: MenuHit; select
       return { hit: { bodyTarget: 'unselected-body', bodyKind: hit.bodyKind } };
     }
     const target = hit.bodyTarget === 'unselected-body' && hit.id !== undefined ? groupFor(deps, hit.id) : undefined;
-    const bodyKind = (target !== undefined ? deps.kindOfNode?.(target) : undefined) ?? hit.bodyKind;
+    const ids = target !== undefined ? [target] : deps.selection?.get();
+    const bodyKind = (deps.kindOfNode && ids?.length ? sharedKind(deps.kindOfNode, ids) : hit.bodyKind);
     return { hit: { bodyTarget: 'selected-body', bodyKind }, ...(target !== undefined ? { select: target } : {}) };
   }
   if (!deps.selection) return { hit: {} };
   const ids = deps.selection.get();
-  return { hit: { bodyTarget: ids.length ? 'selected-body' : 'empty', bodyKind: ids.length === 1 ? deps.kindOfNode?.(ids[0]!) : undefined } };
+  return { hit: { bodyTarget: ids.length ? 'selected-body' : 'empty', bodyKind: ids.length && deps.kindOfNode ? sharedKind(deps.kindOfNode, ids) : undefined } };
+}
+
+/** The kind every one of `ids` has, or none when they differ: a menu on a selection is for all of it. */
+function sharedKind(kindOf: (id: string) => string | undefined, ids: readonly string[]): string | undefined {
+  const kind = kindOf(ids[0]!);
+  return ids.every((id) => kindOf(id) === kind) ? kind : undefined;
 }
 
 /** The node a right-click selects: the press target for `id`, as a left press would pick. */

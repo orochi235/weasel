@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { BETWEEN_GESTURES } from '@weasel-js/routing';
+import { ActionDisabledReason, BETWEEN_GESTURES } from '@weasel-js/routing';
 import {
   createToolActivateAction,
   buildToolActivateBindings,
@@ -136,5 +136,17 @@ describe('buildToolActivateBindings ids', () => {
     ]).map((b) => ('opts' in b ? b.opts?.id : undefined));
     expect(new Set(ids).size).toBe(4);
     expect(ids.slice(0, 2)).toEqual(['tool.activate.select', 'tool.activate.select.v']);
+  });
+});
+
+describe('tool.activate enabled', () => {
+  it('lets the key fall through when there is no activeTool dep to switch', () => {
+    expect(createToolActivateAction([]).enabled?.({} as never, undefined, undefined, { toolId: 'pen' } as never))
+      .toBe(ActionDisabledReason.NotApplicable);
+    expect(createToolActivateAction([], () => true).enabled?.({} as never, undefined, undefined, { toolId: 'pen' } as never))
+      .toBe(ActionDisabledReason.NotApplicable);
+  });
+  it('is enabled with an activeTool dep', () => {
+    expect(createToolActivateAction([]).enabled?.({ activeTool: { setActive: vi.fn() } } as never)).toBe(true);
   });
 });

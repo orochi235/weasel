@@ -41,10 +41,6 @@ describe('viewportZoomAction descriptor', () => {
     expect(viewportZoomAction.requires).toContain('view');
   });
 
-  it('enabled returns true (always enabled)', () => {
-    expect(viewportZoomAction.enabled!()).toBe(true);
-  });
-
   it('has 7 gesture bindings: wheel+mod, ctrl+wheel, pinch, key =, key -, key 0, key alt+0', () => {
     const bindings = viewportZoomAction.defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>;
     expect(bindings).toHaveLength(7);
@@ -232,6 +228,19 @@ describe('viewportZoomAction invoker', () => {
     invoker.run({ view }, undefined);
     // Defaults to zoom-in (scale > 1).
     expect(view._value.scale.x).toBeGreaterThan(1);
+  });
+
+  it('zooms in with no params exactly as kind: in does: about the host center, gliding, recorded', () => {
+    const run = (params: undefined | { kind: 'in' }) => {
+      const animate = vi.fn();
+      const recordViewport = vi.fn();
+      const view = { ...makeView(), hostSize: () => ({ width: 800, height: 600 }), animate };
+      getImmediateInvoker(createViewportZoomAction({ animate: true })).run({ view, debug: { recordViewport } } as never, params);
+      return { target: animate.mock.calls[0]?.[0], recorded: recordViewport.mock.calls };
+    };
+    const bare = run(undefined);
+    expect(bare.target).toBeDefined();
+    expect(bare).toEqual(run({ kind: 'in' }));
   });
 });
 

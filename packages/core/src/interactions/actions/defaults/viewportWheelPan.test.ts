@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { ActionDisabledReason } from '@weasel-js/routing';
 import { viewportWheelPanAction, createViewportWheelPanAction } from './viewportWheelPan';
+import { viewportZoomAction } from './viewportZoom';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 
@@ -42,9 +44,6 @@ describe('viewportWheelPanAction descriptor', () => {
     expect(viewportWheelPanAction.requires).toContain('view');
   });
 
-  it('enabled returns true (always enabled)', () => {
-    expect(viewportWheelPanAction.enabled!()).toBe(true);
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -171,5 +170,14 @@ describe('viewportWheelPanAction and a pan coast', () => {
     view.stopDecay = () => { stopped++; };
     getImmediateInvoker(viewportWheelPanAction).run({ view }, { deltaX: 0, deltaY: 10 });
     expect(stopped).toBe(1);
+  });
+});
+
+describe('viewport.wheelPan and viewport.zoom without a view', () => {
+  it('let the input fall through rather than take it and do nothing', () => {
+    for (const a of [viewportWheelPanAction, viewportZoomAction]) {
+      expect(a.enabled?.({} as never)).toBe(ActionDisabledReason.NotApplicable);
+      expect(a.enabled?.({ view: { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }), set: () => {} } } as never)).toBe(true);
+    }
   });
 });
