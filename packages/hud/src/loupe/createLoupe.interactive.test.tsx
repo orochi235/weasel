@@ -109,6 +109,7 @@ async function openLoupe(m: Mounted, kind: Kind): Promise<LoupeHandle> {
       hud: m.hud,
       canvas: m.canvas,
       requestRedraw: () => m.api.requestRedraw(),
+      shape: 'rect',
       bounds: BOUNDS,
       factor: 4,
       ...(kind === 'picture' ? { source: [] } : { views: m.api, interactive: kind === 'interactive' }),

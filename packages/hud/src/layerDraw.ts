@@ -1,5 +1,6 @@
 import { depsUnchanged, type RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { ellipsePath } from '@weasel-js/geom';
 import type { ResolvedTheme } from '@weasel-js/theme';
 import type { Hud } from './hud';
 import type { HudDrawCtx, Widget } from './widget';
@@ -28,7 +29,7 @@ export function createLayerDraw(
       if (children.length === 0) continue;
       out.push({
         kind: 'group',
-        clip: { kind: 'rect', ...rect },
+        clip: w.shape === 'round' ? ellipsePath(rect) : { kind: 'rect', ...rect },
         children,
       });
     }
@@ -88,14 +89,15 @@ interface CachedFrame {
 const RING_WIDTH = 2;
 const RING_GAP = 2;
 
-/** A stroked rect just outside `w`'s bounds, so the ring never covers the
+/** `w`'s outline stroked just outside its bounds, so the ring never covers the
  *  widget's own edge. */
 function focusRing(w: Widget, color: string): DrawCommand {
   const { x, y, width: bw, height: h } = w.bounds;
   const out = RING_GAP + RING_WIDTH / 2;
+  const box = { x: x - out, y: y - out, width: bw + out * 2, height: h + out * 2 };
   return {
     kind: 'path',
-    path: { kind: 'rect', x: x - out, y: y - out, width: bw + out * 2, height: h + out * 2 },
+    path: w.shape === 'round' ? ellipsePath(box) : { kind: 'rect', ...box },
     stroke: { paint: { kind: 'solid', color }, width: RING_WIDTH },
   };
 }

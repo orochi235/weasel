@@ -3,12 +3,15 @@ import { drawOneLayer, useLatest } from '@weasel-js/core';
 import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { Hud } from '../hud';
 import { createLoupe, type LoupeHandle, type LoupeMode } from '../loupe/createLoupe';
+import type { WindowShapeKind } from '../widgets/window/window';
 
 /** What the lens is told to be: whoever owns these drives it. */
 export interface LoupeSettings {
   visible: boolean;
   mode: LoupeMode;
   factor: number;
+  /** The lens's outline, `'round'` by default; see `LoupeOptions.shape`. A change rebuilds the lens. */
+  shape?: WindowShapeKind;
 }
 
 /** What the lens reports back. */
@@ -53,6 +56,7 @@ export function useLoupe(
     draw: (data, view, dims) => (sourceRef.current ?? []).flatMap((l) => drawOneLayer(l, data, view, dims)),
   }]).current;
 
+  const { shape } = settings;
   useEffect(() => {
     const api = ref.current;
     if (!api?.surface) return;
@@ -66,6 +70,7 @@ export function useLoupe(
       region: () => api.getSurfaceRect(),
       mode,
       factor,
+      ...(shape ? { shape } : {}),
       requestRedraw: () => api.requestRedraw(),
       contentVersion: () => api.getPaintedVersion(),
       onColorChange: (hex) => eventsRef.current.onColorChange(hex),
@@ -75,7 +80,7 @@ export function useLoupe(
     loupe.window.setHidden(!visible);
     handle.current = loupe;
     return () => { loupe.dispose(); handle.current = null; };
-  }, [hud, eventsRef, settingsRef, sourceRef, ref, stableSource]);
+  }, [hud, eventsRef, settingsRef, sourceRef, ref, stableSource, shape]);
 
   const { visible, mode, factor } = settings;
   useEffect(() => { handle.current?.window.setHidden(!visible); }, [visible]);

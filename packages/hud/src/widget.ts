@@ -158,6 +158,9 @@ export interface Widget {
   content?(ctx: HudContentCtx): DrawCommand[];
   /** Region `content` is clipped to. Required when `content` is set. */
   readonly contentRect?: WidgetBounds;
+  /** `'round'` when the widget is the circle inscribed in its bounds: its content is clipped to the circle inscribed
+   *  in `contentRect`, and its focus ring is round. Default `'rect'`. */
+  readonly shape?: 'rect' | 'round';
   hitTest(x: number, y: number): boolean;
   /** True where the widget covers a point but hands its input to what it
    *  shows — a window whose interior is a view on the canvas. The hit walk

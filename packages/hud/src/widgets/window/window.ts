@@ -6,17 +6,20 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { ColorSource } from '@weasel-js/paint';
 import type { Emphasis, Grade, Stance } from '@weasel-js/theme';
 import { createHostHold, createWindowDrag, dragZoneFor } from './windowDrag';
-import { drawWindowFrame, type WindowAppearance, type WindowShape } from './windowFrame';
-import {
-  zoneAt, windowContentRect, cursorForZone,
-  DEFAULT_WINDOW_METRICS, type WindowMetrics, type WindowZone,
-} from './zones';
+import { drawWindowFrame, type WindowAppearance } from './windowFrame';
+import { cursorForZone, type WindowMetrics, type WindowZone } from './zones';
+import { windowLayoutFor } from './windowLayout';
 
 /** Options for a window widget. */
 export interface WindowOptions {
   id: string;
   x: number; y: number; width: number; height: number;
   title: string;
+  /**
+   * The window's outline. `'rect'`, the default, is a box with a titlebar. `'round'` is a circle inscribed in square
+   * bounds: always bare, resized from its rim, with its interior clipped to the circle; its bounds stay square.
+   */
+  shape?: WindowShapeKind;
   minWidth?: number;
   minHeight?: number;
   /** Draw a titlebar with the title and a close box. Default `true`. When
@@ -82,23 +85,18 @@ export interface WindowWidget extends Widget {
   dispose(): void;
 }
 
-export function createWindow(opts: WindowOptions): WindowWidget {
-  const chrome = opts.titlebar ?? true;
-  const passing = opts.interior === 'pass';
-  const configured: WindowMetrics = { ...DEFAULT_WINDOW_METRICS, ...opts.metrics };
-  // Without a titlebar the top inset is the resize band — or, when the
-  // interior passes and so cannot be the move handle, a grip strip whose
-  // titlebar zone is that handle.
-  const gripped = !chrome && passing;
-  const m: WindowMetrics = chrome ? configured
-    : { ...configured, titleH: gripped ? configured.grip : configured.edge };
-  const shape: WindowShape = { m, chrome, gripped };
-  const minW = opts.minWidth ?? 80;
-  const minH = opts.minHeight ?? m.titleH + m.edge + 40;
+/** A window's outline: a titled box, or a bare circle. */
+export type WindowShapeKind = 'rect' | 'round';
 
-  const clampSize = (b: WidgetBounds): WidgetBounds => ({
-    x: b.x, y: b.y, width: Math.max(minW, b.width), height: Math.max(minH, b.height),
+export function createWindow(opts: WindowOptions): WindowWidget {
+  const passing = opts.interior === 'pass';
+  const layout = windowLayoutFor({
+    round: opts.shape === 'round', titlebar: opts.titlebar ?? true, passing,
+    metrics: opts.metrics, minWidth: opts.minWidth, minHeight: opts.minHeight,
   });
+  const { shape, minW, minH, clampSize } = layout;
+  const { chrome, round } = shape;
+  const zoneOf = (x: number, y: number): WindowZone | null => layout.zoneAt(bounds, x, y);
 
   const host = createHostHold();
   const clampOnHost = host.clamp;
@@ -125,8 +123,9 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
   const drag = createWindowDrag({
     bounds: () => bounds,
-    zoneAt: (x, y) => zoneAt(bounds, m, x, y),
+    zoneAt: zoneOf,
     dragZone: asDrag,
+    ...(layout.fit ? { fit: layout.fit } : {}),
     minW, minH, clampOnHost,
     place(b, zone) {
       bounds = b;
@@ -143,8 +142,9 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     get bounds() { return bounds; },
     get hidden() { return hidden; },
     get disposed() { return disposed; },
-    get contentRect() { return windowContentRect(bounds, m); },
-    cursorAt(x, y) { const z = asDrag(zoneAt(bounds, m, x, y)); return z ? cursorForZone(z) : 'default'; },
+    shape: round ? 'round' : 'rect',
+    get contentRect() { return layout.contentRect(bounds); },
+    cursorAt(x, y) { const z = asDrag(zoneOf(x, y)); return z ? cursorForZone(z) : 'default'; },
     content: opts.content,
 
     // Ends any drag in flight: `dragStart` would otherwise still hold the
@@ -180,12 +180,12 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
     hitTest(px, py) {
       if (hidden) return false;
-      const z = zoneAt(bounds, m, px, py);
+      const z = zoneOf(px, py);
       return z !== null && !(passing && z === 'content');
     },
 
     passes(px, py) {
-      return passing && !hidden && zoneAt(bounds, m, px, py) === 'content';
+      return passing && !hidden && zoneOf(px, py) === 'content';
     },
 
     onPointer(evt: HudPointerEvent): void { drag.pointer(evt); },

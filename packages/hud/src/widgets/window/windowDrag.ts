@@ -21,6 +21,8 @@ export interface WindowDragHost {
   dragZone(z: WindowZone | null): WindowZone | null;
   minW: number;
   minH: number;
+  /** `next`, a drag of `zone` from `start`, held to the window's shape. Absent, any box goes. */
+  fit?(start: WidgetBounds, next: WidgetBounds, zone: WindowZone): WidgetBounds;
   /** `b` pulled back onto the host. */
   clampOnHost(b: WidgetBounds): WidgetBounds;
   /** Puts the window at `b`, moved through `zone`: `'title'` is a move, any other a resize. */
@@ -61,9 +63,10 @@ export function createWindowDrag(host: WindowDragHost): WindowDrag {
           if (!dragZone || !Number.isFinite(evt.x) || !Number.isFinite(evt.y)) break;
           // The dispatcher sends a move only once the press crossed the `gestures.dragPx` kit setting.
           pressMoved = true;
-          const dragged = applyWindowDrag(
+          const pulled = applyWindowDrag(
             dragStart, dragZone, evt.x - dragOrigin.x, evt.y - dragOrigin.y, host.minW, host.minH,
           );
+          const dragged = host.fit ? host.fit(dragStart, pulled, dragZone) : pulled;
           // Only 'title' translates without resizing (zones.ts), so it is the
           // one drag where pulling the window back cannot fight the gesture.
           const next = dragZone === 'title' ? host.clampOnHost(dragged) : dragged;

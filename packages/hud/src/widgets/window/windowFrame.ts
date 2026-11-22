@@ -1,17 +1,23 @@
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import { pathFromD, parseColor, textCommandFromRuns } from '@weasel-js/core';
+import { ellipsePath } from '@weasel-js/geom';
 import { dashForStrokeStyle, mixOklab, type ColorSource, solidFill } from '@weasel-js/paint';
 import { TINT_REF, type Emphasis, type Grade, type Stance } from '@weasel-js/theme';
 import type { HudDrawCtx, WidgetBounds } from '../../widget';
 import { windowLook } from './windowLook';
 import { ellipsize } from '../../menu/textWidth';
 import type { WindowMetrics } from './zones';
+import { roundInset } from './roundZones';
 
 /** A window's fixed layout: its metrics, whether it has a titlebar, and whether it grows a grip strip. */
 export interface WindowShape {
   m: WindowMetrics;
   chrome: boolean;
   gripped: boolean;
+  /** Drawn as the circle inscribed in its bounds. */
+  round: boolean;
+  /** Its interior hands input to what it shows. */
+  passing: boolean;
 }
 
 /** What a window's frame is painted from that its setters change. */
@@ -48,6 +54,9 @@ function gripDots(cx: number, cy: number, color: string): PathDrawCommand {
   return { kind: 'path', path: pathFromD(d), fill: solidFill(color) };
 }
 
+const insetBox = (b: WidgetBounds, d: number): WidgetBounds =>
+  ({ x: b.x + d, y: b.y + d, width: b.width - d * 2, height: b.height - d * 2 });
+
 /** The close box of a window at `bounds`. */
 function closeBoxOf(bounds: WidgetBounds, m: WindowMetrics): WidgetBounds {
   return {
@@ -83,11 +92,21 @@ export function drawWindowFrame(
     { x: x + w - m.edge, y: below, width: m.edge, height: bandH },
     { x: x + m.edge, y: y + h - m.edge, width: w - m.edge * 2, height: m.edge },
   ];
-  for (const r of rects) {
-    out.push({ kind: 'path', path: { kind: 'rect', ...r }, fill: solidFill(band) });
+  if (shape.round) {
+    // The rim band, stroked down the middle of the annulus between the bounds and the interior.
+    const inset = roundInset(m, shape.passing);
+    out.push({
+      kind: 'path',
+      path: ellipsePath(insetBox(bounds, inset / 2)),
+      stroke: { paint: { kind: 'solid', color: band }, width: inset },
+    });
+  } else {
+    for (const r of rects) {
+      out.push({ kind: 'path', path: { kind: 'rect', ...r }, fill: solidFill(band) });
+    }
   }
 
-  // Border ring: a stroked rect, no fill, so the interior stays a hole
+  // Border ring: stroked, no fill, so the interior stays a hole
   // for the content painter drawn beneath this widget.
 
   const ringW = Number.parseFloat(look['border-width']) || 0;
@@ -96,11 +115,12 @@ export function drawWindowFrame(
     const dash = dashForStrokeStyle(style, ringW);
     const ring: PathDrawCommand = {
       kind: 'path',
-      path: { kind: 'rect', x, y, width: w, height: h },
+      path: shape.round ? ellipsePath(insetBox(bounds, ringW / 2)) : { kind: 'rect', x, y, width: w, height: h },
       stroke: { paint: { kind: 'solid', color: look['border-color'] }, width: ringW, ...(dash ? { dash } : {}) },
     };
     out.push(ring);
   }
+  if (shape.round) return out;
 
   if (gripped) out.push(gripDots(x + w / 2, y + (m.edge + m.grip) / 2, look['title-color']));
   if (!chrome) return out;

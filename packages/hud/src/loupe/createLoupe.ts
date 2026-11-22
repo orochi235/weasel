@@ -2,7 +2,7 @@ import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { createLoupeModel, type LoupeMode, type LoupeModel, type LoupeSurface } from '@weasel-js/loupe';
 import type { Hud } from '../hud';
-import type { WindowWidget } from '../widgets/window/window';
+import type { WindowShapeKind, WindowWidget } from '../widgets/window/window';
 import type { HudContentCtx, WidgetBounds } from '../widget';
 import { createContentWatch } from './contentWatch';
 import { createLoupeColors } from './loupeColors';
@@ -40,9 +40,16 @@ export interface LoupeBaseOptions {
   contentVersion?: () => number;
   mode?: LoupeMode;
   factor?: number;
+  /**
+   * The lens's outline. `'round'`, the default, is a bare circle moved by its interior (or, for an `interactive`
+   * lens, a grip ring inside its rim) and resized from its rim, with no titlebar or close box. `'rect'` is the older
+   * titled window; prefer the round lens unless the lens must carry a title or be closed from its own chrome.
+   */
+  shape?: WindowShapeKind;
+  /** Where the lens starts. A round lens takes the smaller side and stays square. */
   bounds?: WidgetBounds;
   title?: string;
-  /** Draw the window's titlebar and close box. Default `true`. Pass `false`
+  /** For a `'rect'` lens, draw the window's titlebar and close box. Default `true`. Pass `false`
    *  for a bare lens; the interior then doubles as the move handle, or, for an
    *  `interactive` lens, a grip strip across its top does. */
   titlebar?: boolean;
@@ -148,6 +155,12 @@ export interface LoupeHandle {
   dispose(): void;
 }
 
+/** Where a lens of each shape starts when told nothing. */
+const DEFAULT_BOUNDS: Record<WindowShapeKind, WidgetBounds> = {
+  round: { x: 24, y: 24, width: 200, height: 200 },
+  rect: { x: 24, y: 24, width: 220, height: 200 },
+};
+
 /** Numbers each loupe, so its window and lens view take ids of their own. */
 let loupeCount = 0;
 
@@ -164,7 +177,8 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const input = opts.input ?? element;
   let disposed = false;
 
-  const b = opts.bounds ?? { x: 24, y: 24, width: 220, height: 200 };
+  const shape = opts.shape ?? 'round';
+  const b = opts.bounds ?? DEFAULT_BOUNDS[shape];
 
   const watch = createContentWatch(opts.contentVersion ?? host?.getPaintedVersion);
   let refreshAsked = false;
@@ -199,6 +213,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     id: `weasel-loupe-${++loupeCount}`,
     x: b.x, y: b.y, width: b.width, height: b.height,
     title: opts.title ?? 'Loupe',
+    shape,
     titlebar: opts.titlebar,
     content,
     interior: interactive ? 'pass' : 'claim',

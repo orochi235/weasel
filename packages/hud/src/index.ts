@@ -25,7 +25,7 @@ export { hudButton } from './widgets/button';
 export type { ListOptions, ListWidget } from './widgets/list/list';
 export { hudItemList, type HudListRow, type HudListState, type HudListTarget } from './widgets/list/drawList';
 export { hudMeasureEnv } from './measureEnv';
-export type { WindowOptions, WindowWidget } from './widgets/window/window';
+export type { WindowOptions, WindowShapeKind, WindowWidget } from './widgets/window/window';
 export {
   DEFAULT_WINDOW_METRICS, cursorForZone,
   type WindowZone, type WindowMetrics,
