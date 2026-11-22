@@ -15,11 +15,14 @@
 import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { ActionDisabledReason, isSegment } from '@weasel-js/routing';
 import type { CursorSpec } from '@weasel-js/cursor';
-import { bendSegment, editAnchorSetTracked, type PointOrigin, type PolygonPath } from '@weasel-js/geom';
+import {
+  bendSegmentSymmetric, editAnchorSetTracked, pathToAnchors, type AnchorSet, type PointOrigin, type PolygonPath,
+} from '@weasel-js/geom';
 import {
   editingLayer, inPlane, pathOperationTags, type PathRepresentation, representationOf, segmentUnder,
 } from '@weasel-js/core';
 import { createPathEditPreview, finishPathEditFrame } from './editAnchors/preview';
+import { editedPathSymmetries } from './editAnchors/symmetry';
 import { icon } from '../icons.gen';
 
 const BEND_CURSOR: CursorSpec = 'grab';
@@ -41,7 +44,7 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
   defaultBinding: [{ spec: { kind: 'drag', target: { kindOf: isSegment } }, opts: { id: 'bendSegment.drag' } }],
   cursor: BEND_CURSOR,
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors', 'view', 'kitSettings'],
+  requires: ['editAnchors', 'view', 'kitSettings', 'pathSymmetry'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx): OngoingHandle {
@@ -52,6 +55,7 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
       const { dep, path: originPath, hit } = under;
       const id = dep.editingId;
       const press = { x: ctx.world.x, y: ctx.world.y };
+      const symmetries = editedPathSymmetries(ctx.deps.pathSymmetry, id, pathToAnchors(originPath) as AnchorSet);
       let current: { path: PolygonPath; origins?: readonly (PointOrigin | null)[] } | null = null;
       const preview = createPathEditPreview(dep, id, () => current);
       if (!preview) return {};
@@ -67,7 +71,7 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
             current = null;
             return;
           }
-          const next = editAnchorSetTracked(originPath, (set) => bendSegment(set, hit, dx, dy));
+          const next = editAnchorSetTracked(originPath, (set) => bendSegmentSymmetric(set, hit, dx, dy, symmetries));
           // A frame no extension can finish is dropped, as the anchor drag drops one.
           if (next && finishPathEditFrame(dep, id, next.path, next.origins)) current = next;
         },

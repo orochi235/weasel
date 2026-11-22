@@ -1,6 +1,7 @@
 import { transformPoint, type Affine } from '../affine';
 import { anchorAt, anchorCount, translateAnchorBy, type AnchorSet } from './anchorEdits';
 import { isAnchorSmooth, type PenAnchor } from './anchors';
+import { bendSegment, type BendGrip } from './bendSegment';
 import type { Point } from './cubicMath';
 
 type Side = 'in' | 'out';
@@ -184,6 +185,78 @@ export function moveHandleSymmetric(
     if (!b) continue;
     if (t.side === 'in') b.inHandle = t.to;
     else b.outHandle = t.to;
+  }
+  return true;
+}
+
+/** Flat index of anchor `idx` of subpath `sub`. */
+function flatOf(set: AnchorSet, sub: number, idx: number): number {
+  let flat = idx;
+  for (let k = 0; k < sub; k++) flat += set.anchors[k].length;
+  return flat;
+}
+
+/** Flat index of the anchor after `flat` along its subpath, or -1 at an open end. */
+function nextFlat(set: AnchorSet, flat: number): number {
+  let start = 0;
+  for (let sub = 0; sub < set.anchors.length; sub++) {
+    const len = set.anchors[sub].length;
+    if (flat < start + len) {
+      const idx = flat - start + 1;
+      if (idx < len) return start + idx;
+      return set.closed[sub] ? start : -1;
+    }
+    start += len;
+  }
+  return -1;
+}
+
+/**
+ * Bend a segment as `bendSegment` does, and write each handle the bend moved
+ * into its images under `syms`, so a path that was its own image under each of
+ * them still is. A handle that is also the image of another moved handle, as on
+ * a segment a mirror maps onto itself, takes the mean of its targets.
+ */
+export function bendSegmentSymmetric(
+  set: AnchorSet,
+  grip: BendGrip,
+  dx: number,
+  dy: number,
+  syms: readonly AnchorSymmetry[],
+): boolean {
+  if (syms.length === 0) return bendSegment(set, grip, dx, dy);
+  const ia = flatOf(set, grip.sub, grip.segIdx);
+  const ib = nextFlat(set, ia);
+  if (ib < 0) return false;
+  const a = anchorAt(set, ia)!;
+  const b = anchorAt(set, ib)!;
+  const before = { a: { in: a.inHandle, out: a.outHandle }, b: { in: b.inHandle, out: b.outHandle } };
+  if (!bendSegment(set, grip, dx, dy)) return false;
+
+  const sums = new Map<string, { flat: number; side: Side; x: number; y: number; k: number }>();
+  const add = (flat: number, side: Side, p: Point): void => {
+    const key = `${flat}:${side}`;
+    const sum = sums.get(key) ?? { flat, side, x: 0, y: 0, k: 0 };
+    sum.x += p.x;
+    sum.y += p.y;
+    sum.k++;
+    sums.set(key, sum);
+  };
+  // A transform reverses the segment when it lands a and b with b first; a bare anchor's own pairing can't say.
+  const reverses = syms.map((s) => nextFlat(set, s.partners[ia]) !== s.partners[ib]);
+  for (const [flat, anchor, was] of [[ia, a, before.a], [ib, b, before.b]] as const) {
+    for (const side of ['in', 'out'] as const) {
+      const now = side === 'in' ? anchor.inHandle : anchor.outHandle;
+      if (!now || now === was[side]) continue;
+      add(flat, side, now);
+      syms.forEach((s, k) => add(s.partners[flat], reverses[k] ? other(side) : side, image(s.m, now)));
+    }
+  }
+  for (const t of sums.values()) {
+    const c = anchorAt(set, t.flat)!;
+    const to = { x: t.x / t.k, y: t.y / t.k };
+    if (t.side === 'in') c.inHandle = to;
+    else c.outHandle = to;
   }
   return true;
 }

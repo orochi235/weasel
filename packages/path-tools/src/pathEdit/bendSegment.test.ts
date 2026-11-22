@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PathBuilder, cubicPointAt, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
+import { PathBuilder, anchorSymmetry, cubicPointAt, pathToAnchors, type Affine, type AnchorSet, type PolygonPath } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
@@ -15,9 +15,9 @@ function line(): PolygonPath {
   return b.build();
 }
 
-function setup(finishEdit?: EditAnchorsDep['finishEdit']) {
+function setup(finishEdit?: EditAnchorsDep['finishEdit'], start: PolygonPath = line(), transforms?: readonly Affine[]) {
   const commits: Array<{ path: PolygonPath; label: string }> = [];
-  let current = line();
+  let current = start;
   const dep = makeEditAnchorsDep({
     editingId: 'p1',
     ...(finishEdit ? { finishEdit } : {}),
@@ -28,7 +28,8 @@ function setup(finishEdit?: EditAnchorsDep['finishEdit']) {
     },
   });
   const view = { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) };
-  return { deps: { editAnchors: dep, view } as unknown as InvocationCtx['deps'], commits };
+  const pathSymmetry = transforms ? { transforms: () => transforms } : undefined;
+  return { deps: { editAnchors: dep, view, pathSymmetry } as unknown as InvocationCtx['deps'], commits };
 }
 
 const at = (deps: InvocationCtx['deps'], x: number, y: number): InvocationCtx => ({
@@ -41,6 +42,17 @@ const at = (deps: InvocationCtx['deps'], x: number, y: number): InvocationCtx =>
 const ongoing = bendSegmentAction.invoker as OngoingInvoker;
 
 describe('bendSegmentAction', () => {
+  it('bends the mirror image of the segment under a pathSymmetry dep', () => {
+    const across50: Affine = [-1, 0, 0, 1, 100, 0];
+    const kite = new PathBuilder().moveTo(50, 0).lineTo(80, 40).lineTo(50, 100).lineTo(20, 40).close().build();
+    const { deps, commits } = setup(undefined, kite, [across50]);
+    const handle = ongoing.start(at(deps, 65, 20), {});
+    handle.onMove!(at(deps, 75, 10));
+    handle.onEnd!(at(deps, 75, 10), 'commit');
+    expect(commits).toHaveLength(1);
+    expect(anchorSymmetry(pathToAnchors(commits[0].path) as AnchorSet, across50, 1e-3)).not.toBeNull();
+  });
+
   it('commits nothing when the drag ends back on its press point', () => {
     const { deps, commits } = setup();
     const handle = ongoing.start(at(deps, 50, 2), {});

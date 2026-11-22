@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Affine } from '../affine';
 import type { AnchorSet } from './anchorEdits';
-import { anchorSymmetry, moveHandleSymmetric, translateAnchorsSymmetric } from './anchorSymmetry';
+import { anchorSymmetry, bendSegmentSymmetric, moveHandleSymmetric, translateAnchorsSymmetric } from './anchorSymmetry';
 
 /** Reflection across the vertical line x = 50. */
 const ACROSS_50: Affine = [-1, 0, 0, 1, 100, 0];
@@ -125,5 +125,33 @@ describe('both axes', () => {
     const mirrors = group.map((m) => anchorSymmetry(set, m)!);
     moveHandleSymmetric(set, 0, 'out', 75, 20, false, mirrors);
     for (const m of group) expect(anchorSymmetry(set, m)).not.toBeNull();
+  });
+});
+
+describe('bendSegmentSymmetric', () => {
+  /** A kite symmetric about x = 50: top and bottom on the axis, wings either side. */
+  const kite = (): AnchorSet => ({
+    anchors: [[{ x: 50, y: 0 }, { x: 80, y: 40 }, { x: 50, y: 100 }, { x: 20, y: 40 }]],
+    closed: [true],
+  });
+
+  it('bends the mirrored segment to match', () => {
+    const set = kite();
+    const sym = anchorSymmetry(set, ACROSS_50)!;
+    expect(bendSegmentSymmetric(set, { sub: 0, segIdx: 0, t: 0.5 }, 10, -10, [sym])).toBe(true);
+    expect(anchorSymmetry(set, ACROSS_50, 1e-9)).not.toBeNull();
+    const [top, wing, , other] = set.anchors[0];
+    expect(top.outHandle).toBeDefined();
+    expect(top.inHandle).toEqual({ x: 100 - top.outHandle!.x, y: top.outHandle!.y });
+    expect(other.outHandle).toEqual({ x: 100 - wing.inHandle!.x, y: wing.inHandle!.y });
+  });
+
+  it('keeps a segment the mirror maps onto itself symmetric', () => {
+    const set: AnchorSet = { anchors: [[{ x: 0, y: 0 }, { x: 100, y: 0 }]], closed: [false] };
+    const sym = anchorSymmetry(set, ACROSS_50)!;
+    bendSegmentSymmetric(set, { sub: 0, segIdx: 0, t: 0.3 }, 0, 30, [sym]);
+    const [a, b] = set.anchors[0];
+    expect(b.inHandle!.x).toBeCloseTo(100 - a.outHandle!.x, 9);
+    expect(b.inHandle!.y).toBeCloseTo(a.outHandle!.y, 9);
   });
 });
