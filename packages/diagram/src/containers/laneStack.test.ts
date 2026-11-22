@@ -30,6 +30,12 @@ describe('laneStackLayout', () => {
     expect(rows.fit!(POOL, [A, B]).bounds).toBeUndefined();
   });
 
+  it('stacks lanes past the header the pool\'s own trait gives', () => {
+    const node = { data: { diagram: { container: { role: 'pool', header: { side: 'left', size: 50 } } } } };
+    const poses = rows.childPoses({ ...POOL, node } as never, [A, B]);
+    expect(poses.get('a')).toEqual({ x: 50, y: 0, width: 280, height: 80 });
+  });
+
   it('puts the title up the left header', () => {
     const poses = rows.childPoses(POOL, [A, B, { id: 'p/title', pose: A.pose }]);
     expect(poses.get('p/title')!.rotation).toBeCloseTo(-Math.PI / 2);

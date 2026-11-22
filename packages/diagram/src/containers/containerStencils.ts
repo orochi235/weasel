@@ -150,7 +150,7 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
   const boundary = at !== null ? (axis === 'y' ? at.y : at.x) : axis === 'y' ? b.y + b.height : b.x + b.width;
   // Centered on the boundary it goes in at: the stack orders lanes by where they sit.
   const start = boundary - NEW_LANE_SIZE / 2;
-  const body = bodyBox(b, trait.header);
+  const body = bodyBox(b, trait.header ?? poolHeader(axis));
   const pose: RectPose = axis === 'y'
     ? { x: body.x, y: start, width: body.width, height: NEW_LANE_SIZE }
     : { x: start, y: body.y, width: NEW_LANE_SIZE, height: body.height };

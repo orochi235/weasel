@@ -3,18 +3,18 @@
  * wherever it is dropped or the container is resized to; only the title is
  * placed, in the header.
  *
- * A strategy sees ids and poses, never data, so it cannot tell a lane from a
- * shape. Which nodes a container admits is `diagramCanDropInto`'s call.
+ * The header is the container trait's own where the layout is handed the
+ * container's node. Which nodes a container admits is `diagramCanDropInto`'s call.
  */
 import { type LayoutStrategy, type RectPose } from '@weasel-js/core';
 import { titlePose } from './titlePose';
-import { bodyBox, titleIdOf, type ContainerHeader } from './trait';
+import { bodyBox, layoutHeaderOf, titleIdOf, type ContainerHeader } from './trait';
 import type { Rect } from '@weasel-js/geom';
 import * as ops from '@weasel-js/core/ops';
 
 /** Options for {@link diagramContainerLayout}. */
 export interface ContainerLayoutOptions {
-  /** Where the title sits; matches the container trait's own `header`. */
+  /** Where the title sits in a container whose node carries no header. */
   header?: ContainerHeader;
 }
 
@@ -37,7 +37,7 @@ export function diagramContainerLayout(opts: ContainerLayoutOptions = {}): Layou
   const { header } = opts;
   return {
     snap: { pickTarget: (targets) => targets[0] ?? null },
-    childPoses: (container, children) => titlePoses(container, children, header),
+    childPoses: (container, children) => titlePoses(container, children, layoutHeaderOf(container, header)),
     getDropTargets: (_container, _children, dragged) => [{ pose: dragged.pose, origin: center(dragged.pose) }],
     reflowPoses: () => new Map(),
     commitDrop: (_container, _children, dragged, target) => [ops.setPose<RectPose>({
@@ -45,7 +45,7 @@ export function diagramContainerLayout(opts: ContainerLayoutOptions = {}): Layou
     })],
     dropRegion(container) {
       const b = container.bounds;
-      const body = bodyBox(b, header);
+      const body = bodyBox(b, layoutHeaderOf(container, header));
       return { kind: 'rect', x: body.x - b.x, y: body.y - b.y, width: body.width, height: body.height };
     },
   };

@@ -3,8 +3,8 @@
  * sit and stretched across the body past the header. The pool's size along
  * the stack is the sum of its lanes; its size across is the author's.
  *
- * Like every strategy it sees ids and poses only: the title is told apart by
- * its name, and which nodes a pool admits (lanes) is `diagramCanDropInto`'s call.
+ * The header is the pool trait's own where the layout is handed the pool's node.
+ * Which nodes a pool admits (lanes) is `diagramCanDropInto`'s call.
  */
 import {
   type ContainerBounds,
@@ -16,14 +16,14 @@ import {
   type RectPose,
 } from '@weasel-js/core';
 import { titlePose } from './titlePose';
-import { bodyBox, titleIdOf, type ContainerHeader } from './trait';
+import { bodyBox, layoutHeaderOf, titleIdOf, type ContainerHeader } from './trait';
 import * as coreOps from '@weasel-js/core/ops';
 
 /** Options for {@link laneStackLayout}. */
 export interface LaneStackOptions {
   /** The axis lanes stack along: `'y'` for a pool of rows, `'x'` for columns. */
   axis: 'x' | 'y';
-  /** The header's depth, across the stack. Default {@link POOL_HEADER_SIZE}. */
+  /** The header's depth, across the stack, for a pool whose node carries no header. Default {@link POOL_HEADER_SIZE}. */
   headerSize?: number;
 }
 
@@ -64,13 +64,14 @@ export function stackedLanes(
 /** A pool stacking its lanes along `axis`. */
 export function laneStackLayout(opts: LaneStackOptions): LayoutStrategy<RectPose> {
   const { axis } = opts;
-  const header = poolHeader(axis, opts.headerSize);
+  const fallback = poolHeader(axis, opts.headerSize);
+  const headerOf = (container: LayoutContainer) => layoutHeaderOf(container, fallback);
   const along = (p: { width: number; height: number }) => (axis === 'y' ? p.height : p.width);
   const lanesOf = (container: LayoutContainer, children: readonly Lane[], skip?: string) =>
     children.filter((c) => c.id !== titleIdOf(container.id) && c.id !== skip).sort((a, b) => laneMiddle(axis, a.pose) - laneMiddle(axis, b.pose));
   const sized = (lanes: readonly Lane[]) => lanes.map((l) => ({ id: l.id, size: along(l.pose) }));
   const withTitle = (container: LayoutContainer, children: readonly Lane[], poses: Map<string, RectPose>, bounds = container.bounds) => {
-    if (children.some((c) => c.id === titleIdOf(container.id))) poses.set(titleIdOf(container.id), titlePose(bounds, header));
+    if (children.some((c) => c.id === titleIdOf(container.id))) poses.set(titleIdOf(container.id), titlePose(bounds, headerOf(container)));
     return poses;
   };
   /** The pool sized to hold `lanes`, and where they sit in it. */
@@ -78,12 +79,12 @@ export function laneStackLayout(opts: LaneStackOptions): LayoutStrategy<RectPose
     const sizes = sized(lanes);
     const total = Math.max(MIN_LANE_SIZE, sizes.reduce((s, l) => s + l.size, 0));
     const bounds = axis === 'y' ? { ...container.bounds, height: total } : { ...container.bounds, width: total };
-    return { poses: withTitle(container, children, stackedLanes(axis, bounds, header, sizes), bounds), bounds };
+    return { poses: withTitle(container, children, stackedLanes(axis, bounds, headerOf(container), sizes), bounds), bounds };
   };
   const insertAt = (container: LayoutContainer, children: readonly Lane[], dragged: Lane, index: number) => {
     const sizes = sized(lanesOf(container, children, dragged.id));
     sizes.splice(index, 0, { id: dragged.id, size: along(dragged.pose) });
-    return stackedLanes(axis, container.bounds, header, sizes);
+    return stackedLanes(axis, container.bounds, headerOf(container), sizes);
   };
   const shifted: LayoutStrategy<RectPose>['reflowPoses'] = (container, children, dragged, target) => {
     if (target === null) return new Map();
@@ -100,6 +101,7 @@ export function laneStackLayout(opts: LaneStackOptions): LayoutStrategy<RectPose
     if (last === undefined) return { poses: withTitle(container, children, new Map()) };
     last.size = Math.max(MIN_LANE_SIZE, last.size + along(container.bounds) - sizes.reduce((s, l) => s + l.size, 0));
     const total = sizes.reduce((s, l) => s + l.size, 0);
+    const header = headerOf(container);
     if (total <= along(container.bounds)) return { poses: withTitle(container, children, stackedLanes(axis, container.bounds, header, sizes)) };
     const bounds = axis === 'y' ? { ...container.bounds, height: total } : { ...container.bounds, width: total };
     return { poses: withTitle(container, children, stackedLanes(axis, bounds, header, sizes), bounds), bounds };
@@ -153,7 +155,7 @@ export function laneStackLayout(opts: LaneStackOptions): LayoutStrategy<RectPose
 
     dropRegion(container) {
       const b = container.bounds;
-      const body = bodyBox(b, header);
+      const body = bodyBox(b, headerOf(container));
       return { kind: 'rect', x: body.x - b.x, y: body.y - b.y, width: body.width, height: body.height };
     },
 

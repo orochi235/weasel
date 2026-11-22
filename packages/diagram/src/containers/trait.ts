@@ -53,6 +53,10 @@ export function laneOutlineOf(node: { data: unknown }): Outline | undefined {
   return traitOf(node)?.outline as Outline | undefined;
 }
 
+/** The header a layout lays `container` out under: its trait's own, or `fallback` where its node carries none. */
+export const layoutHeaderOf = <H extends ContainerHeader | undefined>(container: { node?: { data: unknown } }, fallback: H): ContainerHeader | H =>
+  (container.node === undefined ? undefined : diagramContainerOf(container.node)?.header) ?? fallback;
+
 /** The id of a container's title node. */
 export const titleIdOf = (containerId: string): string => `${containerId}/title`;
 
