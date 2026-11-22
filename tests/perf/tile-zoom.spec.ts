@@ -22,7 +22,7 @@ const DPR = 2;
 const ZOOM = Number(process.env.WEASEL_PERF_ZOOM_FRAMES) || 600;
 const PAN = 200;
 
-interface FrameRecord { ms: number; baked: number; bakeMs: number; standIns: number; liveDraws: number; bytes: number; held: number }
+interface FrameRecord { ms: number; walkMs: number; submitMs: number; releaseMs: number; baked: number; bakeMs: number; standIns: number; liveDraws: number; bytes: number; held: number }
 
 test.setTimeout(3_600_000);
 
@@ -92,19 +92,41 @@ test('a zoom over a tiled backdrop against the same layer drawn live', async ({ 
       const renderer = new WeaselRenderer({ gl, canvas, width: w, height: h, dpr });
       const slot = { drawOne: defaultDrawOne, paintBounds: defaultPaintBounds, cull: true, ...(tiled ? { tiles: { main: { fadeMs: 0 } } } : {}) };
       const wired = wireSceneSlotToScene(slot, scene);
-      const layers = buildSceneLayers(wired, sceneToAdapter(scene), () => null, () => null).map((l: { layer: unknown }) => l.layer);
-      const host = tiled ? createTileHost(renderer.tiles) : undefined;
+      // Where a bake's time goes: the layer's walk, the renderer's submission, and freeing tiles.
+      const spent = { walk: 0, submit: 0, release: 0 };
+      const timed = <T>(k: keyof typeof spent, f: () => T): T => {
+        const a = performance.now();
+        try { return f(); } finally { spent[k] += performance.now() - a; }
+      };
+      type Layer = { draw: (d: unknown, v: unknown, dims: { bake?: boolean }) => unknown };
+      const layers = buildSceneLayers(wired, sceneToAdapter(scene), () => null, () => null).map((l: { layer: Layer }) => ({
+        ...l.layer, draw: (d: unknown, v: unknown, dims: { bake?: boolean }) => dims.bake ? timed('walk', () => l.layer.draw(d, v, dims)) : l.layer.draw(d, v, dims),
+      }));
+      const t = renderer.tiles;
+      const baker = {
+        bake: (c: unknown, size: number) => timed('submit', () => t.bake(c, size)),
+        begin: (size: number) => {
+          const b = timed('submit', () => t.begin(size));
+          return b && { size, draw: (c: unknown) => timed('submit', () => b.draw(c)), finish: () => timed('submit', () => b.finish()), cancel: () => b.cancel() };
+        },
+        release: (x: unknown) => timed('release', () => t.release(x)),
+        idle: () => t.idle(),
+        get bytes() { return t.bytes; },
+        get generation() { return t.generation; },
+      };
+      const host = tiled ? createTileHost(baker) : undefined;
       const records = [];
       const dims = { width: w, height: h, dpr };
       for (let f = 0; f < zoom + pan; f++) {
         const view = viewAt(f);
         const t0 = performance.now();
+        spent.walk = spent.submit = spent.release = 0;
         const cmds = drawLayers(layers, null, {}, undefined, view, dims, new Map(), undefined, undefined, undefined, false, host);
         renderer.render(cmds, new Float32Array([view.scale.x, 0, 0, 0, view.scale.y, 0, -view.x * view.scale.x, -view.y * view.scale.y, 1]));
         gl.finish();
         const ms = performance.now() - t0;
         const st = host?.stats() ?? { baked: 0, bakeMs: 0, standIns: 0, liveDraws: 1, bytes: 0, held: 0 };
-        records.push({ ms, ...st });
+        records.push({ ms, walkMs: spent.walk, submitMs: spent.submit, releaseMs: spent.release, ...st });
         if (f % 100 === 0) console.log(`tile-zoom ${tiled ? 'tiled' : 'live '} ${f}/${zoom + pan} ${ms.toFixed(2)} ms`);
       }
       renderer.dispose();
@@ -133,6 +155,11 @@ test('a zoom over a tiled backdrop against the same layer drawn live', async ({ 
     liveDraws: metric(tiledAfter.reduce((a, r) => a + r.liveDraws, 0), 'count', 'frames after the first that drew the layer live'),
     baked: metric(tiledAfter.reduce((a, r) => a + r.baked, 0), 'count', 'tiles baked after the first frame', tiledAfter.map((r) => r.baked)),
     bakeMs: metric(med(tiledAfter.filter((r) => r.baked > 0).map((r) => r.bakeMs)), 'ms', 'median CPU bake time of a frame that baked', tiledAfter.map((r) => r.bakeMs)),
+    maxMs: metric(Math.max(...tiledAfter.map((r) => r.ms)), 'ms', 'slowest frame after the first'),
+    firstMs: metric((out.tiled as FrameRecord[])[0]!.ms, 'ms', 'the first frame, which builds the scene\'s visibility index'),
+    walkMs: metric(Math.max(...tiledAfter.map((r) => r.walkMs)), 'ms', 'most a frame spent walking the layer for bakes', tiledAfter.map((r) => r.walkMs)),
+    submitMs: metric(Math.max(...tiledAfter.map((r) => r.submitMs)), 'ms', 'most a frame spent in the renderer drawing bakes', tiledAfter.map((r) => r.submitMs)),
+    releaseMs: metric(Math.max(...tiledAfter.map((r) => r.releaseMs)), 'ms', 'most a frame spent freeing tiles', tiledAfter.map((r) => r.releaseMs)),
     standIns: metric(tiledAfter.reduce((a, r) => a + r.standIns, 0), 'count', 'stand-in quads drawn', tiledAfter.map((r) => r.standIns)),
     peakBytes: metric(Math.max(...tiledAfter.map((r) => r.bytes)), 'bytes', 'most GPU memory the tiles held', tiledAfter.map((r) => r.bytes)),
   });

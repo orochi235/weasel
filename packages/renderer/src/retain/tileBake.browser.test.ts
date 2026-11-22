@@ -126,4 +126,26 @@ describe('baked tiles', () => {
     expect(r.tiles.bytes).toBe(held);
     r.tiles.release(b);
   });
+
+  it('baked over several calls, each clipped to its part, matches the tile baked at once', () => {
+    const { r, gl } = rendererOf();
+    const size = TILE + 2 * GUTTER;
+    const k = 2, toTexels = mat3.translated(mat3.scaled(mat3.identity(), k, k), GUTTER / k, GUTTER / k);
+    const whole = r.tiles.bake([{ kind: 'group', transform: toTexels, children: world() }], size)!;
+    const parts = r.tiles.begin(size)!;
+    // An uneven split, so no edge falls on the middle.
+    for (const [x0, y0, x1, y1] of [[0, 0, 13, 21], [13, 0, size, 21], [0, 21, 13, size], [13, 21, size, size]] as const) {
+      parts.draw([{ kind: 'group', clip: pathFromD(`M${x0} ${y0}H${x1}V${y1}H${x0}Z`), children: [{ kind: 'group', transform: toTexels, children: world() }] }]);
+    }
+    const split = parts.finish()!;
+    const at = mat3.identity();
+    const show = (tile: TileTexture) => read(gl, r, [{ kind: 'tile', tile, x: 0, y: 0, width: size, height: size, source: { x: 0, y: 0, width: size, height: size } }], at);
+    const a = show(whole), b = show(split);
+    let max = 0;
+    for (let i = 0; i < a.length; i++) max = Math.max(max, Math.abs(a[i]! - b[i]!));
+    expect(max).toBeLessThanOrEqual(1);
+    const before = r.tiles.bytes;
+    r.tiles.begin(size)!.cancel();
+    expect(r.tiles.bytes).toBe(before);
+  });
 });

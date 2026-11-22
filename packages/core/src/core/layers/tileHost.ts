@@ -3,21 +3,13 @@
  * one frame budget, and drawn as tile quads in place of the layer's commands.
  */
 import { pathFromD } from '@weasel-js/geom';
-import { viewToMat3, type DrawCommand, type TileTexture } from '@weasel-js/renderer';
+import type { DrawCommand, TileTexture } from '@weasel-js/renderer';
 import { createPlaneScheme, planeFloor, TilePyramid, type PlaneTileKey, type PlaneTileView, type TileDraw } from '@weasel-js/tiles';
 import { sameList } from '@weasel-js/registry';
 import type { View } from 'core/viewport/view';
 import type { LayerDims } from './dims';
+import { createTileBakes, GUTTER, type TileBaker, type TileBakes } from './tileSplit';
 import { DEFAULT_TILE_BUDGET, DEFAULT_TILE_PX, type TileBudgetOptions, type TileOptions } from './tiles';
-
-/** What a host bakes tiles with: a renderer's `tiles`. */
-export interface TileBaker {
-  bake(commands: readonly DrawCommand[], size: number): TileTexture | null;
-  release(tile: TileTexture): void;
-  idle(): void;
-  readonly bytes: number;
-  readonly generation: number;
-}
 
 /** What a frame of a host's tiled layers came to. */
 export interface TileHostStats {
@@ -55,13 +47,11 @@ export interface TileHost {
   dispose(): void;
 }
 
-/** Texels past each edge of a tile that it bakes, so bilinear sampling at a seam reads its neighbor's content. */
-const GUTTER = 1;
 /** A stale region drawn live through, while an edit goes on, may cover at most this share of the screen's tiles. */
 const DRAW_THROUGH_SHARE = 0.25;
 
 type Pyramid = TilePyramid<PlaneTileKey, PlaneTileView, TileTexture>;
-interface LayerTiles { pyramid: Pyramid; tilePx: number; seen: boolean; last: View | null; deps: readonly unknown[] | undefined }
+interface LayerTiles { pyramid: Pyramid; bakes: TileBakes; tilePx: number; seen: boolean; last: View | null; deps: readonly unknown[] | undefined }
 
 /** The world box `view` shows on a `dims` canvas, `[x0, y0, x1, y1]`. */
 function worldBox(view: View, dims: LayerDims): number[] {
@@ -69,6 +59,8 @@ function worldBox(view: View, dims: LayerDims): number[] {
   const ay = view.y, by = view.y + dims.height / view.scale.y;
   return [Math.min(ax, bx), Math.min(ay, by), Math.max(ax, bx), Math.max(ay, by)];
 }
+
+export type { TileBaker } from './tileSplit';
 
 /** A host baking through `baker`, sharing `budget` across its layers. */
 export function createTileHost(baker: TileBaker, budget: TileBudgetOptions = {}, clock: () => number = () => performance.now()): TileHost {
@@ -89,7 +81,7 @@ export function createTileHost(baker: TileBaker, budget: TileBudgetOptions = {},
     // Every texture went with the context: start over.
     if (baker.generation !== generation) {
       generation = baker.generation;
-      for (const l of layers.values()) l.pyramid.clear();
+      for (const l of layers.values()) clearLayer(l);
     }
   };
 
@@ -97,7 +89,7 @@ export function createTileHost(baker: TileBaker, budget: TileBudgetOptions = {},
     const tilePx = opts.tilePx ?? DEFAULT_TILE_PX;
     let l = layers.get(id);
     if (l && l.tilePx !== tilePx) {
-      l.pyramid.clear();
+      clearLayer(l);
       l = undefined;
     }
     if (!l) {
@@ -112,7 +104,7 @@ export function createTileHost(baker: TileBaker, budget: TileBudgetOptions = {},
           return b ? planeFloor(scheme, tilePx, b, opts.floorTiles ?? 2) : [];
         },
       });
-      l = { pyramid, tilePx, seen: true, last: null, deps: undefined };
+      l = { pyramid, bakes: createTileBakes(baker, scheme, tilePx, clock), tilePx, seen: true, last: null, deps: undefined };
       layers.set(id, l);
     }
     l.seen = true;
@@ -127,23 +119,24 @@ export function createTileHost(baker: TileBaker, budget: TileBudgetOptions = {},
       l.deps = deps;
       const { pyramid, tilePx } = l;
       const damage = opts.damage?.since();
-      if (depsMoved || damage === 'all') pyramid.dirtyAll();
-      else if (damage) for (const box of damage) pyramid.dirty(box);
+      const hit = depsMoved ? 'all' : damage;
+      if (hit === 'all') pyramid.dirtyAll();
+      else if (hit) for (const box of hit) pyramid.dirty(box);
+      if (hit && hit.length > 0) l.bakes.damaged(hit);
 
       const scheme = pyramid.cache.scheme;
-      const bake = bakeWith(baker, scheme, tilePx, draw);
       const box = worldBox(view, dims);
       const motion: [number, number] | undefined = l.last ? [view.x - l.last.x, view.y - l.last.y] : undefined;
       l.last = { x: view.x, y: view.y, scale: { ...view.scale } };
       const pxPerUnit = Math.max(Math.abs(view.scale.x), Math.abs(view.scale.y)) * dims.dpr;
       const t0 = clock();
-      const spent = t0 - frameStart;
-      const frame = pyramid.run({ box, pxPerUnit, ...(motion ? { motion } : {}) }, t0, bake, {
-        ms: Math.max(0, share.ms - spent), tiles: Math.max(1, share.tiles - stats.baked), clock,
+      const ms = Math.max(0, share.ms - (t0 - frameStart));
+      const frame = pyramid.run({ box, pxPerUnit, ...(motion ? { motion } : {}) }, t0, (key) => l.bakes.bake(key, draw, t0 + ms), {
+        ms, tiles: Math.max(1, share.tiles - stats.baked), clock,
       });
       stats.baked += frame.baked;
       stats.bakeMs += clock() - t0;
-      if (frame.pending > 0 || frame.fading) owes = true;
+      if (frame.pending > 0 || frame.fading || l.bakes.inFlight) owes = true;
       if (frame.live) {
         stats.liveDraws++;
         return draw(view, dims);
@@ -168,7 +161,7 @@ export function createTileHost(baker: TileBaker, budget: TileBudgetOptions = {},
       let held = 0;
       for (const [id, l] of layers) {
         if (!l.seen) {
-          l.pyramid.clear();
+          clearLayer(l);
           layers.delete(id);
           continue;
         }
@@ -182,26 +175,17 @@ export function createTileHost(baker: TileBaker, budget: TileBudgetOptions = {},
     owesFrame: () => owes,
     stats: () => stats,
     dispose() {
-      for (const l of layers.values()) l.pyramid.clear();
+      for (const l of layers.values()) clearLayer(l);
       layers.clear();
       baker.idle();
     },
   };
 }
 
-/** Bake a tile of a layer drawn by `draw`: its commands under the tile's own view, a texel to the unit, its gutter included. */
-function bakeWith(
-  baker: TileBaker, scheme: { boundsOf(k: PlaneTileKey): Float64Array; texelsPerUnit(k: PlaneTileKey): number },
-  tilePx: number, draw: (view: View, dims: LayerDims) => DrawCommand[],
-): (key: PlaneTileKey) => TileTexture | null {
-  const size = tilePx + 2 * GUTTER;
-  return (key) => {
-    const b = scheme.boundsOf(key);
-    const k = scheme.texelsPerUnit(key);
-    const tileView: View = { x: b[0]! - GUTTER / k, y: b[1]! - GUTTER / k, scale: { x: k, y: k } };
-    const cmds = draw(tileView, { width: size, height: size, dpr: 1, bake: true });
-    return baker.bake([{ kind: 'group', transform: viewToMat3(tileView), children: cmds }], size);
-  };
+/** Free what a layer's tiles hold. */
+function clearLayer(l: LayerTiles): void {
+  l.bakes.dispose();
+  l.pyramid.clear();
 }
 
 /** The tile command drawing `d`: its spot's world box, sampling its part of the tile inside the gutter. */

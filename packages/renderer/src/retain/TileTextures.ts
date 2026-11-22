@@ -19,6 +19,8 @@ export class TileTextures {
   private readonly live = new Map<TileTexture, GpuTarget>();
   private readonly pool = new Map<number, GpuTarget[]>();
   private scratch: GpuTarget | null = null;
+  /** Scratch buffers of bakes spanning several calls, each held by one until it finishes. */
+  private readonly owned = new Set<GpuTarget>();
   private readonly samples: number;
   /** Bumped when every texture is lost at once, as on context loss: a holder starts over. */
   generation = 0;
@@ -33,6 +35,7 @@ export class TileTextures {
     let n = 0;
     for (const t of this.live.values()) n += t.bytes;
     for (const list of this.pool.values()) for (const t of list) n += t.bytes;
+    for (const t of this.owned) n += t.bytes;
     return n + (this.scratch?.bytes ?? 0);
   }
 
@@ -55,10 +58,22 @@ export class TileTextures {
     return this.scratch;
   }
 
-  /** Keep what the scratch buffer holds as a new tile. */
-  keep(size: number): TileTexture {
+  /** A scratch buffer of a bake's own, kept until `keep` or `free` hands it back. */
+  ownScratch(size: number): GpuTarget {
+    const t = this.gpu.createTarget({ width: size, height: size, samples: this.samples, stencil: true });
+    this.owned.add(t);
+    return t;
+  }
+
+  /** Free a scratch buffer `ownScratch` made. Idempotent. */
+  free(scratch: GpuTarget): void {
+    if (this.owned.delete(scratch)) this.gpu.deleteTarget(scratch);
+  }
+
+  /** Keep what a scratch buffer holds, the shared one by default, as a new tile. */
+  keep(size: number, scratch: GpuTarget = this.scratch!): TileTexture {
     const target = this.pool.get(size)?.pop() ?? this.gpu.createTarget({ width: size, height: size, filter: 'linear' });
-    this.gpu.resolve(this.scratch!, target, size, size, 0, 0);
+    this.gpu.resolve(scratch, target, size, size, 0, 0);
     const tile: TileTexture = { kind: 'tile-texture', size };
     this.live.set(tile, target);
     return tile;
@@ -90,6 +105,8 @@ export class TileTextures {
     this.live.clear();
     for (const list of this.pool.values()) for (const t of list) this.gpu.deleteTarget(t);
     this.pool.clear();
+    for (const t of this.owned) this.gpu.deleteTarget(t);
+    this.owned.clear();
     this.dropScratch();
     this.generation++;
   }

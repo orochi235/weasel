@@ -744,20 +744,26 @@ once tiled (`docs/concepts.md`, "Tiled layers"). Each frame is `drawLayers`, the
 
     onto do --kind bench --gui -- npx playwright test --config tests/perf/playwright.config.ts tile-zoom
 
-On msb-uai (Apple M3 Max, ANGLE Metal) on 2026-11-21, the tiled run's first frame (the floor) left out:
+On msb-uai (Apple M3 Max, ANGLE Metal) on 2026-11-21, the tiled run's first frame left out, before
+and after costly tiles were baked in parts and bakes pruned by a coarser tree (`23f84e7f` plus the
+change; the live columns are each run's own):
 
-| frames | live median (ms) | live p95 | tiled median (ms) | tiled p95 |
-|---|---:|---:|---:|---:|
-| near fit-all (first and last 60 of the zoom) | 79.775 | 110.640 | 1.900 | 18.265 |
-| deep in (frames 240–360) | 0.120 | 0.265 | 0.110 | 1.075 |
-| the pan | 2.385 | 2.960 | 0.160 | 1.750 |
-| the whole zoom | 3.440 | 100.175 | 0.285 | 12.555 |
+| frames | live median (ms) | live p95 | tiled median, before | tiled p95, before | tiled median, after | tiled p95, after |
+|---|---:|---:|---:|---:|---:|---:|
+| near fit-all (first and last 60 of the zoom) | 65.825 | 92.840 | 1.900 | 18.265 | 10.785 | 11.240 |
+| deep in (frames 240–360) | 0.125 | 0.390 | 0.110 | 1.075 | 0.100 | 0.690 |
+| the pan | 1.865 | 2.230 | 0.160 | 1.750 | 0.155 | 1.390 |
+| the whole zoom | 2.185 | 79.910 | 0.285 | 12.555 | 0.880 | 11.085 |
 
-No frame of the tiled run after the first drew the layer live. Its frames that baked nothing took
-0.110 ms (median) and 0.190 (p95); frames that baked took 1.345 and 15.180, the budget's 10 ms and the
-compositing. The slowest, 117.665 ms, baked one tile of a coarse level holding most of the scene:
-a frame always bakes at least one tile, however long it takes. The tiles peaked at 249.9 MiB of the
-256 MiB bound. The run is in `tests/perf/recorded/tiles-2026-11-21/`.
+No frame of the tiled run after the first drew the layer live. Before, its slowest frame took
+117.665 ms and 13 passed 30: each was a bake at a level new to the zoom whose walk built the
+visibility index's tree for that octave over all 100k nodes (the frame's walk took 100–118 ms of it,
+measured by the spec's `walkMs`). After, the slowest took 18.190 ms and none passed 30; frames that baked
+took 3.555 ms (median) and 11.120 (p95), against 1.345 and 15.180 before. Near fit-all the median rose
+to the budget's 10 ms, since the coarse tiles there now take several frames each. The first frame,
+198.2 ms, builds the visibility index's first tree, as the live run's first frame (250.5 ms) does. The
+tiles peaked at 249.9 MiB of the 256 MiB bound in both. The runs are in
+`tests/perf/recorded/tiles-2026-11-21/` (`tile-zoom.json` before, `tile-zoom-split.json` after).
 
 What it costs a canvas that tiles nothing, on the same node: `scene/visibility.bench.ts`'s small and
 closing cases before the tiling commits (`93e4539d`, its second pass, the first having run at a load

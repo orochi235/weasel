@@ -589,9 +589,7 @@ these entries are what is left of them.
   layers of a worker canvas. Left: `<SceneViewCanvas tiles>` (it paints through `sceneViewFrame`, not
   `drawLayers`); the render worker's scene layers, which bake there through the worker's renderer; a
   parallax layer tiled through its plane's view; a whole-view crossfade when the shown level changes
-  (each tile fades in on its own now); and a coarse tile split into several bakes when one would pass the
-  frame budget by itself (117 ms for a fit-all tile of 100k nodes in `tile-zoom.spec.ts`). Closes when
-  each has shipped with a test, and no frame of that spec's tiled run passes 30 ms.
+  (each tile fades in on its own now). Closes when each has shipped with a test.
 - **(P3) [agent] A true 3D force layout.** A diagram reaches a 3D host only through a `LayoutFrame`, a plane
   (2026-11-19), so `force` relaxes in two dimensions: `@weasel-js/simulation`'s `SimulationNode` is
   `{x, y, vx, vy, fx, fy}` (`packages/simulation/src/types.ts:7`) and `packages/diagram/src/force.ts` writes

@@ -1080,6 +1080,16 @@ missing tile is drawn from the nearest held tile up to 8 levels above, sampling 
 tiles up to 2 levels below drawn over that. When the screen and the floor would break the byte bound,
 the screen drops a level. While anything is wanted or fading, the host asks for another frame.
 
+**A costly tile.** A tile that would pass what the frame has left is baked in parts over several
+frames (`renderer.tiles.begin(size)`: each part draws over a multisampled buffer the bake holds, and
+`finish` keeps the whole), its stand-in drawn until then. Each part is a square of the tile, culled and
+clipped to it, cut in four until the level's measured cost per texel fits the frame, down to a
+sixteenth of the side. A level not yet measured guesses from the nearest one that was, four times a
+texel's cost a level coarser; with none, its first part is a sixteenth of the tile. Damage on a
+part-baked tile, or another tile coming first, starts it over. A bake prunes its walk by the
+visibility index's tree at a coarser zoom when one is kept, rather than building one for its own
+octave: wider boxes prune less but never wrongly, and a bake is drawn once.
+
 **Edits.** A scene layer's tiles are staled by damage: a reach tree of the host's own reports each
 named node's own box before and after a change (boxing paint at 1/16 scale, so a `{ px }` stroke is
 boxed as wide as it can draw), and every held tile those boxes meet, padded by a texel at its level,

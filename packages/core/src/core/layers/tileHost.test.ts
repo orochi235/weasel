@@ -20,6 +20,9 @@ function fakeBaker(): TileBaker & { held: Set<TileTexture>; baked: number } {
       b.baked++;
       return t;
     },
+    begin: (size: number) => ({
+      size, draw: () => true, finish: () => b.bake([], size), cancel: () => {},
+    }),
     release: (t: TileTexture) => { held.delete(t); },
     idle: () => {},
   };
