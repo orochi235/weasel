@@ -3762,3 +3762,18 @@ Calls the lanes made without a ruling:
   point when that node is painted over a scroll container rather than inside it or holding it: only the containers
   holding that node scroll, and with none the wheel pans the view. Without `hitAt` wired, every container under the
   point is reached, painted over or not. Testing occlusion by bounds inside the action was the alternative.
+## Audit round seventy-one (2026-11-22): diagram formats
+
+- 2026-11-22 (the fixer's call): the DOT reader takes `pos` as points in a graph with a `bb`, which only layout output
+  carries, and as inches in one without, as neato reads its input. A `!` pin says nothing about the unit; reading it as
+  inches was the alternative, but Graphviz's own output pins nodes too.
+- 2026-11-22 (the fixer's call): the DOT reader reads a cluster whose `style` holds `invis` as a container with a
+  transparent fill and stroke and no label, holding its members as before, since Graphviz still lays an invisible
+  cluster out as one. Leaving the container out, as invisible nodes are, was the alternative; it would lose the grouping.
+- 2026-11-22 (the fixer's call): the DOT reader takes a node's `weasel_outline` only when it names an outline the
+  outline registry holds; an empty one is unset, and any other is read from the node's `shape` with a warning. A
+  document naming an outline its consumer registers later reads as the shape; taking any name on trust was the
+  alternative.
+- 2026-11-22 (the fixer's call): the DOT writer warns whenever a dash it writes is not one of the two patterns DOT's
+  `dashed` and `dotted` read back as, the built-in themes' container dash included, since it reads back changed.
+  Warning only for an element's own dash, not a theme's, was the alternative.

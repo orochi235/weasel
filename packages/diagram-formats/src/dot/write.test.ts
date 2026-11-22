@@ -78,6 +78,27 @@ describe('writing DOT', () => {
     expect(back(pageOf(data)).data.edges.map(markers)).toEqual(data.edges.map(markers));
   });
 
+  it('writes a container\'s own stroke width as its cluster\'s penwidth', () => {
+    const data: DiagramData = { nodes: [{ id: 'a' }], edges: [], containers: [{ id: 'c', role: 'container', members: ['a'], colors: { strokeWidth: 3 } }] };
+    expect(writeDot(pageOf(data)).text).toMatch(/subgraph cluster_c \{[^}]*penwidth=3;/);
+    expect(back(pageOf(data)).data.containers![0]!.colors?.strokeWidth).toBe(3);
+  });
+
+  it('warns for a dash pattern DOT draws differently, and not for the two it has', () => {
+    const data = (dash: number[]): DiagramData => ({ nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ id: '1', from: 'a', to: 'b', colors: { dash } }] });
+    const warning = 'DOT draws only dashed and dotted lines; other dash patterns were written as dashed.';
+    expect(writeDot(pageOf(data([10, 2]))).warnings).toContain(warning);
+    expect(writeDot(pageOf({ nodes: [{ id: 'a', colors: { dash: [1, 1] } }], edges: [] })).warnings).toContain(warning);
+    for (const dash of [[6, 4], [2, 3]]) expect(writeDot(pageOf(data(dash))).warnings).not.toContain(warning);
+  });
+
+  it('writes an open chevron, which DOT has no arrowhead for, as an arrow with a warning', () => {
+    const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ id: '1', from: 'a', to: 'b', colors: { markerEnd: 'arrow-open' } }] };
+    const { text, warnings } = writeDot(pageOf(data));
+    expect(text).not.toMatch(/arrowhead/);
+    expect(warnings).toContain('DOT has no arrowhead for some markers; they were written as arrows.');
+  });
+
   it('writes every node\'s place, size, and the page box when all are placed', () => {
     const data: DiagramData = {
       nodes: [{ id: 'a', at: { x: 10, y: 20 }, width: 100, height: 40 }, { id: 'b', at: { x: 200, y: 150 }, width: 80, height: 50 }],
@@ -100,6 +121,7 @@ describe('writing DOT', () => {
     expect(writeDot(doc).warnings).toEqual([
       'DOT holds one page; connectors to other pages were dropped.',
       'DOT holds no routes; connectors\' bends were dropped.',
+      'DOT draws only dashed and dotted lines; other dash patterns were written as dashed.',
     ]);
   });
 
@@ -114,6 +136,7 @@ describe('writing DOT', () => {
       'DOT has no groups; they were written as clusters, which read back as containers.',
       'DOT has no ports of a shape\'s own; shapes\' ports and port labels were dropped.',
       'DOT has no drawn outlines; those shapes were written as rectangles.',
+      'DOT draws only dashed and dotted lines; other dash patterns were written as dashed.',
       'DOT has only compass ports; connectors\' other ports were dropped.',
       'DOT joins nodes only; connectors to containers and groups were dropped.',
     ]);

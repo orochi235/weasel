@@ -27,6 +27,50 @@ describe('reading DOT', () => {
     ]);
   });
 
+  it('reads an invisible cluster as a container that draws nothing, around members it still draws', () => {
+    const p = page('digraph { subgraph cluster_a { style=invis; label=A; color=red; x; y } }');
+    expect(p.data.containers).toEqual([
+      { id: 'a', role: 'container', members: ['x', 'y'], colors: { fill: 'transparent', stroke: 'transparent' } },
+    ]);
+    expect(p.data.nodes.map((n) => n.id)).toEqual(['x', 'y']);
+  });
+
+  it('reads a node\'s outline from its shape when weasel_outline is empty or names no outline', () => {
+    const { document, warnings } = readDot('digraph { a [shape=diamond, weasel_outline=""]; b [weasel_outline=blob]; c [weasel_outline=stadium] }');
+    expect(asGraph(document.pages[0]!).data.nodes.map((n) => n.outline)).toEqual(['diamond', 'ellipse', 'stadium']);
+    expect(warnings).toEqual(['DOT outlines a diagram does not have were read from the shape: blob.']);
+  });
+
+  it('reads a tailport or headport set to "" as unset, with no warning', () => {
+    const { document, warnings } = readDot('digraph { a -> b [tailport="", headport=""] }');
+    expect(asGraph(document.pages[0]!).data.edges[0]).not.toHaveProperty('fromPort');
+    expect(warnings).toEqual([]);
+  });
+
+  it('reads a subgraph as a cluster by its prefix in any case, or by cluster=true', () => {
+    const { document, warnings } = readDot(
+      'digraph { subgraph Cluster_A { a } subgraph g { cluster=true; b } subgraph { graph [cluster=yes] c } subgraph h { cluster=false; d } }',
+    );
+    expect(asGraph(document.pages[0]!).data.containers).toEqual([
+      { id: 'A', role: 'container', members: ['a'] },
+      { id: 'g', role: 'container', members: ['b'] },
+      { id: 'cluster', role: 'container', members: ['c'] },
+    ]);
+    expect(warnings).toEqual([]);
+  });
+
+  it('keeps a cluster named with a NUL apart from one with no name', () => {
+    const p = page('digraph { subgraph { cluster=1; a } subgraph "\u00000" { cluster=1; b } }');
+    expect(p.data.containers?.map((c) => c.members)).toEqual([['a'], ['b']]);
+  });
+
+  it('reads \\G in a cluster label as the cluster\'s name, and keeps \\N where no node owns the label', () => {
+    const p = page('digraph G { label="\\G \\N"; subgraph cluster_x { label="\\G \\N"; a } a -> b [label="\\N"] }');
+    expect(p.name).toBe('G \\N');
+    expect(p.data.containers![0]!.label).toBe('cluster_x \\N');
+    expect(p.data.edges[0]!.label).toBe('\\N');
+  });
+
   it('reads plain subgraphs as scopes only, and nests clusters', () => {
     const p = page('digraph { subgraph cluster_x { subgraph { rank=same; a } subgraph cluster_y { b } } c }');
     expect(p.data.containers).toEqual([
@@ -95,6 +139,25 @@ describe('reading DOT', () => {
     ]);
   });
 
+  it('reads each of Graphviz\'s arrowhead synonyms as the arrowhead it names', () => {
+    const heads = (a: string, b: string) => page(`digraph { a -> b [arrowhead=${a}]; b -> c [arrowhead=${b}] }`).data.edges
+      .map((e) => e.colors?.markerEnd);
+    for (const [a, b] of [['empty', 'onormal'], ['open', 'vee'], ['ediamond', 'odiamond'], ['invempty', 'oinv']]) {
+      const [x, y] = heads(a!, b!);
+      expect(x).toBe(y);
+      expect(x).not.toBe('arrow');
+    }
+  });
+
+  it('gives a strict graph\'s merged edge the ports a later statement names', () => {
+    expect(page('strict digraph { a -> b; a:n -> b:s [color=red] }').data.edges).toMatchObject([
+      { from: 'a', to: 'b', fromPort: 'n', toPort: 's', colors: { stroke: 'red' } },
+    ]);
+    const [e] = page('strict graph { a -- b:e; b:w -- a }').data.edges;
+    expect(e).toMatchObject({ from: 'a', to: 'b', toPort: 'w' });
+    expect(e).not.toHaveProperty('fromPort');
+  });
+
   it('keeps one edge per pair of ends in a strict graph', () => {
     expect(page('strict graph { a -- b; b -- a; a -- b }').data.edges).toHaveLength(1);
     expect(page('strict digraph { "a\u0000b" -> c; a -> "b\u0000c" }').data.edges).toHaveLength(2);
@@ -115,12 +178,17 @@ describe('reading DOT', () => {
   });
 
   it('sizes the page around every node when there is no bb, a node left of or below the origin included', () => {
-    const p = page('digraph { a [pos="10,20!", width=1, height=1]; b [pos="100,-30"]; }');
+    const p = page('digraph { a [pos="0.1389,0.2778!", width=1, height=1]; b [pos="1.3889,-0.4167"]; }');
     expect(node(p.data, 'a').at).toEqual({ x: 0, y: 0 });
     expect(node(p.data, 'b').at).toEqual({ x: 99, y: 68 });
     expect(node(p.data, 'b')).toMatchObject({ width: 54, height: 36 });
     expect(p).toMatchObject({ width: 153, height: 104 });
     expect(page('digraph { a [pos="Infinity,1"]; }').data.nodes[0]!.at).toBeUndefined();
+  });
+
+  it('reads a pos as inches in a graph with no bb, as neato reads its input', () => {
+    const p = page('graph { a [pos="0,0!"]; b [pos="2,0!"]; }');
+    expect(node(p.data, 'b').at!.x - node(p.data, 'a').at!.x).toBe(144);
   });
 
   it('reads colors in each of DOT\'s spellings', () => {

@@ -5,7 +5,7 @@
  * import.
  */
 import type { MarkerRef } from '@weasel-js/core';
-import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, NodeStyle } from '@weasel-js/diagram';
+import { outlineRegistry, type DataContainer, type DataEdge, type DataNode, type EdgeStyle, type LayoutDirection, type NodeStyle, type Outline } from '@weasel-js/diagram';
 import { compositeKey, freshId, getOwn } from '@weasel-js/registry';
 import { checkedColor } from '../colorCheck';
 import type { ImportResult } from '../document';
@@ -19,9 +19,9 @@ interface Scope { kind: 'root' | 'cluster' | 'plain'; graph: Attrs; node: Attrs;
 interface RawEdge { tail: DotNodeRef; head: DotNodeRef; attrs: Attrs; own: Attrs }
 
 const READ: Readonly<Record<'root' | 'cluster' | 'plain' | 'node' | 'edge', ReadonlySet<string>>> = {
-  root: new Set(['rankdir', 'label', 'bb']),
-  cluster: new Set(['label', 'style', 'color', 'fillcolor', 'bgcolor', 'pencolor', 'fontcolor']),
-  plain: new Set(),
+  root: new Set(['rankdir', 'label', 'bb', 'cluster']),
+  cluster: new Set(['cluster', 'label', 'style', 'color', 'fillcolor', 'bgcolor', 'pencolor', 'fontcolor', 'penwidth']),
+  plain: new Set(['cluster']),
   node: new Set([OUTLINE_ATTR, 'label', 'shape', 'style', 'color', 'fillcolor', 'fontcolor', 'penwidth', 'width', 'height', 'pos']),
   edge: new Set(['label', 'taillabel', 'headlabel', 'color', 'fontcolor', 'penwidth', 'style', 'dir', 'arrowhead', 'arrowtail', 'tailport', 'headport']),
 };
@@ -29,6 +29,25 @@ const READ: Readonly<Record<'root' | 'cluster' | 'plain' | 'node' | 'edge', Read
 const DIRECTIONS: Readonly<Record<string, LayoutDirection>> = { TB: 'down', BT: 'up', LR: 'right', RL: 'left' };
 const COMPASS_PORTS = new Set(['n', 'e', 's', 'w']);
 const POINTS_PER_INCH = 72;
+/** A cluster's key starts with this when it has no name, followed by a count, and twice over when its name does. */
+const ANONYMOUS = '\u0000';
+const clusterKey = (id: string) => (id.startsWith(ANONYMOUS) ? `${ANONYMOUS}${id}` : id);
+/** A cluster's name from its key; `''` for one with none. */
+const clusterName = (key: string) =>
+  key.startsWith(`${ANONYMOUS}${ANONYMOUS}`) ? key.slice(1) : key.startsWith(ANONYMOUS) ? '' : key;
+
+/** A DOT boolean as Graphviz reads one: `true` or `yes` in any case, or a nonzero integer. */
+const truthy = (v: string | undefined) => v !== undefined && (/^(?:true|yes)$/i.test(v.trim()) || (parseInt(v, 10) || 0) !== 0);
+
+/** The `cluster` attribute a subgraph ends with: its own last statement setting it, else what it inherits. */
+function clusterFlag(stmts: readonly DotStmt[], inherited: Attrs): boolean {
+  let flag = str(inherited, 'cluster');
+  for (const s of stmts) {
+    if (s.kind === 'set' && s.key === 'cluster') flag = s.value.value;
+    else if (s.kind === 'attr' && s.target === 'graph') for (const a of s.attrs) if (a.key === 'cluster') flag = a.value.value;
+  }
+  return truthy(flag);
+}
 
 const round = (n: number) => Math.round(n * 100) / 100;
 const str = (attrs: Attrs, key: string) => attrs.get(key)?.value;
@@ -58,6 +77,7 @@ class DotReader {
   readonly nodes = new Map<string, Attrs>();
   readonly edges: RawEdge[] = [];
   readonly clusters = new Map<string, Attrs>();
+  private anonymous = 0;
 
   readonly root: Scope = { kind: 'root', graph: new Map(), node: new Map(), edge: new Map(), cluster: null };
 
@@ -119,13 +139,17 @@ class DotReader {
   }
 
   subgraph(sub: DotSubgraph, parent: Scope): Set<string> {
-    const isCluster = sub.id !== undefined && sub.id.startsWith('cluster');
-    if (isCluster) this.membership.openCluster(sub.id!, parent.cluster);
-    const graph = isCluster ? (this.clusters.get(sub.id!) ?? this.clusterGraph(parent.graph)) : new Map(parent.graph);
-    if (isCluster) this.clusters.set(sub.id!, graph);
+    // Graphviz matches the prefix in any case, and since version 7 takes `cluster=true` too.
+    const isCluster = sub.id !== undefined
+      ? /^cluster/i.test(sub.id) || this.clusters.has(clusterKey(sub.id)) || clusterFlag(sub.stmts, parent.graph)
+      : clusterFlag(sub.stmts, parent.graph);
+    const key = !isCluster ? null : sub.id !== undefined ? clusterKey(sub.id) : `${ANONYMOUS}${this.anonymous++}`;
+    if (key !== null) this.membership.openCluster(key, parent.cluster);
+    const graph = key !== null ? (this.clusters.get(key) ?? this.clusterGraph(parent.graph)) : new Map(parent.graph);
+    if (key !== null) this.clusters.set(key, graph);
     return this.walk(sub.stmts, {
-      kind: isCluster ? 'cluster' : 'plain', graph, node: new Map(parent.node), edge: new Map(parent.edge),
-      cluster: isCluster ? sub.id! : parent.cluster,
+      kind: key !== null ? 'cluster' : 'plain', graph, node: new Map(parent.node), edge: new Map(parent.edge),
+      cluster: key ?? parent.cluster,
     });
   }
 }
@@ -149,7 +173,10 @@ function nodeColors(r: DotReader, attrs: Attrs, styles: readonly string[], unset
 function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
   const styles = stylesOf(str(attrs, 'style'));
   const shape = keyword(attrs, 'shape') ?? 'ellipse';
-  let outline = str(attrs, OUTLINE_ATTR) ?? outlineOf(shape, styles);
+  const named = keyword(attrs, OUTLINE_ATTR);
+  const known = named !== undefined && outlineRegistry.has(named);
+  if (named !== undefined && !known) r.warnings.list('DOT outlines a diagram does not have were read from the shape', named);
+  let outline: Outline | null = known ? named : outlineOf(shape, styles);
   if (outline === null) {
     r.warnings.list('DOT shapes read as rectangles', shape);
     outline = 'rect';
@@ -173,9 +200,11 @@ function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
 const least = (m: number, v: number) => Math.min(m, v);
 const most = (m: number, v: number) => Math.max(m, v);
 
-/** Each node's place from its `pos`, and the page's size, when every node has one; else `null`. */
+/** Each node's place from its `pos`, and the page's size, when every node has one; else `null`. A graph with a `bb` is
+ *  layout output, its `pos` in points; one without is input to neato, its `pos` in inches. */
 function positions(nodes: DataNode[], attrs: ReadonlyMap<string, Attrs>, bb: string | undefined) {
-  const centers = nodes.map((n) => str(attrs.get(n.id)!, 'pos')?.replace(/!$/, '').split(',').map(Number));
+  const unit = bb === undefined ? POINTS_PER_INCH : 1;
+  const centers = nodes.map((n) => str(attrs.get(n.id)!, 'pos')?.replace(/!$/, '').split(',').map((v) => Number(v) * unit));
   if (nodes.length === 0 || centers.some((c) => c === undefined || c.length < 2 || !c.every(Number.isFinite))) return null;
   const size = (n: DataNode) => ({ width: n.width ?? 0.75 * POINTS_PER_INCH, height: n.height ?? 0.5 * POINTS_PER_INCH });
   const box = bb?.split(',').map(Number);
@@ -190,8 +219,8 @@ function positions(nodes: DataNode[], attrs: ReadonlyMap<string, Attrs>, bb: str
 }
 
 function portOf(r: DotReader, ref: DotNodeRef, attr: string | undefined): string | undefined {
-  const [port, compass] = ref.port !== undefined || ref.compass !== undefined ? [ref.port, ref.compass]
-    : attr === undefined ? [undefined, undefined]
+  const [port, compass] = hasPort(ref) ? [ref.port, ref.compass]
+    : attr === undefined || attr === '' ? [undefined, undefined]
     : attr.includes(':') ? attr.split(':') : COMPASS_PORTS.has(attr) || attr === '_' ? [undefined, attr] : [attr, undefined];
   if (port === undefined && (compass === undefined || compass === '_')) return undefined;
   if (port === undefined && COMPASS_PORTS.has(compass!)) return compass;
@@ -228,7 +257,7 @@ function readEdge(r: DotReader, e: RawEdge): DataEdge {
   const names = { edge: `${e.tail.id}${r.graph.directed ? '->' : '--'}${e.head.id}`, tail: e.tail.id, head: e.head.id };
   const textOf = (key: string) => {
     const value = e.attrs.get(key);
-    const joined = value === undefined ? '' : labelLines(value, '', r.graph.id ?? '', names).join(' ');
+    const joined = value === undefined ? '' : labelLines(value, undefined, r.graph.id ?? '', names).join(' ');
     return joined === '' ? undefined : joined;
   };
   const lines = [textOf('label')].filter((l) => l !== undefined);
@@ -247,21 +276,27 @@ function readCluster(
   r: DotReader, id: string, attrs: Attrs, ids: ReadonlyMap<string, string>, unseen: ReadonlySet<string>,
 ): DataContainer {
   const styles = stylesOf(str(attrs, 'style'));
+  const members = r.membership.members(id, ids).filter((m) => !unseen.has(m));
+  // Graphviz draws neither an invisible cluster's box nor its label, but still lays its members out together.
+  if (styles.includes('invis')) {
+    return { id: ids.get(id)!, role: 'container', ...(members.length > 0 ? { members } : {}), colors: { fill: 'transparent', stroke: 'transparent' } };
+  }
   const color = colorAttr(r, attrs, 'color');
   const bg = colorAttr(r, attrs, 'bgcolor');
   const fill = colorAttr(r, attrs, 'fillcolor') ?? color ?? bg;
   const stroke = colorAttr(r, attrs, 'pencolor') ?? color;
   const text = colorAttr(r, attrs, 'fontcolor');
+  const width = numberAttr(r, attrs, 'penwidth');
   const dash = dashOf(styles);
   const colors: Partial<NodeStyle> = {
     ...(styles.includes('filled') && fill !== undefined ? { fill } : bg !== undefined ? { fill: bg } : {}),
     ...(stroke !== undefined ? { stroke } : {}),
     ...(text !== undefined ? { text } : {}),
+    ...(width !== undefined ? { strokeWidth: width } : {}),
     ...(dash !== undefined ? { dash } : {}),
   };
   const label = attrs.get('label');
-  const lines = label === undefined ? [] : labelLines(label, id, r.graph.id ?? '');
-  const members = r.membership.members(id, ids).filter((m) => !unseen.has(m));
+  const lines = label === undefined ? [] : labelLines(label, undefined, clusterName(id));
   return {
     id: ids.get(id)!, role: 'container',
     ...(lines.length > 0 ? { label: lines.join(' ') } : {}),
@@ -276,8 +311,9 @@ function clusterIds(clusters: Iterable<string>, nodes: ReadonlyMap<string, unkno
   const taken = new Set([...nodes.keys()]);
   const out = new Map<string, string>();
   for (const id of clusters) {
-    const short = id.replace(/^cluster_?/, '');
-    const pick = short !== '' && !taken.has(short) ? short : freshId(id, taken, { bare: true });
+    const name = clusterName(id);
+    const short = name.replace(/^cluster_?/i, '');
+    const pick = short !== '' && !taken.has(short) ? short : freshId(name || 'cluster', taken, { bare: true });
     taken.add(pick);
     out.set(id, pick);
   }
@@ -286,6 +322,8 @@ function clusterIds(clusters: Iterable<string>, nodes: ReadonlyMap<string, unkno
 
 const isInvisible = (attrs: Attrs) => stylesOf(str(attrs, 'style')).includes('invis');
 
+const hasPort = (ref: DotNodeRef) => ref.port !== undefined || ref.compass !== undefined;
+
 /** A strict graph's edges: one per pair of ends, the first, with the attributes every later statement naming the
  *  pair sets. */
 function strictEdges(edges: readonly RawEdge[], directed: boolean): RawEdge[] {
@@ -293,7 +331,13 @@ function strictEdges(edges: readonly RawEdge[], directed: boolean): RawEdge[] {
   for (const e of edges) {
     const key = compositeKey(directed ? [e.tail.id, e.head.id] : [e.tail.id, e.head.id].sort());
     const first = kept.get(key);
-    kept.set(key, first === undefined ? e : { ...first, attrs: new Map([...first.attrs, ...e.own]) });
+    if (first === undefined) { kept.set(key, e); continue; }
+    // An undirected statement may name the pair the other way round; its ports go with the ends they name.
+    const [tail, head] = first.tail.id === e.tail.id ? [e.tail, e.head] : [e.head, e.tail];
+    kept.set(key, {
+      ...first, attrs: new Map([...first.attrs, ...e.own]),
+      tail: hasPort(tail) ? tail : first.tail, head: hasPort(head) ? head : first.head,
+    });
   }
   return [...kept.values()];
 }
@@ -324,7 +368,7 @@ export function readDot(text: string): ImportResult {
   const direction = rankdir !== undefined ? getOwn(DIRECTIONS, rankdir) : undefined;
   const name = root.graph.get('label');
   const page = graphPage({
-    name: name !== undefined ? labelLines(name, '', graph.id ?? '').join(' ') : graph.id,
+    name: name !== undefined ? labelLines(name, undefined, graph.id ?? '').join(' ') : graph.id,
     ...(direction !== undefined ? { direction } : {}),
     nodes, edges, containers,
     ...(placed !== null ? { size: placed.size } : {}),

@@ -27,9 +27,10 @@ function htmlLines(markup: string): string[] {
   return lines.slice(from, to);
 }
 
-/** A label's lines: an HTML label's text, else the string with its escapes read. `\N` names `self`, `\G` the graph,
- *  and on an edge `\E`, `\T` and `\H` the edge, its tail, and its head. */
-export function labelLines(label: DotValue, self: string, graph: string, edge?: EdgeNames): string[] {
+/** A label's lines: an HTML label's text, else the string with its escapes read. `\N` names the node `self` (and
+ *  stays as written on anything else), `\G` the graph or cluster, and on an edge `\E`, `\T` and `\H` the edge, its
+ *  tail, and its head. */
+export function labelLines(label: DotValue, self: string | undefined, graph: string, edge?: EdgeNames): string[] {
   if (label.html) return htmlLines(label.value);
   const lines = [''];
   const text = label.value;
@@ -38,7 +39,7 @@ export function labelLines(label: DotValue, self: string, graph: string, edge?: 
     if (c !== '\\' || i === text.length - 1) { lines[lines.length - 1] += c; continue; }
     const next = text[++i]!;
     if (next === 'n' || next === 'l' || next === 'r') lines.push('');
-    else if (next === 'N') lines[lines.length - 1] += self;
+    else if (next === 'N') lines[lines.length - 1] += self ?? '\\N';
     else if (next === 'G') lines[lines.length - 1] += graph;
     else if (edge !== undefined && (next === 'E' || next === 'T' || next === 'H')) {
       lines[lines.length - 1] += next === 'E' ? edge.edge : next === 'T' ? edge.tail : edge.head;
@@ -131,12 +132,13 @@ export function shapeOf(outline: Outline | undefined): { shape: string; rounded?
 
 const ARROWS: Readonly<Record<string, MarkerRef | null>> = {
   normal: 'arrow', inv: 'arrow', none: null, dot: 'circle', odot: 'circle', diamond: 'diamond', odiamond: 'diamond-hollow',
-  box: 'square', obox: 'square', tee: 'bar', empty: 'arrow-open', onormal: 'triangle-hollow', vee: 'arrow-concave',
+  box: 'square', obox: 'square', tee: 'bar', onormal: 'triangle-hollow', empty: 'triangle-hollow', oinv: 'triangle-hollow',
+  invempty: 'triangle-hollow', vee: 'arrow-concave', open: 'arrow-concave', ediamond: 'diamond-hollow',
   crow: 'crow-many', teetee: 'crow-one', teeodot: 'crow-zero-one', crowtee: 'crow-one-many', crowodot: 'crow-zero-many',
 };
 
 const ARROW_NAMES: Readonly<Record<string, string>> = {
-  arrow: 'normal', 'arrow-open': 'empty', 'arrow-concave': 'vee', diamond: 'diamond', 'diamond-hollow': 'odiamond',
+  arrow: 'normal', 'arrow-concave': 'vee', diamond: 'diamond', 'diamond-hollow': 'odiamond',
   circle: 'dot', square: 'box', bar: 'tee', 'triangle-hollow': 'onormal',
   'crow-many': 'crow', 'crow-one': 'teetee', 'crow-zero-one': 'teeodot', 'crow-one-many': 'crowtee', 'crow-zero-many': 'crowodot',
 };

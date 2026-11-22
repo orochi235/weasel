@@ -32,6 +32,10 @@ describe('lexDot', () => {
     expect(() => lexDot('graph {\n a [label="open\n]')).toThrow(/line 2/);
   });
 
+  it('joins a quoted string continued over a CRLF line end', () => {
+    expect(lexDot('"long \\\r\ntext" c').map((t) => [t.value, t.line])).toEqual([['long text', 1], ['c', 2]]);
+  });
+
   it('names the line and the character it cannot read', () => {
     expect(() => lexDot('graph {\n\n a @ b }')).toThrow(/line 3.*"@"/);
   });
