@@ -236,10 +236,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has driven snapping hands-on and the defaults and keys he picks are
   committed.
 
-### Extension authoring and published consumers
-
----
-
 ## Audio
 
 - **(P3) [maintainer] Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
