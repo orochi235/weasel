@@ -22,4 +22,9 @@ describe('rowTexts', () => {
     });
     expect(rowTexts(root).map((r) => r.label)).toEqual(['Size']);
   });
+
+  it('leaves the label out of its own values', () => {
+    const root = page('<div><span class="rowLabel" style="font-size: 11px">Size <b style="font-size: 9px">px</b></span><span style="font-size: 12px">12</span></div>');
+    expect(rowTexts(root).map((r) => r.values.map((v) => v.text))).toEqual([['12']]);
+  });
 });

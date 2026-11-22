@@ -42,7 +42,7 @@ export function rowTexts(root: ParentNode): RowText[] {
       const el = node.parentElement!;
       const text = node.textContent?.trim() ?? '';
       // A native select's options are drawn only when it opens; the select itself is read below.
-      if (text === '' || el.closest('select') || skipped(el)) continue;
+      if (text === '' || label.contains(el) || el.closest('select') || skipped(el)) continue;
       values.push({ text, size: getComputedStyle(el).fontSize });
     }
     for (const control of row.querySelectorAll(TEXT_CONTROL)) {
