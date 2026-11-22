@@ -40,3 +40,37 @@ export function wgslInt(s: string): number | undefined {
   const digits = s.replace(/[iu]$/, '');
   return /^0[xX]/.test(digits) ? parseInt(digits.slice(2), 16) : parseInt(digits, 10);
 }
+
+/** The `{`…`}` depth of `src` at each of `at`, given in ascending order. */
+function braceDepths(src: string, at: readonly number[]): number[] {
+  const out: number[] = [];
+  let depth = 0;
+  let i = 0;
+  for (const pos of at) {
+    for (; i < pos; i++) {
+      if (src[i] === '{') depth++;
+      else if (src[i] === '}') depth--;
+    }
+    out.push(depth);
+  }
+  return out;
+}
+
+/** Every module-scope `const` of `src`, comments stripped, given an integer literal. */
+export function moduleConsts(src: string): Map<string, number> {
+  const consts = new Map<string, number>();
+  const matches = [...src.matchAll(new RegExp(String.raw`\bconst\s+(\w+)\s*(?::\s*\w+\s*)?=\s*(${WGSL_INT})\s*;`, 'g'))];
+  const depth = braceDepths(src, matches.map((m) => m.index));
+  matches.forEach((m, i) => {
+    if (depth[i] === 0) consts.set(m[1], wgslInt(m[2])!);
+  });
+  return consts;
+}
+
+/** An integer attribute's argument, a literal or a module-scope const, as a number. */
+export function attributeInt(attr: string, arg: string | undefined, consts: ReadonlyMap<string, number>): number {
+  const s = (arg ?? '').trim();
+  const n = wgslInt(s) ?? consts.get(s);
+  if (n === undefined) throw new Error(`WGSL: cannot read ${attr.trim()}; give it a literal or a module-scope const`);
+  return n;
+}

@@ -1,7 +1,7 @@
 /** What a WGSL module's entry points read and write: the names its vertex
  *  stage takes attributes under, by location, and the locations its fragment
  *  stage writes. */
-import { stripWgslComments } from './wgslLexical';
+import { attributeInt, moduleConsts, stripWgslComments } from './wgslLexical';
 
 export interface WgslEntries {
   readonly vertex: string;
@@ -16,10 +16,10 @@ export interface WgslEntries {
 }
 
 /** `@location(N) name: type` pairs in a parameter list or struct body. */
-function locationsIn(text: string): Array<[string, number]> {
+function locationsIn(text: string, consts: ReadonlyMap<string, number>): Array<[string, number]> {
   const out: Array<[string, number]> = [];
-  const re = /@location\((\d+)\)\s*(?:@\w+(?:\([^)]*\))?\s*)*(\w+)\s*:/g;
-  for (let m = re.exec(text); m; m = re.exec(text)) out.push([m[2], Number(m[1])]);
+  const re = /(@location\s*\(([^)]*)\))\s*(?:@\w+(?:\s*\([^)]*\))?\s*)*(\w+)\s*:/g;
+  for (let m = re.exec(text); m; m = re.exec(text)) out.push([m[3], attributeInt(m[1], m[2], consts)]);
   return out;
 }
 
@@ -49,11 +49,11 @@ function entry(src: string, stage: 'vertex' | 'fragment'): { name: string; param
 }
 
 /** Locations a parameter list reads, directly or through a struct parameter. */
-function inputsOf(src: string, params: string): Array<[string, number]> {
-  const out = locationsIn(params);
+function inputsOf(src: string, params: string, consts: ReadonlyMap<string, number>): Array<[string, number]> {
+  const out = locationsIn(params, consts);
   const structParam = /(?:^|,)\s*(\w+)\s*:\s*(\w+)\s*(?=,|$)/g;
   for (let m = structParam.exec(params); m; m = structParam.exec(params)) {
-    out.push(...locationsIn(structBody(src, m[2])));
+    out.push(...locationsIn(structBody(src, m[2]), consts));
   }
   return out;
 }
@@ -62,16 +62,17 @@ export function reflectEntries(source: string): WgslEntries {
   const src = stripWgslComments(source);
   const vs = entry(src, 'vertex');
   const fs = entry(src, 'fragment');
+  const consts = moduleConsts(src);
   const attributes = new Map<string, number>();
   const inputs: number[] = [];
-  for (const [name, location] of inputsOf(src, vs.params)) {
+  for (const [name, location] of inputsOf(src, vs.params, consts)) {
     attributes.set(name, location);
     if (!name.startsWith('a_')) attributes.set(`a_${name}`, location);
     if (!inputs.includes(location)) inputs.push(location);
   }
-  const direct = /^@location\((\d+)\)/.exec(fs.result);
+  const direct = /^@location\s*\(([^)]*)\)/.exec(fs.result);
   const outputs = new Set<number>(direct
-    ? [Number(direct[1])]
-    : locationsIn(structBody(src, fs.result.replace(/\W/g, ''))).map(([, l]) => l));
+    ? [attributeInt(direct[0], direct[1], consts)]
+    : locationsIn(structBody(src, fs.result.replace(/\W/g, '')), consts).map(([, l]) => l));
   return { vertex: vs.name, fragment: fs.name, attributes, inputs, outputs };
 }
