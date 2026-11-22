@@ -25,7 +25,7 @@ const isDiagramJson = (value: unknown): value is Partial<DiagramJson> =>
 
 /** What keeps `page` from being drawn, as the end of a sentence, or `null` for none: an id, a finite size, and a `data`
  *  object, a graph's holding `nodes` and `edges` lists. */
-function pageProblem(page: Record<string, unknown>, kind: PageKind): string | null {
+function pageProblem(page: Record<string, unknown>, kind: PageKind, version: number): string | null {
   const label = typeof page.id === 'string' ? `${JSON.stringify(page.id)} ` : '';
   if (typeof page.id !== 'string') return 'with no string id';
   if (page.name !== undefined && typeof page.name !== 'string') return `${label}whose name is not a string`;
@@ -40,7 +40,8 @@ function pageProblem(page: Record<string, unknown>, kind: PageKind): string | nu
     if (!Array.isArray(d.nodes) || !Array.isArray(d.edges)) return `${label}whose graph data has no nodes and edges lists`;
     if (!d.nodes.every(hasId)) return `${label}with a node that has no string id`;
     if (!d.edges.every(isEdge)) return `${label}with an edge that has no string from and to`;
-    for (const key of ['clusters', 'containers'] as const) {
+    // A version 1 page holds its clusters as `groups`.
+    for (const key of [version < 2 ? 'groups' as const : 'clusters' as const, 'containers' as const]) {
       const list = d[key];
       if (list !== undefined && !(Array.isArray(list) && list.every(hasId))) return `${label}whose ${key} is not a list of items with string ids`;
     }
@@ -62,7 +63,7 @@ function read(text: string): ImportResult {
     if (kind !== undefined && !(KINDS as readonly unknown[]).includes(kind)) {
       throw new Error(`A weasel diagram document with a page of kind ${JSON.stringify(kind)}, which this reader does not know`);
     }
-    const problem = pageProblem(p as Record<string, unknown>, (kind as PageKind | undefined) ?? 'graph');
+    const problem = pageProblem(p as Record<string, unknown>, (kind as PageKind | undefined) ?? 'graph', json.version);
     if (problem !== null) throw new Error(`A weasel diagram document with a page ${problem}`);
   }
   const cross = (json as { crossPageEdges?: unknown }).crossPageEdges;
