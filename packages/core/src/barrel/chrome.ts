@@ -126,7 +126,7 @@ export type {
 } from '../domains/chrome-caps';
 export type { ChromeRulesDep, VisibilityRule } from '../canvas/deps/chromeRules';
 
-// ─── Selection chrome: the overlay slot's options, and what draws and hit-tests it ─
+// ─── Selection chrome: the overlay slot's option types; the layers that draw it are in @weasel-js/editing ─
 export type {
   SelectionChrome,
   SelectionChromeSizes,
