@@ -133,3 +133,19 @@ describe('a clone source', () => {
     expect(slot.querySelector('video')?.hasAttribute('autoplay')).toBe(false);
   });
 });
+
+describe('a clone source whose root holds the lens', () => {
+  it('copies nothing rather than its own copies', () => {
+    const outer = document.body.appendChild(document.createElement('div'));
+    outer.className = 'lk-lab__body';
+    const probe = outer.appendChild(document.createElement('p'));
+    probe.textContent = 'hello';
+    const slot = outer.appendChild(document.createElement('div'));
+    document.elementsFromPoint = vi.fn(() => [probe]);
+    createCloneSource<null>({ onFrame, root: '.lk-lab__body' }).attach(slot, request());
+    frame();
+    frame();
+    expect(slot.querySelector('.lk-lens-copy')?.childElementCount).toBe(0);
+    expect(frames).toHaveLength(0);
+  });
+});
