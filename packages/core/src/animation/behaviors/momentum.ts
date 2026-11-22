@@ -136,6 +136,7 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
       const vy = (last.y - first.y) / dt;
       if (Math.hypot(vx, vy) < threshold) return undefined;
 
+      if (!ctx.draggedIds.some((id) => ctx.current.has(id))) return undefined;
       const args: CoastArgs<TPose> = {
         animator: opts.animator, ctx, vx, vy, friction, d, coasts,
         bounds: opts.bounds, boundary: opts.boundary ?? 'stop',

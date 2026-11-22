@@ -67,6 +67,24 @@ describe('momentum', () => {
     expect(samples.map((s) => s.x)).toEqual([0, 10, 20]);
   });
 
+  it('throws nothing, and leaves the move its own commit, when no dragged node has a release pose', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const watchSpy = vi.spyOn(result.current, 'watch');
+    const beh = momentum<RectPose>({ animator: result.current, threshold: 0, now: clock.now });
+    const ctx = makeCtx({ x: 0, y: 0, width: 10, height: 10 }, vi.fn());
+    ctx.adapter.poseTarget = () => undefined;
+    ctx.current = new Map();
+    beh.onStart?.(ctx);
+    for (const x of [0, 10, 20]) {
+      if (x > 0) clock.advance(16);
+      ctx.pointer = { worldX: x, worldY: 0, clientX: x, clientY: 0 };
+      beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
+    }
+    expect(beh.onEnd?.(ctx, moveEnd())).toBeUndefined();
+    expect(watchSpy).not.toHaveBeenCalled();
+  });
+
   it('suppresses default commit and fires decay when release velocity exceeds threshold', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));
