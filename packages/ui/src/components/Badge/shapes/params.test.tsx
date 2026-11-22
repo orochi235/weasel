@@ -63,6 +63,28 @@ describe('a clamped shape param set to NaN', () => {
   }
 });
 
+describe('an unbounded shape param that is not finite', () => {
+  const unbounded: Record<string, string[]> = {
+    sparkler: ['outerR', 'innerR', 'rotation'],
+    starburst: ['outerR', 'innerR', 'rotation'],
+  };
+  for (const [name, keys] of Object.entries(unbounded)) {
+    const m = SHAPES[name as keyof typeof SHAPES];
+    const C = m.Component!;
+    const defaults = m.defaults as Record<string, unknown>;
+    const draw = (params: unknown) => render(
+      <svg viewBox="0 0 100 100"><C variant="solid" focused params={params as never} phase={0} /></svg>,
+    ).container.innerHTML;
+    for (const key of keys) {
+      for (const value of [NaN, Infinity, -Infinity]) {
+        it(`${name} draws its default ${key} for ${value}`, () => {
+          expect(draw({ ...defaults, [key]: value })).toBe(draw(defaults));
+        });
+      }
+    }
+  }
+});
+
 describe('a house badge', () => {
   it('keeps its peak inside the box', () => {
     const peak = (params: Record<string, number>) =>
