@@ -49,7 +49,9 @@ export function RailStack(props: {
     if (!anyEnabled) return;
     if (!held(e, cycle)) { trigger.click(e, entries); return; }
     const from = members.indexOf(face);
-    for (let step = 1; step < members.length; step++) {
+    // A face that is not active is itself a press away, after every other member.
+    const steps = current ? members.length - 1 : members.length;
+    for (let step = 1; step <= steps; step++) {
       const next = members[(from + step) % members.length];
       if (!next.disabled) { choose(next); return; }
     }

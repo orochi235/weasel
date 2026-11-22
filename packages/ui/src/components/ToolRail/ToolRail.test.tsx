@@ -77,4 +77,15 @@ describe('ToolRail', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: /rect/ }));
     expect(rect.onPress).toHaveBeenCalledOnce();
   });
+
+  it('steps to the shown member on a cycle click when it is the only one enabled', () => {
+    const rect = btn('rect', { disabled: true });
+    const ellipse = btn('ellipse');
+    renderWithIcons(<ToolRail items={[{ id: 'shapes', members: [rect, ellipse] }]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'rect' }), { detail: 1 });
+    fireEvent.click(screen.getByRole('menuitem', { name: /ellipse/ }));
+    expect(ellipse.onPress).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: 'ellipse' }), { detail: 1, altKey: true });
+    expect(ellipse.onPress).toHaveBeenCalledTimes(2);
+  });
 });
