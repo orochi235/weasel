@@ -16,3 +16,4 @@ export { _resetPatternSpecCacheForTests } from './patterns/resolveSpec';
 export { _setBatchCutsForTests } from './rendererParts';
 export { _resetProgramRegistryForTests } from './shaders/registerProgram';
 export { _resetTextureRegistryForTests } from './textures/registerTexture';
+export { RENDERER_CONTEXT_ATTRIBUTES } from './gpu/webgl/contextAttributes';
