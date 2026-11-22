@@ -2,14 +2,15 @@ import type { NodeId } from '@weasel-js/core';
 import type { Action } from '@weasel-js/routing';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import { isAnnotationLayer } from '@weasel-js/core';
-import { nodeGates, reachableInGroup } from '@weasel-js/core/engine';
+import { asNodeId, nodeGates, pressTarget, reachableInGroup } from '@weasel-js/core/engine';
 
 /**
  * Static descriptor for the `selectAll` Action. Selects every scene node the
  * user can see and reach — hidden and locked nodes, pages and the page run
  * (`nodeGates`), and nodes on a layer the asking view does not paint, are left
  * out, so Cmd+A then Delete cannot take content that is off screen or locked.
- * Inside an entered group it selects only what the group holds.
+ * Inside an entered group it selects only what the group holds. A group is
+ * selected alone, as a press would take it, never beside its own members.
  */
 export const selectAllAction: Action & { requires: string[] } = {
   id: 'selectAll',
@@ -26,8 +27,11 @@ export const selectAllAction: Action & { requires: string[] } = {
       // The node walk carries the layer each id sits on, which `view` gates.
       const gates = nodeGates(scene);
       const group = deps.enteredGroup?.get() ?? null;
+      const node = (id: string) => scene.get(asNodeId(id));
+      const tree = { getParent: (id: string) => node(id)?.parent ?? null, getNode: node };
       const all: NodeId[] = scene.renderOrderNodes()
         .filter((n) => reachableInGroup(scene, group, n.id)
+          && pressTarget(tree, n.id, group) === n.id
           && !isAnnotationLayer(scene.layers.find((l) => l.id === n.layer))
           && view?.layerIsPainted?.(n.layer) !== false
           && !gates.hidden(n.id)
