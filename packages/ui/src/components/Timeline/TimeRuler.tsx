@@ -24,8 +24,9 @@ export interface TimeRulerProps {
   playhead: number;
   /** Called with the time under the pointer while the ruler is pressed or dragged. */
   onSeek: (t: number) => void;
-  /** Called with the new window when the wheel pans, or Ctrl+wheel zooms, within `bounds`. */
-  onWindowChange: (w: TimeWindow) => void;
+  /** Called with the new window when the wheel pans, or Ctrl+wheel zooms, within `bounds`. Omitted, the wheel is
+   *  left to the page. */
+  onWindowChange?: (w: TimeWindow) => void;
 }
 
 /** A tick's label in `locale`, with the decimals ticks `step` ms apart need to differ. */
@@ -73,6 +74,7 @@ export function TimeRuler(props: TimeRulerProps): ReactElement {
   };
 
   const onWheel = useLatest((e: WheelEvent): void => {
+    if (!onWindowChange) return;
     const width = widthOf();
     const px = wheelPixels(e, { x: width, y: width });
     if (e.ctrlKey) {

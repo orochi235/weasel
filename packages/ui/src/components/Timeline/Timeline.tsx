@@ -142,7 +142,7 @@ export function Timeline(props: TimelineProps): ReactElement {
             bounds={bounds}
             playhead={playhead}
             onSeek={edits ? onSeek : ignore}
-            onWindowChange={hold.disabled ? ignore : setWindow}
+            onWindowChange={hold.disabled ? undefined : setWindow}
           />
         </div>
       </div>
