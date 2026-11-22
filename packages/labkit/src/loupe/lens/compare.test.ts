@@ -29,6 +29,9 @@ function splitLens() {
   return { api, lensId, applied };
 }
 
+const zoom = (k: number) => ({ x: 0, y: 0, scale: { x: k, y: k } });
+const ONE = zoom(1);
+
 const LEFT = 300 - BODY_SIZE / 2;
 const TOP = 200 - BODY_SIZE / 2;
 
@@ -101,10 +104,21 @@ describe('the seam', () => {
     const { api, lensId } = splitLens();
     const preview = createSeamPreview();
     const seamX = LEFT + BODY_SIZE / 2;
-    expect(seamHit(api.scene, preview, seamX + SEAM_GRAB - 1, 200, 1)).toEqual({ lensId });
-    expect(seamHit(api.scene, preview, seamX + SEAM_GRAB + 2, 200, 1)).toBeNull();
+    expect(seamHit(api.scene, preview, seamX + SEAM_GRAB - 1, 200, ONE)).toEqual({ lensId });
+    expect(seamHit(api.scene, preview, seamX + SEAM_GRAB + 2, 200, ONE)).toBeNull();
     // At 2× a grab of SEAM_GRAB screen px is half as many world px.
-    expect(seamHit(api.scene, preview, seamX + SEAM_GRAB - 1, 200, 2)).toBeNull();
+    expect(seamHit(api.scene, preview, seamX + SEAM_GRAB - 1, 200, zoom(2))).toBeNull();
+  });
+
+  it('is claimed where its hit box is drawn, at any zoom', () => {
+    const { api, lensId } = splitLens();
+    api.apply(setLensOps(api.scene, lensId, { seam: 0.33 }));
+    const view = zoom(20);
+    const box = hitBoxesOf(api.scene, new Set(), view).find((b) => b.role === 'lens-seam')!.rect;
+    const drawn = (box.x + box.width / 2) / 20;
+    const near = (SEAM_GRAB - 0.5) / 20;
+    expect(seamHit(api.scene, undefined, drawn - near, 200, view)).toEqual({ lensId });
+    expect(seamHit(api.scene, undefined, drawn + near, 200, view)).toEqual({ lensId });
   });
 
   it('belongs to the lens on top: a press on lens B over A’s seam is B’s', () => {
@@ -118,8 +132,8 @@ describe('the seam', () => {
         reticle: { x: 50, y: 50 },
       }),
     );
-    expect(seamHit(api.scene, preview, seamX, 250, 1)).toBeNull();
-    expect(seamHit(api.scene, preview, seamX, 150, 1)).toEqual({ lensId });
+    expect(seamHit(api.scene, preview, seamX, 250, ONE)).toBeNull();
+    expect(seamHit(api.scene, preview, seamX, 150, ONE)).toEqual({ lensId });
   });
 
   it('previews a drag without writing to the scene, and commits one data op on release', () => {
