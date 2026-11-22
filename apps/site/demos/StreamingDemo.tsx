@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { after } from '@weasel-js/registry';
 import { solid } from '@weasel-js/paint';
 import {
@@ -19,10 +19,13 @@ type Data = { fill: Fill };
 const hue = (x: number, y: number) => ((x * 73856093) ^ (y * 19349663)) % 360;
 
 /** An endless world, 36 rects a cell, each cell arriving 80 ms after it is asked for, as from a server. */
-const WORLD: SceneSource<Data, 'main', RectPose> = {
+export const WORLD: SceneSource<Data, 'main', RectPose> = {
   cellSize: CELL,
   load: (cell: SceneCell, signal: AbortSignal) => new Promise((resolve) => {
+    if (signal.aborted) return resolve([]);
+    const onAbort = () => { cancel(); resolve([]); };
     const cancel = after(80, () => {
+      signal.removeEventListener('abort', onAbort);
       const out: AddNodeSpec<Data, 'main', RectPose>[] = [];
       for (let i = 0; i < 36; i++) {
         out.push({
@@ -33,7 +36,7 @@ const WORLD: SceneSource<Data, 'main', RectPose> = {
       }
       resolve(out);
     });
-    signal.addEventListener('abort', () => { cancel(); resolve([]); });
+    signal.addEventListener('abort', onAbort, { once: true });
   }),
 };
 
@@ -43,7 +46,9 @@ export function StreamingDemo() {
   // A cell landing or leaving notifies the scene's subscribers, which redraws the readout.
   const [, setSeen] = useState(0);
   useEffect(() => scene.subscribe(() => setSeen((n) => n + 1)), [scene]);
-  useEffect(() => { stream.update(START, DIMS); }, [stream]);
+  const view = useRef(START);
+  const dims = useRef(DIMS);
+  useEffect(() => { stream.update(view.current, dims.current); }, [stream]);
   const stats = stream.stats();
   return (
     <div className="ckd-demo">
@@ -56,7 +61,9 @@ export function StreamingDemo() {
       <DemoStage width={W} height={H}>
         <SceneCanvas
           className="ckd-canvas" scene={scene} selectable={false}
-          features={[presets.view]} defaultView={START} onViewChange={(view) => stream.update(view, DIMS)}
+          features={[presets.view]} defaultView={START}
+          onViewChange={(v) => { view.current = v; stream.update(v, dims.current); }}
+          onResize={(size) => { dims.current = size; stream.update(view.current, size); }}
         />
       </DemoStage>
       <p className="ckd-hint">

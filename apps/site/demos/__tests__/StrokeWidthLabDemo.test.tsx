@@ -112,4 +112,19 @@ describe('StrokeWidthLabDemo', () => {
     expect(screen.getByRole('checkbox', { name: 'Nib' })).not.toBeChecked();
     expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
   });
+
+  it("moves only the nibs strokes already have when a nib slider changes over a selection the panel shows without one", async () => {
+    const { container } = await renderSettled(<StrokeWidthLabDemo />, { wrapper: withIcons });
+    const canvas = container.querySelector('.lk-trial-scene canvas');
+    if (!canvas) throw new Error('no scene canvas in the trial');
+    await userEvent.click(screen.getByRole('button', { name: /^Select/ }));
+    drag(canvas, [1, 1], [2000, 2000]);
+    expect(screen.getByRole('checkbox', { name: 'Nib' })).not.toBeChecked();
+    const input = screen.getByRole('spinbutton', { name: /Nib angle/ });
+    await userEvent.clear(input);
+    await userEvent.type(input, '45{Enter}');
+    expect(strokes()[0]?.nib).toBeUndefined();
+    expect(strokes()[4]?.nib?.angle).toBeCloseTo(Math.PI / 4, 6);
+    expect(strokes()[4]?.nib?.ratio).toBeCloseTo(0.15, 6);
+  });
 });

@@ -92,10 +92,14 @@ function outlineLayer(scene: Scene<Data, 'default', RectPose>): RenderLayer<unkn
   };
 }
 
-/** The stroke fields a change of `key` in the panel writes. */
-function fieldsFor(key: keyof Style, style: Style): Partial<Stroke> {
+/** The stroke fields a change of `key` in the panel writes onto `stroke`: a nib slider moves only a nib the
+ *  stroke has, and only the Nib checkbox adds or removes one. */
+function fieldsFor(key: keyof Style, style: Style, stroke: Stroke): Partial<Stroke> {
   if (key === 'width' || key === 'cap' || key === 'join') return { [key]: style[key] };
-  return { nib: style.nib ? { angle: radians(style.nibAngle), ratio: style.nibRatio } : undefined };
+  if (key === 'nib') return { nib: style.nib ? { angle: radians(style.nibAngle), ratio: style.nibRatio } : undefined };
+  const nib = stroke.nib;
+  if (!nib) return {};
+  return { nib: key === 'nibAngle' ? { ...nib, angle: radians(style.nibAngle) } : { ...nib, ratio: style.nibRatio } };
 }
 
 const STYLE_KEYS = ['width', 'cap', 'join', 'nib', 'nibAngle', 'nibRatio'] as const satisfies readonly (keyof Style)[];
@@ -135,13 +139,16 @@ function useStyleControls(scene: Scene<Data, 'default', RectPose>, ctx: RenderCo
   useTrialConfigChange<Config>((config, prev) => {
     const changed = STYLE_KEYS.filter((k) => config[k] !== prev[k]);
     if (changed.length === 0) return;
-    const patch = Object.assign({}, ...changed.map((k) => fieldsFor(k, config))) as Partial<Stroke>;
     scene.batch('Stroke style', () => {
       for (const id of scene.getSelection()) {
         const node = scene.get(id);
         const stroke = node?.data?.stroke;
         if (node?.kind !== 'mark' || !stroke) continue;
-        const next = { ...stroke, ...patch };
+        const next = changed.reduce<Stroke>((acc, k) => {
+          const fields = fieldsFor(k, config, acc);
+          return Object.keys(fields).length === 0 ? acc : { ...acc, ...fields };
+        }, stroke);
+        if (next === stroke) continue;
         if (next.nib === undefined) delete next.nib;
         scene.update(id, { data: { ...node.data, stroke: next } });
       }
