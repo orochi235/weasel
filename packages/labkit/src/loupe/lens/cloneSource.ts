@@ -18,7 +18,8 @@ export interface CloneSource<C> extends LensSource<C>, Remeasurable {}
 /** Marks a copy, so a hit test under a lens never lands on another lens's copy. */
 const COPY_ATTR = 'data-lk-copy';
 
-/** The root under `client`, skipping every lens's copy, found with the lens layer stood down. */
+/** The root under `client`, skipping every lens's copy and any root holding the lens itself, which would copy its own
+ *  copy on every frame; found with the lens layer stood down. */
 function rootAt(slot: HTMLElement, client: LoupePoint, selector: string): HTMLElement | null {
   const stack = probeUnderLens(
     slot,
@@ -28,7 +29,7 @@ function rootAt(slot: HTMLElement, client: LoupePoint, selector: string): HTMLEl
   for (const el of stack) {
     if (el.closest(`[${COPY_ATTR}]`)) continue;
     const root = el.closest<HTMLElement>(selector);
-    if (root) return root;
+    if (root && !root.contains(slot)) return root;
   }
   return null;
 }

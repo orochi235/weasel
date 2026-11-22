@@ -1,6 +1,5 @@
 import {
   type ActionsRegistry,
-  canvasToClient,
   effectivePose,
   type NodeId,
   type RectPose,
@@ -8,7 +7,6 @@ import {
   type SceneCanvasApi,
   useTransformFollower,
   type View,
-  viewWorldToScreen,
   WeaselProvider,
 } from '@weasel-js/core';
 import { commitDeleteToScene, createDeleteAction } from '@weasel-js/editing';
@@ -30,6 +28,7 @@ import { createSeamPreview, type SeamPreview, seamAction, seamLayer, seamOf } fr
 import { LensChrome } from './LensChrome';
 import { LensSlot } from './LensSlot';
 import { LensZoom } from './LensZoom';
+import { sceneToClient } from './lensApi';
 import { HANDLE_SLOP, hitBoxesOf, interiorOf, type LensHitBox } from './lensHitBoxes';
 import { applyLensOps, lensClosure, lensesOf, settingsOf } from './lensScene';
 import { RIM_PX } from './lensShapes';
@@ -177,9 +176,7 @@ function reticleClient<C>(
   const node = scene.get(lens.reticle);
   if (!node || !layer) return { x: 0, y: 0 };
   const p = effectivePose(scene, node);
-  const at = viewWorldToScreen(view, { x: p.x + p.width / 2, y: p.y + p.height / 2 });
-  const [x, y] = canvasToClient(layer, at.x, at.y);
-  return { x, y };
+  return sceneToClient(layer, view, { x: p.x + p.width / 2, y: p.y + p.height / 2 });
 }
 
 /** Registers the lens tile on the layer and keeps the layer's size, which is

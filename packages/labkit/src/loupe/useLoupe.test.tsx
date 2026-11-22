@@ -602,6 +602,43 @@ describe('useLoupe: the eyedropper', () => {
     expect(onPick).toHaveBeenLastCalledWith('#320000');
   });
 
+  it.each([
+    ['circle', `#${(345).toString(16)}0000`],
+    ['square', '#3e0000'],
+  ] as const)(
+    'picks the host under a click in a %s lens box corner only where the lens is not drawn',
+    (shape, want) => {
+      const onPick = vi.fn();
+      const sample = (p: { x: number; y: number }) =>
+        `#${Math.floor(p.x).toString(16).padStart(2, '0')}0000`;
+      let loupe!: LoupeState;
+      const place = () => ({
+        center: { x: 300, y: 300 },
+        shows: { x: 40, y: 25 },
+        width: 100,
+        height: 100,
+        factor: 2,
+      });
+      render(
+        <Harness
+          dropping
+          onPick={onPick}
+          sample={sample}
+          place={place}
+          shape={shape}
+          seen={(l) => {
+            loupe = l;
+          }}
+        />,
+      );
+      move(40, 25);
+      // Inside the lens's box but outside its circle.
+      move(345, 345);
+      act(() => loupe.input.pickAtPointer());
+      expect(onPick).toHaveBeenLastCalledWith(want);
+    },
+  );
+
   it('reports the eyedropper off when it is', () => {
     let loupe!: LoupeState;
     render(

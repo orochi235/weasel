@@ -1,8 +1,9 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { WeaselProvider } from '@weasel-js/core';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
-import { type ReactNode, type RefObject, useRef } from 'react';
-import { describe, expect, it } from 'vitest';
+import { type ReactNode, type RefObject, StrictMode, useRef } from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import { CameraContext, type CameraContextValue } from '../canvas/CameraInput';
 import { LoupeGestures } from './LoupeGestures';
 import { resolveLoupe } from './types';
 import { useLoupe } from './useLoupe';
@@ -103,5 +104,39 @@ describe('<LoupeGestures> with two loupes on the page', () => {
     fireEvent.pointerMove(screen.getByTestId('b'), { clientX: 10, clientY: 10 });
     expect(visible('a')).toBe('false');
     expect(visible('b')).toBe('true');
+  });
+});
+
+describe('<LoupeGestures> with two loupes in one camera', () => {
+  const inCamera = (children: ReactNode) => (
+    <CameraContext.Provider value={{} as CameraContextValue}>{children}</CameraContext.Provider>
+  );
+
+  it('warns that only the newest one will take the camera’s input', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { unmount } = render(
+      <WeaselProvider isolate>
+        <Wall id="a" wrap={inCamera} />
+        <Wall id="b" wrap={inCamera} />
+      </WeaselProvider>,
+    );
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toMatch(/two loupes/);
+    unmount();
+    warn.mockRestore();
+  });
+
+  it('does not warn for one loupe, remounted', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const tree = (
+      <WeaselProvider isolate>
+        <Wall id="a" wrap={inCamera} />
+      </WeaselProvider>
+    );
+    const { rerender, unmount } = render(<StrictMode>{tree}</StrictMode>);
+    rerender(<StrictMode>{tree}</StrictMode>);
+    expect(warn).not.toHaveBeenCalled();
+    unmount();
+    warn.mockRestore();
   });
 });

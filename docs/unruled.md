@@ -3679,3 +3679,8 @@ Calls the lanes made without a ruling:
   set as it was when any leaf under the group is auto, rather than pinning those leaves; `applyConfigWrite` has no
   schema to tell which of the group's leaves may be auto, so unpinning all of them was not an option, and throwing
   was the alternative. A reset writes a record holding `AUTO` at each leaf.
+## Audit round sixty-nine (2026-11-22): labkit.loupe
+
+- 2026-11-22 (my call, audit round 69): two loupes in one camera (`<CanvasStack>`, `<Stage>`) stay unsupported, since
+  their actions share ids on the camera's registry and one hover runs one action; the second to mount warns once in
+  development that only the newest aims, peeks and magnifies, rather than both being routed.
