@@ -115,24 +115,29 @@ export const ORTHOGONAL_EDGE_STYLES: ReadonlySet<string> = new Set([
 
 /** Arrowheads by their style name, and whether a `Fill` of `0` makes one hollow. `classic` is concave, as a draw app draws
  *  it, and `block` straight-backed, so each name means the marker {@link markerStyle} writes it for. One marked `near` is
- *  drawn as the closest marker a diagram has: `dash` is a slash across the line, where `bar` is square to it. */
-const MARKERS_READ: Readonly<Record<string, { filled: MarkerRef; hollow?: MarkerRef; near?: true }>> = {
-  classic: { filled: 'arrow-concave' }, classicThin: { filled: 'arrow-concave' }, block: { filled: 'arrow', hollow: 'triangle-hollow' },
+ *  drawn as the closest marker a diagram has: `dash` is a slash across the line, where `bar` is square to it. One marked
+ *  `solid` is filled, and has no hollow marker to draw a `Fill` of `0` with. */
+const MARKERS_READ: Readonly<Record<string, { filled: MarkerRef; hollow?: MarkerRef; near?: true; solid?: true }>> = {
+  classic: { filled: 'arrow-concave', solid: true }, classicThin: { filled: 'arrow-concave', solid: true },
+  block: { filled: 'arrow', hollow: 'triangle-hollow' },
   blockThin: { filled: 'arrow', hollow: 'triangle-hollow' }, open: { filled: 'arrow-open' }, openThin: { filled: 'arrow-open' },
   diamond: { filled: 'diamond', hollow: 'diamond-hollow' }, diamondThin: { filled: 'diamond', hollow: 'diamond-hollow' },
-  oval: { filled: 'circle' }, box: { filled: 'square' }, dash: { filled: 'bar', near: true },
+  oval: { filled: 'circle', solid: true }, box: { filled: 'square', solid: true }, dash: { filled: 'bar', near: true },
   ERone: { filled: 'bar' }, ERmandOne: { filled: 'crow-one' }, ERmany: { filled: 'crow-many' },
   ERzeroToOne: { filled: 'crow-zero-one' }, ERoneToMany: { filled: 'crow-one-many' }, ERzeroToMany: { filled: 'crow-zero-many' },
 };
 
 /** The marker an arrowhead style name draws as, `null` for none, or `undefined` for a name it does not know. `near` is
- *  called when the marker only approximates the arrowhead. */
-export function markerOf(name: string, fill: string | undefined, near?: (marker: MarkerRef) => void): MarkerRef | null | undefined {
+ *  called when the marker only approximates the arrowhead, with `hollow` when it is a hollow one drawn filled. */
+export function markerOf(
+  name: string, fill: string | undefined, near?: (marker: MarkerRef, hollow: boolean) => void,
+): MarkerRef | null | undefined {
   if (name === 'none' || name === '') return null;
   const known = getOwn(MARKERS_READ, name);
   if (known === undefined) return undefined;
   const marker = fill === '0' && known.hollow !== undefined ? known.hollow : known.filled;
-  if (known.near === true) near?.(marker);
+  const hollow = fill === '0' && known.hollow === undefined && known.solid === true;
+  if (known.near === true || hollow) near?.(marker, hollow);
   return marker;
 }
 

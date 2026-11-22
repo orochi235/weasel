@@ -121,7 +121,8 @@ export function routerOf(style: CellStyle): DiagramRouter {
 function markerAt(style: CellStyle, end: 'start' | 'end', warn: Warn): MarkerRef | null {
   const name = style.values.get(`${end}Arrow`);
   if (name === undefined) return end === 'end' ? 'arrow' : null;
-  const marker = markerOf(name, style.values.get(`${end}Fill`), (near) => warn(`Arrowheads of kind "${name}" were drawn as ${near}s.`));
+  const marker = markerOf(name, style.values.get(`${end}Fill`), (near, hollow) =>
+    warn(hollow ? `Hollow arrowheads of kind "${name}" were drawn as filled ${near}s.` : `Arrowheads of kind "${name}" were drawn as ${near}s.`));
   if (marker !== undefined) return marker;
   warn(`Arrowheads of kind "${name}" were drawn as arrows.`);
   return 'arrow';

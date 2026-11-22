@@ -48,6 +48,25 @@ describe('draw-style XML bar markers', () => {
   });
 });
 
+describe('draw-style XML hollow arrowheads', () => {
+  const read = (style: string) => readCells(`${vertex('a', 'rounded=0;', 'width="80" height="40"')}${vertex('b', 'rounded=0;', 'x="300" width="80" height="40"')}`
+    + `<mxCell id="e" edge="1" parent="1" source="a" target="b" style="${style}"><mxGeometry relative="1" as="geometry"/></mxCell>`);
+
+  it('warns that a hollow oval, box, or classic head with no hollow marker is drawn filled', async () => {
+    const { data, warnings } = await read('endArrow=oval;endFill=0;startArrow=box;startFill=0;');
+    expect(edge(data, 'e').colors).toMatchObject({ markerEnd: 'circle', markerStart: 'square' });
+    expect(warnings).toEqual(expect.arrayContaining([
+      'Hollow arrowheads of kind "oval" were drawn as filled circles.', 'Hollow arrowheads of kind "box" were drawn as filled squares.',
+    ]));
+    expect((await read('endArrow=classic;endFill=0;')).warnings).toContain('Hollow arrowheads of kind "classic" were drawn as filled arrow-concaves.');
+  });
+
+  it('says nothing of a hollow head it has a hollow marker for, or of one with no fill to lose', async () => {
+    expect((await read('endArrow=block;endFill=0;startArrow=open;startFill=0;')).warnings).toEqual([]);
+    expect((await read('endArrow=oval;endFill=1;')).warnings).toEqual([]);
+  });
+});
+
 describe('draw-style XML rotated and flipped shapes', () => {
   const warningsOf = async (style: string) => (await readCells(vertex('n', style, 'width="80" height="40"'))).warnings;
 
