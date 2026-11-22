@@ -288,13 +288,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] `SpanStrips` draws a span's `content` twice, so interactive content in a span breaks.** `SpanPlayed`
-  (`packages/ui/src/components/SpanStrip/SpanSegments.tsx`) renders every segment again in an `aria-hidden` layer over
-  the first, for the part left of the playhead. A button in a span's `content` exists twice, clicks land on the hidden
-  copy, and React Aria's popover from it never shows (skulkr's capstone lane, 2026-11-20, moved its button to the lead
-  cell). Closes when the played layer is `inert` with its content non-interactive, or a span takes an action of its
-  own, and a test clicks a control in a span's content.
-
 - **(P2) [agent] Nothing checks that fonts cascade the way a component expects.** A component that sets or resets
   `font-family` (or the `font` shorthand) on its root replaces what its consumer's container chose, and nothing
   catches it: on 2026-11-19 the audit page's lanes, rebuilt on ui's new `SpanStrip`, silently changed from the
