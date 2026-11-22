@@ -303,6 +303,20 @@ describe('Button stylesheet selectors', () => {
     return b;
   };
 
+  it('leaves every part of a disabled or readonly button alone when pressed', () => {
+    const active = [...css.matchAll(/(^|\})([^{}]*:active[^{}]*)\{/g)].flatMap((m) => m[2]!.split(/,(?![^(]*\))/)).map((s) => s.trim());
+    expect(active.length).toBeGreaterThan(4);
+    for (const sel of active) {
+      const at = sel.replace(/:active/g, '').replace(/::before|::after/g, '');
+      const attrs = /data-stance='confirm'/.test(sel) ? { 'data-stance': 'confirm' } : {};
+      const variant = sel.match(/\.(variant_\w+)/)?.[1] ?? '';
+      expect([sel, el(`button ${variant}`, attrs).matches(at)]).toEqual([sel, true]);
+      for (const off of ['data-disabled', 'data-readonly', 'disabled']) {
+        expect([sel, off, el(`button ${variant}`, { ...attrs, [off]: '' }).matches(at)]).toEqual([sel, off, false]);
+      }
+    }
+  });
+
   it('dims a pressed confirm button, and only a pressed one', () => {
     const sel = selectorOf('filter: brightness(0.92)');
     expect(el('button variant_solid pressed', { 'data-stance': 'confirm' }).matches(sel)).toBe(true);

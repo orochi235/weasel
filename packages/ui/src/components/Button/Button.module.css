@@ -180,7 +180,7 @@
     0 0 0 1px rgba(0, 0, 0, calc((var(--btn-rim) + 0.06) * var(--wzl-gloss)));
   transform: translateY(0.5px);
 }
-.variant_solid[data-stance='confirm']:active:not([data-readonly])::before { opacity: calc(0.3 * var(--wzl-gloss)); }
+.variant_solid[data-stance='confirm']:active:not(:disabled, [data-disabled], [data-readonly])::before { opacity: calc(0.3 * var(--wzl-gloss)); }
 
 /* Solid: neutral glass — drained of color. Flat, it is the raised
    surface, which needs a line around it to read as a button on a panel of
@@ -231,7 +231,7 @@
     0 0 0 1px rgba(0, 0, 0, calc(0.3 * var(--wzl-gloss)));
   transform: translateY(0.5px);
 }
-.variant_solid:active:not([data-readonly])::before { opacity: calc(0.2 * var(--wzl-gloss)); }
+.variant_solid:active:not(:disabled, [data-disabled], [data-readonly])::before { opacity: calc(0.2 * var(--wzl-gloss)); }
 
 /* Ghost: silhouette only — no glass body, no gloss. Low emphasis mutes it until pointed at. */
 .variant_ghost {
