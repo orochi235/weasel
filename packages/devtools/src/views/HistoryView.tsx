@@ -12,7 +12,7 @@ import { usePoll } from '../hooks';
 import type { DevtoolsViewProps } from '../tabs';
 import { followHistory } from '../history';
 import { coalesced } from './coalesced';
-import { HistoryTable } from './HistoryTable';
+import { entryName, HistoryTable } from './HistoryTable';
 import { sequenced, type Sequenced } from './sequenced';
 import s from './HistoryView.module.css';
 
@@ -83,7 +83,7 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
               <ol className={s.stack} aria-label="History entries">
                 {historyEntries.map((c, i) => (
                   <li key={c.id} className={position && i < position.index ? s.applied : s.redoable}>
-                    {c.label || c.id}
+                    {entryName(c)}
                   </li>
                 ))}
               </ol>

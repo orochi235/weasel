@@ -129,6 +129,22 @@ describe('<HistoryView>', () => {
     expect(screen.getByRole('status', { name: 'Position' }).textContent).toBe('0 / 0');
   });
 
+  it('names an unlabeled entry by its id the same way in its row, its detail, and the stacks', async () => {
+    const page = fakePage();
+    const request = page.client.request.bind(page.client);
+    page.client.request = (async (...args: Parameters<typeof request>) => ({
+      ...(await request(...args)),
+      historyEntries: [{ id: 1, label: '' }],
+    })) as typeof request;
+    renderWithIcons(<HistoryView client={page.client} rootId="r" />);
+    act(() => page.push(step('kit:unlabeled')));
+    fireEvent.click(await screen.findByRole('cell', { name: 'push' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'entries' }));
+    expect(screen.getByRole('cell', { name: '#1' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Entry #1' }).querySelector('h4')?.textContent).toMatch(/^#1/);
+    expect((await screen.findByRole('list', { name: 'History entries' })).textContent).toBe('#1');
+  });
+
   it('leaves the open step open when a step with nothing to show is clicked', async () => {
     const page = fakePage();
     renderWithIcons(<HistoryView client={page.client} rootId="r" />);
