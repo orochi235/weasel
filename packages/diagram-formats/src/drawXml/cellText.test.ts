@@ -31,6 +31,11 @@ describe('cellLines', () => {
     expect(cellLines('<table><tr><td>id</td><td>int</td></tr><tr><th>a</th> <th>b</th></tr></table>', true)).toEqual(['id int', 'a b']);
   });
 
+  it('keeps the spaces and line breaks inside a pre', () => {
+    expect(cellLines('<pre>a\n  b</pre>', true)).toEqual(['a', '  b']);
+    expect(cellLines('x  y<pre>\n p  q \r\nr</pre>z  w', true)).toEqual(['x y', ' p  q ', 'r', 'z w']);
+  });
+
   it('decodes entities', () => {
     expect(cellLines('a&nbsp;&amp;&nbsp;b &lt;c&gt; &#65;&#x42;', true)).toEqual(['a & b <c> AB']);
     expect(cellLines('&#99999999;', true)).toEqual(['&#99999999;']);
