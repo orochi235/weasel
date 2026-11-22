@@ -29,7 +29,8 @@ export interface EditSession {
   cancel: (sent: boolean) => void;
 }
 
-const SessionContext = createContext<EditSession>({ begin: () => {}, cancel: () => {} });
+const NO_SESSION: EditSession = { begin: () => {}, cancel: () => {} };
+const SessionContext = createContext<EditSession>(NO_SESSION);
 /** The overlay's hold, which every point it draws answers to. */
 const HoldContext = createContext<ControlHold | null>(null);
 
@@ -127,8 +128,10 @@ export function DragPoint({
   axis?: OverlayPoint;
   onDrag: (p: OverlayPoint, phase: EditPhase) => void;
 }): ReactElement {
-  const session = useContext(SessionContext);
   const hold = useContext(HoldContext);
+  const live = useContext(SessionContext);
+  // A held point sends no edit, so it has no edit to begin or cancel either.
+  const session = hold?.refuses ? NO_SESSION : live;
   const onDrag = hold ? hold.gate(onPointDrag) : onPointDrag;
   const sent = useRef(false);
   // Where on the handle the press landed, so the point keeps that offset from the pointer.
