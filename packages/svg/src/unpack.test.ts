@@ -73,6 +73,22 @@ describe('svgNodesToKitDrafts', () => {
     expect(d.data.stroke).toEqual({ paint: { color: '#00ff00' }, width: 3 });
   });
 
+  it('carries a stroke that paints no line but carries a marker, with no paint, so its head is drawn', () => {
+    const drafts = svgNodesToKitDrafts([rectNode(0, 0, 10, 10, {
+      stroke: { paint: { kind: 'none' }, width: 2, markerEnd: 'arrow' },
+    })], seq());
+    const d = drafts[0];
+    if (d.kind !== 'mark') throw new Error('expected leaf');
+    expect(d.data.stroke).toEqual({ width: 2, markerEnd: 'arrow' });
+  });
+
+  it('drops a stroke that paints nothing and carries no marker', () => {
+    const drafts = svgNodesToKitDrafts([rectNode(0, 0, 10, 10, { stroke: { paint: { kind: 'none' }, width: 2 } })], seq());
+    const d = drafts[0];
+    if (d.kind !== 'mark') throw new Error('expected leaf');
+    expect(d.data.stroke).toBeUndefined();
+  });
+
   it('carries element rotation onto the pose', () => {
     const drafts = svgNodesToKitDrafts([rectNode(0, 0, 10, 10, { rotation: Math.PI / 4 })], seq());
     const d = drafts[0];

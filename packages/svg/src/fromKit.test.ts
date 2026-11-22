@@ -56,6 +56,14 @@ describe('svgStrokeFromKit', () => {
     });
   });
 
+  it('writes a stroke with no paint and a marker as stroke="none" with the marker, and reads it back', () => {
+    const headed: Stroke = { width: 2, markerEnd: 'arrow' };
+    const svg = svgStrokeFromKit(headed, BOX);
+    expect(svg).toEqual({ paint: { kind: 'none' }, width: 2, markerEnd: 'arrow' });
+    expect(strokeDataFromSvg(svg, BOX)).toEqual(headed);
+    expect(svgStrokeFromKit({ width: 2 }, BOX)).toBeUndefined();
+  });
+
   it('round-trips a marker size through export and import', () => {
     const line: Path = {
       kind: 'polygon', commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 50, 0]), fillRule: 'nonzero',

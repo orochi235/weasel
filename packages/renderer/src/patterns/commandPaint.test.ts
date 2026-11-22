@@ -58,6 +58,11 @@ describe('commandStroke', () => {
   it('answers null for a stroke with no paint', () => {
     expect(commandStroke({ width: 3 }, BOX)).toBeNull();
   });
+
+  it('keeps a stroke with no paint that carries a marker, to draw its heads', () => {
+    const stroke: Stroke = { width: 3, markerEnd: 'arrow' };
+    expect(commandStroke(stroke, BOX)).toBe(stroke);
+  });
 });
 
 describe('PathDrawCommand paint, checked by the typecheck and not by this run', () => {

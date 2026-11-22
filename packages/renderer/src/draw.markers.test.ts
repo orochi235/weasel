@@ -121,4 +121,33 @@ describe('renderer — stroke markers', () => {
     expect(frame(stroke, 1).head.height).toBeCloseTo(6, 3);
     expect(frame(stroke, 4).head.height).toBeCloseTo(6, 3);
   });
+
+  it('draws the head of a stroke that paints no line, and no ribbon', () => {
+    const { head, ribbon } = frame({ width: 0.5, markerEnd: { key: HEAD, size: 4 } }, 1);
+    expect(head.height).toBeCloseTo(12, 3);
+    expect(head.maxX).toBeCloseTo(200, 3);
+    expect(ribbon.minX).toBe(Infinity);
+  });
+
+  it('draws nothing for a head painted the line\'s color on a stroke that paints no line', () => {
+    const lineColored = 'test-line-colored-arrow';
+    const unregister = registerMarker({
+      id: lineColored,
+      fill: 'line',
+      path: ({ size }) => ({
+        kind: 'polygon',
+        commands: new Uint8Array([M, L, L, 4]),
+        coords: new Float32Array([0, 0, -3 * size, -1.5 * size, -3 * size, 1.5 * size]),
+        fillRule: 'nonzero',
+      }),
+    });
+    try {
+      const { head, ribbon } = frame({ width: 0.5, markerEnd: { key: lineColored, size: 4 } }, 1);
+      expect(head.minX).toBe(Infinity);
+      expect(ribbon.minX).toBe(Infinity);
+    } finally {
+      unregister();
+    }
+  });
 });
+

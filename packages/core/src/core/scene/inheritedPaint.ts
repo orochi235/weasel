@@ -1,6 +1,6 @@
 import {
   INHERIT, resolveFill, resolveStroke,
-  type Fill, type Inherit, type PaintedFill, type PaintedStroke, type Stroke,
+  type DrawnStroke, type Fill, type Inherit, type PaintedFill, type Stroke,
 } from '@weasel-js/paint';
 
 /**
@@ -10,7 +10,7 @@ import {
  */
 export interface InheritedPaint {
   readonly fill: PaintedFill | null;
-  readonly stroke: PaintedStroke | null;
+  readonly stroke: DrawnStroke | null;
 }
 
 type PaintData = { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null } | null | undefined;
@@ -40,7 +40,7 @@ export function inheritedPaintOf(
   let wantFill = d?.fill === INHERIT;
   let wantStroke = d?.stroke === INHERIT;
   let fill: PaintedFill | null = null;
-  let stroke: PaintedStroke | null = null;
+  let stroke: DrawnStroke | null = null;
   for (const a of ancestors) {
     if (!wantFill && !wantStroke) break;
     const ad = a.data as PaintData;

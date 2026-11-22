@@ -180,10 +180,11 @@ export interface PanelRecord {
   paintAbove?(): PanelPaintAbove;
 }
 
-/** The fill and stroke an `'inherit'` paint takes, each with the paint it resolves to. */
+/** The fill and stroke an `'inherit'` paint takes, each with the paint it resolves to: none for a stroke that
+ *  draws only its marker heads. */
 export interface PanelPaintAbove {
   readonly fill: { readonly paint: Paint } | null;
-  readonly stroke: { readonly paint: Paint } | null;
+  readonly stroke: { readonly paint?: Paint } | null;
 }
 
 /** A kind's properties schema, by the kind's name: what core's `NodePropertiesEntry` carries. */

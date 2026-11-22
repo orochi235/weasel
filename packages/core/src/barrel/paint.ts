@@ -26,6 +26,7 @@ export {
   dashPhase,
   scaledDash,
   decomposePatternTransform,
+  hasMarker,
   hexToRgbBytes,
   INHERIT,
   lerpFill,
@@ -47,6 +48,7 @@ export {
 } from '@weasel-js/paint';
 export type {
   Inherit,
+  DrawnStroke,
   PaintedFill,
   PaintedStroke,
   ColorSpace,

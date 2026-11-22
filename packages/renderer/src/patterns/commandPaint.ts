@@ -3,7 +3,7 @@
  * the two resolutions so every painter and layer applies both.
  */
 
-import type { CommandFill, CommandPaint, CommandStroke, Fill, Paint, Stroke } from '@weasel-js/paint';
+import { hasMarker, type CommandFill, type CommandPaint, type CommandStroke, type Fill, type Paint, type Stroke } from '@weasel-js/paint';
 import type { Rect } from '@weasel-js/geom';
 import { paintToLocalUnits } from '../paintToLocalUnits';
 import { resolvePaintPattern } from './resolveSpec';
@@ -31,12 +31,18 @@ export function commandFill(fill: Fill, box: Rect): CommandFill | null {
 /**
  * `stroke` as a draw command's stroke, its paint resolved as
  * {@link commandPaint} resolves one. `null` when the stroke carries no
- * paint, or its paint cannot be resolved.
+ * paint, or its paint cannot be resolved, unless it carries a marker: SVG
+ * draws a head whatever the line paints, so such a stroke comes back with no
+ * paint, to draw its heads alone.
  */
 export function commandStroke(stroke: Stroke, box: Rect): CommandStroke | null {
-  if (stroke.paint == null) return null;
-  const paint = commandPaint(stroke.paint, box);
-  if (paint === null) return null;
+  const paint = stroke.paint == null ? null : commandPaint(stroke.paint, box);
+  if (paint === null) {
+    if (!hasMarker(stroke)) return null;
+    if (stroke.paint == null) return stroke as CommandStroke;
+    const { paint: _unresolved, ...unpainted } = stroke;
+    return unpainted;
+  }
   // Same object when nothing changed: the renderer's stroke caches key on it.
   return paint === stroke.paint ? (stroke as CommandStroke) : { ...stroke, paint };
 }

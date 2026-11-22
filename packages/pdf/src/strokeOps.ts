@@ -1,6 +1,6 @@
 import { joinPaths, type Path, type PolygonPath, splitByClosure, splitSubpaths } from '@weasel-js/geom';
 import {
-  type CommandPaint, type CommandStroke, dashPattern, dashPhase, isSolidPaint, type Stroke,
+  type CommandPaint, type CommandStroke, dashPattern, hasMarker, dashPhase, isSolidPaint, type Stroke,
 } from '@weasel-js/paint';
 import { markerDrawCommands, resolveStrokeLengths } from '@weasel-js/renderer';
 import { dashRunLength, trimPathEnds, strokeInsets, strokeToPath, trimmedPath, trimmedRuns } from '@weasel-js/stroke';
@@ -43,11 +43,11 @@ export function strokeStyleOps(ctx: PageCtx, stroke: CommandStroke, width: numbe
 }
 
 /** `raw` with its `{ px }` lengths resolved at the exact scale of `state`, and its width as a number. */
-export function resolveStroke(
+export function resolveStroke<S extends CommandStroke>(
   path: Path,
-  raw: CommandStroke & { paint: CommandPaint },
+  raw: S,
   state: DrawState,
-): { stroke: CommandStroke & { paint: CommandPaint }; width: number } {
+): { stroke: S; width: number } {
   const { cmd } = resolveStrokeLengths(state.transform, { kind: 'path', path, stroke: raw }, { quantize: false });
   return { stroke: cmd.stroke, width: typeof cmd.stroke.width === 'number' ? cmd.stroke.width : 1 };
 }
@@ -95,7 +95,14 @@ function shaftOf(path: Path, start: number, end: number): Path | null {
  * line-colored copy that `strokeToPath` already unioned into the outline.
  */
 export async function writeStroke(ctx: PageCtx, path: Path, rawStroke: CommandStroke, state: DrawState): Promise<void> {
-  if (!rawStroke.paint) return;
+  if (!rawStroke.paint) {
+    // SVG draws a stroke's heads whatever its line paints.
+    if (!hasMarker(rawStroke)) return;
+    const { stroke, width } = resolveStroke(path, rawStroke, state);
+    const heads = width > 0 ? markerDrawCommands(path, stroke, width, undefined) : [];
+    if (heads.length) await writeCommands(ctx, heads, state);
+    return;
+  }
   const { stroke, width } = resolveStroke(path, { ...rawStroke, paint: rawStroke.paint as CommandPaint }, state);
   if (!(width > 0)) return;
   let heads =

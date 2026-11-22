@@ -18,7 +18,7 @@ import { fadeFill, fadeRun, fadeStroke } from './fadePaint';
 import { groupTakes, NO_TAKES, takesOf, type Takes } from './draftTakes';
 import { framedTextDraft, framedTextParts, type FramedTextParts } from './framedText';
 import { groupBoxParts } from './groupBox';
-import { solid } from '@weasel-js/paint';
+import { hasMarker, solid } from '@weasel-js/paint';
 import {
   boundsOfPath,
   paintToBoundsUnits,
@@ -103,18 +103,19 @@ export function fillDataFromSvg(
   return fillInBoxFrame(paint.paint, box);
 }
 
-/** Lower an `SvgStroke` onto the leaf's `data.stroke`, or `undefined` for an
- *  unpainted one. The paint is rebased onto the leaf's own box the same way
- *  a fill is. */
+/** Lower an `SvgStroke` onto the leaf's `data.stroke`, or `undefined` for one
+ *  that paints nothing. One that paints no line but carries a marker comes
+ *  through with no paint, since SVG still draws its heads. The paint is
+ *  rebased onto the leaf's own box the same way a fill is. */
 export function strokeDataFromSvg(
   stroke: SvgStroke | undefined,
   box: SvgDraftBounds,
 ): Stroke | undefined {
-  if (!stroke || stroke.paint.kind === 'none') return undefined;
+  if (!stroke) return undefined;
   const paint = fillDataFromSvg(stroke.paint, box);
-  if (paint === undefined || paint === null) return undefined;
+  if (!paint && !hasMarker(stroke)) return undefined;
   return {
-    paint: stroke.opacity !== undefined ? { ...paint, opacity: stroke.opacity } : paint,
+    ...(paint ? { paint: stroke.opacity !== undefined ? { ...paint, opacity: stroke.opacity } : paint } : {}),
     width: stroke.width,
     ...(stroke.cap !== undefined ? { cap: stroke.cap } : {}),
     ...(stroke.join !== undefined ? { join: stroke.join } : {}),

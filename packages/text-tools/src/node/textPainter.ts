@@ -240,11 +240,12 @@ function cutRects(rects: readonly Rect[], box: Rect): Rect[] {
 /** Every stroke `d` draws: its own, and each run's, which overrides it over that run. */
 function strokesOf(d: TextNodeData, inherited: InheritedPaint | undefined): PaintedStroke[] {
   const out: PaintedStroke[] = [];
+  // Text draws no marker heads, so only a stroke that paints its line reaches past the glyphs.
   const own = resolveStroke(d.stroke, inherited?.stroke);
-  if (own) out.push(own);
+  if (own?.paint) out.push(own as PaintedStroke);
   for (const r of d.runs ?? []) {
     const s = r.stroke === undefined ? null : resolveStroke(r.stroke, inherited?.stroke);
-    if (s) out.push(s);
+    if (s?.paint) out.push(s as PaintedStroke);
   }
   return out;
 }

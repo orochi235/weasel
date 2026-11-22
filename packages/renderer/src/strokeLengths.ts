@@ -10,9 +10,12 @@ import { resolveMarkerSize } from '@weasel-js/stroke';
 /** A path command whose stroke paints. */
 export type StrokedPathCommand = PathDrawCommand & { stroke: CommandStroke & { paint: CommandPaint } };
 
+/** A path command with a stroke, painted or not. */
+type StrokeCommand = PathDrawCommand & { stroke: CommandStroke };
+
 /** A stroke command ready to tessellate, and the spaces to tessellate it in. */
-export interface ResolvedStrokeCommand {
-  cmd: StrokedPathCommand;
+export interface ResolvedStrokeCommand<C extends StrokeCommand = StrokedPathCommand> {
+  cmd: C;
   /** Where the ribbon and each head are built; every length in `cmd` is
    *  measured in the space of the part it belongs to. */
   spaces: StrokeSpaces;
@@ -31,11 +34,11 @@ const WORLD: StrokeSpaces = {};
  * measure as they do on screen, so it is exact across, down and on every
  * diagonal rather than right only on average. World-sized parts stay in world.
  */
-export function resolveStrokeLengths(
+export function resolveStrokeLengths<C extends StrokeCommand>(
   transform: GlMat3,
-  cmd: StrokedPathCommand,
+  cmd: C,
   opts: { quantize?: boolean } = {},
-): ResolvedStrokeCommand {
+): ResolvedStrokeCommand<C> {
   const snap = opts.quantize === false ? (_px: number, scale: number) => scale : quantizeStrokeScale;
   const stroke = cmd.stroke;
   const { markerStart, markerMid, markerEnd } = stroke;
@@ -43,7 +46,7 @@ export function resolveStrokeLengths(
     && !isPxMarker(markerMid) && !isPxMarker(markerEnd)) {
     return { cmd, spaces: WORLD };
   }
-  let resolved: CommandStroke & { paint: CommandPaint } = { ...stroke };
+  let resolved: C['stroke'] = { ...stroke };
   const { scale, metric } = strokeMetricOf(transform[0], transform[1], transform[3], transform[4]);
   const screen = (pxPerUnit: number): ScreenSpace | undefined =>
     metric === null ? undefined : { metric, pxPerUnit };
