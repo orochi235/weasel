@@ -160,4 +160,17 @@ describe('writing sequence boxes and regions', () => {
     expect(out.warnings).toContain('Mermaid notes stand beside or over a participant; notes over none were dropped.');
     expect(pageOf(out.text).data.steps).toEqual([]);
   });
+
+  it('writes a create step for a participant the list does not declare', () => {
+    const data: SequenceData = {
+      participants: [{ id: 'A' }],
+      steps: [
+        { kind: 'create', participant: 'C' },
+        { kind: 'message', id: 'm', from: 'A', to: 'C', line: 'solid', head: 'arrow' },
+      ],
+    };
+    const text = writeMermaidSequence(page(data)).text;
+    expect(text).toContain('  create participant C\n');
+    expect(pageOf(text).data.steps.map((s) => s.kind)).toEqual(['create', 'message']);
+  });
 });

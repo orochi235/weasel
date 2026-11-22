@@ -126,8 +126,8 @@ class SequenceWriter {
         const place = s.side === 'left' ? 'left of' : s.side === 'right' ? 'right of' : 'over';
         this.out(depth, `Note ${place} ${s.over.map((id) => this.id(id)).join(',')}: ${mermaidSeqText(s.text)}`);
       } else if (s.kind === 'create') {
-        const p = this.data.participants.find((q) => q.id === s.participant);
-        if (p !== undefined) this.out(depth, this.declaration(p, true));
+        const p = this.data.participants.find((q) => q.id === s.participant) ?? { id: s.participant };
+        this.out(depth, this.declaration(p, true));
       } else if (s.kind === 'fragment') {
         const label = (k: number) => (s.sections[k]?.label === undefined ? '' : ` ${mermaidSeqText(s.sections[k]!.label!)}`);
         if (s.type === 'region') {
