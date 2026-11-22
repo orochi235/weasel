@@ -19,9 +19,10 @@ export interface CurveSpan {
   to: CurvePosition;
 }
 
-/** How many segments run `r` of `t` has: its closing edge included when closed. */
+/** How many segments run `r` of `t` has: its closing edge included when closed, and 0 for an `r` naming no run. */
 export function runSegments(t: LengthTable, r: number): number {
-  return tableInternals(t).cum[r].length - 1;
+  const c = Number.isInteger(r) ? tableInternals(t).cum[r] : undefined;
+  return c ? c.length - 1 : 0;
 }
 
 /**
