@@ -13,6 +13,7 @@ import { textEngineGeneration, textLineBoxes, type TextOutlineSource } from '@we
 import { faceGeneration } from '@weasel-js/font';
 import type { PathInWorldPose } from '@weasel-js/geom';
 import { textEffectItems } from './textItems';
+import { TEXT_LADDER } from './textLadder';
 import { clippedOutline, textOutlineOf } from './textOutline';
 import { commandFill, textCommandFromPose, type DrawCommand } from '@weasel-js/renderer';
 import { INHERIT, resolveFill, resolveStroke, type PaintedStroke } from '@weasel-js/paint';
@@ -92,6 +93,7 @@ export function textPoseOf(d: TextNodeData, p: RectPose, inherited?: InheritedPa
 export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:text',
   snapsToBox: true,
+  ladder: TEXT_LADDER,
   matches: (node) => {
     if (!paintsPose(node.pose)) return false;
     const d = node.data as { text?: string } | null;

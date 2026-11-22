@@ -489,6 +489,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/StrokeAndFillDemo.tsx',
   },
   {
+    id: 'level-of-detail',
+    title: 'Level of detail',
+    category: 'Rendering & paint',
+    description: "A node draws differently by its size on screen. A painter declares a `ladder` of rungs, coarse to fine, each shown from a size in device pixels up, and the render walk picks one per node each frame with hysteresis: up at 1.5× a threshold, down at 0.67×, so a zoom parked on one does not flicker. `kit:text` ships three rungs: nothing below 3 px of font size, gray bars for its lines to 6 px, its glyphs from there. `layers={{ scene: { lod: { collapseBelowPx } } }}` gives every group the built-in `box` rung below that size, which draws the group's box in place of its children and stops the walk there, and a click lands on what was drawn: the group, not a child it hides. A node can set its own thresholds with `lod`, saved with it.",
+    hint: 'Scroll to zoom out and watch labels go to bars, then containers to boxes · click a box to select its container.',
+    load: () => import('./demos/LevelOfDetailDemo').then((m) => m.LevelOfDetailDemo),
+    path: 'apps/site/demos/LevelOfDetailDemo.tsx',
+  },
+  {
     id: 'render-to-pixels',
     title: 'Headless render-to-pixels',
     category: 'Rendering & paint',

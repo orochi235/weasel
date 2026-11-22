@@ -573,13 +573,16 @@ Arcs toward scenes far larger than a screen, in the order each builds on the las
 comparing pezlie's wall, which pans a 1.1M-cell corpus at 60 fps). Arc 1, render-time visibility, landed
 on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed and reach tree.
 
-- **(P3) [agent] Level of detail: a node's representation chosen by its size on screen.** Design:
-  `docs/proposals/2026-11-19-level-of-detail.md`. Painters get
-  `pixelScale` (`packages/core/src/canvas/nodeShapeTypes.ts:23`) and nothing builds on it. A node declares
-  representations by on-screen size, and the engine picks one with hysteresis so a zoom parked on a boundary
-  does not flicker (pezlie's `wall/src/levels.ts:66` goes up at ×1.5 and down at ×0.67). Closes when a node
-  type ships with two or more representations switched by the engine, a test pins the hysteresis, and a demo
-  shows labels dropping out and groups drawing as boxes as it zooms out.
+- **(P3) [agent] Level of detail past `kit:text` and the point pick.** The rung choice, `node.lod`,
+  `collapseBelowPx`, `kit:text`'s rungs and the point pick landed on 2026-11-21 (`docs/concepts.md`, "Level
+  of detail"). Left: diagram containers' ladder (`none 0`, `box 4`, `header 24` reusing the `collapsed: true`
+  painter without writing it, `full 80`); the plot root's `aggregate` rung, binning marks in its scales'
+  frame at a power-of-two bin size, its cache bounded per view; kernel3d's `pixelsPerUnitAt` (focal length
+  over the box's nearest depth, the camera's scale when orthographic) and a 3D consumer; a `fadeMs`
+  crossfade between rungs; the marquee, lasso and snapping reading the asking view's `LodState` (it reaches
+  only the point pick today: a region query takes no view state); `<SceneViewCanvas>` and the worker view
+  holding a `LodState` of their own (both pick statelessly now), the worker posting the ids whose rung
+  enters or leaves a skipping one. Closes when each of those has shipped with a test.
 - **(P3) [agent] A tile-pyramid layer.** `retain` (`packages/renderer/src/draw/retained.ts`) survives only
   whole-device-pixel pans; any zoom redraws. A layer renders its content into `z/tx/ty` power-of-two tiles
   under a per-frame budget, draws a coarser parent until a finer tile is ready, cross-fades between levels,

@@ -1005,6 +1005,45 @@ read the feed too, serializing or comparing only the nodes it names.
 
 What it costs and buys is measured in `tests/perf/README.md`, "A culled frame of a large scene" (2026-11-19).
 
+## Level of detail
+
+A node can draw differently by its size on screen. A **ladder** (`NodeShapeEntry.ladder`) is a
+painter's representations, coarse to fine; a **rung** is one of them, shown from a size in device
+pixels upward. Every node also has three built-in rungs: `full` (the painter's `paint`), `box` (its pose
+box, filled, in place of its children) and `none` (nothing, children included). A node saves its own
+thresholds in `node.lod` (`[{ as: 'none', fromPx: 0 }, { as: 'full', fromPx: 40 }]`), naming its
+painter's rungs or the built-ins; it cannot add a painter. `<SceneCanvas layers={{ scene: { lod: {
+collapseBelowPx } } }}>` gives every group without a ladder `[none 0, box 2, full N]`. A node with
+none of these has one rung and draws as before.
+
+| Where | What changes on zoom out |
+|---|---|
+| `kit:text` (text-tools) | `none` below 3 px of font size, `greek` gray bars per line to 6 px, glyphs from there; `{ px }` text stays full |
+| a group under `collapseBelowPx` | its box in place of its subtree, which the walk does not visit |
+
+**Picking a rung.** `buildSceneTree` asks its `LodWalk` for each node it visits, after the visibility
+index admits it and before its painter runs, and hands the rung to `drawOne` as `ctx.rung`. The size is
+`sizeOf(node)` (default the pose box's longest side; `kit:text`'s is its font size) times the plane
+view's device pixels per unit. The rung moves only past hysteresis (`rungIndexAt`): up to rung *j*
+once the size reaches 1.5 × its threshold, down off rung *i* below 0.67 × its own, so a zoom parked
+on a threshold does not flicker. A rung that skips children stops the descent, so a collapsed group
+costs one visit however large its subtree: the index prunes what is off screen, this prunes what is
+too small.
+
+**State.** Hysteresis needs what each node showed last frame, which differs per view, so a
+`LodState` belongs to the view: `<SceneCanvas>` holds one, its scene layers write it (one map per scene
+layer, replaced whole by each walk, so it holds at most what the last frame visited) and its point pick
+reads it. A render with no state (`buildSceneViewCommands` without one, `renderSceneToPixels`) takes
+the rung each size reaches, which is deterministic for a scale.
+
+**What is drawn is what is hit.** The pick walk (`PickSource.lod`) passes over a node drawn at `none`
+and any node inside a subtree drawn as one rung, and takes the collapsed group as one item even for a
+query that leaves groups out. The GPU id pass needs nothing: a collapsed group's box is painted inside
+its own `pickId` wrapper. The scene, the selection and the layers panel are not views and ignore all of
+this.
+
+What it costs and buys is in `tests/perf/README.md`, "Level of detail" (2026-11-21).
+
 ## Tool
 
 A tool is a list of `{ spec, actionId }` bindings that are live while it holds
