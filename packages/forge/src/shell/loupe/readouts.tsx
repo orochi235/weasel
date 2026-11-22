@@ -1,5 +1,6 @@
 import { messageOf } from '../../messageOf';
 import { contrastRatio, luminanceContrast, relativeLuminance, tryParseColor, useLatest, wcagLevels } from '@weasel-js/core';
+import { after } from '@weasel-js/registry';
 import {
   type LensCapture,
   type LensReadoutProps,
@@ -155,7 +156,7 @@ export function ContrastReadout({ lens, settings, sources, reticle, size, interi
     if (!latest.current || !source?.capture) return;
     const capture = source.capture.bind(source);
     let current = true;
-    const timer = setTimeout(() => {
+    const cancel = after(captureDelay(), () => {
       if (!latest.current) return;
       void capture(latest.current).then(
         (got) => {
@@ -166,10 +167,10 @@ export function ContrastReadout({ lens, settings, sources, reticle, size, interi
         },
       );
       // At once the first time; after that, once whatever moved has come to rest, as the lens's own capture waits.
-    }, captureDelay());
+    });
     return () => {
       current = false;
-      clearTimeout(timer);
+      cancel();
     };
   }, [source, reticle.x, reticle.y, factor, w, h, conditions, dpr, tick, latest, captureDelay]);
   const text = kind === 'live' ? live : kind === 'pixels' && pixels ? textOf(pixels) : null;
