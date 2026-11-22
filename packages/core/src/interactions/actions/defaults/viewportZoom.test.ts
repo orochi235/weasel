@@ -233,6 +233,19 @@ describe('viewportZoomAction invoker', () => {
     // Defaults to zoom-in (scale > 1).
     expect(view._value.scale.x).toBeGreaterThan(1);
   });
+
+  it('zooms in with no params exactly as kind: in does: about the host center, gliding, recorded', () => {
+    const run = (params: undefined | { kind: 'in' }) => {
+      const animate = vi.fn();
+      const recordViewport = vi.fn();
+      const view = { ...makeView(), hostSize: () => ({ width: 800, height: 600 }), animate };
+      getImmediateInvoker(createViewportZoomAction({ animate: true })).run({ view, debug: { recordViewport } } as never, params);
+      return { target: animate.mock.calls[0]?.[0], recorded: recordViewport.mock.calls };
+    };
+    const bare = run(undefined);
+    expect(bare.target).toBeDefined();
+    expect(bare).toEqual(run({ kind: 'in' }));
+  });
 });
 
 // ---------------------------------------------------------------------------

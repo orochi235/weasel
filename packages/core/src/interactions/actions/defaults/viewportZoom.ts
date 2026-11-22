@@ -150,7 +150,8 @@ export function createViewportZoomAction(
           const [wx, wy] = screenToWorld(anchor.x, anchor.y, viewToTransform(from));
           debug.recordViewport('zoom', from, to, { x: wx, y: wy });
         };
-        const kind = params?.kind;
+        // A trigger with no params at all zooms in one step.
+        const kind = params === undefined ? 'in' : params.kind;
 
         const canAnimate = tweenOpts !== null && typeof view.animate === 'function';
         const stepTo = (target: View, ms?: number) => {
@@ -213,11 +214,6 @@ export function createViewportZoomAction(
             break;
           }
           default:
-            // Unknown kind — no-op. Legacy bridge calls with params=undefined;
-            // default to zoom-in as a sensible fallback.
-            if (params === undefined) {
-              view.set(zoomAt(current, { x: 0, y: 0 }, axisZoomFactor(KEY_STEP, axis), clamp));
-            }
             break;
         }
       },
