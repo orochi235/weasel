@@ -274,6 +274,10 @@ function controlled(control: Control, key: string, argType: ArgType, has: boolea
               'reads apart from the rest, so it is not drawn as a choice',
           );
         }
+        // Storybook infers a typeless control's type from the arg, keeping the bounds the control object gives.
+        if (control.type === undefined && (argType.type?.name === 'number' || (has && typeof value === 'number'))) {
+          return controlled({ ...control, type: 'number' }, key, argType, has, value);
+        }
         return has ? structured(argType, value) : null;
       }
       const { icons } = control;
