@@ -2,8 +2,11 @@ import type { Endless } from '@weasel-js/quantity';
 import { getOwn, matchQuery, setOwn } from '@weasel-js/registry';
 import { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 import type { PrefGroup, PrefSection } from './groups';
+import type { PrefList } from './list';
+import type { PrefMap } from './map';
 import type { PrefLeaf, PrefNumber, PrefObject } from './schema';
-import { resolvePrefUnit } from './unit';
+import type { PrefUnion } from './union';
+import { isPrefLinearUnit, resolvePrefUnit } from './unit';
 
 /**
  * A number leaf's bounds in the unit it is displayed in.
@@ -13,9 +16,11 @@ import { resolvePrefUnit } from './unit';
  * slider's track, a step of 1 — is a display-space number already. `min` and
  * `max` are points, so they convert the way the value does; `step` is a
  * distance, and a unit with an offset maps zero somewhere else, so converting
- * it as a point would scale it wrong; under a unit's `places` it is rounded
- * up to the smallest step that changes the shown value; `stops` are points. A decreasing
- * conversion swaps which end is the lower one, and which end is `endless`.
+ * it as a point would scale it wrong; a nonlinear unit's is measured where the
+ * leaf sits (`nonlinearStep`); under a unit's `places` it is rounded
+ * up to the smallest step that changes the shown value; `stops` are points. Under `places`, `min` rounds up
+ * and `max` down, so no shown bound stores past the leaf's. A decreasing conversion swaps which end is the lower
+ * one, which end is `endless`, and the order of `stops`, which come out ascending as the bounds do.
  */
 export function prefDisplayBounds(
   p: PrefNumber,
@@ -24,19 +29,43 @@ export function prefDisplayBounds(
   if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1, ...ends, ...(p.stops ? { stops: p.stops } : {}) };
   const { toDisplay, toDisplayExact, places } = resolvePrefUnit(p.unit);
   const backward = toDisplayExact(1) < toDisplayExact(0);
-  const lo = p.min === undefined ? undefined : toDisplay(p.min);
-  const hi = p.max === undefined ? undefined : toDisplay(p.max);
-  const step = p.step === undefined ? 1 : displayStep(Math.abs(toDisplayExact(p.step) - toDisplayExact(0)), places);
+  const lo = p.min === undefined ? undefined : toDisplayExact(p.min);
+  const hi = p.max === undefined ? undefined : toDisplayExact(p.max);
+  const [low, high] = backward ? [hi, lo] : [lo, hi];
+  let min = low === undefined ? undefined : shownBound(low, places, Math.ceil);
+  let max = high === undefined ? undefined : shownBound(high, places, Math.floor);
+  // A range narrower than one shown place has no shown bounds inside it.
+  if (min !== undefined && max !== undefined && min > max) [min, max] = [low, high];
+  const step = p.step === undefined ? 1 : displayStep(isPrefLinearUnit(p.unit) ? Math.abs(toDisplayExact(p.step) - toDisplayExact(0)) : nonlinearStep(p, p.step, toDisplayExact), places);
   const flip = { min: 'max', max: 'min', both: 'both' } as const;
   const endless = backward && p.endless !== undefined ? flip[p.endless] : p.endless;
-  const stops = p.stops?.map(toDisplay);
+  const stops = p.stops?.map(toDisplay).sort((a, b) => a - b);
   return {
-    min: backward ? hi : lo,
-    max: backward ? lo : hi,
+    min,
+    max,
     step,
     ...(endless === undefined ? {} : { endless }),
     ...(stops ? { stops } : {}),
   };
+}
+
+/** A nonlinear unit's `step` has no one display size: it is measured at the leaf's `default`, else at an end, and
+ *  left as declared where none of those converts to a finite distance (a decibel unit at a stored 0). */
+function nonlinearStep(p: PrefNumber, step: number, exact: (stored: number) => number): number {
+  const spans: [number | undefined, number][] = [[p.default, p.default! + step], [p.min, p.min! + step], [p.max, p.max! - step]];
+  for (const [at, to] of spans) {
+    if (at === undefined) continue;
+    const d = Math.abs(exact(to) - exact(at));
+    if (Number.isFinite(d) && d > 0) return d;
+  }
+  return step;
+}
+
+/** `exact` rounded by `round` to a whole number of the last place `places` shows. */
+function shownBound(exact: number, places: number | undefined, round: (n: number) => number): number {
+  if (places === undefined || !Number.isFinite(exact)) return exact;
+  const quantum = 10 ** -places;
+  return Number((round(Number((exact / quantum).toFixed(9))) * quantum).toFixed(places));
 }
 
 /** `exact` rounded up to a whole number of the last place `places` shows, so a step always changes what is shown. */
@@ -118,9 +147,25 @@ function visibleFields(fields: PrefObject['children'], keepEmpty: boolean): Pref
   return out;
 }
 
+/** `leaf` without the hidden fields of an object, of a union's variants, or of a list's or a map's item. The item
+ *  itself is kept even when hidden, being the shape of the entries rather than a row. */
+function visibleInside(leaf: PrefLeaf, keepEmpty: boolean): PrefLeaf {
+  if (leaf.kind === 'object') return { ...leaf, children: visibleFields((leaf as PrefObject).children, keepEmpty) } as PrefLeaf;
+  if (leaf.kind === 'union') {
+    const variants: PrefUnion['variants'] = {};
+    for (const [key, variant] of Object.entries((leaf as PrefUnion).variants)) {
+      setOwnPrefValue(variants, key, { ...variant, children: visibleFields(variant.children, keepEmpty) });
+    }
+    return { ...leaf, variants } as PrefLeaf;
+  }
+  if (leaf.kind !== 'list' && leaf.kind !== 'map') return leaf;
+  const { item } = leaf as Partial<PrefList | PrefMap>;
+  return item === undefined ? leaf : ({ ...leaf, item: visibleInside(item, keepEmpty) } as PrefLeaf);
+}
+
 /**
- * Recursively drop `hidden` leaves (unless `showHidden`), an object leaf's
- * hidden fields among them, pruning groups
+ * Recursively drop `hidden` leaves (unless `showHidden`), the hidden fields
+ * of an object, a union's variants, and a list's or a map's item among them, pruning groups
  * that end up empty (unless `keepEmpty`). Returns null when the entire
  * subtree is pruned.
  */
@@ -131,8 +176,7 @@ export function visiblePrefSubtree<T extends PrefLeaf | PrefGroup>(
 ): T | null {
   if (isPrefLeaf(node)) {
     if (node.hidden && !showHidden) return null;
-    if (showHidden || node.kind !== 'object') return node;
-    return { ...node, children: visibleFields((node as PrefObject).children, keepEmpty) };
+    return showHidden ? node : (visibleInside(node, keepEmpty) as T);
   }
   const group = node as PrefGroup;
   const children: Record<string, PrefLeaf | PrefGroup> = {};

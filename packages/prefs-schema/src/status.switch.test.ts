@@ -105,3 +105,20 @@ describe("an item's enableIf that reads the entry, and the field it reads", () =
     expect(entry({ on: false, sub: { on: true } }).disabled.has('phases.2.sub.on')).toBe(true);
   });
 });
+
+describe("an item's own showIf and the switch its enableIf spares", () => {
+  const item = {
+    kind: 'object', name: 'Row', description: '', default: {},
+    showIf: { from: 'item', path: 'visible' }, enableIf: { from: 'item', path: 'on' },
+    children: { on: bool('On'), visible: bool('Visible'), x: num('X') },
+  } as PrefLeaf;
+  const schema: PrefGroup = { name: '', children: { rows: { kind: 'list', name: 'Rows', description: '', default: [], item } as PrefLeaf } };
+
+  it('keeps the switch shown in an entry, as prefStatusAt answers it', () => {
+    const holds = prefJudge(schema, () => undefined, { item, value: { on: false, visible: false } });
+    const { item: drawn, hidden } = applyPrefEntryConditions(item, 'rows.0', holds, { keepHidden: true });
+    expect(hidden.has('rows.0.on')).toBe(false);
+    expect(Object.keys((drawn as PrefLeaf & { children: object }).children)).toContain('on');
+    expect(prefStatusAt(schema, 'rows.0.on', holds).shown).toBe(true);
+  });
+});

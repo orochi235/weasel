@@ -161,6 +161,22 @@ describe('visiblePrefSubtree', () => {
     });
     expect(visiblePrefSubtree(schema, true)?.children.stroke).toBe(stroke);
   });
+
+  it("drops the hidden fields of a union's variants and of a list's or a map's item", () => {
+    const shown = { kind: 'number', name: 'Width', description: '', default: 1 } as const;
+    const hidden = { kind: 'number', name: 'Miter', description: '', default: 4, hidden: true } as const;
+    const fields = { kind: 'object', name: 'Fields', description: '', default: {}, children: { shown, hidden } } as const;
+    const curve = { kind: 'union', name: 'Curve', description: '', default: {}, variants: { linear: fields } } as const;
+    const list = { kind: 'list', name: 'Rows', description: '', default: [], item: { ...fields, hidden: true } } as const;
+    const map = { kind: 'map', name: 'Named', description: '', default: {}, item: curve } as const;
+    const out = visiblePrefSubtree({ name: 'Root', children: { curve, list, map } } as unknown as PrefGroup, false);
+    const kept = { ...fields, children: { shown } };
+    expect(out?.children).toEqual({
+      curve: { ...curve, variants: { linear: kept } },
+      list: { ...list, item: { ...kept, hidden: true } },
+      map: { ...map, item: { ...curve, variants: { linear: kept } } },
+    });
+  });
 });
 
 describe('prefDisplayBounds', () => {
@@ -192,7 +208,7 @@ describe('prefDisplayBounds', () => {
       min: 0, max: 10, step: 2, unit: remaining,
     };
     expect(prefDisplayBounds(leaf)).toEqual({ min: 90, max: 100, step: 2 });
-    expect(prefDisplayBounds({ ...leaf, stops: [0, 4] }).stops).toEqual([100, 96]);
+    expect(prefDisplayBounds({ ...leaf, stops: [0, 4] }).stops).toEqual([96, 100]);
   });
 
   it('swaps a lone bound to the other end when the conversion decreases, as it swaps endless', () => {
@@ -216,6 +232,23 @@ describe('prefDisplayBounds', () => {
     expect(prefDisplayBounds(num(0.15, { scale: 1, places: 1 })).step).toBe(0.2);
     expect(prefDisplayBounds(num(1.1, { scale: 1, places: 1 })).step).toBe(1.1);
     expect(prefDisplayBounds(num(1, { scale: 3 })).step).toBeCloseTo(1 / 3, 12);
+  });
+
+  it('rounds a bound inward under places, so no shown bound stores past the stored one', () => {
+    const num = (min: number, max: number, unit: PrefNumber['unit']): PrefNumber => ({ kind: 'number', name: 'N', description: '', default: 1, min, max, unit });
+    expect(prefDisplayBounds(num(0.5, 99.6, { scale: 10, suffix: 'cm', places: 0 }))).toMatchObject({ min: 1, max: 9 });
+    expect(prefDisplayBounds(num(0.5, 99.6, { scale: 1, places: 0 }))).toMatchObject({ min: 1, max: 99 });
+    expect(prefDisplayBounds(num(0.5, 99.6, { scale: -1, places: 0 }))).toMatchObject({ min: -99, max: -1 });
+    expect(prefDisplayBounds(num(1.1, 1.3, { scale: 1, places: 1 }))).toMatchObject({ min: 1.1, max: 1.3 });
+    expect(prefDisplayBounds(num(0.2, 0.4, { scale: 1, places: 0 }))).toMatchObject({ min: 0.2, max: 0.4 });
+  });
+
+  it("measures a nonlinear unit's step where the leaf sits, never as a distance from a stored 0", () => {
+    const db: PrefNumberUnit = { toDisplay: (s) => 20 * Math.log10(s), fromDisplay: (d) => 10 ** (d / 20) };
+    const leaf: PrefNumber = { kind: 'number', name: 'G', description: '', default: 1, min: 0, max: 10, step: 0.1, unit: db };
+    expect(prefDisplayBounds(leaf).step).toBeCloseTo(20 * Math.log10(1.1), 12);
+    expect(prefDisplayBounds({ ...leaf, clearable: true, default: undefined, min: 1 }).step).toBeCloseTo(20 * Math.log10(1.1), 12);
+    expect(prefDisplayBounds({ ...leaf, clearable: true, default: undefined, min: undefined, max: undefined }).step).toBe(0.1);
   });
 
   it('carries stops through unchanged without a unit', () => {
