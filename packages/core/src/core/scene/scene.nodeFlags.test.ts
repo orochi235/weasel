@@ -116,6 +116,19 @@ describe('Scene — undoing a flag cleared', () => {
       expect(other.getSelection()).toEqual([]);
     }
   });
+
+  it('drops a layer\'s nodes from another session\'s selection when undo hides or locks the layer again', () => {
+    for (const flag of ['visible', 'locked'] as const) {
+      const { scene, free } = tree();
+      const other = createEditingSession(scene);
+      const set = (on: boolean) => (flag === 'visible' ? scene.setLayerVisible('base', !on) : scene.setLayerLocked('base', on));
+      set(true);
+      set(false);
+      other.setSelection([free]);
+      scene.undo();
+      expect(other.getSelection()).toEqual([]);
+    }
+  });
 });
 
 describe('Scene — node flags in a snapshot', () => {
