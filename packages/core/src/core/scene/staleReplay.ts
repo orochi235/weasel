@@ -70,7 +70,13 @@ export function createStaleReplay<TData, TLayer extends string, TPose>(
           return !p.detached.every((d) => fits(d.id, layerOf.get(d.id)!, d.parent));
         }
         const taken = new Set(p.nodes.map((n) => n.id));
-        return !p.nodes.every((n) => nodes.has(n.id) && childless(n.id, taken));
+        const roots = new Set(p.detached.map((d) => d.id));
+        // Only the detached roots leave a parent's children; an inner node moved out would be left listed there.
+        return !p.nodes.every((n) => {
+          const live = nodes.get(n.id);
+          return live !== undefined && childless(n.id, taken)
+            && (roots.has(n.id) || (live.parent !== null && taken.has(live.parent)));
+        });
       }
       case 'kit:move': {
         const p = payload as { id: NodeId; fromParent: NodeId | null; toParent: NodeId | null };

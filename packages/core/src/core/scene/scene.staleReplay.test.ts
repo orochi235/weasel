@@ -170,6 +170,22 @@ describe('Scene — replaying an entry whose node an untracked edit took', () =>
     expect(scene.get(B)!.parent).toBe(A);
   });
 
+  it('skips redoing a removal when an untracked edit moved one of its inner nodes out', () => {
+    const { scene, spec, add } = makeScene();
+    add('g', 'group');
+    add('b', 'group');
+    scene.add({ ...spec('a'), parent: G });
+    scene.remove(G);
+    scene.undo();
+    scene.untracked(() => scene.move(A, B));
+
+    expect(scene.redo()).toBe(true);
+    expect(scene.get(G)).toBeDefined();
+    expect(scene.childrenOf(G)).toEqual([]);
+    expect(scene.get(A)!.parent).toBe(B);
+    expect(scene.childrenOf(B)).toEqual([A]);
+  });
+
   it('does not undo an add out from under children an untracked edit gave it', () => {
     const { scene, spec, add } = makeScene();
     add('g', 'group');
