@@ -48,9 +48,10 @@ export function conditionProblems(root: SchemaRoot, over?: SchemaRoot): Map<stri
     for (const held of Object.values(childrenOf(node) ?? {})) rowless(held, path, holderUnder(node, within), group);
   };
   const walk = (node: SchemaNode, path: string | null, within: Holder, group: string): void => {
-    own(node, path, within, group);
-    inner(node, path, within, group);
     const kids = groupUnder(node, path, group);
+    // A group's own tests read from the group itself.
+    own(node, path, within, kids);
+    inner(node, path, within, group);
     for (const [key, kid] of Object.entries(childrenOf(node) ?? {})) walk(kid, joinPath(path, key), holderUnder(node, within), kids);
   };
   walk(root, null, undefined, '');
@@ -58,19 +59,18 @@ export function conditionProblems(root: SchemaRoot, over?: SchemaRoot): Map<stri
 }
 
 /**
- * The value path of the group the node at tree path `path` is declared in, empty at the root: where a condition on it
- * reads a test read from its group (`from: 'group'`). `undefined` for the root itself, or a path naming no node.
+ * Where a condition on the node at tree path `path` reads a test read from its group (`from: 'group'`): the value path
+ * of the group it is declared in, or a group's own, empty at the root. `undefined` for a path naming no node.
  */
 export function conditionGroupAt(root: SchemaRoot, path: string | null): string | undefined {
   const keys = keysOf(path);
-  if (keys.length === 0) return undefined;
   let node: SchemaNode = root;
   let group = '';
   for (let i = 0; i < keys.length; i++) {
     const kids = childrenOf(node);
     const kid = kids && getOwn(kids, keys[i]!);
     if (kid === undefined) return undefined;
-    if (i < keys.length - 1 && !isPrefLeaf(kid as never) && !isPrefSection(kid as never)) group = keys.slice(0, i + 1).join('.');
+    if (!isPrefLeaf(kid as never) && !isPrefSection(kid as never)) group = keys.slice(0, i + 1).join('.');
     node = kid;
   }
   return group;

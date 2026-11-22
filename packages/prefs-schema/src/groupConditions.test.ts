@@ -76,3 +76,18 @@ describe('status with group tests', () => {
     expect(applyPrefConditions(app, judge(app, onHere)).disabled.has('view.feature.axis')).toBe(false);
   });
 });
+
+describe("a group's own group tests", () => {
+  const switched = pref.group('Feature', { on: pref.boolean('On', false), axis: pref.enum('Axis', 'x', ['x', 'y']) }, {
+    enableIf: { from: 'group', path: 'on' },
+  });
+  const mounted: PrefGroup = pref.group('App', { view: pref.group('View', { feature: switched, on: pref.boolean('View on', true) }) });
+
+  it('reads them from the group itself, so its own switch works wherever it is mounted', () => {
+    const resolved = resolvePrefGroupConditions(mounted);
+    expect(prefValueAt(resolved, 'children.view.children.feature.enableIf')).toEqual({ path: 'view.feature.on' });
+    const off = { view: { on: true, feature: { on: false } } };
+    expect(prefStatusAt(mounted, 'view.feature.axis', judge(mounted, off)).enabled).toBe(false);
+    expect(prefStatusAt(mounted, 'view.feature.on', judge(mounted, off)).enabled).toBe(true);
+  });
+});

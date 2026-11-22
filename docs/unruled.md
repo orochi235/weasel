@@ -3695,3 +3695,10 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `PaintInput` with a mixed or missing value and `kinds` leaving out `solid` shows no
   body under the kind bar; a kind is chosen in the bar. Seeding the first offered kind from the picked color was
   the alternative.
+## Audit round seventy (2026-11-22): prefs-schema
+
+- 2026-11-22 (the fixer's call): a group's own test read from its group (`from: 'group'` in a group's `showIf` or
+  `enableIf`) reads a leaf in that group, not in the group it is declared in, so a feature group can carry its own
+  switch wherever it is mounted; a test on the group meaning a leaf beside it names it from the root.
+- 2026-11-22 (the fixer's call): a number leaf's `minAt` and `maxAt` are held inside its declared `min` and `max`, and a
+  `maxAt` below the `min` gives way to it, so crossed bounds collapse to one value rather than one of them being dropped.

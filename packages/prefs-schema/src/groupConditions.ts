@@ -28,8 +28,9 @@ function mapNodes(held: Node, each: (key: string, node: Node) => Node): Node {
 
 /**
  * `node`, declared in the group at `group`, with its conditions read from the root, and everything under it likewise.
- * `path` is the node's own path, which a group's children are declared in. Groups sit only in groups; a section's
- * members, a leaf's fields and its item sit in the group their holder does.
+ * `path` is the node's own path, which a group's children are declared in. A group's own tests read from the group
+ * itself, so its switch can sit in it. Groups sit only in groups; a section's members, a leaf's fields and its item
+ * sit in the group their holder does.
  */
 function resolveNode(node: Node, group: string, path: string): Node {
   let out: Node | undefined;
@@ -37,11 +38,12 @@ function resolveNode(node: Node, group: string, path: string): Node {
     out ??= { ...node };
     setOwn(out, key, value);
   };
+  const readIn = isGroup(node) ? path : group;
   for (const key of CONDITIONS) {
     const condition = node[key];
     // A malformed condition is left as it is, for checkPrefConditions to report.
     if (!isPrefCondition(condition)) continue;
-    const next = prefConditionInGroup(condition, group);
+    const next = prefConditionInGroup(condition, readIn);
     if (next !== condition) set(key, next);
   }
   const inGroup = (_key: string, child: Node) => resolveNode(child, group, path);
