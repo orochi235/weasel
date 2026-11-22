@@ -5,10 +5,10 @@
  * `pathEditingOverlayLayer` both gate on. Pressed with a tool on other than
  * the mode's default (path edit's `anchors`), it returns to that tool instead.
  *
- * Always enabled — calling it when no path is being edited is a no-op.
+ * Disabled when it would do neither, so Escape falls through to the next binding.
  */
 
-import { returnToModeDefault, type Action } from '@weasel-js/routing';
+import { ActionDisabledReason, modeDefaultToReturnTo, returnToModeDefault, type Action } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 
 export const leavePathEditAction: Action & { requires: string[] } = {
@@ -25,5 +25,6 @@ export const leavePathEditAction: Action & { requires: string[] } = {
       editAnchors?.setEditingId(null);
     },
   } as ImmediateInvoker,
-  enabled: () => true,
+  enabled: (deps) =>
+    deps?.editAnchors?.editingId || modeDefaultToReturnTo(deps) !== null ? true : ActionDisabledReason.NotApplicable,
 };
