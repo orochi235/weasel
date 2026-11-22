@@ -218,6 +218,26 @@ describe('useSceneLayerList — annotation layers', () => {
     expect(ids(hook.result.current.items)).toEqual([[row, ['n1', 'n2']], 'box']);
   });
 
+  it('reorders the children of a group on an annotation layer, and keeps content out of it', () => {
+    const { hook, scene } = annotated({ picked: null, pick: vi.fn() });
+    const note = (id: string, parent?: string) => scene.add({
+      id: asNodeId(id), kind: parent ? 'mark' : 'group', layer: 'notes', pose: box, data: { name: id },
+      ...(parent ? { parent: asNodeId(parent) } : {}),
+    });
+    note('ng');
+    note('k1', 'ng');
+    note('k2', 'ng');
+    hook.rerender();
+    const { canMove, onReorder } = hook.result.current;
+    expect(canMove({ ids: ['k1'], parentId: 'ng', index: 0 })).toBe(true);
+    expect(canMove({ ids: ['box'], parentId: 'ng', index: 0 })).toBe(false);
+    onReorder({ ids: ['k1'], parentId: 'ng', index: 0 });
+    expect(scene.childrenOf(asNodeId('ng'))).toEqual(['k2', 'k1']);
+    hook.rerender();
+    hook.result.current.onReorder({ ids: ['k1'], parentId: 'ng', index: 1 });
+    expect(scene.childrenOf(asNodeId('ng'))).toEqual(['k1', 'k2']);
+  });
+
   it('hides the annotation layer from its row, and removes a node from its row', () => {
     const pick = vi.fn();
     const { hook, scene } = annotated({ picked: 'n1', pick });

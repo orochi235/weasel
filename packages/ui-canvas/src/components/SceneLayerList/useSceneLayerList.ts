@@ -120,6 +120,9 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
     const layer = scene.get(asNodeId(id))?.layer;
     return layer !== undefined && onAnnotation.has(layer);
   };
+  // The annotation layer a drop lands on: a layer's row, or a container on that layer.
+  const dropLayer = (parentId: string | null): string | null =>
+    annotationLayerOf(parentId) ?? (parentId !== null && isAnnotation(parentId) ? scene.get(asNodeId(parentId))!.layer : null);
   const commit = (ops: Op[], entry: string) => {
     if (adapter) dispatchApplyBatch(adapter, ops, entry);
     else scene.applyBatch(ops, entry, defaultCommitAdapter(scene, selection.adapterMethods));
@@ -186,7 +189,7 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
     },
     canMove: ({ ids, parentId }) => {
       if (ids.some((id) => id.startsWith(ANNOTATION_LAYER_ROW))) return false;
-      const into = annotationLayerOf(parentId);
+      const into = dropLayer(parentId);
       return ids.every((id) => (isAnnotation(id) ? scene.get(asNodeId(id))?.layer === into : into === null));
     },
     onReorder: ({ ids, parentId, index }) => {
@@ -197,7 +200,9 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
       const left = (parent === null ? scene.roots : scene.childrenOf(asNodeId(parent))).filter((id) => !moved.has(id));
       // `index` counts from the front among the rows the drag left behind, the annotation rows heading the top
       // level among them; the rows shown stand for the siblings of the list's own level.
-      const shown = left.filter((id) => (layer !== null ? scene.get(id)?.layer === layer : !isAnnotation(id)));
+      const shown = parentId !== null && layer === null
+        ? left
+        : left.filter((id) => (layer !== null ? scene.get(id)?.layer === layer : !isAnnotation(id)));
       const at = parentId === null ? Math.max(0, index - annotationRows.length) : index;
       const back = parentId === null && layer === null
         ? behindTopGap((id) => scene.childrenOf(id), scene.roots.filter((id) => !isAnnotation(id)), run, moved, parent, shown, at)
