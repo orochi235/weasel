@@ -60,7 +60,7 @@ export function tugOpenEnd(
 
 /** Options for {@link reachToMeet}. */
 export interface ReachToMeetOptions extends EaseOptions {
-  /** The furthest the end may travel, by arc length. Default: as far as any stroke reaches. */
+  /** The furthest the end may travel, by arc length. Default, and for `Infinity`: as far as any stroke reaches. */
   maxDistance?: number;
   /** The curve the end travels along. Default `'eased'`. */
   mode?: TugMode;
@@ -83,8 +83,9 @@ export function reachToMeet(
   if (!frame) return null;
   const mode = opts.mode ?? 'eased';
   const all = [...boundaries.flatMap((b) => pathSegments(b)), ...segmentsBesideEnd(path, end)];
-  let reach = opts.maxDistance ?? 0;
-  if (opts.maxDistance === undefined) {
+  const limit = opts.maxDistance ?? Infinity;
+  let reach = limit === Infinity ? 0 : limit;
+  if (limit === Infinity) {
     for (const s of all) {
       for (const p of s.pts) reach = Math.max(reach, Math.hypot(p.x - frame.point.x, p.y - frame.point.y));
     }

@@ -156,4 +156,11 @@ describe('mergeRegion where three edges cross at one point', () => {
     expect(merged.commands.filter((c) => c === PATH_M)).toHaveLength(1);
     expectSameRegion(src, merged, 0.5);
   });
+
+  it('joins a short edge lying along a long one at a tilt too small to see', () => {
+    const src = pathFromD('M0 0 L1000 0 L1000 100 L0 100 Z M10 0 L10 -10 L20 -10 L20 0.000009 Z');
+    const merged = mergeRegion(src);
+    expect(merged.commands.filter((c) => c === PATH_M)).toHaveLength(1);
+    expectSameRegion(src, merged, 3.3);
+  });
 });

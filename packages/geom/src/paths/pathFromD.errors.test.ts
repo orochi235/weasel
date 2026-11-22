@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PATH_L, PATH_M } from '../commands';
+import { PATH_L, PATH_M, PATH_Z } from '../commands';
 import { pathFromD } from './pathFromD';
 
 // SVG 2, "Path data errors": a path is rendered up to, but not including,
@@ -23,6 +23,12 @@ describe('pathFromD and path data in error', () => {
     expect(out.commands).toEqual([PATH_M, PATH_L]);
     expect(out.coords).toEqual([0, 0, 10, 10]);
     expect(out.warnings).toEqual([expect.stringMatching(/L.*argument/)]);
+  });
+
+  it('stops after a closepath followed by numbers', () => {
+    const out = read('M0 0 L10 0 L10 10 Z 5 5 L20 20');
+    expect(out.commands).toEqual([PATH_M, PATH_L, PATH_L, PATH_Z]);
+    expect(out.warnings).toEqual([expect.stringMatching(/Z.*no arguments/)]);
   });
 
   it('keeps the whole groups of a repeated command before a short one', () => {

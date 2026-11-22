@@ -98,29 +98,37 @@ function overlapCuts(segs: readonly CubicSegment[], cuts: Cut[][], snap: number)
     for (let j = i + 1; j < segs.length; j++) {
       const b = segs[j]!;
       if (!b.line) continue;
-      const onA = endsAlong(a, b, snap);
+      // Measured against the longer edge both ways: a short edge's line, run out over a long one, strays by its tilt.
+      const ref = length2(a) >= length2(b) ? a : b;
+      const onA = endsAlong(a, b, ref, snap);
       if (!onA) continue;
-      const onB = endsAlong(b, a, snap)!;
+      const onB = endsAlong(b, a, ref, snap);
+      if (!onB) continue;
       cuts[i]!.push(...onA);
       cuts[j]!.push(...onB);
     }
   }
 }
 
-/** Where `b`'s ends fall inside straight edge `a`, when the two lie on one line within `snap` and overlap. */
-function endsAlong(a: CubicSegment, b: CubicSegment, snap: number): Cut[] | null {
+const length2 = (s: CubicSegment): number => (s.c[6] - s.c[0]) ** 2 + (s.c[7] - s.c[1]) ** 2;
+
+/** Where `b`'s ends fall inside straight edge `a`, when both lie on `ref`'s line within `snap` and overlap. */
+function endsAlong(a: CubicSegment, b: CubicSegment, ref: CubicSegment, snap: number): Cut[] | null {
+  const [rx, ry] = [ref.c[0], ref.c[1]];
+  const rdx = ref.c[6] - rx,
+    rdy = ref.c[7] - ry;
+  const rlen = Math.hypot(rdx, rdy);
   const [ax, ay] = [a.c[0], a.c[1]];
   const dx = a.c[6] - ax,
     dy = a.c[7] - ay;
   const len2 = dx * dx + dy * dy;
-  if (len2 === 0) return null;
-  const len = Math.sqrt(len2);
+  if (len2 === 0 || rlen === 0) return null;
   const ends: Pt[] = [[b.c[0], b.c[1]], [b.c[6], b.c[7]]];
   const t: number[] = [];
-  for (const [x, y] of ends) {
-    if (Math.abs((x - ax) * dy - (y - ay) * dx) / len > snap) return null;
-    t.push(((x - ax) * dx + (y - ay) * dy) / len2);
+  for (const [x, y] of [...ends, [a.c[0], a.c[1]], [a.c[6], a.c[7]]] as Pt[]) {
+    if (Math.abs((x - rx) * rdy - (y - ry) * rdx) / rlen > snap) return null;
   }
+  for (const [x, y] of ends) t.push(((x - ax) * dx + (y - ay) * dy) / len2);
   if (Math.min(t[0]!, t[1]!) >= 1 || Math.max(t[0]!, t[1]!) <= 0) return null;
   return ends.map((p, k) => ({ t: t[k]!, p }));
 }

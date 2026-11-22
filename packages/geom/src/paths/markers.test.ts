@@ -71,4 +71,17 @@ describe('marker builders given a count they cannot draw', () => {
     expect(() => roundRectPath(0, 0, 10, 10, 2, 0)).toThrow(RangeError);
     expect(Array.from(roundRectPath(0, 0, 10, 10, 2, 1).coords).every(Number.isFinite)).toBe(true);
   });
+
+  it('keeps a marker far from 0 its shape', () => {
+    const far = 300_000;
+    for (const [p, q] of [
+      [circlePath(far, far, 2), circlePath(0, 0, 2)],
+      [squarePath(far, far, 0.1), squarePath(0, 0, 0.1)],
+      [rectMarkerPath(far, far, 0.1, 0.3), rectMarkerPath(0, 0, 0.1, 0.3)],
+      [roundRectPath(far, far, 4, 3, 1), roundRectPath(0, 0, 4, 3, 1)],
+    ]) {
+      const ox = p.origin?.x ?? 0, oy = p.origin?.y ?? 0;
+      p.coords.forEach((c, i) => expect(c + (i % 2 ? oy : ox) - far).toBeCloseTo(q.coords[i]!, 5));
+    }
+  });
 });

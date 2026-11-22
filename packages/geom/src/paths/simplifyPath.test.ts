@@ -154,4 +154,18 @@ describe('simplifyPath', () => {
     expect(simple.fillRule).toBe('evenodd');
     expect(anchorsOf(simple)).toHaveLength(2);
   });
+
+  it('keeps a subpath of one anchor', () => {
+    const path = new PathBuilder().moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).moveTo(50, 50).build();
+    const subs = anchorsOf(simplifyPath(path, 0.5));
+    expect(subs).toHaveLength(2);
+    expect(subs[1]).toEqual([{ x: 50, y: 50 }]);
+  });
+
+  it('leaves a closed subpath whose anchors all sit on one point as it was', () => {
+    const path = new PathBuilder().moveTo(5, 5).lineTo(5, 5).lineTo(5, 5).close().build();
+    for (const cornerAngle of [0.7, 2]) {
+      expect(anchorsOf(simplifyPath(path, 0.5, { cornerAngle }))[0]).toHaveLength(3);
+    }
+  });
 });

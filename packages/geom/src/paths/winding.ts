@@ -29,8 +29,9 @@ export function closedSignedArea(path: Path): number {
  * closed by a straight edge back to its start where a fill closes it, and as
  * nothing where one does not: see `fillsOpenSubpaths`.
  * Curved segments are integrated exactly, not through their control polygon.
- * Corner shapes count as they are drawn. A `RectPath` has no direction and
- * counts as positive.
+ * Corner shapes count as they are drawn. A `RectPath` turns from `(x, y)`
+ * toward `(x + width, y)`, so it counts as positive unless exactly one of its
+ * extents is negative.
  */
 export function pathSignedArea(path: Path): number {
   if (path.kind === 'rect') return path.width * path.height;

@@ -36,7 +36,6 @@ export function simplifyPath(
   const out: PenAnchor[][] = [];
   const outClosed: boolean[] = [];
   anchors.forEach((sub, s) => {
-    if (sub.length < 2) return;
     out.push(simplifySubpath(sub, closed[s], tolerance, opts));
     outClosed.push(closed[s]);
   });
@@ -51,19 +50,22 @@ export function simplifySubpath(
   tolerance: number,
   opts: SimplifyPathOptions = {},
 ): PenAnchor[] {
+  if (sub.length < 2) return sub.slice();
   const { tol, cosCorner } = fitParams(tolerance, opts);
   const n = sub.length;
   const corners = [...breaksOf(sub, closed, cosCorner, tol)].sort((a, b) => a - b);
   const result: PenAnchor[] = [];
   if (closed && corners.length === 0) {
     const pts = sampleRun(sub, 0, n, tol);
+    if (pts.length < 2) return sub.slice();
     const t = unit(sub2(pts[1], pts[pts.length - 2]));
     fitPointRun(pts, t, neg(t), tol, result, true);
     keepCorner(result[0], sub[0]);
     return result;
   }
   fitStops(sub, closed ? [...corners, corners[0] + n] : corners, tol, result, closed);
-  return result;
+  // Every anchor on one point leaves nothing to fit.
+  return result.length > 0 ? result : sub.slice();
 }
 
 /**

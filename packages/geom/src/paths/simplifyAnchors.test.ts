@@ -142,4 +142,10 @@ describe('simplifyAnchorsAt', () => {
     expect(simplifyAnchorsAt(ring, range(0, 199), 0.5)).toBe(true);
     expect(ring.anchors[0].length).toBeLessThan(10);
   });
+
+  it('leaves a closed subpath of one anchor as it was', () => {
+    const set: AnchorSet = { anchors: [[{ x: 5, y: 5 }]], closed: [true] };
+    expect(simplifyAnchorsAt(set, [0], 0.5)).toBe(false);
+    expect(set.anchors).toEqual([[{ x: 5, y: 5 }]]);
+  });
 });
