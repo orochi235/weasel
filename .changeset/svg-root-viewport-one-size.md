@@ -2,6 +2,6 @@
 '@weasel-js/svg': patch
 ---
 
-`parseSvg` answers `@media` and `@container` queries at the size an `em`-sized root `<svg>` has, and resolves a percentage on the side a root sizes when it leaves the other out.
+`parseSvg` sizes a root `<svg>` one way for percentages and `@media` queries. An `em` size and a root giving one side are read alike by both.
 
 <!-- entry: fix data -->
