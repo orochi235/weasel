@@ -57,6 +57,8 @@ class DotReader {
   readonly edges: RawEdge[] = [];
   readonly clusters = new Map<string, Attrs>();
 
+  readonly root: Scope = { kind: 'root', graph: new Map(), node: new Map(), edge: new Map(), cluster: null };
+
   constructor(readonly graph: DotGraph) {}
 
   dropUnread(kind: keyof typeof READ, keys: Iterable<string>): void {
@@ -107,10 +109,17 @@ class DotReader {
     return [...this.subgraph(end, scope)].map((id) => ({ id, line: end.line }));
   }
 
+  /** A new cluster's attributes, less the root's `bgcolor`: a page draws none, so the cluster has no canvas to blend into. */
+  clusterGraph(parent: Attrs): Attrs {
+    const graph = new Map(parent);
+    if (graph.get('bgcolor') === this.root.graph.get('bgcolor')) graph.delete('bgcolor');
+    return graph;
+  }
+
   subgraph(sub: DotSubgraph, parent: Scope): Set<string> {
     const isCluster = sub.id !== undefined && sub.id.startsWith('cluster');
     if (isCluster) this.membership.openCluster(sub.id!, parent.cluster);
-    const graph = isCluster ? (this.clusters.get(sub.id!) ?? new Map(parent.graph)) : new Map(parent.graph);
+    const graph = isCluster ? (this.clusters.get(sub.id!) ?? this.clusterGraph(parent.graph)) : new Map(parent.graph);
     if (isCluster) this.clusters.set(sub.id!, graph);
     return this.walk(sub.stmts, {
       kind: isCluster ? 'cluster' : 'plain', graph, node: new Map(parent.node), edge: new Map(parent.edge),
@@ -291,7 +300,7 @@ function strictEdges(edges: readonly RawEdge[], directed: boolean): RawEdge[] {
 export function readDot(text: string): ImportResult {
   const graph = parseDot(text);
   const r = new DotReader(graph);
-  const root: Scope = { kind: 'root', graph: new Map(), node: new Map(), edge: new Map(), cluster: null };
+  const root = r.root;
   r.walk(graph.stmts, root);
   let nodes = [...r.nodes].map(([id, attrs]) => readNode(r, id, attrs));
   const placed = positions(nodes, r.nodes, str(root.graph, 'bb'));

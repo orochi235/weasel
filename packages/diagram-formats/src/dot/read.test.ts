@@ -192,3 +192,12 @@ describe('reading DOT points', () => {
     expect(node(data, 'd').colors).toMatchObject({ fill: 'red', stroke: 'red' });
   });
 });
+
+describe("reading a DOT graph's bgcolor", () => {
+  it('fills no cluster with the root graph\'s bgcolor, which the page drops, but keeps a cluster\'s own', () => {
+    const { document, warnings } = readDot('digraph { bgcolor=lightblue; subgraph cluster_a { x } subgraph cluster_b { bgcolor=pink; y; subgraph cluster_c { z } } }');
+    const fills = asGraph(document.pages[0]!).data.containers?.map((k) => k.colors?.fill);
+    expect(fills).toEqual([undefined, 'pink', 'pink']);
+    expect(warnings).toContain('DOT attributes a diagram does not hold were dropped: bgcolor.');
+  });
+});
