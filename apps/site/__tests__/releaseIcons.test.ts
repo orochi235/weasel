@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { hasOwnKey } from '@weasel-js/registry';
-import { PACKAGE_ICONS } from '../releaseIcons';
+import { PACKAGE_ICONS, packageIcon } from '../releaseIcons';
 
 const PACKAGES_DIR = resolve(__dirname, '../../../packages');
 
@@ -17,4 +17,8 @@ it('gives every published package a release-chip badge, but those awaiting a ske
     .filter((manifest) => !manifest.private)
     .map((manifest) => manifest.name.replace(/^@weasel-js\//, ''));
   expect(published.filter((name) => !hasOwnKey(PACKAGE_ICONS, name)).sort()).toEqual(AWAITING_SKETCH);
+});
+
+it('gives no badge to a package named like an Object.prototype member', () => {
+  for (const name of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) expect(packageIcon(name)).toBeUndefined();
 });

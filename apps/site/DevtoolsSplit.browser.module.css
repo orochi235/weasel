@@ -1,9 +1,9 @@
-/* The site's main pane at 1440×900: the viewport less its 280 px sidebar, scrolling on its own. */
+/* The site's main pane at 1440×900: the viewport less its 240 px sidebar, scrolling on its own. */
 .main {
   position: fixed;
   top: 0;
-  left: 280px;
-  width: 1160px;
+  left: 240px;
+  width: 1200px;
   height: 900px;
   overflow: auto;
 }

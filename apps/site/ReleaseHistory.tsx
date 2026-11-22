@@ -45,8 +45,14 @@ function readFilter(known: ReadonlySet<string>): Filter {
   };
 }
 
-function readVersion(): string | null {
-  return new URLSearchParams(window.location.search).get(VERSION_PARAM);
+/** The version `?v=` names, when it is one this page lists: the other page's is not kept here. */
+function readVersion(releases: readonly ReleaseIndexEntry[]): string | null {
+  const version = new URLSearchParams(window.location.search).get(VERSION_PARAM);
+  return releases.some((r) => r.version === version) ? version : null;
+}
+
+function currentPage(): string {
+  return window.location.hash.replace(/^#/, '');
 }
 
 /** Write this view's query params, each dropped when it has no value. */
@@ -93,12 +99,15 @@ export function ReleasesPageLink({ id, children }: { id: string; children: React
 /** A release history, newest first, with its filter and `?v=` deep link. Each release's
  *  entries load when it is opened. `footer` follows the list however much of it is shown. */
 export function ReleaseHistory({
+  id,
   releases,
   title,
   description,
   empty,
   footer,
 }: {
+  /** This page's route id, so a history entry of the other release page is left alone. */
+  id: string;
   releases: readonly ReleaseIndexEntry[];
   title: string;
   description: ReactNode;
@@ -110,14 +119,17 @@ export function ReleaseHistory({
   const known = useMemo(() => new Set(packageCounts.map(([name]) => name)), [packageCounts]);
   const [filter, setFilter] = useState<Filter>(() => readFilter(known));
   /** The version the URL named at mount, kept in the URL while this view is shown. */
-  const [version] = useState(readVersion);
+  const [version] = useState(() => readVersion(releases));
   const [linked, setLinked] = useState(version);
   // The link is spent once the first render has opened its section: a section that a filter
   // change remounts later is not being linked to.
   // eslint-disable-next-line react-hooks/set-state-in-effect -- consumes the deep link after the mount that used it
   useEffect(() => setLinked(null), []);
 
-  useWindowEvent('popstate', () => setFilter(readFilter(known)));
+  // Back or Forward to the other release page fires popstate here before that page mounts.
+  useWindowEvent('popstate', () => {
+    if (currentPage() === id) setFilter(readFilter(known));
+  });
 
   useEffect(() => {
     writeParams(filter, version);
@@ -126,7 +138,7 @@ export function ReleaseHistory({
   // The other release page reads the same filter, so it keeps them.
   useEffect(
     () => () => {
-      if (!isReleasesPage(window.location.hash.replace(/^#/, ''))) writeParams(NO_FILTER, null);
+      if (!isReleasesPage(currentPage())) writeParams(NO_FILTER, null);
     },
     [],
   );

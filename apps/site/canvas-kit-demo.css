@@ -457,6 +457,11 @@ a:hover { text-decoration: underline; }
   font-size: var(--wzl-font-size-sm);
 }
 
+.ckd-source-plain {
+  margin: 0;
+  font-family: var(--wzl-font-mono);
+}
+
 .ckd-source pre {
   font-size: calc(var(--wzl-font-size-sm) + 1px);
   line-height: 1.5;

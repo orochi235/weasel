@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Component, type ReactNode, Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNearViewport, useWindowEvent } from '@weasel-js/react';
 import { FORGE_LAB } from '@shared/labs';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
@@ -157,6 +157,19 @@ function useSourceText(tab: DemoSourceTab | undefined, enabled: boolean): string
   return text;
 }
 
+/** Shows the source unhighlighted when the highlighter fails, so the demo above keeps running. */
+class PlainOnError extends Component<{ code: string; children: ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+
+  override render(): ReactNode {
+    return this.state.failed ? <pre className="ckd-source-plain"><code>{this.props.code}</code></pre> : this.props.children;
+  }
+}
+
 function DemoView({ entry }: { entry: DemoEntry }) {
   const Component = entry.Component;
   // Tabs: the demo's primary TSX is always first; companions follow. Paths and
@@ -178,9 +191,11 @@ function DemoView({ entry }: { entry: DemoEntry }) {
       {code === 'failed' ? (
         <p className="ckd-source-failed" role="status">This file could not be loaded. Reload the page to try again.</p>
       ) : code == null ? <div className="ckd-source-loading" /> : (
-        <Suspense fallback={<div className="ckd-source-loading" />}>
-          <SourceView code={code} language={current.language} />
-        </Suspense>
+        <PlainOnError code={code}>
+          <Suspense fallback={<div className="ckd-source-loading" />}>
+            <SourceView code={code} language={current.language} />
+          </Suspense>
+        </PlainOnError>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 /**
  * The demo page's devtools split at 1440×900, the page's own proportions: the
- * site's sidebar leaves the main pane about 1160 px, a demo is up to 1100 px
+ * site's sidebar leaves the main pane 1200 px, a demo is up to 1100 px
  * wide, and the switch sits under a header a few hundred pixels tall.
  */
 import '@weasel-js/theme/tokens.css';
