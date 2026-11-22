@@ -155,14 +155,15 @@ const Bare = ({ children }: { children: ReactNode }) => <>{children}</>;
 
 const wait = () => act(() => new Promise<void>((done) => setTimeout(done, 50)));
 
-/** Lets effects, a lazy load and a first persisted read settle before the page is read: until the markup holds
- *  still across a wait, or half a second has gone. */
-export async function settle(host: Element): Promise<void> {
+/** Lets effects, a lazy load and a first persisted read settle before the page is read: until the page's markup,
+ *  portals included, holds still across a wait, or half a second has gone. */
+export async function settle(): Promise<void> {
   let last: string | null = null;
   for (let tries = 0; tries < 10; tries += 1) {
     await wait();
-    if (host.innerHTML === last) return;
-    last = host.innerHTML;
+    const now = document.body.innerHTML;
+    if (now === last) return;
+    last = now;
   }
 }
 
@@ -178,7 +179,7 @@ export function describeFontCascade(title: string, { cases, components, alsoKit,
       host.setAttribute('data-font-probe', '');
       const before = new Set(document.body.children);
       const view = render(<Wrap><Story /></Wrap>, { container: host, wrapper: withIcons });
-      await settle(host);
+      await settle();
       try {
         mountedTypes(host, mounted);
         const portals = [...document.body.children].filter((el) => el !== host && !before.has(el));
