@@ -138,3 +138,15 @@ describe('writing sequence text that a reader would split or misread', () => {
     }
   });
 });
+
+describe('writing sequence boxes and regions', () => {
+  it('writes a box whose members are named only by steps', () => {
+    const out = writeMermaidSequence(page({
+      participants: [],
+      boxes: [{ id: 'b1', label: 'Team', members: ['A', 'B'] }],
+      steps: [{ kind: 'message', id: 'm1', from: 'A', to: 'B', line: 'solid', head: 'arrow', text: 'hi' }],
+    }));
+    expect(out.warnings).toEqual([]);
+    expect(pageOf(out.text).data.boxes).toEqual([expect.objectContaining({ label: 'Team', members: ['A', 'B'] })]);
+  });
+});
