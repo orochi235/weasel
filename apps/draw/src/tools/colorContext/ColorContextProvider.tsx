@@ -101,8 +101,8 @@ export function ColorContextProvider({
 }: ColorContextProviderProps) {
   const [own] = useState(createToolOptionValues);
   const values = given ?? own;
-  const startFill = initialFill ?? DEFAULT_FILL;
-  const startStroke = initialStroke ?? DEFAULT_STROKE;
+  const startFill = useMemo(() => spelled(initialFill ?? DEFAULT_FILL), [initialFill]);
+  const startStroke = useMemo(() => spelled(initialStroke ?? DEFAULT_STROKE), [initialStroke]);
   const shared = useSyncExternalStore(values.subscribe, () => values.get(SHARED_TOOL_OPTIONS));
   const fill = paintOf(shared.fill, startFill);
   const stroke = paintOf(shared.stroke, startStroke);
@@ -166,7 +166,7 @@ export function ColorContextProvider({
     let next: ActivePaint = null;
     setPaints((cur) => {
       const paint = which === 'fill' ? cur.fill : cur.stroke;
-      next = paint === null ? (which === 'fill' ? DEFAULT_FILL : DEFAULT_STROKE) : null;
+      next = paint === null ? spelled(which === 'fill' ? DEFAULT_FILL : DEFAULT_STROKE) : null;
       return which === 'fill' ? { ...cur, fill: next } : { ...cur, stroke: next };
     });
     return next;
@@ -176,7 +176,7 @@ export function ColorContextProvider({
     return { slot, paint: toggleNone(slot) };
   }, [toggleNone, focusedRef]);
   const reset = useCallback((): Paints => {
-    const next = { fill: DEFAULT_FILL, stroke: DEFAULT_STROKE };
+    const next = { fill: spelled(DEFAULT_FILL), stroke: spelled(DEFAULT_STROKE) };
     setPaints(next);
     return next;
   }, [setPaints]);

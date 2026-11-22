@@ -29,8 +29,8 @@ describe('ColorContextProvider — state cluster', () => {
       result.current.setStrokeColor('#abcdefff');
       result.current.reset();
     });
-    expect(result.current.fill).toEqual({ kind: 'solid', color: '#ffffffff' });
-    expect(result.current.stroke).toEqual({ kind: 'solid', color: '#000000ff' });
+    expect(result.current.fill).toEqual({ color: '#ffffff' });
+    expect(result.current.stroke).toEqual({ color: '#000000' });
   });
 
   it('swap exchanges fill and stroke', () => {
@@ -64,7 +64,7 @@ describe('ColorContextProvider — state cluster', () => {
     act(() => result.current.toggleFocusedNone());
     expect(result.current.fill).toBeNull();
     act(() => result.current.toggleFocusedNone());
-    expect(result.current.fill).toEqual({ kind: 'solid', color: '#ffffffff' });
+    expect(result.current.fill).toEqual({ color: '#ffffff' });
   });
 
   it('toggleNone flips the named slot, whichever slot has focus', () => {
@@ -74,9 +74,9 @@ describe('ColorContextProvider — state cluster', () => {
     expect(result.current.focused).toBe('fill');
     act(() => result.current.toggleNone('stroke'));
     expect(result.current.stroke).toBeNull();
-    expect(result.current.fill).toEqual({ kind: 'solid', color: '#ffffffff' });
+    expect(result.current.fill).toEqual({ color: '#ffffff' });
     act(() => result.current.toggleNone('stroke'));
-    expect(result.current.stroke).toEqual({ kind: 'solid', color: '#000000ff' });
+    expect(result.current.stroke).toEqual({ color: '#000000' });
   });
 
   it('normalizes an 8-digit color it is given, as it does a 6-digit one', () => {
