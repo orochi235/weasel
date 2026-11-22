@@ -235,3 +235,16 @@ describe('TilePyramid byte bound and the ring', () => {
     expect(made.length).toBe(before);
   });
 });
+
+describe('TilePyramid fade over finer stand-ins', () => {
+  it('keeps drawing the finer tiles under a tile fading in after a zoom out', () => {
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, object>({
+      scheme, bytesOf: () => 1, release: () => {}, floor: () => planeFloor(scheme, TILE, BOUNDS), fadeMs: 100,
+    });
+    for (let f = 0; f < 20; f++) pyramid.run(view(0, 0, 2, 400, 300), f * 1000, () => ({}), { ...budget, tiles: 100 });
+    const frame = pyramid.run(view(0, 0, 0.5, 400, 300), 20_000, () => ({}), { ...budget, tiles: 100 });
+    expect(frame.level).toBe(0);
+    expect(frame.draws.some((d) => d.tile.key.z === 0 && d.alpha < 1)).toBe(true);
+    expect(frame.draws.some((d) => d.tile.key.z === 2)).toBe(true);
+  });
+});

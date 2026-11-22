@@ -200,7 +200,7 @@ export class TilePyramid<K, V, P> {
         mark(anc);
         coarse.push({ at, tile: anc, source: subRect(scheme, anc.key, at), alpha: 1 });
       }
-      if (t === undefined) this.finerHeld(at, down, 1, (child, depth) => {
+      this.finerHeld(at, down, 1, (child, depth) => {
         mark(child);
         (fine[depth] ??= []).push({ at: child.key, tile: child, source: whole(), alpha: 1 });
       });
