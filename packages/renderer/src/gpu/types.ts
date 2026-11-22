@@ -214,9 +214,9 @@ export interface GpuProgramOptions {
   /** Add the id output. Default `true`; `false` for a program that writes
    *  location 1 itself. */
   readonly ids?: boolean;
-  /** Attributes bound to locations before linking, `a_position` at 0 and the rest from 1 in this order.
+  /** The locations the source's own `layout(location = N)` qualifiers give its attributes, by name.
    *  `attribute` answers these without waiting for a link still running in the background. */
-  readonly attributes?: readonly string[];
+  readonly attributes?: Readonly<Record<string, number>>;
 }
 
 /** What a device reports of itself and its canvas target. */

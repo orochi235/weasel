@@ -67,12 +67,7 @@ export class GlProgram implements GpuProgram {
     gl.attachShader(program, vs);
     gl.attachShader(program, fs);
     gl.bindAttribLocation(program, POSITION_ATTRIBUTE_LOCATION, 'a_position');
-    let next = POSITION_ATTRIBUTE_LOCATION + 1;
-    for (const name of options.attributes ?? []) {
-      const location = name === 'a_position' ? POSITION_ATTRIBUTE_LOCATION : next++;
-      if (name !== 'a_position') gl.bindAttribLocation(program, location, name);
-      this.attributes.set(name, location);
-    }
+    for (const [name, location] of Object.entries(options.attributes ?? {})) this.attributes.set(name, location);
     gl.linkProgram(program);
     this.handle = program;
     this.stages = [vs, fs];

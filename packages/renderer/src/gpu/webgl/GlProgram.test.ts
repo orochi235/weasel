@@ -110,12 +110,11 @@ describe('GlProgram compiling in the background', () => {
     expect(named('getUniformLocation').length).toBeGreaterThan(0);
   });
 
-  it('answers an attribute bound before the link without waiting for it', () => {
-    const prog = new GlProgram(host(), VERT_SRC, FRAG_SRC, { attributes: ['a_position', 'a_uv', 'a_post'] });
-    expect([prog.attribute('a_position'), prog.attribute('a_uv'), prog.attribute('a_post')]).toEqual([0, 1, 2]);
+  it('answers an attribute whose location the source gives without waiting for the link', () => {
+    const prog = new GlProgram(host(), VERT_SRC, FRAG_SRC, { attributes: { a_position: 0, a_uv: 2, a_post: 3 } });
+    expect([prog.attribute('a_position'), prog.attribute('a_uv'), prog.attribute('a_post')]).toEqual([0, 2, 3]);
     expect(named('getProgramParameter')).toHaveLength(0);
-    const binds = named('bindAttribLocation').map((c) => c.args.slice(1));
-    expect(binds).toEqual([[0, 'a_position'], [1, 'a_uv'], [2, 'a_post']]);
+    expect(named('getAttribLocation')).toHaveLength(0);
   });
 
   it('throws a failed link at the first use, and at every use after', () => {
