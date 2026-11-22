@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from 'react';
 import { act, render } from '@testing-library/react';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { shown } from './shown';
 import { withIcons } from './withIcons';
 
 // The font-cascade harness: each story renders inside a container set in a face of its own, and every element a kit
@@ -99,16 +100,6 @@ function kitMade(el: Element, kit: Kit): boolean {
   let owner = key ? (el as unknown as Record<string, Fiber>)[key]!._debugOwner : null;
   for (; owner; owner = owner._debugOwner) if (isKit(kit, owner.type)) return true;
   return false;
-}
-
-/** Shown on screen: nothing draws inside a visually hidden box (React Aria's native `<select>` behind its own). */
-function shown(el: Element): boolean {
-  if (!el.checkVisibility()) return false;
-  for (let at: Element | null = el; at; at = at.parentElement) {
-    const box = at.getBoundingClientRect();
-    if (box.width <= 1 && box.height <= 1 && getComputedStyle(at).overflow !== 'visible') return false;
-  }
-  return true;
 }
 
 /** What under `root` that a kit component made is not in the face its nearest root set, or a role's. */
