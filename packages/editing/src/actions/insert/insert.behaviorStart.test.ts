@@ -63,3 +63,17 @@ describe('insert: a start a behavior shaped', () => {
     expect(s.committed[0]?.bounds).toEqual({ x: 45, y: 40, width: 55, height: 50 });
   });
 });
+
+describe('insert: the bounds a behavior is handed', () => {
+  it('is the box the shape is drawn in, its minimum size included', () => {
+    const s = scope();
+    const seen: Bounds[] = [];
+    const watch: InsertBehavior<unknown> = { onMove: (_g, p) => { seen.push({ ...p.bounds }); return undefined; } };
+    if (insertAction.invoker?.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+    const h = insertAction.invoker.start(s.ctx(10, 10), { params: { kind: 'rect', minSize: { width: 20, height: 20 } }, behaviors: [watch] });
+    h.onMove?.(s.ctx(12, 12));
+    h.onEnd?.(s.ctx(12, 12), 'commit');
+    expect(seen.at(-1)).toEqual(s.committed[0]?.bounds);
+    expect(seen.at(-1)).toEqual({ x: 10, y: 10, width: 20, height: 20 });
+  });
+});
