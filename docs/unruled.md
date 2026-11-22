@@ -3815,3 +3815,12 @@ Calls the lanes made without a ruling:
   `irregularity` adds to it alike, so a beam jittered past 90° no longer leans the other way and `angle: 90` draws
   thin near-horizontal beams rather than an infinite shear. Reading an angle past 90° as its equivalent mod 180° was
   the alternative.
+
+## Audit round seventy-two (2026-11-22): path-tools.pathEdit
+
+- 2026-11-22 (the fixer's call): a double-click on an unselected body with no editable path, such as an image, is
+  left to that body: `enterPathEdit` falls back to the selection only when nothing, or a selected node, is under
+  the pointer. Opening the first selected path, as it did, was the alternative.
+- 2026-11-22 (the fixer's call): a segment bend on a symmetric path whose segment a transform maps onto itself
+  gives each handle the mean of where the bend and the transform put it, so the held point follows the pointer
+  only as far as the symmetry allows, as an anchor on a mirror axis slides along it.
