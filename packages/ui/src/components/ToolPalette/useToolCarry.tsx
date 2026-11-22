@@ -50,6 +50,7 @@ export function useToolCarry(
         setGhost(null);
         if (moved) swallowNextClick();
       },
+      onCancel: () => { setGhost(null); },
     });
   };
   return {
