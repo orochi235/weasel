@@ -307,4 +307,23 @@ describe('GradientEditor stops', () => {
     });
   });
 
+  describe('a removal the caller declines', () => {
+    it('leaves the selection on the stop it was on', () => {
+      const onSelectionChange = vi.fn();
+      renderWithIcons(<GradientEditor value={THREE} onSelectionChange={onSelectionChange} onChange={() => {}} />);
+      fireEvent.focus(handle(3));
+      onSelectionChange.mockClear();
+      fireEvent.contextMenu(handle(1));
+      fireEvent.keyDown(handle(3), { key: 'Delete' });
+      expect(onSelectionChange).not.toHaveBeenCalled();
+      expect(screen.getByRole('group', { name: 'Stop 3 of 3' })).toBeInTheDocument();
+    });
+  });
+
+  it('reports no selection change when a stop after the selected one is removed', () => {
+    const onSelectionChange = vi.fn();
+    renderWithIcons(<Live initial={THREE} onSelectionChange={onSelectionChange} />);
+    fireEvent.contextMenu(handle(3));
+    expect(onSelectionChange).not.toHaveBeenCalled();
+  });
 });
