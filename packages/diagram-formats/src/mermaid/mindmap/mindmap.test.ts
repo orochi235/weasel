@@ -78,6 +78,12 @@ describe('writing a Mermaid mind map', () => {
   }] });
   const LOOP = 'Mermaid mind maps hold a tree; connectors that would join a shape to a second parent, or close a loop, were dropped.';
 
+  it('roots the tree at a shape whose only parent is itself, and warns of the self-loop', () => {
+    const out = writeMindmap(graph(['b', 'a'], [['a', 'a'], ['a', 'b']]));
+    expect(out.text).toBe('mindmap\n  A\n    B\n');
+    expect(out.warnings).toEqual([LOOP]);
+  });
+
   it('roots a page whose connectors make a loop at its first shape, and warns of the connector closing it', () => {
     const out = writeMindmap(graph(['a', 'b', 'c'], [['a', 'b'], ['b', 'c'], ['c', 'a']]));
     expect(out.text).toBe('mindmap\n  A\n    B\n      C\n');

@@ -22,7 +22,7 @@ export function writeMindmap(doc: DiagramDocument, opts?: WriteOptions): ExportR
   const children = new Map<string, string[]>();
   const hasParent = new Set<string>();
   for (const e of out.edges) {
-    if (!out.byId.has(e.from) || !out.byId.has(e.to) || hasParent.has(e.to)) continue;
+    if (e.from === e.to || !out.byId.has(e.from) || !out.byId.has(e.to) || hasParent.has(e.to)) continue;
     children.set(e.from, [...(children.get(e.from) ?? []), e.to]);
     hasParent.add(e.to);
   }
