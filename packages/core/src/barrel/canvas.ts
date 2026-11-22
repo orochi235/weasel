@@ -66,6 +66,14 @@ export type {
   InheritedPaint,
   ShapeCoversPointOptions,
 } from '../canvas/NodeShape';
+// Level of detail: a node's representation chosen by its size on screen.
+export { rungIndexAt, BUILT_IN_RUNGS, DEFAULT_HYSTERESIS } from '../canvas/lod/ladder';
+export type { Ladder, Rung, RungId, NodeLod, LodHysteresis } from '../canvas/lod/ladder';
+export { createLodState } from '../canvas/lod/lodState';
+export type { LodState, LodPick, LodWalkRecord } from '../canvas/lod/lodState';
+export { createLodWalk, poseSizeOf } from '../canvas/lod/lodWalk';
+export type { LodWalk, LodOptions } from '../canvas/lod/lodWalk';
+export { paintLodBox, LOD_BOX_FILL } from '../canvas/lod/lodBox';
 // A node kind's outline as paths, and the generation its geometry moves on.
 export { NodeOutlineError, findNodeOutline, sceneNodeOutline, geometryGenerationOf } from '../canvas/nodeOutline';
 export type { NodeOutline, NodeOutlineCtx, PaintedPath } from '../canvas/nodeOutline';

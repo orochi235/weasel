@@ -4,6 +4,7 @@ import type { LayoutStrategy } from '../../layout/types';
 import type { RectPose } from '../geometry/rectPose';
 import type { PageInfo, PageRunInfo } from '../pages/pageNodes';
 import type { StatedNodeFields } from './statedFields';
+import type { NodeLod } from './nodeLod';
 import type { NodeId } from '@weasel-js/routing';
 import type { DerivePathFn, DerivePoseFn, ClipFromPoseFn, CopiesFromPoseFn } from './nodeFnTypes';
 
@@ -104,6 +105,10 @@ export interface NodeBase<TData, TLayer extends string, TPose> {
   readonly page?: PageInfo;
   /** Makes this root the page run: the container that lays out its child pages (`pageRunLayout`). */
   readonly pageRun?: PageRunInfo;
+  /** Which representation it draws at each size on screen, by rung name and device-pixel
+   *  threshold: its painter's `ladder` rungs, or the built-in `'full'`, `'box'` and `'none'`.
+   *  Absent, its painter's ladder decides, or it always draws in full. */
+  readonly lod?: NodeLod;
 }
 
 /** A node that is drawn and picked as one thing — a shape, a label, an image.

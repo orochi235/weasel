@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type RefObject } from 'react';
+import { useCallback, useMemo, useState, type RefObject } from 'react';
 import { useOptionalDepRegistry } from '@weasel-js/routing/react';
 import { asNodeId, type Scene } from 'core/scene/types';
 import { useLatest } from '@weasel-js/react';
@@ -17,6 +17,7 @@ import type { NodeKinds } from './useNodeKinds';
 import { useScenePickers, type UseScenePickersArgs } from './useScenePickers';
 import { useOptionalViewRegistry } from '../viewRegistry';
 import { useViewLayerGate } from '../useViewLayerGate';
+import { createLodState } from '../lod/lodState';
 
 type PickingProps<TData, TLayer extends string, TPose> = Pick<
   SceneCanvasProps<TData, TLayer, TPose>,
@@ -75,6 +76,8 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     canDropInto,
   });
 
+  // What this canvas drew each node as last frame: its scene layers write it, its picking reads it.
+  const [lodState] = useState(createLodState);
   // Stable, so the pickers keyed on it are not rebuilt every render.
   const getView = useCallback(() => viewRef.current, [viewRef]);
   const selectTool = useScenePickers({
@@ -91,6 +94,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     ...(viewLayerGate ? { layerIsPainted: viewLayerGate } : {}),
     isPointerInteractive: reachable,
     readIds,
+    lod: lodState,
     selectTool: args.selectTool,
   });
 
@@ -106,7 +110,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
   })), [scene, kindOfNode, enteredGroup]);
 
   return {
-    ...selectTool, adapter, kindOfNode, doubleClickNames, getNodeAtPoint, viewLayerGate, enteredGroup,
+    ...selectTool, adapter, kindOfNode, lodState, doubleClickNames, getNodeAtPoint, viewLayerGate, enteredGroup,
     /** What a press or a region select can reach. */
     reachable,
     /** The composed paint alpha, only when the consumer fades anything. */

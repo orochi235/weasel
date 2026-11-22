@@ -12,6 +12,8 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
 import type { Node, NodeId, Scene } from '../core/scene/types';
 import { wrapNodeOutput } from './wrapNodeOutput';
+import { createLodWalk, type LodOptions } from './lod/lodWalk';
+import type { LodState } from './lod/lodState';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { scenePickIds } from './scenePickIds';
 import { sceneToAdapter } from './sceneAdapter';
@@ -156,6 +158,9 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   /** The camera parallax layers are placed from — see `buildSceneTree`. Default `view`; null
    *  draws every layer at its world pose. */
   camera: View | null = view,
+  /** Level of detail for the groups, and the record of what this view drew last frame for its
+   *  hysteresis. Without a record each node takes the rung its size reaches. */
+  lod?: { options?: LodOptions; state?: LodState },
 ): DrawCommand[] {
   const shown = shownLookup(scene);
   const derivedOnly = withDerivedPaths(scene, withSceneShapes(scene, withInheritedPaints(shown, drawOne)));
@@ -167,10 +172,12 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     node: Node<TData, TLayer, TPose>,
     pose: TPose,
     v: View,
+    rung?: string,
   ): DrawCommand[] => {
     const overrideAlpha = scene.overrides.read(node.id as NodeId)?.alpha ?? 1;
+    const ctx = pixelScaleCtx(v, dpr);
     return wrapNodeOutput(
-      derived(nodeAsShown(scene.overrides, node), pose, v, pixelScaleCtx(v, dpr)),
+      derived(nodeAsShown(scene.overrides, node), pose, v, rung === undefined ? ctx : { ...ctx, rung }),
       pose,
       (alphaFor ? alphaFor(node.id) : 1) * overrideAlpha,
     );
@@ -195,6 +202,9 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     camera,
     nodeShapesOf(scene),
     cullRect && cull?.paintBounds ? sceneSubtreeCull(scene, cull.paintBounds, cullRect) as Parameters<typeof buildSceneTree>[9] : undefined,
+    createLodWalk({
+      shapes: nodeShapesOf(scene), dpr, ...(lod?.options ? { options: lod.options } : {}), ...(lod?.state ? { state: lod.state } : {}),
+    }) as Parameters<typeof buildSceneTree>[10],
   );
   const children = cull && cullRect ? cullDrawCommands(tree, viewToMat3(view), cullRect, cull.dpr) : tree;
   if (extraCommands && extraCommands.length > 0) {

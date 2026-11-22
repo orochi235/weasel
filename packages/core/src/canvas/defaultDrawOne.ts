@@ -20,6 +20,7 @@ import { isPathLike } from 'core/geometry/autoPoseDescriptor';
 import { pixelScaleCtx } from './pixelScale';
 import { groupBoxBounds, paintGroupBox } from './nodeShapes/groupBoxPainter';
 import { poseBoxBounds } from './nodeShapes/poseBox';
+import { paintLodBox } from './lod/lodBox';
 
 // `globalThis`, not `window`: a render worker has no window, and sets the density it paints at here.
 const ambientDpr = (): number => globalThis.devicePixelRatio || 1;
@@ -40,10 +41,17 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
   const paintCtx = !view || ctx?.pixelScale !== undefined
     ? ctx
     : ctx ? { ...ctx, ...pixelScaleCtx(view, ambientDpr()), ...(ctx.scale !== undefined ? { scale: ctx.scale } : {}) } : pixelScaleCtx(view, ambientDpr());
+  const rung = ctx?.rung;
+  if (rung !== undefined && rung !== 'full') {
+    if (rung === 'box') return paintLodBox(node, pose, ctx?.inherited);
+    const own = painter?.ladder?.rungs.find((r) => r.id === rung);
+    if (rung === 'none') return [];
+    if (own?.paint) return own.paint(node, pose, paintCtx);
+  }
   const primary = painter ? painter.paint(node, pose, paintCtx) : node.kind === 'group' ? paintGroupBox(node, pose) : [];
 
   // Label overlay: skipped for text nodes (their content is the label) and a painter that draws its own.
-  const text = painter?.drawsLabel ? undefined : overlaidLabelOf(node);
+  const text = painter?.drawsLabel || (rung !== undefined && rung !== 'full') ? undefined : overlaidLabelOf(node);
   const p = text ? labelAnchorOf(pose) : null;
   if (text && p !== null) {
     // Copy rather than `push`. A painter's return value is not ours to grow:

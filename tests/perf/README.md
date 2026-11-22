@@ -710,6 +710,31 @@ batch about 0.7 ms either side. `animation-stress.spec.ts`, the one perf spec th
 read a 448.5 ms mean cycle before and 448.4 after on the same node; it does not cull. The runs are in
 `tests/perf/recorded/visibility-2026-11-19/`.
 
+## Level of detail
+
+`scene/lod.bench.ts` times building a culled frame's commands (`buildSceneViewCommands`, no GL) for
+scenes with no ladders, where level of detail can only add cost, and for 101k nodes in 1000 groups of
+100, each group about 10 px on screen, collapsed below 24 px (`docs/concepts.md`, "Level of detail"). It
+reads only what the merge-base had, where the `lod` argument is ignored and the grouped scene draws in full:
+
+    onto do --kind bench -- npx vitest run --config tests/perf/vitest.scene-bench.config.ts tests/perf/scene/lod.bench.ts
+
+On msb-uai (Apple M3 Max) on 2026-11-21, medians of 200 frames, merge-base `1eae5ad1` against the branch:
+
+| case | before (ms) | after (ms) |
+|---|---:|---:|
+| no ladders, 1k all on screen | 1.292 | 1.205 |
+| no ladders, 10k all on screen | 13.467 | 11.777 |
+| no ladders, 100k nested, 1% on screen | 2.028 | 1.848 |
+| 101k in 1000 groups at 10 px, collapsed below 24 px | 160.953 | 0.965 |
+| 101k in 1000 groups at 10 px, no collapse | 156.011 | 135.931 |
+| 1k rects alone, all on screen | 1.154 | 1.139 |
+
+So 101k nodes collapsed into 1000 boxes cost less than 1000 rects alone, inside the design's 2× bar.
+The scenes with no ladders read 7–13% faster after, in one run each side; nothing in the change makes
+them faster, so that is the node's noise, and the per-node cost the rung check adds is below it. The runs
+are in `tests/perf/recorded/lod-2026-11-21/`.
+
 ## An image's upload through the 2D canvas
 
 WebGL draws every `ImageBitmap` bound for an image texture into a scratch 2D canvas and uploads the

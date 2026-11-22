@@ -18,6 +18,8 @@ import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { pixelScaleCtx } from './pixelScale';
 import { sceneLayerKey } from './sceneLayerPaint';
 import { wrapNodeOutput } from './wrapNodeOutput';
+import { createLodWalk, type LodOptions } from './lod/lodWalk';
+import type { LodState } from './lod/lodState';
 
 /** Scene slot config — describes how to draw one object with its effective pose. */
 export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
@@ -85,12 +87,18 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
    * trims commands after painting.
    */
   paintBounds?: PaintBoundsFn<TNode, TPose>;
+  /** Level of detail for the scene's groups: see `LodOptions`. Painters with a `ladder`, and nodes
+   *  with a `lod`, switch representations by size on screen whether or not this is set. */
+  lod?: LodOptions;
 }
 
 /** A scene slot wired to its scene, which can also say which subtrees cannot reach a view
  *  `rect` (screen pixels) by `paintBounds`, for the cull to skip them unwalked. */
 export interface WiredSceneSlot<TNode extends { id: string }, TPose> extends SceneSlotConfig<TNode, TPose> {
   subtreeCull?: (rect: Rect) => SubtreeCullFor | undefined;
+  /** What this view drew each node as last frame, which its picking reads too. Absent, each frame
+   *  picks rungs afresh, with no hysteresis. */
+  lodState?: LodState;
 }
 
 /**
@@ -179,9 +187,10 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
       const hidden = hideIds();
       const a = adapter;
       if (a && cfg.objects === undefined && drawOne) {
-        const filteredDrawOne = (obj: TNode, pose: TPose, v: View): DrawCommand[] => {
+        const filteredDrawOne = (obj: TNode, pose: TPose, v: View, rung?: string): DrawCommand[] => {
           if (hidden && hidden.has(obj.id)) return [];
-          const cmds = drawOne(obj, pose, v, pixelScaleCtx(v, dims.dpr));
+          const ctx = pixelScaleCtx(v, dims.dpr);
+          const cmds = drawOne(obj, pose, v, rung === undefined ? ctx : { ...ctx, rung });
           if (debugSink) {
             const b = boundsOfFn ? boundsOfFn(obj.id) : null;
             if (b) debugSink.recordBounds(obj.id, b);
@@ -214,6 +223,10 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           view,
           cfg.shapes,
           prunedIn(dims),
+          createLodWalk({
+            shapes: cfg.shapes, dpr: dims.dpr, options: cfg.lod,
+            ...(cfg.lodState ? { state: cfg.lodState, key: slot?.forLayer ?? 'scene' } : {}),
+          }) as Parameters<typeof buildSceneTree>[10],
         );
         return finish(postProcess ? postProcess(tree, view, dims) : tree, view, dims);
       }

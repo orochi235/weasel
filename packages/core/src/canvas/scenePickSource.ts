@@ -38,6 +38,8 @@ export interface ScenePickSourceOptions<TPose> extends ViewPickGates {
    *  visits only the nodes it can hit. `descriptor` must be the one the
    *  query reads poses through. */
   index?: { descriptor: PoseDescriptor<unknown> };
+  /** What the asking view drew each node as last frame — see `PickSource.lod`. */
+  lod?: PickSource<TPose>['lod'];
 }
 
 /** The pick source walking `scene` as the asking view shows it: its layers, overrides, alpha and camera. */
@@ -131,6 +133,7 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   const index = getPose || typeof scene.getVersion !== 'function' ? undefined : opts.index;
   return {
     ...(planeOf ? { planeOf } : {}),
+    ...(opts.lod ? { lod: opts.lod } : {}),
     ...(index ? {
       candidates: (broadFor: (layer: string | undefined) => PickBroad | null | undefined) => {
         const found = indexedCandidates(scene as never, index.descriptor, broadFor) as readonly PickCandidate<TPose>[] | null;

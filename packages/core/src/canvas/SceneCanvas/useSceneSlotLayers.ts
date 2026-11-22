@@ -12,6 +12,7 @@ import type { HierarchicalAdapter } from '../buildSceneTree';
 import { isCustomEntry, type LayersMap, type SceneSlotLayers } from '../layerSlots';
 import { wireSceneSlotToScene } from '../sceneSlotWiring';
 import { useSceneLayersKey } from '../useSceneLayersKey';
+import type { LodState } from '../lod/lodState';
 
 type SceneSlot<TData, TLayer extends string, TPose> =
   LayersMap<Node<TData, TLayer, TPose>, TPose>['scene'];
@@ -28,13 +29,15 @@ export function useSceneSlotLayers<TData, TLayer extends string, TPose>(args: {
   /** Ids an in-flight gesture is ghosting; their committed paint is left out
    *  so the source does not show through the ghost. */
   previewIds: () => Iterable<string> | null;
+  /** What the canvas drew each node as last frame, shared with its picking. */
+  lodState?: LodState;
 }): {
   /** The scene-wired config, for whatever else paints with its `drawOne`. */
   config: SceneSlot<TData, TLayer, TPose>;
   /** Absent when the slot is empty or carries no `drawOne`; a pre-built layer is the whole slot. */
   layers: SceneSlotLayers | undefined;
 } {
-  const { slot, scene, adapter, alphaFor, paintOverrides, boundsOf, previewIds } = args;
+  const { slot, scene, adapter, alphaFor, paintOverrides, boundsOf, previewIds, lodState } = args;
 
   const config = useMemo(() => {
     if (!slot || isCustomEntry(slot)) return slot;
@@ -43,8 +46,9 @@ export function useSceneSlotLayers<TData, TLayer extends string, TPose>(args: {
       scene,
       alphaFor,
       paintOverrides,
+      lodState,
     );
-  }, [slot, alphaFor, scene, paintOverrides]);
+  }, [slot, alphaFor, scene, paintOverrides, lodState]);
 
   const sceneLayersKey = useSceneLayersKey(adapter);
   const layers = useMemo<SceneSlotLayers | undefined>(() => {
