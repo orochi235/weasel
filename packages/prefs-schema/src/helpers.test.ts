@@ -161,6 +161,22 @@ describe('visiblePrefSubtree', () => {
     });
     expect(visiblePrefSubtree(schema, true)?.children.stroke).toBe(stroke);
   });
+
+  it("drops the hidden fields of a union's variants and of a list's or a map's item", () => {
+    const shown = { kind: 'number', name: 'Width', description: '', default: 1 } as const;
+    const hidden = { kind: 'number', name: 'Miter', description: '', default: 4, hidden: true } as const;
+    const fields = { kind: 'object', name: 'Fields', description: '', default: {}, children: { shown, hidden } } as const;
+    const curve = { kind: 'union', name: 'Curve', description: '', default: {}, variants: { linear: fields } } as const;
+    const list = { kind: 'list', name: 'Rows', description: '', default: [], item: { ...fields, hidden: true } } as const;
+    const map = { kind: 'map', name: 'Named', description: '', default: {}, item: curve } as const;
+    const out = visiblePrefSubtree({ name: 'Root', children: { curve, list, map } } as unknown as PrefGroup, false);
+    const kept = { ...fields, children: { shown } };
+    expect(out?.children).toEqual({
+      curve: { ...curve, variants: { linear: kept } },
+      list: { ...list, item: { ...kept, hidden: true } },
+      map: { ...map, item: { ...curve, variants: { linear: kept } } },
+    });
+  });
 });
 
 describe('prefDisplayBounds', () => {

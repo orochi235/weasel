@@ -2,7 +2,10 @@ import type { Endless } from '@weasel-js/quantity';
 import { getOwn, matchQuery, setOwn } from '@weasel-js/registry';
 import { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 import type { PrefGroup, PrefSection } from './groups';
+import type { PrefList } from './list';
+import type { PrefMap } from './map';
 import type { PrefLeaf, PrefNumber, PrefObject } from './schema';
+import type { PrefUnion } from './union';
 import { isPrefLinearUnit, resolvePrefUnit } from './unit';
 
 /**
@@ -144,9 +147,25 @@ function visibleFields(fields: PrefObject['children'], keepEmpty: boolean): Pref
   return out;
 }
 
+/** `leaf` without the hidden fields of an object, of a union's variants, or of a list's or a map's item. The item
+ *  itself is kept even when hidden, being the shape of the entries rather than a row. */
+function visibleInside(leaf: PrefLeaf, keepEmpty: boolean): PrefLeaf {
+  if (leaf.kind === 'object') return { ...leaf, children: visibleFields((leaf as PrefObject).children, keepEmpty) } as PrefLeaf;
+  if (leaf.kind === 'union') {
+    const variants: PrefUnion['variants'] = {};
+    for (const [key, variant] of Object.entries((leaf as PrefUnion).variants)) {
+      setOwnPrefValue(variants, key, { ...variant, children: visibleFields(variant.children, keepEmpty) });
+    }
+    return { ...leaf, variants } as PrefLeaf;
+  }
+  if (leaf.kind !== 'list' && leaf.kind !== 'map') return leaf;
+  const { item } = leaf as Partial<PrefList | PrefMap>;
+  return item === undefined ? leaf : ({ ...leaf, item: visibleInside(item, keepEmpty) } as PrefLeaf);
+}
+
 /**
- * Recursively drop `hidden` leaves (unless `showHidden`), an object leaf's
- * hidden fields among them, pruning groups
+ * Recursively drop `hidden` leaves (unless `showHidden`), the hidden fields
+ * of an object, a union's variants, and a list's or a map's item among them, pruning groups
  * that end up empty (unless `keepEmpty`). Returns null when the entire
  * subtree is pruned.
  */
@@ -157,8 +176,7 @@ export function visiblePrefSubtree<T extends PrefLeaf | PrefGroup>(
 ): T | null {
   if (isPrefLeaf(node)) {
     if (node.hidden && !showHidden) return null;
-    if (showHidden || node.kind !== 'object') return node;
-    return { ...node, children: visibleFields((node as PrefObject).children, keepEmpty) };
+    return showHidden ? node : (visibleInside(node, keepEmpty) as T);
   }
   const group = node as PrefGroup;
   const children: Record<string, PrefLeaf | PrefGroup> = {};
