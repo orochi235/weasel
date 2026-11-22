@@ -30,7 +30,8 @@ export interface IconRegistry {
   owner(namespace: string): string | undefined;
   /** The same array until the registry next changes, so it is safe to read through `useSyncExternalStore`. */
   entries(): readonly IconEntry[];
-  provideVariants(loaders: Readonly<Record<string, IconVariantLoader>>): void;
+  /** Adds loaders by name; with `replace`, also drops every variant `loaders` does not name, releasing the tables it loaded. */
+  provideVariants(loaders: Readonly<Record<string, IconVariantLoader>>, options?: { replace?: boolean }): void;
   loadVariant(name: string): Promise<void>;
   variantState(name: string): IconVariantState;
   subscribe(listener: () => void): () => void;
@@ -109,7 +110,7 @@ export function createIconRegistry(initial?: IconTable | readonly IconTable[]): 
     };
   };
 
-  const variants = createVariants((tables) => void add(tables), glyphs.bump);
+  const variants = createVariants(add, glyphs.bump);
   if (initial) add(initial);
 
   return {

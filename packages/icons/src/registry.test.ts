@@ -276,6 +276,30 @@ describe('variants', () => {
     expect(r.variantState('all')).toBe('loaded');
   });
 
+  it('drops a variant a replacing set no longer names, with the tables it loaded', async () => {
+    const r = createIconRegistry(core({ undo: 'u' }));
+    r.provideVariants({ all: async () => ({ default: [core({ redo: 'r' })] }), extra: async () => ({ default: [] }) });
+    await r.loadVariant('all');
+    expect(r.get('core:redo')).toBeDefined();
+    r.provideVariants({ extra: async () => ({ default: [] }) });
+    expect(r.variantState('all')).toBe('loaded');
+    r.provideVariants({}, { replace: true });
+    expect(r.variantState('all')).toBe('unknown');
+    expect(r.variantState('extra')).toBe('unknown');
+    expect(r.get('core:redo')).toBeUndefined();
+    expect(r.get('core:undo')).toBeDefined();
+  });
+
+  it('adds nothing from a load in flight when its variant is dropped', async () => {
+    const r = createIconRegistry();
+    r.provideVariants({ all: async () => ({ default: [core({ redo: 'r' })] }) });
+    const run = r.loadVariant('all');
+    r.provideVariants({}, { replace: true });
+    await run;
+    expect(r.variantState('all')).toBe('unknown');
+    expect(r.get('core:redo')).toBeUndefined();
+  });
+
   it('marks a loader that throws synchronously failed, not stuck loading', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const r = createIconRegistry();
