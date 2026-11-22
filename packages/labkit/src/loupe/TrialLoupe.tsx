@@ -176,9 +176,7 @@ export function TrialLoupe<TData = unknown, TLayer extends string = string, TPos
     dropping: loupeSwitch?.dropper,
     onPick: loupeSwitch?.pick,
   });
-  // A captured source copies frames only while someone is reading them. Taken
-  // after `useLoupe` has subscribed, so the frame a first reader's redraw
-  // captures reaches the color too.
+  // A captured source copies frames only while someone is reading them.
   const reading = loupe.visible ? resolved : null;
   useEffect(() => reading?.retain(), [reading]);
 
