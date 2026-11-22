@@ -25,7 +25,10 @@ const SHADE_CLASSES = [
   'badge-bevel-dark',          // darkest (normal points away from light)
 ];
 
-function lightDirFor(angleDeg: number): { lx: number; ly: number } {
+function lightDirFor(angleDeg: unknown): { lx: number; ly: number } {
+  if (typeof angleDeg !== 'number' || !Number.isFinite(angleDeg)) {
+    throw new RangeError(`a bevel2 effect's lightFrom must be a finite angle in degrees, not ${String(angleDeg)}`);
+  }
   // Compass convention (0° = up, clockwise). Returns the unit vector pointing
   // outward from the badge toward the light source.
   const rad = angleDeg * DEG_TO_RAD;

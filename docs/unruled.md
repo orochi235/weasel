@@ -3623,3 +3623,10 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): `facesAlong` throws a `RangeError` for a `step` that is not a positive finite
   number, as `mergeRegion` does for its `tolerance`; a zero one had looped forever, and a negative one sampled only
   each segment's ends. Falling back to one sample per segment was the alternative.
+
+## Audit round sixty-seven (2026-11-22): Badge effects
+
+- 2026-11-22 (the fixer's call): a `bevel2` effect throws a `RangeError` naming it for a `lightFrom` that is not a
+  finite number (`NaN`, `Infinity`, a corner such as `'tl'`), as `bevel`, `sheen`, and `rivets` do for one that is not
+  a corner, where its other params read a non-finite number as the default. Reading it as the default 315° was the
+  alternative.

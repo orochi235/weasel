@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { polygonSampler } from '../bases/polygonSampler';
 import type { EffectModule } from '../bases/types';
 import Aqua from './Aqua';
@@ -47,4 +47,20 @@ describe('a drawn effect param that is not a finite number', () => {
       expect(drawn.replace(/_r_[\w]+_|«r\w+»|:r\w+:/g, '')).toBe(markup(effect, defaults).replace(/_r_[\w]+_|«r\w+»|:r\w+:/g, ''));
     });
   }
+});
+
+describe('a bevel2 lightFrom', () => {
+  it('throws a RangeError naming the effect for one that is not a finite number', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    for (const lightFrom of [NaN, Infinity, 'tl']) {
+      expect(() => markup(Bevel2 as EffectModule<object>, { lightFrom })).toThrow(/bevel2/);
+    }
+    vi.restoreAllMocks();
+  });
+
+  it('gives every band a shade', () => {
+    const c = document.createElement('div');
+    c.innerHTML = markup(Bevel2, { lightFrom: 45 });
+    for (const band of c.querySelectorAll('g path')) expect(band.getAttribute('class')).toMatch(/^badge-bevel-/);
+  });
 });
