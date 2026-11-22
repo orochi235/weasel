@@ -35,6 +35,13 @@ describe('<use>', () => {
     expect(kept.nodes.map((n) => n.hidden)).toEqual([true]);
   });
 
+  it('leaves out a display="none" target, and keeps it hidden under keepHidden', () => {
+    const body = '<svg xmlns="http://www.w3.org/2000/svg"><g id="a" display="none"><rect width="1" height="1"/></g><use href="#a" x="10"/></svg>';
+    expect(parseSvg(body).nodes).toEqual([]);
+    const kept = parseSvg(body, { keepHidden: true });
+    expect(kept.nodes.map((n) => n.hidden)).toEqual([true, true]);
+  });
+
   it('draws a group it references, with what that group holds', () => {
     const out = parse('<g id="g"><rect width="1" height="1"/></g><use href="#g" x="4"/>');
     expect(out.nodes).toHaveLength(2);
