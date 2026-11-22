@@ -27,6 +27,7 @@ const applyGlobals = followScheme((globals, { root, scope, style }, mode) => {
   applyTrialTheme(root, globals, mode);
   style(fontRule(globals, scope));
 });
+import.meta.hot?.dispose(applyGlobals.dispose);
 
 export default defineFrameConfig({
   decorators: [labkitRoot, devtoolsDock],
