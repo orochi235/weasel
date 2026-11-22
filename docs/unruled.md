@@ -3628,3 +3628,6 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `CharacterOptions` draws No fill as indeterminate whenever the range's fill is
   `MIXED`, though a `RangeStyle` cannot tell runs of two colors from a range that is partly unfilled. Leaving it off
   for a mixed fill, which claims every character is filled, was the alternative.
+- 2026-11-22 (the fixer's call): `SelectionPanel` leaves a node unchanged, with a dev warning, when a schema keys one
+  field of a declared field (`units.drawnAt`) that the node does not hold, since the record it would store lacks
+  `UnitScope`'s required `system`. Building the scope from the node's inherited one was the alternative.

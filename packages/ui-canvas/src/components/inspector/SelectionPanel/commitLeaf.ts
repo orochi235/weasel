@@ -39,7 +39,11 @@ function writeLeaf<TData, TLayer extends string, TPose>(
     const declared = declaredField(head);
     if (declared) {
       const field = nodeRoot(node as AnyNode, head);
-      const to = rest.length === 0 ? value : setAtPath((field ?? {}) as object, rest, value);
+      if (rest.length > 0 && field == null) {
+        warnPartial(leaf.path, head!);
+        continue;
+      }
+      const to = rest.length === 0 ? value : setAtPath(field as object, rest, value);
       if (to !== field) declared.write(scene, id, to);
       continue;
     }
@@ -59,6 +63,16 @@ function writeLeaf<TData, TLayer extends string, TPose>(
     if (written.pose !== prev.pose) scene.setPose(id, written.pose as TPose);
     if (written.data !== prev.data) scene.update(id, { data: written.data as TData });
   }
+}
+
+const warnedPartial = new Set<string>();
+
+/** Warn once per path, in dev, of an edit to one field of a declared field a node does not hold, which would
+ *  store a partial record of a type with required fields. */
+function warnPartial(path: string, head: string): void {
+  if (!isDev() || warnedPartial.has(path)) return;
+  warnedPartial.add(path);
+  console.warn(`weasel: SelectionPanel left "${path}" unsaved on a node with no "${head}" of its own, since one field of it is no whole "${head}". Key the whole "${head}" field, or give the node one first.`);
 }
 
 const writable = (leaf: PanelLeaf): boolean =>
