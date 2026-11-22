@@ -85,12 +85,16 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answer
 
   /** `node`, whose status is `status` in `above`, without what its own value hides: a field, or part of a list's or a
    *  map's item. `entry` is the path of the entry it sits in, if any. */
-  const inside = (node: PrefLeaf, path: string, status: PrefStatus, holds: PrefConditionJudge, above = status, entry?: string): PrefLeaf => {
+  const inside = (
+    node: PrefLeaf, path: string, status: PrefStatus, holds: PrefConditionJudge, above = status, entry?: string, asItem = false,
+  ): PrefLeaf => {
     if (!status.shown) hidden.add(path);
     if (!status.enabled) disabled.add(path);
     const { activeIf } = node as Partial<PrefAction>;
     if (node.kind === 'action' && activeIf !== undefined && answers(activeIf, holds) && holds(activeIf, 'activeIf')) active.add(path);
-    const owner: PrefOwner = entry === undefined ? { node, status, above } : { node, status, above, entry };
+    // An item's own `showIf` is never asked, so it cannot hide the switch its `enableIf` spares.
+    const held = asItem ? { enableIf: node.enableIf } : node;
+    const owner: PrefOwner = entry === undefined ? { node: held, status, above } : { node: held, status, above, entry };
     if (node.kind === 'object') {
       const children = members((node as PrefObject).children, path, owner, holds);
       return children === (node as PrefObject).children ? node : ({ ...node, children } as PrefLeaf);
@@ -101,7 +105,7 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answer
       if (item === undefined) return node;
       // An item is drawn with its entry, so its own `showIf` is not asked.
       const at = under(path, PREF_ENTRY);
-      const entry = inside(item, at, prefStatusUnder(status, { enableIf: item.enableIf }, inItem), inItem, status, at);
+      const entry = inside(item, at, prefStatusUnder(status, { enableIf: item.enableIf }, inItem), inItem, status, at, true);
       return entry === item ? node : ({ ...node, item: entry } as PrefLeaf);
     }
     if (node.kind !== 'union') return node;
@@ -233,5 +237,5 @@ export function applyPrefEntryConditions(
   const answers = (condition: PrefCondition, by: PrefConditionJudge): boolean => by === asked && prefConditionReadsItem(condition);
   const walk = leafWalk({ keepEmpty, keepHidden, inItem: ALWAYS, answers });
   const status = prefStatusUnder(ROOT_PREF_STATUS, { enableIf: item.enableIf }, asked);
-  return { item: walk.inside(item, path, status, asked, ROOT_PREF_STATUS, path), disabled: walk.disabled, hidden: walk.hidden, active: walk.active };
+  return { item: walk.inside(item, path, status, asked, ROOT_PREF_STATUS, path, true), disabled: walk.disabled, hidden: walk.hidden, active: walk.active };
 }
