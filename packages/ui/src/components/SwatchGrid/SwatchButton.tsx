@@ -114,7 +114,7 @@ export function useSwatchStop(current: number, count: number): {
 
 /** Props of {@link SwatchButton}. Every native `<button>` attribute and handler but the ones it writes itself
  *  passes through: a palette's roving keys and focus, the data attributes a layout reads off the swatch, and the
- *  attributes its palette's hold puts on it (`aria-disabled`, `aria-readonly`, `aria-describedby`). */
+ *  attributes its palette's hold puts on it (`aria-disabled`, `aria-describedby`). */
 export type SwatchButtonProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'aria-label' | 'aria-current' | 'tabIndex' | 'children'
 > & DataAttributes & {

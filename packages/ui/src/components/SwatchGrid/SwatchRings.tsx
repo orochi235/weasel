@@ -90,7 +90,7 @@ export function SwatchRings({ shape, align, groups, onSelect, onAltSelect, onHov
     const kept = ringPlan(rows, room);
     return { plan: kept, rings: ringsOf(shape, ringDepths(ringThicknesses(kept, leads, size), gap), direction) };
   }, [shape, rows, leads, size, gap, direction]);
-  const hold = useControlHold(own);
+  const hold = useControlHold(own, { readonlyRole: false });
   const apply = heldApply(useSwatchApply(onSelect, onAltSelect), hold);
   const firsts = plan.map((_, i) => plan.slice(0, i).reduce((a, b) => a + b, 0));
   return hold.wrap(

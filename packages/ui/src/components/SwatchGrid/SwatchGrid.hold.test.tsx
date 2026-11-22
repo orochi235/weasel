@@ -33,9 +33,9 @@ function palette(wrapRun: (node: ReactElement) => ReactElement): HoldSubject {
   };
 }
 
-describeHold('SwatchGrid', palette((n) => n));
+describeHold('SwatchGrid', palette((n) => n), { readonlyRole: false });
 const ARC = arcShape({ center: { x: 200, y: 200 }, radius: 100, start: 270, end: 90 });
-describeHold('SwatchGrid on rings', palette((n) => <Along shape={ARC}>{n}</Along>));
+describeHold('SwatchGrid on rings', palette((n) => <Along shape={ARC}>{n}</Along>), { readonlyRole: false });
 
 it('read-only, the arrows still move among the swatches', () => {
   render(<ReadOnly><SwatchGrid aria-label="Colors" options={OPTIONS} onSelect={() => {}} /></ReadOnly>);

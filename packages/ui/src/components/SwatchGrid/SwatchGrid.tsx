@@ -90,7 +90,7 @@ export function SwatchGrid(props: SwatchGridProps): ReactElement {
 
 function SwatchGridLine(props: SwatchGridProps): ReactElement {
   const { options, value, className, onHoverChange: hover } = props;
-  const hold = useControlHold(props);
+  const hold = useControlHold(props, { readonlyRole: false });
   const apply = heldApply(useSwatchApply(props.onSelect, props.onAltSelect), hold);
   const columns = props.columns ?? 6;
   const lastRow = props.align ?? 'start';
