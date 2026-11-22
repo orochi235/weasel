@@ -287,3 +287,26 @@ describe('the Button stories', () => {
     expect(meta.argTypes?.size?.options).toEqual(['xs', 'sm', 'md']);
   });
 });
+
+describe('Button stylesheet selectors', () => {
+  const css = readFileSync(resolve(__dirname, 'Button.module.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  /** The selector of the rule whose body holds `decl`. */
+  const selectorOf = (decl: string) => {
+    const at = css.indexOf(decl);
+    const open = css.lastIndexOf('{', at);
+    return css.slice(css.lastIndexOf('}', open) + 1, open).trim();
+  };
+  const el = (classes: string, attrs: Record<string, string> = {}) => {
+    const b = document.createElement('button');
+    b.className = classes;
+    for (const [k, v] of Object.entries(attrs)) b.setAttribute(k, v);
+    return b;
+  };
+
+  it('dims a pressed confirm button, and only a pressed one', () => {
+    const sel = selectorOf('filter: brightness(0.92)');
+    expect(el('button variant_solid pressed', { 'data-stance': 'confirm' }).matches(sel)).toBe(true);
+    expect(el('button variant_solid', { 'data-stance': 'confirm' }).matches(sel)).toBe(false);
+    expect(el('button variant_solid pressed', { 'data-stance': 'confirm', 'data-disabled': '' }).matches(sel)).toBe(false);
+  });
+});
