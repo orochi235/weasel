@@ -197,3 +197,22 @@ struct Inner { flag: bool }
 `, STANDARD)).toThrow(/bool/);
   });
 });
+
+describe('reflectWgsl on @align and @size arguments', () => {
+  it('reads a suffixed literal, a hex literal, and a const', () => {
+    const s = reflectWgsl(`
+const A = 32;
+struct P { @size(16u) a: f32, @align(0x10) b: f32, @align(A) c: f32 }
+@group(1) @binding(0) var<uniform> p: P;
+`, STANDARD).structs.get('P')!;
+    expect(s.members.map((m) => m.offset)).toEqual([0, 16, 32]);
+    expect(s.size).toBe(64);
+  });
+
+  it('refuses an argument it cannot read, naming it', () => {
+    expect(() => reflectWgsl(`
+struct P { @size(2 * 8) a: f32 }
+@group(1) @binding(0) var<uniform> p: P;
+`, STANDARD)).toThrow(/@size\(2 \* 8\)/);
+  });
+});

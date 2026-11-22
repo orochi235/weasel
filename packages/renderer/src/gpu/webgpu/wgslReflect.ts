@@ -124,6 +124,13 @@ function parseType(
   throw unlaid.get(s) ?? new Error(`WGSL: unsupported type ${src.trim()}`);
 }
 
+function attributeInt(attr: string, arg: string | undefined, consts: Map<string, number>): number {
+  const s = (arg ?? '').trim();
+  const n = wgslInt(s) ?? consts.get(s);
+  if (n === undefined) throw new Error(`WGSL: cannot read ${attr.trim()}; give it a literal or a module-scope const`);
+  return n;
+}
+
 function parseStruct(
   name: string, body: string, structs: Map<string, WgslStruct>, consts: Map<string, number>, unlaid: Unlaid,
 ): WgslStruct {
@@ -137,8 +144,8 @@ function parseStruct(
     for (;;) {
       const a = /^@(\w+)(?:\(([^)]*)\))?\s*/.exec(decl);
       if (!a) break;
-      if (a[1] === 'align') alignAttr = Number(a[2]);
-      if (a[1] === 'size') sizeAttr = Number(a[2]);
+      if (a[1] === 'align') alignAttr = attributeInt(a[0], a[2], consts);
+      if (a[1] === 'size') sizeAttr = attributeInt(a[0], a[2], consts);
       decl = decl.slice(a[0].length);
     }
     const colon = decl.indexOf(':');
