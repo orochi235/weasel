@@ -3,7 +3,7 @@ import { useOptionalDepRegistry } from '@weasel-js/routing/react';
 import { asNodeId, type Scene } from 'core/scene/types';
 import { useLatest } from '@weasel-js/react';
 import { doubleClickTarget } from '../doubleClickTarget';
-import { useEnteredGroup } from '../deps/enteredGroup';
+import { useEnteredGroup, type EnteredGroupApi } from '../deps/enteredGroup';
 import { createEnteredGroupScope } from 'domains/selection/enteredGroupScope';
 import type { SelectionApi } from '@weasel-js/routing';
 import type { CanvasExtensionApi } from '../canvasExtension';
@@ -102,12 +102,10 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     pickBest: selectTool.pickBest, nodes: adapter, kindOf,
   });
 
-  const doubleClickNames = useMemo(() => kindOfNode && ((hitId: string) => doubleClickTarget(hitId, {
-    parentOf: (id) => scene.get(asNodeId(id))?.parent ?? null,
-    getNode: (id) => scene.get(asNodeId(id)),
-    kindOf: kindOfNode,
-    scope: enteredGroup.get(),
-  })), [scene, kindOfNode, enteredGroup]);
+  const doubleClickNames = useMemo(
+    () => kindOfNode && doubleClickNamer(scene, kindOfNode, enteredGroup),
+    [scene, kindOfNode, enteredGroup],
+  );
 
   return {
     ...selectTool, adapter, kindOfNode, lodState, doubleClickNames, getNodeAtPoint, viewLayerGate, enteredGroup,
@@ -116,4 +114,18 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     /** The composed paint alpha, only when the consumer fades anything. */
     alphaOf: alphaFor ? composedAlphaFor : undefined,
   };
+}
+
+/** The node a double-click on a hit names, inside whichever group is entered when it lands. */
+export function doubleClickNamer(
+  scene: Pick<Scene<unknown, string, unknown>, 'get'>,
+  kindOf: (id: string) => string | undefined,
+  entered: Pick<EnteredGroupApi, 'get'>,
+): (hitId: string) => string {
+  return (hitId) => doubleClickTarget(hitId, {
+    parentOf: (id) => scene.get(asNodeId(id))?.parent ?? null,
+    getNode: (id) => scene.get(asNodeId(id)),
+    kindOf,
+    scope: entered.get(),
+  });
 }

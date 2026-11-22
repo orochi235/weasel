@@ -30,6 +30,7 @@ import type { WorldPoint } from '@weasel-js/routing';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import { pixelPickEvery } from '../pixelPick';
 import { scenePickIds } from '../scenePickIds';
+import { useOptionalViewRegistry, type ViewRegistry } from '../viewRegistry';
 
 /**
  * Default grab slop around a shape's outline, in screen pixels.
@@ -55,6 +56,17 @@ export interface PickView extends ViewPickGates {
   y?: number;
   /** Which view asks: a `<CanvasView>`'s id, or `null` for the surface. */
   viewId?: string | null;
+}
+
+/** How a pick asked by the declared view `id` sees the scene: its camera and its layer gate. */
+export function declaredPickView(
+  registry: Pick<ViewRegistry, 'get' | 'surface'> | null, id: string,
+): PickView | undefined {
+  const reg = registry?.get(id);
+  const surface = registry?.surface();
+  if (!reg || !surface) return undefined;
+  const { view } = reg.layer.resolvable(surface.view(), surface.dims());
+  return { x: view.x, y: view.y, scale: view.scale, layerIsPainted: (layer) => reg.layerIsPainted(layer), viewId: id };
 }
 
 /** A pick view that names a whole camera, or null. */
@@ -229,11 +241,13 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
   }, [scene, d, alphaOf, layerIsPainted, isPointerInteractive]);
   const selectRange = useMemo<SelectRangeDep>(() => ({ at: (level) => rangeAmong(between, adapter, level) }), [between, adapter]);
 
-  // Input routed to a view names only its id; the camera is the surface's, as it was
-  // before the id was passed, so a 2D pick is unchanged and a 3D host learns the view.
+  // Input routed to a view names only its id; the pick takes that view's camera and layer gate,
+  // as hover there does, or the surface's camera for an id no view on this canvas holds.
+  const viewRegistry = useOptionalViewRegistry();
   const askedBy = useCallback((viewId?: string | null): PickView | undefined =>
-    (viewId == null ? undefined : { ...(getViewRef.current?.() ?? { scale: { x: 1, y: 1 } }), viewId }),
-  [getViewRef]);
+    (viewId == null ? undefined
+      : declaredPickView(viewRegistry, viewId) ?? { ...(getViewRef.current?.() ?? { scale: { x: 1, y: 1 } }), viewId }),
+  [getViewRef, viewRegistry]);
   const pressPick = useMemo(() => (world: WorldPoint, viewId?: string | null): string[] =>
     wiredHitBody(world, askedBy(viewId)), [wiredHitBody, askedBy]);
 
@@ -352,7 +366,7 @@ function reachableHits<TData, TLayer extends string, TPose>(scene: Scene<TData, 
  *  are what its id frames were painted with. */
 function askedOwnView(view: PickView | null | undefined, own: Pick<PickView, 'scale' | 'x' | 'y'>): boolean {
   if (!view) return true;
-  if (view.alphaOf || view.layerIsPainted) return false;
+  if (view.viewId != null || view.alphaOf || view.layerIsPainted) return false;
   return view.scale.x === own.scale.x && view.scale.y === own.scale.y
     && (view.x === undefined || view.x === own.x) && (view.y === undefined || view.y === own.y);
 }

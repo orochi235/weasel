@@ -33,7 +33,7 @@ export function useActionsPropResolver(actions: ActionsProp | undefined): void {
     if (!reg) return;
     const prop = actionsRef.current;
     if (prop === undefined) return;
-    let applied: Applied = { releases: [], live: new Map() };
+    let applied: Applied = { releases: [], live: new Map(), bases: new Map() };
     let applying = false;
     const warnedIds = new Set<string>();
     const apply = () => {
@@ -57,11 +57,20 @@ interface Applied {
   releases: Array<() => void>;
   /** The descriptor this resolver put live for each id it registered. */
   live: Map<string, Action>;
+  /** For a merge, the descriptor it was built on, where that is registered at this registry's own node. */
+  bases: Map<string, Action>;
 }
 
 function release(applied: Applied): void {
   for (const u of applied.releases.splice(0).reverse()) u();
   applied.live.clear();
+  applied.bases.clear();
+}
+
+/** Whether `action` is registered for `id` at `reg`'s own node, live or shadowed. */
+function heldAt(reg: ActionsRegistry, id: string, action: Action): boolean {
+  const entry = reg.reflection?.entries().find((e) => e.key === id);
+  return entry !== undefined && (entry.live.value === action || entry.shadowed.some((r) => r.value === action));
 }
 
 /** Whether the registry moved under the applied overrides: an id they
@@ -75,6 +84,9 @@ function isStale(reg: ActionsRegistry, prop: ActionsProp, applied: Applied): boo
     if (entry === null) continue;
     const mine = applied.live.get(slotId);
     if (mine ? byId.get(slotId) !== mine : byId.has(slotId)) return true;
+    // A merge built on a sibling's merge or a tool's descriptor is stale once that one is released.
+    const base = applied.bases.get(slotId);
+    if (base && !heldAt(reg, slotId, base)) return true;
   }
   return false;
 }
@@ -82,10 +94,11 @@ function isStale(reg: ActionsRegistry, prop: ActionsProp, applied: Applied): boo
 function applyActionsProp(reg: ActionsRegistry, prop: ActionsProp, warnedIds: Set<string>): Applied {
   const releases: Array<() => void> = [];
   const live = new Map<string, Action>();
+  const bases = new Map<string, Action>();
 
   if (prop === null) {
     for (const id of reg.list().map((a) => a.id)) releases.push(reg.mute(id));
-    return { releases, live };
+    return { releases, live, bases };
   }
 
   for (const [slotId, entry] of Object.entries(prop)) {
@@ -126,11 +139,12 @@ function applyActionsProp(reg: ActionsRegistry, prop: ActionsProp, warnedIds: Se
     const { id: _drop, ...rest } = entry;
     void _drop;
     const merged: Action = { ...existing, ...rest };
+    if (heldAt(reg, slotId, existing)) bases.set(slotId, existing);
     // No explicit restore: `register` stacks, so popping `merged` uncovers
     // the descriptor it displaced. Re-registering `existing` here would push
     // a stale snapshot back on top and never take it off again.
     releases.push(reg.register(merged));
     live.set(slotId, merged);
   }
-  return { releases, live };
+  return { releases, live, bases };
 }

@@ -55,7 +55,8 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
     const asked = patched === true || defaultTools.includes(id) || preset.has(id);
     if (asked) setOwn(registry, id, offered[id]);
   }
-  for (const [id, own] of Object.entries(presetOwnTools(enabled))) {
+  const ownTools = presetOwnTools(enabled);
+  for (const [id, own] of Object.entries(ownTools)) {
     if (patch && getOwn(patch, id) === false) continue;
     const tool = args.offered && Object.hasOwn(args.offered, id) ? args.offered[id]! : own;
     if (args.insertBuilds && insertsNothing(tool, args.insertBuilds)) {
@@ -70,7 +71,7 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
   for (const [id, value] of Object.entries(patch ?? {})) {
     if (value === false) continue;
     if (value === true) {
-      if (dev && !Object.hasOwn(offered, id)) {
+      if (dev && !Object.hasOwn(offered, id) && !Object.hasOwn(ownTools, id)) {
         console.warn(`[SceneCanvas] tools.${id}=true names no tool this canvas offers; ignoring`);
       }
       continue;
