@@ -38,7 +38,7 @@ export interface ParsedSequence {
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const MESSAGE = new RegExp(`^(.+?)\\s*(${ARROWS.map(([a]) => escape(a)).join('|')})\\s*([+-]?)\\s*([^:]+?)\\s*(?::(.*))?$`, 's');
-const NOTE = /^note\s+(left of|right of|over)\s+([^:]+?)\s*:(.*)$/i;
+const NOTE = /^note\s+(left of|right of|over)\s+([^:]+?)\s*:(.*)$/is;
 const DECLARE = /^(create\s+)?(participant|actor)\s+(.+)$/is;
 
 /** `text` as a participant id: one word, as a declaration takes it. Throws, naming `line`, on anything else. */

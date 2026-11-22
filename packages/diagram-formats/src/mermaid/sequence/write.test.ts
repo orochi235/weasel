@@ -108,3 +108,25 @@ describe('writing a sequence box\'s or region\'s fill', () => {
     expect(out.text).not.toContain('oklch');
   });
 });
+
+describe('writing sequence text that a reader would split or misread', () => {
+  const msg = (text: string, from = 'A') => ({ kind: 'message' as const, id: 'm1', from, to: 'B', line: 'solid' as const, head: 'arrow' as const, text });
+
+  it('writes a carriage return as a line break, so the text reads back as one statement', () => {
+    const out = writeMermaidSequence(page({
+      participants: [{ id: 'A', label: 'x\ry' }, { id: 'B' }],
+      steps: [msg('a\r\nb'), msg('c\rd'), { kind: 'note', id: 'n1', over: ['A'], text: 'e\r\nf' }],
+    }, 'one\rtwo'));
+    const back = pageOf(out.text);
+    expect(back.name).toBe('one\ntwo');
+    expect(back.data.participants[0]!.label).toBe('x\ny');
+    expect(back.data.steps.map((s) => (s.kind === 'message' || s.kind === 'note' ? s.text : undefined))).toEqual(['a\nb', 'c\nd', 'e\nf']);
+  });
+
+  it('reads a note holding a line or paragraph separator whole', () => {
+    const out = writeMermaidSequence(page({ participants: [{ id: 'A' }], steps: [{ kind: 'note', id: 'n1', over: ['A'], text: 'a b c' }] }));
+    const note = pageOf(out.text).data.steps[0]!;
+    expect(note).toMatchObject({ kind: 'note', text: 'a b c' });
+  });
+
+});
