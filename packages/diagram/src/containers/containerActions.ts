@@ -24,7 +24,10 @@ import {
 import type { Vec2 } from '@weasel-js/core/math';
 import { boxFrameOf, transformPoint } from '@weasel-js/geom';
 import { createClaimPressAction, claimPressBindings } from '../connect';
-import { addLane, addLaneLocked, canReleaseMembers, releaseMembers } from './containerStencils';
+import type { NodeStyle } from '../dataTypes';
+import { DIAGRAM_THEME_KEY } from '../theme/types';
+import { addLane, addLaneLocked, canReleaseMembers, lanesOf, releaseMembers } from './containerStencils';
+import { laneBodyStyle } from './regionSpecs';
 import {
   LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneLayer, laneResizable, laneScratchOf, poolLanesOf, poolsOf, stackDirection, type LaneLayerOptions,
   type PoolLanes,
@@ -139,6 +142,9 @@ export interface LaneActionOptions extends LaneLayerOptions {
   commitResize?: (resize: LaneResize, ctx: InvocationCtx) => void;
   /** Defaults to `addLane` on `deps.scene`, at the end of the stack. */
   commitAddLane?: (poolId: string, ctx: InvocationCtx) => void;
+  /** The lane bodies the default add-lane commit styles a new lane by, in turn by its place, in a scene with no
+   *  diagram theme; pass `containerBuild`'s `laneStyles`. Absent, a new lane takes `diagramScene`'s node style. */
+  laneStyles?: { readonly bodies: readonly NodeStyle[] };
   /** Runs for each selected region in place of `releaseMembers`. */
   commitRelease?: (id: string) => void;
 }
@@ -196,7 +202,10 @@ const NO_MODIFIERS = { alt: false, shift: false, meta: false, ctrl: false };
 export function createAddLaneAction(opts: LaneActionOptions): Action {
   const commit = opts.commitAddLane ?? ((poolId: string, ctx: InvocationCtx) => {
     const scene = ctx.deps.scene as AnyScene | undefined;
-    if (scene !== undefined) addLane(scene, poolId);
+    if (scene === undefined) return;
+    const themed = scene.doc.get(DIAGRAM_THEME_KEY) !== undefined;
+    const style = themed ? undefined : laneBodyStyle(opts.laneStyles?.bodies ?? [], lanesOf(scene, poolId).length);
+    addLane(scene, poolId, undefined, style);
   });
   return defineAction({
     id: ADD_LANE_ACTION_ID,

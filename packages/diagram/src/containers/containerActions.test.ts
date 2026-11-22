@@ -215,6 +215,25 @@ describe('the add-lane action', () => {
     expect(pose(h.scene, h.poolId)).toMatchObject({ height: 360 });
   });
 
+  it('styles the lane it adds by the pool\'s lane bodies, in turn, in a scene with no theme', () => {
+    const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+    const bodies = [
+      { fill: '#000000', stroke: '#aa0000', text: '#ffffff' },
+      { fill: '#000000', stroke: '#00aa00', text: '#ffffff' },
+    ];
+    let n = 0;
+    const built = containerBuild(CONTAINER_STENCILS[1]!, { x: 0, y: 0, width: 480, height: 240 }, {
+      layer: 'main', newId: () => `n${n++}`, laneStyles: { header: bodies[0]!, bodies },
+    });
+    commitOps({ scene } as unknown as ActionDeps, built.ops, 'Insert');
+    const action = createAddLaneAction({ scene: scene as never, laneStyles: { bodies } });
+    const affordance = { payload: { targetId: built.id, poolId: built.id } satisfies LaneScratch };
+    (action.invoker as ImmediateInvoker).run({ scene } as never, { world: { x: 0, y: 0 }, affordance } as never);
+    const strokes = lanesOf(scene as never, built.id)
+      .map((id) => (scene.get(id as NodeId)!.data as { stroke: { paint: { color: string } } }).stroke.paint.color);
+    expect(strokes).toEqual(['#aa0000', '#00aa00', '#aa0000']);
+  });
+
   it('offers no button, and passes the press on, where the lane would grow a locked title', () => {
     const h = pool();
     h.scene.setLocked(`${h.poolId}/title` as NodeId, true);
