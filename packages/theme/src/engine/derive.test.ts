@@ -592,3 +592,35 @@ describe('a categorical ramp anchor', () => {
     expect(ramp(-330)).toEqual(ramp(30));
   });
 });
+
+describe('a child entry of a name the parent gives in another layer', () => {
+  const ramp = { kind: 'lightness', steps: ['400', '500'], lightness: [0.8, 0.4] } as const;
+  const parent: ThemeDefinition = {
+    name: 'p',
+    ramps: { blue: ramp },
+    scales: { space: { steps: ['1', '2'], base: 4, step: 4 } },
+    semantics: { tb: { ref: 'blue-400' }, 'gold-1': { value: '#000000', type: 'color' } },
+    components: { pad: { value: '9px', type: 'dimension' } },
+  };
+  const child: ThemeDefinition = {
+    name: 'c',
+    extends: 'p',
+    semantics: { 'blue-500': { value: '#ff0000', type: 'color' }, pad: { value: '1px', type: 'dimension' } },
+    components: { tb: { value: '#00ff00', type: 'color' } },
+    ramps: { space: { kind: 'lightness', steps: ['2'], lightness: [0.5, 0.5] }, gold: { kind: 'lightness', steps: ['1'], lightness: [0.5, 0.5] } },
+  };
+  const all: Record<string, ThemeDefinition> = { p: parent, c: child };
+  const { tokens, issues, provenance } = derive(child, {}, (n) => all[n]);
+
+  it('takes the child entry and drops the parent one, reporting nothing', () => {
+    expect(issues).toEqual([]);
+    expect(tokens['blue-500'].value).toBe('#ff0000');
+    expect(tokens['blue-400'].type).toBe('color');
+    expect(tokens.tb.value).toBe('#00ff00');
+    expect(tokens.pad.value).toBe('1px');
+    expect(provenance['space-2'].layer).toBe('ramps');
+    expect(provenance['gold-1'].layer).toBe('ramps');
+    expect(tokens['space-1'].type).toBe('dimension');
+  });
+});
+

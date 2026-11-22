@@ -273,4 +273,16 @@ describe('axisDependencies', () => {
     };
     expect(axisDependencies(def).x.all).toEqual(['mode', 'density']);
   });
+
+  it("follows a child's semantic over an inherited ramp step of its name", () => {
+    const parent: ThemeDefinition = {
+      name: 'rp',
+      axes: { mode: { default: 'dark', values: { dark: {}, light: {} } } },
+      ramps: { blue: { kind: 'lightness', steps: ['500'], lightness: { by: 'mode', dark: [0.8, 0.4], light: [0.4, 0.8] } } },
+    };
+    const kid: ThemeDefinition = { name: 'rc', extends: 'rp', semantics: { 'blue-500': { value: '#ff0000', type: 'color' } } };
+    const all: Record<string, ThemeDefinition> = { rp: parent, rc: kid };
+    expect(axisDependencies(kid, (n) => all[n])['blue-500']).toEqual({ own: [], all: [] });
+  });
 });
+

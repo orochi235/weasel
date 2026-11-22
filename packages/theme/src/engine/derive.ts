@@ -3,7 +3,7 @@ import { fullAxisChoice, isByAxis, pick, type AxisChoice, type Varying } from '.
 import type { PinValue, ThemeDefinition } from '../definition.ts';
 import { axisIssues } from './axisIssues.ts';
 import { isRecord, rampColors, scaleValues, settle, type SettleContext } from './entries.ts';
-import { mergeChain, type Lookup } from './merge.ts';
+import { foldChain, type Lookup } from './merge.ts';
 import { pinAt, pinToken } from './pinValues.ts';
 import { checkReferences, inferTypes } from './references.ts';
 import { withoutUnsafeNames } from './safeNames.ts';
@@ -69,7 +69,7 @@ function seedsAt(seedDefs: ThemeDefinition['seeds'], sel: AxisChoice, issues: Is
 }
 
 /** Put every ramp's colors; returns each ramp's step names, where they settled. */
-function putRamps(ramps: ThemeDefinition['ramps'], ctx: SettleContext, sink: TokenSink): Record<string, readonly string[]> {
+function putRamps(ramps: ThemeDefinition['ramps'], ctx: SettleContext, sink: TokenSink, replaced: ReadonlySet<string>): Record<string, readonly string[]> {
   const rampSteps: Record<string, readonly string[]> = {};
   for (const [name, entry] of Object.entries(ramps ?? {})) {
     const path = `ramps.${name}`;
@@ -81,13 +81,13 @@ function putRamps(ramps: ThemeDefinition['ramps'], ctx: SettleContext, sink: Tok
       continue;
     }
     for (const step of e.steps) {
-      sink.put(`${name}-${step}`, { type: 'color', value: getOwn(colors, step)!, alpha: undefined, description: describe(e.r, step) }, 'ramps', String(e.r.kind), path);
+      if (!replaced.has(`${name}-${step}`)) sink.put(`${name}-${step}`, { type: 'color', value: getOwn(colors, step)!, alpha: undefined, description: describe(e.r, step) }, 'ramps', String(e.r.kind), path);
     }
   }
   return rampSteps;
 }
 
-function putScales(scales: ThemeDefinition['scales'], ctx: SettleContext, sink: TokenSink): void {
+function putScales(scales: ThemeDefinition['scales'], ctx: SettleContext, sink: TokenSink, replaced: ReadonlySet<string>): void {
   for (const [name, entry] of Object.entries(scales ?? {})) {
     const path = `scales.${name}`;
     const e = settleEntry(entry, path, ctx);
@@ -97,7 +97,7 @@ function putScales(scales: ThemeDefinition['scales'], ctx: SettleContext, sink: 
       continue;
     }
     for (const st of e.steps) {
-      sink.put(`${name}-${st}`, { type: 'dimension', value: getOwn(out.values, st)!, alpha: undefined, description: describe(e.r, st) }, 'scales', out.rule, path);
+      if (!replaced.has(`${name}-${st}`)) sink.put(`${name}-${st}`, { type: 'dimension', value: getOwn(out.values, st)!, alpha: undefined, description: describe(e.r, st) }, 'scales', out.rule, path);
     }
   }
 }
@@ -124,7 +124,8 @@ function applyPins(pins: Readonly<Record<string, Varying<PinValue>>>, ctx: Settl
 /** Derive every token of `definition` for one selection. Unmet rules are reported in `issues`; cycles and dangling references throw. */
 export function derive(definition: ThemeDefinition, selection: AxisChoice = {}, lookup?: Lookup): DeriveResult {
   const issues: Issue[] = [];
-  const def = withoutUnsafeNames(mergeChain(definition, lookup), issues);
+  const { def: merged, replaced } = foldChain(definition, lookup);
+  const def = withoutUnsafeNames(merged, issues);
   issues.push(...axisIssues(def.axes ?? {}));
   const sel = fullAxisChoice(def.axes ?? {}, selection);
   const seeds = seedsAt(def.seeds, sel, issues);
@@ -132,8 +133,8 @@ export function derive(definition: ThemeDefinition, selection: AxisChoice = {}, 
   const sink = createTokenSink(issues);
   const { tokens, failed } = sink;
 
-  const rampSteps = putRamps(def.ramps, ctx, sink);
-  putScales(def.scales, ctx, sink);
+  const rampSteps = putRamps(def.ramps, ctx, sink, replaced.ramps);
+  putScales(def.scales, ctx, sink, replaced.scales);
 
   const pins = def.pins ?? {};
   const semantics = def.semantics ?? {};
