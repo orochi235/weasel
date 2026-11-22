@@ -301,6 +301,17 @@ describe('cascade layers', () => {
     expect(fill('@layer a { #r { fill: #f00 } } rect { fill: #0f0 }')).toBe('#0f0');
     expect(fill('rect { fill: #0f0 } @layer a { #r { fill: #f00 } }')).toBe('#0f0');
   });
+  it('rolls revert-layer back to the layer below, and revert past every author rule', () => {
+    expect(fill('@layer a { rect { fill: #f00 } } @layer b { rect { fill: revert-layer } }')).toBe('#f00');
+    expect(fill('@layer a { rect { fill: #f00 } } rect { fill: revert-layer }', 'fill="#00f"')).toBe('#f00');
+    expect(fill('rect { fill: revert-layer }', 'fill="#00f"')).toBe('#00f');
+    expect(fill('rect { fill: #f00 }', 'fill="#00f" style="fill: revert-layer"')).toBe('#f00');
+    expect(fill('@layer a { rect { fill: #f00 } } rect { fill: revert }', 'fill="#00f"')).toBeNull();
+  });
+  it('lets a revert child take its parent paint', () => {
+    const { nodes } = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><g fill="#ff0000"><rect width="5" height="5" style="fill: revert"/></g></svg>');
+    expect(((nodes[0] as SvgGroupNode).children[0] as SvgPathNode).fill).toMatchObject({ kind: 'solid', color: '#ff0000' });
+  });
   it('ranks a later layer above an earlier one', () => {
     expect(fill('@layer a { #r { fill: #f00 } } @layer b { rect { fill: #0f0 } }')).toBe('#0f0');
   });
