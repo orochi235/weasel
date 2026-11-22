@@ -288,6 +288,12 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P2) [agent] `EffectList` can't turn off renaming a card, or put anything else in its header** (2026-11-22).
+  Every card's name is an in-place field, and the header has no slot for a consumer's own content. agnew's block
+  stack (agnew `b785d8b`, porting to 2.0) needed both: its blocks have no names, so it shows the kind's label
+  and drops the edits, and the source/modifier tag it showed in the header had nowhere to go. Closes when
+  `EffectListProps` has an option that draws the name as plain text and a header slot, each with a test.
+
 - **(P3) [agent] An object leaf's own `enableIf` disables its switch field in `PrefsForm`.** For an object leaf
   `stroke` with `enableIf: { path: 'stroke.on' }`, `applyPrefConditions` spares `stroke.on`, and
   `objectFieldContext` hands that field `disabled: false`, but the leaf's row is a `PropertyRow` with `disabled`,
@@ -611,6 +617,11 @@ on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed a
 ---
 
 ## Release-gate & build hygiene
+
+- **(P2) [agent] `@weasel-js/kernel3d` 2.0.0 shipped without its `IconName` entries** (2026-11-22). No `.d.ts` in its
+  `dist` declares the augmentation in `src/icons.gen.ts`, so `kernel3d:dollyIn` and the other camera icons don't
+  typecheck as `IconName` for a consumer; astv declares them itself in `kernel3dIconNames.ts`. Closes when the packed
+  kernel3d declares them, and a check fails a package whose packed types miss its `IconName` entries.
 
 - **(P2) [maintainer] Make the changelogs something a reader can use** (2026-11-21). The audit rounds write
   a changeset per fix, so 3,827 were pending before 2.0.0 and `packages/core/CHANGELOG.md` was already
