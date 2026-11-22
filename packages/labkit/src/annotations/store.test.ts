@@ -121,6 +121,12 @@ describe('the annotation store', () => {
     expect(store.get(id)?.title).toBe(RING.title);
   });
 
+  it('leaves no scene behind for an add on a target with no content box', () => {
+    const store = makeStore();
+    expect(() => store.add({ ...RING, target: 'nope' })).toThrow(/content box/);
+    expect(Object.keys(store.toJSON().scenes)).toEqual([]);
+  });
+
   it('removes a mark', () => {
     const store = makeStore();
     const id = store.add(RING);

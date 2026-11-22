@@ -46,12 +46,9 @@ export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
       const frac = init.frac;
       const shape = shapeFor(init.kind, init.points, frac);
       const data = markDataFrom(init, shape, seenValues(config, target?.positionDependsOn ?? []));
-      const node = o.openScene(init.target).add({
-        kind: 'mark',
-        layer: 'marks',
-        pose: fracToWorld(frac, contentOf(init.target)),
-        data,
-      });
+      // Placed before the scene opens, so a target with no content box throws without leaving an empty scene.
+      const pose = fracToWorld(frac, contentOf(init.target));
+      const node = o.openScene(init.target).add({ kind: 'mark', layer: 'marks', pose, data });
       return markIdOf(init.target, node);
     },
 
