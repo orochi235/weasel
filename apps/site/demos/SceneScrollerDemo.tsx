@@ -72,11 +72,11 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
     initial: useMemo(
       () => [
         ...tileNodes(WORLD),
-        ...entityNodes(game.current.coins, game.current.enemies),
+        ...entityNodes(initialGame.coins, initialGame.enemies),
         ...flagpoleNodes(POLE),
         ...boneNodes(),
       ],
-      [],
+      [initialGame],
     ),
     // The loop rewrites poses every frame; re-rendering this component for
     // each of those writes would undo the point of the imperative camera.
