@@ -91,15 +91,17 @@ export class MarkHistory {
   }
 
   /** Runs `fn`, whose changes on any target join the ones last made under `key`, so they undo and redo as one
-   *  step: a restyle of a selection spanning targets is one burst, and each target's scene records its own part. */
-  grouped(key: string, fn: () => void): void {
+   *  step: a restyle of a selection spanning targets is one burst, and each target's scene records its own part.
+   *  `fn` gets the key its scenes coalesce under: one per group, so a scene never folds a write into an entry
+   *  from before a change elsewhere came between. */
+  grouped(key: string, fn: (sceneKey: string) => void): void {
     if (this.open?.key !== key) this.lastGroup += 1;
     const group = this.open?.key === key ? this.open.group : this.lastGroup;
     this.open = { key, group };
     const outer = this.active;
     this.active = group;
     try {
-      fn();
+      fn(`${key}#${group}`);
     } finally {
       this.active = outer;
     }
