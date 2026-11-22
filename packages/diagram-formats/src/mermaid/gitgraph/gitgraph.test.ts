@@ -148,6 +148,10 @@ describe('writing a Mermaid gitGraph', () => {
     });
     expect(warnings).toEqual(['Mermaid branch orders are whole numbers; others were rounded.', 'Mermaid branch orders are whole numbers from 0; others were dropped.']);
   });
+
+  it('warns of a page name its title does not match', () => {
+    expect(writeMermaidGitGraph({ ...pageOf({ kind: 'gitgraph', commands: [] }), name: 'History' }).warnings).toContain('Mermaid names a chart by its title; a page name the title does not match was dropped.');
+  });
 });
 
 describe('the Mermaid format', () => {

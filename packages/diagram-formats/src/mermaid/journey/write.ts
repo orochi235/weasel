@@ -1,6 +1,7 @@
 /** A plot page holding a user journey as Mermaid `journey` text. */
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
+import { warnDroppedPageName } from '../common/lines';
 import { oneLine } from '../common/text';
 
 /** A step's name as it opens its line: `(untitled)` for none, since Mermaid reads a step only with a name, a leading
@@ -35,6 +36,7 @@ export function writeMermaidJourney(page: PlotPage): ExportResult {
   const data = page.data;
   if (data.kind !== 'journey') throw new Error(`Mermaid writes this chart as a journey only; the page holds a ${(data as { kind: string }).kind}`);
   const warnings = new Warnings();
+  warnDroppedPageName(page, (m) => warnings.add(m));
   const plain = (text: string, syntax: RegExp): string => {
     const s = oneLine(text, 'journey', (m) => warnings.add(m));
     if (!syntax.test(s)) return s.trim();

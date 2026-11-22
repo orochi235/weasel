@@ -3,6 +3,7 @@ import { formatGanttEnd, formatGanttStart, setGanttTaskId, type GanttData, type 
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { freshId } from '@weasel-js/registry';
+import { warnDroppedPageName } from '../common/lines';
 import { lineOpening, spelledLine } from '../common/text';
 import { TAGS } from './parse';
 
@@ -73,6 +74,7 @@ function settingLines(data: GanttData, text: (s: string) => string): string[] {
 export function writeMermaidGantt(page: PlotPage): ExportResult {
   if (page.data.kind !== 'gantt') throw new Error(`Mermaid writes this chart as a gantt only; the page holds a ${(page.data as { kind: string }).kind}`);
   const warnings = new Warnings();
+  warnDroppedPageName(page, (m) => warnings.add(m));
   const data = writableIds(page.data, warnings);
   const text = (s: string) => spelledLine(s, 'gantt', (m) => warnings.add(m));
   const lines = ['gantt', ...settingLines(data, text)];

@@ -152,6 +152,11 @@ describe('writing a Mermaid gantt', () => {
     const data: GanttData = { kind: 'gantt', dateFormat: 'YYYY-MM-DD', sections: [{ tasks: [task('accTitle'), task('accDescr')] }] };
     expect(ganttOf(writeMermaidGantt(pageOf(data)).text).sections[0]!.tasks.map((t) => t.name)).toEqual(['accTitle', 'accDescr']);
   });
+
+  it('warns of a page name its title does not match', () => {
+    const data: GanttData = { kind: 'gantt', sections: [] };
+    expect(writeMermaidGantt({ ...pageOf(data), name: 'Q3 plan' }).warnings).toContain('Mermaid names a chart by its title; a page name the title does not match was dropped.');
+  });
 });
 
 describe('the Mermaid format', () => {

@@ -118,6 +118,11 @@ describe('writing a Mermaid journey', () => {
     expect(back.document.pages[0]!.name).toBeUndefined();
     expect(warnings).toContain('Mermaid reads a step named "accTitle" or "accDescr" as accessibility text; those steps were dropped.');
   });
+
+  it('warns of a page name its title does not match', () => {
+    const data = { kind: 'journey' as const, title: 'Day', sections: [] };
+    expect(writeMermaidJourney({ kind: 'plot', id: 'p', width: 10, height: 10, name: 'Trip', data }).warnings).toContain('Mermaid names a chart by its title; a page name the title does not match was dropped.');
+  });
 });
 
 describe('the Mermaid format', () => {
