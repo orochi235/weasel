@@ -53,6 +53,12 @@ describe('button lab export', () => {
     expect(out).not.toMatch(/^\s*--wzl-/m);
   });
 
+  it('exports no shape a segmented bar does not read', () => {
+    const knobs = (c: ButtonLabConfig) => { c.shape.radius = 30; c.shape.padx = 20; c.shape.fontweight = '600'; };
+    expect(exportDeltas(tuned((c) => { c.target = 'segmented'; knobs(c); }))).toMatch(/No deltas/);
+    expect(exportDeltas(tuned((c) => { c.target = 'button'; knobs(c); }))).toMatch(/--btn-padx/);
+  });
+
   it('exports no inset x offset for an angle whose sine rounds to zero', () => {
     const out = exportDeltas(tuned((c) => { c.depth.textInsetAngle = 360; }));
     expect(out).not.toMatch(/inset-x/);
