@@ -52,10 +52,10 @@ export function Lines3dDemo() {
   }, []);
 
   const loop = useElapsedRaf((elapsed, self) => {
-    self.request();
     const target = pass.current;
     const canvas = glCanvas.current;
     if (!target || !canvas) return;
+    self.request();
     const { width, height } = size.current;
     const dpr = window.devicePixelRatio || 1;
     const w = Math.round(width * dpr), h = Math.round(height * dpr);

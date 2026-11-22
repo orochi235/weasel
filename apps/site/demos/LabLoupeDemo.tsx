@@ -141,10 +141,10 @@ export function ForeignGl() {
 
   const loop = useElapsedRaf(
     (elapsed, loop) => {
-      loop.request();
       const g = gl.current;
       const canvas = canvasRef.current;
       if (!g || !canvas || !source) return;
+      loop.request();
       const dpr = window.devicePixelRatio || 1;
       const w = Math.round(canvas.clientWidth * dpr);
       const h = Math.round(canvas.clientHeight * dpr);
@@ -184,9 +184,10 @@ export function ForeignGl() {
   }, []);
 
   useEffect(() => {
+    if (!source) return;
     loop.request();
     return () => loop.cancel();
-  }, [loop]);
+  }, [loop, source]);
 
   return (
     <TrialLoupe source={source ?? undefined} factor={8}>
