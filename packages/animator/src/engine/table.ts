@@ -91,6 +91,19 @@ export function each<A>(all: Iterable<A>, run: (a: A) => void): void {
   if (threw) throw first;
 }
 
+/** Interrupts whoever holds `key` for `by`. Where that throws, `by` never starts, so nothing else
+ *  stops the voice it cued ahead of its registration. */
+function claim(
+  cancel: (key: string, by: ActiveAnimation) => void, codec: { stop(id: number): void }, key: string, by: ActiveAnimation,
+): void {
+  try {
+    cancel(key, by);
+  } catch (error) {
+    codec.stop(by.id);
+    throw error;
+  }
+}
+
 /** Runs `run`, answering whether it threw and what. */
 function attempt(run: () => void): [boolean, unknown] {
   try {
@@ -180,7 +193,7 @@ export function createTable(host: TableHost): Table {
 
   const register = (seed: AnimationSeed): AnimationHandle => {
     const anim = seed as ActiveAnimation;
-    if (seed.cancelKey != null && !seed.keepExisting) cancelByKey(seed.cancelKey, anim);
+    if (seed.cancelKey != null && !seed.keepExisting) claim(cancelByKey, codec, seed.cancelKey, anim);
     anim.paused = false;
     anim.timeScale = 1;
     // Its clock starts with the frame clock, as a voice cued now does: both then advance by
