@@ -6,7 +6,7 @@ import {
 import type { Vec2 } from '@weasel-js/core/math';
 import { withDiagramRegistry } from '../edge';
 import { CONTAINER_STENCILS, containerBuild, lanesOf } from './containerStencils';
-import { createAddLaneAction, createLaneResizeAction, createReleaseMembersAction, createDiagramContainersContribution } from './containerActions';
+import { commitLaneResizeToScene, createAddLaneAction, createLaneResizeAction, createReleaseMembersAction, createDiagramContainersContribution } from './containerActions';
 import { createLaneAffordance, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, laneScratchOf, type LaneScratch } from './laneBoundaryLayer';
 
 function pool(opts: { composition?: PoseComposition<RectPose>; at?: Vec2 } = {}) {
@@ -193,6 +193,34 @@ describe('the lane resize action', () => {
     resize(h, { x: 200, y: -500 });
     expect(pose(h.scene, h.first)).toMatchObject({ height: 40 });
     expect(pose(h.scene, h.second)).toMatchObject({ y: 40 });
+  });
+});
+
+describe('commitLaneResizeToScene', () => {
+  const ctxOf = (h: ReturnType<typeof pool>) => ({ deps: { scene: h.scene } }) as unknown as InvocationCtx;
+
+  it('writes nothing where the resize would write a locked pool, lane, or title', () => {
+    for (const lock of ['pool', 'second', 'firstTitle'] as const) {
+      const h = pool();
+      const id = { pool: h.poolId, second: h.second, firstTitle: `${h.first}/title` }[lock];
+      h.scene.setLocked(id as NodeId, true);
+      const entries = h.scene.historyIndex();
+      commitLaneResizeToScene({ poolId: h.poolId, laneId: h.first, size: 150 }, ctxOf(h));
+      expect(h.scene.historyIndex()).toBe(entries);
+      expect(pose(h.scene, h.first)).toMatchObject({ height: 120 });
+    }
+  });
+
+  it('stops a lane at its least size, as the drag does', () => {
+    const h = pool();
+    commitLaneResizeToScene({ poolId: h.poolId, laneId: h.first, size: -10 }, ctxOf(h));
+    expect(pose(h.scene, h.first)).toMatchObject({ height: 40 });
+    expect(pose(h.scene, h.second)).toMatchObject({ y: 40 });
+  });
+
+  it('throws for a size that is not a finite number', () => {
+    const h = pool();
+    expect(() => commitLaneResizeToScene({ poolId: h.poolId, laneId: h.first, size: Number.NaN }, ctxOf(h))).toThrow(RangeError);
   });
 });
 

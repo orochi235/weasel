@@ -3756,3 +3756,9 @@ Calls the lanes made without a ruling:
   move, sends `onInput` the tracks it began from and then calls `onCancel`, as a canceled drag does and as `ColorField`
   does for a pick closed on its starting color. A drag that previewed nothing calls nothing. Calling nothing at all
   was the alternative.
+## Audit round seventy-one (2026-11-22): diagram containers
+
+- 2026-11-22 (the fixer's call): `commitLaneResizeToScene` writes nothing where the resize would write a locked node
+  (the pool, the lane, either title, or a later lane or what it holds), raises a size below `MIN_LANE_SIZE` to it, as
+  the drag does, and throws a `RangeError` for a size that is not a finite number. Throwing for a locked node, as the
+  scene's own lock guard does, was the alternative.
