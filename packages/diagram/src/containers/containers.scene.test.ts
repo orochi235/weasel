@@ -194,6 +194,18 @@ describe('pools in a scene', () => {
     expect(lanes.map((node) => node.pose)).toMatchObject([{ x: 20, width: 0 }, { x: 20, width: 0 }]);
   });
 
+  it('release a lane past a locked lane before it, which the restack leaves in place', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    addLane(scene as never, pool);
+    const [first, second, third] = lanesOf(scene as never, pool);
+    scene.setLocked(first!, true);
+    expect(canReleaseMembers(scene as never, third!)).toBe(true);
+    expect(canReleaseMembers(scene as never, second!)).toBe(true);
+    releaseMembers(scene as never, third!);
+    expect(lanesOf(scene as never, pool)).toEqual([first, second]);
+  });
+
   it('refuse a lane added at a negative or fractional index, and add one past the end at the end', () => {
     const scene = makeScene();
     const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
