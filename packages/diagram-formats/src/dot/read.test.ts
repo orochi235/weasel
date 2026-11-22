@@ -225,6 +225,11 @@ describe('reading DOT', () => {
     expect(warnings).toContain('DOT attributes that are not numbers were dropped: penwidth=thick, width=wide, penwidth= .');
   });
 
+  it('holds a node\'s size to Graphviz\'s 0.01in least', () => {
+    const a = node(page('digraph { a [width=-1, height=0] }').data, 'a');
+    expect([a.width, a.height]).toEqual([0.72, 0.72]);
+  });
+
   it('reads a size or pen width set to "" as unset, as Graphviz does, with no warning', () => {
     const { document, warnings } = readDot('digraph { a [width="", penwidth=""]; a -> b [penwidth=""] }');
     const p = asGraph(document.pages[0]!);
