@@ -12,7 +12,8 @@ export interface BevelBand<K> {
 
 /**
  * Splits a bevel `bevelWidth` CSS px wide into bands by `keyFor` of each sample's outward normal.
- * Each band reaches one sample into its neighbors, so the seams between bands leave no gap.
+ * Each band reaches on to its next neighbor's first sample, and a lone band back round to its own,
+ * so the seams leave no gap and no stretch is painted twice.
  */
 export function bevelBands<K>(
   sampler: BaseSampler,
@@ -46,9 +47,7 @@ export function bevelBands<K>(
   }
 
   return runs.map(({ key, idxs }) => {
-    if (runs.length > 1) {
-      idxs = [(idxs[0] - 1 + SAMPLES) % SAMPLES, ...idxs, (idxs[idxs.length - 1] + 1) % SAMPLES];
-    }
+    idxs = [...idxs, (idxs[idxs.length - 1] + 1) % SAMPLES];
     const pts = [...idxs.map((i) => outer[i]), ...idxs.map((i) => inner[i]).reverse()];
     let d = `M ${trimNumber(pts[0].x, 3)} ${trimNumber(pts[0].y, 3)}`;
     for (let i = 1; i < pts.length; i++) d += ` L ${trimNumber(pts[i].x, 3)} ${trimNumber(pts[i].y, 3)}`;

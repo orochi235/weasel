@@ -41,8 +41,8 @@ const Spikes: EffectModule<BadgeSpikesEffectParams> = {
       vertScale: finiteOr(given.vertScale, DEFAULTS.vertScale),
       horzScale: finiteOr(given.horzScale, DEFAULTS.horzScale),
       diagonalScale: finiteOr(given.diagonalScale, DEFAULTS.diagonalScale),
-      irregularity: clampParam(given.irregularity, 0, 1, DEFAULTS.irregularity),
-      cornerCompensation: clampParam(given.cornerCompensation, 0, 1, DEFAULTS.cornerCompensation),
+      irregularity: clampParam(finiteOr(given.irregularity, DEFAULTS.irregularity), 0, 1, DEFAULTS.irregularity),
+      cornerCompensation: clampParam(finiteOr(given.cornerCompensation, DEFAULTS.cornerCompensation), 0, 1, DEFAULTS.cornerCompensation),
     };
     const mask = rangeMask(s, totalCss, given.range);
     if (mask === 0) return { dx: 0, dy: 0 };

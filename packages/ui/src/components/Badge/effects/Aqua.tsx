@@ -5,6 +5,7 @@ import type { EffectModule } from '../bases/types';
 import { finiteParams } from '../shapes/params';
 import { outlineRegion } from '../composeOutline';
 import { GlassStrokes } from './glassStrokes';
+import { mixPercent } from './mixPercent';
 
 /**
  * Aqua-glass treatment — composes onto any badge silhouette: a body gradient,
@@ -28,7 +29,7 @@ export interface BadgeAquaEffectParams {
   equator?: number;
   /** How far the transition band reaches above the equator, in viewBox units; below it, the band reaches 1.6× as far. */
   equatorSpread?: number;
-  /** Mix ratios for the bright equator and dark base stops (0..100, % accent). */
+  /** Mix ratios for the bright equator and dark base stops (0..100, % accent); one outside that range throws a `RangeError`. */
   equatorTint?: number;
   baseTint?: number;
   /** Specular gloss params. */
@@ -74,8 +75,8 @@ const Aqua: EffectModule<BadgeAquaEffectParams> = {
 
     const equatorLo = Math.max(0, cfg.equator - cfg.equatorSpread);
     const equatorHi = Math.min(100, cfg.equator + cfg.equatorSpread * 1.6);
-    const equatorBrightColor = `color-mix(in srgb, ${accent} ${cfg.equatorTint}%, white)`;
-    const baseColor = `color-mix(in srgb, ${accent} ${cfg.baseTint}%, black)`;
+    const equatorBrightColor = `color-mix(in srgb, ${accent} ${mixPercent(cfg.equatorTint, 'equatorTint', 'aqua')}%, white)`;
+    const baseColor = `color-mix(in srgb, ${accent} ${mixPercent(cfg.baseTint, 'baseTint', 'aqua')}%, black)`;
 
     return (
       <>

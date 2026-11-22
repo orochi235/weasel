@@ -15,7 +15,7 @@ export interface BadgeBevel2EffectParams {
 
 const DEFAULTS: Required<BadgeBevel2EffectParams> = { bevelWidth: 6, lightFrom: 315 };
 
-// Six shade buckets from brightest to darkest. Each maps to a CSS class.
+// Six shade buckets from brightest to darkest, keyed by class so neighbors of one shade share a band.
 const SHADE_CLASSES = [
   'badge-bevel-light',         // brightest (normal points straight at light)
   'badge-bevel-medium-light',
@@ -45,7 +45,7 @@ const Bevel2: EffectModule<BadgeBevel2EffectParams> = {
     // outward normal aligns with -light (facing the light source) are brightest.
     const bucketFor = (nx: number, ny: number) => {
       const t = Math.max(0, Math.min((1 - (nx * lx + ny * ly)) / 2, 0.9999));
-      return Math.floor(t * SHADE_CLASSES.length);
+      return SHADE_CLASSES[Math.floor(t * SHADE_CLASSES.length)];
     };
     const bands = bevelBands(sampler, boxW, boxH, cfg.bevelWidth, bucketFor);
 
@@ -58,7 +58,7 @@ const Bevel2: EffectModule<BadgeBevel2EffectParams> = {
         </defs>
         <g clipPath={`url(#${clipId})`}>
           {bands.map((band, i) => (
-            <path key={i} className={SHADE_CLASSES[band.key]} d={band.d} />
+            <path key={i} className={band.key} d={band.d} />
           ))}
         </g>
       </>

@@ -14,7 +14,7 @@ export interface BadgeSunbeamsEffectParams {
   width?: number;
   /** Gap between adjacent beams in CSS px. */
   gap?: number;
-  /** Skew angle in degrees. 0 = vertical bars; positive = leaning right. */
+  /** Skew angle in degrees. 0 = vertical bars; positive = leaning right. Each beam, jitter included, is held to ±89°. */
   angle?: number;
   /** 0..1 lightness opacity. */
   opacity?: number;
@@ -32,6 +32,9 @@ export interface BadgeSunbeamsEffectParams {
   /** Position along the gradient axis (0..1) where the mask is fully transparent (beams faded out). */
   gradientEnd?: number;
 }
+
+/** The steepest a beam leans, in degrees: at 90° its parallelogram has no width and an infinite shear. */
+const MAX_ANGLE = 89;
 
 const DEFAULTS: Required<BadgeSunbeamsEffectParams> = {
   count: 3,
@@ -83,7 +86,8 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
       const beamWidthVb = nominalWidthVb * widthMult(i);
       const x1 = cursorX;
       const x2 = cursorX + beamWidthVb;
-      const tan = Math.tan((cfg.angle + angleJitter(i)) * DEG_TO_RAD);
+      const beamAngle = Math.max(-MAX_ANGLE, Math.min(cfg.angle + angleJitter(i), MAX_ANGLE));
+      const tan = Math.tan(beamAngle * DEG_TO_RAD);
       const horizPerVb = tan * (sx / sy);
       const halfShear = horizPerVb * (yBot - yTop) / 2;
       const pts = [

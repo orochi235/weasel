@@ -1,5 +1,5 @@
 import { wrapPositive } from '@weasel-js/geom';
-import { clampParam } from '../shapes/params';
+import { clampParam, finiteOr } from '../shapes/params';
 /** The bump of an evenly spaced run around a closed outline that lies nearest a sample. */
 export interface NearestBump {
   /** Which bump, in `[0, count)`: the same bump on both sides of the outline's start. */
@@ -37,6 +37,6 @@ export function bumpWobble(index: number): number {
  * and never past half of `step` so it ends before its neighbor's begins.
  */
 export function bumpRadius(radius: number, irregularity: number, index: number, step: number): number {
-  const irr = clampParam(irregularity, 0, 1, 0);
+  const irr = clampParam(finiteOr(irregularity, 0), 0, 1, 0);
   return Math.min(radius * (1 + irr * 0.55 * bumpWobble(index)), step / 2);
 }
