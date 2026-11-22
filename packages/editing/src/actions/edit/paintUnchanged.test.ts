@@ -32,3 +32,13 @@ describe('a paint action setting the value a node already wears', () => {
     });
   }
 });
+
+describe('None on a node with no paint record', () => {
+  for (const action of [setFillAction, setStrokeAction]) {
+    it(`${action.id} commits no undo entry`, () => {
+      const scene = makeScene({ a: {} });
+      commit(action, scene, { paint: null });
+      expect(scene.batches).toHaveLength(0);
+    });
+  }
+});
