@@ -40,6 +40,30 @@ describe('createNotifier', () => {
   });
 });
 
+describe('createNotifier — muted', () => {
+  it('runs a notice settled under it after the subscribers its caller notifies', () => {
+    const notifier = createNotifier();
+    const order: string[] = [];
+    notifier.subscribe(() => order.push('subscriber'));
+    notifier.muted(() => {
+      notifier.notify();
+      notifier.whenSettled(() => order.push('settled'));
+    });
+    notifier.notify();
+    expect(order).toEqual(['subscriber', 'settled']);
+  });
+
+  it('still runs a settled notice when what it holds throws', () => {
+    const notifier = createNotifier();
+    const settled = vi.fn();
+    expect(() => notifier.muted(() => {
+      notifier.whenSettled(settled);
+      throw new Error('boom');
+    })).toThrow('boom');
+    expect(settled).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('createSceneSelection', () => {
   it('still tells the subscribers after one that throws', () => {
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {});

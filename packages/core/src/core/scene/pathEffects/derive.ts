@@ -11,6 +11,7 @@
  */
 import { boundsOfPath, type Path, type Rect } from '@weasel-js/geom';
 import { derivedPartsOf, pathFromParts, type DerivedPart } from '../derivedParts';
+import { nodeMemoGeneration } from '../nodeMemo';
 import { noteOutsideRead, outsideGeneration, withOutsideReads } from '../outsideReads';
 import { samePoseValue, snapshotPose } from '../poseSnapshot';
 import type { DerivedDep, NodeId } from '../types';
@@ -56,6 +57,8 @@ interface Derived {
   /** The outside generation it was worked out under, or `null` when it read
    *  nothing outside the scene. */
   outside: number | null;
+  /** The node-memo generation it was worked out under: a painter registered or replaced moves it. */
+  memo: number;
 }
 
 /** The derivations of a path effect whose sources `read` reads. */
@@ -70,6 +73,7 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
     if (held !== undefined && current(held, node, deps)) return held;
     const effect = pathEffectOf(node);
     const generation = outsideGeneration();
+    const memo = nodeMemoGeneration();
     const { value: parts, outside } = withOutsideReads(() => (effect === null
       ? null
       : effectParts(effect, deps.map((d) => (d === undefined ? null : read(d))))));
@@ -82,6 +86,7 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
       inherited: deps.map((d) => d?.inherited),
       path: parts === null ? null : pathFromParts(parts),
       outside: outside ? generation : null,
+      memo,
     };
     results.set(node, result);
     return result;
@@ -98,7 +103,7 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
 }
 
 function current(held: Derived, node: { data?: unknown }, deps: readonly (DerivedDep<unknown> | undefined)[]): boolean {
-  if (held.data !== node.data || held.nodes.length !== deps.length) return false;
+  if (held.data !== node.data || held.nodes.length !== deps.length || held.memo !== nodeMemoGeneration()) return false;
   if (held.outside !== null && held.outside !== outsideGeneration()) return false;
   for (let i = 0; i < deps.length; i++) {
     const d = deps[i];

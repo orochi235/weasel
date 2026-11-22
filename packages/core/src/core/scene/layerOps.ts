@@ -32,12 +32,12 @@ export function registerLayerOps<TData, TLayer extends string, TPose>(
 
   registerKitOp<{ layer: TLayer; from: boolean; to: boolean }>('kit:setLayerVisible', {
     apply: (p) => { state.layers[requireLayerIndex(p.layer)].visible = p.to; if (!p.to) env.narrowSelection(); },
-    revert: (p) => { state.layers[requireLayerIndex(p.layer)].visible = p.from; },
+    revert: (p) => { state.layers[requireLayerIndex(p.layer)].visible = p.from; if (!p.from) env.narrowSelection(); },
   });
 
   registerKitOp<{ layer: TLayer; from: boolean; to: boolean }>('kit:setLayerLocked', {
     apply: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.to; if (p.to) env.narrowSelection(); },
-    revert: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.from; },
+    revert: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.from; if (p.from) env.narrowSelection(); },
   });
 
   registerKitOp<{ layer: TLayer; from?: ParallaxOptions; to?: ParallaxOptions }>('kit:setLayerParallax', {

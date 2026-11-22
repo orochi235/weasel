@@ -63,6 +63,14 @@ describe('reconcileSpecs', () => {
     expect(scene.get(id('a'))).toBeDefined();
   });
 
+  it('keeps the foundHidden next states when next also reorders the sources', () => {
+    const fx = (foundHidden: number[]) => ({ pathEffect: { kind: 'tween', steps: 1, hideSources: true, foundHidden } }) as D;
+    const prev = [box('a', 0), box('b', 0), box('t', 0, { dependsOn: [id('a'), id('b')], data: fx([1]) })];
+    const scene = sceneOf(prev);
+    reconcileSpecs(scene, prev, [box('a', 0), box('b', 0), box('t', 0, { dependsOn: [id('b'), id('a')], data: fx([0]) })]);
+    expect(scene.get(id('t'))!.data).toEqual(fx([0]));
+  });
+
   it('throws on a spec with no id', () => {
     const scene = sceneOf([]);
     const { id: _, ...anon } = box('a', 0);

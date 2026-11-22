@@ -1,5 +1,6 @@
 import { createEmitter } from '@weasel-js/registry';
 import { effectivePose } from './effectivePose';
+import { samePoseValue, snapshotPose } from './poseSnapshot';
 import type { Node, NodeId, Scene } from './types';
 
 /** A node and the pose a renderer should draw it at. `node.pose` beside it is
@@ -9,8 +10,8 @@ export interface FeedNode<TData, TLayer extends string, TPose> {
   pose: TPose;
 }
 
-/** What changed since the last `read()`. A node whose effective pose, data or
- *  layer reference moved is `changed`; `reset` means every node is in `added`. */
+/** What changed since the last `read()`. A node whose effective pose moved, by
+ *  value or reference, or whose data or layer reference moved is `changed`; `reset` means every node is in `added`. */
 export interface FeedDelta<TData, TLayer extends string, TPose> {
   added: readonly FeedNode<TData, TLayer, TPose>[];
   removed: readonly NodeId[];
@@ -28,12 +29,26 @@ export interface PoseFeed<TData, TLayer extends string, TPose> {
 
 const EMPTY = Object.freeze([]) as readonly never[];
 
-/** The three references a node carries that a renderer cares about. The node
- *  object is mutated in place, so it is these — not the node — that move. */
+/** What a renderer cares about in a node, as last reported. The node object is
+ *  mutated in place, so it is these — not the node — that move. */
 interface Snapshot<TData, TLayer extends string, TPose> {
   pose: TPose;
+  /** `pose` by value: an override mutates its pose in place and keeps the reference. */
+  poseValue: TPose;
   data: TData;
   layer: TLayer;
+}
+
+function snapshotOf<TData, TLayer extends string, TPose>(node: Node<TData, TLayer, TPose>, pose: TPose): Snapshot<TData, TLayer, TPose> {
+  return { pose, poseValue: snapshotPose(pose), data: node.data, layer: node.layer };
+}
+
+function moved<TData, TLayer extends string, TPose>(
+  before: Snapshot<TData, TLayer, TPose>,
+  node: Node<TData, TLayer, TPose>,
+  pose: TPose,
+): boolean {
+  return before.pose !== pose || !samePoseValue(before.poseValue, pose) || before.data !== node.data || before.layer !== node.layer;
 }
 
 /** A {@link PoseFeed} over `scene`, reporting effective poses (committed pose
@@ -62,12 +77,10 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
 
     for (const [id, node] of scene.nodes) {
       const pose = effectivePose(scene, node);
-      next.set(id, { pose, data: node.data, layer: node.layer });
+      next.set(id, snapshotOf(node, pose));
       const before = prev.get(id);
       if (before === undefined) added.push({ node, pose });
-      else if (before.pose !== pose || before.data !== node.data || before.layer !== node.layer) {
-        changed.push({ node, pose });
-      }
+      else if (moved(before, node, pose)) changed.push({ node, pose });
     }
     for (const id of prev.keys()) if (!next.has(id)) removed.push(id);
 
@@ -99,9 +112,9 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
         continue;
       }
       const pose = effectivePose(scene, node);
-      seen!.set(id, { pose, data: node.data, layer: node.layer });
+      seen!.set(id, snapshotOf(node, pose));
       if (before === undefined) added.push({ node, pose });
-      else if (before.pose !== pose || before.data !== node.data || before.layer !== node.layer) changed.push({ node, pose });
+      else if (moved(before, node, pose)) changed.push({ node, pose });
     }
     return { added, removed, changed, reset: false };
   };

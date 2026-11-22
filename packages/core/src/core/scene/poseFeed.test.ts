@@ -98,6 +98,22 @@ describe('createPoseFeed', () => {
     expect(delta.changed[0]!.node.pose).toEqual(POSE); // committed pose still reachable
   });
 
+  it('reports an override whose pose is mutated in place and committed', () => {
+    const { scene, id } = makeScene();
+    const feed = createPoseFeed(scene);
+    const entry = { pose: { x: 1, y: 0, width: 10, height: 10 } };
+    scene.overrides.set(id, entry);
+    scene.overrides.commit();
+    feed.read();
+
+    entry.pose.x = 2;
+    scene.overrides.commit();
+    const delta = feed.read();
+
+    expect(delta.changed.map((n) => n.node.id)).toEqual([id]);
+    expect(delta.changed[0]!.pose).toEqual({ x: 2, y: 0, width: 10, height: 10 });
+  });
+
   it('reports a node once when both clocks moved in the same frame', () => {
     const { scene, id } = makeScene();
     const feed = createPoseFeed(scene);
