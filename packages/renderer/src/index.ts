@@ -92,7 +92,7 @@ export type { ShaderProgram, ShaderStage, UniformArray } from './shaders/ShaderP
 export { boundsMissRect } from './cullDrawCommands';
 export { strokeReachAt } from './paintedBounds';
 export { markerDrawCommands } from './markerCommands';
-export { resolveStrokeLengths, type ResolvedStrokeCommand, type StrokedPathCommand } from './strokeLengths';
+export { resolveStrokeLengths, type ResolvedStrokeCommand, type StrokeCommand, type StrokedPathCommand } from './strokeLengths';
 export {
   registerPaintDrawKind,
   registerPaintDrawKindLoader,

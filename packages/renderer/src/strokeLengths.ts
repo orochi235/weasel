@@ -11,7 +11,7 @@ import { resolveMarkerSize } from '@weasel-js/stroke';
 export type StrokedPathCommand = PathDrawCommand & { stroke: CommandStroke & { paint: CommandPaint } };
 
 /** A path command with a stroke, painted or not. */
-type StrokeCommand = PathDrawCommand & { stroke: CommandStroke };
+export type StrokeCommand = PathDrawCommand & { stroke: CommandStroke };
 
 /** A stroke command ready to tessellate, and the spaces to tessellate it in. */
 export interface ResolvedStrokeCommand<C extends StrokeCommand = StrokedPathCommand> {
