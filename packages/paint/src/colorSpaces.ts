@@ -83,9 +83,14 @@ function inGamut(rl: number, gl: number, bl: number): boolean {
   );
 }
 
+/** How far past 0..1 a linear channel may sit and still be clamped rather than chroma-reduced: CSS rounds pure red
+ *  to `oklch(62.796% 0.25768 29.2339deg)`, which lands 5e-6 past the edge, and a 3% chroma cut there is visible. */
+const CLAMP_SLACK = 1e-4;
+
 function clipToGamut(L: number, A: number, B: number): [number, number, number] {
   let [rl, gl, bl] = oklabToLinearSrgb(L, A, B);
   if (inGamut(rl, gl, bl)) return [rl, gl, bl];
+  if ([rl, gl, bl].every((c) => c >= -CLAMP_SLACK && c <= 1 + CLAMP_SLACK)) return [clamp01(rl), clamp01(gl), clamp01(bl)];
   let lo = 0;
   let hi = 1;
   // 5 iterations → ~3% chroma precision; sufficient for u8 output.
@@ -312,7 +317,8 @@ const lerp3 = (a: Rgb, b: Rgb, t: number): [number, number, number] => [
 const srgbToOklabFloat = (c: Rgb): [number, number, number] =>
   linearSrgbToOklab(srgbToLinear(c[0]), srgbToLinear(c[1]), srgbToLinear(c[2]));
 
-function oklabToSrgbClipped(L: number, A: number, B: number): [number, number, number] {
+/** OKLab to 0..1 sRGB, chroma-clipped into gamut at constant lightness: the one gamut mapping the package uses. */
+export function oklabToSrgbClipped(L: number, A: number, B: number): [number, number, number] {
   const [rl, gl, bl] = clipToGamut(L, A, B);
   return [clamp01(linearToSrgb(rl)), clamp01(linearToSrgb(gl)), clamp01(linearToSrgb(bl))];
 }

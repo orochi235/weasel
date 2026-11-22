@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { hslToSrgb } from './hsl';
 import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, tryParseColor, parseColorBytes, rgbaToHex, __resetParseColorCache } from './color';
+import { oklchDegToHex } from './colorSpaces';
 
 // Reference chroma-form HSL→RGB — the previous duplicate implementation that
 // lived in `animation/colorHelpers.ts`. Kept here only to prove the shared
@@ -220,6 +221,11 @@ describe('parseColor: color() and the OK spaces', () => {
     close(parseColor('oklab(1 0 0)'), [1, 1, 1, 1]);
     close(parseColor('oklch(0 0 0 / 50%)'), [0, 0, 0, 0.5]);
     close(parseColor('oklch(62.796% 0.25768 29.2339deg)'), [1, 0, 0, 1]);
+  });
+
+  it('keeps a color a hair past the gamut edge, as CSS rounds pure red', () => {
+    expect(rgbaToHex(parseColor('oklch(62.796% 0.25768 29.2339deg)'))).toBe('#ff0000');
+    expect(oklchDegToHex(0.62796, 0.25768, 29.2339)).toBe('#ff0000');
   });
 
   it('reads a negative oklch() chroma as no chroma, as CSS clamps it', () => {
