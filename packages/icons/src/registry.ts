@@ -50,6 +50,10 @@ function isGlyph(value: unknown): value is IconGlyph {
   return typeof g.body === 'string' && typeof g.group === 'string' && Array.isArray(g.tags) && (g.fill === undefined || typeof g.fill === 'string');
 }
 
+function assertGlyph(value: unknown, ref: string): asserts value is IconGlyph {
+  if (!isGlyph(value)) throw new TypeError(`icon "${ref}" needs a string body and group and an array of tags`);
+}
+
 /** A registry, optionally seeded with tables; each `add` and `override` returns its own release function. */
 export function createIconRegistry(initial?: IconTable | readonly IconTable[]): IconRegistry {
   // A provider whose `icons` change identity releases and re-adds the same tables in one tick; their glyphs keep their place.
@@ -74,9 +78,7 @@ export function createIconRegistry(initial?: IconTable | readonly IconTable[]): 
         throw new TypeError(`an icon table needs a string namespace and owner and an object of icons, got ${String(t?.namespace)}`);
       }
       for (const name of Object.keys(icons)) {
-        if (!isGlyph((icons as Record<string, unknown>)[name])) {
-          throw new TypeError(`icon "${t.namespace}:${name}" needs a string body and group and an array of tags`);
-        }
+        assertGlyph((icons as Record<string, unknown>)[name], `${t.namespace}:${name}`);
       }
     }
     // Check every claim, those within the batch included, before writing any: a refused batch registers nothing.
@@ -113,7 +115,10 @@ export function createIconRegistry(initial?: IconTable | readonly IconTable[]): 
   return {
     get: glyphs.get,
     add,
-    override: (ref, glyph, source = OVERRIDE) => glyphs.push(ref, glyph, { source, rank: OVERRIDE_RANK }),
+    override(ref, glyph, source = OVERRIDE) {
+      assertGlyph(glyph, ref);
+      return glyphs.push(ref, glyph, { source, rank: OVERRIDE_RANK });
+    },
     owner: (namespace) => claims.get(namespace)?.owner,
     entries() {
       const from = glyphs.entries();

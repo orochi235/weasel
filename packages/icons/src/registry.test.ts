@@ -55,6 +55,14 @@ describe('createIconRegistry', () => {
     expect(r.owner('core')).toBeUndefined();
   });
 
+  it('refuses an override whose glyph is not a glyph, as add does', () => {
+    const r = createIconRegistry(core({ undo: 'u' }));
+    expect(() => r.override(ref('core:undo'), { body: 5 } as never)).toThrow(TypeError);
+    expect(() => r.override(ref('core:undo'), { body: 'b', group: 'G' } as never)).toThrow(TypeError);
+    expect(r.get('core:undo')?.body).toBe('u');
+    expect(r.entries()[0]?.overridden).toBe(false);
+  });
+
   it('overrides one icon explicitly, and releasing the override uncovers the original', () => {
     const r = createIconRegistry(core({ undo: 'u' }));
     const release = r.override(ref('core:undo'), glyph('mine'), 'app');
