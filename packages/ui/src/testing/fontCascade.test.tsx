@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { exportedComponents, settle } from './fontCascade';
+import { exportedComponents, settle, staleUnmounted } from './fontCascade';
 
 describe('settle', () => {
   it('waits for markup a story only puts in after its first commit', async () => {
@@ -28,5 +28,13 @@ describe('exportedComponents', () => {
     const fn = () => null;
     const found = exportedComponents([{ XYPad: fn, A11yPanel: fn, Slider: fn, SHAPE_TOOLS: fn, X: fn, useThing: fn }]);
     expect([...found.keys()]).toEqual(['XYPad', 'A11yPanel', 'Slider']);
+  });
+});
+
+describe('staleUnmounted', () => {
+  it('names an entry for a component a case mounts, or one nothing exports', () => {
+    const components = new Map<string, unknown>([['Bar', 1], ['BarSpacer', 2], ['Slider', 3]]);
+    const unmounted = { BarSpacer: 'renders nothing', Slider: 'needs a frame', BarGap: 'renamed since' };
+    expect(staleUnmounted(components, unmounted, (name) => name === 'Slider')).toEqual(['Slider', 'BarGap']);
   });
 });

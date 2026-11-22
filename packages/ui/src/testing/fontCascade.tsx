@@ -136,6 +136,11 @@ function mountedTypes(container: Element, into: Set<unknown>): void {
   }
 }
 
+/** The `unmounted` entries no longer true: a case mounts the component, or no module exports it any more. */
+export function staleUnmounted(components: Map<string, unknown>, unmounted: Record<string, string>, seen: (name: string) => boolean): string[] {
+  return Object.keys(unmounted).filter((name) => !components.has(name) || seen(name));
+}
+
 export interface FontCascadeSuite {
   /** Every story to render, as `file#Export`, and any fixture drawing a component no story mounts. */
   readonly cases: [string, ComponentType][];
@@ -194,8 +199,7 @@ export function describeFontCascade(title: string, { cases, components, alsoKit,
       const seen = (name: string) => mounted.has(components.get(name)) || mounted.has(nameOf(components.get(name)) ?? name);
       const missing = [...components.keys()].filter((name) => !seen(name) && !Object.hasOwn(unmounted, name));
       expect(missing).toEqual([]);
-      const stale = Object.keys(unmounted).filter((name) => components.has(name) && seen(name));
-      expect(stale, 'listed as unmounted, but a case mounts it').toEqual([]);
+      expect(staleUnmounted(components, unmounted, seen), 'listed as unmounted, but a case mounts it or nothing exports it').toEqual([]);
     });
   });
 }
