@@ -108,15 +108,16 @@ export class TilePyramid<K, V, P> {
     this.cache.pinFloor(floor.map((k) => scheme.idOf(k)));
 
     const { order, waiting } = this.bakeOrder(floor, onScreen, ring, level, view, frame);
-    let baked = 0;
+    let baked = 0, unfinished = 0;
     const start = budget.clock();
     for (const key of order) {
       if (baked > 0 && (baked >= budget.tiles || budget.clock() - start >= budget.ms)) break;
       const payload = bake(key);
       baked++;
       if (payload !== null) this.cache.put(key, payload, frame, now);
+      else unfinished++;
     }
-    const pending = order.length - baked + waiting;
+    const pending = order.length - baked + unfinished + waiting;
 
     const floorLevel = Math.min(...floor.map((k) => scheme.levelOf(k)));
     const { draws, fading, stale } = this.drawsFor(onScreen, frame, now, floorLevel);

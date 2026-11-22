@@ -192,3 +192,15 @@ describe('TilePyramid draws', () => {
     expect(draws[1]!.source[0]).toBe(0);
   });
 });
+
+describe('TilePyramid partial bakes', () => {
+  it('counts a tile whose bake answered null as still pending', () => {
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, object>({
+      scheme, bytesOf: () => 1, release: () => {}, floor: () => [], fadeMs: 0,
+    });
+    const v: PlaneTileView = { box: [10, 10, 20, 20], pxPerUnit: 1, ring: 0 };
+    const frame = pyramid.run(v, 0, () => null, { ...budget, tiles: 100 });
+    expect(frame.baked).toBeGreaterThan(0);
+    expect(frame.pending).toBe(frame.baked);
+  });
+});
