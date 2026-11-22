@@ -84,7 +84,7 @@ export const FONT_GLOBALS: GlobalDeclarations = {
   ),
   fontWeight: {
     label: 'Weight',
-    default: '500',
+    default: '400',
     options: options(WEIGHTS),
     shows: (value, globals) => fontOf(globals)[1].weights.includes(Number(value)),
   },
@@ -215,7 +215,7 @@ const ALIASES = slotAliases(weaselTheme);
  */
 export function fontRule(globals: StoryContext['globals'], scope = ':root'): string {
   const [, font] = fontOf(globals);
-  const weight = nearest(Number(globals.fontWeight ?? 500), font.weights);
+  const weight = nearest(Number(globals.fontWeight ?? 400), font.weights);
   const stretch = nearestStretch(String(globals.fontStretch ?? 'normal'), font.stretches);
   const italic = globals.fontStyle === 'italic' && font.italics.includes(true);
   const chosen = chosenSlots(globals);
