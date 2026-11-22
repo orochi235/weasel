@@ -102,4 +102,15 @@ describe('<HistoryView>', () => {
     expect(asked).toBe(2);
     await waitFor(() => expect(screen.getByRole('status', { name: 'Position' }).textContent).toBe('20 / 20'));
   });
+
+  it('leaves the open step open when a step with nothing to show is clicked', async () => {
+    const page = fakePage();
+    renderWithIcons(<HistoryView client={page.client} rootId="r" />);
+    act(() => page.push(step('kit:open')));
+    act(() => page.push({ ...step('kit:none'), step: 'undo', entries: [] }));
+    fireEvent.click(await screen.findByRole('cell', { name: 'push' }));
+    expect(await screen.findByText('kit:open')).toBeTruthy();
+    fireEvent.click(screen.getByRole('cell', { name: 'undo' }));
+    expect(screen.getByText('kit:open')).toBeTruthy();
+  });
 });
