@@ -72,10 +72,11 @@ function isEnabled(el: HTMLElement): boolean {
   return !el.matches(':disabled') && el.getAttribute('aria-disabled') !== 'true';
 }
 
-/** Whether focus can land on `el` under `disabled`: never on one hidden, inert, or not drawn. */
-function canStop(el: HTMLElement, disabled: RovingDisabled): boolean {
+/** Whether focus can land on `el`, an item of `root`, under `disabled`: never on one hidden, inert, or not drawn. */
+function canStop(el: HTMLElement, disabled: RovingDisabled, root: HTMLElement | null): boolean {
   const allowed = disabled === 'stop' ? !el.matches(':disabled') : isEnabled(el);
-  return allowed && el.closest('[hidden], [inert]') === null && isRendered(el);
+  // An undrawn container takes no Tab whichever item holds its stop, so whether it is drawn is left unread.
+  return allowed && el.closest('[hidden], [inert]') === null && isRendered(el, root);
 }
 
 /** The inline direction `el` lays its children out in, from its computed `direction`. */
@@ -204,7 +205,7 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
       const found = items();
       const { tabStopIndex: controlled, disabled = 'skip' } = latest.current;
       // Asked lazily: whether an item is drawn reads its computed style, and the first candidate usually answers.
-      const can = (i: number) => i >= 0 && i < found.length && canStop(found[i]!, disabled);
+      const can = (i: number) => i >= 0 && i < found.length && canStop(found[i]!, disabled, rootRef.current);
       let stop = focused ? found.indexOf(focused) : -1;
       if (stop < 0 && controlled !== undefined && can(controlled)) stop = controlled;
       if (stop < 0 && controlled === undefined && last.current) {
@@ -260,7 +261,7 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
       }
       // A modified arrow, Home, or End is a chord for the browser or the item (Alt+Left is Back), not a step.
       if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-      const enabled = found.map((el) => canStop(el, disabled));
+      const enabled = found.map((el) => canStop(el, disabled, rootRef.current));
       const dir = across ?? latest.current.dir ?? inlineDirection(e.currentTarget);
       const rows = columns ? gridRows(found, columns, groupSelector) : [];
       // A row short of `columns` is the last of its group, and sits where `lastRow` puts it.

@@ -263,6 +263,12 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P2) [agent] `EffectList` can't turn off renaming a card, or put anything else in its header** (2026-11-22).
+  Every card's name is an in-place field, and the header has no slot for a consumer's own content. agnew's block
+  stack (agnew `b785d8b`, porting to 2.0) needed both: its blocks have no names, so it shows the kind's label
+  and drops the edits, and the source/modifier tag it showed in the header had nowhere to go. Closes when
+  `EffectListProps` has an option that draws the name as plain text and a header slot, each with a test.
+
 - **(P3) [maintainer] Trials in one labkit workspace have no way to share params.** Each trial owns its own
   settings, so two trials meant to show one setting from different angles each get their own copy, and editing it
   in one leaves the other behind. Wants a way for trials to declare that a param is shared, and a decision on where
@@ -522,6 +528,11 @@ these entries are what is left of them.
 ---
 
 ## Release-gate & build hygiene
+
+- **(P2) [agent] `@weasel-js/kernel3d` 2.0.0 shipped without its `IconName` entries** (2026-11-22). No `.d.ts` in its
+  `dist` declares the augmentation in `src/icons.gen.ts`, so `kernel3d:dollyIn` and the other camera icons don't
+  typecheck as `IconName` for a consumer; astv declares them itself in `kernel3dIconNames.ts`. Closes when the packed
+  kernel3d declares them, and a check fails a package whose packed types miss its `IconName` entries.
 
 - **(P3) [maintainer] Without rolldown's native binding, vite 8.3.8 writes a lazy import's preload list as `[]`
   and a stray hash, and the bundle does not parse** (2026-11-21). Not weasel's: nothing here installs without
