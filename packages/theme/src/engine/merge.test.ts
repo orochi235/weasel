@@ -77,6 +77,17 @@ describe('a theme that declares a ramp or scale', () => {
     expect(mergeChain(child, lookup).pins).toEqual({ 'gray-a': '#ffffff', 'gray-b': '#000000' });
   });
 
+  it("fills a nested axis a child's by-axis pin leaves out from the parent's pin", () => {
+    const axes = {
+      mode: { default: 'dark', values: { dark: {}, light: {} } },
+      density: { default: 'roomy', values: { roomy: {}, compact: {} } },
+    };
+    const parent: ThemeDefinition = { name: 'np', axes, pins: { p: { by: 'mode', dark: { by: 'density', compact: 'A', roomy: 'B' }, light: 'C' } } };
+    const child: ThemeDefinition = { name: 'nc', extends: 'np', pins: { p: { by: 'mode', dark: { by: 'density', compact: 'X' } } } };
+    const all: Record<string, ThemeDefinition> = { np: parent, nc: child };
+    expect(mergeChain(child, (n) => all[n]).pins?.p).toEqual({ by: 'mode', dark: { by: 'density', compact: 'X', roomy: 'B' }, light: 'C' });
+  });
+
   it("fills its own by-axis pin from the parent's only where it does not produce the token itself", () => {
     const axes = { mode: { default: 'dark', values: { dark: {}, light: {} } } };
     const child: ThemeDefinition = {

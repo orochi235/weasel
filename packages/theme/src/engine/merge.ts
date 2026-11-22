@@ -23,9 +23,9 @@ function fillFromParent(child: unknown, parent: unknown, axes: AxisDefs): unknow
   const values = Object.keys(getOwn(axes, child.by)?.values ?? {});
   const out: Record<string, unknown> = { ...child };
   for (const v of values) {
-    if (Object.hasOwn(out, v)) continue;
     const inherited = isByAxis(parent) && parent.by === child.by ? getOwn(parent, v) : parent;
-    if (inherited !== undefined) setOwn(out, v, inherited);
+    if (Object.hasOwn(out, v)) setOwn(out, v, fillFromParent(out[v], inherited, axes));
+    else if (inherited !== undefined) setOwn(out, v, inherited);
   }
   return out;
 }
