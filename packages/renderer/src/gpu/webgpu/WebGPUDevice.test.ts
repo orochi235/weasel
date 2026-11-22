@@ -51,6 +51,39 @@ describe('a WebGPU device drawing with a program the GPU refuses', () => {
     expect(error).toHaveBeenCalledTimes(1);
     error.mockRestore();
   });
+
+  it('draws with it in a submit of its own until the GPU answers, so the draws beside it survive a refusal', async () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const good = gpu.createProgram({ wgsl: KIT_WGSL.pathFill.code });
+    const bad = gpu.createProgram({ wgsl: KIT_WGSL.pathFill.code });
+    const vertices = gpu.createBuffer('vertex', new Float32Array(6), 'static');
+    const geometry = gpu.createGeometry({
+      vertexBuffers: [{ buffer: vertices, stride: 8, attributes: [{ location: 0, components: 2, offset: 0 }] }],
+      indexBuffer: gpu.createBuffer('index', new Uint32Array([0, 1, 2]), 'static'), indexFormat: 'uint32',
+    });
+    drawOnce(gpu, good, geometry);
+    await new Promise((r) => setTimeout(r, 0));
+    fake.failPipelines = true;
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const submit = fake.device.queue.submit.bind(fake.device.queue);
+    const drawsPerSubmit: number[] = [];
+    let seen = fake.passCalls.length;
+    fake.device.queue.submit = (buffers) => {
+      drawsPerSubmit.push(fake.passCalls.slice(seen).filter(([m]) => m === 'drawIndexed').length);
+      seen = fake.passCalls.length;
+      submit(buffers);
+    };
+    const state = (program: GpuProgram) => ({ program, blend: null, colorWrite: true, stencil: null, ids: false });
+    gpu.beginPass({ target: null, viewport: { x: 0, y: 0, width: 64, height: 64 } });
+    gpu.draw(state(good), geometry, 3);
+    gpu.draw(state(bad), geometry, 3);
+    gpu.draw(state(good), geometry, 3);
+    gpu.endPass();
+    await new Promise((r) => setTimeout(r, 0));
+    error.mockRestore();
+    expect(drawsPerSubmit.filter((n) => n > 0)).toEqual([1, 1, 1]);
+  });
 });
 
 describe('a WebGPU device reading back across a device loss', () => {
