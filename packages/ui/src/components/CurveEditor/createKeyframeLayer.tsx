@@ -19,7 +19,7 @@ import {
 } from './keyframeEdits';
 import { keyframeHitAt } from './keyframeCurve';
 import { keyframeMarks, type KeyframeNames } from './keyframeMarks';
-import { keyTargetIn } from './layerMarks';
+import { formatCoord, keyTargetIn } from './layerMarks';
 
 export { applyKeyframeDrag, keyframeLayerState, type KeyframeDrag, type KeyframeDragResult, type KeyframeLayerState };
 
@@ -29,7 +29,7 @@ export interface KeyframeLayerOptions {
   id?: string;
   /** Names the curve in each mark's accessible name. Default `'Curve'`. */
   label?: string;
-  /** Formats a key time for accessible names. Default: rounded number. */
+  /** Formats a key time for accessible names. Default: the number, to three decimal places. */
   formatX?: (x: number) => string;
   /** Times a dragged key snaps to. Holding alt defeats the snap. */
   snapX?: readonly number[];
@@ -68,7 +68,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
   const id = cfg.id ?? 'keyframes';
   const names: KeyframeNames = {
     label: cfg.label ?? 'Curve',
-    formatX: cfg.formatX ?? ((x: number) => String(Math.round(x))),
+    formatX: cfg.formatX ?? formatCoord,
   };
   const snapRadiusPx = (ctx: LayerCtx): number => cfg.snapRadiusPx ?? kitSnapRadiusPx(ctx.kitSettings);
 
@@ -151,7 +151,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
     ctx: LayerCtx,
     extra: KeyDownArgs<KeyframeLayerState>,
   ): void {
-    const target = keyTargetIn(e, id);
+    const target = keyTargetIn(e, extra.group);
     if (!target) return;
     const arrow = arrowMove(e.key, e.shiftKey);
     // The move in model terms: the screen's y runs down, and an inverted axis runs its model value the other way.

@@ -3645,3 +3645,9 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a `shadow` or `sunbeams` effect draws nothing on an `outline` badge, which has no
   fill for it to sit behind or light, as `bevel`, `sheen`, and the other drawn effects already did. Casting the shadow
   of the outline's stroke alone was the alternative.
+## Audit round sixty-seven (2026-11-22): CurveEditor
+
+- 2026-11-22 (the fixer's call): a context menu that opens while a curve layer's drag runs, as a touch long press
+  does after its pointerdown grabbed an anchor, cancels the drag and goes to the layers from the state before it; a
+  right-click in the middle of a mouse drag does the same. Ignoring the menu while a drag runs, which left a long
+  press unable to delete an anchor, was the alternative (`LayeredCurveEditor.tsx`, `onSvgContextMenu`).

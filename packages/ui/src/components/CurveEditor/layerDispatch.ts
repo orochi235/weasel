@@ -107,7 +107,7 @@ export function dispatchKey<B>(
     if (!entry.layer.onKeyDown) continue;
     const prior = before(made);
     const c = committer(entry, entry.state);
-    entry.layer.onKeyDown(entry.state, e, ctx, { commit: c.commit });
+    entry.layer.onKeyDown(entry.state, e, ctx, { commit: c.commit, group: entry.el });
     const edit = c.edit();
     if (edit) { onEdit(prior, edit); made.push(edit); }
     if (e.defaultPrevented) return;

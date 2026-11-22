@@ -99,3 +99,19 @@ describe('an anchor added by a click in empty space on a strict layer', () => {
     expect(withEmptyInsert(state([0, 1]), { x: 1.2, y: 0.9 }, range, rules)).toBeNull();
   });
 });
+
+describe('an ordered anchor between neighbors closer than two gaps', () => {
+  const rules = anchorRulesFor({ constrain: 'function' });
+  const range = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+
+  it.each([0, 0.4, 0.5, 0.6, 1])('stays between them, dragged to x %s', (x) => {
+    const next = withAnchorMoved(state([0, 0.5, 0.5, 0.5, 1]), 2, { x, y: 0.5 }, range, rules);
+    expect(next.points[2].x).toBe(0.5);
+  });
+
+  it('moves within the room it has', () => {
+    const next = withAnchorMoved(state([0, 0.5, 0.5005, 0.5008, 1]), 2, { x: 1, y: 0.5 }, range, rules);
+    expect(next.points[2].x).toBeGreaterThanOrEqual(0.5);
+    expect(next.points[2].x).toBeLessThanOrEqual(0.5008);
+  });
+});
