@@ -458,14 +458,6 @@ only story runner in the repo.
   `apps/site/icons/packages.mjs` and need the maintainer's sketch first. `releaseIcons.test.ts` holds the list
   and fails on a new package without one. Closes when all seven have one.
 
-- **(P3) [agent] labkit's annotation input lagged a second move of its target in one full fleet run.**
-  "the box that takes input follows its target either way it moves with nothing resizing"
-  (`packages/labkit/src/annotations/AnnotationOverlay.clip.browser.test.tsx`) failed in round 53's run on
-  2026-11-20: after the neighbor widened, the input sat 8.25 px off, exactly the second move, so it had followed the
-  first and not the second within `waitFor`'s second. Alone, the same commit passed 4/4. So whatever keeps the input
-  on a target that moves without resizing can miss a move under load. Closes when the input follows each move in a
-  frame or two by construction (an observer, not a poll that load can starve), and that file passes in full runs.
-
 - **(P3) [waiting] `SegmentsArcView`'s arc test missed by 3.5 px in one full fleet run.** "segments sit on the
   arc, edge to edge, and the well runs one rim past the first and last"
   (`packages/ui/src/components/Segmented/lab/SegmentsArcView.browser.test.tsx`) read 54.49 against 51
