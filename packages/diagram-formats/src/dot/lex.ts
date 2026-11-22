@@ -66,7 +66,8 @@ export function lexDot(text: string): DotToken[] {
     i++;
     while (i < text.length && text[i] !== '"') {
       if (text[i] === '\\' && text[i + 1] === '"') { out += '"'; i += 2; continue; }
-      if (text[i] === '\\' && text[i + 1] === '\n') { line++; i += 2; continue; }
+      const join = text[i] !== '\\' ? 0 : text.startsWith('\n', i + 1) ? 2 : text.startsWith('\r\n', i + 1) ? 3 : 0;
+      if (join > 0) { line++; i += join; continue; }
       if (text[i] === '\\' && i + 1 < text.length) { out += text.slice(i, i + 2); i += 2; continue; }
       if (text[i] === '\n') line++;
       out += text[i];
