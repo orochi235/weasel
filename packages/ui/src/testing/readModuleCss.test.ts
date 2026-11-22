@@ -42,6 +42,17 @@ describe('readModuleCss', () => {
     expect(readModuleCss(join(root, 'mod/main.css'))).toBe('@supports (selector(:has(a))) {\n.a{}\n}\n');
   });
 
+  it('inlines a sheet two imports share once, as the bundler does, unless its conditions differ', () => {
+    const root = sheets({
+      'shared/d.css': '.d{}',
+      'mod/b.css': `@import '../shared/d.css';\n.b{}`,
+      'mod/c.css': `@import '../shared/d.css';\n.c{}`,
+      'mod/e.css': `@import '../shared/d.css' print;\n.e{}`,
+      'mod/main.css': `@import './b.css';\n@import './c.css';\n@import './e.css';\n`,
+    });
+    expect(readModuleCss(join(root, 'mod/main.css'))).toBe('.d{}.b{}.c{}@media print {\n.d{}\n}\n.e{}');
+  });
+
   it('leaves a commented-out import and a package import alone', () => {
     const root = sheets({ 'mod/main.css': `/* @import './gone.css'; */\n@import 'pkg/x.css';\n` });
     expect(readModuleCss(join(root, 'mod/main.css'))).toBe(`/* @import './gone.css'; */\n@import 'pkg/x.css';\n`);

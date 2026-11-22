@@ -38,17 +38,29 @@ function wrap(css: string, conditions: string): string {
 
 /**
  * A stylesheet's text as the bundler assembles it: each relative `@import`
- * replaced by the sheet it names. For a test that reads rules off disk because
- * jsdom computes nothing; a module assembled from imports holds none itself.
+ * replaced by the sheet it names, and a sheet already inlined under the same
+ * conditions left out. For a test that reads rules off disk because jsdom
+ * computes nothing; a module assembled from imports holds none itself.
  */
-export function readModuleCss(file: string, importers: string[] = []): string {
+export function readModuleCss(file: string): string {
+  return assemble(file, [], [], new Map());
+}
+
+/** `file` inlined under `chain`, the conditions of the imports around it, skipping what `seen` holds. */
+function assemble(file: string, importers: string[], chain: string[], seen: Map<string, Set<string>>): string {
   if (importers.includes(file)) throw new Error(`readModuleCss: ${[...importers, file].join(' → ')} imports itself`);
   return readFileSync(file, 'utf8').replace(
     IMPORT,
     (match, _q1, url: string | undefined, _q2, quoted: string | undefined, conditions: string | undefined) => {
       const rel = url ?? quoted;
       if (!rel || !/^\.\.?\//.test(rel)) return match;
-      return wrap(readModuleCss(resolve(dirname(file), rel), [...importers, file]), conditions!.trim());
+      const target = resolve(dirname(file), rel);
+      const within = [...chain, conditions!.trim()];
+      const key = within.join(':');
+      const keys = seen.get(target) ?? seen.set(target, new Set()).get(target)!;
+      if (keys.has(key)) return '';
+      keys.add(key);
+      return wrap(assemble(target, [...importers, file], within, seen), within.at(-1)!);
     },
   );
 }
