@@ -104,6 +104,18 @@ describe('WebGLDevice textures', () => {
       .toEqual([['bindTexture', rec.gl.TEXTURE_2D, handle], ['activeTexture', rec.gl.TEXTURE0 + 1], ['bindTexture', rec.gl.TEXTURE_2D, handle]]);
   });
 
+  it('uploads a decoded image into an r8 texture as its red channel, as later writes to it expect', () => {
+    const { rec, gpu } = setup();
+    const source = { width: 1, height: 1, data: new Uint8ClampedArray(4) } as ImageData;
+    const sampling = { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp' } as const;
+    const { gl } = rec;
+    for (const premultiply of [false, true]) {
+      rec.reset();
+      gpu.createTexture('r8', sampling, { source, premultiply });
+      expect(argsOf(rec, 'texImage2D')).toEqual([[gl.TEXTURE_2D, 0, gl.R8, gl.RED, gl.UNSIGNED_BYTE, source]]);
+    }
+  });
+
   it('premultiplies an image upload when asked, and puts the flag back', () => {
     const { rec, gpu } = setup();
     const source = { width: 1, height: 1, data: new Uint8ClampedArray(4) } as ImageData;
