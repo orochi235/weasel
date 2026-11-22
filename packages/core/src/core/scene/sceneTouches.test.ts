@@ -88,6 +88,18 @@ describe('scene.changesSince', () => {
     expect(touchedBy(s, () => s.update(g, { data: { label: 'fill' } }))).toEqual([g, a, b].sort());
   });
 
+  it('names the container a node leaves on undo, not the one its entry recorded, after an untracked move', () => {
+    const s = makeScene();
+    const p = group(s);
+    const q = group(s);
+    const x = mark(s, p);
+    s.untracked(() => s.move(x, q));
+    const { token } = s.changesSince();
+    s.undo();
+    expect(s.get(x)).toBeUndefined();
+    expect(s.changesSince(token).parents.has(q)).toBe(true);
+  });
+
   it('reaches the nodes that derive from a changed one', () => {
     const s = makeScene();
     const a = mark(s);

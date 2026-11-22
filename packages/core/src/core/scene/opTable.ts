@@ -23,6 +23,8 @@ export interface OpTableEnv {
   replayAlone(step: () => void): void;
   /** Called after any op ran, either way and by any path, with its kind and payload. */
   touched(kind: string, payload: unknown): void;
+  /** Called before any op runs, either way and by any path, with its kind and payload. */
+  touching(kind: string, payload: unknown): void;
 }
 
 export interface OpTable {
@@ -80,6 +82,7 @@ export function createOpTable(env: OpTableEnv): OpTable {
   function run(kind: string, payload: unknown, forward: boolean): 'noop' | undefined {
     const handler = requireHandler(kind);
     if (env.skips(kind, payload, forward)) return 'noop';
+    env.touching(kind, payload);
     (forward ? handler.apply : handler.revert)(payload);
     env.touched(kind, payload);
     env.applied(kind, payload, !forward);
@@ -112,7 +115,9 @@ export function createOpTable(env: OpTableEnv): OpTable {
       handlers.set(kind, handler);
     },
     run: (kind, payload) => {
-      requireHandler(kind).apply(payload);
+      const handler = requireHandler(kind);
+      env.touching(kind, payload);
+      handler.apply(payload);
       env.touched(kind, payload);
     },
     op: (kind, payload) => op(kind, payload),

@@ -17,6 +17,8 @@ export interface AppliedLogEnv {
   notify(): void;
   /** Called after an op is taken back, with its kind and payload. */
   touched(kind: string, payload: unknown): void;
+  /** Called before an op is taken back, with its kind and payload. */
+  touching(kind: string, payload: unknown): void;
 }
 
 export interface AppliedLog {
@@ -60,6 +62,7 @@ export function createAppliedLog(env: AppliedLogEnv): AppliedLog {
             const { kind, payload, reverted } = log[i];
             const handler = env.registered.get(kind)!;
             try {
+              env.touching(kind, payload);
               (reverted ? handler.apply : handler.revert)(payload);
               env.touched(kind, payload);
             } catch (back) {

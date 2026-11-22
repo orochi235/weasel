@@ -58,6 +58,9 @@ const EMPTY: ReadonlySet<never> = new Set();
 export interface SceneTouchesFeed extends SceneTouchesMembers {
   /** Record what an op of `kind` with `payload` touched. */
   noteOp(kind: string, payload: unknown): void;
+  /** Before an op runs, record the containers its nodes are about to leave:
+   *  an untracked reparent can have moved a node from where its payload says. */
+  noteLeaving(kind: string, payload: unknown): void;
 }
 
 export function createSceneTouches(env: SceneTouchesEnv): SceneTouchesFeed {
@@ -98,6 +101,17 @@ export function createSceneTouches(env: SceneTouchesEnv): SceneTouchesFeed {
         if (typeof p.id === 'string') journal.note(p.id as NodeId, TOUCH_CONTENT);
         else journal.reset();
     }
+  }
+
+  function noteLeaving(kind: string, payload: unknown): void {
+    if (kind !== 'kit:add' && kind !== 'kit:move' && kind !== 'kit:remove') return;
+    const p = payload as { id?: NodeId; detached?: readonly { id: NodeId }[] };
+    const leave = (id: NodeId): void => {
+      const node = nodes.get(id);
+      if (node !== undefined) journal.note(node.parent, TOUCH_CHILDREN);
+    };
+    if (p.id !== undefined) leave(p.id);
+    for (const d of p.detached ?? []) leave(d.id);
   }
 
   /** Bring the journal up to date with what is not an op: previews, scroll, and ambient generations. */
@@ -151,6 +165,7 @@ export function createSceneTouches(env: SceneTouchesEnv): SceneTouchesFeed {
 
   return {
     noteOp,
+    noteLeaving,
     changesSince(token) {
       poll();
       const now = journal.token();
