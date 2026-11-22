@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useState } from 'react';
-import { localStorageAdapter, openRecordsSync, type RecordCache } from '@weasel-js/storage';
+import { localStorageAdapter, openRecordsSync, readLocal, type RecordCache } from '@weasel-js/storage';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Input } from '@weasel-js/ui/components/Input';
 import { useVisiblePoll } from '../useVisiblePoll';
@@ -58,7 +58,7 @@ export function StorageDemo() {
             <tr key={name}>
               <th scope="row">{name}</th>
               <td>{show(cache.get(name))}</td>
-              <td>{localStorage.getItem(PREFIX + name) ?? '—'}</td>
+              <td>{show(readLocal(PREFIX + name))}</td>
               <td>{cache.pending(name) ? 'yes' : 'no'}</td>
             </tr>
           ))}
