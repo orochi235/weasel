@@ -15,9 +15,17 @@ export type RunItemsOf = (root: HTMLElement) => Iterable<Element>;
 const childrenOf: RunItemsOf = (root) => root.children;
 
 /** A resize observer and the items it watches. */
-interface Watch {
+export interface Watch {
   observer: ResizeObserver;
   watched: Set<Element>;
+}
+
+/** Points `watch` at `items`: each one newly there observed, each one gone since unobserved. */
+export function rewatch(watch: Watch, items: Iterable<Element>): void {
+  const seen = new Set(items);
+  for (const child of watch.watched) if (!seen.has(child)) watch.observer.unobserve(child);
+  for (const child of seen) if (!watch.watched.has(child)) watch.observer.observe(child);
+  watch.watched = seen;
 }
 
 /**
@@ -35,11 +43,7 @@ function read(el: HTMLElement | null, keyOf: RunKeyOf, itemsOf: RunItemsOf, keys
     seen.add(child);
   }
   for (const key of known.keys()) if (!keep.has(key)) known.delete(key);
-  if (watch !== null) {
-    for (const child of watch.watched) if (!seen.has(child)) watch.observer.unobserve(child);
-    for (const child of seen) if (!watch.watched.has(child)) watch.observer.observe(child);
-    watch.watched = seen;
-  }
+  if (watch !== null) rewatch(watch, seen);
   return new Map(known);
 }
 

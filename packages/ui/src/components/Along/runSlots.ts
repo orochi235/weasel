@@ -1,9 +1,9 @@
-import { useContext, useLayoutEffect, useState, useSyncExternalStore, type Context, type CSSProperties, type RefObject } from 'react';
+import { useContext, useLayoutEffect, useRef, useState, useSyncExternalStore, type Context, type CSSProperties, type RefObject } from 'react';
 import type { RunAlign, TrackRun } from '@weasel-js/geom';
 import { createEmitter } from '@weasel-js/registry';
 import { maxOf } from '@weasel-js/geom';
 import { insideOf } from './runBend';
-import { useItemLengths, type RunItemsOf, type RunKeyOf } from './useItemLengths';
+import { rewatch, useItemLengths, type RunItemsOf, type RunKeyOf, type Watch } from './useItemLengths';
 import { useRunRow, type RunItemPlace, type RunOverflow, type RunRow } from './useRunRow';
 
 /** The attribute a slot's element carries its key in, and a host's root carries to mark where its slots end. */
@@ -123,9 +123,12 @@ export interface RunSlotHost extends RunRow {
  */
 export function useRunSlotHost({ slots, root, run, gap, align, overflow }: RunSlotHostArgs): RunSlotHost {
   const [seen, setSeen] = useState<Seen>({ keys: [], thickness: 0 });
+  // A slot can grow taller with no commit here, as when a font lands; the item lengths only follow its width.
+  const sizes = useRef<Watch | null>(null);
   useLayoutEffect(() => {
     const look = (): void => setSeen((prev) => seenUnder(root.current, prev));
     look();
+    if (sizes.current !== null && root.current !== null) rewatch(sizes.current, slotItems(root.current));
   });
   // Re-rendered with the parts it publishes to, so it reads them again once they carry their keys.
   useSyncExternalStore(slots.subscribe, slots.current, slots.current);
@@ -133,9 +136,18 @@ export function useRunSlotHost({ slots, root, run, gap, align, overflow }: RunSl
   useLayoutEffect(() => {
     const el = root.current;
     if (el === null || typeof MutationObserver === 'undefined') return;
-    const watch = new MutationObserver(() => setSeen((prev) => seenUnder(root.current, prev)));
+    const look = (): void => setSeen((prev) => seenUnder(root.current, prev));
+    const watch = new MutationObserver(look);
     watch.observe(el, { subtree: true, childList: true, attributes: true, attributeFilter: [RUN_SLOT] });
-    return () => watch.disconnect();
+    if (typeof ResizeObserver !== 'undefined') {
+      sizes.current = { observer: new ResizeObserver(look), watched: new Set() };
+      rewatch(sizes.current, slotItems(el));
+    }
+    return () => {
+      watch.disconnect();
+      sizes.current?.observer.disconnect();
+      sizes.current = null;
+    };
   }, [root]);
   const lengths = useItemLengths(root, seen.keys, keyOf, slotItems);
   const row = useRunRow({ root, keyOf, itemsOf: slotItems, run, lengths: seen.keys.map((key) => lengths.get(key) ?? 0), gap, align, overflow });
