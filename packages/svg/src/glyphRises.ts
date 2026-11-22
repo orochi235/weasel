@@ -88,9 +88,11 @@ function ownShift(run: StyledRun, style: TextStyle): number {
 export function raiseRuns(line: StyledRun[], rises: readonly number[], fontSize: number, style: TextStyle): void {
   if (!(fontSize > 0) || rises.every((r) => Math.abs(r) < 1e-9)) return;
   let start = line.length;
-  for (let n = rises.length; n > 0 && start > 0;) n -= Array.from(line[--start].text).length;
+  let n = rises.length;
+  while (n > 0 && start > 0) n -= Array.from(line[--start].text).length;
   const out: StyledRun[] = [];
-  let g = 0;
+  // Where the first run reached holds glyphs before the ones raised, they keep their rise.
+  let g = Math.min(n, 0);
   for (const run of line.slice(start)) {
     if (run.text === '') {
       out.push(run);
@@ -98,7 +100,8 @@ export function raiseRuns(line: StyledRun[], rises: readonly number[], fontSize:
     }
     let last: number | undefined;
     for (const glyph of Array.from(run.text)) {
-      const em = Math.round(((rises[g++] ?? 0) / fontSize) * 1e6) / 1e6;
+      const at = g++;
+      const em = at < 0 ? 0 : Math.round(((rises[at] ?? 0) / fontSize) * 1e6) / 1e6;
       if (em === last) out[out.length - 1].text += glyph;
       else out.push(em === 0 ? { ...run, text: glyph } : { ...run, text: glyph, baselineShift: ownShift(run, style) + em });
       last = em;
