@@ -9,17 +9,30 @@
  * onto places the suite's jobs and the postbuild; neither is pinned to a node.
  */
 import { spawn } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const say = (line) => console.log(`test-batch: ${line}`);
+
+// Where each child finds why it was stopped, to pass on to the onto jobs it kills (killOnSignal).
+const whyDir = mkdtempSync(join(tmpdir(), 'weasel-batch-'));
+process.on('exit', () => rmSync(whyDir, { recursive: true, force: true }));
+const stop = (part, why) => {
+  writeFileSync(part.whyFile, why);
+  part.child.kill('SIGTERM');
+};
 
 const args = process.argv.slice(2);
 const ref = args[0] && !args[0].startsWith('-') ? args.shift() : 'HEAD';
 
 /** Spawns a node script, relaying its lines with `prefix` and handing each to `onLine`. */
 const start = (script, argv, { prefix = '', onLine = () => {} } = {}) => {
-  const child = spawn(process.execPath, [script, ...argv], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
+  const whyFile = join(whyDir, script.replaceAll('/', '-'));
+  const env = { ...process.env, WEASEL_STOP_WHY: whyFile };
+  const child = spawn(process.execPath, [script, ...argv], { cwd: ROOT, env, stdio: ['ignore', 'pipe', 'pipe'] });
   for (const [stream, to] of [[child.stdout, process.stdout], [child.stderr, process.stderr]]) {
     let rest = '';
     stream.on('data', (chunk) => {
@@ -33,7 +46,7 @@ const start = (script, argv, { prefix = '', onLine = () => {} } = {}) => {
     stream.on('end', () => rest && to.write(`${prefix}${rest}\n`));
   }
   const exit = new Promise((done) => child.on('close', (code, signal) => done(signal ? 1 : (code ?? 1))));
-  return { child, exit };
+  return { child, exit, whyFile };
 };
 
 const tests = start('scripts/fleet-test.mjs', [ref, ...args]);
@@ -44,7 +57,7 @@ tests.exit.then((status) => {
   outcome.tests ??= status;
   if (status !== 0 && postbuild && outcome.postbuild === undefined) {
     say(`test:fleet failed (${status}); stopping the postbuild`);
-    postbuild.child.kill('SIGTERM');
+    stop(postbuild, `test:fleet failed (${status})`);
     outcome.postbuild = 'stopped';
   }
 });
@@ -58,7 +71,7 @@ else {
   if (outcome.postbuild === undefined) outcome.postbuild = status;
   if (status !== 0 && outcome.tests === undefined) {
     say(`test:fleet:postbuild failed (${status}); stopping the suite`);
-    tests.child.kill('SIGTERM');
+    stop(tests, `postbuild failed (${status})`);
     outcome.tests = 'stopped';
   }
 }

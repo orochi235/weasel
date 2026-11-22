@@ -147,5 +147,11 @@ export const ontoWhenFree = async (args, { cwd, say, prefix, onJob, onLine }) =>
   }
 };
 
-/** Stops a job on the fleet: interrupting the `onto` that launched it leaves it running. */
-export const killJob = (id) => spawnSync('onto', ['kill', id], { stdio: 'ignore' }).status === 0;
+/**
+ * Stops a job on the fleet: interrupting the `onto` that launched it leaves it running. `why` shows on the
+ * job as "stopped: <why>"; an `onto` too old for `--why` refuses the flag, so that kill goes again without it.
+ */
+export const killJob = (id, why) => {
+  const kill = (args) => spawnSync('onto', ['kill', ...args, id], { stdio: 'ignore' }).status === 0;
+  return (why && kill(['--why', why])) || kill([]);
+};

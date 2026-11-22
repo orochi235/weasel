@@ -25,7 +25,10 @@ export const runSuite = async ({ tree, base, scope, ontoArgs, say, jobs = [], on
   // One half aborting on a repeated failure stops the other too: the run's answer is already in.
   const onLine = (line) => {
     heard?.(line);
-    if (line.startsWith('fleet-abort:')) jobs.forEach(killJob);
+    if (line.startsWith('fleet-abort:')) {
+      const why = line.slice('fleet-abort:'.length).split(',')[0].trim();
+      jobs.forEach((id) => killJob(id, why));
+    }
   };
   const onJob = (part) => (job) => {
     jobs.push(job.id);
@@ -50,7 +53,24 @@ export const runSuite = async ({ tree, base, scope, ontoArgs, say, jobs = [], on
   return results.find((s) => s !== 0) ?? 0;
 };
 
-/** Stops every job in `jobs` when this process is told to stop, ahead of the tree's own cleanup. */
-export const killOnSignal = (jobs) => {
-  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.prependListener(signal, () => jobs.forEach(killJob));
+/**
+ * Stops every job in `jobs` when this process is told to stop, ahead of the tree's own cleanup. A parent
+ * that knows why it is stopping this process writes the reason to the file `WEASEL_STOP_WHY` names first.
+ */
+export const killOnSignal = (jobs, env = process.env) => {
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+    process.prependListener(signal, () => {
+      const why = stopReason(env) ?? `the launcher got ${signal}`;
+      jobs.forEach((id) => killJob(id, why));
+    });
+  }
+};
+
+export const stopReason = (env = process.env) => {
+  if (!env.WEASEL_STOP_WHY) return undefined;
+  try {
+    return readFileSync(env.WEASEL_STOP_WHY, 'utf8').trim() || undefined;
+  } catch {
+    return undefined;
+  }
 };
