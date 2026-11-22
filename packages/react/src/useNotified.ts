@@ -21,10 +21,8 @@ const countOf = createPart((source: Notifier): { n: number } => {
  */
 export function useNotified(source: Notifier | null): number {
   const count = source === null ? null : countOf(source);
-  return useSyncExternalStore(
-    source === null ? NONE : subscribeOf(source),
-    () => count?.n ?? 0,
-  );
+  const read = () => count?.n ?? 0;
+  return useSyncExternalStore(source === null ? NONE : subscribeOf(source), read, read);
 }
 
 const NONE = (): (() => void) => () => {};

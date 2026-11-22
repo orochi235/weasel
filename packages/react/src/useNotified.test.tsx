@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import { useLayoutEffect } from 'react';
 import { useNotified, type Notifier } from './useNotified';
 
@@ -35,5 +36,13 @@ describe('useNotified', () => {
     const held = s.size();
     view.unmount();
     expect(s.size()).toBe(held - 1);
+  });
+
+  it('renders on the server', () => {
+    const s = source();
+    function Reader() {
+      return <span>{useNotified(s)}</span>;
+    }
+    expect(renderToString(<Reader />)).toBe('<span>0</span>');
   });
 });
