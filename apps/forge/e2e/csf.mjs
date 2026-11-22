@@ -20,7 +20,7 @@ try {
       await page.goto(`${origin}/#/${story.id}`);
       // The story just opened is the last host on the page; a host stays `data-pending` until its story has painted.
       const frame = page.locator('.fg-story[data-fg-host]').last();
-      await page.locator('.fg-story[data-fg-host]:not([data-pending])').last().waitFor({ timeout: 20000 });
+      await frame.and(page.locator(':not([data-pending])')).waitFor({ timeout: 20000 });
       await story.check({ page, frame });
       const faults = [
         ...(await page.locator('.fg-fault').allInnerTexts()),

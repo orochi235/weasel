@@ -82,6 +82,33 @@ describe('followScheme', () => {
     a.remove();
   });
 
+  it('holds an OS listener only while it follows a root, and releases it on dispose', () => {
+    const flip = stubColorScheme('light');
+    const apply = vi.fn();
+    const root = document.createElement('div');
+    document.body.append(root);
+    const applyGlobals = followScheme(apply);
+    expect(flip.listeners.size).toBe(0);
+    applyGlobals({ mode: 'auto' }, target(root));
+    expect(flip.listeners.size).toBe(1);
+    applyGlobals.dispose();
+    expect(flip.listeners.size).toBe(0);
+    apply.mockClear();
+    flip('dark');
+    expect(apply).not.toHaveBeenCalled();
+    root.remove();
+  });
+
+  it('lets go of the OS listener once every root it followed has left the document', () => {
+    const flip = stubColorScheme('light');
+    const root = document.createElement('div');
+    document.body.append(root);
+    followScheme(vi.fn())({ mode: 'auto' }, target(root));
+    root.remove();
+    flip('dark');
+    expect(flip.listeners.size).toBe(0);
+  });
+
   it('resolves auto to dark with no matchMedia, as the theme does', () => {
     vi.stubGlobal('matchMedia', undefined);
     const apply = vi.fn();
