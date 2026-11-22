@@ -8,7 +8,7 @@ import { runs, tally, timeoutFor } from '../../pbt.fixture';
 import { inlineMarkdownText, parseInline, type InlineToken } from './parseInline';
 
 const RUNS = 300;
-const SAFE = /^(https?:|mailto:|[/#.])/i;
+const SAFE = /^(?:https?:|mailto:|(?![\x00-\x20]|[a-z][a-z0-9+.-]*:))/i;
 
 /** Every text token non-empty, no two side by side, and every link's address one the reader lets through. */
 function tidy(tokens: readonly InlineToken[]): void {
@@ -42,7 +42,7 @@ const ESCAPED = /[`*~[\]\\<]/g;
 const word = fc.array(fc.constantFrom(...'abcxyz09 *~`[]\\()!.:_<'.split('')), { minLength: 1, maxLength: 6 }).map((a) => a.join(''));
 const codeText = fc.array(fc.constantFrom(...'abc09 .-_()+'.split('')), { minLength: 1, maxLength: 6 }).map((a) => a.join(''));
 const chord = fc.array(fc.constantFrom('Mod', 'Shift', 'Alt', 'Z', 'K', '1'), { minLength: 1, maxLength: 3 }).map((a) => a.join('+'));
-const href = fc.constantFrom('https://example.com/a', 'http://x.y', 'mailto:a@b.c', '#top', '/docs/a', './b', '../c');
+const href = fc.constantFrom('https://example.com/a', 'http://x.y', 'mailto:a@b.c', '#top', '/docs/a', './b', '../c', 'guide.html');
 
 /** A run of leaves, merged as the reader merges them, a mark's ends kept clear of spaces. */
 function run(leaves: InlineToken[], edged: boolean): InlineToken[] {

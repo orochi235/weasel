@@ -42,4 +42,12 @@ describe('parseInline', () => {
   it('keeps an escaped shortcut mark literal', () => {
     expect(parseInline('write \\<kbd>Mod+Z</kbd> for one')).toEqual([{ type: 'text', text: 'write <kbd>Mod+Z</kbd> for one' }]);
   });
+
+  it('keeps a plain relative link and drops one with any other scheme', () => {
+    expect(parseInline('[guide](guide.html)')).toEqual([{ type: 'link', href: 'guide.html', children: [{ type: 'text', text: 'guide' }] }]);
+    expect(parseInline('[next](docs/page.md)')).toEqual([{ type: 'link', href: 'docs/page.md', children: [{ type: 'text', text: 'next' }] }]);
+    for (const href of ['javascript:alert(1)', 'JavaScript:alert(1)', 'data:text/html,x', '\u0001javascript:alert(1)']) {
+      expect(parseInline(`[x](${href})`)).toEqual([{ type: 'text', text: 'x' }]);
+    }
+  });
 });
