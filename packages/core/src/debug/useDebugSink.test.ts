@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { Suspense, createElement, startTransition, type ReactNode } from 'react';
+import { act, render, renderHook } from '@testing-library/react';
 import type { RenderLayer } from 'core/layers/render';
 import { createDebugSink } from './createDebugSink';
 import { beginDebugFrame, useDebugSink } from './useDebugSink';
@@ -57,5 +58,45 @@ describe('useDebugSink', () => {
     sink!.recordBounds('a', { x: 0, y: 0, width: 1, height: 1 });
     sink!.recordBounds('b', { x: 0, y: 0, width: 1, height: 1 });
     expect(sink!.snapshot().bounds.map((b) => b.id)).toEqual(['b']);
+  });
+});
+
+describe('useDebugSink with the URL config', () => {
+  it('keeps its sink when an override lays a highlight over the URL config and then lifts it', () => {
+    window.history.replaceState(null, '', '?debug=viewport');
+    try {
+      const { result, rerender } = renderHook(({ debug }: { debug: DebugFlags | undefined }) => useDebugSink(debug), {
+        initialProps: { debug: undefined as DebugFlags | undefined },
+      });
+      const { sink } = result.current;
+      expect(sink).not.toBeNull();
+      rerender({ debug: { viewport: true, highlight: ['a'] } });
+      expect(result.current.sink).toBe(sink);
+      rerender({ debug: undefined });
+      expect(result.current.sink).toBe(sink);
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
+  });
+});
+
+describe('useDebugSink under a discarded render', () => {
+  const never = new Promise<never>(() => {});
+  const Stall = (): ReactNode => { throw never; };
+  let sink: ReturnType<typeof useDebugSink>['sink'] = null;
+  const Host = ({ highlight, stall }: { highlight: string[]; stall: boolean }): ReactNode => {
+    sink = useDebugSink({ viewport: true, highlight }).sink;
+    return stall ? createElement(Stall) : null;
+  };
+  const tree = (highlight: string[], stall: boolean) =>
+    createElement(Suspense, { fallback: null }, createElement(Host, { highlight, stall }));
+
+  it('keeps the committed highlight when a render with another one is thrown away', async () => {
+    const { rerender } = render(tree(['a'], false));
+    await act(async () => { startTransition(() => rerender(tree(['b'], true))); });
+    await act(async () => { rerender(tree(['a'], false)); });
+    sink!.recordBounds('a', { x: 0, y: 0, width: 1, height: 1 });
+    sink!.recordBounds('b', { x: 0, y: 0, width: 1, height: 1 });
+    expect(sink!.snapshot().bounds.map((b) => b.id)).toEqual(['a']);
   });
 });
