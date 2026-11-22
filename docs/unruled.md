@@ -3822,3 +3822,7 @@ Calls the lanes made without a ruling:
   Shift+F10, names the kind every selected shape shares, and no kind when they differ. A right-click had named the
   clicked shape's kind and the keyboard only a lone selected shape's. Naming the clicked shape's kind on a
   right-click, which the keyboard cannot match, was the alternative.
+## Audit round seventy-two (2026-11-22): Mermaid diagrams, part one
+
+- 2026-11-22 (the fixer's call): every Mermaid reader throws, naming the line, on `accTitle {`, since only `accDescr`
+  opens a block and Mermaid reads no other. Reading it as the accessible title was the alternative.

@@ -11,7 +11,7 @@ import { IdMint, Warnings, graphPage } from '../../graphRead';
 import { readPageName } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { textLines } from '../common/text';
-import { SHAPE_OUTLINES } from '../flowchart/read';
+import { SHAPE_OUTLINES, warnMirrored } from '../flowchart/read';
 import { parseBlockDiagram, type BlockItem, type BlockLink, type BlockStmt } from './parse';
 
 /** Between a block diagram's columns, and its rows. */
@@ -43,7 +43,10 @@ class BlockReader {
     }
     if (item.text !== undefined) node.lines = textLines(item.text);
     if (item.shape === 'arrow') this.warnings.add('Mermaid block arrows read as rectangles; their directions were dropped.');
-    else if (item.shape !== undefined) node.outline = SHAPE_OUTLINES[item.shape] ?? this.unknownShape(item.shape);
+    else if (item.shape !== undefined) {
+      node.outline = SHAPE_OUTLINES[item.shape] ?? this.unknownShape(item.shape);
+      warnMirrored(item.shape, this.warnings);
+    }
     if (item.span !== undefined && item.span > 1) setOwn(this.grid.spans, item.id, item.span);
   }
 
@@ -79,7 +82,15 @@ class BlockReader {
           skip = 0;
         }
       } else if (s.kind === 'links') {
-        for (const end of s.ends) if (!this.groupIds.has(end.id)) this.block(end, members);
+        for (const end of s.ends) {
+          if (this.groupIds.has(end.id)) continue;
+          const fresh = !this.nodes.has(end.id);
+          this.block(end, members);
+          if (fresh && skip > 0) {
+            setOwn(this.grid.skips, end.id, skip);
+            skip = 0;
+          }
+        }
         s.links.forEach((link, k) => this.link(link, s.ends[k]!.id, s.ends[k + 1]!.id));
       } else if (s.kind === 'group') {
         const id = s.id ?? this.mint.next(ANONYMOUS_GROUP);

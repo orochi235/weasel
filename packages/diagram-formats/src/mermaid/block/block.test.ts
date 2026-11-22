@@ -94,6 +94,16 @@ describe('reading a Mermaid block diagram', () => {
     expect(Object.hasOwn(grid!.skips!, '__proto__') && grid!.skips!['__proto__']).toBe(1);
   });
 
+  it('places a space before a line of links ahead of that line\'s first new block', () => {
+    const { document, warnings } = readBlockDiagram('block-beta\n  columns 3\n  space\n  a --> b\n  c');
+    expect(onlyPage(document).layout?.options?.grid?.skips).toEqual({ a: 1 });
+    expect(warnings).toEqual([]);
+  });
+
+  it('warns that a lean-left block reads as its mirror image', () => {
+    expect(readBlockDiagram('block-beta\n  a[\\"x"\\]').warnings).toContain('Mermaid shapes read as their mirror images: lean-left.');
+  });
+
   it('joins a link to a group declared after it', () => {
     const read = readBlockDiagram('block-beta\n  x --> G\n  block:G\n    a\n  end');
     expect(onlyPage(read.document).data.nodes.map((n) => n.id)).toEqual(['x', 'a']);
@@ -154,5 +164,12 @@ describe('writing a Mermaid block diagram', () => {
   it('warns that an end it has no head for was written as an arrow', () => {
     const { warnings } = writeBlockDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { markerEnd: 'diamond' } }] } }] });
     expect(warnings).toContain('Mermaid block diagram links end in arrows; other ends were written as arrows.');
+  });
+
+  it('warns that a link\'s colors were dropped', () => {
+    const { warnings } = writeBlockDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { stroke: '#f00' } }],
+    } }] });
+    expect(warnings).toContain('Mermaid block diagram links have no styles; their colors were dropped.');
   });
 });

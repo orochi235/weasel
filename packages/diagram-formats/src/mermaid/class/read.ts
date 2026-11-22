@@ -22,6 +22,9 @@ export function headMarker(head: ClassHead | undefined, dashed: boolean): Marker
   return dashed ? 'arrow-open' : 'arrow';
 }
 
+/** A generic's nested `~` pairs as angle brackets: a `~` before a word character opens one, any other closes it. */
+const angled = (generic: string): string => generic.replace(/~(?=(\w)?)/g, (_, word: string | undefined) => (word !== undefined ? '<' : '>'));
+
 interface ClassDraft { label?: string; generic?: string; annotations: string[]; members: ClassMember[] }
 
 class ClassReader {
@@ -103,7 +106,7 @@ class ClassReader {
 /** A class's rows: its annotations and name, a divider, its attributes, a divider, its methods. */
 export function classRows(id: string, d: ClassDraft): Row[] {
   const label = (text: string): Row => ({ kind: 'label', text });
-  const name = `${d.label ?? id}${d.generic !== undefined ? `<${d.generic}>` : ''}`;
+  const name = `${d.label ?? id}${d.generic !== undefined ? `<${angled(d.generic)}>` : ''}`;
   return [
     ...d.annotations.map((a) => label(`<<${a}>>`)), label(name), { kind: 'divider' },
     ...d.members.filter((m) => !m.method).map((m) => label(m.text)), { kind: 'divider' },

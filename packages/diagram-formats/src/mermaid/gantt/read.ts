@@ -40,11 +40,8 @@ export function readMermaidGantt(text: string): ImportResult {
     if (task === 'vert') warnings.add('Mermaid gantt vertical markers were dropped.');
     else sections[sections.length - 1]!.tasks.push(task);
   }
-  const name = readPageName(src, warnings);
   const { title, ...rest } = settings;
-  if (title !== undefined && src.title !== undefined && title !== src.title) {
-    warnings.add('The front matter title was dropped; the chart is named by its title statement.');
-  }
+  const name = readPageName(src, warnings, title);
   const chartTitle = title || src.title;
   const data: GanttData = {
     kind: 'gantt',

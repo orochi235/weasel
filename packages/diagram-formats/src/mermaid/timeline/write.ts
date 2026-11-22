@@ -34,7 +34,8 @@ export function writeMermaidTimeline(page: PlotPage): ExportResult {
       }
       const events = period.events.filter((e) => e.trim() !== '');
       if (events.length < period.events.length) warnings.add('Mermaid holds no empty events; they were dropped.');
-      lines.push(`${indent}${[blank ? UNTITLED : lineOpening(text(period.label).trim(), ['title', 'section']), ...events.map(text)].join(' : ')}`);
+      const rest = events.map((e) => ` : ${text(e)}`).join('');
+      lines.push(`${indent}${blank ? UNTITLED : lineOpening(text(period.label).trim(), ['title', 'section'], rest)}${rest}`);
     }
   });
   return { text: `${lines.join('\n')}\n`, warnings: warnings.all() };

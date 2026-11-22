@@ -3,6 +3,7 @@ import { formatGanttEnd, formatGanttStart, setGanttTaskId, type GanttData, type 
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { freshId } from '@weasel-js/registry';
+import { warnDroppedPageName } from '../common/lines';
 import { lineOpening, spelledLine } from '../common/text';
 import { TAGS } from './parse';
 
@@ -45,16 +46,22 @@ function taskItems(task: GanttTask, before: GanttTask | undefined, ids: Readonly
   return [...items, idOf(task.id), `after ${idOf(before!.id!)}`, end];
 }
 
-/** Each task id the reader would take for a tag, as the first free `id_n`. `warnings` hears when there is one. */
+/** Each task id the reader would not read back as itself, as the first free `id_n`: one that is a tag word, and one
+ *  holding a comma or a space, each run of those written as `_`. `warnings` hears when there is one. */
 function taskIds(data: GanttData, warnings: Warnings): Map<string, string> {
-  const taken = new Set(data.sections.flatMap((s) => s.tasks.flatMap((t) => (t.id !== undefined ? [t.id] : []))));
+  const ids = new Set(data.sections.flatMap((s) => s.tasks.flatMap((t) => (t.id !== undefined ? [t.id] : []))));
+  const plain = (id: string) => id !== '' && !/[\s,]/.test(id) && !TAGS.has(id);
+  const taken = new Set([...ids].filter(plain));
   const out = new Map<string, string>();
-  for (const id of [...taken]) {
-    if (!TAGS.has(id)) continue;
-    const pick = freshId(id, taken, { sep: '_' });
+  for (const id of ids) {
+    if (plain(id)) continue;
+    const base = id.replace(/[\s,]+/g, '_') || 'task';
+    const pick = !TAGS.has(base) && !taken.has(base) ? base : freshId(base, taken, { sep: '_' });
     taken.add(pick);
     out.set(id, pick);
-    warnings.add('Mermaid reads a task id that is a tag word as a tag; those ids were renamed.');
+    warnings.add(TAGS.has(id)
+      ? 'Mermaid reads a task id that is a tag word as a tag; those ids were renamed.'
+      : 'Mermaid task ids hold no commas or spaces; those ids were renamed.');
   }
   return out;
 }
@@ -73,6 +80,7 @@ function settingLines(data: GanttData, text: (s: string) => string): string[] {
 export function writeMermaidGantt(page: PlotPage): ExportResult {
   if (page.data.kind !== 'gantt') throw new Error(`Mermaid writes this chart as a gantt only; the page holds a ${(page.data as { kind: string }).kind}`);
   const warnings = new Warnings();
+  warnDroppedPageName(page, (m) => warnings.add(m));
   const data = writableIds(page.data, warnings);
   const text = (s: string) => spelledLine(s, 'gantt', (m) => warnings.add(m));
   const lines = ['gantt', ...settingLines(data, text)];
@@ -87,7 +95,8 @@ export function writeMermaidGantt(page: PlotPage): ExportResult {
       warnings.add('Mermaid holds no unnamed section after the first; its tasks were written into the section before it.');
     }
     for (const task of section.tasks) {
-      lines.push(`${named ? '    ' : '  '}${lineOpening(text(task.name).trim(), STATEMENTS)} :${taskItems(task, before, ids).join(', ')}`);
+      const items = ` :${taskItems(task, before, ids).join(', ')}`;
+      lines.push(`${named ? '    ' : '  '}${lineOpening(text(task.name).trim(), STATEMENTS, items)}${items}`);
       before = task;
     }
   });

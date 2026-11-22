@@ -1,10 +1,10 @@
 /** One graph page as a Mermaid C4 diagram: shapes as elements by their `<<kind>>` row, containers as boundaries. */
-import type { DataEdge, DataNode, EdgeStyle, NodeStyle } from '@weasel-js/diagram';
+import { dataEdgeStyle, type DataEdge, type DataNode, type EdgeStyle, type NodeStyle } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
-import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
+import { changed, edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { arrowHead } from '../common/styles';
 import { mermaidIds, mermaidQuoted, oneLine } from '../common/text';
-import { elementParts, hasTechnology, macroOf } from './kinds';
+import { elementParts, hasTechnology, macroOf, smallLines } from './kinds';
 import { C4_HEADERS } from './parse';
 import { BOUNDARY_TYPES, C4_NOTATIONS } from './read';
 
@@ -35,7 +35,9 @@ class C4Writer {
   }
 
   element(n: DataNode, indent: string): void {
-    const { kind, name, technology, description } = elementParts(nodeLines(n, this.out.warnings, 'Mermaid'), n.outline, n.style, (m) => this.out.warnings.add(m));
+    const { kind, name, technology, description } = elementParts(
+      nodeLines(n, this.out.warnings, 'Mermaid'), n.outline, n.style, (m) => this.out.warnings.add(m), n.rows && smallLines(n.rows),
+    );
     if (technology !== undefined && !hasTechnology(kind)) this.out.warnings.add('Mermaid C4 people and systems have no technology; it was written into the description.');
     const tech = hasTechnology(kind) ? [technology] : [];
     const desc = !hasTechnology(kind) && technology !== undefined ? `[${technology}] ${description}`.trim() : description;
@@ -79,7 +81,8 @@ class C4Writer {
     }
     const m = /^(.*?)(?: \[([^\]]*)\])?$/s.exec(e.label ?? '')!;
     this.lines.push(`  ${macro}(${args([this.id(e.from), this.id(e.to), m[1]!, m[2]], 2)})`);
-    this.relColors(e, e.colors);
+    const role = e.style !== undefined ? changed(dataEdgeStyle({ style: e.style }, this.out.theme), dataEdgeStyle({}, this.out.theme)) : {};
+    this.relColors(e, { ...(role.stroke !== undefined ? { stroke: role.stroke } : {}), ...(role.label !== undefined ? { label: role.label } : {}), ...e.colors });
   }
 
   relColors(e: DataEdge, colors: Partial<EdgeStyle> | undefined): void {

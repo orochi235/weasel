@@ -43,13 +43,9 @@ export function frontMatter(text: string): FrontMatter {
 
 /** The first statement's line, its first word, and its line number, read before lexing so another diagram kind's syntax is never lexed. */
 export function headerWord(text: string): { word: string; text: string; line: number } | null {
-  const lines = text.split(/\r\n?|\n/);
-  let k = 0;
-  if (/^---\s*$/.test(lines[0] ?? '')) {
-    k = 1;
-    while (k < lines.length && !/^---\s*$/.test(lines[k]!)) k++;
-    k++;
-  }
+  const source = text.replace(/\r\n?/g, '\n');
+  const lines = source.split('\n');
+  let k = frontMatter(source).lines;
   let directive = false;
   for (; k < lines.length; k++) {
     const l = lines[k]!.trim();

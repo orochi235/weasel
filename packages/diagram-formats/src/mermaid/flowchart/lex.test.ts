@@ -80,6 +80,11 @@ describe('lexFlowchart', () => {
     ]);
   });
 
+  it('counts the lines node metadata runs over', () => {
+    const tokens = lexFlowchart('flowchart TD\nA@{\n  shape: rect,\n  label: "x"\n}\nB').tokens;
+    expect(tokens.find((t) => t.kind === 'word' && t.value === 'B')!.line).toBe(6);
+  });
+
   it('names the line of what it cannot read', () => {
     expect(() => lexFlowchart('flowchart TD\nA[open\nB')).toThrow(/Mermaid, line 2/);
     expect(() => lexFlowchart('flowchart TD\n\nA --> B ^ C')).toThrow(/line 3.*"\^"/);

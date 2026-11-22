@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { diagramThemeFrom, type DataNode } from '@weasel-js/diagram';
+import { dataEdgeStyle, diagramThemeFrom, type DataNode } from '@weasel-js/diagram';
 import { laidOutPage } from '../../pageLayout';
 import { onlyPage, sortedPage } from '../../testing/samePage';
 import { parseC4 } from './parse';
@@ -58,7 +58,7 @@ describe('reading a Mermaid C4 diagram', () => {
   it('warns that a front matter title or an accessible title was dropped for a title statement', () => {
     const front = readC4('---\ntitle: A\n---\nC4Context\n  title B');
     expect(onlyPage(front.document).name).toBe('B');
-    expect(front.warnings).toEqual(['The front matter title was dropped; the page is named by its title statement.']);
+    expect(front.warnings).toEqual(['The front matter title was dropped; the title statement names the chart.']);
     expect(readC4('C4Context\n  accTitle: A\n  title B').warnings).toEqual(['Mermaid accessible titles were dropped; the page is named by the title.']);
     expect(readC4('---\ntitle: B\n---\nC4Context\n  title B').warnings).toEqual([]);
   });
@@ -106,6 +106,21 @@ describe('writing a Mermaid C4 diagram', () => {
     expect(text).toContain('  Rel_D(spa, db, "Reads from and writes to", "JDBC")\n  BiRel(spa, events, "Streams")\n  Rel_Back(audit, db, "Reads")\n');
     expect(text).toContain('  UpdateElementStyle(customer, $bgColor="gray", $fontColor="white", $borderColor="black")\n');
     expect(text).toContain('  UpdateRelStyle(customer, spa, $textColor="blue", $lineColor="blue")\n');
+  });
+
+  it('keeps a description shaped like a technology as the description', () => {
+    const read = readC4('C4Container\n  Container(a, "Api", "", "[beta]")\n  Person(u, "User", "[vip]")');
+    const { text, warnings } = writeC4(read.document);
+    expect(text).toContain('  Container(a, "Api", "", "[beta]")\n  Person(u, "User", "[vip]")\n');
+    expect(warnings).toEqual([]);
+  });
+
+  it('writes a relationship\'s colors from its theme role', () => {
+    const { text } = writeC4({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', style: 'accent' }],
+    } }] });
+    const stroke = dataEdgeStyle({ style: 'accent' }, diagramThemeFrom(undefined)).stroke;
+    expect(text).toContain(`  UpdateRelStyle(a, b, $textColor="${stroke}", $lineColor="${stroke}")`);
   });
 
   it('writes a plain page as systems, people by their outline, and containers as boundaries', () => {

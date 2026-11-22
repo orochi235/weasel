@@ -36,7 +36,13 @@ describe('reading a Mermaid gantt', () => {
     expect(critical[5]).toEqual({ name: 'Add to mermaid', start: { kind: 'previous' }, end: { kind: 'until', ids: ['isadded'] } });
     expect(critical[6]).toMatchObject({ id: 'isadded', tags: ['milestone'], end: { kind: 'duration', amount: 0, unit: 'd' } });
     expect(docs[1]).toEqual({ name: 'Add gantt diagram to demo page', start: { kind: 'after', ids: ['a1'] }, end: { kind: 'duration', amount: 20, unit: 'h' } });
-    expect(warnings).toEqual(['The front matter title was dropped; the chart is named by its title statement.']);
+    expect(warnings).toEqual(['The front matter title was dropped; the title statement names the chart.']);
+  });
+
+  it('warns that an accessible title was dropped where a title statement names the chart', () => {
+    const { document, warnings } = readMermaidGantt('gantt\n  title Plan\n  accTitle: Roadmap\n  A :a, 2024-01-01, 1d');
+    expect(document.pages[0]!.name).toBe('Plan');
+    expect(warnings).toEqual(['Mermaid accessible titles were dropped; the page is named by the title.']);
   });
 
   it('warns of the statements and markers it drops', () => {
@@ -139,6 +145,28 @@ describe('writing a Mermaid gantt', () => {
     expect(tasks).toMatchObject({ sections: [{ tasks: [{ name: 'A', id: 'done_1' }, { name: 'B', start: { kind: 'after', ids: ['done_1'] } }] }] });
     expect((tasks as GanttData).sections[0]!.tasks[0]!.tags).toBeUndefined();
     expect(warnings).toContain('Mermaid reads a task id that is a tag word as a tag; those ids were renamed.');
+  });
+
+  it('keeps a task named accTitle or accDescr a task', () => {
+    const task = (name: string) => ({ name, start: { kind: 'date' as const, date: '2024-01-01' }, end: { kind: 'duration' as const, amount: 1, unit: 'd' as const } });
+    const data: GanttData = { kind: 'gantt', dateFormat: 'YYYY-MM-DD', sections: [{ tasks: [task('accTitle'), task('accDescr')] }] };
+    expect(ganttOf(writeMermaidGantt(pageOf(data)).text).sections[0]!.tasks.map((t) => t.name)).toEqual(['accTitle', 'accDescr']);
+  });
+
+  it('warns of a page name its title does not match', () => {
+    const data: GanttData = { kind: 'gantt', sections: [] };
+    expect(writeMermaidGantt({ ...pageOf(data), name: 'Q3 plan' }).warnings).toContain('Mermaid names a chart by its title; a page name the title does not match was dropped.');
+  });
+
+  it('renames a task id holding a comma or a space, with a warning, and the starts naming it', () => {
+    const data: GanttData = { kind: 'gantt', dateFormat: 'YYYY-MM-DD', sections: [{ tasks: [
+      { name: 'A', id: 'a,b', start: { kind: 'date', date: '2024-01-01' }, end: { kind: 'duration', amount: 3, unit: 'd' } },
+      { name: 'B', id: 'c d', start: { kind: 'date', date: '2024-01-02' }, end: { kind: 'duration', amount: 1, unit: 'd' } },
+      { name: 'C', start: { kind: 'after', ids: ['a,b', 'c d'] }, end: { kind: 'duration', amount: 1, unit: 'd' } },
+    ] }] };
+    const { text, warnings } = writeMermaidGantt(pageOf(data));
+    expect(ganttOf(text).sections[0]!.tasks).toMatchObject([{ id: 'a_b' }, { id: 'c_d' }, { start: { kind: 'after', ids: ['a_b', 'c_d'] } }]);
+    expect(warnings).toContain('Mermaid task ids hold no commas or spaces; those ids were renamed.');
   });
 });
 

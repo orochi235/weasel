@@ -1,12 +1,13 @@
 /** A plot page holding a user journey as Mermaid `journey` text. */
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
+import { warnDroppedPageName } from '../common/lines';
 import { oneLine } from '../common/text';
 
 /** A step's name as it opens its line: `(untitled)` for none, since Mermaid reads a step only with a name, a leading
  *  `%%` dropped, which would make the line a comment, the `{` after a leading `accTitle` or `accDescr` dropped, which
- *  would open accessibility text, and `null` for a name whose first word is `title` or `section`,
- *  which Mermaid reads as that statement. */
+ *  would open accessibility text, and `null` for a name whose first word is `title` or `section`, or that is
+ *  `accTitle` or `accDescr`, which Mermaid reads as that statement. */
 function stepName(name: string, warn: (m: string) => void): string | null {
   let out = name;
   if (out.startsWith('%%')) {
@@ -21,6 +22,10 @@ function stepName(name: string, warn: (m: string) => void): string | null {
     warn('Mermaid reads a step named "title …" or "section …" as that statement; those steps were dropped.');
     return null;
   }
+  if (/^acc(?:Title|Descr)$/.test(out)) {
+    warn('Mermaid reads a step named "accTitle" or "accDescr" as accessibility text; those steps were dropped.');
+    return null;
+  }
   if (out !== '') return out;
   warn('Mermaid reads a step only with a name; steps with none were written as "(untitled)".');
   return '(untitled)';
@@ -31,6 +36,7 @@ export function writeMermaidJourney(page: PlotPage): ExportResult {
   const data = page.data;
   if (data.kind !== 'journey') throw new Error(`Mermaid writes this chart as a journey only; the page holds a ${(data as { kind: string }).kind}`);
   const warnings = new Warnings();
+  warnDroppedPageName(page, (m) => warnings.add(m));
   const plain = (text: string, syntax: RegExp): string => {
     const s = oneLine(text, 'journey', (m) => warnings.add(m));
     if (!syntax.test(s)) return s.trim();

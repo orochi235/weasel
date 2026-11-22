@@ -44,7 +44,7 @@ export function writeErDiagram(doc: DiagramDocument, opts?: WriteOptions): Expor
   const { page } = out;
   if (page.data.nodes.some((n) => n.at !== undefined)) out.warnings.add('Mermaid holds no positions; the page is laid out again when read.');
   if (out.clusters.length > 0) out.warnings.add('Mermaid ER diagrams have no containers; they were dropped.');
-  const ids = mermaidIds(page.data.nodes.map((n) => n.id));
+  const ids = mermaidIds(page.data.nodes.map((n) => n.id), { id: /^(?!.*--)[\w-]+$/ });
   const lines = [...titleLines(page.name), 'erDiagram'];
   if (page.direction !== undefined && page.direction !== 'down') lines.push(`  direction ${HEADER[page.direction]}`);
   for (const n of page.data.nodes) {
@@ -55,7 +55,10 @@ export function writeErDiagram(doc: DiagramDocument, opts?: WriteOptions): Expor
     else lines.push(`  ${head} {`, ...attributes.map((a) => `    ${a}`), '  }');
   }
   for (const e of out.edges) {
-    if (!ids.has(e.from) || !ids.has(e.to)) continue;
+    if (!ids.has(e.from) || !ids.has(e.to)) {
+      out.warnings.add('Mermaid ER relationships join entities; connectors to containers were dropped.');
+      continue;
+    }
     dropPorts(e, (m) => out.warnings.add(m));
     const style = edgeStyleIn(out, e);
     const body = style.dash !== undefined ? '..' : '--';

@@ -23,4 +23,9 @@ describe('Mermaid timeline, shrunk counterexamples', () => {
     };
     expect(back(data).sections[0]!.periods).toEqual([{ label: '#58;', events: ['#35;'] }, { label: 'title x', events: [] }, { label: '%%y', events: ['e'] }]);
   });
+
+  it('keeps a period labeled accTitle or accDescr, with its events', () => {
+    const data: TimelineData = { kind: 'timeline', sections: [{ name: 's', periods: [{ label: 'accTitle', events: ['a'] }, { label: 'accDescr', events: ['b'] }] }] };
+    expect(back(data).sections[0]!.periods).toEqual([{ label: 'accTitle', events: ['a'] }, { label: 'accDescr', events: ['b'] }]);
+  });
 });

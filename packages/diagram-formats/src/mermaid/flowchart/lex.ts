@@ -145,7 +145,9 @@ class MermaidLexer {
     } else if (text.startsWith('@{', this.i)) {
       const end = metaEnd(text, this.i + 2);
       if (end < 0) throw fail(line, 'node metadata is never closed');
-      this.push({ kind: 'meta', value: text.slice(this.i + 2, end), line });
+      const value = text.slice(this.i + 2, end);
+      this.push({ kind: 'meta', value, line });
+      for (const ch of value) if (ch === '\n') this.line++;
       this.i = end + 1;
     } else if (c === '|') {
       this.push({ kind: 'pipe', value: this.delimited('|', '|'), line });

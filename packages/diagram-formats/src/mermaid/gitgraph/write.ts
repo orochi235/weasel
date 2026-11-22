@@ -1,7 +1,7 @@
 /** A plot page holding a gitgraph as Mermaid `gitGraph` text: front matter for its title, then a line per command. */
 import type { GitCommand } from '@weasel-js/plot';
 import type { ExportResult, PlotPage } from '../../document';
-import { titleLines } from '../common/lines';
+import { titleLines, warnDroppedPageName } from '../common/lines';
 import { oneLine } from '../common/text';
 
 type Warn = (m: string) => void;
@@ -64,6 +64,7 @@ export function writeMermaidGitGraph(page: PlotPage): ExportResult {
   const warn: Warn = (m) => {
     if (!warnings.includes(m)) warnings.push(m);
   };
+  warnDroppedPageName(page, warn);
   const header = data.orientation === undefined ? 'gitGraph' : `gitGraph ${data.orientation}:`;
   const lines = [...frontLines(data.title, data.mainBranch ?? 'main'), header, ...data.commands.map((c) => `  ${commandLine(c, warn)}`)];
   return { text: `${lines.join('\n')}\n`, warnings };

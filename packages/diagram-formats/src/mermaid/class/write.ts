@@ -31,6 +31,20 @@ export function classParts(node: DataNode): { annotations: string[]; name: strin
   return { annotations, name: names[0] ?? node.id, attributes, methods };
 }
 
+/** Whether every `<` in `text` closes, in order, and nothing else does: a generic Mermaid's tildes can nest. */
+function balanced(text: string): boolean {
+  let depth = 0;
+  for (const c of text) {
+    if (c === '<') depth += 1;
+    else if (c === '>' && --depth < 0) return false;
+  }
+  return depth === 0 && !/~|<>/.test(text);
+}
+
+/** The ids the reader takes for a class and a namespace, less any holding `--`, which reads as a line. */
+const CLASS_ID = /^(?!.*--)[\w-]+$/;
+const NAMESPACE_ID = /^(?!.*--)[\w.-]+$/;
+
 const HEADS: Readonly<Record<string, readonly [string, string]>> = {
   'triangle-hollow': ['<|', '|>'], diamond: ['*', '*'], 'diamond-hollow': ['o', 'o'], arrow: ['<', '>'], 'arrow-open': ['<', '>'],
 };
@@ -41,7 +55,8 @@ class ClassWriter {
   readonly notes = new Map<string, DataEdge | null>();
 
   constructor(readonly out: GraphOut) {
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds]);
+    const classes = mermaidIds(out.page.data.nodes.map((n) => n.id), { id: CLASS_ID });
+    this.ids = new Map([...classes, ...mermaidIds([...out.clusterIds], { id: NAMESPACE_ID, reserved: [...classes.values()] })]);
     for (const n of out.page.data.nodes) {
       if (n.outline !== 'note') continue;
       const own = out.edges.filter((e) => e.from === n.id || e.to === n.id);
@@ -59,9 +74,9 @@ class ClassWriter {
     if (this.notes.has(node.id)) return;
     const { annotations, name, attributes, methods } = classParts(node);
     const id = this.id(node.id);
-    const generic = /^(.*)<([^<>]*)>$/.exec(name);
+    const generic = /^([^<>]*)<(.*)>$/.exec(name);
     const head = name === id ? id
-      : generic !== null && generic[1] === id ? `${id}~${generic[2]}~`
+      : generic !== null && generic[1] === id && balanced(generic[2]!) ? `${id}~${generic[2]!.replace(/[<>]/g, '~')}~`
         : `${id}["${spelled(name)}"]`;
     const members = [...attributes, ...methods].map((m) => oneLine(m, 'class diagram member', (w) => this.out.warnings.add(w)).trim());
     const kept = members.filter((m) => m !== '}' && readsAsStatement(m));
@@ -94,6 +109,10 @@ class ClassWriter {
     const style = edgeStyleIn(this.out, e);
     const card = (text: string | undefined) => (text !== undefined ? ` "${spelled(text)}"` : '');
     const line = style.dash !== undefined ? '..' : '--';
+    const drawn = line === '..' ? 'arrow-open' : 'arrow';
+    if ([style.markerStart, style.markerEnd].some((m) => (m === 'arrow' || m === 'arrow-open') && m !== drawn)) {
+      this.out.warnings.add('Mermaid class relations draw an open arrow on a dashed line and a filled one on a solid line; other arrows were written as their line\'s.');
+    }
     const label = e.label !== undefined && e.label !== '' ? ` : ${spelled(e.label)}` : '';
     const arrow = `${this.head(style.markerStart, 0)}${line}${this.head(style.markerEnd, 1)}`;
     return `  ${this.id(e.from)}${card(e.endLabels?.from)} ${arrow}${card(e.endLabels?.to)} ${this.id(e.to)}${label}`;

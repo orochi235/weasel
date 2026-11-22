@@ -94,7 +94,7 @@ describe('writing a Mermaid architecture diagram', () => {
       kind: 'graph', id: 'p', width: 100, height: 100,
       data: { nodes: [{ id: 'a', lines: ['A'], outline: 'hexagon' }, { id: 'b', colors: { fill: '#fff' } }], edges: [{ from: 'a', to: 'b', label: 'x' }] },
     }] });
-    expect(text).toBe('architecture-beta\n  service a[A]\n  service b\n  a:R --> L:b\n');
+    expect(text).toBe('architecture-beta\n  service a[A]\n  service b[]\n  a:R --> L:b\n');
     expect(warnings).toEqual([
       'Mermaid architecture services wear only its built-in icons; other outlines were dropped.',
       'Mermaid architecture edges have no labels; they were dropped.',
@@ -119,5 +119,23 @@ describe('writing a Mermaid architecture diagram', () => {
   it('warns that an end it has no head for was written as an arrow', () => {
     const { warnings } = writeArchitecture({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { markerEnd: 'diamond' } }] } }] });
     expect(warnings).toContain('Mermaid architecture links end in arrows; other ends were written as arrows.');
+  });
+
+  it('warns that a group\'s colors were dropped', () => {
+    const { warnings } = writeArchitecture({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a' }], edges: [], containers: [{ id: 'g', role: 'container', members: ['a'], colors: { fill: '#fee' } }],
+    } }] });
+    expect(warnings).toContain('Mermaid architecture diagrams have no styles; colors were dropped.');
+  });
+
+  it('writes a service with no text as an empty title, which reads back with none', () => {
+    const { text } = writeArchitecture({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'b', lines: [] }], edges: [] } }] });
+    expect(page(text).data.nodes[0]!.lines).toEqual([]);
+  });
+
+  it('keeps a service\'s lines apart, without a warning', () => {
+    const { text, warnings } = writeArchitecture({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a', lines: ['web', 'tier'] }], edges: [] } }] });
+    expect(page(text).data.nodes[0]!.lines).toEqual(['web', 'tier']);
+    expect(warnings).toEqual([]);
   });
 });

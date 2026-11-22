@@ -45,7 +45,7 @@ describe('reading a Mermaid journey', () => {
 
   it('warns on what it drops', () => {
     const { warnings } = readMermaidJourney('---\ntitle: Front\n---\n%%{init: {}}%%\njourney\n  title Own\n  A: 3');
-    expect(warnings).toEqual(['Mermaid configuration directives were dropped.', 'The front matter title was dropped; the chart is titled by its own.']);
+    expect(warnings).toEqual(['Mermaid configuration directives were dropped.', 'The front matter title was dropped; the title statement names the chart.']);
   });
 
   it('throws, naming the line, on what it cannot read', () => {
@@ -97,11 +97,31 @@ describe('writing a Mermaid journey', () => {
     expect(() => writeMermaidJourney({ ...page, data: { kind: 'pie', slices: [] } })).toThrow(/as a journey only; the page holds a pie/);
   });
 
+  it('warns that an accessible title was dropped where a title statement names the chart', () => {
+    const { document, warnings } = readMermaidJourney('journey\n  title Day\n  accTitle: Morning\n  section s\n    a: 3: Me');
+    expect(document.pages[0]!.name).toBe('Day');
+    expect(warnings).toEqual(['Mermaid accessible titles were dropped; the page is named by the title.']);
+  });
+
   it('drops the "{" after a step name opening accDescr, with a warning, so the journey reads back', () => {
     const data = { kind: 'journey' as const, sections: [{ tasks: [{ name: 'accDescr { x', score: 3, actors: [] }, { name: 'b', score: 2, actors: [] }] }] };
     const { text, warnings } = writeMermaidJourney({ kind: 'plot', id: 'p', width: 10, height: 10, data });
     expect(plotOf(text).data).toMatchObject({ sections: [{ tasks: [{ name: 'accDescr x' }, { name: 'b' }] }] });
     expect(warnings).toContain('Mermaid reads a line opening "accTitle {" or "accDescr {" as accessibility text; that "{" in step names was dropped.');
+  });
+
+  it('drops a step named accTitle or accDescr, with a warning, rather than read it as accessibility text', () => {
+    const data = { kind: 'journey' as const, sections: [{ tasks: [{ name: 'accTitle', score: 3, actors: ['Me'] }, { name: 'accDescr {', score: 2, actors: [] }, { name: 'b', score: 2, actors: [] }] }] };
+    const { text, warnings } = writeMermaidJourney({ kind: 'plot', id: 'p', width: 10, height: 10, data });
+    const back = readMermaidJourney(text);
+    expect(plotOf(text).data).toMatchObject({ sections: [{ tasks: [{ name: 'b' }] }] });
+    expect(back.document.pages[0]!.name).toBeUndefined();
+    expect(warnings).toContain('Mermaid reads a step named "accTitle" or "accDescr" as accessibility text; those steps were dropped.');
+  });
+
+  it('warns of a page name its title does not match', () => {
+    const data = { kind: 'journey' as const, title: 'Day', sections: [] };
+    expect(writeMermaidJourney({ kind: 'plot', id: 'p', width: 10, height: 10, name: 'Trip', data }).warnings).toContain('Mermaid names a chart by its title; a page name the title does not match was dropped.');
   });
 });
 

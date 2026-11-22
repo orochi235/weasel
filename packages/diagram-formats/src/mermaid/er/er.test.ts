@@ -80,6 +80,19 @@ describe('writing a Mermaid ER diagram', () => {
     expect(text).toContain('a ||--|| b : ""');
   });
 
+  it('writes an id holding a hyphen as itself, as it reads one', () => {
+    const { text } = writeErDiagram(readErDiagram('erDiagram\n  LINE-ITEM ||--o{ ORDER : has').document);
+    expect(text).toContain('  LINE-ITEM ||--o{ ORDER : "has"');
+  });
+
+  it('drops a connector to a container, with a warning', () => {
+    const { text, warnings } = writeErDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'g' }], containers: [{ id: 'g', role: 'container', members: ['b'] }],
+    } }] });
+    expect(text).not.toContain('--');
+    expect(warnings).toContain('Mermaid ER relationships join entities; connectors to containers were dropped.');
+  });
+
   it('keeps an entity\'s name when its id is written cleaned', () => {
     const text = writeErDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'my entity', lines: ['my entity'] }], edges: [] } }] }).text;
     expect(page(text).data.nodes[0]!.rows?.[0]).toEqual({ kind: 'label', text: 'my entity' });

@@ -27,6 +27,11 @@ describe('parseFlowchart', () => {
     expect(metaOf('flowchart TD\nA@{ label: "a}b" }')).toEqual({ label: 'a}b' });
   });
 
+  it('reads metadata pairs set on lines of their own, as YAML writes them', () => {
+    const metaOf = (src: string) => (parseFlowchart(src).stmts[0] as { groups: { meta?: Record<string, string> }[][] }).groups[0]![0]!.meta;
+    expect(metaOf('flowchart TD\nA@{\n  shape: rect\n  label: "x"\n}')).toEqual({ shape: 'rect', label: 'x' });
+  });
+
   it('reads a metadata key named __proto__ as data', () => {
     const { stmts } = parseFlowchart('flowchart TD\nD@{ __proto__: hex }');
     const meta = (stmts[0] as { groups: { meta?: Record<string, string> }[][] }).groups[0]![0]!.meta!;

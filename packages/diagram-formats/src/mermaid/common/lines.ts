@@ -60,6 +60,7 @@ export function statementsOf(text: string): MermaidSource {
     }
     if (trimmed === '' || trimmed.startsWith('%%')) continue;
     const acc = /^acc(Title|Descr)\s*(?::\s*(.*)|\{\s*(.*))$/s.exec(trimmed);
+    if (acc !== null && acc[1] === 'Title' && acc[3] !== undefined) throw lineError('Mermaid', line, 'accTitle takes one line after a colon; only accDescr opens a block');
     if (acc !== null && acc[3] === undefined) {
       if (acc[1] === 'Title') accTitle = acc[2]!.trim();
       else accDescr = acc[2]!.trim();

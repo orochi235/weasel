@@ -12,10 +12,10 @@ const OUTLINE_ICONS = new Map(Object.entries(ICON_OUTLINES).map(([icon, outline]
 const PORT_SIDES = new Map(Object.entries(SIDE_PORTS).map(([side, port]) => [port, side as ArchSide]));
 
 /** A title's text as Mermaid's brackets hold it: one line. */
-const oneTitle = (lines: readonly string[], warn: (m: string) => void): string => oneLine(lines.join(' '), 'architecture', warn).trim();
+const oneTitle = (text: string, warn: (m: string) => void): string => oneLine(text, 'architecture', warn).trim();
 
-/** A title as Mermaid's brackets hold it: escaped, its closing brackets spelled as entities. */
-const title = (text: string): string => mermaidEscaped([text], { also: /\]/g });
+/** A title as Mermaid's brackets hold it: escaped, its closing brackets spelled as entities, its lines joined by `<br>`. */
+const title = (lines: readonly string[]): string => mermaidEscaped(lines, { also: /\]/g });
 
 class ArchWriter {
   readonly lines: string[] = [];
@@ -45,7 +45,7 @@ class ArchWriter {
   }
 
   group(c: Cluster): void {
-    this.lines.push(`  group ${this.id(c.id)}${c.label !== undefined ? `[${title(oneTitle([c.label], (m) => this.out.warnings.add(m)))}]` : ''}${this.in(c.id)}`);
+    this.lines.push(`  group ${this.id(c.id)}${c.label !== undefined ? `[${title([oneTitle(c.label, (m) => this.out.warnings.add(m))])}]` : ''}${this.in(c.id)}`);
     for (const k of c.clusters) this.group(k);
   }
 
@@ -59,8 +59,8 @@ class ArchWriter {
     if (icon === undefined && n.outline !== undefined && n.outline !== 'roundRect') {
       this.out.warnings.add('Mermaid architecture services wear only its built-in icons; other outlines were dropped.');
     }
-    const one = oneTitle(text, (m) => this.out.warnings.add(m));
-    const named = text.length === 0 || one === this.id(n.id) ? '' : `[${title(one)}]`;
+    const lines = text.map((t) => t.trim());
+    const named = lines.length === 1 && lines[0] === this.id(n.id) ? '' : `[${title(lines)}]`;
     this.lines.push(`  service ${this.id(n.id)}${icon !== undefined ? `(${icon})` : ''}${named}${this.in(n.id)}`);
   }
 
@@ -104,7 +104,8 @@ export function writeArchitecture(doc: DiagramDocument, opts?: WriteOptions): Ex
   for (const c of out.clusters) w.group(c);
   for (const n of out.page.data.nodes) w.node(n);
   for (const e of out.edges) w.edge(e);
-  if (out.page.data.nodes.some((n) => n.colors !== undefined) || out.edges.some((e) => e.colors?.stroke !== undefined)) {
+  const { nodes, containers = [] } = out.page.data;
+  if ([...nodes, ...containers].some((n) => n.colors !== undefined) || out.edges.some((e) => e.colors?.stroke !== undefined)) {
     out.warnings.add('Mermaid architecture diagrams have no styles; colors were dropped.');
   }
   return { text: `${w.lines.join('\n')}\n`, warnings: out.warnings.all() };

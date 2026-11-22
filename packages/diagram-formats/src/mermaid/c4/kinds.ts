@@ -67,8 +67,15 @@ export function elementRows(kind: C4Kind, name: string, technology: string | und
   ];
 }
 
-/** An element's parts again from its rows, `warn` hearing of a kind row naming a kind C4 lacks; a box with no `<<kind>>` row is a system, or a person, store, or queue by its outline. */
-export function elementParts(lines: readonly string[], outline: Outline | undefined, role: string | undefined, warn: (m: string) => void) {
+/** For each text line of `rows`, as `rowLines` lists them, whether it is in the small type {@link elementRows} sets a
+ *  technology in. */
+export const smallLines = (rows: readonly Row[]): boolean[] => rows
+  .filter((r) => r.kind === 'label' || r.kind === 'header' || r.kind === 'field')
+  .map((r) => r.kind === 'label' && r.style?.fontSize === SMALL.fontSize);
+
+/** An element's parts again from its rows, `warn` hearing of a kind row naming a kind C4 lacks; a box with no `<<kind>>` row is a system, or a person, store, or queue by its outline. Where `small` is given, a
+ *  `[technology]` line is one only in small type, so a description that reads `[x]` stays one. */
+export function elementParts(lines: readonly string[], outline: Outline | undefined, role: string | undefined, warn: (m: string) => void, small?: readonly boolean[]) {
   const person = /^<<(external_)?person_(?:db|queue)>>$/.exec(lines[0] ?? '');
   if (person !== null) warn('Mermaid C4 has no store or queue of people; they were written as people.');
   const named = person !== null ? { base: 'person' as const, external: person[1] !== undefined } : kindOfStereotype(lines[0] ?? '');
@@ -77,7 +84,7 @@ export function elementParts(lines: readonly string[], outline: Outline | undefi
     base: outline === 'person' || outline === 'actor' ? 'person' : 'system', external: role === 'muted',
     ...(outline === 'cylinder' ? { variant: 'db' as const } : outline === 'queue' ? { variant: 'queue' as const } : {}),
   };
-  const tech = /^\[(.*)\]$/s.exec(rest[1] ?? '');
+  const tech = small === undefined || small[lines.length - rest.length + 1] === true ? /^\[(.*)\]$/s.exec(rest[1] ?? '') : null;
   return {
     kind, name: rest[0] ?? '', technology: tech?.[1],
     description: rest.slice(tech !== null ? 2 : 1).join(' '),
