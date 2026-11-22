@@ -27,6 +27,17 @@ describe('strokeReachAt', () => {
 });
 
 describe('cullDrawCommands', () => {
+  it('keeps a retain group whole, with its own children array, when part of it is on screen', () => {
+    const group: GroupDrawCommand = { kind: 'group', retain: 'big', children: [rect(100, 100), rect(5000, 100)] };
+    const out = cullDrawCommands([group], I, SCREEN, 1);
+    expect(out[0]).toBe(group);
+  });
+
+  it('drops a retain group wholly off screen', () => {
+    const group: GroupDrawCommand = { kind: 'group', retain: 'big', children: [rect(5000, 100), rect(6000, 100)] };
+    expect(cullDrawCommands([group], I, SCREEN, 1)).toEqual([]);
+  });
+
   it('drops a path wholly outside the screen and keeps one inside', () => {
     const inside = rect(100, 100);
     const far = rect(5000, 100);
