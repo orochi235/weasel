@@ -129,7 +129,7 @@ describe('pathSnapSource', () => {
     expect(run(live, { kinds: { nearest: false, midpoint: false } }, {}, { x: 51, y: 50 }).held).toBe(false);
   });
 
-  it('skips the nodes a gesture moves, and offers only the ones it includes', () => {
+  it('skips the nodes a gesture moves', () => {
     const skipped = run(cross, { kinds: { nearest: false, midpoint: false } }, { ids: [asNodeId('b')] }, { x: 51, y: 50 });
     expect(skipped.held).toBe(false);
     const q = (extra: Partial<SnapCollect>) => {
@@ -140,8 +140,8 @@ describe('pathSnapSource', () => {
       };
       return [...src.collect(base)];
     };
-    expect(q({ include: ['b'] })).toHaveLength(1);
-    expect(q({ include: [] })).toHaveLength(0);
+    expect(q({})).toHaveLength(2);
+    expect(q({ exclude: ['a'] })).toHaveLength(1);
     expect(q({ scene: undefined as never })).toHaveLength(0);
   });
 

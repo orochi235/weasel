@@ -2,6 +2,7 @@ import type { SnapCandidate, SnapResolution, Vec } from '@weasel-js/geom/nd';
 import { distinct } from './marks';
 import type { SnapCollect, SnapGesture, SnapMark, SnapProbeAt, SnapSource, SourceCandidate } from './types';
 import { maxOf } from '@weasel-js/geom';
+import type { SnapBegin } from 'interactions/actions/snapDep';
 
 const DEFAULT_GESTURES: readonly SnapGesture[] = ['point', 'move', 'resize'];
 
@@ -19,6 +20,15 @@ export function assertSnapSourceIds(sources: readonly Pick<SnapSource<unknown>, 
     }
     seen.add(id);
   }
+}
+
+/** The sources one gesture asks: `asked`, less those `req.omit` names, then
+ *  `req.sources`. Throws if two of them share an id. */
+export function sourcesForRequest(asked: readonly SnapSource[], req: Pick<SnapBegin, 'sources' | 'omit'>): SnapSource[] {
+  const omit = new Set(req.omit);
+  const out = [...asked.filter((s) => !omit.has(s.id)), ...(req.sources ?? [])];
+  assertSnapSourceIds(out);
+  return out;
 }
 
 /** What a candidate draws when the result meets it. */

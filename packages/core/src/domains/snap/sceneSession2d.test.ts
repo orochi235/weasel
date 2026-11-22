@@ -111,5 +111,41 @@ describe('createSnapSession2d', () => {
     ]);
     expect(boxSeen[0].probes.some((p) => p.role === 'anchor')).toBe(false);
   });
-});
 
+  it('looks for a move\'s geometry probe within the reach in the parallax plane\'s units', () => {
+    // Plane units are half a camera unit here, so the 8px reach is 16 of them.
+    const { scene, b } = fixture();
+    const seen: SnapCollect[] = [];
+    createSnapSession2d({
+      scene, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, gesture: 'move', press: { x: 211, y: 50 }, ids: [b],
+      plane: { scale: { x: 2, y: 2 }, offset: { x: 0, y: 0 } },
+      sources: [{ id: 'outline', roles: ['geometry'], collect(q) { seen.push(q); return []; } }],
+    }).at({ x: 211, y: 50 }, { suspend: false, constrain: false });
+    expect(seen[0].probes[0].at.x).toBeCloseTo(200, 9);
+  });
+
+  it('puts a group\'s geometry probe on its members\' outline', () => {
+    const s = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const g = s.add({ kind: 'group', layer: 'main', pose: { x: 200, y: 0, width: 100, height: 100 }, data: null });
+    s.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {}, parent: g });
+    const seen: SnapCollect[] = [];
+    createSnapSession2d({
+      scene: s as unknown as Scene<unknown, string, unknown>, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, gesture: 'move',
+      press: { x: 205, y: 50 }, ids: [g as string],
+      sources: [{ id: 'outline', roles: ['geometry'], collect(q) { seen.push(q); return []; } }],
+    }).at({ x: 205, y: 50 }, { suspend: false, constrain: false });
+    expect(seen[0].probes[0].at.x).toBeCloseTo(200, 9);
+  });
+
+  it('holds a move to `along`, and leaves out the sources `omit` names', () => {
+    const { scene, b } = fixture();
+    const seen: SnapCollect[] = [];
+    const s = createSnapSession2d({
+      scene, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, gesture: 'move', press: { x: 0, y: 0 }, ids: [b],
+      along: [1, 0], omit: ['gone'],
+      sources: [spy(seen), { id: 'gone', roles: ['box'], collect() { throw new Error('asked'); } }],
+    });
+    expect(s.at({ x: 10, y: 20 }, { suspend: false, constrain: false }).point).toEqual({ x: 10, y: 0 });
+    expect(seen).toHaveLength(1);
+  });
+});

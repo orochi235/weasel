@@ -81,8 +81,8 @@ export interface SnapMods {
   /** No source answers; the input subspace still applies. */
   suspend: boolean;
   constrain: boolean;
-  /** Angle gestures: the angle stays at `theta0`, which becomes a required
-   *  target. */
+  /** Angle gestures: the angle stays at `theta0`, and no step or source
+   *  is asked. */
   hold?: boolean;
 }
 

@@ -89,6 +89,7 @@ export function createSpanSnap(
     anchor(p) {
       if (p.x === start.x && p.y === start.y) return false;
       start = p;
+      held = false;
       startOut = null;
       drop();
       return true;

@@ -14,7 +14,7 @@ export {
   nearestPointOnSegment, distance, distance2, dot, lerpPoint, pointSegmentDistance, pointSegmentDistance2, segmentT,
 } from '../points';
 export {
-  nearestBetweenFlats, nearestOnFlat, flatDim, intersectFlats,
+  nearestBetweenFlats, nearestInSpan, nearestOnFlat, flatDim, intersectFlats,
   type Flat, type Vec,
 } from '../snap/flat';
 export {

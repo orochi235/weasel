@@ -93,8 +93,6 @@ export interface SnapCollect<P = Point> {
   parent?: string;
   /** Nodes that offer no targets: what the gesture moves. */
   exclude: readonly string[];
-  /** Only these nodes offer targets. */
-  include?: readonly string[];
   /** Where the geometry being drawn starts; tangent and perpendicular targets
    *  are measured from it. */
   origin?: P;

@@ -244,6 +244,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   under one column, or of columns that are not finite, has no slots, so `slots` refuses every child; rows under one, or
   not finite, are the default 1. A negative column count placed slots outside the container, and zero or `NaN`
   placed them at `NaN`.
+- 2026-11-21 (the fixer's call): `SnapCollect.include` is removed. No session set it and only `pathSnapSource`
+  read it; making it real would have every source (guides, rotation, measure, kernel3d's) honor an allow-list.
 - Open, 2026-11-11 (guides second property pass): snapping a point already snapped can move it again, because reach
   is a disc about the pointer, not about where it lands. A pointer whose two axes are each in reach of a guide but
   whose crossing is not snaps one axis; snapped again from there, the other comes in reach and snaps too. A grid

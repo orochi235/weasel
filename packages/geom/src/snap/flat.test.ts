@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nearestBetweenFlats, nearestOnFlat, flatDim, intersectFlats, type Vec } from '../nd';
+import { nearestBetweenFlats, nearestInSpan, nearestOnFlat, flatDim, intersectFlats, type Vec } from '../nd';
 import { solveLeastSquares } from './flat';
 
 function expectVecClose(a: Vec, b: Vec, digits = 9) {
@@ -126,4 +126,16 @@ describe('the rank and pivot tolerances', () => {
       }
     });
   }
+});
+
+describe('nearestInSpan', () => {
+  it('stops at a segment\'s end and at a face\'s bounds', () => {
+    expectVecClose(nearestInSpan({ at: [0, 0], dirs: [[10, 0]] }, [15, 3], [[0, 1]]), [10, 0]);
+    expectVecClose(nearestInSpan({ at: [0, 0], dirs: [[10, 0]] }, [4, 3], [[0, 1]]), [4, 0]);
+    expectVecClose(nearestInSpan({ at: [0, 0, 0], dirs: [[1, 0, 0], [0, 2, 0]] }, [-3, 9, 5], [[0, 4], [0, 1]]), [0, 2, 0]);
+  });
+
+  it('is the nearest point of the flat with no span', () => {
+    expectVecClose(nearestInSpan({ at: [0, 0], dirs: [[2, 2]] }, [3, 1]), [2, 2]);
+  });
 });

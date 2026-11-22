@@ -11,3 +11,12 @@ export function screenOf(view: View | null, plane: PlaneMap | null): (w: readonl
     return t ? worldToScreen(w.x, w.y, t) : [w.x, w.y];
   };
 }
+
+/** Screen px per unit of the gesture's plane, on each axis. */
+export function pxPerUnit(view: View | null, plane: PlaneMap | null): { x: number; y: number } {
+  const cam = view?.scale ?? { x: 1, y: 1 };
+  // A camera unit is `plane.scale` plane units.
+  return plane
+    ? { x: Math.abs(cam.x / plane.scale.x), y: Math.abs(cam.y / plane.scale.y) }
+    : { x: Math.abs(cam.x), y: Math.abs(cam.y) };
+}
