@@ -7,7 +7,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { withDiagramRegistry } from '../edge';
 import { CONTAINER_STENCILS, containerBuild, lanesOf } from './containerStencils';
 import { createAddLaneAction, createLaneResizeAction, createReleaseMembersAction, createDiagramContainersContribution } from './containerActions';
-import { createLaneAffordance, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, type LaneScratch } from './laneBoundaryLayer';
+import { createLaneAffordance, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, laneScratchOf, type LaneScratch } from './laneBoundaryLayer';
 
 function pool(opts: { composition?: PoseComposition<RectPose>; at?: Vec2 } = {}) {
   const scene = createScene<Record<string, unknown>, 'main', RectPose>({
@@ -28,6 +28,14 @@ function pool(opts: { composition?: PoseComposition<RectPose>; at?: Vec2 } = {})
 
 const pose = (scene: ReturnType<typeof pool>['scene'], id: string) => scene.get(id as NodeId)!.pose;
 const worldOf = (scene: ReturnType<typeof pool>['scene'], id: string) => scenePoseFrame(scene as never).world(id as NodeId) as RectPose;
+
+describe('laneScratchOf', () => {
+  it('reads no scratch off a hit whose payload is null or not an object', () => {
+    expect(laneScratchOf({ payload: null })).toBeNull();
+    expect(laneScratchOf({ payload: 'pool' })).toBeNull();
+    expect(laneScratchOf({ payload: { targetId: 'p', poolId: 'p' } })).toEqual({ targetId: 'p', poolId: 'p' });
+  });
+});
 
 describe('lane affordances', () => {
   it('offer a boundary after each lane and an add-lane button per pool', () => {
