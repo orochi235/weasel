@@ -2528,6 +2528,7 @@
     "visualBoundsViaDescriptor": "function",
     "warmFonts": "function",
     "warmPaintKinds": "function",
+    "warmPrograms": "function",
     "warmRender": "function",
     "warnOutlines": "function",
     "warnUser": "function",
