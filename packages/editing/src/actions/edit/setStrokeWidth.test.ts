@@ -56,4 +56,14 @@ describe('setStrokeWidthAction', () => {
       expect(scene.updates).toEqual([]);
     }
   });
+
+  it('ignores per-anchor widths that are not widths', () => {
+    for (const vertexWidths of [3, [1, Number.NaN], [-2], [{ left: 1 }], 'wide']) {
+      const params = { vertexWidths };
+      const scene = makeScene({ a: { stroke: solidStroke('#000000ff', 2) } });
+      const ctx = makeCtx({ selectionIds: ['a'], scene, params });
+      getInvoker().start(ctx, { params }).onEnd?.(ctx, 'commit');
+      expect(scene.updates).toEqual([]);
+    }
+  });
 });
