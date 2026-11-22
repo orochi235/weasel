@@ -44,8 +44,8 @@ const Woodgrain: EffectModule<BadgeWoodgrainEffectParams> = {
     }
     const knotPositions: [number, number][] = [];
     for (let i = 0; i < knotCount; i++) {
-      const cx = 30 + osc(i * 3 + 0.7) * 30 + 20;
-      const cy = 50 + osc(i * 3 + 1.3) * 30;
+      const cx = region.x + region.width * (0.5 + 0.3 * osc(i * 3 + 0.7));
+      const cy = region.y + region.height * (0.5 + 0.3 * osc(i * 3 + 1.3));
       knotPositions.push([cx, cy]);
     }
     return (

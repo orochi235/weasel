@@ -14,6 +14,7 @@ import Rivets from './Rivets';
 import Scallops from './Scallops';
 import Spikes from './Spikes';
 import Sunbeams from './Sunbeams';
+import Woodgrain from './Woodgrain';
 import { rangeMask } from './rangeMask';
 
 const line = (s: number): PerimeterPoint => ({ x: s, y: 0, nx: 0, ny: -1 });
@@ -151,5 +152,27 @@ describe('bevel bands', () => {
     const [band] = bevelBands(polygonSampler(square, 200, 30), 200, 30, 6, () => 'all');
     const outer = outerOf(band.d);
     expect(outer[outer.length - 1]).toBe(outer[0]);
+  });
+});
+
+describe('woodgrain knots on an outline that reaches past the viewBox', () => {
+  it('spread over the outline, as its grain lines do', () => {
+    const tall: [number, number][] = [[-10, -40], [110, -40], [110, 140], [-10, 140]];
+    const knots = (sampler?: ReturnType<typeof polygonSampler>) => {
+      const C = Woodgrain.Component!;
+      const { container } = render(
+        <svg>
+          <C sampler={sampler ?? polygonSampler(square, 200, 30)} boxW={200} boxH={30} variant="solid" params={{ lines: 0, knots: 3 }} phase={0} />
+        </svg>,
+      );
+      return [...container.querySelectorAll('g > g > ellipse:first-child')].map((e) => [Number(e.getAttribute('cx')), Number(e.getAttribute('cy'))]);
+    };
+    const inBox = knots();
+    const past = knots(polygonSampler(tall, 200, 30));
+    expect(past).toHaveLength(3);
+    past.forEach(([cx, cy], i) => {
+      expect(cx - 50).toBeCloseTo((inBox[i][0] - 50) * 1.2);
+      expect(cy - 50).toBeCloseTo((inBox[i][1] - 50) * 1.8);
+    });
   });
 });
