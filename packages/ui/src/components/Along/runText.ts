@@ -17,6 +17,8 @@ const ITEM = `.${row.item!.split(' ')[0]}`;
 /** One text node's copy along the run: an empty span after it, holding the svg its glyphs are drawn in. */
 interface Bend {
   span: HTMLSpanElement;
+  /** The element the text node sat in when the copy was made, which a removed node no longer names. */
+  parent: Element;
   path: SVGPathElement;
   text: SVGTextElement;
 }
@@ -73,7 +75,9 @@ function bendText(root: HTMLElement, frame: Element, run: TrackRun, bends: Map<T
         const r = range.getBoundingClientRect();
         if (r.width === 0 && r.height === 0) continue;
         const parent = node.parentElement!;
-        const bend = bends.get(node) ?? make(node);
+        const had = bends.get(node);
+        if (had !== undefined && had.parent !== parent) drop(node, had, bends);
+        const bend = (had?.parent === parent ? had : undefined) ?? make(node);
         bends.set(node, bend);
         seen.add(node);
         parent.setAttribute(HIDES, '');
@@ -128,7 +132,7 @@ function make(node: Text): Bend {
   svg.append(path, text);
   shadow.append(svg);
   node.after(span);
-  return { span, path, text };
+  return { span, parent: node.parentElement!, path, text };
 }
 
 let shared: CSSStyleSheet | undefined;
@@ -144,8 +148,8 @@ function sheet(): CSSStyleSheet {
 function drop(node: Text, bend: Bend, bends: Map<Text, Bend>): void {
   bend.span.remove();
   bends.delete(node);
-  const parent = node.parentElement;
-  if (parent !== null && ![...bends.keys()].some((other) => other.parentElement === parent)) parent.removeAttribute(HIDES);
+  const { parent } = bend;
+  if (![...bends.values()].some((other) => other.parent === parent)) parent.removeAttribute(HIDES);
 }
 
 /** Px between the points of a copy's path. */

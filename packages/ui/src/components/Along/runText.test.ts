@@ -58,3 +58,27 @@ test('a label under a rotated ancestor is drawn where it would be drawn unrotate
   const turned = bentPath({ a: 0, b: 1, c: -1, d: 0, e: 50, f: 0 }, { a: 0, b: -1, c: 1, d: 0, e: 0, f: 50 });
   expect(turned).toBe(flat);
 });
+
+test('a text node removed from an element that stays takes the element’s hidden glyphs with it', () => {
+  const root = document.createElement('div');
+  const item = document.createElement('button');
+  item.className = row.item!;
+  const label = document.createTextNode('On');
+  const inner = document.createElement('b');
+  inner.textContent = 'x';
+  item.append(label, inner);
+  root.append(item);
+  document.body.append(root);
+  Object.defineProperty(root, 'offsetWidth', { value: 100 });
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(DOMRect.fromRect({ x: 0, y: 0, width: 100, height: 50 }));
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+  Range.prototype.getBoundingClientRect = () => DOMRect.fromRect({ x: 20, y: 20, width: 20, height: 10 });
+  const ref = { current: root };
+  const run = trackRun(lineShape({ x: 0, y: 25 }, { x: 100, y: 25 }));
+  const hook = renderHook(() => useRunText(ref, run));
+  expect(item.hasAttribute('data-run-text-hides')).toBe(true);
+  label.remove();
+  hook.rerender();
+  expect(item.hasAttribute('data-run-text-hides')).toBe(false);
+  expect(inner.hasAttribute('data-run-text-hides')).toBe(true);
+});
