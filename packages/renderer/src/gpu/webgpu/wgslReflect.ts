@@ -255,9 +255,12 @@ export function reflectWgsl(source: string, target: WgslTarget): WgslReflection 
     if (space === 'uniform' && unlaid.has(type)) throw unlaid.get(type)!;
     if (space === 'uniform' && !structs.has(type)) structs.set(plainUniform(m[7]), plainStruct(m[7], type, structs, consts, unlaid));
     const kind: WgslBindingKind = space === 'uniform' ? 'uniform'
-      : space === 'storage' ? 'storage'
+      : space === 'storage' || /^texture_storage_/.test(type) ? 'storage'
       : /^sampler/.test(type) ? 'sampler'
       : 'texture';
+    if ((kind === 'texture' && !/^texture_2d\s*<\s*f32\s*>$/.test(type)) || (kind === 'sampler' && type !== 'sampler')) {
+      throw new Error(`WGSL: ${m[7]} is a ${type}, which the kit does not bind; it binds texture_2d<f32> and sampler`);
+    }
     bindings.push({
       group: attributeInt(group[0], group[1], consts), binding: attributeInt(binding[0], binding[1], consts), name: m[7], kind,
       ...(kind === 'uniform' ? { struct: structs.has(type) ? type : plainUniform(m[7]) } : {}),

@@ -45,6 +45,14 @@ describe('reflectWgsl', () => {
     ]);
   });
 
+  it('refuses a texture or sampler the kit cannot bind, naming it, rather than laying it out as a float texture_2d', () => {
+    for (const type of ['texture_2d<u32>', 'texture_depth_2d', 'texture_multisampled_2d<f32>', 'texture_cube<f32>', 'sampler_comparison']) {
+      expect(() => reflectWgsl(`@group(1) @binding(0) var t: ${type};`, STANDARD), type).toThrow(`t is a ${type}`);
+    }
+    expect(reflectWgsl('@group(1) @binding(0) var t: texture_storage_2d<rgba8unorm, write>;', STANDARD).bindings[0].kind).toBe('storage');
+    expect(reflectWgsl('@group(1) @binding(0) var t: texture_2d< f32 >;', STANDARD).bindings[0].kind).toBe('texture');
+  });
+
   it('keeps a 16-byte slot struct at a 16-byte stride', () => {
     const src = 'struct F32Slot { @size(16) v: f32 } struct U { a: array<F32Slot, 4>, b: f32 } @group(1) @binding(0) var<uniform> u: U;';
     expect(reflectWgsl(src, STRICT).structs.get('U')!.members.map((m) => m.offset)).toEqual([0, 64]);
