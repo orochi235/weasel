@@ -6,7 +6,8 @@ import { Bar } from './Bar';
 const realRect = Element.prototype.getBoundingClientRect;
 beforeAll(() => {
   Element.prototype.getBoundingClientRect = function box(this: Element) {
-    const width = this.matches('[data-bar-lead]') ? 20 : this.matches('[data-bar-item]') ? 30 : 0;
+    // A spacer has grown into 500 px of slack.
+    const width = this.matches('[data-bar-lead]') ? 20 : this.matches('[data-bar-item][aria-hidden]') ? 500 : this.matches('[data-bar-item]') ? 30 : 0;
     return { x: 0, y: 0, left: 0, top: 0, right: width, bottom: 20, width, height: 20, toJSON: () => {} } as DOMRect;
   };
 });
@@ -37,4 +38,9 @@ it('asks again when its lead appears or leaves', () => {
   expect(bar.style.getPropertyValue('--bar-natural')).toBe('110px');
   rerender(<Bar label="Tools" overflow="menu">{cells}</Bar>);
   expect(bar.style.getPropertyValue('--bar-natural')).toBe('90px');
+});
+
+it('counts a spacer as no length, whatever slack it has grown into', () => {
+  render(<Bar label="Tools" overflow="menu">{cells[0]}<Bar.Spacer />{cells[1]}{cells[2]}</Bar>);
+  expect(screen.getByRole('toolbar', { name: 'Tools' }).style.getPropertyValue('--bar-natural')).toBe('90px');
 });

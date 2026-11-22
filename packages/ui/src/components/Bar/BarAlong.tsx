@@ -1,4 +1,4 @@
-import { useRef, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
+import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import type { TrackShape } from '@weasel-js/geom';
 import { screenDirection } from '../Along/rowRun';
 import { useRowRun } from '../Along/useRowRun';
@@ -64,7 +64,12 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const keys = useBarReorderKeys({ root: rootRef, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, vertical: false, dir: screenDirection(run) });
   const rove = useRovingTabIndex<HTMLDivElement>({ orientation: 'horizontal' });
   const roveRef = rove.rootRef;
-  const { role } = barRoot(props);
+  const { role, status } = barRoot(props);
+  const Root = status ? 'footer' : 'div';
+  const dropped = [props.framed !== undefined && props.framed !== false && 'framed', props.wrap && 'wrap'].filter(Boolean).join(' and ');
+  useEffect(() => {
+    if (dropped) console.warn(`weasel: a Bar along a curve draws no strip and runs on one line, so its ${dropped} does nothing there.`);
+  }, [dropped]);
   // Its items lie along the run, not in its box, so the run is what they overflow.
   const fit = useFitScope(rootRef, { overflows: (el) => drawnLength(el, gap) > run.length + RUN_SLACK });
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
@@ -87,15 +92,15 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   );
 
   return (
-    <div
+    <Root
       {...rootAttrs}
       {...along.rootProps}
       onPointerDownCapture={onPointerDownCapture}
       onKeyDownCapture={keys.onKeyDownCapture}
       onKeyDown={props.roving ? (e) => rove.onKeyDown(e, screenDirection(run)) : undefined}
-      ref={(el) => {
-        rootRef.current = el;
-        roveRef.current = props.roving ? el : null;
+      ref={(el: HTMLElement | null) => {
+        rootRef.current = el as HTMLDivElement | null;
+        roveRef.current = props.roving ? (el as HTMLDivElement | null) : null;
       }}
       className={[s.root, props.sm && f.sm, className].filter(Boolean).join(' ')}
       data-shape={shape.kind}
@@ -109,7 +114,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
         <RunScope fresh>{props.fit ? <FitScope value={fit}>{runItems}</FitScope> : runItems}</RunScope>
       </DockBarContext.Provider>
       <RunEnds row={along} run={run} />
-    </div>
+    </Root>
   );
 }
 
