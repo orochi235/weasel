@@ -33,6 +33,12 @@ describe('createEnteredGroupFrameLayer', () => {
     expect(cmds[0]!.path).toMatchObject({ kind: 'rect', x: -10, y: -30, width: 20, height: 20 });
   });
 
+  it('frames the box with a positive size from its on-screen top-left on a y-up view', () => {
+    const layer = createEnteredGroupFrameLayer({ entered: entered('g'), boundsOf: () => ({ x: 5, y: 5, width: 10, height: 10 }) });
+    const cmds = layer.draw({}, { ...VIEW, scale: { x: 2, y: -2 } }, DIMS) as PathDrawCommand[];
+    expect(cmds[0]!.path).toMatchObject({ kind: 'rect', x: -10, y: 10, width: 20, height: 20 });
+  });
+
   it('repaints when the entered group changes', () => {
     const subscribe = vi.fn(() => () => {});
     const layer = createEnteredGroupFrameLayer({

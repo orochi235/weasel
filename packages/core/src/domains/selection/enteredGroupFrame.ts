@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { RenderLayer } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
-import { transformPath, translatePath, viewWorldToScreen, type Path } from '@weasel-js/geom';
+import { transformPath, translatePath, viewRectToScreen, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { NodeId, Scene } from 'core/scene/types';
 import { enteredOperandOutlines } from './enteredOperands';
@@ -47,7 +47,6 @@ export function createEnteredGroupFrameLayer(opts: {
       const id = opts.entered.get();
       const b = id === null ? null : opts.boundsOf(id);
       if (b === null) return [];
-      const { x, y } = viewWorldToScreen(view, b);
       const paint = { kind: 'solid', color: opts.color?.() ?? ENTERED_FRAME_COLOR } as const;
       const scale = [view.scale.x, 0, 0, view.scale.y, 0, 0] as const;
       const outlines: DrawCommand[] = (opts.outlinesOf?.(id!) ?? []).map((p) => ({
@@ -57,7 +56,7 @@ export function createEnteredGroupFrameLayer(opts: {
       }));
       return [...outlines, {
         kind: 'path',
-        path: { kind: 'rect', x, y, width: b.width * view.scale.x, height: b.height * view.scale.y },
+        path: { kind: 'rect', ...viewRectToScreen(view, b) },
         stroke: { paint, width: FRAME_WIDTH, dash: FRAME_DASH },
       }];
     },
