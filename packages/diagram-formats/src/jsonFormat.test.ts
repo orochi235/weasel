@@ -86,3 +86,16 @@ describe('DIAGRAM_JSON', () => {
     }
   });
 });
+
+describe('DIAGRAM_JSON page items', () => {
+  const file = (data: object) =>
+    JSON.stringify({ format: 'weasel-diagram', version: 2, pages: [{ id: 'p', width: 10, height: 10, data }] });
+
+  it('refuses a graph page whose nodes, edges, clusters, or containers are not items it can draw', () => {
+    expect(() => DIAGRAM_JSON.read!(file({ nodes: [null], edges: [] }))).toThrow(/node that has no string id/);
+    expect(() => DIAGRAM_JSON.read!(file({ nodes: [{ id: 'a' }], edges: [{ to: 1 }] }))).toThrow(/edge that has no string from and to/);
+    expect(() => DIAGRAM_JSON.read!(file({ nodes: [], edges: [], clusters: [{}] }))).toThrow(/clusters is not a list/);
+    expect(() => DIAGRAM_JSON.read!(file({ nodes: [], edges: [], containers: 'x' }))).toThrow(/containers is not a list/);
+    expect(() => DIAGRAM_JSON.read!(file({ nodes: [{ id: 'a' }], edges: [{ from: 'a', to: 'a' }] }))).not.toThrow();
+  });
+});
