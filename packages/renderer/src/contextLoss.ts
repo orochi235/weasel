@@ -12,8 +12,9 @@ export class ContextLossWatch {
   };
   private readonly onRestored: () => void;
 
-  constructor(target: EventTarget, onRestored: () => void) {
+  constructor(target: EventTarget, onRestored: () => void, lost = false) {
     this.target = target;
+    this.lost = lost;
     this.onRestored = () => {
       this.lost = false;
       onRestored();
@@ -30,8 +31,8 @@ export class ContextLossWatch {
 
 /** A watch on `events`, or null when it is nothing that can be listened to. */
 export function watchContextLoss(
-  events: Partial<EventTarget> | null, onRestored: () => void,
+  events: Partial<EventTarget> | null, onRestored: () => void, lost = false,
 ): ContextLossWatch | null {
   if (!events || typeof events.addEventListener !== 'function') return null;
-  return new ContextLossWatch(events as EventTarget, onRestored);
+  return new ContextLossWatch(events as EventTarget, onRestored, lost);
 }
