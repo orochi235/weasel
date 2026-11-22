@@ -185,6 +185,11 @@ describe('prefDisplayBounds', () => {
     expect(prefDisplayBounds(leaf)).toEqual({ min: 2, max: 8, step: 1 });
   });
 
+  it('keeps a stop within the shown bounds where `places` rounds it past one', () => {
+    const leaf: PrefNumber = { kind: 'number', name: 'S', description: '', default: 0.5, min: 0.001, max: 0.999, stops: [0.001, 0.5, 0.999], unit: { scale: 1, places: 2 } };
+    expect(prefDisplayBounds(leaf)).toMatchObject({ min: 0.01, max: 0.99, stops: [0.01, 0.5, 0.99] });
+  });
+
   it('converts min and max as points and step as a distance', () => {
     const leaf: PrefNumber = {
       kind: 'number', name: 'R', description: '', default: 0,
