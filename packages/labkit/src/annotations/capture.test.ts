@@ -101,6 +101,19 @@ describe('the composed document', () => {
     expect(out).not.toContain('width="520"');
   });
 
+  it('scales a base with no viewBox from the size it declares', () => {
+    const out = composeCaptureSvg({
+      base: { kind: 'svg', markup: '<svg width="800px" height="600"><rect/></svg>' },
+      scene: sceneWithMark(),
+      draw,
+      scale: 1,
+    });
+    const nested = (out.match(/<svg[^>]*>/g) ?? []).find((tag) =>
+      tag.includes('viewBox="0 0 800 600"'),
+    );
+    expect(nested).toMatch(/width="100"/);
+  });
+
   it('exports marks on transparency when a target hands over no base', () => {
     const out = composeCaptureSvg({ scene: sceneWithMark(), draw, scale: 1 });
     expect(out).toContain('#e5484d');

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useRef, useSyncExternalStore } from 'react';
+import { createContext, useContext, useSyncExternalStore } from 'react';
 import type { AnnotationsApi } from './types';
 
 /** Null in a trial whose instrument declares no `annotations`. */
@@ -10,20 +10,14 @@ export const AnnotationsContext = createContext<AnnotationsApi | null>(null);
  *  identity says a mark was added — a component reading `query()` without this
  *  renders one answer and never revises it. */
 function useMarkVersion(api: AnnotationsApi | null): void {
-  const version = useRef(0);
   useSyncExternalStore(
-    useCallback(
-      (fn: () => void) =>
-        api?.subscribe(() => {
-          version.current += 1;
-          fn();
-        }) ?? (() => {}),
-      [api],
-    ),
-    useCallback(() => version.current, []),
+    api?.subscribe ?? NOTHING,
+    () => api?.version() ?? 0,
     () => 0,
   );
 }
+
+const NOTHING = () => () => {};
 
 /** The marks on this trial's targets. Reached through a hook rather than the
  *  chrome context, which carries no instrument state — a sidebar panel listing

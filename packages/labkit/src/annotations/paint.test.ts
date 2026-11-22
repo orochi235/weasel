@@ -205,6 +205,14 @@ describe('markCommands styling', () => {
     expect((ring as { stroke?: { dash?: number[] } }).stroke?.dash).toEqual([6, 4]);
   });
 
+  it('boxes a stale text mark in a dash, since its glyphs cannot be dashed', () => {
+    const fresh = markCommands(mark('text', { title: 'x' }));
+    const stale = markCommands(mark('text', { title: 'x' }), { stale: true });
+    expect(fresh).toHaveLength(1);
+    expect(stale[0]).toMatchObject({ kind: 'text' });
+    expect((stale[1] as { stroke?: { dash?: number[] } }).stroke?.dash).toEqual([6, 4]);
+  });
+
   it("colors a text mark's glyphs too, not only the outlines", () => {
     const [cmd] = markCommands(mark('text', { title: 'x' }), { color: '#30a46c' });
     const runs = (cmd as { runs: { fill?: { paint?: { color?: string } } }[] }).runs;

@@ -60,12 +60,14 @@ function useCaptureRun(
 ) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const run = async (then: (r: CaptureResult) => void | Promise<void>): Promise<void> => {
+  /** Starts the capture inside the click and hands `then` the pending result, so a step the browser
+   *  allows only during the click, a clipboard write, can start before the capture finishes. */
+  const run = async (then: (r: Promise<CaptureResult>) => void | Promise<void>): Promise<void> => {
     if (!marks || !target) return;
     setBusy(true);
     setError(null);
     try {
-      await then(await marks.capture(target, opts));
+      await then(marks.capture(target, opts));
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -154,10 +156,18 @@ export function ExportMenu() {
           />
 
           <div className="lk-export__actions">
-            <button type="button" disabled={busy || !chosen} onClick={() => run(downloadCapture)}>
+            <button
+              type="button"
+              disabled={busy || !chosen}
+              onClick={() => run(async (r) => downloadCapture(await r))}
+            >
               Download
             </button>
-            <button type="button" disabled={busy || !chosen} onClick={() => run(copyCapture)}>
+            <button
+              type="button"
+              disabled={busy || !chosen}
+              onClick={() => run((r) => copyCapture(r, format))}
+            >
               Copy
             </button>
           </div>
