@@ -85,6 +85,7 @@ export function bakeMesh(
   if (!box) return null;
 
   const pixels = new Uint8ClampedArray(size * size * 4);
+  const layer: PatchLayer = { pixels: new Uint8ClampedArray(size * size * 4), claims: new Uint8Array(size * size) };
   const grid = gridFor(size);
   // The box maps onto texel *centers*, not texel edges: a corner of the mesh
   // lands at the center of the corner texel, so the outermost row and column
@@ -116,13 +117,55 @@ export function bakeMesh(
           { at: toTexel(evalPatch(patch, u1, v1)), color: colorAt(rgba, u1, v1, space) },
           { at: toTexel(evalPatch(patch, u0, v1)), color: colorAt(rgba, u0, v1, space) },
         ];
-        fillTriangle(pixels, size, quad[0], quad[1], quad[2]);
-        fillTriangle(pixels, size, quad[0], quad[2], quad[3]);
+        // Which of each triangle's edges, opposite its first, second and third vertex, lie on the patch's outline.
+        fillTriangle(layer, size, quad[0], quad[1], quad[2], (i === grid - 1 ? 1 : 0) | (j === 0 ? 4 : 0));
+        fillTriangle(layer, size, quad[0], quad[2], quad[3], (j === grid - 1 ? 1 : 0) | (i === 0 ? 2 : 0));
       }
     }
+    const b = patchBounds(patch);
+    const lo = toTexel({ x: b.x, y: b.y });
+    const hi = toTexel({ x: b.x + b.width, y: b.y + b.height });
+    composite(pixels, layer, size, {
+      minX: Math.max(0, Math.floor(lo.x) - 1), minY: Math.max(0, Math.floor(lo.y) - 1),
+      maxX: Math.min(size - 1, Math.ceil(hi.x) + 1), maxY: Math.min(size - 1, Math.ceil(hi.y) + 1),
+    });
   }
 
   return { pixels, size, box };
+}
+
+/**
+ * One patch rasterized on its own, so it can go over the patches before it.
+ * `claims` is 0 where the patch has nothing, 1 inside it, and 2 on its
+ * outline.
+ */
+interface PatchLayer {
+  pixels: Uint8ClampedArray;
+  claims: Uint8Array;
+}
+
+interface TexelRegion { minX: number; minY: number; maxX: number; maxY: number }
+
+/**
+ * `layer` over `pixels` inside `region`, source-over, then cleared. A texel on
+ * the patch's outline replaces what is under it instead, so two translucent
+ * patches sharing an edge leave no doubled seam there.
+ */
+function composite(pixels: Uint8ClampedArray, layer: PatchLayer, size: number, region: TexelRegion): void {
+  for (let y = region.minY; y <= region.maxY; y++) {
+    for (let x = region.minX; x <= region.maxX; x++) {
+      const t = y * size + x;
+      const claim = layer.claims[t];
+      if (claim === 0) continue;
+      const k = t * 4;
+      const keep = claim === 2 ? 0 : 1 - layer.pixels[k + 3] / 255;
+      for (let ch = 0; ch < 4; ch++) {
+        pixels[k + ch] = layer.pixels[k + ch] + pixels[k + ch] * keep;
+        layer.pixels[k + ch] = 0;
+      }
+      layer.claims[t] = 0;
+    }
+  }
 }
 
 interface Vertex {
@@ -138,8 +181,9 @@ const EDGE_EPS = 1e-6;
  * the same color there.
  */
 function fillTriangle(
-  pixels: Uint8ClampedArray, size: number, a: Vertex, b: Vertex, c: Vertex,
+  layer: PatchLayer, size: number, a: Vertex, b: Vertex, c: Vertex, outline: number,
 ): void {
+  const { pixels, claims } = layer;
   const minX = Math.max(0, Math.floor(Math.min(a.at.x, b.at.x, c.at.x)));
   const maxX = Math.min(size - 1, Math.ceil(Math.max(a.at.x, b.at.x, c.at.x)));
   const minY = Math.max(0, Math.floor(Math.min(a.at.y, b.at.y, c.at.y)));
@@ -161,7 +205,10 @@ function fillTriangle(
       // can put it a hair outside; the epsilon is what keeps the border row
       // from dropping out.
       if (w0 < -EDGE_EPS || w1 < -EDGE_EPS || w2 < -EDGE_EPS) continue;
-      const k = (y * size + x) * 4;
+      const t = y * size + x;
+      const onOutline = ((outline & 1) && w0 <= EDGE_EPS) || ((outline & 2) && w1 <= EDGE_EPS) || ((outline & 4) && w2 <= EDGE_EPS);
+      claims[t] = onOutline || claims[t] === 2 ? 2 : 1;
+      const k = t * 4;
       const alpha = w0 * a.color[3] + w1 * b.color[3] + w2 * c.color[3];
       for (let ch = 0; ch < 3; ch++) {
         pixels[k + ch] = (w0 * a.color[ch] + w1 * b.color[ch] + w2 * c.color[ch]) * alpha * 255;
