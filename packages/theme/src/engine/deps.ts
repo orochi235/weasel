@@ -2,7 +2,7 @@ import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 import { enumerateAxisChoices, isByAxis, pick, type AxisChoice, type Varying } from '../axes.ts';
 import { refTarget } from '../dtcg/resolve.ts';
 import type { PinValue, SemanticRule, ThemeDefinition } from '../definition.ts';
-import { foldChain, type Lookup } from './merge.ts';
+import { foldChain, stepKey, type Lookup } from './merge.ts';
 import { pinAt } from './pinValues.ts';
 import { ruleProblem } from './ruleShape.ts';
 import { withoutUnsafeNames } from './safeNames.ts';
@@ -151,7 +151,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     scan(ramp, n);
     const always = new Set(alwaysDeclaredSteps(ramp, scope));
     for (const step of declaredSteps(ramp)) {
-      if (!replaced.ramps.has(`${name}-${step}`)) produce(`${name}-${step}`, n, always.has(step));
+      if (!replaced.ramps.has(stepKey(name, step))) produce(`${name}-${step}`, n, always.has(step));
       stepRamps.set(`${name}-${step}`, (stepRamps.get(`${name}-${step}`) ?? new Set()).add(name));
     }
   }
@@ -159,7 +159,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     const n = node();
     scan(s, n);
     const always = new Set(alwaysDeclaredSteps(s, scope));
-    for (const step of declaredSteps(s)) if (!replaced.scales.has(`${name}-${step}`)) produce(`${name}-${step}`, n, always.has(step));
+    for (const step of declaredSteps(s)) if (!replaced.scales.has(stepKey(name, step))) produce(`${name}-${step}`, n, always.has(step));
   }
 
   /** Every ramp a token could sit on: its own, or the ones its semantic rule leaves, pins, or components lead to. */

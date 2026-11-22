@@ -145,6 +145,24 @@ describe('a theme whose ramp steps vary by axis', () => {
   });
 });
 
+describe('a child step named like an inherited step of the same layer', () => {
+  it("takes the child's step, as it does from another layer", () => {
+    const parent: ThemeDefinition = { name: 'p', ramps: { 'blue-dark': { kind: 'lightness', steps: ['1', '2'], lightness: [0.9, 0.2] } }, scales: { 'sp-x': { steps: ['1'], base: 4, step: 4 } } };
+    const child: ThemeDefinition = {
+      name: 'c',
+      extends: 'p',
+      ramps: { blue: { kind: 'lightness', steps: ['dark-1'], lightness: [0.5, 0.5] } },
+      scales: { sp: { steps: ['x-1'], base: 9, step: 1 } },
+    };
+    const all: Record<string, ThemeDefinition> = { p: parent, c: child };
+    const { tokens, issues } = derive(child, {}, (n) => all[n]);
+    expect(issues).toEqual([]);
+    expect(tokens['blue-dark-1'].value).toBe(derive({ name: 'solo', ramps: child.ramps }).tokens['blue-dark-1'].value);
+    expect(tokens['blue-dark-2']).toBeDefined();
+    expect(tokens['sp-x-1'].value).toBe(derive({ name: 'solo', scales: child.scales }).tokens['sp-x-1'].value);
+  });
+});
+
 describe('a child entry declared at only some selections', () => {
   const axes = { mode: { default: 'dark', values: { dark: {}, light: {} } } };
   const lightness = [0.8, 0.3] as [number, number];
