@@ -29,6 +29,10 @@ export interface ReorderSource {
   onChange: (next: EffectDoc, label: string) => void;
 }
 
+/** `order` less the items with no drawn box, which have no slot: a move's indices count only these. */
+const drawnOrder = (order: LookOrder | undefined, boxOf: ReorderSource['boxOf']): LookOrder | undefined =>
+  order === undefined ? undefined : { ...order, items: order.items.filter((i) => boxOf(i.id) !== undefined) };
+
 function slotsOf(order: LookOrder | undefined, boxOf: ReorderSource['boxOf']): ReorderSlots | null {
   if (order === undefined) return null;
   const items = order.items.flatMap((i) => {
@@ -136,12 +140,14 @@ export function createEditorReorderContributions(now: () => ReorderSource): Cont
       label: 'Reorder',
       slots: () => slotsOf(now().order, now().boxOf),
       canDrop: (move) => {
-        const { doc, order } = now();
-        return order !== undefined && stageMove(doc, order, move) !== null;
+        const { doc, order, boxOf } = now();
+        const drawn = drawnOrder(order, boxOf);
+        return drawn !== undefined && stageMove(doc, drawn, move) !== null;
       },
       commit: (move) => {
-        const { doc, order, onChange } = now();
-        const next = order === undefined ? null : stageMove(doc, order, move);
+        const { doc, order, boxOf, onChange } = now();
+        const drawn = drawnOrder(order, boxOf);
+        const next = drawn === undefined ? null : stageMove(doc, drawn, move);
         if (next !== null) onChange(next, 'Reorder');
       },
     }),
@@ -150,8 +156,9 @@ export function createEditorReorderContributions(now: () => ReorderSource): Cont
       label: 'Reorder lanes',
       slots: () => slotsOf(now().laneOrder, now().boxOf),
       commit: (move) => {
-        const { doc, laneOrder, onChange } = now();
-        if (laneOrder !== undefined) onChange(laneMove(doc, laneOrder, move), 'Reorder lanes');
+        const { doc, laneOrder, boxOf, onChange } = now();
+        const drawn = drawnOrder(laneOrder, boxOf);
+        if (drawn !== undefined) onChange(laneMove(doc, drawn, move), 'Reorder lanes');
       },
     }),
     clusterReorder(now),
