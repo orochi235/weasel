@@ -228,3 +228,22 @@ fn f() -> f32 { const N = 2; return f32(N); }
     expect(r.structs.get('P')!.size).toBe(128);
   });
 });
+
+describe('reflectWgsl on a uniform of a plain type', () => {
+  it('lays it out as one member named for the variable', () => {
+    const r = reflectWgsl(`
+@group(1) @binding(1) var<uniform> tint: vec4f;
+@group(1) @binding(2) var<uniform> weights: array<vec4f, 2>;
+`, STANDARD);
+    const [tint, weights] = r.bindings;
+    expect(tint).toMatchObject({ name: 'tint', kind: 'uniform' });
+    const block = createUniformBlock(r, tint.struct!);
+    expect(block.size).toBe(16);
+    expect(block.has('tint')).toBe(true);
+    expect(createUniformBlock(r, weights.struct!).size).toBe(32);
+  });
+
+  it('refuses one it cannot lay out, naming the binding', () => {
+    expect(() => reflectWgsl('@group(1) @binding(1) var<uniform> on: bool;', STANDARD)).toThrow(/uniform on: .*bool/);
+  });
+});

@@ -34,8 +34,8 @@ export interface WgslBinding {
   binding: number;
   name: string;
   kind: WgslBindingKind;
-  /** The struct a uniform binding holds; unset for a texture, a sampler, or
-   *  a uniform of a plain type. */
+  /** The struct a uniform binding holds, a uniform of plain type as a one-member struct named for it in
+   *  `structs`; unset for a texture, a sampler, or a storage binding. */
   struct?: string;
 }
 
@@ -197,6 +197,22 @@ function checkUniformLayout(struct: WgslStruct, structs: Map<string, WgslStruct>
   });
 }
 
+/** The struct key of a uniform of plain type: no WGSL identifier, so no declared struct shares it. */
+function plainUniform(name: string): string {
+  return `var<uniform> ${name}`;
+}
+
+/** A uniform of plain type as the one-member struct it lays out as, its member named for the variable. */
+function plainStruct(
+  name: string, type: string, structs: Map<string, WgslStruct>, consts: Map<string, number>, unlaid: Unlaid,
+): WgslStruct {
+  try {
+    return parseStruct(plainUniform(name), `${name}: ${type}`, structs, consts, unlaid);
+  } catch (e) {
+    throw new Error(`WGSL: uniform ${name}: ${(e as Error).message.replace(/^WGSL: /, '')}`);
+  }
+}
+
 /** The `{`…`}` depth of `src` at each of `at`, given in ascending order. */
 function braceDepths(src: string, at: readonly number[]): number[] {
   const out: number[] = [];
@@ -262,13 +278,14 @@ export function reflectWgsl(source: string, target: WgslTarget): WgslReflection 
     const space = (m[6] ?? '').split(',')[0].trim();
     const type = m[8].trim();
     if (space === 'uniform' && unlaid.has(type)) throw unlaid.get(type)!;
+    if (space === 'uniform' && !structs.has(type)) structs.set(plainUniform(m[7]), plainStruct(m[7], type, structs, consts, unlaid));
     const kind: WgslBindingKind = space === 'uniform' ? 'uniform'
       : space === 'storage' ? 'storage'
       : /^sampler/.test(type) ? 'sampler'
       : 'texture';
     bindings.push({
       group: Number(group[1]), binding: Number(binding[1]), name: m[7], kind,
-      ...(kind === 'uniform' && structs.has(type) ? { struct: type } : {}),
+      ...(kind === 'uniform' ? { struct: structs.has(type) ? type : plainUniform(m[7]) } : {}),
     });
   }
   if (!target.standardLayout) {
