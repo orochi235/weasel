@@ -38,7 +38,6 @@ interface Env {
   readonly get: (name: string) => DerivedSemantic | undefined;
   readonly color: (value: TokenValue | undefined) => string | undefined;
   /** The ramp step a semantic ends on once its pin applies; undefined for anything else. */
-  readonly positionOf: (name: string) => Position | undefined;
   /** The ramp step a reference to `name` ends on: the step itself, or wherever its pin or rule leads. */
   readonly positionAt: (name: string) => Position | undefined;
 }
@@ -107,9 +106,7 @@ export function deriveSemantics(
     if (pin) return follow(pin);
     return Object.hasOwn(rules, name) ? get(name)?.position : follow(ctx.component(name));
   };
-  const positionOf: Env['positionOf'] = (name) => (Object.hasOwn(rules, name) ? positionAt(name) : undefined);
-
-  const env: Env = { get, color, positionOf, positionAt };
+  const env: Env = { get, color, positionAt };
 
   for (const name of Object.keys(rules)) get(name);
 
@@ -161,7 +158,8 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
   const darkening = (ramp: string, steps: readonly string[]) => endsDarken(ramp, steps) ?? noDirection(ramp);
 
   if ('from' in r) {
-    const from = env.positionOf(r.from);
+    requireKnown(name, r.from, ctx.known);
+    const from = env.positionAt(r.from);
     if (!from) return invalid(`"${r.from}" does not end on a ramp step`);
     const { ramp, index } = from;
     const steps = getOwn(ctx.ramps, ramp)!;

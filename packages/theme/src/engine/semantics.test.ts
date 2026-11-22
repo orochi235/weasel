@@ -179,6 +179,17 @@ describe('ramp direction', () => {
 });
 
 describe('offset rule', () => {
+  it('counts from a ramp step or a component that names one', () => {
+    const with_ = (semantics: ThemeDefinition['semantics'], components?: ThemeDefinition['components']) =>
+      derive({ ...W, semantics: { ...W.semantics, ...semantics }, components }, { mode: 'dark' });
+    expect(with_({ x: { from: 'gray-200', offset: 1, dir: 'darker' } }).tokens.x.value).toBe('{gray-300}');
+    expect(with_({ x: { from: 'chip', offset: 1, dir: 'darker' } }, { chip: '{gray-200}' }).tokens.x.value).toBe('{gray-300}');
+  });
+
+  it('throws on a from naming nothing', () => {
+    expect(() => derive({ ...W, semantics: { ...W.semantics, x: { from: 'typo', offset: 1, dir: 'darker' } } })).toThrow(/"typo", which is not defined/);
+  });
+
   it('counts from where a pin puts its reference', () => {
     const rule = { 'fg-muted': { from: 'surface', offset: 5, dir: 'away' } } as const;
     const pinned = (pin: string) => derive({ ...W, semantics: { surface: W.semantics!.surface, ...rule }, pins: { ...W.pins, surface: pin } }, { mode: 'dark' });
