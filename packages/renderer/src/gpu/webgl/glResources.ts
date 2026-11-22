@@ -4,7 +4,7 @@ import type {
   GpuTextureData, GpuTextureFormat,
 } from '../types';
 import type { GlCache } from './glCache';
-import { withPremultipliedSource } from './premultipliedBitmap';
+import { withFlagHonoringSource } from './bitmapCanvas';
 import { packedStride } from '../vertexLayout';
 
 export interface GlBuffer extends GpuBuffer {
@@ -114,17 +114,14 @@ function upload(gl: WebGL2RenderingContext, format: GpuTextureFormat, data: GpuT
   if ('source' in data) {
     const internal = format === 'r8' ? gl.R8 : gl.RGBA;
     const texels = format === 'r8' ? gl.RED : gl.RGBA;
-    if (!data.premultiply) {
-      gl.texImage2D(gl.TEXTURE_2D, 0, internal, texels, gl.UNSIGNED_BYTE, data.source);
-      return;
-    }
-    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    const { premultiply } = data;
+    if (premultiply) gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
     try {
-      withPremultipliedSource(data.source, (source) =>
+      withFlagHonoringSource(data.source, (source) =>
         gl.texImage2D(gl.TEXTURE_2D, 0, internal, texels, gl.UNSIGNED_BYTE, source));
     } finally {
       // Put back even on a throw: it would premultiply every later upload too.
-      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+      if (premultiply) gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     }
     return;
   }

@@ -3,7 +3,7 @@
  * `UNPACK_PREMULTIPLY_ALPHA_WEBGL`, and nothing reports whether a bitmap holds
  * them straight (`premultiplyAlpha: 'none'`) or premultiplied. A 2D canvas
  * knows, and draws either kind premultiplied, and a canvas upload honors the
- * flag: so a bitmap bound for a premultiplied texture goes through one.
+ * flag either way: so every bitmap goes through one.
  */
 import type { GpuImageSource } from '../types';
 
@@ -22,13 +22,12 @@ function scratchCanvas(): typeof scratch {
 }
 
 /**
- * Hand `upload` a source whose texels, uploaded under
- * `UNPACK_PREMULTIPLY_ALPHA_WEBGL`, come out premultiplied: an `ImageBitmap`
- * drawn into a scratch 2D canvas, anything else as it is. The canvas is
- * shrunk again once `upload` returns, so it holds no image's pixels between
- * uploads.
+ * Hand `upload` a source whose upload honors `UNPACK_PREMULTIPLY_ALPHA_WEBGL`:
+ * an `ImageBitmap` drawn into a scratch 2D canvas, anything else as it is. The
+ * canvas is shrunk again once `upload` returns, so it holds no image's pixels
+ * between uploads.
  */
-export function withPremultipliedSource(source: GpuImageSource, upload: (source: TexImageSource) => void): void {
+export function withFlagHonoringSource(source: GpuImageSource, upload: (source: TexImageSource) => void): void {
   const s = typeof ImageBitmap !== 'undefined' && source instanceof ImageBitmap ? scratchCanvas() : null;
   if (!s) {
     upload(source);

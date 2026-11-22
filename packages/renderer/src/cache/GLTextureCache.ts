@@ -52,7 +52,7 @@ export class GLTextureCache {
    *  image can be a clamped shader texture in one draw and a repeating pattern
    *  tile in the next. */
   upload(id: string, source: TexSource, wrap: TextureWrap = 'clamp'): string {
-    // A font atlas's channels are a distance field, not a color: sent as held.
+    // A font atlas's channels are a distance field, not a color: kept straight.
     return this.ensure(id, source, wrap, false);
   }
 

@@ -236,7 +236,9 @@ export interface GpuLimits {
  *  `DYNAMIC_DRAW`). */
 export type GpuBufferUsage = 'static' | 'dynamic';
 
-/** A texture's pixels, whole: from a decoded image, or tightly packed bytes. */
+/** A texture's pixels, whole: from a decoded image, or tightly packed bytes.
+ *  `premultiply` says what the texture holds, premultiplied or straight texels,
+ *  whichever the source holds; packed bytes are stored as they are. */
 export type GpuTextureData =
   | { readonly source: GpuImageSource; readonly premultiply: boolean }
   | { readonly width: number; readonly height: number; readonly data: ArrayBufferView | null };

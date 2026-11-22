@@ -178,12 +178,9 @@ export function replaceTexture(host: ResourceHost, texture: WgpuTexture, gpu: GP
 function upload(host: ResourceHost, texture: WgpuTexture, data: GpuTextureData): void {
   const { width, height } = texture;
   if ('source' in data) {
-    // GL uploads an ImageBitmap as it holds its texels, whatever the unpack
-    // flags say, and a bitmap made with default options holds them premultiplied.
-    const premultipliedAlpha = data.premultiply || (typeof ImageBitmap !== 'undefined' && data.source instanceof ImageBitmap);
     host.device.queue.copyExternalImageToTexture(
       { source: data.source as GPUCopyExternalImageSource },
-      { texture: texture.gpu, premultipliedAlpha },
+      { texture: texture.gpu, premultipliedAlpha: data.premultiply },
       [width, height],
     );
   } else if (data.data) {
