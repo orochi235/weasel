@@ -94,4 +94,11 @@ describe('ItemList held', () => {
     expect(calls.onAction).not.toHaveBeenCalled();
     expect(option('Alpha')).toHaveAccessibleDescription('Busy');
   });
+
+  it('empty, still names itself and says why it is held', () => {
+    render(<ItemList rows={[]} empty="No layers" disabled disabledReason="Select a layer first" containerProps={{ 'aria-label': 'Layers' }} />);
+    const list = screen.getByRole('group', { name: 'Layers' });
+    expect(list).toHaveAccessibleDescription('Select a layer first');
+    expect(list.getAttribute('data-held')).toBe('disabled');
+  });
 });

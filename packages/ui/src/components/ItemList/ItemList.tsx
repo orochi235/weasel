@@ -152,11 +152,20 @@ export const ItemList = forwardRef(function ItemList(
 
   const cls = [s.list, className].filter(Boolean).join(' ');
   if (rows.length === 0) {
-    return (
-      <div className={cls} ref={setRefs} {...containerProps} data-held={hold.held}>
+    // A list role wants items it does not have; a group can carry the list's name and its hold.
+    return hold.wrap(hold.scope(
+      <div
+        className={cls}
+        ref={setRefs}
+        {...containerProps}
+        role="group"
+        aria-disabled={hold.focus['aria-disabled']}
+        aria-describedby={hold.focus['aria-describedby']}
+        data-held={hold.held}
+      >
         <div className={s.empty}>{empty ?? '—'}</div>
-      </div>
-    );
+      </div>,
+    ));
   }
 
   const trailingColumn = mode === 'grid' && rows.some((row) => row.trailing != null);
