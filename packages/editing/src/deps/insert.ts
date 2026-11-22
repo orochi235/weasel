@@ -218,7 +218,13 @@ export function useInsertDepSource(
     };
     const build: NonNullable<InsertDep['build']> = (...args) => {
       const made = make(...args);
-      return made && { id: made.id, ops: made.ops };
+      if (made === null) return null;
+      const { id, ops: built, batch, inserted } = made;
+      return {
+        id, ops: built,
+        ...(batch ? { batch: batch(String(id)) } : {}),
+        ...(inserted ? { inserted: () => inserted(String(id), registry) } : {}),
+      };
     };
     return {
       layer: () => site().layer,

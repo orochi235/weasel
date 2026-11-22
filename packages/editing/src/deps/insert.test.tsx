@@ -82,6 +82,27 @@ describe('useInsertDepSource', () => {
     expect(inserted).toHaveBeenCalledWith('srv-0', reg);
   });
 
+  it("hands a factory's `batch` and `inserted` hooks back from `build`, bound to the minted id", () => {
+    const inserted = vi.fn();
+    const note = vi.fn(() => ({ data: {}, batch: (id: string) => ({ join: `note:${id}` }) as never, inserted }));
+    let reg!: DepRegistry;
+    function Wire() {
+      useInsertDepSource(makeScene(), { applyOps: vi.fn() }, { note } as never);
+      return null;
+    }
+    render(
+      <DepRegistryProvider>
+        <Wire />
+        <Capture onR={(r) => { reg = r; }} />
+      </DepRegistryProvider>,
+    );
+    const built = (reg.get as any)('insert').build({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'note' });
+    expect(built.batch).toEqual({ join: 'note:srv-0' });
+    expect(inserted).not.toHaveBeenCalled();
+    built.inserted();
+    expect(inserted).toHaveBeenCalledWith('srv-0', reg);
+  });
+
   it('applies a factory node with no `batch` hook outside any batch', () => {
     const applyOps = vi.fn();
     const scene = makeScene();

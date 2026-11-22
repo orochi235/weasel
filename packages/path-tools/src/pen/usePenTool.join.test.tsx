@@ -37,6 +37,22 @@ describe('usePenTool', () => {
       expect(p.scratch.current).toBeNull();
     });
 
+    it("joins inside the batch the insert's `build` asks for, then runs its `inserted` hook", () => {
+      const b = poly('M 0 0 L 100 0 L 100 100');
+      const batch = vi.fn((_label: string, fn: () => unknown) => fn());
+      const inserted = vi.fn();
+      const build = vi.fn(() => ({ id: 'n1', ops: [], batch: { join: 'x' }, inserted }));
+      const scene = { get: (id: string) => (id === 'b' ? { id, kind: 'mark', parent: null, data: { path: b } } : undefined), batch };
+      const p = setup({ paths: { b }, deps: { scene, insert: { commit: vi.fn(), build } } });
+      p.click(0, 200);
+      p.click(0, 100);
+      p.click(1, 1);
+      expect(batch).toHaveBeenCalledWith('Join paths', expect.any(Function), { join: 'x' });
+      expect(p.applyOps).toHaveBeenCalledOnce();
+      expect(inserted).toHaveBeenCalledOnce();
+      expect(inserted.mock.invocationCallOrder[0]).toBeGreaterThan(p.applyOps.mock.invocationCallOrder[0]);
+    });
+
     it('ending on the other path\'s last anchor turns it around, swapping each anchor\'s handles', () => {
       const p = setup({ paths: { b: poly('M 0 0 C 30 0 70 0 100 0 L 100 100') } });
       p.click(200, 200);

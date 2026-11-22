@@ -2,6 +2,7 @@ import type { Affine, PolygonPath, Rect } from '@weasel-js/geom';
 import type { DragSample, WorldPoint } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
+import type { SceneBatchOptions } from 'core/scene/recorder';
 import type { CommitSelection } from './defaultCommitAdapter';
 
 /**
@@ -91,13 +92,15 @@ export interface InsertDep {
   /**
    * What `commit` would apply, unapplied: the new node's id and the ops that
    * insert it, for a caller that has more to put in the same undo step. The
-   * pen joins two paths this way. Without it such a caller declines.
+   * pen joins two paths this way. Without it such a caller declines. The caller
+   * applies the ops inside `scene.batch(label, apply, batch)` when `batch` is
+   * set, and calls `inserted` once they have applied, as `commit` would.
    */
   build?(
     bounds: Rect,
     extras: InsertExtras,
     ends?: InsertEnds,
-  ): { id: NodeId; ops: Op[] } | null;
+  ): { id: NodeId; ops: Op[]; batch?: SceneBatchOptions; inserted?: () => void } | null;
   /**
    * The node `build` would insert, made the same way and inserting nothing: no
    * id is minted and nothing counted per insert (the palette's step) advances,
