@@ -24,18 +24,20 @@ const OFF = { sink: null, overlay: null, frameStats: false };
 /**
  * Resolve a surface's `debug` prop and hold what it turns on. `undefined`
  * reads `?debug=…` from the URL, `false` forces it off, and a config forces it
- * on. Keyed on the config's content, so one written inline keeps its sink, and
- * what the sink and the overlay have accumulated, from render to render.
+ * on. Keyed on the resolved config's content, so one written inline, or the
+ * URL's config laid under an inspector's override, keeps its sink, and what
+ * the sink and the overlay have accumulated, from render to render.
  * `highlight` is left out of the key: an inspector changes it on every hover,
  * so it is written into the live config, and only the overlay is replaced.
  */
 export function useDebugSink(debug: DebugFlags | false | undefined): SurfaceDebug {
-  const { highlight, ...rest }: DebugFlags = debug || {};
-  const key = debug === undefined ? undefined : debug === false ? 'false' : JSON.stringify(rest);
+  const resolved = resolveDebugFlags(debug);
+  const { highlight, ...rest }: DebugFlags = resolved ?? {};
+  const key = resolved ? JSON.stringify(rest) : null;
   const highlightKey = JSON.stringify(highlight ?? null);
   const base = useMemo(() => {
-    const config = resolveDebugFlags(key === undefined ? undefined : JSON.parse(key) as DebugFlags | false);
-    if (!config) return null;
+    if (key === null) return null;
+    const config = JSON.parse(key) as DebugFlags;
     const live: DebugFlags = { ...config };
     const setHighlight = (ids: readonly string[] | null): void => {
       if (ids) live.highlight = ids;

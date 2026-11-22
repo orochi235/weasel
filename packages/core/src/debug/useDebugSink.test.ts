@@ -61,6 +61,25 @@ describe('useDebugSink', () => {
   });
 });
 
+describe('useDebugSink with the URL config', () => {
+  it('keeps its sink when an override lays a highlight over the URL config and then lifts it', () => {
+    window.history.replaceState(null, '', '?debug=viewport');
+    try {
+      const { result, rerender } = renderHook(({ debug }: { debug: DebugFlags | undefined }) => useDebugSink(debug), {
+        initialProps: { debug: undefined as DebugFlags | undefined },
+      });
+      const { sink } = result.current;
+      expect(sink).not.toBeNull();
+      rerender({ debug: { viewport: true, highlight: ['a'] } });
+      expect(result.current.sink).toBe(sink);
+      rerender({ debug: undefined });
+      expect(result.current.sink).toBe(sink);
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
+  });
+});
+
 describe('useDebugSink under a discarded render', () => {
   const never = new Promise<never>(() => {});
   const Stall = (): ReactNode => { throw never; };
