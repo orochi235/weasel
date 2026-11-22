@@ -149,3 +149,18 @@ describe('useDragHandle in another document', () => {
     expect(onDrop).toHaveBeenCalledOnce();
   });
 });
+
+describe('the default ghost', () => {
+  it('leaves the source row\'s checked radio checked', () => {
+    document.body.innerHTML = '<div id="src"><input type="radio" name="g" id="r" checked></div><input type="radio" name="g">';
+    const radio = document.getElementById('r') as HTMLInputElement;
+    const { result } = renderHook(() => useDragHandle(() => ({ kind: 'item', ids: ['a'] })));
+    press(result.current, document.getElementById('src')!);
+    firePointer('pointermove', 30, 0);
+    firePointer('pointermove', 40, 0);
+    expect(document.querySelectorAll('[name="g"]')).toHaveLength(2);
+    expect(radio.checked).toBe(true);
+    firePointer('pointerup', 40, 0);
+    expect(radio.checked).toBe(true);
+  });
+});

@@ -51,7 +51,12 @@ function defaultGhost(source: HTMLElement, payload: DragPayload, seat: FixedSeat
   const rect = source.getBoundingClientRect();
   const doc = source.ownerDocument;
   const clone = source.cloneNode(true) as HTMLElement;
-  for (const el of [clone, ...clone.querySelectorAll('[id]')]) el.removeAttribute('id');
+  // A named clone would join the page's radio groups and forms: a checked
+  // radio's copy unchecks the original as it is appended.
+  for (const el of [clone, ...clone.querySelectorAll('[id], [name]')]) {
+    el.removeAttribute('id');
+    el.removeAttribute('name');
+  }
   clone.style.position = 'fixed';
   clone.style.left = '0';
   clone.style.top = '0';
