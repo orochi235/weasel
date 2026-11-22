@@ -16,6 +16,26 @@ import { drawPrefs } from '../../prefs';
 import { drawToolOptionValues } from '../../toolOptions';
 import { OffsetSlider, SimplifySlider, useSimplifyTolerance } from './PathCommands';
 
+/** Drags `name`'s slider, over a 200 px track, from its middle to `x`, then presses Escape. */
+function dragAndCancel(name: string, x: number) {
+  const slider = screen.getByRole('slider', { name });
+  const track = { x: 0, y: 0, width: 200, height: 24, top: 0, left: 0, right: 200, bottom: 24, toJSON: () => ({}) };
+  slider.parentElement!.getBoundingClientRect = () => track;
+  act(() => {
+    fireEvent.pointerDown(slider, { clientX: 100, clientY: 12, pointerId: 1, button: 0 });
+  });
+  act(() => {
+    fireEvent.pointerMove(document, { clientX: x, clientY: 12, pointerId: 1 });
+  });
+  act(() => {
+    fireEvent.keyDown(slider, { key: 'Escape' });
+  });
+  act(() => {
+    fireEvent.pointerUp(document, { clientX: x, clientY: 12, pointerId: 1 });
+  });
+  return slider;
+}
+
 function Simplify() {
   const [tolerance, setTolerance] = useState(1);
   return <SimplifySlider tolerance={tolerance} onTolerance={setTolerance} />;
@@ -69,6 +89,24 @@ describe('the path command sliders', () => {
       fireEvent.keyDown(screen.getByRole('slider', { name: 'Simplify tolerance' }), { key: 'ArrowRight' });
     });
     expect(drawToolOptionValues().get('sand').tolerance).toBeCloseTo(1.1, 5);
+  });
+
+  it("leaves Sand's tolerance, and the slider, where they were when a drag is canceled", () => {
+    render(<TunedSimplify />);
+    const before = drawToolOptionValues().get('sand').tolerance;
+    const slider = dragAndCancel('Simplify tolerance', 180);
+    expect(edits.get('simplifyPath')!.cancel).toHaveBeenCalled();
+    expect(drawToolOptionValues().get('sand').tolerance).toBe(before);
+    expect(slider).toHaveAttribute('aria-valuenow', String(before));
+  });
+
+  it('leaves Offset at its distance when a drag is canceled', () => {
+    render(<OffsetSlider />);
+    const slider = screen.getByRole('slider', { name: 'Offset distance' });
+    const before = slider.getAttribute('aria-valuenow');
+    dragAndCancel('Offset distance', 180);
+    expect(edits.get('offsetPath')!.cancel).toHaveBeenCalled();
+    expect(slider).toHaveAttribute('aria-valuenow', before);
   });
 
   it('hands back the same tolerance setter on every render', () => {
