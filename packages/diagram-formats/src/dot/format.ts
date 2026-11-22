@@ -6,7 +6,7 @@ import { writeDot } from './write';
 /** Comments, and the quoted strings a comment marker inside of opens none. */
 const COMMENTS = /("(?:[^"\\]|\\[\s\S])*")|\/\*[\s\S]*?\*\/|\/\/[^\n]*|^[^\S\n]*#[^\n]*/gm;
 const KEYWORD = /^\s*(?:strict\s+)?(?:di)?graph(?![\w\u0080-￿])\s*/i;
-const ID = /^(?:[A-Za-z_\u0080-￿][\w\u0080-￿]*|-?(?:\.\d+|\d+(?:\.\d*)?)|"(?:[^"\\]|\\.)*")?\s*\{/;
+const ID = /^(?:[A-Za-z_\u0080-￿][\w\u0080-￿]*|-?(?:\.\d+|\d+(?:\.\d*)?)|"(?:[^"\\]|\\[\s\S])*")?\s*\{/;
 
 /** Whether `text`, its comments gone, opens with a graph header: the keywords, an id, then `{`. An HTML id is read
  *  to its matching `>`, as the lexer reads one. */
@@ -32,7 +32,7 @@ export const DIAGRAM_DOT: DiagramFormat = {
   id: 'graphviz-dot',
   name: 'Graphviz DOT',
   extensions: ['.dot', '.gv'],
-  detect: (text) => hasHeader(text.replace(COMMENTS, (_, quoted: string | undefined) => quoted ?? '')),
+  detect: (text) => hasHeader(text.replace(COMMENTS, (_, quoted: string | undefined) => quoted ?? ' ')),
   read: readDot,
   write: writeDot,
   onePage: true,
