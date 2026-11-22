@@ -8,7 +8,7 @@ import s from './Timeline.module.css';
 import { Lane, type LaneHold, type LaneProps } from './Lane';
 import { TimeRuler } from './TimeRuler';
 import { PlayheadReadout, Transport, type TransportProps } from '../Transport/Transport';
-import { buildLanes, trackAtPath, type LaneRow } from './lanes';
+import { buildLanes, type LaneRow } from './lanes';
 import { deleteKey, insertKey, keyTime, moveKey, samePath, setKeys, type KeyEdit, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
 import { useHeld, useKeyAndSegment, useKeyEditsHeldByPress, useTimeWindow } from './timelineState';
@@ -108,7 +108,7 @@ export function Timeline(props: TimelineProps): ReactElement {
     if ((e.key !== 'Delete' && e.key !== 'Backspace') || hold.refuses) return;
     const marked = markedKey(e.target as Element, rows);
     const target = marked === undefined ? selection : marked;
-    if (target && trackAtPath(tracks, target.trackPath)?.kind === 'sampled') {
+    if (target && deletable(target, rows)) {
       e.preventDefault();
       commit(deleteKey(tracks, target));
     }
@@ -249,6 +249,12 @@ function snapTimesOf(rows: readonly LaneRow[], duration: number): number[] {
     if (row.kind === 'sampled') for (const k of (row.track as SampledTrack<unknown>).keys) out.add(k.t + row.offset);
   }
   return [...out];
+}
+
+/** Whether `sel` names a key that exists on a sampled row that is drawn. */
+function deletable(sel: KeySelection, rows: readonly LaneRow[]): boolean {
+  const row = rows.find((r) => samePath(r.path, sel.trackPath));
+  return row?.kind === 'sampled' && sel.keyIndex >= 0 && sel.keyIndex < (row.track as SampledTrack<unknown>).keys.length;
 }
 
 /** The key whose mark `el` is in, `null` for a mark on no row drawn, or `undefined` when `el` is on no mark. */

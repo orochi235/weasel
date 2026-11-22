@@ -518,4 +518,31 @@ describe('Timeline', () => {
     fireEvent.pointerUp(document, { clientX: 196, clientY: 10 });
     expect(nestedKeyTimes(onChange.mock.calls[0][0] as Track[])).toEqual([300, 300]);
   });
+
+  it('deletes nothing for Delete once the selected key’s row is folded away', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 0, clientY: 10 });
+    const disclosure = screen.getByTestId('timeline-disclosure');
+    fireEvent.click(disclosure);
+    disclosure.focus();
+    fireEvent.keyDown(disclosure, { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('deletes nothing for Delete on a selected key the tracks no longer hold', () => {
+    const onChange = vi.fn();
+    const three = [
+      { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 100, value: 1 }, { t: 200, value: 2 }], onTick: () => {} },
+    ] as Track[];
+    const { rerender } = renderWithIcons(<Timeline {...base} tracks={three} onChange={onChange} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[2], { clientX: 200, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 200 });
+    const two = [{ ...three[0], keys: (three[0] as SampledTrack<number>).keys.slice(0, 2) }] as Track[];
+    rerender(<Timeline {...base} tracks={two} onChange={onChange} />);
+    fireEvent.keyDown(screen.getByTestId('timeline-root'), { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });
