@@ -191,6 +191,25 @@ describe('WebGLDevice id targets', () => {
   });
 });
 
+describe('WebGLDevice read-backs', () => {
+  it('reads the canvas and ids into client memory under default pack state', () => {
+    const { rec, gpu } = setup();
+    const { gl } = rec;
+    const rect = { x: 0, y: 0, width: 3, height: 1 };
+    const target = gpu.createTarget({ width: 4, height: 4, ids: true });
+    for (const read of [() => gpu.readCanvasSync(rect), () => gpu.readIdsSync(target, rect)]) {
+      rec.reset();
+      read();
+      expect(argsOf(rec, 'bindBuffer')).toEqual([[gl.PIXEL_PACK_BUFFER, null]]);
+      expect(argsOf(rec, 'pixelStorei')).toEqual([
+        [gl.PACK_ALIGNMENT, 4], [gl.PACK_ROW_LENGTH, 0], [gl.PACK_SKIP_ROWS, 0], [gl.PACK_SKIP_PIXELS, 0],
+      ]);
+      expect(names(rec).indexOf('pixelStorei')).toBeLessThan(names(rec).indexOf('readPixels'));
+    }
+    expect(gl.PIXEL_PACK_BUFFER).toBe(0x88EB);
+  });
+});
+
 describe('WebGLDevice resolve', () => {
   it('blits a whole multisampled buffer straight into its destination', () => {
     const { rec, gpu } = setup();

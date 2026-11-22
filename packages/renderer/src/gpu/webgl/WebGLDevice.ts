@@ -9,7 +9,7 @@ import type {
 import { GlCache } from './glCache';
 import { GlProgram, type GlProgramHost } from './GlProgram';
 import * as res from './glResources';
-import { createTarget, deleteTarget, readIds, resolve, type GlTarget } from './glTargets';
+import { createTarget, deleteTarget, readIds, readRgba, resolve, type GlTarget } from './glTargets';
 
 export class WebGLDevice implements GpuDevice, GlProgramHost {
   readonly language = 'glsl' as const;
@@ -240,7 +240,7 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     const gl = this.gl;
     const bytes = new Uint8Array(rect.width * rect.height * 4);
     this.cache.bindFramebuffer(null);
-    gl.readPixels(rect.x, rect.y, rect.width, rect.height, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+    readRgba(gl, rect, bytes);
     return bytes;
   };
 }
