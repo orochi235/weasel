@@ -406,3 +406,20 @@ describe('declarations CSS rejects', () => {
     expect(initial.warnings).toEqual([]);
   });
 });
+
+describe('a paint function the reader cannot read', () => {
+  it('reads as unset, so the element takes its parent paint rather than black', () => {
+    const { nodes, warnings } = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><g fill="red" stroke="blue">'
+      + '<rect width="1" height="1" fill="rgb(255,0" stroke="color(foo 1 2)"/></g>'
+      + '<rect width="1" height="1" style="stroke: var(--accent)"/></svg>');
+    const inGroup = (nodes[0] as SvgGroupNode).children[0] as SvgPathNode;
+    expect(inGroup.fill).toEqual({ kind: 'solid', color: '#ff0000' });
+    expect(inGroup.stroke?.paint).toEqual({ kind: 'solid', color: '#0000ff' });
+    expect((nodes[1] as SvgPathNode).stroke).toBeUndefined();
+    expect(warnings).toEqual([
+      'fill: rgb(255,0 is not a color this reader can read; it is read as unset',
+      'stroke: color(foo 1 2) is not a color this reader can read; it is read as unset',
+      'stroke: var(--accent) is not a color this reader can read; it is read as unset',
+    ]);
+  });
+});
