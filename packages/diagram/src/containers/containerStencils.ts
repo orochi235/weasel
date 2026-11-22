@@ -163,7 +163,8 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
     // A themed scene colors the lanes as a theme change would, by their places in the stack: those after the new
     // one, which it moved along one, and the new one unless it was given a style.
     if (scene.doc.get(DIAGRAM_THEME_KEY) !== undefined) {
-      const writes = themeWrites(scene as unknown as ThemedScene, diagramThemeOf(scene), new Set(style === undefined ? [id, ...lanes] : lanes));
+      const moved = index === undefined ? [] : lanes.slice(index);
+      const writes = themeWrites(scene as unknown as ThemedScene, diagramThemeOf(scene), new Set(style === undefined ? [id, ...moved] : moved));
       for (const [at, data] of writes) scene.update(at as never, { data } as never);
     }
   });
