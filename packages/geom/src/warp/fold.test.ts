@@ -70,8 +70,9 @@ it('leaves a mesh at rest where it is', () => {
 });
 
 // Before the L-BFGS solve, the refit that split at the worst sample took 6 and 22 here; under the stop
-// relative to the whole energy, 5 and 11 (2026-10-27).
-it.each([{ c: discSquash, anchors: 4 }, { c: barS, anchors: 10 }])('refits the $c.name with about the anchors its bends need', ({ c, anchors }) => {
+// relative to the whole energy, 5 and 11 (2026-10-27); 4 and 10, then 5 and 11 again over a truly
+// triangular lattice (2026-11-22).
+it.each([{ c: discSquash, anchors: 5 }, { c: barS, anchors: 11 }])('refits the $c.name with about the anchors its bends need', ({ c, anchors }) => {
   const out = warpPath(c.shape, pinWarpMap(c.shape, c.pins), { tolerance: 0.5 });
   expect(pathToAnchors(out).anchors[0]).toHaveLength(anchors);
 });

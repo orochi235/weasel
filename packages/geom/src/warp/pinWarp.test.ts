@@ -242,3 +242,17 @@ describe('pinTargets', () => {
     expect(pinTargets(mesh, [p(10, 0, 14, 0), p(10, 0, 10, 6), p(0, 0, 5, 5)])).toEqual({ pinned: [1], targets: [12, 3] });
   });
 });
+
+describe('pinWarpMesh', () => {
+  it('fills a shape with a lattice of near-equilateral triangles', () => {
+    const square = new PathBuilder().moveTo(0, 0).lineTo(200, 0).lineTo(200, 200).lineTo(0, 200).close().build();
+    const { vertices: V, triangles: T } = pinWarpMesh(square, []);
+    const len = (a: number, b: number) => Math.hypot(V[2 * a] - V[2 * b], V[2 * a + 1] - V[2 * b + 1]);
+    let even = 0;
+    for (let t = 0; t < T.length; t += 3) {
+      const sides = [len(T[t], T[t + 1]), len(T[t + 1], T[t + 2]), len(T[t + 2], T[t])];
+      if (Math.max(...sides) / Math.min(...sides) < 1.05) even++;
+    }
+    expect(even / (T.length / 3)).toBeGreaterThan(0.6);
+  });
+});

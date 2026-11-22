@@ -187,7 +187,7 @@ function fillLattice(region: Region, h: number): void {
   for (let row = 0, y = y0 + rowH / 2; y < y1; row++, y += rowH) {
     const xs = crossingsAt(region.rings, y);
     let left = 0;
-    for (let x = x0 + (row % 2 ? h / 2 : h / 4); x < x1; x += h) {
+    for (let x = x0 + (row % 2 ? 3 * h / 4 : h / 4); x < x1; x += h) {
       while (left < xs.length && xs[left] < x) left++;
       if (left % 2 === 0 || nearOutline(x, y)) continue;
       if (pins.some((p) => Math.hypot(p.x - x, p.y - y) < 0.5 * h)) continue;
