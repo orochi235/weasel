@@ -187,11 +187,16 @@ export function encodeResolve(
   } else {
     from = source.color!.gpu;
   }
-  if (width <= 0 || height <= 0) return;
+  // Clipped to both targets as GL's blit is: a copy past either texture is a validation error that voids the submit.
+  const x0 = Math.max(0, -x);
+  const y0 = Math.max(0, -y);
+  const w = Math.min(width, source.width, dest.width - x) - x0;
+  const h = Math.min(height, source.height, dest.height - y) - y0;
+  if (w <= 0 || h <= 0) return;
   encoder.copyTextureToTexture(
-    { texture: from, origin: [0, source.height - height] },
-    { texture: dest.color!.gpu, origin: [x, dest.height - y - height] },
-    [width, height],
+    { texture: from, origin: [x0, source.height - y0 - h] },
+    { texture: dest.color!.gpu, origin: [x + x0, dest.height - y - y0 - h] },
+    [w, h],
   );
 }
 
