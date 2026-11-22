@@ -258,27 +258,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] An object leaf's own `enableIf` disables its switch field in `PrefsForm`.** For an object leaf
-  `stroke` with `enableIf: { path: 'stroke.on' }`, `applyPrefConditions` spares `stroke.on`, and
-  `objectFieldContext` hands that field `disabled: false`, but the leaf's row is a `PropertyRow` with `disabled`,
-  whose `holdScope` disables every control inside it, so the checkbox can never turn the leaf back on (measured in
-  jsdom, 2026-11-20). Sections and groups are spared because their frames dim a title without holding the controls.
-  Closes when the object leaf's row dims its label without holding its fields, and a test turns such a leaf back on
-  from its own switch, in `PrefsForm` and `SelectionPanel`.
-
-- **(P3) [agent] draw's color keys change only the next shape's paint, while the swatch buttons also paint the
-  selection.** `/`, `X` and `D` (`apps/draw/src/tools/colorContext/actions.ts`) call the color context alone; the
-  swatch's None toggle, Swap and paint editor (`apps/draw/src/ActiveSwatches.tsx`) also commit `setFill`/`setStroke`.
-  The keys' actions have no way to reach the selection edit today. Closes when each key paints the selection as its
-  swatch button does, Swap as one undo entry, with a test per key.
-
-- **(P3) [agent] `SpanStrips` draws a span's `content` twice, so interactive content in a span breaks.** `SpanPlayed`
-  (`packages/ui/src/components/SpanStrip/SpanSegments.tsx`) renders every segment again in an `aria-hidden` layer over
-  the first, for the part left of the playhead. A button in a span's `content` exists twice, clicks land on the hidden
-  copy, and React Aria's popover from it never shows (skulkr's capstone lane, 2026-11-20, moved its button to the lead
-  cell). Closes when the played layer is `inert` with its content non-interactive, or a span takes an action of its
-  own, and a test clicks a control in a span's content.
-
 - **(P3) [maintainer] Trials in one labkit workspace have no way to share params.** Each trial owns its own
   settings, so two trials meant to show one setting from different angles each get their own copy, and editing it
   in one leaves the other behind. Wants a way for trials to declare that a param is shared, and a decision on where
@@ -298,21 +277,6 @@ Owner tags, after the priority (2026-10-26):
   windease's `DragProvider` with its default overlay, which labels the chip with the node's `meta.title` and falls
   back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip
   (seen 2026-11-11). Closes when the ghost shows the trial's title, or labkit draws its own.
-
-- **(P3) [agent] iconfab still mounts its annotation targets 12 at a time.** labkit's overlay died with "Maximum
-  update depth exceeded" past about two dozen targets in one commit, because the surface committed each tile's
-  placement in a `flushSync` of its own; it now commits a frame's tiles together, and
-  `AnnotationOverlay.many.browser.test.tsx` mounts 100 (2026-11-12). iconfab's Review page
-  (`~/src/iconfab/apps/lab/src/review/Review.tsx`, `TARGET_BATCH`) and its README's "Known problems" still work
-  around it, on labkit 1.19.0 from npm. The fix (7e27df1ba) landed after 1.19.1, so no release has it. iconfab's
-  branch `drop-annotation-batching` (worktree `~/src/iconfab-wt/drop-annotation-batching`, 91f8293) drops the
-  batching and typechecks; at release, bump its labkit pin, run `apps/lab/e2e/review.spec.ts`, and merge it
-  (2026-11-14). Closes when a labkit release carries the fix and iconfab drops the batching.
-- **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
-  (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
-  necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown
-  over time in each cell. Raised as a direction, not to build yet (2026-11-08). Closes when the maintainer
-  has said how a third sweep shows and `<Sequence>` takes any number of sweeps.
 
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
@@ -437,14 +401,6 @@ only story runner in the repo.
   (`apps/site/releaseIcons.ts`) has no entry for them, so their chips draw no glyph; the badges are drawn in
   `apps/site/icons/packages.mjs` and need the maintainer's sketch first. `releaseIcons.test.ts` holds the list
   and fails on a new package without one. Closes when all seven have one.
-
-- **(P3) [agent] labkit's annotation input lagged a second move of its target in one full fleet run.**
-  "the box that takes input follows its target either way it moves with nothing resizing"
-  (`packages/labkit/src/annotations/AnnotationOverlay.clip.browser.test.tsx`) failed in round 53's run on
-  2026-11-20: after the neighbor widened, the input sat 8.25 px off, exactly the second move, so it had followed the
-  first and not the second within `waitFor`'s second. Alone, the same commit passed 4/4. So whatever keeps the input
-  on a target that moves without resizing can miss a move under load. Closes when the input follows each move in a
-  frame or two by construction (an observer, not a poll that load can starve), and that file passes in full runs.
 
 - **(P3) [waiting] `SegmentsArcView`'s arc test missed by 3.5 px in one full fleet run.** "segments sit on the
   arc, edge to edge, and the well runs one rim past the first and last"

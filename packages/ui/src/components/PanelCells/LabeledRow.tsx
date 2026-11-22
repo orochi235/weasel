@@ -15,13 +15,15 @@ export interface LabeledRowProps extends DisableableProps {
   marked: boolean;
   /** The selection and hidden attributes the row's element carries. */
   attrs: Record<string, string | undefined>;
+  /** Whether disabling the row disables the controls inside it. Default `true`; `false` dims the label alone. */
+  holds?: boolean;
   children: ReactNode;
 }
 
 /** A panel row: its label in the label column, its controls beside it. Disabled, its reason is read after `title`
  *  in the label's tooltip. */
 export function LabeledRow(props: LabeledRowProps): ReactElement {
-  const { label, title, marked, attrs, children } = props;
+  const { label, title, marked, attrs, holds = true, children } = props;
   const { disabled, reason: why } = useDisabled(props);
   const state = useRowState();
   const { onReset } = state;
@@ -30,7 +32,7 @@ export function LabeledRow(props: LabeledRowProps): ReactElement {
     <div className={s.row} {...attrs} {...(disabled ? { 'data-disabled': '' } : {})}>
       <span className={s.rowLabel} title={why ? (title ? `${title}\n${why}` : why) : title}>{label}{marked && <HiddenBadge />}{onReset && <ResetControl name={typeof label === 'string' ? label : 'this setting'} onReset={onReset} disabled={disabled} />}</span>
       <span className={s.rowControls}>
-        <InsideRow scope={scope}><ReasonTold reason={why}>{holdScope(props, children)}</ReasonTold></InsideRow>
+        <InsideRow scope={scope}><ReasonTold reason={why}>{holdScope(holds ? props : { ...props, disabled: false }, children)}</ReasonTold></InsideRow>
       </span>
     </div>
   );

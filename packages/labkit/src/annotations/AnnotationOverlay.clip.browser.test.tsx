@@ -205,6 +205,37 @@ test('the box that takes input follows its target either way it moves with nothi
   await waitFor(() => expect(input.getBoundingClientRect().left).toBeCloseTo(shown().left, 0));
 });
 
+/** What the next move waits for once the input has followed the last: the race this guards sat in those gaps. */
+const GAPS: Array<() => Promise<void>> = [
+  async () => {},
+  () => Promise.resolve(),
+  () => new Promise((r) => requestAnimationFrame(() => r())),
+  () => new Promise((r) => setTimeout(r, 0)),
+  () => new Promise((r) => setTimeout(r, 16)),
+];
+
+test('the box that takes input follows every one of many moves in a row', async () => {
+  renderWithIcons(
+    <div className="lk-clip-lab-host">
+      <Lab instruments={[Clipped]} />
+    </div>,
+  );
+  await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
+  await waitFor(() => expect(document.querySelector('.lk-annotate__input')).not.toBeNull());
+  const input = document.querySelector('.lk-annotate__input') as HTMLElement;
+  const shown = () =>
+    ((pane.current as HTMLElement).parentElement as HTMLElement).getBoundingClientRect();
+  const beside = document.querySelector('.lk-clip-lab-beside') as HTMLElement;
+  const widths = ['lk-clip-lab-beside--narrow', 'lk-clip-lab-beside--wide', ''];
+  for (let i = 0; i < 60; i++) {
+    beside.classList.remove('lk-clip-lab-beside--narrow', 'lk-clip-lab-beside--wide');
+    const width = widths[i % widths.length];
+    if (width) beside.classList.add(width);
+    await waitFor(() => expect(input.getBoundingClientRect().left).toBeCloseTo(shown().left, 0));
+    await GAPS[i % GAPS.length]?.();
+  }
+});
+
 const scroller: { current: HTMLDivElement | null } = { current: null };
 
 // The target is the scroller's own box; its marks live in the content it scrolls.

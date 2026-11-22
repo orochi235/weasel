@@ -131,10 +131,11 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
     shown.observe(element);
   };
 
-  const frame = (threshold: number): void => {
+  // Around `at`, a box a report already checked, so a move made since it was measured shows in the next first report.
+  const frame = (threshold: number, at?: DOMRectReadOnly): void => {
     disconnect();
     if (stopped) return;
-    const box = element.getBoundingClientRect();
+    const box = at ?? element.getBoundingClientRect();
     if (box.width === 0 || box.height === 0) {
       awaitSize();
       return;
@@ -157,12 +158,12 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
         // ask for what it does reach. One wholly off it reports zero for
         // every frame, wherever it goes; look again once it may have come back.
         if (ratio !== 0) {
-          frame(ratio);
+          frame(ratio, box);
           watchShown(box, ratio);
         } else {
           retry = setTimeout(() => {
-            if (movedTo(box, element.getBoundingClientRect()) && !report()) return;
-            frame(1e-7);
+            const moved = movedTo(box, element.getBoundingClientRect());
+            if (!moved || report()) frame(1e-7, moved ? undefined : box);
           }, 1000);
         }
       },

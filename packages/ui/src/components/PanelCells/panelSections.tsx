@@ -96,6 +96,7 @@ function labeledRow(row: PanelRow, controls: readonly RenderedCell[], marks: Pan
         marked={marked}
         disabled={controls.every((cell) => cell.disabled)}
         disabledReason={first.leaf.disabledReason}
+        holds={!controls.every((cell) => cell.selfHeld === true)}
         attrs={{ ...selectionAttrs(panelLeafKey(first), shared ? selectedOnly(marks) : marks, true), ...(shared ? hiddenAttrs(marked) : {}) }}
       >
         {controls.map(({ key, content }) => (

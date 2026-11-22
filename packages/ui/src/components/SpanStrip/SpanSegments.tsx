@@ -31,10 +31,11 @@ export function SpanSegments({ placed }: { placed: readonly PlacedSpan[] }): Rea
   return <>{placed.map((p) => <Segment key={p.span.id} placed={p} />)}</>;
 }
 
-/** The same spans filled in their own colors, shown only left of the playhead. */
+/** The same spans filled in their own colors, shown only left of the playhead. A copy, so nothing in a span's
+ *  content can be reached through it: a click, focus, and assistive tech all find the one underneath. */
 export function SpanPlayed({ placed }: { placed: readonly PlacedSpan[] }): ReactElement {
   return (
-    <div className={s.played} aria-hidden="true">
+    <div className={s.played} aria-hidden="true" inert>
       {placed.map((p) => <Segment key={p.span.id} placed={p} />)}
     </div>
   );

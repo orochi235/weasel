@@ -1,13 +1,16 @@
 /**
- * Declares the `color` dep the color actions read. `colorContribution`
+ * Declares the `color` and `colorPaint` deps the color actions read. `colorContribution`
  * publishes its live source.
  */
 import '@weasel-js/routing';
 import type { ColorContextValue } from './ColorContextProvider';
+import type { PaintSelection } from '../../usePaintSelection';
 
 declare module '@weasel-js/routing' {
   interface DepSchema {
     color?: ColorContextValue;
+    /** Paints the selection with the active paints a color key just set. */
+    colorPaint?: PaintSelection;
   }
 }
 

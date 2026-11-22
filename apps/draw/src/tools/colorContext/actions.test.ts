@@ -11,10 +11,10 @@ import type { ImmediateInvoker } from '@weasel-js/core';
 
 function makeColorDeps() {
   return {
-    reset: vi.fn(),
-    swap: vi.fn(),
+    reset: vi.fn(() => ({ fill: null, stroke: null })),
+    swap: vi.fn(() => ({ fill: null, stroke: null })),
     swapFocus: vi.fn(),
-    toggleFocusedNone: vi.fn(),
+    toggleFocusedNone: vi.fn(() => ({ slot: 'fill', paint: null })),
   };
 }
 
