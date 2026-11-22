@@ -3618,3 +3618,8 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): `addLane` returns null and changes nothing when the add would move or restyle a
   locked node (the pool, its title, a lane it shifts, or what that lane holds), as `releaseMembers` does; throwing,
   or adding the lane and leaving locked lanes overlapping it, were the alternatives.
+## Audit round sixty-six (2026-11-21): path-tools, part two
+
+- 2026-11-21 (the fixer's call): `facesAlong` throws a `RangeError` for a `step` that is not a positive finite
+  number, as `mergeRegion` does for its `tolerance`; a zero one had looped forever, and a negative one sampled only
+  each segment's ends. Falling back to one sample per segment was the alternative.
