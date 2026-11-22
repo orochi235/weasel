@@ -23,6 +23,12 @@ describe('kneadPath', () => {
     expect(out.find((a) => a.x === 100 && a.y === 0)).toBeDefined();
   });
 
+  it('bends a long edge the brush meets between where samples along it would land', () => {
+    const line = polygonFromPoints([{ x: 0, y: 0 }, { x: 1000, y: 0 }, { x: 1000, y: 1000 }]);
+    const out = pathToAnchors(kneadPath(line, { center: { x: 560, y: 0 }, delta: { x: 0, y: 10 }, radius: 30 })).anchors[0];
+    expect(out.find((a) => Math.abs(a.x - 560) < 5)?.y).toBeGreaterThan(5);
+  });
+
   it('bends the closing segment of a closed subpath too', () => {
     const out = anchors(kneadPath(square(), { center: { x: 0, y: 50 }, delta: { x: -10, y: 0 }, radius: 20 }));
     expect(out.length).toBeGreaterThan(4);
