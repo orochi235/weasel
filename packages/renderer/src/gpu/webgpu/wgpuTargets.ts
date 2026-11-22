@@ -62,7 +62,7 @@ export function createTarget(host: ResourceHost, desc: GpuTargetDesc): WgpuTarge
   const depth = stencil
     ? device.createTexture({ label: 'target stencil', size: [width, height], format: DEPTH_STENCIL, sampleCount: samples, usage: TextureUsage.RENDER_ATTACHMENT })
     : null;
-  const colorView = color?.view ?? msaa!.createView();
+  const msaaView = msaa?.createView();
   const depthView = depth?.createView();
   const attached = new Set<WgpuTexture>([color, ids].filter((t): t is WgpuTexture => t !== null));
   const perPixel = samples * (4 + (stencil ? 4 : 0)) + (ids ? 4 : 0);
@@ -70,7 +70,7 @@ export function createTarget(host: ResourceHost, desc: GpuTargetDesc): WgpuTarge
     kind: 'target', width, height, samples: samples === 4 ? 4 : 0, sampleCount: samples, color, ids, msaa, depth, resolved: null, usedIn: -1,
     format: 'rgba8unorm', stencil, hasIds: ids !== null, key: attachmentKey('rgba8unorm', samples, stencil, ids !== null), attached,
     get bytes() { return width * height * (perPixel + (this.resolved ? 4 : 0)); },
-    colorView: () => colorView,
+    colorView: () => color?.view ?? msaaView!,
     resolveView: () => undefined,
     idsView: () => ids?.view,
     depthView: () => depthView,
