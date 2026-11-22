@@ -3505,7 +3505,7 @@ Calls the lanes made without a ruling:
   second in one composite, a start a transition arrives at, an end one leaves, one with no transition) as before,
   with a warning; refusing the page was the alternative. A diamond with text is written as a plain state keeping its
   text, with a warning; writing it as a `<<choice>>` and dropping the text was the alternative.
-- 2026-11-21 (the fixer's call): A chart writer (pie, packet, quadrant, radar, xychart, timeline) warns of a page name
+- 2026-11-21 (the fixer's call): A chart writer (pie, packet, quadrant, radar, sankey, xychart, timeline) warns of a page name
   that is not its chart's title and writes none; writing it as front matter, which every chart reader takes as the
   chart's title where it has none, was the alternative. A Mermaid sequence page named `''` reads back unnamed, as an
   empty title statement names no page of any other kind.
@@ -3605,3 +3605,11 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): reading draw-style XML leaves out a cell its `visible="0"` hides, every cell under it,
   and every connector with an end on one, with one warning. Importing them shown, or keeping a connector between a
   shown shape and a hidden one as a loose end, were the alternatives (`drawXml/pageCells.ts`, `shown`).
+## Audit round sixty-six (2026-11-21): Mermaid diagrams, part two
+
+- 2026-11-21 (the fixer's call): The Mermaid sequence writer writes a region with no fill as `rect transparent`,
+  which reads back with no fill, so Mermaid draws it unshaded. Writing a faint gray, which shows in Mermaid but reads
+  back as a fill the page never had, was the alternative.
+- 2026-11-21 (the fixer's call): The Mermaid state writer writes what a pool holds outside its lanes (its own states,
+  containers, and `[*]` transitions) as a concurrent region ahead of the lanes, with a warning, so it reads back as a
+  lane of its own. Dropping it with a warning was the alternative.

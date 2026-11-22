@@ -221,3 +221,31 @@ describe('reading a Mermaid state\'s name and description in either order', () =
     expect(node('stateDiagram-v2\n  state "Idle" as A\n  A : waits for input', 'A').lines).toEqual(['Idle', 'waits for input']);
   });
 });
+
+describe('writing a Mermaid state whose id is a statement word', () => {
+  it('renames a state whose id is accTitle or accDescr, so its description reads back as its own', () => {
+    for (const id of ['accTitle', 'accDescr']) {
+      const doc = { pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: { nodes: [{ id, lines: ['Name', 'desc'] }, { id: 'b' }], edges: [{ id: 'e', from: id, to: 'b' }] } as never }] };
+      const back = page(writeStateDiagram(doc).text);
+      expect(back.data.nodes.find((n) => n.id !== 'b')?.lines, id).toEqual(['Name', 'desc']);
+    }
+  });
+});
+
+describe('writing what a Mermaid state pool holds outside its lanes', () => {
+  it('writes a pool\'s own states and containers as a region of their own, with a warning', () => {
+    const doc = { pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 's1', lines: ['One'] }, { id: 'a' }, { id: 'b' }, { id: 'c' }], edges: [],
+      containers: [
+        { id: 'P', role: 'pool', label: 'P', members: ['s1', 'inner'], lanes: [{ id: 'L1', members: ['a'] }, { id: 'L2', members: ['b'] }] },
+        { id: 'inner', role: 'container', label: 'Inner', members: ['c'] },
+      ],
+    } as never }] };
+    const out = writeStateDiagram(doc);
+    expect(out.warnings).toContain('Mermaid divides a state into regions only; what a pool holds outside its lanes was written as a region of its own.');
+    const back = page(out.text);
+    expect(back.data.nodes.map((n) => n.id).sort()).toEqual(['a', 'b', 'c', 's1']);
+    expect(back.data.containers?.find((k) => k.id === 'inner')).toMatchObject({ role: 'container', label: 'Inner', members: ['c'] });
+    expect(back.data.containers?.find((k) => k.id === 'P')?.lanes).toHaveLength(3);
+  });
+});

@@ -1,7 +1,7 @@
 /** A plot page holding a sankey as Mermaid `sankey-beta` text: front matter for its title, then a CSV row per link. */
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
-import { titleLines } from '../common/lines';
+import { titleLines, warnDroppedPageName } from '../common/lines';
 import { oneLine } from '../common/text';
 
 /** A field bare where it reads back the same, else quoted, a quote inside doubled. A row starting `%%` or `acc` would
@@ -13,6 +13,7 @@ export function writeMermaidSankey(page: PlotPage): ExportResult {
   const data = page.data;
   if (data.kind !== 'sankey') throw new Error(`Mermaid writes this chart as a sankey only; the page holds a ${(data as { kind: string }).kind}`);
   const warnings = new Warnings();
+  warnDroppedPageName({ ...(page.name !== undefined ? { name: page.name } : {}), data }, (m) => warnings.add(m));
   const field = (s: string) => quoted(oneLine(s, 'sankey', (m) => warnings.add(m)));
   const rows = data.links.map((l) => {
     const ok = Number.isFinite(l.value) && l.value >= 0;

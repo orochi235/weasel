@@ -2,13 +2,14 @@
 import type { SeqParticipant, SeqStep, SequenceData } from '@weasel-js/diagram';
 import type { ExportResult, SequencePage } from '../../document';
 import { Warnings } from '../../graphRead';
+import { ACC_WORDS } from '../common/lines';
 import { mermaidIds } from '../common/text';
 import { arrowOf, leadingColor, mermaidSeqText, typeOf } from './syntax';
 
 const SECTION_WORDS = { loop: null, alt: 'else', opt: null, par: 'and', critical: 'option', break: null, region: null } as const;
 
 /** Words a sequence reads as a statement when a line opens with one, however the line goes on. */
-const SEQUENCE_WORDS = ['title', 'accTitle', 'accDescr', 'link', 'links', 'properties', 'details'];
+const SEQUENCE_WORDS = ['title', ...ACC_WORDS, 'link', 'links', 'properties', 'details'];
 
 /** Every participant id `data` names: declared, and named by a step. */
 function namedIds(data: SequenceData): string[] {
@@ -74,24 +75,26 @@ class SequenceWriter {
       this.out(depth, this.declaration(p, false));
       written.push(p.id);
     };
-    for (const p of this.data.participants) {
-      if (created.has(p.id)) continue;
-      const box = boxOf.get(p.id);
-      if (box === undefined) {
-        declare(p, 1);
-        continue;
-      }
-      if (done.has(box.id)) continue;
+    const writeBox = (box: Box) => {
+      if (done.has(box.id)) return;
       done.add(box.id);
+      const members = new Set(box.members.filter((m) => boxOf.get(m) === box && kept(m)));
+      if (members.size === 0) return;
       if (box.colors !== undefined && Object.keys(box.colors).some((k) => k !== 'fill')) this.warnings.add('Box colors other than the fill were dropped.');
       const label = box.label === undefined ? undefined : mermaidSeqText(box.label);
       const color = this.fill(box.colors?.fill) ?? (label !== undefined && leadingColor(label) !== undefined ? 'transparent' : undefined);
       this.out(1, ['box', color, label].filter((t) => t !== undefined).join(' '));
-      const members = new Set(box.members.filter((m) => boxOf.get(m) === box && kept(m)));
       for (const q of this.data.participants) if (members.has(q.id)) declare(q, 2);
       for (const m of members) if (!declared.has(m)) declare({ id: m }, 2);
       this.out(1, 'end');
+    };
+    for (const p of this.data.participants) {
+      if (created.has(p.id)) continue;
+      const box = boxOf.get(p.id);
+      if (box === undefined) declare(p, 1);
+      else writeBox(box);
     }
+    for (const b of this.data.boxes ?? []) writeBox(b);
     const order = this.data.participants.map((p) => p.id).filter((id) => !created.has(id));
     const moved = written.filter((id) => declared.has(id));
     if (order.some((id, k) => moved[k] !== id)) this.warnings.add('Mermaid declares a box\'s members together; members declared apart were moved beside each other.');
@@ -125,7 +128,7 @@ class SequenceWriter {
         const label = (k: number) => (s.sections[k]?.label === undefined ? '' : ` ${mermaidSeqText(s.sections[k]!.label!)}`);
         if (s.type === 'region') {
           if (s.sections.some((sec) => sec.label !== undefined)) this.warnings.add('Labels on colored regions were dropped.');
-          this.out(depth, `rect ${this.fill(s.colors?.fill) ?? 'rgba(128, 128, 128, 0.1)'}`);
+          this.out(depth, `rect ${this.fill(s.colors?.fill) ?? 'transparent'}`);
         } else {
           if (s.colors !== undefined) this.warnings.add('Colors on loops, alts, and other fragments were dropped.');
           this.out(depth, `${s.type}${label(0)}`);
