@@ -106,7 +106,7 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
   const tabs = pages.map((page, i) => {
     const cls = [s.tab];
     if (draggedIds?.includes(page.id)) cls.push(s.dragging);
-    if (targetIndex === i && !draggedIds?.includes(page.id)) cls.push(s.dropBefore);
+    if (targetIndex === i) cls.push(s.dropBefore);
     if (targetIndex === pages.length && i === pages.length - 1) cls.push(s.dropAfter);
     return (
       <Tab

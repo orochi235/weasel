@@ -110,6 +110,15 @@ export interface PatternPickerProps extends HoldProps {
   readImage?: (file: File) => Promise<ReadImage>;
 }
 
+/** A new pattern in place of `of`, keeping what the picker's own controls don't set: its transform and opacity. */
+function carried(next: PatternPaint, of: PatternPaint): PatternPaint {
+  return {
+    ...next,
+    ...(of.transform && { transform: of.transform }),
+    ...(of.opacity !== undefined && { opacity: of.opacity }),
+  };
+}
+
 /**
  * Grid of tile swatches over a size switch and a rotation field, each swatch
  * previewing the real tile at the current color. The last swatch uploads an
@@ -136,12 +145,9 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
   const latest = useRef({ value, onChange });
   useEffect(() => { latest.current = { value, onChange }; });
 
-  const withTransform = (next: PatternPaint, of: PatternPaint = value): PatternPaint =>
-    (of.transform ? { ...next, transform: of.transform } : next);
-
   const pick = (kind: TileKind): void => {
     reading.drop();
-    onChange(withTransform(seedPattern(kind, color, size)));
+    onChange(carried(seedPattern(kind, color, size), value));
   };
 
   const upload = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -153,7 +159,7 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
     readImage(file).then(
       (read) => {
         const now = latest.current;
-        if (mine()) now.onChange(withTransform(seedImagePattern(read), now.value));
+        if (mine()) now.onChange(carried(seedImagePattern(read), now.value));
       },
       (err: unknown) => console.warn(`weasel PatternPicker: "${file.name}" could not be read as an image`, err),
     );

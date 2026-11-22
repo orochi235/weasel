@@ -42,8 +42,8 @@ export function PageTabsAlong<P extends PageTabItem>(props: PageTabsAlongProps<P
     pointer: (client) => positionAt(frame.current ?? root.current!, run, client),
   }), [run]);
   const parts = usePageTabs(props, line);
-  const { targetIndex, draggedIds } = parts.drag.state;
-  const drop = dropAt(targetIndex, draggedIds ?? [], pages, host, run.length, gap);
+  const { targetIndex } = parts.drag.state;
+  const drop = dropAt(targetIndex, pages, host, run.length, gap);
 
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
     parts.onPointerDownCapture();
@@ -89,17 +89,13 @@ function AddOnRun({ add }: { add: PageTabsParts['add'] }): ReactElement {
   );
 }
 
-/**
- * Px along the run where a tab dropped at `target`, an index into `pages`, would land: midway across the gap there. A
- * target before a dragged tab is its own place, which gets no mark.
- */
+/** Px along the run where a tab dropped at `target`, an index into `pages`, would land: midway across the gap there. */
 function dropAt(
-  target: number | null, dragged: readonly string[], pages: readonly PageTabItem[], host: RunSlotHost, length: number, gap: number,
+  target: number | null, pages: readonly PageTabItem[], host: RunSlotHost, length: number, gap: number,
 ): number | null {
   if (target === null || pages.length === 0) return null;
   const before = target < pages.length;
   const page = pages[before ? target : pages.length - 1]!;
-  if (before && dragged.includes(page.id)) return null;
   const place = host.placeOf(page.id);
   if (place === undefined) return null;
   const reach = host.lengthOf(page.id) / 2 + gap / 2;

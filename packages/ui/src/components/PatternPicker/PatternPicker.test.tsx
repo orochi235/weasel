@@ -124,6 +124,23 @@ describe('PatternPicker images', () => {
     expect(seedImagePattern(READ)).toMatchObject({ kind: 'image', width: 128, height: 64, units: 'bounds' });
   });
 
+  it('keeps the paint\'s opacity across a tile pick and an image upload', async () => {
+    const onChange = vi.fn();
+    render(
+      <PatternPicker
+        value={{ ...seedPattern('hatch', '#123456'), opacity: 0.4 }}
+        color="#123456"
+        onChange={onChange}
+        readImage={async () => READ}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'dots' }));
+    expect(onChange.mock.calls[0][0]).toEqual({ ...seedPattern('dots', '#123456'), opacity: 0.4 });
+    upload();
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(2));
+    expect(onChange.mock.calls[1][0]).toEqual({ ...seedImagePattern(READ), opacity: 0.4 });
+  });
+
   it('marks the image swatch as the one in use', () => {
     render(<PatternPicker value={seedImagePattern(READ)} color="#123456" onChange={() => {}} />);
     expect(screen.getByRole('button', { name: 'image' }).getAttribute('aria-pressed')).toBe('true');

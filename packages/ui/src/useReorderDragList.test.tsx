@@ -133,6 +133,17 @@ describe('useReorderDragList', () => {
     expect(onReorder).toHaveBeenCalledWith(['a'], 3);
   });
 
+  it('publishes no target while the drop would leave the dragged rows where they are', () => {
+    const { row } = setup();
+    // Row b spans y 32–64: its upper half is the gap right after a, a's own place.
+    press(row('a'), 16);
+    move(40);
+    expect(latest.draggedIds).toEqual(['a']);
+    expect(latest.targetIndex).toBeNull();
+    move(70);
+    expect(latest.targetIndex).toBe(2);
+  });
+
   it('dragging a selected row moves entire selection as one block', () => {
     const { onReorder, row } = setup(ITEMS, ['a', 'c']);
     press(row('a'), 16);

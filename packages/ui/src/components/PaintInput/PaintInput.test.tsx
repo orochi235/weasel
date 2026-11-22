@@ -81,6 +81,14 @@ describe('PaintInput', () => {
     expect(onInput).toHaveBeenCalledWith(expect.objectContaining({ color: '#445566' }));
   });
 
+  it('offers no color field for a mixed or missing value when `kinds` leaves out solid', () => {
+    const kinds = ['linear-gradient', 'radial-gradient'] as const;
+    const { container, rerender } = renderWithIcons(<PaintInput value={LINEAR} mixed kinds={kinds} onChange={() => {}} />);
+    expect(container.querySelector('input[type="color"]')).toBeNull();
+    rerender(<PaintInput value={undefined} kinds={kinds} onChange={() => {}} />);
+    expect(container.querySelector('input[type="color"]')).toBeNull();
+  });
+
   // The switch precedence, which is the whole point of the memory.
   it('linear -> solid -> linear restores the stops', () => {
     const onCommit = vi.fn();

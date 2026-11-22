@@ -3687,3 +3687,11 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (my call, audit round 69): two loupes in one camera (`<CanvasStack>`, `<Stage>`) stay unsupported, since
   their actions share ids on the camera's registry and one hover runs one action; the second to mount warns once in
   development that only the newest aims, peeks and magnifies, rather than both being routed.
+## Audit round sixty-nine (2026-11-22): ui components, part six
+
+- 2026-11-22 (the fixer's call): `PageTabs` treats a rename committed blank, or only spaces, as abandoned and calls no
+  `onRename`. Clearing the page's name back to its numbered label was the alternative, which `onRename`'s string
+  argument cannot say.
+- 2026-11-22 (the fixer's call): `PaintInput` with a mixed or missing value and `kinds` leaving out `solid` shows no
+  body under the kind bar; a kind is chosen in the bar. Seeding the first offered kind from the picked color was
+  the alternative.

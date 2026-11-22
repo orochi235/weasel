@@ -211,6 +211,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
           value={value}
           mixed={mixed}
           valueKind={valueKind}
+          solidAllowed={kinds === undefined || kinds.includes('solid')}
           currentColor={currentColor}
           onInput={onInput}
           onChange={onChange}
@@ -227,6 +228,8 @@ interface PaintBodyProps {
   value: Paint | null | undefined;
   mixed: boolean;
   valueKind: ReturnType<typeof usePaintKind>;
+  /** Whether `kinds` offers solid, which a mixed or missing value's color field would write. */
+  solidAllowed: boolean;
   /** The color a pattern seeds from. */
   currentColor: () => string;
   onInput?: (next: Paint | null) => void;
@@ -242,7 +245,7 @@ function appliedColor(applied: Paint | null | void): string | undefined {
 
 /** The editor for whichever kind the bar has lit. */
 function PaintBody(props: PaintBodyProps): ReactElement | null {
-  const { value, mixed, valueKind, currentColor, onInput, onChange, onCancel, ariaLabel } = props;
+  const { value, mixed, valueKind, solidAllowed, currentColor, onInput, onChange, onCancel, ariaLabel } = props;
   return renderBody();
 
   /** A solid's alpha rides its swatch; every other kind has no one color to
@@ -266,6 +269,7 @@ function PaintBody(props: PaintBodyProps): ReactElement | null {
 
   function renderBody(): ReactElement | null {
     if (mixed || value === undefined) {
+      if (!solidAllowed) return null;
       return (
         <ColorField
           mixed
