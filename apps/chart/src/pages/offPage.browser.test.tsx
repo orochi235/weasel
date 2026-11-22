@@ -14,6 +14,7 @@ import { readClientPixels } from '../testing/canvasPixels';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
 import { doubleClick, drag } from '../testing/pointer';
 import { savedContent } from '../testing/savedChart';
+import { toolButtonName } from '../testing/toolName';
 import { PAGE_FIT_PADDING } from './useChartPages';
 
 registerCanvasFont('sans-serif');
@@ -47,7 +48,7 @@ function at(host: HTMLElement, x: number, y: number, fitted = 0): { x: number; y
   return { x: box.left + (x - view.x) * view.scale.x, y: box.top + (y - view.y) * view.scale.y };
 }
 
-const useTool = (name: string) => userEvent.click(page.getByRole('toolbar', { name: 'Tools' }).getByRole('button', { name: new RegExp(`^${name}`) }));
+const useTool = (name: string) => userEvent.click(page.getByRole('toolbar', { name: 'Tools' }).getByRole('button', { name: toolButtonName(name) }));
 
 /** Whether every pixel the canvas drew in a client rect is the same color. */
 function blank(canvas: HTMLCanvasElement, a: { x: number; y: number }, b: { x: number; y: number }): boolean {

@@ -11,6 +11,7 @@ import { at, readClientPixels } from './canvasPixels';
 import { unmountChartApp } from './mountChartApp';
 import { savedContent } from './savedChart';
 import { drag } from './pointer';
+import { toolButtonName } from './toolName';
 
 export const paper = DIAGRAM_THEMES.paper!;
 
@@ -38,7 +39,7 @@ export function chartSession<L extends Roles<L>>({ page, userEvent }: BrowserApi
     localStorage.clear();
   });
 
-  const useTool = (name: string) => userEvent.click(page.getByRole('toolbar', { name: 'Tools' }).getByRole('button', { name: new RegExp(`^${name}`) }));
+  const useTool = (name: string) => userEvent.click(page.getByRole('toolbar', { name: 'Tools' }).getByRole('button', { name: toolButtonName(name) }));
 
   /** Two Process bodies, 120 by 60: one from world (100, 100), one from (500, 100). */
   async function twoBodies(host: HTMLElement, canvas: HTMLCanvasElement): Promise<string[]> {
