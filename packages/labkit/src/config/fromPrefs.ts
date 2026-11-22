@@ -120,18 +120,33 @@ function sectionLeaves(
   });
 }
 
-/** Puts `node` at `path` in `root`, each segment before its last a branch no group of the schema named. */
+const isBranch = (entry: ConfigEntry): entry is ConfigBranch => 'children' in entry;
+
+/** Puts `node` at `path` in `root`, each segment before its last a branch no group of the schema named. A group
+ *  placed where such a branch already stands takes its children; any other meeting of two entries throws. */
 function place(root: OpenShape, path: string, node: ConfigEntry): void {
   const segments = path.split('.');
   const last = segments.pop()!;
+  const clash = (): never => {
+    throw new Error(`[labkit] configFromPrefs: two members of the schema both sit at \`${path}\``);
+  };
   let shape = root;
   for (const segment of segments) {
-    let branch = ownAt(shape, segment) as ConfigBranch | undefined;
-    if (branch === undefined || !('children' in branch)) {
+    let branch = ownAt(shape, segment) as ConfigEntry | undefined;
+    if (branch === undefined) {
       branch = { children: {}, annotations: { name: '' }, options: {} };
       setOwn(shape, segment, branch);
+    } else if (!isBranch(branch)) clash();
+    shape = (branch as ConfigBranch).children as OpenShape;
+  }
+  const held = ownAt(shape, last) as ConfigEntry | undefined;
+  if (held !== undefined) {
+    if (!isBranch(held) || !isBranch(node)) clash();
+    const children = (node as ConfigBranch).children as OpenShape;
+    for (const [key, child] of Object.entries((held as ConfigBranch).children as OpenShape)) {
+      if (ownAt(children, key) !== undefined) clash();
+      setOwn(children, key, child);
     }
-    shape = branch.children as OpenShape;
   }
   setOwn(shape, last, node);
 }

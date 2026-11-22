@@ -3660,3 +3660,9 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a `Sequence` grid's `cap` bounds its cells, not each axis: an axis shorter than
   √`cap` keeps every step and the other takes what that leaves, else both keep ⌊√`cap`⌋. Two open sweeps had drawn
   `cap`² live cells. Capping rows alone, at ⌊`cap` / columns⌋, was the alternative.
+
+## Audit round sixty-nine (2026-11-22): labkit.config
+
+- 2026-11-22 (the fixer's call): `configFromPrefs` (`f.prefs`) merges a group's `object` leaf with the dotted keys
+  under it in either member order, and throws where a plain leaf and a branch, or two leaves, claim one path, rather
+  than letting the later member replace the earlier.

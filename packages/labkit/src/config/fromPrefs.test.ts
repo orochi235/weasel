@@ -204,4 +204,43 @@ describe('f.prefs', () => {
     expect(isRowEnabled(resolved, 'grid.on', off)).toBe(true);
     expect(isRowEnabled(resolved, 'grid.size', off)).toBe(false);
   });
+  describe('a dotted key and a member at its prefix', () => {
+    const group = (children: Record<string, PrefLeaf>): PrefLeaf =>
+      ({
+        kind: 'object',
+        name: 'Grid',
+        description: '',
+        default: {},
+        group: {},
+        children: { inner: { name: '', members: children } },
+      }) as unknown as PrefLeaf;
+    const rows = (members: PrefSection['members']) => {
+      const schema = f.prefs({ name: '', members });
+      const shape = schema.nodes as Record<string, { children?: Record<string, unknown> }>;
+      return Object.keys(shape.grid?.children ?? {}).sort();
+    };
+
+    it('places a group after a dotted key under it without dropping that key', () => {
+      expect(rows({ 'grid.extra': num('Extra'), grid: group({ size: num('Size') }) })).toEqual([
+        'extra',
+        'size',
+      ]);
+    });
+
+    it('places a group before a dotted key under it the same way', () => {
+      expect(rows({ grid: group({ size: num('Size') }), 'grid.extra': num('Extra') })).toEqual([
+        'extra',
+        'size',
+      ]);
+    });
+
+    it('throws where a leaf and a branch both claim the path', () => {
+      expect(() => f.prefs({ name: '', members: { grid: num('G'), 'grid.size': num('S') } })).toThrow(
+        /grid/,
+      );
+      expect(() => f.prefs({ name: '', members: { 'grid.size': num('S'), grid: num('G') } })).toThrow(
+        /grid/,
+      );
+    });
+  });
 });
