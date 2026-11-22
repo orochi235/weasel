@@ -34,7 +34,8 @@ export type ArapStage = 'similarity' | 'rigid' | 'local-global' | 'injective';
 /** A solve's state after one stage: every vertex's position, interleaved `x, y`. */
 export interface ArapStep {
   stage: ArapStage;
-  /** Which round of its stage, from 1. */
+  /** Which round of its stage, from 1. A pass that runs out of rounds still
+   *  tangled reports its result under its last round again. */
   round: number;
   vertices: Float64Array;
 }
@@ -208,7 +209,7 @@ export function createArapSolver(mesh: ArapMesh, pinned: readonly number[]): Ara
           placePiece(piece, pos[k], out);
           fell = true;
         });
-        if (fell) report('injective', r);
+        if (fell) report('injective', r - 1);
       }
       return out;
     },
