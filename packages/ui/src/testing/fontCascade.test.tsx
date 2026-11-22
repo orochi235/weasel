@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { settle } from './fontCascade';
+import { exportedComponents, settle } from './fontCascade';
 
 describe('settle', () => {
   it('waits for markup a story only puts in after its first commit', async () => {
@@ -20,5 +20,13 @@ describe('settle', () => {
     expect(portal.innerHTML).toBe('<p>popover</p>');
     host.remove();
     portal.remove();
+  });
+});
+
+describe('exportedComponents', () => {
+  it('takes PascalCase names that open on an acronym, and leaves constants out', () => {
+    const fn = () => null;
+    const found = exportedComponents([{ XYPad: fn, A11yPanel: fn, Slider: fn, SHAPE_TOOLS: fn, X: fn, useThing: fn }]);
+    expect([...found.keys()]).toEqual(['XYPad', 'A11yPanel', 'Slider']);
   });
 });

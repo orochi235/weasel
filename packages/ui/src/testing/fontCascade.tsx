@@ -68,7 +68,7 @@ export function exportedComponents(modules: readonly Record<string, unknown>[], 
   const out = new Map<string, unknown>();
   for (const mod of modules) {
     for (const [name, value] of Object.entries(mod)) {
-      if (!/^[A-Z][a-z]/.test(name) || leaveOut.has(name) || isClass(value)) continue;
+      if (!/^[A-Z]/.test(name) || !/[a-z]/.test(name) || leaveOut.has(name) || isClass(value)) continue;
       const tag = value && typeof value === 'object' ? (value as { $$typeof?: symbol }).$$typeof : undefined;
       if (typeof value === 'function' || tag === REACT_MEMO || tag === REACT_FORWARD_REF) out.set(name, value);
     }
