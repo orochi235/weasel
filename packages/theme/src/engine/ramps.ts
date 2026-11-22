@@ -96,11 +96,13 @@ export function categoricalRamp(
   anchors: readonly Anchor[],
 ): { colors: Record<string, string>; feasible: boolean } {
   const palette = generate({ ...DEFAULT_CONSTRAINTS, ...gates, count: steps.length, anchors });
+  // An anchor fills its named step unless an earlier anchor named it first, as `rampColors` reports.
+  const claims = anchors.map((a, i) => steps.includes(a.name) && anchors.findIndex((b) => b.name === a.name) === i);
   const colors: Record<string, string> = {};
   const rest: string[] = [];
   for (const swatch of palette.swatches) {
     const hex = swatch.hex.toLowerCase();
-    if (swatch.anchored && steps.includes(swatch.name) && !hasOwnKey(colors, swatch.name)) setOwn(colors, swatch.name, hex);
+    if (swatch.anchor !== undefined && claims[swatch.anchor]) setOwn(colors, anchors[swatch.anchor].name, hex);
     else rest.push(hex);
   }
   steps.filter((step) => !hasOwnKey(colors, step)).forEach((step, i) => {

@@ -78,6 +78,8 @@ export interface Swatch {
   readonly lch: Lch;
   /** Came from one of the constraints' anchors. */
   readonly anchored: boolean;
+  /** Which of the constraints' `anchors` it came from, when `anchored`. */
+  readonly anchor?: number;
   /** WCAG contrast against the constraints' `surface`. */
   readonly contrast: number;
 }
@@ -207,6 +209,7 @@ export function generate(constraints: Constraints): Palette {
     hex: hexes[i],
     lch: toLch(hexes[i]),
     anchored: anchoredFlags[i],
+    ...(anchoredFlags[i] ? { anchor: i } : {}),
     contrast: contrast(hexes[i], c.surface),
   }));
 

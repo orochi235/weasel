@@ -44,6 +44,18 @@ describe('lightnessRamp', () => {
 });
 
 describe('categoricalRamp', () => {
+  it("leaves a step a later anchor names to that anchor, not to an earlier anchor's duplicate", () => {
+    const anchors = [
+      { name: 'a', hue: 30, lightness: 0.7 },
+      { name: 'a', hue: 150, lightness: 0.7 },
+      { name: 'a-2', hue: 270, lightness: 0.7 },
+    ];
+    const { colors } = categoricalRamp(['a', 'a-2', 'c'], DEFAULT_CONSTRAINTS, anchors);
+    const hue = (step: string) => Math.round(toLch(colors[step]).H);
+    expect(Math.abs(hue('a-2') - 270)).toBeLessThan(15);
+    expect(Math.abs(hue('c') - 150)).toBeLessThan(15);
+  });
+
   it('names the generated set by step, in generation order', () => {
     const steps = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
     const { colors, feasible } = categoricalRamp(steps, DEFAULT_CONSTRAINTS, []);
