@@ -17,7 +17,7 @@ function device() {
     language: 'glsl',
     createProgram: () => {
       if (state.lost) throw new Error('compile failed: context lost');
-      const program = { lookupUniforms() {}, lookupUniformArrays() {}, lookupAttributes() {} };
+      const program = { lookupUniforms() {}, lookupUniformArrays() {}, lookupAttributes() {}, ready: () => true, settle() {} };
       state.made.push(program);
       return program as unknown as ShaderProgram;
     },
@@ -82,7 +82,7 @@ function countingDevice() {
     language: 'glsl',
     createProgram: (src: { glsl: { frag: string } }) => {
       if (state.lost || src.glsl.frag.includes('BROKEN')) throw new Error('compile failed');
-      const program = { lookupUniforms() {}, lookupUniformArrays() {}, lookupAttributes() {} };
+      const program = { lookupUniforms() {}, lookupUniformArrays() {}, lookupAttributes() {}, ready: () => true, settle() {} };
       state.made.push(program);
       return program as unknown as ShaderProgram;
     },
