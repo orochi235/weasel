@@ -35,6 +35,7 @@ export interface Offender {
  */
 export const ALLOWED: Record<string, Record<string, string>> = {
   'packages/labkit/src/theme/base.less': { '.lk-root': "a lab's page root" },
+  'packages/theme/src/fonts.css': { ':where([data-wzl-theme])': "a themed subtree's root, in the kit's opt-in typography" },
   'packages/forge/src/frame/index/index.css': {
     '.fg-index': "the root of forge's index page",
     '.fg-index__description': 'the index page sets its prose in the body face',

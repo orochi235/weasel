@@ -134,18 +134,21 @@ function Reference() {
 
 it('clips a popover opened in the copy to the lens, and paints it in the copy’s mode', async () => {
   const lenses = createLiveLenses();
+  // Inside `.lk-root`, as in the workshop, whose lab sets the face a popover's text inherits.
   const { container } = renderWithIcons(
-    <LiveLensesContext.Provider value={lenses}>
-      <StoryGlobalsContext.Provider value={{ mode: 'light' }}>
-        <TrialIdContext.Provider value="t1">
-          <div className="fg-live-test-host">
-            <StoryTrial story={menu!} setup={setup} ctx={{ config: {}, state: null, setConfig: () => {}, setState: () => {} }} />
-          </div>
-        </TrialIdContext.Provider>
-      </StoryGlobalsContext.Provider>
-      <div className="fg-live-test-slot" />
-      <Reference />
-    </LiveLensesContext.Provider>,
+    <div className="lk-root">
+      <LiveLensesContext.Provider value={lenses}>
+        <StoryGlobalsContext.Provider value={{ mode: 'light' }}>
+          <TrialIdContext.Provider value="t1">
+            <div className="fg-live-test-host">
+              <StoryTrial story={menu!} setup={setup} ctx={{ config: {}, state: null, setConfig: () => {}, setState: () => {} }} />
+            </div>
+          </TrialIdContext.Provider>
+        </StoryGlobalsContext.Provider>
+        <div className="fg-live-test-slot" />
+        <Reference />
+      </LiveLensesContext.Provider>
+    </div>,
   );
   const host = container.querySelector<HTMLElement>('[data-fg-host="t1"]')!;
   const open = await waitFor(() => {

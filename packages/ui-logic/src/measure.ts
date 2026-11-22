@@ -50,6 +50,9 @@ export interface MeasureEnv {
   /** A token's value (`'28px'`, `'500'`), or undefined where nothing sets it. */
   token(name: string): string | undefined;
   text(text: string, font: FontSpec): TextExtent;
+  /** The family the target sets its text in, where it takes one from around it: a DOM element's computed
+   *  `font-family`, which its container chose. A target with none, such as a HUD, draws in `--wzl-font-ui`. */
+  family?(): string | undefined;
 }
 
 /** A CSS number, as `1e+21`, `-.5`, and `+3` are, with an optional `px` in either case. */
@@ -88,6 +91,11 @@ export function envFontWeight(env: MeasureEnv, name: string, fallback: number): 
   if (raw === 'bold') return 700;
   const n = envNumber(env, name, NaN);
   return n >= 1 && n <= 1000 ? n : fallback;
+}
+
+/** The family text is measured in: the one the target sets its text in, else the UI face's token. */
+export function envFamily(env: MeasureEnv): string | undefined {
+  return env.family?.() || env.token('--wzl-font-ui');
 }
 
 /** A box's size, its first baseline, and where its parts sit inside it. */

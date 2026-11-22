@@ -10,3 +10,9 @@
   font-family: var(--wzl-font-ui);
   font-weight: var(--wzl-font-weight-normal);
 }
+
+/* A subtree themed apart from the page sets its text in its own theme's face: the one inherited from `:root`
+ * resolved the page's tokens. At no specificity, so a consumer's own class on that root still wins. */
+:where([data-wzl-theme]) {
+  font-family: var(--wzl-font-ui);
+}

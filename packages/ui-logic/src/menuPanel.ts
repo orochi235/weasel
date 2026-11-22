@@ -1,6 +1,6 @@
 import { clamp, maxOf, type Rect } from '@weasel-js/geom';
 import {
-  centeredBaseline, envFontWeight, envNumber, envPx,
+  centeredBaseline, envFontWeight, envNumber, envFamily, envPx,
   type Constraints, type FontSpec, type MeasureEnv, type Measured,
 } from './measure';
 
@@ -42,7 +42,7 @@ export interface MenuPanelMetrics {
 export function menuPanelMetrics(env: MeasureEnv): MenuPanelMetrics {
   const inset = MENU_BORDER_WIDTH + envPx(env, '--wzl-space-2');
   const size = envPx(env, '--wzl-font-size');
-  const font = { family: env.token('--wzl-font-ui'), size, weight: 400 };
+  const font = { family: envFamily(env), size, weight: 400 };
   return {
     rowHeight: envPx(env, '--wzl-control-h-sm'),
     inset,

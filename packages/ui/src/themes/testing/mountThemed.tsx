@@ -1,4 +1,5 @@
 import '@weasel-js/theme/tokens.css';
+import '@weasel-js/theme/fonts.css';
 import { applyTheme, type AxisChoice, type Theme } from '@weasel-js/theme';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { CSSProperties } from 'react';
