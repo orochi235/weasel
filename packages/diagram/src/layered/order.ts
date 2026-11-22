@@ -236,21 +236,25 @@ function between(work: Work, side: Map<string, Near[]>, u: string, v: string): n
 /** Swap neighbors with the same innermost cluster while that strictly lowers
  *  crossings with both adjacent ranks, until no swap helps. A port of several
  *  places is read for the order each side of the swap gives it. */
-function transpose(work: Work): void {
+function transpose(work: Work, byRank: readonly Pair[][]): void {
   const { rows, pos, ups, downs } = work;
-  const cost = (a: string, b: string) => between(work, ups, a, b) + between(work, downs, a, b);
+  // A swap can move a port of several places, which changes crossings between
+  // hops of neither node, so only every hop beside the rank counts it exactly.
+  const several = byRank.some((pairs) => pairs.some((p) => p.fromPlaces !== undefined || p.toPlaces !== undefined));
+  const beside = (r: number) => (r > 0 ? pairCrossings(byRank[r - 1]!, pos, work.sides) : 0) + (r + 1 < rows.length ? pairCrossings(byRank[r]!, pos, work.sides) : 0);
+  const cost = (r: number, a: string, b: string) => (several ? beside(r) : between(work, ups, a, b) + between(work, downs, a, b));
   let improved = true;
   while (improved) {
     improved = false;
-    for (const row of rows) {
+    for (const [r, row] of rows.entries()) {
       for (let i = 0; i + 1 < row.length; i++) {
         const u = row[i]!;
         const v = row[i + 1]!;
         if (u.cluster !== v.cluster || (u.cluster !== undefined && work.places.has(u.cluster))) continue;
-        const now = cost(u.id, v.id);
+        const now = cost(r, u.id, v.id);
         pos.set(v.id, i);
         pos.set(u.id, i + 1);
-        if (cost(v.id, u.id) < now) {
+        if (cost(r, v.id, u.id) < now) {
           row[i] = v;
           row[i + 1] = u;
           improved = true;
@@ -295,7 +299,7 @@ export function orderRows(rows: Rows, hops: readonly Hop[], opts: OrderOptions =
   for (let sweep = 0, stale = 0; sweep < maxSweeps && stale < patience && fewest > 0; sweep++) {
     if (sweep % 2 === 0) for (let r = 1; r < work.rows.length; r++) reorder(work, r, ups);
     else for (let r = work.rows.length - 2; r >= 0; r--) reorder(work, r, downs);
-    transpose(work);
+    transpose(work, byRank);
     const n = total(work.rows, byRank, work.pos, sides);
     if (n < fewest) {
       fewest = n;

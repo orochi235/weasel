@@ -167,3 +167,19 @@ describe('orderRows', () => {
     }
   });
 });
+
+describe('orderRows, ports of several places', () => {
+  it('takes a swap only when it lowers every crossing beside the rank, including ones a moved port makes', () => {
+    const rows = rowsOf(['a', 'b', 'c'], ['x', 'y']);
+    const two = [0.2, 0.8];
+    const three = [0.25, 0.5, 0.75];
+    const fine = [0.1, 0.5, 0.9];
+    const hops: Hop[] = [
+      { from: 'c', to: 'x', edge: 'e0', fromAt: 0.25, fromPlaces: three },
+      { from: 'c', to: 'x', edge: 'e1', fromAt: 0.2, fromPlaces: two, toAt: 0.25, toPlaces: three },
+      { from: 'b', to: 'x', edge: 'e2', fromAt: 0.2, fromPlaces: two, toAt: 0.2, toPlaces: two },
+      { from: 'a', to: 'y', edge: 'e3', fromAt: 0.1, fromPlaces: fine, toAt: 0.1, toPlaces: fine },
+    ];
+    expect(crossings(orderRows(rows, hops, { patience: 1, maxSweeps: 1 }), hops)).toBe(0);
+  });
+});
