@@ -8,6 +8,7 @@ and GPU utilization before and after is in `teitou/conditions.txt`.
 | `teitou-probe/skulkr-1.19.1.json` | `probe.mjs` on skulkr's `build:demo` (weasel 1.19.1), headless Chromium 159, 3 rounds | `probe.mjs` |
 | `teitou-probe/skulkr-chrome-headed.json` | the same, headed Chrome 157, 3 rounds | `probe.mjs --headed --channel chrome` |
 | `teitou-probe/skulkr-chromium-headed.json` | the same, headed Chromium 159, 2 rounds | `probe.mjs --headed` |
+| `orochi/` | `pages.sh`, headed Chrome 159 on orochi (Apple M2 Max), run by the session controller with the maintainer's approval; load average 104 rising to 184 on 12 threads | `pages.sh` |
 | `teitou-pages-check/` | the page built against weasel at 1eae5ad17c (`before`) and at b16c3e1b7e (`after`), headless Chrome 157, warm and `--cold`, 2 rounds each | `HEADLESS=1 pages.sh` |
 
 The probe's page is skulkr's `dashboard`, built with `vite build --config vite.demo.config.ts --mode demo`

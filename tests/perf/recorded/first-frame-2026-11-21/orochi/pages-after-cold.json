@@ -1,0 +1,447 @@
+{
+  "url": "http://localhost:59354/skulkr/",
+  "headed": true,
+  "channel": "chrome",
+  "dpr": 2,
+  "cold": true,
+  "rounds": [
+    {
+      "round": 1,
+      "browser": "159.0.8154.13",
+      "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)",
+      "errors": [],
+      "loads": [
+        {
+          "how": "goto",
+          "wallMs": 4212,
+          "canvases": 1,
+          "longtasks": [
+            [
+              223,
+              472
+            ],
+            [
+              696,
+              91
+            ]
+          ],
+          "top": [
+            [
+              "(garbage collector) :-1",
+              395.4
+            ],
+            [
+              "(program) :-1",
+              365.1
+            ],
+            [
+              "pS index-CUFQ2wlZ.js:397",
+              353.6
+            ],
+            [
+              "getProgramParameter :-1",
+              233.3
+            ],
+            [
+              "tm index-CUFQ2wlZ.js:77",
+              93.4
+            ],
+            [
+              "oS index-CUFQ2wlZ.js:397",
+              85.9
+            ],
+            [
+              "Hme index-CUFQ2wlZ.js:397",
+              84.3
+            ],
+            [
+              "(idle) :-1",
+              83.1
+            ],
+            [
+              "Bme index-CUFQ2wlZ.js:397",
+              66.4
+            ],
+            [
+              "ko index-CUFQ2wlZ.js:76",
+              66
+            ],
+            [
+              "Zce index-CUFQ2wlZ.js:397",
+              62.6
+            ],
+            [
+              "Xu index-CUFQ2wlZ.js:77",
+              56.4
+            ],
+            [
+              "gre index-CUFQ2wlZ.js:158",
+              55.9
+            ],
+            [
+              "(anonymous) index-CUFQ2wlZ.js:77",
+              54
+            ],
+            [
+              "h index-CUFQ2wlZ.js:397",
+              48.3
+            ],
+            [
+              "Pae index-CUFQ2wlZ.js:396",
+              47.7
+            ],
+            [
+              "checkVisibility :-1",
+              44.2
+            ],
+            [
+              "pushGradientMesh index-CUFQ2wlZ.js:397",
+              43.1
+            ],
+            [
+              "Bce index-CUFQ2wlZ.js:397",
+              42.9
+            ],
+            [
+              "bufferSubData :-1",
+              40.6
+            ]
+          ],
+          "gl": {
+            "getContext": 2.6,
+            "texImage2D": 0.8,
+            "getShaderParameter": 30.3,
+            "getProgramParameter": 233.3,
+            "texSubImage2D": 0.3,
+            "drawElements": 4.9,
+            "bufferData": 24.3
+          }
+        },
+        {
+          "how": "reload",
+          "wallMs": 4437,
+          "canvases": 1,
+          "longtasks": [
+            [
+              334,
+              128
+            ],
+            [
+              463,
+              100
+            ],
+            [
+              1730,
+              63
+            ]
+          ],
+          "top": [
+            [
+              "(program) :-1",
+              515.9
+            ],
+            [
+              "pS index-CUFQ2wlZ.js:397",
+              351.4
+            ],
+            [
+              "(garbage collector) :-1",
+              314.1
+            ],
+            [
+              "Zce index-CUFQ2wlZ.js:397",
+              127.1
+            ],
+            [
+              "jp index-CUFQ2wlZ.js:77",
+              127
+            ],
+            [
+              "oS index-CUFQ2wlZ.js:397",
+              123.6
+            ],
+            [
+              "tm index-CUFQ2wlZ.js:77",
+              105.3
+            ],
+            [
+              "ko index-CUFQ2wlZ.js:76",
+              104.8
+            ],
+            [
+              "Hme index-CUFQ2wlZ.js:397",
+              91
+            ],
+            [
+              "(idle) :-1",
+              83.6
+            ],
+            [
+              "(anonymous) index-CUFQ2wlZ.js:77",
+              76.8
+            ],
+            [
+              "h index-CUFQ2wlZ.js:397",
+              71.6
+            ],
+            [
+              "Ap index-CUFQ2wlZ.js:77",
+              68.6
+            ],
+            [
+              "Bme index-CUFQ2wlZ.js:397",
+              65.2
+            ],
+            [
+              "pushGradientMesh index-CUFQ2wlZ.js:397",
+              64.4
+            ],
+            [
+              "bufferData :-1",
+              63.6
+            ],
+            [
+              "bufferSubData :-1",
+              57.4
+            ],
+            [
+              "Xu index-CUFQ2wlZ.js:77",
+              50.6
+            ],
+            [
+              "gre index-CUFQ2wlZ.js:158",
+              47.8
+            ],
+            [
+              "mne index-CUFQ2wlZ.js:78",
+              37.5
+            ]
+          ],
+          "gl": {
+            "getContext": 2.5,
+            "getParameter": 0.3,
+            "getShaderParameter": 5.9,
+            "drawElements": 5.1,
+            "bufferData": 63.6
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "browser": "159.0.8154.13",
+      "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)",
+      "errors": [],
+      "loads": [
+        {
+          "how": "goto",
+          "wallMs": 4176,
+          "canvases": 1,
+          "longtasks": [
+            [
+              189,
+              413
+            ],
+            [
+              603,
+              87
+            ]
+          ],
+          "top": [
+            [
+              "(program) :-1",
+              382.6
+            ],
+            [
+              "pS index-CUFQ2wlZ.js:397",
+              370.4
+            ],
+            [
+              "(garbage collector) :-1",
+              350.1
+            ],
+            [
+              "getProgramParameter :-1",
+              202.6
+            ],
+            [
+              "tm index-CUFQ2wlZ.js:77",
+              86.5
+            ],
+            [
+              "oS index-CUFQ2wlZ.js:397",
+              83.1
+            ],
+            [
+              "ko index-CUFQ2wlZ.js:76",
+              81.4
+            ],
+            [
+              "Hme index-CUFQ2wlZ.js:397",
+              75.9
+            ],
+            [
+              "Ap index-CUFQ2wlZ.js:77",
+              71.2
+            ],
+            [
+              "Bme index-CUFQ2wlZ.js:397",
+              70.7
+            ],
+            [
+              "(idle) :-1",
+              67.1
+            ],
+            [
+              "Zce index-CUFQ2wlZ.js:397",
+              64.9
+            ],
+            [
+              "pushGradientMesh index-CUFQ2wlZ.js:397",
+              64
+            ],
+            [
+              "jp index-CUFQ2wlZ.js:77",
+              56.2
+            ],
+            [
+              "bufferSubData :-1",
+              55.6
+            ],
+            [
+              "Pp index-CUFQ2wlZ.js:77",
+              55
+            ],
+            [
+              "Xu index-CUFQ2wlZ.js:77",
+              54.7
+            ],
+            [
+              "h index-CUFQ2wlZ.js:397",
+              51.1
+            ],
+            [
+              "(anonymous) index-CUFQ2wlZ.js:77",
+              45
+            ],
+            [
+              "gre index-CUFQ2wlZ.js:158",
+              42.4
+            ]
+          ],
+          "gl": {
+            "getContext": 2.6,
+            "getShaderParameter": 23.9,
+            "getProgramParameter": 202.6,
+            "bufferData": 33.2,
+            "drawElements": 11.9
+          }
+        },
+        {
+          "how": "reload",
+          "wallMs": 4304,
+          "canvases": 1,
+          "longtasks": [
+            [
+              239,
+              114
+            ],
+            [
+              354,
+              82
+            ]
+          ],
+          "top": [
+            [
+              "(program) :-1",
+              501.8
+            ],
+            [
+              "pS index-CUFQ2wlZ.js:397",
+              417.4
+            ],
+            [
+              "(garbage collector) :-1",
+              337
+            ],
+            [
+              "tm index-CUFQ2wlZ.js:77",
+              107.3
+            ],
+            [
+              "oS index-CUFQ2wlZ.js:397",
+              93.3
+            ],
+            [
+              "Hme index-CUFQ2wlZ.js:397",
+              79.8
+            ],
+            [
+              "Zce index-CUFQ2wlZ.js:397",
+              72.5
+            ],
+            [
+              "ko index-CUFQ2wlZ.js:76",
+              71
+            ],
+            [
+              "Xu index-CUFQ2wlZ.js:77",
+              69.4
+            ],
+            [
+              "Ap index-CUFQ2wlZ.js:77",
+              66.1
+            ],
+            [
+              "(anonymous) index-CUFQ2wlZ.js:77",
+              63.1
+            ],
+            [
+              "h index-CUFQ2wlZ.js:397",
+              57.9
+            ],
+            [
+              "pushGradientMesh index-CUFQ2wlZ.js:397",
+              57.9
+            ],
+            [
+              "gre index-CUFQ2wlZ.js:158",
+              57.4
+            ],
+            [
+              "jp index-CUFQ2wlZ.js:77",
+              56.7
+            ],
+            [
+              "(idle) :-1",
+              56.1
+            ],
+            [
+              "bufferSubData :-1",
+              54.6
+            ],
+            [
+              "Bme index-CUFQ2wlZ.js:397",
+              54.1
+            ],
+            [
+              "Wce index-CUFQ2wlZ.js:397",
+              47.1
+            ],
+            [
+              "bufferData :-1",
+              33
+            ]
+          ],
+          "gl": {
+            "getContext": 2.9,
+            "getParameter": 1.5,
+            "getShaderParameter": 4.3,
+            "drawElements": 8.4,
+            "bufferData": 33
+          }
+        }
+      ]
+    }
+  ]
+}

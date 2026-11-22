@@ -1,0 +1,13 @@
+probe http://localhost:59354/skulkr/ headed true channel chrome dpr 2 cold true
+1/2 goto   longest task   472 ms  canvases 1  tasks [[223,472],[696,91]]
+    gl (profile, inclusive) {"getContext":2.6,"texImage2D":0.8,"getShaderParameter":30.3,"getProgramParameter":233.3,"texSubImage2D":0.3,"drawElements":4.9,"bufferData":24.3}
+    top self [["(garbage collector) :-1",395.4],["(program) :-1",365.1],["pS index-CUFQ2wlZ.js:397",353.6],["getProgramParameter :-1",233.3],["tm index-CUFQ2wlZ.js:77",93.4],["oS index-CUFQ2wlZ.js:397",85.9],["Hme index-CUFQ2wlZ.js:397",84.3],["(idle) :-1",83.1]]
+1/2 reload longest task   128 ms  canvases 1  tasks [[334,128],[463,100],[1730,63]]
+    gl (profile, inclusive) {"getContext":2.5,"getParameter":0.3,"getShaderParameter":5.9,"drawElements":5.1,"bufferData":63.6}
+    top self [["(program) :-1",515.9],["pS index-CUFQ2wlZ.js:397",351.4],["(garbage collector) :-1",314.1],["Zce index-CUFQ2wlZ.js:397",127.1],["jp index-CUFQ2wlZ.js:77",127],["oS index-CUFQ2wlZ.js:397",123.6],["tm index-CUFQ2wlZ.js:77",105.3],["ko index-CUFQ2wlZ.js:76",104.8]]
+2/2 goto   longest task   413 ms  canvases 1  tasks [[189,413],[603,87]]
+    gl (profile, inclusive) {"getContext":2.6,"getShaderParameter":23.9,"getProgramParameter":202.6,"bufferData":33.2,"drawElements":11.9}
+    top self [["(program) :-1",382.6],["pS index-CUFQ2wlZ.js:397",370.4],["(garbage collector) :-1",350.1],["getProgramParameter :-1",202.6],["tm index-CUFQ2wlZ.js:77",86.5],["oS index-CUFQ2wlZ.js:397",83.1],["ko index-CUFQ2wlZ.js:76",81.4],["Hme index-CUFQ2wlZ.js:397",75.9]]
+2/2 reload longest task   114 ms  canvases 1  tasks [[239,114],[354,82]]
+    gl (profile, inclusive) {"getContext":2.9,"getParameter":1.5,"getShaderParameter":4.3,"drawElements":8.4,"bufferData":33}
+    top self [["(program) :-1",501.8],["pS index-CUFQ2wlZ.js:397",417.4],["(garbage collector) :-1",337],["tm index-CUFQ2wlZ.js:77",107.3],["oS index-CUFQ2wlZ.js:397",93.3],["Hme index-CUFQ2wlZ.js:397",79.8],["Zce index-CUFQ2wlZ.js:397",72.5],["ko index-CUFQ2wlZ.js:76",71]]

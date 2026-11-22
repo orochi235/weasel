@@ -10,20 +10,28 @@ When work merges, retire its entry here in the same change.
 
 ## Renderer and the batch
 
-- **(P2) [waiting] The first frame waited 1.9 s on shader compiles on the maintainer's M2 Max; not remeasured
-  there since programs compile in the background.** x-skulk's audits page showed one 1,917 ms main-thread task
-  before its map drew, in Chrome 156 on an M2 Max (ANGLE Metal), on every reload (2026-11-20, `longtask`
-  observer). On teitou (M5 Max) the cost appears only on a cold Metal cache, which macOS keeps per user across
-  browser launches and profiles: skulkr's demo build of that page in headed Chrome 157 showed a 588 ms task on its
-  first load there and 65 to 142 ms on every load after (2026-11-21, `tests/perf/recorded/first-frame-2026-11-21/`).
-  Since 2026-11-21 a renderer starts its batch program and the batch's text build at construction under
-  `KHR_parallel_shader_compile`, so the two compile at once; `first-frame.spec.ts` with cold shaders reads the
-  first frame at 192 ms before and 130 ms after on teitou, and 0 ms of main-thread block for a host that holds
-  its frame until `programsReady()`. The audits page itself, built against weasel before and after, read 455
-  and 328 ms against 261 and 266 ms with cold shaders in headless Chrome 157 there. Left: run
-  `tests/perf/recorded/first-frame-2026-11-21/pages.sh` on orochi, and if its reloads still pay the compile, find
-  why they miss the Metal cache that teitou's hit. Closes when a weasel canvas's first frame on that machine
-  comes within 300 ms of its data arriving, measured the same way.
+- **(P2) [waiting] On a cold Metal cache the audits page's first load still blocks 413 to 472 ms on the
+  maintainer's M2 Max, measured under heavy load.** On 2026-11-20 x-skulk's audits page showed one 1,917 ms
+  main-thread task before its map drew, in Chrome 156 on that machine, on every reload. Since 2026-11-21 a
+  renderer starts its batch program and the batch's text build at construction under
+  `KHR_parallel_shader_compile`, so the two compile at once. `pages.sh` on orochi (Chrome 159, load average 104
+  rising to 184 on 12 threads) then read the page's longest task as below, two loads each; the runs are in
+  `tests/perf/recorded/first-frame-2026-11-21/orochi/`.
+
+  | load | before (ms) | after (ms) |
+  |---|---:|---:|
+  | first, cold shaders | 544, 537 | 472, 413 |
+  | first, warm | 572 (cache not yet filled), 233 | 213, 206 |
+  | reload | 112 to 122 | 114 to 128 |
+
+  Reloads now find the Metal cache on both sides, so the 1.9 s reload no longer reproduces; a cold cache comes
+  only with a first visit or a Chrome update. In the cold first load after the change, 203 to 233 ms is the main
+  thread waiting on those two links (`getProgramParameter`), and the batch program, with its 16-sampler fragment
+  shader, is the larger: about 90 ms cold on teitou against 70 for the text build. Next: measure `pages.sh` again
+  on an idle orochi; if a cold first load is still over the bar, make the batch program cheaper to compile.
+  Holding the first frame until `programsReady()` would empty the long task but not draw sooner. Closes when a
+  weasel canvas's first frame on that machine comes within 300 ms of its data arriving, cold cache included,
+  measured the same way.
 
 - **(P3) [waiting] Whether the batched path costs a co-tenant on the same page.** Reported, not measured
   here. A consumer benchmarking its wall against a canvas2d control found that at one rung the
