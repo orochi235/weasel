@@ -88,12 +88,34 @@ describe('scene.changesSince', () => {
     expect(touchedBy(s, () => s.update(g, { data: { label: 'fill' } }))).toEqual([g, a, b].sort());
   });
 
+  it('names the container a node leaves on undo, not the one its entry recorded, after an untracked move', () => {
+    const s = makeScene();
+    const p = group(s);
+    const q = group(s);
+    const x = mark(s, p);
+    s.untracked(() => s.move(x, q));
+    const { token } = s.changesSince();
+    s.undo();
+    expect(s.get(x)).toBeUndefined();
+    expect(s.changesSince(token).parents.has(q)).toBe(true);
+  });
+
   it('reaches the nodes that derive from a changed one', () => {
     const s = makeScene();
     const a = mark(s);
     const b = mark(s);
     const edge = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'e' }, dependsOn: [a, b] });
     expect(touchedBy(s, () => s.setPose(a, { ...POSE, x: 9 }))).toEqual([a, edge].sort());
+  });
+
+  it('reaches the nodes that derive from one that left the scene', () => {
+    const s = makeScene();
+    const x = 'x' as NodeId;
+    const edge = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'e' }, dependsOn: [x] });
+    s.add({ id: x, kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'x' } });
+    expect(touchedBy(s, () => s.undo())).toEqual([edge, x].sort());
+    s.redo();
+    expect(touchedBy(s, () => s.remove(x))).toEqual([edge, x].sort());
   });
 
   it('names the nodes a pose preview set and cleared, one a frame', () => {

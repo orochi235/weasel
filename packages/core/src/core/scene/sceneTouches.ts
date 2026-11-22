@@ -58,6 +58,9 @@ const EMPTY: ReadonlySet<never> = new Set();
 export interface SceneTouchesFeed extends SceneTouchesMembers {
   /** Record what an op of `kind` with `payload` touched. */
   noteOp(kind: string, payload: unknown): void;
+  /** Before an op runs, record the containers its nodes are about to leave:
+   *  an untracked reparent can have moved a node from where its payload says. */
+  noteLeaving(kind: string, payload: unknown): void;
 }
 
 export function createSceneTouches(env: SceneTouchesEnv): SceneTouchesFeed {
@@ -100,6 +103,17 @@ export function createSceneTouches(env: SceneTouchesEnv): SceneTouchesFeed {
     }
   }
 
+  function noteLeaving(kind: string, payload: unknown): void {
+    if (kind !== 'kit:add' && kind !== 'kit:move' && kind !== 'kit:remove') return;
+    const p = payload as { id?: NodeId; detached?: readonly { id: NodeId }[] };
+    const leave = (id: NodeId): void => {
+      const node = nodes.get(id);
+      if (node !== undefined) journal.note(node.parent, TOUCH_CHILDREN);
+    };
+    if (p.id !== undefined) leave(p.id);
+    for (const d of p.detached ?? []) leave(d.id);
+  }
+
   /** Bring the journal up to date with what is not an op: previews, scroll, and ambient generations. */
   function poll(): void {
     const now = [nodeMemoGeneration(), outsideGeneration()];
@@ -139,10 +153,11 @@ export function createSceneTouches(env: SceneTouchesEnv): SceneTouchesFeed {
     const deriving = !env.dependents.isEmpty();
     while (queue.length > 0) {
       const id = queue.pop()!;
+      // What derives from an id outlives its removal, so it is reached either way.
+      if (deriving) for (const d of env.dependents.transitiveDependentsOf(id)) add(d);
       const node = nodes.get(id);
       if (node === undefined) continue;
       for (const c of node.children ?? []) add(c);
-      if (deriving) for (const d of env.dependents.transitiveDependentsOf(id)) add(d);
       if (env.childDerived.size > 0) hugging(node.parent);
     }
     return out;
@@ -150,6 +165,7 @@ export function createSceneTouches(env: SceneTouchesEnv): SceneTouchesFeed {
 
   return {
     noteOp,
+    noteLeaving,
     changesSince(token) {
       poll();
       const now = journal.token();

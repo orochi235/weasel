@@ -171,6 +171,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     arrivals,
     writePose,
     touched: touches.noteOp,
+    touching: touches.noteLeaving,
     poseWrites,
     config: options,
   });
