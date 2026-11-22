@@ -83,10 +83,14 @@ export function createFieldEdits<TData, TLayer extends string, TPose>(
       if (subtree.length === 1) {
         record('kit:setLayer', { id, from: node.layer, to: layer }, 'setLayer');
       } else {
+        // Lowered nodes top-down, then raised ones bottom-up: no step puts a child below its parent, so a
+        // replay's floor check never skips one.
+        const at = requireLayerIndex(layer);
+        const lowered = subtree.filter((sid) => requireLayerIndex(requireNode(sid).layer) > at);
+        const raised = subtree.filter((sid) => requireLayerIndex(requireNode(sid).layer) < at).reverse();
         batch('setLayer', () => {
-          for (const sid of subtree) {
+          for (const sid of [...lowered, ...raised]) {
             const cur = requireNode(sid);
-            if (cur.layer === layer) continue;
             record('kit:setLayer', { id: sid, from: cur.layer, to: layer }, 'setLayer');
           }
         });

@@ -70,7 +70,13 @@ export function createStaleReplay<TData, TLayer extends string, TPose>(
           return !p.detached.every((d) => fits(d.id, layerOf.get(d.id)!, d.parent));
         }
         const taken = new Set(p.nodes.map((n) => n.id));
-        return !p.nodes.every((n) => nodes.has(n.id) && childless(n.id, taken));
+        const roots = new Set(p.detached.map((d) => d.id));
+        // Only the detached roots leave a parent's children; an inner node moved out would be left listed there.
+        return !p.nodes.every((n) => {
+          const live = nodes.get(n.id);
+          return live !== undefined && childless(n.id, taken)
+            && (roots.has(n.id) || (live.parent !== null && taken.has(live.parent)));
+        });
       }
       case 'kit:move': {
         const p = payload as { id: NodeId; fromParent: NodeId | null; toParent: NodeId | null };
@@ -79,7 +85,11 @@ export function createStaleReplay<TData, TLayer extends string, TPose>(
       }
       case 'kit:setLayer': {
         const p = payload as { id: NodeId; from: TLayer; to: TLayer };
-        return !nodes.has(p.id) || !layers.has(forward ? p.to : p.from);
+        const node = nodes.get(p.id);
+        const layer = forward ? p.to : p.from;
+        if (node === undefined || !layers.has(layer) || !fits(p.id, layer, node.parent)) return true;
+        const at = layers.get(layer)!;
+        return hasChildren(node) && node.children.some((c) => (layers.get(nodes.get(c)!.layer) ?? -1) < at);
       }
       case 'kit:setLayerVisible':
       case 'kit:setLayerLocked':

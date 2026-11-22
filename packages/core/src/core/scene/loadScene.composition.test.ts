@@ -39,6 +39,20 @@ describe('loadScene without a composition', () => {
     expect(loadScene(saved(false)).get('c' as NodeId)!.pose).toEqual(solid(2));
   });
 
+  it('refuses a version 2 save whose nested pose the default composition reads as NaN', () => {
+    const json = {
+      version: 2,
+      systemLayers: [{ id: 'a' }],
+      nodes: [
+        { id: 'g', kind: 'group', layer: 'a', parent: null, children: ['c'], pose: { x: 0, y: 0, width: 50, height: 50 }, data: {} },
+        { id: 'c', kind: 'mark', layer: 'a', parent: 'g', pose: { cx: 5, cy: 5, width: 2, height: 2 }, data: {} },
+      ],
+    };
+    expect(() => loadScene(json as never)).toThrow(/node "c".*not a rect/s);
+    const rect = createScene<object, 'a'>({ systemLayers: [{ id: 'a' }] });
+    expect(() => rect.loadState(json as never)).toThrow(/not a rect/);
+  });
+
   it('loads a nested rect scene as before', () => {
     const g = 'g' as NodeId;
     const json = createScene<object, 'a'>({
