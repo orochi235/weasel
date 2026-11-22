@@ -86,7 +86,7 @@ function setOrder(include: ToolPaletteProps['include'], of: 'groups' | 'tools'):
 }
 
 function paletteStacks(stacks: ToolPaletteProps['stacks'], include: ToolPaletteProps['include']): (readonly string[])[] {
-  if (stacks) return stacks.map((stack) => ('members' in stack ? toolIdsOf([stack]) : stack));
+  if (stacks) return stacks.map((stack) => ('members' in stack ? toolIdsOf([stack]) : [...new Set(stack)]));
   return include !== undefined && typeof include !== 'function' ? toolStacksOf([include]) : [];
 }
 

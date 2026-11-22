@@ -138,6 +138,11 @@ describe('ToolPalette stacks', () => {
     expect(screen.getByRole('menuitem', { name: /rect/ })).toHaveAccessibleDescription(expect.stringContaining('Drag out a rectangle'));
   });
 
+  it('reads a stack naming one tool twice as naming it once', () => {
+    renderWithIcons(<Palette stacks={[['rect', 'rect']]} />);
+    expect(screen.getByRole('button', { name: /rect/ })).not.toHaveAttribute('aria-haspopup');
+  });
+
   it('throws for a tool named in two stacks', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => renderWithIcons(<Palette stacks={[['rect', 'ellipse'], ['ellipse', 'star']]} />))
