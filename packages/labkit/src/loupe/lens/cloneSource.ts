@@ -50,6 +50,32 @@ function copyCanvases(root: HTMLElement, copy: Element): void {
   });
 }
 
+/** Gives each element in `copy` the scroll offsets and control state of the element at the same place in `root`:
+ *  none of these is in the markup a clone copies, and none of them changes it. */
+function mirrorState(root: Element, copy: Element): void {
+  const from = [root, ...root.querySelectorAll('*')];
+  const to = [copy, ...copy.querySelectorAll('*')];
+  from.forEach((source, i) => {
+    const target = to[i];
+    if (!target) return;
+    if (target.scrollTop !== source.scrollTop) target.scrollTop = source.scrollTop;
+    if (target.scrollLeft !== source.scrollLeft) target.scrollLeft = source.scrollLeft;
+    if (source instanceof HTMLInputElement && target instanceof HTMLInputElement) {
+      if (source.type.toLowerCase() !== 'file' && target.value !== source.value)
+        target.value = source.value;
+      target.checked = source.checked;
+      target.indeterminate = source.indeterminate;
+    } else if (source instanceof HTMLTextAreaElement && target instanceof HTMLTextAreaElement) {
+      if (target.value !== source.value) target.value = source.value;
+    } else if (source instanceof HTMLOptionElement && target instanceof HTMLOptionElement) {
+      target.selected = source.selected;
+    }
+  });
+}
+
+/** Events after which a root's scroll offsets or control state may differ from its copy's. */
+const STATE_EVENTS = ['scroll', 'input', 'change'] as const;
+
 /**
  * Takes the live behavior out of a copy before it is connected: a named radio would join the trial's own radio group
  * and uncheck its checked one, an iframe would load its page again, and autoplaying media would start a second time.
@@ -71,7 +97,15 @@ class CloneCell {
   private copy: Element | null = null;
   private readonly watch =
     typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => this.schedule());
+  private readonly sizes =
+    typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => this.position());
   private stale = false;
+  /** Scroll offsets or control state have changed since the copy last mirrored them. */
+  private drifted = false;
+  private readonly onState = () => {
+    this.drifted = true;
+    this.want();
+  };
 
   constructor(
     private readonly slot: HTMLElement,
@@ -96,24 +130,34 @@ class CloneCell {
   place(): void {
     const root = rootAt(this.slot, this.request.reticle, this.selector);
     if (root !== this.root) {
+      this.unwatch();
       this.root = root;
-      this.watch?.disconnect();
-      if (root)
+      if (root) {
         this.watch?.observe(root, {
           subtree: true,
           childList: true,
           attributes: true,
           characterData: true,
         });
+        this.sizes?.observe(root);
+        for (const type of STATE_EVENTS) root.addEventListener(type, this.onState, true);
+      }
       this.recopy();
     }
     this.position();
   }
 
   detach(): void {
-    this.watch?.disconnect();
+    this.unwatch();
+    this.root = null;
     this.copy = null;
     this.box.remove();
+  }
+
+  private unwatch(): void {
+    this.watch?.disconnect();
+    this.sizes?.disconnect();
+    for (const type of STATE_EVENTS) this.root?.removeEventListener(type, this.onState, true);
   }
 
   private position(): void {
@@ -140,7 +184,12 @@ class CloneCell {
     this.copy = root ? (root.cloneNode(true) as Element) : null;
     if (this.copy) stillCopy(this.copy);
     this.box.replaceChildren(...(this.copy ? [this.copy] : []));
-    if (root && this.copy) copyCanvases(root, this.copy);
+    this.drifted = false;
+    if (root && this.copy) {
+      copyCanvases(root, this.copy);
+      mirrorState(root, this.copy);
+    }
+    this.position();
     this.want();
   }
 
@@ -152,12 +201,21 @@ class CloneCell {
 
   /** Whether the next frame has work: a stale copy, or canvases, which repaint without any DOM change. */
   wants(): boolean {
-    return this.copy !== null && (this.stale || this.copy.querySelector('canvas') !== null);
+    return (
+      this.copy !== null &&
+      (this.stale || this.drifted || this.copy.querySelector('canvas') !== null)
+    );
   }
 
   frame(): void {
     if (this.stale) this.recopy();
-    else if (this.root && this.copy) copyCanvases(this.root, this.copy);
+    else if (this.root && this.copy) {
+      copyCanvases(this.root, this.copy);
+      if (this.drifted) {
+        this.drifted = false;
+        mirrorState(this.root, this.copy);
+      }
+    }
   }
 }
 

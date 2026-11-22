@@ -1,5 +1,6 @@
 import { act, cleanup, render } from '@testing-library/react';
 import { makeMatchMedia } from '@weasel-js/core/testing/matchMedia';
+import type { CanvasSource } from '@weasel-js/loupe';
 import { afterEach, expect, test, vi } from 'vitest';
 import { SourceLoupe } from './SourceLoupe';
 
@@ -39,4 +40,23 @@ test('the lens canvas follows a density change after mount', () => {
   act(() => media.fire('(resolution: 1dppx)', false));
 
   expect(canvas.width).toBe(before * 2);
+});
+
+test('holds the source it reads for as long as it is mounted', () => {
+  const release = vi.fn();
+  const source = {
+    capture: () => {},
+    frame: () => null,
+    pixel: () => null,
+    retain: vi.fn(() => release),
+    subscribeFrame: () => () => {},
+  } as unknown as CanvasSource;
+  const host = { current: document.createElement('div') };
+  const { unmount } = render(
+    <SourceLoupe aim={{ x: 0, y: 0 }} factor={4} diameter={40} source={source} hostRef={host} />,
+  );
+  expect(source.retain).toHaveBeenCalledTimes(1);
+  expect(release).not.toHaveBeenCalled();
+  unmount();
+  expect(release).toHaveBeenCalledTimes(1);
 });

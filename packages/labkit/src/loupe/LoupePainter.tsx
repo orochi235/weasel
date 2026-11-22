@@ -10,6 +10,7 @@ import { DomLoupe } from './DomLoupe';
 import { SceneLoupe } from './SceneLoupe';
 import { SourceLoupe } from './SourceLoupe';
 import type { ResolvedLoupe } from './types';
+import { useFollowed } from './useFollowed';
 
 const IDENTITY: ViewTransform2D = { zoom: 1, pan: { x: 0, y: 0 } };
 
@@ -44,16 +45,28 @@ export function LoupePainter<TData, TLayer extends string, TPose>({
   host,
   surface,
 }: LoupePainterProps<TData, TLayer, TPose>) {
+  const sceneViewCamera = options.sceneView?.view;
+  const sceneCameraThunk =
+    !options.hollow && typeof sceneViewCamera === 'function' ? sceneViewCamera : undefined;
+  const followedSceneView = useFollowed(sceneCameraThunk);
+  const domCamera =
+    !options.hollow && !options.sceneView && options.render && !view && !stack?.view && camera
+      ? camera
+      : undefined;
+  const followedCameraView = useFollowed(
+    domCamera ? () => fromCameraView(domCamera.view.get(), domCamera.frame) : undefined,
+  );
+
   if (options.hollow) return null;
   if (options.sceneView) {
-    const { scene, view: sceneViewCamera, drawOne, extraCommands, paintBounds } = options.sceneView;
+    const { scene, drawOne, extraCommands, paintBounds } = options.sceneView;
     return (
       <SceneLoupe
         aim={shows}
         factor={shownFactor}
         diameter={box}
         scene={scene}
-        view={sceneViewCamera}
+        view={followedSceneView ?? options.sceneView.view}
         drawOne={drawOne}
         extraCommands={extraCommands}
         paintBounds={paintBounds}
@@ -68,11 +81,7 @@ export function LoupePainter<TData, TLayer extends string, TPose>({
         mode={mode}
         diameter={box}
         size={size}
-        view={
-          view ??
-          stack?.view ??
-          (camera ? fromCameraView(camera.view.get(), camera.frame) : IDENTITY)
-        }
+        view={view ?? stack?.view ?? followedCameraView ?? IDENTITY}
         frame={stack?.frame ?? camera?.frame}
         render={options.render}
       />

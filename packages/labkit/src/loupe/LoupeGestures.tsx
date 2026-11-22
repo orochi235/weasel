@@ -96,12 +96,13 @@ function OwnLoupeDispatch(props: LoupeGesturesProps) {
   return <LoupeDispatch {...props} registry={registry} ownDispatcher />;
 }
 
-/** Whether `hostRef` is the camera's own element, read after commit, when both refs are attached. */
+/** Whether `hostRef` is the camera's own element, read after commit, when both refs are attached; `null` until
+ *  then, so nothing registers on the camera for a host that turns out not to be its element. */
 function useOnCameraElement(
   hostRef: RefObject<HTMLElement | null>,
   camera: CameraContextValue | null,
-): boolean {
-  const [on, setOn] = useState(camera !== null);
+): boolean | null {
+  const [on, setOn] = useState<boolean | null>(camera === null ? false : null);
   useEffect(() => {
     setOn(camera !== null && hostRef.current === camera.element());
   }, [camera, hostRef]);
@@ -119,7 +120,7 @@ export function LoupeGestures(props: LoupeGesturesProps) {
   const registry = useActionsRegistry();
   const camera = useContext(CameraContext);
   const onCamera = useOnCameraElement(props.hostRef, camera);
-  if (!registry) return null;
+  if (!registry || onCamera === null) return null;
   if (onCamera) return <LoupeDispatch {...props} registry={registry} ownDispatcher={false} />;
   return (
     <InputScope>

@@ -215,8 +215,8 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
     else if (!pointer.peeking) bump();
   }, [enabled, aimAtPointer, pointer]);
 
-  // Subscribed while the lens is up, and before any effect the caller declares
-  // after this hook runs — so a frame its own effect provokes is not missed.
+  // Subscribed while the lens is up, then sampled once: a child's effect (a
+  // SourceLoupe taking the first hold) can provoke a frame before this one runs.
   // This render's `enabled`: `enabledRef` holds the last committed one.
   const visible = lensShown(pointer.over, enabled, pointer.peeking);
 
@@ -226,7 +226,9 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
   useLensReport(options.onLens, visible ? lens : null);
   useEffect(() => {
     if (!visible || !subscribeResample) return;
-    return subscribeResample(() => model.resample());
+    const off = subscribeResample(() => model.resample());
+    model.resample();
+    return off;
   }, [visible, subscribeResample, model]);
 
   const wheelRateRef = useLatest(useKitSetting('loupe.wheelRate') ?? LOUPE_WHEEL_RATE);
