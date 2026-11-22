@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { type Browser, unringed } from './a11y.ring';
+import { type Browser, finishing, unringed } from './a11y.ring';
 
 /** Tab moves through `order`, as the page's tab order would, then leaves the document. */
 const keyboard = (order: () => HTMLElement[]): Browser => ({
@@ -60,5 +60,29 @@ describe('unringed', () => {
     const portal = document.body.appendChild(button('portal', true));
     const start = () => document.querySelector<HTMLElement>('button')!;
     expect(await unringed(host, keyboard(() => [start(), first, portal, last]))).toEqual(['<button> "last"']);
+  });
+});
+
+describe('finishing', () => {
+  const animation = (playState: AnimationPlayState, timeline: AnimationTimeline | null = document.timeline) =>
+    ({
+      playState,
+      timeline,
+      effect: { getComputedTiming: () => ({ endTime: 100 }) },
+      finished: new Promise(() => {}),
+    }) as unknown as Animation;
+
+  const settles = (animations: Animation[]) =>
+    Promise.race([
+      finishing(animations).then(() => true),
+      new Promise((resolve) => setTimeout(resolve, 50, false)),
+    ]);
+
+  it('does not wait on an animation that is paused, idle or on a timeline other than the document', async () => {
+    expect(await settles([animation('paused'), animation('idle'), animation('running', {} as AnimationTimeline)])).toBe(true);
+  });
+
+  it('waits on a running one', async () => {
+    expect(await settles([animation('running')])).toBe(false);
   });
 });

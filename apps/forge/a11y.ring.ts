@@ -7,10 +7,14 @@ export interface Browser {
   userEvent: { keyboard(text: string): Promise<unknown> };
 }
 
-/** Waits out each of `animations` that will finish on its own. */
+/**
+ * Waits out each of `animations` that will finish on its own: running, finite, and on the document's clock. A paused
+ * or idle one, or one driven by scrolling, would never settle the wait.
+ */
 export const finishing = (animations: readonly Animation[]) =>
   Promise.all(
     animations
+      .filter((a) => a.playState === 'running' && a.timeline === document.timeline)
       .filter((a) => a.effect?.getComputedTiming().endTime !== Infinity)
       .map((a) => a.finished.catch(() => {})),
   );
