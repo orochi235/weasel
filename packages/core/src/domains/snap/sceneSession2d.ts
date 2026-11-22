@@ -12,6 +12,7 @@ import { assertSnapSourceIds, snapSourcesFor } from './gather';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { buildProbes, subjectOf } from './probes2d';
 import { sceneProbeReads, sceneRotations, sceneSnapFrames, withSubtrees } from './sceneReads';
+import { pxPerUnit } from './screen';
 import { createSession2d, DEFAULT_SNAP_PX } from './session2d';
 import type { SnapAnchors, SnapGesture, SnapSource } from './types';
 import type { AnyScene } from 'core/scene/anyScene';
@@ -43,7 +44,9 @@ export interface SceneSessionInputs {
 /** A 2D session whose probes are the subject's, read from the scene at press. */
 export function createSceneSession2d(i: SceneSessionInputs): SnapSession {
   const geometryAt = i.geometryAt ?? (snapSourcesFor(i.sources, i.req.gesture).some((s) => s.roles.includes('geometry'))
-    ? (press: WorldPoint, ids: readonly string[]) => ownGeometryAt(i.scene, press, ids, i.view()?.scale ?? { x: 1, y: 1 }, i.reachPx)
+    ? (press: WorldPoint, ids: readonly string[]) => ownGeometryAt(
+      i.scene, press, ids, pxPerUnit(i.view(), i.req.plane?.() ?? null), i.reachPx,
+    )
     : undefined);
   const reads = sceneProbeReads({
     scene: i.scene, boxes: i.boxes,

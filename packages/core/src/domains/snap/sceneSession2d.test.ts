@@ -111,5 +111,16 @@ describe('createSnapSession2d', () => {
     ]);
     expect(boxSeen[0].probes.some((p) => p.role === 'anchor')).toBe(false);
   });
-});
 
+  it('looks for a move\'s geometry probe within the reach in the parallax plane\'s units', () => {
+    // Plane units are half a camera unit here, so the 8px reach is 16 of them.
+    const { scene, b } = fixture();
+    const seen: SnapCollect[] = [];
+    createSnapSession2d({
+      scene, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, gesture: 'move', press: { x: 211, y: 50 }, ids: [b],
+      plane: { scale: { x: 2, y: 2 }, offset: { x: 0, y: 0 } },
+      sources: [{ id: 'outline', roles: ['geometry'], collect(q) { seen.push(q); return []; } }],
+    }).at({ x: 211, y: 50 }, { suspend: false, constrain: false });
+    expect(seen[0].probes[0].at.x).toBeCloseTo(200, 9);
+  });
+});
