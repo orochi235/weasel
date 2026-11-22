@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Before anything is published from 2.0 on, the releases page has nothing to list.
@@ -42,5 +42,13 @@ describe('moving between the two release pages', () => {
     window.history.replaceState(null, '', '/?pkg=core&v=2.1.0#__older_releases');
     render(<OlderReleases />);
     expect(window.location.search).toBe('?pkg=core');
+  });
+
+  it('leaves the arriving entry of the other page alone on Back', () => {
+    window.history.replaceState(null, '', '/?pkg=core#__older_releases');
+    render(<OlderReleases />);
+    window.history.replaceState(null, '', '/?v=2.1.0&pkg=text-tools#__releases');
+    act(() => window.dispatchEvent(new PopStateEvent('popstate')));
+    expect(window.location.search).toBe('?v=2.1.0&pkg=text-tools');
   });
 });

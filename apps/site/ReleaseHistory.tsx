@@ -99,12 +99,15 @@ export function ReleasesPageLink({ id, children }: { id: string; children: React
 /** A release history, newest first, with its filter and `?v=` deep link. Each release's
  *  entries load when it is opened. `footer` follows the list however much of it is shown. */
 export function ReleaseHistory({
+  id,
   releases,
   title,
   description,
   empty,
   footer,
 }: {
+  /** This page's route id, so a history entry of the other release page is left alone. */
+  id: string;
   releases: readonly ReleaseIndexEntry[];
   title: string;
   description: ReactNode;
@@ -123,7 +126,10 @@ export function ReleaseHistory({
   // eslint-disable-next-line react-hooks/set-state-in-effect -- consumes the deep link after the mount that used it
   useEffect(() => setLinked(null), []);
 
-  useWindowEvent('popstate', () => setFilter(readFilter(known)));
+  // Back or Forward to the other release page fires popstate here before that page mounts.
+  useWindowEvent('popstate', () => {
+    if (currentPage() === id) setFilter(readFilter(known));
+  });
 
   useEffect(() => {
     writeParams(filter, version);

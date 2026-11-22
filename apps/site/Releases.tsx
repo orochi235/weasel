@@ -1,6 +1,6 @@
 import RELEASES from 'virtual:changelogs';
 import { CURRENT_MAJOR } from '@shared/releaseMajor';
-import { OLDER_RELEASES_ID } from './routes';
+import { OLDER_RELEASES_ID, RELEASES_ID } from './routes';
 import { ReleaseHistory, ReleasesPageLink } from './ReleaseHistory';
 
 /** Release history for every published package from `CURRENT_MAJOR` on, newest first. The entries
@@ -9,6 +9,7 @@ import { ReleaseHistory, ReleasesPageLink } from './ReleaseHistory';
 export function Releases() {
   return (
     <ReleaseHistory
+      id={RELEASES_ID}
       releases={RELEASES}
       title="Releases"
       empty={`Nothing has been published since ${CURRENT_MAJOR}.0 yet.`}
