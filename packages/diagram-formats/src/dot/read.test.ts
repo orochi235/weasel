@@ -41,6 +41,12 @@ describe('reading DOT', () => {
     expect(warnings).toEqual(['DOT outlines a diagram does not have were read from the shape: blob.']);
   });
 
+  it('reads a tailport or headport set to "" as unset, with no warning', () => {
+    const { document, warnings } = readDot('digraph { a -> b [tailport="", headport=""] }');
+    expect(asGraph(document.pages[0]!).data.edges[0]).not.toHaveProperty('fromPort');
+    expect(warnings).toEqual([]);
+  });
+
   it('reads plain subgraphs as scopes only, and nests clusters', () => {
     const p = page('digraph { subgraph cluster_x { subgraph { rank=same; a } subgraph cluster_y { b } } c }');
     expect(p.data.containers).toEqual([

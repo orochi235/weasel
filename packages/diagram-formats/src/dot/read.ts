@@ -196,7 +196,7 @@ function positions(nodes: DataNode[], attrs: ReadonlyMap<string, Attrs>, bb: str
 
 function portOf(r: DotReader, ref: DotNodeRef, attr: string | undefined): string | undefined {
   const [port, compass] = ref.port !== undefined || ref.compass !== undefined ? [ref.port, ref.compass]
-    : attr === undefined ? [undefined, undefined]
+    : attr === undefined || attr === '' ? [undefined, undefined]
     : attr.includes(':') ? attr.split(':') : COMPASS_PORTS.has(attr) || attr === '_' ? [undefined, attr] : [attr, undefined];
   if (port === undefined && (compass === undefined || compass === '_')) return undefined;
   if (port === undefined && COMPASS_PORTS.has(compass!)) return compass;
