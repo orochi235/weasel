@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { lineItems } from './barItems';
-import { BarGroup } from './barParts';
+import { BarGroup, BarItem } from './barParts';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -30,6 +30,12 @@ describe('lineItems', () => {
     expect(items[1]!.key).not.toBe('x');
     expect(items[1]!.in).toBeUndefined();
     expect(warn).toHaveBeenCalledOnce();
+  });
+
+  it('leaves a Bar.Item whose id an earlier child holds out of the reorder units', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const items = lineItems([<BarItem key="a" id="zoom" in=""><b /></BarItem>, <BarItem key="b" id="zoom" in=""><i /></BarItem>], true);
+    expect(items.map((item) => item.in)).toEqual(['', undefined]);
   });
 
   it('marks a keyed group as a unit of the top level', () => {

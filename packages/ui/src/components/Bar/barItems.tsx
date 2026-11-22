@@ -61,7 +61,8 @@ export function lineItems(children: ReactNode, mark: boolean): LineItem[] {
     console.warn(`weasel: two of a Bar's children share the key "${key}", so the later one is keyed by its place and is not a unit a reorder moves. Give each child of a bar a key of its own.`);
     return path;
   };
-  const unit = (key: string, child: ReactElement) => (mark && key === child.key ? { in: '' } : {});
+  // A key that fell back to the slot names no unit, so a reorder never writes it into an order.
+  const unit = (key: string, wanted: string | null, container: string | undefined = '') => (mark && container !== undefined && key === wanted ? { in: container } : {});
   flatChildren(children).forEach(({ child, path }) => {
     if (!isValidElement(child)) {
       items.push({ key: path, content: child });
@@ -71,14 +72,15 @@ export function lineItems(children: ReactNode, mark: boolean): LineItem[] {
       items.push({ key: own(child.key, path), spacer: true });
     } else if (child.type === BarItem) {
       const p = child.props as { id: string; in?: string; rule?: boolean; attrs?: Record<string, string | undefined>; children?: ReactNode };
-      items.push({ key: own(p.id, path), content: p.children, ...(p.rule ? { rule: true } : {}), ...(p.attrs ? { attrs: p.attrs } : {}), ...(mark && p.in !== undefined ? { in: p.in } : {}) });
+      const key = own(p.id, path);
+      items.push({ key, content: p.children, ...(p.rule ? { rule: true } : {}), ...(p.attrs ? { attrs: p.attrs } : {}), ...unit(key, p.id, p.in) });
     } else if (child.type === BarGroup) {
       const key = own(child.key, path);
       if ((child.props as { end?: boolean }).end) items.push({ key: `${key}:end`, spacer: true });
-      items.push({ divider: true }, { key, content: child, ...unit(key, child) }, { divider: true });
+      items.push({ divider: true }, { key, content: child, ...unit(key, child.key) }, { divider: true });
     } else {
       const key = own(child.key, path);
-      items.push({ key, content: child, ...unit(key, child) });
+      items.push({ key, content: child, ...unit(key, child.key) });
     }
   });
   return tidyDividers(items);
