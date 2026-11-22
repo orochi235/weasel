@@ -25,6 +25,12 @@ vi.mock('../platformer/skin', async (importOriginal) => {
   };
 });
 
+let gamesBuilt = 0;
+vi.mock('../platformer/world', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../platformer/world')>();
+  return { ...real, freshGame: () => { gamesBuilt++; return real.freshGame(); } };
+});
+
 // The demo keeps its scene to itself; capture it to read the history.
 const scenes: { historyEntries(): readonly unknown[] }[] = [];
 
@@ -88,6 +94,14 @@ describe('SceneScrollerDemo', () => {
     expect(screen.getByRole('button', { name: /click to start/i })).toBeTruthy();
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
+  });
+
+  it('builds its game state once per run, not on every render', () => {
+    gamesBuilt = 0;
+    const { rerender } = render(<SceneScrollerDemo />);
+    rerender(<SceneScrollerDemo />);
+    rerender(<SceneScrollerDemo />);
+    expect(gamesBuilt).toBe(1);
   });
 
   it('centers each question mark on its block', () => {

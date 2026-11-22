@@ -60,7 +60,8 @@ export function SceneScrollerDemo() {
 function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
   const animator = useAnimator();
   const input = usePlatformerInput();
-  const game = useRef<GameRefs>(freshGame());
+  const [initialGame] = useState(freshGame);
+  const game = useRef<GameRefs>(initialGame);
 
   const scene = useScene<WorldData, WorldLayer, RectPose>({
     systemLayers: [{ id: 'tiles' }, { id: 'entities' }, { id: 'player' }],
