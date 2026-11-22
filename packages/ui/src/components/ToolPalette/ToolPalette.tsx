@@ -141,7 +141,7 @@ function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
       onPress: () => { tools.setActive(tool.id); },
       onPointerDown: carryTool && enabled ? (e) => carry.press(tool, e) : undefined,
       onDragStart: onToolDragStart && enabled ? (e) => onToolDragStart(tool, e) : undefined,
-      className: carryTool?.(tool) != null ? s.carrySource : undefined,
+      className: enabled && carryTool?.(tool) != null ? s.carrySource : undefined,
     };
   };
   const items = groupTools(list, groupOrder, toolOrder).flatMap(({ key, tools: group }) =>

@@ -385,6 +385,16 @@ describe('ToolPalette — mode eligibility', () => {
     expect(screen.getByRole('menuitem', { name: /select/i })).toHaveAttribute('aria-description', 'disabled in path-edit mode');
   });
 
+  it('gives a tool the mode disables none of the carry-source styling', () => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    const tools = makeTools(selectTool, anchorTool, handTool);
+    const carryTool = (t: Tool) => ({ type: 'test/tool', value: t.id });
+    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} carryTool={carryTool} />);
+    const carrying = (name: RegExp) => screen.getByRole('button', { name }).className.includes('carrySource');
+    expect(carrying(/anchor/i)).toBe(true);
+    expect(carrying(/select/i)).toBe(false);
+  });
+
   it('ineligible button does not invoke setActive when clicked', () => {
     const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
     const tools = makeTools(selectTool, anchorTool, handTool);
