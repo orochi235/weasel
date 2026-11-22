@@ -32,6 +32,10 @@ describe('scaleBar', () => {
     expect(scaleBar({ pxPerUnit: 2.5, scopes: [INCHES], lengths })).toMatchObject({ length: 48, label: '4ft' });
   });
 
+  it('throws for an empty list of lengths rather than measuring NaN', () => {
+    expect(() => scaleBar({ pxPerUnit: 2.5, scopes: [INCHES], lengths: [] })).toThrow(RangeError);
+  });
+
   it('settles for the shortest when none fits', () => {
     expect(scaleBar({ pxPerUnit: 1e6, scopes: [INCHES] })).toMatchObject({ length: 0.001 });
   });

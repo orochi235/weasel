@@ -13,7 +13,7 @@ export interface ScaleBarProps {
   scopes?: readonly UnitScope[];
   /** The longest the bar may be, in screen pixels. Default 140. */
   maxPx?: number;
-  /** The lengths it chooses among, in the frame's units. Default: 1, 2 and 5
+  /** The lengths it chooses among, in the frame's units; at least one, or it throws. Default: 1, 2 and 5
    *  of every decade of every unit its system carries. */
   lengths?: readonly UnitValue[];
   /** Additional class for the root, to place it. */
