@@ -260,4 +260,17 @@ describe('axisDependencies', () => {
     };
     expect(axisDependencies(def).hover.all).toEqual(['density']);
   });
+
+  it('joins in a component of a name whose by-axis semantic has no value at some selection', () => {
+    const def: ThemeDefinition = {
+      name: 'x',
+      axes: {
+        mode: { default: 'dark', values: { dark: {}, light: {} } },
+        density: { default: 'roomy', values: { roomy: {}, compact: {} } },
+      },
+      semantics: { x: { by: 'mode', dark: { value: '1px', type: 'dimension' } } },
+      components: { x: { by: 'density', roomy: { value: '2px', type: 'dimension' }, compact: { value: '3px', type: 'dimension' } } },
+    };
+    expect(axisDependencies(def).x.all).toEqual(['mode', 'density']);
+  });
 });

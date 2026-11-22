@@ -98,6 +98,12 @@ function closure(nodes: ReadonlyMap<string, Node>, ownSets: ReadonlyMap<string, 
   return all;
 }
 
+/** The value a `by` gives at `sel`, or nothing where it has none. */
+const pickedOr = (v: unknown, sel: AxisChoice): unknown => {
+  const p = pick(v, sel);
+  return p.ok ? p.value : undefined;
+};
+
 /** The rules under a possibly `by`-varying semantic that `derive` can read; it reports the rest. */
 const readableRules = (rule: unknown): SemanticRule[] =>
   leaves(rule).filter((l): l is SemanticRule => isPlainObject(l) && ruleProblem(l) === undefined);
@@ -175,6 +181,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     }
     return out;
   };
+  const selections = enumerateAxisChoices(def.axes ?? {});
   for (const [name, rule] of Object.entries(def.semantics ?? {})) {
     const n = node();
     scan(rule, n);
@@ -198,14 +205,13 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
         for (const s of declaredSteps(getOwn(def.ramps ?? {}, leaf.ramp))) n.edges.add(`${leaf.ramp}-${s}`);
       }
     }
-    produce(name, n, true);
+    produce(name, n, selections.every((sel) => readableRules(pickedOr(rule, sel)).length > 0));
   }
   for (const [name, v] of Object.entries(def.components ?? {})) {
     const n = node();
     scan(v, n);
     produce(name, n, true);
   }
-  const selections = enumerateAxisChoices(def.axes ?? {});
   for (const [name, v] of Object.entries(def.pins ?? {})) {
     const n = node();
     scan(v, n);
