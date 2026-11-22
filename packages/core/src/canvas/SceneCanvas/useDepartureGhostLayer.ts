@@ -49,7 +49,8 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
         getPose: (id: string) => effectivePose(sc, sc.get(id as NodeId)!),
         definesFrame: (id: string) => definesFrame(sc.get(id as NodeId)!),
       } as PoseAdapter<TPose>);
-      // As the scene paints it: a hidden node and its subtree are not drawn, nor a
+      // As the scene paints it: a hidden node and its subtree are not drawn, nor one under a
+      // hidden container still in the scene, nor a
       // node on a hidden layer; a node is drawn at the slot's drawn pose; one
       // on a parallax layer is drawn through its plane's view and carried
       // into its parent's world.
@@ -79,12 +80,15 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
         const transform = planeTransform(plane, parentPlane);
         out.push(transform ? { kind: 'group', transform, children } : { kind: 'group', children });
       };
-      return leaving.map(({ removal, pose, alpha }): DrawCommand => {
+      const shownUnder = (parent: NodeId | null): boolean => parent === null
+        || ![parent, ...sc.ancestorsOf(parent)].some((id) => { const n = sc.get(id); return n !== undefined && hidesSubtree(n); });
+      return leaving.flatMap(({ removal, pose, alpha }): DrawCommand[] => {
         const parent = removal.parent !== null && sc.get(removal.parent) ? removal.parent : null;
+        if (!shownUnder(parent)) return [];
         const world = composes && parent !== null ? compose(composeChildFrame(frames, parent, compose), pose) : pose;
         const children: DrawCommand[] = [];
         draw(removal, world, null, children);
-        return { kind: 'group', alpha: Math.max(0, Math.min(1, alpha)), children };
+        return [{ kind: 'group', alpha: Math.max(0, Math.min(1, alpha)), children }];
       });
     },
   }), [departures, sceneRef, slotRef]);

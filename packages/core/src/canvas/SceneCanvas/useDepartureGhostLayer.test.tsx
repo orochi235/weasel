@@ -126,4 +126,16 @@ describe('useDepartureGhostLayer', () => {
       : (c as GroupDrawCommand).clip ? rectsIn((c as GroupDrawCommand).children) : clipped((c as GroupDrawCommand).children));
     expect(clipped(out)).toEqual([4]);
   });
+
+  it('draws no ghost of a node removed from under a hidden container still in the scene', () => {
+    const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const top = scene.add({ kind: 'group', layer: 'main', pose: at(0), data: null });
+    const p = scene.add({ kind: 'group', layer: 'main', pose: at(0), data: null, parent: top });
+    scene.setHidden(top, true);
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: null, parent: p } as unknown as N;
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene, sceneSlot: { drawOne }, departures: departing([{ removal: removal(k, at(4)), pose: at(4), alpha: 1 }]),
+    }));
+    expect(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 })).toEqual([]);
+  });
 });
