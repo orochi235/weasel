@@ -28,22 +28,23 @@ export function useLensRemeasure(
     const remeasure = () => {
       for (const source of sources) source.remeasure();
     };
-    // A resize can move the lab body, and with it every reticle's client point, which only a render recomputes.
-    const resize = () => {
+    // A resize or a scroll anywhere in the page can move the lab body, and with it every reticle's client point, which
+    // only a render recomputes.
+    const moved = () => {
       rerender();
       remeasure();
     };
-    body.addEventListener('scroll', remeasure, { capture: true, passive: true });
-    window.addEventListener('resize', resize);
-    const unwatchScheme = watchColorScheme(resize);
+    window.addEventListener('scroll', moved, { capture: true, passive: true });
+    window.addEventListener('resize', moved);
+    const unwatchScheme = watchColorScheme(moved);
     // A host takes no pointer while `data-pending`, so a hit test skips it; a new story's host is only found once that
     // attribute goes, after the trials have already changed.
     const unveiled =
       typeof MutationObserver === 'undefined' ? null : new MutationObserver(remeasure);
     unveiled?.observe(body, { subtree: true, attributes: true, attributeFilter: ['data-pending'] });
     return () => {
-      body.removeEventListener('scroll', remeasure, { capture: true });
-      window.removeEventListener('resize', resize);
+      window.removeEventListener('scroll', moved, { capture: true });
+      window.removeEventListener('resize', moved);
       unwatchScheme();
       unveiled?.disconnect();
     };
