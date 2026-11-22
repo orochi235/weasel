@@ -10,15 +10,22 @@ const byTrial = createKeyedEmitter<string, [how: string]>();
  *  and appended after the constructor returns. */
 const RETRIES_MS = [0, 50, 250, 1000];
 
-function findTrial(canvas: Element, how: string, attempt = 0): void {
+/** Reports `canvas` to its trial, waiting for it to join the DOM; `done` hears whether it found one. */
+function findTrial(
+  canvas: Element,
+  how: string,
+  attempt = 0,
+  done?: (found: boolean) => void,
+): void {
   if (!canvas.isConnected) {
     const wait = RETRIES_MS[attempt + 1];
-    if (wait !== undefined) after(wait, () => findTrial(canvas, how, attempt + 1));
+    if (wait !== undefined) after(wait, () => findTrial(canvas, how, attempt + 1, done));
+    else done?.(false);
     return;
   }
   const id = canvas.closest('[data-trial-id]')?.getAttribute('data-trial-id');
-  if (!id) return;
-  byTrial.emit(id, how);
+  if (id) byTrial.emit(id, how);
+  done?.(!!id);
 }
 
 /** Duck-typed: the canvas may come from another realm than this module, or be an `OffscreenCanvas`. */
@@ -56,7 +63,24 @@ function installThreeWatch(): void {
 
 const DEPTH_TEST = 0x0b71;
 let depthInstalled = false;
+/** Depth-tested canvases already reported to a trial, or announced by three, and those being looked for. */
 const depthSeen = new WeakSet<object>();
+const depthPending = new WeakSet<object>();
+
+/** Reports a depth-tested canvas to its trial once; a search that finds none leaves the next call to try again. */
+function depthFound(canvas: Element, how: string): void {
+  if (depthSeen.has(canvas) || depthPending.has(canvas)) return;
+  depthPending.add(canvas);
+  // Deferred, as three announces its renderer only after turning depth testing on or building a pipeline.
+  after(0, () => {
+    const settle = (found: boolean): void => {
+      depthPending.delete(canvas);
+      if (found) depthSeen.add(canvas);
+    };
+    if (threeCanvases.has(canvas)) settle(true);
+    else findTrial(canvas, how, 0, settle);
+  });
+}
 
 /**
  * Listens for WebGL depth testing turned on, in development: what a
@@ -75,13 +99,7 @@ function installDepthWatch(): void {
     if (!proto || typeof enable !== 'function') continue;
     proto.enable = function (this: { canvas?: unknown }, cap: number) {
       const canvas = this.canvas;
-      if (cap === DEPTH_TEST && isElement(canvas) && !depthSeen.has(canvas)) {
-        depthSeen.add(canvas);
-        // Deferred, as three announces its renderer only once its constructor has turned depth testing on.
-        after(0, () => {
-          if (!threeCanvases.has(canvas)) findTrial(canvas, 'WebGL with depth testing');
-        });
-      }
+      if (cap === DEPTH_TEST && isElement(canvas)) depthFound(canvas, 'WebGL with depth testing');
       return enable.call(this, cap);
     };
   }
@@ -104,14 +122,7 @@ let gpuInstalled = false;
 const gpuCanvases = new WeakMap<object, Set<Element>>();
 const gpuDepth = new WeakSet<object>();
 
-function gpuFound(canvas: Element): void {
-  if (depthSeen.has(canvas)) return;
-  depthSeen.add(canvas);
-  // Deferred, as three may build a pipeline before it announces its renderer.
-  after(0, () => {
-    if (!threeCanvases.has(canvas)) findTrial(canvas, 'WebGPU with depth testing');
-  });
-}
+const gpuFound = (canvas: Element): void => depthFound(canvas, 'WebGPU with depth testing');
 
 /**
  * The WebGPU counterpart of {@link installDepthWatch}. A pipeline belongs to a
