@@ -85,6 +85,21 @@ describe('moveInChain', () => {
     expect(next.routes).toEqual({});
   });
 
+  it('wires into an input that takes many though a side wire feeds it', () => {
+    const many = (id: string): EffectStage => img(id, { inputs: [{ id: 'image', type: 'image', many: true }] });
+    const doc: EffectDoc = {
+      places: {},
+      pipeline: {
+        stages: [{ id: 'src', title: 'src', kind: 'source', outputs: [{ id: 'out', type: 'image' }] }, many('f'), many('g'),
+          { id: 'n', title: 'n', kind: 'source', outputs: [{ id: 'out', type: 'image' }] }],
+        wires: [wire('w1', 'src', 'out', 'f', 'image'), wire('w2', 'f', 'out', 'g', 'image'), wire('w3', 'n', 'out', 'g', 'image')],
+      },
+    };
+    const next = moveInChain(doc, 'g', 1);
+    expect(mainChain(next!.pipeline)).toEqual(['src', 'g', 'f']);
+    expect(ends(next)).toContain('n.out>g.image');
+  });
+
   it('moves a stage to the front of a chain with no source', () => {
     const bare: EffectDoc = {
       places: {},

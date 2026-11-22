@@ -2,7 +2,7 @@
  *  signal between neighbors, and the rewiring that moves a stage along it. */
 import { isNoopDrop, moveItems } from '@weasel-js/ui-input';
 import { drawableWires, isControl } from './draw';
-import { canWire, nextWireId, pruneRoutes } from './edit';
+import { canWire, inputFed, nextWireId, pruneRoutes, takesMany } from './edit';
 import { mainChain } from './mainChain';
 import type { EffectDoc, EffectPipeline, EffectPort, EffectWire } from './types';
 
@@ -71,9 +71,9 @@ export function moveRunInChain(doc: EffectDoc, first: string, last: string, to: 
   const wAB = to > 0 && to < chain.length ? between[to - 1] : undefined;
   const gone = new Set([wIn, wOut, wAB].filter((k): k is number => k !== undefined));
   const kept = p.wires.filter((_, k) => !gone.has(k));
-  const free = (ref: Ref) => !kept.some((w) => w.to.stage === ref.stage && w.to.port === ref.port);
+  const open = (ref: Ref) => takesMany(p, ref) || !kept.some((w) => w.to.stage === ref.stage && w.to.port === ref.port);
   const pick = (id: string, side: 'inputs' | 'outputs', type?: string) =>
-    portsOf(p, id, side).find((port) => (type === undefined || port.type === type) && (side === 'outputs' || free({ stage: id, port: port.id })))?.id;
+    portsOf(p, id, side).find((port) => (type === undefined || port.type === type) && (side === 'outputs' || open({ stage: id, port: port.id })))?.id;
   const typeOf = (id: string, port: string | undefined) => [...portsOf(p, id, 'inputs'), ...portsOf(p, id, 'outputs')].find((x) => x.id === port)?.type;
 
   const made: { reuse: number | undefined; from: Ref; to: Ref }[] = [];
@@ -94,7 +94,7 @@ export function moveRunInChain(doc: EffectDoc, first: string, last: string, to: 
     if (bIn === undefined || sOut === undefined) return null;
     made.push({ reuse: wOut, from: { stage: last, port: sOut }, to: { stage: b, port: bIn } });
   }
-  if (made.some((m) => !canWire(p, m.from, m.to) || !free(m.to))) return null;
+  if (made.some((m) => !canWire(p, m.from, m.to) || inputFed(p, kept, m.from, m.to))) return null;
   if (new Set(made.map((m) => `${m.to.stage}\u0000${m.to.port}`)).size !== made.length) return null;
 
   const wires: EffectWire[] = p.wires.flatMap((w, k) => {

@@ -146,6 +146,20 @@ export function ensureWireIds(doc: EffectDoc): EffectDoc {
   return withPipeline(doc, { wires });
 }
 
+type Ref = { stage: string; port: string };
+const sameRef = (a: Ref, b: Ref) => a.stage === b.stage && a.port === b.port;
+
+/** Whether input `to` of `p` takes many wires. */
+export const takesMany = (p: EffectPipeline, to: Ref): boolean =>
+  p.stages.find((s) => s.id === to.stage)?.inputs?.find((i) => i.id === to.port)?.many === true;
+
+/** Whether input `to` may not take wire `from`–`to` beside `wires`: one of them feeds it already,
+ *  or for an input that takes many, one from `from` does. */
+export function inputFed(p: EffectPipeline, wires: readonly EffectWire[], from: Ref, to: Ref): boolean {
+  const many = takesMany(p, to);
+  return wires.some((w) => sameRef(w.to, to) && (!many || sameRef(w.from, from)));
+}
+
 /** An output into an input of the same type, both existing, on different stages. */
 export function canWire(p: EffectPipeline, from: { stage: string; port: string }, to: { stage: string; port: string }): boolean {
   if (from.stage === to.stage) return false;
