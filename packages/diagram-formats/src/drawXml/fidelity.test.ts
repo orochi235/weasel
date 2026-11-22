@@ -85,6 +85,15 @@ describe('draw-style XML exit and entry points', () => {
   });
 });
 
+describe('draw-style XML font styles', () => {
+  it('warns that underlined or struck-through text was read plain, and keeps its bold', async () => {
+    const { data, warnings } = await readCells(vertex('n', 'fontStyle=5;', 'width="80" height="40"') + vertex('m', 'fontStyle=8;', 'y="60" width="80" height="40"'));
+    expect(node(data, 'n').rows).toEqual([{ kind: 'label', text: 'n', style: { bold: true } }]);
+    expect(warnings).toEqual(expect.arrayContaining(['Underlined text was drawn without its underline.', 'Struck-through text was drawn without its line.']));
+    expect((await readCells(vertex('n', 'fontStyle=3;', 'width="80" height="40"'))).warnings).toEqual([]);
+  });
+});
+
 describe('draw-style XML rotated and flipped shapes', () => {
   const warningsOf = async (style: string) => (await readCells(vertex('n', style, 'width="80" height="40"'))).warnings;
 

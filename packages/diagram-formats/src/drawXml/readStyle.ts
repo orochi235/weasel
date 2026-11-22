@@ -86,10 +86,13 @@ export function regionColorsOf(style: CellStyle, warn: Warn): Partial<NodeStyle>
 /** A cell's value as text. */
 export const valueLines = (cell: RawCell): string[] => cellLines(cell.value, styleFlag(cell.style, 'html'));
 
-/** A vertex's text: plain lines, or label rows when its style sets a font. */
-export function textOf(cell: RawCell): Pick<DataNode, 'lines' | 'rows'> {
+/** A vertex's text: plain lines, or label rows when its style sets a font. `fontStyle`'s underline and strikethrough
+ *  bits, which a row has no style for, warn. */
+export function textOf(cell: RawCell, warn: Warn): Pick<DataNode, 'lines' | 'rows'> {
   const lines = valueLines(cell);
   const fontStyle = styleNumber(cell.style, 'fontStyle');
+  if (fontStyle !== undefined && (fontStyle & 4) === 4) warn('Underlined text was drawn without its underline.');
+  if (fontStyle !== undefined && (fontStyle & 8) === 8) warn('Struck-through text was drawn without its line.');
   const style = defined<RowTextStyle>({
     fontSize: styleNumber(cell.style, 'fontSize'),
     fontFamily: cell.style.values.get('fontFamily') || undefined,
