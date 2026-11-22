@@ -48,8 +48,8 @@ export function roughenPath(path: Path, opts: RoughenPathOptions): Path {
   const word = seedWord(seed);
   const contours = pathToCubicContours(path).map((contour, r) => polylineContour(
     sampleContour(contour, pieces).map(({ at }, i) => ({
-      x: at.x + (hash01(word, r * 65536 + i, 0) * 2 - 1) * size,
-      y: at.y + (hash01(word, r * 65536 + i, 1) * 2 - 1) * size,
+      x: at.x + (hash01(word, i, 2 * r) * 2 - 1) * size,
+      y: at.y + (hash01(word, i, 2 * r + 1) * 2 - 1) * size,
     })),
     contour.closed,
   ));
