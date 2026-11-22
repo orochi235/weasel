@@ -79,3 +79,24 @@ describe('TileStream', () => {
     expect(stream.count).toBe(0);
   });
 });
+
+describe('TileStream loads that fail', () => {
+  it('treats a load that throws at once as a failed load, freeing its slot', async () => {
+    const errors: string[] = [];
+    const started: string[] = [];
+    const stream = new TileStream<PlaneTileKey, PlaneTileView, string>({
+      scheme, level: 0, maxConcurrent: 1,
+      load: (k) => {
+        started.push(scheme.idOf(k));
+        throw new Error('bad key');
+      },
+      release: () => {},
+      onError: (k) => { errors.push(scheme.idOf(k)); },
+    });
+    expect(() => stream.update(view(0, 0))).not.toThrow();
+    for (let i = 0; i < 40 && stream.inFlight > 0; i++) await flush();
+    expect(stream.inFlight).toBe(0);
+    expect(errors).toEqual(started);
+    expect(started).toHaveLength(scheme.wanted(view(0, 0), 0).length);
+  });
+});

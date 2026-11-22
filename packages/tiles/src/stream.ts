@@ -111,7 +111,13 @@ export class TileStream<K, V, P> {
         if (this.loading.get(id)?.abort === abort) this.loading.delete(id);
         this.pump();
       };
-      this.opts.load(key, abort.signal).then((payload) => {
+      let loaded: Promise<P>;
+      try {
+        loaded = this.opts.load(key, abort.signal);
+      } catch (error) {
+        loaded = Promise.reject(error);
+      }
+      loaded.then((payload) => {
         if (abort.signal.aborted || this.disposed) {
           this.opts.release(key, payload);
         } else {
