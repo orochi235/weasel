@@ -109,9 +109,9 @@ export function paintAlpha(paint: Paint | undefined): number {
   return paint?.opacity ?? 1;
 }
 
-/** `paint` painting at `alpha01` (clamped to 0..1). */
+/** `paint` painting at `alpha01` (clamped to 0..1, and `NaN` read as 0, as `withAlpha01` reads it). */
 export function paintWithAlpha(paint: Paint, alpha01: number): Paint {
-  return { ...paint, opacity: Math.max(0, Math.min(1, alpha01)) };
+  return { ...paint, opacity: Number.isNaN(alpha01) ? 0 : Math.max(0, Math.min(1, alpha01)) };
 }
 
 /**
