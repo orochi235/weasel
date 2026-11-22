@@ -45,7 +45,7 @@ describe('reading a Mermaid journey', () => {
 
   it('warns on what it drops', () => {
     const { warnings } = readMermaidJourney('---\ntitle: Front\n---\n%%{init: {}}%%\njourney\n  title Own\n  A: 3');
-    expect(warnings).toEqual(['Mermaid configuration directives were dropped.', 'The front matter title was dropped; the chart is titled by its own.']);
+    expect(warnings).toEqual(['Mermaid configuration directives were dropped.', 'The front matter title was dropped; the title statement names the chart.']);
   });
 
   it('throws, naming the line, on what it cannot read', () => {
@@ -95,6 +95,12 @@ describe('writing a Mermaid journey', () => {
       'Mermaid journey text holds no "#", ";" or ":" (nor "," in an actor); they were dropped.',
     ]);
     expect(() => writeMermaidJourney({ ...page, data: { kind: 'pie', slices: [] } })).toThrow(/as a journey only; the page holds a pie/);
+  });
+
+  it('warns that an accessible title was dropped where a title statement names the chart', () => {
+    const { document, warnings } = readMermaidJourney('journey\n  title Day\n  accTitle: Morning\n  section s\n    a: 3: Me');
+    expect(document.pages[0]!.name).toBe('Day');
+    expect(warnings).toEqual(['Mermaid accessible titles were dropped; the page is named by the title.']);
   });
 
   it('drops the "{" after a step name opening accDescr, with a warning, so the journey reads back', () => {

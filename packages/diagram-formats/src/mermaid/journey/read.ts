@@ -37,8 +37,7 @@ export function readMermaidJourney(text: string): ImportResult {
       sections[sections.length - 1]!.tasks.push(taskOf(s));
     }
   }
-  const named = readPageName(src, warnings);
-  if (title !== undefined && src.title !== undefined && src.title !== title) warnings.add('The front matter title was dropped; the chart is titled by its own.');
+  const named = readPageName(src, warnings, title);
   title ??= src.title;
   const data: JourneyData = { kind: 'journey', ...(title !== undefined ? { title } : {}), sections };
   const name = title ?? named;

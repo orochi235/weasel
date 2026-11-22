@@ -36,7 +36,13 @@ describe('reading a Mermaid gantt', () => {
     expect(critical[5]).toEqual({ name: 'Add to mermaid', start: { kind: 'previous' }, end: { kind: 'until', ids: ['isadded'] } });
     expect(critical[6]).toMatchObject({ id: 'isadded', tags: ['milestone'], end: { kind: 'duration', amount: 0, unit: 'd' } });
     expect(docs[1]).toEqual({ name: 'Add gantt diagram to demo page', start: { kind: 'after', ids: ['a1'] }, end: { kind: 'duration', amount: 20, unit: 'h' } });
-    expect(warnings).toEqual(['The front matter title was dropped; the chart is named by its title statement.']);
+    expect(warnings).toEqual(['The front matter title was dropped; the title statement names the chart.']);
+  });
+
+  it('warns that an accessible title was dropped where a title statement names the chart', () => {
+    const { document, warnings } = readMermaidGantt('gantt\n  title Plan\n  accTitle: Roadmap\n  A :a, 2024-01-01, 1d');
+    expect(document.pages[0]!.name).toBe('Plan');
+    expect(warnings).toEqual(['Mermaid accessible titles were dropped; the page is named by the title.']);
   });
 
   it('warns of the statements and markers it drops', () => {

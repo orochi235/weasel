@@ -148,13 +148,7 @@ export function readC4(source: string): ImportResult {
   const known = (id: string) => r.nodes.has(id) || r.containers.some((c) => c.id === id);
   const edges = r.edges.filter((e) => known(e.from) && known(e.to));
   if (edges.length < r.edges.length) r.warnings.add('Mermaid C4 relationships to elements never declared were dropped.');
-  const named = readPageName(src, r.warnings);
-  if (r.title !== undefined && named !== undefined && named !== r.title) {
-    r.warnings.add(src.title !== undefined
-      ? 'The front matter title was dropped; the page is named by its title statement.'
-      : 'Mermaid accessible titles were dropped; the page is named by the title.');
-  }
-  const name = r.title ?? named;
+  const name = readPageName(src, r.warnings, r.title);
   const page = graphPage({ ...(name !== undefined ? { name } : {}), nodes: [...r.nodes.values()], edges, containers: r.containers });
   return { document: { pages: [{ ...page, notation: C4_NOTATIONS[header] }] }, warnings: r.warnings.all() };
 }
