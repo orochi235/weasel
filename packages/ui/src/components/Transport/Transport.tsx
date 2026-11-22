@@ -20,8 +20,8 @@ export const TRANSPORT_RATES = CLOCK_SPEEDS;
  *  play and pause still work, and the switches and sliders, which hold values, change nothing. */
 export interface TransportProps extends HoldProps {
   playing: boolean;
-  /** A `TimelineHandle`'s loop policy. The switch shows any value but
-   *  `false` or `0` as on, and toggles between `true` and `false`. */
+  /** A `TimelineHandle`'s loop policy. The switch shows `true`, or a count of more than one pass,
+   *  as on, and toggles between `true` and `false`. */
   loop: boolean | number;
   /** Playback speed multiplier. A rate off the offered detents gets one of its own. */
   rate: number;
@@ -104,6 +104,10 @@ export function PlayheadReadout({
   );
 }
 
+/** Whether a loop policy has a pass left after the one under way: a count counts that pass, as
+ *  `TimelineHandle.loop` gives it. */
+export const loopsAgain = (loop: boolean | number): boolean => loop === true || (typeof loop === 'number' && loop > 1);
+
 /** Play/pause, a reverse switch, a loop switch, a rate slider, a scrub bar,
  *  and the playhead as a time readout, in seconds by default. Holds no state: every
  *  control reports through a callback, and the reverse switch and scrub bar
@@ -116,7 +120,7 @@ export function Transport(props: TransportProps): ReactElement {
   const reverse = props.reverse ?? false;
   const start = props.start ?? 0;
   const shown = Math.min(Math.max(playhead, start), start + duration);
-  const looping = loop !== false && loop !== 0;
+  const looping = loopsAgain(loop);
   // The handle's scale is whatever anything holding it set, so an off-list rate
   // gets its own detent — `useDetents` would otherwise round it to the
   // nearest and label the thumb with a rate the timeline is not running at.

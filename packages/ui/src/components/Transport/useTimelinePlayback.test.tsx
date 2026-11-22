@@ -13,6 +13,16 @@ describe('useTimelinePlayback', () => {
     expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy();
   });
 
+  it('reads a timeline at its end on its last pass as stopped', () => {
+    for (const loop of [0, 1]) {
+      const h = fakeHandle({ time: () => 1000, loop: () => loop });
+      h.resume();
+      const { unmount } = renderWithIcons(<AnimatedTransport handle={h} />);
+      expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy();
+      unmount();
+    }
+  });
+
   it('rewinds a timeline played backward to 0 to its end on play', () => {
     const h = fakeHandle();
     h.setTimeScale(-1);
