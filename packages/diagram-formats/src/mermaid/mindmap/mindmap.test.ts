@@ -35,8 +35,14 @@ describe('reading a Mermaid mind map', () => {
     expect(edges.find((e) => e.to === 'n3')).toMatchObject({ from: 'n2', colors: { markerEnd: null } });
   });
 
-  it('warns of icons and classes', () => {
-    expect(readMindmap(LAUNCH).warnings).toEqual(['Mermaid mind map icons were dropped.']);
+  it('warns of icons, classes, and bangs', () => {
+    expect(readMindmap(LAUNCH).warnings).toEqual(['Mermaid mind map icons were dropped.', 'Mermaid mind map bangs were read as clouds.']);
+  });
+
+  it('warns that a bang is read as a cloud', () => {
+    const { document, warnings } = readMindmap('mindmap\n  root))Boom((\n');
+    expect(warnings).toEqual(['Mermaid mind map bangs were read as clouds.']);
+    expect(onlyPage(document).data.nodes[0]?.outline).toBe('cloud');
   });
 
   it('names the line of a second root and of an icon with no node', () => {
@@ -71,6 +77,12 @@ describe('writing a Mermaid mind map', () => {
     data: { nodes: ids.map((id) => ({ id, lines: [id.toUpperCase()] })), edges: edges.map(([from, to]) => ({ from, to })) },
   }] });
   const LOOP = 'Mermaid mind maps hold a tree; connectors that would join a shape to a second parent, or close a loop, were dropped.';
+
+  it('roots the tree at a shape whose only parent is itself, and warns of the self-loop', () => {
+    const out = writeMindmap(graph(['b', 'a'], [['a', 'a'], ['a', 'b']]));
+    expect(out.text).toBe('mindmap\n  A\n    B\n');
+    expect(out.warnings).toEqual([LOOP]);
+  });
 
   it('roots a page whose connectors make a loop at its first shape, and warns of the connector closing it', () => {
     const out = writeMindmap(graph(['a', 'b', 'c'], [['a', 'b'], ['b', 'c'], ['c', 'a']]));
