@@ -51,6 +51,12 @@ describe('defineTheme', () => {
     expect(() => defineTheme({ name: 'x', axes: { mode: { default: 'light', values: { dim: {} } } } })).not.toThrow();
   });
 
+  it('refuses an axis value named "by", or whose scheme is not dark or light', () => {
+    expect(() => defineTheme({ name: 'x', axes: { mode: { default: 'dark', values: { dark: {}, by: {} } } } })).toThrow(/"by" is reserved/);
+    const scheme = { scheme: 'dim' } as unknown as { scheme: 'dark' };
+    expect(() => defineTheme({ name: 'x', axes: { mode: { default: 'dark', values: { dark: scheme } } } })).toThrow(/neither "dark" nor "light"/);
+  });
+
   it('refuses an axis name an attribute or selector cannot carry', () => {
     expect(() => defineTheme({ name: 'x', axes: { 'my axis': { default: 'a', values: { a: {} } } } })).toThrow(/"my axis" cannot name an axis/);
     expect(() => defineTheme({ name: 'x', axes: { 'a.b': { default: 'a', values: { a: {} } } } })).toThrow(/"a\.b" cannot name an axis/);

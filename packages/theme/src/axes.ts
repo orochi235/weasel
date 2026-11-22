@@ -39,6 +39,16 @@ export function axisNameProblem(name: string): string | undefined {
   return undefined;
 }
 
+/** Why `entry` cannot be an axis's value named `value`, or undefined when it can. */
+export function axisValueProblem(value: string, entry: unknown): string | undefined {
+  if (value === 'by') return '"by" is reserved and cannot name an axis value: a by-axis value\'s "by" key names its axis';
+  if (!isPlainObject(entry)) return `axis value "${value}" must be an object`;
+  if (entry.scheme !== undefined && entry.scheme !== 'dark' && entry.scheme !== 'light') {
+    return `axis value "${value}" has scheme ${JSON.stringify(entry.scheme)}, which is neither "dark" nor "light"`;
+  }
+  return undefined;
+}
+
 /** Whether `v` is a {@link ByAxis} value. */
 export function isByAxis(v: unknown): v is ByAxis<unknown> {
   return isPlainObject(v) && typeof v.by === 'string';

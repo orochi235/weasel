@@ -1,5 +1,5 @@
 import { isPlainObject } from '@weasel-js/registry';
-import { axisNameProblem, type AxisDefs } from '../axes.ts';
+import { axisNameProblem, axisValueProblem, type AxisDefs } from '../axes.ts';
 import type { Issue } from './types.ts';
 
 /** What is wrong with the axes themselves: one with no values has no selection to derive at, and a default outside the values names tokens nothing declares. */
@@ -11,7 +11,12 @@ export function axisIssues(axes: AxisDefs): Issue[] {
       issues.push({ kind: 'invalid', path: `axes.${name}`, message: problem ?? `axis "${name}" must be an object with values and a default` });
       continue;
     }
-    const values = Object.keys(isPlainObject(def.values) ? def.values : {});
+    const entries = isPlainObject(def.values) ? def.values : {};
+    const values = Object.keys(entries);
+    for (const [value, entry] of Object.entries(entries)) {
+      const bad = axisValueProblem(value, entry);
+      if (bad) issues.push({ kind: 'invalid', path: `axes.${name}.values.${value}`, message: `axis "${name}": ${bad}` });
+    }
     if (values.length === 0) {
       issues.push({ kind: 'invalid', path: `axes.${name}`, message: `axis "${name}" has no values` });
     } else if (typeof def.default !== 'string') {

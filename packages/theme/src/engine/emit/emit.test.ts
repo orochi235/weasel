@@ -125,6 +125,13 @@ describe('emitCss', () => {
     expect(css).toContain('  --wzl-line: color-mix(in srgb, var(--wzl-surface) 20%, transparent);\n');
   });
 
+  it('refuses an axis value that is not an object, or whose scheme is not dark or light', () => {
+    for (const values of [{ dark: {}, light: null }, { dark: { scheme: 'dark; } body { display: none' } }]) {
+      const def = { ...E, axes: { mode: { default: 'dark', values } } } as unknown as ThemeDefinition;
+      expect(() => emitCss([input(def)])).toThrow(/axis "mode": axis value "(light|dark)"/);
+    }
+  });
+
   it('keeps a description holding a comment end inside its comment', () => {
     const def = { ...E, pins: { ...E.pins, ink: { value: '#111111', type: 'color', description: 'Ends */ a { b: c } /* here.' } } };
     const sheet = emitCss([input(def)]);

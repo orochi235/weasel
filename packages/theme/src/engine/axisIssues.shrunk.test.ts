@@ -40,6 +40,11 @@ describe('axes loaded malformed', () => {
     expect(derive(def, { mode: 'dark' }).tokens.x!.value).toBe('4px');
   });
 
+  it('reports an axis value named "by", one that is not an object, and a scheme that is not dark or light', () => {
+    const def = loaded('{"name":"t","axes":{"mode":{"default":"dark","values":{"dark":{"scheme":"dark; } body { x: y"},"light":null,"by":{}}}}}');
+    expect(derive(def).issues.map((i) => i.kind === 'invalid' && i.path)).toEqual(['axes.mode.values.dark', 'axes.mode.values.light', 'axes.mode.values.by']);
+  });
+
   it('bakes the tokens that do not vary on an axis whose default is not one of its values', () => {
     for (const d of ['"cozy"', '5', 'null']) {
       const def = loaded(`{"name":"t","axes":{"density":{"default":${d},"values":{"compact":{},"roomy":{}}}},"pins":{"x":{"value":"4px","type":"dimension"},"y":{"by":"density","compact":{"value":"1px","type":"dimension"},"roomy":{"value":"2px","type":"dimension"}}}}`);

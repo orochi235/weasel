@@ -1,5 +1,5 @@
 import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
-import { axisNameProblem, isByAxis, mergeAxes, type AxisDefs, type Varying } from './axes.ts';
+import { axisNameProblem, axisValueProblem, isByAxis, mergeAxes, type AxisDefs, type Varying } from './axes.ts';
 import type { SerializableColorList } from './colorListItems.ts';
 import type { PinObject, PinValue, ThemeDefinition } from './definition.ts';
 import { isAlpha, isSafeTokenName, unsafeTokenName, type RawToken, type TokenValue } from './dtcg/types.ts';
@@ -72,6 +72,10 @@ export function defineTheme(input: ThemeInput): Theme {
   for (const [axis, def] of Object.entries(input.axes ?? {})) {
     const problem = axisNameProblem(axis);
     if (problem) throw new Error(`Theme "${input.name}": ${problem}`);
+    for (const [value, entry] of Object.entries(def.values ?? {})) {
+      const bad = axisValueProblem(value, entry);
+      if (bad) throw new Error(`Theme "${input.name}": axis "${axis}": ${bad}`);
+    }
     if (!Object.hasOwn(getOwn(all, axis)?.values ?? {}, def.default)) {
       throw new Error(`Theme "${input.name}": axis "${axis}" defaults to "${def.default}", which is not one of its values`);
     }
