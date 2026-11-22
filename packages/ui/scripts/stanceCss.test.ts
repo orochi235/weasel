@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { STANCE_SLOTS, STANCES } from '@weasel-js/theme';
 import { describe, expect, it } from 'vitest';
 import { CASE, TRACKING } from '../../../scripts/check-labels';
-import { stanceCss, withStanceCss } from './stanceCss';
+import { fallbackOf, stanceCss, UNSET, withStanceCss } from './stanceCss';
 import { STANCE_SURFACES } from './stanceSurfaces';
 
 const root = resolve(__dirname, '../../..');
@@ -21,13 +21,20 @@ describe('stance rules', () => {
     for (const stance of surface.stanceless ? [] : STANCES) {
       for (const { name } of STANCE_SLOTS) {
         if (!(name in surface.base) || name === 'tint' || name === 'accent') continue;
-        const fallback = surface.stanced?.[name] ?? surface.base[name];
+        const fallback = fallbackOf(surface.stanced?.[name] ?? surface.base[name]!);
         expect(text).toContain(`--_s-${name}: var(--wzl-stance-${stance}-${name}, ${fallback});`);
         if (surface.nests) {
           expect(text).toContain(`var(--wzl-stance-${stance}-nested-${name}, var(--wzl-stance-${stance}-${name}, ${fallback}))`);
         }
       }
     }
+  });
+
+  // A title left to the cascade: invalid with no stance, and with a stance the theme leaves unset, so it inherits.
+  it('leaves an unset slot guaranteed-invalid, stanced or not', () => {
+    const text = stanceCss({ id: 'x', file: 'x.css', selector: '.x', base: { 'title-font': UNSET } });
+    expect(text).toContain('.x {\n  --_s-title-font: initial;\n}');
+    expect(text).toContain("--_s-title-font: var(--wzl-stance-debug-title-font, var(--_s-unset));");
   });
 
   it.each(STANCE_SURFACES.filter((s) => s.sinks).map((s) => [s.id, s] as const))('%s sinks its wells without reading them as its own surface', (_, surface) => {

@@ -20,7 +20,6 @@
 }
 
 .heading {
-  font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-xs);
   font-weight: var(--wzl-font-weight-medium);
   text-transform: var(--wzl-params-label-case, uppercase);
@@ -30,7 +29,6 @@
 
 .empty {
   margin: 0;
-  font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
 }

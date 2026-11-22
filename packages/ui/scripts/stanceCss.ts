@@ -35,6 +35,13 @@ export interface StanceSurface {
 /** A surface with a tint and no stance tint takes this; mixing a surface into itself changes nothing. */
 export const TINT_BASE = 'var(--wzl-tint, var(--_s-surface))';
 export const ACCENT_BASE = 'var(--wzl-tint)';
+/**
+ * A slot the surface leaves to the cascade: its title takes its container's family. The base block
+ * declares it guaranteed-invalid, and a stance falls back to `--_s-unset`, which nothing declares.
+ */
+export const UNSET = 'initial';
+/** What a stance falls back to for a slot whose own look is `value`. */
+export const fallbackOf = (value: string) => (value === UNSET ? 'var(--_s-unset)' : value);
 
 const begin = (id: string) => `/* BEGIN GENERATED stance rules: ${id} — \`npm run gen:stances\`, do not edit. */`;
 const end = (id: string) => `/* END GENERATED stance rules: ${id} */`;
@@ -77,10 +84,10 @@ export function stanceCss(surface: StanceSurface): string {
       return `var(--wzl-tint, ${nested ? stanceVar(`${stance}-nested-tint`, own) : own})`;
     }
     if (name === 'accent') {
-      const own = stanceVar(`${stance}-accent`, surface.stanced?.accent ?? surface.base.accent);
+      const own = stanceVar(`${stance}-accent`, fallbackOf(surface.stanced?.accent ?? surface.base.accent));
       return `var(--wzl-tint, ${nested ? stanceVar(`${stance}-nested-accent`, own) : own})`;
     }
-    const outer = stanceVar(`${stance}-${name}`, surface.stanced?.[name] ?? surface.base[name]);
+    const outer = stanceVar(`${stance}-${name}`, fallbackOf(surface.stanced?.[name] ?? surface.base[name]));
     return nested ? stanceVar(`${stance}-nested-${name}`, outer) : outer;
   };
 

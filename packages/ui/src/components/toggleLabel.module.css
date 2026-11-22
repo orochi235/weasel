@@ -7,7 +7,6 @@
   align-items: baseline;
   gap: var(--wzl-space-4);
   cursor: pointer;
-  font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size);
   color: var(--wzl-fg);
   user-select: none;

@@ -41,7 +41,7 @@
 }
 
 .name {
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: var(--wzl-font-mono);
   font-size: 11px;
 }
 

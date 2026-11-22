@@ -58,7 +58,7 @@
 
 .label {
   fill: #14100b;
-  font: 600 14px system-ui, sans-serif;
+  font: 600 14px var(--wzl-font-ui);
   text-anchor: middle;
   dominant-baseline: central;
   pointer-events: none;
@@ -105,7 +105,7 @@
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: var(--wzl-font-mono);
 }
 
 .winner td:first-child {
@@ -135,7 +135,7 @@
   margin: 0;
   padding-inline-start: 0;
   list-style: none;
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: var(--wzl-font-mono);
   font-size: 12px;
   color: var(--wzl-fg-muted);
 }

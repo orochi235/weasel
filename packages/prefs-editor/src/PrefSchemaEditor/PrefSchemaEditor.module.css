@@ -14,7 +14,6 @@
 .number input { text-align: right; }
 /* A whole surface a host may mount anywhere, so it brings its face rather than inheriting the page's. */
 .editor {
-  font-family: var(--wzl-font-ui);
   color: var(--wzl-fg);
   display: grid;
   grid-template-columns: minmax(var(--structure-min), var(--structure-w)) auto minmax(var(--attributes-min), var(--attributes-w)) auto minmax(320px, 1fr);
@@ -206,7 +205,7 @@
 .paletteTool { display: flex; touch-action: none; }
 .palette .paletteTool > button { cursor: grab; }
 /* A dragged node drawn as the form would draw it. The form brings its own padding; a page is a rail entry. */
-.ghostNode { padding: var(--wzl-space-2) var(--wzl-space-3); font-family: var(--wzl-font-ui); }
+.ghostNode { padding: var(--wzl-space-2) var(--wzl-space-3); }
 .ghostPage {
   padding: var(--wzl-space-2) var(--wzl-space-3);
   border-radius: var(--wzl-radius-sm);
@@ -214,7 +213,6 @@
   color: var(--wzl-fg-on-accent);
   --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
-  font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-sm);
 }
 /* How many leaves a branch holds, before its kind. A count badge stands alone, so its digits keep their own widths. */

@@ -640,6 +640,25 @@ hold a number stays proportional, and code or hex stays in the mono face.
 `npm run check:numeric` fails on `tabular-nums` or a read of the token anywhere
 else, and on a font property beside the helper.
 
+### Font families
+
+A component takes its font family from its container. One that sets the UI or body face on
+itself replaces whatever face its consumer chose, so only these set a family:
+
+| Where | What it sets |
+|---|---|
+| a theme or page root (`:root`, `html`, `body`, `#root`, labkit's `.lk-root`) | any face |
+| a control the user agent gives its own face (`button`, `input`, `select`, `textarea`, `math`) | `inherit` |
+| a role: code, ids and readouts; headings; a stance's title; figures | its token: `--wzl-font-mono`, `--wzl-font-display`, a `*-title-font`, the numeric module |
+| a documented exception | listed with its reason in `ALLOWED` in `scripts/check-fonts.ts` |
+
+A consumer retargets a role by setting its token, so the choice stays theirs. A stance surface
+whose title takes the body's face leaves its `title-font` slot `UNSET`, so the title inherits.
+An app has no consumer, so its own stylesheets may set the base faces, but a family written out
+still goes through a token. `npm run check:fonts` holds stylesheets to this, and
+`packages/ui/src/fontCascade.browser.test.tsx` renders every story of ui and labkit inside a
+container with a face of its own and fails on text in any other.
+
 ### Appearance props
 
 Four props decide how a component looks, and each is a hint: a component decides

@@ -54,7 +54,7 @@
   gap: var(--wzl-space-3);
   border: none;
   border-radius: var(--btn-radius);
-  font-family: var(--wzl-font-ui);
+  font-family: inherit;
   font-weight: var(--btn-fontweight);
   font-style: normal;
   font-size: var(--wzl-field-font-size, var(--btn-fontsize));

@@ -11,7 +11,7 @@
   height: 260px;
   box-sizing: border-box;
   resize: none;
-  font: 11px/1.4 ui-monospace, Menlo, monospace;
+  font: 11px/1.4 var(--wzl-font-mono);
   background: var(--wzl-surface-sunken);
   color: var(--wzl-fg);
   border: 1px solid var(--wzl-border-on-sunken);

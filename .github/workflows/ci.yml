@@ -78,6 +78,9 @@ jobs:
       # Numeric text takes its face from @weasel-js/theme/numeric.module.css;
       # tabular-nums written anywhere else aligns nothing in Oswald.
       - run: npm run check:numeric
+      # A component inherits its font family; only a theme root, a role token
+      # (mono, display, a title) or a documented exception sets one.
+      - run: npm run check:fonts
       # Text on an accent fill redirects muted and subtle to their on-accent pair,
       # or they fall below 4.5:1 there.
       - run: npm run check:on-accent
