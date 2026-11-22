@@ -14,7 +14,9 @@ import { parseDot, type DotGraph, type DotNodeRef, type DotStmt, type DotSubgrap
 import { dashOf, dotColor, labelLines, markerOf, OUTLINE_ATTR, outlineOf, stylesOf } from './values';
 
 type Attrs = Map<string, DotValue>;
-interface Scope { kind: 'root' | 'cluster' | 'plain'; graph: Attrs; node: Attrs; edge: Attrs; cluster: string | null }
+/** What a named subgraph's statements set itself, which Graphviz keeps on the subgraph for when it is opened again. */
+interface Own { graph: Attrs; node: Attrs; edge: Attrs }
+interface Scope { kind: 'root' | 'cluster' | 'plain'; graph: Attrs; node: Attrs; edge: Attrs; cluster: string | null; own?: Own }
 /** An edge as a statement made it: `own` the attributes the statement names, `attrs` those over its scope's defaults. */
 interface RawEdge { tail: DotNodeRef; head: DotNodeRef; attrs: Attrs; own: Attrs }
 
@@ -78,6 +80,7 @@ class DotReader {
   readonly nodes = new Map<string, Attrs>();
   readonly edges: RawEdge[] = [];
   readonly clusters = new Map<string, Attrs>();
+  private readonly named = new Map<string, Own>();
   private anonymous = 0;
 
   readonly root: Scope = { kind: 'root', graph: new Map(), node: new Map(), edge: new Map(), cluster: null };
@@ -98,6 +101,7 @@ class DotReader {
       if (scope.kind !== 'cluster' && !READ[scope.kind].has(a.key) && READ.cluster.has(a.key)) this.unheld.push(a);
       else this.dropUnread(scope.kind, [a.key]);
       scope.graph.set(a.key, a.value);
+      scope.own?.graph.set(a.key, a.value);
     }
   }
 
@@ -122,7 +126,10 @@ class DotReader {
         this.setGraph(scope, s.kind === 'set' ? [{ key: s.key, value: s.value }] : s.attrs);
       } else if (s.kind === 'attr') {
         this.dropUnread(s.target as 'node' | 'edge', s.attrs.map((a) => a.key));
-        for (const a of s.attrs) scope[s.target].set(a.key, a.value);
+        for (const a of s.attrs) {
+          scope[s.target].set(a.key, a.value);
+          scope.own?.[s.target].set(a.key, a.value);
+        }
       } else if (s.kind === 'node') {
         this.touch(s.node, scope, named);
         this.dropUnread('node', s.attrs.map((a) => a.key));
@@ -165,11 +172,17 @@ class DotReader {
       : clusterFlag(sub.stmts, parent.graph);
     const key = !isCluster ? null : sub.id !== undefined ? clusterKey(sub.id) : `${ANONYMOUS}${this.anonymous++}`;
     if (key !== null) this.membership.openCluster(key, parent.cluster);
-    const graph = key !== null ? (this.clusters.get(key) ?? this.clusterGraph(parent.graph)) : new Map(parent.graph);
+    let own: Own | undefined;
+    if (sub.id !== undefined) {
+      own = this.named.get(sub.id) ?? { graph: new Map(), node: new Map(), edge: new Map() };
+      this.named.set(sub.id, own);
+    }
+    const over = (inherited: Attrs, mine: Attrs | undefined) => new Map([...inherited, ...(mine ?? [])]);
+    const graph = key !== null ? (this.clusters.get(key) ?? this.clusterGraph(parent.graph)) : over(parent.graph, own?.graph);
     if (key !== null) this.clusters.set(key, graph);
     return this.walk(sub.stmts, {
-      kind: key !== null ? 'cluster' : 'plain', graph, node: new Map(parent.node), edge: new Map(parent.edge),
-      cluster: key ?? parent.cluster,
+      kind: key !== null ? 'cluster' : 'plain', graph, node: over(parent.node, own?.node), edge: over(parent.edge, own?.edge),
+      cluster: key ?? parent.cluster, ...(own !== undefined ? { own } : {}),
     });
   }
 }

@@ -275,6 +275,24 @@ describe('reading DOT points', () => {
   });
 });
 
+describe('reading a DOT subgraph opened twice', () => {
+  it('keeps the node and edge defaults its first opening set', () => {
+    const p = page('digraph { subgraph cluster_a { node [shape=box]; edge [color=red]; x } subgraph cluster_a { y; y -> x } }');
+    expect(node(p.data, 'y').outline).toBe('rect');
+    expect(p.data.edges[0]!.colors).toMatchObject({ stroke: 'red' });
+    expect(node(page('digraph { subgraph s { node [shape=box]; x } subgraph s { y } }').data, 'y').outline).toBe('rect');
+  });
+
+  it('keeps the graph attributes a plain subgraph\'s first opening set', () => {
+    const p = page('digraph { subgraph s { label="L" } subgraph s { subgraph cluster_b { b } } }');
+    expect(p.data.containers![0]!.label).toBe('L');
+  });
+
+  it('takes defaults its parent set after the first opening, where it set none itself', () => {
+    expect(node(page('digraph { subgraph s { x } node [shape=box]; subgraph s { y } }').data, 'y').outline).toBe('rect');
+  });
+});
+
 describe('warning for dropped DOT graph attributes', () => {
   it('does not warn for a root or plain subgraph\'s attributes a cluster below inherits and reads', () => {
     const root = readDot('digraph { color=red; style=filled; penwidth=2; subgraph cluster_a { a } }');
