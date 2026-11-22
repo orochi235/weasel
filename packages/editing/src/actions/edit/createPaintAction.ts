@@ -60,12 +60,14 @@ interface Scratch<TState, TValue, K extends string> {
   previews: Map<NodeId, PaintData<K, TValue>>;
 }
 
-/** The nodes a paint action edits: the params' `ids` when given, else the selection's content. */
+/** The nodes a paint action edits: the params' `ids` when given, else the selection's content, less any the scene
+ *  does not hold. */
 function targetsOf(deps: ActionDeps | undefined, params: Readonly<Record<string, unknown>> | undefined): readonly NodeId[] {
   const ids = explicitIds(params);
-  if (ids === undefined) return operandContent(deps);
   const scene = deps?.scene;
-  return scene ? withoutPageStructure(scene, ids.map(asNodeId)) : ids.map(asNodeId);
+  if (!scene) return ids === undefined ? operandContent(deps) : ids.map(asNodeId);
+  const named = ids === undefined ? operandContent(deps) : withoutPageStructure(scene, ids.map(asNodeId));
+  return named.filter((id) => scene.get(id) !== undefined);
 }
 
 function explicitIds(params: Readonly<Record<string, unknown>> | undefined): readonly string[] | undefined {
@@ -187,11 +189,16 @@ export function createPaintAction<TState, TValue, K extends string, P>(
       },
     },
     enabled: (deps, _at, _carried, params) => {
-      const given = explicitIds(params) !== undefined ? true : requiresContent(1)(deps);
+      if (explicitIds(params) === undefined) {
+        const given = requiresContent(1)(deps);
+        if (given !== true) return given;
+      }
       const scene = deps?.scene as Scene<Data, string, unknown> | undefined;
-      if (given !== true || !spec.writable || !scene) return given;
+      if (!scene) return true;
       const ids = targetsOf(deps, params);
-      return ids.some((id) => scene.get(id) && spec.writable!(baseOf(scene, id))) ? true : ActionDisabledReason.NotApplicable;
+      if (ids.length === 0) return ActionDisabledReason.NotApplicable;
+      if (!spec.writable) return true;
+      return ids.some((id) => spec.writable!(baseOf(scene, id))) ? true : ActionDisabledReason.NotApplicable;
     },
   });
 }
