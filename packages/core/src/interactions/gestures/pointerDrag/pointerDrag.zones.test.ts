@@ -128,3 +128,59 @@ describe('the default drag ghost', () => {
     firePointer('pointerup', 100, 60);
   });
 });
+
+describe('useDragHandle in another document', () => {
+  it('resolves zones in the source document, not the global one', () => {
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument!;
+    doc.body.innerHTML = '<div id="zone"></div><div id="src"></div>';
+    const onDrop = vi.fn();
+    zone(doc.getElementById('zone')!, { accepts: () => true, onDrop });
+    Object.defineProperty(doc, 'elementFromPoint', { configurable: true, value: () => doc.getElementById('zone') });
+    vi.spyOn(document, 'elementFromPoint').mockReturnValue(null);
+    const { result } = renderHook(() => useDragHandle(() => ({ kind: 'item', ids: ['a'] })));
+    press(result.current, doc.getElementById('src')!);
+    for (const [type, x] of [['pointermove', 30], ['pointermove', 40], ['pointerup', 40]] as const) {
+      const ev = new Event(type) as PointerEvent;
+      Object.assign(ev, { clientX: x, clientY: 0, pointerId: 1, pointerType: 'mouse', button: 0 });
+      doc.dispatchEvent(ev);
+    }
+    expect(onDrop).toHaveBeenCalledOnce();
+  });
+});
+
+describe('useDragHandle in another document, pressed on a control', () => {
+  it('leaves the press to the control', () => {
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument!;
+    doc.body.innerHTML = '<div id="src"><button id="b">x</button></div>';
+    Object.defineProperty(doc, 'elementFromPoint', { configurable: true, value: () => null });
+    const { result } = renderHook(() => useDragHandle(() => ({ kind: 'item', ids: ['a'] })));
+    press(result.current, doc.getElementById('src')!, doc.getElementById('b')!);
+    for (const x of [30, 40]) {
+      const ev = new Event('pointermove') as PointerEvent;
+      Object.assign(ev, { clientX: x, clientY: 0, pointerId: 1, pointerType: 'mouse', button: 0 });
+      doc.dispatchEvent(ev);
+    }
+    const ghosts = [...doc.querySelectorAll('*'), ...document.querySelectorAll('*')]
+      .filter((el) => (el as HTMLElement).style?.position === 'fixed');
+    expect(ghosts).toEqual([]);
+  });
+});
+
+describe('the default ghost', () => {
+  it('leaves the source row\'s checked radio checked', () => {
+    document.body.innerHTML = '<div id="src"><input type="radio" name="g" id="r" checked></div><input type="radio" name="g">';
+    const radio = document.getElementById('r') as HTMLInputElement;
+    const { result } = renderHook(() => useDragHandle(() => ({ kind: 'item', ids: ['a'] })));
+    press(result.current, document.getElementById('src')!);
+    firePointer('pointermove', 30, 0);
+    firePointer('pointermove', 40, 0);
+    expect(document.querySelectorAll('[name="g"]')).toHaveLength(2);
+    expect(radio.checked).toBe(true);
+    firePointer('pointerup', 40, 0);
+    expect(radio.checked).toBe(true);
+  });
+});

@@ -36,6 +36,59 @@ describe('useDragGesture ended from inside or outside', () => {
     expect(seen).toEqual([]);
   });
 
+  it('an onEnd that cancels closes the gesture once', () => {
+    const ref: { c: DragGestureController | null } = { c: null };
+    const onGestureEnd = vi.fn();
+    const onCancel = vi.fn();
+    const { result } = renderHook(() => useDragGesture({
+      onEnd: () => ref.c!.cancel(),
+      onCancel,
+      onGestureEnd,
+    }));
+    ref.c = result.current;
+    act(() => result.current.start(P(0, 0), NO_MODS));
+    act(() => result.current.end());
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(onGestureEnd).toHaveBeenCalledExactlyOnceWith(true);
+  });
+
+  it('an onEnd that starts the next gesture leaves it live', () => {
+    const ref: { c: DragGestureController | null } = { c: null };
+    let chained = false;
+    const onGestureStart = vi.fn();
+    const onGestureEnd = vi.fn();
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useDragGesture({
+      onEnd: () => { if (!chained) { chained = true; ref.c!.start(P(5, 5), NO_MODS); } },
+      onMove,
+      onGestureStart,
+      onGestureEnd,
+    }));
+    ref.c = result.current;
+    act(() => result.current.start(P(0, 0), NO_MODS));
+    act(() => result.current.end());
+    expect(result.current.phase).toBe('active');
+    expect(onGestureStart).toHaveBeenCalledTimes(2);
+    expect(onGestureEnd).toHaveBeenCalledOnce();
+    act(() => { expect(result.current.move(P(9, 9), NO_MODS)).toBe(true); });
+    expect(onMove.mock.calls[0][0].start).toEqual(P(5, 5));
+    act(() => result.current.end());
+    expect(onGestureEnd).toHaveBeenCalledTimes(2);
+    expect(result.current.phase).toBe('idle');
+  });
+
+  it('an onCancel that starts the next gesture leaves it live', () => {
+    const ref: { c: DragGestureController | null } = { c: null };
+    let chained = false;
+    const { result } = renderHook(() => useDragGesture({
+      onCancel: () => { if (!chained) { chained = true; ref.c!.start(P(5, 5), NO_MODS); } },
+    }));
+    ref.c = result.current;
+    act(() => result.current.start(P(0, 0), NO_MODS));
+    act(() => result.current.cancel());
+    expect(result.current.phase).toBe('active');
+  });
+
   it('unmounting mid-gesture cancels it, closing onGestureStart with onGestureEnd(false)', () => {
     const onGestureEnd = vi.fn();
     const onCancel = vi.fn();

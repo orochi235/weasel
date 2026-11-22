@@ -29,9 +29,9 @@ function registerDropZone(zone: DropZone): () => void {
   };
 }
 
-/** The innermost zone under the point that accepts `kind`. */
-function findZone(x: number, y: number, kind: string): DropZone | null {
-  const el = document.elementFromPoint(x, y);
+/** The innermost zone under the point in `doc` that accepts `kind`. */
+function findZone(doc: Document, x: number, y: number, kind: string): DropZone | null {
+  const el = doc.elementFromPoint(x, y);
   if (!el) return null;
   let best: DropZone | null = null;
   for (const z of dropZones) {
@@ -49,8 +49,14 @@ function zoneAccepts(zone: DropZone, kind: string): boolean {
 
 function defaultGhost(source: HTMLElement, payload: DragPayload, seat: FixedSeat): HTMLElement {
   const rect = source.getBoundingClientRect();
+  const doc = source.ownerDocument;
   const clone = source.cloneNode(true) as HTMLElement;
-  for (const el of [clone, ...clone.querySelectorAll('[id]')]) el.removeAttribute('id');
+  // A named clone would join the page's radio groups and forms: a checked
+  // radio's copy unchecks the original as it is appended.
+  for (const el of [clone, ...clone.querySelectorAll('[id], [name]')]) {
+    el.removeAttribute('id');
+    el.removeAttribute('name');
+  }
   clone.style.position = 'fixed';
   clone.style.left = '0';
   clone.style.top = '0';
@@ -62,9 +68,9 @@ function defaultGhost(source: HTMLElement, payload: DragPayload, seat: FixedSeat
   clone.style.zIndex = 'var(--wzl-z-drag, 10000)';
   clone.style.transition = 'none';
   clone.style.transformOrigin = 'center center';
-  clone.style.fontFamily = getComputedStyle(source).fontFamily;
+  clone.style.fontFamily = (doc.defaultView ?? window).getComputedStyle(source).fontFamily;
   if (payload.ids.length > 1) {
-    const badge = document.createElement('div');
+    const badge = doc.createElement('div');
     badge.textContent = String(payload.ids.length);
     badge.style.position = 'absolute';
     badge.style.top = '-6px';
@@ -112,6 +118,7 @@ function beginPointerDrag(
   createGhost: ((source: HTMLElement, payload: DragPayload) => HTMLElement) | undefined,
 ): GhostDrag | null {
   if (activeDrag) return null;
+  const doc = source.ownerDocument;
   const seat = fixedSeat(source);
   const ghost = createGhost ? createGhost(source, payload) : defaultGhost(source, payload, seat);
   seat.host.appendChild(ghost);
@@ -127,7 +134,7 @@ function beginPointerDrag(
     move(e) {
       if (!activeDrag) return;
       positionGhost(activeDrag.ghost, activeDrag.seat, e.clientX, e.clientY);
-      const zone = findZone(e.clientX, e.clientY, payload.kind);
+      const zone = findZone(doc, e.clientX, e.clientY, payload.kind);
       if (zone !== activeDrag.lastZone) {
         const left = activeDrag.lastZone;
         activeDrag.lastZone = zone;
@@ -138,7 +145,7 @@ function beginPointerDrag(
     },
     drop(e) {
       if (!activeDrag) return;
-      const zone = findZone(e.clientX, e.clientY, payload.kind);
+      const zone = findZone(doc, e.clientX, e.clientY, payload.kind);
       const { payload: dropped, lastZone } = activeDrag;
       teardown();
       zoneCall('onOver', () => lastZone?.onOver?.(false));
@@ -193,14 +200,16 @@ export function useDragHandle(
     // the ref while the first drag runs on with nothing to cancel it.
     if (live.current) return;
     const target = e.currentTarget as HTMLElement;
-    if (e.target instanceof Element && e.target.closest('input, button, select, textarea')) return;
+    // Not `instanceof Element`: a source in another window's document has that window's Element.
+    const pressed = e.target as Partial<Element> | null;
+    if (pressed?.closest?.('input, button, select, textarea')) return;
     const start = { clientX: e.clientX, clientY: e.clientY };
     const pointerId = e.pointerId;
     let ghost: GhostDrag | null = null;
     let past = false;
     let dropClickGuard: (() => void) | null = null;
 
-    // No pointer capture: zones are resolved with `document.elementFromPoint`,
+    // No pointer capture: zones are resolved with `elementFromPoint`,
     // which capture would not help, and the source row is free to be removed
     // and re-rendered under the drag.
     live.current = openPointerSession(target, e, {

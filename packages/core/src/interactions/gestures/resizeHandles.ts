@@ -69,10 +69,10 @@ export function isCornerHandle(entry: ResizeHandleAnchor): entry is CornerAnchor
 /** The corner entries of {@link RESIZE_HANDLE_ANCHORS}, in its order. */
 export const CORNER_ANCHORS: readonly CornerAnchor[] = RESIZE_HANDLE_ANCHORS.filter(isCornerHandle);
 
-/** An edge handle sits this many hit radii on screen from each corner of the
- *  side it is on, at least: under that, it would crowd the corners and leave
- *  the body too little room to be grabbed. At the default 8 px radius, a
- *  side must span 48 px. */
+/** How many hit radii on screen a side must span to get an edge handle, which
+ *  then sits half that from each corner: under that, it would crowd the
+ *  corners and leave the body too little room to be grabbed. At the default
+ *  8 px radius, a side must span 48 px. */
 export const EDGE_HANDLE_MIN_RADII = 6;
 
 /** Whether a body this size, in its own frame `xf`, has room for edge
@@ -85,8 +85,12 @@ export function edgeHandlesFit(
   scale: { x: number; y: number },
   radiusPx: number,
 ): boolean {
-  const floor = pxExtentIn(EDGE_HANDLE_MIN_RADII * radiusPx, scale, xf);
-  return Math.abs(body.width) >= floor.x && Math.abs(body.height) >= floor.y;
+  const need = EDGE_HANDLE_MIN_RADII * radiusPx;
+  if (need <= 0) return true;
+  // A singular frame answers a zero floor: the body spans nothing on screen.
+  const floor = pxExtentIn(need, scale, xf);
+  return floor.x > 0 && floor.y > 0
+    && Math.abs(body.width) >= floor.x && Math.abs(body.height) >= floor.y;
 }
 
 /** How a canvas lays out its resize handles. `hitRadiusPx` is the one size

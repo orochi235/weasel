@@ -31,10 +31,10 @@ export interface DragRectCtx<TScratch = unknown> {
 /** The context handed to `onEnd`, adding whether the final box is too small
  *  to be meaningful. */
 export interface DragRectEndCtx<TScratch = unknown> extends DragRectCtx<TScratch> {
-  /** True if the end-time bounds are at or below `minBounds` on either axis.
-   *  Present-tense state check — distinct from the base's retrospective
+  /** True if the bounds are at or below `minBounds` on either axis, read
+   *  after any `setStart`/`setCurrent` from `onEnd`. Present-tense state check — distinct from the base's retrospective
    *  `wasSubThreshold`. Computed by this wrapper, not by `useDragGesture`. */
-  isSubThreshold: boolean;
+  readonly isSubThreshold: boolean;
 }
 
 /** Options for `useDragRect`. */
@@ -70,6 +70,18 @@ interface DragRectScratch<TConsumer> {
   consumer: TConsumer;
 }
 
+function rectCtx<T>(s: DragRectScratch<T>, onCorner: () => void): DragRectCtx<T> {
+  return {
+    get start() { return s.start; },
+    get current() { return s.current; },
+    get bounds() { return boundsFrom(s.start, s.current); },
+    get modifiers() { return s.modifiers; },
+    get scratch() { return s.consumer; },
+    setStart(p) { s.start = p; onCorner(); },
+    setCurrent(p) { s.current = p; onCorner(); },
+  };
+}
+
 /**
  * The gesture "the user drew a rectangle": press, drag, release, with the
  * resulting box reported live and at commit.
@@ -97,18 +109,10 @@ export function useDragRect<TScratch = unknown>(
     });
   }, []);
 
-  const buildConsumerCtx = useCallback((): DragRectCtx<TScratch> => {
-    const s = scratchRef.current!;
-    return {
-      get start() { return s.start; },
-      get current() { return s.current; },
-      get bounds() { return boundsFrom(s.start, s.current); },
-      get modifiers() { return s.modifiers; },
-      get scratch() { return s.consumer; },
-      setStart(p) { s.start = p; writeOverlay(); },
-      setCurrent(p) { s.current = p; writeOverlay(); },
-    };
-  }, [writeOverlay]);
+  const buildConsumerCtx = useCallback(
+    (): DragRectCtx<TScratch> => rectCtx(scratchRef.current!, writeOverlay),
+    [writeOverlay],
+  );
 
   const gesture = useDragGesture<DragRectScratch<TScratch>>({
     initScratch: () => {
@@ -144,35 +148,33 @@ export function useDragRect<TScratch = unknown>(
       const opts = optsRef.current;
       const min = opts.minBounds ?? { width: 0, height: 0 };
       const b = boundsFrom(ctx.scratch.start, ctx.scratch.current);
-      const isSubThreshold = b.width <= min.width || b.height <= min.height;
       const s = ctx.scratch;
-      const endCtx: DragRectEndCtx<TScratch> = {
-        get start() { return s.start; },
-        get current() { return s.current; },
-        get bounds() { return boundsFrom(s.start, s.current); },
-        get modifiers() { return s.modifiers; },
-        get scratch() { return s.consumer; },
-        setStart(p) { s.start = p; writeOverlay(); },
-        setCurrent(p) { s.current = p; writeOverlay(); },
-        isSubThreshold,
-      };
-      dlog('drag-rect', 'end', { bounds: b, isSubThreshold });
+      const below = (r: DragRectBounds) => r.width <= min.width || r.height <= min.height;
+      const endCtx = Object.defineProperty(rectCtx(s, writeOverlay), 'isSubThreshold', {
+        get: () => below(boundsFrom(s.start, s.current)),
+        enumerable: true,
+      }) as DragRectEndCtx<TScratch>;
+      dlog('drag-rect', 'end', { bounds: b, isSubThreshold: below(b) });
       let r: boolean | void;
       try {
         r = opts.onEnd?.(endCtx);
       } finally {
-        scratchRef.current = null;
-        setOverlay(null);
+        if (scratchRef.current === ctx.scratch) {
+          scratchRef.current = null;
+          setOverlay(null);
+        }
       }
       return r;
     },
-    onCancel: () => {
+    onCancel: (ctx) => {
       dlog('drag-rect', 'cancel');
       try {
         optsRef.current.onCancel?.(buildConsumerCtx());
       } finally {
-        scratchRef.current = null;
-        setOverlay(null);
+        if (scratchRef.current === ctx.scratch) {
+          scratchRef.current = null;
+          setOverlay(null);
+        }
       }
     },
     onGestureStart: () => optsRef.current.onGestureStart?.(),
