@@ -94,6 +94,12 @@ describe('reading a Mermaid block diagram', () => {
     expect(Object.hasOwn(grid!.skips!, '__proto__') && grid!.skips!['__proto__']).toBe(1);
   });
 
+  it('places a space before a line of links ahead of that line\'s first new block', () => {
+    const { document, warnings } = readBlockDiagram('block-beta\n  columns 3\n  space\n  a --> b\n  c');
+    expect(onlyPage(document).layout?.options?.grid?.skips).toEqual({ a: 1 });
+    expect(warnings).toEqual([]);
+  });
+
   it('joins a link to a group declared after it', () => {
     const read = readBlockDiagram('block-beta\n  x --> G\n  block:G\n    a\n  end');
     expect(onlyPage(read.document).data.nodes.map((n) => n.id)).toEqual(['x', 'a']);

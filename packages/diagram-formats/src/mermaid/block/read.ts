@@ -79,7 +79,15 @@ class BlockReader {
           skip = 0;
         }
       } else if (s.kind === 'links') {
-        for (const end of s.ends) if (!this.groupIds.has(end.id)) this.block(end, members);
+        for (const end of s.ends) {
+          if (this.groupIds.has(end.id)) continue;
+          const fresh = !this.nodes.has(end.id);
+          this.block(end, members);
+          if (fresh && skip > 0) {
+            setOwn(this.grid.skips, end.id, skip);
+            skip = 0;
+          }
+        }
         s.links.forEach((link, k) => this.link(link, s.ends[k]!.id, s.ends[k + 1]!.id));
       } else if (s.kind === 'group') {
         const id = s.id ?? this.mint.next(ANONYMOUS_GROUP);
