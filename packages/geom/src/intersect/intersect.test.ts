@@ -118,3 +118,17 @@ describe('pathCrossings on a closed one-cubic subpath', () => {
     expect(pathCrossings([pathFromD('M 0 0 C 100 0 100 100 0 0 Z')])).toHaveLength(0);
   });
 });
+
+describe('segmentCrossings with a zero-length line', () => {
+  it('touches the line it lies on', () => {
+    expect(segmentCrossings([P(5, 0), P(5, 0)], [P(0, 0), P(10, 0)])).toEqual([{ ta: 0, tb: 0.5, x: 5, y: 0 }]);
+    expect(segmentCrossings([P(0, 0), P(10, 0)], [P(5, 0), P(5, 0)])).toEqual([{ ta: 0.5, tb: 0, x: 5, y: 0 }]);
+    expect(segmentCrossings([P(5, 0), P(5, 0)], [P(5, 0), P(5, 0)])).toEqual([{ ta: 0, tb: 0, x: 5, y: 0 }]);
+  });
+
+  it('misses a line it is off', () => {
+    expect(segmentCrossings([P(5, 1), P(5, 1)], [P(0, 0), P(10, 0)])).toEqual([]);
+    expect(segmentCrossings([P(12, 0), P(12, 0)], [P(0, 0), P(10, 0)])).toEqual([]);
+    expect(segmentCrossings([P(5, 0), P(5, 0)], [P(5, 1), P(5, 1)])).toEqual([]);
+  });
+});
