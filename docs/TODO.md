@@ -319,17 +319,6 @@ Owner tags, after the priority (2026-10-26):
   back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip
   (seen 2026-11-11). Closes when the ghost shows the trial's title, or labkit draws its own.
 
-- **(P3) [agent] iconfab still mounts its annotation targets 12 at a time.** labkit's overlay died with "Maximum
-  update depth exceeded" past about two dozen targets in one commit; it now commits a frame's tiles together
-  (7e27df1ba, 2026-11-12), and 2.0.0 on npm carries that. iconfab's Review page
-  (`~/src/iconfab/apps/lab/src/review/Review.tsx`, `TARGET_BATCH`) and its README's "Known problems" still work
-  around it on labkit 1.19.0. Its branch `drop-annotation-batching` (worktree
-  `~/src/iconfab-wt/drop-annotation-batching`, 91f8293) drops the batching, but pinning that branch to weasel 2.0.0
-  fails its typecheck with 13 errors from labkit 2.0's API changes (`Lab`'s `defaultInstrument`,
-  `SerializedAnnotations`, `Rect`'s `w`/`h`, measured 2026-11-21), and iconfab is not on the fleet, so its
-  `apps/lab/e2e/review.spec.ts` cannot run there. Closes when iconfab is on weasel 2.x with the batching gone and
-  that spec passing.
-
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
   native `contextmenu` event to the focused canvas, which would reopen it at that event's point.
