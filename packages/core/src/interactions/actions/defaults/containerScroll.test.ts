@@ -86,6 +86,21 @@ describe('containerScrollAction', () => {
     expect(scene.scroll.get(C)).toEqual({ x: 0, y: 175 });
   });
 
+  it('leaves the wheel to what the classifier finds painted over the container', () => {
+    const { scene, deps } = setup();
+    const over = scene.add({ kind: 'mark', layer: 'l', pose: { x: 90, y: 90, width: 100, height: 100 }, data: null });
+    const child = scene.childrenOf(C)[0]!;
+    let top: string = over;
+    const covered = { ...deps, hitAt: () => ({ bodyTarget: 'unselected-body', id: top }) } as unknown as ActionDeps;
+    expect(containerScrollAction.enabled!(covered, { x: 120, y: 150 })).not.toBe(true);
+    expect(wheel(covered, { x: 120, y: 150 }, 10)).toBe('pass');
+    expect(scene.scroll.get(C)).toBeUndefined();
+    top = child;
+    expect(containerScrollAction.enabled!(covered, { x: 120, y: 150 })).toBe(true);
+    wheel(covered, { x: 120, y: 150 }, 10);
+    expect(scene.scroll.get(C)).toEqual({ x: 0, y: 5 });
+  });
+
   it('leaves an axis with nowhere to go where it is, and passes the wheel on', () => {
     const { scene, deps } = setup();
     expect(wheel(deps, { x: 120, y: 150 }, 60, true)).toBe('pass');

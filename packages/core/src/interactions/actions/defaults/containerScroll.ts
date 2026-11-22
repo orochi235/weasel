@@ -110,14 +110,39 @@ function scrollablesAt(scene: AnyScene, at: { x: number; y: number }, descriptor
   return out;
 }
 
+/** `chain` (innermost first) as seen past `top`, the node painted topmost at
+ *  the point: whole when `top` is in or holds the innermost container, else
+ *  only the containers holding `top`, so a node painted over a container
+ *  takes the wheel from it. */
+function pastTop(scene: AnyScene, chain: ShownScrollable[], top: string | undefined): ShownScrollable[] {
+  if (top === undefined || chain.length === 0) return chain;
+  const holds = (outer: NodeId, inner: NodeId): boolean => {
+    for (let id: NodeId | null = inner; id !== null; id = scene.get(id)?.parent ?? null) if (id === outer) return true;
+    return false;
+  };
+  const topId = top as NodeId;
+  if (!scene.get(topId) || holds(topId, chain[0]!.id)) return chain;
+  const k = chain.findIndex((c) => holds(c.id, topId));
+  return k === -1 ? [] : chain.slice(k);
+}
+
+/** The containers the wheel at `at` reaches, innermost first, past the node
+ *  the dispatcher's `hitAt` classifier finds there when one is wired. */
+function wheelChain(scene: AnyScene, deps: ActionDeps | undefined, at: { x: number; y: number }): ShownScrollable[] {
+  const chain = scrollablesAt(scene, at, poseDescriptorOf(deps?.poseDescriptor));
+  return pastTop(scene, chain, chain.length ? deps?.hitAt?.(at)?.id : undefined);
+}
+
 /** The innermost shown container under the world point `at` whose content
- *  can scroll, with its range. */
+ *  can scroll, with its range. `top`, the node painted topmost at `at`,
+ *  leaves out every container it is painted over rather than inside. */
 export function scrollableAt(
   scene: AnyScene,
   at: { x: number; y: number },
   descriptor: PoseDescriptor<unknown>,
+  top?: string,
 ): ScrollableContainer | null {
-  const hit = scrollablesAt(scene, at, descriptor)[0];
+  const hit = pastTop(scene, scrollablesAt(scene, at, descriptor), top)[0];
   return hit ? { id: hit.id, range: hit.range } : null;
 }
 
@@ -153,7 +178,8 @@ function sceneOf(deps: ActionDeps | undefined): AnyScene | undefined {
  * `contentExtent`; Shift+wheel scrolls it across. A container already at the
  * end of its range in the wheel's direction hands the wheel to the scrollable
  * container holding it, and past the outermost one the action passes, so the
- * wheel pans the viewport. Anywhere else it declines.
+ * wheel pans the viewport. Anywhere else it declines, as it does over a node
+ * the `hitAt` classifier finds painted over the container.
  */
 export const containerScrollAction = defineAction({
   id: 'container.scroll',
@@ -166,11 +192,11 @@ export const containerScrollAction = defineAction({
       opts: { id: 'container.scroll.swapAxis', yields: true, params: { swapAxis: true } },
     },
   ],
-  requires: ['scene', 'view', 'poseDescriptor'],
+  requires: ['scene', 'view', 'poseDescriptor', 'hitAt'],
   enabled: (deps, at) => {
     const scene = sceneOf(deps);
     if (!scene || !at) return 'not-applicable';
-    return scrollableAt(scene, at, poseDescriptorOf(deps?.poseDescriptor)) ? true : 'not-applicable';
+    return wheelChain(scene, deps, at).length > 0 ? true : 'not-applicable';
   },
   invoker: {
     timing: 'immediate',
@@ -182,7 +208,7 @@ export const containerScrollAction = defineAction({
       const delta = { deltaX: params?.deltaX ?? 0, deltaY: params?.deltaY ?? 0 };
       // The pan's own conversion, from a view at the origin: how far the wheel moves in world units.
       const by = wheelPan({ x: 0, y: 0, scale: view.scale }, delta, { swapAxis: params?.swapAxis === true });
-      for (const hit of scrollablesAt(scene, world, poseDescriptorOf(deps.poseDescriptor))) {
+      for (const hit of wheelChain(scene, deps, world)) {
         const from = scene.scroll.get(hit.id) ?? { x: 0, y: 0 };
         const unit = worldPerScrollUnit(scene, hit.pose);
         const to = {
