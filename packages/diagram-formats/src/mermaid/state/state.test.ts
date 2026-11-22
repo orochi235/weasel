@@ -233,6 +233,13 @@ describe('writing a Mermaid state whose id is a statement word', () => {
 });
 
 describe('writing what a Mermaid state pool holds outside its lanes', () => {
+  it('warns that a bar\'s text is dropped', () => {
+    const doc = { pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'f', outline: 'bar', lines: ['sync'] }, { id: 'a' }], edges: [{ from: 'f', to: 'a' }],
+    } as never }] };
+    expect(writeStateDiagram(doc).warnings).toContain('Mermaid forks and joins hold no text; text on bars was dropped.');
+  });
+
   it('warns that a lane\'s label is dropped', () => {
     const doc = { pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: {
       nodes: [{ id: 'a' }, { id: 'b' }], edges: [],

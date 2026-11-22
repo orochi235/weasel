@@ -61,7 +61,9 @@ class StateWriter {
       if (described.length < lines.length - 1) this.out.warnings.add('Mermaid states describe themselves in lines of text; blank lines past a name were dropped.');
       this.lines.push(`${indent}state "${mermaidEscaped([lines[0]!])}" as ${id}`, ...described.map((l) => `${indent}${id} : ${mermaidEscaped([l])}`));
     }
-    if (node.outline === 'diamond' && lines.length > 0) {
+    if (node.outline === 'bar' && lines.some((l) => l.trim() !== '')) {
+      this.out.warnings.add('Mermaid forks and joins hold no text; text on bars was dropped.');
+    } else if (node.outline === 'diamond' && lines.length > 0) {
       this.out.warnings.add('Mermaid choices hold no text; diamonds with text were written as plain states.');
     } else if (node.outline !== undefined && !['roundRect', 'bar', 'diamond'].includes(node.outline as string)) {
       this.out.warnings.add('Mermaid draws every state alike; their outlines were dropped.');
