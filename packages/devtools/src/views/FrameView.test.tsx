@@ -51,3 +51,28 @@ it("shows why the root's state could not be read, not the overlay note", async (
   expect(await screen.findByText('no canvas r')).toBeTruthy();
   expect(screen.queryByText(/measures its paints only while/)).toBeNull();
 });
+
+it('keeps one frame read out at a time, so a slow answer never replaces a newer one', async () => {
+  let calls = 0;
+  let pending = 0;
+  let most = 0;
+  const client = {
+    onChanged: () => () => {},
+    request: (_root: string, m: { type: string }) => {
+      if (m.type !== 'get-frame') {
+        return Promise.resolve({ selection: [], view: {}, activeTool: null, tools: [], overlays: { fps: true }, probes: {} });
+      }
+      const paintMs = ++calls === 1 ? 1.11 : 2.22;
+      most = Math.max(most, ++pending);
+      return new Promise((resolve) => setTimeout(() => {
+        pending--;
+        resolve({ paintMs, drawCalls: 2, layers: [] });
+      }, paintMs === 1.11 ? 1200 : 0));
+    },
+  } as unknown as DevtoolsClient;
+  renderWithIcons(<FrameView client={client} rootId="r" />);
+  expect(await screen.findByText(/2\.22/, {}, { timeout: 3000 })).toBeTruthy();
+  await new Promise((r) => setTimeout(r, 700));
+  expect(screen.queryByText(/1\.11/)).toBeNull();
+  expect(most).toBe(1);
+});
