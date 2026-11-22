@@ -1,6 +1,7 @@
 /** What a WGSL module's entry points read and write: the names its vertex
  *  stage takes attributes under, by location, and the locations its fragment
  *  stage writes. */
+import { stripWgslComments } from './wgslLexical';
 
 export interface WgslEntries {
   readonly vertex: string;
@@ -12,10 +13,6 @@ export interface WgslEntries {
   readonly inputs: readonly number[];
   /** Every location the fragment stage writes. */
   readonly outputs: ReadonlySet<number>;
-}
-
-function stripComments(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
 }
 
 /** `@location(N) name: type` pairs in a parameter list or struct body. */
@@ -62,7 +59,7 @@ function inputsOf(src: string, params: string): Array<[string, number]> {
 }
 
 export function reflectEntries(source: string): WgslEntries {
-  const src = stripComments(source);
+  const src = stripWgslComments(source);
   const vs = entry(src, 'vertex');
   const fs = entry(src, 'fragment');
   const attributes = new Map<string, number>();

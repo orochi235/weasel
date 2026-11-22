@@ -1,6 +1,7 @@
 import type { ShaderSource } from '../../../shaders/registerProgram';
 import { NDC_WGSL } from './common';
 import { ID_OUT_WGSL } from './idOut';
+import { stripWgslComments } from '../wgslLexical';
 
 /**
  * What a custom WGSL program is written against. A program supplies plain
@@ -69,7 +70,7 @@ export const CUSTOM_KIT_WGSL_NAMES: Readonly<Record<string, string>> = {
 /** Whether `code` is a whole module, declaring its own entry points, rather
  *  than the functions a prelude calls. */
 export function declaresEntryPoints(code: string): boolean {
-  return /@vertex\s+fn\b/.test(code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, ''));
+  return /@vertex\s+fn\b/.test(stripWgslComments(code));
 }
 
 /** The module a registered program's WGSL compiles to: a whole module as it
