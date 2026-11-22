@@ -80,12 +80,16 @@ function at(t: LengthTable, r: number, i: number): [number, number, number] {
 /** The direction of segment `i`, or of the nearest one with length, looking back first. */
 function tangentNear(t: LengthTable, r: number, i: number): [number, number, number] {
   const last = tableInternals(t).cum[r].length - 2;
-  for (let k = i; k >= 0; k--) { const d = direction(t, r, k); if (d) return d; }
-  for (let k = i + 1; k <= last; k++) { const d = direction(t, r, k); if (d) return d; }
+  for (let k = i; k >= 0; k--) { const d = direction(t, r, k, 1); if (d) return d; }
+  for (let k = i + 1; k <= last; k++) { const d = direction(t, r, k, 0); if (d) return d; }
   return [0, 0, 0];
 }
 
-function direction(t: LengthTable, r: number, i: number): [number, number, number] | null {
+/** Segment `i`'s direction at its end `u` (0 or 1): a curve's own there, else the chord's. */
+function direction(t: LengthTable, r: number, i: number, u: number): [number, number, number] | null {
+  const arc = segmentArc(t, r, i);
+  const own = arc && bezierDirection(arc.coords, t.dim, u);
+  if (own) return own;
   const a = at(t, r, i);
   const b = at(t, r, i + 1);
   const d: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
