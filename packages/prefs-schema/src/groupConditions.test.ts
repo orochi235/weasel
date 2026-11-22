@@ -91,3 +91,10 @@ describe("a group's own group tests", () => {
     expect(prefStatusAt(mounted, 'view.feature.on', judge(mounted, off)).enabled).toBe(true);
   });
 });
+
+describe('applyPrefConditions over a schema with group tests', () => {
+  it('hands back the resolved schema itself when every node is shown', () => {
+    const on = { view: { on: true, feature: { on: true } } };
+    expect(applyPrefConditions(app, judge(app, on)).shown).toBe(resolvePrefGroupConditions(app));
+  });
+});
