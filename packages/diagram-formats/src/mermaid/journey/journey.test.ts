@@ -103,6 +103,15 @@ describe('writing a Mermaid journey', () => {
     expect(plotOf(text).data).toMatchObject({ sections: [{ tasks: [{ name: 'accDescr x' }, { name: 'b' }] }] });
     expect(warnings).toContain('Mermaid reads a line opening "accTitle {" or "accDescr {" as accessibility text; that "{" in step names was dropped.');
   });
+
+  it('drops a step named accTitle or accDescr, with a warning, rather than read it as accessibility text', () => {
+    const data = { kind: 'journey' as const, sections: [{ tasks: [{ name: 'accTitle', score: 3, actors: ['Me'] }, { name: 'accDescr {', score: 2, actors: [] }, { name: 'b', score: 2, actors: [] }] }] };
+    const { text, warnings } = writeMermaidJourney({ kind: 'plot', id: 'p', width: 10, height: 10, data });
+    const back = readMermaidJourney(text);
+    expect(plotOf(text).data).toMatchObject({ sections: [{ tasks: [{ name: 'b' }] }] });
+    expect(back.document.pages[0]!.name).toBeUndefined();
+    expect(warnings).toContain('Mermaid reads a step named "accTitle" or "accDescr" as accessibility text; those steps were dropped.');
+  });
 });
 
 describe('the Mermaid format', () => {
