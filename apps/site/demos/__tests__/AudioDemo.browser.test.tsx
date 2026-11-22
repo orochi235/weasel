@@ -49,3 +49,12 @@ test('the source reads as stopped once a busy bus steals its voice', async () =>
   for (let i = 0; i < 8; i += 1) fireEvent.click(music);
   await expect.poll(() => source.textContent).toBe('play source');
 });
+
+test('the voice readout counts each bus against its own cap of eight', async () => {
+  render(<AudioDemo />);
+  const burst = screen.getByRole('button', { name: 'fire 50 one-shots' }) as HTMLButtonElement;
+  await expect.poll(() => burst.disabled).toBe(false);
+  fireEvent.click(burst);
+  const readout = screen.getByTestId('voice-readout');
+  await expect.poll(() => readout.textContent).toMatch(/^activeVoices sfx \d \/ 8, music \d \/ 8$/);
+});
