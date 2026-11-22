@@ -20,6 +20,7 @@ import { LabOverContext } from '../config/over';
 import { FieldChoicesContext } from '../controls/fieldChoices';
 import { LightboxContext } from '../lightbox/LightboxContext';
 import { LightboxLayersContext } from '../lightbox/LightboxLayers';
+import { TrialGuidesContext } from '../rulers/trialGuides';
 import { LabStoreContext, TrialIdContext, TrialWritersContext } from '../state/context';
 import { PersistenceContext } from '../state/Persistence';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
@@ -46,6 +47,7 @@ const absent = <T,>(ctx: Context<T>, value: T): Absent => [ctx as unknown as Con
  *  missing. */
 const ABSENT: readonly Absent[] = [
   absent(LabStoreContext, null),
+  absent(TrialGuidesContext, null),
   absent(PersistenceContext, null),
   absent(AnnotationPreloadContext, null),
   absent(LabContext, null),
