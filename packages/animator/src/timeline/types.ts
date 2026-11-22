@@ -182,4 +182,7 @@ export interface TimelineHandle extends AnimationHandle {
    *  reaching the end. What a view of the playhead listens to, so a change
    *  made elsewhere reaches it. Returns an unsubscribe. */
   subscribePlayback(cb: () => void): () => void;
+  /** Whether it was canceled, by `cancel`, its `cancelKey`, or `cancelAll`. A canceled timeline
+   *  never plays again, and its `isPaused` keeps reporting the playback last asked for. */
+  isCanceled(): boolean;
 }

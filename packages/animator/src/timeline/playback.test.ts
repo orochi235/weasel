@@ -37,6 +37,15 @@ describe('timeline playback notifications', () => {
     expect(cb).toHaveBeenCalledTimes(1);
   });
 
+  it('reads as canceled once canceled, and not when it only ran to its end', () => {
+    const tl = makeTimeline({});
+    expect(tl.handle.isCanceled()).toBe(false);
+    tl.advance(1000);
+    expect(tl.handle.isCanceled()).toBe(false);
+    tl.handle.cancel();
+    expect(tl.handle.isCanceled()).toBe(true);
+  });
+
   it('says nothing for an edit, which `subscribe` reports, or after unsubscribing', () => {
     const { handle } = makeTimeline({});
     const cb = vi.fn();

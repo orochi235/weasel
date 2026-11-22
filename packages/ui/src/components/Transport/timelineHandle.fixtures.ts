@@ -13,16 +13,18 @@ export function fakeHandle(over: Partial<TimelineHandle> = {}): TimelineHandle &
   let paused = true;
   let loop: boolean | number = false;
   let scale = 1;
+  let canceled = false;
   const subscribers = new Set<() => void>();
   const playback = new Set<() => void>();
   const changed = (): void => { for (const cb of playback) cb(); };
   return {
     live,
     id: 1,
-    cancel: vi.fn(), pause: vi.fn(() => { paused = true; changed(); }), resume: vi.fn(() => { paused = false; changed(); }),
+    cancel: vi.fn(() => { canceled = true; changed(); }), pause: vi.fn(() => { paused = true; changed(); }), resume: vi.fn(() => { paused = false; changed(); }),
     setTimeScale: vi.fn((s: number) => { scale = s; changed(); }),
     timeScale: () => scale,
     isPaused: () => paused,
+    isCanceled: () => canceled,
     seek: vi.fn((to: number) => { t = to; changed(); }),
     time: () => t,
     duration: () => 1000,
