@@ -11,6 +11,7 @@ import { ConditionSyntaxError, evaluateCondition, triAnd, triNot, type Tri } fro
 import { splitTopLevel } from './cssScan';
 import { fontSizeOf } from './fontSize';
 import { outerViewportOf } from './lengths';
+import { presentationAttribute } from './properties';
 import { getOwn } from '@weasel-js/registry';
 
 /** The media a parse is taken to be rendered on. */
@@ -62,7 +63,7 @@ export function mediaEnvironmentFor(
   overrides: Partial<SvgMediaEnvironment> = {},
 ): SvgMediaEnvironment {
   // The cascade reads this environment, so the root's own `font-size` attribute sizes an `em`, not its computed style.
-  const { width, height } = outerViewportOf(root, fontSizeOf({ 'font-size': root.getAttribute('font-size') ?? undefined }));
+  const { width, height } = outerViewportOf(root, fontSizeOf({ 'font-size': presentationAttribute(root, 'font-size') ?? undefined }));
   return {
     ...DEFAULT_MEDIA_ENVIRONMENT,
     width: Number.isNaN(width) ? DEFAULT_MEDIA_ENVIRONMENT.width : width,
