@@ -7,6 +7,7 @@ import type { AffordanceHit, ImmediateInvoker, InvocationCtx, OngoingHandle } fr
 import { createEditAnchorsDepForTests as makeEditAnchorsDep, stubDepsForTests as stubDeps } from '@weasel-js/core/test-seams';
 import { editAnchorsAction } from './editAnchors';
 import { nudgeAnchorsRightAction } from '../anchorNudge';
+import { setAnchorFieldAction } from '../anchorFields';
 
 /** A kite symmetric about x = 50: top and bottom on the axis, wings either side. */
 const kite = (): PolygonPath =>
@@ -85,6 +86,30 @@ describe('nudging anchors with a pathSymmetry dep', () => {
     const [, , x1, , , , x3] = coords(committed)!;
     expect(x1).toBeGreaterThan(80);
     expect(x1 + x3).toBeCloseTo(100);
+  });
+});
+
+describe('typing an anchor field with a pathSymmetry dep', () => {
+  const typed = (path: PolygonPath, flat: number, params: Record<string, unknown>) => {
+    let committed: PolygonPath | null = null;
+    const dep = makeEditAnchorsDep({
+      getEditablePath: () => path,
+      applyEdit: (_id, next) => { committed = next as PolygonPath; },
+      selectedAnchors: new Set([flat]),
+    });
+    const invoker = setAnchorFieldAction.invoker as ImmediateInvoker;
+    invoker.run(stubDeps({ editAnchors: dep, pathSymmetry: { transforms: () => [ACROSS_50] } }), params);
+    return committed;
+  };
+
+  it('moves the image of an anchor whose X is typed', () => {
+    expect(coords(typed(kite(), 1, { field: 'x', to: 90 }))).toEqual([50, 0, 90, 40, 50, 100, 10, 40]);
+  });
+
+  it('moves the image of a handle whose X is typed', () => {
+    const lobe = pathFromD('M50 0 C70 0 80 20 80 40 L50 100 L20 40 C20 20 30 0 50 0 Z') as PolygonPath;
+    const out = typed(lobe, 1, { field: 'inX', to: 90 });
+    expect(anchorSymmetries(pathToAnchors(out!) as AnchorSet, [ACROSS_50], 1e-3)).toHaveLength(1);
   });
 });
 

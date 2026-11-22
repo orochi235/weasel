@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pathFromD, type PolygonPath } from '@weasel-js/geom';
+import { pathFromD, type Affine, type PolygonPath } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { pathSnapSource } from '@weasel-js/core';
 import {
@@ -72,5 +72,35 @@ describe('an anchor drag snapping', () => {
   it('holds to the axes through its press while Shift is held, with or without a snap dep', () => {
     expect(anchor2(dragAnchor2To({ x: 130, y: 103 }, { shift: true })!)).toEqual([130, 100]);
     expect(anchor2(dragAnchor2To({ x: 130, y: 103 }, { shift: true, snap: false })!)).toEqual([130, 100]);
+  });
+});
+
+describe('an anchor drag snapping on a symmetric path', () => {
+  const kite = pathFromD('M50 0 L80 40 L50 100 L20 40 Z') as PolygonPath;
+  const ACROSS_50: Affine = [-1, 0, 0, 1, 100, 0];
+
+  it("offers no target where the dragged anchor's image began, since the image moves too", () => {
+    const scene = sceneOfPaths([kite]);
+    const [editingId] = [...scene.nodes.keys()];
+    let committed: PolygonPath | null = null;
+    const dep = makeEditAnchorsDep({
+      editingId: editingId!,
+      getEditablePath: () => kite,
+      applyEdit: (_id, path) => { committed = path as PolygonPath; },
+    });
+    const snap = sessionDep(scene, [pathSnapSource({ kinds: { nearest: false } })]);
+    const at = (x: number, y: number): InvocationCtx => ({
+      world: { x, y },
+      screen: { x, y },
+      modifiers: KEYS,
+      deps: stubDeps({
+        selection: [editingId], editAnchors: dep, snap, pathSymmetry: { transforms: () => [ACROSS_50] },
+      }),
+      drag: { start: { x: 80, y: 40 }, current: { x, y }, delta: { x: x - 80, y: y - 40 }, affordance: { kind: 'anchor:1' } },
+    });
+    const handle = (editAnchorsAction.invoker as OngoingInvoker).start(at(80, 40), undefined);
+    handle.onMove!(at(22, 41));
+    handle.onEnd!(at(22, 41), 'commit');
+    expect(Array.from(committed!.coords).slice(2, 4)).toEqual([22, 41]);
   });
 });

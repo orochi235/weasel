@@ -8,6 +8,7 @@
 import { anchorAt, moveHandleTo, translateAnchorBy, type AnchorSet } from './anchorEdits';
 import type { PenAnchor } from './anchors';
 import { DEG_TO_RAD, RAD_TO_DEG } from '../angle';
+import { moveHandleSymmetric, translateEachSymmetric, type AnchorSymmetry } from './anchorSymmetry';
 
 /** One number of an anchor. Handle angles are degrees counterclockwise from
  *  +x as drawn, where y grows downward; lengths and positions are in the
@@ -60,33 +61,42 @@ export function readAnchorFields(set: AnchorSet, flatIndexes: Iterable<number>):
  * the typed spot would (`moveHandleTo`): on a smooth anchor the opposite
  * handle mirrors it, taking its turn and its length, and on a corner it stays
  * where it is. An anchor without that handle is skipped. An angle keeps the
- * handle's length, and a length keeps its angle. Returns whether anything
- * moved.
+ * handle's length, and a length keeps its angle. Under `syms` each anchor's
+ * and handle's images move with it, as `translateEachSymmetric` and
+ * `moveHandleSymmetric` move them. Returns whether anything moved.
  */
 export function writeAnchorField(
   set: AnchorSet,
   flatIndexes: Iterable<number>,
   field: AnchorField,
   entry: NumberEntry,
+  syms: readonly AnchorSymmetry[] = [],
 ): boolean {
   if (!Number.isFinite('to' in entry ? entry.to : entry.by)) return false;
+  if (field === 'x' || field === 'y') {
+    const deltas = new Map<number, Point>();
+    for (const flat of new Set(flatIndexes)) {
+      const a = anchorAt(set, flat);
+      if (!a) continue;
+      const next = apply(a[field], entry);
+      if (next !== a[field]) deltas.set(flat, field === 'x' ? { x: next - a.x, y: 0 } : { x: 0, y: next - a.y });
+    }
+    if (deltas.size === 0) return false;
+    if (syms.length > 0) return translateEachSymmetric(set, deltas, syms);
+    for (const [flat, d] of deltas) translateAnchorBy(set, flat, d.x, d.y);
+    return true;
+  }
   let changed = false;
+  const side = field.startsWith('in') ? 'in' : 'out';
   for (const flat of new Set(flatIndexes)) {
     const a = anchorAt(set, flat);
     if (!a) continue;
-    if (field === 'x' || field === 'y') {
-      const next = apply(a[field], entry);
-      if (next === a[field]) continue;
-      translateAnchorBy(set, flat, field === 'x' ? next - a.x : 0, field === 'y' ? next - a.y : 0);
-      changed = true;
-      continue;
-    }
-    const side = field.startsWith('in') ? 'in' : 'out';
     const h = handleOf(a, side);
     if (!h) continue;
     const to = handleTarget(a, h, field.slice(side.length) as 'X' | 'Y' | 'Angle' | 'Length', entry);
     if (to.x === h.x && to.y === h.y) continue;
-    moveHandleTo(set, flat, side, to.x, to.y, false);
+    if (syms.length > 0) moveHandleSymmetric(set, flat, side, to.x, to.y, false, syms);
+    else moveHandleTo(set, flat, side, to.x, to.y, false);
     changed = true;
   }
   return changed;
