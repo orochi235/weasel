@@ -9,7 +9,7 @@ import type { ActiveAnimation, AnimationContext } from './context';
 import { createFrame, type AnimatorClock } from './frame';
 import { createHandoffs } from './handoff/handoffs';
 import { createTargetBook } from './offsets';
-import { createTable } from './table';
+import { createTable, each } from './table';
 import { createEmitter } from '@weasel-js/registry';
 
 /** What {@link createAnimatorCore} needs of whoever hosts it: a clock and a frame loop. */
@@ -86,9 +86,10 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     requestFrame: host.requestFrame,
   });
   const targets = createTargetBook({
+    // Every one of them, though one throws.
     stop: (s) => {
-      for (const a of [...table.on(s)]) table.retire(a.id);
-      for (const part of [...s.parts]) part();
+      const retires = [...table.on(s)].map((a) => () => table.retire(a.id));
+      each([...retires, ...s.parts], (stop) => stop());
     },
     columns: (table) => codec.columns(table),
   });

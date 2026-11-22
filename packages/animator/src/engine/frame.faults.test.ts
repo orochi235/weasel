@@ -68,3 +68,27 @@ describe('a frame whose voices or holds throw', () => {
     errors.mockRestore();
   });
 });
+
+describe('a frame whose targets throw as they are shown', () => {
+  it('keeps the loop running when stopping what moves a target whose show threw throws too', () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const r = rig();
+    r.tick(0);
+    let value = 0;
+    let other = 0;
+    const bad = createTarget({
+      get: () => value,
+      set: (v: number) => { if (v !== 10) throw new Error('bad set'); value = v; },
+      show: (v) => { if (v > 1) throw new Error('bad show'); },
+    });
+    const good = createTarget({ get: () => other, set: (v: number) => { other = v; } });
+    r.animator.tween({ target: bad, to: 10, ms: 100, easing: 'linear' });
+    r.animator.tween({ target: good, to: 10, ms: 100, easing: 'linear' });
+    expect(r.tick(20)).toBe(true);
+    expect(bad.active).toBe(false);
+    expect(good.active).toBe(true);
+    expect(r.tick(50)).toBe(true);
+    expect(r.seen.at(-1)).toBeCloseTo(50);
+    errors.mockRestore();
+  });
+});

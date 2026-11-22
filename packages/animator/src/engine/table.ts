@@ -79,7 +79,7 @@ export function timeScaleOf(scale: number): number {
 }
 
 /** Runs `each` over `all`, every one of them though one throws; then throws the first throw. */
-function each<A>(all: Iterable<A>, run: (a: A) => void): void {
+export function each<A>(all: Iterable<A>, run: (a: A) => void): void {
   let threw = false;
   let first: unknown;
   for (const a of all) {
