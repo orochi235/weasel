@@ -147,8 +147,8 @@ function readEdge({ page, idOf, groups, claimId, warn }: Reader, cell: RawCell, 
   }
   return {
     id: claimId(cell), from, to, router: routerOf(cell.style),
-    ...optional('fromPort', portAt(cell.style, 'exit')),
-    ...optional('toPort', portAt(cell.style, 'entry')),
+    ...optional('fromPort', portAt(cell.style, 'exit', warn)),
+    ...optional('toPort', portAt(cell.style, 'entry', warn)),
     ...(points.length > 0 ? { waypoints: points } : {}),
     ...(holder !== undefined ? { label: labelOf(holder)!, ...optional('labelPlacement', labelPlacementOf(holder, geometryOf(holder), line)) } : {}),
     ...(ends.length > 0 ? { endLabels } : {}),

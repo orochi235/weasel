@@ -140,14 +140,19 @@ export function edgeColorsOf(style: CellStyle, warn: Warn): Partial<EdgeStyle> |
   });
 }
 
-/** The compass port nearest an exit or entry point given as fractions of the box, or `undefined` for none. */
-export function portAt(style: CellStyle, end: 'exit' | 'entry'): string | undefined {
+/** The compass port nearest an exit or entry point given as fractions of the box, or `undefined` for none. A point
+ *  off that port, or offset from it by `Dx` or `Dy`, warns. */
+export function portAt(style: CellStyle, end: 'exit' | 'entry', warn: Warn): string | undefined {
   const u = styleNumber(style, `${end}X`);
   const v = styleNumber(style, `${end}Y`);
   if (u === undefined || v === undefined) return undefined;
   let best = DEFAULT_PORTS[0]!;
   for (const port of DEFAULT_PORTS) {
     if (Math.hypot(port.at.u - u, port.at.v - v) < Math.hypot(best.at.u - u, best.at.v - v)) best = port;
+  }
+  const offset = (styleNumber(style, `${end}Dx`) ?? 0) !== 0 || (styleNumber(style, `${end}Dy`) ?? 0) !== 0;
+  if (offset || best.at.u !== u || best.at.v !== v) {
+    warn('Connector ends fixed to a point other than the middle of a side were moved to the nearest side\'s middle.');
   }
   return best.id;
 }

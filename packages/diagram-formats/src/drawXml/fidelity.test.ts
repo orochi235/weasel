@@ -67,6 +67,24 @@ describe('draw-style XML hollow arrowheads', () => {
   });
 });
 
+describe('draw-style XML exit and entry points', () => {
+  const read = (style: string) => readCells(`${vertex('a', 'rounded=0;', 'width="80" height="40"')}${vertex('b', 'rounded=0;', 'x="300" width="80" height="40"')}`
+    + `<mxCell id="e" edge="1" parent="1" source="a" target="b" style="${style}"><mxGeometry relative="1" as="geometry"/></mxCell>`);
+  const moved = 'Connector ends fixed to a point other than the middle of a side were moved to the nearest side\'s middle.';
+
+  it('warns when a point off a side\'s middle, or offset from it, is read as the nearest port', async () => {
+    const quarter = await read('exitX=1;exitY=0.25;');
+    expect(edge(quarter.data, 'e').fromPort).toBe('e');
+    expect(quarter.warnings).toContain(moved);
+    expect((await read('entryX=0;entryY=0;')).warnings).toContain(moved);
+    expect((await read('exitX=1;exitY=0.5;exitDx=4;exitDy=0;')).warnings).toContain(moved);
+  });
+
+  it('says nothing of a point on a side\'s middle', async () => {
+    expect((await read('exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;')).warnings).toEqual([]);
+  });
+});
+
 describe('draw-style XML rotated and flipped shapes', () => {
   const warningsOf = async (style: string) => (await readCells(vertex('n', style, 'width="80" height="40"'))).warnings;
 
