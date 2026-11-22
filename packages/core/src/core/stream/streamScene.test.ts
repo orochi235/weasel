@@ -12,7 +12,7 @@ type Data = { fill: unknown };
 const CELL = 100;
 const PER_CELL = 25;
 const DIMS = { width: 800, height: 600 };
-const flush = () => new Promise<void>((r) => setTimeout(r, 0));
+const flush = () => new Promise<void>((r) => setImmediate(r));
 
 /** An endless grid: every cell holds 25 rects, made on request. */
 function endless(): SceneSource<Data, 'main', RectPose> & { loads: SceneCell[]; inFlight: number; most: number } {
