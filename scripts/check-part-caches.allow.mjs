@@ -26,6 +26,7 @@ export const PART_CACHE_ALLOWED = new Map([
   ['packages/audio/src/graph/createAudioGraph.ts', 'set at graph creation from its state, and read without being made'],
   ['packages/d3/src/pendingRemovals.ts', 'the emit path reads it without making it'],
   ['packages/d3/src/liveTransitions.ts', 'two other functions read it without making it'],
+  ['packages/diagram/src/containers/laneStack.ts', 'set by stacksAlong to the axis its caller names, and read by regionAxisOf without being made'],
   ['packages/editing/src/actions/move/delta.ts', 'replaced every call with a value from the call\'s arguments'],
   ['packages/editing/src/actions/move/sessionOf.ts', 'set by beginMove to the session it built, and read by that gesture\'s behaviors without being made'],
   ['packages/editing/src/ingest/weaselJsonHandler.ts', 'replaced on every paste with what that paste made, and read without being made'],

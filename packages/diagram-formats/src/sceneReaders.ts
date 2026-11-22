@@ -290,7 +290,7 @@ export function readRegion(scene: ReadScene, node: ReadNode, page: Vec2, theme: 
   const themed = dataRegionStyle({ role, style }, theme);
   const pose = node.pose;
   const members = role === 'container' ? membersOf(scene, node.id) : [];
-  const axis = poolAxisOf(container);
+  const axis = poolAxisOf(node);
   return {
     id: node.id,
     role,

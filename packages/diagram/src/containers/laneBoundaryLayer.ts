@@ -64,7 +64,7 @@ export function poolLanesOf(scene: AnyScene, id: string, world = worldWith(scene
   if (node === undefined || trait?.role !== 'pool') return null;
   return {
     id: node.id,
-    axis: poolAxisOf(trait),
+    axis: poolAxisOf(node),
     pose: node.pose as RectPose,
     at: world(node.id) as RectPose,
     lanes: lanesOf(scene, node.id).map((l) => ({ id: l, pose: scene.get(l)!.pose as RectPose, at: world(l) as RectPose })),

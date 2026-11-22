@@ -35,7 +35,7 @@ export function laneList(scene: AnyScene, poolId: string): { id: string; size: n
   const pool = scene.get(poolId as never);
   const trait = pool === undefined ? null : diagramContainerOf(pool);
   if (trait === null) return [];
-  const axis = poolAxisOf(trait);
+  const axis = poolAxisOf(pool!);
   return lanesOf(scene, poolId).map((id) => {
     const p = scene.get(id)!.pose as RectPose;
     return { id: id as string, size: axis === 'y' ? p.height : p.width };
