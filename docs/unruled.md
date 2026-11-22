@@ -3630,3 +3630,6 @@ Calls the lanes made without a ruling:
   finite number (`NaN`, `Infinity`, a corner such as `'tl'`), as `bevel`, `sheen`, and `rivets` do for one that is not
   a corner, where its other params read a non-finite number as the default. Reading it as the default 315° was the
   alternative.
+- 2026-11-22 (the fixer's call): a `shadow` or `sunbeams` effect draws nothing on an `outline` badge, which has no
+  fill for it to sit behind or light, as `bevel`, `sheen`, and the other drawn effects already did. Casting the shadow
+  of the outline's stroke alone was the alternative.

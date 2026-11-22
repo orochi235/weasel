@@ -48,12 +48,13 @@ const DEFAULTS: Required<BadgeSunbeamsEffectParams> = {
 };
 
 const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
-  Component: ({ sampler, boxW, boxH, params }) => {
+  Component: ({ sampler, boxW, boxH, variant, params }) => {
     const cfg = finiteParams({ ...DEFAULTS, ...params }, DEFAULTS, ['count']);
     const css = useColorCss();
     const clipId = useId();
     const maskId = useId();
     const gradId = useId();
+    if (variant !== 'solid' && variant !== 'subtle') return null;
     const sx = 100 / boxW;
     const sy = 100 / boxH;
     const irr = Math.max(0, Math.min(cfg.irregularity, 1));

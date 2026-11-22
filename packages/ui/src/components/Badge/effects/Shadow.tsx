@@ -14,7 +14,8 @@ export interface BadgeShadowEffectParams {
 const DEFAULTS: Required<BadgeShadowEffectParams> = { dx: 1, dy: 2, opacity: 0.28 };
 
 const Shadow: EffectModule<BadgeShadowEffectParams> = {
-  Component: ({ sampler, boxW, boxH, params }) => {
+  Component: ({ sampler, boxW, boxH, variant, params }) => {
+    if (variant !== 'solid' && variant !== 'subtle') return null;
     const cfg = finiteParams({ ...DEFAULTS, ...params }, DEFAULTS);
     const sx = 100 / boxW, sy = 100 / boxH;
     const dxVb = cfg.dx * sx;
