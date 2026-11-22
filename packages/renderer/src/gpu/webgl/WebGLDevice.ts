@@ -71,6 +71,7 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     gl.disable(gl.SAMPLE_COVERAGE);
     gl.disable(gl.POLYGON_OFFSET_FILL);
     gl.clearColor(0, 0, 0, 0);
+    gl.clearStencil(0);
     gl.colorMask(true, true, true, true);
     gl.bindVertexArray(null);
     // Every upload reads its texels under the unpack state, which another user of the context may leave set.

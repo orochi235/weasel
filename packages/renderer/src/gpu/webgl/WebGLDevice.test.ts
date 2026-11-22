@@ -74,6 +74,11 @@ describe('WebGLDevice draw state', () => {
     expect(gl.RASTERIZER_DISCARD).toBe(0x8C89);
   });
 
+  it('puts back at frame start the stencil clear value another user of the context may have left set', () => {
+    const { rec } = setup();
+    expect(argsOf(rec, 'clearStencil')).toEqual([[0]]);
+  });
+
   it('zeroes only the stencil bits asked for', () => {
     const { rec, gpu } = setup();
     rec.reset();
