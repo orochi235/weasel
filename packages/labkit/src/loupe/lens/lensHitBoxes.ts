@@ -91,7 +91,7 @@ export function hitBoxesOf<C>(
     if (body && showsSeam(data)) {
       const interior = interiorOf(rect, grown);
       const { seamX } = splitRects(interior, seamOf(data, preview, data.lensId));
-      const strip = seamBox(interior, seamX, false);
+      const strip = seamBox(interior, seamX, data.shape === 'circle');
       out.push({ nodeId: node.id, role: 'lens-seam', rect: strip, round: false });
     }
   }
