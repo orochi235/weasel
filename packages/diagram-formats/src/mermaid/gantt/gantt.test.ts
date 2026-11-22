@@ -140,6 +140,12 @@ describe('writing a Mermaid gantt', () => {
     expect((tasks as GanttData).sections[0]!.tasks[0]!.tags).toBeUndefined();
     expect(warnings).toContain('Mermaid reads a task id that is a tag word as a tag; those ids were renamed.');
   });
+
+  it('keeps a task named accTitle or accDescr a task', () => {
+    const task = (name: string) => ({ name, start: { kind: 'date' as const, date: '2024-01-01' }, end: { kind: 'duration' as const, amount: 1, unit: 'd' as const } });
+    const data: GanttData = { kind: 'gantt', dateFormat: 'YYYY-MM-DD', sections: [{ tasks: [task('accTitle'), task('accDescr')] }] };
+    expect(ganttOf(writeMermaidGantt(pageOf(data)).text).sections[0]!.tasks.map((t) => t.name)).toEqual(['accTitle', 'accDescr']);
+  });
 });
 
 describe('the Mermaid format', () => {

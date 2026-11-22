@@ -48,10 +48,10 @@ export const numberedText = (s: string): string =>
   s.trim().replace(/#(\d+);/g, (whole, n: string) => (Number(n) <= 0x10ffff ? String.fromCodePoint(Number(n)) : whole));
 
 /** `text` as it opens a line, its first character spelled `#n;` where the line would otherwise read as a comment,
- *  accessibility text, or a statement opening with one of `words`. */
-export function lineOpening(text: string, words: readonly string[]): string {
+ *  accessibility text, or a statement opening with one of `words`. `after` is what the line holds past `text`. */
+export function lineOpening(text: string, words: readonly string[], after = ''): string {
   const statement = words.some((w) => text === w || (text.startsWith(w) && /\s/.test(text[w.length]!)));
-  return statement || /^%%|^acc(?:Title|Descr)\s*[:{]/.test(text) ? `#${text.codePointAt(0)};${text.slice(String.fromCodePoint(text.codePointAt(0)!).length)}` : text;
+  return statement || /^%%|^acc(?:Title|Descr)\s*[:{]/.test(`${text}${after}`) ? `#${text.codePointAt(0)};${text.slice(String.fromCodePoint(text.codePointAt(0)!).length)}` : text;
 }
 
 /** `text` without the double quotes around it, if it has them. */

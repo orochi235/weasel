@@ -87,7 +87,8 @@ export function writeMermaidGantt(page: PlotPage): ExportResult {
       warnings.add('Mermaid holds no unnamed section after the first; its tasks were written into the section before it.');
     }
     for (const task of section.tasks) {
-      lines.push(`${named ? '    ' : '  '}${lineOpening(text(task.name).trim(), STATEMENTS)} :${taskItems(task, before, ids).join(', ')}`);
+      const items = ` :${taskItems(task, before, ids).join(', ')}`;
+      lines.push(`${named ? '    ' : '  '}${lineOpening(text(task.name).trim(), STATEMENTS, items)}${items}`);
       before = task;
     }
   });
