@@ -391,6 +391,16 @@ describe('TokenPanel', () => {
     expect(row.getByText('ms')).toBeInTheDocument();
   });
 
+  it('shows an unset font weight as unset, with only the nine weights to pick', () => {
+    const unset: TokenEntry = { name: '--w', type: 'fontWeight', group: 'w', value: '' };
+    renderWithIcons(<TokenPanel tokens={[unset]} onChange={() => {}} />);
+    const button = within(screen.getByRole('group', { name: '--w' })).getByRole('button', { name: /--w/ });
+    expect(button).toHaveTextContent('unset');
+    fireEvent.click(button);
+    expect(screen.getAllByRole('option').map((o) => o.textContent))
+      .toEqual(['100', '200', '300', '400', '500', '600', '700', '800', '900']);
+  });
+
   it('picks a font weight from the nine CSS weights', () => {
     const onChange = vi.fn();
     renderWithIcons(<TokenPanel tokens={tokens} onChange={onChange} />);
