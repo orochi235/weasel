@@ -95,6 +95,16 @@ describe('reading DOT', () => {
     ]);
   });
 
+  it('reads each of Graphviz\'s arrowhead synonyms as the arrowhead it names', () => {
+    const heads = (a: string, b: string) => page(`digraph { a -> b [arrowhead=${a}]; b -> c [arrowhead=${b}] }`).data.edges
+      .map((e) => e.colors?.markerEnd);
+    for (const [a, b] of [['empty', 'onormal'], ['open', 'vee'], ['ediamond', 'odiamond'], ['invempty', 'oinv']]) {
+      const [x, y] = heads(a!, b!);
+      expect(x).toBe(y);
+      expect(x).not.toBe('arrow');
+    }
+  });
+
   it('keeps one edge per pair of ends in a strict graph', () => {
     expect(page('strict graph { a -- b; b -- a; a -- b }').data.edges).toHaveLength(1);
     expect(page('strict digraph { "a\u0000b" -> c; a -> "b\u0000c" }').data.edges).toHaveLength(2);

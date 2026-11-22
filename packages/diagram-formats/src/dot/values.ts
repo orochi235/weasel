@@ -131,12 +131,13 @@ export function shapeOf(outline: Outline | undefined): { shape: string; rounded?
 
 const ARROWS: Readonly<Record<string, MarkerRef | null>> = {
   normal: 'arrow', inv: 'arrow', none: null, dot: 'circle', odot: 'circle', diamond: 'diamond', odiamond: 'diamond-hollow',
-  box: 'square', obox: 'square', tee: 'bar', empty: 'arrow-open', onormal: 'triangle-hollow', vee: 'arrow-concave',
+  box: 'square', obox: 'square', tee: 'bar', onormal: 'triangle-hollow', empty: 'triangle-hollow', oinv: 'triangle-hollow',
+  invempty: 'triangle-hollow', vee: 'arrow-concave', open: 'arrow-concave', ediamond: 'diamond-hollow',
   crow: 'crow-many', teetee: 'crow-one', teeodot: 'crow-zero-one', crowtee: 'crow-one-many', crowodot: 'crow-zero-many',
 };
 
 const ARROW_NAMES: Readonly<Record<string, string>> = {
-  arrow: 'normal', 'arrow-open': 'empty', 'arrow-concave': 'vee', diamond: 'diamond', 'diamond-hollow': 'odiamond',
+  arrow: 'normal', 'arrow-concave': 'vee', diamond: 'diamond', 'diamond-hollow': 'odiamond',
   circle: 'dot', square: 'box', bar: 'tee', 'triangle-hollow': 'onormal',
   'crow-many': 'crow', 'crow-one': 'teetee', 'crow-zero-one': 'teeodot', 'crow-one-many': 'crowtee', 'crow-zero-many': 'crowodot',
 };

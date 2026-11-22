@@ -78,6 +78,13 @@ describe('writing DOT', () => {
     expect(back(pageOf(data)).data.edges.map(markers)).toEqual(data.edges.map(markers));
   });
 
+  it('writes an open chevron, which DOT has no arrowhead for, as an arrow with a warning', () => {
+    const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ id: '1', from: 'a', to: 'b', colors: { markerEnd: 'arrow-open' } }] };
+    const { text, warnings } = writeDot(pageOf(data));
+    expect(text).not.toMatch(/arrowhead/);
+    expect(warnings).toContain('DOT has no arrowhead for some markers; they were written as arrows.');
+  });
+
   it('writes every node\'s place, size, and the page box when all are placed', () => {
     const data: DiagramData = {
       nodes: [{ id: 'a', at: { x: 10, y: 20 }, width: 100, height: 40 }, { id: 'b', at: { x: 200, y: 150 }, width: 80, height: 50 }],
