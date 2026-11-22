@@ -28,6 +28,8 @@ export const viewportWheelPanAction = defineAction({
     run(deps, params) {
       const view = deps.view;
       if (!view) return;
+      // A camera input catches the view, as a drag-pan press does.
+      view.stopDecay?.();
       const axis = params?.axis ?? 'both';
       const deltaX = params?.deltaX ?? 0;
       const deltaY = params?.deltaY ?? 0;

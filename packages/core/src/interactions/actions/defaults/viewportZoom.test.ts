@@ -69,6 +69,21 @@ describe('viewportZoomAction descriptor', () => {
 // ---------------------------------------------------------------------------
 
 describe('viewportZoomAction invoker', () => {
+  it.each([
+    [{ kind: 'wheel', deltaY: -100, deltaX: 0, clientX: 0, clientY: 0 }],
+    [{ kind: 'pinch', scale: 1.1, clientX: 0, clientY: 0 }],
+    [{ kind: 'in' }],
+    [{ kind: 'out' }],
+    [{ kind: 'reset' }],
+    [{ kind: 'fit' }],
+  ])('stops a running pan coast on %o', (params) => {
+    const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    let stopped = 0;
+    view.stopDecay = () => { stopped++; };
+    getImmediateInvoker(viewportZoomAction).run({ view }, params as never);
+    expect(stopped).toBe(1);
+  });
+
   describe("kind: 'wheel'", () => {
     it('zooms in when deltaY is negative (scroll up)', () => {
       const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });

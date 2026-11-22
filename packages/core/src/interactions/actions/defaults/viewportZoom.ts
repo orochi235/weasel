@@ -140,6 +140,8 @@ export function createViewportZoomAction(
       run(deps, params) {
         const view = deps.view;
         if (!view) return;
+        // A camera input catches the view, as a drag-pan press does.
+        view.stopDecay?.();
         const debug = deps.debug;
         const current = view.get();
         // Report a zoom about `anchor` (canvas-local px) from `from` to `to`.
