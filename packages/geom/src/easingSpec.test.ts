@@ -105,3 +105,14 @@ describe('cubicBezierEasing', () => {
     }
   });
 });
+
+describe('cubicBezierEasing where Newton gives up', () => {
+  it('solves a flat end to the solver epsilon', () => {
+    const [x1, y1, x2, y2] = [0.42, 0, 1, 1];
+    const bx = (t: number) => 3 * x1 * t * (1 - t) ** 2 + 3 * x2 * t * t * (1 - t) + t ** 3;
+    const by = (t: number) => 3 * y1 * t * (1 - t) ** 2 + 3 * y2 * t * t * (1 - t) + t ** 3;
+    let lo = 0, hi = 1;
+    for (let i = 0; i < 80; i++) { const m = (lo + hi) / 2; if (bx(m) < 0.9999) lo = m; else hi = m; }
+    expect(Math.abs(cubicBezierEasing(x1, y1, x2, y2)(0.9999) - by(lo))).toBeLessThan(1e-6);
+  });
+});
