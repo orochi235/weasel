@@ -115,6 +115,16 @@ describe('moveCluster', () => {
     expect(next.clusterBoxes).toEqual({ inner: { x: 100, y: 10, width: 220, height: 80 } });
     expect(next.routes).toEqual({ w2: [{ x: 160, y: 60 }], w3: [{ x: 250, y: 40 }] });
   });
+
+  it('moves the near point of a label on a wire inside, and no other label', () => {
+    const doc: EffectDoc = {
+      ...DOC,
+      labels: { w2: { at: { near: { x: 150, y: 40 } }, offset: 4 }, w3: { at: { near: { x: 250, y: 40 } } }, w1: { at: 'mid' } },
+    };
+    expect(moveCluster(doc, 'outer', { x: 10, y: 20 }).labels).toEqual({
+      w2: { at: { near: { x: 160, y: 60 } }, offset: 4 }, w3: { at: { near: { x: 250, y: 40 } } }, w1: { at: 'mid' },
+    });
+  });
 });
 
 describe('removeStages', () => {
