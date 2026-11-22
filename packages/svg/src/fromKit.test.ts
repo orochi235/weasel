@@ -274,6 +274,21 @@ describe('svgNodesFromKit', () => {
     expect(g.children).toHaveLength(1);
   });
 
+  it('gives a root below the top the paint its ancestors hand it, as the canvas does', () => {
+    const rectData = { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } } as const;
+    const nested: SvgKitTree<string> = {
+      roots: ['g'],
+      childrenOf: (id) => (id === 'g' ? ['h'] : id === 'h' ? ['m'] : []),
+      get: (id) => {
+        if (id === 'g') return { kind: 'group', data: { fill: { paint: solid('#ff0000') } }, pose: BOX };
+        if (id === 'h') return { kind: 'group', parent: 'g', data: { fill: 'inherit' }, pose: BOX };
+        return { kind: 'mark', parent: 'h', data: { ...rectData, fill: 'inherit' }, pose: { x: 0, y: 0, width: 10, height: 10 } };
+      },
+    } as SvgKitTree<string>;
+    const [m] = svgNodesFromKit(nested, { roots: ['m'] }) as SvgPathNode[];
+    expect(m.fill).toMatchObject({ kind: 'solid', color: '#ff0000' });
+  });
+
   it('writes a hidden node, leaf or group, with display="none" so it reads back hidden', () => {
     const hiding: SvgKitTree<string> = {
       ...tree,
