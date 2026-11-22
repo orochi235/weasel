@@ -112,7 +112,10 @@ export class TilePyramid<K, V, P> {
     const ring = wanted.filter((w) => w.ring).map((w) => w.key);
     this.cache.pinFloor(floor.map((k) => scheme.idOf(k)));
 
-    const { order, waiting } = this.bakeOrder(floor, onScreen, ring, level, view, frame);
+    // Room the byte bound leaves past the screen, its stand-ins and the floor: tiles baked past it
+    // would be evicted before they were used, and baked again.
+    const room = per === undefined ? Infinity : Math.max(0, Math.floor(this.cache.maxBytes / per) - (2 * n + floor.length));
+    const { order, waiting } = this.bakeOrder(floor, onScreen, ring, level, view, frame, room);
     let baked = 0, unfinished = 0;
     const start = budget.clock();
     for (const key of order) {
@@ -144,9 +147,9 @@ export class TilePyramid<K, V, P> {
     return t.dirtiedAt < frame - 1 ? 'stale' : 'waiting';
   }
 
-  /** Floor, then what is missing on screen, then what is stale there, then the level above and the ring;
-   *  and how many stale tiles wait out their hold before they can join it. */
-  private bakeOrder(floor: readonly K[], onScreen: readonly K[], ring: readonly K[], level: number, view: V, frame: number): { order: K[]; waiting: number } {
+  /** Floor, then what is missing on screen, then what is stale there, then the first `room` of the
+   *  level above and the ring; and how many stale tiles wait out their hold before they can join it. */
+  private bakeOrder(floor: readonly K[], onScreen: readonly K[], ring: readonly K[], level: number, view: V, frame: number, room: number): { order: K[]; waiting: number } {
     const { scheme } = this.opts;
     const seen = new Set<string>();
     const out: K[] = [];
@@ -163,8 +166,8 @@ export class TilePyramid<K, V, P> {
     for (const k of floor) take(k, 'either');
     for (const k of onScreen) take(k, 'missing');
     for (const k of onScreen) take(k, 'stale');
-    for (const w of scheme.wanted(view, level - 1)) if (!w.ring) take(w.key, 'either');
-    for (const k of ring) take(k, 'either');
+    const extra = [...scheme.wanted(view, level - 1).filter((w) => !w.ring).map((w) => w.key), ...ring];
+    for (const k of extra.slice(0, room)) take(k, 'either');
     return { order: out, waiting };
   }
 

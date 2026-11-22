@@ -219,3 +219,19 @@ describe('TilePyramid byte bound', () => {
     expect(count(frame.level - 1)).toBe(count(frame.level));
   });
 });
+
+describe('TilePyramid byte bound and the ring', () => {
+  it('settles with nothing pending when the bound holds the screen but not all of its ring', () => {
+    const v = view(0, 0, 1);
+    const z = scheme.levelFor(v, undefined);
+    const onScreen = scheme.wanted(v, z).filter((w) => !w.ring).length;
+    const { pyramid, made, bake } = setup((2 * onScreen + 1 + 4) * TILE_BYTES);
+    let last = pyramid.run(v, 0, bake, { ...budget, tiles: 100 });
+    for (let f = 1; f < 30; f++) last = pyramid.run(v, f, bake, { ...budget, tiles: 100 });
+    expect(last.level).toBe(z);
+    expect(last.pending).toBe(0);
+    const before = made.length;
+    pyramid.run(v, 30, bake, { ...budget, tiles: 100 });
+    expect(made.length).toBe(before);
+  });
+});
