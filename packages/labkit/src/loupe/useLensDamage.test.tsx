@@ -59,3 +59,20 @@ describe('a hollow lens turned solid', () => {
     expect(invalidateBox).toHaveBeenCalledWith({ left: 40, top: 40, width: 20, height: 20 });
   });
 });
+
+describe('a solid lens turned hollow while it is up', () => {
+  it('redraws the tiles under it at once, and the box it leaves on the next move', () => {
+    const { el, invalidateBox, wrapper } = hosted();
+    const { result, rerender } = renderHook(
+      ({ hollow }) => useLensDamage(hollow, undefined, { current: { current: el } }),
+      { wrapper, initialProps: { hollow: false } },
+    );
+    result.current?.(lensAt(50, 50));
+    rerender({ hollow: true });
+    expect(invalidateBox).toHaveBeenCalledWith({ left: 40, top: 40, width: 20, height: 20 });
+    invalidateBox.mockClear();
+    result.current?.(lensAt(100, 100));
+    expect(invalidateBox).toHaveBeenCalledWith({ left: 40, top: 40, width: 20, height: 20 });
+    expect(invalidateBox).toHaveBeenCalledWith({ left: 90, top: 90, width: 20, height: 20 });
+  });
+});

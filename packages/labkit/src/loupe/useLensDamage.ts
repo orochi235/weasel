@@ -27,35 +27,41 @@ function invalidate(
 
 /**
  * The `onLens` a loupe reports through: the host's own, and for a hollow lens on a tiled surface, the damage each move
- * does — the host draws a hollow lens into the tiles under it, so the tiles it left and landed on both redraw. Undefined
- * when there is neither to report to.
+ * does — the host draws a hollow lens into the tiles under it, so the tiles it left and landed on both redraw.
  */
 export function useLensDamage(
   hollow: boolean | undefined,
   onLens: ((lens: LoupeLens | null) => void) | undefined,
   host: RefObject<RefObject<HTMLElement | null>>,
-): ((lens: LoupeLens | null) => void) | undefined {
+): (lens: LoupeLens | null) => void {
   const tiles = useSurfaceOptional();
   const onLensLatest = useLatest(onLens);
   // Kept in the host's px and converted when it is invalidated: the host may have scrolled since it was drawn.
   const was = useRef<LoupeLens | null>(null);
+  // Every report is heard even while solid, so a lens turned hollow where it stands knows where it is.
+  const last = useRef<LoupeLens | null>(null);
   const damage = hollow ? tiles : null;
   const report = useCallback(
     (lens: LoupeLens | null) => {
       onLensLatest.current?.(lens);
+      last.current = lens;
       if (!damage) return;
       invalidate(damage, host.current.current, [was.current, lens]);
       was.current = lens;
     },
     [damage, onLensLatest, host],
   );
-  // Turning hollow off, or losing the surface, leaves the last hollow drawing in its tiles unless they redraw now.
-  useEffect(
-    () => () => {
-      if (damage) invalidate(damage, host.current.current, [was.current]);
+  // Turning hollow on or off, or gaining or losing the surface, leaves the tiles under the lens showing the other
+  // drawing unless they redraw now.
+  useEffect(() => {
+    if (!damage) return;
+    const redraw = () => invalidate(damage, host.current.current, [was.current]);
+    was.current = last.current;
+    redraw();
+    return () => {
+      redraw();
       was.current = null;
-    },
-    [damage, host],
-  );
-  return onLens || damage ? report : undefined;
+    };
+  }, [damage, host]);
+  return report;
 }
