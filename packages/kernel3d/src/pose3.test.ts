@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadScene } from '@weasel-js/core';
 import { quatFromAxisAngle } from '@weasel-js/geom/3d';
-import { aabbOfPose, pose3, UNIT_CUBE, type Pose3 } from './pose3';
+import { aabbOfPose, pose3, UNIT_CUBE, withAabb, type Pose3 } from './pose3';
 import { createTestScene, type TestData, type TestLayer } from './testScene';
 
 describe('aabbOfPose', () => {
@@ -81,5 +81,27 @@ describe('a quaternion pose in core Scene', () => {
     // drops its prototype without throwing, so a `Vector3` here would come back
     // as a bare object whose first method call fails far from the cause.
     expect(Array.isArray(pose.rotation)).toBe(true);
+  });
+});
+
+describe('withAabb', () => {
+  it('moves and scales an unrotated pose onto a box exactly', () => {
+    const pose = pose3({ x: 3, y: 1, z: -2 }, { x: 2, y: 4, z: 6 });
+    const box = { min: { x: 10, y: 20, z: 30 }, max: { x: 14, y: 21, z: 33 } };
+    const to = withAabb(pose, box);
+    expect(aabbOfPose(to)).toEqual(box);
+    expect(to.rotation).toBe(pose.rotation);
+  });
+
+  it('keeps the scale exactly when the box only moves, rotated or not', () => {
+    const pose = { ...pose3({ x: 3, y: 1, z: -2 }, { x: 2, y: 4, z: 6 }), rotation: quatFromAxisAngle({ x: 0, y: 1, z: 0 }, 0.4) };
+    const now = aabbOfPose(pose);
+    const d = { x: 5, y: -2, z: 7 };
+    const to = withAabb(pose, {
+      min: { x: now.min.x + d.x, y: now.min.y + d.y, z: now.min.z + d.z },
+      max: { x: now.max.x + d.x, y: now.max.y + d.y, z: now.max.z + d.z },
+    });
+    expect(to.scale).toBe(pose.scale);
+    for (const axis of ['x', 'y', 'z'] as const) expect(to.position[axis]).toBeCloseTo(pose.position[axis] + d[axis], 9);
   });
 });
