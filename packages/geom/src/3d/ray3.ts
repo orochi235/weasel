@@ -122,7 +122,8 @@ function squarable(v: Vec3): { v: Vec3; k: number } {
   if (squaresHeld(len2(v))) return { v, k: 1 };
   const k = Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z));
   if (!(k > 0 && k < Infinity)) return { v, k: 1 };
-  return { v: scale(v, 1 / k), k };
+  // Divided, not scaled by 1 / k: a subnormal k's reciprocal overflows to Infinity.
+  return { v: { x: v.x / k, y: v.y / k, z: v.z / k }, k };
 }
 
 /** The point of segment `a`–`b` nearest `p`; `a` when the segment has no
