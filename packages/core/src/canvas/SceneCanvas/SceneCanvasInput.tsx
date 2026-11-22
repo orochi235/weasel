@@ -123,7 +123,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   const { props, scene, selection, picking, chrome, overlay, canvas } = p;
   const { viewState } = p.camera;
   const { publish, picking: source, ...gestures } = p.content;
-  const contentBounds = useContentBounds({ scene, ...source, ...gestures });
+  const contentBounds = useContentBounds({ scene, ...source, ...gestures, getView: viewState.getView });
   useInsertionEffect(() => { publish(contentBounds); });
   const { enableKeybindings = true } = props;
   const snapRegistry = useContext(SnapSourceRegistryContext);
