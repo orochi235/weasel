@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
+import { createPart } from '@weasel-js/registry';
 import { runPlaceAt, type Point, type TrackRun } from '@weasel-js/geom';
 import row from './runRow.module.css';
 import s from './runText.module.css';
@@ -46,7 +47,7 @@ export function useRunText(root: RefObject<HTMLElement | null>, run: TrackRun, f
       if (records.some((r) => !ours(r.target) && !(r.type === 'childList' && [...r.addedNodes, ...r.removedNodes].every(ours)))) draw.current();
     });
     watch.observe(el, { subtree: true, childList: true, characterData: true });
-    const fonts = typeof document !== 'undefined' ? document.fonts : undefined;
+    const fonts = el.ownerDocument.fonts as FontFaceSet | undefined;
     const redraw = (): void => draw.current();
     fonts?.addEventListener?.('loadingdone', redraw);
     const all = bends.current;
@@ -58,16 +59,16 @@ export function useRunText(root: RefObject<HTMLElement | null>, run: TrackRun, f
   }, [root]);
 }
 
-const ours = (node: Node): boolean => (node instanceof Element ? node : node.parentElement)?.closest(`[${BEND}]`) != null;
+const ours = (node: Node): boolean => (node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement)?.closest(`[${BEND}]`) != null;
 
 /** Lays a copy of every text node under `root`'s run items along `run`, and drops the copies of nodes gone since. */
 function bendText(root: HTMLElement, frame: Element, run: TrackRun, bends: Map<Text, Bend>): void {
   const seen = new Set<Text>();
   const box = root.getBoundingClientRect();
   // Without layout, as under jsdom, there is nothing to measure the text against.
-  if (box.width > 0 && root.offsetWidth > 0 && run.length > 0 && typeof Range !== 'undefined' && 'getBoundingClientRect' in Range.prototype) {
+  const range = root.ownerDocument.createRange?.();
+  if (box.width > 0 && root.offsetWidth > 0 && run.length > 0 && typeof range?.getBoundingClientRect === 'function') {
     const toRoot = (x: number, y: number): Point => boxPoint(frame, x, y);
-    const range = document.createRange();
     for (const item of root.querySelectorAll<HTMLElement>(ITEM)) {
       const turn = turnOf(item);
       for (const node of textUnder(item)) {
@@ -92,7 +93,7 @@ function bendText(root: HTMLElement, frame: Element, run: TrackRun, bends: Map<T
 /** The text nodes under `item` that show: not blank, not one of the copies, and not under an item of its own. */
 function textUnder(item: HTMLElement): Text[] {
   const found: Text[] = [];
-  const walk = document.createTreeWalker(item, NodeFilter.SHOW_TEXT);
+  const walk = item.ownerDocument.createTreeWalker(item, NodeFilter.SHOW_TEXT);
   for (let n = walk.nextNode(); n !== null; n = walk.nextNode()) {
     const node = n as Text;
     const parent = node.parentElement;
@@ -112,19 +113,20 @@ function turnOf(item: HTMLElement): number {
 }
 
 function make(node: Text): Bend {
-  const span = document.createElement('span');
+  const doc = node.ownerDocument;
+  const span = doc.createElement('span');
   span.className = s.bend!;
   span.setAttribute(BEND, '');
   span.setAttribute('aria-hidden', 'true');
   // In a shadow tree the copy's glyphs stay out of the item's textContent and out of queries for its text, while the
   // inherited styles still reach them.
   const shadow = span.attachShadow({ mode: 'open' });
-  shadow.adoptedStyleSheets = [sheet()];
-  const svg = document.createElementNS(SVG, 'svg');
-  const path = document.createElementNS(SVG, 'path');
+  shadow.adoptedStyleSheets = [sheetFor(doc)];
+  const svg = doc.createElementNS(SVG, 'svg');
+  const path = doc.createElementNS(SVG, 'path');
   path.id = 'run';
-  const text = document.createElementNS(SVG, 'text');
-  const along = document.createElementNS(SVG, 'textPath');
+  const text = doc.createElementNS(SVG, 'text');
+  const along = doc.createElementNS(SVG, 'textPath');
   along.setAttribute('href', '#run');
   along.setAttribute('startOffset', '50%');
   text.setAttribute('text-anchor', 'middle');
@@ -135,15 +137,13 @@ function make(node: Text): Bend {
   return { span, parent: node.parentElement!, path, text };
 }
 
-let shared: CSSStyleSheet | undefined;
-
-function sheet(): CSSStyleSheet {
-  if (shared === undefined) {
-    shared = new CSSStyleSheet();
-    shared.replaceSync('svg { position: absolute; inline-size: 1px; block-size: 1px; overflow: visible; } path { fill: none; } text { fill: currentColor; }');
-  }
-  return shared;
-}
+// A constructed sheet may only be adopted in the document whose window constructed it.
+const sheetFor = createPart((doc: Document): CSSStyleSheet => {
+  const Sheet = (doc.defaultView as (Window & typeof globalThis) | null)?.CSSStyleSheet ?? CSSStyleSheet;
+  const sheet = new Sheet();
+  sheet.replaceSync('svg { position: absolute; inline-size: 1px; block-size: 1px; overflow: visible; } path { fill: none; } text { fill: currentColor; }');
+  return sheet;
+});
 
 function drop(node: Text, bend: Bend, bends: Map<Text, Bend>): void {
   bend.span.remove();

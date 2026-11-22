@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { lineShape, trackRun } from '@weasel-js/geom';
 import row from './runRow.module.css';
 import { useRunText } from './runText';
@@ -81,4 +81,33 @@ test('a text node removed from an element that stays takes the element’s hidde
   hook.rerender();
   expect(item.hasAttribute('data-run-text-hides')).toBe(false);
   expect(inner.hasAttribute('data-run-text-hides')).toBe(true);
+});
+
+test('a row in another document draws its copies with that document’s stylesheet and redraws on its fonts', () => {
+  const frame = document.createElement('iframe');
+  document.body.append(frame);
+  const win = frame.contentWindow! as Window & typeof globalThis;
+  const doc = win.document;
+  const loaded = new EventTarget();
+  Object.defineProperty(doc, 'fonts', { value: loaded });
+  const root = doc.createElement('div');
+  const item = doc.createElement('span');
+  item.className = row.item!;
+  item.textContent = 'Label';
+  root.append(item);
+  doc.body.append(root);
+  Object.defineProperty(root, 'offsetWidth', { value: 100 });
+  vi.spyOn(win.HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(DOMRect.fromRect({ x: 0, y: 0, width: 100, height: 50 }));
+  vi.spyOn(win.HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+  win.Range.prototype.getBoundingClientRect = () => DOMRect.fromRect({ x: 20, y: 20, width: 20, height: 10 });
+  const ref = { current: root };
+  const run = trackRun(lineShape({ x: 0, y: 25 }, { x: 100, y: 25 }));
+  renderHook(() => useRunText(ref, run));
+  const copy = root.querySelector('[data-run-text-bend]');
+  expect(copy?.shadowRoot?.adoptedStyleSheets[0]).toBeInstanceOf(win.CSSStyleSheet);
+  item.textContent = 'Longer';
+  act(() => {
+    loaded.dispatchEvent(new Event('loadingdone'));
+  });
+  expect(root.querySelector('[data-run-text-bend]')?.shadowRoot?.querySelector('textPath')?.textContent).toBe('Longer');
 });
