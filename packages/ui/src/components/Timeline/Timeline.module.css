@@ -43,6 +43,10 @@
   flex: 1 1 auto;
   min-width: 0;
   background: var(--wzl-surface);
+  /* Marks before the window's start would paint over the label column and take its presses. The margin keeps a key
+     drawn whole, focus ring included, when it sits at either edge. */
+  overflow: clip;
+  overflow-clip-margin: calc(var(--wzl-handle-size) * 0.75 + 3px);
 }
 
 .key, .eventMark {
