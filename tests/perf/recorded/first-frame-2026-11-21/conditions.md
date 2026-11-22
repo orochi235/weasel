@@ -9,6 +9,7 @@ and GPU utilization before and after is in `teitou/conditions.txt`.
 | `teitou-probe/skulkr-chrome-headed.json` | the same, headed Chrome 157, 3 rounds | `probe.mjs --headed --channel chrome` |
 | `teitou-probe/skulkr-chromium-headed.json` | the same, headed Chromium 159, 2 rounds | `probe.mjs --headed` |
 | `orochi/` | `pages.sh`, headed Chrome 159 on orochi (Apple M2 Max), run by the session controller with the maintainer's approval; load average 104 rising to 184 on 12 threads | `pages.sh` |
+| `orochi/pages4-*-cold` | `pages.sh` cold only over `teitou-warmup/`'s four builds, headed Chrome 159 on orochi, 2 rounds each, run by the session controller; load average 27 rising to 140 on 12 threads (`orochi/conditions.txt`, "cold-only") | `pages.sh` |
 | `teitou-warmup/` | `pages.sh` over four builds of the page, headless Chrome 157, 4 rounds each, warm and `--cold`, with each program's link traced: `base` (weasel at 1eae5ad17c), `head` (at 0da22ca47a), `tree` (this branch's warm-up, uncommitted on 0da22ca47a), `boot` (`tree` with skulkr's `main.tsx` calling `warmPrograms()` first) | `ROUNDS=4 HEADLESS=1 pages.sh` |
 | `shader-cost/` | cold link time of batch shader variants (`variants-*.json`), and whether a second context's link joins a compile already under way on another (`warm-*.json`), headless Chromium 159 on teitou | `gen.ts`, `run.mjs`, `warm.mjs` |
 | `teitou-pages-check/` | the page built against weasel at 1eae5ad17c (`before`) and at b16c3e1b7e (`after`), headless Chrome 157, warm and `--cold`, 2 rounds each | `HEADLESS=1 pages.sh` |

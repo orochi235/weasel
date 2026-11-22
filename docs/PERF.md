@@ -10,28 +10,6 @@ When work merges, retire its entry here in the same change.
 
 ## Renderer and the batch
 
-- **(P2) [waiting] The audits page's cold-cache first load on the maintainer's M2 Max is not yet measured on
-  an idle machine since programs start compiling before the canvas does.** On 2026-11-20 x-skulk's audits page
-  showed one 1,917 ms main-thread task before its map drew, in Chrome 156 on that machine, on every reload. In
-  Chrome 159 reloads find the Metal cache (112 to 128 ms there, 2026-11-21), so what is left is a cold cache: a
-  first visit or a Chrome update. A renderer now starts the first frame's programs (`FIRST_FRAME_SPECS`: the
-  batch, its small-text build, the path fill) under `KHR_parallel_shader_compile` and flushes them, a canvas
-  starts them again on a context of its own as it first renders (`warmPrograms`), and an app can call
-  `warmPrograms()` at startup to start them sooner still. The batch's shader text is not the cost: cold on
-  teitou any program links in 45 to 75 ms, its 16-sampler fragment stage adding about 20 over a trivial one.
-  `pages.sh` with cold shaders, longest task, medians of 4 (2026-11-21, `tests/perf/recorded/first-frame-2026-11-21/`):
-
-  | page | teitou, M5 Max, headless (ms) | orochi, M2 Max, loaded (ms) |
-  |---|---:|---:|
-  | merge-base | 344 | 537 to 544 |
-  | renderer compiling in the background | 260 | 413 to 472 |
-  | and the canvas warming its programs | 185 | not run |
-  | and the app calling `warmPrograms()` at startup | 139 | not run |
-  | warm cache, any of them | 113 to 127 | 206 to 233 |
-
-  Next: run `pages.sh` on an idle orochi over these four builds. Closes when a weasel canvas's first frame on
-  that machine comes within 300 ms of its data arriving, cold cache included, measured the same way.
-
 - **(P3) [waiting] Whether the batched path costs a co-tenant on the same page.** Reported, not measured
   here. A consumer benchmarking its wall against a canvas2d control found that at one rung the
   *canvas2d* side went from ~8.8 ms to 102-160 ms, and only when the page also held a build with

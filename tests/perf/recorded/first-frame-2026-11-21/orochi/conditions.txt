@@ -23,3 +23,5 @@ pages: Chrome Metal caches after:
   0 KiB, 1 files, newest modules.timestamp  /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.helper/com.apple.metalfe
   0 KiB, 0 files, newest   /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome/com.apple.metalfe
 pages: load { 184.32 126.29 75.69 }; end 2026-11-22T02:56:40Z
+cold-only: start 2026-11-22T03:55:09Z tree 06adf720cf3882f08754161d5274d5183ff10950 load { 27.49 29.31 39.00 }
+cold-only: end 2026-11-22T03:57:00Z load { 140.46 70.76 54.18 }

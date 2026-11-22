@@ -1,0 +1,516 @@
+{
+  "url": "http://localhost:62257/skulkr/",
+  "headed": true,
+  "channel": "chrome",
+  "dpr": 2,
+  "cold": true,
+  "rounds": [
+    {
+      "round": 1,
+      "browser": "159.0.8154.13",
+      "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)",
+      "errors": [],
+      "loads": [
+        {
+          "how": "goto",
+          "wallMs": 4208,
+          "canvases": 1,
+          "longtasks": [
+            [
+              202,
+              423
+            ],
+            [
+              626,
+              103
+            ]
+          ],
+          "links": [
+            {
+              "at": 350.8,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 351.8,
+              "frag": 6152,
+              "waited": 157.9
+            },
+            {
+              "at": 538.1,
+              "frag": 563,
+              "waited": 37.8
+            }
+          ],
+          "top": [
+            [
+              "(program) :-1",
+              375.9
+            ],
+            [
+              "pS index-yAUy5eFN.js:397",
+              342.1
+            ],
+            [
+              "(garbage collector) :-1",
+              310.3
+            ],
+            [
+              "getProgramParameter :-1",
+              195.3
+            ],
+            [
+              "oS index-yAUy5eFN.js:397",
+              94.7
+            ],
+            [
+              "tm index-yAUy5eFN.js:77",
+              92
+            ],
+            [
+              "Hme index-yAUy5eFN.js:397",
+              84.5
+            ],
+            [
+              "ko index-yAUy5eFN.js:76",
+              78.3
+            ],
+            [
+              "Zce index-yAUy5eFN.js:397",
+              78.3
+            ],
+            [
+              "Xu index-yAUy5eFN.js:77",
+              61.7
+            ],
+            [
+              "(idle) :-1",
+              61.2
+            ],
+            [
+              "bufferSubData :-1",
+              58.5
+            ],
+            [
+              "(anonymous) index-yAUy5eFN.js:77",
+              56
+            ],
+            [
+              "h index-yAUy5eFN.js:397",
+              55
+            ],
+            [
+              "gre index-yAUy5eFN.js:158",
+              54.8
+            ],
+            [
+              "Ap index-yAUy5eFN.js:77",
+              52.3
+            ],
+            [
+              "Bme index-yAUy5eFN.js:397",
+              50.8
+            ],
+            [
+              "jp index-yAUy5eFN.js:77",
+              47.2
+            ],
+            [
+              "pushGradientMesh index-yAUy5eFN.js:397",
+              43.1
+            ],
+            [
+              "checkVisibility :-1",
+              40.1
+            ]
+          ],
+          "gl": {
+            "getContext": 3.4,
+            "getParameter": 0.2,
+            "getShaderParameter": 25.4,
+            "getProgramParameter": 195.3,
+            "bufferData": 32.3,
+            "drawElements": 9.1,
+            "texSubImage2D": 0.3
+          }
+        },
+        {
+          "how": "reload",
+          "wallMs": 4343,
+          "canvases": 1,
+          "longtasks": [
+            [
+              266,
+              122
+            ],
+            [
+              389,
+              90
+            ]
+          ],
+          "links": [
+            {
+              "at": 356,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 356.4,
+              "frag": 6152,
+              "waited": 0.1
+            },
+            {
+              "at": 367.8,
+              "frag": 563,
+              "waited": 0.1
+            }
+          ],
+          "top": [
+            [
+              "(program) :-1",
+              486.2
+            ],
+            [
+              "pS index-yAUy5eFN.js:397",
+              439.6
+            ],
+            [
+              "(garbage collector) :-1",
+              325.4
+            ],
+            [
+              "tm index-yAUy5eFN.js:77",
+              110.6
+            ],
+            [
+              "oS index-yAUy5eFN.js:397",
+              103.5
+            ],
+            [
+              "Hme index-yAUy5eFN.js:397",
+              82.6
+            ],
+            [
+              "Ap index-yAUy5eFN.js:77",
+              75.8
+            ],
+            [
+              "h index-yAUy5eFN.js:397",
+              75.2
+            ],
+            [
+              "Xu index-yAUy5eFN.js:77",
+              74.9
+            ],
+            [
+              "Zce index-yAUy5eFN.js:397",
+              68.5
+            ],
+            [
+              "ko index-yAUy5eFN.js:76",
+              64.4
+            ],
+            [
+              "bufferSubData :-1",
+              61
+            ],
+            [
+              "pushGradientMesh index-yAUy5eFN.js:397",
+              55.7
+            ],
+            [
+              "Bce index-yAUy5eFN.js:397",
+              54.6
+            ],
+            [
+              "Bme index-yAUy5eFN.js:397",
+              53
+            ],
+            [
+              "jp index-yAUy5eFN.js:77",
+              52
+            ],
+            [
+              "(idle) :-1",
+              51.7
+            ],
+            [
+              "gre index-yAUy5eFN.js:158",
+              45.8
+            ],
+            [
+              "bufferData :-1",
+              45.8
+            ],
+            [
+              "Pae index-yAUy5eFN.js:396",
+              38.1
+            ]
+          ],
+          "gl": {
+            "getContext": 3.3,
+            "getParameter": 0.5,
+            "getShaderParameter": 5,
+            "bufferData": 45.8,
+            "texSubImage2D": 0.3,
+            "drawElements": 9.6
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "browser": "159.0.8154.13",
+      "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)",
+      "errors": [],
+      "loads": [
+        {
+          "how": "goto",
+          "wallMs": 4185,
+          "canvases": 1,
+          "longtasks": [
+            [
+              203,
+              441
+            ],
+            [
+              645,
+              162
+            ]
+          ],
+          "links": [
+            {
+              "at": 367,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 368.1,
+              "frag": 6152,
+              "waited": 170.6
+            },
+            {
+              "at": 566,
+              "frag": 563,
+              "waited": 30.9
+            }
+          ],
+          "top": [
+            [
+              "(program) :-1",
+              381.3
+            ],
+            [
+              "pS index-yAUy5eFN.js:397",
+              336.2
+            ],
+            [
+              "(garbage collector) :-1",
+              331.8
+            ],
+            [
+              "getProgramParameter :-1",
+              201.6
+            ],
+            [
+              "oS index-yAUy5eFN.js:397",
+              93
+            ],
+            [
+              "tm index-yAUy5eFN.js:77",
+              92.4
+            ],
+            [
+              "Hme index-yAUy5eFN.js:397",
+              89.1
+            ],
+            [
+              "Zce index-yAUy5eFN.js:397",
+              78.1
+            ],
+            [
+              "ko index-yAUy5eFN.js:76",
+              75.5
+            ],
+            [
+              "Xu index-yAUy5eFN.js:77",
+              71.1
+            ],
+            [
+              "h index-yAUy5eFN.js:397",
+              64.8
+            ],
+            [
+              "(idle) :-1",
+              62.4
+            ],
+            [
+              "pushGradientMesh index-yAUy5eFN.js:397",
+              59.3
+            ],
+            [
+              "jp index-yAUy5eFN.js:77",
+              57.6
+            ],
+            [
+              "Ap index-yAUy5eFN.js:77",
+              52.5
+            ],
+            [
+              "Bme index-yAUy5eFN.js:397",
+              50.6
+            ],
+            [
+              "bufferSubData :-1",
+              50.5
+            ],
+            [
+              "gre index-yAUy5eFN.js:158",
+              50.1
+            ],
+            [
+              "(anonymous) index-yAUy5eFN.js:77",
+              49.4
+            ],
+            [
+              "checkVisibility :-1",
+              37.4
+            ]
+          ],
+          "gl": {
+            "getContext": 1.3,
+            "getParameter": 0.7,
+            "texImage2D": 0.4,
+            "getShaderParameter": 24.9,
+            "getProgramParameter": 201.6,
+            "texSubImage2D": 0.3,
+            "drawElements": 9.7,
+            "bufferData": 32.6
+          }
+        },
+        {
+          "how": "reload",
+          "wallMs": 4339,
+          "canvases": 1,
+          "longtasks": [
+            [
+              266,
+              111
+            ],
+            [
+              378,
+              84
+            ]
+          ],
+          "links": [
+            {
+              "at": 346,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 346.4,
+              "frag": 6152,
+              "waited": 0
+            },
+            {
+              "at": 358.4,
+              "frag": 563,
+              "waited": 0
+            }
+          ],
+          "top": [
+            [
+              "pS index-yAUy5eFN.js:397",
+              468.4
+            ],
+            [
+              "(program) :-1",
+              463.3
+            ],
+            [
+              "(garbage collector) :-1",
+              349.4
+            ],
+            [
+              "tm index-yAUy5eFN.js:77",
+              106.2
+            ],
+            [
+              "oS index-yAUy5eFN.js:397",
+              93.3
+            ],
+            [
+              "h index-yAUy5eFN.js:397",
+              85.4
+            ],
+            [
+              "Xu index-yAUy5eFN.js:77",
+              83.9
+            ],
+            [
+              "Hme index-yAUy5eFN.js:397",
+              78.8
+            ],
+            [
+              "Zce index-yAUy5eFN.js:397",
+              77.2
+            ],
+            [
+              "ko index-yAUy5eFN.js:76",
+              74.9
+            ],
+            [
+              "Ap index-yAUy5eFN.js:77",
+              70
+            ],
+            [
+              "Bme index-yAUy5eFN.js:397",
+              62.4
+            ],
+            [
+              "gre index-yAUy5eFN.js:158",
+              62.2
+            ],
+            [
+              "(anonymous) index-yAUy5eFN.js:77",
+              60.9
+            ],
+            [
+              "pushGradientMesh index-yAUy5eFN.js:397",
+              58
+            ],
+            [
+              "jp index-yAUy5eFN.js:77",
+              56.9
+            ],
+            [
+              "(idle) :-1",
+              50.7
+            ],
+            [
+              "bufferSubData :-1",
+              49.1
+            ],
+            [
+              "Bce index-yAUy5eFN.js:397",
+              39
+            ],
+            [
+              "bufferData :-1",
+              38.5
+            ]
+          ],
+          "gl": {
+            "getContext": 2.7,
+            "getParameter": 0.3,
+            "texImage2D": 0.3,
+            "getShaderParameter": 5.4,
+            "bufferData": 38.5,
+            "drawElements": 5.8
+          }
+        }
+      ]
+    }
+  ]
+}

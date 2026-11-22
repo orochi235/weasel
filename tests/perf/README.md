@@ -744,11 +744,22 @@ Chromium 159 on ANGLE Metal) on 2026-11-21, medians of 5 rounds with cold shader
 | reload, before |   2.4 |  14.4 |   0 |
 | reload, after |   1.8 |  11.1 |   0 |
 
-That frame draws with the batch program and its text build, about 90 ms and 70 ms to link cold; since
-2026-11-21 they start at construction, with the path fill, and compile at once. On skulkr's audits page,
-measured with `pages.sh`, starting them sooner matters more: a canvas warming them as it first renders, and an
-app calling `warmPrograms()` at startup, bring its cold first load from 260 ms to 185 and 139 on teitou. The runs, and `probe.mjs`'s loads of skulkr's demo
-audits page, are in `tests/perf/recorded/first-frame-2026-11-21/`.
+That frame draws with the batch program and its text build, about 90 ms and 70 ms to link cold. Any program
+links in 45 to 75 ms cold there, so the shaders' text is not the cost; when the compile starts is. A renderer
+starts its first frame's programs at construction (`FIRST_FRAME_SPECS`) and flushes them, a canvas starts them
+again on a context of its own as it first renders, and `warmPrograms()` starts them from app startup; the
+browser hands a later context the compile already under way. `pages.sh` over skulkr's demo audits page, cold
+shaders, longest task (2026-11-21):
+
+| build | teitou, M5 Max, headless, median of 4 (ms) | orochi, M2 Max, headed, load 27 rising to 140 (ms) |
+|---|---:|---:|
+| merge-base | 344 | 612, 614 |
+| renderer compiling in the background | 260 | 423, 441 |
+| and the canvas warming its programs | 185 | 306, 295 |
+| and the app calling `warmPrograms()` at startup | 139 | 221, 213 |
+
+Reloads read 66 to 130 ms on every build on both machines: Chrome 159 finds the Metal cache. The runs, and
+`probe.mjs`'s earlier loads of the page, are in `tests/perf/recorded/first-frame-2026-11-21/`.
 
 ## Timing a frame
 

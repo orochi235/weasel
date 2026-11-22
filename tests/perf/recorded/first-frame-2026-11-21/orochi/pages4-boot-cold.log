@@ -1,0 +1,17 @@
+probe http://localhost:62677/skulkr/ headed true channel chrome dpr 2 cold true
+1/2 goto   longest task   221 ms  canvases 1  tasks [[226,221],[447,103]]
+    gl (profile, inclusive) {"getContext":10,"getParameter":0.3,"texImage2D":0.3,"getShaderParameter":24.6,"bufferData":40.3,"drawElements":9.3,"texSubImage2D":0.3}
+    links [at ms, frag length, waited ms] [[115.4,3797,0],[115.9,6152,0],[116,563,0.1],[372.2,3797,0],[373,563,0],[373.6,6152,0]]
+    top self [["(program) :-1",412.5],["sS index-CeGo5YeO.js:389",370.4],["(garbage collector) :-1",318.6],["eS index-CeGo5YeO.js:389",92.8],["(idle) :-1",91.1],["Vme index-CeGo5YeO.js:389",87.6],["Wp index-CeGo5YeO.js:69",84],["go index-CeGo5YeO.js:68",81.9]]
+1/2 reload longest task   121 ms  canvases 1  tasks [[283,121],[405,95]]
+    gl (profile, inclusive) {"getContext":5.8,"texImage2D":0.3,"getShaderParameter":3.5,"getProgramParameter":0.2,"bufferData":46.6,"texSubImage2D":0.3,"drawElements":7.3}
+    links [at ms, frag length, waited ms] [[273.4,3797,0],[273.7,6152,0],[273.7,563,0],[373.5,3797,0],[373.7,563,0.1],[373.9,6152,0.1]]
+    top self [["(program) :-1",494.3],["sS index-CeGo5YeO.js:389",412.4],["(garbage collector) :-1",305.5],["eS index-CeGo5YeO.js:389",104.5],["Wp index-CeGo5YeO.js:69",90.3],["zce index-CeGo5YeO.js:389",83.9],["pushGradientMesh index-CeGo5YeO.js:389",77.5],["Vme index-CeGo5YeO.js:389",75.7]]
+2/2 goto   longest task   213 ms  canvases 1  tasks [[255,213],[469,108]]
+    gl (profile, inclusive) {"getContext":5.7,"getParameter":5.3,"texImage2D":0.3,"getShaderParameter":27.1,"bufferData":28.1,"drawElements":10.3,"texSubImage2D":0.6}
+    links [at ms, frag length, waited ms] [[112.5,3797,0],[112.8,6152,0],[112.9,563,0],[394.1,3797,0],[395.1,563,0],[395.3,6152,0.1]]
+    top self [["(program) :-1",474.3],["sS index-CeGo5YeO.js:389",384.8],["(garbage collector) :-1",317],["(idle) :-1",113.8],["Vme index-CeGo5YeO.js:389",97.8],["eS index-CeGo5YeO.js:389",88.8],["go index-CeGo5YeO.js:68",84.4],["Xce index-CeGo5YeO.js:389",72.1]]
+2/2 reload longest task   109 ms  canvases 1  tasks [[245,109],[355,79]]
+    gl (profile, inclusive) {"getContext":6.2,"linkProgram":0.3,"getParameter":0.3,"texImage2D":0.3,"getShaderParameter":2.9,"drawElements":10.6,"getProgramParameter":0.4,"bufferData":36.2}
+    links [at ms, frag length, waited ms] [[235.8,3797,0],[236.1,6152,0],[236.2,563,0],[327.5,3797,0],[327.8,563,0],[328,6152,0.1]]
+    top self [["(program) :-1",428.7],["sS index-CeGo5YeO.js:389",411.1],["(garbage collector) :-1",364.1],["Wp index-CeGo5YeO.js:69",110.2],["eS index-CeGo5YeO.js:389",90.9],["Vme index-CeGo5YeO.js:389",87.5],["Pu index-CeGo5YeO.js:69",82],["Xce index-CeGo5YeO.js:389",78]]
