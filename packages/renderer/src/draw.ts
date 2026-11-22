@@ -10,7 +10,7 @@ import { drawRetainedGroup } from './draw/retained';
 import { drawPath } from './draw/pathPaint';
 import { drawText } from './draw/text';
 import { drawTextLayer } from './draw/textLayer';
-import { drawImage, drawSprites } from './draw/image';
+import { drawImage, drawSprites, drawTile } from './draw/image';
 import { flushBatch } from './draw/flushBatch';
 
 export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
@@ -21,6 +21,7 @@ export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
     case 'text-layer': return drawTextLayer(ctx, cmd);
     case 'image':  return drawImage(ctx, cmd);
     case 'sprites': return drawSprites(ctx, cmd);
+    case 'tile': return drawTile(ctx, cmd);
     case 'shader': flushForOwnDraw(ctx); return drawShader(ctx, cmd);
   }
 }

@@ -3,6 +3,7 @@ import { HULL_POOL, type HullSet } from '../batchHull';
 import { type BatchMatrix, matrixIndex, matrixSlots } from './batchMatrices';
 import { liveHulls, runClipDepth } from './clip';
 import type { DrawContext } from './drawContext';
+import type { GpuTexture } from '../gpu/types';
 
 /**
  * What a staged run draws under, and what it samples.
@@ -61,7 +62,8 @@ export interface StagedBatchState {
 /** One entry in a run's slot list. */
 type BatchTexture =
   | { kind: 'bitmap'; image: ImageBitmap; sampling: 'linear' | 'nearest'; mips: boolean }
-  | { kind: 'atlas'; id: string; fieldScale: readonly [number, number] };
+  | { kind: 'atlas'; id: string; fieldScale: readonly [number, number] }
+  | { kind: 'target'; texture: GpuTexture };
 
 /**
  * The slot `image` would sample from in this run, or -1 if it cannot join.
@@ -78,6 +80,15 @@ export function slotForBitmap(
     const entry = staged.textures[i];
     if (entry.kind !== 'bitmap' || entry.image !== image) continue;
     return entry.sampling === sampling && entry.mips === mips ? i + 1 : -1;
+  }
+  return nextFreeSlot(staged);
+}
+
+/** The same for a texture the renderer drew into, whose filter was set when it was made. */
+export function slotForTexture(staged: StagedBatchState, texture: GpuTexture): number {
+  for (let i = 0; i < staged.textures.length; i++) {
+    const entry = staged.textures[i];
+    if (entry.kind === 'target' && entry.texture === texture) return i + 1;
   }
   return nextFreeSlot(staged);
 }

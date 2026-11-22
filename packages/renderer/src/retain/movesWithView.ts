@@ -37,6 +37,7 @@ function commandMoves(cmd: DrawCommand, hasViewMatrix: boolean): boolean {
     case 'text-layer':
       return cmd.texts.every((text) => commandMoves(text, hasViewMatrix));
     case 'image':
+    case 'tile':
     case 'sprites':
       return true;
     case 'shader':

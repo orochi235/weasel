@@ -8,11 +8,12 @@ import type { DrawContext } from './drawContext';
 import { retryUncut, flushForOwnDraw } from './clip';
 import { flushBatch } from './flushBatch';
 import {
-  openRun, runTakes, slotForAtlas, slotForBitmap, slotForRamps, takeHulls, takeMatrix,
+  openRun, runTakes, slotForAtlas, slotForBitmap, slotForRamps, slotForTexture, takeHulls, takeMatrix,
 } from './batchRun';
 import { type BatchPaint, rampVertices } from './gradient';
 import { pushPatternMesh } from './patternBatch';
 import type { Rect } from '@weasel-js/geom';
+import type { GpuTexture } from '../gpu/types';
 
 /**
  * Vertices above which a mesh keeps its own draw, by whether a run is open.
@@ -93,6 +94,24 @@ export function stageImage(
   let slot = slotForBitmap(staged, image, sampling, mips);
   if (slot > staged.textures.length) {
     staged.textures.push({ kind: 'bitmap', image, sampling, mips });
+    slot = staged.textures.length;
+  }
+  under.slot = takeHulls(ctx, staged, withMatrix(slot, takeMatrix(staged, under.colorMatrix, under.alpha)));
+  return under;
+}
+
+/** {@link stageImage} for a texture the renderer drew into, as a baked tile is. */
+export function stageTexture(ctx: DrawContext, texture: GpuTexture): { slot: number; tint: Tint } {
+  const under = texturedUnder(ctx, false);
+  const open = ctx.batchState;
+  if (open !== undefined && (!runTakes(ctx, open, under.colorMatrix, under.alpha) || slotForTexture(open, texture) < 0)) {
+    flushBatch(ctx);
+  }
+  if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
+  const staged = openRun(ctx);
+  let slot = slotForTexture(staged, texture);
+  if (slot > staged.textures.length) {
+    staged.textures.push({ kind: 'target', texture });
     slot = staged.textures.length;
   }
   under.slot = takeHulls(ctx, staged, withMatrix(slot, takeMatrix(staged, under.colorMatrix, under.alpha)));

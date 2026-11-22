@@ -12,6 +12,7 @@ import { DrawBatch } from '../drawBatch';
 import type { ClipBox } from '../batchClip';
 import type { EffectTargets } from '../effects/EffectTargets';
 import type { RetainedSurfaces } from '../retain/RetainedSurfaces';
+import type { TileTexture } from '../retain/TileTextures';
 import type { PaintScratch } from '../paintScratch';
 import type { StagedBatchState } from './batchRun';
 import type { FlattenTolerance } from './flattenTolerance';
@@ -127,6 +128,8 @@ export interface DrawContext {
    *  without a renderer behind the context, and then they draw straight
    *  through. */
   retained?: RetainedSurfaces;
+  /** The renderer's baked tiles, which a `TileDrawCommand` samples. */
+  tiles?: { textureOf(tile: TileTexture): GpuTexture | null };
   /** Device-pixel size of the drawing buffer. */
   deviceWidth?: number;
   deviceHeight?: number;

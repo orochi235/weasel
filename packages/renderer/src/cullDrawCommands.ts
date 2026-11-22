@@ -67,6 +67,7 @@ function cullOne(cmd: DrawCommand, m: GlMat3, box: Box, dpr: number): DrawComman
     }
     case 'path':
     case 'image':
+    case 'tile':
     case 'sprites':
       return boxMisses(paintedBox(cmd, m), box) ? null : cmd;
     case 'text-layer':

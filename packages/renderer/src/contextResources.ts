@@ -1,3 +1,6 @@
+import { textureRegistry } from './textures/registerTexture';
+import type { CustomPrograms } from './shaders/CustomPrograms';
+import type { GroupState } from './state/GroupState';
 import { createPaintResources, type OwnedPaintResources } from './paintResources';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import type { GpuBuffer, GpuDevice, GpuTexture } from './gpu/types';
@@ -137,4 +140,18 @@ export class ContextResources {
     if (this.whiteTexture) gpu.deleteTexture(this.whiteTexture);
     this.whiteTexture = null;
   }
+}
+
+/** What every frame does before it draws. A frame that threw part-way never unwound: its group stack
+ *  and staged vertices are still here. */
+export function startFrame(res: ContextResources, programs: CustomPrograms, groupState: GroupState): void {
+  // Free GPU resources whose Mesh was GC'd since the last frame. Done here, before any draws:
+  // deleting from the FinalizationRegistry callback directly races a draw in flight.
+  res.meshCache.drainPendingDeletes();
+  res.textureCache.sweep(textureRegistry);
+  programs.refresh();
+  groupState.reset();
+  res.drawBatch.reset();
+  // A frame that threw part-way left its clip here.
+  res.drawBatch.clip = null;
 }
