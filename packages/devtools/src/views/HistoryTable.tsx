@@ -18,7 +18,15 @@ export const entryName = (entry: { id: number | string; label: string }): string
 
 const expandable = ({ step }: StepRow): boolean => step.entries.length > 0;
 
-const opCount = (step: DevtoolsHistoryRecord): number => step.entries.reduce((n, e) => n + e.opCount, 0);
+/** `… N more` for what a record cut from a list it kept `kept` of, or nothing when it cut none. */
+const more = (total: number, kept: number, noun = ''): string | null =>
+  total > kept ? `… ${total - kept} more${noun && ` ${noun}`}` : null;
+
+function entriesText(step: DevtoolsHistoryRecord): string {
+  const names = step.entries.map(entryName);
+  const cut = more(step.entryCount, step.entries.length);
+  return [...names, ...(cut ? [cut] : [])].join(', ') || '—';
+}
 
 function StepDetail({ step }: { step: DevtoolsHistoryRecord }): ReactElement {
   return (
@@ -37,9 +45,11 @@ function StepDetail({ step }: { step: DevtoolsHistoryRecord }): ReactElement {
                 <ValueView value={op.summary} label={`${op.kind} arguments`} />
               </li>
             ))}
+            {entry.opCount > entry.ops.length && <li className={s.note}>{more(entry.opCount, entry.ops.length, 'ops')}</li>}
           </ul>
         </section>
       ))}
+      {step.entryCount > step.entries.length && <p className={s.note}>{more(step.entryCount, step.entries.length, 'entries')}</p>}
     </div>
   );
 }
@@ -54,9 +64,9 @@ export function HistoryTable({ steps, now }: { steps: readonly Sequenced<Devtool
       id: 'entries',
       header: 'Entries',
       sortable: false,
-      render: ({ step }) => step.entries.map(entryName).join(', ') || '—',
+      render: ({ step }) => entriesText(step),
     },
-    { id: 'ops', header: 'Ops', sortable: false, className: s.figure, render: ({ step }) => opCount(step) },
+    { id: 'ops', header: 'Ops', sortable: false, className: s.figure, render: ({ step }) => step.opCount },
     {
       id: 'position',
       header: 'Position',

@@ -25,6 +25,8 @@ function recordOf(step: HistoryStep, history: Pick<History, 'undoDepth' | 'redoD
       opCount: e.ops.length,
       ops: e.ops.slice(0, HISTORY_RECORD_LIMITS.ops).map(opOf),
     })),
+    entryCount: step.entries.length,
+    opCount: step.entries.reduce((n, e) => n + e.ops.length, 0),
     position: { index, total: index + history.redoDepth() },
   };
 }

@@ -48,6 +48,18 @@ describe('recordHistory', () => {
     const last = t.ring.since(0).entries.at(-1)!;
     expect(last.entries[0]!.ops).toHaveLength(HISTORY_RECORD_LIMITS.ops);
     expect(last.entries[0]!.opCount).toBe(many);
+    expect(last.opCount).toBe(many);
+  });
+
+  it('counts every entry and op a step touched, past the ones its record keeps', () => {
+    const t = setup();
+    const extra = 5;
+    for (let i = 0; i < HISTORY_RECORD_LIMITS.entries + extra; i++) t.add(`n${i}`);
+    t.scene.history.goto(0);
+    const jump = t.ring.since(0).entries.at(-1)!;
+    expect(jump.step).toBe('goto');
+    expect(jump.entries).toHaveLength(HISTORY_RECORD_LIMITS.entries);
+    expect(jump).toMatchObject({ entryCount: HISTORY_RECORD_LIMITS.entries + extra, opCount: HISTORY_RECORD_LIMITS.entries + extra });
   });
 
   it('keeps nothing in a production build until something watches the ring, and stops when released', () => {

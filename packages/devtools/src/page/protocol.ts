@@ -191,6 +191,9 @@ export interface DevtoolsHistoryRecord {
   step: 'push' | 'coalesce' | 'undo' | 'redo' | 'goto' | 'branch' | 'prune' | 'drop' | 'clear' | 'restore';
   /** The entries the step pushed, merged into or walked across, in the order it touched them. */
   entries: { id: number; label: string; opCount: number; ops: DevtoolsHistoryOp[] }[];
+  /** How many entries the step touched, and ops among them: `entries` and each entry's `ops` may hold fewer. */
+  entryCount: number;
+  opCount: number;
   /** Where the history stood after the step: entries applied, and entries in all. */
   position: { index: number; total: number };
 }

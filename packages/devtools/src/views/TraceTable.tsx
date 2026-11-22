@@ -28,6 +28,22 @@ export interface TraceTableProps {
 
 interface TraceRow { id: string; entry: TraceLogEntry }
 
+/** Whether `showHandled` governs a record's row: an input an action handled, or a mode switch. */
+export const shownAsHandled = (e: TraceLogEntry): boolean => e.kind === 'mode' || e.outcome === 'handled';
+
+/** `list`'s newest `keep` records `showHandled` governs and its newest `keep` the rest, in order, so rows one filter
+ *  hides never push out the rows the other shows. */
+export function keepEach(list: readonly Sequenced<TraceLogEntry>[], keep: number): Sequenced<TraceLogEntry>[] {
+  let handled = 0;
+  let unhandled = 0;
+  const out: Sequenced<TraceLogEntry>[] = [];
+  for (let i = list.length - 1; i >= 0; i--) {
+    const item = list[i]!;
+    if (shownAsHandled(item.record) ? handled++ < keep : unhandled++ < keep) out.push(item);
+  }
+  return out.reverse();
+}
+
 function renderEvent(entry: TraceLogEntry): ReactNode {
   if (entry.kind === 'mode') {
     return <><code>{entry.mode}</code>{entry.detail ? <span className={s.modeDetail}> ({entry.detail})</span> : null}</>;
@@ -47,7 +63,7 @@ export function TraceTable({ entries, live, now, showHandled, showUnhandled, emp
 
   const rows = entries
     .map(({ seq, record }): TraceRow => ({ id: String(seq), entry: record }))
-    .filter(({ entry: e }) => (e.kind === 'mode' || e.outcome === 'handled' ? showHandled : showUnhandled))
+    .filter(({ entry: e }) => (shownAsHandled(e) ? showHandled : showUnhandled))
     .slice(-DISPLAY_LIMIT)
     .reverse();
   if (live) rows.unshift({ id: LIVE_ID, entry: live });

@@ -12,7 +12,7 @@ import { Badge } from '@weasel-js/ui/components/Badge';
 import { Code } from '@weasel-js/ui/components/Code';
 import { GestureRoute } from './GestureRoute';
 import { KeyCap, KeySequence } from '@weasel-js/ui/components/Keycaps';
-import { keyLegendsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
+import { heldMods, modLegends } from './modLegends';
 import { keyName } from './keyName';
 import s from './FallthroughDiagram.module.css';
 
@@ -36,10 +36,8 @@ function walkLabel(w: WalkStep): ReactNode {
 
 const isWinner = (w: WalkStep) => w.kind === 'fired' || w.kind === 'would-fire';
 
-const MOD_ORDER = ['shift', 'alt', 'ctrl', 'meta'] as const;
-
 function InputLine({ input, predicted }: { input: DispatchRecordInput; predicted: boolean }) {
-  const mods: LogicalModSpec[] = MOD_ORDER.filter((m) => input.modifiers[m]).map((name) => ({ name }));
+  const mods = heldMods(input.modifiers);
   return (
     <dl className={s.input} aria-label="Input">
       <div className={s.field}>
@@ -56,7 +54,7 @@ function InputLine({ input, predicted }: { input: DispatchRecordInput; predicted
       )}
       <div className={s.field}>
         <dt>Modifiers</dt>
-        <dd>{mods.length > 0 ? <KeySequence keys={keyLegendsFromMods(mods)} /> : 'none'}</dd>
+        <dd>{mods.length > 0 ? <KeySequence keys={modLegends(mods)} /> : 'none'}</dd>
       </div>
       {input.viewId !== null && (
         <div className={s.field}>

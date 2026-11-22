@@ -11,20 +11,18 @@ import { Badge, type BadgeVariant } from '@weasel-js/ui/components/Badge';
 import { Powerline, type EdgeCap, type PowerlineProps } from '@weasel-js/ui/components/Powerline';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import { KeyCap, type KeyLegend } from '@weasel-js/ui/components/Keycaps';
-import { foldKeyRoute, keyLegendsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
+import { foldKeyRoute, type LogicalModSpec } from '@weasel-js/gestures';
+import { modLegends } from './modLegends';
 import { keyName } from './keyName';
 import s from './GestureRoute.module.css';
 
-const MOD_DISPLAY_ORDER: readonly ModifierKey[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
-
 function modifierKeys(modifiers: ParsedModifiers): readonly KeyLegend[] | undefined {
   const specs: LogicalModSpec[] = [];
-  for (const name of MOD_DISPLAY_ORDER) {
-    const req = modifiers[name];
+  for (const [name, req] of Object.entries(modifiers) as [ModifierKey, ParsedModifiers[ModifierKey]][]) {
     if (req !== undefined) specs.push({ name, optional: req === 'optional' });
   }
   if (specs.length === 0) return undefined;
-  return keyLegendsFromMods(specs);
+  return modLegends(specs);
 }
 
 /** One badge of a {@link GestureRoute}. */
