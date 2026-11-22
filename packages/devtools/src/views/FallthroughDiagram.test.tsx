@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { screen, within } from '@testing-library/react';
 import type { DispatchRecord } from '@weasel-js/core/routing';
 import { FallthroughDiagram } from './FallthroughDiagram';
@@ -135,5 +135,30 @@ describe('FallthroughDiagram routes', () => {
     renderWithIcons(<FallthroughDiagram record={noRoute} />);
     const matched = within(band('Matched'));
     expect(matched.getAllByText('no route form')).toHaveLength(record.matched.length);
+  });
+});
+
+describe('FallthroughDiagram input line', () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  const held = (modifiers: Partial<DispatchRecord['input']['modifiers']>): DispatchRecord => ({
+    ...fixtures.nothingMatched,
+    input: { ...fixtures.nothingMatched.input, modifiers: { alt: false, ctrl: false, meta: false, shift: false, ...modifiers } },
+  });
+
+  it("draws held modifiers in a route's order, the platform's mod key first", () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
+    renderWithIcons(<FallthroughDiagram record={held({ meta: true, shift: true })} />);
+    const text = screen.getByLabelText('Input').textContent!;
+    expect(text.indexOf('⌘')).toBeGreaterThan(-1);
+    expect(text.indexOf('⌘')).toBeLessThan(text.indexOf('⇧'));
+  });
+
+  it('names Ctrl as the mod key off an Apple platform', () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('Linux x86_64');
+    renderWithIcons(<FallthroughDiagram record={held({ ctrl: true, shift: true })} />);
+    const text = screen.getByLabelText('Input').textContent!;
+    expect(text.indexOf('Ctrl')).toBeGreaterThan(-1);
+    expect(text.indexOf('Ctrl')).toBeLessThan(text.indexOf('⇧'));
   });
 });
