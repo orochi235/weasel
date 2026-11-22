@@ -76,13 +76,18 @@ export function pathAsSvgDraws(node: SvgPathNode): SvgPathNode | SvgGroupNode {
   if (path.commands.length === 0) return node;
   const { closed, open } = splitByClosure(path);
   const filled = fill.kind === 'none' ? null : fillsOpenSubpaths(path) ? path : closed;
-  const parts = strokeParts(path, stroke, filled, closed, open);
+  // With no stroke to trace them, open subpaths the fill leaves empty draw nothing.
+  const parts = filled && !stroke ? [] : strokeParts(path, stroke, filled, closed, open);
   const pieces = filled ? withFill(parts, filled, fill) : parts;
   if (pieces.length === 1) {
     const only = pieces[0];
-    if (only.fill === fill && only.stroke === stroke) return node;
-    const { stroke: _stroke, ...rest } = node;
-    return { ...rest, fill: only.fill, ...(only.stroke ? { stroke: only.stroke } : {}) };
+    if (only.path === path && only.fill === fill && only.stroke === stroke) return node;
+    // A node turns about its own path's center, which a part of it does not share.
+    const turned = node.rotation != null && node.rotation !== 0;
+    if (only.path === path || !turned) {
+      const { stroke: _stroke, ...rest } = node;
+      return { ...rest, path: only.path, fill: only.fill, ...(only.stroke ? { stroke: only.stroke } : {}) };
+    }
   }
   return drawsAsGroup(
     node,

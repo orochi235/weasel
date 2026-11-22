@@ -1,5 +1,5 @@
 /** How `svgNodesFromKit` carries a container's paint to the leaves that inherit it. */
-import { INHERIT, isSolidPaint, type Fill, type Stroke } from '@weasel-js/core';
+import { INHERIT, isSolidPaint, resolveFill, resolveStroke, type Fill, type Stroke } from '@weasel-js/core';
 import type { SvgKitLeafData } from './fromKit';
 import { svgPaintFromKit, svgStrokeFromKit, type SvgKitPose } from './kitPaint';
 import type { SvgGroupNode, SvgNode } from './types';
@@ -11,6 +11,14 @@ export interface SvgKitInherited {
   stroke: Stroke | null;
 }
 export const NO_UP_PAINT: SvgKitInherited = { fill: null, stroke: null };
+
+/** What a container with data `own`, under `up`, hands its children. */
+export function paintBelow(own: SvgKitLeafData | null, up: SvgKitInherited): SvgKitInherited {
+  return {
+    fill: own?.fill === INHERIT ? up.fill : resolveFill(own?.fill),
+    stroke: own?.stroke === INHERIT ? up.stroke : resolveStroke(own?.stroke),
+  };
+}
 
 /** Whether SVG's cascade can carry `p` to a child as is: a box-relative
  *  paint resolves against the group's box there, and the kit's against the child's. */

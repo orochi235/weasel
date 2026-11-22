@@ -6,12 +6,12 @@
  * the canvas shows.
  */
 import {
-  asPolygonPath, paintToLocalUnits, clipOutline, definesFrame, pathInPoseBox, pathThroughPoseFrame, poseFrameOf, poseLinearOf, resolveFill, resolveStroke, shapePathOf, type ImageNodeData, type NodeClip, type Path, type Stroke, type Fill, type Inherit, INHERIT, nodeShapesOf, type NodeShapes,
+  asPolygonPath, paintToLocalUnits, clipOutline, definesFrame, pathInPoseBox, pathThroughPoseFrame, poseFrameOf, poseLinearOf, resolveFill, resolveStroke, shapePathOf, type ImageNodeData, type NodeClip, type Path, type Stroke, type Fill, type Inherit, nodeShapesOf, type NodeShapes,
 } from '@weasel-js/core';
 import { solidFill } from '@weasel-js/paint';
 import { type StyledRun, type TextStyle, type TextVerticalAlign, type TextFit } from '@weasel-js/text';
 import { textFrameOf, type TextEdge, type TextShadow } from '@weasel-js/text-tools';
-import { groupPaintFromKit, markInherits, NO_UP_PAINT, resolvedData, type SvgKitInherited } from './kitInherits';
+import { groupPaintFromKit, markInherits, NO_UP_PAINT, paintBelow, resolvedData, type SvgKitInherited } from './kitInherits';
 import { painterLeafFromKit, warnOncePerCall } from './painterLeaf';
 import { mapFillPaint } from './fillPaint';
 import { svgPaintFromKit, svgStrokeFromKit, type SvgKitPose } from './kitPaint';
@@ -284,9 +284,8 @@ export function svgNodesFromKit<TId extends string>(
     const out = node && (!include || include(id)) ? lower(id, node, up, own) : null;
     return out && node?.hidden === true ? { ...out, hidden: true } : out;
   };
-  // A walk that starts below the top starts in the frame its first id is stored in.
-  const frameAbove = (id: TId): SvgKitPose | null => {
-    if (!compose) return null;
+  /** `id`'s ancestors, outermost first. */
+  const ancestorsOf = (id: TId): SvgKitTreeNode[] => {
     const chain: SvgKitTreeNode[] = [];
     const seen = new Set<string>([id]);
     let at = (tree.get(id) as { parent?: TId | null } | undefined)?.parent ?? null;
@@ -297,12 +296,22 @@ export function svgNodesFromKit<TId extends string>(
       chain.unshift(n);
       at = (n as { parent?: TId | null }).parent ?? null;
     }
+    return chain;
+  };
+  // A walk that starts below the top starts in the frame its first id is stored in, and under the paint it inherits there.
+  const frameAbove = (chain: readonly SvgKitTreeNode[]): SvgKitPose | null => {
+    if (!compose) return null;
     let frame: SvgKitPose | null = null;
     for (const n of chain) {
       const pose: SvgKitPose = frame ? compose(frame, n.pose) : n.pose;
       if (definesFrame(n as { dependsOn?: unknown; derivePose?: unknown })) frame = pose;
     }
     return frame;
+  };
+  const paintAbove = (chain: readonly SvgKitTreeNode[]): SvgKitInherited => {
+    let up = NO_UP_PAINT;
+    for (const n of chain) up = paintBelow(n.data as SvgKitLeafData | null, up);
+    return up;
   };
   const lower = (id: TId, stored: SvgKitTreeNode, up: SvgKitInherited, frame: SvgKitPose | null): SvgNode | null => {
     const booleans = stored.consumesChildren === true;
@@ -313,15 +322,16 @@ export function svgNodesFromKit<TId extends string>(
     const isGroup = node.kind === 'group';
     const custom = isGroup ? null : leaf?.(id, node, up);
     const painted = isGroup || custom !== undefined ? undefined : painterLeafFromKit(node, up, warn, shapes);
+    const data = isGroup || painted !== undefined || custom !== undefined ? null : resolvedData(own ?? {}, up);
+    if (data && ((data as { vertexColors?: unknown }).vertexColors || (data.stroke as Stroke | null | undefined)?.vertexColors)) {
+      warn('vertexColors', 'per-anchor vertex colors are not written; the path takes its fill and stroke paint');
+    }
     const self = isGroup ? null : painted !== undefined ? painted : markInherits(
-      custom !== undefined ? custom : svgLeafFromKit(resolvedData(own ?? {}, up), node.pose), own ?? {}, up,
+      custom !== undefined ? custom : svgLeafFromKit(data!, node.pose), own ?? {}, up,
     );
     const kids = tree.childrenOf(id);
     if (!isGroup && kids.length === 0) return self;
-    const below: SvgKitInherited = {
-      fill: own?.fill === INHERIT ? up.fill : resolveFill(own?.fill),
-      stroke: own?.stroke === INHERIT ? up.stroke : resolveStroke(own?.stroke),
-    };
+    const below = paintBelow(own, up);
     // Emitted afresh for each copy: a node object is never shared by two groups.
     const emitChildren = (): SvgNode[] => {
       const children: SvgNode[] = [];
@@ -360,7 +370,8 @@ export function svgNodesFromKit<TId extends string>(
   };
   const out: SvgNode[] = [];
   for (const id of options.roots ?? tree.roots) {
-    const n = emit(id, NO_UP_PAINT, frameAbove(id));
+    const chain = ancestorsOf(id);
+    const n = emit(id, paintAbove(chain), frameAbove(chain));
     if (n) out.push(n);
   }
   return out;

@@ -127,6 +127,7 @@ export function strokeDataFromSvg(
     ...(stroke.markerEnd !== undefined ? { markerEnd: stroke.markerEnd } : {}),
     ...(stroke.vertexWidths !== undefined ? { vertexWidths: stroke.vertexWidths } : {}),
     ...(stroke.nib !== undefined ? { nib: stroke.nib } : {}),
+    ...(stroke.varyingWidthJoinThreshold !== undefined ? { varyingWidthJoinThreshold: stroke.varyingWidthJoinThreshold } : {}),
     ...(stroke.trim !== undefined ? { trim: stroke.trim } : {}),
   };
 }

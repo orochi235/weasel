@@ -95,6 +95,8 @@ export interface SvgStroke {
    *  more takes `width`. */
   vertexWidths?: VertexWidth[];
   nib?: StrokeNib;
+  /** The kit stroke's `varyingWidthJoinThreshold`, kept beside `vertexWidths` in the private namespace. */
+  varyingWidthJoinThreshold?: number;
   /** The kit stroke's `trim`, measured along the path as written. SVG has no
    *  trim, so the serializer strokes only the span it draws; `parseSvg` never sets it. */
   trim?: Stroke['trim'];

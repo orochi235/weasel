@@ -36,6 +36,28 @@ describe('marker serialization', () => {
     expect(warnings).toContain('marker "never-registered" is not registered, so the stroke is written without it');
   });
 
+  it('never gives a marker the id the document mints for a gradient', () => {
+    const arrow = getMarker('arrow')!;
+    const unregister = registerMarker({ ...arrow, id: 'grad0' });
+    const nodes: SvgNode[] = [{
+      kind: 'path', path: pathFromD('M0 0 L50 0'),
+      fill: { kind: 'none' },
+      stroke: {
+        paint: { kind: 'gradient', paint: { kind: 'linear-gradient', units: 'world', from: { x: 0, y: 0 }, to: { x: 50, y: 0 }, stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }] } },
+        width: 2, markerEnd: 'grad0',
+      },
+    } as SvgNode];
+    try {
+      const out = serializeSvg(nodes);
+      const ids = [...out.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
+      expect(new Set(ids).size).toBe(ids.length);
+      const back = parseSvg(out).nodes[0] as { stroke?: { markerEnd?: unknown } };
+      expect(back.stroke?.markerEnd).toBe('grad0');
+    } finally {
+      unregister();
+    }
+  });
+
   it('emits one def for a key used many times', () => {
     const many = [...line({ markerEnd: 'arrow' }), ...line({ markerEnd: 'arrow' })];
     const out = serializeSvg(many);
