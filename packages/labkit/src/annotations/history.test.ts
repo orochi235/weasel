@@ -110,6 +110,19 @@ describe('undo across targets', () => {
     expect(s.get(left)?.width).toBe(3);
   });
 
+  it('takes back a keyed write made after another target changed before that change', () => {
+    const s = store();
+    const left = s.add({ ...MARK, target: 'left' });
+    const right = s.add({ ...MARK, target: 'right' });
+    s.update(left, { width: 3 }, { coalesceKey: 'k' });
+    s.update(right, { title: 'between' });
+    s.update(left, { width: 5 }, { coalesceKey: 'k' });
+
+    s.undo();
+    expect(s.get(left)?.width).toBe(3);
+    expect(s.get(right)?.title).toBe('between');
+  });
+
   it('follows an undo driven from inside a pane, not just its own', () => {
     // A pane's own Cmd+Z calls scene.undo() directly. Tracking the ordering
     // off the subscribe callback alone would read that as one more change and

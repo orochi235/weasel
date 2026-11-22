@@ -80,10 +80,11 @@ export function withAnchorMoved(
   } else if (rules.endpoints === 'pinned-x' && isEndpoint) {
     nx = index === 0 ? xLo : xHi;
   } else if (rules.ordered) {
-    const epsilon = anchorGap(range, rules);
-    const left = index > 0 ? points[index - 1].x + epsilon : xLo;
-    const right = index < points.length - 1 ? points[index + 1].x - epsilon : xHi;
-    nx = Math.max(left, Math.min(right, nx));
+    const lo = index > 0 ? points[index - 1].x : xLo;
+    const hi = index < points.length - 1 ? points[index + 1].x : xHi;
+    // Neighbors closer than two gaps leave no room for the gap, so the anchor keeps only their order.
+    const epsilon = Math.min(anchorGap(range, rules), Math.max(0, (hi - lo) / 2));
+    nx = Math.max(lo + (index > 0 ? epsilon : 0), Math.min(hi - (index < points.length - 1 ? epsilon : 0), nx));
   }
 
   // A sub-range layer's free interior anchors stay inside it too.

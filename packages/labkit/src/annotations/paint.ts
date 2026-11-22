@@ -126,20 +126,21 @@ export function markCommands(
         const box = { ...stroke, width: { px: 1 }, dash: UNTITLED_DASH };
         return [{ kind: 'path', path: rectPath(x, y, width, height), stroke: box }];
       }
-      return [
-        textCommand(
-          m.pose.x,
-          m.pose.y,
-          text,
-          { fontSize: m.data.fontSize ?? MARK_TEXT_SIZE },
-          undefined,
-          undefined,
-          undefined,
-          {
-            fill: { paint: { color } },
-          },
-        ),
-      ];
+      const glyphs = textCommand(
+        m.pose.x,
+        m.pose.y,
+        text,
+        { fontSize: m.data.fontSize ?? MARK_TEXT_SIZE },
+        undefined,
+        undefined,
+        undefined,
+        { fill: { paint: { color } } },
+      );
+      if (!style.stale) return [glyphs];
+      // Glyphs take no dash, so a stale label wears a dashed box to be told from a current one.
+      const { x, y, width, height } = m.pose;
+      const box = { ...stroke, width: { px: 1 } };
+      return [glyphs, { kind: 'path', path: rectPath(x, y, width, height), stroke: box }];
     }
   }
 }

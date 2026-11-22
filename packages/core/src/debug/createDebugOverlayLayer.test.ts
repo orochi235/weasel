@@ -198,3 +198,18 @@ describe('the frame-rate readout', () => {
     expect(fpsLine(cmds)).toMatch(/fps\s+62\.50/);
   });
 });
+
+describe('the ids feature on a flipped view', () => {
+  it('puts a label inside the screen top-left of its bounds when both axes are flipped', () => {
+    const sink = createDebugSink({ ids: true });
+    sink.recordBounds('a', { x: 100, y: 50, width: 40, height: 12 });
+    const view = { x: 0, y: 0, scale: { x: -1, y: -1 } };
+    const [label] = createDebugOverlayLayer({ sink, config: { ids: true } })
+      .draw(null, view, DIMS) as TextDrawCommand[];
+    // World x 100..140 lands at screen -140..-100, and y 50..62 at -62..-50.
+    expect(label!.x).toBeGreaterThanOrEqual(-140);
+    expect(label!.x).toBeLessThan(-100);
+    expect(label!.y).toBeGreaterThanOrEqual(-62);
+    expect(label!.y + 10).toBeLessThanOrEqual(-50);
+  });
+});

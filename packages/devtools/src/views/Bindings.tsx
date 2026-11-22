@@ -19,7 +19,7 @@ export function Bindings({ bindings }: { bindings: readonly DevtoolsBinding[] })
             <li key={i} className={s.binding}>
               <span className={s.routes}>
                 {b.routes.length > 0
-                  ? b.routes.map((r) => <GestureRoute key={r} route={r} size="sm" />)
+                  ? b.routes.map((r, i) => <GestureRoute key={i} route={r} size="sm" />)
                   : <ValueView value={b.spec} label="Spec" />}
               </span>
               <span className={s.arrow} aria-hidden>→</span>

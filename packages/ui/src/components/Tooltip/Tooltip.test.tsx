@@ -90,6 +90,16 @@ describe('Tooltip', () => {
     expect(screen.getByTestId('kept').textContent).toBe('`raw`');
   });
 
+  it('reads markdown spanning an interpolated value as one piece', () => {
+    const name = 'fill';
+    const count = 3;
+    render(<Subject>Sets **{name}** on {count} stops</Subject>);
+    keyboardFocus(screen.getByRole('button'));
+    const tip = screen.getByRole('tooltip');
+    expect(tip.querySelector('strong')?.textContent).toBe('fill');
+    expect(tip.textContent).toBe('Sets fill on 3 stops');
+  });
+
   it("lets an Escape pressed elsewhere through to its target, closing an open tooltip on the way", () => {
     const onOpenChange = vi.fn();
     const onEditorKey = vi.fn();

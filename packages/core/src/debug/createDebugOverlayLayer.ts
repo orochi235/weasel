@@ -293,10 +293,11 @@ function emitIds(
   // (selection overlay's handle math, the kit's per-node debug shim) gets
   // an id label for free.
   for (const b of s.bounds) {
-    const [sx, sy] = worldToScreen(b.bounds.x, b.bounds.y, t);
+    const [x0, y0] = worldToScreen(b.bounds.x, b.bounds.y, t);
+    const [x1, y1] = worldToScreen(b.bounds.x + b.bounds.width, b.bounds.y + b.bounds.height, t);
     out.push(textCommandFromRuns(
-      sx + 2,
-      sy + 1,
+      Math.min(x0, x1) + 2,
+      Math.min(y0, y1) + 1,
       [{ text: b.id, fill: { paint: { kind: 'solid', color: theme.idText } } }],
       { fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 10 },
     ));

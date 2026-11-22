@@ -5,7 +5,7 @@
 import type { PolygonPath } from '../path';
 import { editAnchorSet, insertAnchorOnSegment, translateAnchorBy, type AnchorSet } from './anchorEdits';
 import { segmentEnds, type PenAnchor } from './anchors';
-import { cubicPointAt, type Point } from './cubicMath';
+import { splitCubicPoints, type Point } from './cubicMath';
 
 /** Options for {@link kneadPath}. */
 export interface KneadPathOptions {
@@ -25,8 +25,6 @@ export interface KneadPathOptions {
   detail?: number;
 }
 
-/** Samples along a segment when deciding whether it passes under the brush. */
-const PROBES = 12;
 /** Most anchors a single dab may add. */
 const MAX_ADDED = 512;
 
@@ -98,9 +96,30 @@ function controlLength(a: PenAnchor, b: PenAnchor): number {
 /** Whether any of the segment from `a` to `b` lies under the brush. */
 function underBrush(a: PenAnchor, b: PenAnchor, c: Point, radius: number): boolean {
   const [p0, p1, p2, p3] = controls(a, b);
-  for (let k = 0; k <= PROBES; k++) {
-    const p = cubicPointAt(p0, p1, p2, p3, k / PROBES);
-    if ((p.x - c.x) ** 2 + (p.y - c.y) ** 2 < radius * radius) return true;
-  }
-  return false;
+  return cubicUnder(p0, p1, p2, p3, c, radius, 0);
+}
+
+/** Subdivides until the control polygon is flat to within a hundredth of `radius`, pruning
+ *  halves whose control box stays clear of the brush. */
+function cubicUnder(p0: Point, p1: Point, p2: Point, p3: Point, c: Point, radius: number, depth: number): boolean {
+  const xs = [p0.x, p1.x, p2.x, p3.x];
+  const ys = [p0.y, p1.y, p2.y, p3.y];
+  if (Math.min(...xs) - radius >= c.x || Math.max(...xs) + radius <= c.x
+    || Math.min(...ys) - radius >= c.y || Math.max(...ys) + radius <= c.y) return false;
+  const chord = Math.hypot(p3.x - p0.x, p3.y - p0.y);
+  const polygon = Math.hypot(p1.x - p0.x, p1.y - p0.y) + Math.hypot(p2.x - p1.x, p2.y - p1.y)
+    + Math.hypot(p3.x - p2.x, p3.y - p2.y);
+  if (depth >= MAX_DEPTH || polygon - chord <= radius * 0.01) return segmentDistance(p0, p3, c) < radius;
+  const { left, right } = splitCubicPoints(p0, p1, p2, p3, 0.5);
+  return cubicUnder(...left, c, radius, depth + 1) || cubicUnder(...right, c, radius, depth + 1);
+}
+
+const MAX_DEPTH = 24;
+
+function segmentDistance(a: Point, b: Point, c: Point): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len2 = dx * dx + dy * dy;
+  const t = len2 > 0 ? Math.min(1, Math.max(0, ((c.x - a.x) * dx + (c.y - a.y) * dy) / len2)) : 0;
+  return Math.hypot(a.x + t * dx - c.x, a.y + t * dy - c.y);
 }

@@ -180,7 +180,7 @@
     0 0 0 1px rgba(0, 0, 0, calc((var(--btn-rim) + 0.06) * var(--wzl-gloss)));
   transform: translateY(0.5px);
 }
-.variant_solid[data-stance='confirm']:active:not([data-readonly])::before { opacity: calc(0.3 * var(--wzl-gloss)); }
+.variant_solid[data-stance='confirm']:active:not(:disabled, [data-disabled], [data-readonly])::before { opacity: calc(0.3 * var(--wzl-gloss)); }
 
 /* Solid: neutral glass — drained of color. Flat, it is the raised
    surface, which needs a line around it to read as a button on a panel of
@@ -231,7 +231,7 @@
     0 0 0 1px rgba(0, 0, 0, calc(0.3 * var(--wzl-gloss)));
   transform: translateY(0.5px);
 }
-.variant_solid:active:not([data-readonly])::before { opacity: calc(0.2 * var(--wzl-gloss)); }
+.variant_solid:active:not(:disabled, [data-disabled], [data-readonly])::before { opacity: calc(0.2 * var(--wzl-gloss)); }
 
 /* Ghost: silhouette only — no glass body, no gloss. Low emphasis mutes it until pointed at. */
 .variant_ghost {
@@ -296,8 +296,7 @@
   box-shadow: var(--wzl-bevel-pressed, inset 0 1px 2px rgb(0 0 0 / 18%));
 }
 
-.variant_solid[data-stance='confirm']/* A confirm button keeps its accent body when pressed; the rule after this dims it instead. */
-.pressed:not(:disabled, [data-disabled]):not(:where(.variant_solid[data-stance='confirm'])) { filter: brightness(0.92); }
+.variant_solid[data-stance='confirm'].pressed:not(:disabled, [data-disabled]) { filter: brightness(0.92); }
 
 .fullWidth { width: 100%; }
 .loading .label { opacity: 0.7; }

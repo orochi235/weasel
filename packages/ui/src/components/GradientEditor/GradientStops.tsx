@@ -38,6 +38,8 @@ export interface GradientStopsProps {
   onSelectionChange?: (index: number) => void;
   /** The editor around this is inert, so nothing here can be removed. */
   disabled?: boolean;
+  /** A read-only scope holds the editor: the stops' own controls refuse their edits, and nothing is removed. */
+  readOnly?: boolean;
   onInput?: (next: Paint) => void;
   onChange: (next: Paint) => void;
   onCancel?: () => void;
@@ -56,13 +58,13 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
   const order = stopOrder(stops);
   const locale = useFieldLocale();
   const position = useMemo(() => new Intl.NumberFormat(locale, POSITION_FORMAT), [locale]);
-  const { selected, select, removing } = useStopSelection(stops, props.selectedStop, props.onSelectionChange);
+  const { selected, select, afterRemoval } = useStopSelection(stops, props.selectedStop, props.onSelectionChange);
 
   const trackRef = useRef<HTMLDivElement | null>(null);
   const handleEls = (): HTMLElement[] => Array.from(trackRef.current?.querySelectorAll<HTMLElement>(HANDLE) ?? []);
-  const focusNext = useFocusAfterCommit(stops.length, (index) => {
-    select(index);
-    handleEls()[index]?.focus();
+  const focusNext = useFocusAfterCommit(stops.length, (index, how) => {
+    select(index, how.report);
+    if (how.focus) handleEls()[index]?.focus();
   });
   const commit = (next: GradientPaint): void => {
     focusNext.committing();
@@ -76,11 +78,12 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
   const fromThumbs = (next: StopThumb[]): GradientPaint =>
     withStops(next.map((t) => ({ offset: t.value, color: t.color })));
 
-  const removable = !props.disabled && stops.length > MIN_STOPS;
+  const removable = !props.disabled && !props.readOnly && stops.length > MIN_STOPS;
   // Handles are keyed by index, so focus left on the track would stay on whatever stop shifts into its place.
   const removed = (index: number, refocus: boolean): void => {
-    const next = removing(index);
-    if (refocus || trackRef.current?.contains(document.activeElement)) focusNext.request(next, stops.length - 1);
+    const { next, lost } = afterRemoval(index);
+    const focus = refocus || (trackRef.current?.contains(document.activeElement) ?? false);
+    focusNext.request(next, stops.length - 1, { focus, report: lost });
   };
   const remove = (index: number, refocus: boolean): void => {
     if (!removable) return;
@@ -132,7 +135,7 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
           onChange={(next) => commit(fromThumbs(next))}
           onCancel={cancel}
           onAddThumb={(at) => {
-            focusNext.request(stops.length, stops.length + 1);
+            focusNext.request(stops.length, stops.length + 1, { focus: true, report: false });
             return { value: at, color: sampleGradientStops(stops, at, space) };
           }}
           onRemoveThumb={(index) => {

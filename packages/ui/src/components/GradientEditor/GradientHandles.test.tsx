@@ -128,6 +128,31 @@ describe('GradientHandles', () => {
     expect(calls).not.toContain('change');
   });
 
+  it('reports nothing for an Escaped drag on a read-only overlay', () => {
+    const onInput = vi.fn();
+    const onCancel = vi.fn();
+    render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onInput={onInput} onChange={() => {}} onCancel={onCancel} readOnly readOnlyReason="Locked" width={400} height={300} />);
+    const handle = screen.getByLabelText('Gradient start');
+    fireEvent.pointerDown(handle, { clientX: 10, clientY: 20, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 90, clientY: 120, pointerId: 1 });
+    fireEvent.keyDown(handle, { key: 'Escape' });
+    expect(onInput).not.toHaveBeenCalled();
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
+  it('ignores an arrow key during a drag, so Escape still restores where the drag began', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onInput={onInput} onChange={onChange} width={400} height={300} />);
+    const handle = screen.getByLabelText('Gradient start');
+    fireEvent.pointerDown(handle, { clientX: 10, clientY: 20, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 90, clientY: 120, pointerId: 1 });
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
+    fireEvent.keyDown(handle, { key: 'Escape' });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onInput.mock.calls.at(-1)![0]).toEqual(linear);
+  });
+
   it('draws a commit-only caller\'s drag, and commits it once', () => {
     const onChange = vi.fn();
     render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);

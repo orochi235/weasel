@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "An authored edge with a label reserves an empty label row and then drops its own hop",
+  "settleAcross gives up on a pin whenever its rank holds any free multi-rank column, even one nowhere near the conflict"
+ ],
+ "b": [
+  "settleAcross gives up on a whole rank when any unrelated tall free column shares it",
+  "transpose has no global potential once a port has several places, so it can cycle",
+  "An authored edge between adjacent ranks loses its hop when another edge's label row lands between them"
+ ]
+}

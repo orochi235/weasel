@@ -277,6 +277,77 @@
   --wzl-space-lg: var(--wzl-space-8);
 }
 
+:where([data-wzl-theme='weasel']) {
+  color-scheme: dark;
+  --wzl-accent-soft: #262a66;
+  --wzl-accent-base: #5b63c9;
+  --wzl-accent-strong: #8c94ee;
+  --wzl-secondary-soft: #704e09;
+  --wzl-secondary-base: #dc9d15;
+  --wzl-secondary-strong: #f1cb8d;
+  --wzl-font-size-2xs: 10px;
+  --wzl-font-size-xs: 12px;
+  --wzl-font-size-sm: 13px;
+  --wzl-font-size-md: 15px;
+  --wzl-font-size-lg: 18px;
+  --wzl-font-size-xl: 23px;
+  --wzl-surface: var(--wzl-gray-800);
+  --wzl-surface-raised: var(--wzl-gray-700);
+  --wzl-surface-popover: var(--wzl-surface-raised);
+  --wzl-surface-sunken: var(--wzl-gray-900);
+  --wzl-fg: var(--wzl-gray-100);
+  --wzl-fg-muted: rgb(from currentColor r g b / 0.7);
+  --wzl-fg-subtle: rgb(from currentColor r g b / 0.54);
+  --wzl-fg-muted-on-accent: rgb(from currentColor r g b / 0.98);
+  --wzl-fg-subtle-on-accent: rgb(from currentColor r g b / 0.96);
+  --wzl-border: var(--wzl-gray-700);
+  --wzl-border-strong: var(--wzl-gray-400);
+  --wzl-accent-fg: var(--wzl-accent-strong);
+  --wzl-secondary-fg: var(--wzl-secondary-base);
+  --wzl-fg-inverse: var(--wzl-gray-900);
+  --wzl-shadow: rgba(0, 0, 0, 0.6);
+  --wzl-code-keyword: var(--wzl-swatch-violet);
+  --wzl-code-string: var(--wzl-swatch-green);
+  --wzl-code-number: var(--wzl-swatch-amber);
+  --wzl-code-constant: var(--wzl-swatch-teal);
+  --wzl-code-property: var(--wzl-swatch-sky);
+  --wzl-code-name: var(--wzl-swatch-rose);
+  --wzl-panel-surface: var(--wzl-surface-raised);
+  --wzl-panel-border-color: var(--wzl-border);
+  --wzl-panel-title-size: var(--wzl-font-size-lg);
+  --wzl-panel-title-color: var(--wzl-fg);
+  --wzl-stance-clarify-nested-surface: var(--wzl-surface);
+  --wzl-stance-aside-border-color: var(--wzl-line-subtle);
+  --wzl-stance-aside-title-color: var(--wzl-fg-subtle);
+  --wzl-stance-advanced-title-color: var(--wzl-fg-subtle);
+  --wzl-stance-preview-title-size: var(--wzl-font-size-xs);
+  --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
+  --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
+  --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
+  --wzl-border-on-sunken: color-mix(in srgb, var(--wzl-fg) 12%, transparent);
+  --wzl-curve-color: var(--wzl-accent-strong);
+  --wzl-accent: var(--wzl-accent-base);
+  --wzl-accent-hover: var(--wzl-accent-strong);
+  --wzl-secondary: var(--wzl-secondary-base);
+  --wzl-focus-ring: var(--wzl-accent-strong);
+  --wzl-glass-tint: var(--wzl-accent);
+  --wzl-surface-hover: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
+  --wzl-surface-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
+  --wzl-tb-height: 32px;
+  --wzl-control-h-xs: 22px;
+  --wzl-control-h-sm: 24px;
+  --wzl-control-h: 28px;
+  --wzl-icon-button-size: 26px;
+  --wzl-slider-track-mix: 40%;
+  --wzl-slider-thumb-mix: 100%;
+  --wzl-checker-a: var(--wzl-border);
+  --wzl-checker-b: var(--wzl-surface);
+  --wzl-workspace-surface: #272727;
+  --wzl-workspace-line: var(--wzl-line-subtle);
+  --wzl-workspace: repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px) var(--wzl-workspace-surface);
+  --wzl-font-size: var(--wzl-font-size-md);
+}
+
 [data-wzl-theme='weasel'][data-wzl-mode='dark'],
 [data-wzl-mode='dark'] {
   color-scheme: dark;

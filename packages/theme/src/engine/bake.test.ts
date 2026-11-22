@@ -131,4 +131,9 @@ describe('bake', () => {
       expect(bake({ name: 'c3', extends: 'p1', axes: threeModes }, lookup).tokens).toEqual({});
     });
   });
+
+  it('lists no ramp whose name derive drops as unsafe', () => {
+    const def: ThemeDefinition = { name: 'u', ramps: { 'a.b': { kind: 'lightness', steps: ['500'], lightness: [0.9, 0.2] }, ok: { kind: 'lightness', steps: ['500'], lightness: [0.9, 0.2] } } };
+    expect(bake(def).ramps).toEqual({ ok: ['500'] });
+  });
 });

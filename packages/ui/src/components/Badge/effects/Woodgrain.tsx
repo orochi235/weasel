@@ -1,7 +1,8 @@
 import { trimNumber } from '@weasel-js/geom';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
-import { repeatCount } from '../shapes/params';
+import { outlineRegion } from '../composeOutline';
+import { repeatCount, finiteParams } from '../shapes/params';
 
 /** What an effect of type `woodgrain` takes as `params`. */
 export interface BadgeWoodgrainEffectParams {
@@ -27,16 +28,19 @@ const Woodgrain: EffectModule<BadgeWoodgrainEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = finiteParams({ ...DEFAULTS, ...params }, DEFAULTS, ['lines', 'knots']);
     const lineCount = repeatCount(cfg.lines, 0);
     const knotCount = repeatCount(cfg.knots, 0);
+    const region = outlineRegion(sampler, 0);
+    const x0 = region.x - 5, span = region.width + 10;
+    const at = (f: number) => trimNumber(x0 + span * f, 2);
     const lines: string[] = [];
     for (let i = 0; i < lineCount; i++) {
-      const y = ((i + 1) / (lineCount + 1)) * 100;
+      const y = region.y + ((i + 1) / (lineCount + 1)) * region.height;
       // Two control points, slight vertical wobble.
       const dy1 = osc(i * 2 + 1) * 4;
       const dy2 = osc(i * 2 + 2) * 4;
-      lines.push(`M -5 ${trimNumber(y, 2)} Q 35 ${trimNumber(y + dy1, 2)} 60 ${trimNumber(y, 2)} T 105 ${trimNumber(y + dy2, 2)}`);
+      lines.push(`M ${at(0)} ${trimNumber(y, 2)} Q ${at(40 / 110)} ${trimNumber(y + dy1, 2)} ${at(65 / 110)} ${trimNumber(y, 2)} T ${at(1)} ${trimNumber(y + dy2, 2)}`);
     }
     const knotPositions: [number, number][] = [];
     for (let i = 0; i < knotCount; i++) {

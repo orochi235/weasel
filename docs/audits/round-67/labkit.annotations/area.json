@@ -1,0 +1,117 @@
+{
+ "id": "labkit.annotations",
+ "commit": "a2dfd0456e1787d352e92d6a6a6ad07fce7f5229",
+ "date": "2026-11-22",
+ "files": [
+  "packages/labkit/src/annotations/AnnotationOptions.less",
+  "packages/labkit/src/annotations/AnnotationOptions.stories.tsx",
+  "packages/labkit/src/annotations/AnnotationOptions.tsx",
+  "packages/labkit/src/annotations/AnnotationOverlay.tsx",
+  "packages/labkit/src/annotations/AnnotationTargets.tsx",
+  "packages/labkit/src/annotations/Annotations.less",
+  "packages/labkit/src/annotations/AnnotationsContext.ts",
+  "packages/labkit/src/annotations/ExportMenu.tsx",
+  "packages/labkit/src/annotations/MarkList.tsx",
+  "packages/labkit/src/annotations/calibration/Calibration.less",
+  "packages/labkit/src/annotations/calibration/Calibration.stories.tsx",
+  "packages/labkit/src/annotations/calibration/CalibrationPicture.tsx",
+  "packages/labkit/src/annotations/calibration/CalibrationResults.tsx",
+  "packages/labkit/src/annotations/calibration/calibrationInstrument.tsx",
+  "packages/labkit/src/annotations/calibration/condition.ts",
+  "packages/labkit/src/annotations/calibration/exercises.ts",
+  "packages/labkit/src/annotations/calibration/score.ts",
+  "packages/labkit/src/annotations/calibration/trialPictures.ts",
+  "packages/labkit/src/annotations/capture.ts",
+  "packages/labkit/src/annotations/drawOne.ts",
+  "packages/labkit/src/annotations/frac.ts",
+  "packages/labkit/src/annotations/history.ts",
+  "packages/labkit/src/annotations/index.ts",
+  "packages/labkit/src/annotations/labMarkStores.ts",
+  "packages/labkit/src/annotations/labMarks.ts",
+  "packages/labkit/src/annotations/markData.ts",
+  "packages/labkit/src/annotations/markGesture.ts",
+  "packages/labkit/src/annotations/markId.ts",
+  "packages/labkit/src/annotations/markReads.ts",
+  "packages/labkit/src/annotations/markScenes.ts",
+  "packages/labkit/src/annotations/markShape.ts",
+  "packages/labkit/src/annotations/markTools.ts",
+  "packages/labkit/src/annotations/markWrites.ts",
+  "packages/labkit/src/annotations/options.ts",
+  "packages/labkit/src/annotations/overlayCanvas.ts",
+  "packages/labkit/src/annotations/overlayPlacement.ts",
+  "packages/labkit/src/annotations/overlayTile.ts",
+  "packages/labkit/src/annotations/paint.ts",
+  "packages/labkit/src/annotations/preload.ts",
+  "packages/labkit/src/annotations/query.ts",
+  "packages/labkit/src/annotations/saveCapture.ts",
+  "packages/labkit/src/annotations/selectionStyle.ts",
+  "packages/labkit/src/annotations/staleness.ts",
+  "packages/labkit/src/annotations/store.ts",
+  "packages/labkit/src/annotations/svgNodes.ts",
+  "packages/labkit/src/annotations/toolMap.ts",
+  "packages/labkit/src/annotations/types.ts",
+  "packages/labkit/src/annotations/useLabToolOptions.ts",
+  "packages/labkit/src/annotations/view.ts",
+  "packages/labkit/src/annotations/wheelScroll.ts"
+ ],
+ "a": 5,
+ "b": 5,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 11,
+ "unfound": 3,
+ "read": {
+  "A": 50,
+  "B": 50
+ },
+ "newCode": {
+  "since": 50,
+  "changedFiles": 18,
+  "findings": 6
+ },
+ "previous": {
+  "round": 50,
+  "chapman": 15,
+  "unfound": 3
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 27,
+  "testFiles": {
+   "failed": 0,
+   "passed": 501,
+   "total": 501
+  },
+  "gui": true,
+  "repairs": 1,
+  "capstone": true
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.2,
+   "B": 5,
+   "match": 1.7,
+   "fix": 28.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "weightedTokens": 1926394,
+  "costUsd": 5.59
+ },
+ "fixCommits": [
+  "9a621f950a5499c649b4d5e5b4b0543977a971a0",
+  "3249fac0ceed1a63be157b72cf15638957c95219",
+  "aec8f35c066fedb338115443ef78975fced83900",
+  "b2803a6de255c71b3e284c9d71e0819337bad559",
+  "f3adc0f43d9c45d420bbd1da473f17228330543a",
+  "1d65d975b15561fb840c2f7dadfb1e2f4d6125ff",
+  "9130a1f13a5c509b6debc02b4b4aa27d4f6948e2",
+  "db5368f94055b3ba60f0aae829cd33c7e936d3d0"
+ ]
+}

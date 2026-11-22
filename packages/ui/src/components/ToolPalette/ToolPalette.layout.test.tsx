@@ -90,6 +90,17 @@ describe('ToolPalette carryTool', () => {
     expect(tools.setActive).toHaveBeenCalledWith('a');
   });
 
+  it('takes its ghost down when the carry is canceled', () => {
+    const tools = fakeTools([tool('a')]);
+    renderWithIcons(<ToolPalette tools={tools} carryTool={carryTool} carryGhost={() => <span data-testid="ghost" />} />);
+    const a = screen.getByRole('button', { name: 'a' });
+    fireEvent.pointerDown(a, { button: 0, pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(document, { button: 0, buttons: 1, pointerId: 1, clientX: 60, clientY: 40 });
+    expect(screen.queryByTestId('ghost')).not.toBeNull();
+    fireEvent.pointerCancel(document, { pointerId: 1 });
+    expect(screen.queryByTestId('ghost')).toBeNull();
+  });
+
   it('picks nothing with the click that ends a carry, and picks again on the next click', async () => {
     const tools = fakeTools([tool('a')]);
     renderWithIcons(<ToolPalette tools={tools} carryTool={carryTool} />);

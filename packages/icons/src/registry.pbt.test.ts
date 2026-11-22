@@ -242,6 +242,8 @@ describe('icon variants against a model', () => {
         const pending = new Map<string, { resolve: (ok: boolean, rival: boolean) => void }[]>();
         const flight = new Map<string, Promise<void>>();
         const added: string[] = [];
+        // Names whose loader was handed over while a load ran: that load failing leaves the new loader to try.
+        const handedOver = new Set<string>();
         const flush = () => new Promise<void>((res) => setTimeout(res, 0));
         for (const s of steps) {
           const before = r.getVersion();
@@ -260,6 +262,7 @@ describe('icon variants against a model', () => {
             r.provideVariants(loaders);
             for (const n of s.names) {
               hasLoader.add(n);
+              if (states.get(n) === 'loading') handedOver.add(n);
               if (!states.has(n) || states.get(n) === 'failed') states.set(n, 'idle');
             }
             if (!fresh) expect(r.getVersion()).toBe(before);
@@ -273,6 +276,7 @@ describe('icon variants against a model', () => {
               expect(p).toBe(flight.get(s.name));
             } else {
               states.set(s.name, 'loading');
+              handedOver.delete(s.name);
               flight.set(s.name, p);
             }
             await flush();
@@ -283,7 +287,8 @@ describe('icon variants against a model', () => {
             await flight.get(s.name);
             flight.delete(s.name);
             const ok = s.ok && !s.rival;
-            states.set(s.name, ok ? 'loaded' : 'failed');
+            states.set(s.name, ok ? 'loaded' : handedOver.has(s.name) ? 'idle' : 'failed');
+            handedOver.delete(s.name);
             if (ok) added.push(`v-${s.name}:${s.name}`);
             expect(r.get('core:undo')?.body).toBe('u');
             expect(r.owner('core')).toBe('@a');

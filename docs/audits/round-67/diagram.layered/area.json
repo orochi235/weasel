@@ -1,0 +1,76 @@
+{
+ "id": "diagram.layered",
+ "commit": "a2dfd0456e1787d352e92d6a6a6ad07fce7f5229",
+ "date": "2026-11-22",
+ "files": [
+  "packages/diagram/src/layered/across.ts",
+  "packages/diagram/src/layered/bands.ts",
+  "packages/diagram/src/layered/cloudFixture.ts",
+  "packages/diagram/src/layered/clusterSpans.ts",
+  "packages/diagram/src/layered/cycles.ts",
+  "packages/diagram/src/layered/expand.ts",
+  "packages/diagram/src/layered/fixtures.ts",
+  "packages/diagram/src/layered/inward.ts",
+  "packages/diagram/src/layered/level.ts",
+  "packages/diagram/src/layered/order.ts",
+  "packages/diagram/src/layered/overlaps.ts",
+  "packages/diagram/src/layered/pins.ts",
+  "packages/diagram/src/layered/place.ts",
+  "packages/diagram/src/layered/places.ts",
+  "packages/diagram/src/layered/plan.ts",
+  "packages/diagram/src/layered/rank.ts",
+  "packages/diagram/src/layered/reach.ts",
+  "packages/diagram/src/layered/types.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 5,
+ "unfound": 1,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "newCode": {
+  "since": 46,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 46,
+  "chapman": 14,
+  "unfound": 8
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 11,
+  "testFiles": {
+   "failed": 0,
+   "passed": 319,
+   "total": 319
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.2,
+   "B": 8.4,
+   "match": 0.1,
+   "fix": 23,
+   "repair": 9.8
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1380955,
+  "costUsd": 4.34
+ },
+ "fixCommits": []
+}

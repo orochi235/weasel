@@ -14,7 +14,7 @@ export interface MarkWritesOptions {
   openScene: (target: string) => MarkScene;
   hold: (fn: () => void) => void;
   /** Runs `fn`, whose changes on every target join the others made under `key` as one undo step. */
-  grouped: (key: string, fn: () => void) => void;
+  grouped: (key: string, fn: (sceneKey: string) => void) => void;
   nodeOf: (id: string) => FoundMark | undefined;
   targetOf: (id: string) => AnnotationTargetInfo | undefined;
   contentOf: (target: string) => { width: number; height: number };
@@ -46,12 +46,9 @@ export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
       const frac = init.frac;
       const shape = shapeFor(init.kind, init.points, frac);
       const data = markDataFrom(init, shape, seenValues(config, target?.positionDependsOn ?? []));
-      const node = o.openScene(init.target).add({
-        kind: 'mark',
-        layer: 'marks',
-        pose: fracToWorld(frac, contentOf(init.target)),
-        data,
-      });
+      // Placed before the scene opens, so a target with no content box throws without leaving an empty scene.
+      const pose = fracToWorld(frac, contentOf(init.target));
+      const node = o.openScene(init.target).add({ kind: 'mark', layer: 'marks', pose, data });
       return markIdOf(init.target, node);
     },
 
@@ -69,7 +66,7 @@ export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
       const settled = settledMarkData(found.node.data, found.node.pose as MarkPose, content);
       const data = { ...settled, ...meaning, ...(shape ? { shape } : {}) };
       const key = opts?.coalesceKey;
-      const write = (): void =>
+      const write = (sceneKey?: string): void =>
         found.scene.batch(
           'update mark',
           () => {
@@ -77,7 +74,7 @@ export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
               found.scene.update(nid, { data });
             if (frac) found.scene.setPose(nid, fracToWorld(bounds, content));
           },
-          key === undefined ? undefined : { coalesceKey: key },
+          sceneKey === undefined ? undefined : { coalesceKey: sceneKey },
         );
       // The key folds updates within one target's scene; the group joins the targets' parts as one step.
       if (key === undefined) write();
@@ -87,7 +84,12 @@ export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
     setMeta(id, meta) {
       const found = nodeOf(id);
       if (!found) return;
-      found.scene.update(asNodeId(found.node.id), { data: { ...found.node.data, meta } });
+      const settled = settledMarkData(
+        found.node.data,
+        found.node.pose as MarkPose,
+        o.contentOf(found.target),
+      );
+      found.scene.update(asNodeId(found.node.id), { data: { ...settled, meta } });
     },
 
     remove(id) {

@@ -4,7 +4,7 @@ import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 import { DEG_TO_RAD, trimNumber } from '@weasel-js/geom';
 import { outlineRegion } from '../composeOutline';
-import { repeatCount } from '../shapes/params';
+import { repeatCount, finiteParams } from '../shapes/params';
 
 /** What an effect of type `sunbeams` takes as `params`. */
 export interface BadgeSunbeamsEffectParams {
@@ -48,12 +48,13 @@ const DEFAULTS: Required<BadgeSunbeamsEffectParams> = {
 };
 
 const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
-  Component: ({ sampler, boxW, boxH, params }) => {
-    const cfg = { ...DEFAULTS, ...params };
+  Component: ({ sampler, boxW, boxH, variant, params }) => {
+    const cfg = finiteParams({ ...DEFAULTS, ...params }, DEFAULTS, ['count']);
     const css = useColorCss();
     const clipId = useId();
     const maskId = useId();
     const gradId = useId();
+    if (variant !== 'solid' && variant !== 'subtle') return null;
     const sx = 100 / boxW;
     const sy = 100 / boxH;
     const irr = Math.max(0, Math.min(cfg.irregularity, 1));

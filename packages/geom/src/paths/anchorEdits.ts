@@ -237,7 +237,8 @@ function pointOnSegment(a: PenAnchor, b: PenAnchor, t: number): { x: number; y: 
  * surviving segment is refitted to the two it replaces (`fitCubicThroughDeletion`)
  * so the path keeps its shape; a gap between two straight segments closes straight.
  *
- * Subpaths left with fewer than two anchors are dropped entirely. If that
+ * Subpaths the deletion leaves with fewer than two anchors are dropped entirely;
+ * a lone point it does not touch stays. If that
  * would leave the path with no subpaths at all, the whole deletion is refused
  * (returns false, `set` untouched): an empty path leaves the node selected
  * and in the scene with nothing on screen and no anchors to grab it by.
@@ -257,8 +258,8 @@ export function deleteAnchorsAt(set: AnchorSet, flatIndexes: Iterable<number>): 
   // than mutating and rolling back.
   let survivors = 0;
   for (let s = 0; s < set.anchors.length; s++) {
-    const doomed = bySub.get(s)?.length ?? 0;
-    if (set.anchors[s].length - doomed >= 2) survivors++;
+    const doomed = bySub.get(s)?.length;
+    if (doomed === undefined ? set.anchors[s].length > 0 : set.anchors[s].length - doomed >= 2) survivors++;
   }
   if (survivors === 0) return false;
 
@@ -280,9 +281,9 @@ export function deleteAnchorsAt(set: AnchorSet, flatIndexes: Iterable<number>): 
     }
   }
 
-  // Drop degenerate subpaths, back to front so indices stay valid.
+  // Drop the subpaths this deletion left degenerate, back to front so indices stay valid.
   for (let s = set.anchors.length - 1; s >= 0; s--) {
-    if (set.anchors[s].length < 2) {
+    if (bySub.has(s) && set.anchors[s].length < 2) {
       set.anchors.splice(s, 1);
       set.closed.splice(s, 1);
     }

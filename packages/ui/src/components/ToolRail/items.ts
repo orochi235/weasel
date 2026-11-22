@@ -53,11 +53,20 @@ export interface RailRun {
   items: ToolRailItem[];
 }
 
+/** A stack as the rail draws it: left out with no members, and its one member's button with one. */
+function drawn(item: ToolRailItem): ToolRailItem | null {
+  if (!isStack(item) || item.members.length > 1) return item;
+  const [only] = item.members;
+  return only ? { ...only, id: item.id, group: item.group } : null;
+}
+
 /** The rail's runs, in the order {@link ToolRailPlaced.group} gives them. */
 export function railRuns(items: readonly ToolRailItem[]): RailRun[] {
   const runs: RailRun[] = [];
   const byGroup = new Map<string, RailRun>();
-  for (const item of items) {
+  for (const given of items) {
+    const item = drawn(given);
+    if (!item) continue;
     if (item.group == null) {
       const last = runs.at(-1);
       if (last && last.group === undefined) last.items.push(item);

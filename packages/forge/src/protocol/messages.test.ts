@@ -23,4 +23,11 @@ describe('configKey', () => {
     expect(configKey({ n: { $type: 'number', value: 'NaN' } })).not.toBe(configKey({ n: Number.NaN }));
     expect(configKey({ m: { $type: 'set', value: [1] } })).not.toBe(configKey({ m: new Set([1]) }));
   });
+
+  it('keeps an `undefined` member of a list, a Map, or a Set apart from `null`', () => {
+    expect(configKey({ items: [undefined] })).not.toBe(configKey({ items: [null] }));
+    expect(configKey({ m: new Map([['a', undefined]]) })).not.toBe(configKey({ m: new Map([['a', null]]) }));
+    expect(configKey({ s: new Set([undefined]) })).not.toBe(configKey({ s: new Set([null]) }));
+    expect(configKey({ items: [undefined] })).toBe(configKey({ items: [undefined] }));
+  });
 });

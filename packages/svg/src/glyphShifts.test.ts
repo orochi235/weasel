@@ -64,6 +64,15 @@ describe('a tspan dx list read as letter spacing', () => {
     expect(spacing(node)).toEqual([['A', undefined], ['\nB', 1], ['C', undefined]]);
   });
 
+  it('reads a lone first value over white space SVG collapses, which cannot move the glyph it names', () => {
+    const spaced = text('<text x="0" y="20">Hello<tspan dx="4">\n  world</tspan></text>');
+    expect(spaced.warnings).toEqual([]);
+    expect(spacing(spaced.node)).toEqual([['Hell', undefined], ['o', 4], [' world', undefined]]);
+    const own = text('<text x="0" y="20" dx="10">\n    Label\n  </text>');
+    expect(own.warnings).toEqual([]);
+    expect(own.node).toMatchObject({ x: text('<text x="0" y="20" dx="10">Label</text>').node.x });
+  });
+
   it('leaves a list unread, and says so, where collapsing white space would move its glyphs', () => {
     const { node, warnings } = text('<text><tspan dx="0 2 2"> a  b</tspan></text>');
     expect(node.text).toBe('a b');
@@ -235,7 +244,7 @@ describe('a dx list on a text holding tspans', () => {
   it('leaves the list unread, and says so, where collapsing white space would move its glyphs', () => {
     const { node, warnings } = text('<text dx="0 1">\n  <tspan>ab</tspan>\n</text>');
     expect(node.text).toBe('ab');
-    expect(warnings).toEqual([expect.stringMatching(/<text dx="0 1"> is not read/)]);
+    expect(warnings).toEqual([expect.stringMatching(/<text dx="0 1"> is read only to its first value/)]);
     expect(node.runs).toBeUndefined();
   });
 });

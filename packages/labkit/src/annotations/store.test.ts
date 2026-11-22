@@ -121,6 +121,12 @@ describe('the annotation store', () => {
     expect(store.get(id)?.title).toBe(RING.title);
   });
 
+  it('leaves no scene behind for an add on a target with no content box', () => {
+    const store = makeStore();
+    expect(() => store.add({ ...RING, target: 'nope' })).toThrow(/content box/);
+    expect(Object.keys(store.toJSON().scenes)).toEqual([]);
+  });
+
   it('removes a mark', () => {
     const store = makeStore();
     const id = store.add(RING);
@@ -563,6 +569,17 @@ describe('a moved mark', () => {
     expectNear(store.get('naive/n1')?.points ?? [], moved);
     const [node] = (store.toJSON().scenes.naive as { nodes: { data: object }[] }).nodes;
     expect(node?.data).not.toHaveProperty('points');
+  });
+
+  it('writes such a save back settled through setMeta, as update does', () => {
+    let targets: AnnotationTargetInfo[] = [{ id: 'naive', content: { width: 0, height: 0 } }];
+    const store = loadAnnotations(legacyLine(), () => targets);
+    targets = TARGETS;
+    store.setMeta('naive/n1', { note: 1 });
+    const [node] = (store.toJSON().scenes.naive as { nodes: { data: object }[] }).nodes;
+    expect(node?.data).not.toHaveProperty('points');
+    expect(node?.data).toHaveProperty('meta', { note: 1 });
+    expectNear(store.get('naive/n1')?.points ?? [], LINE.points ?? []);
   });
 });
 

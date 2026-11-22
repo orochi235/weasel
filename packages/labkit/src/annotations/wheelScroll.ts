@@ -14,7 +14,8 @@ function scrolls(el: Element, axis: 'x' | 'y', delta: number): boolean {
   if (overflow !== 'auto' && overflow !== 'scroll') return false;
   const at = axis === 'x' ? el.scrollLeft : el.scrollTop;
   const max = axis === 'x' ? el.scrollWidth - el.clientWidth : el.scrollHeight - el.clientHeight;
-  return delta < 0 ? at > 0 : at < max;
+  // The offset can be fractional while the extents are whole pixels, so less than a pixel left is at the end.
+  return delta < 0 ? at >= 1 : at <= max - 1;
 }
 
 /** The deepest element of `el`'s subtree whose box holds the point, by geometry alone: hit testing skips a subtree

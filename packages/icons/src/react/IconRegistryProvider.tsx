@@ -7,7 +7,7 @@ const IconRegistryContext = createContext<IconRegistry | null>(null);
 export interface IconRegistryProviderProps {
   /** Tables to register: `virtual:weasel-icons`'s default export, or tables imported by hand. A new value replaces the tables the last one registered. */
   icons?: IconTable | readonly IconTable[];
-  /** Variants a component may ask for by name, as dynamic imports: `{ all: () => import('virtual:weasel-icons/all') }`. */
+  /** Variants a component may ask for by name, as dynamic imports: `{ all: () => import('virtual:weasel-icons/all') }`. A new value replaces the last, and a variant it no longer names drops the tables it loaded. */
   variants?: Readonly<Record<string, IconVariantLoader>>;
   children: ReactNode;
 }
@@ -36,7 +36,7 @@ function useOwnedRegistry(
   useEffect(() => {
     if (provided.current === variants) return;
     provided.current = variants;
-    if (variants) registry.provideVariants(variants);
+    registry.provideVariants(variants ?? {}, { replace: true });
   }, [registry, variants]);
   return registry;
 }

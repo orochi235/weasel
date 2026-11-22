@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "`ids` labels land outside their node's box under a flipped (y-up) view",
+  "Hover highlight can stick at the value from a render React threw away"
+ ],
+ "b": [
+  "A highlight from a discarded render sticks, because `useDebugSink` writes it into the live config inside `useMemo`",
+  "`ids` labels land outside the node's box on a y-up (or x-flipped) view",
+  "An override toggling between \"shows something\" and \"shows nothing\" rebuilds the debug sink and overlay each time"
+ ]
+}

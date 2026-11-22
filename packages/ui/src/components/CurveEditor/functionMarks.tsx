@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { decimal, present } from '@weasel-js/quantity';
 import { ARROW_KEYSHORTCUTS } from '../../handles';
 import { Diamond } from './Diamond';
 import { canAnchorMove, isHiddenAnchor, isPinnedEndpointAt } from './anchorRules';
@@ -9,6 +8,7 @@ import type { EndpointMode, FillSettings, FunctionLayerOptions, FunctionLayerSta
 import type { InterpolationMode } from '@weasel-js/geom';
 import { CurveFill } from './CurveFill';
 import { curvePaths } from './functionCurve';
+import { formatCoord } from './layerMarks';
 
 /** What a function layer's options say about how its anchors look, fixed when the layer is built. */
 export interface AnchorLook extends Pick<FunctionLayerOptions, 'label' | 'renderAnchor' | 'hideNonInteractive'> {
@@ -26,7 +26,6 @@ export function anchorLookFor(cfg: FunctionLayerOptions): AnchorLook {
   };
 }
 
-const formatCoord = (n: number): string => present(n, decimal({ maxPlaces: 3 })).spoken;
 
 /**
  * Everything a function layer draws: its fill, its curve unless hidden, and, given `anchors`, a mark per anchor.
@@ -64,7 +63,8 @@ function anchorMarks(state: FunctionLayerState, ctx: LayerRenderCtx, look: Ancho
     if (isHiddenAnchor(points, i, endpoints, look.hideNonInteractive)) return null;
     const active = activeIndex === i;
     const isEndpoint = curveVisible && (i === 0 || i === points.length - 1);
-    const focus = canAnchorMove(points, i, endpoints)
+    const movable = canAnchorMove(points, i, endpoints);
+    const focus = movable
       ? { tabIndex: 0, 'aria-keyshortcuts': ARROW_KEYSHORTCUTS }
       : {};
     const a11y = {
@@ -86,7 +86,7 @@ function anchorMarks(state: FunctionLayerState, ctx: LayerRenderCtx, look: Ancho
     const anchorCls = [
       s.anchor,
       isEndpoint && s.endpoint,
-      (pinned || locked) && s.pinned,
+      !movable && s.pinned,
       locked && s.locked,
       active && s.active,
     ].filter(Boolean).join(' ');

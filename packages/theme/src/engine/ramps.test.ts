@@ -61,6 +61,12 @@ describe('a categorical ramp with anchors', () => {
     const anchored = generate({ ...DEFAULT_CONSTRAINTS, ...gates, count: 3, anchors }).swatches.find((s) => s.anchored)!;
     expect(categoricalRamp(steps, gates, anchors).colors.brand).toBe(anchored.hex.toLowerCase());
   });
+
+  it('gives a step two anchors name to the first of them, whatever the palette order', () => {
+    const anchors = [{ name: 'brand', hue: 200, lightness: 0.7 }, { name: 'brand', hue: 30, lightness: 0.7 }];
+    const { colors } = categoricalRamp(['brand', 'a', 'b'], { order: 'hue' }, anchors);
+    expect(toLch(colors.brand).H).toBeCloseTo(200, -1);
+  });
 });
 
 describe('lightBias', () => {

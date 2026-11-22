@@ -126,6 +126,13 @@ describe('Transport', () => {
     expect(screen.getByRole('switch', { name: /loop/i })).toBeChecked();
   });
 
+  it('treats a count of one pass or none as not looping', () => {
+    const { rerender } = renderWithIcons(<Transport {...props} loop={1} />);
+    expect(screen.getByRole('switch', { name: /loop/i })).not.toBeChecked();
+    rerender(<Transport {...props} loop={0} />);
+    expect(screen.getByRole('switch', { name: /loop/i })).not.toBeChecked();
+  });
+
   // Keyboard, not a pointer: the detents are laid out, and jsdom has no layout,
   // so a click at an x offset would be asserting the emulation.
   it('changes the rate a detent at a time', () => {

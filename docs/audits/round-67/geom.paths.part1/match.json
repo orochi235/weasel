@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "Kept anchors whose handles an edit swaps in place get their handle origins swapped",
+  "Knead misses a long segment that passes under the brush between probe samples",
+  "deleteAnchorsAt drops untouched single-anchor subpaths",
+  "A corner on the first anchor of a subpath closed by an explicit `L` back to its start is never cut"
+ ],
+ "b": [
+  "anchorsToPath numbers corner specs by decoded anchor, but a re-encode can fold one away, shifting every later spec",
+  "editAnchorSetTracked maps a reversed subpath's handle points to the wrong side",
+  "deleteAnchorsAt drops untouched lone-point subpaths, and refuses a deletion because of them",
+  "asPolygonPath stores a far-out rect as raw float32 world coords with no origin",
+  "outsideSide returns null for a closed contour drawn as one curve, so growRegion grows that hole the wrong way"
+ ]
+}

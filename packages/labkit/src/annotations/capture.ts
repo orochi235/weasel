@@ -25,6 +25,12 @@ export function capturePlan(base: CaptureSource | undefined, format: 'png' | 'sv
   return base?.kind === 'svg' ? 'svg-document' : 'raster-stack';
 }
 
+/** A length in user units, or undefined for one that is not (a percentage, `cm`, or none). */
+function userUnits(length: string | null): number | undefined {
+  const m = length?.trim().match(/^(\d*\.?\d+(?:e[-+]?\d+)?)(px)?$/i);
+  return m?.[1] === undefined ? undefined : Number(m[1]);
+}
+
 /** Re-frame a base's own `<svg>` onto the content box, keeping its `viewBox`.
  *  Parsed rather than string-spliced: a base whose declared width disagrees
  *  with its viewBox would otherwise land at the wrong scale. */
@@ -33,6 +39,11 @@ function nestBaseSvg(markup: string, w: number, h: number): string {
   const root = doc.documentElement;
   if (doc.getElementsByTagName('parsererror').length > 0 || root.localName !== 'svg') {
     throw new Error("[labkit] a target's `base()` returned markup that is not an <svg> document");
+  }
+  // Without a viewBox the base would draw at 1:1 into the content box, cropped; its own size frames it instead.
+  const own = [root.getAttribute('width'), root.getAttribute('height')].map(userUnits);
+  if (!root.hasAttribute('viewBox') && own.every((n) => n !== undefined && n > 0)) {
+    root.setAttribute('viewBox', `0 0 ${own[0]} ${own[1]}`);
   }
   root.setAttribute('x', '0');
   root.setAttribute('y', '0');

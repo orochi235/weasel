@@ -86,7 +86,7 @@ function setOrder(include: ToolPaletteProps['include'], of: 'groups' | 'tools'):
 }
 
 function paletteStacks(stacks: ToolPaletteProps['stacks'], include: ToolPaletteProps['include']): (readonly string[])[] {
-  if (stacks) return stacks.map((stack) => ('members' in stack ? toolIdsOf([stack]) : stack));
+  if (stacks) return stacks.map((stack) => ('members' in stack ? toolIdsOf([stack]) : [...new Set(stack)]));
   return include !== undefined && typeof include !== 'function' ? toolStacksOf([include]) : [];
 }
 
@@ -141,7 +141,7 @@ function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
       onPress: () => { tools.setActive(tool.id); },
       onPointerDown: carryTool && enabled ? (e) => carry.press(tool, e) : undefined,
       onDragStart: onToolDragStart && enabled ? (e) => onToolDragStart(tool, e) : undefined,
-      className: carryTool?.(tool) != null ? s.carrySource : undefined,
+      className: enabled && carryTool?.(tool) != null ? s.carrySource : undefined,
     };
   };
   const items = groupTools(list, groupOrder, toolOrder).flatMap(({ key, tools: group }) =>

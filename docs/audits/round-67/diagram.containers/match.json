@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "diagramCanDropInto admits any insert into a pool: an empty `ids` passes the lanes-only rule vacuously",
+  "Releasing a pool deletes any member of the pool that is not a lane",
+  "The pool header is decided two ways: laneStackLayout uses a fixed default, while addLane and restackLocked read the trait's header",
+  "A new pool's first lanes can overflow the pool box they are built in",
+  "The lane actions check locks and build the preview on `opts.scene` but commit to `ctx.deps.scene`"
+ ],
+ "b": [
+  "addLane in a themed scene restyles locked lanes that its lock check passed over",
+  "restackLocked compares round-tripped float poses exactly, so a locked lane that stays put still blocks the add"
+ ]
+}

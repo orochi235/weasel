@@ -145,6 +145,36 @@ describe('<ExportMenu>', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/tainted/);
   });
 
+  it('starts the clipboard write inside the click, before the capture finishes', async () => {
+    const { store, capture } = spied();
+    const blob = new Blob(['png'], { type: 'image/png' });
+    let finish: () => void = () => {};
+    capture.mockImplementationOnce(
+      (target: string) =>
+        new Promise((resolve) => {
+          finish = () => resolve({ target, blob, format: 'png', width: 1, height: 1 });
+        }),
+    );
+    const write = vi.fn(async (_items: { items: Record<string, Promise<Blob>> }[]) => {});
+    vi.stubGlobal('navigator', { clipboard: { write } });
+    vi.stubGlobal(
+      'ClipboardItem',
+      class {
+        constructor(readonly items: Record<string, Promise<Blob>>) {}
+      },
+    );
+    try {
+      mount(store);
+      open();
+      fireEvent.click(screen.getByRole('button', { name: /copy/i }));
+      expect(write).toHaveBeenCalledTimes(1);
+      finish();
+      expect(await write.mock.calls[0]?.[0][0]?.items['image/png']).toBe(blob);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('says the browser refused the clipboard on a page that has none', async () => {
     vi.stubGlobal('navigator', {});
     try {

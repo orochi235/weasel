@@ -70,7 +70,6 @@ function treeOf(categories: readonly RegistryCategory[]) {
     const branch: TreeNode = {
       id: categoryKey(c.id),
       label: c.label,
-      trailing: countBadge(c.entries.length),
       children: c.entries.map((e) => {
         const key = leafKey(c.id, e.id);
         picks.set(key, { category: c.id, id: e.id });
@@ -90,9 +89,12 @@ function treeOf(categories: readonly RegistryCategory[]) {
     }
     group.children.push(branch);
   }
-  for (const group of groups.values()) group.trailing = countBadge(group.children.length);
   return { nodes: out, picks, texts };
 }
+
+/** Badges each branch with the children it shows, so a filtered category counts what the filter left. */
+const counted = (nodes: readonly TreeNode[]): TreeNode[] =>
+  nodes.map((n) => (n.children ? { ...n, trailing: countBadge(n.children.length), children: counted(n.children) } : n));
 
 /**
  * A filter field over a tree of registry categories, beside a detail pane.
@@ -127,7 +129,7 @@ export function RegistryBrowser(props: RegistryBrowserProps): ReactElement {
   const { nodes, picks, texts } = useMemo(() => treeOf(categories), [categories]);
   const q = filter.trim();
   const shown = useMemo(
-    () => (q ? filterTree(nodes, (n) => { const t = texts.get(n.id); return t !== undefined && matchQuery(q, t) !== null; }) : nodes),
+    () => counted(q ? filterTree(nodes, (n) => { const t = texts.get(n.id); return t !== undefined && matchQuery(q, t) !== null; }) : nodes),
     [nodes, texts, q],
   );
   const selectedIds = selected ? [leafKey(selected.category, selected.id)] : [];

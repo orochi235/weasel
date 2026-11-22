@@ -86,3 +86,12 @@ it('finds the scroller by its box when hit testing skips the target, as it does 
   ).toBe(false);
   expect(scroll.scrollTop).toBe(30);
 });
+
+it('hands a wheel on from a scroller resting a fraction of a pixel short of either end', () => {
+  const { target, scroll, box } = setup();
+  document.elementsFromPoint = () => [box, scroll, target, document.body];
+  Object.defineProperty(scroll, 'scrollTop', { value: 299.5, writable: true });
+  expect(scrollUnder(new WheelEvent('wheel', { deltaY: 30 }), box, target)).toBe(false);
+  Object.defineProperty(scroll, 'scrollTop', { value: 0.5, writable: true });
+  expect(scrollUnder(new WheelEvent('wheel', { deltaY: -30 }), box, target)).toBe(false);
+});

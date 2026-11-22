@@ -1,0 +1,105 @@
+{
+ "id": "ui.components.Bar",
+ "commit": "a2dfd0456e1787d352e92d6a6a6ad07fce7f5229",
+ "date": "2026-11-22",
+ "files": [
+  "packages/ui/src/components/Bar/Bar.module.css",
+  "packages/ui/src/components/Bar/Bar.overflow.stories.module.css",
+  "packages/ui/src/components/Bar/Bar.overflow.stories.tsx",
+  "packages/ui/src/components/Bar/Bar.stories.module.css",
+  "packages/ui/src/components/Bar/Bar.stories.tsx",
+  "packages/ui/src/components/Bar/Bar.tsx",
+  "packages/ui/src/components/Bar/BarAlong.module.css",
+  "packages/ui/src/components/Bar/BarAlong.tsx",
+  "packages/ui/src/components/Bar/BarField.fixtures.tsx",
+  "packages/ui/src/components/Bar/BarField.stories.tsx",
+  "packages/ui/src/components/Bar/BarField.tsx",
+  "packages/ui/src/components/Bar/BarLine.tsx",
+  "packages/ui/src/components/Bar/BarMenu.stories.tsx",
+  "packages/ui/src/components/Bar/BarMenu.tsx",
+  "packages/ui/src/components/Bar/BarOverflow.tsx",
+  "packages/ui/src/components/Bar/BarPopover.stories.tsx",
+  "packages/ui/src/components/Bar/BarPopover.tsx",
+  "packages/ui/src/components/Bar/barFrames.module.css",
+  "packages/ui/src/components/Bar/barItems.tsx",
+  "packages/ui/src/components/Bar/barLabel.module.css",
+  "packages/ui/src/components/Bar/barLeadHandle.tsx",
+  "packages/ui/src/components/Bar/barLines.ts",
+  "packages/ui/src/components/Bar/barMenuRoot.ts",
+  "packages/ui/src/components/Bar/barOrder.ts",
+  "packages/ui/src/components/Bar/barParts.module.css",
+  "packages/ui/src/components/Bar/barParts.tsx",
+  "packages/ui/src/components/Bar/barSide.ts",
+  "packages/ui/src/components/Bar/barTurn.module.css",
+  "packages/ui/src/components/Bar/index.ts",
+  "packages/ui/src/components/Bar/lab/BarArc.stories.module.css",
+  "packages/ui/src/components/Bar/lab/BarArc.stories.tsx",
+  "packages/ui/src/components/Bar/lab/BarArcView.tsx",
+  "packages/ui/src/components/Bar/lab/barArcConfig.ts",
+  "packages/ui/src/components/Bar/lab/useBarMeasure.ts",
+  "packages/ui/src/components/Bar/popFace.tsx",
+  "packages/ui/src/components/Bar/renderBarLeaf.tsx",
+  "packages/ui/src/components/Bar/useBarOverflow.ts",
+  "packages/ui/src/components/Bar/useBarReorder.ts",
+  "packages/ui/src/components/Bar/useBarReorderKeys.ts",
+  "packages/ui/src/components/Bar/useMenuLeast.ts",
+  "packages/ui/src/components/Bar/useTurnToFit.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 41,
+  "B": 41
+ },
+ "newCode": {
+  "since": 57,
+  "changedFiles": 8,
+  "findings": 6
+ },
+ "previous": {
+  "round": 57,
+  "chapman": 13,
+  "unfound": 3
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 16,
+  "testFiles": {
+   "failed": 0,
+   "passed": 933,
+   "total": 933
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.9,
+   "B": 8.7,
+   "match": 1.8,
+   "fix": 18.5
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1416770,
+  "costUsd": 4.14
+ },
+ "fixCommits": [
+  "164afbe3d0205626faa606982acf2e983e6d32cd",
+  "5688394ae375c67ce015f1b3eede3cd496738e6a",
+  "466e7ce8448bf185141c5295a5e6cd5042ccaba8",
+  "bdd5641f052b333b01ef9e079484dfd1d1b27238",
+  "9d2892d9254bc7976ec7f315c665cdbe726760bf",
+  "8a7c4e0b18574ec7f1f51febb10be50ff4225f29"
+ ]
+}

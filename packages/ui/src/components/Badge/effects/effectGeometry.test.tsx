@@ -262,3 +262,47 @@ describe('a light corner', () => {
     });
   }
 });
+
+describe('woodgrain on an outline that reaches past the viewBox', () => {
+  const tall: [number, number][] = [[-10, -20], [110, -20], [110, 120], [-10, 120]];
+
+  it('runs its grain across the whole outline', () => {
+    const c = draw(Woodgrain, { lines: 4, knots: 0 }, 200, 30, polygonSampler(tall, 200, 30));
+    const nums = [...c.querySelectorAll('path.badge-stroke')].map((p) => p.getAttribute('d')!.match(/-?[\d.]+/g)!.map(Number));
+    for (const n of nums) {
+      expect(n[0]).toBeLessThan(-10);
+      expect(n[n.length - 2]).toBeGreaterThan(110);
+    }
+    expect(nums[0][1]).toBeCloseTo(-20 + 140 / 5);
+    expect(nums[3][1]).toBeCloseTo(-20 + (4 * 140) / 5);
+  });
+
+  it('draws as before on an outline inside the viewBox', () => {
+    const d = draw(Woodgrain, { lines: 1, knots: 0 }).querySelector('path.badge-stroke')!.getAttribute('d')!;
+    expect(d.startsWith('M -5 50 Q 35 ')).toBe(true);
+    expect(d).toMatch(/ 60 50 T 105 /);
+  });
+});
+
+describe('perforation spacing', () => {
+  it('never sets holes closer than twice their radius', () => {
+    for (let total = 12; total <= 30; total += 0.75) {
+      const boxW = total / 2 - 3;
+      const holes = draw(Perforations, { holeRadius: 3, holeSpacing: 6 }, boxW, 3).querySelectorAll('ellipse').length;
+      expect(holes === 2 || total / holes >= 6).toBe(true);
+    }
+  });
+});
+
+describe('rivets on an outline that reaches past a corner of its box', () => {
+  it('sit `inset` CSS px in from the corner, which is inside the body', () => {
+    const tall: [number, number][] = [[-10, -20], [110, -20], [110, 120], [-10, 120]];
+    const c = draw(Rivets, { inset: 7 }, 100, 100, polygonSampler(tall, 100, 100));
+    const found = [...c.querySelectorAll('ellipse.badge-bevel-dark')].map((e) => [Number(e.getAttribute('cx')), Number(e.getAttribute('cy'))]);
+    expect(found).toHaveLength(4);
+    for (const [x, y] of found) {
+      expect(Math.abs(x - 50)).toBeCloseTo(43);
+      expect(Math.abs(y - 50)).toBeCloseTo(43);
+    }
+  });
+});

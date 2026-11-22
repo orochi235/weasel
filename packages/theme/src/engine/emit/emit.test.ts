@@ -78,6 +78,7 @@ function computed(sheet: string, chain: readonly Attrs[]): Record<string, string
   const rules = [...sheet.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^}]*)\}/g)].map((m) => ({
     sels: m[1].split(',').map((s) => s.trim()).filter(Boolean).map((s) => ({
       root: s.startsWith(':root'),
+      where: s.startsWith(':where('),
       attrs: [...s.matchAll(/\[data-wzl-([\w-]+)='([^']+)'\]/g)].map((p) => [p[1], p[2]] as const),
     })),
     decls: m[2].split(';').map((d) => d.trim()).filter(Boolean).map((d) => [d.slice(0, d.indexOf(':')).trim(), d.slice(d.indexOf(':') + 1).trim()] as const),
@@ -88,7 +89,7 @@ function computed(sheet: string, chain: readonly Attrs[]): Record<string, string
     for (const r of rules) {
       const hits = r.sels.filter((s) => (!s.root || depth === 0) && s.attrs.every(([k, v]) => attrs[k] === v));
       if (hits.length === 0) continue;
-      const spec = Math.max(...hits.map((s) => s.attrs.length + (s.root ? 1 : 0)));
+      const spec = Math.max(...hits.map((s) => (s.where ? 0 : s.attrs.length + (s.root ? 1 : 0))));
       for (const [p, value] of r.decls) if (spec >= (winners.get(p)?.spec ?? -1)) winners.set(p, { spec, value });
     }
     const out = { ...inherited };
@@ -215,6 +216,19 @@ describe('emitCss', () => {
             for (const chain of chains) failures.push(...wrong(sheet, def, chain).map((w) => `${JSON.stringify(chain)} ${w}`));
           }
         }
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+
+  it('reads every token at its defaults on an element stamping only a theme, inside another theme', () => {
+    const all = [base, child, grand, aaa];
+    const sheet = emitCss(all.map((d) => input(d, d === base)));
+    const failures: string[] = [];
+    for (const def of all) {
+      for (const outer of all) {
+        const chain: Attrs[] = [{}, { theme: outer.name, mode: 'light', density: 'compact' }, { theme: def.name }];
+        failures.push(...wrong(sheet, def, chain).map((w) => `${JSON.stringify(chain)} ${w}`));
       }
     }
     expect(failures).toEqual([]);

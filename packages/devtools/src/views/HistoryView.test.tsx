@@ -103,6 +103,47 @@ describe('<HistoryView>', () => {
     await waitFor(() => expect(screen.getByRole('status', { name: 'Position' }).textContent).toBe('20 / 20'));
   });
 
+  it('keeps the open step open across a read that fails', async () => {
+    const page = fakePage();
+    renderWithIcons(<HistoryView client={page.client} rootId="r" />);
+    act(() => page.push(step('kit:open')));
+    fireEvent.click(await screen.findByRole('cell', { name: 'push' }));
+    expect(await screen.findByText('kit:open')).toBeTruthy();
+    page.client.request = (() => Promise.reject(new Error('lost the page'))) as DevtoolsClient['request'];
+    act(() => page.push(step('kit:next')));
+    expect((await screen.findByRole('alert')).textContent).toBe('lost the page');
+    expect(screen.getByText('kit:open')).toBeTruthy();
+  });
+
+  it('reads again after a failed read, with no history notice to prompt it', async () => {
+    const page = fakePage();
+    const request = page.client.request.bind(page.client);
+    let fail = true;
+    page.client.request = ((...args: Parameters<typeof request>) =>
+      fail ? Promise.reject(new Error('lost the page')) : request(...args)) as typeof request;
+    renderWithIcons(<HistoryView client={page.client} rootId="r" />);
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    fail = false;
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull(), { timeout: 2000 });
+    expect(screen.getByRole('status', { name: 'Position' }).textContent).toBe('0 / 0');
+  });
+
+  it('names an unlabeled entry by its id the same way in its row, its detail, and the stacks', async () => {
+    const page = fakePage();
+    const request = page.client.request.bind(page.client);
+    page.client.request = (async (...args: Parameters<typeof request>) => ({
+      ...((await request(...args)) as DevtoolsHistorySlice),
+      historyEntries: [{ id: 1, label: '' }],
+    })) as typeof request;
+    renderWithIcons(<HistoryView client={page.client} rootId="r" />);
+    act(() => page.push(step('kit:unlabeled')));
+    fireEvent.click(await screen.findByRole('cell', { name: 'push' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'entries' }));
+    expect(screen.getByRole('cell', { name: '#1' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Entry #1' }).querySelector('h4')?.textContent).toMatch(/^#1/);
+    expect((await screen.findByRole('list', { name: 'History entries' })).textContent).toBe('#1');
+  });
+
   it('leaves the open step open when a step with nothing to show is clicked', async () => {
     const page = fakePage();
     renderWithIcons(<HistoryView client={page.client} rootId="r" />);

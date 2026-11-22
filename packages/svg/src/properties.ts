@@ -379,6 +379,12 @@ export function isDeclarationInvalid(prop: string, value: string): boolean {
   return invalid ? invalid(v) : false;
 }
 
+/** An element's own presentation attribute for `prop`, as written; null when absent or CSS would drop it. */
+export function presentationAttribute(el: Element, prop: PropertyName): string | null {
+  const raw = el.getAttribute(prop);
+  return raw == null || isDeclarationInvalid(prop, raw) ? null : raw;
+}
+
 /**
  * Whether a declaration of `prop: value` would change what this parser
  * produces, exactly as asked. `inherit` is honored for inherited properties

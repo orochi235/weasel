@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "Drawn effects let NaN through their clamps, where the offset effects read it as the default",
+  "bevel2 gives a non-finite `lightFrom` unstyled bands, where bevel/sheen/rivets throw a RangeError",
+  "Woodgrain's grain lines stop at a fixed -5..105 span and miss outline that warping effects push past the box",
+  "Perforations rounds its hole count up, so holes asked to sit `2 × holeRadius` apart can overlap",
+  "shadow and sunbeams draw on any variant, where every other drawn effect skips variants with no fill"
+ ],
+ "b": [
+  "A `bevel2` effect with a non-finite or non-numeric `lightFrom` paints every band solid black",
+  "A NaN opacity or intensity in `shadow`, `sheen`, `woodgrain` or `sunbeams` draws at full strength instead of at the default",
+  "`rivets` measures its corner entry from the farthest outline crossing behind the corner when the outline reaches past the box",
+  "The `aqua` doc says `equatorSpread` is the band's half-width, but the band below the equator is 1.6× wider"
+ ]
+}

@@ -88,8 +88,8 @@ export type TooltipProps = Omit<WithoutPortalTarget<RACTooltipProps>, 'children'
   OverlayPortalProps & {
     /** Whether the tooltip is open, controlled; unset, its trigger's state holds it. */
     open?: boolean;
-    /** A string is read as inline markdown ({@link InlineMarkdown}), its links drawn as their
-     *  labels; an element is drawn as given. */
+    /** Text is read as inline markdown ({@link InlineMarkdown}), adjacent strings and numbers as one
+     *  piece and links drawn as their labels; an element is drawn as given. */
     children?: ReactNode;
     className?: string;
   };
@@ -115,13 +115,28 @@ export function Tooltip(props: TooltipProps) {
           offset={offset}
           className={[s.tooltip, className].filter(Boolean).join(' ')}
         >
-          {Children.map(children, (child) =>
-            typeof child === 'string' ? <InlineMarkdown text={child} links="text" /> : child,
-          )}
+          {markdownRuns(children)}
         </TooltipOverlay>
       )}
     </>
   );
+}
+
+/** Each run of adjacent text children read as one piece of inline markdown, so markup can span an
+ *  interpolated value; elements are drawn as given. */
+function markdownRuns(children: ReactNode): ReactNode[] {
+  const out: ReactNode[] = [];
+  let text: string | null = null;
+  const flush = () => {
+    if (text !== null) out.push(<InlineMarkdown key={`md${out.length}`} text={text} links="text" />);
+    text = null;
+  };
+  for (const child of Children.toArray(children)) {
+    if (typeof child === 'string' || typeof child === 'number') text = (text ?? '') + String(child);
+    else { flush(); out.push(child); }
+  }
+  flush();
+  return out;
 }
 
 type OverlayProps = Omit<WithoutPortalTarget<RACTooltipProps>, 'children'> & { children: ReactNode };

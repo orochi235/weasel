@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SCRIPT_METRICS } from '@weasel-js/text';
 import { parseSvg } from './parse';
+import { raiseRuns } from './glyphRises';
 import { serializeSvg } from './serialize';
 import type { SvgTextNode } from './types';
 
@@ -101,5 +102,13 @@ describe('glyphs moved off their line, read as baseline shift', () => {
     const { node } = text('<text x="10" y="20" font-size="10">a<tspan dy="-5">b</tspan>c</text>');
     const back = parseSvg(serializeSvg([node])).nodes[0] as SvgTextNode;
     expect(shifts(back)).toEqual([['a', undefined], ['b', 0.5], ['c', 0.5]]);
+  });
+});
+
+describe('raiseRuns', () => {
+  it('raises only the last glyphs of a run that holds earlier ones too', () => {
+    const line = [{ text: 'abc' }];
+    raiseRuns(line, [5], 10, {});
+    expect(line).toEqual([{ text: 'ab' }, { text: 'c', baselineShift: 0.5 }]);
   });
 });

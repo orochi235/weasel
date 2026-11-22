@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useLayoutEffect, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { paintedLayers, type LayerDrawSpan, type RenderLayer } from 'core/layers/render';
 import type { CanvasDebugSink, DebugFlags } from './types';
@@ -24,18 +24,20 @@ const OFF = { sink: null, overlay: null, frameStats: false };
 /**
  * Resolve a surface's `debug` prop and hold what it turns on. `undefined`
  * reads `?debug=…` from the URL, `false` forces it off, and a config forces it
- * on. Keyed on the config's content, so one written inline keeps its sink, and
- * what the sink and the overlay have accumulated, from render to render.
+ * on. Keyed on the resolved config's content, so one written inline, or the
+ * URL's config laid under an inspector's override, keeps its sink, and what
+ * the sink and the overlay have accumulated, from render to render.
  * `highlight` is left out of the key: an inspector changes it on every hover,
  * so it is written into the live config, and only the overlay is replaced.
  */
 export function useDebugSink(debug: DebugFlags | false | undefined): SurfaceDebug {
-  const { highlight, ...rest }: DebugFlags = debug || {};
-  const key = debug === undefined ? undefined : debug === false ? 'false' : JSON.stringify(rest);
+  const resolved = resolveDebugFlags(debug);
+  const { highlight, ...rest }: DebugFlags = resolved ?? {};
+  const key = resolved ? JSON.stringify(rest) : null;
   const highlightKey = JSON.stringify(highlight ?? null);
   const base = useMemo(() => {
-    const config = resolveDebugFlags(key === undefined ? undefined : JSON.parse(key) as DebugFlags | false);
-    if (!config) return null;
+    if (key === null) return null;
+    const config = JSON.parse(key) as DebugFlags;
     const live: DebugFlags = { ...config };
     const setHighlight = (ids: readonly string[] | null): void => {
       if (ids) live.highlight = ids;
@@ -44,10 +46,13 @@ export function useDebugSink(debug: DebugFlags | false | undefined): SurfaceDebu
     const sink = createDebugSink(live);
     return { setHighlight, sink, overlay: createDebugOverlayLayer({ sink, config: live }), frameStats: config.fps === true };
   }, [key]);
+  // In commit, not render: `live` is shared, and a render React throws away must not leave its highlight there.
+  useLayoutEffect(() => { base?.setHighlight(JSON.parse(highlightKey) as string[] | null); }, [base, highlightKey]);
   const state = useMemo(() => {
     if (!base) return OFF;
-    base.setHighlight(JSON.parse(highlightKey) as string[] | null);
     return { sink: base.sink, overlay: { ...base.overlay }, frameStats: base.frameStats };
+    // A new overlay object per highlight, so the stack recomposes and repaints.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [base, highlightKey]);
   const committed = useLatest(state.sink);
   const getDebug = useCallback(() => committed.current, [committed]);

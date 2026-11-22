@@ -112,6 +112,22 @@ interface Plan {
 /** Declarations clearing tokens a theme lacks, so its subtree inherits none from an outer theme that has them. */
 const unset = (names: readonly string[]) => names.map((n) => `  --wzl-${n}: initial;`);
 
+/**
+ * Every axis-varying token of the theme at the default selection, for an element stamping the theme and no axis: it
+ * would otherwise inherit what an outer element's axis attributes chose. `:where()` so any axis block outranks it.
+ */
+function defaultsBlock(lines: string[], plan: Plan, names: readonly string[]): void {
+  const decls = names.flatMap((n) => {
+    const token = plan.all(n).length > 0 ? plan.value(n, {}) : undefined;
+    return token ? [`  --wzl-${n}: ${cssValue(n, token)};`] : [];
+  });
+  const schemes = Object.entries(plan.axes).flatMap(([a, d]) => {
+    const scheme = axisScheme(plan.schemes, a, d.default);
+    return scheme ? [`  color-scheme: ${scheme};`] : [];
+  });
+  if (decls.length + schemes.length > 0) lines.push(`:where(${wzlAttr('theme', plan.theme)}) {`, ...schemes, ...decls, '}', '');
+}
+
 function blocks(lines: string[], plan: Plan, selector: (attrs: string) => string[]): void {
   const { axes, names } = plan;
   for (const set of axisSets(axes)) {
@@ -212,22 +228,21 @@ export function emitCss(themes: readonly EmitInput[]): string {
     );
   }
 
-  blocks(
-    lines,
-    {
-      theme,
-      axes,
-      schemes: axes,
-      names: Object.keys(def.baked.tokens),
-      all: (n) => getOwn(def.deps, n)?.all ?? [],
-      own: (n) => getOwn(def.deps, n)?.own ?? [],
-      value: (n, sel) => getOwn(pickAll(def.baked.tokens, fullAxisChoice(axes, sel)), n),
-      has: (n) => Object.hasOwn(def.baked.tokens, n),
-    },
-    (attrs) => [`${wzlAttr('theme', theme)}${attrs},`, `${attrs} {`],
-  );
+  const defPlan: Plan = {
+    theme,
+    axes,
+    schemes: axes,
+    names: Object.keys(def.baked.tokens),
+    all: (n) => getOwn(def.deps, n)?.all ?? [],
+    own: (n) => getOwn(def.deps, n)?.own ?? [],
+    value: (n, sel) => getOwn(pickAll(def.baked.tokens, fullAxisChoice(axes, sel)), n),
+    has: (n) => Object.hasOwn(def.baked.tokens, n),
+  };
+  defaultsBlock(lines, defPlan, defPlan.names);
+  blocks(lines, defPlan, (attrs) => [`${wzlAttr('theme', theme)}${attrs},`, `${attrs} {`]);
 
-  for (const plan of others) {
+  for (const [i, plan] of others.entries()) {
+    defaultsBlock(lines, plan, diffed[i].resolved.names);
     const invariant = plan.names.filter((n) => plan.all(n).length === 0);
     const lacks = [...redeclared].filter((n) => !plan.has(n));
     if (invariant.length + lacks.length > 0) {

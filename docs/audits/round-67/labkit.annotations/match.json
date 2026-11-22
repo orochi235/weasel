@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "A mark change made before a reader subscribes is never shown: the version counter only moves inside the listener",
+  "PNG Copy calls `clipboard.write` only after the capture's awaits, so it loses user activation (always on Safari, after ~5 s on Chromium)",
+  "`add` on a target with no known content box throws but leaves a new empty scene behind, which `toJSON` then persists",
+  "A coalesced write that folds into an earlier scene entry does not move the cross-target undo order",
+  "Wheel hand-off treats a scroller sitting at a fractional end position as still scrollable, swallowing the wheel"
+ ],
+ "b": [
+  "An SVG base without a `viewBox` is cropped, not scaled, in an export",
+  "`add` on a target with no known content box leaves an empty scene behind",
+  "`setMeta` writes a legacy mark back unsettled, unlike `update`",
+  "`useAnnotations` misses a mark change made between a consumer's render and its subscription",
+  "A stale text mark is drawn exactly like a fresh one"
+ ]
+}

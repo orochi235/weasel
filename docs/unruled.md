@@ -808,6 +808,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   rather than clamping; they built NaN coordinates or a bare `Z`.
 - Ruled 2026-11-20 (my call, audit round 49): `joinPaths` gives the joined path the `openFill` its parts holding
   an open subpath share; where they disagree it takes the first such part's and warns, since one path holds one rule.
+- 2026-11-22 (my call, audit round 67): `parseSvg` reads one viewport for an outermost `<svg>` with no
+  `viewBox`, for its percentages and its media and container queries: each side it sizes (an `em` side included), a
+  missing one from the `viewBox` aspect. A percentage on a side it leaves unsized still warns and reads its number,
+  where media take 300 × 150. An `em` side reads the root's `font-size` attribute for media, since the cascade
+  reads them, so a stylesheet sizing the root's font moves only its percentages.
 
 - Ruled 2026-11-10 (my call, overnight sweep): `serializeSvg` writes a character XML 1.0 cannot hold (a
   control, U+FFFE, U+FFFF, or half a surrogate pair) as U+FFFD and warns once, where it used to drop it
@@ -1253,6 +1258,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   the theme prefs schema shows one of them, its listed `value`, as the unset value, and pinning what it shows
   changes the reads that fall back to another. Whether the schema shows such a hook with no unset value, or shows
   the per-read values from its description, is open. `check:token-reads` holds every other hook's reads to its value.
+- 2026-11-22 (my call, audit round 67): a `Bar` along a curve draws no `framed` strip and does not `wrap`; it warns
+  when given either rather than drawing a strip along the curve. A `framed="status"` bar there is still a `<footer>`.
 
 ## Diagram, audio, and labkit
 
@@ -1551,7 +1558,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `%uXXXX` per code unit outside `[A-Za-z0-9_.-]` in its placeholder.
 - 2026-11-20 (my call, audit round 50): `provideVariants` handing a `failed` variant a loader of another identity sets
   it `idle` and announces it, so a mounted `useIconVariant` loads from the new one; a new loader for a `loaded` or
-  `loading` variant is kept for no run, since running it would add the variant's tables a second time.
+  `loading` variant is kept for no run, since running it would add the variant's tables a second time. Since audit
+  round 67, a load that fails after its loader was replaced leaves the variant `idle`, not `failed`, so the new one runs.
+- 2026-11-22 (my call, audit round 67): `IconRegistryProvider`'s `variants` is the current set: a new value drops
+  every variant it no longer names, which then reads `unknown`, and releases the tables that variant loaded, as a new
+  `icons` value releases the last one's tables; a load in flight for a dropped variant adds nothing. A bare
+  `provideVariants` still only adds; `{ replace: true }` is the provider's path.
 - Open (icons second property pass, 2026-11-11): the registry and icons-plugin take a table whose namespace, or a
   glyph's name, holds a colon or whitespace, which no `splitIconRef` reads: namespace `a` with glyph `b:c` and
   namespace `a:b` with glyph `c` share the slot `a:b:c` under two owners. Whether such a table is refused.
@@ -3695,3 +3707,19 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `PaintInput` with a mixed or missing value and `kinds` leaving out `solid` shows no
   body under the kind bar; a kind is chosen in the bar. Seeding the first offered kind from the picked color was
   the alternative.
+
+## Audit round sixty-seven (2026-11-22): Badge effects
+
+- 2026-11-22 (the fixer's call): a `bevel2` effect throws a `RangeError` naming it for a `lightFrom` that is not a
+  finite number (`NaN`, `Infinity`, a corner such as `'tl'`), as `bevel`, `sheen`, and `rivets` do for one that is not
+  a corner, where its other params read a non-finite number as the default. Reading it as the default 315° was the
+  alternative.
+- 2026-11-22 (the fixer's call): a `shadow` or `sunbeams` effect draws nothing on an `outline` badge, which has no
+  fill for it to sit behind or light, as `bevel`, `sheen`, and the other drawn effects already did. Casting the shadow
+  of the outline's stroke alone was the alternative.
+## Audit round sixty-seven (2026-11-22): CurveEditor
+
+- 2026-11-22 (the fixer's call): a context menu that opens while a curve layer's drag runs, as a touch long press
+  does after its pointerdown grabbed an anchor, cancels the drag and goes to the layers from the state before it; a
+  right-click in the middle of a mouse drag does the same. Ignoring the menu while a drag runs, which left a long
+  press unable to delete an anchor, was the alternative (`LayeredCurveEditor.tsx`, `onSvgContextMenu`).

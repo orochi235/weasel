@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "`override` registers a glyph without the shape check `add` applies to every table glyph"
+ ],
+ "b": [
+  "A loader provided while its variant is `loading` is never run after that load fails, until a remount",
+  "`override` accepts any value as a glyph, where `add` refuses one that is not a glyph",
+  "A provider's new `variants` value never drops a name the last one had"
+ ]
+}

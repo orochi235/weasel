@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "listWithUnsent turns an `undefined` member's part into `null`, so a list edit can lose an unsendable sibling",
+  "`control: { min, max }` without a `type` silently drops the bounds",
+  "`weaselforge build --out <root>` builds into the vite root itself"
+ ],
+ "b": [
+  "A control with one finite bound and one infinite bound loses both bounds",
+  "configKey gives an array holding `undefined` the same key as one holding `null`",
+  "A leaf's `.dialog()` is silently dropped when its schema crosses to the workshop",
+  "Answer paths for keys containing a dot collide with nested paths"
+ ]
+}

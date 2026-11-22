@@ -38,7 +38,7 @@ function renderEvent(entry: TraceLogEntry): ReactNode {
 
 function renderOutcome(entry: TraceLogEntry): ReactNode {
   if (entry.kind === 'mode') return <><code>{entry.from ?? '∅'}</code> → <code>{entry.to ?? '∅'}</code></>;
-  if (entry.outcome === 'unhandled') return 'unhandled';
+  if (entry.outcome === 'unhandled') return entry.predicted ? 'would not handle' : 'unhandled';
   return entry.fired ? <code>{entry.fired}</code> : 'handled';
 }
 

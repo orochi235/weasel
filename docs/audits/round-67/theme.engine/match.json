@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "A child theme's entry loses to a parent's entry of the same token name in another layer",
+  "An element stamping only `data-wzl-theme` inherits an outer theme's axis-varying tokens",
+  "`bake` lists ramps whose names `derive` drops as unsafe"
+ ],
+ "b": [
+  "Duplicate categorical anchor names: which anchor fills the named step follows palette order, not definition order, contradicting the reported issue",
+  "A pin over a semantic that failed at this selection is never reported untyped",
+  "axisDependencies ignores a component that derive uses wherever a same-named `by` semantic has no value",
+  "fillFromParent fills only the top-level axis a child pin leaves out, not nested ones"
+ ]
+}
