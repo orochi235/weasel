@@ -1250,6 +1250,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   the theme prefs schema shows one of them, its listed `value`, as the unset value, and pinning what it shows
   changes the reads that fall back to another. Whether the schema shows such a hook with no unset value, or shows
   the per-read values from its description, is open. `check:token-reads` holds every other hook's reads to its value.
+- 2026-11-22 (my call, audit round 67): a `Bar` along a curve draws no `framed` strip and does not `wrap`; it warns
+  when given either rather than drawing a strip along the curve. A `framed="status"` bar there is still a `<footer>`.
 
 ## Diagram, audio, and labkit
 

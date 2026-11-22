@@ -40,7 +40,8 @@ export interface BarProps extends ControlSizeProps, HoldProps {
    * among other things; `'segmented'` a compact one with the cells almost touching; `'band'` a strip the width of
    * its host, ruled off below, as a toolbar along a window's top; and `'status'` the readout strip along an editor's
    * foot, in a numeric face and ruled off above. A status strip is a `<footer>`, not a toolbar: its readouts change on
-   * every pointer move, so it is no live region either.
+   * every pointer move, so it is no live region either. Along a curve no strip is drawn, though a status bar is still
+   * a footer.
    */
   framed?: boolean | 'segmented' | 'band' | 'status';
   /** A divider between every two neighboring cells, none beside a spacer. */
@@ -48,7 +49,7 @@ export interface BarProps extends ControlSizeProps, HoldProps {
   /** Arrow keys move focus between the buttons on the bar, leaving one in the tab order. Off by default: a bar of
    *  number boxes and selects has to leave the arrow keys to them. */
   roving?: boolean;
-  /** Lets the cells run onto a second line rather than overflow. */
+  /** Lets the cells run onto a second line rather than overflow. A bar along a curve keeps to one. */
   wrap?: boolean;
   /** Every `FitLabel` on the line shortens together, a step at a time, before the strip scrolls. */
   fit?: boolean;

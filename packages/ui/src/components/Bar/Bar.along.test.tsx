@@ -364,4 +364,13 @@ describe('a fitted bar along a curve', () => {
     render(<Along shape={shape}><Bar label="Tools" fit>{cells(3)}</Bar></Along>);
     expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['Long0', 'Long1', 'Long2']);
   });
+
+  test('a status strip on a curve is still a footer, and a strip or wrap it cannot draw there warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
+    const arc = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 });
+    const { container } = render(<Along shape={arc}><Bar framed="status" wrap><span>x</span></Bar></Along>);
+    expect(container.querySelector('footer')).not.toBeNull();
+    expect(warn.mock.calls.map(([m]) => String(m)).join('\n')).toMatch(/framed.*wrap|wrap.*framed/s);
+  });
 });
