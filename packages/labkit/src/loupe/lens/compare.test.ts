@@ -136,6 +136,14 @@ describe('the seam', () => {
     expect(seamHit(api.scene, preview, seamX, 150, ONE)).toEqual({ lensId });
   });
 
+  it('gives a press on a reticle over the seam to the reticle, not the seam', () => {
+    const api = lensApiFixture();
+    const lensId = api.add({ x: 300, y: 150 }) as string;
+    api.apply(setLensOps(api.scene, lensId, { compare: 'b', view: 'split' }));
+    expect(seamHit(api.scene, undefined, 300, 150, ONE)).toBeNull();
+    expect(seamHit(api.scene, undefined, 300, 240, ONE)).toEqual({ lensId });
+  });
+
   it('previews a drag without writing to the scene, and commits one data op on release', () => {
     const { api, lensId, applied } = splitLens();
     const preview = createSeamPreview();

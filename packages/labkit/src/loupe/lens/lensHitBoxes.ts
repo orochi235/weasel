@@ -29,6 +29,31 @@ export function interiorOf(rect: LoupeRect, grown: boolean): LoupeRect {
   };
 }
 
+/** The strip SEAM_GRAB either side of a seam at `seamX`, as tall as the interior is there: a round lens's seam is
+ *  clipped to the circle, so the strip stops where the lens does. */
+function seamBox(interior: LoupeRect, seamX: number, round: boolean): LoupeRect {
+  const x = seamX - SEAM_GRAB;
+  const width = 2 * SEAM_GRAB;
+  if (!round) return { x, y: interior.y, width, height: interior.height };
+  const rx = interior.width / 2;
+  const ry = interior.height / 2;
+  const cx = interior.x + rx;
+  const dx = Math.max(0, Math.abs(cx - seamX) - SEAM_GRAB);
+  const half = rx > 0 ? ry * Math.sqrt(Math.max(0, 1 - (dx / rx) ** 2)) : 0;
+  return { x, y: interior.y + ry - half, width, height: 2 * half };
+}
+
+/** Whether a box takes a press at `(x, y)`, in its own px: a round box only inside its ellipse, as it is drawn. */
+export function boxContains(box: LensHitBox, x: number, y: number): boolean {
+  const { rect } = box;
+  if (x < rect.x || x > rect.x + rect.width || y < rect.y || y > rect.y + rect.height) return false;
+  if (!box.round) return true;
+  const rx = rect.width / 2;
+  const ry = rect.height / 2;
+  if (rx <= 0 || ry <= 0) return false;
+  return ((x - rect.x - rx) / rx) ** 2 + ((y - rect.y - ry) / ry) ** 2 <= 1;
+}
+
 const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /** Every body and reticle's box, through `view`, in paint order, with a split
@@ -66,13 +91,8 @@ export function hitBoxesOf<C>(
     if (body && showsSeam(data)) {
       const interior = interiorOf(rect, grown);
       const { seamX } = splitRects(interior, seamOf(data, preview, data.lensId));
-      const seam = {
-        x: seamX - SEAM_GRAB,
-        y: interior.y,
-        width: 2 * SEAM_GRAB,
-        height: interior.height,
-      };
-      out.push({ nodeId: node.id, role: 'lens-seam', rect: seam, round: false });
+      const strip = seamBox(interior, seamX, false);
+      out.push({ nodeId: node.id, role: 'lens-seam', rect: strip, round: false });
     }
   }
   return out;
