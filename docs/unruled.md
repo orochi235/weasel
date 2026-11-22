@@ -3815,3 +3815,9 @@ Calls the lanes made without a ruling:
   `irregularity` adds to it alike, so a beam jittered past 90° no longer leans the other way and `angle: 90` draws
   thin near-horizontal beams rather than an infinite shear. Reading an angle past 90° as its equivalent mod 180° was
   the alternative.
+
+## Audit round seventy-two (2026-11-22): tiles
+
+- 2026-11-22 (the fixer's call): `planeFloor` throws a `RangeError` for a `floorTiles` under 2 (or not a number), and
+  so does a tiled layer given `floorTiles: 1`: no level holds a box straddling a tile edge in one tile a side. There is
+  no override. Keeping 1 and documenting the bound as `max(floorTiles, 2)` was the alternative.

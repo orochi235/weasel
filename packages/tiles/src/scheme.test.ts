@@ -19,3 +19,20 @@ describe('planeFloor tile size', () => {
     expect(planeFloor(createPlaneScheme(512), 512, [0, 0, 4000, 3000]).length).toBeGreaterThan(0);
   });
 });
+
+describe('planeFloor floorTiles', () => {
+  const scheme = createPlaneScheme(256);
+
+  it('throws for fewer than two tiles a side, which no level can promise a box straddling an edge', () => {
+    expect(() => planeFloor(scheme, 256, [1900, 1900, 2500, 2500], 1)).toThrow(RangeError);
+    expect(() => planeFloor(scheme, 256, [0, 0, 100, 100], Number.NaN)).toThrow(RangeError);
+  });
+
+  it('holds a box straddling tile edges in at most floorTiles a side', () => {
+    for (const n of [2, 3, 4]) {
+      const keys = planeFloor(scheme, 256, [1900, 1900, 2500, 2500], n);
+      expect(new Set(keys.map((k) => k.x)).size).toBeLessThanOrEqual(n);
+      expect(new Set(keys.map((k) => k.y)).size).toBeLessThanOrEqual(n);
+    }
+  });
+});
