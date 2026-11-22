@@ -10,6 +10,15 @@ class Color {
 }
 
 describe('isPortSafe', () => {
+  it('takes an array or a plain object made in another realm', async () => {
+    const { runInNewContext } = await import('node:vm');
+    const [list, record] = runInNewContext('[[1, 2], { a: 1 }]') as [unknown[], object];
+    expect(isPortSafe(list)).toBe(true);
+    expect(isPortSafe(record)).toBe(true);
+    class Items extends Array {}
+    expect(isPortSafe(Items.from([1]))).toBe(false);
+  });
+
   it('refuses a value cloned whole that carries a field of its own, which a clone drops', () => {
     expect(isPortSafe(new Date(0))).toBe(true);
     expect(isPortSafe(new Float32Array([1, 2]))).toBe(true);

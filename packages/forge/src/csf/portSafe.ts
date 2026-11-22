@@ -1,5 +1,5 @@
 import { isPlainObject } from '@weasel-js/core';
-import { setOwn } from '@weasel-js/registry';
+import { isPlainPrototype, setOwn } from '@weasel-js/registry';
 import { sameKnob } from '../route/url';
 
 const g = globalThis as Record<string, unknown>;
@@ -24,6 +24,9 @@ const CLONED_NAMES = [
 const CLONED_WHOLE = new Set<unknown>(
   CLONED_NAMES.map((name) => (g[name] as { prototype?: object } | undefined)?.prototype).filter(Boolean),
 );
+
+/** Whether `proto` is some realm's `Array.prototype`, which is itself an array where a subclass's prototype is not. */
+const isArrayPrototype = (proto: object | null): boolean => proto !== null && Array.isArray(proto);
 
 /** Own keys a clone keeps: enumerable string keys, plus an array's `length`. */
 const hasOnlyClonedKeys = (v: object): boolean =>
@@ -70,7 +73,7 @@ export function isPortSafe(value: unknown): boolean {
     if (proto === Map.prototype)
       return hasOnlyClonedKeys(v) && [...(v as Map<unknown, unknown>)].every(([key, member]) => safe(key) && safe(member));
     if (proto === Set.prototype) return hasOnlyClonedKeys(v) && [...(v as Set<unknown>)].every(safe);
-    if (proto !== Array.prototype && proto !== Object.prototype && proto !== null) return false;
+    if (!isArrayPrototype(proto) && !isPlainPrototype(proto)) return false;
     return hasOnlyClonedKeys(v) && Object.values(v).every(safe);
   };
   try {
@@ -83,7 +86,7 @@ export function isPortSafe(value: unknown): boolean {
 /** A plain object or array whose members can be split: React elements are plain objects, but whole, and so is one
  *  whose members each cross yet which does not, a Proxy. */
 const splittable = (v: unknown): v is Record<string, unknown> | unknown[] =>
-  (Array.isArray(v) ? Object.getPrototypeOf(v) === Array.prototype : isPlainObject(v) && !('$$typeof' in v)) &&
+  (Array.isArray(v) ? isArrayPrototype(Object.getPrototypeOf(v)) : isPlainObject(v) && !('$$typeof' in v)) &&
   hasOnlyClonedKeys(v as object) &&
   !(Object.values(v as object).every(isPortSafe) && !clones(v));
 
