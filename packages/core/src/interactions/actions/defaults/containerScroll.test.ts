@@ -77,6 +77,15 @@ describe('containerScrollAction', () => {
     expect(scene.childrenOf(C).map((id) => scene.get(id)!.pose)).toEqual(stored);
   });
 
+  it('steps an offset left past its range back by the wheel, and never further out', () => {
+    const { scene, deps } = setup();
+    scene.scroll.set(C, { x: 0, y: 180 });
+    wheel(deps, { x: 120, y: 150 }, -10);
+    expect(scene.scroll.get(C)).toEqual({ x: 0, y: 175 });
+    expect(wheel(deps, { x: 120, y: 150 }, 10)).toBe('pass');
+    expect(scene.scroll.get(C)).toEqual({ x: 0, y: 175 });
+  });
+
   it('leaves an axis with nowhere to go where it is, and passes the wheel on', () => {
     const { scene, deps } = setup();
     expect(wheel(deps, { x: 120, y: 150 }, 60, true)).toBe('pass');

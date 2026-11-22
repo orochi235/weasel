@@ -4,7 +4,7 @@
  * says how far; the offset goes to `scene.scroll`, which moves what the view
  * shows and leaves the document where it is.
  */
-import { clamp, pathContainsPoint, type Rect, rectContainsPoint } from '@weasel-js/geom';
+import { pathContainsPoint, type Rect, rectContainsPoint } from '@weasel-js/geom';
 import { ownClipOf } from 'canvas/ownClip';
 import { defineAction, type ActionDeps } from '@weasel-js/routing';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -134,6 +134,15 @@ function worldPerScrollUnit(scene: AnyScene, pose: unknown): { x: number; y: num
   return { x: length({ x: 1, y: 0 }), y: length({ x: 0, y: 1 }) };
 }
 
+/** `from` moved by `d`, clamped to `range` but never past `from` in `d`'s
+ *  direction, so an offset left outside a range that shrank steps back by the
+ *  wheel rather than jumping to the range's edge. */
+function stepToward(from: number, d: number, [lo, hi]: readonly [number, number]): number {
+  if (d > 0) return Math.min(from + d, Math.max(hi, from));
+  if (d < 0) return Math.max(from + d, Math.min(lo, from));
+  return from;
+}
+
 function sceneOf(deps: ActionDeps | undefined): AnyScene | undefined {
   return (deps as { scene?: AnyScene } | undefined)?.scene;
 }
@@ -178,8 +187,8 @@ export const containerScrollAction = defineAction({
         const unit = worldPerScrollUnit(scene, hit.pose);
         const to = {
           ...from,
-          x: clamp(from.x + by.x / unit.x, ...hit.range.x),
-          y: clamp(from.y + by.y / unit.y, ...hit.range.y),
+          x: stepToward(from.x, by.x / unit.x, hit.range.x),
+          y: stepToward(from.y, by.y / unit.y, hit.range.y),
         };
         if (to.x === from.x && to.y === from.y) continue;
         scene.scroll.set(hit.id, to);
