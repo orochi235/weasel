@@ -112,26 +112,33 @@ export function enterHold(
  *  `s` shows stays where it was. The caller shows what is left. */
 export function leaveHold(ctx: AnimationContext, s: TargetState, layer: HoldLayer, covers: Uint8Array | null, commit: boolean): void {
   const { store, row } = s.holds!;
-  if (commit && !s.discard) {
-    store.refold(row);
-    const committed = s.axes.to(s.get());
-    const f = both(s, layer, committed);
-    absorb(s, settle(s, f, covers, committed));
-    dim(s, f.all.total, f.rest.total);
-  }
-  store.part(layer, row);
-  ctx.targets.holding(store, -1);
-  s.held -= 1;
-  if (s.held === 0) {
-    s.holds = null;
-    // Nothing stands in front of the committed value now, so it takes what waited beside it.
-    const beside = s.beside;
-    if (beside) {
-      setBeside(s, null);
-      absorb(s, beside);
+  // A setter that throws as it commits still takes the hold off the target.
+  try {
+    try {
+      if (commit && !s.discard) {
+        store.refold(row);
+        const committed = s.axes.to(s.get());
+        const f = both(s, layer, committed);
+        absorb(s, settle(s, f, covers, committed));
+        dim(s, f.all.total, f.rest.total);
+      }
+    } finally {
+      store.part(layer, row);
+      ctx.targets.holding(store, -1);
+      s.held -= 1;
+      if (s.held === 0) s.holds = null;
     }
+    if (s.held === 0) {
+      // Nothing stands in front of the committed value now, so it takes what waited beside it.
+      const beside = s.beside;
+      if (beside) {
+        setBeside(s, null);
+        absorb(s, beside);
+      }
+    }
+  } finally {
+    ctx.targets.detach(s);
   }
-  ctx.targets.detach(s);
 }
 
 /** Throws where a hold of `value` over `axes` on `s` would be refused as it opens; answers the

@@ -1,7 +1,7 @@
 import { stateOf, type Behind, type TargetState } from '../target';
 import type { AnimationKind, PhysicsHandle, TargetPhysicsOptions } from '../types';
 import type { AnimationContext, AnimationSeed } from './context';
-import { absorb, axesFor, comeOut, commitOffset, commitOver, goBehind, minus, norm, plus, takeUp, times, travel } from './offsets';
+import { absorb, axesFor, comeOut, commitOffset, commitOver, leaveTarget, goBehind, minus, norm, plus, takeUp, times, travel } from './offsets';
 import { resolveSpringConstants } from './physicsAnimation';
 import { earliestRest } from './springRest';
 import { createSpringVoices, type SpringVoices, type SpringVoicesOptions } from './springVoices';
@@ -114,9 +114,7 @@ export function startOffsetPhysics<T>(
     left = true;
     const moved = voices.moved();
     const shown = comeOut(s, behind, moved);
-    if (commit) commitOffset(s, voices.own().value, moved, shown);
-    voices.stop();
-    ctx.targets.detach(s as never);
+    leaveTarget(ctx, s as never, commit ? () => commitOffset(s, voices.own().value, moved, shown) : null, () => voices.stop());
   };
   /** A coast commits where it stopped, and so does one played back to its start; a spring
    *  drops what is left under the threshold. */

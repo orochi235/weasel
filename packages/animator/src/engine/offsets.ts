@@ -155,6 +155,17 @@ export function commitOver(ctx: AnimationContext, s: TargetState, value: unknown
   if (s.beside) setBeside(s, null);
 }
 
+/** Takes an animation off `s`: `commit` writes where it stopped, and a setter that throws there
+ *  still stops its voices and leaves the target to whatever else moves it. */
+export function leaveTarget(ctx: AnimationContext, s: TargetState, commit: (() => void) | null, stop: () => void): void {
+  try {
+    commit?.();
+  } finally {
+    stop();
+    ctx.targets.detach(s);
+  }
+}
+
 /** The targets one animator is moving. */
 export interface TargetBook {
   /** Throws where another animator is moving `s`. */

@@ -107,3 +107,25 @@ describe('a hold refused for its own input', () => {
     expect(a.animator.live()).toHaveLength(1);
   });
 });
+
+describe('an animation on a target whose setter throws as it is canceled', () => {
+  it('still leaves the target to whatever else moves it', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const a = hosted();
+    const other = hosted();
+    const { target, box } = numberTarget();
+    a.tick(0);
+    const handles = [
+      a.animator.tween({ target, to: 10, ms: 100 }),
+      a.animator.spring({ target, to: 20 }),
+      a.animator.hold({ target, value: 5 }),
+    ];
+    a.tick(20);
+    box.bad = true;
+    for (const h of handles) expect(() => h.cancel()).toThrow('bad set');
+    box.bad = false;
+    expect(target.active).toBe(false);
+    expect(() => other.animator.tween({ target, to: 5, ms: 100 })).not.toThrow();
+    vi.restoreAllMocks();
+  });
+});

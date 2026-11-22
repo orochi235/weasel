@@ -3,7 +3,7 @@ import { stateOf } from '../target';
 import type { AnimationHandle, TargetTweenOptions } from '../types';
 import { voiceMs } from './tweenAnimation';
 import type { AnimationContext, AnimationSeed } from './context';
-import { axesFor, bump, bumpOn, comeOut, commitOffset, commitOver, goBehind, minus, plus, runsOn, seat, shareBehind, takeUp, times, travel } from './offsets';
+import { axesFor, bump, bumpOn, comeOut, commitOffset, commitOver, goBehind, leaveTarget, minus, plus, runsOn, seat, shareBehind, takeUp, times, travel } from './offsets';
 
 /** A tween on a target: its destination is committed as it starts, and its voice is what is
  *  left to travel. Given `interrupted`, what holds its key was interrupted already, by that id,
@@ -61,13 +61,11 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
     const value = at ?? own?.value;
     const moved = value ? times(value, share) : [];
     const shown = comeOut(s, behind, moved);
-    if (own) {
-      if (commit) commitOffset(s, value!, moved, shown);
+    leaveTarget(ctx, s as never, own && commit ? () => commitOffset(s, value!, moved, shown) : null, () => {
       // Voices among the target's own are in its `slot` until the next frame reads it.
-      if (!behind.move) bump(s as never, own.value, -1);
-    }
-    codec.stop(id);
-    ctx.targets.detach(s as never);
+      if (own && !behind.move) bump(s as never, own.value, -1);
+      codec.stop(id);
+    });
   };
   /** Ends it at its destination, or played backward, at its start. */
   const end = (atStart: boolean): true => {
