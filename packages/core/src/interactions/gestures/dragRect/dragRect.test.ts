@@ -187,6 +187,24 @@ describe('useDragRect', () => {
   });
 });
 
+describe('useDragRect — isSubThreshold', () => {
+  it('answers for the corners onEnd moved', () => {
+    const seen: boolean[] = [];
+    const { result } = renderHook(() => useDragRect({
+      minBounds: { width: 5, height: 5 },
+      onEnd: (ctx) => {
+        seen.push(ctx.isSubThreshold);
+        ctx.setCurrent({ x: 10, y: 10 });
+        seen.push(ctx.isSubThreshold);
+      },
+    }));
+    act(() => result.current.start(0, 0, NO_MODS));
+    act(() => { result.current.move(3, 3, NO_MODS); });
+    act(() => result.current.end());
+    expect(seen).toEqual([true, false]);
+  });
+});
+
 describe('useDragRect — chained from onEnd', () => {
   it('keeps the overlay of a gesture its onEnd starts', () => {
     const ref: { c: ReturnType<typeof useDragRect> | null } = { c: null };

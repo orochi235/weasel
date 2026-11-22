@@ -31,10 +31,10 @@ export interface DragRectCtx<TScratch = unknown> {
 /** The context handed to `onEnd`, adding whether the final box is too small
  *  to be meaningful. */
 export interface DragRectEndCtx<TScratch = unknown> extends DragRectCtx<TScratch> {
-  /** True if the end-time bounds are at or below `minBounds` on either axis.
-   *  Present-tense state check — distinct from the base's retrospective
+  /** True if the bounds are at or below `minBounds` on either axis, read
+   *  after any `setStart`/`setCurrent` from `onEnd`. Present-tense state check — distinct from the base's retrospective
    *  `wasSubThreshold`. Computed by this wrapper, not by `useDragGesture`. */
-  isSubThreshold: boolean;
+  readonly isSubThreshold: boolean;
 }
 
 /** Options for `useDragRect`. */
@@ -144,8 +144,8 @@ export function useDragRect<TScratch = unknown>(
       const opts = optsRef.current;
       const min = opts.minBounds ?? { width: 0, height: 0 };
       const b = boundsFrom(ctx.scratch.start, ctx.scratch.current);
-      const isSubThreshold = b.width <= min.width || b.height <= min.height;
       const s = ctx.scratch;
+      const below = (r: DragRectBounds) => r.width <= min.width || r.height <= min.height;
       const endCtx: DragRectEndCtx<TScratch> = {
         get start() { return s.start; },
         get current() { return s.current; },
@@ -154,9 +154,9 @@ export function useDragRect<TScratch = unknown>(
         get scratch() { return s.consumer; },
         setStart(p) { s.start = p; writeOverlay(); },
         setCurrent(p) { s.current = p; writeOverlay(); },
-        isSubThreshold,
+        get isSubThreshold() { return below(boundsFrom(s.start, s.current)); },
       };
-      dlog('drag-rect', 'end', { bounds: b, isSubThreshold });
+      dlog('drag-rect', 'end', { bounds: b, isSubThreshold: below(b) });
       let r: boolean | void;
       try {
         r = opts.onEnd?.(endCtx);
