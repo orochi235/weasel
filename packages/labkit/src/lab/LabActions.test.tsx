@@ -223,8 +223,8 @@ describe('a lab’s actions registry', () => {
     const zoom = (registry as ActionsRegistry | null)?.list().find((a) => a.id === 'lab.zoom');
     expect(zoom?.variants?.map((v) => v.key)).toEqual(['in', 'out', 'reset']);
     expect(zoom?.variants?.map((v) => v.label)).toEqual(['Zoom in', 'Zoom out', 'Actual size']);
-    const bindings = zoom?.defaultBinding as { spec: { key: string } }[] | undefined;
+    const bindings = zoom?.defaultBinding as { spec: { key: string | string[] } }[] | undefined;
     const keys = bindings?.map((b) => b.spec.key);
-    expect(keys).toEqual(['=', '-', '0']);
+    expect(keys).toEqual([['=', '+'], '-', '0']);
   });
 });
