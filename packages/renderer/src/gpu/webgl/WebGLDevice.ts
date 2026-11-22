@@ -23,7 +23,10 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
 
   constructor(readonly gl: WebGL2RenderingContext) {
     this.cache = new GlCache(gl);
-    const parallel = gl.getExtension('KHR_parallel_shader_compile') as { COMPLETION_STATUS_KHR: number } | null;
+    // A stub that cannot answer compiles in the foreground.
+    const parallel = typeof gl.getExtension === 'function'
+      ? gl.getExtension('KHR_parallel_shader_compile') as { COMPLETION_STATUS_KHR: number } | null
+      : null;
     this.completionStatus = typeof parallel?.COMPLETION_STATUS_KHR === 'number' ? parallel.COMPLETION_STATUS_KHR : null;
     this.compilesInBackground = this.completionStatus !== null;
     this.limits = {

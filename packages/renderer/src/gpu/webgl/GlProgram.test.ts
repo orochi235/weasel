@@ -100,6 +100,12 @@ describe('GlProgram compiling in the background', () => {
     expect(named('getUniformLocation').length).toBeGreaterThan(0);
   });
 
+  it('flushes after the link, so the compile starts before the next call that syncs', () => {
+    new GlProgram(host(), VERT_SRC, FRAG_SRC);
+    const link = recorder.calls.findIndex((c) => c.name === 'linkProgram');
+    expect(recorder.calls.findIndex((c, i) => i > link && c.name === 'flush')).toBeGreaterThan(link);
+  });
+
   it('reports ready only once the driver says the link is complete', () => {
     const prog = new GlProgram(host(), VERT_SRC, FRAG_SRC);
     prog.lookupUniforms(PATH_FILL_UNIFORMS);

@@ -73,7 +73,9 @@ export class GlProgram implements GpuProgram {
     this.stages = [vs, fs];
     this.writesIds = rewritten !== null;
     if (rewritten) this.lookupUniforms([ID_UNIFORM]);
+    // Unflushed, the compile waits in the client until the next call that syncs, usually the first draw.
     if (host.completionStatus === null) this.settle();
+    else gl.flush();
   }
 
   private compile(type: number, source: string): WebGLShader {

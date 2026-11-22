@@ -70,7 +70,7 @@ const BATCH_ARRAYS: ReadonlyMap<string, { type: string; size: number }> = new Ma
 ]);
 
 /** `spec` compiled on `gpu`, every name it is written through looked up. */
-function buildProgram(gpu: GpuDevice, spec: ProgramSpec): ShaderProgram {
+export function buildProgram(gpu: GpuDevice, spec: ProgramSpec): ShaderProgram {
   const { vert, frag, wgsl, uniforms, attributes, arrays, locations } = spec;
   const program = gpu.createProgram({ glsl: { vert, frag }, wgsl }, { attributes: locations });
   program.lookupUniforms(uniforms);
@@ -87,7 +87,7 @@ function buildProgram(gpu: GpuDevice, spec: ProgramSpec): ShaderProgram {
 export class LazyProgram {
   private program: ShaderProgram | null = null;
 
-  constructor(private readonly gpu: GpuDevice, private readonly spec: ProgramSpec) {}
+  constructor(private readonly gpu: GpuDevice, readonly spec: ProgramSpec) {}
 
   get(): ShaderProgram {
     this.program ??= buildProgram(this.gpu, this.spec);
@@ -165,10 +165,19 @@ export const GLYPH_PAINT_SPECS: Readonly<Record<GlyphPaintKind, ProgramSpec>> = 
   },
 };
 
+const BATCH_FILL_SPEC = batchSpec(BATCH_VERT_SRC, BATCH_FRAG_SRC, { matrices: false, hulls: false, area: false });
+/** The batch's builds with the glyph taps, indexed by `matrices + 2 * hulls`. */
+const BATCH_AREA_SPECS = [false, true].flatMap((hulls) => [false, true].map((matrices) =>
+  batchSpec(BATCH_AREA_VERT_SRC, batchAreaFragSrc(matrices, hulls), { matrices, hulls, area: true })));
+
+/** What a first frame of shapes and text draws with: the batch, its build for small text, and the fill a
+ *  path the batch does not take draws with. A renderer starts these at construction, and `warmPrograms` sooner. */
+export const FIRST_FRAME_SPECS: readonly ProgramSpec[] = [BATCH_FILL_SPEC, BATCH_AREA_SPECS[0], PATH_FILL_SPEC];
+
 /** Built eagerly: nearly every frame draws with it, and `DrawBatch` binds its
  *  attributes at construction. */
 export function createBatchFill(gpu: GpuDevice): ShaderProgram {
-  return buildProgram(gpu, batchSpec(BATCH_VERT_SRC, BATCH_FRAG_SRC, { matrices: false, hulls: false, area: false }));
+  return buildProgram(gpu, BATCH_FILL_SPEC);
 }
 
 /** The batch program's other builds, which a run picks by what it holds, and
@@ -221,8 +230,7 @@ export class BatchVariantPrograms implements BatchVariants {
     this.hull = new LazyProgram(gpu, BATCH_FILL_HULL_SPEC);
     this.matricesHull = new LazyProgram(gpu, BATCH_FILL_MATRICES_HULL_SPEC);
     this.trimmed = new LazyProgram(gpu, TRIMMED_RIBBON_SPEC);
-    this.area = [false, true].flatMap((hulls) => [false, true].map((matrices) => new LazyProgram(gpu,
-      batchSpec(BATCH_AREA_VERT_SRC, batchAreaFragSrc(matrices, hulls), { matrices, hulls, area: true }))));
+    this.area = BATCH_AREA_SPECS.map((spec) => new LazyProgram(gpu, spec));
   }
 
   get(matrices: boolean, hulls: boolean, area = false): ShaderProgram {
@@ -233,11 +241,6 @@ export class BatchVariantPrograms implements BatchVariants {
 
   trimmedRibbon(): ShaderProgram {
     return this.trimmed.get();
-  }
-
-  /** Start the build a run of text draws with, with no hull or color matrices, without waiting for it. */
-  startText(): void {
-    this.area[0].get();
   }
 
   lazy(): LazyProgram[] {

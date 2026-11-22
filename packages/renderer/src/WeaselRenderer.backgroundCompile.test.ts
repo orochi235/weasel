@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { rectPath } from '@weasel-js/geom';
 import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
+import { FIRST_FRAME_SPECS } from './shaders/builtinPrograms';
 
 const COMPLETION_STATUS_KHR = 0x91b1;
 const LINK_STATUS = 0x8b82;
@@ -34,9 +35,9 @@ describe('WeaselRenderer where programs compile in the background', () => {
   });
   const linkWaits = () => ctx.recorder.calls.filter((c) => c.name === 'getProgramParameter' && c.args[1] === LINK_STATUS);
 
-  it('starts the batch program and its text build at construction without waiting on either', () => {
+  it('starts every first-frame program at construction without waiting on any', () => {
     new WeaselRenderer({ gl: ctx.gl, width: 100, height: 100, dpr: 1 });
-    expect(ctx.recorder.calls.filter((c) => c.name === 'linkProgram')).toHaveLength(2);
+    expect(ctx.recorder.calls.filter((c) => c.name === 'linkProgram')).toHaveLength(FIRST_FRAME_SPECS.length);
     expect(linkWaits()).toHaveLength(0);
   });
 
