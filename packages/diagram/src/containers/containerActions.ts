@@ -58,9 +58,13 @@ export interface LaneResize {
  *  it to find. */
 export function commitLaneResizeToScene(resize: LaneResize, ctx: InvocationCtx): void {
   const scene = ctx.deps.scene as AnyScene | undefined;
-  const pool = scene === undefined ? null : poolLanesOf(scene, resize.poolId);
+  if (scene !== undefined) writeLaneResize(scene, resize);
+}
+
+function writeLaneResize(scene: AnyScene, resize: LaneResize): void {
+  const pool = poolLanesOf(scene, resize.poolId);
   const index = pool?.lanes.findIndex((l) => l.id === resize.laneId) ?? -1;
-  if (scene === undefined || pool === null || index < 0) return;
+  if (pool === null || index < 0) return;
   const frame = laneResizeFrame(scene, pool, index, resize.size);
   scene.batch('Resize lane', () => {
     for (const [id, pose] of frame) scene.setPose(id as NodeId, pose);
@@ -135,12 +139,13 @@ export function laneResizeFrame(scene: AnyScene, pool: PoolLanes, index: number,
 
 /** Options for the container actions. */
 export interface LaneActionOptions extends LaneLayerOptions {
+  /** The scene the lane layer draws, the actions check and preview against, and the default commits write. */
   scene: AnyScene;
   /** The selected ids, which Release members reads. */
   selected?: () => readonly string[];
-  /** Defaults to {@link commitLaneResizeToScene}. */
+  /** Defaults to writing what {@link commitLaneResizeToScene} writes, to `scene`. */
   commitResize?: (resize: LaneResize, ctx: InvocationCtx) => void;
-  /** Defaults to `addLane` on `deps.scene`, at the end of the stack. */
+  /** Defaults to `addLane` on `scene`, at the end of the stack. */
   commitAddLane?: (poolId: string, ctx: InvocationCtx) => void;
   /** The lane bodies the default add-lane commit styles a new lane by, in turn by its place, in a scene with no
    *  diagram theme; pass `containerBuild`'s `laneStyles`. Absent, a new lane takes `diagramScene`'s node style. */
@@ -151,7 +156,7 @@ export interface LaneActionOptions extends LaneLayerOptions {
 
 /** The `diagram.resizeLane` action: an ongoing drag moving one lane's far boundary. */
 export function createLaneResizeAction(opts: LaneActionOptions): Action {
-  const commit = opts.commitResize ?? commitLaneResizeToScene;
+  const commit = opts.commitResize ?? ((resize: LaneResize) => writeLaneResize(opts.scene, resize));
   return {
     id: RESIZE_LANE_ACTION_ID,
     label: 'Resize lane',
@@ -200,9 +205,8 @@ const NO_MODIFIERS = { alt: false, shift: false, meta: false, ctrl: false };
  *  boundary is not its own, nor one where the add would write a locked node,
  *  and it passes those on. */
 export function createAddLaneAction(opts: LaneActionOptions): Action {
-  const commit = opts.commitAddLane ?? ((poolId: string, ctx: InvocationCtx) => {
-    const scene = ctx.deps.scene as AnyScene | undefined;
-    if (scene === undefined) return;
+  const commit = opts.commitAddLane ?? ((poolId: string) => {
+    const { scene } = opts;
     const themed = scene.doc.get(DIAGRAM_THEME_KEY) !== undefined;
     const style = themed ? undefined : laneBodyStyle(opts.laneStyles?.bodies ?? [], lanesOf(scene, poolId).length);
     addLane(scene, poolId, undefined, style);
