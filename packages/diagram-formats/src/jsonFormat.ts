@@ -38,6 +38,12 @@ function pageProblem(page: Record<string, unknown>, kind: PageKind): string | nu
   if (kind === 'graph') {
     const d = data as Record<string, unknown>;
     if (!Array.isArray(d.nodes) || !Array.isArray(d.edges)) return `${label}whose graph data has no nodes and edges lists`;
+    if (!d.nodes.every(hasId)) return `${label}with a node that has no string id`;
+    if (!d.edges.every(isEdge)) return `${label}with an edge that has no string from and to`;
+    for (const key of ['clusters', 'containers'] as const) {
+      const list = d[key];
+      if (list !== undefined && !(Array.isArray(list) && list.every(hasId))) return `${label}whose ${key} is not a list of items with string ids`;
+    }
   }
   return null;
 }
@@ -45,7 +51,8 @@ function pageProblem(page: Record<string, unknown>, kind: PageKind): string | nu
 function read(text: string): ImportResult {
   const json = parsed(text);
   if (!isDiagramJson(json)) throw new Error('Not a weasel diagram document');
-  if (typeof json.version !== 'number' || json.version > VERSION) {
+  if (typeof json.version !== 'number') throw new Error(`A weasel diagram document with no numeric version (${JSON.stringify(json.version) ?? 'none'})`);
+  if (json.version > VERSION) {
     throw new Error(`A weasel diagram document of version ${String(json.version)}, newer than this reader's ${VERSION}`);
   }
   if (!Array.isArray(json.pages)) throw new Error('A weasel diagram document with no pages list');
@@ -80,6 +87,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 
 const isEdge = (value: unknown): boolean => isRecord(value) && typeof value.from === 'string' && typeof value.to === 'string';
+
+const hasId = (value: unknown): boolean => isRecord(value) && typeof value.id === 'string';
 
 /** `record` with `from` renamed to `to`, or `record` itself when it has no `from`. */
 function renamed(record: Record<string, unknown>, from: string, to: string): Record<string, unknown> {

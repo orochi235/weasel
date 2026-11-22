@@ -116,11 +116,12 @@ export function documentFromScene<TData, TLayer extends string>(
   }
 
   const crossPageEdges: DataEdge[] = [];
+  const holdsGraph = (page: PlacedPage) => !plots.has(page.id) && buckets.get(page.id)!.sequence === undefined;
   for (const node of edges) {
     const [from, to] = Array.isArray(node.dependsOn) ? node.dependsOn : [];
     const fromPage = itemPage.get(from ?? '');
     const toPage = itemPage.get(to ?? '');
-    if (fromPage === undefined || toPage === undefined) continue;
+    if (fromPage === undefined || toPage === undefined || !holdsGraph(fromPage) || !holdsGraph(toPage)) continue;
     const [fromUnder, toUnder] = [onPage(from!), onPage(to!)];
     const split = fromUnder !== null && toUnder !== null && fromUnder !== toUnder;
     const read = (page: PlacedPage | { x: number; y: number } | null) =>

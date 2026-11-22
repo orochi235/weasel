@@ -29,3 +29,12 @@ describe('DIAGRAM_DOT', () => {
     expect(DIAGRAM_DOT.detect('digraph{ a }')).toBe(true);
   });
 });
+
+describe('DIAGRAM_DOT header detection', () => {
+  it('recognizes a header whose tokens only a comment separates, and a quoted id that continues a line', () => {
+    for (const text of ['digraph/* x */G { a }', 'strict/**/digraph { a }', 'digraph "a\\\nb" { a }']) {
+      expect(() => readDot(text)).not.toThrow();
+      expect(DIAGRAM_DOT.detect(text)).toBe(true);
+    }
+  });
+});

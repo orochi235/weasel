@@ -172,3 +172,43 @@ describe('reading DOT', () => {
     expect(data.containers?.map((c) => [c.id, c.members])).toEqual([['a', ['cluster_a', 'b']]]);
   });
 });
+
+describe('reading invisible DOT items', () => {
+  it('leaves out an invisible node, its edges, and an invisible edge, with a warning', () => {
+    const { document, warnings } = readDot('digraph { subgraph cluster_k { a; c } b; a -> b [style=invis]; b -> c; c [style="invis"]; a -> b }');
+    const data = asGraph(document.pages[0]!).data;
+    expect(data.nodes.map((n) => n.id)).toEqual(['a', 'b']);
+    expect(data.edges.map((e) => [e.from, e.to])).toEqual([['a', 'b']]);
+    expect(data.containers?.map((k) => k.members)).toEqual([['a']]);
+    expect(warnings).toContain('DOT invisible nodes and edges were left out: c, a->b.');
+  });
+});
+
+describe('reading DOT points', () => {
+  it('reads a point as a small filled circle with no label, the smaller of its sizes across', () => {
+    const data = page('digraph { node [shape=point]; a -> b; c [width=0.2, height=0.1]; d [color=red] }').data;
+    expect(node(data, 'a')).toMatchObject({ lines: [], outline: 'ellipse', width: 3.6, height: 3.6, colors: { fill: 'black' } });
+    expect(node(data, 'c')).toMatchObject({ width: 7.2, height: 7.2 });
+    expect(node(data, 'd').colors).toMatchObject({ fill: 'red', stroke: 'red' });
+  });
+});
+
+describe("reading a DOT graph's bgcolor", () => {
+  it('fills no cluster with the root graph\'s bgcolor, which the page drops, but keeps a cluster\'s own', () => {
+    const { document, warnings } = readDot('digraph { bgcolor=lightblue; subgraph cluster_a { x } subgraph cluster_b { bgcolor=pink; y; subgraph cluster_c { z } } }');
+    const fills = asGraph(document.pages[0]!).data.containers?.map((k) => k.colors?.fill);
+    expect(fills).toEqual([undefined, 'pink', 'pink']);
+    expect(warnings).toContain('DOT attributes a diagram does not hold were dropped: bgcolor.');
+  });
+});
+
+describe('reading DOT keywords set to ""', () => {
+  it('reads an empty arrowhead, arrowtail, shape, or dir as Graphviz\'s default, with no warning', () => {
+    const { document, warnings } = readDot('digraph { a [shape=""]; a -> b [arrowhead="", arrowtail="", dir=""] }');
+    const data = asGraph(document.pages[0]!).data;
+    expect(node(data, 'a').outline).toBe('ellipse');
+    expect(data.edges[0]!.colors?.markerStart).toBeUndefined();
+    expect(data.edges[0]!.colors?.markerEnd).toBeUndefined();
+    expect(warnings).toEqual([]);
+  });
+});

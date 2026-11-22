@@ -56,4 +56,19 @@ describe('plot pages', () => {
     expect(parsed.querySelector(`[fill="${color}"]`)).not.toBeNull();
     expect(parsed.querySelector('text')?.textContent).toBe('Sales');
   });
+
+  it('leave out a connector to a shape drawn over a plot page, with the shape', () => {
+    const one = DOC.pages[0]!;
+    const doc: DiagramDocument = {
+      ...DOC,
+      pages: [
+        { ...one, data: { nodes: [{ id: 'n', lines: ['N'], at: { x: 20, y: 30 } }, { id: 'm', lines: ['M'], at: { x: 600, y: 100 } }], edges: [{ id: 'nm', from: 'n', to: 'm' }] } } as DiagramDocument['pages'][number],
+        DOC.pages[1]!,
+      ],
+    };
+    const read = documentFromScene(sceneOf(doc), { theme: THEME });
+    expect(read.pages[1]!.kind).toBe('plot');
+    expect(read.pages.flatMap((p) => (p.kind === 'graph' ? p.data.nodes.map((n) => n.id) : []))).toEqual(['n']);
+    expect(read.crossPageEdges ?? []).toEqual([]);
+  });
 });

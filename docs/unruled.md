@@ -2970,7 +2970,8 @@ Calls the lanes made without a ruling:
 
 - 2026-11-20 (the fixer's call): the Diagram JSON reader refuses a page with no string `id`, a `width` or `height` that
   is not a finite size of at least 0, or no `data` object, and a graph page whose data has no `nodes` and `edges`
-  lists, as it refuses a theme that does not check. Taking such a page and failing at draw time was the alternative.
+  lists, a node, cluster, or container with no string `id`, or an edge with no string `from` and `to` (round 70), as it
+  refuses a theme that does not check. Taking such a page and failing at draw time was the alternative.
 - 2026-11-20 (the fixer's call): `writtenPage`, and so every one-page writer (DOT, Mermaid), throws a `RangeError` when
   `WriteOptions.page` names a page the document does not have, and `scenePageKinds` does the same for an `opts.page`
   its scene has no page for. Both had fallen back to the first page, so a stale id exported another page as if it
@@ -3723,3 +3724,12 @@ Calls the lanes made without a ruling:
   does after its pointerdown grabbed an anchor, cancels the drag and goes to the layers from the state before it; a
   right-click in the middle of a mouse drag does the same. Ignoring the menu while a drag runs, which left a long
   press unable to delete an anchor, was the alternative (`LayeredCurveEditor.tsx`, `onSvgContextMenu`).
+## Audit round seventy (2026-11-22): diagram formats
+
+- 2026-11-22 (the fixer's call): the DOT reader leaves out a node or an edge whose `style` holds `invis`, and every edge
+  to an invisible node, with one warning naming them, as draw-style XML leaves out hidden shapes. Invisible nodes still
+  count toward the page's size when every node has a `pos`. Keeping them drawn, or drawn with no stroke and no fill, was
+  the alternative.
+- 2026-11-22 (the fixer's call): the DOT reader reads a `shape=point` node as Graphviz draws one: no label, whatever
+  `label` says, a circle the smaller of its `width` and `height` across (0.05in when neither is set), filled with its
+  `fillcolor`, else its `color`, else black.

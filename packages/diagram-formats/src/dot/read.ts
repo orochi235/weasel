@@ -32,6 +32,8 @@ const POINTS_PER_INCH = 72;
 
 const round = (n: number) => Math.round(n * 100) / 100;
 const str = (attrs: Attrs, key: string) => attrs.get(key)?.value;
+/** A keyword attribute, `undefined` when unset or set to `""`, which Graphviz reads as its default. */
+const keyword = (attrs: Attrs, key: string) => str(attrs, key) || undefined;
 
 /** A color attribute as CSS reads it; `undefined` for one unset or set to `""`, Graphviz's default, and, with a warning,
  *  for one naming a color a diagram cannot draw. */
@@ -56,6 +58,8 @@ class DotReader {
   readonly nodes = new Map<string, Attrs>();
   readonly edges: RawEdge[] = [];
   readonly clusters = new Map<string, Attrs>();
+
+  readonly root: Scope = { kind: 'root', graph: new Map(), node: new Map(), edge: new Map(), cluster: null };
 
   constructor(readonly graph: DotGraph) {}
 
@@ -107,10 +111,17 @@ class DotReader {
     return [...this.subgraph(end, scope)].map((id) => ({ id, line: end.line }));
   }
 
+  /** A new cluster's attributes, less the root's `bgcolor`: a page draws none, so the cluster has no canvas to blend into. */
+  clusterGraph(parent: Attrs): Attrs {
+    const graph = new Map(parent);
+    if (graph.get('bgcolor') === this.root.graph.get('bgcolor')) graph.delete('bgcolor');
+    return graph;
+  }
+
   subgraph(sub: DotSubgraph, parent: Scope): Set<string> {
     const isCluster = sub.id !== undefined && sub.id.startsWith('cluster');
     if (isCluster) this.membership.openCluster(sub.id!, parent.cluster);
-    const graph = isCluster ? (this.clusters.get(sub.id!) ?? new Map(parent.graph)) : new Map(parent.graph);
+    const graph = isCluster ? (this.clusters.get(sub.id!) ?? this.clusterGraph(parent.graph)) : new Map(parent.graph);
     if (isCluster) this.clusters.set(sub.id!, graph);
     return this.walk(sub.stmts, {
       kind: isCluster ? 'cluster' : 'plain', graph, node: new Map(parent.node), edge: new Map(parent.edge),
@@ -119,9 +130,9 @@ class DotReader {
   }
 }
 
-function nodeColors(r: DotReader, attrs: Attrs, styles: readonly string[]): Partial<NodeStyle> | undefined {
+function nodeColors(r: DotReader, attrs: Attrs, styles: readonly string[], unsetFill: string): Partial<NodeStyle> | undefined {
   const stroke = colorAttr(r, attrs, 'color');
-  const fill = styles.includes('filled') ? colorAttr(r, attrs, 'fillcolor') ?? stroke ?? 'lightgrey' : undefined;
+  const fill = styles.includes('filled') ? colorAttr(r, attrs, 'fillcolor') ?? stroke ?? unsetFill : undefined;
   const text = colorAttr(r, attrs, 'fontcolor');
   const width = numberAttr(r, attrs, 'penwidth');
   const dash = dashOf(styles);
@@ -137,18 +148,21 @@ function nodeColors(r: DotReader, attrs: Attrs, styles: readonly string[]): Part
 
 function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
   const styles = stylesOf(str(attrs, 'style'));
-  const shape = str(attrs, 'shape') ?? 'ellipse';
+  const shape = keyword(attrs, 'shape') ?? 'ellipse';
   let outline = str(attrs, OUTLINE_ATTR) ?? outlineOf(shape, styles);
   if (outline === null) {
     r.warnings.list('DOT shapes read as rectangles', shape);
     outline = 'rect';
   }
-  const colors = nodeColors(r, attrs, styles);
-  const width = numberAttr(r, attrs, 'width');
-  const height = numberAttr(r, attrs, 'height');
+  const point = shape.toLowerCase() === 'point';
+  const colors = nodeColors(r, attrs, point ? [...styles, 'filled'] : styles, point ? 'black' : 'lightgrey');
+  let width = numberAttr(r, attrs, 'width');
+  let height = numberAttr(r, attrs, 'height');
+  // Graphviz draws a point with no label, as a circle the smaller of its sizes across, 0.05in when neither is set.
+  if (point) width = height = Math.min(width ?? height ?? 0.05, height ?? width ?? 0.05);
   return {
     id,
-    lines: labelLines(attrs.get('label') ?? { value: '\\N' }, id, r.graph.id ?? ''),
+    lines: point ? [] : labelLines(attrs.get('label') ?? { value: '\\N' }, id, r.graph.id ?? ''),
     outline,
     ...(width !== undefined ? { width: round(width * POINTS_PER_INCH) } : {}),
     ...(height !== undefined ? { height: round(height * POINTS_PER_INCH) } : {}),
@@ -194,9 +208,9 @@ function marker(r: DotReader, name: string | undefined): MarkerRef | null {
 
 function readEdge(r: DotReader, e: RawEdge): DataEdge {
   const styles = stylesOf(str(e.attrs, 'style'));
-  const dir = str(e.attrs, 'dir') ?? (r.graph.directed ? 'forward' : 'none');
-  const end = dir === 'forward' || dir === 'both' ? marker(r, str(e.attrs, 'arrowhead')) : null;
-  const start = dir === 'back' || dir === 'both' ? marker(r, str(e.attrs, 'arrowtail')) : null;
+  const dir = keyword(e.attrs, 'dir') ?? (r.graph.directed ? 'forward' : 'none');
+  const end = dir === 'forward' || dir === 'both' ? marker(r, keyword(e.attrs, 'arrowhead')) : null;
+  const start = dir === 'back' || dir === 'both' ? marker(r, keyword(e.attrs, 'arrowtail')) : null;
   const stroke = colorAttr(r, e.attrs, 'color');
   const label = colorAttr(r, e.attrs, 'fontcolor');
   const width = numberAttr(r, e.attrs, 'penwidth');
@@ -229,7 +243,9 @@ function readEdge(r: DotReader, e: RawEdge): DataEdge {
   };
 }
 
-function readCluster(r: DotReader, id: string, attrs: Attrs, ids: ReadonlyMap<string, string>): DataContainer {
+function readCluster(
+  r: DotReader, id: string, attrs: Attrs, ids: ReadonlyMap<string, string>, unseen: ReadonlySet<string>,
+): DataContainer {
   const styles = stylesOf(str(attrs, 'style'));
   const color = colorAttr(r, attrs, 'color');
   const bg = colorAttr(r, attrs, 'bgcolor');
@@ -245,7 +261,7 @@ function readCluster(r: DotReader, id: string, attrs: Attrs, ids: ReadonlyMap<st
   };
   const label = attrs.get('label');
   const lines = label === undefined ? [] : labelLines(label, id, r.graph.id ?? '');
-  const members = r.membership.members(id, ids);
+  const members = r.membership.members(id, ids).filter((m) => !unseen.has(m));
   return {
     id: ids.get(id)!, role: 'container',
     ...(lines.length > 0 ? { label: lines.join(' ') } : {}),
@@ -268,6 +284,8 @@ function clusterIds(clusters: Iterable<string>, nodes: ReadonlyMap<string, unkno
   return out;
 }
 
+const isInvisible = (attrs: Attrs) => stylesOf(str(attrs, 'style')).includes('invis');
+
 /** A strict graph's edges: one per pair of ends, the first, with the attributes every later statement naming the
  *  pair sets. */
 function strictEdges(edges: readonly RawEdge[], directed: boolean): RawEdge[] {
@@ -284,15 +302,24 @@ function strictEdges(edges: readonly RawEdge[], directed: boolean): RawEdge[] {
 export function readDot(text: string): ImportResult {
   const graph = parseDot(text);
   const r = new DotReader(graph);
-  const root: Scope = { kind: 'root', graph: new Map(), node: new Map(), edge: new Map(), cluster: null };
+  const root = r.root;
   r.walk(graph.stmts, root);
   let nodes = [...r.nodes].map(([id, attrs]) => readNode(r, id, attrs));
   const placed = positions(nodes, r.nodes, str(root.graph, 'bb'));
   if (placed !== null) nodes = placed.nodes;
   else if ([...r.nodes.values()].some((a) => a.has('pos'))) r.warnings.list('DOT attributes a diagram does not hold were dropped', 'pos');
-  const edges = (graph.strict ? strictEdges(r.edges, graph.directed) : r.edges).map((e) => readEdge(r, e));
+  const unseen = new Set([...r.nodes].filter(([, attrs]) => isInvisible(attrs)).map(([id]) => id));
+  for (const id of unseen) r.warnings.list('DOT invisible nodes and edges were left out', id);
+  nodes = nodes.filter((n) => !unseen.has(n.id));
+  const seen = (graph.strict ? strictEdges(r.edges, graph.directed) : r.edges).filter((e) => {
+    if (unseen.has(e.tail.id) || unseen.has(e.head.id)) return false;
+    if (!isInvisible(e.attrs)) return true;
+    r.warnings.list('DOT invisible nodes and edges were left out', `${e.tail.id}${graph.directed ? '->' : '--'}${e.head.id}`);
+    return false;
+  });
+  const edges = seen.map((e) => readEdge(r, e));
   const ids = clusterIds(r.clusters.keys(), r.nodes);
-  const containers = [...r.clusters].map(([id, attrs]) => readCluster(r, id, attrs, ids));
+  const containers = [...r.clusters].map(([id, attrs]) => readCluster(r, id, attrs, ids, unseen));
   const rankdir = str(root.graph, 'rankdir')?.toUpperCase();
   const direction = rankdir !== undefined ? getOwn(DIRECTIONS, rankdir) : undefined;
   const name = root.graph.get('label');
