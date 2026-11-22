@@ -12,7 +12,7 @@ import { usePoll } from '../hooks';
 import type { DevtoolsViewProps } from '../tabs';
 import { followHistory } from '../history';
 import { coalesced } from './coalesced';
-import { HistoryTable } from './HistoryTable';
+import { entryName, HistoryTable } from './HistoryTable';
 import { sequenced, type Sequenced } from './sequenced';
 import s from './HistoryView.module.css';
 
@@ -50,15 +50,14 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
     return () => { live = false; off(); };
   }, [client, rootId, follower]);
 
-  usePoll(() => setNow(Date.now()), AGE_MS, true);
+  // A read that failed has no notice coming to retry it, so the Age poll does.
+  usePoll(() => { setNow(Date.now()); if (error) readNow.current(); }, AGE_MS, true);
 
   const toggleStack = (on: boolean): void => {
     follower.setHistoryEntries(on);
     setShowStack(on);
     readNow.current();
   };
-
-  if (error) return <p className={s.note}>{error}</p>;
 
   return (
     <div className={s.history}>
@@ -75,6 +74,7 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
           {position ? `${position.index} / ${position.total}` : ''}
         </span>
       </div>
+      {error && <p className={s.note} role="alert">{error}</p>}
       <div className={s.body}>
         {showStack && historyEntries && (
           <section aria-label="Checkpoint stack">
@@ -83,7 +83,7 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
               <ol className={s.stack} aria-label="History entries">
                 {historyEntries.map((c, i) => (
                   <li key={c.id} className={position && i < position.index ? s.applied : s.redoable}>
-                    {c.label || c.id}
+                    {entryName(c)}
                   </li>
                 ))}
               </ol>

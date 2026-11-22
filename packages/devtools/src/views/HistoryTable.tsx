@@ -13,6 +13,9 @@ const DISPLAY_LIMIT = 100;
 
 interface StepRow { id: string; step: DevtoolsHistoryRecord }
 
+/** How the tab names an entry: its label, or its id when it has none. */
+export const entryName = (entry: { id: number | string; label: string }): string => entry.label || `#${entry.id}`;
+
 const expandable = ({ step }: StepRow): boolean => step.entries.length > 0;
 
 const opCount = (step: DevtoolsHistoryRecord): number => step.entries.reduce((n, e) => n + e.opCount, 0);
@@ -21,9 +24,9 @@ function StepDetail({ step }: { step: DevtoolsHistoryRecord }): ReactElement {
   return (
     <div className={s.entries}>
       {step.entries.map((entry) => (
-        <section key={entry.id} className={s.entry} aria-label={`Entry ${entry.label || entry.id}`}>
+        <section key={entry.id} className={s.entry} aria-label={`Entry ${entryName(entry)}`}>
           <h4 className={s.entryTitle}>
-            {entry.label || <span className={s.note}>unlabeled</span>}
+            {entry.label || <span className={s.note}>{entryName(entry)}</span>}
             <span className={s.figure}>{entry.opCount} {entry.opCount === 1 ? 'op' : 'ops'}</span>
           </h4>
           <ul className={s.ops}>
@@ -51,7 +54,7 @@ export function HistoryTable({ steps, now }: { steps: readonly Sequenced<Devtool
       id: 'entries',
       header: 'Entries',
       sortable: false,
-      render: ({ step }) => step.entries.map((e) => e.label || `#${e.id}`).join(', ') || '—',
+      render: ({ step }) => step.entries.map(entryName).join(', ') || '—',
     },
     { id: 'ops', header: 'Ops', sortable: false, className: s.figure, render: ({ step }) => opCount(step) },
     {

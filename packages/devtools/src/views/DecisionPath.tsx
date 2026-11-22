@@ -25,7 +25,7 @@ export function DecisionPath({ record }: { record: DispatchRecord }): ReactEleme
       )}
       {record.outcome === 'handled'
         ? <Badge grade="success">{record.predicted ? 'would handle' : 'handled'}</Badge>
-        : <Badge grade="danger">unhandled</Badge>}
+        : <Badge grade="danger">{record.predicted ? 'would not handle' : 'unhandled'}</Badge>}
     </Powerline>
   );
 }

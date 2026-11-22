@@ -67,8 +67,6 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
     if (!on) setCoords([]);
   };
 
-  if (error) return <p className={s.note}>{error}</p>;
-
   return (
     <div className={s.dispatch}>
       <div className={s.toolbar}>
@@ -96,6 +94,7 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
         </Button>
         <span className={s.count}>{entries.length} {entries.length === 1 ? 'record' : 'records'}</span>
       </div>
+      {error && <p className={s.note} role="alert">{error}</p>}
       <div className={s.body}>
         <TraceTable
           entries={entries}

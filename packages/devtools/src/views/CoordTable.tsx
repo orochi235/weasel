@@ -22,37 +22,40 @@ export interface CoordEntry {
 }
 
 const DISPLAY_LIMIT = 100;
-/** Wide enough for a coordinate in the tens of thousands, sign included, at one decimal. */
-const fixed = (n: Coord, digits = 1): string => serializedNumber(n).toFixed(digits).padStart(8, ' ');
-const pair = (x: Coord, y: Coord, digits = 1): string => `${fixed(x, digits)} ${fixed(y, digits)}`;
+/** A coordinate in the tens of thousands, sign included, at one decimal; wider values widen their column. */
+const MIN_WIDTH = 8;
+
+/** A cell's x and y at its decimals, or the text it shows in their place. */
+type Pair = readonly [x: Coord, y: Coord, digits: number] | string;
+type Row = { id: string; entry: CoordEntry };
+
+const COLUMNS: readonly { id: string; header: string; pair(e: CoordEntry): Pair }[] = [
+  { id: 'client', header: 'Client', pair: (e) => [e.clientX, e.clientY, 1] },
+  { id: 'canvas', header: 'Canvas', pair: (e) => (e.rect ? [e.rect.left, e.rect.top, 1] : '') },
+  { id: 'world', header: 'World', pair: (e) => [e.world.x, e.world.y, 1] },
+  { id: 'scale', header: 'Scale', pair: (e) => (e.fallback || !e.view ? 'fallback' : [e.view.scaleX, e.view.scaleY, 3]) },
+  { id: 'offset', header: 'Offset', pair: (e) => (e.view ? [e.view.x, e.view.y, 1] : '') },
+];
+
+const fixed = (n: Coord, digits: number): string => serializedNumber(n).toFixed(digits);
+
+function widthOf(pairs: readonly Pair[]): number {
+  let width = MIN_WIDTH;
+  for (const p of pairs) if (typeof p !== 'string') width = Math.max(width, fixed(p[0], p[2]).length, fixed(p[1], p[2]).length);
+  return width;
+}
+
+const show = (p: Pair, width: number): string =>
+  typeof p === 'string' ? p : `${fixed(p[0], p[2]).padStart(width, ' ')} ${fixed(p[1], p[2]).padStart(width, ' ')}`;
 
 export function CoordTable({ entries, now }: { entries: readonly Sequenced<CoordEntry>[]; now: number }): ReactElement {
-  const rows = entries.slice(-DISPLAY_LIMIT).map(({ seq, record }) => ({ id: String(seq), entry: record })).reverse();
-  const columns: readonly DataGridColumn<(typeof rows)[number]>[] = [
+  const rows: Row[] = entries.slice(-DISPLAY_LIMIT).map(({ seq, record }) => ({ id: String(seq), entry: record })).reverse();
+  const columns: readonly DataGridColumn<Row>[] = [
     { id: 'age', header: 'Age', sortable: false, className: s.age, render: ({ entry }) => formatAge(Math.max(0, now - entry.ts)) },
-    { id: 'client', header: 'Client', sortable: false, className: s.count, render: ({ entry }) => pair(entry.clientX, entry.clientY) },
-    {
-      id: 'canvas',
-      header: 'Canvas',
-      sortable: false,
-      className: s.count,
-      render: ({ entry }) => (entry.rect ? pair(entry.rect.left, entry.rect.top) : ''),
-    },
-    { id: 'world', header: 'World', sortable: false, className: s.count, render: ({ entry }) => pair(entry.world.x, entry.world.y) },
-    {
-      id: 'scale',
-      header: 'Scale',
-      sortable: false,
-      className: s.count,
-      render: ({ entry }) => (entry.fallback || !entry.view ? 'fallback' : pair(entry.view.scaleX, entry.view.scaleY, 3)),
-    },
-    {
-      id: 'offset',
-      header: 'Offset',
-      sortable: false,
-      className: s.count,
-      render: ({ entry }) => (entry.view ? pair(entry.view.x, entry.view.y) : ''),
-    },
+    ...COLUMNS.map(({ id, header, pair }): DataGridColumn<Row> => {
+      const width = widthOf(rows.map((r) => pair(r.entry)));
+      return { id, header, sortable: false, className: s.count, render: ({ entry }) => show(pair(entry), width) };
+    }),
   ];
   return (
     <section aria-label="Coord records">

@@ -84,7 +84,7 @@ function Routes({ candidate }: { candidate: RecordCandidate }) {
   if (candidate.routes.length === 0) return <span className={s.muted}>no route form</span>;
   return (
     <span className={s.routes}>
-      {candidate.routes.map((r) => <GestureRoute key={r} route={r} size="sm" />)}
+      {candidate.routes.map((r, i) => <GestureRoute key={i} route={r} size="sm" />)}
     </span>
   );
 }
