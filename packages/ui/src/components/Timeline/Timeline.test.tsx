@@ -563,4 +563,19 @@ describe('Timeline', () => {
     }
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('puts back its preview and cancels a key drag released on its own time', () => {
+    const input = [{ kind: 'sampled', label: 'hold', keys: [{ t: 500, value: 1 }, { t: 500, value: 2 }], onTick: () => {} }] as Track[];
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    const onCancel = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={input} onInput={onInput} onChange={onChange} onCancel={onCancel} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
+    fireEvent.pointerMove(document, { clientX: 250, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 250, clientY: 10 });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect((onInput.mock.calls.at(-1)![0][0] as SampledTrack<number>).keys.map((k) => k.value)).toEqual([1, 2]);
+  });
 });
