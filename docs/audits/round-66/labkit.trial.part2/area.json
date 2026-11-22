@@ -1,0 +1,90 @@
+{
+ "id": "labkit.trial.part2",
+ "commit": "64f0b083bc66bebeb52e9c5a64e5b2587c66b45b",
+ "date": "2026-11-21",
+ "files": [
+  "packages/labkit/src/trial/useKeptMarks.ts",
+  "packages/labkit/src/trial/useOrbitView.tsx",
+  "packages/labkit/src/trial/useRestoredHistory.ts",
+  "packages/labkit/src/trial/useRuntimeSections.tsx",
+  "packages/labkit/src/trial/useTrialCamera.tsx",
+  "packages/labkit/src/trial/useTrialChromeContext.ts",
+  "packages/labkit/src/trial/useTrialClock.ts",
+  "packages/labkit/src/trial/useTrialConfig.ts",
+  "packages/labkit/src/trial/useTrialContributions.ts",
+  "packages/labkit/src/trial/useTrialDragDrop.tsx",
+  "packages/labkit/src/trial/useTrialEdits.ts",
+  "packages/labkit/src/trial/useTrialJob.ts",
+  "packages/labkit/src/trial/useTrialLayerStack.tsx",
+  "packages/labkit/src/trial/useTrialLayers.ts",
+  "packages/labkit/src/trial/useTrialMarks.ts",
+  "packages/labkit/src/trial/useTrialOrbit.ts",
+  "packages/labkit/src/trial/useTrialPanels.ts",
+  "packages/labkit/src/trial/useTrialSnapshot.ts",
+  "packages/labkit/src/trial/useTrialTool.ts",
+  "packages/labkit/src/trial/useTrialToolSlot.ts",
+  "packages/labkit/src/trial/useTrialUndo.ts",
+  "packages/labkit/src/trial/useTrialWrites.ts",
+  "packages/labkit/src/trial/useViewPlacement.ts",
+  "packages/labkit/src/trial/useWriteGestures.ts",
+  "packages/labkit/src/trial/watch3d.ts",
+  "packages/labkit/src/trial/writeGesture.ts"
+ ],
+ "a": 2,
+ "b": 5,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 8,
+ "unfound": 2,
+ "read": {
+  "A": 26,
+  "B": 26
+ },
+ "newCode": {
+  "since": 51,
+  "changedFiles": 8,
+  "findings": 2
+ },
+ "previous": {
+  "round": 51,
+  "chapman": 20,
+  "unfound": 10
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 15,
+  "testFiles": {
+   "failed": 0,
+   "passed": 458,
+   "total": 458
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.6,
+   "B": 7.5,
+   "match": 0.3,
+   "fix": 24.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1248877,
+  "costUsd": 3.62
+ },
+ "fixCommits": [
+  "e620fdc911e779bd5781acf2da8054f41bc7fd00",
+  "9b27939dded26796eeeaa80d69386b0a8f8c897c",
+  "04b292411258ee5f82665c4ce098fc654bcf60fe",
+  "ab80180e8b7e848704072f4e5ee142af6eef0b00",
+  "69f348258ffdab6c75a72437554d6b3d03974ac5",
+  "9445573980b607514db4cfd85f82018468c97fd1"
+ ]
+}

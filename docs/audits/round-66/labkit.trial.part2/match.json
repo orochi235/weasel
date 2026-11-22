@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "A trial with no camera shows a live zoom control whose writes put a 2D view into the record",
+  "Marks kept in an instrument's own storage are never reloaded when the storage changes, so the next save overwrites the new storage with the old marks"
+ ],
+ "b": [
+  "useKeptMarks keeps the first storage's marks when the instrument's storage changes, and the trial then saves them into the new storage",
+  "The trial's config history is created without `rebuild`, unlike the restored one",
+  "watch3d schedules its retries with a computed `setTimeout` delay rather than `after`",
+  "WebGPU watch holds every canvas a device ever configured, strongly, for the device's life",
+  "A canvas whose depth testing turns on before it joins a trial is never reported"
+ ]
+}

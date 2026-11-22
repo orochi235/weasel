@@ -1,0 +1,92 @@
+{
+ "id": "core.domains.snap",
+ "commit": "64f0b083bc66bebeb52e9c5a64e5b2587c66b45b",
+ "date": "2026-11-21",
+ "files": [
+  "packages/core/src/domains/snap/angle2d.ts",
+  "packages/core/src/domains/snap/debugCandidates.ts",
+  "packages/core/src/domains/snap/gather.ts",
+  "packages/core/src/domains/snap/inputSubspace.ts",
+  "packages/core/src/domains/snap/lazySession.ts",
+  "packages/core/src/domains/snap/marks.ts",
+  "packages/core/src/domains/snap/outcomeStore.ts",
+  "packages/core/src/domains/snap/pointSnap.ts",
+  "packages/core/src/domains/snap/probes2d.ts",
+  "packages/core/src/domains/snap/readoutDep.ts",
+  "packages/core/src/domains/snap/readoutDraw.ts",
+  "packages/core/src/domains/snap/readoutLayer.ts",
+  "packages/core/src/domains/snap/registry.ts",
+  "packages/core/src/domains/snap/resizeBox.ts",
+  "packages/core/src/domains/snap/roles.ts",
+  "packages/core/src/domains/snap/rotationSource.ts",
+  "packages/core/src/domains/snap/sceneReads.ts",
+  "packages/core/src/domains/snap/sceneSession2d.ts",
+  "packages/core/src/domains/snap/screen.ts",
+  "packages/core/src/domains/snap/session2d.ts",
+  "packages/core/src/domains/snap/spanSnap.ts",
+  "packages/core/src/domains/snap/stepAngles.ts",
+  "packages/core/src/domains/snap/testing/sessionDep.ts",
+  "packages/core/src/domains/snap/types.ts"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 9,
+ "unfound": 3,
+ "read": {
+  "A": 24,
+  "B": 24
+ },
+ "newCode": {
+  "since": 42,
+  "changedFiles": 2,
+  "findings": 1
+ },
+ "previous": {
+  "round": 42,
+  "chapman": 17,
+  "unfound": 10
+ },
+ "patches": 10,
+ "verify": {
+  "ok": true,
+  "files": 34,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2517,
+   "total": 2517
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 1,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.4,
+   "B": 8.2,
+   "match": 2.4,
+   "fix": 28.5
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1824495,
+  "costUsd": 5.06
+ },
+ "fixCommits": [
+  "9c47bb6e82b2364589cb9e4cdad075500b3fbf9b",
+  "2663bcfe54a6afcf225f40a67489b0dc0fcb8fc3",
+  "4e03d7cd4aeb3c569cad3260ce01e4579aaf3cb6",
+  "4ddd970b3818e4838e59d1cd1293574693c5f5d9",
+  "3973fd7af8acaab9f26710c8b5fc2f1bec9b66ce",
+  "243a007864be140bf0cd06110330a5e1d7f72f31",
+  "85ffda2580118813d694257498f0c05490f07746",
+  "4ea81e18fc7e398bd4123fb1ff04e60053b26c32",
+  "a12cd65877ba9199dbb9cacb1e5cb1c3f4ac5d12",
+  "67fc08230b44c55ee23b774f2b5073e4381f045f"
+ ]
+}

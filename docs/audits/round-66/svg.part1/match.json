@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "A path with closed and open subpaths, a fill, and no stroke is written as a group holding an invisible extra `<path>`",
+  "`revert` and `revert-layer` on an inherited property are kept as a literal value, not rolled back",
+  "`svgStrokeFromKit` silently drops a stroke's `varyingWidthJoinThreshold` and `vertexColors`",
+  "A nested `<svg width=\"auto\">` leaves its children with no viewport for percentages",
+  "A `container` shorthand declared after `container-type` does not reset it"
+ ],
+ "b": [
+  "`svgNodesFromKit` with `roots` below the top drops the paint a root inherits, though it rebuilds the root's frame from its ancestors",
+  "A marker key can mint the same `<defs>` id as a gradient, pattern, clip or text cut"
+ ]
+}

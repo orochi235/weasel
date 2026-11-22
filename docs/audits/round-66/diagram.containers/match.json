@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "A pool's lane order is decided two ways: `lanesOf` sorts by start edge, while `laneStackLayout` and the theme sort by middle",
+  "`diagramDropParentAt` never asks a consumer's `canReparent` about an insert: an empty id list skips it",
+  "`addLane` names an inserted lane `Lane ${count+1}` wherever it goes",
+  "Release refuses when any lane of the pool is locked, even a lane the release does not write"
+ ],
+ "b": [
+  "Lane order is answered two ways: `lanesOf` sorts by start edge, `laneStackLayout` and the theme by middle",
+  "`addLane` drops the pool's lane styles in an unthemed scene",
+  "`addLane` with an `index` moves later lanes without checking locks",
+  "`diagramDropParentAt` calls the scene composition's `compose` detached from its object",
+  "`laneScratchOf` throws on a hit whose payload is `null`",
+  "A pool drawn shorter than its lanes' minimum gets lanes that overflow it"
+ ]
+}

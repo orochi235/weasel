@@ -491,6 +491,7 @@
    "apps/shared/packageRoutes.ts",
    "apps/shared/prefsRoundTrip.ts",
    "apps/shared/reference.ts",
+   "apps/shared/releaseMajor.ts",
    "apps/shared/releases.ts"
   ]
  },
@@ -506,12 +507,14 @@
    "apps/site/DevtoolsSplit.tsx",
    "apps/site/Features/Features.module.css",
    "apps/site/Features/Features.tsx",
+   "apps/site/OlderReleases.tsx",
    "apps/site/PageBoundary.tsx",
    "apps/site/Prose.module.css",
    "apps/site/Prose.tsx",
    "apps/site/ReleaseChipIcon.tsx",
    "apps/site/ReleaseEntry.tsx",
    "apps/site/ReleaseFilter.tsx",
+   "apps/site/ReleaseHistory.tsx",
    "apps/site/ReleaseSection.tsx",
    "apps/site/Releases.css",
    "apps/site/Releases.tsx",
@@ -2193,6 +2196,7 @@
    "packages/devtools/src/views/TraceTable.tsx",
    "packages/devtools/src/views/ValueView.module.css",
    "packages/devtools/src/views/ValueView.tsx",
+   "packages/devtools/src/views/coalesced.ts",
    "packages/devtools/src/views/formatAge.ts",
    "packages/devtools/src/views/keyName.ts",
    "packages/devtools/src/views/note.module.css",
@@ -2220,6 +2224,7 @@
    "packages/diagram-formats/src/dot/read.ts",
    "packages/diagram-formats/src/dot/values.ts",
    "packages/diagram-formats/src/dot/write.ts",
+   "packages/diagram-formats/src/dot/x11.ts",
    "packages/diagram-formats/src/exportPage.ts",
    "packages/diagram-formats/src/formats.ts",
    "packages/diagram-formats/src/fromScene.ts",
@@ -2229,6 +2234,7 @@
    "packages/diagram-formats/src/index.ts",
    "packages/diagram-formats/src/jsonFormat.ts",
    "packages/diagram-formats/src/lineError.ts",
+   "packages/diagram-formats/src/markReaders.ts",
    "packages/diagram-formats/src/pageKinds.ts",
    "packages/diagram-formats/src/pageLayout.ts",
    "packages/diagram-formats/src/pageRoots.ts",
@@ -5275,6 +5281,7 @@
    "packages/quantity/src/kinds/proportion.ts",
    "packages/quantity/src/kinds/scientific.ts",
    "packages/quantity/src/localized.ts",
+   "packages/quantity/src/memo.ts",
    "packages/quantity/src/number.ts",
    "packages/quantity/src/pbt.fixture.ts",
    "packages/quantity/src/places.ts",
@@ -5929,6 +5936,7 @@
    "packages/svg/src/groupBox.ts",
    "packages/svg/src/groupPaint.ts",
    "packages/svg/src/groupPaintXml.ts",
+   "packages/svg/src/hiddenElement.ts",
    "packages/svg/src/hugeStrokeBounds.bench.ts",
    "packages/svg/src/index.ts",
    "packages/svg/src/kitInherits.ts",
@@ -5943,13 +5951,13 @@
    "packages/svg/src/openSubpathFill.ts",
    "packages/svg/src/paintServers.ts",
    "packages/svg/src/paintThroughMatrix.ts",
-   "packages/svg/src/painterLeaf.ts",
-   "packages/svg/src/parse.ts"
+   "packages/svg/src/painterLeaf.ts"
   ]
  },
  {
   "id": "svg.part2",
   "files": [
+   "packages/svg/src/parse.ts",
    "packages/svg/src/patterns.ts",
    "packages/svg/src/pbt.fixture.ts",
    "packages/svg/src/placeBox.ts",
@@ -6533,6 +6541,7 @@
    "packages/ui/src/components/Badge/effects/bumps.ts",
    "packages/ui/src/components/Badge/effects/glassStrokes.tsx",
    "packages/ui/src/components/Badge/effects/index.ts",
+   "packages/ui/src/components/Badge/effects/lightCorner.ts",
    "packages/ui/src/components/Badge/effects/rangeMask.ts"
   ]
  },

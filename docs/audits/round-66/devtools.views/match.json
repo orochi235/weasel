@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "RegistryBrowser's filter field freezes when a caller passes `onFilterChange` without `filter`",
+  "FrameView's frame poll lets a stale `get-frame` answer overwrite a newer one",
+  "HistoryTable's row click collapses the open step when the clicked step has nothing to expand"
+ ],
+ "b": [
+  "StateView and FrameView poll `get-state` by bumping the query's version, so a read slower than the poll interval is always discarded and never shown",
+  "The scene tree keeps expanded ids of deleted nodes and re-requests their children on every scene change",
+  "The coord table drops the canvas rect, so a client point cannot be reconciled with the world point it shows"
+ ]
+}

@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   5,
+   0
+  ]
+ ],
+ "a": [
+  "A fill or stroke value the cascade keeps but `readPaint` cannot read paints solid black, so an unreadable stroke draws a black outline",
+  "Unpacking drops a marker-carrying stroke whose paint is `none`, so imported arrowheads vanish",
+  "A text run whose own stroke has a non-finite dash loses that stroke and so inherits the node's",
+  "Under `keepHidden`, a `<use>` whose target is `display=\"none\"` is dropped instead of arriving hidden",
+  "A `stroke-dasharray` length in a unit the reader does not convert is dropped as invalid, where `stroke-width` reads the same unit as its number",
+  "Pattern `x` / `y` are parsed with `parseFloat`, so a unit or percentage is read as its bare number and an empty value is NaN",
+  "Specificity counts a namespace prefix as a second type selector",
+  "`<title>`, `<desc>` and `<metadata>` inside `<defs>` warn as \"unsupported <defs> child\""
+ ],
+ "b": [
+  "A pattern's malformed `x` / `y` reads as a NaN origin",
+  "A fill or stroke whose value is an unreadable function paints black instead of being dropped",
+  "An `<image>` without `width` / `height` imports as a zero-size box, silently"
+ ]
+}

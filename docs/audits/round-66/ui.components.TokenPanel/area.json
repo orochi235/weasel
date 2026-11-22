@@ -1,0 +1,72 @@
+{
+ "id": "ui.components.TokenPanel",
+ "commit": "64f0b083bc66bebeb52e9c5a64e5b2587c66b45b",
+ "date": "2026-11-21",
+ "files": [
+  "packages/ui/src/components/TokenPanel/Scale.module.css",
+  "packages/ui/src/components/TokenPanel/Scale.tsx",
+  "packages/ui/src/components/TokenPanel/TokenControl.tsx",
+  "packages/ui/src/components/TokenPanel/TokenPanel.module.css",
+  "packages/ui/src/components/TokenPanel/TokenPanel.stories.module.css",
+  "packages/ui/src/components/TokenPanel/TokenPanel.stories.tsx",
+  "packages/ui/src/components/TokenPanel/TokenPanel.tsx",
+  "packages/ui/src/components/TokenPanel/color.ts",
+  "packages/ui/src/components/TokenPanel/index.ts",
+  "packages/ui/src/components/TokenPanel/parts.tsx",
+  "packages/ui/src/components/TokenPanel/tokenTypes.ts"
+ ],
+ "a": 1,
+ "b": 3,
+ "m": 1,
+ "distinct": 3,
+ "chapman": 3,
+ "unfound": 0,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "newCode": {
+  "since": 65,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 65,
+  "chapman": 20,
+  "unfound": 10
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 7,
+  "testFiles": {
+   "failed": 0,
+   "passed": 479,
+   "total": 479
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5,
+   "B": 5,
+   "match": 0.7,
+   "fix": 9.4
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 882568,
+  "costUsd": 2.77
+ },
+ "fixCommits": [
+  "bbd191dd4c0a508a5a15f80d36bf15d600178783",
+  "612366c9338437bd4d68566d60b3fa1abefb67d4",
+  "3d10e11aa4e16dbfef38d2cfa7926d49386a168c"
+ ]
+}
