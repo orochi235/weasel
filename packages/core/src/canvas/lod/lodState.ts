@@ -32,6 +32,7 @@ export interface LodWalkRecord {
   end(): void;
 }
 
+/** A view's record of the rung each node showed in its last walk, per walk key, for hysteresis. */
 export function createLodState(): LodState {
   const walks = new Map<string, Map<string, LodPick>>();
   const find = (id: string): LodPick | undefined => {

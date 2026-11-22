@@ -14,6 +14,8 @@ export type {
   TextDrawCommand,
   TextLayerDrawCommand,
   ImageDrawCommand,
+  TileDrawCommand,
+  TileTexture,
   SpritesDrawCommand,
   ShaderDrawCommand,
   ShaderProgramHandle,

@@ -31,6 +31,7 @@ export interface LodHysteresis {
   down: number;
 }
 
+/** A rung change's default margins: a node grows half again past a boundary to move up a rung, and shrinks to two thirds of it to move down. */
 export const DEFAULT_HYSTERESIS: LodHysteresis = { up: 1.5, down: 0.67 };
 
 /** A kind's representations, coarse to fine. */

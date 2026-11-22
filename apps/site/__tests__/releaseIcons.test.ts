@@ -7,7 +7,7 @@ import { PACKAGE_ICONS } from '../releaseIcons';
 const PACKAGES_DIR = resolve(__dirname, '../../../packages');
 
 /** Published packages whose badge waits on the maintainer's sketch (docs/TODO.md). Drawing one removes it here. */
-const AWAITING_SKETCH = ['export', 'paint-kinds', 'prefs-editor', 'prefs-schema', 'scale', 'text-tools', 'ui-canvas'];
+const AWAITING_SKETCH = ['export', 'paint-kinds', 'prefs-editor', 'prefs-schema', 'scale', 'text-tools', 'tiles', 'ui-canvas'];
 
 it('gives every published package a release-chip badge, but those awaiting a sketch', () => {
   const published = readdirSync(PACKAGES_DIR)

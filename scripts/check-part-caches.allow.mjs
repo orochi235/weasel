@@ -6,6 +6,7 @@ export const PART_CACHE_ALLOWED = new Map([
   ['packages/core/src/canvas/nodeOutline.ts', 'replaced when the painters or their geometry generations change'],
   ['packages/core/src/canvas/nodeShapeRegistry.ts', ["`orders` is replaced when the memo generation moves; `tiersOf` is read without being made", 2]],
   ['packages/core/src/canvas/nodeShapes/derivedPainter.ts', 'the entry turns on the pose and is replaced when it changes'],
+  ['packages/core/src/canvas/tileHosts.ts', 'made only once a frame tiles a layer, and read by tileHostOf without being made'],
   ['packages/core/src/canvas/renderWorker/liveClients.ts', 'entries are deleted on release'],
   ['packages/core/src/core/scene/depFrame.ts', 'the entry turns on the matrix and is replaced when its key changes'],
   ['packages/core/src/core/scene/derivedParts.ts', 'set from the parts argument in one function and read in another'],

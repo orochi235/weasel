@@ -1,5 +1,5 @@
 .stats {
-  font-variant-numeric: tabular-nums;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   text-align: end;
   margin-inline-start: auto;
   min-width: 34ch;

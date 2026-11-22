@@ -208,6 +208,7 @@
       "@weasel-js/theme/inherited.module.css": ["../theme/src/inherited.module.css"],
       "@weasel-js/theme/sizer.module.css": ["../theme/src/sizer.module.css"],
       "@weasel-js/theme/testing/*": ["../theme/src/testing/*"],
+      "@weasel-js/tiles": ["../tiles/src/index.ts"],
       "@weasel-js/ui": ["../ui/src/index.ts"],
       "@weasel-js/ui/components/Badge/geometry": ["../ui/src/components/Badge/geometry.ts"],
       "@weasel-js/ui/components/*": ["../ui/src/components/*/index.ts"],

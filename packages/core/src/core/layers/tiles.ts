@@ -40,5 +40,7 @@ export interface TileBudgetOptions {
   bytes?: number;
 }
 
+/** A tile's side in texels, without its gutter, when `TileOptions.tilePx` is unset. */
 export const DEFAULT_TILE_PX = 512;
+/** What a canvas's tiled layers share when `TileBudgetOptions` leaves a field unset: 10 ms and 4 tiles a frame, and 256 MiB of tiles. */
 export const DEFAULT_TILE_BUDGET = { ms: 10, tiles: 4, bytes: 256 * 1024 * 1024 } as const;
