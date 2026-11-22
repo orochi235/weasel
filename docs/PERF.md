@@ -19,9 +19,11 @@ When work merges, retire its entry here in the same change.
   Since 2026-11-21 a renderer starts its batch program and the batch's text build at construction under
   `KHR_parallel_shader_compile`, so the two compile at once; `first-frame.spec.ts` with cold shaders reads the
   first frame at 192 ms before and 130 ms after on teitou, and 0 ms of main-thread block for a host that holds
-  its frame until `programsReady()`. Left: measure the page on orochi as on 2026-11-20, and if its reloads still
-  pay the compile, find why they miss the Metal cache that teitou's hit. Closes when a weasel canvas's first
-  frame on that machine comes within 300 ms of its data arriving, measured the same way.
+  its frame until `programsReady()`. The audits page itself, built against weasel before and after, read 455
+  and 328 ms against 261 and 266 ms with cold shaders in headless Chrome 157 there. Left: run
+  `tests/perf/recorded/first-frame-2026-11-21/pages.sh` on orochi, and if its reloads still pay the compile, find
+  why they miss the Metal cache that teitou's hit. Closes when a weasel canvas's first frame on that machine
+  comes within 300 ms of its data arriving, measured the same way.
 
 - **(P3) [waiting] Whether the batched path costs a co-tenant on the same page.** Reported, not measured
   here. A consumer benchmarking its wall against a canvas2d control found that at one rung the

@@ -2,7 +2,10 @@
  * Loads a built page in a fresh headless Chromium on ANGLE Metal, a browser per round, and reports
  * the main thread's long tasks and where a CPU profile of the load spent its time.
  *
- * Run: node probe.mjs <dir> <base> [--rounds 3] [--out file.json] [--headed] [--channel chrome] [--dpr 2]
+ * Run: node probe.mjs <dir> <base> [--rounds 3] [--out file.json] [--headed] [--channel chrome] [--dpr 2] [--cold]
+ *
+ * `--cold` renames every shader's `main` per browser, as `first-frame.spec.ts`'s `WEASEL_PERF_COLD_METAL` does,
+ * so the first load compiles against a cold Metal cache and its reload finds what that load compiled.
  * where <dir> holds the build (`index.html` and its assets) and <base> is the path it was built
  * for, e.g. `/skulkr/`.
  */
@@ -27,6 +30,7 @@ const SETTLE_MS = Number(arg('settle', 4000));
 const HEADED = process.argv.includes('--headed');
 const CHANNEL = arg('channel', undefined);
 const DPR = Number(arg('dpr', 2));
+const COLD = process.argv.includes('--cold');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
   '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
@@ -80,40 +84,55 @@ async function load(page, cdp, how) {
 }
 
 const rounds = [];
-console.log(`probe ${url} headed ${HEADED} channel ${CHANNEL ?? 'chromium'} dpr ${DPR}`);
+console.log(`probe ${url} headed ${HEADED} channel ${CHANNEL ?? 'chromium'} dpr ${DPR} cold ${COLD}`);
 for (let r = 0; r < ROUNDS; r++) {
   const browser = await chromium.launch({
     headless: !HEADED, channel: CHANNEL, args: ['--use-angle=metal', '--disable-features=LocalNetworkAccessChecks'],
   });
-  const context = await browser.newContext({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: DPR });
-  await context.addInitScript(() => {
-    globalThis.__longtasks = [];
-    new PerformanceObserver((list) => {
-      for (const e of list.getEntries()) globalThis.__longtasks.push([+e.startTime.toFixed(0), +e.duration.toFixed(0)]);
-    }).observe({ type: 'longtask', buffered: true });
-  });
-  const page = await context.newPage();
-  const errors = [];
-  page.on('pageerror', (e) => errors.push(e.message));
-  const cdp = await context.newCDPSession(page);
-  await cdp.send('Profiler.enable');
-  await cdp.send('Profiler.setSamplingInterval', { interval: 200 });
-  const glRenderer = await page.evaluate(() => {
-    const gl = document.createElement('canvas').getContext('webgl2');
-    const dbg = gl?.getExtension('WEBGL_debug_renderer_info');
-    return gl ? String(gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER)) : null;
-  });
-  const loads = [await load(page, cdp, 'goto'), await load(page, cdp, 'reload')];
-  rounds.push({ round: r + 1, browser: browser.version(), glRenderer, errors, loads });
-  for (const l of loads) {
-    const longest = Math.max(0, ...l.longtasks.map((t) => t[1]));
-    console.log(`${r + 1}/${ROUNDS} ${l.how.padEnd(6)} longest task ${String(longest).padStart(5)} ms  canvases ${l.canvases}`
-      + `  tasks ${JSON.stringify(l.longtasks)}`);
-    console.log(`    gl (profile, inclusive) ${JSON.stringify(l.gl)}`);
-    console.log(`    top self ${JSON.stringify(l.top.slice(0, 8))}`);
+  try {
+    const context = await browser.newContext({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: DPR });
+    if (COLD) {
+      await context.addInitScript((nonce) => {
+        const proto = WebGL2RenderingContext.prototype;
+        const source = proto.shaderSource;
+        const MAIN = /\bvoid\s+main\s*\(\s*(?:void\s*)?\)/;
+        proto.shaderSource = function (shader, src) {
+          if (!MAIN.test(src)) return source.call(this, shader, src);
+          const name = `cold_${nonce}`;
+          return source.call(this, shader, `${src.replace(MAIN, `void ${name}()`)}\nvoid main() { ${name}(); }\n`);
+        };
+      }, Math.random().toString(36).slice(2));
+    }
+    await context.addInitScript(() => {
+      globalThis.__longtasks = [];
+      new PerformanceObserver((list) => {
+        for (const e of list.getEntries()) globalThis.__longtasks.push([+e.startTime.toFixed(0), +e.duration.toFixed(0)]);
+      }).observe({ type: 'longtask', buffered: true });
+    });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('Profiler.enable');
+    await cdp.send('Profiler.setSamplingInterval', { interval: 200 });
+    const glRenderer = await page.evaluate(() => {
+      const gl = document.createElement('canvas').getContext('webgl2');
+      const dbg = gl?.getExtension('WEBGL_debug_renderer_info');
+      return gl ? String(gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER)) : null;
+    });
+    const loads = [await load(page, cdp, 'goto'), await load(page, cdp, 'reload')];
+    rounds.push({ round: r + 1, browser: browser.version(), glRenderer, errors, loads });
+    for (const l of loads) {
+      const longest = Math.max(0, ...l.longtasks.map((t) => t[1]));
+      console.log(`${r + 1}/${ROUNDS} ${l.how.padEnd(6)} longest task ${String(longest).padStart(5)} ms  canvases ${l.canvases}`
+        + `  tasks ${JSON.stringify(l.longtasks)}`);
+      console.log(`    gl (profile, inclusive) ${JSON.stringify(l.gl)}`);
+      console.log(`    top self ${JSON.stringify(l.top.slice(0, 8))}`);
+    }
+    if (errors.length) console.log(`    page errors: ${errors.join(' | ')}`);
+  } finally {
+    await browser.close();
   }
-  if (errors.length) console.log(`    page errors: ${errors.join(' | ')}`);
-  await browser.close();
 }
 server.close();
-if (OUT) await writeFile(OUT, `${JSON.stringify({ url, headed: HEADED, channel: CHANNEL ?? null, dpr: DPR, rounds }, null, 2)}\n`);
+if (OUT) await writeFile(OUT, `${JSON.stringify({ url, headed: HEADED, channel: CHANNEL ?? null, dpr: DPR, cold: COLD, rounds }, null, 2)}\n`);
