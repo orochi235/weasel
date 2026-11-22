@@ -106,6 +106,12 @@ describe('writing a Mermaid class diagram', () => {
     expect(writeClassDiagram(read.document).text).toContain('  class Foo~List~int~~\n');
   });
 
+  it('writes ids holding a hyphen, and namespaces holding a dot, as themselves, as it reads them', () => {
+    const { text, warnings } = writeClassDiagram(readClassDiagram('classDiagram\n  namespace com.example {\n    class my-class\n  }').document);
+    expect(text).toContain('  namespace com.example {\n    class my-class\n');
+    expect(warnings).toEqual([]);
+  });
+
   it('writes a plain box\'s lines as a class, warning of ends it has no head for', () => {
     const { text, warnings } = writeClassDiagram({ pages: [{
       kind: 'graph', id: 'p', width: 100, height: 100,

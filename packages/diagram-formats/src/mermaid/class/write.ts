@@ -41,6 +41,10 @@ function balanced(text: string): boolean {
   return depth === 0 && !/~|<>/.test(text);
 }
 
+/** The ids the reader takes for a class and a namespace, less any holding `--`, which reads as a line. */
+const CLASS_ID = /^(?!.*--)[\w-]+$/;
+const NAMESPACE_ID = /^(?!.*--)[\w.-]+$/;
+
 const HEADS: Readonly<Record<string, readonly [string, string]>> = {
   'triangle-hollow': ['<|', '|>'], diamond: ['*', '*'], 'diamond-hollow': ['o', 'o'], arrow: ['<', '>'], 'arrow-open': ['<', '>'],
 };
@@ -51,7 +55,8 @@ class ClassWriter {
   readonly notes = new Map<string, DataEdge | null>();
 
   constructor(readonly out: GraphOut) {
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds]);
+    const classes = mermaidIds(out.page.data.nodes.map((n) => n.id), { id: CLASS_ID });
+    this.ids = new Map([...classes, ...mermaidIds([...out.clusterIds], { id: NAMESPACE_ID, reserved: [...classes.values()] })]);
     for (const n of out.page.data.nodes) {
       if (n.outline !== 'note') continue;
       const own = out.edges.filter((e) => e.from === n.id || e.to === n.id);
