@@ -36,6 +36,7 @@ function diagram(): Spec[] {
 
 // Groups narrower than this many device pixels draw as their box, and their children are not walked.
 const SCENE_SLOT = { scene: { lod: { collapseBelowPx: 60 } } };
+const WHEEL_ZOOM = { pan: false, zoom: { wheel: 'plain' } } as const;
 
 export function LevelOfDetailDemo() {
   const scene = useScene<Data, 'main'>({ systemLayers: [{ id: 'main' }], initial: useMemo(() => diagram(), []) });
@@ -49,6 +50,7 @@ export function LevelOfDetailDemo() {
           features={[presets.select, presets.view, textTools.text]}
           defaultView={{ x: -20, y: -20, scale: { x: 0.9, y: 0.9 } }}
           layers={SCENE_SLOT}
+          viewport={WHEEL_ZOOM}
         />
       </DemoStage>
       <p className="ckd-hint">
