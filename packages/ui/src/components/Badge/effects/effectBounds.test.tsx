@@ -4,6 +4,7 @@ import Bites from './Bites';
 import Puffs from './Puffs';
 import Scallops from './Scallops';
 import Spikes from './Spikes';
+import { rangeMask } from './rangeMask';
 
 const line = (s: number): PerimeterPoint => ({ x: s, y: 0, nx: 0, ny: -1 });
 
@@ -25,4 +26,13 @@ describe('an infinite bump effect param', () => {
       expect(outline(effect, params)).toEqual(outline(effect, {}));
     });
   }
+});
+
+describe('a range with an entry that is not a finite number', () => {
+  it('reads as no range, keeping the effect on the whole perimeter', () => {
+    for (const range of [[NaN, 0.5], [0.2, Infinity], [-Infinity, NaN]] as [number, number][]) {
+      for (const s of [0, 30, 99]) expect(rangeMask(s, 100, range)).toBe(1);
+    }
+    expect(outline(Spikes, { range: [NaN, 0.5] })).toEqual(outline(Spikes, {}));
+  });
 });
