@@ -63,9 +63,9 @@ function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
 }
 
 /** What a cluster around this one set, which Graphviz carries into this one unless it sets its own. */
-interface Inherited { label: boolean; styled: boolean; stroke: boolean; text: boolean }
+interface Inherited { label: boolean; styled: boolean; stroke: boolean; text: boolean; strokeWidth: boolean }
 
-const NOTHING_INHERITED: Inherited = { label: false, styled: false, stroke: false, text: false };
+const NOTHING_INHERITED: Inherited = { label: false, styled: false, stroke: false, text: false, strokeWidth: false };
 
 function writeCluster(
   out: GraphOut, c: Cluster, placed: boolean, indent: string, lines: string[], inherited: Inherited = NOTHING_INHERITED,
@@ -80,18 +80,20 @@ function writeCluster(
   else if (inherited.styled) lines.push(`${inner}style="";`);
   if (c.style?.stroke === undefined && inherited.stroke) lines.push(`${inner}color="";`);
   if (c.style?.text === undefined && inherited.text) lines.push(`${inner}fontcolor="";`);
+  const width = penwidth(c.style?.strokeWidth);
+  if (width === null && inherited.strokeWidth) lines.push(`${inner}penwidth="";`);
   if (c.style !== undefined) {
     if (filled) lines.push(`${inner}${color('fillcolor', c.style.fill)};`);
     for (const [key, value] of [['color', c.style.stroke], ['fontcolor', c.style.text]] as const) {
       if (value !== undefined) lines.push(`${inner}${color(key, value)};`);
     }
-    const width = penwidth(c.style.strokeWidth);
-    if (width !== null) lines.push(`${inner}${width};`);
   }
+  if (width !== null) lines.push(`${inner}${width};`);
   for (const id of c.nodes) lines.push(`${inner}${dotId(id)}${nodeAttrs(out, out.byId.get(id)!, placed)};`);
   for (const child of c.clusters) writeCluster(out, child, placed, inner, lines, {
     label: inherited.label || c.label !== undefined, styled: inherited.styled || styles.length > 0,
     stroke: inherited.stroke || c.style?.stroke !== undefined, text: inherited.text || c.style?.text !== undefined,
+    strokeWidth: inherited.strokeWidth || width !== null,
   });
   lines.push(`${indent}}`);
 }

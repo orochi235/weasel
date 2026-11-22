@@ -11,10 +11,12 @@ import { checkedColor } from '../colorCheck';
 import type { ImportResult } from '../document';
 import { Membership, Warnings, graphPage } from '../graphRead';
 import { parseDot, type DotGraph, type DotNodeRef, type DotStmt, type DotSubgraph, type DotValue } from './parse';
+import { POINTS_PER_INCH, positions, round, str, type Attrs } from './positions';
 import { dashOf, dotColor, labelLines, markerOf, OUTLINE_ATTR, outlineOf, stylesOf } from './values';
 
-type Attrs = Map<string, DotValue>;
-interface Scope { kind: 'root' | 'cluster' | 'plain'; graph: Attrs; node: Attrs; edge: Attrs; cluster: string | null }
+/** What a named subgraph's statements set itself, which Graphviz keeps on the subgraph for when it is opened again. */
+interface Own { graph: Attrs; node: Attrs; edge: Attrs }
+interface Scope { kind: 'root' | 'cluster' | 'plain'; graph: Attrs; node: Attrs; edge: Attrs; cluster: string | null; own?: Own }
 /** An edge as a statement made it: `own` the attributes the statement names, `attrs` those over its scope's defaults. */
 interface RawEdge { tail: DotNodeRef; head: DotNodeRef; attrs: Attrs; own: Attrs }
 
@@ -28,7 +30,6 @@ const READ: Readonly<Record<'root' | 'cluster' | 'plain' | 'node' | 'edge', Read
 
 const DIRECTIONS: Readonly<Record<string, LayoutDirection>> = { TB: 'down', BT: 'up', LR: 'right', RL: 'left' };
 const COMPASS_PORTS = new Set(['n', 'e', 's', 'w']);
-const POINTS_PER_INCH = 72;
 /** A cluster's key starts with this when it has no name, followed by a count, and twice over when its name does. */
 const ANONYMOUS = '\u0000';
 const clusterKey = (id: string) => (id.startsWith(ANONYMOUS) ? `${ANONYMOUS}${id}` : id);
@@ -49,8 +50,6 @@ function clusterFlag(stmts: readonly DotStmt[], inherited: Attrs): boolean {
   return truthy(flag);
 }
 
-const round = (n: number) => Math.round(n * 100) / 100;
-const str = (attrs: Attrs, key: string) => attrs.get(key)?.value;
 /** A keyword attribute, `undefined` when unset or set to `""`, which Graphviz reads as its default. */
 const keyword = (attrs: Attrs, key: string) => str(attrs, key) || undefined;
 
@@ -61,15 +60,18 @@ function colorAttr(r: DotReader, attrs: Attrs, key: string): string | undefined 
   return raw === undefined || raw === '' ? undefined : checkedColor(dotColor(raw) ?? raw, 'DOT', (lead, item) => r.warnings.list(lead, item));
 }
 
-/** An attribute as a number, or `undefined`, with a warning, when it is not one. */
+/** An attribute as a number; `undefined` for one unset or set to `""`, Graphviz's default, and, with a warning, for
+ *  one that is not a number. */
 function numberAttr(r: DotReader, attrs: Attrs, key: string): number | undefined {
   const raw = str(attrs, key);
-  if (raw === undefined) return undefined;
+  if (raw === undefined || raw === '') return undefined;
   const n = raw.trim() === '' ? NaN : Number(raw);
   if (Number.isFinite(n)) return n;
   r.warnings.list('DOT attributes that are not numbers were dropped', `${key}=${raw}`);
   return undefined;
 }
+
+const atLeast = (n: number | undefined, min: number) => (n === undefined ? undefined : Math.max(n, min));
 
 class DotReader {
   readonly warnings = new Warnings();
@@ -77,14 +79,37 @@ class DotReader {
   readonly nodes = new Map<string, Attrs>();
   readonly edges: RawEdge[] = [];
   readonly clusters = new Map<string, Attrs>();
+  private readonly named = new Map<string, Own>();
   private anonymous = 0;
 
   readonly root: Scope = { kind: 'root', graph: new Map(), node: new Map(), edge: new Map(), cluster: null };
 
   constructor(readonly graph: DotGraph) {}
 
+  /** Graph attributes a root or plain scope set and does not read, which count as dropped unless a cluster inherits them. */
+  private readonly unheld: { key: string; value: DotValue }[] = [];
+
   dropUnread(kind: keyof typeof READ, keys: Iterable<string>): void {
     for (const key of keys) if (!READ[kind].has(key)) this.warnings.list('DOT attributes a diagram does not hold were dropped', key);
+  }
+
+  /** Warns for graph attributes `scope` sets that it does not read; a cluster's ones a root or plain scope holds back, as a
+   *  cluster below may read them. */
+  setGraph(scope: Scope, pairs: readonly { key: string; value: DotValue }[]): void {
+    for (const a of pairs) {
+      if (scope.kind !== 'cluster' && !READ[scope.kind].has(a.key) && READ.cluster.has(a.key)) this.unheld.push(a);
+      else this.dropUnread(scope.kind, [a.key]);
+      scope.graph.set(a.key, a.value);
+      scope.own?.graph.set(a.key, a.value);
+    }
+  }
+
+  /** Warns for the held-back graph attributes no cluster inherited. */
+  dropUninherited(): void {
+    const clusters = [...this.clusters.values()];
+    for (const { key, value } of this.unheld) {
+      if (!clusters.some((g) => g.get(key) === value)) this.warnings.list('DOT attributes a diagram does not hold were dropped', key);
+    }
   }
 
   touch(ref: DotNodeRef, scope: Scope, named: Set<string>): void {
@@ -97,12 +122,13 @@ class DotReader {
     const named = new Set<string>();
     for (const s of stmts) {
       if (s.kind === 'set' || (s.kind === 'attr' && s.target === 'graph')) {
-        const pairs = s.kind === 'set' ? [{ key: s.key, value: s.value }] : s.attrs;
-        this.dropUnread(scope.kind, pairs.map((a) => a.key));
-        for (const a of pairs) scope.graph.set(a.key, a.value);
+        this.setGraph(scope, s.kind === 'set' ? [{ key: s.key, value: s.value }] : s.attrs);
       } else if (s.kind === 'attr') {
         this.dropUnread(s.target as 'node' | 'edge', s.attrs.map((a) => a.key));
-        for (const a of s.attrs) scope[s.target].set(a.key, a.value);
+        for (const a of s.attrs) {
+          scope[s.target].set(a.key, a.value);
+          scope.own?.[s.target].set(a.key, a.value);
+        }
       } else if (s.kind === 'node') {
         this.touch(s.node, scope, named);
         this.dropUnread('node', s.attrs.map((a) => a.key));
@@ -145,11 +171,17 @@ class DotReader {
       : clusterFlag(sub.stmts, parent.graph);
     const key = !isCluster ? null : sub.id !== undefined ? clusterKey(sub.id) : `${ANONYMOUS}${this.anonymous++}`;
     if (key !== null) this.membership.openCluster(key, parent.cluster);
-    const graph = key !== null ? (this.clusters.get(key) ?? this.clusterGraph(parent.graph)) : new Map(parent.graph);
+    let own: Own | undefined;
+    if (sub.id !== undefined) {
+      own = this.named.get(sub.id) ?? { graph: new Map(), node: new Map(), edge: new Map() };
+      this.named.set(sub.id, own);
+    }
+    const over = (inherited: Attrs, mine: Attrs | undefined) => new Map([...inherited, ...(mine ?? [])]);
+    const graph = key !== null ? (this.clusters.get(key) ?? this.clusterGraph(parent.graph)) : over(parent.graph, own?.graph);
     if (key !== null) this.clusters.set(key, graph);
     return this.walk(sub.stmts, {
-      kind: key !== null ? 'cluster' : 'plain', graph, node: new Map(parent.node), edge: new Map(parent.edge),
-      cluster: key ?? parent.cluster,
+      kind: key !== null ? 'cluster' : 'plain', graph, node: over(parent.node, own?.node), edge: over(parent.edge, own?.edge),
+      cluster: key ?? parent.cluster, ...(own !== undefined ? { own } : {}),
     });
   }
 }
@@ -183,8 +215,9 @@ function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
   }
   const point = shape.toLowerCase() === 'point';
   const colors = nodeColors(r, attrs, point ? [...styles, 'filled'] : styles, point ? 'black' : 'lightgrey');
-  let width = numberAttr(r, attrs, 'width');
-  let height = numberAttr(r, attrs, 'height');
+  // Graphviz holds a node's size to at least 0.01in.
+  let width = atLeast(numberAttr(r, attrs, 'width'), 0.01);
+  let height = atLeast(numberAttr(r, attrs, 'height'), 0.01);
   // Graphviz draws a point with no label, as a circle the smaller of its sizes across, 0.05in when neither is set.
   if (point) width = height = Math.min(width ?? height ?? 0.05, height ?? width ?? 0.05);
   return {
@@ -195,27 +228,6 @@ function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
     ...(height !== undefined ? { height: round(height * POINTS_PER_INCH) } : {}),
     ...(colors !== undefined ? { colors } : {}),
   };
-}
-
-const least = (m: number, v: number) => Math.min(m, v);
-const most = (m: number, v: number) => Math.max(m, v);
-
-/** Each node's place from its `pos`, and the page's size, when every node has one; else `null`. A graph with a `bb` is
- *  layout output, its `pos` in points; one without is input to neato, its `pos` in inches. */
-function positions(nodes: DataNode[], attrs: ReadonlyMap<string, Attrs>, bb: string | undefined) {
-  const unit = bb === undefined ? POINTS_PER_INCH : 1;
-  const centers = nodes.map((n) => str(attrs.get(n.id)!, 'pos')?.replace(/!$/, '').split(',').map((v) => Number(v) * unit));
-  if (nodes.length === 0 || centers.some((c) => c === undefined || c.length < 2 || !c.every(Number.isFinite))) return null;
-  const size = (n: DataNode) => ({ width: n.width ?? 0.75 * POINTS_PER_INCH, height: n.height ?? 0.5 * POINTS_PER_INCH });
-  const box = bb?.split(',').map(Number);
-  const xs = nodes.flatMap((n, i) => [centers[i]![0]! - size(n).width / 2, centers[i]![0]! + size(n).width / 2]);
-  const ys = nodes.flatMap((n, i) => [centers[i]![1]! - size(n).height / 2, centers[i]![1]! + size(n).height / 2]);
-  const [llx, lly, right, top] = box?.length === 4 && box.every(Number.isFinite)
-    ? box : [xs.reduce(least, Infinity), ys.reduce(least, Infinity), xs.reduce(most, -Infinity), ys.reduce(most, -Infinity)];
-  const placed = nodes.map((n, i) => ({
-    ...n, ...size(n), at: { x: round(centers[i]![0]! - llx! - size(n).width / 2), y: round(top - centers[i]![1]! - size(n).height / 2) },
-  }));
-  return { nodes: placed, size: { width: round(right - llx!), height: round(top - lly!) } };
 }
 
 function portOf(r: DotReader, ref: DotNodeRef, attr: string | undefined): string | undefined {
@@ -283,13 +295,13 @@ function readCluster(
   }
   const color = colorAttr(r, attrs, 'color');
   const bg = colorAttr(r, attrs, 'bgcolor');
-  const fill = colorAttr(r, attrs, 'fillcolor') ?? color ?? bg;
+  const fill = styles.includes('filled') ? colorAttr(r, attrs, 'fillcolor') ?? color ?? bg ?? 'lightgrey' : bg;
   const stroke = colorAttr(r, attrs, 'pencolor') ?? color;
   const text = colorAttr(r, attrs, 'fontcolor');
   const width = numberAttr(r, attrs, 'penwidth');
   const dash = dashOf(styles);
   const colors: Partial<NodeStyle> = {
-    ...(styles.includes('filled') && fill !== undefined ? { fill } : bg !== undefined ? { fill: bg } : {}),
+    ...(fill !== undefined ? { fill } : {}),
     ...(stroke !== undefined ? { stroke } : {}),
     ...(text !== undefined ? { text } : {}),
     ...(width !== undefined ? { strokeWidth: width } : {}),
@@ -348,6 +360,7 @@ export function readDot(text: string): ImportResult {
   const r = new DotReader(graph);
   const root = r.root;
   r.walk(graph.stmts, root);
+  r.dropUninherited();
   let nodes = [...r.nodes].map(([id, attrs]) => readNode(r, id, attrs));
   const placed = positions(nodes, r.nodes, str(root.graph, 'bb'));
   if (placed !== null) nodes = placed.nodes;

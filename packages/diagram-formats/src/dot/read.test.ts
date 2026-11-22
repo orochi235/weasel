@@ -27,6 +27,11 @@ describe('reading DOT', () => {
     ]);
   });
 
+  it('fills a filled cluster that names no color lightgrey, as Graphviz does', () => {
+    expect(page('digraph { subgraph cluster_a { style=filled; a } }').data.containers![0]!.colors).toEqual({ fill: 'lightgrey' });
+    expect(page('digraph { subgraph cluster_a { a } }').data.containers![0]).not.toHaveProperty('colors');
+  });
+
   it('reads an invisible cluster as a container that draws nothing, around members it still draws', () => {
     const p = page('digraph { subgraph cluster_a { style=invis; label=A; color=red; x; y } }');
     expect(p.data.containers).toEqual([
@@ -212,12 +217,26 @@ describe('reading DOT', () => {
   });
 
   it('drops a size or pen width that is not a number, with a warning', () => {
-    const { document, warnings } = readDot('digraph { a [width=wide, penwidth=thick]; a -> b [penwidth=""] }');
+    const { document, warnings } = readDot('digraph { a [width=wide, penwidth=thick]; a -> b [penwidth=" "] }');
     const p = asGraph(document.pages[0]!);
     expect(node(p.data, 'a')).not.toHaveProperty('width');
     expect(node(p.data, 'a')).not.toHaveProperty('colors');
     expect(p.data.edges[0]).not.toHaveProperty('colors');
-    expect(warnings).toContain('DOT attributes that are not numbers were dropped: penwidth=thick, width=wide, penwidth=.');
+    expect(warnings).toContain('DOT attributes that are not numbers were dropped: penwidth=thick, width=wide, penwidth= .');
+  });
+
+  it('holds a node\'s size to Graphviz\'s 0.01in least', () => {
+    const a = node(page('digraph { a [width=-1, height=0] }').data, 'a');
+    expect([a.width, a.height]).toEqual([0.72, 0.72]);
+  });
+
+  it('reads a size or pen width set to "" as unset, as Graphviz does, with no warning', () => {
+    const { document, warnings } = readDot('digraph { a [width="", penwidth=""]; a -> b [penwidth=""] }');
+    const p = asGraph(document.pages[0]!);
+    expect(node(p.data, 'a')).not.toHaveProperty('width');
+    expect(node(p.data, 'a')).not.toHaveProperty('colors');
+    expect(p.data.edges[0]).not.toHaveProperty('colors');
+    expect(warnings).toEqual([]);
   });
 
   it('reads an edge label\'s names for the edge, its tail, and its head', () => {
@@ -258,6 +277,42 @@ describe('reading DOT points', () => {
     expect(node(data, 'a')).toMatchObject({ lines: [], outline: 'ellipse', width: 3.6, height: 3.6, colors: { fill: 'black' } });
     expect(node(data, 'c')).toMatchObject({ width: 7.2, height: 7.2 });
     expect(node(data, 'd').colors).toMatchObject({ fill: 'red', stroke: 'red' });
+  });
+});
+
+describe('reading a DOT subgraph opened twice', () => {
+  it('keeps the node and edge defaults its first opening set', () => {
+    const p = page('digraph { subgraph cluster_a { node [shape=box]; edge [color=red]; x } subgraph cluster_a { y; y -> x } }');
+    expect(node(p.data, 'y').outline).toBe('rect');
+    expect(p.data.edges[0]!.colors).toMatchObject({ stroke: 'red' });
+    expect(node(page('digraph { subgraph s { node [shape=box]; x } subgraph s { y } }').data, 'y').outline).toBe('rect');
+  });
+
+  it('keeps the graph attributes a plain subgraph\'s first opening set', () => {
+    const p = page('digraph { subgraph s { label="L" } subgraph s { subgraph cluster_b { b } } }');
+    expect(p.data.containers![0]!.label).toBe('L');
+  });
+
+  it('takes defaults its parent set after the first opening, where it set none itself', () => {
+    expect(node(page('digraph { subgraph s { x } node [shape=box]; subgraph s { y } }').data, 'y').outline).toBe('rect');
+  });
+});
+
+describe('warning for dropped DOT graph attributes', () => {
+  it('does not warn for a root or plain subgraph\'s attributes a cluster below inherits and reads', () => {
+    const root = readDot('digraph { color=red; style=filled; penwidth=2; subgraph cluster_a { a } }');
+    expect(asGraph(root.document.pages[0]!).data.containers![0]!.colors).toEqual({ fill: 'red', stroke: 'red', strokeWidth: 2 });
+    expect(root.warnings).toEqual([]);
+    const plain = readDot('digraph { subgraph s { label="L"; subgraph cluster_b { b } } }');
+    expect(asGraph(plain.document.pages[0]!).data.containers![0]!.label).toBe('L');
+    expect(plain.warnings).toEqual([]);
+  });
+
+  it('warns for those no cluster inherits, or every cluster below sets for itself', () => {
+    expect(readDot('digraph { color=red; a }').warnings).toEqual(['DOT attributes a diagram does not hold were dropped: color.']);
+    expect(readDot('digraph { subgraph s { label="L"; b } }').warnings).toEqual(['DOT attributes a diagram does not hold were dropped: label.']);
+    expect(readDot('digraph { color=red; subgraph cluster_a { color=blue; a } }').warnings)
+      .toEqual(['DOT attributes a diagram does not hold were dropped: color.']);
   });
 });
 

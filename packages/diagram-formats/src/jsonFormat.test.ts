@@ -31,6 +31,15 @@ describe('DIAGRAM_JSON', () => {
     expect(specs).toEqual(documentSpecs(doc));
   });
 
+  it('refuses a version 1 graph page whose groups are not a list of items with string ids', () => {
+    const text = (groups: unknown) => JSON.stringify({
+      format: 'weasel-diagram', version: 1, pages: [{ id: 'p', width: 100, height: 100, data: { nodes: [], edges: [], groups } }],
+    });
+    for (const groups of [5, [{ members: [] }]]) {
+      expect(() => DIAGRAM_JSON.read!(text(groups))).toThrow('A weasel diagram document with a page "p" whose groups is not a list of items with string ids');
+    }
+  });
+
   it('round-trips a plot page', () => {
     const doc: DiagramDocument = {
       pages: [{ kind: 'plot', id: 'c', width: 300, height: 200, data: { kind: 'xychart', series: [{ kind: 'line', values: [1, 2] }] } }],
