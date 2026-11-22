@@ -42,4 +42,12 @@ describe('a paint action on a node whose paint is inherited', () => {
   it('setStrokeWidth keeps the inherited paint', () => {
     expect(commit(setStrokeWidthAction, { width: 5 }).stroke).toEqual(solidStroke('#00ff00ff', 5));
   });
+
+  it('setFill with the inherited paint leaves the node inheriting', () => {
+    expect(commit(setFillAction, { paint: solid('#33669980') }).fill).toBe('inherit');
+  });
+
+  it('setStrokeWidth with the inherited width leaves the node inheriting', () => {
+    expect(commit(setStrokeWidthAction, { width: 3 }).stroke).toBe('inherit');
+  });
 });

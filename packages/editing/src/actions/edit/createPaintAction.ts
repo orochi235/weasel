@@ -87,12 +87,19 @@ export function createPaintAction<TState, TValue, K extends string, P>(
 ): Action {
   type Data = PaintData<K, TValue>;
 
+  /** What the run writes to `id`, or null when it leaves the node alone. An `'inherit'` node that would take the
+   *  paint it already inherits is left alone too, so it goes on inheriting. */
+  const writeFor = (scratch: Scratch<TState, TValue, K>, id: NodeId): { next: TValue | null } | null => {
+    const base = scratch.bases.get(id);
+    const next = spec.merge(base, scratch.state);
+    return unchanged(scratch.startData.get(id)?.[spec.dataKey], next) || unchanged(base, next) ? null : { next };
+  };
+
   const refreshPreviews = (scratch: Scratch<TState, TValue, K>): void => {
     scratch.previews.clear();
     for (const id of scratch.ids) {
-      const prev = scratch.startData.get(id);
-      const next = spec.merge(scratch.bases.get(id), scratch.state);
-      if (!unchanged(prev?.[spec.dataKey], next)) scratch.previews.set(id, { ...(prev ?? {}), [spec.dataKey]: next } as Data);
+      const write = writeFor(scratch, id);
+      if (write) scratch.previews.set(id, { ...(scratch.startData.get(id) ?? {}), [spec.dataKey]: write.next } as Data);
     }
   };
 
@@ -164,12 +171,11 @@ export function createPaintAction<TState, TValue, K extends string, P>(
             }
             const ops: Op[] = [];
             for (const id of scratch.ids) {
-              const start = scratch.startData.get(id)?.[spec.dataKey];
-              const merged = spec.merge(scratch.bases.get(id), scratch.state);
+              const write = writeFor(scratch, id);
               const nodeNow = scratch.scene.get(id);
-              if (!nodeNow || unchanged(start, merged)) continue;
+              if (!nodeNow || !write) continue;
               const from = { ...(nodeNow.data as object) } as Data;
-              const to = { ...from, [spec.dataKey]: merged } as Data;
+              const to = { ...from, [spec.dataKey]: write.next } as Data;
               ops.push(coreOps.setData<Data>({ id: id as string, from, to }));
             }
             commitOps(ctx.deps, ops, spec.label);
