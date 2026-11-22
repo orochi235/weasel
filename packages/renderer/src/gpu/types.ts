@@ -83,8 +83,8 @@ export interface GpuGeometry {
 export interface GpuTargetDesc {
   readonly width: number;
   readonly height: number;
-  /** Samples a pixel; 0 single-sampled. A multisampled target's color cannot
-   *  be sampled, only resolved. */
+  /** Samples a pixel; 0 or 1 single-sampled. A multisampled target's color
+   *  cannot be sampled, only resolved. */
   readonly samples?: number;
   /** A stencil attachment: clips and even-odd fills need one. */
   readonly stencil?: boolean;

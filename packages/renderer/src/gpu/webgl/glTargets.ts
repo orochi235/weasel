@@ -39,7 +39,7 @@ function renderbuffer(gl: WebGL2RenderingContext, format: number, samples: numbe
  */
 export function createTarget(gl: WebGL2RenderingContext, cache: GlCache, desc: GpuTargetDesc): GlTarget {
   const { width, height } = desc;
-  const samples = desc.samples ?? 0;
+  const samples = (desc.samples ?? 0) > 1 ? desc.samples! : 0;
   const color = samples > 0 ? null : emptyTexture(gl, cache, width, height, desc.filter ?? 'nearest');
   // Ids are not samples to blend between.
   const ids = desc.ids ? emptyTexture(gl, cache, width, height, 'nearest') : null;

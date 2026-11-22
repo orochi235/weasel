@@ -220,6 +220,17 @@ describe('WebGLDevice ids of a target without them', () => {
   });
 });
 
+describe('WebGLDevice targets', () => {
+  it('makes a single-sampled target with a color texture for one sample a pixel', () => {
+    const { rec, gpu } = setup();
+    rec.reset();
+    const target = gpu.createTarget({ width: 4, height: 4, samples: 1 });
+    expect(target.samples).toBe(0);
+    expect(target.color).not.toBeNull();
+    expect(names(rec)).not.toContain('renderbufferStorageMultisample');
+  });
+});
+
 describe('WebGLDevice resolve', () => {
   it('blits a whole multisampled buffer straight into its destination', () => {
     const { rec, gpu } = setup();
