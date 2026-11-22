@@ -102,6 +102,8 @@ export function moveRunInChain(doc: EffectDoc, first: string, last: string, to: 
     const m = made.find((x) => x.reuse === k);
     return m === undefined ? [] : [{ ...w, from: m.from, to: m.to }];
   });
+  // Pruned before minting: a freed id may be minted again, and the new wire must not inherit the old one's route or label.
+  const pruned = pruneRoutes({ ...doc, pipeline: { ...p, wires } }, [...gone].flatMap((k) => p.wires[k]!.id ?? []));
   for (const m of made) {
     if (m.reuse !== undefined) continue;
     wires.push({ id: nextWireId({ ...p, wires }), from: m.from, to: m.to });
@@ -110,8 +112,7 @@ export function moveRunInChain(doc: EffectDoc, first: string, last: string, to: 
   const want = moveItems(chain, run, to);
   const got = mainChain(pipeline);
   if (got.length !== want.length || got.some((id, k) => id !== want[k])) return null;
-  // A freed id may be minted again for a new wire, which must not inherit the old one's route.
-  return pruneRoutes({ ...doc, pipeline }, [...gone].flatMap((k) => p.wires[k]!.id ?? []));
+  return { ...pruned, pipeline };
 }
 
 /** Whether `moveInChain` would make the move. */
