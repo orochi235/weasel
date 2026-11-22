@@ -570,6 +570,17 @@ describe('a moved mark', () => {
     const [node] = (store.toJSON().scenes.naive as { nodes: { data: object }[] }).nodes;
     expect(node?.data).not.toHaveProperty('points');
   });
+
+  it('writes such a save back settled through setMeta, as update does', () => {
+    let targets: AnnotationTargetInfo[] = [{ id: 'naive', content: { width: 0, height: 0 } }];
+    const store = loadAnnotations(legacyLine(), () => targets);
+    targets = TARGETS;
+    store.setMeta('naive/n1', { note: 1 });
+    const [node] = (store.toJSON().scenes.naive as { nodes: { data: object }[] }).nodes;
+    expect(node?.data).not.toHaveProperty('points');
+    expect(node?.data).toHaveProperty('meta', { note: 1 });
+    expectNear(store.get('naive/n1')?.points ?? [], LINE.points ?? []);
+  });
 });
 
 /** A store saved before vertices followed the bounds: one line, its points in content fractions. */

@@ -84,7 +84,12 @@ export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
     setMeta(id, meta) {
       const found = nodeOf(id);
       if (!found) return;
-      found.scene.update(asNodeId(found.node.id), { data: { ...found.node.data, meta } });
+      const settled = settledMarkData(
+        found.node.data,
+        found.node.pose as MarkPose,
+        o.contentOf(found.target),
+      );
+      found.scene.update(asNodeId(found.node.id), { data: { ...settled, meta } });
     },
 
     remove(id) {
