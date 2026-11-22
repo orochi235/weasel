@@ -289,6 +289,7 @@ const drawnScenes = createPart((scene: Scene<unknown, string, unknown>): DrawnBo
   return {
     get: (id) => shown.get(id) as never,
     childrenOf: (id) => scene.childrenOf(id),
+    get layers() { return scene.layers; },
     shapes: nodeShapesOf(scene),
     derivedPathOf: (id) => {
       const node = scene.get(id);
