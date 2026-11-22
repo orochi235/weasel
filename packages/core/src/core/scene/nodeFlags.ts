@@ -52,6 +52,7 @@ export function createNodeFlags<TData, TLayer extends string, TPose>(
         write(node, flag, from);
         env.noteWritten(node);
         if (flag === 'hidden') env.invalidateDependents(id);
+        if (from) env.narrowSelection();
       },
     });
   }

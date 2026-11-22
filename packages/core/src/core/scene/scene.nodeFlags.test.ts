@@ -3,6 +3,7 @@
  * kept out of the selection, and carried through a snapshot.
  */
 import { describe, expect, it } from 'vitest';
+import { createEditingSession } from './editingSession';
 import { createScene } from './scene';
 import { asNodeId } from './types';
 
@@ -97,6 +98,23 @@ describe('Scene — setLocked', () => {
     expect(scene.getSelection()).toEqual([]);
     scene.setSelection([free]);
     expect(scene.getSelection()).toEqual([]);
+  });
+});
+
+describe('Scene — undoing a flag cleared', () => {
+  // Undo restores its own session's selection; another session's has only the narrowing to keep it legal.
+  it('drops a node from another session\'s selection when undo hides or locks it again', () => {
+    for (const flag of ['hidden', 'locked'] as const) {
+      const { scene, free } = tree();
+      const other = createEditingSession(scene);
+      const set = flag === 'hidden' ? scene.setHidden : scene.setLocked;
+      set(free, true);
+      set(free, false);
+      other.setSelection([free]);
+      scene.undo();
+      expect(scene.get(free)![flag]).toBe(true);
+      expect(other.getSelection()).toEqual([]);
+    }
   });
 });
 
