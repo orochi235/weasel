@@ -3623,3 +3623,8 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): `facesAlong` throws a `RangeError` for a `step` that is not a positive finite
   number, as `mergeRegion` does for its `tolerance`; a zero one had looped forever, and a negative one sampled only
   each segment's ends. Falling back to one sample per segment was the alternative.
+## Audit round sixty-eight (2026-11-22): prefs-schema
+
+- 2026-11-22 (the fixer's call): `prefDisplayBounds` measures a nonlinear (function) unit's `step` as the display
+  distance one step makes at the leaf's `default`, else at `min` or `max`, and leaves it as declared where none of
+  those gives a finite one. Leaving a function unit's step unconverted everywhere was the alternative.

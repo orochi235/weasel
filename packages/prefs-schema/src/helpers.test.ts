@@ -227,6 +227,14 @@ describe('prefDisplayBounds', () => {
     expect(prefDisplayBounds(num(0.2, 0.4, { scale: 1, places: 0 }))).toMatchObject({ min: 0.2, max: 0.4 });
   });
 
+  it("measures a nonlinear unit's step where the leaf sits, never as a distance from a stored 0", () => {
+    const db: PrefNumberUnit = { toDisplay: (s) => 20 * Math.log10(s), fromDisplay: (d) => 10 ** (d / 20) };
+    const leaf: PrefNumber = { kind: 'number', name: 'G', description: '', default: 1, min: 0, max: 10, step: 0.1, unit: db };
+    expect(prefDisplayBounds(leaf).step).toBeCloseTo(20 * Math.log10(1.1), 12);
+    expect(prefDisplayBounds({ ...leaf, clearable: true, default: undefined, min: 1 }).step).toBeCloseTo(20 * Math.log10(1.1), 12);
+    expect(prefDisplayBounds({ ...leaf, clearable: true, default: undefined, min: undefined, max: undefined }).step).toBe(0.1);
+  });
+
   it('carries stops through unchanged without a unit', () => {
     const leaf: PrefNumber = { kind: 'number', name: 'S', description: '', default: 0, min: -1, max: 1, stops: [0] };
     expect(prefDisplayBounds(leaf)).toEqual({ min: -1, max: 1, step: 1, stops: [0] });
