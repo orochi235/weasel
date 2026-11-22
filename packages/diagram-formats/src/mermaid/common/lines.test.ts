@@ -24,8 +24,9 @@ describe('statementsOf', () => {
     expect(src.body).toEqual([{ text: '"a" : 1', line: 3, indent: 0 }]);
   });
 
-  it('names the line of an accDescr block never closed, and of a file with no header', () => {
+  it('names the line of an accDescr block never closed, an accTitle block, and a file with no header', () => {
     expect(() => statementsOf('classDiagram\naccDescr {\nnever')).toThrow('Mermaid, line 2: an accDescr block is never closed');
+    expect(() => statementsOf('pie\naccTitle { Foo }\n"a" : 1')).toThrow('Mermaid, line 2: accTitle takes one line after a colon; only accDescr opens a block');
     expect(() => statementsOf('classDiagram\n%%{init: {}\nclass A')).toThrow('Mermaid, line 2: a directive opened here is never closed');
     expect(() => statementsOf('---\ntitle: x\n---\n%% only')).toThrow('Mermaid, line 4: the diagram has no header');
   });

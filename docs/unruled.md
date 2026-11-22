@@ -3815,3 +3815,8 @@ Calls the lanes made without a ruling:
   `irregularity` adds to it alike, so a beam jittered past 90° no longer leans the other way and `angle: 90` draws
   thin near-horizontal beams rather than an infinite shear. Reading an angle past 90° as its equivalent mod 180° was
   the alternative.
+
+## Audit round seventy-two (2026-11-22): Mermaid diagrams, part one
+
+- 2026-11-22 (the fixer's call): every Mermaid reader throws, naming the line, on `accTitle {`, since only `accDescr`
+  opens a block and Mermaid reads no other. Reading it as the accessible title was the alternative.
