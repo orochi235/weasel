@@ -103,9 +103,14 @@ export function useFloatingPlacement({
 
   const item = useMemo(() => floatingItem(size, snapCorners), [size, snapCorners]);
 
+  const [boxes, setBoxes] = useState<{ el: HTMLElement; parent: Element } | null>(null);
+  // No deps: a ref's target can change with the ref object the same, as when a panel mounts after the first commit.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const el = panelRef.current;
     const parent = containerRef?.current ?? el?.offsetParent ?? el?.parentElement;
+    if (el === boxes?.el && parent === boxes?.parent) return;
+    setBoxes(el && parent ? { el, parent } : null);
     if (!el || !parent) return;
     // Measured before the first paint, since the observer's first report lands a frame later and the box has no place
     // until then. jsdom reports 0 for every DOM size, so there only the observer's entries count.
@@ -115,6 +120,11 @@ export function useFloatingPlacement({
       setSize(panel);
       setContainer(room);
     }
+  });
+
+  useLayoutEffect(() => {
+    if (!boxes) return;
+    const { el, parent } = boxes;
     return watchResize([parent, el], (entries) => {
       for (const entry of entries) {
         if (entry.target === parent) {
@@ -124,7 +134,7 @@ export function useFloatingPlacement({
         }
       }
     });
-  }, [panelRef, containerRef]);
+  }, [boxes]);
 
   const rect = STRATEGY
     .layout({

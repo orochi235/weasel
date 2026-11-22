@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { DRAG_THRESHOLD_PX } from '@weasel-js/gestures';
 import { type ReactNode, useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Corner, FloatingPlacement } from 'windease';
+import { type Corner, DEFAULT_INSET, type FloatingPlacement } from 'windease';
 import { useFloatingPlacement } from './useFloatingPlacement';
 
 // The shared stub reports one size for every element, which makes the panel and
@@ -595,5 +595,55 @@ describe('a host that commits the placement a tick later', () => {
     expect(panel.style.left).toBe('112px');
     act(() => reset());
     expect(panel.style.left).toBe('12px');
+  });
+});
+
+describe('a host whose elements change after the first commit', () => {
+  function LateHost({ open, wide }: { open: boolean; wide: boolean }) {
+    const panelRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const { style, placed } = useFloatingPlacement({
+      panelRef,
+      containerRef,
+      placement: { x: 0, y: 0, anchor: 'bottom-right' },
+      onPlacementChange: () => {},
+    });
+    return (
+      <>
+        {wide ? <div data-wide="" key="wide" ref={containerRef} /> : <div key="narrow" ref={containerRef} />}
+        {open && <div data-panel="" data-placed={placed ? 'true' : undefined} ref={panelRef} style={style} />}
+      </>
+    );
+  }
+
+  beforeEach(() => {
+    const plain = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = class extends plain {
+      #cb: ResizeObserverCallback;
+      constructor(cb: ResizeObserverCallback) {
+        super(cb);
+        this.#cb = cb;
+      }
+      override observe(target: Element) {
+        if (!target.hasAttribute('data-wide')) return super.observe(target);
+        const contentRect = { width: 800, height: 600, x: 0, y: 0, top: 0, left: 0 };
+        this.#cb([{ target, contentRect } as ResizeObserverEntry], this);
+      }
+    } as unknown as typeof ResizeObserver;
+  });
+
+  it('measures a panel that mounts after the first commit', () => {
+    const { container, rerender } = render(<LateHost open={false} wide={false} />);
+    rerender(<LateHost open wide={false} />);
+    const panel = container.querySelector('[data-panel]') as HTMLElement;
+    expect(panel.dataset.placed).toBe('true');
+    expect(panel.style.left).toBe(`${400 - 100 - DEFAULT_INSET}px`);
+  });
+
+  it('measures the container a host swaps in', () => {
+    const { container, rerender } = render(<LateHost open wide={false} />);
+    rerender(<LateHost open wide />);
+    const panel = container.querySelector('[data-panel]') as HTMLElement;
+    expect(panel.style.left).toBe(`${800 - 100 - DEFAULT_INSET}px`);
   });
 });
