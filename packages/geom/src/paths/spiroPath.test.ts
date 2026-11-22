@@ -63,6 +63,13 @@ describe('spiroToPath', () => {
 });
 
 describe('spiroContoursOf', () => {
+  it('reads a closed two-point contour back as closed', () => {
+    const contour: SpiroContour = { points: pts('smooth', [0, 0], [100, 0]), closed: true };
+    const { path, at } = spiroToPath([contour]);
+    const back = spiroContoursOf(path, contour.points.map((p) => p.kind), at)!;
+    expect(back[0].closed).toBe(true);
+  });
+
   it('reads the points back out of the path, after the path has moved', () => {
     const contour = wave();
     const { path, at } = spiroToPath([contour]);
