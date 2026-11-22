@@ -34,6 +34,14 @@ describe('readModuleCss', () => {
     );
   });
 
+  it('wraps a supports condition holding nested functions as supports, not media', () => {
+    const root = sheets({
+      'mod/a.css': '.a{}',
+      'mod/main.css': `@import './a.css' supports(selector(:has(a)));`,
+    });
+    expect(readModuleCss(join(root, 'mod/main.css'))).toBe('@supports (selector(:has(a))) {\n.a{}\n}\n');
+  });
+
   it('leaves a commented-out import and a package import alone', () => {
     const root = sheets({ 'mod/main.css': `/* @import './gone.css'; */\n@import 'pkg/x.css';\n` });
     expect(readModuleCss(join(root, 'mod/main.css'))).toBe(`/* @import './gone.css'; */\n@import 'pkg/x.css';\n`);
