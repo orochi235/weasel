@@ -119,6 +119,13 @@ describe('resolveToolRegistry', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
+  it("takes `true` on a preset's own tool quietly, and mounts it", () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const enabled = resolveFeatures([{ id: 'mine', tools: [tool('own')] }]);
+    expect(Object.keys(resolveToolRegistry({ ...args, enabled, patch: { own: true }, dev: true }))).toEqual(['own']);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
   it('ignores `true` on an id nothing offers, and says so', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const registry = resolveToolRegistry({ ...args, patch: { nope: true, toString: true }, dev: true });
