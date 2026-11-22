@@ -10,6 +10,7 @@ vi.hoisted(() => { Object.defineProperty(navigator, 'usb', { value: {}, configur
 const printers: { disposed: boolean }[] = [];
 const printed: { disposed: boolean }[] = [];
 const lbx = vi.hoisted(() => ({ fail: null as Error | null }));
+const label = vi.hoisted(() => ({ fail: null as Error | null }));
 
 vi.mock('@weasel-js/p-touch', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@weasel-js/p-touch')>()),
@@ -18,7 +19,10 @@ vi.mock('@weasel-js/p-touch', async (importOriginal) => ({
     printers.push(printer);
     return printer;
   },
-  renderLabel: async () => ({ width: 1, height: 1, data: new Uint8ClampedArray(4) }),
+  renderLabel: async () => {
+    if (label.fail) throw label.fail;
+    return { width: 1, height: 1, data: new Uint8ClampedArray(4) };
+  },
   printLabel: async ({ printer }: { printer: { disposed: boolean } }) => {
     printed.push({ disposed: printer.disposed });
     return { hasError: false };
@@ -31,7 +35,7 @@ vi.mock('@weasel-js/p-touch', async (importOriginal) => ({
 }));
 
 describe('PTouchLabelDemo', () => {
-  afterEach(() => { printers.length = 0; printed.length = 0; lbx.fail = null; });
+  afterEach(() => { printers.length = 0; printed.length = 0; lbx.fail = null; label.fail = null; });
   afterAll(() => { Reflect.deleteProperty(navigator, 'usb'); });
 
   it('prints with a live printer under StrictMode, whose remount disposes the first one', async () => {
@@ -46,4 +50,11 @@ describe('PTouchLabelDemo', () => {
     await act(async () => { fireEvent.click(getByRole('button', { name: 'Download .lbx' })); });
     expect(await findByText('Error: no font')).toBeTruthy();
   });
+
+  it('shows a preview that fails to render on the status line', async () => {
+    label.fail = new Error('no glyphs');
+    const { findByText } = render(<PTouchLabelDemo />);
+    expect(await findByText('Error: no glyphs')).toBeTruthy();
+  });
+
 });

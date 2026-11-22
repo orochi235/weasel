@@ -46,6 +46,7 @@ export function PTouchLabelDemo() {
   const selection = useSelection({ scene, mode: 'multiple' });
   const version = useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
   const preview = useRef<HTMLCanvasElement>(null);
+  const [status, setStatus] = useState('');
   const [printer, setPrinter] = useState<BrotherPrinter | null>(null);
   // Made in the effect that disposes it: StrictMode's remount disposes the first printer and keeps a memoized one.
   useEffect(() => {
@@ -55,8 +56,6 @@ export function PTouchLabelDemo() {
     setPrinter(made);
     return () => made.dispose();
   }, []);
-  const [status, setStatus] = useState('');
-
   // `renderLabel` paints through the scene's own registry, not the canvas's presets.
   useEffect(() => nodeShapesOf(scene).register(TEXT_PAINTER), [scene]);
   useEffect(() => {
@@ -67,7 +66,7 @@ export function PTouchLabelDemo() {
       out.width = img.width;
       out.height = img.height;
       out.getContext('2d')?.putImageData(new ImageData(Uint8ClampedArray.from(img.data), img.width, img.height), 0, 0);
-    });
+    }, (err: unknown) => { if (live) setStatus(String(err)); });
     return () => { live = false; };
   }, [scene, version]);
 
