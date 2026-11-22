@@ -16,6 +16,14 @@ describe('setVertexColorAction', () => {
     expect((scene.updates[0]!.data as { vertexColors: number[] }).vertexColors).toEqual([1, 0, 0, 1, 0, 0, 0, 0.5, 0, 0, 1, 1]);
   });
 
+  it('clamps each channel to 0..1, as the opacity actions clamp alpha', () => {
+    const scene = makeScene({ a: { vertexColors: RAMP } });
+    const params = { index: 0, rgba: [2, -1, 0.5, 5] };
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params });
+    getInvoker().start(ctx, { params }).onEnd?.(ctx, 'commit');
+    expect((scene.updates[0]!.data as { vertexColors: number[] }).vertexColors.slice(0, 4)).toEqual([1, 0, 0.5, 1]);
+  });
+
   it('leaves out a node with no vertex colors, or too few anchors for the index', () => {
     const scene = makeScene({ plain: {}, short: { vertexColors: RAMP } });
     const params = { index: 5, rgba: [0, 0, 0, 1] };

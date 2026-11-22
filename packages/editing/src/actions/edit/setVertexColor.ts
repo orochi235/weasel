@@ -10,16 +10,18 @@ interface SetVertexColorState {
 
 type Rgba = readonly [number, number, number, number];
 
-/** `v` when it is four finite channels, else `undefined`: a shorter or longer
- *  `rgba` would shift every later anchor's color. */
+/** `v`'s four channels clamped to 0..1 when it is four finite numbers, else `undefined`: a shorter or
+ *  longer `rgba` would shift every later anchor's color. */
 const rgbaOf = (v: unknown): Rgba | undefined =>
-  Array.isArray(v) && v.length === 4 && v.every(isFiniteNumber) ? (v as unknown as Rgba) : undefined;
+  Array.isArray(v) && v.length === 4 && v.every(isFiniteNumber)
+    ? (v.map((c: number) => Math.min(1, Math.max(0, c))) as unknown as Rgba)
+    : undefined;
 
 /**
  * Static descriptor for the `setVertexColor` Action.
  *
  * `params.index` names an anchor and `params.rgba` its new color (ignored
- * unless four finite numbers), written into each selected node's
+ * unless four finite numbers, each clamped to 0..1), written into each selected node's
  * `data.vertexColors` (one RGBA per anchor of its path), leaving the other
  * anchors alone. A node with no vertex colors, or fewer anchors than `index`
  * names, is left as it is; the action is `NotApplicable` while no selected
