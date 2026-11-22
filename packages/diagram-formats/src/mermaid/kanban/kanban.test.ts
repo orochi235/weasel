@@ -8,6 +8,8 @@ import { parseKanban } from './parse';
 import { readKanban } from './read';
 import { writeKanban } from './write';
 
+/** A million columns take about 3 s to read alone, so a loaded node needs more than the default 5 s. */
+const MILLION_COLUMNS = 30_000;
 const RELEASE = readFileSync(join(__dirname, '..', '..', '__fixtures__', 'mermaid', 'kanban', 'release.mmd'), 'utf8');
 const page = (text: string) => onlyPage(readKanban(text).document);
 const card = (id: string) => page(RELEASE).data.nodes.find((n) => n.id === id)!;
@@ -103,7 +105,7 @@ describe('writing a Mermaid kanban board', () => {
   it('reads a board of a million columns without overflowing the call stack', () => {
     const text = `kanban\n${Array.from({ length: 1_000_000 }, (_, i) => `  c${i}[Column]`).join('\n')}`;
     expect(() => readKanban(text)).not.toThrow();
-  });
+  }, MILLION_COLUMNS);
 
   it('writes a metadata key of several words as one, with a warning, and a value on one line, so the board reads back', () => {
     const card = (label: string, value: string) => ({ pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: {
