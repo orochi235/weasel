@@ -33,3 +33,19 @@ describe('bezierCubic', () => {
     expect(handles.length).toBe(2);
   });
 });
+
+describe('bezierCubic.discriminators', () => {
+  it('offers only the handles a segment reads', () => {
+    const anchors: SharedAnchor[] = [
+      { x: 0, y: 0, inHandle: { x: -1, y: 0 }, outHandle: { x: 1, y: 1 } },
+      { x: 5, y: 0 },
+      { x: 10, y: 0, outHandle: { x: 11, y: 1 } },
+    ];
+    expect(bezierCubic.discriminators(anchors)).toEqual([
+      { kind: 'handle', anchorIndex: 0, which: 'out' },
+      { kind: 'handle', anchorIndex: 1, which: 'out' },
+      { kind: 'handle', anchorIndex: 1, which: 'in' },
+      { kind: 'handle', anchorIndex: 2, which: 'in' },
+    ]);
+  });
+});

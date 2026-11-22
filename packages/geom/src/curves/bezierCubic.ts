@@ -41,11 +41,10 @@ export const bezierCubic: CurveRepresentation = {
   discriminators(anchors) {
     const out: Discriminator[] = [];
     for (let i = 0; i < anchors.length; i++) {
-      const a = anchors[i];
-      if (a.outHandle || i + 1 < anchors.length) {
+      if (i + 1 < anchors.length) {
         out.push({ kind: 'handle', anchorIndex: i, which: 'out' });
       }
-      if (a.inHandle || i > 0) {
+      if (i > 0) {
         out.push({ kind: 'handle', anchorIndex: i, which: 'in' });
       }
     }
