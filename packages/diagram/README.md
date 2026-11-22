@@ -795,7 +795,7 @@ stroke's color.
 disposer runs. An `OutlineDef` builds `path` in a node's bounds, and optionally
 `detail`, `solid` (filled in the stroke's color over the fill), `content` (the box rows lay out in), and `boxForContent` (its inverse,
 for sizing a node to its rows). `outlineFromD(d, { detail, content })` builds one
-from SVG path data in a unit square, and throws on data that does not parse or draws nothing. A saved name that is not registered paints
+from SVG path data in a unit square, and throws on data that does not parse or draws nothing, and on a `content` box with no area or reaching outside that square. A saved name that is not registered paints
 as whatever `'rect'` resolves to and warns once.
 
 `marks` draws more over a box than its rows. A mark with `d` is SVG path data

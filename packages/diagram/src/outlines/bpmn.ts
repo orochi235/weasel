@@ -7,8 +7,8 @@
 import { trimNumber } from '@weasel-js/geom';
 import { PathBuilder, type Path } from '@weasel-js/core/math';
 import { FIGURE_OUTLINES, figureOver } from './figures';
-import { FLOWCHART_OUTLINES } from './flowchart';
-import { outlineFromD } from './fromD';
+import { FLOWCHART_OUTLINES, KAPPA } from './flowchart';
+import { outlineFromD, ringD } from './fromD';
 import type { Bounds, OutlineDef } from './types';
 
 /** The label strip under an event or a gateway, in px at the default size. */
@@ -25,12 +25,11 @@ const event = figureOver(FLOWCHART_OUTLINES.ellipse, 1, EVENT / (EVENT + STRIP))
 
 /** An end event's ring, as a share of its radius: 3px on the 40px circle. */
 const END_RING = 0.15;
-const KAPPA = 0.5522847498;
 
 /** The band between `b`'s ellipse and one `k` of its radius smaller, the inner one wound the other way so it is a hole. */
 function annulus({ x, y, width: w, height: h }: Bounds, k: number): Path {
   const cx = x + w / 2, cy = y + h / 2;
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   for (const [rx, ry, turn] of [[w / 2, h / 2, 1], [(w / 2) * (1 - k), (h / 2) * (1 - k), -1]] as const) {
     const ox = rx * KAPPA, oy = ry * KAPPA * turn, ey = ry * turn;
     b.moveTo(cx + rx, cy)
@@ -50,7 +49,7 @@ const DIAMOND = 'M0.5 0L1 0.5L0.5 1L0 0.5Z';
 const gateway = (marker: string): OutlineDef =>
   figureOver(outlineFromD(DIAMOND, { detail: marker }), 1, GATEWAY / (GATEWAY + STRIP));
 
-const ring = (r: number): string => `M${0.5 + r} 0.5A${r} ${r} 0 1 1 ${0.5 - r} 0.5A${r} ${r} 0 1 1 ${0.5 + r} 0.5`;
+const ring = (r: number): string => ringD(0.5, 0.5, r);
 
 /** A regular pentagon, point up, around the center. */
 const PENTAGON = (() => {
@@ -80,7 +79,7 @@ const subprocess: OutlineDef = {
     const left = x + (w - m) / 2;
     const top = y + h - MARKER_GAP - m;
     const arm = m * 0.25;
-    return new PathBuilder()
+    return new PathBuilder().autoOrigin()
       .moveTo(left, top).lineTo(left + m, top).lineTo(left + m, top + m).lineTo(left, top + m).close()
       .moveTo(left + m / 2, top + arm).lineTo(left + m / 2, top + m - arm)
       .moveTo(left + arm, top + m / 2).lineTo(left + m - arm, top + m / 2)
@@ -91,10 +90,7 @@ const subprocess: OutlineDef = {
     const foot = b.y + b.height - MARKER_GAP - markerOf(b.width, b.height);
     return { ...c, height: Math.max(Math.min(c.y + c.height, foot) - c.y, 0) };
   },
-  boxForContent: (c) => {
-    const box = roundRect.boxForContent!(c);
-    return { width: box.width, height: box.height + MARKER + MARKER_GAP };
-  },
+  boxForContent: (c) => roundRect.boxForContent!({ width: c.width, height: c.height + MARKER + MARKER_GAP }),
 };
 
 export const BPMN_OUTLINES = {

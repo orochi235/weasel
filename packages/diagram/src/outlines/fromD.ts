@@ -1,5 +1,5 @@
 import type { Path } from '@weasel-js/core/math';
-import { pathFromD, transformPath } from '@weasel-js/geom';
+import { PATH_M, pathFromD, transformPath } from '@weasel-js/geom';
 import type { Bounds, OutlineDef } from './types';
 
 /** Parse unit-square path data, reporting each command that does not parse and a path that draws nothing.
@@ -10,12 +10,16 @@ export function parseUnitD(d: string, onProblem?: (message: string) => void): { 
     ok = false;
     onProblem?.(message);
   });
-  if (path.kind === 'polygon' && path.commands.length === 0) {
+  if (path.kind === 'polygon' && path.commands.every((c) => c === PATH_M)) {
     ok = false;
     onProblem?.('it draws nothing');
   }
   return { path, ok };
 }
+
+/** An ellipse as two closed arcs, in path data. */
+export const ringD = (cx: number, cy: number, rx: number, ry = rx): string =>
+  `M${cx + rx} ${cy}A${rx} ${ry} 0 1 1 ${cx - rx} ${cy}A${rx} ${ry} 0 1 1 ${cx + rx} ${cy}Z`;
 
 const strictD = (d: string, what: string): Path => parseUnitD(d, (message) => {
   throw new Error(`outlineFromD: ${what} ${JSON.stringify(d)} does not parse or draws nothing: ${message}`);
@@ -27,13 +31,19 @@ const unitMatrix = (b: Bounds): [number, number, number, number, number, number]
 /** An outline from SVG path data in a unit square — `(0, 0)` the box's
  *  top-left, `(1, 1)` its bottom-right — stretched over each node's bounds.
  *  `content` is in the same unit square. Throws on path data that does not parse or draws nothing, and on a
- *  `content` with no area. */
+ *  `content` with no area or reaching outside the unit square. */
 export function outlineFromD(d: string, opts: { detail?: string; content?: Bounds } = {}): OutlineDef {
   const path = strictD(d, 'path data');
   const detail = opts.detail === undefined ? undefined : strictD(opts.detail, 'detail');
   const unit = opts.content ?? { x: 0, y: 0, width: 1, height: 1 };
   if (!(unit.width > 0 && unit.height > 0 && Number.isFinite(unit.width) && Number.isFinite(unit.height))) {
     throw new RangeError(`outlineFromD: content must have a finite, positive width and height, not ${unit.width}×${unit.height}`);
+  }
+  const EPS = 1e-9;
+  if (!(unit.x >= -EPS && unit.y >= -EPS && unit.x + unit.width <= 1 + EPS && unit.y + unit.height <= 1 + EPS)) {
+    throw new RangeError(
+      `outlineFromD: content must lie inside the unit square, not ${unit.width}×${unit.height} at (${unit.x}, ${unit.y})`,
+    );
   }
   return {
     path: (b) => transformPath(path, unitMatrix(b)),

@@ -24,7 +24,7 @@ export function roundRectOutline(maxRadius: number): OutlineDef {
     path: ({ x, y, width: w, height: h }) => {
       const r = radiusOf(w, h);
       const k = r * KAPPA;
-      return new PathBuilder()
+      return new PathBuilder().autoOrigin()
         .moveTo(x + r, y)
         .lineTo(x + w - r, y)
         .curveTo(x + w - r + k, y, x + w, y + r - k, x + w, y + r)
@@ -105,7 +105,7 @@ const CLOUD = (() => {
     const t = deg * DEG_TO_RAD;
     return { x: 0.5 + CLOUD_RX * Math.cos(t), y: 0.5 + CLOUD_RY * Math.sin(t) };
   });
-  const b = new PathBuilder().moveTo(pts[0]!.x, pts[0]!.y);
+  const b = new PathBuilder().autoOrigin().moveTo(pts[0]!.x, pts[0]!.y);
   pts.forEach((p, i) => {
     const q = pts[(i + 1) % pts.length]!;
     const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2;
@@ -166,7 +166,7 @@ export const ACTOR_FIGURE: OutlineDef = {
   path: ({ x, y, height: s }) => {
     const at = (u: number, v: number): [number, number] => [x + u * s, y + v * s];
     const r = 0.13 * s;
-    const b = new PathBuilder().moveTo(x + 0.3 * s + r, y + r);
+    const b = new PathBuilder().autoOrigin().moveTo(x + 0.3 * s + r, y + r);
     arc(b, x + 0.3 * s, y + r, r, 0, Math.PI * 2);
     b.close();
     for (const [from, to] of [
@@ -220,7 +220,7 @@ const person: OutlineDef = {
     const { d, top, shoulder: r, foot: f } = personParts(b);
     const k = r * KAPPA;
     const q = f * KAPPA;
-    const p = new PathBuilder()
+    const p = new PathBuilder().autoOrigin()
       .moveTo(x + r, top).lineTo(x + w - r, top)
       .curveTo(x + w - r + k, top, x + w, top + r - k, x + w, top + r)
       .lineTo(x + w, y + h - f)

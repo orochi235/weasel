@@ -110,7 +110,7 @@ const stadium: OutlineDef = {
 function stadiumPath(x: number, y: number, w: number, h: number): Path {
   const r = Math.min(w, h) / 2;
   const k = r * KAPPA;
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
 
   if (w >= h) {
     const left = x + r;

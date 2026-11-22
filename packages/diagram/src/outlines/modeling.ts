@@ -9,19 +9,22 @@ import type { Bounds, OutlineDef } from './types';
 const ICON = { width: 14, height: 12, tab: { width: 6, height: 3 }, margin: 6 };
 /** The room the glyph keeps clear on each side, so a centered label never runs under it. */
 const ICON_SIDE = ICON.margin * 2 + ICON.width + ICON.tab.width / 2;
+/** The height the glyph and its margins take; a box shorter than this or narrower than `ICON_SIDE` shrinks the glyph. */
+const ICON_TALL = ICON.margin * 2 + ICON.height;
 
 const component: OutlineDef = {
   path: ({ x, y, width: w, height: h }) => rectPath(x, y, w, h),
   // The UML component glyph in the top-right corner: a body with two tabs across its left edge,
   // the edge broken where each tab crosses it.
-  detail: ({ x, y, width: w }) => {
-    const left = x + w - ICON.margin - ICON.width;
-    const top = y + ICON.margin;
-    const { width: tw, height: th } = ICON.tab;
-    const tabs = [top + 2, top + ICON.height - 2 - th];
-    const b = new PathBuilder()
-      .moveTo(left, tabs[0]!).lineTo(left, top).lineTo(left + ICON.width, top)
-      .lineTo(left + ICON.width, top + ICON.height).lineTo(left, top + ICON.height).lineTo(left, tabs[1]! + th)
+  detail: ({ x, y, width: w, height: h }) => {
+    const s = Math.max(0, Math.min(1, w / ICON_SIDE, h / ICON_TALL));
+    const margin = ICON.margin * s, iw = ICON.width * s, ih = ICON.height * s, tw = ICON.tab.width * s, th = ICON.tab.height * s;
+    const left = x + w - margin - iw;
+    const top = y + margin;
+    const tabs = [top + 2 * s, top + ih - 2 * s - th];
+    const b = new PathBuilder().autoOrigin()
+      .moveTo(left, tabs[0]!).lineTo(left, top).lineTo(left + iw, top)
+      .lineTo(left + iw, top + ih).lineTo(left, top + ih).lineTo(left, tabs[1]! + th)
       .moveTo(left, tabs[0]! + th).lineTo(left, tabs[1]!);
     for (const t of tabs) b.moveTo(left - tw / 2, t).lineTo(left + tw / 2, t).lineTo(left + tw / 2, t + th).lineTo(left - tw / 2, t + th).close();
     return b.build();
