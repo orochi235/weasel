@@ -235,3 +235,17 @@ describe('a WebGPU canvas read back after a resize and before the next frame', (
     expect(calls[0][2]).toEqual([4, 4]);
   });
 });
+
+describe('a WebGPU target with no area', () => {
+  it('makes every attachment at least 1×1, as its color is, so a pass over it stays valid', () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const before = fake.textures.length;
+    const msaa = gpu.createTarget({ width: 0, height: 10, samples: 4, stencil: true });
+    gpu.createTarget({ width: 10, height: 0, stencil: true });
+    const dest = gpu.createTarget({ width: 4, height: 4 });
+    gpu.resolve(msaa, dest, 0, 0, 0, 0);
+    const sizes = fake.textures.slice(before).map((t) => (t.desc as unknown as GPUTextureDescriptor).size as number[]);
+    expect(sizes.filter((s) => s[0] < 1 || s[1] < 1)).toEqual([]);
+  });
+});
