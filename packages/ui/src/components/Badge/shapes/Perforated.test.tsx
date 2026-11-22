@@ -27,4 +27,9 @@ describe('perforated holes', () => {
     expect(holes({ holeRadius: 8, holePitch: 4 })).toHaveLength(24);
   });
 
+  it('draw a finite radius for an infinite one', () => {
+    const [hole] = holes({ holeRadius: Infinity });
+    expect(hole.getAttribute('rx')).toBe('100');
+    expect(hole.getAttribute('ry')).toBe('100');
+  });
 });

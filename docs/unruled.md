@@ -3623,3 +3623,8 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): `facesAlong` throws a `RangeError` for a `step` that is not a positive finite
   number, as `mergeRegion` does for its `tolerance`; a zero one had looped forever, and a negative one sampled only
   each segment's ends. Falling back to one sample per segment was the alternative.
+## Audit round sixty-eight (2026-11-22): badge shapes
+
+- 2026-11-22 (the fixer's call): a `perforated` badge's `holeRadius` stops at the box's longer side, so an infinite
+  one draws as any radius that already masks the whole badge. Reading it as the default, as an infinite `rotation`
+  does, was the alternative.

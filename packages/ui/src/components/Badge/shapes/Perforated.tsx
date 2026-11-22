@@ -24,7 +24,8 @@ function PerforatedComponent({ variant, focused, params }: {
   const box = useSvgBox(ref);
 
   // Convert CSS-px hole sizing into viewBox units so holes look circular on either axis.
-  const holeRadius = clampParam(cfg.holeRadius, 0, Infinity, DEFAULTS.holeRadius);
+  // Past the box's longer side a hole already masks the whole badge, so that bound changes no pixel.
+  const holeRadius = clampParam(cfg.holeRadius, 0, Math.max(box.width, box.height), DEFAULTS.holeRadius);
   const rx = (holeRadius / box.width) * 100;
   const ry = (holeRadius / box.height) * 100;
   const pitch = Math.max(2 * holeRadius, clampParam(cfg.holePitch, MIN_HOLE_PITCH, Infinity, DEFAULTS.holePitch));
