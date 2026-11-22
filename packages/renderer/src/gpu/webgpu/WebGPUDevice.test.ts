@@ -199,6 +199,13 @@ describe('a WebGPU canvas with no area', () => {
     const made = fake.textures.slice(before).filter((t) => t.label.startsWith('canvas'));
     expect(made.map((t) => t.label).sort()).toEqual(['canvas color', 'canvas resolved', 'canvas stencil']);
   });
+  it('takes no context texture, which a canvas with no area cannot have, so the submit stays valid', () => {
+    const fake = fakeGpuDevice(0, 10);
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    gpu.beginPass({ target: null, viewport: { x: 0, y: 0, width: 0, height: 10 } });
+    gpu.endPass();
+    expect(fake.textures.filter((t) => t.label === 'context')).toEqual([]);
+  });
 });
 
 describe('a WebGPU canvas read back after a resize and before the next frame', () => {

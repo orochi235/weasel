@@ -149,7 +149,8 @@ export class CanvasTarget implements PassAttachments {
 
   finish(encoder: GPUCommandEncoder): void {
     const frame = this.frameTexture();
-    if (!frame) return;
+    // A canvas with no area has no valid current texture, and copying into one voids the submit.
+    if (!frame || this.width === 0 || this.height === 0) return;
     const into = this.context.getCurrentTexture();
     const width = Math.min(frame.width, into.width);
     const height = Math.min(frame.height, into.height);
