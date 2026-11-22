@@ -136,6 +136,32 @@ describe('the seam', () => {
     expect(seamHit(api.scene, preview, seamX, 150, ONE)).toEqual({ lensId });
   });
 
+  it('gives a press on a reticle over the seam to the reticle, not the seam', () => {
+    const api = lensApiFixture();
+    const lensId = api.add({ x: 300, y: 150 }) as string;
+    api.apply(setLensOps(api.scene, lensId, { compare: 'b', view: 'split' }));
+    expect(seamHit(api.scene, undefined, 300, 150, ONE)).toBeNull();
+    expect(seamHit(api.scene, undefined, 300, 240, ONE)).toEqual({ lensId });
+  });
+
+  it('stops at a round lens’s rim, where the seam is clipped away', () => {
+    const { api, lensId } = splitLens();
+    api.apply(setLensOps(api.scene, lensId, { seam: 0.1 }));
+    const seamX = LEFT + Math.round(BODY_SIZE * 0.1);
+    const box = hitBoxesOf(api.scene, new Set()).find((b) => b.role === 'lens-seam')!.rect;
+    expect(box.y).toBeGreaterThan(TOP + 10);
+    expect(box.y + box.height).toBeLessThan(TOP + BODY_SIZE - 10);
+    expect(seamHit(api.scene, undefined, seamX, TOP + 5, ONE)).toBeNull();
+    expect(seamHit(api.scene, undefined, seamX, 200, ONE)).toEqual({ lensId });
+  });
+
+  it('spans a square lens’s full height wherever the seam is', () => {
+    const { api, lensId } = splitLens();
+    api.apply(setLensOps(api.scene, lensId, { seam: 0.1, shape: 'square' }));
+    const box = hitBoxesOf(api.scene, new Set()).find((b) => b.role === 'lens-seam')!.rect;
+    expect(box).toMatchObject({ y: TOP, height: BODY_SIZE });
+  });
+
   it('previews a drag without writing to the scene, and commits one data op on release', () => {
     const { api, lensId, applied } = splitLens();
     const preview = createSeamPreview();

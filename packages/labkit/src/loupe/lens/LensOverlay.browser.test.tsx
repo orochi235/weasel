@@ -164,6 +164,15 @@ test('lets a press that misses every lens reach the story underneath', async () 
   expect(clicks).toBe(1);
 });
 
+test('moves a reticle’s hit box with an override hold, which bumps no scene version', async () => {
+  await mount();
+  const box = () => document.querySelector('.lk-lens-hit[data-role="lens-reticle"]') as HTMLElement;
+  const before = box().getBoundingClientRect().left;
+  const reticle = pose('a:reticle');
+  scene.overrides.hold().set([['a:reticle' as never, { ...reticle, x: reticle.x + 50 }]]);
+  await waitFor(() => expect(box().getBoundingClientRect().left).toBeCloseTo(before + 50, 0));
+});
+
 test('drags a body with core’s move, leaving the pinned reticle where it was', async () => {
   await mount();
   const before = pose('a:body');

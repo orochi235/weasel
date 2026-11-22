@@ -1,17 +1,17 @@
 import { useVisibleRaf } from '@weasel-js/react';
 import { useCallback, useRef } from 'react';
 
-/** Runs the last function handed to it on the next visible frame, once however many arrive before then. */
+/** Runs each function handed to it on the next visible frame, each once however many times it arrives before then. */
 export function useFrameSchedule(): (run: () => void) => void {
-  const next = useRef<(() => void) | null>(null);
+  const due = useRef<(() => void)[]>([]);
   const frame = useVisibleRaf(() => {
-    const run = next.current;
-    next.current = null;
-    run?.();
+    const runs = due.current;
+    due.current = [];
+    for (const run of runs) run();
   });
   return useCallback(
     (run: () => void) => {
-      next.current = run;
+      if (!due.current.includes(run)) due.current.push(run);
       frame.request();
     },
     [frame],

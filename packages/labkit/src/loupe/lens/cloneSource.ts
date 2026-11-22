@@ -123,13 +123,15 @@ class CloneCell {
     const { left, top, scale } = layoutBoxOf(root);
     const { reticle, factor, size } = this.request;
     const local = { x: (reticle.x - left) / scale.x, y: (reticle.y - top) / scale.y };
-    const k = factor * scale.x;
+    const kx = factor * scale.x;
+    const ky = factor * scale.y;
     const set = (name: string, px: number) => this.box.style.setProperty(name, `${px}px`);
     set('--lk-copy-w', root.offsetWidth);
     set('--lk-copy-h', root.offsetHeight);
-    set('--lk-copy-x', size.width / 2 - local.x * k);
-    set('--lk-copy-y', size.height / 2 - local.y * k);
-    this.box.style.setProperty('--lk-copy-k', String(k));
+    set('--lk-copy-x', size.width / 2 - local.x * kx);
+    set('--lk-copy-y', size.height / 2 - local.y * ky);
+    this.box.style.setProperty('--lk-copy-kx', String(kx));
+    this.box.style.setProperty('--lk-copy-ky', String(ky));
   }
 
   private recopy(): void {

@@ -10,8 +10,18 @@ import { useLoupe } from './useLoupe';
 
 /** A loupe that is off, so only the peek key can raise it. `wrap` puts its
  *  gestures under a provider of the test's choosing. */
-function Wall({ id, wrap }: { id: string; wrap: (children: ReactNode) => ReactNode }) {
-  const hostRef = useRef<HTMLDivElement | null>(null);
+function Wall({
+  id,
+  wrap,
+  host,
+}: {
+  id: string;
+  wrap: (children: ReactNode) => ReactNode;
+  /** The element the loupe tracks, when not its own wall. */
+  host?: RefObject<HTMLElement | null>;
+}) {
+  const own = useRef<HTMLDivElement | null>(null);
+  const hostRef = (host ?? own) as RefObject<HTMLDivElement | null>;
   const options = resolveLoupe({});
   const loupe = useLoupe({
     hostRef: hostRef as RefObject<HTMLElement | null>,
@@ -19,7 +29,7 @@ function Wall({ id, wrap }: { id: string; wrap: (children: ReactNode) => ReactNo
     options,
   });
   return (
-    <div ref={hostRef} data-testid={id}>
+    <div ref={own} data-testid={id}>
       {wrap(
         <LoupeGestures
           hostRef={hostRef as RefObject<HTMLElement | null>}
@@ -108,16 +118,23 @@ describe('<LoupeGestures> with two loupes on the page', () => {
 });
 
 describe('<LoupeGestures> with two loupes in one camera', () => {
+  const cameraEl = { current: null as HTMLElement | null };
+  const attachCamera = (el: HTMLElement | null) => {
+    cameraEl.current = el;
+  };
+  const camera = { element: () => cameraEl.current } as CameraContextValue;
   const inCamera = (children: ReactNode) => (
-    <CameraContext.Provider value={{} as CameraContextValue}>{children}</CameraContext.Provider>
+    <CameraContext.Provider value={camera}>{children}</CameraContext.Provider>
   );
 
   it('warns that only the newest one will take the camera’s input', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { unmount } = render(
       <WeaselProvider isolate>
-        <Wall id="a" wrap={inCamera} />
-        <Wall id="b" wrap={inCamera} />
+        <div ref={attachCamera}>
+          <Wall id="a" wrap={inCamera} host={cameraEl} />
+          <Wall id="b" wrap={inCamera} host={cameraEl} />
+        </div>
       </WeaselProvider>,
     );
     expect(warn).toHaveBeenCalledTimes(1);
@@ -130,7 +147,9 @@ describe('<LoupeGestures> with two loupes in one camera', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const tree = (
       <WeaselProvider isolate>
-        <Wall id="a" wrap={inCamera} />
+        <div ref={attachCamera}>
+          <Wall id="a" wrap={inCamera} host={cameraEl} />
+        </div>
       </WeaselProvider>
     );
     const { rerender, unmount } = render(<StrictMode>{tree}</StrictMode>);
@@ -138,5 +157,30 @@ describe('<LoupeGestures> with two loupes in one camera', () => {
     expect(warn).not.toHaveBeenCalled();
     unmount();
     warn.mockRestore();
+  });
+});
+
+describe('<LoupeGestures> on a pane inside a camera', () => {
+  it('listens on its own host, not on the camera’s element', () => {
+    const cameraEl = { current: null as HTMLElement | null };
+    const attachCamera = (el: HTMLElement | null) => {
+      cameraEl.current = el;
+    };
+    const camera = { element: () => cameraEl.current } as CameraContextValue;
+    render(
+      <WeaselProvider isolate>
+        <div ref={attachCamera} data-testid="camera">
+          <Wall
+            id="pane"
+            wrap={(children) => (
+              <CameraContext.Provider value={camera}>{children}</CameraContext.Provider>
+            )}
+          />
+        </div>
+      </WeaselProvider>,
+    );
+    fireEvent.pointerMove(screen.getByTestId('pane'), { clientX: 10, clientY: 10 });
+    peek();
+    expect(visible('pane')).toBe('true');
   });
 });

@@ -9,14 +9,14 @@ import {
   type LayerHit,
   type RenderLayer,
   type View,
-  viewRectToScreen,
   viewWorldToScreen,
 } from '@weasel-js/core';
 import { clamp } from '@weasel-js/geom';
 import type { LoupeRect } from '@weasel-js/loupe';
 import { createEmitter } from '@weasel-js/registry';
 import type { LensActionApi } from './lensActionDefs';
-import { lensesOf, setLensOps, settingsOf } from './lensScene';
+import { boxContains, hitBoxesOf } from './lensHitBoxes';
+import { setLensOps } from './lensScene';
 import type { LensScene, LensSettings } from './lensTypes';
 
 /** How far either side of the seam a press takes it, in screen px. */
@@ -96,9 +96,8 @@ export const seamOf = <C>(
   lensId: string,
 ) => preview?.get(lensId) ?? settings.seam;
 
-/** The lens whose seam lies at the world point, within `SEAM_GRAB` screen px through `view`, measured on screen as
- *  the seam is drawn. Only the topmost body under the point counts: a press on a lens over another's seam belongs to
- *  the lens on top. */
+/** The lens whose seam lies at the world point, measured on screen through `view` against the hit boxes the lens
+ *  canvas draws: a press belongs to the topmost box under it, so a reticle or another lens over a seam keeps it. */
 export function seamHit<C>(
   scene: LensScene<C>,
   preview: SeamPreview | undefined,
@@ -107,18 +106,11 @@ export function seamHit<C>(
   view: View,
 ): { lensId: string } | null {
   const { x, y } = viewWorldToScreen(view, { x: wx, y: wy });
-  for (const { lensId, body } of [...lensesOf(scene)].reverse()) {
-    const settings = settingsOf(scene, lensId);
-    const node = scene.get(body);
-    if (!settings || !node) continue;
-    const p = viewRectToScreen(view, effectivePose(scene, node));
-    if (x < p.x - SEAM_GRAB || x > p.x + p.width + SEAM_GRAB || y < p.y || y > p.y + p.height)
-      continue;
-    if (!showsSeam(settings)) return null;
-    const { seamX } = splitRects(p, seamOf(settings, preview, lensId));
-    return Math.abs(x - seamX) <= SEAM_GRAB ? { lensId } : null;
-  }
-  return null;
+  const boxes = hitBoxesOf(scene, new Set(scene.getSelection()), view, preview);
+  const top = [...boxes].reverse().find((box) => boxContains(box, x, y));
+  if (top?.role !== 'lens-seam') return null;
+  const lensId = scene.get(top.nodeId as never)?.data.lensId;
+  return lensId === undefined ? null : { lensId };
 }
 
 /** The layer the lens canvas registers so a press on a seam reaches `loupe.seam` instead of the body's move. */
