@@ -276,12 +276,13 @@ export function svgNodesFromKit<TId extends string>(
   const warn = warnOncePerCall(options.onWarn);
   const shapes = options.shapes ?? nodeShapesOf(tree);
   const compose = tree.composition?.compose as ((parent: SvgKitPose, child: SvgKitPose) => SvgKitPose) | undefined;
-  // `frame`: the world pose of the frame `id` is stored in, null at the top.
-  const emit = (id: TId, up: SvgKitInherited, frame: SvgKitPose | null): SvgNode | null => {
+  // `frame`: the world pose of the frame `id` is stored in, null at the top. `carried`: whether a `<g>`
+  // written above holds `up`, which is false at the top of a walk that starts below the tree's top.
+  const emit = (id: TId, up: SvgKitInherited, frame: SvgKitPose | null, carried: boolean): SvgNode | null => {
     const stored = tree.get(id);
     const node = stored && compose && frame ? { ...stored, pose: compose(frame, stored.pose) } : stored;
     const own = node && definesFrame(node as { dependsOn?: unknown; derivePose?: unknown }) ? node.pose : frame;
-    const out = node && (!include || include(id)) ? lower(id, node, up, own) : null;
+    const out = node && (!include || include(id)) ? lower(id, node, up, own, carried) : null;
     return out && node?.hidden === true ? { ...out, hidden: true } : out;
   };
   /** `id`'s ancestors, outermost first. */
@@ -313,7 +314,7 @@ export function svgNodesFromKit<TId extends string>(
     for (const n of chain) up = paintBelow(n.data as SvgKitLeafData | null, up);
     return up;
   };
-  const lower = (id: TId, stored: SvgKitTreeNode, up: SvgKitInherited, frame: SvgKitPose | null): SvgNode | null => {
+  const lower = (id: TId, stored: SvgKitTreeNode, up: SvgKitInherited, frame: SvgKitPose | null, carried: boolean): SvgNode | null => {
     const booleans = stored.consumesChildren === true;
     const node = booleans
       ? asBooleanLeaf(stored, derivedPathIn(tree, id), (box) => (compose && frame ? compose(frame, box) : box))
@@ -327,7 +328,7 @@ export function svgNodesFromKit<TId extends string>(
       warn('vertexColors', 'per-anchor vertex colors are not written; the path takes its fill and stroke paint');
     }
     const self = isGroup ? null : painted !== undefined ? painted : markInherits(
-      custom !== undefined ? custom : svgLeafFromKit(data!, node.pose), own ?? {}, up,
+      custom !== undefined ? custom : svgLeafFromKit(data!, node.pose), own ?? {}, carried ? up : NO_UP_PAINT,
     );
     const kids = tree.childrenOf(id);
     if (!isGroup && kids.length === 0) return self;
@@ -336,7 +337,7 @@ export function svgNodesFromKit<TId extends string>(
     const emitChildren = (): SvgNode[] => {
       const children: SvgNode[] = [];
       for (const c of kids) {
-        const child = emit(c, below, frame);
+        const child = emit(c, below, frame, true);
         if (child) children.push(child);
       }
       return children;
@@ -346,7 +347,7 @@ export function svgNodesFromKit<TId extends string>(
       : node.clip === 'outline' ? clipOutline(node as never, node.pose, undefined, shapes) : null) ?? undefined;
     const copies = node.copiesFromPose?.(node.pose, node as never) ?? [];
     const content = (): SvgGroupNode => ({ kind: 'group', children: emitChildren(), ...(clip ? { clip } : {}) });
-    const paint = groupPaintFromKit(own, below, node.pose);
+    const paint = groupPaintFromKit(own, below, node.pose, carried);
     if (booleans) {
       const g = booleanGroupSvg(self, emitChildren(), own, paint);
       return mark ? mark(id, g) : g;
@@ -371,7 +372,7 @@ export function svgNodesFromKit<TId extends string>(
   const out: SvgNode[] = [];
   for (const id of options.roots ?? tree.roots) {
     const chain = ancestorsOf(id);
-    const n = emit(id, paintAbove(chain), frameAbove(chain));
+    const n = emit(id, paintAbove(chain), frameAbove(chain), false);
     if (n) out.push(n);
   }
   return out;

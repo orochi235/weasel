@@ -25,14 +25,16 @@ export function paintBelow(own: SvgKitLeafData | null, up: SvgKitInherited): Svg
 const carries = (p: { paint?: unknown } | null): boolean => p != null && isSolidPaint(p.paint as never);
 
 /** A container's paint as its group's: its own where it has one, marked
- *  inherited where it takes it from above. */
-export function groupPaintFromKit(own: SvgKitLeafData | null, below: SvgKitInherited, pose: SvgKitPose): Partial<SvgGroupNode> {
+ *  inherited where it takes it from above and a group written above, `carried`, holds it. */
+export function groupPaintFromKit(
+  own: SvgKitLeafData | null, below: SvgKitInherited, pose: SvgKitPose, carried: boolean,
+): Partial<SvgGroupNode> {
   const out: Partial<SvgGroupNode> = {};
   if (below.fill?.paint) out.fill = svgPaintFromKit(below.fill.paint, pose);
   const stroke = svgStrokeFromKit(below.stroke, pose);
   if (stroke) out.stroke = stroke;
-  const fill = own?.fill === INHERIT && carries(below.fill);
-  const strokes = own?.stroke === INHERIT && carries(below.stroke);
+  const fill = carried && own?.fill === INHERIT && carries(below.fill);
+  const strokes = carried && own?.stroke === INHERIT && carries(below.stroke);
   if (fill || strokes) out.inherits = { ...(fill ? { fill: true } : {}), ...(strokes ? { stroke: true } : {}) };
   return out;
 }
