@@ -99,9 +99,10 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
 }
 
 /** A scene slot wired to its scene, which can also say which subtrees cannot reach a view
- *  `rect` (screen pixels) by `paintBounds`, for the cull to skip them unwalked. */
+ *  `rect` (screen pixels) by `paintBounds`, for the cull to skip them unwalked. `coarser` lets
+ *  boxes taken at a coarser zoom answer, as for a tile bake. */
 export interface WiredSceneSlot<TNode extends { id: string }, TPose> extends SceneSlotConfig<TNode, TPose> {
-  subtreeCull?: (rect: Rect) => SubtreeCullFor | undefined;
+  subtreeCull?: (rect: Rect, opts?: { coarser?: boolean }) => SubtreeCullFor | undefined;
   /** What this view drew each node as last frame, which its picking reads too. Absent, each frame
    *  picks rungs afresh, with no hysteresis. */
   lodState?: LodState;
@@ -187,7 +188,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
     return paintBounds ? paintMissesView(paintBounds, view, { x: 0, y: 0, width: dims.width, height: dims.height }) : undefined;
   };
   const prunedIn = (dims: LayerDims) => paintBoundsIn(dims) && cfg.subtreeCull
-    ? cfg.subtreeCull({ x: 0, y: 0, width: dims.width, height: dims.height })
+    ? cfg.subtreeCull({ x: 0, y: 0, width: dims.width, height: dims.height }, dims.bake ? { coarser: true } : undefined)
     : undefined;
   return {
     id: slot?.id ?? 'scene',

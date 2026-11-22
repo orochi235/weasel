@@ -73,7 +73,7 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
     ...(slot.paintBounds
       ? {
           paintBounds: sceneCullPaintBounds(scene, slot.paintBounds, shown, slot.toPose),
-          subtreeCull: (rect) => sceneSubtreeCull(scene, slot.paintBounds!, rect, slot.toPose),
+          subtreeCull: (rect, opts) => sceneSubtreeCull(scene, slot.paintBounds!, rect, slot.toPose, opts?.coarser),
         }
       : {}),
     drawOne: withShownNode(scene.overrides, painted),

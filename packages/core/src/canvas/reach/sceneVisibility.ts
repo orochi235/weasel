@@ -57,8 +57,20 @@ function worldRegion(v: View, rect: Rect): ReachRegion {
   return { box: [Math.min(ax, bx) - px, Math.min(ay, by) - py, Math.max(ax, bx) + px, Math.max(ay, by) + py] };
 }
 
+/** Whether boxes taken at `coarse` hold for views at `fine`: every layer's scale no larger, of the same sign. */
+function holdsFor(coarse: ReadonlyMap<string, View>, fine: ReadonlyMap<string, View>): boolean {
+  for (const [id, f] of fine) {
+    const c = coarse.get(id);
+    if (!c) return false;
+    for (const k of ['x', 'y'] as const) {
+      if (Math.sign(c.scale[k]) !== Math.sign(f.scale[k]) || Math.abs(c.scale[k]) > Math.abs(f.scale[k])) return false;
+    }
+  }
+  return true;
+}
+
 class SceneVisibility {
-  private readonly trees = new Map<string, ReachTree>();
+  private readonly trees = new Map<string, { tree: ReachTree; octaves: ReadonlyMap<string, View> }>();
 
   constructor(
     private readonly scene: AnyScene,
@@ -66,16 +78,21 @@ class SceneVisibility {
     private readonly toPose: ToPose | undefined,
   ) {}
 
-  /** The tree for views at these octaves, built when first asked for. */
-  treeFor(key: string, octaves: ReadonlyMap<string, View>): ReachTree {
-    let tree = this.trees.get(key);
-    if (tree !== undefined) {
-      this.trees.delete(key);
-      this.trees.set(key, tree);
-      return tree;
+  /** The tree for views at these octaves, built when first asked for. With `coarser`, a kept tree at
+   *  coarser octaves stands in rather than building one: its boxes are wider, so it prunes less but
+   *  never wrongly. */
+  treeFor(key: string, octaves: ReadonlyMap<string, View>, coarser = false): ReachTree {
+    let kept = this.trees.get(key);
+    if (kept === undefined && coarser) {
+      for (const [k, t] of this.trees) if (holdsFor(t.octaves, octaves)) [key, kept] = [k, t];
     }
-    tree = createReachTree(this.source(octaves));
-    this.trees.set(key, tree);
+    if (kept !== undefined) {
+      this.trees.delete(key);
+      this.trees.set(key, kept);
+      return kept.tree;
+    }
+    const tree = createReachTree(this.source(octaves));
+    this.trees.set(key, { tree, octaves });
     if (this.trees.size > OCTAVES_KEPT) this.trees.delete(this.trees.keys().next().value!);
     return tree;
   }
@@ -187,13 +204,16 @@ export function __withoutSubtreeCullForTest<T>(fn: () => T): T {
  * What `buildSceneTree` prunes by for `scene` drawn into `rect` (screen pixels):
  * the children of each container whose paint, by `paintBounds`, can reach the
  * view of one of the layers the walk draws. `paintBounds` is the slot's own,
- * before the scene's wrapping; `toPose` the slot's.
+ * before the scene's wrapping; `toPose` the slot's. With `coarser`, as for a tile
+ * bake, which is drawn once, a tree kept at a coarser zoom serves rather than
+ * a new one being built.
  */
 export function sceneSubtreeCull<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   paintBounds: PaintBoundsFn<Node<TData, TLayer, TPose>, TPose>,
   rect: Rect,
   toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
+  coarser = false,
 ): SubtreeCullFor | undefined {
   if (!enabled || scene.nodes.size < PRUNE_FROM_NODES) return undefined;
   const index = visibilityOf(scene as AnyScene, paintBounds as PaintBoundsFn<AnyNode, unknown>, toPose as ToPose | undefined);
@@ -206,7 +226,7 @@ export function sceneSubtreeCull<TData, TLayer extends string, TPose>(
       octaves.set(l.id, { x: v.x, y: v.y, scale: { x: sx, y: sy } });
       keys.push(sx, sy);
     }
-    const tree = index.treeFor(keys.join(','), octaves);
+    const tree = index.treeFor(keys.join(','), octaves, coarser);
     tree.ensure();
     const regions: (ReachRegion | undefined)[] = [];
     let bits = 0;
