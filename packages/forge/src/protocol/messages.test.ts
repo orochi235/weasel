@@ -19,4 +19,8 @@ describe('configKey', () => {
     expect(configKey({ m: new Map([['a', 1]]) })).toBe(configKey({ m: new Map([['a', 1]]) }));
   });
 
+  it('keeps an object with a `$type` key apart from a tag', () => {
+    expect(configKey({ n: { $type: 'number', value: 'NaN' } })).not.toBe(configKey({ n: Number.NaN }));
+    expect(configKey({ m: { $type: 'set', value: [1] } })).not.toBe(configKey({ m: new Set([1]) }));
+  });
 });

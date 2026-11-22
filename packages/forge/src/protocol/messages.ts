@@ -161,10 +161,12 @@ export function configKey(config: unknown): string {
     }
     if (!Array.isArray(v) && !isPlainObject(v)) return v;
     const out: unknown[] | Record<string, unknown> = Array.isArray(v) ? [] : {};
-    seen.set(v, out);
+    // An object of the config's own with a `$type` key is tagged too, so it never reads as one of the tags above.
+    const held = !Array.isArray(v) && Object.hasOwn(v, '$type') ? tag('object', out) : out;
+    seen.set(v, held);
     if (Array.isArray(out)) for (const member of v as unknown[]) out.push(tagged(member));
     else for (const [key, member] of Object.entries(v)) setOwn(out, key, tagged(member));
-    return out;
+    return held;
   };
   return coreStableStringify(tagged(config));
 }
