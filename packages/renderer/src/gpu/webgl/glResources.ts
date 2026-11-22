@@ -7,9 +7,11 @@ import type { GlCache } from './glCache';
 import { withFlagHonoringSource } from './bitmapCanvas';
 import { packedStride } from '../vertexLayout';
 import { textureSize } from '../textureSize';
+import { bytesOf, checkBufferWrite } from '../bufferWrite';
 
 export interface GlBuffer extends GpuBuffer {
   readonly handle: WebGLBuffer;
+  size: number;
   /** The geometry this index buffer was last bound into, which holds it as
    *  its element binding: a write binds that, not some other. */
   owner?: GlGeometry;
@@ -55,7 +57,7 @@ export function createBuffer(
 ): GlBuffer {
   const handle = gl.createBuffer();
   if (!handle) throw new Error(`createBuffer (${kind}) returned null`);
-  const buffer: GlBuffer = { kind, handle };
+  const buffer: GlBuffer = { kind, handle, size: 0 };
   resizeBuffer(gl, cache, buffer, init, usage);
   return buffer;
 }
@@ -65,12 +67,14 @@ export function resizeBuffer(
 ): void {
   const target = bindBuffer(gl, cache, buffer);
   gl.bufferData(target, init as ArrayBufferView, usageOf(gl, usage));
+  buffer.size = typeof init === 'number' ? init : init.byteLength;
 }
 
 export function writeBuffer(
   gl: WebGL2RenderingContext, cache: GlCache, buffer: GlBuffer, dstByteOffset: number, data: ArrayBufferView,
   srcOffset?: number, length?: number,
 ): void {
+  checkBufferWrite(dstByteOffset, dstByteOffset + bytesOf(data, srcOffset, length).byteLength, buffer.size);
   const target = bindBuffer(gl, cache, buffer);
   if (srcOffset === undefined && length === undefined) gl.bufferSubData(target, dstByteOffset, data);
   else gl.bufferSubData(target, dstByteOffset, data, srcOffset ?? 0, length);

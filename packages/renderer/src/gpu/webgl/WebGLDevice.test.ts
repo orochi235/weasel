@@ -307,6 +307,19 @@ describe('WebGLDevice mipmapped textures', () => {
   });
 });
 
+describe('WebGLDevice buffer writes', () => {
+  it('refuses one running past the buffer, as WebGPU does, rather than dropping it with a GL error', () => {
+    const { rec, gpu } = setup();
+    const buffer = gpu.createBuffer('vertex', 8, 'dynamic');
+    gpu.writeBuffer(buffer, 0, new Float32Array(4), 2, 2);
+    expect(() => gpu.writeBuffer(buffer, 4, new Float32Array(2))).toThrow(RangeError);
+    expect(() => gpu.writeBuffer(buffer, 0, new Float32Array(4), 1)).toThrow(RangeError);
+    gpu.resizeBuffer(buffer, new Float32Array(4), 'dynamic');
+    gpu.writeBuffer(buffer, 4, new Float32Array(3));
+    expect(argsOf(rec, 'bufferSubData')).toHaveLength(2);
+  });
+});
+
 describe('WebGLDevice id targets', () => {
   it('draws the id attachment only for a draw that writes ids, and clears both', () => {
     const { rec, gpu } = setup();

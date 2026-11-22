@@ -304,3 +304,14 @@ describe('a WGSL program given a texture index outside its sampler', () => {
     program.setTexture('u_missing', tex, 3);
   });
 });
+
+describe('a WebGPU buffer write', () => {
+  it('refuses one running past the buffer, which would drop the write with a device error', () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const buffer = gpu.createBuffer('vertex', 6, 'dynamic');
+    gpu.writeBuffer(buffer, 0, new Uint8Array(6));
+    expect(() => gpu.writeBuffer(buffer, 0, new Uint8Array(10))).toThrow(/buffer write/);
+    expect(() => gpu.writeBuffer(buffer, 4, new Uint8Array(4))).toThrow(/buffer write/);
+  });
+});

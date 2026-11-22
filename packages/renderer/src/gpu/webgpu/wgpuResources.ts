@@ -6,6 +6,7 @@ import type {
 import { BufferUsage, TextureUsage } from './flags';
 import { packedStride } from '../vertexLayout';
 import { textureSize } from '../textureSize';
+import { bytesOf, checkBufferWrite } from '../bufferWrite';
 
 /** Something a command in the open encoder may read, which a write must not
  *  overtake: queue writes land before the encoder's commands run. */
@@ -76,12 +77,6 @@ function padded(bytes: Uint8Array): Uint8Array {
   return out;
 }
 
-function bytesOf(data: ArrayBufferView, srcOffset = 0, length?: number): Uint8Array {
-  const per = 'BYTES_PER_ELEMENT' in data ? (data as unknown as { BYTES_PER_ELEMENT: number }).BYTES_PER_ELEMENT : 1;
-  const count = length ?? data.byteLength / per - srcOffset;
-  return new Uint8Array(data.buffer, data.byteOffset + srcOffset * per, count * per);
-}
-
 export function createBuffer(
   host: ResourceHost, kind: GpuBuffer['kind'], init: number | ArrayBufferView, _usage: GpuBufferUsage,
 ): WgpuBuffer {
@@ -104,6 +99,7 @@ export function writeBuffer(
 ): void {
   const bytes = bytesOf(data, srcOffset, length);
   const end = dstByteOffset + bytes.byteLength;
+  checkBufferWrite(dstByteOffset, end, buffer.size);
   if (dstByteOffset % 4 !== 0 || (bytes.byteLength % 4 !== 0 && end < buffer.size)) {
     throw new Error(`weasel: a WebGPU buffer write starts and ends on a multiple of 4 bytes, or at the buffer's end; this one covers ${dstByteOffset}–${end}`);
   }
