@@ -308,7 +308,7 @@ describe('Button stylesheet selectors', () => {
     expect(active.length).toBeGreaterThan(4);
     for (const sel of active) {
       const at = sel.replace(/:active/g, '').replace(/::before|::after/g, '');
-      const attrs = /data-stance='confirm'/.test(sel) ? { 'data-stance': 'confirm' } : {};
+      const attrs: Record<string, string> = /data-stance='confirm'/.test(sel) ? { 'data-stance': 'confirm' } : {};
       const variant = sel.match(/\.(variant_\w+)/)?.[1] ?? '';
       expect([sel, el(`button ${variant}`, attrs).matches(at)]).toEqual([sel, true]);
       for (const off of ['data-disabled', 'data-readonly', 'disabled']) {
