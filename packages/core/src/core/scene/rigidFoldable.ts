@@ -1,9 +1,11 @@
 import type { NodeId } from './types';
 
+const isNumber = (v: unknown): boolean => typeof v === 'number' && !Number.isNaN(v);
+
+// A version 1–2 save is localized before this check, so a pose the rigid fold could not read arrives holding NaN.
 const isRect = (p: unknown): boolean => {
   const r = p as Record<string, unknown> | null;
-  return !!r && typeof r === 'object' && typeof r.x === 'number' && typeof r.y === 'number'
-    && typeof r.width === 'number' && typeof r.height === 'number';
+  return !!r && typeof r === 'object' && isNumber(r.x) && isNumber(r.y) && isNumber(r.width) && isNumber(r.height);
 };
 
 /**
