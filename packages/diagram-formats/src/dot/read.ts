@@ -229,7 +229,9 @@ function readEdge(r: DotReader, e: RawEdge): DataEdge {
   };
 }
 
-function readCluster(r: DotReader, id: string, attrs: Attrs, ids: ReadonlyMap<string, string>): DataContainer {
+function readCluster(
+  r: DotReader, id: string, attrs: Attrs, ids: ReadonlyMap<string, string>, unseen: ReadonlySet<string>,
+): DataContainer {
   const styles = stylesOf(str(attrs, 'style'));
   const color = colorAttr(r, attrs, 'color');
   const bg = colorAttr(r, attrs, 'bgcolor');
@@ -245,7 +247,7 @@ function readCluster(r: DotReader, id: string, attrs: Attrs, ids: ReadonlyMap<st
   };
   const label = attrs.get('label');
   const lines = label === undefined ? [] : labelLines(label, id, r.graph.id ?? '');
-  const members = r.membership.members(id, ids);
+  const members = r.membership.members(id, ids).filter((m) => !unseen.has(m));
   return {
     id: ids.get(id)!, role: 'container',
     ...(lines.length > 0 ? { label: lines.join(' ') } : {}),
@@ -267,6 +269,8 @@ function clusterIds(clusters: Iterable<string>, nodes: ReadonlyMap<string, unkno
   }
   return out;
 }
+
+const isInvisible = (attrs: Attrs) => stylesOf(str(attrs, 'style')).includes('invis');
 
 /** A strict graph's edges: one per pair of ends, the first, with the attributes every later statement naming the
  *  pair sets. */
@@ -290,9 +294,18 @@ export function readDot(text: string): ImportResult {
   const placed = positions(nodes, r.nodes, str(root.graph, 'bb'));
   if (placed !== null) nodes = placed.nodes;
   else if ([...r.nodes.values()].some((a) => a.has('pos'))) r.warnings.list('DOT attributes a diagram does not hold were dropped', 'pos');
-  const edges = (graph.strict ? strictEdges(r.edges, graph.directed) : r.edges).map((e) => readEdge(r, e));
+  const unseen = new Set([...r.nodes].filter(([, attrs]) => isInvisible(attrs)).map(([id]) => id));
+  for (const id of unseen) r.warnings.list('DOT invisible nodes and edges were left out', id);
+  nodes = nodes.filter((n) => !unseen.has(n.id));
+  const seen = (graph.strict ? strictEdges(r.edges, graph.directed) : r.edges).filter((e) => {
+    if (unseen.has(e.tail.id) || unseen.has(e.head.id)) return false;
+    if (!isInvisible(e.attrs)) return true;
+    r.warnings.list('DOT invisible nodes and edges were left out', `${e.tail.id}${graph.directed ? '->' : '--'}${e.head.id}`);
+    return false;
+  });
+  const edges = seen.map((e) => readEdge(r, e));
   const ids = clusterIds(r.clusters.keys(), r.nodes);
-  const containers = [...r.clusters].map(([id, attrs]) => readCluster(r, id, attrs, ids));
+  const containers = [...r.clusters].map(([id, attrs]) => readCluster(r, id, attrs, ids, unseen));
   const rankdir = str(root.graph, 'rankdir')?.toUpperCase();
   const direction = rankdir !== undefined ? getOwn(DIRECTIONS, rankdir) : undefined;
   const name = root.graph.get('label');

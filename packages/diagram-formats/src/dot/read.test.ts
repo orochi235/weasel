@@ -172,3 +172,14 @@ describe('reading DOT', () => {
     expect(data.containers?.map((c) => [c.id, c.members])).toEqual([['a', ['cluster_a', 'b']]]);
   });
 });
+
+describe('reading invisible DOT items', () => {
+  it('leaves out an invisible node, its edges, and an invisible edge, with a warning', () => {
+    const { document, warnings } = readDot('digraph { subgraph cluster_k { a; c } b; a -> b [style=invis]; b -> c; c [style="invis"]; a -> b }');
+    const data = asGraph(document.pages[0]!).data;
+    expect(data.nodes.map((n) => n.id)).toEqual(['a', 'b']);
+    expect(data.edges.map((e) => [e.from, e.to])).toEqual([['a', 'b']]);
+    expect(data.containers?.map((k) => k.members)).toEqual([['a']]);
+    expect(warnings).toContain('DOT invisible nodes and edges were left out: c, a->b.');
+  });
+});

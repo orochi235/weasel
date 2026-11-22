@@ -3696,3 +3696,9 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `PaintInput` with a mixed or missing value and `kinds` leaving out `solid` shows no
   body under the kind bar; a kind is chosen in the bar. Seeding the first offered kind from the picked color was
   the alternative.
+## Audit round seventy (2026-11-22): diagram formats
+
+- 2026-11-22 (the fixer's call): the DOT reader leaves out a node or an edge whose `style` holds `invis`, and every edge
+  to an invisible node, with one warning naming them, as draw-style XML leaves out hidden shapes. Invisible nodes still
+  count toward the page's size when every node has a `pos`. Keeping them drawn, or drawn with no stroke and no fill, was
+  the alternative.
