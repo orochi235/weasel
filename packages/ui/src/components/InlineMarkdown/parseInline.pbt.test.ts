@@ -37,9 +37,9 @@ describe('parseInline', () => {
   }, timeoutFor(RUNS, 1));
 });
 
-const ESCAPED = /[`*~[\]\\]/g;
+const ESCAPED = /[`*~[\]\\<]/g;
 /** Plain text, marks' own characters among it, with no `<` to start a tag. */
-const word = fc.array(fc.constantFrom(...'abcxyz09 *~`[]\\()!.:_'.split('')), { minLength: 1, maxLength: 6 }).map((a) => a.join(''));
+const word = fc.array(fc.constantFrom(...'abcxyz09 *~`[]\\()!.:_<'.split('')), { minLength: 1, maxLength: 6 }).map((a) => a.join(''));
 const codeText = fc.array(fc.constantFrom(...'abc09 .-_()+'.split('')), { minLength: 1, maxLength: 6 }).map((a) => a.join(''));
 const chord = fc.array(fc.constantFrom('Mod', 'Shift', 'Alt', 'Z', 'K', '1'), { minLength: 1, maxLength: 3 }).map((a) => a.join('+'));
 const href = fc.constantFrom('https://example.com/a', 'http://x.y', 'mailto:a@b.c', '#top', '/docs/a', './b', '../c');

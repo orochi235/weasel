@@ -27,7 +27,7 @@ const INLINE = new RegExp(
     opens('~~') + '(' + inner('') + '+?)(?<=\\S)~~',
     // A link's address may hold one level of balanced parentheses, as a Wikipedia page's often does.
     '\\[(' + inner('\\]') + '+)\\]\\(((?:[^()\\s]|\\([^()\\s]*\\))+)\\)',
-    '\\\\([`*~[\\]\\\\])',
+    '\\\\([`*~[\\]\\\\<])',
   ].join('|'),
   'gu',
 );

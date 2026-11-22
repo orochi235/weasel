@@ -38,4 +38,8 @@ describe('parseInline', () => {
       { type: 'text', text: ' now' },
     ]);
   });
+
+  it('keeps an escaped shortcut mark literal', () => {
+    expect(parseInline('write \\<kbd>Mod+Z</kbd> for one')).toEqual([{ type: 'text', text: 'write <kbd>Mod+Z</kbd> for one' }]);
+  });
 });
