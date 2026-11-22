@@ -35,6 +35,14 @@ const META_OUTLINES: Readonly<Record<string, Outline>> = {
   trapezoid: 'trapezoid', priority: 'trapezoid', 'trap-t': 'trapezoid', 'inv-trapezoid': 'trapezoid', manual: 'trapezoid',
 };
 
+/** Shapes, bracketed and named in metadata, whose outline is the mirror image of the one they read as. */
+const MIRRORED: ReadonlySet<string> = new Set(['lean-left', 'inv-trapezoid', 'lean-l', 'out-in', 'trap-t', 'manual']);
+
+/** Warns, through `warnings`, where the shape `name` reads as its mirror image. */
+export function warnMirrored(name: string, warnings: Warnings): void {
+  if (MIRRORED.has(name)) warnings.list('Mermaid shapes read as their mirror images', name);
+}
+
 /** The dash a dotted link draws. */
 export const DOTTED_DASH: readonly number[] = [4, 4];
 
@@ -76,8 +84,12 @@ class MermaidReader {
     if (ref.shape !== undefined) {
       draft.lines = textLines(ref.text ?? '');
       draft.outline = this.outline(SHAPE_OUTLINES[ref.shape], ref.shape);
+      warnMirrored(ref.shape, this.warnings);
     }
-    if (ref.meta?.shape !== undefined) draft.outline = this.outline(getOwn(META_OUTLINES, ref.meta.shape), ref.meta.shape);
+    if (ref.meta?.shape !== undefined) {
+      draft.outline = this.outline(getOwn(META_OUTLINES, ref.meta.shape), ref.meta.shape);
+      warnMirrored(ref.meta.shape, this.warnings);
+    }
     if (ref.meta?.label !== undefined) draft.lines = textLines(ref.meta.label);
     for (const c of ref.classes) this.addClass(ref.id, c);
   }

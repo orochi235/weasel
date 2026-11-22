@@ -11,7 +11,7 @@ import { IdMint, Warnings, graphPage } from '../../graphRead';
 import { readPageName } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { textLines } from '../common/text';
-import { SHAPE_OUTLINES } from '../flowchart/read';
+import { SHAPE_OUTLINES, warnMirrored } from '../flowchart/read';
 import { parseBlockDiagram, type BlockItem, type BlockLink, type BlockStmt } from './parse';
 
 /** Between a block diagram's columns, and its rows. */
@@ -43,7 +43,10 @@ class BlockReader {
     }
     if (item.text !== undefined) node.lines = textLines(item.text);
     if (item.shape === 'arrow') this.warnings.add('Mermaid block arrows read as rectangles; their directions were dropped.');
-    else if (item.shape !== undefined) node.outline = SHAPE_OUTLINES[item.shape] ?? this.unknownShape(item.shape);
+    else if (item.shape !== undefined) {
+      node.outline = SHAPE_OUTLINES[item.shape] ?? this.unknownShape(item.shape);
+      warnMirrored(item.shape, this.warnings);
+    }
     if (item.span !== undefined && item.span > 1) setOwn(this.grid.spans, item.id, item.span);
   }
 

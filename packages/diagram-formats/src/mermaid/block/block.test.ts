@@ -100,6 +100,10 @@ describe('reading a Mermaid block diagram', () => {
     expect(warnings).toEqual([]);
   });
 
+  it('warns that a lean-left block reads as its mirror image', () => {
+    expect(readBlockDiagram('block-beta\n  a[\\"x"\\]').warnings).toContain('Mermaid shapes read as their mirror images: lean-left.');
+  });
+
   it('joins a link to a group declared after it', () => {
     const read = readBlockDiagram('block-beta\n  x --> G\n  block:G\n    a\n  end');
     expect(onlyPage(read.document).data.nodes.map((n) => n.id)).toEqual(['x', 'a']);

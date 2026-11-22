@@ -140,4 +140,9 @@ describe('reading Mermaid', () => {
     expect(data.edges[0]!.colors).toBeUndefined();
     expect(read.warnings).toContain('Mermaid style lengths that are not numbers were dropped: stroke-width:thick, stroke-dasharray:5 abc.');
   });
+
+  it('warns that a lean-left or inverted-trapezoid shape reads as its mirror image', () => {
+    const read = readFlowchart('flowchart LR\n  A[\\x\\] --> B[\\y/]\n  C@{ shape: trap-t }');
+    expect(read.warnings).toContain('Mermaid shapes read as their mirror images: lean-left, inv-trapezoid, trap-t.');
+  });
 });
