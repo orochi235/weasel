@@ -58,7 +58,8 @@ describe('a clone source', () => {
     // The reticle sits 20, 10 into the body; × 4 is 80, 40, and the interior's center is 50, 40.
     expect(copy?.style.getPropertyValue('--lk-copy-x')).toBe('-30px');
     expect(copy?.style.getPropertyValue('--lk-copy-y')).toBe('0px');
-    expect(copy?.style.getPropertyValue('--lk-copy-k')).toBe('4');
+    expect(copy?.style.getPropertyValue('--lk-copy-kx')).toBe('4');
+    expect(copy?.style.getPropertyValue('--lk-copy-ky')).toBe('4');
     expect(copy?.style.getPropertyValue('--lk-copy-w')).toBe('200px');
   });
 
@@ -68,7 +69,19 @@ describe('a clone source', () => {
     handle.update(request({ reticle: { x: 60, y: 20 }, factor: 2 }));
     const copy = slot.querySelector<HTMLElement>('.lk-lens-copy');
     expect(copy?.style.getPropertyValue('--lk-copy-x')).toBe('-50px');
-    expect(copy?.style.getPropertyValue('--lk-copy-k')).toBe('2');
+    expect(copy?.style.getPropertyValue('--lk-copy-kx')).toBe('2');
+  });
+
+  it('scales each axis by the trial’s own scale on it, under a non-uniform transform', () => {
+    const { root, slot } = setup();
+    // Drawn at scale(1, 0.5): 200 × 50 on screen for a 200 × 100 layout box.
+    root.getBoundingClientRect = () => ({ left: 10, top: 10, width: 200, height: 50 }) as DOMRect;
+    createCloneSource<null>({ onFrame }).attach(slot, request());
+    const copy = slot.querySelector<HTMLElement>('.lk-lens-copy');
+    // The reticle sits 10 screen px down, 20 layout px; × 4 × 0.5 is 40, at the interior's center.
+    expect(copy?.style.getPropertyValue('--lk-copy-ky')).toBe('2');
+    expect(copy?.style.getPropertyValue('--lk-copy-y')).toBe('0px');
+    expect(copy?.style.getPropertyValue('--lk-copy-kx')).toBe('4');
   });
 
   it('copies again on the frame after the trial changes', async () => {
