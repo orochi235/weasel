@@ -26,6 +26,7 @@ import {
 } from '@weasel-js/core';
 import { editAnchorsAction } from '../pathEdit/editAnchors/editAnchors';
 import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
+import { isFiniteNumber } from '@weasel-js/registry';
 import { constraintLinkNode, constraintLinkOf } from './constraintLinks';
 import type {} from '../actionParamSchema';
 import * as coreOps from '@weasel-js/core/ops';
@@ -50,7 +51,7 @@ export const LINK_ANCHOR_PARAMS = pref.group(LABEL, {
 });
 
 const reachOf = (params: Readonly<LinkAnchorParams> | undefined): number =>
-  typeof params?.reachPx === 'number' && params.reachPx > 0 ? params.reachPx : DEFAULT_REACH_PX;
+  isFiniteNumber(params?.reachPx) && params.reachPx > 0 ? params.reachPx : DEFAULT_REACH_PX;
 
 /** What the released anchor lands on: another node, the constraint tying it there in that node's own numbering, and the point. */
 export interface LinkTarget {

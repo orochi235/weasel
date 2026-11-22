@@ -281,6 +281,18 @@ describe('constraint links', () => {
     expect(t.links()).toHaveLength(1);
   });
 
+  it('replays a drop given a reach that is not a finite number with the default reach', () => {
+    const t = setup();
+    const handle = t.linkDrag(t.triangle, 2, 0, -30);
+    t.scene.undo();
+    for (const reachPx of [Infinity, Number.NaN]) {
+      handle.replay!({ reachPx });
+      expect(t.links()).toEqual([]);
+      expect(t.points(t.triangle)[2]).toEqual({ x: 10, y: -80 });
+      t.scene.undo();
+    }
+  });
+
   it('previews a linked node following a move drag, as the move commits it', () => {
     const t = setup();
     const previews = t.moveDrag(t.square, 0, 30);
