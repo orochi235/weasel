@@ -266,5 +266,20 @@ describe('per-anchor stroke data through Join', () => {
     expect(stroke.vertexWidths).toEqual([1, 3, 4, 4]);
     expect(stroke.vertexColors).toBeUndefined();
   });
+
+  it('drops a channel the other path cannot fill while another channel joins', () => {
+    const gradient = { kind: 'linear', stops: [] };
+    const a = {
+      pose: line(0, 0, 10, 0),
+      data: { vertexColors: [1, 0, 0, 1, 0, 1, 0, 1], fill: { color: '#ff0000' }, stroke: { width: 2, vertexWidths: [1, 3], vertexColors: [1, 0, 0, 1, 0, 1, 0, 1], paint: { color: '#ff0000' } } },
+    };
+    const b = { pose: line(12, 0, 30, 0), data: { fill: gradient, stroke: { width: 4, paint: gradient } } };
+    const { deps, batches } = setup({ a, b }, ['a', 'b']);
+    run(deps);
+    const data = joinedData(batches) as ReturnType<typeof joinedData> & { vertexColors?: unknown };
+    expect(data.stroke.vertexWidths).toEqual([1, 3, 4, 4]);
+    expect(data.stroke.vertexColors).toBeUndefined();
+    expect(data.vertexColors).toBeUndefined();
+  });
 });
 
