@@ -12,3 +12,10 @@ describe('planeFloor', () => {
     }
   });
 });
+
+describe('planeFloor tile size', () => {
+  it('throws when its tilePx is not the scheme\'s', () => {
+    expect(() => planeFloor(createPlaneScheme(256), 512, [0, 0, 4000, 3000])).toThrow(RangeError);
+    expect(planeFloor(createPlaneScheme(512), 512, [0, 0, 4000, 3000]).length).toBeGreaterThan(0);
+  });
+});

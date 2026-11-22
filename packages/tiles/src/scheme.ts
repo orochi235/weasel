@@ -125,8 +125,12 @@ export function boxesMeet(a: TileBox, b: TileBox, dim: number): boolean {
 }
 
 /** The plane tiles that hold `bounds` at the finest level where it spans at most `floorTiles` tiles
- *  a side: what a pyramid pins so something can always stand in. */
+ *  a side: what a pyramid pins so something can always stand in. `tilePx` must be the scheme's own,
+ *  or it throws a `RangeError`. */
 export function planeFloor(scheme: TileScheme<PlaneTileKey, PlaneTileView>, tilePx: number, bounds: TileBox, floorTiles = 2): PlaneTileKey[] {
+  const origin = { z: 0, x: 0, y: 0 };
+  const own = (scheme.boundsOf(origin)[2]! - scheme.boundsOf(origin)[0]!) * scheme.texelsPerUnit(origin);
+  if (Math.abs(own - tilePx) > 1e-9 * own) throw new RangeError(`planeFloor: tilePx ${tilePx} is not the scheme's ${own}`);
   const span = Math.max(bounds[2]! - bounds[0]!, bounds[3]! - bounds[1]!);
   if (!(span > 0) || !Number.isFinite(span)) return [];
   // One less than the level the span fills: a box straddling tile edges takes one more a side.
