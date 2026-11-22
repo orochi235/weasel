@@ -3660,3 +3660,12 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a `Sequence` grid's `cap` bounds its cells, not each axis: an axis shorter than
   √`cap` keeps every step and the other takes what that leaves, else both keep ⌊√`cap`⌋. Two open sweeps had drawn
   `cap`² live cells. Capping rows alone, at ⌊`cap` / columns⌋, was the alternative.
+
+## Audit round sixty-nine (2026-11-22): ui components, part six
+
+- 2026-11-22 (the fixer's call): `PageTabs` treats a rename committed blank, or only spaces, as abandoned and calls no
+  `onRename`. Clearing the page's name back to its numbered label was the alternative, which `onRename`'s string
+  argument cannot say.
+- 2026-11-22 (the fixer's call): `PaintInput` with a mixed or missing value and `kinds` leaving out `solid` shows no
+  body under the kind bar; a kind is chosen in the bar. Seeding the first offered kind from the picked color was
+  the alternative.
