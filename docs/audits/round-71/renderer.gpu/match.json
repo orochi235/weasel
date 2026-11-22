@@ -1,0 +1,15 @@
+{
+ "pairs": [],
+ "a": [
+  "WebGL draws a program whose texture was deleted by sampling whatever its unit last held; WebGPU samples the dummy",
+  "A texture the pass draws into samples opaque black on WebGL and transparent black on WebGPU, though the GL comment says it matches WebGPU"
+ ],
+ "b": [
+  "`GlProgram.ready()` answers false forever on a lost (or restored) context, so `programsReady()` and `warmPrograms`' poll never finish",
+  "GL `setTexture` writes an out-of-range sampler-array index into another sampler's unit; WebGPU ignores it",
+  "WebGPU resolve/copy does not clip to either target the way GL's blit does, so an out-of-bounds rect voids the whole submit",
+  "GL `writeTexture` that resizes a mipmapped texture leaves it mipmap-incomplete (samples black); WebGPU drops to one level and keeps drawing",
+  "WebGPU `writeBuffer` accepts an unaligned write that runs past the buffer's end, which voids the submit",
+  "`identityNdcGroups` makes a GPU buffer per call and never destroys it"
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "Dispatch tab's KEEP cap counts hidden unhandled records, so idle pointer moves evict the handled records the default filter shows"
+ ],
+ "b": [
+  "DispatchView and HistoryView keep their records and toggles across a follower change, so the new follower re-delivers the ring as duplicate rows",
+  "The Ops count and Entries list for a large history step are silently cut at 50 entries, with no sign of the cut",
+  "The modifier chord is ordered one way in a route strip and another way in the diagram's input line",
+  "RegistryBrowser's narrow layout depends on a container that only DevtoolsPanel declares"
+ ]
+}

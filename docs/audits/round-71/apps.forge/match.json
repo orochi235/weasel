@@ -1,0 +1,15 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "KNOWN / JUDGED entries naming a file the sweep no longer globs are never checked, so a stale entry outlives its story",
+  "UNSWEPT entries are never checked again, so a story whose fault is fixed stays out of the sweep for good"
+ ],
+ "b": [
+  "KNOWN / JUDGED / UNSWEPT entries for a story file that no longer exists are never checked, so a rename leaves them stale forever"
+ ]
+}

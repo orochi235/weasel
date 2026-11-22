@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "An argTypes-only arg typed `boolean`, `string` or `enum` gets no control, while one typed `number` does",
+  "`weaselforge build --out <root>` still builds into the vite root itself",
+  "`sameKnob` treats an `undefined` list member as absent, so `[1, undefined]` equals `[1]` and `[undefined]` equals `[]`"
+ ],
+ "b": [
+  "describeSchema drops a nested leaf's `encoding`, so the shell refuses or misreads encoded values inside a list, map, object or union",
+  "sameKnob ignores array length, so lists that differ only by trailing `undefined` members compare equal",
+  "boundsOf drops a valid finite bound when the other one is non-finite"
+ ]
+}

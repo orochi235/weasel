@@ -1,0 +1,116 @@
+{
+ "id": "labkit.loupe",
+ "commit": "f51df0e1e7d5bf1efdc19be6d81db701aa19c8ac",
+ "date": "2026-11-22",
+ "files": [
+  "packages/labkit/src/loupe/CanvasLoupe.tsx",
+  "packages/labkit/src/loupe/DomLoupe.tsx",
+  "packages/labkit/src/loupe/Loupe.less",
+  "packages/labkit/src/loupe/LoupeBubble.tsx",
+  "packages/labkit/src/loupe/LoupeGestures.tsx",
+  "packages/labkit/src/loupe/LoupePainter.tsx",
+  "packages/labkit/src/loupe/SceneLoupe.tsx",
+  "packages/labkit/src/loupe/SourceLoupe.tsx",
+  "packages/labkit/src/loupe/TrialLoupe.tsx",
+  "packages/labkit/src/loupe/canvasLens.ts",
+  "packages/labkit/src/loupe/hostLoupe.ts",
+  "packages/labkit/src/loupe/index.ts",
+  "packages/labkit/src/loupe/lens/GridCanvas.tsx",
+  "packages/labkit/src/loupe/lens/LabLoupe.tsx",
+  "packages/labkit/src/loupe/lens/Lens.less",
+  "packages/labkit/src/loupe/lens/LensActions.tsx",
+  "packages/labkit/src/loupe/lens/LensChrome.tsx",
+  "packages/labkit/src/loupe/lens/LensOverlay.tsx",
+  "packages/labkit/src/loupe/lens/LensSlot.tsx",
+  "packages/labkit/src/loupe/lens/LensZoom.tsx",
+  "packages/labkit/src/loupe/lens/ScopeOf.tsx",
+  "packages/labkit/src/loupe/lens/cloneSource.ts",
+  "packages/labkit/src/loupe/lens/compare.ts",
+  "packages/labkit/src/loupe/lens/difference.ts",
+  "packages/labkit/src/loupe/lens/intoFrames.ts",
+  "packages/labkit/src/loupe/lens/lensActionDefs.ts",
+  "packages/labkit/src/loupe/lens/lensApi.fixture.ts",
+  "packages/labkit/src/loupe/lens/lensApi.ts",
+  "packages/labkit/src/loupe/lens/lensHitBoxes.ts",
+  "packages/labkit/src/loupe/lens/lensScene.ts",
+  "packages/labkit/src/loupe/lens/lensShapes.ts",
+  "packages/labkit/src/loupe/lens/lensSource.ts",
+  "packages/labkit/src/loupe/lens/lensTypes.ts",
+  "packages/labkit/src/loupe/lens/lensZoomTrack.ts",
+  "packages/labkit/src/loupe/lens/pixelGrid.ts",
+  "packages/labkit/src/loupe/lens/probeUnderLens.ts",
+  "packages/labkit/src/loupe/lens/reticleFollower.ts",
+  "packages/labkit/src/loupe/lens/scrollByWheel.ts",
+  "packages/labkit/src/loupe/lens/useCaptureDelay.ts",
+  "packages/labkit/src/loupe/lens/useFocusReports.ts",
+  "packages/labkit/src/loupe/lens/useFrameSchedule.ts",
+  "packages/labkit/src/loupe/lens/useLabBody.ts",
+  "packages/labkit/src/loupe/lens/useLensRemeasure.ts",
+  "packages/labkit/src/loupe/lens/useLensShapes.ts",
+  "packages/labkit/src/loupe/lens/useWheelPassThrough.ts",
+  "packages/labkit/src/loupe/sourceLens.ts",
+  "packages/labkit/src/loupe/types.ts",
+  "packages/labkit/src/loupe/useLensDamage.ts",
+  "packages/labkit/src/loupe/useLensReport.ts",
+  "packages/labkit/src/loupe/useLoupe.ts"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 1,
+ "distinct": 7,
+ "chapman": 11.5,
+ "unfound": 4.5,
+ "read": {
+  "A": 50,
+  "B": 50
+ },
+ "newCode": {
+  "since": 70,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 70,
+  "chapman": 14,
+  "unfound": 8
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 20,
+  "testFiles": {
+   "failed": 0,
+   "passed": 59,
+   "total": 59
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.3,
+   "B": 5.2,
+   "match": 0.1,
+   "fix": 17.6,
+   "repair": 6.2
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2304702,
+  "costUsd": 6.8
+ },
+ "fixCommits": [
+  "b989d7eefd1ae853231e063d022cfdf843bec156",
+  "4dabdb26c944c1eacb6f8779014e500949341540",
+  "7b2688996bc778ba0aa6940d3efc3034f3836218",
+  "4d8a4b82d5b9d7e4d08aa72b3afb6eca8d5c65f7",
+  "78685e694439d96faf93fbe8df76fc3fa7936d8c",
+  "7b95cbcdfca6bd4659dd22029f5e4960596c43e4",
+  "f7917c875d7f248399dfc586e0dd7b0fcadf2a90"
+ ]
+}

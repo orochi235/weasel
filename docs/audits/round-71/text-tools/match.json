@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "Greek rung memo ignores the inherited fill, so bars keep a container's old color",
+  "Greek bars ignore verticalAlign (and fit), so centered or bottom text jumps to the top when zoomed out",
+  "Greek rung drops a background's shadow and edge",
+  "Selection and double-click disagree on where overflowing text is: a visible overflow line picks but won't open for editing",
+  "enterTextEdit / isTextNode open a locked node, whose edit is then silently discarded"
+ ],
+ "b": [
+  "Greek-rung bars of a text node with an inherited fill keep the old container paint",
+  "Greek-rung bars ignore `verticalAlign`, `fit` and `overflow: 'clip'`, so they sit where the text is not"
+ ]
+}

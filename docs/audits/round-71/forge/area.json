@@ -1,0 +1,91 @@
+{
+ "id": "forge",
+ "commit": "f51df0e1e7d5bf1efdc19be6d81db701aa19c8ac",
+ "date": "2026-11-22",
+ "files": [
+  "packages/forge/src/actionParamSchema.ts",
+  "packages/forge/src/cli/cli.ts",
+  "packages/forge/src/cli/parse.ts",
+  "packages/forge/src/cli/policy.ts",
+  "packages/forge/src/config.ts",
+  "packages/forge/src/csf/argsContext.ts",
+  "packages/forge/src/csf/argsToSchema.ts",
+  "packages/forge/src/csf/loadCsfModule.tsx",
+  "packages/forge/src/csf/portSafe.ts",
+  "packages/forge/src/csf/propArgTypes.ts",
+  "packages/forge/src/csf/shims/preview-api.ts",
+  "packages/forge/src/csf/types.ts",
+  "packages/forge/src/icons.gen.ts",
+  "packages/forge/src/index.ts",
+  "packages/forge/src/kitIcons.tsx",
+  "packages/forge/src/messageOf.ts",
+  "packages/forge/src/pbt.fixture.ts",
+  "packages/forge/src/play.ts",
+  "packages/forge/src/protocol/channel.ts",
+  "packages/forge/src/protocol/messages.ts",
+  "packages/forge/src/protocol/schema.ts",
+  "packages/forge/src/route/url.ts",
+  "packages/forge/src/test/index.ts",
+  "packages/forge/src/test/play.ts",
+  "packages/forge/src/test/runStory.tsx",
+  "packages/forge/src/testing/frame.ts",
+  "packages/forge/src/testing/loupe.ts",
+  "packages/forge/src/testing/shell.ts",
+  "packages/forge/src/title.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 7,
+ "unfound": 2,
+ "read": {
+  "A": 29,
+  "B": 29
+ },
+ "newCode": {
+  "since": 67,
+  "changedFiles": 1,
+  "findings": 1
+ },
+ "previous": {
+  "round": 67,
+  "chapman": 19,
+  "unfound": 12
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 14,
+  "testFiles": {
+   "failed": 0,
+   "passed": 282,
+   "total": 282
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.6,
+   "B": 4.2,
+   "match": 0.9,
+   "fix": 12.1
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1380224,
+  "costUsd": 4.12
+ },
+ "fixCommits": [
+  "f08d66cbe17df95f42bd2918240537b3c8b542ff",
+  "33a2dcae40ebe3ee6f3b78fe1797bbfe9cb6917a",
+  "82d4aeff5f442b2c8d995a13f2485096e3ac4b96",
+  "6556be03e0d140c88a3175c85638f5332c644b65"
+ ]
+}

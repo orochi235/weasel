@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "Zoom-in key never matches Cmd+Shift+= / Cmd++: the spec names only `'='`",
+  "Pinch zoom doesn't stop a running fling coast, so the two fight",
+  "Keyboard context menu swallows Shift+F10 / ContextMenu when it opens nothing",
+  "A right-click can change the selection even when no menu opens",
+  "Slice pieces go in reversed: each is inserted at the same index",
+  "Wheel over a container whose offset is past its range jumps the content",
+  "`resetMs` is documented as the Cmd+0 duration but also times Fit Content"
+ ],
+ "b": [
+  "Two-finger pinch zoom does not stop a running pan coast, so the view keeps sliding under the fingers",
+  "Wheel pan, wheel/trackpad/key zoom and container scroll leave a running pan coast going",
+  "Container scroll takes the wheel for a container covered by a non-scrollable node painted above it",
+  "Context-menu pointer hit reports `selected-body` when the hit has no id, while selecting nothing"
+ ]
+}

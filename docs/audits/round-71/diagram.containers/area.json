@@ -1,0 +1,73 @@
+{
+ "id": "diagram.containers",
+ "commit": "f51df0e1e7d5bf1efdc19be6d81db701aa19c8ac",
+ "date": "2026-11-22",
+ "files": [
+  "packages/diagram/src/containers/canDropInto.ts",
+  "packages/diagram/src/containers/containerActions.ts",
+  "packages/diagram/src/containers/containerLayout.ts",
+  "packages/diagram/src/containers/containerStencils.ts",
+  "packages/diagram/src/containers/containerTitle.ts",
+  "packages/diagram/src/containers/index.ts",
+  "packages/diagram/src/containers/laneBoundaryLayer.ts",
+  "packages/diagram/src/containers/laneStack.ts",
+  "packages/diagram/src/containers/layouts.ts",
+  "packages/diagram/src/containers/regionSpecs.ts",
+  "packages/diagram/src/containers/titlePose.ts",
+  "packages/diagram/src/containers/trait.ts"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 1,
+ "distinct": 3,
+ "chapman": 3.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 67,
+  "changedFiles": 7,
+  "findings": 3
+ },
+ "previous": {
+  "round": 67,
+  "chapman": 17,
+  "unfound": 10
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 19,
+  "testFiles": {
+   "failed": 0,
+   "passed": 358,
+   "total": 358
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.6,
+   "B": 7.2,
+   "match": 0.1,
+   "fix": 12.6
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1183838,
+  "costUsd": 3.53
+ },
+ "fixCommits": [
+  "48503c43b9fa42b2cf345beeeed6aea62d8a0f08",
+  "4f578830a79ed7c13aa823b831dad281d0e86eb4",
+  "c1a5687acfb1ca58a0fcceb1dd8461357d53f2ad"
+ ]
+}

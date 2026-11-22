@@ -1,0 +1,94 @@
+{
+ "id": "text-tools",
+ "commit": "f51df0e1e7d5bf1efdc19be6d81db701aa19c8ac",
+ "date": "2026-11-22",
+ "files": [
+  "packages/text-tools/src/actionParamSchema.ts",
+  "packages/text-tools/src/actions/editEffectText.ts",
+  "packages/text-tools/src/actions/enterTextEdit.ts",
+  "packages/text-tools/src/actions/enterTextEditAt.ts",
+  "packages/text-tools/src/editor/canvasEditor.tsx",
+  "packages/text-tools/src/editor/editingDrawOne.ts",
+  "packages/text-tools/src/editor/hostTextEditors.ts",
+  "packages/text-tools/src/editor/sceneTextDrafts.ts",
+  "packages/text-tools/src/editor/textEditDep.ts",
+  "packages/text-tools/src/editor/textEditScreenPose.ts",
+  "packages/text-tools/src/editor/textEditStub.ts",
+  "packages/text-tools/src/editor/textHitAt.ts",
+  "packages/text-tools/src/editor/textLayer.ts",
+  "packages/text-tools/src/editor/useSceneTextEdit.ts",
+  "packages/text-tools/src/featurePresets.ts",
+  "packages/text-tools/src/icons.gen.ts",
+  "packages/text-tools/src/index.ts",
+  "packages/text-tools/src/ingest/textHandler.ts",
+  "packages/text-tools/src/node/insert.ts",
+  "packages/text-tools/src/node/properties.ts",
+  "packages/text-tools/src/node/textFrame.ts",
+  "packages/text-tools/src/node/textItems.ts",
+  "packages/text-tools/src/node/textLadder.ts",
+  "packages/text-tools/src/node/textOutline.ts",
+  "packages/text-tools/src/node/textPainter.ts",
+  "packages/text-tools/src/presets.ts",
+  "packages/text-tools/src/testing/openAt.ts",
+  "packages/text-tools/src/testing/textPainter.ts",
+  "packages/text-tools/src/toolSets.ts",
+  "packages/text-tools/src/tools/sticky/stickyNode.ts",
+  "packages/text-tools/src/tools/sticky/useStickyTool.ts",
+  "packages/text-tools/src/tools/text/useTextTool.ts"
+ ],
+ "a": 5,
+ "b": 2,
+ "m": 2,
+ "distinct": 5,
+ "chapman": 5,
+ "unfound": 0,
+ "read": {
+  "A": 32,
+  "B": 32
+ },
+ "newCode": {
+  "since": 58,
+  "changedFiles": 4,
+  "findings": 6
+ },
+ "previous": {
+  "round": 58,
+  "chapman": 14,
+  "unfound": 4
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 7,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1097,
+   "total": 1097
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.1,
+   "B": 1.8,
+   "match": 0.1,
+   "fix": 18.5
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1293922,
+  "costUsd": 3.76
+ },
+ "fixCommits": [
+  "0581482f877d675ae030af3a36b177d042459224",
+  "8ef70ddc2729c19dc8c30a2b580861b745c47060",
+  "50f0713f0404cde931e4caa5d8345377acdaccce",
+  "08af9c86b363c09808541e565ebc882d93a40907"
+ ]
+}

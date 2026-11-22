@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "An infinite `perforations` `holeRadius` draws no holes at all, where the `perforated` shape holds it to the box",
+  "`aqua` and `metal` tint and darkness mixes outside 0..100 produce invalid `color-mix()`, and those gradient stops turn black",
+  "A negative `rivets` `radius` writes negative `rx`/`ry`, so no rivets draw",
+  "`sunbeams` angle jitter can push a beam across 90°, flipping its lean or stretching it to ±1e16"
+ ],
+ "b": [
+  "Aqua and Metal pass unclamped tint/darkness percentages into `color-mix()`, which rejects them and drops the stop's color",
+  "Adjacent bevel bands overlap by one sample, so every seam double-paints the translucent bevel fill",
+  "Woodgrain places knots at fixed viewBox coordinates while its grain lines follow the outline's region",
+  "`irregularity: Infinity` (and `cornerCompensation: Infinity`) reads as 1, not the default, in the perimeter-warping effects",
+  "A non-finite entry in `range` silently removes the whole effect",
+  "Perforations accepts `holeRadius: Infinity`, producing infinite ellipse radii"
+ ]
+}

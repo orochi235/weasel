@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "Composite pass leaves the color matrix's alpha unclamped, where every other fill shader clamps it",
+  "`cullDrawCommands` copies a `retain` group whose children it partly drops, so the retained surface is redrawn on every call",
+  "bake.ts's header still says the bake is straight RGBA and the shader premultiplies; it is premultiplied and neither shader premultiplies",
+  "Overlapping mesh patches overwrite each other's texels instead of compositing, so a translucent patch punches a hole in the one beneath",
+  "A renderer whose context is lost and never restored keeps pinning the images it last drew"
+ ],
+ "b": [
+  "Effect composite leaves color-matrix alpha unclamped, unlike every other color-matrix shader",
+  "`bake.ts` header says the bake is straight alpha and the shader premultiplies; both are premultiplied",
+  "`Effect.uniforms` and `registerEffect` docs leave out `u_windowOrigin`, a uniform the renderer sets",
+  "With both `gl` and `canvas` given, the renderer sizes and watches `canvas`, though `gl` \"wins\""
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "setFillOpacity / setStrokeOpacity turn a None paint back on in the default color",
+  "setStrokeWidth handles \"None stroke\" two ways: `stroke: null` gets a default-colored stroke, a paint-less record stays unpainted",
+  "Test fake `FakeScene.get` returns `null` for a missing id, where the real scene returns `undefined`"
+ ],
+ "b": [
+  "selectAll selects a group together with every one of its descendants",
+  "setVertexColor writes channels outside 0..1 unclamped"
+ ]
+}

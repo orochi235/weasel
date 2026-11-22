@@ -1,0 +1,112 @@
+{
+ "id": "core.canvas.SceneCanvas.part2",
+ "commit": "f51df0e1e7d5bf1efdc19be6d81db701aa19c8ac",
+ "date": "2026-11-22",
+ "files": [
+  "packages/core/src/canvas/SceneCanvas/toolProps.ts",
+  "packages/core/src/canvas/SceneCanvas/toolRegistry.ts",
+  "packages/core/src/canvas/SceneCanvas/useActionTunings.ts",
+  "packages/core/src/canvas/SceneCanvas/useActionsPropResolver.ts",
+  "packages/core/src/canvas/SceneCanvas/useBakedScene.ts",
+  "packages/core/src/canvas/SceneCanvas/useBestHit.ts",
+  "packages/core/src/canvas/SceneCanvas/useBuiltinTools.ts",
+  "packages/core/src/canvas/SceneCanvas/useCanvasCamera.ts",
+  "packages/core/src/canvas/SceneCanvas/useCanvasDispatcher.ts",
+  "packages/core/src/canvas/SceneCanvas/useCanvasSelection.ts",
+  "packages/core/src/canvas/SceneCanvas/useCanvasTools.ts",
+  "packages/core/src/canvas/SceneCanvas/useChromeAffordances.ts",
+  "packages/core/src/canvas/SceneCanvas/useContentBounds.ts",
+  "packages/core/src/canvas/SceneCanvas/useContributionRoles.ts",
+  "packages/core/src/canvas/SceneCanvas/useDepartureGhostLayer.ts",
+  "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts",
+  "packages/core/src/canvas/SceneCanvas/useEdgePan.ts",
+  "packages/core/src/canvas/SceneCanvas/useHeldModifiers.ts",
+  "packages/core/src/canvas/SceneCanvas/useIgnoredProps.ts",
+  "packages/core/src/canvas/SceneCanvas/useMagnificationCheck.ts",
+  "packages/core/src/canvas/SceneCanvas/useNodeKinds.ts",
+  "packages/core/src/canvas/SceneCanvas/usePresetTraits.ts",
+  "packages/core/src/canvas/SceneCanvas/usePreviewGhostLayer.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneCanvasHandle.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneCanvasLayers.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneCanvasPathEdit.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneCanvasTools.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneChrome.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneColorAt.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneGestureDispatcher.ts",
+  "packages/core/src/canvas/SceneCanvas/useScenePickers.ts",
+  "packages/core/src/canvas/SceneCanvas/useScenePicking.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneRedrawSources.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneSlotLayers.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneStandardActions.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneWorkerSurface.ts",
+  "packages/core/src/canvas/SceneCanvas/useSelectionOverlayLayer.ts",
+  "packages/core/src/canvas/SceneCanvas/useSurfaceRouting.ts",
+  "packages/core/src/canvas/SceneCanvas/useSurfaceViewInputs.ts",
+  "packages/core/src/canvas/SceneCanvas/useToolKeybindings.ts",
+  "packages/core/src/canvas/SceneCanvas/useViewportActions.ts",
+  "packages/core/src/canvas/SceneCanvas/useViewportWithoutView.ts",
+  "packages/core/src/canvas/SceneCanvas/viewportProp.ts",
+  "packages/core/src/canvas/SceneCanvas/workerProps.ts",
+  "packages/core/src/canvas/SceneCanvas/worldPointAt.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 1,
+ "distinct": 8,
+ "chapman": 14,
+ "unfound": 6,
+ "read": {
+  "A": 45,
+  "B": 45
+ },
+ "newCode": {
+  "since": 39,
+  "changedFiles": 8,
+  "findings": 5
+ },
+ "previous": {
+  "round": 39,
+  "chapman": 11.8,
+  "unfound": 1.8
+ },
+ "patches": 9,
+ "verify": {
+  "ok": true,
+  "files": 23,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2449,
+   "total": 2449
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.7,
+   "B": 6.2,
+   "match": 0.1,
+   "fix": 26.1
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 2376081,
+  "costUsd": 6.68
+ },
+ "fixCommits": [
+  "03d5beb666462f5e340c0edc21f2ca7e9679326a",
+  "5d13b9fedcd01511c2f33656ac6a3556e71e2952",
+  "fd6d58ab7b4862cb30418e97a04884ebc9853bba",
+  "ad83ec8cc6b991ac27079c4eae634fea2ab75994",
+  "87648e412805a77ae946353584adcd06e23c37b1",
+  "13884fba2b75acafc84cf32c088d4cca5be76633",
+  "6c76314b1f439650c4c6536a42f59e1c558a3c30",
+  "319e930707a535f5690b9ef9c3c8e9a2a771dfd7",
+  "a1d98a0ae05a41c343350276486e6ee5848ca148"
+ ]
+}

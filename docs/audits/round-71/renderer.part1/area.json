@@ -1,0 +1,104 @@
+{
+ "id": "renderer.part1",
+ "commit": "f51df0e1e7d5bf1efdc19be6d81db701aa19c8ac",
+ "date": "2026-11-22",
+ "files": [
+  "packages/renderer/src/DrawCommand.ts",
+  "packages/renderer/src/WeaselRenderer.ts",
+  "packages/renderer/src/batchBuffers.ts",
+  "packages/renderer/src/batchClip.ts",
+  "packages/renderer/src/batchHull.ts",
+  "packages/renderer/src/batchStage.ts",
+  "packages/renderer/src/contextLoss.ts",
+  "packages/renderer/src/contextResources.ts",
+  "packages/renderer/src/cullDrawCommands.ts",
+  "packages/renderer/src/cullTree.fixture.ts",
+  "packages/renderer/src/draw.ts",
+  "packages/renderer/src/drawBatch.ts",
+  "packages/renderer/src/drawStream.ts",
+  "packages/renderer/src/dropShadow.ts",
+  "packages/renderer/src/effects/EffectTargets.ts",
+  "packages/renderer/src/effects/builtins.ts",
+  "packages/renderer/src/effects/composite.ts",
+  "packages/renderer/src/effects/compositeOp.ts",
+  "packages/renderer/src/effects/effectPrelude.ts",
+  "packages/renderer/src/effects/types.ts",
+  "packages/renderer/src/glyphCorners.ts",
+  "packages/renderer/src/glyphOutlineMesh.ts",
+  "packages/renderer/src/images/bitmapHolds.ts",
+  "packages/renderer/src/images/bitmapNames.ts",
+  "packages/renderer/src/images/imageCache.ts",
+  "packages/renderer/src/images/imageLoader.ts",
+  "packages/renderer/src/images/imageReads.ts",
+  "packages/renderer/src/index.ts",
+  "packages/renderer/src/markerCommands.ts",
+  "packages/renderer/src/math/patternSpace.ts",
+  "packages/renderer/src/mesh.ts",
+  "packages/renderer/src/meshPaint/bake.ts",
+  "packages/renderer/src/meshPaint/bakeCache.ts",
+  "packages/renderer/src/meshPaint/handles.ts",
+  "packages/renderer/src/meshPaint/index.ts",
+  "packages/renderer/src/meshPaint/meshPaint.ts",
+  "packages/renderer/src/meshPaint/meshShader.ts",
+  "packages/renderer/src/meshPaint/surface.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 38,
+  "B": 38
+ },
+ "newCode": {
+  "since": 54,
+  "changedFiles": 17,
+  "findings": 6
+ },
+ "previous": {
+  "round": 54,
+  "chapman": 11.886111111111111,
+  "unfound": 1.6361111111111113
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 21,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3081,
+   "total": 3081
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8,
+   "B": 4.5,
+   "match": 0.1,
+   "fix": 15.1
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2330867,
+  "costUsd": 6.72
+ },
+ "fixCommits": [
+  "f9410cb72d638fe754f340ce66d86068d659b895",
+  "356ee6b9b51e282f91a5d2a10a0524ca7a57e4cd",
+  "10c5704b0f68540e6e657000c5a0adb48ce9bd98",
+  "e87ba13e439e30127bfa20434ec5eedf5a554952",
+  "5397eed206d12df2e530659448e521cfbd11b69e",
+  "f452d523a7a20f77f7ee0dcc5088b0410da6e3e1",
+  "eed4fe7f53b48729842542c54505542fe5e29de3",
+  "6ce91e5260b72387ad67b6423269632da4eefdac"
+ ]
+}

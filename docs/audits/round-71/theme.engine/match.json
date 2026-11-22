@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   4,
+   2
+  ]
+ ],
+ "a": [
+  "A child's ramp or scale step declared at only some selections does not shadow the parent's semantic, component or pin of that name, so the child is reported as a duplicate (and loses to a parent pin)",
+  "A single neutral anchor on a lightness ramp silently drops the declared `chroma.peak`, turning the whole ramp gray",
+  "A duplicate categorical anchor can take the step a later anchor names, so that later anchor fills no named step and is not reported",
+  "A contrast rule on a one-step ramp always fails with \"cannot tell which end is darker\"",
+  "`summarize` of an empty palette returns ±Infinity stats, unlike its own small-set defaults",
+  "`axisDependencies` treats a pin as always applying when a seed inside its value list has no value, while `derive` lets the rule underneath show through"
+ ],
+ "b": [
+  "A child's step-layer entry declared at only some selections replaces an inherited step everywhere, while the same partial entry against an inherited semantic replaces nothing",
+  "An offset rule's `from` cannot name a ramp step or a component, though `axisDependencies` treats both as valid",
+  "`summarize` returns ±Infinity spreads and minimums for an empty palette"
+ ]
+}

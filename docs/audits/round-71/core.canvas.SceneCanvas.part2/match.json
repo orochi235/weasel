@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A partial `actions` entry merged on a sibling canvas's merge keeps that sibling's fields after it unmounts",
+  "A pick asked for another view takes the surface's id frames and LOD rungs, since `askedOwnView` never reads `viewId`",
+  "Hover in a declared view drops the view's camera, so parallax layers hover as if they moved with the camera, and hover and press disagree there",
+  "`viewport={{ inertia }}` without the `view` preset warns that it does nothing, though hand-tool inertia still works"
+ ],
+ "b": [
+  "doubleClickNames freezes the entered group at memo time, so a double-click after entering a group names the wrong node",
+  "A press routed to a `<CanvasView>` picks through the surface's layer gate, id frames and LOD, while hover in the same view uses the view's own gate",
+  "`tools={{ id: true }}` for a preset's own tool warns that the canvas offers no such tool, while mounting it",
+  "Departing ghosts draw a clipping container's children unclipped",
+  "A node removed from under a hidden container still in the scene fades out visibly"
+ ]
+}

@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   2,
+   3
+  ]
+ ],
+ "a": [
+  "A canvas-stack loupe never resamples its color while the stack animates under a still aim",
+  "`<SourceLoupe>` reads its `CanvasSource` without retaining it, so a captured (WebGL) source is blank when used on its own",
+  "`<LoupeGestures>` registers on the camera's registry for the first commit even when its host is not the camera's element, and the \"two loupes\" warning fires falsely",
+  "A `render` loupe falling back to the camera, and a `sceneView` lens with a thunk view, read the camera once per React render, and nothing re-renders them when it moves"
+ ],
+ "b": [
+  "Live clone lens shows a scrolled scroller inside the trial at scroll position 0",
+  "Live clone lens goes stale on input that doesn't change the DOM",
+  "A clone copy's box keeps the root's old size and offset after a DOM change resizes or moves the root",
+  "LoupeGestures registers a non-camera-host loupe on the camera's registry for its first commit, causing a false two-loupe warning and possibly removing a sibling's actions"
+ ]
+}

@@ -1,0 +1,87 @@
+{
+ "id": "ui.components.Badge.effects",
+ "commit": "f51df0e1e7d5bf1efdc19be6d81db701aa19c8ac",
+ "date": "2026-11-22",
+ "files": [
+  "packages/ui/src/components/Badge/effects/Aqua.tsx",
+  "packages/ui/src/components/Badge/effects/Bevel.tsx",
+  "packages/ui/src/components/Badge/effects/Bevel2.tsx",
+  "packages/ui/src/components/Badge/effects/Bites.tsx",
+  "packages/ui/src/components/Badge/effects/Metal.tsx",
+  "packages/ui/src/components/Badge/effects/Outline.tsx",
+  "packages/ui/src/components/Badge/effects/Perforations.tsx",
+  "packages/ui/src/components/Badge/effects/Puffs.tsx",
+  "packages/ui/src/components/Badge/effects/Rivets.tsx",
+  "packages/ui/src/components/Badge/effects/Scallops.tsx",
+  "packages/ui/src/components/Badge/effects/Shadow.tsx",
+  "packages/ui/src/components/Badge/effects/Sheen.tsx",
+  "packages/ui/src/components/Badge/effects/Spikes.tsx",
+  "packages/ui/src/components/Badge/effects/Sunbeams.tsx",
+  "packages/ui/src/components/Badge/effects/Woodgrain.tsx",
+  "packages/ui/src/components/Badge/effects/bevelBands.ts",
+  "packages/ui/src/components/Badge/effects/bumps.ts",
+  "packages/ui/src/components/Badge/effects/glassStrokes.tsx",
+  "packages/ui/src/components/Badge/effects/index.ts",
+  "packages/ui/src/components/Badge/effects/lightCorner.ts",
+  "packages/ui/src/components/Badge/effects/rangeMask.ts"
+ ],
+ "a": 4,
+ "b": 6,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 10.7,
+ "unfound": 2.7,
+ "read": {
+  "A": 21,
+  "B": 21
+ },
+ "newCode": {
+  "since": 67,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 67,
+  "chapman": 14,
+  "unfound": 6
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 23,
+  "testFiles": {
+   "failed": 0,
+   "passed": 983,
+   "total": 983
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.4,
+   "B": 2.9,
+   "match": 0.1,
+   "fix": 15
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "weightedTokens": 1118880,
+  "costUsd": 3.44
+ },
+ "fixCommits": [
+  "2d2c1364bd5f101fd443ce99e9cf34a8c8c35a82",
+  "230c4f4f0e1ee1183a19ee4938bc39d126aafe9a",
+  "4c9a68d9b9abfd76fea652b8e62263c93784aab0",
+  "9bf3e599aaf9c3b438d9b8c5430e542f9f200aae",
+  "f0d1396b7ad52b7ec3a76c82ad9b6a789c65dcdd",
+  "451b7e00bd25c0bc5388fcf19585b41bfee0eaca",
+  "305f5e54ce21febbe278eee2a63564009a6ac8b7",
+  "68f61434b46d3e6cc72eea8964e0543d3b4a7c3d"
+ ]
+}

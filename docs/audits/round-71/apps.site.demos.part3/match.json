@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "MenuDemo's menu has no outside-press, blur or resize dismissal, so clicking away leaves it open with the opener disabled",
+  "MenuDemo's \"Show grid\" entry is built from a snapshot of `grid`, so its checkmark and toggle are frozen at open time",
+  "LayoutDemo's added tile is posed outside G, not at \"G's bottom-right corner\" as the comment says",
+  "Lines3dDemo and LabLoupeDemo's ForeignGl spin a frame loop forever when the WebGL context can't be created",
+  "LabLoupeDemo's `compile` never checks compile or link status, so a shader failure renders silently black"
+ ],
+ "b": [
+  "LevelOfDetailDemo's hint says \"Scroll to zoom out\", but a plain wheel pans",
+  "ParallaxDemo's zoom control scales about the world origin, so zooming in sinks the landscape off the bottom",
+  "LayoutDemo adds a tile below G, not at \"G's bottom-right corner\" as its comment says",
+  "MenuDemo's menu never closes on an outside click or blur, and the only opener stays disabled"
+ ]
+}

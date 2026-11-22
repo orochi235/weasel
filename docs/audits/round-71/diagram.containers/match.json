@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "`commitLaneResizeToScene` writes locked nodes and sizes below `MIN_LANE_SIZE`",
+  "A pool's stack axis is answered two ways: by its header in `poolAxisOf`, and by its layout key in `laneStackLayout`"
+ ],
+ "b": [
+  "A double-click on a locked (or otherwise uneditable) region's header still starts editing its title",
+  "`commitLaneResizeToScene` writes the pool and lanes without checking locks"
+ ]
+}

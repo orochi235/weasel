@@ -1,0 +1,89 @@
+{
+ "id": "core.interactions.actions.defaults",
+ "commit": "f51df0e1e7d5bf1efdc19be6d81db701aa19c8ac",
+ "date": "2026-11-22",
+ "files": [
+  "packages/core/src/interactions/actions/defaults/cancelAll.ts",
+  "packages/core/src/interactions/actions/defaults/containerScroll.ts",
+  "packages/core/src/interactions/actions/defaults/contextMenu.ts",
+  "packages/core/src/interactions/actions/defaults/copySubtree.ts",
+  "packages/core/src/interactions/actions/defaults/index.ts",
+  "packages/core/src/interactions/actions/defaults/lockedReach.ts",
+  "packages/core/src/interactions/actions/defaults/nudgeSteps.ts",
+  "packages/core/src/interactions/actions/defaults/requiresOperands.ts",
+  "packages/core/src/interactions/actions/defaults/segmentUnder.ts",
+  "packages/core/src/interactions/actions/defaults/sliceOps.ts",
+  "packages/core/src/interactions/actions/defaults/toolActivate.ts",
+  "packages/core/src/interactions/actions/defaults/toolResetToDefault.ts",
+  "packages/core/src/interactions/actions/defaults/touchZoom.ts",
+  "packages/core/src/interactions/actions/defaults/undoRedo.ts",
+  "packages/core/src/interactions/actions/defaults/viewportDragPan.ts",
+  "packages/core/src/interactions/actions/defaults/viewportWheelPan.ts",
+  "packages/core/src/interactions/actions/defaults/viewportZoom.ts"
+ ],
+ "a": 7,
+ "b": 4,
+ "m": 1,
+ "distinct": 10,
+ "chapman": 19,
+ "unfound": 9,
+ "read": {
+  "A": 17,
+  "B": 17
+ },
+ "newCode": {
+  "since": 42,
+  "changedFiles": 4,
+  "findings": 5
+ },
+ "previous": {
+  "round": 42,
+  "chapman": 11,
+  "unfound": 4
+ },
+ "patches": 13,
+ "verify": {
+  "ok": true,
+  "files": 25,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2439,
+   "total": 2439
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.7,
+   "B": 3.4,
+   "match": 0.1,
+   "fix": 25.9,
+   "repair": 4.5
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1598262,
+  "costUsd": 4.5
+ },
+ "fixCommits": [
+  "1a165940fd5d90ff4b82868265990ef37da46357",
+  "84010df7597b5ff1a7fc6ef819278469d87fea3b",
+  "c8cc1dafede2b42a53577c69486200917033e355",
+  "c5acac99c63c68a4a3d02cde0998cca8ccb82a70",
+  "8bec8e8fcc7dc8d0382a88b020d895a5ae0bfb6c",
+  "f998f222ea8a3156f75408de1b5bb4a87d51f10f",
+  "398c051ac247416808d3cecb56003f9ebb937e98",
+  "6906ac187dcad93250c099f568e369bd6f5212c5",
+  "f869bda0204732e2e4de158ff7684cb330e514a5",
+  "231b4d16ec3db0860cb3954c0d1022a84346b870",
+  "39cc0784b029854108a266749704822d766f8a5d",
+  "44b224467441b7e222bc33ad9070608ad7c573b5",
+  "f7f525fa974f320f1b85a143e5f7e9b97a682040"
+ ]
+}

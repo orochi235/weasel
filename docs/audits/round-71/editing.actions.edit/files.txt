@@ -1,0 +1,14 @@
+packages/editing/src/actions/edit/createPaintAction.ts
+packages/editing/src/actions/edit/deselect.ts
+packages/editing/src/actions/edit/duplicate.ts
+packages/editing/src/actions/edit/group.ts
+packages/editing/src/actions/edit/ingest.ts
+packages/editing/src/actions/edit/nudge.ts
+packages/editing/src/actions/edit/paintActionTestUtils.ts
+packages/editing/src/actions/edit/selectAll.ts
+packages/editing/src/actions/edit/setFill.ts
+packages/editing/src/actions/edit/setFillOpacity.ts
+packages/editing/src/actions/edit/setStroke.ts
+packages/editing/src/actions/edit/setStrokeOpacity.ts
+packages/editing/src/actions/edit/setStrokeWidth.ts
+packages/editing/src/actions/edit/setVertexColor.ts

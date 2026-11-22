@@ -1,0 +1,19 @@
+{
+ "pairs": [],
+ "a": [
+  "DOT reader reads a hand-written `pos` (inches, pinned with `!`) as points",
+  "Graphviz's `empty` and `onormal` arrowheads (the same arrow) read as two different markers",
+  "DOT cluster with `style=invis` is still drawn as a container",
+  "`weasel_outline` is taken unvalidated, so an empty or unknown value becomes the node's outline",
+  "`tailport=\"\"`/`headport=\"\"` warns that a port was dropped"
+ ],
+ "b": [
+  "The DOT reader treats only a lowercase `cluster` prefix as a cluster, and ignores `cluster=true`",
+  "`\\G` in a cluster label names the root graph, not the cluster",
+  "A backslash-newline continuation in a CRLF file is kept in the string, not joined",
+  "The DOT writer drops a container's own stroke width with no warning",
+  "Dash patterns are written as the words `dashed` and `dotted`, so any other pattern changes with no warning",
+  "A strict graph's merged edge keeps the first statement's ports",
+  "DOT detection strips comment markers inside an HTML graph id, and does not follow `+` concatenation, so it disagrees with the lexer"
+ ]
+}

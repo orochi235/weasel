@@ -1,0 +1,44 @@
+{
+ "findings": [
+  {
+   "id": "r70-1",
+   "claim": "followScheme subscribes to the OS scheme at module load and never unsubscribes, so each re-evaluation of the frame config leaves a live listener re-applying stale globals",
+   "where": "apps/forge/mode.ts:22 (followScheme), called at module scope from apps/forge/forge.frame.tsx:26",
+   "from": "A",
+   "round": 70,
+   "rounds": [
+    70
+   ]
+  },
+  {
+   "id": "r70-3",
+   "claim": "labkit stories drop the Theme and Density globals: LabRoot re-themes them as interstellar",
+   "where": "apps/forge/forge.frame.tsx:23 (labkitRoot)",
+   "from": "B",
+   "round": 70,
+   "rounds": [
+    70
+   ]
+  },
+  {
+   "id": "r70-4",
+   "claim": "The a11y sweep titles stories from their directory, not the title the workshop gives them",
+   "where": "apps/forge/a11y.suite.tsx:39 (titleOf), used at :147-151",
+   "from": "B",
+   "round": 70,
+   "rounds": [
+    70
+   ]
+  },
+  {
+   "id": "r70-6",
+   "claim": "The Weight global defaults to a weight the default font hides",
+   "where": "apps/forge/fonts.ts:85-89 (FONT_GLOBALS.fontWeight)",
+   "from": "B",
+   "round": 70,
+   "rounds": [
+    70
+   ]
+  }
+ ]
+}

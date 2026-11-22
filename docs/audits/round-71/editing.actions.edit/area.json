@@ -1,0 +1,77 @@
+{
+ "id": "editing.actions.edit",
+ "commit": "f51df0e1e7d5bf1efdc19be6d81db701aa19c8ac",
+ "date": "2026-11-22",
+ "files": [
+  "packages/editing/src/actions/edit/createPaintAction.ts",
+  "packages/editing/src/actions/edit/deselect.ts",
+  "packages/editing/src/actions/edit/duplicate.ts",
+  "packages/editing/src/actions/edit/group.ts",
+  "packages/editing/src/actions/edit/ingest.ts",
+  "packages/editing/src/actions/edit/nudge.ts",
+  "packages/editing/src/actions/edit/paintActionTestUtils.ts",
+  "packages/editing/src/actions/edit/selectAll.ts",
+  "packages/editing/src/actions/edit/setFill.ts",
+  "packages/editing/src/actions/edit/setFillOpacity.ts",
+  "packages/editing/src/actions/edit/setStroke.ts",
+  "packages/editing/src/actions/edit/setStrokeOpacity.ts",
+  "packages/editing/src/actions/edit/setStrokeWidth.ts",
+  "packages/editing/src/actions/edit/setVertexColor.ts"
+ ],
+ "a": 3,
+ "b": 2,
+ "m": 0,
+ "distinct": 5,
+ "chapman": 11,
+ "unfound": 6,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "newCode": {
+  "since": 70,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 70,
+  "chapman": 23,
+  "unfound": 12
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 16,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1412,
+   "total": 1412
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.2,
+   "B": 2.7,
+   "match": 2.8,
+   "fix": 19
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1095766,
+  "costUsd": 3.2
+ },
+ "fixCommits": [
+  "3058ba580af48666096e05387a7f5a475dece53e",
+  "02fbccdee88fa0ede4a34eb0caba097a9aea1ef1",
+  "4c30ec7a59a0ede38c54e17bce6a52239c5cd4d3",
+  "b729c1f99742f9062010b0de9b6c516acae930ca",
+  "6da25e9827937e0647a7db5e2d80aef851e8555e"
+ ]
+}
