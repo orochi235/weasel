@@ -43,6 +43,15 @@ describe('a call handed to the compositor, as it starts', () => {
     expect(r.animator.live()).toHaveLength(1);
   });
 
+  it('refuses a required spring that starts at rest before it interrupts what holds its key', () => {
+    const r = moving();
+    const still = element(r.timeline, 40);
+    expect(() => r.animator.spring({ target: still.target, to: { x: 40 }, cancelKey: 'k', compositor: 'require' }))
+      .toThrow(/at rest/);
+    expect(r.events.some((ev) => ev.type === 'interrupt')).toBe(false);
+    expect(r.animator.live()).toHaveLength(1);
+  });
+
   it('runs a tween that never ends on the main thread', () => {
     const r = setup();
     const e = element(r.timeline);

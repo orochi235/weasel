@@ -1,6 +1,6 @@
 import { easeOutQuad, resolveEasing } from '@weasel-js/geom';
 import type { ElementBinding } from '../../elementTarget';
-import { stateOf, type TargetState } from '../../target';
+import { readTarget, stateOf, type TargetState } from '../../target';
 import type {
   AnimationHandle, AnimationKind, PhysicsHandle, TargetPhysicsOptions, TargetTweenOptions,
 } from '../../types';
@@ -98,6 +98,11 @@ export function handOffPhysics<T>(hs: Handoffs, o: TargetPhysicsOptions<T>, kind
   let dest: number[] | null = null;
   let given: number[] | null = null;
   let constants = {} as ReturnType<typeof constantsFor>;
+  const restThreshold = o.restThreshold ?? 0.01;
+  // From the destination's side of each angle axis, so the spring turns the short way round.
+  const motionOf = (ax: TargetState['axes'], at: readonly number[], v: readonly number[]): Motion => physicsMotion({
+    start: dest ? plus(dest, travel(ax, at, dest)) : at, velocity: v, to: dest, ...constants, threshold: restThreshold,
+  });
   const begun = begin(hs, o as TargetPhysicsOptions<unknown>, kind, (s) => {
     dest = o.to == null ? null : axesFor(s.axes, o.to, 'to');
     constants = constantsFor(o, kind, dest != null);
@@ -105,17 +110,18 @@ export function handOffPhysics<T>(hs: Handoffs, o: TargetPhysicsOptions<T>, kind
     // Read ahead of the interrupt, which stops the animation whose velocity this is.
     if (o.velocity !== undefined) velocity = axesFor(s.axes, o.velocity, 'velocity');
     else if (o.cancelKey != null && o.interrupt !== false) velocity = ctx.velocityUnder(o.cancelKey, s);
+    // The interrupt commits what the target shows, which is where it would start.
+    const at = given ?? s.axes.to(readTarget(s));
+    if (o.compositor === 'require' && motionOf(s.axes, at, velocity ?? at.map(() => 0)).ms <= 0) {
+      refuse(o, 'it starts at rest');
+    }
   });
   if (begun === null) return null;
   if (typeof begun === 'number') return startOffsetPhysics(ctx, o, kind, { id: begun, velocity });
   const { s, binding, seed } = begun;
   const ax = s.axes as TargetState<T>['axes'];
-  const restThreshold = o.restThreshold ?? 0.01;
   const start = given ?? ax.to(s.get() as T);
-  // From the destination's side of each angle axis, so the spring turns the short way round.
-  const motionFrom = (at: readonly number[], v: readonly number[]): Motion => physicsMotion({
-    start: dest ? plus(dest, travel(ax, at, dest)) : at, velocity: v, to: dest, ...constants, threshold: restThreshold,
-  });
+  const motionFrom = (at: readonly number[], v: readonly number[]): Motion => motionOf(ax as TargetState['axes'], at, v);
   const motion = motionFrom(start, velocity ?? start.map(() => 0));
   if (motion.ms <= 0) {
     if (o.compositor === 'require') refuse(o, 'it starts at rest');
