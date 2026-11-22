@@ -112,6 +112,17 @@ describe('writing a Mermaid class diagram', () => {
     expect(warnings).toEqual([]);
   });
 
+  it('warns that an open arrow on a solid line, or a filled one on a dashed line, was written as its line\'s', () => {
+    const write = (edge: object) => writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', ...edge }],
+    } }] }).warnings;
+    const warning = 'Mermaid class relations draw an open arrow on a dashed line and a filled one on a solid line; other arrows were written as their line\'s.';
+    expect(write({ colors: { markerEnd: 'arrow-open' } })).toContain(warning);
+    expect(write({ colors: { markerEnd: 'arrow', dash: [4, 4] } })).toContain(warning);
+    expect(write({ colors: { markerEnd: 'arrow-open', dash: [4, 4] } })).not.toContain(warning);
+    expect(write({})).not.toContain(warning);
+  });
+
   it('writes a plain box\'s lines as a class, warning of ends it has no head for', () => {
     const { text, warnings } = writeClassDiagram({ pages: [{
       kind: 'graph', id: 'p', width: 100, height: 100,

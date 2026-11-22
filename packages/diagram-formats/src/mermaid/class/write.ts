@@ -109,6 +109,10 @@ class ClassWriter {
     const style = edgeStyleIn(this.out, e);
     const card = (text: string | undefined) => (text !== undefined ? ` "${spelled(text)}"` : '');
     const line = style.dash !== undefined ? '..' : '--';
+    const drawn = line === '..' ? 'arrow-open' : 'arrow';
+    if ([style.markerStart, style.markerEnd].some((m) => (m === 'arrow' || m === 'arrow-open') && m !== drawn)) {
+      this.out.warnings.add('Mermaid class relations draw an open arrow on a dashed line and a filled one on a solid line; other arrows were written as their line\'s.');
+    }
     const label = e.label !== undefined && e.label !== '' ? ` : ${spelled(e.label)}` : '';
     const arrow = `${this.head(style.markerStart, 0)}${line}${this.head(style.markerEnd, 1)}`;
     return `  ${this.id(e.from)}${card(e.endLabels?.from)} ${arrow}${card(e.endLabels?.to)} ${this.id(e.to)}${label}`;
