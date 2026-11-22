@@ -23,16 +23,29 @@ const KINDS = (Object.keys(SAMPLES) as Kind[]).map((value) => ({ value, label: v
 export function MermaidKindsDemo() {
   const [kind, setKind] = useState<Kind>('class');
   const [specs, setSpecs] = useState<DiagramSpec[]>([]);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
-    void Promise.resolve(DIAGRAM_MERMAID.read!(SAMPLES[kind])).then(({ document }) => {
-      if (live) setSpecs(documentSpecs(document).specs);
-    });
+    void Promise.resolve().then(() => DIAGRAM_MERMAID.read!(SAMPLES[kind])).then(
+      ({ document }) => {
+        if (!live) return;
+        setSpecs(documentSpecs(document).specs);
+        setError(null);
+      },
+      (err: unknown) => {
+        if (!live) return;
+        setSpecs([]);
+        setError(String(err));
+      },
+    );
     return () => { live = false; };
   }, [kind]);
   return (
     <div className="ckd-demo">
-      <div className="ckd-row"><SegmentedBar items={KINDS} value={kind} onChange={(k) => k && setKind(k)} aria-label="Diagram kind" size="sm" /></div>
+      <div className="ckd-row">
+        <SegmentedBar items={KINDS} value={kind} onChange={(k) => k && setKind(k)} aria-label="Diagram kind" size="sm" />
+        {error && <span role="alert">{error}</span>}
+      </div>
       <DemoStage width={640} height={380}>
         <DiagramView specs={specs} refit="always" className="ckd-canvas" />
       </DemoStage>

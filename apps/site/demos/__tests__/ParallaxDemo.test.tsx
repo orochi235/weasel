@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Scene } from '@weasel-js/core';
+import { worldPoseOf, type Scene } from '@weasel-js/core';
 import { ParallaxDemo } from '../ParallaxDemo';
 
 const held = vi.hoisted(() => ({ scene: null as Scene<unknown, string, unknown> | null }));
@@ -50,4 +50,21 @@ describe('ParallaxDemo', () => {
     for (let i = 0; i < 10; i++) step(200);
     expect(trees()).toMatchObject({ zoom: 1.5, anchor: { x: 0 } });
   });
+
+  it('draws every tree part inside its tree, on the stage', () => {
+    render(<ParallaxDemo />);
+    const scene = held.scene!;
+    type Rect = { x: number; y: number; width: number; height: number };
+    const parts = [...scene.nodes.values()].filter((n) => n.layer === 'trees' && n.parent != null);
+    expect(parts.length).toBeGreaterThan(0);
+    for (const part of parts) {
+      const tree = worldPoseOf(scene, part.parent!) as Rect;
+      const at = worldPoseOf(scene, part.id) as Rect;
+      expect(at.x, part.id).toBeGreaterThanOrEqual(tree.x);
+      expect(at.y, part.id).toBeGreaterThanOrEqual(tree.y);
+      expect(at.x + at.width, part.id).toBeLessThanOrEqual(tree.x + tree.width);
+      expect(at.y + at.height, part.id).toBeLessThanOrEqual(tree.y + tree.height);
+    }
+  });
 });
+

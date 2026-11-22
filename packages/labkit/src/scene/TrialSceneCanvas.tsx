@@ -17,10 +17,10 @@ import {
 } from 'react';
 import { useTrialHistory } from '../trial/trialHistory';
 import { useTrialTitle } from '../trial/trialTitle';
-import { sceneResetsOf } from './sceneResets';
 import { editStampsOf, sceneTrialHistory, stampSceneEdits } from './sceneTrialHistory';
 import { useSceneCamera } from './useSceneCamera';
 import { type TrialToolSlot, useSceneToolSlot } from './useSceneToolSlot';
+import { useTrialSceneReset } from './useTrialSceneReset';
 
 /** Props for {@link TrialSceneCanvas}: a `<SceneCanvas>`'s, sized by the trial. */
 // Distributed, since an `Omit` of the page-or-worker union would merge its two branches.
@@ -64,13 +64,9 @@ function TrialSceneCanvasInner<TData, TLayer extends string, TPose>(
   useSceneCamera(api, host);
   // A Reset reopens the path the canvas opened on. With none, a host may own what is open, so it is left alone.
   const opening = useLatest(rest.defaultPathEdit);
-  useEffect(
-    () =>
-      sceneResetsOf(scene).subscribe(() => {
-        if (opening.current) api.current?.setPathEdit(opening.current);
-      }),
-    [scene, opening],
-  );
+  useTrialSceneReset(scene, () => {
+    if (opening.current) api.current?.setPathEdit(opening.current);
+  });
   const both = useCallback(
     (v: SceneCanvasApi | null) => {
       api.current = v;

@@ -23,9 +23,9 @@ function diagram(): Spec[] {
       const x = c * (BOX + GAP), y = r * (BOX + GAP);
       const g = asNodeId(`g${r}-${c}`);
       out.push({ id: g, kind: 'group', layer: 'main', pose: { x, y, width: BOX, height: BOX }, data: { background: { paint: solid(HUES[(r + c) % HUES.length]!) } } });
-      out.push({ id: asNodeId(`t${r}-${c}`), kind: 'mark', layer: 'main', parent: g, pose: { x: x + 10, y: y + 8, width: BOX - 20, height: 24 }, data: { text: `Service ${r * COLS + c + 1}`, style: { fontSize: 18, fontWeight: 600 }, fill: { paint: INK } } });
+      out.push({ id: asNodeId(`t${r}-${c}`), kind: 'mark', layer: 'main', parent: g, pose: { x: 10, y: 8, width: BOX - 20, height: 24 }, data: { text: `Service ${r * COLS + c + 1}`, style: { fontSize: 18, fontWeight: 600 }, fill: { paint: INK } } });
       for (let k = 0; k < 4; k++) {
-        const cx = x + 10 + (k % 2) * 85, cy = y + 44 + Math.floor(k / 2) * 66;
+        const cx = 10 + (k % 2) * 85, cy = 44 + Math.floor(k / 2) * 66;
         out.push({ id: asNodeId(`c${r}-${c}-${k}`), kind: 'mark', layer: 'main', parent: g, pose: { x: cx, y: cy, width: 75, height: 56 }, data: { fill: { paint: solid('#ffffff') } } });
         out.push({ id: asNodeId(`l${r}-${c}-${k}`), kind: 'mark', layer: 'main', parent: g, pose: { x: cx + 6, y: cy + 6, width: 63, height: 44 }, data: { text: `worker ${k + 1}\nqueue ${(r + c + k) % 7}`, style: { fontSize: 11 }, fill: { paint: INK } } });
       }

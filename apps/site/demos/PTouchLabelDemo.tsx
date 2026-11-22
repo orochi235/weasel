@@ -23,7 +23,6 @@ const TAPE = tapeForWidthMm(24)!;
 const LENGTH = 288;
 const TEXT = createTextPreset({ editor: false });
 const MEDIA = Printers.ptP710bt.media(TAPE.widthMm);
-const CAN_PRINT = typeof navigator !== 'undefined' && ('usb' in navigator || 'serial' in navigator);
 
 type Pose = { x: number; y: number; width: number; height: number };
 
@@ -46,17 +45,17 @@ export function PTouchLabelDemo() {
   const selection = useSelection({ scene, mode: 'multiple' });
   const version = useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
   const preview = useRef<HTMLCanvasElement>(null);
+  const [status, setStatus] = useState('');
+  const [canPrint] = useState(() => typeof navigator !== 'undefined' && ('usb' in navigator || 'serial' in navigator));
   const [printer, setPrinter] = useState<BrotherPrinter | null>(null);
   // Made in the effect that disposes it: StrictMode's remount disposes the first printer and keeps a memoized one.
   useEffect(() => {
-    if (!CAN_PRINT) return;
+    if (!canPrint) return;
     const made = createBrotherPrinter();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the printer's lifetime is this effect's
     setPrinter(made);
     return () => made.dispose();
-  }, []);
-  const [status, setStatus] = useState('');
-
+  }, [canPrint]);
   // `renderLabel` paints through the scene's own registry, not the canvas's presets.
   useEffect(() => nodeShapesOf(scene).register(TEXT_PAINTER), [scene]);
   useEffect(() => {
@@ -67,7 +66,7 @@ export function PTouchLabelDemo() {
       out.width = img.width;
       out.height = img.height;
       out.getContext('2d')?.putImageData(new ImageData(Uint8ClampedArray.from(img.data), img.width, img.height), 0, 0);
-    });
+    }, (err: unknown) => { if (live) setStatus(String(err)); });
     return () => { live = false; };
   }, [scene, version]);
 
@@ -98,7 +97,8 @@ export function PTouchLabelDemo() {
       <div className="ckd-row">
         <Button size="sm" onClick={() => report(download)}>Download .lbx</Button>
         <Button size="sm" onClick={() => report(print)} disabled={!printer}>Print</Button>
-        <span>{CAN_PRINT ? status : 'printing needs WebUSB or Web Serial'}</span>
+        {!canPrint && <span>printing needs WebUSB or Web Serial</span>}
+        <span>{status}</span>
       </div>
     </div>
   );

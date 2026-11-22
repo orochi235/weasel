@@ -13,6 +13,7 @@ import {
   type SceneTrialState,
   TrialSceneCanvas,
   useTrialScene,
+  useTrialSceneReset,
 } from '@weasel-js/labkit';
 import { useMemo, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
@@ -63,6 +64,10 @@ function MeasureTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const { snap, spacing, angleStep } = ctx.config;
   const [measurements] = useState(() => createMeasurements({ layer: ANNOTATIONS }));
+  useTrialSceneReset(scene, () => {
+    measurements.picked.set(null);
+    measurements.draft.set(null);
+  });
   const measure = useMeasureTool({ measurements, angleStep: angleStep * DEG_TO_RAD });
   const tools = useMemo(() => ({ measure }), [measure]);
   const ambient = useMemo(() => [createMeasurementsContribution(scene, measurements)], [scene, measurements]);
