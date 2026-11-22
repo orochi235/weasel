@@ -37,7 +37,7 @@ function axesIn(v: unknown, into: Record<string, { default: string; values: Reco
 }
 
 /** The step names `derive` gives an entry at a full selection, or undefined where it gives it none. */
-function stepsAt(entry: unknown, sel: AxisChoice, scope: StepScope): string[] | undefined {
+export function stepsAt(entry: unknown, sel: AxisChoice, scope: StepScope): string[] | undefined {
   const picked = pick(entry, sel);
   if (!picked.ok || typeof picked.value !== 'object' || picked.value === null) return undefined;
   const seeds: Record<string, number | string> = {};

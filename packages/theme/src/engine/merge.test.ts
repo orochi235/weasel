@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ThemeDefinition } from '../definition';
+import { axisDependencies } from './deps';
+import { derive } from './derive';
 import { mergeChain } from './merge';
 
 const base: ThemeDefinition = {
@@ -140,5 +142,63 @@ describe('a theme whose ramp steps vary by axis', () => {
       ramps: { gray: { ...gray, steps: { by: 'mode', dark: ['50'], light: ['50', '900'] } } },
     } as unknown as ThemeDefinition;
     expect(mergeChain(child, lookup).pins).toEqual({ 'gray-900': '#000000' });
+  });
+});
+
+describe('a child entry declared at only some selections', () => {
+  const axes = { mode: { default: 'dark', values: { dark: {}, light: {} } } };
+  const lightness = [0.8, 0.3] as [number, number];
+  const at = (def: ThemeDefinition, all: Record<string, ThemeDefinition>, mode: string) => derive(def, { mode }, (n) => all[n]);
+
+  it('replaces an inherited ramp step only where it declares that name', () => {
+    const parent: ThemeDefinition = {
+      name: 'p',
+      axes,
+      ramps: { brand: { kind: 'lightness', steps: ['x'], lightness } },
+      semantics: { accent: { ramp: 'brand', step: 'x' } },
+    };
+    const child = {
+      name: 'c',
+      extends: 'p',
+      scales: { brand: { steps: { by: 'mode', dark: ['x'], light: ['z'] }, base: 4, step: 4 } },
+    } as unknown as ThemeDefinition;
+    const all = { p: parent, c: child };
+    expect(at(child, all, 'dark').tokens['brand-x'].type).toBe('dimension');
+    const light = at(child, all, 'light');
+    expect(light.tokens['brand-x'].type).toBe('color');
+    expect(light.tokens.accent).toBeDefined();
+  });
+
+  it('shadows an inherited semantic and pin only where it declares that name', () => {
+    const parent: ThemeDefinition = {
+      name: 'p',
+      axes,
+      semantics: { 'r-b': { value: '#123456' } },
+      pins: { 'r-a': '#abcdef' },
+    };
+    const child = {
+      name: 'c',
+      extends: 'p',
+      ramps: { r: { kind: 'lightness', steps: { by: 'mode', dark: ['a', 'b'], light: ['c'] }, lightness } },
+    } as unknown as ThemeDefinition;
+    const all = { p: parent, c: child };
+    const dark = at(child, all, 'dark');
+    expect(dark.issues.filter((i) => i.kind === 'invalid')).toEqual([]);
+    expect(dark.provenance['r-b'].layer).toBe('ramps');
+    expect(dark.provenance['r-a']).toMatchObject({ layer: 'ramps', pinned: false });
+    const light = at(child, all, 'light');
+    expect(light.tokens['r-b'].value).toBe('#123456');
+    expect(light.tokens['r-a'].value).toBe('#abcdef');
+  });
+
+  it('counts both producers in axisDependencies', () => {
+    const parent: ThemeDefinition = { name: 'p', axes, pins: { 'r-a': '#abcdef' } };
+    const child = {
+      name: 'c',
+      extends: 'p',
+      ramps: { r: { kind: 'lightness', steps: { by: 'mode', dark: ['a'], light: ['c'] }, lightness } },
+    } as unknown as ThemeDefinition;
+    const all: Record<string, ThemeDefinition> = { p: parent, c: child };
+    expect(axisDependencies(child, (n) => all[n])['r-a'].all).toEqual(['mode']);
   });
 });

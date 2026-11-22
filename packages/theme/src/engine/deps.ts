@@ -132,7 +132,7 @@ function producer(nodes: Map<string, Node>): (name: string, n: Node, always: boo
  * axis declaration order.
  */
 export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): Record<string, AxisDependency> {
-  const { def: merged, replaced } = foldChain(definition, lookup);
+  const { def: merged, replaced, partly } = foldChain(definition, lookup);
   const def = withoutUnsafeNames(merged);
   const nodes = new Map<string, Node>();
   const scope: StepScope = { axes: def.axes ?? {}, seeds: def.seeds };
@@ -216,9 +216,9 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   for (const [name, v] of Object.entries(def.pins ?? {})) {
     const n = node();
     scan(v, n);
-    // Where the pin has no value, what it pins shows through, so the token depends on that too.
+    // Where the pin has no value, or a descendant's step replaces an inherited pin, what is under it shows through.
     const under = nodes.get(name);
-    if (under && !selections.every((sel) => pinApplies(v, sel, def.seeds ?? {}))) {
+    if (under && (partly.has(name) || !selections.every((sel) => pinApplies(v, sel, def.seeds ?? {})))) {
       for (const k of ['axes', 'seeds', 'edges'] as const) for (const x of under[k]) n[k].add(x);
     }
     nodes.set(name, n);
