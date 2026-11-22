@@ -6,6 +6,7 @@ import { INHERIT } from '@weasel-js/paint';
 import { deepEqual, isFiniteNumber } from '@weasel-js/registry';
 import * as coreOps from '@weasel-js/core/ops';
 import { asNodeId, operandContent, requiresContent, withoutPageStructure } from '@weasel-js/core';
+import { anyLocked } from '../lockedWrites';
 
 /** The node data one paint action reads and writes: its own key, nothing else. */
 type PaintData<K extends string, TValue> = { [P in K]?: TValue | null };
@@ -130,7 +131,7 @@ export function createPaintAction<TState, TValue, K extends string, P>(
         const fallback = resolveParams(opts?.params);
         type Targeted = { ids?: unknown } | undefined;
         const ids = [...targetsOf(ctx.deps, { ids: (ctx.params as Targeted)?.ids ?? (fallback as Targeted)?.ids })];
-        if (ids.length === 0) return {};
+        if (ids.length === 0 || anyLocked(scene, ids)) return {};
 
         // `??` would lose a `paint: null`, which is None, not "no paint given".
         const pick: PickParam<P> = (key) => (ctx.params?.[key] !== undefined ? ctx.params[key] : fallback?.[key]);
@@ -197,6 +198,7 @@ export function createPaintAction<TState, TValue, K extends string, P>(
       if (!scene) return true;
       const ids = targetsOf(deps, params);
       if (ids.length === 0) return ActionDisabledReason.NotApplicable;
+      if (anyLocked(scene, ids)) return ActionDisabledReason.Locked;
       if (!spec.writable) return true;
       return ids.some((id) => spec.writable!(baseOf(scene, id))) ? true : ActionDisabledReason.NotApplicable;
     },
