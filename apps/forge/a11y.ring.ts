@@ -15,7 +15,6 @@ export const finishing = (animations: readonly Animation[]) =>
       .map((a) => a.finished.catch(() => {})),
   );
 
-const FOCUSABLE = 'a[href], button, input, select, textarea, summary, [tabindex], [contenteditable="true"]';
 const LOOK = [
   'outline-style', 'outline-width', 'outline-color', 'box-shadow', 'background-color', 'color', 'stroke', 'stroke-width', 'fill',
   'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color',
@@ -56,7 +55,8 @@ export async function unringed(host: HTMLElement, browser: Browser, max = 40): P
   // An autofocused field is read unfocused too.
   (document.activeElement as HTMLElement | null)?.blur();
   const before = new Map<Element, string>();
-  for (const el of host.querySelectorAll(FOCUSABLE)) before.set(el, lookOf(el));
+  // Any element can be a Tab stop (a scroll container, an iframe, a control with no tabindex), so every one is read.
+  for (const el of host.querySelectorAll('*')) before.set(el, lookOf(el));
   const start = document.createElement('button');
   start.textContent = 'start';
   host.before(start);
@@ -76,7 +76,8 @@ export async function unringed(host: HTMLElement, browser: Browser, max = 40): P
       // A ring that fades in is read once it has.
       await finishing([el, el.parentElement, el.firstElementChild].flatMap((part) => part?.getAnimations() ?? []));
       const was = before.get(el);
-      if (was === undefined || was !== lookOf(el)) continue;
+      // A stop that was not there to read before is judged by its pixels alone.
+      if (was !== undefined && was !== lookOf(el)) continue;
       const focused = await shotOf(el, browser);
       start.focus();
       // A modal that keeps focus leaves nothing to compare against.
