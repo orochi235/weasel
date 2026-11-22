@@ -2,7 +2,7 @@ import { useVisibleRaf } from '@weasel-js/core';
 import {
   editableTheme, rendererMeasure, setThemeValue, themeValue, type DiagramTheme, type ThemePath,
 } from '@weasel-js/diagram';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ChartScene } from '../chartDocument';
 import { applyChartTheme } from './applyChartTheme';
 import { chartThemeOf } from './themeCommands';
@@ -26,23 +26,35 @@ export interface ThemeEdit {
 
 const keyOf = (path: ThemePath): string => `theme:${path.join('.')}`;
 
+type Pending = { current: { path: ThemePath; value: string | number } | null };
+
+function applyEdit(scene: ChartScene, before: { current: number | null }, path: ThemePath, value: string | number): void {
+  const current = chartThemeOf(scene);
+  if (themeValue(current, path) === value) return;
+  before.current ??= scene.historyIndex();
+  applyChartTheme(scene, setThemeValue(editableTheme(current), path, value), EDIT_THEME_LABEL, { coalesceKey: keyOf(path), from: current, measure: rendererMeasure });
+}
+
+function flushPending(scene: ChartScene, pending: Pending, before: { current: number | null }): void {
+  const next = pending.current;
+  pending.current = null;
+  if (next !== null) applyEdit(scene, before, next.path, next.value);
+}
+
 /** The Theme panel's edits to `scene`'s theme. */
 export function useThemeEdit(scene: ChartScene): ThemeEdit {
-  const pending = useRef<{ path: ThemePath; value: string | number } | null>(null);
+  const pending: Pending = useRef<Pending['current']>(null);
   /** The history index before the running gesture's first write, or null when none has written. */
   const before = useRef<number | null>(null);
-  const apply = (path: ThemePath, value: string | number) => {
-    const current = chartThemeOf(scene);
-    if (themeValue(current, path) === value) return;
-    before.current ??= scene.historyIndex();
-    applyChartTheme(scene, setThemeValue(editableTheme(current), path, value), EDIT_THEME_LABEL, { coalesceKey: keyOf(path), from: current, measure: rendererMeasure });
-  };
-  const flush = () => {
-    const next = pending.current;
-    pending.current = null;
-    if (next !== null) apply(next.path, next.value);
-  };
+  const apply = (path: ThemePath, value: string | number) => applyEdit(scene, before, path, value);
+  const flush = () => flushPending(scene, pending, before);
   const frame = useVisibleRaf(flush);
+  useEffect(() => () => {
+    flushPending(scene, pending, before);
+    if (before.current === null) return;
+    before.current = null;
+    scene.history.seal();
+  }, [scene]);
   return {
     theme: chartThemeOf(scene),
     input(path, value) {
