@@ -63,7 +63,7 @@ export const barS: FoldCase = {
   },
 };
 
-/** How many triangles of `mesh` placed at `at` have turned over against their rest orientation. */
+/** How many triangles of `mesh` placed at `at` have turned over against their rest orientation; one flat at rest has none. */
 export function invertedTriangles(mesh: ArapMesh, at: ArrayLike<number>): number {
   const V = mesh.vertices, T = mesh.triangles;
   const area = (P: ArrayLike<number>, t: number) => {
@@ -71,7 +71,10 @@ export function invertedTriangles(mesh: ArapMesh, at: ArrayLike<number>): number
     return (P[2 * b] - P[2 * a]) * (P[2 * c + 1] - P[2 * a + 1]) - (P[2 * b + 1] - P[2 * a + 1]) * (P[2 * c] - P[2 * a]);
   };
   let count = 0;
-  for (let t = 0; t < T.length / 3; t++) if (area(at, t) * Math.sign(area(V, t)) <= 0) count++;
+  for (let t = 0; t < T.length / 3; t++) {
+    const rest = Math.sign(area(V, t));
+    if (rest !== 0 && area(at, t) * rest <= 0) count++;
+  }
   return count;
 }
 

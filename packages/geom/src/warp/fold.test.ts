@@ -81,3 +81,10 @@ it.each([{ c: discSquash, anchors: 4 }, { c: barS, anchors: 10 }])('refits the $
   const out = warpPath(c.shape, pinWarpMap(c.shape, c.pins), { tolerance: 0.5 });
   expect(pathToAnchors(out).anchors[0]).toHaveLength(anchors);
 });
+
+describe('invertedTriangles', () => {
+  it('skips a triangle flat at rest', () => {
+    const mesh = { vertices: Float64Array.from([0, 0, 10, 0, 20, 0, 0, 10]), triangles: Uint32Array.from([0, 1, 2, 0, 1, 3]) };
+    expect(invertedTriangles(mesh, mesh.vertices)).toBe(0);
+  });
+});
