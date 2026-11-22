@@ -10,6 +10,7 @@ import type {
   GpuProgram, GpuProgramOptions, GpuTexture, GpuUniformArray, GpuUniformData, GpuUniformType,
 } from '../types';
 import { setUniformData } from './uniformUpload';
+import { checkSamplerIndex } from '../samplerIndex';
 
 /** What a program needs of the device that made it. */
 export interface GlProgramHost {
@@ -231,16 +232,19 @@ export class GlProgram implements GpuProgram {
   setTexture(name: string, texture: GpuTexture | null, index = 0): void {
     this.settle();
     let base = this.samplerUnits.get(name);
+    const size = this.arrays.get(name)?.size ?? 1;
     if (base === undefined) {
       const loc = this.at(name);
       if (loc === undefined) return;
+      checkSamplerIndex(name, index, size);
       base = this.textures.length;
-      const size = this.arrays.get(name)?.size ?? 1;
       for (let i = 0; i < size; i++) this.textures.push(null);
       this.samplerUnits.set(name, base);
       const gl = this.host.gl;
       if (size === 1) gl.uniform1i(loc, base);
       else gl.uniform1iv(loc, Int32Array.from({ length: size }, (_, i) => base! + i));
+    } else {
+      checkSamplerIndex(name, index, size);
     }
     this.textures[base + index] = texture;
   }

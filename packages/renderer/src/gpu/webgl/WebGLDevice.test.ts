@@ -270,6 +270,23 @@ describe('WebGLDevice textures it cannot sample', () => {
   });
 });
 
+describe('WebGLDevice sampler arrays', () => {
+  it('refuses a texture index outside the sampler, which would take another sampler\'s unit', () => {
+    const { gpu } = setup();
+    const program = gpu.createProgram({ glsl: { vert: VERT, frag: '#version 300 es\nprecision highp float;\n'
+      + 'uniform sampler2D u_a[2];\nuniform sampler2D u_b;\nout vec4 o;\n'
+      + 'void main() { o = texture(u_a[1], vec2(0.0)) + texture(u_b, vec2(0.0)); }\n' } });
+    program.lookupUniforms(['u_b']);
+    program.lookupUniformArrays(new Map([['u_a', { type: 'sampler2D', size: 2 }]]));
+    const tex = gpu.createTexture('rgba8', { min: 'nearest', mag: 'nearest', wrapS: 'clamp', wrapT: 'clamp' }, { width: 1, height: 1, data: null });
+    program.setTexture('u_a', tex, 1);
+    program.setTexture('u_b', tex);
+    expect(() => program.setTexture('u_a', tex, 2)).toThrow(RangeError);
+    expect(() => program.setTexture('u_b', tex, 1)).toThrow(RangeError);
+    expect(() => program.setTexture('u_a', tex, -1)).toThrow(RangeError);
+  });
+});
+
 describe('WebGLDevice id targets', () => {
   it('draws the id attachment only for a draw that writes ids, and clears both', () => {
     const { rec, gpu } = setup();
