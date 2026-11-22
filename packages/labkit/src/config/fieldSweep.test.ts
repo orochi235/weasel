@@ -34,6 +34,17 @@ describe('fieldSweep', () => {
     expect(walk(fieldSweep(f.boolean(true)))).toEqual([false, true]);
   });
 
+  it('skips an enum’s disabled options, which its control never offers', () => {
+    const e = fieldSweep(
+      f.enum('a', [
+        { value: 'a', label: 'A' },
+        { value: 'x', label: 'X', disabled: true },
+        { value: 'b', label: 'B' },
+      ]),
+    );
+    expect(walk(e)).toEqual(['a', 'b']);
+  });
+
   it('refuses a kind with no values to walk', () => {
     expect(() => fieldSweep(f.string('x'))).toThrow(TypeError);
   });

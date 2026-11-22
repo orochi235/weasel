@@ -12,14 +12,14 @@ export interface FieldSweepOptions {
 /**
  * The values a config field's own control offers, as a sweep: a number's
  * `stops`, else its `range` by its `step` (or the `step` or `count` given
- * here); an enum's options; a boolean's off and on.
+ * here); an enum's options but its disabled ones; a boolean's off and on.
  */
 export function fieldSweep<T>(node: ConfigNode<T>, options: FieldSweepOptions = {}): Sweep<T> {
   const ann = node.annotations;
   if (node.kind === 'boolean')
     return valuesSweep([false, true], (v) => (v ? 'on' : 'off')) as Sweep<unknown> as Sweep<T>;
   if (node.kind === 'enum') {
-    const opts = ann.options ?? [];
+    const opts = (ann.options ?? []).filter((o) => !o.disabled);
     const labels = new Map(opts.map((o) => [o.value, o.label]));
     return valuesSweep(
       opts.map((o) => o.value),
