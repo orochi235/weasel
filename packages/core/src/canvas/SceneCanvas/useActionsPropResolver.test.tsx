@@ -51,4 +51,32 @@ describe('useActionsPropResolver', () => {
     const { reg } = mount(null, action('tool.sides', 'Adjust sides'));
     expect(reg().list().map((a) => a.id)).toContain('tool.sides');
   });
+
+  it("re-merges onto the default once a sibling canvas's merge beneath it unmounts", () => {
+    const run = () => {};
+    const forA = { 'tool.sides': { invoker: { kind: 'immediate', run } } } as never;
+    const forB = { 'tool.sides': { label: 'B' } };
+    const A = () => { useActionsPropResolver(forA); return null; };
+    const B = ({ onReg }: { onReg: (r: ActionsRegistry) => void }) => {
+      onReg(useActionsRegistry()!);
+      useActionsPropResolver(forB);
+      return null;
+    };
+    const Default = () => {
+      const reg = useActionsRegistry()!;
+      useEffect(() => reg.register(action('tool.sides', 'Adjust sides')), [reg]);
+      return null;
+    };
+    let reg: ActionsRegistry | null = null;
+    const tree = (withA: boolean) => (
+      <ActionsProvider><Default />{withA ? <A /> : null}<B onReg={(r) => { reg = r; }} /></ActionsProvider>
+    );
+    const out = render(tree(true));
+    const live = () => reg!.list().find((a) => a.id === 'tool.sides') as unknown as { label: string; invoker: { run: unknown } };
+    expect(live().label).toBe('B');
+    expect(live().invoker.run).toBe(run);
+    out.rerender(tree(false));
+    expect(live().label).toBe('B');
+    expect(live().invoker.run).not.toBe(run);
+  });
 });
