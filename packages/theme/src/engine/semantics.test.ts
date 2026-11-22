@@ -29,6 +29,16 @@ const W: ThemeDefinition = {
 const at = (mode: string) => derive(W, { mode });
 
 describe('contrast rule', () => {
+  it('picks the only step of a one-step ramp when it passes', () => {
+    const r = derive({
+      name: 'one',
+      ramps: { brand: { kind: 'lightness', steps: ['500'], lightness: [0.3, 0.3] } },
+      semantics: { surface: { value: '#ffffff', type: 'color' }, x: { ramp: 'brand', contrast: { min: 3, against: ['surface'] } } },
+    });
+    expect(r.issues).toEqual([]);
+    expect(r.tokens.x.value).toBe('{brand-500}');
+  });
+
   it('walks away from the surfaces to the first step that clears every one', () => {
     expect(at('dark').tokens['border-strong'].value).toBe('{gray-400}');
     expect(at('light').tokens['border-strong'].value).toBe('{gray-500}');
@@ -169,6 +179,17 @@ describe('ramp direction', () => {
 });
 
 describe('offset rule', () => {
+  it('counts from a ramp step or a component that names one', () => {
+    const with_ = (semantics: ThemeDefinition['semantics'], components?: ThemeDefinition['components']) =>
+      derive({ ...W, semantics: { ...W.semantics, ...semantics }, components }, { mode: 'dark' });
+    expect(with_({ x: { from: 'gray-200', offset: 1, dir: 'darker' } }).tokens.x.value).toBe('{gray-300}');
+    expect(with_({ x: { from: 'chip', offset: 1, dir: 'darker' } }, { chip: '{gray-200}' }).tokens.x.value).toBe('{gray-300}');
+  });
+
+  it('throws on a from naming nothing', () => {
+    expect(() => derive({ ...W, semantics: { ...W.semantics, x: { from: 'typo', offset: 1, dir: 'darker' } } })).toThrow(/"typo", which is not defined/);
+  });
+
   it('counts from where a pin puts its reference', () => {
     const rule = { 'fg-muted': { from: 'surface', offset: 5, dir: 'away' } } as const;
     const pinned = (pin: string) => derive({ ...W, semantics: { surface: W.semantics!.surface, ...rule }, pins: { ...W.pins, surface: pin } }, { mode: 'dark' });

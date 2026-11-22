@@ -38,7 +38,8 @@ function envelopeMax(lightBias: number, darkBias: number): number {
  * An anchored step emits its anchor exactly, and the anchor replaces `hue` and `peak`: its OKLCH hue becomes the hue and
  * its chroma becomes the peak, unscaled by the envelope. With several anchors, both blend linearly by step between
  * consecutive anchors, hue along the shorter arc; steps before the first anchor or after the last take that anchor's.
- * A neutral anchor (white, black, a gray) has no hue of its own and takes its nearest chromatic anchor's, or `hue`.
+ * A neutral anchor (white, black, a gray) says nothing of the ramp's color: it takes its nearest chromatic anchor's hue
+ * and peak, or `hue` and `peak`.
  */
 export function lightnessRamp(p: LightnessParams): Record<string, string> {
   const n = p.steps.length;
@@ -52,12 +53,11 @@ export function lightnessRamp(p: LightnessParams): Record<string, string> {
     const { C, H } = toLch(hex);
     return [{ i, hue: H, peak: C }];
   });
-  // A neutral's hue is atan2 of rounding noise, so it borrows the nearest chromatic anchor's.
   const chromatic = measured.filter((a) => a.peak >= ACHROMATIC);
   const anchors = measured.map((a) => {
     if (a.peak >= ACHROMATIC) return a;
     const near = chromatic.reduce<(typeof a) | undefined>((best, b) => (best && Math.abs(best.i - a.i) <= Math.abs(b.i - a.i) ? best : b), undefined);
-    return { ...a, hue: near?.hue ?? p.hue };
+    return { ...a, hue: near?.hue ?? p.hue, peak: near?.peak ?? p.peak };
   });
   const hueAndPeak = (i: number): { hue: number; peak: number } => {
     if (anchors.length === 0) return p;
@@ -96,11 +96,13 @@ export function categoricalRamp(
   anchors: readonly Anchor[],
 ): { colors: Record<string, string>; feasible: boolean } {
   const palette = generate({ ...DEFAULT_CONSTRAINTS, ...gates, count: steps.length, anchors });
+  // An anchor fills its named step unless an earlier anchor named it first, as `rampColors` reports.
+  const claims = anchors.map((a, i) => steps.includes(a.name) && anchors.findIndex((b) => b.name === a.name) === i);
   const colors: Record<string, string> = {};
   const rest: string[] = [];
   for (const swatch of palette.swatches) {
     const hex = swatch.hex.toLowerCase();
-    if (swatch.anchored && steps.includes(swatch.name) && !hasOwnKey(colors, swatch.name)) setOwn(colors, swatch.name, hex);
+    if (swatch.anchor !== undefined && claims[swatch.anchor]) setOwn(colors, anchors[swatch.anchor].name, hex);
     else rest.push(hex);
   }
   steps.filter((step) => !hasOwnKey(colors, step)).forEach((step, i) => {

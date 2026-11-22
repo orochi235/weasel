@@ -1,8 +1,9 @@
 import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
-import { enumerateAxisChoices, isByAxis, pick, type AxisChoice } from '../axes.ts';
+import { enumerateAxisChoices, isByAxis, pick, type AxisChoice, type Varying } from '../axes.ts';
 import { refTarget } from '../dtcg/resolve.ts';
-import type { SemanticRule, ThemeDefinition } from '../definition.ts';
+import type { PinValue, SemanticRule, ThemeDefinition } from '../definition.ts';
 import { foldChain, type Lookup } from './merge.ts';
+import { pinAt } from './pinValues.ts';
 import { ruleProblem } from './ruleShape.ts';
 import { withoutUnsafeNames } from './safeNames.ts';
 import { alwaysDeclaredSteps, declaredSteps as stepsOf, type StepScope } from './steps.ts';
@@ -62,13 +63,14 @@ function scanSteps(entry: unknown, into: Node): void {
 /** Node key for a ramp's step list. `derive` rejects a token name containing a dot, so it never collides with one. */
 const stepsKey = (ramp: string) => `ramps.${ramp}`;
 
-/** Whether a pin replaces what it pins at `sel`: it has a value there, and any whole-value seed it names does too. */
-function pinApplies(pin: unknown, sel: AxisChoice, seeds: Readonly<Record<string, unknown>>): boolean {
-  const picked = pick(pin, sel);
-  if (!picked.ok) return false;
-  const value = isPlainObject(picked.value) && 'value' in picked.value ? picked.value.value : picked.value;
-  const seed = typeof value === 'string' ? SEED_REF.exec(value.trim()) : null;
-  return seed === null || (Object.hasOwn(seeds, seed[1]) && pick(seeds[seed[1]], sel).ok);
+/** Whether a pin replaces what it pins at `sel`: `derive` lets the rule underneath show through wherever `pinAt` gives nothing. */
+function pinApplies(pin: unknown, sel: AxisChoice, seedDefs: Readonly<Record<string, unknown>>): boolean {
+  const seeds: Record<string, number | string> = {};
+  for (const [k, v] of Object.entries(seedDefs)) {
+    const s = pick(v, sel);
+    if (s.ok) setOwn(seeds, k, s.value as number | string);
+  }
+  return pinAt(pin as Varying<PinValue>, { sel, seeds, declaredSeeds: new Set(Object.keys(seedDefs)), issues: [] }) !== undefined;
 }
 
 /** The non-`by` values under a possibly nested `by` object. */
@@ -132,7 +134,7 @@ function producer(nodes: Map<string, Node>): (name: string, n: Node, always: boo
  * axis declaration order.
  */
 export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): Record<string, AxisDependency> {
-  const { def: merged, replaced } = foldChain(definition, lookup);
+  const { def: merged, replaced, partly } = foldChain(definition, lookup);
   const def = withoutUnsafeNames(merged);
   const nodes = new Map<string, Node>();
   const scope: StepScope = { axes: def.axes ?? {}, seeds: def.seeds };
@@ -216,9 +218,9 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   for (const [name, v] of Object.entries(def.pins ?? {})) {
     const n = node();
     scan(v, n);
-    // Where the pin has no value, what it pins shows through, so the token depends on that too.
+    // Where the pin has no value, or a descendant's step replaces an inherited pin, what is under it shows through.
     const under = nodes.get(name);
-    if (under && !selections.every((sel) => pinApplies(v, sel, def.seeds ?? {}))) {
+    if (under && (partly.has(name) || !selections.every((sel) => pinApplies(v, sel, def.seeds ?? {})))) {
       for (const k of ['axes', 'seeds', 'edges'] as const) for (const x of under[k]) n[k].add(x);
     }
     nodes.set(name, n);

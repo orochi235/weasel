@@ -44,6 +44,18 @@ describe('lightnessRamp', () => {
 });
 
 describe('categoricalRamp', () => {
+  it("leaves a step a later anchor names to that anchor, not to an earlier anchor's duplicate", () => {
+    const anchors = [
+      { name: 'a', hue: 30, lightness: 0.7 },
+      { name: 'a', hue: 150, lightness: 0.7 },
+      { name: 'a-2', hue: 270, lightness: 0.7 },
+    ];
+    const { colors } = categoricalRamp(['a', 'a-2', 'c'], DEFAULT_CONSTRAINTS, anchors);
+    const hue = (step: string) => Math.round(toLch(colors[step]).H);
+    expect(Math.abs(hue('a-2') - 270)).toBeLessThan(15);
+    expect(Math.abs(hue('c') - 150)).toBeLessThan(15);
+  });
+
   it('names the generated set by step, in generation order', () => {
     const steps = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
     const { colors, feasible } = categoricalRamp(steps, DEFAULT_CONSTRAINTS, []);
@@ -149,5 +161,13 @@ describe('an achromatic anchor', () => {
     const ramp = lightnessRamp({ steps: ['50', '300', '500', '700', '900'], lightness: [0.98, 0.35], curve: 0, hue: 0, peak: 0, darkBias: 0, anchor: { '50': '#ffffff', '900': '#2563eb' } });
     const blue = toLch('#2563eb').H;
     for (const step of ['300', '500', '700']) expect(hueGap(toLch(ramp[step]).H, blue)).toBeLessThan(3);
+  });
+
+  it("keeps the declared peak when it is the ramp's only anchor", () => {
+    const steps = ['50', '300', '500', '700', '900'];
+    const params = { steps, lightness: [0.98, 0.35] as const, curve: 0, hue: 250, peak: 0.15, darkBias: 0 };
+    const free = lightnessRamp(params);
+    const anchored = lightnessRamp({ ...params, anchor: { '50': '#ffffff' } });
+    for (const step of ['300', '500', '700']) expect(toLch(anchored[step]).C).toBeCloseTo(toLch(free[step]).C, 3);
   });
 });

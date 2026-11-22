@@ -124,7 +124,7 @@ function applyPins(pins: Readonly<Record<string, Varying<PinValue>>>, ctx: Settl
 /** Derive every token of `definition` for one selection. Unmet rules are reported in `issues`; cycles and dangling references throw. */
 export function derive(definition: ThemeDefinition, selection: AxisChoice = {}, lookup?: Lookup): DeriveResult {
   const issues: Issue[] = [];
-  const { def: merged, replaced } = foldChain(definition, lookup);
+  const { def: merged, replaced } = foldChain(definition, lookup, selection);
   const def = withoutUnsafeNames(merged, issues);
   issues.push(...axisIssues(def.axes ?? {}));
   const sel = fullAxisChoice(def.axes ?? {}, selection);
