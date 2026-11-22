@@ -262,3 +262,24 @@ describe('a light corner', () => {
     });
   }
 });
+
+describe('woodgrain on an outline that reaches past the viewBox', () => {
+  const tall: [number, number][] = [[-10, -20], [110, -20], [110, 120], [-10, 120]];
+
+  it('runs its grain across the whole outline', () => {
+    const c = draw(Woodgrain, { lines: 4, knots: 0 }, 200, 30, polygonSampler(tall, 200, 30));
+    const nums = [...c.querySelectorAll('path.badge-stroke')].map((p) => p.getAttribute('d')!.match(/-?[\d.]+/g)!.map(Number));
+    for (const n of nums) {
+      expect(n[0]).toBeLessThan(-10);
+      expect(n[n.length - 2]).toBeGreaterThan(110);
+    }
+    expect(nums[0][1]).toBeCloseTo(-20 + 140 / 5);
+    expect(nums[3][1]).toBeCloseTo(-20 + (4 * 140) / 5);
+  });
+
+  it('draws as before on an outline inside the viewBox', () => {
+    const d = draw(Woodgrain, { lines: 1, knots: 0 }).querySelector('path.badge-stroke')!.getAttribute('d')!;
+    expect(d.startsWith('M -5 50 Q 35 ')).toBe(true);
+    expect(d).toMatch(/ 60 50 T 105 /);
+  });
+});
