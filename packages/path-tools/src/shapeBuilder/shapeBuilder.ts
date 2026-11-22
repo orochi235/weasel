@@ -83,12 +83,14 @@ export function planShapeBuilder(
  * The faces a run of world points passes through, each once, in the order
  * the run enters them. `step` is the world distance between the samples
  * taken along each segment; a face narrower than it can be stepped over.
+ * Throws a `RangeError` for a `step` that is not a positive finite number.
  */
 export function facesAlong(
   plan: Pick<ShapeBuilderPlan, 'faceAt'>,
   run: readonly { x: number; y: number }[],
   step: number,
 ): number[] {
+  if (!(step > 0 && Number.isFinite(step))) throw new RangeError(`facesAlong: step must be a positive finite number, got ${step}`);
   const out: number[] = [];
   const visit = (x: number, y: number): void => {
     const i = plan.faceAt(x, y);

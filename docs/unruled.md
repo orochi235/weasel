@@ -3589,3 +3589,9 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): a `'click-curve'` function layer with fewer than two anchors, which draws no curve to
   press, adds a point from a click anywhere in the plot until it has two. Holding `minPoints` at 2 in that mode, so a
   delete could never leave it there, was the alternative; it would not help a state the consumer passes in that short.
+
+## Audit round sixty-six (2026-11-21): path-tools, part two
+
+- 2026-11-21 (the fixer's call): `facesAlong` throws a `RangeError` for a `step` that is not a positive finite
+  number, as `mergeRegion` does for its `tolerance`; a zero one had looped forever, and a negative one sampled only
+  each segment's ends. Falling back to one sample per segment was the alternative.
