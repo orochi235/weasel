@@ -159,3 +159,17 @@ describe('a log scale asked for few ticks', () => {
     expect(logScale({ domain: [2, 9e299], range: [0, 100] }).ticks(1).every((v) => Number.isInteger(Math.log10(v)))).toBe(true);
   });
 });
+
+describe('a domain of one value', () => {
+  it('ticks on that value and labels it as it is', () => {
+    const lin = linearScale({ domain: [0.3, 0.3], range: [0, 100] });
+    expect(lin.ticks()).toEqual([0.3]);
+    expect(lin.tickFormat()(0.3)).toBe('0.3');
+    expect(linearScale({ domain: [1e300, 1e300], range: [0, 100] }).ticks()).toEqual([1e300]);
+    const log = logScale({ domain: [150, 150], range: [0, 100] });
+    expect(log.ticks()).toEqual([150]);
+    expect(log.tickFormat()(150)).toBe('150');
+    expect(logScale({ domain: [0.15, 0.15], range: [0, 100] }).tickFormat()(0.15)).toBe('0.15');
+    expect(powScale({ domain: [0.3, 0.3], range: [0, 100], exponent: 2 }).ticks()).toEqual([0.3]);
+  });
+});

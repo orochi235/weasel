@@ -1,4 +1,4 @@
-import { decimalsOf, formatNumber, stepTicks, tickCount, tickStep } from './linear';
+import { decimalsOf, domainTicks, formatNumber, tickCount, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import { tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
@@ -56,10 +56,10 @@ export function logScale(opts: LogScaleOptions): LogScale {
     return l0 <= l1 ? out : out.reverse();
   };
   // A domain holding fewer than two powers is nearly linear across it, and ticks and reads as a linear one would.
-  const linear = d0 !== d1 && powerTicks(0, false).length < 2;
+  const linear = d0 === d1 || powerTicks(0, false).length < 2;
   const ticks = (count = 5): number[] => {
     const n = tickCount(count);
-    return linear ? stepTicks(d0, d1, tickStep(d0, d1, n)) : powerTicks(n);
+    return linear ? domainTicks(d0, d1, tickStep(d0, d1, n)) : powerTicks(n);
   };
   const linearFormat = (count: number) => (v: number) => formatNumber(v, tickStep(d0, d1, count));
   // Each label is as precise as its own decade, whatever the count, and another base's powers as their digits need.

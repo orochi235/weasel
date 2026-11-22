@@ -1,4 +1,4 @@
-import { formatNumber, proportion, stepTicks, tickCount, tickStep } from './linear';
+import { domainTicks, formatNumber, proportion, tickCount, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import { tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
@@ -56,7 +56,7 @@ export function warpTicks(domain: readonly [number, number], to: (value: number)
   const [d0, d1] = domain;
   const w0 = to(d0);
   const w1 = to(d1);
-  if (w0 === w1 || !Number.isFinite(w0) || !Number.isFinite(w1)) return stepTicks(d0, d1, tickStep(d0, d1, count));
+  if (w0 === w1 || !Number.isFinite(w0) || !Number.isFinite(w1)) return domainTicks(d0, d1, tickStep(d0, d1, count));
   const lo = Math.min(d0, d1);
   const hi = Math.max(d0, d1);
   const n = Math.max(1, Math.round(tickCount(count)));

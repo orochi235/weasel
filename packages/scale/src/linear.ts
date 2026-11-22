@@ -1,6 +1,6 @@
 import { niceStep, lerp } from '@weasel-js/geom';
 import { replacedFormat } from './replacedFormat';
-import { FINEST_STEP, formatTick } from './tickFormat';
+import { FINEST_STEP, formatTick, tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
 
 /** Options for {@link linearScale}. */
@@ -51,8 +51,8 @@ export function tickStep(lo: number, hi: number, count = DEFAULT_TICKS): number 
   // Halved first, so ends near ±Number.MAX_VALUE still give a step rather than an infinite span.
   const raw = (Math.abs(hi / 2 - lo / 2) / Math.max(1, tickCount(count))) * 2;
   if (!Number.isFinite(raw)) return 1;
-  // A span among the subnormals halves to nothing, and is cut at multiples of itself.
-  if (raw === 0) return Math.abs(hi - lo) || 1;
+  // A span among the subnormals halves to nothing, and is cut at multiples of itself; a single value, on its own grid.
+  if (raw === 0) return Math.abs(hi - lo) || (Number.isFinite(lo) ? Math.min(1, 10 ** -tickDecimals([lo])) : 1);
   return niceStep(raw, 'nearest');
 }
 
@@ -70,6 +70,10 @@ const countable = (i: number): boolean => Math.abs(i) <= Number.MAX_SAFE_INTEGER
 
 /** `i` steps of `step`, without the float noise a bare product carries. */
 const onGrid = (i: number, step: number): number => (step < FINEST_STEP ? i * step + 0 : Number((i * step).toFixed(decimalsOf(step))));
+
+/** {@link stepTicks}, or the one value of a domain holding only it. */
+export const domainTicks = (lo: number, hi: number, step: number): number[] =>
+  lo === hi ? (Number.isFinite(lo) ? [lo] : []) : stepTicks(lo, hi, step);
 
 /** Every multiple of `step` from `lo` to `hi`, inclusive; none where those multiples are past counting. */
 export function stepTicks(lo: number, hi: number, step: number): number[] {
@@ -166,7 +170,7 @@ export function linearScale(opts: LinearScaleOptions): LinearScale {
     invert: (at) => (r1 === r0 ? d0 : unmap((at - r0) / (r1 - r0))),
     tickStep: step,
     spacedTicks: (options) => spacedTicks(domain, Math.abs(r1 - r0), options),
-    ticks: (count = DEFAULT_TICKS) => stepTicks(d0, d1, step(count)),
+    ticks: (count = DEFAULT_TICKS) => domainTicks(d0, d1, step(count)),
     format,
     tickFormat(count) {
       const s = step(count);
