@@ -47,7 +47,8 @@ export function createVariants(addTables: (tables: readonly IconTable[]) => void
         .then((settled) => {
           // Out of flight before the notice, so a listener retrying a failure starts a fresh load.
           pending.delete(name);
-          set(name, settled);
+          // A loader handed over while this one ran was kept for no run; once this one fails, it is the next to try.
+          set(name, settled === 'failed' && loaders.get(name) !== loader ? 'idle' : settled);
         });
       // In flight before the notice, so a listener asking for it again joins this load.
       pending.set(name, run);

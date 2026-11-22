@@ -261,6 +261,21 @@ describe('variants', () => {
     }
   });
 
+  it('reopens a variant whose loader was replaced while the one it ran failed', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const r = createIconRegistry();
+    const fixed = vi.fn(async () => ({ default: [core({ redo: 'r' })] }));
+    r.provideVariants({ all: async () => { throw new Error('offline'); } });
+    const run = r.loadVariant('all');
+    r.provideVariants({ all: fixed });
+    expect(r.variantState('all')).toBe('loading');
+    await run;
+    expect(r.variantState('all')).toBe('idle');
+    expect(fixed).not.toHaveBeenCalled();
+    await r.loadVariant('all');
+    expect(r.variantState('all')).toBe('loaded');
+  });
+
   it('marks a loader that throws synchronously failed, not stuck loading', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const r = createIconRegistry();
