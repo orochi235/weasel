@@ -173,9 +173,11 @@ function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
 const least = (m: number, v: number) => Math.min(m, v);
 const most = (m: number, v: number) => Math.max(m, v);
 
-/** Each node's place from its `pos`, and the page's size, when every node has one; else `null`. */
+/** Each node's place from its `pos`, and the page's size, when every node has one; else `null`. A graph with a `bb` is
+ *  layout output, its `pos` in points; one without is input to neato, its `pos` in inches. */
 function positions(nodes: DataNode[], attrs: ReadonlyMap<string, Attrs>, bb: string | undefined) {
-  const centers = nodes.map((n) => str(attrs.get(n.id)!, 'pos')?.replace(/!$/, '').split(',').map(Number));
+  const unit = bb === undefined ? POINTS_PER_INCH : 1;
+  const centers = nodes.map((n) => str(attrs.get(n.id)!, 'pos')?.replace(/!$/, '').split(',').map((v) => Number(v) * unit));
   if (nodes.length === 0 || centers.some((c) => c === undefined || c.length < 2 || !c.every(Number.isFinite))) return null;
   const size = (n: DataNode) => ({ width: n.width ?? 0.75 * POINTS_PER_INCH, height: n.height ?? 0.5 * POINTS_PER_INCH });
   const box = bb?.split(',').map(Number);

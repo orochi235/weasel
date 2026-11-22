@@ -115,12 +115,17 @@ describe('reading DOT', () => {
   });
 
   it('sizes the page around every node when there is no bb, a node left of or below the origin included', () => {
-    const p = page('digraph { a [pos="10,20!", width=1, height=1]; b [pos="100,-30"]; }');
+    const p = page('digraph { a [pos="0.1389,0.2778!", width=1, height=1]; b [pos="1.3889,-0.4167"]; }');
     expect(node(p.data, 'a').at).toEqual({ x: 0, y: 0 });
     expect(node(p.data, 'b').at).toEqual({ x: 99, y: 68 });
     expect(node(p.data, 'b')).toMatchObject({ width: 54, height: 36 });
     expect(p).toMatchObject({ width: 153, height: 104 });
     expect(page('digraph { a [pos="Infinity,1"]; }').data.nodes[0]!.at).toBeUndefined();
+  });
+
+  it('reads a pos as inches in a graph with no bb, as neato reads its input', () => {
+    const p = page('graph { a [pos="0,0!"]; b [pos="2,0!"]; }');
+    expect(node(p.data, 'b').at!.x - node(p.data, 'a').at!.x).toBe(144);
   });
 
   it('reads colors in each of DOT\'s spellings', () => {

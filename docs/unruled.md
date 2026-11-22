@@ -3756,3 +3756,8 @@ Calls the lanes made without a ruling:
   move, sends `onInput` the tracks it began from and then calls `onCancel`, as a canceled drag does and as `ColorField`
   does for a pick closed on its starting color. A drag that previewed nothing calls nothing. Calling nothing at all
   was the alternative.
+## Audit round seventy-one (2026-11-22): diagram formats
+
+- 2026-11-22 (the fixer's call): the DOT reader takes `pos` as points in a graph with a `bb`, which only layout output
+  carries, and as inches in one without, as neato reads its input. A `!` pin says nothing about the unit; reading it as
+  inches was the alternative, but Graphviz's own output pins nodes too.
