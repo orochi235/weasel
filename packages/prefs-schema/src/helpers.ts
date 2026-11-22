@@ -14,8 +14,9 @@ import { resolvePrefUnit } from './unit';
  * `max` are points, so they convert the way the value does; `step` is a
  * distance, and a unit with an offset maps zero somewhere else, so converting
  * it as a point would scale it wrong; under a unit's `places` it is rounded
- * up to the smallest step that changes the shown value; `stops` are points. A decreasing
- * conversion swaps which end is the lower one, and which end is `endless`.
+ * up to the smallest step that changes the shown value; `stops` are points. Under `places`, `min` rounds up
+ * and `max` down, so no shown bound stores past the leaf's. A decreasing conversion swaps which end is the lower
+ * one, and which end is `endless`.
  */
 export function prefDisplayBounds(
   p: PrefNumber,
@@ -24,19 +25,31 @@ export function prefDisplayBounds(
   if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1, ...ends, ...(p.stops ? { stops: p.stops } : {}) };
   const { toDisplay, toDisplayExact, places } = resolvePrefUnit(p.unit);
   const backward = toDisplayExact(1) < toDisplayExact(0);
-  const lo = p.min === undefined ? undefined : toDisplay(p.min);
-  const hi = p.max === undefined ? undefined : toDisplay(p.max);
+  const lo = p.min === undefined ? undefined : toDisplayExact(p.min);
+  const hi = p.max === undefined ? undefined : toDisplayExact(p.max);
+  const [low, high] = backward ? [hi, lo] : [lo, hi];
+  let min = low === undefined ? undefined : shownBound(low, places, Math.ceil);
+  let max = high === undefined ? undefined : shownBound(high, places, Math.floor);
+  // A range narrower than one shown place has no shown bounds inside it.
+  if (min !== undefined && max !== undefined && min > max) [min, max] = [low, high];
   const step = p.step === undefined ? 1 : displayStep(Math.abs(toDisplayExact(p.step) - toDisplayExact(0)), places);
   const flip = { min: 'max', max: 'min', both: 'both' } as const;
   const endless = backward && p.endless !== undefined ? flip[p.endless] : p.endless;
   const stops = p.stops?.map(toDisplay);
   return {
-    min: backward ? hi : lo,
-    max: backward ? lo : hi,
+    min,
+    max,
     step,
     ...(endless === undefined ? {} : { endless }),
     ...(stops ? { stops } : {}),
   };
+}
+
+/** `exact` rounded by `round` to a whole number of the last place `places` shows. */
+function shownBound(exact: number, places: number | undefined, round: (n: number) => number): number {
+  if (places === undefined || !Number.isFinite(exact)) return exact;
+  const quantum = 10 ** -places;
+  return Number((round(Number((exact / quantum).toFixed(9))) * quantum).toFixed(places));
 }
 
 /** `exact` rounded up to a whole number of the last place `places` shows, so a step always changes what is shown. */

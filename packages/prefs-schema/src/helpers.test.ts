@@ -218,6 +218,15 @@ describe('prefDisplayBounds', () => {
     expect(prefDisplayBounds(num(1, { scale: 3 })).step).toBeCloseTo(1 / 3, 12);
   });
 
+  it('rounds a bound inward under places, so no shown bound stores past the stored one', () => {
+    const num = (min: number, max: number, unit: PrefNumber['unit']): PrefNumber => ({ kind: 'number', name: 'N', description: '', default: 1, min, max, unit });
+    expect(prefDisplayBounds(num(0.5, 99.6, { scale: 10, suffix: 'cm', places: 0 }))).toMatchObject({ min: 1, max: 9 });
+    expect(prefDisplayBounds(num(0.5, 99.6, { scale: 1, places: 0 }))).toMatchObject({ min: 1, max: 99 });
+    expect(prefDisplayBounds(num(0.5, 99.6, { scale: -1, places: 0 }))).toMatchObject({ min: -99, max: -1 });
+    expect(prefDisplayBounds(num(1.1, 1.3, { scale: 1, places: 1 }))).toMatchObject({ min: 1.1, max: 1.3 });
+    expect(prefDisplayBounds(num(0.2, 0.4, { scale: 1, places: 0 }))).toMatchObject({ min: 0.2, max: 0.4 });
+  });
+
   it('carries stops through unchanged without a unit', () => {
     const leaf: PrefNumber = { kind: 'number', name: 'S', description: '', default: 0, min: -1, max: 1, stops: [0] };
     expect(prefDisplayBounds(leaf)).toEqual({ min: -1, max: 1, step: 1, stops: [0] });
