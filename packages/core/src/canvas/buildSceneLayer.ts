@@ -1,6 +1,7 @@
 /**
  * The scene slot: an adapter's tree as render layers, one per scene layer.
  */
+import { getOwn } from '@weasel-js/registry';
 import type { NodeShapes } from './nodeShapeRegistry';
 import type { Path } from '@weasel-js/geom';
 import type { Dims, LayerDims, RenderLayer } from 'core/layers/render';
@@ -288,7 +289,7 @@ export function buildSceneLayers<TNode extends { id: string }, TPose>(
   const parallax = new Set(adapter!.getLayers().filter((l) => l.parallax).map((l) => l.id));
   return sceneLayerIds.map((id) => {
     const layer = buildSceneLayer(cfg, adapter, boundsOfFn, hideIds, { id: sceneLayerKey(id), forLayer: id });
-    const opts = cfg.tiles?.[id];
+    const opts = getOwn(cfg.tiles, id);
     // A plane moves against the camera's world, which tiles are kept in.
     if (opts && !parallax.has(id)) {
       const source = cfg.tileSourceFor?.(id);
