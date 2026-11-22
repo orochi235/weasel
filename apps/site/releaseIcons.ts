@@ -1,5 +1,6 @@
 import type { IconRef } from '@weasel-js/icons';
 import type { Tag } from '@shared/releases';
+import { hasOwnKey } from '@weasel-js/registry';
 import { icon } from './icons.gen';
 
 /** Each published package's badge, by the unscoped name its changelog entries carry. */
@@ -63,6 +64,11 @@ export const PACKAGE_ICONS: Readonly<Record<string, IconRef>> = {
   'ui-input': icon('uiInput'),
   'ui-logic': icon('uiLogic'),
 };
+
+/** The badge for a package a changelog names, or `undefined` for one with none. */
+export function packageIcon(name: string): IconRef | undefined {
+  return hasOwnKey(PACKAGE_ICONS, name) ? PACKAGE_ICONS[name] : undefined;
+}
 
 /** Each change kind's badge. */
 export const TAG_ICONS: Readonly<Record<Tag, IconRef>> = {

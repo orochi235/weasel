@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { type ChangelogEntry, type Filter, type Tag, TAGS } from '@shared/releases';
 import { Button } from '@weasel-js/ui/components/Button';
 import { chipIcon } from './ReleaseChipIcon';
-import { PACKAGE_ICONS, TAG_ICONS } from './releaseIcons';
+import { packageIcon, TAG_ICONS } from './releaseIcons';
 
 /** One change: its tags and packages, its title, and its body folded behind the title. */
 export function ReleaseEntry({
@@ -28,7 +28,7 @@ export function ReleaseEntry({
             size="sm"
             pressed={filter.packages.includes(name)}
             onClick={() => onTogglePackage(name)}
-            leadingIcon={chipIcon(PACKAGE_ICONS[name])}
+            leadingIcon={chipIcon(packageIcon(name))}
           >
             {name}
           </Button>
