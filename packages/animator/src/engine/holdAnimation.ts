@@ -1,7 +1,7 @@
 import { stateOf } from '../target';
 import type { HoldHandle, HoldOptions } from '../types';
 import type { AnimationContext, AnimationSeed } from './context';
-import { openHold } from './holds';
+import { checkHold, openHold } from './holds';
 
 const isFn = (x: unknown): x is () => unknown => typeof x === 'function';
 
@@ -19,7 +19,7 @@ export function startHold<T>(ctx: AnimationContext, o: HoldOptions<T>): HoldHand
     // It leaves when released or canceled, and has nothing to do on a frame.
     due: Infinity,
   } as AnimationSeed;
-  ctx.targets.check(target as never);
+  checkHold(ctx, target as never, isFn(value) ? value() : value, o.axes);
   // Ahead of opening: an interrupted hold commits what it showed, which this one then stands in for.
   if (o.cancelKey != null && o.interrupt !== false) ctx.interrupt(o.cancelKey, seed);
   const held = openHold(ctx, {

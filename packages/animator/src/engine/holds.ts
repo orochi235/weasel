@@ -134,14 +134,23 @@ export function leaveHold(ctx: AnimationContext, s: TargetState, layer: HoldLaye
   ctx.targets.detach(s);
 }
 
+/** Throws where a hold of `value` over `axes` on `s` would be refused as it opens; answers the
+ *  axes it covers. */
+export function checkHold(
+  ctx: AnimationContext, s: TargetState, value: unknown, axes: readonly (number | string)[] | undefined,
+): Uint8Array | null {
+  ctx.targets.check(s);
+  axesFor(s.axes, value, 'value');
+  return coverOf(axes, s.axes);
+}
+
 /** Holds a value on a target: it shows `value` where the committed value would show. */
 export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   const s = o.target;
   const ax = s.axes;
   const state = s as unknown as TargetState;
-  ctx.targets.check(state);
+  const covers = checkHold(ctx, state, o.value(), o.axes);
   state.handoff?.release();
-  axesFor(ax, o.value(), 'value');
   let gone = false;
   let broken = false;
   const fail = (error: unknown): void => {
@@ -152,7 +161,6 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   const write = ax.write
     ? (out: Float64Array, at: number) => ax.write!(o.value(), out, at)
     : (out: Float64Array, at: number) => out.set(ax.to(o.value()), at);
-  const covers = coverOf(o.axes, ax);
   const { layer } = enterHold(ctx, state, (store, row) => store.free(row), {
     value: (out, at) => {
       if (broken) return;

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createHostedAnimator } from '../createHostedAnimator';
 import { createTarget, stateOf } from '../target';
+import { createTargetTable } from '../targetTable';
 
 /** An animator on frames the test runs. */
 function hosted() {
@@ -82,5 +83,27 @@ describe('a target tween whose path throws as it starts', () => {
     expect(stateOf(target).behind).toHaveLength(0);
     // No longer this animator's, so another may move it.
     expect(() => other.animator.tween({ target, to: 5, ms: 100 })).not.toThrow();
+  });
+});
+
+describe('a hold refused for its own input', () => {
+  it('leaves what holds its key holding', () => {
+    const a = hosted();
+    const { target } = numberTarget();
+    a.animator.hold({ target, value: 5, cancelKey: 'k' });
+    expect(() => a.animator.hold({ target, value: 5, axes: ['nope'] as never, cancelKey: 'k' })).toThrow();
+    expect(() => a.animator.hold({ target, value: { x: 1 } as never, cancelKey: 'k' })).toThrow();
+    expect(() => a.animator.hold({ target, value: () => [1, 2] as never, cancelKey: 'k' })).toThrow();
+    expect(a.animator.live()).toHaveLength(1);
+    expect(target.read()).toBe(5);
+  });
+
+  it('leaves what holds its key holding when its rows hold axes the table lacks', () => {
+    const a = hosted();
+    const table = createTargetTable({ axes: 2 });
+    table.add([0, 0]);
+    a.animator.holdRows({ table, cancelKey: 'k' });
+    expect(() => a.animator.holdRows({ table, axes: [5], cancelKey: 'k' })).toThrow();
+    expect(a.animator.live()).toHaveLength(1);
   });
 });

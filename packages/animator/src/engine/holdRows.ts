@@ -20,6 +20,8 @@ export function startHoldRows(ctx: AnimationContext, o: HoldRowsOptions): RowsHo
     ctx.targets.check(s);
     targets.set(row, s);
   }
+  const first = targets.values().next().value;
+  const covers = first ? coverOf(o.axes, first.axes) : null;
   const id = ctx.nextId();
   const seed = {
     id, kind: 'hold', cancelKey: o.cancelKey, label: o.label, keepExisting: o.interrupt === false,
@@ -31,7 +33,6 @@ export function startHoldRows(ctx: AnimationContext, o: HoldRowsOptions): RowsHo
   /** The rows it holds, each with what lets it go. */
   const held = new Map<number, { s: TargetState; part: () => void }>();
   const weight = o.weight ?? 1;
-  let covers: Uint8Array | null = null;
   const letGo = (row: number, commit: boolean): void => {
     const h = held.get(row);
     if (!h) return;
@@ -54,7 +55,6 @@ export function startHoldRows(ctx: AnimationContext, o: HoldRowsOptions): RowsHo
   };
   try {
     for (const [row, s] of targets) {
-      covers ??= coverOf(o.axes, s.axes);
       enterHold(ctx, s, (st) => (layer ??= st.layer()), { covers, fixed: true });
       layer.values.set(table.committed.subarray(row * n, (row + 1) * n), row * n);
       layer.weights[row] = weight;
