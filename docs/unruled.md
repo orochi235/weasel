@@ -3613,3 +3613,8 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): The Mermaid state writer writes what a pool holds outside its lanes (its own states,
   containers, and `[*]` transitions) as a concurrent region ahead of the lanes, with a warning, so it reads back as a
   lane of its own. Dropping it with a warning was the alternative.
+## Audit round sixty-six (2026-11-21): diagram containers
+
+- 2026-11-21 (the fixer's call): `addLane` returns null and changes nothing when the add would move or restyle a
+  locked node (the pool, its title, a lane it shifts, or what that lane holds), as `releaseMembers` does; throwing,
+  or adding the lane and leaving locked lanes overlapping it, were the alternatives.

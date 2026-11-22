@@ -83,6 +83,10 @@ export function regionSpecs<TLayer extends string>(
   }];
 }
 
+/** The style of a pool's lane at place `i` in its stack, its `bodies` taken in turn; undefined for none. */
+export const laneBodyStyle = (bodies: readonly NodeStyle[], i: number): NodeStyle | undefined =>
+  bodies.length > 0 ? bodies[i % bodies.length] : undefined;
+
 /** The lane specs a new pool at `at` starts with: one per title in `titles`, default `Lane 1` and `Lane 2`. */
 export function firstLanes<TLayer extends string>(
   poolId: string, axis: 'x' | 'y', at: RectPose, opts: ContainerBuildOptions<TLayer>,
@@ -96,8 +100,7 @@ export function firstLanes<TLayer extends string>(
     const pose: RectPose = axis === 'y'
       ? { x: body.x, y: at.y + i * size, width: body.width, height: size }
       : { x: at.x + i * size, y: body.y, width: size, height: body.height };
-    const bodies = opts.laneStyles?.bodies ?? [];
-    const style = bodies.length > 0 ? bodies[i % bodies.length] : opts.style;
+    const style = laneBodyStyle(opts.laneStyles?.bodies ?? [], i) ?? opts.style;
     out.push(...regionSpecs('lane', axis, pose, titles[i]!, {
       id: opts.newId(), layer: opts.layer, parent: poolId, ...(style ? { style } : {}),
     }));

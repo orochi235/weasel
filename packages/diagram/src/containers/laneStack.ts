@@ -34,6 +34,10 @@ export const MIN_LANE_SIZE = 40;
 
 type Lane = LayoutChild<RectPose>;
 
+/** Where a lane sits along its pool's stack: its middle along `axis`. Every reader of a pool's lane order sorts by it. */
+export const laneMiddle = (axis: 'x' | 'y', p: { x?: number; y?: number; width?: number; height?: number }): number =>
+  (p[axis] ?? 0) + (p[axis === 'y' ? 'height' : 'width'] ?? 0) / 2;
+
 /** The header a pool stacking along `axis` has: across the stack, at its start. */
 export const poolHeader = (axis: 'x' | 'y', size = POOL_HEADER_SIZE): ContainerHeader =>
   ({ side: axis === 'y' ? 'left' : 'top', size });
@@ -62,9 +66,8 @@ export function laneStackLayout(opts: LaneStackOptions): LayoutStrategy<RectPose
   const { axis } = opts;
   const header = poolHeader(axis, opts.headerSize);
   const along = (p: { width: number; height: number }) => (axis === 'y' ? p.height : p.width);
-  const mid = (p: RectPose) => (axis === 'y' ? p.y + p.height / 2 : p.x + p.width / 2);
   const lanesOf = (container: LayoutContainer, children: readonly Lane[], skip?: string) =>
-    children.filter((c) => c.id !== titleIdOf(container.id) && c.id !== skip).sort((a, b) => mid(a.pose) - mid(b.pose));
+    children.filter((c) => c.id !== titleIdOf(container.id) && c.id !== skip).sort((a, b) => laneMiddle(axis, a.pose) - laneMiddle(axis, b.pose));
   const sized = (lanes: readonly Lane[]) => lanes.map((l) => ({ id: l.id, size: along(l.pose) }));
   const withTitle = (container: LayoutContainer, children: readonly Lane[], poses: Map<string, RectPose>, bounds = container.bounds) => {
     if (children.some((c) => c.id === titleIdOf(container.id))) poses.set(titleIdOf(container.id), titlePose(bounds, header));

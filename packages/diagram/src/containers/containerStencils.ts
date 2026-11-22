@@ -12,6 +12,7 @@ import type { NodeStyle } from '../dataTypes';
 import { diagramThemeOf } from '../theme/resolve';
 import { themeWrites, type ThemedScene } from '../theme/themeWrites';
 import { DIAGRAM_THEME_KEY } from '../theme/types';
+import { laneMiddle, poolHeader, stackedLanes } from './laneStack';
 import { firstLanes, regionSpecs, type ContainerBuildOptions } from './regionSpecs';
 import { bodyBox, diagramContainerOf, titleIdOf, type DiagramContainer } from './trait';
 import type { Rect } from '@weasel-js/geom';
@@ -81,20 +82,57 @@ export function lanesOf(scene: AnyScene, poolId: string): NodeId[] {
   const trait = pool === undefined ? null : diagramContainerOf(pool);
   if (pool === undefined || trait?.role !== 'pool') return [];
   const axis = poolAxisOf(trait);
-  const start = (id: NodeId) => {
-    const p = scene.get(id)!.pose as RectPose;
-    return axis === 'y' ? p.y : p.x;
-  };
+  const mid = (id: NodeId) => laneMiddle(axis, scene.get(id)!.pose as RectPose);
   return scene.childrenOf(pool.id)
     .filter((id) => diagramContainerOf(scene.get(id)!)?.role === 'lane')
-    .sort((a, b) => start(a) - start(b));
+    .sort((a, b) => mid(a) - mid(b));
+}
+
+/** Pool `pool`'s own box, where its layout lays its lanes out: the box in world, the box at the origin, and where a
+ *  node draws in it. Upright where poses do not compose. */
+function poolBox(scene: AnyScene, pool: { id: NodeId; pose: unknown }) {
+  const frame = scenePoseFrame(scene);
+  const world = frame.world(pool.id) as RectPose;
+  const box = composesFrames(scene.composition) ? world : { x: world.x, y: world.y, width: world.width, height: world.height };
+  const { width, height } = pool.pose as RectPose;
+  const local: RectPose = { x: 0, y: 0, width, height };
+  const inBox = (id: NodeId) => RIGID_POSE_COMPOSITION.decompose(box, frame.world(id) as RectPose);
+  return { box, local, inBox };
+}
+
+/** Whether restacking pool `poolId` would write a locked node: the pool, its title, a lane of `kept` (which lead the
+ *  stack) not already where the stack puts it, or a lane of `moved` or anything one of those holds. */
+function restackLocked(scene: AnyScene, poolId: NodeId, kept: readonly NodeId[], moved: readonly NodeId[]): boolean {
+  const pool = scene.get(poolId);
+  const trait = pool === undefined ? null : diagramContainerOf(pool);
+  if (pool === undefined || trait === null) return false;
+  if ([poolId, titleIdOf(poolId)].some((id) => scene.isLocked(id as NodeId))) return true;
+  const axis = poolAxisOf(trait);
+  const { local, inBox } = poolBox(scene, pool);
+  const at = kept.map(inBox);
+  const sizes = kept.map((id, k) => ({ id: id as string, size: (axis === 'y' ? at[k]?.height : at[k]?.width) ?? 0 }));
+  const stacked = stackedLanes(axis, local, trait.header ?? poolHeader(axis), sizes);
+  const shifted = kept.filter((id, k) => {
+    const p = at[k];
+    const to = stacked.get(id)!;
+    return p == null || p.x !== to.x || p.y !== to.y || p.width !== to.width || p.height !== to.height;
+  });
+  return reachesLocked(scene as never, [...shifted, ...moved]);
+}
+
+/** Whether {@link addLane} at `index` would write a locked node, and so writes nothing. */
+export function addLaneLocked(scene: AnyScene, poolId: string, index?: number): boolean {
+  const lanes = lanesOf(scene, poolId);
+  const at = index === undefined ? lanes.length : Math.min(index, lanes.length);
+  return restackLocked(scene, poolId as NodeId, lanes.slice(0, at), lanes.slice(at));
 }
 
 /**
  * Add a lane to `poolId` before the lane at `index`, or at the end of the
  * stack when `index` is absent or past the last lane, as one history entry.
- * The pool grows to hold it. Returns the new lane's id, or null when `poolId`
- * is not a pool. Throws a `RangeError` for a negative or fractional `index`.
+ * The pool grows to hold it. Returns the new lane's id, or null, changing
+ * nothing, when `poolId` is not a pool or the add would move or restyle a
+ * locked node. Throws a `RangeError` for a negative or fractional `index`.
  */
 export function addLane(scene: AnyScene, poolId: string, index?: number, style?: NodeStyle): string | null {
   const pool = scene.get(poolId as NodeId);
@@ -103,15 +141,11 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
   if (index !== undefined && !(Number.isInteger(index) && index >= 0)) {
     throw new RangeError(`addLane: index ${index} is not a lane's place; pass a whole number from 0, or none for the end`);
   }
+  if (addLaneLocked(scene, poolId, index)) return null;
   const axis = poolAxisOf(trait);
   const lanes = lanesOf(scene, poolId);
-  // Laid out in the pool's own box, where a layout sees it: upright where poses do not compose.
-  const frame = scenePoseFrame(scene);
-  const world = frame.world(pool.id) as RectPose;
-  const box = composesFrames(scene.composition) ? world : { x: world.x, y: world.y, width: world.width, height: world.height };
-  const inBox = (id: NodeId) => RIGID_POSE_COMPOSITION.decompose(box, frame.world(id) as RectPose);
-  const { width, height } = pool.pose as RectPose;
-  const b: RectPose = { x: 0, y: 0, width, height };
+  // Laid out in the pool's own box, where a layout sees it.
+  const { box, local: b, inBox } = poolBox(scene, pool);
   const at = index === undefined || index >= lanes.length ? null : inBox(lanes[index]!);
   const boundary = at !== null ? (axis === 'y' ? at.y : at.x) : axis === 'y' ? b.y + b.height : b.x + b.width;
   // Centered on the boundary it goes in at: the stack orders lanes by where they sit.
@@ -153,12 +187,12 @@ function releasePlan(scene: AnyScene, id: string) {
   const membersOf = (c: NodeId) => scene.childrenOf(c).filter((m) => m !== titleIdOf(c as string));
   const members = trait.role === 'pool' ? membersOf(node.id).flatMap(membersOf) : membersOf(node.id);
   const beside = releasedFrom(scene, node.id);
-  // A lane's pool restacks the lanes left: it, its title and they are written too, and the lanes after it move
-  // with what they hold.
-  const restacked = beside === node.id ? [] : [beside, titleIdOf(beside), ...membersOf(beside)];
-  if (restacked.some((id) => scene.isLocked(id as NodeId))) return null;
-  const lanes = beside === node.id ? [] : lanesOf(scene, beside);
-  if (reachesLocked(scene as never, lanes.slice(lanes.indexOf(node.id) + 1))) return null;
+  // A lane's pool restacks the lanes left: it, its title, and each lane it moves are written too.
+  if (beside !== node.id) {
+    const lanes = lanesOf(scene, beside);
+    const at = lanes.indexOf(node.id);
+    if (restackLocked(scene, beside, lanes.slice(0, at), lanes.slice(at + 1))) return null;
+  }
   const parent = scene.get(beside)!.parent;
   // A lane's members go just past the pool, which stays and would draw over them; a container's take its place.
   const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(beside) + (beside === node.id ? 0 : 1);

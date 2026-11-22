@@ -7,7 +7,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { withDiagramRegistry } from '../edge';
 import { CONTAINER_STENCILS, containerBuild, lanesOf } from './containerStencils';
 import { createAddLaneAction, createLaneResizeAction, createReleaseMembersAction, createDiagramContainersContribution } from './containerActions';
-import { createLaneAffordance, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, type LaneScratch } from './laneBoundaryLayer';
+import { createLaneAffordance, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, laneScratchOf, type LaneScratch } from './laneBoundaryLayer';
 
 function pool(opts: { composition?: PoseComposition<RectPose>; at?: Vec2 } = {}) {
   const scene = createScene<Record<string, unknown>, 'main', RectPose>({
@@ -28,6 +28,14 @@ function pool(opts: { composition?: PoseComposition<RectPose>; at?: Vec2 } = {})
 
 const pose = (scene: ReturnType<typeof pool>['scene'], id: string) => scene.get(id as NodeId)!.pose;
 const worldOf = (scene: ReturnType<typeof pool>['scene'], id: string) => scenePoseFrame(scene as never).world(id as NodeId) as RectPose;
+
+describe('laneScratchOf', () => {
+  it('reads no scratch off a hit whose payload is null or not an object', () => {
+    expect(laneScratchOf({ payload: null })).toBeNull();
+    expect(laneScratchOf({ payload: 'pool' })).toBeNull();
+    expect(laneScratchOf({ payload: { targetId: 'p', poolId: 'p' } })).toEqual({ targetId: 'p', poolId: 'p' });
+  });
+});
 
 describe('lane affordances', () => {
   it('offer a boundary after each lane and an add-lane button per pool', () => {
@@ -205,6 +213,25 @@ describe('the add-lane action', () => {
     (action.invoker as ImmediateInvoker).run({ scene: h.scene } as never, { world: { x: 0, y: 0 }, affordance } as never);
     expect(lanesOf(h.scene as never, h.poolId)).toHaveLength(3);
     expect(pose(h.scene, h.poolId)).toMatchObject({ height: 360 });
+  });
+
+  it('styles the lane it adds by the pool\'s lane bodies, in turn, in a scene with no theme', () => {
+    const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+    const bodies = [
+      { fill: '#000000', stroke: '#aa0000', text: '#ffffff' },
+      { fill: '#000000', stroke: '#00aa00', text: '#ffffff' },
+    ];
+    let n = 0;
+    const built = containerBuild(CONTAINER_STENCILS[1]!, { x: 0, y: 0, width: 480, height: 240 }, {
+      layer: 'main', newId: () => `n${n++}`, laneStyles: { header: bodies[0]!, bodies },
+    });
+    commitOps({ scene } as unknown as ActionDeps, built.ops, 'Insert');
+    const action = createAddLaneAction({ scene: scene as never, laneStyles: { bodies } });
+    const affordance = { payload: { targetId: built.id, poolId: built.id } satisfies LaneScratch };
+    (action.invoker as ImmediateInvoker).run({ scene } as never, { world: { x: 0, y: 0 }, affordance } as never);
+    const strokes = lanesOf(scene as never, built.id)
+      .map((id) => (scene.get(id as NodeId)!.data as { stroke: { paint: { color: string } } }).stroke.paint.color);
+    expect(strokes).toEqual(['#aa0000', '#00aa00', '#aa0000']);
   });
 
   it('offers no button, and passes the press on, where the lane would grow a locked title', () => {
