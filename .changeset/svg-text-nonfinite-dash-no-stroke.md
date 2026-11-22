@@ -2,6 +2,6 @@
 '@weasel-js/svg': patch
 ---
 
-An exported text run, or a text inheriting its group's stroke, whose dash has a non-finite entry is written unstroked, as the canvas draws it, instead of taking the node's or group's stroke.
+SVG export writes a text run whose dash has a non-finite entry unstroked, as the canvas draws it. The same goes for a text inheriting such a stroke from its group.
 
 <!-- entry: fix visual -->
