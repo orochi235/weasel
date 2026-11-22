@@ -15,7 +15,7 @@ import {
 import { targetCorners, targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
 import { axisAlignedBounds, unionBounds } from 'core/geometry/unionBounds';
 import type { Node, NodeId } from 'core/scene/types';
-import { hidesSubtree } from 'core/scene/nodeGates';
+import { hiddenLayerIds, hidesSubtree, type GatedLayer } from 'core/scene/nodeGates';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { boundsOfPath, meanScale, type Path, type Scale2 } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
@@ -28,6 +28,8 @@ import { groupBoxDrawnBounds } from './nodeShapes/groupBoxPainter';
 export interface DrawnBoundsScene {
   get(id: NodeId): Node<unknown, string, unknown> | undefined;
   childrenOf?(id: NodeId): readonly NodeId[];
+  /** Its layers. A node on one with `visible: false` is not painted, though its children are. */
+  readonly layers?: readonly GatedLayer[];
   /** The path a node shows in place of its pose's, or `null` for one that shows its own. */
   derivedPathOf?(id: NodeId): Path | null;
   /** The painters its nodes are drawn with. Absent, `defaultNodeShapes`. */
@@ -80,11 +82,7 @@ export function inkExtentsOf(
   if (!node) return NO_INK_EXTENTS;
   const own = framedBounds(pose, descriptorFor(scene, id, opts));
   const unframed = { x: own.x, y: own.y, width: own.width, height: own.height };
-  // Only members the walk paints: a consumed child is an operand, and a hidden one shows nothing.
-  const members = node.consumesChildren === true ? [] : (scene.childrenOf?.(id) ?? []).filter((m) => {
-    const member = scene.get(m);
-    return member !== undefined && !hidesSubtree(member);
-  });
+  const members = node.consumesChildren === true ? [] : paintedMembers(scene, scene.childrenOf?.(id) ?? [], hiddenLayerIds(scene));
   const reached = members.length > 0 ? membersExtents(scene, members, own, opts) : NO_INK_EXTENTS;
   const ctx = inkCtx(opts.scale, own);
   const drawn = node.kind === 'group'
@@ -98,6 +96,17 @@ export function inkExtentsOf(
     right: Math.max(ink.right, reached.right),
     bottom: Math.max(ink.bottom, reached.bottom),
   };
+}
+
+/** Of `ids`, the nodes the walk paints: a hidden one shows nothing, and in
+ *  place of one on a hidden layer, what it paints of its own children. */
+function paintedMembers(scene: DrawnBoundsScene, ids: readonly NodeId[], hiddenLayers: Set<string> | null): NodeId[] {
+  return ids.flatMap((m) => {
+    const member = scene.get(m);
+    if (member === undefined || hidesSubtree(member)) return [];
+    if (hiddenLayers === null || !hiddenLayers.has(member.layer)) return [m];
+    return member.consumesChildren === true ? [] : paintedMembers(scene, scene.childrenOf?.(m) ?? [], hiddenLayers);
+  });
 }
 
 /** The box of a node drawn along `path`: the path's own, grown by the stroke
