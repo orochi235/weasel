@@ -87,8 +87,8 @@ export function bundleProblems(root: SchemaRoot): Map<string, BundleProblem> {
     if (leaf.member.kind !== 'bundle' || leaf.bundle === undefined) continue;
     if (reached.get(leaf.member.id)?.includes(leaf.bundle)) mark(leaf.path, { cycle: true });
   }
-  // Who names each thing, and the first bundle found that loads two of them.
-  const said = new Map<string, string>();
+  // For each thing named twice, each holder that names it alongside another, with the first sentence saying so.
+  const said = new Map<string, Map<string, string>>();
   for (const bundle of readBundles(root)) {
     const loaded = reached.get(bundle.id)!;
     const owners = new Map<string, string[]>();
@@ -98,14 +98,18 @@ export function bundleProblems(root: SchemaRoot): Map<string, BundleProblem> {
     }
     for (const [name, by] of owners) {
       const distinct = [...new Set(by)];
-      if (distinct.length > 1 && !said.has(name)) said.set(name, `${distinct.join(' and ')} both name it, and ${bundle.id} loads them together`);
+      if (distinct.length < 2) continue;
+      const why = `${distinct.join(' and ')} both name it, and ${bundle.id} loads them together`;
+      const clash = said.get(name) ?? new Map<string, string>();
+      for (const h of distinct) if (!clash.has(h)) clash.set(h, why);
+      said.set(name, clash);
     }
   }
   for (const leaf of leaves) {
     if (leaf.bundle === undefined) continue;
     // An atom shows what it names on its own row.
-    const named = leaf.member.kind === 'atom' ? holders.get(leaf.member.id)?.names ?? [] : [];
-    const why = [memberKey(leaf.member), ...named].map((name) => said.get(name)).find((w) => w !== undefined);
+    const named = leaf.member.kind === 'atom' ? (holders.get(leaf.member.id)?.names ?? []).map((name) => [name, leaf.member.id] as const) : [];
+    const why = [[memberKey(leaf.member), leaf.bundle] as const, ...named].map(([name, by]) => said.get(name)?.get(by)).find((w) => w !== undefined);
     if (why !== undefined) mark(leaf.path, { twice: why });
   }
   return out;

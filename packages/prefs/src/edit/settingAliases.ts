@@ -17,6 +17,9 @@ function settingsUnder(over: SchemaRoot, path: string): string[] {
   return Object.keys(childrenOf(node) ?? {}).flatMap((key) => settingsUnder(over, joinPath(path, key)));
 }
 
+/** The key a layout's alias of the setting at `path` starts from: a dialog's key may be a dotted value path, a layout's may not. */
+const layoutKey = (path: string): string => keyOf(path).replaceAll('.', '_');
+
 /**
  * What a layout takes for the node at tree path `path` of its dialog `over`, and the key it starts under: an alias
  * to a setting, and for a group a heading under its name over an alias to each setting it holds at any depth.
@@ -25,11 +28,11 @@ function settingsUnder(over: SchemaRoot, path: string): string[] {
 export function aliasesTo(over: SchemaRoot, path: string): { key: string; node: SchemaNode } | undefined {
   const node = nodeAt(over, path);
   if (!node) return undefined;
-  if (isPrefLeaf(node)) return isAliasable(over, path) ? { key: keyOf(path), node: aliasOf(over, path) } : undefined;
+  if (isPrefLeaf(node)) return isAliasable(over, path) ? { key: layoutKey(path), node: aliasOf(over, path) } : undefined;
   const settings = settingsUnder(over, path);
   if (settings.length === 0) return undefined;
   const children: ChildMap = {};
-  for (const at of settings) setOwn(children, uniqueKey(children, keyOf(at)), aliasOf(over, at));
+  for (const at of settings) setOwn(children, uniqueKey(children, layoutKey(at)), aliasOf(over, at));
   return { key: keyOf(path), node: { name: node.name, as: 'section', children } as PrefGroup };
 }
 

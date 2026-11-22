@@ -1,4 +1,4 @@
-import { setOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { isPrefLeaf, isPrefSection, prefHoldsValue } from '../index';
 import { branchUnder, childrenOf, joinPath, nodeAt, parentPath, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaTree';
 
@@ -55,6 +55,20 @@ export function uniqueLeafKey(kids: ChildMap, key: string): string {
   let n = 2;
   while (!free([`${head}${n}`, ...rest].join('.'))) n++;
   return [`${head}${n}`, ...rest].join('.');
+}
+
+/** `node` with each leaf it holds as a section, at any depth, keyed as {@link uniqueLeafKey} gives against `leafKeys`
+ *  and claimed there: a section's key is no part of a value path, so its leaves join the scope it is set down in. */
+export function claimLeafKeys(node: SchemaNode, leafKeys: ChildMap): SchemaNode {
+  if (!isPrefSection(node)) return node;
+  const members = Object.fromEntries(Object.entries(node.members).map(([key, kid]): [string, SchemaNode] => {
+    if (!isPrefLeaf(kid)) return [key, claimLeafKeys(kid, leafKeys)];
+    const free = uniqueLeafKey(leafKeys, key);
+    setOwn(leafKeys, free, kid);
+    return [free, kid];
+  }));
+  const same = Object.keys(members).every((key, i) => key === Object.keys(node.members)[i] && getOwn(members, key) === getOwn(node.members, key));
+  return same ? node : { ...node, members } as SchemaNode;
 }
 
 /** Why `key` cannot join `kids`, in words for the person typing it; `null` when it can. `kids` is what

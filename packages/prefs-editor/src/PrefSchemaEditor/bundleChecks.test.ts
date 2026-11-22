@@ -41,6 +41,13 @@ describe('bundleProblems', () => {
     expect(problems.get('pkg/b/x')?.twice).toBeDefined();
   });
 
+  it('leaves a bundle naming an id two others clash over, where nothing loads it with them', () => {
+    const tree = bundleTree([d('a', { actions: ['x'] }), d('b', { actions: ['x'] }), d('top', { includes: ['a', 'b'] }), d('w', { actions: ['x'] })]);
+    const problems = bundleProblems(tree);
+    expect(problems.get('pkg/a/x')?.twice).toBeDefined();
+    expect(problems.get('pkg/w/x')).toBeUndefined();
+  });
+
   it("marks an atom whose own action a bundle loaded with it names", () => {
     const tree = bundleTree([d('resize', { atom: true, actions: ['resize'] }), d('top', { actions: ['resize'], includes: ['resize'] })]);
     const problems = bundleProblems(tree);

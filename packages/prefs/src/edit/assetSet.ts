@@ -2,7 +2,7 @@ import type { PresetDescription } from '@weasel-js/prefs-schema';
 import { isPrefLeaf, isPrefSection } from '../index';
 import { bundleTree } from './bundleTree';
 import type { SchemaRoot } from './schemaEdit';
-import { sameList } from '@weasel-js/registry';
+import { getOwn, sameList } from '@weasel-js/registry';
 
 /** The fields every asset in the editor's asset set carries. */
 export interface AssetBase {
@@ -122,11 +122,14 @@ export function catalogOf(assetSet: AssetSet): ActionsAsset | undefined {
 
 /**
  * `current` with the roots `stepped` holds, by id: an undo step keeps the asset set as it was when the step was made,
- * and what a host has said of an asset since (its label, its lock) is not the step's to take back. An asset
+ * and what a host has said of an asset since (its label, its lock, anything but its root) is not the step's to take back. An asset
  * `stepped` lacks keeps its root. `stepped` itself where it already says of every asset what `current` does.
  */
 export function withRoots(current: AssetSet, stepped: AssetSet): AssetSet {
-  const said = (a: Asset, b: Asset): boolean => a.label === b.label && a.kind === b.kind && a.readOnly === b.readOnly && (a as LayoutAsset).over === (b as LayoutAsset).over;
+  const said = (a: Asset, b: Asset): boolean => {
+    const [x, y] = [a as unknown as Record<string, unknown>, b as unknown as Record<string, unknown>];
+    return [...new Set([...Object.keys(x), ...Object.keys(y)])].every((k) => k === 'root' || getOwn(x, k) === getOwn(y, k));
+  };
   const assets = current.assets.map((asset) => {
     const was = assetOf(stepped, asset.id);
     if (!was || was.root === asset.root) return asset;

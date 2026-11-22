@@ -56,6 +56,13 @@ describe('aggregateAttributes', () => {
     expect(both.apart).toEqual([]);
   });
 
+  it('sets apart an attribute every node has under a different definition, such as actions firing different unregistered keys', () => {
+    const fires = (action: string) => ({ kind: 'action', name: 'A', description: '', default: undefined, action }) as unknown as PrefLeaf;
+    const both = aggregateAttributes([fires('old.gone'), fires('older.gone')], {}, undefined, [{ key: 'copy', label: 'Copy' }]);
+    expect(both.schema.own).not.toHaveProperty('action');
+    expect(both.apart).toContain('action');
+  });
+
   it('still sets an object attribute apart when a field that disagrees has no mixed state', () => {
     const both = aggregateAttributes([boxed({ tags: ['a'] }), boxed({ tags: ['b'] })], KINDS);
     expect(both.schema.own).not.toHaveProperty('frame');

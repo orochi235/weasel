@@ -78,7 +78,7 @@ export interface AttributeAggregate {
   mixed: ReadonlySet<string>;
   /** {@link values} and {@link mixed} for the Auto panel's rows, which all come from a leaf's one `auto` field. */
   auto: { values: Record<string, unknown>; mixed: ReadonlySet<string> };
-  /** Attributes every node has whose values disagree and cannot be edited together. */
+  /** Attributes every node has that cannot be edited together: their values disagree, or so do their definitions. */
   apart: readonly string[];
   /** The leaf kind every node has; `null` when all are leaves of differing kinds; `undefined` when any is not a leaf. */
   kind: string | null | undefined;
@@ -104,7 +104,10 @@ export function aggregateAttributes(
     const held = part === 'auto' ? rows : fields;
     const { values, mixed } = part === 'auto' ? auto : shown;
     for (const [key, def] of Object.entries(first![part])) {
-      if (!rest.every((s) => deepEqual(getOwn(s[part], key), def))) continue;
+      if (!rest.every((s) => deepEqual(getOwn(s[part], key), def))) {
+        if (rest.every((s) => Object.hasOwn(s[part], key))) apart.push(key);
+        continue;
+      }
       const first = getOwn(held[0]!, key);
       if (held.every((h) => deepEqual(getOwn(h, key), first))) {
         setOwn(out, key, def);
