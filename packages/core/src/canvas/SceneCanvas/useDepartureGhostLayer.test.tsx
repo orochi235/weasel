@@ -138,4 +138,20 @@ describe('useDepartureGhostLayer', () => {
     }));
     expect(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 })).toEqual([]);
   });
+  it("passes a departing child the paint it inherits from its departing container", () => {
+    const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const g = { id: asNodeId('g'), kind: 'group', layer: 'main', pose: at(0), data: { fill: { paint: { color: '#f00' } } }, parent: null, children: [] } as unknown as N;
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: { fill: 'inherit' }, parent: g.id } as unknown as N;
+    const ghost = removal(g, at(0), [{ node: k, pose: at(4), children: [] }]);
+    const seen: unknown[] = [];
+    const spy = (n: N, pose: RectPose, _v: View, ctx?: { inherited?: unknown }): DrawCommand[] => {
+      if (n.id === k.id) seen.push(ctx?.inherited);
+      return drawOne(n, pose);
+    };
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene, sceneSlot: { drawOne: spy as never }, departures: departing([{ removal: ghost, pose: at(0), alpha: 1 }]),
+    }));
+    result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 });
+    expect(seen).toEqual([{ fill: { paint: { color: '#f00' } }, stroke: null }]);
+  });
 });
