@@ -48,7 +48,7 @@ describe('a stroke that paints no line but carries a marker', () => {
   });
 
   it('reaches the draw command, with no paint, for the renderer to draw its heads', () => {
-    expect(pathCommand(line, null, headed)).toMatchObject({ stroke: { width: 2, markerEnd: 'arrow' } });
-    expect(pathCommand(line, null, { width: 2 })).not.toHaveProperty('stroke');
+    expect(pathCommand(line, null, headed, undefined)).toMatchObject({ stroke: { width: 2, markerEnd: 'arrow' } });
+    expect(pathCommand(line, null, { width: 2 }, undefined)).not.toHaveProperty('stroke');
   });
 });
