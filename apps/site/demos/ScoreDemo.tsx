@@ -78,9 +78,9 @@ export function ScoreDemo() {
       const engine = createAudioEngine({ buses: ['music'] });
       kit.current = { engine, score: createScore(engine, { mood, onBar: (state) => setHeard(state) }) };
     }
-    const { engine, score } = kit.current;
-    score.setMood(mood);
-    void engine.unlock().then(() => score.start());
+    const built = kit.current;
+    built.score.setMood(mood);
+    void built.engine.unlock().then(() => { if (kit.current === built) built.score.start(); });
   };
 
   // While it plays, everything shown is the bar in force; a slider's move
