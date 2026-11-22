@@ -7,6 +7,7 @@ import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import arabicUrl from '../assets/fonts/noto-sans-arabic-subset.ttf';
 import devanagariUrl from '../assets/fonts/noto-sans-devanagari-subset.ttf';
 import { DemoStage } from './DemoStage';
+import { visualOrder } from './shapedVisualOrder';
 import s from './TextShapingDemo.module.css';
 
 const W = 520, H = 260, EM = 72;
@@ -22,11 +23,10 @@ const SAMPLES = [
 
 const INK = { paint: { color: '#1a1a1a' } };
 
-/** `glyphs` as paths along one line at `baseline`, in ems: right to left when the shaper says so. */
-function line(shaper: TextShaper, face: ArrayBuffer, glyphs: readonly ShapedGlyph[], baseline: number): DrawCommand[] {
-  const visual = glyphs.some((g) => g.rtl) ? [...glyphs].reverse() : glyphs;
+/** Separately shaped strings, in logical order, as paths along one line at `baseline`, in ems. */
+function line(shaper: TextShaper, face: ArrayBuffer, shaped: readonly (readonly ShapedGlyph[])[], baseline: number): DrawCommand[] {
   let pen = 0;
-  return visual.flatMap((g) => {
+  return visualOrder(shaped).flatMap((g) => {
     const d = shaper.glyphD(face, g.gid, pen + g.dx, baseline + g.dy);
     pen += g.advance;
     return d ? [{ kind: 'path' as const, path: pathFromD(d), fill: INK }] : [];
@@ -54,10 +54,10 @@ export function TextShapingDemo() {
 
   const sample = SAMPLES.find((x) => x.value === text)!;
   const shaped = loaded ? loaded.shaper.shape(loaded.faces[sample.face], text) : [];
-  const apart = loaded ? [...text].flatMap((c) => loaded.shaper.shape(loaded.faces[sample.face], c)) : [];
+  const apart = loaded ? [...text].map((c) => loaded.shaper.shape(loaded.faces[sample.face], c)) : [];
   const commands = loaded ? [
     ...line(loaded.shaper, loaded.faces[sample.face], apart, 1.1),
-    ...line(loaded.shaper, loaded.faces[sample.face], shaped, 2.7),
+    ...line(loaded.shaper, loaded.faces[sample.face], [shaped], 2.7),
   ] : [];
 
   return (
@@ -68,7 +68,7 @@ export function TextShapingDemo() {
       </div>
       <div className={s.stage}>
         <dl className={s.rows}>
-          <div><dt>one glyph per character</dt><dd className={s.count}>{apart.length}</dd></div>
+          <div><dt>one glyph per character</dt><dd className={s.count}>{apart.flat().length}</dd></div>
           <div><dt>shaped</dt><dd className={s.count} aria-label="shaped glyphs">{shaped.length}</dd></div>
         </dl>
         <DemoStage width={W} height={H}>
