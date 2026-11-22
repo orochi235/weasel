@@ -40,8 +40,8 @@ export function createToolResetToDefaultAction(
     invoker,
     requires: ['activeTool'],
     // Report disabled (rather than silently no-op'ing) when there's nothing
-    // to return to, so the dispatcher falls through and the keypress isn't
-    // swallowed.
-    enabled: () => (getTarget() ? true : ActionDisabledReason.NotApplicable),
+    // to return to or nothing to switch, so the dispatcher falls through and
+    // the keypress isn't swallowed.
+    enabled: (deps) => (deps?.activeTool && getTarget() ? true : ActionDisabledReason.NotApplicable),
   } as Action & { requires: string[] };
 }
