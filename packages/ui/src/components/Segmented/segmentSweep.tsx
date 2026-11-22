@@ -9,7 +9,7 @@
 import { ActionsProvider, ActiveToolContextProvider, DepRegistryProvider, useAction, useActionsRegistry, useGestureDispatcher } from '@weasel-js/routing/react';
 import { createSweepAction, type ModifierState } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
-import { useMemo, useRef, type ReactElement, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, type ReactElement, type RefObject } from 'react';
 import { flushSync } from 'react-dom';
 import { createLiveSelectionModel, soloSweepFrom, sweepFrom, type SelectionModel, type SelectState } from '@weasel-js/ui-input';
 
@@ -44,8 +44,11 @@ export interface SegmentSweeperProps<V> {
  *  or until the next press or key. */
 export function useSweepGuard(): { swept: (how?: 'commit' | 'cancel') => void; sweeping: () => boolean } {
   const just = useRef(false);
+  const listening = useRef<(() => void) | null>(null);
+  useEffect(() => () => listening.current?.(), []);
   return {
     swept: (how = 'commit') => {
+      listening.current?.();
       just.current = true;
       const clear = (): void => { just.current = false; };
       if (how === 'commit') {
@@ -59,6 +62,7 @@ export function useSweepGuard(): { swept: (how?: 'commit' | 'cancel') => void; s
         pressed();
       };
       const stop = (): void => {
+        if (listening.current === stop) listening.current = null;
         document.removeEventListener('pointerup', released, true);
         document.removeEventListener('pointercancel', released, true);
         document.removeEventListener('pointerdown', pressed, true);
@@ -68,6 +72,7 @@ export function useSweepGuard(): { swept: (how?: 'commit' | 'cancel') => void; s
       document.addEventListener('pointercancel', released, true);
       document.addEventListener('pointerdown', pressed, true);
       document.addEventListener('keydown', keyed, true);
+      listening.current = stop;
     },
     sweeping: () => just.current,
   };

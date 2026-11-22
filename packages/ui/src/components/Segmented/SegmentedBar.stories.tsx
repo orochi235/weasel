@@ -211,6 +211,7 @@ export const Wrapped: Story = {
 };
 
 export const Disabled: Story = {
+  args: { 'aria-label': 'Choice' },
   render: ({ 'aria-label': ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('a');
     return (
@@ -232,7 +233,7 @@ export const Disabled: Story = {
 };
 
 export const Tall: Story = {
-  args: { height: 32 },
+  args: { 'aria-label': 'Text alignment', height: 32 },
   render: ({ 'aria-label': ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('center');
     return <SegmentedBar items={alignItems} value={v} onChange={setV} aria-label={ariaLabel} height={height} size={size} variant={variant} />;
@@ -240,7 +241,7 @@ export const Tall: Story = {
 };
 
 export const Minimal: Story = {
-  args: { variant: 'minimal' },
+  args: { 'aria-label': 'Text alignment', variant: 'minimal' },
   render: ({ 'aria-label': ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('center');
     return <SegmentedBar items={alignItems} value={v} onChange={setV} aria-label={ariaLabel} height={height} size={size} variant={variant} />;
@@ -248,6 +249,7 @@ export const Minimal: Story = {
 };
 
 export const AllowDeselect: Story = {
+  args: { 'aria-label': 'Text alignment' },
   render: ({ 'aria-label': ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('center');
     return <SegmentedBar items={alignItems} value={v} onChange={setV} allowDeselect aria-label={ariaLabel} height={height} size={size} variant={variant} />;

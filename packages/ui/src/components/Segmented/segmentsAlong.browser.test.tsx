@@ -91,3 +91,15 @@ test('a scrolled row ends its well one rim past the run, and a lit segment at th
   const run = group.querySelector<SVGPathElement>('svg path[class*="bandPath"]')!.getTotalLength();
   expect(well.getTotalLength()).toBeCloseTo(run + 2 * pad, 0);
 });
+
+test('a flat bar on an arc keeps every segment where the run placed it, with no seam overlap', async () => {
+  render(
+    <div style={{ position: 'relative', width: 280, height: 280 }}>
+      <Along arc={{ at: 0, span: '180deg', direction: 'cw' }}>
+        <SegmentedBar aria-label="Alignment" variant="flat" items={WORDS.map((w) => ({ value: w, label: w }))} value={WORDS[0]!} onChange={() => {}} />
+      </Along>
+    </div>,
+  );
+  await settle();
+  for (const w of WORDS) expect(getComputedStyle(screen.getByRole('radio', { name: w })).marginInlineStart, w).toBe('0px');
+});
