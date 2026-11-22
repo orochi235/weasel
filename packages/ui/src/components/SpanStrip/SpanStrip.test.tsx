@@ -120,6 +120,16 @@ describe('SpanStrip', () => {
     expect(onSeek).toHaveBeenLastCalledWith(0, false);
   });
 
+  it('steps an arrow from the end it shows when the moment lies outside the window', () => {
+    const onSeek = vi.fn();
+    const { rerender } = render(<SpanStrip spans={SPANS} window={{ from: 0, to: 1000 }} at={1500} aria-label="lane" onSeek={onSeek} />);
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'lane' }), { key: 'ArrowLeft' });
+    expect(onSeek).toHaveBeenLastCalledWith(990, false);
+    rerender(<SpanStrip spans={SPANS} window={{ from: 0, to: 1000 }} at={-500} aria-label="lane" onSeek={onSeek} />);
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'lane' }), { key: 'ArrowRight' });
+    expect(onSeek).toHaveBeenLastCalledWith(10, false);
+  });
+
   it('holds while pressed, lets go on release, and goes back where it began on a lost pointer', () => {
     const onSeek = vi.fn();
     render(<SpanStrip spans={SPANS} at={450} aria-label="lane" onSeek={onSeek} />);
