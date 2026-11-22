@@ -157,6 +157,17 @@ describe('writing a Mermaid gantt', () => {
     const data: GanttData = { kind: 'gantt', sections: [] };
     expect(writeMermaidGantt({ ...pageOf(data), name: 'Q3 plan' }).warnings).toContain('Mermaid names a chart by its title; a page name the title does not match was dropped.');
   });
+
+  it('renames a task id holding a comma or a space, with a warning, and the starts naming it', () => {
+    const data: GanttData = { kind: 'gantt', dateFormat: 'YYYY-MM-DD', sections: [{ tasks: [
+      { name: 'A', id: 'a,b', start: { kind: 'date', date: '2024-01-01' }, end: { kind: 'duration', amount: 3, unit: 'd' } },
+      { name: 'B', id: 'c d', start: { kind: 'date', date: '2024-01-02' }, end: { kind: 'duration', amount: 1, unit: 'd' } },
+      { name: 'C', start: { kind: 'after', ids: ['a,b', 'c d'] }, end: { kind: 'duration', amount: 1, unit: 'd' } },
+    ] }] };
+    const { text, warnings } = writeMermaidGantt(pageOf(data));
+    expect(ganttOf(text).sections[0]!.tasks).toMatchObject([{ id: 'a_b' }, { id: 'c_d' }, { start: { kind: 'after', ids: ['a_b', 'c_d'] } }]);
+    expect(warnings).toContain('Mermaid task ids hold no commas or spaces; those ids were renamed.');
+  });
 });
 
 describe('the Mermaid format', () => {
