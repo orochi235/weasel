@@ -126,12 +126,19 @@ export function setLaneOrder(doc: EffectDoc, order: readonly string[]): EffectDo
   return { ...doc, laneOrder: [...order] };
 }
 
-/** Mints ids for id-less wires; returns `doc` itself when none lacks one. */
+/** Mints ids for id-less wires and for each wire repeating an earlier wire's id, so an edit through one
+ *  id touches one wire; returns `doc` itself when every wire has an id of its own. */
 export function ensureWireIds(doc: EffectDoc): EffectDoc {
-  if (doc.pipeline.wires.every((w) => w.id !== undefined)) return doc;
+  const seen = new Set<string>();
+  const minted = doc.pipeline.wires.map((w) => {
+    const own = w.id !== undefined && !seen.has(w.id);
+    if (own) seen.add(w.id!);
+    return !own;
+  });
+  if (!minted.includes(true)) return doc;
   const used = new Set(doc.pipeline.wires.map((w) => w.id));
-  const wires = doc.pipeline.wires.map((w) => {
-    if (w.id !== undefined) return w;
+  const wires = doc.pipeline.wires.map((w, k) => {
+    if (!minted[k]) return w;
     const id = freshId('w', used, { sep: '' });
     used.add(id);
     return { ...w, id };

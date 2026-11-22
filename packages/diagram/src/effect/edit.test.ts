@@ -104,6 +104,15 @@ describe('edit', () => {
     expect(ensureWireIds(bare).pipeline.wires.map((w) => w.id)).toEqual(['w2', 'w1']);
   });
 
+  it('ensureWireIds gives a wire repeating an earlier wire\'s id one of its own', () => {
+    const d = built();
+    const [first, second] = d.pipeline.wires;
+    const twice = { ...d, pipeline: { ...d.pipeline, wires: [first!, { ...second!, id: first!.id }] } };
+    const fixed = ensureWireIds(twice);
+    expect(fixed.pipeline.wires.map((w) => w.id)).toEqual([first!.id, 'w2']);
+    expect(removeWires(fixed, [first!.id!]).pipeline.wires).toEqual([{ ...second!, id: 'w2' }]);
+  });
+
   it('a doc built through edits has no problems and renders', () => {
     const d = built();
     expect(checkPipeline(d.pipeline)).toEqual([]);
