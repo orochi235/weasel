@@ -67,4 +67,26 @@ describe('a streamed scene', () => {
     stream.dispose();
     expect(scene.nodes.size).toBe(0);
   });
+
+  it('keeps a node a recorded edit touched past its cell\'s drop, so undo finds it', async () => {
+    const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const stream = streamScene(scene, endless(), { maxConcurrent: 4, maxCells: 4, margin: 0 });
+    for (let k = 0; k < 20; k++) {
+      stream.update({ x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
+      await flush();
+    }
+    const id = asNodeId('c0_0_0');
+    expect(scene.get(id)).toBeDefined();
+    scene.setPose(id, { x: 3, y: 3, width: 12, height: 12 });
+    expect(scene.canUndo()).toBe(true);
+    // Far away, past the cell bound: cell 0/0 is dropped.
+    for (let k = 0; k < 20; k++) {
+      stream.update({ x: 50_000, y: 50_000, scale: { x: 1, y: 1 } }, DIMS);
+      await flush();
+    }
+    expect(scene.get(asNodeId('c0_0_1'))).toBeUndefined();
+    expect(() => scene.undo()).not.toThrow();
+    expect(scene.get(id)?.pose).toEqual({ x: 0, y: 0, width: 12, height: 12 });
+    stream.dispose();
+  });
 });

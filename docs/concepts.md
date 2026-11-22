@@ -1104,6 +1104,10 @@ the view each `update(view, dims)` names, usually from `<SceneCanvas onViewChang
 - it adds a cell's nodes as it lands and removes them once the cell is dropped, at most `maxCells` (64)
   being held past what the view wants, the longest unwanted first.
 
+A streamed node a recorded edit touches (moved, restyled, reparented or deleted) is the document's from
+then on: no drop removes it and no reload adds it again, so undo always finds it. Writing it back to the
+source is its owner's business.
+
 Both go through `scene.untracked`, so a pan records nothing in undo history; each add and remove is a
 kit op naming its node, so the visibility index updates node by node from the touched-ids feed
 rather than rebuilding (`streamScene.test.ts` pans 400 frames over 300 cells with neither). The loader

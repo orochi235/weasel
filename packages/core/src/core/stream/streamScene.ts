@@ -24,7 +24,8 @@ export interface SceneSource<TData, TLayer extends string, TPose> {
   /**
    * The nodes of `cell`, each with an `id` unique across every cell, as roots or under each other.
    * A node belongs to the cell that answers it: it is added when the cell lands and removed when the
-   * cell is dropped. Honor `signal`: the view may leave before the load ends.
+   * cell is dropped, unless a recorded edit has touched it, which keeps it in the scene for good and
+   * leaves persisting it to the source's owner. Honor `signal`: the view may leave before the load ends.
    */
   load(cell: SceneCell, signal: AbortSignal): Promise<readonly AddNodeSpec<TData, TLayer, TPose>[]>;
 }
@@ -48,7 +49,8 @@ export interface SceneStream {
   update(view: View, dims: Dims): void;
   /** Cells held and loading, and nodes the stream has in the scene. */
   stats(): { cells: number; loading: number; waiting: number; nodes: number };
-  /** Remove every streamed node and stop loading. */
+  /** Remove every streamed node and stop loading. A node a recorded edit touched stays: it is the
+   *  document's now, and undo has to find it. */
   dispose(): void;
 }
 
@@ -64,19 +66,26 @@ export function streamScene<TData, TLayer extends string, TPose>(
     const b = scheme.boundsOf(k);
     return { x: k.x, y: k.y, box: [b[0]!, b[1]!, b[2]!, b[3]!] };
   };
-  let nodes = 0;
+  const streamed = new Set<NodeId>();
+  // Nodes a recorded edit has touched are the document's now: undo has to find them, so no drop removes
+  // them and no reload adds them again.
+  const adopted = new Set<NodeId>();
+  const removePass = scene.addEditPass((edit) => {
+    for (const set of [edit.posed, edit.dataChanged, edit.reparented, edit.removed]) for (const id of set) if (streamed.delete(id)) adopted.add(id);
+    return null;
+  });
   const stream = new TileStream<PlaneTileKey, PlaneTileView, NodeId[]>({
     scheme, level: 0, maxConcurrent: opts.maxConcurrent ?? 4, maxHeld: opts.maxCells ?? 64,
     load: async (k, signal) => {
       const specs = await source.load(cellOf(k), signal);
       if (signal.aborted) return [];
-      const ids = scene.untracked(() => specs.map((spec) => scene.add(spec)));
-      nodes += ids.length;
+      const fresh = specs.filter((spec) => spec.id === undefined || (!adopted.has(spec.id) && scene.get(spec.id) === undefined));
+      const ids = scene.untracked(() => fresh.map((spec) => scene.add(spec)));
+      for (const id of ids) streamed.add(id);
       return ids;
     },
     release: (_k, ids) => {
-      const live = ids.filter((id) => scene.get(id) !== undefined);
-      nodes -= ids.length;
+      const live = ids.filter((id) => streamed.delete(id) && scene.get(id) !== undefined);
       if (live.length > 0) scene.untracked(() => scene.removeMany(live));
     },
     ...(opts.onError ? { onError: (k: PlaneTileKey, e: unknown) => opts.onError!(cellOf(k), e) } : {}),
@@ -95,7 +104,10 @@ export function streamScene<TData, TLayer extends string, TPose>(
       const moving = dx !== 0 || dy !== 0;
       stream.update(at, moving ? { box: [box[0]! + dx, box[1]! + dy, box[2]! + dx, box[3]! + dy], pxPerUnit: 1, ring: 0 } : undefined);
     },
-    stats: () => ({ cells: stream.count, loading: stream.inFlight, waiting: stream.waiting, nodes }),
-    dispose: () => stream.dispose(),
+    stats: () => ({ cells: stream.count, loading: stream.inFlight, waiting: stream.waiting, nodes: streamed.size }),
+    dispose: () => {
+      stream.dispose();
+      removePass();
+    },
   };
 }
