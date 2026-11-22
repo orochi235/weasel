@@ -131,17 +131,16 @@ function readLinejoin(v: string, warn: Warn): 'miter' | 'round' | 'bevel' | unde
 }
 
 /** `null` is `none`; an odd-length list is repeated to make the pattern even, as SVG says. */
-function readDashArray(v: string, warn: Warn, _prop: string, fontSize: number): number[] | null | undefined {
+function readDashArray(v: string, warn: Warn, prop: string, fontSize: number): number[] | null | undefined {
   if (v.toLowerCase() === 'none' || v === '') return null;
   const nums: number[] = [];
   for (const t of v.split(/[\s,]+/).filter(Boolean)) {
-    const d = dimension(t);
-    const scale = d && pxPer(d.unit, fontSize);
-    if (!d || scale == null || d.n < 0) {
+    const n = isNegative(t) ? undefined : worldLength(t, warn, prop, fontSize);
+    if (n === undefined) {
       warn(`unrecognized stroke-dasharray: ${v}`);
       return undefined;
     }
-    nums.push(d.n * scale);
+    nums.push(n);
   }
   return nums.length % 2 === 1 ? [...nums, ...nums] : nums;
 }
