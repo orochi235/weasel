@@ -6,6 +6,7 @@ import { icon } from '../../icons.gen';
 import type { AnyScene } from '@weasel-js/core/engine';
 import { STRUCTURE_GROUP } from '../../actionGroups';
 import * as coreOps from '@weasel-js/core/ops';
+import { anyLocked, writesLocked } from '../lockedWrites';
 
 /** Where grouping the selection puts its container and members, or null when it cannot: no content, members on
  *  more than one layer, a container too large for the double range, a container that lands in a singular frame
@@ -48,7 +49,10 @@ function groupPlan(deps: ActionDeps) {
   const page = parent === null ? null : pageIdOf(scene, parent);
   const followers = followerOpsFor(scene, new Map(nodes.map((n) => [n.id as string, page])), 'Group');
   if (followers === null) return null;
-  return { scene, nodes, locals, parent, pose, followers };
+  // A member, the container it lands in, or a follower it moves is locked: then it is disabled, as Ungroup is.
+  const locked = anyLocked(scene, parent === null ? nodes.map((n) => n.id) : [parent, ...nodes.map((n) => n.id)])
+    || writesLocked(scene, followers);
+  return { scene, nodes, locals, parent, pose, followers, locked };
 }
 
 /**
@@ -75,7 +79,7 @@ export const groupAction: Action & { requires: string[] } = {
     timing: 'immediate',
     run: (deps) => {
       const plan = groupPlan(deps);
-      if (!plan) return;
+      if (!plan || plan.locked) return;
       const { scene, nodes, locals, parent, pose, followers } = plan;
 
       // The container must exist before any child reparents into it, so the
@@ -114,7 +118,9 @@ export const groupAction: Action & { requires: string[] } = {
   enabled: (deps) => {
     const given = requiresContent(1)(deps);
     if (given !== true) return given;
-    return groupPlan(deps!) ? true : ActionDisabledReason.NotApplicable;
+    const plan = groupPlan(deps!);
+    if (!plan) return ActionDisabledReason.NotApplicable;
+    return plan.locked ? ActionDisabledReason.Locked : true;
   },
 };
 
