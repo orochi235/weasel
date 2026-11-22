@@ -49,11 +49,20 @@ export function TokenControl({ token, set }: { token: TokenEntry; set: (value: s
   }
 
   if (type === 'fontWeight') {
-    const options = (WEIGHTS.includes(value) ? WEIGHTS : [...WEIGHTS, value]).map((weight) => ({
+    const options = (WEIGHTS.includes(value) || !value ? WEIGHTS : [...WEIGHTS, value]).map((weight) => ({
       value: weight,
       label: weight,
     }));
-    return <Select aria-label={name} width="fit" selectedKey={value} options={options} onSelectionChange={set} />;
+    return (
+      <Select
+        aria-label={name}
+        width="fit"
+        placeholder="unset"
+        selectedKey={value || null}
+        options={options}
+        onSelectionChange={set}
+      />
+    );
   }
 
   const points = type === 'cubicBezier' ? bezierPoints(value) : null;

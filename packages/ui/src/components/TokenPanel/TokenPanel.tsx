@@ -33,7 +33,8 @@ export interface TokenPanelProps extends HoldProps {
   onScaleChange?: (group: string, scale: TokenScale) => void;
   /** Files a token under a section. Defaults to `tokenCategory`. */
   categorize?: (token: TokenEntry) => TokenCategory;
-  /** The fewest colors, or sizes, sharing a group that draw as one row of swatches or one slider of steps. Default 3. */
+  /** The fewest colors, or sizes, sharing a group that draw as one row of swatches or one slider of steps. Default 3.
+   *  A group named in `scales` draws as a scale whatever its size. */
   familySize?: number;
   /** Left off every name the panel draws, so `--wzl-` does not repeat down the rail. The full name is in each tooltip. */
   namePrefix?: string;
@@ -50,7 +51,7 @@ function familyKindOf(token: TokenEntry): FamilyKind | null {
   return SCALAR.has(token.type) && splitUnit(token.value) ? 'scale' : null;
 }
 
-function itemsOf(tokens: readonly TokenEntry[], familySize: number): Item[] {
+function itemsOf(tokens: readonly TokenEntry[], familySize: number, scales?: Readonly<Record<string, TokenScale>>): Item[] {
   const counts = new Map<string, number>();
   for (const token of tokens) {
     const kind = familyKindOf(token);
@@ -61,7 +62,8 @@ function itemsOf(tokens: readonly TokenEntry[], familySize: number): Item[] {
   for (const token of tokens) {
     const kind = familyKindOf(token);
     const key = `${kind}:${token.group}`;
-    if (!kind || (counts.get(key) ?? 0) < familySize) {
+    const generated = kind === 'scale' && scales !== undefined && getOwn(scales, token.group) !== undefined;
+    if (!kind || (!generated && (counts.get(key) ?? 0) < familySize)) {
       items.push({ kind: 'row', token });
       continue;
     }
@@ -239,7 +241,7 @@ function Section({
   onChange: OnChange;
   onScaleChange?: (group: string, scale: TokenScale) => void;
 }) {
-  const items = useMemo(() => itemsOf(tokens, familySize), [tokens, familySize]);
+  const items = useMemo(() => itemsOf(tokens, familySize, scales), [tokens, familySize, scales]);
   const runs = useMemo(() => rowRuns(items, prefix), [items, prefix]);
   return (
     <section className={s.section} aria-label={title} data-token-category={id}>
