@@ -150,13 +150,15 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
   }
 
   const rampColor = (ramp: string, step: string) => env.color(`{${ramp}-${step}}`);
-  /** 1 when the ramp darkens toward its last step, -1 when it lightens; undefined, reported, when its ends cannot say. */
-  const darkening = (ramp: string, steps: readonly string[]) => {
+  /** 1 when the ramp darkens toward its last step, -1 when it lightens; undefined when its ends cannot say. */
+  const endsDarken = (ramp: string, steps: readonly string[]) => {
     const first = lightnessOf(rampColor(ramp, steps[0]));
     const last = lightnessOf(rampColor(ramp, steps[steps.length - 1]));
-    if (Number.isNaN(first) || Number.isNaN(last) || first === last) return invalid(`cannot tell which end of ramp "${ramp}" is darker`);
+    if (Number.isNaN(first) || Number.isNaN(last) || first === last) return undefined;
     return last < first ? 1 : -1;
   };
+  const noDirection = (ramp: string) => invalid(`cannot tell which end of ramp "${ramp}" is darker`);
+  const darkening = (ramp: string, steps: readonly string[]) => endsDarken(ramp, steps) ?? noDirection(ramp);
 
   if ('from' in r) {
     const from = env.positionOf(r.from);
@@ -185,10 +187,10 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
     const colors = steps.map((s) => rampColor(r.ramp, s));
     const against = r.contrast.against.map((a) => env.color(`{${a}}`));
     if (colors.some((c) => !c) || against.some((hex) => !hex)) return invalid('contrast needs solid colors on both sides');
-    const darker = darkening(r.ramp, steps);
-    if (darker === undefined) return undefined;
-
+    const darker = endsDarken(r.ramp, steps);
     const L = colors.map(lightnessOf);
+    // Steps all of one lightness need no direction to choose among; ends alike around a different middle do.
+    if (darker === undefined && L.some((l) => l !== L[0])) return noDirection(r.ramp);
     const surfaces = against.map(lightnessOf);
     const meanL = surfaces.reduce((sum, l) => sum + l, 0) / surfaces.length;
     const last = steps.length - 1;
@@ -198,6 +200,7 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
     const worst = (i: number) => minOf(against, (hex) => contrast(colors[i]!, hex!));
     /** From the first step past every surface toward one ramp end, to that end. */
     const walk = (toLast: boolean) => {
+      if (darker === undefined) return [];
       const order = steps.map((_, i) => (toLast ? i : last - i));
       const past = toLast === (darker > 0) ? (l: number) => l < lo : (l: number) => l > hi;
       const start = order.findIndex((i) => past(L[i]));

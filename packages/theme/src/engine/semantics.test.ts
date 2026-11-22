@@ -29,6 +29,16 @@ const W: ThemeDefinition = {
 const at = (mode: string) => derive(W, { mode });
 
 describe('contrast rule', () => {
+  it('picks the only step of a one-step ramp when it passes', () => {
+    const r = derive({
+      name: 'one',
+      ramps: { brand: { kind: 'lightness', steps: ['500'], lightness: [0.3, 0.3] } },
+      semantics: { surface: { value: '#ffffff', type: 'color' }, x: { ramp: 'brand', contrast: { min: 3, against: ['surface'] } } },
+    });
+    expect(r.issues).toEqual([]);
+    expect(r.tokens.x.value).toBe('{brand-500}');
+  });
+
   it('walks away from the surfaces to the first step that clears every one', () => {
     expect(at('dark').tokens['border-strong'].value).toBe('{gray-400}');
     expect(at('light').tokens['border-strong'].value).toBe('{gray-500}');
