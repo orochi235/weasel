@@ -113,11 +113,29 @@ export const DEFAULT_NODE_GAP = 48;
 export const DEFAULT_RANK_GAP = 96;
 const DEFAULT_TOLERANCE = 1e-6;
 
-/** Which world axis carries ranks, which carries within-rank order, and
- *  whether ranks grow toward positive world coordinates. */
+/** An axis by its index into a position's coordinates: 0 is x, 1 is y and 2
+ *  is z. */
+export type LayoutAxis = 0 | 1 | 2;
+
+/** An axis of the plane a diagram lies on, where the layouts that rank and
+ *  order nodes lay them out. */
+export type PlaneAxis = 0 | 1;
+
+/** `p`'s coordinate along `axis`. */
+export function coordOf(p: { readonly x: number; readonly y: number; readonly z?: number }, axis: LayoutAxis): number {
+  return axis === 0 ? p.x : axis === 1 ? p.y : (p.z ?? 0);
+}
+
+/** The point on the plane at `along` on `axis` and `across` on the other. */
+export function pointOn(axis: PlaneAxis, along: number, across: number): Vec2 {
+  return axis === 0 ? { x: along, y: across } : { x: across, y: along };
+}
+
+/** Which axis of the plane carries ranks, which carries within-rank order,
+ *  and whether ranks grow toward positive world coordinates. */
 export interface LayoutAxes {
-  rank: 'x' | 'y';
-  cross: 'x' | 'y';
+  rank: PlaneAxis;
+  cross: PlaneAxis;
   /** `-1` for `'up'` and `'left'`, where the canonical frame is mirrored. */
   sign: 1 | -1;
 }
@@ -126,24 +144,24 @@ export interface LayoutAxes {
 export function axesFor(direction: LayoutDirection = 'down'): LayoutAxes {
   switch (direction) {
     case 'up':
-      return { rank: 'y', cross: 'x', sign: -1 };
+      return { rank: 1, cross: 0, sign: -1 };
     case 'right':
-      return { rank: 'x', cross: 'y', sign: 1 };
+      return { rank: 0, cross: 1, sign: 1 };
     case 'left':
-      return { rank: 'x', cross: 'y', sign: -1 };
+      return { rank: 0, cross: 1, sign: -1 };
     default:
-      return { rank: 'y', cross: 'x', sign: 1 };
+      return { rank: 1, cross: 0, sign: 1 };
   }
 }
 
 /** A node's extent along one axis. */
-export function extent(bounds: Bounds, axis: 'x' | 'y'): number {
-  return axis === 'x' ? bounds.width : bounds.height;
+export function extent(bounds: Bounds, axis: PlaneAxis): number {
+  return axis === 0 ? bounds.width : bounds.height;
 }
 
 /** A node's center along one axis — what within-rank order is seeded from. */
-export function center(bounds: Bounds, axis: 'x' | 'y'): number {
-  return axis === 'x' ? bounds.x + bounds.width / 2 : bounds.y + bounds.height / 2;
+export function center(bounds: Bounds, axis: PlaneAxis): number {
+  return axis === 0 ? bounds.x + bounds.width / 2 : bounds.y + bounds.height / 2;
 }
 
 /** Every id layout must leave alone. */
@@ -196,7 +214,7 @@ export function placeSlots(
  *  translation, for something `depth` deep along the rank axis. */
 export function worldOf(slot: Slot, depth: number, axes: LayoutAxes): Vec2 {
   const along = axes.sign === 1 ? slot.rank : -(slot.rank + depth);
-  return axes.rank === 'y' ? { x: slot.cross, y: along } : { x: along, y: slot.cross };
+  return pointOn(axes.rank, along, slot.cross);
 }
 
 /**
@@ -296,7 +314,7 @@ export function anchorOffset(
  */
 export function packAcross(
   nodes: readonly GraphNode[],
-  axis: 'x' | 'y',
+  axis: PlaneAxis,
   gap: number,
 ): { at: Map<string, number>; span: number } {
   const at = new Map<string, number>();
@@ -313,7 +331,7 @@ export function packAcross(
  *  two runs on the same input. */
 export function seededOrder(
   nodes: readonly GraphNode[],
-  axis: 'x' | 'y',
+  axis: PlaneAxis,
   indexOf: (id: string) => number,
 ): GraphNode[] {
   return [...nodes].sort((a, b) => {

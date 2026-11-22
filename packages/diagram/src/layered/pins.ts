@@ -70,8 +70,8 @@ export function holdPins(input: PinInput): HeldPins {
     const x = node.bounds.x - (anchor.bounds.x - anchorWorld.x);
     const y = node.bounds.y - (anchor.bounds.y - anchorWorld.y);
     const ext = extent(node.bounds, axes.rank);
-    const rankWorld = axes.rank === 'x' ? x : y;
-    return { cross: axes.cross === 'x' ? x : y, rank: axes.sign === 1 ? rankWorld : -rankWorld - ext };
+    const rankWorld = axes.rank === 0 ? x : y;
+    return { cross: axes.cross === 0 ? x : y, rank: axes.sign === 1 ? rankWorld : -rankWorld - ext };
   };
 
   // Nearest the anchor first, so a pin far off cannot crowd out a near one.

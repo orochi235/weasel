@@ -10,12 +10,24 @@ import {
   DEFAULT_ALPHA_DECAY,
   DEFAULT_ALPHA_MIN,
   DEFAULT_VELOCITY_DECAY,
+  SIMULATION_AXES,
   type Simulation,
+  type SimulationDimensions,
   type SimulationForce,
   type SimulationNode,
   type SimulationOptions,
 } from './types';
 import { lerp } from '@weasel-js/geom';
+
+/** A node's position, velocity and pin fields, read by axis. */
+type Fields = Partial<Record<'x' | 'y' | 'z' | 'vx' | 'vy' | 'vz' | 'fx' | 'fy' | 'fz', number | null>>;
+
+/** A non-finite velocity or position — force overflow, or two nodes exactly
+ *  coincident — would reach the renderer as geometry and cost pathological
+ *  tessellation work without throwing anywhere, so it becomes 0. */
+function finiteOr0(value: number): number {
+  return Number.isFinite(value) ? value : 0;
+}
 
 /** `value`, or a `RangeError` naming `what` when it is not a finite number. */
 function finite(what: string, value: number): number {
@@ -23,10 +35,46 @@ function finite(what: string, value: number): number {
   return value;
 }
 
+/** Move each node along the first `dimensions` axes by its velocity, shed by
+ *  `friction`, holding a pinned axis at its pin. */
+function integrate(nodes: readonly SimulationNode[], dimensions: SimulationDimensions, friction: number): void {
+  // Unrolled over the axes rather than looped by field name: keyed reads here
+  // cost a 300-node force layout 7% of its run (2026-11-21).
+  for (const n of nodes) {
+    if (n.fx == null) {
+      const v = finiteOr0((n.vx ?? 0) * friction);
+      n.vx = v;
+      n.x = finiteOr0(n.x + v);
+    } else {
+      if (Number.isFinite(n.fx)) n.x = n.fx;
+      n.vx = 0;
+    }
+    if (dimensions === 1) continue;
+    if (n.fy == null) {
+      const v = finiteOr0((n.vy ?? 0) * friction);
+      n.vy = v;
+      n.y = finiteOr0(n.y + v);
+    } else {
+      if (Number.isFinite(n.fy)) n.y = n.fy;
+      n.vy = 0;
+    }
+    if (dimensions === 2) continue;
+    if (n.fz == null) {
+      const v = finiteOr0((n.vz ?? 0) * friction);
+      n.vz = v;
+      n.z = finiteOr0(n.z! + v);
+    } else {
+      if (Number.isFinite(n.fz)) n.z = n.fz;
+      n.vz = 0;
+    }
+  }
+}
+
 /**
  * A d3-force-compatible simulation with no clock: nothing moves until `tick()`.
- * Nodes are mutated in place, and primed with `index`, `vx` and `vy` on creation.
- * A rate, threshold or tick count that is not a finite number throws a `RangeError`.
+ * Nodes are mutated in place, and primed with `index` and a velocity per axis on creation.
+ * A rate, threshold or tick count that is not a finite number throws a `RangeError`, and so
+ * does a `dimensions` that is not 1, 2 or 3.
  */
 export function createSimulation<TNode extends SimulationNode>(
   opts: SimulationOptions<TNode>,
@@ -39,6 +87,11 @@ export function createSimulation<TNode extends SimulationNode>(
   let alphaTarget = finite('alphaTarget', opts.alphaTarget ?? 0);
   let velocityDecay = finite('velocityDecay', opts.velocityDecay ?? DEFAULT_VELOCITY_DECAY);
   const random = opts.random ?? Math.random;
+  const dimensions = opts.dimensions ?? 2;
+  if (dimensions !== 1 && dimensions !== 2 && dimensions !== 3) {
+    throw new RangeError(`a simulation's dimensions are 1, 2 or 3, not ${String(dimensions)}`);
+  }
+  const axes = SIMULATION_AXES.slice(0, dimensions);
 
   /** `index` is what `forceLink` and friends address nodes by, and a d3 force
    *  does `n.vx += …` without checking, so both must exist before the first
@@ -46,13 +99,16 @@ export function createSimulation<TNode extends SimulationNode>(
   function prime(list: TNode[]): void {
     list.forEach((n, i) => {
       n.index = i;
-      if (n.vx == null) n.vx = 0;
-      if (n.vy == null) n.vy = 0;
+      const fields = n as Fields;
+      for (const a of axes) {
+        if (fields[a.position] == null) fields[a.position] = 0;
+        if (fields[a.velocity] == null) fields[a.velocity] = 0;
+      }
     });
   }
 
   prime(nodes);
-  for (const f of forces) f.initialize?.(nodes, random);
+  for (const f of forces) f.initialize?.(nodes, random, dimensions);
 
   function step(): void {
     // Decay toward the target never overshoots it, and stays finite between finite ends.
@@ -61,30 +117,7 @@ export function createSimulation<TNode extends SimulationNode>(
     alpha = Math.sign(next - alphaTarget) === -Math.sign(alpha - alphaTarget) ? alphaTarget : next;
     for (const f of forces) f(alpha);
 
-    const friction = 1 - velocityDecay;
-    for (const n of nodes) {
-      if (n.fx == null) {
-        n.vx = (n.vx ?? 0) * friction;
-        // A non-finite velocity — force overflow, or two nodes exactly
-        // coincident — would reach the renderer as geometry and cost
-        // pathological tessellation work without throwing anywhere.
-        if (!Number.isFinite(n.vx)) n.vx = 0;
-        n.x += n.vx;
-        if (!Number.isFinite(n.x)) n.x = 0;
-      } else {
-        n.x = Number.isFinite(n.fx) ? n.fx : n.x;
-        n.vx = 0;
-      }
-      if (n.fy == null) {
-        n.vy = (n.vy ?? 0) * friction;
-        if (!Number.isFinite(n.vy)) n.vy = 0;
-        n.y += n.vy;
-        if (!Number.isFinite(n.y)) n.y = 0;
-      } else {
-        n.y = Number.isFinite(n.fy) ? n.fy : n.y;
-        n.vy = 0;
-      }
-    }
+    integrate(nodes, dimensions, 1 - velocityDecay);
   }
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -92,17 +125,18 @@ export function createSimulation<TNode extends SimulationNode>(
     get nodes() {
       return nodes;
     },
+    dimensions,
     setNodes(next: TNode[]) {
       nodes = next;
       prime(nodes);
-      for (const f of forces) f.initialize?.(nodes, random);
+      for (const f of forces) f.initialize?.(nodes, random, dimensions);
       return core;
     },
     setForces(next: SimulationForce<TNode>[]) {
       const old = forces;
       forces = next;
       for (const f of next) {
-        if (!old.includes(f)) f.initialize?.(nodes, random);
+        if (!old.includes(f)) f.initialize?.(nodes, random, dimensions);
       }
       return core;
     },

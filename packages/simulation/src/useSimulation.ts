@@ -108,6 +108,9 @@ function simulationHandle<TNode extends SimulationNode>(core: Simulation<TNode>,
     get nodes() {
       return core.nodes;
     },
+    get dimensions() {
+      return core.dimensions;
+    },
     setNodes(newNodes: TNode[]) {
       core.setNodes(newNodes);
       return h;

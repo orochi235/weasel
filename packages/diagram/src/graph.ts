@@ -7,6 +7,7 @@
  * hot path.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import type { Aabb } from '@weasel-js/geom/3d';
 import { DEFAULT_CLUSTER_INSET, expandClusterEdges, insetOf, type ClusterInset } from './cluster';
 import { diagramContainerOf, isFittedContainer, type DiagramContainer } from './containers/trait';
 import { diagramEdgeOf, layoutOwnsRoute } from './edgeTrait';
@@ -35,6 +36,9 @@ export interface GraphNode {
   id: string;
   /** Where it is now, in world coordinates. */
   bounds: Bounds;
+  /** The box it covers in three dimensions, where the frame answers one
+   *  (`LayoutFrame.box3`). `bounds` is that box's face on the plane. */
+  box3?: Aabb;
   /** Layout must not move it. */
   pinned: boolean;
   /** The innermost cluster it belongs to, when it belongs to one. */
@@ -212,6 +216,7 @@ export function buildGraph<TPose>(
     const entry: GraphNode = {
       id: node.id,
       bounds: frame.box(pose),
+      ...(frame.box3 !== undefined ? { box3: frame.box3(pose) } : {}),
       pinned: trait.pinned === true,
       ...(trait.ports !== undefined ? { ports: trait.ports } : {}),
       ...(trait.outline !== undefined ? { outline: trait.outline } : {}),

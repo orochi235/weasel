@@ -9,6 +9,8 @@ export { createSimulation } from './createSimulation';
 export type {
   RunningSimulation,
   Simulation,
+  SimulationAxis,
+  SimulationDimensions,
   SimulationForce,
   SimulationNode,
   SimulationOptions,
@@ -18,4 +20,5 @@ export {
   DEFAULT_ALPHA_DECAY,
   DEFAULT_ALPHA_MIN,
   DEFAULT_VELOCITY_DECAY,
+  SIMULATION_AXES,
 } from './types';

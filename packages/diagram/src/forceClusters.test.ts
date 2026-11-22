@@ -4,7 +4,7 @@ import type { ForceBody } from './force';
 import { separateClusters } from './forceClusters';
 import type { GraphCluster } from './graph';
 
-const body = (id: string, x: number, y = 0): ForceBody => ({ id, x, y, hw: 10, hh: 10, vx: 0, vy: 0 });
+const body = (id: string, x: number, y = 0): ForceBody => ({ id, x, y, hw: 10, hh: 10, hd: 0, vx: 0, vy: 0 });
 
 /** `p` in P, P and `s` in System, and an outsider `o`. Insets are 12, so P's
  *  box reaches 22 from `p` and System's a further 12 beyond that. */

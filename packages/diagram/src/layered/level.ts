@@ -14,7 +14,7 @@ import type { Bounds } from '../outline';
 import { unionRects } from '@weasel-js/geom';
 import { boxAround } from '../cluster';
 import { grownBy } from '../footprint';
-import { center, extent, type LayoutAxes, type LayoutDirection, type LayoutPorts } from '../layout';
+import { center, coordOf, extent, pointOn, type LayoutAxes, type LayoutDirection, type LayoutPorts, type PlaneAxis } from '../layout';
 import { FACES, hasCompassPort, type Compass } from '../route';
 
 /** What {@link levelRoutes} reads. */
@@ -35,15 +35,15 @@ export interface LevelRoutes {
 }
 
 /** The compass faces toward low and high cross coordinates. */
-const SIDES = { x: { low: 'w', high: 'e' }, y: { low: 'n', high: 's' } } as const;
+const SIDES = [{ low: 'w', high: 'e' }, { low: 'n', high: 's' }] as const;
 
 interface Span {
   lo: number;
   hi: number;
 }
 
-const spanOf = (b: Bounds, axis: 'x' | 'y'): Span => {
-  const lo = axis === 'x' ? b.x : b.y;
+const spanOf = (b: Bounds, axis: PlaneAxis): Span => {
+  const lo = coordOf(b, axis);
   return { lo, hi: lo + extent(b, axis) };
 };
 const overlaps = (p: Span, q: Span): boolean => p.lo < q.hi && q.lo < p.hi;
@@ -150,6 +150,6 @@ function around(a: Bounds, b: Bounds, others: readonly Bounds[], axes: LayoutAxe
     if (room > 0) standoff = Math.min(standoff, room / 2);
   }
   const rank = axes.sign * (edge + standoff);
-  const point = (cross: number): Vec2 => (axes.cross === 'x' ? { x: cross, y: rank } : { x: rank, y: cross });
+  const point = (cross: number): Vec2 => pointOn(axes.cross, cross, rank);
   return [point(ma), point(mb)];
 }

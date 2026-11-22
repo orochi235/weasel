@@ -31,8 +31,8 @@ export const radial: LayoutFn = (graph, opts = {}) => untilSettled(radialOnce, g
 const radialOnce: LayoutFn = (graph, opts = {}) => {
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;
-  const { roots, children } = forestOf(graph, 'y');
-  const blocks = subtreeBlocks(children, 'y', nodeGap);
+  const { roots, children } = forestOf(graph, 1);
+  const blocks = subtreeBlocks(children, 1, nodeGap);
   const order = graphOrder(graph);
   const placed = new Map<string, Vec2>();
 

@@ -23,6 +23,11 @@ Forces are pluggable functions matching **d3-force's protocol**, so d3-force's
 bundled forces (`forceManyBody`, `forceLink`, `forceCenter`, …) work here
 without translation. Don't invent a parallel force signature.
 
+`dimensions: 3` runs it in depth too, under d3-force-3d's node shape (`z`, `vz`,
+`fz`), and hands the dimensions to each force's `initialize` as d3-force-3d
+does, so its forces drop in the same way. `SIMULATION_AXES` names each axis's
+position, velocity and pin fields.
+
 ## The kit doesn't write to your scene
 
 `onTick(nodes)` fires after each integration step and **the consumer decides**

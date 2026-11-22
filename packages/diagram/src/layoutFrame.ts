@@ -15,6 +15,7 @@ import {
   type PoseDescriptor,
   type Vec2,
 } from '@weasel-js/core/math';
+import type { Aabb, Vec3 } from '@weasel-js/geom/3d';
 import { createPart } from '@weasel-js/registry';
 import type { Bounds } from './outlines/types';
 
@@ -29,6 +30,53 @@ export interface LayoutFrame<TPose> {
   /** The pose's rotation within the plane, in radians, about its box's
    *  center. Absent means none. */
   rotation?(pose: TPose): number;
+  /** The box the pose covers in three dimensions, for a host with a third:
+   *  `box` is then its face on the plane, x and y the same. Absent, the
+   *  diagram is flat. */
+  box3?(pose: TPose): Aabb;
+  /** The pose moved by `d` in three dimensions. Given with `box3`. */
+  translate3?(pose: TPose, d: Vec3): TPose;
+}
+
+/** How {@link createSolidFrame} reads and places a solid. */
+export interface SolidReader<TPose> {
+  /** The box the pose covers in three dimensions. */
+  box3(pose: TPose): Aabb;
+  /** A pose like `pose` that covers `box`. */
+  fromBox3(box: Aabb, pose: TPose): TPose;
+}
+
+/**
+ * The frame of a diagram of solids, which lies on the plane z = const and
+ * reaches into depth: `box` is a solid's face on that plane, and `box3` and
+ * `translate3` are the whole of it. A box set on the plane keeps the solid's
+ * depth.
+ */
+export function createSolidFrame<TPose>(read: SolidReader<TPose>): LayoutFrame<TPose> {
+  const box = (pose: TPose): Bounds => {
+    const { min, max } = read.box3(pose);
+    return { x: min.x, y: min.y, width: max.x - min.x, height: max.y - min.y };
+  };
+  const translate3 = (pose: TPose, d: Vec3): TPose => {
+    const { min, max } = read.box3(pose);
+    return read.fromBox3({
+      min: { x: min.x + d.x, y: min.y + d.y, z: min.z + d.z },
+      max: { x: max.x + d.x, y: max.y + d.y, z: max.z + d.z },
+    }, pose);
+  };
+  return {
+    box,
+    box3: read.box3,
+    translate: (pose, dx, dy) => translate3(pose, { x: dx, y: dy, z: 0 }),
+    translate3,
+    fromBox: (b, pose) => {
+      const { min, max } = read.box3(pose);
+      return read.fromBox3({
+        min: { x: b.x, y: b.y, z: min.z },
+        max: { x: b.x + b.width, y: b.y + b.height, z: max.z },
+      }, pose);
+    },
+  };
 }
 
 /** Where a reader finds its frame: `frame` when given, else one read off

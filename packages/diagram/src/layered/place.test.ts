@@ -54,7 +54,7 @@ function generated(seed: number): { rows: Rows; hops: Hop[] } {
 describe('placeAcross', () => {
   it('lines a straight chain of equal widths up exactly', () => {
     const rows: Rows = [[box('a', 40)], [box('b', 40)], [box('c', 40)]];
-    const low = placeAcross(rows, [hop('a', 'b'), hop('b', 'c')], 'x', GAP);
+    const low = placeAcross(rows, [hop('a', 'b'), hop('b', 'c')], 0, GAP);
     expect(low.get('a')).toBe(0);
     expect(low.get('b')).toBe(0);
     expect(low.get('c')).toBe(0);
@@ -70,7 +70,7 @@ describe('placeAcross', () => {
       [box('b', 120)],
     ];
     const hops = [hop('a', p1), hop(p1, p2), hop(p2, 'b'), hop('side', 'x'), hop('x', 'y')];
-    const low = placeAcross(rows, hops, 'x', GAP);
+    const low = placeAcross(rows, hops, 0, GAP);
     const c = centerOf(rows, low, 'a');
     expect(centerOf(rows, low, p1)).toBeCloseTo(c, 9);
     expect(centerOf(rows, low, p2)).toBeCloseTo(c, 9);
@@ -81,7 +81,7 @@ describe('placeAcross', () => {
   it('keeps every rank in order and apart on generated graphs', () => {
     for (let seed = 1; seed <= 200; seed++) {
       const { rows, hops } = generated(seed);
-      const low = placeAcross(rows, hops, 'x', GAP);
+      const low = placeAcross(rows, hops, 0, GAP);
       expect(low.size).toBe(rows.flat().length);
       expectOrderAndGaps(rows, low);
     }
@@ -89,7 +89,7 @@ describe('placeAcross', () => {
 
   it('lines up the ports a hop joins, not the two centers', () => {
     const rows: Rows = [[box('a', 40)], [box('b', 80)]];
-    const low = placeAcross(rows, [{ ...hop('a', 'b'), fromAt: 0.5, toAt: 0.25 }], 'x', GAP);
+    const low = placeAcross(rows, [{ ...hop('a', 'b'), fromAt: 0.5, toAt: 0.25 }], 0, GAP);
     expect(low.get('a')! + 40 * 0.5).toBe(low.get('b')! + 80 * 0.25);
   });
 
@@ -98,13 +98,13 @@ describe('placeAcross', () => {
       const { rows, hops } = generated(seed);
       const rand = lcg(seed * 7);
       const ported = hops.map((h) => ({ ...h, fromAt: rand(), toAt: rand() }));
-      expectOrderAndGaps(rows, placeAcross(rows, ported, 'x', GAP));
+      expectOrderAndGaps(rows, placeAcross(rows, ported, 0, GAP));
     }
   });
 
   it('puts a parent over the middle of three children', () => {
     const rows: Rows = [[box('p', 30)], [box('a', 40), box('b', 40), box('c', 40)]];
-    const low = placeAcross(rows, [hop('p', 'a'), hop('p', 'b'), hop('p', 'c')], 'x', GAP);
+    const low = placeAcross(rows, [hop('p', 'a'), hop('p', 'b'), hop('p', 'c')], 0, GAP);
     expect(centerOf(rows, low, 'p')).toBeCloseTo(centerOf(rows, low, 'b'), 9);
   });
 
@@ -118,7 +118,7 @@ describe('placeAcross', () => {
       [box('u', 40), box('e', 40)],
     ];
     const hops = [hop('s', d1), hop(d1, d2), hop(d2, 'e'), hop('t', 'x'), hop('x', 'y'), hop('y', 'u')];
-    const low = placeAcross(rows, hops, 'x', GAP);
+    const low = placeAcross(rows, hops, 0, GAP);
     expect(centerOf(rows, low, d1)).toBeCloseTo(centerOf(rows, low, d2), 9);
     expectOrderAndGaps(rows, low);
   });
@@ -126,16 +126,16 @@ describe('placeAcross', () => {
   it('starts at 0 and gives equal output for equal input', () => {
     for (let seed = 1; seed <= 20; seed++) {
       const { rows, hops } = generated(seed);
-      const low = placeAcross(rows, hops, 'x', GAP);
+      const low = placeAcross(rows, hops, 0, GAP);
       expect(Math.min(...low.values())).toBe(0);
       const again = generated(seed);
-      expect([...placeAcross(again.rows, again.hops, 'x', GAP)]).toEqual([...low]);
+      expect([...placeAcross(again.rows, again.hops, 0, GAP)]).toEqual([...low]);
     }
   });
 
   it('measures extents along the axis it is given', () => {
     const rows: Rows = [[{ id: 'a', bounds: { x: 0, y: 0, width: 5, height: 50 }, pinned: false }, box('b', 5)]];
-    const low = placeAcross(rows, [], 'y', GAP);
+    const low = placeAcross(rows, [], 1, GAP);
     expect(low.get('b')! - low.get('a')!).toBe(50 + GAP);
   });
 });

@@ -166,6 +166,6 @@ function blockRoom(count: number, column: ReadonlyMap<string, number>, blocks: r
     const parent = blocks.find((p) => p.depth === b.depth - 1 && p.first <= b.first && b.last <= p.last);
     return { id: b.cluster, members: inside(b), inset: insetOf(DEFAULT_CLUSTER_INSET), ...(parent !== undefined ? { parent: parent.cluster } : {}) };
   });
-  const gaps = rankGaps({ clusters }, rows, { rank: 'x', cross: 'y', sign: 1 }, gap);
+  const gaps = rankGaps({ clusters }, rows, { rank: 0, cross: 1, sign: 1 }, gap);
   return gaps.map((g, c) => (c === 0 || c === count ? g - gap : g));
 }

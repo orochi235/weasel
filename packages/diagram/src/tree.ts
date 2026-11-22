@@ -29,6 +29,7 @@ import {
   placeSlots,
   untilSettled,
   type LayoutFn,
+  type PlaneAxis,
   type Slot,
 } from './layout';
 
@@ -42,7 +43,7 @@ export interface Forest {
 /** The forest a depth-first walk in graph order finds. Exported because "which
  *  node ended up whose child" is the question anyone debugging a tree layout
  *  asks first. */
-export function forestOf(graph: Graph, crossAxis: 'x' | 'y'): Forest {
+export function forestOf(graph: Graph, crossAxis: PlaneAxis): Forest {
   const order = graphOrder(graph);
   const children = new Map<string, GraphNode[]>();
   const depth = new Map<string, number>();
@@ -94,7 +95,7 @@ export function forestOf(graph: Graph, crossAxis: 'x' | 'y'): Forest {
  *  whose block starts at `from`, each parent centered over its children. */
 export function subtreeBlocks(
   children: ReadonlyMap<string, readonly GraphNode[]>,
-  axis: 'x' | 'y',
+  axis: PlaneAxis,
   gap: number,
 ): { span(node: GraphNode): number; lay(node: GraphNode, from: number, into: Map<string, number>): void } {
   const measured = new Map<string, number>();

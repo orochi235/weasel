@@ -581,13 +581,6 @@ on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed a
   them through a mutation path outside history, and caps concurrent loads. Closes when a demo pans a scene
   larger than memory would hold whole, undo history stays empty through the pan, and the visibility index
   updates without a rebuild.
-- **(P3) [agent] A true 3D force layout.** A diagram reaches a 3D host only through a `LayoutFrame`, a plane
-  (2026-11-19), so `force` relaxes in two dimensions: `@weasel-js/simulation`'s `SimulationNode` is
-  `{x, y, vx, vy, fx, fy}` (`packages/simulation/src/types.ts:7`) and `packages/diagram/src/force.ts` writes
-  `Vec2` places. The integrator and its forces run over an axis list instead (position, velocity and pin as
-  number arrays), `LayoutAxes` (`packages/diagram/src/layout.ts:118`) names axes by index rather than
-  `'x' | 'y'`, and a frame can answer a box in three dimensions. Closes when `force` relaxes a graph of
-  solids in 3D under kernel3d, with a test that a run over nodes all on z = 0 returns the 2D run's places.
 
 ## Backends (WebGL future)
 

@@ -87,8 +87,8 @@ export function forceProducer<TPose>(
         // A dragged node holds its neighbors while they relax, which is `fx` /
         // `fy` on the integrator rather than a correction applied afterward.
         const bounds = frame.box(held);
-        body.fx = center(bounds, 'x');
-        body.fy = center(bounds, 'y');
+        body.fx = center(bounds, 0);
+        body.fy = center(bounds, 1);
       } else if (!relaxation.pinned.has(node.id)) {
         delete body.fx;
         delete body.fy;

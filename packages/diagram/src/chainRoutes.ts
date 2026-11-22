@@ -6,7 +6,7 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import { maxOf, minOf } from '@weasel-js/geom';
 import type { Graph, GraphEdge, GraphNode } from './graph';
-import type { LayoutAxes, LayoutResult } from './layout';
+import { coordOf, extent, pointOn, type LayoutAxes, type LayoutResult, type PlaneAxis } from './layout';
 
 /** Which chain node each node hangs on, and how many steps out. */
 export interface Hanging {
@@ -30,11 +30,11 @@ interface Side {
 const portOf = (node: GraphNode, id: string | undefined) => (id === undefined ? undefined : node.ports?.find((p) => p.id === id));
 
 /** A port's place along `axis` within `bounds` at `at`. */
-function coord(node: GraphNode, at: Vec2, id: string | undefined, axis: 'x' | 'y'): { along: number; anchor: number } | undefined {
+function coord(node: GraphNode, at: Vec2, id: string | undefined, axis: PlaneAxis): { along: number; anchor: number } | undefined {
   const spec = portOf(node, id);
   if (spec === undefined) return undefined;
-  const anchor = axis === 'x' ? spec.at.u : spec.at.v;
-  return { along: (axis === 'x' ? at.x : at.y) + anchor * (axis === 'x' ? node.bounds.width : node.bounds.height), anchor };
+  const anchor = axis === 0 ? spec.at.u : spec.at.v;
+  return { along: coordOf(at, axis) + anchor * extent(node.bounds, axis), anchor };
 }
 
 /** The side edges of the graph, where both ends name ports on the edges of
@@ -121,7 +121,7 @@ export function sideRoutes(
           { rank: s.port + dir * Math.min(Math.abs(track - s.lineEdge), half), cross: track },
           { rank: s.hung - dir * Math.min(Math.abs(s.hungEdge - track), half), cross: track },
         ];
-        const points = turns.map((t) => (axes.rank === 'x' ? { x: t.rank, y: t.cross } : { x: t.cross, y: t.rank }));
+        const points = turns.map((t) => pointOn(axes.rank, t.rank, t.cross));
         out.set(s.edge.id, s.lineFirst ? points : points.reverse());
       });
     }
@@ -138,7 +138,7 @@ export function inPortOrder(graph: Graph, lineId: string, row: readonly GraphNod
       ...graph.incoming(node.id).filter((e) => e.from === lineId).map((e) => e.fromPort)]
       .flatMap((id) => {
         const spec = portOf(line, id);
-        return spec === undefined ? [] : [axes.rank === 'x' ? spec.at.u : spec.at.v];
+        return spec === undefined ? [] : [axes.rank === 0 ? spec.at.u : spec.at.v];
       });
     return anchors.length === 0 ? undefined : (axes.sign * anchors.reduce((a, b) => a + b, 0)) / anchors.length;
   };
