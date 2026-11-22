@@ -14,7 +14,7 @@ import type { Action, InvocationCtx, OngoingHandle, BindingOptions } from '@weas
 interface FakeNode<TData> { id: NodeId; kind: 'mark'; pose: unknown; data: TData; parent: string | null }
 
 export interface FakeScene<TData> {
-  get(id: NodeId): FakeNode<TData> | null;
+  get(id: NodeId): FakeNode<TData> | undefined;
   childrenOf(id: NodeId): NodeId[];
   update: Mock<(id: NodeId, patch: { data: unknown }) => void>;
   setPose: Mock;
@@ -50,7 +50,7 @@ export function makeScene<TData extends object>(
   const updates: Array<{ id: string; data: unknown }> = [];
   const batches: string[] = [];
   return {
-    get: (id: NodeId) => current.get(id as unknown as string) ?? null,
+    get: (id: NodeId) => current.get(id as unknown as string),
     childrenOf: (id: NodeId) => Object.keys(parents).filter((c) => parents[c] === (id as unknown as string)).map(asNodeId),
     update: vi.fn((id: NodeId, patch: { data: unknown }) => {
       updates.push({ id: id as unknown as string, data: patch.data });
