@@ -17,8 +17,8 @@ function setup(inner = '<p class="probe">hello</p>') {
   const root = document.body.appendChild(document.createElement('div'));
   root.className = 'lk-trial__body';
   root.innerHTML = inner;
-  Object.defineProperty(root, 'offsetWidth', { value: 200 });
-  Object.defineProperty(root, 'offsetHeight', { value: 100 });
+  Object.defineProperty(root, 'offsetWidth', { value: 200, writable: true });
+  Object.defineProperty(root, 'offsetHeight', { value: 100, writable: true });
   root.getBoundingClientRect = () => ({ left: 10, top: 10, width: 200, height: 100 }) as DOMRect;
   const slot = document.body.appendChild(document.createElement('div'));
   const hit = root.firstElementChild as Element;
@@ -145,6 +145,20 @@ describe('a clone source', () => {
     expect(slot.querySelector('iframe')?.hasAttribute('src')).toBe(false);
     expect(slot.querySelector('video')?.hasAttribute('autoplay')).toBe(false);
   });
+});
+
+describe('a clone source keeping its copy current', () => {
+  it('sizes its copy again when a change in the trial resizes the trial', async () => {
+    const { root, slot } = setup();
+    createCloneSource<null>({ onFrame }).attach(slot, request());
+    (root as { offsetHeight: number }).offsetHeight = 300;
+    (root.querySelector('.probe') as HTMLElement).textContent = 'taller';
+    await Promise.resolve();
+    frame();
+    const copy = slot.querySelector<HTMLElement>('.lk-lens-copy');
+    expect(copy?.style.getPropertyValue('--lk-copy-h')).toBe('300px');
+  });
+
 });
 
 describe('a clone source whose root holds the lens', () => {

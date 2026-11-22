@@ -71,6 +71,8 @@ class CloneCell {
   private copy: Element | null = null;
   private readonly watch =
     typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => this.schedule());
+  private readonly sizes =
+    typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => this.position());
   private stale = false;
 
   constructor(
@@ -98,13 +100,16 @@ class CloneCell {
     if (root !== this.root) {
       this.root = root;
       this.watch?.disconnect();
-      if (root)
+      this.sizes?.disconnect();
+      if (root) {
         this.watch?.observe(root, {
           subtree: true,
           childList: true,
           attributes: true,
           characterData: true,
         });
+        this.sizes?.observe(root);
+      }
       this.recopy();
     }
     this.position();
@@ -112,6 +117,7 @@ class CloneCell {
 
   detach(): void {
     this.watch?.disconnect();
+    this.sizes?.disconnect();
     this.copy = null;
     this.box.remove();
   }
@@ -141,6 +147,7 @@ class CloneCell {
     if (this.copy) stillCopy(this.copy);
     this.box.replaceChildren(...(this.copy ? [this.copy] : []));
     if (root && this.copy) copyCanvases(root, this.copy);
+    this.position();
     this.want();
   }
 
