@@ -164,6 +164,21 @@ describe('WebGLDevice textures', () => {
     expect(gl.UNPACK_SKIP_PIXELS).toBe(0x0CF4);
   });
 
+  it('unbinds, once a frame, a sampler object another user of the context left on a unit it draws with', () => {
+    const { rec, gpu } = setup();
+    const { program, geometry, state } = drawable(gpu);
+    const texture = gpu.createTexture('rgba8', { min: 'nearest', mag: 'nearest', wrapS: 'clamp', wrapT: 'clamp' }, { width: 1, height: 1, data: null });
+    program.setTexture('u_a', texture);
+    program.setTexture('u_b', texture);
+    gpu.draw(state(), geometry, 3);
+    gpu.draw(state(), geometry, 3);
+    expect(argsOf(rec, 'bindSampler')).toEqual([[0, null], [1, null]]);
+    gpu.beginFrame();
+    rec.reset();
+    gpu.draw(state(), geometry, 3);
+    expect(argsOf(rec, 'bindSampler')).toEqual([[0, null], [1, null]]);
+  });
+
   it('empties a unit holding the texture a pass draws into', () => {
     const { rec, gpu } = setup();
     const { program, geometry, state } = drawable(gpu);

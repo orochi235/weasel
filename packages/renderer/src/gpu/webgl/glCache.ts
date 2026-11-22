@@ -28,6 +28,9 @@ export class GlCache {
   private scissor: GpuRect | undefined;
   private activeUnit: number | undefined;
   private readonly units: (WebGLTexture | null | undefined)[] = [];
+  /** Units whose sampler object has been unbound this frame: one another user of the context leaves
+   *  bound overrides the texture's own filter and wrap. */
+  private readonly samplerFree: boolean[] = [];
   /** Each id target's draw buffers. GL keeps them per framebuffer, so they
    *  survive a frame; only a restored context loses them. */
   private readonly drawBuffers = new WeakMap<WebGLFramebuffer, DrawBuffers>();
@@ -45,6 +48,7 @@ export class GlCache {
     this.viewport = this.scissor = this.scissorOn = undefined;
     this.activeUnit = undefined;
     this.units.length = 0;
+    this.samplerFree.length = 0;
   }
 
   /** What the device's frame-start state has just set. */
@@ -192,6 +196,10 @@ export class GlCache {
     for (let unit = 0; unit < textures.length; unit++) {
       const t = textures[unit];
       const tex = t && !drawnInto.includes(t) ? t.handle : null;
+      if (!this.samplerFree[unit]) {
+        gl.bindSampler(unit, null);
+        this.samplerFree[unit] = true;
+      }
       if (this.units[unit] === tex) continue;
       this.activate(unit);
       gl.bindTexture(gl.TEXTURE_2D, tex);
