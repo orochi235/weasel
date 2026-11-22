@@ -19,10 +19,13 @@ type Data = { fill: Fill };
 const hue = (x: number, y: number) => ((x * 73856093) ^ (y * 19349663)) % 360;
 
 /** An endless world, 36 rects a cell, each cell arriving 80 ms after it is asked for, as from a server. */
-const WORLD: SceneSource<Data, 'main', RectPose> = {
+export const WORLD: SceneSource<Data, 'main', RectPose> = {
   cellSize: CELL,
   load: (cell: SceneCell, signal: AbortSignal) => new Promise((resolve) => {
+    if (signal.aborted) return resolve([]);
+    const onAbort = () => { cancel(); resolve([]); };
     const cancel = after(80, () => {
+      signal.removeEventListener('abort', onAbort);
       const out: AddNodeSpec<Data, 'main', RectPose>[] = [];
       for (let i = 0; i < 36; i++) {
         out.push({
@@ -33,7 +36,7 @@ const WORLD: SceneSource<Data, 'main', RectPose> = {
       }
       resolve(out);
     });
-    signal.addEventListener('abort', () => { cancel(); resolve([]); });
+    signal.addEventListener('abort', onAbort, { once: true });
   }),
 };
 

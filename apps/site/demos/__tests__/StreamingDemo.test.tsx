@@ -1,6 +1,6 @@
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { StreamingDemo } from '../StreamingDemo';
+import { StreamingDemo, WORLD } from '../StreamingDemo';
 
 afterEach(() => {
   cleanup();
@@ -33,5 +33,28 @@ describe('StreamingDemo', () => {
     vi.restoreAllMocks();
     const large = cells(await renderAt(1200, 800));
     expect(large).toBeGreaterThan(small);
+  });
+});
+
+describe('StreamingDemo source', () => {
+  const cell = { x: 0, y: 0, box: [0, 0, 200, 200] as [number, number, number, number] };
+
+  it('answers an already-aborted request with nothing, at once', async () => {
+    vi.useFakeTimers();
+    const ac = new AbortController();
+    ac.abort();
+    const out = WORLD.load(cell, ac.signal);
+    expect(vi.getTimerCount()).toBe(0);
+    await expect(out).resolves.toEqual([]);
+  });
+
+  it('takes its abort listener off the signal once the cell arrives', async () => {
+    vi.useFakeTimers();
+    const ac = new AbortController();
+    const off = vi.spyOn(ac.signal, 'removeEventListener');
+    const out = WORLD.load(cell, ac.signal);
+    await vi.advanceTimersByTimeAsync(100);
+    await expect(out).resolves.toHaveLength(36);
+    expect(off).toHaveBeenCalledWith('abort', expect.any(Function));
   });
 });
