@@ -188,11 +188,26 @@ describe('useFloatingPlacement dragging', () => {
     expect(panel.style.left).toBe('12px');
     fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
     fireEvent.pointerMove(panel, { clientX: 200, clientY: 180 });
-    expect(panel.style.left).toBe('100px');
-    expect(panel.style.top).toBe('80px');
+    expect(panel.style.left).toBe('112px');
+    expect(panel.style.top).toBe('92px');
     fireEvent.pointerMove(panel, { clientX: 250, clientY: 180 });
-    expect(panel.style.left).toBe('150px');
-    expect(panel.style.top).toBe('80px');
+    expect(panel.style.left).toBe('162px');
+    expect(panel.style.top).toBe('92px');
+  });
+
+  it('follows the pointer from where a corner-snapped drop shows it, not from the drop point', () => {
+    function Dropped() {
+      const ref = useRef<HTMLDivElement>(null);
+      const [placement, setPlacement] = useState<FloatingPlacement>({ x: 2, y: 2, anchor: 'top-left' });
+      const { style, startDrag } = useFloatingPlacement({ panelRef: ref, placement, onPlacementChange: setPlacement });
+      return <div data-panel="" onPointerDown={startDrag} ref={ref} style={style} />;
+    }
+    const { panel } = renderPanel(<Dropped />);
+    expect(panel.style.left).toBe('12px');
+    fireEvent.pointerDown(panel, { pointerId: 1, clientX: 50, clientY: 50 });
+    fireEvent.pointerMove(panel, { pointerId: 1, clientX: 150, clientY: 130 });
+    expect(panel.style.left).toBe('112px');
+    expect(panel.style.top).toBe('92px');
   });
 
   it('reports the placement once, on release', () => {
@@ -204,8 +219,8 @@ describe('useFloatingPlacement dragging', () => {
     expect(onChange).not.toHaveBeenCalled();
     fireEvent.pointerUp(panel, { pointerId: 1, clientX: 250, clientY: 180 });
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange.mock.calls[0]?.[0]).toMatchObject({ x: 150, y: 80, anchor: null });
-    expect(panel.style.left).toBe('150px');
+    expect(onChange.mock.calls[0]?.[0]).toMatchObject({ x: 162, y: 92, anchor: null });
+    expect(panel.style.left).toBe('162px');
   });
 
   it('puts it back and reports nothing when Escape cancels the drag', () => {
@@ -213,7 +228,7 @@ describe('useFloatingPlacement dragging', () => {
     const { panel } = renderPanel(<Harness onChange={onChange} />);
     fireEvent.pointerDown(panel, { pointerId: 1, clientX: 100, clientY: 100 });
     fireEvent.pointerMove(panel, { pointerId: 1, clientX: 200, clientY: 180 });
-    expect(panel.style.left).toBe('100px');
+    expect(panel.style.left).toBe('112px');
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(panel.dataset.dragging).toBeUndefined();
     expect(panel.style.left).toBe('12px');
@@ -243,8 +258,8 @@ describe('useFloatingPlacement dragging', () => {
     for (let i = steps - 1; i >= 30; i--) {
       fireEvent.pointerMove(panel, { pointerId: 1, buttons: 1, clientX: 100 + i * 5, clientY: 100 + i * 4 });
     }
-    expect(panel.style.left).toBe('150px');
-    expect(panel.style.top).toBe('120px');
+    expect(panel.style.left).toBe('162px');
+    expect(panel.style.top).toBe('132px');
   });
 
   it('refuses a corner it was not given', () => {
@@ -387,11 +402,11 @@ describe('useFloatingPlacement drag lifecycle', () => {
     fireEvent.pointerDown(panel, { pointerId: 1, buttons: 1, clientX: 100, clientY: 100 });
     fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 200, clientY: 180 });
     expect(panel.dataset.dragging).toBe('true');
-    expect(panel.style.left).toBe('100px');
+    expect(panel.style.left).toBe('112px');
     fireEvent.pointerUp(document.body, { pointerId: 1, clientX: 200, clientY: 180 });
     expect(panel.dataset.dragging).toBeUndefined();
     fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 300, clientY: 180 });
-    expect(panel.style.left).toBe('100px');
+    expect(panel.style.left).toBe('112px');
   });
 
   // The other half of the rule — a detached origin does cancel — is owned by
@@ -400,13 +415,13 @@ describe('useFloatingPlacement drag lifecycle', () => {
     const { panel } = renderPanel(<Harness />);
     fireEvent.pointerDown(panel, { pointerId: 1, buttons: 1, clientX: 100, clientY: 100 });
     fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 200, clientY: 180 });
-    expect(panel.style.left).toBe('100px');
+    expect(panel.style.left).toBe('112px');
     // Chrome releases capture a beat before it delivers pointerup, so ending
     // here throws away a release that has already been dispatched.
     fireEvent(panel, new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
     expect(panel.dataset.dragging).toBe('true');
     fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 300, clientY: 180 });
-    expect(panel.style.left).toBe('200px');
+    expect(panel.style.left).toBe('212px');
   });
 
   it('reads a move with nothing held as the release that never arrived', () => {
@@ -417,7 +432,7 @@ describe('useFloatingPlacement drag lifecycle', () => {
     expect(panel.dataset.dragging).toBe('true');
     fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 0, clientX: 300, clientY: 180 });
     expect(panel.dataset.dragging).toBeUndefined();
-    expect(panel.style.left).toBe('100px');
+    expect(panel.style.left).toBe('112px');
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 
@@ -536,12 +551,12 @@ describe('a host that commits the placement a tick later', () => {
     expect(panel.style.left).toBe('12px');
     fireEvent.pointerDown(panel, { pointerId: 1, clientX: 100, clientY: 100 });
     fireEvent.pointerMove(panel, { pointerId: 1, clientX: 200, clientY: 180 });
-    expect(panel.style.left).toBe('100px');
+    expect(panel.style.left).toBe('112px');
     drawn.length = 0;
     fireEvent.pointerUp(panel, { pointerId: 1, clientX: 200, clientY: 180 });
-    expect(panel.style.left).toBe('100px');
+    expect(panel.style.left).toBe('112px');
     await act(() => new Promise((done) => setTimeout(done, 5)));
-    expect(panel.style.left).toBe('100px');
+    expect(panel.style.left).toBe('112px');
     expect(drawn.length).toBeGreaterThan(0);
     expect(drawn).not.toContain('12px');
   });
@@ -557,7 +572,7 @@ describe('a host that commits the placement a tick later', () => {
     fireEvent.pointerDown(panel, { pointerId: 1, clientX: 100, clientY: 100 });
     fireEvent.pointerMove(panel, { pointerId: 1, clientX: 200, clientY: 180 });
     fireEvent.pointerUp(panel, { pointerId: 1, clientX: 200, clientY: 180 });
-    expect(panel.style.left).toBe('100px');
+    expect(panel.style.left).toBe('112px');
     fireEvent.pointerDown(panel, { pointerId: 1, clientX: 100, clientY: 100 });
     expect(panel.style.left).toBe('12px');
     fireEvent.pointerUp(panel, { pointerId: 1, clientX: 100, clientY: 100 });
@@ -577,7 +592,7 @@ describe('a host that commits the placement a tick later', () => {
     fireEvent.pointerDown(panel, { pointerId: 1, clientX: 100, clientY: 100 });
     fireEvent.pointerMove(panel, { pointerId: 1, clientX: 200, clientY: 180 });
     fireEvent.pointerUp(panel, { pointerId: 1, clientX: 200, clientY: 180 });
-    expect(panel.style.left).toBe('100px');
+    expect(panel.style.left).toBe('112px');
     act(() => reset());
     expect(panel.style.left).toBe('12px');
   });

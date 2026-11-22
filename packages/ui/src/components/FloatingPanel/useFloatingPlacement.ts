@@ -11,7 +11,7 @@ import {
   useState,
 } from 'react';
 import { type Corner, DEFAULT_INSET, type FloatingPlacement } from 'windease';
-import { dragPlacement, floatingItem, ITEM_ID, STRATEGY } from './dragPlacement';
+import { dragPlacement, floatingItem, ITEM_ID, shownPlacement, STRATEGY } from './dragPlacement';
 import { cssPx } from '../../cssPx';
 import { isInControlWithin, isPrimaryPress } from '@weasel-js/gestures';
 
@@ -152,6 +152,8 @@ export function useFloatingPlacement({
     const press = { x: e.clientX, y: e.clientY };
     let last = press;
     const over = latest.current.placement;
+    // windease keeps an anchored placement's own x/y as the drag's base, which a whole-travel delta then offsets.
+    const from = shownPlacement(over, latest.current);
     let at = over;
     let moved = false;
     const end = (): void => {
@@ -165,7 +167,7 @@ export function useFloatingPlacement({
       onMove: (ev) => {
         if (ev.clientX === last.x && ev.clientY === last.y) return;
         last = { x: ev.clientX, y: ev.clientY };
-        at = dragPlacement(over, ev.clientX - press.x, ev.clientY - press.y, latest.current);
+        at = dragPlacement(from, ev.clientX - press.x, ev.clientY - press.y, latest.current);
         moved = true;
         setLive({ at, over, dragging: true });
       },
