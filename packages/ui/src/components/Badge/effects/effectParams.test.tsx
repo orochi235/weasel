@@ -64,3 +64,17 @@ describe('a bevel2 lightFrom', () => {
     for (const band of c.querySelectorAll('g path')) expect(band.getAttribute('class')).toMatch(/^badge-bevel-/);
   });
 });
+
+describe('an effect drawn on a badge with no fill', () => {
+  for (const [name, effect] of [['shadow', Shadow], ['sunbeams', Sunbeams]] as const) {
+    it(`${name} draws nothing on an outline badge`, () => {
+      const Component = (effect as EffectModule<object>).Component!;
+      const { container } = render(
+        <svg>
+          <Component sampler={polygonSampler(square, 200, 30)} boxW={200} boxH={30} variant="outline" params={{}} phase={0} />
+        </svg>,
+      );
+      expect(container.querySelector('svg')!.children).toHaveLength(0);
+    });
+  }
+});

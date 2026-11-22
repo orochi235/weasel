@@ -293,3 +293,16 @@ describe('perforation spacing', () => {
     }
   });
 });
+
+describe('rivets on an outline that reaches past a corner of its box', () => {
+  it('sit `inset` CSS px in from the corner, which is inside the body', () => {
+    const tall: [number, number][] = [[-10, -20], [110, -20], [110, 120], [-10, 120]];
+    const c = draw(Rivets, { inset: 7 }, 100, 100, polygonSampler(tall, 100, 100));
+    const found = [...c.querySelectorAll('ellipse.badge-bevel-dark')].map((e) => [Number(e.getAttribute('cx')), Number(e.getAttribute('cy'))]);
+    expect(found).toHaveLength(4);
+    for (const [x, y] of found) {
+      expect(Math.abs(x - 50)).toBeCloseTo(43);
+      expect(Math.abs(y - 50)).toBeCloseTo(43);
+    }
+  });
+});
