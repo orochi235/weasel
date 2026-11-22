@@ -54,6 +54,19 @@ describe('parseColorBytes', () => {
 });
 
 describe('parseColor', () => {
+  it('reads CSS\'s missing component, none, as 0', () => {
+    expect(parseColor('hsl(none 0% 50%)')).toEqual(parseColor('hsl(0 0% 50%)'));
+    expect(parseColor('rgb(255 none 0 / none)')).toEqual([1, 0, 0, 0]);
+    expect(parseColor('oklch(0.5 none none)')).toEqual(parseColor('oklch(0.5 0 0)'));
+    expect(parseColor('oklab(0.5 none 0)')).toEqual(parseColor('oklab(0.5 0 0)'));
+  });
+
+  it('refuses none in the legacy comma syntax, or with a unit', () => {
+    expect(() => parseColor('rgb(255, none, 0)')).toThrow();
+    expect(() => parseColor('hsl(nonedeg 0% 50%)')).toThrow();
+    expect(() => parseColor('rgb(none% 0 0)')).toThrow();
+  });
+
   it('parses #rrggbb', () => {
     expect(parseColor('#ff0000')).toEqual([1, 0, 0, 1]);
     expect(parseColor('#00ff00')).toEqual([0, 1, 0, 1]);
