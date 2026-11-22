@@ -19,9 +19,9 @@ interface Scope { kind: 'root' | 'cluster' | 'plain'; graph: Attrs; node: Attrs;
 interface RawEdge { tail: DotNodeRef; head: DotNodeRef; attrs: Attrs; own: Attrs }
 
 const READ: Readonly<Record<'root' | 'cluster' | 'plain' | 'node' | 'edge', ReadonlySet<string>>> = {
-  root: new Set(['rankdir', 'label', 'bb']),
-  cluster: new Set(['label', 'style', 'color', 'fillcolor', 'bgcolor', 'pencolor', 'fontcolor']),
-  plain: new Set(),
+  root: new Set(['rankdir', 'label', 'bb', 'cluster']),
+  cluster: new Set(['cluster', 'label', 'style', 'color', 'fillcolor', 'bgcolor', 'pencolor', 'fontcolor']),
+  plain: new Set(['cluster']),
   node: new Set([OUTLINE_ATTR, 'label', 'shape', 'style', 'color', 'fillcolor', 'fontcolor', 'penwidth', 'width', 'height', 'pos']),
   edge: new Set(['label', 'taillabel', 'headlabel', 'color', 'fontcolor', 'penwidth', 'style', 'dir', 'arrowhead', 'arrowtail', 'tailport', 'headport']),
 };
@@ -29,6 +29,25 @@ const READ: Readonly<Record<'root' | 'cluster' | 'plain' | 'node' | 'edge', Read
 const DIRECTIONS: Readonly<Record<string, LayoutDirection>> = { TB: 'down', BT: 'up', LR: 'right', RL: 'left' };
 const COMPASS_PORTS = new Set(['n', 'e', 's', 'w']);
 const POINTS_PER_INCH = 72;
+/** A cluster's key starts with this when it has no name, followed by a count, and twice over when its name does. */
+const ANONYMOUS = '\u0000';
+const clusterKey = (id: string) => (id.startsWith(ANONYMOUS) ? `${ANONYMOUS}${id}` : id);
+/** A cluster's name from its key; `''` for one with none. */
+const clusterName = (key: string) =>
+  key.startsWith(`${ANONYMOUS}${ANONYMOUS}`) ? key.slice(1) : key.startsWith(ANONYMOUS) ? '' : key;
+
+/** A DOT boolean as Graphviz reads one: `true` or `yes` in any case, or a nonzero integer. */
+const truthy = (v: string | undefined) => v !== undefined && (/^(?:true|yes)$/i.test(v.trim()) || (parseInt(v, 10) || 0) !== 0);
+
+/** The `cluster` attribute a subgraph ends with: its own last statement setting it, else what it inherits. */
+function clusterFlag(stmts: readonly DotStmt[], inherited: Attrs): boolean {
+  let flag = str(inherited, 'cluster');
+  for (const s of stmts) {
+    if (s.kind === 'set' && s.key === 'cluster') flag = s.value.value;
+    else if (s.kind === 'attr' && s.target === 'graph') for (const a of s.attrs) if (a.key === 'cluster') flag = a.value.value;
+  }
+  return truthy(flag);
+}
 
 const round = (n: number) => Math.round(n * 100) / 100;
 const str = (attrs: Attrs, key: string) => attrs.get(key)?.value;
@@ -58,6 +77,7 @@ class DotReader {
   readonly nodes = new Map<string, Attrs>();
   readonly edges: RawEdge[] = [];
   readonly clusters = new Map<string, Attrs>();
+  private anonymous = 0;
 
   readonly root: Scope = { kind: 'root', graph: new Map(), node: new Map(), edge: new Map(), cluster: null };
 
@@ -119,13 +139,17 @@ class DotReader {
   }
 
   subgraph(sub: DotSubgraph, parent: Scope): Set<string> {
-    const isCluster = sub.id !== undefined && sub.id.startsWith('cluster');
-    if (isCluster) this.membership.openCluster(sub.id!, parent.cluster);
-    const graph = isCluster ? (this.clusters.get(sub.id!) ?? this.clusterGraph(parent.graph)) : new Map(parent.graph);
-    if (isCluster) this.clusters.set(sub.id!, graph);
+    // Graphviz matches the prefix in any case, and since version 7 takes `cluster=true` too.
+    const isCluster = sub.id !== undefined
+      ? /^cluster/i.test(sub.id) || this.clusters.has(clusterKey(sub.id)) || clusterFlag(sub.stmts, parent.graph)
+      : clusterFlag(sub.stmts, parent.graph);
+    const key = !isCluster ? null : sub.id !== undefined ? clusterKey(sub.id) : `${ANONYMOUS}${this.anonymous++}`;
+    if (key !== null) this.membership.openCluster(key, parent.cluster);
+    const graph = key !== null ? (this.clusters.get(key) ?? this.clusterGraph(parent.graph)) : new Map(parent.graph);
+    if (key !== null) this.clusters.set(key, graph);
     return this.walk(sub.stmts, {
-      kind: isCluster ? 'cluster' : 'plain', graph, node: new Map(parent.node), edge: new Map(parent.edge),
-      cluster: isCluster ? sub.id! : parent.cluster,
+      kind: key !== null ? 'cluster' : 'plain', graph, node: new Map(parent.node), edge: new Map(parent.edge),
+      cluster: key ?? parent.cluster,
     });
   }
 }
@@ -285,8 +309,9 @@ function clusterIds(clusters: Iterable<string>, nodes: ReadonlyMap<string, unkno
   const taken = new Set([...nodes.keys()]);
   const out = new Map<string, string>();
   for (const id of clusters) {
-    const short = id.replace(/^cluster_?/, '');
-    const pick = short !== '' && !taken.has(short) ? short : freshId(id, taken, { bare: true });
+    const name = clusterName(id);
+    const short = name.replace(/^cluster_?/i, '');
+    const pick = short !== '' && !taken.has(short) ? short : freshId(name || 'cluster', taken, { bare: true });
     taken.add(pick);
     out.set(id, pick);
   }

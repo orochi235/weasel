@@ -47,6 +47,23 @@ describe('reading DOT', () => {
     expect(warnings).toEqual([]);
   });
 
+  it('reads a subgraph as a cluster by its prefix in any case, or by cluster=true', () => {
+    const { document, warnings } = readDot(
+      'digraph { subgraph Cluster_A { a } subgraph g { cluster=true; b } subgraph { graph [cluster=yes] c } subgraph h { cluster=false; d } }',
+    );
+    expect(asGraph(document.pages[0]!).data.containers).toEqual([
+      { id: 'A', role: 'container', members: ['a'] },
+      { id: 'g', role: 'container', members: ['b'] },
+      { id: 'cluster', role: 'container', members: ['c'] },
+    ]);
+    expect(warnings).toEqual([]);
+  });
+
+  it('keeps a cluster named with a NUL apart from one with no name', () => {
+    const p = page('digraph { subgraph { cluster=1; a } subgraph "\u00000" { cluster=1; b } }');
+    expect(p.data.containers?.map((c) => c.members)).toEqual([['a'], ['b']]);
+  });
+
   it('reads plain subgraphs as scopes only, and nests clusters', () => {
     const p = page('digraph { subgraph cluster_x { subgraph { rank=same; a } subgraph cluster_y { b } } c }');
     expect(p.data.containers).toEqual([
