@@ -34,6 +34,7 @@ export function useSpanSeek(win: Span, at: number, onSeek: ((ms: number, held: b
       onSeek(Math.min(win.to, Math.max(win.from, to)), false);
     },
     onPointerDown: (e) => {
+      if (e.button !== 0) return;
       e.currentTarget.setPointerCapture?.(e.pointerId);
       held.current = true;
       began.current = at;
