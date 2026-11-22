@@ -3,6 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { polygonSampler } from '../bases/polygonSampler';
 import type { EffectModule, PerimeterPoint } from '../bases/types';
 import Aqua from './Aqua';
+import Bevel from './Bevel';
+import Bevel2 from './Bevel2';
+import { bevelBands } from './bevelBands';
 import Bites from './Bites';
 import Metal from './Metal';
 import Perforations from './Perforations';
@@ -108,5 +111,45 @@ describe('a sunbeams angle near 90°', () => {
   it('holds a beam short of horizontal, drawing it at 89°', () => {
     expect(beams({ angle: 90 })).toEqual(beams({ angle: 89 }));
     expect(beams({ angle: 135 })).toEqual(beams({ angle: 89 }));
+  });
+});
+
+describe('bevel bands', () => {
+  const outerOf = (d: string) => {
+    const pts = d.match(/-?[\d.]+ -?[\d.]+/g)!;
+    return pts.slice(0, pts.length / 2);
+  };
+
+  for (const [name, effect] of [['bevel', Bevel], ['bevel2', Bevel2]] as const) {
+    it(`${name} meets each neighbor at one sample, painting no seam twice`, () => {
+      const ds = [...draw(effect as EffectModule<object>, { lightFrom: name === 'bevel' ? 'tl' : 10 }).querySelectorAll('g path')]
+        .map((p) => p.getAttribute('d')!);
+      expect(ds.length).toBeGreaterThan(1);
+      for (let i = 0; i < ds.length; i++) {
+        const a = outerOf(ds[i]);
+        const b = outerOf(ds[(i + 1) % ds.length]);
+        expect(a.filter((pt) => b.includes(pt))).toEqual([a[a.length - 1]]);
+        expect(b[0]).toBe(a[a.length - 1]);
+      }
+    });
+  }
+
+  it('bevel2 draws one band for neighboring buckets of the same shade', () => {
+    const circle = Array.from({ length: 64 }, (_, i): [number, number] => [50 + 50 * Math.cos((i / 64) * 2 * Math.PI), 50 + 50 * Math.sin((i / 64) * 2 * Math.PI)]);
+    const C = Bevel2.Component!;
+    const { container } = render(
+      <svg>
+        <C sampler={polygonSampler(circle, 100, 100)} boxW={100} boxH={100} variant="solid" params={{ lightFrom: 10 }} phase={0} />
+      </svg>,
+    );
+    const classes = [...container.querySelectorAll('g path')].map((p) => p.getAttribute('class'));
+    expect(classes.length).toBeGreaterThan(1);
+    for (let i = 0; i < classes.length; i++) expect(classes[i]).not.toBe(classes[(i + 1) % classes.length]);
+  });
+
+  it('closes a single band round the whole outline', () => {
+    const [band] = bevelBands(polygonSampler(square, 200, 30), 200, 30, 6, () => 'all');
+    const outer = outerOf(band.d);
+    expect(outer[outer.length - 1]).toBe(outer[0]);
   });
 });
