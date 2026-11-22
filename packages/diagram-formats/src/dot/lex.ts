@@ -17,8 +17,10 @@ const PUNCT = '{}[];,=:';
 const fail = (line: number, message: string) => lineError('DOT', line, message);
 
 /** Splits DOT source into tokens, skipping comments. Throws, naming the line, on text it cannot read. */
-export function lexDot(text: string): DotToken[] {
-  const tokens: DotToken[] = [];
+export const lexDot = (text: string): DotToken[] => [...dotTokens(text)];
+
+/** {@link lexDot}'s tokens one at a time, reading only as far as the caller takes them. */
+export function* dotTokens(text: string): Generator<DotToken, void, undefined> {
   let i = 0;
   let line = 1;
   let lineStart = true;
@@ -39,18 +41,17 @@ export function lexDot(text: string): DotToken[] {
     if (text.startsWith('//', i)) { advance(end('\n', i)); continue; }
     if (text.startsWith('/*', i)) { advance(Math.min(text.length, end('*/', i + 2) + 2)); continue; }
     if (text.startsWith('->', i) || text.startsWith('--', i)) {
-      tokens.push({ kind: 'edgeop', value: text.slice(i, i + 2), line });
+      yield { kind: 'edgeop', value: text.slice(i, i + 2), line };
       i += 2;
       continue;
     }
-    if (PUNCT.includes(c)) { tokens.push({ kind: 'punct', value: c, line }); i++; continue; }
-    if (c === '"') { tokens.push(quoted()); continue; }
-    if (c === '<') { tokens.push(html()); continue; }
+    if (PUNCT.includes(c)) { yield { kind: 'punct', value: c, line }; i++; continue; }
+    if (c === '"') { yield quoted(); continue; }
+    if (c === '<') { yield html(); continue; }
     const word = match(NUMERAL) ?? match(NAME);
     if (word === null) throw fail(line, `cannot read "${c}"`);
-    tokens.push({ kind: 'id', value: word, line });
+    yield { kind: 'id', value: word, line };
   }
-  return tokens;
 
   function match(re: RegExp): string | null {
     re.lastIndex = i;

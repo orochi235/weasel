@@ -37,4 +37,11 @@ describe('DIAGRAM_DOT header detection', () => {
       expect(DIAGRAM_DOT.detect(text)).toBe(true);
     }
   });
+
+  it('recognizes an HTML id holding a comment marker, and a quoted id joined with +', () => {
+    for (const text of ['digraph <a//b> { x }', 'digraph "a" + "b" { x }', 'digraph <a/*b> { x }']) {
+      expect(() => readDot(text)).not.toThrow();
+      expect(DIAGRAM_DOT.detect(text)).toBe(true);
+    }
+  });
 });
