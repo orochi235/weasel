@@ -156,6 +156,20 @@ describe('Scene — replaying an entry whose node an untracked edit took', () =>
     expect(scene.roots).toEqual([A]);
   });
 
+  it('skips a move under a node an untracked edit put beneath it', () => {
+    const { scene, add } = makeScene();
+    add('a', 'group');
+    add('b', 'group');
+    scene.move(A, B);
+    scene.undo();
+    scene.untracked(() => scene.move(B, A));
+
+    expect(scene.redo()).toBe(true);
+    expect(scene.roots).toEqual([A]);
+    expect(scene.get(A)!.parent).toBeNull();
+    expect(scene.get(B)!.parent).toBe(A);
+  });
+
   it('does not undo an add out from under children an untracked edit gave it', () => {
     const { scene, spec, add } = makeScene();
     add('g', 'group');
@@ -204,6 +218,23 @@ describe('Scene — replaying an entry whose layer an untracked edit took', () =
 
     expect(scene.redo()).toBe(true);
     expect(scene.get(A)!.layer).toBe('default');
+    expect(scene.redo()).toBe(true);
+    expect(scene.get(B)).toBeUndefined();
+  });
+
+  it('skips a move or an add under a node an untracked edit raised above it', () => {
+    const { scene, add } = layered();
+    scene.addLayer({ id: 'L', name: 'L' });
+    scene.add({ id: G, kind: 'group', layer: 'default', pose: { ...POSE }, data: { label: 'g' } });
+    add('a', 'default');
+    scene.move(A, G);
+    scene.add({ id: B, kind: 'mark', layer: 'default', pose: { ...POSE }, data: { label: 'b' }, parent: G });
+    scene.undo();
+    scene.undo();
+    scene.untracked(() => scene.setLayer(G, 'L'));
+
+    expect(scene.redo()).toBe(true);
+    expect(scene.get(A)!.parent).toBeNull();
     expect(scene.redo()).toBe(true);
     expect(scene.get(B)).toBeUndefined();
   });

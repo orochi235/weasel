@@ -38,10 +38,18 @@ export function createStaleReplay<TData, TLayer extends string, TPose>(
   let replaying = 0;
   /** Kit payloads whose last replay was skipped, by the direction it ran in. */
   const skipped = new WeakMap<object, boolean>();
-  const holds = (id: NodeId | null): boolean => id === null || nodes.has(id);
   const onLayer = (layer: TLayer): boolean => {
     for (const n of nodes.values()) if (n.layer === layer) return true;
     return false;
+  };
+  /** Whether a node on `layer` can sit under `parent`: the parent is there,
+   *  is not `id` or below it, and paints no higher than `layer`. */
+  const fits = (id: NodeId, layer: TLayer, parent: NodeId | null): boolean => {
+    if (parent === null) return true;
+    const p = nodes.get(parent);
+    if (p === undefined || (layers.get(layer) ?? -1) < (layers.get(p.layer) ?? -1)) return false;
+    for (let at: NodeId | null = parent; at !== null; at = nodes.get(at)?.parent ?? null) if (at === id) return false;
+    return true;
   };
   const childless = (id: NodeId, within?: ReadonlySet<NodeId>): boolean => {
     const node = nodes.get(id);
@@ -52,17 +60,22 @@ export function createStaleReplay<TData, TLayer extends string, TPose>(
     switch (kind) {
       case 'kit:add': {
         const p = payload as { id: NodeId; parent: NodeId | null; layer: TLayer };
-        return forward ? nodes.has(p.id) || !holds(p.parent) || !layers.has(p.layer) : !nodes.has(p.id) || !childless(p.id);
+        return forward ? nodes.has(p.id) || !layers.has(p.layer) || !fits(p.id, p.layer, p.parent) : !nodes.has(p.id) || !childless(p.id);
       }
       case 'kit:remove': {
         const p = payload as RemoveSnapshot<TData, TLayer, TPose>;
-        if (!forward) return p.nodes.some((n) => nodes.has(n.id) || !layers.has(n.layer)) || !p.detached.every((d) => holds(d.parent));
+        if (!forward) {
+          if (p.nodes.some((n) => nodes.has(n.id) || !layers.has(n.layer))) return true;
+          const layerOf = new Map(p.nodes.map((n) => [n.id, n.layer]));
+          return !p.detached.every((d) => fits(d.id, layerOf.get(d.id)!, d.parent));
+        }
         const taken = new Set(p.nodes.map((n) => n.id));
         return !p.nodes.every((n) => nodes.has(n.id) && childless(n.id, taken));
       }
       case 'kit:move': {
         const p = payload as { id: NodeId; fromParent: NodeId | null; toParent: NodeId | null };
-        return !nodes.has(p.id) || !holds(forward ? p.toParent : p.fromParent);
+        const node = nodes.get(p.id);
+        return node === undefined || !fits(p.id, node.layer, forward ? p.toParent : p.fromParent);
       }
       case 'kit:setLayer': {
         const p = payload as { id: NodeId; from: TLayer; to: TLayer };
