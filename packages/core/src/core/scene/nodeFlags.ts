@@ -30,6 +30,9 @@ function write(node: { hidden?: boolean; locked?: boolean }, flag: NodeFlag, to:
 
 const KIND: Record<NodeFlag, string> = { hidden: 'kit:setHidden', locked: 'kit:setLocked' };
 
+/** The op kinds these flags record, each naming one node by `id`. */
+export const NODE_FLAG_KINDS: readonly string[] = Object.values(KIND);
+
 /** Register `kit:setHidden` and `kit:setLocked`, and answer with the scene
  *  methods that record them. Neither is refused by a lock: like a layer's,
  *  a node's lock is what lifts it. */

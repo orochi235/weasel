@@ -51,6 +51,18 @@ describe('Scene — replaying an entry whose node an untracked edit took', () =>
     expect(depths()).toEqual([3, 0]);
   });
 
+  it('walks past every declared-field edit of the node', () => {
+    const { scene, add, depths } = makeScene();
+    add('a');
+    scene.setLod(A, [{ as: 'box', fromPx: 4 }]);
+    scene.setUnits(A, { length: 'mm' } as never);
+    scene.untracked(() => scene.remove(A));
+
+    expect(scene.undo()).toBe(true);
+    expect(scene.undo()).toBe(true);
+    expect(depths()).toEqual([1, 2]);
+  });
+
   it('applies the rest of an entry that also names a live node', () => {
     const { scene, add } = makeScene();
     add('a');

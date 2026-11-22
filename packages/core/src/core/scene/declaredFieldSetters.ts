@@ -48,6 +48,9 @@ const KIND: Record<Field, string> = {
   units: 'kit:setUnits', clip: 'kit:setClip', page: 'kit:setPage', pageRun: 'kit:setPageRun', lod: 'kit:setLod',
 };
 
+/** The op kinds these setters record, each naming one node by `id`. */
+export const DECLARED_FIELD_KINDS: readonly string[] = Object.values(KIND);
+
 /** Register the `KIND` ops, and answer with the scene methods that record them. */
 export function createDeclaredFieldSetters<TData, TLayer extends string, TPose>(
   env: DeclaredFieldSettersEnv<TData, TLayer, TPose>,

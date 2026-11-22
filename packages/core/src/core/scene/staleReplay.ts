@@ -7,9 +7,16 @@
  * the entry on top of its stack, and every entry beneath it out of reach. The
  * inverse of a skipped op is skipped too, so undo then redo changes nothing.
  */
+import { DECLARED_FIELD_KINDS } from './declaredFieldSetters';
 import type { RemoveSnapshot } from './kitOps';
+import { NODE_FLAG_KINDS } from './nodeFlags';
 import { hasChildren } from './treeShape';
 import type { Node, NodeId } from './types';
+
+/** Ops that edit one node, named by `id`, and nothing else. */
+const NODE_KINDS: ReadonlySet<string> = new Set([
+  'kit:setPose', 'kit:setData', 'kit:setDependsOn', 'kit:setLayout', ...DECLARED_FIELD_KINDS, ...NODE_FLAG_KINDS,
+]);
 
 /** A scene edit named a node the scene does not hold, or one it already does. */
 export class SceneMembershipError extends Error {
@@ -74,19 +81,8 @@ export function createStaleReplay<TData, TLayer extends string, TPose>(
         // Taking away a layer nodes still sit on would leave them on none.
         return adds ? layers.has(id) : !layers.has(id) || onLayer(id);
       }
-      case 'kit:setPose':
-      case 'kit:setData':
-      case 'kit:setDependsOn':
-      case 'kit:setLayout':
-      case 'kit:setUnits':
-      case 'kit:setClip':
-      case 'kit:setPage':
-      case 'kit:setPageRun':
-      case 'kit:setHidden':
-      case 'kit:setLocked':
-        return !nodes.has((payload as { id: NodeId }).id);
       default:
-        return false;
+        return NODE_KINDS.has(kind) && !nodes.has((payload as { id: NodeId }).id);
     }
   }
 
