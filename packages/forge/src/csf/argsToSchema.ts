@@ -304,8 +304,9 @@ function conditionOf(condition: ArgCondition, read: ArgReader): ((config: Record
   return (config) => {
     const value = read(config, arg);
     if (condition.exists !== undefined) return (value !== undefined) === condition.exists;
-    if ('eq' in condition) return sameKnob(value, condition.eq);
-    if ('neq' in condition) return !sameKnob(value, condition.neq);
+    // As Storybook's `testValue`: an `eq` or `neq` given as `undefined` is no test at all.
+    if (condition.eq !== undefined) return sameKnob(value, condition.eq);
+    if (condition.neq !== undefined) return !sameKnob(value, condition.neq);
     return Boolean(value) === (condition.truthy ?? true);
   };
 }
