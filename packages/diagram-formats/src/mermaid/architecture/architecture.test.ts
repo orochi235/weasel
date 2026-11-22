@@ -94,7 +94,7 @@ describe('writing a Mermaid architecture diagram', () => {
       kind: 'graph', id: 'p', width: 100, height: 100,
       data: { nodes: [{ id: 'a', lines: ['A'], outline: 'hexagon' }, { id: 'b', colors: { fill: '#fff' } }], edges: [{ from: 'a', to: 'b', label: 'x' }] },
     }] });
-    expect(text).toBe('architecture-beta\n  service a[A]\n  service b\n  a:R --> L:b\n');
+    expect(text).toBe('architecture-beta\n  service a[A]\n  service b[]\n  a:R --> L:b\n');
     expect(warnings).toEqual([
       'Mermaid architecture services wear only its built-in icons; other outlines were dropped.',
       'Mermaid architecture edges have no labels; they were dropped.',
@@ -126,5 +126,10 @@ describe('writing a Mermaid architecture diagram', () => {
       nodes: [{ id: 'a' }], edges: [], containers: [{ id: 'g', role: 'container', members: ['a'], colors: { fill: '#fee' } }],
     } }] });
     expect(warnings).toContain('Mermaid architecture diagrams have no styles; colors were dropped.');
+  });
+
+  it('writes a service with no text as an empty title, which reads back with none', () => {
+    const { text } = writeArchitecture({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'b', lines: [] }], edges: [] } }] });
+    expect(page(text).data.nodes[0]!.lines).toEqual([]);
   });
 });
