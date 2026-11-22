@@ -136,6 +136,23 @@ describe('SpanStrip', () => {
     expect(onSeek).toHaveBeenLastCalledWith(450, false);
   });
 
+  it('ignores a second pointer while one holds', () => {
+    const onSeek = vi.fn();
+    const { rerender } = render(<SpanStrip spans={SPANS} at={450} aria-label="lane" onSeek={onSeek} />);
+    const slider = screen.getByRole('slider');
+    slider.getBoundingClientRect = () => ({ left: 0, width: 200, top: 0, height: 22, right: 200, bottom: 22, x: 0, y: 0, toJSON: () => ({}) });
+    fireEvent.pointerDown(slider, { clientX: 20, pointerId: 1 });
+    fireEvent.pointerMove(slider, { clientX: 60, pointerId: 1 });
+    rerender(<SpanStrip spans={SPANS} at={300} aria-label="lane" onSeek={onSeek} />);
+    const calls = onSeek.mock.calls.length;
+    fireEvent.pointerDown(slider, { clientX: 180, pointerId: 2 });
+    fireEvent.pointerMove(slider, { clientX: 190, pointerId: 2 });
+    fireEvent.pointerUp(slider, { clientX: 190, pointerId: 2 });
+    expect(onSeek).toHaveBeenCalledTimes(calls);
+    fireEvent.pointerCancel(slider, { pointerId: 1 });
+    expect(onSeek).toHaveBeenLastCalledWith(450, false);
+  });
+
   it('seeks only on a primary-button press', () => {
     const onSeek = vi.fn();
     render(<SpanStrip spans={SPANS} at={450} aria-label="lane" onSeek={onSeek} />);

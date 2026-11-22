@@ -10,12 +10,13 @@ const KEY_STEP = 0.01;
 type SeekHandlers = Pick<HTMLAttributes<HTMLDivElement>, 'onKeyDown' | 'onPointerDown' | 'onPointerMove' | 'onPointerUp' | 'onPointerCancel'>;
 
 /**
- * The strip's handlers as a slider: a press holds at that moment and a drag follows it, both sent with `held`;
- * letting go sends the last moment without it, and a lost pointer sends back, without it, where the press began. The arrows step,
- * Home and End go to either end. None without `onSeek`.
+ * The strip's handlers as a slider: a primary press holds at that moment and a drag of that pointer follows it,
+ * both sent with `held`; letting go sends the last moment without it, and a lost pointer sends back, without it,
+ * where the press began. Other pointers are ignored while one holds. The arrows step, Home and End go to either
+ * end. None without `onSeek`.
  */
 export function useSpanSeek(win: Span, at: number, onSeek: ((ms: number, held: boolean) => void) | undefined): SeekHandlers {
-  const held = useRef(false);
+  const held = useRef<number | null>(null);
   const began = useRef(0);
   if (!onSeek) return {};
   const msAt = (e: ReactPointerEvent<HTMLDivElement>): number => {
@@ -34,23 +35,23 @@ export function useSpanSeek(win: Span, at: number, onSeek: ((ms: number, held: b
       onSeek(Math.min(win.to, Math.max(win.from, to)), false);
     },
     onPointerDown: (e) => {
-      if (e.button !== 0) return;
+      if (e.button !== 0 || held.current !== null) return;
       e.currentTarget.setPointerCapture?.(e.pointerId);
-      held.current = true;
+      held.current = e.pointerId;
       began.current = at;
       onSeek(msAt(e), true);
     },
     onPointerMove: (e) => {
-      if (held.current) onSeek(msAt(e), true);
+      if (held.current === e.pointerId) onSeek(msAt(e), true);
     },
     onPointerUp: (e) => {
-      if (!held.current) return;
-      held.current = false;
+      if (held.current !== e.pointerId) return;
+      held.current = null;
       onSeek(msAt(e), false);
     },
-    onPointerCancel: () => {
-      if (!held.current) return;
-      held.current = false;
+    onPointerCancel: (e) => {
+      if (held.current !== e.pointerId) return;
+      held.current = null;
       onSeek(began.current, false);
     },
   };
