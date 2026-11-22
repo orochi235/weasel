@@ -52,6 +52,7 @@ export function useThemeEdit(scene: ChartScene): ThemeEdit {
     },
     commit(path, value) {
       frame.cancel();
+      if (pending.current !== null && keyOf(pending.current.path) !== keyOf(path)) flush();
       pending.current = null;
       apply(path, value);
       before.current = null;
