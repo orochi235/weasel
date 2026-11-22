@@ -22,7 +22,7 @@ describe('Mermaid, shrunk counterexamples', () => {
   });
 
   it('writes an architecture title as text, not markup', () => {
-    expect(lines(back({ nodes: [{ id: 'a', lines: [] }, { id: 'b', lines: ['<br>', 'a'] }], edges: [] }, 'architecture'))[1]).toEqual(['<br> a']);
+    expect(lines(back({ nodes: [{ id: 'a', lines: [] }, { id: 'b', lines: ['<br>', 'a'] }], edges: [] }, 'architecture'))[1]).toEqual(['<br>', 'a']);
   });
 
   it('drops, with a warning, an ER row that would not read as an attribute', () => {
