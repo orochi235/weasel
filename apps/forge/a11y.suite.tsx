@@ -2,7 +2,7 @@ import '@weasel-js/forge/shell.css';
 import '@weasel-js/forge/frame.css';
 import { loadStories, runAxe, runStory } from '@weasel-js/forge/test';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { STORY_MODULES as modules, storyKey } from './a11y.files';
+import { STORY_MODULES as modules, storyKey, titleOf } from './a11y.files';
 import { JUDGED, KNOWN, UNSWEPT } from './a11y.known';
 import { type Browser, finishing, unringed } from './a11y.ring';
 import { shardOf } from './a11y.shards';
@@ -22,12 +22,6 @@ let browser: Browser;
 const MODES = ['light', 'dark'] as const;
 const FOCUS_RING = 'focus-ring';
 
-/** `packages/ui/src/components/Button/Button.stories.tsx` → `ui/components/Button`: the package leads, as labkit's frame decorator expects. */
-const titleOf = (path: string) => {
-  const [, pkg, rest] = /packages\/([^/]+)\/src\/(.*)\/[^/]+$/.exec(path) ?? [];
-  return `${pkg}/${rest}`;
-};
-
 /** Waits out every finite animation in `host`, its own fade-in included: axe judges text by the opacity it has now. */
 const settled = (host: HTMLElement) => finishing(host.getAnimations({ subtree: true }));
 
@@ -36,7 +30,7 @@ const judgeFile = (path: string) => {
   if (Object.hasOwn(UNSWEPT, key)) {
     it(`still faults as UNSWEPT records: ${UNSWEPT[key]}`, async () => {
       const mod = (await modules[path]!()) as Record<string, unknown>;
-      const title = titleOf(path);
+      const title = titleOf(mod, path);
       let faults = 0;
       for (const story of loadStories(mod, title, setup.parameters)) {
         if (story.isolate !== null) continue;
@@ -54,7 +48,7 @@ const judgeFile = (path: string) => {
 
   it.each(MODES)('passes axe in %s mode', async (mode) => {
     const mod = (await modules[path]!()) as Record<string, unknown>;
-    const title = titleOf(path);
+    const title = titleOf(mod, path);
     const found: string[] = [];
     for (const story of loadStories(mod, title, setup.parameters)) {
       if (story.isolate !== null) continue;

@@ -14,3 +14,13 @@ export function unresolvedKeys(tables: Readonly<Record<string, object>>, files: 
     Object.keys(entries).filter((key) => !known.has(key)).map((key) => `${table}: ${key}`),
   );
 }
+
+/**
+ * The title the workshop indexes a story module under: its meta's own. A meta naming none is titled by the workshop
+ * from its stories glob, which the sweep cannot see, so it throws rather than guess.
+ */
+export function titleOf(mod: Record<string, unknown>, path: string): string {
+  const title = (mod.default as { title?: unknown } | undefined)?.title;
+  if (typeof title !== 'string' || title === '') throw new Error(`${storyKey(path)}: its meta names no title for the sweep to render it under`);
+  return title;
+}

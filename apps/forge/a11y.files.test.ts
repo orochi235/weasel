@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STORY_MODULES, storyKey, unresolvedKeys } from './a11y.files';
+import { STORY_MODULES, storyKey, titleOf, unresolvedKeys } from './a11y.files';
 import { JUDGED, KNOWN, UNSWEPT } from './a11y.known';
 
 describe('a11y sweep tables', () => {
@@ -17,5 +17,17 @@ describe('a11y sweep tables', () => {
 
   it('keys a file by its path under packages/', () => {
     expect(storyKey('../../packages/labkit/src/x/X.stories.tsx')).toBe('labkit/src/x/X.stories.tsx');
+  });
+});
+
+describe('titleOf', () => {
+  it('takes the title the meta names, as the workshop does', () => {
+    expect(titleOf({ default: { title: 'labkit/Annotations/Calibration' } }, '../../packages/labkit/src/annotations/calibration/Calibration.stories.tsx')).toBe(
+      'labkit/Annotations/Calibration',
+    );
+  });
+
+  it('throws for a meta naming none', () => {
+    expect(() => titleOf({ default: {} }, '../../packages/ui/src/A.stories.tsx')).toThrow(/ui\/src\/A\.stories\.tsx/);
   });
 });
