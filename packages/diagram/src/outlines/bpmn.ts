@@ -91,10 +91,7 @@ const subprocess: OutlineDef = {
     const foot = b.y + b.height - MARKER_GAP - markerOf(b.width, b.height);
     return { ...c, height: Math.max(Math.min(c.y + c.height, foot) - c.y, 0) };
   },
-  boxForContent: (c) => {
-    const box = roundRect.boxForContent!(c);
-    return { width: box.width, height: box.height + MARKER + MARKER_GAP };
-  },
+  boxForContent: (c) => roundRect.boxForContent!({ width: c.width, height: c.height + MARKER + MARKER_GAP }),
 };
 
 export const BPMN_OUTLINES = {
