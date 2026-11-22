@@ -99,3 +99,13 @@ describe('DIAGRAM_JSON page items', () => {
     expect(() => DIAGRAM_JSON.read!(file({ nodes: [{ id: 'a' }], edges: [{ from: 'a', to: 'a' }] }))).not.toThrow();
   });
 });
+
+describe('DIAGRAM_JSON version', () => {
+  it('refuses a document with no numeric version as such, not as a newer one', () => {
+    for (const version of [undefined, '2']) {
+      const text = JSON.stringify({ format: 'weasel-diagram', version, pages: [] });
+      expect(() => DIAGRAM_JSON.read!(text)).toThrow(/no numeric version/);
+    }
+    expect(() => DIAGRAM_JSON.read!(JSON.stringify({ format: 'weasel-diagram', version: 3, pages: [] }))).toThrow(/newer/);
+  });
+});

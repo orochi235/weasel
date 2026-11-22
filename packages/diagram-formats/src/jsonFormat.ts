@@ -51,7 +51,8 @@ function pageProblem(page: Record<string, unknown>, kind: PageKind): string | nu
 function read(text: string): ImportResult {
   const json = parsed(text);
   if (!isDiagramJson(json)) throw new Error('Not a weasel diagram document');
-  if (typeof json.version !== 'number' || json.version > VERSION) {
+  if (typeof json.version !== 'number') throw new Error(`A weasel diagram document with no numeric version (${JSON.stringify(json.version) ?? 'none'})`);
+  if (json.version > VERSION) {
     throw new Error(`A weasel diagram document of version ${String(json.version)}, newer than this reader's ${VERSION}`);
   }
   if (!Array.isArray(json.pages)) throw new Error('A weasel diagram document with no pages list');
