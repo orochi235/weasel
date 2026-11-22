@@ -157,8 +157,9 @@ const wait = () => act(() => new Promise<void>((done) => setTimeout(done, 50)));
 
 /** Lets effects, a lazy load and a first persisted read settle before the page is read: until the markup holds
  *  still across a wait, or half a second has gone. */
-async function settle(host: Element): Promise<void> {
-  for (let tries = 0, last = ''; tries < 10; tries += 1) {
+export async function settle(host: Element): Promise<void> {
+  let last: string | null = null;
+  for (let tries = 0; tries < 10; tries += 1) {
     await wait();
     if (host.innerHTML === last) return;
     last = host.innerHTML;
