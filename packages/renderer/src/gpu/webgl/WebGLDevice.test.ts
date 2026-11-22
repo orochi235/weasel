@@ -261,6 +261,18 @@ describe('WebGLDevice geometry', () => {
   });
 });
 
+describe('WebGLDevice uniforms', () => {
+  it('writes nothing for a ranged write of no numbers', () => {
+    const { rec, gpu } = setup();
+    const { program } = drawable(gpu);
+    program.lookupUniforms(['u_n']);
+    rec.reset();
+    program.set('u_n', 'vec4', new Float32Array(8), 4, 0);
+    program.set('u_n', 'vec4', new Float32Array(8), 8);
+    expect(argsOf(rec, 'uniform4fv')).toEqual([]);
+  });
+});
+
 describe('WebGLDevice resolve', () => {
   it('blits a whole multisampled buffer straight into its destination', () => {
     const { rec, gpu } = setup();
