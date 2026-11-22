@@ -92,10 +92,9 @@ export function pointOnRay(ray: Ray, t: number): Vec3 {
   return add(ray.origin, scale(ray.direction, t));
 }
 
-/** The smallest box containing every point, or null for none, as the 2D
- *  barrel's `boundsOfCoords` and `unionRects` answer. */
+/** The smallest box containing every point, or null for none. A NaN coordinate is skipped, and an axis left with
+ *  none answers null, as the 2D barrel's `boundsOfCoords` does. */
 export function aabbOfPoints(points: readonly Vec3[]): Aabb | null {
-  if (points.length === 0) return null;
   const min = { x: Infinity, y: Infinity, z: Infinity };
   const max = { x: -Infinity, y: -Infinity, z: -Infinity };
   for (const p of points) {
@@ -104,7 +103,7 @@ export function aabbOfPoints(points: readonly Vec3[]): Aabb | null {
       if (p[axis] > max[axis]) max[axis] = p[axis];
     }
   }
-  return { min, max };
+  return min.x <= max.x && min.y <= max.y && min.z <= max.z ? { min, max } : null;
 }
 
 /** The point of the infinite line through `origin` along `direction` nearest

@@ -73,7 +73,7 @@ export function createPlotFrame(scene: AnyScene, frame: PlotFrame = {}): Require
 function worldBox(box: PlotBox, fromPlot: (p: PlotPoint) => PlotPoint): PlotBox {
   const corners = [[box.x, box.y], [box.x + box.width, box.y], [box.x, box.y + box.height], [box.x + box.width, box.y + box.height]]
     .flatMap(([x, y]) => { const p = fromPlot({ x: x!, y: y! }); return [p.x, p.y]; });
-  const [x0, y0, x1, y1] = boundsOfCoords(corners)!;
+  const [x0, y0, x1, y1] = boundsOfCoords(corners) ?? [NaN, NaN, NaN, NaN];
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }
 

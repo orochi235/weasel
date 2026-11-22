@@ -5,7 +5,8 @@ export type Box = readonly [number, number, number, number];
  *  the one that survives being read by a human. */
 export interface Rect { x: number; y: number; width: number; height: number }
 
-/** Tight bounds of an interleaved coord stream, or null if empty. */
+/** Tight bounds of an interleaved coord stream, or null if empty. A NaN coordinate is skipped, and an axis left
+ *  with none answers null. */
 export function boundsOfCoords(coords: ArrayLike<number>): Box | null {
   if (coords.length < 2) return null;
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -16,7 +17,7 @@ export function boundsOfCoords(coords: ArrayLike<number>): Box | null {
     if (x > maxX) maxX = x;
     if (y > maxY) maxY = y;
   }
-  return [minX, minY, maxX, maxY];
+  return minX <= maxX && minY <= maxY ? [minX, minY, maxX, maxY] : null;
 }
 
 /** Smallest box containing both inputs. */

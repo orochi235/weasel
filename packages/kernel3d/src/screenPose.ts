@@ -11,6 +11,7 @@ import type { Pose3 } from './pose3';
 import type { ScreenRect } from './screen';
 import { castOntoPlane, type Viewport3d } from './project';
 
+const NAN3: Vec3 = { x: NaN, y: NaN, z: NaN };
 
 /**
  * The plane through `p` that faces the camera.
@@ -122,7 +123,7 @@ export function poseFromBounds(vp: Viewport3d, bounds: ScreenRect, template: Pos
       add(c, scaleBy(plane.normal, half)),
       sub(c, scaleBy(plane.normal, half)),
     ]),
-  )!;
+  ) ?? { min: NAN3, max: NAN3 };
   return {
     position: scaleBy(add(box.min, box.max), 0.5),
     rotation: quatIdentity(),

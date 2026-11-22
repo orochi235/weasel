@@ -3695,3 +3695,9 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `PaintInput` with a mixed or missing value and `kinds` leaving out `solid` shows no
   body under the kind bar; a kind is chosen in the bar. Seeding the first offered kind from the picked color was
   the alternative.
+
+## Audit round seventy (2026-11-22): geom, part one
+
+- 2026-11-22 (the fixer's call): `boundsOfCoords` and `aabbOfPoints` skip a NaN coordinate, as they did, and answer
+  null when an axis is left with none, where they had answered an inverted box of infinities. Propagating NaN, as
+  `unionRects` does, was the alternative; skipping kept every answer that had been a real box.

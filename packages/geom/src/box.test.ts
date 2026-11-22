@@ -104,3 +104,14 @@ describe('rectBetween', () => {
     expect(rectBetween(4, 2, 1, 6)).toEqual({ x: 1, y: 2, width: 3, height: 4 });
   });
 });
+
+describe('boundsOfCoords with NaN', () => {
+  it('skips a NaN coordinate', () => {
+    expect(boundsOfCoords([NaN, 0, 1, 1])).toEqual([1, 0, 1, 1]);
+  });
+
+  it('answers null when an axis has no number', () => {
+    expect(boundsOfCoords([NaN, NaN])).toBeNull();
+    expect(boundsOfCoords([NaN, 2, NaN, 3])).toBeNull();
+  });
+});
