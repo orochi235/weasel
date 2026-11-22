@@ -45,8 +45,14 @@ function readFilter(known: ReadonlySet<string>): Filter {
   };
 }
 
-function readVersion(): string | null {
-  return new URLSearchParams(window.location.search).get(VERSION_PARAM);
+/** The version `?v=` names, when it is one this page lists: the other page's is not kept here. */
+function readVersion(releases: readonly ReleaseIndexEntry[]): string | null {
+  const version = new URLSearchParams(window.location.search).get(VERSION_PARAM);
+  return releases.some((r) => r.version === version) ? version : null;
+}
+
+function currentPage(): string {
+  return window.location.hash.replace(/^#/, '');
 }
 
 /** Write this view's query params, each dropped when it has no value. */
@@ -110,7 +116,7 @@ export function ReleaseHistory({
   const known = useMemo(() => new Set(packageCounts.map(([name]) => name)), [packageCounts]);
   const [filter, setFilter] = useState<Filter>(() => readFilter(known));
   /** The version the URL named at mount, kept in the URL while this view is shown. */
-  const [version] = useState(readVersion);
+  const [version] = useState(() => readVersion(releases));
   const [linked, setLinked] = useState(version);
   // The link is spent once the first render has opened its section: a section that a filter
   // change remounts later is not being linked to.
@@ -126,7 +132,7 @@ export function ReleaseHistory({
   // The other release page reads the same filter, so it keeps them.
   useEffect(
     () => () => {
-      if (!isReleasesPage(window.location.hash.replace(/^#/, ''))) writeParams(NO_FILTER, null);
+      if (!isReleasesPage(currentPage())) writeParams(NO_FILTER, null);
     },
     [],
   );

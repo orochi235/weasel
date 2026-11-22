@@ -36,3 +36,11 @@ describe('the older releases page', () => {
     expect(screen.getByRole('link', { name: '← Releases since 2.0' })).toHaveAttribute('href', '#__releases');
   });
 });
+
+describe('moving between the two release pages', () => {
+  it('drops a ?v= the arriving page does not list, and keeps the filter', () => {
+    window.history.replaceState(null, '', '/?pkg=core&v=2.1.0#__older_releases');
+    render(<OlderReleases />);
+    expect(window.location.search).toBe('?pkg=core');
+  });
+});
