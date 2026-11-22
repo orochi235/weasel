@@ -275,6 +275,24 @@ describe('reading DOT points', () => {
   });
 });
 
+describe('warning for dropped DOT graph attributes', () => {
+  it('does not warn for a root or plain subgraph\'s attributes a cluster below inherits and reads', () => {
+    const root = readDot('digraph { color=red; style=filled; penwidth=2; subgraph cluster_a { a } }');
+    expect(asGraph(root.document.pages[0]!).data.containers![0]!.colors).toEqual({ fill: 'red', stroke: 'red', strokeWidth: 2 });
+    expect(root.warnings).toEqual([]);
+    const plain = readDot('digraph { subgraph s { label="L"; subgraph cluster_b { b } } }');
+    expect(asGraph(plain.document.pages[0]!).data.containers![0]!.label).toBe('L');
+    expect(plain.warnings).toEqual([]);
+  });
+
+  it('warns for those no cluster inherits, or every cluster below sets for itself', () => {
+    expect(readDot('digraph { color=red; a }').warnings).toEqual(['DOT attributes a diagram does not hold were dropped: color.']);
+    expect(readDot('digraph { subgraph s { label="L"; b } }').warnings).toEqual(['DOT attributes a diagram does not hold were dropped: label.']);
+    expect(readDot('digraph { color=red; subgraph cluster_a { color=blue; a } }').warnings)
+      .toEqual(['DOT attributes a diagram does not hold were dropped: color.']);
+  });
+});
+
 describe("reading a DOT graph's bgcolor", () => {
   it('fills no cluster with the root graph\'s bgcolor, which the page drops, but keeps a cluster\'s own', () => {
     const { document, warnings } = readDot('digraph { bgcolor=lightblue; subgraph cluster_a { x } subgraph cluster_b { bgcolor=pink; y; subgraph cluster_c { z } } }');

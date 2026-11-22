@@ -84,8 +84,29 @@ class DotReader {
 
   constructor(readonly graph: DotGraph) {}
 
+  /** Graph attributes a root or plain scope set and does not read, which count as dropped unless a cluster inherits them. */
+  private readonly unheld: { key: string; value: DotValue }[] = [];
+
   dropUnread(kind: keyof typeof READ, keys: Iterable<string>): void {
     for (const key of keys) if (!READ[kind].has(key)) this.warnings.list('DOT attributes a diagram does not hold were dropped', key);
+  }
+
+  /** Warns for graph attributes `scope` sets that it does not read; a cluster's ones a root or plain scope holds back, as a
+   *  cluster below may read them. */
+  setGraph(scope: Scope, pairs: readonly { key: string; value: DotValue }[]): void {
+    for (const a of pairs) {
+      if (scope.kind !== 'cluster' && !READ[scope.kind].has(a.key) && READ.cluster.has(a.key)) this.unheld.push(a);
+      else this.dropUnread(scope.kind, [a.key]);
+      scope.graph.set(a.key, a.value);
+    }
+  }
+
+  /** Warns for the held-back graph attributes no cluster inherited. */
+  dropUninherited(): void {
+    const clusters = [...this.clusters.values()];
+    for (const { key, value } of this.unheld) {
+      if (!clusters.some((g) => g.get(key) === value)) this.warnings.list('DOT attributes a diagram does not hold were dropped', key);
+    }
   }
 
   touch(ref: DotNodeRef, scope: Scope, named: Set<string>): void {
@@ -98,9 +119,7 @@ class DotReader {
     const named = new Set<string>();
     for (const s of stmts) {
       if (s.kind === 'set' || (s.kind === 'attr' && s.target === 'graph')) {
-        const pairs = s.kind === 'set' ? [{ key: s.key, value: s.value }] : s.attrs;
-        this.dropUnread(scope.kind, pairs.map((a) => a.key));
-        for (const a of pairs) scope.graph.set(a.key, a.value);
+        this.setGraph(scope, s.kind === 'set' ? [{ key: s.key, value: s.value }] : s.attrs);
       } else if (s.kind === 'attr') {
         this.dropUnread(s.target as 'node' | 'edge', s.attrs.map((a) => a.key));
         for (const a of s.attrs) scope[s.target].set(a.key, a.value);
@@ -349,6 +368,7 @@ export function readDot(text: string): ImportResult {
   const r = new DotReader(graph);
   const root = r.root;
   r.walk(graph.stmts, root);
+  r.dropUninherited();
   let nodes = [...r.nodes].map(([id, attrs]) => readNode(r, id, attrs));
   const placed = positions(nodes, r.nodes, str(root.graph, 'bb'));
   if (placed !== null) nodes = placed.nodes;
