@@ -28,7 +28,9 @@ test('the unit\'s four fields share a line inside the pane, and an accepted suff
   renderWithIcons(<div className="unit-editor-box"><PrefSchemaEditor schema={SCHEMA} onChange={() => {}} /></div>);
   fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('heat'));
   const pane = screen.getByRole('region', { name: 'Attributes' });
-  const box = (name: string) => within(pane).getByRole('textbox', { name }).getBoundingClientRect();
+  // A field is its frame: the input inside is as tall as its face's line, which differs between a text and a number
+  // field, and is centered in a frame of one height.
+  const box = (name: string) => within(pane).getByRole('textbox', { name }).parentElement!.getBoundingClientRect();
   const fields = ['Unit suffix', 'Unit scale', 'Unit offset', 'Unit places'].map(box);
   const edge = pane.getBoundingClientRect();
   for (const [i, field] of fields.entries()) {
