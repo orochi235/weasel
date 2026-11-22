@@ -38,6 +38,12 @@ describe('aliasesTo', () => {
     expect(aliasesTo(sections, 'lines/snap')).toEqual({ key: 'snap', node: pointer('snap') });
   });
 
+  it("keys an alias of a section-root dialog's dotted value path with no dot, which a layout key may not hold", () => {
+    const sections: PrefSection = { name: 'Props', members: { look: { name: 'Look', members: { 'stroke.width': flag('Width') } } } };
+    expect(aliasesTo(sections, 'look/stroke.width')).toEqual({ key: 'stroke_width', node: pointer('stroke.width') });
+    expect(aliasesTo(sections, 'look')).toEqual({ key: 'look', node: { name: 'Look', as: 'section', children: { stroke_width: pointer('stroke.width') } } });
+  });
+
   it('makes a heading of a group, over an alias to each setting beneath it, a second of one key numbered', () => {
     expect(aliasesTo(OVER, 'view')).toEqual({
       key: 'view',
