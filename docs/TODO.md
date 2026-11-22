@@ -309,12 +309,6 @@ Owner tags, after the priority (2026-10-26):
   cell). Closes when the played layer is `inert` with its content non-interactive, or a span takes an action of its
   own, and a test clicks a control in a span's content.
 
-- **(P3) [agent] The font-cascade browser test mounts no lab sidebar, aside, footer or trial scene.**
-  `packages/labkit/src/fontCascade.browser.test.tsx` lists `LabSidebarRegion`, `LabAsideRegion`, `LabFooterRegion`
-  and `TrialSceneCanvas` as unmounted: rendered outside forge, `LabFullChrome`'s stories lay out their panes with no
-  sidebar even when their `chrome` arg contributes one (2026-11-21, read from the DOM on the fleet), so nothing there
-  checks those pieces' fonts. Closes when a story or fixture mounts all four and the list is empty.
-
 - **(P3) [maintainer] Trials in one labkit workspace have no way to share params.** Each trial owns its own
   settings, so two trials meant to show one setting from different angles each get their own copy, and editing it
   in one leaves the other behind. Wants a way for trials to declare that a param is shared, and a decision on where

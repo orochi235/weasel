@@ -27,15 +27,7 @@ describeFontCascade('every labkit story sets its text in its container’s face,
   alsoKit: exportedComponents(Object.values(ui)),
   // forge's frame draws every labkit story inside one (apps/forge/forge.frame.tsx).
   wrap: LabRoot,
-  unmounted: {
-    LabSidebarRegion:
-      "mounted only by a lab's own shell, which lays out no sidebar or footer outside forge; see docs/TODO.md",
-    LabAsideRegion:
-      "mounted only by a lab's own shell, which lays out no sidebar or footer outside forge; see docs/TODO.md",
-    LabFooterRegion:
-      "mounted only by a lab's own shell, which lays out no sidebar or footer outside forge; see docs/TODO.md",
-    TrialSceneCanvas: "draws a trial's scene, so only a running trial mounts it; see docs/TODO.md",
-  },
+  unmounted: {},
   skip: {
     './canvas/CanvasStack.stories.tsx#Default':
       "calls forge's useArgs, which only forge's frame provides",
