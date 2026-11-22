@@ -3756,3 +3756,8 @@ Calls the lanes made without a ruling:
   move, sends `onInput` the tracks it began from and then calls `onCancel`, as a canceled drag does and as `ColorField`
   does for a pick closed on its starting color. A drag that previewed nothing calls nothing. Calling nothing at all
   was the alternative.
+## Audit round seventy-one (2026-11-22): Badge effects
+
+- 2026-11-22 (the fixer's call): an `aqua` effect's `equatorTint` or `baseTint`, or a `metal` effect's `topDarkness` or
+  `baseDarkness`, throws a `RangeError` naming it outside 0..100, as round 58 ruled for `plaque({ mix })`, since
+  `color-mix()` rejects such a percentage and the stop paints black. Clamping it was the alternative.

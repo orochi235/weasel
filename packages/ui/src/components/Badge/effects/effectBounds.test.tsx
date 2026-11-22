@@ -1,8 +1,10 @@
 import { render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { polygonSampler } from '../bases/polygonSampler';
 import type { EffectModule, PerimeterPoint } from '../bases/types';
+import Aqua from './Aqua';
 import Bites from './Bites';
+import Metal from './Metal';
 import Perforations from './Perforations';
 import Puffs from './Puffs';
 import Rivets from './Rivets';
@@ -74,4 +76,21 @@ describe('a negative rivets radius', () => {
     expect(drawn.querySelectorAll('ellipse')).toHaveLength(0);
     expect(draw(Rivets, { radius: 0 }).querySelectorAll('ellipse')).toHaveLength(0);
   });
+});
+
+describe('a glassy effect color-mix percentage', () => {
+  const cases: [string, EffectModule<object>, string][] = [
+    ['aqua', Aqua, 'equatorTint'],
+    ['aqua', Aqua, 'baseTint'],
+    ['metal', Metal, 'topDarkness'],
+    ['metal', Metal, 'baseDarkness'],
+  ];
+  for (const [name, effect, param] of cases) {
+    it(`${name} throws a RangeError naming ${param} outside 0..100`, () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      for (const v of [-10, 120]) expect(() => draw(effect, { [param]: v })).toThrow(new RegExp(`${name}.*${param}`));
+      vi.restoreAllMocks();
+      for (const v of [0, 100]) expect(draw(effect, { [param]: v }).innerHTML).toContain(`${v}%`);
+    });
+  }
 });

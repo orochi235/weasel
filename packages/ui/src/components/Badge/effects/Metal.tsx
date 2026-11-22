@@ -5,6 +5,7 @@ import type { EffectModule } from '../bases/types';
 import { finiteParams } from '../shapes/params';
 import { outlineRegion } from '../composeOutline';
 import { GlassStrokes } from './glassStrokes';
+import { mixPercent } from './mixPercent';
 
 /**
  * Metal — opaque cousin of the Aqua treatment, with the same sub-passes. One
@@ -23,7 +24,7 @@ export interface BadgeMetalEffectParams {
   equator?: number;
   /** Half-width of the bright equator band. Smaller = sharper specular. */
   equatorSpread?: number;
-  /** How dark the upper and lower extremes are (% accent vs black, 0..100). */
+  /** How dark the upper and lower extremes are (% accent vs black, 0..100); one outside that range throws a `RangeError`. */
   topDarkness?: number;
   baseDarkness?: number;
   /** Gloss params. */
@@ -68,8 +69,8 @@ const Metal: EffectModule<BadgeMetalEffectParams> = {
     // At spec=0 the equator is just the accent; at spec=1 it's almost white.
     const equatorWhiteMix = 100 - Math.round(spec * 85);
     const equatorColor = `color-mix(in srgb, ${accent} ${equatorWhiteMix}%, white)`;
-    const topDarkColor = `color-mix(in srgb, ${accent} ${cfg.topDarkness}%, black)`;
-    const baseDarkColor = `color-mix(in srgb, ${accent} ${cfg.baseDarkness}%, black)`;
+    const topDarkColor = `color-mix(in srgb, ${accent} ${mixPercent(cfg.topDarkness, 'topDarkness', 'metal')}%, black)`;
+    const baseDarkColor = `color-mix(in srgb, ${accent} ${mixPercent(cfg.baseDarkness, 'baseDarkness', 'metal')}%, black)`;
     // Bright stops on either side of the peak collapse toward the peak as
     // specularity rises, sharpening the highlight.
     const upperBrightMix = 100 - Math.round(spec * 50);
