@@ -163,6 +163,27 @@ describe('useRunScroll', () => {
     expect(clickReaches(items[1]!)).toBe(false);
   });
 
+  test('a drag that starts mid-glide moves the run from where it is drawn, not from where the glide is going', () => {
+    const { root, items, hook } = mount(160);
+    wheel(root, 60);
+    act(() => {
+      vi.advanceTimersByTime(20);
+    });
+    const drawn = hook.result.current.offset;
+    expect(drawn).toBeLessThan(60);
+    act(() => {
+      hook.result.current.onPointerDownCapture(press(items[1]!, 50));
+      document.dispatchEvent(pointer('pointermove', 40));
+    });
+    expect(hook.result.current.offset).toBeCloseTo(drawn + 10);
+    settle();
+    expect(hook.result.current.offset).toBeCloseTo(drawn + 10);
+    act(() => {
+      document.dispatchEvent(pointer('pointerup', 40));
+    });
+    expect(clickReaches(items[1]!)).toBe(false);
+  });
+
   test('a drag scrolls only once it passes the gestures.dragPx kit setting', () => {
     const { items, hook } = mount(160, { dragPx: 30 });
     act(() => {

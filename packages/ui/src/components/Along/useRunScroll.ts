@@ -125,6 +125,8 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
     session.current?.cancel();
     const across = frame?.current ?? el;
     const s0 = positionAt(across, latest.current.run, e);
+    // A press stops a glide where it is drawn, so a drag carries the items from there rather than from its target.
+    scrollTo(drawn.current, 'jump');
     const from = now();
     let scrolling = false;
     let at = s0;
@@ -134,11 +136,7 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
       if (!scrolling && Math.abs(travel) >= (latest.current.dragPx ?? DRAG_THRESHOLD_PX)) {
         scrolling = true;
         // Once it is a drag the root takes the pointer, so the release lands off the item and its press cancels.
-        try {
-          el.setPointerCapture?.(ev.pointerId);
-        } catch {
-          /* a pointer already gone: nothing to retarget */
-        }
+        takePointer(el, ev.pointerId);
       }
       if (scrolling) scrollTo(from - travel, 'jump');
     };
@@ -169,6 +167,14 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
   };
 
   return { offset, onPointerDownCapture, onFocusCapture };
+}
+
+function takePointer(el: Element, pointerId: number): void {
+  try {
+    el.setPointerCapture?.(pointerId);
+  } catch {
+    /* a pointer already gone: nothing to retarget */
+  }
 }
 
 /**
