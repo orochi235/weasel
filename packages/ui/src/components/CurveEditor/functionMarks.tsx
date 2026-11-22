@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { decimal, present } from '@weasel-js/quantity';
 import { ARROW_KEYSHORTCUTS } from '../../handles';
 import { Diamond } from './Diamond';
 import { canAnchorMove, isHiddenAnchor, isPinnedEndpointAt } from './anchorRules';
@@ -9,6 +8,7 @@ import type { EndpointMode, FillSettings, FunctionLayerOptions, FunctionLayerSta
 import type { InterpolationMode } from '@weasel-js/geom';
 import { CurveFill } from './CurveFill';
 import { curvePaths } from './functionCurve';
+import { formatCoord } from './layerMarks';
 
 /** What a function layer's options say about how its anchors look, fixed when the layer is built. */
 export interface AnchorLook extends Pick<FunctionLayerOptions, 'label' | 'renderAnchor' | 'hideNonInteractive'> {
@@ -26,7 +26,6 @@ export function anchorLookFor(cfg: FunctionLayerOptions): AnchorLook {
   };
 }
 
-const formatCoord = (n: number): string => present(n, decimal({ maxPlaces: 3 })).spoken;
 
 /**
  * Everything a function layer draws: its fill, its curve unless hidden, and, given `anchors`, a mark per anchor.
