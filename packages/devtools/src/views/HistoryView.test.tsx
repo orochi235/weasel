@@ -105,12 +105,11 @@ describe('<HistoryView>', () => {
 
   it('keeps the open step open across a read that fails', async () => {
     const page = fakePage();
-    const request = page.client.request.bind(page.client);
     renderWithIcons(<HistoryView client={page.client} rootId="r" />);
     act(() => page.push(step('kit:open')));
     fireEvent.click(await screen.findByRole('cell', { name: 'push' }));
     expect(await screen.findByText('kit:open')).toBeTruthy();
-    page.client.request = (() => Promise.reject(new Error('lost the page'))) as typeof request;
+    page.client.request = (() => Promise.reject(new Error('lost the page'))) as DevtoolsClient['request'];
     act(() => page.push(step('kit:next')));
     expect((await screen.findByRole('alert')).textContent).toBe('lost the page');
     expect(screen.getByText('kit:open')).toBeTruthy();
@@ -133,7 +132,7 @@ describe('<HistoryView>', () => {
     const page = fakePage();
     const request = page.client.request.bind(page.client);
     page.client.request = (async (...args: Parameters<typeof request>) => ({
-      ...(await request(...args)),
+      ...((await request(...args)) as DevtoolsHistorySlice),
       historyEntries: [{ id: 1, label: '' }],
     })) as typeof request;
     renderWithIcons(<HistoryView client={page.client} rootId="r" />);
