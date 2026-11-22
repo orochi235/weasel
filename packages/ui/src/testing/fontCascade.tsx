@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from 'react';
 import { act, render } from '@testing-library/react';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { shown } from './shown';
 import { withIcons } from './withIcons';
 
 // The font-cascade harness: each story renders inside a container set in a face of its own, and every element a kit
@@ -67,7 +68,7 @@ export function exportedComponents(modules: readonly Record<string, unknown>[], 
   const out = new Map<string, unknown>();
   for (const mod of modules) {
     for (const [name, value] of Object.entries(mod)) {
-      if (!/^[A-Z][a-z]/.test(name) || leaveOut.has(name) || isClass(value)) continue;
+      if (!/^[A-Z]/.test(name) || !/[a-z]/.test(name) || leaveOut.has(name) || isClass(value)) continue;
       const tag = value && typeof value === 'object' ? (value as { $$typeof?: symbol }).$$typeof : undefined;
       if (typeof value === 'function' || tag === REACT_MEMO || tag === REACT_FORWARD_REF) out.set(name, value);
     }
@@ -99,16 +100,6 @@ function kitMade(el: Element, kit: Kit): boolean {
   let owner = key ? (el as unknown as Record<string, Fiber>)[key]!._debugOwner : null;
   for (; owner; owner = owner._debugOwner) if (isKit(kit, owner.type)) return true;
   return false;
-}
-
-/** Shown on screen: nothing draws inside a visually hidden box (React Aria's native `<select>` behind its own). */
-function shown(el: Element): boolean {
-  if (!el.checkVisibility()) return false;
-  for (let at: Element | null = el; at; at = at.parentElement) {
-    const box = at.getBoundingClientRect();
-    if (box.width <= 1 && box.height <= 1 && getComputedStyle(at).overflow !== 'visible') return false;
-  }
-  return true;
 }
 
 /** What under `root` that a kit component made is not in the face its nearest root set, or a role's. */
@@ -145,6 +136,11 @@ function mountedTypes(container: Element, into: Set<unknown>): void {
   }
 }
 
+/** The `unmounted` entries no longer true: a case mounts the component, or no module exports it any more. */
+export function staleUnmounted(components: Map<string, unknown>, unmounted: Record<string, string>, seen: (name: string) => boolean): string[] {
+  return Object.keys(unmounted).filter((name) => !components.has(name) || seen(name));
+}
+
 export interface FontCascadeSuite {
   /** Every story to render, as `file#Export`, and any fixture drawing a component no story mounts. */
   readonly cases: [string, ComponentType][];
@@ -164,13 +160,15 @@ const Bare = ({ children }: { children: ReactNode }) => <>{children}</>;
 
 const wait = () => act(() => new Promise<void>((done) => setTimeout(done, 50)));
 
-/** Lets effects, a lazy load and a first persisted read settle before the page is read: until the markup holds
- *  still across a wait, or half a second has gone. */
-async function settle(host: Element): Promise<void> {
-  for (let tries = 0, last = ''; tries < 10; tries += 1) {
+/** Lets effects, a lazy load and a first persisted read settle before the page is read: until the page's markup,
+ *  portals included, holds still across a wait, or half a second has gone. */
+export async function settle(): Promise<void> {
+  let last: string | null = null;
+  for (let tries = 0; tries < 10; tries += 1) {
     await wait();
-    if (host.innerHTML === last) return;
-    last = host.innerHTML;
+    const now = document.body.innerHTML;
+    if (now === last) return;
+    last = now;
   }
 }
 
@@ -186,7 +184,7 @@ export function describeFontCascade(title: string, { cases, components, alsoKit,
       host.setAttribute('data-font-probe', '');
       const before = new Set(document.body.children);
       const view = render(<Wrap><Story /></Wrap>, { container: host, wrapper: withIcons });
-      await settle(host);
+      await settle();
       try {
         mountedTypes(host, mounted);
         const portals = [...document.body.children].filter((el) => el !== host && !before.has(el));
@@ -201,8 +199,7 @@ export function describeFontCascade(title: string, { cases, components, alsoKit,
       const seen = (name: string) => mounted.has(components.get(name)) || mounted.has(nameOf(components.get(name)) ?? name);
       const missing = [...components.keys()].filter((name) => !seen(name) && !Object.hasOwn(unmounted, name));
       expect(missing).toEqual([]);
-      const stale = Object.keys(unmounted).filter((name) => components.has(name) && seen(name));
-      expect(stale, 'listed as unmounted, but a case mounts it').toEqual([]);
+      expect(staleUnmounted(components, unmounted, seen), 'listed as unmounted, but a case mounts it or nothing exports it').toEqual([]);
     });
   });
 }

@@ -1,5 +1,6 @@
 import type { PrefGroup, PrefKind, PrefLeaf } from '@weasel-js/prefs';
 import { icon } from '../icons.gen';
+import { shown } from './shown';
 
 /** A row label on any params surface: PropertyRow's and SelectionPanel's, and labkit's paired cell. */
 const LABEL = '[class*="rowLabel"], .lk-pair-label';
@@ -23,17 +24,6 @@ export interface RowText {
 /** Titles inside a compound row head its parts; they are not its value. */
 const HEADING = 'h1, h2, h3, h4, h5, h6, legend, [role="heading"]';
 
-/** Drawn, and in no box clipped to the 1px a visually hidden element keeps: a native select behind a custom one. */
-const shown = (el: Element) => {
-  if (getComputedStyle(el).visibility === 'hidden') return false;
-  for (let at: Element | null = el; at; at = at.parentElement) {
-    if (getComputedStyle(at).display === 'contents') continue;
-    const box = at.getBoundingClientRect();
-    if (box.width <= 1 || box.height <= 1) return false;
-  }
-  return true;
-};
-
 const skipped = (el: Element) => el.closest('[data-wzl-subordinate]') !== null || el.closest(HEADING) !== null || !shown(el);
 
 /**
@@ -51,7 +41,8 @@ export function rowTexts(root: ParentNode): RowText[] {
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       const el = node.parentElement!;
       const text = node.textContent?.trim() ?? '';
-      if (text === '' || skipped(el)) continue;
+      // A native select's options are drawn only when it opens; the select itself is read below.
+      if (text === '' || label.contains(el) || el.closest('select') || skipped(el)) continue;
       values.push({ text, size: getComputedStyle(el).fontSize });
     }
     for (const control of row.querySelectorAll(TEXT_CONTROL)) {

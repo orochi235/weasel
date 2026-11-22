@@ -1,0 +1,40 @@
+import { describe, expect, it } from 'vitest';
+import { exportedComponents, settle, staleUnmounted } from './fontCascade';
+
+describe('settle', () => {
+  it('waits for markup a story only puts in after its first commit', async () => {
+    const host = document.body.appendChild(document.createElement('div'));
+    setTimeout(() => (host.innerHTML = '<p>loaded</p>'), 70);
+    await settle();
+    expect(host.innerHTML).toBe('<p>loaded</p>');
+    host.remove();
+  });
+
+  it('waits for a portal that fills in after the story itself holds still', async () => {
+    const host = document.body.appendChild(document.createElement('div'));
+    host.innerHTML = '<p>story</p>';
+    const portal = document.body.appendChild(document.createElement('div'));
+    setTimeout(() => (portal.innerHTML = '<p>loading</p>'), 70);
+    setTimeout(() => (portal.innerHTML = '<p>popover</p>'), 130);
+    await settle();
+    expect(portal.innerHTML).toBe('<p>popover</p>');
+    host.remove();
+    portal.remove();
+  });
+});
+
+describe('exportedComponents', () => {
+  it('takes PascalCase names that open on an acronym, and leaves constants out', () => {
+    const fn = () => null;
+    const found = exportedComponents([{ XYPad: fn, A11yPanel: fn, Slider: fn, SHAPE_TOOLS: fn, X: fn, useThing: fn }]);
+    expect([...found.keys()]).toEqual(['XYPad', 'A11yPanel', 'Slider']);
+  });
+});
+
+describe('staleUnmounted', () => {
+  it('names an entry for a component a case mounts, or one nothing exports', () => {
+    const components = new Map<string, unknown>([['Bar', 1], ['BarSpacer', 2], ['Slider', 3]]);
+    const unmounted = { BarSpacer: 'renders nothing', Slider: 'needs a frame', BarGap: 'renamed since' };
+    expect(staleUnmounted(components, unmounted, (name) => name === 'Slider')).toEqual(['Slider', 'BarGap']);
+  });
+});

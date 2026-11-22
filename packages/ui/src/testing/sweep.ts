@@ -6,13 +6,13 @@ function middleOf(el: Element): { x: number; y: number } {
   return { x: r.left + Math.min(8, r.width / 2), y: r.top + r.height / 2 };
 }
 
-/** Fires `type` at whatever the page draws at `at`, as a mouse with its button down. */
+/** Fires `type` at whatever the page draws at `at`, as the primary mouse with its button down. */
 function fireAt(type: string, at: { x: number; y: number }, init: PointerEventInit): void {
   const el = document.elementFromPoint(at.x, at.y);
   if (!el) throw new Error(`nothing is drawn at ${at.x}, ${at.y}`);
   act(() => {
     el.dispatchEvent(new PointerEvent(type, {
-      bubbles: true, pointerId: 1, pointerType: 'mouse', button: 0, buttons: 1, clientX: at.x, clientY: at.y, ...init,
+      bubbles: true, pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0, buttons: 1, clientX: at.x, clientY: at.y, ...init,
     }));
   });
 }
@@ -25,5 +25,5 @@ export function sweepAcross(path: readonly Element[], init: PointerEventInit = {
   if (!first) return;
   fireAt('pointerdown', first, init);
   for (const p of rest) fireAt('pointermove', p, init);
-  fireAt('pointerup', points.at(-1)!, init);
+  fireAt('pointerup', points.at(-1)!, { ...init, buttons: 0 });
 }
