@@ -1,3 +1,4 @@
+import type { TileOptions } from 'core/layers/tiles';
 import type { ModeRegistry } from '@weasel-js/modes';
 import type { PathEditHost, PathEditOpening } from './pathEditHost';
 import type { SceneCanvasGeometry } from './geometryProps';
@@ -89,6 +90,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  spread over that slot's defaults; pass `slot: null` to suppress a
      *  default explicitly. */
     layers?: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose>;
+
+    /** Scene layers this canvas keeps as tile pyramids, by layer id (`{ backdrop: {} }`): a zoom over
+     *  one draws tiles it holds and bakes the rest under a frame budget, a coarser tile standing in.
+     *  A view's choice, not the document's: nothing of it is saved. See `TileOptions`. */
+    tiles?: Readonly<Partial<Record<TLayer, TileOptions>>>;
 
     /** Carries the siblings a layout reflow displaces to their slots over time
      *  instead of snapping them — `useAnimatedReflow` builds one. Covers a

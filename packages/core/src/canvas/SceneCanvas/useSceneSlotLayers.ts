@@ -13,6 +13,7 @@ import { isCustomEntry, type LayersMap, type SceneSlotLayers } from '../layerSlo
 import { wireSceneSlotToScene } from '../sceneSlotWiring';
 import { useSceneLayersKey } from '../useSceneLayersKey';
 import type { LodState } from '../lod/lodState';
+import type { TileOptions } from 'core/layers/tiles';
 
 type SceneSlot<TData, TLayer extends string, TPose> =
   LayersMap<Node<TData, TLayer, TPose>, TPose>['scene'];
@@ -31,24 +32,27 @@ export function useSceneSlotLayers<TData, TLayer extends string, TPose>(args: {
   previewIds: () => Iterable<string> | null;
   /** What the canvas drew each node as last frame, shared with its picking. */
   lodState?: LodState;
+  /** `<SceneCanvas tiles>`, laid over the slot's own. */
+  tiles?: Readonly<Record<string, TileOptions>>;
 }): {
   /** The scene-wired config, for whatever else paints with its `drawOne`. */
   config: SceneSlot<TData, TLayer, TPose>;
   /** Absent when the slot is empty or carries no `drawOne`; a pre-built layer is the whole slot. */
   layers: SceneSlotLayers | undefined;
 } {
-  const { slot, scene, adapter, alphaFor, paintOverrides, boundsOf, previewIds, lodState } = args;
+  const { slot, scene, adapter, alphaFor, paintOverrides, boundsOf, previewIds, lodState, tiles } = args;
 
   const config = useMemo(() => {
     if (!slot || isCustomEntry(slot)) return slot;
+    const own = slot as SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>;
     return wireSceneSlotToScene(
-      slot as SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
+      tiles ? { ...own, tiles: { ...own.tiles, ...tiles } } : own,
       scene,
       alphaFor,
       paintOverrides,
       lodState,
     );
-  }, [slot, alphaFor, scene, paintOverrides, lodState]);
+  }, [slot, alphaFor, scene, paintOverrides, lodState, tiles]);
 
   const sceneLayersKey = useSceneLayersKey(adapter);
   const layers = useMemo<SceneSlotLayers | undefined>(() => {

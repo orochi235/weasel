@@ -18,6 +18,7 @@ import { ViewSnap } from './viewSnap';
 import type { WorkerStack } from './renderWorker/useWorkerStack';
 import type { CanvasWorkerSurface } from './renderWorker/workerStack';
 import type { Rect } from '@weasel-js/geom';
+import { frameTileHost } from './tileHosts';
 
 /** What a frame's paint reads that a React render owns. */
 export interface PaintInputs extends Pick<CanvasProps<unknown>, 'dpr' | 'layerGroups' | 'shaders' | 'flattenTolerance' | 'imageMinification' | 'retain'> {
@@ -134,6 +135,7 @@ export function useCanvasPaint(
       return true;
     }
     const spans = debugFrame?.time();
+    const tiles = frameTileHost(renderer, paintLayers);
     const commands = drawLayers(
       paintLayers,
       helpersRef.current,
@@ -146,8 +148,10 @@ export function useCanvasPaint(
       groups,
       spans,
       retainPolicy(retain),
+      tiles,
     );
     renderer.render(commands, viewToMat3(view), spans ? { spans } : undefined);
+    if (tiles?.owesFrame()) requestRedraw();
     lastFrameRef.current = { renderer, commands, view };
     const stats = renderer.lastFrameStats();
     if (spans) debugFrame?.end([{ spans, render: stats }]);

@@ -34,6 +34,7 @@ import type { EnteredGroupApi } from '../deps/enteredGroup';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from 'domains/snap/outcomeStore';
 import { createSnapReadoutLayer } from 'domains/snap/readoutLayer';
 import type { LodState } from '../lod/lodState';
+import type { TileOptions } from 'core/layers/tiles';
 import type { SnapReadoutStyle } from 'domains/snap/types';
 
 interface SceneCanvasLayersArgs<TData, TLayer extends string, TPose> {
@@ -71,6 +72,8 @@ interface SceneCanvasLayersArgs<TData, TLayer extends string, TPose> {
   selectionChrome: SelectionChrome | undefined;
   /** What the canvas drew each node as last frame, shared with its picking. */
   lodState?: LodState;
+  /** `<SceneCanvas tiles>`. */
+  tiles?: Readonly<Record<string, TileOptions>>;
 }
 
 /**
@@ -118,6 +121,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
     boundsOf: args.boundsOf,
     previewIds: args.previewIds,
     ...(args.lodState ? { lodState: args.lodState } : {}),
+    ...(args.tiles ? { tiles: args.tiles } : {}),
   });
   // Takes the scene-wired slot, so a ghosted derived node still resolves its path.
   const previewLayer = usePreviewGhostLayer<TData, TLayer, TPose>({ scene, sceneSlot, dispatcher });

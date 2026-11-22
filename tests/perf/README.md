@@ -735,6 +735,30 @@ The scenes with no ladders read 7–13% faster after, in one run each side; noth
 them faster, so that is the node's noise, and the per-node cost the rung check adds is below it. The runs
 are in `tests/perf/recorded/lod-2026-11-21/`.
 
+## A tiled backdrop
+
+`tile-zoom.spec.ts` zooms a 1280 × 800 canvas at dpr 2 over 100k rect nodes in one scene layer, from
+fit-all to 64× and back over 600 frames, then pans 200, once with the layer drawn live (culled) and
+once tiled (`docs/concepts.md`, "Tiled layers"). Each frame is `drawLayers`, the bakes, `render` and a
+`gl.finish`; the tiled run also records tiles baked, bake time, stand-ins, live draws and tile bytes:
+
+    onto do --kind bench --gui -- npx playwright test --config tests/perf/playwright.config.ts tile-zoom
+
+On msb-uai (Apple M3 Max, ANGLE Metal) on 2026-11-21, the tiled run's first frame (the floor) left out:
+
+| frames | live median (ms) | live p95 | tiled median (ms) | tiled p95 |
+|---|---:|---:|---:|---:|
+| near fit-all (first and last 60 of the zoom) | 79.775 | 110.640 | 1.900 | 18.265 |
+| deep in (frames 240–360) | 0.120 | 0.265 | 0.110 | 1.075 |
+| the pan | 2.385 | 2.960 | 0.160 | 1.750 |
+| the whole zoom | 3.440 | 100.175 | 0.285 | 12.555 |
+
+No frame of the tiled run after the first drew the layer live. Its frames that baked nothing took
+0.110 ms (median) and 0.190 (p95); frames that baked took 1.345 and 15.180, the budget's 10 ms and the
+compositing. The slowest, 117.665 ms, baked one tile of a coarse level holding most of the scene:
+a frame always bakes at least one tile, however long it takes. The tiles peaked at 249.9 MiB of the
+256 MiB bound. The run is in `tests/perf/recorded/tiles-2026-11-21/`.
+
 ## An image's upload through the 2D canvas
 
 WebGL draws every `ImageBitmap` bound for an image texture into a scratch 2D canvas and uploads the

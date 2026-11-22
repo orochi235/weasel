@@ -583,12 +583,14 @@ on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed a
   only the point pick today: a region query takes no view state); `<SceneViewCanvas>` and the worker view
   holding a `LodState` of their own (both pick statelessly now), the worker posting the ids whose rung
   enters or leaves a skipping one. Closes when each of those has shipped with a test.
-- **(P3) [agent] A tile-pyramid layer.** `retain` (`packages/renderer/src/draw/retained.ts`) survives only
-  whole-device-pixel pans; any zoom redraws. A layer renders its content into `z/tx/ty` power-of-two tiles
-  under a per-frame budget, draws a coarser parent until a finer tile is ready, cross-fades between levels,
-  and keeps a bounded LRU with the coarsest level pinned (pezlie's `wall/src/tiles.ts`). Design:
-  `docs/proposals/2026-11-19-tile-pyramid.md`. Closes when a layer can be marked tiled, a zoom over a static backdrop draws from
-  tiles with no full redraw (measured), and the cache's bound is tested.
+- **(P3) [agent] Tiled layers in detached and worker views.** Tile pyramids landed on 2026-11-21
+  (`docs/concepts.md`, "Tiled layers"): `<SceneCanvas tiles>`, `RenderLayer.tiles` and the page-painted
+  layers of a worker canvas. Left: `<SceneViewCanvas tiles>` (it paints through `sceneViewFrame`, not
+  `drawLayers`); the render worker's scene layers, which bake there through the worker's renderer; a
+  parallax layer tiled through its plane's view; a whole-view crossfade when the shown level changes
+  (each tile fades in on its own now); and a coarse tile split into several bakes when one would pass the
+  frame budget by itself (117 ms for a fit-all tile of 100k nodes in `tile-zoom.spec.ts`). Closes when
+  each has shipped with a test, and no frame of that spec's tiled run passes 30 ms.
 - **(P3) [agent] A streaming scene source.** Nothing loads or drops nodes as the view moves; a consumer on
   `onViewChange` pays an undo-history entry per change. A source answers the nodes
   of a world rect, loads in priority order (on screen, the margin, where a fling will land), adds and drops

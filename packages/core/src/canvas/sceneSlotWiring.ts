@@ -21,6 +21,8 @@ import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
 import { withShownNode } from './shownNodes';
 import { drawnPoseOf } from 'core/scene/outputGrid';
 import type { LodState } from './lod/lodState';
+import { createSceneTileSources } from './reach/tileDamage';
+import { defaultPaintBounds } from './defaultDrawOne';
 
 /**
  * The alpha a view paints a node at: the view's own `alphaFor` times any
@@ -80,5 +82,6 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
     alphaFor: composeAlphaFor(scene, alphaFor),
     shapes: nodeShapesOf(scene),
     ...(lodState ? { lodState } : {}),
+    ...(slot.tiles ? { tileSourceFor: createSceneTileSources(scene, slot.paintBounds ?? defaultPaintBounds, slot.toPose) } : {}),
   };
 }

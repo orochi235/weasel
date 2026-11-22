@@ -17,6 +17,7 @@ import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type React from 'react';
 import { forwardRef, useMemo, useRef } from 'react';
+import type { TileOptions } from 'core/layers/tiles';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { Canvas } from './Canvas';
 import { canvasDebug, DevHuds } from './SceneCanvas/DevHuds';
@@ -108,7 +109,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     enteredGroup: picking.enteredGroup, frameColor, alphaFor: props.alphaFor, paintOverrides: props.animator, boundsOf, planeOfNode,
     poseTransition: props.poseTransition, previewIds: previewIdsExtra, dispatcher, snapReadout: props.snap?.readout !== false, snapReadoutStyle: props.snap?.readoutStyle, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
-    boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true, selectTool: selectToolOpts, selectionChrome: enabled.selectionChrome, lodState: picking.lodState,
+    boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true, selectTool: selectToolOpts, selectionChrome: enabled.selectionChrome, lodState: picking.lodState, tiles: props.tiles as Readonly<Record<string, TileOptions>> | undefined,
   });
   const workerSurface = useSceneWorkerSurface(props, scene as Scene<unknown, string, unknown>, previewIdsExtra, layered.sceneSlot);
   const redrawOn = useSceneRedrawSources({ props, scene, heldModifiers, departures: layered.departures });

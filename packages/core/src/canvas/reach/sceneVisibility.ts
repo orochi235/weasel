@@ -81,53 +81,7 @@ class SceneVisibility {
   }
 
   private source(octaves: ReadonlyMap<string, View>): ReachSource {
-    const { scene, toPose } = this;
-    const reachBounds = this.paintBounds === defaultPaintBounds ? defaultReachBounds : this.paintBounds;
-    const bounds = sceneCullPaintBounds(scene, reachBounds, shownLookup(scene), toPose);
-    const painted = scenePaintedPoseOf(scene, toPose as never) as (node: AnyNode) => unknown;
-    const drawnAt = drawnPoseOf(scene);
-    const fallback = octaves.values().next().value as View | undefined;
-    let markers = markerGeneration();
-    return {
-      dim: 2,
-      changesSince: (token) => {
-        const changed = scene.changesSince(token);
-        // A marker's shape lands outside the scene, and moves every box that draws one.
-        if (markerGeneration() === markers) return changed;
-        markers = markerGeneration();
-        return { ...changed, ids: 'unknown', parents: new Set(), structural: true };
-      },
-      childrenOf: (id) => (id === null ? scene.roots : scene.get(asNodeId(id))?.children ?? []),
-      parentOf: (id) => {
-        const node = scene.get(asNodeId(id));
-        return node === undefined ? undefined : node.parent;
-      },
-      ownBox: (id, out, at) => {
-        const node = scene.get(asNodeId(id));
-        if (node === undefined) return BOX_NONE;
-        const pose = painted(node);
-        const drawn = drawnAt ? drawnAt(nodeAsShown(scene.overrides, node), pose) : pose;
-        const view = octaves.get(node.layer) ?? fallback;
-        if (view === undefined) return BOX_ALL;
-        let b;
-        try {
-          b = bounds(node, drawn, view);
-        } catch {
-          b = null;
-        }
-        return writeBounds(b, poseFrameOf(drawn), out, at);
-      },
-      tagsOf: (id) => {
-        const node = scene.get(asNodeId(id));
-        return node === undefined ? 0 : 1 << this.tagOf(node.layer);
-      },
-      imagesOf: (id) => {
-        const node = scene.get(asNodeId(id)) as (AnyNode & { copiesFromPose?: (p: unknown, n: unknown) => readonly import('@weasel-js/geom').Affine[] | null }) | undefined;
-        if (typeof node?.copiesFromPose !== 'function') return null;
-        const copies = node.copiesFromPose(painted(node), node);
-        return copies && copies.length > 0 ? copies.map(affineImage) : null;
-      },
-    };
+    return sceneReachSource(this.scene, this.paintBounds, this.toPose, octaves, (layer) => this.tagOf(layer));
   }
 
   private bits: { layers: readonly unknown[]; of: Map<string, number> } | null = null;
@@ -138,6 +92,60 @@ class SceneVisibility {
     if (this.bits?.layers !== layers) this.bits = { layers, of: new Map(layers.map((l, i) => [l.id, Math.min(i, TAG_BITS)])) };
     return this.bits.of.get(layer) ?? TAG_BITS;
   }
+}
+
+/** A reach source over `scene`'s paint boxes, by `paintBounds` at each layer's view in `octaves`, its nodes tagged by
+ *  `tagOf` their layer. */
+export function sceneReachSource(
+  scene: AnyScene, paintBounds: PaintBoundsFn<AnyNode, unknown>, toPose: ToPose | undefined,
+  octaves: ReadonlyMap<string, View>, tagOf: (layer: string) => number,
+): ReachSource {
+  const reachBounds = paintBounds === defaultPaintBounds ? defaultReachBounds : paintBounds;
+  const bounds = sceneCullPaintBounds(scene, reachBounds, shownLookup(scene), toPose);
+  const painted = scenePaintedPoseOf(scene, toPose as never) as (node: AnyNode) => unknown;
+  const drawnAt = drawnPoseOf(scene);
+  const fallback = octaves.values().next().value as View | undefined;
+  let markers = markerGeneration();
+  return {
+    dim: 2,
+    changesSince: (token) => {
+      const changed = scene.changesSince(token);
+      // A marker's shape lands outside the scene, and moves every box that draws one.
+      if (markerGeneration() === markers) return changed;
+      markers = markerGeneration();
+      return { ...changed, ids: 'unknown', parents: new Set(), structural: true };
+    },
+    childrenOf: (id) => (id === null ? scene.roots : scene.get(asNodeId(id))?.children ?? []),
+    parentOf: (id) => {
+      const node = scene.get(asNodeId(id));
+      return node === undefined ? undefined : node.parent;
+    },
+    ownBox: (id, out, at) => {
+      const node = scene.get(asNodeId(id));
+      if (node === undefined) return BOX_NONE;
+      const pose = painted(node);
+      const drawn = drawnAt ? drawnAt(nodeAsShown(scene.overrides, node), pose) : pose;
+      const view = octaves.get(node.layer) ?? fallback;
+      if (view === undefined) return BOX_ALL;
+      let b;
+      try {
+        b = bounds(node, drawn, view);
+      } catch {
+        b = null;
+      }
+      return writeBounds(b, poseFrameOf(drawn), out, at);
+    },
+    tagsOf: (id) => {
+      const node = scene.get(asNodeId(id));
+      return node === undefined ? 0 : 1 << tagOf(node.layer);
+    },
+    imagesOf: (id) => {
+      const node = scene.get(asNodeId(id)) as (AnyNode & { copiesFromPose?: (p: unknown, n: unknown) => readonly import('@weasel-js/geom').Affine[] | null }) | undefined;
+      if (typeof node?.copiesFromPose !== 'function') return null;
+      const copies = node.copiesFromPose(painted(node), node);
+      return copies && copies.length > 0 ? copies.map(affineImage) : null;
+    },
+  };
 }
 
 /** How many `paintBounds` / `toPose` pairs a scene keeps an index for, the least recently used dropped past it.

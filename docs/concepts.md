@@ -1044,6 +1044,52 @@ this.
 
 What it costs and buys is in `tests/perf/README.md`, "Level of detail" (2026-11-21).
 
+## Tiled layers
+
+A layer kept as a **tile pyramid** draws from square tiles of its pixels baked at power-of-two
+scales in its own world space, so a zoom draws tiles it already holds, resampled, and bakes only what
+is missing. `retain` keeps one layer's exact pixels under one transform; tiles survive any pan or zoom
+at the cost of a 1 to 2× resample. A tiled layer is never retained.
+
+**Opting in.** It is a view's choice, not the document's: `<SceneCanvas tiles={{ backdrop: {} }}>`
+for a scene layer (also `layers={{ scene: { tiles } }}`), or `tiles: TileOptions` on a consumer
+`RenderLayer`. A screen-space layer cannot tile; a layer with `effects`, and a parallax scene layer,
+draw live.
+
+| `TileOptions` | Default | |
+|---|---|---|
+| `tilePx` | 512 | a tile's side in texels; each is baked with a one-texel gutter and sampled inside it, so neighbors meet with no seam |
+| `maxLevel` | none | past it the layer draws live, so a deep zoom stays sharp |
+| `floorTiles` | 2 | the pinned floor holds the layer's `bounds` in at most this many tiles a side |
+| `fadeMs` | 160 | a tile baked after its spot came on screen fades in over its stand-in |
+
+**The parts.** `@weasel-js/tiles` holds the pyramid with no GPU in it: a scheme (the plane's keys are
+`z/x/y`, a tile at level `z` covering `tilePx / 2^z` world units), a cache bounded by count (twice the
+working set, at least 128) and bytes together, evicting the least recently drawn and never the floor
+or a tile drawn this frame, and the frame planner. The renderer bakes (`renderer.tiles.bake` draws a
+tile's commands into a pooled texture) and draws (`{ kind: 'tile' }`, staged in the batch's image
+runs). Core's `TileHost`, one per renderer (`tileHostOf`), runs each tiled layer's pyramid inside
+`drawLayers`: a bake is the layer's own `draw` under the tile's view, with `dims.bake` set so it culls to
+the tile and records nothing for the view (its level-of-detail record, for one).
+
+**A frame.** The level is the coarsest at least as sharp as the screen, `ceil(log2(px per unit))`,
+held until `log2` passes a boundary by 1/16. A frame bakes, under the canvas's budget (10 ms and 4
+tiles, always at least one), the floor, then missing tiles on screen nearest the center, then stale
+ones, then the level a zoom out lands on and a ring past the screen leaning the way the view moves. A
+missing tile is drawn from the nearest held tile up to 8 levels above, sampling its part, with held
+tiles up to 2 levels below drawn over that. When the screen and the floor would break the byte bound,
+the screen drops a level. While anything is wanted or fading, the host asks for another frame.
+
+**Edits.** A scene layer's tiles are staled by damage: a reach tree of the host's own reports each
+named node's own box before and after a change (boxing paint at 1/16 scale, so a `{ px }` stroke is
+boxed as wide as it can draw), and every held tile those boxes meet, padded by a texel at its level,
+goes stale. A change the feed cannot name stales every tile. A consumer layer's tiles go stale
+together when its `deps` move, so its `deps` must not read the view. A stale tile keeps standing in;
+while an edit goes on, the layer is drawn live through its stale tiles when they are at most a quarter
+of the screen's, and it rebakes once the damage has held still for a frame.
+
+What it costs and buys is in `tests/perf/README.md`, "A tiled backdrop" (2026-11-21).
+
 ## Tool
 
 A tool is a list of `{ spec, actionId }` bindings that are live while it holds
