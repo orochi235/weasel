@@ -759,6 +759,21 @@ compositing. The slowest, 117.665 ms, baked one tile of a coarse level holding m
 a frame always bakes at least one tile, however long it takes. The tiles peaked at 249.9 MiB of the
 256 MiB bound. The run is in `tests/perf/recorded/tiles-2026-11-21/`.
 
+What it costs a canvas that tiles nothing, on the same node: `scene/visibility.bench.ts`'s small and
+closing cases before the tiling commits (`93e4539d`, its second pass, the first having run at a load
+average of 16) and after (`56938f09`), medians in ms:
+
+| case | before | after |
+|---|---:|---:|
+| 100 all on screen, cull on | 0.147 | 0.144 |
+| 1k all on screen, cull on | 1.168 | 1.146 |
+| 10k all on screen, cull on | 12.213 | 11.308 |
+| 100k flat, 1% on screen | 1.792 | 1.858 |
+| 100k nested, 1% on screen | 1.813 | 1.663 |
+| 100k flat, one node dragged | 1.442 | 1.458 |
+
+Within −7% to +4% either way, which is this node's noise: nothing measurable. Those runs are beside it.
+
 ## An image's upload through the 2D canvas
 
 WebGL draws every `ImageBitmap` bound for an image texture into a scratch 2D canvas and uploads the
