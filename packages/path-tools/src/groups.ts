@@ -7,10 +7,14 @@
  * <ActionBar group={pathToolsGroups.anchorSelection} />
  * ```
  *
- * Its actions that edit anchors or whole paths sit in core's `anchors` and `path` groups (`@weasel-js/core/groups`).
+ * Its other actions sit in core's `anchors` and `path` groups and editing's `edit` and `pathfinder`
+ * (`@weasel-js/editing/groups`).
  *
  * @packageDocumentation
  */
 export { ANCHOR_SELECTION_GROUP as anchorSelection } from './anchorSelect/anchorSelect';
+export { CONSTRAINTS_GROUP as constraints } from './constraints/anchorConstraints';
+export { NUDGE_ANCHORS_GROUP as nudgeAnchors } from './pathEdit/anchorNudge';
+export { TEXT_GROUP as text } from './outlines/createOutlinesAction';
 export { PATH_EFFECTS_GROUP as pathEffects } from './pathEffects/actions';
 export { PATH_OVERLAYS_GROUP as pathOverlays } from './overlays/showOverlay';

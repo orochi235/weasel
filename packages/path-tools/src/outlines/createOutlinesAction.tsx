@@ -44,6 +44,9 @@ export function runCreateOutlines(
   return withOutlines(adapter, [...ids], (at) => applyCreateOutlines(adapter, at), 'createOutlines', notices);
 }
 
+/** The `group` Create Outlines sits in, beside the text tools. */
+export const TEXT_GROUP = 'text';
+
 /**
  * Static descriptor for Create Outlines: replace the operands that have
  * an outline (text's glyphs) with path nodes carrying it. Reads the
@@ -53,7 +56,7 @@ export const createOutlinesAction: Action = {
   id: 'createOutlines',
   label: 'Create Outlines',
   icon: icon('core:createOutlines'),
-  group: 'text',
+  group: TEXT_GROUP,
   // Mod+Enter, since Mod+Shift+O is Chrome's bookmark manager.
   defaultBinding: [{ spec: { kind: 'key', key: 'Enter', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'createOutlines.key' } }],
   eligible: { capability: 'creates-shapes' },
