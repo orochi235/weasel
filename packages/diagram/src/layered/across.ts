@@ -103,7 +103,6 @@ function settleLevel(ctx: Context, ids: readonly string[], depth: number, pref: 
   squeeze(items, order, xs, gap);
   for (const list of order) {
     if (clear(items, list, xs, gap)) continue;
-    if (list.some((i) => items[i]!.fixed === undefined && items[i]!.tall)) return false;
     jump(items, list, xs, gap);
     if (!clear(items, list, xs, gap)) return false;
   }
@@ -199,11 +198,14 @@ function clear(items: readonly Item[], list: readonly number[], xs: readonly num
 /**
  * A rank's free nodes, in order, each at its preferred place or the first
  * clear one past it, jumping a held item it lands on: toward the high end or
- * the low, whichever moves them less in all. Writes into `xs`.
+ * the low, whichever moves them less in all. Writes into `xs`. A column
+ * spanning ranks stays where `squeeze` put it, since moving it here would
+ * move it in its other ranks too.
  */
 function jump(items: readonly Item[], list: readonly number[], xs: number[], gap: number): void {
-  const blocks = list.filter((i) => items[i]!.fixed !== undefined).map((i) => ({ lo: xs[i]! - gap, hi: xs[i]! + items[i]!.width + gap }));
-  const free = list.filter((i) => items[i]!.fixed === undefined);
+  const movable = (i: number) => items[i]!.fixed === undefined && !items[i]!.tall;
+  const blocks = list.filter((i) => !movable(i)).map((i) => ({ lo: xs[i]! - gap, hi: xs[i]! + items[i]!.width + gap }));
+  const free = list.filter(movable);
   const along = (dir: 1 | -1): number[] => {
     const out: number[] = [];
     let cursor = dir * -Infinity;
