@@ -3,6 +3,7 @@ import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import type { SnapDep } from 'interactions/actions/snapDep';
+import { sourcesForRequest } from '../gather';
 import { createSnapOutcomeStore } from '../outcomeStore';
 import { createSceneSession2d } from '../sceneSession2d';
 import type { SnapSource } from '../types';
@@ -40,13 +41,16 @@ export function sceneOfPaths(paths: readonly PolygonPath[]): AnyScene {
   return scene;
 }
 
-/** A `snap` dep whose sessions run `sources` over `scene` at a zoom of
+/** A `snap` dep whose sessions run `sources`, less a request's `omit` and
+ *  with its own `sources`, over `scene` at a zoom of
  *  `scale` (default 1), with an 8px reach, writing marks to `store`. */
 export function sessionDep(
   scene: AnyScene, sources: readonly SnapSource[], scale = 1, store = createSnapOutcomeStore(),
 ): SnapDep {
   const view = { ...VIEW, scale: { x: scale, y: scale } };
   return {
-    begin: (req) => createSceneSession2d({ req, scene, boxes: drawnBoxes({ scene }), sources, view: () => view, reachPx: 8, store }),
+    begin: (req) => createSceneSession2d({
+      req, scene, boxes: drawnBoxes({ scene }), sources: sourcesForRequest(sources, req), view: () => view, reachPx: 8, store,
+    }),
   };
 }
