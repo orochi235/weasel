@@ -131,11 +131,12 @@ const tag = (type: string, value: unknown) => ({ $type: type, value });
 
 /**
  * `stableStringify` of a config, with what JSON writes as `null` or `{}` written apart: `Infinity`, `-Infinity`, and
- * `NaN`, and a Map's, a Set's, a RegExp's, a buffer's, or a typed array's contents, so two configs that differ only
- * there are two configs. Answers and frame-local args are keyed by it.
+ * `NaN`, an `undefined` member of a list, a Map, or a Set, and a Map's, a Set's, a RegExp's, a buffer's, or a typed
+ * array's contents, so two configs that differ only there are two configs. Answers and frame-local args are keyed by it.
  */
 export function configKey(config: unknown): string {
   const seen = new Map<object, unknown>();
+  const member = (v: unknown): unknown => (v === undefined ? tag('undefined', null) : tagged(v));
   const tagged = (v: unknown): unknown => {
     if (unwritable(v)) return tag('number', String(v));
     if (v === null || typeof v !== 'object') return v;
@@ -143,13 +144,13 @@ export function configKey(config: unknown): string {
     if (v instanceof Map) {
       const entries: unknown[] = [];
       seen.set(v, tag('map', entries));
-      for (const [key, member] of v) entries.push([tagged(key), tagged(member)]);
+      for (const [key, value] of v) entries.push([member(key), member(value)]);
       return seen.get(v);
     }
     if (v instanceof Set) {
       const members: unknown[] = [];
       seen.set(v, tag('set', members));
-      for (const member of v) members.push(tagged(member));
+      for (const value of v) members.push(member(value));
       return seen.get(v);
     }
     if (v instanceof Date) return tag('date', tagged(v.getTime()));
@@ -164,7 +165,7 @@ export function configKey(config: unknown): string {
     // An object of the config's own with a `$type` key is tagged too, so it never reads as one of the tags above.
     const held = !Array.isArray(v) && Object.hasOwn(v, '$type') ? tag('object', out) : out;
     seen.set(v, held);
-    if (Array.isArray(out)) for (const member of v as unknown[]) out.push(tagged(member));
+    if (Array.isArray(out)) for (const value of v as unknown[]) out.push(member(value));
     else for (const [key, member] of Object.entries(v)) setOwn(out, key, tagged(member));
     return held;
   };

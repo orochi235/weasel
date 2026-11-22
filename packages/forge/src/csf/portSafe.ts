@@ -144,8 +144,11 @@ export function withUnsent(sent: unknown, original: unknown): unknown {
  * entries were added or removed, gets nothing back rather than another entry's.
  */
 function listWithUnsent(sent: readonly unknown[], original: readonly unknown[]): unknown[] {
-  // A member with no part crossed as null.
-  const parts = original.map((member) => portSafePart(member)?.value ?? null);
+  // A member with no part crossed as null, and an `undefined` one as itself.
+  const parts = original.map((member) => {
+    const kept = portSafePart(member);
+    return kept ? kept.value : null;
+  });
   const kept = sent.length === original.length;
   const used = new Set<number>();
   const pairs = sent.map((member, i) => {

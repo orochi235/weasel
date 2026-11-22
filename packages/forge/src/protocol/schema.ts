@@ -3,7 +3,6 @@ import {
   isConfigBranch,
   isConfigNodeShown,
   resolveConfigSchema,
-  schemaNodeAt,
   type Annotations,
   type BranchAnnotations,
   type ConfigActionContext,
@@ -81,7 +80,26 @@ export interface SchemaAnswers {
   run?(path: string, ctx: ConfigActionContext): void;
 }
 
-const joinPath = (at: string, key: string): string => (at === '' ? key : `${at}.${key}`);
+/** A node's path in answers: keys joined by `.`, with a `.` or `\\` inside a key escaped, so a key holding a dot
+ *  never reads as the nested path it looks like. */
+const joinPath = (at: string, key: string): string => {
+  const escaped = key.replace(/[\\.]/g, '\\$&');
+  return at === '' ? escaped : `${at}.${escaped}`;
+};
+
+/** The keys a {@link joinPath} path names. */
+function pathKeys(path: string): string[] {
+  const keys = [''];
+  for (let i = 0; i < path.length; i++) {
+    const c = path[i]!;
+    if (c === '\\' && i + 1 < path.length) keys[keys.length - 1] += path[++i]!;
+    else if (c === '.') keys.push('');
+    else keys[keys.length - 1] += c;
+  }
+  return keys;
+}
+
+type ResolvedGroup = ReturnType<typeof resolveConfigSchema>['group'];
 
 const DROPPED = Symbol('dropped');
 
@@ -199,7 +217,7 @@ export function schemaFromDescription(
 /** The `run` of the action leaf at `path` in `schema`, or undefined where none is. */
 export function schemaActionAt(schema: ConfigSchema<unknown>, path: string): ConfigActionRun | undefined {
   let shape: ConfigShape = schema.nodes;
-  const segments = path.split('.');
+  const segments = pathKeys(path);
   for (const [i, segment] of segments.entries()) {
     if (!Object.hasOwn(shape, segment)) return undefined;
     const entry = shape[segment]!;
@@ -221,13 +239,14 @@ export function answerSchema(
   const record = config as Record<string, unknown>;
   const { group } = resolveConfigSchema(schema);
 
-  const walk = (shape: ConfigShape, at: string): void => {
+  const walk = (shape: ConfigShape, at: string, node: ResolvedGroup): void => {
     for (const [key, entry] of Object.entries(shape)) {
       const path = joinPath(at, key);
+      const child = Object.hasOwn(node.children, key) ? node.children[key] : undefined;
       if (!isConfigNodeShown(entry, record, group)) hidden.push(path);
       if (entry.options.enableIf && !entry.options.enableIf(record)) disabled.push(path);
       if (isConfigBranch(entry)) {
-        walk(entry.children, path);
+        if (child && 'children' in child) walk(entry.children, path, child);
         continue;
       }
       const { validate, autoResolve } = entry.options;
@@ -236,12 +255,12 @@ export function answerSchema(
         if (isPortSafe(value)) setOwn(resolved, path, value);
       }
       if (!validate) continue;
-      const leaf = schemaNodeAt(group, path);
-      if (!leaf || 'children' in leaf) continue;
+      if (!child || 'children' in child || 'members' in child) continue;
+      const leaf = child;
       const found = validate(leaf, record);
       if (found.length > 0) setOwn(errors, path, found);
     }
   };
-  walk(schema.nodes, '');
+  walk(schema.nodes, '', group);
   return { hidden, errors, disabled, resolved };
 }

@@ -130,6 +130,13 @@ describe('argsToSchema', () => {
       .toEqual({ kind: 'number', default: 200, min: 100, max: 800, step: 20, control: 'input' });
   });
 
+  it('keeps the bounds of a control object with no type over a number arg', () => {
+    expect(shape(leaf({ size: 4 }, { size: { control: { min: 0, max: 10, step: 1 } } }, 'size')))
+      .toEqual({ kind: 'number', default: 4, min: 0, max: 10, step: 1, control: 'input' });
+    expect(shape(leaf({}, { size: { type: { name: 'number' }, control: { min: 2 } } }, 'size')))
+      .toEqual({ kind: 'number', default: undefined, clearable: true, min: 2 });
+  });
+
   it('keeps a lone finite bound, as Storybook does', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(shape(leaf({ n: 4 }, { n: { control: { type: 'number', min: 0 } } }, 'n'))).toEqual({ kind: 'number', default: 4, min: 0 });
