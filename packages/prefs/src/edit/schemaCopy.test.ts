@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
+import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { aliasNodes, copyNodes } from './schemaCopy';
 import { nodeAt } from './schemaTree';
 
@@ -60,5 +60,21 @@ describe('a copy under a section root, where a leaf\'s key is the path its value
     const once = copyNodes(NODE, ['layout/pose.x'], { parentPath: 'look', index: 0 }).root;
     expect(copyNodes(once, ['layout/pose.x'], { parentPath: 'layout', index: 0 }).paths).toEqual(['layout/pose_xAlias2']);
     expect(aliasNodes(once, ['layout/pose.x'], { parentPath: 'layout', index: 0 }).paths).toEqual(['layout/pose_xAlias2']);
+  });
+});
+
+describe('the key a copied leaf takes', () => {
+  const text = (name: string): PrefLeaf => ({ kind: 'string', name, description: '', default: '' });
+  const box = (children: Record<string, PrefLeaf>): PrefLeaf => ({ kind: 'object', name: 'Box', description: '', default: {}, children } as PrefLeaf);
+
+  it('is numbered where it would hold its value inside a field already there', () => {
+    const root: PrefGroup = { name: 'R', children: { a: box({ stroke: text('Stroke') }), b: box({ 'stroke.width': num('Width') }) } };
+    expect(copyNodes(root, ['b/stroke.width'], { parentPath: 'a', index: 1 }).paths).toEqual(['a/stroke2.width']);
+  });
+
+  it('is numbered where a value leaf already there would hold its value inside it', () => {
+    const label = { kind: 'label', name: 'Stroke', description: '', default: undefined } as PrefLeaf;
+    const root: PrefGroup = { name: 'R', children: { a: box({ 'stroke.width': num('Width') }), b: box({ stroke: label }) } };
+    expect(copyNodes(root, ['b/stroke'], { parentPath: 'a', index: 0 }).paths).toEqual(['a/stroke2']);
   });
 });

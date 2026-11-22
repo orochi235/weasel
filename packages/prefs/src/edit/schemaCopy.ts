@@ -1,6 +1,6 @@
 import { setOwn } from '@weasel-js/registry';
 import { isPrefLeaf, isPrefSection, prefHoldsValue, type PrefAlias } from '../index';
-import { keysTakenAt, uniqueKey } from './schemaKeys';
+import { keysTakenAt, uniqueKey, uniqueLeafKey } from './schemaKeys';
 import {
   checkFits, childrenOf, editChildren, insertAt, joinPath, keyOf, keysOf, nodeAt, outermost, pathOf,
   type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
@@ -56,7 +56,7 @@ export function aliasNodes<R extends SchemaRoot>(root: R, paths: readonly string
   const next = editChildren(root, dest, (kids) => {
     const taken: ChildMap = { ...keysTakenAt(root, dest, true) };
     const entries: Array<[string, SchemaNode]> = made.map((m) => {
-      const key = uniqueKey(taken, aliasKey(root, m.key));
+      const key = uniqueLeafKey(taken, aliasKey(root, m.key));
       setOwn(taken, key, m.alias);
       out.push(joinPath(dest, key));
       return [key, m.alias];
@@ -91,7 +91,7 @@ export function copyNodes<R extends SchemaRoot>(root: R, paths: readonly string[
     const taken: ChildMap = { ...keysTakenAt(root, dest, false) };
     const leafKeys: ChildMap = { ...keysTakenAt(root, dest, true) };
     const leafKey = (key: string, node: SchemaNode): string => {
-      const free = uniqueKey(leafKeys, key);
+      const free = uniqueLeafKey(leafKeys, key);
       setOwn(leafKeys, free, node);
       return free;
     };
