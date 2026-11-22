@@ -12,13 +12,14 @@ import { fitCubicWithTangents } from './schneiderFit';
 
 /** Options for {@link resamplePath}. */
 export interface ResamplePathOptions {
-  /** How many anchors the result holds across all its subpaths. Default, and
-   *  for a count that is not a finite number: as many as `path` has. Ignored
-   *  when `spacing` is given. */
+  /** How many anchors the result holds across all its subpaths, at most
+   *  10,000. Default, and for a count that is not a finite number: as many as
+   *  `path` has. Ignored when `spacing` is given. */
   count?: number;
   /** The distance along the path between neighboring anchors, in path units.
    *  Each run between fixed anchors is cut into the whole number of equal
-   *  pieces nearest this. */
+   *  pieces nearest this. A spacing that would place more than 10,000 anchors
+   *  places 10,000, spread by length. */
   spacing?: number;
   /** Keep every corner anchor (`isAnchorSmooth` false) where it is, with its
    *  corner, and resample the runs between. Default `true`. Open ends are
@@ -32,6 +33,7 @@ export interface ResamplePathOptions {
 
 const FIT_SAMPLES = 16;
 const MAX_HALVINGS = 6;
+const MAX_ANCHORS = 10_000;
 
 /** A run between two fixed anchors, as the arc-length measure over it. */
 interface Span {
@@ -98,12 +100,18 @@ function spansOf(sub: readonly PenAnchor[], closed: boolean, fixed: number[]): S
 
 /** How many equal pieces each span is cut into. */
 function allocate(spans: Span[], fixedBySub: number[][], opts: ResamplePathOptions, anchors: PenAnchor[][]): void {
+  let asked = opts.count;
   if (opts.spacing !== undefined && opts.spacing > 0) {
-    for (const span of spans) span.pieces = Math.max(1, Math.round(span.run.length / opts.spacing));
-    return;
+    const pieces = spans.map((span) => Math.max(1, Math.round(span.run.length / opts.spacing!)));
+    if (pieces.reduce((n, k) => n + k, 0) <= MAX_ANCHORS) {
+      spans.forEach((span, i) => { span.pieces = pieces[i]; });
+      return;
+    }
+    asked = MAX_ANCHORS;
   }
-  const asked = opts.count;
-  const count = Number.isFinite(asked) ? Math.floor(asked!) : anchors.reduce((n, sub) => n + sub.length, 0);
+  const count = Number.isFinite(asked)
+    ? Math.min(Math.floor(asked!), MAX_ANCHORS)
+    : anchors.reduce((n, sub) => n + sub.length, 0);
   const fixedCount = fixedBySub.reduce((n, f, s) => n + (anchors[s].length < 2 ? anchors[s].length : f.length), 0);
   const free = count - fixedCount;
   const total = spans.reduce((n, span) => n + span.run.length, 0);
