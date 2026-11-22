@@ -142,3 +142,10 @@ test('a wrapped flat bar lines its rows up, each sharing its rule with the one a
   expect(b!.left).toBe(a!.right - 1);
   expect(c!.top).toBe(a!.bottom - 1);
 });
+
+test.each(['horizontal', 'vertical'] as const)('a lone segment of a %s flat bar rounds all four corners', (orientation) => {
+  render(<SegmentedBar aria-label="One" variant="flat" orientation={orientation} items={[{ value: 'a', label: 'A' }]} value="a" onChange={() => {}} />);
+  const cs = getComputedStyle(screen.getByRole('radio'));
+  for (const corner of [cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomLeftRadius, cs.borderBottomRightRadius])
+    expect(parseFloat(corner)).toBeGreaterThan(0);
+});

@@ -401,6 +401,10 @@
   border-radius: 0 0 var(--wzl-radius-sm) var(--wzl-radius-sm);
 }
 
+.variant_flat[data-orientation='vertical'] .segment:only-of-type {
+  border-radius: var(--wzl-radius-sm);
+}
+
 /* Forced colors drop the selected segment's gradient and shadow, so no segment would read as on. */
 @media (forced-colors: active) {
   .segmentSelected {
