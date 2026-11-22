@@ -21,8 +21,10 @@ reloads included, showed 65 to 142 ms.
 
 The `before` and `after` pages come from `.ff-skulkr/build.sh` on the branch (not committed): skulkr's
 dashboard at 8a6d5c0 with every installed `@weasel-js/*` package's `dist` replaced by this tree's build, the
-renderer's rebuilt from 1eae5ad17c for `before`. vite 8 wrote that build's one lazy preload list as `[]` and a
-stray 32-hex hash, a syntax error, which the script strips. With cold shaders the page's longest task read
+renderer's rebuilt from 1eae5ad17c for `before`. Those builds installed the dashboard with `--omit=optional`,
+which leaves out rolldown's native binding, and without it vite 8.3.8 wrote the one lazy preload list as `[]` and a
+stray 32-hex hash, a syntax error, which the script stripped (docs/TODO.md, "rolldown's native binding");
+`pages-build.sh` now installs it. With cold shaders the page's longest task read
 455 and 328 ms before and 261 and 266 ms after; warm, 125 to 128 against 118 to 119; reloads 68 to 89 either way.
 
 From `teitou-warmup/`'s traces: the page made its renderer about 80 ms into its long task and drew at once, so a
