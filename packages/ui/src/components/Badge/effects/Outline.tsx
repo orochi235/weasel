@@ -1,6 +1,7 @@
 import type { ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
 import type { EffectModule } from '../bases/types';
+import { finiteParams } from '../shapes/params';
 
 /** What an effect of type `outline` takes as `params`. */
 export interface BadgeOutlineEffectParams {
@@ -27,7 +28,7 @@ const DEFAULTS: Required<BadgeOutlineEffectParams> = {
 
 const Outline: EffectModule<BadgeOutlineEffectParams> = {
   Component: ({ sampler, params }) => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = finiteParams({ ...DEFAULTS, ...params }, DEFAULTS);
     const css = useColorCss();
     return (
       <path

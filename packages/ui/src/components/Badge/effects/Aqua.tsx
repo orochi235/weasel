@@ -2,6 +2,7 @@ import type { ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
+import { finiteParams } from '../shapes/params';
 import { outlineRegion } from '../composeOutline';
 import { GlassStrokes } from './glassStrokes';
 
@@ -67,7 +68,7 @@ const Aqua: EffectModule<BadgeAquaEffectParams> = {
     const glossClipId = useId();
     const css = useColorCss();
     if (variant !== 'solid' && variant !== 'subtle' && variant !== 'outline') return null;
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = finiteParams({ ...DEFAULTS, ...params }, DEFAULTS);
     const accent = css(cfg.accent);
     const region = outlineRegion(sampler, 0);
 

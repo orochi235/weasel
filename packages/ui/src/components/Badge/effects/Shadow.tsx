@@ -1,5 +1,6 @@
 import { trimNumber } from '@weasel-js/geom';
 import type { EffectModule } from '../bases/types';
+import { finiteParams } from '../shapes/params';
 
 /** What an effect of type `shadow` takes as `params`. */
 export interface BadgeShadowEffectParams {
@@ -14,7 +15,7 @@ const DEFAULTS: Required<BadgeShadowEffectParams> = { dx: 1, dy: 2, opacity: 0.2
 
 const Shadow: EffectModule<BadgeShadowEffectParams> = {
   Component: ({ sampler, boxW, boxH, params }) => {
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = finiteParams({ ...DEFAULTS, ...params }, DEFAULTS);
     const sx = 100 / boxW, sy = 100 / boxH;
     const dxVb = cfg.dx * sx;
     const dyVb = cfg.dy * sy;

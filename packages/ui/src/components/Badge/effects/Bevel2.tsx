@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 import { DEG_TO_RAD } from '@weasel-js/geom';
+import { finiteParams } from '../shapes/params';
 import { bevelBands } from './bevelBands';
 
 /** What an effect of type `bevel2` takes as `params`. */
@@ -35,7 +36,7 @@ const Bevel2: EffectModule<BadgeBevel2EffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = finiteParams({ ...DEFAULTS, ...params }, DEFAULTS, ['lightFrom']);
     const { lx, ly } = lightDirFor(cfg.lightFrom);
     // dot(n, lightDir) where light points FROM the corner OUTWARD: surfaces whose
     // outward normal aligns with -light (facing the light source) are brightest.

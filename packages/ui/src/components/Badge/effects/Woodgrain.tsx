@@ -1,7 +1,7 @@
 import { trimNumber } from '@weasel-js/geom';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
-import { repeatCount } from '../shapes/params';
+import { repeatCount, finiteParams } from '../shapes/params';
 
 /** What an effect of type `woodgrain` takes as `params`. */
 export interface BadgeWoodgrainEffectParams {
@@ -27,7 +27,7 @@ const Woodgrain: EffectModule<BadgeWoodgrainEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = finiteParams({ ...DEFAULTS, ...params }, DEFAULTS, ['lines', 'knots']);
     const lineCount = repeatCount(cfg.lines, 0);
     const knotCount = repeatCount(cfg.knots, 0);
     const lines: string[] = [];

@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import type { BaseSampler, EffectModule } from '../bases/types';
+import { finiteParams } from '../shapes/params';
 import type { BadgeCorner } from '../types';
 import { lightCorner } from './lightCorner';
 
@@ -45,7 +46,7 @@ const Rivets: EffectModule<BadgeRivetsEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
-    const cfg = { ...DEFAULTS, ...params };
+    const cfg = finiteParams({ ...DEFAULTS, ...params }, DEFAULTS);
     const sx = 100 / boxW, sy = 100 / boxH;
     const rx = cfg.radius * sx;
     const ry = cfg.radius * sy;
