@@ -5,7 +5,7 @@
  * import.
  */
 import type { MarkerRef } from '@weasel-js/core';
-import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, NodeStyle } from '@weasel-js/diagram';
+import { outlineRegistry, type DataContainer, type DataEdge, type DataNode, type EdgeStyle, type LayoutDirection, type NodeStyle, type Outline } from '@weasel-js/diagram';
 import { compositeKey, freshId, getOwn } from '@weasel-js/registry';
 import { checkedColor } from '../colorCheck';
 import type { ImportResult } from '../document';
@@ -149,7 +149,10 @@ function nodeColors(r: DotReader, attrs: Attrs, styles: readonly string[], unset
 function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
   const styles = stylesOf(str(attrs, 'style'));
   const shape = keyword(attrs, 'shape') ?? 'ellipse';
-  let outline = str(attrs, OUTLINE_ATTR) ?? outlineOf(shape, styles);
+  const named = keyword(attrs, OUTLINE_ATTR);
+  const known = named !== undefined && outlineRegistry.has(named);
+  if (named !== undefined && !known) r.warnings.list('DOT outlines a diagram does not have were read from the shape', named);
+  let outline: Outline | null = known ? named : outlineOf(shape, styles);
   if (outline === null) {
     r.warnings.list('DOT shapes read as rectangles', shape);
     outline = 'rect';

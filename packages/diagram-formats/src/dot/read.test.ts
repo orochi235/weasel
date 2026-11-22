@@ -35,6 +35,12 @@ describe('reading DOT', () => {
     expect(p.data.nodes.map((n) => n.id)).toEqual(['x', 'y']);
   });
 
+  it('reads a node\'s outline from its shape when weasel_outline is empty or names no outline', () => {
+    const { document, warnings } = readDot('digraph { a [shape=diamond, weasel_outline=""]; b [weasel_outline=blob]; c [weasel_outline=stadium] }');
+    expect(asGraph(document.pages[0]!).data.nodes.map((n) => n.outline)).toEqual(['diamond', 'ellipse', 'stadium']);
+    expect(warnings).toEqual(['DOT outlines a diagram does not have were read from the shape: blob.']);
+  });
+
   it('reads plain subgraphs as scopes only, and nests clusters', () => {
     const p = page('digraph { subgraph cluster_x { subgraph { rank=same; a } subgraph cluster_y { b } } c }');
     expect(p.data.containers).toEqual([

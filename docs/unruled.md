@@ -3764,3 +3764,7 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): the DOT reader reads a cluster whose `style` holds `invis` as a container with a
   transparent fill and stroke and no label, holding its members as before, since Graphviz still lays an invisible
   cluster out as one. Leaving the container out, as invisible nodes are, was the alternative; it would lose the grouping.
+- 2026-11-22 (the fixer's call): the DOT reader takes a node's `weasel_outline` only when it names an outline the
+  outline registry holds; an empty one is unset, and any other is read from the node's `shape` with a warning. A
+  document naming an outline its consumer registers later reads as the shape; taking any name on trust was the
+  alternative.
