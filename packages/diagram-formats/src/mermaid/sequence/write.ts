@@ -2,13 +2,14 @@
 import type { SeqParticipant, SeqStep, SequenceData } from '@weasel-js/diagram';
 import type { ExportResult, SequencePage } from '../../document';
 import { Warnings } from '../../graphRead';
+import { ACC_WORDS } from '../common/lines';
 import { mermaidIds } from '../common/text';
 import { arrowOf, leadingColor, mermaidSeqText, typeOf } from './syntax';
 
 const SECTION_WORDS = { loop: null, alt: 'else', opt: null, par: 'and', critical: 'option', break: null, region: null } as const;
 
 /** Words a sequence reads as a statement when a line opens with one, however the line goes on. */
-const SEQUENCE_WORDS = ['title', 'accTitle', 'accDescr', 'link', 'links', 'properties', 'details'];
+const SEQUENCE_WORDS = ['title', ...ACC_WORDS, 'link', 'links', 'properties', 'details'];
 
 /** Every participant id `data` names: declared, and named by a step. */
 function namedIds(data: SequenceData): string[] {

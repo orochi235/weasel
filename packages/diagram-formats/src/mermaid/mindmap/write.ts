@@ -2,7 +2,7 @@
 import type { DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { graphOut, nodeLines } from '../../graphWrite';
-import { readsAsStatement, titleLines } from '../common/lines';
+import { ACC_WORDS, readsAsStatement, titleLines } from '../common/lines';
 import { mermaidEscaped, mermaidIds } from '../common/text';
 import { mindmapIds } from './read';
 import { getOwn } from '@weasel-js/registry';
@@ -40,7 +40,7 @@ export function writeMindmap(doc: DiagramDocument, opts?: WriteOptions): ExportR
   const kept = out.edges.filter((e) => seen.has(e.from) && seen.has(e.to)).length;
   if (kept > seen.size - 1) warnings.add('Mermaid mind maps hold a tree; connectors that would join a shape to a second parent, or close a loop, were dropped.');
   const generated = mindmapIds(order.map(() => ({})));
-  const ids = mermaidIds(order.map(({ node }) => node.id));
+  const ids = mermaidIds(order.map(({ node }) => node.id), { reserved: ACC_WORDS });
   const lines = [...titleLines(page.name), 'mindmap'];
   order.forEach(({ node, depth }, k) => {
     // Trimmed as the reader trims them, before escaping, so a trim cannot make a markdown string of the text.
@@ -48,7 +48,7 @@ export function writeMindmap(doc: DiagramDocument, opts?: WriteOptions): ExportR
     const outline = typeof node.outline === 'string' ? node.outline : undefined;
     const brackets = outline === undefined ? undefined : getOwn(BRACKETS, outline);
     if (node.outline !== undefined && brackets === undefined) warnings.add('Mermaid mind maps have five shapes; others were written plain.');
-    const own = /^[\w-]+$/.test(node.id) ? node.id : ids.get(node.id)!;
+    const own = /^[\w-]+$/.test(node.id) && !ACC_WORDS.includes(node.id) ? node.id : ids.get(node.id)!;
     const id = own === generated[k] ? '' : own;
     const plain = readsAsStatement(text) && !text.startsWith(':::') ? text : `"${text}"`;
     lines.push(`${'  '.repeat(depth + 1)}${brackets === undefined ? plain : `${id}${brackets[0]}${text}${brackets[1]}`}`);
