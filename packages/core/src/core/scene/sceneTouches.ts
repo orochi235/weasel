@@ -139,10 +139,11 @@ export function createSceneTouches(env: SceneTouchesEnv): SceneTouchesFeed {
     const deriving = !env.dependents.isEmpty();
     while (queue.length > 0) {
       const id = queue.pop()!;
+      // What derives from an id outlives its removal, so it is reached either way.
+      if (deriving) for (const d of env.dependents.transitiveDependentsOf(id)) add(d);
       const node = nodes.get(id);
       if (node === undefined) continue;
       for (const c of node.children ?? []) add(c);
-      if (deriving) for (const d of env.dependents.transitiveDependentsOf(id)) add(d);
       if (env.childDerived.size > 0) hugging(node.parent);
     }
     return out;

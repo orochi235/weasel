@@ -96,6 +96,16 @@ describe('scene.changesSince', () => {
     expect(touchedBy(s, () => s.setPose(a, { ...POSE, x: 9 }))).toEqual([a, edge].sort());
   });
 
+  it('reaches the nodes that derive from one that left the scene', () => {
+    const s = makeScene();
+    const x = 'x' as NodeId;
+    const edge = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'e' }, dependsOn: [x] });
+    s.add({ id: x, kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'x' } });
+    expect(touchedBy(s, () => s.undo())).toEqual([edge, x].sort());
+    s.redo();
+    expect(touchedBy(s, () => s.remove(x))).toEqual([edge, x].sort());
+  });
+
   it('names the nodes a pose preview set and cleared, one a frame', () => {
     const s = makeScene();
     const a = mark(s);
