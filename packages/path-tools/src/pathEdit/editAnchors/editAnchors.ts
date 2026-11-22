@@ -144,18 +144,18 @@ interface EditAnchorsScratch {
 /**
  * An anchor drag's snap: a `point` session, begun on the first move, for
  * where the pressed anchor goes. The edited path offers no targets but what
- * the drag leaves still of it, and Shift holds the anchor to the axes and
+ * the drag leaves still of it (`movedAnchors`), and Shift holds the anchor to the axes and
  * diagonals through its press.
  */
 function anchorDragSnap(
   snap: SnapDep | undefined,
-  press: { id: string; origin: WorldPoint; originPose: PolygonPath; dragging: readonly number[] },
+  press: { id: string; origin: WorldPoint; originPose: PolygonPath; moving: () => Iterable<number> },
 ): { at(world: WorldPoint, mods: SnapMods): WorldPoint; end(): void } {
   let session: SnapSession | null = null;
   return {
     at(world, mods) {
       if (!session) {
-        const { path, anchors } = pathAwayFromAnchors(press.originPose, press.dragging);
+        const { path, anchors } = pathAwayFromAnchors(press.originPose, press.moving());
         const req: SnapBegin = {
           gesture: 'point', press: press.origin, ids: [press.id],
           also: { paths: [path], anchors }, constrain: 'axis',
@@ -206,6 +206,15 @@ function moveAnchors(scratch: EditAnchorsScratch, to: WorldPoint): void {
     if (weights) translateWeighted(set, weights, dx, dy);
     else translateAnchorsSymmetric(set, scratch.dragging, dx, dy, scratch.symmetries);
   }));
+}
+
+/** Every anchor `moveAnchors` moves: the extensions' weighted ones, else the dragged ones and their images. */
+function movedAnchors(scratch: EditAnchorsScratch): Set<number> {
+  const weights = dragWeights(scratch.drags, scratch.dragging);
+  if (weights) return new Set([...weights].filter(([, w]) => w !== 0).map(([flat]) => flat));
+  const out = new Set(scratch.dragging);
+  for (const s of scratch.symmetries) for (const flat of scratch.dragging) out.add(s.partners[flat]);
+  return out;
 }
 
 /** The modifiers `editAnchors` reads while it runs: Shift on the press adds
@@ -349,7 +358,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         others: [],
       };
       const snapAnchor = anchorDragSnap(ctx.deps.snap, {
-        id: editingId, origin: scratch.anchorOrigin, originPose: worldPath, dragging,
+        id: editingId, origin: scratch.anchorOrigin, originPose: worldPath, moving: () => movedAnchors(scratch),
       });
 
       const move = (moveCtx: InvocationCtx): void => {
