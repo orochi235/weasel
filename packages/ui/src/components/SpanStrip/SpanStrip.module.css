@@ -55,6 +55,9 @@
 }
 
 .segment[data-open] { overflow: visible; }
+/* Its unfilled copy is what shows past its end, over the track, so it takes the track's ink, not the span's: a span
+   inked for its own fill would vanish there. The filled copy above it keeps the span's ink, clipped to the fill. */
+.strip > .segment[data-open] { color: var(--wzl-fg); }
 .segment[data-open] > .label {
   width: max-content;
   max-width: calc((1 - var(--span-from, 0)) / max(var(--span-share, 1), 0.0001) * 100%);

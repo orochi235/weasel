@@ -33,4 +33,17 @@ describe('an open span', () => {
     expect(text(open!).scrollWidth).toBeLessThanOrEqual(text(open!).clientWidth);
     expect(text(first!).scrollWidth).toBeGreaterThan(text(first!).clientWidth);
   });
+
+  it("inks what runs past its end in the track's foreground, though the span is inked for its own fill", () => {
+    const spans = [{ id: 'y', label, ms: 4, start: 0, state: 'done' as const, color: 'black', ink: 'white' }];
+    render(<div style={{ width: 600 }}><SpanStrips window={{ from: 0, to: 40 }} rows={[{ id: 'r', 'aria-label': 'r', spans }]} /></div>);
+    const [plain, filled] = [...screen.getByRole('meter', { name: 'r' }).querySelectorAll('[data-open]')] as HTMLElement[];
+    const fg = getComputedStyle(document.documentElement).getPropertyValue('--wzl-fg').trim();
+    const probe = document.createElement('i');
+    probe.style.color = fg;
+    document.body.append(probe);
+    expect(getComputedStyle(plain!).color).toBe(getComputedStyle(probe).color);
+    expect(getComputedStyle(filled!).color).toBe('rgb(255, 255, 255)');
+    probe.remove();
+  });
 });
