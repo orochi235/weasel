@@ -1,5 +1,6 @@
 /**
- * Part of the `@weasel-js/core` barrel. Drag and keyboard action hooks, snapping, and animation.
+ * Part of the `@weasel-js/core` barrel. Origin projections, transform options and pose geometry, drag gesture
+ * hooks, pointer sessions, animation, and the `drawnBoxes` dep.
  *
  * @packageDocumentation
  */
