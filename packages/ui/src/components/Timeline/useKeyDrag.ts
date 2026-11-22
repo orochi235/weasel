@@ -67,6 +67,7 @@ export function useKeyDrag(a: KeyDragArgs) {
     // A press that never travels is a click: it selects and moves nothing.
     const start = { clientX: e.clientX, clientY: e.clientY };
     let dragging = false;
+    let previewed = false;
     const traveled = (ev: PointerEvent): boolean => (dragging ||= pastDragThreshold(start, ev, dragPx));
 
     const end = (): void => {
@@ -79,10 +80,14 @@ export function useKeyDrag(a: KeyDragArgs) {
         if (!traveled(ev)) return;
         const t = at.current(ev);
         setDrag({ keyIndex: i, t });
+        previewed = true;
         onKeyInput(i, t);
       },
+      // A drag released back on its own time changes nothing, so a preview it sent is put back as for a cancel.
       onEnd: (ev) => {
-        if (traveled(ev)) onKeyChange(i, at.current(ev));
+        const t = traveled(ev) ? at.current(ev) : times[i];
+        if (t !== times[i]) onKeyChange(i, t);
+        else if (previewed) { onRevert?.(); onCancel?.(); }
         end();
       },
       // The consumer previewed the move through `onKeyInput`; a drag that ends without a release puts it back.

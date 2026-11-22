@@ -3750,3 +3750,9 @@ Calls the lanes made without a ruling:
   switch wherever it is mounted; a test on the group meaning a leaf beside it names it from the root.
 - 2026-11-22 (the fixer's call): a number leaf's `minAt` and `maxAt` are held inside its declared `min` and `max`, and a
   `maxAt` below the `min` gives way to it, so crossed bounds collapse to one value rather than one of them being dropped.
+## Audit round seventy (2026-11-22): ui's Timeline
+
+- 2026-11-22 (the fixer's call): a `Timeline` key drag released on the time it began from, after `onInput` previewed a
+  move, sends `onInput` the tracks it began from and then calls `onCancel`, as a canceled drag does and as `ColorField`
+  does for a pick closed on its starting color. A drag that previewed nothing calls nothing. Calling nothing at all
+  was the alternative.

@@ -72,20 +72,22 @@ function keyTimesAt(tracks: readonly Track[], path: readonly number[]): string {
  * it began from, and would undo them. `onPointerDownCapture` goes on the lanes, `onKeyDownCapture` on the root.
  */
 export function useKeyEditsHeldByPress() {
-  const pressed = useRef(false);
+  // Each pointer pressed on the lanes and not yet let go, so a second finger lifting leaves the first one's drag held.
+  const pressed = useRef(new Set<number>());
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
     if (e.button !== 0) return;
-    pressed.current = true;
+    const id = e.pointerId;
+    pressed.current.add(id);
     const release = (ev: PointerEvent): void => {
-      if (ev.type === 'pointermove' && ev.buttons !== 0) return;
-      pressed.current = false;
+      if (ev.pointerId !== id || (ev.type === 'pointermove' && ev.buttons !== 0)) return;
+      pressed.current.delete(id);
       for (const type of ['pointerup', 'pointercancel', 'pointermove'] as const) window.removeEventListener(type, release, true);
     };
     // Capture, so the press lets go before the drag's own release commits.
     for (const type of ['pointerup', 'pointercancel', 'pointermove'] as const) window.addEventListener(type, release, true);
   };
   const onKeyDownCapture = (e: ReactKeyboardEvent): void => {
-    if (!pressed.current) return;
+    if (pressed.current.size === 0) return;
     if (e.target !== e.currentTarget && !(e.target as Element).closest?.('[data-lane-key]')) return;
     if (arrowMove(e.key, e.shiftKey) || e.key === 'Delete' || e.key === 'Backspace') e.stopPropagation();
   };

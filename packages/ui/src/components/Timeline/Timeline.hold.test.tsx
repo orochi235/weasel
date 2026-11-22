@@ -134,4 +134,11 @@ describe('Timeline held, in graph mode', () => {
     fireEvent.keyDown(graphKey(), { key: 'ArrowUp' });
     expect(calls.onChange).not.toHaveBeenCalled();
   });
+
+  it('disabled, leaves the wheel over its ruler to the page', () => {
+    renderTimeline((n) => n, { disabled: true, window: { from: 0, to: 500 } });
+    const ruler = screen.getByTestId('timeline-ruler');
+    expect(fireEvent.wheel(ruler, { deltaY: 50 })).toBe(true);
+    expect(fireEvent.wheel(ruler, { deltaY: -100, ctrlKey: true, clientX: 250 })).toBe(true);
+  });
 });

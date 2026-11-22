@@ -518,4 +518,76 @@ describe('Timeline', () => {
     fireEvent.pointerUp(document, { clientX: 196, clientY: 10 });
     expect(nestedKeyTimes(onChange.mock.calls[0][0] as Track[])).toEqual([300, 300]);
   });
+
+  it('deletes nothing for Delete once the selected key’s row is folded away', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 0, clientY: 10 });
+    const disclosure = screen.getByTestId('timeline-disclosure');
+    fireEvent.click(disclosure);
+    disclosure.focus();
+    fireEvent.keyDown(disclosure, { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('deletes nothing for Delete on a selected key the tracks no longer hold', () => {
+    const onChange = vi.fn();
+    const three = [
+      { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 100, value: 1 }, { t: 200, value: 2 }], onTick: () => {} },
+    ] as Track[];
+    const { rerender } = renderWithIcons(<Timeline {...base} tracks={three} onChange={onChange} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[2], { clientX: 200, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 200 });
+    const two = [{ ...three[0], keys: (three[0] as SampledTrack<number>).keys.slice(0, 2) }] as Track[];
+    rerender(<Timeline {...base} tracks={two} onChange={onChange} />);
+    fireEvent.keyDown(screen.getByTestId('timeline-root'), { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('leaves focus where it is after a key press that changed nothing, when the timeline next renders', () => {
+    const onChange = vi.fn();
+    const props = { ...base, tracks: tracks(), onChange };
+    const { rerender } = renderWithIcons(<Timeline {...props} />);
+    const keys = () => screen.getAllByTestId('timeline-key');
+    const event = () => screen.getByTestId('timeline-event');
+    fireEvent.pointerDown(keys()[1], { clientX: 250, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 250 });
+    const tries: [() => HTMLElement, string][] = [[() => keys()[0], 'ArrowLeft'], [event, 'Delete']];
+    for (const [at, key] of tries) {
+      at().focus();
+      fireEvent.keyDown(at(), { key });
+      rerender(<Timeline {...props} playhead={props.playhead + 1} />);
+      expect(document.activeElement, key).toBe(at());
+    }
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('puts back its preview and cancels a key drag released on its own time', () => {
+    const input = [{ kind: 'sampled', label: 'hold', keys: [{ t: 500, value: 1 }, { t: 500, value: 2 }], onTick: () => {} }] as Track[];
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    const onCancel = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={input} onInput={onInput} onChange={onChange} onCancel={onCancel} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
+    fireEvent.pointerMove(document, { clientX: 250, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 250, clientY: 10 });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect((onInput.mock.calls.at(-1)![0][0] as SampledTrack<number>).keys.map((k) => k.value)).toEqual([1, 2]);
+  });
+
+  it('keeps refusing keyboard edits while a key drag is held, though another finger lifts', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    const key = screen.getAllByTestId('timeline-key')[1];
+    fireEvent.pointerDown(key, { pointerId: 1, pointerType: 'touch', clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-lane-track')[1], { pointerId: 2, pointerType: 'touch', clientX: 50, clientY: 10, button: 0 });
+    fireEvent.pointerUp(document, { pointerId: 2, pointerType: 'touch', clientX: 50, clientY: 10 });
+    fireEvent.pointerMove(document, { pointerId: 3, pointerType: 'mouse', clientX: 50, clientY: 10, buttons: 0 });
+    fireEvent.keyDown(key, { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

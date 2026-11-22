@@ -30,6 +30,13 @@ describe('buildLanes', () => {
     expect(rows.map((r) => r.end)).toEqual([Infinity, 400, 400]);
   });
 
+  it('ends a nested row whose duration is below 0 or not a number where its bar ends, at its start', () => {
+    for (const duration of [-100, Number.NaN]) {
+      const inner = { kind: 'timeline', label: 'n', at: 100, timeline: { duration, tracks: [sampled('x', [0])] } } as Track;
+      expect(buildLanes([inner], new Set(['0'])).map((r) => r.end), String(duration)).toEqual([Infinity, 100]);
+    }
+  });
+
   it('ends a nested row with no declared duration where its parent ends', () => {
     const rows = buildLanes([nested('n', 100, [sampled('x', [0])])], new Set(['0']));
     expect(rows.map((r) => r.end)).toEqual([Infinity, Infinity]);

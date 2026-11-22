@@ -51,7 +51,7 @@ export function buildLanes(
       });
       if (track.kind === 'timeline' && expanded.has(key)) {
         const start = offset + track.at;
-        walk(track.timeline.tracks, nextPath, depth + 1, start, Math.min(end, start + (track.timeline.duration ?? Infinity)));
+        walk(track.timeline.tracks, nextPath, depth + 1, start, Math.min(end, start + (declaredSpan(track.timeline) ?? Infinity)));
       }
     });
   };
@@ -71,9 +71,15 @@ export function trackAtPath(tracks: readonly Track[], path: readonly number[]): 
   return found;
 }
 
+/** A nested timeline's `duration` as the ruler reads it, none below 0, or `undefined` when it declares none. */
+function declaredSpan(timeline: NestedTimeline): number | undefined {
+  return timeline.duration == null ? undefined : Math.max(0, timeline.duration) || 0;
+}
+
 /** How long a nested timeline runs on the ruler: its `duration`, none below 0, or with none, to its last track's end. */
 export function timelineSpan(timeline: NestedTimeline): number {
-  if (timeline.duration != null) return Math.max(0, timeline.duration) || 0;
+  const declared = declaredSpan(timeline);
+  if (declared !== undefined) return declared;
   let end = 0;
   for (const track of timeline.tracks) end = Math.max(end, trackEnd(track));
   return end;
