@@ -90,6 +90,7 @@ export {
   releaseImage,
   setImageCacheBudget,
   retryImage,
+  warmPrograms,
 } from '@weasel-js/renderer';
 export type { ImageNodeData, ImageRasterSize, ImageStatus } from '@weasel-js/renderer';
 export { sceneToAdapter } from '../canvas/sceneAdapter';

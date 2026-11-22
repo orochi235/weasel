@@ -9,6 +9,8 @@ and GPU utilization before and after is in `teitou/conditions.txt`.
 | `teitou-probe/skulkr-chrome-headed.json` | the same, headed Chrome 157, 3 rounds | `probe.mjs --headed --channel chrome` |
 | `teitou-probe/skulkr-chromium-headed.json` | the same, headed Chromium 159, 2 rounds | `probe.mjs --headed` |
 | `orochi/` | `pages.sh`, headed Chrome 159 on orochi (Apple M2 Max), run by the session controller with the maintainer's approval; load average 104 rising to 184 on 12 threads | `pages.sh` |
+| `teitou-warmup/` | `pages.sh` over four builds of the page, headless Chrome 157, 4 rounds each, warm and `--cold`, with each program's link traced: `base` (weasel at 1eae5ad17c), `head` (at 0da22ca47a), `tree` (this branch's warm-up, uncommitted on 0da22ca47a), `boot` (`tree` with skulkr's `main.tsx` calling `warmPrograms()` first) | `ROUNDS=4 HEADLESS=1 pages.sh` |
+| `shader-cost/` | cold link time of batch shader variants (`variants-*.json`), and whether a second context's link joins a compile already under way on another (`warm-*.json`), headless Chromium 159 on teitou | `gen.ts`, `run.mjs`, `warm.mjs` |
 | `teitou-pages-check/` | the page built against weasel at 1eae5ad17c (`before`) and at b16c3e1b7e (`after`), headless Chrome 157, warm and `--cold`, 2 rounds each | `HEADLESS=1 pages.sh` |
 
 The probe's page is skulkr's `dashboard`, built with `vite build --config vite.demo.config.ts --mode demo`
@@ -21,3 +23,9 @@ dashboard at 8a6d5c0 with every installed `@weasel-js/*` package's `dist` replac
 renderer's rebuilt from 1eae5ad17c for `before`. vite 8 wrote that build's one lazy preload list as `[]` and a
 stray 32-hex hash, a syntax error, which the script strips. With cold shaders the page's longest task read
 455 and 328 ms before and 261 and 266 ms after; warm, 125 to 128 against 118 to 119; reloads 68 to 89 either way.
+
+From `teitou-warmup/`'s traces: the page made its renderer about 80 ms into its long task and drew at once, so a
+renderer starting its own programs gained only their running at once; three programs link on its first frame,
+the third the path fill. From `shader-cost/`: unflushed, a compile started on one context did not progress while
+the main thread was busy, and a flushed one did, which a second context's link then joined (110 ms cold, 57 ms
+after 50 ms of head start, 9 ms after 100).

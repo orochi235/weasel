@@ -79,8 +79,9 @@ async function load(page, cdp, how) {
   await page.waitForTimeout(SETTLE_MS);
   const { profile } = await cdp.send('Profiler.stop');
   const longtasks = await page.evaluate(() => globalThis.__longtasks);
+  const links = await page.evaluate(() => globalThis.__links);
   const canvases = await page.evaluate(() => document.querySelectorAll('canvas').length);
-  return { how, wallMs: Date.now() - t0, canvases, longtasks, ...summarize(profile) };
+  return { how, wallMs: Date.now() - t0, canvases, longtasks, links, ...summarize(profile) };
 }
 
 const rounds = [];
@@ -104,6 +105,34 @@ for (let r = 0; r < ROUNDS; r++) {
       }, Math.random().toString(36).slice(2));
     }
     await context.addInitScript(() => {
+      // Each program linked: when, its fragment source's length, and how long the page waited on its status.
+      globalThis.__links = [];
+      const proto = WebGL2RenderingContext.prototype;
+      const src = new WeakMap(), frag = new WeakMap(), rec = new WeakMap(), fragShaders = new WeakSet();
+      const create = proto.createShader;
+      proto.createShader = function (type) {
+        const sh = create.call(this, type);
+        if (sh && type === this.FRAGMENT_SHADER) fragShaders.add(sh);
+        return sh;
+      };
+      const shaderSource = proto.shaderSource;
+      proto.shaderSource = function (sh, s) { src.set(sh, s.length); return shaderSource.call(this, sh, s); };
+      const attach = proto.attachShader;
+      proto.attachShader = function (p, sh) {
+        if (fragShaders.has(sh)) frag.set(p, src.get(sh));
+        return attach.call(this, p, sh);
+      };
+      const link = proto.linkProgram;
+      proto.linkProgram = function (p) {
+        const r = { at: +performance.now().toFixed(1), frag: frag.get(p) ?? -1, waited: 0 };
+        rec.set(p, r); globalThis.__links.push(r);
+        return link.call(this, p);
+      };
+      const param = proto.getProgramParameter;
+      proto.getProgramParameter = function (p, pname) {
+        const t0 = performance.now();
+        try { return param.call(this, p, pname); } finally { const r = rec.get(p); if (r) r.waited = +(r.waited + performance.now() - t0).toFixed(1); }
+      };
       globalThis.__longtasks = [];
       new PerformanceObserver((list) => {
         for (const e of list.getEntries()) globalThis.__longtasks.push([+e.startTime.toFixed(0), +e.duration.toFixed(0)]);
@@ -127,6 +156,7 @@ for (let r = 0; r < ROUNDS; r++) {
       console.log(`${r + 1}/${ROUNDS} ${l.how.padEnd(6)} longest task ${String(longest).padStart(5)} ms  canvases ${l.canvases}`
         + `  tasks ${JSON.stringify(l.longtasks)}`);
       console.log(`    gl (profile, inclusive) ${JSON.stringify(l.gl)}`);
+      console.log(`    links [at ms, frag length, waited ms] ${JSON.stringify(l.links.map((k) => [k.at, k.frag, k.waited]))}`);
       console.log(`    top self ${JSON.stringify(l.top.slice(0, 8))}`);
     }
     if (errors.length) console.log(`    page errors: ${errors.join(' | ')}`);

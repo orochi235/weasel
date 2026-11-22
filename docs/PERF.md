@@ -10,28 +10,27 @@ When work merges, retire its entry here in the same change.
 
 ## Renderer and the batch
 
-- **(P2) [waiting] On a cold Metal cache the audits page's first load still blocks 413 to 472 ms on the
-  maintainer's M2 Max, measured under heavy load.** On 2026-11-20 x-skulk's audits page showed one 1,917 ms
-  main-thread task before its map drew, in Chrome 156 on that machine, on every reload. Since 2026-11-21 a
-  renderer starts its batch program and the batch's text build at construction under
-  `KHR_parallel_shader_compile`, so the two compile at once. `pages.sh` on orochi (Chrome 159, load average 104
-  rising to 184 on 12 threads) then read the page's longest task as below, two loads each; the runs are in
-  `tests/perf/recorded/first-frame-2026-11-21/orochi/`.
+- **(P2) [waiting] The audits page's cold-cache first load on the maintainer's M2 Max is not yet measured on
+  an idle machine since programs start compiling before the canvas does.** On 2026-11-20 x-skulk's audits page
+  showed one 1,917 ms main-thread task before its map drew, in Chrome 156 on that machine, on every reload. In
+  Chrome 159 reloads find the Metal cache (112 to 128 ms there, 2026-11-21), so what is left is a cold cache: a
+  first visit or a Chrome update. A renderer now starts the first frame's programs (`FIRST_FRAME_SPECS`: the
+  batch, its small-text build, the path fill) under `KHR_parallel_shader_compile` and flushes them, a canvas
+  starts them again on a context of its own as it first renders (`warmPrograms`), and an app can call
+  `warmPrograms()` at startup to start them sooner still. The batch's shader text is not the cost: cold on
+  teitou any program links in 45 to 75 ms, its 16-sampler fragment stage adding about 20 over a trivial one.
+  `pages.sh` with cold shaders, longest task, medians of 4 (2026-11-21, `tests/perf/recorded/first-frame-2026-11-21/`):
 
-  | load | before (ms) | after (ms) |
+  | page | teitou, M5 Max, headless (ms) | orochi, M2 Max, loaded (ms) |
   |---|---:|---:|
-  | first, cold shaders | 544, 537 | 472, 413 |
-  | first, warm | 572 (cache not yet filled), 233 | 213, 206 |
-  | reload | 112 to 122 | 114 to 128 |
+  | merge-base | 344 | 537 to 544 |
+  | renderer compiling in the background | 260 | 413 to 472 |
+  | and the canvas warming its programs | 185 | not run |
+  | and the app calling `warmPrograms()` at startup | 139 | not run |
+  | warm cache, any of them | 113 to 127 | 206 to 233 |
 
-  Reloads now find the Metal cache on both sides, so the 1.9 s reload no longer reproduces; a cold cache comes
-  only with a first visit or a Chrome update. In the cold first load after the change, 203 to 233 ms is the main
-  thread waiting on those two links (`getProgramParameter`), and the batch program, with its 16-sampler fragment
-  shader, is the larger: about 90 ms cold on teitou against 70 for the text build. Next: measure `pages.sh` again
-  on an idle orochi; if a cold first load is still over the bar, make the batch program cheaper to compile.
-  Holding the first frame until `programsReady()` would empty the long task but not draw sooner. Closes when a
-  weasel canvas's first frame on that machine comes within 300 ms of its data arriving, cold cache included,
-  measured the same way.
+  Next: run `pages.sh` on an idle orochi over these four builds. Closes when a weasel canvas's first frame on
+  that machine comes within 300 ms of its data arriving, cold cache included, measured the same way.
 
 - **(P3) [waiting] Whether the batched path costs a co-tenant on the same page.** Reported, not measured
   here. A consumer benchmarking its wall against a canvas2d control found that at one rung the

@@ -1,0 +1,77 @@
+[
+ {
+  "round": 0,
+  "mode": "none",
+  "ms": 191.10000038146973
+ },
+ {
+  "round": 0,
+  "mode": "warm-50",
+  "ms": 105.90000009536743
+ },
+ {
+  "round": 0,
+  "mode": "warm-50-flush",
+  "ms": 56.90000009536743
+ },
+ {
+  "round": 0,
+  "mode": "warm-100-flush",
+  "ms": 9.400000095367432
+ },
+ {
+  "round": 0,
+  "mode": "self-50-flush",
+  "ms": 59.200000286102295
+ },
+ {
+  "round": 1,
+  "mode": "none",
+  "ms": 111.90000009536743
+ },
+ {
+  "round": 1,
+  "mode": "warm-50",
+  "ms": 118.09999990463257
+ },
+ {
+  "round": 1,
+  "mode": "warm-50-flush",
+  "ms": 60.59999990463257
+ },
+ {
+  "round": 1,
+  "mode": "warm-100-flush",
+  "ms": 10.5
+ },
+ {
+  "round": 1,
+  "mode": "self-50-flush",
+  "ms": 61.90000009536743
+ },
+ {
+  "round": 2,
+  "mode": "none",
+  "ms": 112
+ },
+ {
+  "round": 2,
+  "mode": "warm-50",
+  "ms": 113.40000009536743
+ },
+ {
+  "round": 2,
+  "mode": "warm-50-flush",
+  "ms": 59.09999990463257
+ },
+ {
+  "round": 2,
+  "mode": "warm-100-flush",
+  "ms": 8.599999904632568
+ },
+ {
+  "round": 2,
+  "mode": "self-50-flush",
+  "ms": 60.10000038146973
+ }
+]

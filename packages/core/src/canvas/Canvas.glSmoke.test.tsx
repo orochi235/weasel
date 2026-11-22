@@ -11,9 +11,11 @@ describe('GL renderer', () => {
   // readPixels() after render returns all zeros.
   it('calls getContext("webgl2") with preserveDrawingBuffer + stencil', async () => {
     const getCtxSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
-    render(<Canvas width={100} height={100} layers={{}} />);
+    const { container } = render(<Canvas width={100} height={100} layers={{}} />);
     await waitForFrame();
-    const webgl2Calls = getCtxSpy.mock.calls.filter((c) => c[0] === 'webgl2');
+    // The canvas's own context: `warmPrograms` opens one of its own on a canvas no one sees.
+    const canvas = container.querySelector('canvas');
+    const webgl2Calls = getCtxSpy.mock.calls.filter((c, i) => c[0] === 'webgl2' && getCtxSpy.mock.contexts[i] === canvas);
     expect(webgl2Calls.length).toBeGreaterThan(0);
     expect(webgl2Calls[0][1]).toMatchObject({ preserveDrawingBuffer: true, stencil: true });
     getCtxSpy.mockRestore();

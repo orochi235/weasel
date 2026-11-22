@@ -9,6 +9,7 @@
  */
 
 export { WeaselRenderer } from './WeaselRenderer';
+export { warmPrograms } from './warmPrograms';
 export {
   type WeaselRendererOptions, type RenderTarget,
   type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats, type RetainedStats,

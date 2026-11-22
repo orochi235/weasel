@@ -745,7 +745,9 @@ Chromium 159 on ANGLE Metal) on 2026-11-21, medians of 5 rounds with cold shader
 | reload, after |   1.8 |  11.1 |   0 |
 
 That frame draws with the batch program and its text build, about 90 ms and 70 ms to link cold; since
-2026-11-21 both start at construction and compile at once. The runs, and `probe.mjs`'s loads of skulkr's demo
+2026-11-21 they start at construction, with the path fill, and compile at once. On skulkr's audits page,
+measured with `pages.sh`, starting them sooner matters more: a canvas warming them as it first renders, and an
+app calling `warmPrograms()` at startup, bring its cold first load from 260 ms to 185 and 139 on teitou. The runs, and `probe.mjs`'s loads of skulkr's demo
 audits page, are in `tests/perf/recorded/first-frame-2026-11-21/`.
 
 ## Timing a frame

@@ -1,0 +1,33 @@
+probe http://localhost:63071/skulkr/ headed false channel chrome dpr 2 cold true
+1/4 goto   longest task   209 ms  canvases 1  tasks [[132,209],[342,66]]
+    gl (profile, inclusive) {"getContext":4.1,"linkProgram":0.4,"getParameter":0.5,"texImage2D":0.3,"bufferData":16.2,"getShaderParameter":24.5,"getProgramParameter":32,"texSubImage2D":0.5,"drawElements":3.3}
+    links [at ms, frag length, waited ms] [[158.2,3797,0],[158.5,6152,0],[158.5,563,0],[248.2,3797,0],[249,563,0.1],[249.2,6152,32.3]]
+    top self [["(idle) :-1",1778.2],["(garbage collector) :-1",295.1],["(program) :-1",226],["mS index-BgDTtAIt.js:397",171.4],["Xce index-BgDTtAIt.js:397",48.2],["sS index-BgDTtAIt.js:397",47.9],["tm index-BgDTtAIt.js:77",45.7],["ko index-BgDTtAIt.js:76",35.2]]
+1/4 reload longest task    68 ms  canvases 1  tasks [[125,68]]
+    gl (profile, inclusive) {"getContext":3.5,"getParameter":0.3,"texImage2D":0.3,"getShaderParameter":1.6,"texSubImage2D":0.3,"drawElements":5.3,"bufferData":12.1}
+    links [at ms, frag length, waited ms] [[133.4,3797,0],[133.5,6152,0],[133.6,563,0],[171.4,3797,0],[171.6,563,0.1],[171.7,6152,0]]
+    top self [["(idle) :-1",1966.1],["(garbage collector) :-1",296.8],["(program) :-1",215.2],["mS index-BgDTtAIt.js:397",178.9],["tm index-BgDTtAIt.js:77",48.8],["Xce index-BgDTtAIt.js:397",45.1],["sS index-BgDTtAIt.js:397",43.5],["zme index-BgDTtAIt.js:397",38.6]]
+2/4 goto   longest task   183 ms  canvases 1  tasks [[116,183],[299,56]]
+    gl (profile, inclusive) {"getContext":4.3,"getParameter":0.3,"linkProgram":0.3,"texImage2D":0.2,"getShaderParameter":20.2,"getProgramParameter":33.9,"bufferData":13.5,"texSubImage2D":0.2,"drawElements":3.5}
+    links [at ms, frag length, waited ms] [[140,3797,0],[140.3,6152,0],[140.3,563,0],[213.1,3797,0],[214,563,0.1],[214.3,6152,33.8]]
+    top self [["(idle) :-1",1863.4],["(garbage collector) :-1",266.9],["(program) :-1",219.5],["mS index-BgDTtAIt.js:397",166.6],["tm index-BgDTtAIt.js:77",50.4],["sS index-BgDTtAIt.js:397",46.2],["Xce index-BgDTtAIt.js:397",41.7],["ko index-BgDTtAIt.js:76",40.6]]
+2/4 reload longest task    71 ms  canvases 1  tasks [[115,71],[187,50]]
+    gl (profile, inclusive) {"getContext":4.1,"getParameter":0.2,"texImage2D":0.2,"getShaderParameter":1.8,"getUniformLocation":0.3,"getProgramParameter":0.3,"bufferData":15.9,"drawElements":3.5}
+    links [at ms, frag length, waited ms] [[124.5,3797,0],[124.7,6152,0],[124.8,563,0],[165.7,3797,0],[165.9,563,0],[166,6152,0.1]]
+    top self [["(idle) :-1",1952.4],["(garbage collector) :-1",286.2],["(program) :-1",214.9],["mS index-BgDTtAIt.js:397",193.9],["tm index-BgDTtAIt.js:77",55.2],["sS index-BgDTtAIt.js:397",45.5],["Xu index-BgDTtAIt.js:77",44.3],["Xce index-BgDTtAIt.js:397",41.9]]
+3/4 goto   longest task   185 ms  canvases 1  tasks [[128,185],[313,60]]
+    gl (profile, inclusive) {"getContext":3.8,"getParameter":0.2,"linkProgram":0.3,"texImage2D":0.2,"getShaderParameter":22.4,"getProgramParameter":37.1,"texSubImage2D":0.3,"bufferData":13.5,"drawElements":4.3}
+    links [at ms, frag length, waited ms] [[153.8,3797,0],[154.1,6152,0],[154.1,563,0],[223.8,3797,0],[224.4,563,0],[224.7,6152,37]]
+    top self [["(idle) :-1",1883.9],["(garbage collector) :-1",258.4],["(program) :-1",213.9],["mS index-BgDTtAIt.js:397",160.8],["tm index-BgDTtAIt.js:77",55.6],["sS index-BgDTtAIt.js:397",45.8],["Xce index-BgDTtAIt.js:397",42.2],["ko index-BgDTtAIt.js:76",40.6]]
+3/4 reload longest task    80 ms  canvases 1  tasks [[144,80],[225,58]]
+    gl (profile, inclusive) {"getContext":4.7,"texImage2D":0.2,"getShaderParameter":2.9,"getProgramParameter":0.5,"bufferData":12.8,"drawElements":2.5,"texSubImage2D":0.3}
+    links [at ms, frag length, waited ms] [[154.2,3797,0],[154.4,6152,0],[154.5,563,0],[200.8,3797,0],[200.9,563,0],[201,6152,0]]
+    top self [["(idle) :-1",1918.1],["(garbage collector) :-1",289.6],["(program) :-1",223.4],["mS index-BgDTtAIt.js:397",176.4],["tm index-BgDTtAIt.js:77",51.7],["sS index-BgDTtAIt.js:397",48.6],["Xu index-BgDTtAIt.js:77",47.2],["ko index-BgDTtAIt.js:76",39.5]]
+4/4 goto   longest task   183 ms  canvases 1  tasks [[118,183],[301,57]]
+    gl (profile, inclusive) {"getContext":4.6,"linkProgram":0.1,"getParameter":0.3,"texImage2D":0.3,"getShaderParameter":21.2,"getProgramParameter":36,"drawElements":5,"bufferData":16.6}
+    links [at ms, frag length, waited ms] [[140.2,3797,0],[140.4,6152,0],[140.4,563,0],[212.4,3797,0],[213.1,563,0],[213.3,6152,36]]
+    top self [["(idle) :-1",1815.8],["(garbage collector) :-1",296.6],["(program) :-1",214.9],["mS index-BgDTtAIt.js:397",174.1],["tm index-BgDTtAIt.js:77",53.9],["Xce index-BgDTtAIt.js:397",47.2],["sS index-BgDTtAIt.js:397",46.9],["Xu index-BgDTtAIt.js:77",44.4]]
+4/4 reload longest task    77 ms  canvases 1  tasks [[150,77],[227,54]]
+    gl (profile, inclusive) {"getContext":3.9,"texImage2D":0.2,"getShaderParameter":2.2,"bufferData":20.3,"getProgramParameter":0.2,"texSubImage2D":0.2,"drawElements":5.1}
+    links [at ms, frag length, waited ms] [[161.1,3797,0],[161.2,6152,0.1],[161.3,563,0],[206.3,3797,0],[206.6,563,0.1],[206.7,6152,0]]
+    top self [["(idle) :-1",1866.8],["(garbage collector) :-1",303.4],["(program) :-1",218.9],["mS index-BgDTtAIt.js:397",191.3],["sS index-BgDTtAIt.js:397",48.3],["tm index-BgDTtAIt.js:77",46.3],["Xu index-BgDTtAIt.js:77",44.3],["zme index-BgDTtAIt.js:397",44.1]]
