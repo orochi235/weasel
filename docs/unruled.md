@@ -3623,3 +3623,9 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): `facesAlong` throws a `RangeError` for a `step` that is not a positive finite
   number, as `mergeRegion` does for its `tolerance`; a zero one had looped forever, and a negative one sampled only
   each segment's ends. Falling back to one sample per segment was the alternative.
+## Audit round sixty-seven (2026-11-22): CurveEditor
+
+- 2026-11-22 (the fixer's call): a context menu that opens while a curve layer's drag runs, as a touch long press
+  does after its pointerdown grabbed an anchor, cancels the drag and goes to the layers from the state before it; a
+  right-click in the middle of a mouse drag does the same. Ignoring the menu while a drag runs, which left a long
+  press unable to delete an anchor, was the alternative (`LayeredCurveEditor.tsx`, `onSvgContextMenu`).

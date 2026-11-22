@@ -6,6 +6,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
+import { flushSync } from 'react-dom';
 import { historyKey } from '@weasel-js/gestures';
 import { deepEqual } from '@weasel-js/registry';
 import {
@@ -147,11 +148,12 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     e: ReactMouseEvent<SVGSVGElement>,
     coords: LayerPoint,
   ) => {
-    if (busy()) return;
+    // A long press opens a menu after its pointerdown has started a drag; the menu wins, as from where the drag began.
+    if (busy()) flushSync(cancel);
     const before = snapshot();
     const edit = dispatchContextMenu(layers(), coords, e.nativeEvent, makeCtx(readModifiers(e)));
     if (edit) settleEdit(before, edit);
-  }, [busy, makeCtx, snapshot, settleEdit, layers]);
+  }, [busy, cancel, makeCtx, snapshot, settleEdit, layers]);
 
   // ── render ─────────────────────────────────────────────────────────
   const host = useMemo<LayerHost>(() => ({ register, base: renderCtxBase, active: activeEntry }), [register, renderCtxBase, activeEntry]);
