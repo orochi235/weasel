@@ -215,6 +215,22 @@ describe('prefReader', () => {
     expect(prefReader(section, {})('data.fill')).toBe('b');
   });
 
+  it('reads a split leaf as the option its selector names, by its `defaultScope` where nothing is held', () => {
+    const mode = { kind: 'enum', name: 'Mode', description: '', default: 'a', options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }] } as PrefLeaf;
+    const gap = num('Gap', { scopes: [{ selector: 'mode' }], defaultScope: { $by: 'mode', $in: { b: 4 }, $else: 1 } });
+    const split: PrefGroup = { name: '', children: { mode, gap } };
+    expect(prefReader(split, {})('gap')).toBe(1);
+    expect(prefReader(split, { mode: 'b' })('gap')).toBe(4);
+    expect(prefReader(split, { mode: 'b', gap: { $by: 'mode', $in: { b: 9 }, $else: 2 } })('gap')).toBe(9);
+    expect(prefJudge(split, prefReader(split, { mode: 'b' }))({ path: 'gap', atLeast: 3 }, 'showIf')).toBe(true);
+  });
+
+  it('reads a leaf that starts auto as its `auto.value`, never its default', () => {
+    const auto: PrefGroup = { name: '', children: { size: num('Size', { auto: { on: true, value: 5 } }), free: num('Free', { auto: { on: true } }) } };
+    expect(prefReader(auto, {})('size')).toBe(5);
+    expect(prefReader(auto, {})('free')).toBeUndefined();
+  });
+
   it('reads a path no leaf holds as undefined', () => {
     const read = prefReader(root, {});
     expect(read('snap')).toBeUndefined();
