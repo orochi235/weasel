@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
-import { maxImageTextureSide } from './cache/GLImageCache';
+import { imageSourceInLatestFrame, maxImageTextureSide } from './cache/GLImageCache';
 import { registerProgram, _resetProgramRegistryForTests } from './shaders/registerProgram';
 import { mat3 } from '@weasel-js/geom';
 import type { DrawCommand } from './DrawCommand';
@@ -148,6 +148,17 @@ describe('WeaselRenderer context loss', () => {
     expect(idxFirstDelete).toBeGreaterThanOrEqual(0);
     expect(idxFirstDelete).toBeLessThan(idxClear);
     expect(cache._pendingDeleteCount()).toBe(0);
+  });
+
+  it('stops holding the images it drew once its context is lost', () => {
+    const canvas = makeFakeCanvas();
+    const r = new WeaselRenderer({ canvas, width: 100, height: 100, dpr: 1 });
+    const key = {};
+    rendererParts(r).imageCache.upload(key, { width: 2, height: 2 } as unknown as ImageBitmap);
+    expect(imageSourceInLatestFrame(key)).toBe(true);
+    canvas.dispatchEvent('webglcontextlost');
+    expect(imageSourceInLatestFrame(key)).toBe(false);
+    r.dispose();
   });
 
   it('reinitializes after webglcontextrestored', () => {

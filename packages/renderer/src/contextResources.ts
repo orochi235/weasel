@@ -126,6 +126,12 @@ export class ContextResources {
     this.startFirstFrame();
   }
 
+  /** Stop answering for the images the lost context held, so a context that
+   *  never comes back pins none of them and limits no other renderer's size. */
+  contextLost(): void {
+    this.imageCache.abandon();
+  }
+
   /** Free every image texture and sample images under `mode` from here on. */
   setImageMinification(mode: ImageMinification): void {
     this.imageCache.dispose();
