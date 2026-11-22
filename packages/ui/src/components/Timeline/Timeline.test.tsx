@@ -578,4 +578,16 @@ describe('Timeline', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect((onInput.mock.calls.at(-1)![0][0] as SampledTrack<number>).keys.map((k) => k.value)).toEqual([1, 2]);
   });
+
+  it('keeps refusing keyboard edits while a key drag is held, though another finger lifts', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    const key = screen.getAllByTestId('timeline-key')[1];
+    fireEvent.pointerDown(key, { pointerId: 1, pointerType: 'touch', clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-lane-track')[1], { pointerId: 2, pointerType: 'touch', clientX: 50, clientY: 10, button: 0 });
+    fireEvent.pointerUp(document, { pointerId: 2, pointerType: 'touch', clientX: 50, clientY: 10 });
+    fireEvent.pointerMove(document, { pointerId: 3, pointerType: 'mouse', clientX: 50, clientY: 10, buttons: 0 });
+    fireEvent.keyDown(key, { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });
