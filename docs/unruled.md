@@ -3756,3 +3756,9 @@ Calls the lanes made without a ruling:
   move, sends `onInput` the tracks it began from and then calls `onCancel`, as a canceled drag does and as `ColorField`
   does for a pick closed on its starting color. A drag that previewed nothing calls nothing. Calling nothing at all
   was the alternative.
+
+## Audit round seventy-one (2026-11-22): renderer, part one
+
+- 2026-11-22: `WeaselRenderer` throws when given both `gl` and a `canvas` that is not `gl.canvas`, rather than
+  letting `gl` win and ignoring the canvas, or sizing and watching the wrong one as it did. A stand-in `gl.canvas`
+  that is not a real canvas (a test double's) is not checked.

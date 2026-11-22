@@ -10,7 +10,16 @@ export function openWebGL(opts: Pick<WeaselRendererOptions, 'gl' | 'canvas'>): {
   if (!opts.gl && !opts.canvas) {
     throw new Error('WeaselRenderer requires either gl or canvas');
   }
+  if (opts.gl && opts.canvas && opts.canvas !== opts.gl.canvas && isCanvas(opts.gl.canvas)) {
+    throw new Error('WeaselRenderer: `canvas` is not the canvas of the `gl` it was given with; pass `gl` alone, or its own canvas.');
+  }
   const gl = opts.gl ?? opts.canvas!.getContext('webgl2', RENDERER_CONTEXT_ATTRIBUTES);
   if (!gl) throw new Error('WeaselRenderer: WebGL2 not available');
   return { device: webglDevice(gl), lossTarget: (gl.canvas as Partial<EventTarget> | undefined) ?? null };
+}
+
+/** A real canvas, rather than a test double's stand-in for one. */
+function isCanvas(target: unknown): boolean {
+  return (typeof HTMLCanvasElement !== 'undefined' && target instanceof HTMLCanvasElement)
+    || (typeof OffscreenCanvas !== 'undefined' && target instanceof OffscreenCanvas);
 }

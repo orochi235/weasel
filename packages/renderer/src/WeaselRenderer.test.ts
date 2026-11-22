@@ -338,6 +338,15 @@ describe('dispose', () => {
     expect(links()).toBe(2);
   });
 
+  it('refuses a canvas that is not the canvas of the gl it came with', () => {
+    const rec = createGLRecorder();
+    const own = document.createElement('canvas');
+    const gl = new Proxy(rec.gl, { get: (t, k) => (k === 'canvas' ? own : Reflect.get(t, k)) });
+    expect(() => new WeaselRenderer({ gl, canvas: document.createElement('canvas'), width: 10, height: 10, dpr: 1 }))
+      .toThrow(/not the canvas of the `gl`/);
+    expect(() => new WeaselRenderer({ gl, canvas: own, width: 10, height: 10, dpr: 1 }).dispose()).not.toThrow();
+  });
+
   it('builds a lazy program again on a restored context', () => {
     const canvas = document.createElement('canvas');
     const rec = createGLRecorder();
