@@ -5,6 +5,7 @@ import type { GradientPaint, Paint } from '@weasel-js/paint';
 import { stubRect } from '../Slider/testing/stubRect';
 import { GradientEditor, type GradientEditorProps } from './GradientEditor';
 import { renderWithIcons } from '../../testing/withIcons';
+import { ReadOnly } from '../Disabled';
 
 const THREE: GradientPaint = {
   kind: 'linear-gradient',
@@ -286,5 +287,50 @@ describe('GradientEditor stops', () => {
       expect(container.querySelector('[inert]')).toBeNull();
       expect(container.firstElementChild).not.toHaveAttribute('aria-disabled');
     });
+  });
+  describe('read-only', () => {
+    it('removes no stop by Delete, the Remove button, or a right-click', () => {
+      const onChange = vi.fn();
+      renderWithIcons(<ReadOnly reason="Locked"><GradientEditor value={THREE} onChange={onChange} /></ReadOnly>);
+      fireEvent.focus(handle(2));
+      fireEvent.keyDown(handle(2), { key: 'Delete' });
+      fireEvent.click(screen.getByRole('button', { name: /^Remove stop/ }));
+      fireEvent.contextMenu(handle(1));
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('switches neither the kind nor the blend space', () => {
+      const onChange = vi.fn();
+      renderWithIcons(<ReadOnly reason="Locked"><GradientEditor value={THREE} onChange={onChange} /></ReadOnly>);
+      fireEvent.click(screen.getByRole('radio', { name: 'OKLab' }));
+      expect(onChange).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('a removal the caller declines', () => {
+    it('leaves the selection on the stop it was on', () => {
+      const onSelectionChange = vi.fn();
+      renderWithIcons(<GradientEditor value={THREE} onSelectionChange={onSelectionChange} onChange={() => {}} />);
+      fireEvent.focus(handle(3));
+      onSelectionChange.mockClear();
+      fireEvent.contextMenu(handle(1));
+      fireEvent.keyDown(handle(3), { key: 'Delete' });
+      expect(onSelectionChange).not.toHaveBeenCalled();
+      expect(screen.getByRole('group', { name: 'Stop 3 of 3' })).toBeInTheDocument();
+    });
+  });
+
+  it('reports the selection moving when the selected stop at index 0 is removed', () => {
+    const onSelectionChange = vi.fn();
+    renderWithIcons(<Live initial={THREE} onSelectionChange={onSelectionChange} />);
+    fireEvent.keyDown(handle(1), { key: 'Delete' });
+    expect(onSelectionChange).toHaveBeenCalledWith(0);
+  });
+
+  it('reports no selection change when a stop after the selected one is removed', () => {
+    const onSelectionChange = vi.fn();
+    renderWithIcons(<Live initial={THREE} onSelectionChange={onSelectionChange} />);
+    fireEvent.contextMenu(handle(3));
+    expect(onSelectionChange).not.toHaveBeenCalled();
   });
 });

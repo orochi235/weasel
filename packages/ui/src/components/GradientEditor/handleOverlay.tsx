@@ -29,7 +29,8 @@ export interface EditSession {
   cancel: (sent: boolean) => void;
 }
 
-const SessionContext = createContext<EditSession>({ begin: () => {}, cancel: () => {} });
+const NO_SESSION: EditSession = { begin: () => {}, cancel: () => {} };
+const SessionContext = createContext<EditSession>(NO_SESSION);
 /** The overlay's hold, which every point it draws answers to. */
 const HoldContext = createContext<ControlHold | null>(null);
 
@@ -127,10 +128,13 @@ export function DragPoint({
   axis?: OverlayPoint;
   onDrag: (p: OverlayPoint, phase: EditPhase) => void;
 }): ReactElement {
-  const session = useContext(SessionContext);
   const hold = useContext(HoldContext);
+  const live = useContext(SessionContext);
+  // A held point sends no edit, so it has no edit to begin or cancel either.
+  const session = hold?.refuses ? NO_SESSION : live;
   const onDrag = hold ? hold.gate(onPointDrag) : onPointDrag;
   const sent = useRef(false);
+  const dragging = useRef(false);
   // Where on the handle the press landed, so the point keeps that offset from the pointer.
   const grab = useRef<OverlayPoint>({ x: 0, y: 0 });
   const held = (p: OverlayPoint): OverlayPoint => ({ x: p.x - grab.current.x, y: p.y - grab.current.y });
@@ -138,6 +142,7 @@ export function DragPoint({
     onStart: (p) => {
       session.begin();
       sent.current = false;
+      dragging.current = true;
       grab.current = { x: p.x - at.x, y: p.y - at.y };
     },
     onMove: (p) => {
@@ -145,15 +150,21 @@ export function DragPoint({
       onDrag(held(p), 'input');
     },
     onEnd: ({ point, moved }) => {
+      dragging.current = false;
       if (moved) onDrag(held(point), 'commit');
     },
-    onCancel: () => { session.cancel(sent.current); },
+    onCancel: () => {
+      dragging.current = false;
+      session.cancel(sent.current);
+    },
     escape: true,
   });
   const onKeyDown = (e: ReactKeyboardEvent<SVGCircleElement>): void => {
     const move = arrowMove(e.key, e.shiftKey);
     if (move === null) return;
     e.preventDefault();
+    // A step mid-drag would commit, and take the drag's start with it, under the pointer's own edit.
+    if (dragging.current) return;
     const along = (move.dx - move.dy) * KEY_STEP;
     const next = axis
       ? { x: at.x + axis.x * along, y: at.y + axis.y * along }

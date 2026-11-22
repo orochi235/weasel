@@ -9,9 +9,10 @@ export function stopOrder(stops: readonly GradStop[]): number[] {
 /** Which stop the editor is on, and how that moves when the list changes. Stops are named by their index in `stops`. */
 export interface StopSelection {
   selected: number;
-  select: (index: number) => void;
-  /** Moves the selection for the removal of `index` and returns where it went, as an index into the shorter list. */
-  removing: (index: number) => number;
+  /** `report` tells the caller even when the index is unchanged, because another stop now holds it. */
+  select: (index: number, report?: boolean) => void;
+  /** Where the selection goes once `index` is removed, as an index into the shorter list, and whether the selected stop is the one removed. */
+  afterRemoval: (index: number) => { next: number; lost: boolean };
 }
 
 /**
@@ -29,20 +30,19 @@ export function useStopSelection(
   const asked = controlled ?? own;
   const selected = asked >= 0 && asked < stops.length ? asked : order[0];
 
-  const select = (index: number): void => {
-    if (index === asked) return;
+  const select = (index: number, report = false): void => {
+    if (index === asked && !report) return;
     setOwn(index);
     onSelect?.(index);
   };
 
-  const removing = (index: number): number => {
+  const afterRemoval = (index: number): { next: number; lost: boolean } => {
     // Losing the selected stop hands the selection to the stop before it, or to the one after the first.
     const place = order.indexOf(index);
-    const keep = index === selected ? order[place > 0 ? place - 1 : 1] : selected;
-    const next = keep > index ? keep - 1 : keep;
-    select(next);
-    return next;
+    const lost = index === selected;
+    const keep = lost ? order[place > 0 ? place - 1 : 1] : selected;
+    return { next: keep > index ? keep - 1 : keep, lost };
   };
 
-  return { selected, select, removing };
+  return { selected, select, afterRemoval };
 }
