@@ -1,10 +1,10 @@
 import type { EffectModule } from '../bases/types';
-import { clampParam } from '../shapes/params';
+import { clampParam, finiteOr } from '../shapes/params';
 import { rangeMask, type BadgeRangeMaskParams } from './rangeMask';
 
 /** What an effect of type `perforations` takes as `params`. */
 export interface BadgePerforationsEffectParams extends BadgeRangeMaskParams {
-  /** Hole radius in CSS px. */
+  /** Hole radius in CSS px, held to the box's longer side. */
   holeRadius?: number;
   /** Spacing between hole centers along the perimeter, in CSS px. */
   holeSpacing?: number;
@@ -23,8 +23,10 @@ const Perforations: EffectModule<BadgePerforationsEffectParams> = {
     const sx = 100 / boxW;
     const sy = 100 / boxH;
     const total = sampler.totalCss;
-    const holeRadius = clampParam(cfg.holeRadius, 0, Infinity, DEFAULTS.holeRadius);
-    const pitch = clampParam(Math.max(2 * holeRadius, cfg.holeSpacing), MIN_HOLE_PITCH, Infinity, DEFAULTS.holeSpacing);
+    // A radius past the box's longer side already masks the whole badge, as the `perforated` shape's does.
+    const holeRadius = clampParam(cfg.holeRadius, 0, Math.max(boxW, boxH), DEFAULTS.holeRadius);
+    const holeSpacing = finiteOr(cfg.holeSpacing, DEFAULTS.holeSpacing);
+    const pitch = Math.max(MIN_HOLE_PITCH, 2 * holeRadius, holeSpacing);
     const N = Math.max(2, Math.floor(total / pitch));
     const step = total / N;
     const holes: { cx: number; cy: number }[] = [];
