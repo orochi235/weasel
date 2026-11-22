@@ -41,10 +41,6 @@ describe('viewportZoomAction descriptor', () => {
     expect(viewportZoomAction.requires).toContain('view');
   });
 
-  it('enabled returns true (always enabled)', () => {
-    expect(viewportZoomAction.enabled!()).toBe(true);
-  });
-
   it('has 7 gesture bindings: wheel+mod, ctrl+wheel, pinch, key =, key -, key 0, key alt+0', () => {
     const bindings = viewportZoomAction.defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>;
     expect(bindings).toHaveLength(7);

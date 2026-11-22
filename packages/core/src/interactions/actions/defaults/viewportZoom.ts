@@ -1,4 +1,4 @@
-import { defineAction, type Action, type ActionParamsOf, type BoundGesture } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, type Action, type ActionParamsOf, type BoundGesture } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
 import { axisZoomFactor, zoomAt, type ZoomAxis } from 'core/viewport/zoomAt';
 import { wheelZoomFactor } from 'core/viewport/wheelHandler';
@@ -218,7 +218,7 @@ export function createViewportZoomAction(
         }
       },
     },
-    enabled: () => true,
+    enabled: (deps) => (deps?.view ? true : ActionDisabledReason.NotApplicable),
   });
 }
 

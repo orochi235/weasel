@@ -1,4 +1,4 @@
-import { defineAction, type Action, type ActionParamsOf, type BoundGesture } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, type Action, type ActionParamsOf, type BoundGesture } from '@weasel-js/routing';
 import { wheelPan } from 'core/viewport/wheelHandler';
 import type {} from '../actionParamSchema';
 import { VIEWPORT_GROUP } from '../actionGroups';
@@ -39,7 +39,7 @@ export const viewportWheelPanAction = defineAction({
       deps.debug?.recordViewport('pan', from, next);
     },
   },
-  enabled: () => true,
+  enabled: (deps) => (deps?.view ? true : ActionDisabledReason.NotApplicable),
 });
 
 /** Tuning for {@link createViewportWheelPanAction}. */
