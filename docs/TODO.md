@@ -421,6 +421,13 @@ only story runner in the repo.
   before a face or a layout settles is the first thing to look for.
   Closes when it fails again, which makes it a fix, or on 2026-11-30 with no second sighting, delete it.
 
+- **(P3) [waiting] `offsetPath`'s round-join property timed out in one full fleet run.** "grows a convex polygon
+  with round joins by its perimeter times the distance and the disc, everywhere at the distance"
+  (`packages/stroke/src/offsetPath.pbt.test.ts`) hit vitest's 6,000 ms timeout twice, after 13.1 s on its retry, in
+  batch 2026-11-22's run on 2026-11-22, which changed nothing in `packages/stroke`. Alone on msb-uai it took 1.1 s
+  (job a4098798). Seen once. Closes when it times out again, which makes it a fix (cap its runs or shrink its
+  inputs), or on 2026-12-06 with no second sighting, delete it.
+
 - **(P3) [waiting] chart's audio browser test timed out clicking a menu row in one full fleet run.** "plays an
   oscillator into the output, draws it as a scope or a spectrum, and closes its engine when the mode is left while
   it plays" (`apps/chart/src/pipeline/audio.browser.test.tsx`) hit `locator.click: Timeout 2435ms exceeded` on the
