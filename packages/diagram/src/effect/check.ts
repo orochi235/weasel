@@ -28,25 +28,25 @@ export function splitProblem(stage: EffectStage): string | null {
   return null;
 }
 
-/** What a stage or port id starts with when a look made it: the lanes look's
+/** What a stage, port or cluster id starts with when a look made it: the lanes look's
  *  lane nodes, the rack look's skip and tap ports. No pipeline's may. */
 export const RESERVED_ID_PREFIX = '~';
 
-/** The first stage or port id in `pipeline` that starts with `RESERVED_ID_PREFIX`. */
-function firstReserved(pipeline: EffectPipeline): { stage: string; port?: string } | undefined {
+/** The first stage, port or cluster id in `pipeline` that starts with `RESERVED_ID_PREFIX`, as the words naming it. */
+function firstReserved(pipeline: EffectPipeline): string | undefined {
   for (const stage of pipeline.stages) {
-    if (stage.id.startsWith(RESERVED_ID_PREFIX)) return { stage: stage.id };
+    if (stage.id.startsWith(RESERVED_ID_PREFIX)) return `stage "${stage.id}"`;
     const port = [...(stage.inputs ?? []), ...(stage.outputs ?? [])].find((p) => p.id.startsWith(RESERVED_ID_PREFIX));
-    if (port !== undefined) return { stage: stage.id, port: port.id };
+    if (port !== undefined) return `port "${stage.id}.${port.id}"`;
   }
-  return undefined;
+  const cluster = pipeline.clusters?.find((g) => g.id.startsWith(RESERVED_ID_PREFIX));
+  return cluster === undefined ? undefined : `group "${cluster.id}"`;
 }
 
-/** Throws when `pipeline` has a stage or port id a look keeps for its own, naming `look`. */
+/** Throws when `pipeline` has a stage, port or cluster id a look keeps for its own, naming `look`. */
 export function assertNoReservedIds(pipeline: EffectPipeline, look: string): void {
-  const at = firstReserved(pipeline);
-  if (at === undefined) return;
-  const what = at.port === undefined ? `stage "${at.stage}"` : `port "${at.stage}.${at.port}"`;
+  const what = firstReserved(pipeline);
+  if (what === undefined) return;
   throw new Error(`the ${look} look can't draw ${what}: ids starting with "${RESERVED_ID_PREFIX}" are kept for the ones looks make`);
 }
 
@@ -116,6 +116,9 @@ export function checkPipeline(pipeline: EffectPipeline): EffectProblem[] {
       return false;
     }
     clusterIds.add(cluster.id);
+    if (cluster.id.startsWith(RESERVED_ID_PREFIX)) {
+      out.push({ kind: 'reserved-id', cluster: cluster.id, message: `Group "${cluster.id}" starts with "${RESERVED_ID_PREFIX}", which is kept for the ids looks make.` });
+    }
     return true;
   });
   const holder = new Map<string, string>();
