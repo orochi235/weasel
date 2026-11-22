@@ -612,6 +612,23 @@ on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed a
 
 ## Release-gate & build hygiene
 
+- **(P3) [maintainer] Without rolldown's native binding, vite 8.3.8 writes a lazy import's preload list as `[]`
+  and a stray hash, and the bundle does not parse** (2026-11-21). Not weasel's: nothing here installs without
+  optional dependencies; it showed up building skulkr's dashboard with `npm ci --omit=optional`, which drops
+  `@rolldown/binding-darwin-arm64`. Reproduction, on teitou (rolldown 1.2.19):
+
+  ```sh
+  mkdir r && cd r && echo '{"type":"module","devDependencies":{"vite":"8.3.8"}}' > package.json
+  echo '<script type="module" src="./main.js"></script>' > index.html
+  echo "(async () => (await import('./lazy.js')).x)().then(console.log);" > main.js
+  echo 'export const x = 1;' > lazy.js
+  npm install --omit=optional && npx vite build && grep -o '},\[\][0-9a-f]*)' dist/assets/*.js
+  # },[]ef065ca479353b7f1dbfaa9906aadf54)   with a plain `npm install`: },[])
+  ```
+
+  Closes when the maintainer has decided whether to report it upstream to vite and has done so, or has ruled it
+  not worth reporting.
+
 - **(P2) [maintainer] Make the changelogs something a reader can use** (2026-11-21). The audit rounds write
   a changeset per fix, so 3,827 were pending before 2.0.0 and `packages/core/CHANGELOG.md` was already
   13,131 lines: a reader deciding whether to upgrade gets thousands of one-line fixes with a few real

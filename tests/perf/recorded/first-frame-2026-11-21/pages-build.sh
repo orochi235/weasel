@@ -14,7 +14,7 @@ echo "ff: tree $(git rev-parse HEAD) + $(git status --porcelain | wc -l | tr -d 
 [ -d node_modules ] || npm ci --no-audit --no-fund > /dev/null 2>&1
 npm run build > "$out/weasel-build.log" 2>&1
 cd "$root/.ff-skulkr/dashboard"
-npm ci --no-audit --no-fund --omit=optional > "$out/dashboard-install.log" 2>&1
+npm ci --no-audit --no-fund > "$out/dashboard-install.log" 2>&1
 node -e '
 const fs = require("fs"), path = require("path");
 const root = process.argv[1];
@@ -49,8 +49,6 @@ for label in base head tree boot; do
   npx vite build --config vite.demo.config.ts --mode demo --outDir "$out/pages/$label" > "$out/page-build-$label.log" 2>&1
   if [ "$label" = boot ]; then cp /tmp/ff-main.tsx src/main.tsx; fi
   cd "$root"
-  # vite 8 writes this build's one lazy preload list as `[]` and a stray 32-hex hash, a syntax error; the list is empty.
-  for f in "$out/pages/$label"/assets/*.js; do perl -pi -e 's/\[\][0-9a-f]{32}\)/[])/g' "$f"; done
   node -e 'const a=require("acorn"),fs=require("fs");for(const f of process.argv.slice(1)){a.parse(fs.readFileSync(f,"utf8"),{ecmaVersion:"latest",sourceType:"module"})}' "$out/pages/$label"/assets/*.js
   echo "ff: $label built; KHR mentions $(cat "$out/pages/$label"/assets/*.js | grep -c KHR_parallel_shader_compile || true)"
 done
