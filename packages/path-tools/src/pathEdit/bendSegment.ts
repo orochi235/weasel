@@ -62,6 +62,11 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
         onMove(moveCtx: InvocationCtx): void {
           const dx = moveCtx.world.x - press.x;
           const dy = moveCtx.world.y - press.y;
+          // Back on the press point is no bend: a straight segment stays straight and nothing commits.
+          if (dx === 0 && dy === 0) {
+            current = null;
+            return;
+          }
           const next = editAnchorSetTracked(originPath, (set) => bendSegment(set, hit, dx, dy));
           // A frame no extension can finish is dropped, as the anchor drag drops one.
           if (next && finishPathEditFrame(dep, id, next.path, next.origins)) current = next;

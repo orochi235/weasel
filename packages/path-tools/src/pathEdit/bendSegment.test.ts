@@ -41,6 +41,15 @@ const at = (deps: InvocationCtx['deps'], x: number, y: number): InvocationCtx =>
 const ongoing = bendSegmentAction.invoker as OngoingInvoker;
 
 describe('bendSegmentAction', () => {
+  it('commits nothing when the drag ends back on its press point', () => {
+    const { deps, commits } = setup();
+    const handle = ongoing.start(at(deps, 50, 2), {});
+    handle.onMove!(at(deps, 50, 32));
+    handle.onMove!(at(deps, 50, 2));
+    handle.onEnd!(at(deps, 50, 2), 'commit');
+    expect(commits).toHaveLength(0);
+  });
+
   it('bends the segment so the pressed point follows the pointer, in one commit', () => {
     const { deps, commits } = setup();
     const handle = ongoing.start(at(deps, 50, 2), {});
