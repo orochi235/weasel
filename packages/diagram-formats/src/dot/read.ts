@@ -249,6 +249,11 @@ function readCluster(
   r: DotReader, id: string, attrs: Attrs, ids: ReadonlyMap<string, string>, unseen: ReadonlySet<string>,
 ): DataContainer {
   const styles = stylesOf(str(attrs, 'style'));
+  const members = r.membership.members(id, ids).filter((m) => !unseen.has(m));
+  // Graphviz draws neither an invisible cluster's box nor its label, but still lays its members out together.
+  if (styles.includes('invis')) {
+    return { id: ids.get(id)!, role: 'container', ...(members.length > 0 ? { members } : {}), colors: { fill: 'transparent', stroke: 'transparent' } };
+  }
   const color = colorAttr(r, attrs, 'color');
   const bg = colorAttr(r, attrs, 'bgcolor');
   const fill = colorAttr(r, attrs, 'fillcolor') ?? color ?? bg;
@@ -263,7 +268,6 @@ function readCluster(
   };
   const label = attrs.get('label');
   const lines = label === undefined ? [] : labelLines(label, id, r.graph.id ?? '');
-  const members = r.membership.members(id, ids).filter((m) => !unseen.has(m));
   return {
     id: ids.get(id)!, role: 'container',
     ...(lines.length > 0 ? { label: lines.join(' ') } : {}),

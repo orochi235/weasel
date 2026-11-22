@@ -27,6 +27,14 @@ describe('reading DOT', () => {
     ]);
   });
 
+  it('reads an invisible cluster as a container that draws nothing, around members it still draws', () => {
+    const p = page('digraph { subgraph cluster_a { style=invis; label=A; color=red; x; y } }');
+    expect(p.data.containers).toEqual([
+      { id: 'a', role: 'container', members: ['x', 'y'], colors: { fill: 'transparent', stroke: 'transparent' } },
+    ]);
+    expect(p.data.nodes.map((n) => n.id)).toEqual(['x', 'y']);
+  });
+
   it('reads plain subgraphs as scopes only, and nests clusters', () => {
     const p = page('digraph { subgraph cluster_x { subgraph { rank=same; a } subgraph cluster_y { b } } c }');
     expect(p.data.containers).toEqual([

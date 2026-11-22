@@ -3761,3 +3761,6 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): the DOT reader takes `pos` as points in a graph with a `bb`, which only layout output
   carries, and as inches in one without, as neato reads its input. A `!` pin says nothing about the unit; reading it as
   inches was the alternative, but Graphviz's own output pins nodes too.
+- 2026-11-22 (the fixer's call): the DOT reader reads a cluster whose `style` holds `invis` as a container with a
+  transparent fill and stroke and no label, holding its members as before, since Graphviz still lays an invisible
+  cluster out as one. Leaving the container out, as invisible nodes are, was the alternative; it would lose the grouping.
