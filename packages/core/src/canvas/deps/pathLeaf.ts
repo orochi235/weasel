@@ -6,6 +6,9 @@ import type { Path } from '@weasel-js/geom';
 import { poseLinearOf, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Node, Scene } from 'core/scene/types';
+import { withoutShapeGenerator } from 'domains/paths/shapeGenerator';
+import { withoutGeometryBoundData } from 'domains/paths/pathEditExtension';
+import { withoutAnchorData } from 'domains/paths/anchorData';
 
 /** A path leaf's world pose, and the box, rotation, and transform its path is drawn through. */
 export interface DrawnPose {
@@ -35,6 +38,12 @@ export function storePiece({ world, g, box }: DrawnPose, piece: Path): { pose: u
   const dst = { x: b.x, y: b.y, width: b.width, height: b.height };
   const pose = g.remapBounds(world, g.getBounds(world), dst);
   return { pose: rotation !== 0 ? g.withRotation!(pose, rotation) : pose, path };
+}
+
+/** A source leaf's `data` for a piece cut from it: less its shape generator, its geometry-bound data, and its
+ *  per-anchor arrays, none of which describe the piece's anchors. */
+export function pieceData<T>(data: T): T {
+  return withoutAnchorData(withoutGeometryBoundData(withoutShapeGenerator(data)));
 }
 
 /** The path a leaf stores, or null for one that is not a free path leaf: a

@@ -118,3 +118,37 @@ describe('the booleansPreset booleansAdapter stroke frame', () => {
     expect(adapter.getStrokeFrame?.(id)).toBeNull();
   });
 });
+
+describe('the booleansPreset booleansAdapter result data', () => {
+  it('drops what made or numbered the source geometry: its generator, its geometry-bound data, and its per-anchor arrays', () => {
+    const data = {
+      path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
+      fill: { paint: { color: 'red' } },
+      generator: { kind: 'star', points: 5, innerRadiusRatio: 0.5 },
+      skin: { bones: [] },
+      constraints: [],
+      warp: {},
+      representation: {},
+      vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1],
+      stroke: { paint: { color: 'black' }, width: 2, vertexWidths: [1, 2, 3, 4], vertexColors: [0, 0, 0, 1] },
+      label: 'kept',
+    };
+    const scene = createScene<unknown, 'main', P>({ systemLayers: [{ id: 'main' }], initial: [{ ...box(0, 'red'), data }] });
+    let registry: ReturnType<typeof useOptionalDepRegistry> = null;
+    function Probe() {
+      registry = useOptionalDepRegistry();
+      return null;
+    }
+    render(<SceneCanvas features={[selectionPreset, booleansPreset]} scene={scene} layers={{}} width={400} height={400}><Probe /></SceneCanvas>);
+    const adapter = registry!.get('booleansAdapter')!;
+    const id = [...scene.renderOrder()][0] as NodeId;
+    const piece = { kind: 'rect', x: 0, y: 0, width: 50, height: 50 } as Path;
+    for (const paint of [undefined, { fill: { paint: { color: 'blue' } }, stroke: null }]) {
+      const made = adapter.createPathNode(piece, 'union', id, paint as never) as unknown as { data: Record<string, unknown> };
+      for (const k of ['generator', 'skin', 'constraints', 'warp', 'representation', 'vertexColors']) expect(made.data).not.toHaveProperty(k);
+      const stroke = made.data['stroke'] as Record<string, unknown> | null;
+      if (stroke) expect(stroke).toEqual({ paint: { color: 'black' }, width: 2 });
+      expect(made.data['label']).toBe('kept');
+    }
+  });
+});
