@@ -150,4 +150,12 @@ describe('an achromatic anchor', () => {
     const blue = toLch('#2563eb').H;
     for (const step of ['300', '500', '700']) expect(hueGap(toLch(ramp[step]).H, blue)).toBeLessThan(3);
   });
+
+  it("keeps the declared peak when it is the ramp's only anchor", () => {
+    const steps = ['50', '300', '500', '700', '900'];
+    const params = { steps, lightness: [0.98, 0.35] as const, curve: 0, hue: 250, peak: 0.15, darkBias: 0 };
+    const free = lightnessRamp(params);
+    const anchored = lightnessRamp({ ...params, anchor: { '50': '#ffffff' } });
+    for (const step of ['300', '500', '700']) expect(toLch(anchored[step]).C).toBeCloseTo(toLch(free[step]).C, 3);
+  });
 });
