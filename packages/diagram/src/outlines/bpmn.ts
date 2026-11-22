@@ -7,7 +7,7 @@
 import { trimNumber } from '@weasel-js/geom';
 import { PathBuilder, type Path } from '@weasel-js/core/math';
 import { FIGURE_OUTLINES, figureOver } from './figures';
-import { FLOWCHART_OUTLINES } from './flowchart';
+import { FLOWCHART_OUTLINES, KAPPA } from './flowchart';
 import { outlineFromD } from './fromD';
 import type { Bounds, OutlineDef } from './types';
 
@@ -25,7 +25,6 @@ const event = figureOver(FLOWCHART_OUTLINES.ellipse, 1, EVENT / (EVENT + STRIP))
 
 /** An end event's ring, as a share of its radius: 3px on the 40px circle. */
 const END_RING = 0.15;
-const KAPPA = 0.5522847498;
 
 /** The band between `b`'s ellipse and one `k` of its radius smaller, the inner one wound the other way so it is a hole. */
 function annulus({ x, y, width: w, height: h }: Bounds, k: number): Path {
