@@ -3589,3 +3589,9 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): a `'click-curve'` function layer with fewer than two anchors, which draws no curve to
   press, adds a point from a click anywhere in the plot until it has two. Holding `minPoints` at 2 in that mode, so a
   delete could never leave it there, was the alternative; it would not help a state the consumer passes in that short.
+
+## Audit round sixty-six (2026-11-21): core's animation
+
+- 2026-11-21 (the fixer's call): an `animateLifecycle` node inserted again while its exit runs replaces the leaving one:
+  the exit ends, the node is removed as it stood, and the node given is inserted, so undo sees a removal and an insert.
+  Skipping the insert and writing only the new pose, which drops the rest of the node given, was the alternative.

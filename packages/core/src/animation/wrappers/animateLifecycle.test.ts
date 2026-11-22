@@ -160,9 +160,28 @@ describe('animateLifecycle when the node comes back or the tween cannot run', ()
       act(() => { wrapped.insertNode({ id: 'a', pose: { x: 5, y: 5, width: 30, height: 30 } }); });
       act(() => clock.advance(100));
       act(() => clock.advance(100));
-      expect(removeNode).not.toHaveBeenCalled();
+      expect(removeNode).toHaveBeenCalledTimes(1);
       expect(initial.get('a')).toEqual({ x: 5, y: 5, width: 30, height: 30 });
     }
+  });
+
+  it('never inserts an id the adapter still holds when the node comes back mid-exit', () => {
+    const clock = makeClock();
+    const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 20, height: 20 }]]);
+    const { base } = makeAdapter(initial);
+    const strict = {
+      ...base,
+      insertNode: (o: Obj) => {
+        if (initial.has(o.id)) throw new Error(`id collision on "${o.id}"`);
+        base.insertNode(o);
+      },
+    };
+    const { result } = renderHook(() => useAnimator(clock));
+    const wrapped = animateLifecycle(strict, result.current, { exitTo: SHRINK, ms: 100 });
+    act(() => { wrapped.removeNode('a'); });
+    act(() => clock.advance(50));
+    expect(() => wrapped.insertNode({ id: 'a', pose: { x: 5, y: 5, width: 30, height: 30 } })).not.toThrow();
+    expect(initial.get('a')).toEqual({ x: 5, y: 5, width: 30, height: 30 });
   });
 
   it('can remove a node again after a removal whose tween threw', () => {

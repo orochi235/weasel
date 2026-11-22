@@ -88,6 +88,21 @@ describe('unplaceSkeleton', () => {
     expect(back.joints[0].bind.rotation).toBeCloseTo(0, 6);
     expect(back.joints[1]).toBe(ARM.joints[1]);
   });
+
+  it('mirrors a root joint\'s turn with a node mirrored by its transform, and undoes it', () => {
+    const pose = { ...BOX, transform: [-1, 0, 0, 1] as const };
+    const turned = { joints: [{ ...ARM.joints[0], bind: { ...ARM.joints[0].bind, rotation: 0.3 } }, ARM.joints[1]] };
+    const root = placeSkeleton(turned, pose).joints[0].bind;
+    // The bone's +x axis, turned 0.3, drawn through x → -x.
+    const angle = root.rotation;
+    expect(Math.cos(angle) * root.scaleX).toBeCloseTo(-Math.cos(0.3), 6);
+    expect(Math.sin(angle) * root.scaleX).toBeCloseTo(Math.sin(0.3), 6);
+    expect(root.scaleX * root.scaleY).toBeCloseTo(-1, 6);
+    const back = unplaceSkeleton(placeSkeleton(turned, pose), pose).joints[0].bind;
+    expect(back.rotation).toBeCloseTo(0.3, 6);
+    expect(back.scaleX).toBeCloseTo(1, 6);
+    expect(back.scaleY).toBeCloseTo(1, 6);
+  });
 });
 
 describe('useRigNode', () => {
