@@ -225,6 +225,12 @@ describe('draw-style XML placeholders', () => {
     expect(node(data, 'u').lines).toEqual(['Ana\'s job %missing% 100%']);
   });
 
+  it('fills an HTML label\'s placeholders with their values as text, not markup', async () => {
+    const { data } = await readCells('<object id="u" label="&lt;b&gt;%name%&lt;/b&gt;" name="a&lt;b&gt;c &amp;lt; d" placeholders="1">'
+      + '<mxCell style="html=1;" vertex="1" parent="1"><mxGeometry width="80" height="40" as="geometry"/></mxCell></object>');
+    expect(node(data, 'u').lines).toEqual(['a<b>c &lt; d']);
+  });
+
   it('leaves placeholders alone without the flag', async () => {
     const { data } = await readCells('<UserObject id="u" label="%owner%" owner="Ana">'
       + '<mxCell style="rounded=0;" vertex="1" parent="1"><mxGeometry width="80" height="40" as="geometry"/></mxCell></UserObject>');

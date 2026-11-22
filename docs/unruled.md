@@ -3589,3 +3589,9 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): a `'click-curve'` function layer with fewer than two anchors, which draws no curve to
   press, adds a point from a click anywhere in the plot until it has two. Holding `minPoints` at 2 in that mode, so a
   delete could never leave it there, was the alternative; it would not help a state the consumer passes in that short.
+
+## Audit round sixty-six (2026-11-21): draw-style XML
+
+- 2026-11-21 (the fixer's call): a draw-style XML placeholder filled into an `html=1` label is escaped first, so its
+  value reads as the text it holds and never as markup. Letting a value carry HTML into the label was the alternative
+  (`drawXml/cells.ts`, `filled`).
