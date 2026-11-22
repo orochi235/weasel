@@ -58,12 +58,13 @@ export function needsDefaultAttribute(program: WgpuProgram, geometry: WgpuGeomet
 }
 
 /** The pipeline a draw of `program` is drawn with, or `null` where the GPU
- *  refused it: an invalid pipeline set on a pass voids the whole submit. */
+ *  refused it: an invalid pipeline set on a pass voids the whole submit. One
+ *  the GPU has not yet answered for stays in `program.unsettled` until it does. */
 export function ensurePipeline(
   device: GPUDevice, program: WgpuProgram, geometry: WgpuGeometry, target: PassAttachments, state: GpuDrawState,
 ): GPURenderPipeline | null {
   const key = `${geometry.layoutKey}|${target.key}|${stateKey(state)}`;
-  let pipeline = program.pipelines.get(key);
+  const pipeline = program.pipelines.get(key);
   if (pipeline !== undefined) return pipeline;
   const missing = missingInputs(program, geometry);
   const buffers: GPUVertexBufferLayout[] = [...geometry.layouts];
@@ -80,7 +81,7 @@ export function ensurePipeline(
   }];
   if (target.hasIds) targets.push({ format: 'rgba8unorm', blend, writeMask: state.ids && outputs.has(1) ? ColorWrite.ALL : 0 });
   device.pushErrorScope('validation');
-  pipeline = device.createRenderPipeline({
+  const made = device.createRenderPipeline({
     layout: program.layout,
     vertex: { module: program.module, entryPoint: program.entries.vertex, buffers },
     fragment: { module: program.module, entryPoint: program.entries.fragment, targets },
@@ -90,12 +91,14 @@ export function ensurePipeline(
       depthStencil: { format: DEPTH_STENCIL, depthWriteEnabled: false, depthCompare: 'always', ...stencilState(state.stencil) },
     }),
   });
+  program.unsettled.add(made);
   void device.popErrorScope().then((error) => {
+    program.unsettled.delete(made);
     if (!error) return;
     program.refusePipeline(key, error.message);
     // Handed on as the scope found it, so a listener for uncaptured errors still hears it.
     if (typeof GPUUncapturedErrorEvent !== 'undefined') device.dispatchEvent(new GPUUncapturedErrorEvent('uncapturederror', { error }));
-  }, () => {});
-  program.pipelines.set(key, pipeline);
-  return pipeline;
+  }, () => { program.unsettled.delete(made); });
+  program.pipelines.set(key, made);
+  return made;
 }

@@ -51,6 +51,39 @@ describe('a WebGPU device drawing with a program the GPU refuses', () => {
     expect(error).toHaveBeenCalledTimes(1);
     error.mockRestore();
   });
+
+  it('draws with it in a submit of its own until the GPU answers, so the draws beside it survive a refusal', async () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const good = gpu.createProgram({ wgsl: KIT_WGSL.pathFill.code });
+    const bad = gpu.createProgram({ wgsl: KIT_WGSL.pathFill.code });
+    const vertices = gpu.createBuffer('vertex', new Float32Array(6), 'static');
+    const geometry = gpu.createGeometry({
+      vertexBuffers: [{ buffer: vertices, stride: 8, attributes: [{ location: 0, components: 2, offset: 0 }] }],
+      indexBuffer: gpu.createBuffer('index', new Uint32Array([0, 1, 2]), 'static'), indexFormat: 'uint32',
+    });
+    drawOnce(gpu, good, geometry);
+    await new Promise((r) => setTimeout(r, 0));
+    fake.failPipelines = true;
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const submit = fake.device.queue.submit.bind(fake.device.queue);
+    const drawsPerSubmit: number[] = [];
+    let seen = fake.passCalls.length;
+    fake.device.queue.submit = (buffers) => {
+      drawsPerSubmit.push(fake.passCalls.slice(seen).filter(([m]) => m === 'drawIndexed').length);
+      seen = fake.passCalls.length;
+      submit(buffers);
+    };
+    const state = (program: GpuProgram) => ({ program, blend: null, colorWrite: true, stencil: null, ids: false });
+    gpu.beginPass({ target: null, viewport: { x: 0, y: 0, width: 64, height: 64 } });
+    gpu.draw(state(good), geometry, 3);
+    gpu.draw(state(bad), geometry, 3);
+    gpu.draw(state(good), geometry, 3);
+    gpu.endPass();
+    await new Promise((r) => setTimeout(r, 0));
+    error.mockRestore();
+    expect(drawsPerSubmit.filter((n) => n > 0)).toEqual([1, 1, 1]);
+  });
 });
 
 describe('a WebGPU device reading back across a device loss', () => {
@@ -81,6 +114,21 @@ describe('a WGSL program written by array slot', () => {
     const mirror = new Uint8Array(program.uploadBytes(0, 256));
     program.upload(mirror, 0, 0, 256);
     expect(Array.from(new Float32Array(mirror.buffer, 32, 4))).toEqual([1, 2, 3, 4]);
+  });
+
+  it('writes from that slot to the array\'s end, as GL writes from an element\'s location', () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const program = gpu.createProgram({ wgsl: [
+      'struct U { u_ripples: array<vec4f, 4>, after: vec4f }',
+      '@group(1) @binding(0) var<uniform> u: U;',
+      '@vertex fn vs(@location(0) a_position: vec2f) -> @builtin(position) vec4f { return vec4f(a_position, 0.0, 1.0); }',
+      '@fragment fn fs() -> @location(0) vec4f { return u.u_ripples[2] + u.after; }',
+    ].join('\n') }) as WgpuProgram;
+    program.set('u_ripples[2]', 'vec4', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    const mirror = new Uint8Array(program.uploadBytes(0, 256));
+    program.upload(mirror, 0, 0, 256);
+    expect(Array.from(new Float32Array(mirror.buffer, 32, 12))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0]);
   });
 });
 

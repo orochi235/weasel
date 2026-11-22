@@ -90,6 +90,8 @@ export class WgpuProgram implements GpuProgram {
   readonly usesNdc: boolean;
   /** A key's pipeline, or `null` once the GPU refused to make it. */
   readonly pipelines = new Map<string, GPURenderPipeline | null>();
+  /** Pipelines whose error scope has not settled, each drawn in a submit of its own until it does. */
+  readonly unsettled = new Set<GPURenderPipeline>();
   /** The GPU refused the module or a pipeline of it, which was reported:
    *  a draw with it would void every command submitted beside it. */
   refused = false;

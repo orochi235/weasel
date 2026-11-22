@@ -183,10 +183,13 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
     const geom = geometry as res.WgpuGeometry;
     program.set1i('u_targetHeight', frame.pass.target.height);
     this.uploadUniforms(program);
+    const pipeline = ensurePipeline(this.device, program, geom, frame.pass.target, state);
+    if (!pipeline) return;
+    // Until the GPU answers for a pipeline, it may be one it refuses, which would void every command submitted beside it.
+    const unsettled = program.unsettled.has(pipeline);
+    if (unsettled) frame.flush();
     const pass = frame.pass;
     const { target, encoder } = pass;
-    const pipeline = ensurePipeline(this.device, program, geom, target, state);
-    if (!pipeline) return;
     if (pass.pipeline !== pipeline) {
       encoder.setPipeline(pipeline);
       pass.pipeline = pipeline;
@@ -207,6 +210,7 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
     geom.indexBuffer.usedIn = serial;
     if (target.stencil) encoder.setStencilReference(state.stencil?.ref ?? 0);
     encoder.drawIndexed(count, instances, firstIndex);
+    if (unsettled) frame.flush();
   }
 
   /** Put the program's changed blocks, and the pass's viewport fold, in the

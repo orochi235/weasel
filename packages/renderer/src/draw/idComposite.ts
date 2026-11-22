@@ -30,7 +30,7 @@ export function compositeIds(
   compositeOver(ctx, program, color, rect, composite, { stencil, colorWrite: false, ids: true });
 }
 
-const ID_COMPOSITE_FRAG = /* glsl */ `#version 300 es
+export const ID_COMPOSITE_FRAG = /* glsl */ `#version 300 es
 precision highp float;
 in vec2 v_uv;
 uniform sampler2D u_source;
@@ -45,7 +45,7 @@ layout(location = 1) out highp vec4 o_id;
 void main() {
   vec4 src = texture(u_source, v_uv);
   vec3 rgb = src.a > 0.0 ? src.rgb / src.a : vec3(0.0);
-  float a = (u_colorMatrix * vec4(rgb, src.a) + u_colorBias).a * u_alpha;
+  float a = clamp((u_colorMatrix * vec4(rgb, src.a) + u_colorBias).a, 0.0, 1.0) * u_alpha;
   vec4 inner = texelFetch(u_ids, ivec2(v_uv * u_resolution), 0);
   bool claims = a > 0.0 && a >= u_groupId.a;
   o_id = vec4(0.0);
