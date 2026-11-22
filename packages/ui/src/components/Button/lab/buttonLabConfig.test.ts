@@ -37,9 +37,20 @@ describe('button lab export', () => {
     expect(exportDeltas(D)).toMatch(/No deltas/);
   });
 
-  it('exports a shape as the button hooks the size rules read, and leaves the theme accent alone', () => {
-    const out = exportDeltas(tuned((c) => { c.shape.height = 40; c.accent = '#ff0000'; }));
-    expect(out).toBe('.button {\n  --wzl-button-h: 40px;\n}');
+  it('exports a shape as the md size it was tuned at, behind the theme hooks, and leaves the theme accent alone', () => {
+    const out = exportDeltas(tuned((c) => {
+      c.target = 'button'; c.shape.height = 40; c.shape.fontsize = 16; c.shape.radius = 20; c.accent = '#ff0000';
+    }));
+    expect(out).toBe([
+      '.button {',
+      '  --btn-radius: var(--wzl-button-radius, calc(var(--btn-height) * 0.2));',
+      '}',
+      '.size_md {',
+      '  --btn-fontsize: 16px;',
+      '  --btn-height: var(--wzl-button-h, 40px);',
+      '}',
+    ].join('\n'));
+    expect(out).not.toMatch(/^\s*--wzl-/m);
   });
 
   it('exports no inset x offset for an angle whose sine rounds to zero', () => {

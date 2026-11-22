@@ -28,7 +28,7 @@ function Target({ config, vars, className }: { config: ButtonLabConfig; vars: CS
   return <Button {...weight(config.variant)} className={className} style={vars}>{config.label}</Button>;
 }
 
-/** The tuned control magnified on its backdrop, its rest, hover, and disabled states at size, and the rule to paste
+/** The tuned control magnified on its backdrop, its rest, hover, and disabled states at size, and the declarations to change
  *  into `Button.module.css` for the look as it stands. */
 export function ButtonLabView({ config }: { config: ButtonLabConfig }): ReactElement {
   const [deltas, setDeltas] = useState<string | null>(null);
