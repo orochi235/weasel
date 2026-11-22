@@ -14,9 +14,11 @@
  * `tolerance` option are what keep a second pass from scrambling a settled
  * diagram.
  */
-import { createSimulation, type SimulationForce, type SimulationNode } from '@weasel-js/simulation';
+import { createSimulation, type SimulationNode } from '@weasel-js/simulation';
+import type { Vec3 } from '@weasel-js/geom/3d';
 import type { Graph } from './graph';
 import { clusterCohesion, separateClusters } from './forceClusters';
+import { charge, gravity, links, separate, separateBoxes } from './forceTerms';
 import {
   center,
   pinnedSet,
@@ -53,6 +55,8 @@ export interface ForceBody extends SimulationNode {
    *  rather than on a point. */
   hw: number;
   hh: number;
+  /** Half its depth: its `box3`'s along z in a run of three dimensions, else 0. */
+  hd: number;
 }
 
 const DEFAULTS = {
@@ -65,123 +69,33 @@ const DEFAULTS = {
   clusterStrength: 0.2,
 } as const;
 
-/** The golden angle. Coincident nodes fan out along it, which spreads any
- *  number of them without two landing on the same heading. */
-const GOLDEN = Math.PI * (3 - Math.sqrt(5));
-/** How far the first coincident node is pushed, in world units. Small enough
- *  to be invisible, large enough that the repulsion term is finite. */
-const NUDGE = 0.5;
-/** The nearest repulsion reckons two bodies to be, in world units. Without a
- *  floor, a pair a nudge apart takes a kick that throws it thousands of units off. */
-const MIN_CHARGE_DISTANCE = 10;
-
-/** Pairwise repulsion, applied to every pair once. */
-function charge(bodies: readonly ForceBody[], strength: number): SimulationForce<ForceBody> {
-  return (alpha) => {
-    for (let i = 0; i < bodies.length; i++) {
-      const a = bodies[i]!;
-      for (let j = i + 1; j < bodies.length; j++) {
-        const b = bodies[j]!;
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const d2 = dx * dx + dy * dy;
-        if (d2 === 0) continue;
-        const w = (strength * alpha) / Math.max(d2, MIN_CHARGE_DISTANCE * MIN_CHARGE_DISTANCE);
-        a.vx! += dx * w;
-        a.vy! += dy * w;
-        b.vx! -= dx * w;
-        b.vy! -= dy * w;
-      }
-    }
-  };
-}
-
-/** A spring per edge, pulling both ends toward `distance`. */
-function links(
-  bodies: ReadonlyMap<string, ForceBody>,
-  graph: Graph,
-  distance: number,
-  strength: number,
-): SimulationForce<ForceBody> {
-  return (alpha) => {
-    for (const edge of graph.edges) {
-      const a = bodies.get(edge.from);
-      const b = bodies.get(edge.to);
-      if (a === undefined || b === undefined || a === b) continue;
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const d = Math.hypot(dx, dy);
-      if (d === 0) continue;
-      const pull = ((d - distance) / d) * alpha * strength;
-      a.vx! += dx * pull;
-      a.vy! += dy * pull;
-      b.vx! -= dx * pull;
-      b.vy! -= dy * pull;
-    }
-  };
-}
-
-/**
- * Push overlapping boxes apart along whichever axis they overlap least.
- *
- * Charge alone is not enough: it treats a node as a point, so two wide boxes
- * whose centers are a comfortable distance apart still cover each other. Not
- * scaled by alpha — an overlap at the end of the run is exactly as wrong as
- * one at the start.
- */
-function separateBoxes(bodies: readonly ForceBody[], padding: number): SimulationForce<ForceBody> {
-  return () => {
-    for (let i = 0; i < bodies.length; i++) {
-      const a = bodies[i]!;
-      for (let j = i + 1; j < bodies.length; j++) {
-        const b = bodies[j]!;
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const gapX = a.hw + b.hw + padding - Math.abs(dx);
-        const gapY = a.hh + b.hh + padding - Math.abs(dy);
-        if (gapX <= 0 || gapY <= 0) continue;
-        if (gapX < gapY) {
-          const push = (Math.sign(dx) || 1) * gapX * 0.5;
-          a.vx! -= push;
-          b.vx! += push;
-        } else {
-          const push = (Math.sign(dy) || 1) * gapY * 0.5;
-          a.vy! -= push;
-          b.vy! += push;
-        }
-      }
-    }
-  };
-}
-
-/** A pull toward the seed centroid, so a component with nothing to hold it
- *  does not drift off under pure repulsion. */
-function gravity(bodies: readonly ForceBody[], at: { x: number; y: number }, strength: number): SimulationForce<ForceBody> {
-  return (alpha) => {
-    for (const body of bodies) {
-      body.vx! += (at.x - body.x) * strength * alpha;
-      body.vy! += (at.y - body.y) * strength * alpha;
-    }
-  };
-}
-
 /**
  * The bodies and the force list, wound up and ready to tick.
  */
 export interface ForceRelaxation {
   bodies: ForceBody[];
   byId: Map<string, ForceBody>;
-  /** Ids the caller must not move: declared pins, held as `fx`/`fy`. */
+  /** Ids the caller must not move: declared pins, held as `fx`/`fy` (and `fz`). */
   pinned: ReadonlySet<string>;
   sim: ReturnType<typeof createSimulation<ForceBody>>;
   /** Where a body's node's top-left sits, given the body's center. */
   placed(): Map<string, { x: number; y: number }>;
+  /** Where a body's node's low corner sits in three dimensions, given the
+   *  body's center: `placed()` with z, which is 0 in a flat run. */
+  placed3(): Map<string, Vec3>;
 }
 
-/** Wind up a relaxation of `graph` without ticking it: bodies seeded from
- *  where the nodes are, pins held fixed. Tick `sim` yourself and read the
- *  top-lefts from `placed()`. */
-export function createForceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRelaxation {
+/**
+ * Wind up a relaxation of `graph` without ticking it: bodies seeded from
+ * where the nodes are, pins held fixed. Tick `sim` yourself and read the
+ * top-lefts from `placed()`.
+ *
+ * With `dimensions` 3 it relaxes in depth as well, each body seeded on z from
+ * its node's `box3` (a node without one is flat, at 0). x and y are seeded from
+ * `bounds` either way, so a run of solids that all share one z lands each where
+ * the flat run of their `bounds` does.
+ */
+export function createForceRelaxation(graph: Graph, opts: ForceOptions = {}, dimensions: 2 | 3 = 2): ForceRelaxation {
   const {
     linkDistance = DEFAULTS.linkDistance,
     linkStrength = DEFAULTS.linkStrength,
@@ -191,41 +105,51 @@ export function createForceRelaxation(graph: Graph, opts: ForceOptions = {}): Fo
     clusterStrength = DEFAULTS.clusterStrength,
   } = opts;
 
+  const three = dimensions === 3;
   const pinned = pinnedSet(graph, opts);
   const bodies: ForceBody[] = graph.nodes.map((node) => {
     const body: ForceBody = {
       id: node.id,
-      x: center(node.bounds, 'x'),
-      y: center(node.bounds, 'y'),
+      x: center(node.bounds, 0),
+      y: center(node.bounds, 1),
       hw: node.bounds.width / 2,
       hh: node.bounds.height / 2,
+      hd: 0,
     };
+    if (three) {
+      const box = node.box3;
+      body.z = box === undefined ? 0 : box.min.z + (box.max.z - box.min.z) / 2;
+      body.hd = box === undefined ? 0 : (box.max.z - box.min.z) / 2;
+    }
     // A pin is the integrator's own `fx`/`fy`, not a filter applied after the
     // fact: a pinned node has to hold its neighbors while they relax.
     if (pinned.has(node.id)) {
       body.fx = body.x;
       body.fy = body.y;
+      if (three) body.fz = body.z;
     }
     return body;
   });
-  separate(bodies);
+  separate(bodies, three);
 
   const byId = new Map(bodies.map((b) => [b.id, b]));
   const centroid = {
     x: bodies.reduce((sum, b) => sum + b.x, 0) / bodies.length,
     y: bodies.reduce((sum, b) => sum + b.y, 0) / bodies.length,
+    z: three ? bodies.reduce((sum, b) => sum + b.z!, 0) / bodies.length : 0,
   };
 
   const clusters = graph.clusters ?? [];
   const sim = createSimulation<ForceBody>({
     nodes: bodies,
+    dimensions,
     forces: [
-      charge(bodies, chargeStrength),
-      links(byId, graph, linkDistance, linkStrength),
-      gravity(bodies, centroid, gravityStrength),
-      separateBoxes(bodies, padding),
+      charge(bodies, chargeStrength, three),
+      links(byId, graph, linkDistance, linkStrength, three),
+      gravity(bodies, centroid, gravityStrength, three),
+      separateBoxes(bodies, padding, three),
       ...(clusters.length > 0
-        ? [clusterCohesion(clusters, byId, clusterStrength), separateClusters(clusters, bodies, byId, padding)]
+        ? [clusterCohesion(clusters, byId, clusterStrength, three), separateClusters(clusters, bodies, byId, padding, three)]
         : []),
     ],
   });
@@ -246,6 +170,18 @@ export function createForceRelaxation(graph: Graph, opts: ForceOptions = {}): Fo
       }
       return placed;
     },
+    placed3() {
+      const placed = new Map<string, Vec3>();
+      for (const node of graph.nodes) {
+        const body = byId.get(node.id)!;
+        placed.set(node.id, {
+          x: body.x - node.bounds.width / 2,
+          y: body.y - node.bounds.height / 2,
+          z: (body.z ?? 0) - body.hd,
+        });
+      }
+      return placed;
+    },
   };
 }
 
@@ -262,20 +198,3 @@ export const force = (graph: Graph, opts: ForceOptions = {}): LayoutResult => {
 /** `ForceOptions` only widens `LayoutOptions`, so this is a `LayoutFn` — but
  *  declaring it as one would hide the extra options from every caller. */
 force satisfies LayoutFn;
-
-/** Push coincident bodies apart, deterministically. Two nodes at exactly the
- *  same point feel no repulsion from each other and stay stacked forever. A
- *  pinned body is counted but never moved — a pin outranks this. */
-function separate(bodies: ForceBody[]): void {
-  const seen = new Map<string, number>();
-  bodies.forEach((body, i) => {
-    const key = `${body.x},${body.y}`;
-    const nth = seen.get(key) ?? 0;
-    seen.set(key, nth + 1);
-    if (nth === 0 || body.fx != null || body.fy != null) return;
-    const angle = GOLDEN * i;
-    const radius = NUDGE * nth;
-    body.x += Math.cos(angle) * radius;
-    body.y += Math.sin(angle) * radius;
-  });
-}

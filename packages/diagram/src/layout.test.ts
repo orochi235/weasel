@@ -98,7 +98,7 @@ describe('tree', () => {
       { a: [0, 0], b: [200, 0], shared: [400, 0] },
       [['a', 'shared'], ['b', 'shared']],
     );
-    const { children, depth } = forestOf(graph, 'x');
+    const { children, depth } = forestOf(graph, 0);
     expect(children.get('a')!.map((n) => n.id)).toEqual(['shared']);
     expect(children.get('b')).toEqual([]);
     expect(depth.get('shared')).toBe(1);
@@ -115,7 +115,7 @@ describe('tree', () => {
   it('makes one root for an all-cycle component and ranks the rest below it', () => {
     const boxes = { a: [0, 0], b: [200, 0] } as const;
     const graph = graphOf(boxes, [['a', 'b'], ['b', 'a']]);
-    const { roots } = forestOf(graph, 'x');
+    const { roots } = forestOf(graph, 0);
     expect(roots.map((n) => n.id)).toEqual(['a']);
     const result = tree(graph);
     expect(at(boxes, result, 'b').y - at(boxes, result, 'a').y).toBe(40 + DEFAULT_RANK_GAP);

@@ -6,7 +6,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { maxOf, minOf } from '@weasel-js/geom';
 import type { EdgeLabelRoom, Graph, GraphEdge, GraphNode } from '../graph';
 import { portSitesOf } from '../ports';
-import { center, extent, graphOrder, seededOrder, type LayoutAxes } from '../layout';
+import { center, coordOf, extent, graphOrder, seededOrder, type LayoutAxes } from '../layout';
 import { PLACEHOLDER, type Hop, type Rows } from './types';
 import { compositeKey } from '@weasel-js/registry';
 
@@ -82,7 +82,7 @@ function labelRoom(room: EdgeLabelRoom, axes: LayoutAxes, back: boolean, nodeGap
   if (offset === 0) return { size: across, depth, wire: across / 2 };
   // Left of travel, read along the cross axis: with y down, a wire running
   // down has its left toward +x, and one running right has it toward -y.
-  const left = (axes.rank === 'y' ? 1 : -1) * axes.sign * (back ? -1 : 1);
+  const left = (axes.rank === 1 ? 1 : -1) * axes.sign * (back ? -1 : 1);
   const margin = nodeGap / 4;
   const size = margin + Math.abs(offset) + across;
   return { size, depth, wire: left * Math.sign(offset) > 0 ? margin : size - margin };
@@ -102,8 +102,8 @@ export function portPlaces(node: GraphNode | undefined, port: string | undefined
   const sites = portSitesOf({ id: node.id, kind: 'mark', data: null }, bounds, port, { read: () => trait });
   const size = extent(bounds, axes.cross);
   if (sites.length === 0 || size <= 0) return MIDDLE;
-  const low = axes.cross === 'x' ? bounds.x : bounds.y;
-  return sites.map((p) => (p.point[axes.cross] - low) / size);
+  const low = coordOf(bounds, axes.cross);
+  return sites.map((p) => (coordOf(p.point, axes.cross) - low) / size);
 }
 
 /** A hop end's port as a `Hop` carries it: its first place, and every place
@@ -183,7 +183,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
     // its `from` end as drawn; only a route with exactly that many says.
     const now = d.waypoints?.length === crossings * 2 ? d.waypoints : undefined;
     const seed = (j: number): number => {
-      if (now !== undefined) return now[(d.back ? crossings - 1 - j : j) * 2]![axes.cross];
+      if (now !== undefined) return coordOf(now[(d.back ? crossings - 1 - j : j) * 2]!, axes.cross);
       return start + ((end - start) * (j + 1)) / (crossings + 1);
     };
     const labelRow = labeled.labelRow.get(d.id);
@@ -196,7 +196,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
         ? labelRoom(d.label, axes, d.back, opts.nodeGap)
         : { size: opts.nodeGap / 2, depth: 0, wire: opts.nodeGap / 4 };
       const at = seed(r - a[1] - 1) - room.wire;
-      const bounds = axes.cross === 'x'
+      const bounds = axes.cross === 0
         ? { x: at, y: 0, width: room.size, height: room.depth }
         : { x: 0, y: at, width: room.depth, height: room.size };
       add(r, { id, bounds, pinned: false, ...(cluster !== undefined ? { cluster } : {}) });

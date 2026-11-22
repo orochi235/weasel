@@ -41,6 +41,7 @@ export type { PerimeterPortLabelBox } from './portLabels';
 export { footprintNode } from './footprint';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { force, createForceRelaxation } from './force';
+export { force3, type Layout3Result } from './force3';
 export type { EdgeLabelRoom, Graph, GraphEdge, GraphCluster, GraphNode } from './graph';
 export { chain } from './chain';
 export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
@@ -58,6 +59,7 @@ export type { DiagramLabel, LabelSpot } from './labelTrait';
 export { backEdges, layered, layeredPlan, simplexRanks, longestPathRanks, type LayeredPlan } from './layered';
 export type {
   LayoutAxes,
+  LayoutAxis,
   LayoutDirection,
   LayoutFn,
   LayoutOptions,
@@ -65,11 +67,14 @@ export type {
   LayoutPlanner,
   LayoutPorts,
   LayoutResult,
+  PlaneAxis,
   Slot,
 } from './layout';
 export {
   anchorOffset,
   axesFor,
+  coordOf,
+  pointOn,
   DEFAULT_NODE_GAP,
   DEFAULT_RANK_GAP,
   extent,

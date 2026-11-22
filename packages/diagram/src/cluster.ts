@@ -63,7 +63,7 @@ interface CanonicalInset {
 }
 
 function canonical(inset: ClusterInset, axes: LayoutAxes): CanonicalInset {
-  if (axes.rank === 'y') {
+  if (axes.rank === 1) {
     return axes.sign === 1
       ? { crossLo: inset.left, crossHi: inset.right, rankLo: inset.top, rankHi: inset.bottom }
       : { crossLo: inset.left, crossHi: inset.right, rankLo: inset.bottom, rankHi: inset.top };
@@ -320,7 +320,7 @@ function closeGaps(spans: readonly (readonly [number, number])[], gap: number): 
  *  answer the room added on each side. A label only runs along world x, so
  *  only a vertical layout widens for it. */
 function widen(block: Block, cluster: GraphCluster, inset: CanonicalInset, axes: LayoutAxes): number {
-  const floor = axes.cross === 'x' ? (cluster.minWidth ?? 0) - inset.crossLo - inset.crossHi : 0;
+  const floor = axes.cross === 0 ? (cluster.minWidth ?? 0) - inset.crossLo - inset.crossHi : 0;
   const slack = Math.max(0, floor - block.width) / 2;
   block.width += 2 * slack;
   for (const [child, local] of block.childAt) block.childAt.set(child, local + slack);

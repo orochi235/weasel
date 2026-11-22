@@ -1,6 +1,6 @@
 /** Placement across the rank: Brandes & Köpf, "Fast and Simple Horizontal
  *  Coordinate Assignment" (2001), with nodes of varying extent. */
-import { extent } from '../layout';
+import { extent, type PlaneAxis } from '../layout';
 import { isPlaceholder, type Hop, type Rows } from './types';
 
 type Neighbors = Map<string, string[]>;
@@ -30,7 +30,7 @@ const pairKey = (upper: string, lower: string) => `${upper}\u0000${lower}`;
  * straight run up exactly and keeps a run of placeholders straight where
  * another wire crosses it.
  */
-export function placeAcross(rows: Rows, hops: readonly Hop[], axis: 'x' | 'y', nodeGap: number): Map<string, number> {
+export function placeAcross(rows: Rows, hops: readonly Hop[], axis: PlaneAxis, nodeGap: number): Map<string, number> {
   const frame: Frame = { rows: rows.map((row) => row.map((n) => n.id)), size: new Map(), gap: nodeGap, ports: new Map() };
   for (const row of rows) for (const node of row) frame.size.set(node.id, extent(node.bounds, axis));
   for (const hop of hops) {

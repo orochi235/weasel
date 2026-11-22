@@ -194,7 +194,7 @@ export function bandGaps(
   const insets = rankGaps(graph, bands, axes, 0);
   const out = gaps.map((gap, i) => gap + (insets[i] ?? 0));
   const clusters = graph.clusters ?? [];
-  if (axes.rank !== 'x' || !clusters.some((g) => g.minWidth !== undefined)) return out;
+  if (axes.rank !== 0 || !clusters.some((g) => g.minWidth !== undefined)) return out;
 
   const bandOf = new Map<string, number>();
   bands.forEach((band, i) => band.forEach((n) => bandOf.set(n.id, i)));

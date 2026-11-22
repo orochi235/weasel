@@ -23,7 +23,7 @@ const bodiesArb = fc.tuple(...IDS.map((id) => fc.record({
   y: fc.integer({ min: -20, max: 20 }).map((n) => n * 10),
   hw: fc.integer({ min: 0, max: 40 }),
   hh: fc.integer({ min: 0, max: 40 }),
-}).map((b): ForceBody => ({ id, ...b, vx: 0, vy: 0 }))));
+}).map((b): ForceBody => ({ id, ...b, hd: 0, vx: 0, vy: 0 }))));
 
 const insetArb = fc.oneof(fc.constant(12), fc.integer({ min: 0, max: 20 }), fc.record({
   top: fc.nat(20), right: fc.nat(20), bottom: fc.nat(20), left: fc.nat(20),

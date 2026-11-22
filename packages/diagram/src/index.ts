@@ -157,8 +157,8 @@ export { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute, layoutWritesRoute } fro
 export type { DiagramEdge, EdgeEnd } from './edgeTrait';
 export { selfLoop } from './selfLoop';
 export type { SelfLoop } from './selfLoop';
-export { AUTO_LAYOUT_FRAME, frameFor, layoutFrameOf } from './layoutFrame';
-export type { FrameOptions, LayoutFrame } from './layoutFrame';
+export { AUTO_LAYOUT_FRAME, createSolidFrame, frameFor, layoutFrameOf } from './layoutFrame';
+export type { FrameOptions, LayoutFrame, SolidReader } from './layoutFrame';
 export { buildGraph } from './graph';
 export type {
   BuildGraphOptions,
@@ -248,6 +248,7 @@ export type {
 export { diagramMarkOf, markShape, registerMarkShape, type MarkShapeOptions } from './marks';
 export type { DataMark, DiagramMark } from './marks';
 export { force, createForceRelaxation } from './force';
+export { force3, type Layout3Result } from './force3';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { EASED_LAYOUTS, easedProducer, forceProducer, useLiveLayout } from './live';
 export type {
@@ -268,6 +269,8 @@ export {
   DEFAULT_RANK_GAP,
   anchorOffset,
   axesFor,
+  coordOf,
+  pointOn,
   graphOrder,
   packAcross,
   pinnedSet,
@@ -280,6 +283,7 @@ export {
 } from './layout';
 export type {
   LayoutAxes,
+  LayoutAxis,
   LayoutDirection,
   LayoutFn,
   LayoutOptions,
@@ -287,6 +291,7 @@ export type {
   LayoutPlanner,
   LayoutPorts,
   LayoutResult,
+  PlaneAxis,
   Slot,
 } from './layout';
 export {

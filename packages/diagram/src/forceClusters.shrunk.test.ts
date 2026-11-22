@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ForceBody } from './force';
 import { separateClusters } from './forceClusters';
 
-const point = (id: string): ForceBody => ({ id, x: 0, y: 0, hw: 0, hh: 0, vx: 0, vy: 0 });
+const point = (id: string): ForceBody => ({ id, x: 0, y: 0, hw: 0, hh: 0, hd: 0, vx: 0, vy: 0 });
 
 describe('separateClusters, shrunk', () => {
   it('pushes an outsider inside a cluster\'s box past its far edge, padding and all', () => {

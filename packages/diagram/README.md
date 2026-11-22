@@ -660,6 +660,12 @@ it; `layeredPlan` names it in `unheld`.
 `force` is the exception to the second half of that: it is an iterative
 relaxation seeded from the current positions, so re-running it keeps relaxing.
 
+`force3` is `force` in three dimensions, for a diagram of solids: it reads each
+node's `box3`, which `buildGraph` fills from a frame that answers `box3`
+(`createSolidFrame` builds one from how a host reads and places a solid's box),
+and answers each moved node's new low corner as `{ x, y, z }`. Solids that all
+share one z stay on it and land where `force` puts their faces.
+
 `layered` turns around any edge that closes a cycle, then gives each node a
 rank that keeps the total edge length as short as it can (`simplexRanks`,
 network simplex), so a node with no inputs sits beside what it feeds rather
@@ -1579,7 +1585,8 @@ resize; `rayHit` moves it onto the shape. Don't store outline-relative anchors.
 directly.** A descriptor answers in whatever space its host draws in; kernel3d's
 answers a solid's screen box. The frame is the plane the diagram lives on, so a
 3D host passes one that projects onto it, and every layout place, port,
-waypoint and route is a coordinate on that plane. Reading `getBounds` in a new
+waypoint and route is a coordinate on that plane. A frame that also answers
+`box3` and `translate3` lets `force3` lay the solids out in depth. Reading `getBounds` in a new
 reader instead lays a 3D diagram out in screen pixels, and type-checks.
 
 **Connect declines in two different places on purpose.** Which presses start a
