@@ -1,5 +1,5 @@
 import { getOwn } from '@weasel-js/registry';
-import { linearToSrgb, oklabToLinearSrgb, oklchToOklab } from './colorSpaces';
+import { linearToSrgb, oklabToSrgbClipped, oklchToOklab } from './colorSpaces';
 import { hslToSrgb } from './hsl';
 import { byteHex, parseHexBytes } from './hex';
 import { wrapDeg } from './hue';
@@ -17,7 +17,7 @@ import { clamp01 } from './scalar';
  *     unitless 0..100, as CSS Color 4 reads it); same alpha rules and separator rules
  *     as `rgb()`
  *   - The 148 CSS named colors plus `transparent`
- *   - `color(srgb …)` and `color(srgb-linear …)`; `oklab()` and `oklch()`, clamped into sRGB
+ *   - `color(srgb …)` and `color(srgb-linear …)`; `oklab()` and `oklch()`, chroma-clipped into sRGB
  *   - `none`, CSS's missing component, in any component of the space-separated syntax, read as 0
  *
  * Not supported: `lab()`, `lch()`, other `color()` spaces, `currentColor`, system
@@ -251,7 +251,7 @@ function parseColorFunction(s: string): [number, number, number, number] | null 
   return [clamp01(r as number), clamp01(g as number), clamp01(b as number), a];
 }
 
-/** `oklab(L a b)` or `oklch(L C h)`, clamped into sRGB. L is 0..1 or a percent; a, b and C are numbers. */
+/** `oklab(L a b)` or `oklch(L C h)`, chroma-clipped into sRGB as `oklchDegToHex` clips it. L is 0..1 or a percent; a, b and C are numbers. */
 function parseOkFunction(s: string): [number, number, number, number] | null {
   const lch = unwrapFn(s, 'oklch');
   const body = lch ?? unwrapFn(s, 'oklab');
@@ -265,8 +265,8 @@ function parseOkFunction(s: string): [number, number, number, number] | null {
   if (L === null || second === null || third === null || alpha === null) return null;
   // CSS clamps a negative chroma to 0 rather than turning the hue half a turn.
   const [, A, B] = lch !== null ? oklchToOklab(L, Math.max(0, second), third * (Math.PI / 180)) : [L, second, third];
-  const [r, g, b] = oklabToLinearSrgb(L, A, B).map((c) => clamp01(linearToSrgb(c)));
-  return [r as number, g as number, b as number, alpha];
+  const [r, g, b] = oklabToSrgbClipped(L, A, B);
+  return [r, g, b, alpha];
 }
 
 /** Parse a hue token:`<number>`, `<number>deg`, `<number>rad`, `<number>grad`, `<number>turn`. Returns degrees 0..360 (modulo). */

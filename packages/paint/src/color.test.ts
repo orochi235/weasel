@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { hslToSrgb } from './hsl';
 import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, tryParseColor, parseColorBytes, rgbaToHex, __resetParseColorCache } from './color';
 import { oklchDegToHex } from './colorSpaces';
+import { colorLiteralToHex } from './palette';
 
 // Reference chroma-form HSL→RGB — the previous duplicate implementation that
 // lived in `animation/colorHelpers.ts`. Kept here only to prove the shared
@@ -221,6 +222,14 @@ describe('parseColor: color() and the OK spaces', () => {
     close(parseColor('oklab(1 0 0)'), [1, 1, 1, 1]);
     close(parseColor('oklch(0 0 0 / 50%)'), [0, 0, 0, 0.5]);
     close(parseColor('oklch(62.796% 0.25768 29.2339deg)'), [1, 0, 0, 1]);
+  });
+
+  it('maps an out-of-gamut oklch() into sRGB as oklchDegToHex and colorLiteralToHex do', () => {
+    for (const [L, C, h] of [[0.7, 0.4, 30], [0.5, 0.3, 250], [0.9, 0.3, 140]] as const) {
+      const hex = oklchDegToHex(L, C, h);
+      expect(rgbaToHex(parseColor(`oklch(${L} ${C} ${h})`))).toBe(hex);
+      expect(colorLiteralToHex({ space: 'oklch', coords: [L, C, h] })).toBe(hex);
+    }
   });
 
   it('keeps a color a hair past the gamut edge, as CSS rounds pure red', () => {
