@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useLayoutEffect, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { paintedLayers, type LayerDrawSpan, type RenderLayer } from 'core/layers/render';
 import type { CanvasDebugSink, DebugFlags } from './types';
@@ -44,10 +44,13 @@ export function useDebugSink(debug: DebugFlags | false | undefined): SurfaceDebu
     const sink = createDebugSink(live);
     return { setHighlight, sink, overlay: createDebugOverlayLayer({ sink, config: live }), frameStats: config.fps === true };
   }, [key]);
+  // In commit, not render: `live` is shared, and a render React throws away must not leave its highlight there.
+  useLayoutEffect(() => { base?.setHighlight(JSON.parse(highlightKey) as string[] | null); }, [base, highlightKey]);
   const state = useMemo(() => {
     if (!base) return OFF;
-    base.setHighlight(JSON.parse(highlightKey) as string[] | null);
     return { sink: base.sink, overlay: { ...base.overlay }, frameStats: base.frameStats };
+    // A new overlay object per highlight, so the stack recomposes and repaints.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [base, highlightKey]);
   const committed = useLatest(state.sink);
   const getDebug = useCallback(() => committed.current, [committed]);
