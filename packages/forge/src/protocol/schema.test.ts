@@ -114,6 +114,30 @@ describe('schema descriptions', () => {
     expect(structuredClone(described)).toEqual(described);
   });
 
+  it('ships only the part of a default or an annotation a port delivers', () => {
+    class Point {
+      constructor(readonly x: number) {}
+      norm() {
+        return Math.abs(this.x);
+      }
+    }
+    const schema = f.schema({
+      motif: f.custom('motif', { name: 'dots', draw: () => null }),
+      at: f.custom('point', new Point(1)),
+      plain: f.custom('json', { n: 1 }).describe('plain'),
+    });
+    const withPoint = f.schema({ n: f.number(1) });
+    (withPoint.nodes.n as { annotations: Record<string, unknown> }).annotations.origin = new Point(0);
+    const description = describeSchema(schema);
+    expect(() => structuredClone(description)).not.toThrow();
+    const nodes = description.nodes as Record<string, { default?: unknown }>;
+    expect(nodes.motif!.default).toEqual({ name: 'dots' });
+    expect(nodes.at!.default).toBeUndefined();
+    expect(nodes.plain!.default).toEqual({ n: 1 });
+    const n = describeSchema(withPoint).nodes.n as unknown as { annotations: Record<string, unknown> };
+    expect(Object.hasOwn(n.annotations, 'origin')).toBe(false);
+  });
+
   it('marks a custom control without shipping it', () => {
     const custom = f.schema({ blob: f.custom('json', { a: 1 }) });
     const d = describeSchema(custom);

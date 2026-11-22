@@ -119,6 +119,9 @@ export interface LoadedStory {
   play: ((ctx: PlayContext) => void | Promise<void>) | null;
   /** The timeline the story declares, for a config; null when it declares none. */
   timeline: ((config: unknown) => TimelineSpec) | null;
+  /** Subscribes to the story's schema answering differently under the same config, as a CSF story's `showIf` does
+   *  once `updateArgs` keeps an arg in its frame; the frame answers again. Returns the unsubscribe. */
+  onAnswersStale?: (listener: () => void) => () => void;
 }
 
 /** One story as the index knows it, before its module is loaded. */

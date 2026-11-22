@@ -1,5 +1,5 @@
 import { isPlainObject } from '@weasel-js/core';
-import { setOwn } from '@weasel-js/registry';
+import { isPlainPrototype, setOwn } from '@weasel-js/registry';
 import { sameKnob } from '../route/url';
 
 const g = globalThis as Record<string, unknown>;
@@ -25,6 +25,9 @@ const CLONED_WHOLE = new Set<unknown>(
   CLONED_NAMES.map((name) => (g[name] as { prototype?: object } | undefined)?.prototype).filter(Boolean),
 );
 
+/** Whether `proto` is some realm's `Array.prototype`, which is itself an array where a subclass's prototype is not. */
+const isArrayPrototype = (proto: object | null): boolean => proto !== null && Array.isArray(proto);
+
 /** Own keys a clone keeps: enumerable string keys, plus an array's `length`. */
 const hasOnlyClonedKeys = (v: object): boolean =>
   Reflect.ownKeys(v).every(
@@ -32,6 +35,17 @@ const hasOnlyClonedKeys = (v: object): boolean =>
       typeof key === 'string' &&
       (Object.prototype.propertyIsEnumerable.call(v, key) || (Array.isArray(v) && key === 'length')),
   );
+
+/** Whether a value cloned whole carries no own key of its own, which a clone would drop: a typed array's own keys are
+ *  its indices, and a RegExp's `lastIndex` a clone resets. */
+const hasNoExpandos = (v: object): boolean => {
+  const indexed = ArrayBuffer.isView(v) && !(v instanceof DataView) ? (v as unknown as ArrayLike<unknown>).length : 0;
+  return Reflect.ownKeys(v).every(
+    (key) =>
+      typeof key === 'string' &&
+      ((v instanceof RegExp && key === 'lastIndex' && v.lastIndex === 0) || (/^(0|[1-9]\d*)$/.test(key) && Number(key) < indexed)),
+  );
+};
 
 /** Whether `structuredClone` takes `value`, which a Proxy refuses however plain it reads through its traps. */
 const clones = (value: unknown): boolean => {
@@ -55,11 +69,11 @@ export function isPortSafe(value: unknown): boolean {
     if (seen.has(v)) return true;
     seen.add(v);
     const proto = Object.getPrototypeOf(v);
-    if (CLONED_WHOLE.has(proto)) return true;
+    if (CLONED_WHOLE.has(proto)) return hasNoExpandos(v);
     if (proto === Map.prototype)
       return hasOnlyClonedKeys(v) && [...(v as Map<unknown, unknown>)].every(([key, member]) => safe(key) && safe(member));
     if (proto === Set.prototype) return hasOnlyClonedKeys(v) && [...(v as Set<unknown>)].every(safe);
-    if (proto !== Array.prototype && proto !== Object.prototype && proto !== null) return false;
+    if (!isArrayPrototype(proto) && !isPlainPrototype(proto)) return false;
     return hasOnlyClonedKeys(v) && Object.values(v).every(safe);
   };
   try {
@@ -72,7 +86,7 @@ export function isPortSafe(value: unknown): boolean {
 /** A plain object or array whose members can be split: React elements are plain objects, but whole, and so is one
  *  whose members each cross yet which does not, a Proxy. */
 const splittable = (v: unknown): v is Record<string, unknown> | unknown[] =>
-  (Array.isArray(v) ? Object.getPrototypeOf(v) === Array.prototype : isPlainObject(v) && !('$$typeof' in v)) &&
+  (Array.isArray(v) ? isArrayPrototype(Object.getPrototypeOf(v)) : isPlainObject(v) && !('$$typeof' in v)) &&
   hasOnlyClonedKeys(v as object) &&
   !(Object.values(v as object).every(isPortSafe) && !clones(v));
 
