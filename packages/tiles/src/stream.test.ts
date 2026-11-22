@@ -100,3 +100,46 @@ describe('TileStream loads that fail', () => {
     expect(started).toHaveLength(scheme.wanted(view(0, 0), 0).length);
   });
 });
+
+describe('TileStream views that come back', () => {
+  const keyOf = (id: string): PlaneTileKey => {
+    const [z, x, y] = id.split('/').map(Number);
+    return { z: z!, x: x!, y: y! };
+  };
+
+  it('loads a tile wanted again while its aborted load was settling, the source honoring the abort', async () => {
+    const pending = new Map<string, { resolve: (p: string) => void }>();
+    const stream = new TileStream<PlaneTileKey, PlaneTileView, string>({
+      scheme, level: 0, maxConcurrent: 2,
+      load: (k, signal) => new Promise((resolve, reject) => {
+        const id = scheme.idOf(k);
+        pending.set(id, { resolve });
+        signal.addEventListener('abort', () => queueMicrotask(() => reject(new Error('aborted'))));
+      }),
+      release: () => {},
+    });
+    stream.update(view(0, 0));
+    const first = [...pending.keys()];
+    pending.clear();
+    stream.update(view(5000, 5000));
+    stream.update(view(0, 0));
+    await flush();
+    for (let i = 0; i < 40 && stream.inFlight + stream.waiting > 0; i++) {
+      for (const [id, p] of [...pending]) { pending.delete(id); p.resolve(id); }
+      await flush();
+    }
+    for (const id of first) expect(stream.payloadOf(keyOf(id))).toBe(id);
+  });
+
+  it('keeps what an aborted load returns when the view wants it again', async () => {
+    const { stream, pending, released } = setup(2);
+    stream.update(view(0, 0));
+    const first = [...pending.entries()];
+    stream.update(view(5000, 5000));
+    stream.update(view(0, 0));
+    for (const [id, p] of first) p.resolve(id);
+    await flush();
+    for (const [id] of first) expect(stream.payloadOf(keyOf(id))).toBe(id);
+    expect(released).toHaveLength(0);
+  });
+});
