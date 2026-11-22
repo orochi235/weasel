@@ -120,6 +120,7 @@ describe('a trial config write', () => {
   });
 
   it('keeps a run in one entry while another lab on the page records an edit', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
     await renderSettled(
       <>
         <div data-testid="lab-a">
