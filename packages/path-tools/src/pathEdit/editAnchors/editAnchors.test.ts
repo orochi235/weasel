@@ -296,3 +296,27 @@ describe('editAnchorsAction — REAL invoker (anchors)', () => {
     expect(handle).toEqual({});
   });
 });
+
+describe('editAnchorsAction cancel', () => {
+  it('puts back the anchor selection and the mark the press replaced', () => {
+    const invoker = getOngoingInvoker(editAnchorsAction);
+    const mark = { kind: 'test' } as unknown as NonNullable<EditAnchorsDep['selectedMark']>;
+    let selectedMark: EditAnchorsDep['selectedMark'] = mark;
+    const dep: EditAnchorsDep = makeEditAnchorsDep({
+      getEditablePath: () => makeTriangle(),
+    });
+    Object.defineProperty(dep, 'selectedMark', { get: () => selectedMark, configurable: true });
+    dep.setSelectedMark = (next) => { selectedMark = next; };
+    const plainSet = dep.setSelectedAnchors.bind(dep);
+    dep.setSelectedAnchors = (next) => { plainSet(next); selectedMark = null; };
+    dep.setSelectedAnchors([0, 1]);
+    selectedMark = mark;
+    const ctx = makeCtx(dep, { kind: 'anchor:2', targetIds: ['node-a'] });
+    const handle = invoker.start(ctx, undefined);
+    expect([...dep.selectedAnchors]).toEqual([2]);
+    handle.onMove!({ ...ctx, world: { x: 20, y: 20 } });
+    handle.onEnd!(ctx, 'cancel');
+    expect([...dep.selectedAnchors].sort()).toEqual([0, 1]);
+    expect(selectedMark).toBe(mark);
+  });
+});

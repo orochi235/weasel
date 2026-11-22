@@ -318,6 +318,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
       );
       if (!preview) return {};
 
+      const baseSelection = { anchors: new Set(dep.selectedAnchors), mark: dep.selectedMark ?? null };
       const dragging = draggedByPress(dep, anchorInfo, roleHeld(ctx, 'selection.add'));
 
       const scratch: EditAnchorsScratch = {
@@ -380,7 +381,14 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           active = false;
           try {
-            if (reason === 'cancel' || samePolygon(scratch.frame, scratch.originPose)) return;
+            if (reason === 'cancel') {
+              // A cancel undoes the press's selection change too, as a canceled marquee does.
+              if (scratch.part !== 'anchor') return;
+              dep.setSelectedAnchors(baseSelection.anchors);
+              if (baseSelection.mark) dep.setSelectedMark?.(baseSelection.mark);
+              return;
+            }
+            if (samePolygon(scratch.frame, scratch.originPose)) return;
             scratch.dep.applyEdit(scratch.id, scratch.frame, 'Edit anchors', scratch.origins);
           } finally {
             snapAnchor.end();
