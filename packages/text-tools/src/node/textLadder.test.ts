@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { createLodState, createLodWalk, defaultDrawOne, type SceneNode as Node } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core';
 import { withTextPainter } from '../testing/textPainter';
+import { INHERIT } from '@weasel-js/paint';
 import type { TextNodeData } from './textPainter';
+import { paintGreekText } from './textLadder';
 
 withTextPainter();
 
@@ -51,5 +53,17 @@ describe('kit:text ladder', () => {
     const px = { ...node, data: { ...node.data, style: { fontSize: { px: 12 } } } } as typeof node;
     const walk = createLodWalk<typeof node, RectPose>({ dpr: 1 });
     expect(walk.pick(px, px.pose, view(0.01))?.rung).toBe('full');
+  });
+});
+
+describe('paintGreekText', () => {
+  const solid = (color: string) => ({ fill: { paint: { kind: 'solid' as const, color } }, stroke: null });
+  const barColors = (cmds: unknown) => JSON.stringify(cmds).match(/"color":"[^"]+"/g);
+
+  it('repaints its bars when the paint it inherits changes', () => {
+    const n = { data: { text: 'Hi', fill: INHERIT } };
+    const pose = { x: 0, y: 0, width: 100, height: 40 };
+    expect(barColors(paintGreekText(n, pose, solid('#ff0000')))).toEqual(['"color":"#ff0000"']);
+    expect(barColors(paintGreekText(n, pose, solid('#0000ff')))).toEqual(['"color":"#0000ff"']);
   });
 });

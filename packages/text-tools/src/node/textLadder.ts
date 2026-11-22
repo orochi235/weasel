@@ -53,7 +53,7 @@ export function paintGreekText(node: { data?: unknown }, pose: RectPose, inherit
     if (bgFill) out.push({ kind: 'path', path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height }, fill: bgFill });
     if (bars.length > 0) out.push({ kind: 'group', alpha: GREEK_ALPHA, children: bars });
     return out;
-  });
+  }, inherited);
 }
 
 /** `kit:text`'s ladder: `none` below 3 px of font size, `greek` bars to 6 px, glyphs from there. */
