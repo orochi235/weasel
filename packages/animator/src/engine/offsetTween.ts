@@ -2,8 +2,8 @@ import { easeOutQuad, resolveEasing } from '@weasel-js/geom';
 import { stateOf } from '../target';
 import type { AnimationHandle, TargetTweenOptions } from '../types';
 import { voiceMs } from './tweenAnimation';
-import { commitOrLeave, type AnimationContext, type AnimationSeed } from './context';
-import { axesFor, bump, bumpOn, comeOut, commitOffset, goBehind, minus, plus, runsOn, seat, shareBehind, takeUp, times, travel } from './offsets';
+import type { AnimationContext, AnimationSeed } from './context';
+import { axesFor, bump, bumpOn, comeOut, commitOffset, commitOver, goBehind, minus, plus, runsOn, seat, shareBehind, takeUp, times, travel } from './offsets';
 
 /** A tween on a target: its destination is committed as it starts, and its voice is what is
  *  left to travel. Given `interrupted`, what holds its key was interrupted already, by that id,
@@ -19,6 +19,7 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   const seed = {
     id, kind: 'tween', cancelKey: o.cancelKey, label: o.label, target: s, keepExisting: !interrupts,
   } as AnimationSeed;
+  ctx.targets.check(s as never);
   // Ahead of reading the committed value: an interrupted animation commits where it stopped.
   if (interrupted === undefined && o.cancelKey != null && interrupts) ctx.interrupt(o.cancelKey, seed);
   s.handoff?.release();
@@ -32,7 +33,7 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   const ms = voiceMs(o.ms);
 
   ctx.targets.attach(s as never);
-  commitOrLeave(ctx, s as never, o.to);
+  commitOver(ctx, s as never, o.to);
   const atEnd = ctx.atEnd();
   ctx.seedClock();
   const offsetAt = (u: number): number[] => minus(ax.to(path!(easing(u))), to);

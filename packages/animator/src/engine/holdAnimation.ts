@@ -19,6 +19,7 @@ export function startHold<T>(ctx: AnimationContext, o: HoldOptions<T>): HoldHand
     // It leaves when released or canceled, and has nothing to do on a frame.
     due: Infinity,
   } as AnimationSeed;
+  ctx.targets.check(target as never);
   // Ahead of opening: an interrupted hold commits what it showed, which this one then stands in for.
   if (o.cancelKey != null && o.interrupt !== false) ctx.interrupt(o.cancelKey, seed);
   const held = openHold(ctx, {

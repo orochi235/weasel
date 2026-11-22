@@ -1,4 +1,5 @@
 import { wrapAngle } from '@weasel-js/geom';
+import { commitOrLeave, type AnimationContext } from './context';
 import type { HoldStore } from './holdStore';
 import type { Reader } from './lanes';
 import { readTarget, type Behind, type RowTable, type TargetAxes, type TargetOwner, type TargetState } from '../target';
@@ -141,16 +142,23 @@ export function keep<T>(s: TargetState<T>, delta: readonly number[]): void {
 }
 
 /** The committed value's axes as an animation about to commit a destination finds them: with
- *  what `keep` left beside it, which that destination replaces. */
+ *  what `keep` left beside it, which {@link commitOver} replaces. */
 export function takeUp<T>(s: TargetState<T>): number[] {
   const committed = s.axes.to(s.get());
-  const beside = s.beside;
-  if (beside) setBeside(s as never, null);
-  return beside ? plus(committed, beside) : committed;
+  return s.beside ? plus(committed, s.beside) : committed;
+}
+
+/** Commits `value` on `s`, just attached, in place of what waited beside the committed value;
+ *  a setter that throws leaves both as they were found. */
+export function commitOver(ctx: AnimationContext, s: TargetState, value: unknown): void {
+  commitOrLeave(ctx, s, value);
+  if (s.beside) setBeside(s, null);
 }
 
 /** The targets one animator is moving. */
 export interface TargetBook {
+  /** Throws where another animator is moving `s`. */
+  check(s: TargetState): void;
   /** Counts one more animation on `s`. Throws where another animator is moving it. */
   attach(s: TargetState): void;
   /** Counts one fewer. */
@@ -195,11 +203,13 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
     for (const p of publishes) p();
     publishes.clear();
   };
+  const check = (s: TargetState): void => {
+    if (s.owner && s.owner !== token) throw new Error('animator: this target is being moved by another animator');
+  };
   return {
+    check,
     attach(s) {
-      if (s.owner && s.owner !== token) {
-        throw new Error('animator: this target is being moved by another animator');
-      }
+      check(s);
       s.owner = token;
       s.live += 1;
       if (s.show) showing.add(s);

@@ -139,6 +139,7 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   const s = o.target;
   const ax = s.axes;
   const state = s as unknown as TargetState;
+  ctx.targets.check(state);
   state.handoff?.release();
   axesFor(ax, o.value(), 'value');
   let gone = false;
