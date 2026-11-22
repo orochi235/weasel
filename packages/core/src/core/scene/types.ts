@@ -106,7 +106,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  by `loadState`. `undefined` when `id` is not in the scene. Compare tokens
    *  for equality only; their order means nothing. */
   incarnation(id: NodeId): number | undefined;
-  /** `id`'s children, first painted first; empty for a mark or an unknown id. */
+  /** `id`'s children, first painted first; empty for a childless node or an unknown id. */
   childrenOf(id: NodeId): readonly NodeId[];
   /** `id`'s parent, its parent's parent, and so on up to a root. */
   ancestorsOf(id: NodeId): readonly NodeId[];
