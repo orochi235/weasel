@@ -42,7 +42,9 @@ export type PoseClosure = 'identity' | 'translation' | 'rigid';
  *  valid pose to store, and `compose` folds its children flat. Such a frame has
  *  no inverse, so `decompose` answers `null` for it, and for one too
  *  ill-conditioned for the local pose to compose back to `world`. A writer that
- *  promises to keep a node where it is shown refuses the whole edit then. */
+ *  promises to keep a node where it is shown refuses the whole edit then.
+ *
+ *  The engine calls `compose` and `decompose` detached, so neither may read `this`. */
 export interface PoseComposition<TPose> {
   compose(parent: TPose, child: TPose): TPose;
   /** The local pose `child` with `compose(parent, child)` equal to `world`, or
