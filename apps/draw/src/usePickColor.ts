@@ -1,5 +1,6 @@
 import { useActionsRegistry } from '@weasel-js/core';
 import { useColorContext } from './tools/colorContext';
+import { paintSelectionThrough } from './usePaintSelection';
 
 /**
  * What a picked color does, wherever it was picked — the eyedropper tool or a
@@ -11,7 +12,7 @@ export function usePickColor(): (hex: string) => void {
   const colors = useColorContext();
   const actions = useActionsRegistry();
   return (hex: string) => {
-    const paint = colors.setFocusedColor(hex);
-    actions?.begin(colors.focused === 'fill' ? 'setFill' : 'setStroke', { paint })?.end('commit');
+    const slot = colors.focused;
+    paintSelectionThrough(actions, { [slot]: colors.setFocusedColor(hex) });
   };
 }

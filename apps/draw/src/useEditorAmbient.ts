@@ -10,6 +10,7 @@ import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
 import { CHROME_ITEMS } from './surfaces/chrome';
 import { useChromeCommands } from './surfaces/surfaceState';
 import { colorContribution, useColorContext } from './tools/colorContext';
+import { usePaintSelection } from './usePaintSelection';
 import { PATHFINDER_KEYMAP } from '@weasel-js/editing';
 
 export interface EditorAmbientArgs {
@@ -40,7 +41,8 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
   const hudTool = useHudContribution();
 
   const colorsRef = useLatest(useColorContext());
-  const colorKeys = useMemo(() => colorContribution(() => colorsRef.current), [colorsRef]);
+  const paintRef = useLatest(usePaintSelection(scene));
+  const colorKeys = useMemo(() => colorContribution(() => colorsRef.current, () => paintRef.current), [colorsRef, paintRef]);
 
   // Read from the scene, so an edit that adds or drops a subpath of a selected path (an undo, say)
   // re-renders this and the command's enabled state follows.

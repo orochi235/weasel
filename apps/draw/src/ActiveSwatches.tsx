@@ -15,10 +15,12 @@ import { useOngoingAction, type Paint } from '@weasel-js/core';
 import type { DrawScene } from './drawDocument';
 import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
 import { useColorContext } from './tools/colorContext';
+import { usePaintSelection } from './usePaintSelection';
 
 export function ActiveSwatches({ scene }: { scene: Pick<DrawScene, 'batch'> }): ReactElement {
   const colors = useColorContext();
   const edits = { fill: useOngoingAction('setFill'), stroke: useOngoingAction('setStroke') };
+  const paintSelection = usePaintSelection(scene);
 
   const paint = (slot: 'fill' | 'stroke', next: Paint | null): void => {
     if (slot === 'fill') colors.setFill(next);
@@ -42,15 +44,9 @@ export function ActiveSwatches({ scene }: { scene: Pick<DrawScene, 'batch'> }): 
       }}
       onToggleNone={(slot) => {
         colors.setFocus(slot);
-        edits[slot].commit({ paint: colors.toggleNone(slot) });
+        paintSelection({ [slot]: colors.toggleNone(slot) }, slot === 'fill' ? 'Set fill' : 'Set stroke');
       }}
-      onSwap={() => {
-        const next = colors.swap();
-        scene.batch('Swap fill and stroke', () => {
-          edits.fill.commit({ paint: next.fill });
-          edits.stroke.commit({ paint: next.stroke });
-        });
-      }}
+      onSwap={() => paintSelection(colors.swap(), 'Swap fill and stroke')}
       shortcuts={{ none: '/', swap: 'X' }}
     />
   );

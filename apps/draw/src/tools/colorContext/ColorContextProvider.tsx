@@ -41,8 +41,10 @@ export interface ColorContextValue {
   swapFocus: () => void;
   /** Sets `slot` to none, or back to its default paint when it already is none, and returns the paint it set. */
   toggleNone: (slot: 'fill' | 'stroke') => ActivePaint;
-  toggleFocusedNone: () => void;
-  reset: () => void;
+  /** Sets the focused slot as `toggleNone` does, and returns the slot and the paint it set. */
+  toggleFocusedNone: () => { slot: 'fill' | 'stroke'; paint: ActivePaint };
+  /** Sets the default fill and stroke, and returns them. */
+  reset: () => { fill: ActivePaint; stroke: ActivePaint };
 }
 
 export interface ColorContextProviderProps {
@@ -169,9 +171,14 @@ export function ColorContextProvider({
     });
     return next;
   }, [setPaints]);
-  const toggleFocusedNone = useCallback(() => { toggleNone(focusedRef.current); }, [toggleNone, focusedRef]);
-  const reset = useCallback(() => {
-    setPaints({ fill: DEFAULT_FILL, stroke: DEFAULT_STROKE });
+  const toggleFocusedNone = useCallback(() => {
+    const slot = focusedRef.current;
+    return { slot, paint: toggleNone(slot) };
+  }, [toggleNone, focusedRef]);
+  const reset = useCallback((): Paints => {
+    const next = { fill: DEFAULT_FILL, stroke: DEFAULT_STROKE };
+    setPaints(next);
+    return next;
   }, [setPaints]);
 
   const value = useMemo<ColorContextValue>(() => ({

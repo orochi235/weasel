@@ -288,12 +288,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] draw's color keys change only the next shape's paint, while the swatch buttons also paint the
-  selection.** `/`, `X` and `D` (`apps/draw/src/tools/colorContext/actions.ts`) call the color context alone; the
-  swatch's None toggle, Swap and paint editor (`apps/draw/src/ActiveSwatches.tsx`) also commit `setFill`/`setStroke`.
-  The keys' actions have no way to reach the selection edit today. Closes when each key paints the selection as its
-  swatch button does, Swap as one undo entry, with a test per key.
-
 - **(P3) [agent] `SpanStrips` draws a span's `content` twice, so interactive content in a span breaks.** `SpanPlayed`
   (`packages/ui/src/components/SpanStrip/SpanSegments.tsx`) renders every segment again in an `aria-hidden` layer over
   the first, for the part left of the playhead. A button in a span's `content` exists twice, clicks land on the hidden

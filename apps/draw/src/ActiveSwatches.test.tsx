@@ -10,6 +10,9 @@ vi.mock('@weasel-js/core', async (importOriginal) => ({
     commit: (params: unknown) => { commits.push({ id, params, batch: batching.label }); },
     cancel: () => {},
   }),
+  useActionsRegistry: () => ({
+    begin: (id: string, params: unknown) => ({ end: () => { commits.push({ id, params, batch: batching.label }); } }),
+  }),
 }));
 
 import { ActiveSwatches } from './ActiveSwatches';
@@ -87,9 +90,9 @@ describe('ActiveSwatches', () => {
   it('paints the selection with the None it toggles to, as the paint editor does', () => {
     const none = mount();
     fireEvent.click(none);
-    expect(commits).toEqual([{ id: 'setFill', params: { paint: null }, batch: null }]);
+    expect(commits).toEqual([{ id: 'setFill', params: { paint: null }, batch: 'Set fill' }]);
     fireEvent.click(trigger('Stroke'), { shiftKey: true });
-    expect(commits[1]).toEqual({ id: 'setStroke', params: { paint: null }, batch: null });
+    expect(commits[1]).toEqual({ id: 'setStroke', params: { paint: null }, batch: 'Set stroke' });
   });
 
   it('paints the selection with the swapped paints, in one undo entry', () => {

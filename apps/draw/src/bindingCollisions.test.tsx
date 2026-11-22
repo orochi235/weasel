@@ -79,7 +79,7 @@ function Draw({ planted = [] }: { planted?: readonly Contribution[] }) {
     hud,
     modalityShortcuts(machine, { pathToEdit: () => null, selection: () => [] }),
     createModeTriggersContribution(machine.registry, { enter: noop }),
-    colorContribution(() => ({}) as ColorContextValue),
+    colorContribution(() => ({}) as ColorContextValue, () => () => {}),
     appCommandsContribution(() => ({}) as AppCommands),
     ...PATHFINDER_KEYMAP,
     recordingContribution({ attach: () => noop } as unknown as RecordingSession),
