@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { actionItems, actionShortcuts } from '@weasel-js/routing';
+import { matchSpec, type GestureSpec, type InputEvent } from '@weasel-js/gestures';
 import { viewportZoomAction, createViewportZoomAction } from './viewportZoom';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
@@ -51,7 +52,7 @@ describe('viewportZoomAction descriptor', () => {
     expect(specs).toContainEqual({ kind: 'pinch' });
     expect(specs).toContainEqual({ kind: 'wheel', mods: { mod: true } });
     expect(specs).toContainEqual({ kind: 'wheel', mods: { ctrl: true } });
-    expect(specs).toContainEqual({ kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } });
+    expect(specs).toContainEqual({ kind: 'key', key: ['=', '+'], mods: { mod: true, shift: 'optional' } });
     expect(specs).toContainEqual({ kind: 'key', key: '-', mods: { mod: true } });
     expect(specs).toContainEqual({ kind: 'key', key: '0', mods: { mod: true } });
   });
@@ -397,6 +398,17 @@ describe('viewport.zoom variants', () => {
       ['viewport.zoom:reset', 'Reset Zoom', { kind: 'reset' }],
       ['viewport.zoom:fit', 'Fit Content', { kind: 'fit' }],
     ]);
+  });
+
+  it.each([
+    ['Cmd+=', { key: '=', code: 'Equal', shiftKey: false }],
+    ['Cmd+Shift+= (Cmd++)', { key: '+', code: 'Equal', shiftKey: true }],
+    ['Cmd++ on a layout with its own + key', { key: '+', code: 'BracketRight', shiftKey: false }],
+    ['Cmd+numpad +', { key: '+', code: 'NumpadAdd', shiftKey: false }],
+  ])('zooms in on %s', (_name, keys) => {
+    const binding = createViewportZoomAction().defaultBinding!.find((b) => b.opts?.id === 'viewport.zoom.in')!;
+    const e = { kind: 'key', metaKey: true, ctrlKey: false, altKey: false, ...keys } as unknown as InputEvent;
+    expect(matchSpec(e, binding.spec as GestureSpec, true)).toBe(true);
   });
 
   it('finds each variant its key binding as a shortcut', () => {

@@ -86,9 +86,9 @@ function zoomBindings(wheel: ViewportZoomOptions['wheel']): BoundGesture<ActionP
       spec: { kind: 'pinch' as const },
       opts: { id: 'viewport.zoom.pinch', params: { kind: 'pinch' } },
     },
-    // Cmd+= → zoom in (also accepts Cmd+Shift+= which is Cmd++ on many keyboards)
+    // Cmd+= → zoom in. Cmd+Shift+= types '+', as do a layout's own + key and the numpad's.
     {
-      spec: { kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } },
+      spec: { kind: 'key', key: ['=', '+'], mods: { mod: true, shift: 'optional' } },
       opts: { id: 'viewport.zoom.in', params: { kind: 'in' } },
     },
     {
