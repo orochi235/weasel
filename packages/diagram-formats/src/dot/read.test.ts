@@ -212,12 +212,21 @@ describe('reading DOT', () => {
   });
 
   it('drops a size or pen width that is not a number, with a warning', () => {
-    const { document, warnings } = readDot('digraph { a [width=wide, penwidth=thick]; a -> b [penwidth=""] }');
+    const { document, warnings } = readDot('digraph { a [width=wide, penwidth=thick]; a -> b [penwidth=" "] }');
     const p = asGraph(document.pages[0]!);
     expect(node(p.data, 'a')).not.toHaveProperty('width');
     expect(node(p.data, 'a')).not.toHaveProperty('colors');
     expect(p.data.edges[0]).not.toHaveProperty('colors');
-    expect(warnings).toContain('DOT attributes that are not numbers were dropped: penwidth=thick, width=wide, penwidth=.');
+    expect(warnings).toContain('DOT attributes that are not numbers were dropped: penwidth=thick, width=wide, penwidth= .');
+  });
+
+  it('reads a size or pen width set to "" as unset, as Graphviz does, with no warning', () => {
+    const { document, warnings } = readDot('digraph { a [width="", penwidth=""]; a -> b [penwidth=""] }');
+    const p = asGraph(document.pages[0]!);
+    expect(node(p.data, 'a')).not.toHaveProperty('width');
+    expect(node(p.data, 'a')).not.toHaveProperty('colors');
+    expect(p.data.edges[0]).not.toHaveProperty('colors');
+    expect(warnings).toEqual([]);
   });
 
   it('reads an edge label\'s names for the edge, its tail, and its head', () => {

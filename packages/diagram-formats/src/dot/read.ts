@@ -61,10 +61,11 @@ function colorAttr(r: DotReader, attrs: Attrs, key: string): string | undefined 
   return raw === undefined || raw === '' ? undefined : checkedColor(dotColor(raw) ?? raw, 'DOT', (lead, item) => r.warnings.list(lead, item));
 }
 
-/** An attribute as a number, or `undefined`, with a warning, when it is not one. */
+/** An attribute as a number; `undefined` for one unset or set to `""`, Graphviz's default, and, with a warning, for
+ *  one that is not a number. */
 function numberAttr(r: DotReader, attrs: Attrs, key: string): number | undefined {
   const raw = str(attrs, key);
-  if (raw === undefined) return undefined;
+  if (raw === undefined || raw === '') return undefined;
   const n = raw.trim() === '' ? NaN : Number(raw);
   if (Number.isFinite(n)) return n;
   r.warnings.list('DOT attributes that are not numbers were dropped', `${key}=${raw}`);

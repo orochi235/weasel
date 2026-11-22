@@ -84,6 +84,16 @@ describe('writing DOT', () => {
     expect(back(pageOf(data)).data.containers![0]!.colors?.strokeWidth).toBe(3);
   });
 
+  it('writes a group nested in a container with a stroke width so it does not read back with the container\'s', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a' }],
+      edges: [],
+      containers: [{ id: 'outer', role: 'container', members: ['inner'], colors: { strokeWidth: 4 } }],
+      clusters: [{ id: 'inner', members: ['a'] }],
+    };
+    expect(back(pageOf(data)).data.containers?.map((c) => [c.id, c.colors?.strokeWidth])).toEqual([['outer', 4], ['inner', undefined]]);
+  });
+
   it('warns for a dash pattern DOT draws differently, and not for the two it has', () => {
     const data = (dash: number[]): DiagramData => ({ nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ id: '1', from: 'a', to: 'b', colors: { dash } }] });
     const warning = 'DOT draws only dashed and dotted lines; other dash patterns were written as dashed.';
