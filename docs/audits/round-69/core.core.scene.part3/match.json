@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "staleReplay skips every per-node kit op on a removed node except `kit:setLod`, which throws instead",
+  "`changesSince` leaves out the dependents of a node that left the scene, though their derived pose changed with it"
+ ],
+ "b": [
+  "A redo or undo of `kit:move` after an untracked edit can create a cycle and drop a subtree from the document, because stale-replay does not check for a cycle or the layer floor",
+  "In `kit:add`'s revert, the touched-ids feed notes the parent from the payload, not the parent the node actually leaves",
+  "`loadState` trims an `EditingSession`'s selection without telling its subscribers",
+  "`sceneMutators.setChildOrder` reorders ids under a different parent when the list names a node that is not a child of `parentId`"
+ ]
+}

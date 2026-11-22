@@ -1,0 +1,94 @@
+{
+ "id": "prefs-schema",
+ "commit": "85d050b8517caf8fb72762e33ef3d59cbec89c53",
+ "date": "2026-11-22",
+ "files": [
+  "packages/prefs-schema/src/action.ts",
+  "packages/prefs-schema/src/alias.ts",
+  "packages/prefs-schema/src/bounds.ts",
+  "packages/prefs-schema/src/build.ts",
+  "packages/prefs-schema/src/condition.ts",
+  "packages/prefs-schema/src/groupConditions.ts",
+  "packages/prefs-schema/src/groups.ts",
+  "packages/prefs-schema/src/helpers.ts",
+  "packages/prefs-schema/src/holding.ts",
+  "packages/prefs-schema/src/index.ts",
+  "packages/prefs-schema/src/internal.ts",
+  "packages/prefs-schema/src/judge.ts",
+  "packages/prefs-schema/src/label.ts",
+  "packages/prefs-schema/src/leafValue.ts",
+  "packages/prefs-schema/src/list.ts",
+  "packages/prefs-schema/src/map.ts",
+  "packages/prefs-schema/src/number.ts",
+  "packages/prefs-schema/src/object.ts",
+  "packages/prefs-schema/src/paths.ts",
+  "packages/prefs-schema/src/presets.ts",
+  "packages/prefs-schema/src/repair.ts",
+  "packages/prefs-schema/src/schema.ts",
+  "packages/prefs-schema/src/schemaIcon.typetest.ts",
+  "packages/prefs-schema/src/scope.ts",
+  "packages/prefs-schema/src/scopeSpec.ts",
+  "packages/prefs-schema/src/shown.ts",
+  "packages/prefs-schema/src/status.ts",
+  "packages/prefs-schema/src/statusAt.ts",
+  "packages/prefs-schema/src/testing/pbt.fixture.ts",
+  "packages/prefs-schema/src/union.ts",
+  "packages/prefs-schema/src/unit.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 0,
+ "distinct": 5,
+ "chapman": 11,
+ "unfound": 6,
+ "read": {
+  "A": 31,
+  "B": 31
+ },
+ "newCode": {
+  "since": 68,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 68,
+  "chapman": 11,
+  "unfound": 6
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 15,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3554,
+   "total": 3554
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.4,
+   "B": 9.7,
+   "match": 0.1,
+   "fix": 29.8
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1611469,
+  "costUsd": 5.09
+ },
+ "fixCommits": [
+  "88f93faaa6a93260449dc404c556e3e97e726337",
+  "dcb8e737a3265dd0623798a348c9b19a1f1c270b",
+  "1bee2a8c422efcfcdeaf94830dae9702f81cca83",
+  "b5c0034d0f175482a28af335ac7e2d3798787663",
+  "ebff051cad9be9610cd1563bd8da98ce507e02de"
+ ]
+}

@@ -1,0 +1,95 @@
+{
+ "id": "labkit.config",
+ "commit": "85d050b8517caf8fb72762e33ef3d59cbec89c53",
+ "date": "2026-11-22",
+ "files": [
+  "packages/labkit/src/config/auto.ts",
+  "packages/labkit/src/config/autoConfig.ts",
+  "packages/labkit/src/config/autoReports.ts",
+  "packages/labkit/src/config/baseNode.ts",
+  "packages/labkit/src/config/builder.ts",
+  "packages/labkit/src/config/compound.ts",
+  "packages/labkit/src/config/curveNode.ts",
+  "packages/labkit/src/config/declarationEmit.fixture.ts",
+  "packages/labkit/src/config/drawsOwn.ts",
+  "packages/labkit/src/config/fieldSweep.ts",
+  "packages/labkit/src/config/fromPrefs.ts",
+  "packages/labkit/src/config/headingLeaf.ts",
+  "packages/labkit/src/config/index.ts",
+  "packages/labkit/src/config/leaves.ts",
+  "packages/labkit/src/config/numberNode.ts",
+  "packages/labkit/src/config/over.ts",
+  "packages/labkit/src/config/path.ts",
+  "packages/labkit/src/config/railConditions.ts",
+  "packages/labkit/src/config/resolve.ts",
+  "packages/labkit/src/config/rules.ts",
+  "packages/labkit/src/config/sectionTree.ts",
+  "packages/labkit/src/config/storedDefault.ts",
+  "packages/labkit/src/config/stutter.ts",
+  "packages/labkit/src/config/toPrefs.ts",
+  "packages/labkit/src/config/types.ts",
+  "packages/labkit/src/config/useConfigSchema.ts",
+  "packages/labkit/src/config/useResolvedConfig.ts",
+  "packages/labkit/src/config/visible.ts"
+ ],
+ "a": 4,
+ "b": 7,
+ "m": 2,
+ "distinct": 9,
+ "chapman": 12.3,
+ "unfound": 3.3,
+ "read": {
+  "A": 28,
+  "B": 28
+ },
+ "newCode": {
+  "since": 50,
+  "changedFiles": 13,
+  "findings": 8
+ },
+ "previous": {
+  "round": 50,
+  "chapman": 15.7,
+  "unfound": 4.7
+ },
+ "patches": 9,
+ "verify": {
+  "ok": true,
+  "files": 25,
+  "testFiles": {
+   "failed": 0,
+   "passed": 607,
+   "total": 607
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.8,
+   "B": 9.6,
+   "match": 0.1,
+   "fix": 28.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1801733,
+  "costUsd": 5.39
+ },
+ "fixCommits": [
+  "0b13418e4bff4db800e0613ccd36ff085d4c360c",
+  "b109262a47e1b8035f9b93206f543eb1b4ba2f5d",
+  "233c7e9b9aecf9244c0e4904627a8b20172a8cde",
+  "7561a565942380005d1306a117982a4db2a189ba",
+  "80598eb5c79874e148d5c68689f510a48bf4892e",
+  "ba3c7f1152b62394d4200c6442f3c86f29562daa",
+  "da85a739f9c034401ab3a736eb7b30635f61ea71",
+  "c9e38db505b53dda050a703ccf608d34964833bb",
+  "3b26c74bbd6213946e6e300c35791eef2a351f18"
+ ]
+}

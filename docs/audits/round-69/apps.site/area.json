@@ -1,0 +1,109 @@
+{
+ "id": "apps.site",
+ "commit": "85d050b8517caf8fb72762e33ef3d59cbec89c53",
+ "date": "2026-11-22",
+ "files": [
+  "apps/site/App.tsx",
+  "apps/site/CommandPalette/SitePalette.tsx",
+  "apps/site/DemoDevtools.module.css",
+  "apps/site/DemoDevtools.tsx",
+  "apps/site/DemoFrame.tsx",
+  "apps/site/DevtoolsSplit.browser.module.css",
+  "apps/site/DevtoolsSplit.tsx",
+  "apps/site/Features/Features.module.css",
+  "apps/site/Features/Features.tsx",
+  "apps/site/OlderReleases.tsx",
+  "apps/site/PageBoundary.tsx",
+  "apps/site/Prose.module.css",
+  "apps/site/Prose.tsx",
+  "apps/site/ReleaseChipIcon.tsx",
+  "apps/site/ReleaseEntry.tsx",
+  "apps/site/ReleaseFilter.tsx",
+  "apps/site/ReleaseHistory.tsx",
+  "apps/site/ReleaseSection.tsx",
+  "apps/site/Releases.css",
+  "apps/site/Releases.tsx",
+  "apps/site/Shell.tsx",
+  "apps/site/SiteNav.tsx",
+  "apps/site/SiteThemeProvider.tsx",
+  "apps/site/SourceView.tsx",
+  "apps/site/WeaselDemos.tsx",
+  "apps/site/WhatsNew.module.css",
+  "apps/site/WhatsNew.tsx",
+  "apps/site/canvas-kit-demo.css",
+  "apps/site/canvasBackend.ts",
+  "apps/site/chunkReload.ts",
+  "apps/site/colorMode.ts",
+  "apps/site/icons.gen.ts",
+  "apps/site/icons.table.ts",
+  "apps/site/icons/frame.mjs",
+  "apps/site/icons/index.mjs",
+  "apps/site/icons/kinds.mjs",
+  "apps/site/icons/packages.mjs",
+  "apps/site/icons/planet.mjs",
+  "apps/site/isoDay.ts",
+  "apps/site/main.tsx",
+  "apps/site/registry.ts",
+  "apps/site/releaseIcons.ts",
+  "apps/site/routes.ts",
+  "apps/site/testIcons.ts",
+  "apps/site/typography.css",
+  "apps/site/useVisiblePoll.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 5,
+ "unfound": 1,
+ "read": {
+  "A": 45,
+  "B": 46
+ },
+ "newCode": {
+  "since": 40,
+  "changedFiles": 9,
+  "findings": 3
+ },
+ "previous": {
+  "round": 40,
+  "chapman": 11.5,
+  "unfound": 4.5
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 13,
+  "testFiles": {
+   "failed": 0,
+   "passed": 24,
+   "total": 24
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9.2,
+   "B": 13.5,
+   "match": 0.1,
+   "fix": 17.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1677131,
+  "costUsd": 5.74
+ },
+ "fixCommits": [
+  "d35a024bfea49584548b677803f932499b6c8848",
+  "d49bcfe83db472a5eb65f0a3c4b55f057ad72f96",
+  "631213f9e9fa44ed1dfb5e058fdbfd52ce0162f9",
+  "41a490eddb5ac5734330cda8957df488130e0e48",
+  "ef2c0223fdb167d9a66c2772d1ee251abef0a50f"
+ ]
+}

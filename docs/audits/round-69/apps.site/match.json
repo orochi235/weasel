@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "Back/Forward between the two release pages rewrites the destination entry's query with the departing page's filter and version",
+  "A failed fetch of the highlighter chunk takes the whole demo page down instead of the code panel"
+ ],
+ "b": [
+  "Release chips look up package badges with a prototype-chain index on a changelog-keyed table",
+  "Moving between the two release pages from the sidebar keeps `?v=`, and the stale version then reroutes the page",
+  "The DevtoolsSplit browser-test stylesheet models a 280 px sidebar; the site's is 240 px"
+ ]
+}

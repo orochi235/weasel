@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "A pinned vertex that no triangle uses never reaches its target",
+  "`iterations: 0` is documented to return the two linear steps' result alone, but the injective pass still runs after it",
+  "`invertedTriangles` counts every triangle that is flat at rest as turned over",
+  "The bench resolves two pins on one vertex differently from the pin warp it measures"
+ ],
+ "b": [
+  "Lawson flips in `refineTriangulation`'s initial pass re-queue only two of a flip's four outer edges, so the result is not Delaunay",
+  "`fillLattice` offsets alternate rows by h/4, not h/2, so the lattice is not triangular",
+  "The warp bench solves with each shared vertex's first pin's drag, where `pinWarpMap` uses the mean of the drags",
+  "A pinned vertex that no triangle uses is never moved to its target",
+  "The trace reports the injective fallback under a round number that never ran"
+ ]
+}

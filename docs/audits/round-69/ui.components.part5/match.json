@@ -1,0 +1,9 @@
+{
+ "pairs": [],
+ "a": [
+  "LastOperationPanel hands PrefsForm a flat by-path record where PrefsForm reads a nested tree, so any leaf under a subgroup shows its default rather than the value the command ran with"
+ ],
+ "b": [
+  "ListEditor drops focus to the body when an add in a `renderEntry` list reaches `maxItems`"
+ ]
+}

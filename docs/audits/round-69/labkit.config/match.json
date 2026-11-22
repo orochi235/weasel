@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "configFromPrefs silently drops leaves when a dotted member key and a group/leaf at its prefix both appear",
+  "isRowVisible/isRowEnabled look up an `over` alias target's path in the panel's own predicate maps",
+  "isConfigNodeShown judges data conditions without `over`, unlike isRowVisible",
+  "configFromPrefs' defaults() hands out each leaf's own default object, where f.schema deep-copies"
+ ],
+ "b": [
+  "isConfigNodeShown reads a condition on an `over` path as undefined, where isRowVisible reads that leaf's default",
+  "`.auto()` with no resolver keeps a resolver an earlier `.auto(fn)` set",
+  "Writing `AUTO` at a group path pins every leaf under it and records the group path as unpinned",
+  "fromPrefs: a group `object` leaf placed after a dotted key into the same branch overwrites it, dropping the earlier leaves",
+  "useOverAccess outside a lab hands an instrument a writer that silently drops writes",
+  "fieldSweep sweeps an enum's disabled options",
+  "fieldSweep labels a unit'd number with the raw float and ignores `.display`"
+ ]
+}

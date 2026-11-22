@@ -1,0 +1,15 @@
+{
+ "pairs": [],
+ "a": [
+  "A refused WGSL pipeline or module is drawn with before its refusal arrives, voiding the whole submit",
+  "`@align` / `@size` arguments are parsed with `Number`, so valid WGSL like `@size(16u)` or `@align(ALIGN)` lays out to NaN",
+  "`beginFrame` resets `clearColor` but not `clearStencil`, so a co-tenant's clear value leaks into the renderer's stencil clears"
+ ],
+ "b": [
+  "WebGL draws go to whatever framebuffer was bound last, not the open pass's target, once anything rebinds mid-pass",
+  "A WebGL renderer built from `canvas` opens its context without `preserveDrawingBuffer`, so `readCanvas` after the frame's task reads a cleared buffer",
+  "A plain-typed `var<uniform>` in group 0 or 1 throws \"WGSL: no struct undefined\"",
+  "WGSL reflection reads function-scope `const`s as module constants, so a local of the same name resizes a uniform array",
+  "On WebGPU, replacing a target color texture's GPU texture leaves the target drawing into the retired one"
+ ]
+}

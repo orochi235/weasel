@@ -1,0 +1,110 @@
+{
+ "id": "ui.components.part6",
+ "commit": "85d050b8517caf8fb72762e33ef3d59cbec89c53",
+ "date": "2026-11-22",
+ "files": [
+  "packages/ui/src/components/PageTabs/PageTabs.stories.tsx",
+  "packages/ui/src/components/PageTabs/PageTabs.tsx",
+  "packages/ui/src/components/PageTabs/PageTabsAlong.tsx",
+  "packages/ui/src/components/PageTabs/RenameField.tsx",
+  "packages/ui/src/components/PageTabs/index.ts",
+  "packages/ui/src/components/PageTabs/usePageTabs.tsx",
+  "packages/ui/src/components/PaintField/PaintEditorPopover.tsx",
+  "packages/ui/src/components/PaintField/PaintField.module.css",
+  "packages/ui/src/components/PaintField/PaintField.stories.module.css",
+  "packages/ui/src/components/PaintField/PaintField.stories.tsx",
+  "packages/ui/src/components/PaintField/PaintField.tsx",
+  "packages/ui/src/components/PaintField/index.ts",
+  "packages/ui/src/components/PaintInput/PaintInput.module.css",
+  "packages/ui/src/components/PaintInput/PaintInput.stories.tsx",
+  "packages/ui/src/components/PaintInput/PaintInput.tsx",
+  "packages/ui/src/components/PaintInput/index.ts",
+  "packages/ui/src/components/PaintInput/paintKindEditor.tsx",
+  "packages/ui/src/components/PatternPicker/PatternPicker.module.css",
+  "packages/ui/src/components/PatternPicker/PatternPicker.stories.tsx",
+  "packages/ui/src/components/PatternPicker/PatternPicker.tsx",
+  "packages/ui/src/components/PatternPicker/index.ts",
+  "packages/ui/src/components/PatternPicker/readImageFile.ts",
+  "packages/ui/src/components/Plot2D/Plot2D.module.css",
+  "packages/ui/src/components/Plot2D/Plot2D.stories.tsx",
+  "packages/ui/src/components/Plot2D/Plot2D.tsx",
+  "packages/ui/src/components/Plot2D/PlotFrame.tsx",
+  "packages/ui/src/components/Plot2D/PlotTicks.tsx",
+  "packages/ui/src/components/Plot2D/geometry.ts",
+  "packages/ui/src/components/Plot2D/index.ts",
+  "packages/ui/src/components/Popover/Popover.module.css",
+  "packages/ui/src/components/Popover/Popover.stories.module.css",
+  "packages/ui/src/components/Popover/Popover.stories.tsx",
+  "packages/ui/src/components/Popover/Popover.tsx",
+  "packages/ui/src/components/Popover/PopoverDialog.tsx",
+  "packages/ui/src/components/Popover/index.ts",
+  "packages/ui/src/components/Powerline/Powerline.module.css",
+  "packages/ui/src/components/Powerline/Powerline.stories.tsx",
+  "packages/ui/src/components/Powerline/Powerline.tsx",
+  "packages/ui/src/components/Powerline/index.ts",
+  "packages/ui/src/components/Powerline/slot.ts",
+  "packages/ui/src/components/PrefsBar/PrefsBar.stories.module.css",
+  "packages/ui/src/components/PrefsBar/PrefsBar.stories.tsx",
+  "packages/ui/src/components/PrefsBar/PrefsBar.tsx",
+  "packages/ui/src/components/PrefsBar/barCells.tsx",
+  "packages/ui/src/components/PrefsBar/barNodes.tsx",
+  "packages/ui/src/components/PrefsBar/index.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 5,
+ "unfound": 1,
+ "read": {
+  "A": 46,
+  "B": 46
+ },
+ "newCode": {
+  "since": 60,
+  "changedFiles": 3,
+  "findings": 2
+ },
+ "previous": {
+  "round": 60,
+  "chapman": 12.532608695652174,
+  "unfound": 2.489130434782609
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 15,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1077,
+   "total": 1077
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.2,
+   "B": 6.6,
+   "match": 0.2,
+   "fix": 16.2
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1512390,
+  "costUsd": 4.4
+ },
+ "fixCommits": [
+  "571db40d6112b6d42192092db626793e8c08a455",
+  "0a39d6f8297f5f8b91c786a332f83e91b72e2fac",
+  "5d190d78a7a93eabdfd3f8f8209b36b67e9d2ac5",
+  "e30999af9b8d5c313e93e4ffea46737c7daafb06",
+  "186019b5c215b51c6b0e280b176f5423a8735ed0",
+  "51b8972d6e0d07907f9f202f2a9739d3fd3b895b"
+ ]
+}

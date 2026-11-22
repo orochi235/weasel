@@ -1,0 +1,91 @@
+{
+ "id": "apps.chart.src.part2",
+ "commit": "85d050b8517caf8fb72762e33ef3d59cbec89c53",
+ "date": "2026-11-22",
+ "files": [
+  "apps/chart/src/prefs.ts",
+  "apps/chart/src/reportFailure.ts",
+  "apps/chart/src/stencilDrop.ts",
+  "apps/chart/src/templates/TemplateDialog.tsx",
+  "apps/chart/src/templates/templateDialog.css",
+  "apps/chart/src/testIcons.ts",
+  "apps/chart/src/testing/canvasPixels.ts",
+  "apps/chart/src/testing/chartSession.ts",
+  "apps/chart/src/testing/choose.ts",
+  "apps/chart/src/testing/mountChartApp.tsx",
+  "apps/chart/src/testing/pointer.ts",
+  "apps/chart/src/testing/savedChart.ts",
+  "apps/chart/src/theme/StylePanel.tsx",
+  "apps/chart/src/theme/ThemePanel.tsx",
+  "apps/chart/src/theme/ThemeRoles.tsx",
+  "apps/chart/src/theme/applyChartTheme.ts",
+  "apps/chart/src/theme/stylePanel.css",
+  "apps/chart/src/theme/themeCommands.tsx",
+  "apps/chart/src/theme/themeFields.tsx",
+  "apps/chart/src/theme/themePanel.css",
+  "apps/chart/src/theme/useThemeEdit.ts",
+  "apps/chart/src/toolbar/ChartToolbar.tsx",
+  "apps/chart/src/toolbar/toolbar.css",
+  "apps/chart/src/toolbar/toolbarAssets.ts",
+  "apps/chart/src/useChartDiagram.tsx",
+  "apps/chart/src/useChartSnap.ts",
+  "apps/chart/src/workspace.css"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 5,
+ "unfound": 1,
+ "read": {
+  "A": 27,
+  "B": 27
+ },
+ "newCode": {
+  "since": 63,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 63,
+  "chapman": 11,
+  "unfound": 6
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 9,
+  "testFiles": {
+   "failed": 0,
+   "passed": 26,
+   "total": 26
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.6,
+   "B": 6.2,
+   "match": 1.3,
+   "fix": 7.6,
+   "repair": 2.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 860809,
+  "costUsd": 2.57
+ },
+ "fixCommits": [
+  "ed13821a1d2faec9f87a67b2349217523be985f7",
+  "92ff2124d09f110f3a2b73d5295b655109acbaf9",
+  "b89697dba6c2c04fce851d4e8b47feb2cc056030",
+  "03e89f601cdc56597619a6cfd9998c3c52fa57f9",
+  "43afdaaa1b9d4a711e8fe5063d0cd287d1501b9a"
+ ]
+}

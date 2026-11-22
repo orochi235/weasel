@@ -1,0 +1,85 @@
+{
+ "id": "geom.warp",
+ "commit": "85d050b8517caf8fb72762e33ef3d59cbec89c53",
+ "date": "2026-11-22",
+ "files": [
+  "packages/geom/src/warp/arap.ts",
+  "packages/geom/src/warp/arapPiece.ts",
+  "packages/geom/src/warp/arapSystem.ts",
+  "packages/geom/src/warp/cloughTocher.ts",
+  "packages/geom/src/warp/foldCases.ts",
+  "packages/geom/src/warp/index.ts",
+  "packages/geom/src/warp/injective.ts",
+  "packages/geom/src/warp/lbfgs.ts",
+  "packages/geom/src/warp/mesh.ts",
+  "packages/geom/src/warp/meshMap.ts",
+  "packages/geom/src/warp/pathWarp.ts",
+  "packages/geom/src/warp/pinWarp.ts",
+  "packages/geom/src/warp/pinWarpMesh.ts",
+  "packages/geom/src/warp/profileCholesky.ts",
+  "packages/geom/src/warp/quad.ts",
+  "packages/geom/src/warp/refine.ts",
+  "packages/geom/src/warp/warp.bench.ts",
+  "packages/geom/src/warp/warpPath.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "newCode": {
+  "since": 49,
+  "changedFiles": 6,
+  "findings": 7
+ },
+ "previous": {
+  "round": 49,
+  "chapman": 11.5,
+  "unfound": 4.5
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 0,
+   "passed": 556,
+   "total": 556
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4,
+   "B": 10.5,
+   "match": 0.1,
+   "fix": 25.3,
+   "repair": 7.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 1402276,
+  "costUsd": 4.48
+ },
+ "fixCommits": [
+  "4ccd4a51784823633d205ecff2a391f35d0e0562",
+  "44d50d2d63a253c57b3dc195a561e96d493d484d",
+  "46da93d3a38bb2c06cb2d6349c8e1f48c548240b",
+  "a43f7c3ead2c88b6efadcdf65970726404e80afb",
+  "44f6803771fa51609de268b13cee1234cbd86cbe",
+  "77653779b971141e1d9e1d17140a2f0594dbab6c",
+  "e4e101cf9dec41bbd718dc088162e7a79effeb38",
+  "6596fea2c597897a6e54a51cefbf4cae55c4e501"
+ ]
+}

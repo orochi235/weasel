@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "resamplePath allocates pieces with no bound, so a small `spacing` (or a huge `count`) hangs",
+  "spiroToPath drops `closed` on a two-point contour, so reading the path back reopens it",
+  "tweenPaths' subdivideTo spreads every segment length into Math.max, which throws on a large contour and is quadratic below that"
+ ],
+ "b": [
+  "pathFromD draws a path from data that does not begin with a moveto when numbers come before the first letter"
+ ]
+}

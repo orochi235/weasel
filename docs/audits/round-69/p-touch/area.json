@@ -1,0 +1,71 @@
+{
+ "id": "p-touch",
+ "commit": "85d050b8517caf8fb72762e33ef3d59cbec89c53",
+ "date": "2026-11-22",
+ "files": [
+  "packages/p-touch/src/index.ts",
+  "packages/p-touch/src/lbx/carried.ts",
+  "packages/p-touch/src/lbx/sceneLbx.ts",
+  "packages/p-touch/src/lbx/shapes.ts",
+  "packages/p-touch/src/lbx/style.ts",
+  "packages/p-touch/src/lbx/writeLbx.ts",
+  "packages/p-touch/src/pbt.fixture.ts",
+  "packages/p-touch/src/print.ts",
+  "packages/p-touch/src/render.ts",
+  "packages/p-touch/src/tape.ts"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 0,
+ "distinct": 4,
+ "chapman": 8,
+ "unfound": 4,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "newCode": {
+  "since": 64,
+  "changedFiles": 5,
+  "findings": 4
+ },
+ "previous": {
+  "round": 64,
+  "chapman": 11.5,
+  "unfound": 4.5
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 8,
+  "testFiles": {
+   "failed": 0,
+   "passed": 19,
+   "total": 19
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.3,
+   "B": 2.9,
+   "match": 2.7,
+   "fix": 14.9
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 875824,
+  "costUsd": 2.55
+ },
+ "fixCommits": [
+  "a7cfe3f3926daf00124e77b08f5e3745d8638f07",
+  "99d52cb67f4cea88aa7424dabb8183396a6785a2",
+  "a84affecb371e3b33eed097931ee4443204a0175"
+ ]
+}

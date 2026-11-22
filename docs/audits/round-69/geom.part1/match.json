@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "`solveForX` gives up after 12 bisection steps, so a curve where Newton bails is only solved to ~2^-12, far short of its own 1e-7 epsilon",
+  "`bezierCubic.discriminators` offers an `out` handle on the last anchor and an `in` handle on the first, and neither is used by any segment"
+ ],
+ "b": [
+  "3D `invert` returns a matrix with NaN/Infinity translation for an affine input with non-finite translation; 2D `invert` returns null",
+  "`pathCrossings` reports the closing joint of a one-cubic closed subpath as a self-crossing",
+  "`pointAtLength` at a run's start falls back to a neighboring curve's chord rather than its tangent"
+ ]
+}

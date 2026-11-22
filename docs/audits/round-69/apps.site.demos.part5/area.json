@@ -1,0 +1,109 @@
+{
+ "id": "apps.site.demos.part5",
+ "commit": "85d050b8517caf8fb72762e33ef3d59cbec89c53",
+ "date": "2026-11-22",
+ "files": [
+  "apps/site/demos/SceneDemo.tsx",
+  "apps/site/demos/SceneLabDemo.tsx",
+  "apps/site/demos/SceneScrollerDemo.module.css",
+  "apps/site/demos/SceneScrollerDemo.tsx",
+  "apps/site/demos/ScopedGridDemo.tsx",
+  "apps/site/demos/ScoreDemo.module.css",
+  "apps/site/demos/ScoreDemo.tsx",
+  "apps/site/demos/ScrollingGridDemo.tsx",
+  "apps/site/demos/SegmentTypeLabDemo.tsx",
+  "apps/site/demos/SelectDemo.module.css",
+  "apps/site/demos/SelectDemo.tsx",
+  "apps/site/demos/SelectionPanelDemo.tsx",
+  "apps/site/demos/SequenceDiagramDemo.tsx",
+  "apps/site/demos/ShapeBuilderLabDemo.tsx",
+  "apps/site/demos/ShapeToolsDemo.tsx",
+  "apps/site/demos/SharedBrushSizeDemo.tsx",
+  "apps/site/demos/SkinDemo.tsx",
+  "apps/site/demos/SliceDemo.tsx",
+  "apps/site/demos/SlideNavigationDemo.tsx",
+  "apps/site/demos/SmallCapsDemo.tsx",
+  "apps/site/demos/SnipLabDemo.tsx",
+  "apps/site/demos/SpacingHintsLabDemo.tsx",
+  "apps/site/demos/SpiroLabDemo.tsx",
+  "apps/site/demos/StickyNotesDemo.tsx",
+  "apps/site/demos/StorageDemo.module.css",
+  "apps/site/demos/StorageDemo.tsx",
+  "apps/site/demos/StreamingDemo.module.css",
+  "apps/site/demos/StreamingDemo.tsx",
+  "apps/site/demos/StrokeAndFillDemo.tsx",
+  "apps/site/demos/StrokeMarkersDemo.tsx",
+  "apps/site/demos/StrokeTrimLabDemo.module.css",
+  "apps/site/demos/StrokeTrimLabDemo.tsx",
+  "apps/site/demos/StrokeWidthLabDemo.tsx",
+  "apps/site/demos/SvgDemo.module.css",
+  "apps/site/demos/SvgDemo.tsx",
+  "apps/site/demos/SwapDemo.tsx",
+  "apps/site/demos/SymmetryLabDemo.tsx",
+  "apps/site/demos/TextDemo.tsx",
+  "apps/site/demos/TextDomDemo.module.css",
+  "apps/site/demos/TextDomDemo.tsx",
+  "apps/site/demos/TextOutlinesDemo.module.css",
+  "apps/site/demos/TextOutlinesDemo.tsx",
+  "apps/site/demos/TextScriptDemo.module.css",
+  "apps/site/demos/TextScriptDemo.tsx",
+  "apps/site/demos/TextShapingDemo.module.css",
+  "apps/site/demos/TextShapingDemo.tsx",
+  "apps/site/demos/ThemeDemo.module.css",
+  "apps/site/demos/ThemeDemo.tsx"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 1,
+ "distinct": 3,
+ "chapman": 3.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 36,
+  "B": 48
+ },
+ "newCode": {
+  "since": 66,
+  "changedFiles": 3,
+  "findings": 3
+ },
+ "previous": {
+  "round": 66,
+  "chapman": 12.1875,
+  "unfound": 4.6875
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 4,
+  "testFiles": {
+   "failed": 0,
+   "passed": 13,
+   "total": 13
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.6,
+   "B": 6.7,
+   "match": 1.5,
+   "fix": 8.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1270550,
+  "costUsd": 3.71
+ },
+ "fixCommits": [
+  "ba52663db51810b2ad8ea794d58b9a63d28505c4",
+  "e152396e857242fd3039f5ed5da26b5fe1e3e809",
+  "51f19229f57cd64e5b524c24324a37e3a64f174f"
+ ]
+}

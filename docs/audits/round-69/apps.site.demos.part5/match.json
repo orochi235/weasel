@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "StreamingDemo asks the stream for cells over a fixed 640×400 viewport, so a stage the reader enlarged shows empty world past that box",
+  "StrokeWidthLab strips the nib from every selected stroke when the nib angle or ratio slider moves while the panel shows \"Nib\" off"
+ ],
+ "b": [
+  "StreamingDemo asks the stream for a fixed 640×400 window, so cells past it never load after the stage is resized",
+  "StreamingDemo's load leaves its abort listener in place and never checks an already-aborted signal"
+ ]
+}

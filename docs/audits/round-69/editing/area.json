@@ -1,0 +1,104 @@
+{
+ "id": "editing",
+ "commit": "85d050b8517caf8fb72762e33ef3d59cbec89c53",
+ "date": "2026-11-22",
+ "files": [
+  "packages/editing/src/actionGroups.ts",
+  "packages/editing/src/actionParamSchema.ts",
+  "packages/editing/src/booleans/booleans.ts",
+  "packages/editing/src/booleans/commit.ts",
+  "packages/editing/src/booleans/custom.ts",
+  "packages/editing/src/booleans/index.ts",
+  "packages/editing/src/booleans/operands.ts",
+  "packages/editing/src/booleans/pieces.ts",
+  "packages/editing/src/booleans/placement.ts",
+  "packages/editing/src/booleans/useBooleans.ts",
+  "packages/editing/src/booleans/useBooleansAdapter.ts",
+  "packages/editing/src/clipboard/clipboardOps.ts",
+  "packages/editing/src/clipboard/index.ts",
+  "packages/editing/src/clipboard/materializePaste.ts",
+  "packages/editing/src/clipboard/osClipboard.ts",
+  "packages/editing/src/clipboard/useClipboard.ts",
+  "packages/editing/src/clipboard/wireFormat.ts",
+  "packages/editing/src/deps/areaSelect.ts",
+  "packages/editing/src/deps/booleans.ts",
+  "packages/editing/src/deps/insert.ts",
+  "packages/editing/src/deps/lassoSelect.ts",
+  "packages/editing/src/deps/presetDeps.tsx",
+  "packages/editing/src/deps/resizePolicy.ts",
+  "packages/editing/src/engine.ts",
+  "packages/editing/src/engineStandardActions.ts",
+  "packages/editing/src/groups.ts",
+  "packages/editing/src/icons.gen.ts",
+  "packages/editing/src/icons.table.ts",
+  "packages/editing/src/index.ts",
+  "packages/editing/src/ingest/ghost.ts",
+  "packages/editing/src/ingest/imageHandler.ts",
+  "packages/editing/src/ingest/kitHandlers.ts",
+  "packages/editing/src/ingest/svgHandler.ts",
+  "packages/editing/src/ingest/weaselJsonHandler.ts",
+  "packages/editing/src/integration/core/canvas/SceneCanvas/kitActionParams.allow.ts",
+  "packages/editing/src/integration/core/canvas/SceneCanvas/kitSweep.fixture.tsx",
+  "packages/editing/src/integration/interactions/actions/pbt.fixture.ts",
+  "packages/editing/src/namedPresets.ts",
+  "packages/editing/src/presets.ts",
+  "packages/editing/src/selection/useSelection.ts",
+  "packages/editing/src/test-seams.ts",
+  "packages/editing/src/useStandardActions.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 5,
+ "unfound": 1,
+ "read": {
+  "A": 42,
+  "B": 42
+ },
+ "newCode": {
+  "since": 47,
+  "changedFiles": 5,
+  "findings": 2
+ },
+ "previous": {
+  "round": 47,
+  "chapman": 11.3,
+  "unfound": 2.3
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 19,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2418,
+   "total": 2418
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.2,
+   "B": 4.1,
+   "match": 0.1,
+   "fix": 17.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1916748,
+  "costUsd": 5.41
+ },
+ "fixCommits": [
+  "ee8db5c3b0744310b65afd4d4cfc5c6053cd2d3b",
+  "1a4ceaf249c7a0ce4f3e2025ab32144ab2ad1711",
+  "5a7a956891b3a8b6d0b46b2c0a50edbdd0befb54",
+  "66eda7d0dd98019f4d4bac767b6eeead0ffb0c4d"
+ ]
+}

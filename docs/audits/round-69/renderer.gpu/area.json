@@ -1,0 +1,114 @@
+{
+ "id": "renderer.gpu",
+ "commit": "85d050b8517caf8fb72762e33ef3d59cbec89c53",
+ "date": "2026-11-22",
+ "files": [
+  "packages/renderer/src/gpu/blend.ts",
+  "packages/renderer/src/gpu/types.ts",
+  "packages/renderer/src/gpu/uniformTypes.ts",
+  "packages/renderer/src/gpu/vertexLayout.ts",
+  "packages/renderer/src/gpu/webgl/GlProgram.ts",
+  "packages/renderer/src/gpu/webgl/WebGLDevice.ts",
+  "packages/renderer/src/gpu/webgl/glCache.ts",
+  "packages/renderer/src/gpu/webgl/glResources.ts",
+  "packages/renderer/src/gpu/webgl/glTargets.ts",
+  "packages/renderer/src/gpu/webgl/openWebGL.ts",
+  "packages/renderer/src/gpu/webgl/premultipliedBitmap.ts",
+  "packages/renderer/src/gpu/webgl/uniformUpload.ts",
+  "packages/renderer/src/gpu/webgpu/WebGPUDevice.ts",
+  "packages/renderer/src/gpu/webgpu/deviceLoss.ts",
+  "packages/renderer/src/gpu/webgpu/flags.ts",
+  "packages/renderer/src/gpu/webgpu/openWebGPU.ts",
+  "packages/renderer/src/gpu/webgpu/requestRendererDevice.ts",
+  "packages/renderer/src/gpu/webgpu/wgpuFrame.ts",
+  "packages/renderer/src/gpu/webgpu/wgpuPipelines.ts",
+  "packages/renderer/src/gpu/webgpu/wgpuProgram.ts",
+  "packages/renderer/src/gpu/webgpu/wgpuResources.ts",
+  "packages/renderer/src/gpu/webgpu/wgpuTargets.ts",
+  "packages/renderer/src/gpu/webgpu/wgpuUtility.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/batchFill.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/common.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/composite.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/customPrelude.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/effectPrelude.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/effects.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/glyphCell.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/glyphLayer.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/glyphPaint.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/gradFill.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/hullCoverage.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/idComposite.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/idOut.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/kitPrograms.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/meshPaint.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/ownDrawPaint.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/paintPrelude.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/paintVertex.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/pathFill.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/patternFill.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/testNdc.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/trimmedRibbon.ts",
+  "packages/renderer/src/gpu/webgpu/wgslEntries.ts",
+  "packages/renderer/src/gpu/webgpu/wgslLexical.ts",
+  "packages/renderer/src/gpu/webgpu/wgslReflect.ts",
+  "packages/renderer/src/gpu/webgpu/wgslUniforms.ts"
+ ],
+ "a": 3,
+ "b": 5,
+ "m": 0,
+ "distinct": 8,
+ "chapman": 23,
+ "unfound": 15,
+ "read": {
+  "A": 49,
+  "B": 49
+ },
+ "newCode": {
+  "since": 68,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 68,
+  "chapman": 34,
+  "unfound": 20
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 18,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3056,
+   "total": 3056
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.8,
+   "B": 9.6,
+   "match": 0.1,
+   "fix": 25
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2676616,
+  "costUsd": 8.28
+ },
+ "fixCommits": [
+  "cb0d2c45136c804c354056329ae225e7c4549245",
+  "ce1d7ec7bfdfaee38bc915d6afa2c6e263c1f2c7",
+  "788f80dab09473f26dc35140bb05876d9211eb8c",
+  "19f1ea49c38aafe45b1a99ccb4b6d2739bdb862f",
+  "925f8c5ba8099a90195f450cbc4e6b646ceec5ff",
+  "74570bcdf1a29aa6336cda470a75b9ea21c34b20",
+  "9f5855dad5c96adf7f9f8706eddd11e6cda5ac0a"
+ ]
+}

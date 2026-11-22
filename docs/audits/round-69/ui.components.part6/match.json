@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "PatternPicker drops the paint's opacity (and the image's) on a tile pick or an image upload",
+  "Page strips mark a drop in the gap just after the dragged tab, where releasing does nothing"
+ ],
+ "b": [
+  "Renaming a page to an empty or all-space name commits `''`, leaving a blank tab with no accessible name",
+  "A drag that would drop a tab just after itself shows a drop mark, and the release does nothing",
+  "With no value or a mixed one, PaintInput's body writes a solid even when `kinds` leaves out `solid`"
+ ]
+}

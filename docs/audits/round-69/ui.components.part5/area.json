@@ -1,0 +1,106 @@
+{
+ "id": "ui.components.part5",
+ "commit": "85d050b8517caf8fb72762e33ef3d59cbec89c53",
+ "date": "2026-11-22",
+ "files": [
+  "packages/ui/src/components/ItemList/index.ts",
+  "packages/ui/src/components/ItemList/useRowInput.ts",
+  "packages/ui/src/components/Jog/Jog.module.css",
+  "packages/ui/src/components/Jog/Jog.stories.module.css",
+  "packages/ui/src/components/Jog/Jog.stories.tsx",
+  "packages/ui/src/components/Jog/Jog.tsx",
+  "packages/ui/src/components/Jog/JogAlong.module.css",
+  "packages/ui/src/components/Jog/JogAlong.tsx",
+  "packages/ui/src/components/Jog/index.ts",
+  "packages/ui/src/components/KeymapHint/KeymapHint.module.css",
+  "packages/ui/src/components/KeymapHint/KeymapHint.stories.tsx",
+  "packages/ui/src/components/KeymapHint/KeymapHint.tsx",
+  "packages/ui/src/components/KeymapHint/index.ts",
+  "packages/ui/src/components/LastOperationPanel/LastOperationPanel.module.css",
+  "packages/ui/src/components/LastOperationPanel/LastOperationPanel.stories.tsx",
+  "packages/ui/src/components/LastOperationPanel/LastOperationPanel.tsx",
+  "packages/ui/src/components/LastOperationPanel/index.ts",
+  "packages/ui/src/components/Legend/Legend.module.css",
+  "packages/ui/src/components/Legend/Legend.stories.tsx",
+  "packages/ui/src/components/Legend/Legend.tsx",
+  "packages/ui/src/components/Legend/index.ts",
+  "packages/ui/src/components/ListEditor/AddEntry.tsx",
+  "packages/ui/src/components/ListEditor/ListEditor.module.css",
+  "packages/ui/src/components/ListEditor/ListEditor.stories.tsx",
+  "packages/ui/src/components/ListEditor/ListEditor.tsx",
+  "packages/ui/src/components/ListEditor/entryDraft.ts",
+  "packages/ui/src/components/ListEditor/index.ts",
+  "packages/ui/src/components/ListEditor/listEntries.ts",
+  "packages/ui/src/components/MenuButton/MenuButton.module.css",
+  "packages/ui/src/components/MenuButton/MenuButton.stories.module.css",
+  "packages/ui/src/components/MenuButton/MenuButton.stories.tsx",
+  "packages/ui/src/components/MenuButton/MenuButton.tsx",
+  "packages/ui/src/components/MenuButton/index.ts",
+  "packages/ui/src/components/MeshEditor/MeshEditor.module.css",
+  "packages/ui/src/components/MeshEditor/MeshEditor.stories.tsx",
+  "packages/ui/src/components/MeshEditor/MeshEditor.tsx",
+  "packages/ui/src/components/MeshEditor/MeshHandles.stories.module.css",
+  "packages/ui/src/components/MeshEditor/MeshHandles.stories.tsx",
+  "packages/ui/src/components/MeshEditor/MeshHandles.tsx",
+  "packages/ui/src/components/MeshEditor/index.ts",
+  "packages/ui/src/components/OpacityRange/OpacityRange.module.css",
+  "packages/ui/src/components/OpacityRange/OpacityRange.stories.tsx",
+  "packages/ui/src/components/OpacityRange/OpacityRange.tsx",
+  "packages/ui/src/components/OpacityRange/index.ts",
+  "packages/ui/src/components/PageTabs/PageTabs.module.css",
+  "packages/ui/src/components/PageTabs/PageTabs.stories.module.css"
+ ],
+ "a": 1,
+ "b": 1,
+ "m": 0,
+ "distinct": 2,
+ "chapman": 3,
+ "unfound": 1,
+ "read": {
+  "A": 46,
+  "B": 38
+ },
+ "newCode": {
+  "since": 60,
+  "changedFiles": 12,
+  "findings": 2
+ },
+ "previous": {
+  "round": 60,
+  "chapman": 14.065217391304348,
+  "unfound": 2.0652173913043477
+ },
+ "patches": 2,
+ "verify": {
+  "ok": true,
+  "files": 6,
+  "testFiles": {
+   "failed": 0,
+   "passed": 933,
+   "total": 933
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.3,
+   "B": 8,
+   "match": 3.4,
+   "fix": 7.6
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1080994,
+  "costUsd": 3.23
+ },
+ "fixCommits": [
+  "db3d4ad13f98bf7359db67dd62e91209b721026f",
+  "f6ceba765e493f76e16b7c3ba259c8ccd88532f3"
+ ]
+}

@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "Run text in a popout or iframe gets the main window's constructed sheet and font set",
+  "A slot host's `thickness` goes stale when slots change height but not width",
+  "`useRunGap` misses a `column-gap` change that does not resize the root",
+  "A text node removed from a parent that stays leaves the parent's `data-run-text-hides` behind"
+ ],
+ "b": [
+  "useRunText builds its copies from the global document, so a run row rendered into another document throws",
+  "A drag that starts mid-glide jumps the run to the glide's target"
+ ]
+}

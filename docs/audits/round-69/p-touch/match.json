@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "A carried line's pen reach is ignored by the clip test, so a stroked line passes `insideClips` while its ink leaves the clip",
+  "`textObject` ignores a run's `lang`, so language-specific forms are lost without the box being rasterized"
+ ],
+ "b": [
+  "Carried `.lbx` objects skip the auto-length bound every mapped object is held to",
+  "`rasterDpi` is never validated, so 0, a negative or NaN writes non-finite image positions into the file"
+ ]
+}

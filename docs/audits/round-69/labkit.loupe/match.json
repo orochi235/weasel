@@ -1,0 +1,17 @@
+{
+ "pairs": [],
+ "a": [
+  "LensDifference schedules its capture with a bare setTimeout on a computed delay",
+  "GridCanvas schedules its capture with the same bare setTimeout on a computed delay",
+  "A Live lens's copy goes stale and lands off target when anything outside the lab body scrolls",
+  "Wheel pass-through scrolls a page whose root is `overflow: hidden`",
+  "A clone source whose `root` matches an ancestor of the lens layer copies its own copies, recursively, every frame",
+  "A click in a round lens's corners, outside the drawn circle, is picked as if it were inside the lens",
+  "Turning `hollow` on while the lens is up invalidates nothing, so the host's hollow drawing never reaches the tiles until the lens moves"
+ ],
+ "b": [
+  "createLensApi places and follows lenses in frame px, ignoring the camera LensOverlay draws the scene through",
+  "A split lens's seam is hit-tested at a world-rounded x but drawn and hit-boxed at a screen-rounded x",
+  "Two loupes inside one camera register their actions on one id, so only the newest one ever aims"
+ ]
+}

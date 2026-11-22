@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "A boolean result keeps its source's geometry-bound data (`generator`, `skin`, `constraints`, `warp`, `representation`, per-anchor data), unlike every path command",
+  "`insert` dep's `build` silently drops a factory's `batch` and `inserted` hooks that `commit` honors"
+ ],
+ "b": [
+  "The canvas booleans adapter copies the source's `vertexColors` (and the rest of its data) onto every result, sized for a path the result no longer has",
+  "A weasel paste that makes nothing lets kit:svg paste the same copy's SVG flavor as an image",
+  "Counting strokes changes whether an outline that inks nothing is an operand"
+ ]
+}

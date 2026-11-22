@@ -1,0 +1,105 @@
+{
+ "id": "geom.part1",
+ "commit": "85d050b8517caf8fb72762e33ef3d59cbec89c53",
+ "date": "2026-11-22",
+ "files": [
+  "packages/geom/src/3d/along3.ts",
+  "packages/geom/src/3d/index.ts",
+  "packages/geom/src/3d/mat4.ts",
+  "packages/geom/src/3d/portCurve3.ts",
+  "packages/geom/src/3d/ray3.ts",
+  "packages/geom/src/3d/vec3.ts",
+  "packages/geom/src/affine.ts",
+  "packages/geom/src/affineFit.ts",
+  "packages/geom/src/along/along.bench.ts",
+  "packages/geom/src/along/arcLookup.ts",
+  "packages/geom/src/along/bezier.ts",
+  "packages/geom/src/along/curvePosition.ts",
+  "packages/geom/src/along/lengthTable.ts",
+  "packages/geom/src/along/pathTable.ts",
+  "packages/geom/src/along/positions.ts",
+  "packages/geom/src/angle.ts",
+  "packages/geom/src/box.ts",
+  "packages/geom/src/bvh/bvh.ts",
+  "packages/geom/src/bvh/bvhQuery.ts",
+  "packages/geom/src/bvh/bvhTree.ts",
+  "packages/geom/src/bvh/settledCache.ts",
+  "packages/geom/src/commands.ts",
+  "packages/geom/src/curve.ts",
+  "packages/geom/src/curves/anchorHandles.ts",
+  "packages/geom/src/curves/bezierCubic.ts",
+  "packages/geom/src/curves/bezierQuadratic.ts",
+  "packages/geom/src/curves/curvatureSource.ts",
+  "packages/geom/src/curves/index.ts",
+  "packages/geom/src/curves/nurbs.ts",
+  "packages/geom/src/curves/spiro.ts",
+  "packages/geom/src/curves/types.ts",
+  "packages/geom/src/easingSpec.ts",
+  "packages/geom/src/easings.ts",
+  "packages/geom/src/flatten.ts",
+  "packages/geom/src/glMat3.ts",
+  "packages/geom/src/index.ts",
+  "packages/geom/src/intersect/pathCrossings.ts",
+  "packages/geom/src/intersect/pathSegments.ts",
+  "packages/geom/src/intersect/segmentIntersections.ts",
+  "packages/geom/src/intersect/writeSubpaths.ts",
+  "packages/geom/src/meanScale.ts",
+  "packages/geom/src/nd/index.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 0,
+ "distinct": 5,
+ "chapman": 11,
+ "unfound": 6,
+ "read": {
+  "A": 42,
+  "B": 42
+ },
+ "newCode": {
+  "since": 49,
+  "changedFiles": 10,
+  "findings": 2
+ },
+ "previous": {
+  "round": 49,
+  "chapman": 11.5,
+  "unfound": 4.5
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 13,
+  "testFiles": {
+   "failed": 0,
+   "passed": 4722,
+   "total": 4722
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9,
+   "B": 6.5,
+   "match": 1.6,
+   "fix": 14.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1521784,
+  "costUsd": 4.65
+ },
+ "fixCommits": [
+  "0330c79888a124b8217b96d496f096909865ce7b",
+  "c2badc3661ed65183c8f9b5237d50f9d8af43295",
+  "0a81c70ab84596abf1a04447ca90c28238027e0b",
+  "585e046f4867158e540b9d676a8ccd966cb948c3",
+  "00655421e9f1d9314635645ac1344e13e7d46b69"
+ ]
+}

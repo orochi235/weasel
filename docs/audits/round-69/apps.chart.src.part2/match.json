@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "Theme panel unmounting mid-gesture drops the pending value and leaves the gesture's undo entry unsealed",
+  "mountChartApp called twice without unmount leaks the first React root and its mount point"
+ ],
+ "b": [
+  "Theme panel unmounted mid-gesture leaves the gesture's undo entry unsealed, so the next edit of that path merges into it",
+  "`commit` on one path discards a still-pending `input` on another",
+  "`useTool` builds a RegExp from a tool name without escaping it"
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "prefObjectBase takes an array (or any non-plain object) as the object, skipping `fromScalar`, where repair reads it as a scalar",
+  "applyPrefConditions keeps a group or section that starts out empty but drops one that conditions empty"
+ ],
+ "b": [
+  "`prefStatusAt` does not narrow an alias that is a field of an object/union leaf or a list/map item, where `applyPrefConditions` does",
+  "`prefReader` reads a scoped leaf as its raw `PrefScope` (or `default`, ignoring `defaultScope`) and an auto leaf as `default`",
+  "`prefDisplayBounds` rounds `stops` to nearest under `places` while it rounds `min`/`max` inward, so a stop can land outside the shown range"
+ ]
+}
