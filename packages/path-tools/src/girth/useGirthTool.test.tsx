@@ -229,6 +229,14 @@ describe('useGirthTool', () => {
     expect(t.marks().some((m) => Math.hypot(centerOf(m).x - 100, centerOf(m).y + 2) < 0.5)).toBe(false);
   });
 
+  it('keeps the default reach for a press given a reach that is not a finite number', () => {
+    const t = setup(LINE, { paint: { color: '#000' }, width: 4, vertexWidths: [NaN, 8] });
+    const grabbed = () => t.marks().some((m) => Math.abs(centerOf(m).x - 50) < 0.5 && centerOf(m).y > 1);
+    for (const reachPx of [Infinity, Number.NaN]) t.pressWith({ x: 50, y: 300 }, { reachPx });
+    t.hover(50, 15);
+    expect(grabbed()).toBe(false);
+  });
+
   it('hovers and clears within the reach a drag last took from the panel', () => {
     const t = setup(LINE, { paint: { color: '#000' }, width: 4, vertexWidths: [NaN, 8] });
     const grabbed = () => t.marks().some((m) => Math.abs(centerOf(m).x - 50) < 0.5 && centerOf(m).y > 1);

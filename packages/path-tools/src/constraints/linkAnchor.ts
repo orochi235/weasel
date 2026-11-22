@@ -26,6 +26,7 @@ import {
 } from '@weasel-js/core';
 import { editAnchorsAction } from '../pathEdit/editAnchors/editAnchors';
 import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
+import { isFiniteNumber } from '@weasel-js/registry';
 import { constraintLinkNode, constraintLinkOf } from './constraintLinks';
 import type {} from '../actionParamSchema';
 import * as coreOps from '@weasel-js/core/ops';
@@ -50,7 +51,7 @@ export const LINK_ANCHOR_PARAMS = pref.group(LABEL, {
 });
 
 const reachOf = (params: Readonly<LinkAnchorParams> | undefined): number =>
-  typeof params?.reachPx === 'number' && params.reachPx > 0 ? params.reachPx : DEFAULT_REACH_PX;
+  isFiniteNumber(params?.reachPx) && params.reachPx > 0 ? params.reachPx : DEFAULT_REACH_PX;
 
 /** What the released anchor lands on: another node, the constraint tying it there in that node's own numbering, and the point. */
 export interface LinkTarget {
@@ -65,18 +66,18 @@ export interface LinkTarget {
 const flatIndex = (set: AnchorSet, sub: number, i: number) =>
   set.anchors.slice(0, sub).reduce((n, s) => n + s.length, 0) + i;
 
-/** Where `p` lands on `path`: an anchor within `reach` world units, else a segment within it; null when neither. */
-function landingOn(path: PolygonPath, p: Point, reach: number, scale: Point): Omit<LinkTarget, 'id'> | null {
+/** Where `p` lands on `path`: an anchor within `reachPx` on screen, else a segment within it; null when neither. */
+function landingOn(path: PolygonPath, p: Point, reachPx: number, scale: Point): Omit<LinkTarget, 'id'> | null {
   const anchors = pathAnchorPoints(path);
   let best = -1;
-  let bestD = reach;
+  let bestD = reachPx;
   anchors.forEach((a, i) => {
-    const d = Math.hypot(a.x - p.x, a.y - p.y);
+    const d = Math.hypot((a.x - p.x) * scale.x, (a.y - p.y) * scale.y);
     if (d <= bestD) { best = i; bestD = d; }
   });
   if (best >= 0) return { kind: 'coincident', anchors: [best], at: { x: anchors[best].x, y: anchors[best].y } };
   const set = pathToAnchors(path) as AnchorSet;
-  const hit = segmentAt(set, p.x, p.y, { tolerancePx: reach * Math.max(scale.x, scale.y), scale });
+  const hit = segmentAt(set, p.x, p.y, { tolerancePx: reachPx, scale });
   if (!hit) return null;
   const count = set.anchors[hit.sub].length;
   const a = flatIndex(set, hit.sub, hit.segIdx);
@@ -98,7 +99,6 @@ export function linkTargetAt(
   reachPx: number,
   scale: Point = { x: 1, y: 1 },
 ): LinkTarget | null {
-  const reach = reachPx / Math.min(scale.x, scale.y);
   const nodes = [...scene.renderOrderNodes()].reverse() as SceneNode<unknown, string, unknown>[];
   let coincident: LinkTarget | null = null;
   let onPath: LinkTarget | null = null;
@@ -107,7 +107,7 @@ export function linkTargetAt(
     if (scene.isHidden?.(node.id) || scene.isLocked?.(node.id)) continue;
     const path = dep.getEditablePath(node.id) as PolygonPath | null | undefined;
     if (path?.kind !== 'polygon') continue;
-    const landed = landingOn(path, p, reach, scale);
+    const landed = landingOn(path, p, reachPx, scale);
     if (landed?.kind === 'coincident') coincident ??= { id: node.id, ...landed };
     else if (landed) onPath ??= { id: node.id, ...landed };
   }

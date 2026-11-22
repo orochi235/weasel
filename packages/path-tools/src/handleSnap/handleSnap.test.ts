@@ -78,6 +78,15 @@ describe('handle snapping', () => {
     expect(drag.marks()).toEqual([]);
   });
 
+  it('leaves the steps off for an angle step that is not a finite number', () => {
+    for (const angleStep of [Number.NaN, Infinity, -Infinity]) {
+      const drag = start({ angleStep, reachRad: 6 * DEG_TO_RAD });
+      drag.move({ x: 20, y: 19 });
+      expect(drag.marks()).toEqual([]);
+      expect(drag.out()).toEqual({ x: 20, y: 19 });
+    }
+  });
+
   it('does not snap when its options are null', () => {
     const drag = start(null);
     drag.move({ x: 20, y: 19 });

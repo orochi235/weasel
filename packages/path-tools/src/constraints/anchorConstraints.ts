@@ -27,6 +27,9 @@ import { editedPath, selectedConstraintOf, setConstraints } from './constraintsE
 import { icon } from '../icons.gen';
 import type { IconRef } from '@weasel-js/icons';
 
+/** The `group` the constraint actions sit in. */
+export const CONSTRAINTS_GROUP = 'constraints';
+
 /** Every constraint kind's name, in the order a menu lists them. */
 export const CONSTRAINT_KIND_LABELS: Readonly<Record<PathConstraintKind, string>> = {
   horizontal: 'Horizontal',
@@ -138,7 +141,7 @@ function constraintCommand<const Id extends 'constrainAnchors' | 'unconstrainAnc
     id,
     label,
     icon: glyph,
-    group: 'constraints',
+    group: CONSTRAINTS_GROUP,
     ...(variants ? { variants } : {}),
     tags: pathOperationTags('drag'),
     eligible: { capability: 'edits-anchors' },
@@ -169,7 +172,7 @@ export const deleteConstraintAction: Action & { requires: string[] } = {
   id: 'deleteConstraint',
   label: 'Delete constraint',
   icon: icon('core:delete'),
-  group: 'constraints',
+  group: CONSTRAINTS_GROUP,
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {

@@ -9,6 +9,9 @@ import { nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from '@weasel
 import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf, requiresAnchorSelection } from './anchorEditing';
 import { icon } from '../icons.gen';
 
+/** The `group` the anchor nudges sit in. */
+export const NUDGE_ANCHORS_GROUP = 'nudgeAnchors';
+
 const NUDGE_ICON = {
   right: icon('core:nudgeAnchors'),
   up: icon('core:nudgeAnchorsUp'),
@@ -24,7 +27,7 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
   return {
     id: `nudgeAnchors.${dir}`,
     label: `Nudge Anchors ${NUDGE_LABEL[dir]}`,
-    group: 'nudgeAnchors',
+    group: NUDGE_ANCHORS_GROUP,
     icon: NUDGE_ICON[dir],
     defaultBinding: [
       { spec: nudgeSpec(dir, false), opts: { id: `nudgeAnchors.${dir}.small`, params: { magnitude: 'small' } } },

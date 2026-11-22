@@ -1,6 +1,7 @@
 import type { Action, ActionDeps, ImmediateParams, OngoingInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
 import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
+import { isFiniteNumber } from '@weasel-js/registry';
 import { meanScale, pathToAnchors, pxReach, type PolygonPath, type Point } from '@weasel-js/geom';
 import type { VertexWidth } from '@weasel-js/paint';
 import { commitOps, reshapeTo, type AnyScene } from '@weasel-js/core';
@@ -105,7 +106,7 @@ const edgeOf = (grip: GirthGrip, moved: number): Point => ({
 });
 
 function reachOf(params: Readonly<GirthDragParams> | undefined, env: GirthEnv): number {
-  if (typeof params?.reachPx !== 'number' || !(params.reachPx > 0)) return env.reachPx();
+  if (!isFiniteNumber(params?.reachPx) || params.reachPx <= 0) return env.reachPx();
   env.noteReach?.(params.reachPx);
   return params.reachPx;
 }
