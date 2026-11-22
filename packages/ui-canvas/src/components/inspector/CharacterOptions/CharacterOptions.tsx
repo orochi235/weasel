@@ -114,7 +114,7 @@ function scriptPresets(style: RangeStyle): typeof SCRIPT_METRICS {
 }
 
 /** The paths whose sources disagree — every `MIXED` key, plus a fill with no
- *  single color to show. */
+ *  single color to show, and `noFill` when the fill is mixed, since that can mean some runs are unfilled. */
 function characterMixed(style: RangeStyle): Set<string> {
   const out = new Set<string>();
   for (const key of Object.keys(CHARACTER_OPTIONS.children) as StyleKey[]) {
@@ -124,6 +124,7 @@ function characterMixed(style: RangeStyle): Set<string> {
   // mixed range, rather than a swatch claiming the text is some solid color.
   // The tag is checked as well as the key: a tile paint carries a `color` too.
   const fill = style.fill;
+  if (fill === MIXED) out.add('noFill');
   if (fill !== MIXED && resolveFill(fill) !== null && solidFill(fill) === undefined) out.add('fill');
   return out;
 }

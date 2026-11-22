@@ -92,3 +92,21 @@ describe('warnUnwritable', () => {
     warn.mockRestore();
   });
 });
+
+describe('commitLeaf — a declared field', () => {
+  it('writes no part of a scope into a node that declares none, and warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const scene = createScene<{ kind: string }, 'default', Record<string, number>>({
+      composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }],
+    });
+    const system = { base: 'in', units: { in: 1 } };
+    scene.add({ id: asNodeId('bare'), kind: 'mark', layer: 'default', pose: { x: 0 }, data: { kind: 'thing' } });
+    scene.add({ id: asNodeId('scoped'), kind: 'group', layer: 'default', pose: { x: 0 }, data: { kind: 'thing' }, units: { system } });
+    const drawnAt = { path: 'units.drawnAt', leaf: { kind: 'number', name: 'Drawn at', description: '', default: 1 } as PrefLeaf };
+    leafWrites(scene).commit({ current: [asNodeId('bare'), asNodeId('scoped')] }, drawnAt, () => 0.4);
+    expect(scene.get(asNodeId('bare'))!.units ?? null).toBeNull();
+    expect(scene.get(asNodeId('scoped'))!.units).toEqual({ system, drawnAt: 0.4 });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('units.drawnAt'));
+    warn.mockRestore();
+  });
+});

@@ -248,11 +248,17 @@ describe('CharacterOptions — no fill', () => {
     expect(container.querySelector('[data-mixed]')).toBeNull();
   });
 
-  it('leaves it unlit over a filled range, a mixed one included', () => {
-    const { rerender } = renderWithIcons(<CharacterOptions value={{ fill: { paint: { color: '#ff0000ff' } } }} onChange={vi.fn()} />);
+  it('leaves it unlit over a filled range', () => {
+    renderWithIcons(<CharacterOptions value={{ fill: { paint: { color: '#ff0000ff' } } }} onChange={vi.fn()} />);
     expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'false');
-    rerender(<CharacterOptions value={{ fill: MIXED }} onChange={vi.fn()} />);
-    expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('draws it indeterminate over a mixed fill, which may leave some characters unfilled', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{ fill: MIXED }} onChange={onChange} />);
+    expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'mixed');
+    fireEvent.click(toggle('No fill'));
+    expect(onChange).toHaveBeenCalledWith({ fill: null });
   });
 
   it('unfills the range', () => {

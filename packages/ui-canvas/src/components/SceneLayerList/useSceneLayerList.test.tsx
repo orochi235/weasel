@@ -218,6 +218,26 @@ describe('useSceneLayerList — annotation layers', () => {
     expect(ids(hook.result.current.items)).toEqual([[row, ['n1', 'n2']], 'box']);
   });
 
+  it('reorders the children of a group on an annotation layer, and keeps content out of it', () => {
+    const { hook, scene } = annotated({ picked: null, pick: vi.fn() });
+    const note = (id: string, parent?: string) => scene.add({
+      id: asNodeId(id), kind: parent ? 'mark' : 'group', layer: 'notes', pose: box, data: { name: id },
+      ...(parent ? { parent: asNodeId(parent) } : {}),
+    });
+    note('ng');
+    note('k1', 'ng');
+    note('k2', 'ng');
+    hook.rerender();
+    const { canMove, onReorder } = hook.result.current;
+    expect(canMove({ ids: ['k1'], parentId: 'ng', index: 0 })).toBe(true);
+    expect(canMove({ ids: ['box'], parentId: 'ng', index: 0 })).toBe(false);
+    onReorder({ ids: ['k1'], parentId: 'ng', index: 0 });
+    expect(scene.childrenOf(asNodeId('ng'))).toEqual(['k2', 'k1']);
+    hook.rerender();
+    hook.result.current.onReorder({ ids: ['k1'], parentId: 'ng', index: 1 });
+    expect(scene.childrenOf(asNodeId('ng'))).toEqual(['k1', 'k2']);
+  });
+
   it('hides the annotation layer from its row, and removes a node from its row', () => {
     const pick = vi.fn();
     const { hook, scene } = annotated({ picked: 'n1', pick });
@@ -272,6 +292,18 @@ describe('useSceneLayerList in a paged scene', () => {
     hook.result.current.onReorder({ ids: ['x'], parentId: null, index: 0 });
     expect(scene.get(asNodeId('x'))!.parent).toBeNull();
     expect(scene.roots).toEqual([run, 'y', 'x']);
+  });
+
+  it('sends a top-level drop of a root and a grouped node to one parent, whichever row leads', () => {
+    for (const order of [['x', 'gk'], ['gk', 'x']]) {
+      const { hook, scene, run } = paged();
+      scene.add({ id: asNodeId('x'), kind: 'mark', layer: 'main', pose: box, data: { name: 'x' } });
+      scene.add({ id: asNodeId('g'), kind: 'group', layer: 'main', parent: asNodeId('p1'), pose: box, data: { name: 'g' } });
+      scene.add({ id: asNodeId('gk'), kind: 'mark', layer: 'main', parent: asNodeId('g'), pose: box, data: { name: 'gk' } });
+      hook.rerender();
+      hook.result.current.onReorder({ ids: order, parentId: null, index: 0 });
+      expect([scene.get(asNodeId('x'))!.parent, scene.get(asNodeId('gk'))!.parent]).toEqual([run, run]);
+    }
   });
 
   it('places a top-level drop where it lands when the run shares the top level with a pasteboard root', () => {
