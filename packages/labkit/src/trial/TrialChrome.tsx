@@ -27,6 +27,7 @@ import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
 import { FloatSidebarContext } from './FloatSidebar';
+import { cameraOf } from './homeView';
 import { TrialBody } from './TrialBody';
 import type { TrialActions } from './TrialScope';
 import { TrialTheme } from './TrialTheme';
@@ -159,6 +160,7 @@ export function TrialChrome({
   const ctx = useTrialChromeContext({
     trialId,
     record,
+    cameraKind: cameraOf(instrument)?.kind ?? null,
     lab,
     store,
     title,

@@ -8,8 +8,11 @@ import { useLightboxControl } from '../lightbox/LightboxContext';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
+import type { InstrumentCamera } from './homeView';
 import type { TrialActions } from './TrialScope';
 import { useTrialPanels } from './useTrialPanels';
+
+type CameraKind = NonNullable<InstrumentCamera>['kind'] | null;
 
 /** The trial's loupe as its chrome sees it: its switch, the eyedropper's, and
  *  the color last picked through either. */
@@ -58,9 +61,11 @@ const undoChrome = (b: UndoBindings | undefined) =>
   }) satisfies Partial<TrialChromeContext>;
 
 /** The trial view is opaque to labkit, so the zoom chrome asks for the 2D shape and goes inert
- *  when the trial holds something else — an orbit, say. An unplaced view reads as the default
- *  its canvas paints, so the status strip is in before the first fit. */
-const chromeView = (view: unknown) => as2DView(view) ?? (view === null ? DEFAULT_VIEW : null);
+ *  when the trial holds something else — an orbit, say. An unplaced view on a 2D camera reads as
+ *  the default its canvas paints, so the status strip is in before the first fit. */
+const chromeView = (view: unknown, cameraKind: CameraKind) =>
+  as2DView(view) ??
+  (view === null && (cameraKind === 'canvas' || cameraKind === 'stage') ? DEFAULT_VIEW : null);
 
 /** The lab's commands on one trial: its snapshots and the title bar's actions. */
 const labOpsOn = (lab: LabCommands, trialId: string) =>
@@ -81,6 +86,8 @@ export interface TrialChromeSources
   > {
   trialId: string;
   record: TrialRecord;
+  /** The kind of camera the trial's instrument declares, `null` for none. */
+  cameraKind: CameraKind;
   lab: LabCommands;
   store: LabStore;
   undoBindings: UndoBindings | undefined;
@@ -94,6 +101,7 @@ export interface TrialChromeSources
 export function useTrialChromeContext({
   trialId,
   record,
+  cameraKind,
   lab,
   store,
   title,
@@ -120,7 +128,7 @@ export function useTrialChromeContext({
   const lightbox = useLightboxControl();
 
   return useMemo<TrialChromeContext>(() => {
-    const view2d = chromeView(record.view);
+    const view2d = chromeView(record.view, cameraKind);
     const setZoom = (z: number): void => {
       if (camera) zoomCameraTo(camera, z);
       else if (view2d) writes.updateTrialView(trialId, withZoom(view2d, z));
@@ -160,6 +168,7 @@ export function useTrialChromeContext({
   }, [
     trialId,
     record,
+    cameraKind,
     lab,
     title,
     isLastTrial,
