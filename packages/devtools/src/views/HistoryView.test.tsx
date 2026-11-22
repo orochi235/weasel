@@ -103,6 +103,19 @@ describe('<HistoryView>', () => {
     await waitFor(() => expect(screen.getByRole('status', { name: 'Position' }).textContent).toBe('20 / 20'));
   });
 
+  it('keeps the open step open across a read that fails', async () => {
+    const page = fakePage();
+    const request = page.client.request.bind(page.client);
+    renderWithIcons(<HistoryView client={page.client} rootId="r" />);
+    act(() => page.push(step('kit:open')));
+    fireEvent.click(await screen.findByRole('cell', { name: 'push' }));
+    expect(await screen.findByText('kit:open')).toBeTruthy();
+    page.client.request = (() => Promise.reject(new Error('lost the page'))) as typeof request;
+    act(() => page.push(step('kit:next')));
+    expect((await screen.findByRole('alert')).textContent).toBe('lost the page');
+    expect(screen.getByText('kit:open')).toBeTruthy();
+  });
+
   it('leaves the open step open when a step with nothing to show is clicked', async () => {
     const page = fakePage();
     renderWithIcons(<HistoryView client={page.client} rootId="r" />);

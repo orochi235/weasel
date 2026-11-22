@@ -58,8 +58,6 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
     readNow.current();
   };
 
-  if (error) return <p className={s.note}>{error}</p>;
-
   return (
     <div className={s.history}>
       <div className={s.toolbar}>
@@ -75,6 +73,7 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
           {position ? `${position.index} / ${position.total}` : ''}
         </span>
       </div>
+      {error && <p className={s.note} role="alert">{error}</p>}
       <div className={s.body}>
         {showStack && historyEntries && (
           <section aria-label="Checkpoint stack">
