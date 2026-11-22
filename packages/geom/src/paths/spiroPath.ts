@@ -92,7 +92,7 @@ export function spiroToPath(contours: readonly SpiroContour[], options: SpiroToP
     if (c.points.length === 0) continue;
     const written = contourAnchors(c, tol);
     subs.push(written.anchors);
-    closed.push(c.closed && c.points.length > 2);
+    closed.push(c.closed);
     at.push(...written.at.map((i) => i + base));
     base += written.anchors.length;
   }

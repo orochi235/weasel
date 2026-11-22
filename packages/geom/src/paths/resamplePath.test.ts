@@ -67,6 +67,12 @@ describe('resamplePath', () => {
     expect(deviation(src, out)).toBeLessThan(0.25);
   });
 
+  it('places at most 10,000 anchors, however small the spacing or large the count', () => {
+    const src = polygon('M 0 0 L 1000 0');
+    expect(pathToAnchors(resamplePath(src, { spacing: 1e-3 })).anchors[0]).toHaveLength(10_000);
+    expect(pathToAnchors(resamplePath(src, { count: 1e7 })).anchors[0]).toHaveLength(10_000);
+  });
+
   it('holds corners fixed and resamples the runs between', () => {
     // A D shape: a straight back and a curved front, cornered where they meet.
     const src = polygon('M 0 0 C 80 0 120 40 120 100 C 120 160 80 200 0 200 Z');

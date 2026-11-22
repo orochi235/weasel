@@ -3665,3 +3665,8 @@ Calls the lanes made without a ruling:
 
 - 2026-11-22 (the fixer's call): chart's `mountChartApp` test helper throws when the app is already mounted, so a test
   simulating a reload calls `unmountChartApp` first. Unmounting the earlier app silently was the alternative.
+## Audit round sixty-nine (2026-11-22): geom paths, part two
+
+- 2026-11-22 (the fixer's call): `resamplePath` places at most 10,000 anchors before tolerance halving. A larger
+  `count` is read as 10,000, and a `spacing` that would place more spreads 10,000 by length; a spacing near 0 had
+  hung the call. Throwing on either was the alternative; a slider dragged toward 0 should not throw. The number is mine.

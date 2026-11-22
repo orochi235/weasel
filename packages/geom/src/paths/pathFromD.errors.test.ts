@@ -18,6 +18,16 @@ describe('pathFromD and path data in error', () => {
     expect(out.warnings).toEqual([expect.stringMatching(/moveto/)]);
   });
 
+  it('draws nothing when numbers come before the first command', () => {
+    const out = read('10 20 M0 0 L5 5');
+    expect(out.commands).toEqual([]);
+    expect(out.warnings).toEqual([expect.stringMatching(/moveto/)]);
+  });
+
+  it('reads data that opens with whitespace', () => {
+    expect(read(' \n\tM0 0 L5 5').commands).toEqual([PATH_M, PATH_L]);
+  });
+
   it('stops at a command with too few arguments', () => {
     const out = read('M0 0 L10 10 L 20 l5 5');
     expect(out.commands).toEqual([PATH_M, PATH_L]);

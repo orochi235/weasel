@@ -33,6 +33,17 @@ describe('tweenPaths', () => {
     expect(boundsOfPath(tween.at(0))).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
   });
 
+  it('splits a few segments to match a contour of hundreds of thousands', () => {
+    const n = 200_000;
+    const ring = polygonFromPoints(Array.from({ length: n }, (_, i) => {
+      const a = (2 * Math.PI * i) / n;
+      return { x: 50 + 50 * Math.cos(a), y: 50 + 50 * Math.sin(a) };
+    }));
+    const tween = prepareTween(rectPath(0, 0, 100, 100), ring, { autoAlign: false });
+    expect(tween.segmentCounts).toEqual([n]);
+    expect(boundsOfPath(tween.at(0))).toMatchObject({ x: 0, y: 0, width: 100, height: 100 });
+  });
+
   it('picks the start point that keeps matched anchors closest', () => {
     const a = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }]);
     // The same square drawn from the opposite corner, far away.
