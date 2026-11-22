@@ -3,7 +3,8 @@
  * standard slot, a split scene's layers, each other, a key nothing defines, or nothing, with chains, cycles,
  * empty anchors, and keys named like `Object.prototype` members. Checked against the anchor graph itself: every
  * layer once, each placed custom beside its anchor in one unbroken run with everything anchored to it, the
- * unplaceable last in map order, each with one warning naming its cycle or the key its chain ends on.
+ * unplaceable last, each beside an unplaceable anchor it was chained to, with one warning each, in map order, naming
+ * its cycle or the key its chain ends on.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
@@ -108,7 +109,15 @@ describe('composeOrderedLayers against the anchor graph', () => {
 
       const fates = new Map(c.customs.map((x) => [x.key, fateOf(c, x.key)]));
       const orphans = c.customs.filter((x) => !fates.get(x.key)!.placed).map((x) => x.key);
-      expect(out.slice(out.length - orphans.length)).toEqual(orphans);
+      expect([...out.slice(out.length - orphans.length)].sort()).toEqual([...orphans].sort());
+      // An orphan on a dangling chain keeps its side of the orphan it is anchored to.
+      for (const x of c.customs) {
+        const fate = fates.get(x.key)!;
+        const a = anchorOf(x);
+        if (fate.placed || fate.cycle || a === null || !orphans.includes(a.to)) continue;
+        if (a.side === 'after') expect(out.indexOf(x.key)).toBeGreaterThan(out.indexOf(a.to));
+        else expect(out.indexOf(x.key)).toBeLessThan(out.indexOf(a.to));
+      }
 
       const at = (id: string) => out.indexOf(id);
       const idOf = (key: string): string | null => {
