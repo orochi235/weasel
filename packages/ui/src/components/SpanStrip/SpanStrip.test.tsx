@@ -62,6 +62,13 @@ describe('spanLayout', () => {
     const gappy = placeSpans([{ id: 'a', label: 'a', ms: 10, start: 0 }, { id: 'b', label: 'b', ms: 10, start: 50 }], { from: 0, to: 100 });
     expect(spanAt(gappy, 30)?.id).toBe('a');
   });
+
+  it('follows the latest end on a track, not the last span placed on it', () => {
+    const placed = placeSpans([
+      { id: 'a', label: 'a', ms: 10 }, { id: 'b', label: 'b', ms: 3, start: 2 }, { id: 'c', label: 'c', ms: 4 },
+    ], { from: 0, to: 20 });
+    expect(placed.map((p) => [p.start, p.end])).toEqual([[0, 10], [2, 5], [10, 14]]);
+  });
 });
 
 describe('SpanStrip', () => {
@@ -127,6 +134,35 @@ describe('SpanStrip', () => {
     fireEvent.pointerDown(slider, { clientX: 20, pointerId: 2 });
     fireEvent.pointerCancel(slider, { pointerId: 2 });
     expect(onSeek).toHaveBeenLastCalledWith(450, false);
+  });
+
+  it('ignores a second pointer while one holds', () => {
+    const onSeek = vi.fn();
+    const { rerender } = render(<SpanStrip spans={SPANS} at={450} aria-label="lane" onSeek={onSeek} />);
+    const slider = screen.getByRole('slider');
+    slider.getBoundingClientRect = () => ({ left: 0, width: 200, top: 0, height: 22, right: 200, bottom: 22, x: 0, y: 0, toJSON: () => ({}) });
+    fireEvent.pointerDown(slider, { clientX: 20, pointerId: 1 });
+    fireEvent.pointerMove(slider, { clientX: 60, pointerId: 1 });
+    rerender(<SpanStrip spans={SPANS} at={300} aria-label="lane" onSeek={onSeek} />);
+    const calls = onSeek.mock.calls.length;
+    fireEvent.pointerDown(slider, { clientX: 180, pointerId: 2 });
+    fireEvent.pointerMove(slider, { clientX: 190, pointerId: 2 });
+    fireEvent.pointerUp(slider, { clientX: 190, pointerId: 2 });
+    expect(onSeek).toHaveBeenCalledTimes(calls);
+    fireEvent.pointerCancel(slider, { pointerId: 1 });
+    expect(onSeek).toHaveBeenLastCalledWith(450, false);
+  });
+
+  it('seeks only on a primary-button press', () => {
+    const onSeek = vi.fn();
+    render(<SpanStrip spans={SPANS} at={450} aria-label="lane" onSeek={onSeek} />);
+    const slider = screen.getByRole('slider');
+    slider.getBoundingClientRect = () => ({ left: 0, width: 200, top: 0, height: 22, right: 200, bottom: 22, x: 0, y: 0, toJSON: () => ({}) });
+    fireEvent.pointerDown(slider, { clientX: 100, pointerId: 1, button: 2 });
+    fireEvent.pointerMove(slider, { clientX: 150, pointerId: 1 });
+    fireEvent.pointerUp(slider, { clientX: 150, pointerId: 1, button: 2 });
+    fireEvent.pointerDown(slider, { clientX: 100, pointerId: 2, button: 1 });
+    expect(onSeek).not.toHaveBeenCalled();
   });
 });
 

@@ -28,6 +28,13 @@ describe('SwatchGrid', () => {
     expect(screen.getByRole('button', { name: 'None' })).toHaveAttribute('data-none');
   });
 
+  it('keys two swatches of one color apart', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<SwatchGrid options={[{ value: '#ffffffff' }, { value: '#ffffffff' }]} onSelect={() => {}} columns={2} aria-label="Twins" />);
+    expect(error.mock.calls.filter((c) => String(c[0]).includes('same key'))).toEqual([]);
+    error.mockRestore();
+  });
+
   it('applies on click', () => {
     const { onSelect } = mount();
     fireEvent.click(screen.getByRole('button', { name: 'Green' }));

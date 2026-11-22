@@ -3652,3 +3652,11 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a `perforated` badge's `holeRadius` stops at the box's longer side, so an infinite
   one draws as any radius that already masks the whole badge. Reading it as the default, as an infinite `rotation`
   does, was the alternative.
+
+## Audit round sixty-eight (2026-11-22): ui components, part eight
+
+- 2026-11-22 (the fixer's call): `scaleBar` (and so `ScaleBar`) throws a `RangeError` for an empty `lengths`, which
+  had measured a NaN length; falling back to the 1-2-5 default, as for no `lengths`, was the alternative.
+- 2026-11-22 (the fixer's call): a `Sequence` grid's `cap` bounds its cells, not each axis: an axis shorter than
+  √`cap` keeps every step and the other takes what that leaves, else both keep ⌊√`cap`⌋. Two open sweeps had drawn
+  `cap`² live cells. Capping rows alone, at ⌊`cap` / columns⌋, was the alternative.

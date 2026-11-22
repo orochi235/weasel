@@ -14,7 +14,7 @@ export interface SpanStripSpan {
   content?: ReactNode;
   /** Its length; a negative one counts as none. */
   ms: number;
-  /** Where it begins, in the strip's time. Default: where the span before it ends, or the window's start. */
+  /** Where it begins, in the strip's time. Default: where the spans before it on its tracks end, the latest of them, or the window's start. */
   start?: number;
   /** Any CSS color, `var(--…)` included, that fills the played part of it and tints the rest. Default: the accent. */
   color?: string;
@@ -62,7 +62,7 @@ function timed(spans: readonly SpanStripSpan[], origin: number): { span: SpanStr
     const covered = coveredBy(span);
     const start = span.start ?? Math.max(origin, ...covered.map((t) => cursors.get(t) ?? origin));
     const end = start + lengthOf(span);
-    for (const t of covered) cursors.set(t, end);
+    for (const t of covered) cursors.set(t, Math.max(cursors.get(t) ?? origin, end));
     return { span, start, end };
   });
 }

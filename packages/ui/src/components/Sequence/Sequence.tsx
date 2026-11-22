@@ -16,7 +16,8 @@ export interface SequenceProps<A, B = undefined> {
   /** `'wrap'`, the default, wraps cells onto rows; `'strip'` keeps them on one
    *  line that scrolls. Ignored by a grid. */
   layout?: 'wrap' | 'strip';
-  /** Steps taken from a sweep that has not ended by then. Default `SWEEP_CAP`. */
+  /** Steps taken from a sweep that has not ended by then, or a grid's cells: it keeps as many rows and columns as
+   *  make no more than `cap` cells between them. Default `SWEEP_CAP`. */
   cap?: number;
   /** The accessible name of the list or grid. */
   'aria-label': string;
@@ -35,8 +36,27 @@ function stepKeys<T>(steps: readonly T[], label: (value: T) => string): string[]
   });
 }
 
-function Capped({ cap }: { cap: number }): ReactElement {
-  return <p className={s.capped}>Showing the first {cap} steps.</p>;
+function Capped({ shown }: { shown: string | number }): ReactElement {
+  return <p className={s.capped}>Showing the first {shown} steps.</p>;
+}
+
+/** A grid's rows and columns, as many of each as make at most `cap` cells: an axis shorter than the square root of
+ *  `cap` keeps all its steps and the other takes what that leaves. */
+function gridSteps<A, B>(sweep: Sweep<A>, across: Sweep<B>, cap: number): {
+  rows: { steps: A[]; capped: boolean }; cols: { steps: B[]; capped: boolean };
+} {
+  const rows = stepsOf(sweep, cap);
+  const cols = stepsOf(across, cap);
+  const r = rows.steps.length;
+  const c = cols.steps.length;
+  if (r * c <= cap) return { rows, cols };
+  const side = Math.floor(Math.sqrt(cap));
+  const keepR = r <= side ? r : c <= side ? Math.floor(cap / c) : side;
+  const keepC = r <= side ? Math.floor(cap / r) : c <= side ? c : side;
+  return {
+    rows: { steps: rows.steps.slice(0, keepR), capped: rows.capped || keepR < r },
+    cols: { steps: cols.steps.slice(0, keepC), capped: cols.capped || keepC < c },
+  };
 }
 
 /**
@@ -46,9 +66,8 @@ function Capped({ cap }: { cap: number }): ReactElement {
  */
 export function Sequence<A, B = undefined>(props: SequenceProps<A, B>): ReactElement {
   const { sweep, across, children, layout = 'wrap', cap = SWEEP_CAP, 'aria-label': label, className } = props;
-  const rows = stepsOf(sweep, cap);
   if (across) {
-    const cols = stepsOf(across, cap);
+    const { rows, cols } = gridSteps(sweep, across, cap);
     const rowKeys = stepKeys(rows.steps, (v) => sweep.label(v));
     const colKeys = stepKeys(cols.steps, (v) => across.label(v));
     return (
@@ -73,10 +92,11 @@ export function Sequence<A, B = undefined>(props: SequenceProps<A, B>): ReactEle
             ))}
           </tbody>
         </table>
-        {(rows.capped || cols.capped) && <Capped cap={cap} />}
+        {(rows.capped || cols.capped) && <Capped shown={`${rows.steps.length} × ${cols.steps.length}`} />}
       </div>
     );
   }
+  const rows = stepsOf(sweep, cap);
   const caption = props.caption ?? ((value: A) => sweep.label(value));
   const keys = stepKeys(rows.steps, (v) => sweep.label(v));
   return (
@@ -91,7 +111,7 @@ export function Sequence<A, B = undefined>(props: SequenceProps<A, B>): ReactEle
           </li>
         ))}
       </ol>
-      {rows.capped && <Capped cap={cap} />}
+      {rows.capped && <Capped shown={cap} />}
     </div>
   );
 }

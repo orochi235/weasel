@@ -13,8 +13,8 @@ export interface ScaleBarOptions {
   scopes: readonly UnitScope[];
   /** The longest the bar may be, in screen pixels. Default 140. */
   maxPx?: number;
-  /** The lengths it chooses among, in the innermost scope's units. Default:
-   *  1, 2 and 5 of every decade of every unit that scope's system carries. */
+  /** The lengths it chooses among, in the innermost scope's units; at least one, or it throws a `RangeError`.
+   *  Default: 1, 2 and 5 of every decade of every unit that scope's system carries. */
   lengths?: readonly UnitValue[];
   /** BCP 47 locale the label's number is written in. Default `defaultLocale()`: the browser's, else `en-US`. */
   locale?: string;
@@ -73,6 +73,7 @@ export function scaleBar(opts: ScaleBarOptions): ScaleBar {
 
 /** The longest of `lengths` no longer than `fit`, or the shortest when none is. */
 function longestFitting(lengths: readonly number[], fit: number): number {
+  if (lengths.length === 0) throw new RangeError('a scale bar chooses among at least one length; leave `lengths` out for the default');
   const sorted = [...lengths].sort((a, b) => a - b);
   let length = sorted[0]!;
   for (const l of sorted) if (l <= fit) length = l;

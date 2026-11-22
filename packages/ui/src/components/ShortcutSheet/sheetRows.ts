@@ -20,9 +20,17 @@ function keyNames(row: ShortcutRow, platform: Platform): Set<string>[] {
   });
 }
 
-/** A query as the keys it names: split at spaces and `+`, a run of modifier glyphs split one per key (`⇧⌘Z`). */
+/** A query as the keys it names: split at spaces and `+`, a run of modifier glyphs split one per key (`⇧⌘Z`). A `+`
+ *  standing alone or ending a part joins keys, as it does mid-typing (`Ctrl+`); it is the plus key only alone in the
+ *  query or after another `+` (`Ctrl++`). */
 function queryKeys(query: string): string[] {
-  return query.trim().split(/\s+/).flatMap((part) => keyLegendsFromFormatted(part).map((k) => foldText(k.label)));
+  const q = query.trim();
+  if (q === '+') return [foldText(q)];
+  return q.split(/\s+/)
+    .filter((part) => part !== '+')
+    .map((part) => (part.endsWith('+') && !part.endsWith('++') ? part.slice(0, -1) : part))
+    .flatMap((part) => keyLegendsFromFormatted(part).map((k) => foldText(k.label)))
+    .filter((k) => k !== '');
 }
 
 /** Whether `row` answers `query`: by its label, or by one of its keys naming every key the query names. */

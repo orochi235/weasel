@@ -65,6 +65,21 @@ describe('Sequence', () => {
     expect(within(grid).getAllByRole('cell').map((c) => c.textContent)).toContain('b3');
   });
 
+  it('caps a grid by its cells, not by each axis', () => {
+    const open = () => rangeSweep({ from: 0, to: Infinity, step: 1 });
+    const { unmount } = render(
+      <Sequence aria-label="Open" sweep={open()} across={open()} cap={16}>{(r, c) => `${r}${c}`}</Sequence>,
+    );
+    expect(document.querySelectorAll('tbody td')).toHaveLength(16);
+    expect(screen.getByText('Showing the first 4 × 4 steps.')).toBeInTheDocument();
+    unmount();
+    render(
+      <Sequence aria-label="Few" sweep={valuesSweep(['a', 'b'])} across={open()} cap={16}>{(r, c) => `${r}${c}`}</Sequence>,
+    );
+    expect(screen.getAllByRole('columnheader')).toHaveLength(8);
+    expect(document.querySelectorAll('tbody td')).toHaveLength(16);
+  });
+
   it('keeps a step\'s state with that step when the sweep around it changes', () => {
     function Cell({ d }: { d: number }) {
       const [on, setOn] = useState(false);
