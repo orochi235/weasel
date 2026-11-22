@@ -33,6 +33,17 @@ const hasOnlyClonedKeys = (v: object): boolean =>
       (Object.prototype.propertyIsEnumerable.call(v, key) || (Array.isArray(v) && key === 'length')),
   );
 
+/** Whether a value cloned whole carries no own key of its own, which a clone would drop: a typed array's own keys are
+ *  its indices, and a RegExp's `lastIndex` a clone resets. */
+const hasNoExpandos = (v: object): boolean => {
+  const indexed = ArrayBuffer.isView(v) && !(v instanceof DataView) ? (v as unknown as ArrayLike<unknown>).length : 0;
+  return Reflect.ownKeys(v).every(
+    (key) =>
+      typeof key === 'string' &&
+      ((v instanceof RegExp && key === 'lastIndex' && v.lastIndex === 0) || (/^(0|[1-9]\d*)$/.test(key) && Number(key) < indexed)),
+  );
+};
+
 /** Whether `structuredClone` takes `value`, which a Proxy refuses however plain it reads through its traps. */
 const clones = (value: unknown): boolean => {
   try {
@@ -55,7 +66,7 @@ export function isPortSafe(value: unknown): boolean {
     if (seen.has(v)) return true;
     seen.add(v);
     const proto = Object.getPrototypeOf(v);
-    if (CLONED_WHOLE.has(proto)) return true;
+    if (CLONED_WHOLE.has(proto)) return hasNoExpandos(v);
     if (proto === Map.prototype)
       return hasOnlyClonedKeys(v) && [...(v as Map<unknown, unknown>)].every(([key, member]) => safe(key) && safe(member));
     if (proto === Set.prototype) return hasOnlyClonedKeys(v) && [...(v as Set<unknown>)].every(safe);

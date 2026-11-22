@@ -10,6 +10,20 @@ class Color {
 }
 
 describe('isPortSafe', () => {
+  it('refuses a value cloned whole that carries a field of its own, which a clone drops', () => {
+    expect(isPortSafe(new Date(0))).toBe(true);
+    expect(isPortSafe(new Float32Array([1, 2]))).toBe(true);
+    expect(isPortSafe(/a/g)).toBe(true);
+    expect(isPortSafe(Object.assign(new Date(0), { label: 'epoch' }))).toBe(false);
+    expect(isPortSafe(Object.assign(new Float32Array([1]), { meta: 1 }))).toBe(false);
+    expect(isPortSafe(Object.assign(new ArrayBuffer(1), { meta: 1 }))).toBe(false);
+    const sticky = /a/g;
+    sticky.exec('aa');
+    expect(isPortSafe(sticky)).toBe(false);
+    const labeled = Object.assign(new Date(0), { label: 'epoch' });
+    expect(withUnsent(portSafePart(labeled)?.value ?? null, labeled)).toBe(labeled);
+  });
+
   it('accepts primitives and null', () => {
     for (const value of ['s', 0, Number.NaN, true, 1n, undefined, null]) expect(isPortSafe(value)).toBe(true);
   });
