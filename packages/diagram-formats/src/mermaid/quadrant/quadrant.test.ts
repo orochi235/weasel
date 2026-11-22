@@ -109,6 +109,12 @@ describe('writing a Mermaid quadrant chart', () => {
     expect(back.kind === 'quadrant' && back.points.map((p) => p.name)).toEqual(names);
   });
 
+  it('reads a quoted axis end holding an arrow as text', () => {
+    expect(plotOf('quadrantChart\n  x-axis "a-->b" --> c\n  y-axis "d-->e"\n').data).toMatchObject({
+      x: { low: 'a-->b', high: 'c' }, y: { low: 'd-->e' },
+    });
+  });
+
   it('reads back a quoted name holding text that looks like a reference', () => {
     const names = ['a: #35; b', 'c: #quot; d', 'e: &amp; <b>'];
     const page: PlotPage = {

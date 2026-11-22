@@ -13,9 +13,19 @@ export const textOf = (s: string): string => {
 };
 
 
+/** Where the first `-->` outside double quotes starts, or -1. */
+function arrowAt(rest: string): number {
+  let quoted = false;
+  for (let i = 0; i < rest.length; i++) {
+    if (rest[i] === '"') quoted = !quoted;
+    else if (!quoted && rest.startsWith('-->', i)) return i;
+  }
+  return -1;
+}
+
 /** `Low --> High`, `Low -->` or `Low` as an axis's ends. */
 export function axisOf(rest: string): QuadrantAxis {
-  const at = rest.indexOf('-->');
+  const at = arrowAt(rest);
   const low = textOf(at < 0 ? rest : rest.slice(0, at));
   const high = at < 0 ? '' : textOf(rest.slice(at + 3));
   return { ...(low !== '' ? { low } : {}), ...(high !== '' ? { high } : {}) };
