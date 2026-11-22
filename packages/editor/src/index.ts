@@ -21,6 +21,7 @@ export {
   type DocClipboardCommandOptions, type DocClipboardOptions,
 } from './useDocClipboard';
 export { pageGridSchema, usePageGrid, type PageGridOptions, type PageGridSettings } from './usePageGrid';
+export { useEditorRulers, type EditorRulers, type EditorRulersOptions } from './useEditorRulers';
 export { EditorShell, type EditorShellProps } from './EditorShell';
 export { PublishEditorTools, usePublishEditorTools } from './shortcutSheet';
 export { EDITOR_CONTEXT_MENUS, EDITOR_CONTEXT_MENUS_CONTRIBUTION } from './contextMenus';

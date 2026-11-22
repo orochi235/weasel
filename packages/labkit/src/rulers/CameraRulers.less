@@ -1,0 +1,21 @@
+// Over the camera's overlay, whose direct children take pointer events: the rulers' drags are the camera's, so
+// presses pass through to its element.
+.lk-canvas-stack__overlay > .lk-camera-rulers,
+.lk-camera-rulers {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.lk-camera-rulers__guides {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.lk-camera-rulers__guide {
+  stroke: var(--wzl-accent);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}

@@ -5,6 +5,7 @@ import type { ToolSlotContext, TrialChromeContext } from '../chrome/types';
 import { useLabOverValues } from '../config/over';
 import type { LabCommands } from '../lab/LabContext';
 import { useLightboxControl } from '../lightbox/LightboxContext';
+import type { TrialGuidesChrome } from '../rulers/types';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
@@ -92,6 +93,7 @@ export interface TrialChromeSources
   store: LabStore;
   undoBindings: UndoBindings | undefined;
   loupe: LoupeBindings | undefined;
+  guides?: TrialGuidesChrome;
   toolSlot: ToolSlotContext;
   actions: TrialActions | undefined;
 }
@@ -108,6 +110,7 @@ export function useTrialChromeContext({
   isLastTrial,
   undoBindings,
   loupe,
+  guides,
   toolSlot,
   actions,
   configSchema,
@@ -144,6 +147,7 @@ export function useTrialChromeContext({
       ...undoChrome(undoBindings),
       runAction: actions?.run ?? NO_RUN,
       ...loupeChrome(loupe),
+      ...(guides ? { guides: { shown: guides.shown, toggle: guides.toggle } } : {}),
       canExpand: lightbox != null,
       expanded: lightbox?.expanded ?? false,
       toggleExpanded: lightbox?.toggle ?? NO_OP,
@@ -176,6 +180,7 @@ export function useTrialChromeContext({
     draftConfig,
     undoBindings,
     loupe,
+    guides,
     lightbox,
     toolSlot,
     actions,

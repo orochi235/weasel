@@ -1,6 +1,6 @@
 {
   "packages/labkit/src/trial/Trial.tsx": {
-    "longestFunction": 160
+    "longestFunction": 156
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
     "longestFunction": 126

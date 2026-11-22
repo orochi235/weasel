@@ -77,6 +77,7 @@ function Harness() {
                 setToolShortcuts: () => {},
                 visibleLayers: [],
                 pointer: createPointerStore(),
+                snap: (p) => p,
               },
               emit: () => {},
             })}

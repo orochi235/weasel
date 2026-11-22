@@ -3,6 +3,7 @@ import { CanvasStack } from '../canvas/CanvasStack';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { DragOverlay, type UseDragDropResult } from '../dragdrop/DragDropRuntime';
 import type { Instrument, RenderContext } from '../instrument/types';
+import type { TrialRulersPart } from '../rulers/rulersPart';
 import { DEFAULT_VIEW } from '../state/view';
 import type { TrialCamera } from './useTrialCamera';
 
@@ -17,6 +18,8 @@ export interface TrialContentSources {
   canvasHost: RefObject<HTMLDivElement | null>;
   ticks: ComponentProps<typeof CanvasStack>['ticks'];
   setView: (view: unknown) => void;
+  /** The camera's rulers, where its instrument offers them. */
+  rulers: TrialRulersPart | null;
 }
 
 /**
@@ -33,6 +36,7 @@ export function renderTrialContent({
   canvasHost,
   ticks,
   setView,
+  rulers,
 }: TrialContentSources): ReactNode {
   const { camera, view2d } = cam;
   if (camera?.kind === 'canvas') {
@@ -50,14 +54,16 @@ export function renderTrialContent({
           ticks={ticks}
           gestures={cam.gestures}
           onHome={cam.home}
+          contributions={rulers?.contributions}
         >
           {instrument.render(ctx)}
           {instrument.dragDrop ? dragDrop.target : null}
+          {rulers?.chrome}
         </CanvasStack>
         <DragOverlay drag={dragDrop.drag} />
       </div>
     );
   }
-  if (camera) return cam.body(instrument.render(ctx), ctx);
+  if (camera) return cam.body(instrument.render(ctx), ctx, rulers);
   return instrument.render(ctx);
 }

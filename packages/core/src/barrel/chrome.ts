@@ -67,6 +67,7 @@ export {
   type PathAnchorAffordanceOptions,
   type TargetTransform,
 } from '../affordances';
+export { layerAffordance } from '../canvas/affordanceAt';
 export type { ClaimableGesture } from '@weasel-js/gestures';
 export type { ChromeState } from '../core/selection/chromeState';
 export { paintsLayer } from '../core/selection/chromeState';

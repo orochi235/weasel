@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
-import { TRIAL_LAYERS_OP, trialEditOf } from '../trial/trialEditOp';
+import { TRIAL_GUIDES_OP, TRIAL_LAYERS_OP, trialEditOf } from '../trial/trialEditOp';
 import { trialUndoHistory } from '../trial/useRestoredHistory';
 import { serializeTrials } from './helpers';
 import { createLabStore } from './store';
@@ -63,6 +63,21 @@ describe("a trial's saved history", () => {
       'state.change',
       'state.change',
     ]);
+  });
+
+  it('leaves out a guide step, since the guides are not saved', () => {
+    const store = storeWithTrial();
+    const history = trialUndoHistory(50);
+    store.getState().setTrialHistory('t', history);
+    history.recordEntry([trialEditOf(record(store), 'edit', store)], 'state.change');
+    const guides = {
+      name: TRIAL_GUIDES_OP,
+      apply: () => {},
+      invert: () => ({ name: TRIAL_GUIDES_OP, apply: () => {}, invert: () => guides }),
+    };
+    history.recordEntry([guides], 'guides.change');
+    const [saved] = serializeTrials(store.getState().trials, {});
+    expect(saved?.undo?.trial?.undoStack.map((e) => e.label)).toEqual(['state.change']);
   });
 
   it('is left out while there is nothing to undo or redo', () => {

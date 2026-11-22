@@ -14,6 +14,7 @@ schedules its own layers; a foreign renderer wants rects and dirtiness only.
 | `CanvasStackContext.ts` | React context exposing the current `view` to descendants |
 | `useLayerScheduler.ts` | DPR-aware rAF scheduler; redraws dirty layers on view/state changes |
 | `CameraInput.tsx` | Pan, zoom, tap and home routed through weasel's gesture dispatcher; `CameraContext`; publishes the pointer |
+| `cameraContributions.ts` | Installs weasel contributions' input roles on the camera's dispatcher: actions, deps, bindings, and layer hit tests |
 | `Orbit.tsx` / `Orbit.less` | The 3D camera: kernel3d's orbit actions on a `camera3d` dep, through the same dispatcher |
 | `orbitZoom.ts` | An orbit as a 2D `CameraView`, so the lab's zoom chrome dollies it |
 | `cameraGestures.ts` / `cameraTouch.less` | Which gestures a camera takes, and the `touch-action` that follows from them |
@@ -41,6 +42,7 @@ interface CanvasStackProps {
   className?: string;
   onHitTest?: (worldPos: Point) => void;  // fired on tap (no drag)
   gestures?: CameraGestures;            // { pan, wheel: 'plain' | 'mod' | false, pinch, tap }
+  contributions?: SurfaceContribution[]; // input routed on the camera's dispatcher; see "Contributions"
   children?: ReactNode;                 // rendered into the overlay layer
 }
 ```
@@ -144,6 +146,34 @@ claimed, so the page gets it: an unbound wheel scrolls, and the host's
 `touch-action` (from `data-lk-touch`) hands one finger to the page once the
 camera does not take a drag. `home` defaults on only for an orbit; a 2D
 camera's double clicks usually belong to its content.
+
+## Contributions
+
+`contributions` (on `<CanvasStack>`, `<Stage>` and `<CameraInput>`) installs a weasel `SurfaceContribution`'s
+input on the camera's own dispatcher: its `actions` in the scope's registry, its `deps` in the dep registry, its
+`bindings` as dispatcher entries, and each layer's `hitTest` as the affordance its bindings target (`layerAffordance`),
+the last listed hit first. Hit tests and actions see the dispatcher's world, which is frame-local, and the camera
+`View`. A camera paints nothing of a contribution: not its layers, `overlay`, views or markers, and it runs no
+`attach`, `beforePaint` or `afterPaint`. Whatever those would do, the host does itself.
+
+## Rulers and guides
+
+`rulers` on `canvas` or `stage` (and on `<TrialSceneCanvas>`) offers `@weasel-js/guides`' rulers to the trial:
+`true` reads in CSS px, `{ unit, lengths }` names the scope and the steps. The trial's Guides menu (`guides` in the
+toolbar) switches the rulers, the guides and snapping to them, all off at first. An orbit has none: a ruler measures a
+2D view.
+
+On a labkit camera, `src/rulers/` installs `createRulers`' contribution through `contributions`, so a drag off a
+ruler is an action on the camera's dispatcher like a pan; its hit layer claims nothing while the rulers are hidden,
+nor a hidden guide. `<CameraRulers>` reports the camera to the rulers with `Rulers.follow`, through
+`toCameraView(view, frame)`, and draws the guides and `<Rulers>` in the overlay. The rulers read frame-local
+coordinates, so a y-up `worldSpec` creates them with `yAxis: 'up'`, which labels the left ruler with world y. Guides
+are stored frame-local; `trial.snap(point)` converts to and from the instrument's world.
+
+Each guide placed, moved or removed is one undo step (`guides.change`, in the default `snapshotOn`), committed
+through an `applyOps` dep the rulers' contribution provides. A saved history leaves those steps out, as it does the
+layer list's: guides last the session. The switches are not undo steps; they change what is shown, as the loupe's do.
+On a `<TrialSceneCanvas>` the scene's history takes the steps instead, as draw's does.
 
 ## The orbit
 

@@ -15,10 +15,12 @@ import {
   useMemo,
   useRef,
 } from 'react';
+import type { RulersOption } from '../rulers/types';
 import { useTrialHistory } from '../trial/trialHistory';
 import { useTrialTitle } from '../trial/trialTitle';
 import { editStampsOf, sceneTrialHistory, stampSceneEdits } from './sceneTrialHistory';
 import { useSceneCamera } from './useSceneCamera';
+import { useSceneRulers } from './useSceneRulers';
 import { type TrialToolSlot, useSceneToolSlot } from './useSceneToolSlot';
 import { useTrialSceneReset } from './useTrialSceneReset';
 
@@ -40,6 +42,9 @@ export type TrialSceneCanvasProps<TData, TLayer extends string, TPose> = (SceneC
   /** Whether the trial's Undo and Redo step the scene's history. Default
    *  `true`; the buttons appear only for an instrument declaring `undo`. */
   history?: boolean;
+  /** Rulers along the canvas and the guides dragged off them, offered to the trial as a `canvas`'s are: its Guides
+   *  menu turns them on. Placing, moving and removing a guide is a step of the scene's history. */
+  rulers?: RulersOption;
 };
 
 function TrialSceneCanvasInner<TData, TLayer extends string, TPose>(
@@ -47,6 +52,7 @@ function TrialSceneCanvasInner<TData, TLayer extends string, TPose>(
     scene,
     trial,
     history = true,
+    rulers,
     onToolsCreated,
     ...rest
   }: TrialSceneCanvasProps<TData, TLayer, TPose>,
@@ -67,6 +73,14 @@ function TrialSceneCanvasInner<TData, TLayer extends string, TPose>(
   useTrialSceneReset(scene, () => {
     if (opening.current) api.current?.setPathEdit(opening.current);
   });
+  const guided = useSceneRulers(rulers, rest);
+  // The rulers add one layer, entry and source to what was given, so the props keep the branch they were in.
+  const props = {
+    ...rest,
+    ambient: guided.ambient,
+    layers: guided.layers,
+    snap: guided.snap,
+  } as typeof rest;
   const both = useCallback(
     (v: SceneCanvasApi | null) => {
       api.current = v;
@@ -79,11 +93,12 @@ function TrialSceneCanvasInner<TData, TLayer extends string, TPose>(
     <div className="lk-trial-scene" ref={host}>
       <SceneCanvas
         aria-label={title ?? undefined}
-        {...rest}
+        {...props}
         ref={both}
         scene={scene}
         onToolsCreated={toolsReported}
       />
+      {guided.chrome}
     </div>
   );
 }

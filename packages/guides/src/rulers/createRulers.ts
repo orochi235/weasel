@@ -6,7 +6,7 @@ import type { GuideStore } from '../guides/ops';
 import type { Guide } from '../guides/types';
 import { createRulersGuideAction, createRulersPointerAction } from './actions';
 import { createRulersHitLayer } from './hit';
-import { rulersLayout, type RulersLayout, type RulersState } from './layout';
+import { rulersLayout, type RulersLayout, type RulersState, type RulersYAxis } from './layout';
 import { documentRulerFrame } from './reading';
 import type { Point } from '@weasel-js/geom';
 
@@ -28,6 +28,10 @@ export interface RulersOptions {
   minorPx?: number;
   /** The lengths a labeled step chooses among, as `scaleBar` takes them. */
   lengths?: readonly UnitValue[];
+  /** Which way the left ruler reads. `'up'` labels it with the canvas
+   *  world's y negated, for a host whose document runs y up the screen over a
+   *  canvas world that runs it down. Default `'down'`. */
+  yAxis?: RulersYAxis;
   /** The color of the guide a drag is placing. Default the guides layer's. */
   guideColor?: string;
   /** Contribution id, and the prefix of its layers' and actions'. Default `'rulers'`. */
@@ -45,6 +49,11 @@ export interface Rulers {
   readonly size: number;
   get(): RulersState;
   subscribe(listener: () => void): () => void;
+  /** Report the canvas's view and its size in CSS px, for a host that is not
+   *  a `<SceneCanvas>`: the contribution reads both on every paint there. The
+   *  host still installs the contribution's actions, bindings and hit layer on
+   *  its dispatcher; nothing else of it needs the canvas. */
+  follow(view: View, size: { width: number; height: number }): void;
   /** Both rulers' ticks as the state stands, or `null` before the first paint. */
   layout(): RulersLayout | null;
   /** `guides` less the one a drag is moving, which the rulers draw where it
@@ -111,6 +120,8 @@ export function createRulers(opts: RulersOptions): Rulers {
     ...(opts.guideColor ? { color: opts.guideColor } : {}),
   });
   let api: CanvasExtensionApi | null = null;
+  const follow = (view: View, size: { width: number; height: number } | undefined): void =>
+    set({ ...(sameView(state.view, view) ? {} : { view }), ...(size ? { width: size.width, height: size.height } : {}) });
 
   const contribution: SurfaceContribution = {
     id,
@@ -128,15 +139,15 @@ export function createRulers(opts: RulersOptions): Rulers {
         set(initial());
       };
     },
-    beforePaint: ({ view }) => {
-      const rect = api?.getSurfaceRect();
-      set({ ...(sameView(state.view, view) ? {} : { view }), ...(rect ? { width: rect.width, height: rect.height } : {}) });
-    },
+    beforePaint: ({ view }) => follow(view, api?.getSurfaceRect()),
   };
 
   const settled = (guides: readonly Guide[]): readonly Guide[] => {
     const moving = state.draft?.id;
     return moving === undefined || !guides.some((g) => g.id === moving) ? guides : guides.filter((g) => g.id !== moving);
   };
-  return { contribution, size, get: () => state, subscribe, layout: () => rulersLayout(state, spacing), settled };
+  const yAxis = opts.yAxis ?? 'down';
+  return {
+    contribution, size, get: () => state, subscribe, follow, layout: () => rulersLayout(state, spacing, yAxis), settled,
+  };
 }

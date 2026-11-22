@@ -98,6 +98,7 @@ function scanInstrument(
     render: (ctx) => <SeedMarks ctx={ctx} />,
     canvas: {
       initialView: { zoom: 1, pan: { x: 24, y: 24 } },
+      rulers: true,
       layers: [
         {
           id: 'grid',
@@ -166,7 +167,7 @@ function scanInstrument(
       ],
       onDrop: (worldPos, _item, state) => ({ ...state, marks: [...state.marks, worldPos.x] }),
     },
-    undo: { snapshotOn: ['state.change', 'canvas.itemAdded'], maxDepth: 20 },
+    undo: { snapshotOn: ['state.change', 'canvas.itemAdded', 'guides.change'], maxDepth: 20 },
     job: {
       auto: true,
       run: ({ signal }) => sweep(spec, signal),

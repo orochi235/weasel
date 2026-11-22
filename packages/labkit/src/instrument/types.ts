@@ -11,6 +11,7 @@ import type { ClockCapability, TrialClock } from '../clock/trialClock';
 import type { OverAccess } from '../config/over';
 import type { ConfigPath, ConfigSchema } from '../config/types';
 import type { JobCapability, JobHandle } from '../job/types';
+import type { RulersOption } from '../rulers/types';
 import type { TrialInfo } from '../state/types';
 import type { ToolCapability } from '../tools/types';
 
@@ -72,6 +73,9 @@ export interface RenderContext<TS = unknown, TC = unknown> {
     pointer: PointerContextValue;
     /** The trial's clock, present when the instrument declares `clock`. */
     clock?: TrialClock;
+    /** `point`, in the instrument's world, moved onto the nearest guide in reach while the trial snaps to its
+     *  guides (`rulers`); `point` itself otherwise. */
+    snap: (point: Point) => Point;
   };
   emit: (event: string) => void;
   /** Present only when the instrument declares a `job`. */
@@ -123,6 +127,9 @@ export interface CanvasCapability<TS = unknown, TC = unknown> {
   /** Which gestures the trial's camera takes; the rest reach the page.
    *  `<Lab gestures>` overrides these one by one. Omitted, all of them. */
   gestures?: CameraGestures;
+  /** Rulers along the canvas, reading the world through `worldSpec`, and the guides dragged off them. Offered,
+   *  not shown: the trial's Guides menu turns them on. An orbit takes none, since a ruler measures a 2D view. */
+  rulers?: RulersOption;
 }
 
 /** Declares that an instrument's DOM is content of a fixed size, which the
@@ -138,6 +145,8 @@ export interface StageCapability<TS = unknown, TC = unknown> {
   maxZoom?: number;
   /** As `CanvasCapability.gestures`. */
   gestures?: CameraGestures;
+  /** As `CanvasCapability.rulers`, reading the content's CSS px from its top-left. */
+  rulers?: RulersOption;
   /** Drawn over the content in viewport pixels, outside the camera — a legend,
    *  a floating panel, anything that must not zoom with the picture. */
   overlay?: (ctx: RenderContext<TS, TC>) => ReactNode;
@@ -200,6 +209,8 @@ export interface DragDropCapability<TS = unknown, TC = unknown> {
 /** How an instrument's undo records: which emitted events snapshot its state
  *  and config, and how many snapshots to keep. */
 export interface UndoCapability {
+  /** Default `['state.change', 'config.change', 'guides.change']`. `guides.change` is a guide placed, moved or
+   *  removed off the trial's rulers; a saved history leaves those steps out, since the guides are not saved. */
   snapshotOn?: string[];
   maxDepth?: number;
 }

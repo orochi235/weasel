@@ -15,6 +15,9 @@ export const TRIAL_EDIT_OP = 'labkit:trialEdit';
  *  the layer order and visibility they step. */
 export const TRIAL_LAYERS_OP = 'labkit:trialLayers';
 
+/** The name a trial's guide steps go by: a saved history leaves them out too, since guides last only the session. */
+export const TRIAL_GUIDES_OP = 'labkit:trialGuides';
+
 /** A trial edit entry's args: plain data, so the entry survives a reload. */
 export interface TrialEditArgs {
   /** `'settings'` steps the trial's config and auto paths; `'edit'`, its state with them. */

@@ -53,6 +53,7 @@ export function createRulersPointerAction(ctx: RulersActionCtx): Action {
   return defineAction<string, RulersPointerParams>({
     id: `${ctx.id}.pointer`,
     label: 'Follow the pointer on the rulers',
+    requires: ['scene'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
@@ -98,7 +99,7 @@ export function createRulersGuideAction(ctx: RulersActionCtx): Action {
     id: `${ctx.id}.guide`,
     label: 'Place Guide',
     modifierRoles: SNAP_ROLES,
-    requires: ['view'],
+    requires: ['view', 'snap', 'applyOps', 'scene'],
     invoker: {
       timing: 'ongoing',
       // The dispatcher builds deps once, for `start`; later events carry none.

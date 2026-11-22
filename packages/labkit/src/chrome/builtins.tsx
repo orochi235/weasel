@@ -49,6 +49,32 @@ function loupeContributions(ctx: TrialChromeContext): TrialContribution[] {
   ];
 }
 
+const GUIDE_SWITCHES = [
+  ['rulers', 'Show rulers'],
+  ['guides', 'Show guides'],
+  ['snap', 'Snap to guides'],
+] as const;
+
+/** The Guides menu, while a camera in the trial offers rulers: a checked row for each of what it shows. */
+function guidesMenu(guides: NonNullable<TrialChromeContext['guides']>): TrialContribution {
+  return {
+    id: 'guides',
+    region: 'toolbar',
+    group: 'view',
+    item: {
+      kind: 'menu',
+      label: 'Guides',
+      entries: GUIDE_SWITCHES.map(([key, label]) => ({
+        kind: 'item',
+        key,
+        label,
+        checked: guides.shown[key],
+        run: () => guides.toggle(key),
+      })),
+    },
+  };
+}
+
 /** The color last picked, by the eyedropper or a loupe, as one toolbar item: it reads the hex, and pressing it
  *  copies it. */
 function pickedColorReadout(hex: string | null): TrialContribution {
@@ -100,7 +126,7 @@ function shownKey(t: TrialTool, ctx: TrialChromeContext): TrialTool['shortcut'] 
 
 /** Built-in ids contributed only while runtime state says so — the loupe
  *  and eyedropper toggles and the picked color appear once a lens mounts, after
- *  the trial's first render, the snapshot loader once a snapshot is saved, the
+ *  the trial's first render, the Guides menu once a camera offers rulers, the snapshot loader once a snapshot is saved, the
  *  expand toggle only inside a lightbox, and the zoom controls and scale once
  *  the trial has a 2D view, which an `initialView` sized to the viewport does
  *  not until the canvas is measured. The FPS meter comes only with a canvas. Marks, export, and the undo
@@ -116,6 +142,7 @@ export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
   'marks',
   'loupe',
   'eyedropper',
+  'guides',
   'picked-color',
   'snapshot-load',
   'expand',
@@ -269,6 +296,7 @@ export function builtinContributions(
   }
 
   if (ctx.hasLoupe) out.push(...loupeContributions(ctx));
+  if (ctx.guides) out.push(guidesMenu(ctx.guides));
 
   out.push(...zoomContributions(instrument, ctx));
   if (instrument.canvas != null) out.push(FPS);

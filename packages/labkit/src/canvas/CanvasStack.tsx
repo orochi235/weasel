@@ -1,4 +1,4 @@
-import type { Yoke } from '@weasel-js/core';
+import type { SurfaceContribution, Yoke } from '@weasel-js/core';
 import { useLatest, watchDevicePixelRatio } from '@weasel-js/core';
 import { watchResize } from '@weasel-js/react';
 import {
@@ -48,6 +48,8 @@ export interface CanvasStackProps {
   onHome?: () => void;
   /** Frames after each of which every `timed` layer repaints — a trial clock's. */
   ticks?: (fn: () => void) => () => void;
+  /** As `<CameraInput contributions>`: weasel contributions whose input the camera routes. */
+  contributions?: readonly SurfaceContribution[];
 }
 
 /** The most backing pixels one layer's canvas is given, whatever magnifies it: 4096², 64 MB of RGBA. */
@@ -158,6 +160,7 @@ export function CanvasStack({
   ticks,
   gestures,
   onHome,
+  contributions,
 }: CanvasStackProps) {
   // Keyed on its numbers: a caller handing over an equal view in a new object
   // must not mark every layer dirty.
@@ -232,6 +235,7 @@ export function CanvasStack({
             onTap={onHitTest}
             gestures={gestures}
             onHome={onHome}
+            contributions={contributions}
           />
           <div
             ref={containerRef}

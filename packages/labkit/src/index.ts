@@ -316,6 +316,7 @@ export type { LayerListItem, LayerListProps, LayerMove } from './layers';
 export { LayerList, moveLayers } from './layers';
 export * from './lightbox';
 export * from './primitives';
+export type { RulersOption, TrialGuidesChrome, TrialGuidesShown } from './rulers/types';
 export * from './scene';
 export { SPECIMEN_SECTIONS, Specimen } from './specimen/Specimen';
 export {

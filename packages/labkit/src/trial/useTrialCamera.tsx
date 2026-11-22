@@ -6,9 +6,15 @@ import { zoomCameraTo } from '../canvas/cameraZoom';
 import { clientSize, layoutSize } from '../canvas/hostBox';
 import { Orbit } from '../canvas/Orbit';
 import { orbitZoomView } from '../canvas/orbitZoom';
-import { Stage } from '../canvas/Stage';
-import type { Instrument, RenderContext, ViewTransform2D } from '../instrument/types';
+import { Stage, type StageProps } from '../canvas/Stage';
+import type {
+  Instrument,
+  RenderContext,
+  StageCapability,
+  ViewTransform2D,
+} from '../instrument/types';
 import { useIsPresented } from '../lab/presentation';
+import type { TrialRulersPart } from '../rulers/rulersPart';
 import { as2DView, as3DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { cameraOf, type InstrumentCamera } from './homeView';
 import type { TrialOrbit } from './useTrialOrbit';
@@ -39,8 +45,40 @@ export interface TrialCamera {
   /** What `useTrialOrbit` reads; `null` unless the camera is an orbit. */
   orbit: TrialOrbit | null;
   /** A `stage` or `orbit` camera around `content`, drawing its capability's
-   *  overlay from `ctx`; `null` for the others, which the trial lays out itself. */
-  body: (content: ReactNode, ctx: RenderContext) => ReactNode | null;
+   *  overlay from `ctx`, and a stage the trial's `rulers`; `null` for the others, which the trial lays out itself. */
+  body: (
+    content: ReactNode,
+    ctx: RenderContext,
+    rulers?: TrialRulersPart | null,
+  ) => ReactNode | null;
+}
+
+/** A trial's `<Stage>`: its capability's size and zoom range, and the trial's rulers, where it has them, over its
+ *  overlay. */
+function TrialStage({
+  stage,
+  rulers,
+  overlay,
+  ...props
+}: Omit<StageProps, 'size' | 'minZoom' | 'maxZoom' | 'contributions'> & {
+  stage: StageCapability;
+  rulers: TrialRulersPart | null | undefined;
+}) {
+  return (
+    <Stage
+      {...props}
+      size={stage.size}
+      minZoom={stage.minZoom}
+      maxZoom={stage.maxZoom}
+      contributions={rulers?.contributions}
+      overlay={
+        <>
+          {overlay}
+          {rulers?.chrome}
+        </>
+      }
+    />
+  );
 }
 
 const STILL: CameraGestures = { drag: false, wheel: false, pinch: false, tap: false, home: false };
@@ -139,38 +177,36 @@ export function useTrialCamera({
       else if (view3d) orbitZoom?.set({ x: 0, y: 0, scale: { x: z, y: z } });
     },
     orbit,
-    body: (content, ctx) => {
+    body: (content, ctx, rulers) => {
+      const shared = {
+        onViewChange: setView,
+        onResize: placement.place,
+        hostRef: cameraHost,
+        gestures,
+      };
       if (camera?.kind === 'stage') {
-        const stage = camera.capability;
         return (
-          <Stage
-            size={stage.size}
+          <TrialStage
+            {...shared}
+            stage={camera.capability}
             view={view2d ?? DEFAULT_VIEW}
-            onViewChange={setView}
-            onResize={placement.place}
-            hostRef={cameraHost}
-            gestures={gestures}
             onHome={home}
-            minZoom={stage.minZoom}
-            maxZoom={stage.maxZoom}
-            overlay={stage.overlay?.(ctx)}
+            overlay={camera.capability.overlay?.(ctx)}
+            rulers={rulers}
           >
             {content}
-          </Stage>
+          </TrialStage>
         );
       }
       if (orbitCap) {
         return (
           <Orbit
+            {...shared}
             view={view3d ?? createCamera({})}
-            onViewChange={setView}
             limits={orbitCap.limits}
             up={orbitCap.up}
             home={orbitHome}
             viewport={pane}
-            onResize={placement.place}
-            hostRef={cameraHost}
-            gestures={gestures}
             overlay={orbitCap.overlay?.(ctx)}
           >
             {content}

@@ -1,7 +1,7 @@
 export { createRulers } from './createRulers';
 export type { Rulers, RulersOptions } from './createRulers';
 export { rulersLayout } from './layout';
-export type { RulersLayout, RulersSpacing, RulersState } from './layout';
+export type { RulersLayout, RulersSpacing, RulersState, RulersYAxis } from './layout';
 export { documentRulerFrame, createRulerFrameLookup } from './reading';
 export type { RulerFrame } from './reading';
 export { rulerTicks } from './ticks';

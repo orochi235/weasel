@@ -24,6 +24,7 @@ import { useLabCommands } from '../lab/LabContext';
 import { type ChordTarget, useLabChords } from '../lab/labChords';
 import { usePresentedTrial } from '../lab/presentation';
 import { JobProgress } from '../primitives/JobProgress';
+import type { TrialGuidesChrome } from '../rulers/types';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
 import { FloatSidebarContext } from './FloatSidebar';
@@ -75,6 +76,8 @@ export interface TrialChromeProps extends TrialChromeOptions {
   /** Supplied while a lens is mounted in the trial. The lens itself is the
    *  instrument's to mount; the chrome only offers the switch. */
   loupe?: LoupeBindings;
+  /** Supplied while a camera in the trial offers rulers: what is shown of them, and the switches. */
+  guides?: TrialGuidesChrome;
   /** Contributions the trial runtime itself adds — the drag palette and the
    *  layer list, which depend on runtime state the instrument cannot reach. */
   trialChrome?: readonly TrialContribution[];
@@ -135,6 +138,7 @@ export function TrialChrome({
   reported,
   job,
   loupe,
+  guides,
   trialChrome,
   chrome,
   suppress,
@@ -167,6 +171,7 @@ export function TrialChrome({
     isLastTrial,
     undoBindings,
     loupe,
+    guides,
     toolSlot,
     actions,
     configSchema,
