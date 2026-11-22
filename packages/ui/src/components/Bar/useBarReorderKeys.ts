@@ -53,6 +53,8 @@ function nameOf(unit: HTMLElement): string {
 export function useBarReorderKeys({ root, order, onReorder, vertical, dir, keysOf }: BarReorderKeysArgs): BarReorderKeys {
   const latest = useLatest({ order, onReorder, keysOf });
   const [announcement, setAnnouncement] = useState('');
+  // Each move renders, so a refocus a host's refusal leaves unanswered is dropped then, not on some later render.
+  const [, setMoves] = useState(0);
   const refocus = useRef<{ container: string; key: string } | null>(null);
   const enabled = onReorder !== undefined;
 
@@ -101,6 +103,7 @@ export function useBarReorderKeys({ root, order, onReorder, vertical, dir, keysO
     if (next === was) return;
     refocus.current = { container: grabbed.getAttribute(BAR_IN) ?? '', key: grabbed.getAttribute(BAR_UNIT)! };
     setAnnouncement(`${nameOf(units[from]!.els[0]!)}, ${to + 1} of ${units.length}`);
+    setMoves((n) => n + 1);
     done(next);
   };
 
