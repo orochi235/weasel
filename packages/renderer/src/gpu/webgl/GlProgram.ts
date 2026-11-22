@@ -122,6 +122,8 @@ export class GlProgram implements GpuProgram {
     this.pending = null;
     const failed = ([[vs, 'vertex'], [fs, 'fragment']] as const).find(([sh]) => !gl.getShaderParameter(sh, gl.COMPILE_STATUS));
     if (failed || !gl.getProgramParameter(this.handle, gl.LINK_STATUS)) {
+      // A lost context answers every status as failed; the program draws nothing, and a restore builds a new one.
+      if (gl.isContextLost()) return;
       this.failure = failed
         ? new ShaderCompileError(failed[1], gl.getShaderInfoLog(failed[0]) ?? '')
         : new ShaderCompileError('link', gl.getProgramInfoLog(this.handle) ?? '');

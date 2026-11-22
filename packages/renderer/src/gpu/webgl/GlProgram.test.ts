@@ -65,6 +65,24 @@ describe('GlProgram', () => {
   });
 });
 
+describe('GlProgram on a lost context', () => {
+  it('reports no compile error, which a valid shader did not have, and draws nothing', () => {
+    const recorder = createGLRecorder();
+    const lost = new Proxy(recorder.gl, {
+      get(target, prop) {
+        if (prop === 'isContextLost') return () => true;
+        if (prop === 'getShaderParameter' || prop === 'getProgramParameter') return () => null;
+        if (prop === 'getShaderInfoLog' || prop === 'getProgramInfoLog') return () => null;
+        return Reflect.get(target, prop);
+      },
+    });
+    const prog = new GlProgram(new WebGLDevice(lost), VERT_SRC, FRAG_SRC);
+    expect(() => prog.settle()).not.toThrow();
+    expect(prog.has('u_color')).toBe(false);
+    expect(recorder.calls.map((c) => c.name)).not.toContain('deleteProgram');
+  });
+});
+
 describe('GlProgram compiling in the background', () => {
   const COMPLETION_STATUS_KHR = 0x91b1;
   let recorder: ReturnType<typeof createGLRecorder>;

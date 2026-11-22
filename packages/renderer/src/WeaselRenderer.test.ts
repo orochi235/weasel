@@ -164,11 +164,10 @@ describe('WeaselRenderer context loss', () => {
     expect(names).toContain('compileShader');
   });
 
-  it('holds no context-loss listener on a canvas whose context failed it mid-construction', () => {
+  it('holds no context-loss listener on a canvas whose renderer failed mid-construction', () => {
     const lost = new Proxy(recorder.gl, {
       get(target, prop) {
         if (prop === 'getShaderParameter') return () => false;
-        if (prop === 'isContextLost') return () => true;
         return Reflect.get(target, prop);
       },
     });
