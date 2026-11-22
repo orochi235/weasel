@@ -181,3 +181,14 @@ describe('TilePyramid floor', () => {
     expect(frame.draws.every((d) => d.tile.key.z === floor[0]!.z)).toBe(true);
   });
 });
+
+describe('TilePyramid draws', () => {
+  it('gives each draw a source of its own', () => {
+    const { pyramid, bake } = setup();
+    for (let f = 0; f < 20; f++) pyramid.run(view(0, 0, 1), f, bake, { ...budget, tiles: 100 });
+    const { draws } = pyramid.run(view(0, 0, 1), 20, bake, budget);
+    expect(draws.length).toBeGreaterThan(1);
+    draws[0]!.source[0] = 0.5;
+    expect(draws[1]!.source[0]).toBe(0);
+  });
+});

@@ -172,8 +172,7 @@ export class TilePyramid<K, V, P> {
     const own: TileDraw<K, P>[] = [];
     const stale: K[] = [];
     let fading = false;
-    const unit = new Float64Array(2 * scheme.dim).fill(1, scheme.dim);
-    const whole = (_k: K): Float64Array => unit;
+    const whole = (): Float64Array => new Float64Array(2 * scheme.dim).fill(1, scheme.dim);
     const mark = (t: HeldTile<K, P>) => {
       if (t.stale && t.drawnAt !== frame) stale.push(t.key);
       t.drawnAt = frame;
@@ -183,7 +182,7 @@ export class TilePyramid<K, V, P> {
       const alpha = t === undefined ? 0 : fadeMs > 0 ? Math.min(1, Math.max(0, (now - t.bornAt) / fadeMs)) : 1;
       if (t !== undefined && alpha >= 1) {
         mark(t);
-        own.push({ at, tile: t, source: whole(at), alpha: 1 });
+        own.push({ at, tile: t, source: whole(), alpha: 1 });
         continue;
       }
       // Missing, or fading in: something coarser underneath, and what is finer over that.
@@ -194,12 +193,12 @@ export class TilePyramid<K, V, P> {
       }
       if (t === undefined) this.finerHeld(at, down, 1, (child, depth) => {
         mark(child);
-        (fine[depth] ??= []).push({ at: child.key, tile: child, source: whole(child.key), alpha: 1 });
+        (fine[depth] ??= []).push({ at: child.key, tile: child, source: whole(), alpha: 1 });
       });
       if (t !== undefined) {
         mark(t);
         fading = true;
-        own.push({ at, tile: t, source: whole(at), alpha });
+        own.push({ at, tile: t, source: whole(), alpha });
       }
     }
     return { draws: [...coarse, ...fine.flat(), ...own], fading, stale };
