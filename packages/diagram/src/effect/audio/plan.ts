@@ -3,7 +3,7 @@ import { getOwn, setOwn } from '@weasel-js/registry';
 import { uniqueStages } from '../draw';
 import { runOrder } from '../runner/order';
 import { paramValues } from '../runner/params';
-import type { EffectPipeline, EffectStage } from '../types';
+import type { EffectPipeline, EffectStage, EffectWire } from '../types';
 import type { AudioSources, AudioStageNode, AudioStageNodes } from './nodes';
 
 /** A node the plan builds: its stage type, its discrete settings and its numeric levels. */
@@ -54,6 +54,13 @@ export function livePlan(pipeline: EffectPipeline, nodes: AudioStageNodes, sourc
   const errors: Record<string, string> = {};
   for (const id of cyclic) if (stages.has(id)) setOwn(errors, id, 'on a feedback loop');
 
+  const hasPort = (ports: EffectStage['inputs'], port: string) => (ports ?? []).some((p) => p.id === port);
+  /** A wire from an output its stage has: the chart draws no other. */
+  const fromOutput = (w: EffectWire) => {
+    const from = stages.get(w.from.stage);
+    return from !== undefined && hasPort(from.outputs, w.from.port);
+  };
+
   /** The planned nodes whose sound leaves each stage: itself, or what a bypassed stage carries on. */
   const origins = new Map<string, readonly string[]>();
   const edges = new Map<string, PlanEdge>();
@@ -65,7 +72,7 @@ export function livePlan(pipeline: EffectPipeline, nodes: AudioStageNodes, sourc
     const bypassed = stage.bypassed === true && !isOutput;
     const firstAudio = (stage.inputs ?? []).find((i) => i.type === 'audio')?.id;
     const fed = pipeline.wires
-      .filter((w) => w.to.stage === id && stages.has(w.from.stage) && (!bypassed || w.to.port === firstAudio))
+      .filter((w) => w.to.stage === id && fromOutput(w) && (!isOutput || hasPort(stage.inputs, w.to.port)) && (!bypassed || w.to.port === firstAudio))
       .flatMap((w) => (origins.get(w.from.stage) ?? []).map((from) => ({ from, port: w.to.port })));
     if ((stage.inputs?.length ?? 0) > 0 && fed.length === 0) continue;
 
