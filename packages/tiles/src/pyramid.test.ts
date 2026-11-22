@@ -154,3 +154,18 @@ describe('TilePyramid frames', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 });
+
+describe('TilePyramid pending', () => {
+  it('counts stale tiles waiting out their hold, so the caller asks for the frame that rebakes them', () => {
+    const { pyramid, made, bake } = setup();
+    let f = 0;
+    for (; f < 20; f++) pyramid.run(view(0, 0, 1), f, bake, { ...budget, tiles: 100 });
+    pyramid.dirtyAll();
+    const held = pyramid.run(view(0, 0, 1), f++, bake, { ...budget, tiles: 100 });
+    expect(held.pending).toBeGreaterThan(0);
+    const before = made.length;
+    const rebaked = pyramid.run(view(0, 0, 1), f++, bake, { ...budget, tiles: 100 });
+    expect(made.length).toBeGreaterThan(before);
+    expect(rebaked.pending).toBe(0);
+  });
+});
