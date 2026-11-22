@@ -58,3 +58,21 @@ test('stops watching an item that leaves while the keys stay the same', () => {
     vi.unstubAllGlobals();
   }
 });
+
+test('measures the items of a run in another document', () => {
+  const frame = document.createElement('iframe');
+  document.body.append(frame);
+  const doc = frame.contentDocument!;
+  const root = doc.createElement('div');
+  const a = doc.createElement('span');
+  a.setAttribute('data-key', 'a');
+  Object.defineProperty(a, 'offsetWidth', { value: 14 });
+  root.append(a);
+  doc.body.append(root);
+  try {
+    const hook = renderHook(() => useItemLengths({ current: root }, ['a'], keyOf));
+    expect(hook.result.current.get('a')).toBe(14);
+  } finally {
+    frame.remove();
+  }
+});

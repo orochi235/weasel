@@ -29,8 +29,8 @@ function read(el: HTMLElement | null, keyOf: RunKeyOf, itemsOf: RunItemsOf, keys
   const seen = new Set<Element>();
   for (const child of el === null ? [] : itemsOf(el)) {
     const key = keyOf(child);
-    if (key === null || !(child instanceof HTMLElement)) continue;
-    known.set(key, child.offsetWidth);
+    if (key === null || !('offsetWidth' in child)) continue;
+    known.set(key, (child as HTMLElement).offsetWidth);
     keep.add(key);
     seen.add(child);
   }
