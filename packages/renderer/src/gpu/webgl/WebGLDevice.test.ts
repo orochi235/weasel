@@ -64,6 +64,16 @@ describe('WebGLDevice draw state', () => {
     expect(argsOf(rec, 'blendFunc')).toContainEqual([gl.ZERO, gl.SRC_ALPHA]);
   });
 
+  it('puts back at frame start the blend equation and rasterizer state another user of the context may have left set', () => {
+    const { rec } = setup();
+    const { gl } = rec;
+    expect(argsOf(rec, 'blendEquation')).toEqual([[gl.FUNC_ADD]]);
+    expect(argsOf(rec, 'disable')).toEqual(expect.arrayContaining([
+      [gl.RASTERIZER_DISCARD], [gl.SAMPLE_ALPHA_TO_COVERAGE], [gl.SAMPLE_COVERAGE], [gl.POLYGON_OFFSET_FILL],
+    ]));
+    expect(gl.RASTERIZER_DISCARD).toBe(0x8C89);
+  });
+
   it('zeroes only the stencil bits asked for', () => {
     const { rec, gpu } = setup();
     rec.reset();

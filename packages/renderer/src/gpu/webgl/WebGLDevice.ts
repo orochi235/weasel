@@ -63,8 +63,13 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     this.cache.reset();
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendEquation(gl.FUNC_ADD);
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.CULL_FACE);
+    gl.disable(gl.RASTERIZER_DISCARD);
+    gl.disable(gl.SAMPLE_ALPHA_TO_COVERAGE);
+    gl.disable(gl.SAMPLE_COVERAGE);
+    gl.disable(gl.POLYGON_OFFSET_FILL);
     gl.clearColor(0, 0, 0, 0);
     gl.colorMask(true, true, true, true);
     gl.bindVertexArray(null);
