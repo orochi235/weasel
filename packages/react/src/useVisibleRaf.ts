@@ -160,13 +160,16 @@ export function useVisibleRaf(
     syncGateRef.current = syncGate;
     document.addEventListener('visibilitychange', syncGate);
     if (typeof IntersectionObserver !== 'undefined') {
-      observerRef.current = new IntersectionObserver((entries) => {
+      const io = new IntersectionObserver((entries) => {
+        // Reports queued before `disconnect()` still arrive, after an unmount or StrictMode's remount.
+        if (observerRef.current !== io) return;
         // A report on an element that has since left or been swapped out is about the old one.
         syncObserver();
         const last = latestFor(entries, observedRef.current);
         if (last) intersectingRef.current = last.isIntersecting;
         syncGate();
       });
+      observerRef.current = io;
       syncObserver();
     }
     return () => {
