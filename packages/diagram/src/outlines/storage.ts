@@ -93,7 +93,7 @@ const note: OutlineDef = {
 
 const MAX_TAB = 16;
 const tabOf = (w: number, h: number) => {
-  const t = Math.min(MAX_TAB, h * 0.2);
+  const t = Math.min(MAX_TAB, h * 0.2, w / 2);
   return { t, tw: Math.max(Math.min(w * 0.4, w - t * 2), 0) };
 };
 
