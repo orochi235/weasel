@@ -78,6 +78,12 @@ describe('writing DOT', () => {
     expect(back(pageOf(data)).data.edges.map(markers)).toEqual(data.edges.map(markers));
   });
 
+  it('writes a container\'s own stroke width as its cluster\'s penwidth', () => {
+    const data: DiagramData = { nodes: [{ id: 'a' }], edges: [], containers: [{ id: 'c', role: 'container', members: ['a'], colors: { strokeWidth: 3 } }] };
+    expect(writeDot(pageOf(data)).text).toMatch(/subgraph cluster_c \{[^}]*penwidth=3;/);
+    expect(back(pageOf(data)).data.containers![0]!.colors?.strokeWidth).toBe(3);
+  });
+
   it('writes an open chevron, which DOT has no arrowhead for, as an arrow with a warning', () => {
     const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ id: '1', from: 'a', to: 'b', colors: { markerEnd: 'arrow-open' } }] };
     const { text, warnings } = writeDot(pageOf(data));

@@ -20,7 +20,7 @@ interface RawEdge { tail: DotNodeRef; head: DotNodeRef; attrs: Attrs; own: Attrs
 
 const READ: Readonly<Record<'root' | 'cluster' | 'plain' | 'node' | 'edge', ReadonlySet<string>>> = {
   root: new Set(['rankdir', 'label', 'bb', 'cluster']),
-  cluster: new Set(['cluster', 'label', 'style', 'color', 'fillcolor', 'bgcolor', 'pencolor', 'fontcolor']),
+  cluster: new Set(['cluster', 'label', 'style', 'color', 'fillcolor', 'bgcolor', 'pencolor', 'fontcolor', 'penwidth']),
   plain: new Set(['cluster']),
   node: new Set([OUTLINE_ATTR, 'label', 'shape', 'style', 'color', 'fillcolor', 'fontcolor', 'penwidth', 'width', 'height', 'pos']),
   edge: new Set(['label', 'taillabel', 'headlabel', 'color', 'fontcolor', 'penwidth', 'style', 'dir', 'arrowhead', 'arrowtail', 'tailport', 'headport']),
@@ -286,11 +286,13 @@ function readCluster(
   const fill = colorAttr(r, attrs, 'fillcolor') ?? color ?? bg;
   const stroke = colorAttr(r, attrs, 'pencolor') ?? color;
   const text = colorAttr(r, attrs, 'fontcolor');
+  const width = numberAttr(r, attrs, 'penwidth');
   const dash = dashOf(styles);
   const colors: Partial<NodeStyle> = {
     ...(styles.includes('filled') && fill !== undefined ? { fill } : bg !== undefined ? { fill: bg } : {}),
     ...(stroke !== undefined ? { stroke } : {}),
     ...(text !== undefined ? { text } : {}),
+    ...(width !== undefined ? { strokeWidth: width } : {}),
     ...(dash !== undefined ? { dash } : {}),
   };
   const label = attrs.get('label');

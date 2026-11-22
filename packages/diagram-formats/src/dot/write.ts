@@ -77,6 +77,8 @@ function writeCluster(
     for (const [key, value] of [['color', c.style.stroke], ['fontcolor', c.style.text]] as const) {
       if (value !== undefined) lines.push(`${inner}${color(key, value)};`);
     }
+    const width = penwidth(c.style.strokeWidth);
+    if (width !== null) lines.push(`${inner}${width};`);
   }
   for (const id of c.nodes) lines.push(`${inner}${dotId(id)}${nodeAttrs(out, out.byId.get(id)!, placed)};`);
   for (const child of c.clusters) writeCluster(out, child, placed, inner, lines, {
