@@ -70,6 +70,14 @@ describe('RegistryBrowser', () => {
     expect(queryItem(/^Icons/)).toBeNull();
   });
 
+  it('counts only the entries the filter leaves in a category', () => {
+    renderWithIcons(browser());
+    filter('rect');
+    expect(item('Ops 1')).toBeTruthy();
+    filter('');
+    expect(item('Ops 2')).toBeTruthy();
+  });
+
   it('matches an entry by its extra match text', () => {
     renderWithIcons(browser({ categories: [{ id: 'ops', label: 'Ops', entries: [{ id: 'rect', label: 'useRectTool', match: ['quad'] }] }] }));
     filter('quad');
@@ -151,6 +159,14 @@ describe('RegistryBrowser — grouped categories', () => {
     expect(item('Traits 2')).toHaveAttribute('aria-expanded', 'false');
     expect(queryItem(/^Shape/)).toBeNull();
     expect(queryItem(/^Properties/)).toBeNull();
+  });
+
+  it('counts only the categories the filter leaves in a group', () => {
+    const mixed = [...grouped, { id: 'style', label: 'Style', group: { id: 'traits', label: 'Traits' }, entries: [{ id: 'fill', label: 'fill' }] }];
+    renderWithIcons(browser({ categories: mixed }));
+    expect(item('Traits 3')).toBeTruthy();
+    filter('fill');
+    expect(item('Traits 1')).toBeTruthy();
   });
 
   it('expands the group on click and reveals its child categories, still closed', () => {
