@@ -1,3 +1,4 @@
+import { onTestFinished } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from '../../../useAnimator';
 import { createElementTarget } from '../../../elementTarget';
@@ -67,6 +68,7 @@ export class FakeAnimation {
 export function setup() {
   let now = 0;
   const timeline = { now: 0, animations: [] as FakeAnimation[] };
+  const before = Object.getOwnPropertyDescriptor(document, 'timeline');
   // The document timeline stands where the frame clock does, as a browser's does at each frame.
   Object.defineProperty(document, 'timeline', { configurable: true, value: { get currentTime() { return timeline.now; } } });
   const callbacks = new Map<number, (t: number) => void>();
@@ -76,6 +78,10 @@ export function setup() {
     requestFrame: (cb: (t: number) => void): number => { callbacks.set(next, cb); return next++; },
     cancelFrame: (h: number): void => { callbacks.delete(h); },
   };
+  onTestFinished(() => {
+    if (before) Object.defineProperty(document, 'timeline', before);
+    else delete (document as { timeline?: unknown }).timeline;
+  });
   const { result, unmount } = renderHook(() => useAnimator(clock));
   /** Runs the frame `ms` from the last; the timeline moves with it. */
   const step = (ms: number): void => act(() => {

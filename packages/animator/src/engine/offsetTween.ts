@@ -86,7 +86,7 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   seed.tick = (nowMs, scale) => {
     if (ctx.tripwire()) { leave(true); return true; }
     if (scale < 0 && (nowMs <= 0 || codec.rewound(id))) return end(true);
-    if (o.ms <= 0 || nowMs >= o.ms) return end(false);
+    if (o.ms <= 0 || (scale >= 0 && nowMs >= o.ms)) return end(false);
     o.onTick?.(ax.from(plus(to, codec.own(id)!.value)));
     return false;
   };

@@ -9,7 +9,7 @@ import type { ActiveAnimation, AnimationContext } from './context';
 import { createFrame, type AnimatorClock } from './frame';
 import { createHandoffs } from './handoff/handoffs';
 import { createTargetBook } from './offsets';
-import { createTable, each } from './table';
+import { createTable, each, type Table } from './table';
 import { createEmitter } from '@weasel-js/registry';
 
 /** What {@link createAnimatorCore} needs of whoever hosts it: a clock and a frame loop. */
@@ -144,12 +144,12 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
 
   return {
     api,
-    tick(t) { checkFrame(t, 1); pacing.outside.on = false; pacing.framed(t); frame.tick(t); },
+    // The animator's own frames only go forward, whichever way an outside clock last moved.
+    tick(t) { checkFrame(t, 1); pacing.outside.on = false; pacing.framed(t); driveTo(table, clock, 1); frame.tick(t); },
     follow(t, rate, wall) {
       checkFrame(t, rate); pacing.follow(rate, wall);
       const moved = clock.frameT == null ? 0 : t - clock.frameT;
-      const drive = moved < 0 || (moved === 0 && rate < 0) ? -1 : 1;
-      if (drive !== clock.drive) table.turn(() => { clock.drive = drive; });
+      driveTo(table, clock, moved < 0 || (moved === 0 && rate < 0) ? -1 : 1);
       frame.tick(t);
     },
     suspended: pacing.suspend,
@@ -159,6 +159,11 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
       if (handoffs.any()) host.requestFrame();
     },
   };
+}
+
+/** Turns the way frames drive the clock, giving every animation its new rate. */
+function driveTo(table: Pick<Table, 'turn'>, clock: AnimatorClock, drive: 1 | -1): void {
+  if (drive !== clock.drive) table.turn(() => { clock.drive = drive; });
 }
 
 /** The summed velocity of `under` on `target`; null where none of them moves it. */

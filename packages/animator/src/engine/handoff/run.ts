@@ -131,7 +131,7 @@ export function launch(
     if (child) return false;
     const at = nowMs - placed.offset;
     if (scale < 0 && at <= 0) return end(true);
-    if (at >= motion.ms) return end(false);
+    if (scale >= 0 && at >= motion.ms) return end(false);
     // The browser ended ahead of the animator's clock: placed back, it finishes again.
     if (finished) { finished = false; hs.place(placed); ctx.defer(id, motion.ms - at); }
     return false;
