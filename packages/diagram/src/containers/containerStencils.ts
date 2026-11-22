@@ -15,7 +15,7 @@ import { DIAGRAM_THEME_KEY } from '../theme/types';
 import { laneMiddle, poolHeader, stackedLanes } from './laneStack';
 import { firstLanes, regionSpecs, type ContainerBuildOptions } from './regionSpecs';
 import { bodyBox, diagramContainerOf, titleIdOf, type DiagramContainer } from './trait';
-import type { Rect } from '@weasel-js/geom';
+import { EPS, type Rect } from '@weasel-js/geom';
 import * as ops from '@weasel-js/core/ops';
 
 export type { ContainerBuildOptions };
@@ -108,14 +108,17 @@ function restackLocked(scene: AnyScene, poolId: NodeId, kept: readonly NodeId[],
   if (pool === undefined || trait === null) return false;
   if ([poolId, titleIdOf(poolId)].some((id) => scene.isLocked(id as NodeId))) return true;
   const axis = poolAxisOf(trait);
-  const { local, inBox } = poolBox(scene, pool);
+  const { box, local, inBox } = poolBox(scene, pool);
   const at = kept.map(inBox);
+  // A lane's place in the pool is read back through its world pose, so it carries rounding as large as the pool's.
+  const scale = Math.max(1, Math.abs(box.x) + box.width, Math.abs(box.y) + box.height);
+  const near = (a: number, b: number) => Math.abs(a - b) <= EPS * scale;
   const sizes = kept.map((id, k) => ({ id: id as string, size: (axis === 'y' ? at[k]?.height : at[k]?.width) ?? 0 }));
   const stacked = stackedLanes(axis, local, trait.header ?? poolHeader(axis), sizes);
   const shifted = kept.filter((id, k) => {
     const p = at[k];
     const to = stacked.get(id)!;
-    return p == null || p.x !== to.x || p.y !== to.y || p.width !== to.width || p.height !== to.height;
+    return p == null || !near(p.x, to.x) || !near(p.y, to.y) || !near(p.width, to.width) || !near(p.height, to.height);
   });
   return reachesLocked(scene as never, [...shifted, ...moved]);
 }

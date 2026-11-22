@@ -220,6 +220,17 @@ describe('pools in a scene', () => {
     expect(lanesOf(scene as never, pool)).toEqual([first, second, lane]);
   });
 
+  it('add a lane past a locked lane in a pool at a fractional place, where the lane stays put', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 123.456, y: 0.3, width: 480, height: 240 });
+    const [first, second] = lanesOf(scene as never, pool);
+    scene.setLocked(first!, true);
+    scene.setLocked(second!, true);
+    const lane = addLane(scene as never, pool);
+    expect(lane).not.toBeNull();
+    expect(lanesOf(scene as never, pool)).toEqual([first, second, lane]);
+  });
+
   it('refuse a lane added at a negative or fractional index, and add one past the end at the end', () => {
     const scene = makeScene();
     const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
