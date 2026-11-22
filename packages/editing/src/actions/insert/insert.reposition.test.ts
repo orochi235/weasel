@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { insertAction } from './action';
 import { insertRepositionAction } from './repositionAction';
-import type { InsertDep, InsertExtras, InsertLive } from '@weasel-js/core/engine';
+import type { InsertBehavior, InsertDep, InsertExtras, InsertLive } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import { gridSnapSourceForTests as gridSource, snapSessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
@@ -71,5 +71,30 @@ describe('insert.reposition', () => {
   it('does nothing with no insert in flight', () => {
     const s = scope();
     expect(holdSpace(s)).toEqual({});
+  });
+});
+
+describe('insert: a move dropped while Space carries the shape', () => {
+  it('does not carry the same step again on the next move', () => {
+    const committed: Array<{ x: number; y: number; width: number; height: number }> = [];
+    const insert: InsertDep = { commit: (bounds) => { committed.push({ ...bounds }); return 'n' as NodeId; } };
+    const insertLive: InsertLive = { gesture: null };
+    const ctx = (x: number, y: number): InvocationCtx => ({
+      world: { x, y }, screen: { x, y }, modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: { insert, insertLive },
+    });
+    let poison = false;
+    const behavior: InsertBehavior<unknown> = { onMove: () => (poison ? { current: { x: NaN, y: NaN } } : undefined) };
+    if (insertAction.invoker?.timing !== 'ongoing' || insertRepositionAction.invoker?.timing !== 'ongoing') throw new Error('expected ongoing invokers');
+    const h = insertAction.invoker.start(ctx(10, 10), { params: { kind: 'rect' }, behaviors: [behavior] });
+    h.onMove?.(ctx(60, 40));
+    const space = insertRepositionAction.invoker.start(ctx(0, 0), undefined);
+    poison = true;
+    h.onMove?.(ctx(90, 70));
+    poison = false;
+    h.onMove?.(ctx(100, 80));
+    space.onEnd?.(ctx(100, 80), 'commit');
+    h.onEnd?.(ctx(100, 80), 'commit');
+    expect(committed[0]).toEqual({ x: 50, y: 50, width: 50, height: 30 });
   });
 });

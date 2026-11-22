@@ -3,14 +3,15 @@ import { defineAction, resolveParams } from '@weasel-js/routing';
 import type { ModSpec } from '@weasel-js/gestures';
 import { shapeKindInfo, runBehaviorSettled, inPlane, insertLayer, copiesWithin, scenePaintedPoseOf, finiteFrame } from '@weasel-js/core';
 import { SNAP_ROLE_MODS, SNAP_ROLES } from '@weasel-js/core/engine';
-import { cancelInsert, commitInsert, restoreSelection } from './commit';
+import { cancelInsert, commitInsert } from './commit';
 import { carryStart, nextFrame } from './frame';
 import type { InsertLiveGesture } from './live';
 import { insertParams } from './params';
-import { beginInsert } from './session';
+import { beginInsert, restoreSelection } from './session';
 import { insertKind, insertShape } from './shape';
 import { insertLanding } from './lands';
 import type { NodeId } from '@weasel-js/core';
+import type { InsertPoint } from '@weasel-js/core/engine';
 import { INSERT_GROUP } from '../../actionGroups';
 
 /** How far, in CSS pixels, a drag travels before it draws a shape: past the wobble of a click, so a
@@ -74,10 +75,16 @@ export const insertAction: Action = inPlane(defineAction({
         kind: 'insert',
         autoPan: true,
         onMove(moveCtx: InvocationCtx): void {
-          frame = finiteFrame(frame, moveCtx, () => {
-            if (gesture.repositioning) carryStart(session, frame.pointer, moveCtx.world, moveCtx);
+          const carried = { to: null as InsertPoint | null };
+          const next = finiteFrame(frame, moveCtx, () => {
+            if (gesture.repositioning) {
+              carryStart(session, frame.pointer, moveCtx.world, moveCtx);
+              carried.to = { x: moveCtx.world.x, y: moveCtx.world.y };
+            }
             return nextFrame(session, readers, frame, moveCtx);
           }, (f) => f.shaped);
+          // The carry has moved the start even when the frame is dropped, so the pointer it carried to stands.
+          frame = next === frame && carried.to ? { ...frame, pointer: carried.to } : next;
         },
         overlay(): OngoingOverlay | null {
           if (!gesture.open) return null;
