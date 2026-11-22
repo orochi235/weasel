@@ -25,6 +25,7 @@ function fakeGraph() {
   const taps: { id: string; dispose: ReturnType<typeof vi.fn> }[] = [];
   const g = {
     taps,
+    check() {},
     apply(patches: readonly GraphPatch[]) {
       for (const p of patches) {
         if (p.kind === 'add') live.add(p.id);

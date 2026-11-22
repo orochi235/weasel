@@ -224,6 +224,15 @@ describe('createAudioGraph lifetime', () => {
     expect(() => h.graph.apply([{ kind: 'replace', id: 'a', def: testNode(h.ctx).def }])).toThrow(/no node "a"/);
   });
 
+  it('check throws what apply would for a wrong batch, and changes nothing either way', () => {
+    const h = harness();
+    const a = testNode(h.ctx);
+    expect(() => h.graph.check([{ kind: 'add', id: 'a', def: a.def }, { kind: 'connect', from: 'a', to: { node: 'b', port: 'in' } }]))
+      .toThrow(/no node "b"/);
+    h.graph.check([{ kind: 'add', id: 'a', def: a.def }]);
+    expect(h.graph.has('a')).toBe(false);
+  });
+
   it('apply changes nothing when a later patch is structurally wrong', () => {
     const { ctx, graph, dest } = harness();
     const a = testNode(ctx, []);
