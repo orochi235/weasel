@@ -7,11 +7,11 @@ const INSET = { top: 12, right: 12, bottom: 12, left: 12 };
 const node = (id: string, x: number, cluster?: string): GraphNode => ({ id, bounds: { x, y: 0, width: 80, height: 30 }, pinned: false, ...(cluster !== undefined ? { cluster } : {}) });
 
 /** `nodes` in one rank at their x, with `held` pins at theirs. */
-function settle(nodes: GraphNode[], clusters: GraphCluster[], held: Record<string, number>) {
+function settle(nodes: GraphNode[], clusters: GraphCluster[], held: Record<string, number>, rows: GraphNode[][] = [nodes]) {
   const byId = new Map(nodes.map((n) => [n.id, n]));
   return settleAcross({
     graph: { nodes, edges: [], clusters, node: (id) => byId.get(id), outgoing: () => [], incoming: () => [] },
-    rows: [nodes],
+    rows,
     preferred: new Map(nodes.map((n) => [n.id, n.bounds.x])),
     held: new Map(Object.entries(held)),
     axes: axesFor('down'),
@@ -34,5 +34,17 @@ describe('settleAcross, a cluster column', () => {
       { id: 'C', members: ['c'], inset: INSET, parent: 'P' },
     ];
     expect(settle([node('a', 0, 'P'), node('c', 120, 'C'), node('b', 240, 'P'), node('q', 352)], clusters, { a: 0, q: 352 })).toBeDefined();
+  });
+});
+
+describe('settleAcross, a node between two pins with no room', () => {
+  it('jumps it past a pin though a cluster column spanning ranks shares the rank far off', () => {
+    const [p, q, x] = [node('p', 0), node('q', 120), node('x', 60)];
+    const clusters = [{ id: 'C', members: ['c0', 'c1'], inset: INSET }];
+    const [c0, c1] = [node('c0', 600, 'C'), node('c1', 600, 'C')];
+    const out = settle([p, q, x, c0, c1], clusters, { p: 0, q: 120 }, [[p, q, x, c0], [c1]]);
+    expect(out).toBeDefined();
+    expect(out!.get('x')).toBe(220);
+    expect([out!.get('c0'), out!.get('c1')]).toEqual([600, 600]);
   });
 });

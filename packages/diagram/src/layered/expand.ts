@@ -57,7 +57,7 @@ function labelRowsOf(
 ): { rows: Map<string, number>; labelRow: Map<string, number> } {
   const gapOf = new Map<string, number>();
   for (const d of drawn) {
-    if (d.label === undefined) continue;
+    if (d.label === undefined || d.authored) continue;
     const a = span(d.back ? d.to : d.from, ranks);
     const b = span(d.back ? d.from : d.to, ranks);
     if (a === null || b === null || a[1] >= b[0]) continue;
@@ -133,6 +133,10 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
   const labeled = labelRowsOf(drawn, nodeRanks, spanIn);
   const ranks = labeled.rows;
   const span = (id: string) => spanIn(id, ranks);
+  const crossesRank = (from: string, to: string): boolean => {
+    const [a, b] = [spanIn(from, nodeRanks), spanIn(to, nodeRanks)];
+    return a !== null && b !== null && b[0] - a[1] > 1;
+  };
   const inRank = (id: string, r: number): string[] =>
     (clusters.get(id)?.members ?? [id]).filter((m) => ranks.get(m) === r && graph.node(m) !== undefined);
   const ancestry = (id: string): string[] => {
@@ -173,8 +177,9 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
     const b = span(to);
     if (a === null || b === null || a[1] >= b[0]) continue;
     // Its route goes where its author put it, and no seed from it would
-    // follow where this run puts the ranks it crosses.
-    if (d.authored && b[0] - a[1] > 1) continue;
+    // follow where this run puts the ranks it crosses. Label rows are not
+    // ranks it crosses: it keeps its hop through one.
+    if (d.authored && crossesRank(from, to)) continue;
     const cluster = sharedCluster(from, to);
     const start = crossCenter(from);
     const end = crossCenter(to);
@@ -212,7 +217,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
       chain.push(id);
     }
     for (const p of prev) for (const q of inRank(to, b[0])) hops.push({ from: p, to: q, edge: d.id, ...(prevAt ?? leave(p)), ...arrive(q) });
-    if (chain.length > 0) {
+    if (chain.length > 0 && !d.authored) {
       const ends = [...(clusters.get(from)?.members ?? [from]), ...(clusters.get(to)?.members ?? [to])];
       chains.set(d.id, { ids: d.back ? chain.reverse() : chain, back: d.back, ends });
     }

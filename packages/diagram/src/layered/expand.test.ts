@@ -63,6 +63,28 @@ describe('expand', () => {
     expect(out.chains.get('e1')!.ids).toHaveLength(1);
   });
 
+  it('keeps no label row for an authored edge, and keeps its hop between adjacent ranks', () => {
+    const g = graphOf(['a', 'b'], [['a', 'b']]);
+    const edges = g.edges.map((e) => ({ ...e, authored: true, label: { width: 30, height: 10 } }));
+    const out = expand({ ...g, edges }, ranks({ a: 0, b: 1 }), new Set(), { axes: AXES, nodeGap: 40 });
+    expect(out.rows.map((r) => r.map((n) => n.id))).toEqual([['a'], ['b']]);
+    expect([...out.labelRows]).toEqual([]);
+    expect(out.hops.map((h) => [h.from, h.to])).toEqual([['a', 'b']]);
+  });
+
+  it('runs an authored edge between adjacent ranks through a label row another edge put between them', () => {
+    const g = graphOf(['a', 'b', 'c', 'd'], [['a', 'b'], ['c', 'd']]);
+    const edges = g.edges.map((e) => (e.id === 'e0' ? { ...e, authored: true } : { ...e, label: { width: 30, height: 10 } }));
+    const out = expand({ ...g, edges }, ranks({ a: 0, b: 1, c: 0, d: 1 }), new Set(), { axes: AXES, nodeGap: 40 });
+    const own = out.hops.filter((h) => h.edge === 'e0');
+    expect(own).toHaveLength(2);
+    expect(own[0]!.from).toBe('a');
+    expect(own[1]!.to).toBe('b');
+    expect(out.labels.has('e0')).toBe(false);
+    // Layout leaves its route, so it plans no waypoints through the row.
+    expect(out.chains.has('e0')).toBe(false);
+  });
+
   it('starts a placeholder where its edge\'s route crosses the rank now', () => {
     const g = graphOf(['a', 'b', 'c'], [['a', 'b'], ['b', 'c'], ['a', 'c']]);
     const across = (waypoints?: { x: number; y: number }[]) => {
