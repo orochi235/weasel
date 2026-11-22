@@ -171,7 +171,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       axes={axes}
       xTicks={xTicks}
       yTicks={yTicks}
-      tabIndex={historyEnabled ? hold.tabIndex(0) : undefined}
+      tabIndex={hold.tabIndex(0)}
       role="group"
       aria-label={props['aria-label']}
       aria-disabled={hold.focus['aria-disabled']}
