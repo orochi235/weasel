@@ -21,7 +21,7 @@ function clickRoles(params: Readonly<Record<string, unknown>> | undefined) {
 /**
  * Click-to-insert: the companion to `insertAction` for a click, which draws
  * no box. It commits a node of `params.kind` at `params.size`, centered on the
- * click, snapped through a `point` session of the `snap` dep unless the
+ * click's press, snapped through a `point` session of the `snap` dep unless the
  * click held `snap.suspend` (Ctrl), and commits
  * through the same `insert` dep a drag commits through. Its extras are the
  * ones a drag out from the click's center to the size's corner makes
@@ -49,9 +49,10 @@ export const placeAction: Action = inPlane(defineAction({
       const size = asked && min
         ? { width: Math.max(asked.width, min.width), height: Math.max(asked.height, min.height) }
         : asked;
-      const world = params?.world;
-      if (!dep || !size || !world) return;
-      const { x, y } = world;
+      const click = params as ImmediateParams | undefined;
+      const pressed = click?.press ?? click?.world;
+      if (!dep || !size || !pressed) return;
+      const { x, y } = pressed;
       if (!(size.width > 0 && size.height > 0)) return;
 
       const prior = deps.operands ? [...deps.operands.get()] : [];

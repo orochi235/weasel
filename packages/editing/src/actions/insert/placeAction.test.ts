@@ -168,3 +168,12 @@ describe('placeAction — a built-in kind\'s extras, as a drag out from the clic
     expect(insert.calls[0].extras).toMatchObject({ kind: 'polygon', sides: 5, center: { x: 100, y: 50 }, rotation: Math.atan2(10, 20) });
   });
 });
+
+describe('placeAction — a click that drifts', () => {
+  it('places at the press, not the release', () => {
+    const insert = makeInsertDep();
+    if (placeAction.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
+    placeAction.invoker.run({ insert } as unknown as ActionDeps, { kind: 'sticky', size: { width: 40, height: 20 }, world: { x: 104, y: 53 }, press: { x: 100, y: 50 } });
+    expect(insert.calls[0].bounds).toEqual({ x: 80, y: 40, width: 40, height: 20 });
+  });
+});
