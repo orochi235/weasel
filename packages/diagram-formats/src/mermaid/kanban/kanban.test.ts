@@ -161,4 +161,10 @@ describe('writing a Mermaid kanban board so its reader takes every item back', (
     const generated = page(writeKanban(doc([{ id: 'card-1', lines: ['A'] }], [{ id: 'l', members: ['card-1'] }, { id: 'm', members: ['card-1'] }])).text);
     expect(generated.data.nodes.map((n) => n.id)).toEqual(['card-1']);
   });
+
+  it('reads back a metadata value holding a closing bracket and an opening brace', () => {
+    const card = { id: 'c', rows: [{ kind: 'label', text: 'x' }, { kind: 'field', label: 'k', value: 'a]@{b' }] };
+    const back = page(writeKanban(doc([card], [{ id: 'todo', members: ['c'] }])).text);
+    expect(back.data.nodes[0]!.rows).toEqual([{ kind: 'label', text: 'x' }, { kind: 'field', label: 'k', value: 'a]@{b' }]);
+  });
 });
