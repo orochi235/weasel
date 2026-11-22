@@ -64,3 +64,17 @@ describe('a section its enableIf turns off', () => {
     expect(disabled.has('phases.2.hold')).toBe(true);
   });
 });
+
+describe('a group or a section with nothing in it', () => {
+  it('is dropped whether it started out empty or its conditions emptied it, unless `keepEmpty`', () => {
+    const sections: PrefSection = {
+      name: 'Root',
+      members: { bare: { name: 'Bare', members: {} }, gone: { name: 'Gone', members: { a: bool('A', { showIf: { path: 'x' } }) } }, x: bool('X') },
+    };
+    expect(Object.keys(applyPrefConditions(sections, over({ x: false })).shown!.members)).toEqual(['x']);
+    expect(Object.keys(applyPrefConditions(sections, over({ x: false }), { keepEmpty: true }).shown!.members)).toEqual(['bare', 'gone', 'x']);
+    const groups = { name: '', children: { bare: { name: 'Bare', children: {} }, x: bool('X') } };
+    expect(Object.keys(applyPrefConditions(groups, over({})).shown!.children)).toEqual(['x']);
+    expect(Object.keys(applyPrefConditions(groups, over({}), { keepEmpty: true }).shown!.children)).toEqual(['bare', 'x']);
+  });
+});
