@@ -104,7 +104,8 @@ export function writeArchitecture(doc: DiagramDocument, opts?: WriteOptions): Ex
   for (const c of out.clusters) w.group(c);
   for (const n of out.page.data.nodes) w.node(n);
   for (const e of out.edges) w.edge(e);
-  if (out.page.data.nodes.some((n) => n.colors !== undefined) || out.edges.some((e) => e.colors?.stroke !== undefined)) {
+  const { nodes, containers = [] } = out.page.data;
+  if ([...nodes, ...containers].some((n) => n.colors !== undefined) || out.edges.some((e) => e.colors?.stroke !== undefined)) {
     out.warnings.add('Mermaid architecture diagrams have no styles; colors were dropped.');
   }
   return { text: `${w.lines.join('\n')}\n`, warnings: out.warnings.all() };
