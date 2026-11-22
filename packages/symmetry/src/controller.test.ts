@@ -346,6 +346,17 @@ describe('the guide\'s angle knob', () => {
   });
 });
 
+describe('reachFrom', () => {
+  it('reaches as far as the copies of a symmetry group nested inside', () => {
+    const { scene, sym, group } = setup();
+    const inner = sym.create({ center: { x: 100, y: 0 }, parent: group, symmetry: { kind: 'repeat', angle: 0, spacing: 200, count: 4 } });
+    scene.add({ kind: 'mark', layer: 'main', parent: inner, pose: { x: 0, y: 0, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) } });
+    const far = Math.max(...copiesOf(scene, inner).map((m) => transformPoint(m, 110, 10)[0]));
+    expect(far).toBeGreaterThan(600);
+    expect(reachFrom(scene as never, group, { x: 100, y: 0 })).toBeCloseTo(Math.hypot(far - 100, 10));
+  });
+});
+
 describe('createSymmetry, subscribe', () => {
   it('hears an Undo of a change to the active group, and of its making', () => {
     const { scene, sym, group } = setup();
