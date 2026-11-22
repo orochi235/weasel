@@ -20,8 +20,11 @@ function place(el: HTMLElement | null, { span, from, share, track, trackSpan, tr
 function Segment({ placed }: { placed: PlacedSpan }): ReactElement {
   const { span } = placed;
   return (
-    <span ref={(el) => place(el, placed)} className={s.segment} data-state={span.state ?? 'pending'} title={span.title ?? span.label}>
-      {span.content ?? span.label}
+    <span
+      ref={(el) => place(el, placed)} className={s.segment} data-state={span.state ?? 'pending'} data-open={placed.open ? '' : undefined}
+      title={span.title ?? span.label}
+    >
+      <span className={s.label}>{span.content ?? span.label}</span>
     </span>
   );
 }

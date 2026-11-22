@@ -44,7 +44,20 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+/* The label is cut short with an ellipsis at the segment's end, or, where nothing follows it on its stripe, at the
+   strip's: its width there is the rest of the window, as a multiple of the segment's own. */
+.label {
+  display: block;
+  overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.segment[data-open] { overflow: visible; }
+.segment[data-open] > .label {
+  width: max-content;
+  max-width: calc((1 - var(--span-from, 0)) / max(var(--span-share, 1), 0.0001) * 100%);
 }
 
 .segment[data-state='pending'] { opacity: 0.5; }

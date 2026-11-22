@@ -46,6 +46,8 @@ export interface PlacedSpan {
   readonly track: number;
   readonly trackSpan: number;
   readonly tracks: number;
+  /** Nothing starts at or after its end on any stripe it covers, so its label may run on over the empty track. */
+  readonly open: boolean;
 }
 
 const lengthOf = (span: SpanStripSpan): number => Math.max(0, span.ms);
@@ -76,9 +78,13 @@ export function stripWindow(spans: readonly SpanStripSpan[], window?: Span): Spa
 /** Every span placed along `win`, a fraction of it from its start and a fraction long. */
 export function placeSpans(spans: readonly SpanStripSpan[], win: Span): PlacedSpan[] {
   const tracks = Math.max(1, ...spans.map((span) => trackOf(span) + trackSpanOf(span)));
-  return timed(spans, win.from).map(({ span, start, end }) => ({
+  const all = timed(spans, win.from);
+  const sharesStripe = (a: SpanStripSpan, b: SpanStripSpan) =>
+    trackOf(a) < trackOf(b) + trackSpanOf(b) && trackOf(b) < trackOf(a) + trackSpanOf(a);
+  return all.map(({ span, start, end }) => ({
     span, start, end, from: spanFraction(win, start), share: spanShare(win, end - start),
     track: trackOf(span), trackSpan: trackSpanOf(span), tracks,
+    open: !all.some((o) => o.span !== span && o.start >= end && sharesStripe(span, o.span)),
   }));
 }
 

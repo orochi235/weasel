@@ -71,6 +71,18 @@ describe('spanLayout', () => {
   });
 });
 
+describe('open spans', () => {
+  it('marks a span open where nothing starts at or after its end on a stripe it covers', () => {
+    const placed = placeSpans([
+      { id: 'a', label: 'a', ms: 10, start: 0 }, { id: 'b', label: 'b', ms: 10, start: 10 },
+      { id: 'c', label: 'c', ms: 30, start: 0, track: 1 },
+      { id: 'd', label: 'd', ms: 5, start: 40, track: 0, trackSpan: 2 },
+    ], { from: 0, to: 60 });
+    expect(Object.fromEntries(placed.map((p) => [p.span.id, p.open]))).toEqual({ a: false, b: false, c: false, d: true });
+    expect(placeSpans([{ id: 'a', label: 'a', ms: 1 }], { from: 0, to: 1 })[0]!.open).toBe(true);
+  });
+});
+
 describe('SpanStrip', () => {
   it('is a meter without onSeek, with its value spoken', () => {
     render(<SpanStrip spans={SPANS} at={450} aria-label="lane" valueText="fixing, 2 minutes in" />);

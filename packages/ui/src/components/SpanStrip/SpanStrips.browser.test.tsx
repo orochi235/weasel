@@ -18,3 +18,19 @@ describe('SpanStrips corners', () => {
     });
   }
 });
+
+describe('an open span', () => {
+  const label = 'six of six fixed after a long fix';
+  it("runs its label on past its end over the empty track, and cuts a span's that something follows", () => {
+    const spans = [{ id: 'x', label: 'first of two', ms: 4, start: 0, state: 'done' as const }, { id: 'y', label, ms: 4, start: 4, state: 'done' as const }];
+    render(<div style={{ width: 600 }}><SpanStrips window={{ from: 0, to: 40 }} rows={[{ id: 'r', 'aria-label': 'r', spans }]} /></div>);
+    const strip = screen.getByRole('meter', { name: 'r' });
+    const [first, open] = [...strip.querySelectorAll('[data-state]')].slice(0, 2) as HTMLElement[];
+    const text = (seg: HTMLElement) => seg.firstElementChild as HTMLElement;
+    expect(open!.hasAttribute('data-open')).toBe(true);
+    expect(first!.hasAttribute('data-open')).toBe(false);
+    expect(text(open!).getBoundingClientRect().width).toBeGreaterThan(open!.getBoundingClientRect().width);
+    expect(text(open!).scrollWidth).toBeLessThanOrEqual(text(open!).clientWidth);
+    expect(text(first!).scrollWidth).toBeGreaterThan(text(first!).clientWidth);
+  });
+});
