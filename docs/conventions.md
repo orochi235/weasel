@@ -647,12 +647,14 @@ itself replaces whatever face its consumer chose, so only these set a family:
 
 | Where | What it sets |
 |---|---|
-| a theme or page root (`:root`, `html`, `body`, `#root`, labkit's `.lk-root`) | any face |
+| a theme or page root (`:root`, `html`, `body`, `#root`, labkit's `.lk-root`, and in `fonts.css` a themed subtree's root) | any face |
 | a control the user agent gives its own face (`button`, `input`, `select`, `textarea`, `math`) | `inherit` |
 | a role: code, ids and readouts; headings; a stance's title; figures | its token: `--wzl-font-mono`, `--wzl-font-display`, a `*-title-font`, the numeric module |
 | a documented exception | listed with its reason in `ALLOWED` in `scripts/check-fonts.ts` |
 
-A consumer retargets a role by setting its token, so the choice stays theirs. A stance surface
+A consumer retargets a role by setting its token, so the choice stays theirs. Code that measures text for a
+component reads the family through `envFamily` (`@weasel-js/ui-logic`), which a DOM element answers with the face
+it inherited, so a measure matches what the browser draws. A stance surface
 whose title takes the body's face leaves its `title-font` slot `UNSET`, so the title inherits.
 An app has no consumer, so its own stylesheets may set the base faces, but a family written out
 still goes through a token. `npm run check:fonts` holds stylesheets to this, and

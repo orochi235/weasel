@@ -69,17 +69,17 @@ function presented(props: Exclude<QuantityTextProps, { unit: string }>, locale: 
  */
 export function QuantityText(props: QuantityTextProps) {
   const locale = useFieldLocale(props.locale);
-  const className = [s.quantity, props.className].filter(Boolean).join(' ');
   if (props.unit !== undefined) {
     const shown = unitSymbol(props.unit, { compact: props.compact });
-    return <span className={className}><span data-part="unit" data-attach={shown.attaches ? '' : undefined} data-raise={shown.attaches && shown.raised ? '' : undefined}>{shown.text}</span></span>;
+    return <span className={[s.quantity, s.figures, props.className].filter(Boolean).join(' ')}><span data-part="unit" data-attach={shown.attaches ? '' : undefined} data-raise={shown.attaches && shown.raised ? '' : undefined}>{shown.text}</span></span>;
   }
   const { text, spoken, html, mathml, stacked } = presented(props, locale);
   const reads = !props.mute && spoken !== text;
+  const drawsMath = stacked && mathml !== undefined && props.value !== undefined;
   return (
-    <span className={className}>
+    <span className={[s.quantity, !drawsMath && s.figures, props.className].filter(Boolean).join(' ')}>
       {/* The package escapes every run it writes, a consumer's labels and separators included. */}
-      {stacked && mathml !== undefined && props.value !== undefined ? (
+      {drawsMath ? (
         <span aria-hidden={reads || undefined}>
           <data value={String(amount(props.value))}>
             <span className={s.math} dangerouslySetInnerHTML={{ __html: mathml }} />

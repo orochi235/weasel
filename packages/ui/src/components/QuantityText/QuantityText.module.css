@@ -1,8 +1,12 @@
 /* `position: relative` holds the spoken copy, which is out of flow, inside this box. */
 .quantity {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
   position: relative;
   white-space: nowrap;
+}
+
+/* Figures in the numeric face; a stacked fraction stays out of it (`.math math`). */
+.figures {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
 }
 
 /* What a value is measured in, and what a member is called, sit back from how much. */

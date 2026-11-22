@@ -15,6 +15,9 @@ export function createDomMeasureEnv(element: Element): MeasureEnv {
       const v = style.getPropertyValue(name).trim();
       return v === '' ? undefined : v;
     },
+    family() {
+      return style.fontFamily || undefined;
+    },
     text(text, font) {
       const context = measureContextIn(element.ownerDocument);
       if (!context) return { width: 0, ascent: font.size * 0.8, descent: font.size * 0.2 };

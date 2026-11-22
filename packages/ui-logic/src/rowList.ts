@@ -1,6 +1,6 @@
 import { clamp, type Rect, maxOf } from '@weasel-js/geom';
 import {
-  centeredBaseline, envNumber, envPx,
+  centeredBaseline, envNumber, envFamily, envPx,
   type Constraints, type FontSpec, type MeasureEnv, type Measured,
 } from './measure';
 
@@ -68,7 +68,7 @@ export interface RowListMetrics {
 /** The tokens a row list is sized by: the ones `ItemList.module.css` lays it out with. */
 export function rowListMetrics(env: MeasureEnv): RowListMetrics {
   const size = envPx(env, '--wzl-font-size-sm');
-  const font = { family: env.token('--wzl-font-ui'), size, weight: 400 };
+  const font = { family: envFamily(env), size, weight: 400 };
   return {
     rowHeight: envPx(env, '--wzl-control-h'),
     padX: envPx(env, '--wzl-space-4'),

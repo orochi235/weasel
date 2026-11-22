@@ -20,10 +20,12 @@ function rule(selector: string, css = menuCss): Record<string, string> {
 }
 
 describe('Menu.module.css lays a panel out as measureMenuPanel measures it', () => {
+  // The family is the container's: the measure reads it off the panel (`MeasureEnv.family`), so no rule sets one.
   it('sets a panel in --wzl-font-size inside a MENU_BORDER_WIDTH border, padded by --wzl-space-2, no narrower than MENU_MIN_WIDTH', () => {
     expect(rule('.surface', surfaceCss)).toMatchObject({
-      border: `${MENU_BORDER_WIDTH}px solid var(--wzl-border)`, 'font-family': 'var(--wzl-font-ui)', 'font-size': 'var(--wzl-font-size)',
+      border: `${MENU_BORDER_WIDTH}px solid var(--wzl-border)`, 'font-size': 'var(--wzl-font-size)',
     });
+    expect(rule('.surface', surfaceCss)).not.toHaveProperty('font-family');
     expect(rule('.panel')).toMatchObject({
       'box-sizing': 'border-box', padding: 'var(--wzl-space-2)', 'min-width': `${MENU_MIN_WIDTH}px`,
       'line-height': 'var(--wzl-leading-snug)',
