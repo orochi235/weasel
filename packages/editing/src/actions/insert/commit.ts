@@ -2,15 +2,9 @@ import type { DragSample } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
 import { defaultCommitAdapter, operandMethods } from '@weasel-js/core/engine';
 import { commitRunOps, readRunLifecycle, reduceBehaviorEnd, runBehaviorCancel } from '@weasel-js/core';
-import { clearedSelection, type InsertFrame, type InsertSession } from './session';
+import { clearedSelection, restoreSelection, type InsertFrame, type InsertSession } from './session';
 import { insertShape, isCommittableExtent } from './shape';
 import * as ops from '@weasel-js/core/ops';
-
-/** Put back the selection the press cleared, for a draw that ends without
- *  committing. */
-export function restoreSelection(session: Pick<InsertSession, 'priorSelection' | 'selection'>): void {
-  if (session.priorSelection.length > 0) session.selection?.set([...session.priorSelection]);
-}
 
 /** Cancel the insert: tell the behaviors, and put the selection the draw
  *  cleared back. */

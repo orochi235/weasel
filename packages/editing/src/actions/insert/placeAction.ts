@@ -1,9 +1,8 @@
 import { defineAction, type Action, type ImmediateParams, type ModifierState } from '@weasel-js/routing';
 import { SNAP_ROLES, snapMods } from '@weasel-js/core/engine';
 import { inPlane, insertLayer, insertParent, minSizeOf } from '@weasel-js/core';
-import { restoreSelection } from './commit';
 import { insertShape } from './shape';
-import { clearedSelection } from './session';
+import { clearedSelection, restoreSelection } from './session';
 import type {} from '@weasel-js/core';
 import { INSERT_GROUP } from '../../actionGroups';
 

@@ -58,6 +58,12 @@ export function clearedSelection(prior: readonly NodeId[]): CommitSelection | un
   return prior.length > 0 ? { from: prior, selectNode: false } : undefined;
 }
 
+/** Put back the selection the press cleared, for a draw that ends without
+ *  committing. */
+export function restoreSelection(session: Pick<InsertSession, 'priorSelection' | 'selection'>): void {
+  if (session.priorSelection.length > 0) session.selection?.set([...session.priorSelection]);
+}
+
 /** What the latest pump event left. Replaced, not mutated, by the next. */
 export interface InsertFrame {
   /** The raw (unsnapped) pointer in world space. */
@@ -120,7 +126,13 @@ export function beginInsert(
       : undefined) as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };
-  for (const b of behaviors) b.onStart?.(gestureCtx);
+  try {
+    for (const b of behaviors) b.onStart?.(gestureCtx);
+  } catch (err) {
+    snap.close();
+    restoreSelection({ priorSelection, selection });
+    throw err;
+  }
   // A snap target in range outranks a behavior's own snapping.
   if (snap.startHeld()) gestureCtx.origin.set(GESTURE_KEY, origin);
   const startPoint = gestureCtx.origin.get(GESTURE_KEY) as InsertPoint;

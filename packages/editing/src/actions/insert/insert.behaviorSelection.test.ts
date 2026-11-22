@@ -26,3 +26,25 @@ describe('insert: a behavior that answers with a selection', () => {
     expect(sel).toEqual(['a']);
   });
 });
+
+describe('insert: a behavior whose onStart throws', () => {
+  it('puts the selection back and ends the start\'s snap session', () => {
+    let sel: string[] = ['a'];
+    const operands = { get: () => sel, clear: () => { sel = []; }, set: (next: readonly string[]) => { sel = [...next]; } };
+    let open = 0;
+    const snap = {
+      begin: () => {
+        open++;
+        return { at: (p: { x: number; y: number }) => ({ point: p, marks: [] }), angle: (theta: number) => ({ theta, marks: [] }), end: () => { open--; } };
+      },
+    };
+    const ctx = { world: { x: 0, y: 0 }, screen: { x: 0, y: 0 }, modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: { insert: { commit: () => 'n' as NodeId }, operands, snap } } as unknown as InvocationCtx;
+    const throws: InsertBehavior<unknown> = { onStart: () => { throw new Error('boom'); } };
+    if (insertAction.invoker?.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+    const invoker = insertAction.invoker;
+    expect(() => invoker.start(ctx, { params: { kind: 'rect' }, behaviors: [throws] })).toThrow('boom');
+    expect(sel).toEqual(['a']);
+    expect(open).toBe(0);
+  });
+});
