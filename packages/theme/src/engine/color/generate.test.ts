@@ -202,3 +202,12 @@ describe('perceptual gates', () => {
     expect(sixteen.stats.hueFloorShare).toBeGreaterThanOrEqual(0.9 - 0.02);
   });
 });
+
+describe('an empty palette', () => {
+  it('reports finite stats', () => {
+    const { swatches, stats } = generate({ ...DEFAULT_CONSTRAINTS, count: 0 });
+    expect(swatches).toEqual([]);
+    for (const v of Object.values(stats)) expect(Number.isFinite(v)).toBe(true);
+    expect(stats).toMatchObject({ chromaSpread: 0, lightnessSpread: 0, minContrast: 21, minSurfaceDistance: 1 });
+  });
+});

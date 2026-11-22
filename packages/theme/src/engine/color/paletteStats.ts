@@ -22,14 +22,16 @@ export function summarize(swatches: Swatch[], surface: string): Stats {
       gap = Math.min(gap, hueGap(swatches[i].lch.H, swatches[j].lch.H));
     }
   }
+  const none = swatches.length === 0;
   return {
     meanChroma: cs.reduce((a, b) => a + b, 0) / (cs.length || 1),
-    chromaSpread: maxOf(cs) - minOf(cs),
-    lightnessSpread: maxOf(ls) - minOf(ls),
+    chromaSpread: none ? 0 : maxOf(cs) - minOf(cs),
+    lightnessSpread: none ? 0 : maxOf(ls) - minOf(ls),
     minHueGap: swatches.length > 1 ? gap : 360,
     hueFloorShare: swatches.length > 1 ? (gap * swatches.length) / 360 : 1,
-    minContrast: minOf(swatches, (s) => contrast(s.hex, surface)),
-    minSurfaceDistance: minOf(swatches, (s) => deltaE(s.hex, surface)),
+    // An empty set's minimums are the best each can be, as `minHueGap` and `minDistance` are for fewer than two.
+    minContrast: none ? 21 : minOf(swatches, (s) => contrast(s.hex, surface)),
+    minSurfaceDistance: none ? 1 : minOf(swatches, (s) => deltaE(s.hex, surface)),
     minDistance: pairwiseMin(swatches.map((s) => s.hex)),
   };
 }
