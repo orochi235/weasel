@@ -44,7 +44,6 @@ export function useViewportActions(args: {
 }): void {
   const { pan, zoom, touchZoom, rev } = args;
   const reg = useActionsRegistry();
-  const regRef = useLatest(reg);
   const zoomRef = useLatest(zoom);
 
   // Serialized so the effect re-runs when a config's fields change, not its
@@ -55,7 +54,7 @@ export function useViewportActions(args: {
   const pinchKey = typeof touchZoom === 'object' ? JSON.stringify(touchZoom) : String(touchZoom);
 
   useEffect(() => {
-    const r = regRef.current;
+    const r = reg;
     if (!r) return;
     const unregisters: Array<() => void> = [r.register(containerScrollAction)];
     if (pan) {
@@ -73,7 +72,7 @@ export function useViewportActions(args: {
     }
     return () => { for (const u of unregisters) u(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- configs tracked via zoomKey / pinchKey
-  }, [panKey, zoomKey, pinchKey, rev]);
+  }, [reg, panKey, zoomKey, pinchKey, rev]);
 }
 
 /** `viewport.zoom` registered from `zoom`, each run built from the config `latest` reads then. Building is cheap
