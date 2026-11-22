@@ -112,26 +112,43 @@ export function enterHold(
  *  `s` shows stays where it was. The caller shows what is left. */
 export function leaveHold(ctx: AnimationContext, s: TargetState, layer: HoldLayer, covers: Uint8Array | null, commit: boolean): void {
   const { store, row } = s.holds!;
-  if (commit && !s.discard) {
-    store.refold(row);
-    const committed = s.axes.to(s.get());
-    const f = both(s, layer, committed);
-    absorb(s, settle(s, f, covers, committed));
-    dim(s, f.all.total, f.rest.total);
-  }
-  store.part(layer, row);
-  ctx.targets.holding(store, -1);
-  s.held -= 1;
-  if (s.held === 0) {
-    s.holds = null;
-    // Nothing stands in front of the committed value now, so it takes what waited beside it.
-    const beside = s.beside;
-    if (beside) {
-      setBeside(s, null);
-      absorb(s, beside);
+  // A setter that throws as it commits still takes the hold off the target.
+  try {
+    try {
+      if (commit && !s.discard) {
+        store.refold(row);
+        const committed = s.axes.to(s.get());
+        const f = both(s, layer, committed);
+        absorb(s, settle(s, f, covers, committed));
+        dim(s, f.all.total, f.rest.total);
+      }
+    } finally {
+      store.part(layer, row);
+      ctx.targets.holding(store, -1);
+      s.held -= 1;
+      if (s.held === 0) s.holds = null;
     }
+    if (s.held === 0) {
+      // Nothing stands in front of the committed value now, so it takes what waited beside it.
+      const beside = s.beside;
+      if (beside) {
+        setBeside(s, null);
+        absorb(s, beside);
+      }
+    }
+  } finally {
+    ctx.targets.detach(s);
   }
-  ctx.targets.detach(s);
+}
+
+/** Throws where a hold of `value` over `axes` on `s` would be refused as it opens; answers the
+ *  axes it covers. */
+export function checkHold(
+  ctx: AnimationContext, s: TargetState, value: unknown, axes: readonly (number | string)[] | undefined,
+): Uint8Array | null {
+  ctx.targets.check(s);
+  axesFor(s.axes, value, 'value');
+  return coverOf(axes, s.axes);
 }
 
 /** Holds a value on a target: it shows `value` where the committed value would show. */
@@ -139,8 +156,8 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   const s = o.target;
   const ax = s.axes;
   const state = s as unknown as TargetState;
+  const covers = checkHold(ctx, state, o.value(), o.axes);
   state.handoff?.release();
-  axesFor(ax, o.value(), 'value');
   let gone = false;
   let broken = false;
   const fail = (error: unknown): void => {
@@ -151,7 +168,6 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   const write = ax.write
     ? (out: Float64Array, at: number) => ax.write!(o.value(), out, at)
     : (out: Float64Array, at: number) => out.set(ax.to(o.value()), at);
-  const covers = coverOf(o.axes, ax);
   const { layer } = enterHold(ctx, state, (store, row) => store.free(row), {
     value: (out, at) => {
       if (broken) return;

@@ -67,6 +67,8 @@ export class FakeAnimation {
 export function setup() {
   let now = 0;
   const timeline = { now: 0, animations: [] as FakeAnimation[] };
+  // The document timeline stands where the frame clock does, as a browser's does at each frame.
+  Object.defineProperty(document, 'timeline', { configurable: true, value: { get currentTime() { return timeline.now; } } });
   const callbacks = new Map<number, (t: number) => void>();
   let next = 1;
   const clock = {

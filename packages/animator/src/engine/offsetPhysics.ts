@@ -1,7 +1,7 @@
 import { stateOf, type Behind, type TargetState } from '../target';
 import type { AnimationKind, PhysicsHandle, TargetPhysicsOptions } from '../types';
-import { commitOrLeave, type AnimationContext, type AnimationSeed } from './context';
-import { absorb, axesFor, comeOut, commitOffset, goBehind, minus, norm, plus, takeUp, times, travel } from './offsets';
+import type { AnimationContext, AnimationSeed } from './context';
+import { absorb, axesFor, comeOut, commitOffset, commitOver, leaveTarget, goBehind, minus, norm, plus, takeUp, times, travel } from './offsets';
 import { resolveSpringConstants } from './physicsAnimation';
 import { earliestRest } from './springRest';
 import { createSpringVoices, type SpringVoices, type SpringVoicesOptions } from './springVoices';
@@ -88,6 +88,7 @@ export function startOffsetPhysics<T>(
   const seed = {
     id, kind, cancelKey: o.cancelKey, label: o.label, target: s, keepExisting: !interrupts,
   } as AnimationSeed;
+  ctx.targets.check(s as never);
   if (!interrupted && o.cancelKey != null && interrupts) {
     // Read ahead of the interrupt, which stops the voices whose velocity this is.
     velocity ??= ctx.velocityUnder(o.cancelKey, s as never);
@@ -101,7 +102,7 @@ export function startOffsetPhysics<T>(
   const move = dest ? travel(ax, before, dest) : zeros();
 
   ctx.targets.attach(s as never);
-  if (o.to != null) commitOrLeave(ctx, s as never, o.to);
+  if (o.to != null) commitOver(ctx, s as never, o.to);
   ctx.seedClock();
   const { voices, behind } = startVoices(
     ctx, s as never, { id, nextId: ctx.nextId, ...constants }, move, start, velocity ?? zeros(), dest == null,
@@ -113,9 +114,7 @@ export function startOffsetPhysics<T>(
     left = true;
     const moved = voices.moved();
     const shown = comeOut(s, behind, moved);
-    if (commit) commitOffset(s, voices.own().value, moved, shown);
-    voices.stop();
-    ctx.targets.detach(s as never);
+    leaveTarget(ctx, s as never, commit ? () => commitOffset(s, voices.own().value, moved, shown) : null, () => voices.stop());
   };
   /** A coast commits where it stopped, and so does one played back to its start; a spring
    *  drops what is left under the threshold. */

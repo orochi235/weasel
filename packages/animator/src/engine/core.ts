@@ -9,7 +9,7 @@ import type { ActiveAnimation, AnimationContext } from './context';
 import { createFrame, type AnimatorClock } from './frame';
 import { createHandoffs } from './handoff/handoffs';
 import { createTargetBook } from './offsets';
-import { createTable } from './table';
+import { createTable, each } from './table';
 import { createEmitter } from '@weasel-js/registry';
 
 /** What {@link createAnimatorCore} needs of whoever hosts it: a clock and a frame loop. */
@@ -86,9 +86,10 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     requestFrame: host.requestFrame,
   });
   const targets = createTargetBook({
+    // Every one of them, though one throws.
     stop: (s) => {
-      for (const a of [...table.on(s)]) table.retire(a.id);
-      for (const part of [...s.parts]) part();
+      const retires = [...table.on(s)].map((a) => () => table.retire(a.id));
+      each([...retires, ...s.parts], (stop) => stop());
     },
     columns: (table) => codec.columns(table),
   });
@@ -143,7 +144,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
 
   return {
     api,
-    tick(t) { checkFrame(t, 1); pacing.outside.on = false; frame.tick(t); },
+    tick(t) { checkFrame(t, 1); pacing.outside.on = false; pacing.framed(t); frame.tick(t); },
     follow(t, rate, wall) {
       checkFrame(t, rate); pacing.follow(rate, wall);
       const moved = clock.frameT == null ? 0 : t - clock.frameT;
@@ -186,6 +187,9 @@ function createPacing(clock: AnimatorClock, wallNow: () => number, now: () => nu
   const outside = { on: false, rate: 1, wall: 0 };
   /** Between `suspend` and `resume`, when the clock counts nothing. */
   let unseen = false;
+  /** The document timeline less the frame clock, as the last frame found them: 0 in a browser,
+   *  whose frame timestamps are on that timeline, and the gap to it for a host's own clock. */
+  let toWall = 0;
   const pacing = {
     outside,
     /** The animator's clock now. Runs handed to the compositor ask for no frames, so while only
@@ -201,7 +205,7 @@ function createPacing(clock: AnimatorClock, wallNow: () => number, now: () => nu
     },
     host: {
       pace: () => (clock.paused ? 0 : Math.abs(clock.timeScale) * (outside.on ? Math.abs(outside.rate) : 1)),
-      wall: () => (outside.on ? outside.wall : clock.frameT ?? wallNow()),
+      wall: () => (outside.on ? outside.wall : clock.frameT == null ? wallNow() : clock.frameT + toWall),
       elapsed: (): number => pacing.current(),
     },
     follow(rate: number, wall: number | undefined): void {
@@ -209,6 +213,8 @@ function createPacing(clock: AnimatorClock, wallNow: () => number, now: () => nu
       outside.rate = rate;
       outside.wall = wall ?? wallNow();
     },
+    /** A frame of the animator's own loop comes at `t`. */
+    framed(t: number): void { toWall = wallNow() - t; },
     /** The clock was seeded from idle. */
     seeded(): void { if (outside.on) outside.wall = wallNow(); },
     /** The frame loop stops unseen. Runs on the compositor ask for no frames, so the clock has

@@ -2,8 +2,8 @@ import { easeOutQuad, resolveEasing } from '@weasel-js/geom';
 import { stateOf } from '../target';
 import type { AnimationHandle, TargetTweenOptions } from '../types';
 import { voiceMs } from './tweenAnimation';
-import { commitOrLeave, type AnimationContext, type AnimationSeed } from './context';
-import { axesFor, bump, bumpOn, comeOut, commitOffset, goBehind, minus, plus, runsOn, seat, shareBehind, takeUp, times, travel } from './offsets';
+import type { AnimationContext, AnimationSeed } from './context';
+import { axesFor, bump, bumpOn, comeOut, commitOffset, commitOver, goBehind, leaveTarget, minus, plus, runsOn, seat, shareBehind, takeUp, times, travel } from './offsets';
 
 /** A tween on a target: its destination is committed as it starts, and its voice is what is
  *  left to travel. Given `interrupted`, what holds its key was interrupted already, by that id,
@@ -19,6 +19,7 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   const seed = {
     id, kind: 'tween', cancelKey: o.cancelKey, label: o.label, target: s, keepExisting: !interrupts,
   } as AnimationSeed;
+  ctx.targets.check(s as never);
   // Ahead of reading the committed value: an interrupted animation commits where it stopped.
   if (interrupted === undefined && o.cancelKey != null && interrupts) ctx.interrupt(o.cancelKey, seed);
   s.handoff?.release();
@@ -31,13 +32,16 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   const easing = resolveEasing(o.easing ?? easeOutQuad);
   const ms = voiceMs(o.ms);
 
-  ctx.targets.attach(s as never);
-  commitOrLeave(ctx, s as never, o.to);
   const atEnd = ctx.atEnd();
-  ctx.seedClock();
   const offsetAt = (u: number): number[] => minus(ax.to(path!(easing(u))), to);
   /** Its offset at its start, where a run backward ends. */
   const first = path ? offsetAt(0) : travel(ax, given ?? base, to);
+  // Its path's ends, read where a throw from them still finds the target as it was.
+  if (path && atEnd) offsetAt(1);
+
+  ctx.targets.attach(s as never);
+  commitOver(ctx, s as never, o.to);
+  ctx.seedClock();
   const share = shareBehind(ax, committed, to, travel(ax, given ?? base, to));
   const own = (): number[] => codec.own(id)!.value;
   const behind = goBehind(s, own, () => times(own(), share), share);
@@ -57,13 +61,11 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
     const value = at ?? own?.value;
     const moved = value ? times(value, share) : [];
     const shown = comeOut(s, behind, moved);
-    if (own) {
-      if (commit) commitOffset(s, value!, moved, shown);
+    leaveTarget(ctx, s as never, own && commit ? () => commitOffset(s, value!, moved, shown) : null, () => {
       // Voices among the target's own are in its `slot` until the next frame reads it.
-      if (!behind.move) bump(s as never, own.value, -1);
-    }
-    codec.stop(id);
-    ctx.targets.detach(s as never);
+      if (own && !behind.move) bump(s as never, own.value, -1);
+      codec.stop(id);
+    });
   };
   /** Ends it at its destination, or played backward, at its start. */
   const end = (atStart: boolean): true => {

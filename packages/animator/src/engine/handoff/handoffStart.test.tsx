@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { act } from '@testing-library/react';
 import type { AnimatorEvent } from '../../types';
-import { element, setup } from './testing/fakeAnimate';
+import { createElementTarget } from '../../elementTarget';
+import { element, FakeAnimation, setup } from './testing/fakeAnimate';
 
 /** An element target with a main-thread tween holding `k` on it, and the animator's events. */
 function moving() {
@@ -40,6 +41,35 @@ describe('a call handed to the compositor, as it starts', () => {
   it('refuses spring constants it cannot run before it interrupts what holds its key', () => {
     const r = moving();
     expect(() => r.animator.spring({ target: r.e.target, to: { x: 0 }, stiffness: -1, cancelKey: 'k', compositor: 'auto' })).toThrow();
+    expect(r.animator.live()).toHaveLength(1);
+  });
+
+  it('refuses a required spring that starts at rest before it interrupts what holds its key', () => {
+    const r = moving();
+    const still = element(r.timeline, 40);
+    expect(() => r.animator.spring({ target: still.target, to: { x: 40 }, cancelKey: 'k', compositor: 'require' }))
+      .toThrow(/at rest/);
+    expect(r.events.some((ev) => ev.type === 'interrupt')).toBe(false);
+    expect(r.animator.live()).toHaveLength(1);
+  });
+
+  it('puts back what it committed when its keyframes throw as they are sampled', () => {
+    const r = setup();
+    const el = document.createElement('div');
+    (el as unknown as { animate: unknown }).animate = (frames: Record<string, string | number>[], o: { duration: number }) =>
+      new FakeAnimation(frames, o.duration, r.timeline);
+    const target = createElementTarget({
+      element: el,
+      value: { x: 0 },
+      style: (v) => { if (v.x > 50) throw new Error('bad style'); return { transform: `translateX(${v.x}px)` }; },
+    });
+    expect(() => r.animator.tween({ target, to: { x: 100 }, ms: 100, compositor: 'require' })).toThrow('bad style');
+    expect(() => r.animator.spring({ target, to: { x: 100 }, compositor: 'require' })).toThrow('bad style');
+    expect(target.committed()).toEqual({ x: 0 });
+    expect(r.animator.live()).toHaveLength(0);
+    const spring = r.animator.physics({ target, to: { x: 40 }, compositor: 'require' });
+    expect(() => spring.setTarget({ x: 100 })).toThrow('bad style');
+    expect(target.committed()).toEqual({ x: 40 });
     expect(r.animator.live()).toHaveLength(1);
   });
 

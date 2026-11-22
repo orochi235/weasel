@@ -1,6 +1,6 @@
 import { easeOutQuad, resolveEasing } from '@weasel-js/geom';
 import type { ElementBinding } from '../../elementTarget';
-import { stateOf, type TargetState } from '../../target';
+import { readTarget, stateOf, type TargetState } from '../../target';
 import type {
   AnimationHandle, AnimationKind, PhysicsHandle, TargetPhysicsOptions, TargetTweenOptions,
 } from '../../types';
@@ -47,6 +47,19 @@ function begin(
   return { s, binding, seed };
 }
 
+/** Commits `value` on `s` and runs `then`, which samples what shows it; a throw from `then` puts
+ *  back what was committed. */
+function committing<R>(s: TargetState, value: unknown, then: () => R): R {
+  const was = s.get();
+  s.set(value);
+  try {
+    return then();
+  } catch (error) {
+    s.set(was);
+    throw error;
+  }
+}
+
 /** A tween on an element target, handed to the compositor; null where it cannot be. */
 export function handOffTween<T>(hs: Handoffs, o: TargetTweenOptions<T>): AnimationHandle | null {
   if (!(o.ms > 0 && o.ms < Infinity)) {
@@ -75,16 +88,15 @@ export function handOffTween<T>(hs: Handoffs, o: TargetTweenOptions<T>): Animati
     delta: travel(ax, to, from),
     path: blend && ((e) => ax.to(blend(e))),
   });
-  s.set(o.to);
   if (ctx.atEnd()) seed.startAt = o.ms;
   seed.progress = (now) => Math.min(1, Math.max(0, now / o.ms));
   ctx.seedClock();
-  const run = launch(hs, s, binding, motion, seed, {
+  const run = committing(s, o.to, () => launch(hs, s, binding, motion, seed, {
     endCommit: () => null,
     takeBack: (m, local, backward, done) =>
       continueOnMainThread(ctx, { target: o.target, cancelKey: o.cancelKey, label: o.label }, m, local, backward, done),
     onDone: o.onDone,
-  });
+  }));
   const handle = ctx.register(seed);
   run.start();
   return handle;
@@ -98,6 +110,11 @@ export function handOffPhysics<T>(hs: Handoffs, o: TargetPhysicsOptions<T>, kind
   let dest: number[] | null = null;
   let given: number[] | null = null;
   let constants = {} as ReturnType<typeof constantsFor>;
+  const restThreshold = o.restThreshold ?? 0.01;
+  // From the destination's side of each angle axis, so the spring turns the short way round.
+  const motionOf = (ax: TargetState['axes'], at: readonly number[], v: readonly number[]): Motion => physicsMotion({
+    start: dest ? plus(dest, travel(ax, at, dest)) : at, velocity: v, to: dest, ...constants, threshold: restThreshold,
+  });
   const begun = begin(hs, o as TargetPhysicsOptions<unknown>, kind, (s) => {
     dest = o.to == null ? null : axesFor(s.axes, o.to, 'to');
     constants = constantsFor(o, kind, dest != null);
@@ -105,35 +122,36 @@ export function handOffPhysics<T>(hs: Handoffs, o: TargetPhysicsOptions<T>, kind
     // Read ahead of the interrupt, which stops the animation whose velocity this is.
     if (o.velocity !== undefined) velocity = axesFor(s.axes, o.velocity, 'velocity');
     else if (o.cancelKey != null && o.interrupt !== false) velocity = ctx.velocityUnder(o.cancelKey, s);
+    // The interrupt commits what the target shows, which is where it would start.
+    const at = given ?? s.axes.to(readTarget(s));
+    if (o.compositor === 'require' && motionOf(s.axes, at, velocity ?? at.map(() => 0)).ms <= 0) {
+      refuse(o, 'it starts at rest');
+    }
   });
   if (begun === null) return null;
   if (typeof begun === 'number') return startOffsetPhysics(ctx, o, kind, { id: begun, velocity });
   const { s, binding, seed } = begun;
   const ax = s.axes as TargetState<T>['axes'];
-  const restThreshold = o.restThreshold ?? 0.01;
   const start = given ?? ax.to(s.get() as T);
-  // From the destination's side of each angle axis, so the spring turns the short way round.
-  const motionFrom = (at: readonly number[], v: readonly number[]): Motion => physicsMotion({
-    start: dest ? plus(dest, travel(ax, at, dest)) : at, velocity: v, to: dest, ...constants, threshold: restThreshold,
-  });
+  const motionFrom = (at: readonly number[], v: readonly number[]): Motion => motionOf(ax as TargetState['axes'], at, v);
   const motion = motionFrom(start, velocity ?? start.map(() => 0));
   if (motion.ms <= 0) {
     if (o.compositor === 'require') refuse(o, 'it starts at rest');
     // Its interrupt has run, naming this id: the main thread takes both, and the velocity read.
     return startOffsetPhysics(ctx, o, kind, { id: seed.id, velocity });
   }
-  if (o.to != null) s.set(o.to);
   ctx.seedClock();
   const carried = (): Carried<T> => ({
     target: o.target, cancelKey: o.cancelKey, label: o.label,
     physics: { kind, to: dest, ...constants, restThreshold },
   });
-  const run = launch(hs, s, binding, motion, seed, {
+  const go = () => launch(hs, s, binding, motion, seed, {
     // A coast commits where it stops; a spring's destination is committed already.
     endCommit: (m) => (dest ? null : m.at(m.ms)),
     takeBack: (m, local, backward, done) => continueOnMainThread(ctx, carried(), m, local, backward, done),
     onDone: o.onDone,
   });
+  const run = o.to == null ? go() : committing(s, o.to, go);
   const handle = ctx.register(seed);
   run.start();
   const here = (): [number[], number[]] => [run.motion.at(run.local()), run.motion.velocity(run.local())];
@@ -144,17 +162,21 @@ export function handOffPhysics<T>(hs: Handoffs, o: TargetPhysicsOptions<T>, kind
       if (child) { child.setTarget?.(next); return; }
       if (!ctx.has(seed.id)) return;
       const [at, v] = here();
+      const was = dest;
       if (next == null) {
         if (dest == null) return;
         dest = null;
-        // The committed value stops where the spring had brought it; the coast carries the rest.
-        s.set(ax.from(at));
       } else {
         if (!(constants.stiffness > 0)) throw new Error(`${kind}: setTarget needs a positive stiffness`);
         dest = axesFor(ax, next, 'setTarget');
-        s.set(next);
       }
-      run.replace(motionFrom(at, v));
+      try {
+        // Without one, the committed value stops where the spring had brought it; the coast carries the rest.
+        committing(s, next ?? ax.from(at), () => run.replace(motionFrom(at, v)));
+      } catch (error) {
+        dest = was;
+        throw error;
+      }
     },
     setVelocity(v) {
       const child = run.child as PhysicsHandle<T> | null;

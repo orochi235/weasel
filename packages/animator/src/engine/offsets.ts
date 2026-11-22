@@ -1,4 +1,5 @@
 import { wrapAngle } from '@weasel-js/geom';
+import { commitOrLeave, type AnimationContext } from './context';
 import type { HoldStore } from './holdStore';
 import type { Reader } from './lanes';
 import { readTarget, type Behind, type RowTable, type TargetAxes, type TargetOwner, type TargetState } from '../target';
@@ -141,16 +142,34 @@ export function keep<T>(s: TargetState<T>, delta: readonly number[]): void {
 }
 
 /** The committed value's axes as an animation about to commit a destination finds them: with
- *  what `keep` left beside it, which that destination replaces. */
+ *  what `keep` left beside it, which {@link commitOver} replaces. */
 export function takeUp<T>(s: TargetState<T>): number[] {
   const committed = s.axes.to(s.get());
-  const beside = s.beside;
-  if (beside) setBeside(s as never, null);
-  return beside ? plus(committed, beside) : committed;
+  return s.beside ? plus(committed, s.beside) : committed;
+}
+
+/** Commits `value` on `s`, just attached, in place of what waited beside the committed value;
+ *  a setter that throws leaves both as they were found. */
+export function commitOver(ctx: AnimationContext, s: TargetState, value: unknown): void {
+  commitOrLeave(ctx, s, value);
+  if (s.beside) setBeside(s, null);
+}
+
+/** Takes an animation off `s`: `commit` writes where it stopped, and a setter that throws there
+ *  still stops its voices and leaves the target to whatever else moves it. */
+export function leaveTarget(ctx: AnimationContext, s: TargetState, commit: (() => void) | null, stop: () => void): void {
+  try {
+    commit?.();
+  } finally {
+    stop();
+    ctx.targets.detach(s);
+  }
 }
 
 /** The targets one animator is moving. */
 export interface TargetBook {
+  /** Throws where another animator is moving `s`. */
+  check(s: TargetState): void;
   /** Counts one more animation on `s`. Throws where another animator is moving it. */
   attach(s: TargetState): void;
   /** Counts one fewer. */
@@ -179,27 +198,38 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
   const tables = new Map<RowTable, number>();
   /** Each store holds are folded in, and how many. */
   const stores = new Map<HoldStore, number>();
+  /** Stops what moves `s`, whose `show` or `publish` threw. Thrown out of a frame, either would
+   *  stop the frame loop, and every animation with it. */
+  const stop = (s: TargetState, what: string, error: unknown): void => {
+    console.error(`useAnimator: a target's ${what} threw; stopping what moves it`, error);
+    try { owner.stop(s); } catch (again) { console.error('useAnimator: stopping what moves it threw', again); }
+    rested.delete(s);
+  };
   const shown = (s: TargetState, value: unknown): void => {
     try {
       s.show!(value);
     } catch (error) {
-      // Thrown out of a frame, it would stop the frame loop, and every animation with it.
-      console.error("useAnimator: a target's show threw; stopping what moves it", error);
-      owner.stop(s);
-      rested.delete(s);
+      stop(s, 'show', error);
       return;
     }
     if (s.publish) publishes.add(s.publish);
   };
   const publish = (): void => {
-    for (const p of publishes) p();
+    const due = [...publishes];
     publishes.clear();
+    for (const p of due) {
+      try { p(); } catch (error) {
+        for (const s of [...showing, ...rested]) if (s.publish === p) stop(s, 'publish', error);
+      }
+    }
+  };
+  const check = (s: TargetState): void => {
+    if (s.owner && s.owner !== token) throw new Error('animator: this target is being moved by another animator');
   };
   return {
+    check,
     attach(s) {
-      if (s.owner && s.owner !== token) {
-        throw new Error('animator: this target is being moved by another animator');
-      }
+      check(s);
       s.owner = token;
       s.live += 1;
       if (s.show) showing.add(s);

@@ -12,11 +12,16 @@ export function startHoldRows(ctx: AnimationContext, o: HoldRowsOptions): RowsHo
   const rows = rowTableOf(table);
   const n = table.axes;
   const store = rows.holds();
-  // Every row's target first, so a row not in the table refuses the call before it interrupts.
+  // Every row's target first, so a row not in the table or another animator's refuses the call before it interrupts.
   const targets = new Map<number, TargetState>();
   for (const row of o.rows ? Array.from(o.rows) : rows.rows()) {
-    if (!targets.has(row)) targets.set(row, stateOf(table.target(row)) as TargetState);
+    if (targets.has(row)) continue;
+    const s = stateOf(table.target(row)) as TargetState;
+    ctx.targets.check(s);
+    targets.set(row, s);
   }
+  const first = targets.values().next().value;
+  const covers = first ? coverOf(o.axes, first.axes) : null;
   const id = ctx.nextId();
   const seed = {
     id, kind: 'hold', cancelKey: o.cancelKey, label: o.label, keepExisting: o.interrupt === false,
@@ -28,7 +33,6 @@ export function startHoldRows(ctx: AnimationContext, o: HoldRowsOptions): RowsHo
   /** The rows it holds, each with what lets it go. */
   const held = new Map<number, { s: TargetState; part: () => void }>();
   const weight = o.weight ?? 1;
-  let covers: Uint8Array | null = null;
   const letGo = (row: number, commit: boolean): void => {
     const h = held.get(row);
     if (!h) return;
@@ -51,7 +55,6 @@ export function startHoldRows(ctx: AnimationContext, o: HoldRowsOptions): RowsHo
   };
   try {
     for (const [row, s] of targets) {
-      covers ??= coverOf(o.axes, s.axes);
       enterHold(ctx, s, (st) => (layer ??= st.layer()), { covers, fixed: true });
       layer.values.set(table.committed.subarray(row * n, (row + 1) * n), row * n);
       layer.weights[row] = weight;

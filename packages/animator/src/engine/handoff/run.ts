@@ -126,8 +126,9 @@ export function launch(
   seed.due = motion.ms;
   seed.velocity = () => (gone ? s.axes.to(s.get()).map(() => 0) : motion.velocity(local()));
   seed.tick = (nowMs, scale) => {
+    // Ahead of `child`, which leaves on the tripwire without ending this run.
+    if (ctx.tripwire()) { if (!child) letGo(motion.at(local())); return true; }
     if (child) return false;
-    if (ctx.tripwire()) { letGo(motion.at(local())); return true; }
     const at = nowMs - placed.offset;
     if (scale < 0 && at <= 0) return end(true);
     if (at >= motion.ms) return end(false);
@@ -160,8 +161,9 @@ export function launch(
       const a = entry();
       const offset = a ? table.clockOf(a) : 0;
       const old = placed;
+      const animation = animate(binding, s, next);
       motion = next;
-      placed = { id, animation: animate(binding, s, motion), offset };
+      placed = { id, animation, offset };
       finished = false;
       onFinish(placed.animation);
       swap(hs, old, placed);
