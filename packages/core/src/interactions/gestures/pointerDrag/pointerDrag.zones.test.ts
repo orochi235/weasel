@@ -150,6 +150,26 @@ describe('useDragHandle in another document', () => {
   });
 });
 
+describe('useDragHandle in another document, pressed on a control', () => {
+  it('leaves the press to the control', () => {
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument!;
+    doc.body.innerHTML = '<div id="src"><button id="b">x</button></div>';
+    Object.defineProperty(doc, 'elementFromPoint', { configurable: true, value: () => null });
+    const { result } = renderHook(() => useDragHandle(() => ({ kind: 'item', ids: ['a'] })));
+    press(result.current, doc.getElementById('src')!, doc.getElementById('b')!);
+    for (const x of [30, 40]) {
+      const ev = new Event('pointermove') as PointerEvent;
+      Object.assign(ev, { clientX: x, clientY: 0, pointerId: 1, pointerType: 'mouse', button: 0 });
+      doc.dispatchEvent(ev);
+    }
+    const ghosts = [...doc.querySelectorAll('*'), ...document.querySelectorAll('*')]
+      .filter((el) => (el as HTMLElement).style?.position === 'fixed');
+    expect(ghosts).toEqual([]);
+  });
+});
+
 describe('the default ghost', () => {
   it('leaves the source row\'s checked radio checked', () => {
     document.body.innerHTML = '<div id="src"><input type="radio" name="g" id="r" checked></div><input type="radio" name="g">';

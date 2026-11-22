@@ -200,7 +200,9 @@ export function useDragHandle(
     // the ref while the first drag runs on with nothing to cancel it.
     if (live.current) return;
     const target = e.currentTarget as HTMLElement;
-    if (e.target instanceof Element && e.target.closest('input, button, select, textarea')) return;
+    // Not `instanceof Element`: a source in another window's document has that window's Element.
+    const pressed = e.target as Partial<Element> | null;
+    if (pressed?.closest?.('input, button, select, textarea')) return;
     const start = { clientX: e.clientX, clientY: e.clientY };
     const pointerId = e.pointerId;
     let ghost: GhostDrag | null = null;
