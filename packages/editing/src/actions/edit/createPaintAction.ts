@@ -1,12 +1,12 @@
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
 import type { Scene, NodeId, Op } from '@weasel-js/core';
-import { commitOps, inheritedPaintIn, paintInheritors } from '@weasel-js/core/engine';
-import { INHERIT } from '@weasel-js/paint';
+import { commitOps, paintInheritors } from '@weasel-js/core/engine';
 import { deepEqual, isFiniteNumber } from '@weasel-js/registry';
 import * as coreOps from '@weasel-js/core/ops';
 import { asNodeId, operandContent, requiresContent, withoutPageStructure } from '@weasel-js/core';
 import { anyLocked } from '../lockedWrites';
+import { paintBaseOf, paintHeirsIn } from './paintInheritance';
 
 /** The node data one paint action reads and writes: its own key, nothing else. */
 type PaintData<K extends string, TValue> = { [P in K]?: TValue | null };
@@ -57,6 +57,8 @@ interface Scratch<TState, TValue, K extends string> {
   startData: Map<NodeId, PaintData<K, TValue>>;
   /** What `merge` starts from per node: its value at gesture start, `'inherit'` resolved. */
   bases: Map<NodeId, TValue | null | undefined>;
+  /** For an `'inherit'` node in the run, the nearest node it inherits from that is in the run too. */
+  heirs: Map<NodeId, NodeId>;
   state: TState;
   /** Preview data entries — the merged value per selected node. */
   previews: Map<NodeId, PaintData<K, TValue>>;
@@ -92,11 +94,15 @@ export function createPaintAction<TState, TValue, K extends string, P>(
   type Data = PaintData<K, TValue>;
 
   /** What the run writes to `id`, or null when it leaves the node alone. An `'inherit'` node that would take the
-   *  paint it already inherits is left alone too, so it goes on inheriting. */
+   *  paint it inherits, as it stands or as this run leaves it, is left alone too, so it goes on inheriting. */
   const writeFor = (scratch: Scratch<TState, TValue, K>, id: NodeId): { next: TValue | null } | null => {
     const base = scratch.bases.get(id);
     const next = spec.merge(base, scratch.state);
-    return unchanged(scratch.startData.get(id)?.[spec.dataKey], next) || unchanged(base, next) ? null : { next };
+    if (unchanged(scratch.startData.get(id)?.[spec.dataKey], next) || unchanged(base, next)) return null;
+    const heir = scratch.heirs.get(id);
+    if (heir === undefined) return { next };
+    const inherited = writeFor(scratch, heir)?.next ?? scratch.bases.get(heir);
+    return unchanged(inherited, next) ? null : { next };
   };
 
   const refreshPreviews = (scratch: Scratch<TState, TValue, K>): void => {
@@ -107,14 +113,8 @@ export function createPaintAction<TState, TValue, K extends string, P>(
     }
   };
 
-  const baseOf = (scene: Scene<Data, string, unknown>, id: NodeId): TValue | null | undefined => {
-    const node = scene.get(id);
-    const own = (node?.data as Data | undefined)?.[spec.dataKey];
-    if ((own as unknown) !== INHERIT || !node) return own;
-    const key = spec.dataKey as string;
-    if (key !== 'fill' && key !== 'stroke') return own;
-    return (inheritedPaintIn(scene as never, node as never)?.[key] ?? null) as TValue | null;
-  };
+  const baseOf = (scene: Scene<Data, string, unknown>, id: NodeId): TValue | null | undefined =>
+    paintBaseOf(scene as never, id, spec.dataKey) as TValue | null | undefined;
 
   return defineAction<string, P>({
     id: spec.id,
@@ -145,12 +145,12 @@ export function createPaintAction<TState, TValue, K extends string, P>(
           startData.set(id, { ...(node.data as Data) });
           bases.set(id, baseOf(scene, id));
         }
-
         const scratch: Scratch<TState, TValue, K> = {
           ids,
           scene,
           startData,
           bases,
+          heirs: paintHeirsIn(scene as never, new Set(startData.keys()), spec.dataKey),
           state: spec.readParams(initial, ctx.params) ?? initial,
           previews: new Map(),
         };
@@ -158,7 +158,7 @@ export function createPaintAction<TState, TValue, K extends string, P>(
         // Members that inherit the paint being changed preview with it.
         const key = spec.dataKey as string;
         const inheritors = key === 'fill' || key === 'stroke'
-          ? [...new Set(ids.flatMap((id) => paintInheritors(scene, id, key)))].filter((id) => !startData.has(id as NodeId))
+          ? [...new Set(ids.flatMap((id) => paintInheritors(scene, id, key)))]
           : [];
 
         return {
@@ -185,7 +185,9 @@ export function createPaintAction<TState, TValue, K extends string, P>(
             commitOps(ctx.deps, ops, spec.label);
             scratch.previews.clear();
           },
-          previewIds: () => (scratch.previews.size === 0 ? [] : [...scratch.previews.keys(), ...inheritors]),
+          previewIds: () => (scratch.previews.size === 0
+            ? []
+            : [...scratch.previews.keys(), ...inheritors.filter((id) => !scratch.previews.has(id as NodeId))]),
           previewData: (id: string) => scratch.previews.get(id as unknown as NodeId) ?? null,
         };
       },
