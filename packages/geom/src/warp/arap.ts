@@ -71,7 +71,7 @@ const SETTLED_ENERGY = 3e-3;
  *  limited-memory descent is often followed by a long one. */
 const CALM_ROUNDS = 2;
 
-/** The mesh's connected pieces: vertex lists and triangle lists. */
+/** The mesh's connected pieces: vertex lists and triangle lists. A vertex no triangle uses is a piece of its own. */
 function piecesOf(mesh: ArapMesh): { verts: number[]; tris: number[] }[] {
   const n = mesh.vertices.length >> 1;
   const parent = Int32Array.from({ length: n }, (_, i) => i);
@@ -93,7 +93,9 @@ function piecesOf(mesh: ArapMesh): { verts: number[]; tris: number[] }[] {
     p.tris.push(t / 3);
     for (let k = 0; k < 3; k++) if (!used[T[t + k]]) { used[T[t + k]] = 1; p.verts.push(T[t + k]); }
   }
-  return [...byRoot.values()];
+  const pieces = [...byRoot.values()];
+  for (let v = 0; v < n; v++) if (!used[v]) pieces.push({ verts: [v], tris: [] });
+  return pieces;
 }
 
 /** The farthest any vertex moved between `a` and `b`. */
