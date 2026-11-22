@@ -18,7 +18,8 @@ export interface Aabb {
   max: Vec3;
 }
 
-/** Distance along the ray to the box, or null; null too for a ray with a NaN component. A ray starting inside returns 0. */
+/** Distance along the ray to the box, or null; null too for a ray with a NaN component or an infinite origin. A ray
+ *  starting inside returns 0; one with an infinite direction component is at a finite place only at t = 0. */
 export function intersectRayAabb(ray: Ray, box: Aabb): number | null {
   const { min, max } = box;
   let tMin = Number.NEGATIVE_INFINITY;
@@ -28,10 +29,11 @@ export function intersectRayAabb(ray: Ray, box: Aabb): number | null {
     const o = ray.origin[axis];
     const d = ray.direction[axis];
     // NaN fails every comparison below, so an axis it reached would never narrow the slab.
-    if (Number.isNaN(o) || Number.isNaN(d)) return null;
-    // Any other direction, however short, divides to an honest (possibly infinite) t.
-    if (d === 0) {
+    if (Number.isNaN(d) || !Number.isFinite(o)) return null;
+    // Any other finite direction, however short, divides to an honest (possibly infinite) t.
+    if (d === 0 || !Number.isFinite(d)) {
       if (o < min[axis] || o > max[axis]) return null;
+      if (d !== 0) tMax = Math.min(tMax, 0);
       continue;
     }
     let t1 = (min[axis] - o) / d;
@@ -42,8 +44,8 @@ export function intersectRayAabb(ray: Ray, box: Aabb): number | null {
     if (tMin > tMax) return null;
   }
 
-  if (tMax < 0) return null;
-  return tMin < 0 ? 0 : tMin;
+  if (tMax < 0 || tMin > tMax) return null;
+  return tMin > 0 ? tMin : 0;
 }
 
 /** Plane is `dot(normal, p) === offset`. Null when the ray runs parallel to the
