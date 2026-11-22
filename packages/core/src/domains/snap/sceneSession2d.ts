@@ -45,7 +45,7 @@ export interface SceneSessionInputs {
 export function createSceneSession2d(i: SceneSessionInputs): SnapSession {
   const geometryAt = i.geometryAt ?? (snapSourcesFor(i.sources, i.req.gesture).some((s) => s.roles.includes('geometry'))
     ? (press: WorldPoint, ids: readonly string[]) => ownGeometryAt(
-      i.scene, press, ids, pxPerUnit(i.view(), i.req.plane?.() ?? null), i.reachPx,
+      i.scene, press, withSubtrees(i.scene, ids), pxPerUnit(i.view(), i.req.plane?.() ?? null), i.reachPx,
     )
     : undefined);
   const reads = sceneProbeReads({

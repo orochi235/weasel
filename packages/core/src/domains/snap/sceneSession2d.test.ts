@@ -123,4 +123,17 @@ describe('createSnapSession2d', () => {
     }).at({ x: 211, y: 50 }, { suspend: false, constrain: false });
     expect(seen[0].probes[0].at.x).toBeCloseTo(200, 9);
   });
+
+  it('puts a group\'s geometry probe on its members\' outline', () => {
+    const s = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const g = s.add({ kind: 'group', layer: 'main', pose: { x: 200, y: 0, width: 100, height: 100 }, data: null });
+    s.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {}, parent: g });
+    const seen: SnapCollect[] = [];
+    createSnapSession2d({
+      scene: s as unknown as Scene<unknown, string, unknown>, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, gesture: 'move',
+      press: { x: 205, y: 50 }, ids: [g as string],
+      sources: [{ id: 'outline', roles: ['geometry'], collect(q) { seen.push(q); return []; } }],
+    }).at({ x: 205, y: 50 }, { suspend: false, constrain: false });
+    expect(seen[0].probes[0].at.x).toBeCloseTo(200, 9);
+  });
 });
