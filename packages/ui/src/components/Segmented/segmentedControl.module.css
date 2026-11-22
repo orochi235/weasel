@@ -276,8 +276,8 @@
   color: var(--wzl-fg-muted);
 }
 
-/* Adjacent cells share one rule rather than stacking two. */
-.variant_flat:not(.tiled) .segment ~ .segment {
+/* Adjacent cells share one rule rather than stacking two; a curved run spaces its cells apart instead. */
+.root.variant_flat:not(.tiled) .segment ~ .segment {
   margin-inline-start: -1px;
 }
 
@@ -388,7 +388,7 @@
   border-radius: var(--wzl-radius-pill);
 }
 
-.variant_flat[data-orientation='vertical'] .segment ~ .segment {
+.root.variant_flat[data-orientation='vertical'] .segment ~ .segment {
   margin-inline-start: 0;
   margin-block-start: -1px;
 }
