@@ -31,6 +31,8 @@ function quote(s: string): string {
 }
 
 function printKey(k: string): string {
+  // `__proto__: v`, bare or quoted, sets an object literal's prototype rather than an own key.
+  if (k === '__proto__') return `['__proto__']`;
   return isValidKey(k) ? k : quote(k);
 }
 

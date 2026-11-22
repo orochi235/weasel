@@ -68,6 +68,16 @@ describe('printValue', () => {
       expect(new Function(`return ${printValue(text)};`)()).toBe(text);
     }
   });
+
+  it('prints a `__proto__` entry as an own key of the literal, not its prototype', () => {
+    const map = JSON.parse('{"__proto__": 1, "b": 2}') as Record<string, unknown>;
+    for (const printed of [printValue(map), printValue({ m: map })]) {
+      const back = new Function(`return (${printed});`)() as Record<string, unknown>;
+      const held = 'm' in back ? back.m as Record<string, unknown> : back;
+      expect(Object.hasOwn(held, '__proto__')).toBe(true);
+      expect(Object.getPrototypeOf(held)).toBe(Object.prototype);
+    }
+  });
 });
 
 describe('diffSchemas', () => {
