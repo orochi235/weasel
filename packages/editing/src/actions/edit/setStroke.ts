@@ -22,8 +22,12 @@ function repaint(prev: Stroke | null | undefined, state: SetStrokeState): Stroke
     const { paint: _dropped, ...rest } = prev;
     return rest;
   }
-  const base = prev?.paint == null && prev?.width === undefined ? { ...prev, width: 1 } : prev;
-  return { ...base, paint: state.paint ?? paintWithColor(prev?.paint, state.color) };
+  return { ...strokeUnderPaint(prev), paint: state.paint ?? paintWithColor(prev?.paint, state.color) };
+}
+
+/** The stroke a new paint goes onto: `prev`, or a hairline when it has neither a paint nor a width yet. */
+export function strokeUnderPaint(prev: Stroke | null | undefined): Stroke {
+  return prev == null || (prev.paint == null && prev.width === undefined) ? { ...prev, width: 1 } : prev;
 }
 
 /**
