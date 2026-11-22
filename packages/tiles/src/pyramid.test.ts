@@ -142,3 +142,15 @@ describe('TilePyramid', () => {
     expect(pyramid.run(view(0, 0, 16), 0, () => ({}), budget).live).toBe(true);
   });
 });
+
+describe('TilePyramid frames', () => {
+  it('lists a stale stand-in once, however many spots it covers', () => {
+    const { pyramid, bake } = setup();
+    for (let f = 0; f < 20; f++) pyramid.run(view(0, 0, 0.5, 400, 300), f, bake, { ...budget, tiles: 100 });
+    pyramid.dirtyAll();
+    const frame = pyramid.run(view(0, 0, 1, 400, 300), 20, () => null, { ...budget, tiles: 0 });
+    const ids = frame.stale.map((k) => scheme.idOf(k));
+    expect(ids.length).toBeGreaterThan(0);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});

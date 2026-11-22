@@ -170,8 +170,8 @@ export class TilePyramid<K, V, P> {
     const unit = new Float64Array(2 * scheme.dim).fill(1, scheme.dim);
     const whole = (_k: K): Float64Array => unit;
     const mark = (t: HeldTile<K, P>) => {
+      if (t.stale && t.drawnAt !== frame) stale.push(t.key);
       t.drawnAt = frame;
-      if (t.stale) stale.push(t.key);
     };
     for (const at of onScreen) {
       const t = this.cache.get(scheme.idOf(at));
