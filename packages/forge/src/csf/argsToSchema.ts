@@ -74,6 +74,8 @@ export interface OptionChoice {
   values: readonly unknown[];
 }
 
+const SCALAR_SHAPES: ReadonlySet<string> = new Set(['boolean', 'string', 'enum']);
+
 const CHOICE_CONTROLS: ReadonlySet<string | undefined> = new Set(['select', 'radio', 'inline-radio', undefined]);
 
 const hasStringForm = (o: unknown): boolean =>
@@ -278,7 +280,10 @@ function controlled(control: Control, key: string, argType: ArgType, has: boolea
         if (control.type === undefined && (argType.type?.name === 'number' || (has && typeof value === 'number'))) {
           return controlled({ ...control, type: 'number' }, key, argType, has, value);
         }
-        return has ? structured(argType, value) : null;
+        if (has) return structured(argType, value);
+        // With no arg, only a scalar shape infers a leaf: an object one, like `control: 'object'`, needs a value to edit.
+        const scalar = control.type === undefined && argType.type && SCALAR_SHAPES.has(argType.type.name);
+        return scalar ? shaped(argType.type!, undefined) : null;
       }
       const { icons } = control;
       const node = f.enum(
