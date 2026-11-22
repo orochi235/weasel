@@ -175,6 +175,33 @@ describe('schema descriptions', () => {
     expect(schemaActionAt(schema, 'gain')).toBeUndefined();
   });
 
+  it('answers a key holding a dot apart from the nested path it reads like', () => {
+    const run = vi.fn();
+    const schema = f.schema({
+      'a.b': f.custom('json', 1, () => ['flat']).showIf(() => false),
+      a: f.group({ b: f.custom('json', 2, () => ['nested']) }),
+      'go.now': f.action(run),
+    });
+    const { hidden, errors } = answerSchema(schema, schema.defaults());
+    expect(hidden).toHaveLength(1);
+    const asked: string[] = [];
+    const rebuilt = schemaFromDescription(describeSchema(schema), {
+      hidden: (path) => hidden.includes(path),
+      errors: (path) => errors[path] ?? [],
+      run: (path) => asked.push(path),
+    });
+    const flat = rebuilt.nodes['a.b']!;
+    const nested = rebuilt.nodes.a!;
+    if ('children' in flat || !('children' in nested)) throw new Error('unexpected shape');
+    expect(flat.options.showIf?.({})).toBe(false);
+    expect(nested.children.b!.options.showIf).toBeUndefined();
+    expect(flat.options.validate?.(flat as never, {})).toEqual(['flat']);
+    expect((nested.children.b as typeof flat).options.validate?.(flat as never, {})).toEqual(['nested']);
+    const go = rebuilt.nodes['go.now']!;
+    if (!('children' in go)) (go.annotations.run as (c: unknown) => void)({});
+    expect(schemaActionAt(schema, asked[0]!)).toBe(run);
+  });
+
   it('answers validate in the frame and serves it to the rebuilt leaf', () => {
     const schema = f.schema({
       blob: f.custom('json', { a: 1 }, (leaf, config) =>
