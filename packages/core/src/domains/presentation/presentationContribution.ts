@@ -3,7 +3,7 @@ import { placedPagesOf } from 'core/pages/pageNodes';
 import type { PlacedPage } from 'core/pages/pages';
 import type { Contribution } from 'tools/overlayBinding';
 import {
-  stepPresentation, viewCamera, type PageRequest, type PresentationStepOptions,
+  stepPresentation, stepTarget, viewCamera, type PageRequest, type PresentationStepOptions,
 } from './presentationStep';
 import type {} from '../../interactions/actions/actionParamSchema';
 import { isFiniteNumber } from '@weasel-js/registry';
@@ -67,9 +67,12 @@ function presentationAction(id: string, label: string, go: boolean, opts: Presen
     group: PRESENTATION_GROUP,
     ...(go ? {} : { variants: STEP_VARIANTS.map((v) => ({ ...v, params: { ...v.params } })) }),
     requires: ['view', 'scene'],
-    // A canvas with no pages leaves the keys to whatever else binds them.
-    enabled: (deps, _at, _carried, params) =>
-      deps?.view && pagesOf(deps).length > 0 && requestOf(params, go) !== null ? true : ActionDisabledReason.NotApplicable,
+    // A request naming no page, past either end or on a canvas with none, leaves the keys to whatever else binds them.
+    enabled: (deps, _at, _carried, params) => {
+      const request = requestOf(params, go);
+      return deps?.view && request !== null && stepTarget(viewCamera(deps.view), pagesOf(deps), request, opts.wrap) !== null
+        ? true : ActionDisabledReason.NotApplicable;
+    },
     invoker: {
       timing: 'immediate',
       run(deps, params) {
@@ -102,8 +105,8 @@ function keyBindings(): GestureBinding[] {
  * zoom in between is stepped on from where it left the view.
  *
  * The arrow keys are the ones the `nudge` preset binds, so a canvas that
- * presents leaves `nudge` off. Where there are no pages the actions are
- * disabled and the keys fall through.
+ * presents leaves `nudge` off. Where a step names no page, past either end
+ * or on a canvas with none, the actions are disabled and the keys fall through.
  */
 export function createPresentationContribution(opts: PresentationOptions = {}): Contribution {
   return {

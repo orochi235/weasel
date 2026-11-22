@@ -62,6 +62,17 @@ export function pageShown(pages: readonly PlacedPage[], camera: PresentationCame
   return pageInView(pages, camera.target?.() ?? camera.get(), dims);
 }
 
+/** The page {@link stepPresentation} would move `camera` to, `null` where it would move nothing. */
+export function stepTarget(
+  camera: PresentationCamera,
+  pages: readonly PlacedPage[],
+  request: PageRequest,
+  wrap = false,
+): PlacedPage | null {
+  if (camera.dims() === null) return null;
+  return requestedPage(pages, pageShown(pages, camera), request, wrap);
+}
+
 /**
  * Move `camera` to the page `request` names, fitted whole, and return that
  * page; `null`, and nothing moves, when there is no such page or the viewport
@@ -74,9 +85,8 @@ export function stepPresentation(
   options: PresentationStepOptions = {},
 ): PlacedPage | null {
   const dims = camera.dims();
-  if (dims === null) return null;
-  const page = requestedPage(pages, pageShown(pages, camera), request, options.wrap);
-  if (page === null) return null;
+  const page = stepTarget(camera, pages, request, options.wrap);
+  if (dims === null || page === null) return null;
   const view = fitViewToPage(page, dims, camera.get(), options.fit);
   if (view === null) return null;
   const { animate = true } = options;
