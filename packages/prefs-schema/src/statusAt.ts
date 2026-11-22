@@ -75,33 +75,37 @@ const under = (prefix: string, key: string): string => (prefix === '' ? key : `$
 /** The status of the field at `rest` among the members of `owner`, whose leaves' paths start at `prefix`, or `undefined` when none is there.
  *  A member keyed by all of `rest` answers ahead of one whose key only begins it. */
 function statusAmong(
-  held: PrefSection['members'], prefix: string, rest: string, owner: PrefOwner, holds: PrefConditionJudge,
+  held: PrefSection['members'], prefix: string, rest: string, owner: PrefOwner, holds: PrefConditionJudge, narrow: Narrow,
 ): PrefStatus | undefined {
-  return statusMatching(held, prefix, rest, owner, holds, true) ?? statusMatching(held, prefix, rest, owner, holds, false);
+  return statusMatching(held, prefix, rest, owner, holds, narrow, true) ?? statusMatching(held, prefix, rest, owner, holds, narrow, false);
 }
 
+/** A leaf's status by its own conditions, narrowed as the walk narrows an alias by the leaf it shows. */
+type Narrow = (leaf: PrefLeaf, own: PrefStatus) => PrefStatus;
+const UNNARROWED: Narrow = (_leaf, own) => own;
+
 function statusMatching(
-  held: PrefSection['members'], prefix: string, rest: string, owner: PrefOwner, holds: PrefConditionJudge, exact: boolean,
+  held: PrefSection['members'], prefix: string, rest: string, owner: PrefOwner, holds: PrefConditionJudge, narrow: Narrow, exact: boolean,
 ): PrefStatus | undefined {
   for (const [key, child] of Object.entries(held)) {
     if (!isPrefLeaf(child)) {
-      const found = statusMatching(child.members, prefix, rest, { node: child, status: prefStatusUnder(owner.status, child, holds), above: owner.status }, holds, exact);
+      const found = statusMatching(child.members, prefix, rest, { node: child, status: prefStatusUnder(owner.status, child, holds), above: owner.status }, holds, narrow, exact);
       if (found) return found;
       continue;
     }
     if (exact ? rest !== key : !rest.startsWith(`${key}.`)) continue;
     const path = under(prefix, key);
     const sits = prefStatusIn(owner, path, holds);
-    const status = prefStatusUnder(sits, child, holds);
-    return rest === key ? status : statusInside(child, path, rest.slice(key.length + 1), { node: child, status, above: sits }, holds);
+    const status = narrow(child, prefStatusUnder(sits, child, holds));
+    return rest === key ? status : statusInside(child, path, rest.slice(key.length + 1), { node: child, status, above: sits }, holds, narrow);
   }
   return undefined;
 }
 
 /** The status at `rest` inside `owner`'s leaf, at `path`: that of a field, or the leaf's where `rest` names none. */
-function statusInside(leaf: PrefLeaf, path: string, rest: string, owner: PrefOwner, holds: PrefConditionJudge): PrefStatus {
+function statusInside(leaf: PrefLeaf, path: string, rest: string, owner: PrefOwner, holds: PrefConditionJudge, narrow: Narrow): PrefStatus {
   const { status } = owner;
-  if (leaf.kind === 'object') return statusAmong((leaf as PrefObject).children, path, rest, owner, holds) ?? status;
+  if (leaf.kind === 'object') return statusAmong((leaf as PrefObject).children, path, rest, owner, holds, narrow) ?? status;
   if (leaf.kind === 'list' || leaf.kind === 'map') {
     const { item } = leaf as Partial<PrefList | PrefMap>;
     if (item === undefined) return status;
@@ -110,20 +114,20 @@ function statusInside(leaf: PrefLeaf, path: string, rest: string, owner: PrefOwn
     const dot = rest.indexOf('.');
     if (dot < 0) return entry;
     const at = `${path}.${rest.slice(0, dot)}`;
-    return statusInside(item, at, rest.slice(dot + 1), { node: { enableIf: item.enableIf }, status: entry, above: status }, inItem);
+    return statusInside(item, at, rest.slice(dot + 1), { node: { enableIf: item.enableIf }, status: entry, above: status }, inItem, narrow);
   }
   if (leaf.kind !== 'union') return status;
   for (const variant of Object.values((leaf as PrefUnion).variants)) {
-    const found = statusAmong(variant.children, path, rest, owner, holds);
+    const found = statusAmong(variant.children, path, rest, owner, holds, narrow);
     if (found) return found;
   }
   return status;
 }
 
-function statusAt(schema: PrefGroup | PrefSection, path: string, holds: PrefConditionJudge): PrefStatus {
+function statusAt(schema: PrefGroup | PrefSection, path: string, holds: PrefConditionJudge, narrow = UNNARROWED): PrefStatus {
   let owner: PrefOwner = { node: schema, status: prefStatusUnder(ROOT_PREF_STATUS, schema, holds), above: ROOT_PREF_STATUS };
   if (path === '') return owner.status;
-  if (isPrefSection(schema)) return statusAmong(schema.members, '', path, owner, holds) ?? owner.status;
+  if (isPrefSection(schema)) return statusAmong(schema.members, '', path, owner, holds, narrow) ?? owner.status;
   let node: PrefGroup = schema;
   const steps = path.split('.');
   for (let i = 0; i < steps.length; i++) {
@@ -131,8 +135,9 @@ function statusAt(schema: PrefGroup | PrefSection, path: string, holds: PrefCond
     const child: PrefLeaf | PrefGroup = node.children[steps[i]!]!;
     const at = steps.slice(0, i + 1).join('.');
     const sits = isPrefLeaf(child) ? prefStatusIn(owner, at, holds) : owner.status;
-    owner = { node: child, status: prefStatusUnder(sits, child, holds), above: sits };
-    if (isPrefLeaf(child)) return i === steps.length - 1 ? owner.status : statusInside(child, at, steps.slice(i + 1).join('.'), owner, holds);
+    const status = prefStatusUnder(sits, child, holds);
+    owner = { node: child, status: isPrefLeaf(child) ? narrow(child, status) : status, above: sits };
+    if (isPrefLeaf(child)) return i === steps.length - 1 ? owner.status : statusInside(child, at, steps.slice(i + 1).join('.'), owner, holds, narrow);
     node = child;
   }
   return owner.status;
@@ -171,7 +176,7 @@ export function prefStatusAt(
   schema: PrefGroup | PrefSection, path: string, holds: PrefConditionJudge, { aliasOver, aliasHolds }: PrefStatusAtOptions = {},
 ): PrefStatus {
   schema = resolvePrefGroupConditions(schema);
-  const own = statusAt(schema, path, holds);
-  const leaf = prefLeafAt(schema, path);
-  return leaf?.kind === 'alias' ? prefAliasStatus(own, leaf as PrefAlias, aliasOver ?? schema, aliasHolds ?? holds) : own;
+  const over = aliasOver ?? schema;
+  const narrow: Narrow = (leaf, own) => (leaf.kind === 'alias' ? prefAliasStatus(own, leaf as PrefAlias, over, aliasHolds ?? holds) : own);
+  return statusAt(schema, path, holds, narrow);
 }

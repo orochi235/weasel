@@ -145,3 +145,25 @@ describe('prefReader over a section schema', () => {
     expect(prefReader(section, {})('pose.y')).toBeUndefined();
   });
 });
+
+describe('an alias that is a field of an object leaf', () => {
+  const nested: PrefGroup = {
+    name: '',
+    children: {
+      ...schema.children,
+      stroke: { kind: 'object', name: 'Stroke', description: '', default: {}, children: { link: alias('view.grid') } } as PrefLeaf,
+    },
+  };
+
+  it('answers prefStatusAt as applyPrefConditions has it, narrowed by the leaf it shows', () => {
+    for (const off of ['gridOn', 'gridOpen'] as const) {
+      const holds = over(off, nested);
+      const applied = applyPrefConditions(nested, holds, { keepHidden: true });
+      expect(prefStatusAt(nested, 'stroke.link', holds)).toEqual({
+        shown: !applied.hidden.has('stroke.link'),
+        enabled: !applied.disabled.has('stroke.link'),
+      });
+    }
+    expect(prefStatusAt(nested, 'stroke.link', over('gridOn', nested)).shown).toBe(false);
+  });
+});
