@@ -408,6 +408,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   declined before its first move. They are `NotApplicable` only where no operand holds anything they could ever
   write, which today is `setVertexColor` with no selected node carrying `vertexColors`. A run that would write
   what each node already wears stays enabled and commits no undo entry.
+- 2026-11-22 (the fixer's call, audit round 71): a fill or stroke set to None, `null` or a record with no `paint`,
+  stays None under `setFillOpacity`, `setStrokeOpacity`, and `setStrokeWidth`, which change only the alpha or width
+  and never add a paint. Only a node with no fill or stroke at all takes the kit default from them.
 - 2026-11-22 (the fixer's call, audit round 70): a paint action is disabled with `Locked` while any node it would
   paint, named by `ids` or selected, is locked, and its run writes nothing, after the 2026-11-09 ruling for Ungroup,
   Delete, and Cut. It does not paint the unlocked nodes and skip the locked ones.

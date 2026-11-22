@@ -10,7 +10,8 @@ import { strokeUnderPaint } from './setStroke';
  *
  * `params.alpha01` (0..1, ignored unless a finite number) becomes each node's stroke paint `opacity`, leaving
  * the rest of the stroke — color, width, cap, join, dash — alone. A node with
- * no stroke yet gets a hairline one.
+ * no stroke yet gets a hairline one; a stroke set to None (`null`, or a stroke
+ * with no `paint`) stays None.
  */
 export const setStrokeOpacityAction: Action = createPaintAction<
   number,
@@ -24,6 +25,7 @@ export const setStrokeOpacityAction: Action = createPaintAction<
   initialState: (pick) => finiteOr(pick('alpha01'), 1),
   readParams: (_prev, params) => finiteOr(params?.alpha01, null),
   merge: (prev, alpha01) => {
+    if (prev === null || (prev !== undefined && prev.paint == null)) return prev;
     const base = strokeUnderPaint(prev);
     return { ...base, paint: paintWithAlpha(base.paint ?? solid(DEFAULT_STROKE_COLOR), alpha01) };
   },

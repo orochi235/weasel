@@ -50,11 +50,13 @@ describe('setStrokeOpacityAction', () => {
     expect(scene.update).not.toHaveBeenCalled();
   });
 
-  it('gives a stroke with no paint and no width the hairline setStroke gives it', () => {
-    const scene = makeScene({ a: { stroke: {} } });
-    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 0.5 } });
-    getInvoker().start(ctx, { params: { alpha01: 0.5 } }).onEnd?.(ctx, 'commit');
-    expect((scene.updates[0]!.data as { stroke: Stroke }).stroke).toEqual({ paint: { color: '#000000', opacity: 0.5 }, width: 1 });
+  it('leaves a stroke set to None unpainted, keeping its width', () => {
+    for (const stroke of [null, {}, { width: 3, cap: 'round' }]) {
+      const scene = makeScene({ a: { stroke } });
+      const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 0.5 } });
+      getInvoker().start(ctx, { params: { alpha01: 0.5 } }).onEnd?.(ctx, 'commit');
+      expect(scene.updates).toEqual([]);
+    }
   });
 
   it('uses the kit default stroke when node.data.stroke is absent', () => {

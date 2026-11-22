@@ -81,6 +81,36 @@ describe('selectAllAction (behavior)', () => {
   });
 });
 
+describe('selectAllAction — groups', () => {
+  const nested = () => {
+    const scene = createScene<{ v: number }, 'base', { x: number }>({ composition: IDENTITY_POSE_COMPOSITION,
+      systemLayers: [{ id: 'base' as const }],
+    });
+    const box = scene.add({ kind: 'group', id: asNodeId('box'), layer: 'base', data: { v: 1 }, pose: { x: 0 } });
+    const inner = scene.add({ kind: 'group', id: asNodeId('inner'), layer: 'base', data: { v: 2 }, pose: { x: 0 }, parent: box });
+    scene.add({ kind: 'mark', id: asNodeId('kid'), layer: 'base', data: { v: 3 }, pose: { x: 0 }, parent: box });
+    scene.add({ kind: 'mark', id: asNodeId('deep'), layer: 'base', data: { v: 4 }, pose: { x: 0 }, parent: inner });
+    scene.add({ kind: 'mark', id: asNodeId('loose'), layer: 'base', data: { v: 5 }, pose: { x: 0 } });
+    return scene;
+  };
+  const runIn = (scene: unknown, entered: string | null): string[] => {
+    const picked: string[][] = [];
+    (selectAllAction.invoker as { run(deps: never, params: never): void }).run(
+      { scene, selection: { set: (ids: string[]) => picked.push(ids) }, enteredGroup: { get: () => entered } } as never,
+      undefined as never,
+    );
+    return picked[0] ?? [];
+  };
+
+  it('selects a group alone, not its members beside it, as a press would', () => {
+    expect(runIn(nested(), null)).toEqual(['box', 'loose']);
+  });
+
+  it('inside an entered group, selects its direct members and not what a nested group holds', () => {
+    expect(runIn(nested(), 'box')).toEqual(['inner', 'kid']);
+  });
+});
+
 describe('selectAllAction — the asking view', () => {
   it('leaves out a layer the asking view does not paint, though the scene shows it', () => {
     const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({ composition: IDENTITY_POSE_COMPOSITION,

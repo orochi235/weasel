@@ -31,8 +31,8 @@ const vertexWidthsOf = (v: unknown): readonly VertexWidth[] | null | undefined =
  *
  * `params.width` (ignored unless a finite number, zero or more) becomes each
  * node's stroke `width`, and `params.vertexWidths` its per-anchor widths
- * (`null` removes them; ignored unless every entry is such a width, or sides that are), leaving the paint, cap, join and dash alone. A node with no stroke yet gets a hairline one in the kit default
- * color.
+ * (`null` removes them; ignored unless every entry is such a width, or sides that are), leaving the paint, cap, join and dash alone. A node with no stroke yet gets one in the kit default
+ * color; a stroke set to None (`null`) takes the width and stays unpainted.
  */
 export const setStrokeWidthAction: Action = createPaintAction<
   SetStrokeWidthState,
@@ -56,7 +56,7 @@ export const setStrokeWidthAction: Action = createPaintAction<
   },
   merge: (prev, state) => {
     if (state.width === undefined && (state.vertexWidths === undefined || (state.vertexWidths === null && prev == null))) return prev ?? null;
-    const base: Stroke = prev ?? solidStroke(DEFAULT_STROKE_COLOR);
+    const base: Stroke = prev === null ? {} : prev ?? solidStroke(DEFAULT_STROKE_COLOR);
     const next: Stroke = state.width !== undefined ? { ...base, width: state.width } : { ...base };
     if (state.vertexWidths === null) delete next.vertexWidths;
     else if (state.vertexWidths !== undefined) next.vertexWidths = [...state.vertexWidths];

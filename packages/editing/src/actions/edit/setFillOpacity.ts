@@ -10,7 +10,8 @@ import { paintWithAlpha, solid, DEFAULT_FILL_COLOR } from '@weasel-js/paint';
  * `params.alpha01` (0..1, ignored unless a finite number) becomes each node's fill paint `opacity`, leaving
  * the rest of the paint — color, gradient stops, pattern — alone. That is the
  * one alpha slot a gradient or a pattern has, so it is the slot all of them
- * use. A node with no fill yet takes the kit's default one.
+ * use. A node with no fill yet takes the kit's default one; a fill set to
+ * None (`null`, or a fill with no `paint`) stays None.
  */
 export const setFillOpacityAction: Action = createPaintAction<
   number,
@@ -23,5 +24,7 @@ export const setFillOpacityAction: Action = createPaintAction<
   dataKey: 'fill',
   initialState: (pick) => finiteOr(pick('alpha01'), 1),
   readParams: (_prev, params) => finiteOr(params?.alpha01, null),
-  merge: (prev, alpha01) => ({ ...prev, paint: paintWithAlpha(prev?.paint ?? solid(DEFAULT_FILL_COLOR), alpha01) }),
+  merge: (prev, alpha01) => prev === null || (prev !== undefined && prev.paint == null)
+    ? prev
+    : { ...prev, paint: paintWithAlpha(prev?.paint ?? solid(DEFAULT_FILL_COLOR), alpha01) },
 });

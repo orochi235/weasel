@@ -50,6 +50,22 @@ describe('setFillOpacityAction', () => {
     expect(scene.update).not.toHaveBeenCalled();
   });
 
+  it('leaves a fill set to None unpainted', () => {
+    for (const fill of [null, {}]) {
+      const scene = makeScene({ a: { fill } });
+      const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 0.5 } });
+      getInvoker().start(ctx, { params: { alpha01: 0.5 } }).onEnd?.(ctx, 'commit');
+      expect(scene.updates).toEqual([]);
+    }
+  });
+
+  it('passes over a selected id the scene no longer holds', () => {
+    const scene = makeScene({ a: { fill: { paint: solid('#aabbccff') } } });
+    const ctx = makeCtx({ selectionIds: ['gone', 'a'], scene, params: { alpha01: 0.5 } });
+    getInvoker().start(ctx, { params: { alpha01: 0.5 } }).onEnd?.(ctx, 'commit');
+    expect(scene.updates.map((u) => u.id)).toEqual(['a']);
+  });
+
   it('uses the kit default fill when node.data.fill is absent', () => {
     const scene = makeScene({ a: {} });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 0.5 } });
