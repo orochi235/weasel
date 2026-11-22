@@ -73,8 +73,8 @@ function lowerCommands(
 }
 
 function lowerPath(cmd: PathDrawCommand, toDoc: Affine, pose: SvgKitPose, painter: string, warn: PainterWarn): SvgPathNode {
-  if (cmd.vertexColors) {
-    warn('vertexColors', `per-anchor vertex colors from painter ${painter} are not written; the path takes its fill`);
+  if (cmd.vertexColors || cmd.stroke?.vertexColors) {
+    warn('vertexColors', `per-anchor vertex colors from painter ${painter} are not written; the path takes its fill and stroke paint`);
   }
   const node: SvgPathNode = { kind: 'path', path: cmd.path, fill: paintIn(cmd.fill?.paint as Paint | undefined, toDoc, pose, warn) };
   const stroke = svgStrokeFromKit(cmd.stroke as Stroke | undefined, pose);

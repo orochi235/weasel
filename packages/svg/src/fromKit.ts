@@ -322,8 +322,12 @@ export function svgNodesFromKit<TId extends string>(
     const isGroup = node.kind === 'group';
     const custom = isGroup ? null : leaf?.(id, node, up);
     const painted = isGroup || custom !== undefined ? undefined : painterLeafFromKit(node, up, warn, shapes);
+    const data = isGroup || painted !== undefined || custom !== undefined ? null : resolvedData(own ?? {}, up);
+    if (data && ((data as { vertexColors?: unknown }).vertexColors || (data.stroke as Stroke | null | undefined)?.vertexColors)) {
+      warn('vertexColors', 'per-anchor vertex colors are not written; the path takes its fill and stroke paint');
+    }
     const self = isGroup ? null : painted !== undefined ? painted : markInherits(
-      custom !== undefined ? custom : svgLeafFromKit(resolvedData(own ?? {}, up), node.pose), own ?? {}, up,
+      custom !== undefined ? custom : svgLeafFromKit(data!, node.pose), own ?? {}, up,
     );
     const kids = tree.childrenOf(id);
     if (!isGroup && kids.length === 0) return self;
