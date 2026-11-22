@@ -3738,3 +3738,8 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): the DOT reader reads a `shape=point` node as Graphviz draws one: no label, whatever
   `label` says, a circle the smaller of its `width` and `height` across (0.05in when neither is set), filled with its
   `fillcolor`, else its `color`, else black.
+## Audit round seventy (2026-11-22): geom, part one
+
+- 2026-11-22 (the fixer's call): `boundsOfCoords` and `aabbOfPoints` skip a NaN coordinate, as they did, and answer
+  null when an axis is left with none, where they had answered an inverted box of infinities. Propagating NaN, as
+  `unionRects` does, was the alternative; skipping kept every answer that had been a real box.

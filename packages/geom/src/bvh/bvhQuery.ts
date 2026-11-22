@@ -163,11 +163,13 @@ function entry(arr: Float64Array, o: number, d: number, org: ArrayLike<number>, 
   for (let j = 0; j < d; j++) {
     const lo = arr[o + j];
     const hi = arr[o + d + j];
-    if (Number.isNaN(org[j]) || Number.isNaN(dir[j])) return -1;
+    if (Number.isNaN(dir[j]) || !Number.isFinite(org[j])) return -1;
     // Divides, as `intersectRayAabb` does: a reciprocal rounds differently
     // and can reject a ray grazing an edge that the exact test accepts.
-    if (dir[j] === 0) {
+    if (dir[j] === 0 || !Number.isFinite(dir[j])) {
       if (org[j] < lo || org[j] > hi) return -1;
+      if (dir[j] !== 0) far = 0;
+      if (near > far) return -1;
       continue;
     }
     const t1 = (lo - org[j]) / dir[j];

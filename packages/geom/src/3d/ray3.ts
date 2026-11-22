@@ -18,7 +18,8 @@ export interface Aabb {
   max: Vec3;
 }
 
-/** Distance along the ray to the box, or null; null too for a ray with a NaN component. A ray starting inside returns 0. */
+/** Distance along the ray to the box, or null; null too for a ray with a NaN component or an infinite origin. A ray
+ *  starting inside returns 0; one with an infinite direction component is at a finite place only at t = 0. */
 export function intersectRayAabb(ray: Ray, box: Aabb): number | null {
   const { min, max } = box;
   let tMin = Number.NEGATIVE_INFINITY;
@@ -28,10 +29,11 @@ export function intersectRayAabb(ray: Ray, box: Aabb): number | null {
     const o = ray.origin[axis];
     const d = ray.direction[axis];
     // NaN fails every comparison below, so an axis it reached would never narrow the slab.
-    if (Number.isNaN(o) || Number.isNaN(d)) return null;
-    // Any other direction, however short, divides to an honest (possibly infinite) t.
-    if (d === 0) {
+    if (Number.isNaN(d) || !Number.isFinite(o)) return null;
+    // Any other finite direction, however short, divides to an honest (possibly infinite) t.
+    if (d === 0 || !Number.isFinite(d)) {
       if (o < min[axis] || o > max[axis]) return null;
+      if (d !== 0) tMax = Math.min(tMax, 0);
       continue;
     }
     let t1 = (min[axis] - o) / d;
@@ -42,8 +44,8 @@ export function intersectRayAabb(ray: Ray, box: Aabb): number | null {
     if (tMin > tMax) return null;
   }
 
-  if (tMax < 0) return null;
-  return tMin < 0 ? 0 : tMin;
+  if (tMax < 0 || tMin > tMax) return null;
+  return tMin > 0 ? tMin : 0;
 }
 
 /** Plane is `dot(normal, p) === offset`. Null when the ray runs parallel to the
@@ -90,10 +92,9 @@ export function pointOnRay(ray: Ray, t: number): Vec3 {
   return add(ray.origin, scale(ray.direction, t));
 }
 
-/** The smallest box containing every point, or null for none, as the 2D
- *  barrel's `boundsOfCoords` and `unionRects` answer. */
+/** The smallest box containing every point, or null for none. A NaN coordinate is skipped, and an axis left with
+ *  none answers null, as the 2D barrel's `boundsOfCoords` does. */
 export function aabbOfPoints(points: readonly Vec3[]): Aabb | null {
-  if (points.length === 0) return null;
   const min = { x: Infinity, y: Infinity, z: Infinity };
   const max = { x: -Infinity, y: -Infinity, z: -Infinity };
   for (const p of points) {
@@ -102,7 +103,7 @@ export function aabbOfPoints(points: readonly Vec3[]): Aabb | null {
       if (p[axis] > max[axis]) max[axis] = p[axis];
     }
   }
-  return { min, max };
+  return min.x <= max.x && min.y <= max.y && min.z <= max.z ? { min, max } : null;
 }
 
 /** The point of the infinite line through `origin` along `direction` nearest
@@ -121,7 +122,8 @@ function squarable(v: Vec3): { v: Vec3; k: number } {
   if (squaresHeld(len2(v))) return { v, k: 1 };
   const k = Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z));
   if (!(k > 0 && k < Infinity)) return { v, k: 1 };
-  return { v: scale(v, 1 / k), k };
+  // Divided, not scaled by 1 / k: a subnormal k's reciprocal overflows to Infinity.
+  return { v: { x: v.x / k, y: v.y / k, z: v.z / k }, k };
 }
 
 /** The point of segment `a`–`b` nearest `p`; `a` when the segment has no

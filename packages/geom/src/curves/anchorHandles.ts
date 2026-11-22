@@ -49,8 +49,11 @@ export function defaultInHandle(anchors: SharedAnchor[], i: number): { x: number
   };
 }
 
+/** The segment `t` falls in and how far along it; a NaN `t` answers the first segment at a NaN `localT`, so the
+ *  curve answers NaN as NURBS does. */
 export function segmentAt(anchors: SharedAnchor[], t: number): { segIdx: number; localT: number } {
   if (anchors.length < 2) return { segIdx: 0, localT: 0 };
+  if (Number.isNaN(t)) return { segIdx: 0, localT: NaN };
   const segments = anchors.length - 1;
   const scaled = Math.min(Math.max(t, 0), 1) * segments;
   const segIdx = Math.min(Math.floor(scaled), segments - 1);

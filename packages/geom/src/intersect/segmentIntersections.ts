@@ -83,13 +83,30 @@ function chordCross(p0: Point, p1: Point, q0: Point, q1: Point, slack: number): 
   return [u, v];
 }
 
+/** Where the point `p` lies on the line `q0`–`q1` of squared length `ss`, as that line's parameter, or null. */
+function pointOnLine(p: Point, q0: Point, q1: Point, ss: number): number | null {
+  if (ss === 0) return p.x === q0.x && p.y === q0.y ? 0 : null;
+  const sx = q1.x - q0.x, sy = q1.y - q0.y;
+  const off = (p.x - q0.x) * sy - (p.y - q0.y) * sx;
+  if (off * off > 1e-24 * ss * ss) return null;
+  const tb = ((p.x - q0.x) * sx + (p.y - q0.y) * sy) / ss;
+  return tb >= 0 && tb <= 1 ? tb : null;
+}
+
 /** The ends of the stretch two collinear lines share, one point where they
- *  only touch end to end, and none when they are apart or not collinear. */
+ *  only touch end to end or one has no length, and none when they are apart or not collinear. */
 function collinearOverlap(p0: Point, p1: Point, q0: Point, q1: Point): SegmentCrossing[] {
   const rx = p1.x - p0.x, ry = p1.y - p0.y;
   const sx = q1.x - q0.x, sy = q1.y - q0.y;
   const rr = rx * rx + ry * ry, ss = sx * sx + sy * sy;
-  if (rr === 0 || ss === 0) return [];
+  if (rr === 0) {
+    const tb = pointOnLine(p0, q0, q1, ss);
+    return tb === null ? [] : [{ ta: 0, tb, x: p0.x, y: p0.y }];
+  }
+  if (ss === 0) {
+    const ta = pointOnLine(q0, p0, p1, rr);
+    return ta === null ? [] : [{ ta, tb: 0, x: q0.x, y: q0.y }];
+  }
   const off = (q0.x - p0.x) * ry - (q0.y - p0.y) * rx;
   if (off * off > 1e-24 * rr * Math.max(rr, ss)) return [];
   const onA = (q: Point) => ((q.x - p0.x) * rx + (q.y - p0.y) * ry) / rr;
