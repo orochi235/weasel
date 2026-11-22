@@ -55,7 +55,8 @@ export interface GpuVertexAttribute {
 /** One vertex buffer of a geometry, and the attributes read from each vertex in it. */
 export interface GpuVertexBufferLayout {
   readonly buffer: GpuBuffer;
-  /** Bytes per vertex; 0 for tightly packed. */
+  /** Bytes per vertex; 0 for its attributes packed end to end, up to the
+   *  furthest byte any of them reads. */
   readonly stride: number;
   readonly attributes: readonly GpuVertexAttribute[];
   /** Whether the buffer advances per vertex or per instance. Default `'vertex'`. */

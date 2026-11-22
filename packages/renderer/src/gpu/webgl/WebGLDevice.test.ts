@@ -236,6 +236,19 @@ describe('WebGLDevice targets', () => {
   });
 });
 
+describe('WebGLDevice geometry', () => {
+  it('reads a stride-0 buffer of several attributes as interleaved vertices, as WebGPU does', () => {
+    const { rec, gpu } = setup();
+    const buffer = gpu.createBuffer('vertex', new Float32Array(12), 'static');
+    rec.reset();
+    gpu.createGeometry({
+      vertexBuffers: [{ buffer, stride: 0, attributes: [{ location: 0, components: 2, offset: 0 }, { location: 1, components: 4, offset: 8 }] }],
+      indexBuffer: gpu.createBuffer('index', new Uint32Array([0, 1, 2]), 'static'), indexFormat: 'uint32',
+    });
+    expect(argsOf(rec, 'vertexAttribPointer')).toEqual([[0, 2, rec.gl.FLOAT, false, 24, 0], [1, 4, rec.gl.FLOAT, false, 24, 8]]);
+  });
+});
+
 describe('WebGLDevice resolve', () => {
   it('blits a whole multisampled buffer straight into its destination', () => {
     const { rec, gpu } = setup();

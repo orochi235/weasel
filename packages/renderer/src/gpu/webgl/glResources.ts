@@ -5,6 +5,7 @@ import type {
 } from '../types';
 import type { GlCache } from './glCache';
 import { withPremultipliedSource } from './premultipliedBitmap';
+import { packedStride } from '../vertexLayout';
 
 export interface GlBuffer extends GpuBuffer {
   readonly handle: WebGLBuffer;
@@ -75,9 +76,10 @@ export function createGeometry(gl: WebGL2RenderingContext, cache: GlCache, desc:
   cache.bindVertexArray(vao);
   for (const { buffer, stride, attributes, step } of desc.vertexBuffers) {
     gl.bindBuffer(gl.ARRAY_BUFFER, (buffer as GlBuffer).handle);
+    const bytes = stride || packedStride(attributes);
     for (const a of attributes) {
       gl.enableVertexAttribArray(a.location);
-      gl.vertexAttribPointer(a.location, a.components, gl.FLOAT, false, stride, a.offset);
+      gl.vertexAttribPointer(a.location, a.components, gl.FLOAT, false, bytes, a.offset);
       if (step === 'instance') gl.vertexAttribDivisor(a.location, 1);
     }
   }

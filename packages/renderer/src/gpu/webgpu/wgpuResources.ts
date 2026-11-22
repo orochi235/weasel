@@ -4,6 +4,7 @@ import type {
   GpuTextureData, GpuTextureFormat,
 } from '../types';
 import { BufferUsage, TextureUsage } from './flags';
+import { packedStride } from '../vertexLayout';
 
 /** Something a command in the open encoder may read, which a write must not
  *  overtake: queue writes land before the encoder's commands run. */
@@ -113,9 +114,8 @@ export function createGeometry(desc: GpuGeometryDesc): WgpuGeometry {
   const locations = new Set<number>();
   const layouts = desc.vertexBuffers.map(({ stride, attributes, step }): GPUVertexBufferLayout => {
     for (const a of attributes) locations.add(a.location);
-    const packed = attributes.reduce((end, a) => Math.max(end, a.offset + 4 * a.components), 0);
     return {
-      arrayStride: stride || packed,
+      arrayStride: stride || packedStride(attributes),
       stepMode: step ?? 'vertex',
       attributes: attributes.map((a) => ({ shaderLocation: a.location, offset: a.offset, format: FORMATS[a.components - 1] })),
     };
