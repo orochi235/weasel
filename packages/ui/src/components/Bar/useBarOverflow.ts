@@ -5,6 +5,8 @@ import { compositeKey } from '@weasel-js/registry';
 
 /** Marks a bar's child as one of its items, by key, for {@link useBarOverflow} to measure. */
 export const BAR_ITEM = 'data-bar-item';
+/** Marks an item that only takes up slack, which has no length of its own. */
+export const BAR_SPACER = 'data-bar-spacer';
 /** Marks the bar's child that opens what did not fit. */
 export const BAR_MORE = 'data-bar-more';
 /** Marks the bar's name at the start of its line, which takes room from its items. */
@@ -59,7 +61,7 @@ export function useBarOverflow(
     const measure = (): void => {
       const held = new Set(keysRef.current);
       for (const key of sizes.current.keys()) if (!held.has(key)) sizes.current.delete(key);
-      for (const child of el.querySelectorAll(`:scope > [${BAR_ITEM}]`)) sizes.current.set(child.getAttribute(BAR_ITEM)!, along(child));
+      for (const child of el.querySelectorAll(`:scope > [${BAR_ITEM}]`)) sizes.current.set(child.getAttribute(BAR_ITEM)!, child.hasAttribute(BAR_SPACER) ? 0 : along(child));
       const button = el.querySelector(`:scope > [${BAR_MORE}]`);
       if (button !== null) more.current = along(button);
       const room = roomOf(el, vertical);

@@ -5,7 +5,7 @@ import type { BarSide } from './barSide';
 import { RunScope } from '../Run';
 import type { RunSpot } from '@weasel-js/geom';
 import { BAR_IN, BAR_UNIT, barUnitKey } from './barOrder';
-import { BAR_ITEM } from './useBarOverflow';
+import { BAR_ITEM, BAR_SPACER } from './useBarOverflow';
 import { BarDivider, BarGroup, BarItem, BarSpacer } from './barParts';
 import type { BarProps } from './Bar';
 import s from './Bar.module.css';
@@ -137,7 +137,7 @@ export function drawBarItem(item: LineItem, across: boolean, place?: BarItemPlac
   if (item.divider) {
     return <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={own(s.divider)} role="separator" aria-orientation={orient} style={place?.style} data-clipped={place?.clipped} />;
   }
-  if (item.spacer) return <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={own(s.spacer)} aria-hidden="true" style={place?.style} />;
+  if (item.spacer) return <span key={item.key} {...{ [BAR_ITEM]: item.key, [BAR_SPACER]: '' }} className={own(s.spacer)} aria-hidden="true" style={place?.style} />;
   return (
     <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={own(s.cell)} {...item.attrs} {...(item.in !== undefined ? { [BAR_IN]: item.in, [BAR_UNIT]: barUnitKey(item.key) } : {})} style={place?.style} data-clipped={place?.clipped}>
       {item.rule ? (
