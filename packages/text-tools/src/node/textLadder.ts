@@ -4,6 +4,7 @@ import { commandFill, type DrawCommand } from '@weasel-js/renderer';
 import { resolveFill, type PaintedFill } from '@weasel-js/paint';
 import { nodeMemo, type InheritedPaint, type Ladder, type RectPose } from '@weasel-js/core';
 import type { TextNodeData } from './textPainter';
+import { textBackdropOf } from './textFrame';
 
 /** Below this many device pixels of font size a text node draws nothing. */
 export const TEXT_GREEK_FROM_PX = 3;
@@ -47,10 +48,7 @@ export function paintGreekText(node: { data?: unknown }, pose: RectPose, inherit
       const f = commandFill(fill, rect);
       bars.push({ kind: 'path', path: { kind: 'rect', ...rect }, ...(f ? { fill: f } : {}) });
     }
-    const out: DrawCommand[] = [];
-    const bg = resolveFill(d.background);
-    const bgFill = bg && commandFill(bg, pose);
-    if (bgFill) out.push({ kind: 'path', path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height }, fill: bgFill });
+    const out = textBackdropOf(d, pose);
     if (bars.length > 0) out.push({ kind: 'group', alpha: GREEK_ALPHA, children: bars });
     return out;
   }, inherited);

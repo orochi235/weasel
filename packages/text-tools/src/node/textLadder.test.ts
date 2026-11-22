@@ -67,3 +67,17 @@ describe('paintGreekText', () => {
     expect(barColors(paintGreekText(n, pose, solid('#0000ff')))).toEqual(['"color":"#0000ff"']);
   });
 });
+
+describe('paintGreekText frame', () => {
+  it('draws the shadow and edge the full rung draws under its lines', () => {
+    const d = {
+      text: 'Hi', background: { paint: { kind: 'solid' as const, color: '#ffe680' } },
+      edge: { width: 2, shade: 0.2 }, shadow: { x: 0, y: 4, blur: 8, alpha: 0.3 },
+    };
+    const pose = { x: 0, y: 0, width: 100, height: 100 };
+    const cmds = paintGreekText({ data: d }, pose);
+    expect(cmds.some((c) => c.kind === 'path' && c.stroke !== undefined)).toBe(true);
+    expect(cmds[0]!.kind).toBe('group');
+    expect(cmds).toHaveLength(4);
+  });
+});
