@@ -102,6 +102,20 @@ export type SceneLayerListProps = Required<Pick<LayerListProps, 'items' | 'selec
   & Pick<LayerListProps, 'onRemove' | 'onRename'>;
 
 /**
+ * The parent a drop on the list's top level lands under, which holds the run's children and the scene's own roots
+ * alike. A drag that stays there keeps its parent; any other goes to the run, or with the pasteboard on, the root.
+ */
+function topParent(
+  scene: Pick<Scene<unknown, string, unknown>, 'get'>, run: NodeId | null, ids: readonly string[],
+): NodeId | null {
+  const froms = new Set(ids.map((id) => scene.get(asNodeId(id))?.parent ?? null));
+  const [from] = froms;
+  if (froms.size === 1 && (from === null || from === run)) return from ?? null;
+  if (run === null) return null;
+  return scene.get(run)!.pageRun!.pasteboard === true ? null : run;
+}
+
+/**
  * The props that put a scene in a `<LayerList>`: a row per node, a container's
  * children nested under it, the front-most at the top, selection read from and
  * written to `selection`, a drag — among siblings or into another container —
@@ -148,16 +162,6 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
       }];
     });
 
-  // The list's top level holds the run's children and the scene's own roots alike. A drag that stays there
-  // keeps its parent; any other goes to the run, or with the pasteboard on, the root.
-  const topParent = (ids: readonly string[]): NodeId | null => {
-    const froms = new Set(ids.map((id) => scene.get(asNodeId(id))?.parent ?? null));
-    const [from] = froms;
-    if (froms.size === 1 && (from === null || from === run)) return from ?? null;
-    if (run === null) return null;
-    return scene.get(run)!.pageRun!.pasteboard === true ? null : run;
-  };
-
   const content = build(scene.roots.filter((id) => !isAnnotation(id)), annotations ? { removable: false } : {});
   const annotationRows: LayerListItem[] = annotations
     ? [...annotationLayers].reverse().map((layer) => ({
@@ -195,7 +199,7 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
     onReorder: ({ ids, parentId, index }) => {
       // An annotation layer's row holds roots on that layer; it is no node of the scene.
       const layer = annotationLayerOf(parentId);
-      const parent = layer !== null ? null : (parentId ?? topParent(ids));
+      const parent = layer !== null ? null : (parentId ?? topParent(scene, run, ids));
       const moved = new Set(ids);
       const left = (parent === null ? scene.roots : scene.childrenOf(asNodeId(parent))).filter((id) => !moved.has(id));
       // `index` counts from the front among the rows the drag left behind, the annotation rows heading the top
