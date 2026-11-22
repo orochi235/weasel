@@ -1,4 +1,4 @@
-import type { Yoke } from '@weasel-js/core';
+import type { SurfaceContribution, Yoke } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/core';
 import { watchResize } from '@weasel-js/react';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
@@ -36,6 +36,8 @@ export interface StageProps {
   gestures?: CameraGestures;
   /** Returns the camera to where it opened; what the `home` gesture runs. */
   onHome?: () => void;
+  /** As `<CameraInput contributions>`: weasel contributions whose input the camera routes. */
+  contributions?: readonly SurfaceContribution[];
 }
 
 /**
@@ -76,6 +78,7 @@ export function Stage({
   yoke,
   gestures,
   onHome,
+  contributions,
 }: StageProps) {
   const view = normalize2DView(viewProp);
   const host = useRef<HTMLDivElement | null>(null);
@@ -139,6 +142,7 @@ export function Stage({
           frame={DEFAULT_FRAME}
           gestures={gestures}
           onHome={onHome}
+          contributions={contributions}
         />
         <div
           ref={(el) => {

@@ -5,6 +5,8 @@ import { AnnotationTargets } from '../annotations/AnnotationTargets';
 import type { Instrument, InstrumentList } from '../instrument/types';
 import { useLabCommands } from '../lab/LabContext';
 import { PresentedTransport } from '../lab/PresentedTransport';
+import { useTrialRulersPart } from '../rulers/rulersPart';
+import { TrialGuidesContext, useTrialGuides } from '../rulers/trialGuides';
 import { LabStoreContext } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
@@ -14,13 +16,11 @@ import { createRenderContext } from './renderContext';
 import { TrialChrome, type TrialChromeOptions } from './TrialChrome';
 import { TrialBodyScope, TrialContexts } from './TrialContexts';
 import { createTrialActions } from './TrialScope';
-import { renderTrialContent } from './trialContent';
 import { useKeptMarks } from './useKeptMarks';
-import { useRuntimeSections } from './useRuntimeSections';
+import { useTrialBody } from './useTrialBody';
 import { useTrialCamera } from './useTrialCamera';
 import { useTrialClock } from './useTrialClock';
 import { useTrialConfig } from './useTrialConfig';
-import { useTrialDragDrop } from './useTrialDragDrop';
 import { useTrialEdits } from './useTrialEdits';
 import { useTrialJob } from './useTrialJob';
 import { useTrialLayerStack } from './useTrialLayerStack';
@@ -115,6 +115,8 @@ function TrialRuntime({
     shownMarks: annotationsCap,
   });
   const { snapshot: snapshotIfNeeded, writes, annotations, mounted } = edits;
+  const guides = useTrialGuides(snapshotIfNeeded);
+  const rulers = useTrialRulersPart(instrument, guides, cam.view2d);
 
   const layerStack = useTrialLayerStack({
     instrument,
@@ -154,30 +156,23 @@ function TrialRuntime({
     pointer,
     clock: clock.handle?.clock,
     job,
+    snap: guides.snap,
   });
 
-  const { dragDrop, layers, palette } = useTrialDragDrop({
+  const { body, extraChrome } = useTrialBody({
     instrument,
     state: record.state,
     config,
     setState: (next) => updateTrialState(record.id, next as never),
     snapshot: snapshotIfNeeded,
-    canvasLayers: layerStack.canvasLayers,
-    canvasHost: canvasContainerRef,
-  });
-
-  const body = renderTrialContent({
-    instrument,
+    layerStack,
     ctx: renderCtx,
     cam,
-    layers,
-    dragDrop,
     canvasHost: canvasContainerRef,
     ticks: clock.ticks,
     setView,
+    rulers,
   });
-
-  const extraChrome = useRuntimeSections(palette, layerStack.list);
 
   // Rendered beside the body rather than inside it: an overlay portals itself
   // into the surface container, so where it sits in this tree decides only
@@ -206,6 +201,7 @@ function TrialRuntime({
       <TrialChrome
         job={job}
         loupe={loupeBindings}
+        guides={guides.offered ? guides : undefined}
         trialId={record.id}
         record={record}
         instrument={instrument}
@@ -225,7 +221,7 @@ function TrialRuntime({
           loupeSwitch={loupeSwitch}
           mounted={mounted}
         >
-          {body}
+          <TrialGuidesContext.Provider value={guides}>{body}</TrialGuidesContext.Provider>
         </TrialBodyScope>
         {annotationOverlays}
         <PresentedTransport trialId={record.id} />

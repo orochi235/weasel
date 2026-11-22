@@ -14,8 +14,8 @@ import {
   type OngoingInvoker,
   PointerContextProvider,
   type PointerWorldPos,
+  type SurfaceContribution,
   screenToWorld,
-  type Tool,
   useActionsRegistry,
   useDepSource,
   useGestureDispatcher,
@@ -45,6 +45,7 @@ import type { Point, ViewTransform2D } from '../instrument/types';
 import { LabContextMenusContext } from '../lab/labContextMenus';
 import { as2DView, normalize2DView } from '../state/view';
 import { useCameraWheelSlot } from './CameraWheelContext';
+import { useCameraContributions } from './cameraContributions';
 import { type CameraGestures, resolveGestures } from './cameraGestures';
 import { usePublishCamera } from './cameraRegistry';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
@@ -183,7 +184,6 @@ export function useCameraView({
 
 const TAP_ID = 'camera.tap';
 const HOME_ID = 'camera.home';
-const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
 const CHANNELS = { contextMenu: false, ingest: false } as const;
 const CHANNELS_WITH_MENU = { ingest: false } as const;
 // A trial pans on a plain drag; the kit action binds none of its own.
@@ -222,6 +222,9 @@ export interface CameraInputProps {
   gestures?: CameraGestures;
   /** Returns the camera to where it opened; what the `home` gesture runs. */
   onHome?: () => void;
+  /** Weasel contributions whose input the camera's dispatcher routes: their actions, deps, bindings, and the
+   *  affordances their layers' `hitTest`s claim, in the frame-local world. Nothing of them is painted. */
+  contributions?: readonly SurfaceContribution[];
 }
 
 /**
@@ -242,6 +245,7 @@ function CameraDispatch({
   onTap,
   onHome,
   gestures,
+  contributions,
   registry,
 }: CameraInputProps & { registry: ActionsRegistry }) {
   const frameRef = useLatest(frame);
@@ -334,10 +338,11 @@ function CameraDispatch({
     };
   }, [registry, actions]);
 
+  const routed = useCameraContributions(contributions, registry, camera, hostRef);
   useGestureDispatcher({
     canvasRef: hostRef,
     actions: registry,
-    entriesById: NO_TOOLS,
+    ...routed,
     clientToWorld,
     clientToLocal,
     channels: labMenu ? CHANNELS_WITH_MENU : CHANNELS,

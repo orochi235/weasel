@@ -6,6 +6,7 @@ import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import type { ReactNode } from 'react';
 import type { AutoReports } from '../config/autoReports';
 import type { ResolvedConfig } from '../config/types';
+import type { TrialGuidesChrome } from '../rulers/types';
 import type { SavedSnapshot } from '../state/types';
 
 /** A named position in a trial's chrome. Content is not a region — that is
@@ -221,6 +222,10 @@ export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext 
   toggleDropper: () => void;
   /** The color last picked, by the eyedropper or inside a lens; `null` before one. */
   pickedColor: string | null;
+
+  /** The trial's rulers, guides and snapping to them, while a camera in it offers rulers: what is shown and the
+   *  switch for each, which the Guides menu offers. Absent while none does. */
+  guides?: TrialGuidesChrome;
 
   /** Whether the trial sits in a `<Lightbox>` — every `<Workspace>` tile does
    *  unless the workspace turned it off. The expand toggle is offered only

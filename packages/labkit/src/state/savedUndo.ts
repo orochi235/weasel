@@ -4,7 +4,12 @@ import type {
   SerializedHistoryEntry,
   SerializedOp,
 } from '@weasel-js/core';
-import { TRIAL_EDIT_OP, TRIAL_LAYERS_OP, type TrialEditArgs } from '../trial/trialEditOp';
+import {
+  TRIAL_EDIT_OP,
+  TRIAL_GUIDES_OP,
+  TRIAL_LAYERS_OP,
+  type TrialEditArgs,
+} from '../trial/trialEditOp';
 import type { InstrumentSerializers } from './types';
 
 type Serializer = InstrumentSerializers[string];
@@ -19,13 +24,13 @@ export interface SavedTrialUndo {
   own?: unknown;
 }
 
-/** `history` as a trial's record saves it, without the layer-list steps, whose layer state is not saved:
+/** `history` as a trial's record saves it, without the layer-list and guide steps, whose state is not saved:
  *  undefined with nothing to undo or redo. */
 export function savedTrialHistory(
   history: History,
   serializer: Serializer,
 ): SerializedHistory | undefined {
-  const out = withoutLayerSteps(history.serialize());
+  const out = withoutSessionSteps(history.serialize());
   if (out.undoStack.length === 0 && out.redoStack.length === 0 && !out.branches) return undefined;
   const serialize = serializer?.serialize;
   return serialize ? withEditStates(out, (state) => serialize(state)) : out;
@@ -50,12 +55,14 @@ export function latestStamp(saved: SerializedHistory): number {
   return entries.reduce((max, e) => Math.max(max, e.timestamp ?? 0), Number.NEGATIVE_INFINITY);
 }
 
-const isLayerStep = (e: SerializedHistoryEntry): boolean =>
-  e.forwardOps.length > 0 && e.forwardOps.every((o) => o.name === TRIAL_LAYERS_OP);
+const SESSION_OPS: ReadonlySet<string | undefined> = new Set([TRIAL_LAYERS_OP, TRIAL_GUIDES_OP]);
 
-/** `saved` without the entries that step only the trial's layers. */
-function withoutLayerSteps(saved: SerializedHistory): SerializedHistory {
-  const keep = (entries: SerializedHistoryEntry[]) => entries.filter((e) => !isLayerStep(e));
+const isSessionStep = (e: SerializedHistoryEntry): boolean =>
+  e.forwardOps.length > 0 && e.forwardOps.every((o) => SESSION_OPS.has(o.name));
+
+/** `saved` without the entries that step only what the trial does not save: its layers and its guides. */
+function withoutSessionSteps(saved: SerializedHistory): SerializedHistory {
+  const keep = (entries: SerializedHistoryEntry[]) => entries.filter((e) => !isSessionStep(e));
   return {
     ...saved,
     undoStack: keep(saved.undoStack),

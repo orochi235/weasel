@@ -89,6 +89,7 @@ function SceneBody({ ctx }: { ctx: RenderContext<SceneState, SceneConfig> }) {
       trial={ctx.trial}
       snap={snap}
       layers={layers}
+      rulers
     />
   );
 }

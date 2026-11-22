@@ -284,6 +284,13 @@ Owner tags, after the priority (2026-10-26):
   pick-up and its drop as one undo step; removing it is a breaking change (round 50 audit, 2026-11-20). Closes
   when a declared `pickUp` starts a drag from the canvas, or the option and `HitResult` are gone.
 
+- **(P3) [agent] A guide placed on a `<TrialSceneCanvas>` cuts the scene's saved undo at reload.** The rulers commit
+  `createAddGuideOp` and its siblings onto the scene's history, and those ops have no `name`, so `History.serialize`
+  keeps only the entries after the last of them (`packages/history/src/serialized.ts`, `snapshot`); labkit saves that
+  history with the trial. A labkit `canvas` names its guide steps `TRIAL_GUIDES_OP` and leaves them out instead. Needs
+  either a history notion of an op a snapshot skips rather than cuts at, or named guide ops a scene rebuilds as no-ops
+  (filed 2026-11-22). Closes when a reload after placing a guide keeps the scene's earlier undo steps.
+
 - **(P3) [maintainer] A labkit tile drag shows its node's UUID as the ghost.** `<Workspace reorderable>` mounts
   windease's `DragProvider` with its default overlay, which labels the chip with the node's `meta.title` and falls
   back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip

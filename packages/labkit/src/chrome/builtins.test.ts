@@ -107,6 +107,27 @@ describe('builtinContributions', () => {
     ]);
   });
 
+  it('offers the Guides menu only while a camera offers rulers, a checked row for each switch', () => {
+    expect(ids(withCanvas)).not.toContain('guides');
+    const toggle = vi.fn();
+    const shown = { rulers: true, guides: false, snap: false };
+    const menu = builtinContributions(withCanvas, { ...ctx, guides: { shown, toggle } }).find(
+      (c) => c.id === 'guides',
+    );
+    const item = menu?.item as unknown as {
+      kind: string;
+      entries: { label: string; checked: boolean; run(): void }[];
+    };
+    expect(item.kind).toBe('menu');
+    expect(item.entries.map((e) => [e.label, e.checked])).toEqual([
+      ['Show rulers', true],
+      ['Show guides', false],
+      ['Snap to guides', false],
+    ]);
+    item.entries[2]?.run();
+    expect(toggle).toHaveBeenCalledWith('snap');
+  });
+
   it('contributes the loupe toggle only while a lens is mounted', () => {
     expect(ids(bare)).not.toContain('loupe');
     const mounted = builtinContributions(bare, { ...ctx, hasLoupe: true });

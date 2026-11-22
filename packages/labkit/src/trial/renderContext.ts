@@ -25,6 +25,7 @@ export interface RenderContextSources {
   pointer: ReturnType<typeof createPointerStore>;
   clock: TrialClock | undefined;
   job: JobHandle | undefined;
+  snap: RenderContext['trial']['snap'];
 }
 
 /** The trial as its instrument's `render` sees it, and as `useTrialWriters` hands it to the trial's descendants. */
@@ -48,6 +49,7 @@ export function createRenderContext(src: RenderContextSources): RenderContext<un
       visibleLayers: src.visibleLayers,
       pointer: src.pointer,
       ...(clock ? { clock } : {}),
+      snap: src.snap,
     },
     emit: src.emit,
     job,

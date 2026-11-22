@@ -16,7 +16,7 @@ import {
 } from './useRestoredHistory';
 
 /** What a trial snapshots on when its instrument names no events. */
-const DEFAULT_SNAPSHOT_ON = ['state.change', 'config.change'];
+const DEFAULT_SNAPSHOT_ON = ['state.change', 'config.change', 'guides.change'];
 
 const isConfigEvent = (event: string): boolean =>
   event === 'config.change' || event.startsWith('config.change:');
