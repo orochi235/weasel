@@ -36,6 +36,16 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
   const [showCoords, setShowCoords] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+  // A new follower reads its ring from the start, with coords off, so what the last one delivered goes.
+  const [following, setFollowing] = useState(follower);
+  if (following !== follower) {
+    setFollowing(follower);
+    setEntries([]);
+    setCoords([]);
+    setLive(null);
+    setShowCoords(false);
+    setError(null);
+  }
   const readNow = useRef<() => void>(() => {});
 
   useEffect(() => {

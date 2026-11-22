@@ -154,4 +154,17 @@ describe('<HistoryView>', () => {
     fireEvent.click(screen.getByRole('cell', { name: 'undo' }));
     expect(screen.getByText('kit:open')).toBeTruthy();
   });
+  it('starts over, the entries switch off, when its client changes', async () => {
+    const first = fakePage();
+    first.push(step('only-op'));
+    const view = renderWithIcons(<HistoryView client={first.client} rootId="r" />);
+    expect(await screen.findAllByText('push')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('switch', { name: 'entries' }));
+    const second = fakePage();
+    second.push(step('only-op'));
+    view.rerender(<HistoryView client={second.client} rootId="r" />);
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    expect(screen.getAllByText('push')).toHaveLength(1);
+    expect((screen.getByRole('switch', { name: 'entries' }) as HTMLInputElement).checked).toBe(false);
+  });
 });

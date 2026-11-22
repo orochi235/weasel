@@ -29,6 +29,16 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
   const [showStack, setShowStack] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  // A new follower reads its ring from the start, with the stack off, so what the last one delivered goes.
+  const [following, setFollowing] = useState(follower);
+  if (following !== follower) {
+    setFollowing(follower);
+    setSteps([]);
+    setPosition(null);
+    setHistoryEntries(null);
+    setShowStack(false);
+    setError(null);
+  }
   // Each read advances the follower's cursor, so the subscription outlives a switch flip: one torn down mid-read
   // would drop what that read brought back.
   const readNow = useRef<() => void>(() => {});

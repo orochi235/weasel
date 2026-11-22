@@ -91,4 +91,20 @@ describe('<DispatchView>', () => {
     for (let i = 0; i < 6; i++) await act(async () => { for (const l of page.listeners) l('r', ['trace']); await new Promise((r) => setTimeout(r, 0)); });
     expect(await screen.findByText('kept-action')).toBeTruthy();
   });
+  it('starts over, coords switched off, when its client changes', async () => {
+    const ring: unknown[] = [{ ...bareDragSelect, fired: 'once-action' }];
+    const serve = () => fakePage((async (_root: string, m: { cursor: number }) => ({
+      entries: ring.slice(m.cursor), cursor: ring.length, live: null,
+    })) as () => Promise<unknown>);
+    const first = serve();
+    const view = renderWithIcons(<DispatchView client={first.client} rootId="r" />);
+    await act(async () => { for (const l of first.listeners) l('r', ['trace']); });
+    expect(await screen.findByText('once-action')).toBeTruthy();
+    fireEvent.click(screen.getByRole('switch', { name: 'coords' }));
+    const second = serve();
+    view.rerender(<DispatchView client={second.client} rootId="r" />);
+    await act(async () => { for (const l of second.listeners) l('r', ['trace']); await new Promise((r) => setTimeout(r, 0)); });
+    expect(screen.getAllByText('once-action')).toHaveLength(1);
+    expect((screen.getByRole('switch', { name: 'coords' }) as HTMLInputElement).checked).toBe(false);
+  });
 });
