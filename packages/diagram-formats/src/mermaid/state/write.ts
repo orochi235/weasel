@@ -76,6 +76,7 @@ class StateWriter {
       const rest: Cluster = { id: c.id, nodes: c.nodes, clusters: c.clusters.filter((k) => !this.lanes.has(k.id)) };
       const loose = rest.nodes.length > 0 || rest.clusters.length > 0 || this.out.edges.some((e) => this.edgeScope(e) === c.id);
       if (loose) this.out.warnings.add('Mermaid divides a state into regions only; what a pool holds outside its lanes was written as a region of its own.');
+      if (lanes.some((l) => l.label !== undefined)) this.out.warnings.add('Mermaid state regions hold no labels; lane labels were dropped.');
       (loose ? [rest, ...lanes] : lanes).forEach((lane, i) => {
         if (i > 0) this.lines.push(`${indent}  --`);
         this.scope(lane, `${indent}  `);
