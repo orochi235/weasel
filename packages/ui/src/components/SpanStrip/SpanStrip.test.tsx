@@ -62,6 +62,13 @@ describe('spanLayout', () => {
     const gappy = placeSpans([{ id: 'a', label: 'a', ms: 10, start: 0 }, { id: 'b', label: 'b', ms: 10, start: 50 }], { from: 0, to: 100 });
     expect(spanAt(gappy, 30)?.id).toBe('a');
   });
+
+  it('follows the latest end on a track, not the last span placed on it', () => {
+    const placed = placeSpans([
+      { id: 'a', label: 'a', ms: 10 }, { id: 'b', label: 'b', ms: 3, start: 2 }, { id: 'c', label: 'c', ms: 4 },
+    ], { from: 0, to: 20 });
+    expect(placed.map((p) => [p.start, p.end])).toEqual([[0, 10], [2, 5], [10, 14]]);
+  });
 });
 
 describe('SpanStrip', () => {
