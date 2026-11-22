@@ -6,7 +6,7 @@ import { lineError } from '../../lineError';
 export function metaOf(meta: string, line: number, what = 'node metadata'): [string, string][] {
   const out: [string, string][] = [];
   const text = meta.trim();
-  const re = /\s*([\w-]+)\s*:\s*('[^']*'|"[^"]*"|[^,]*?)\s*(?:,|$)/y;
+  const re = /\s*([\w-]+)[ \t]*:[ \t]*('[^']*'|"[^"]*"|[^,\n]*?)[ \t]*(?:,|\n|$)/y;
   for (re.lastIndex = 0; re.lastIndex < text.length;) {
     const at = re.lastIndex;
     const m = re.exec(text);
