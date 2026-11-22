@@ -99,3 +99,15 @@ export function textBackdropOf(
   if (edge) out.push({ kind: 'path', path: edge.path, stroke: { paint: { kind: 'solid', color: edge.color }, width: edge.width } });
   return out;
 }
+
+/** The box a text node's lines lay out in: its pose box, inset by
+ *  `data.padding` and never past its center. */
+export function textBoxOf(
+  d: { padding?: number },
+  p: Rect,
+): Rect {
+  const pad = Math.max(0, d.padding ?? 0);
+  const px = Math.min(pad, p.width / 2);
+  const py = Math.min(pad, p.height / 2);
+  return { x: p.x + px, y: p.y + py, width: p.width - 2 * px, height: p.height - 2 * py };
+}

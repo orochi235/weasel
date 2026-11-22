@@ -17,7 +17,7 @@ import { TEXT_LADDER } from './textLadder';
 import { clippedOutline, textOutlineOf } from './textOutline';
 import { textCommandFromPose, type DrawCommand } from '@weasel-js/renderer';
 import { INHERIT, resolveFill, resolveStroke, type PaintedStroke } from '@weasel-js/paint';
-import { textBackdropOf, textShadowBox, type TextEdge, type TextShadow } from './textFrame';
+import { textBackdropOf, textBoxOf, textShadowBox, type TextEdge, type TextShadow } from './textFrame';
 import { inkReach, nodeMemo, PAINT_SLOT, paintsPose, strokeOutsetPerAxis, type InheritedPaint, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
 
 /** The `data` a `kit:text` node carries. */
@@ -50,6 +50,8 @@ export interface TextNodeData {
 export type TextOverflow = 'visible' | 'clip';
 
 
+export { textBoxOf } from './textFrame';
+
 /** `cmd` cut to `box`: a group whose clip is the box as a rect, which the
  *  renderer cuts on the CPU when the frame keeps it axis-aligned. */
 export function clippedToBox(cmd: DrawCommand, box: Rect): DrawCommand {
@@ -58,18 +60,6 @@ export function clippedToBox(cmd: DrawCommand, box: Rect): DrawCommand {
     clip: { kind: 'rect', x: box.x, y: box.y, width: box.width, height: box.height },
     children: [cmd],
   };
-}
-
-/** The box a text node's lines lay out in: its pose box, inset by
- *  `data.padding` and never past its center. */
-export function textBoxOf(
-  d: Pick<TextNodeData, 'padding'>,
-  p: RectPose,
-): Rect {
-  const pad = Math.max(0, d.padding ?? 0);
-  const px = Math.min(pad, p.width / 2);
-  const py = Math.min(pad, p.height / 2);
-  return { x: p.x + px, y: p.y + py, width: p.width - 2 * px, height: p.height - 2 * py };
 }
 
 /** A `kit:text` node as the `TextPose` every text consumer reads, in the box

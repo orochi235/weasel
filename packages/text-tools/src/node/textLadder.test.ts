@@ -81,3 +81,32 @@ describe('paintGreekText frame', () => {
     expect(cmds).toHaveLength(4);
   });
 });
+
+describe('paintGreekText placement', () => {
+  const pose = { x: 0, y: 0, width: 100, height: 100 };
+  const bars = (data: Partial<TextNodeData>) => {
+    const cmds = paintGreekText({ data: { text: 'one\ntwo', style: { fontSize: 10, lineHeight: 1 }, ...data } }, pose);
+    const group = cmds.find((c) => c.kind === 'group');
+    return (group && group.kind === 'group' ? group.children : []).map((c) => (c.kind === 'path' && c.path.kind === 'rect' ? c.path : null)!);
+  };
+
+  it('centers its lines in the box as verticalAlign center lays them out', () => {
+    const [first, second] = bars({ verticalAlign: 'center' });
+    expect(first!.y + (second!.y + second!.height - first!.y) / 2).toBeCloseTo(50);
+  });
+
+  it('cuts its lines to the box when overflow is clip', () => {
+    const lines = Array.from({ length: 30 }, () => 'line').join('\n');
+    const cut = bars({ text: lines, overflow: 'clip' });
+    expect(Math.max(...cut.map((r) => r.y + r.height))).toBeLessThanOrEqual(100);
+    const shown = bars({ text: lines });
+    expect(shown).toHaveLength(30);
+  });
+
+  it('sets its lines at the shrunk size when fit is shrink', () => {
+    const lines = Array.from({ length: 20 }, () => 'x').join('\n');
+    const shrunk = bars({ text: lines, fit: 'shrink' });
+    expect(shrunk).toHaveLength(20);
+    expect(shrunk[19]!.y + shrunk[19]!.height).toBeLessThanOrEqual(100);
+  });
+});
