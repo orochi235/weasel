@@ -1,5 +1,6 @@
 /** The rung choice a scene walk makes for each node it visits. */
 import { boundsOfPath } from '@weasel-js/geom';
+import { createPart, getOwn } from '@weasel-js/registry';
 import type { View } from 'core/viewport/view';
 import { isPathLike, isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { findNodeShape } from '../NodeShape';
@@ -49,27 +50,22 @@ function resolve(rungs: readonly Rung[], sizeOf: Ladder['sizeOf'], h: LodHystere
   };
 }
 
-const byLadder = new WeakMap<Ladder, Resolved>();
-const byNodeLod = new WeakMap<NodeLod, WeakMap<object, Resolved>>();
+const ladderRungs = createPart((ladder: Ladder): Resolved =>
+  resolve(ladder.rungs as readonly Rung[], ladder.sizeOf as Ladder['sizeOf'], ladder.hysteresis));
+/** A node's `lod`, resolved once per ladder it is read against. */
+const nodeLodHeld = createPart((_lod: NodeLod) => new WeakMap<object, Resolved>());
 const byCollapse = new Map<number, Resolved>();
 const NO_LADDER = {};
 
-function ladderRungs(ladder: Ladder): Resolved {
-  let r = byLadder.get(ladder);
-  if (r === undefined) byLadder.set(ladder, r = resolve(ladder.rungs as readonly Rung[], ladder.sizeOf as Ladder['sizeOf'], ladder.hysteresis));
-  return r;
-}
-
 /** `lod`'s thresholds over the rungs `ladder` and the built-ins name; a name neither knows draws `full`. */
 function nodeLodRungs(lod: NodeLod, ladder: Ladder | undefined): Resolved {
-  let held = byNodeLod.get(lod);
-  if (held === undefined) byNodeLod.set(lod, held = new WeakMap());
+  const held = nodeLodHeld(lod);
   const key = ladder ?? NO_LADDER;
   let r = held.get(key);
   if (r === undefined) {
     const rungs = lod.map(({ as, fromPx }) => {
       const own = ladder?.rungs.find((x) => x.id === as) as Rung | undefined;
-      const known = own ?? BUILT_IN[as];
+      const known = own ?? getOwn(BUILT_IN, as);
       return { ...(known ?? BUILT_IN.full!), id: known ? as : 'full', fromPx };
     });
     held.set(key, r = resolve(rungs, ladder?.sizeOf as Ladder['sizeOf'], ladder?.hysteresis));
@@ -97,14 +93,11 @@ export function poseSizeOf(pose: unknown): number {
   return Infinity;
 }
 
-const ladderIn = new WeakMap<readonly unknown[], boolean>();
+const ladderIn = createPart((order: ReturnType<typeof evaluationOrder>) => order.some((r) => r.entry.ladder !== undefined));
 
 /** Whether any painter `shapes` resolves declares a ladder, memoized on its evaluation order. */
 function anyLadderIn(shapes: NodeShapes = defaultNodeShapes): boolean {
-  const order = evaluationOrder(effectiveShapes(shapes));
-  let has = ladderIn.get(order);
-  if (has === undefined) ladderIn.set(order, has = order.some((r) => r.entry.ladder !== undefined));
-  return has;
+  return ladderIn(evaluationOrder(effectiveShapes(shapes)));
 }
 
 /**
