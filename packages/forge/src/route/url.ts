@@ -271,7 +271,7 @@ export function knobPaths(schema: Pick<ConfigSchema<unknown>, 'nodes'>): KnobPat
 }
 
 /** Whether two knob values are the same value, compared as data: `NaN` is itself, and `0` is `-0`, which no param tells
- *  apart. */
+ *  apart. An object's `undefined` field is absent, but a list's `undefined` member is held. */
 export function sameKnob(a: unknown, b: unknown): boolean {
   // Pairs already being compared hold unless something else differs, so a cycle compares as the tree it unrolls to.
   const open = new Map<object, Set<object>>();
@@ -284,6 +284,11 @@ export function sameKnob(a: unknown, b: unknown): boolean {
     const against = open.get(xo) ?? new Set<object>();
     if (against.has(yo)) return true;
     open.set(xo, against.add(yo));
+    if (array) {
+      const xs = x as unknown[];
+      const ys = y as unknown[];
+      return xs.length === ys.length && Array.from(xs).every((member, i) => same(member, ys[i]));
+    }
     const keys = Object.keys(xo).filter((key) => xo[key] !== undefined);
     const others = Object.keys(yo).filter((key) => yo[key] !== undefined);
     return keys.length === others.length && keys.every((key) => Object.hasOwn(yo, key) && same(xo[key], yo[key]));

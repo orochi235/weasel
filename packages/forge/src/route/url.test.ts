@@ -279,6 +279,14 @@ describe('sameKnob', () => {
     expect(sameKnob(0, -0)).toBe(true);
   });
 
+  it('holds a list member that is undefined, where an undefined field is absent', () => {
+    expect(sameKnob([1, undefined], [1])).toBe(false);
+    expect(sameKnob([undefined], [])).toBe(false);
+    expect(sameKnob([1, undefined], [1, undefined])).toBe(true);
+    expect(sameKnob([, 1], [5, 1])).toBe(false);
+    expect(sameKnob({ a: 1, b: undefined }, { a: 1 })).toBe(true);
+  });
+
   it('writes a param for a value that differs from its default only as an infinity', () => {
     const endless = f.schema({ reach: f.number(Infinity).endless('never', 'both') });
     expect(knobsToParams(endless, { reach: -Infinity })).toEqual({ reach: '-Infinity' });
