@@ -32,10 +32,16 @@ export const THEME_GLOBAL: GlobalDeclaration = {
 
 const DENSITIES = ['compact', 'comfortable', 'roomy'];
 
-/** Themes `root` from the Theme and Density globals, at `mode`; a value nothing is registered under takes the default. */
-export function applyTrialTheme(root: HTMLElement, globals: StoryContext['globals'], mode: 'light' | 'dark'): void {
+/** The theme and density the Theme and Density globals pick; a value nothing is registered under takes the default. */
+export function trialChoice(globals: StoryContext['globals']): { theme: Theme; density: string } {
   const named = String(globals.theme);
   const theme = Object.hasOwn(THEMES, named) ? THEMES[named]! : THEMES[DEFAULT_THEME]!;
   const density = typeof globals.density === 'string' && DENSITIES.includes(globals.density) ? globals.density : 'comfortable';
+  return { theme, density };
+}
+
+/** Themes `root` from the Theme and Density globals, at `mode`. */
+export function applyTrialTheme(root: HTMLElement, globals: StoryContext['globals'], mode: 'light' | 'dark'): void {
+  const { theme, density } = trialChoice(globals);
   applyTheme(root, theme, { mode, density });
 }

@@ -74,7 +74,7 @@ describe('FONT_GLOBALS', () => {
       fontDisplay: 'theme',
       fontBody: 'theme',
       fontMono: 'theme',
-      fontWeight: '500',
+      fontWeight: '400',
       fontStretch: 'normal',
       fontStyle: 'normal',
     });
@@ -91,6 +91,13 @@ describe('FONT_GLOBALS', () => {
     expect(shown('fontStyle', { fontFamily: 'oswald' })).toEqual(['normal']);
     expect(shown('fontStyle', { fontFamily: 'inter' })).toEqual(['normal', 'italic']);
     expect(shown('fontWeight', { fontFamily: 'oswald' })).toEqual(['200', '300', '400']);
+  });
+
+  it('defaults each global to a value the default font shows', () => {
+    const defaults = Object.fromEntries(Object.entries(FONT_GLOBALS).map(([key, d]) => [key, String(d.default)]));
+    for (const [key, declaration] of Object.entries(FONT_GLOBALS)) {
+      if (declaration.shows) expect(declaration.shows(defaults[key]!, defaults), key).toBe(true);
+    }
   });
 });
 

@@ -1,27 +1,37 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/labkit/styles.css';
-import { type Decorator, defineFrameConfig } from '@weasel-js/forge';
-import type { LabMode } from '@weasel-js/labkit';
+import { type Decorator, defineFrameConfig, type StoryContext } from '@weasel-js/forge';
+import { ThemeProvider } from '@weasel-js/theme/react';
+import type { ReactNode } from 'react';
 import { icons as drawIcons } from '@draw/icons.table';
 import { icons as pathToolsIcons } from '@weasel-js/path-tools/icons';
 import { icons as rigIcons } from '@weasel-js/rig/icons';
 import { devtoolsDock } from './devtools';
 import { fontRule, loadWebFonts } from './fonts';
-import { followScheme } from './mode';
-import { applyTrialTheme } from './themes';
+import { followScheme, useResolvedMode } from './mode';
+import { applyTrialTheme, trialChoice } from './themes';
 
 if (typeof document !== 'undefined') loadWebFonts(document);
-
-const asLabMode = (picked: unknown): LabMode =>
-  picked === 'light' || picked === 'dark' ? picked : 'auto';
 
 const isLabkit = (title: string): boolean => title.startsWith('labkit/');
 
 // Imported only for labkit's own stories: the package is most of what a frame would otherwise load.
 let LabRoot: typeof import('@weasel-js/labkit').LabRoot | null = null;
 
+// A LabRoot with no theme above it applies labkit's own, over the trial's.
+function LabkitTrial({ globals, children }: { globals: StoryContext['globals']; children: ReactNode }) {
+  const Root = LabRoot!;
+  const { theme, density } = trialChoice(globals);
+  const mode = useResolvedMode(globals.mode);
+  return (
+    <ThemeProvider theme={theme} selection={{ mode, density }}>
+      <Root>{children}</Root>
+    </ThemeProvider>
+  );
+}
+
 const labkitRoot: Decorator = (story, ctx) =>
-  LabRoot && isLabkit(ctx.title) ? <LabRoot mode={asLabMode(ctx.globals.mode)}>{story()}</LabRoot> : story();
+  LabRoot && isLabkit(ctx.title) ? <LabkitTrial globals={ctx.globals}>{story()}</LabkitTrial> : story();
 
 const applyGlobals = followScheme((globals, { root, scope, style }, mode) => {
   applyTrialTheme(root, globals, mode);

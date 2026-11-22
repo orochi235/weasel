@@ -2,13 +2,13 @@ import '@weasel-js/forge/shell.css';
 import '@weasel-js/forge/frame.css';
 import { loadStories, runAxe, runStory } from '@weasel-js/forge/test';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { KNOWN, UNSWEPT } from './a11y.known';
+import { STORY_MODULES as modules, storyKey, titleOf } from './a11y.files';
+import { JUDGED, KNOWN, UNSWEPT } from './a11y.known';
 import { type Browser, finishing, unringed } from './a11y.ring';
 import { shardOf } from './a11y.shards';
 import setup from './forge.frame';
 
 // Every story of ui and labkit, rendered as the workshop renders it and judged by axe in light and dark mode.
-const modules = import.meta.glob(['../../packages/ui/src/**/*.stories.{ts,tsx}', '../../packages/labkit/src/**/*.stories.{ts,tsx}']);
 
 /** Rules off for every story, each with why. */
 const OFF: Readonly<Record<string, string>> = {
@@ -17,39 +17,38 @@ const OFF: Readonly<Record<string, string>> = {
     'flags controls showing a value, a count or a shortcut beside a name taken from what they edit, which WCAG 2.5.3 leaves alone',
 };
 
-/** Rules from {@link OFF} a story file is still judged on, by story file under `packages/`. */
-const JUDGED: Readonly<Record<string, readonly string[]>> = {
-  'ui/src/components/BandEditor/BandEditor.stories.tsx': ['label-content-name-mismatch'],
-};
-
 let browser: Browser;
 
 const MODES = ['light', 'dark'] as const;
 const FOCUS_RING = 'focus-ring';
 
-/** `packages/ui/src/components/Button/Button.stories.tsx` → `ui/components/Button`: the package leads, as labkit's frame decorator expects. */
-const titleOf = (path: string) => {
-  const [, pkg, rest] = /packages\/([^/]+)\/src\/(.*)\/[^/]+$/.exec(path) ?? [];
-  return `${pkg}/${rest}`;
-};
-
 /** Waits out every finite animation in `host`, its own fade-in included: axe judges text by the opacity it has now. */
 const settled = (host: HTMLElement) => finishing(host.getAnimations({ subtree: true }));
 
 const judgeFile = (path: string) => {
-  if (Object.hasOwn(UNSWEPT, path.replace('../../packages/', ''))) {
-    it.skip(`is not swept: ${UNSWEPT[path.replace('../../packages/', '')]}`, () => {});
+  const key = storyKey(path);
+  if (Object.hasOwn(UNSWEPT, key)) {
+    it(`still faults as UNSWEPT records: ${UNSWEPT[key]}`, async () => {
+      const mod = (await modules[path]!()) as Record<string, unknown>;
+      const title = titleOf(mod, path);
+      let faults = 0;
+      for (const story of loadStories(mod, title, setup.parameters)) {
+        if (story.isolate !== null) continue;
+        await runStory(mod, story.exportName, path, title, { setup, globals: { mode: 'light' } }).catch(() => (faults += 1));
+      }
+      expect(faults, `${key} renders: take it out of UNSWEPT so the sweep judges it`).toBeGreaterThan(0);
+    }, 120_000);
     return;
   }
-  const known = KNOWN[path.replace('../../packages/', '')] ?? {};
-  const judged = JUDGED[path.replace('../../packages/', '')] ?? [];
+  const known = KNOWN[key] ?? {};
+  const judged = JUDGED[key] ?? [];
   const off = Object.keys(OFF).filter((rule) => !judged.includes(rule));
   const seen = new Set<string>();
   let runs = 0;
 
   it.each(MODES)('passes axe in %s mode', async (mode) => {
     const mod = (await modules[path]!()) as Record<string, unknown>;
-    const title = titleOf(path);
+    const title = titleOf(mod, path);
     const found: string[] = [];
     for (const story of loadStories(mod, title, setup.parameters)) {
       if (story.isolate !== null) continue;

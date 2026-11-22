@@ -64,3 +64,8 @@ export const UNSWEPT: Readonly<Record<string, string>> = {
   'labkit/src/clock/ClockFrames.stories.tsx':
     'faults in the browser sweep with "usePlayhead: this story declares no timeline" though it declares one; renders under runStory in jsdom (2026-11-20)',
 };
+
+/** Rules the sweep turns off for every story (`OFF` in `a11y.suite.tsx`) that a story file is still judged on, by file under `packages/`. */
+export const JUDGED: Readonly<Record<string, readonly string[]>> = {
+  'ui/src/components/BandEditor/BandEditor.stories.tsx': ['label-content-name-mismatch'],
+};
