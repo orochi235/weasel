@@ -77,18 +77,18 @@ describe('buildSceneLayer over a bare adapter', () => {
 
 describe('buildSceneLayer over a composing adapter', () => {
   // A container at x = 100 holding `a` and `b` at local x = 0 and 100; the edge is a root.
-  function paintFramed(withToPose: boolean) {
+  function paintFramed(withToPose: boolean, parentOnNode = false) {
     const box: Item = { id: 'box', layer: 'main', kind: 'group', pose: { x: 100, y: 0, width: 10, height: 10 } };
     const a: Item = { id: 'a', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } };
     const b: Item = { id: 'b', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 } };
     const edge = items()[2];
-    const list = [box, a, b, edge];
     const parentOf: Record<string, string | null> = { box: null, a: 'box', b: 'box', edge: null };
+    const list = [box, a, b, edge].map((n) => (parentOnNode ? { ...n, parent: parentOf[n.id] } : n));
     const poseOf = (id: string) => list.find((n) => n.id === id)!.pose;
     const adapter = {
       getNode: (id: string) => list.find((n) => n.id === id),
       getPose: poseOf,
-      getParent: (id: string) => parentOf[id] ?? null,
+      ...(parentOnNode ? {} : { getParent: (id: string) => parentOf[id] ?? null }),
       getWorldPose: (id: string): Pose => {
         const p = parentOf[id];
         const own = poseOf(id);
@@ -111,5 +111,9 @@ describe('buildSceneLayer over a composing adapter', () => {
 
   it('derives the same path through a toPose that answers local poses', () => {
     expect(paintFramed(true)).toEqual([100, 0, 200, 0]);
+  });
+
+  it('reads each node\'s parent off the node when the adapter has no getParent', () => {
+    expect(paintFramed(true, true)).toEqual([100, 0, 200, 0]);
   });
 });

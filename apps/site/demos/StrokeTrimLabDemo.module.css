@@ -37,3 +37,9 @@
   align-items: center;
   gap: var(--wzl-space-3);
 }
+
+.error {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-danger);
+}

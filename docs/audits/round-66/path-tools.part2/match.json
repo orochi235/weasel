@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "Join fills a per-anchor channel that cannot be joined with zeros for the dropped path's anchors, rather than dropping it",
+  "`facesAlong` hangs when `step` is 0"
+ ],
+ "b": [
+  "Retargeting an effect's path or spine keeps a stale `foundHidden` entry, so the new source is hidden for good",
+  "`facesAlong` hangs when `step` is 0 or negative"
+ ]
+}

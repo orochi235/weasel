@@ -26,7 +26,7 @@ const LABEL: Body = { stop: ']', close: '' };
 
 const SPACE = /\s/;
 const PUNCTUATION = /[\p{P}\p{S}]/u;
-const ESCAPABLE = '`*~[]\\';
+const ESCAPABLE = '`*~[]\\<';
 
 const codePointLength = (src: string, i: number): number => ((src.codePointAt(i) ?? 0) > 0xffff ? 2 : 1);
 

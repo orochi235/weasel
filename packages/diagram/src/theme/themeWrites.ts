@@ -4,6 +4,7 @@
  * owner's `ownStyle` is the author's, and stays.
  */
 import { outlineOf, type NodeStyle, type OutlineKind } from '../dataTypes';
+import { laneMiddle } from '../containers/laneStack';
 import { deepEqual } from '@weasel-js/registry';
 import { edgeStrokeOf } from '../edgeStroke';
 import { roleEdgeStyle, roleStyle, themeLabelFamily, themeLabelFont } from './resolve';
@@ -56,10 +57,7 @@ function laneIndex(scene: ThemedScene, node: ThemedNode): number {
   if (node.parent === null) return 0;
   const pool = traitOf(scene.get(node.parent as never)?.data)?.container as { header?: { side?: string } } | undefined;
   const axis = pool?.header?.side === 'top' ? 'x' : 'y';
-  const mid = (id: string) => {
-    const p = scene.get(id as never)?.pose as { x?: number; y?: number; width?: number; height?: number } | undefined;
-    return (p?.[axis] ?? 0) + (p?.[axis === 'y' ? 'height' : 'width'] ?? 0) / 2;
-  };
+  const mid = (id: string) => laneMiddle(axis, (scene.get(id as never)?.pose ?? {}) as Parameters<typeof laneMiddle>[1]);
   const lanes = scene.childrenOf(node.parent as never).filter((id) => {
     const t = traitOf(scene.get(id as never)?.data);
     return t !== null && containerRole(t) === 'lane';

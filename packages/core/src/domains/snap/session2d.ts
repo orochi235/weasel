@@ -12,7 +12,7 @@ import { recordSnapCandidates } from './debugCandidates';
 import { markFromPlane } from './marks';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { resizedBox, resizeSides, resizeSubject, type ResizeSubject } from './resizeBox';
-import { screenOf } from './screen';
+import { pxPerUnit, screenOf } from './screen';
 import type { SnapCollect, SnapFrame, SnapMark, SnapProbeAt, SnapSource } from './types';
 
 /** The canvas's reach when neither a source nor the kit settings name one. */
@@ -119,9 +119,8 @@ function collectAll(
   sources: readonly SnapSource[], probesAtPress: readonly SnapProbeAt[],
   fixed: FixedCollect & Pick<SnapCollect, 'box' | 'sides' | 'boxAt'>, { delta0, view, plane }: Frame, reachPx: number,
 ): GatheredCandidate<Point>[] {
-  const camera = view ? Math.min(Math.abs(view.scale.x), Math.abs(view.scale.y)) : 1;
-  // A camera unit is `plane.scale` plane units.
-  const scale = plane ? camera / Math.max(Math.abs(plane.scale.x), Math.abs(plane.scale.y)) : camera;
+  const per = pxPerUnit(view, plane);
+  const scale = Math.min(per.x, per.y);
   const probes = probesAtPress.map((q) => ({ ...q, at: { x: q.at.x + delta0.x, y: q.at.y + delta0.y } }));
   return gatherSnapCandidates(sources, probes, (_source, offered, sourceReach) => ({
     ...fixed, probes: offered, delta0,

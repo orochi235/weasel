@@ -26,6 +26,16 @@ describe('round-trip', () => {
   });
 });
 
+describe('an <image> sized auto', () => {
+  it('warns that it reads as 0, since the bitmap is not decoded', () => {
+    const { nodes, warnings } = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><image href="pic.png" x="10" y="10" height="auto"/></svg>');
+    expect((nodes[0] as SvgImageNode).width).toBe(0);
+    expect(warnings).toEqual([
+      '<image href="pic.png"> has an auto width and height, which takes the bitmap\'s own size; this reader does not decode the bitmap, so it reads as 0',
+    ]);
+  });
+});
+
 describe('image source rect and flip', () => {
   const VIEW = { viewBox: { x: 0, y: 0, width: 200, height: 200 } };
   const image = (extra: Partial<SvgImageNode> = {}): SvgImageNode => ({

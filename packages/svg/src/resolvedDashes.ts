@@ -39,17 +39,19 @@ function pathDashes(node: SvgPathNode): SvgPathNode {
 }
 
 /** A text stroke's dash, read with no length: each glyph's outline is its own, and SVG lays them out. */
-function textStroke<T extends { stroke?: Stroke }>(owner: T): T {
+function textStroke<T extends { stroke?: Stroke; inherits?: SvgInherits }>(owner: T, none: Stroke | undefined): T {
   if (!owner.stroke?.dash) return owner;
-  const stroke = resolvedDash(owner.stroke, undefined, false);
+  const stroke = resolvedDash(owner.stroke, undefined, false) ?? none;
   if (stroke === owner.stroke) return owner;
-  const { stroke: _, ...rest } = owner;
-  return (stroke ? { ...rest, stroke } : rest) as T;
+  const { stroke: _, inherits, ...rest } = owner;
+  const kept = ownStroke(inherits);
+  return { ...rest, ...(stroke ? { stroke } : {}), ...(kept ? { inherits: kept } : {}) } as T;
 }
 
 function textDashes(node: SvgTextNode): SvgTextNode {
-  const out = textStroke(node);
-  const runs = node.runs?.map(textStroke);
+  const out = textStroke(node, undefined);
+  // An absent run stroke takes the node's, so one that draws nothing stays as an empty override.
+  const runs = node.runs?.map((r) => textStroke(r, {}));
   return runs && runs.some((r, i) => r !== node.runs![i]) ? { ...out, runs } : out;
 }
 

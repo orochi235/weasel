@@ -108,3 +108,50 @@ describe('writing a sequence box\'s or region\'s fill', () => {
     expect(out.text).not.toContain('oklch');
   });
 });
+
+describe('writing sequence text that a reader would split or misread', () => {
+  const msg = (text: string, from = 'A') => ({ kind: 'message' as const, id: 'm1', from, to: 'B', line: 'solid' as const, head: 'arrow' as const, text });
+
+  it('writes a carriage return as a line break, so the text reads back as one statement', () => {
+    const out = writeMermaidSequence(page({
+      participants: [{ id: 'A', label: 'x\ry' }, { id: 'B' }],
+      steps: [msg('a\r\nb'), msg('c\rd'), { kind: 'note', id: 'n1', over: ['A'], text: 'e\r\nf' }],
+    }, 'one\rtwo'));
+    const back = pageOf(out.text);
+    expect(back.name).toBe('one\ntwo');
+    expect(back.data.participants[0]!.label).toBe('x\ny');
+    expect(back.data.steps.map((s) => (s.kind === 'message' || s.kind === 'note' ? s.text : undefined))).toEqual(['a\nb', 'c\nd', 'e\nf']);
+  });
+
+  it('reads a note holding a line or paragraph separator whole', () => {
+    const out = writeMermaidSequence(page({ participants: [{ id: 'A' }], steps: [{ kind: 'note', id: 'n1', over: ['A'], text: 'a b c' }] }));
+    const note = pageOf(out.text).data.steps[0]!;
+    expect(note).toMatchObject({ kind: 'note', text: 'a b c' });
+  });
+
+  it('keeps a participant whose id opens with a statement word and goes on with a letter outside ASCII', () => {
+    for (const id of ['titleé', 'linksé', 'linké', 'propertiesé', 'detailsé', 'accTitleé', 'accDescré']) {
+      const out = writeMermaidSequence(page({ participants: [{ id }, { id: 'B' }], steps: [msg('hi', id)] }));
+      const back = pageOf(out.text);
+      expect(back.name, id).toBeUndefined();
+      expect(back.data.steps[0], id).toMatchObject({ kind: 'message', from: id, to: 'B', text: 'hi' });
+    }
+  });
+});
+
+describe('writing sequence boxes and regions', () => {
+  it('writes a box whose members are named only by steps', () => {
+    const out = writeMermaidSequence(page({
+      participants: [],
+      boxes: [{ id: 'b1', label: 'Team', members: ['A', 'B'] }],
+      steps: [{ kind: 'message', id: 'm1', from: 'A', to: 'B', line: 'solid', head: 'arrow', text: 'hi' }],
+    }));
+    expect(out.warnings).toEqual([]);
+    expect(pageOf(out.text).data.boxes).toEqual([expect.objectContaining({ label: 'Team', members: ['A', 'B'] })]);
+  });
+
+  it('writes a region with no fill so it reads back with none', () => {
+    const out = writeMermaidSequence(page({ participants: [{ id: 'A' }], steps: [{ kind: 'fragment', id: 'f', type: 'region', sections: [{ steps: [] }] }] }));
+    expect(pageOf(out.text).data.steps[0]).not.toHaveProperty('colors');
+  });
+});

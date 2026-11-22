@@ -48,6 +48,68 @@ describe('draw-style XML bar markers', () => {
   });
 });
 
+describe('draw-style XML hollow arrowheads', () => {
+  const read = (style: string) => readCells(`${vertex('a', 'rounded=0;', 'width="80" height="40"')}${vertex('b', 'rounded=0;', 'x="300" width="80" height="40"')}`
+    + `<mxCell id="e" edge="1" parent="1" source="a" target="b" style="${style}"><mxGeometry relative="1" as="geometry"/></mxCell>`);
+
+  it('warns that a hollow oval, box, or classic head with no hollow marker is drawn filled', async () => {
+    const { data, warnings } = await read('endArrow=oval;endFill=0;startArrow=box;startFill=0;');
+    expect(edge(data, 'e').colors).toMatchObject({ markerEnd: 'circle', markerStart: 'square' });
+    expect(warnings).toEqual(expect.arrayContaining([
+      'Hollow arrowheads of kind "oval" were drawn as filled circles.', 'Hollow arrowheads of kind "box" were drawn as filled squares.',
+    ]));
+    expect((await read('endArrow=classic;endFill=0;')).warnings).toContain('Hollow arrowheads of kind "classic" were drawn as filled arrow-concaves.');
+  });
+
+  it('says nothing of a hollow head it has a hollow marker for, or of one with no fill to lose', async () => {
+    expect((await read('endArrow=block;endFill=0;startArrow=open;startFill=0;')).warnings).toEqual([]);
+    expect((await read('endArrow=oval;endFill=1;')).warnings).toEqual([]);
+  });
+});
+
+describe('draw-style XML exit and entry points', () => {
+  const read = (style: string) => readCells(`${vertex('a', 'rounded=0;', 'width="80" height="40"')}${vertex('b', 'rounded=0;', 'x="300" width="80" height="40"')}`
+    + `<mxCell id="e" edge="1" parent="1" source="a" target="b" style="${style}"><mxGeometry relative="1" as="geometry"/></mxCell>`);
+  const moved = 'Connector ends fixed to a point other than the middle of a side were moved to the nearest side\'s middle.';
+
+  it('warns when a point off a side\'s middle, or offset from it, is read as the nearest port', async () => {
+    const quarter = await read('exitX=1;exitY=0.25;');
+    expect(edge(quarter.data, 'e').fromPort).toBe('e');
+    expect(quarter.warnings).toContain(moved);
+    expect((await read('entryX=0;entryY=0;')).warnings).toContain(moved);
+    expect((await read('exitX=1;exitY=0.5;exitDx=4;exitDy=0;')).warnings).toContain(moved);
+  });
+
+  it('says nothing of a point on a side\'s middle', async () => {
+    expect((await read('exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;')).warnings).toEqual([]);
+  });
+});
+
+describe('draw-style XML font styles', () => {
+  it('warns that underlined or struck-through text was read plain, and keeps its bold', async () => {
+    const { data, warnings } = await readCells(vertex('n', 'fontStyle=5;', 'width="80" height="40"') + vertex('m', 'fontStyle=8;', 'y="60" width="80" height="40"'));
+    expect(node(data, 'n').rows).toEqual([{ kind: 'label', text: 'n', style: { bold: true } }]);
+    expect(warnings).toEqual(expect.arrayContaining(['Underlined text was drawn without its underline.', 'Struck-through text was drawn without its line.']));
+    expect((await readCells(vertex('n', 'fontStyle=3;', 'width="80" height="40"'))).warnings).toEqual([]);
+  });
+});
+
+describe('draw-style XML hidden cells', () => {
+  it('leaves out a hidden layer, a hidden shape, what they hold, and connectors to them, with a warning', async () => {
+    const { data, warnings } = await readCells('<mxCell id="h" parent="0" visible="0"/>'
+      + vertex('a', 'rounded=0;', 'width="80" height="40"') + vertex('b', 'rounded=0;', 'x="300" width="80" height="40"', 'b', 'h')
+      + vertex('c', 'container=1;', 'y="100" width="200" height="100"').replace('vertex="1"', 'vertex="1" visible="0"')
+      + vertex('d', 'rounded=0;', 'x="10" y="10" width="40" height="20"', 'd', 'c')
+      + vertex('k', 'rounded=0;', 'y="300" width="80" height="40"')
+      + '<mxCell id="e" edge="1" parent="1" source="a" target="b"><mxGeometry relative="1" as="geometry"/></mxCell>'
+      + '<mxCell id="f" edge="1" parent="1" source="a" target="k"><mxGeometry relative="1" as="geometry"/></mxCell>');
+    expect(data.nodes.map((n) => n.id)).toEqual(['a', 'k']);
+    expect(data.containers).toBeUndefined();
+    expect(data.edges.map((e) => e.id)).toEqual(['f']);
+    expect(warnings).toEqual(['Hidden shapes, connectors, and layers were left out.']);
+  });
+});
+
 describe('draw-style XML rotated and flipped shapes', () => {
   const warningsOf = async (style: string) => (await readCells(vertex('n', style, 'width="80" height="40"'))).warnings;
 
@@ -161,6 +223,18 @@ describe('draw-style XML self-loop labels', () => {
   });
 });
 
+describe('draw-style XML dragged edge labels', () => {
+  it('keeps a dragged label at the end of a line whose last stretch has no length near that end', async () => {
+    const { data } = await readCells(vertex('a', 'rounded=0;', 'width="40" height="20"') + vertex('b', 'rounded=0;', 'x="4" y="2" width="40" height="20"')
+      + '<mxCell id="e" value="go" edge="1" parent="1" source="a" target="b" style=""><mxGeometry x="1" relative="1" as="geometry">'
+      + '<Array as="points"><mxPoint x="21" y="11"/><mxPoint x="24" y="12"/></Array><mxPoint x="0" y="5" as="offset"/></mxGeometry></mxCell>');
+    const placement = edge(data, 'e').labelPlacement as { at: { near: { x: number; y: number } }; offset: number };
+    expect(placement.at.near.x).toBeCloseTo(25.5);
+    expect(placement.at.near.y).toBeCloseTo(12.5);
+    expect(placement.offset).toBeCloseTo(-15 / Math.sqrt(10));
+  });
+});
+
 describe('draw-style XML file names', () => {
   it('claims the draw app\'s .drawio files, and writes one', () => {
     expect(DIAGRAM_DRAW_XML.extensions).toEqual(['.drawio', '.xml']);
@@ -211,6 +285,12 @@ describe('draw-style XML placeholders', () => {
     const { data } = await readCells('<UserObject id="u" label="%owner%\'s %task% %missing% 100%" owner="Ana" task="job" placeholders="1">'
       + '<mxCell style="rounded=0;" vertex="1" parent="1"><mxGeometry width="80" height="40" as="geometry"/></mxCell></UserObject>');
     expect(node(data, 'u').lines).toEqual(['Ana\'s job %missing% 100%']);
+  });
+
+  it('fills an HTML label\'s placeholders with their values as text, not markup', async () => {
+    const { data } = await readCells('<object id="u" label="&lt;b&gt;%name%&lt;/b&gt;" name="a&lt;b&gt;c &amp;lt; d" placeholders="1">'
+      + '<mxCell style="html=1;" vertex="1" parent="1"><mxGeometry width="80" height="40" as="geometry"/></mxCell></object>');
+    expect(node(data, 'u').lines).toEqual(['a<b>c &lt; d']);
   });
 
   it('leaves placeholders alone without the flag', async () => {

@@ -105,6 +105,10 @@ describe('specificity', () => {
     expect(specificity('rect')).toEqual([0, 0, 1]);
     expect(specificity('.a')).toEqual([0, 1, 0]);
     expect(specificity('#x')).toEqual([1, 0, 0]);
+    expect(specificity('svg|rect')).toEqual([0, 0, 1]);
+    expect(specificity('*|rect')).toEqual([0, 0, 1]);
+    expect(specificity('|rect.a')).toEqual([0, 1, 1]);
+    expect(specificity('rect[xlink|href]')).toEqual([0, 1, 1]);
     expect(specificity('g > rect.a[fill="#f00"]:first-child')).toEqual([0, 3, 2]);
     expect(specificity('*')).toEqual([0, 0, 0]);
     expect(specificity('g#x .a .b rect')).toEqual([1, 2, 2]);
@@ -301,6 +305,17 @@ describe('cascade layers', () => {
     expect(fill('@layer a { #r { fill: #f00 } } rect { fill: #0f0 }')).toBe('#0f0');
     expect(fill('rect { fill: #0f0 } @layer a { #r { fill: #f00 } }')).toBe('#0f0');
   });
+  it('rolls revert-layer back to the layer below, and revert past every author rule', () => {
+    expect(fill('@layer a { rect { fill: #f00 } } @layer b { rect { fill: revert-layer } }')).toBe('#f00');
+    expect(fill('@layer a { rect { fill: #f00 } } rect { fill: revert-layer }', 'fill="#00f"')).toBe('#f00');
+    expect(fill('rect { fill: revert-layer }', 'fill="#00f"')).toBe('#00f');
+    expect(fill('rect { fill: #f00 }', 'fill="#00f" style="fill: revert-layer"')).toBe('#f00');
+    expect(fill('@layer a { rect { fill: #f00 } } rect { fill: revert }', 'fill="#00f"')).toBeNull();
+  });
+  it('lets a revert child take its parent paint', () => {
+    const { nodes } = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><g fill="#ff0000"><rect width="5" height="5" style="fill: revert"/></g></svg>');
+    expect(((nodes[0] as SvgGroupNode).children[0] as SvgPathNode).fill).toMatchObject({ kind: 'solid', color: '#ff0000' });
+  });
   it('ranks a later layer above an earlier one', () => {
     expect(fill('@layer a { #r { fill: #f00 } } @layer b { rect { fill: #0f0 } }')).toBe('#0f0');
   });
@@ -404,5 +419,22 @@ describe('declarations CSS rejects', () => {
     const initial = fillOf(`<svg ${NS} fill="red"><rect width="1" height="1" style="fill: initial"/></svg>`);
     expect(initial.fill).toEqual({ kind: 'solid', color: '#000000' });
     expect(initial.warnings).toEqual([]);
+  });
+});
+
+describe('a paint function the reader cannot read', () => {
+  it('reads as unset, so the element takes its parent paint rather than black', () => {
+    const { nodes, warnings } = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><g fill="red" stroke="blue">'
+      + '<rect width="1" height="1" fill="rgb(255,0" stroke="color(foo 1 2)"/></g>'
+      + '<rect width="1" height="1" style="stroke: var(--accent)"/></svg>');
+    const inGroup = (nodes[0] as SvgGroupNode).children[0] as SvgPathNode;
+    expect(inGroup.fill).toEqual({ kind: 'solid', color: '#ff0000' });
+    expect(inGroup.stroke?.paint).toEqual({ kind: 'solid', color: '#0000ff' });
+    expect((nodes[1] as SvgPathNode).stroke).toBeUndefined();
+    expect(warnings).toEqual([
+      'fill: rgb(255,0 is not a color this reader can read; it is read as unset',
+      'stroke: color(foo 1 2) is not a color this reader can read; it is read as unset',
+      'stroke: var(--accent) is not a color this reader can read; it is read as unset',
+    ]);
   });
 });

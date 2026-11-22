@@ -30,6 +30,8 @@ describe('@container against the root <svg>', () => {
   it('reads the container type from a stylesheet rule and from the shorthand', () => {
     expect(fillOf('svg { container-type: size } @container (min-width: 1px) { rect { fill: red } }', '')).toEqual(RED);
     expect(fillOf('@container (min-width: 1px) { rect { fill: red } }', 'container: card / size')).toEqual(RED);
+    expect(fillOf('@container card (min-width: 1px) { rect { fill: red } }', 'container-type: size; container: card')).toEqual(BLACK);
+    expect(fillOf('@container card (min-width: 1px) { rect { fill: red } }', 'container: card; container-type: size')).toEqual(RED);
   });
 
   it('answers only the inline axis for an inline-size container', () => {

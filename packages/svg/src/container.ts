@@ -17,19 +17,27 @@ export interface QueryContainer {
   readonly height: number;
 }
 
+/** The `container` shorthand as the `container-name` and `container-type` it sets;
+ *  a type it leaves out is `normal`, as CSS resets it. */
+export function containerLonghands(value: string): [string, string][] {
+  const [name, type] = value.split('/').map((part) => part.trim());
+  if (type === undefined && /^(?:inherit|initial|unset|revert|revert-layer)$/i.test(name)) {
+    return [['container-name', name], ['container-type', name]];
+  }
+  return [['container-name', name], ['container-type', type || 'normal']];
+}
+
 /**
  * The size container the root is, sized by `media`'s viewport, or `null` when
- * its `container-type` (or the `container` shorthand's) is not `size` or
- * `inline-size`. `declared` reads a cascaded property of the root; a longhand
- * wins over the shorthand wherever each was set.
+ * its `container-type` is not `size` or `inline-size`. `declared` reads a
+ * cascaded property of the root, the `container` shorthand already expanded.
  */
 export function queryContainerOf(
   declared: (prop: string) => string | undefined, media: SvgMediaEnvironment,
 ): QueryContainer | null {
-  const [shortNames, shortType] = (declared('container') ?? '').split('/').map((part) => part.trim());
-  const type = (declared('container-type') ?? shortType ?? '').trim().toLowerCase();
+  const type = (declared('container-type') ?? '').trim().toLowerCase();
   if (type !== 'size' && type !== 'inline-size') return null;
-  const names = (declared('container-name') ?? shortNames ?? '').trim().split(/\s+/)
+  const names = (declared('container-name') ?? '').trim().split(/\s+/)
     .filter((n) => n !== '' && n.toLowerCase() !== 'none');
   return { names, type, width: media.width, height: media.height };
 }

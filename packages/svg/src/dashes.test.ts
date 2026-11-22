@@ -122,6 +122,23 @@ describe('a dash in SVG export, decided as the canvas and pdf decide it', () => 
     expect(negative).not.toContain('stroke-dasharray');
   });
 
+  it("draws no stroke on a run whose own dash is non-finite, rather than the node's", () => {
+    const svg = serializeSvg([{
+      kind: 'text', x: 0, y: 0, width: 10, height: 10, text: 'ab',
+      stroke: { paint: { color: '#f00' }, width: 2 },
+      runs: [{ text: 'a', stroke: { paint: { color: '#00f' }, width: 1, dash: [NaN] } }, { text: 'b' }],
+    }]);
+    expect(/<tspan[^>]*>a</.exec(svg)![0]).toContain('stroke="none"');
+  });
+
+  it('draws no stroke on a text whose group stroke it inherits with a non-finite dash', () => {
+    const stroke = { paint: INK, width: 1, dash: [4, NaN] };
+    const svg = serializeSvg([{ kind: 'group', stroke, children: [{
+      kind: 'text', x: 0, y: 0, width: 10, height: 10, text: 'a', stroke, inherits: { stroke: true },
+    }] }]);
+    expect(/<text[^>]*>/.exec(svg)![0]).toContain('stroke="none"');
+  });
+
   it('states a solid stroke on a leaf whose group dashes it', () => {
     const own = line({ dash: [1e-4, 1e-4] });
     const nodes: SvgNode[] = [{

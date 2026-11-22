@@ -74,8 +74,21 @@ describe('svg export: an open subpath no fill closes is written unfilled', () =>
     expect(out).toMatch(/<g opacity="0.5">/);
   });
 
+  it('writes a filled path with no stroke as its closed subpaths alone', () => {
+    const out = write(node(MIXED, { opacity: 0.5 }, 'none'));
+    expect(out).not.toContain('<g');
+    expect(out.match(/<path [^>]*>/g)).toEqual([expect.stringContaining('d="M0 0L10 0L10 10Z"')]);
+    expect(parseSvg(out).nodes).toMatchObject([{ kind: 'path', opacity: 0.5 }]);
+  });
+
+  it('turns a filled path with no stroke about the center of the whole', () => {
+    const back = parseSvg(write(node(MIXED, { rotation: Math.PI / 2 }, 'none'))).nodes[0] as { children: SvgPathNode[] };
+    expect(back.children).toHaveLength(1);
+    expect(Array.from((back.children[0].path as PolygonPath).coords.slice(0, 2)).map(Math.round)).toEqual([20, -10]);
+  });
+
   it('turns a split path about the center of the whole, not of each half', () => {
-    const out = write(node(MIXED, { rotation: Math.PI / 2 }, 'none'));
+    const out = write(node(MIXED, { rotation: Math.PI / 2, stroke: STROKE }, 'none'));
     const back = parseSvg(out).nodes[0] as { children: SvgPathNode[] };
     // The whole spans x 0..30, y 0..10: a quarter turn about (15, 5) takes
     // (0, 0) to (20, -10) and (20, 0) to (20, 10).

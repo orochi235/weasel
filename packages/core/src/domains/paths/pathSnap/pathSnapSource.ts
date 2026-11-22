@@ -32,12 +32,11 @@ export function pathSnapSource(opts: PathSnapSourceOptions = {}): SnapSource {
       if (!q.scene) return;
       const { ids, index } = sceneSnapIndex(q.scene, q.also);
       const exclude = new Set(q.exclude);
-      const include = q.include ? new Set(q.include) : null;
       const radius = q.reachWorld(opts.reachPx ?? q.reachPx);
       const skip = (i: number) => {
         const id = ids[i];
         if (id === null) return false;
-        return exclude.has(id) || (include ? !include.has(id) : false);
+        return exclude.has(id);
       };
       for (const p of q.probes) {
         const hits = findPathSnaps(index, p.at, { radius, kinds, skip, ...(q.origin ? { origin: q.origin } : {}) });

@@ -102,6 +102,15 @@ describe('pattern serialization', () => {
     [0, 1, -1, 1].forEach((v, i) => expect(back.transform![i]).toBeCloseTo(v, 5));
   });
 
+  it('reads a pattern x/y as a length: a unit converts, a percentage is of the viewport, and an unreadable one is 0', () => {
+    const spec = JSON.stringify(TILES[0]).replace(/"/g, '&quot;');
+    const read = (x: string, y: string) => firstFill(parseSvg('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100"><defs>'
+      + `<pattern id="p" patternUnits="userSpaceOnUse" width="5" height="5" x="${x}" y="${y}" data-weasel-tile="${spec}"/>`
+      + '</defs><rect width="100" height="100" fill="url(#p)"/></svg>').nodes) as PatternPaint;
+    expect(read('10%', '1in').origin).toEqual({ x: 20, y: 96 });
+    expect(read('', 'abc').origin).toBeUndefined();
+  });
+
   it('warns and drops a pattern carrying a TextureHandle', () => {
     const warnings: string[] = [];
     const svg = serializeSvg(

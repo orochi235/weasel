@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   4,
+   3
+  ],
+  [
+   5,
+   2
+  ]
+ ],
+ "a": [
+  "A carriage return in sequence text is written raw, so the written diagram reads back as a broken statement and throws",
+  "A kanban lane and a card sharing an id are written under one id, which the kanban reader rejects",
+  "Sequence participant ids that start with `title`, `link`, `details` and so on, followed by a non-ASCII letter, read back as other statements",
+  "A mind map node whose id is `accTitle` or `accDescr` and whose outline is a hexagon is read as an accessible description, and the node is lost",
+  "The sankey writer drops a page name without a warning, unlike every other Mermaid plot writer",
+  "The sequence writer silently drops a box whose members are all undeclared participants",
+  "A kanban card metadata value holding `]@{` makes the card's line read back wrong"
+ ],
+ "b": [
+  "Kanban writer writes a card once per lane naming it, and its own reader then rejects the board",
+  "State writer drops a pool's direct members and turns nested containers in a pool into regions",
+  "Sequence writer silently drops a box none of whose members is in `participants`",
+  "Sankey writer drops a page name that is not the chart's title without a warning",
+  "Sequence writer gives an uncolored `region` a gray fill that reads back as a color"
+ ]
+}

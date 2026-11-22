@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { DevtoolsArea, PanelTransport } from './protocol';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
+import { coalesced } from './views/coalesced';
 import { createDevtoolsClient, type DevtoolsClient, type DevtoolsClientState } from './client';
 
 /** A connection over `transport` for as long as the component is mounted: `yo` on mount, `bye` on unmount. */
@@ -25,7 +26,9 @@ export interface RootQuery<T> {
 
 /**
  * `read`'s answer about `rootId`, asked again whenever a `changed` notice for
- * that root names one of `areas`, or a dependency in `deps` changes.
+ * that root names one of `areas`, `refresh` is called, or a dependency in `deps`
+ * changes. One read is out at a time: asking while one is out reads once more
+ * after it answers, so a read slower than its asking is still shown.
  */
 export function useRootQuery<T>(
   client: DevtoolsClient,
@@ -36,25 +39,27 @@ export function useRootQuery<T>(
 ): RootQuery<T> {
   const [data, setData] = useState<T | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
-  const [version, setVersion] = useState(0);
   const readRef = useLatest(read);
+  const again = useRef<() => void>(() => {});
   const areaKey = areas.join(',');
-
-  useEffect(() => client.onChanged((id, changed) => {
-    if (id === rootId && changed.some((a) => areaKey.split(',').includes(a))) setVersion((v) => v + 1);
-  }), [client, rootId, areaKey]);
 
   useEffect(() => {
     let live = true;
-    readRef.current().then(
+    const ask = coalesced(() => (!live ? Promise.resolve() : readRef.current().then(
       (result) => { if (live) { setData(result); setError(null); } },
       (err: Error) => { if (live) setError(err.message); },
-    );
-    return () => { live = false; };
+    )));
+    again.current = ask;
+    ask();
+    const wanted = areaKey.split(',');
+    const off = client.onChanged((id, changed) => {
+      if (id === rootId && changed.some((a) => wanted.includes(a))) ask();
+    });
+    return () => { live = false; again.current = () => {}; off(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `deps` is the caller's
-  }, [client, rootId, version, readRef, ...deps]);
+  }, [client, rootId, areaKey, readRef, ...deps]);
 
-  const refresh = useRef(() => setVersion((v) => v + 1)).current;
+  const refresh = useRef(() => again.current()).current;
   return { data, error, refresh };
 }
 

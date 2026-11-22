@@ -90,6 +90,9 @@ export function statementsOf(text: string): MermaidSource {
   };
 }
 
+/** Words Mermaid reads a line opening with as an accessibility statement, so no written id may be one. */
+export const ACC_WORDS: readonly string[] = ['accTitle', 'accDescr'];
+
 /** Whether `text`, written as a line of its own, reads back as a statement rather than as a blank line, a comment, a
  *  directive, or an accessible title or description, which {@link statementsOf} reads off first. */
 export function readsAsStatement(text: string): boolean {

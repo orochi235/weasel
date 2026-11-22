@@ -52,6 +52,10 @@ function imageNodeAt(
   const rawY = readLength(boxEl, 'y', 'y', 0, onWarn, fontSize);
   const rawW = readLength(boxEl, 'width', 'x', 0, onWarn, fontSize);
   const rawH = readLength(boxEl, 'height', 'y', 0, onWarn, fontSize);
+  const auto = (['width', 'height'] as const).filter((n) => (boxEl.getAttribute(n)?.trim().toLowerCase() ?? 'auto') === 'auto');
+  if (auto.length > 0) {
+    onWarn(`<image href="${href}"> has an auto ${auto.join(' and ')}, which takes the bitmap's own size; this reader does not decode the bitmap, so it reads as 0`);
+  }
   const node: SvgImageNode = { kind: 'image', href, x: rawX, y: rawY, width: rawW, height: rawH };
   const opacity = ownValue(ownerEl, 'opacity');
   if (opacity != null) node.opacity = opacity;

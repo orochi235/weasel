@@ -44,11 +44,11 @@ export const plainText = (text: string): string => markupLines(text.trim(), true
 
 const ENTITIES: Readonly<Record<'#' | ';' | '<' | '>' | '&', string>> = { '#': '#35;', ';': '#59;', '<': '#lt;', '>': '#gt;', '&': '#38;' };
 
-/** Text as Mermaid writes it in a sequence: line breaks as `<br>`, and what it reads as syntax as entities. An `&` is
+/** Text as Mermaid writes it in a sequence: line breaks, `\r` among them, as `<br>`, and what it reads as syntax as entities. An `&` is
  *  one only before a `#`, a `;`, or an `&` that is one, whose `#35;`, `#59;`, or `#38;` would otherwise make an HTML
  *  reference of it. */
 export const mermaidSeqText = (text: string): string =>
-  text.split('\n').map((l) => l.replace(/[#;<>]|&(?=&*[#;])/g, (c) => ENTITIES[c as keyof typeof ENTITIES])).join('<br>');
+  text.split(/\r\n?|\n/).map((l) => l.replace(/[#;<>]|&(?=&*[#;])/g, (c) => ENTITIES[c as keyof typeof ENTITIES])).join('<br>');
 
 /** The color a box's or a rect's text opens with, or `undefined`: a function or hex color, or a bare word only where it
  *  names one. */

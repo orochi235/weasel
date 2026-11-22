@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StorageDemo } from '../StorageDemo';
 
 const clear = () => {
@@ -9,6 +9,7 @@ const clear = () => {
 beforeEach(clear);
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   clear();
 });
 
@@ -26,5 +27,14 @@ describe('StorageDemo', () => {
     expect(localStorage.getItem('weasel-demo-storage.count')).toBe('2');
     render(<StorageDemo />);
     expect((await screen.findByRole('row', { name: /^count/ })).textContent).toMatch(/^count22/);
+  });
+
+  it('shows a dash for each record where the browser refuses site data', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError');
+    });
+    render(<StorageDemo />);
+    expect((await screen.findByRole('row', { name: /^count/ })).textContent).toMatch(/^count0?—/);
   });
 });

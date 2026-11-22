@@ -363,6 +363,15 @@ describe('argsToSchema', () => {
       expect(at({ neq: 'b' }, { mode: 'b' })).toBe(false);
     });
 
+    it('ignores an eq or neq given as undefined, as Storybook does', () => {
+      const at = (condition: Record<string, unknown>, config: Record<string, unknown>) =>
+        shownWhen({ gridDivisions: { control: 'number', if: { arg: 'mode', ...condition } } }, 'gridDivisions', config);
+      expect(at({ eq: undefined, truthy: false }, { mode: '' })).toBe(true);
+      expect(at({ eq: undefined, truthy: false }, { mode: 'a' })).toBe(false);
+      expect(at({ neq: undefined }, { mode: 'a' })).toBe(true);
+      expect(at({ neq: undefined }, { mode: '' })).toBe(false);
+    });
+
     it('compares eq and neq as data, as Storybook does, so an array or object can match', () => {
       const at = (condition: Record<string, unknown>, config: Record<string, unknown>) =>
         shownWhen({ gridDivisions: { control: 'number', if: { arg: 'mode', ...condition } } }, 'gridDivisions', config);

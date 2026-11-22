@@ -1,0 +1,110 @@
+{
+ "id": "svg.part1",
+ "commit": "64f0b083bc66bebeb52e9c5a64e5b2587c66b45b",
+ "date": "2026-11-21",
+ "files": [
+  "packages/svg/src/__fixtures__/fixtures.ts",
+  "packages/svg/src/absoluteUnits.ts",
+  "packages/svg/src/alignedTextStroke.ts",
+  "packages/svg/src/bakeTransforms.ts",
+  "packages/svg/src/bitmapHref.ts",
+  "packages/svg/src/booleanGroup.ts",
+  "packages/svg/src/cascade.ts",
+  "packages/svg/src/color.ts",
+  "packages/svg/src/condition.ts",
+  "packages/svg/src/conditional.ts",
+  "packages/svg/src/container.ts",
+  "packages/svg/src/cssScan.ts",
+  "packages/svg/src/draftPose.ts",
+  "packages/svg/src/draftSpecs.ts",
+  "packages/svg/src/draftTakes.ts",
+  "packages/svg/src/elements.ts",
+  "packages/svg/src/fadePaint.ts",
+  "packages/svg/src/fillPaint.ts",
+  "packages/svg/src/fontSize.ts",
+  "packages/svg/src/framedText.ts",
+  "packages/svg/src/fromKit.ts",
+  "packages/svg/src/glyphRises.ts",
+  "packages/svg/src/glyphShifts.ts",
+  "packages/svg/src/glyphTurns.ts",
+  "packages/svg/src/gradientStops.ts",
+  "packages/svg/src/gradients.ts",
+  "packages/svg/src/groupBox.ts",
+  "packages/svg/src/groupPaint.ts",
+  "packages/svg/src/groupPaintXml.ts",
+  "packages/svg/src/hiddenElement.ts",
+  "packages/svg/src/hugeStrokeBounds.bench.ts",
+  "packages/svg/src/index.ts",
+  "packages/svg/src/kitInherits.ts",
+  "packages/svg/src/kitPaint.ts",
+  "packages/svg/src/laidLines.ts",
+  "packages/svg/src/lengths.ts",
+  "packages/svg/src/lowerLeaf.ts",
+  "packages/svg/src/markerDefs.ts",
+  "packages/svg/src/media.ts",
+  "packages/svg/src/metaXml.ts",
+  "packages/svg/src/metricScale.ts",
+  "packages/svg/src/openSubpathFill.ts",
+  "packages/svg/src/paintServers.ts",
+  "packages/svg/src/paintThroughMatrix.ts",
+  "packages/svg/src/painterLeaf.ts"
+ ],
+ "a": 5,
+ "b": 2,
+ "m": 0,
+ "distinct": 7,
+ "chapman": 17,
+ "unfound": 10,
+ "read": {
+  "A": 45,
+  "B": 45
+ },
+ "newCode": {
+  "since": 64,
+  "changedFiles": 18,
+  "findings": 4
+ },
+ "previous": {
+  "round": 64,
+  "chapman": 22.488888888888887,
+  "unfound": 9.777777777777777
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 27,
+  "testFiles": {
+   "failed": 0,
+   "passed": 643,
+   "total": 643
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 16.3,
+   "B": 8.4,
+   "match": 3.3,
+   "fix": 22.9
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 3235117,
+  "costUsd": 8.86
+ },
+ "fixCommits": [
+  "8402171c35128df5459a28b8f1c62b012ede4fb9",
+  "b87755b6f633fdeac898e693b090c208c7d07b42",
+  "3f0e07400191f8767019d6c1c4b0968576a63921",
+  "d1b1d63930c2f88cd72739f22bdff940907b0291",
+  "bd4ebde83a02d765eeb3e1c39a8217720641a593",
+  "b58787a0583cf586201bf06a0f54e81af20597be",
+  "7b7bdbf9416559ba22590a9c275e92d7bb87b719"
+ ]
+}

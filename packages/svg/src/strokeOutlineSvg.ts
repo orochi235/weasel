@@ -21,6 +21,7 @@ import type { SvgNode, SvgStroke } from './types';
 
 const VERTEX_WIDTHS = 'vertex-widths';
 const NIB = 'nib';
+const JOIN_THRESHOLD = 'varying-width-join-threshold';
 const ALIGN = 'stroke-align';
 const WIDTH = 'stroke-width';
 const ROLE = 'role';
@@ -82,6 +83,9 @@ export function outlinedStrokeAttrs(stroke: SvgStroke, strokeAttrs: readonly str
     // Unrounded: an angle in radians is rarely a short decimal.
     out.push(`${WEASEL_NS_PREFIX}:${NIB}="${String(stroke.nib.angle)} ${String(stroke.nib.ratio)}"`);
   }
+  if (stroke.varyingWidthJoinThreshold !== undefined) {
+    out.push(`${WEASEL_NS_PREFIX}:${JOIN_THRESHOLD}="${String(stroke.varyingWidthJoinThreshold)}"`);
+  }
   if (stroke.align === 'inner' || stroke.align === 'outer') out.push(`${WEASEL_NS_PREFIX}:${ALIGN}="${stroke.align}"`);
   return out;
 }
@@ -92,6 +96,7 @@ export function kitStroke(stroke: SvgStroke): Stroke {
     width: stroke.width,
     ...(stroke.vertexWidths ? { vertexWidths: stroke.vertexWidths } : {}),
     ...(stroke.nib ? { nib: stroke.nib } : {}),
+    ...(stroke.varyingWidthJoinThreshold !== undefined ? { varyingWidthJoinThreshold: stroke.varyingWidthJoinThreshold } : {}),
     ...(stroke.cap ? { cap: stroke.cap } : {}),
     ...(stroke.join ? { join: stroke.join } : {}),
     ...(stroke.dash ? { dash: stroke.dash } : {}),
@@ -135,7 +140,7 @@ export function isStrokeOutline(el: Element): boolean {
   return attrOf(el, ROLE) === OUTLINE;
 }
 
-/** `stroke` as read off `el`, with the width, per-vertex widths, nib,
+/** `stroke` as read off `el`, with the width, per-vertex widths, join threshold, nib,
  *  alignment, and markers an outlined stroke keeps in the private namespace restored. */
 export function withOutlinedStroke(el: Element, stroke: SvgStroke | undefined): SvgStroke | undefined {
   const width = parseFloat(attrOf(el, WIDTH) ?? '');
@@ -145,6 +150,8 @@ export function withOutlinedStroke(el: Element, stroke: SvgStroke | undefined): 
   if (list) out.vertexWidths = list.trim().split(/\s+/).map(widthOfToken);
   const [angle, ratio] = (attrOf(el, NIB) ?? '').trim().split(/\s+/).map(Number);
   if (Number.isFinite(angle) && Number.isFinite(ratio)) out.nib = { angle, ratio };
+  const threshold = parseFloat(attrOf(el, JOIN_THRESHOLD) ?? '');
+  if (Number.isFinite(threshold)) out.varyingWidthJoinThreshold = threshold;
   const align = attrOf(el, ALIGN);
   if (align === 'inner' || align === 'outer') out.align = align;
   for (const [attr, field] of [['marker-start', 'markerStart'], ['marker-mid', 'markerMid'], ['marker-end', 'markerEnd']] as const) {

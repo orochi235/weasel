@@ -1,0 +1,113 @@
+{
+ "id": "core.canvas.part1",
+ "commit": "64f0b083bc66bebeb52e9c5a64e5b2587c66b45b",
+ "date": "2026-11-21",
+ "files": [
+  "packages/core/src/canvas/Canvas.tsx",
+  "packages/core/src/canvas/CanvasView.tsx",
+  "packages/core/src/canvas/CursorCoordsHud.tsx",
+  "packages/core/src/canvas/DrawCanvas.tsx",
+  "packages/core/src/canvas/GestureReason.module.css",
+  "packages/core/src/canvas/GestureReason.tsx",
+  "packages/core/src/canvas/ModalityHud.tsx",
+  "packages/core/src/canvas/NodeShape.ts",
+  "packages/core/src/canvas/PickHud.tsx",
+  "packages/core/src/canvas/SceneCanvas.tsx",
+  "packages/core/src/canvas/SceneViewCanvas.tsx",
+  "packages/core/src/canvas/SurfaceCanvas.tsx",
+  "packages/core/src/canvas/ViewMarker.tsx",
+  "packages/core/src/canvas/accentColor.ts",
+  "packages/core/src/canvas/adapterDerivedPath.ts",
+  "packages/core/src/canvas/adapterPickSource.ts",
+  "packages/core/src/canvas/affordanceAt.ts",
+  "packages/core/src/canvas/ambientContributions.tsx",
+  "packages/core/src/canvas/bestHitPicker.ts",
+  "packages/core/src/canvas/buildSceneLayer.ts",
+  "packages/core/src/canvas/buildSceneTree.ts",
+  "packages/core/src/canvas/canvasBackend.ts",
+  "packages/core/src/canvas/canvasBackendContext.ts",
+  "packages/core/src/canvas/canvasExtension.ts",
+  "packages/core/src/canvas/canvasProps.ts",
+  "packages/core/src/canvas/canvasRenderer.ts",
+  "packages/core/src/canvas/canvasViewProps.ts",
+  "packages/core/src/canvas/centersBetween.ts",
+  "packages/core/src/canvas/commandRasterizer.ts",
+  "packages/core/src/canvas/contentBounds.ts",
+  "packages/core/src/canvas/contextAttributes.ts",
+  "packages/core/src/canvas/copiesAbove.ts",
+  "packages/core/src/canvas/defaultDrawOne.ts",
+  "packages/core/src/canvas/derivedPath.ts",
+  "packages/core/src/canvas/devtoolsLabel.tsx",
+  "packages/core/src/canvas/doubleClickTarget.ts",
+  "packages/core/src/canvas/drawEnvelope.ts",
+  "packages/core/src/canvas/drawnBounds.ts",
+  "packages/core/src/canvas/gestureBounds.ts",
+  "packages/core/src/canvas/hostAnchor.ts",
+  "packages/core/src/canvas/hud.module.css",
+  "packages/core/src/canvas/inheritedPaints.ts",
+  "packages/core/src/canvas/inkBoxes.ts",
+  "packages/core/src/canvas/insertPreviewExtent.ts",
+  "packages/core/src/canvas/kitRequirements.ts",
+  "packages/core/src/canvas/layerHover.ts",
+  "packages/core/src/canvas/layerOrder.ts",
+  "packages/core/src/canvas/layerSample.ts",
+  "packages/core/src/canvas/layerSlots.ts",
+  "packages/core/src/canvas/mountedCanvases.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 7,
+ "unfound": 2,
+ "read": {
+  "A": 50,
+  "B": 50
+ },
+ "newCode": {
+  "since": 63,
+  "changedFiles": 1,
+  "findings": 0
+ },
+ "previous": {
+  "round": 63,
+  "chapman": 15,
+  "unfound": 9
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 19,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2696,
+   "total": 2696
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4,
+   "B": 4.5,
+   "match": 0.4,
+   "fix": 21.6
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2068644,
+  "costUsd": 6.09
+ },
+ "fixCommits": [
+  "58be1d6a2c515b9797ba89f4b72ade984f121afd",
+  "19592d95166b4a603931af21e36e38e7ed311a46",
+  "59dc058bdc628277ae02a3dbed92256651a4d789",
+  "40dcf8a9644ed73dff3d1f032b831ab65457d587",
+  "138828ca8821e1fc37cb617311042de78b386bc5"
+ ]
+}

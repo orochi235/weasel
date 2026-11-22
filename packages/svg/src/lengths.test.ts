@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { boundsOfPath } from '@weasel-js/core';
 import { parseSvg } from './parse';
-import type { SvgImageNode, SvgPathNode, SvgTextNode } from './types';
+import type { SvgGroupNode, SvgImageNode, SvgPathNode, SvgTextNode } from './types';
 
 const NS = 'xmlns="http://www.w3.org/2000/svg"';
 
@@ -47,6 +47,14 @@ describe('a percentage length on a shape, image, or text', () => {
     expect(warnings).toEqual([]);
     expect((nodes[0] as SvgPathNode).path).toMatchObject({ width: 200 });
     expect((nodes[1] as SvgPathNode).path).toMatchObject({ width: 20, height: 5 });
+  });
+
+  it('reads a nested svg sized auto as 100% of the viewport it sits in', () => {
+    const { nodes, warnings } = parseSvg(
+      `<svg ${NS} viewBox="0 0 200 100"><svg width="auto" height="50"><rect width="50%" height="10"/></svg></svg>`,
+    );
+    expect(warnings).toEqual([]);
+    expect((nodes[0] as SvgPathNode).path).toMatchObject({ width: 100 });
   });
 
   it('reads image and text positions the same way', () => {
@@ -99,6 +107,14 @@ describe('a CSS unit on a geometry attribute', () => {
     expect((nodes[0] as SvgPathNode).stroke).toMatchObject({ width: 96, dash: [96, 4] });
     expect((nodes[1] as SvgTextNode).style?.fontSize).toBe(16);
     expect(warnings).toEqual([]);
+  });
+
+  it('reads a stroke-dasharray length in an unconverted unit as its number, as stroke-width does', () => {
+    const { nodes, warnings } = parseSvg(
+      `<svg ${NS}><g stroke-dasharray="9 9"><path d="M0 0h10" stroke="#000" stroke-width="5%" stroke-dasharray="5% 2vw"/></g></svg>`,
+    );
+    expect(((nodes[0] as SvgGroupNode).children[0] as SvgPathNode).stroke).toMatchObject({ width: 5, dash: [5, 2] });
+    expect(warnings).toHaveLength(3);
   });
 
   it('resolves a percentage against a root sized in an absolute unit', () => {

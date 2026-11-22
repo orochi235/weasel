@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "A drag that starts from a corner-snapped placement shows the box offset from the pointer by up to the snap threshold",
+  "`<kbd>` is a mark that a backslash cannot keep literal",
+  "An empty ItemList drops the hold's reason and puts the list's `aria-label` on a roleless div"
+ ],
+ "b": [
+  "parseInline drops plain relative links that its docstring promises to keep",
+  "InlineMarkdown opens same-page `#fragment` links in a new tab"
+ ]
+}

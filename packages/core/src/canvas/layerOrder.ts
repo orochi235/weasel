@@ -14,7 +14,8 @@ const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
  *   custom-layer keys, and chains may mix the two.
  * - Customs with neither `after` nor `before` are emitted after all standard
  *   slots.
- * - Dangling references and cycles go to the tail with a `console.warn`.
+ * - Dangling references and cycles go to the tail with a `console.warn`, each
+ *   chain from its root, so customs anchored to an orphan stay beside it.
  * - An entry with both `after` and `before` throws, as does a value under a
  *   non-standard key that is neither a `{ layer }` entry nor `null`/`undefined`.
  */
@@ -99,6 +100,19 @@ export function composeOrderedLayers(
 
   for (const t of tail) emitChild(t);
 
+  for (const root of orphanRoots(layersMap, allCustomKeys, emitted)) {
+    if (!emitted.has(root)) emitChild({ key: root, layer: (getOwn(layersMap, root) as CustomLayerEntry).layer });
+  }
+
+  return out;
+}
+
+/**
+ * Warn for each custom no anchor chain placed, because its chain loops or ends on a key nothing
+ * defines, and answer the key each such chain starts from: emitted from there, the orphans
+ * anchored to one another keep their order at the tail.
+ */
+function orphanRoots(layersMap: Record<string, unknown>, allCustomKeys: ReadonlySet<string>, emitted: ReadonlySet<string>): string[] {
   // What placed each custom above: `after` when it names one, else `before`.
   const anchorOf = (key: string): string | undefined => {
     const value = getOwn(layersMap, key);
@@ -115,20 +129,23 @@ export function composeOrderedLayers(
     }
     return null;
   };
-
-  // Orphans: customs that declared an `after`/`before` but never got emitted,
-  // because the chain of anchors loops or ends on a key nothing defines.
-  for (const key of allCustomKeys) {
-    if (emitted.has(key)) continue;
+  const rootOf = (key: string): string => {
+    const seen = new Set<string>([key]);
+    let at = key;
+    for (let next = anchorOf(at)!; allCustomKeys.has(next) && !seen.has(next); next = anchorOf(at)!) {
+      seen.add(next);
+      at = next;
+    }
+    return at;
+  };
+  const orphans = [...allCustomKeys].filter((key) => !emitted.has(key));
+  for (const key of orphans) {
     const end = deadEnd(key);
     console.warn(end === null
       ? `composeOrderedLayers: cycle detected involving custom layer "${key}" — falling back to tail`
       : `composeOrderedLayers: dangling reference "${end}" from custom layer "${key}" — falling back to tail`);
-    emitted.add(key);
-    out.push((getOwn(layersMap, key) as CustomLayerEntry).layer);
   }
-
-  return out;
+  return orphans.map(rootOf);
 }
 
 /**

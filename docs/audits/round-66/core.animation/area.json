@@ -1,0 +1,88 @@
+{
+ "id": "core.animation",
+ "commit": "64f0b083bc66bebeb52e9c5a64e5b2587c66b45b",
+ "date": "2026-11-21",
+ "files": [
+  "packages/core/src/animation/behaviors/coast.ts",
+  "packages/core/src/animation/behaviors/coastByWrite.ts",
+  "packages/core/src/animation/behaviors/coastOnTargets.ts",
+  "packages/core/src/animation/behaviors/momentum.ts",
+  "packages/core/src/animation/clipTargets.ts",
+  "packages/core/src/animation/departures.ts",
+  "packages/core/src/animation/index.ts",
+  "packages/core/src/animation/motionMs.ts",
+  "packages/core/src/animation/pathMotion.ts",
+  "packages/core/src/animation/poseHelpers.ts",
+  "packages/core/src/animation/poseTarget.ts",
+  "packages/core/src/animation/poseTransition.ts",
+  "packages/core/src/animation/reflow.ts",
+  "packages/core/src/animation/reflowGlide.ts",
+  "packages/core/src/animation/rewind.ts",
+  "packages/core/src/animation/rig/bindRig.ts",
+  "packages/core/src/animation/rig/index.ts",
+  "packages/core/src/animation/rig/rigNode.ts",
+  "packages/core/src/animation/rig/rigSeat.ts",
+  "packages/core/src/animation/rig/skinBinding.ts",
+  "packages/core/src/animation/rig/useRig.ts",
+  "packages/core/src/animation/wrappers/animateLifecycle.ts",
+  "packages/core/src/animation/wrappers/animateOnSetPose.ts",
+  "packages/core/src/animation/wrappers/index.ts",
+  "packages/core/src/animation/wrappers/instantPose.ts",
+  "packages/core/src/animation/writtenPoseTarget.ts"
+ ],
+ "a": 4,
+ "b": 2,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 6.5,
+ "unfound": 1.5,
+ "read": {
+  "A": 26,
+  "B": 26
+ },
+ "newCode": {
+  "since": 38,
+  "changedFiles": 11,
+  "findings": 6
+ },
+ "previous": {
+  "round": 38,
+  "chapman": 16.5,
+  "unfound": 7.5
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 13,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2355,
+   "total": 2355
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.6,
+   "B": 6.6,
+   "match": 0.1,
+   "fix": 20
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1536798,
+  "costUsd": 4.42
+ },
+ "fixCommits": [
+  "4a2ed88da7e4d703d518883c1c1ad5f92e0a5566",
+  "bef097d41fcc6926b9140e571f61ef5a00d5573f",
+  "54619ab835bc48269e90e6e2811386357353dfe7",
+  "bd3d0c59616034c0dfa34b4e53bf04d29c856873"
+ ]
+}

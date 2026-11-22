@@ -167,7 +167,7 @@ describe('drawnBoundsOf a node showing a derived path', () => {
 
 describe('drawnBoundsOf over members nothing paints', () => {
   function boxWith(groupExtra: Record<string, unknown>, memberExtra: Record<string, unknown>) {
-    const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<unknown, 'main' | 'off' | 'top', RectPose>({ systemLayers: [{ id: 'main' }, { id: 'off', visible: false }, { id: 'top' }] });
     scene.add({ id: asNodeId('g'), kind: 'group', layer: 'main', data: {}, pose: BOX, ...groupExtra } as never);
     scene.add({
       id: asNodeId('m'), kind: 'mark', layer: 'main', data: { shape: 'rect' },
@@ -182,6 +182,18 @@ describe('drawnBoundsOf over members nothing paints', () => {
 
   it('leaves out the members of a node that consumes its children', () => {
     expect(boxWith({ consumesChildren: true }, {})).toEqual(BOX);
+  });
+
+  it('leaves out a member on a hidden layer, but reaches over what it paints of its children', () => {
+    expect(boxWith({}, { layer: 'off' })).toEqual(BOX);
+    const scene = createScene<unknown, 'main' | 'off' | 'top', RectPose>({ systemLayers: [{ id: 'main' }, { id: 'off', visible: false }, { id: 'top' }] });
+    scene.add({ id: asNodeId('g'), kind: 'group', layer: 'main', data: {}, pose: BOX } as never);
+    scene.add({ id: asNodeId('m'), kind: 'group', layer: 'off', data: {}, pose: { x: 300, y: 0, width: 10, height: 10 }, parent: asNodeId('g') } as never);
+    scene.add({
+      id: asNodeId('c'), kind: 'mark', layer: 'top', data: { shape: 'rect' },
+      pose: { x: 0, y: 150, width: 10, height: 10 }, parent: asNodeId('m'),
+    } as never);
+    expect(drawnBoundsOf(drawnBoundsScene(scene), asNodeId('g'), BOX)).toEqual({ x: 0, y: 0, width: 100, height: 160 });
   });
 
   it('still reaches over a shown member', () => {

@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "HTML table cells in a cell's label run together with no separator",
+  "`<pre>` content in an HTML label loses its line breaks and spacing",
+  "A moved edge label near the end of a line whose last stretch has no length falls back to the line's start"
+ ],
+ "b": [
+  "HTML table cells in a label run together: `<td>`/`<th>` are not block breaks",
+  "`<pre>` content has its whitespace folded and its newlines dropped",
+  "Placeholder values are substituted raw into an HTML label, so their `<`/`&` are parsed as markup",
+  "Hollow `oval`/`box`/`classic` arrowheads read as filled with no warning",
+  "Exit/entry points snap to the nearest compass port with no warning",
+  "Underline and strikethrough bits of `fontStyle` are dropped silently",
+  "Hidden cells and layers (`visible=\"0\"`) are imported as visible"
+ ]
+}

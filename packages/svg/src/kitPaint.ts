@@ -50,6 +50,7 @@ export function svgStrokeFromKit(raw: Stroke | null | undefined, box: SvgKitPose
     ...(stroke.markerEnd !== undefined ? { markerEnd: stroke.markerEnd } : {}),
     ...(stroke.vertexWidths?.length ? { vertexWidths: stroke.vertexWidths } : {}),
     ...(stroke.nib ? { nib: stroke.nib } : {}),
+    ...(stroke.varyingWidthJoinThreshold !== undefined ? { varyingWidthJoinThreshold: stroke.varyingWidthJoinThreshold } : {}),
     ...(stroke.trim !== undefined ? { trim: stroke.trim } : {}),
   };
 }

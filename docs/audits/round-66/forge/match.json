@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "configKey writes every Map and every Set as `{}`, so configs differing only inside one share a key",
+  "isPortSafe passes a Date, RegExp, ArrayBuffer or typed array whole, own expando properties included, which a port drops",
+  "useArgs sends an update to a forge-reserved key over the port, where the shell drops it, and keeps no local copy"
+ ],
+ "b": [
+  "A leaf's `default` crosses the port unsanitized, though its annotations are stripped to data",
+  "An arg cleared or set to a frame-local value through `useArgs` still reads as its config value to `argTypes.if`",
+  "`play` gets args without the frame-local ones, which its render sees",
+  "`if: { eq: undefined }` is tested as an equality, where Storybook ignores it"
+ ]
+}

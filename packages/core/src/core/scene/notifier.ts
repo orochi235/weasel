@@ -15,7 +15,8 @@ export interface Notifier {
    *  this holder has let go, before any subscriber is called. */
   deferred<T>(fn: () => T, settle?: () => void): T;
   /** Run `fn` with the calls it causes held and then dropped: its caller
-   *  notifies once itself. The version still counts each one. */
+   *  notifies once itself, and what `whenSettled` queued runs after that call.
+   *  The version still counts each one. */
   muted<T>(fn: () => T): T;
   /** Run `fn` now, or, while a call is held, once the outermost holder is done
    *  and after the subscribers it notifies: for a change notice of another
@@ -46,6 +47,7 @@ export function createNotifier(): Notifier {
         return;
       }
       changed.emit();
+      flush();
     },
     version: () => version,
     subscribe: changed.subscribe,
@@ -66,12 +68,16 @@ export function createNotifier(): Notifier {
     muted(fn) {
       const was = pending;
       held++;
+      let threw = true;
       try {
-        return fn();
+        const result = fn();
+        threw = false;
+        return result;
       } finally {
         held--;
         pending = was;
-        flush();
+        // A caller whose `fn` threw may never notify.
+        if (threw) flush();
       }
     },
     whenSettled(fn) {

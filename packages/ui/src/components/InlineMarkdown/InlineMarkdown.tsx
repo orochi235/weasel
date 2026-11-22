@@ -14,7 +14,7 @@ export interface InlineMarkdownProps {
 /**
  * A line of prose written with inline markdown, drawn as elements in place of its punctuation: a
  * backticked span as {@link Code}, a `<kbd>` shortcut as a {@link KeySequence}, strong, emphasis, strikethrough, and links that open away from
- * the page. Renders a fragment, so it takes the type of whatever it sits in.
+ * the page, apart from a `#id` link to a spot on it. Renders a fragment, so it takes the type of whatever it sits in.
  */
 export function InlineMarkdown({ text, links = 'anchor' }: InlineMarkdownProps) {
   return <>{draw(parseInline(text), links)}</>;
@@ -42,7 +42,7 @@ function drawToken(token: InlineToken, links: 'anchor' | 'text'): ReactNode {
       return links === 'text' ? (
         draw(token.children, links)
       ) : (
-        <a href={token.href} target="_blank" rel="noreferrer">
+        <a href={token.href} {...(token.href.startsWith('#') ? {} : { target: '_blank', rel: 'noreferrer' })}>
           {draw(token.children, links)}
         </a>
       );

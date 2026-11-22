@@ -18,6 +18,13 @@ export interface DragPlacementContext {
   options: { inset: number };
 }
 
+/** `from` with its `x` and `y` moved to where the box shows, which a corner-snapped drop leaves short of the corner. */
+export function shownPlacement(from: FloatingPlacement, { container, item, options }: DragPlacementContext): FloatingPlacement {
+  const rect = STRATEGY.layout({ items: [item], container, state: { at: { [ITEM_ID]: from }, inner: undefined }, options })
+    .placements.get(ITEM_ID);
+  return rect ? { ...from, x: rect.x, y: rect.y } : from;
+}
+
 /**
  * Where a box at `from` rests after a drag of `dx`, `dy`: kept inside the container, and caught by a corner it ends
  * near. windease's own drag step, so every floating box snaps the same way.

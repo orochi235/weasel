@@ -1,5 +1,5 @@
 import { isDev } from '@weasel-js/react';
-import { createKeyedEmitter } from '@weasel-js/registry';
+import { after, createKeyedEmitter } from '@weasel-js/registry';
 
 type Hook = EventTarget;
 type Global = { __THREE_DEVTOOLS__?: Hook; [ctor: string]: unknown };
@@ -10,15 +10,22 @@ const byTrial = createKeyedEmitter<string, [how: string]>();
  *  and appended after the constructor returns. */
 const RETRIES_MS = [0, 50, 250, 1000];
 
-function findTrial(canvas: Element, how: string, attempt = 0): void {
+/** Reports `canvas` to its trial, waiting for it to join the DOM; `done` hears whether it found one. */
+function findTrial(
+  canvas: Element,
+  how: string,
+  attempt = 0,
+  done?: (found: boolean) => void,
+): void {
   if (!canvas.isConnected) {
     const wait = RETRIES_MS[attempt + 1];
-    if (wait !== undefined) setTimeout(() => findTrial(canvas, how, attempt + 1), wait);
+    if (wait !== undefined) after(wait, () => findTrial(canvas, how, attempt + 1, done));
+    else done?.(false);
     return;
   }
   const id = canvas.closest('[data-trial-id]')?.getAttribute('data-trial-id');
-  if (!id) return;
-  byTrial.emit(id, how);
+  if (id) byTrial.emit(id, how);
+  done?.(!!id);
 }
 
 /** Duck-typed: the canvas may come from another realm than this module, or be an `OffscreenCanvas`. */
@@ -27,7 +34,7 @@ const isElement = (el: unknown): el is Element =>
 
 /** Reported later rather than now, so a trial whose watch subscribes in an effect after its instrument's still hears. */
 const report = (canvas: Element, how: string): void => {
-  setTimeout(() => findTrial(canvas, how), RETRIES_MS[0]);
+  after(0, () => findTrial(canvas, how));
 };
 
 let threeInstalled = false;
@@ -56,7 +63,24 @@ function installThreeWatch(): void {
 
 const DEPTH_TEST = 0x0b71;
 let depthInstalled = false;
+/** Depth-tested canvases already reported to a trial, or announced by three, and those being looked for. */
 const depthSeen = new WeakSet<object>();
+const depthPending = new WeakSet<object>();
+
+/** Reports a depth-tested canvas to its trial once; a search that finds none leaves the next call to try again. */
+function depthFound(canvas: Element, how: string): void {
+  if (depthSeen.has(canvas) || depthPending.has(canvas)) return;
+  depthPending.add(canvas);
+  // Deferred, as three announces its renderer only after turning depth testing on or building a pipeline.
+  after(0, () => {
+    const settle = (found: boolean): void => {
+      depthPending.delete(canvas);
+      if (found) depthSeen.add(canvas);
+    };
+    if (threeCanvases.has(canvas)) settle(true);
+    else findTrial(canvas, how, 0, settle);
+  });
+}
 
 /**
  * Listens for WebGL depth testing turned on, in development: what a
@@ -75,13 +99,7 @@ function installDepthWatch(): void {
     if (!proto || typeof enable !== 'function') continue;
     proto.enable = function (this: { canvas?: unknown }, cap: number) {
       const canvas = this.canvas;
-      if (cap === DEPTH_TEST && isElement(canvas) && !depthSeen.has(canvas)) {
-        depthSeen.add(canvas);
-        // Deferred, as three announces its renderer only once its constructor has turned depth testing on.
-        setTimeout(() => {
-          if (!threeCanvases.has(canvas)) findTrial(canvas, 'WebGL with depth testing');
-        }, RETRIES_MS[0]);
-      }
+      if (cap === DEPTH_TEST && isElement(canvas)) depthFound(canvas, 'WebGL with depth testing');
       return enable.call(this, cap);
     };
   }
@@ -100,18 +118,12 @@ const testsDepth = (ds: DepthStencil | undefined): boolean =>
   (ds.depthWriteEnabled === true || (ds.depthCompare ?? 'always') !== 'always');
 
 let gpuInstalled = false;
-/** Canvases configured with each device, and the devices that have built a depth-tested pipeline. */
-const gpuCanvases = new WeakMap<object, Set<Element>>();
+/** Canvases configured with each device before it built a depth-tested pipeline, held weakly so a
+ *  long-lived device keeps no closed trial's canvas; and the devices that have built one. */
+const gpuCanvases = new WeakMap<object, Set<WeakRef<Element>>>();
 const gpuDepth = new WeakSet<object>();
 
-function gpuFound(canvas: Element): void {
-  if (depthSeen.has(canvas)) return;
-  depthSeen.add(canvas);
-  // Deferred, as three may build a pipeline before it announces its renderer.
-  setTimeout(() => {
-    if (!threeCanvases.has(canvas)) findTrial(canvas, 'WebGPU with depth testing');
-  }, RETRIES_MS[0]);
-}
+const gpuFound = (canvas: Element): void => depthFound(canvas, 'WebGPU with depth testing');
 
 /**
  * The WebGPU counterpart of {@link installDepthWatch}. A pipeline belongs to a
@@ -131,10 +143,18 @@ function installGpuDepthWatch(): void {
       const { canvas } = this;
       const device = config?.device;
       if (device && isElement(canvas)) {
-        const set = gpuCanvases.get(device) ?? new Set();
-        gpuCanvases.set(device, set);
-        set.add(canvas);
         if (gpuDepth.has(device)) gpuFound(canvas);
+        else {
+          const set = gpuCanvases.get(device) ?? new Set();
+          gpuCanvases.set(device, set);
+          let held = false;
+          for (const ref of set) {
+            const el = ref.deref();
+            if (!el) set.delete(ref);
+            else if (el === canvas) held = true;
+          }
+          if (!held) set.add(new WeakRef(canvas));
+        }
       }
       return configure.call(this, config);
     };
@@ -147,7 +167,11 @@ function installGpuDepthWatch(): void {
     const wrapped: Pipeline = function (this, descriptor) {
       if (testsDepth(descriptor?.depthStencil) && !gpuDepth.has(this)) {
         gpuDepth.add(this);
-        for (const canvas of gpuCanvases.get(this) ?? []) gpuFound(canvas);
+        for (const ref of gpuCanvases.get(this) ?? []) {
+          const canvas = ref.deref();
+          if (canvas) gpuFound(canvas);
+        }
+        gpuCanvases.delete(this);
       }
       return (create as Pipeline).call(this, descriptor);
     };

@@ -1,0 +1,96 @@
+{
+ "id": "forge",
+ "commit": "64f0b083bc66bebeb52e9c5a64e5b2587c66b45b",
+ "date": "2026-11-21",
+ "files": [
+  "packages/forge/src/actionParamSchema.ts",
+  "packages/forge/src/cli/cli.ts",
+  "packages/forge/src/cli/parse.ts",
+  "packages/forge/src/cli/policy.ts",
+  "packages/forge/src/config.ts",
+  "packages/forge/src/csf/argsContext.ts",
+  "packages/forge/src/csf/argsToSchema.ts",
+  "packages/forge/src/csf/loadCsfModule.tsx",
+  "packages/forge/src/csf/portSafe.ts",
+  "packages/forge/src/csf/propArgTypes.ts",
+  "packages/forge/src/csf/shims/preview-api.ts",
+  "packages/forge/src/csf/types.ts",
+  "packages/forge/src/icons.gen.ts",
+  "packages/forge/src/index.ts",
+  "packages/forge/src/kitIcons.tsx",
+  "packages/forge/src/messageOf.ts",
+  "packages/forge/src/pbt.fixture.ts",
+  "packages/forge/src/play.ts",
+  "packages/forge/src/protocol/channel.ts",
+  "packages/forge/src/protocol/messages.ts",
+  "packages/forge/src/protocol/schema.ts",
+  "packages/forge/src/route/url.ts",
+  "packages/forge/src/test/index.ts",
+  "packages/forge/src/test/play.ts",
+  "packages/forge/src/test/runStory.tsx",
+  "packages/forge/src/testing/frame.ts",
+  "packages/forge/src/testing/loupe.ts",
+  "packages/forge/src/testing/shell.ts",
+  "packages/forge/src/title.ts"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 0,
+ "distinct": 7,
+ "chapman": 19,
+ "unfound": 12,
+ "read": {
+  "A": 29,
+  "B": 29
+ },
+ "newCode": {
+  "since": 65,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 65,
+  "chapman": 17,
+  "unfound": 10
+ },
+ "patches": 9,
+ "verify": {
+  "ok": true,
+  "files": 24,
+  "testFiles": {
+   "failed": 0,
+   "passed": 276,
+   "total": 276
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.8,
+   "B": 6.2,
+   "match": 1,
+   "fix": 30.4
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 928436,
+  "costUsd": 6.74
+ },
+ "fixCommits": [
+  "f1638a8f0e168baedc705e1de1f24a2d2266f405",
+  "08fd862dcaad712b00ab0e91ca1fcd5070d78941",
+  "3b5f36bb8479b7ccdd27873de2ecfc56061a3314",
+  "45f827ea692f743c8ecab2c88321796d1bbea4f1",
+  "fba7728cab932c1e1ed2b1140cd8bda162e2a077",
+  "1df9002e6e4ea8aa8ad0c130524d715ca549b7c9",
+  "a77b97685009eea519b4626d714a08b68dfb7599",
+  "6c27513e01b7902ad543c6fca4fa9f5e9a11756a",
+  "48ba8d08660272f66d090d2dc13e7ec7208eb4c2"
+ ]
+}

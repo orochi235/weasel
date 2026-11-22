@@ -88,6 +88,22 @@ export function nearestOnFlat(f: Flat, p: Vec): Vec {
   return out;
 }
 
+/** The point of `f` nearest `p`, its coordinates along `f.dirs` clamped to
+ *  `span`'s ranges: on a segment or a bounded face, where its bounds allow.
+ *  With no `span`, `nearestOnFlat`. */
+export function nearestInSpan(f: Flat, p: Vec, span?: readonly (readonly [number, number])[]): Vec {
+  const near = nearestOnFlat(f, p);
+  if (!span) return near;
+  const u = solveLeastSquares(f.dirs, near.map((x, i) => x - f.at[i]));
+  const out = f.at.slice();
+  f.dirs.forEach((d, j) => {
+    const r = span[j];
+    const t = r ? Math.min(Math.max(u[j], r[0]), r[1]) : u[j];
+    for (let i = 0; i < out.length; i++) out[i] += t * d[i];
+  });
+  return out;
+}
+
 /**
  * The `x` minimizing `|Σ x_j cols_j − rhs|`, through the normal equations.
  * A column within `RANK_TOL` of the span of the kept ones before it is

@@ -177,6 +177,11 @@ function flaggedLayers(scene: GateSource, flag: 'locked' | 'hidden'): Set<string
   return out;
 }
 
+/** The ids of the layers that hide what is on them, or null when none does. */
+export function hiddenLayerIds(scene: Pick<GateSource, 'layers'>): Set<string> | null {
+  return flaggedLayers(scene as GateSource, 'hidden');
+}
+
 /** {@link NodeGates.hidden} for one id. */
 export function isNodeHidden(scene: GateSource, id: NodeId): boolean {
   const node = scene.get(id);

@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "Orphaned custom layers are emitted in map order, ignoring anchors between them",
+  "toPoseReads' parent fallback reads `parentId`, a field kit nodes don't carry",
+  "drawnBoundsOf counts a member on a hidden layer, which the render walk doesn't paint"
+ ],
+ "b": [
+  "Orphaned custom layers fall to the tail in declaration order, so a chain anchored among them comes out reversed",
+  "sceneContentBounds counts the copies of a container inside a consumed (boolean-operand) subtree that the render walk never paints",
+  "GestureReason's tag stays put when the camera moves without a dispatcher notification"
+ ]
+}

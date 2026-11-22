@@ -279,6 +279,62 @@ describe('TokenPanel', () => {
     });
   });
 
+  it('fits the track to the steps again after they move outside a drag, with room past each end', () => {
+    const steps = (amounts: number[]): TokenEntry[] =>
+      amounts.map((n, i) => ({ name: `--s-${i}`, type: 'dimension', group: 's', value: `${n}px` }));
+    const { rerender } = renderWithIcons(<TokenPanel tokens={steps([8, 16, 64])} onChange={() => {}} />);
+    const ends = () => {
+      const all = within(screen.getByRole('group', { name: 's' })).getAllByRole('slider');
+      return [Number(all[0]!.getAttribute('aria-valuemin')), Number(all.at(-1)!.getAttribute('aria-valuemax'))];
+    };
+    rerender(<TokenPanel tokens={steps([1, 2, 8])} onChange={() => {}} />);
+    expect(ends()).toEqual([Math.log2(1 / 1.5), Math.log2(8 * 1.5)]);
+    rerender(<TokenPanel tokens={steps([400, 800, 1600])} onChange={() => {}} />);
+    expect(ends()).toEqual([Math.log2(400 / 1.5), Math.log2(1600 * 1.5)]);
+  });
+
+  it('holds the track still under a drag while the steps it writes come back', () => {
+    const start: TokenEntry[] = [
+      { name: '--s-sm', type: 'dimension', group: 's', value: '8px' },
+      { name: '--s-md', type: 'dimension', group: 's', value: '16px' },
+      { name: '--s-lg', type: 'dimension', group: 's', value: '32px' },
+    ];
+    function Held() {
+      const [held, setHeld] = useState(start);
+      return (
+        <TokenPanel
+          tokens={held}
+          onChange={(name, value) => setHeld((was) => was.map((t) => (t.name === name && value !== null ? { ...t, value } : t)))}
+        />
+      );
+    }
+    renderWithIcons(<Held />);
+    const slider = (name: string) => within(screen.getByRole('group', { name: 's' })).getByRole('slider', { name });
+    const rail = slider('--s-lg').parentElement!;
+    rail.getBoundingClientRect = () =>
+      ({ x: 0, y: 0, left: 0, top: 0, width: 1000, height: 24, right: 1000, bottom: 24, toJSON: () => ({}) }) as DOMRect;
+    const [lo, hi] = [Math.log2(8 / 1.5), Math.log2(32 * 1.5)];
+    const at = (amount: number) => ({ clientX: ((Math.log2(amount) - lo) / (hi - lo)) * 1000, clientY: 12, pointerId: 1 });
+
+    fireEvent.pointerDown(slider('--s-lg'), { ...at(32), button: 0 });
+    fireEvent.pointerMove(document, at(24));
+    expect(slider('--s-lg')).toHaveAttribute('aria-valuemax', String(hi));
+    fireEvent.pointerUp(document, at(24));
+    expect(slider('--s-lg')).toHaveAttribute('aria-valuemax', String(Math.log2(24 * 1.5)));
+  });
+
+  it('draws a group named in scales as a scale, with its base and rule, however few steps it has', () => {
+    const radii: TokenEntry[] = [
+      { name: '--radius-sm', type: 'dimension', group: 'radius', value: '4px' },
+      { name: '--radius-md', type: 'dimension', group: 'radius', value: '8px' },
+    ];
+    const scale: TokenScale = { tokens: radii.map((t) => t.name), base: 4, rule: { kind: 'ratio', ratio: 2 } };
+    renderWithIcons(<TokenPanel tokens={radii} onChange={() => {}} scales={{ radius: scale }} onScaleChange={() => {}} />);
+    const group = within(screen.getByRole('group', { name: 'radius' }));
+    expect(group.getAllByRole('slider')).toHaveLength(2);
+    expect(group.getByRole('textbox', { name: 'radius base' })).toBeInTheDocument();
+  });
+
   it('keeps a unit on each step of a scale whose units differ', () => {
     const scale: TokenEntry[] = [
       { name: '--tracking-none', type: 'dimension', group: 'tracking', value: '0' },
@@ -333,6 +389,16 @@ describe('TokenPanel', () => {
     const row = within(screen.getByRole('group', { name: '--wzl-motion-fast' }));
     expect(row.getByRole('textbox', { name: '--wzl-motion-fast value' })).toHaveValue('120');
     expect(row.getByText('ms')).toBeInTheDocument();
+  });
+
+  it('shows an unset font weight as unset, with only the nine weights to pick', () => {
+    const unset: TokenEntry = { name: '--w', type: 'fontWeight', group: 'w', value: '' };
+    renderWithIcons(<TokenPanel tokens={[unset]} onChange={() => {}} />);
+    const button = within(screen.getByRole('group', { name: '--w' })).getByRole('button', { name: /--w/ });
+    expect(button).toHaveTextContent('unset');
+    fireEvent.click(button);
+    expect(screen.getAllByRole('option').map((o) => o.textContent))
+      .toEqual(['100', '200', '300', '400', '500', '600', '700', '800', '900']);
   });
 
   it('picks a font weight from the nine CSS weights', () => {

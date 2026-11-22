@@ -10,13 +10,13 @@
 
 import { createPart } from '@weasel-js/registry';
 import { parseDeclarations, type Declaration } from './cssScan';
-import { containerQueryHolds, queryContainerOf } from './container';
+import { containerLonghands, containerQueryHolds, queryContainerOf } from './container';
 import { compareSpecificity, specificity, type Specificity } from './specificity';
 import {
   DEFAULT_MEDIA_ENVIRONMENT, evaluateMediaQuery, mediaEnvironmentFor, type SvgMediaEnvironment,
 } from './media';
 import {
-  INHERITED_PROPERTIES, isDeclarationInvalid, numericFontWeight, PROPERTIES, readProperty, type InheritedPropertyName, type PropertyName, type PropertyValue, type Warn,
+  CSS_WIDE_KEYWORDS, INHERITED_PROPERTIES, isDeclarationInvalid, numericFontWeight, PROPERTIES, readProperty, type InheritedPropertyName, type PropertyName, type PropertyValue, type Warn,
 } from './properties';
 import {
   CascadeLayers, parseStylesheet, type StyleRule, type StylesheetContext,
@@ -141,7 +141,8 @@ const PROPERTY_NAMES = Object.keys(PROPERTIES) as PropertyName[];
  * presentation attributes, normal rules, normal inline, `!important` rules,
  * `!important` inline (CSS Cascade 5, SVG2). Layers order the rules within
  * each importance, reversed for `!important`. A value CSS rejects is dropped,
- * as CSS drops it, so the one below it stands.
+ * as CSS drops it, so the one below it stands. `revert` rolls back every author
+ * declaration and `revert-layer` those of its own layer, leaving the property unset where nothing is left.
  */
 const cascaded = createPart((el: Element): ReadonlyMap<string, string> => {
   const sheet = el.ownerDocument && documentSheet(el.ownerDocument);
@@ -149,10 +150,27 @@ const cascaded = createPart((el: Element): ReadonlyMap<string, string> => {
     && (!r.containers || containersHold(el, r.containers, sheet!.media)));
   const inline = parseDeclarations(el.getAttribute('style') ?? '');
   const out = new Map<string, string>();
-  const take = (prop: string, value: string, written: string): void => {
-    if (!isDeclarationInvalid(prop, value)) out.set(prop, value);
-    else sheet?.onWarn?.(`${written} is not a valid ${prop}; it is ignored, as CSS ignores it`);
+  // What the layers below the one being applied gave, which `revert-layer` rolls back to.
+  let below: ReadonlyMap<string, string> = out;
+  const enterLayer = (): void => {
+    below = new Map(out);
   };
+  const take = (prop: string, value: string, written: string): void => {
+    if (prop === 'container') {
+      for (const [longhand, part] of containerLonghands(value)) take(longhand, part, written);
+      return;
+    }
+    if (isDeclarationInvalid(prop, value)) {
+      sheet?.onWarn?.(`${written} is not a valid ${prop}; it is ignored, as CSS ignores it`);
+      return;
+    }
+    const word = value.trim().toLowerCase();
+    // Every declaration here is the author's, and no user-agent rule sets an SVG property.
+    const rolledBack = word === 'revert' ? undefined : word === 'revert-layer' ? below.get(prop) : value;
+    if (rolledBack === undefined) out.delete(prop);
+    else out.set(prop, rolledBack);
+  };
+  enterLayer();
   for (const prop of PROPERTY_NAMES) {
     const attr = el.getAttribute(prop);
     if (attr != null) take(prop, attr, `${prop}="${attr}"`);
@@ -162,11 +180,28 @@ const cascaded = createPart((el: Element): ReadonlyMap<string, string> => {
     const declare = (d: Declaration): void => {
       if (d.important === important) take(d.prop, d.value, `${d.prop}: ${d.value}`);
     };
-    for (const r of ordered) r.declarations.forEach(declare);
+    let rank: number | null = null;
+    for (const r of ordered) {
+      if (r.rank !== rank) {
+        rank = r.rank;
+        enterLayer();
+      }
+      r.declarations.forEach(declare);
+    }
+    enterLayer();
     inline.forEach(declare);
+  }
+  for (const prop of UNREAD_PAINT_UNSETS) {
+    const value = out.get(prop);
+    if (value == null || CSS_WIDE_KEYWORDS.has(value.trim().toLowerCase()) || readProperty(prop, value) !== undefined) continue;
+    out.set(prop, 'unset');
+    sheet?.onWarn?.(`${prop}: ${value} is not a color this reader can read; it is read as unset`);
   }
   return out;
 });
+
+/** Inherited paints kept by the cascade as a function it might not know, read as `unset` when unreadable. */
+const UNREAD_PAINT_UNSETS = ['fill', 'stroke', 'color'] as const;
 
 /**
  * Resolve an element's own (cascaded, pre-inheritance) value for a property:

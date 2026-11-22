@@ -9,7 +9,8 @@ export type InlineToken =
   | { type: 'strong' | 'em' | 'del'; children: InlineToken[] }
   | { type: 'link'; href: string; children: InlineToken[] };
 
-const SAFE_HREF = /^(https?:|mailto:|[/#.])/i;
+// No scheme is a relative link. A browser drops leading control characters and spaces before it reads the scheme.
+const SAFE_HREF = /^(?:https?:|mailto:|(?![\x00-\x20]|[a-z][a-z0-9+.-]*:))/i;
 
 /**
  * Reads a line of inline markdown: code spans in backticks, a shortcut in `<kbd>Mod+Z</kbd>`, `**strong**`, `*emphasis*`,

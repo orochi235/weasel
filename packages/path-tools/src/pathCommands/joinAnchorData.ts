@@ -54,7 +54,8 @@ function joinedArray<T>(
  * The per-anchor widths and colors of `keep` and `drop` through their join from `before` (the two paths' subpaths,
  * `keep`'s first) to `after`, with `origins` as `editAnchorSetTracked` answered: each anchor takes its own path's
  * value, a reversed one's sides traded, a merged end the anchor that stays. A path without an array fills its anchors
- * with its own width or solid paint. A patch to lay over `keep`'s data; empty when neither path carries any.
+ * with its own width or solid paint; a channel that cannot be joined so is dropped. A patch to lay over `keep`'s data;
+ * empty when neither path carries any.
  */
 export function joinedAnchorData(
   keep: PathNode,
@@ -75,11 +76,13 @@ export function joinedAnchorData(
     sources, (n) => (n.node.data as Carrier | null)?.vertexColors,
     (n) => solidRgba((n.node.data as Carrier | null)?.fill), COLOR_STRIDE,
   );
-  const combined: Carrier = { ...(fillColors ? { vertexColors: fillColors } : {}) };
-  if (stroke && (widths || strokeColors)) {
-    combined.stroke = { ...stroke, ...(widths ? { vertexWidths: widths } : {}), ...(strokeColors ? { vertexColors: strokeColors } : {}) };
+  if (!fillColors && !(stroke && (widths || strokeColors))) return {};
+  const { vertexColors: _keepsFillColors, ...rest } = data;
+  const combined: Carrier = { ...rest, ...(fillColors ? { vertexColors: fillColors } : {}) };
+  if (stroke) {
+    const { vertexWidths: _keepsWidths, vertexColors: _keepsColors, ...plain } = stroke;
+    combined.stroke = { ...plain, ...(widths ? { vertexWidths: widths } : {}), ...(strokeColors ? { vertexColors: strokeColors } : {}) };
   }
-  if (!combined.vertexColors && !combined.stroke) return {};
-  const { skin: _skinIsGeometryBound, ...patch } = anchorDataPatch({ ...data, ...combined, skin: undefined }, before, after, origins);
+  const { skin: _skinIsGeometryBound, ...patch } = anchorDataPatch({ ...combined, skin: undefined }, before, after, origins);
   return patch;
 }

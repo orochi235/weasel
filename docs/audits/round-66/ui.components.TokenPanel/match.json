@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "A scale slider's track never shrinks back after its steps move by anything but a drag"
+ ],
+ "b": [
+  "A scale slider's track widens to a regenerated step with no margin, pinning the end thumb, and never narrows back",
+  "A group with `scales` gets no base or rule controls when it has fewer than `familySize` steps",
+  "An unset `fontWeight` token draws an empty option in the weight select"
+ ]
+}

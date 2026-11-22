@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "A move's default `geometry` probe measures its reach through the camera's scale, ignoring the parallax plane",
+  "A turned resize far from the origin drops the box sides it moves",
+  "`SpanSnap.anchor` leaves `startHeld()` reporting the replaced start's hold"
+ ],
+ "b": [
+  "A move's default `geometry` probe search ignores the parallax plane's scale, so its reach is wrong in a plane",
+  "`hold` does not keep an angle at `theta0` when another required angle is offered",
+  "A rotate's angle step is checked one way and a point gesture's step another",
+  "The debug overlay draws a spanned candidate off its span"
+ ]
+}

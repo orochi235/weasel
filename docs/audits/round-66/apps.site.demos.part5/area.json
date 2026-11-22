@@ -1,0 +1,115 @@
+{
+ "id": "apps.site.demos.part5",
+ "commit": "64f0b083bc66bebeb52e9c5a64e5b2587c66b45b",
+ "date": "2026-11-21",
+ "files": [
+  "apps/site/demos/SceneLabDemo.tsx",
+  "apps/site/demos/SceneScrollerDemo.module.css",
+  "apps/site/demos/SceneScrollerDemo.tsx",
+  "apps/site/demos/ScopedGridDemo.tsx",
+  "apps/site/demos/ScoreDemo.module.css",
+  "apps/site/demos/ScoreDemo.tsx",
+  "apps/site/demos/ScrollingGridDemo.tsx",
+  "apps/site/demos/SegmentTypeLabDemo.tsx",
+  "apps/site/demos/SelectDemo.module.css",
+  "apps/site/demos/SelectDemo.tsx",
+  "apps/site/demos/SelectionPanelDemo.tsx",
+  "apps/site/demos/SequenceDiagramDemo.tsx",
+  "apps/site/demos/ShapeBuilderLabDemo.tsx",
+  "apps/site/demos/ShapeToolsDemo.tsx",
+  "apps/site/demos/SharedBrushSizeDemo.tsx",
+  "apps/site/demos/SkinDemo.tsx",
+  "apps/site/demos/SliceDemo.tsx",
+  "apps/site/demos/SlideNavigationDemo.tsx",
+  "apps/site/demos/SmallCapsDemo.tsx",
+  "apps/site/demos/SnipLabDemo.tsx",
+  "apps/site/demos/SpacingHintsLabDemo.tsx",
+  "apps/site/demos/SpiroLabDemo.tsx",
+  "apps/site/demos/StickyNotesDemo.tsx",
+  "apps/site/demos/StorageDemo.module.css",
+  "apps/site/demos/StorageDemo.tsx",
+  "apps/site/demos/StrokeAndFillDemo.tsx",
+  "apps/site/demos/StrokeMarkersDemo.tsx",
+  "apps/site/demos/StrokeTrimLabDemo.module.css",
+  "apps/site/demos/StrokeTrimLabDemo.tsx",
+  "apps/site/demos/StrokeWidthLabDemo.tsx",
+  "apps/site/demos/SvgDemo.module.css",
+  "apps/site/demos/SvgDemo.tsx",
+  "apps/site/demos/SwapDemo.tsx",
+  "apps/site/demos/SymmetryLabDemo.tsx",
+  "apps/site/demos/TextDemo.tsx",
+  "apps/site/demos/TextDomDemo.module.css",
+  "apps/site/demos/TextDomDemo.tsx",
+  "apps/site/demos/TextOutlinesDemo.module.css",
+  "apps/site/demos/TextOutlinesDemo.tsx",
+  "apps/site/demos/TextScriptDemo.module.css",
+  "apps/site/demos/TextScriptDemo.tsx",
+  "apps/site/demos/TextShapingDemo.module.css",
+  "apps/site/demos/TextShapingDemo.tsx",
+  "apps/site/demos/ThemeDemo.module.css",
+  "apps/site/demos/ThemeDemo.tsx",
+  "apps/site/demos/TiledSurfaceDemo.tsx",
+  "apps/site/demos/TimelineDemo.tsx",
+  "apps/site/demos/TimelineFramesDemo.tsx"
+ ],
+ "a": 6,
+ "b": 3,
+ "m": 1,
+ "distinct": 8,
+ "chapman": 13,
+ "unfound": 5,
+ "read": {
+  "A": 48,
+  "B": 48
+ },
+ "newCode": {
+  "since": 36,
+  "changedFiles": 33,
+  "findings": 8
+ },
+ "previous": {
+  "round": 36,
+  "chapman": 10.48392857142857,
+  "unfound": 3.898469387755102
+ },
+ "patches": 9,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 0,
+   "passed": 22,
+   "total": 22
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.4,
+   "B": 4.8,
+   "match": 1.2,
+   "fix": 17
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1721523,
+  "costUsd": 4.94
+ },
+ "fixCommits": [
+  "01228ff6141be7c638c0001989865e54fe653b54",
+  "c40cde33eee9baae63335a69006e8b87ab8345d5",
+  "227f12115e6b143eaad9343920646109067c488f",
+  "e3dbd1616a8d2a52ab830975fd9c41ee1147c1c0",
+  "e2023c7651764433043866e7ef578ea3c275c919",
+  "bb64b328539ef309676d52b7dca2def8485b6e17",
+  "532e61220781f914f2ab1058d5b442f70260a4d5",
+  "d08338fdb7e60f52a968878327ad374d13919fc1",
+  "fbe9c7585a34df1d9635b2ff030bd1b8146b1b0b"
+ ]
+}

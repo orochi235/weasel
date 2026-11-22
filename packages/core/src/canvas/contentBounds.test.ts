@@ -51,6 +51,22 @@ describe('sceneContentBounds', () => {
     expect(sceneContentBounds(scene, boxOf(scene))).toEqual(box(0, 0, 10, 10));
   });
 
+  it('leaves out the copies of a group a node consumes as an operand', () => {
+    const scene = make();
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0, 10, 10), data: {}, consumesChildren: true });
+    const g = scene.add({ kind: 'group', layer: 'main', pose: BOX, data: {}, parent: b, copiesFromPose: () => [translate(100, 0)] });
+    scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0, 10, 10), data: {}, parent: g });
+    expect(sceneContentBounds(scene, boxOf(scene))).toEqual(box(0, 0, 10, 10));
+  });
+
+  it('leaves out the operands of a node on a hidden layer that consumes them', () => {
+    const scene = createScene<unknown, 'off' | 'main', RectPose>({ systemLayers: [{ id: 'off', visible: false }, { id: 'main' }] });
+    scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0, 10, 10), data: {} });
+    const b = scene.add({ kind: 'mark', layer: 'off', pose: box(0, 0, 10, 10), data: {}, consumesChildren: true });
+    scene.add({ kind: 'mark', layer: 'main', pose: box(200, 0, 10, 10), data: {}, parent: b });
+    expect(sceneContentBounds(scene, boxOf(scene as never))).toEqual(box(0, 0, 10, 10));
+  });
+
   it('computes copies from the pose `poseOf` answers', () => {
     const scene = make();
     const g = scene.add({

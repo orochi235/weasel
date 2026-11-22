@@ -60,4 +60,13 @@ describe('createSpanSnap.landingAt', () => {
     span.anchor({ x: 3, y: 3 });
     expect(span.landingAt({ x: 1, y: 2 })).toBeUndefined();
   });
+
+  it('reports a start that `anchor` placed as not held, though the start it replaced was', () => {
+    const span = createSpanSnap(sessionDep(sceneOfPaths([]), [dot]));
+    span.start({ x: 12, y: 11 }, FREE);
+    expect(span.startHeld()).toBe(true);
+    expect(span.anchor({ x: 40, y: 40 })).toBe(true);
+    expect(span.startHeld()).toBe(false);
+    span.close();
+  });
 });

@@ -26,6 +26,7 @@ export interface StorySession {
   setGlobals(globals: StoryGlobals): void;
   /** Runs the story's action leaf at `path` against the config the session holds. */
   runAction(path: string): void;
+  dispose(): void;
 }
 
 /**
@@ -111,7 +112,14 @@ export function createStorySession({
     onCommit();
   };
 
+  const offStale = story.onAnswersStale?.(() => {
+    if (!initialized) return;
+    answeredKey = configKey(config);
+    send({ type: 'answers', answers: { configKey: answeredKey, ...answerSchema(story.config, config) } });
+  });
+
   return {
+    dispose: () => offStale?.(),
     init: (msg) =>
       input(() => {
         initialized = true;

@@ -37,6 +37,18 @@ describe('a variable-width stroke in SVG', () => {
     expect(back.stroke?.vertexWidths).toEqual(WIDTHS);
   });
 
+  it('keeps the join threshold between differing widths, and outlines with it', () => {
+    const elbow = new PathBuilder().moveTo(0, 0).lineTo(50, 0).lineTo(50, 50).build();
+    const at = (threshold?: number) => serializeSvg([node({
+      path: elbow,
+      stroke: { paint: { kind: 'solid', color: '#000' }, width: 2, vertexWidths: [2, 2, 5], ...(threshold ? { varyingWidthJoinThreshold: threshold } : {}) },
+    })]);
+    const outlineOf = (svg: string) => /<path d="([^"]+)"[^>]*wzl:role="stroke-outline"/.exec(svg)![1];
+    expect(outlineOf(at(3))).not.toBe(outlineOf(at()));
+    const back = parseSvg(at(3)).nodes[0] as SvgPathNode;
+    expect(back.stroke?.varyingWidthJoinThreshold).toBe(3);
+  });
+
   it('keeps a { px } width', () => {
     const svg = serializeSvg([node({ stroke: { paint: { kind: 'solid', color: '#000' }, width: { px: 3 }, vertexWidths: WIDTHS } })]);
     const back = parseSvg(svg).nodes[0] as SvgPathNode;

@@ -282,6 +282,34 @@ describe('svgNodesFromKit', () => {
     expect(g.children).toHaveLength(1);
   });
 
+  it('carries a join threshold through a round trip and says it leaves out vertex colors', () => {
+    const warnings: string[] = [];
+    const stroke: Stroke = { paint: solid('#000000'), width: 2, vertexWidths: [2, 5], varyingWidthJoinThreshold: 3, vertexColors: [0, 0, 0, 1, 1, 0, 0, 1] };
+    const one: SvgKitTree<string> = {
+      roots: ['m'], childrenOf: () => [],
+      get: () => ({ kind: 'mark', data: { path: pathFromD('M0 0L10 0'), fill: null, stroke }, pose: { x: 0, y: 0, width: 10, height: 10 } }),
+    };
+    const nodes = svgNodesFromKit(one, { onWarn: (m) => warnings.push(m) });
+    expect(warnings).toEqual(['per-anchor vertex colors are not written; the path takes its fill and stroke paint']);
+    const back = parseSvg(serializeSvg(nodes)).nodes[0] as SvgPathNode;
+    expect(strokeDataFromSvg(back.stroke, { x: 0, y: 0, width: 10, height: 10 })?.varyingWidthJoinThreshold).toBe(3);
+  });
+
+  it('gives a root below the top the paint its ancestors hand it, as the canvas does', () => {
+    const rectData = { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } } as const;
+    const nested: SvgKitTree<string> = {
+      roots: ['g'],
+      childrenOf: (id) => (id === 'g' ? ['h'] : id === 'h' ? ['m'] : []),
+      get: (id) => {
+        if (id === 'g') return { kind: 'group', data: { fill: { paint: solid('#ff0000') } }, pose: BOX };
+        if (id === 'h') return { kind: 'group', parent: 'g', data: { fill: 'inherit' }, pose: BOX };
+        return { kind: 'mark', parent: 'h', data: { ...rectData, fill: 'inherit' }, pose: { x: 0, y: 0, width: 10, height: 10 } };
+      },
+    } as SvgKitTree<string>;
+    const [m] = svgNodesFromKit(nested, { roots: ['m'] }) as SvgPathNode[];
+    expect(m.fill).toMatchObject({ kind: 'solid', color: '#ff0000' });
+  });
+
   it('writes a hidden node, leaf or group, with display="none" so it reads back hidden', () => {
     const hiding: SvgKitTree<string> = {
       ...tree,

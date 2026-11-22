@@ -3,7 +3,8 @@
  * canvas measures only while its `fps` overlay is on and announces nothing, so
  * this polls while the tab is open: the overlay always, the frame while it is on.
  */
-import { useState, type ReactElement } from 'react';
+import { useMemo, useState, type ReactElement } from 'react';
+import { useLatest } from '@weasel-js/react';
 import type { FrameStats } from '@weasel-js/core';
 import type { SerializedValue } from '../protocol';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
@@ -12,6 +13,7 @@ import { Switch } from '@weasel-js/ui/components/Switch';
 import { usePoll, useRootQuery } from '../hooks';
 import type { DevtoolsViewProps } from '../tabs';
 import { ValueView } from './ValueView';
+import { coalesced } from './coalesced';
 import s from './FrameView.module.css';
 
 const POLL_MS = 500;
@@ -40,13 +42,15 @@ export function FrameView({ client, rootId }: DevtoolsViewProps): ReactElement {
   if (span.fps !== fps) setSpan({ fps, id: span.id + 1 });
   const [read, setRead] = useState<FrameRead | null>(null);
   usePoll(state.refresh, POLL_MS, true);
-  usePoll(() => {
-    const at = span.id;
-    client.request(rootId, { type: 'get-frame' }).then(
+  const spanId = useLatest(span.id);
+  const readFrame = useMemo(() => coalesced(() => {
+    const at = spanId.current;
+    return client.request(rootId, { type: 'get-frame' }).then(
       (value) => setRead({ span: at, value, error: null }),
       (err: Error) => setRead({ span: at, value: null, error: err.message }),
     );
-  }, POLL_MS, fps);
+  }), [client, rootId, spanId]);
+  usePoll(readFrame, POLL_MS, fps);
   const current = read?.span === span.id ? read : null;
   const frame = current?.value ?? null;
 

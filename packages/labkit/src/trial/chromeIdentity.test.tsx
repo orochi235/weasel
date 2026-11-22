@@ -42,6 +42,7 @@ describe("a trial chrome's sources keep their identity across a render that chan
     const props = {
       trialId: 't',
       record,
+      cameraKind: 'canvas',
       lab: { savedSnapshots: [] } as unknown as LabCommands,
       store,
       title: 'Counter',

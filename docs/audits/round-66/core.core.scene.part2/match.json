@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "A path effect's cached result ignores the node-memo generation, so a painter change leaves it showing the old outline",
+  "reconcileSpecs retargets a path effect's `foundHidden` a second time when `next` changes both its data and its `dependsOn`",
+  "The pose feed misses an override pose mutated in place, which is the override table's documented frame shape"
+ ],
+ "b": [
+  "Undoing an unhide or unlock re-hides/re-locks a node without dropping it from the selection",
+  "Same for layer visibility/lock: reverting `kit:setLayerVisible`/`kit:setLayerLocked` never narrows the selection",
+  "The pose feed misses a pose override that mutates its pose buffer in place",
+  "Under `muted`, settled callbacks run before the subscribers hear of the change",
+  "`reconcileSpecs` brings back a node the scene deleted when its spec did not change"
+ ]
+}

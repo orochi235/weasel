@@ -1,0 +1,77 @@
+{
+ "id": "diagram.containers",
+ "commit": "64f0b083bc66bebeb52e9c5a64e5b2587c66b45b",
+ "date": "2026-11-21",
+ "files": [
+  "packages/diagram/src/containers/canDropInto.ts",
+  "packages/diagram/src/containers/containerActions.ts",
+  "packages/diagram/src/containers/containerLayout.ts",
+  "packages/diagram/src/containers/containerStencils.ts",
+  "packages/diagram/src/containers/containerTitle.ts",
+  "packages/diagram/src/containers/index.ts",
+  "packages/diagram/src/containers/laneBoundaryLayer.ts",
+  "packages/diagram/src/containers/laneStack.ts",
+  "packages/diagram/src/containers/layouts.ts",
+  "packages/diagram/src/containers/regionSpecs.ts",
+  "packages/diagram/src/containers/titlePose.ts",
+  "packages/diagram/src/containers/trait.ts"
+ ],
+ "a": 4,
+ "b": 6,
+ "m": 1,
+ "distinct": 9,
+ "chapman": 16.5,
+ "unfound": 7.5,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 64,
+  "changedFiles": 7,
+  "findings": 10
+ },
+ "previous": {
+  "round": 64,
+  "chapman": 30.5,
+  "unfound": 17.5
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 19,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2724,
+   "total": 2724
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.2,
+   "B": 5.7,
+   "match": 2.3,
+   "fix": 20.3
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1424086,
+  "costUsd": 3.99
+ },
+ "fixCommits": [
+  "4f29b1138ec95067c20acad0f4a112c36b36c495",
+  "d4ec8cbf55e580b9baa67c6081dfee92e1dcb1f9",
+  "3851900d33af595f2b4cb31d269e768d85937054",
+  "2174cc196c8b366b7718bc18aaadbaaf4a8a6689",
+  "4fcae2439cbc4a82d76f05ac4b3cdb0076b6109f",
+  "1c760a7965763557012a2372756a55a964de37bb",
+  "52ee1f5691ca9defd07bccba3cb9de73b716a3bd"
+ ]
+}

@@ -45,7 +45,7 @@ export interface RegistryBrowserProps {
   detail: ReactNode;
   /** Category ids open at mount. Default none. */
   defaultOpen?: Iterable<string>;
-  /** Controlled filter text. Omit both to let the browser hold it. */
+  /** Controlled filter text. Omit it to let the browser hold the text; `onFilterChange` still hears each edit. */
   filter?: string;
   onFilterChange?(next: string): void;
   /** A leading glyph for the filter field. */
@@ -103,7 +103,12 @@ export function RegistryBrowser(props: RegistryBrowserProps): ReactElement {
   const { categories, selected, onSelectionChange, detail, filterIcon, className } = props;
   const [ownFilter, setOwnFilter] = useState('');
   const filter = props.filter ?? ownFilter;
-  const setFilter = props.onFilterChange ?? setOwnFilter;
+  const controlled = props.filter !== undefined;
+  const { onFilterChange } = props;
+  const setFilter = (next: string): void => {
+    if (!controlled) setOwnFilter(next);
+    onFilterChange?.(next);
+  };
   const [openIds, setOpenIds] = useState<ReadonlySet<string>>(
     () => new Set([...(props.defaultOpen ?? [])].map(categoryKey)),
   );

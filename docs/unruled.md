@@ -244,6 +244,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   under one column, or of columns that are not finite, has no slots, so `slots` refuses every child; rows under one, or
   not finite, are the default 1. A negative column count placed slots outside the container, and zero or `NaN`
   placed them at `NaN`.
+- 2026-11-21 (the fixer's call): `SnapCollect.include` is removed. No session set it and only `pathSnapSource`
+  read it; making it real would have every source (guides, rotation, measure, kernel3d's) honor an allow-list.
 - Open, 2026-11-11 (guides second property pass): snapping a point already snapped can move it again, because reach
   is a disc about the pointer, not about where it lands. A pointer whose two axes are each in reach of a guide but
   whose crossing is not snaps one axis; snapped again from there, the other comes in reach and snaps too. A grid
@@ -3503,7 +3505,7 @@ Calls the lanes made without a ruling:
   second in one composite, a start a transition arrives at, an end one leaves, one with no transition) as before,
   with a warning; refusing the page was the alternative. A diamond with text is written as a plain state keeping its
   text, with a warning; writing it as a `<<choice>>` and dropping the text was the alternative.
-- 2026-11-21 (the fixer's call): A chart writer (pie, packet, quadrant, radar, xychart, timeline) warns of a page name
+- 2026-11-21 (the fixer's call): A chart writer (pie, packet, quadrant, radar, sankey, xychart, timeline) warns of a page name
   that is not its chart's title and writes none; writing it as front matter, which every chart reader takes as the
   chart's title where it has none, was the alternative. A Mermaid sequence page named `''` reads back unnamed, as an
   empty title statement names no page of any other kind.
@@ -3589,3 +3591,35 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): a `'click-curve'` function layer with fewer than two anchors, which draws no curve to
   press, adds a point from a click anywhere in the plot until it has two. Holding `minPoints` at 2 in that mode, so a
   delete could never leave it there, was the alternative; it would not help a state the consumer passes in that short.
+
+## Audit round sixty-six (2026-11-21): core's animation
+
+- 2026-11-21 (the fixer's call): an `animateLifecycle` node inserted again while its exit runs replaces the leaving one:
+  the exit ends, the node is removed as it stood, and the node given is inserted, so undo sees a removal and an insert.
+  Skipping the insert and writing only the new pose, which drops the rest of the node given, was the alternative.
+## Audit round sixty-six (2026-11-21): draw-style XML
+
+- 2026-11-21 (the fixer's call): a draw-style XML placeholder filled into an `html=1` label is escaped first, so its
+  value reads as the text it holds and never as markup. Letting a value carry HTML into the label was the alternative
+  (`drawXml/cells.ts`, `filled`).
+- 2026-11-21 (the fixer's call): reading draw-style XML leaves out a cell its `visible="0"` hides, every cell under it,
+  and every connector with an end on one, with one warning. Importing them shown, or keeping a connector between a
+  shown shape and a hidden one as a loose end, were the alternatives (`drawXml/pageCells.ts`, `shown`).
+## Audit round sixty-six (2026-11-21): Mermaid diagrams, part two
+
+- 2026-11-21 (the fixer's call): The Mermaid sequence writer writes a region with no fill as `rect transparent`,
+  which reads back with no fill, so Mermaid draws it unshaded. Writing a faint gray, which shows in Mermaid but reads
+  back as a fill the page never had, was the alternative.
+- 2026-11-21 (the fixer's call): The Mermaid state writer writes what a pool holds outside its lanes (its own states,
+  containers, and `[*]` transitions) as a concurrent region ahead of the lanes, with a warning, so it reads back as a
+  lane of its own. Dropping it with a warning was the alternative.
+## Audit round sixty-six (2026-11-21): diagram containers
+
+- 2026-11-21 (the fixer's call): `addLane` returns null and changes nothing when the add would move or restyle a
+  locked node (the pool, its title, a lane it shifts, or what that lane holds), as `releaseMembers` does; throwing,
+  or adding the lane and leaving locked lanes overlapping it, were the alternatives.
+## Audit round sixty-six (2026-11-21): path-tools, part two
+
+- 2026-11-21 (the fixer's call): `facesAlong` throws a `RangeError` for a `step` that is not a positive finite
+  number, as `mergeRegion` does for its `tolerance`; a zero one had looped forever, and a negative one sampled only
+  each segment's ends. Falling back to one sample per segment was the alternative.

@@ -45,6 +45,20 @@ describe('GestureReason', () => {
     act(pump);
     expect(queryByRole('status')).toBeNull();
   });
+  it('follows a camera that moves with no gesture publishing, on the next paint', () => {
+    const canvas = document.createElement('canvas');
+    canvas.getBoundingClientRect = () => ({ left: 100, top: 50, right: 500, bottom: 350, width: 400, height: 300, x: 100, y: 50, toJSON: () => ({}) });
+    const viewRef = { current: { x: 0, y: 0, scale: { x: 1, y: 1 } } as View };
+    const { dispatcher, pump } = fakeDispatcher(() => [{ kind: 'reason', at: { x: 20, y: 30 }, text: 'No' }]);
+    const frames = new Set<(time: number) => void>();
+    const canvasApi = { subscribeFrame: (fn: (time: number) => void) => { frames.add(fn); return () => { frames.delete(fn); }; } };
+    const { queryByRole } = render(<GestureReason dispatcher={dispatcher} canvasRef={{ current: canvas }} viewRef={viewRef} canvasApi={canvasApi} />);
+    act(pump);
+    expect(queryByRole('status')!.style.left).toBe(`${100 + 20 + 14}px`);
+    viewRef.current = { x: 10, y: 0, scale: { x: 1, y: 1 } } as View;
+    act(() => frames.forEach((fn) => fn(0)));
+    expect(queryByRole('status')!.style.left).toBe(`${100 + 10 + 14}px`);
+  });
   it("shows a reason a gesture inside a view posts, placed through that view's map", () => {
     const canvas = document.createElement('canvas');
     canvas.getBoundingClientRect = () => ({ left: 100, top: 50, right: 500, bottom: 350, width: 400, height: 300, x: 100, y: 50, toJSON: () => ({}) });

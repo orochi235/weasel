@@ -194,6 +194,32 @@ describe('pools in a scene', () => {
     expect(lanes.map((node) => node.pose)).toMatchObject([{ x: 20, width: 0 }, { x: 20, width: 0 }]);
   });
 
+  it('release a lane past a locked lane before it, which the restack leaves in place', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    addLane(scene as never, pool);
+    const [first, second, third] = lanesOf(scene as never, pool);
+    scene.setLocked(first!, true);
+    expect(canReleaseMembers(scene as never, third!)).toBe(true);
+    expect(canReleaseMembers(scene as never, second!)).toBe(true);
+    releaseMembers(scene as never, third!);
+    expect(lanesOf(scene as never, pool)).toEqual([first, second]);
+  });
+
+  it('add no lane where the add would move a locked lane, and add one past it', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    const [first, second] = lanesOf(scene as never, pool);
+    scene.setLocked(second!, true);
+    const entries = scene.historyIndex();
+    expect(addLane(scene as never, pool, 0)).toBeNull();
+    expect(addLane(scene as never, pool, 1)).toBeNull();
+    expect(scene.historyIndex()).toBe(entries);
+    expect(lanesOf(scene as never, pool)).toEqual([first, second]);
+    const lane = addLane(scene as never, pool);
+    expect(lanesOf(scene as never, pool)).toEqual([first, second, lane]);
+  });
+
   it('refuse a lane added at a negative or fractional index, and add one past the end at the end', () => {
     const scene = makeScene();
     const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
@@ -312,5 +338,26 @@ describe('pools in a scene', () => {
     const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
     const back = loadScene(JSON.parse(JSON.stringify(scene.toJSON())), { registry: withDiagramRegistry() });
     expect(back.layoutOf(pool as NodeId)).toBe(scene.layoutOf(pool as NodeId));
+  });
+});
+
+describe('lanesOf', () => {
+  /** A pool of rows with no layout, so its lanes sit where they are put. */
+  function unstacked(lanes: Record<string, RectPose>): Scene {
+    const scene = makeScene();
+    const region = (role: string) => ({ diagram: { outline: 'rect', container: { role, header: { side: 'left', size: 32 } } } });
+    scene.add({ id: 'pool' as NodeId, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 480, height: 400 }, data: region('pool') });
+    for (const [id, at] of Object.entries(lanes)) {
+      scene.add({ id: id as NodeId, kind: 'mark', layer: 'main', parent: 'pool' as NodeId, pose: at, data: region('lane') });
+    }
+    return scene;
+  }
+
+  it('orders lanes by their middles along the stack, as the pool lays them out', () => {
+    const scene = unstacked({
+      wide: { x: 32, y: 180, width: 448, height: 120 },
+      thin: { x: 32, y: 200, width: 448, height: 40 },
+    });
+    expect(lanesOf(scene as never, 'pool')).toEqual(['thin', 'wide']);
   });
 });

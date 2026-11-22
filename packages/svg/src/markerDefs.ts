@@ -66,12 +66,15 @@ export function shortHash(s: string): string {
 /** What an attribute and an unquoted `url(#…)` both hold as written: no space, quote, markup, or bracket. */
 const SAFE_ID = /^[^\s"'&<>()#\\]+$/;
 
+/** The ids `PaintServerRegistry` and the aligned text stroke mint for their own defs. */
+const MINTED_ID = /^(?:grad|pat|clip|textcut)\d+$/;
+
 /** `key` as an id an attribute and a `url(#…)` can both hold: itself when it
- *  is one, else its safe characters and a hash of the whole, so two keys that
- *  differ only in what is replaced stay apart. Only a derived id holds `--`,
- *  so none can equal another key's own. */
+ *  is one and no other def's, else its safe characters and a hash of the whole,
+ *  so two keys that differ only in what is replaced stay apart. Only a derived
+ *  id holds `--`, so none can equal another key's own. */
 function idOfKey(key: string): string {
-  if (SAFE_ID.test(key) && !key.includes('--')) return key;
+  if (SAFE_ID.test(key) && !key.includes('--') && !MINTED_ID.test(key)) return key;
   return `m--${key.replace(/[^\w.]/g, '_')}--${shortHash(key)}`;
 }
 

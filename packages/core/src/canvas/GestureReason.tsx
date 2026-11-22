@@ -9,6 +9,7 @@ import { canvasToClient, overlaysOf, type Dispatcher } from '@weasel-js/routing'
 import { viewToTransform, type View } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { resolveOverlays } from 'interactions/actions/resolveOverlays';
+import type { CanvasExtensionApi } from './canvasExtension';
 import { useOptionalViewRegistry } from './viewRegistry';
 import s from './GestureReason.module.css';
 
@@ -24,6 +25,9 @@ export interface GestureReasonProps {
   dispatcher: Dispatcher | null | undefined;
   canvasRef: RefObject<HTMLElement | null>;
   viewRef: RefObject<View>;
+  /** The canvas whose paints re-place the tag, so it follows a camera that moves with no gesture
+   *  publishing: the surface's or a `<CanvasView>`'s. */
+  canvasApi?: Pick<CanvasExtensionApi, 'subscribeFrame'> | null;
 }
 
 /** The pointer's client point, and what to say there. */
@@ -34,7 +38,7 @@ interface Source { dispatcher: Dispatcher; toCanvas: (x: number, y: number) => {
 
 /** The first `reason` overlay of the in-flight gestures, shown beside the pointer: the surface's, then each
  *  `<CanvasView>`'s, each placed through the camera of the view it runs in. */
-export function GestureReason({ dispatcher, canvasRef, viewRef }: GestureReasonProps) {
+export function GestureReason({ dispatcher, canvasRef, viewRef, canvasApi }: GestureReasonProps) {
   const [shown, setShown] = useState<Shown | null>(null);
   const registry = useOptionalViewRegistry();
   const views = useSyncExternalStore(registry?.subscribe ?? NO_SUBSCRIBE, registry?.getVersion ?? NO_VERSION);
@@ -60,18 +64,19 @@ export function GestureReason({ dispatcher, canvasRef, viewRef }: GestureReasonP
         if (reason?.kind !== 'reason') continue;
         const at = source.toCanvas(reason.at.x, reason.at.y);
         const [x, y] = canvasToClient(canvas, at.x, at.y);
-        setShown({ x, y, text: reason.text });
+        setShown((was) => (was?.x === x && was.y === y && was.text === reason.text ? was : { x, y, text: reason.text }));
         return;
       }
       setShown(null);
     };
     read();
     const offs = sources.map((source) => source.dispatcher.subscribe(read));
+    if (canvasApi) offs.push(canvasApi.subscribeFrame(read));
     return () => {
       for (const off of offs) off();
       setShown(null);
     };
-  }, [dispatcher, canvasRef, viewRef, registry, views]);
+  }, [dispatcher, canvasRef, viewRef, registry, views, canvasApi]);
   const tagRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     if (tagRef.current && shown) placeFixedAt(tagRef.current, shown.x, shown.y);

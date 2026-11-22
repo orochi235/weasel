@@ -38,13 +38,13 @@ export function animateLifecycle<
   animator: Animator,
   opts: LifecycleAnimation<TPose>,
 ): A {
-  /** Each node whose exit is running, with what calls that exit off. */
+  /** Each node whose exit is running, with what ends that exit and removes the node at once. */
   const leaving = new Map<string, () => void>();
 
   return {
     ...adapter,
     insertNode(object: TNode, index?: number): void {
-      // A node back before its exit ended stays: the pending removal is dropped.
+      // A node back before its exit ended replaces the one leaving, which the adapter still holds.
       leaving.get(object.id)?.();
       adapter.insertNode(object, index);
       if (!opts.enterFrom) return;
@@ -83,24 +83,19 @@ export function animateLifecycle<
         if (target) target.commit(home as TPose);
         else setPoseInstant(adapter, id, current);
       };
-      const end = (): boolean => {
-        if (leaving.get(id) !== callOff) return false;
+      const remove = (): void => {
+        if (leaving.get(id) !== removeNow) return;
         leaving.delete(id);
         unwatch();
-        return true;
-      };
-      const callOff = (): void => {
-        if (!end()) return;
-        handle?.cancel();
-        restore();
-      };
-      const remove = (): void => {
-        if (!end()) return;
         // The exit pose was only for show: the node is removed as it stood, so undo restores that.
         restore();
         adapter.removeNode(id);
       };
-      leaving.set(id, callOff);
+      const removeNow = (): void => {
+        remove();
+        handle?.cancel();
+      };
+      leaving.set(id, removeNow);
       try {
         handle = tweenPose(animator, adapter, {
           id,

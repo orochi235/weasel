@@ -235,6 +235,11 @@ Owner tags, after the priority (2026-10-26):
   `packages/core/src/domains/paths/pathSnap/`).
   Closes when the maintainer has driven snapping hands-on and the defaults and keys he picks are
   committed.
+- **(P3) [agent] Snap the pen's and spiro's cursor with the modifiers held.** `PointSnap.trail` always snaps with
+  none held, so under Ctrl or Shift the rubber band's end sits where a click would not land
+  (`packages/core/src/domains/snap/pointSnap.ts`). The pointer dep the trail follows carries no modifiers and is
+  not re-read when one changes; the canvas's `useHeldModifiers` is the source, and needs a way into a tool's deps.
+  Closes when the pen and spiro trails snap with the held modifiers and redraw when one changes.
 
 ## Audio
 

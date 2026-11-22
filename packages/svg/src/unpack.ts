@@ -112,7 +112,7 @@ export function strokeDataFromSvg(
   box: SvgDraftBounds,
 ): Stroke | undefined {
   if (!stroke) return undefined;
-  const paint = fillDataFromSvg(stroke.paint, box);
+  const paint = stroke.paint.kind === 'none' ? null : fillDataFromSvg(stroke.paint, box);
   if (!paint && !hasMarker(stroke)) return undefined;
   return {
     ...(paint ? { paint: stroke.opacity !== undefined ? { ...paint, opacity: stroke.opacity } : paint } : {}),
@@ -128,6 +128,7 @@ export function strokeDataFromSvg(
     ...(stroke.markerEnd !== undefined ? { markerEnd: stroke.markerEnd } : {}),
     ...(stroke.vertexWidths !== undefined ? { vertexWidths: stroke.vertexWidths } : {}),
     ...(stroke.nib !== undefined ? { nib: stroke.nib } : {}),
+    ...(stroke.varyingWidthJoinThreshold !== undefined ? { varyingWidthJoinThreshold: stroke.varyingWidthJoinThreshold } : {}),
     ...(stroke.trim !== undefined ? { trim: stroke.trim } : {}),
   };
 }

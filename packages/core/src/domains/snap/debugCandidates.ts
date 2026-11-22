@@ -1,4 +1,4 @@
-import { nearestOnFlat, type SnapCandidate } from '@weasel-js/geom/nd';
+import { nearestInSpan, type SnapCandidate } from '@weasel-js/geom/nd';
 import type { DebugSink } from '@weasel-js/routing';
 import { fromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { SnapProbeAt } from './types';
@@ -20,7 +20,7 @@ export function recordSnapCandidates(
   for (const c of candidates) {
     const p = at.get(c.probe);
     if (!p) continue;
-    const [x, y] = nearestOnFlat(c.locus, p);
+    const [x, y] = nearestInSpan(c.locus, p, c.span);
     debug.recordSnapCandidate(plane ? fromPlane(plane, { x, y }) : { x, y }, met.has(c));
   }
 }

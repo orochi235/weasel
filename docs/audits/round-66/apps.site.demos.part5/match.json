@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "TextShapingDemo reverses every glyph of an RTL line, though the shaper already returns logical cluster order with each cluster's glyphs in drawn order",
+  "TextShapingDemo feeds an HTTP error page to the shaper as a font and then throws during render",
+  "SvgDemo exports a scene that still holds the last good parse under the fallback viewBox while the source has a parse error",
+  "StrokeTrimLabDemo's export promises have no rejection handler",
+  "StorageDemo reads `localStorage` directly in render, bypassing the adapter's guarding",
+  "SceneScrollerDemo builds a whole fresh game state on every render of the load-test demo"
+ ],
+ "b": [
+  "ScoreDemo starts the score on an engine already disposed when it unmounts during `unlock()`",
+  "StrokeAndFillDemo's pencil factory builds a closed polygon, so every pressure stroke gets an edge back to its start",
+  "SvgDemo serializes the last good import under the default viewBox while the source fails to parse"
+ ]
+}

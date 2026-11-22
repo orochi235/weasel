@@ -64,8 +64,9 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
       if (moves) scene.move(id, parent);
       if (relayers && !layerFirst) scene.setLayer(id, spec.layer);
       else if (!relayers) restoreLayer(scene, id, startLayer.get(id));
-      if (!same(spec.data, before.data)) scene.update(id, { data: spec.data });
+      // A retarget moves the data's `foundHidden` along, so it goes first: data `next` states is already in its order.
       if (!same(spec.dependsOn, before.dependsOn)) scene.setDependsOn(id, spec.dependsOn);
+      if (!same(spec.data, before.data)) scene.update(id, { data: spec.data });
       if (!same(spec.units, before.units)) scene.setUnits(id, spec.units ?? null);
       if (spec.clip !== before.clip) scene.setClip(id, spec.clip ?? null);
       if (!same(spec.page, before.page)) scene.setPage(id, spec.page ?? null);

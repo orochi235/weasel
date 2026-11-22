@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "A write that animateOnSetPose passes straight through leaves a running no-poseTarget glide on, which writes over it next frame",
+  "Baking a skinned node writes its world-space bent path into `data.path`, so a rotated node gets its rotation applied twice",
+  "animateLifecycle re-inserting a node whose exit is still running inserts a node the scene still holds",
+  "placeSkeleton / unplaceSkeleton place root joints by the pose's full frame but turn them by the descriptor's rotation only"
+ ],
+ "b": [
+  "animateLifecycle: re-inserting a node whose exit is still running inserts an id the scene still holds, which a scene-backed adapter refuses",
+  "coastOnTargets: a flick with no riders never ends, so its coast stays registered and its animator watch is never removed"
+ ]
+}

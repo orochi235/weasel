@@ -127,21 +127,46 @@ export { stableStringify } from '@weasel-js/core';
 /** A number JSON cannot write, which it would write as `null`. */
 const unwritable = (v: unknown): v is number => typeof v === 'number' && !Number.isFinite(v);
 
+const tag = (type: string, value: unknown) => ({ $type: type, value });
+
 /**
- * `stableStringify` of a config, with `Infinity`, `-Infinity`, and `NaN` written apart from each other and from
- * `null`, so two configs that differ only there are two configs. Answers and frame-local args are keyed by it.
+ * `stableStringify` of a config, with what JSON writes as `null` or `{}` written apart: `Infinity`, `-Infinity`, and
+ * `NaN`, and a Map's, a Set's, a RegExp's, a buffer's, or a typed array's contents, so two configs that differ only
+ * there are two configs. Answers and frame-local args are keyed by it.
  */
 export function configKey(config: unknown): string {
   const seen = new Map<object, unknown>();
   const tagged = (v: unknown): unknown => {
-    if (unwritable(v)) return { $type: 'number', value: String(v) };
-    if (!Array.isArray(v) && !isPlainObject(v)) return v;
+    if (unwritable(v)) return tag('number', String(v));
+    if (v === null || typeof v !== 'object') return v;
     if (seen.has(v)) return seen.get(v);
+    if (v instanceof Map) {
+      const entries: unknown[] = [];
+      seen.set(v, tag('map', entries));
+      for (const [key, member] of v) entries.push([tagged(key), tagged(member)]);
+      return seen.get(v);
+    }
+    if (v instanceof Set) {
+      const members: unknown[] = [];
+      seen.set(v, tag('set', members));
+      for (const member of v) members.push(tagged(member));
+      return seen.get(v);
+    }
+    if (v instanceof Date) return tag('date', tagged(v.getTime()));
+    if (v instanceof RegExp) return tag('regexp', String(v));
+    if (v instanceof ArrayBuffer) return tag('ArrayBuffer', [...new Uint8Array(v)]);
+    if (ArrayBuffer.isView(v)) {
+      const members = v instanceof DataView ? new Uint8Array(v.buffer, v.byteOffset, v.byteLength) : v;
+      return tag(v.constructor.name, [...(members as unknown as Iterable<unknown>)].map(tagged));
+    }
+    if (!Array.isArray(v) && !isPlainObject(v)) return v;
     const out: unknown[] | Record<string, unknown> = Array.isArray(v) ? [] : {};
-    seen.set(v, out);
+    // An object of the config's own with a `$type` key is tagged too, so it never reads as one of the tags above.
+    const held = !Array.isArray(v) && Object.hasOwn(v, '$type') ? tag('object', out) : out;
+    seen.set(v, held);
     if (Array.isArray(out)) for (const member of v as unknown[]) out.push(tagged(member));
     else for (const [key, member] of Object.entries(v)) setOwn(out, key, tagged(member));
-    return out;
+    return held;
   };
   return coreStableStringify(tagged(config));
 }

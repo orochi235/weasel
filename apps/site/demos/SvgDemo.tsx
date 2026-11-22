@@ -85,6 +85,8 @@ function sceneFromSvg(source: string) {
   return { parsed, specs: svgDraftSpecs(drafts, { layer: 'default' as LayerId, composition: RIGID_POSE_COMPOSITION }) };
 }
 
+type Imported = ReturnType<typeof sceneFromSvg>;
+
 /**
  * SVG in, scene nodes, SVG out.
  *
@@ -110,19 +112,23 @@ function SvgRoundTrip() {
     }
   }, [source]);
 
+  // The scene holds the last source that parsed, so the export keeps that source's viewBox through a failed parse.
+  const [loaded, setLoaded] = useState<Imported | null>(null);
+  if ('specs' in imported && imported !== loaded) setLoaded(imported);
+
   useEffect(() => {
-    if (!('specs' in imported)) return;
+    if (!loaded) return;
     selection.set([]);
     scene.loadState({ version: 3, systemLayers: [{ id: 'default' }], nodes: [] });
     // Loading a source is not an edit: undo stays within the edits made to it.
-    scene.untracked(() => { for (const spec of imported.specs) scene.add(spec); });
-  }, [scene, selection, imported]);
+    scene.untracked(() => { for (const spec of loaded.specs) scene.add(spec); });
+  }, [scene, selection, loaded]);
 
   const version = useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
   const [exported, setExported] = useState<{ text: string; warnings: string[] }>({ text: '', warnings: [] });
   useEffect(() => {
     const nodes = svgNodesFromKit(scene);
-    const viewBox = ('parsed' in imported && imported.parsed.viewBox) || VIEW;
+    const viewBox = loaded?.parsed.viewBox ?? VIEW;
     const warnings: string[] = [];
     let current = true;
     // `serializeSvg` is synchronous, so a paint kind that loads on demand has
@@ -136,7 +142,7 @@ function SvgRoundTrip() {
       });
     return () => { current = false; };
     // `version` is the scene's change signal; the scene object itself is stable.
-  }, [scene, imported, version]);
+  }, [scene, loaded, version]);
 
   const importWarnings = 'parsed' in imported ? imported.parsed.warnings : [imported.error];
 

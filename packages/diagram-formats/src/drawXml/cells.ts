@@ -1,7 +1,7 @@
 /** The cells of a draw-style graph model, read off its XML as they are, before they mean anything to a diagram. */
 import type { Vec2 } from '@weasel-js/core/math';
 import { freshId } from '@weasel-js/registry';
-import { parseStyle, type CellStyle } from './style';
+import { parseStyle, styleFlag, type CellStyle } from './style';
 
 /** One cell element, with a wrapper's id and label read in. */
 export interface RawCell {
@@ -13,6 +13,8 @@ export interface RawCell {
   edge: boolean;
   source: string | null;
   target: string | null;
+  /** `false` for a cell its `visible="0"` hides. */
+  visible: boolean;
   geometry: Element | null;
 }
 
@@ -37,26 +39,33 @@ const childElements = (el: Element): Element[] => Array.from(el.childNodes).filt
 
 const idAttr = (outer: Element, cell: Element): string | null => outer.getAttribute('id') ?? cell.getAttribute('id');
 
+const escapeHtml = (text: string): string => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 /** A wrapper's label with each `%name%` its `placeholders="1"` asks for filled from the wrapper's own attribute of that
- *  name, as a draw app shows it; a name it has no attribute for, `label`, and `tooltip` stay as written. */
-function filled(outer: Element, label: string): string {
+ *  name, as a draw app shows it; a name it has no attribute for, `label`, and `tooltip` stay as written. In an `html`
+ *  label a value is text, so it is escaped. */
+function filled(outer: Element, label: string, html: boolean): string {
   if (outer.getAttribute('placeholders') !== '1') return label;
-  return label.replace(/%([^%]+)%/g, (whole, name: string) =>
-    (name === 'label' || name === 'tooltip' ? whole : outer.getAttribute(name) ?? whole));
+  return label.replace(/%([^%]+)%/g, (whole, name: string) => {
+    const value = name === 'label' || name === 'tooltip' ? null : outer.getAttribute(name);
+    return value === null ? whole : html ? escapeHtml(value) : value;
+  });
 }
 
 function rawCell(outer: Element, cell: Element, id: string): RawCell {
   const wrapped = outer !== cell;
-  const value = wrapped ? filled(outer, outer.getAttribute('label') ?? '') : cell.getAttribute('value') ?? '';
+  const style = parseStyle(cell.getAttribute('style'));
+  const value = wrapped ? filled(outer, outer.getAttribute('label') ?? '', styleFlag(style, 'html')) : cell.getAttribute('value') ?? '';
   return {
     id,
     parent: cell.getAttribute('parent'),
     value,
-    style: parseStyle(cell.getAttribute('style')),
+    style,
     vertex: cell.getAttribute('vertex') === '1',
     edge: cell.getAttribute('edge') === '1',
     source: cell.getAttribute('source'),
     target: cell.getAttribute('target'),
+    visible: cell.getAttribute('visible') !== '0',
     geometry: childElements(cell).find((c) => c.tagName === 'mxGeometry') ?? null,
   };
 }

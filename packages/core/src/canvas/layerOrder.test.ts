@@ -244,6 +244,21 @@ describe('composeOrderedLayers', () => {
     warn.mockRestore();
   });
 
+  it('keeps a custom anchored to a dangling one beside it at the tail', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const out = composeOrderedLayers(
+      {
+        b: { layer: L('b'), after: 'a' },
+        c: { layer: L('c'), before: 'a' },
+        a: { layer: L('a'), after: 'missing' },
+      },
+      { scene: L('scene') },
+    );
+    expect(out.map(l => l.id)).toEqual(['scene', 'c', 'a', 'b']);
+    expect(warn).toHaveBeenCalledTimes(3);
+    warn.mockRestore();
+  });
+
   it('reports a cycle for a layer anchored onto one it is not part of', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     composeOrderedLayers(

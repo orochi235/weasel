@@ -95,4 +95,10 @@ describe('facesAlong', () => {
     expect(facesAlong(plan, [{ x: 13, y: 5 }, { x: 1, y: 5 }], 0.5)).toEqual([1, 2, 0]);
     expect(facesAlong(plan, [{ x: 7, y: 5 }, { x: 7, y: 8 }, { x: 12, y: 8 }], 0.5)).toEqual([2, 1]);
   });
+
+  it('throws for a step that is not a positive finite distance', () => {
+    const { plan }: { plan: ShapeBuilderPlan } = twoBoxes();
+    const run = [{ x: 0, y: 5 }, { x: 10, y: 5 }];
+    for (const step of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) expect(() => facesAlong(plan, run, step)).toThrow(RangeError);
+  });
 });

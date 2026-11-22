@@ -13,6 +13,8 @@ const DISPLAY_LIMIT = 100;
 
 interface StepRow { id: string; step: DevtoolsHistoryRecord }
 
+const expandable = ({ step }: StepRow): boolean => step.entries.length > 0;
+
 const opCount = (step: DevtoolsHistoryRecord): number => step.entries.reduce((n, e) => n + e.opCount, 0);
 
 function StepDetail({ step }: { step: DevtoolsHistoryRecord }): ReactElement {
@@ -66,10 +68,12 @@ export function HistoryTable({ steps, now }: { steps: readonly Sequenced<Devtool
       rows={rows}
       columns={columns}
       empty="No history steps yet. Edit the scene to fill the log."
-      rowExpandable={({ step }) => step.entries.length > 0}
+      rowExpandable={expandable}
       expandedIds={expanded}
       onExpandedChange={setExpanded}
-      onRowClick={({ id }) => setExpanded((cur) => (cur.has(id) ? new Set() : new Set([id])))}
+      onRowClick={(row) => {
+        if (expandable(row)) setExpanded((cur) => (cur.has(row.id) ? new Set() : new Set([row.id])));
+      }}
       renderDetail={({ step }) => <StepDetail step={step} />}
     />
   );

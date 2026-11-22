@@ -86,10 +86,13 @@ export function regionColorsOf(style: CellStyle, warn: Warn): Partial<NodeStyle>
 /** A cell's value as text. */
 export const valueLines = (cell: RawCell): string[] => cellLines(cell.value, styleFlag(cell.style, 'html'));
 
-/** A vertex's text: plain lines, or label rows when its style sets a font. */
-export function textOf(cell: RawCell): Pick<DataNode, 'lines' | 'rows'> {
+/** A vertex's text: plain lines, or label rows when its style sets a font. `fontStyle`'s underline and strikethrough
+ *  bits, which a row has no style for, warn. */
+export function textOf(cell: RawCell, warn: Warn): Pick<DataNode, 'lines' | 'rows'> {
   const lines = valueLines(cell);
   const fontStyle = styleNumber(cell.style, 'fontStyle');
+  if (fontStyle !== undefined && (fontStyle & 4) === 4) warn('Underlined text was drawn without its underline.');
+  if (fontStyle !== undefined && (fontStyle & 8) === 8) warn('Struck-through text was drawn without its line.');
   const style = defined<RowTextStyle>({
     fontSize: styleNumber(cell.style, 'fontSize'),
     fontFamily: cell.style.values.get('fontFamily') || undefined,
@@ -121,7 +124,8 @@ export function routerOf(style: CellStyle): DiagramRouter {
 function markerAt(style: CellStyle, end: 'start' | 'end', warn: Warn): MarkerRef | null {
   const name = style.values.get(`${end}Arrow`);
   if (name === undefined) return end === 'end' ? 'arrow' : null;
-  const marker = markerOf(name, style.values.get(`${end}Fill`), (near) => warn(`Arrowheads of kind "${name}" were drawn as ${near}s.`));
+  const marker = markerOf(name, style.values.get(`${end}Fill`), (near, hollow) =>
+    warn(hollow ? `Hollow arrowheads of kind "${name}" were drawn as filled ${near}s.` : `Arrowheads of kind "${name}" were drawn as ${near}s.`));
   if (marker !== undefined) return marker;
   warn(`Arrowheads of kind "${name}" were drawn as arrows.`);
   return 'arrow';
@@ -139,14 +143,19 @@ export function edgeColorsOf(style: CellStyle, warn: Warn): Partial<EdgeStyle> |
   });
 }
 
-/** The compass port nearest an exit or entry point given as fractions of the box, or `undefined` for none. */
-export function portAt(style: CellStyle, end: 'exit' | 'entry'): string | undefined {
+/** The compass port nearest an exit or entry point given as fractions of the box, or `undefined` for none. A point
+ *  off that port, or offset from it by `Dx` or `Dy`, warns. */
+export function portAt(style: CellStyle, end: 'exit' | 'entry', warn: Warn): string | undefined {
   const u = styleNumber(style, `${end}X`);
   const v = styleNumber(style, `${end}Y`);
   if (u === undefined || v === undefined) return undefined;
   let best = DEFAULT_PORTS[0]!;
   for (const port of DEFAULT_PORTS) {
     if (Math.hypot(port.at.u - u, port.at.v - v) < Math.hypot(best.at.u - u, best.at.v - v)) best = port;
+  }
+  const offset = (styleNumber(style, `${end}Dx`) ?? 0) !== 0 || (styleNumber(style, `${end}Dy`) ?? 0) !== 0;
+  if (offset || best.at.u !== u || best.at.v !== v) {
+    warn('Connector ends fixed to a point other than the middle of a side were moved to the nearest side\'s middle.');
   }
   return best.id;
 }
@@ -157,9 +166,11 @@ function pointAlong(line: readonly Vec2[], fraction: number): { at: Vec2; dir: V
   const total = lengths.reduce((t, l) => t + l, 0);
   if (total === 0) return undefined;
   let left = fraction * total;
+  let last = lengths.length - 1;
+  while (last > 0 && lengths[last] === 0) last--;
   for (let i = 0; i < lengths.length; i++) {
     const l = lengths[i]!;
-    if (l === 0 || (left > l && i < lengths.length - 1)) {
+    if (l === 0 || (left > l && i < last)) {
       left -= l;
       continue;
     }

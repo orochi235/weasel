@@ -97,6 +97,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
 
   return () => {
     off();
+    session.dispose();
     globalsTarget.dispose();
     services.dispose();
     root.unmount();

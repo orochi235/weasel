@@ -95,3 +95,15 @@ describe('writing a mind map\'s cloud', () => {
     expect(parseMindmap(text).root).toMatchObject({ id: 'sky', shape: 'cloud' });
   });
 });
+
+describe('writing a mind map node whose id is a statement word', () => {
+  it('renames a node whose id would open an accTitle or accDescr statement, so the tree reads back whole', () => {
+    for (const id of ['accTitle', 'accDescr']) {
+      const nodes = [{ id, outline: 'hexagon', lines: ['Root'] }, { id: 'leaf', lines: ['Leaf'] }];
+      const doc = { pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: { nodes, edges: [{ id: 'e', from: id, to: 'leaf' }] } as never }] };
+      const back = page(writeMindmap(doc).text);
+      expect(back.data.nodes.map((n) => n.lines ?? n.rows), id).toHaveLength(2);
+      expect(back.data.edges, id).toHaveLength(1);
+    }
+  });
+});

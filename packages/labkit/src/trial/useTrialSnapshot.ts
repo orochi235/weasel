@@ -121,13 +121,24 @@ export function useTrialSnapshot({
       }
       let history = current.history;
       if (!history) {
-        history = trialUndoHistory(maxDepth);
+        history = trialUndoHistory(maxDepth, rebuild);
         setTrialHistory(trialId, history);
       }
       history.recordEntry([entry], event);
       return true;
     },
-    [undoCap, undoEvents, maxDepth, stored, ownHistory, store, trialId, setTrialHistory, recorded],
+    [
+      undoCap,
+      undoEvents,
+      maxDepth,
+      stored,
+      ownHistory,
+      store,
+      trialId,
+      setTrialHistory,
+      recorded,
+      rebuild,
+    ],
   );
 
   return { snapshot, stored, rebuild };

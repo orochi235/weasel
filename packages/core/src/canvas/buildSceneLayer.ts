@@ -147,7 +147,7 @@ function toPoseReads<TNode extends { id: string }, TPose>(
   const frames: PoseAdapter<TPose> = {
     getPose,
     getParent: (id) => adapter.getParent?.(id)
-      ?? (adapter.getNode(id) as { parentId?: string | null } | undefined)?.parentId ?? null,
+      ?? (adapter.getNode(id) as { parent?: string | null } | undefined)?.parent ?? null,
     definesFrame: (id) => {
       const obj = adapter.getNode(id);
       return obj === undefined || definesFrame(obj as never);
