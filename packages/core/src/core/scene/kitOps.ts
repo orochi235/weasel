@@ -223,6 +223,7 @@ function registerAdd<TData, TLayer extends string, TPose>(env: KitOpsEnv<TData, 
       detach(p.id);
       state.nodes.delete(p.id);
       env.forgetViewState(p.id);
+      env.narrowSelection(new Set([p.id]));
       dependents.remove(p.id);
       childDerived.delete(p.id);
       invalidateChildDerivedFrom(p.parent);
