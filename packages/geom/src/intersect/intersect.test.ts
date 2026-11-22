@@ -112,3 +112,9 @@ describe('a cubic that loops over itself', () => {
     expect(pathCrossings([pathFromD('M 0 0 Q 50 80 100 0')])).toHaveLength(0);
   });
 });
+
+describe('pathCrossings on a closed one-cubic subpath', () => {
+  it('leaves out the joint where it closes', () => {
+    expect(pathCrossings([pathFromD('M 0 0 C 100 0 100 100 0 0 Z')])).toHaveLength(0);
+  });
+});
