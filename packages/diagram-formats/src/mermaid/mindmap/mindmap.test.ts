@@ -35,8 +35,14 @@ describe('reading a Mermaid mind map', () => {
     expect(edges.find((e) => e.to === 'n3')).toMatchObject({ from: 'n2', colors: { markerEnd: null } });
   });
 
-  it('warns of icons and classes', () => {
-    expect(readMindmap(LAUNCH).warnings).toEqual(['Mermaid mind map icons were dropped.']);
+  it('warns of icons, classes, and bangs', () => {
+    expect(readMindmap(LAUNCH).warnings).toEqual(['Mermaid mind map icons were dropped.', 'Mermaid mind map bangs were read as clouds.']);
+  });
+
+  it('warns that a bang is read as a cloud', () => {
+    const { document, warnings } = readMindmap('mindmap\n  root))Boom((\n');
+    expect(warnings).toEqual(['Mermaid mind map bangs were read as clouds.']);
+    expect(onlyPage(document).data.nodes[0]?.outline).toBe('cloud');
   });
 
   it('names the line of a second root and of an icon with no node', () => {

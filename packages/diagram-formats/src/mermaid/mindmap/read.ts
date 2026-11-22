@@ -56,6 +56,7 @@ export function readMindmap(text: string): ImportResult {
   const nodes: DataNode[] = order.map((n) => {
     if (n.icon !== undefined) warnings.add('Mermaid mind map icons were dropped.');
     if (n.classes !== undefined) warnings.add('Mermaid mind map classes were dropped.');
+    if (n.shape === 'bang') warnings.add('Mermaid mind map bangs were read as clouds.');
     return { id: idOf.get(n)!, lines: textLines(n.text), ...(n.shape !== 'plain' ? { outline: SHAPE_OUTLINES[n.shape] } : {}) };
   });
   const edges: DataEdge[] = order.filter((n) => parents.has(n)).map((n) => ({
