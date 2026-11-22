@@ -4,7 +4,7 @@ import { uniqueStages } from '../draw';
 import { runOrder } from '../runner/order';
 import { paramValues } from '../runner/params';
 import type { EffectPipeline, EffectStage } from '../types';
-import type { AudioSources, AudioStageNodes } from './nodes';
+import type { AudioSources, AudioStageNode, AudioStageNodes } from './nodes';
 
 /** A node the plan builds: its stage type, its discrete settings and its numeric levels. */
 export interface PlanNode {
@@ -33,10 +33,11 @@ const OUTPUT_TYPE = 'audio.output';
 export const edgeKey = (e: PlanEdge): string =>
   JSON.stringify([e.from, 'output' in e.to ? null : [e.to.node, e.to.port]]);
 
-function levelsOf(levels: readonly string[], params: Readonly<Record<string, unknown>>): Record<string, number> {
+function levelsOf(entry: AudioStageNode, params: Readonly<Record<string, unknown>>): Record<string, number> {
   const out: Record<string, number> = {};
-  for (const id of levels) {
-    const v = getOwn(params, id);
+  for (const id of entry.levels) {
+    const given = getOwn(params, id);
+    const v = typeof given === 'number' ? given : entry.levelDefaults && getOwn(entry.levelDefaults, id);
     if (typeof v === 'number') setOwn(out, id, v);
   }
   return out;
@@ -76,7 +77,7 @@ export function livePlan(pipeline: EffectPipeline, nodes: AudioStageNodes, sourc
       const entry = getOwn(nodes, stage.type!)!;
       const params = paramValues(stage);
       try {
-        setOwn(planNodes, id, { type: stage.type!, settings: entry.settings(params, sources), levels: levelsOf(entry.levels, params) });
+        setOwn(planNodes, id, { type: stage.type!, settings: entry.settings(params, sources), levels: levelsOf(entry, params) });
       } catch (err) {
         setOwn(errors, id, err instanceof Error ? err.message : String(err));
         continue;

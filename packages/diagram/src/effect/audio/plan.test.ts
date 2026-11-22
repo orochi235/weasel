@@ -27,6 +27,12 @@ describe('livePlan', () => {
     ]));
   });
 
+  it('plays a level its params leave out at the stage type\'s default', () => {
+    const p = plan([stage('d', 'audio.delay', { params: [] }), stage('osc', 'audio.oscillator'), stage('out', 'audio.output')],
+      [wire('osc', 'd'), wire('d', 'out')]);
+    expect(p.nodes.d!.levels).toEqual({ time: 300, feedback: 0.4, mix: 0.5 });
+  });
+
   it('plans a stage whose id is __proto__ as its own node', () => {
     const p = plan([stage('__proto__', 'audio.oscillator'), stage('out', 'audio.output')], [wire('__proto__', 'out')]);
     expect(Object.getPrototypeOf(p.nodes)).toBe(Object.prototype);

@@ -54,6 +54,11 @@ describe('diffPlans', () => {
     expect(kinds).toEqual(['add', 'add', 'add', 'connect', 'connect', 'connect']);
   });
 
+  it('rebuilds a node whose plan stopped giving one of its levels', () => {
+    const next = plan({ ...base.nodes, delay: node('delay', {}, {}) }, [...base.edges]);
+    expect(diffPlans(base, next, build).map((p) => p.kind)).toEqual(['replace']);
+  });
+
   it('sets a changed level with no ramp', () => {
     const next = plan({ ...base.nodes, delay: node('delay', {}, { time: 500 }) }, [...base.edges]);
     expect(diffPlans(base, next, build)).toEqual([{ kind: 'set', id: 'delay', param: 'time', value: 500 }]);
