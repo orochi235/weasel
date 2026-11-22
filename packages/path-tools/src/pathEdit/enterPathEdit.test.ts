@@ -27,6 +27,10 @@ describe('enterPathEdit', () => {
     expect(run({ selected: ['r', 'a'], editable: ['a'], under: 'r' })).toHaveBeenCalledWith('a');
   });
 
+  it('leaves a double-click on an unselected body with no editable path to that body', () => {
+    expect(run({ selected: ['a'], editable: ['a'], under: 'img' })).not.toHaveBeenCalled();
+  });
+
   it('stands aside where the double-click names a group above the path under it', () => {
     const hitAt = (named: string | undefined) => () => ({
       bodyTarget: 'unselected-body' as const, bodyKind: 'path', id: 'member',
@@ -50,7 +54,7 @@ describe('enterPathEdit', () => {
     }) as never;
     const enabled = enterPathEditAction.enabled!;
     expect(enabled(deps('text', []), { x: 5, y: 5 })).toBe(ActionDisabledReason.NotApplicable);
-    expect(enabled(deps('text', ['path']), { x: 5, y: 5 })).toBe(true);
+    expect(enabled(deps('text', ['text', 'path']), { x: 5, y: 5 })).toBe(true);
     expect(enabled(deps(null, []))).toBe(ActionDisabledReason.NotApplicable);
   });
 

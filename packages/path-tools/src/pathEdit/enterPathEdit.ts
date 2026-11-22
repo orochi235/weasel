@@ -16,8 +16,9 @@ import { ActionDisabledReason, defineAction, isBody, type ActionDeps } from '@we
 import { effectSourceFor } from '@weasel-js/core';
 import type {} from '../actionParamSchema';
 
-/** The path entering edit at `world` would open: the one under the pointer, else the first selected node with
- *  an editable path. Null when there is none, so the double-click is left to the next binding. */
+/** The path entering edit at `world` would open: the one under the pointer, else, when what is under it is
+ *  selected or nothing is, the first selected node with an editable path. Null when there is none, so the
+ *  double-click is left to the next binding. */
 function pathEditTarget(deps: ActionDeps | undefined, world: { x: number; y: number } | undefined): string | null {
   const editAnchors = deps?.editAnchors;
   const selection = deps?.operands;
@@ -25,10 +26,13 @@ function pathEditTarget(deps: ActionDeps | undefined, world: { x: number; y: num
   // The path under the pointer wins: with several selected, the first may not be the one double-clicked.
   const under = world ? deps.nodeAtPoint?.(world) : null;
   if (under && editAnchors.getEditablePath(under)) return under;
+  const selected = selection.get() as NodeId[];
+  // An unselected body under the pointer is what the double-click is aimed at, not some selected path elsewhere.
+  if (under && !selected.includes(under as NodeId)) return null;
   const scene = deps.scene;
   // Use the dep's editability check rather than poking at node.pose directly — the dep knows whether a node has
   // an editable polygon (pose-as-polygon OR data.path) so this picks up both shapes.
-  for (const id of selection.get() as NodeId[]) {
+  for (const id of selected) {
     // An effect hiding its path edits that path when entered from the selection. A double-click never does: on the
     // effect's glyphs it is the text's, and between them it is aimed at nothing.
     const target = (!world && scene ? effectSourceFor(scene, id, 'path') : null) ?? id;
