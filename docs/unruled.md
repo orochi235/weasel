@@ -3647,3 +3647,8 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `SelectionPanel` leaves a node unchanged, with a dev warning, when a schema keys one
   field of a declared field (`units.drawnAt`) that the node does not hold, since the record it would store lacks
   `UnitScope`'s required `system`. Building the scope from the node's inherited one was the alternative.
+## Audit round sixty-eight (2026-11-22): badge shapes
+
+- 2026-11-22 (the fixer's call): a `perforated` badge's `holeRadius` stops at the box's longer side, so an infinite
+  one draws as any radius that already masks the whole badge. Reading it as the default, as an infinite `rotation`
+  does, was the alternative.

@@ -1,5 +1,5 @@
 import type { ShapeModule } from '../types';
-import { clampParam, repeatCount, withDefaults } from './params';
+import { clampParam, finiteOr, repeatCount, withDefaults } from './params';
 import { DEG_TO_RAD, lerp, trimNumber } from '@weasel-js/geom';
 
 /** What `shapeParams` takes on a `starburst` badge. */
@@ -58,8 +58,11 @@ function starburstPath(points: number, outerR: number, innerR: number, rotationD
 const Starburst: ShapeModule<BadgeStarburstShapeParams> = {
   Component: ({ variant, focused, params }) => {
     const cfg = withDefaults(DEFAULTS, params);
-    const d = starburstPath(cfg.points, cfg.outerR, cfg.innerR, cfg.rotation, cfg.erosion);
-    const dFocus = starburstPath(cfg.points, cfg.outerR + 4, cfg.innerR + 3, cfg.rotation, cfg.erosion);
+    const outerR = finiteOr(cfg.outerR, DEFAULTS.outerR);
+    const innerR = finiteOr(cfg.innerR, DEFAULTS.innerR);
+    const rotation = finiteOr(cfg.rotation, DEFAULTS.rotation);
+    const d = starburstPath(cfg.points, outerR, innerR, rotation, cfg.erosion);
+    const dFocus = starburstPath(cfg.points, outerR + 4, innerR + 3, rotation, cfg.erosion);
     return (
       <>
         {(variant === 'solid' || variant === 'subtle') && <path className="badge-fill" d={d} />}
