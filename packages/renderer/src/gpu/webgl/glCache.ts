@@ -186,15 +186,15 @@ export class GlCache {
     this.scissorOn = undefined;
   }
 
-  /** Bind `textures` to units 0.., each only where the unit holds another. A unit with no texture, or one of
-   *  `drawnInto`, gets `unset()`, made before any unit is bound. */
+  /** Bind `textures` to units 0.., each only where the unit holds another. A unit with no texture, a deleted
+   *  one, or one of `drawnInto` gets `unset()`, made before any unit is bound. */
   bindTextures(
-    textures: readonly ({ readonly handle: WebGLTexture } | null)[],
+    textures: readonly ({ readonly handle: WebGLTexture; readonly deleted: boolean } | null)[],
     drawnInto: readonly ({ readonly handle: WebGLTexture } | null)[],
     unset: () => WebGLTexture,
   ): void {
     const gl = this.gl;
-    const sampleable = (t: (typeof textures)[number]) => t !== null && !drawnInto.includes(t);
+    const sampleable = (t: (typeof textures)[number]) => t !== null && !t.deleted && !drawnInto.includes(t);
     const placeholder = textures.every(sampleable) ? null : unset();
     for (let unit = 0; unit < textures.length; unit++) {
       const t = textures[unit];

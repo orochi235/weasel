@@ -228,6 +228,20 @@ describe('WebGLDevice textures it cannot sample', () => {
     return out;
   };
 
+  it('samples transparent black for a texture deleted while a program still holds it, as WebGPU does', () => {
+    const { rec, gpu } = setup();
+    const { program, geometry, state } = drawable(gpu);
+    const tex = gpu.createTexture('rgba8', NEAREST, { width: 2, height: 2, data: null });
+    program.setTexture('u_a', tex);
+    gpu.draw(state(), geometry, 3);
+    gpu.deleteTexture(tex);
+    rec.reset();
+    gpu.draw(state(), geometry, 3);
+    const bound = argsOf(rec, 'bindTexture').map(([, t]) => t);
+    expect(bound).not.toContain(handleOf(tex));
+    expect(bound.at(-1)).toBe(transparent(rec)[0]);
+  });
+
   it('samples transparent black for a texture the pass draws into, as WebGPU does', () => {
     const { rec, gpu } = setup();
     const { program, geometry, state } = drawable(gpu);

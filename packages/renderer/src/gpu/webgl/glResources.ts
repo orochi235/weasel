@@ -24,6 +24,7 @@ export interface GlTexture extends GpuTexture {
   readonly format: GpuTextureFormat;
   /** The sampling last set, so an unchanged one is not sent again. */
   sampling: GpuSampling;
+  deleted: boolean;
 }
 
 function usageOf(gl: WebGL2RenderingContext, usage: GpuBufferUsage): number {
@@ -158,7 +159,7 @@ export function createTexture(
 ): GlTexture {
   const handle = gl.createTexture();
   if (!handle) throw new Error('createTexture returned null');
-  const texture: GlTexture = { kind: 'texture', handle, format, sampling };
+  const texture: GlTexture = { kind: 'texture', handle, format, sampling, deleted: false };
   cache.withTexture(handle, () => {
     upload(gl, format, data);
     applySampling(gl, sampling);
@@ -202,5 +203,6 @@ export function setSampling(
 
 export function deleteTexture(gl: WebGL2RenderingContext, cache: GlCache, texture: GlTexture): void {
   cache.forgetTexture(texture.handle);
+  texture.deleted = true;
   gl.deleteTexture(texture.handle);
 }
