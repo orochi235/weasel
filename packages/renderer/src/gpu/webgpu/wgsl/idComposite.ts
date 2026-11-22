@@ -18,7 +18,7 @@ struct IdOut {
 @fragment fn fs(in: VOut) -> IdOut {
   let src = textureSample(u_source, u_source_sampler, in.uv);
   let rgb = select(vec3f(0.0), src.rgb / src.a, src.a > 0.0);
-  let a = (u.u_colorMatrix * vec4f(rgb, src.a) + u.u_colorBias).a * u.u_alpha;
+  let a = saturate((u.u_colorMatrix * vec4f(rgb, src.a) + u.u_colorBias).a) * u.u_alpha;
   // in.uv is already top-down, so this is GL's texel row turned over within
   // u_ids, which is stored the other way up from GL.
   let rows = i32(textureDimensions(u_ids).y);
