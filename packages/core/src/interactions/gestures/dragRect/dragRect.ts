@@ -70,6 +70,18 @@ interface DragRectScratch<TConsumer> {
   consumer: TConsumer;
 }
 
+function rectCtx<T>(s: DragRectScratch<T>, onCorner: () => void): DragRectCtx<T> {
+  return {
+    get start() { return s.start; },
+    get current() { return s.current; },
+    get bounds() { return boundsFrom(s.start, s.current); },
+    get modifiers() { return s.modifiers; },
+    get scratch() { return s.consumer; },
+    setStart(p) { s.start = p; onCorner(); },
+    setCurrent(p) { s.current = p; onCorner(); },
+  };
+}
+
 /**
  * The gesture "the user drew a rectangle": press, drag, release, with the
  * resulting box reported live and at commit.
@@ -97,18 +109,10 @@ export function useDragRect<TScratch = unknown>(
     });
   }, []);
 
-  const buildConsumerCtx = useCallback((): DragRectCtx<TScratch> => {
-    const s = scratchRef.current!;
-    return {
-      get start() { return s.start; },
-      get current() { return s.current; },
-      get bounds() { return boundsFrom(s.start, s.current); },
-      get modifiers() { return s.modifiers; },
-      get scratch() { return s.consumer; },
-      setStart(p) { s.start = p; writeOverlay(); },
-      setCurrent(p) { s.current = p; writeOverlay(); },
-    };
-  }, [writeOverlay]);
+  const buildConsumerCtx = useCallback(
+    (): DragRectCtx<TScratch> => rectCtx(scratchRef.current!, writeOverlay),
+    [writeOverlay],
+  );
 
   const gesture = useDragGesture<DragRectScratch<TScratch>>({
     initScratch: () => {
@@ -146,16 +150,10 @@ export function useDragRect<TScratch = unknown>(
       const b = boundsFrom(ctx.scratch.start, ctx.scratch.current);
       const s = ctx.scratch;
       const below = (r: DragRectBounds) => r.width <= min.width || r.height <= min.height;
-      const endCtx: DragRectEndCtx<TScratch> = {
-        get start() { return s.start; },
-        get current() { return s.current; },
-        get bounds() { return boundsFrom(s.start, s.current); },
-        get modifiers() { return s.modifiers; },
-        get scratch() { return s.consumer; },
-        setStart(p) { s.start = p; writeOverlay(); },
-        setCurrent(p) { s.current = p; writeOverlay(); },
-        get isSubThreshold() { return below(boundsFrom(s.start, s.current)); },
-      };
+      const endCtx = Object.defineProperty(rectCtx(s, writeOverlay), 'isSubThreshold', {
+        get: () => below(boundsFrom(s.start, s.current)),
+        enumerable: true,
+      }) as DragRectEndCtx<TScratch>;
       dlog('drag-rect', 'end', { bounds: b, isSubThreshold: below(b) });
       let r: boolean | void;
       try {
