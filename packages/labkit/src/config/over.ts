@@ -64,12 +64,12 @@ export function writesOver(resolved: ResolvedConfig, path: string): boolean {
   );
 }
 
-/** {@link OverAccess} for `over`, read from the surrounding lab's values; none without an `over`. */
+/** {@link OverAccess} for `over`, read from the surrounding lab's values, or outside a lab from values kept here;
+ *  none without an `over`. */
 export function useOverAccess(over: PrefGroup | PrefSection | undefined): OverAccess | undefined {
-  const lab = useContext(LabOverContext);
+  const lab = useKeptOver(useContext(LabOverContext) ?? undefined);
   return useMemo(() => {
     if (over === undefined) return undefined;
-    const read = prefReader(over, lab?.values ?? NO_VALUES);
-    return { read, set: (path: string, value: unknown) => lab?.set(path, value) };
+    return { read: prefReader(over, lab.values), set: lab.set };
   }, [over, lab]);
 }
