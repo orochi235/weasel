@@ -33,9 +33,8 @@ export { ANCHOR_SNAP_PX, CURVE_HIT_PX } from './functionCurve';
  * interpolated curve and its anchors, and handles dragging, inserting and
  * deleting them.
  *
- * Several can coexist on one editor as long as their ids differ — plotting a
- * derived read-only curve beside an editable one is the case it is shaped
- * for, via `interactive: false`.
+ * Several can coexist on one editor — plotting a derived read-only curve
+ * beside an editable one is the case it is shaped for, via `interactive: false`.
  */
 export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<FunctionLayerState> {
   const id = cfg.id ?? 'function';
@@ -133,7 +132,7 @@ export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<
     extra: KeyDownArgs<FunctionLayerState>,
   ): void {
     if (!interactive) return;
-    const el = keyTargetIn(e, id)?.closest('[data-anchor-index]');
+    const el = keyTargetIn(e, extra.group)?.closest('[data-anchor-index]');
     if (!el) return;
     const move = arrowMove(e.key, e.shiftKey);
     if (move === null) return;

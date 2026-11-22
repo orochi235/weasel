@@ -151,7 +151,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
     ctx: LayerCtx,
     extra: KeyDownArgs<KeyframeLayerState>,
   ): void {
-    const target = keyTargetIn(e, id);
+    const target = keyTargetIn(e, extra.group);
     if (!target) return;
     const arrow = arrowMove(e.key, e.shiftKey);
     // The move in model terms: the screen's y runs down, and an inverted axis runs its model value the other way.

@@ -133,6 +133,9 @@ export interface CurveLayer<S> {
 /** Handed to `onKeyDown` so a key press can publish a committed edit. */
 export interface KeyDownArgs<S> {
   commit(next: S): void;
+  /** The group this layer draws into. Every layer hears every key, and ids may repeat, so a key on one of this
+   *  layer's own marks is one whose target sits in this group. */
+  readonly group: Element | null;
 }
 
 /** Helpers handed to `onPointerDown` and `onEmptyPointerDown` so a
