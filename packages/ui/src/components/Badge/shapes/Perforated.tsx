@@ -27,7 +27,7 @@ function PerforatedComponent({ variant, focused, params }: {
   const holeRadius = clampParam(cfg.holeRadius, 0, Infinity, DEFAULTS.holeRadius);
   const rx = (holeRadius / box.width) * 100;
   const ry = (holeRadius / box.height) * 100;
-  const pitch = clampParam(cfg.holePitch, MIN_HOLE_PITCH, Infinity, DEFAULTS.holePitch);
+  const pitch = Math.max(2 * holeRadius, clampParam(cfg.holePitch, MIN_HOLE_PITCH, Infinity, DEFAULTS.holePitch));
   const nH = Math.max(2, Math.round(box.width / pitch));
   const nV = Math.max(2, Math.round(box.height / pitch));
 
