@@ -43,8 +43,8 @@ export interface ArapStep {
 /** Options for {@link ArapSolver.solve}. */
 export interface ArapSolveOptions {
   /** The most local/global rounds to run after the two linear steps; 0
-   *  returns their result alone. Rounds stop early once the mesh settles.
-   *  Default {@link ARAP_ROUNDS}. */
+   *  skips them, leaving the injective pass to start from the linear steps'
+   *  result. Rounds stop early once the mesh settles. Default {@link ARAP_ROUNDS}. */
   iterations?: number;
   /** The most rounds of the injective pass; 0 skips it. Default
    *  {@link ARAP_INJECTIVE_ROUNDS}. */
