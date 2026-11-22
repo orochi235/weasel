@@ -16,7 +16,8 @@ export type PrefConditionValue = string | number | boolean | null;
  * `{ from: 'item', path: 'mode' }` on a field of a list's item reads `mode`
  * of the same entry, and an empty path is the entry itself. With `from: 'group'` the path is
  * read from the group the test's node is declared in, so a group can be mounted anywhere:
- * `{ from: 'group', path: 'on' }` on `view.feature.axis` reads `view.feature.on`. The value compared is the one
+ * `{ from: 'group', path: 'on' }` on `view.feature.axis` reads `view.feature.on`. A group's own tests read from
+ * the group itself, so the same test as `view.feature`'s `enableIf` reads that switch too. The value compared is the one
  * the leaf's control shows, where an `encoding` stores another. With
  * several operators it holds while all of them do, so
  * `{ path: 'count', atLeast: 1, below: 10 }` is a range.
@@ -31,7 +32,7 @@ export type PrefConditionValue = string | number | boolean | null;
  */
 export interface PrefTest {
   path: string;
-  /** Where `path` is read from: the entry the node is drawn in, or the group it is declared in. Unset: the schema
+  /** Where `path` is read from: the entry the node is drawn in, or the group it is declared in (a group: itself). Unset: the schema
    *  root. */
   from?: PrefConditionFrom;
   is?: PrefConditionValue;

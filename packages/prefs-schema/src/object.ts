@@ -11,7 +11,8 @@ const isObject = isPlainObject;
 export function prefObjectBase(pref: PrefObject, held: unknown): Record<string, unknown> {
   if (isObject(held)) return held;
   const lifted = held === undefined ? undefined : pref.fromScalar?.(held);
-  return lifted ?? (isObject(pref.default) ? pref.default : {});
+  if (isObject(lifted)) return lifted;
+  return isObject(pref.default) ? pref.default : {};
 }
 
 /** The value of the field `key` in `held`. A dotted key (`'nib.angle'`) names a field of a field. */

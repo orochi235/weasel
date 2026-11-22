@@ -67,7 +67,7 @@ const under = (at: string, key: string): string => (at === '' ? key : `${at}.${k
  * `root` with `fn` applied to every node, a list's or a map's entry and a union's variants among them; the same
  * object where none changed. `fn` is told the value path of the entry the node is drawn in, its step written `*`
  * (`'phases.*'`): the item's own for the item, and `undefined` outside every list and map, and the value path of the
- * group the node is declared in.
+ * group the node's tests read from: the one it is declared in, and a group's own.
  */
 function mapNodes<R extends SchemaRoot>(root: R, fn: (node: SchemaNode, entry: string | undefined, group: string) => SchemaNode): R {
   /** `at(key, kid)` is the value path of each kid. */
@@ -76,7 +76,9 @@ function mapNodes<R extends SchemaRoot>(root: R, fn: (node: SchemaNode, entry: s
     return Object.keys(kids).every((key) => getOwn(mapped, key) === kids[key]) ? kids : (mapped as M);
   };
   const go = (node: SchemaNode, at: string, entry: string | undefined, group: string): SchemaNode => {
-    let self = fn(node, entry, group);
+    // A group's children are declared in it, and its own tests read from it; anything else's sit in the group it does.
+    const inside = !isPrefLeaf(node) && !isPrefSection(node) ? at : group;
+    let self = fn(node, entry, inside);
     const { item, variants } = innerOf(node);
     const itemAt = under(at, PREF_ENTRY);
     const held = item && go(item, itemAt, itemAt, group);
@@ -86,8 +88,6 @@ function mapNodes<R extends SchemaRoot>(root: R, fn: (node: SchemaNode, entry: s
     if (shapes !== variants) self = { ...self, variants: shapes } as SchemaNode;
     // An entry's fields were mapped with the entry.
     const kids = ownChildrenOf(node);
-    // A group's children are declared in it; anything else's sit in the group it does.
-    const inside = !isPrefLeaf(node) && !isPrefSection(node) ? at : group;
     // A section's key is a heading, and no part of the paths under it.
     const mapped = kids && each(kids, (key, kid) => (isPrefSection(kid) ? at : under(at, key)), entry, inside);
     return mapped === kids ? self : withChildren(self, mapped!);

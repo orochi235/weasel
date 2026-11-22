@@ -47,9 +47,22 @@ describe('the editor with a group test', () => {
 
   it('finds the group a node is declared in', () => {
     expect(conditionGroupAt(ROOT, 'view/feature/axis')).toBe('view.feature');
-    expect(conditionGroupAt(ROOT, 'view/feature')).toBe('view');
+    expect(conditionGroupAt(ROOT, 'view/feature')).toBe('view.feature');
     expect(conditionGroupAt(ROOT, 'on')).toBe('');
-    expect(conditionGroupAt(ROOT, null)).toBeUndefined();
+    expect(conditionGroupAt(ROOT, null)).toBe('');
     expect(conditionGroupAt(ROOT, 'view/nothing')).toBeUndefined();
+  });
+});
+
+describe("a group's own test that reads from its group", () => {
+  const switched: PrefGroup = { name: 'Feature', enableIf: { from: 'group', path: 'on' }, children: { on: flag('On'), axis: flag('Axis') } };
+  const root: PrefGroup = { name: 'Root', children: { view: { name: 'View', children: { feature: switched } } } };
+  const featureOf = (r: PrefGroup) => (r.children.view as PrefGroup).children.feature as PrefGroup;
+
+  it('reads the leaf in the group itself, for the check, the marks, and a rename', () => {
+    expect(checkPrefConditions(root)).toEqual([]);
+    expect(conditionProblems(root).size).toBe(0);
+    const renamed = rebaseValuePaths(root, [['view.feature.on', 'view.feature.enabled']]);
+    expect(featureOf(renamed).enableIf).toEqual({ from: 'group', path: 'enabled' });
   });
 });

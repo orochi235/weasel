@@ -23,8 +23,9 @@ const under = (prefix: string, key: string): string => (prefix === '' ? key : `$
 
 /** A schema with its conditions applied. */
 export interface PrefConditionsApplied<T> {
-  /** The schema without the nodes that are not shown. The schema itself when
-   *  that is all of it, and `null` when its root is not shown. */
+  /** The schema without the nodes that are not shown, its tests read from a group read from the root as
+   *  {@link resolvePrefGroupConditions} reads them. That schema itself when it is all of it (the schema given, where
+   *  no test reads from a group), and `null` when its root is not shown. */
   shown: T | null;
   /**
    * The value path of every leaf that is disabled, a field of an `object` or
@@ -167,7 +168,7 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answer
  * An alias is shown only while it and the leaf it shows both are, and enabled
  * only while both are, with everything above that leaf counted. That leaf is
  * looked for in `aliasOver`, and its side is asked of `aliasHolds`.
- * Parts with nothing dropped come back as the objects they were.
+ * Parts with nothing dropped come back as the objects {@link resolvePrefGroupConditions} gives for them.
  */
 export function applyPrefConditions<T extends PrefGroup | PrefSection>(
   schema: T,
