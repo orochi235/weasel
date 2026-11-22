@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { createLodState, createLodWalk, defaultDrawOne, type SceneNode as Node } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core';
 import { withTextPainter } from '../testing/textPainter';
+import { INHERIT } from '@weasel-js/paint';
 import type { TextNodeData } from './textPainter';
+import { paintGreekText } from './textLadder';
 
 withTextPainter();
 
@@ -51,5 +53,60 @@ describe('kit:text ladder', () => {
     const px = { ...node, data: { ...node.data, style: { fontSize: { px: 12 } } } } as typeof node;
     const walk = createLodWalk<typeof node, RectPose>({ dpr: 1 });
     expect(walk.pick(px, px.pose, view(0.01))?.rung).toBe('full');
+  });
+});
+
+describe('paintGreekText', () => {
+  const solid = (color: string) => ({ fill: { paint: { kind: 'solid' as const, color } }, stroke: null });
+  const barColors = (cmds: unknown) => JSON.stringify(cmds).match(/"color":"[^"]+"/g);
+
+  it('repaints its bars when the paint it inherits changes', () => {
+    const n = { data: { text: 'Hi', fill: INHERIT } };
+    const pose = { x: 0, y: 0, width: 100, height: 40 };
+    expect(barColors(paintGreekText(n, pose, solid('#ff0000')))).toEqual(['"color":"#ff0000"']);
+    expect(barColors(paintGreekText(n, pose, solid('#0000ff')))).toEqual(['"color":"#0000ff"']);
+  });
+});
+
+describe('paintGreekText frame', () => {
+  it('draws the shadow and edge the full rung draws under its lines', () => {
+    const d = {
+      text: 'Hi', background: { paint: { kind: 'solid' as const, color: '#ffe680' } },
+      edge: { width: 2, shade: 0.2 }, shadow: { x: 0, y: 4, blur: 8, alpha: 0.3 },
+    };
+    const pose = { x: 0, y: 0, width: 100, height: 100 };
+    const cmds = paintGreekText({ data: d }, pose);
+    expect(cmds.some((c) => c.kind === 'path' && c.stroke !== undefined)).toBe(true);
+    expect(cmds[0]!.kind).toBe('group');
+    expect(cmds).toHaveLength(4);
+  });
+});
+
+describe('paintGreekText placement', () => {
+  const pose = { x: 0, y: 0, width: 100, height: 100 };
+  const bars = (data: Partial<TextNodeData>) => {
+    const cmds = paintGreekText({ data: { text: 'one\ntwo', style: { fontSize: 10, lineHeight: 1 }, ...data } }, pose);
+    const group = cmds.find((c) => c.kind === 'group');
+    return (group && group.kind === 'group' ? group.children : []).map((c) => (c.kind === 'path' && c.path.kind === 'rect' ? c.path : null)!);
+  };
+
+  it('centers its lines in the box as verticalAlign center lays them out', () => {
+    const [first, second] = bars({ verticalAlign: 'center' });
+    expect(first!.y + (second!.y + second!.height - first!.y) / 2).toBeCloseTo(50);
+  });
+
+  it('cuts its lines to the box when overflow is clip', () => {
+    const lines = Array.from({ length: 30 }, () => 'line').join('\n');
+    const cut = bars({ text: lines, overflow: 'clip' });
+    expect(Math.max(...cut.map((r) => r.y + r.height))).toBeLessThanOrEqual(100);
+    const shown = bars({ text: lines });
+    expect(shown).toHaveLength(30);
+  });
+
+  it('sets its lines at the shrunk size when fit is shrink', () => {
+    const lines = Array.from({ length: 20 }, () => 'x').join('\n');
+    const shrunk = bars({ text: lines, fit: 'shrink' });
+    expect(shrunk).toHaveLength(20);
+    expect(shrunk[19]!.y + shrunk[19]!.height).toBeLessThanOrEqual(100);
   });
 });

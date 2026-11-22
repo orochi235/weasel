@@ -4,7 +4,7 @@
  * drawn by the canvas painter and written by the SVG export from it.
  */
 import { isSolidPaint, mixOklab, parseColor, resolveFill, rgbaToHex, type Fill } from '@weasel-js/paint';
-import { dropShadowLayers } from '@weasel-js/renderer';
+import { commandFill, dropShadowLayers, type DrawCommand } from '@weasel-js/renderer';
 import type { Path, Rect } from '@weasel-js/geom';
 
 /** A rule just inside a text node's box, in its background's color mixed toward black. */
@@ -76,4 +76,38 @@ export function textShadowBox(d: { background?: Fill | null; shadow?: TextShadow
   if (!s || !(s.alpha > 0) || !resolveFill(d.background)) return null;
   const e = Math.max(0, s.blur) / 2;
   return { x: box.x + s.x - e, y: box.y + s.y - e, width: box.width + 2 * e, height: box.height + 2 * e };
+}
+
+/** What a text node draws under its lines: its shadow, its background across `box`, and its edge. Empty with no background. */
+export function textBackdropOf(
+  d: { background?: Fill | null; edge?: TextEdge; shadow?: TextShadow },
+  box: Rect,
+): DrawCommand[] {
+  const bg = resolveFill(d.background);
+  if (!bg) return [];
+  const fill = commandFill(bg, box);
+  const { shadow, edge } = textFrameOf(d, box);
+  const out: DrawCommand[] = [];
+  if (shadow) {
+    const paint = { paint: { kind: 'solid' as const, color: shadow.color } };
+    out.push({
+      kind: 'group',
+      children: shadow.paths.map((path, i) => ({ kind: 'group', alpha: shadow.alphas[i], children: [{ kind: 'path', path, fill: paint }] })),
+    });
+  }
+  out.push({ kind: 'path', path: { kind: 'rect', x: box.x, y: box.y, width: box.width, height: box.height }, ...(fill ? { fill } : {}) });
+  if (edge) out.push({ kind: 'path', path: edge.path, stroke: { paint: { kind: 'solid', color: edge.color }, width: edge.width } });
+  return out;
+}
+
+/** The box a text node's lines lay out in: its pose box, inset by
+ *  `data.padding` and never past its center. */
+export function textBoxOf(
+  d: { padding?: number },
+  p: Rect,
+): Rect {
+  const pad = Math.max(0, d.padding ?? 0);
+  const px = Math.min(pad, p.width / 2);
+  const py = Math.min(pad, p.height / 2);
+  return { x: p.x + px, y: p.y + py, width: p.width - 2 * px, height: p.height - 2 * py };
 }

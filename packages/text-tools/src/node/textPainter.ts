@@ -15,9 +15,9 @@ import type { PathInWorldPose } from '@weasel-js/geom';
 import { textEffectItems } from './textItems';
 import { TEXT_LADDER } from './textLadder';
 import { clippedOutline, textOutlineOf } from './textOutline';
-import { commandFill, textCommandFromPose, type DrawCommand } from '@weasel-js/renderer';
+import { textCommandFromPose, type DrawCommand } from '@weasel-js/renderer';
 import { INHERIT, resolveFill, resolveStroke, type PaintedStroke } from '@weasel-js/paint';
-import { textFrameOf, textShadowBox, type TextEdge, type TextShadow } from './textFrame';
+import { textBackdropOf, textBoxOf, textShadowBox, type TextEdge, type TextShadow } from './textFrame';
 import { inkReach, nodeMemo, PAINT_SLOT, paintsPose, strokeOutsetPerAxis, type InheritedPaint, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
 
 /** The `data` a `kit:text` node carries. */
@@ -50,6 +50,8 @@ export interface TextNodeData {
 export type TextOverflow = 'visible' | 'clip';
 
 
+export { textBoxOf } from './textFrame';
+
 /** `cmd` cut to `box`: a group whose clip is the box as a rect, which the
  *  renderer cuts on the CPU when the frame keeps it axis-aligned. */
 export function clippedToBox(cmd: DrawCommand, box: Rect): DrawCommand {
@@ -58,18 +60,6 @@ export function clippedToBox(cmd: DrawCommand, box: Rect): DrawCommand {
     clip: { kind: 'rect', x: box.x, y: box.y, width: box.width, height: box.height },
     children: [cmd],
   };
-}
-
-/** The box a text node's lines lay out in: its pose box, inset by
- *  `data.padding` and never past its center. */
-export function textBoxOf(
-  d: Pick<TextNodeData, 'padding'>,
-  p: RectPose,
-): Rect {
-  const pad = Math.max(0, d.padding ?? 0);
-  const px = Math.min(pad, p.width / 2);
-  const py = Math.min(pad, p.height / 2);
-  return { x: p.x + px, y: p.y + py, width: p.width - 2 * px, height: p.height - 2 * py };
 }
 
 /** A `kit:text` node as the `TextPose` every text consumer reads, in the box
@@ -203,20 +193,7 @@ const SCREEN_PAINT_SLOT = 'shape:paint:text-screen';
 function paintText(d: TextNodeData, pose: RectPose, inherited: InheritedPaint | undefined, scale: number): DrawCommand[] {
   const laid = textCommandFromPose(textPoseOf(d, pose, inherited), scale);
   const text = d.overflow === 'clip' ? clippedToBox(laid, pose) : laid;
-  const bg = resolveFill(d.background);
-  if (!bg) return [text];
-  const fill = commandFill(bg, pose);
-  const { shadow, edge } = textFrameOf(d, pose);
-  const out: DrawCommand[] = [];
-  if (shadow) {
-    const paint = { paint: { kind: 'solid' as const, color: shadow.color } };
-    out.push({
-      kind: 'group',
-      children: shadow.paths.map((path, i) => ({ kind: 'group', alpha: shadow.alphas[i], children: [{ kind: 'path', path, fill: paint }] })),
-    });
-  }
-  out.push({ kind: 'path', path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height }, ...(fill ? { fill } : {}) });
-  if (edge) out.push({ kind: 'path', path: edge.path, stroke: { paint: { kind: 'solid', color: edge.color }, width: edge.width } });
+  const out = textBackdropOf(d, pose);
   out.push(text);
   return out;
 }
