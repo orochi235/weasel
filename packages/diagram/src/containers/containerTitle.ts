@@ -11,7 +11,7 @@ import {
   type GestureBinding,
   type RectPose,
 } from '@weasel-js/core';
-import { diagramContainerOf, headerBox } from './trait';
+import { diagramContainerOf, headerBox, titleIdOf } from './trait';
 import type {} from '../actionParamSchema';
 import { rectContainsPointHalfOpen } from '@weasel-js/geom';
 import { worldWith } from '../worldWith';
@@ -20,7 +20,8 @@ import { targetTransformOf, worldToLocal, type AnyScene } from '@weasel-js/core'
 /** The action a double-click on a region's header runs. */
 export const EDIT_CONTAINER_TITLE_ACTION_ID = 'diagram.editContainerTitle';
 
-/** The container, pool, or lane whose header holds `at`: the node under it, or a region around that. */
+/** The container, pool, or lane whose header holds `at`: the node under it, or a region around that. Null where that
+ *  region or its title is locked, as its title cannot be edited. */
 export function regionHeaderAt(deps: ActionDeps | undefined, at: { x: number; y: number } | undefined): string | null {
   if (deps === undefined || at === undefined) return null;
   const scene = deps.scene;
@@ -34,12 +35,16 @@ export function regionHeaderAt(deps: ActionDeps | undefined, at: { x: number; y:
     // Tested in the region's unturned box, so a rotated region's header is where it draws, and half-open as its body
     // is, so the edge between them is the body's.
     const p = worldToLocal(targetTransformOf(box), at.x, at.y);
-    if (h !== null && p !== null && rectContainsPointHalfOpen(h, p.x, p.y)) return id as string;
+    if (h !== null && p !== null && rectContainsPointHalfOpen(h, p.x, p.y)) {
+      const locked = [id as string, titleIdOf(id as string)].some((at) => (scene as unknown as AnyScene).isLocked(at as never));
+      return locked ? null : (id as string);
+    }
   }
   return null;
 }
 
-/** The action that hands `commit` the region whose header a double-click landed on. It declines anywhere else. */
+/** The action that hands `commit` the region whose header a double-click landed on. It declines anywhere else, and on
+ *  a locked region's header. */
 export function createEditContainerTitleAction(commit: (id: string) => void): Action {
   return defineAction({
     id: EDIT_CONTAINER_TITLE_ACTION_ID,

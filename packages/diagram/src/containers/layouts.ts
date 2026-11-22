@@ -4,7 +4,7 @@
  */
 import type { LayoutStrategy, RectPose } from '@weasel-js/core';
 import { diagramContainerLayout } from './containerLayout';
-import { laneStackLayout, poolHeader } from './laneStack';
+import { laneStackLayout, poolHeader, stacksAlong } from './laneStack';
 import type { ContainerHeader, ContainerRole } from './trait';
 
 /** A plain container's header. */
@@ -36,8 +36,8 @@ export const CONTAINER_LAYOUTS: Readonly<Record<string, LayoutStrategy<RectPose>
   [DIAGRAM_CONTAINER_LAYOUT]: diagramContainerLayout({ header: CONTAINER_HEADER }),
   [DIAGRAM_POOL_ROWS_LAYOUT]: laneStackLayout({ axis: 'y' }),
   [DIAGRAM_POOL_COLUMNS_LAYOUT]: laneStackLayout({ axis: 'x' }),
-  [DIAGRAM_LANE_ROWS_LAYOUT]: diagramContainerLayout({ header: laneHeader('y') }),
-  [DIAGRAM_LANE_COLUMNS_LAYOUT]: diagramContainerLayout({ header: laneHeader('x') }),
+  [DIAGRAM_LANE_ROWS_LAYOUT]: stacksAlong(diagramContainerLayout({ header: laneHeader('y') }), 'y'),
+  [DIAGRAM_LANE_COLUMNS_LAYOUT]: stacksAlong(diagramContainerLayout({ header: laneHeader('x') }), 'x'),
 });
 
 /** The layout key and header for a container of `role`; a pool or lane's

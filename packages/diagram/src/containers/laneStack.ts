@@ -62,6 +62,23 @@ export function stackedLanes(
   return out;
 }
 
+const STACK_AXIS = new WeakMap<object, 'x' | 'y'>();
+
+/** `layout`, marked as the layout of a pool or lane stacking along `axis`, which {@link regionAxisOf} reads first. */
+export function stacksAlong<L extends object>(layout: L, axis: 'x' | 'y'): L {
+  STACK_AXIS.set(layout, axis);
+  return layout;
+}
+
+/** The axis a pool or lane stacks along: its layout's where that is marked by {@link stacksAlong}, else its header's
+ *  (a top header is a column's); undefined with neither. */
+export function regionAxisOf(node: { data: unknown; layout?: unknown }): 'x' | 'y' | undefined {
+  const byLayout = typeof node.layout === 'object' && node.layout !== null ? STACK_AXIS.get(node.layout) : undefined;
+  if (byLayout !== undefined) return byLayout;
+  const side = diagramContainerOf(node)?.header?.side;
+  return side === undefined ? undefined : side === 'top' ? 'x' : 'y';
+}
+
 /** A pool stacking its lanes along `axis`. */
 export function laneStackLayout(opts: LaneStackOptions): LayoutStrategy<RectPose> {
   const { axis } = opts;
@@ -110,7 +127,7 @@ export function laneStackLayout(opts: LaneStackOptions): LayoutStrategy<RectPose
     return { poses: withTitle(container, children, stackedLanes(axis, bounds, header, sizes), bounds), bounds };
   };
 
-  return {
+  return stacksAlong({
     snap: {
       pickTarget(targets, pointer) {
         const p = axis === 'y' ? pointer.y : pointer.x;
@@ -163,5 +180,5 @@ export function laneStackLayout(opts: LaneStackOptions): LayoutStrategy<RectPose
     },
 
     releaseDrop: () => [],
-  };
+  }, axis);
 }

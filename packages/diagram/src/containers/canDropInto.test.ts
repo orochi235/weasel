@@ -4,6 +4,8 @@ import { createScene, unionOfChildren, type NodeId, type RectPose } from '@wease
 import { withDiagramRegistry } from '../edge';
 import { diagramScene } from '../fromData';
 import { diagramCanDropInto, diagramDropParentAt } from './canDropInto';
+import { poolAxisOf } from './containerStencils';
+import { CONTAINER_LAYOUTS, DIAGRAM_POOL_COLUMNS_LAYOUT, DIAGRAM_POOL_ROWS_LAYOUT } from './layouts';
 
 type N = { id: string; kind: 'mark' | 'group'; data: unknown };
 const region = (id: string, role: string, side?: 'top' | 'left'): N =>
@@ -43,6 +45,24 @@ describe('diagramCanDropInto', () => {
   it('lets a lane move only into a pool stacking along its axis', () => {
     expect(can('rows', ['row'])).toBe(true);
     expect(can('rows', ['column'])).toBe(false);
+  });
+
+  it('reads a pool\'s axis off its layout, whatever its header says', () => {
+    const laidOut = (id: string, layout: string, side?: 'top' | 'left') => ({ ...region(id, 'pool', side), layout: CONTAINER_LAYOUTS[layout] });
+    const nodes: Record<string, unknown> = {
+      ...NODES,
+      bareRows: laidOut('bareRows', DIAGRAM_POOL_ROWS_LAYOUT),
+      bareColumns: laidOut('bareColumns', DIAGRAM_POOL_COLUMNS_LAYOUT),
+      editedColumns: laidOut('editedColumns', DIAGRAM_POOL_COLUMNS_LAYOUT, 'left'),
+    };
+    const canIn = diagramCanDropInto({ get: (id: never) => nodes[id as string] as N });
+    expect(poolAxisOf(nodes.bareColumns as N)).toBe('x');
+    expect(poolAxisOf(nodes.editedColumns as N)).toBe('x');
+    expect(poolAxisOf(nodes.bareRows as N)).toBe('y');
+    expect(canIn('bareRows', ['row'])).toBe(true);
+    expect(canIn('bareColumns', ['column'])).toBe(true);
+    expect(canIn('bareColumns', ['row'])).toBe(false);
+    expect(canIn('editedColumns', ['column'])).toBe(true);
   });
 
   it('keeps pools out of containers and lanes', () => {

@@ -64,7 +64,7 @@ export function poolLanesOf(scene: AnyScene, id: string, world = worldWith(scene
   if (node === undefined || trait?.role !== 'pool') return null;
   return {
     id: node.id,
-    axis: poolAxisOf(trait),
+    axis: poolAxisOf(node),
     pose: node.pose as RectPose,
     at: world(node.id) as RectPose,
     lanes: lanesOf(scene, node.id).map((l) => ({ id: l, pose: scene.get(l)!.pose as RectPose, at: world(l) as RectPose })),
@@ -83,11 +83,11 @@ export function poolsOf(scene: AnyScene): PoolLanes[] {
   return out;
 }
 
-/** Whether resizing the lane at `index` of `pool` would write a locked node: the lane, the lane's or the pool's
- *  title, or a lane after it or anything it holds, which moves with it. The boundary is offered, and the resize
+/** Whether resizing the lane at `index` of `pool` would write a locked node: the pool, the lane, the lane's or the
+ *  pool's title, or a lane after it or anything it holds, which moves with it. The boundary is offered, and the resize
  *  runs, only where this is false. */
 export function laneResizeLocked(scene: AnyScene, pool: PoolLanes, index: number): boolean {
-  const writes = [titleIdOf(pool.id), titleIdOf(pool.lanes[index]!.id), pool.lanes[index]!.id];
+  const writes = [pool.id, titleIdOf(pool.id), titleIdOf(pool.lanes[index]!.id), pool.lanes[index]!.id];
   return writes.some((id) => scene.isLocked(id as NodeId))
     || reachesLocked(scene as never, pool.lanes.slice(index + 1).map((l) => l.id as NodeId));
 }

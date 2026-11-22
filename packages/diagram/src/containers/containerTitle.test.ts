@@ -32,4 +32,16 @@ describe('regionHeaderAt', () => {
     expect(regionHeaderAt(deps, { x: 240, y: -100 })).toBe(built.id);
     expect(regionHeaderAt(deps, { x: 10, y: 120 })).toBeNull();
   });
+
+  it('finds no header to edit on a locked region, or one whose title is locked', () => {
+    for (const lock of ['pool', 'title'] as const) {
+      const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+      let n = 0;
+      const built = containerBuild(CONTAINER_STENCILS[1]!, { x: 0, y: 0, width: 480, height: 240 }, { layer: 'main', newId: () => `n${n++}` });
+      commitOps({ scene } as unknown as ActionDeps, built.ops, 'Insert');
+      scene.setLocked((lock === 'pool' ? built.id : `${built.id}/title`) as NodeId, true);
+      const deps = { scene, nodeAtPoint: () => built.id as NodeId } as unknown as ActionDeps;
+      expect(regionHeaderAt(deps, { x: 10, y: 120 })).toBeNull();
+    }
+  });
 });

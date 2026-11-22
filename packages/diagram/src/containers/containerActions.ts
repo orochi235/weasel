@@ -29,7 +29,7 @@ import { DIAGRAM_THEME_KEY } from '../theme/types';
 import { addLane, addLaneLocked, canReleaseMembers, lanesOf, releaseMembers } from './containerStencils';
 import { laneBodyStyle } from './regionSpecs';
 import {
-  LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneLayer, laneResizable, laneScratchOf, poolLanesOf, poolsOf, stackDirection, type LaneLayerOptions,
+  LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneLayer, laneResizable, laneResizeLocked, laneScratchOf, poolLanesOf, poolsOf, stackDirection, type LaneLayerOptions,
   type PoolLanes,
 } from './laneBoundaryLayer';
 import { MIN_LANE_SIZE } from './laneStack';
@@ -55,17 +55,19 @@ export interface LaneResize {
 
 /** The default commit: every pose {@link laneResizeFrame} previews, as one history entry labeled "Resize lane". The
  *  pool's layout stacks lanes by where they sit, so the later ones are written where they go rather than left for
- *  it to find. */
+ *  it to find. A size below {@link MIN_LANE_SIZE} is raised to it, a resize that would write a locked node writes
+ *  nothing, and a size that is not a finite number throws a `RangeError`. */
 export function commitLaneResizeToScene(resize: LaneResize, ctx: InvocationCtx): void {
   const scene = ctx.deps.scene as AnyScene | undefined;
   if (scene !== undefined) writeLaneResize(scene, resize);
 }
 
 function writeLaneResize(scene: AnyScene, resize: LaneResize): void {
+  if (!Number.isFinite(resize.size)) throw new RangeError(`commitLaneResizeToScene: size ${resize.size} is not a finite number`);
   const pool = poolLanesOf(scene, resize.poolId);
   const index = pool?.lanes.findIndex((l) => l.id === resize.laneId) ?? -1;
-  if (pool === null || index < 0) return;
-  const frame = laneResizeFrame(scene, pool, index, resize.size);
+  if (pool === null || index < 0 || laneResizeLocked(scene, pool, index)) return;
+  const frame = laneResizeFrame(scene, pool, index, Math.max(MIN_LANE_SIZE, resize.size));
   scene.batch('Resize lane', () => {
     for (const [id, pose] of frame) scene.setPose(id as NodeId, pose);
   });

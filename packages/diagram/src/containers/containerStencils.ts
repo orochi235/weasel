@@ -12,7 +12,7 @@ import type { NodeStyle } from '../dataTypes';
 import { diagramThemeOf } from '../theme/resolve';
 import { themeWrites, type ThemedScene } from '../theme/themeWrites';
 import { DIAGRAM_THEME_KEY } from '../theme/types';
-import { laneMiddle, poolHeader, stackedLanes } from './laneStack';
+import { laneMiddle, poolHeader, regionAxisOf, stackedLanes } from './laneStack';
 import { firstLanes, regionSpecs, type ContainerBuildOptions } from './regionSpecs';
 import { bodyBox, diagramContainerOf, titleIdOf, type DiagramContainer } from './trait';
 import { EPS, type Rect } from '@weasel-js/geom';
@@ -73,15 +73,17 @@ export function containerBuild<TLayer extends string>(
   return { id, ops: stored.map((node) => ops.insert({ node, label })) };
 }
 
-/** The axis a pool stacks its lanes along, read off its header. */
-export const poolAxisOf = (pool: DiagramContainer): 'x' | 'y' => (pool.header?.side === 'top' ? 'x' : 'y');
+/** The axis a pool stacks its lanes along: its layout's, else its header's, else rows. Pass the pool's node; a bare
+ *  trait is read by its header alone. */
+export const poolAxisOf = (pool: DiagramContainer | { data: unknown; layout?: unknown }): 'x' | 'y' =>
+  ('data' in pool ? regionAxisOf(pool) : pool.header === undefined ? undefined : pool.header.side === 'top' ? 'x' : 'y') ?? 'y';
 
 /** The lanes of `poolId`, in the order they stack. */
 export function lanesOf(scene: AnyScene, poolId: string): NodeId[] {
   const pool = scene.get(poolId as NodeId);
   const trait = pool === undefined ? null : diagramContainerOf(pool);
   if (pool === undefined || trait?.role !== 'pool') return [];
-  const axis = poolAxisOf(trait);
+  const axis = poolAxisOf(pool);
   const mid = (id: NodeId) => laneMiddle(axis, scene.get(id)!.pose as RectPose);
   return scene.childrenOf(pool.id)
     .filter((id) => diagramContainerOf(scene.get(id)!)?.role === 'lane')
@@ -107,7 +109,7 @@ function restackLocked(scene: AnyScene, poolId: NodeId, kept: readonly NodeId[],
   const trait = pool === undefined ? null : diagramContainerOf(pool);
   if (pool === undefined || trait === null) return false;
   if ([poolId, titleIdOf(poolId)].some((id) => scene.isLocked(id as NodeId))) return true;
-  const axis = poolAxisOf(trait);
+  const axis = poolAxisOf(pool);
   const { box, local, inBox } = poolBox(scene, pool);
   const at = kept.map(inBox);
   // A lane's place in the pool is read back through its world pose, so it carries rounding as large as the pool's.
@@ -145,7 +147,7 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
     throw new RangeError(`addLane: index ${index} is not a lane's place; pass a whole number from 0, or none for the end`);
   }
   if (addLaneLocked(scene, poolId, index)) return null;
-  const axis = poolAxisOf(trait);
+  const axis = poolAxisOf(pool);
   const lanes = lanesOf(scene, poolId);
   // Laid out in the pool's own box, where a layout sees it.
   const { box, local: b, inBox } = poolBox(scene, pool);

@@ -3,6 +3,8 @@ import { diagramEdgeOf } from '../edgeTrait';
 import { diagramLabelOf } from '../labelTrait';
 import { DIAGRAM_TRAIT_KEY } from '../trait';
 import { childVerdict, definesFrame, targetTransformOf, worldToLocal, type CanDropIntoDep, type ChildReader, type DropVerdict } from '@weasel-js/core';
+import { poolAxisOf } from './containerStencils';
+import { regionAxisOf } from './laneStack';
 import { bodyBox, diagramContainerOf, type ContainerRole } from './trait';
 
 /** Whether the nodes `ids` may move into the container or lane `container`. */
@@ -36,8 +38,8 @@ export function diagramCanDropInto(
     const role = roleOf(parent);
     if (role === 'pool') {
       // A lane is built for its pool's axis, header and layout both, so it moves only into a pool stacking the same way.
-      const side = diagramContainerOf(node)?.header?.side;
-      return ids.length > 0 && ids.every((id) => roleOf(id) === 'lane' && diagramContainerOf(nodeOf(id)!)?.header?.side === side);
+      const axis = poolAxisOf(node);
+      return ids.length > 0 && ids.every((id) => roleOf(id) === 'lane' && (regionAxisOf(nodeOf(id)!) ?? axis) === axis);
     }
     if (ids.some((id) => roleOf(id) === 'lane')) return false;
     if (role !== null) return ids.every((id) => roleOf(id) !== 'pool');

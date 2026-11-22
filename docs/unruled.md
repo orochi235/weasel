@@ -3777,3 +3777,9 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): the DOT writer warns whenever a dash it writes is not one of the two patterns DOT's
   `dashed` and `dotted` read back as, the built-in themes' container dash included, since it reads back changed.
   Warning only for an element's own dash, not a theme's, was the alternative.
+## Audit round seventy-one (2026-11-22): diagram containers
+
+- 2026-11-22 (the fixer's call): `commitLaneResizeToScene` writes nothing where the resize would write a locked node
+  (the pool, the lane, either title, or a later lane or what it holds), raises a size below `MIN_LANE_SIZE` to it, as
+  the drag does, and throws a `RangeError` for a size that is not a finite number. Throwing for a locked node, as the
+  scene's own lock guard does, was the alternative.
