@@ -47,4 +47,13 @@ describe('setStrokeWidthAction', () => {
     getInvoker().start(ctx, { params: { width: 4 } }).onEnd?.(ctx, 'commit');
     expect(strokeAfter(scene)).toEqual({ paint: { color: '#000000' }, width: 4 });
   });
+
+  it('gives a strokeless node no stroke when it has no width to write', () => {
+    for (const params of [{}, { width: -1 }, { width: Number.NaN }, { vertexWidths: null }]) {
+      const scene = makeScene({ a: {} });
+      const ctx = makeCtx({ selectionIds: ['a'], scene, params });
+      getInvoker().start(ctx, { params }).onEnd?.(ctx, 'commit');
+      expect(scene.updates).toEqual([]);
+    }
+  });
 });

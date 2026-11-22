@@ -45,6 +45,7 @@ export const setStrokeWidthAction: Action = createPaintAction<
     return { ...prev, ...(width !== undefined ? { width } : {}), ...(vertexWidths !== undefined ? { vertexWidths } : {}) };
   },
   merge: (prev, state) => {
+    if (state.width === undefined && (state.vertexWidths === undefined || (state.vertexWidths === null && prev == null))) return prev ?? null;
     const base: Stroke = prev ?? solidStroke(DEFAULT_STROKE_COLOR);
     const next: Stroke = state.width !== undefined ? { ...base, width: state.width } : { ...base };
     if (state.vertexWidths === null) delete next.vertexWidths;
