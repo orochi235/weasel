@@ -23,6 +23,7 @@ class StateWriter {
   /** The cluster each cluster sits in directly. */
   readonly clusterParent = new Map<string, string>();
   readonly pools: ReadonlySet<string>;
+  readonly lanes: ReadonlySet<string>;
   readonly notes: ReadonlySet<string>;
 
   constructor(readonly out: GraphOut) {
@@ -33,7 +34,9 @@ class StateWriter {
       c.clusters.forEach(visit);
     };
     out.clusters.forEach(visit);
-    this.pools = new Set((out.page.data.containers ?? []).filter((c) => c.role === 'pool').map((c) => c.id));
+    const pools = (out.page.data.containers ?? []).filter((c) => c.role === 'pool');
+    this.pools = new Set(pools.map((c) => c.id));
+    this.lanes = new Set(pools.flatMap((c) => (c.lanes ?? []).map((l) => l.id)));
     this.notes = new Set(out.page.data.nodes.filter((n) => n.outline === 'note').map((n) => n.id));
   }
 
@@ -69,7 +72,11 @@ class StateWriter {
     const head = c.label !== undefined && c.label !== this.id(c.id) ? `state "${mermaidEscaped([c.label])}" as ${this.id(c.id)}` : `state ${this.id(c.id)}`;
     this.lines.push(`${indent}${head} {`);
     if (this.pools.has(c.id)) {
-      c.clusters.forEach((lane, i) => {
+      const lanes = c.clusters.filter((k) => this.lanes.has(k.id));
+      const rest: Cluster = { id: c.id, nodes: c.nodes, clusters: c.clusters.filter((k) => !this.lanes.has(k.id)) };
+      const loose = rest.nodes.length > 0 || rest.clusters.length > 0 || this.out.edges.some((e) => this.edgeScope(e) === c.id);
+      if (loose) this.out.warnings.add('Mermaid divides a state into regions only; what a pool holds outside its lanes was written as a region of its own.');
+      (loose ? [rest, ...lanes] : lanes).forEach((lane, i) => {
         if (i > 0) this.lines.push(`${indent}  --`);
         this.scope(lane, `${indent}  `);
       });

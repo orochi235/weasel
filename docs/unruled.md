@@ -3595,3 +3595,6 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): The Mermaid sequence writer writes a region with no fill as `rect transparent`,
   which reads back with no fill, so Mermaid draws it unshaded. Writing a faint gray, which shows in Mermaid but reads
   back as a fill the page never had, was the alternative.
+- 2026-11-21 (the fixer's call): The Mermaid state writer writes what a pool holds outside its lanes (its own states,
+  containers, and `[*]` transitions) as a concurrent region ahead of the lanes, with a warning, so it reads back as a
+  lane of its own. Dropping it with a warning was the alternative.
