@@ -20,6 +20,14 @@ describe('reachToMeet', () => {
     expect(reachToMeet(once.path, [], { sub: 0, end: 'first' })).toBeNull();
   });
 
+  it('takes an infinite maxDistance as no limit', () => {
+    for (const mode of ['tangent', 'eased', 'curvature'] as const) {
+      const r = reachToMeet(pathFromD('M0 -5 C0 0 2 0 5 0'), walls, { sub: 0, end: 'last' }, { mode, maxDistance: Infinity });
+      expect(r?.distance).toEqual(reachToMeet(pathFromD('M0 -5 C0 0 2 0 5 0'), walls, { sub: 0, end: 'last' }, { mode })?.distance);
+      expect(r).not.toBeNull();
+    }
+  });
+
   it('lengthens a straight end to the stroke it points at', () => {
     const r = reachToMeet(pathFromD('M0 0 H5'), walls, { sub: 0, end: 'last' })!;
     expect(r.distance).toBeCloseTo(5, 9);
