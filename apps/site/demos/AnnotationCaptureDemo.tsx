@@ -10,7 +10,7 @@
 import { defineInstrument, f, Lab, useAnnotations } from '@weasel-js/labkit';
 import '@weasel-js/labkit/styles.css';
 import { createEmitter } from '@weasel-js/registry';
-import { createRef, useCallback, useSyncExternalStore } from 'react';
+import { createRef, useCallback, useEffect, useSyncExternalStore } from 'react';
 import 'windease/styles.css';
 import { Button } from '@weasel-js/ui/components/Button';
 
@@ -63,7 +63,6 @@ function CapturePanel() {
   // `onCapture` handles the result, as it does for the toolbar's export.
   const run = (format: 'png' | 'svg') => {
     marks.capture('pane', { format, scale: 4 }).catch((err: unknown) => {
-      publish(null);
       console.error('[annotation-capture] capture failed', err);
     });
   };
@@ -119,6 +118,7 @@ const inspector = defineInstrument<Record<string, never>, { hue: number }>({
 });
 
 export function AnnotationCaptureDemo() {
+  useEffect(() => () => publish(null), []);
   return (
     <div className="ckd-lab-frame">
       <Lab

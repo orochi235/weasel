@@ -39,11 +39,15 @@ let markTexture: TextureHandle | null = null;
 let markLoad: Promise<TextureHandle> | null = null;
 
 function loadWeaselMark(): Promise<TextureHandle> {
-  markLoad ??= new Promise((resolve) => {
+  markLoad ??= new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       markTexture = registerTexture(img);
       resolve(markTexture);
+    };
+    img.onerror = () => {
+      markLoad = null;
+      reject(new Error(`could not load ${weaselMarkUrl}`));
     };
     img.src = weaselMarkUrl;
   });
@@ -55,7 +59,10 @@ function useWeaselMarkTexture(): TextureHandle | null {
   useEffect(() => {
     if (markTexture) return;
     let live = true;
-    void loadWeaselMark().then((t) => { if (live) setTex(t); });
+    loadWeaselMark().then(
+      (t) => { if (live) setTex(t); },
+      (err: unknown) => { console.error('[custom-shader] the Ripple texture did not load', err); },
+    );
     return () => { live = false; };
   }, []);
   return tex;

@@ -23,6 +23,14 @@ const WORDS = [
   'sixteen',
 ];
 
+/** `cols` bars across `width`, `gap` apart; a pinned gap too wide for the
+ *  columns narrows until every bar is at least 1px and all of them fit. */
+export function gridBars(width: number, cols: number, gap: number): { x: number; width: number }[] {
+  const g = cols > 1 ? Math.min(gap, (width - cols) / (cols - 1)) : 0;
+  const cell = (width - g * (cols - 1)) / cols;
+  return Array.from({ length: cols }, (_, i) => ({ x: i * (cell + g), width: cell }));
+}
+
 const grid = defineInstrument({
   name: 'Grid',
   config: f.schema({
@@ -76,13 +84,10 @@ const grid = defineInstrument({
             caption?: string;
             tint: string;
           };
-          const cell = (width - gap * (cols - 1)) / cols;
           ctx.fillStyle = '#f4f4f5';
           ctx.fillRect(0, 0, width, 260);
           ctx.fillStyle = tint;
-          for (let i = 0; i < cols; i++) {
-            ctx.fillRect(i * (cell + gap), 0, Math.max(cell, 1), 180);
-          }
+          for (const bar of gridBars(width, cols, gap)) ctx.fillRect(bar.x, 0, bar.width, 180);
           if (caption) {
             ctx.fillStyle = '#1f2430';
             ctx.font = '14px system-ui, sans-serif';

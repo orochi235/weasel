@@ -100,7 +100,7 @@ export function AudioDemo() {
 
   const [kit, setKit] = useState<Kit | null>(null);
   const [state, setState] = useState<AudioContextState>('suspended');
-  const [voices, setVoices] = useState(0);
+  const [voices, setVoices] = useState<Record<Bus, number>>({ sfx: 0, music: 0 });
   const [gains, setGains] = useState<Record<Bus, number>>({ sfx: 1, music: 1 });
   const [muted, setMuted] = useState<Record<Bus, boolean>>({ sfx: false, music: false });
   const [soloed, setSoloed] = useState<Record<Bus, boolean>>({ sfx: false, music: false });
@@ -145,7 +145,9 @@ export function AudioDemo() {
     if (!kit) return;
     bands.current = kit.tap.bands(BARS);
     setState(kit.engine.state());
-    setVoices(kit.engine.activeVoices());
+    const sfx = kit.engine.activeVoices('sfx');
+    const music = kit.engine.activeVoices('music');
+    setVoices((v) => (v.sfx === sfx && v.music === music ? v : { sfx, music }));
     setPatternStep(step.current);
     // A busy bus can steal the looping source; then it is no longer playing.
     if (sourceVoice.current && !sourceVoice.current.isPlaying()) {
@@ -272,7 +274,9 @@ export function AudioDemo() {
         <Button onClick={enable} disabled={!kit || state === 'running'}>enable audio</Button>
         <Button onClick={toggleSource} disabled={!kit}>{sourcePlaying ? 'stop source' : 'play source'}</Button>
         <Button onClick={burst} disabled={!kit}>fire 50 one-shots</Button>
-        <span className={`ckd-readout ${num.numeric}`}>activeVoices {voices} / 8 per bus</span>
+        <span className={`ckd-readout ${num.numeric}`} data-testid="voice-readout">
+          activeVoices sfx {voices.sfx} / 8, music {voices.music} / 8
+        </span>
         <span className="ckd-readout is-code">engine.state() = {state}</span>
       </div>
       <div className="ckd-row">

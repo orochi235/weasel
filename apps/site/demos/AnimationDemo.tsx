@@ -10,6 +10,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import styles from './AnimationDemo.module.css';
 import { AnimatorWatch } from './animation/AnimatorWatch';
 import { FlickSnapPanel } from './animation/FlickSnapPanel';
+import { usePruneCardEffects, type CardEffect } from './animation/cardEffects';
 import { DemoStage } from './DemoStage';
 import { useSelection } from '@weasel-js/editing';
 import * as presets from '@weasel-js/editing/presets';
@@ -49,10 +50,10 @@ export function AnimationCards({ animator }: { animator: Animator }) {
   const nextId = useRef(1);
   const [size, setSize] = useState<Dims>({ width: W, height: H });
 
-  // Per-card visual effects (multiplicative scale + alpha). Read by drawOne,
-  // mutated by breathing-loop / stagger-fade onTick. A ref, so a tick renders
-  // nothing: the canvas repaints on the animator's own frames (`redrawOn`).
-  const effects = useRef<Map<string, { scale: number; alpha: number }>>(new Map());
+  // Read by drawOne and written by the breathing loop and the stagger fade; the
+  // canvas repaints on the animator's own frames (`redrawOn`).
+  const effects = useRef(new Map<string, CardEffect>());
+  usePruneCardEffects(scene, effects);
   const getEffect = (id: string) => {
     let e = effects.current.get(id);
     if (!e) { e = { scale: 1, alpha: 1 }; effects.current.set(id, e); }
