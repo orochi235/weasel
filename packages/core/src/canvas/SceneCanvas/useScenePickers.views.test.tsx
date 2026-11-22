@@ -1,13 +1,14 @@
 /** A pick routed to a declared `<CanvasView>` sees the scene as that view draws it. */
 import { describe, it, expect } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { act, fireEvent, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { useScene } from 'core/scene/useScene';
-import { asNodeId } from 'core/scene/types';
+import { asNodeId, type NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { useSceneAdapter } from 'canvas/useSceneAdapter';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from '../viewRegistry';
 import { useScenePickers } from './useScenePickers';
+import { useSceneCanvasChrome } from './useSceneChrome';
 
 type Pose = { x: number; y: number; width: number; height: number };
 const SURFACE: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -41,5 +42,33 @@ describe('useScenePickers, a pick asked by a declared view', () => {
     declare(result.current.registry, (layer) => layer !== 'notes');
     expect(result.current.pickers.pickEveryIn({ x: 50, y: 50 }, null)).toEqual(['n']);
     expect(result.current.pickers.pickEveryIn({ x: 50, y: 50 }, 'inset')).toEqual([]);
+  });
+});
+
+describe('useSceneCanvasChrome hover in a declared view', () => {
+  it("asks the picker with the view's whole camera", () => {
+    const asked: unknown[] = [];
+    const el = document.createElement('div');
+    const { result } = renderHook(() => ({
+      registry: useOptionalViewRegistry()!,
+      chrome: useSceneCanvasChrome({
+        source: {
+          getMode: () => ({ id: 'default' }) as never, getFocused: undefined, resizable: undefined,
+          editingAnchors: () => false, device: { canHover: true } as never,
+        },
+        rules: { enabled: { presets: [] } as never, selectable: true, chromeVisibility: undefined },
+        hover: {
+          canvasApiRef: { current: { clientToWorld: (x: number, y: number) => [x, y] } as never },
+          nodeAtPointRef: { current: ((_w: unknown, view: unknown) => { asked.push(view); return { id: 'n' }; }) as never },
+        },
+        selection: [] as readonly NodeId[],
+        viewRef: { current: SURFACE },
+        dispatcher: { getActiveAction: () => ({ kind: null, id: null }) },
+      }),
+    }), { wrapper });
+    declare(result.current.registry, () => true);
+    result.current.chrome.trackHoverOn(el);
+    fireEvent.pointerMove(el, { clientX: 5, clientY: 5 });
+    expect(asked.at(-1)).toMatchObject({ x: 7, y: 9, scale: INSET.scale, viewId: 'inset' });
   });
 });
