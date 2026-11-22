@@ -58,10 +58,31 @@ function skinOn(skin: Skin, names: ReadonlySet<string>): { kept: Skin; lost: str
 
 const through = (m: Affine | null, x: number, y: number): [number, number] => (m ? transformPoint(m, x, y) : [x, y]);
 
+type Bind = Skeleton['joints'][number]['bind'];
+
+/** `bind` with its turn and scale carried through `m`'s linear part, keeping the sign of its `scaleX`. */
+function turnBind(bind: Bind, m: Affine | null): Pick<Bind, 'rotation' | 'scaleX' | 'scaleY'> {
+  const { rotation, scaleX, scaleY } = bind;
+  if (!m) return { rotation, scaleX, scaleY };
+  const cos = Math.cos(rotation), sin = Math.sin(rotation);
+  const a = m[0] * cos * scaleX + m[2] * sin * scaleX;
+  const b = m[1] * cos * scaleX + m[3] * sin * scaleX;
+  const c = -m[0] * sin * scaleY + m[2] * cos * scaleY;
+  const d = -m[1] * sin * scaleY + m[3] * cos * scaleY;
+  const sign = scaleX < 0 ? -1 : 1;
+  const sx = sign * Math.hypot(a, b);
+  const turned = Math.atan2(sign * b, sign * a) - rotation;
+  return {
+    rotation: rotation + Math.atan2(Math.sin(turned), Math.cos(turned)),
+    scaleX: sx,
+    scaleY: sx === 0 ? scaleY : (a * d - b * c) / sx,
+  };
+}
+
 /**
  * A skeleton as a rig node's data keeps it, moved to where the node's pose puts it: its root
- * joints are offset from the pose box's top-left corner and turned as the node is. Joints
- * under a root are relative to their parents and are left as they are.
+ * joints are offset from the pose box's top-left corner and turned, scaled, and mirrored as the
+ * node is drawn. Joints under a root are relative to their parents and are left as they are.
  */
 export function placeSkeleton<TPose>(
   skeleton: Skeleton,
@@ -70,12 +91,11 @@ export function placeSkeleton<TPose>(
 ): Skeleton {
   const box = descriptor.getBounds(pose);
   const frame = poseFrameOf(pose);
-  const turn = descriptor.getRotation?.(pose) ?? 0;
   return {
     joints: skeleton.joints.map((joint) => {
       if (joint.parent != null) return joint;
       const [x, y] = through(frame, box.x + joint.bind.x, box.y + joint.bind.y);
-      return { ...joint, bind: { ...joint.bind, x, y, rotation: joint.bind.rotation + turn } };
+      return { ...joint, bind: { ...joint.bind, x, y, ...turnBind(joint.bind, frame) } };
     }),
   };
 }
@@ -89,12 +109,11 @@ export function unplaceSkeleton<TPose>(
 ): Skeleton {
   const box = descriptor.getBounds(pose);
   const inverse = poseFrameInverseOf(pose);
-  const turn = descriptor.getRotation?.(pose) ?? 0;
   return {
     joints: skeleton.joints.map((joint) => {
       if (joint.parent != null) return joint;
       const [x, y] = through(inverse, joint.bind.x, joint.bind.y);
-      return { ...joint, bind: { ...joint.bind, x: x - box.x, y: y - box.y, rotation: joint.bind.rotation - turn } };
+      return { ...joint, bind: { ...joint.bind, x: x - box.x, y: y - box.y, ...turnBind(joint.bind, inverse) } };
     }),
   };
 }
