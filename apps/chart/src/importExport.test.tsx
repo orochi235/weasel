@@ -235,6 +235,7 @@ describe('File › Import…', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     io.picked = new File(['not a diagram'], 'notes.bin');
     mount();
+    await waitFor(() => expect(stored()).not.toBeNull(), IMPORTED);
     const before = stored();
     choose('Import');
     expect(await screen.findByText('Could not import the file')).toBeTruthy();
