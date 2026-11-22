@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { diagramThemeFrom, type DataNode } from '@weasel-js/diagram';
+import { dataEdgeStyle, diagramThemeFrom, type DataNode } from '@weasel-js/diagram';
 import { laidOutPage } from '../../pageLayout';
 import { onlyPage, sortedPage } from '../../testing/samePage';
 import { parseC4 } from './parse';
@@ -113,6 +113,14 @@ describe('writing a Mermaid C4 diagram', () => {
     const { text, warnings } = writeC4(read.document);
     expect(text).toContain('  Container(a, "Api", "", "[beta]")\n  Person(u, "User", "[vip]")\n');
     expect(warnings).toEqual([]);
+  });
+
+  it('writes a relationship\'s colors from its theme role', () => {
+    const { text } = writeC4({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', style: 'accent' }],
+    } }] });
+    const stroke = dataEdgeStyle({ style: 'accent' }, diagramThemeFrom(undefined)).stroke;
+    expect(text).toContain(`  UpdateRelStyle(a, b, $textColor="${stroke}", $lineColor="${stroke}")`);
   });
 
   it('writes a plain page as systems, people by their outline, and containers as boundaries', () => {
