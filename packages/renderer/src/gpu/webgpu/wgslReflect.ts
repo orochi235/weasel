@@ -197,6 +197,21 @@ function checkUniformLayout(struct: WgslStruct, structs: Map<string, WgslStruct>
   });
 }
 
+/** The `{`…`}` depth of `src` at each of `at`, given in ascending order. */
+function braceDepths(src: string, at: readonly number[]): number[] {
+  const out: number[] = [];
+  let depth = 0;
+  let i = 0;
+  for (const pos of at) {
+    for (; i < pos; i++) {
+      if (src[i] === '{') depth++;
+      else if (src[i] === '}') depth--;
+    }
+    out.push(depth);
+  }
+  return out;
+}
+
 /** Reflect the structs and `@group`/`@binding` variables a WGSL module declares. Every struct is laid out by
  *  WGSL's one set of rules; `target` says whether a uniform struct must also keep the stricter uniform ones. */
 export function reflectWgsl(source: string, target: WgslTarget): WgslReflection {
@@ -209,7 +224,10 @@ export function reflectWgsl(source: string, target: WgslTarget): WgslReflection 
   // Module-scope declarations may come in any order: consts first, then structs until none is left that the
   // ones laid out so far can lay out, then the variables.
   const matches = [...src.matchAll(token)];
-  for (const m of matches) if (m[1]) consts.set(m[1], wgslInt(m[2])!);
+  const depth = braceDepths(src, matches.map((m) => m.index));
+  matches.forEach((m, i) => {
+    if (m[1] && depth[i] === 0) consts.set(m[1], wgslInt(m[2])!);
+  });
   let pending = matches.filter((m) => m[3]);
   for (let laid = true; laid && pending.length > 0;) {
     laid = false;

@@ -216,3 +216,15 @@ struct P { @size(2 * 8) a: f32 }
 `, STANDARD)).toThrow(/@size\(2 \* 8\)/);
   });
 });
+
+describe('reflectWgsl on a const declared inside a function', () => {
+  it('sizes a uniform array by the module-scope const of that name', () => {
+    const r = reflectWgsl(`
+const N = 8;
+struct P { w: array<vec4f, N> }
+@group(1) @binding(0) var<uniform> p: P;
+fn f() -> f32 { const N = 2; return f32(N); }
+`, STANDARD);
+    expect(r.structs.get('P')!.size).toBe(128);
+  });
+});
