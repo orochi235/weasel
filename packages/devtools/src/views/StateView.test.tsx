@@ -67,3 +67,22 @@ describe('<StateView> overlays', () => {
     await waitFor(() => expect((fps as HTMLInputElement).checked).toBe(true), { timeout: 2000 });
   });
 });
+
+it('shows a state read slower than the poll, rather than dropping each answer for the next request', async () => {
+  let pending = 0;
+  let most = 0;
+  const client = {
+    onChanged: () => () => {},
+    request: (_root: string, m: { type: string }) => {
+      if (m.type !== 'get-state') return Promise.resolve(null);
+      most = Math.max(most, ++pending);
+      return new Promise((resolve) => setTimeout(() => {
+        pending--;
+        resolve({ selection: ['slow'], view: {}, activeTool: null, tools: [], overlays: {}, probes: {} });
+      }, 700));
+    },
+  } as unknown as DevtoolsClient;
+  renderWithIcons(<StateView client={client} rootId="r" />);
+  expect(await screen.findByText('slow', {}, { timeout: 3000 })).toBeTruthy();
+  expect(most).toBe(1);
+});
