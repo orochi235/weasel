@@ -4,7 +4,7 @@ import type { Point } from '../paths/cubicMath';
 import { addSymmetric, factorSymmetric, symmetricRows } from './profileCholesky';
 import { createArapSolver } from './arap';
 import { pinWarpMesh } from './pinWarpMesh';
-import { pinWarpMap, pinWarpSolve, unwarpPoint } from './pinWarp';
+import { pinTargets, pinWarpMap, pinWarpSolve, unwarpPoint } from './pinWarp';
 
 const close = (p: Point, q: Point, digits = 6) => {
   expect(p.x).toBeCloseTo(q.x, digits);
@@ -232,5 +232,13 @@ describe('pinWarpSolve', () => {
 
   it('is null with no pins', () => {
     expect(pinWarpSolve(square(), [])).toBeNull();
+  });
+});
+
+describe('pinTargets', () => {
+  it('moves a vertex two pins share by the mean of their drags', () => {
+    const mesh = { vertices: Float64Array.from([0, 0, 10, 0, 0, 10]), triangles: Uint32Array.from([0, 1, 2]), pinVertex: Int32Array.from([1, 1, -1]) };
+    const p = (x: number, y: number, tx: number, ty: number) => ({ from: { x, y }, to: { x: tx, y: ty } });
+    expect(pinTargets(mesh, [p(10, 0, 14, 0), p(10, 0, 10, 6), p(0, 0, 5, 5)])).toEqual({ pinned: [1], targets: [12, 3] });
   });
 });

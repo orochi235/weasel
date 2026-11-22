@@ -38,7 +38,7 @@ function ensureRig(source: PolygonPath, pins: readonly WarpPin[]): Rig {
   const held = rigs.get(source);
   if (held?.key === key) return held;
   const mesh = pinWarpMesh(source, pins.map((p) => p.from));
-  const pinned = [...new Set(Array.from(mesh.pinVertex).filter((v) => v >= 0))];
+  const { pinned } = pinTargets(mesh, pins);
   const rig: Rig = { key, mesh, frames: restFrames(mesh), solver: createArapSolver(mesh, pinned), locate: meshLocator(mesh), spots: new Map(), remembered: 0 };
   rigs.set(source, rig);
   return rig;
@@ -66,22 +66,27 @@ export function pinWarpMap(source: PolygonPath, pins: readonly WarpPin[]): (p: P
   };
 }
 
-/** The rig's vertices under `pins`, or null when no pin landed on the mesh. Pins
- *  sharing a vertex move it by the mean of their drags. */
-function solveRig(rig: Rig, pins: readonly WarpPin[], opts?: ArapSolveOptions): Float64Array | null {
+/** The vertices of `mesh` that `pins` hold, in pin order, and each one's target. Pins
+ *  sharing a vertex move it by the mean of their drags; a pin off the outline holds the
+ *  outline point it snapped to, carried by its own drag. */
+export function pinTargets(mesh: PinWarpMesh, pins: readonly WarpPin[]): { pinned: number[]; targets: number[] } {
   const drag = new Map<number, { dx: number; dy: number; n: number }>();
   pins.forEach((pin, k) => {
-    const v = rig.mesh.pinVertex[k];
+    const v = mesh.pinVertex[k];
     if (v < 0) return;
     const d = drag.get(v) ?? { dx: 0, dy: 0, n: 0 };
     d.dx += pin.to.x - pin.from.x; d.dy += pin.to.y - pin.from.y; d.n++;
     drag.set(v, d);
   });
-  if (drag.size === 0) return null;
-  // A pin off the outline holds the outline point it snapped to, carried by its own drag.
   const targets: number[] = [];
-  for (const [v, d] of drag) targets.push(rig.mesh.vertices[2 * v] + d.dx / d.n, rig.mesh.vertices[2 * v + 1] + d.dy / d.n);
-  return rig.solver.solve(targets, opts);
+  for (const [v, d] of drag) targets.push(mesh.vertices[2 * v] + d.dx / d.n, mesh.vertices[2 * v + 1] + d.dy / d.n);
+  return { pinned: [...drag.keys()], targets };
+}
+
+/** The rig's vertices under `pins`, or null when no pin landed on the mesh. */
+function solveRig(rig: Rig, pins: readonly WarpPin[], opts?: ArapSolveOptions): Float64Array | null {
+  const { pinned, targets } = pinTargets(rig.mesh, pins);
+  return pinned.length === 0 ? null : rig.solver.solve(targets, opts);
 }
 
 /**

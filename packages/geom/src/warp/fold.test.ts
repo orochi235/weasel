@@ -1,20 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createArapSolver, type ArapStep } from './arap';
 import { barS, backwardStretches, discSquash, invertedTriangles, type FoldCase } from './foldCases';
-import { pinWarpMap } from './pinWarp';
+import { pinTargets, pinWarpMap } from './pinWarp';
 import { pinWarpMesh } from './pinWarpMesh';
 import { warpPath } from './warpPath';
 import { pathToAnchors } from '../paths/anchors';
 
 function solved(c: FoldCase) {
   const mesh = pinWarpMesh(c.shape, c.pins.map((p) => p.from));
-  const pinned: number[] = [], targets: number[] = [];
-  c.pins.forEach((pin, k) => {
-    const v = mesh.pinVertex[k];
-    if (v < 0 || pinned.includes(v)) return;
-    pinned.push(v);
-    targets.push(pin.to.x + mesh.vertices[2 * v] - pin.from.x, pin.to.y + mesh.vertices[2 * v + 1] - pin.from.y);
-  });
+  const { pinned, targets } = pinTargets(mesh, c.pins);
   return { mesh, pinned, targets, solver: createArapSolver(mesh, pinned) };
 }
 
