@@ -17,6 +17,7 @@ const LENGTH = /^\s*([-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?)\s*([a-z%]*)\s*$/
  *  axis, like a radius: SVG's normalized diagonal, `sqrt((w² + h²) / 2)`. */
 export type LengthAxis = 'x' | 'y' | 'other';
 
+/** A side no attribute sizes is `NaN`. */
 type Viewport = { readonly width: number; readonly height: number };
 
 function viewportOf(el: Element): Viewport | undefined {
@@ -24,13 +25,48 @@ function viewportOf(el: Element): Viewport | undefined {
     if (e.tagName.toLowerCase() !== 'svg') continue;
     const box = parseViewBoxAttr(e.getAttribute('viewBox'));
     if (box) return { width: box.width, height: box.height };
+    if (!hasSvgAbove(e)) return orUndefined(outerViewportOf(e));
     let outer: Viewport | undefined | null = null;
     const around = (): Viewport | undefined => (outer === null ? (outer = viewportOf(e)) : outer);
-    const width = viewportSide(e, 'width', around);
-    const height = viewportSide(e, 'height', around);
-    return Number.isFinite(width) && Number.isFinite(height) ? { width, height } : undefined;
+    return orUndefined({ width: viewportSide(e, 'width', around), height: viewportSide(e, 'height', around) });
   }
   return undefined;
+}
+
+const orUndefined = (v: Viewport): Viewport | undefined =>
+  (Number.isFinite(v.width) || Number.isFinite(v.height) ? v : undefined);
+
+function hasSvgAbove(el: Element): boolean {
+  for (let e = el.parentElement; e; e = e.parentElement) if (e.tagName.toLowerCase() === 'svg') return true;
+  return false;
+}
+
+/**
+ * The outermost `<svg>`'s viewport, which its percentages and its media and
+ * container queries all read: its `width` and `height` as lengths, a side left
+ * out taken from the `viewBox`'s aspect ratio, and `NaN` for a side neither gives.
+ * A percentage or `auto` gives none, with nothing outside the document to be of.
+ * `fontSize` is the root's, for an `em` side; without it, read from its computed style.
+ */
+export function outerViewportOf(root: Element, fontSize?: number): Viewport {
+  let width = outerSide(root, 'width', fontSize);
+  let height = outerSide(root, 'height', fontSize);
+  const vb = parseViewBoxAttr(root.getAttribute('viewBox'));
+  if (vb && vb.width > 0 && vb.height > 0) {
+    if (Number.isNaN(width) && Number.isNaN(height)) ({ width, height } = vb);
+    else if (Number.isNaN(width)) width = height * (vb.width / vb.height);
+    else if (Number.isNaN(height)) height = width * (vb.height / vb.width);
+  }
+  return { width, height };
+}
+
+const SIDE = /^[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?\s*[a-z]*$/i;
+
+function outerSide(root: Element, name: 'width' | 'height', fontSize?: number): number {
+  const raw = root.getAttribute(name)?.trim();
+  if (raw == null || !SIDE.test(raw)) return NaN;
+  const n = lengthOf(raw, root, name, name === 'width' ? 'x' : 'y', () => {}, fontSize);
+  return Number.isFinite(n) && n >= 0 ? n : NaN;
 }
 
 /** An `<svg>`'s `width` or `height`: absent or `auto` is `100%`, and a percentage
@@ -92,12 +128,12 @@ function lengthOf(
     return n;
   }
   const view = viewportOf(el);
-  if (!view) {
+  const of = !view ? NaN : axis === 'x' ? view.width
+    : axis === 'y' ? view.height
+      : Math.sqrt((view.width * view.width + view.height * view.height) / 2);
+  if (!Number.isFinite(of)) {
     onWarn(`<${tag} ${name}="${raw}"> has no viewport to be a percentage of; read as ${n}`);
     return n;
   }
-  const of = axis === 'x' ? view.width
-    : axis === 'y' ? view.height
-      : Math.sqrt((view.width * view.width + view.height * view.height) / 2);
   return (n / 100) * of;
 }

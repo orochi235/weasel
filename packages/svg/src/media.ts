@@ -9,7 +9,8 @@
 import { absolutePx } from './absoluteUnits';
 import { ConditionSyntaxError, evaluateCondition, triAnd, triNot, type Tri } from './condition';
 import { splitTopLevel } from './cssScan';
-import { parseViewBoxAttr } from './viewBox';
+import { fontSizeOf } from './fontSize';
+import { outerViewportOf } from './lengths';
 import { getOwn } from '@weasel-js/registry';
 
 /** The media a parse is taken to be rendered on. */
@@ -51,38 +52,21 @@ export const DEFAULT_MEDIA_ENVIRONMENT: SvgMediaEnvironment = {
   monochrome: 0,
 };
 
-/** An absolute SVG length in px, or undefined for a percentage, a relative unit, or garbage. */
-function absoluteLength(raw: string | null): number | undefined {
-  const m = raw == null ? null : /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*([a-z]*)$/i.exec(raw.trim());
-  if (!m) return undefined;
-  const scale = absolutePx(m[2].toLowerCase() || 'px');
-  const n = parseFloat(m[1]) * (scale ?? NaN);
-  return Number.isFinite(n) && n >= 0 ? n : undefined;
-}
-
 /**
  * The environment a parse of this `<svg>` evaluates media against: the
- * defaults, with the viewport taken from the root's `width` / `height`, then
- * its `viewBox` (keeping its aspect ratio when only one side is given), then
- * the 300 × 150 replaced-element default. `overrides` win over all of it.
+ * defaults, with the viewport its percentages read (`outerViewportOf`), and
+ * the 300 × 150 replaced-element default for a side it leaves unsized. `overrides` win over all of it.
  */
 export function mediaEnvironmentFor(
   root: Element,
   overrides: Partial<SvgMediaEnvironment> = {},
 ): SvgMediaEnvironment {
-  let width = absoluteLength(root.getAttribute('width'));
-  let height = absoluteLength(root.getAttribute('height'));
-  const vb = parseViewBoxAttr(root.getAttribute('viewBox'));
-  if (vb && vb.width > 0 && vb.height > 0) {
-    const { width: w, height: h } = vb;
-    if (width == null && height == null) { width = w; height = h; }
-    else if (width == null) width = (height as number) * (w / h);
-    else if (height == null) height = width * (h / w);
-  }
+  // The cascade reads this environment, so the root's own `font-size` attribute sizes an `em`, not its computed style.
+  const { width, height } = outerViewportOf(root, fontSizeOf({ 'font-size': root.getAttribute('font-size') ?? undefined }));
   return {
     ...DEFAULT_MEDIA_ENVIRONMENT,
-    width: width ?? DEFAULT_MEDIA_ENVIRONMENT.width,
-    height: height ?? DEFAULT_MEDIA_ENVIRONMENT.height,
+    width: Number.isNaN(width) ? DEFAULT_MEDIA_ENVIRONMENT.width : width,
+    height: Number.isNaN(height) ? DEFAULT_MEDIA_ENVIRONMENT.height : height,
     ...Object.fromEntries(Object.entries(overrides).filter(([, v]) => v !== undefined)),
   };
 }
