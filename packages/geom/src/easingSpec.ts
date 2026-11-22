@@ -16,7 +16,8 @@ export type EasingSpec = EasingFn | EasingName | BezierEasing;
 const NEWTON_ITERATIONS = 8;
 const NEWTON_MIN_SLOPE = 1e-3;
 const SUBDIVISION_EPSILON = 1e-7;
-const SUBDIVISION_MAX = 12;
+// Enough halvings of [0, 1] to reach SUBDIVISION_EPSILON in x, whose slope is at most 3.
+const SUBDIVISION_MAX = 40;
 
 function bezierAt(t: number, a1: number, a2: number): number {
   const c = 3 * a1;

@@ -53,7 +53,7 @@ export function pathCrossings(paths: readonly Path[], opts: PathCrossingsOptions
       if (opts.of !== undefined && i !== opts.of && j !== opts.of) continue;
       for (let m = 0; m < segs[i].length; m++) {
         const own = i === j ? segmentSelfCrossing(segs[i][m].pts) : null;
-        if (own) {
+        if (own && !sharedEnd(segs[i][m], segs[i][m], own.ta, own.tb)) {
           const sa = segs[i][m];
           out.push({
             x: own.x, y: own.y,

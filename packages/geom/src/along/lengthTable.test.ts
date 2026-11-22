@@ -190,3 +190,12 @@ describe('a subpath a drawing command opens after Z, with no M', () => {
     expect(lengthAtSegmentFraction(t, 2.5 / 3)).toBeCloseTo(triangle - Math.hypot(10, 10) / 2, 9);
   });
 });
+
+describe('pointAtLength beside a segment with no length', () => {
+  it("takes a curved neighbor's own direction, not its chord", () => {
+    const t = lengthTable([{ points: [0, 0, 0, 0, 100, 100], closed: false, controls: [null, [50, 0, 100, 50]] }], 2);
+    const { tangent } = pointAtLength(t, 0);
+    expect(tangent[0]).toBeCloseTo(1, 9);
+    expect(tangent[1]).toBeCloseTo(0, 9);
+  });
+});

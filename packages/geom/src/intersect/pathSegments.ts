@@ -43,7 +43,7 @@ export function boxesNear(a: PathSegment['box'], b: PathSegment['box']): boolean
 }
 
 /** Whether segments `a` and `b` of one path follow each other, so they meet
- *  at a shared end that is no crossing. */
+ *  at a shared end that is no crossing: a closed subpath's only segment follows itself. */
 export function adjacentSegments(a: PathSegment, b: PathSegment): boolean {
   if (a.sub !== b.sub) return false;
   const d = Math.abs(a.index - b.index);
