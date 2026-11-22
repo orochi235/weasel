@@ -774,6 +774,26 @@ average of 16) and after (`56938f09`), medians in ms:
 
 Within −7% to +4% either way, which is this node's noise: nothing measurable. Those runs are beside it.
 
+## A streamed scene
+
+`scene/stream.bench.ts` pans 400 frames across an endless world of 36-node cells at 1280 × 800, each
+frame landing what loaded and building the culled frame (`buildSceneViewCommands`). Against
+`streamScene` it applies the same cells the way a consumer on `onViewChange` could before it, each
+arrival and departure a recorded edit:
+
+    onto do --kind bench -- npx vitest run --config tests/perf/vitest.scene-bench.config.ts tests/perf/scene/stream.bench.ts
+
+On msb-uai on 2026-11-21:
+
+| | frame median (ms) | p95 | max | undo entries | heap growth (MiB) |
+|---|---:|---:|---:|---:|---:|
+| recorded adds and removes (before) | 2.195 | 5.929 | 20.266 | 2378 | 36.3 |
+| `streamScene` | 2.535 | 4.740 | 8.962 | 0 | 6.5 |
+
+A frame costs about the same either way; what streaming saves is the history and the memory it holds,
+which grows with every cell a recorded pan passes. The stream keeps a margin and where the pan heads,
+so it holds 2880 nodes to the other's 2520. The run is in `tests/perf/recorded/stream-2026-11-21/`.
+
 ## An image's upload through the 2D canvas
 
 WebGL draws every `ImageBitmap` bound for an image texture into a scratch 2D canvas and uploads the

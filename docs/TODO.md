@@ -569,9 +569,10 @@ only story runner in the repo.
 
 ## Scale
 
-Arcs toward scenes far larger than a screen, in the order each builds on the last (2026-11-19, from
-comparing pezlie's wall, which pans a 1.1M-cell corpus at 60 fps). Arc 1, render-time visibility, landed
-on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed and reach tree.
+Arcs toward scenes far larger than a screen (2026-11-19, from comparing pezlie's wall, which pans a
+1.1M-cell corpus at 60 fps). Render-time visibility landed on 2026-11-19, and level of detail, tile
+pyramids and streaming on 2026-11-21 (`docs/concepts.md`, "Visibility index" and the sections after it);
+these entries are what is left of them.
 
 - **(P3) [agent] Level of detail past `kit:text` and the point pick.** The rung choice, `node.lod`,
   `collapseBelowPx`, `kit:text`'s rungs and the point pick landed on 2026-11-21 (`docs/concepts.md`, "Level
@@ -591,12 +592,12 @@ on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed a
   (each tile fades in on its own now); and a coarse tile split into several bakes when one would pass the
   frame budget by itself (117 ms for a fit-all tile of 100k nodes in `tile-zoom.spec.ts`). Closes when
   each has shipped with a test, and no frame of that spec's tiled run passes 30 ms.
-- **(P3) [agent] A streaming scene source.** Nothing loads or drops nodes as the view moves; a consumer on
-  `onViewChange` pays an undo-history entry per change. A source answers the nodes
-  of a world rect, loads in priority order (on screen, the margin, where a fling will land), adds and drops
-  them through a mutation path outside history, and caps concurrent loads. Closes when a demo pans a scene
-  larger than memory would hold whole, undo history stays empty through the pan, and the visibility index
-  updates without a rebuild.
+- **(P3) A streamed node a recorded edit touched outlives its cell.** `streamScene` (2026-11-21,
+  `docs/concepts.md`, "Streaming scenes") drops a cell's nodes once the view has left it, whatever the
+  undo history says of them, so undoing a move of a node since dropped would find no node (reasoned from
+  the code, not yet seen). Closes when a node a
+  recorded edit names is kept past its cell's drop (or handed back to the source) and a test undoes such an
+  edit after the cell has gone.
 - **(P3) [agent] A true 3D force layout.** A diagram reaches a 3D host only through a `LayoutFrame`, a plane
   (2026-11-19), so `force` relaxes in two dimensions: `@weasel-js/simulation`'s `SimulationNode` is
   `{x, y, vx, vy, fx, fy}` (`packages/simulation/src/types.ts:7`) and `packages/diagram/src/force.ts` writes

@@ -1,0 +1,6 @@
+.stats {
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  margin-inline-start: auto;
+  min-width: 34ch;
+}

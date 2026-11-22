@@ -1090,6 +1090,28 @@ of the screen's, and it rebakes once the damage has held still for a frame.
 
 What it costs and buys is in `tests/perf/README.md`, "A tiled backdrop" (2026-11-21).
 
+## Streaming scenes
+
+A scene can be larger than memory holds, loaded around the view. A `SceneSource` names a `cellSize`
+and answers `load(cell, signal)` with the nodes of one square cell of the world, each with an id
+unique across cells. `streamScene(scene, source, opts)` (or `useSceneStream` in a component) follows
+the view each `update(view, dims)` names, usually from `<SceneCanvas onViewChange>`:
+
+- it wants the cells on screen nearest the center first, then a `margin` ring, then the cells where the
+  view's last motion, `lead` frames ahead, would land;
+- it loads at most `maxConcurrent` at once (4), aborting what the view no longer wants, an aborted load
+  still counting against the cap until it settles;
+- it adds a cell's nodes as it lands and removes them once the cell is dropped, at most `maxCells` (64)
+  being held past what the view wants, the longest unwanted first.
+
+Both go through `scene.untracked`, so a pan records nothing in undo history; each add and remove is a
+kit op naming its node, so the visibility index updates node by node from the touched-ids feed
+rather than rebuilding (`streamScene.test.ts` pans 400 frames over 300 cells with neither). The loader
+is `@weasel-js/tiles`' `TileStream` over a plane scheme a cell wide, so a 3D host streams its own cells
+through the same priority and cap.
+
+What it costs is in `tests/perf/README.md`, "A streamed scene" (2026-11-21).
+
 ## Tool
 
 A tool is a list of `{ spec, actionId }` bindings that are live while it holds

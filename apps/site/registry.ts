@@ -489,6 +489,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/StrokeAndFillDemo.tsx',
   },
   {
+    id: 'streaming-scene',
+    title: 'Streaming scene',
+    category: 'Viewport',
+    description: "A scene larger than memory, loaded around the view. A `SceneSource` answers the nodes of one cell of a grid over the world; `useSceneStream(scene, source)` (or `streamScene`) loads the cells the view shows nearest its center first, then its margin, then where a fling is heading, at most `maxConcurrent` at once, aborting what the view has left, and drops held cells past `maxCells`, the longest unwanted first. Cells land and leave through `scene.untracked`, so a pan writes nothing to undo history, and the visibility index updates node by node from the touched-ids feed rather than rebuilding.",
+    hint: 'Drag or scroll to travel · the readout counts the cells and nodes held and the undo entries, which stay at 0.',
+    load: () => import('./demos/StreamingDemo').then((m) => m.StreamingDemo),
+    path: 'apps/site/demos/StreamingDemo.tsx',
+  },
+  {
     id: 'level-of-detail',
     title: 'Level of detail',
     category: 'Rendering & paint',
