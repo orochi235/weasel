@@ -54,6 +54,13 @@ export function sceneMutators<TData, TLayer extends string, TPose>(
     setPose: (id, pose) => scene.setPose(asNodeId(id), pose),
     setParent: (id, parentId) => scene.move(asNodeId(id), parentId == null ? null : asNodeId(parentId)),
     setChildOrder: (parentId, ids) => {
+      const held = new Set(getChildren(parentId));
+      const seen = new Set<string>();
+      for (const id of ids) {
+        if (!held.has(id)) throw new Error(`Scene: setChildOrder names "${id}", which is not a child of ${parentId === null ? 'the roots' : `"${parentId}"`}`);
+        if (seen.has(id)) throw new Error(`Scene: setChildOrder names "${id}" more than once`);
+        seen.add(id);
+      }
       scene.batch('Reorder', () => {
         for (let i = 0; i < ids.length; i++) {
           // Re-read each time: a reorder shifts later ids, sometimes into place.
