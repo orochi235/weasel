@@ -15,7 +15,7 @@ export type CanReparent = (ids: readonly string[], container: string) => DropVer
  * edges and labels are never dropped in: they stay where they are, drawn from
  * what they are attached to. A plain group — a group carrying no diagram
  * trait — takes anything but a lane, and nothing else takes anything. `canReparent` is asked about a move the rules allow
- * into a container the nodes are not already in, and has the last word.
+ * into a container the nodes are not already in, and has the last word; an insert asks it with no `ids`.
  */
 export function diagramCanDropInto(
   scene: { get(id: never): { id: string; kind: 'mark' | 'group'; data: unknown; parent?: string | null } | undefined },
@@ -45,7 +45,7 @@ export function diagramCanDropInto(
   };
   return (parent, ids) => {
     if (!allowed(parent, ids)) return false;
-    if (canReparent === undefined || ids.every((id) => nodeOf(id)?.parent === parent)) return true;
+    if (canReparent === undefined || (ids.length > 0 && ids.every((id) => nodeOf(id)?.parent === parent))) return true;
     return canReparent(ids, parent);
   };
 }

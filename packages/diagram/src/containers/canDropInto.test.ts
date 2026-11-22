@@ -82,6 +82,15 @@ describe('diagramCanDropInto', () => {
   });
 });
 
+describe('diagramCanDropInto with canReparent', () => {
+  it('asks canReparent about an insert, which moves no node', () => {
+    const asked: string[][] = [];
+    const veto = diagramCanDropInto({ get: (id: never) => NODES[id as string] }, (ids) => { asked.push([...ids]); return false; });
+    expect(veto('box', [])).toBe(false);
+    expect(asked).toEqual([[]]);
+  });
+});
+
 describe('diagramDropParentAt', () => {
   it('finds a container where it overhangs the body of the one it is in', () => {
     const specs = diagramScene({
