@@ -1,4 +1,4 @@
-import { getOwn, setOwn } from '@weasel-js/registry';
+import { deepEqual, getOwn, setOwn } from '@weasel-js/registry';
 import { enumerateAxisChoices, fullAxisChoice, isByAxis, pick } from '../../axes.ts';
 import type { SerializableColorList } from '../../colorListItems.ts';
 import { AXES_EXT, overrideKey, RAMPS_EXT, TINTS_EXT, type DtcgAxesExtension } from '../../dtcg/axesExtension.ts';
@@ -120,7 +120,7 @@ export function toDtcg(theme: Theme): DtcgExport {
       const picked = modes.map((mode) => [mode, pick(raw, { ...sel, mode })] as const);
       const first = picked[0][1];
       // The same leaf in every mode: this combination doesn't depend on mode.
-      if (first.ok && picked.every(([, p]) => p.ok && p.value === first.value)) {
+      if (first.ok && picked.every(([, p]) => p.ok && deepEqual(p.value, first.value, { undefinedAsAbsent: true }))) {
         put(layer.primitives, name, first.value);
         continue;
       }
