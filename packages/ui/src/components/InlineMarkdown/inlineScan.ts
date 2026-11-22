@@ -39,7 +39,7 @@ function kbdEnd(src: string, p: number): number {
 
 /**
  * Where the unit of a mark's text at `i` ends, or -1 where text cannot go on: a backslash pair is one unit and a
- * code span another, so neither can hold the close; a backtick that a later one would pair with but cannot, as in
+ * code span another and a `<kbd>` span a third, so none can hold the close; a backtick that a later one would pair with but cannot, as in
  * two side by side, ends the text.
  */
 function unitEnd(src: string, i: number, stop: string): number {
@@ -49,6 +49,10 @@ function unitEnd(src: string, i: number, stop: string): number {
   if (c === '`') {
     const j = src.indexOf('`', i + 1);
     return j < 0 ? i + 1 : j > i + 1 ? j + 1 : -1;
+  }
+  if (c === '<') {
+    const k = kbdEnd(src, i);
+    if (k >= 0) return k;
   }
   if (stop.includes(c)) return -1;
   return i + codePointLength(src, i);

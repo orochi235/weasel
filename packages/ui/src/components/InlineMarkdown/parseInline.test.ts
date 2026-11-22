@@ -32,6 +32,15 @@ describe('parseInline', () => {
     ]);
   });
 
+  it('keeps a shortcut whole inside a mark or a link label', () => {
+    expect(parseInline('[<kbd>Mod+]</kbd>](#bring-forward)')).toEqual([
+      { type: 'link', href: '#bring-forward', children: [{ type: 'keys', chord: 'Mod+]' }] },
+    ]);
+    expect(parseInline('*press <kbd>Mod+*</kbd>*')).toEqual([
+      { type: 'em', children: [{ type: 'text', text: 'press ' }, { type: 'keys', chord: 'Mod+*' }] },
+    ]);
+  });
+
   it('keeps balanced parentheses in a link address', () => {
     expect(parseInline('[x](https://en.wikipedia.org/wiki/Foo_(bar)) after')).toEqual([
       { type: 'link', href: 'https://en.wikipedia.org/wiki/Foo_(bar)', children: [{ type: 'text', text: 'x' }] },
