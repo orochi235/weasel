@@ -57,4 +57,18 @@ describe('PTouchLabelDemo', () => {
     expect(await findByText('Error: no glyphs')).toBeTruthy();
   });
 
+  it('shows a failed download where printing is unavailable', async () => {
+    const usb = Object.getOwnPropertyDescriptor(navigator, 'usb')!;
+    Reflect.deleteProperty(navigator, 'usb');
+    lbx.fail = new Error('no font');
+    try {
+      const { getByRole, findByText, getByText } = render(<PTouchLabelDemo />);
+      expect(getByText('printing needs WebUSB or Web Serial')).toBeTruthy();
+      await act(async () => { fireEvent.click(getByRole('button', { name: 'Download .lbx' })); });
+      expect(await findByText('Error: no font')).toBeTruthy();
+    } finally {
+      Object.defineProperty(navigator, 'usb', usb);
+    }
+  });
 });
+
