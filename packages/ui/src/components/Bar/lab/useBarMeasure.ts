@@ -2,8 +2,7 @@ import { useLayoutEffect, useState, type RefObject } from 'react';
 import { deepEqual } from '@weasel-js/registry';
 import type { Point, TrackShape } from '@weasel-js/geom';
 import { cssPx } from '../../../cssPx';
-
-export type Side = 'top' | 'bottom' | 'left' | 'right';
+import { sideOf, type BarSide as Side } from '../barSide';
 
 /** One thing on the bar as the page lays it out. */
 export interface PlacedReading {
@@ -25,11 +24,6 @@ export interface BarReading {
 }
 
 const EMPTY: BarReading = { scrolls: false, offset: 0, placed: [], popover: null };
-
-function sideOf(v: Point): Side {
-  if (Math.abs(v.y) >= Math.abs(v.x)) return v.y < 0 ? 'top' : 'bottom';
-  return v.x < 0 ? 'left' : 'right';
-}
 
 const nameOf = (el: Element): string =>
   el.querySelector('[aria-label]')?.getAttribute('aria-label') ?? el.getAttribute('aria-label') ?? el.textContent?.trim() ?? '';
