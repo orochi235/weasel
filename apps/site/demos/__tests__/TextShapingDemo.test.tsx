@@ -11,7 +11,7 @@ describe('TextShapingDemo', () => {
     // jsdom fetches nothing from the dev server: answer each face's URL from the file it names.
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       const bytes = readFileSync(resolve(FONTS, basename(String(url))));
-      return { arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) };
+      return { ok: true, status: 200, arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) };
     }));
   });
   afterEach(() => vi.unstubAllGlobals());
@@ -32,5 +32,14 @@ describe('TextShapingDemo', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'سلام' }));
     expect(shapedCount()).toBe(4);
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('shows the error when a face fails to download, rather than shaping the error page', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: false, status: 404, arrayBuffer: async () => new TextEncoder().encode('<!doctype html>Not found').buffer,
+    })));
+    render(<TextShapingDemo />);
+    expect((await screen.findByRole('alert', {}, { timeout: 10_000 })).textContent).toContain('404');
+    expect(shapedCount()).toBe(0);
   });
 });

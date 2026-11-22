@@ -42,7 +42,10 @@ export function TextShapingDemo() {
 
   useEffect(() => {
     let live = true;
-    const bytes = (url: string) => fetch(url).then((r) => r.arrayBuffer());
+    const bytes = (url: string) => fetch(url).then((r) => {
+      if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+      return r.arrayBuffer();
+    });
     Promise.all([loadShaper(), bytes(FACE_URLS.arabic), bytes(FACE_URLS.devanagari)])
       .then(([shaper, arabic, devanagari]) => { if (live) setLoaded({ shaper, faces: { arabic, devanagari } }); })
       .catch((e: unknown) => { if (live) setError(e instanceof Error ? e.message : String(e)); });
