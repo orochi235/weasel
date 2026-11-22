@@ -1,0 +1,110 @@
+{
+ "id": "prefs.edit",
+ "commit": "10bea68e02d106803e7a30c1d22e90799d85a3d9",
+ "date": "2026-11-22",
+ "files": [
+  "packages/prefs/src/edit/actionCatalog.ts",
+  "packages/prefs/src/edit/actionLeaves.ts",
+  "packages/prefs/src/edit/aliases.ts",
+  "packages/prefs/src/edit/assetExport.ts",
+  "packages/prefs/src/edit/assetScope.ts",
+  "packages/prefs/src/edit/assetSet.ts",
+  "packages/prefs/src/edit/assetSetChanges.ts",
+  "packages/prefs/src/edit/assetSetCodec.ts",
+  "packages/prefs/src/edit/assetSetEdit.ts",
+  "packages/prefs/src/edit/attrAggregate.ts",
+  "packages/prefs/src/edit/autoRows.ts",
+  "packages/prefs/src/edit/bundleChecks.ts",
+  "packages/prefs/src/edit/bundleExport.ts",
+  "packages/prefs/src/edit/bundleTree.ts",
+  "packages/prefs/src/edit/carry.ts",
+  "packages/prefs/src/edit/conditionFlow.ts",
+  "packages/prefs/src/edit/conditionGroups.ts",
+  "packages/prefs/src/edit/conditionLeaves.ts",
+  "packages/prefs/src/edit/conditionMarks.ts",
+  "packages/prefs/src/edit/conditionRows.ts",
+  "packages/prefs/src/edit/document.ts",
+  "packages/prefs/src/edit/draft.ts",
+  "packages/prefs/src/edit/draftChangedAssets.ts",
+  "packages/prefs/src/edit/folds.ts",
+  "packages/prefs/src/edit/kindAttrTable.ts",
+  "packages/prefs/src/edit/kindSchemas.ts",
+  "packages/prefs/src/edit/layoutEdit.ts",
+  "packages/prefs/src/edit/loose.ts",
+  "packages/prefs/src/edit/nodeOrigins.ts",
+  "packages/prefs/src/edit/oneAsset.ts",
+  "packages/prefs/src/edit/registeredActionAttrs.ts",
+  "packages/prefs/src/edit/schemaCodec.ts",
+  "packages/prefs/src/edit/schemaCopy.ts",
+  "packages/prefs/src/edit/schemaEdit.ts",
+  "packages/prefs/src/edit/schemaExport.ts",
+  "packages/prefs/src/edit/schemaKeys.ts",
+  "packages/prefs/src/edit/schemaTree.ts",
+  "packages/prefs/src/edit/sent.ts",
+  "packages/prefs/src/edit/settingAliases.ts",
+  "packages/prefs/src/edit/swaps.ts",
+  "packages/prefs/src/edit/types.ts",
+  "packages/prefs/src/edit/unplaced.ts",
+  "packages/prefs/src/edit/upgrade.ts",
+  "packages/prefs/src/edit/valuePaths.ts"
+ ],
+ "a": 6,
+ "b": 6,
+ "m": 4,
+ "distinct": 8,
+ "chapman": 8.8,
+ "unfound": 0.8,
+ "read": {
+  "A": 44,
+  "B": 44
+ },
+ "newCode": {
+  "since": 54,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 54,
+  "chapman": 17,
+  "unfound": 6
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 24,
+  "testFiles": {
+   "failed": 0,
+   "passed": 141,
+   "total": 141
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.8,
+   "B": 14.1,
+   "match": 0.4,
+   "fix": 19
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1338522,
+  "costUsd": 6.5
+ },
+ "fixCommits": [
+  "4fd86ae0e472d3a54a9773d0b6ba5ab4b847b2e6",
+  "079559500d906cb3f391f85348b196d22a6de71c",
+  "252b79035c68496e55a652a108eaa2b156678f2a",
+  "c309fcb26c3117f6cf127ad5693469b75fa3f0d2",
+  "81f53bced701f8c353d93142bfa966560ea72f55",
+  "1af45a070bc239747f1dae3047c74ffc39d113a0",
+  "d0a9f7924c2590eb3a976378750ae1145c5f44e8",
+  "8df914e2d847e4e3eadf6345181d7e210ecb8930"
+ ]
+}

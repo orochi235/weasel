@@ -1,0 +1,111 @@
+{
+ "id": "ui.components.part8",
+ "commit": "10bea68e02d106803e7a30c1d22e90799d85a3d9",
+ "date": "2026-11-22",
+ "files": [
+  "packages/ui/src/components/ScaleBar/ScaleBar.module.css",
+  "packages/ui/src/components/ScaleBar/ScaleBar.stories.tsx",
+  "packages/ui/src/components/ScaleBar/ScaleBar.tsx",
+  "packages/ui/src/components/ScaleBar/index.ts",
+  "packages/ui/src/components/Sequence/Sequence.module.css",
+  "packages/ui/src/components/Sequence/Sequence.stories.module.css",
+  "packages/ui/src/components/Sequence/Sequence.stories.tsx",
+  "packages/ui/src/components/Sequence/Sequence.tsx",
+  "packages/ui/src/components/Sequence/index.ts",
+  "packages/ui/src/components/ShortcutSheet/ShortcutSheet.module.css",
+  "packages/ui/src/components/ShortcutSheet/ShortcutSheet.stories.tsx",
+  "packages/ui/src/components/ShortcutSheet/ShortcutSheet.tsx",
+  "packages/ui/src/components/ShortcutSheet/index.ts",
+  "packages/ui/src/components/ShortcutSheet/sheetRows.ts",
+  "packages/ui/src/components/ShortcutSheet/shortcutSheetCommand.ts",
+  "packages/ui/src/components/Sidebar/Sidebar.module.css",
+  "packages/ui/src/components/Sidebar/Sidebar.stories.module.css",
+  "packages/ui/src/components/Sidebar/Sidebar.stories.tsx",
+  "packages/ui/src/components/Sidebar/Sidebar.tsx",
+  "packages/ui/src/components/Sidebar/index.ts",
+  "packages/ui/src/components/SidebarPanel/SidebarPanel.module.css",
+  "packages/ui/src/components/SidebarPanel/SidebarPanel.stories.module.css",
+  "packages/ui/src/components/SidebarPanel/SidebarPanel.stories.tsx",
+  "packages/ui/src/components/SidebarPanel/SidebarPanel.tsx",
+  "packages/ui/src/components/SidebarPanel/index.ts",
+  "packages/ui/src/components/SpanStrip/SpanMarks.tsx",
+  "packages/ui/src/components/SpanStrip/SpanSegments.tsx",
+  "packages/ui/src/components/SpanStrip/SpanStrip.module.css",
+  "packages/ui/src/components/SpanStrip/SpanStrip.stories.tsx",
+  "packages/ui/src/components/SpanStrip/SpanStrip.tsx",
+  "packages/ui/src/components/SpanStrip/SpanStrips.tsx",
+  "packages/ui/src/components/SpanStrip/index.ts",
+  "packages/ui/src/components/SpanStrip/spanLayout.ts",
+  "packages/ui/src/components/SpanStrip/useSpanSeek.ts",
+  "packages/ui/src/components/SwatchGrid/SwatchButton.tsx",
+  "packages/ui/src/components/SwatchGrid/SwatchGrid.module.css",
+  "packages/ui/src/components/SwatchGrid/SwatchGrid.stories.tsx",
+  "packages/ui/src/components/SwatchGrid/SwatchGrid.tsx",
+  "packages/ui/src/components/SwatchGrid/SwatchRings.tsx",
+  "packages/ui/src/components/SwatchGrid/index.ts",
+  "packages/ui/src/components/SwatchGrid/ringPlan.ts",
+  "packages/ui/src/components/Switch/Switch.module.css",
+  "packages/ui/src/components/Switch/Switch.stories.tsx",
+  "packages/ui/src/components/Switch/Switch.tsx",
+  "packages/ui/src/components/Switch/index.ts",
+  "packages/ui/src/components/Tabs/TabListAlong.tsx"
+ ],
+ "a": 3,
+ "b": 6,
+ "m": 1,
+ "distinct": 8,
+ "chapman": 13,
+ "unfound": 5,
+ "read": {
+  "A": 38,
+  "B": 46
+ },
+ "newCode": {
+  "since": 60,
+  "changedFiles": 10,
+  "findings": 1
+ },
+ "previous": {
+  "round": 60,
+  "chapman": 10.917391304347825,
+  "unfound": 2.939130434782609
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 23,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3666,
+   "total": 3666
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 12.9,
+   "B": 9.7,
+   "match": 2.3,
+   "fix": 35.1
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1555055,
+  "costUsd": 4.58
+ },
+ "fixCommits": [
+  "8b781579ae31a4430569f28c227838a8cc89c7ee",
+  "446980b14f1926742f2c029c83929b4ef34bb7e7",
+  "0e71e0cd44fab9ed258ad6f8bc7f2754b0f339e5",
+  "1a79b0c314f67f5079f2458e91c12154e21af7b8",
+  "223493544b17cdf38de0d55d03e344644221fb20",
+  "c8b78fd417aa5f811ccee2e640d4eb25a6e292be",
+  "6246310896c943a66c8e6a697c95f5a92f4fb130"
+ ]
+}

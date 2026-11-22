@@ -1,0 +1,101 @@
+{
+ "id": "ui-canvas",
+ "commit": "10bea68e02d106803e7a30c1d22e90799d85a3d9",
+ "date": "2026-11-22",
+ "files": [
+  "packages/ui-canvas/src/components/PlotDataPanel/PlotDataPanel.module.css",
+  "packages/ui-canvas/src/components/PlotDataPanel/PlotDataPanel.stories.tsx",
+  "packages/ui-canvas/src/components/PlotDataPanel/PlotDataPanel.tsx",
+  "packages/ui-canvas/src/components/PlotDataPanel/PlotTableView.tsx",
+  "packages/ui-canvas/src/components/PlotDataPanel/index.ts",
+  "packages/ui-canvas/src/components/PlotDataPanel/rowIds.ts",
+  "packages/ui-canvas/src/components/PlotDataPanel/valueControl.ts",
+  "packages/ui-canvas/src/components/Rulers/Rulers.module.css",
+  "packages/ui-canvas/src/components/Rulers/Rulers.stories.module.css",
+  "packages/ui-canvas/src/components/Rulers/Rulers.stories.tsx",
+  "packages/ui-canvas/src/components/Rulers/Rulers.tsx",
+  "packages/ui-canvas/src/components/Rulers/index.ts",
+  "packages/ui-canvas/src/components/SceneGradientHandles/SceneGradientHandles.tsx",
+  "packages/ui-canvas/src/components/SceneGradientHandles/index.ts",
+  "packages/ui-canvas/src/components/SceneLayerList/index.ts",
+  "packages/ui-canvas/src/components/SceneLayerList/useSceneLayerList.ts",
+  "packages/ui-canvas/src/components/inspector/AnchorFields/AnchorFields.stories.tsx",
+  "packages/ui-canvas/src/components/inspector/AnchorFields/AnchorFields.tsx",
+  "packages/ui-canvas/src/components/inspector/AnchorFields/index.ts",
+  "packages/ui-canvas/src/components/inspector/CharacterOptions/CharacterOptions.stories.tsx",
+  "packages/ui-canvas/src/components/inspector/CharacterOptions/CharacterOptions.tsx",
+  "packages/ui-canvas/src/components/inspector/CharacterOptions/characterSchema.ts",
+  "packages/ui-canvas/src/components/inspector/CharacterOptions/index.ts",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/SelectionPanel.module.css",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/SelectionPanel.stories.module.css",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/SelectionPanel.stories.tsx",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/SelectionPanel.tsx",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/commitLeaf.ts",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/declaredFields.ts",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/index.ts",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/nodeModel.ts",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/scopes.ts",
+  "packages/ui-canvas/src/icons.gen.ts",
+  "packages/ui-canvas/src/index.ts",
+  "packages/ui-canvas/src/kitIcons.ts",
+  "packages/ui-canvas/src/pbt.fixture.ts",
+  "packages/ui-canvas/src/testing/rectScene.ts",
+  "packages/ui-canvas/src/testing/withIcons.tsx"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 7,
+ "unfound": 2,
+ "read": {
+  "A": 38,
+  "B": 38
+ },
+ "newCode": {
+  "since": 58,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 58,
+  "chapman": 14,
+  "unfound": 6
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 11,
+  "testFiles": {
+   "failed": 0,
+   "passed": 175,
+   "total": 175
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6,
+   "B": 7.3,
+   "match": 0.1,
+   "fix": 13.4
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1366615,
+  "costUsd": 4.06
+ },
+ "fixCommits": [
+  "799698760a1a84a026c073fbacff964ead3b1afa",
+  "975caaf6aaf27349d65252afef40ea6c571a5b33",
+  "54d3fe6e7eece8fb9b099ac84dda5d1142f66df0",
+  "3632ce36807eb2571fa067acbcff5c4301e97026",
+  "fa051a1d277a32a4667da5fa4964efe9bfd73936"
+ ]
+}

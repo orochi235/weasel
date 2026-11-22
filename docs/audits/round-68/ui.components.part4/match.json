@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "A `<kbd>` shortcut is not kept whole inside a mark or a link label, so a key in it can close the mark"
+ ],
+ "b": [
+  "useFloatingPlacement never measures a panel or container element that mounts or changes after the first commit",
+  "InlineRange's fill and marks are drawn at `value` while the native thumb sits at the step-snapped value",
+  "A `<kbd>` shortcut whose key is `<` never parses as keys"
+ ]
+}

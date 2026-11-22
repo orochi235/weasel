@@ -1,0 +1,74 @@
+{
+ "id": "ui.components.Segmented",
+ "commit": "10bea68e02d106803e7a30c1d22e90799d85a3d9",
+ "date": "2026-11-22",
+ "files": [
+  "packages/ui/src/components/Segmented/SegmentedBar.stories.tsx",
+  "packages/ui/src/components/Segmented/SegmentedBar.tsx",
+  "packages/ui/src/components/Segmented/index.ts",
+  "packages/ui/src/components/Segmented/lab/SegmentsArc.stories.module.css",
+  "packages/ui/src/components/Segmented/lab/SegmentsArc.stories.tsx",
+  "packages/ui/src/components/Segmented/lab/SegmentsArcView.tsx",
+  "packages/ui/src/components/Segmented/segmentSweep.tsx",
+  "packages/ui/src/components/Segmented/segmentedControl.module.css",
+  "packages/ui/src/components/Segmented/segmentedRow.tsx",
+  "packages/ui/src/components/Segmented/segmentedVariant.ts",
+  "packages/ui/src/components/Segmented/segmentsAlong.module.css",
+  "packages/ui/src/components/Segmented/segmentsAlong.tsx"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 2,
+ "distinct": 4,
+ "chapman": 4.3,
+ "unfound": 0.3,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 59,
+  "changedFiles": 2,
+  "findings": 3
+ },
+ "previous": {
+  "round": 59,
+  "chapman": 13,
+  "unfound": 3
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 10,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1097,
+   "total": 1097
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 11.3,
+   "B": 10.3,
+   "match": 0.1,
+   "fix": 21.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 849145,
+  "costUsd": 2.68
+ },
+ "fixCommits": [
+  "552de36641b9ff5689635254a4a3316026cd26d1",
+  "967f9769085f9b2c9fcb2001fa58352b3063f194",
+  "4ae0e244bfcabfba9ec15db2b414d865f5add5b3",
+  "2e4b68161004b388c712c06f6290e125f72f6a0f"
+ ]
+}

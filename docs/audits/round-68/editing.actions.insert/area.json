@@ -1,0 +1,78 @@
+{
+ "id": "editing.actions.insert",
+ "commit": "10bea68e02d106803e7a30c1d22e90799d85a3d9",
+ "date": "2026-11-22",
+ "files": [
+  "packages/editing/src/actions/insert/action.ts",
+  "packages/editing/src/actions/insert/commit.ts",
+  "packages/editing/src/actions/insert/extras.ts",
+  "packages/editing/src/actions/insert/frame.ts",
+  "packages/editing/src/actions/insert/geometry.ts",
+  "packages/editing/src/actions/insert/lands.ts",
+  "packages/editing/src/actions/insert/live.ts",
+  "packages/editing/src/actions/insert/params.ts",
+  "packages/editing/src/actions/insert/placeAction.ts",
+  "packages/editing/src/actions/insert/repositionAction.ts",
+  "packages/editing/src/actions/insert/rotateAction.ts",
+  "packages/editing/src/actions/insert/session.ts",
+  "packages/editing/src/actions/insert/shape.ts",
+  "packages/editing/src/actions/insert/style.ts"
+ ],
+ "a": 2,
+ "b": 5,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 8,
+ "unfound": 2,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "newCode": {
+  "since": 47,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 47,
+  "chapman": 14,
+  "unfound": 6
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1416,
+   "total": 1416
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.6,
+   "B": 4.5,
+   "match": 0.1,
+   "fix": 17
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1091347,
+  "costUsd": 3.1
+ },
+ "fixCommits": [
+  "243f1ba5f6a43b061142e64b66d4f8585d7339ec",
+  "dfff5679f251c6fafe11b62e4cd676fc6a6da82c",
+  "5a3dfa146dc91518b2d6d8c99d7c187e6f7e70cb",
+  "8bda079f3705cf54d1e2f284d9b88fc2525dd6dc",
+  "0488005d9e43106a16ff713fc4e454fd535e88aa",
+  "4feb843d8432d710d7f8de612290ee28bb2ac452"
+ ]
+}

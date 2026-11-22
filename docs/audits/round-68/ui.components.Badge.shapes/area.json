@@ -1,0 +1,85 @@
+{
+ "id": "ui.components.Badge.shapes",
+ "commit": "10bea68e02d106803e7a30c1d22e90799d85a3d9",
+ "date": "2026-11-22",
+ "files": [
+  "packages/ui/src/components/Badge/shapes/Beavis.tsx",
+  "packages/ui/src/components/Badge/shapes/Cloud.tsx",
+  "packages/ui/src/components/Badge/shapes/Coffin.tsx",
+  "packages/ui/src/components/Badge/shapes/Crest.tsx",
+  "packages/ui/src/components/Badge/shapes/Hexagon.tsx",
+  "packages/ui/src/components/Badge/shapes/House.tsx",
+  "packages/ui/src/components/Badge/shapes/Notched.tsx",
+  "packages/ui/src/components/Badge/shapes/Perforated.tsx",
+  "packages/ui/src/components/Badge/shapes/Pill.tsx",
+  "packages/ui/src/components/Badge/shapes/Plain.tsx",
+  "packages/ui/src/components/Badge/shapes/Plaque.tsx",
+  "packages/ui/src/components/Badge/shapes/Postage.tsx",
+  "packages/ui/src/components/Badge/shapes/Quatrefoil.tsx",
+  "packages/ui/src/components/Badge/shapes/Receipt.tsx",
+  "packages/ui/src/components/Badge/shapes/Ribbon.tsx",
+  "packages/ui/src/components/Badge/shapes/Scalloped.tsx",
+  "packages/ui/src/components/Badge/shapes/Shield.tsx",
+  "packages/ui/src/components/Badge/shapes/Sparkler.tsx",
+  "packages/ui/src/components/Badge/shapes/Square.tsx",
+  "packages/ui/src/components/Badge/shapes/Starburst.tsx",
+  "packages/ui/src/components/Badge/shapes/Urn.tsx",
+  "packages/ui/src/components/Badge/shapes/Wood.tsx",
+  "packages/ui/src/components/Badge/shapes/index.ts",
+  "packages/ui/src/components/Badge/shapes/params.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 5,
+ "unfound": 1,
+ "read": {
+  "A": 24,
+  "B": 24
+ },
+ "newCode": {
+  "since": 57,
+  "changedFiles": 14,
+  "findings": 4
+ },
+ "previous": {
+  "round": 57,
+  "chapman": 14,
+  "unfound": 6
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 9,
+  "testFiles": {
+   "failed": 0,
+   "passed": 966,
+   "total": 966
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.5,
+   "B": 11.3,
+   "match": 0.1,
+   "fix": 20.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 689261,
+  "costUsd": 2.21
+ },
+ "fixCommits": [
+  "bff87869e808b5bae4c79b6120af3895a8ddc8ab",
+  "e4082b48b6dd6a508093bb9f66d5856ec66289ad",
+  "909e71a98ee65d8c87bf75e850584df1b8c48ecd"
+ ]
+}

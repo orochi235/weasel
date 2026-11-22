@@ -420,6 +420,7 @@
    "apps/draw/src/useHoldContentUnderChrome.ts",
    "apps/draw/src/useLastTool.ts",
    "apps/draw/src/useMachineFontOutlines.ts",
+   "apps/draw/src/usePaintSelection.ts",
    "apps/draw/src/usePathOverlays.ts",
    "apps/draw/src/usePickColor.ts",
    "apps/draw/src/useRightSidebarWidth.ts",
@@ -707,6 +708,7 @@
    "apps/site/demos/LayeredCurveDemo.tsx",
    "apps/site/demos/LayoutDemo.module.css",
    "apps/site/demos/LayoutDemo.tsx",
+   "apps/site/demos/LevelOfDetailDemo.tsx",
    "apps/site/demos/Lines3dDemo.module.css",
    "apps/site/demos/Lines3dDemo.tsx",
    "apps/site/demos/LoupeDemo.module.css",
@@ -739,13 +741,13 @@
    "apps/site/demos/PathConstraintsLabDemo.tsx",
    "apps/site/demos/PathDirectionLabDemo.tsx",
    "apps/site/demos/PathMotionDemo.tsx",
-   "apps/site/demos/PathPoseDemo.tsx",
-   "apps/site/demos/PathSnapLabDemo.tsx"
+   "apps/site/demos/PathPoseDemo.tsx"
   ]
  },
  {
   "id": "apps.site.demos.part4",
   "files": [
+   "apps/site/demos/PathSnapLabDemo.tsx",
    "apps/site/demos/PdfDemo.module.css",
    "apps/site/demos/PdfDemo.tsx",
    "apps/site/demos/PerAxisZoomDemo.module.css",
@@ -792,13 +794,13 @@
    "apps/site/demos/RulersDemo.tsx",
    "apps/site/demos/SandLabDemo.tsx",
    "apps/site/demos/ScaleDemo.module.css",
-   "apps/site/demos/ScaleDemo.tsx",
-   "apps/site/demos/SceneDemo.tsx"
+   "apps/site/demos/ScaleDemo.tsx"
   ]
  },
  {
   "id": "apps.site.demos.part5",
   "files": [
+   "apps/site/demos/SceneDemo.tsx",
    "apps/site/demos/SceneLabDemo.tsx",
    "apps/site/demos/SceneScrollerDemo.module.css",
    "apps/site/demos/SceneScrollerDemo.tsx",
@@ -824,6 +826,8 @@
    "apps/site/demos/StickyNotesDemo.tsx",
    "apps/site/demos/StorageDemo.module.css",
    "apps/site/demos/StorageDemo.tsx",
+   "apps/site/demos/StreamingDemo.module.css",
+   "apps/site/demos/StreamingDemo.tsx",
    "apps/site/demos/StrokeAndFillDemo.tsx",
    "apps/site/demos/StrokeMarkersDemo.tsx",
    "apps/site/demos/StrokeTrimLabDemo.module.css",
@@ -843,15 +847,15 @@
    "apps/site/demos/TextShapingDemo.module.css",
    "apps/site/demos/TextShapingDemo.tsx",
    "apps/site/demos/ThemeDemo.module.css",
-   "apps/site/demos/ThemeDemo.tsx",
-   "apps/site/demos/TiledSurfaceDemo.tsx",
-   "apps/site/demos/TimelineDemo.tsx",
-   "apps/site/demos/TimelineFramesDemo.tsx"
+   "apps/site/demos/ThemeDemo.tsx"
   ]
  },
  {
   "id": "apps.site.demos.part6",
   "files": [
+   "apps/site/demos/TiledSurfaceDemo.tsx",
+   "apps/site/demos/TimelineDemo.tsx",
+   "apps/site/demos/TimelineFramesDemo.tsx",
    "apps/site/demos/ToolReflectionDemo.module.css",
    "apps/site/demos/ToolReflectionDemo.tsx",
    "apps/site/demos/TransformDemo.tsx",
@@ -894,6 +898,7 @@
    "apps/site/demos/rotatedResize/math.ts",
    "apps/site/demos/rotatedResize/panels.tsx",
    "apps/site/demos/score/scoreRoll.ts",
+   "apps/site/demos/shapedVisualOrder.ts",
    "apps/site/demos/warpLab.tsx"
   ]
  },
@@ -1436,7 +1441,12 @@
    "packages/core/src/canvas/doubleClickTarget.ts",
    "packages/core/src/canvas/drawEnvelope.ts",
    "packages/core/src/canvas/drawnBounds.ts",
-   "packages/core/src/canvas/gestureBounds.ts",
+   "packages/core/src/canvas/gestureBounds.ts"
+  ]
+ },
+ {
+  "id": "core.canvas.part2",
+  "files": [
    "packages/core/src/canvas/hostAnchor.ts",
    "packages/core/src/canvas/hud.module.css",
    "packages/core/src/canvas/inheritedPaints.ts",
@@ -1447,12 +1457,11 @@
    "packages/core/src/canvas/layerOrder.ts",
    "packages/core/src/canvas/layerSample.ts",
    "packages/core/src/canvas/layerSlots.ts",
-   "packages/core/src/canvas/mountedCanvases.ts"
-  ]
- },
- {
-  "id": "core.canvas.part2",
-  "files": [
+   "packages/core/src/canvas/lod/ladder.ts",
+   "packages/core/src/canvas/lod/lodBox.ts",
+   "packages/core/src/canvas/lod/lodState.ts",
+   "packages/core/src/canvas/lod/lodWalk.ts",
+   "packages/core/src/canvas/mountedCanvases.ts",
    "packages/core/src/canvas/nodeOutline.ts",
    "packages/core/src/canvas/nodeShapeRegistry.ts",
    "packages/core/src/canvas/nodeShapeTypes.ts",
@@ -1476,7 +1485,12 @@
    "packages/core/src/canvas/pixelRenderRect.ts",
    "packages/core/src/canvas/pixelScale.ts",
    "packages/core/src/canvas/planeClips.ts",
-   "packages/core/src/canvas/poseRotation.ts",
+   "packages/core/src/canvas/poseRotation.ts"
+  ]
+ },
+ {
+  "id": "core.canvas.part3",
+  "files": [
    "packages/core/src/canvas/pressTarget.ts",
    "packages/core/src/canvas/publishPreviews.ts",
    "packages/core/src/canvas/rasterReadback.ts",
@@ -1488,6 +1502,7 @@
    "packages/core/src/canvas/reach/reachTree.ts",
    "packages/core/src/canvas/reach/reachTypes.ts",
    "packages/core/src/canvas/reach/sceneVisibility.ts",
+   "packages/core/src/canvas/reach/tileDamage.ts",
    "packages/core/src/canvas/reach/wideChildren.ts",
    "packages/core/src/canvas/readCanvasPixels.ts",
    "packages/core/src/canvas/readback.ts",
@@ -1502,12 +1517,7 @@
    "packages/core/src/canvas/sceneLayerPaint.ts",
    "packages/core/src/canvas/scenePickIds.ts",
    "packages/core/src/canvas/scenePickReads.ts",
-   "packages/core/src/canvas/scenePickSource.ts"
-  ]
- },
- {
-  "id": "core.canvas.part3",
-  "files": [
+   "packages/core/src/canvas/scenePickSource.ts",
    "packages/core/src/canvas/sceneShapes.ts",
    "packages/core/src/canvas/sceneSlotWiring.ts",
    "packages/core/src/canvas/sceneViewRender.ts",
@@ -1517,8 +1527,14 @@
    "packages/core/src/canvas/slopsDebugLayer.ts",
    "packages/core/src/canvas/surfaceContribution.ts",
    "packages/core/src/canvas/testing/stubCanvasContext.ts",
+   "packages/core/src/canvas/tileHosts.ts",
    "packages/core/src/canvas/timelineFrames.ts",
-   "packages/core/src/canvas/topmostOf.ts",
+   "packages/core/src/canvas/topmostOf.ts"
+  ]
+ },
+ {
+  "id": "core.canvas.part4",
+  "files": [
    "packages/core/src/canvas/trimOverrides.ts",
    "packages/core/src/canvas/useCanvasElements.ts",
    "packages/core/src/canvas/useCanvasHandle.ts",
@@ -1597,15 +1613,6 @@
    "packages/core/src/core/device/useTargetBasePx.ts",
    "packages/core/src/core/device/watchDevicePixelRatio.ts",
    "packages/core/src/core/isPlainObject.ts",
-   "packages/core/src/core/layers/backgroundFill.ts",
-   "packages/core/src/core/layers/children.ts",
-   "packages/core/src/core/layers/dims.ts",
-   "packages/core/src/core/layers/gateLayer.ts",
-   "packages/core/src/core/layers/layerGroup.ts",
-   "packages/core/src/core/layers/redrawSource.ts",
-   "packages/core/src/core/layers/render.ts",
-   "packages/core/src/core/layers/retain.ts",
-   "packages/core/src/core/layers/unknownOrderIds.ts",
    "packages/core/src/core/modifierState.ts",
    "packages/core/src/core/pbt.fixture.ts",
    "packages/core/src/core/persistence/codec.ts",
@@ -1620,6 +1627,8 @@
    "packages/core/src/core/selection/viewerSelection.ts",
    "packages/core/src/core/shapeKinds.ts",
    "packages/core/src/core/stableStringify.ts",
+   "packages/core/src/core/stream/streamScene.ts",
+   "packages/core/src/core/stream/useSceneStream.ts",
    "packages/core/src/core/stylus/stylus.ts",
    "packages/core/src/core/stylus/usePointerStylus.ts"
   ]
@@ -1639,6 +1648,24 @@
    "packages/core/src/core/geometry/targetFrame.ts",
    "packages/core/src/core/geometry/unionBounds.ts",
    "packages/core/src/core/geometry/vec2.ts"
+  ]
+ },
+ {
+  "id": "core.core.layers",
+  "files": [
+   "packages/core/src/core/layers/backgroundFill.ts",
+   "packages/core/src/core/layers/children.ts",
+   "packages/core/src/core/layers/dims.ts",
+   "packages/core/src/core/layers/gateLayer.ts",
+   "packages/core/src/core/layers/layerGroup.ts",
+   "packages/core/src/core/layers/layerVisibility.ts",
+   "packages/core/src/core/layers/redrawSource.ts",
+   "packages/core/src/core/layers/render.ts",
+   "packages/core/src/core/layers/retain.ts",
+   "packages/core/src/core/layers/tileHost.ts",
+   "packages/core/src/core/layers/tileSplit.ts",
+   "packages/core/src/core/layers/tiles.ts",
+   "packages/core/src/core/layers/unknownOrderIds.ts"
   ]
  },
  {
@@ -1744,6 +1771,7 @@
    "packages/core/src/core/scene/nodeFnFields.ts",
    "packages/core/src/core/scene/nodeFnTypes.ts",
    "packages/core/src/core/scene/nodeGates.ts",
+   "packages/core/src/core/scene/nodeLod.ts",
    "packages/core/src/core/scene/nodeMemo.ts",
    "packages/core/src/core/scene/nodeStore.ts",
    "packages/core/src/core/scene/nodeTypes.ts",
@@ -1772,13 +1800,13 @@
    "packages/core/src/core/scene/poseWrites.ts",
    "packages/core/src/core/scene/reconcileSpecs.ts",
    "packages/core/src/core/scene/recorder.ts",
-   "packages/core/src/core/scene/registeredOp.ts",
-   "packages/core/src/core/scene/renderOrder.ts"
+   "packages/core/src/core/scene/registeredOp.ts"
   ]
  },
  {
   "id": "core.core.scene.part3",
   "files": [
+   "packages/core/src/core/scene/renderOrder.ts",
    "packages/core/src/core/scene/renderRank.ts",
    "packages/core/src/core/scene/rigidFoldable.ts",
    "packages/core/src/core/scene/sameValue.ts",
@@ -2567,7 +2595,12 @@
    "packages/diagram/src/diagramTypes/catalog.ts",
    "packages/diagram/src/diagramTypes/doc.ts",
    "packages/diagram/src/diagramTypes/edge.ts",
-   "packages/diagram/src/diagramTypes/index.ts",
+   "packages/diagram/src/diagramTypes/index.ts"
+  ]
+ },
+ {
+  "id": "diagram.part2",
+  "files": [
    "packages/diagram/src/diagramTypes/types.ts",
    "packages/diagram/src/diagramViewProps.ts",
    "packages/diagram/src/edge.ts",
@@ -2578,19 +2611,18 @@
    "packages/diagram/src/edgeTrait.ts",
    "packages/diagram/src/effect-audio.entry.ts",
    "packages/diagram/src/effect.entry.ts",
-   "packages/diagram/src/entryMemo.ts"
-  ]
- },
- {
-  "id": "diagram.part2",
-  "files": [
+   "packages/diagram/src/entryMemo.ts",
    "packages/diagram/src/faceCapCenter.ts",
    "packages/diagram/src/faceMeasure.ts",
    "packages/diagram/src/faceRemeasure.ts",
    "packages/diagram/src/firstSight.ts",
+   "packages/diagram/src/fitContainers.ts",
    "packages/diagram/src/footprint.ts",
+   "packages/diagram/src/force.bench.ts",
    "packages/diagram/src/force.ts",
+   "packages/diagram/src/force3.ts",
    "packages/diagram/src/forceClusters.ts",
+   "packages/diagram/src/forceTerms.ts",
    "packages/diagram/src/fromData.ts",
    "packages/diagram/src/graph.ts",
    "packages/diagram/src/grid.ts",
@@ -2607,7 +2639,12 @@
    "packages/diagram/src/labelDragLayer.ts",
    "packages/diagram/src/labelTrait.ts",
    "packages/diagram/src/labels/fit.ts",
-   "packages/diagram/src/labels/install.ts",
+   "packages/diagram/src/labels/install.ts"
+  ]
+ },
+ {
+  "id": "diagram.part3",
+  "files": [
    "packages/diagram/src/labels/labels.bench.ts",
    "packages/diagram/src/labels/place.ts",
    "packages/diagram/src/labels/specLabels.ts",
@@ -2633,12 +2670,7 @@
    "packages/diagram/src/offPage/pagedFixture.ts",
    "packages/diagram/src/offPage/split.ts",
    "packages/diagram/src/offPage/tag.ts",
-   "packages/diagram/src/offPage/trait.ts"
-  ]
- },
- {
-  "id": "diagram.part3",
-  "files": [
+   "packages/diagram/src/offPage/trait.ts",
    "packages/diagram/src/offPage/useOffPageMarkers.ts",
    "packages/diagram/src/onOutline.ts",
    "packages/diagram/src/outline.ts",
@@ -2651,7 +2683,12 @@
    "packages/diagram/src/portLabels.ts",
    "packages/diagram/src/portLayer.ts",
    "packages/diagram/src/ports.ts",
-   "packages/diagram/src/radial.ts",
+   "packages/diagram/src/radial.ts"
+  ]
+ },
+ {
+  "id": "diagram.part4",
+  "files": [
    "packages/diagram/src/reconnect.ts",
    "packages/diagram/src/regionEditing.ts",
    "packages/diagram/src/regionSync.ts",
@@ -4358,6 +4395,7 @@
    "packages/labkit/src/dragdrop/Palette.tsx",
    "packages/labkit/src/dragdrop/feedbackLayer.ts",
    "packages/labkit/src/dragdrop/index.ts",
+   "packages/labkit/src/fontCascade.fixtures.tsx",
    "packages/labkit/src/frames.stories.less",
    "packages/labkit/src/icons.gen.ts",
    "packages/labkit/src/index.ts",
@@ -4392,6 +4430,7 @@
    "packages/labkit/src/passthrough/weasel-canvas.ts",
    "packages/labkit/src/pbt.fixture.ts",
    "packages/labkit/src/scene/TrialSceneCanvas.less",
+   "packages/labkit/src/scene/TrialSceneCanvas.stories.tsx",
    "packages/labkit/src/scene/TrialSceneCanvas.tsx",
    "packages/labkit/src/scene/index.ts",
    "packages/labkit/src/scene/sceneResets.ts",
@@ -5507,13 +5546,13 @@
    "packages/renderer/src/meshPaint/handles.ts",
    "packages/renderer/src/meshPaint/index.ts",
    "packages/renderer/src/meshPaint/meshPaint.ts",
-   "packages/renderer/src/meshPaint/meshShader.ts"
+   "packages/renderer/src/meshPaint/meshShader.ts",
+   "packages/renderer/src/meshPaint/surface.ts"
   ]
  },
  {
   "id": "renderer.part2",
   "files": [
-   "packages/renderer/src/meshPaint/surface.ts",
    "packages/renderer/src/paintKinds.ts",
    "packages/renderer/src/paintResources.ts",
    "packages/renderer/src/paintScratch.ts",
@@ -5534,6 +5573,8 @@
    "packages/renderer/src/rendererParts.ts",
    "packages/renderer/src/rendererTypes.ts",
    "packages/renderer/src/retain/RetainedSurfaces.ts",
+   "packages/renderer/src/retain/TileTextures.ts",
+   "packages/renderer/src/retain/bakeTile.ts",
    "packages/renderer/src/retain/contentBounds.ts",
    "packages/renderer/src/retain/movesWithView.ts",
    "packages/renderer/src/retain/retainedKey.ts",
@@ -5548,6 +5589,7 @@
    "packages/renderer/src/textCommand.ts",
    "packages/renderer/src/textLayout.ts",
    "packages/renderer/src/textures/registerTexture.ts",
+   "packages/renderer/src/warmPrograms.ts",
    "packages/renderer/src/warnOnce.ts"
   ]
  },
@@ -5948,6 +5990,7 @@
    "packages/svg/src/media.ts",
    "packages/svg/src/metaXml.ts",
    "packages/svg/src/metricScale.ts",
+   "packages/svg/src/nestedTspans.ts",
    "packages/svg/src/openSubpathFill.ts",
    "packages/svg/src/paintServers.ts",
    "packages/svg/src/paintThroughMatrix.ts",
@@ -6135,6 +6178,7 @@
    "packages/text-tools/src/node/properties.ts",
    "packages/text-tools/src/node/textFrame.ts",
    "packages/text-tools/src/node/textItems.ts",
+   "packages/text-tools/src/node/textLadder.ts",
    "packages/text-tools/src/node/textOutline.ts",
    "packages/text-tools/src/node/textPainter.ts",
    "packages/text-tools/src/presets.ts",
@@ -6282,6 +6326,16 @@
   ]
  },
  {
+  "id": "tiles",
+  "files": [
+   "packages/tiles/src/cache.ts",
+   "packages/tiles/src/index.ts",
+   "packages/tiles/src/pyramid.ts",
+   "packages/tiles/src/scheme.ts",
+   "packages/tiles/src/stream.ts"
+  ]
+ },
+ {
   "id": "ui",
   "files": [
    "packages/ui/src/alongTrack.ts",
@@ -6295,6 +6349,7 @@
    "packages/ui/src/cursors/cursors.stories.tsx",
    "packages/ui/src/dlog.ts",
    "packages/ui/src/dropTarget.ts",
+   "packages/ui/src/fontCascade.fixtures.tsx",
    "packages/ui/src/handles.ts",
    "packages/ui/src/icons.gen.ts",
    "packages/ui/src/icons.table.ts",
@@ -7291,6 +7346,7 @@
  {
   "id": "ui.components.part10",
   "files": [
+   "packages/ui/src/components/ToolPalette/ToolPalette.stories.module.css",
    "packages/ui/src/components/ToolPalette/ToolPalette.stories.tsx",
    "packages/ui/src/components/ToolPalette/ToolPalette.tsx",
    "packages/ui/src/components/ToolPalette/index.ts",
@@ -7464,6 +7520,7 @@
    "packages/ui/src/components/InlineMarkdown/InlineMarkdown.stories.tsx",
    "packages/ui/src/components/InlineMarkdown/InlineMarkdown.tsx",
    "packages/ui/src/components/InlineMarkdown/index.ts",
+   "packages/ui/src/components/InlineMarkdown/inlineScan.ts",
    "packages/ui/src/components/InlineMarkdown/parseInline.ts",
    "packages/ui/src/components/InlineRange/InlineRange.module.css",
    "packages/ui/src/components/InlineRange/InlineRange.stories.module.css",
@@ -7480,13 +7537,13 @@
    "packages/ui/src/components/ItemList/ItemList.stories.module.css",
    "packages/ui/src/components/ItemList/ItemList.stories.tsx",
    "packages/ui/src/components/ItemList/ItemList.tsx",
-   "packages/ui/src/components/ItemList/domItemList.tsx",
-   "packages/ui/src/components/ItemList/index.ts"
+   "packages/ui/src/components/ItemList/domItemList.tsx"
   ]
  },
  {
   "id": "ui.components.part5",
   "files": [
+   "packages/ui/src/components/ItemList/index.ts",
    "packages/ui/src/components/ItemList/useRowInput.ts",
    "packages/ui/src/components/Jog/Jog.module.css",
    "packages/ui/src/components/Jog/Jog.stories.module.css",
@@ -7531,13 +7588,13 @@
    "packages/ui/src/components/OpacityRange/OpacityRange.tsx",
    "packages/ui/src/components/OpacityRange/index.ts",
    "packages/ui/src/components/PageTabs/PageTabs.module.css",
-   "packages/ui/src/components/PageTabs/PageTabs.stories.module.css",
-   "packages/ui/src/components/PageTabs/PageTabs.stories.tsx"
+   "packages/ui/src/components/PageTabs/PageTabs.stories.module.css"
   ]
  },
  {
   "id": "ui.components.part6",
   "files": [
+   "packages/ui/src/components/PageTabs/PageTabs.stories.tsx",
    "packages/ui/src/components/PageTabs/PageTabs.tsx",
    "packages/ui/src/components/PageTabs/PageTabsAlong.tsx",
    "packages/ui/src/components/PageTabs/RenameField.tsx",
@@ -7582,13 +7639,13 @@
    "packages/ui/src/components/PrefsBar/PrefsBar.tsx",
    "packages/ui/src/components/PrefsBar/barCells.tsx",
    "packages/ui/src/components/PrefsBar/barNodes.tsx",
-   "packages/ui/src/components/PrefsBar/index.ts",
-   "packages/ui/src/components/PrefsSource/PrefsSource.tsx"
+   "packages/ui/src/components/PrefsBar/index.ts"
   ]
  },
  {
   "id": "ui.components.part7",
   "files": [
+   "packages/ui/src/components/PrefsSource/PrefsSource.tsx",
    "packages/ui/src/components/PrefsSource/hooks.ts",
    "packages/ui/src/components/PrefsSource/index.ts",
    "packages/ui/src/components/PrefsSource/leafContext.ts",
@@ -7633,13 +7690,13 @@
    "packages/ui/src/components/Ruler/index.ts",
    "packages/ui/src/components/Ruler/thinLabels.ts",
    "packages/ui/src/components/Run/index.ts",
-   "packages/ui/src/components/Run/run.tsx",
-   "packages/ui/src/components/ScaleBar/ScaleBar.module.css"
+   "packages/ui/src/components/Run/run.tsx"
   ]
  },
  {
   "id": "ui.components.part8",
   "files": [
+   "packages/ui/src/components/ScaleBar/ScaleBar.module.css",
    "packages/ui/src/components/ScaleBar/ScaleBar.stories.tsx",
    "packages/ui/src/components/ScaleBar/ScaleBar.tsx",
    "packages/ui/src/components/ScaleBar/index.ts",
@@ -7684,13 +7741,13 @@
    "packages/ui/src/components/Switch/Switch.stories.tsx",
    "packages/ui/src/components/Switch/Switch.tsx",
    "packages/ui/src/components/Switch/index.ts",
-   "packages/ui/src/components/Tabs/TabListAlong.tsx",
-   "packages/ui/src/components/Tabs/TabRule.tsx"
+   "packages/ui/src/components/Tabs/TabListAlong.tsx"
   ]
  },
  {
   "id": "ui.components.part9",
   "files": [
+   "packages/ui/src/components/Tabs/TabRule.tsx",
    "packages/ui/src/components/Tabs/Tabs.module.css",
    "packages/ui/src/components/Tabs/Tabs.stories.tsx",
    "packages/ui/src/components/Tabs/Tabs.tsx",
@@ -7735,8 +7792,7 @@
    "packages/ui/src/components/ToolOptionsBar/ToolOptionsBar.stories.tsx",
    "packages/ui/src/components/ToolOptionsBar/ToolOptionsBar.tsx",
    "packages/ui/src/components/ToolOptionsBar/index.ts",
-   "packages/ui/src/components/ToolPalette/ToolPalette.module.css",
-   "packages/ui/src/components/ToolPalette/ToolPalette.stories.module.css"
+   "packages/ui/src/components/ToolPalette/ToolPalette.module.css"
   ]
  },
  {
@@ -7745,6 +7801,7 @@
    "packages/ui/src/testing/badge.ts",
    "packages/ui/src/testing/composeStory.tsx",
    "packages/ui/src/testing/contextMenu.ts",
+   "packages/ui/src/testing/fontCascade.tsx",
    "packages/ui/src/testing/geometry.ts",
    "packages/ui/src/testing/icon.ts",
    "packages/ui/src/testing/labViews.ts",

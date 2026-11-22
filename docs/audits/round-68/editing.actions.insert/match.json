@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ]
+ ],
+ "a": [
+  "A from-center line's `bounds` is twice the line's extent and centered on the mirrored start",
+  "A behavior that returns a non-finite point mid-reposition leaves the carry applied while the frame is thrown away, so the next move carries the same step again"
+ ],
+ "b": [
+  "Behavior commit appends the press's selection clear after the behavior's ops, so it overrides their selection and undo does not restore the prior one",
+  "placeAction places at the click's release point, ignoring `params.press`",
+  "Line from-center hands the dep a box twice the line's extent",
+  "Behaviors' `onMove` get a `bounds` computed differently from the one previewed and committed",
+  "A behavior `onStart` that throws leaves the selection cleared and the start's snap session open"
+ ]
+}

@@ -1,0 +1,101 @@
+{
+ "id": "path-tools.part1",
+ "commit": "10bea68e02d106803e7a30c1d22e90799d85a3d9",
+ "date": "2026-11-22",
+ "files": [
+  "packages/path-tools/src/actionParamSchema.ts",
+  "packages/path-tools/src/anchorSelect/anchorSelect.ts",
+  "packages/path-tools/src/bridge/bridge.ts",
+  "packages/path-tools/src/comb/comb.ts",
+  "packages/path-tools/src/constraints/anchorConstraints.ts",
+  "packages/path-tools/src/constraints/constraintGlyphs.ts",
+  "packages/path-tools/src/constraints/constraintLinkMarks.ts",
+  "packages/path-tools/src/constraints/constraintLinks.ts",
+  "packages/path-tools/src/constraints/constraintsExtension.ts",
+  "packages/path-tools/src/constraints/linkAnchor.ts",
+  "packages/path-tools/src/constraints/pathConstraints.ts",
+  "packages/path-tools/src/drape/drape.ts",
+  "packages/path-tools/src/extremes/addExtremes.ts",
+  "packages/path-tools/src/fairing/fairing.tsx",
+  "packages/path-tools/src/featurePresets.ts",
+  "packages/path-tools/src/fillet/cornerRadii.ts",
+  "packages/path-tools/src/fillet/editFillet.ts",
+  "packages/path-tools/src/fillet/filletCommands.ts",
+  "packages/path-tools/src/fillet/filletControls.ts",
+  "packages/path-tools/src/fillet/filletWidgets.ts",
+  "packages/path-tools/src/fillet/useFilletControls.ts",
+  "packages/path-tools/src/girth/girthActions.ts",
+  "packages/path-tools/src/girth/girthOverlay.ts",
+  "packages/path-tools/src/girth/index.ts",
+  "packages/path-tools/src/girth/useGirthTool.ts",
+  "packages/path-tools/src/girth/widthEdit.ts",
+  "packages/path-tools/src/groups.ts",
+  "packages/path-tools/src/handleLocks/handleLocks.tsx",
+  "packages/path-tools/src/handleSnap/handleSnap.ts",
+  "packages/path-tools/src/host/createPathEditHost.ts",
+  "packages/path-tools/src/host/usePathEditMode.ts",
+  "packages/path-tools/src/icons.gen.ts",
+  "packages/path-tools/src/icons.table.ts",
+  "packages/path-tools/src/index.ts",
+  "packages/path-tools/src/kitSettings.ts",
+  "packages/path-tools/src/knead/knead.ts",
+  "packages/path-tools/src/knead/kneadTargets.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 9,
+ "unfound": 3,
+ "read": {
+  "A": 37,
+  "B": 37
+ },
+ "newCode": {
+  "since": 53,
+  "changedFiles": 1,
+  "findings": 0
+ },
+ "previous": {
+  "round": 53,
+  "chapman": 13.621621621621623,
+  "unfound": 5.837837837837839
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 20,
+  "testFiles": {
+   "failed": 0,
+   "passed": 553,
+   "total": 553
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.9,
+   "B": 9.7,
+   "match": 2.3,
+   "fix": 17.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1684076,
+  "costUsd": 4.83
+ },
+ "fixCommits": [
+  "23ffb468bb142103e78b6053805d51ade5a54bdd",
+  "bbddf85bc5e4ddb5a1c055d51325be5edc177c00",
+  "77ebeba443a167bca6620b5b8b92daa778728f65",
+  "63d36991c5c6abb2950b9721bd552fba83627dce",
+  "2223e96f391b4b52d679bcfeb1ab6463ed00c354",
+  "f5cf1b521f056ba788ec3e44ec45ae9847d3b29d"
+ ]
+}

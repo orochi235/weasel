@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   1,
+   3
+  ]
+ ],
+ "a": [
+  "ShortcutSheet's key search takes a free-standing or trailing `+` as the plus key, so `Cmd + Z` and `Ctrl+` match nothing",
+  "A swatch whose `id` is `lead` or `empty` collides with a ring's lead or empty item in React's keys",
+  "`timed` says a span with no `start` follows the latest end on its tracks, but it follows the last span placed there"
+ ],
+ "b": [
+  "A SpanStrip slider seeks on a right-click or middle-click press",
+  "A second pointer pressed mid-drag resets where a cancel goes back to",
+  "A `Sequence` grid caps each axis, not the cells: two open sweeps draw 65,536 live cells",
+  "A swatch whose id is `lead` or `empty` collides with the ring's lead or empty-state element key",
+  "Two swatches of one color with no `id` get duplicate React keys",
+  "`ScaleBar` given `lengths: []` renders a NaN label and width"
+ ]
+}

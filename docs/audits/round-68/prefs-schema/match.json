@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "A function unit's `step` is converted as the distance from 0, which is Infinity or meaningless for a nonlinear unit",
+  "In an entry's pass, the switch field of a disabled item gets hidden by the item's own `showIf`, which is never meant to be asked",
+  "`visiblePrefSubtree` leaves `hidden` fields in a union's variants and a list's or map's item"
+ ],
+ "b": [
+  "prefDisplayBounds rounds a unit leaf's min and max to the nearest shown place, so the display range can reach past the stored bounds",
+  "prefDisplayBounds swaps min/max for a decreasing unit but leaves `stops` in descending order"
+ ]
+}

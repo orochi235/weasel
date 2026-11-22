@@ -1,0 +1,32 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "A tile re-wanted while its aborted load is still settling is never loaded until another update",
+  "A `load` that throws synchronously leaks a concurrency slot forever",
+  "`pending` omits stale tiles waiting out their one-frame hold, so a frame can report nothing owed while stale tiles still need a rebake",
+  "`stale` lists a stand-in ancestor once per spot it covers",
+  "The floor stops standing in once the view is more than `standInLevels` below it"
+ ],
+ "b": [
+  "A tile re-wanted while its aborted load is still settling is dropped, and never loads unless update() runs again",
+  "A load() that throws synchronously leaves its entry in `loading` forever, using up a slot of the concurrency cap",
+  "`TileFrame.stale` lists the same stand-in tile once per on-screen tile it covers",
+  "Every whole-tile draw shares one mutable `source` array",
+  "Replacing a tile releases the old payload even when the new payload is the same object",
+  "planeFloor takes tilePx separately from the scheme it is given, so the two can disagree",
+  "planeFloor returns no tiles for a zero-width or zero-height content box lying on a tile edge"
+ ]
+}

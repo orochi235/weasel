@@ -1,0 +1,72 @@
+{
+ "id": "symmetry",
+ "commit": "10bea68e02d106803e7a30c1d22e90799d85a3d9",
+ "date": "2026-11-22",
+ "files": [
+  "packages/symmetry/src/bake.ts",
+  "packages/symmetry/src/controller.ts",
+  "packages/symmetry/src/frames.ts",
+  "packages/symmetry/src/group.ts",
+  "packages/symmetry/src/guide.ts",
+  "packages/symmetry/src/handleDrag.ts",
+  "packages/symmetry/src/index.ts",
+  "packages/symmetry/src/kinds.ts",
+  "packages/symmetry/src/pbt.fixture.ts",
+  "packages/symmetry/src/settings.ts",
+  "packages/symmetry/src/wallpaper.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 2,
+ "distinct": 4,
+ "chapman": 4.3,
+ "unfound": 0.3,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "newCode": {
+  "since": 55,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 55,
+  "chapman": 15,
+  "unfound": 6
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 7,
+  "testFiles": {
+   "failed": 0,
+   "passed": 76,
+   "total": 76
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.7,
+   "B": 3.9,
+   "match": 2.5,
+   "fix": 11.8
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 896089,
+  "costUsd": 2.68
+ },
+ "fixCommits": [
+  "d08a8f3fccafb9f4a111393babb41c19b5d20628",
+  "19d0ae3d9bac629438809d87501799671892b521",
+  "92ffc0b38ef89cfabedf0b2adb80fb2dd2551cd2"
+ ]
+}

@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "A flat SegmentedBar on a curved `Along` keeps the straight row's -1px seam overlap on every segment after the first",
+  "Several SegmentedBar stories render a radiogroup with no accessible name",
+  "A canceled sweep's document listeners outlive the bar that installed them"
+ ],
+ "b": [
+  "A lone segment in a vertical flat bar loses its top corners' rounding",
+  "On a curved run, a flat bar's segments after the first are shifted 1px by the straight row's shared-border margin",
+  "Several SegmentedBar stories render a radiogroup with no accessible name"
+ ]
+}

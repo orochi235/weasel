@@ -1,0 +1,15 @@
+{
+ "pairs": [],
+ "a": [
+  "`mergeRegion` throws when a long straight edge has a short, slightly tilted one lying along it",
+  "`pathFromD` ignores numbers after `Z` and keeps drawing, where SVG stops at the error",
+  "`simplifyAnchorsAt` deletes every anchor of a closed one-anchor subpath and leaves an empty subpath in the set",
+  "`simplifyPath` drops lone-anchor subpaths, though its doc says open ends stay",
+  "`roughenPath` gives two contours the same offsets once a contour has more than 65,536 samples"
+ ],
+ "b": [
+  "Marker builders write absolute float32 coords with no origin, so a marker far from 0 loses its shape",
+  "reachToMeet with an explicit `maxDistance: Infinity` in tangent or eased mode meets nothing",
+  "pathSignedArea returns a negative area for a RectPath with negative extent, contradicting \"counts as positive\""
+ ]
+}

@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "A repeat's guide line points away from its copies when its spacing is negative",
+  "The angle knob can sit on a nested symmetry group's copies, though the guide says it clears the contents",
+  "Bake builds copies from the 'document' world pose while the live copies, the guide and edits use 'shown'"
+ ],
+ "b": [
+  "A handle press takes the first handle in reach, not the nearest, so the center cannot be grabbed once a step or row handle sits within the hit radius of it",
+  "A repeat's guide line is drawn on the wrong side of the center when its spacing is negative",
+  "The angle knob's reach ignores the copies of a symmetry group nested inside the active one"
+ ]
+}

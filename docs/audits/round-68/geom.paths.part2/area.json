@@ -1,0 +1,104 @@
+{
+ "id": "geom.paths.part2",
+ "commit": "10bea68e02d106803e7a30c1d22e90799d85a3d9",
+ "date": "2026-11-22",
+ "files": [
+  "packages/geom/src/paths/markers.ts",
+  "packages/geom/src/paths/mergeRegion.ts",
+  "packages/geom/src/paths/nearestAnchor.ts",
+  "packages/geom/src/paths/pathAt.ts",
+  "packages/geom/src/paths/pathAwayFromAnchors.ts",
+  "packages/geom/src/paths/pathDistance.ts",
+  "packages/geom/src/paths/pathEndExtension.ts",
+  "packages/geom/src/paths/pathFromD.ts",
+  "packages/geom/src/paths/pathInWorld.ts",
+  "packages/geom/src/paths/pathMeasure.ts",
+  "packages/geom/src/paths/pathOrigin.ts",
+  "packages/geom/src/paths/pathStructure.ts",
+  "packages/geom/src/paths/pathToD.ts",
+  "packages/geom/src/paths/poiseHandles.ts",
+  "packages/geom/src/paths/puckerBloatPath.ts",
+  "packages/geom/src/paths/reachPath.ts",
+  "packages/geom/src/paths/repeatAlongPath.ts",
+  "packages/geom/src/paths/resamplePath.ts",
+  "packages/geom/src/paths/roughenPath.ts",
+  "packages/geom/src/paths/samePolygon.ts",
+  "packages/geom/src/paths/schneiderFit.ts",
+  "packages/geom/src/paths/segmentLength.ts",
+  "packages/geom/src/paths/segmentType.ts",
+  "packages/geom/src/paths/simplifyAnchors.ts",
+  "packages/geom/src/paths/simplifyPath.ts",
+  "packages/geom/src/paths/snipPath.ts",
+  "packages/geom/src/paths/spanFit.ts",
+  "packages/geom/src/paths/spiro.ts",
+  "packages/geom/src/paths/spiroPath.ts",
+  "packages/geom/src/paths/splitByClosure.ts",
+  "packages/geom/src/paths/splitSubpaths.ts",
+  "packages/geom/src/paths/transform.ts",
+  "packages/geom/src/paths/transformPath.ts",
+  "packages/geom/src/paths/tugPathEnd.ts",
+  "packages/geom/src/paths/tweenPaths.ts",
+  "packages/geom/src/paths/winding.ts",
+  "packages/geom/src/paths/zigzagPath.ts"
+ ],
+ "a": 5,
+ "b": 3,
+ "m": 0,
+ "distinct": 8,
+ "chapman": 23,
+ "unfound": 15,
+ "read": {
+  "A": 37,
+  "B": 37
+ },
+ "newCode": {
+  "since": 65,
+  "changedFiles": 1,
+  "findings": 0
+ },
+ "previous": {
+  "round": 65,
+  "chapman": 11,
+  "unfound": 6
+ },
+ "patches": 9,
+ "verify": {
+  "ok": true,
+  "files": 22,
+  "testFiles": {
+   "failed": 0,
+   "passed": 4726,
+   "total": 4726
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 11,
+   "B": 6.4,
+   "match": 2.6,
+   "fix": 25.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1860114,
+  "costUsd": 5.66
+ },
+ "fixCommits": [
+  "47d6c8d334030fa357cb63239442b44c3d999c6e",
+  "1a6730abb05195cccc2fef4ca93dfcc984f79976",
+  "d30e0655f7bd5cb9c87efa78621ca9f5a6cde354",
+  "a77fd24a6faa66bfe1a2935a71d57285b96d2c7b",
+  "786cd8f5d718cf1a6d5885a89a4bf0038712875b",
+  "29c5220355765141b489322a08c97991cbdec95e",
+  "a463da73424783b8704f1f3cf99acea7e57ad865",
+  "c4b6c64986e7b607e5bd37194da25b07ace6cb7e",
+  "e5824a048e4a5d81658d788c4518dcf08ed2e9ed"
+ ]
+}

@@ -1,0 +1,94 @@
+{
+ "id": "core.domains",
+ "commit": "10bea68e02d106803e7a30c1d22e90799d85a3d9",
+ "date": "2026-11-22",
+ "files": [
+  "packages/core/src/domains/chrome-caps/conditions.ts",
+  "packages/core/src/domains/chrome-caps/defaults.ts",
+  "packages/core/src/domains/chrome-caps/index.ts",
+  "packages/core/src/domains/chrome-caps/resolve.ts",
+  "packages/core/src/domains/chrome-caps/types.ts",
+  "packages/core/src/domains/chrome-caps/useChromeCaps.ts",
+  "packages/core/src/domains/chrome-caps/useHoverTracking.ts",
+  "packages/core/src/domains/ingestion/contentHandlers.ts",
+  "packages/core/src/domains/ingestion/index.ts",
+  "packages/core/src/domains/ingestion/openFilePicker.ts",
+  "packages/core/src/domains/ingestion/placement.ts",
+  "packages/core/src/domains/ingestion/useCanvasIngestion.ts",
+  "packages/core/src/domains/longPress/longPressFeedback.ts",
+  "packages/core/src/domains/modes/modeLayers.ts",
+  "packages/core/src/domains/modes/modeTriggers.ts",
+  "packages/core/src/domains/pathEffects/effectSources.ts",
+  "packages/core/src/domains/pathEffects/hiddenSources.ts",
+  "packages/core/src/domains/pathEffects/index.ts",
+  "packages/core/src/domains/pathEffects/readSource.ts",
+  "packages/core/src/domains/pathEffects/useEffectSourcesLayer.ts",
+  "packages/core/src/domains/poseRun/index.ts",
+  "packages/core/src/domains/poseRun/usePoseRun.ts",
+  "packages/core/src/domains/presentation/index.ts",
+  "packages/core/src/domains/presentation/presentationContribution.ts",
+  "packages/core/src/domains/presentation/presentationStep.ts",
+  "packages/core/src/domains/selection/enteredGroupFrame.ts",
+  "packages/core/src/domains/selection/enteredGroupScope.ts",
+  "packages/core/src/domains/selection/enteredOperands.ts",
+  "packages/core/src/domains/viewports/aim.ts",
+  "packages/core/src/domains/viewports/index.ts",
+  "packages/core/src/domains/viewports/viewMarker.ts",
+  "packages/core/src/domains/viewports/viewMarkerDrag.ts",
+  "packages/core/src/domains/viewports/viewResolver.ts",
+  "packages/core/src/domains/viewports/viewportLayer.ts"
+ ],
+ "a": 1,
+ "b": 1,
+ "m": 0,
+ "distinct": 2,
+ "chapman": 3,
+ "unfound": 1,
+ "read": {
+  "A": 34,
+  "B": 34
+ },
+ "newCode": {
+  "since": 65,
+  "changedFiles": 4,
+  "findings": 1
+ },
+ "previous": {
+  "round": 65,
+  "chapman": 11,
+  "unfound": 6
+ },
+ "patches": 2,
+ "verify": {
+  "ok": true,
+  "files": 7,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2410,
+   "total": 2410
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 10.2,
+   "B": 6.6,
+   "match": 0.1,
+   "fix": 11.7
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1061390,
+  "costUsd": 3.19
+ },
+ "fixCommits": [
+  "af6af1d61624a7d4cdba98116de1e2695e6e875a",
+  "327698151dc5d262a46cd4a18384f89ab64b5045"
+ ]
+}

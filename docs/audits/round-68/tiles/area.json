@@ -1,0 +1,62 @@
+{
+ "id": "tiles",
+ "commit": "10bea68e02d106803e7a30c1d22e90799d85a3d9",
+ "date": "2026-11-22",
+ "files": [
+  "packages/tiles/src/cache.ts",
+  "packages/tiles/src/index.ts",
+  "packages/tiles/src/pyramid.ts",
+  "packages/tiles/src/scheme.ts",
+  "packages/tiles/src/stream.ts"
+ ],
+ "a": 5,
+ "b": 7,
+ "m": 3,
+ "distinct": 9,
+ "chapman": 11,
+ "unfound": 2,
+ "read": {
+  "A": 5,
+  "B": 5
+ },
+ "patches": 9,
+ "verify": {
+  "ok": true,
+  "files": 18,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2448,
+   "total": 2448
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.6,
+   "B": 11.9,
+   "match": 0.1,
+   "fix": 22.4
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 821698,
+  "costUsd": 2.45
+ },
+ "fixCommits": [
+  "62c61874f75e43b923fdef0fc1ebd10a7231b25b",
+  "d1f1f7403152fc8bce8182f6c80682712d6f4829",
+  "9ef7fa1ac7f00d6f173c12a8e179e4908b6d6b3b",
+  "6ba521a466bb173a290de6c1d84ff519d573a5de",
+  "e635102a6bb73b90ecb756ef89fcd8739c53d620",
+  "c07152da21cd43d7652af3febf939867a3d99af7",
+  "172e01998bd2c91fc133a23a91d6e13ec8dfdc02",
+  "60221359da4bd6c118c305c7beb558d454085652",
+  "c6039d4e9ee2b588281b94063993dd0d288be952"
+ ]
+}

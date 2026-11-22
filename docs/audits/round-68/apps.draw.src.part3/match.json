@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "Canceling a Simplify or Offset slider drag leaves the slider, and Sand's tolerance pref, at the value that was canceled",
+  "Reset (D) and toggle-none write the default paints in a different spelling from every other color write"
+ ],
+ "b": [
+  "Canceling a Simplify slider drag leaves Sand's tolerance pref at the canceled value, and the slider shows it",
+  "Canceling an Offset slider drag leaves the slider at the canceled distance"
+ ]
+}

@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   2,
+   5
+  ]
+ ],
+ "a": [
+  "WebGL `limits.samples` reads whatever draw framebuffer is bound, not the canvas's",
+  "WebGL `beginFrame` leaves blend equation and rasterizer state that another tenant of the context may have set",
+  "WebGL read-backs run under whatever pack state the context holds",
+  "WebGL `readIds` on a target without ids returns its color bytes; WebGPU returns zeros",
+  "`stride: 0` means two different layouts on the two backends when a buffer has several attributes",
+  "A multisampled target with ids cannot be drawn into on either backend, and `GpuTargetDesc` allows it",
+  "Decoded-image upload into an `r8` texture is RGBA on WebGL and red-only on WebGPU",
+  "WebGPU premultiplies every ImageBitmap even when the caller asked for straight texels",
+  "WGSL reflection strips comments as if they could not nest, and reads no hex constants"
+ ],
+ "b": [
+  "A pipeline the GPU refuses, or one over a module that failed to compile, is drawn with before the refusal is known, voiding the whole submit",
+  "A GL program deleted before it settles leaks both of its shader objects",
+  "WebGL `set` with `count: 0` uploads the whole rest of the array; WebGPU uploads nothing",
+  "`samples: 1` makes a multisampled, colorless target on WebGL and a single-sampled one with a color texture on WebGPU",
+  "A null adapter after a device loss is cached for the page's life, so WebGPU never comes back",
+  "WebGL readbacks run under pack state another tenant of the context may have left set"
+ ]
+}

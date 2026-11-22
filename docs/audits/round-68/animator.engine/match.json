@@ -1,0 +1,32 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   4,
+   2
+  ]
+ ],
+ "a": [
+  "A target tween whose `interpolator`/`interpolate`/`easing` throws at its start leaves the target attached, its destination committed, and a dead `Behind` on it",
+  "`takeUp` clears what waits beside the committed value before `attach`/`commitOrLeave` can refuse, so a refused start loses it",
+  "A throw from `owner.stop` inside `targets.show()` escapes the frame after `framing` is cleared, so no next frame is requested and the loop stops",
+  "Hold starts refuse bad `axes`/`value` after they have already interrupted the key's holder",
+  "`compositor: 'require'` physics at rest throws after interrupting, as do the begin-time refusals",
+  "A handed-off tween whose `interpolator`/`easing`/`style` throws while keyframes are sampled leaves its destination committed with no animation",
+  "Compositor runs are placed against `clock.frameT`, which is on the host's `now()` clock, not the document timeline `Element.animate` uses"
+ ],
+ "b": [
+  "A call refused for another animator's target first takes that animator's compositor run back and drops its `beside`",
+  "A target's `publish` that throws escapes the frame unguarded and stops the frame loop",
+  "`compositor: 'require'` on a spring that starts at rest throws only after interrupting what held its key",
+  "A throwing interrupt in `register` leaks the codec voice a plain tween or spring started ahead of it",
+  "A handed-off run taken back stays on the table forever when its continuation leaves on unmount"
+ ]
+}

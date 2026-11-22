@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "linkAnchor's reach accepts an infinite `reachPx`, so a drop ties to whatever node is first in the scan",
+  "linkTargetAt's segment tolerance grows past `reachPx` under a non-uniform view scale",
+  "handleSnapSource throws on every handle move when `angleStep` is NaN or ±Infinity",
+  "`@weasel-js/path-tools/groups` omits the `constraints` group its own actions use"
+ ],
+ "b": [
+  "addExtremeAnchors replaces the anchor selection even when the commit is refused",
+  "linkAnchor's reach accepts Infinity, so a drop links to an anchor anywhere on the canvas",
+  "girth.drag's reach accepts Infinity, so a press grabs a stroke edge anywhere"
+ ]
+}

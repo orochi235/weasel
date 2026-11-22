@@ -1,0 +1,14 @@
+packages/editing/src/actions/insert/action.ts
+packages/editing/src/actions/insert/commit.ts
+packages/editing/src/actions/insert/extras.ts
+packages/editing/src/actions/insert/frame.ts
+packages/editing/src/actions/insert/geometry.ts
+packages/editing/src/actions/insert/lands.ts
+packages/editing/src/actions/insert/live.ts
+packages/editing/src/actions/insert/params.ts
+packages/editing/src/actions/insert/placeAction.ts
+packages/editing/src/actions/insert/repositionAction.ts
+packages/editing/src/actions/insert/rotateAction.ts
+packages/editing/src/actions/insert/session.ts
+packages/editing/src/actions/insert/shape.ts
+packages/editing/src/actions/insert/style.ts

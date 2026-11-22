@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "`sparkler` and `starburst` draw a NaN path for a non-finite `outerR`, `innerR` or `rotation`",
+  "The `perforated` shape lets holes overlap that the `perforations` effect keeps apart"
+ ],
+ "b": [
+  "A sparkler badge's `outerR`, `innerR` and `rotation` are taken raw, so a non-finite value collapses its outline into the box's corner",
+  "A starburst badge's `outerR`, `innerR` and `rotation` are taken raw, so a non-finite value collapses its outline into the box's corner",
+  "A perforated badge accepts `holeRadius: Infinity` and writes `rx=\"Infinity\"`, an invalid attribute, so the holes silently disappear"
+ ]
+}

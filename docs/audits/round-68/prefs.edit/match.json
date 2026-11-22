@@ -1,0 +1,36 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   4,
+   3
+  ],
+  [
+   5,
+   5
+  ]
+ ],
+ "a": [
+  "bundleProblems marks a leaf \"named twice\" in a bundle that is never loaded with the other namer",
+  "copyNodes picks a copied leaf's key with uniqueKey where shiftNodes uses uniqueLeafKey, so a copy can take a key nested in another leaf's value path",
+  "Copying or moving a section re-keys only the section, so the leaves inside it can share a value path with leaves already in the target scope",
+  "aliasesTo keys a layout alias with a section root's dotted leaf key, which copyNodes rewrites with `_` instead",
+  "withRoots treats a step's asset as unchanged by the host while ignoring presets and nodeKind",
+  "printValue prints a `__proto__` key bare, so the exported literal sets a prototype instead of holding the key"
+ ],
+ "b": [
+  "A draft stores a list's or a map's object entry's fields as a pointer to the source's fields whenever one of them holds code, so every edit to those fields is lost on reopen",
+  "aliasesTo keys a layout's alias by the dialog's raw key, which under a section-root dialog is a dotted value path no group key may be",
+  "copyNodes and aliasNodes pick a leaf's key with uniqueKey, so a copy can land at a key holding a value inside or around a sibling's; shiftNodes uses uniqueLeafKey for exactly this",
+  "withRoots hands back the stepped asset whole when label, kind, lock and `over` match, so an undo takes back a host's later change to `nodeKind` or a Bundles asset's `presets`",
+  "Selecting action prefs that fire different unregistered keys drops the Action row silently: it is neither shown as mixed nor listed in `apart`",
+  "printValue prints a data key `__proto__` bare, so the exported literal sets a prototype instead of holding the entry"
+ ]
+}

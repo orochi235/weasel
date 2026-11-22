@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "Raising a translucent text fill's alpha to 100% in CharacterOptions keeps the old opacity",
+  "CharacterOptions shows \"No fill\" off, not mixed, for a range that is partly unfilled",
+  "A layer-list drag to the top level picks one parent from the first dragged row, which sends rows from inside a container to the root, not the page run"
+ ],
+ "b": [
+  "Children of an annotation group can never be reordered or moved in the layer list",
+  "Editing one field of a declared `units`/`clip` on a node that declares none writes a malformed scope",
+  "CharacterOptions shows \"No fill\" off, not indeterminate, on a range that mixes no fill with a color"
+ ]
+}
