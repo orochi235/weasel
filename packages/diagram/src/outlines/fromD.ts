@@ -1,5 +1,5 @@
 import type { Path } from '@weasel-js/core/math';
-import { pathFromD, transformPath } from '@weasel-js/geom';
+import { PATH_M, pathFromD, transformPath } from '@weasel-js/geom';
 import type { Bounds, OutlineDef } from './types';
 
 /** Parse unit-square path data, reporting each command that does not parse and a path that draws nothing.
@@ -10,7 +10,7 @@ export function parseUnitD(d: string, onProblem?: (message: string) => void): { 
     ok = false;
     onProblem?.(message);
   });
-  if (path.kind === 'polygon' && path.commands.length === 0) {
+  if (path.kind === 'polygon' && path.commands.every((c) => c === PATH_M)) {
     ok = false;
     onProblem?.('it draws nothing');
   }
