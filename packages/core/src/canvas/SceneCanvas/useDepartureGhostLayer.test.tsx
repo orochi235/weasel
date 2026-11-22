@@ -112,4 +112,18 @@ describe('useDepartureGhostLayer', () => {
     const { result } = renderHook(() => useDepartureGhostLayer({ scene, sceneSlot: { drawOne }, departures: departing([]) }));
     expect(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 })).toEqual([]);
   });
+
+  it('clips a departing container\'s children to its outline, as the scene does', () => {
+    const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const g = { id: asNodeId('g'), kind: 'group', layer: 'main', pose: at(0), data: null, parent: null, children: [], clip: 'outline' } as unknown as N;
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: null, parent: g.id } as unknown as N;
+    const ghost = removal(g, at(0), [{ node: k, pose: at(4), children: [] }]);
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene, sceneSlot: { drawOne }, departures: departing([{ removal: ghost, pose: at(0), alpha: 1 }]),
+    }));
+    const out = result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[];
+    const clipped = (cmds: readonly DrawCommand[]): number[] => cmds.flatMap((c) => c.kind !== 'group' ? []
+      : (c as GroupDrawCommand).clip ? rectsIn((c as GroupDrawCommand).children) : clipped((c as GroupDrawCommand).children));
+    expect(clipped(out)).toEqual([4]);
+  });
 });

@@ -5,7 +5,7 @@
  */
 import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
-import type { DrawCommand } from '@weasel-js/renderer';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { composeChildFrame, composesFrames, type PoseAdapter } from 'core/scene/composePose';
 import { viewPoseAdapter } from 'core/scene/scrollOffsets';
@@ -21,6 +21,8 @@ import { wrapWithPoseRotation } from '../poseRotation';
 import { createLayerPlaneLookup } from '../pickWalk';
 import { planeTransform } from '../planeClips';
 import { pixelScaleCtx } from '../pixelScale';
+import { ownClipOf } from '../ownClip';
+import { nodeShapesOf } from '../nodeShapeRegistry';
 
 export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args: {
   scene: Scene<TData, TLayer, TPose>;
@@ -65,9 +67,15 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
         const plane = planeOf?.(layer) ?? null;
         const v = viewOf(layer);
         const drawn = shown.has(layer) && slot.drawnPose ? slot.drawnPose(r.node, pose) : pose;
+        const scaled = pixelScaleCtx(v, dims.dpr);
         const children: DrawCommand[] = shown.has(layer)
-          ? wrapWithPoseRotation(drawOne(r.node, drawn, v, pixelScaleCtx(v, dims.dpr)), drawn) : [];
-        for (const c of r.children) draw(c, composes ? compose(pose, c.pose) : c.pose, plane, children);
+          ? wrapWithPoseRotation(drawOne(r.node, drawn, v, scaled), drawn) : [];
+        const kids: DrawCommand[] = [];
+        for (const c of r.children) draw(c, composes ? compose(pose, c.pose) : c.pose, plane, kids);
+        // The node's clip is its children's, not its own paint's.
+        const clip = kids.length > 0
+          ? ownClipOf(r.node, pose, () => slot.derivedPathOf?.(r.node, pose), nodeShapesOf(sc), scaled.scale) : null;
+        children.push(...(clip ? [{ kind: 'group', clip, children: kids } as GroupDrawCommand] : kids));
         const transform = planeTransform(plane, parentPlane);
         out.push(transform ? { kind: 'group', transform, children } : { kind: 'group', children });
       };
