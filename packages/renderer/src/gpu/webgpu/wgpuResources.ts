@@ -48,6 +48,8 @@ export interface WgpuTexture extends GpuTexture, Tracked {
   sampling: GpuSampling;
   /** Advanced whenever `gpu` is replaced, so a bind group made over the old one is not reused. */
   version: number;
+  /** Set once freed: a program still holding it samples the dummy, as a destroyed texture would void the submit. */
+  deleted: boolean;
 }
 
 const align4 = (n: number) => Math.ceil(n / 4) * 4;
@@ -157,7 +159,7 @@ export function createTexture(
   const gpu = gpuTexture(host.device, format, width, height);
   const texture: WgpuTexture = {
     kind: 'texture', id: nextTextureId++, format, gpu, view: gpu.createView(), width, height, mipLevels: 1,
-    sampling, version: 0, usedIn: -1,
+    sampling, version: 0, usedIn: -1, deleted: false,
   };
   upload(host, texture, data);
   return texture;

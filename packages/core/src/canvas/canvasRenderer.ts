@@ -285,7 +285,7 @@ export function leaseCanvasRenderer(defaults: { backend?: () => CanvasBackend } 
         canvas, renderer, shared, width, height, dpr, tileX: null, tileY: null,
         flattenTolerance: options.flattenTolerance, retainBudget: options.retainBudget,
         imageMinification: options.imageMinification, shaderKey: '',
-        lost: false,
+        lost: renderer.backend === 'webgl2' && renderer.isContextLost(),
         // A lost WebGPU device does not come back: the next paint rebuilds on another.
         offDeviceLost: renderer.backend === 'webgpu' ? subscribeDeviceLost(restored.emit) : null,
         onLost: () => { mine.lost = true; },

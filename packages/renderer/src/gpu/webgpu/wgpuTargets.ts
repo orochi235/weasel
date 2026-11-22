@@ -54,13 +54,15 @@ export function createTarget(host: ResourceHost, desc: GpuTargetDesc): WgpuTarge
   const samples: 1 | 4 = (desc.samples ?? 0) > 1 ? 4 : 1;
   if (samples > 1 && desc.ids) throw new Error('weasel: a multisampled target cannot have ids: its two color attachments would differ in sample count');
   const device = host.device;
+  // Every attachment is made at least 1×1, as `gpuTexture` makes the color; a 0 dimension is invalid.
+  const size = [Math.max(1, width), Math.max(1, height)];
   const color = samples === 1 ? emptyTexture(host, width, height, desc.filter ?? 'nearest') : null;
   const msaa = samples === 1 ? null
-    : device.createTexture({ label: 'target color ×4', size: [width, height], format: 'rgba8unorm', sampleCount: 4, usage: TextureUsage.RENDER_ATTACHMENT });
+    : device.createTexture({ label: 'target color ×4', size, format: 'rgba8unorm', sampleCount: 4, usage: TextureUsage.RENDER_ATTACHMENT });
   const ids = desc.ids ? emptyTexture(host, width, height, 'nearest') : null;
   const stencil = desc.stencil === true;
   const depth = stencil
-    ? device.createTexture({ label: 'target stencil', size: [width, height], format: DEPTH_STENCIL, sampleCount: samples, usage: TextureUsage.RENDER_ATTACHMENT })
+    ? device.createTexture({ label: 'target stencil', size, format: DEPTH_STENCIL, sampleCount: samples, usage: TextureUsage.RENDER_ATTACHMENT })
     : null;
   const msaaView = msaa?.createView();
   const depthView = depth?.createView();
@@ -84,6 +86,7 @@ export function createTarget(host: ResourceHost, desc: GpuTargetDesc): WgpuTarge
 }
 
 export function deleteTarget(host: ResourceHost, target: WgpuTarget): void {
+  for (const t of [target.color, target.ids]) if (t) t.deleted = true;
   for (const t of [target.color?.gpu, target.ids?.gpu, target.msaa, target.depth, target.resolved]) if (t) host.retire(t);
 }
 
@@ -147,7 +150,8 @@ export class CanvasTarget implements PassAttachments {
 
   finish(encoder: GPUCommandEncoder): void {
     const frame = this.frameTexture();
-    if (!frame) return;
+    // A canvas with no area has no valid current texture, and copying into one voids the submit.
+    if (!frame || this.width === 0 || this.height === 0) return;
     const into = this.context.getCurrentTexture();
     const width = Math.min(frame.width, into.width);
     const height = Math.min(frame.height, into.height);
@@ -174,7 +178,7 @@ export function encodeResolve(
 ): void {
   let from: GPUTexture;
   if (source.msaa) {
-    source.resolved ??= host.device.createTexture({ label: 'target resolved', size: [source.width, source.height], format: 'rgba8unorm', usage: ATTACHMENT });
+    source.resolved ??= host.device.createTexture({ label: 'target resolved', size: [source.msaa.width, source.msaa.height], format: 'rgba8unorm', usage: ATTACHMENT });
     const pass = encoder.beginRenderPass({
       colorAttachments: [{ view: source.msaa.createView(), resolveTarget: source.resolved.createView(), loadOp: 'load', storeOp: 'store' }],
     });

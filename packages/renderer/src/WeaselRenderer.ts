@@ -114,7 +114,8 @@ export class WeaselRenderer {
       groupState: this.groupState,
     }));
     // Last: a constructor that throws (a lost context fails the compile above) must leave no listener to rebuild it.
-    this.loss = watchContextLoss(opts.gpu ? null : this.canvas ?? lossTarget, () => this.onContextRestored());
+    // A context lost before this was built sent its loss event to no one.
+    this.loss = watchContextLoss(opts.gpu ? null : this.canvas ?? lossTarget, () => this.onContextRestored(), !opts.gpu && this.gpu.isContextLost());
   }
 
   /**

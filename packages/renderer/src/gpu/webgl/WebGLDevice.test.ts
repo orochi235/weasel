@@ -164,6 +164,21 @@ describe('WebGLDevice textures', () => {
     expect(gl.UNPACK_SKIP_PIXELS).toBe(0x0CF4);
   });
 
+  it('unbinds, once a frame, a sampler object another user of the context left on a unit it draws with', () => {
+    const { rec, gpu } = setup();
+    const { program, geometry, state } = drawable(gpu);
+    const texture = gpu.createTexture('rgba8', { min: 'nearest', mag: 'nearest', wrapS: 'clamp', wrapT: 'clamp' }, { width: 1, height: 1, data: null });
+    program.setTexture('u_a', texture);
+    program.setTexture('u_b', texture);
+    gpu.draw(state(), geometry, 3);
+    gpu.draw(state(), geometry, 3);
+    expect(argsOf(rec, 'bindSampler')).toEqual([[0, null], [1, null]]);
+    gpu.beginFrame();
+    rec.reset();
+    gpu.draw(state(), geometry, 3);
+    expect(argsOf(rec, 'bindSampler')).toEqual([[0, null], [1, null]]);
+  });
+
   it('empties a unit holding the texture a pass draws into', () => {
     const { rec, gpu } = setup();
     const { program, geometry, state } = drawable(gpu);
@@ -173,6 +188,28 @@ describe('WebGLDevice textures', () => {
     rec.reset();
     gpu.beginPass({ target, viewport: { x: 0, y: 0, width: 4, height: 4 } });
     expect(argsOf(rec, 'bindTexture')).toContainEqual([rec.gl.TEXTURE_2D, null]);
+  });
+
+  it('samples nothing for a texture the pass draws into, as WebGPU does, rather than binding a feedback loop', () => {
+    const { rec, gpu } = setup();
+    const { program, geometry, state } = drawable(gpu);
+    const target = gpu.createTarget({ width: 4, height: 4, ids: true });
+    const other = gpu.createTexture('rgba8', { min: 'nearest', mag: 'nearest', wrapS: 'clamp', wrapT: 'clamp' }, { width: 1, height: 1, data: null });
+    program.setTexture('u_a', target.color);
+    program.setTexture('u_b', target.ids);
+    gpu.beginPass({ target, viewport: { x: 0, y: 0, width: 4, height: 4 } });
+    rec.reset();
+    gpu.draw(state(), geometry, 3);
+    const bound = argsOf(rec, 'bindTexture').map(([, tex]) => tex);
+    expect(bound).not.toContain((target.color as unknown as { handle: WebGLTexture }).handle);
+    expect(bound).not.toContain((target.ids as unknown as { handle: WebGLTexture }).handle);
+    gpu.endPass();
+    program.setTexture('u_b', other);
+    rec.reset();
+    gpu.draw(state(), geometry, 3);
+    expect(argsOf(rec, 'bindTexture').map(([, tex]) => tex)).toEqual([
+      (target.color as unknown as { handle: WebGLTexture }).handle, (other as unknown as { handle: WebGLTexture }).handle,
+    ]);
   });
 });
 

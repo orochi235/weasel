@@ -2,7 +2,7 @@
  *  structs, laid out under WGSL's uniform address-space rules, and its group bindings. */
 
 import { getOwn } from '@weasel-js/registry';
-import { stripWgslComments, WGSL_INT, wgslInt } from './wgslLexical';
+import { attributeInt, moduleConsts, stripWgslComments, WGSL_INT, wgslInt } from './wgslLexical';
 
 export type WgslScalar = 'f32' | 'i32' | 'u32';
 
@@ -124,13 +124,6 @@ function parseType(
   throw unlaid.get(s) ?? new Error(`WGSL: unsupported type ${src.trim()}`);
 }
 
-function attributeInt(attr: string, arg: string | undefined, consts: Map<string, number>): number {
-  const s = (arg ?? '').trim();
-  const n = wgslInt(s) ?? consts.get(s);
-  if (n === undefined) throw new Error(`WGSL: cannot read ${attr.trim()}; give it a literal or a module-scope const`);
-  return n;
-}
-
 function parseStruct(
   name: string, body: string, structs: Map<string, WgslStruct>, consts: Map<string, number>, unlaid: Unlaid,
 ): WgslStruct {
@@ -142,7 +135,7 @@ function parseStruct(
     let alignAttr: number | undefined;
     let sizeAttr: number | undefined;
     for (;;) {
-      const a = /^@(\w+)(?:\(([^)]*)\))?\s*/.exec(decl);
+      const a = /^@(\w+)(?:\s*\(([^)]*)\))?\s*/.exec(decl);
       if (!a) break;
       if (a[1] === 'align') alignAttr = attributeInt(a[0], a[2], consts);
       if (a[1] === 'size') sizeAttr = attributeInt(a[0], a[2], consts);
@@ -213,37 +206,18 @@ function plainStruct(
   }
 }
 
-/** The `{`…`}` depth of `src` at each of `at`, given in ascending order. */
-function braceDepths(src: string, at: readonly number[]): number[] {
-  const out: number[] = [];
-  let depth = 0;
-  let i = 0;
-  for (const pos of at) {
-    for (; i < pos; i++) {
-      if (src[i] === '{') depth++;
-      else if (src[i] === '}') depth--;
-    }
-    out.push(depth);
-  }
-  return out;
-}
-
 /** Reflect the structs and `@group`/`@binding` variables a WGSL module declares. Every struct is laid out by
  *  WGSL's one set of rules; `target` says whether a uniform struct must also keep the stricter uniform ones. */
 export function reflectWgsl(source: string, target: WgslTarget): WgslReflection {
   const src = stripWgslComments(source);
   const structs = new Map<string, WgslStruct>();
-  const consts = new Map<string, number>();
+  const consts = moduleConsts(src);
   const unlaid = new Map<string, Error>();
   const bindings: WgslBinding[] = [];
-  const token = new RegExp(String.raw`\bconst\s+(\w+)\s*(?::\s*\w+\s*)?=\s*(${WGSL_INT})\s*;|\bstruct\s+(\w+)\s*\{([^}]*)\}|((?:@\w+(?:\([^)]*\))?\s*)+)var(?:<([^>]*)>)?\s+(\w+)\s*:\s*([^;]+);`, 'g');
+  const token = new RegExp(String.raw`\bconst\s+(\w+)\s*(?::\s*\w+\s*)?=\s*(${WGSL_INT})\s*;|\bstruct\s+(\w+)\s*\{([^}]*)\}|((?:@\w+(?:\s*\([^)]*\))?\s*)+)var(?:<([^>]*)>)?\s+(\w+)\s*:\s*([^;]+);`, 'g');
   // Module-scope declarations may come in any order: consts first, then structs until none is left that the
   // ones laid out so far can lay out, then the variables.
   const matches = [...src.matchAll(token)];
-  const depth = braceDepths(src, matches.map((m) => m.index));
-  matches.forEach((m, i) => {
-    if (m[1] && depth[i] === 0) consts.set(m[1], wgslInt(m[2])!);
-  });
   let pending = matches.filter((m) => m[3]);
   for (let laid = true; laid && pending.length > 0;) {
     laid = false;
@@ -272,9 +246,10 @@ export function reflectWgsl(source: string, target: WgslTarget): WgslReflection 
   for (const m of matches) {
     if (m[1] || m[3]) continue;
     const attrs = m[5];
-    const group = /@group\((\d+)\)/.exec(attrs);
-    const binding = /@binding\((\d+)\)/.exec(attrs);
-    if (!group || !binding) continue;
+    const group = /@group\s*\(([^)]*)\)/.exec(attrs);
+    const binding = /@binding\s*\(([^)]*)\)/.exec(attrs);
+    if (!group && !binding) continue;
+    if (!group || !binding) throw new Error(`WGSL: ${m[7]} needs both @group and @binding`);
     const space = (m[6] ?? '').split(',')[0].trim();
     const type = m[8].trim();
     if (space === 'uniform' && unlaid.has(type)) throw unlaid.get(type)!;
@@ -284,7 +259,7 @@ export function reflectWgsl(source: string, target: WgslTarget): WgslReflection 
       : /^sampler/.test(type) ? 'sampler'
       : 'texture';
     bindings.push({
-      group: Number(group[1]), binding: Number(binding[1]), name: m[7], kind,
+      group: attributeInt(group[0], group[1], consts), binding: attributeInt(binding[0], binding[1], consts), name: m[7], kind,
       ...(kind === 'uniform' ? { struct: structs.has(type) ? type : plainUniform(m[7]) } : {}),
     });
   }

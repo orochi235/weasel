@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { reflectWgsl } from './wgslReflect';
+import { reflectEntries } from './wgslEntries';
 import { declaresEntryPoints } from './wgsl/customPrelude';
 import { createUniformBlock } from './wgslUniforms';
 
@@ -245,5 +246,34 @@ describe('reflectWgsl on a uniform of a plain type', () => {
 
   it('refuses one it cannot lay out, naming the binding', () => {
     expect(() => reflectWgsl('@group(1) @binding(1) var<uniform> on: bool;', STANDARD)).toThrow(/uniform on: .*bool/);
+  });
+});
+
+describe('a WGSL attribute given by a const or with spaces', () => {
+  it('places a binding at the group and slot it names', () => {
+    const r = reflectWgsl([
+      'const TEX = 1;',
+      'const GROUP: u32 = 0x1u;',
+      '@group(GROUP) @binding(TEX) var u_tex: texture_2d<f32>;',
+      '@group( 1 ) @binding (2) var u_tex_sampler: sampler;',
+    ].join('\n'), STANDARD);
+    expect(r.bindings.map((b) => [b.name, b.group, b.binding])).toEqual([['u_tex', 1, 1], ['u_tex_sampler', 1, 2]]);
+  });
+
+  it('refuses one it cannot read rather than leaving it out of the layout', () => {
+    expect(() => reflectWgsl('@group(1) @binding(MISSING) var t: texture_2d<f32>;', STANDARD)).toThrow(/cannot read @binding/);
+    expect(() => reflectWgsl('@group(1) var t: texture_2d<f32>;', STANDARD)).toThrow(/needs both @group and @binding/);
+  });
+
+  it('reads a vertex input and a fragment output at the location it names', () => {
+    const e = reflectEntries([
+      'const UV = 2;',
+      'struct In { @location( 0 ) a_position: vec2f, @location(UV) uv: vec2f }',
+      '@vertex fn vs(v: In, @location (3) a_post: f32) -> @builtin(position) vec4f { return vec4f(v.a_position, 0.0, 1.0); }',
+      '@fragment fn fs() -> @location( 0 ) vec4f { return vec4f(1.0); }',
+    ].join('\n'));
+    expect([...e.attributes]).toEqual(expect.arrayContaining([['a_position', 0], ['a_uv', 2], ['a_post', 3]]));
+    expect([...e.inputs].sort()).toEqual([0, 2, 3]);
+    expect([...e.outputs]).toEqual([0]);
   });
 });

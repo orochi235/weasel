@@ -16,6 +16,7 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
   readonly cache: GlCache;
   /** The target the open pass draws into; `null` the canvas. */
   private target: GlTarget | null = null;
+  private drawnInto: readonly (res.GlTexture | null)[] = [];
 
   readonly limits: GpuLimits;
   readonly completionStatus: number | null;
@@ -162,6 +163,7 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     const cache = this.cache;
     const target = desc.target as GlTarget | null;
     this.target = target;
+    this.drawnInto = target ? [target.color, target.ids] : [];
     cache.bindFramebuffer(target ? target.fbo : null);
     if (target?.color) cache.unbindTexture(target.color.handle);
     cache.setViewport(desc.viewport);
@@ -183,6 +185,7 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
 
   endPass(): void {
     this.target = null;
+    this.drawnInto = [];
   }
 
   setViewport(rect: GpuRect): void {
@@ -218,7 +221,8 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     cache.setStencil(state.stencil);
     const geom = geometry as res.GlGeometry;
     cache.bindVertexArray(geom.vao);
-    cache.bindTextures(program.textures as readonly (res.GlTexture | null)[]);
+    // A texture the pass draws into reads as unset, as on WebGPU, rather than a feedback loop GL drops the draw for.
+    cache.bindTextures(program.textures as readonly (res.GlTexture | null)[], this.drawnInto);
     const type = res.indexType(gl, geom.indexFormat);
     const offset = firstIndex * (geom.indexFormat === 'uint16' ? 2 : 4);
     if (instances === undefined) gl.drawElements(gl.TRIANGLES, count, type, offset);
