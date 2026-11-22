@@ -7,6 +7,7 @@ import {
   type SetStateAction,
   useContext,
   useEffect,
+  useLayoutEffect,
   useState,
 } from 'react';
 import { DEFAULT_LAYOUT, type StoryGlobals, type StoryLayout, type StoryViewport } from '../protocol/messages';
@@ -16,7 +17,7 @@ import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } fr
 import { type ArgType, argChoices, argsToSchema, choiceLabel, choiceValue, type ControlMatchers } from './argsToSchema';
 import { isPlainObject } from '@weasel-js/core';
 import { withUnsent } from './portSafe';
-import { getOwn, setOwn } from '@weasel-js/registry';
+import { createEmitter, getOwn, setOwn } from '@weasel-js/registry';
 import { API_EXPORT } from '../story/api';
 import { PROP_ARG_TYPES_EXPORT } from './propArgTypes';
 import { timelineOf } from '../timeline/declare';
@@ -121,19 +122,47 @@ interface StoryLocals {
 
 const LocalArgsContext = createContext<StoryLocals | null>(null);
 
+/** A story's frame-local args as its outermost scope last committed them, for what reads args outside its render. */
+interface LocalHolder {
+  readonly current: LocalArgs;
+  readonly changed: ReturnType<typeof createEmitter>;
+  report(local: LocalArgs): void;
+}
+
+function localHolder(): LocalHolder {
+  const changed = createEmitter();
+  const holder = {
+    current: {} as LocalArgs,
+    changed,
+    report(local: LocalArgs) {
+      if (holder.current === local) return;
+      const quiet = Object.keys(local).length === 0 && Object.keys(holder.current).length === 0;
+      holder.current = local;
+      if (!quiet) changed.emit();
+    },
+  };
+  return holder;
+}
+
 /** The outermost scope of a story holds its frame-local args, so its decorators and render share them. */
 function Scoped({
   id,
   build,
   fn,
+  holder,
 }: {
   id: string;
   build: (local: StoryLocals) => [ArgsScope, CsfContext];
   fn: (context: CsfContext) => ReactNode;
+  holder: LocalHolder;
 }): ReactNode {
   const outer = useContext(LocalArgsContext);
   const [local, setLocal] = useState<LocalArgs>({});
-  const shared = outer?.story === id ? outer : { story: id, local, setLocal };
+  const owns = outer?.story !== id;
+  const shared = owns ? { story: id, local, setLocal } : outer;
+  useLayoutEffect(() => {
+    if (owns) holder.report(local);
+  }, [owns, local, holder]);
   const [scope, context] = build(shared);
   const { config } = scope;
   const prune = shared.setLocal;
@@ -183,6 +212,7 @@ export function loadCsfModule(
     // A render that takes no args draws the same thing whatever a prop's control says.
     const fromProps = render === undefined || takesArgs(render) ? propArgTypes : undefined;
     const argTypes = combineParameters(fromProps, meta.argTypes, spec.argTypes) as Record<string, ArgType>;
+    const holder = localHolder();
     const config = argsToSchema(args, argTypes, isPlainObject(matchers) ? matchers : {});
     const choices = argChoices(argTypes);
     const defaults = config.defaults() as Args;
@@ -210,6 +240,7 @@ export function loadCsfModule(
     const scoped = (ctx: StoryContext, fn: (context: CsfContext) => ReactNode): ReactNode =>
       createElement(Scoped, {
         id,
+        holder,
         build: ({ local, setLocal }: StoryLocals): [ArgsScope, CsfContext] => {
           const context = csfContext(ctx.config, ctx.globals, local);
           const scope: ArgsScope = {
@@ -257,9 +288,9 @@ export function loadCsfModule(
       isolate: typeof isolate === 'string' ? isolate : null,
       play: play
         ? ({ canvasElement, config, globals }: PlayContext) =>
-            play({ ...csfContext(config, globals), canvasElement, step: async (_label, fn) => fn() })
+            play({ ...csfContext(config, globals, holder.current), canvasElement, step: async (_label, fn) => fn() })
         : null,
-      timeline: timelineOf(forgeParams?.timeline, (config) => csfContext(config, {}).args),
+      timeline: timelineOf(forgeParams?.timeline, (config) => csfContext(config, {}, holder.current).args),
     });
   }
   return stories;

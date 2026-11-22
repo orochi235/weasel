@@ -88,6 +88,26 @@ describe('useArgs with values that cannot cross the port', () => {
     expect(screen.getByText('mine')).toBeInTheDocument();
   });
 
+  it("hands play the args the render sees, frame-local ones included", async () => {
+    let captured: ReturnType<typeof useArgs> | undefined;
+    let played: Args | undefined;
+    const story = load({
+      render: function Read() {
+        captured = useArgs();
+        return null;
+      },
+      play: ({ args }: { args: Args }) => {
+        played = args;
+      },
+    });
+    const { port } = mount(story);
+    const next = () => 'next';
+    act(() => captured?.[1]({ onClick: next, label: undefined }));
+    await story.play?.({ canvasElement: document.body, config: port.config, globals: {} } as never);
+    expect(played?.onClick).toBe(next);
+    expect(played && Object.hasOwn(played, 'label')).toBe(false);
+  });
+
   it('renders a choice of non-string options with the option itself, and sends an update as its string form', () => {
     let captured: ReturnType<typeof useArgs> | undefined;
     const story = loadCsfModule(
