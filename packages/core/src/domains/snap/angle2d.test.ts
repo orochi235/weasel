@@ -80,6 +80,16 @@ describe('SnapSession.angle', () => {
     expect(session({}, [twice]).angle(10 * DEG_TO_RAD, FREE).theta).toBe(first);
   });
 
+  it('keeps a held angle at theta0 though a step and a source offer required angles nearer', () => {
+    const required: SnapSource = {
+      id: 'req', roles: [], gestures: ['rotate'], collect: () => [],
+      *angles() { yield { angle: 40 * DEG_TO_RAD, required: true }; },
+    };
+    const s = session({ theta0: 0, constrain: { step: 45 * DEG_TO_RAD } }, [required]);
+    expect(s.angle(40 * DEG_TO_RAD, { ...SHIFT, hold: true }).theta).toBeCloseTo(0, 9);
+    expect(s.angle(40 * DEG_TO_RAD, { ...FREE, hold: true }).theta).toBeCloseTo(0, 9);
+  });
+
   it('throws on a step that is zero or not finite, as a point gesture does', () => {
     for (const step of [0, NaN, Infinity]) {
       expect(() => session({ constrain: { step } }, []).angle(0.3, SHIFT)).toThrow(RangeError);

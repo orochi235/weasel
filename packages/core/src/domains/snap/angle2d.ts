@@ -52,17 +52,17 @@ function collectAngles(
   reachOf: (s: SnapSource) => number,
 ): SnapCandidate<SnapMarks>[] {
   const { req } = inputs;
+  const theta0 = req.theta0 ?? 0;
+  if (mods.hold) {
+    const at = theta0 + TURN * Math.round((theta - theta0) / TURN);
+    return [{ probe: PROBE, locus: { at: [at], dirs: [] }, source: 'hold', order: -1, tier: 'target', reachPx: 0, required: true, mark: [] }];
+  }
   const out: SnapCandidate<SnapMarks>[] = [];
   const c = req.constrain;
   if (mods.constrain && typeof c === 'object') {
     for (const at of stepAngles(theta, c.step)) {
       out.push({ probe: PROBE, locus: { at: [at], dirs: [] }, source: 'constrain', order: -1, tier: 'target', reachPx: 0, required: true });
     }
-  }
-  const theta0 = req.theta0 ?? 0;
-  if (mods.hold) {
-    const at = theta0 + TURN * Math.round((theta - theta0) / TURN);
-    out.push({ probe: PROBE, locus: { at: [at], dirs: [] }, source: 'hold', order: -1, tier: 'target', reachPx: 0, required: true, mark: [] });
   }
   if (mods.suspend) return out;
   const q: AngleCollect = {
