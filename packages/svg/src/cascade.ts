@@ -10,7 +10,7 @@
 
 import { createPart } from '@weasel-js/registry';
 import { parseDeclarations, type Declaration } from './cssScan';
-import { containerQueryHolds, queryContainerOf } from './container';
+import { containerLonghands, containerQueryHolds, queryContainerOf } from './container';
 import { compareSpecificity, specificity, type Specificity } from './specificity';
 import {
   DEFAULT_MEDIA_ENVIRONMENT, evaluateMediaQuery, mediaEnvironmentFor, type SvgMediaEnvironment,
@@ -156,6 +156,10 @@ const cascaded = createPart((el: Element): ReadonlyMap<string, string> => {
     below = new Map(out);
   };
   const take = (prop: string, value: string, written: string): void => {
+    if (prop === 'container') {
+      for (const [longhand, part] of containerLonghands(value)) take(longhand, part, written);
+      return;
+    }
     if (isDeclarationInvalid(prop, value)) {
       sheet?.onWarn?.(`${written} is not a valid ${prop}; it is ignored, as CSS ignores it`);
       return;
