@@ -179,4 +179,13 @@ describe('RegistryBrowser — grouped categories', () => {
     fireEvent.click(screen.getByText('first'));
     expect(onSelectionChange).toHaveBeenLastCalledWith({ category: 'a/b', id: 'c' });
   });
+
+  it('filters on its own text when given onFilterChange without filter, and reports each edit', () => {
+    const heard: string[] = [];
+    renderWithIcons(browser({ onFilterChange: (next) => heard.push(next) }));
+    filter('ellipse');
+    expect(screen.getByRole('textbox', { name: 'Filter registry' })).toHaveValue('ellipse');
+    expect(queryItem(/useRectTool/)).toBeNull();
+    expect(heard).toEqual(['ellipse']);
+  });
 });
