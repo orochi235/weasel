@@ -64,6 +64,13 @@ describe('reading DOT', () => {
     expect(p.data.containers?.map((c) => c.members)).toEqual([['a'], ['b']]);
   });
 
+  it('reads \\G in a cluster label as the cluster\'s name, and keeps \\N where no node owns the label', () => {
+    const p = page('digraph G { label="\\G \\N"; subgraph cluster_x { label="\\G \\N"; a } a -> b [label="\\N"] }');
+    expect(p.name).toBe('G \\N');
+    expect(p.data.containers![0]!.label).toBe('cluster_x \\N');
+    expect(p.data.edges[0]!.label).toBe('\\N');
+  });
+
   it('reads plain subgraphs as scopes only, and nests clusters', () => {
     const p = page('digraph { subgraph cluster_x { subgraph { rank=same; a } subgraph cluster_y { b } } c }');
     expect(p.data.containers).toEqual([

@@ -257,7 +257,7 @@ function readEdge(r: DotReader, e: RawEdge): DataEdge {
   const names = { edge: `${e.tail.id}${r.graph.directed ? '->' : '--'}${e.head.id}`, tail: e.tail.id, head: e.head.id };
   const textOf = (key: string) => {
     const value = e.attrs.get(key);
-    const joined = value === undefined ? '' : labelLines(value, '', r.graph.id ?? '', names).join(' ');
+    const joined = value === undefined ? '' : labelLines(value, undefined, r.graph.id ?? '', names).join(' ');
     return joined === '' ? undefined : joined;
   };
   const lines = [textOf('label')].filter((l) => l !== undefined);
@@ -294,7 +294,7 @@ function readCluster(
     ...(dash !== undefined ? { dash } : {}),
   };
   const label = attrs.get('label');
-  const lines = label === undefined ? [] : labelLines(label, id, r.graph.id ?? '');
+  const lines = label === undefined ? [] : labelLines(label, undefined, clusterName(id));
   return {
     id: ids.get(id)!, role: 'container',
     ...(lines.length > 0 ? { label: lines.join(' ') } : {}),
@@ -358,7 +358,7 @@ export function readDot(text: string): ImportResult {
   const direction = rankdir !== undefined ? getOwn(DIRECTIONS, rankdir) : undefined;
   const name = root.graph.get('label');
   const page = graphPage({
-    name: name !== undefined ? labelLines(name, '', graph.id ?? '').join(' ') : graph.id,
+    name: name !== undefined ? labelLines(name, undefined, graph.id ?? '').join(' ') : graph.id,
     ...(direction !== undefined ? { direction } : {}),
     nodes, edges, containers,
     ...(placed !== null ? { size: placed.size } : {}),
