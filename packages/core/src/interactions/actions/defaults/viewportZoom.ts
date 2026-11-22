@@ -25,7 +25,7 @@ function keyAnchor(view: ViewApi): { x: number; y: number } {
  * Tuning for the animated form of the discrete zoom steps.
  */
 export interface ViewportZoomAnimateOptions extends ViewAnimationOptions {
-  /** Duration for the Cmd+0 reset branch. Defaults to `ms`. */
+  /** Duration for the whole-view steps, Cmd+0 reset and Cmd+Alt+0 Fit Content. Defaults to `ms`. */
   resetMs?: number;
 }
 
@@ -49,7 +49,7 @@ export interface ViewportZoomOptions {
    *  keeps its scale and its translation. Default `'both'`. Cmd+0 still resets both. */
   axis?: ZoomAxis;
   /**
-   * Glide the discrete steps (Cmd+=, Cmd+-, Cmd+0) instead of jumping.
+   * Glide the discrete steps (Cmd+=, Cmd+-, Cmd+0, Cmd+Alt+0) instead of jumping.
    * `true` uses the kit defaults; an object tunes them. Wheel and pinch never
    * animate — their input already samples every frame. Requires a `view` dep
    * that implements `animate`; without one this is ignored.
