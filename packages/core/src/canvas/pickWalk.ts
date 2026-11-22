@@ -26,6 +26,7 @@ import { rectToPlane, type PlaneMap } from 'core/viewport/parallax';
 import { clipCarrier } from './planeClips';
 import type { NodeShapes } from './nodeShapeRegistry';
 import { reaches } from './pickReach';
+import type { LodState } from './lod/lodState';
 
 /** The subset of a node the walk itself reads. Deliberately structural: a
  *  bare adapter's node satisfies it as readily as a `SceneNode`. */
@@ -87,6 +88,10 @@ export interface PickSource<TPose> {
   candidates?(
     broadFor: (layer: string | undefined) => PickBroad | null | undefined,
   ): readonly PickCandidate<TPose>[] | null;
+  /** What the asking view drew each node as last frame. A node drawn at `'none'` or inside a
+   *  subtree drawn as one rung cannot be hit; the group drawn as that rung is one item even to a
+   *  query that excludes groups. Omit for a view with no level of detail. */
+  lod?: Pick<LodState, 'rungOf' | 'skips' | 'collapsedAbove'>;
 }
 
 /** The box a query cannot hit outside of, for a source's index to look up. */
@@ -238,8 +243,10 @@ export function pickWalk<TPose>(
     const query = queryFor(layer);
     return query === null ? null : query.broad;
   }) : null) ?? order;
+  const lod = src.lod;
   for (const node of visit) {
-    if (!includeGroups && node.kind === 'group') continue;
+    if (!includeGroups && node.kind === 'group' && lod?.skips(node.id) !== true) continue;
+    if (lod !== undefined && lod.rungOf(node.id) === 'none') continue;
     if (!passesPickGates(src, node, q.includeLocked === true)) continue;
 
     const query = queryFor(node.layer);
@@ -248,6 +255,8 @@ export function pickWalk<TPose>(
     const derived = src.derivedPathOf?.(node);
     const inherited = inheritsPaint(node) ? inheritedPaintOf(node, src.parentsOf(node)) : undefined;
     if (!reaches(node, pose, derived, inherited, query, parentsOf, copying, lookups, src.shapes)) continue;
+    // Drawn as part of a collapsed ancestor, which answers for it as its own candidate.
+    if (lod !== undefined && lod.collapsedAbove(src.parentsOf(node)) !== null) continue;
     out.push(node.id);
   }
 

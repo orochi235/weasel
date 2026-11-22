@@ -18,6 +18,10 @@ import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { pixelScaleCtx } from './pixelScale';
 import { sceneLayerKey } from './sceneLayerPaint';
 import { wrapNodeOutput } from './wrapNodeOutput';
+import { createLodWalk, type LodOptions } from './lod/lodWalk';
+import type { LodState } from './lod/lodState';
+import type { TileDamage, TileOptions } from 'core/layers/tiles';
+import type { TileBox } from '@weasel-js/tiles';
 
 /** Scene slot config — describes how to draw one object with its effective pose. */
 export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
@@ -85,12 +89,25 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
    * trims commands after painting.
    */
   paintBounds?: PaintBoundsFn<TNode, TPose>;
+  /** Level of detail for the scene's groups: see `LodOptions`. Painters with a `ladder`, and nodes
+   *  with a `lod`, switch representations by size on screen whether or not this is set. */
+  lod?: LodOptions;
+  /** Scene layers kept as tile pyramids, by id: see `TileOptions`. A tiled layer is baked into
+   *  tiles at power-of-two scales and drawn from them, its tiles staled by the boxes each edit moves.
+   *  A parallax layer draws live. */
+  tiles?: Readonly<Record<string, TileOptions>>;
 }
 
 /** A scene slot wired to its scene, which can also say which subtrees cannot reach a view
- *  `rect` (screen pixels) by `paintBounds`, for the cull to skip them unwalked. */
+ *  `rect` (screen pixels) by `paintBounds`, for the cull to skip them unwalked. `coarser` lets
+ *  boxes taken at a coarser zoom answer, as for a tile bake. */
 export interface WiredSceneSlot<TNode extends { id: string }, TPose> extends SceneSlotConfig<TNode, TPose> {
-  subtreeCull?: (rect: Rect) => SubtreeCullFor | undefined;
+  subtreeCull?: (rect: Rect, opts?: { coarser?: boolean }) => SubtreeCullFor | undefined;
+  /** What this view drew each node as last frame, which its picking reads too. Absent, each frame
+   *  picks rungs afresh, with no hysteresis. */
+  lodState?: LodState;
+  /** Where a tiled scene layer's content lies and what each change moved: see `createSceneTileSources`. */
+  tileSourceFor?: (layer: string) => { bounds(): TileBox | null; damage: TileDamage };
 }
 
 /**
@@ -160,16 +177,18 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
   const { drawOne, derivedPathOf } = withAdapterDerivedPaths(cfg, adapter, toPose);
   const postProcess = cfg.postProcess;
   const drawnAt = cfg.drawnPose ?? ((_obj: TNode, pose: TPose) => pose);
-  const finish = cfg.cull
-    ? (cmds: DrawCommand[], view: View, dims: LayerDims): DrawCommand[] =>
-      cullDrawCommands(cmds, viewToMat3(view), { x: 0, y: 0, width: dims.width, height: dims.height }, dims.dpr)
-    : (cmds: DrawCommand[]): DrawCommand[] => cmds;
-  const paintBounds = cfg.cull ? cfg.paintBounds : undefined;
-  const culledIn = (view: View, dims: Dims) => paintBounds
-    ? paintMissesView(paintBounds, view, { x: 0, y: 0, width: dims.width, height: dims.height })
-    : undefined;
-  const prunedIn = (dims: Dims) => paintBounds && cfg.subtreeCull
-    ? cfg.subtreeCull({ x: 0, y: 0, width: dims.width, height: dims.height })
+  // A tile bake is culled to its tile whatever the slot says: a tile shows a small part of the scene.
+  const culls = (dims: LayerDims) => cfg.cull === true || dims.bake === true;
+  const finish = (cmds: DrawCommand[], view: View, dims: LayerDims): DrawCommand[] => (culls(dims)
+    ? cullDrawCommands(cmds, viewToMat3(view), { x: 0, y: 0, width: dims.width, height: dims.height }, dims.dpr)
+    : cmds);
+  const paintBoundsIn = (dims: LayerDims) => (culls(dims) ? cfg.paintBounds : undefined);
+  const culledIn = (view: View, dims: LayerDims) => {
+    const paintBounds = paintBoundsIn(dims);
+    return paintBounds ? paintMissesView(paintBounds, view, { x: 0, y: 0, width: dims.width, height: dims.height }) : undefined;
+  };
+  const prunedIn = (dims: LayerDims) => paintBoundsIn(dims) && cfg.subtreeCull
+    ? cfg.subtreeCull({ x: 0, y: 0, width: dims.width, height: dims.height }, dims.bake ? { coarser: true } : undefined)
     : undefined;
   return {
     id: slot?.id ?? 'scene',
@@ -179,9 +198,10 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
       const hidden = hideIds();
       const a = adapter;
       if (a && cfg.objects === undefined && drawOne) {
-        const filteredDrawOne = (obj: TNode, pose: TPose, v: View): DrawCommand[] => {
+        const filteredDrawOne = (obj: TNode, pose: TPose, v: View, rung?: string): DrawCommand[] => {
           if (hidden && hidden.has(obj.id)) return [];
-          const cmds = drawOne(obj, pose, v, pixelScaleCtx(v, dims.dpr));
+          const ctx = pixelScaleCtx(v, dims.dpr);
+          const cmds = drawOne(obj, pose, v, rung === undefined ? ctx : { ...ctx, rung });
           if (debugSink) {
             const b = boundsOfFn ? boundsOfFn(obj.id) : null;
             if (b) debugSink.recordBounds(obj.id, b);
@@ -214,6 +234,11 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           view,
           cfg.shapes,
           prunedIn(dims),
+          createLodWalk({
+            shapes: cfg.shapes, dpr: dims.dpr, options: cfg.lod,
+            // A tile bake is no frame of this view's: it picks rungs afresh and records none.
+            ...(cfg.lodState && !dims.bake ? { state: cfg.lodState, key: slot?.forLayer ?? 'scene' } : {}),
+          }) as Parameters<typeof buildSceneTree>[10],
         );
         return finish(postProcess ? postProcess(tree, view, dims) : tree, view, dims);
       }
@@ -260,11 +285,19 @@ export function buildSceneLayers<TNode extends { id: string }, TPose>(
   if (!sceneLayerIds || sceneLayerIds.length === 0) {
     return [{ key: 'scene', layer: buildSceneLayer(cfg, adapter, boundsOfFn, hideIds) }];
   }
-  return sceneLayerIds.map((id) => ({
-    key: sceneLayerKey(id),
-    layer: buildSceneLayer(cfg, adapter, boundsOfFn, hideIds, {
-      id: sceneLayerKey(id),
-      forLayer: id,
-    }),
-  }));
+  const parallax = new Set(adapter!.getLayers().filter((l) => l.parallax).map((l) => l.id));
+  return sceneLayerIds.map((id) => {
+    const layer = buildSceneLayer(cfg, adapter, boundsOfFn, hideIds, { id: sceneLayerKey(id), forLayer: id });
+    const opts = cfg.tiles?.[id];
+    // A plane moves against the camera's world, which tiles are kept in.
+    if (opts && !parallax.has(id)) {
+      const source = cfg.tileSourceFor?.(id);
+      layer.tiles = {
+        ...opts,
+        ...(opts.bounds ?? source ? { bounds: opts.bounds ?? source!.bounds } : {}),
+        ...(opts.damage ?? source ? { damage: opts.damage ?? source!.damage } : {}),
+      };
+    }
+    return { key: sceneLayerKey(id), layer };
+  });
 }

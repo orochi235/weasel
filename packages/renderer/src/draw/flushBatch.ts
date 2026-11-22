@@ -61,6 +61,10 @@ export function flushBatch(ctx: DrawContext): void {
       FIELD_SCALES[2 * (i + 1) + 1] = entry.fieldScale[1];
       continue;
     }
+    if (entry.kind === 'target') {
+      prog.setTexture('u_samplers', entry.texture, i + 1);
+      continue;
+    }
     prog.setTexture('u_samplers', ctx.imageCache.texture(entry.image), i + 1);
     // Per flush, not at upload: the same bitmap can be drawn at both filters in
     // one frame. The device skips the write when the texture already carries

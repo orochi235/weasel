@@ -5,6 +5,7 @@ import type { ResolvedRun } from '@weasel-js/text';
 import type { TextVerticalAlign } from '@weasel-js/text';
 import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgram';
 import type { Effect } from './effects/types';
+import type { TileTexture } from './retain/TileTextures';
 import type { BlendFactors, CompositeOp } from './effects/compositeOp';
 
 /** DrawCommand variants implemented through step 6. */
@@ -15,6 +16,7 @@ export type DrawCommand =
   | TextLayerDrawCommand
   | ImageDrawCommand
   | SpritesDrawCommand
+  | TileDrawCommand
   | ShaderDrawCommand;
 
 /** Draw a path, filled and/or stroked. The workhorse command: every shape the
@@ -240,6 +242,23 @@ export interface ImageDrawCommand {
    *  move — a flipped draw covers exactly the pixels an unflipped one does. */
   flipX?: boolean;
   flipY?: boolean;
+}
+
+/**
+ * Draw a tile the renderer baked (`WeaselRenderer.tiles.bake`) over `x, y, width, height`, sampling
+ * `source` of it, bilinearly. It joins the image runs a frame's quads are drawn in. A tile released or
+ * lost to a context loss draws nothing.
+ */
+export interface TileDrawCommand {
+  kind: 'tile';
+  tile: TileTexture;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** The part of the tile to sample, in texels from its top-left. Omitted samples all of it. */
+  source?: Rect;
+  opacity?: number;
 }
 
 /** Floats per sprite in `SpritesDrawCommand.sprites`. */

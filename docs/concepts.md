@@ -1005,6 +1005,127 @@ read the feed too, serializing or comparing only the nodes it names.
 
 What it costs and buys is measured in `tests/perf/README.md`, "A culled frame of a large scene" (2026-11-19).
 
+## Level of detail
+
+A node can draw differently by its size on screen. A **ladder** (`NodeShapeEntry.ladder`) is a
+painter's representations, coarse to fine; a **rung** is one of them, shown from a size in device
+pixels upward. Every node also has three built-in rungs: `full` (the painter's `paint`), `box` (its pose
+box, filled, in place of its children) and `none` (nothing, children included). A node saves its own
+thresholds in `node.lod` (`[{ as: 'none', fromPx: 0 }, { as: 'full', fromPx: 40 }]`), naming its
+painter's rungs or the built-ins; it cannot add a painter. `<SceneCanvas layers={{ scene: { lod: {
+collapseBelowPx } } }}>` gives every group without a ladder `[none 0, box 2, full N]`. A node with
+none of these has one rung and draws as before.
+
+| Where | What changes on zoom out |
+|---|---|
+| `kit:text` (text-tools) | `none` below 3 px of font size, `greek` gray bars per line to 6 px, glyphs from there; `{ px }` text stays full |
+| a group under `collapseBelowPx` | its box in place of its subtree, which the walk does not visit |
+
+**Picking a rung.** `buildSceneTree` asks its `LodWalk` for each node it visits, after the visibility
+index admits it and before its painter runs, and hands the rung to `drawOne` as `ctx.rung`. The size is
+`sizeOf(node)` (default the pose box's longest side; `kit:text`'s is its font size) times the plane
+view's device pixels per unit. The rung moves only past hysteresis (`rungIndexAt`): up to rung *j*
+once the size reaches 1.5 × its threshold, down off rung *i* below 0.67 × its own, so a zoom parked
+on a threshold does not flicker. A rung that skips children stops the descent, so a collapsed group
+costs one visit however large its subtree: the index prunes what is off screen, this prunes what is
+too small.
+
+**State.** Hysteresis needs what each node showed last frame, which differs per view, so a
+`LodState` belongs to the view: `<SceneCanvas>` holds one, its scene layers write it (one map per scene
+layer, replaced whole by each walk, so it holds at most what the last frame visited) and its point pick
+reads it. A render with no state (`buildSceneViewCommands` without one, `renderSceneToPixels`) takes
+the rung each size reaches, which is deterministic for a scale.
+
+**What is drawn is what is hit.** The pick walk (`PickSource.lod`) passes over a node drawn at `none`
+and any node inside a subtree drawn as one rung, and takes the collapsed group as one item even for a
+query that leaves groups out. The GPU id pass needs nothing: a collapsed group's box is painted inside
+its own `pickId` wrapper. The scene, the selection and the layers panel are not views and ignore all of
+this.
+
+What it costs and buys is in `tests/perf/README.md`, "Level of detail" (2026-11-21).
+
+## Tiled layers
+
+A layer kept as a **tile pyramid** draws from square tiles of its pixels baked at power-of-two
+scales in its own world space, so a zoom draws tiles it already holds, resampled, and bakes only what
+is missing. `retain` keeps one layer's exact pixels under one transform; tiles survive any pan or zoom
+at the cost of a 1 to 2× resample. A tiled layer is never retained.
+
+**Opting in.** It is a view's choice, not the document's: `<SceneCanvas tiles={{ backdrop: {} }}>`
+for a scene layer (also `layers={{ scene: { tiles } }}`), or `tiles: TileOptions` on a consumer
+`RenderLayer`. A screen-space layer cannot tile; a layer with `effects`, and a parallax scene layer,
+draw live.
+
+| `TileOptions` | Default | |
+|---|---|---|
+| `tilePx` | 512 | a tile's side in texels; each is baked with a one-texel gutter and sampled inside it, so neighbors meet with no seam |
+| `maxLevel` | none | past it the layer draws live, so a deep zoom stays sharp |
+| `floorTiles` | 2 | the pinned floor holds the layer's `bounds` in at most this many tiles a side |
+| `fadeMs` | 160 | a tile baked after its spot came on screen fades in over its stand-in |
+
+**The parts.** `@weasel-js/tiles` holds the pyramid with no GPU in it: a scheme (the plane's keys are
+`z/x/y`, a tile at level `z` covering `tilePx / 2^z` world units), a cache bounded by count (twice the
+working set, at least 128) and bytes together, evicting the least recently drawn and never the floor
+or a tile drawn this frame, and the frame planner. The renderer bakes (`renderer.tiles.bake` draws a
+tile's commands into a pooled texture) and draws (`{ kind: 'tile' }`, staged in the batch's image
+runs). Core's `TileHost`, one per renderer (`tileHostOf`), runs each tiled layer's pyramid inside
+`drawLayers`: a bake is the layer's own `draw` under the tile's view, with `dims.bake` set so it culls to
+the tile and records nothing for the view (its level-of-detail record, for one).
+
+**A frame.** The level is the coarsest at least as sharp as the screen, `ceil(log2(px per unit))`,
+held until `log2` passes a boundary by 1/16. A frame bakes, under the canvas's budget (10 ms and 4
+tiles, always at least one), the floor, then missing tiles on screen nearest the center, then stale
+ones, then the level a zoom out lands on and a ring past the screen leaning the way the view moves. A
+missing tile is drawn from the nearest held tile up to 8 levels above, sampling its part, with held
+tiles up to 2 levels below drawn over that. When the screen and the floor would break the byte bound,
+the screen drops a level. While anything is wanted or fading, the host asks for another frame.
+
+**A costly tile.** A tile that would pass what the frame has left is baked in parts over several
+frames (`renderer.tiles.begin(size)`: each part draws over a multisampled buffer the bake holds, and
+`finish` keeps the whole), its stand-in drawn until then. Each part is a square of the tile, culled and
+clipped to it, cut in four until the level's measured cost per texel fits the frame, down to a
+sixteenth of the side. A level not yet measured guesses from the nearest one that was, four times a
+texel's cost a level coarser; with none, its first part is a sixteenth of the tile. Damage on a
+part-baked tile, or another tile coming first, starts it over. A bake prunes its walk by the
+visibility index's tree at a coarser zoom when one is kept, rather than building one for its own
+octave: wider boxes prune less but never wrongly, and a bake is drawn once.
+
+**Edits.** A scene layer's tiles are staled by damage: a reach tree of the host's own reports each
+named node's own box before and after a change (boxing paint at 1/16 scale, so a `{ px }` stroke is
+boxed as wide as it can draw), and every held tile those boxes meet, padded by a texel at its level,
+goes stale. A change the feed cannot name stales every tile. A consumer layer's tiles go stale
+together when its `deps` move, so its `deps` must not read the view. A stale tile keeps standing in;
+while an edit goes on, the layer is drawn live through its stale tiles when they are at most a quarter
+of the screen's, and it rebakes once the damage has held still for a frame.
+
+What it costs and buys is in `tests/perf/README.md`, "A tiled backdrop" (2026-11-21).
+
+## Streaming scenes
+
+A scene can be larger than memory holds, loaded around the view. A `SceneSource` names a `cellSize`
+and answers `load(cell, signal)` with the nodes of one square cell of the world, each with an id
+unique across cells. `streamScene(scene, source, opts)` (or `useSceneStream` in a component) follows
+the view each `update(view, dims)` names, usually from `<SceneCanvas onViewChange>`:
+
+- it wants the cells on screen nearest the center first, then a `margin` ring, then the cells where the
+  view's last motion, `lead` frames ahead, would land;
+- it loads at most `maxConcurrent` at once (4), aborting what the view no longer wants, an aborted load
+  still counting against the cap until it settles;
+- it adds a cell's nodes as it lands and removes them once the cell is dropped, at most `maxCells` (64)
+  being held past what the view wants, the longest unwanted first.
+
+A streamed node a recorded edit touches (moved, restyled, reparented or deleted) is the document's from
+then on: no drop removes it and no reload adds it again, so undo always finds it. Writing it back to the
+source is its owner's business.
+
+Both go through `scene.untracked`, so a pan records nothing in undo history; each add and remove is a
+kit op naming its node, so the visibility index updates node by node from the touched-ids feed
+rather than rebuilding (`streamScene.test.ts` pans 400 frames over 300 cells with neither). The loader
+is `@weasel-js/tiles`' `TileStream` over a plane scheme a cell wide, so a 3D host streams its own cells
+through the same priority and cap.
+
+What it costs is in `tests/perf/README.md`, "A streamed scene" (2026-11-21).
+
 ## Tool
 
 A tool is a list of `{ spec, actionId }` bindings that are live while it holds

@@ -20,6 +20,9 @@ import { withPaintOverrides, type PaintOverrides } from './paintOverrides';
 import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
 import { withShownNode } from './shownNodes';
 import { drawnPoseOf } from 'core/scene/outputGrid';
+import type { LodState } from './lod/lodState';
+import { createSceneTileSources } from './reach/tileDamage';
+import { defaultPaintBounds } from './defaultDrawOne';
 
 /**
  * The alpha a view paints a node at: the view's own `alphaFor` times any
@@ -56,6 +59,8 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   alphaFor?: (id: string) => number,
   overrides?: PaintOverrides,
+  /** What the view drew each node as last frame, for hysteresis and its picking. */
+  lodState?: LodState,
 ): WiredSceneSlot<Node<TData, TLayer, TPose>, TPose> {
   const shown = shownLookup(scene);
   const derived = withDerivedPaths(scene, withSceneShapes(scene, withInheritedPaints(shown, slot.drawOne)), slot.toPose);
@@ -68,7 +73,7 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
     ...(slot.paintBounds
       ? {
           paintBounds: sceneCullPaintBounds(scene, slot.paintBounds, shown, slot.toPose),
-          subtreeCull: (rect) => sceneSubtreeCull(scene, slot.paintBounds!, rect, slot.toPose),
+          subtreeCull: (rect, opts) => sceneSubtreeCull(scene, slot.paintBounds!, rect, slot.toPose, opts?.coarser),
         }
       : {}),
     drawOne: withShownNode(scene.overrides, painted),
@@ -76,5 +81,7 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
     derivedPathOf: (node) => derivedPathOf(nodeAsShown(scene.overrides, node)),
     alphaFor: composeAlphaFor(scene, alphaFor),
     shapes: nodeShapesOf(scene),
+    ...(lodState ? { lodState } : {}),
+    ...(slot.tiles ? { tileSourceFor: createSceneTileSources(scene, slot.paintBounds ?? defaultPaintBounds, slot.toPose) } : {}),
   };
 }

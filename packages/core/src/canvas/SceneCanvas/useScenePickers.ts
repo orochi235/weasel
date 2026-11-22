@@ -11,6 +11,7 @@ import type { SceneCanvasAdapter } from '../sceneAdapter';
 import {
   passesPickGates, pickWalk, scenePickSource, createLayerPlaneLookup, type PickCandidate, type ViewPickGates,
 } from 'canvas/pickWalk';
+import type { ScenePickSourceOptions } from 'canvas/scenePickSource';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -92,6 +93,8 @@ export interface UseScenePickersArgs<TData, TLayer extends string, TPose> {
   /** The surface's id frames, which `geometry.picking: 'pixels'` reads. Where
    *  they cannot be read at once (WebGPU), the pick walks the shapes instead. */
   readIds?: () => CanvasExtensionApi['readIdsSync'] | null;
+  /** What this canvas drew each node as last frame, so a click lands on what the user sees. */
+  lod?: ScenePickSourceOptions<TPose>['lod'];
   /** `<SceneCanvas selectTool>`, whose `move` the `move` preset's bindings carry. */
   selectTool?: { move?: MoveOptions<TPose> };
 }
@@ -154,7 +157,7 @@ export interface ScenePickers<TPose> {
 export function useScenePickers<TData, TLayer extends string, TPose>(
   args: UseScenePickersArgs<TData, TLayer, TPose>,
 ): ScenePickers<TPose> {
-  const { scene, adapter, geometry, selectTool: opts, getView, alphaOf, layerIsPainted, isPointerInteractive, readIds } = args;
+  const { scene, adapter, geometry, selectTool: opts, getView, alphaOf, layerIsPainted, isPointerInteractive, readIds, lod } = args;
   const d = (args.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
 
   const pickEveryProp = geometry?.pickEvery;
@@ -174,6 +177,7 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
     scene, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
     alphaOf, layerIsPainted, isPointerInteractive,
     readIds: picking === 'pixels' ? readIds : undefined,
+    lod,
   });
 
   // Read through a ref: this is the chrome's bounds source, and a caller's
@@ -272,10 +276,11 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
   layerIsPainted: ((layer: string) => boolean) | undefined;
   isPointerInteractive: ((id: string) => boolean) | undefined;
   readIds: UseScenePickersArgs<TData, TLayer, TPose>['readIds'];
+  lod: UseScenePickersArgs<TData, TLayer, TPose>['lod'];
 }): (world: WorldPoint, view?: PickView | null) => string[] {
   const {
     scene, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
-    alphaOf, layerIsPainted, isPointerInteractive, readIds,
+    alphaOf, layerIsPainted, isPointerInteractive, readIds, lod,
   } = args;
   // Default pickEvery: walk renderOrder() forward (back-to-front) and collect
   // every node whose pose contains the world point. Order matches the
@@ -317,12 +322,14 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
         ...(viewAlpha ? { alphaOf: viewAlpha } : {}),
         ...(viewLayers ? { layerIsPainted: viewLayers } : {}),
         ...(camera ? { camera } : {}),
+        // The rungs drawn are this canvas's own; another view's pick reads its own drawing.
+        ...(lod && own && askedOwnView(view, own) ? { lod } : {}),
       });
       const pointQuery = scenePointQuery<TPose>(d as PoseDescriptor<unknown>, shapePicking, pickTolerancePx);
       return pickWalk<TPose>(src, pointQuery(world.x, world.y, asked?.scale ?? { x: 1, y: 1 }));
     };
   }, [scene, pickEveryProp, shapePicking, pickTolerancePx, getView,
-      alphaOf, layerIsPainted, d, readIds]);
+      alphaOf, layerIsPainted, d, readIds, lod]);
   const wiredHitBody = useMemo(() => {
     if (!isPointerInteractive) return walk;
     return (world: WorldPoint, view?: PickView | null): string[] =>

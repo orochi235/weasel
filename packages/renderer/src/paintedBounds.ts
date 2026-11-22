@@ -4,6 +4,7 @@ import { markerReach, widestStrokeWidth } from '@weasel-js/stroke';
 import {
   SPRITE_STRIDE, type DrawCommand, type ImageDrawCommand, type PathDrawCommand, type ShaderDrawCommand,
   type SpritesDrawCommand,
+  type TileDrawCommand,
 } from './DrawCommand';
 import { effectsReach } from './effects/types';
 import { getProgramSource } from './shaders/registerProgram';
@@ -35,6 +36,7 @@ export function commandBox(cmd: DrawCommand, m: GlMat3, scale: number): ScreenBo
     }
     case 'path':
     case 'image':
+    case 'tile':
     case 'sprites':
       return paintedBox(cmd, m) ?? ANYWHERE;
     case 'text':
@@ -92,10 +94,11 @@ export function clipped(a: ScreenBox, clip: ScreenBox | null): ScreenBox {
  * there is nothing to bound by, which a caller must read as anywhere.
  */
 export function paintedBox(
-  cmd: PathDrawCommand | ImageDrawCommand | SpritesDrawCommand, m: GlMat3,
+  cmd: PathDrawCommand | ImageDrawCommand | TileDrawCommand | SpritesDrawCommand, m: GlMat3,
 ): ScreenBox | null {
   switch (cmd.kind) {
     case 'path': return pathBox(cmd.path, cmd.stroke, m);
+    case 'tile':
     case 'image': return screenBox(cmd.x, cmd.y, cmd.x + cmd.width, cmd.y + cmd.height, m);
     case 'sprites': return spritesBox(cmd.sprites, m);
   }

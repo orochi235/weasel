@@ -145,6 +145,23 @@ describe('render visibility: a pruned walk paints what the full walk paints', ()
     });
   }
 
+  it('prunes a tile bake by a tree kept at a coarser zoom, painting what the full walk paints', () => {
+    const rand = seeded(41);
+    const { scene, ids, groups } = randomScene(rand);
+    const cfg = wireSceneSlotToScene({ drawOne: defaultDrawOne, cull: true, paintBounds: defaultPaintBounds }, scene);
+    const layers = buildSceneLayers(cfg as never, sceneToAdapter(scene) as never, undefined, () => null);
+    const bake = (view: { x: number; y: number; scale: { x: number; y: number } }) =>
+      painted(layers.flatMap(({ layer }) => layer.draw(undefined, view, { width: 258, height: 258, dpr: 1, bake: true }) as DrawCommand[]));
+    // The coarse tree: screen-sized strokes make its boxes wider than any finer view's.
+    bake({ x: -2000, y: -2000, scale: { x: 0.05, y: 0.05 } });
+    for (let step = 0; step < 20; step++) {
+      const s = 0.1 * 2 ** (rand() * 6);
+      const view = { x: rand() * 3000 - 1500, y: rand() * 3000 - 1500, scale: { x: s, y: s } };
+      expect(bake(view)).toBe(__withoutSubtreeCullForTest(() => bake(view)));
+      edit(scene, ids, groups, rand);
+    }
+  });
+
   it('walks only what can reach the view of a wide, flat scene', () => {
     const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'a' }, { id: 'b' }] });
     for (let i = 0; i < 2000; i++) {

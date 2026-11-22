@@ -6,11 +6,15 @@ import { warnLayersOnce, warnBadOrderIds } from './unknownOrderIds';
 import { DEFAULT_LAYER_RETAIN, retainedId, type LayerRetainPolicy } from './retain';
 import type { RedrawSource } from './redrawSource';
 import type { Dims, LayerDims } from './dims';
+import type { TileHost } from './tileHost';
+import type { TileOptions } from './tiles';
 import { sameList } from '@weasel-js/registry';
 
 export type { Dims, LayerDims, LayerGroup, LayerRetainPolicy };
 export { DEFAULT_LAYER_RETAIN };
 export { subscribeToSources, type RedrawSource } from './redrawSource';
+export { isLayerVisible, isLayerPainted, paintedLayers } from './layerVisibility';
+import { paintedLayers } from './layerVisibility';
 
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
@@ -118,6 +122,13 @@ export interface RenderLayer<TData> {
    */
   retain?: boolean;
   /**
+   * Keep this world-space layer as a tile pyramid: its pixels baked into tiles at power-of-two
+   * scales, so a zoom draws from tiles and bakes only what is missing, under the canvas's frame
+   * budget. See {@link TileOptions}. A screen-space layer cannot be tiled; one with `effects` draws
+   * live. `deps` must not read the view: their moving stales every tile.
+   */
+  tiles?: TileOptions;
+  /**
    * Optional hit-test for **consumer-attached** layers.
    *
    * Layers registered through `CanvasExtensionApi.registerLayer` or carried
@@ -196,6 +207,8 @@ export function drawLayers<TData>(
   groups?: readonly LayerGroup[],
   spans?: LayerDrawSpan[],
   retain: LayerRetainPolicy | false = DEFAULT_LAYER_RETAIN,
+  /** The canvas's tiled layers, which draws every layer carrying `tiles` from them. Absent, they draw live. */
+  tiles?: TileHost,
 ): DrawCommand[] {
   const layerById = new Map(layers.map((l) => [l.id, l]));
   const v = view ?? IDENTITY_VIEW;
@@ -224,7 +237,7 @@ export function drawLayers<TData>(
 
   for (const layer of paintedLayers(layers, visibility, order)) {
     const t0 = spans ? clockMs() : 0;
-    const cmds = drawLayerOnce(layer, data, v, dims, cache, onLayerError, retain);
+    const cmds = layer.tiles && tiles ? drawTiledLayer(layer, data, v, dims, tiles, onLayerError) : drawLayerOnce(layer, data, v, dims, cache, onLayerError, retain);
     const buildMs = spans ? clockMs() - t0 : 0;
     // A layer that painted nothing neither joins a run nor breaks one.
     if (cmds.length === 0) {
@@ -255,55 +268,25 @@ export function drawLayers<TData>(
     for (const c of cmds) run.children.push(c);
   }
   closeRun();
+  tiles?.endFrame();
 
   return out;
 }
 
-/**
- * Resolve one layer's visibility: `alwaysOn` wins, then an explicit entry in
- * `visibility`, then `defaultVisible`, defaulting to shown.
- */
-export function isLayerVisible<TData>(
-  layer: RenderLayer<TData>,
-  visibility: Record<string, boolean>,
-): boolean {
-  if (layer.alwaysOn) return true;
-  if (Object.hasOwn(visibility, layer.id)) return visibility[layer.id]!;
-  return layer.defaultVisible ?? true;
-}
-
-/**
- * Does this layer reach the screen at all — membership of
- * {@link paintedLayers}, asked of one layer.
- *
- * **A listed `order` is the whole list**, so omission from it drops a layer
- * that `visibility` would have shown, and `alwaysOn` does not rescue it.
- * Hit-testing asks this, not `isLayerVisible`.
- */
-export function isLayerPainted<TData>(
-  layer: RenderLayer<TData>,
-  visibility: Record<string, boolean>,
-  order: readonly string[] | undefined,
-): boolean {
-  if (order && !order.includes(layer.id)) return false;
-  return isLayerVisible(layer, visibility);
-}
-
-/**
- * The layers that reach the screen, in the order they are drawn: `order`
- * sequences them, each at its first place, and drops what it leaves out, then `visibility` drops what is
- * hidden. What `drawLayers` paints, and what a view narrows its stack with.
- */
-export function paintedLayers<TData>(
-  layers: readonly RenderLayer<TData>[],
-  visibility: Record<string, boolean>,
-  order: readonly string[] | undefined,
-): RenderLayer<TData>[] {
-  if (!order) return layers.filter((l) => isLayerVisible(l, visibility));
-  const byId = new Map(layers.map((l) => [l.id, l]));
-  return [...new Set(order)]
-    .map((id) => byId.get(id))
-    .filter((l): l is RenderLayer<TData> => l !== undefined && isLayerVisible(l, visibility));
+/** A tiled layer's frame, from its tiles, wrapped in the view as any world-space layer is. */
+function drawTiledLayer<TData>(
+  layer: RenderLayer<TData>, data: TData, view: View, dims: LayerDims, tiles: TileHost,
+  onLayerError: (failure: LayerDrawFailure) => void,
+): DrawCommand[] {
+  try {
+    if ((layer.space ?? 'world') === 'screen') throw new Error(`a screen-space layer cannot be tiled: its pixels do not stay put in the world`);
+    if (layer.effects && layer.effects.length > 0) return drawLayerOnce(layer, data, view, dims, undefined, onLayerError, false);
+    const cmds = tiles.layerFrame(layer.id, layer.tiles!, view, dims, (v, d) => layer.draw(data, v, d), layer.deps?.(data, view, dims));
+    return cmds.length === 0 ? [] : [{ kind: 'group', transform: viewToMat3(view), children: cmds }];
+  } catch (error) {
+    onLayerError({ layerId: layer.id, error });
+    return [];
+  }
 }
 
 /**

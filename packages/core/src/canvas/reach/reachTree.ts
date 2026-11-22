@@ -12,7 +12,7 @@
 import { ReachBoxes } from './reachBoxes';
 import { boxMeets, boxWithin } from './reachRegion';
 import type { ReachRec } from './reachRec';
-import type { ReachQuery, ReachSource } from './reachTypes';
+import { BOX_ALL, BOX_NONE, type ReachQuery, type ReachSource } from './reachTypes';
 import type { WideChildren } from './wideChildren';
 
 /** Children past which a container indexes them; below half of it, it stops. */
@@ -32,7 +32,14 @@ export interface ReachTree {
   collect(q: ReachQuery, visit: (id: string) => boolean | void): void;
   /** How often it built from the whole scene, and how many nodes it holds. */
   stats(): { builds: number; records: number; wide: number };
+  /** A node's reach (`null` for the roots' together): its box, `'all'` when nothing bounds it, or
+   *  null when it paints nothing or is not held. */
+  reachOf(id: string | null): Float64Array | 'all' | null;
 }
+
+/** Where a change to the tree's boxes landed: each moved box as it was and as it is, or `'all'` when
+ *  the tree was built again from the whole scene, or a box that moved is unbounded. */
+export type ReachDamage = (box: Float64Array | 'all', id?: string) => void;
 
 let totalBuilds = 0;
 
@@ -46,7 +53,7 @@ class Tree implements ReachTree {
   private token: number | null = null;
   private builds = 0;
 
-  constructor(private readonly source: ReachSource, private readonly wideAt: number) {
+  constructor(private readonly source: ReachSource, private readonly wideAt: number, private readonly damage?: ReachDamage) {
     this.boxes = new ReachBoxes(source, wideAt);
   }
 
@@ -58,14 +65,50 @@ class Tree implements ReachTree {
         return false;
       }
       this.token = changed.token;
+      if (this.builds > 0) this.damage?.('all');
       this.buildAll();
       return true;
     }
     this.token = changed.token;
     if (changed.ids.size === 0 && changed.parents.size === 0) return true;
+    const moved = this.damage ? this.touched(changed.ids) : null;
+    if (moved) for (const m of moved) this.report(m);
     this.apply(changed.ids, changed.parents);
     this.boxes.drain();
+    if (moved) for (const m of moved) this.report(m);
     return true;
+  }
+
+  /** The nodes a change names, whose own boxes are reported before it applies and after: a kit op
+   *  names every node it moves, adds, removes or reorders, and the feed widens those to their
+   *  descendants and dependents. */
+  private touched(ids: ReadonlySet<string>): { id: string | null; reach: boolean }[] {
+    const out: { id: string | null; reach: boolean }[] = [];
+    for (const id of ids) out.push({ id, reach: false });
+    return out;
+  }
+
+  private report(m: { id: string | null; reach: boolean }): void {
+    const rec = this.boxes.recOf(m.id);
+    if (rec === undefined) return;
+    const kind = m.reach ? rec.reach : rec.own;
+    if (kind === BOX_NONE) return;
+    if (kind === BOX_ALL) {
+      this.damage!('all');
+      return;
+    }
+    const { slab } = this.boxes;
+    const at = m.reach ? slab.reachAt(rec) : slab.ownAt(rec);
+    this.damage!(slab.data.slice(at, at + 2 * slab.dim), m.id ?? undefined);
+  }
+
+  reachOf(id: string | null): Float64Array | 'all' | null {
+    const rec = this.boxes.recOf(id);
+    if (rec === undefined || rec.reach === BOX_NONE) return null;
+    if (rec.reach === BOX_ALL) return 'all';
+    const { slab } = this.boxes;
+    const at = slab.reachAt(rec);
+    return slab.data.slice(at, at + 2 * slab.dim);
   }
 
   invalidate(): void {
@@ -191,6 +234,6 @@ class Tree implements ReachTree {
 }
 
 /** A reach tree over `source`'s nodes, built on its first {@link ReachTree.ensure}. */
-export function createReachTree(source: ReachSource, wideAt = WIDE_AT): ReachTree {
-  return new Tree(source, wideAt);
+export function createReachTree(source: ReachSource, wideAt = WIDE_AT, damage?: ReachDamage): ReachTree {
+  return new Tree(source, wideAt, damage);
 }

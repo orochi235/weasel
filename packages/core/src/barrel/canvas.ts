@@ -66,6 +66,14 @@ export type {
   InheritedPaint,
   ShapeCoversPointOptions,
 } from '../canvas/NodeShape';
+// Level of detail: a node's representation chosen by its size on screen.
+export { rungIndexAt, BUILT_IN_RUNGS, DEFAULT_HYSTERESIS } from '../canvas/lod/ladder';
+export type { Ladder, Rung, RungId, NodeLod, LodHysteresis } from '../canvas/lod/ladder';
+export { createLodState } from '../canvas/lod/lodState';
+export type { LodState, LodPick, LodWalkRecord } from '../canvas/lod/lodState';
+export { createLodWalk, poseSizeOf } from '../canvas/lod/lodWalk';
+export type { LodWalk, LodOptions } from '../canvas/lod/lodWalk';
+export { paintLodBox, LOD_BOX_FILL } from '../canvas/lod/lodBox';
 // A node kind's outline as paths, and the generation its geometry moves on.
 export { NodeOutlineError, findNodeOutline, sceneNodeOutline, geometryGenerationOf } from '../canvas/nodeOutline';
 export type { NodeOutline, NodeOutlineCtx, PaintedPath } from '../canvas/nodeOutline';
@@ -173,6 +181,15 @@ export type { WeaselProviderProps } from '../WeaselProvider';
 
 // ─── Layer primitives: RenderLayer, ordered children ────────────────────────
 export * from '../core/layers/render';
+export { DEFAULT_TILE_PX, DEFAULT_TILE_BUDGET } from '../core/layers/tiles';
+export type { TileOptions, TileDamage, TileBudgetOptions } from '../core/layers/tiles';
+export { createTileHost } from '../core/layers/tileHost';
+export type { TileHost, TileBaker, TileHostStats } from '../core/layers/tileHost';
+export { tileHostOf } from '../canvas/tileHosts';
+export { createSceneTileSources, type SceneTileSource } from '../canvas/reach/tileDamage';
+export { streamScene } from '../core/stream/streamScene';
+export type { SceneSource, SceneCell, SceneStream, StreamSceneOptions } from '../core/stream/streamScene';
+export { useSceneStream } from '../core/stream/useSceneStream';
 export { createWorkspaceTintLayer, createModeDecorationLayer } from '../domains/modes/modeLayers';
 export type { WorkspaceTintLayerOptions } from '../domains/modes/modeLayers';
 export { createModeTriggersContribution } from '../domains/modes/modeTriggers';

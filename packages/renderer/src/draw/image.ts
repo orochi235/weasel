@@ -1,9 +1,9 @@
-import { type ImageDrawCommand, type SpritesDrawCommand, SPRITE_STRIDE } from '../DrawCommand';
+import { type ImageDrawCommand, type SpritesDrawCommand, type TileDrawCommand, SPRITE_STRIDE } from '../DrawCommand';
 import type { BatchCut } from '../batchClip';
 import type { DrawContext } from './drawContext';
 import { enterUncut, leaveUncut, retryUncut } from './clip';
 import { flushBatch } from './flushBatch';
-import { stageImage } from './batch';
+import { stageImage, stageTexture } from './batch';
 
 /**
  * Stage one image quad. Nothing reaches the GPU here — `flushBatch` draws the
@@ -116,4 +116,18 @@ export function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
       ({ slot, tint } = stage());
     }
   }
+}
+
+/** Stage a baked tile's quad. Its texture was drawn into, so its rows run bottom-up: v is flipped. */
+export function drawTile(ctx: DrawContext, cmd: TileDrawCommand): void {
+  const texture = ctx.tiles?.textureOf(cmd.tile);
+  if (!texture) return;
+  const { slot, tint } = stageTexture(ctx, texture);
+  const n = cmd.tile.size, src = cmd.source;
+  const u0 = src ? src.x / n : 0, u1 = src ? (src.x + src.width) / n : 1;
+  const v0 = 1 - (src ? src.y / n : 0), v1 = 1 - (src ? (src.y + src.height) / n : 1);
+  if (!ctx.drawBatch.pushQuad(
+    cmd.x, cmd.y, cmd.width, cmd.height, ctx.state.transform,
+    u0, v0, u1, v1, (cmd.opacity ?? 1) * tint[3], slot, tint[0], tint[1], tint[2],
+  )) retryUncut(ctx, cmd, undefined, drawTile);
 }

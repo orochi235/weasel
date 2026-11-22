@@ -27,6 +27,7 @@ export {
 export { edgeColor, textFrameOf, type TextEdge, type TextFrame, type TextShadow } from './node/textFrame';
 export { textOutlineOf } from './node/textOutline';
 export { textEffectItems } from './node/textItems';
+export { TEXT_LADDER, TEXT_GREEK_FROM_PX, TEXT_FULL_FROM_PX, paintGreekText, textFontSizeOf } from './node/textLadder';
 export { TEXT_PROPERTIES } from './node/properties';
 export { textNodeFactory } from './node/insert';
 

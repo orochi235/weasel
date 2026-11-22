@@ -33,8 +33,11 @@ export type {
   TextLayerDrawCommand,
   ImageDrawCommand,
   SpritesDrawCommand,
+  TileDrawCommand,
   ShaderDrawCommand,
 } from './DrawCommand';
+export type { TileTexture } from './retain/TileTextures';
+export type { RendererTiles, TileBake } from './retain/bakeTile';
 export type { CommandFill, CommandPaint, CommandStroke, CommandPaintUnits, PosedPaint, SolidPaint } from '@weasel-js/paint';
 export { SPRITE_STRIDE } from './DrawCommand';
 export { frameRect, type SpriteSheet } from './spriteSheet';

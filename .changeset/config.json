@@ -34,6 +34,7 @@
       "@weasel-js/prefs-editor",
       "@weasel-js/select",
       "@weasel-js/registry",
+      "@weasel-js/tiles",
       "@weasel-js/icons",
       "@weasel-js/icons-plugin",
       "@weasel-js/react",

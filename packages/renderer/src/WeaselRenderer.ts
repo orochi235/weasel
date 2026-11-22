@@ -21,7 +21,9 @@ import type { ShaderProgramHandle } from './shaders/registerProgram';
 import { CustomPrograms } from './shaders/CustomPrograms';
 import { EffectTargets } from './effects/EffectTargets';
 import { RetainedSurfaces } from './retain/RetainedSurfaces';
-import { ContextResources } from './contextResources';
+import { TileTextures } from './retain/TileTextures';
+import { RendererTiles } from './retain/bakeTile';
+import { ContextResources, startFrame } from './contextResources';
 import { watchContextLoss, type ContextLossWatch } from './contextLoss';
 import { canvasPassFor, deviceRectFor, sizeCanvas } from './targetRect';
 import { paintDrawKindRegistry } from './paintKinds';
@@ -58,6 +60,7 @@ export class WeaselRenderer {
    *  with effects asks, so a canvas without them pays no memory. */
   private readonly effectTargets: EffectTargets;
   private readonly retained: RetainedSurfaces;
+  private readonly tileTextures: TileTextures;
   private readonly paintScratch: PaintScratch;
   private imageMinification: ImageMinification;
   private flattenTolerance?: FlattenTolerance;
@@ -73,6 +76,10 @@ export class WeaselRenderer {
     this.effectTargets = new EffectTargets(this.gpu);
     this.programs = new CustomPrograms(this.gpu);
     this.retained = new RetainedSurfaces(this.gpu, opts.retainBudget ?? DEFAULT_RETAIN_BUDGET);
+    this.tileTextures = new TileTextures(this.gpu);
+    this.tiles = new RendererTiles(this.tileTextures, this.gpu, () => !this.disposed && !this.isContextLost(), () => this.beginFrame(),
+      (renderTarget) => ({ ...this.frameContext(undefined, undefined, undefined, { renderTarget, fragOrigin: [0, 0] }),
+        flattenTolerance: inCssPixels(this.flattenTolerance, 1) }), () => this.res.meshCache.freeTransient());
     this.paintScratch = new PaintScratch(this.gpu);
 
     // Bits 0-7 are load-bearing: bit 0 for even-odd fills and stenciled
@@ -154,6 +161,7 @@ export class WeaselRenderer {
     // the next group with effects.
     this.effectTargets.releaseAll();
     this.retained.releaseAll();
+    this.tileTextures.releaseAll();
     this.paintScratch.release();
     this.res.restore(this.imageMinification);
     this.programs.restore();
@@ -174,6 +182,7 @@ export class WeaselRenderer {
     this.programs.dispose();
     this.effectTargets.releaseAll();
     this.retained.releaseAll();
+    this.tileTextures.releaseAll();
     this.paintScratch.release();
     this.gpu.dispose?.();
   }
@@ -288,21 +297,8 @@ export class WeaselRenderer {
     }
   }
 
-  /** What every frame does before it draws. A frame that threw part-way never
-   *  unwound: its group stack and staged vertices are still here. */
-  private beginFrame(): void {
-    // Free GPU resources whose Mesh was GC'd since the last frame. Done here,
-    // before any draws — deleting from the FinalizationRegistry callback
-    // directly races a draw in flight.
-    const res = this.res;
-    res.meshCache.drainPendingDeletes();
-    res.textureCache.sweep(textureRegistry);
-    this.programs.refresh();
-    this.groupState.reset();
-    res.drawBatch.reset();
-    // A frame that threw part-way left its clip here.
-    res.drawBatch.clip = null;
-  }
+  /** What every frame does before it draws: see `startFrame`. */
+  private beginFrame(): void { startFrame(this.res, this.programs, this.groupState); }
 
   /** The draw context of one frame; `target` says where it draws. */
   private frameContext(
@@ -346,10 +342,14 @@ export class WeaselRenderer {
       deviceWidth: device.width,
       deviceHeight: device.height,
       paintResources: res.paintResources,
+      tiles: this.tiles,
       stats,
       ...target,
     };
   }
+
+  /** Tiles baked for `TileDrawCommand`s: see `RendererTiles`. */
+  readonly tiles: RendererTiles;
 
   /** What the last `render()` cost: GL draw calls issued and CPU milliseconds
    *  spent issuing them, in total and per requested span. GPU time is not

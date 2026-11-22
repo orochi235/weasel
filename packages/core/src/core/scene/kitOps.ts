@@ -11,6 +11,7 @@ import type { LayoutStrategy } from '../../layout/types';
 import { registerLayerOps } from './layerOps';
 import { restoreFn, type FnBearingNode, type NodeFnField } from './nodeFnFields';
 import { own } from './owned';
+import type { NodeLod } from './nodeLod';
 import { statedFields } from './statedFields';
 import type { createNodeStore } from './nodeStore';
 import type { MutableNode } from './nodeTypes';
@@ -186,7 +187,7 @@ function registerAdd<TData, TLayer extends string, TPose>(env: KitOpsEnv<TData, 
     parent: NodeId | null; index: number;
     dependsOn?: readonly NodeId[] | 'children';
     pickable?: boolean; hidden?: boolean; locked?: boolean;
-    units?: UnitScope; clip?: NodeClip; consumesChildren?: boolean; page?: PageInfo; pageRun?: PageRunInfo;
+    units?: UnitScope; clip?: NodeClip; consumesChildren?: boolean; page?: PageInfo; pageRun?: PageRunInfo; lod?: NodeLod;
   } & Record<string, unknown>>('kit:add', {
     apply: (p) => {
       if (state.nodes.has(p.id)) {

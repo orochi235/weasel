@@ -128,6 +128,8 @@ async function writeCommand(ctx: PageCtx, cmd: DrawCommand, state: DrawState): P
   else if (cmd.kind === 'image' || cmd.kind === 'sprites') writeImage(ctx, cmd, state);
   else if (cmd.kind === 'text') await writeText(ctx, cmd, state);
   else if (cmd.kind === 'text-layer') await writeCommands(ctx, cmd.texts, state);
+  // A baked tile lives in one renderer's textures: an export draws its layer live instead.
+  else if (cmd.kind === 'tile') return;
   else await writeShader(ctx, cmd, state);
 }
 

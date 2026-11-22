@@ -710,6 +710,96 @@ batch about 0.7 ms either side. `animation-stress.spec.ts`, the one perf spec th
 read a 448.5 ms mean cycle before and 448.4 after on the same node; it does not cull. The runs are in
 `tests/perf/recorded/visibility-2026-11-19/`.
 
+## Level of detail
+
+`scene/lod.bench.ts` times building a culled frame's commands (`buildSceneViewCommands`, no GL) for
+scenes with no ladders, where level of detail can only add cost, and for 101k nodes in 1000 groups of
+100, each group about 10 px on screen, collapsed below 24 px (`docs/concepts.md`, "Level of detail"). It
+reads only what the merge-base had, where the `lod` argument is ignored and the grouped scene draws in full:
+
+    onto do --kind bench -- npx vitest run --config tests/perf/vitest.scene-bench.config.ts tests/perf/scene/lod.bench.ts
+
+On msb-uai (Apple M3 Max) on 2026-11-21, medians of 200 frames, merge-base `1eae5ad1` against the branch:
+
+| case | before (ms) | after (ms) |
+|---|---:|---:|
+| no ladders, 1k all on screen | 1.292 | 1.205 |
+| no ladders, 10k all on screen | 13.467 | 11.777 |
+| no ladders, 100k nested, 1% on screen | 2.028 | 1.848 |
+| 101k in 1000 groups at 10 px, collapsed below 24 px | 160.953 | 0.965 |
+| 101k in 1000 groups at 10 px, no collapse | 156.011 | 135.931 |
+| 1k rects alone, all on screen | 1.154 | 1.139 |
+
+So 101k nodes collapsed into 1000 boxes cost less than 1000 rects alone, inside the design's 2× bar.
+The scenes with no ladders read 7–13% faster after, in one run each side; nothing in the change makes
+them faster, so that is the node's noise, and the per-node cost the rung check adds is below it. The runs
+are in `tests/perf/recorded/lod-2026-11-21/`.
+
+## A tiled backdrop
+
+`tile-zoom.spec.ts` zooms a 1280 × 800 canvas at dpr 2 over 100k rect nodes in one scene layer, from
+fit-all to 64× and back over 600 frames, then pans 200, once with the layer drawn live (culled) and
+once tiled (`docs/concepts.md`, "Tiled layers"). Each frame is `drawLayers`, the bakes, `render` and a
+`gl.finish`; the tiled run also records tiles baked, bake time, stand-ins, live draws and tile bytes:
+
+    onto do --kind bench --gui -- npx playwright test --config tests/perf/playwright.config.ts tile-zoom
+
+On msb-uai (Apple M3 Max, ANGLE Metal) on 2026-11-21, the tiled run's first frame left out, before
+and after costly tiles were baked in parts and bakes pruned by a coarser tree (`23f84e7f` plus the
+change; the live columns are each run's own):
+
+| frames | live median (ms) | live p95 | tiled median, before | tiled p95, before | tiled median, after | tiled p95, after |
+|---|---:|---:|---:|---:|---:|---:|
+| near fit-all (first and last 60 of the zoom) | 65.825 | 92.840 | 1.900 | 18.265 | 10.785 | 11.240 |
+| deep in (frames 240–360) | 0.125 | 0.390 | 0.110 | 1.075 | 0.100 | 0.690 |
+| the pan | 1.865 | 2.230 | 0.160 | 1.750 | 0.155 | 1.390 |
+| the whole zoom | 2.185 | 79.910 | 0.285 | 12.555 | 0.880 | 11.085 |
+
+No frame of the tiled run after the first drew the layer live. Before, its slowest frame took
+117.665 ms and 13 passed 30: each was a bake at a level new to the zoom whose walk built the
+visibility index's tree for that octave over all 100k nodes (the frame's walk took 100–118 ms of it,
+measured by the spec's `walkMs`). After, the slowest took 18.190 ms and none passed 30; frames that baked
+took 3.555 ms (median) and 11.120 (p95), against 1.345 and 15.180 before. Near fit-all the median rose
+to the budget's 10 ms, since the coarse tiles there now take several frames each. The first frame,
+198.2 ms, builds the visibility index's first tree, as the live run's first frame (250.5 ms) does. The
+tiles peaked at 249.9 MiB of the 256 MiB bound in both. The runs are in
+`tests/perf/recorded/tiles-2026-11-21/` (`tile-zoom.json` before, `tile-zoom-split.json` after).
+
+What it costs a canvas that tiles nothing, on the same node: `scene/visibility.bench.ts`'s small and
+closing cases before the tiling commits (`93e4539d`, its second pass, the first having run at a load
+average of 16) and after (`56938f09`), medians in ms:
+
+| case | before | after |
+|---|---:|---:|
+| 100 all on screen, cull on | 0.147 | 0.144 |
+| 1k all on screen, cull on | 1.168 | 1.146 |
+| 10k all on screen, cull on | 12.213 | 11.308 |
+| 100k flat, 1% on screen | 1.792 | 1.858 |
+| 100k nested, 1% on screen | 1.813 | 1.663 |
+| 100k flat, one node dragged | 1.442 | 1.458 |
+
+Within −7% to +4% either way, which is this node's noise: nothing measurable. Those runs are beside it.
+
+## A streamed scene
+
+`scene/stream.bench.ts` pans 400 frames across an endless world of 36-node cells at 1280 × 800, each
+frame landing what loaded and building the culled frame (`buildSceneViewCommands`). Against
+`streamScene` it applies the same cells the way a consumer on `onViewChange` could before it, each
+arrival and departure a recorded edit:
+
+    onto do --kind bench -- npx vitest run --config tests/perf/vitest.scene-bench.config.ts tests/perf/scene/stream.bench.ts
+
+On msb-uai on 2026-11-21:
+
+| | frame median (ms) | p95 | max | undo entries | heap growth (MiB) |
+|---|---:|---:|---:|---:|---:|
+| recorded adds and removes (before) | 2.195 | 5.929 | 20.266 | 2378 | 36.3 |
+| `streamScene` | 2.535 | 4.740 | 8.962 | 0 | 6.5 |
+
+A frame costs about the same either way; what streaming saves is the history and the memory it holds,
+which grows with every cell a recorded pan passes. The stream keeps a margin and where the pan heads,
+so it holds 2880 nodes to the other's 2520. The run is in `tests/perf/recorded/stream-2026-11-21/`.
+
 ## An image's upload through the 2D canvas
 
 WebGL draws every `ImageBitmap` bound for an image texture into a scratch 2D canvas and uploads the

@@ -2,6 +2,7 @@
  * The canvases of a `<SceneCanvas worker>` stack and how one frame reaches them: each page run
  * drawn through a renderer of its own, each worker run handed its layers and the frame's view.
  */
+import { frameTileHost } from '../tileHosts';
 import { viewToMat3, type DrawCommand, type IdBuffer, type WeaselRenderer } from '@weasel-js/renderer';
 import { drawLayers, isLayerVisible, type LayerCommandCache, type LayerDrawSpan, type LayerRetainPolicy, type RenderLayer } from '../../core/layers/render';
 import type { LayerGroup } from '../../core/layers/layerGroup';
@@ -82,10 +83,11 @@ export function paintPageRun(
 ): void {
   const ids = new Set(run.ids);
   const spans: LayerDrawSpan[] | undefined = frame.timed ? [] : undefined;
+  const layers = onlyIds(frame.layers, ids);
   const commands = drawLayers(
-    onlyIds(frame.layers, ids), frame.helpers, frame.visibility,
+    layers, frame.helpers, frame.visibility,
     frame.order?.filter((id) => ids.has(id)), frame.view, frame.dims, frame.cache, undefined,
-    groupsFor(frame.groups, ids, frame.paints), spans, frame.retain,
+    groupsFor(frame.groups, ids, frame.paints), spans, frame.retain, frameTileHost(renderer, layers),
   );
   renderer.render(commands, viewToMat3(frame.view), spans ? { spans } : undefined);
   if (spans) frame.timed!.push({ spans, render: renderer.lastFrameStats() });

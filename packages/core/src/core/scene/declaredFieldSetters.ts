@@ -9,8 +9,9 @@ import { own } from './owned';
 import { sameValue } from './sameValue';
 import type { Node, NodeClip, NodeId, RegisteredOp } from './types';
 import type { PageInfo, PageRunInfo } from '../pages/pageNodes';
+import type { NodeLod } from './nodeLod';
 
-/** The scene methods that write a node's declared `units`, `clip`, `page` and `pageRun`, each one undo step. */
+/** The scene methods that write a node's declared `units`, `clip`, `page`, `pageRun` and `lod`, each one undo step. */
 export interface SceneDeclaredFieldSetters {
   /** Declare the unit scope of container `id`, or clear it with `null`. */
   setUnits(id: NodeId, units: UnitScope | null): void;
@@ -21,6 +22,8 @@ export interface SceneDeclaredFieldSetters {
   setPage(id: NodeId, page: PageInfo | null): void;
   /** Make root `id` the page run with these settings, or stop it being one with `null`. */
   setPageRun(id: NodeId, pageRun: PageRunInfo | null): void;
+  /** Declare the rungs `id` draws at each size on screen (see `SceneNode.lod`), or clear them with `null`. */
+  setLod(id: NodeId, lod: NodeLod | null): void;
 }
 
 /** What `createDeclaredFieldSetters` needs from the scene it is built into. */
@@ -31,7 +34,7 @@ export interface DeclaredFieldSettersEnv<TData, TLayer extends string, TPose> {
   record(kind: string, payload: unknown, label: string): void;
 }
 
-type Declared = { units?: UnitScope; clip?: NodeClip; page?: PageInfo; pageRun?: PageRunInfo };
+type Declared = { units?: UnitScope; clip?: NodeClip; page?: PageInfo; pageRun?: PageRunInfo; lod?: NodeLod };
 type Field = keyof Declared;
 interface DeclaredPayload { id: NodeId; from?: unknown; to?: unknown }
 
@@ -42,14 +45,14 @@ function write(node: Declared, field: Field, to: unknown): void {
 }
 
 const KIND: Record<Field, string> = {
-  units: 'kit:setUnits', clip: 'kit:setClip', page: 'kit:setPage', pageRun: 'kit:setPageRun',
+  units: 'kit:setUnits', clip: 'kit:setClip', page: 'kit:setPage', pageRun: 'kit:setPageRun', lod: 'kit:setLod',
 };
 
 /** Register the `KIND` ops, and answer with the scene methods that record them. */
 export function createDeclaredFieldSetters<TData, TLayer extends string, TPose>(
   env: DeclaredFieldSettersEnv<TData, TLayer, TPose>,
 ): SceneDeclaredFieldSetters {
-  for (const field of ['units', 'clip', 'page', 'pageRun'] as const) {
+  for (const field of ['units', 'clip', 'page', 'pageRun', 'lod'] as const) {
     env.register(KIND[field], {
       apply: (p) => { const { id, to } = p as DeclaredPayload; write(env.requireNode(id), field, to); },
       revert: (p) => { const { id, from } = p as DeclaredPayload; write(env.requireNode(id), field, from); },
@@ -68,5 +71,6 @@ export function createDeclaredFieldSetters<TData, TLayer extends string, TPose>(
     setClip: set('clip', 'setClip', 'set the clip of'),
     setPage: set('page', 'setPage', 'set the page of'),
     setPageRun: set('pageRun', 'setPageRun', 'set the page run of'),
+    setLod: set('lod', 'setLod', 'set the level of detail of'),
   };
 }

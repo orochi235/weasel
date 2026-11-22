@@ -10,6 +10,7 @@ import type { View } from 'core/viewport/view';
 import type { NodeShapes } from './nodeShapeRegistry';
 import type { NodeOutline, NodeOutlineCtx } from './nodeOutline';
 import type { EffectItem } from 'core/scene/pathEffects/source';
+import type { Ladder, RungId } from './lod/ladder';
 
 /** Optional per-call paint context, threaded through `defaultDrawOne`'s third argument. Lets
  *  a rendering entry point override ambient environment reads; custom painters may ignore it
@@ -54,6 +55,10 @@ export interface NodePaintCtx {
   /** The painters the caller resolves through — the scene's, `nodeShapesOf(scene)` — for a
    *  painter that asks after another node's shape. Absent, `defaultNodeShapes`. */
   shapes?: NodeShapes;
+  /** The representation the walk chose for the node by its size on screen (`Ladder`), when it has
+   *  more than one. Absent is `'full'`. `defaultDrawOne` draws `'box'` and `'none'` itself and hands
+   *  a painter's own rung to that rung's `paint`. */
+  rung?: RungId;
 }
 
 /**
@@ -148,6 +153,10 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
   /** Optional: the node as the rigid pieces a path effect lays one by one along a path — a text
    *  node's grapheme clusters — each in its own frame. `[]` while what they need is loading. */
   effectItems?(node: Node<TData, string, TPose>, pose: TPose): readonly EffectItem[];
+  /** Optional: this kind's representations by on-screen size, coarse to fine. The render walk picks
+   *  one per node each frame, with hysteresis, and hands it to `paint` as `ctx.rung`; see `Ladder`.
+   *  Absent, the node always draws `paint` in full. */
+  ladder?: Ladder<TData, TPose>;
 }
 
 /** How a painter inks its silhouette. See {@link NodeShapeEntry.ink}.
