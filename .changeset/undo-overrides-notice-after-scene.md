@@ -2,6 +2,6 @@
 '@weasel-js/core': patch
 ---
 
-During an undo, redo, or history step, a scene's overrides listeners hear of a change after its own subscribers, as they do for any other edit.
+During undo, redo, or another history step, overrides listeners hear of a change after the scene's own subscribers.
 
 <!-- entry: fix -->
