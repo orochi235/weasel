@@ -2,7 +2,8 @@
 import type { DataEdge, DataNode, LayoutDirection } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../document';
 import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type Cluster, type GraphOut } from '../graphWrite';
-import { arrowName, dashStyle, dotNumber, OUTLINE_ATTR, quoteLabel, shapeOf } from './values';
+import { sameList } from '@weasel-js/registry';
+import { arrowName, dashOf, dashStyle, dotNumber, OUTLINE_ATTR, quoteLabel, shapeOf } from './values';
 
 const RANKDIR: Readonly<Record<LayoutDirection, string | null>> = { down: null, up: 'BT', right: 'LR', left: 'RL' };
 const KEYWORDS = new Set(['node', 'edge', 'graph', 'digraph', 'subgraph', 'strict']);
@@ -23,11 +24,18 @@ const attrList = (attrs: readonly (string | null)[]) => {
 };
 const penwidth = (width: number | undefined) => (width !== undefined && Number.isFinite(width) ? `penwidth=${dotNumber(width)}` : null);
 const dashedDefault = (dash: readonly number[] | undefined) => dash !== undefined && dash.length > 0;
+/** The style word `dash` writes as, with a warning when DOT draws that word as another pattern. */
+function dashWord(out: GraphOut, dash: readonly number[]): string {
+  const word = dashStyle(dash);
+  if (!sameList(dash, dashOf([word])!)) out.warnings.add('DOT draws only dashed and dotted lines; other dash patterns were written as dashed.');
+  return word;
+}
 /** An edge's `style` where its dash is not the default's: its dash word, or `solid` under a dashed default. */
-function edgeDash(dash: readonly number[] | undefined, base: readonly number[] | undefined): string | null {
+function edgeDash(out: GraphOut, dash: readonly number[] | undefined, base: readonly number[] | undefined): string | null {
   const dashed = dashedDefault(dash);
   if (!dashed) return dashedDefault(base) ? 'style=solid' : null;
-  return dashedDefault(base) && dashStyle(dash!) === dashStyle(base!) ? null : `style=${dashStyle(dash!)}`;
+  const word = dashWord(out, dash!);
+  return dashedDefault(base) && word === dashStyle(base!) ? null : `style=${word}`;
 }
 const color = (key: string, value: string | undefined) => (value === undefined ? null : `${key}="${hexColor(value, 'hex')}"`);
 
@@ -37,7 +45,7 @@ function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
   const own = changed(nodeStyleIn(out, node), nodeStyleIn(out));
   const dash = nodeStyleIn(out, node).dash;
   const dashed = dash !== undefined && dash.length > 0;
-  const styles = [rounded ? 'rounded' : null, 'filled', dashed ? dashStyle(dash) : null].filter((s) => s !== null);
+  const styles = [rounded ? 'rounded' : null, 'filled', dashed ? dashWord(out, dash) : null].filter((s) => s !== null);
   // Written when it says more than `filled`, or when the default it would otherwise take is dashed and this one is not.
   const ownStyle = styles.length > 1 || (!dashed && dashedDefault(nodeStyleIn(out).dash));
   const page = out.page.height;
@@ -66,7 +74,7 @@ function writeCluster(
   const inner = `${indent}  `;
   const filled = c.style?.fill !== undefined;
   const dash = c.style?.dash;
-  const styles = [filled ? 'filled' : null, dash !== undefined && dash.length > 0 ? dashStyle(dash) : null].filter((w) => w !== null);
+  const styles = [filled ? 'filled' : null, dash !== undefined && dash.length > 0 ? dashWord(out, dash) : null].filter((w) => w !== null);
   if (c.label !== undefined || inherited.label) lines.push(`${inner}label=${quoteLabel(c.label !== undefined ? [c.label] : [])};`);
   if (styles.length > 0) lines.push(`${inner}style=${styles.length > 1 ? `"${styles.join(',')}"` : styles[0]};`);
   else if (inherited.styled) lines.push(`${inner}style="";`);
@@ -127,7 +135,7 @@ function edgeLine(out: GraphOut, edge: DataEdge): string | null {
     edge.endLabels?.to ? `headlabel=${quoteLabel([edge.endLabels.to])}` : null,
     color('color', own.stroke), color('fontcolor', own.label),
     penwidth(own.width),
-    edgeDash(edgeStyleIn(out, edge).dash, edgeStyleIn(out).dash),
+    edgeDash(out, edgeStyleIn(out, edge).dash, edgeStyleIn(out).dash),
     ...markerAttrs(out, edge),
   ])};`;
 }
@@ -147,12 +155,12 @@ export function writeDot(doc: DiagramDocument, opts?: WriteOptions): ExportResul
     ...(rankdir !== null ? [`  rankdir=${rankdir};`] : []),
     ...(placed ? [`  bb="0,0,${dotNumber(page.width)},${dotNumber(page.height)}";`] : []),
     `  node${attrList([
-      'shape=box', node.dash !== undefined && node.dash.length > 0 ? `style="filled,${dashStyle(node.dash)}"` : 'style=filled',
+      'shape=box', node.dash !== undefined && node.dash.length > 0 ? `style="filled,${dashWord(out, node.dash)}"` : 'style=filled',
       color('fillcolor', node.fill), color('color', node.stroke), color('fontcolor', node.text), penwidth(node.strokeWidth),
     ])};`,
     `  edge${attrList([
       color('color', edge.stroke), color('fontcolor', edge.label), penwidth(edge.width),
-      edge.dash !== undefined && edge.dash.length > 0 ? `style=${dashStyle(edge.dash)}` : null,
+      edge.dash !== undefined && edge.dash.length > 0 ? `style=${dashWord(out, edge.dash)}` : null,
     ])};`,
   ];
   for (const n of out.nodes) lines.push(`  ${dotId(n.id)}${nodeAttrs(out, n, placed)};`);

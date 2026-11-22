@@ -3768,3 +3768,6 @@ Calls the lanes made without a ruling:
   outline registry holds; an empty one is unset, and any other is read from the node's `shape` with a warning. A
   document naming an outline its consumer registers later reads as the shape; taking any name on trust was the
   alternative.
+- 2026-11-22 (the fixer's call): the DOT writer warns whenever a dash it writes is not one of the two patterns DOT's
+  `dashed` and `dotted` read back as, the built-in themes' container dash included, since it reads back changed.
+  Warning only for an element's own dash, not a theme's, was the alternative.

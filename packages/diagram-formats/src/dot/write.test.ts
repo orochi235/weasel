@@ -84,6 +84,14 @@ describe('writing DOT', () => {
     expect(back(pageOf(data)).data.containers![0]!.colors?.strokeWidth).toBe(3);
   });
 
+  it('warns for a dash pattern DOT draws differently, and not for the two it has', () => {
+    const data = (dash: number[]): DiagramData => ({ nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ id: '1', from: 'a', to: 'b', colors: { dash } }] });
+    const warning = 'DOT draws only dashed and dotted lines; other dash patterns were written as dashed.';
+    expect(writeDot(pageOf(data([10, 2]))).warnings).toContain(warning);
+    expect(writeDot(pageOf({ nodes: [{ id: 'a', colors: { dash: [1, 1] } }], edges: [] })).warnings).toContain(warning);
+    for (const dash of [[6, 4], [2, 3]]) expect(writeDot(pageOf(data(dash))).warnings).not.toContain(warning);
+  });
+
   it('writes an open chevron, which DOT has no arrowhead for, as an arrow with a warning', () => {
     const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ id: '1', from: 'a', to: 'b', colors: { markerEnd: 'arrow-open' } }] };
     const { text, warnings } = writeDot(pageOf(data));
@@ -113,6 +121,7 @@ describe('writing DOT', () => {
     expect(writeDot(doc).warnings).toEqual([
       'DOT holds one page; connectors to other pages were dropped.',
       'DOT holds no routes; connectors\' bends were dropped.',
+      'DOT draws only dashed and dotted lines; other dash patterns were written as dashed.',
     ]);
   });
 
@@ -127,6 +136,7 @@ describe('writing DOT', () => {
       'DOT has no groups; they were written as clusters, which read back as containers.',
       'DOT has no ports of a shape\'s own; shapes\' ports and port labels were dropped.',
       'DOT has no drawn outlines; those shapes were written as rectangles.',
+      'DOT draws only dashed and dotted lines; other dash patterns were written as dashed.',
       'DOT has only compass ports; connectors\' other ports were dropped.',
       'DOT joins nodes only; connectors to containers and groups were dropped.',
     ]);
