@@ -1548,7 +1548,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `%uXXXX` per code unit outside `[A-Za-z0-9_.-]` in its placeholder.
 - 2026-11-20 (my call, audit round 50): `provideVariants` handing a `failed` variant a loader of another identity sets
   it `idle` and announces it, so a mounted `useIconVariant` loads from the new one; a new loader for a `loaded` or
-  `loading` variant is kept for no run, since running it would add the variant's tables a second time.
+  `loading` variant is kept for no run, since running it would add the variant's tables a second time. Since audit
+  round 67, a load that fails after its loader was replaced leaves the variant `idle`, not `failed`, so the new one runs.
+- 2026-11-22 (my call, audit round 67): `IconRegistryProvider`'s `variants` is the current set: a new value drops
+  every variant it no longer names, which then reads `unknown`, and releases the tables that variant loaded, as a new
+  `icons` value releases the last one's tables; a load in flight for a dropped variant adds nothing. A bare
+  `provideVariants` still only adds; `{ replace: true }` is the provider's path.
 - Open (icons second property pass, 2026-11-11): the registry and icons-plugin take a table whose namespace, or a
   glyph's name, holds a colon or whitespace, which no `splitIconRef` reads: namespace `a` with glyph `b:c` and
   namespace `a:b` with glyph `c` share the slot `a:b:c` under two owners. Whether such a table is refused.

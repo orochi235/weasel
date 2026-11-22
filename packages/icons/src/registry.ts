@@ -30,7 +30,8 @@ export interface IconRegistry {
   owner(namespace: string): string | undefined;
   /** The same array until the registry next changes, so it is safe to read through `useSyncExternalStore`. */
   entries(): readonly IconEntry[];
-  provideVariants(loaders: Readonly<Record<string, IconVariantLoader>>): void;
+  /** Adds loaders by name; with `replace`, also drops every variant `loaders` does not name, releasing the tables it loaded. */
+  provideVariants(loaders: Readonly<Record<string, IconVariantLoader>>, options?: { replace?: boolean }): void;
   loadVariant(name: string): Promise<void>;
   variantState(name: string): IconVariantState;
   subscribe(listener: () => void): () => void;
@@ -48,6 +49,10 @@ function isGlyph(value: unknown): value is IconGlyph {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
   const g = value as Partial<Record<keyof IconGlyph, unknown>>;
   return typeof g.body === 'string' && typeof g.group === 'string' && Array.isArray(g.tags) && (g.fill === undefined || typeof g.fill === 'string');
+}
+
+function assertGlyph(value: unknown, ref: string): asserts value is IconGlyph {
+  if (!isGlyph(value)) throw new TypeError(`icon "${ref}" needs a string body and group and an array of tags`);
 }
 
 /** A registry, optionally seeded with tables; each `add` and `override` returns its own release function. */
@@ -74,9 +79,7 @@ export function createIconRegistry(initial?: IconTable | readonly IconTable[]): 
         throw new TypeError(`an icon table needs a string namespace and owner and an object of icons, got ${String(t?.namespace)}`);
       }
       for (const name of Object.keys(icons)) {
-        if (!isGlyph((icons as Record<string, unknown>)[name])) {
-          throw new TypeError(`icon "${t.namespace}:${name}" needs a string body and group and an array of tags`);
-        }
+        assertGlyph((icons as Record<string, unknown>)[name], `${t.namespace}:${name}`);
       }
     }
     // Check every claim, those within the batch included, before writing any: a refused batch registers nothing.
@@ -107,13 +110,16 @@ export function createIconRegistry(initial?: IconTable | readonly IconTable[]): 
     };
   };
 
-  const variants = createVariants((tables) => void add(tables), glyphs.bump);
+  const variants = createVariants(add, glyphs.bump);
   if (initial) add(initial);
 
   return {
     get: glyphs.get,
     add,
-    override: (ref, glyph, source = OVERRIDE) => glyphs.push(ref, glyph, { source, rank: OVERRIDE_RANK }),
+    override(ref, glyph, source = OVERRIDE) {
+      assertGlyph(glyph, ref);
+      return glyphs.push(ref, glyph, { source, rank: OVERRIDE_RANK });
+    },
     owner: (namespace) => claims.get(namespace)?.owner,
     entries() {
       const from = glyphs.entries();

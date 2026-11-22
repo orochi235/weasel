@@ -55,6 +55,14 @@ describe('createIconRegistry', () => {
     expect(r.owner('core')).toBeUndefined();
   });
 
+  it('refuses an override whose glyph is not a glyph, as add does', () => {
+    const r = createIconRegistry(core({ undo: 'u' }));
+    expect(() => r.override(ref('core:undo'), { body: 5 } as never)).toThrow(TypeError);
+    expect(() => r.override(ref('core:undo'), { body: 'b', group: 'G' } as never)).toThrow(TypeError);
+    expect(r.get('core:undo')?.body).toBe('u');
+    expect(r.entries()[0]?.overridden).toBe(false);
+  });
+
   it('overrides one icon explicitly, and releasing the override uncovers the original', () => {
     const r = createIconRegistry(core({ undo: 'u' }));
     const release = r.override(ref('core:undo'), glyph('mine'), 'app');
@@ -251,6 +259,45 @@ describe('variants', () => {
       vi.unstubAllEnvs();
       error.mockRestore();
     }
+  });
+
+  it('reopens a variant whose loader was replaced while the one it ran failed', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const r = createIconRegistry();
+    const fixed = vi.fn(async () => ({ default: [core({ redo: 'r' })] }));
+    r.provideVariants({ all: async () => { throw new Error('offline'); } });
+    const run = r.loadVariant('all');
+    r.provideVariants({ all: fixed });
+    expect(r.variantState('all')).toBe('loading');
+    await run;
+    expect(r.variantState('all')).toBe('idle');
+    expect(fixed).not.toHaveBeenCalled();
+    await r.loadVariant('all');
+    expect(r.variantState('all')).toBe('loaded');
+  });
+
+  it('drops a variant a replacing set no longer names, with the tables it loaded', async () => {
+    const r = createIconRegistry(core({ undo: 'u' }));
+    r.provideVariants({ all: async () => ({ default: [core({ redo: 'r' })] }), extra: async () => ({ default: [] }) });
+    await r.loadVariant('all');
+    expect(r.get('core:redo')).toBeDefined();
+    r.provideVariants({ extra: async () => ({ default: [] }) });
+    expect(r.variantState('all')).toBe('loaded');
+    r.provideVariants({}, { replace: true });
+    expect(r.variantState('all')).toBe('unknown');
+    expect(r.variantState('extra')).toBe('unknown');
+    expect(r.get('core:redo')).toBeUndefined();
+    expect(r.get('core:undo')).toBeDefined();
+  });
+
+  it('adds nothing from a load in flight when its variant is dropped', async () => {
+    const r = createIconRegistry();
+    r.provideVariants({ all: async () => ({ default: [core({ redo: 'r' })] }) });
+    const run = r.loadVariant('all');
+    r.provideVariants({}, { replace: true });
+    await run;
+    expect(r.variantState('all')).toBe('unknown');
+    expect(r.get('core:redo')).toBeUndefined();
   });
 
   it('marks a loader that throws synchronously failed, not stuck loading', async () => {

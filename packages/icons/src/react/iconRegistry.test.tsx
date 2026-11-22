@@ -126,6 +126,21 @@ describe('icon registry provider', () => {
     error.mockRestore();
   });
 
+  it('drops a variant its new variants value no longer names', async () => {
+    const loader = async () => ({ default: [more] });
+    function Probe() {
+      const { state } = useIconVariant('extra');
+      return <span>{`${state} ${useIconGlyph('core:redo')?.body ?? 'none'}`}</span>;
+    }
+    const tree = (variants: Record<string, typeof loader>) => (
+      <IconRegistryProvider icons={core} variants={variants}><Probe /></IconRegistryProvider>
+    );
+    const { rerender, container } = render(tree({ all: loader, extra: loader }));
+    await waitFor(() => expect(container.textContent).toBe('loaded <path d="r"/>'));
+    await act(async () => rerender(tree({ all: loader })));
+    expect(container.textContent).toBe('unknown none');
+  });
+
   it('server-renders a glyph and a variant listing from the registry as it stands', () => {
     function Probe() {
       const { state, entries } = useIconVariant('all');
