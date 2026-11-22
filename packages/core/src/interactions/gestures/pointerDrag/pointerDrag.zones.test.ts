@@ -128,3 +128,24 @@ describe('the default drag ghost', () => {
     firePointer('pointerup', 100, 60);
   });
 });
+
+describe('useDragHandle in another document', () => {
+  it('resolves zones in the source document, not the global one', () => {
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument!;
+    doc.body.innerHTML = '<div id="zone"></div><div id="src"></div>';
+    const onDrop = vi.fn();
+    zone(doc.getElementById('zone')!, { accepts: () => true, onDrop });
+    Object.defineProperty(doc, 'elementFromPoint', { configurable: true, value: () => doc.getElementById('zone') });
+    vi.spyOn(document, 'elementFromPoint').mockReturnValue(null);
+    const { result } = renderHook(() => useDragHandle(() => ({ kind: 'item', ids: ['a'] })));
+    press(result.current, doc.getElementById('src')!);
+    for (const [type, x] of [['pointermove', 30], ['pointermove', 40], ['pointerup', 40]] as const) {
+      const ev = new Event(type) as PointerEvent;
+      Object.assign(ev, { clientX: x, clientY: 0, pointerId: 1, pointerType: 'mouse', button: 0 });
+      doc.dispatchEvent(ev);
+    }
+    expect(onDrop).toHaveBeenCalledOnce();
+  });
+});
