@@ -101,3 +101,40 @@ describe('createSimulation', () => {
     expect(a).toMatchObject({ x: 3, y: 4, vx: 0, vy: 0 });
   });
 });
+
+describe('createSimulation in three dimensions', () => {
+  it('moves z only when asked for three dimensions, and primes it to 0', () => {
+    const flat: TestNode = { id: 'a', x: 0, y: 0, vz: 5 };
+    createSimulation<TestNode>({ nodes: [flat] }).tick();
+    expect(flat.z).toBeUndefined();
+
+    const solid: TestNode = { id: 'b', x: 0, y: 0 };
+    const sim = createSimulation<TestNode>({ nodes: [solid], dimensions: 3, forces: [(alpha) => { solid.vz! += alpha; }] });
+    expect(sim.dimensions).toBe(3);
+    expect(solid.z).toBe(0);
+    sim.tick();
+    expect(solid.z).toBeGreaterThan(0);
+    expect(solid.x).toBe(0);
+  });
+
+  it('holds a node pinned on z there', () => {
+    const a: TestNode = { id: 'a', x: 0, y: 0, z: 3, fz: 7 };
+    createSimulation<TestNode>({ nodes: [a], dimensions: 3, forces: [() => { a.vz! += 1; a.vx! += 1; }] }).tick();
+    expect(a.z).toBe(7);
+    expect(a.vz).toBe(0);
+    expect(a.x).toBeGreaterThan(0);
+  });
+
+  it('hands its dimensions to each force, as d3-force-3d does', () => {
+    let seen: number | undefined;
+    const force: SimulationForce<TestNode> = Object.assign(() => {}, {
+      initialize: (_nodes: TestNode[], _random?: () => number, dimensions?: number) => { seen = dimensions; },
+    });
+    createSimulation<TestNode>({ nodes: [node('a')], forces: [force], dimensions: 3 });
+    expect(seen).toBe(3);
+  });
+
+  it('refuses dimensions other than 1, 2 or 3', () => {
+    expect(() => createSimulation<TestNode>({ nodes: [], dimensions: 4 as never })).toThrow(RangeError);
+  });
+});

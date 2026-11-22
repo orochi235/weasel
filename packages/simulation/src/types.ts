@@ -2,20 +2,44 @@ import type { ClockHandle } from '@weasel-js/clock';
 
 /**
  * Matches d3-force's node shape exactly so d3-force's bundled forces work
- * without translation. Consumers extend this with additional fields.
+ * without translation, and d3-force-3d's in three dimensions (`z`, `vz`, `fz`).
+ * Consumers extend this with additional fields.
  */
 export interface SimulationNode {
   x: number;
   y: number;
+  /** Read and moved only by a simulation of three `dimensions`, which primes it to 0. */
+  z?: number;
   vx?: number;
   vy?: number;
+  vz?: number;
   /** Pin x to this value when non-null. The integrator skips x/vx for the node, and a
    *  non-finite pin holds x where it stands. */
   fx?: number | null;
   fy?: number | null;
+  fz?: number | null;
   /** Array index, written by `initialize`. Some forces (e.g. forceLink) rely on it. */
   index?: number;
 }
+
+/** One axis the integrator moves nodes along: the node fields holding a
+ *  node's position, velocity and pin on it. */
+export interface SimulationAxis {
+  readonly position: 'x' | 'y' | 'z';
+  readonly velocity: 'vx' | 'vy' | 'vz';
+  readonly pin: 'fx' | 'fy' | 'fz';
+}
+
+/** Every axis a simulation can run along, in order: a simulation of `n`
+ *  dimensions runs along the first `n`. */
+export const SIMULATION_AXES: readonly SimulationAxis[] = Object.freeze([
+  { position: 'x', velocity: 'vx', pin: 'fx' },
+  { position: 'y', velocity: 'vy', pin: 'fy' },
+  { position: 'z', velocity: 'vz', pin: 'fz' },
+]);
+
+/** How many of {@link SIMULATION_AXES} a simulation runs along. */
+export type SimulationDimensions = 1 | 2 | 3;
 
 /**
  * Force protocol — contract-compatible with d3-force. A force is a function
@@ -24,7 +48,8 @@ export interface SimulationNode {
  */
 export interface SimulationForce<TNode extends SimulationNode = SimulationNode> {
   (alpha: number): void;
-  initialize?(nodes: TNode[], random?: () => number): void;
+  /** `dimensions` is the simulation's, as d3-force-3d passes it. */
+  initialize?(nodes: TNode[], random?: () => number, dimensions?: SimulationDimensions): void;
 }
 
 /** Options for `useSimulation`: everything {@link SimulationOptions} carries,
@@ -61,6 +86,8 @@ export interface UseSimulationOptions<TNode extends SimulationNode>
  */
 export interface Simulation<TNode extends SimulationNode> {
   readonly nodes: TNode[];
+  /** How many of {@link SIMULATION_AXES} it moves nodes along. */
+  readonly dimensions: SimulationDimensions;
 
   setNodes(nodes: TNode[]): this;
   setForces(forces: SimulationForce<TNode>[]): this;
@@ -110,6 +137,9 @@ export interface SimulationOptions<TNode extends SimulationNode> {
   alphaTarget?: number;
   /** Friction multiplier on velocity per tick: vx *= (1 - velocityDecay). Default 0.4. */
   velocityDecay?: number;
+  /** How many of {@link SIMULATION_AXES} the integrator moves nodes along.
+   *  Default 2. At 3 it moves `z` too, priming it to 0 where a node has none. */
+  dimensions?: SimulationDimensions;
   /** Handed to each force's `initialize`. Default `Math.random`; pass a seeded
    *  source to make a run reproducible. */
   random?: () => number;
