@@ -15,7 +15,7 @@ import {
 } from 'bil-lbx';
 import type { Tape } from '../tape';
 import { carriedObjects, placeCarried } from './carried';
-import { inkSpanX, lineObject, rectObject, textObject } from './shapes';
+import { inkBox, lineObject, rectObject, textObject } from './shapes';
 import { keepsAxes, type DrawState } from './style';
 
 /** One label: its size and the commands painted on it, in points with the origin at its top left. */
@@ -36,7 +36,7 @@ export interface LbxPage {
 export interface WriteLbxOptions {
   /** Draws what an `.lbx` object cannot state; `commandRasterizer` from `@weasel-js/core` is one. Without it those commands are skipped. */
   rasterize?: CommandRasterizer;
-  /** Pixels per inch for rasterized content. Default 180, the PT-P710BT's. */
+  /** Pixels per inch for rasterized content, a positive finite number. Default 180, the PT-P710BT's. */
   rasterDpi?: number;
 }
 
@@ -98,8 +98,10 @@ function insideClips(objects: readonly LabelObject[], clips: readonly Clip[]): b
     const [ax, ay] = mat3.transformPoint(transform, path.x, path.y);
     const [bx, by] = mat3.transformPoint(transform, path.x + path.width, path.y + path.height);
     const x0 = Math.min(ax, bx), y0 = Math.min(ay, by), x1 = Math.max(ax, bx), y1 = Math.max(ay, by);
-    return objects.every(({ position: p }) =>
-      p.x >= x0 - CLIP_EPS && p.y >= y0 - CLIP_EPS && p.x + p.width <= x1 + CLIP_EPS && p.y + p.height <= y1 + CLIP_EPS);
+    return objects.every((object) => {
+      const ink = inkBox(object);
+      return ink.x0 >= x0 - CLIP_EPS && ink.y0 >= y0 - CLIP_EPS && ink.x1 <= x1 + CLIP_EPS && ink.y1 <= y1 + CLIP_EPS;
+    });
   });
 }
 
@@ -112,7 +114,7 @@ function finiteObject(v: unknown): boolean {
 
 /** Whether an object lies along the tape within `[0, end]`, the stretch the rasterizer draws. */
 function withinLength(object: LabelObject, end: number): boolean {
-  const { x0, x1 } = inkSpanX(object);
+  const { x0, x1 } = inkBox(object);
   return x0 >= -CLIP_EPS && x1 <= end + CLIP_EPS;
 }
 
@@ -238,6 +240,9 @@ async function settle(items: Item[], page: LbxPage, opts: WriteLbxOptions, skipp
 export async function lbxConfig(page: LbxPage, opts: WriteLbxOptions = {}): Promise<{ config: LabelConfig; skipped: LbxSkip[] }> {
   if (!Number.isFinite(page.length) || page.length <= 0) {
     throw new RangeError(`writeLbx: a label's length must be a positive finite number of points, got ${page.length}`);
+  }
+  if (opts.rasterDpi !== undefined && !(Number.isFinite(opts.rasterDpi) && opts.rasterDpi > 0)) {
+    throw new RangeError(`writeLbx: rasterDpi must be a positive finite number, got ${opts.rasterDpi}`);
   }
   if (page.autoLength && page.length > AUTO_LENGTH_MAX_PT) {
     throw new RangeError(

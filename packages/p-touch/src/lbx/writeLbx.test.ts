@@ -122,6 +122,13 @@ describe('lbxConfig', () => {
     expect((await lbxConfig(page([over]))).config.objects.map((o) => o.type)).toEqual(['rect']);
   });
 
+  it('refuses a raster dpi that is not a positive finite number', async () => {
+    for (const rasterDpi of [0, -180, NaN, Infinity]) {
+      await expect(lbxConfig(page([]), { rasterDpi })).rejects.toThrow(RangeError);
+    }
+    await expect(lbxConfig(page([]), { rasterDpi: 300 })).resolves.toBeDefined();
+  });
+
   it('refuses an auto-length label longer than the ceiling P-touch parks its paper at', async () => {
     await expect(lbxConfig({ ...page([]), length: 3000, autoLength: true })).rejects.toThrow(RangeError);
     await expect(lbxConfig({ ...page([]), length: 2834.4, autoLength: true })).resolves.toBeDefined();
@@ -201,6 +208,22 @@ describe('lbxObjectsCommand', () => {
     ]));
     expect(skipped).toEqual([]);
     expect(config.objects).toEqual([]);
+  });
+
+  it('skips a carried line whose pen reaches past a clip its points lie inside', async () => {
+    const line: LineObject = {
+      type: 'line', position: { x: 0, y: 10, width: 50, height: 0 }, points: [{ x: 0, y: 10 }, { x: 50, y: 10 }],
+      arrowBegin: 'ROUND', arrowEnd: 'ROUND', pen: { style: 'SOLID', widthX: 6, widthY: 6, color: '#000000' }, brush: { style: 'NULL' },
+    };
+    const clipped = (width: number, height: number) => lbxConfig(page([{
+      kind: 'group', clip: { kind: 'rect', x: -3, y: 10 - height / 2, width, height }, children: [lbxObjectsCommand([line])],
+    }]));
+    const thin = await clipped(56, 4);
+    expect(thin.config.objects).toEqual([]);
+    expect(thin.skipped).toEqual([{ kind: 'group', detail: 'lbxObjectsCommand not wholly inside an axis-aligned rect clip' }]);
+    const wide = await clipped(56, 6);
+    expect(wide.skipped).toEqual([]);
+    expect(wide.config.objects).toEqual([line]);
   });
 
   it('skips carried objects a clip would cut, or under a group the writer must rasterize', async () => {
