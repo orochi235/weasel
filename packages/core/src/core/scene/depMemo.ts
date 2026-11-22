@@ -10,7 +10,8 @@
  *
  * What is recorded is what a derivation may read of a dependency: its node (an
  * identity), its pose (by value), its `data` (a reference, which every edit
- * replaces), its `layer`, and its path where the derivation read it. Anything
+ * replaces), its `layer`, and its path and inherited paint where the
+ * derivation read them. Anything
  * else on the node — its parent, its children — still needs a push. A
  * derivation that read glyph outlines also records the face generation, since
  * a face landing changes its result with nothing in the scene changed.
@@ -30,6 +31,8 @@ export interface DepRecord<TPose> {
   data: unknown[];
   layers: (string | undefined)[];
   paths: (Path | null | undefined)[];
+  /** The paint each dependency inherited, {@link UNREAD} where the derivation never asked. */
+  inherited: (InheritedPaint | undefined | typeof UNREAD)[];
   /** What each dependency's children resolved to, where the derivation read them. */
   children: (DepRecord<TPose> | undefined)[];
   /** The outside generation it was derived under, or `null` when it read
@@ -37,8 +40,11 @@ export interface DepRecord<TPose> {
   outside: number | null;
 }
 
+/** A dependency's inherited paint was never read: `undefined` is a value it can answer. */
+export const UNREAD: unique symbol = Symbol('unread');
+
 export function emptyDepRecord<TPose>(): DepRecord<TPose> {
-  return { nodes: [], poses: [], data: [], layers: [], paths: [], children: [], outside: null };
+  return { nodes: [], poses: [], data: [], layers: [], paths: [], inherited: [], children: [], outside: null };
 }
 
 /** A dependency as the derivation is handed it, noting a read of its path. A
@@ -61,7 +67,7 @@ class RecordedDep<TPose> implements DerivedDep<TPose> {
   }
 
   get inherited(): InheritedPaint | undefined {
-    return this.dep.inherited;
+    return (this.record.inherited[this.index] = this.dep.inherited);
   }
 
   get scene(): object | undefined {
@@ -86,6 +92,7 @@ function recordDeps<TPose>(
   into.data.length = 0;
   into.layers.length = 0;
   into.paths.length = 0;
+  into.inherited.length = 0;
   into.children.length = 0;
   return deps.map((dep, i) => {
     into.nodes.push(dep?.node);
@@ -93,6 +100,7 @@ function recordDeps<TPose>(
     into.data.push(dep?.node.data);
     into.layers.push(dep?.node.layer);
     into.paths.push(undefined);
+    into.inherited.push(UNREAD);
     into.children.push(undefined);
     return dep === undefined ? undefined : new RecordedDep(dep, into, i);
   });
@@ -144,6 +152,8 @@ function sameDep<TPose>(record: DepRecord<TPose>, i: number, dep: DerivedDep<TPo
   if (!samePoseValue(record.poses[i], dep.pose)) return false;
   const path = record.paths[i];
   if (path !== undefined && path !== dep.path) return false;
+  const inherited = record.inherited[i];
+  if (inherited !== UNREAD && inherited !== dep.inherited) return false;
   const kids = record.children[i];
   if (kids === undefined) return true;
   const now = dep.children;
