@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import type { DevtoolsArea } from '../protocol';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import type { DevtoolsClient } from '../client';
+import { bareDragSelect, nothingMatched } from './FallthroughDiagram.fixtures';
 import { DispatchView } from './DispatchView';
 
 afterEach(cleanup);
@@ -79,5 +80,15 @@ describe('<DispatchView>', () => {
     expect(asked).toBe(1);
     await act(async () => { release(); await new Promise((r) => setTimeout(r, 0)); });
     expect(asked).toBe(2);
+  });
+  it('keeps a handled record that more hidden unhandled ones arrive after than the panel keeps', async () => {
+    const ring: unknown[] = [{ ...bareDragSelect, fired: 'kept-action' }];
+    for (let i = 0; i < 250; i++) ring.push(nothingMatched);
+    const page = fakePage((async (_root: string, m: { cursor: number }) => ({
+      entries: ring.slice(m.cursor, m.cursor + 50), cursor: Math.min(ring.length, m.cursor + 50), live: null,
+    })) as () => Promise<unknown>);
+    renderWithIcons(<DispatchView client={page.client} rootId="r" />);
+    for (let i = 0; i < 6; i++) await act(async () => { for (const l of page.listeners) l('r', ['trace']); await new Promise((r) => setTimeout(r, 0)); });
+    expect(await screen.findByText('kept-action')).toBeTruthy();
   });
 });

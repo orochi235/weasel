@@ -16,13 +16,13 @@ import { followTrace } from '../trace';
 import { coalesced } from './coalesced';
 import { CoordTable, type CoordEntry } from './CoordTable';
 import { sequenced, type Sequenced } from './sequenced';
-import { TraceTable } from './TraceTable';
+import { keepEach, TraceTable } from './TraceTable';
 import s from './DispatchView.module.css';
 
 type Outcome = 'handled' | 'unhandled';
 
 const POLL_MS = 250;
-/** How many records the panel keeps, as many as a canvas's own buffer holds. */
+/** How many records of each outcome the panel keeps, as many as a canvas's own buffer holds. */
 const KEEP = 200;
 
 export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElement {
@@ -44,7 +44,7 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
       if (!live) return;
       if (slice.entries.length) {
         const read = sequenced(slice.entries as unknown as TraceLogEntry[], slice.cursor);
-        setEntries((prev) => [...prev, ...read].slice(-KEEP));
+        setEntries((prev) => keepEach([...prev, ...read], KEEP));
       }
       if (slice.coords?.length) {
         const read = sequenced(slice.coords as unknown as CoordEntry[], slice.coordCursor!);
