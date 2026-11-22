@@ -183,4 +183,28 @@ describe('<LoupeGestures> on a pane inside a camera', () => {
     peek();
     expect(visible('pane')).toBe('true');
   });
+
+  it('does not count two panes as two loupes in the camera', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const cameraEl = { current: null as HTMLElement | null };
+    const camera = { element: () => cameraEl.current } as CameraContextValue;
+    const inCamera = (children: ReactNode) => (
+      <CameraContext.Provider value={camera}>{children}</CameraContext.Provider>
+    );
+    const { unmount } = render(
+      <WeaselProvider isolate>
+        <div
+          ref={(el) => {
+            cameraEl.current = el;
+          }}
+        >
+          <Wall id="p" wrap={inCamera} />
+          <Wall id="q" wrap={inCamera} />
+        </div>
+      </WeaselProvider>,
+    );
+    expect(warn).not.toHaveBeenCalled();
+    unmount();
+    warn.mockRestore();
+  });
 });
