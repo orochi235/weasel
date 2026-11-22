@@ -408,6 +408,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   declined before its first move. They are `NotApplicable` only where no operand holds anything they could ever
   write, which today is `setVertexColor` with no selected node carrying `vertexColors`. A run that would write
   what each node already wears stays enabled and commits no undo entry.
+- 2026-11-22 (the fixer's call, audit round 70): a paint action is disabled with `Locked` while any node it would
+  paint, named by `ids` or selected, is locked, and its run writes nothing, after the 2026-11-09 ruling for Ungroup,
+  Delete, and Cut. It does not paint the unlocked nodes and skip the locked ones.
+- 2026-11-22 (the fixer's call, audit round 70): Group is disabled with `Locked` while a member, the container it
+  would land in, or a node it would move as a follower is locked, as Ungroup is. It used to throw from the scene.
 - Ruled 2026-11-10 (my call, overnight sweep): a reorder that would shift a locked node's place in the stack
   is disabled with `Locked`, after the 2026-11-09 ruling (a node it would move is locked). It used to throw
   from the scene partway through.

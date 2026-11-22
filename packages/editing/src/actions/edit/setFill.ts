@@ -16,9 +16,10 @@ interface SetFillState {
 
 /** Repaint a node's fill, keeping whatever else the fill carries. None is
  *  that record without its `paint`. */
-function repaint(prev: Fill | null | undefined, state: SetFillState): Fill {
+function repaint(prev: Fill | null | undefined, state: SetFillState): Fill | null {
   if (state.paint === null) {
-    const { paint: _dropped, ...rest } = prev ?? {};
+    if (prev == null) return null;
+    const { paint: _dropped, ...rest } = prev;
     return rest;
   }
   return { ...prev, paint: state.paint ?? paintWithColor(prev?.paint, state.color) };

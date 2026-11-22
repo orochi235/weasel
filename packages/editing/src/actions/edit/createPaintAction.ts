@@ -6,6 +6,7 @@ import { INHERIT } from '@weasel-js/paint';
 import { deepEqual, isFiniteNumber } from '@weasel-js/registry';
 import * as coreOps from '@weasel-js/core/ops';
 import { asNodeId, operandContent, requiresContent, withoutPageStructure } from '@weasel-js/core';
+import { anyLocked } from '../lockedWrites';
 
 /** The node data one paint action reads and writes: its own key, nothing else. */
 type PaintData<K extends string, TValue> = { [P in K]?: TValue | null };
@@ -60,12 +61,14 @@ interface Scratch<TState, TValue, K extends string> {
   previews: Map<NodeId, PaintData<K, TValue>>;
 }
 
-/** The nodes a paint action edits: the params' `ids` when given, else the selection's content. */
+/** The nodes a paint action edits: the params' `ids` when given, else the selection's content, less any the scene
+ *  does not hold. */
 function targetsOf(deps: ActionDeps | undefined, params: Readonly<Record<string, unknown>> | undefined): readonly NodeId[] {
   const ids = explicitIds(params);
-  if (ids === undefined) return operandContent(deps);
   const scene = deps?.scene;
-  return scene ? withoutPageStructure(scene, ids.map(asNodeId)) : ids.map(asNodeId);
+  if (!scene) return ids === undefined ? operandContent(deps) : ids.map(asNodeId);
+  const named = ids === undefined ? operandContent(deps) : withoutPageStructure(scene, ids.map(asNodeId));
+  return named.filter((id) => scene.get(id) !== undefined);
 }
 
 function explicitIds(params: Readonly<Record<string, unknown>> | undefined): readonly string[] | undefined {
@@ -87,12 +90,19 @@ export function createPaintAction<TState, TValue, K extends string, P>(
 ): Action {
   type Data = PaintData<K, TValue>;
 
+  /** What the run writes to `id`, or null when it leaves the node alone. An `'inherit'` node that would take the
+   *  paint it already inherits is left alone too, so it goes on inheriting. */
+  const writeFor = (scratch: Scratch<TState, TValue, K>, id: NodeId): { next: TValue | null } | null => {
+    const base = scratch.bases.get(id);
+    const next = spec.merge(base, scratch.state);
+    return unchanged(scratch.startData.get(id)?.[spec.dataKey], next) || unchanged(base, next) ? null : { next };
+  };
+
   const refreshPreviews = (scratch: Scratch<TState, TValue, K>): void => {
     scratch.previews.clear();
     for (const id of scratch.ids) {
-      const prev = scratch.startData.get(id);
-      const next = spec.merge(scratch.bases.get(id), scratch.state);
-      if (!unchanged(prev?.[spec.dataKey], next)) scratch.previews.set(id, { ...(prev ?? {}), [spec.dataKey]: next } as Data);
+      const write = writeFor(scratch, id);
+      if (write) scratch.previews.set(id, { ...(scratch.startData.get(id) ?? {}), [spec.dataKey]: write.next } as Data);
     }
   };
 
@@ -121,7 +131,7 @@ export function createPaintAction<TState, TValue, K extends string, P>(
         const fallback = resolveParams(opts?.params);
         type Targeted = { ids?: unknown } | undefined;
         const ids = [...targetsOf(ctx.deps, { ids: (ctx.params as Targeted)?.ids ?? (fallback as Targeted)?.ids })];
-        if (ids.length === 0) return {};
+        if (ids.length === 0 || anyLocked(scene, ids)) return {};
 
         // `??` would lose a `paint: null`, which is None, not "no paint given".
         const pick: PickParam<P> = (key) => (ctx.params?.[key] !== undefined ? ctx.params[key] : fallback?.[key]);
@@ -164,12 +174,11 @@ export function createPaintAction<TState, TValue, K extends string, P>(
             }
             const ops: Op[] = [];
             for (const id of scratch.ids) {
-              const start = scratch.startData.get(id)?.[spec.dataKey];
-              const merged = spec.merge(scratch.bases.get(id), scratch.state);
+              const write = writeFor(scratch, id);
               const nodeNow = scratch.scene.get(id);
-              if (!nodeNow || unchanged(start, merged)) continue;
+              if (!nodeNow || !write) continue;
               const from = { ...(nodeNow.data as object) } as Data;
-              const to = { ...from, [spec.dataKey]: merged } as Data;
+              const to = { ...from, [spec.dataKey]: write.next } as Data;
               ops.push(coreOps.setData<Data>({ id: id as string, from, to }));
             }
             commitOps(ctx.deps, ops, spec.label);
@@ -181,11 +190,17 @@ export function createPaintAction<TState, TValue, K extends string, P>(
       },
     },
     enabled: (deps, _at, _carried, params) => {
-      const given = explicitIds(params) !== undefined ? true : requiresContent(1)(deps);
+      if (explicitIds(params) === undefined) {
+        const given = requiresContent(1)(deps);
+        if (given !== true) return given;
+      }
       const scene = deps?.scene as Scene<Data, string, unknown> | undefined;
-      if (given !== true || !spec.writable || !scene) return given;
+      if (!scene) return true;
       const ids = targetsOf(deps, params);
-      return ids.some((id) => scene.get(id) && spec.writable!(baseOf(scene, id))) ? true : ActionDisabledReason.NotApplicable;
+      if (ids.length === 0) return ActionDisabledReason.NotApplicable;
+      if (anyLocked(scene, ids)) return ActionDisabledReason.Locked;
+      if (!spec.writable) return true;
+      return ids.some((id) => spec.writable!(baseOf(scene, id))) ? true : ActionDisabledReason.NotApplicable;
     },
   });
 }

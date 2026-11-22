@@ -16,13 +16,18 @@ interface SetStrokeState {
 /** Repaint a node's stroke, keeping its width, cap, join, dash and align, so
  *  picking a paint does not discard the rest of the stroke, and None keeps
  *  them for the next paint. A node with no stroke yet gets a hairline one. */
-function repaint(prev: Stroke | null | undefined, state: SetStrokeState): Stroke {
+function repaint(prev: Stroke | null | undefined, state: SetStrokeState): Stroke | null {
   if (state.paint === null) {
-    const { paint: _dropped, ...rest } = prev ?? {};
+    if (prev == null) return null;
+    const { paint: _dropped, ...rest } = prev;
     return rest;
   }
-  const base = prev?.paint == null && prev?.width === undefined ? { ...prev, width: 1 } : prev;
-  return { ...base, paint: state.paint ?? paintWithColor(prev?.paint, state.color) };
+  return { ...strokeUnderPaint(prev), paint: state.paint ?? paintWithColor(prev?.paint, state.color) };
+}
+
+/** The stroke a new paint goes onto: `prev`, or a hairline when it has neither a paint nor a width yet. */
+export function strokeUnderPaint(prev: Stroke | null | undefined): Stroke {
+  return prev == null || (prev.paint == null && prev.width === undefined) ? { ...prev, width: 1 } : prev;
 }
 
 /**

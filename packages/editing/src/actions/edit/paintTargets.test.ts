@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from '@weasel-js/core/engine';
 import { asNodeId, type RectPose, type Scene } from '@weasel-js/core';
+import { ActionDisabledReason } from '@weasel-js/routing';
 import { stubDepsForTests as stubDeps } from '@weasel-js/core/test-seams';
 import { setFillAction } from './setFill';
 import { makeSelection, ongoingInvoker } from './paintActionTestUtils';
@@ -30,5 +31,30 @@ describe('a paint action given ids', () => {
   it('is enabled with nothing selected', () => {
     const deps = stubDeps({ scene: makeScene(), operands: makeSelection([]) });
     expect(setFillAction.enabled!(deps, undefined, undefined, { ids: ['b'] })).toBe(true);
+  });
+
+  it('is not applicable when the ids name nothing in the scene', () => {
+    const deps = stubDeps({ scene: makeScene(), operands: makeSelection(['a']) });
+    expect(setFillAction.enabled!(deps, undefined, undefined, { ids: ['gone'] })).toBe(ActionDisabledReason.NotApplicable);
+    expect(setFillAction.enabled!(deps, undefined, undefined, { ids: [] })).toBe(ActionDisabledReason.NotApplicable);
+  });
+
+  it('previews only the named nodes the scene holds', () => {
+    const scene = makeScene();
+    const params = { color: '#ff0000', ids: ['b', 'gone'] };
+    const deps = stubDeps({ scene, operands: makeSelection([]) });
+    const ctx = { world: { x: 0, y: 0 }, screen: { x: 0, y: 0 }, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps, params };
+    expect(ongoingInvoker(setFillAction).start(ctx, { params }).previewIds?.()).toEqual(['b']);
+  });
+
+  it('is locked, and writes nothing, while a node it would paint is locked', () => {
+    const scene = makeScene();
+    scene.setLocked(B, true);
+    const params = { color: '#ff0000', ids: ['a', 'b'] };
+    const deps = stubDeps({ scene, operands: makeSelection([]) });
+    expect(setFillAction.enabled!(deps, undefined, undefined, params)).toBe(ActionDisabledReason.Locked);
+    const ctx = { world: { x: 0, y: 0 }, screen: { x: 0, y: 0 }, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps, params };
+    ongoingInvoker(setFillAction).start(ctx, { params }).onEnd?.(ctx, 'commit');
+    expect(fillOf(scene, A)).toBeUndefined();
   });
 });
