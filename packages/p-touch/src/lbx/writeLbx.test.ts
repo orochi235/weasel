@@ -203,6 +203,22 @@ describe('lbxObjectsCommand', () => {
     expect(config.objects).toEqual([]);
   });
 
+  it('skips a carried line whose pen reaches past a clip its points lie inside', async () => {
+    const line: LineObject = {
+      type: 'line', position: { x: 0, y: 10, width: 50, height: 0 }, points: [{ x: 0, y: 10 }, { x: 50, y: 10 }],
+      arrowBegin: 'ROUND', arrowEnd: 'ROUND', pen: { style: 'SOLID', widthX: 6, widthY: 6, color: '#000000' }, brush: { style: 'NULL' },
+    };
+    const clipped = (width: number, height: number) => lbxConfig(page([{
+      kind: 'group', clip: { kind: 'rect', x: -3, y: 10 - height / 2, width, height }, children: [lbxObjectsCommand([line])],
+    }]));
+    const thin = await clipped(56, 4);
+    expect(thin.config.objects).toEqual([]);
+    expect(thin.skipped).toEqual([{ kind: 'group', detail: 'lbxObjectsCommand not wholly inside an axis-aligned rect clip' }]);
+    const wide = await clipped(56, 6);
+    expect(wide.skipped).toEqual([]);
+    expect(wide.config.objects).toEqual([line]);
+  });
+
   it('skips carried objects a clip would cut, or under a group the writer must rasterize', async () => {
     const narrow = await lbxConfig(page([frame({ kind: 'rect', x: 0, y: 0, width: 20, height: 20 }, [lbxObjectsCommand([barcode])])]));
     expect(narrow.config.objects).toEqual([]);

@@ -82,21 +82,25 @@ function cornersMiter(points: readonly Point[], stroke: PlainStroke): boolean {
 }
 
 /**
- * The stretch along the tape an object's ink covers: its position, or for a line, every point
- * widened by how far its stroke reaches from it (half the width at an end, the miter at a corner).
+ * The box an object's ink covers: its position, or for a line, every point widened in both axes by
+ * how far its stroke reaches from it (half the width at an end, the miter at a corner).
  */
-export function inkSpanX(object: LabelObject): { x0: number; x1: number } {
-  if (object.type !== 'line') return { x0: object.position.x, x1: object.position.x + object.position.width };
+export function inkBox(object: LabelObject): { x0: number; y0: number; x1: number; y1: number } {
+  const p = object.position;
+  if (object.type !== 'line') return { x0: p.x, y0: p.y, x1: p.x + p.width, y1: p.y + p.height };
   const { points } = object;
   const half = !object.pen || object.pen.style === 'NULL' ? 0 : (object.pen.widthX ?? 0) / 2;
-  let x0 = Infinity, x1 = -Infinity;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (let i = 0; i < points.length; i++) {
     const inner = i > 0 && i < points.length - 1;
     const reach = half * (inner ? miterRatio(points[i - 1]!, points[i]!, points[i + 1]!) : 1);
-    x0 = Math.min(x0, points[i]!.x - reach);
-    x1 = Math.max(x1, points[i]!.x + reach);
+    const { x, y } = points[i]!;
+    x0 = Math.min(x0, x - reach);
+    x1 = Math.max(x1, x + reach);
+    y0 = Math.min(y0, y - reach);
+    y1 = Math.max(y1, y + reach);
   }
-  return { x0, x1 };
+  return { x0, y0, x1, y1 };
 }
 
 /** An open polyline stroked in a solid color, unfilled, as a `draw:poly`. */
