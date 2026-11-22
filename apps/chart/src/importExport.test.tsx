@@ -235,6 +235,8 @@ describe('File › Import…', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     io.picked = new File(['not a diagram'], 'notes.bin');
     mount();
+    // The chart saves itself once after it opens; take the stored chart after that save, or the save lands during the import and reads as the import's.
+    await waitFor(() => expect(stored()).not.toBeNull(), IMPORTED);
     const before = stored();
     choose('Import');
     expect(await screen.findByText('Could not import the file')).toBeTruthy();
