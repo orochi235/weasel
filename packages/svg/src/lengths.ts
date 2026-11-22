@@ -33,10 +33,11 @@ function viewportOf(el: Element): Viewport | undefined {
   return undefined;
 }
 
-/** An `<svg>`'s `width` or `height`: absent is `100%`, and a percentage is of
- *  the viewport it sits in; `NaN` where there is none. */
+/** An `<svg>`'s `width` or `height`: absent or `auto` is `100%`, and a percentage
+ *  is of the viewport it sits in; `NaN` where there is none. */
 function viewportSide(svg: Element, name: 'width' | 'height', around: () => Viewport | undefined): number {
-  const raw = svg.getAttribute(name) ?? '100%';
+  const own = svg.getAttribute(name);
+  const raw = own == null || own.trim().toLowerCase() === 'auto' ? '100%' : own;
   const m = LENGTH.exec(raw);
   if (m?.[2] !== '%') return resolveLength(raw, svg, name, name === 'width' ? 'x' : 'y', NaN, () => {});
   const outer = around();
