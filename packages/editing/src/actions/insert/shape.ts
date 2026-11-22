@@ -55,6 +55,24 @@ function reachMinimum(
  *  trail is drawn where the pointer went. */
 const NO_MINIMUM = new Set(['line', 'pencil']);
 
+/** The box a drag between `shaped`'s endpoints draws in `mode`, and the
+ *  endpoints it resolves them to: a line's start mirrored from center, and
+ *  the end moved out to the binding's minimum size. */
+export function insertBox(
+  resolved: Readonly<Partial<InsertParams>> | undefined,
+  shaped: InsertFrame['shaped'],
+  mode: 'corner' | 'center',
+): { start: InsertPoint; current: InsertPoint; bounds: Rect; min: MinSize | null } {
+  const kind = insertKind(resolved);
+  const ends = resolveEndpoints(shaped, kind, mode);
+  const { start } = ends;
+  const min = NO_MINIMUM.has(kind) ? null : minSizeOf(resolved);
+  const current = min ? reachMinimum(start, ends.current, min, mode) : ends.current;
+  // A line's resolved ends are already its box's corners, from center or not.
+  const bounds = insertRectFor(start.x, start.y, current.x, current.y, kind === 'line' ? 'corner' : mode);
+  return { start, current, bounds, min };
+}
+
 export interface InsertShape {
   bounds: Rect;
   extras: InsertExtras;
@@ -79,12 +97,7 @@ export function insertShape(
   site?: InsertPoint,
 ): InsertShape {
   const mode = effectiveOriginMode(resolved?.['originMode'], frame.altHeld);
-  const kind = insertKind(resolved);
-  const ends = resolveEndpoints(frame.shaped, kind, mode);
-  const { start } = ends;
-  const min = NO_MINIMUM.has(kind) ? null : minSizeOf(resolved);
-  const current = min ? reachMinimum(start, ends.current, min, mode) : ends.current;
-  const bounds = insertRectFor(start.x, start.y, current.x, current.y, mode);
+  const { start, current, bounds, min } = insertBox(resolved, frame.shaped, mode);
   const extras = buildExtras(
     { ...(resolved ?? {}), originMode: mode },
     start.x, start.y, current.x, current.y,
