@@ -1,6 +1,6 @@
 import { expect, test, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import { useItemLengths } from './useItemLengths';
+import { act, renderHook } from '@testing-library/react';
+import { useItemLengths, useRunGap } from './useItemLengths';
 
 const keyOf = (el: Element): string | null => el.getAttribute('data-key');
 
@@ -74,5 +74,27 @@ test('measures the items of a run in another document', () => {
     expect(hook.result.current.get('a')).toBe(14);
   } finally {
     frame.remove();
+  }
+});
+
+test('reads the gap again when a theme on an ancestor changes it without resizing the root', async () => {
+  const theme = document.createElement('div');
+  const root = document.createElement('div');
+  theme.append(root);
+  document.body.append(theme);
+  let gap = '4px';
+  const real = window.getComputedStyle.bind(window);
+  const spy = vi.spyOn(window, 'getComputedStyle').mockImplementation((el) => (el === root ? ({ columnGap: gap } as CSSStyleDeclaration) : real(el)));
+  try {
+    const hook = renderHook(() => useRunGap({ current: root }));
+    expect(hook.result.current).toBe(4);
+    gap = '10px';
+    await act(async () => {
+      theme.setAttribute('data-density', 'roomy');
+    });
+    expect(hook.result.current).toBe(10);
+  } finally {
+    spy.mockRestore();
+    theme.remove();
   }
 });

@@ -86,15 +86,30 @@ export function useItemLengths(root: RefObject<HTMLElement | null>, keys: readon
   return lengths;
 }
 
-/** The gap `root`'s stylesheet sets between two items along its line, read once it is laid out and again when it resizes. */
+/**
+ * The gap `root`'s stylesheet sets between two items along its line, read after every commit, when it resizes, and when
+ * an attribute changes on it or an ancestor, as a theme or density switch does.
+ */
 export function useRunGap(root: RefObject<HTMLElement | null>): number {
   const [gap, setGap] = useState(0);
+  const measure = (): void => {
+    const el = root.current;
+    if (el !== null) setGap(cssPx(getComputedStyle(el).columnGap));
+  };
+  const latest = useLatest(measure);
+  useLayoutEffect(() => latest.current());
   useLayoutEffect(() => {
     const el = root.current;
     if (el === null) return;
-    const measure = (): void => setGap(cssPx(getComputedStyle(el).columnGap));
-    measure();
-    return watchResize(el, measure);
-  }, [root]);
+    const read = (): void => latest.current();
+    const stop = watchResize(el, read);
+    if (typeof MutationObserver === 'undefined') return stop;
+    const styled = new MutationObserver(read);
+    for (let at: Element | null = el; at !== null; at = at.parentElement) styled.observe(at, { attributes: true });
+    return () => {
+      stop();
+      styled.disconnect();
+    };
+  }, [root, latest]);
   return gap;
 }
