@@ -102,7 +102,7 @@ const always = () => true;
 function watchListeners({ scope, records, replace }: Patch): void {
   type Add = EventTarget['addEventListener'];
   type Remove = EventTarget['removeEventListener'];
-  type Entry = { rec: Live; type: string; cb: EventListenerOrEventListenerObject; capture: boolean };
+  type Entry = { rec: Live; type: string; cb: EventListenerOrEventListenerObject; capture: boolean; off?: () => void };
   // By target, held weakly: a story's elements come and go by the thousand, and none of them is the probe's to keep.
   const byTarget = new WeakMap<EventTarget, Entry[]>();
   const captureOf = (o?: boolean | EventListenerOptions): boolean => (typeof o === 'boolean' ? o : !!o?.capture);
@@ -113,8 +113,9 @@ function watchListeners({ scope, records, replace }: Patch): void {
     const at = list?.indexOf(e) ?? -1;
     if (at >= 0) list!.splice(at, 1);
     records.delete(e.rec);
+    e.off?.();
   };
-  const watching = (add: Add): Add =>
+  const watching = (add: Add, remove: Remove): Add =>
     function (this: EventTarget, type, cb, options) {
       const opts = typeof options === 'object' ? options : undefined;
       const capture = captureOf(options);
@@ -129,7 +130,11 @@ function watchListeners({ scope, records, replace }: Patch): void {
         type, cb, capture,
       };
       // Ahead of the listener, so one that stops the event's propagation still lets this see it fire.
-      if (opts?.once) add.call(target, type, () => drop(target, entry), { once: true, capture });
+      if (opts?.once) {
+        const helper = () => drop(target, entry);
+        add.call(target, type, helper, { once: true, capture });
+        entry.off = () => remove.call(target, type, helper, capture);
+      }
       add.call(target, type, cb, options);
       const list = byTarget.get(target) ?? [];
       byTarget.set(target, list);
@@ -146,14 +151,14 @@ function watchListeners({ scope, records, replace }: Patch): void {
       if (entry) drop(this, entry);
     };
   const proto = EventTarget.prototype;
-  replace(proto, 'addEventListener', watching(proto.addEventListener));
+  replace(proto, 'addEventListener', watching(proto.addEventListener, proto.removeEventListener));
   replace(proto, 'removeEventListener', unwatching(proto.removeEventListener));
   // jsdom test environments copy the window's methods onto the global scope, bound, where the prototype's patch misses them.
   const own = (key: string) => Object.prototype.hasOwnProperty.call(scope, key) && typeof scope[key] === 'function';
   if (own('addEventListener') && own('removeEventListener')) {
     const add = scope.addEventListener.bind(scope);
     const remove = scope.removeEventListener.bind(scope);
-    replace(scope, 'addEventListener', watching(add as Add));
+    replace(scope, 'addEventListener', watching(add as Add, remove as Remove));
     replace(scope, 'removeEventListener', unwatching(remove as Remove));
   }
 }

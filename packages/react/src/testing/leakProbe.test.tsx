@@ -73,6 +73,15 @@ describe('installLeakProbe', () => {
     expect(probe.live().length).toBe(before);
   });
 
+  it('takes its own once helper off a target when a once listener is removed before it fires', () => {
+    const inner = installLeakProbe();
+    const before = probe.live().length;
+    document.addEventListener('keydown', noop, { once: true });
+    document.removeEventListener('keydown', noop);
+    inner.restore();
+    expect(probe.live().length).toBe(before);
+  });
+
   it('passes a once listener on an element that stopped the event', () => {
     expect(leftBy(() => {
       document.body.addEventListener('click', (e) => e.stopImmediatePropagation(), { once: true });

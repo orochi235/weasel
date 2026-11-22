@@ -7,7 +7,7 @@
 
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
-import { useRef } from 'react';
+import { StrictMode, useRef } from 'react';
 import { useVisibleRaf } from './useVisibleRaf';
 import type { VisibleRaf, VisibleRafOptions } from './useVisibleRaf';
 import { renderThenAbandon } from './testing/abandonRender';
@@ -332,6 +332,19 @@ describe('useVisibleRaf', () => {
     expect(frame).toHaveBeenCalledTimes(2);
   });
 
+  it('resumes a held request when its element leaves the document while out of view', async () => {
+    const clock = makeClock();
+    const a = document.body.appendChild(document.createElement('div'));
+    const frame = vi.fn();
+    const { loop } = mount(frame, { ...clock, target: () => a });
+    act(() => { setIntersecting(false); });
+    act(() => { loop().request(); });
+    expect(clock.pending()).toBe(0);
+    await act(async () => { a.remove(); });
+    act(() => { clock.flush(); });
+    expect(frame).toHaveBeenCalledTimes(1);
+  });
+
   it('resumes a suspended loop on the commit that points its target at a visible element', () => {
     const clock = makeClock();
     const frame = vi.fn((_t: number, self: VisibleRaf) => self.request());
@@ -390,6 +403,27 @@ describe('useVisibleRaf', () => {
     act(() => { handle.request(); });
     act(() => { clock.flush(); });
     expect(frame).not.toHaveBeenCalled();
+  });
+
+  it('ignores a report its observer queued before it was disconnected', () => {
+    const clock = makeClock();
+    const onSuspend = vi.fn();
+    const onResume = vi.fn();
+    const loopRef = { current: null as VisibleRaf | null };
+    const view = render(
+      <StrictMode><Host loopRef={loopRef} frame={vi.fn()} options={{ ...clock, onSuspend, onResume }} /></StrictMode>,
+    );
+    const [first, second] = observerCallbacks;
+    hidden = true;
+    act(() => { first!([], null as never); });
+    expect(onSuspend).not.toHaveBeenCalled();
+    hidden = false;
+    act(() => { loopRef.current!.request(); });
+    expect(onResume).not.toHaveBeenCalled();
+    view.unmount();
+    hidden = true;
+    act(() => { second!([], null as never); });
+    expect(onSuspend).not.toHaveBeenCalled();
   });
 
   it('reports the gate through isVisible', () => {
