@@ -6,7 +6,7 @@ import { lightCorner } from './lightCorner';
 
 /** What an effect of type `rivets` takes as `params`. */
 export interface BadgeRivetsEffectParams {
-  /** Rivet radius in CSS px. */
+  /** Rivet radius in CSS px; a negative one reads as 0. */
   radius?: number;
   /** Inset in CSS px, along each axis, from where the outline crosses the diagonal running in from a corner of the box. */
   inset?: number;
@@ -51,13 +51,14 @@ const Rivets: EffectModule<BadgeRivetsEffectParams> = {
     if (variant !== 'solid' && variant !== 'subtle') return null;
     const cfg = finiteParams({ ...DEFAULTS, ...params }, DEFAULTS);
     const sx = 100 / boxW, sy = 100 / boxH;
-    const rx = cfg.radius * sx;
-    const ry = cfg.radius * sy;
+    const radius = Math.max(0, cfg.radius);
+    const rx = radius * sx;
+    const ry = radius * sy;
     const lightFrom = lightCorner(cfg.lightFrom, 'rivets');
-    const litDx = lightFrom[1] === 'l' ? -cfg.radius * 0.32 : cfg.radius * 0.32;
-    const litDy = lightFrom[0] === 't' ? -cfg.radius * 0.32 : cfg.radius * 0.32;
+    const litDx = lightFrom[1] === 'l' ? -radius * 0.32 : radius * 0.32;
+    const litDy = lightFrom[0] === 't' ? -radius * 0.32 : radius * 0.32;
     const positions: [number, number][] = [];
-    for (const [cx, cy, ux, uy] of [[0, 0, 1, 1], [boxW, 0, -1, 1], [0, boxH, 1, -1], [boxW, boxH, -1, -1]]) {
+    if (radius > 0) for (const [cx, cy, ux, uy] of [[0, 0, 1, 1], [boxW, 0, -1, 1], [0, boxH, 1, -1], [boxW, boxH, -1, -1]]) {
       const entry = cornerEntry(sampler, boxW, boxH, cx, cy, ux, uy);
       if (entry === null) continue;
       const d = entry + cfg.inset;

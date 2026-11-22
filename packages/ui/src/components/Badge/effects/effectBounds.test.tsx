@@ -5,6 +5,7 @@ import type { EffectModule, PerimeterPoint } from '../bases/types';
 import Bites from './Bites';
 import Perforations from './Perforations';
 import Puffs from './Puffs';
+import Rivets from './Rivets';
 import Scallops from './Scallops';
 import Spikes from './Spikes';
 import { rangeMask } from './rangeMask';
@@ -64,5 +65,13 @@ describe('an infinite perforations param', () => {
 
   it('reads holeSpacing as the default', () => {
     expect(draw(Perforations, { holeSpacing: Infinity }).innerHTML).toBe(draw(Perforations, {}).innerHTML);
+  });
+});
+
+describe('a negative rivets radius', () => {
+  it('reads as 0, drawing no rivet rather than an invalid one', () => {
+    const drawn = draw(Rivets, { radius: -2 });
+    expect(drawn.querySelectorAll('ellipse')).toHaveLength(0);
+    expect(draw(Rivets, { radius: 0 }).querySelectorAll('ellipse')).toHaveLength(0);
   });
 });
