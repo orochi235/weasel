@@ -25,6 +25,13 @@ describe('parseInline', () => {
     ]);
   });
 
+  it('reads a shortcut whose key is `<`', () => {
+    expect(parseInline('Zoom out: <kbd>Mod+<</kbd>')).toEqual([
+      { type: 'text', text: 'Zoom out: ' },
+      { type: 'keys', chord: 'Mod+<' },
+    ]);
+  });
+
   it('keeps balanced parentheses in a link address', () => {
     expect(parseInline('[x](https://en.wikipedia.org/wiki/Foo_(bar)) after')).toEqual([
       { type: 'link', href: 'https://en.wikipedia.org/wiki/Foo_(bar)', children: [{ type: 'text', text: 'x' }] },
