@@ -36,7 +36,6 @@ export function simplifyPath(
   const out: PenAnchor[][] = [];
   const outClosed: boolean[] = [];
   anchors.forEach((sub, s) => {
-    if (sub.length < 2) return;
     out.push(simplifySubpath(sub, closed[s], tolerance, opts));
     outClosed.push(closed[s]);
   });
