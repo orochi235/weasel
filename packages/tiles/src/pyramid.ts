@@ -118,7 +118,8 @@ export class TilePyramid<K, V, P> {
     }
     const pending = order.length - baked + waiting;
 
-    const { draws, fading, stale } = this.drawsFor(onScreen, frame, now);
+    const floorLevel = Math.min(...floor.map((k) => scheme.levelOf(k)));
+    const { draws, fading, stale } = this.drawsFor(onScreen, frame, now, floorLevel);
     this.cache.trim(frame, onScreen.length + ring.length + floor.length);
     return { level, draws, live: false, baked, pending, fading, stale };
   }
@@ -161,7 +162,7 @@ export class TilePyramid<K, V, P> {
     return { order: out, waiting };
   }
 
-  private drawsFor(onScreen: readonly K[], frame: number, now: number) {
+  private drawsFor(onScreen: readonly K[], frame: number, now: number, floorLevel: number) {
     const { scheme } = this.opts;
     const fadeMs = this.opts.fadeMs ?? 160;
     const up = this.opts.standInLevels ?? 8;
@@ -186,7 +187,7 @@ export class TilePyramid<K, V, P> {
         continue;
       }
       // Missing, or fading in: something coarser underneath, and what is finer over that.
-      const anc = this.ancestorHeld(at, up);
+      const anc = this.ancestorHeld(at, up, floorLevel);
       if (anc !== null) {
         mark(anc);
         coarse.push({ at, tile: anc, source: subRect(scheme, anc.key, at), alpha: 1 });
@@ -204,16 +205,16 @@ export class TilePyramid<K, V, P> {
     return { draws: [...coarse, ...fine.flat(), ...own], fading, stale };
   }
 
-  private ancestorHeld(key: K, levels: number): HeldTile<K, P> | null {
+  /** The nearest held tile within `levels` above `key`, or past them the floor tile holding it. */
+  private ancestorHeld(key: K, levels: number, floorLevel: number): HeldTile<K, P> | null {
     const { scheme } = this.opts;
     let k: K | null = key;
-    for (let i = 0; i < levels; i++) {
-      k = k === null ? null : scheme.parentOf(k);
-      if (k === null) return null;
+    for (let i = 0; ; i++) {
+      k = scheme.parentOf(k);
+      if (k === null || (i >= levels && !(scheme.levelOf(k) >= floorLevel))) return null;
       const t = this.cache.get(scheme.idOf(k));
-      if (t !== undefined) return t;
+      if (t !== undefined && (i < levels || this.cache.isFloor(t.id))) return t;
     }
-    return null;
   }
 
   private finerHeld(key: K, levels: number, depth: number, visit: (t: HeldTile<K, P>, depth: number) => void): void {

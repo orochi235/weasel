@@ -169,3 +169,15 @@ describe('TilePyramid pending', () => {
     expect(rebaked.pending).toBe(0);
   });
 });
+
+describe('TilePyramid floor', () => {
+  it('stands the floor in for a spot more levels below it than standInLevels searches', () => {
+    const { pyramid, bake } = setup();
+    pyramid.run(view(0, 0, 0.1), 0, bake, { ...budget, tiles: 100 });
+    const floor = planeFloor(scheme, TILE, BOUNDS);
+    const frame = pyramid.run(view(100, 100, 4096, 400, 300), 1, () => null, { ...budget, tiles: 0 });
+    expect(frame.level - floor[0]!.z).toBeGreaterThan(8);
+    expect(frame.draws.length).toBeGreaterThan(0);
+    expect(frame.draws.every((d) => d.tile.key.z === floor[0]!.z)).toBe(true);
+  });
+});
