@@ -8,7 +8,7 @@ import { RunBand, RunEnds, useRunRow, type RunItemPlace } from '../Along/useRunR
 import type { HoldProps } from '../Disabled';
 import { useControlHold, type ControlHold } from '../Disabled/controlHold';
 import {
-  heldApply, SwatchButton, swatchesIn, swatchId, swatchKeyDown, swatchMarks, useSwatchApply, useSwatchStop, type SwatchApply, type SwatchSelect,
+  heldApply, SwatchButton, swatchesIn, swatchKeyDown, swatchKeys, swatchMarks, useSwatchApply, useSwatchStop, type SwatchApply, type SwatchSelect,
   type SwatchValue,
 } from './SwatchButton';
 import type { SwatchGridOption } from './SwatchGrid';
@@ -127,12 +127,13 @@ function RingGroup({ group, rings, align, apply, hold, hover }: RingGroupProps):
   const marks = swatchMarks(options, value);
   const tab = useSwatchStop(marks.first, options.length);
   const swatches = () => swatchesIn(root.current);
+  const keys = swatchKeys(options);
 
   const swatch = (i: number): RingEntry => ({
     key: String(i),
     render: (place) => (
       <SwatchButton
-        key={swatchId(options[i]!) ?? `none-${i}`}
+        key={keys[i]}
         option={options[i]!}
         tabStop={!hold.unreachable && i === tab.stop}
         current={marks.marked(i)}

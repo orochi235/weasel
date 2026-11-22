@@ -121,6 +121,14 @@ const WARM: SwatchPalette = { id: 'warm', name: 'Warm', columns: 2, colors: opti
 const COOL: SwatchPalette = { id: 'cool', name: 'Cool', columns: 2, colors: [{ value: '#0000ffff', label: 'Blue' }] };
 
 describe('SwatchStrip along a curve', () => {
+  test('a swatch whose id is `lead`, or two of one color, share no React key with anything beside them', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const palette = { ...WARM, colors: [{ id: 'lead', value: '#ff0000ff' }, { value: '#00ff00ff' }, { value: '#00ff00ff' }] };
+    render(<Along shape={ARCS['top, clockwise'][0]}><SwatchStrip palettes={[palette, COOL]} columns={4} onSelect={() => {}} /></Along>);
+    expect(error.mock.calls.filter((c) => String(c[0]).includes('same key'))).toEqual([]);
+    error.mockRestore();
+  });
+
   test('the recent rows lie outermost, the palette rows go on further in, each led by its heading', () => {
     const store = createRecentColorsStore({ storage: null });
     store.record(['#111111ff', '#222222ff', '#333333ff']);

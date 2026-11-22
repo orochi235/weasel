@@ -4,7 +4,7 @@ import { useRun } from '../Run';
 import type { HoldProps } from '../Disabled';
 import { ownHold, useControlHold } from '../Disabled/controlHold';
 import {
-  heldApply, SwatchButton, swatchesIn, swatchId, swatchKeyDown, swatchMarks, useSwatchApply, useSwatchStop, type SwatchSelect, type SwatchValue,
+  heldApply, SwatchButton, swatchesIn, swatchKeyDown, swatchKeys, swatchMarks, useSwatchApply, useSwatchStop, type SwatchSelect, type SwatchValue,
 } from './SwatchButton';
 import { tiling } from '../../tiling';
 import { SwatchRings } from './SwatchRings';
@@ -100,6 +100,7 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
   const marks = swatchMarks(options, value);
   const tab = useSwatchStop(marks.first, options.length);
   const swatches = () => swatchesIn(rootRef.current);
+  const keys = swatchKeys(options);
 
   return hold.wrap(
     <div
@@ -117,7 +118,7 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
     >
       {options.map((o, i) => (
         <SwatchButton
-          key={swatchId(o) ?? `none-${i}`}
+          key={keys[i]}
           option={o}
           tabStop={!hold.unreachable && i === tab.stop}
           current={marks.marked(i)}

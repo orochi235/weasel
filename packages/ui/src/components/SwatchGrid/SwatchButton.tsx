@@ -17,6 +17,17 @@ export function swatchId(o: SwatchGridOption): string | null {
   return o.id ?? o.value;
 }
 
+/** A React key per swatch, apart from any other child's key, with a repeated id told apart by how many came before. */
+export function swatchKeys(options: readonly SwatchGridOption[]): string[] {
+  const seen = new Map<string | null, number>();
+  return options.map((o) => {
+    const id = swatchId(o);
+    const n = seen.get(id) ?? 0;
+    seen.set(id, n + 1);
+    return id === null ? `swatch-none:${n}` : `swatch:${n}:${id}`;
+  });
+}
+
 /** A palette's `value`: the id of its one current swatch, or a list of the ids pressed, which makes every swatch a
  *  toggle. */
 export type SwatchValue = string | null | readonly (string | null)[];
