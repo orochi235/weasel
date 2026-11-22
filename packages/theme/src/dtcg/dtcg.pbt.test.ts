@@ -124,6 +124,8 @@ const dtcgish = fc.letrec((tie) => ({
 
 const axisName = fc.constantFrom('mode', 'density', 'constructor', 'by');
 const valueName = fc.constantFrom('dark', 'light', 'roomy', 'constructor', 'by');
+/** An axis value name defineTheme accepts: every one but the reserved "by". */
+const axisValueName = fc.constantFrom('dark', 'light', 'roomy', 'constructor');
 const $value = fc.oneof({ weight: 4, arbitrary: fc.constantFrom('#fff', '4px', '{fg}', '{color.bg}', 2) }, dtcgish);
 const tokens = fc.dictionary(tokenName, fc.record({ $value }), { maxKeys: 3 }).map((g) => ({ $type: 'color', ...g }));
 const group = fc.dictionary(fc.constantFrom('color', 'dimension', '$type'), fc.oneof({ weight: 4, arbitrary: tokens }, dtcgish), { maxKeys: 2 });
@@ -158,7 +160,7 @@ const structuredDoc: fc.Arbitrary<DtcgDocument> = fc.record({
   primitives: group,
   modes: fc.dictionary(valueName, group, { maxKeys: 3 }),
   $extensions: fc.record({
-    axes: fc.dictionary(axisName, fc.record({ default: valueName, values: fc.dictionary(valueName, fc.constantFrom({}, { scheme: 'dark' }), { minKeys: 1, maxKeys: 3 }) }), { maxKeys: 3 }),
+    axes: fc.dictionary(axisName, fc.dictionary(axisValueName, fc.constantFrom({}, { scheme: 'dark' }), { minKeys: 1, maxKeys: 3 }).chain((values) => fc.record({ default: fc.constantFrom(...Object.keys(values)), values: fc.constant(values) })), { maxKeys: 3 }),
     varies: fc.dictionary(tokenName, fc.array(axisName, { maxLength: 2 }), { maxKeys: 3 }),
     overrides: fc.dictionary(fc.constantFrom('density=roomy', 'mode=light', 'constructor=by', 'by=dark'), fc.record({ primitives: group, modes: fc.dictionary(valueName, group, { maxKeys: 3 }) }), { maxKeys: 2 }),
   }).map((ext) => ({ 'com.weasel.axes': ext })),
