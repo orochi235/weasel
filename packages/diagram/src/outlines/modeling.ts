@@ -19,7 +19,7 @@ const component: OutlineDef = {
     const top = y + ICON.margin;
     const { width: tw, height: th } = ICON.tab;
     const tabs = [top + 2, top + ICON.height - 2 - th];
-    const b = new PathBuilder()
+    const b = new PathBuilder().autoOrigin()
       .moveTo(left, tabs[0]!).lineTo(left, top).lineTo(left + ICON.width, top)
       .lineTo(left + ICON.width, top + ICON.height).lineTo(left, top + ICON.height).lineTo(left, tabs[1]! + th)
       .moveTo(left, tabs[0]! + th).lineTo(left, tabs[1]!);

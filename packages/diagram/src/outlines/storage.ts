@@ -20,7 +20,7 @@ const cylinder: OutlineDef = {
     const cx = x + rx;
     const top = y + ry;
     const bottom = y + h - ry;
-    return new PathBuilder()
+    return new PathBuilder().autoOrigin()
       .moveTo(x, top)
       .curveTo(x, top - ry * KAPPA, cx - rx * KAPPA, y, cx, y)
       .curveTo(cx + rx * KAPPA, y, x + w, top - ry * KAPPA, x + w, top)
@@ -35,7 +35,7 @@ const cylinder: OutlineDef = {
     const rx = w / 2;
     const cx = x + rx;
     const top = y + ry;
-    return new PathBuilder()
+    return new PathBuilder().autoOrigin()
       .moveTo(x, top)
       .curveTo(x, top + ry * KAPPA, cx - rx * KAPPA, top + ry, cx, top + ry)
       .curveTo(cx + rx * KAPPA, top + ry, x + w, top + ry * KAPPA, x + w, top)
@@ -58,7 +58,7 @@ const document: OutlineDef = {
     const a = h * WAVE;
     const mid = y + h - a;
     const k = a * WAVE_CONTROL;
-    return new PathBuilder()
+    return new PathBuilder().autoOrigin()
       .moveTo(x, y)
       .lineTo(x + w, y)
       .lineTo(x + w, mid)
@@ -137,7 +137,7 @@ const cube: OutlineDef = {
   },
   detail: ({ x, y, width: w, height: h }) => {
     const d = Math.min(w, h) * DEPTH;
-    return new PathBuilder()
+    return new PathBuilder().autoOrigin()
       .moveTo(x, y + d).lineTo(x + w - d, y + d).lineTo(x + w, y)
       .moveTo(x + w - d, y + d).lineTo(x + w - d, y + h)
       .build();

@@ -30,7 +30,7 @@ const KAPPA = 0.5522847498;
 /** The band between `b`'s ellipse and one `k` of its radius smaller, the inner one wound the other way so it is a hole. */
 function annulus({ x, y, width: w, height: h }: Bounds, k: number): Path {
   const cx = x + w / 2, cy = y + h / 2;
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   for (const [rx, ry, turn] of [[w / 2, h / 2, 1], [(w / 2) * (1 - k), (h / 2) * (1 - k), -1]] as const) {
     const ox = rx * KAPPA, oy = ry * KAPPA * turn, ey = ry * turn;
     b.moveTo(cx + rx, cy)
@@ -80,7 +80,7 @@ const subprocess: OutlineDef = {
     const left = x + (w - m) / 2;
     const top = y + h - MARKER_GAP - m;
     const arm = m * 0.25;
-    return new PathBuilder()
+    return new PathBuilder().autoOrigin()
       .moveTo(left, top).lineTo(left + m, top).lineTo(left + m, top + m).lineTo(left, top + m).close()
       .moveTo(left + m / 2, top + arm).lineTo(left + m / 2, top + m - arm)
       .moveTo(left + arm, top + m / 2).lineTo(left + m - arm, top + m / 2)

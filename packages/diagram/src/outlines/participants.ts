@@ -32,13 +32,13 @@ const offsetOf = (w: number, h: number): number => Math.min(6, w / 8, h / 8);
 const collections: OutlineDef = {
   path: ({ x, y, width: w, height: h }) => {
     const o = offsetOf(w, h);
-    return new PathBuilder()
+    return new PathBuilder().autoOrigin()
       .moveTo(x + o, y).lineTo(x + w, y).lineTo(x + w, y + h - o).lineTo(x + w - o, y + h - o).lineTo(x + w - o, y + h)
       .lineTo(x, y + h).lineTo(x, y + o).lineTo(x + o, y + o).close().build();
   },
   detail: ({ x, y, width: w, height: h }) => {
     const o = offsetOf(w, h);
-    return new PathBuilder().moveTo(x + o, y + o).lineTo(x + w - o, y + o).lineTo(x + w - o, y + h - o).build();
+    return new PathBuilder().autoOrigin().moveTo(x + o, y + o).lineTo(x + w - o, y + o).lineTo(x + w - o, y + h - o).build();
   },
   content: ({ x, y, width: w, height: h }) => {
     const o = offsetOf(w, h);
@@ -55,7 +55,7 @@ const queue: OutlineDef = {
     const r = capOf(w, h);
     const cy = y + h / 2;
     const ry = h / 2;
-    return new PathBuilder()
+    return new PathBuilder().autoOrigin()
       .moveTo(x + r, y).lineTo(x + w - r, y)
       .curveTo(x + w - r + r * KAPPA, y, x + w, cy - ry * KAPPA, x + w, cy)
       .curveTo(x + w, cy + ry * KAPPA, x + w - r + r * KAPPA, y + h, x + w - r, y + h)
@@ -69,7 +69,7 @@ const queue: OutlineDef = {
     const cy = y + h / 2;
     const ry = h / 2;
     const rim = x + w - r;
-    return new PathBuilder()
+    return new PathBuilder().autoOrigin()
       .moveTo(rim, y)
       .curveTo(rim - r * KAPPA, y, rim - r, cy - ry * KAPPA, rim - r, cy)
       .curveTo(rim - r, cy + ry * KAPPA, rim - r * KAPPA, y + h, rim, y + h)
