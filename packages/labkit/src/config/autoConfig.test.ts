@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AUTO } from './auto';
-import { resolveAutoConfig, startAutoPathsOf } from './autoConfig';
+import { applyConfigWrite, resolveAutoConfig, startAutoPathsOf } from './autoConfig';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
 
@@ -139,5 +139,21 @@ describe('resolveAutoConfig', () => {
       m: 6,
       n: 5,
     });
+  });
+});
+
+describe('applyConfigWrite', () => {
+  it('leaves the leaves under a group auto when `AUTO` is written at the group itself', () => {
+    const config = { grid: { size: 8, gap: 2 } };
+    const next = applyConfigWrite(config, ['grid.size'], 'grid', AUTO);
+    expect(next.autoPaths).toEqual(['grid.size']);
+    expect(next.config).toBe(config);
+  });
+
+  it('unpins the leaves a group value holds `AUTO` at, and pins the rest', () => {
+    const config = { grid: { size: 8, gap: 2 } };
+    const next = applyConfigWrite(config, ['grid.gap'], 'grid', { size: AUTO, gap: 3 });
+    expect(next.autoPaths).toEqual(['grid.size']);
+    expect(next.config).toEqual({ grid: { size: 8, gap: 3 } });
   });
 });
