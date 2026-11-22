@@ -16,7 +16,7 @@ import { resolvePrefUnit } from './unit';
  * it as a point would scale it wrong; under a unit's `places` it is rounded
  * up to the smallest step that changes the shown value; `stops` are points. Under `places`, `min` rounds up
  * and `max` down, so no shown bound stores past the leaf's. A decreasing conversion swaps which end is the lower
- * one, and which end is `endless`.
+ * one, which end is `endless`, and the order of `stops`, which come out ascending as the bounds do.
  */
 export function prefDisplayBounds(
   p: PrefNumber,
@@ -35,7 +35,7 @@ export function prefDisplayBounds(
   const step = p.step === undefined ? 1 : displayStep(Math.abs(toDisplayExact(p.step) - toDisplayExact(0)), places);
   const flip = { min: 'max', max: 'min', both: 'both' } as const;
   const endless = backward && p.endless !== undefined ? flip[p.endless] : p.endless;
-  const stops = p.stops?.map(toDisplay);
+  const stops = p.stops?.map(toDisplay).sort((a, b) => a - b);
   return {
     min,
     max,

@@ -192,7 +192,7 @@ describe('prefDisplayBounds', () => {
       min: 0, max: 10, step: 2, unit: remaining,
     };
     expect(prefDisplayBounds(leaf)).toEqual({ min: 90, max: 100, step: 2 });
-    expect(prefDisplayBounds({ ...leaf, stops: [0, 4] }).stops).toEqual([100, 96]);
+    expect(prefDisplayBounds({ ...leaf, stops: [0, 4] }).stops).toEqual([96, 100]);
   });
 
   it('swaps a lone bound to the other end when the conversion decreases, as it swaps endless', () => {
