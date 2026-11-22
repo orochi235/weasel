@@ -4,7 +4,7 @@ import { readLocal, sameStored, writeLocal } from '@weasel-js/storage';
 import { carry } from './carry';
 import { SWAP, type DraftStorage } from './document';
 import { isPrefLeaf, type PrefLeaf } from '../index';
-import { childrenOf, joinPath, nodeAt, ownChildrenOf, ownSlotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { childrenOf, joinPath, nodeAt, ownChildrenOf, ownSlotOf, slotOf, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { containsCode, overridesOf, STUB } from './schemaExport';
 import { findType, NO_TYPES, type PrefTypes } from './types';
 import { upgradeStored } from './upgrade';
@@ -133,10 +133,11 @@ function packAttrs(node: SchemaNode, at: Origin, ctx: Packing): Record<string, u
 }
 
 function packNode(node: SchemaNode, path: string | null, ctx: Packing): unknown {
-  // An entry's fields pack with the entry.
   const kids = ownChildrenOf(node);
   const out = packAttrs(node, [path], ctx);
-  if (kids) out[ownSlotOf(node)!] = Object.fromEntries(Object.entries(kids).map(([k, child]) => [k, packNode(child, joinPath(path, k), ctx)]));
+  const fields = (held: ChildMap) => Object.fromEntries(Object.entries(held).map(([k, child]) => [k, packNode(child, joinPath(path, k), ctx)]));
+  if (kids) out[ownSlotOf(node)!] = fields(kids);
+  else if (slotOf(node) === 'item') (out.item as Record<string, unknown>).children = fields(childrenOf(node)!);
   return out;
 }
 

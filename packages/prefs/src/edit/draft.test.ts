@@ -39,6 +39,20 @@ describe('a schema draft', () => {
     expect(nodeAt(back, 'view/snap')).toBeUndefined();
   });
 
+  it("keeps an edit to a field of a list's object entry when a field beside it holds code", () => {
+    const check = () => true;
+    const source: PrefGroup = { name: 'Root', children: { tags: { kind: 'list', name: 'Tags', description: '', default: [], item: {
+      kind: 'object', name: '', description: '', default: {}, children: {
+        label: { kind: 'string', name: 'Label', description: '', default: '', validate: check },
+        size: { kind: 'number', name: 'Size', description: '', default: 1 },
+      },
+    } } } } as PrefGroup;
+    const edited = setAttribute(source, 'tags/size', 'name', 'Weight');
+    const back = unpackDraft(JSON.parse(JSON.stringify(packDraft(edited, source))), source);
+    expect(nodeAt(back, 'tags/size')).toMatchObject({ name: 'Weight' });
+    expect((nodeAt(back, 'tags/label') as unknown as { validate: unknown }).validate).toBe(check);
+  });
+
   it('keeps the order of a group’s children', () => {
     const back = round(moveNodes(SOURCE, ['view/cut'], { parentPath: 'view', index: 0 }).root);
     expect(Object.keys((nodeAt(back, 'view') as PrefGroup).children)).toEqual(['cut', 'snap']);
