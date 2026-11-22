@@ -103,7 +103,8 @@ export class GlProgram implements GpuProgram {
   ready(): boolean {
     if (this.pending === null) return true;
     const status = this.host.completionStatus;
-    if (status !== null && this.host.gl.getProgramParameter(this.handle, status) !== true) return false;
+    // A lost context, or a restored one the extension is not enabled on again, answers null: `settle` knows both.
+    if (status !== null && this.host.gl.getProgramParameter(this.handle, status) === false) return false;
     this.settle();
     return true;
   }

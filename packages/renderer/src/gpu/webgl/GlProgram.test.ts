@@ -86,7 +86,7 @@ describe('GlProgram on a lost context', () => {
 describe('GlProgram compiling in the background', () => {
   const COMPLETION_STATUS_KHR = 0x91b1;
   let recorder: ReturnType<typeof createGLRecorder>;
-  let done: boolean;
+  let done: boolean | null;
   let linkFails: boolean;
   let gl: WebGL2RenderingContext;
   beforeEach(() => {
@@ -132,6 +132,14 @@ describe('GlProgram compiling in the background', () => {
     done = true;
     expect(prog.ready()).toBe(true);
     expect(named('getUniformLocation').length).toBeGreaterThan(0);
+  });
+
+  it('reports ready when the driver gives no completion status, as a lost or restored context does', () => {
+    const prog = new GlProgram(host(), VERT_SRC, FRAG_SRC);
+    prog.lookupUniforms(PATH_FILL_UNIFORMS);
+    done = null;
+    expect(prog.ready()).toBe(true);
+    expect(prog.has(PATH_FILL_UNIFORMS[0])).toBe(true);
   });
 
   it('answers an attribute whose location the source gives without waiting for the link', () => {
