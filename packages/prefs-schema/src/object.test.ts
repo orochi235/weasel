@@ -76,3 +76,16 @@ describe('prefObjectBase', () => {
     expect(prefObjectWithField(lifting, undefined, 'paint', '#f00')).toEqual({ paint: '#f00', width: 1 });
   });
 });
+
+describe('prefObjectBase over a value that is not a plain object', () => {
+  it('lifts an array or a class instance through `fromScalar`, as repair reads it, rather than spreading it', () => {
+    const padding: PrefObject = {
+      kind: 'object', name: 'Padding', description: '', default: { top: 0, bottom: 0 },
+      children: { top: { kind: 'number', name: 'Top', description: '', default: 0 }, bottom: { kind: 'number', name: 'Bottom', description: '', default: 0 } },
+      fromScalar: (v) => ({ top: (v as number[])[0], bottom: (v as number[])[1] }),
+    };
+    expect(prefObjectWithField(padding, [4, 8], 'top', 5)).toEqual({ top: 5, bottom: 8 });
+    expect(prefObjectWithField(stroke, new Date(0), 'width', 2)).toEqual({ paint: '#000', width: 2 });
+    expect(prefObjectField([4, 8] as unknown as Record<string, unknown>, '0')).toBeUndefined();
+  });
+});

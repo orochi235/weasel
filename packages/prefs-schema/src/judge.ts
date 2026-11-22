@@ -2,9 +2,12 @@
 
 import { prefConditionHolds, prefConditionReadsItem, type PrefCondition, type PrefConditionReader } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
-import { isPrefLeaf, isPrefSection, prefSectionLeaves, prefValueAt } from './helpers';
+import { isPrefLeaf, isPrefSection, prefHoldsValue, prefSectionLeaves, prefValueAt } from './helpers';
 import { prefSchemaHolding } from './holding';
 import type { PrefLeaf } from './schema';
+import { setOwn } from '@weasel-js/registry';
+import { isPrefScope, prefScopeValue } from './scope';
+import { prefOverridesLookup, prefScopedDefault, prefScopesOf } from './scopeSpec';
 import { prefShownReader } from './shown';
 
 /** Every field a schema node holds a {@link PrefCondition} in. `activeIf` is an action leaf's alone. */
@@ -61,31 +64,59 @@ export function deferEntryConditions(holds: PrefConditionJudge): PrefConditionJu
 
 /**
  * Reads a value by path the way a form over `schema` shows it: what `values`
- * holds there, else the default of the leaf at that path, or the part of a
- * leaf's default the rest of the path names. `over` is the schema `schema`
- * is drawn over: a path no leaf of `schema` holds takes its default there.
+ * holds there, else what the leaf at that path holds with nothing stored (its
+ * `auto.value` where it starts auto, its `defaultScope` where it has one, else
+ * its `default`), or the part of that the rest of the path names. A split
+ * value reads as the one its selectors' options, read the same way, name.
+ * `over` is the schema `schema` is drawn over: a path no leaf of `schema`
+ * holds is read as a reader over `over` reads it.
  */
 export function prefReader(schema: PrefGroup | PrefSection, values: unknown, over?: PrefGroup | PrefSection): (path: string) => unknown {
   const beyond = over && prefReader(over, values);
-  return (path) => {
-    const held = prefValueAt(values, path);
-    if (held !== undefined) return held;
+  const read = (path: string): unknown => {
     if (beyond && prefSchemaHolding(schema, path, over) === over) return beyond(path);
-    if (isPrefSection(schema)) {
-      const leaves = prefSectionLeaves(schema.members);
-      const exact = leaves.find(([key]) => key === path);
-      if (exact) return exact[1].default;
-      const outer = leaves.find(([key]) => path.startsWith(`${key}.`));
-      return outer && prefValueAt(outer[1].default, path.slice(outer[0].length + 1));
-    }
-    const steps = path.split('.');
-    let node: PrefGroup = schema;
-    for (let i = 0; i < steps.length; i++) {
-      if (!Object.hasOwn(node.children, steps[i]!)) return undefined;
-      const child: PrefLeaf | PrefGroup = node.children[steps[i]!]!;
-      if (!isPrefLeaf(child)) node = child;
-      else return i === steps.length - 1 ? child.default : prefValueAt(child.default, steps.slice(i + 1).join('.'));
-    }
-    return undefined;
+    const found = leafHolding(schema, path);
+    if (found === undefined) return prefValueAt(values, path);
+    const [key, leaf] = found;
+    const value = shownValue(leaf, prefValueAt(values, key), read);
+    if (key === path) return value;
+    const rest = path.slice(key.length + 1);
+    const field = prefValueAt(value, rest);
+    return field !== undefined ? field : prefValueAt(shownValue(leaf, undefined, read), rest);
   };
+  return read;
+}
+
+/** The leaf of `schema` at `path`, or the one whose value `path` names a part of, with that leaf's own path. */
+function leafHolding(schema: PrefGroup | PrefSection, path: string): [key: string, leaf: PrefLeaf] | undefined {
+  if (isPrefSection(schema)) {
+    const leaves = prefSectionLeaves(schema.members);
+    return leaves.find(([key]) => key === path) ?? leaves.find(([key]) => path.startsWith(`${key}.`));
+  }
+  const steps = path.split('.');
+  let node: PrefGroup = schema;
+  for (let i = 0; i < steps.length; i++) {
+    if (!Object.hasOwn(node.children, steps[i]!)) return undefined;
+    const child: PrefLeaf | PrefGroup = node.children[steps[i]!]!;
+    if (isPrefLeaf(child)) return [steps.slice(0, i + 1).join('.'), child];
+    node = child;
+  }
+  return undefined;
+}
+
+/** What `leaf`, holding `held`, reads as: with nothing held, what it holds unset; a split value, the option `read` selects. */
+function shownValue(leaf: PrefLeaf, held: unknown, read: (path: string) => unknown): unknown {
+  const value = held !== undefined ? held : unsetValue(leaf);
+  if (!isPrefScope(value)) return value;
+  const selection: Record<string, string> = {};
+  for (const { selector } of prefScopesOf(leaf)) {
+    const option = read(selector);
+    if (option !== undefined && option !== null) setOwn(selection, selector, String(option));
+  }
+  return prefScopeValue(value, selection, leaf.default, prefOverridesLookup(leaf));
+}
+
+function unsetValue(leaf: PrefLeaf): unknown {
+  if (prefHoldsValue(leaf) && typeof leaf.auto === 'object' && leaf.auto !== null && leaf.auto.on === true) return leaf.auto.value;
+  return prefScopedDefault(leaf) ?? leaf.default;
 }

@@ -146,8 +146,8 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answer
     if (!status.shown) hidden.add(path);
     if (!status.enabled) disabled.add(path);
     const kept = members(node.members, prefix, entry === undefined ? { node, status, above } : { node, status, above, entry }, holds, path);
-    if (kept === node.members) return node;
-    return Object.keys(kept).length === 0 && !keepEmpty ? null : { ...node, members: kept };
+    if (Object.keys(kept).length === 0 && !keepEmpty) return null;
+    return kept === node.members ? node : { ...node, members: kept };
   };
 
   return { disabled, hidden, active, leaf, inside, members };
@@ -194,8 +194,8 @@ export function applyPrefConditions<T extends PrefGroup | PrefSection>(
       changed ||= kept !== child;
       if (kept !== null) setOwnPrefValue(children, key, kept);
     }
-    if (!changed) return node;
-    return Object.keys(children).length === 0 && !keepEmpty && path !== '' ? null : { ...node, children };
+    if (Object.keys(children).length === 0 && !keepEmpty && path !== '') return null;
+    return changed ? { ...node, children } : node;
   };
 
   if (!isPrefSection(schema)) return { shown: group(schema, '', ROOT_PREF_STATUS) as T | null, disabled, hidden, active };

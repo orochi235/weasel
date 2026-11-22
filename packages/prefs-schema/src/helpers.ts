@@ -19,7 +19,7 @@ import { isPrefLinearUnit, resolvePrefUnit } from './unit';
  * it as a point would scale it wrong; a nonlinear unit's is measured where the
  * leaf sits (`nonlinearStep`); under a unit's `places` it is rounded
  * up to the smallest step that changes the shown value; `stops` are points. Under `places`, `min` rounds up
- * and `max` down, so no shown bound stores past the leaf's. A decreasing conversion swaps which end is the lower
+ * and `max` down, so no shown bound stores past the leaf's, and a stop stays within the shown bounds. A decreasing conversion swaps which end is the lower
  * one, which end is `endless`, and the order of `stops`, which come out ascending as the bounds do.
  */
 export function prefDisplayBounds(
@@ -39,7 +39,8 @@ export function prefDisplayBounds(
   const step = p.step === undefined ? 1 : displayStep(isPrefLinearUnit(p.unit) ? Math.abs(toDisplayExact(p.step) - toDisplayExact(0)) : nonlinearStep(p, p.step, toDisplayExact), places);
   const flip = { min: 'max', max: 'min', both: 'both' } as const;
   const endless = backward && p.endless !== undefined ? flip[p.endless] : p.endless;
-  const stops = p.stops?.map(toDisplay).sort((a, b) => a - b);
+  const inside = (v: number): number => Math.min(max ?? Infinity, Math.max(min ?? -Infinity, v));
+  const stops = p.stops?.map((stop) => inside(toDisplay(stop))).sort((a, b) => a - b);
   return {
     min,
     max,
