@@ -38,6 +38,8 @@ export interface GradientStopsProps {
   onSelectionChange?: (index: number) => void;
   /** The editor around this is inert, so nothing here can be removed. */
   disabled?: boolean;
+  /** A read-only scope holds the editor: the stops' own controls refuse their edits, and nothing is removed. */
+  readOnly?: boolean;
   onInput?: (next: Paint) => void;
   onChange: (next: Paint) => void;
   onCancel?: () => void;
@@ -76,7 +78,7 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
   const fromThumbs = (next: StopThumb[]): GradientPaint =>
     withStops(next.map((t) => ({ offset: t.value, color: t.color })));
 
-  const removable = !props.disabled && stops.length > MIN_STOPS;
+  const removable = !props.disabled && !props.readOnly && stops.length > MIN_STOPS;
   // Handles are keyed by index, so focus left on the track would stay on whatever stop shifts into its place.
   const removed = (index: number, refocus: boolean): void => {
     const next = removing(index);

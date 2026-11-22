@@ -5,6 +5,7 @@ import type { GradientPaint, Paint } from '@weasel-js/paint';
 import { stubRect } from '../Slider/testing/stubRect';
 import { GradientEditor, type GradientEditorProps } from './GradientEditor';
 import { renderWithIcons } from '../../testing/withIcons';
+import { ReadOnly } from '../Disabled';
 
 const THREE: GradientPaint = {
   kind: 'linear-gradient',
@@ -287,4 +288,23 @@ describe('GradientEditor stops', () => {
       expect(container.firstElementChild).not.toHaveAttribute('aria-disabled');
     });
   });
+  describe('read-only', () => {
+    it('removes no stop by Delete, the Remove button, or a right-click', () => {
+      const onChange = vi.fn();
+      renderWithIcons(<ReadOnly reason="Locked"><GradientEditor value={THREE} onChange={onChange} /></ReadOnly>);
+      fireEvent.focus(handle(2));
+      fireEvent.keyDown(handle(2), { key: 'Delete' });
+      fireEvent.click(screen.getByRole('button', { name: /^Remove stop/ }));
+      fireEvent.contextMenu(handle(1));
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('switches neither the kind nor the blend space', () => {
+      const onChange = vi.fn();
+      renderWithIcons(<ReadOnly reason="Locked"><GradientEditor value={THREE} onChange={onChange} /></ReadOnly>);
+      fireEvent.click(screen.getByRole('radio', { name: 'OKLab' }));
+      expect(onChange).not.toHaveBeenCalled();
+    });
+  });
+
 });

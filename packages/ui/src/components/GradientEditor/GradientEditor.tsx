@@ -6,7 +6,7 @@ import { paintKindEditor } from '../PaintInput/paintKindEditor';
 import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
 import { GradientStops } from './GradientStops';
 import s from './GradientEditor.module.css';
-import { useDisabled, type DisableableProps } from '../Disabled';
+import { useDisabled, useReadOnly, type DisableableProps } from '../Disabled';
 import { useHoldReason } from '../Disabled/HoldReason';
 
 const SPACES: readonly SegmentedBarItem<ColorSpace>[] = [
@@ -84,6 +84,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
   // Inert whatever the reason: the reason is read off the group, as its description and tooltip.
   const { disabled, reason } = useDisabled(props);
   const why = useHoldReason(reason);
+  const { readOnly } = useReadOnly();
   const kind: PaintKind = value.kind ?? 'solid';
   const space: ColorSpace = (value as { interpolate?: ColorSpace }).interpolate ?? 'rgb';
 
@@ -144,6 +145,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
           selectedStop={props.selectedStop}
           onSelectionChange={props.onSelectionChange}
           disabled={disabled}
+          readOnly={readOnly}
           onInput={onInput}
           onChange={onChange}
           onCancel={onCancel}
