@@ -299,3 +299,26 @@ export const WithFooter: Story = {
     footer: <span className="lk-run-tag">Footer — reached through LabProps.footer</span>,
   },
 };
+
+/** The lab's own chrome, through `<Lab labChrome>`: a sidebar section, an aside section and a footer readout,
+ *  beside the lab rather than in each trial the way `chrome` puts them. */
+export const LabSidebarAsideAndFooter: Story = {
+  args: {
+    instruments: [spectrometer, beamProfile],
+    opening: ['Spectrometer'],
+    title: 'Lab chrome',
+    labChrome: [
+      {
+        id: 'bench',
+        region: 'sidebar',
+        item: { title: 'Bench', body: <p className="lk-run-tag">Bench 3, run 42.</p> },
+      },
+      {
+        id: 'notes',
+        region: 'aside',
+        item: { title: 'Notes', body: <p className="lk-run-tag">Aligned at 09:40.</p> },
+      },
+      { id: 'status', region: 'footer', item: { text: 'Idle' } },
+    ],
+  },
+};

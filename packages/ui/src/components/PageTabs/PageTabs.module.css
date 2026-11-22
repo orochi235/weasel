@@ -7,7 +7,6 @@
   min-width: 0;
   background: var(--wzl-surface);
   border-top: 1px solid var(--wzl-border);
-  font-family: var(--wzl-font-ui);
 }
 
 .tabs {

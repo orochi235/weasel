@@ -22,11 +22,11 @@
   user-select: none;
 }
 
-/* The UI face with proportional digits, not the browser's math font. Equal-width digits align a column
+/* The container's face with proportional digits, not the browser's math font. Equal-width digits align a column
  * but tilt a fraction: a narrow 1 sits off center in a wide 6's slot. Only a math font carries the gap
  * between a fraction's bar and its digits, so without one the gap is set here. */
 .math math {
-  font-family: var(--wzl-font-ui);
+  font-family: inherit;
   font-variant-numeric: proportional-nums;
 }
 

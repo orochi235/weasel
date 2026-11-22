@@ -84,7 +84,7 @@ a:hover { text-decoration: underline; }
 }
 
 .ckd-nav-package h3 {
-  font: 600 var(--wzl-font-size-sm) ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 600 var(--wzl-font-size-sm) var(--wzl-font-mono);
   color: var(--wzl-fg-subtle);
   margin: 0 0 var(--wzl-space-2) var(--wzl-space-4);
 }
@@ -413,7 +413,7 @@ a:hover { text-decoration: underline; }
   padding-bottom: var(--wzl-space-3);
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-subtle);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--wzl-font-mono);
 }
 
 /* The tab strip is the kit's Tabs; these only fit it to the header. */
@@ -433,7 +433,7 @@ a:hover { text-decoration: underline; }
 .ckd-code-tabs .ckd-code-tab {
   flex: 0 0 auto;
   white-space: nowrap;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--wzl-font-mono);
 }
 
 /* `.ckd-source` pads the code; the kit panel's own padding would double it. */
@@ -500,7 +500,7 @@ a:hover { text-decoration: underline; }
   color: var(--wzl-fg);
 }
 .ckd-readout.is-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--wzl-font-mono);
 }
 
 .ckd-toolbar-note {
@@ -551,7 +551,7 @@ a:hover { text-decoration: underline; }
   padding: var(--wzl-space-5) var(--wzl-space-7);
   border-radius: 6px;
   font-size: calc(var(--wzl-font-size-sm) + 1px);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--wzl-font-mono);
   cursor: grab;
 }
 
@@ -563,7 +563,7 @@ a:hover { text-decoration: underline; }
   border-radius: 6px;
   color: var(--wzl-fg-muted);
   font-size: calc(var(--wzl-font-size-sm) + 1px);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--wzl-font-mono);
 }
 
 .ckd-gestures-zone.is-over {
@@ -585,7 +585,7 @@ a:hover { text-decoration: underline; }
 
 .ckd-gestures-mod {
   font-size: var(--wzl-font-size-sm);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--wzl-font-mono);
   padding: var(--wzl-space-1) var(--wzl-space-4);
   border-radius: var(--wzl-radius-sm);
   border: 1px solid var(--wzl-border);
@@ -626,7 +626,7 @@ a:hover { text-decoration: underline; }
 }
 .curve-lab-panel-title {
   font-size: calc(var(--wzl-font-size-sm) + 1px);
-  font-family: ui-monospace, monospace;
+  font-family: var(--wzl-font-mono);
   color: var(--wzl-fg);
   padding: var(--wzl-space-2) var(--wzl-space-4);
   background: var(--wzl-surface-sunken);
@@ -724,7 +724,7 @@ a:hover { text-decoration: underline; }
   list-style: none;
   max-height: 190px;
   overflow-y: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg);
 }
@@ -771,7 +771,7 @@ a:hover { text-decoration: underline; }
 .lab-loupe-stage {
   transform-origin: 0 0;
   padding: var(--wzl-space-6) var(--wzl-space-8);
-  font: var(--wzl-font-size-sm)/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: var(--wzl-font-size-sm)/1.5 var(--wzl-font-mono);
   white-space: nowrap;
 }
 

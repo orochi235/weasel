@@ -93,7 +93,7 @@
   --_s-tint-mix: var(--wzl-panel-tint-mix);
   --_s-tint: var(--wzl-tint, var(--_s-surface));
   --_s-accent: var(--wzl-tint);
-  --_s-title-font: var(--wzl-font-ui);
+  --_s-title-font: initial;
   --_s-title-weight: var(--wzl-font-weight-bold);
   --_s-title-size: var(--wzl-font-size-sm);
   --_s-title-case: uppercase;
@@ -106,7 +106,7 @@
   --_s-tint-mix: var(--wzl-stance-clarify-tint-mix, var(--wzl-panel-tint-mix));
   --_s-tint: var(--wzl-tint, var(--wzl-stance-clarify-tint, var(--_s-surface)));
   --_s-accent: var(--wzl-tint, var(--wzl-stance-clarify-accent, var(--wzl-tint)));
-  --_s-title-font: var(--wzl-stance-clarify-title-font, var(--wzl-font-ui));
+  --_s-title-font: var(--wzl-stance-clarify-title-font, var(--_s-unset));
   --_s-title-weight: var(--wzl-stance-clarify-title-weight, var(--wzl-font-weight-bold));
   --_s-title-size: var(--wzl-stance-clarify-title-size, var(--wzl-font-size-sm));
   --_s-title-case: var(--wzl-stance-clarify-title-case, uppercase);
@@ -119,7 +119,7 @@
   --_s-tint-mix: var(--wzl-stance-aside-tint-mix, var(--wzl-panel-tint-mix));
   --_s-tint: var(--wzl-tint, var(--wzl-stance-aside-tint, var(--_s-surface)));
   --_s-accent: var(--wzl-tint, var(--wzl-stance-aside-accent, var(--wzl-tint)));
-  --_s-title-font: var(--wzl-stance-aside-title-font, var(--wzl-font-ui));
+  --_s-title-font: var(--wzl-stance-aside-title-font, var(--_s-unset));
   --_s-title-weight: var(--wzl-stance-aside-title-weight, var(--wzl-font-weight-bold));
   --_s-title-size: var(--wzl-stance-aside-title-size, var(--wzl-font-size-sm));
   --_s-title-case: var(--wzl-stance-aside-title-case, uppercase);
@@ -132,7 +132,7 @@
   --_s-tint-mix: var(--wzl-stance-advanced-tint-mix, var(--wzl-panel-tint-mix));
   --_s-tint: var(--wzl-tint, var(--wzl-stance-advanced-tint, var(--_s-surface)));
   --_s-accent: var(--wzl-tint, var(--wzl-stance-advanced-accent, var(--wzl-tint)));
-  --_s-title-font: var(--wzl-stance-advanced-title-font, var(--wzl-font-ui));
+  --_s-title-font: var(--wzl-stance-advanced-title-font, var(--_s-unset));
   --_s-title-weight: var(--wzl-stance-advanced-title-weight, var(--wzl-font-weight-bold));
   --_s-title-size: var(--wzl-stance-advanced-title-size, var(--wzl-font-size-sm));
   --_s-title-case: var(--wzl-stance-advanced-title-case, uppercase);
@@ -145,7 +145,7 @@
   --_s-tint-mix: var(--wzl-stance-debug-tint-mix, var(--wzl-panel-tint-mix));
   --_s-tint: var(--wzl-tint, var(--wzl-stance-debug-tint, var(--_s-surface)));
   --_s-accent: var(--wzl-tint, var(--wzl-stance-debug-accent, var(--wzl-tint)));
-  --_s-title-font: var(--wzl-stance-debug-title-font, var(--wzl-font-ui));
+  --_s-title-font: var(--wzl-stance-debug-title-font, var(--_s-unset));
   --_s-title-weight: var(--wzl-stance-debug-title-weight, var(--wzl-font-weight-bold));
   --_s-title-size: var(--wzl-stance-debug-title-size, var(--wzl-font-size-sm));
   --_s-title-case: var(--wzl-stance-debug-title-case, uppercase);
@@ -158,7 +158,7 @@
   --_s-tint-mix: var(--wzl-stance-preview-tint-mix, var(--wzl-panel-tint-mix));
   --_s-tint: var(--wzl-tint, var(--wzl-stance-preview-tint, var(--_s-surface)));
   --_s-accent: var(--wzl-tint, var(--wzl-stance-preview-accent, var(--wzl-tint)));
-  --_s-title-font: var(--wzl-stance-preview-title-font, var(--wzl-font-ui));
+  --_s-title-font: var(--wzl-stance-preview-title-font, var(--_s-unset));
   --_s-title-weight: var(--wzl-stance-preview-title-weight, var(--wzl-font-weight-bold));
   --_s-title-size: var(--wzl-stance-preview-title-size, var(--wzl-font-size-sm));
   --_s-title-case: var(--wzl-stance-preview-title-case, uppercase);
@@ -171,7 +171,7 @@
   --_s-tint-mix: var(--wzl-stance-confirm-tint-mix, var(--wzl-panel-tint-mix));
   --_s-tint: var(--wzl-tint, var(--wzl-stance-confirm-tint, var(--_s-surface)));
   --_s-accent: var(--wzl-tint, var(--wzl-stance-confirm-accent, var(--wzl-tint)));
-  --_s-title-font: var(--wzl-stance-confirm-title-font, var(--wzl-font-ui));
+  --_s-title-font: var(--wzl-stance-confirm-title-font, var(--_s-unset));
   --_s-title-weight: var(--wzl-stance-confirm-title-weight, var(--wzl-font-weight-bold));
   --_s-title-size: var(--wzl-stance-confirm-title-size, var(--wzl-font-size-sm));
   --_s-title-case: var(--wzl-stance-confirm-title-case, uppercase);
@@ -184,7 +184,7 @@
   --_s-tint-mix: var(--wzl-stance-cancel-tint-mix, var(--wzl-panel-tint-mix));
   --_s-tint: var(--wzl-tint, var(--wzl-stance-cancel-tint, var(--_s-surface)));
   --_s-accent: var(--wzl-tint, var(--wzl-stance-cancel-accent, var(--wzl-tint)));
-  --_s-title-font: var(--wzl-stance-cancel-title-font, var(--wzl-font-ui));
+  --_s-title-font: var(--wzl-stance-cancel-title-font, var(--_s-unset));
   --_s-title-weight: var(--wzl-stance-cancel-title-weight, var(--wzl-font-weight-bold));
   --_s-title-size: var(--wzl-stance-cancel-title-size, var(--wzl-font-size-sm));
   --_s-title-case: var(--wzl-stance-cancel-title-case, uppercase);

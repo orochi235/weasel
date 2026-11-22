@@ -74,6 +74,7 @@ export function EasingPicker(props: EasingPickerProps): ReactElement {
   const menu = (
     <select
       {...hold.attrs}
+      className={s.menu}
       aria-label={shown === false ? name : undefined}
       value={selectValue}
       onChange={(e) => onChange(e.target.value === 'linear' ? undefined : e.target.value as EasingSpec)}

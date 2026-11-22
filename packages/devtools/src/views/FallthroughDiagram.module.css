@@ -2,7 +2,6 @@
   display: grid;
   gap: var(--wzl-space-3);
   color: var(--wzl-fg);
-  font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-sm);
 }
 

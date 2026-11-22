@@ -23,7 +23,7 @@
   border-radius: 12px;
   background: hsl(var(--hue) 55% 55%);
   color: #14100b;
-  font: 600 11px ui-monospace, SFMono-Regular, monospace;
+  font: 600 11px var(--wzl-font-mono);
   cursor: pointer;
 }
 

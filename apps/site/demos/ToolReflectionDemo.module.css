@@ -33,7 +33,7 @@
 .registry {
   width: 100%;
   border-collapse: collapse;
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-sm);
 }
 

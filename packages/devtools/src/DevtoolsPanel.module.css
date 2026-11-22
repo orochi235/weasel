@@ -9,7 +9,6 @@
   overflow: hidden;
   color: var(--wzl-fg);
   background: var(--wzl-panel-surface);
-  font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-sm);
   /* The views lay themselves out by the panel's own width: a sidebar gives it far less than a page. */
   container-type: inline-size;

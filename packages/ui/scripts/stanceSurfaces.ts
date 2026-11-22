@@ -1,4 +1,4 @@
-import { ACCENT_BASE, type StanceSurface, TINT_BASE } from './stanceCss';
+import { ACCENT_BASE, type StanceSurface, TINT_BASE, UNSET } from './stanceCss';
 
 /** Build-time only: every surface `npm run gen:stances` writes rules for. */
 export const STANCE_SURFACES: readonly StanceSurface[] = [
@@ -99,7 +99,7 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
       'tint-mix': 'var(--wzl-panel-tint-mix)',
       tint: TINT_BASE,
       accent: ACCENT_BASE,
-      'title-font': 'var(--wzl-font-ui)',
+      'title-font': UNSET,
       'title-weight': 'var(--wzl-font-weight-bold)',
       'title-size': 'var(--wzl-font-size)',
       'title-case': 'none',
@@ -122,7 +122,7 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
       'tint-mix': 'var(--wzl-panel-tint-mix)',
       tint: TINT_BASE,
       accent: ACCENT_BASE,
-      'title-font': 'var(--wzl-font-ui)',
+      'title-font': UNSET,
       'title-weight': 'var(--wzl-font-weight-bold)',
       'title-size': 'var(--wzl-font-size)',
       'title-case': 'none',
@@ -141,7 +141,7 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
       'tint-mix': 'var(--wzl-panel-tint-mix)',
       tint: TINT_BASE,
       accent: ACCENT_BASE,
-      'title-font': 'var(--wzl-font-ui)',
+      'title-font': UNSET,
       'title-weight': 'var(--wzl-font-weight-bold)',
       'title-size': 'var(--wzl-font-size-sm)',
       'title-case': 'uppercase',

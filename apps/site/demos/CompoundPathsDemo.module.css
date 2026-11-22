@@ -17,7 +17,7 @@
   border-radius: 4px;
   background: #1a130d;
   color: #fafafa;
-  font: 14px monospace;
+  font: 14px var(--wzl-font-mono);
   pointer-events: none;
 }
 
@@ -28,7 +28,7 @@
   border: 1px solid #1a130d;
   border-radius: 3px;
   background: #f5c542;
-  font: 11px monospace;
+  font: 11px var(--wzl-font-mono);
   cursor: pointer;
 }
 

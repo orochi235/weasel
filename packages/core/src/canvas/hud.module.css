@@ -6,7 +6,7 @@
   z-index: var(--wzl-z-hud, 900);
   background: rgba(0, 0, 0, 0.7);
   color: #e8e8e8;
-  font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 11px var(--wzl-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
   padding: var(--wzl-space-3, 6px) var(--wzl-space-4, 8px);
   border-radius: 4px;
   pointer-events: none;

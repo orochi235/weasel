@@ -6,7 +6,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--wzl-space-2);
-  font-family: var(--wzl-font-ui);
   color: var(--wzl-fg);
 }
 
@@ -81,10 +80,10 @@
   transition: border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }
 
-/* The face a frame falls back to, beneath any class: NumberField composes the
+/* A button frame takes its container's face, beneath any class: NumberField composes the
    numeric face onto its frame, and a tie here would go to whichever sheet loaded last. */
 :where(.frame) {
-  font-family: var(--wzl-font-ui);
+  font-family: inherit;
 }
 
 /* A frame holding a text box rings whenever it has focus; a button frame only

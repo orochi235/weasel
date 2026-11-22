@@ -41,7 +41,7 @@
 
 .kind {
   white-space: nowrap;
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: var(--wzl-font-mono);
   color: var(--wzl-fg-muted);
 }
 

@@ -1,4 +1,4 @@
 .field { display: grid; gap: var(--wzl-space-2); min-inline-size: 0; }
 .bar { display: flex; flex-wrap: wrap; gap: var(--wzl-space-2); align-items: center; }
 .current { font-family: var(--wzl-font-mono); font-size: var(--wzl-font-size-sm); color: var(--wzl-fg-muted); overflow-wrap: anywhere; }
-.unregistered { margin-inline-start: var(--wzl-space-2); color: var(--wzl-danger); font-family: var(--wzl-font-body); }
+.unregistered { margin-inline-start: var(--wzl-space-2); color: var(--wzl-danger); }

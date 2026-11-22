@@ -91,6 +91,7 @@
     "check:token-reads": "tsx scripts/check-token-reads.ts",
     "check:spacing": "tsx scripts/check-spacing.ts",
     "check:numeric": "tsx scripts/check-numeric.ts",
+    "check:fonts": "tsx scripts/check-fonts.ts",
     "check:on-accent": "tsx scripts/check-on-accent.ts",
     "check:disabled": "tsx scripts/check-disabled.ts",
     "check:controls": "tsx scripts/check-controls.ts",

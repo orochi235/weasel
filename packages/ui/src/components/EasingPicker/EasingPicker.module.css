@@ -1,5 +1,7 @@
 .easingPicker { display: inline-flex; align-items: center; gap: var(--wzl-space-3); }
 
+.menu { font: inherit; }
+
 .easingLabel { composes: numeric from '@weasel-js/theme/numeric.module.css'; color: var(--wzl-fg-muted); }
 
 .easingPreview {

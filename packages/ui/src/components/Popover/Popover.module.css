@@ -6,6 +6,5 @@
   border-radius: var(--wzl-radius-md);
   box-shadow: var(--wzl-bevel-raised, 0 8px 24px var(--wzl-shadow));
   outline: none;
-  font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size);
 }
